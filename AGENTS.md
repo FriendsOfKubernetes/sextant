@@ -42,6 +42,8 @@
 - E2E: WebKitWebDriver теряет повторы и пробелы в `browser.keys` (для текста есть `typeText` в `e2e/app.ts`) и неверно печатает `/` и `:` — такие символы через `browser.keys` не вводить.
 - TypeScript закреплён на `~6.0` (ограничение typescript-eslint) — не обновлять вслепую.
 - CI (`ci.yml`) срабатывает на push и PR в ветку `main`, три ОС, `core.autocrlf false`; по записям сборки ни разу не запускался на GitHub.
+- macOS и Windows здесь не проверить — только CI. Что ломалось там и не видно на Linux: имена файлов, различающиеся только регистром (ловит `scripts/check-case-collisions.mjs`), GNU-only утилиты в тестовых скриптах (`stat -c`), `/proc`, `Path::is_absolute` по правилам хоста, путь `tauri://localhost` в тестах IPC (на Windows — `http://tauri.localhost`), хэши путей с `/`.
+- Релиз: тег `v*` или ручной запуск `gh workflow run release.yml -f tag=vX.Y.Z` (пересобрать существующий тег без его переписывания).
 
 ## Окружение
 
