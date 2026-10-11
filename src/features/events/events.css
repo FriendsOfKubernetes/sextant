@@ -1,0 +1,74 @@
+/* Warning rows of the Events table are tinted as a whole. */
+.rt__row:has(.events-warning) {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
+.events-warning.events-type,
+.events-message.events-warning {
+  color: var(--color-warning);
+}
+
+.events-type {
+  font-weight: 500;
+}
+
+.events-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.events-section {
+  margin: 12px 0;
+}
+
+.events-section__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.events-empty {
+  color: var(--color-text-muted);
+}
+
+.events-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.events-item {
+  border-left: 3px solid var(--color-border);
+  padding: 4px 8px;
+}
+
+.events-item.events-warning {
+  border-left-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+}
+
+.events-item__head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.events-item__reason {
+  font-weight: 600;
+}
+
+.events-item.events-warning .events-item__reason {
+  color: var(--color-warning);
+}
+
+.events-item__meta {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.events-item__message {
+  overflow-wrap: anywhere;
+}

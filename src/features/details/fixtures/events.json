@@ -1,0 +1,134 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "count": 1,
+      "eventTime": null,
+      "firstTimestamp": "2026-10-11T17:16:38Z",
+      "involvedObject": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "nginx-9f755754d-g85tv",
+        "namespace": "sextant-demo",
+        "resourceVersion": "548",
+        "uid": "0e4170fb-eebe-4be4-9ff6-b21b8a0b5e8c"
+      },
+      "kind": "Event",
+      "lastTimestamp": "2026-10-11T17:16:38Z",
+      "message": "Successfully assigned sextant-demo/nginx-9f755754d-g85tv to sextant-test-control-plane",
+      "metadata": {
+        "creationTimestamp": "2026-10-11T17:16:38Z",
+        "name": "nginx-9f755754d-g85tv.18dd8920488d8de3",
+        "namespace": "sextant-demo",
+        "resourceVersion": "562",
+        "uid": "fc6d2003-e59c-448b-99e9-ed740594839e"
+      },
+      "reason": "Scheduled",
+      "reportingComponent": "default-scheduler",
+      "reportingInstance": "",
+      "source": {
+        "component": "default-scheduler"
+      },
+      "type": "Normal"
+    },
+    {
+      "apiVersion": "v1",
+      "count": 1,
+      "eventTime": null,
+      "firstTimestamp": "2026-10-11T17:16:39Z",
+      "involvedObject": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{nginx}",
+        "kind": "Pod",
+        "name": "nginx-9f755754d-g85tv",
+        "namespace": "sextant-demo",
+        "resourceVersion": "557",
+        "uid": "0e4170fb-eebe-4be4-9ff6-b21b8a0b5e8c"
+      },
+      "kind": "Event",
+      "lastTimestamp": "2026-10-11T17:16:39Z",
+      "message": "Pulling image \"nginx:stable-alpine\"",
+      "metadata": {
+        "creationTimestamp": "2026-10-11T17:16:39Z",
+        "name": "nginx-9f755754d-g85tv.18dd892066df2cfd",
+        "namespace": "sextant-demo",
+        "resourceVersion": "577",
+        "uid": "6ebbd744-c866-4a10-8640-32404ccd57f5"
+      },
+      "reason": "Pulling",
+      "reportingComponent": "kubelet",
+      "reportingInstance": "sextant-test-control-plane",
+      "source": {
+        "component": "kubelet",
+        "host": "sextant-test-control-plane"
+      },
+      "type": "Normal"
+    },
+    {
+      "apiVersion": "v1",
+      "count": 1,
+      "eventTime": null,
+      "firstTimestamp": "2026-10-11T17:16:51Z",
+      "involvedObject": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{nginx}",
+        "kind": "Pod",
+        "name": "nginx-9f755754d-g85tv",
+        "namespace": "sextant-demo",
+        "resourceVersion": "557",
+        "uid": "0e4170fb-eebe-4be4-9ff6-b21b8a0b5e8c"
+      },
+      "kind": "Event",
+      "lastTimestamp": "2026-10-11T17:16:51Z",
+      "message": "Successfully pulled image \"nginx:stable-alpine\" in 1.359s (12.319s including waiting). Image size: 26098628 bytes.",
+      "metadata": {
+        "creationTimestamp": "2026-10-11T17:16:51Z",
+        "name": "nginx-9f755754d-g85tv.18dd89234528bebb",
+        "namespace": "sextant-demo",
+        "resourceVersion": "623",
+        "uid": "cf55071c-cecc-497a-b0ff-6f9cd4e26ba8"
+      },
+      "reason": "Pulled",
+      "reportingComponent": "kubelet",
+      "reportingInstance": "sextant-test-control-plane",
+      "source": {
+        "component": "kubelet",
+        "host": "sextant-test-control-plane"
+      },
+      "type": "Normal"
+    },
+    {
+      "apiVersion": "v1",
+      "count": 1,
+      "eventTime": null,
+      "firstTimestamp": "2026-10-11T17:16:38Z",
+      "involvedObject": {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "name": "nginx",
+        "namespace": "sextant-demo",
+        "resourceVersion": "538",
+        "uid": "a4ed8436-4644-4fd3-9bd5-da8cb9524918"
+      },
+      "kind": "Event",
+      "lastTimestamp": "2026-10-11T17:16:38Z",
+      "message": "Scaled up replica set nginx-9f755754d from 0 to 2",
+      "metadata": {
+        "creationTimestamp": "2026-10-11T17:16:38Z",
+        "name": "nginx.18dd892046cd90c7",
+        "namespace": "sextant-demo",
+        "resourceVersion": "544",
+        "uid": "ed89525c-0cf5-46df-b01a-3175d5dbfe1a"
+      },
+      "reason": "ScalingReplicaSet",
+      "reportingComponent": "deployment-controller",
+      "reportingInstance": "",
+      "source": {
+        "component": "deployment-controller"
+      },
+      "type": "Normal"
+    }
+  ]
+}

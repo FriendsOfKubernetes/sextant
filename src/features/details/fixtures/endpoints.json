@@ -1,0 +1,51 @@
+{
+    "apiVersion": "v1",
+    "kind": "Endpoints",
+    "metadata": {
+        "annotations": {
+            "endpoints.kubernetes.io/last-change-trigger-time": "2026-10-11T17:16:38Z"
+        },
+        "creationTimestamp": "2026-10-11T17:16:38Z",
+        "labels": {
+            "app": "nginx",
+            "endpoints.kubernetes.io/managed-by": "endpoint-controller"
+        },
+        "name": "nginx",
+        "namespace": "sextant-demo",
+        "resourceVersion": "6819",
+        "uid": "fa52a00b-43a0-44d7-b2a6-2cfe66041da7"
+    },
+    "subsets": [
+        {
+            "addresses": [
+                {
+                    "ip": "10.244.0.3",
+                    "nodeName": "sextant-test-control-plane",
+                    "targetRef": {
+                        "kind": "Pod",
+                        "name": "nginx-9f755754d-ncmfh",
+                        "namespace": "sextant-demo",
+                        "uid": "f36976be-6efd-47b2-a866-2411c741b762"
+                    }
+                },
+                {
+                    "ip": "10.244.0.4",
+                    "nodeName": "sextant-test-control-plane",
+                    "targetRef": {
+                        "kind": "Pod",
+                        "name": "nginx-9f755754d-g85tv",
+                        "namespace": "sextant-demo",
+                        "uid": "0e4170fb-eebe-4be4-9ff6-b21b8a0b5e8c"
+                    }
+                }
+            ],
+            "ports": [
+                {
+                    "name": "http",
+                    "port": 80,
+                    "protocol": "TCP"
+                }
+            ]
+        }
+    ]
+}

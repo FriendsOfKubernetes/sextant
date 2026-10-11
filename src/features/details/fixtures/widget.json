@@ -1,0 +1,19 @@
+{
+  "apiVersion": "demo.sextant.dev/v1",
+  "kind": "Widget",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"demo.sextant.dev/v1\",\"kind\":\"Widget\",\"metadata\":{\"annotations\":{},\"name\":\"demo-widget\",\"namespace\":\"sextant-demo\"},\"spec\":{\"replicas\":3,\"size\":\"large\"}}\n"
+    },
+    "creationTimestamp": "2026-10-11T17:16:40Z",
+    "generation": 1,
+    "name": "demo-widget",
+    "namespace": "sextant-demo",
+    "resourceVersion": "583",
+    "uid": "22333e93-3427-436d-bf46-a1b40484bffc"
+  },
+  "spec": {
+    "replicas": 3,
+    "size": "large"
+  }
+}
