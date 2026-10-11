@@ -1,0 +1,21 @@
+{
+  "shell": {
+    "action": "Shell",
+    "tabTitle": "Shell: {{pod}}",
+    "tabTitleContainer": "Shell: {{pod}}/{{container}}",
+    "pickContainer": "Open a shell in {{pod}}",
+    "pickContainerHint": "Choose a container"
+  },
+  "local": {
+    "open": "Terminal",
+    "tabTitle": "Terminal: {{cluster}}"
+  },
+  "status": {
+    "connecting": "Connecting…",
+    "ended": "Session ended",
+    "endedWithCode": "Session ended (exit code {{code}})",
+    "failed": "Session failed: {{message}}"
+  },
+  "reconnect": "Reconnect",
+  "terminal": "Terminal"
+}

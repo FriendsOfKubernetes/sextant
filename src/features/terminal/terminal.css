@@ -1,0 +1,62 @@
+/* Terminal dock tabs (container shell and local shell). */
+.terminal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-dock);
+}
+
+.terminal__screen {
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0 0 6px;
+  overflow: hidden;
+}
+
+.terminal__screen .xterm {
+  height: 100%;
+}
+
+.terminal__status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-dock-header);
+  font-size: 12px;
+}
+
+.terminal__status--error .terminal__status-text {
+  color: var(--color-danger);
+}
+
+.terminal__status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-picker__hint {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+}
+
+.terminal-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.terminal-picker .btn {
+  width: 100%;
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
