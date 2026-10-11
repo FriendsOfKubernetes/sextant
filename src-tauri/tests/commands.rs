@@ -75,15 +75,30 @@ struct Harness {
     _dirs: tempfile::TempDir,
 }
 
+/// Application state in `dirs` that never reads the developer's own kubeconfig: no `KUBECONFIG`, home inside
+/// `dirs` (so `~/.kube/config` is `<dirs>/home/.kube/config`).
+fn isolated_state(dirs: &std::path::Path) -> sextant_lib::AppState {
+    let state = sextant_lib::AppState::new(&dirs.join("config"), &dirs.join("data"));
+    state
+        .registry
+        .write()
+        .unwrap()
+        .set_env(sextant_core::kubeconfig::KubeconfigEnv {
+            kubeconfig: None,
+            home: Some(dirs.join("home")),
+        });
+    state
+}
+
 fn harness() -> Harness {
-    let dirs = tempfile::tempdir().unwrap();
+    harness_in(tempfile::tempdir().unwrap())
+}
+
+fn harness_in(dirs: tempfile::TempDir) -> Harness {
     let app = sextant_lib::with_commands(mock_builder())
         .build(mock_context(noop_assets()))
         .unwrap();
-    app.manage(sextant_lib::AppState::new(
-        &dirs.path().join("config"),
-        &dirs.path().join("data"),
-    ));
+    app.manage(isolated_state(dirs.path()));
     let window = WebviewWindowBuilder::new(&app, "main", Default::default())
         .build()
         .unwrap();
@@ -156,10 +171,123 @@ fn every_contract_command_is_registered_with_its_argument_names() {
 }
 
 #[test]
-fn stub_commands_answer_with_code_other() {
+fn unknown_cluster_cannot_connect_and_is_disconnected() {
     let h = harness();
     let err = invoke(&h, "cluster_connect", json!({ "clusterId": "abc" })).unwrap_err();
-    assert_eq!(err["code"], "other");
+    assert_eq!(err["code"], "notFound");
+    let state = invoke(&h, "cluster_state", json!({ "clusterId": "abc" })).unwrap();
+    assert_eq!(
+        state,
+        json!({ "state": "error", "code": "notFound", "message": err["message"] })
+    );
+    invoke(&h, "cluster_disconnect", json!({ "clusterId": "abc" })).unwrap();
+    let state = invoke(&h, "cluster_state", json!({ "clusterId": "abc" })).unwrap();
+    assert_eq!(state, json!({ "state": "disconnected" }));
+    let err = invoke(&h, "cluster_kinds", json!({ "clusterId": "abc" })).unwrap_err();
+    assert_eq!(err["code"], "notFound");
+}
+
+const PASTED: &str = "apiVersion: v1
+kind: Config
+clusters:
+  - name: c
+    cluster:
+      server: https://127.0.0.1:1
+users:
+  - name: u
+    user:
+      token: pasted-secret-token
+contexts:
+  - name: pasted-one
+    context:
+      cluster: c
+      user: u
+  - name: pasted-two
+    context:
+      cluster: c
+      user: u
+      namespace: team
+current-context: pasted-one
+";
+
+#[test]
+fn without_kubeconfig_there_are_no_clusters_and_the_checked_path_is_listed() {
+    let dirs = tempfile::tempdir().unwrap();
+    let home_config = dirs.path().join("home").join(".kube").join("config");
+    let h = harness_in(dirs);
+    assert_eq!(invoke(&h, "clusters_list", json!({})).unwrap(), json!([]));
+    let sources = invoke(&h, "kubeconfig_sources", json!({})).unwrap();
+    assert_eq!(sources.as_array().unwrap().len(), 1);
+    assert_eq!(sources[0]["kind"], "default");
+    assert_eq!(sources[0]["path"], home_config.to_str().unwrap());
+}
+
+#[test]
+fn pasted_and_added_kubeconfigs_survive_a_restart_and_are_removed() {
+    let dirs = tempfile::tempdir().unwrap();
+    let root = dirs.path().to_path_buf();
+    let h = harness_in(dirs);
+
+    let pasted = invoke(&h, "kubeconfig_add_pasted", json!({ "text": PASTED })).unwrap();
+    assert_eq!(pasted["kind"], "pasted");
+    assert!(std::path::Path::new(pasted["path"].as_str().unwrap()).starts_with(root.join("data")));
+
+    let file = root.join("team.yaml");
+    std::fs::write(&file, PASTED.replace("pasted-", "file-")).unwrap();
+    let added = invoke(&h, "kubeconfig_add_file", json!({ "path": file })).unwrap();
+    assert_eq!(added["kind"], "addedFile");
+
+    let clusters = invoke(&h, "clusters_list", json!({})).unwrap();
+    let contexts: Vec<_> = clusters
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["context"].clone())
+        .collect();
+    assert_eq!(
+        contexts,
+        [
+            json!("pasted-one"),
+            json!("pasted-two"),
+            json!("file-one"),
+            json!("file-two")
+        ]
+    );
+    assert!(
+        !clusters.to_string().contains("pasted-secret-token"),
+        "no credentials in the list"
+    );
+
+    let invalid = invoke(
+        &h,
+        "kubeconfig_add_pasted",
+        json!({ "text": "not: [valid" }),
+    )
+    .unwrap_err();
+    assert_eq!(invalid["code"], "kubeconfig");
+
+    // Restart: a new application state over the same directories.
+    let restarted = isolated_state(&root);
+    let again = sextant_lib::commands::clusters::list_clusters(&restarted).unwrap();
+    assert_eq!(again.len(), 4);
+    assert_eq!(again[0].id.as_str(), clusters[0]["id"].as_str().unwrap());
+
+    invoke(&h, "kubeconfig_remove", json!({ "sourceId": pasted["id"] })).unwrap();
+    let clusters = invoke(&h, "clusters_list", json!({})).unwrap();
+    assert_eq!(clusters.as_array().unwrap().len(), 2);
+    assert!(!std::path::Path::new(pasted["path"].as_str().unwrap()).exists());
+    let saved = invoke(&h, "settings_get", json!({})).unwrap();
+    assert_eq!(saved["kubeconfigSources"].as_array().unwrap().len(), 1);
+    assert_eq!(saved["kubeconfigSources"][0]["id"], added["id"]);
+
+    let default_source = invoke(&h, "kubeconfig_sources", json!({})).unwrap()[0]["id"].clone();
+    let err = invoke(
+        &h,
+        "kubeconfig_remove",
+        json!({ "sourceId": default_source }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid");
 }
 
 #[test]

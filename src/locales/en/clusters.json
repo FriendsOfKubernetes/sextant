@@ -1,0 +1,75 @@
+{
+  "rail": {
+    "list": "Cluster list",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Add cluster",
+    "refresh": "Refresh kubeconfig"
+  },
+  "state": {
+    "disconnected": "disconnected",
+    "connecting": "connecting",
+    "connected": "connected",
+    "error": "connection failed"
+  },
+  "menu": {
+    "open": "Open",
+    "connect": "Connect",
+    "reconnect": "Reconnect",
+    "disconnect": "Disconnect",
+    "settings": "Settings"
+  },
+  "add": {
+    "title": "Add cluster",
+    "file": "Add kubeconfig file",
+    "paste": "Paste kubeconfig",
+    "fileDialogTitle": "Choose a kubeconfig file"
+  },
+  "paste": {
+    "title": "Paste kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Paste the contents of a kubeconfig file. Sextant keeps a private copy in its data folder.",
+    "submit": "Add"
+  },
+  "sources": {
+    "title": "Kubeconfig sources",
+    "kind": {
+      "default": "default",
+      "env": "KUBECONFIG",
+      "addedFile": "added file",
+      "pasted": "pasted"
+    },
+    "remove": "Remove",
+    "removeNamed": "Remove {{path}}",
+    "confirmTitle": "Remove kubeconfig source?",
+    "confirmFile": "Its clusters disappear from the list. The file itself stays on disk.",
+    "confirmPasted": "Its clusters disappear from the list and the pasted copy is deleted."
+  },
+  "welcome": {
+    "loading": "Reading kubeconfig…",
+    "noClusters": "No clusters found",
+    "checked": "Sextant looked for a kubeconfig here:",
+    "checkedPaths": "Checked paths",
+    "title": "Welcome to Sextant",
+    "pick": "Select a cluster on the left to connect."
+  },
+  "connection": {
+    "connecting": "Connecting to {{name}}…",
+    "failed": "Cannot connect to {{name}}",
+    "reconnect": "Reconnect",
+    "certificate": "The server certificate was not accepted."
+  },
+  "settings": {
+    "title": "Cluster settings — {{name}}",
+    "displayName": "Display name",
+    "color": "Color label",
+    "autoColor": "Auto",
+    "colorOption": "Color {{index}}"
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "Cluster",
+    "server": "Server",
+    "user": "User",
+    "source": "Kubeconfig"
+  }
+}
