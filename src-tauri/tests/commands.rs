@@ -119,7 +119,17 @@ fn invoke(h: &Harness, cmd: &str, args: Value) -> Result<Value, Value> {
         cmd: cmd.into(),
         callback: CallbackFn(0),
         error: CallbackFn(1),
-        url: "tauri://localhost".parse().unwrap(),
+        // Local origin of the app's own pages differs per OS: tauri-2.12.3
+        // src/protocol/mod.rs `origin()` (used by `Webview::is_local_url`).
+        // Any other URL is treated as a remote origin, which `default`
+        // capability does not grant.
+        url: if cfg!(any(windows, target_os = "android")) {
+            "http://tauri.localhost"
+        } else {
+            "tauri://localhost"
+        }
+        .parse()
+        .unwrap(),
         body: InvokeBody::Json(args),
         headers: Default::default(),
         invoke_key: INVOKE_KEY.to_string(),
