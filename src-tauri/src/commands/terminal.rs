@@ -442,9 +442,10 @@ mod tests {
         path
     }
 
-    /// The path printed by `echo "KC=$KUBECONFIG"` (not the echoed command line itself).
+    /// The path printed by `echo "KC=$KUBECONFIG"` (not the echoed command line itself, which has
+    /// `KC=$`). The output may follow a prompt on the same line.
     #[cfg(unix)]
-    fn kubeconfig_path_in(text: &str) -> std::path::PathBuf {
+    fn printed_kubeconfig(text: &str) -> Option<std::path::PathBuf> {
         text.match_indices("KC=/")
             .map(|(i, _)| &text[i + 3..])
             .map(|rest| {
@@ -454,7 +455,11 @@ mod tests {
             })
             .find(|p| !p.is_empty())
             .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| panic!("KUBECONFIG is not set: {text:?}"))
+    }
+
+    #[cfg(unix)]
+    fn kubeconfig_path_in(text: &str) -> std::path::PathBuf {
+        printed_kubeconfig(text).unwrap_or_else(|| panic!("KUBECONFIG is not set: {text:?}"))
     }
 
     #[cfg(unix)]
@@ -530,12 +535,14 @@ mod tests {
         let line = if kubectl {
             "echo \"KC=$KUBECONFIG\"; echo \"CTX=$(kubectl config current-context)\"\n"
         } else {
-            "echo \"KC=$KUBECONFIG\"; echo CTX=fixture-ctx\n"
+            "echo \"KC=$KUBECONFIG\"; printf 'CTX=%s\\n' fixture-ctx\n"
         };
         input.blocking_send(line.as_bytes().to_vec()).unwrap();
         let mut text = String::new();
+        // The tty echoes the typed line, possibly long before a slow shell runs it, so neither
+        // expected string appears in the command itself: only the shell's output can match.
         read_text(&events, &mut text, |t| {
-            t.contains("CTX=fixture-ctx\r\n") || t.contains("CTX=fixture-ctx\n")
+            printed_kubeconfig(t).is_some() && t.contains("CTX=fixture-ctx")
         });
         let temp = kubeconfig_path_in(&text);
         assert_ne!(temp, kubeconfig, "a private copy, not the user's file");
