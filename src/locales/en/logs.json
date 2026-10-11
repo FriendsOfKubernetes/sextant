@@ -1,0 +1,49 @@
+{
+  "action": {
+    "label": "Logs"
+  },
+  "toolbar": {
+    "label": "Log options",
+    "container": "Container",
+    "initContainer": "{{name}} (init)",
+    "follow": "Follow",
+    "timestamps": "Timestamps",
+    "previous": "Previous container",
+    "wrap": "Wrap lines",
+    "save": "Save",
+    "reconnect": "Reconnect"
+  },
+  "search": {
+    "label": "Search logs",
+    "placeholder": "Search",
+    "previous": "Previous match",
+    "next": "Next match",
+    "count": "{{current}} of {{total}}",
+    "countCapped": "{{current}} of {{total}}+",
+    "none": "No matches"
+  },
+  "status": {
+    "connecting": "Connecting…",
+    "live": "Live",
+    "notFollowing": "Not following",
+    "ended": "Stream ended",
+    "failed": "Stream failed"
+  },
+  "lines_one": "{{count}} line",
+  "lines_other": "{{count}} lines",
+  "dropped_one": "{{count}} older line discarded (the newest {{limit}} are kept)",
+  "dropped_other": "{{count}} older lines discarded (the newest {{limit}} are kept)",
+  "empty": "No log lines yet.",
+  "view": "Log lines",
+  "save": {
+    "title": "Save logs",
+    "filter": "Log files",
+    "failed": "The logs could not be saved."
+  },
+  "picker": {
+    "title": "Logs of {{name}}: choose a pod",
+    "loading": "Loading pods…",
+    "none": "No pods found.",
+    "noSelector": "This object does not select pods."
+  }
+}

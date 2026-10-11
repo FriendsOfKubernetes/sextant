@@ -1,0 +1,143 @@
+/* Log tab in the dock. */
+.logs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.logs__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logs__field,
+.logs__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.logs__spacer {
+  flex: 1;
+}
+
+.logs__search {
+  width: 180px;
+  padding: 2px 6px;
+}
+
+.logs__match-count {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.logs__statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.logs__status--streaming {
+  color: var(--color-success);
+}
+
+.logs__status--ended,
+.logs__status--error {
+  color: var(--color-warning);
+}
+
+.logs__dropped {
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-warning);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.logs__scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.logs__empty {
+  margin: 8px;
+  color: var(--color-text-muted);
+}
+
+.logs__body {
+  position: relative;
+  min-width: 100%;
+  width: max-content;
+}
+
+.logs__line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  padding: 0 8px;
+  min-height: 18px;
+  line-height: 18px;
+  white-space: pre;
+}
+
+.logs__scroll--wrap .logs__body {
+  width: 100%;
+}
+
+.logs__scroll--wrap .logs__line {
+  width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.logs__mark {
+  background: rgba(226, 160, 63, 0.45);
+  color: inherit;
+}
+
+.logs__mark--current {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.logs-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.logs-picker__pod {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.logs-picker__pod:hover {
+  background: var(--color-hover);
+}
+
+.logs-picker__phase {
+  color: var(--color-text-muted);
+}
