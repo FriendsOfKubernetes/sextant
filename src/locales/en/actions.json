@@ -1,0 +1,92 @@
+{
+  "edit": {
+    "label": "Edit"
+  },
+  "delete": {
+    "label": "Delete",
+    "title_one": "Delete {{kind}}?",
+    "title_other": "Delete {{count}} {{kind}} objects?",
+    "text_one": "This {{kind}} will be deleted from the cluster:",
+    "text_other": "These {{count}} objects will be deleted from the cluster:",
+    "confirm": "Delete",
+    "failed": "Not deleted: {{name}}",
+    "partial": "{{done}} of {{total}} deleted. The others failed:"
+  },
+  "scale": {
+    "label": "Scale",
+    "title": "Scale {{kind}} {{name}}",
+    "replicas": "Replicas",
+    "current": "Currently: {{count}}",
+    "confirm": "Scale",
+    "invalid": "Enter a whole number, 0 or more."
+  },
+  "restart": {
+    "label": "Restart",
+    "title": "Restart {{kind}} {{name}}?",
+    "text": "All pods of {{name}} will be replaced one by one (rollout restart).",
+    "confirm": "Restart"
+  },
+  "cordon": {
+    "label": "Cordon / Uncordon",
+    "cordonTitle": "Cordon node {{name}}?",
+    "cordonText": "No new pods will be scheduled on {{name}}. Pods already running there keep running.",
+    "cordonConfirm": "Cordon",
+    "uncordonTitle": "Uncordon node {{name}}?",
+    "uncordonText": "New pods can be scheduled on {{name}} again.",
+    "uncordonConfirm": "Uncordon"
+  },
+  "drain": {
+    "label": "Drain",
+    "title": "Drain node {{name}}?",
+    "text": "{{name}} will be cordoned and every pod on it evicted, except pods of DaemonSets and static (mirror) pods. Evicted pods are recreated on other nodes only if a controller manages them.",
+    "confirm": "Drain",
+    "failed": "The node is cordoned, but some pods could not be evicted"
+  },
+  "trigger": {
+    "label": "Trigger now",
+    "title": "Run CronJob {{name}} now?",
+    "text": "A Job is created from the CronJob's template right away.",
+    "confirm": "Trigger",
+    "done": "Job {{name}} created."
+  },
+  "suspend": {
+    "label": "Suspend / Resume",
+    "suspendTitle": "Suspend CronJob {{name}}?",
+    "suspendText": "{{name}} will not start new Jobs until it is resumed. Running Jobs are not affected.",
+    "suspendConfirm": "Suspend",
+    "resumeTitle": "Resume CronJob {{name}}?",
+    "resumeText": "{{name}} will start Jobs on its schedule again.",
+    "resumeConfirm": "Resume"
+  },
+  "dialog": {
+    "working": "Working…",
+    "close": "Close"
+  },
+  "editor": {
+    "tabTitle": "Edit {{kind}} {{name}}",
+    "editorLabel": "YAML of {{kind}} {{name}}",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "unsaved": "Unsaved changes",
+    "reload": "Reload",
+    "loading": "Loading…",
+    "conflict": "{{kind}} {{name}} was changed in the cluster after you opened it. Your changes were not saved. Reload to get the current version.",
+    "reloadTitle": "Discard your changes?",
+    "reloadText": "Reloading replaces the text with the current version from the cluster. Your unsaved changes will be lost.",
+    "reloadConfirm": "Discard and reload",
+    "saveFailed": "Not saved"
+  },
+  "create": {
+    "open": "Create resource",
+    "tabTitle": "Create resource",
+    "editorLabel": "YAML of the resources to create",
+    "placeholder": "Paste or type YAML. Separate several objects with ---",
+    "apply": "Apply",
+    "applying": "Applying…",
+    "applied_one": "Applied {{count}} object:",
+    "applied_other": "Applied {{count}} objects:",
+    "failed": "Not applied",
+    "empty": "Enter at least one object."
+  }
+}

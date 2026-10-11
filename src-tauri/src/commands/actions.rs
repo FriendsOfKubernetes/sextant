@@ -1,63 +1,70 @@
-//! Actions on workloads, nodes and CronJobs.
+//! Actions on workloads, nodes and CronJobs: thin wrappers over `sextant_core::resources`.
 
+use sextant_core::resources;
 use sextant_core::{ClusterId, CoreError, ObjectRef};
 use tauri::State;
 
 use crate::state::AppState;
 
+/// Sets the replica count of a Deployment, StatefulSet or ReplicaSet.
 #[tauri::command]
 pub async fn workload_scale(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
     _ref: ObjectRef,
-    _replicas: i32,
+    replicas: i32,
 ) -> Result<(), CoreError> {
-    Err(CoreError::not_implemented())
+    resources::scale(&state.clusters, &cluster_id, &_ref, replicas).await
 }
 
+/// Rollout restart of a Deployment, StatefulSet or DaemonSet.
 #[tauri::command]
 pub async fn workload_restart(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
     _ref: ObjectRef,
 ) -> Result<(), CoreError> {
-    Err(CoreError::not_implemented())
+    resources::restart(&state.clusters, &cluster_id, &_ref).await
 }
 
+/// Cordon (`unschedulable: true`) or uncordon a node.
 #[tauri::command]
 pub async fn node_cordon(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
-    _name: String,
-    _unschedulable: bool,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    name: String,
+    unschedulable: bool,
 ) -> Result<(), CoreError> {
-    Err(CoreError::not_implemented())
+    resources::cordon(&state.clusters, &cluster_id, &name, unschedulable).await
 }
 
+/// Cordons the node and evicts its pods (DaemonSet and mirror pods stay).
 #[tauri::command]
 pub async fn node_drain(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
-    _name: String,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    name: String,
 ) -> Result<(), CoreError> {
-    Err(CoreError::not_implemented())
+    resources::drain(&state.clusters, &cluster_id, &name).await
 }
 
+/// Starts a Job from the CronJob's template now; returns the Job.
 #[tauri::command]
 pub async fn cronjob_trigger(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
     _ref: ObjectRef,
 ) -> Result<ObjectRef, CoreError> {
-    Err(CoreError::not_implemented())
+    resources::trigger_cronjob(&state.clusters, &cluster_id, &_ref).await
 }
 
+/// Suspends (`suspend: true`) or resumes a CronJob.
 #[tauri::command]
 pub async fn cronjob_suspend(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
     _ref: ObjectRef,
-    _suspend: bool,
+    suspend: bool,
 ) -> Result<(), CoreError> {
-    Err(CoreError::not_implemented())
+    resources::suspend_cronjob(&state.clusters, &cluster_id, &_ref, suspend).await
 }

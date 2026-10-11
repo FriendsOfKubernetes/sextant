@@ -1,0 +1,28 @@
+/* Dialogs of the actions (delete, scale, drain, …). */
+.action-dialog__names {
+  margin: 8px 0;
+  padding-left: 18px;
+  max-height: 240px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.action-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-dialog__field input {
+  width: 120px;
+}
+
+.action-dialog__hint {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.action-dialog__result {
+  color: var(--color-success);
+}
