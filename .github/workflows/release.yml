@@ -2,17 +2,25 @@
 # (.msi) and publishes them as a GitHub Release with generated notes. Installers are not code-signed.
 #
 #   git tag v0.1.0 && git push origin v0.1.0
+#
+# To rebuild the release of an already pushed tag without moving it: Actions -> Release -> Run workflow, input `tag`.
 name: Release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build the release for, e.g. v0.1.0
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -23,22 +31,52 @@ jobs:
       release-id: ${{ steps.create.outputs.release-id }}
     steps:
       - uses: actions/checkout@v5
-      - name: Create a draft release with generated notes
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+      - name: Find or create the draft release and output its id
         id: create
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
+          set -euo pipefail
+
+          # Id of the (draft or published) release of $TAG, or empty if there is none. The list is read
+          # into a variable first so that `head` closing the pipe cannot fail `gh` under pipefail.
           find_release() {
-            gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .id" | head -n1
+            local ids
+            ids=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq '.[] | select(.tag_name == env.TAG) | .id')
+            printf '%s\n' "$ids" | sed -n '1p'
           }
-          id=$(find_release)
-          if [ -z "$id" ]; then
-            gh release create "$TAG" --draft --verify-tag --title "Sextant $TAG" --generate-notes \
-              --notes "Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY#installing) for how to open them on macOS and Windows."
+
+          # The tag must already exist: a draft release does not create it.
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent \
+            || { echo "::error::Tag $TAG does not exist in $GITHUB_REPOSITORY"; exit 1; }
+
+          id=""
+          for attempt in 1 2 3; do
             id=$(find_release)
+            [ -n "$id" ] && break
+            [ "$attempt" -lt 3 ] && sleep 5
+          done
+
+          if [ -z "$id" ]; then
+            echo "No release for $TAG yet, creating a draft"
+            notes="Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY#installing) for how to open them on macOS and Windows."
+            # The id comes straight from the creation response, not from the (possibly lagging) list.
+            id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" -f name="Sextant $TAG" -f body="$notes" \
+              -F draft=true -F generate_release_notes=true --jq '.id')
+          else
+            echo "Found existing release $id for $TAG"
           fi
-          test -n "$id"
+
+          if ! [[ "$id" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not determine the release id for $TAG (got '$id')"
+            exit 1
+          fi
+          echo "Release id: $id"
           echo "release-id=$id" >> "$GITHUB_OUTPUT"
 
   build:
@@ -60,6 +98,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
 
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
@@ -99,5 +139,5 @@ jobs:
       - name: Publish (no longer a draft)
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          RELEASE_ID: ${{ needs.create-release.outputs.release-id }}
+        run: gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -f make_latest=true --silent
