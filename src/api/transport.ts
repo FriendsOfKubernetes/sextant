@@ -2,6 +2,7 @@
 import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen as tauriListen } from "@tauri-apps/api/event";
 import { open as tauriOpen, save as tauriSave } from "@tauri-apps/plugin-dialog";
+import { openUrl as tauriOpenUrl } from "@tauri-apps/plugin-opener";
 import { toApiError } from "./errors";
 
 export type Unsubscribe = () => void;
@@ -29,6 +30,8 @@ export interface Transport {
   listen<T>(event: string, handler: (payload: T) => void): Promise<Unsubscribe>;
   openFile(options: OpenFileOptions): Promise<string | null>;
   saveFile(options: SaveFileOptions): Promise<string | null>;
+  /** Opens a URL in the system's default browser (never inside the app window). */
+  openUrl(url: string): Promise<void>;
 }
 
 export const tauriTransport: Transport = {
@@ -39,6 +42,7 @@ export const tauriTransport: Transport = {
     return typeof picked === "string" ? picked : null;
   },
   saveFile: (options) => tauriSave(options),
+  openUrl: (url) => tauriOpenUrl(url),
 };
 
 let current: Transport = tauriTransport;
@@ -67,4 +71,13 @@ export function openFileDialog(options: OpenFileOptions = {}): Promise<string | 
 
 export function saveFileDialog(options: SaveFileOptions = {}): Promise<string | null> {
   return current.saveFile(options);
+}
+
+/** Opens `url` in the system browser; failures are rethrown as `ApiError`. */
+export async function openExternalUrl(url: string): Promise<void> {
+  try {
+    await current.openUrl(url);
+  } catch (err) {
+    throw toApiError(err);
+  }
 }

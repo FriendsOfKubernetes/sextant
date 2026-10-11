@@ -1,0 +1,286 @@
+// The Settings page: appearance (theme, language), the `helm` binary (found in PATH or chosen) and the kubeconfig
+// sources. Everything is saved right away through `updateSettings`; the window applies theme and language itself.
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { api, toApiError, useSettings, type ApiError, type AppSettings, type KubeconfigSource, type Theme } from "../../api";
+import { ConfirmDialog } from "../../components";
+import { availableLanguages } from "../../i18n";
+import type { PageProps } from "../../layout/pages";
+import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
+import { removeKubeconfigSource } from "../clusters/clustersStore";
+import { useClusters } from "../clusters/hooks";
+import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
+import { languageName } from "./languages";
+import "./settings.css";
+
+const THEMES: Theme[] = ["system", "light", "dark"];
+const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted"]);
+
+/** The sidebar page (`registerPage`). */
+export function SettingsPage(_props: PageProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="settings-page">
+      <h1 className="settings-page__title">{t("settings:page.title")}</h1>
+      <SettingsContent />
+    </div>
+  );
+}
+
+/** The sections, also shown in a dialog when no cluster is open. */
+export function SettingsContent() {
+  const { settings, update } = useSettings();
+  const [error, setError] = useState<ApiError | null>(null);
+
+  const save = (change: (current: AppSettings) => AppSettings): Promise<boolean> =>
+    update(change).then(
+      () => {
+        setError(null);
+        return true;
+      },
+      (err: unknown) => {
+        setError(toApiError(err));
+        return false;
+      },
+    );
+
+  return (
+    <div className="settings">
+      {error && <SaveError error={error} />}
+      <AppearanceSection settings={settings} save={save} />
+      <HelmSection settings={settings} save={save} />
+      <KubeconfigSection />
+    </div>
+  );
+}
+
+type Save = (change: (current: AppSettings) => AppSettings) => Promise<boolean>;
+
+function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+  const id = useId();
+  return (
+    <section className="settings__section" aria-labelledby={id}>
+      <h2 id={id} className="settings__heading">
+        {title}
+      </h2>
+      {hint && <p className="settings__hint">{hint}</p>}
+      {children}
+    </section>
+  );
+}
+
+function AppearanceSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  const languageId = useId();
+  const theme = settings?.theme ?? "system";
+  const language = settings?.language ?? "en";
+  const languages = availableLanguages.includes(language) ? availableLanguages : [...availableLanguages, language];
+
+  return (
+    <Section title={t("settings:appearance.title")}>
+      <div className="settings__field">
+        <span className="settings__label">{t("settings:appearance.theme")}</span>
+        <div className="settings__choices" role="radiogroup" aria-label={t("settings:appearance.theme")}>
+          {THEMES.map((value) => (
+            <label key={value} className="settings__choice">
+              <input
+                type="radio"
+                name="settings-theme"
+                value={value}
+                checked={theme === value}
+                disabled={!settings}
+                onChange={() => void save((s) => ({ ...s, theme: value }))}
+              />
+              {t(`settings:appearance.themes.${value}`)}
+            </label>
+          ))}
+        </div>
+        <p className="settings__hint">{t("settings:appearance.systemHint")}</p>
+      </div>
+      <div className="settings__field">
+        <label className="settings__label" htmlFor={languageId}>
+          {t("settings:appearance.language")}
+        </label>
+        <select
+          id={languageId}
+          className="settings__input settings__select"
+          value={language}
+          disabled={!settings}
+          onChange={(e) => {
+            const next = e.target.value;
+            void save((s) => ({ ...s, language: next }));
+          }}
+        >
+          {languages.map((code) => (
+            <option key={code} value={code}>
+              {languageName(code)}
+            </option>
+          ))}
+        </select>
+        <p className="settings__hint">{t("settings:appearance.languageHint")}</p>
+      </div>
+    </Section>
+  );
+}
+
+function HelmSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  const pathId = useId();
+  const status = useHelmStatus();
+  const savedPath = settings?.helmPath ?? null;
+  const [manual, setManual] = useState(savedPath !== null);
+  const [path, setPath] = useState(savedPath ?? "");
+
+  // The saved settings arrived or changed elsewhere: show them.
+  useEffect(() => {
+    setManual(savedPath !== null);
+    if (savedPath !== null) setPath(savedPath);
+  }, [savedPath]);
+
+  const choose = async (helmPath: string | null) => {
+    if (await save((s) => ({ ...s, helmPath }))) refreshHelmStatus();
+  };
+
+  const browse = async () => {
+    const picked = await api.dialog.openFile({ title: t("settings:helm.browseTitle") });
+    if (picked) setPath(picked);
+  };
+
+  let statusText: string;
+  if (!status) statusText = t("settings:helm.checking");
+  else if (status.available && status.path) {
+    statusText = status.version
+      ? t("settings:helm.found", { version: status.version, path: status.path })
+      : t("settings:helm.foundNoVersion", { path: status.path });
+  } else if (status.path) statusText = t("settings:helm.notRunnable", { path: status.path });
+  else statusText = t("settings:helm.notFound");
+
+  return (
+    <Section title={t("settings:helm.title")} hint={t("settings:helm.hint")}>
+      <div className="settings__choices settings__choices--column" role="radiogroup" aria-label={t("settings:helm.title")}>
+        <label className="settings__choice">
+          <input
+            type="radio"
+            name="settings-helm"
+            checked={!manual}
+            disabled={!settings}
+            onChange={() => {
+              setManual(false);
+              void choose(null);
+            }}
+          />
+          {t("settings:helm.auto")}
+        </label>
+        <label className="settings__choice">
+          <input
+            type="radio"
+            name="settings-helm"
+            checked={manual}
+            disabled={!settings}
+            onChange={() => {
+              setManual(true);
+              if (!path && status?.path) setPath(status.path);
+            }}
+          />
+          {t("settings:helm.manual")}
+        </label>
+      </div>
+      {manual && (
+        <form
+          className="settings__row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (path.trim()) void choose(path.trim());
+          }}
+        >
+          <label className="settings-visually-hidden" htmlFor={pathId}>
+            {t("settings:helm.path")}
+          </label>
+          <input
+            id={pathId}
+            className="settings__input settings__path"
+            type="text"
+            spellCheck={false}
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+          />
+          <button type="button" className="btn" onClick={() => void browse()}>
+            {t("settings:helm.browse")}
+          </button>
+          <button type="submit" className="btn btn--primary" disabled={!path.trim()}>
+            {t("settings:helm.apply")}
+          </button>
+        </form>
+      )}
+      <p className="settings__status" role="status" data-available={status?.available ?? undefined}>
+        {statusText}
+      </p>
+    </Section>
+  );
+}
+
+function KubeconfigSection() {
+  const { t } = useTranslation();
+  const { sources } = useClusters();
+  const [removing, setRemoving] = useState<KubeconfigSource | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  const remove = async (source: KubeconfigSource) => {
+    setRemoving(null);
+    try {
+      await removeKubeconfigSource(source.id);
+      setError(null);
+    } catch (err) {
+      setError(toApiError(err));
+    }
+  };
+
+  return (
+    <Section title={t("settings:kubeconfig.title")} hint={t("settings:kubeconfig.hint")}>
+      <ul className="settings__sources" aria-label={t("clusters:sources.title")}>
+        {sources.map((source) => (
+          <li key={source.id} className="settings__source">
+            <span className="settings__source-path">{source.path}</span>
+            <span className="settings__source-kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
+            {REMOVABLE.has(source.kind) && (
+              <button
+                type="button"
+                className="btn"
+                aria-label={t("clusters:sources.removeNamed", { path: source.path })}
+                onClick={() => setRemoving(source)}
+              >
+                {t("clusters:sources.remove")}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {error && <SourceError error={error} />}
+      <div className="settings__row">
+        <AddFileButton />
+        <PasteButton />
+      </div>
+      <ConfirmDialog
+        open={removing !== null}
+        title={t("clusters:sources.confirmTitle")}
+        confirmLabel={t("clusters:sources.remove")}
+        danger
+        onCancel={() => setRemoving(null)}
+        onConfirm={() => removing && void remove(removing)}
+      >
+        <p>{t(removing?.kind === "pasted" ? "clusters:sources.confirmPasted" : "clusters:sources.confirmFile")}</p>
+        <p className="settings__source-path">{removing?.path}</p>
+      </ConfirmDialog>
+    </Section>
+  );
+}
+
+function SaveError({ error }: { error: ApiError }) {
+  const { t } = useTranslation();
+  return (
+    <div className="settings__error" role="alert">
+      <strong>{t("settings:saveFailed")}</strong>
+      {error.message && <span>{t("common:error.details", { message: error.message })}</span>}
+    </div>
+  );
+}

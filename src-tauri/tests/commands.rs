@@ -410,3 +410,41 @@ fn settings_update_from_a_stale_copy_keeps_kubeconfig_sources_written_by_the_bac
     assert_eq!(saved["kubeconfigSources"][0]["id"], "src-1");
     assert_eq!(state.settings.get().kubeconfig_sources, vec![source]);
 }
+
+/// The `helm` chosen in Settings (`helmPath`) wins over the one found in `PATH`; clearing it goes back to auto.
+#[cfg(unix)]
+#[test]
+fn helm_path_from_settings_is_used_by_helm_commands() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let h = harness();
+    let dir = tempfile::tempdir().unwrap();
+    let fake = dir.path().join("my-helm");
+    std::fs::write(&fake, "#!/bin/sh\nprintf v9.9.9\n").unwrap();
+    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+
+    let mut settings = invoke(&h, "settings_get", json!({})).unwrap();
+    assert_eq!(settings["helmPath"], Value::Null, "{settings}");
+    settings["helmPath"] = json!(fake.display().to_string());
+    let saved = invoke(
+        &h,
+        "settings_update",
+        json!({ "settings": settings.clone() }),
+    )
+    .unwrap();
+    assert_eq!(saved["helmPath"], json!(fake.display().to_string()));
+
+    let status = invoke(&h, "helm_status", json!({})).unwrap();
+    assert_eq!(status["available"], true, "{status}");
+    assert_eq!(status["version"], "v9.9.9", "{status}");
+    assert_eq!(
+        status["path"],
+        json!(fake.display().to_string()),
+        "{status}"
+    );
+
+    settings["helmPath"] = Value::Null;
+    invoke(&h, "settings_update", json!({ "settings": settings })).unwrap();
+    let status = invoke(&h, "helm_status", json!({})).unwrap();
+    assert_eq!(status["available"], false, "{status}");
+}

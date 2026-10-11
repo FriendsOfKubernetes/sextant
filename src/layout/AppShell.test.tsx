@@ -198,4 +198,104 @@ describe("AppShell", () => {
       unregisterPage("t-overview");
     }
   });
+
+  describe("narrow window (up to 768 px)", () => {
+    let width = 1280;
+    const listeners = new Set<() => void>();
+    const original = window.matchMedia;
+
+    function resizeTo(next: number) {
+      width = next;
+      act(() => {
+        for (const fn of listeners) fn();
+      });
+    }
+
+    beforeEach(() => {
+      width = 1280;
+      listeners.clear();
+      // jsdom has no layout: answer max-width queries from `width`.
+      window.matchMedia = ((query: string) => {
+        const max = /max-width:\s*(\d+)px/.exec(query);
+        return {
+          get matches() {
+            return max ? width <= Number(max[1]) : false;
+          },
+          media: query,
+          onchange: null,
+          addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+          removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+          addListener: (fn: () => void) => listeners.add(fn),
+          removeListener: (fn: () => void) => listeners.delete(fn),
+          dispatchEvent: () => true,
+        };
+      }) as unknown as typeof window.matchMedia;
+    });
+    afterEach(() => {
+      window.matchMedia = original;
+    });
+
+    function menuOf(button: HTMLElement): HTMLElement {
+      const id = button.getAttribute("aria-controls");
+      const menu = id ? document.getElementById(id) : null;
+      if (!menu) throw new Error("the menu button controls no element");
+      return menu;
+    }
+
+    it("moves the cluster rail and the sidebar into a menu that closes when a section is chosen", () => {
+      registerPage({ id: "t-page", section: "cluster", order: 1, labelKey: "common:app.name", Component: () => <p>the page</p> });
+      try {
+        width = 400;
+        render(<AppShell />);
+        withCluster();
+        const button = screen.getByRole("button", { name: "Open menu" });
+        expect(button).toHaveAttribute("aria-expanded", "false");
+        const menu = menuOf(button);
+        expect(menu).toHaveAttribute("data-open", "false");
+        expect(within(menu).getByRole("navigation", { name: "Clusters" })).toBeInTheDocument();
+        expect(within(menu).getByRole("navigation", { name: "Sections" })).toBeInTheDocument();
+        expect(screen.queryByRole("separator", { name: "Resize sidebar" })).not.toBeInTheDocument();
+
+        fireEvent.click(button);
+        expect(menu).toHaveAttribute("data-open", "true");
+        expect(screen.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
+
+        fireEvent.click(within(menu).getByRole("button", { name: "Sextant" }));
+        expect(screen.getByRole("main")).toHaveTextContent("the page");
+        expect(menu).toHaveAttribute("data-open", "false");
+      } finally {
+        unregisterPage("t-page");
+      }
+    });
+
+    it("keeps the details panel and the dock reachable, and Escape closes the menu", () => {
+      width = 360;
+      render(<AppShell />);
+      withCluster();
+      act(() => useAppStore.getState().openDetails(pod));
+      expect(screen.getByRole("complementary", { name: "Details" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Dock" })).toBeInTheDocument();
+
+      const button = screen.getByRole("button", { name: "Open menu" });
+      fireEvent.click(button);
+      expect(menuOf(button)).toHaveAttribute("data-open", "true");
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(menuOf(button)).toHaveAttribute("data-open", "false");
+    });
+
+    it("follows the window width: wide shows the rail and sidebar again", () => {
+      render(<AppShell />);
+      withCluster();
+      expect(screen.queryByRole("button", { name: "Open menu" })).not.toBeInTheDocument();
+      expect(screen.getByRole("separator", { name: "Resize sidebar" })).toBeInTheDocument();
+
+      resizeTo(700);
+      expect(screen.getByRole("button", { name: "Open menu" })).toBeInTheDocument();
+      expect(screen.queryByRole("separator", { name: "Resize sidebar" })).not.toBeInTheDocument();
+
+      resizeTo(1024);
+      expect(screen.queryByRole("button", { name: "Open menu" })).not.toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: "Sections" })).toBeInTheDocument();
+    });
+  });
 });

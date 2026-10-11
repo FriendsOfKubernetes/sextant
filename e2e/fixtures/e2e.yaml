@@ -1,0 +1,59 @@
+# Resources of the end-to-end tests. Everything lives in namespace `sextant-e2e`, which the tests delete afterwards.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sextant-e2e
+  labels:
+    app.kubernetes.io/part-of: sextant-e2e
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e2e-web
+  namespace: sextant-e2e
+  labels:
+    app: e2e-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e2e-web
+  template:
+    metadata:
+      labels:
+        app: e2e-web
+    spec:
+      terminationGracePeriodSeconds: 2
+      containers:
+        - name: nginx
+          image: nginx:stable-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: e2e-web
+  namespace: sextant-e2e
+spec:
+  selector:
+    app: e2e-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: e2e-config
+  namespace: sextant-e2e
+data:
+  greeting: hello

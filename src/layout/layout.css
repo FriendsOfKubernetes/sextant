@@ -253,3 +253,102 @@
   inset: 0;
   overflow: hidden;
 }
+
+.rail__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- narrow window (≤ 768 px, see useNarrowLayout.ts) ---------- */
+
+.topbar {
+  display: none;
+}
+
+.app-shell--narrow {
+  flex-direction: column;
+}
+
+.app-shell--narrow .topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px;
+  background: var(--color-rail);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbar__menu {
+  font-size: 18px;
+}
+
+.topbar__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell--narrow .workspace {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* The closed drawer stays mounted: `visibility` hides it, while dialogs and menus inside it (fixed-positioned)
+   still show when something opens them. No transform/translate here — it would trap those fixed elements. */
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  max-width: calc(100vw - 40px);
+  background: var(--color-sidebar);
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
+  visibility: hidden;
+}
+
+.drawer--open {
+  visibility: visible;
+  animation: drawer-in 160ms ease-out;
+}
+
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.drawer .dialog-backdrop,
+.drawer .cluster-menu {
+  visibility: visible;
+}
+
+.drawer .sidebar {
+  width: min(260px, calc(100vw - 112px));
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 768px) {
+  .details {
+    width: 100%;
+    border-left: none;
+  }
+
+  .dock {
+    max-height: calc(100% - 80px);
+  }
+}

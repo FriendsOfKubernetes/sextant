@@ -1,25 +1,65 @@
 # Sextant
 
-Sextant is a desktop application for managing Kubernetes clusters — an alternative to Lens, written in Rust
-on [Tauri 2](https://tauri.app). It reads your kubeconfig, shows the resources of every cluster in live tables,
-and lets you inspect, edit and operate them: logs, shells in containers, a local terminal bound to the cluster,
-port forwarding, CPU/memory metrics and Helm releases.
+[![CI](https://github.com/FriendsOfKubernetes/sextant/actions/workflows/ci.yml/badge.svg)](https://github.com/FriendsOfKubernetes/sextant/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/FriendsOfKubernetes/sextant?sort=semver)](https://github.com/FriendsOfKubernetes/sextant/releases/latest)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
 
-The window follows the familiar layout: clusters on the left, a section tree, the resource table in the center,
-a details panel that slides in from the right and a dock with tabs at the bottom. Light, dark and system themes.
-The interface is in English; every string comes from translation files, so more languages can be added.
+Sextant is a desktop application for managing Kubernetes clusters — an alternative to Lens, written in Rust on
+[Tauri 2](https://tauri.app). It reads your kubeconfig, shows the resources of every cluster in live tables and
+lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 
-> Status: under active development. Builds for Linux, macOS and Windows; installers are not signed.
+![Sextant: the pods of a kind cluster](docs/screenshot.png)
 
-## Repository layout
+## Features
 
-| Path | What |
+- **Clusters from your kubeconfig** — `KUBECONFIG` (every file in the list) or `~/.kube/config`, plus files you add
+  or paste. Every context is an entry in the cluster rail, with its own name and color; several clusters can be
+  connected at once. Client certificates, tokens, basic auth and exec plugins are supported.
+- **The Lens layout** — cluster rail, section tree, live resource table, details panel and a dock with tabs.
+  Light, dark or system theme. Narrow windows (down to 360 px) move the rail and sidebar into a menu.
+- **Every resource** — Workloads, Config, Network, Storage, Namespaces, Events, Access Control, Nodes and Custom
+  Resources (columns from `additionalPrinterColumns`). Tables update through watches, handle thousands of rows,
+  sort by any column and filter by namespace, name or label (`app=web`).
+- **Details** — metadata, kind-specific fields, conditions, events and YAML; Secret values only on request; links
+  between owners, pods, nodes, services and volumes.
+- **Changes** — edit YAML (with conflict detection), create resources from multi-document YAML (server-side apply),
+  delete, scale, rollout restart, cordon/uncordon and drain nodes, trigger and suspend CronJobs.
+- **Logs** — follow, timestamps, previous container, search with highlighting, save to a file.
+- **Shells** — a terminal in any container (`bash`, then `sh`) and a local terminal whose `kubectl` already points at
+  the selected cluster.
+- **Port forwarding** — from a pod or a service, to a chosen or a free local port; open it in the browser.
+- **Metrics** — CPU and memory from metrics-server in tables and details; last-hour charts from Prometheus
+  (found automatically or set per cluster).
+- **Helm** — releases with values, manifest, notes and history are read straight from the cluster; upgrade,
+  roll back, uninstall and install charts from your repositories through the `helm` binary.
+
+The interface is in English; every string comes from translation files (`src/locales/<lang>/`), so adding a
+language is adding a directory. There is no account, no server and no telemetry: settings stay in your OS config
+folder.
+
+## Installing
+
+Download the installer for your system from the
+[latest release](https://github.com/FriendsOfKubernetes/sextant/releases/latest):
+
+| System | File |
 |---|---|
-| `crates/sextant-core` | Everything about clusters (kube-rs). No Tauri dependency, so it can back a mobile app later. |
-| `src-tauri` | The desktop application (crate `sextant`): Tauri commands, events, local terminal. |
-| `src` | The interface: React + TypeScript + Vite. `src/api` is the only bridge to the backend. |
-| `src/locales/<lang>/<namespace>.json` | Translations. A new language is a new directory. |
-| `scripts/test-cluster.sh` | A local kind cluster with test fixtures for development and integration tests. |
+| Linux (Debian, Ubuntu) | `Sextant_<version>_amd64.deb` — `sudo apt install ./Sextant_<version>_amd64.deb` |
+| Linux (any distribution) | `Sextant_<version>_amd64.AppImage` — `chmod +x` it and run |
+| macOS (Apple silicon and Intel) | `Sextant_<version>_universal.dmg` |
+| Windows | `Sextant_<version>_x64_en-US.msi` |
+
+### Unsigned installers
+
+The installers are not code-signed, so the operating system warns the first time you open Sextant.
+
+- **macOS:** move Sextant to Applications, then right-click it and choose **Open** (once). If macOS says the app
+  "is damaged" or still refuses to open it, run `xattr -dr com.apple.quarantine /Applications/Sextant.app`.
+- **Windows:** SmartScreen shows "Windows protected your PC" — choose **More info → Run anyway**.
+
+Optional tools used by some features: `kubectl` (in the local terminal) and [`helm`](https://helm.sh/docs/intro/install/)
+(installing and changing Helm releases; viewing releases works without it). If `helm` is not in `PATH`, choose the
+binary in **Settings** (the gear at the bottom of the cluster rail).
 
 ## Building from source
 
@@ -32,24 +72,15 @@ Requirements:
   `build-essential`, `curl`, `wget`, `file`, `libssl-dev`, `libxdo-dev`)
 
 ```sh
+git clone https://github.com/FriendsOfKubernetes/sextant.git
+cd sextant
 npm install
 npm run tauri dev      # run in development mode
 npm run tauri build    # build installers into target/release/bundle/
 ```
 
-On Linux `npm run tauri build` produces `.deb`, `.rpm` and `.AppImage` packages; on macOS `.app`/`.dmg`;
-on Windows `.msi` and an NSIS installer.
-
-Optional tools used by some features: `kubectl` (in the local terminal) and `helm` (installing and changing
-Helm releases; viewing releases works without it).
-
-### Unsigned installers
-
-Installers are not code-signed.
-
-- **macOS:** after moving Sextant to Applications, right-click it and choose **Open** (once), or run
-  `xattr -dr com.apple.quarantine /Applications/Sextant.app`.
-- **Windows:** SmartScreen may warn about an unknown publisher — choose **More info → Run anyway**.
+On Linux `npm run tauri build` produces `.deb`, `.rpm` and `.AppImage` packages; on macOS `.app`/`.dmg`; on Windows
+`.msi` and an NSIS installer.
 
 ## Development
 
@@ -60,21 +91,54 @@ npx vitest run src/layout     # one group of frontend tests
 cargo test -p sextant-core    # core unit tests
 ```
 
+| Path | What |
+|---|---|
+| `crates/sextant-core` | Everything about clusters (kube-rs). No Tauri dependency, so it can back a mobile app later. |
+| `src-tauri` | The desktop application (crate `sextant`): Tauri commands, events, local terminal. |
+| `src` | The interface: React + TypeScript + Vite. `src/api` is the only bridge to the backend. |
+| `src/locales/<lang>/<namespace>.json` | Translations. A new language is a new directory. |
+| `scripts/test-cluster.sh` | A local kind cluster with test fixtures for development and tests. |
+| `e2e/` | End-to-end tests of the whole window (WebdriverIO + tauri-driver). |
+
 ### Test cluster
 
-Integration tests of the core run against a local [kind](https://kind.sigs.k8s.io) cluster and are skipped
-when `SEXTANT_TEST_KUBECONFIG` is not set.
+Integration tests of the core run against a local [kind](https://kind.sigs.k8s.io) cluster and are skipped when
+`SEXTANT_TEST_KUBECONFIG` is not set.
 
 ```sh
-scripts/test-cluster.sh up                 # kind cluster "sextant-test" + metrics-server + fixtures
+scripts/test-cluster.sh up --prometheus    # kind cluster "sextant-test" + metrics-server + Prometheus + fixtures
 scripts/test-cluster.sh kubeconfig         # path to its admin kubeconfig
 scripts/test-cluster.sh kubeconfig limited # kubeconfig of a ServiceAccount that cannot read Secrets
 SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) \
-  cargo test -p sextant-core --tests -- --test-threads=1
+  cargo test --workspace --tests -- --test-threads=1
 scripts/test-cluster.sh down
 ```
 
 The script keeps your `~/.kube/config` untouched; its files live in `~/.cache/sextant-test`.
+
+### End-to-end tests
+
+`npm run e2e` builds the debug app, starts it through [`tauri-driver`](https://v2.tauri.app/develop/tests/webdriver/)
+and walks through every feature against `sextant-test`: connecting, the pod table, details, logs, a shell, YAML
+editing, scaling, port forwarding, a Helm release, the overview, Settings and the narrow layout. It also takes the
+screenshot above (`docs/screenshot.png`).
+
+```sh
+cargo install tauri-driver --locked
+sudo apt install webkit2gtk-driver   # Linux: WebKitWebDriver
+scripts/test-cluster.sh up --prometheus
+npm run e2e
+```
+
+The app runs with throwaway config and data directories and only the test cluster's kubeconfig; everything the
+tests create lives in the namespace `sextant-e2e`, which is deleted afterwards. A failed scenario leaves a
+screenshot in `target/e2e/`. `SEXTANT_E2E_SKIP_BUILD=1` reuses the last build.
+
+### Releases
+
+Pushing a tag `v*` (for example `v0.1.0`) runs [`release.yml`](.github/workflows/release.yml): installers for the
+three systems are built and published as a GitHub Release. Every push and pull request to `main` runs
+[`ci.yml`](.github/workflows/ci.yml) (`npm run check` on Linux, macOS and Windows).
 
 ## License
 
@@ -84,3 +148,6 @@ Licensed under either of
 - MIT license ([LICENSE-MIT](LICENSE-MIT))
 
 at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you,
+as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.

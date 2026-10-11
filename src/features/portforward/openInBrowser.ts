@@ -1,7 +1,7 @@
-import type { ForwardInfo } from "../../api";
+import { api, type ForwardInfo } from "../../api";
 import { urlOf } from "./model";
 
-/** Opens the forwarded port in the default browser. */
+/** Opens the forwarded port in the system's default browser. */
 export function openInBrowser(forward: Pick<ForwardInfo, "localPort">): void {
-  window.open(urlOf(forward), "_blank", "noopener,noreferrer");
+  api.shell.openUrl(urlOf(forward)).catch((err: unknown) => console.error("cannot open the browser", err));
 }

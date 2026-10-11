@@ -1,6 +1,6 @@
 // Public surface of the backend bridge. Components import from "src/api" only.
 import * as commands from "./commands";
-import { openFileDialog, saveFileDialog } from "./transport";
+import { openExternalUrl, openFileDialog, saveFileDialog } from "./transport";
 
 export const api = {
   clusters: commands.clusters,
@@ -14,6 +14,8 @@ export const api = {
   settings: commands.settings,
   files: commands.files,
   dialog: { openFile: openFileDialog, saveFile: saveFileDialog },
+  /** The operating system: `openUrl(url)` opens a link in the default browser. */
+  shell: { openUrl: openExternalUrl },
 };
 
 export type { KubeObject } from "./commands";

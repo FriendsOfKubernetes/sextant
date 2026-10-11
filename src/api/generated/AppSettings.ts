@@ -12,4 +12,8 @@ language: string,
 /**
  * Kubeconfig files the user added or pasted (not `KUBECONFIG` / `~/.kube/config`).
  */
-kubeconfigSources: Array<KubeconfigSource>, clusters: { [key in string]: ClusterSettings }, window: WindowLayout, };
+kubeconfigSources: Array<KubeconfigSource>, clusters: { [key in string]: ClusterSettings }, window: WindowLayout, 
+/**
+ * The `helm` binary chosen in Settings; `None` = look `helm` up in `PATH`.
+ */
+helmPath: string | null, };

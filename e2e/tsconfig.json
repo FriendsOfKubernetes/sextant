@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node", "mocha", "@wdio/globals/types", "@wdio/mocha-framework"]
+  },
+  "include": ["**/*.ts"]
+}

@@ -95,7 +95,8 @@ describe("details section", () => {
     ]);
     expect(screen.getByRole("dialog")).toHaveTextContent("localhost:41234");
     fireEvent.click(screen.getByRole("button", { name: "Open in browser" }));
-    expect(open).toHaveBeenCalledWith("http://localhost:41234", "_blank", "noopener,noreferrer");
+    await waitFor(() => expect(backend.openedUrls).toEqual(["http://localhost:41234"]));
+    expect(open).not.toHaveBeenCalled();
   });
 
   it("forwards a service port to a port the user chose", async () => {
@@ -241,7 +242,8 @@ describe("Port Forwarding page", () => {
     render(<Page clusterId="c1" />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Open in browser" }));
-    expect(open).toHaveBeenCalledWith("http://localhost:41234", "_blank", "noopener,noreferrer");
+    await waitFor(() => expect(backend.openedUrls).toEqual(["http://localhost:41234"]));
+    expect(open).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Stop" }));
 
     await waitFor(() => expect(backend.calls.some((c) => c.cmd === "portforward_stop")).toBe(true));

@@ -20,7 +20,7 @@ import { getPages } from "../pages";
 import "./sidebar.css";
 
 /** Sections shown as one link (their only entry) instead of a collapsible group. */
-const SINGLE_ENTRY = new Set(["cluster", "nodes", "namespaces", "events"]);
+const SINGLE_ENTRY = new Set(["cluster", "nodes", "namespaces", "events", "settings"]);
 
 const CRDS: WatchSpec = { kind: CRD_KIND, namespaces: null, labelSelector: null, fieldSelector: null };
 

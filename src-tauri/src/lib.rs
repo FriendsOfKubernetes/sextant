@@ -111,6 +111,7 @@ fn spawn_event_forwarders<R: Runtime>(app: &tauri::AppHandle<R>) {
 pub fn run() {
     with_commands(tauri::Builder::default())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let paths = app.path();
             let state = AppState::new(&paths.app_config_dir()?, &paths.app_data_dir()?);

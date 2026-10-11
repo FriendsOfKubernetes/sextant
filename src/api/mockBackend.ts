@@ -25,6 +25,8 @@ export interface MockBackend {
   readonly calls: MockCall[];
   /** Settings as stored by the default settings handlers. */
   readonly settings: AppSettings;
+  /** URLs passed to `api.shell.openUrl` (the system browser), in order. */
+  readonly openedUrls: string[];
   /** Adds or replaces a command handler. */
   on(cmd: string, handler: MockHandler): void;
   /** Delivers a backend event to the current listeners. */
@@ -45,6 +47,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   const table = new Map<string, MockHandler>();
   const listeners = new Map<string, Set<(payload: unknown) => void>>();
   const calls: MockCall[] = [];
+  const openedUrls: string[] = [];
   const defaults = defaultAppSettings();
   let settings: AppSettings = {
     ...defaults,
@@ -81,6 +84,9 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
     async saveFile(opts) {
       return options.saveFile?.(opts) ?? null;
     },
+    async openUrl(url) {
+      openedUrls.push(url);
+    },
   };
 
   resetSettingsCache();
@@ -88,6 +94,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
 
   return {
     calls,
+    openedUrls,
     get settings() {
       return settings;
     },

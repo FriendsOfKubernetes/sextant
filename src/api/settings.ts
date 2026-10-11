@@ -21,6 +21,7 @@ export function defaultAppSettings(): AppSettings {
       height: null,
       maximized: false,
     },
+    helmPath: null,
   };
 }
 

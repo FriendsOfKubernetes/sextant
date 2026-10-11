@@ -2,7 +2,8 @@
 //!
 //! Every call that reaches a cluster gets a temporary kubeconfig (0600) with only that cluster's context; it is
 //! deleted as soon as `helm` exits. The `helm` binary and its environment come from a managed `HelmCli` when the
-//! app (or a test) registers one with `app.manage(..)`, otherwise `HelmCli::default()` (looked up in `PATH`).
+//! app (or a test) registers one with `app.manage(..)`, otherwise `HelmCli::default()` (looked up in `PATH`); the
+//! path chosen in Settings (`AppSettings::helm_path`) replaces the binary.
 
 use sextant_core::helm::cli::{self, ChartHit, HelmCli, HelmRepo, HelmStatus};
 use sextant_core::helm::{self, HelmRelease, HelmReleaseDetail};
@@ -11,10 +12,20 @@ use tauri::{AppHandle, Manager, Runtime, State};
 
 use crate::state::AppState;
 
+/// The managed (or default) `HelmCli`, with the binary chosen in Settings (`helmPath`) if there is one.
 fn helm_cli<R: Runtime>(app: &AppHandle<R>) -> HelmCli {
-    app.try_state::<HelmCli>()
+    let cli = app
+        .try_state::<HelmCli>()
         .map(|cli| cli.inner().clone())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    let chosen = app
+        .try_state::<AppState>()
+        .and_then(|state| state.settings.get().helm_path)
+        .filter(|path| !path.trim().is_empty());
+    match chosen {
+        Some(path) => cli.with_binary(path.trim()),
+        None => cli,
+    }
 }
 
 #[tauri::command]

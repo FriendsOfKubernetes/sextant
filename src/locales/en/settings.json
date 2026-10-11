@@ -1,0 +1,43 @@
+{
+  "page": {
+    "title": "Settings",
+    "open": "Settings"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "systemHint": "System follows the light or dark mode of your operating system.",
+    "language": "Language",
+    "languageHint": "Translations live in src/locales/<language>/. A new folder there is a new language."
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "Installing and changing Helm releases runs the helm command. Viewing releases works without it.",
+    "auto": "Find helm in PATH",
+    "manual": "Use this binary",
+    "path": "Path to helm",
+    "browse": "Browse…",
+    "browseTitle": "Choose the helm binary",
+    "apply": "Apply",
+    "checking": "Checking for helm…",
+    "found": "Helm {{version}} at {{path}}",
+    "foundNoVersion": "Helm at {{path}}",
+    "notFound": "Helm was not found",
+    "notRunnable": "{{path}} is not a working helm binary"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "Clusters come from KUBECONFIG (or ~/.kube/config) and from the files you add here."
+  },
+  "menu": {
+    "open": "Open menu",
+    "close": "Close menu",
+    "title": "Menu"
+  },
+  "saveFailed": "Could not save settings"
+}

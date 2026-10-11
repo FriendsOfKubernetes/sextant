@@ -40,16 +40,18 @@ impl AppState {
         }
     }
 
-    /// Stops every subscription and session of a cluster (on disconnect).
+    /// Stops every subscription, session and port forward of a cluster (on disconnect).
     pub fn close_cluster(&self, cluster: &ClusterId) {
         self.subscriptions.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
+        self.forwarder.stop_cluster(cluster);
     }
 
     /// Stops everything (window closed).
     pub fn close_all(&self) {
         self.subscriptions.stop_all();
         self.sessions.stop_all();
+        self.forwarder.stop_all();
     }
 }
 
@@ -187,4 +189,99 @@ impl Sessions {
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+#[cfg(test)]
+mod tests {
+    //! Port forwards end with their cluster. Needs the kind test cluster (`scripts/test-cluster.sh`):
+    //! `SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant state::tests`.
+    use std::net::Ipv4Addr;
+    use std::time::{Duration, Instant};
+
+    use sextant_core::kubeconfig::KubeconfigEnv;
+    use sextant_core::portforward::ForwardTarget;
+
+    use super::*;
+
+    async fn connected_state(dirs: &Path) -> Option<(AppState, ClusterId)> {
+        let Some(kubeconfig) =
+            std::env::var_os("SEXTANT_TEST_KUBECONFIG").filter(|v| !v.is_empty())
+        else {
+            eprintln!("skipped: SEXTANT_TEST_KUBECONFIG is not set (see scripts/test-cluster.sh)");
+            return None;
+        };
+        let state = AppState::new(&dirs.join("config"), &dirs.join("data"));
+        state.registry.write().unwrap().set_env(KubeconfigEnv {
+            kubeconfig: Some(kubeconfig),
+            home: Some(dirs.join("home")),
+        });
+        let id = state.registry.read().unwrap().clusters().unwrap()[0]
+            .id
+            .clone();
+        state.clusters.connect(&id).await.unwrap();
+        Some((state, id))
+    }
+
+    async fn forward_nginx(state: &AppState, id: &ClusterId) -> u16 {
+        let target = ForwardTarget::Service {
+            namespace: "sextant-demo".into(),
+            name: "nginx".into(),
+        };
+        let info = state
+            .forwarder
+            .start(&state.clusters, id, target, 80, None)
+            .await
+            .unwrap();
+        info.local_port
+    }
+
+    async fn wait_until_closed(state: &AppState, port: u16) {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        loop {
+            let free = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, port))
+                .await
+                .is_ok();
+            if state.forwarder.list().is_empty() && free {
+                return;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "port forward still open: {:?}",
+                state.forwarder.list()
+            );
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    }
+
+    #[tokio::test]
+    async fn closing_a_cluster_stops_its_port_forwards() {
+        let dirs = tempfile::tempdir().unwrap();
+        let Some((state, id)) = connected_state(dirs.path()).await else {
+            return;
+        };
+        let port = forward_nginx(&state, &id).await;
+        let other = ClusterId::from("another-cluster");
+
+        state.close_cluster(&other);
+        assert_eq!(
+            state.forwarder.list().len(),
+            1,
+            "another cluster's close keeps it"
+        );
+
+        state.close_cluster(&id);
+        wait_until_closed(&state, port).await;
+    }
+
+    #[tokio::test]
+    async fn closing_everything_stops_every_port_forward() {
+        let dirs = tempfile::tempdir().unwrap();
+        let Some((state, id)) = connected_state(dirs.path()).await else {
+            return;
+        };
+        let port = forward_nginx(&state, &id).await;
+
+        state.close_all();
+        wait_until_closed(&state, port).await;
+    }
 }

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { EditorView } from "codemirror";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartHit, HelmRelease, HelmReleaseDetail, HelmRepo, HelmStatus, KubeObject } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { getPage, getPages } from "../../layout/pages";
@@ -270,7 +270,14 @@ describe("Releases", () => {
     await waitFor(() => expect(rows(table)).toHaveLength(2));
     const hint = await screen.findByRole("note");
     expect(hint).toHaveTextContent("Helm is not installed");
-    expect(within(hint).getByRole("link", { name: HELM_INSTALL_URL })).toHaveAttribute("href", HELM_INSTALL_URL);
+    const link = within(hint).getByRole("link", { name: HELM_INSTALL_URL });
+    expect(link).toHaveAttribute("href", HELM_INSTALL_URL);
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    // The click is handled by the app (system browser), not by the webview following the link.
+    expect(fireEvent.click(link)).toBe(false);
+    await waitFor(() => expect(wb.backend.openedUrls).toEqual([HELM_INSTALL_URL]));
+    expect(open).not.toHaveBeenCalled();
+    open.mockRestore();
 
     const details = await openRelease("web");
     await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));

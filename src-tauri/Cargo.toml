@@ -24,6 +24,7 @@ tauri-build.workspace = true
 sextant-core.workspace = true
 tauri.workspace = true
 tauri-plugin-dialog.workspace = true
+tauri-plugin-opener = "2.7"
 tokio.workspace = true
 futures.workspace = true
 serde.workspace = true

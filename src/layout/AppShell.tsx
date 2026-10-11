@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DOCK_MAX_HEIGHT,
@@ -5,6 +6,7 @@ import {
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
   useAppStore,
+  useClusterView,
 } from "../app/store";
 import { EmptyState } from "../components";
 import { ClusterRail } from "./ClusterRail";
@@ -14,14 +16,19 @@ import { MainView } from "./main/MainView";
 import { Sidebar } from "./sidebar/Sidebar";
 import { getSlot } from "./slots";
 import { Splitter } from "./Splitter";
+import { useNarrowLayout } from "./useNarrowLayout";
 import "./layout.css";
 
 /**
  * The window in the Lens layout: cluster rail | sidebar | main view (+ details panel sliding in from the right)
  * with the dock below. The zones know nothing about resource kinds.
+ *
+ * In a narrow window (up to 768 px) the rail and the sidebar move into a menu opened from a top bar; the details
+ * panel and the dock take the full width.
  */
 export function AppShell() {
   const { t } = useTranslation();
+  const narrow = useNarrowLayout();
   const activeClusterId = useAppStore((s) => s.activeClusterId);
   const details = useAppStore((s) => s.details);
   const sidebarWidth = useAppStore((s) => s.sidebarWidth);
@@ -30,23 +37,40 @@ export function AppShell() {
   const { setSidebarWidth, setDockHeight } = useAppStore.getState();
   const Welcome = getSlot("welcome");
 
+  const sidebar = activeClusterId && (
+    <nav
+      className="sidebar"
+      aria-label={t("common:layout.sidebar")}
+      style={narrow ? undefined : { width: sidebarWidth }}
+    >
+      <Sidebar clusterId={activeClusterId} />
+    </nav>
+  );
+
   return (
-    <div className="app-shell">
-      <ClusterRail />
-      {activeClusterId && (
+    <div className={narrow ? "app-shell app-shell--narrow" : "app-shell"}>
+      {narrow ? (
+        <NarrowMenu clusterId={activeClusterId}>
+          <ClusterRail />
+          {sidebar}
+        </NarrowMenu>
+      ) : (
         <>
-          <nav className="sidebar" aria-label={t("common:layout.sidebar")} style={{ width: sidebarWidth }}>
-            <Sidebar clusterId={activeClusterId} />
-          </nav>
-          <Splitter
-            orientation="vertical"
-            label={t("common:layout.resizeSidebar")}
-            value={sidebarWidth}
-            min={SIDEBAR_MIN_WIDTH}
-            max={SIDEBAR_MAX_WIDTH}
-            direction={1}
-            onResize={setSidebarWidth}
-          />
+          <ClusterRail />
+          {activeClusterId && (
+            <>
+              {sidebar}
+              <Splitter
+                orientation="vertical"
+                label={t("common:layout.resizeSidebar")}
+                value={sidebarWidth}
+                min={SIDEBAR_MIN_WIDTH}
+                max={SIDEBAR_MAX_WIDTH}
+                direction={1}
+                onResize={setSidebarWidth}
+              />
+            </>
+          )}
         </>
       )}
       <div className="workspace">
@@ -78,5 +102,57 @@ export function AppShell() {
         <Dock />
       </div>
     </div>
+  );
+}
+
+/**
+ * Top bar with a menu button and the drawer holding the rail and the sidebar. The drawer stays mounted while closed
+ * (hidden by CSS), so dialogs that live in the rail keep working; it closes when a cluster or a section is chosen,
+ * on Escape and on a click outside.
+ */
+function NarrowMenu({ clusterId, children }: { clusterId: string | null; children: React.ReactNode }) {
+  const { t } = useTranslation();
+  const drawerId = useId();
+  const [open, setOpen] = useState(false);
+  const { view } = useClusterView(clusterId);
+
+  useEffect(() => setOpen(false), [clusterId, view]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return (
+    <>
+      <header className="topbar">
+        <button
+          type="button"
+          className="icon-btn topbar__menu"
+          aria-label={t(open ? "settings:menu.close" : "settings:menu.open")}
+          aria-expanded={open}
+          aria-controls={drawerId}
+          onClick={() => setOpen((v) => !v)}
+        >
+          ☰
+        </button>
+        <span className="topbar__title">{t("common:app.name")}</span>
+      </header>
+      {open && <div className="drawer-backdrop" aria-hidden="true" onClick={() => setOpen(false)} />}
+      <div
+        id={drawerId}
+        className={open ? "drawer drawer--open" : "drawer"}
+        data-open={open}
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
+        aria-label={t("settings:menu.title")}
+      >
+        {children}
+      </div>
+    </>
   );
 }

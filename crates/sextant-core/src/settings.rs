@@ -78,6 +78,8 @@ pub struct AppSettings {
     pub kubeconfig_sources: Vec<KubeconfigSource>,
     pub clusters: HashMap<String, ClusterSettings>,
     pub window: WindowLayout,
+    /// The `helm` binary chosen in Settings; `None` = look `helm` up in `PATH`.
+    pub helm_path: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -88,6 +90,7 @@ impl Default for AppSettings {
             kubeconfig_sources: Vec::new(),
             clusters: HashMap::new(),
             window: WindowLayout::default(),
+            helm_path: None,
         }
     }
 }
