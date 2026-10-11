@@ -40,7 +40,7 @@ pub struct KubeconfigSource {
     pub kind: SourceKind,
 }
 
-/// Stable cluster id: hex `sha256(source path + "\0" + context)[..16]`.
+/// Stable cluster id: hex `sha256(normalized source path + "\0" + context)[..16]` (see `normalized_path`).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct ClusterId(pub String);
@@ -48,7 +48,10 @@ pub struct ClusterId(pub String);
 impl ClusterId {
     /// The id of `context` in the kubeconfig file at `source_path`.
     pub fn for_context(source_path: &Path, context: &str) -> Self {
-        let mut bytes = source_path.as_os_str().as_encoded_bytes().to_vec();
+        let mut bytes = normalized_path(source_path)
+            .as_os_str()
+            .as_encoded_bytes()
+            .to_vec();
         bytes.push(0);
         bytes.extend_from_slice(context.as_bytes());
         Self(short_hash(&bytes))
@@ -375,7 +378,7 @@ impl Loaded {
 
 fn source(path: PathBuf, kind: SourceKind) -> KubeconfigSource {
     KubeconfigSource {
-        id: short_hash(path.as_os_str().as_encoded_bytes()),
+        id: short_hash(normalized_path(&path).as_os_str().as_encoded_bytes()),
         path,
         kind,
     }
@@ -432,6 +435,34 @@ fn restrict_permissions(path: &Path) -> CoreResult<()> {
 fn restrict_permissions(_path: &Path) -> CoreResult<()> {
     // Files in the user's profile and temp directory are private to the user on Windows.
     Ok(())
+}
+
+/// The path as it is hashed into ids, so the same file gets the same id however its path arrived (`KUBECONFIG`,
+/// `~/.kube/config`, a canonicalized added file): redundant separators and `.` components are dropped, and on
+/// Windows `/` becomes `\`, a verbatim prefix (`\\?\C:\`, what `canonicalize` returns) becomes a plain one and the
+/// drive letter is upper-cased. `..` is kept: without touching the file system it cannot be resolved.
+fn normalized_path(path: &Path) -> PathBuf {
+    use std::path::{Component, Prefix};
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::Prefix(prefix) => match prefix.kind() {
+                Prefix::Disk(d) | Prefix::VerbatimDisk(d) => {
+                    out.push(format!("{}:", char::from(d.to_ascii_uppercase())));
+                }
+                Prefix::UNC(server, share) | Prefix::VerbatimUNC(server, share) => {
+                    out.push(format!(
+                        r"\\{}\{}",
+                        server.to_string_lossy(),
+                        share.to_string_lossy()
+                    ));
+                }
+                _ => out.push(component.as_os_str()),
+            },
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
 }
 
 /// First 16 hex digits of sha256.
@@ -536,8 +567,11 @@ current-context: {name}
             }
         }
 
+        /// `name` is a `/`-separated relative path; it is split so the result is built with the OS separator,
+        /// the way the code under test builds its own paths.
         fn path(&self, name: &str) -> PathBuf {
-            self.dir.path().join(name)
+            name.split('/')
+                .fold(self.dir.path().to_path_buf(), |path, part| path.join(part))
         }
 
         fn write(&self, name: &str, text: &str) -> PathBuf {
@@ -579,6 +613,45 @@ current-context: {name}
             ClusterId::for_context(Path::new("/tmp/a"), "ctx").as_str(),
             "e3b2065058c31c9b"
         );
+    }
+
+    #[test]
+    fn cluster_id_does_not_depend_on_how_the_path_is_spelled() {
+        let plain = ClusterId::for_context(Path::new("/tmp/a/kube"), "ctx");
+        assert_eq!(
+            ClusterId::for_context(Path::new("/tmp//a/./kube"), "ctx"),
+            plain
+        );
+        assert_eq!(
+            ClusterId::for_context(&Path::new("/tmp").join("a").join("kube"), "ctx"),
+            plain
+        );
+        assert_ne!(
+            ClusterId::for_context(Path::new("/tmp/a/other"), "ctx"),
+            plain
+        );
+        assert_ne!(
+            ClusterId::for_context(Path::new("/tmp/a/kube"), "other"),
+            plain
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn cluster_id_is_the_same_for_slashes_verbatim_prefix_and_drive_case() {
+        let backslash = ClusterId::for_context(Path::new(r"C:\Users\me\.kube\config"), "ctx");
+        for spelling in [
+            "C:/Users/me/.kube/config",
+            r"C:\Users/me\.kube/config",
+            r"c:\Users\me\.kube\config",
+            r"\\?\C:\Users\me\.kube\config",
+        ] {
+            assert_eq!(
+                ClusterId::for_context(Path::new(spelling), "ctx"),
+                backslash,
+                "{spelling}"
+            );
+        }
     }
 
     #[test]
