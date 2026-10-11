@@ -1,0 +1,30 @@
+.sidebar__list--nested {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar__item--nested {
+  padding-left: 32px;
+}
+
+.sidebar__list--nested .sidebar__list--nested .sidebar__item--nested {
+  padding-left: 48px;
+}
+
+.sidebar__group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.sidebar__list--nested .sidebar__group {
+  font-weight: 500;
+}
+
+.sidebar__chevron {
+  width: 12px;
+  font-size: 10px;
+  color: var(--color-text-muted);
+}

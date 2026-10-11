@@ -1,0 +1,68 @@
+.ns-filter {
+  position: relative;
+}
+
+.ns-filter__button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ns-filter__popup {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  width: 260px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-panel);
+  padding: 6px;
+  gap: 4px;
+}
+
+.ns-filter__search {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: inherit;
+  font: inherit;
+}
+
+.ns-filter__list {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.ns-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ns-filter__option:hover {
+  background: var(--color-hover);
+}
+
+.ns-filter__option--all {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 6px;
+}
+
+.ns-filter__empty {
+  padding: 4px;
+  color: var(--color-text-muted);
+}

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use ts_rs::TS;
 
-use crate::error::{CoreError, CoreResult, ErrorCode};
+use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::{ClusterId, KubeconfigRegistry, kubeconfig_error};
 use crate::resources::{KindRef, PrinterColumn, ResourceKind};
 
@@ -213,7 +213,7 @@ impl ClusterManager {
         config.connect_timeout = Some(CONNECT_TIMEOUT);
 
         let client = kube::Client::try_from(config).map_err(|err| {
-            let core = connection_error_for(err, plugin.as_deref());
+            let core = kube_error(err, plugin.as_deref());
             if core.code == ErrorCode::AuthPlugin {
                 core
             } else {
@@ -225,7 +225,7 @@ impl ClusterManager {
         // `/api` needs an authenticated user (unlike `/version`), so a rejected token fails here with 401.
         match tokio::time::timeout(CHECK_TIMEOUT, client.list_core_api_versions()).await {
             Ok(Ok(_)) => Ok(client),
-            Ok(Err(err)) => Err(connection_error_for(err, plugin.as_deref())),
+            Ok(Err(err)) => Err(kube_error(err, plugin.as_deref())),
             Err(_) => Err(CoreError::new(
                 ErrorCode::Unreachable,
                 format!(
@@ -253,90 +253,6 @@ impl ClusterManager {
     }
 }
 
-/// A kube error with the whole cause chain in the message ("client error (Connect): tcp connect error:
-/// Connection refused"), so the user sees why, e.g. that a certificate was not accepted.
-/// Auth-plugin errors are the exception: see [`auth_plugin_error`].
-fn connection_error(err: kube::Error) -> CoreError {
-    connection_error_for(err, None)
-}
-
-/// [`connection_error`] that names the exec plugin of the cluster's user (`plugin`) in auth-plugin errors.
-fn connection_error_for(err: kube::Error, plugin: Option<&str>) -> CoreError {
-    if let Some(auth) = find_auth_error(&err) {
-        return auth_plugin_error(auth, plugin);
-    }
-    let mut message = err.to_string();
-    let mut source = std::error::Error::source(&err);
-    while let Some(cause) = source {
-        let text = cause.to_string();
-        if !message.contains(&text) {
-            message.push_str(": ");
-            message.push_str(&text);
-        }
-        source = cause.source();
-    }
-    let mut core = CoreError::from(err);
-    if core.code != ErrorCode::Unauthorized
-        && core.code != ErrorCode::Forbidden
-        && !matches!(core.code, ErrorCode::NotFound | ErrorCode::Invalid)
-    {
-        core.message = message;
-    }
-    core
-}
-
-/// The auth error inside `err`, whether kube returns it directly or wrapped in a service error.
-fn find_auth_error(err: &kube::Error) -> Option<&kube::client::AuthError> {
-    if let kube::Error::Auth(auth) = err {
-        return Some(auth);
-    }
-    let mut source = std::error::Error::source(err);
-    while let Some(cause) = source {
-        if let Some(auth) = cause.downcast_ref::<kube::client::AuthError>() {
-            return Some(auth);
-        }
-        source = cause.source();
-    }
-    None
-}
-
-/// An auth error without anything the plugin was given or printed. kube-rs puts the whole command (its env and
-/// arguments, which often carry tokens) and the plugin's stdout/stderr into the text of exec errors, so for
-/// those only the plugin name and the exit code are kept.
-fn auth_plugin_error(auth: &kube::client::AuthError, plugin: Option<&str>) -> CoreError {
-    use kube::client::AuthError as A;
-    let name = plugin.unwrap_or("exec");
-    let (code, message) = match auth {
-        A::AuthExecStart(io) => (
-            ErrorCode::AuthPlugin,
-            format!("cannot run the auth plugin '{name}': {io}"),
-        ),
-        A::AuthExecRun { status, .. } => (
-            ErrorCode::AuthPlugin,
-            match status.code() {
-                Some(exit) => format!("the auth plugin '{name}' failed with exit code {exit}"),
-                None => format!("the auth plugin '{name}' was terminated by a signal"),
-            },
-        ),
-        A::AuthExecParse(_) => (
-            ErrorCode::AuthPlugin,
-            format!("the auth plugin '{name}' printed something that is not an ExecCredential"),
-        ),
-        A::AuthExecSerialize(_) | A::AuthExec(_) => (
-            ErrorCode::AuthPlugin,
-            format!("the auth plugin '{name}' failed"),
-        ),
-        A::ExecPluginFailed => (
-            ErrorCode::AuthPlugin,
-            format!("the auth plugin '{name}' returned no status"),
-        ),
-        A::MissingCommand | A::ExecMissingClusterInfo => (ErrorCode::AuthPlugin, auth.to_string()),
-        // Token files, basic auth, refresh: messages hold paths and reasons, not credentials.
-        other => (ErrorCode::Unauthorized, other.to_string()),
-    };
-    CoreError::new(code, message)
-}
-
 /// Lists the preferred version of every API group (core `v1` included). A group that fails (e.g. an
 /// aggregated API whose backend is down) is skipped; only a failing core group fails the discovery.
 async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
@@ -346,7 +262,7 @@ async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     let core_versions = client
         .list_core_api_versions()
         .await
-        .map_err(connection_error)?;
+        .map_err(CoreError::from)?;
     let core_lists = join_all(
         core_versions
             .versions
@@ -355,7 +271,7 @@ async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     )
     .await;
 
-    let groups = client.list_api_groups().await.map_err(connection_error)?;
+    let groups = client.list_api_groups().await.map_err(CoreError::from)?;
     let group_versions: Vec<String> = groups
         .groups
         .iter()
@@ -407,7 +323,7 @@ async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     let mut kinds = Vec::new();
     let mut core_ok = false;
     for list in core_lists {
-        let list = list.map_err(connection_error)?;
+        let list = list.map_err(CoreError::from)?;
         core_ok = true;
         push_kinds(&mut kinds, list, &columns);
     }

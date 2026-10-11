@@ -22,4 +22,5 @@ export { events } from "./events";
 export { mockBackend, type MockBackend, type MockBackendOptions, type MockCall, type MockHandler } from "./mockBackend";
 export { defaultAppSettings, loadSettings, updateSettings, useSettings, type UseSettings } from "./settings";
 export type { FileFilter, OpenFileOptions, SaveFileOptions, Unsubscribe } from "./transport";
+export { applyWatchUpdate, uidOf, useWatch, type WatchState, type WatchStatus } from "./useWatch";
 export type * from "./types";

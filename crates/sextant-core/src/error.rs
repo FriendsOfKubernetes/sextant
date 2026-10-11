@@ -85,37 +85,108 @@ pub fn code_for_http_status(status: u16) -> ErrorCode {
     }
 }
 
+/// Every `kube::Error` becomes a [`CoreError`] through [`kube_error`], so auth-plugin failures are sanitized the same
+/// way everywhere (connect, watch, get, logs, exec), including a token refresh that fails mid-stream.
 impl From<kube::Error> for CoreError {
     fn from(err: kube::Error) -> Self {
-        use kube::Error as E;
-        use kube::client::AuthError as A;
-        let code = match &err {
-            E::Api(status) => code_for_http_status(status.code),
-            E::HyperError(_) | E::Service(_) | E::UpgradeConnection(_) | E::ReadEvents(_) => {
-                ErrorCode::Unreachable
-            }
-            E::RustlsTls(_) | E::TlsRequired => ErrorCode::Unreachable,
-            E::Auth(auth) => match auth {
-                A::AuthExecStart(_)
-                | A::AuthExecRun { .. }
-                | A::AuthExecParse(_)
-                | A::AuthExecSerialize(_)
-                | A::AuthExec(_)
-                | A::ExecPluginFailed
-                | A::MissingCommand
-                | A::ExecMissingClusterInfo => ErrorCode::AuthPlugin,
-                _ => ErrorCode::Unauthorized,
-            },
-            E::InferConfig(_) | E::InferKubeconfig(_) => ErrorCode::Kubeconfig,
-            E::SerdeError(_) | E::BuildRequest(_) => ErrorCode::Invalid,
-            _ => ErrorCode::Other,
-        };
+        kube_error(err, None)
+    }
+}
+
+/// Converts a kube error. The message keeps the whole cause chain ("client error (Connect): tcp connect error:
+/// Connection refused"), so the user sees why; API errors keep the server's own message.
+///
+/// Auth errors are the exception, found whether kube returns them directly or wrapped in a service error:
+/// kube-rs puts the whole exec command (its env and arguments, which often carry tokens) and the plugin's
+/// stdout/stderr into their text, so only the plugin name (`plugin`, when the caller knows it) and the exit code
+/// are kept.
+pub fn kube_error(err: kube::Error, plugin: Option<&str>) -> CoreError {
+    use kube::Error as E;
+    if let Some(auth) = find_auth_error(&err) {
+        return auth_error(auth, plugin);
+    }
+    let code = match &err {
+        E::Api(status) => code_for_http_status(status.code),
+        E::HyperError(_) | E::Service(_) | E::UpgradeConnection(_) | E::ReadEvents(_) => {
+            ErrorCode::Unreachable
+        }
+        E::RustlsTls(_) | E::TlsRequired => ErrorCode::Unreachable,
+        E::InferConfig(_) | E::InferKubeconfig(_) => ErrorCode::Kubeconfig,
+        E::SerdeError(_) | E::BuildRequest(_) => ErrorCode::Invalid,
+        _ => ErrorCode::Other,
+    };
+    let message = match &err {
         // `kube::Error::Api` displays as "ApiError: <message>: <reason> (<debug>)"; the plain message reads better.
-        let message = match &err {
-            E::Api(status) if !status.message.is_empty() => status.message.clone(),
-            _ => err.to_string(),
-        };
-        Self::new(code, message)
+        E::Api(status) if !status.message.is_empty() => status.message.clone(),
+        _ => with_causes(&err),
+    };
+    CoreError::new(code, message)
+}
+
+/// The error text followed by every cause that is not already part of it.
+fn with_causes(err: &dyn std::error::Error) -> String {
+    let mut message = err.to_string();
+    let mut source = err.source();
+    while let Some(cause) = source {
+        let text = cause.to_string();
+        if !message.contains(&text) {
+            message.push_str(": ");
+            message.push_str(&text);
+        }
+        source = cause.source();
+    }
+    message
+}
+
+/// The auth error inside `err`, whether kube returns it directly or wrapped in a service error.
+fn find_auth_error(err: &kube::Error) -> Option<&kube::client::AuthError> {
+    if let kube::Error::Auth(auth) = err {
+        return Some(auth);
+    }
+    let mut source = std::error::Error::source(err);
+    while let Some(cause) = source {
+        if let Some(auth) = cause.downcast_ref::<kube::client::AuthError>() {
+            return Some(auth);
+        }
+        source = cause.source();
+    }
+    None
+}
+
+/// An auth error without anything the exec plugin was given or printed.
+fn auth_error(auth: &kube::client::AuthError, plugin: Option<&str>) -> CoreError {
+    use kube::client::AuthError as A;
+    let name = plugin.map_or_else(
+        || "the auth plugin".to_owned(),
+        |p| format!("the auth plugin '{p}'"),
+    );
+    let message = match auth {
+        A::AuthExecStart(io) => format!("cannot run {name}: {io}"),
+        A::AuthExecRun { status, .. } => match status.code() {
+            Some(exit) => format!("{name} failed with exit code {exit}"),
+            None => format!("{name} was terminated by a signal"),
+        },
+        A::AuthExecParse(_) => format!("{name} printed something that is not an ExecCredential"),
+        A::AuthExecSerialize(_) | A::AuthExec(_) => format!("{name} failed"),
+        A::ExecPluginFailed => format!("{name} returned no status"),
+        A::MissingCommand | A::ExecMissingClusterInfo => auth.to_string(),
+        // Token files, basic auth, refresh: messages hold paths and reasons, not credentials.
+        other => return CoreError::new(ErrorCode::Unauthorized, other.to_string()),
+    };
+    CoreError::new(ErrorCode::AuthPlugin, message)
+}
+
+/// Errors of `kube::runtime::watcher` (watch subscriptions).
+impl From<kube::runtime::watcher::Error> for CoreError {
+    fn from(err: kube::runtime::watcher::Error) -> Self {
+        use kube::runtime::watcher::Error as W;
+        match err {
+            W::InitialListFailed(e) | W::WatchStartFailed(e) | W::WatchFailed(e) => e.into(),
+            W::WatchError(status) => {
+                CoreError::new(code_for_http_status(status.code), status.message)
+            }
+            W::NoResourceVersion => CoreError::other(err.to_string()),
+        }
     }
 }
 
@@ -230,6 +301,53 @@ mod tests {
             io,
         )));
         assert_eq!(err.code, ErrorCode::AuthPlugin);
+    }
+
+    /// A failed exec plugin as kube-rs reports it: the command line with env and arguments, and the output.
+    #[cfg(unix)]
+    fn exec_run_error() -> kube::client::AuthError {
+        use std::os::unix::process::ExitStatusExt as _;
+        let status = std::process::ExitStatus::from_raw(3 << 8);
+        kube::client::AuthError::AuthExecRun {
+            cmd: r#"VAULT_TOKEN="ENV-SECRET-123" "/usr/local/bin/vault-login" "--password=ARG-SECRET""#
+                .to_owned(),
+            status,
+            out: std::process::Output {
+                status,
+                stdout: b"token: OUT-SECRET-456".to_vec(),
+                stderr: b"ERR-SECRET-789".to_vec(),
+            },
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn exec_plugin_errors_from_kube_carry_no_env_args_or_output() {
+        const SECRETS: [&str; 4] = [
+            "ENV-SECRET-123",
+            "ARG-SECRET",
+            "OUT-SECRET-456",
+            "ERR-SECRET-789",
+        ];
+        // Directly, and wrapped in a service error the way a token refresh fails in the middle of a watch.
+        let direct = kube::Error::Auth(exec_run_error());
+        let wrapped = kube::Error::Service(Box::new(exec_run_error()));
+        for err in [direct, wrapped] {
+            let core = CoreError::from(err);
+            assert_eq!(core.code, ErrorCode::AuthPlugin, "{core}");
+            assert!(
+                core.message.contains("exit code 3"),
+                "keeps the exit code: {core}"
+            );
+            let json = serde_json::to_string(&core).unwrap();
+            for secret in SECRETS {
+                assert!(!json.contains(secret), "{secret} leaked in {json}");
+            }
+        }
+        // With the plugin name known (as `ClusterManager::connect` knows it), only the name is added.
+        let named = kube_error(kube::Error::Auth(exec_run_error()), Some("vault-login"));
+        assert!(named.message.contains("'vault-login'"), "{named}");
+        assert!(!named.message.contains("ARG-SECRET"), "{named}");
     }
 
     #[test]
