@@ -1,0 +1,49 @@
+{
+  "sidebar": "Port Forwarding",
+  "title": "Port Forwarding",
+  "loading": "Loading port forwards…",
+  "empty": "No active port forwards.",
+  "emptyText": "Start one from the details of a pod or service.",
+  "columns": {
+    "target": "Target",
+    "ports": "Ports",
+    "status": "Status"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Active",
+    "error": "Error"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Open in browser",
+    "stop": "Stop"
+  },
+  "action": {
+    "label": "Port forward…"
+  },
+  "section": {
+    "title": "Port forwarding",
+    "forward": "Forward",
+    "forwardPort": "Forward port {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Forward {{target}}",
+    "remotePort": "Port to forward",
+    "localPort": "Local port",
+    "localPortChoice": "Local port choice",
+    "auto": "Random free port",
+    "custom": "Specific port",
+    "invalidPort": "Enter a port from 1 to 65535.",
+    "start": "Start forwarding",
+    "starting": "Starting…",
+    "started": "Forwarding localhost:{{local}} to port {{remote}}.",
+    "inUse": "Local port {{port}} is already in use.",
+    "useFree": "Use a free port",
+    "close": "Close"
+  }
+}
