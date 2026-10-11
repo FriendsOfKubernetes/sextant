@@ -61,15 +61,28 @@ pub fn shell_for(
         Platform::Unix => {
             let program = env_shell
                 .filter(|s| !s.is_empty())
-                .map(Path::new)
-                .filter(|p| p.is_absolute() && is_executable(p))
-                .map(|p| p.as_os_str().to_owned())
+                .filter(|s| is_unix_absolute(s) && is_executable(Path::new(s)))
+                .map(|s| s.to_owned())
                 .unwrap_or_else(|| UNIX_FALLBACK_SHELL.into());
             ShellCommand {
                 program,
                 args: vec!["-l".into()],
             }
         }
+    }
+}
+
+/// Whether `path` is absolute by Unix rules (starts with `/`), whatever OS this is built for: `Path::is_absolute`
+/// follows the host, so on Windows it rejects `/usr/bin/zsh`.
+fn is_unix_absolute(path: &OsStr) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        path.as_bytes().first() == Some(&b'/')
+    }
+    #[cfg(not(unix))]
+    {
+        path.to_string_lossy().starts_with('/')
     }
 }
 
@@ -366,19 +379,23 @@ mod tests {
         let (text, _) = read_until(&mut session, |t| pid_in(t).is_some());
         let pid = pid_in(&text).unwrap();
         drop(session);
-        let proc_dir = Path::new("/proc").join(&pid);
         let deadline = Instant::now() + Duration::from_secs(10);
-        while proc_dir.exists() && !is_zombie(&proc_dir) {
+        while !is_gone_or_zombie(&pid) {
             assert!(Instant::now() < deadline, "shell {pid} is still running");
             std::thread::sleep(Duration::from_millis(20));
         }
     }
 
+    /// No such process, or only an unreaped zombie. `ps` instead of `/proc`, which macOS does not have.
     #[cfg(unix)]
-    fn is_zombie(proc_dir: &Path) -> bool {
-        std::fs::read_to_string(proc_dir.join("stat"))
-            .map(|s| s.contains(") Z "))
-            .unwrap_or(true)
+    fn is_gone_or_zombie(pid: &str) -> bool {
+        let out = std::process::Command::new("ps")
+            .args(["-o", "stat=", "-p", pid])
+            .output()
+            .expect("run ps");
+        let stat = String::from_utf8_lossy(&out.stdout);
+        let stat = stat.trim();
+        stat.is_empty() || stat.starts_with('Z')
     }
 
     #[test]

@@ -563,7 +563,7 @@ printf '%s\\n' \"$@\" > \"$out.args\"
 prev=''
 for a in \"$@\"; do
   if [ \"$prev\" = --kubeconfig ]; then
-    stat -c %a \"$a\" > \"$out.mode\"
+    stat -c %a \"$a\" > \"$out.mode\" 2>/dev/null || stat -f %Lp \"$a\" > \"$out.mode\"
     cat \"$a\" > \"$out.kubeconfig\"
     printf '%s' \"$a\" > \"$out.path\"
   fi
