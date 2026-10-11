@@ -1,0 +1,29 @@
+# ServiceAccount with read access to everything the built-in "view" role allows
+# ("view" deliberately excludes Secrets), used to check "no permission" handling.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: limited
+  namespace: sextant-demo
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: limited-token
+  namespace: sextant-demo
+  annotations:
+    kubernetes.io/service-account.name: limited
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sextant-limited-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: limited
+    namespace: sextant-demo

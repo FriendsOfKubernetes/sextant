@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Sextant logo"
+  },
+  "layout": {
+    "clusters": "Clusters",
+    "sidebar": "Sections",
+    "main": "Main",
+    "details": "Details",
+    "dock": "Dock",
+    "resizeSidebar": "Resize sidebar",
+    "resizeDock": "Resize dock"
+  },
+  "actions": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "openDock": "Open dock",
+    "closeDock": "Close dock",
+    "closeTab": "Close tab {{title}}",
+    "closeDetails": "Close details"
+  },
+  "welcome": {
+    "title": "Welcome to Sextant",
+    "text": "Select a cluster on the left to start."
+  },
+  "main": {
+    "selectSection": "Select a section in the sidebar.",
+    "noSections": "Nothing to show for this cluster yet."
+  },
+  "dock": {
+    "empty": "Open logs, a shell or a terminal to see it here."
+  },
+  "details": {
+    "loading": "Loading…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}}s",
+    "minutes": "{{count}}m",
+    "hours": "{{count}}h",
+    "days": "{{count}}d",
+    "years": "{{count}}y"
+  },
+  "error": {
+    "details": "Details: {{message}}"
+  }
+}

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Sextant: a 60° graduated arc with frame, index arm and telescope. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f6feb"/>
+      <stop offset="1" stop-color="#0b3d91"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="url(#bg)"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- frame: two radii from the pivot (512,200) and the arc at r=560 between -30° and +30° from vertical -->
+    <path d="M512 200 L232 685 M512 200 L792 685" stroke-width="44"/>
+    <path d="M232 685 A560 560 0 0 0 792 685" stroke-width="56"/>
+    <!-- graduations on the arc -->
+    <g stroke-width="14">
+      <path d="M287 717 L301 694"/>
+      <path d="M346 742 L355 717"/>
+      <path d="M408 755 L412 729"/>
+      <path d="M471 760 L472 734"/>
+      <path d="M553 760 L552 734"/>
+      <path d="M616 755 L612 729"/>
+      <path d="M678 742 L669 717"/>
+      <path d="M737 717 L723 694"/>
+    </g>
+    <!-- index arm -->
+    <path d="M512 200 L600 790" stroke-width="30"/>
+    <!-- telescope across the frame -->
+    <path d="M330 470 L700 400" stroke-width="40"/>
+  </g>
+  <circle cx="512" cy="200" r="46" fill="#ffffff"/>
+  <circle cx="512" cy="200" r="18" fill="#0b3d91"/>
+</svg>

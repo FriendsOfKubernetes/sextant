@@ -1,0 +1,13 @@
+{
+  "unreachable": "The cluster cannot be reached.",
+  "unauthorized": "The cluster did not accept the credentials (401).",
+  "forbidden": "You don't have permission to do this (403).",
+  "notFound": "Not found.",
+  "conflict": "The object was changed by someone else. Reload it and try again.",
+  "invalid": "The request is not valid.",
+  "authPlugin": "The authentication plugin from the kubeconfig is missing or failed.",
+  "helmMissing": "Helm is not installed.",
+  "portInUse": "The local port is already in use.",
+  "kubeconfig": "The kubeconfig cannot be read or is not valid.",
+  "other": "Something went wrong."
+}

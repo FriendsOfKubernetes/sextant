@@ -1,0 +1,30 @@
+[package]
+name = "sextant-core"
+description = "Kubernetes cluster access for Sextant: kubeconfig, connections, watch, actions, logs, exec, port-forward, metrics, Helm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[features]
+default = ["desktop"]
+# Everything that spawns OS processes (the `helm` binary). Mobile builds turn it off.
+desktop = []
+
+[dependencies]
+kube.workspace = true
+k8s-openapi.workspace = true
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+ts-rs.workspace = true
+flate2.workspace = true
+base64.workspace = true
+tempfile.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

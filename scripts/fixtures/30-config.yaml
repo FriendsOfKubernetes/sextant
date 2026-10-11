@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-config
+  namespace: sextant-demo
+data:
+  app.properties: |
+    greeting=hello
+    color=blue
+  LOG_LEVEL: info
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-secret
+  namespace: sextant-demo
+type: Opaque
+stringData:
+  username: demo
+  password: not-a-real-password

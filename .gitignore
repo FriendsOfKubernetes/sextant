@@ -5,3 +5,9 @@ node_modules/
 __pycache__/
 .DS_Store
 .autopilot/serve.*
+# build output
+/target/
+/dist/
+/src-tauri/target/
+/src-tauri/gen/schemas/
+*.tsbuildinfo

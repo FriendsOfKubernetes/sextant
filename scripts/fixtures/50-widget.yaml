@@ -1,0 +1,8 @@
+apiVersion: demo.sextant.dev/v1
+kind: Widget
+metadata:
+  name: demo-widget
+  namespace: sextant-demo
+spec:
+  size: large
+  replicas: 3

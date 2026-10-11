@@ -1,0 +1,37 @@
+[package]
+name = "sextant"
+description = "Sextant — desktop Kubernetes client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+default-run = "sextant"
+
+[lib]
+# `_lib` suffix avoids a name clash with the binary on Windows (cargo issue #8519).
+name = "sextant_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "sextant"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+sextant-core.workspace = true
+tauri.workspace = true
+tauri-plugin-dialog.workspace = true
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ts-rs.workspace = true
+portable-pty.workspace = true
+base64.workspace = true
+
+[dev-dependencies]
+tauri = { workspace = true, features = ["test"] }
+tempfile.workspace = true
