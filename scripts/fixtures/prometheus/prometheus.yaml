@@ -1,0 +1,154 @@
+# Minimal Prometheus for the Sextant test cluster (`scripts/test-cluster.sh up --prometheus`).
+#
+# Namespace `monitoring`, Service `prometheus-operated:9090` — one of the names Sextant's auto-detection tries.
+# Scrapes the kubelet (`/metrics`: kubelet_running_pods) and cAdvisor (`/metrics/cadvisor`: container CPU, memory,
+# filesystem) of every node through the API server proxy, so no extra exporters are needed. Every series gets a
+# `node` label (and `instance` = node name). Data lives in an emptyDir and keeps 6 hours.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sextant-test-prometheus
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/proxy", "nodes/metrics", "services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sextant-test-prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sextant-test-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    scrape_configs:
+      - job_name: kubelet
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+      - job_name: cadvisor
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: quay.io/prometheus/prometheus:v3.15.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=6h
+          ports:
+            - name: web
+              containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: data
+              mountPath: /prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-operated
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  selector:
+    app.kubernetes.io/name: prometheus
+  ports:
+    - name: web
+      port: 9090
+      targetPort: web

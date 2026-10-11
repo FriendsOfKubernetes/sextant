@@ -1,0 +1,380 @@
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ChartTarget, ClusterInfo, KubeObject, MetricsStatus, NodeUsage, PodUsage, PrometheusTarget, Series } from "../../api";
+import { resetAppStore, useAppStore } from "../../app/store";
+import { ResourceTable } from "../../components/Table";
+import { getDetailsSections } from "../../layout/details/registry";
+import "../../resources";
+import { useClustersStore } from "../clusters/clustersStore";
+import { getClusterSettingsSections } from "../clusters/settingsRegistry";
+import deploymentJson from "../details/fixtures/deployment.json";
+import nodeJson from "../details/fixtures/node.json";
+import podJson from "../details/fixtures/pod.json";
+import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
+import { resetNamespaceRestore } from "../namespaces";
+import { POLL_INTERVAL_MS, resetMetricsCache, usePodUsage } from "./hooks";
+import "./index";
+
+const pod = podJson as KubeObject;
+const node = nodeJson as KubeObject;
+const deployment = deploymentJson as KubeObject;
+const POD = { group: "", version: "v1", kind: "Pod" };
+const NODE = { group: "", version: "v1", kind: "Node" };
+const DEPLOYMENT = { group: "apps", version: "v1", kind: "Deployment" };
+
+const PROMETHEUS: PrometheusTarget = {
+  type: "service",
+  namespace: "monitoring",
+  service: "prometheus-operated",
+  port: 9090,
+  pathPrefix: "",
+};
+
+function status(patch: Partial<MetricsStatus> = {}): MetricsStatus {
+  return {
+    metricsServer: true,
+    prometheus: null,
+    mode: { mode: "auto" },
+    usageSource: "auto",
+    effectiveUsageSource: "metricsServer",
+    ...patch,
+  };
+}
+
+const NOTHING = status({ metricsServer: false, prometheus: null, effectiveUsageSource: null });
+
+const nginxUsage: PodUsage = {
+  namespace: "sextant-demo",
+  name: "nginx-9f755754d-g85tv",
+  usage: { cpuMillicores: 3.4, memoryBytes: 34 * 1024 * 1024 },
+  containers: [["nginx", { cpuMillicores: 3.4, memoryBytes: 34 * 1024 * 1024 }]],
+};
+
+/** 1.6 of 16 cores (10%), 7 GiB of 28578828Ki (~25%). */
+const nodeUsage: NodeUsage = {
+  name: "sextant-test-control-plane",
+  usage: { cpuMillicores: 1600, memoryBytes: 7 * 1024 ** 3 },
+};
+
+function series(metric: string, values: number[]): Series {
+  return { metric, points: values.map((v, i) => [1_700_000_000 + i * 60, v] as [number, number]) };
+}
+
+let wb: WatchBackend;
+
+function serve(current: MetricsStatus, opts: { pods?: PodUsage[]; nodes?: NodeUsage[]; charts?: Series[] } = {}) {
+  wb.backend.on("metrics_status", () => current);
+  wb.backend.on("metrics_pods", () => {
+    if (!current.effectiveUsageSource) throw { code: "notFound", message: "metrics are unavailable" };
+    return opts.pods ?? [];
+  });
+  wb.backend.on("metrics_nodes", () => {
+    if (!current.effectiveUsageSource) throw { code: "notFound", message: "metrics are unavailable" };
+    return opts.nodes ?? [];
+  });
+  wb.backend.on("metrics_charts", () => opts.charts ?? []);
+}
+
+function calls(cmd: string) {
+  return wb.backend.calls.filter((c) => c.cmd === cmd);
+}
+
+beforeEach(() => {
+  resetAppStore();
+  resetNamespaceRestore();
+  resetMetricsCache();
+  useClustersStore.setState({ settingsFor: null });
+  useAppStore.getState().setActiveCluster("c1");
+  wb = watchBackend();
+  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains("rt__scroll") ? 660 : 0;
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains("rt__scroll") ? 1600 : 0;
+  });
+});
+
+afterEach(() => {
+  wb.backend.restore();
+  resetMetricsCache();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
+
+/** Header texts and the cells of the first data row, by header. */
+function firstRow(): Record<string, string> {
+  const table = screen.getByRole("table");
+  const headers = within(table)
+    .getAllByRole("columnheader")
+    .map((h) => h.textContent ?? "");
+  const row = within(table)
+    .getAllByRole("row")
+    .find((r) => r.getAttribute("aria-rowindex") === "2")!;
+  const cells = within(row).getAllByRole("cell");
+  return Object.fromEntries(headers.map((h, i) => [h, cells[i]?.textContent ?? ""]));
+}
+
+/** Header labels (without sort arrows), in order. */
+function headers(): string[] {
+  return within(screen.getByRole("table"))
+    .getAllByRole("columnheader")
+    .map((h) => (h.textContent ?? "").replace(/[^\p{L} ]/gu, "").trim())
+    .filter(Boolean);
+}
+
+async function showTable(kind: typeof POD, obj: KubeObject) {
+  render(<ResourceTable clusterId="c1" kind={kind} />);
+  const id = await watchOf(wb, kind.kind);
+  emitSnapshot(wb, id, [copy(obj)]);
+}
+
+describe("CPU and Memory columns", () => {
+  it("pods: values from the current source, after Containers", async () => {
+    serve(status(), { pods: [nginxUsage] });
+    await showTable(POD, pod);
+    await waitFor(() => expect(firstRow()["CPU"]).toBe("3m"));
+    expect(firstRow()["Memory"]).toBe("34.0MiB");
+    const h = headers();
+    expect(h.indexOf("CPU")).toBe(h.indexOf("Containers") + 1);
+    expect(h.indexOf("Memory")).toBe(h.indexOf("CPU") + 1);
+    // One request for the whole table, for the selected namespaces (all).
+    expect(calls("metrics_pods")).toHaveLength(1);
+    expect(calls("metrics_pods")[0]!.args).toEqual({ clusterId: "c1", namespaces: null });
+  });
+
+  it("nodes: usage against allocatable, after Name", async () => {
+    serve(status(), { nodes: [nodeUsage] });
+    await showTable(NODE, node);
+    await waitFor(() => expect(firstRow()["CPU"]).toBe("10%"));
+    expect(firstRow()["Memory"]).toBe("26%");
+    const h = headers();
+    expect(h.indexOf("CPU")).toBe(h.indexOf("Name") + 1);
+    const cpuCell = screen.getByTitle("1600m of 16000m");
+    expect(cpuCell).toBeInTheDocument();
+  });
+
+  it("without any source the cells say n/a and open the cluster settings", async () => {
+    serve(NOTHING);
+    await showTable(POD, pod);
+    await waitFor(() => expect(firstRow()["CPU"]).toBe("n/a"));
+    const cell = screen.getAllByTitle("Metrics are unavailable")[0]!;
+    fireEvent.click(cell);
+    expect(useClustersStore.getState().settingsFor).toBe("c1");
+    // The click does not open the row's details.
+    expect(useAppStore.getState().details).toBeNull();
+  });
+});
+
+function Usage() {
+  const usage = usePodUsage("c1");
+  return <div data-testid="usage">{usage.data ? usage.data.size : "-"}</div>;
+}
+
+describe("polling", () => {
+  it("refreshes every 30 seconds while shown and stops when nothing shows it", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    serve(status(), { pods: [nginxUsage] });
+    const view = render(<Usage />);
+    await waitFor(() => expect(screen.getByTestId("usage").textContent).toBe("1"));
+    expect(calls("metrics_pods")).toHaveLength(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+    });
+    expect(calls("metrics_pods")).toHaveLength(2);
+    view.unmount();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3);
+    });
+    expect(calls("metrics_pods")).toHaveLength(2);
+  });
+});
+
+function section(kind: typeof POD) {
+  const def = getDetailsSections(kind).find((s) => s.id === "metrics");
+  expect(def).toBeDefined();
+  return def!.Component;
+}
+
+/** Lets uPlot run in jsdom: matchMedia and a 2D context that accepts every call. */
+function fakeCanvas() {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
+  );
+  // Every Path2D method is a no-op.
+  vi.stubGlobal(
+    "Path2D",
+    class {
+      constructor() {
+        return new Proxy(this, { get: (target, prop) => (prop in target ? Reflect.get(target, prop) : () => undefined) });
+      }
+    },
+  );
+  const ctx: Record<string | symbol, unknown> = {};
+  const proxy = new Proxy(ctx, {
+    get: (target, prop) => (prop in target ? target[prop] : () => ({ width: 10 })),
+    set: (target, prop, value) => {
+      target[prop] = value;
+      return true;
+    },
+  });
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(proxy as unknown as CanvasRenderingContext2D);
+}
+
+describe("Metrics section of the details panel", () => {
+  it("is placed between conditions and events, for pods, nodes and Deployments/StatefulSets/DaemonSets", () => {
+    const ids = (kind: typeof POD) => getDetailsSections(kind).map((s) => s.id);
+    expect(ids(POD)).toContain("metrics");
+    expect(ids(NODE)).toContain("metrics");
+    for (const kind of ["Deployment", "StatefulSet", "DaemonSet"]) expect(ids({ ...DEPLOYMENT, kind })).toContain("metrics");
+    expect(ids({ group: "", version: "v1", kind: "ConfigMap" })).not.toContain("metrics");
+    const order = getDetailsSections(POD).find((s) => s.id === "metrics")!.order;
+    expect(order).toBeGreaterThan(30);
+    expect(order).toBeLessThan(80);
+  });
+
+  it("with Prometheus draws the last hour of a Deployment (sum of its pods)", async () => {
+    fakeCanvas();
+    serve(status({ prometheus: PROMETHEUS }), { charts: [series("cpu", [10, 20, 30]), series("memory", [1024 ** 2, 2 * 1024 ** 2])] });
+    const Section = section(DEPLOYMENT);
+    const ref = { kind: DEPLOYMENT, namespace: "sextant-demo", name: "nginx" };
+    const view = render(<Section clusterId="c1" objectRef={ref} obj={deployment} />);
+    const cpu = await screen.findByRole("figure", { name: "CPU" });
+    expect(within(cpu).getByText("30m")).toBeInTheDocument();
+    expect(within(screen.getByRole("figure", { name: "Memory" })).getByText("2.00MiB")).toBeInTheDocument();
+    expect(calls("metrics_charts")[0]!.args).toEqual({
+      clusterId: "c1",
+      chart: { type: "workload", namespace: "sextant-demo", kind: "Deployment", name: "nginx" } satisfies ChartTarget,
+      rangeSecs: 3600,
+    });
+    // uPlot drew into the figure.
+    await waitFor(() => expect(view.container.querySelectorAll(".uplot")).toHaveLength(2));
+  });
+
+  it("for a pod shows the current values and its charts", async () => {
+    serve(status({ prometheus: PROMETHEUS }), { pods: [nginxUsage], charts: [series("cpu", [1, 2]), series("memory", [5, 6])] });
+    const Section = section(POD);
+    render(<Section clusterId="c1" objectRef={{ kind: POD, namespace: "sextant-demo", name: "nginx-9f755754d-g85tv" }} obj={pod} />);
+    expect(await screen.findByText("34.0MiB")).toBeInTheDocument();
+    expect(screen.getByText("3m")).toBeInTheDocument();
+    await screen.findByRole("figure", { name: "CPU" });
+    expect(calls("metrics_charts")[0]!.args.chart).toEqual({ type: "pod", namespace: "sextant-demo", name: "nginx-9f755754d-g85tv" });
+  });
+
+  it("for a node shows usage of allocatable and CPU, memory, pods and disk charts", async () => {
+    serve(status({ prometheus: PROMETHEUS }), {
+      nodes: [nodeUsage],
+      charts: ["cpu", "memory", "pods", "disk"].map((m) => series(m, [1, 2, 3])),
+    });
+    const Section = section(NODE);
+    render(<Section clusterId="c1" objectRef={{ kind: NODE, namespace: null, name: "sextant-test-control-plane" }} obj={node} />);
+    expect(await screen.findByText("10% · 1600m of 16000m")).toBeInTheDocument();
+    for (const name of ["CPU", "Memory", "Pods", "Disk"]) expect(await screen.findByRole("figure", { name })).toBeInTheDocument();
+    expect(calls("metrics_charts")[0]!.args.chart).toEqual({ type: "node", name: "sextant-test-control-plane" });
+  });
+
+  it("without Prometheus (off or not found) asks for it and does not query charts", async () => {
+    serve(status({ mode: { mode: "off" } }), { pods: [nginxUsage] });
+    const Section = section(POD);
+    render(<Section clusterId="c1" objectRef={{ kind: POD, namespace: "sextant-demo", name: "nginx-9f755754d-g85tv" }} obj={pod} />);
+    expect(await screen.findByText("Charts of the last hour need Prometheus.")).toBeInTheDocument();
+    expect(await screen.findByText("34.0MiB")).toBeInTheDocument();
+    expect(calls("metrics_charts")).toHaveLength(0);
+  });
+
+  it("without any source says Metrics are unavailable with a link to the cluster settings", async () => {
+    serve(NOTHING);
+    const Section = section(NODE);
+    render(<Section clusterId="c1" objectRef={{ kind: NODE, namespace: null, name: "sextant-test-control-plane" }} obj={node} />);
+    expect(await screen.findByText("Metrics are unavailable")).toBeInTheDocument();
+    expect(screen.queryByRole("figure")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open cluster settings" }));
+    expect(useClustersStore.getState().settingsFor).toBe("c1");
+    expect(calls("metrics_charts")).toHaveLength(0);
+  });
+});
+
+const cluster: ClusterInfo = {
+  id: "c1",
+  context: "kind-sextant-test",
+  clusterName: "kind-sextant-test",
+  server: "https://127.0.0.1:6443",
+  user: "admin",
+  namespace: null,
+  sourceId: "default",
+};
+
+function settingsSection() {
+  const def = getClusterSettingsSections().find((s) => s.id === "metrics");
+  expect(def?.titleKey).toBe("metrics:settings.title");
+  const Section = def!.Component;
+  render(<Section clusterId="c1" cluster={cluster} />);
+}
+
+const saved = () => wb.backend.settings.clusters["c1"];
+
+describe("Metrics cluster settings", () => {
+  it("shows what was found automatically and where current values come from", async () => {
+    serve(status({ prometheus: PROMETHEUS }));
+    settingsSection();
+    expect(await screen.findByText("Found automatically: monitoring/prometheus-operated:9090")).toBeInTheDocument();
+    const detected = screen.getByLabelText("Found");
+    expect(within(detected).getByText("Available")).toBeInTheDocument();
+    // Both sources in auto: current values from metrics-server.
+    expect(within(detected).getByText("metrics-server", { selector: "dd" })).toBeInTheDocument();
+  });
+
+  it("a manual service address replaces the automatic search", async () => {
+    serve(status());
+    settingsSection();
+    fireEvent.click(await screen.findByRole("radio", { name: "Manual address" }));
+    const input = screen.getByRole("textbox", { name: "Service (namespace/service:port)" });
+
+    fireEvent.change(input, { target: { value: "prometheus-operated" } });
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Expected namespace/service:port");
+    expect(saved()?.prometheus).toBeUndefined();
+
+    fireEvent.change(input, { target: { value: "monitoring/prometheus-operated:9090" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Path prefix" }), { target: { value: "/prom" } });
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    await waitFor(() =>
+      expect(saved()?.prometheus).toEqual({ mode: "manual", target: { ...PROMETHEUS, pathPrefix: "/prom" } }),
+    );
+    // The status is asked again for the new settings.
+    await waitFor(() => expect(calls("metrics_status").length).toBeGreaterThanOrEqual(2));
+  });
+
+  it("a manual URL is saved as a direct address", async () => {
+    serve(status());
+    settingsSection();
+    fireEvent.click(await screen.findByRole("radio", { name: "Manual address" }));
+    fireEvent.click(screen.getByRole("radio", { name: "URL" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Prometheus URL" }), { target: { value: "http://10.0.0.5:9090" } });
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    await waitFor(() =>
+      expect(saved()?.prometheus).toEqual({ mode: "manual", target: { type: "url", url: "http://10.0.0.5:9090" } }),
+    );
+  });
+
+  it("Off turns Prometheus off", async () => {
+    serve(status());
+    settingsSection();
+    fireEvent.click(await screen.findByRole("radio", { name: "Off" }));
+    await waitFor(() => expect(saved()?.prometheus).toEqual({ mode: "off" }));
+  });
+
+  it("the source of current values switches, and the columns ask again", async () => {
+    serve(status(), { pods: [nginxUsage] });
+    render(<Usage />);
+    settingsSection();
+    await waitFor(() => expect(calls("metrics_pods")).toHaveLength(1));
+    fireEvent.change(await screen.findByRole("combobox", { name: "Current CPU and memory from" }), {
+      target: { value: "prometheus" },
+    });
+    await waitFor(() => expect(saved()?.usageSource).toBe("prometheus"));
+    // New settings → new values right away, not after the next 30 s tick.
+    await waitFor(() => expect(calls("metrics_pods")).toHaveLength(2));
+  });
+});

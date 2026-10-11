@@ -1,0 +1,137 @@
+/* Cluster overview page. */
+.ov {
+  height: 100%;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.ov__title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ov__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ov__card {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-panel);
+}
+
+.ov__card--wide {
+  grid-column: span 2;
+}
+
+.ov__heading {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ov__big {
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ov__sub {
+  color: var(--color-text-muted);
+}
+
+.ov__section {
+  margin-bottom: 20px;
+}
+
+.ov__states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ov__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ov__state::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.ov__state--success::before {
+  background: var(--color-success);
+}
+
+.ov__state--info::before {
+  background: var(--color-accent);
+}
+
+.ov__state--warning::before {
+  background: var(--color-warning);
+}
+
+.ov__state--danger::before {
+  background: var(--color-danger);
+}
+
+.ov__state-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.ov__workloads {
+  border-collapse: collapse;
+}
+
+.ov__workloads th,
+.ov__workloads td {
+  padding: 6px 16px 6px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ov__workloads th {
+  font-weight: 500;
+}
+
+.ov__total {
+  font-variant-numeric: tabular-nums;
+}
+
+.ov__workloads .ov__states {
+  margin: 0;
+}
+
+.ov__usage {
+  margin-bottom: 10px;
+}
+
+.ov__usage-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.ov__usage-percent {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ov__usage .mx-bar {
+  width: 120px;
+}

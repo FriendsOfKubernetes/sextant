@@ -2,6 +2,8 @@
 # Test Kubernetes cluster for Sextant: kind cluster `sextant-test` + metrics-server + fixtures.
 #
 #   scripts/test-cluster.sh up                  create (or reuse) the cluster and apply everything
+#   scripts/test-cluster.sh up --prometheus     the same, plus a minimal Prometheus in namespace `monitoring`
+#                                               (scripts/fixtures/prometheus/, service prometheus-operated:9090)
 #   scripts/test-cluster.sh kubeconfig          print the path of the admin kubeconfig
 #   scripts/test-cluster.sh kubeconfig limited  print the path of a kubeconfig for the `limited`
 #                                               ServiceAccount (no access to Secrets)
@@ -145,6 +147,22 @@ cmd_up() {
   log "ready; KUBECONFIG=$ADMIN_KUBECONFIG"
 }
 
+install_prometheus() {
+  log "installing Prometheus (namespace monitoring)"
+  kc apply -f "$FIXTURES_DIR/prometheus/prometheus.yaml" >/dev/null
+  kc -n monitoring rollout status deployment/prometheus --timeout=300s >/dev/null
+  log "waiting for the first scrapes"
+  local i
+  for i in $(seq 1 60); do
+    if kc get --raw "/api/v1/namespaces/monitoring/services/prometheus-operated:9090/proxy/api/v1/query?query=count(container_memory_working_set_bytes)" 2>/dev/null |
+      grep -q '"result":\[{'; then
+      return 0
+    fi
+    sleep 5
+  done
+  die "Prometheus did not collect metrics"
+}
+
 cmd_kubeconfig() {
   local which="${1:-admin}"
   cluster_exists || die "cluster $CLUSTER_NAME is not running (run: scripts/test-cluster.sh up)"
@@ -166,6 +184,13 @@ cmd_down() {
   fi
   rm -f "$ADMIN_KUBECONFIG" "$LIMITED_KUBECONFIG"
 }
+
+if [[ "${1:-}" == "up" && "${2:-}" == "--prometheus" ]]; then
+  cmd_up
+  install_prometheus
+  log "Prometheus ready: monitoring/prometheus-operated:9090"
+  exit 0
+fi
 
 case "${1:-}" in
   up) cmd_up ;;

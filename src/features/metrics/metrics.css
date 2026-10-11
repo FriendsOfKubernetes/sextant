@@ -1,0 +1,165 @@
+/* Metrics: usage bars, charts, the "unavailable" notice and the cluster settings section. */
+.mx-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.mx-usage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.mx-bar {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 6px;
+  flex: none;
+  border-radius: 3px;
+  background: var(--color-hover);
+  overflow: hidden;
+}
+
+.mx-bar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-accent);
+}
+
+.mx-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.mx-link:hover {
+  text-decoration: underline;
+}
+
+.mx-na {
+  color: var(--color-text-muted);
+}
+
+.mx-unavailable,
+.mx-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 0;
+  color: var(--color-text-muted);
+}
+
+.mx-section {
+  margin: 12px 0;
+}
+
+.mx-section__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mx-current,
+.mx-detected {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+}
+
+.mx-current dt,
+.mx-detected dt {
+  color: var(--color-text-muted);
+}
+
+.mx-current dd,
+.mx-detected dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.mx-current__container {
+  padding-left: 12px;
+}
+
+.mx-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.mx-chart {
+  margin: 0;
+  min-width: 0;
+}
+
+.mx-chart__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.mx-chart__title {
+  font-weight: 600;
+}
+
+.mx-chart__value {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mx-chart__plot {
+  width: 100%;
+  overflow: hidden;
+}
+
+.mx-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mx-settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mx-settings__group legend {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.mx-settings__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mx-settings__manual {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 22px;
+}
+
+.mx-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mx-settings__invalid {
+  color: var(--color-danger);
+}

@@ -1,0 +1,100 @@
+{
+  "title": "Metrics",
+  "loading": "Loading metrics…",
+  "unavailable": "Metrics are unavailable",
+  "openSettings": "Open cluster settings",
+  "na": "n/a",
+  "percent": "{{value}}%",
+  "percentOf": "{{value}}% · {{text}}",
+  "usedOf": "{{used}} of {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "columns": {
+    "cpu": "CPU",
+    "memory": "Memory"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "Memory",
+    "pods": "Pods",
+    "disk": "Disk",
+    "loading": "Loading charts…",
+    "noData": "No data for the last hour yet.",
+    "needPrometheus": "Charts of the last hour need Prometheus."
+  },
+  "settings": {
+    "title": "Metrics",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "Find automatically",
+      "manual": "Manual address",
+      "off": "Off"
+    },
+    "serviceKind": "Service in the cluster",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "Path prefix",
+    "url": "Prometheus URL",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "Expected namespace/service:port, e.g. monitoring/prometheus-operated:9090.",
+    "invalidUrl": "Expected an http:// or https:// URL.",
+    "save": "Use this address",
+    "usageSource": "Current CPU and memory from",
+    "source": {
+      "auto": "Automatic (metrics-server, else Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "Off"
+    },
+    "detected": "Found",
+    "checking": "Checking metrics sources…",
+    "metricsServer": "metrics-server",
+    "available": "Available",
+    "notAvailable": "Not available",
+    "foundAuto": "Found automatically: {{target}}",
+    "foundManual": "Answers at {{target}}",
+    "notFound": "Not found",
+    "manualNoAnswer": "The address does not answer",
+    "prometheusOff": "Off",
+    "currentFrom": "Current values from",
+    "noSource": "No source — metrics are unavailable"
+  },
+  "overview": {
+    "sidebar": "Cluster",
+    "title": "Cluster overview",
+    "nodes": "Nodes",
+    "nodesReady": "{{ready}} of {{count}} ready",
+    "pods": "Pods",
+    "workloads": "Workloads",
+    "usage": "Usage",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "usageOf": "{{used}} of {{total}} allocatable",
+    "charts": "Last hour",
+    "warnings": "Warnings",
+    "noWarnings": "No warnings.",
+    "loading": "Loading…",
+    "phase": {
+      "Running": "Running",
+      "Pending": "Pending",
+      "Succeeded": "Succeeded",
+      "Failed": "Failed",
+      "Unknown": "Unknown"
+    },
+    "state": {
+      "ready": "Ready",
+      "pending": "Not ready",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "failed": "Failed"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}
