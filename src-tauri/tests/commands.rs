@@ -99,6 +99,11 @@ fn harness_in(dirs: tempfile::TempDir) -> Harness {
         .build(mock_context(noop_assets()))
         .unwrap();
     app.manage(isolated_state(dirs.path()));
+    // Helm commands use this `helm`: a path that does not exist, so no test runs the developer's helm (network,
+    // ~/.config/helm, ~/.cache/helm) — they answer `helmMissing` instead.
+    app.manage(
+        sextant_core::helm::cli::HelmCli::default().with_binary(dirs.path().join("no-helm")),
+    );
     let window = WebviewWindowBuilder::new(&app, "main", Default::default())
         .build()
         .unwrap();
@@ -144,6 +149,17 @@ fn unknown_command_is_rejected() {
         err.as_str().unwrap_or_default().contains("not found"),
         "{err}"
     );
+}
+
+#[test]
+fn helm_commands_never_run_the_real_helm() {
+    let h = harness();
+    let status = invoke(&h, "helm_status", json!({})).unwrap();
+    assert_eq!(status["available"], false, "{status}");
+    for cmd in ["helm_repos", "helm_repo_update"] {
+        let err = invoke(&h, cmd, json!({})).unwrap_err();
+        assert_eq!(err["code"], "helmMissing", "{cmd}: {err}");
+    }
 }
 
 #[test]

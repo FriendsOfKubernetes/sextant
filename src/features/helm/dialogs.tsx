@@ -1,0 +1,251 @@
+// Dialogs of the Helm pages. Nothing reaches `helm` before the user presses the confirm button; uninstall and
+// rollback also need the release name typed in. A failure keeps the dialog open with Helm's own text (stderr).
+import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { api, type ClusterId, type HelmRelease, type HelmRepo } from "../../api";
+import { ConfirmAction } from "../actions";
+import { YamlEditor } from "../editor";
+
+/** Release names Helm accepts. */
+export const RELEASE_NAME = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
+
+export function isValidReleaseName(name: string): boolean {
+  return name.length <= 53 && RELEASE_NAME.test(name);
+}
+
+/** "Type the release name to confirm" field; reports whether the typed text matches. */
+function ConfirmName({ name, onMatch }: { name: string; onMatch: (ok: boolean) => void }) {
+  const { t } = useTranslation();
+  const id = useId();
+  const [typed, setTyped] = useState("");
+  return (
+    <div className="action-dialog__field">
+      <label htmlFor={id}>{t("helm:confirmName.label", { name })}</label>
+      <input
+        id={id}
+        value={typed}
+        autoFocus
+        spellCheck={false}
+        onChange={(e) => {
+          setTyped(e.target.value);
+          onMatch(e.target.value === name);
+        }}
+      />
+      {typed !== "" && typed !== name && <span className="action-dialog__hint">{t("helm:confirmName.mismatch")}</span>}
+    </div>
+  );
+}
+
+export function UninstallDialog({
+  clusterId,
+  release,
+  close,
+  onDone,
+}: {
+  clusterId: ClusterId;
+  release: HelmRelease;
+  close: () => void;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const [match, setMatch] = useState(false);
+  return (
+    <ConfirmAction
+      title={t("helm:uninstall.title", { name: release.name })}
+      confirmLabel={t("helm:uninstall.confirm")}
+      danger
+      close={close}
+      canConfirm={match}
+      errorTitle={() => t("helm:uninstall.failed")}
+      onConfirm={async () => {
+        await api.helm.uninstall(clusterId, release.namespace, release.name);
+        onDone();
+      }}
+    >
+      <p>{t("helm:uninstall.text", { name: release.name, namespace: release.namespace })}</p>
+      <ConfirmName name={release.name} onMatch={setMatch} />
+    </ConfirmAction>
+  );
+}
+
+export function RollbackDialog({
+  clusterId,
+  release,
+  revision,
+  close,
+  onDone,
+}: {
+  clusterId: ClusterId;
+  release: HelmRelease;
+  revision: number;
+  close: () => void;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const [match, setMatch] = useState(false);
+  return (
+    <ConfirmAction
+      title={t("helm:rollback.title", { name: release.name })}
+      confirmLabel={t("helm:rollback.confirm")}
+      danger
+      close={close}
+      canConfirm={match}
+      errorTitle={() => t("helm:rollback.failed")}
+      onConfirm={async () => {
+        await api.helm.rollback(clusterId, release.namespace, release.name, revision);
+        onDone();
+      }}
+    >
+      <p>{t("helm:rollback.text", { name: release.name, revision })}</p>
+      <ConfirmName name={release.name} onMatch={setMatch} />
+    </ConfirmAction>
+  );
+}
+
+/** `repo/chart` of an added repository that has the release's chart, or "" (the backend then reuses the stored chart). */
+async function findChartRef(chart: string): Promise<string> {
+  try {
+    const hits = await api.helm.search(chart);
+    return hits.find((h) => h.name.endsWith(`/${chart}`))?.name ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function UpgradeDialog({
+  clusterId,
+  release,
+  values,
+  close,
+  onDone,
+}: {
+  clusterId: ClusterId;
+  release: HelmRelease;
+  /** The release's current user values. */
+  values: string;
+  close: () => void;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const refId = useId();
+  const [text, setText] = useState(values);
+  const [chartRef, setChartRef] = useState("");
+  const refTouched = useRef(false);
+
+  // Suggest the repository reference once; what the user typed wins.
+  useEffect(() => {
+    let alive = true;
+    void findChartRef(release.chart).then((found) => {
+      if (alive && !refTouched.current) setChartRef(found);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [release.chart]);
+
+  return (
+    <ConfirmAction
+      title={t("helm:upgrade.title", { name: release.name })}
+      confirmLabel={t("helm:upgrade.confirm")}
+      close={close}
+      errorTitle={() => t("helm:upgrade.failed")}
+      onConfirm={async () => {
+        await api.helm.upgrade(clusterId, release.namespace, release.name, chartRef.trim(), text);
+        onDone();
+        return t("helm:upgrade.done", { name: release.name });
+      }}
+    >
+      <div className="helm-dialog__editor">
+        <YamlEditor value={text} onChange={setText} label={t("helm:upgrade.valuesLabel", { name: release.name })} />
+      </div>
+      <div className="action-dialog__field">
+        <label htmlFor={refId}>{t("helm:upgrade.chartRef")}</label>
+        <input
+          id={refId}
+          value={chartRef}
+          spellCheck={false}
+          onChange={(e) => {
+            refTouched.current = true;
+            setChartRef(e.target.value);
+          }}
+        />
+        <span className="action-dialog__hint">
+          {t("helm:upgrade.chartRefHint", { chart: release.chart, version: release.chartVersion })}
+        </span>
+      </div>
+    </ConfirmAction>
+  );
+}
+
+export function RemoveRepoDialog({ repo, close, onDone }: { repo: HelmRepo; close: () => void; onDone: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <ConfirmAction
+      title={t("helm:charts.removeTitle", { name: repo.name })}
+      confirmLabel={t("helm:charts.remove")}
+      danger
+      close={close}
+      onConfirm={async () => {
+        await api.helm.repoRemove(repo.name);
+        onDone();
+      }}
+    >
+      <p>{t("helm:charts.removeText", { name: repo.name, url: repo.url })}</p>
+    </ConfirmAction>
+  );
+}
+
+export function InstallDialog({
+  clusterId,
+  chart,
+  version,
+  defaultValues,
+  defaultNamespace,
+  close,
+}: {
+  clusterId: ClusterId;
+  /** `repo/chart` */
+  chart: string;
+  version: string;
+  defaultValues: string;
+  defaultNamespace: string;
+  close: () => void;
+}) {
+  const { t } = useTranslation();
+  const nameId = useId();
+  const nsId = useId();
+  const short = chart.split("/").pop() ?? chart;
+  const [release, setRelease] = useState(isValidReleaseName(short) ? short : "");
+  const [namespace, setNamespace] = useState(defaultNamespace);
+  const [values, setValues] = useState(defaultValues);
+  const nameOk = isValidReleaseName(release);
+  const nsOk = namespace.trim() !== "";
+
+  return (
+    <ConfirmAction
+      title={t("helm:install.title", { chart, version })}
+      confirmLabel={t("helm:install.confirm")}
+      close={close}
+      canConfirm={nameOk && nsOk}
+      errorTitle={() => t("helm:install.failed")}
+      onConfirm={async () => {
+        const ns = namespace.trim();
+        await api.helm.install(clusterId, ns, release, chart, version || null, values);
+        return t("helm:install.done", { release, namespace: ns });
+      }}
+    >
+      <div className="action-dialog__field">
+        <label htmlFor={nameId}>{t("helm:install.release")}</label>
+        <input id={nameId} value={release} spellCheck={false} autoFocus onChange={(e) => setRelease(e.target.value.trim())} />
+        {!nameOk && release !== "" && <span className="action-dialog__hint">{t("helm:install.invalidName")}</span>}
+      </div>
+      <div className="action-dialog__field">
+        <label htmlFor={nsId}>{t("helm:install.namespace")}</label>
+        <input id={nsId} value={namespace} spellCheck={false} onChange={(e) => setNamespace(e.target.value)} />
+      </div>
+      <div className="helm-dialog__editor">
+        <YamlEditor value={values} onChange={setValues} label={t("helm:install.valuesLabel", { chart })} />
+      </div>
+    </ConfirmAction>
+  );
+}

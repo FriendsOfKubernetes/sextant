@@ -1,0 +1,124 @@
+{
+  "sidebar": {
+    "charts": "Charts",
+    "releases": "Releases"
+  },
+  "missing": {
+    "title": "Helm is not installed",
+    "text": "Releases can be viewed, but changing them and installing charts needs the helm command in PATH. Install Helm and restart Sextant:",
+    "short": "Needs Helm — see the hint at the top of the page"
+  },
+  "releases": {
+    "title": "Releases",
+    "search": "Search releases",
+    "searchPlaceholder": "Search…",
+    "loading": "Loading releases…",
+    "empty": "No Helm releases",
+    "emptyText": "Releases installed with Helm in the selected namespaces appear here.",
+    "noMatch": "No release matches the search",
+    "open": "Open release {{name}}"
+  },
+  "columns": {
+    "name": "Name",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "Version",
+    "appVersion": "App version",
+    "status": "Status",
+    "updated": "Updated",
+    "revision": "Revision",
+    "description": "Description"
+  },
+  "details": {
+    "title": "Release {{name}}",
+    "close": "Close release details",
+    "loading": "Loading…",
+    "chart": "Chart {{chart}} {{version}} · app {{appVersion}} · revision {{revision}}",
+    "tabs": {
+      "values": "Values",
+      "manifest": "Manifest",
+      "notes": "Notes",
+      "history": "History"
+    },
+    "tabsLabel": "Release details",
+    "valuesLabel": "User values of {{name}}",
+    "manifestLabel": "Manifest of {{name}}",
+    "noValues": "No user values: the release uses the chart's defaults.",
+    "noNotes": "The chart has no notes.",
+    "current": "current"
+  },
+  "actions": {
+    "editValues": "Edit values",
+    "rollback": "Roll back",
+    "rollbackTo": "Roll back to revision {{revision}}",
+    "uninstall": "Uninstall"
+  },
+  "upgrade": {
+    "title": "Edit values of {{name}}",
+    "valuesLabel": "Values of {{name}}",
+    "chartRef": "Chart reference",
+    "chartRefHint": "Upgrades with chart {{chart}} {{version}}. Leave empty to reuse the chart stored in the release; a chart with subcharts needs its repository reference, e.g. repo/{{chart}}.",
+    "confirm": "Upgrade",
+    "done": "Release {{name}} upgraded. A new revision was created.",
+    "failed": "Helm could not upgrade the release"
+  },
+  "rollback": {
+    "title": "Roll back {{name}}?",
+    "text": "{{name}} will get a new revision with the chart and values of revision {{revision}}. The resources in the cluster change accordingly.",
+    "confirm": "Roll back",
+    "failed": "Helm could not roll back the release"
+  },
+  "uninstall": {
+    "title": "Uninstall {{name}}?",
+    "text": "Release {{name}} in namespace {{namespace}} and every resource it created will be deleted from the cluster. This cannot be undone.",
+    "confirm": "Uninstall",
+    "failed": "Helm could not uninstall the release"
+  },
+  "confirmName": {
+    "label": "Type the release name ({{name}}) to confirm",
+    "mismatch": "The name does not match."
+  },
+  "charts": {
+    "title": "Charts",
+    "repositories": "Repositories",
+    "noRepos": "No chart repositories yet. Add one to search its charts.",
+    "repoName": "Name",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "add": "Add repository",
+    "adding": "Adding…",
+    "remove": "Remove",
+    "removeLabel": "Remove repository {{name}}",
+    "removeTitle": "Remove repository {{name}}?",
+    "removeText": "Helm forgets the repository {{name}} ({{url}}). Releases installed from it are not affected.",
+    "update": "Update repositories",
+    "updating": "Updating…",
+    "updated": "Repositories updated.",
+    "search": "Search charts",
+    "searchPlaceholder": "Chart name or keyword",
+    "searchButton": "Search",
+    "searching": "Searching…",
+    "noResults": "No chart matches the search.",
+    "description": "Description",
+    "select": "Show chart {{name}}",
+    "defaultValues": "Default values",
+    "defaultValuesLabel": "Default values of {{name}} {{version}}",
+    "loadingValues": "Loading default values…",
+    "install": "Install",
+    "loading": "Loading…"
+  },
+  "install": {
+    "title": "Install {{chart}} {{version}}",
+    "release": "Release name",
+    "namespace": "Namespace",
+    "valuesLabel": "Values for {{chart}}",
+    "invalidName": "Use lowercase letters, digits, - and . (at most 53 characters), starting and ending with a letter or digit.",
+    "confirm": "Install",
+    "done": "Release {{release}} installed in namespace {{namespace}}. It is listed under Releases.",
+    "failed": "Helm could not install the chart"
+  },
+  "status": {
+    "loading": "Checking for Helm…"
+  }
+}

@@ -1,0 +1,3 @@
+# Default values of the test chart.
+greeting: hello
+replicas: 1

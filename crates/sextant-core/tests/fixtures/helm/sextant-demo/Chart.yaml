@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sextant-demo
+description: A tiny chart for Sextant's Helm tests (one ConfigMap, no pods).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
