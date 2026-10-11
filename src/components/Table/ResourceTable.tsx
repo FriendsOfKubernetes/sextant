@@ -29,6 +29,7 @@ import { useResourceDef, type ActionId, type CellContext, type ColumnDef } from 
 import { Badge } from "../Badge";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
+import { usePopup } from "../usePopup";
 import { matchesSearch } from "./search";
 import "./table.css";
 
@@ -165,11 +166,13 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   useEffect(() => {
     setRowSelection((current) => {
       const ids = Object.keys(current).filter((id) => current[id]);
-      const kept = ids.filter((id) => watch.items.has(id) && data.some((o) => uidOf(o) === id));
+      if (ids.length === 0) return current;
+      const shown = new Set(data.map(uidOf));
+      const kept = ids.filter((id) => shown.has(id));
       if (kept.length === ids.length) return current;
       return Object.fromEntries(kept.map((id) => [id, true]));
     });
-  }, [watch.items, data]);
+  }, [data]);
 
   const selected = rows.filter((r) => r.getIsSelected()).map((r) => r.original);
 
@@ -405,21 +408,10 @@ function ActionMenu({
 }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  usePopup(ref, onClose);
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
     ref.current?.querySelector<HTMLButtonElement>("[role='menuitem']")?.focus();
-    return () => {
-      window.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  }, []);
   return (
     <div ref={ref} className="rt-menu" role="menu" aria-label={t("resources:table.actions")} style={{ left: x, top: y }}>
       {actions.length === 0 ? (

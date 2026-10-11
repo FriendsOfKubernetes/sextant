@@ -91,7 +91,10 @@ interface Failure {
   error: ApiError;
 }
 
-/** Lists every object to delete; deletes them one by one after confirmation and reports each failure. */
+/**
+ * Lists every object to delete; deletes them one by one after confirmation and reports each failure. Once started,
+ * the deletion runs to the end.
+ */
 export function DeleteDialog({
   clusterId,
   kind,
@@ -150,14 +153,19 @@ export function DeleteDialog({
     );
   }
 
+  // Deleting cannot be cancelled halfway: while it runs, Cancel is disabled and Escape / × / the backdrop do nothing,
+  // so the dialog always ends with the full result (closed, or the list of what was not deleted).
+  const closeUnlessBusy = () => {
+    if (!busy) close();
+  };
   return (
     <Dialog
       open
       title={t("actions:delete.title", { count, kind: kind.kind })}
-      onClose={close}
+      onClose={closeUnlessBusy}
       footer={
         <>
-          <button type="button" className="btn" onClick={close}>
+          <button type="button" className="btn" disabled={busy} onClick={close}>
             {t("common:actions.cancel")}
           </button>
           <button type="button" className="btn btn--danger" disabled={busy} onClick={() => void confirm()}>

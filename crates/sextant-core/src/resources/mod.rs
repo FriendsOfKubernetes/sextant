@@ -9,7 +9,7 @@ mod watch;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::error::CoreError;
+use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub use get::get;
 pub use mutate::{
@@ -60,6 +60,22 @@ pub struct ObjectRef {
     pub kind: KindRef,
     pub namespace: Option<String>,
     pub name: String,
+}
+
+impl ObjectRef {
+    /// The namespace of an object of a namespaced kind; without one the reference is `invalid`, with the same text
+    /// for every function that takes an `ObjectRef` (read, change, logs, exec).
+    pub(crate) fn required_namespace(&self) -> CoreResult<&str> {
+        self.namespace
+            .as_deref()
+            .filter(|ns| !ns.is_empty())
+            .ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::Invalid,
+                    format!("{} {} needs a namespace", self.kind.kind, self.name),
+                )
+            })
+    }
 }
 
 /// What to watch. `namespaces: None` means all namespaces.

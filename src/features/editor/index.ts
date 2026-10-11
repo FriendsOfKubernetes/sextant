@@ -10,7 +10,7 @@ import "./editor.css";
 export { describeRef, type CreateTabPayload } from "./CreateTab";
 export type { EditTabPayload } from "./EditTab";
 export { YamlEditor, type YamlEditorProps } from "./YamlEditor";
-export { toYaml } from "./yaml";
+export { toYaml } from "../details/yaml";
 
 registerDockTab("edit", EditTab);
 registerDockTab("create", CreateTab);

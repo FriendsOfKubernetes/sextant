@@ -755,3 +755,150 @@ spec:
     })
     .await;
 }
+
+// ---------- one field manager for every change ----------
+
+/// Whether `managedFields` has an `Update` by `sextant` that owns `field` (e.g. `f:replicas`).
+fn updated_by_sextant(
+    meta: &k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta,
+    field: &str,
+) -> bool {
+    meta.managed_fields.iter().flatten().any(|entry| {
+        entry.manager.as_deref() == Some("sextant")
+            && entry.operation.as_deref() == Some("Update")
+            && entry
+                .fields_v1
+                .as_ref()
+                .is_some_and(|f| serde_json::to_string(&f.0).unwrap().contains(field))
+    })
+}
+
+fn managers(meta: &k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta) -> Vec<String> {
+    meta.managed_fields
+        .iter()
+        .flatten()
+        .map(|e| {
+            format!(
+                "{}/{}/{}",
+                e.manager.clone().unwrap_or_default(),
+                e.operation.clone().unwrap_or_default(),
+                e.subresource.clone().unwrap_or_default()
+            )
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn scale_cordon_and_suspend_are_signed_by_the_sextant_field_manager() {
+    in_scratch("manager", |s| async move {
+        // Created outside Sextant, so only Sextant's own changes can carry its name.
+        let deployment: Deployment =
+            serde_yaml::from_str(&deployment_yaml(&s.ns, "web", 1)).unwrap();
+        let deployments: Api<Deployment> = Api::namespaced(s.client.clone(), &s.ns);
+        deployments
+            .create(&PostParams::default(), &deployment)
+            .await
+            .unwrap();
+        resources::scale(&s.mgr, &s.id, &deployment_ref(&s.ns, "web"), 2)
+            .await
+            .unwrap();
+        let meta = deployments.get("web").await.unwrap().metadata;
+        assert!(
+            updated_by_sextant(&meta, "f:replicas"),
+            "{:?}",
+            managers(&meta)
+        );
+
+        create_fake_node(&s.client, &s.node).await;
+        resources::cordon(&s.mgr, &s.id, &s.node, true)
+            .await
+            .unwrap();
+        let meta = Api::<Node>::all(s.client.clone())
+            .get(&s.node)
+            .await
+            .unwrap()
+            .metadata;
+        assert!(
+            updated_by_sextant(&meta, "f:unschedulable"),
+            "{:?}",
+            managers(&meta)
+        );
+
+        let cronjob: CronJob = serde_json::from_value(json!({
+            "metadata": { "name": "nightly", "namespace": s.ns },
+            "spec": {
+                "schedule": "0 3 1 1 *",
+                "jobTemplate": { "spec": { "template": { "spec": {
+                    "restartPolicy": "Never",
+                    "containers": [{ "name": "run", "image": BUSYBOX_IMAGE, "command": ["true"] }]
+                } } } }
+            }
+        }))
+        .unwrap();
+        let cronjobs: Api<CronJob> = Api::namespaced(s.client.clone(), &s.ns);
+        cronjobs
+            .create(&PostParams::default(), &cronjob)
+            .await
+            .unwrap();
+        let r = object(kind("batch", "v1", "CronJob"), Some(&s.ns), "nightly");
+        resources::suspend_cronjob(&s.mgr, &s.id, &r, true)
+            .await
+            .unwrap();
+        let meta = cronjobs.get("nightly").await.unwrap().metadata;
+        assert!(
+            updated_by_sextant(&meta, "f:suspend"),
+            "{:?}",
+            managers(&meta)
+        );
+    })
+    .await;
+}
+
+// ---------- a namespaced object without a namespace ----------
+
+#[tokio::test]
+async fn a_pod_without_a_namespace_is_invalid_the_same_way_everywhere() {
+    in_scratch("nonamespace", |s| async move {
+        let pod = object(kind("", "v1", "Pod"), None, "web");
+        let expected = "Pod web needs a namespace";
+        let opts = sextant_core::logs::LogOptions {
+            container: String::new(),
+            follow: false,
+            previous: false,
+            timestamps: false,
+            tail_lines: None,
+        };
+        let errors = [
+            (
+                "get",
+                resources::get(&s.mgr, &s.id, &pod).await.unwrap_err(),
+            ),
+            (
+                "exec",
+                sextant_core::exec::exec_shell(&s.mgr, &s.id, &pod, "c", 80, 24)
+                    .await
+                    .err()
+                    .unwrap(),
+            ),
+            (
+                "logs",
+                sextant_core::logs::stream_logs(&s.mgr, &s.id, &pod, opts)
+                    .await
+                    .err()
+                    .unwrap(),
+            ),
+            (
+                "delete",
+                resources::delete(&s.mgr, &s.id, &pod).await.unwrap_err(),
+            ),
+        ];
+        for (what, err) in errors {
+            assert_eq!(
+                (err.code, err.message.as_str()),
+                (ErrorCode::Invalid, expected),
+                "{what}"
+            );
+        }
+    })
+    .await;
+}

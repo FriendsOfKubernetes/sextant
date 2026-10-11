@@ -9,7 +9,7 @@ import { ConfirmDialog, ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { openActionDialog } from "../actions/registry";
 import { YamlEditor } from "./YamlEditor";
-import { toYaml } from "./yaml";
+import { toYaml } from "../details/yaml";
 
 export interface EditTabPayload {
   clusterId: ClusterId;
@@ -120,13 +120,15 @@ export function EditTab({ tab }: DockTabProps) {
       {loadError && <ErrorState error={loadError} onRetry={() => void load()} />}
       {saveError &&
         (saveError.code === "conflict" ? (
-          <div className="error-state" role="alert" data-code="conflict">
-            <div className="error-state__title">{t("actions:editor.conflict", names)}</div>
-            <div className="error-state__message">{t("common:error.details", { message: saveError.message })}</div>
-            <button type="button" className="btn" onClick={reload}>
-              {t("actions:editor.reload")}
-            </button>
-          </div>
+          <ErrorState
+            error={saveError}
+            title={t("actions:editor.conflict", names)}
+            actions={
+              <button type="button" className="btn" onClick={reload}>
+                {t("actions:editor.reload")}
+              </button>
+            }
+          />
         ) : (
           <ErrorState error={saveError} />
         ))}

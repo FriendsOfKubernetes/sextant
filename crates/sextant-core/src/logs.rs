@@ -55,12 +55,7 @@ pub async fn stream_logs(
     opts: LogOptions,
 ) -> CoreResult<impl Stream<Item = LogUpdate> + Send + 'static> {
     let client = mgr.client(cluster)?;
-    let namespace = pod.namespace.as_deref().ok_or_else(|| {
-        CoreError::new(
-            ErrorCode::Invalid,
-            "a pod needs a namespace to read its logs",
-        )
-    })?;
+    let namespace = pod.required_namespace()?;
     let params = LogParams {
         container: Some(opts.container).filter(|c| !c.is_empty()),
         follow: opts.follow,

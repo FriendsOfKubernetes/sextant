@@ -158,9 +158,17 @@
   color: var(--color-text-muted);
 }
 
-.clusters-error {
-  color: var(--color-danger);
+/* A compact ErrorState inside a form or dialog. */
+.error-state.clusters-error {
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0;
   margin-top: 8px;
+  text-align: left;
+}
+
+.error-state.clusters-error .error-state__title {
+  font-size: inherit;
 }
 
 .clusters-error__details {

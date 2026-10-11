@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type ClusterInfo, type KubeconfigSource, type MockBackend } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { AppShell } from "../../layout";
-import { resetClustersStore } from "./clustersStore";
+import { resetClusterKinds, useClusterKinds } from "../../resources";
+import { connectCluster, resetClustersStore } from "./clustersStore";
 import "./index";
 import { registerClusterSettingsSection, unregisterClusterSettingsSection } from "./settingsRegistry";
 import { VIEW_PERSIST_DELAY_MS } from "./viewPersistence";
@@ -167,6 +168,30 @@ describe("cluster rail", () => {
     await within(rail()).findByRole("button", { name: "kind-alpha" });
     act(() => backend.emit("cluster-state", { clusterId: "aaaa", state: { state: "connected" } }));
     expect(railButton("kind-alpha")).toHaveAttribute("data-state", "connected");
+  });
+
+  it("forgets the cluster's kinds when it connects again: a CRD created meanwhile shows after Reconnect", async () => {
+    const pod = { kindRef: { group: "", version: "v1", kind: "Pod" }, plural: "pods", namespaced: true, verbs: [], printerColumns: [] };
+    const widget = { ...pod, kindRef: { group: "demo.sextant.dev", version: "v1", kind: "Widget" }, plural: "widgets" };
+    let served = [pod];
+    setup([alpha], { connect: () => undefined });
+    backend.on("cluster_kinds", () => served);
+    function Probe() {
+      const { kinds } = useClusterKinds("aaaa");
+      return <p data-testid="kinds">{kinds?.map((k) => k.kindRef.kind).join(",")}</p>;
+    }
+    resetClusterKinds();
+    try {
+      await act(async () => connectCluster("aaaa"));
+      render(<Probe />);
+      await waitFor(() => expect(screen.getByTestId("kinds")).toHaveTextContent("Pod"));
+
+      served = [pod, widget];
+      await act(async () => connectCluster("aaaa"));
+      await waitFor(() => expect(screen.getByTestId("kinds")).toHaveTextContent("Pod,Widget"));
+    } finally {
+      resetClusterKinds();
+    }
   });
 
   it("disconnect from the context menu closes the cluster", async () => {

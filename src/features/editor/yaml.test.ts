@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { toYaml } from "./yaml";
+import { toYaml } from "../details/yaml";
 
 describe("toYaml", () => {
-  it("writes an object as block YAML with lists of objects under their key", () => {
+  it("writes an object as block YAML with lists of objects under their key (kubectl style)", () => {
     const deployment = {
       apiVersion: "apps/v1",
       kind: "Deployment",
@@ -33,11 +33,11 @@ describe("toYaml", () => {
         "  template:",
         "    spec:",
         "      containers:",
-        "        - name: web",
-        "          image: nginx:stable-alpine",
-        "          ports:",
-        "            - containerPort: 80",
-        "          args: []",
+        "      - name: web",
+        "        image: nginx:stable-alpine",
+        "        ports:",
+        "        - containerPort: 80",
+        "        args: []",
         "status: null",
         "",
       ].join("\n"),
@@ -99,6 +99,6 @@ describe("toYaml", () => {
   });
 
   it("writes nested and empty lists", () => {
-    expect(toYaml({ matrix: [[1, 2], [], ["x"]] })).toBe("matrix:\n  -\n    - 1\n    - 2\n  - []\n  -\n    - x\n");
+    expect(toYaml({ matrix: [[1, 2], [], ["x"]] })).toBe("matrix:\n-\n  - 1\n  - 2\n- []\n-\n  - x\n");
   });
 });

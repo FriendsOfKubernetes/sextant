@@ -1,8 +1,9 @@
 // Namespace filter in the table header: "All namespaces" or a multi-selection, with a filter box.
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
+import { usePopup } from "../../components";
 import { selectNamespaces } from "./namespaces";
 import "./namespaces.css";
 
@@ -32,21 +33,7 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
 
   const visible = all.filter((ns) => ns.toLowerCase().includes(filter.trim().toLowerCase()));
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  usePopup(ref, () => setOpen(false), open);
 
   const choose = (value: string[] | null) => {
     void selectNamespaces(clusterId, value).catch(() => {

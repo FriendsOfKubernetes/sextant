@@ -59,10 +59,7 @@ pub async fn exec_shell(
     rows: u16,
 ) -> CoreResult<ExecSession> {
     let client = mgr.client(cluster)?;
-    let api: Api<Pod> = match &pod.namespace {
-        Some(ns) => Api::namespaced(client, ns),
-        None => Api::default_namespaced(client),
-    };
+    let api: Api<Pod> = Api::namespaced(client, pod.required_namespace()?);
     let mut last_failure = None;
     for shell in SHELLS {
         match start(&api, pod, container, shell, cols, rows).await? {

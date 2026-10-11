@@ -1,100 +1,114 @@
-// JSON → YAML for showing objects (there is no YAML library in the project; this covers what JSON can hold).
-// Strings that YAML would read as something else (numbers, booleans, null, indicators, `: `, ` #`) are quoted;
-// multi-line strings become literal blocks.
+// JSON → YAML, the one writer for both the details panel (read-only view) and the editor (text sent back to the
+// server). There is no YAML library in the project and parsing is the backend's job (`resource_replace`,
+// `resource_apply`), so there is no parser here.
+//
+// Block style, two-space indent, lists under a key not indented further (kubectl style). A string is quoted whenever
+// plain YAML would read it as something else (a number, a bool, null, a date, an indicator, `: `, ` #`…), so saving
+// the text back never changes a value's type. Multi-line strings become literal blocks (`|`, `|-`, `|+`).
 import type { KubeObject } from "../../api";
 
-// "-", "?" and ":" start a plain scalar unless a space (or nothing) follows: "--port" stays plain.
-const INDICATOR = /^(?:[,[\]{}#&*!|>'"%@`\s]|[-?:](?:\s|$))/;
-// Words a YAML 1.1/1.2 reader turns into booleans or null, and anything that looks like a number.
-const AMBIGUOUS = /^(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|y|Y|yes|Yes|YES|n|N|no|No|NO|on|On|ON|off|Off|OFF)$/;
-const NUMBER_LIKE = /^[-+]?(?:\.?\d|0x|0o|\.inf|\.Inf|\.INF|\.nan|\.NaN|\.NAN)/;
-/** Characters that are not allowed (or not kept) in plain and block scalars: C0/C1 controls except tab and newline. */
-function hasControl(s: string): boolean {
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if ((c < 0x20 && c !== 0x09 && c !== 0x0a) || c === 0x7f || c === 0x85 || c === 0x2028 || c === 0x2029 || c === 0xfeff)
-      return true;
-  }
+const INDENT = "  ";
+
+/** `value` as a YAML document (ends with a newline). */
+export function toYaml(value: unknown): string {
+  return `${emit(value, 0).replace(/^\n/, "")}\n`;
+}
+
+function emit(value: unknown, depth: number): string {
+  if (Array.isArray(value)) return emitArray(value, depth);
+  if (isPlainObject(value)) return emitObject(value, depth);
+  return ` ${scalar(value, depth)}`;
+}
+
+/** Rendered after a key or dash: a leading newline for nested blocks, a leading space for inline values. */
+function emitObject(obj: Record<string, unknown>, depth: number): string {
+  const entries = Object.entries(obj).filter(([, v]) => v !== undefined);
+  if (entries.length === 0) return " {}";
+  const pad = INDENT.repeat(depth);
+  // A list under a key starts its dashes at the key's own column.
+  return entries
+    .map(([k, v]) => `\n${pad}${key(k)}:${emit(v, Array.isArray(v) ? depth : depth + 1)}`)
+    .join("");
+}
+
+function emitArray(items: unknown[], depth: number): string {
+  if (items.length === 0) return " []";
+  const pad = INDENT.repeat(depth);
+  return items
+    .map((item) => {
+      if (isPlainObject(item) && Object.keys(item).length > 0) {
+        // "- first: x\n  second: y": the first key shares the dash's line.
+        const body = emitObject(item, depth + 1);
+        return `\n${pad}-${body.replace(/^\n\s*/, " ")}`;
+      }
+      if (Array.isArray(item) && item.length > 0) return `\n${pad}-${emitArray(item, depth + 1)}`;
+      return `\n${pad}-${emit(item, depth + 1)}`;
+    })
+    .join("");
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function scalar(value: unknown, depth: number): string {
+  if (value === null || value === undefined) return "null";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : quote(String(value));
+  if (typeof value === "bigint") return value.toString();
+  const text = String(value);
+  if (text.includes("\n") && canBeLiteralBlock(text)) return literalBlock(text, depth);
+  return needsQuotes(text) ? quote(text) : text;
+}
+
+function key(name: string): string {
+  return needsQuotes(name) ? quote(name) : name;
+}
+
+/** Plain scalars YAML 1.1/1.2 would read as another type: bool, null, numbers (also octal, hex, `.inf`), dates. */
+const TYPED =
+  /^(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|y|Y|yes|Yes|YES|n|N|no|No|NO|on|On|ON|off|Off|OFF|[-+]?(?:\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][-+]?\d+)?|[-+]?0[xob][0-9a-fA-F_]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)|\d{4}-\d\d?-\d\d?(?:[Tt ].*)?|[-+]?\d[\d_]*(?::[0-5]?\d)+(?:\.\d*)?)$/;
+
+function needsQuotes(text: string): boolean {
+  if (text === "") return true;
+  if (TYPED.test(text)) return true;
+  // Indicators that cannot start a plain scalar, and surrounding whitespace. "-" may start one when a non-space
+  // follows ("-foo", "--port").
+  if (/^[\s\-?:,[\]{}#&*!|>'"%@`]/.test(text) && !/^-\S/.test(text)) return true;
+  if (/^-\s|^-$|^---|\s$/.test(text)) return true;
+  // ": " starts a mapping, " #" a comment; control characters and a trailing colon are not plain either.
+  // eslint-disable-next-line no-control-regex
+  if (/: |:$| #|\t|[\u0000-\u001f\u007f-\u009f\u2028\u2029\ufeff]/.test(text)) return true;
   return false;
 }
 
-function plainSafe(s: string): boolean {
-  return (
-    s.length > 0 &&
-    !INDICATOR.test(s) &&
-    !AMBIGUOUS.test(s) &&
-    !NUMBER_LIKE.test(s) &&
-    !hasControl(s) &&
-    !s.includes(": ") &&
-    !s.includes(" #") &&
-    !s.includes("\n") &&
-    !s.includes("\t") &&
-    !s.endsWith(":") &&
-    !s.endsWith(" ")
+/**
+ * A literal block keeps the text exactly; not possible with carriage returns or other control characters, nor when
+ * the first line starts with a space (that would need an indentation indicator).
+ */
+function canBeLiteralBlock(text: string): boolean {
+  if (text.startsWith(" ")) return false;
+  // eslint-disable-next-line no-control-regex
+  return !/[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u2028\u2029\ufeff]/.test(text);
+}
+
+function literalBlock(text: string, depth: number): string {
+  const pad = INDENT.repeat(Math.max(depth, 1));
+  const trailing = /\n+$/.exec(text)?.[0].length ?? 0;
+  const chomp = trailing === 0 ? "-" : trailing === 1 ? "" : "+";
+  const body = (trailing > 0 ? text.slice(0, -1) : text)
+    .split("\n")
+    .map((line) => (line === "" ? "" : pad + line))
+    .join("\n");
+  return `|${chomp}\n${body}`;
+}
+
+/** A double-quoted scalar: JSON escapes, plus the characters YAML does not allow raw in one. */
+function quote(text: string): string {
+  return JSON.stringify(text).replace(
+    /[\u007f-\u009f\u2028\u2029\ufeff]/g,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`,
   );
-}
-
-function scalarString(s: string, indent: string): string {
-  if (plainSafe(s)) return s;
-  // A literal block keeps multi-line text readable (config files in ConfigMaps, certificates, scripts).
-  const lines = s.split("\n");
-  const blockable =
-    lines.length > 1 &&
-    s.trim().length > 0 &&
-    !hasControl(s) &&
-    !s.includes("\r") &&
-    !/^[ \t]/.test(s) &&
-    !s.endsWith("\n\n") &&
-    lines.every((l) => !/[ \t]$/.test(l));
-  if (blockable) {
-    const chomp = s.endsWith("\n") ? "" : "-";
-    const body = (s.endsWith("\n") ? lines.slice(0, -1) : lines).map((l) => (l ? `${indent}${l}` : "")).join("\n");
-    return `|${chomp}\n${body}`;
-  }
-  return JSON.stringify(s);
-}
-
-function key(k: string): string {
-  return plainSafe(k) ? k : JSON.stringify(k);
-}
-
-function isScalar(value: unknown): boolean {
-  return value === null || typeof value !== "object" || (Array.isArray(value) ? value.length === 0 : Object.keys(value).length === 0);
-}
-
-function scalar(value: unknown, indent: string): string {
-  if (value === null || value === undefined) return "null";
-  if (typeof value === "string") return scalarString(value, indent);
-  if (typeof value === "number") return Number.isFinite(value) ? String(value) : ".nan";
-  if (typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return "[]";
-  return "{}";
-}
-
-function lines(value: unknown, indent: string): string[] {
-  const deeper = `${indent}  `;
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => {
-      if (isScalar(item)) return [`${indent}- ${scalar(item, deeper)}`];
-      const inner = lines(item, deeper);
-      // The first line of a nested map/list goes on the dash line.
-      const first = inner[0]!.slice(deeper.length);
-      return [`${indent}- ${first}`, ...inner.slice(1)];
-    });
-  }
-  return Object.entries(value as Record<string, unknown>)
-    .filter(([, v]) => v !== undefined)
-    .flatMap(([k, v]) => {
-      if (isScalar(v)) return [`${indent}${key(k)}: ${scalar(v, deeper)}`];
-      // Lists under a key are not indented further (kubectl style).
-      return [`${indent}${key(k)}:`, ...lines(v, Array.isArray(v) ? indent : deeper)];
-    });
-}
-
-/** YAML text of a JSON value (a map or list at the top). */
-export function toYaml(value: unknown): string {
-  if (isScalar(value)) return `${scalar(value, "  ")}\n`;
-  return `${lines(value, "").join("\n")}\n`;
 }
 
 const TOP_ORDER = ["apiVersion", "kind", "metadata", "spec", "data", "stringData", "status"];

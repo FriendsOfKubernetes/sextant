@@ -233,6 +233,7 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
     use std::time::{Duration, Instant};
 
     use super::*;
@@ -288,6 +289,7 @@ mod tests {
     }
 
     /// Collects output until `done` holds or the shell exits.
+    #[cfg(unix)]
     fn read_until(
         session: &mut ExecSession,
         done: impl Fn(&str) -> bool,

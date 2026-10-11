@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings, type ClusterInfo, type ConnectionState } from "../../api";
 import { useAppStore } from "../../app/store";
+import { usePopup } from "../../components";
 import { AddClusterDialog } from "./AddClusterDialog";
 import { ClusterSettingsDialog } from "./ClusterSettingsDialog";
 import { colorOf, displayNameOf, initialsOf } from "./clusterSettings";
@@ -107,19 +108,10 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
   const ref = useRef<HTMLUListElement>(null);
   const id = menu.cluster.id;
 
+  usePopup(ref, onClose);
   useEffect(() => {
     ref.current?.querySelector("button")?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("mousedown", onDown);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("mousedown", onDown);
-    };
-  }, [onClose]);
+  }, []);
 
   const run = (action: () => unknown) => () => {
     onClose();

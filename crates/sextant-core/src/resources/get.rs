@@ -10,10 +10,13 @@ use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
 
-/// Reads one object; `managedFields` are stripped, `apiVersion` and `kind` are always set.
+/// Reads one object; a namespaced kind without a namespace is `invalid`. `managedFields` are stripped, `apiVersion` and `kind` are always set.
 pub async fn get(mgr: &ClusterManager, cluster: &ClusterId, r: &ObjectRef) -> CoreResult<Value> {
     let client = mgr.client(cluster)?;
     let kind = resolve_kind(mgr, cluster, &r.kind).await?;
+    if kind.namespaced {
+        r.required_namespace()?;
+    }
     let api = kind.api(client, r.namespace.as_deref());
     let obj = api.get(&r.name).await?;
     to_json(obj, &kind.resource)

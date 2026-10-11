@@ -14,7 +14,8 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !document.querySelector("[aria-modal='true']")) closeDetails();
+      // An open popup or dialog takes Escape for itself.
+      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("[aria-modal='true']")) closeDetails();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

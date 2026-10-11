@@ -422,8 +422,10 @@ mod tests {
     }
 
     /// A kubeconfig with one context; its token must never reach the window.
+    #[cfg(unix)]
     const FIXTURE_TOKEN: &str = "fixture-token-not-for-events";
 
+    #[cfg(unix)]
     fn kubeconfig_fixture(dir: &std::path::Path) -> std::path::PathBuf {
         let path = dir.join("fixture-kubeconfig.yaml");
         std::fs::write(
@@ -441,6 +443,7 @@ mod tests {
     }
 
     /// The path printed by `echo "KC=$KUBECONFIG"` (not the echoed command line itself).
+    #[cfg(unix)]
     fn kubeconfig_path_in(text: &str) -> std::path::PathBuf {
         text.match_indices("KC=/")
             .map(|(i, _)| &text[i + 3..])
@@ -454,6 +457,7 @@ mod tests {
             .unwrap_or_else(|| panic!("KUBECONFIG is not set: {text:?}"))
     }
 
+    #[cfg(unix)]
     fn kubectl_available() -> bool {
         std::process::Command::new("kubectl")
             .args(["version", "--client"])
@@ -463,6 +467,7 @@ mod tests {
     }
 
     /// Text of every `data` payload so far, and whether an exit arrived.
+    #[cfg(unix)]
     fn read_text(
         events: &std_mpsc::Receiver<Value>,
         text: &mut String,

@@ -60,10 +60,7 @@ pub async fn replace_yaml(
     let kind = resolve_kind(mgr, cluster, &doc.kind).await?;
     let api = kind.api(client.clone(), Some(doc.namespace_or(&client)));
     let obj: DynamicObject = serde_json::from_value(doc.value)?;
-    let params = PostParams {
-        field_manager: Some(FIELD_MANAGER.to_owned()),
-        ..PostParams::default()
-    };
+    let params = post_params();
     let saved = api.replace(&doc.name, &params, &obj).await?;
     to_json(saved, &kind.resource)
 }
@@ -148,7 +145,7 @@ pub async fn scale(
     }
     let (api, _) = object_api(mgr, cluster, r).await?;
     let patch = json!({ "spec": { "replicas": replicas } });
-    api.patch_scale(&r.name, &PatchParams::default(), &Patch::Merge(&patch))
+    api.patch_scale(&r.name, &patch_params(), &Patch::Merge(&patch))
         .await?;
     Ok(())
 }
@@ -158,15 +155,8 @@ pub async fn restart(mgr: &ClusterManager, cluster: &ClusterId, r: &ObjectRef) -
     ensure_kind(r, "apps", &["Deployment", "StatefulSet", "DaemonSet"])?;
     let (api, _) = object_api(mgr, cluster, r).await?;
     let patch = restart_patch(&now_rfc3339());
-    api.patch(
-        &r.name,
-        &PatchParams {
-            field_manager: Some(FIELD_MANAGER.to_owned()),
-            ..PatchParams::default()
-        },
-        &Patch::Merge(&patch),
-    )
-    .await?;
+    api.patch(&r.name, &patch_params(), &Patch::Merge(&patch))
+        .await?;
     Ok(())
 }
 
@@ -180,7 +170,7 @@ pub async fn cordon(
     let nodes: Api<Node> = Api::all(mgr.client(cluster)?);
     let patch = json!({ "spec": { "unschedulable": unschedulable } });
     nodes
-        .patch(node, &PatchParams::default(), &Patch::Merge(&patch))
+        .patch(node, &patch_params(), &Patch::Merge(&patch))
         .await?;
     Ok(())
 }
@@ -204,7 +194,11 @@ pub async fn drain(mgr: &ClusterManager, cluster: &ClusterId, node: &str) -> Cor
             continue;
         };
         let api: Api<Pod> = Api::namespaced(client.clone(), namespace);
-        match api.evict(name, &EvictParams::default()).await {
+        let params = EvictParams {
+            post_options: post_params(),
+            ..EvictParams::default()
+        };
+        match api.evict(name, &params).await {
             Ok(_) => {}
             Err(err) => {
                 let err = CoreError::from(err);
@@ -237,16 +231,13 @@ pub async fn trigger_cronjob(
     r: &ObjectRef,
 ) -> CoreResult<ObjectRef> {
     ensure_kind(r, "batch", &["CronJob"])?;
-    let namespace = required_namespace(r)?;
+    let namespace = r.required_namespace()?;
     let client = mgr.client(cluster)?;
     let cronjobs: Api<CronJob> = Api::namespaced(client.clone(), namespace);
     let cronjob = cronjobs.get(&r.name).await?;
     let job = job_from_cronjob(&cronjob, &manual_job_name(&r.name, unix_seconds()));
     let jobs: Api<Job> = Api::namespaced(client, namespace);
-    let params = PostParams {
-        field_manager: Some(FIELD_MANAGER.to_owned()),
-        ..PostParams::default()
-    };
+    let params = post_params();
     let created = jobs.create(&params, &job).await?;
     Ok(ObjectRef {
         kind: KindRef {
@@ -267,16 +258,32 @@ pub async fn suspend_cronjob(
     suspend: bool,
 ) -> CoreResult<()> {
     ensure_kind(r, "batch", &["CronJob"])?;
-    let namespace = required_namespace(r)?;
+    let namespace = r.required_namespace()?;
     let cronjobs: Api<CronJob> = Api::namespaced(mgr.client(cluster)?, namespace);
     let patch = json!({ "spec": { "suspend": suspend } });
     cronjobs
-        .patch(&r.name, &PatchParams::default(), &Patch::Merge(&patch))
+        .patch(&r.name, &patch_params(), &Patch::Merge(&patch))
         .await?;
     Ok(())
 }
 
 // ---------- helpers ----------
+
+/// Parameters of a merge patch, signed by [`FIELD_MANAGER`].
+fn patch_params() -> PatchParams {
+    PatchParams {
+        field_manager: Some(FIELD_MANAGER.to_owned()),
+        ..PatchParams::default()
+    }
+}
+
+/// Parameters of a create or replace, signed by [`FIELD_MANAGER`].
+fn post_params() -> PostParams {
+    PostParams {
+        field_manager: Some(FIELD_MANAGER.to_owned()),
+        ..PostParams::default()
+    }
+}
 
 /// A client for the cluster that does not retry `429 Too Many Requests`.
 ///
@@ -421,11 +428,8 @@ async fn object_api(
 ) -> CoreResult<(Api<DynamicObject>, ResolvedKind)> {
     let client = mgr.client(cluster)?;
     let kind = resolve_kind(mgr, cluster, &r.kind).await?;
-    if kind.namespaced && r.namespace.as_deref().is_none_or(str::is_empty) {
-        return Err(CoreError::new(
-            ErrorCode::Invalid,
-            format!("{} {} needs a namespace", r.kind.kind, r.name),
-        ));
+    if kind.namespaced {
+        r.required_namespace()?;
     }
     Ok((kind.api(client, r.namespace.as_deref()), kind))
 }
@@ -443,18 +447,6 @@ fn ensure_kind(r: &ObjectRef, group: &str, kinds: &[&str]) -> CoreResult<()> {
             ),
         ))
     }
-}
-
-fn required_namespace(r: &ObjectRef) -> CoreResult<&str> {
-    r.namespace
-        .as_deref()
-        .filter(|ns| !ns.is_empty())
-        .ok_or_else(|| {
-            CoreError::new(
-                ErrorCode::Invalid,
-                format!("{} {} needs a namespace", r.kind.kind, r.name),
-            )
-        })
 }
 
 fn restart_patch(at: &str) -> Value {

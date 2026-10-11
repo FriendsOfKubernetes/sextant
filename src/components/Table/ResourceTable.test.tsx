@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type KindRef, type KubeObject, type MockBackend, type ResourceKind } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { registerAction, resetActions } from "../../features/actions/registry";
+import { DetailsPanel } from "../../layout/details/DetailsPanel";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import "../../resources";
 import { extendColumns } from "../../resources";
@@ -204,6 +205,29 @@ describe("ResourceTable", () => {
     expect(remove.mock.calls[0]![0].refs.map((r: { name: string }) => r.name)).toEqual(["pod-0001", "pod-0003"]);
   });
 
+  it("Escape closes the open context menu and leaves the details panel open", async () => {
+    registerAction("edit", { labelKey: "Edit", icon: "✎", appliesTo: () => true, run: vi.fn() });
+    const ref = { kind: POD, namespace: "default", name: "web-1" };
+    act(() => useAppStore.getState().openDetails(ref));
+    render(
+      <>
+        <ResourceTable clusterId="c1" kind={POD} actions={["edit"]} />
+        <DetailsPanel clusterId="c1" objectRef={ref} />
+      </>,
+    );
+    await snapshot([pod(1)]);
+    fireEvent.contextMenu(screen.getByText("pod-0001"));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(useAppStore.getState().details).toEqual(ref);
+
+    // With no menu open, Escape closes the details panel as before.
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(useAppStore.getState().details).toBeNull();
+  });
+
   it("shows a failed action as an error dialog", async () => {
     registerAction("edit", {
       labelKey: "Edit",
@@ -222,6 +246,20 @@ describe("ResourceTable", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
     const dialog = await screen.findByRole("dialog", { name: "Edit failed" });
     expect(dialog).toHaveTextContent("pods is forbidden");
+  });
+
+  it("before the first snapshot shows loading, not an empty table, also after a reconnect or a stray delta", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await waitFor(() => expect(backend.listenerCount("watch:watch-1")).toBe(1));
+    act(() => backend.emit("watch:watch-1", { type: "reconnecting" }));
+    expect(screen.queryByText(/No Pods found/)).not.toBeInTheDocument();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    act(() => backend.emit("watch:watch-1", { type: "delta", upserted: [], deleted: ["uid-9"] }));
+    expect(screen.queryByText(/No Pods found/)).not.toBeInTheDocument();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+
+    act(() => backend.emit("watch:watch-1", { type: "snapshot", items: [] }));
+    expect(screen.getByText(/No Pods found/)).toBeInTheDocument();
   });
 
   it("says when the selected namespaces have no objects", async () => {

@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, useSettings, type ApiError, type AppSettings, type KubeconfigSource, type Theme } from "../../api";
-import { ConfirmDialog } from "../../components";
+import { ConfirmDialog, ErrorState } from "../../components";
 import { availableLanguages } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
@@ -277,10 +277,5 @@ function KubeconfigSection() {
 
 function SaveError({ error }: { error: ApiError }) {
   const { t } = useTranslation();
-  return (
-    <div className="settings__error" role="alert">
-      <strong>{t("settings:saveFailed")}</strong>
-      {error.message && <span>{t("common:error.details", { message: error.message })}</span>}
-    </div>
-  );
+  return <ErrorState error={error} title={t("settings:saveFailed")} className="settings__error" />;
 }

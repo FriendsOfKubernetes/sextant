@@ -1,29 +1,37 @@
-.sidebar__list--nested {
+/*
+ * Sections and groups of the sidebar. `layout.css` (loaded after this file) sets the base `.sidebar__list` and
+ * `.sidebar__item`; the rules here are compound selectors so they win regardless of the order.
+ *
+ * Columns: a group's chevron (12px) + gap (4px) puts its label 16px right of the row's padding, which is exactly the
+ * extra indent of the entries inside it — the label lines up with its entries.
+ */
+.sidebar__list.sidebar__list--nested {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.sidebar__item--nested {
+.sidebar__item.sidebar__item--nested {
   padding-left: 32px;
 }
 
-.sidebar__list--nested .sidebar__list--nested .sidebar__item--nested {
+.sidebar__list--nested .sidebar__list--nested .sidebar__item.sidebar__item--nested {
   padding-left: 48px;
 }
 
-.sidebar__group {
+.sidebar__item.sidebar__group {
   display: flex;
   align-items: center;
   gap: 4px;
   font-weight: 600;
 }
 
-.sidebar__list--nested .sidebar__group {
+.sidebar__list--nested .sidebar__item.sidebar__group {
   font-weight: 500;
 }
 
 .sidebar__chevron {
+  flex: none;
   width: 12px;
   font-size: 10px;
   color: var(--color-text-muted);

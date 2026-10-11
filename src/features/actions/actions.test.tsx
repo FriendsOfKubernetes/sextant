@@ -96,6 +96,26 @@ describe("delete", () => {
     ]);
   });
 
+  it("cannot be cancelled halfway: while deleting, Cancel, Escape and × leave the dialog running", async () => {
+    let release: () => void = () => undefined;
+    const first = new Promise<void>((resolve) => (release = resolve));
+    backend.on("resource_delete", (args) => ((args.ref as { name: string }).name === "a" ? first : undefined));
+    await run("delete", CONFIG_MAP, [obj(CONFIG_MAP, "a", "demo"), obj(CONFIG_MAP, "b", "demo")]);
+    const dialog = screen.getByRole("dialog", { name: "Delete 2 ConfigMap objects?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(calls("resource_delete")).toHaveLength(1));
+
+    expect(within(dialog).getByRole("button", { name: "Cancel" })).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.getByRole("dialog", { name: "Delete 2 ConfigMap objects?" })).toBeInTheDocument();
+
+    await act(async () => release());
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(calls("resource_delete").map((a) => (a.ref as { name: string }).name)).toEqual(["a", "b"]);
+  });
+
   it("closes the details of a deleted object", async () => {
     backend.on("resource_delete", () => undefined);
     useAppStore.getState().openDetails({ kind: CONFIG_MAP, namespace: "demo", name: "a" });

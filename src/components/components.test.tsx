@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api";
 import { Age, ageParts } from "./Age";
@@ -35,6 +35,30 @@ describe("ErrorState", () => {
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("The cluster cannot be reached.");
     expect(alert).toHaveTextContent("dial tcp: connection refused");
+  });
+
+  it("takes a title, Retry and an extra action next to it", () => {
+    const onRetry = vi.fn();
+    const onReload = vi.fn();
+    render(
+      <ErrorState
+        error={new ApiError("conflict", "the object has been modified")}
+        title="Changed in the cluster"
+        onRetry={onRetry}
+        actions={
+          <button type="button" onClick={onReload}>
+            Reload
+          </button>
+        }
+      />,
+    );
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Changed in the cluster");
+    expect(alert).toHaveTextContent("the object has been modified");
+    fireEvent.click(within(alert).getByRole("button", { name: "Retry" }));
+    fireEvent.click(within(alert).getByRole("button", { name: "Reload" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onReload).toHaveBeenCalledTimes(1);
   });
 });
 

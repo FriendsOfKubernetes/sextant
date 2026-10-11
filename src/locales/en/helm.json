@@ -5,7 +5,7 @@
   },
   "missing": {
     "title": "Helm is not installed",
-    "text": "Releases can be viewed, but changing them and installing charts needs the helm command in PATH. Install Helm and restart Sextant:",
+    "text": "Releases can be viewed, but changing them and installing charts needs the helm command. Install Helm, then pick it in Settings → Helm (found in PATH or a binary you choose) — no restart needed. Install guide:",
     "short": "Needs Helm — see the hint at the top of the page"
   },
   "releases": {

@@ -8,7 +8,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { api, events, toApiError, type ApiError, type TermPayload, type Unsubscribe } from "../../api";
+import { api, events, openStream, toApiError, type ApiError, type TermPayload } from "../../api";
 
 /** Starts a session of `cols`×`rows`; resolves to its id. */
 export type TerminalSessionFactory = (cols: number, rows: number) => Promise<string>;
@@ -86,7 +86,6 @@ export function useTerminal(
     if (!terminal) return;
     let cancelled = false;
     let sessionId: string | null = null;
-    let unsubscribe: Unsubscribe | null = null;
     let lastSize = "";
     setStatus("connecting");
     setExitCode(null);
@@ -108,7 +107,6 @@ export function useTerminal(
     };
 
     const onPayload = (payload: TermPayload) => {
-      if (cancelled) return;
       switch (payload.type) {
         case "data":
           terminal.write(decodeBase64(payload.data));
@@ -129,46 +127,30 @@ export function useTerminal(
     });
     const resize = terminal.onResize(() => sendSize());
 
-    void (async () => {
-      safeFit(fitRef.current);
-      const cols = terminal.cols || DEFAULT_COLS;
-      const rows = terminal.rows || DEFAULT_ROWS;
-      let id: string;
-      try {
-        id = await factoryRef.current(cols, rows);
-      } catch (err) {
-        fail(err);
-        return;
-      }
-      if (cancelled) {
-        api.terminal.stop(id).catch(() => undefined);
-        return;
-      }
-      const off = await events.onTerm(id, onPayload);
-      if (cancelled) {
-        off();
-        api.terminal.stop(id).catch(() => undefined);
-        return;
-      }
-      unsubscribe = off;
-      sessionId = id;
-      sessionRef.current = id;
-      setStatus((s) => (s === "connecting" ? "running" : s));
-      // We listen now: the first resize releases the output the backend held back.
-      try {
+    safeFit(fitRef.current);
+    const cols = terminal.cols || DEFAULT_COLS;
+    const rows = terminal.rows || DEFAULT_ROWS;
+    const close = openStream<TermPayload>({
+      start: () => factoryRef.current(cols, rows),
+      listen: events.onTerm,
+      stop: api.terminal.stop,
+      onEvent: onPayload,
+      onListening: (id) => {
+        sessionId = id;
+        sessionRef.current = id;
+        setStatus((s) => (s === "connecting" ? "running" : s));
+        // We listen now: the first resize releases the output the backend held back.
         lastSize = `${terminal.cols}x${terminal.rows}`;
-        await api.terminal.resize(id, terminal.cols, terminal.rows);
-      } catch (err) {
-        fail(err);
-      }
-    })();
+        api.terminal.resize(id, terminal.cols, terminal.rows).catch(fail);
+      },
+      onStartError: fail,
+    });
 
     return () => {
       cancelled = true;
       input.dispose();
       resize.dispose();
-      unsubscribe?.();
-      if (sessionId) api.terminal.stop(sessionId).catch(() => undefined);
+      close();
       sessionRef.current = null;
     };
   }, [terminal, attempt]);

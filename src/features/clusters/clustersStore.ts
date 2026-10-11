@@ -14,6 +14,7 @@ import {
   type Unsubscribe,
 } from "../../api";
 import { useAppStore } from "../../app/store";
+import { refreshClusterKinds } from "../../resources/useKinds";
 import { startViewPersistence } from "./viewPersistence";
 
 export interface ClustersState {
@@ -52,7 +53,10 @@ export function stateOf(id: ClusterId): ConnectionState {
 }
 
 function setClusterState(id: ClusterId, state: ConnectionState): void {
+  const was = useClustersStore.getState().states[id]?.state;
   useClustersStore.setState((s) => ({ states: { ...s.states, [id]: state } }));
+  // A new connection may serve other kinds (a CRD created since the last one): discovery is read again.
+  if (state.state === "connected" && was !== "connected") refreshClusterKinds(id);
 }
 
 /** Re-reads the kubeconfig files ("Refresh"). */

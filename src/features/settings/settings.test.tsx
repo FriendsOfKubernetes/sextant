@@ -63,6 +63,26 @@ describe("Settings page", () => {
     expect(within(theme).getByRole("radio", { name: "Dark" })).toBeChecked();
   });
 
+  it("shows a failed save as an error with its code and the backend's message", async () => {
+    setup();
+    renderPage();
+    const theme = screen.getByRole("radiogroup", { name: "Theme" });
+    await waitFor(() => expect(within(theme).getByRole("radio", { name: "System" })).toBeChecked());
+    backend.restore();
+    backend = mockBackend({
+      kubeconfig_sources: () => sources,
+      helm_status: () => helm,
+      settings_update: () => {
+        throw { code: "other", message: "disk is full" };
+      },
+    });
+    fireEvent.click(within(theme).getByRole("radio", { name: "Dark" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Could not save settings");
+    expect(alert).toHaveTextContent("disk is full");
+    expect(alert).toHaveAttribute("data-code", "other");
+  });
+
   it("offers the languages found in src/locales", async () => {
     setup();
     renderPage();

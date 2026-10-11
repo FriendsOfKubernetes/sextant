@@ -3,7 +3,17 @@
 // Starting the stream is `api.logs.start`, which answers with the stream id; the window can listen to
 // `logs:<id>` only afterwards, and the backend holds the first batch back long enough for that.
 import { useCallback, useEffect, useState } from "react";
-import { api, events, toApiError, type ApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
+import {
+  api,
+  events,
+  openStream,
+  toApiError,
+  type ApiError,
+  type ClusterId,
+  type LogOptions,
+  type LogUpdate,
+  type ObjectRef,
+} from "../../api";
 import { appendLines, EMPTY_BUFFER, type LogBuffer } from "./buffer";
 
 export type LogStatus = "connecting" | "streaming" | "ended" | "error";
@@ -33,47 +43,30 @@ export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogO
 
   useEffect(() => {
     const [cluster, podRef, logOptions] = JSON.parse(key) as [ClusterId, ObjectRef, LogOptions];
-    let cancelled = false;
-    let streamId: string | null = null;
-    let unlisten: (() => void) | null = null;
     const update = (fn: (s: LogStreamState) => LogStreamState) =>
       setState((prev) => ({ key, value: fn(prev.key === key ? prev.value : INITIAL) }));
 
-    api.logs.start(cluster, podRef, logOptions).then(
-      async (id) => {
-        if (cancelled) {
-          void api.logs.stop(id).catch(() => undefined);
-          return;
+    return openStream<LogUpdate>({
+      start: () => api.logs.start(cluster, podRef, logOptions),
+      listen: events.onLogs,
+      stop: api.logs.stop,
+      // Events may arrive before the subscription is confirmed: only a stream still "connecting" becomes "streaming".
+      onListening: () => update((s) => (s.status === "connecting" ? { ...s, status: "streaming" } : s)),
+      onEvent: (u) => {
+        switch (u.type) {
+          case "lines":
+            update((s) => ({ ...s, buffer: appendLines(s.buffer, u.lines) }));
+            break;
+          case "ended":
+            update((s) => (s.status === "error" ? s : { ...s, status: "ended" }));
+            break;
+          case "error":
+            update((s) => ({ ...s, status: "error", error: toApiError(u) }));
+            break;
         }
-        streamId = id;
-        update((s) => ({ ...s, status: "streaming" }));
-        const off = await events.onLogs(id, (u) => {
-          if (cancelled) return;
-          switch (u.type) {
-            case "lines":
-              update((s) => ({ ...s, buffer: appendLines(s.buffer, u.lines) }));
-              break;
-            case "ended":
-              update((s) => (s.status === "error" ? s : { ...s, status: "ended" }));
-              break;
-            case "error":
-              update((s) => ({ ...s, status: "error", error: toApiError(u) }));
-              break;
-          }
-        });
-        if (cancelled) off();
-        else unlisten = off;
       },
-      (err: unknown) => {
-        if (!cancelled) update((s) => ({ ...s, status: "error", error: toApiError(err) }));
-      },
-    );
-
-    return () => {
-      cancelled = true;
-      unlisten?.();
-      if (streamId) void api.logs.stop(streamId).catch(() => undefined);
-    };
+      onStartError: (err) => update((s) => ({ ...s, status: "error", error: toApiError(err) })),
+    });
   }, [key]);
 
   const reconnect = useCallback(() => setAttempt((n) => n + 1), []);
