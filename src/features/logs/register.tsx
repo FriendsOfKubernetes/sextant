@@ -3,7 +3,7 @@ import { registerDockTab } from "../../layout/dock/registry";
 import { registerAction } from "../actions/registry";
 import "./logs.css";
 import { LogsTab } from "./LogsTab";
-import { openLogsTab } from "./logsTab";
+import { openLogsTab } from "./openLogsTab";
 import { PodPicker } from "./PodPicker";
 import { labelSelectorOf } from "./selector";
 

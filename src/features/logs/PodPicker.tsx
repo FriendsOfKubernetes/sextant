@@ -2,7 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KubeObject } from "../../api";
 import { Dialog, EmptyState, ErrorState } from "../../components";
-import { openLogsTab, POD_KIND } from "./logsTab";
+import { openLogsTab, POD_KIND } from "./openLogsTab";
 import { labelSelectorOf } from "./selector";
 
 export interface PodPickerProps {

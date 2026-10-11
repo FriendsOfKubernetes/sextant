@@ -2,5 +2,5 @@
 import "./register";
 
 export { LogsTab, type LogContainer, type LogsPayload } from "./LogsTab";
-export { openLogsTab } from "./logsTab";
+export { openLogsTab } from "./openLogsTab";
 export { LOG_BUFFER_LIMIT } from "./buffer";
