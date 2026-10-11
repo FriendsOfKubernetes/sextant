@@ -608,10 +608,17 @@ current-context: {name}
 
     #[test]
     fn cluster_id_is_sha256_of_path_and_context() {
-        // printf '/tmp/a\0ctx' | sha256sum | cut -c1-16
+        // The hashed path is normalized: `/tmp/a` stays as is on Unix and becomes `\tmp\a` on Windows.
+        // Unix:    printf '/tmp/a\0ctx' | sha256sum | cut -c1-16
+        // Windows: printf '\\tmp\\a\0ctx' | sha256sum | cut -c1-16
+        let expected = if cfg!(windows) {
+            "5f4ba2ecb318bd7d"
+        } else {
+            "e3b2065058c31c9b"
+        };
         assert_eq!(
             ClusterId::for_context(Path::new("/tmp/a"), "ctx").as_str(),
-            "e3b2065058c31c9b"
+            expected
         );
     }
 
