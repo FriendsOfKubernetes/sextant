@@ -7,6 +7,7 @@
 //! Every type that crosses the IPC boundary derives `ts_rs::TS`; `cargo test` regenerates the TypeScript
 //! bindings (see `.cargo/config.toml` and `npm run gen:types`).
 
+pub mod argocd;
 pub mod cluster;
 pub mod error;
 pub mod exec;

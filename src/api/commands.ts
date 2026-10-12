@@ -1,6 +1,8 @@
 // One function per backend command (interfaces.md, «Команды»). Argument names are the camelCase names the
 // Rust commands expect. Every function rejects with `ApiError`.
 import type { AppSettings } from "./generated/AppSettings";
+import type { ArgoLogin } from "./generated/ArgoLogin";
+import type { ArgoStatus } from "./generated/ArgoStatus";
 import type { ChartHit } from "./generated/ChartHit";
 import type { ChartTarget } from "./generated/ChartTarget";
 import type { ClusterId } from "./generated/ClusterId";
@@ -16,6 +18,7 @@ import type { HelmRepo } from "./generated/HelmRepo";
 import type { HelmStatus } from "./generated/HelmStatus";
 import type { KubeconfigSource } from "./generated/KubeconfigSource";
 import type { LogOptions } from "./generated/LogOptions";
+import type { ManagedResource } from "./generated/ManagedResource";
 import type { MetricsStatus } from "./generated/MetricsStatus";
 import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
@@ -172,4 +175,23 @@ export const settings = {
 
 export const files = {
   save: (path: string, contents: string) => call<void>("file_save", { path, contents }),
+};
+
+/**
+ * Argo CD API through a port forward to `argocd-server`. Passwords and tokens only go in (`login`); nothing the
+ * backend answers carries one.
+ */
+export const argocd = {
+  /** Whether Argo CD is signed in for the cluster (does not sign in). */
+  status: (clusterId: ClusterId) => call<ArgoStatus>("argocd_status", { clusterId }),
+  /** Signs in with a user name and password or an API token; `remember` saves it in the OS credential store. */
+  login: (clusterId: ClusterId, login: ArgoLogin) => call<ArgoStatus>("argocd_login", { clusterId, login }),
+  /** Ends the session; `forget` also deletes the saved login. */
+  logout: (clusterId: ClusterId, forget: boolean) =>
+    call<ArgoStatus>("argocd_logout", { clusterId, options: { forget } }),
+  /**
+   * Desired (Git) and live states of an Application's resources; Secret values are `""`. Signs in by itself from the
+   * saved login or the standard secrets; rejects with `unauthorized` when none works (show the sign-in window).
+   */
+  diff: (clusterId: ClusterId, app: ObjectRef) => call<ManagedResource[]>("argocd_diff", { clusterId, app }),
 };

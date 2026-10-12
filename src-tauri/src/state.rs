@@ -14,6 +14,8 @@ use sextant_core::{
 use tokio::sync::mpsc;
 use tokio::task::AbortHandle;
 
+use crate::commands::argocd::{ArgoSessions, KeyringStore};
+
 /// Everything the commands share. Registered with `app.manage(AppState::new(..))`.
 pub struct AppState {
     pub registry: Arc<RwLock<KubeconfigRegistry>>,
@@ -24,6 +26,8 @@ pub struct AppState {
     pub subscriptions: Subscriptions,
     /// Terminal sessions: container exec and local shells.
     pub sessions: Sessions,
+    /// Argo CD sessions (tokens in memory only) and their port forwards to `argocd-server`.
+    pub argocd: ArgoSessions,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -43,15 +47,18 @@ impl AppState {
             settings,
             subscriptions: Subscriptions::default(),
             sessions: Sessions::default(),
+            argocd: ArgoSessions::new(Arc::new(KeyringStore::os())),
             streams_generation: AtomicU64::new(0),
         }
     }
 
-    /// Stops every subscription, session and port forward of a cluster (on disconnect).
+    /// Stops every subscription, session and port forward of a cluster (on disconnect), and forgets its Argo CD
+    /// session.
     pub fn close_cluster(&self, cluster: &ClusterId) {
         self.subscriptions.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
         self.forwarder.stop_cluster(cluster);
+        self.argocd.close_cluster(cluster);
     }
 
     /// Stops everything (window closed, application exiting). Terminal sessions drop their temporary kubeconfig
@@ -59,6 +66,7 @@ impl AppState {
     pub fn close_all(&self) {
         self.reset_streams();
         self.forwarder.stop_all();
+        self.argocd.close_all();
     }
 
     /// Stops every watch subscription, log stream and terminal session, but keeps connections and port forwards

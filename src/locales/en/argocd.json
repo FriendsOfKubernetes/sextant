@@ -96,5 +96,67 @@
     "title": "Terminate the operation of {{name}}?",
     "text": "Argo CD stops the running sync of {{name}}. What it already applied stays as it is.",
     "confirm": "Terminate"
+  },
+  "diff": {
+    "action": "Diff",
+    "title": "Diff: {{name}}",
+    "loading": "Reading the diff from Argo CD…",
+    "summary_one": "{{changed}} of {{total}} resource differs",
+    "summary_other": "{{changed}} of {{total}} resources differ",
+    "resources": "Resources of the application",
+    "empty": "Argo CD manages no resources for this application.",
+    "desired": "Desired (Git)",
+    "live": "Live (cluster)",
+    "desiredLabel": "Desired state of {{resource}}",
+    "liveLabel": "Live state of {{resource}}",
+    "secretHidden": "Secret values are hidden on both sides.",
+    "state": {
+      "changed": "Differs",
+      "inSync": "In sync",
+      "missingLive": "Not in the cluster yet",
+      "missingTarget": "Not in Git (to be pruned)"
+    },
+    "signedIn": "Signed in to Argo CD",
+    "signedInAs": "Signed in to Argo CD as {{user}}",
+    "source": {
+      "secret": "from the standard Argo CD secret",
+      "saved": "with the saved login",
+      "manual": "until Sextant is closed"
+    },
+    "reload": "Reload",
+    "retry": "Try again",
+    "signOut": "Sign out",
+    "forget": "Forget saved login",
+    "errors": {
+      "forbidden": "Argo CD does not show this application to the signed-in account.",
+      "notFound": "Argo CD was not found in this cluster: there is no argocd-server Service."
+    }
+  },
+  "login": {
+    "title": "Sign in to Argo CD",
+    "intro": "Sextant could not sign in to Argo CD in {{namespace}} by itself. Sign in with a local user or an API token.",
+    "expired": "The Argo CD session has expired and signing in again with the saved login did not work.",
+    "noLocalUsers": "This Argo CD has no local users who may sign in with a password: use an API token.",
+    "sso": "Sign-in through SSO is not supported in Sextant.",
+    "mode": {
+      "label": "How to sign in",
+      "password": "User and password",
+      "token": "API token"
+    },
+    "username": "User",
+    "password": "Password",
+    "token": "API token",
+    "remember": "Remember on this computer (system keychain)",
+    "hint": "Before asking, Sextant tries the saved login, the admin password from argocd-initial-admin-secret and API tokens in Secrets labelled app.kubernetes.io/part-of=argocd. argocd-secret holds only a bcrypt hash of the admin password, so it cannot be used to sign in.",
+    "submit": "Sign in",
+    "signingIn": "Signing in…",
+    "errors": {
+      "invalid": "Argo CD refused the user name or password.",
+      "invalidToken": "Argo CD refused the API token: it is wrong, expired or revoked.",
+      "ssoOnly": "This Argo CD signs in only through SSO, which Sextant does not support: use an API token.",
+      "unreachable": "Argo CD is not reachable: its server has no ready pod or does not answer.",
+      "incomplete": "Enter a user name and password, or an API token.",
+      "other": "Signing in to Argo CD did not work."
+    }
   }
 }

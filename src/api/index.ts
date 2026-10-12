@@ -14,6 +14,7 @@ export const api = {
   helm: commands.helm,
   settings: commands.settings,
   files: commands.files,
+  argocd: commands.argocd,
   streams: commands.streams,
   dialog: { openFile: openFileDialog, saveFile: saveFileDialog },
   /** The operating system: `openUrl(url)` opens a link in the default browser. */

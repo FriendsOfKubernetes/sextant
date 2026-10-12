@@ -73,6 +73,10 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         settings::settings_update,
         settings::settings_status,
         files::file_save,
+        argocd::argocd_status,
+        argocd::argocd_login,
+        argocd::argocd_logout,
+        argocd::argocd_diff,
     ])
 }
 

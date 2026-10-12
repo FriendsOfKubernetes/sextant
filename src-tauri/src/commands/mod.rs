@@ -2,6 +2,7 @@
 //! One file per feature; `lib.rs` registers them all.
 
 pub mod actions;
+pub mod argocd;
 pub mod clusters;
 pub mod files;
 pub mod helm;

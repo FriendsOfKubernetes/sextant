@@ -32,6 +32,9 @@ serde_json.workspace = true
 ts-rs.workspace = true
 portable-pty.workspace = true
 base64.workspace = true
+# Saved Argo CD logins in the OS credential store: Keychain (macOS), Credential Manager (Windows), Secret Service
+# over D-Bus (Linux; libdbus is already linked by tao), encrypted with pure-Rust crypto.
+keyring = { version = "3.6.3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 
 # In-app updates (desktop only): checks and installs signed releases; `process` relaunches after installing.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

@@ -74,6 +74,10 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("settings_update", Some("settings")),
     ("settings_status", None),
     ("file_save", Some("path")),
+    ("argocd_status", Some("clusterId")),
+    ("argocd_login", Some("clusterId")),
+    ("argocd_logout", Some("clusterId")),
+    ("argocd_diff", Some("clusterId")),
 ];
 
 struct Harness {
@@ -230,6 +234,45 @@ fn optional_arguments_of_changed_commands_may_be_left_out() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "helmMissing", "{err}");
+}
+
+#[test]
+fn argocd_commands_on_a_cluster_that_is_not_connected_fail_without_echoing_the_password() {
+    let h = harness();
+    let login = json!({ "username": "admin", "password": "pw-echo-42", "remember": true });
+    let app = json!({ "kind": { "group": "argoproj.io", "version": "v1alpha1", "kind": "Application" }, "namespace": "argocd", "name": "a" });
+
+    let status = invoke(&h, "argocd_status", json!({ "clusterId": "nope" })).unwrap_err();
+    let signed = invoke(
+        &h,
+        "argocd_login",
+        json!({ "clusterId": "nope", "login": login }),
+    )
+    .unwrap_err();
+    let out = invoke(
+        &h,
+        "argocd_logout",
+        json!({ "clusterId": "nope", "options": { "forget": true } }),
+    )
+    .unwrap_err();
+    let diff = invoke(
+        &h,
+        "argocd_diff",
+        json!({ "clusterId": "nope", "app": app }),
+    )
+    .unwrap_err();
+    let empty = invoke(
+        &h,
+        "argocd_login",
+        json!({ "clusterId": "nope", "login": { "remember": false } }),
+    )
+    .unwrap_err();
+
+    for err in [&status, &signed, &out, &diff] {
+        assert_eq!(err["code"], "notFound", "{err}");
+    }
+    assert_eq!(empty["code"], "invalid", "{empty}");
+    assert!(!signed.to_string().contains("pw-echo-42"));
 }
 
 #[test]
@@ -479,6 +522,9 @@ fn later_argument_names_match_the_frontend() {
             json!({ "clusterId": "c", "name": "n" }),
             "options",
         ),
+        ("argocd_login", json!({ "clusterId": "c" }), "login"),
+        ("argocd_logout", json!({ "clusterId": "c" }), "options"),
+        ("argocd_diff", json!({ "clusterId": "c" }), "app"),
     ];
     for (cmd, args, next) in cases {
         let err = invoke(&h, cmd, args).expect_err(cmd);

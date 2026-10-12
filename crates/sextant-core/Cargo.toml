@@ -28,6 +28,12 @@ sha2.workspace = true
 # The connection's own retry policy (`cluster::RetryPolicy`) plugs into kube's client stack; same versions as kube-client.
 tower = { version = "0.5.3", default-features = false, features = ["retry", "buffer"] }
 http = "1.5"
+# Argo CD API client (`argocd.rs`) over a local port forward: the HTTP/TLS stack kube already brings, ring only.
+hyper = { version = "1.12", default-features = false, features = ["client", "http1"] }
+hyper-util = { version = "0.1.21", default-features = false, features = ["tokio"] }
+http-body-util = "0.1.5"
+rustls = { version = "0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26.6", default-features = false, features = ["tls12"] }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

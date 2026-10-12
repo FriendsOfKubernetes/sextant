@@ -1,5 +1,7 @@
 // Re-exports of the generated IPC types, so feature code can `import type { ObjectRef } from "src/api"`.
 export type { AppSettings } from "./generated/AppSettings";
+export type { ArgoLogin } from "./generated/ArgoLogin";
+export type { ArgoStatus } from "./generated/ArgoStatus";
 export type { ChartHit } from "./generated/ChartHit";
 export type { ChartTarget } from "./generated/ChartTarget";
 export type { ClusterId } from "./generated/ClusterId";
@@ -8,6 +10,7 @@ export type { ClusterSettings } from "./generated/ClusterSettings";
 export type { ClusterStatePayload } from "./generated/ClusterStatePayload";
 export type { ConnectionState } from "./generated/ConnectionState";
 export type { CoreError } from "./generated/CoreError";
+export type { CredentialSource } from "./generated/CredentialSource";
 export type { DrainOptions } from "./generated/DrainOptions";
 export type { DrainPreview } from "./generated/DrainPreview";
 export type { ErrorCode } from "./generated/ErrorCode";
@@ -22,6 +25,7 @@ export type { KindRef } from "./generated/KindRef";
 export type { KubeconfigSource } from "./generated/KubeconfigSource";
 export type { LogOptions } from "./generated/LogOptions";
 export type { LogUpdate } from "./generated/LogUpdate";
+export type { ManagedResource } from "./generated/ManagedResource";
 export type { MetricsStatus } from "./generated/MetricsStatus";
 export type { NodeUsage } from "./generated/NodeUsage";
 export type { ObjectRef } from "./generated/ObjectRef";
