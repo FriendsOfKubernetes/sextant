@@ -1,6 +1,6 @@
 // JSON → YAML, the one writer for both the details panel (read-only view) and the editor (text sent back to the
-// server). There is no YAML library in the project and parsing is the backend's job (`resource_replace`,
-// `resource_apply`), so there is no parser here.
+// server). Parsing is the backend's job (`resource_replace`, `resource_apply`), so the app has no YAML parser; the
+// `yaml` package is a dev dependency only, for the round-trip tests of this writer.
 //
 // Block style, two-space indent, lists under a key not indented further (kubectl style). A string is quoted whenever
 // plain YAML would read it as something else (a number, a bool, null, a date, an indicator, `: `, ` #`…), so saving
@@ -83,11 +83,13 @@ function needsQuotes(text: string): boolean {
 }
 
 /**
- * A literal block keeps the text exactly; not possible with carriage returns or other control characters, nor when
- * the first line starts with a space (that would need an indentation indicator).
+ * A literal block keeps the text exactly only when a parser reads the same lines back: never with carriage returns or
+ * other control characters; not when there is no non-empty line (newlines only — the block would read as ""), nor
+ * when the first non-empty line starts with a space (the parser takes its indentation as the block's own).
  */
 function canBeLiteralBlock(text: string): boolean {
-  if (text.startsWith(" ")) return false;
+  const firstLine = text.split("\n").find((line) => line !== "");
+  if (firstLine === undefined || firstLine.startsWith(" ")) return false;
   // eslint-disable-next-line no-control-regex
   return !/[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u2028\u2029\ufeff]/.test(text);
 }

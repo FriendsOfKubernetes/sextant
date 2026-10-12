@@ -11,7 +11,7 @@ use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
-pub use get::get;
+pub use get::{get, get_full, secret_value};
 pub use mutate::{
     apply_yaml, cordon, delete, drain, replace_yaml, restart, scale, suspend_cronjob,
     trigger_cronjob,

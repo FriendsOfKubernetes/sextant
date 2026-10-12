@@ -2,9 +2,10 @@
 // that were created or changed, or the error naming the failing document; the text is kept either way.
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type ApiError, type ClusterId, type ObjectRef } from "../../api";
+import { api, ApiError, toApiError, type ClusterId, type ObjectRef } from "../../api";
 import { ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
+import { hasHiddenValues } from "../details/secrets";
 import { YamlEditor } from "./YamlEditor";
 
 export interface CreateTabPayload {
@@ -25,8 +26,13 @@ export function CreateTab({ tab }: DockTabProps) {
   const [error, setError] = useState<ApiError | null>(null);
 
   const apply = async () => {
-    setApplying(true);
     setApplied(null);
+    // Text copied from a Secret shown without its values would replace every value with an empty string.
+    if (hasHiddenValues(text)) {
+      setError(new ApiError("invalid", t("details:secret.reloadBeforeSave")));
+      return;
+    }
+    setApplying(true);
     setError(null);
     try {
       setApplied(await api.resources.apply(clusterId, text));

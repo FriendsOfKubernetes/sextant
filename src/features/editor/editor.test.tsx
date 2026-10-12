@@ -163,6 +163,78 @@ describe("Edit tab", () => {
   });
 });
 
+describe("Edit tab of a Secret", () => {
+  const secretRef: ObjectRef = { kind: { group: "", version: "v1", kind: "Secret" }, namespace: "demo", name: "creds" };
+  const MARKER = "sextant.dev/values-hidden";
+
+  /** The Secret as `resource_get_full` returns it: values included. */
+  function fullSecret(resourceVersion: string): KubeObject {
+    return {
+      apiVersion: "v1",
+      kind: "Secret",
+      metadata: { name: "creds", namespace: "demo", resourceVersion },
+      type: "Opaque",
+      data: { token: "bWFkZS11cC10b2tlbg==" },
+    };
+  }
+
+  /** The Secret as the watch, `resource_get` and `resource_replace` return it: keys only, marker set. */
+  function hiddenSecret(resourceVersion: string): KubeObject {
+    const obj = fullSecret(resourceVersion);
+    return { ...obj, metadata: { ...obj.metadata, annotations: { [MARKER]: "true" } }, data: { token: "" } };
+  }
+
+  let full: KubeObject;
+
+  beforeEach(() => {
+    full = fullSecret("1");
+    backend.on("resource_get", () => hiddenSecret("1"));
+    backend.on("resource_get_full", () => structuredClone(full));
+  });
+
+  async function openSecretEditor() {
+    render(<Shell />);
+    act(() => {
+      openEditTab("c1", secretRef);
+    });
+    await waitFor(() => expect(editorText()).toContain("token: bWFkZS11cC10b2tlbg=="));
+  }
+
+  it("loads the whole object with resource_get_full", async () => {
+    await openSecretEditor();
+    expect(backend.calls.find((c) => c.cmd === "resource_get_full")?.args).toEqual({ clusterId: "c1", ref: secretRef });
+    expect(backend.calls.some((c) => c.cmd === "resource_get")).toBe(false);
+    expect(editorText()).not.toContain(MARKER);
+  });
+
+  it("refuses to save text whose values were hidden and asks to reload", async () => {
+    await openSecretEditor();
+    backend.on("resource_replace", () => hiddenSecret("2"));
+    typeText(editorText().replace("  namespace: demo", `  namespace: demo\n  annotations:\n    ${MARKER}: "true"`));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/reload/i);
+    expect(backend.calls.some((c) => c.cmd === "resource_replace")).toBe(false);
+    expect(editorText()).toContain(MARKER);
+  });
+
+  it("after saving shows the stored Secret with its values again, ready for the next save", async () => {
+    await openSecretEditor();
+    backend.on("resource_replace", () => {
+      full = fullSecret("2");
+      return hiddenSecret("2");
+    });
+    typeText(editorText().replace("type: Opaque", "type: Opaque\n"));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Saved.")).toBeInTheDocument();
+    expect(editorText()).toContain('resourceVersion: "2"');
+    expect(editorText()).toContain("token: bWFkZS11cC10b2tlbg==");
+    expect(editorText()).not.toContain(MARKER);
+  });
+});
+
 describe("Create resource tab", () => {
   it("opens from the dock's + button and applies several documents", async () => {
     useAppStore.setState({ activeClusterId: "c1" });
@@ -204,6 +276,18 @@ describe("Create resource tab", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("document 2 (Deployment web)");
     expect(editorText()).toBe("apiVersion: v1\nkind: ConfigMap\n");
+  });
+
+  it("refuses text copied from a Secret whose values were hidden", async () => {
+    useAppStore.setState({ activeClusterId: "c1" });
+    render(<Shell />);
+    fireEvent.click(screen.getByRole("button", { name: "Create resource" }));
+    await screen.findByRole("tab", { name: "Create resource" });
+    typeText('apiVersion: v1\nkind: Secret\nmetadata:\n  name: creds\n  annotations:\n    sextant.dev/values-hidden: "true"\ndata:\n  token: ""\n');
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/reload/i);
+    expect(backend.calls.some((c) => c.cmd === "resource_apply")).toBe(false);
   });
 
   it("is offered only with an active cluster", () => {

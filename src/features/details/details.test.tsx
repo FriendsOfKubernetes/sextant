@@ -185,31 +185,52 @@ describe("details of other kinds", () => {
 
 describe("secrets", () => {
   const SECRET_REF: ObjectRef = { kind: { group: "", version: "v1", kind: "Secret" }, namespace: "sextant-demo", name: "demo-secret" };
+  const VALUES: Record<string, string> = { password: "not-a-real-password", username: "demo" };
 
-  it("hides every value until Show is pressed for that key, then shows it decoded", async () => {
+  beforeEach(() => {
+    wb.backend.on("secret_value", (args) => VALUES[args.key as string]);
+  });
+
+  const valueCalls = () => wb.backend.calls.filter((c) => c.cmd === "secret_value").map((c) => c.args);
+
+  it("hides every value until Show is pressed for that key, then asks the backend for that one value", async () => {
     await openDetails(secret, SECRET_REF);
     const panel = document.querySelector<HTMLElement>(".details")!;
     expect(panel.textContent).not.toContain("not-a-real-password");
-    expect(panel.textContent).not.toContain("bm90LWEtcmVhbC1wYXNzd29yZA==");
-    expect(panel.textContent).not.toContain("ZGVtbw==");
+    expect(valueCalls()).toEqual([]);
 
     fireEvent.click(screen.getByRole("button", { name: "Show value of password" }));
-    expect(screen.getByText("not-a-real-password")).toBeInTheDocument();
-    // The other key stays hidden.
+    expect(await screen.findByText("not-a-real-password")).toBeInTheDocument();
+    expect(valueCalls()).toEqual([{ clusterId: "c1", namespace: "sextant-demo", name: "demo-secret", key: "password" }]);
+    // The other key stays hidden and is not fetched.
     expect(screen.queryByText("demo")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Hide value of password" }));
     expect(panel.textContent).not.toContain("not-a-real-password");
   });
 
+  it("shows why a binary value cannot be shown", async () => {
+    wb.backend.on("secret_value", () => {
+      throw { code: "invalid", message: "binary value, 3 bytes" };
+    });
+    await openDetails(secret, SECRET_REF);
+    fireEvent.click(screen.getByRole("button", { name: "Show value of password" }));
+    expect(await screen.findByText(/binary value, 3 bytes/)).toBeInTheDocument();
+  });
+
   it("is hidden again when the secret is opened again", async () => {
     await openDetails(secret, SECRET_REF);
     fireEvent.click(screen.getByRole("button", { name: "Show value of username" }));
-    expect(screen.getByText("demo")).toBeInTheDocument();
+    expect(await screen.findByText("demo")).toBeInTheDocument();
     cleanup();
     await openDetails(secret, SECRET_REF);
     expect(screen.queryByText("demo")).toBeNull();
     expect(screen.getByRole("button", { name: "Show value of username" })).toBeInTheDocument();
+  });
+
+  it("does not list the hidden-values marker among the annotations", async () => {
+    await openDetails(secret, SECRET_REF);
+    expect(document.querySelector(".details")!.textContent).not.toContain("sextant.dev/values-hidden");
   });
 });
 

@@ -1,10 +1,10 @@
-// ConfigMap (every key with its value) and Secret (keys with hidden values; "Show" decodes one value from base64).
-import { useState } from "react";
+// ConfigMap (every key with its value) and Secret (keys only: the backend sends no values; "Show" reads one).
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { KubeObject } from "../../../api";
+import { api, toApiError, type ApiError, type ClusterId, type KubeObject } from "../../../api";
 import { status } from "../../../resources";
-import { decodeBase64 } from "../secrets";
 import { Block, Fields, KINDS, link, muted, nsOf, pre, table, type FieldRow } from "../ui";
+import type { KindViewProps } from "./index";
 
 const { get, record, str } = status;
 
@@ -29,18 +29,21 @@ export function ConfigMapDetails({ obj }: { obj: KubeObject }) {
   );
 }
 
-export function SecretDetails({ obj }: { obj: KubeObject }) {
+export function SecretDetails({ obj, clusterId }: KindViewProps) {
   const { t } = useTranslation();
   const annotations = record(obj.metadata?.annotations);
+  const namespace = obj.metadata?.namespace ?? "";
+  const name = obj.metadata?.name ?? "";
   const rows: FieldRow[] = [
     ["type", str(get(obj, "type"))],
     ["serviceAccount", link(KINDS.serviceAccount, str(annotations["kubernetes.io/service-account.name"]), nsOf(obj))],
   ];
+  // The backend sends the keys with empty values; each value is read on its own when asked for.
   const data = table(
     [t("details:columns.key"), t("details:columns.value")],
-    Object.entries(record(get(obj, "data"))).map(([key, value]) => [
-      key,
-      <SecretValue key={key} name={key} value={String(value)} />,
+    Object.keys(record(get(obj, "data"))).map((field) => [
+      field,
+      <SecretValue key={field} clusterId={clusterId} namespace={namespace} name={name} field={field} />,
     ]),
   );
   return (
@@ -51,22 +54,58 @@ export function SecretDetails({ obj }: { obj: KubeObject }) {
   );
 }
 
-/** Hidden until "Show"; the state lives in the panel, so reopening the secret hides it again. */
-function SecretValue({ name, value }: { name: string; value: string }) {
+type ValueState =
+  | { phase: "hidden" }
+  | { phase: "loading" }
+  | { phase: "shown"; value: string }
+  | { phase: "failed"; error: ApiError };
+
+interface SecretValueProps {
+  clusterId: ClusterId;
+  namespace: string;
+  name: string;
+  field: string;
+}
+
+/**
+ * Hidden until "Show", which reads this one value from the backend (`secret_value`); "Hide" forgets it. The state
+ * lives in the panel, so reopening the secret hides it again.
+ */
+function SecretValue({ clusterId, namespace, name, field }: SecretValueProps) {
   const { t } = useTranslation();
-  const [shown, setShown] = useState(false);
+  const [state, setState] = useState<ValueState>({ phase: "hidden" });
+  // A reply that arrives after "Hide" (or after a newer "Show") is dropped.
+  const request = useRef(0);
+
+  const toggle = () => {
+    const id = ++request.current;
+    if (state.phase !== "hidden") {
+      setState({ phase: "hidden" });
+      return;
+    }
+    setState({ phase: "loading" });
+    api.resources.secretValue(clusterId, namespace, name, field).then(
+      (value) => {
+        if (request.current === id) setState({ phase: "shown", value });
+      },
+      (err: unknown) => {
+        if (request.current === id) setState({ phase: "failed", error: toApiError(err) });
+      },
+    );
+  };
+
   let content;
-  if (!shown) content = muted(t("details:secret.hidden"));
-  else {
-    const decoded = decodeBase64(value);
-    content = decoded === null ? muted(t("details:secret.notBase64")) : pre(decoded);
-  }
-  const label = t(shown ? "details:secret.hideKey" : "details:secret.showKey", { key: name });
+  if (state.phase === "hidden") content = muted(t("details:secret.hidden"));
+  else if (state.phase === "loading") content = muted(t("details:secret.loading"));
+  else if (state.phase === "shown") content = pre(state.value);
+  else content = muted(t("details:secret.unreadable", { message: state.error.message }));
+  const open = state.phase !== "hidden";
+  const label = t(open ? "details:secret.hideKey" : "details:secret.showKey", { key: field });
   return (
     <span className="dt-secret-value">
       {content}
-      <button type="button" className="btn" aria-label={label} aria-pressed={shown} onClick={() => setShown((v) => !v)}>
-        {t(shown ? "details:secret.hide" : "details:secret.show")}
+      <button type="button" className="btn" aria-label={label} aria-pressed={open} onClick={toggle}>
+        {t(open ? "details:secret.hide" : "details:secret.show")}
       </button>
     </span>
   );

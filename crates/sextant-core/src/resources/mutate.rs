@@ -16,7 +16,7 @@ use kube::api::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::get::{ResolvedKind, resolve_kind, to_json};
+use super::get::{ResolvedKind, ensure_values_present, resolve_kind, to_json};
 use super::{KindRef, ObjectRef};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
@@ -346,6 +346,7 @@ impl Document {
             ));
         };
         let namespace = meta("namespace");
+        ensure_values_present(&value)?;
         Ok(Self {
             kind: kind_ref(api_version, kind),
             name,

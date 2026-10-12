@@ -1,24 +1,26 @@
-// Secret values never show up unasked: the details panel hides every value of a Secret until "Show" is pressed
-// for that key, and hides the copies that would reveal it anyway (the `last-applied-configuration` annotation,
-// which `kubectl apply` fills with the whole manifest, and the YAML view).
+// Secret values never show up unasked. The backend sends a Secret without its values (keys with empty values, no
+// `last-applied-configuration`, the `VALUES_HIDDEN` annotation set); "Show" reads one value with `secret_value`, and
+// "Edit" loads the whole object with `resource_get_full`. Text that still carries the marker is never saved back:
+// it would replace every value with an empty string.
 import type { KubeObject } from "../../api";
 
 export const LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration";
+/** Set by the backend on a Secret sent without its values. */
+export const VALUES_HIDDEN = "sextant.dev/values-hidden";
 
 /** Whether an annotation of an object of `kind` is hidden because it may hold secret data. */
 export function maskedAnnotation(kind: string, annotation: string): boolean {
   return kind === "Secret" && annotation === LAST_APPLIED;
 }
 
-/** Text of a base64 value (UTF-8; invalid bytes become U+FFFD); `null` when it is not base64. */
-export function decodeBase64(value: string): string | null {
-  try {
-    const binary = atob(value.replace(/\s+/g, ""));
-    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-    return new TextDecoder("utf-8").decode(bytes);
-  } catch {
-    return null;
-  }
+/** Whether the annotation list shows `annotation`: the marker of hidden values is Sextant's own, not the object's. */
+export function listedAnnotation(kind: string, annotation: string): boolean {
+  return !(kind === "Secret" && annotation === VALUES_HIDDEN);
+}
+
+/** Whether YAML text came from a Secret sent without its values (saving it would wipe them). */
+export function hasHiddenValues(text: string): boolean {
+  return text.includes(VALUES_HIDDEN);
 }
 
 export const HIDDEN_VALUE = "<hidden>";

@@ -1,14 +1,17 @@
 // Dock tab "edit": the object as YAML (managedFields already stripped by the backend), saved with PUT.
+// A Secret is the one kind loaded with `resource_get_full`: everywhere else it comes without its values, and text that
+// still carries the hidden-values marker is never sent (it would replace every value with an empty string).
 // A failed save — broken YAML, a validation error, a missing permission, a conflict — is shown above the editor and
 // the text stays as typed. A conflict is never overwritten: "Reload" loads the cluster's version, and drops unsaved
 // edits only after the user confirms.
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type ApiError, type ClusterId, type ObjectRef } from "../../api";
+import { api, ApiError, toApiError, type ClusterId, type ObjectRef } from "../../api";
 import { ConfirmDialog, ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { openActionDialog } from "../actions/registry";
 import { YamlEditor } from "./YamlEditor";
+import { hasHiddenValues } from "../details/secrets";
 import { toYaml } from "../details/yaml";
 
 export interface EditTabPayload {
@@ -17,6 +20,15 @@ export interface EditTabPayload {
 }
 
 type Phase = "loading" | "ready" | "saving";
+
+function isSecret(ref: ObjectRef): boolean {
+  return ref.kind.group === "" && ref.kind.kind === "Secret";
+}
+
+/** The object to edit: a Secret with its values, any other kind as `resource_get` returns it. */
+function loadObject(clusterId: ClusterId, ref: ObjectRef) {
+  return isSecret(ref) ? api.resources.getFull(clusterId, ref) : api.resources.get(clusterId, ref);
+}
 
 export function EditTab({ tab }: DockTabProps) {
   const { t } = useTranslation();
@@ -35,7 +47,7 @@ export function EditTab({ tab }: DockTabProps) {
   const load = useCallback(async () => {
     setPhase("loading");
     try {
-      const yaml = toYaml(await api.resources.get(clusterId, ref));
+      const yaml = toYaml(await loadObject(clusterId, ref));
       setBase(yaml);
       setText(yaml);
       setLoadError(null);
@@ -54,10 +66,16 @@ export function EditTab({ tab }: DockTabProps) {
   }, [load]);
 
   const save = async () => {
-    setPhase("saving");
     setSaved(false);
+    if (hasHiddenValues(text)) {
+      setSaveError(new ApiError("invalid", t("details:secret.reloadBeforeSave")));
+      return;
+    }
+    setPhase("saving");
     try {
-      const yaml = toYaml(await api.resources.replace(clusterId, text));
+      const stored = await api.resources.replace(clusterId, text);
+      // The reply of a Secret comes without its values; the editor needs them for the next save.
+      const yaml = toYaml(isSecret(ref) ? await loadObject(clusterId, ref) : stored);
       setBase(yaml);
       setText(yaml);
       setSaveError(null);

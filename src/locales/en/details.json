@@ -197,7 +197,9 @@
     "showKey": "Show value of {{key}}",
     "hideKey": "Hide value of {{key}}",
     "hidden": "••••••",
-    "notBase64": "The value is not valid base64.",
+    "loading": "Loading…",
+    "unreadable": "Cannot show: {{message}}",
+    "reloadBeforeSave": "This text comes from a Secret shown without its values; saving it would erase them. Reload the secret in the editor before saving.",
     "annotationHidden": "hidden (may contain secret data)"
   },
   "node": {

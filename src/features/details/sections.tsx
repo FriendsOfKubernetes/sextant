@@ -9,7 +9,7 @@ import { findResourceDef, status } from "../../resources";
 import { ActionBar } from "./ActionBar";
 import { kindView } from "./kinds";
 import { useDetailsLife } from "./liveObject";
-import { maskedAnnotation } from "./secrets";
+import { listedAnnotation, maskedAnnotation } from "./secrets";
 import { Block, chips, Fields, inline, KINDS, link, mapChips, muted, strings, table, type FieldRow } from "./ui";
 
 const { arr, get, record, str } = status;
@@ -45,16 +45,18 @@ export function MetadataSection({ obj, objectRef }: DetailsSectionProps) {
   const meta = obj.metadata ?? {};
   const ns = meta.namespace ?? null;
   const hidden = t("details:secret.annotationHidden");
-  const annotations = Object.entries(record(meta.annotations)).map(([key, value]) => (
-    <li key={key}>
-      <span className="dt-annotations__key">{key}</span>
-      {maskedAnnotation(objectRef.kind.kind, key) ? (
-        muted(hidden)
-      ) : (
-        <span className="dt-annotations__value">{typeof value === "string" ? value : JSON.stringify(value)}</span>
-      )}
-    </li>
-  ));
+  const annotations = Object.entries(record(meta.annotations))
+    .filter(([key]) => listedAnnotation(objectRef.kind.kind, key))
+    .map(([key, value]) => (
+      <li key={key}>
+        <span className="dt-annotations__key">{key}</span>
+        {maskedAnnotation(objectRef.kind.kind, key) ? (
+          muted(hidden)
+        ) : (
+          <span className="dt-annotations__value">{typeof value === "string" ? value : JSON.stringify(value)}</span>
+        )}
+      </li>
+    ));
   const owners = arr(meta.ownerReferences).map((o) => {
     const kind = str(get(o, "kind")) ?? "";
     const name = str(get(o, "name"));
