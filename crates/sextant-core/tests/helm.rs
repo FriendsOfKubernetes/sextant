@@ -19,13 +19,14 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
-use futures::FutureExt;
+use futures::{FutureExt, StreamExt};
 use k8s_openapi::api::core::v1::{ConfigMap, Namespace};
 use kube::api::DeleteParams;
 use kube::{Api, Client};
 use sextant_core::helm::cli::{self, ChartHit, HelmCli, HelmRepo};
 use sextant_core::helm::{self, HelmRelease};
 use sextant_core::kubeconfig::KubeconfigEnv;
+use sextant_core::resources::{self, KindRef, WatchSpec, WatchUpdate};
 use sextant_core::{ClusterId, ClusterManager, ErrorCode, KubeconfigRegistry};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -316,6 +317,68 @@ async fn new_values_make_a_revision_and_rollback_brings_the_old_ones_back() {
             .await
             .unwrap();
         assert_eq!(old.values_yaml, "greeting: changed\n");
+    })
+    .await;
+}
+
+/// The Helm page notices new revisions through a watch of the release Secrets' metadata: the API server sends
+/// labels and names, never the stored releases.
+#[tokio::test]
+async fn release_secrets_are_watched_by_their_metadata_only() {
+    in_scratch("meta-watch", |s| async move {
+        s.install("demo", chart_dir().to_str().unwrap(), None, "")
+            .await;
+        let spec = WatchSpec {
+            kind: KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Secret".into(),
+            },
+            namespaces: Some(vec![s.ns.clone()]),
+            label_selector: Some("owner=helm".into()),
+            field_selector: Some("type=helm.sh/release.v1".into()),
+            metadata_only: true,
+        };
+        let mut updates = Box::pin(resources::watch(&s.mgr, &s.id, spec).await.unwrap());
+        let mut next = async || {
+            tokio::time::timeout(Duration::from_secs(30), updates.next())
+                .await
+                .expect("a watch update in 30s")
+                .expect("the watch stream ended")
+        };
+        let items = match next().await {
+            WatchUpdate::Snapshot { items } => items,
+            other => panic!("expected a snapshot, got {other:?}"),
+        };
+        assert_eq!(items.len(), 1, "{items:?}");
+        let secret = items[0].as_object().unwrap();
+        assert_eq!(secret["metadata"]["name"], "sh.helm.release.v1.demo.v1");
+        assert_eq!(secret["metadata"]["labels"]["status"], "deployed");
+        assert!(
+            !secret.contains_key("data") && !secret.contains_key("type"),
+            "metadata only: {secret:?}"
+        );
+
+        // A new revision arrives the same way.
+        cli::upgrade_release(&s.helm, &s.mgr, &s.id, &s.ns, "demo", "", "greeting: two\n")
+            .await
+            .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(30);
+        loop {
+            assert!(Instant::now() < deadline, "revision 2 never came");
+            let upserted = match next().await {
+                WatchUpdate::Delta { upserted, .. } => upserted,
+                WatchUpdate::Snapshot { items } => items,
+                _ => continue,
+            };
+            if let Some(v2) = upserted
+                .iter()
+                .find(|o| o["metadata"]["name"] == "sh.helm.release.v1.demo.v2")
+            {
+                assert!(v2.get("data").is_none(), "{v2:?}");
+                break;
+            }
+        }
     })
     .await;
 }

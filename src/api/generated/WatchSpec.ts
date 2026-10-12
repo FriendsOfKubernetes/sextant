@@ -4,4 +4,9 @@ import type { KindRef } from "./KindRef";
 /**
  * What to watch. `namespaces: None` means all namespaces.
  */
-export type WatchSpec = { kind: KindRef, namespaces: Array<string> | null, labelSelector: string | null, fieldSelector: string | null, };
+export type WatchSpec = { kind: KindRef, namespaces: Array<string> | null, labelSelector: string | null, fieldSelector: string | null, 
+/**
+ * Only the `metadata` of each object (metadata-only list and watch), no `spec`, `data` or `status`: to notice
+ * changes without downloading the objects, as the Helm page does with release Secrets. Off when left out.
+ */
+metadataOnly?: boolean, };

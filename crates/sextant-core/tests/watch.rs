@@ -59,6 +59,7 @@ fn spec(kind: KindRef, namespaces: Option<&[&str]>, labels: Option<&str>) -> Wat
         namespaces: namespaces.map(|ns| ns.iter().map(|n| n.to_string()).collect()),
         label_selector: labels.map(str::to_owned),
         field_selector: None,
+        metadata_only: false,
     }
 }
 

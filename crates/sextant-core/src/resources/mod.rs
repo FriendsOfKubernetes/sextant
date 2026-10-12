@@ -87,6 +87,10 @@ pub struct WatchSpec {
     pub namespaces: Option<Vec<String>>,
     pub label_selector: Option<String>,
     pub field_selector: Option<String>,
+    /// Only the `metadata` of each object (metadata-only list and watch), no `spec`, `data` or `status`: to notice
+    /// changes without downloading the objects, as the Helm page does with release Secrets. Off when left out.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub metadata_only: bool,
 }
 
 /// One batch of a watch subscription. Serialized with a `type` tag.

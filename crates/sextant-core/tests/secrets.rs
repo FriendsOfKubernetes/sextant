@@ -150,6 +150,7 @@ async fn watched(s: &Scratch, kind: &str) -> Vec<Value> {
         namespaces: Some(vec![s.ns.clone()]),
         label_selector: None,
         field_selector: None,
+        metadata_only: false,
     };
     let mut updates = Box::pin(
         resources::watch(&s.mgr, &s.id, spec)

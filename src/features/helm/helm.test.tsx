@@ -49,12 +49,11 @@ const webHistory: HelmRelease[] = [
   web,
 ];
 
-/** A release Secret as the watch delivers it. */
+/** A release Secret as the metadata-only watch delivers it. */
 function secret(name: string, revision: number): KubeObject {
   return {
     apiVersion: "v1",
     kind: "Secret",
-    type: "helm.sh/release.v1",
     metadata: {
       name: `sh.helm.release.v1.${name}.v${revision}`,
       namespace: "apps",
@@ -147,11 +146,13 @@ describe("Releases", () => {
     helmBackend();
     renderPage("helm-releases");
     const id = await watchOf(wb, "Secret");
+    // Only the Secrets' metadata: the revisions themselves (gzipped releases) are never downloaded by the watch.
     expect(wb.specs.get(id)).toEqual({
       kind: { group: "", version: "v1", kind: "Secret" },
       namespaces: ["apps"],
       labelSelector: "owner=helm",
       fieldSelector: "type=helm.sh/release.v1",
+      metadataOnly: true,
     });
     const table = await screen.findByRole("table", { name: "Releases" });
     await waitFor(() => expect(rows(table)).toHaveLength(2));

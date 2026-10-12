@@ -14,6 +14,9 @@
 //! - `Error` — the watch cannot start (no permission to list the kind in any of the namespaces, unknown kind,
 //!   rejected credentials); the stream ends after it.
 //!
+//! With `WatchSpec::metadata_only`, the lists and watches ask the API server for metadata only
+//! (`PartialObjectMetadata`): every object is `apiVersion`, `kind` and `metadata`.
+//!
 //! The first snapshot is sent as soon as everything is listed (the caller listens before it starts the watch);
 //! after it, at most one update per 250 ms.
 
@@ -23,12 +26,12 @@ use std::time::Duration;
 use futures::stream::{AbortHandle, BoxStream, SelectAll};
 use futures::{Stream, StreamExt};
 use kube::Api;
-use kube::api::{ApiResource, DynamicObject};
+use kube::api::{ApiResource, DynamicObject, PartialObjectMeta};
 use kube::runtime::watcher;
 use serde_json::Value;
 use tokio::time::{Instant, Interval, MissedTickBehavior};
 
-use super::get::{resolve_kind, to_json};
+use super::get::{ResolvedKind, resolve_kind, to_json};
 use super::{WatchSpec, WatchUpdate};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
@@ -56,19 +59,19 @@ pub async fn watch(
     let mut namespaces: Vec<String> = spec.namespaces.unwrap_or_default();
     namespaces.sort();
     namespaces.dedup();
+    let source = |namespace: Option<String>| Source {
+        api: SourceApi::new(
+            &kind,
+            client.clone(),
+            namespace.as_deref(),
+            spec.metadata_only,
+        ),
+        namespace,
+    };
     let sources: Vec<Source> = if kind.namespaced && !namespaces.is_empty() {
-        namespaces
-            .into_iter()
-            .map(|ns| Source {
-                api: kind.api(client.clone(), Some(&ns)),
-                namespace: Some(ns),
-            })
-            .collect()
+        namespaces.into_iter().map(|ns| source(Some(ns))).collect()
     } else {
-        vec![Source {
-            api: kind.api(client, None),
-            namespace: None,
-        }]
+        vec![source(None)]
     };
 
     let mut config = watcher::Config::default();
@@ -98,8 +101,46 @@ type Events = BoxStream<'static, (usize, watcher::Result<watcher::Event<DynamicO
 
 /// One watched API: a namespace, or all of them (`namespace: None`).
 struct Source {
-    api: Api<DynamicObject>,
+    api: SourceApi,
     namespace: Option<String>,
+}
+
+/// The API of a source: whole objects, or only their metadata (`WatchSpec::metadata_only`).
+#[derive(Clone)]
+enum SourceApi {
+    Whole(Api<DynamicObject>),
+    Metadata(Api<PartialObjectMeta<DynamicObject>>),
+}
+
+impl SourceApi {
+    /// Like `ResolvedKind::api`: `namespace` is ignored for a cluster-scoped kind.
+    fn new(
+        kind: &ResolvedKind,
+        client: kube::Client,
+        namespace: Option<&str>,
+        metadata_only: bool,
+    ) -> Self {
+        if !metadata_only {
+            return Self::Whole(kind.api(client, namespace));
+        }
+        Self::Metadata(match namespace {
+            Some(ns) if kind.namespaced => Api::namespaced_with(client, ns, &kind.resource),
+            _ => Api::all_with(client, &kind.resource),
+        })
+    }
+
+    /// A watcher of this API; metadata-only objects come as `DynamicObject`s without any other field.
+    fn watch(
+        &self,
+        config: watcher::Config,
+    ) -> BoxStream<'static, watcher::Result<watcher::Event<DynamicObject>>> {
+        match self {
+            Self::Whole(api) => watcher(api.clone(), config).boxed(),
+            Self::Metadata(api) => watcher(api.clone(), config)
+                .map(|event| event.map(metadata_event))
+                .boxed(),
+        }
+    }
 }
 
 /// Watcher streams + store + pending batch.
@@ -189,8 +230,10 @@ impl Batcher {
             if self.forbidden[index] {
                 continue;
             }
-            let events =
-                watcher(source.api.clone(), self.config.clone()).map(move |event| (index, event));
+            let events = source
+                .api
+                .watch(self.config.clone())
+                .map(move |event| (index, event));
             let (events, abort) = futures::stream::abortable(events);
             self.aborts[index] = Some(abort);
             self.streams.push(events.boxed());
@@ -400,6 +443,24 @@ impl Batcher {
     }
 }
 
+/// An event of a metadata-only watcher as the batcher handles every event: objects with only `metadata`.
+fn metadata_event(
+    event: watcher::Event<PartialObjectMeta<DynamicObject>>,
+) -> watcher::Event<DynamicObject> {
+    let object = |meta: PartialObjectMeta<DynamicObject>| DynamicObject {
+        types: None,
+        metadata: meta.metadata,
+        data: Value::Object(serde_json::Map::new()),
+    };
+    match event {
+        watcher::Event::Apply(meta) => watcher::Event::Apply(object(meta)),
+        watcher::Event::Delete(meta) => watcher::Event::Delete(object(meta)),
+        watcher::Event::Init => watcher::Event::Init,
+        watcher::Event::InitApply(meta) => watcher::Event::InitApply(object(meta)),
+        watcher::Event::InitDone => watcher::Event::InitDone,
+    }
+}
+
 async fn sleep_until(at: Option<Instant>) {
     match at {
         Some(at) => tokio::time::sleep_until(at).await,
@@ -524,6 +585,7 @@ mod tests {
             namespaces: namespaces.map(|ns| ns.iter().map(|n| n.to_string()).collect()),
             label_selector: None,
             field_selector: None,
+            metadata_only: false,
         }
     }
 
@@ -714,6 +776,64 @@ mod tests {
             );
             tokio::time::sleep(Duration::from_millis(20)).await;
         }
+    }
+
+    /// A Secret as the fake server lists it: always whole, whatever the client asks for.
+    const FULL_SECRET_LIST: &str = r#"{"apiVersion":"v1","kind":"SecretList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"sh.helm.release.v1.web.v1","namespace":"apps","uid":"uid-web-1","resourceVersion":"1","labels":{"owner":"helm"}},"type":"helm.sh/release.v1","data":{"release":"eA=="}}]}"#;
+
+    fn secrets_server() -> impl Fn(&Request) -> Reply + Send + Sync + 'static {
+        |req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/api/v1/namespaces/apps/secrets" if req.query.contains("watch=") => Reply::stream(""),
+            "/api/v1/namespaces/apps/secrets" => Reply::json(200, FULL_SECRET_LIST),
+            _ => Reply::not_found(),
+        }
+    }
+
+    /// Whether the Secret list of `apps` asked for metadata only (`Accept: …;as=PartialObjectMetadataList;…`).
+    fn asked_for_metadata(api: &FakeApi) -> Vec<bool> {
+        api.requests()
+            .iter()
+            .filter(|r| r.path == "/api/v1/namespaces/apps/secrets")
+            .map(|r| r.header("accept").contains("as=PartialObjectMetadata"))
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn a_metadata_only_watch_asks_for_metadata_and_gives_objects_without_their_data() {
+        let api = FakeApi::start(secrets_server()).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let spec = WatchSpec {
+            metadata_only: true,
+            ..spec("", "Secret", Some(&["apps"]))
+        };
+        let items = first_snapshot(&mgr, &id, spec).await;
+        assert_eq!(names(&items), ["sh.helm.release.v1.web.v1"]);
+        let secret = items[0].as_object().unwrap();
+        assert_eq!(
+            (secret["apiVersion"].as_str(), secret["kind"].as_str()),
+            (Some("v1"), Some("Secret"))
+        );
+        assert_eq!(secret["metadata"]["labels"]["owner"], "helm");
+        assert!(
+            !secret.contains_key("data") && !secret.contains_key("type"),
+            "metadata only: {secret:?}"
+        );
+        let asked = asked_for_metadata(&api);
+        assert!(
+            !asked.is_empty() && asked.iter().all(|m| *m),
+            "the list and the watch ask for metadata only: {asked:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_watch_without_metadata_only_gets_whole_objects() {
+        let api = FakeApi::start(secrets_server()).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let items = first_snapshot(&mgr, &id, spec("", "Secret", Some(&["apps"]))).await;
+        assert_eq!(items[0]["type"], "helm.sh/release.v1");
+        assert_eq!(items[0]["data"]["release"], "", "values hidden, keys kept");
+        assert!(asked_for_metadata(&api).iter().all(|m| !*m));
     }
 
     #[tokio::test]

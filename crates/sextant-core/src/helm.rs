@@ -6,11 +6,14 @@
 //! status=<status>`, whose `data.release` is base64 text of the gzipped release JSON. Helm 4 adds fields
 //! (`apply_method`, `modtime`), which are ignored.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Read;
+use std::sync::{LazyLock, Mutex};
 
 use base64::Engine as _;
+use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::core::v1::Secret;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::Api;
 use kube::api::ListParams;
 use serde::{Deserialize, Serialize};
@@ -357,10 +360,8 @@ fn is_release_secret(secret: &Secret) -> bool {
     secret.type_.as_deref() == Some(RELEASE_SECRET_TYPE)
 }
 
-fn label<'a>(secret: &'a Secret, key: &str) -> Option<&'a str> {
-    secret
-        .metadata
-        .labels
+fn label<'a>(meta: &'a ObjectMeta, key: &str) -> Option<&'a str> {
+    meta.labels
         .as_ref()
         .and_then(|l| l.get(key))
         .map(String::as_str)
@@ -379,9 +380,42 @@ async fn list_secrets(
     Ok(list.items.into_iter().filter(is_release_secret).collect())
 }
 
+/// The metadata of every release Secret in `namespace` (`None` = all namespaces), without the release data: one
+/// request.
+async fn list_revision_metadata(
+    client: &kube::Client,
+    namespace: Option<&str>,
+) -> CoreResult<Vec<ObjectMeta>> {
+    let api: Api<Secret> = match namespace {
+        Some(ns) => Api::namespaced(client.clone(), ns),
+        None => Api::all(client.clone()),
+    };
+    let params = ListParams::default()
+        .labels(OWNER_SELECTOR)
+        .fields(&format!("type={RELEASE_SECRET_TYPE}"));
+    let list = api.list_metadata(&params).await?;
+    Ok(list.items.into_iter().map(|item| item.metadata).collect())
+}
+
+/// The release and revision a release Secret holds: its `name` and `version` labels, else its name
+/// `sh.helm.release.v1.<release>.v<revision>`.
+fn release_of(meta: &ObjectMeta) -> Option<(String, i32)> {
+    let from_name = meta
+        .name
+        .as_deref()
+        .and_then(|n| n.strip_prefix("sh.helm.release.v1."))
+        .and_then(|n| n.rsplit_once(".v"))
+        .and_then(|(release, revision)| Some((release, revision.parse().ok()?)));
+    let release = label(meta, "name").or(from_name.map(|(release, _)| release))?;
+    let revision = label(meta, "version")
+        .and_then(|v| v.parse().ok())
+        .or(from_name.map(|(_, revision)| revision))?;
+    Some((release.to_owned(), revision))
+}
+
 /// The revision a release Secret holds: its `version` label, else the `.v<N>` ending of its name.
 fn revision_of(secret: &Secret) -> Option<i32> {
-    label(secret, "version")
+    label(&secret.metadata, "version")
         .and_then(|v| v.parse().ok())
         .or_else(|| {
             secret
@@ -395,14 +429,104 @@ fn revision_of(secret: &Secret) -> Option<i32> {
         })
 }
 
+/// How many release Secrets `list_releases` reads at the same time.
+const PARALLEL_READS: usize = 8;
+
+/// One stored revision of a release, known from the metadata list.
+struct RevisionMeta {
+    revision: i32,
+    /// The Secret's name.
+    secret: String,
+    /// The Secret's uid and resourceVersion: the same pair is the same content.
+    version_key: Option<(String, String)>,
+    /// Its `status` label.
+    status: Option<String>,
+}
+
 /// A release in the list: its last readable revision, and its latest revision.
 struct Listed {
-    release: Option<StoredRelease>,
+    release: Option<HelmRelease>,
     latest: i32,
+}
+
+/// Release Secrets read before, by cluster, uid and resourceVersion: the summary of the release, or `None` when it
+/// cannot be decoded. A list made again reads only the revisions that are new or changed.
+type ReadRevisions = HashMap<(ClusterId, String, String), Option<HelmRelease>>;
+
+static READ_REVISIONS: LazyLock<Mutex<ReadRevisions>> = LazyLock::new(Default::default);
+
+/// Above this many entries `READ_REVISIONS` starts over (summaries are small; this only bounds a long session).
+const MAX_READ_REVISIONS: usize = 10_000;
+
+fn read_before(cluster: &ClusterId, key: &(String, String)) -> Option<Option<HelmRelease>> {
+    let cache = READ_REVISIONS.lock().unwrap_or_else(|e| e.into_inner());
+    cache
+        .get(&(cluster.clone(), key.0.clone(), key.1.clone()))
+        .cloned()
+}
+
+fn remember_read(cluster: &ClusterId, secret: &Secret, release: Option<HelmRelease>) {
+    let (Some(uid), Some(version)) = (
+        secret.metadata.uid.clone(),
+        secret.metadata.resource_version.clone(),
+    ) else {
+        return;
+    };
+    let mut cache = READ_REVISIONS.lock().unwrap_or_else(|e| e.into_inner());
+    if cache.len() >= MAX_READ_REVISIONS {
+        cache.clear();
+    }
+    cache.insert((cluster.clone(), uid, version), release);
+}
+
+/// The revisions of one release, newest first, until one can be decoded (normally only the latest is read whole;
+/// one read before with the same resourceVersion is not read again). A revision deleted meanwhile does not count;
+/// `None` when none is left.
+async fn read_latest(
+    client: &kube::Client,
+    cluster: &ClusterId,
+    namespace: &str,
+    mut revisions: Vec<RevisionMeta>,
+) -> CoreResult<Option<Listed>> {
+    revisions.sort_by_key(|r| std::cmp::Reverse(r.revision));
+    let api: Api<Secret> = Api::namespaced(client.clone(), namespace);
+    let mut latest = None;
+    for meta in revisions {
+        let known = meta
+            .version_key
+            .as_ref()
+            .and_then(|key| read_before(cluster, key));
+        let release = match known {
+            Some(release) => release,
+            None => {
+                let Some(secret) = api.get_opt(&meta.secret).await? else {
+                    continue;
+                };
+                let release = is_release_secret(&secret)
+                    .then(|| decode_secret(&secret).ok())
+                    .flatten()
+                    .map(|r| r.summary());
+                remember_read(cluster, &secret, release.clone());
+                release
+            }
+        };
+        let latest = *latest.get_or_insert(meta.revision);
+        if release.is_some() {
+            return Ok(Some(Listed { release, latest }));
+        }
+    }
+    Ok(latest.map(|latest| Listed {
+        release: None,
+        latest,
+    }))
 }
 
 /// Latest revision of every release. `None` (or an empty list) means every namespace. Releases whose latest
 /// revision is `uninstalled` (kept with `--keep-history`) are left out, as `helm list` does.
+///
+/// The revisions are found from the metadata of the release Secrets (one list per namespace, or one for all) and
+/// their labels `name`, `version`, `status`; only the latest revision of each release is read whole, several
+/// releases at a time.
 ///
 /// A release whose latest revision cannot be decoded stays in the list with its last readable revision and
 /// `unreadable_revision` set; when no revision can be read, it is an `unreadable` row.
@@ -412,76 +536,84 @@ pub async fn list_releases(
     namespaces: Option<Vec<String>>,
 ) -> CoreResult<Vec<HelmRelease>> {
     let client = mgr.client(cluster)?;
-    let mut secrets = Vec::new();
-    match namespaces.filter(|ns| !ns.is_empty()) {
-        None => secrets = list_secrets(&client, None, OWNER_SELECTOR).await?,
-        Some(list) => {
-            for ns in list {
-                secrets.extend(list_secrets(&client, Some(&ns), OWNER_SELECTOR).await?);
-            }
+    let metadata = match namespaces.filter(|ns| !ns.is_empty()) {
+        None => list_revision_metadata(&client, None).await?,
+        Some(mut list) => {
+            list.sort();
+            list.dedup();
+            futures::future::try_join_all(
+                list.iter()
+                    .map(|ns| list_revision_metadata(&client, Some(ns))),
+            )
+            .await?
+            .concat()
         }
-    }
+    };
 
-    // The revisions of each release, found by the labels.
-    let mut by_release: BTreeMap<(String, String), Vec<(i32, &Secret)>> = BTreeMap::new();
-    let mut unlabelled = Vec::new();
-    for secret in &secrets {
-        let ns = secret.metadata.namespace.clone().unwrap_or_default();
-        match (label(secret, "name"), revision_of(secret)) {
-            (Some(name), Some(revision)) => by_release
-                .entry((ns, name.to_owned()))
-                .or_default()
-                .push((revision, secret)),
-            _ => unlabelled.push(secret),
-        }
-    }
-
-    // Newest first, decoded until one can be read (normally the latest, the only one decoded).
-    let mut listed: BTreeMap<(String, String), Listed> = BTreeMap::new();
-    for (key, mut revisions) in by_release {
-        revisions.sort_by_key(|(revision, _)| std::cmp::Reverse(*revision));
-        let latest = revisions[0].0;
-        let release = revisions.iter().find_map(|(_, s)| decode_secret(s).ok());
-        listed.insert(key, Listed { release, latest });
-    }
-    for secret in unlabelled {
-        let Ok(release) = decode_secret(secret) else {
+    // The revisions of each release, found by the labels (or the Secret names).
+    let mut by_release: BTreeMap<(String, String), Vec<RevisionMeta>> = BTreeMap::new();
+    for meta in metadata {
+        let (Some(ns), Some(secret)) = (meta.namespace.clone(), meta.name.clone()) else {
             continue;
         };
-        let ns = secret.metadata.namespace.clone().unwrap_or_default();
-        let entry = listed.entry((ns, release.name.clone())).or_insert(Listed {
-            release: None,
-            latest: release.version,
-        });
-        entry.latest = entry.latest.max(release.version);
-        if entry
-            .release
-            .as_ref()
-            .is_none_or(|known| known.version < release.version)
-        {
-            entry.release = Some(release);
-        }
+        let Some((name, revision)) = release_of(&meta) else {
+            continue;
+        };
+        by_release
+            .entry((ns, name))
+            .or_default()
+            .push(RevisionMeta {
+                revision,
+                secret,
+                version_key: meta.uid.clone().zip(meta.resource_version.clone()),
+                status: label(&meta, "status").map(str::to_owned),
+            });
     }
+    // Uninstalled with the history kept: nothing to read.
+    by_release.retain(|_, revisions| {
+        revisions
+            .iter()
+            .max_by_key(|r| r.revision)
+            .is_some_and(|latest| latest.status.as_deref() != Some("uninstalled"))
+    });
 
-    Ok(listed
-        .into_iter()
-        .filter_map(|((ns, name), l)| match l.release {
-            Some(release) => {
-                let unreadable_revision = (l.latest > release.version).then_some(l.latest);
-                if unreadable_revision.is_none() && release.info.status == "uninstalled" {
-                    return None;
-                }
-                Some(HelmRelease {
-                    unreadable_revision,
-                    ..release.summary()
-                })
-            }
-            None => Some(HelmRelease {
-                unreadable_revision: Some(l.latest),
-                ..HelmRelease::unreadable(&name, &ns, l.latest)
+    let client = &client;
+    let listed: Vec<((String, String), Option<Listed>)> = futures::stream::iter(
+        by_release
+            .into_iter()
+            .map(|((ns, name), revisions)| async move {
+                let listed = read_latest(client, cluster, &ns, revisions).await?;
+                CoreResult::Ok(((ns, name), listed))
             }),
+    )
+    .buffer_unordered(PARALLEL_READS)
+    .try_collect()
+    .await?;
+
+    let mut releases: Vec<HelmRelease> = listed
+        .into_iter()
+        .filter_map(|((ns, name), listed)| {
+            let l = listed?;
+            match l.release {
+                Some(release) => {
+                    let unreadable_revision = (l.latest > release.revision).then_some(l.latest);
+                    if unreadable_revision.is_none() && release.status == "uninstalled" {
+                        return None;
+                    }
+                    Some(HelmRelease {
+                        unreadable_revision,
+                        ..release
+                    })
+                }
+                None => Some(HelmRelease {
+                    unreadable_revision: Some(l.latest),
+                    ..HelmRelease::unreadable(&name, &ns, l.latest)
+                }),
+            }
         })
-        .collect())
+        .collect();
+    releases.sort_by(|a, b| (&a.namespace, &a.name).cmp(&(&b.namespace, &b.name)));
+    Ok(releases)
 }
 
 /// One stored revision of a release: the release, or why its Secret cannot be decoded.
@@ -736,6 +868,357 @@ mod tests {
             decode_release(not_json.as_bytes()).unwrap_err().code,
             ErrorCode::Invalid
         );
+    }
+
+    mod listing {
+        //! `list_releases` against a fake API server: what is downloaded and how often.
+        use std::sync::{Arc, Mutex};
+
+        use super::*;
+        use crate::fake_api::{FakeApi, Reply, Request, connected_to};
+
+        const API_VERSIONS: &str =
+            r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+        /// What kube asks for in a metadata-only list.
+        const METADATA_ACCEPT: &str = "as=PartialObjectMetadataList";
+
+        /// One stored revision of a release.
+        #[derive(Clone)]
+        struct Revision {
+            namespace: &'static str,
+            release: &'static str,
+            revision: i32,
+            status: &'static str,
+            /// `data.release` is not a release.
+            broken: bool,
+            resource_version: u32,
+        }
+
+        impl Revision {
+            fn secret_name(&self) -> String {
+                format!("sh.helm.release.v1.{}.v{}", self.release, self.revision)
+            }
+
+            fn metadata(&self) -> Value {
+                json!({
+                    "name": self.secret_name(),
+                    "namespace": self.namespace,
+                    "uid": format!("uid-{}-{}-{}", self.namespace, self.release, self.revision),
+                    "resourceVersion": self.resource_version.to_string(),
+                    "labels": {
+                        "owner": "helm",
+                        "name": self.release,
+                        "version": self.revision.to_string(),
+                        "status": self.status,
+                    },
+                })
+            }
+
+            /// The whole Secret as the API server sends it (`data` values are base64 once more).
+            fn secret(&self) -> Value {
+                let stored = if self.broken {
+                    b"not a release".to_vec()
+                } else {
+                    encode(
+                        &json!({
+                            "name": self.release,
+                            "namespace": self.namespace,
+                            "version": self.revision,
+                            "info": { "status": self.status, "last_deployed": "2026-10-12T10:00:00Z" },
+                            "chart": { "metadata": { "name": "demo", "version": "1.0.0", "appVersion": "1" } },
+                            "config": {},
+                            "manifest": "",
+                        }),
+                        true,
+                    )
+                };
+                json!({
+                    "apiVersion": "v1",
+                    "kind": "Secret",
+                    "type": RELEASE_SECRET_TYPE,
+                    "metadata": self.metadata(),
+                    "data": { "release": base64::engine::general_purpose::STANDARD.encode(stored) },
+                })
+            }
+        }
+
+        /// `releases` × `revisions` revisions in each of `namespaces`; the latest is `deployed`, the others
+        /// `superseded`.
+        fn stored(
+            namespaces: &[&'static str],
+            releases: &[&'static str],
+            revisions: i32,
+        ) -> Vec<Revision> {
+            let mut out = Vec::new();
+            for &namespace in namespaces {
+                for &release in releases {
+                    for revision in 1..=revisions {
+                        out.push(Revision {
+                            namespace,
+                            release,
+                            revision,
+                            status: if revision == revisions {
+                                "deployed"
+                            } else {
+                                "superseded"
+                            },
+                            broken: false,
+                            resource_version: 1,
+                        });
+                    }
+                }
+            }
+            out
+        }
+
+        /// Serves `stored` as Secrets: lists (whole, or metadata only when asked so) of a namespace or of all, and
+        /// single Secrets.
+        async fn serve(stored: Vec<Revision>) -> FakeApi {
+            serve_changing(Arc::new(Mutex::new(stored))).await
+        }
+
+        /// Like `serve`, with revisions the test may change meanwhile.
+        async fn serve_changing(stored: Arc<Mutex<Vec<Revision>>>) -> FakeApi {
+            FakeApi::start(move |req: &Request| {
+                let stored = stored.lock().unwrap().clone();
+                let path = req.path.as_str();
+                if path == "/api" {
+                    return Reply::json(200, API_VERSIONS);
+                }
+                let (namespace, name) = match path.strip_prefix("/api/v1/namespaces/") {
+                    Some(rest) => match rest.split_once("/secrets") {
+                        Some((ns, "")) => (Some(ns), None),
+                        Some((ns, name)) => (Some(ns), name.strip_prefix('/')),
+                        None => return Reply::not_found(),
+                    },
+                    None if path == "/api/v1/secrets" => (None, None),
+                    None => return Reply::not_found(),
+                };
+                let in_scope = |r: &&Revision| namespace.is_none_or(|ns| ns == r.namespace);
+                if let Some(name) = name {
+                    return match stored.iter().filter(in_scope).find(|r| r.secret_name() == name) {
+                        Some(r) => Reply::json(200, r.secret().to_string()),
+                        None => Reply::not_found(),
+                    };
+                }
+                let metadata_only = req.header("accept").contains(METADATA_ACCEPT);
+                let items: Vec<Value> = stored
+                    .iter()
+                    .filter(in_scope)
+                    .map(|r| {
+                        if metadata_only {
+                            json!({ "apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadata", "metadata": r.metadata() })
+                        } else {
+                            r.secret()
+                        }
+                    })
+                    .collect();
+                let kind = if metadata_only { "PartialObjectMetadataList" } else { "SecretList" };
+                Reply::json(
+                    200,
+                    json!({ "apiVersion": "v1", "kind": kind, "metadata": { "resourceVersion": "1" }, "items": items })
+                        .to_string(),
+                )
+            })
+            .await
+        }
+
+        /// Paths of the requests for single Secrets (whole revisions), sorted.
+        fn fetched(api: &FakeApi) -> Vec<String> {
+            let mut out: Vec<String> = api
+                .requests()
+                .iter()
+                .filter(|r| r.path.contains("/secrets/"))
+                .map(|r| r.path.rsplit('/').next().unwrap_or_default().to_owned())
+                .collect();
+            out.sort();
+            out
+        }
+
+        /// The list requests: (path, asked for metadata only).
+        fn lists(api: &FakeApi) -> Vec<(String, bool)> {
+            let mut out: Vec<(String, bool)> = api
+                .requests()
+                .iter()
+                .filter(|r| r.path.ends_with("/secrets"))
+                .map(|r| (r.path.clone(), r.header("accept").contains(METADATA_ACCEPT)))
+                .collect();
+            out.sort();
+            out
+        }
+
+        fn summary(list: &[HelmRelease]) -> Vec<(&str, &str, i32, &str, Option<i32>)> {
+            list.iter()
+                .map(|r| {
+                    (
+                        r.namespace.as_str(),
+                        r.name.as_str(),
+                        r.revision,
+                        r.status.as_str(),
+                        r.unreadable_revision,
+                    )
+                })
+                .collect()
+        }
+
+        #[tokio::test]
+        async fn only_the_latest_revision_of_each_release_is_downloaded_whole() {
+            let api = serve(stored(&["a", "b"], &["web", "db"], 4)).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let list = list_releases(&mgr, &id, Some(vec!["a".into(), "b".into()]))
+                .await
+                .unwrap();
+            assert_eq!(
+                summary(&list),
+                [
+                    ("a", "db", 4, "deployed", None),
+                    ("a", "web", 4, "deployed", None),
+                    ("b", "db", 4, "deployed", None),
+                    ("b", "web", 4, "deployed", None),
+                ]
+            );
+            assert_eq!(list[0].chart, "demo");
+            assert_eq!(
+                lists(&api),
+                [
+                    ("/api/v1/namespaces/a/secrets".to_owned(), true),
+                    ("/api/v1/namespaces/b/secrets".to_owned(), true),
+                ],
+                "one metadata-only list per namespace"
+            );
+            // 4 releases × 4 revisions: the 4 latest ones are read whole.
+            assert_eq!(
+                fetched(&api),
+                [
+                    "sh.helm.release.v1.db.v4",
+                    "sh.helm.release.v1.db.v4",
+                    "sh.helm.release.v1.web.v4",
+                    "sh.helm.release.v1.web.v4",
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn every_namespace_is_one_metadata_list_of_the_whole_cluster() {
+            let api = serve(stored(&["a", "b"], &["web"], 3)).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let list = list_releases(&mgr, &id, None).await.unwrap();
+            assert_eq!(
+                summary(&list),
+                [
+                    ("a", "web", 3, "deployed", None),
+                    ("b", "web", 3, "deployed", None)
+                ]
+            );
+            assert_eq!(lists(&api), [("/api/v1/secrets".to_owned(), true)]);
+            assert_eq!(
+                fetched(&api),
+                ["sh.helm.release.v1.web.v3", "sh.helm.release.v1.web.v3"]
+            );
+        }
+
+        #[tokio::test]
+        async fn an_unreadable_latest_revision_falls_back_to_the_previous_one() {
+            let mut revisions = stored(&["a"], &["web", "solo"], 3);
+            for r in &mut revisions {
+                // web: v3 broken, v2 readable; solo: nothing readable.
+                r.broken = (r.release == "web" && r.revision == 3) || r.release == "solo";
+            }
+            let api = serve(revisions).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let list = list_releases(&mgr, &id, Some(vec!["a".into()]))
+                .await
+                .unwrap();
+            assert_eq!(
+                summary(&list),
+                [
+                    ("a", "solo", 3, "", Some(3)),
+                    ("a", "web", 2, "superseded", Some(3))
+                ]
+            );
+            assert!(list[0].unreadable && !list[1].unreadable);
+            assert_eq!(
+                fetched(&api),
+                [
+                    "sh.helm.release.v1.solo.v1",
+                    "sh.helm.release.v1.solo.v2",
+                    "sh.helm.release.v1.solo.v3",
+                    "sh.helm.release.v1.web.v2",
+                    "sh.helm.release.v1.web.v3",
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn listing_again_reads_only_the_revisions_that_changed() {
+            let stored = Arc::new(Mutex::new(stored(&["a"], &["web", "db"], 2)));
+            let api = serve_changing(Arc::clone(&stored)).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+            let ns = Some(vec!["a".to_owned()]);
+
+            list_releases(&mgr, &id, ns.clone()).await.unwrap();
+            assert_eq!(fetched(&api).len(), 2);
+            // Nothing changed: the list comes from the metadata alone.
+            list_releases(&mgr, &id, ns.clone()).await.unwrap();
+            assert_eq!(fetched(&api).len(), 2, "nothing read again");
+
+            // `helm upgrade web`: revision 3 is new, revision 2 becomes superseded (a new resourceVersion).
+            {
+                let mut revisions = stored.lock().unwrap();
+                for r in revisions
+                    .iter_mut()
+                    .filter(|r| r.release == "web" && r.revision == 2)
+                {
+                    r.status = "superseded";
+                    r.resource_version = 2;
+                }
+                revisions.push(Revision {
+                    namespace: "a",
+                    release: "web",
+                    revision: 3,
+                    status: "deployed",
+                    broken: false,
+                    resource_version: 1,
+                });
+            }
+            let list = list_releases(&mgr, &id, ns).await.unwrap();
+            assert_eq!(
+                summary(&list),
+                [
+                    ("a", "db", 2, "deployed", None),
+                    ("a", "web", 3, "deployed", None)
+                ]
+            );
+            assert_eq!(
+                fetched(&api),
+                [
+                    "sh.helm.release.v1.db.v2",
+                    "sh.helm.release.v1.web.v2",
+                    "sh.helm.release.v1.web.v3",
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn a_release_uninstalled_with_its_history_kept_is_left_out_unread() {
+            let mut revisions = stored(&["a"], &["web", "gone"], 2);
+            for r in &mut revisions {
+                if r.release == "gone" && r.revision == 2 {
+                    r.status = "uninstalled";
+                }
+            }
+            let api = serve(revisions).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let list = list_releases(&mgr, &id, Some(vec!["a".into()]))
+                .await
+                .unwrap();
+            assert_eq!(summary(&list), [("a", "web", 2, "deployed", None)]);
+            assert_eq!(fetched(&api), ["sh.helm.release.v1.web.v2"]);
+        }
     }
 
     #[test]

@@ -1,5 +1,6 @@
 // Hooks of the Helm pages. Releases are read natively by the backend; the list refreshes whenever a release Secret
-// (`sh.helm.release.v1.*`, label owner=helm) changes in the watched namespaces.
+// (`sh.helm.release.v1.*`, label owner=helm) changes in the watched namespaces — the watch carries only the Secrets'
+// metadata, never the stored releases.
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { api, toApiError, useWatch, type ApiError, type ClusterId, type HelmRelease, type HelmStatus, type WatchSpec } from "../../api";
 
@@ -61,13 +62,14 @@ export function resetHelmStatus(): void {
 
 export const RELEASE_SECRET_KIND = { group: "", version: "v1", kind: "Secret" } as const;
 
-/** The watch that tells when releases change: release Secrets of the selected namespaces. */
+/** The watch that tells when releases change: the metadata of the release Secrets of the selected namespaces. */
 export function releaseSecretsSpec(namespaces: string[] | null): WatchSpec {
   return {
     kind: { ...RELEASE_SECRET_KIND },
     namespaces,
     labelSelector: "owner=helm",
     fieldSelector: "type=helm.sh/release.v1",
+    metadataOnly: true,
   };
 }
 
