@@ -1,7 +1,7 @@
 // Adding kubeconfig files or pasted text, and the list of kubeconfig sources with "Remove" for added ones.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type ApiError, type KubeconfigSource } from "../../api";
+import { api, toApiError, type ApiError, type CoreError, type KubeconfigSource } from "../../api";
 import { ConfirmDialog, Dialog, ErrorState } from "../../components";
 import { addKubeconfigFile, addPastedKubeconfig, removeKubeconfigSource, useClustersStore } from "./clustersStore";
 
@@ -17,8 +17,8 @@ export async function pickKubeconfigFile(title: string): Promise<ApiError | null
   }
 }
 
-/** A failed kubeconfig change, shown compactly inside a form or dialog. */
-export function SourceError({ error }: { error: ApiError }) {
+/** A failed kubeconfig change or a source that cannot be read, shown compactly inside a form, list or dialog. */
+export function SourceError({ error }: { error: ApiError | CoreError }) {
   return <ErrorState error={error} className="clusters-error" />;
 }
 

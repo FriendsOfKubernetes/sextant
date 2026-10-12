@@ -1,15 +1,18 @@
 //! Watch subscriptions and reading/writing objects.
 //!
 //! Note: `resource_replace` / `resource_apply` / `resource_delete` stay here (they are listed with `resource_get`
-//! in the command table); their core functions live in `sextant_core::resources::mutate`.
+//! in the command table); their core functions live in `sextant_core::resources::mutate`. Like the actions, they are
+//! limited to [`CHANGE_TIMEOUT`].
 
 use std::future::Future;
 
 use futures::{Stream, StreamExt};
+use sextant_core::error::with_timeout;
 use sextant_core::resources::{self, WatchUpdate};
 use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef, WatchSpec};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
+use crate::commands::actions::CHANGE_TIMEOUT;
 use crate::events::watch_event;
 use crate::state::{AppState, Subscription, check_stream_id};
 
@@ -128,7 +131,12 @@ pub async fn resource_replace(
     cluster_id: ClusterId,
     yaml: String,
 ) -> Result<serde_json::Value, CoreError> {
-    resources::replace_yaml(&state.clusters, &cluster_id, &yaml).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "saving the object",
+        resources::replace_yaml(&state.clusters, &cluster_id, &yaml),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -137,7 +145,12 @@ pub async fn resource_apply(
     cluster_id: ClusterId,
     yaml: String,
 ) -> Result<Vec<ObjectRef>, CoreError> {
-    resources::apply_yaml(&state.clusters, &cluster_id, &yaml).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "applying the YAML",
+        resources::apply_yaml(&state.clusters, &cluster_id, &yaml),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -146,7 +159,12 @@ pub async fn resource_delete(
     cluster_id: ClusterId,
     _ref: ObjectRef,
 ) -> Result<(), CoreError> {
-    resources::delete(&state.clusters, &cluster_id, &_ref).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "the deletion",
+        resources::delete(&state.clusters, &cluster_id, &_ref),
+    )
+    .await
 }
 
 #[cfg(test)]

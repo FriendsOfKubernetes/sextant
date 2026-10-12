@@ -2,6 +2,7 @@
 //! by `code`; `message` keeps the original text for details.
 
 use std::fmt;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -73,6 +74,25 @@ impl fmt::Display for CoreError {
 }
 
 impl std::error::Error for CoreError {}
+
+/// Runs `call`, giving up after `limit` with a `timeout` error naming `what` ("scaling deploy/web"). The call is
+/// dropped at the limit, so a request still waiting for the server is cancelled.
+pub async fn with_timeout<T>(
+    limit: Duration,
+    what: &str,
+    call: impl Future<Output = CoreResult<T>>,
+) -> CoreResult<T> {
+    match tokio::time::timeout(limit, call).await {
+        Ok(result) => result,
+        Err(_) => Err(CoreError::new(
+            ErrorCode::Timeout,
+            format!(
+                "{what} did not finish in {} s; it may still complete in the cluster",
+                limit.as_secs()
+            ),
+        )),
+    }
+}
 
 /// Maps an HTTP status code from the API server to an [`ErrorCode`].
 pub fn code_for_http_status(status: u16) -> ErrorCode {
@@ -366,6 +386,39 @@ mod tests {
         assert_eq!(CoreError::from(in_use).code, ErrorCode::PortInUse);
         let refused = std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "refused");
         assert_eq!(CoreError::from(refused).code, ErrorCode::Unreachable);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn a_call_slower_than_the_limit_gives_timeout() {
+        let started = tokio::time::Instant::now();
+        let slow = async {
+            tokio::time::sleep(Duration::from_secs(300)).await;
+            Ok::<_, CoreError>(())
+        };
+        let err = with_timeout(Duration::from_secs(30), "scaling", slow)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Timeout, "{err}");
+        assert!(err.message.contains("scaling"), "{err}");
+        assert!(err.message.contains("30 s"), "{err}");
+        assert_eq!(started.elapsed(), Duration::from_secs(30));
+        assert_eq!(serde_json::to_value(ErrorCode::Timeout).unwrap(), "timeout");
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn a_call_within_the_limit_keeps_its_result() {
+        let quick = async {
+            tokio::time::sleep(Duration::from_secs(29)).await;
+            Err::<(), _>(CoreError::new(ErrorCode::Conflict, "stale"))
+        };
+        let err = with_timeout(Duration::from_secs(30), "scaling", quick)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Conflict);
+        assert_eq!(
+            with_timeout(Duration::from_secs(30), "x", async { Ok(7) }).await,
+            Ok(7)
+        );
     }
 
     #[test]

@@ -9,7 +9,7 @@ import "./index";
 import { registerClusterSettingsSection, unregisterClusterSettingsSection } from "./settingsRegistry";
 import { VIEW_PERSIST_DELAY_MS } from "./viewPersistence";
 
-const homeConfig: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default" };
+const homeConfig: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default", error: null };
 
 function cluster(id: string, context: string, sourceId = "src-home"): ClusterInfo {
   return {
@@ -75,7 +75,7 @@ afterEach(() => {
 
 describe("cluster rail", () => {
   it("shows every context from every kubeconfig file", async () => {
-    setup([alpha, beta], { sources: [{ id: "src-home", path: "/a.yaml", kind: "env" }, { id: "src-env2", path: "/b.yaml", kind: "env" }] });
+    setup([alpha, beta], { sources: [{ id: "src-home", path: "/a.yaml", kind: "env", error: null }, { id: "src-env2", path: "/b.yaml", kind: "env", error: null }] });
     render(<AppShell />);
     expect(await within(rail()).findByRole("button", { name: "kind-alpha" })).toBeInTheDocument();
     expect(railButton("kind-beta")).toBeInTheDocument();
@@ -217,6 +217,43 @@ describe("cluster rail", () => {
   });
 });
 
+describe("kubeconfig source errors", () => {
+  const broken: KubeconfigSource = {
+    id: "src-env2",
+    path: "/b.yaml",
+    kind: "env",
+    error: { code: "kubeconfig", message: "the kubeconfig is not valid YAML (line 2, column 5)" },
+  };
+
+  it("the rail shows that a source failed while the clusters of the good one work", async () => {
+    setup([alpha], { sources: [{ id: "src-home", path: "/a.yaml", kind: "env", error: null }, broken] });
+    render(<AppShell />);
+    expect(await within(rail()).findByRole("button", { name: "kind-alpha" })).toBeInTheDocument();
+    fireEvent.click(within(rail()).getByRole("button", { name: "Some kubeconfig files cannot be read" }));
+    const dialog = await screen.findByRole("dialog", { name: "Kubeconfig problems" });
+    const item = within(dialog).getByRole("listitem");
+    expect(item).toHaveTextContent("/b.yaml");
+    expect(within(item).getByRole("alert")).toHaveTextContent("line 2, column 5");
+    expect(within(dialog).queryByText("/a.yaml")).not.toBeInTheDocument();
+  });
+
+  it("the rail shows nothing when every source is fine", async () => {
+    setup([alpha]);
+    render(<AppShell />);
+    expect(await within(rail()).findByRole("button", { name: "kind-alpha" })).toBeInTheDocument();
+    expect(within(rail()).queryByRole("button", { name: "Some kubeconfig files cannot be read" })).not.toBeInTheDocument();
+  });
+
+  it("without clusters the error is shown next to the checked path", async () => {
+    setup([], { sources: [broken] });
+    render(<AppShell />);
+    const paths = await screen.findByRole("list", { name: "Checked paths" });
+    const item = within(paths).getByRole("listitem");
+    expect(item).toHaveTextContent("/b.yaml");
+    expect(within(item).getByRole("alert")).toHaveTextContent("line 2, column 5");
+  });
+});
+
 describe("no clusters", () => {
   it("shows the checked paths and adds a kubeconfig file chosen in the dialog", async () => {
     const ctl = setup([], { backend: { openFile: () => "/home/me/team.yaml" } });
@@ -227,7 +264,7 @@ describe("no clusters", () => {
 
     backend.on("kubeconfig_add_file", () => {
       ctl.setClusters([cluster("ffff", "team", "src-team")]);
-      return { id: "src-team", path: "/home/me/team.yaml", kind: "addedFile" };
+      return { id: "src-team", path: "/home/me/team.yaml", kind: "addedFile", error: null };
     });
     fireEvent.click(within(main).getByRole("button", { name: "Add kubeconfig file" }));
     expect(await within(rail()).findByRole("button", { name: "team" })).toBeInTheDocument();
@@ -252,7 +289,7 @@ describe("no clusters", () => {
 
     backend.on("kubeconfig_add_pasted", (args) => {
       ctl.setClusters([cluster("pppp", "pasted-ctx", "src-p")]);
-      return { id: "src-p", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted", text: args.text };
+      return { id: "src-p", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted", error: null, text: args.text };
     });
     fireEvent.change(textarea, { target: { value: "apiVersion: v1" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
@@ -262,7 +299,7 @@ describe("no clusters", () => {
   });
 
   it("an added source can be removed after confirmation; its clusters disappear", async () => {
-    const added: KubeconfigSource = { id: "src-team", path: "/home/me/team.yaml", kind: "addedFile" };
+    const added: KubeconfigSource = { id: "src-team", path: "/home/me/team.yaml", kind: "addedFile", error: null };
     const ctl = setup([cluster("ffff", "team", "src-team")], { sources: [homeConfig, added] });
     backend.on("kubeconfig_remove", () => {
       ctl.setClusters([]);

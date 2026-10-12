@@ -4,7 +4,7 @@ import type { SourceKind } from "./SourceKind";
 
 export type KubeconfigSource = { id: string, path: string, kind: SourceKind, 
 /**
- * Why the source cannot be read right now (`null` when it is fine). Not set yet; optional in TypeScript so
- * that existing fixtures stay valid until it is filled.
+ * Why the source cannot be read right now (`null` when it is fine). Filled by
+ * [`KubeconfigRegistry::sources`]; never stored in the settings.
  */
-error?: CoreError | null, };
+error: CoreError | null, };

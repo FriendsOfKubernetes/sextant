@@ -1,11 +1,12 @@
 // Content of the cluster rail: one icon per kubeconfig context with its connection state, a context menu
-// (connect / reconnect / disconnect / settings) and the "add" and "refresh" buttons.
+// (connect / reconnect / disconnect / settings), the "add" and "refresh" buttons and, when a kubeconfig source cannot
+// be read, a warning that lists those sources with their errors.
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings, type ClusterInfo, type ConnectionState } from "../../api";
+import { useSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
 import { useAppStore } from "../../app/store";
-import { usePopup } from "../../components";
-import { AddClusterDialog } from "./AddClusterDialog";
+import { Dialog, usePopup } from "../../components";
+import { AddClusterDialog, SourceError } from "./AddClusterDialog";
 import { ClusterSettingsDialog } from "./ClusterSettingsDialog";
 import { colorOf, displayNameOf, initialsOf } from "./clusterSettings";
 import {
@@ -29,13 +30,15 @@ interface MenuState {
 
 export function ClusterList() {
   const { t } = useTranslation();
-  const { clusters, loading } = useClusters();
+  const { clusters, sources, loading } = useClusters();
   const { settings } = useSettings();
   const states = useClustersStore((s) => s.states);
   const pendingId = useClustersStore((s) => s.pendingId);
   const activeClusterId = useAppStore((s) => s.activeClusterId);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [problemsOpen, setProblemsOpen] = useState(false);
+  const broken = sources.filter((s) => s.error);
 
   return (
     <div className="cluster-list">
@@ -70,6 +73,17 @@ export function ClusterList() {
         })}
       </ul>
       <div className="cluster-list__actions">
+        {broken.length > 0 && (
+          <button
+            type="button"
+            className="icon-btn cluster-list__problems"
+            aria-label={t("clusters:sources.problems")}
+            title={t("clusters:sources.problems")}
+            onClick={() => setProblemsOpen(true)}
+          >
+            !
+          </button>
+        )}
         <button
           type="button"
           className="icon-btn"
@@ -98,6 +112,7 @@ export function ClusterList() {
         />
       )}
       <AddClusterDialog open={addOpen} onClose={() => setAddOpen(false)} />
+      <SourceProblemsDialog open={problemsOpen} sources={broken} onClose={() => setProblemsOpen(false)} />
       <ClusterSettingsDialog />
     </div>
   );
@@ -144,5 +159,32 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
         </button>
       </li>
     </ul>
+  );
+}
+
+/** The kubeconfig sources that cannot be read, each with its error. */
+function SourceProblemsDialog({
+  open,
+  sources,
+  onClose,
+}: {
+  open: boolean;
+  sources: KubeconfigSource[];
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Dialog open={open && sources.length > 0} title={t("clusters:sources.problemsTitle")} onClose={onClose}>
+      <p className="clusters-hint">{t("clusters:sources.problemsHint")}</p>
+      <ul className="cluster-problems">
+        {sources.map((source) => (
+          <li key={source.id} className="cluster-problems__item">
+            <span className="cluster-problems__path">{source.path}</span>
+            <span className="cluster-problems__kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
+            {source.error && <SourceError error={source.error} />}
+          </li>
+        ))}
+      </ul>
+    </Dialog>
   );
 }

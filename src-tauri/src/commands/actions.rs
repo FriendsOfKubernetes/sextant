@@ -1,10 +1,19 @@
 //! Actions on workloads, nodes and CronJobs: thin wrappers over `sextant_core::resources`.
+//!
+//! Every change in the cluster is limited to [`CHANGE_TIMEOUT`]: an API server that does not answer (or keeps
+//! answering "try later") gives a `timeout` error instead of an action that hangs.
 
+use std::time::Duration;
+
+use sextant_core::error::with_timeout;
 use sextant_core::resources;
 use sextant_core::{ClusterId, CoreError, DrainOptions, DrainPreview, ObjectRef};
 use tauri::State;
 
 use crate::state::AppState;
+
+/// How long one action may take.
+pub const CHANGE_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Sets the replica count of a Deployment, StatefulSet or ReplicaSet.
 #[tauri::command]
@@ -14,7 +23,12 @@ pub async fn workload_scale(
     _ref: ObjectRef,
     replicas: i32,
 ) -> Result<(), CoreError> {
-    resources::scale(&state.clusters, &cluster_id, &_ref, replicas).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "scaling",
+        resources::scale(&state.clusters, &cluster_id, &_ref, replicas),
+    )
+    .await
 }
 
 /// Rollout restart of a Deployment, StatefulSet or DaemonSet.
@@ -24,7 +38,12 @@ pub async fn workload_restart(
     cluster_id: ClusterId,
     _ref: ObjectRef,
 ) -> Result<(), CoreError> {
-    resources::restart(&state.clusters, &cluster_id, &_ref).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "the restart",
+        resources::restart(&state.clusters, &cluster_id, &_ref),
+    )
+    .await
 }
 
 /// Cordon (`unschedulable: true`) or uncordon a node.
@@ -35,7 +54,12 @@ pub async fn node_cordon(
     name: String,
     unschedulable: bool,
 ) -> Result<(), CoreError> {
-    resources::cordon(&state.clusters, &cluster_id, &name, unschedulable).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "changing the node",
+        resources::cordon(&state.clusters, &cluster_id, &name, unschedulable),
+    )
+    .await
 }
 
 /// What draining the node would do with its pods.
@@ -58,7 +82,12 @@ pub async fn node_drain(
     options: Option<DrainOptions>,
 ) -> Result<(), CoreError> {
     let _ = options;
-    resources::drain(&state.clusters, &cluster_id, &name).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "the drain",
+        resources::drain(&state.clusters, &cluster_id, &name),
+    )
+    .await
 }
 
 /// Starts a Job from the CronJob's template now; returns the Job.
@@ -68,7 +97,12 @@ pub async fn cronjob_trigger(
     cluster_id: ClusterId,
     _ref: ObjectRef,
 ) -> Result<ObjectRef, CoreError> {
-    resources::trigger_cronjob(&state.clusters, &cluster_id, &_ref).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "starting the Job",
+        resources::trigger_cronjob(&state.clusters, &cluster_id, &_ref),
+    )
+    .await
 }
 
 /// Suspends (`suspend: true`) or resumes a CronJob.
@@ -79,5 +113,10 @@ pub async fn cronjob_suspend(
     _ref: ObjectRef,
     suspend: bool,
 ) -> Result<(), CoreError> {
-    resources::suspend_cronjob(&state.clusters, &cluster_id, &_ref, suspend).await
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "changing the CronJob",
+        resources::suspend_cronjob(&state.clusters, &cluster_id, &_ref, suspend),
+    )
+    .await
 }

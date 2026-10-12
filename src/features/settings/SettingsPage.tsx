@@ -252,6 +252,7 @@ function KubeconfigSection() {
                 {t("clusters:sources.remove")}
               </button>
             )}
+            {source.error && <SourceError error={source.error} />}
           </li>
         ))}
       </ul>

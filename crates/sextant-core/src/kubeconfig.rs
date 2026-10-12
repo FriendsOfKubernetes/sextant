@@ -38,10 +38,9 @@ pub struct KubeconfigSource {
     pub id: String,
     pub path: PathBuf,
     pub kind: SourceKind,
-    /// Why the source cannot be read right now (`null` when it is fine). Not set yet; optional in TypeScript so
-    /// that existing fixtures stay valid until it is filled.
+    /// Why the source cannot be read right now (`null` when it is fine). Filled by
+    /// [`KubeconfigRegistry::sources`]; never stored in the settings.
     #[serde(default)]
-    #[ts(optional = nullable)]
     pub error: Option<CoreError>,
 }
 
@@ -144,8 +143,23 @@ impl KubeconfigRegistry {
         self.env = env;
     }
 
-    /// Every source, the checked default locations first (they are listed even when the file is missing).
+    /// Every source, the checked default locations first (they are listed even when the file is missing), each with
+    /// the error that keeps it from being read right now (`error`; a missing default file is not an error). Re-reads
+    /// the files.
     pub fn sources(&self) -> Vec<KubeconfigSource> {
+        let (_, errors) = self.load();
+        let mut sources = self.listed_sources();
+        for source in &mut sources {
+            source.error = errors
+                .iter()
+                .find(|(id, _)| *id == source.id)
+                .map(|(_, err)| err.clone());
+        }
+        sources
+    }
+
+    /// Every source without reading the files.
+    fn listed_sources(&self) -> Vec<KubeconfigSource> {
         let mut sources = self.default_sources();
         for extra in &self.extra_sources {
             if !sources.iter().any(|s| s.path == extra.path) {
@@ -183,14 +197,15 @@ impl KubeconfigRegistry {
 
     /// Reads every source. `KUBECONFIG` files are merged the way kubectl does (the first file to define a name
     /// wins), so a context may use a user from another file of the list. A missing default file is skipped
-    /// quietly; an unreadable added file is reported only when nothing else could be read.
-    fn load(&self) -> (Vec<Loaded>, Option<CoreError>) {
+    /// quietly; every other source that cannot be read or merged is skipped and its error is returned with its
+    /// source id.
+    fn load(&self) -> (Vec<Loaded>, Vec<(String, CoreError)>) {
         let mut loaded = Vec::new();
-        let mut first_error = None;
+        let mut errors: Vec<(String, CoreError)> = Vec::new();
         let mut env_merged: Option<Kubeconfig> = None;
         let mut env_files: Vec<(KubeconfigSource, Kubeconfig)> = Vec::new();
 
-        for src in self.sources() {
+        for src in self.listed_sources() {
             let is_default = matches!(src.kind, SourceKind::Default | SourceKind::Env);
             if is_default && !src.path.exists() {
                 continue;
@@ -198,21 +213,22 @@ impl KubeconfigRegistry {
             let config = match Kubeconfig::read_from(&src.path) {
                 Ok(config) => config,
                 Err(err) => {
-                    first_error.get_or_insert_with(|| kubeconfig_error(err));
+                    errors.push((src.id.clone(), kubeconfig_error(err)));
                     continue;
                 }
             };
             if src.kind == SourceKind::Env {
-                env_merged = Some(match env_merged.take() {
-                    None => config.clone(),
+                match env_merged.take() {
+                    None => env_merged = Some(config.clone()),
                     Some(merged) => match merged.clone().merge(config.clone()) {
-                        Ok(next) => next,
+                        Ok(next) => env_merged = Some(next),
                         Err(err) => {
-                            first_error.get_or_insert_with(|| kubeconfig_error(err));
-                            merged
+                            errors.push((src.id.clone(), kubeconfig_error(err)));
+                            env_merged = Some(merged);
+                            continue;
                         }
                     },
-                });
+                }
                 env_files.push((src, config));
             } else {
                 loaded.push(Loaded {
@@ -237,15 +253,16 @@ impl KubeconfigRegistry {
             }
             loaded.splice(0..0, env_loaded);
         }
-        (loaded, first_error)
+        (loaded, errors)
     }
 
-    /// Re-reads the files and lists every context.
+    /// Re-reads the files and lists every context. Fails only when no context could be listed and a source has an
+    /// error (that error); otherwise the errors are on [`Self::sources`].
     pub fn clusters(&self) -> CoreResult<Vec<ClusterInfo>> {
-        let (loaded, first_error) = self.load();
+        let (loaded, errors) = self.load();
         let clusters: Vec<ClusterInfo> = loaded.iter().flat_map(Loaded::clusters).collect();
-        match first_error {
-            Some(err) if clusters.is_empty() => Err(err),
+        match errors.into_iter().next() {
+            Some((_, err)) if clusters.is_empty() => Err(err),
             _ => Ok(clusters),
         }
     }
@@ -259,7 +276,7 @@ impl KubeconfigRegistry {
                 format!("cannot open {}: {e}", path.display()),
             )
         })?;
-        if let Some(existing) = self.sources().into_iter().find(|s| s.path == path) {
+        if let Some(existing) = self.listed_sources().into_iter().find(|s| s.path == path) {
             return Ok(existing);
         }
         let config = Kubeconfig::read_from(&path).map_err(kubeconfig_error)?;
@@ -947,6 +964,71 @@ current-context: {name}
             .clusters()
             .unwrap_err();
         assert_eq!(err.code, ErrorCode::Kubeconfig);
+    }
+
+    #[test]
+    fn a_broken_file_in_kubeconfig_is_reported_on_its_source_while_the_good_one_works() {
+        let fx = Fixture::new();
+        let good = fx.write("good.yaml", &one_context("good", "https://g:6443"));
+        let bad = fx.write("bad.yaml", "clusters: [\n");
+        let env = std::env::join_paths([&bad, &good]).unwrap();
+        let registry = fx.registry_with(Vec::new(), Some(env));
+
+        let clusters = registry.clusters().unwrap();
+        assert_eq!(contexts(&clusters), ["good"]);
+        registry
+            .kubeconfig_for(&clusters[0].id)
+            .expect("the good cluster can be connected");
+
+        let sources = registry.sources();
+        let of = |path: &PathBuf| sources.iter().find(|s| &s.path == path).unwrap();
+        let error = of(&bad)
+            .error
+            .clone()
+            .expect("the broken file has an error");
+        assert_eq!(error.code, ErrorCode::Kubeconfig, "{error}");
+        assert_eq!(of(&good).error, None);
+    }
+
+    #[test]
+    fn an_added_file_that_broke_or_vanished_is_reported_on_its_source() {
+        let fx = Fixture::new();
+        fx.write("home/.kube/config", &one_context("home", "https://h:6443"));
+        let broken = fx.write("team.yaml", &two_contexts());
+        let gone = fx.write("gone.yaml", &one_context("gone", "https://x:6443"));
+        let mut registry = fx.registry();
+        let broken_source = registry.add_file(broken.clone()).unwrap();
+        let gone_source = registry.add_file(gone.clone()).unwrap();
+        std::fs::write(&broken, format!("users: [\n  token: {SECRET_TOKEN}\n")).unwrap();
+        std::fs::remove_file(&gone).unwrap();
+
+        assert_eq!(contexts(&registry.clusters().unwrap()), ["home"]);
+        let sources = registry.sources();
+        let error_of = |id: &str| {
+            sources
+                .iter()
+                .find(|s| s.id == id)
+                .and_then(|s| s.error.clone())
+        };
+        let broken_error = error_of(&broken_source.id).expect("broken file has an error");
+        assert!(
+            !broken_error.message.contains(SECRET_TOKEN),
+            "{broken_error}"
+        );
+        assert!(
+            error_of(&gone_source.id).is_some(),
+            "a vanished file has an error"
+        );
+        assert_eq!(sources[0].kind, SourceKind::Default);
+        assert_eq!(sources[0].error, None);
+        // The settings store the sources without their current errors.
+        assert!(registry.added_sources().iter().all(|s| s.error.is_none()));
+    }
+
+    #[test]
+    fn a_missing_default_file_is_not_an_error() {
+        let fx = Fixture::new();
+        assert_eq!(fx.registry().sources()[0].error, None);
     }
 
     #[test]

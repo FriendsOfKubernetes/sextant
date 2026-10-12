@@ -8,8 +8,8 @@ import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
 import { SETTINGS_PAGE_ID } from "./index";
 
-const home: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default" };
-const pasted: KubeconfigSource = { id: "src-pasted", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted" };
+const home: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default", error: null };
+const pasted: KubeconfigSource = { id: "src-pasted", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted", error: null };
 const FOUND: HelmStatus = { available: true, version: "v4.3.0", path: "/usr/local/bin/helm" };
 const MISSING: HelmStatus = { available: false, version: null, path: null };
 
@@ -142,6 +142,69 @@ describe("Settings page", () => {
     await waitFor(() => expect(calls("kubeconfig_remove")).toHaveLength(1));
     expect(calls("kubeconfig_remove")[0]!.args).toEqual({ sourceId: "src-pasted" });
     await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(1));
+  });
+});
+
+describe("kubeconfig source errors in Settings", () => {
+  it("shows the error of a source next to it, the others stay plain", async () => {
+    setup();
+    const broken: KubeconfigSource = {
+      id: "src-env-bad",
+      path: "/home/me/broken.yaml",
+      kind: "env",
+      error: { code: "kubeconfig", message: "the kubeconfig is not valid YAML (line 3, column 1)" },
+    };
+    sources = [home, broken];
+    renderPage();
+    const list = within(screen.getByRole("region", { name: "Kubeconfig" })).getByRole("list", { name: "Kubeconfig sources" });
+    await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(2));
+    const [homeItem, brokenItem] = within(list).getAllByRole("listitem");
+    expect(within(brokenItem!).getByText(broken.path)).toBeInTheDocument();
+    const alert = within(brokenItem!).getByRole("alert");
+    expect(alert).toHaveAttribute("data-code", "kubeconfig");
+    expect(alert).toHaveTextContent("line 3, column 1");
+    expect(within(homeItem!).queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("settings file banner", () => {
+  const banner = () => screen.findByRole("alert", { name: "Settings file" });
+
+  it("says the file cannot be read and changes are not saved, with the file's path", async () => {
+    setup();
+    backend.on("settings_status", () => ({
+      writable: false,
+      backupPath: null,
+      error: { code: "forbidden", message: "cannot read /cfg/sextant/settings.json: Permission denied (os error 13)" },
+    }));
+    render(<AppShell />);
+    const alert = await banner();
+    expect(alert).toHaveTextContent("Changes are not saved");
+    expect(alert).toHaveTextContent("/cfg/sextant/settings.json");
+
+    fireEvent.click(within(alert).getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByRole("alert", { name: "Settings file" })).not.toBeInTheDocument();
+  });
+
+  it("names the copy of a damaged file", async () => {
+    setup();
+    backend.on("settings_status", () => ({
+      writable: true,
+      backupPath: "/cfg/sextant/settings.json.bak-20261012-153012",
+      error: { code: "invalid", message: "/cfg/sextant/settings.json is not valid (expected value at line 1 column 1)" },
+    }));
+    render(<AppShell />);
+    const alert = await banner();
+    expect(alert).toHaveTextContent("/cfg/sextant/settings.json.bak-20261012-153012");
+    expect(alert).not.toHaveTextContent("Changes are not saved");
+  });
+
+  it("is not shown when the file is fine", async () => {
+    setup();
+    backend.on("settings_status", () => ({ writable: true, backupPath: null, error: null }));
+    render(<AppShell />);
+    await waitFor(() => expect(calls("settings_status")).toHaveLength(1));
+    expect(screen.queryByRole("alert", { name: "Settings file" })).not.toBeInTheDocument();
   });
 });
 

@@ -42,7 +42,10 @@
     "removeNamed": "Remove {{path}}",
     "confirmTitle": "Remove kubeconfig source?",
     "confirmFile": "Its clusters disappear from the list. The file itself stays on disk.",
-    "confirmPasted": "Its clusters disappear from the list and the pasted copy is deleted."
+    "confirmPasted": "Its clusters disappear from the list and the pasted copy is deleted.",
+    "problems": "Some kubeconfig files cannot be read",
+    "problemsTitle": "Kubeconfig problems",
+    "problemsHint": "Clusters from the other files keep working. Fix the file, then press Refresh."
   },
   "welcome": {
     "loading": "Reading kubeconfig…",

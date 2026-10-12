@@ -24,7 +24,10 @@ export function Welcome() {
         <p>{t("clusters:welcome.checked")}</p>
         <ul className="clusters-welcome__paths" aria-label={t("clusters:welcome.checkedPaths")}>
           {sources.map((s) => (
-            <li key={s.id}>{s.path}</li>
+            <li key={s.id}>
+              {s.path}
+              {s.error && <SourceError error={s.error} />}
+            </li>
           ))}
         </ul>
         {error && <SourceError error={error} />}

@@ -13,6 +13,7 @@ use std::path::Path;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
+use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use sextant_core::kubeconfig::KubeconfigEnv;
 use sextant_core::{
     ClusterId, ClusterInfo, ClusterManager, ConnectionState, ErrorCode, KubeconfigRegistry,
@@ -150,6 +151,133 @@ async fn kinds_include_builtin_kinds_and_the_test_crd_with_printer_columns() {
 
     // Cached until reconnect.
     assert_eq!(mgr.kinds(&id).await.unwrap(), kinds);
+}
+
+/// Group of the CRDs made by `kinds_served_only_by_a_non_preferred_version_are_discovered` (cluster-scoped objects,
+/// so a group of its own instead of a namespace).
+const VERSIONS_GROUP: &str = "versions.connect.sextant.dev";
+
+/// A namespaced CRD in [`VERSIONS_GROUP`] served in `versions` (the first one is stored).
+fn crd(kind: &str, plural: &str, versions: &[&str]) -> CustomResourceDefinition {
+    let versions: Vec<serde_json::Value> = versions
+        .iter()
+        .enumerate()
+        .map(|(i, name)| {
+            serde_json::json!({
+                "name": name,
+                "served": true,
+                "storage": i == 0,
+                "schema": { "openAPIV3Schema": {
+                    "type": "object",
+                    "x-kubernetes-preserve-unknown-fields": true
+                } }
+            })
+        })
+        .collect();
+    serde_json::from_value(serde_json::json!({
+        "apiVersion": "apiextensions.k8s.io/v1",
+        "kind": "CustomResourceDefinition",
+        "metadata": { "name": format!("{plural}.{VERSIONS_GROUP}") },
+        "spec": {
+            "group": VERSIONS_GROUP,
+            "scope": "Namespaced",
+            "names": { "kind": kind, "plural": plural, "singular": kind.to_lowercase() },
+            "versions": versions
+        }
+    }))
+    .unwrap()
+}
+
+async fn delete_crds(crds: &kube::Api<CustomResourceDefinition>, names: &[String]) {
+    for name in names {
+        let _ = crds.delete(name, &Default::default()).await;
+    }
+    // Wait until they are gone, so the next run can create them again.
+    let deadline = Instant::now() + Duration::from_secs(60);
+    for name in names {
+        while crds.get_opt(name).await.unwrap().is_some() && Instant::now() < deadline {
+            tokio::time::sleep(Duration::from_millis(300)).await;
+        }
+    }
+}
+
+#[tokio::test]
+async fn kinds_served_only_by_a_non_preferred_version_are_discovered() {
+    let Some(cluster) = common::test_cluster() else {
+        return;
+    };
+    let admin = cluster.client().await;
+    let crds = kube::Api::<CustomResourceDefinition>::all(admin.clone());
+    // `Gauge` in v1 (stored) and v1beta1, `Probe` in v1beta1 only: the group prefers v1, which has no `Probe`.
+    let objects = [
+        crd("Gauge", "gauges", &["v1", "v1beta1"]),
+        crd("Probe", "probes", &["v1beta1"]),
+    ];
+    let names: Vec<String> = objects
+        .iter()
+        .map(|c| c.metadata.name.clone().unwrap())
+        .collect();
+    delete_crds(&crds, &names).await;
+    for object in &objects {
+        crds.create(&Default::default(), object).await.unwrap();
+    }
+    // The API server serves a new CRD a moment after creating it.
+    let deadline = Instant::now() + Duration::from_secs(60);
+    loop {
+        let served = admin
+            .list_api_group_resources(&format!("{VERSIONS_GROUP}/v1beta1"))
+            .await
+            .is_ok_and(|list| list.resources.iter().any(|r| r.kind == "Probe"));
+        let preferred = admin
+            .list_api_groups()
+            .await
+            .unwrap()
+            .groups
+            .into_iter()
+            .any(|g| {
+                g.name == VERSIONS_GROUP && g.preferred_version.is_some_and(|p| p.version == "v1")
+            });
+        if served && preferred {
+            break;
+        }
+        assert!(Instant::now() < deadline, "the test CRDs are not served");
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
+    let tmp = tempfile::tempdir().unwrap();
+    let registry = registry_for(&[&cluster.kubeconfig], tmp.path());
+    let id = registry.clusters().unwrap()[0].id.clone();
+    let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
+    mgr.connect(&id).await.unwrap();
+    let kinds = mgr.kinds(&id).await;
+    delete_crds(&crds, &names).await;
+    let kinds = kinds.unwrap();
+
+    let versions_of = |kind: &str| -> Vec<(String, String)> {
+        kinds
+            .iter()
+            .filter(|k| k.kind_ref.group == VERSIONS_GROUP && k.kind_ref.kind == kind)
+            .map(|k| (k.kind_ref.version.clone(), k.plural.clone()))
+            .collect()
+    };
+    assert_eq!(
+        versions_of("Probe"),
+        [("v1beta1".to_owned(), "probes".to_owned())],
+        "served only by v1beta1"
+    );
+    assert_eq!(
+        versions_of("Gauge"),
+        [("v1".to_owned(), "gauges".to_owned())],
+        "once, in the preferred version"
+    );
+    assert_eq!(kind_count(&kinds, "apps", "Deployment"), 1, "no duplicates");
+}
+
+fn kind_count(kinds: &[sextant_core::ResourceKind], group: &str, kind: &str) -> usize {
+    kinds
+        .iter()
+        .filter(|k| k.kind_ref.group == group && k.kind_ref.kind == kind)
+        .count()
 }
 
 #[tokio::test]

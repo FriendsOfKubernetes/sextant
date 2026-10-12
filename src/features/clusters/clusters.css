@@ -305,3 +305,42 @@
     transform: rotate(360deg);
   }
 }
+
+/* Kubeconfig sources that cannot be read: the warning in the rail and its dialog. */
+.icon-btn.cluster-list__problems {
+  color: var(--color-warning);
+  font-weight: 700;
+}
+
+.cluster-problems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cluster-problems__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cluster-problems__path {
+  flex: 1 1 200px;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.cluster-problems__kind {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.cluster-problems__item .error-state.clusters-error {
+  flex-basis: 100%;
+  margin-top: 0;
+}

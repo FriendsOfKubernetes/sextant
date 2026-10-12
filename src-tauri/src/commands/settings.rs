@@ -14,7 +14,7 @@ use crate::state::AppState;
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct SettingsStatus {
-    /// `false` when changes are not written (the file could not be read).
+    /// `false` when changes are not written (the file could not be read or is read-only); they last for the session.
     pub writable: bool,
     /// Where the unreadable file was copied to, if it was.
     pub backup_path: Option<PathBuf>,
@@ -22,9 +22,16 @@ pub struct SettingsStatus {
     pub error: Option<CoreError>,
 }
 
+/// How `settings.json` was found at start: a file that did not parse was copied aside (`backupPath`), one that
+/// cannot be read or is read-only is not written (`writable: false`).
 #[tauri::command]
-pub async fn settings_status(_state: State<'_, AppState>) -> Result<SettingsStatus, CoreError> {
-    Err(CoreError::not_implemented())
+pub async fn settings_status(state: State<'_, AppState>) -> Result<SettingsStatus, CoreError> {
+    let status = state.settings.status();
+    Ok(SettingsStatus {
+        writable: status.writable,
+        backup_path: status.backup_path,
+        error: status.error,
+    })
 }
 
 #[tauri::command]

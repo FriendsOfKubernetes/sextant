@@ -25,6 +25,9 @@ flate2.workspace = true
 base64.workspace = true
 tempfile.workspace = true
 sha2.workspace = true
+# The connection's own retry policy (`cluster::RetryPolicy`) plugs into kube's client stack; same versions as kube-client.
+tower = { version = "0.5.3", default-features = false, features = ["retry", "buffer"] }
+http = "1.5"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }

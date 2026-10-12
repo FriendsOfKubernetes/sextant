@@ -3981,6 +3981,7 @@ dependencies = [
  "base64 0.23.1",
  "flate2",
  "futures",
+ "http",
  "k8s-openapi",
  "kube",
  "serde",
@@ -3989,6 +3990,7 @@ dependencies = [
  "sha2 0.11.0",
  "tempfile",
  "tokio",
+ "tower",
  "ts-rs",
 ]
 

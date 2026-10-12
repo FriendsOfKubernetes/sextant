@@ -22,6 +22,45 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 /// How long the whole connection check (exec plugin + first request) may take.
 const CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 
+/// When the connection's client repeats a request the server asked to repeat (429 Too Many Requests, 503 Service
+/// Unavailable, 504 Gateway Timeout): at most [`RetryPolicy::MAX_RETRIES`] times, pausing 0.5 s, 1 s, 2 s, and never
+/// more than [`RetryPolicy::MAX_WAIT`] in total. A `Retry-After` (in seconds) longer than the pause is waited for, if
+/// it fits into what is left of the budget; otherwise the server's answer is returned at once. One value per request:
+/// a copy starts from zero.
+///
+/// It replaces kube's `server_retry` (15 repeats, pauses up to 1000 s, any `Retry-After`), with which an action could
+/// hang for minutes.
+#[derive(Debug, Clone, Default)]
+pub struct RetryPolicy {
+    retries: u32,
+    waited: Duration,
+}
+
+impl RetryPolicy {
+    pub const MAX_RETRIES: u32 = 3;
+    pub const MAX_WAIT: Duration = Duration::from_secs(5);
+    const FIRST_PAUSE: Duration = Duration::from_millis(500);
+
+    /// The pause before repeating a request answered with `status` (and the `Retry-After` header, if any), or `None`
+    /// when the answer is final.
+    pub fn next_delay(&mut self, status: u16, retry_after: Option<&str>) -> Option<Duration> {
+        if !matches!(status, 429 | 503 | 504) || self.retries >= Self::MAX_RETRIES {
+            return None;
+        }
+        let backoff = Self::FIRST_PAUSE * 2u32.pow(self.retries);
+        let asked = retry_after
+            .and_then(|v| v.trim().parse::<u64>().ok())
+            .map(Duration::from_secs);
+        let pause = asked.map_or(backoff, |asked| asked.max(backoff));
+        if self.waited + pause > Self::MAX_WAIT {
+            return None;
+        }
+        self.retries += 1;
+        self.waited += pause;
+        Some(pause)
+    }
+}
+
 /// Connection state of one cluster. Serialized with a `state` tag:
 /// `{ "state": "connected" }`, `{ "state": "error", "code": "unreachable", "message": "…" }`.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -150,8 +189,8 @@ impl ClusterManager {
             })
     }
 
-    /// Discovery: every resource kind the cluster serves (preferred version of each group), with the printer
-    /// columns of CRDs. Cached until the cluster reconnects.
+    /// Discovery: every resource kind the cluster serves (in the preferred version of its group when that version
+    /// serves it), with the printer columns of CRDs. Cached until the cluster reconnects.
     pub async fn kinds(&self, id: &ClusterId) -> CoreResult<Vec<ResourceKind>> {
         let (client, generation) = {
             let clusters = self.lock();
@@ -211,8 +250,10 @@ impl ClusterManager {
             .await
             .map_err(kubeconfig_error)?;
         config.connect_timeout = Some(CONNECT_TIMEOUT);
+        // kube's own retry (`server_retry`: 15 repeats, any `Retry-After`) is replaced by [`RetryPolicy`].
+        config.default_retry = false;
 
-        let client = kube::Client::try_from(config).map_err(|err| {
+        let client = retrying_client(config).map_err(|err| {
             let core = kube_error(err, plugin.as_deref());
             if core.code == ErrorCode::AuthPlugin {
                 core
@@ -253,8 +294,56 @@ impl ClusterManager {
     }
 }
 
-/// Lists the preferred version of every API group (core `v1` included). A group that fails (e.g. an
-/// aggregated API whose backend is down) is skipped; only a failing core group fails the discovery.
+/// A client for `config` that repeats requests as [`RetryPolicy`] says. The retry layer needs a cloneable inner
+/// service, hence the buffer in front of kube's own stack.
+fn retrying_client(config: kube::Config) -> Result<kube::Client, kube::Error> {
+    let builder = kube::client::ClientBuilder::try_from(config)?
+        .with_layer(&tower::buffer::BufferLayer::new(1024))
+        .with_layer(&tower::retry::RetryLayer::new(RetryPolicy::default()));
+    Ok(builder.build())
+}
+
+impl<Res>
+    tower::retry::Policy<http::Request<kube::client::Body>, http::Response<Res>, tower::BoxError>
+    for RetryPolicy
+{
+    type Future = tokio::time::Sleep;
+
+    fn retry(
+        &mut self,
+        _request: &mut http::Request<kube::client::Body>,
+        result: &mut Result<http::Response<Res>, tower::BoxError>,
+    ) -> Option<Self::Future> {
+        let response = result.as_ref().ok()?;
+        let retry_after = response
+            .headers()
+            .get(http::header::RETRY_AFTER)
+            .and_then(|v| v.to_str().ok());
+        self.next_delay(response.status().as_u16(), retry_after)
+            .map(tokio::time::sleep)
+    }
+
+    /// Requests whose body cannot be cloned (a stream) are sent once.
+    fn clone_request(
+        &mut self,
+        request: &http::Request<kube::client::Body>,
+    ) -> Option<http::Request<kube::client::Body>> {
+        let body = request.body().try_clone()?;
+        let mut clone = http::Request::builder()
+            .method(request.method().clone())
+            .uri(request.uri().clone())
+            .version(request.version())
+            .body(body)
+            .ok()?;
+        *clone.headers_mut() = request.headers().clone();
+        *clone.extensions_mut() = request.extensions().clone();
+        Some(clone)
+    }
+}
+
+/// Lists every kind the cluster serves (core `v1` included), each once: in the preferred version of its group, or in
+/// the first other served version that has it. A group version that fails (e.g. an aggregated API whose backend is
+/// down) is skipped; only a failing core group fails the discovery.
 async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     use futures::future::join_all;
     use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
@@ -272,14 +361,24 @@ async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     .await;
 
     let groups = client.list_api_groups().await.map_err(CoreError::from)?;
+    // Every served version of every group, the preferred one first: a kind is taken from the first version that
+    // serves it, so a kind that only an older version serves (a CRD not yet moved to the group's newest version)
+    // is listed too.
     let group_versions: Vec<String> = groups
         .groups
         .iter()
-        .filter_map(|g| {
-            g.preferred_version
+        .flat_map(|g| {
+            let preferred = g
+                .preferred_version
                 .as_ref()
-                .map(|p| p.group_version.clone())
-                .or_else(|| g.versions.first().map(|v| v.group_version.clone()))
+                .map(|p| p.group_version.clone());
+            let others = g
+                .versions
+                .iter()
+                .map(|v| v.group_version.clone())
+                .filter(|gv| Some(gv) != preferred.as_ref())
+                .collect::<Vec<_>>();
+            preferred.into_iter().chain(others)
         })
         .collect();
     let group_lists = join_all(
@@ -333,6 +432,8 @@ async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     for list in group_lists.into_iter().flatten() {
         push_kinds(&mut kinds, list, &columns);
     }
+    let mut seen = std::collections::HashSet::new();
+    kinds.retain(|k| seen.insert((k.kind_ref.group.clone(), k.kind_ref.kind.clone())));
     kinds.sort_by(|a, b| {
         (&a.kind_ref.group, &a.kind_ref.kind).cmp(&(&b.kind_ref.group, &b.kind_ref.kind))
     });
@@ -490,6 +591,130 @@ mod tests {
         let (_, second) = states.recv().await.unwrap();
         assert_eq!(error_code(second), ErrorCode::Unreachable);
         assert!(mgr.client(&id).is_err());
+    }
+
+    /// Every pause the policy asks for until it gives up, for the same answer each time.
+    fn pauses(status: u16, retry_after: Option<&str>) -> Vec<Duration> {
+        let mut policy = RetryPolicy::default();
+        std::iter::from_fn(|| policy.next_delay(status, retry_after))
+            .take(100)
+            .collect()
+    }
+
+    #[test]
+    fn retry_policy_repeats_429_503_504_at_most_3_times_within_5_seconds() {
+        for status in [429, 503, 504] {
+            let waits = pauses(status, None);
+            assert!(!waits.is_empty(), "{status} is retried");
+            assert!(waits.len() <= 3, "{status}: {waits:?}");
+            let total: Duration = waits.iter().sum();
+            assert!(total <= Duration::from_secs(5), "{status}: {waits:?}");
+        }
+        for status in [200, 400, 401, 403, 404, 409, 500, 502] {
+            assert!(pauses(status, None).is_empty(), "{status} is not retried");
+        }
+    }
+
+    #[test]
+    fn retry_after_within_the_budget_is_respected_and_beyond_it_fails_at_once() {
+        assert_eq!(pauses(429, Some("2"))[0], Duration::from_secs(2));
+        assert!(
+            pauses(503, Some("2")).iter().sum::<Duration>() <= Duration::from_secs(5),
+            "Retry-After never stretches the total past the budget"
+        );
+        assert!(
+            pauses(429, Some("30")).is_empty(),
+            "the server asks for more than 5 s"
+        );
+        assert!(pauses(503, Some("6")).is_empty());
+        // A date or garbage is not a number of seconds: the policy's own pauses apply.
+        assert!(!pauses(503, Some("Wed, 21 Oct 2026 07:28:00 GMT")).is_empty());
+    }
+
+    /// A plain-HTTP API server on 127.0.0.1 that answers every request with `status` (and `Retry-After`, if given).
+    /// Returns its URL and the number of requests it got.
+    async fn always_answering(
+        status: u16,
+        retry_after: Option<&'static str>,
+    ) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let requests = Arc::new(AtomicUsize::new(0));
+        let counter = Arc::clone(&requests);
+        tokio::spawn(async move {
+            while let Ok((mut socket, _)) = listener.accept().await {
+                let counter = Arc::clone(&counter);
+                tokio::spawn(async move {
+                    let mut buf = Vec::new();
+                    let mut chunk = [0u8; 4096];
+                    loop {
+                        // One response per request head (GET requests have no body).
+                        while let Some(end) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
+                            buf.drain(..end + 4);
+                            counter.fetch_add(1, Ordering::SeqCst);
+                            let body = format!(
+                                r#"{{"kind":"Status","apiVersion":"v1","status":"Failure","message":"try later","code":{status}}}"#
+                            );
+                            let extra = retry_after
+                                .map(|v| format!("Retry-After: {v}\r\n"))
+                                .unwrap_or_default();
+                            let response = format!(
+                                "HTTP/1.1 {status} Try Later\r\nContent-Type: application/json\r\nContent-Length: {}\r\n{extra}\r\n{body}",
+                                body.len()
+                            );
+                            if socket.write_all(response.as_bytes()).await.is_err() {
+                                return;
+                            }
+                        }
+                        match socket.read(&mut chunk).await {
+                            Ok(0) | Err(_) => return,
+                            Ok(n) => buf.extend_from_slice(&chunk[..n]),
+                        }
+                    }
+                });
+            }
+        });
+        (url, requests)
+    }
+
+    #[tokio::test]
+    async fn the_client_repeats_429_503_504_at_most_3_times_within_about_5_seconds() {
+        use std::sync::atomic::Ordering;
+        for status in [429, 503, 504] {
+            let (url, requests) = always_answering(status, None).await;
+            let (_dir, mgr, id) = manager(&kubeconfig(&url, "      token: abc\n"));
+            let started = std::time::Instant::now();
+            let err = mgr.connect(&id).await.unwrap_err();
+            let elapsed = started.elapsed();
+            let sent = requests.load(Ordering::SeqCst);
+            assert!(
+                (2..=4).contains(&sent),
+                "{status}: {sent} requests (first + at most 3 repeats)"
+            );
+            assert!(
+                elapsed < Duration::from_secs(6),
+                "{status}: took {elapsed:?}"
+            );
+            assert_ne!(err.code, ErrorCode::Timeout, "{err}");
+        }
+    }
+
+    #[tokio::test]
+    async fn the_client_gives_up_at_once_when_retry_after_exceeds_the_budget() {
+        use std::sync::atomic::Ordering;
+        let (url, requests) = always_answering(503, Some("30")).await;
+        let (_dir, mgr, id) = manager(&kubeconfig(&url, "      token: abc\n"));
+        let started = std::time::Instant::now();
+        let err = mgr.connect(&id).await.unwrap_err();
+        assert_eq!(requests.load(Ordering::SeqCst), 1, "{err}");
+        assert!(
+            started.elapsed() < Duration::from_secs(2),
+            "took {:?}",
+            started.elapsed()
+        );
     }
 
     #[tokio::test]
