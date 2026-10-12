@@ -279,6 +279,26 @@ describe("ResourceTable", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("You don't have permission to list Secrets");
   });
 
+  it("shows the rows of the allowed namespaces and names the namespaces without permission", async () => {
+    act(() => useAppStore.getState().setNamespaces("c1", ["team-a", "team-b", "team-c"]));
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await waitFor(() => expect(backend.calls.some((c) => c.cmd === "watch_start")).toBe(true));
+    const streamId = backend.calls.find((c) => c.cmd === "watch_start")!.args.streamId as string;
+    await waitFor(() => expect(backend.listenerCount(`watch:${streamId}`)).toBe(1));
+    act(() => backend.emit(`watch:${streamId}`, { type: "forbidden", namespaces: ["team-b", "team-c"] }));
+    act(() =>
+      backend.emit(`watch:${streamId}`, { type: "snapshot", items: [pod(1, { namespace: "team-a" }), pod(2, { namespace: "team-a" })] }),
+    );
+    expect(names()).toEqual(["pod-0001", "pod-0002"]);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByTestId("rt-forbidden")).toHaveTextContent("No permission in: team-b, team-c");
+
+    // Later batches keep the note.
+    act(() => backend.emit(`watch:${streamId}`, { type: "delta", upserted: [pod(3, { namespace: "team-a" })], deleted: [] }));
+    expect(names()).toEqual(["pod-0001", "pod-0002", "pod-0003"]);
+    expect(screen.getByTestId("rt-forbidden")).toHaveTextContent("No permission in: team-b, team-c");
+  });
+
   it("marks the header while reconnecting and keeps the rows", async () => {
     render(<ResourceTable clusterId="c1" kind={POD} />);
     await snapshot([pod(1), pod(2)]);

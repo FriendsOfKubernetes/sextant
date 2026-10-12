@@ -1,7 +1,8 @@
 //! Actions on workloads, nodes and CronJobs: thin wrappers over `sextant_core::resources`.
 //!
 //! Every change in the cluster is limited to [`CHANGE_TIMEOUT`]: an API server that does not answer (or keeps
-//! answering "try later") gives a `timeout` error instead of an action that hangs.
+//! answering "try later") gives a `timeout` error instead of an action that hangs. A drain is the exception: it is
+//! one request per pod, so each request is limited instead (see [`node_drain`]).
 
 use std::time::Duration;
 
@@ -62,32 +63,35 @@ pub async fn node_cordon(
     .await
 }
 
-/// What draining the node would do with its pods.
+/// What draining the node would do with its pods (lists only, changes nothing).
 #[tauri::command]
 pub async fn node_drain_preview(
-    _state: State<'_, AppState>,
-    _cluster_id: ClusterId,
-    _name: String,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    name: String,
 ) -> Result<DrainPreview, CoreError> {
-    Err(CoreError::not_implemented())
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "listing the pods of the node",
+        resources::drain_preview(&state.clusters, &cluster_id, &name),
+    )
+    .await
 }
 
-/// Cordons the node and evicts its pods (DaemonSet and mirror pods stay). `options` is not applied yet and may be
-/// left out until the drain dialog sends it.
+/// Cordons the node and evicts its pods like `kubectl drain`: DaemonSet and mirror pods stay; pods without a
+/// controller go only with `options.force`, pods with `emptyDir` data only with `options.deleteEmptyDirData`.
+///
+/// Not limited as a whole: a drain sends one request per pod, so the core limits each request
+/// (`resources::STEP_TIMEOUT`, as long as [`CHANGE_TIMEOUT`]) and a `timeout` error names the pods already evicted
+/// and the ones not sent.
 #[tauri::command]
 pub async fn node_drain(
     state: State<'_, AppState>,
     cluster_id: ClusterId,
     name: String,
-    options: Option<DrainOptions>,
+    options: DrainOptions,
 ) -> Result<(), CoreError> {
-    let _ = options;
-    with_timeout(
-        CHANGE_TIMEOUT,
-        "the drain",
-        resources::drain(&state.clusters, &cluster_id, &name),
-    )
-    .await
+    resources::drain(&state.clusters, &cluster_id, &name, options).await
 }
 
 /// Starts a Job from the CronJob's template now; returns the Job.

@@ -211,7 +211,77 @@ describe("nodes", () => {
     ]);
   });
 
+  const PREVIEW = {
+    evict: [{ namespace: "demo", name: "web-1" }],
+    unmanaged: [{ namespace: "demo", name: "lonely" }],
+    emptyDir: [{ namespace: "demo", name: "cache-0" }],
+    daemonSet: [{ namespace: "kube-system", name: "kube-proxy-x" }],
+  };
+  const podsIn = (dialog: HTMLElement, list: RegExp) =>
+    within(within(dialog).getByRole("list", { name: list }))
+      .getAllByRole("listitem")
+      .map((li) => li.textContent);
+
+  it("lists every pod of the node before draining, with the risky options off", async () => {
+    backend.on("node_drain_preview", () => PREVIEW);
+    backend.on("node_drain", () => undefined);
+    await run("drain", NODE, [obj(NODE, "n1", undefined)]);
+    const dialog = screen.getByRole("dialog", { name: "Drain node n1?" });
+    await within(dialog).findByText("demo/web-1");
+    expect(calls("node_drain_preview")).toEqual([{ clusterId: "c1", name: "n1" }]);
+
+    expect(podsIn(dialog, /^Evicted/)).toEqual(["demo/web-1"]);
+    expect(podsIn(dialog, /^Without a controller/)).toEqual(["demo/lonely"]);
+    expect(podsIn(dialog, /^With emptyDir data/)).toEqual(["demo/cache-0"]);
+    expect(podsIn(dialog, /^Stay: DaemonSet pods/)).toEqual(["kube-system/kube-proxy-x"]);
+    const force = within(dialog).getByRole("checkbox", { name: /without a controller \(force\)/ });
+    const emptyDir = within(dialog).getByRole("checkbox", { name: /delete emptyDir data/ });
+    expect(force).not.toBeChecked();
+    expect(emptyDir).not.toBeChecked();
+    expect(calls("node_drain")).toHaveLength(0);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Drain" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(calls("node_drain")).toEqual([
+      { clusterId: "c1", name: "n1", options: { force: false, deleteEmptyDirData: false } },
+    ]);
+  });
+
+  it("sends the options the user ticked", async () => {
+    backend.on("node_drain_preview", () => PREVIEW);
+    backend.on("node_drain", () => undefined);
+    await run("drain", NODE, [obj(NODE, "n1", undefined)]);
+    const dialog = screen.getByRole("dialog", { name: "Drain node n1?" });
+    fireEvent.click(await within(dialog).findByRole("checkbox", { name: /without a controller \(force\)/ }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Drain" }));
+    await waitFor(() => expect(calls("node_drain")).toHaveLength(1));
+    expect(calls("node_drain")[0]).toEqual({
+      clusterId: "c1",
+      name: "n1",
+      options: { force: true, deleteEmptyDirData: false },
+    });
+  });
+
+  it("offers no option when the node has no such pods", async () => {
+    backend.on("node_drain_preview", () => ({ ...PREVIEW, unmanaged: [], emptyDir: [] }));
+    await run("drain", NODE, [obj(NODE, "n1", undefined)]);
+    const dialog = screen.getByRole("dialog", { name: "Drain node n1?" });
+    await within(dialog).findByText("demo/web-1");
+    expect(within(dialog).queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("cannot drain without the list of pods", async () => {
+    backend.on("node_drain_preview", () => {
+      throw { code: "forbidden", message: "pods is forbidden" };
+    });
+    await run("drain", NODE, [obj(NODE, "n1", undefined)]);
+    const dialog = screen.getByRole("dialog", { name: "Drain node n1?" });
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("pods is forbidden");
+    expect(within(dialog).getByRole("button", { name: "Drain" })).toBeDisabled();
+  });
+
   it("drains only after confirmation and shows why pods were not evicted", async () => {
+    backend.on("node_drain_preview", () => ({ evict: [{ namespace: "demo", name: "db-0" }], unmanaged: [], emptyDir: [], daemonSet: [] }));
     backend.on("node_drain", () => {
       throw {
         code: "other",
@@ -221,14 +291,17 @@ describe("nodes", () => {
     });
     await run("drain", NODE, [obj(NODE, "n1", undefined)]);
     const dialog = screen.getByRole("dialog", { name: "Drain node n1?" });
-    expect(dialog).toHaveTextContent("except pods of DaemonSets and static (mirror) pods");
+    expect(dialog).toHaveTextContent("Pods of DaemonSets and static (mirror) pods stay");
     expect(calls("node_drain")).toHaveLength(0);
 
+    await within(dialog).findByText("demo/db-0");
     fireEvent.click(within(dialog).getByRole("button", { name: "Drain" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("The node is cordoned, but some pods could not be evicted");
     expect(alert).toHaveTextContent("demo/db-0: Cannot evict pod as it would violate the pod's disruption budget.");
-    expect(calls("node_drain")).toEqual([{ clusterId: "c1", name: "n1" }]);
+    expect(calls("node_drain")).toEqual([
+      { clusterId: "c1", name: "n1", options: { force: false, deleteEmptyDirData: false } },
+    ]);
   });
 });
 

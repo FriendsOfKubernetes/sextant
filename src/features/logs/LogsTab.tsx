@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
 import { ErrorState } from "../../components";
+import { Checkbox } from "../../components/Table";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { LOG_BUFFER_LIMIT } from "./buffer";
 import { findMatches, MAX_MATCHES, splitLine } from "./search";
@@ -150,22 +151,22 @@ export function LogsTab({ tab, active }: DockTabProps) {
           </select>
         </label>
         <label className="logs__check">
-          <input type="checkbox" checked={follow} onChange={(e) => {
+          <Checkbox checked={follow} onChange={(e) => {
               atBottom.current = true;
               setFollow(e.target.checked);
             }} />
           <span>{t("logs:toolbar.follow")}</span>
         </label>
         <label className="logs__check">
-          <input type="checkbox" checked={timestamps} onChange={(e) => setTimestamps(e.target.checked)} />
+          <Checkbox checked={timestamps} onChange={(e) => setTimestamps(e.target.checked)} />
           <span>{t("logs:toolbar.timestamps")}</span>
         </label>
         <label className="logs__check">
-          <input type="checkbox" checked={previous} onChange={(e) => setPrevious(e.target.checked)} />
+          <Checkbox checked={previous} onChange={(e) => setPrevious(e.target.checked)} />
           <span>{t("logs:toolbar.previous")}</span>
         </label>
         <label className="logs__check">
-          <input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} />
+          <Checkbox checked={wrap} onChange={(e) => setWrap(e.target.checked)} />
           <span>{t("logs:toolbar.wrap")}</span>
         </label>
         <span className="logs__spacer" />

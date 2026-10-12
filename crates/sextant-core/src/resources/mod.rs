@@ -13,8 +13,8 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub use get::{get, get_full, secret_value};
 pub use mutate::{
-    apply_yaml, cordon, delete, drain, replace_yaml, restart, scale, suspend_cronjob,
-    trigger_cronjob,
+    STEP_TIMEOUT, apply_yaml, cordon, delete, drain, drain_preview, replace_yaml, restart, scale,
+    suspend_cronjob, trigger_cronjob,
 };
 pub use watch::watch;
 

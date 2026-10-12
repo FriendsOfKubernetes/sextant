@@ -1,11 +1,21 @@
 // Dialogs the actions open. Nothing reaches the cluster before the user presses the confirm button; a refusal
 // (403, 409, 422, a disruption budget…) is shown inside the dialog with the translated text for its code and the
 // server's own message.
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type ApiError, type ClusterId, type KindRef, type ObjectRef } from "../../api";
+import {
+  api,
+  toApiError,
+  type ApiError,
+  type ClusterId,
+  type DrainPreview,
+  type KindRef,
+  type ObjectRef,
+  type PodRef,
+} from "../../api";
 import { useAppStore } from "../../app/store";
 import { Dialog, ErrorState } from "../../components";
+import { Checkbox } from "../../components/Table";
 
 /** "demo/web" for a namespaced object, "node-1" otherwise. */
 export function displayName(r: ObjectRef): string {
@@ -236,6 +246,104 @@ export function ScaleDialog({
           {valid ? t("actions:scale.current", { count: current }) : t("actions:scale.invalid")}
         </span>
       </div>
+    </ConfirmAction>
+  );
+}
+
+/** One list of pods in the drain dialog, named by its heading. */
+function PodList({ title, pods, children }: { title: string; pods: PodRef[]; children?: ReactNode }) {
+  const headingId = useId();
+  if (pods.length === 0) return null;
+  return (
+    <div className="drain-group">
+      <h3 id={headingId} className="drain-group__title">
+        {title}
+      </h3>
+      <ul className="action-dialog__names" aria-labelledby={headingId}>
+        {pods.map((pod) => (
+          <li key={`${pod.namespace}/${pod.name}`}>{`${pod.namespace}/${pod.name}`}</li>
+        ))}
+      </ul>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Drain like `kubectl drain`: first the pods of the node (`node_drain_preview`), then the drain with the options the
+ * user ticked. Pods without a controller and pods with emptyDir data are evicted only with their option ticked (both
+ * off by default); without it they stay on the node and the drain reports them. Nothing can be drained before the
+ * list of pods is shown.
+ */
+export function DrainDialog({ clusterId, node, close }: { clusterId: ClusterId; node: string; close: () => void }) {
+  const { t } = useTranslation();
+  const [preview, setPreview] = useState<DrainPreview | null>(null);
+  const [previewError, setPreviewError] = useState<ApiError | null>(null);
+  const [force, setForce] = useState(false);
+  const [deleteEmptyDirData, setDeleteEmptyDirData] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    api.actions.drainPreview(clusterId, node).then(
+      (result) => {
+        if (current) setPreview(result);
+      },
+      (err: unknown) => {
+        if (current) setPreviewError(toApiError(err));
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [clusterId, node]);
+
+  let content: ReactNode;
+  if (previewError) {
+    content = <ErrorState error={previewError} title={t("actions:drain.previewFailed")} />;
+  } else if (!preview) {
+    content = (
+      <p className="action-dialog__hint" role="status">
+        {t("actions:drain.loading")}
+      </p>
+    );
+  } else {
+    const nothing =
+      preview.evict.length + preview.unmanaged.length + preview.emptyDir.length + preview.daemonSet.length === 0;
+    content = (
+      <>
+        {nothing && <p className="action-dialog__hint">{t("actions:drain.noPods")}</p>}
+        <PodList title={t("actions:drain.evict", { count: preview.evict.length })} pods={preview.evict} />
+        <PodList title={t("actions:drain.unmanaged", { count: preview.unmanaged.length })} pods={preview.unmanaged}>
+          <label className="drain-group__option">
+            <Checkbox checked={force} onChange={(e) => setForce(e.target.checked)} />
+            {t("actions:drain.force")}
+          </label>
+        </PodList>
+        <PodList title={t("actions:drain.emptyDir", { count: preview.emptyDir.length })} pods={preview.emptyDir}>
+          <label className="drain-group__option">
+            <Checkbox checked={deleteEmptyDirData} onChange={(e) => setDeleteEmptyDirData(e.target.checked)} />
+            {t("actions:drain.deleteEmptyDirData")}
+          </label>
+        </PodList>
+        <PodList title={t("actions:drain.daemonSet", { count: preview.daemonSet.length })} pods={preview.daemonSet} />
+      </>
+    );
+  }
+
+  return (
+    <ConfirmAction
+      danger
+      title={t("actions:drain.title", { name: node })}
+      confirmLabel={t("actions:drain.confirm")}
+      // Pods the node kept (a disruption budget, an option not ticked…) get their own title; a refused cordon (403)
+      // keeps the generic text for its code.
+      errorTitle={(error) => (error.message.includes("could not be evicted") ? t("actions:drain.failed") : undefined)}
+      close={close}
+      canConfirm={preview !== null}
+      onConfirm={() => api.actions.drain(clusterId, node, { force, deleteEmptyDirData })}
+    >
+      <p>{t("actions:drain.text", { name: node })}</p>
+      {content}
     </ConfirmAction>
   );
 }

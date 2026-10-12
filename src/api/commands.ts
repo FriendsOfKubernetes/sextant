@@ -80,7 +80,7 @@ export const actions = {
   cordon: (clusterId: ClusterId, name: string, unschedulable: boolean) =>
     call<void>("node_cordon", { clusterId, name, unschedulable }),
   drainPreview: (clusterId: ClusterId, name: string) => call<DrainPreview>("node_drain_preview", { clusterId, name }),
-  drain: (clusterId: ClusterId, name: string, options?: DrainOptions) =>
+  drain: (clusterId: ClusterId, name: string, options: DrainOptions) =>
     call<void>("node_drain", { clusterId, name, options }),
   triggerCronJob: (clusterId: ClusterId, ref: ObjectRef) => call<ObjectRef>("cronjob_trigger", { clusterId, ref }),
   suspendCronJob: (clusterId: ClusterId, ref: ObjectRef, suspend: boolean) =>

@@ -213,9 +213,7 @@ fn streams_reset_is_registered_without_arguments_and_answers() {
 #[test]
 fn optional_arguments_of_changed_commands_may_be_left_out() {
     let h = harness();
-    // `options` of node_drain and the login of helm_repo_add are optional: without them the command runs.
-    let err = invoke(&h, "node_drain", json!({ "clusterId": "c", "name": "n" })).unwrap_err();
-    assert_eq!(err["code"], "notFound", "{err}");
+    // The login of helm_repo_add is optional: without it the command runs. (`options` of node_drain is required.)
     let err = invoke(
         &h,
         "node_drain",
@@ -446,6 +444,11 @@ fn later_argument_names_match_the_frontend() {
         ),
         ("resource_get_full", json!({ "clusterId": "c" }), "ref"),
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
+        (
+            "node_drain",
+            json!({ "clusterId": "c", "name": "n" }),
+            "options",
+        ),
     ];
     for (cmd, args, next) in cases {
         let err = invoke(&h, cmd, args).expect_err(cmd);

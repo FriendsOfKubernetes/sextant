@@ -26,3 +26,25 @@
 .action-dialog__result {
   color: var(--color-success);
 }
+
+/* Drain: the pods of the node by what happens to them. */
+.drain-group {
+  margin-top: 12px;
+}
+
+.drain-group__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.drain-group__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.drain-group__option .checkbox {
+  margin-top: 2px;
+}

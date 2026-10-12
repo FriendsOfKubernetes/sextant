@@ -5,7 +5,7 @@ import type { KindRef, KubeObject } from "../../api";
 import { api } from "../../api";
 import { i18n } from "../../i18n";
 import { openEditTab } from "../editor";
-import { ConfirmAction, DeleteDialog, ScaleDialog } from "./dialogs";
+import { ConfirmAction, DeleteDialog, DrainDialog, ScaleDialog } from "./dialogs";
 import { registerAction } from "./registry";
 
 const is = (kind: KindRef, group: string, ...kinds: string[]) => kind.group === group && kinds.includes(kind.kind);
@@ -105,20 +105,7 @@ registerAction("drain", {
   run: ({ clusterId, refs, openDialog }) => {
     const ref = refs[0];
     if (!ref) return;
-    openDialog((close) => (
-      <ConfirmAction
-        danger
-        title={t("actions:drain.title", { name: ref.name })}
-        confirmLabel={t("actions:drain.confirm")}
-        // Pods the node kept (a disruption budget…) get their own title; a refused cordon (403) keeps the
-        // generic text for its code.
-        errorTitle={(error) => (error.message.includes("could not be evicted") ? t("actions:drain.failed") : undefined)}
-        close={close}
-        onConfirm={() => api.actions.drain(clusterId, ref.name)}
-      >
-        <p>{t("actions:drain.text", { name: ref.name })}</p>
-      </ConfirmAction>
-    ));
+    openDialog((close) => <DrainDialog clusterId={clusterId} node={ref.name} close={close} />);
   },
 });
 

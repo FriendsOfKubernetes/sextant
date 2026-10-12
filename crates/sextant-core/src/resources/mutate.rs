@@ -4,7 +4,7 @@
 //! server keep their code (`forbidden`, `conflict`, `invalid`, …) and the server's own text.
 
 use std::collections::BTreeMap;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use k8s_openapi::api::batch::v1::{CronJob, Job};
 use k8s_openapi::api::core::v1::{Node, Pod};
@@ -17,9 +17,9 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::get::{ResolvedKind, ensure_values_present, resolve_kind, to_json};
-use super::{KindRef, ObjectRef};
-use crate::cluster::ClusterManager;
-use crate::error::{CoreError, CoreResult, ErrorCode};
+use super::{DrainOptions, DrainPreview, KindRef, ObjectRef, PodRef};
+use crate::cluster::{CONNECT_TIMEOUT, ClusterManager};
+use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::kubeconfig::ClusterId;
 
 /// Field manager of every change Sextant makes (server-side apply and updates).
@@ -32,6 +32,10 @@ const MIRROR_ANNOTATION: &str = "kubernetes.io/config.mirror";
 const INSTANTIATE_ANNOTATION: &str = "cronjob.kubernetes.io/instantiate";
 /// Longest name of a Job (its name goes into a pod label).
 const MAX_JOB_NAME: usize = 63;
+/// How long one request of a multi-step change ([`apply_yaml`] of several documents, [`drain`]) may take. The limit
+/// is per request, not for the whole change: a drain of many pods may take longer, but a server that stops answering
+/// ends it with a `timeout` error that says what was already done and what was not sent.
+pub const STEP_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// PUT of an edited object; a stale `resourceVersion` gives `Conflict`.
 ///
@@ -68,12 +72,22 @@ pub async fn replace_yaml(
 /// Multi-document server-side apply with field manager `sextant`.
 ///
 /// Every document is parsed and its kind resolved before anything is sent, so a typo in the third document
-/// changes nothing. Documents are then applied in order; a failure names the document and lists what was already
-/// applied. Empty documents are skipped; a `kind: List` is applied item by item.
+/// changes nothing. Documents are then applied in order; a failure (also a `timeout` after [`STEP_TIMEOUT`] without
+/// an answer) names the document, lists what was already applied and what was not sent. Empty documents are skipped;
+/// a `kind: List` is applied item by item.
 pub async fn apply_yaml(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     yaml: &str,
+) -> CoreResult<Vec<ObjectRef>> {
+    apply_yaml_within(mgr, cluster, yaml, STEP_TIMEOUT).await
+}
+
+async fn apply_yaml_within(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    yaml: &str,
+    step: Duration,
 ) -> CoreResult<Vec<ObjectRef>> {
     let docs = parse_documents(yaml)?;
     if docs.is_empty() {
@@ -85,15 +99,21 @@ pub async fn apply_yaml(
     let client = mgr.client(cluster)?;
     let mut targets = Vec::with_capacity(docs.len());
     for (label, doc) in docs {
-        let kind = resolve_kind(mgr, cluster, &doc.kind)
-            .await
-            .map_err(|e| in_document(&label, &doc, e))?;
+        let kind = with_timeout(
+            step,
+            "looking up the kind (nothing was applied)",
+            resolve_kind(mgr, cluster, &doc.kind),
+        )
+        .await
+        .map_err(|e| in_document(&label, &doc, e))?;
         targets.push((label, doc, kind));
     }
 
     let params = PatchParams::apply(FIELD_MANAGER);
     let mut applied: Vec<ObjectRef> = Vec::with_capacity(targets.len());
-    for (label, mut doc, kind) in targets {
+    let total = targets.len();
+    let mut targets = targets.into_iter();
+    while let Some((label, mut doc, kind)) = targets.next() {
         let namespace = kind
             .namespaced
             .then(|| doc.namespace_or(&client).to_owned());
@@ -102,15 +122,25 @@ pub async fn apply_yaml(
             meta.remove("managedFields");
         }
         let api = kind.api(client.clone(), namespace.as_deref());
-        if let Err(err) = api
-            .patch(&doc.name, &params, &Patch::Apply(&doc.value))
-            .await
-        {
-            let mut err = in_document(&label, &doc, err.into());
+        let sent = with_timeout(step, "applying it", async {
+            api.patch(&doc.name, &params, &Patch::Apply(&doc.value))
+                .await
+                .map_err(CoreError::from)
+        })
+        .await;
+        if let Err(err) = sent {
+            let mut err = in_document(&label, &doc, err);
             if !applied.is_empty() {
                 let done: Vec<String> = applied.iter().map(describe_ref).collect();
                 err.message
                     .push_str(&format!(" (already applied: {})", done.join(", ")));
+            }
+            if applied.len() + 1 < total {
+                let rest: Vec<String> = targets
+                    .map(|(label, doc, _)| format!("{label} ({} {})", doc.kind.kind, doc.name))
+                    .collect();
+                err.message
+                    .push_str(&format!(" (not sent: {})", rest.join(", ")));
             }
             return Err(err);
         }
@@ -175,53 +205,135 @@ pub async fn cordon(
     Ok(())
 }
 
-/// Cordon + eviction of every pod except DaemonSet-owned and mirror pods.
+/// What a drain of `node` would do with each of its pods, like `kubectl drain --dry-run`. Changes nothing.
+pub async fn drain_preview(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    node: &str,
+) -> CoreResult<DrainPreview> {
+    let pods = pods_on_node(mgr.client(cluster)?, node).await?;
+    Ok(preview_of(&pods))
+}
+
+/// Cordon + eviction, like `kubectl drain`: pods of DaemonSets and mirror pods stay; pods without a controller are
+/// evicted only with `options.force` (nothing would recreate them), pods with `emptyDir` volumes only with
+/// `options.delete_empty_dir_data` (the data is lost). The pods are looked at again here, so a pod that appeared
+/// after the preview is never evicted without the option it needs.
 ///
-/// Every pod is tried, also after one fails; the error lists each pod that was not evicted with the server's reason
-/// (e.g. "Cannot evict pod as it would violate the pod's disruption budget."). The node stays cordoned. Does not
-/// wait for the evicted pods to terminate.
-pub async fn drain(mgr: &ClusterManager, cluster: &ClusterId, node: &str) -> CoreResult<()> {
-    cordon(mgr, cluster, node, true).await?;
+/// Every pod is tried, also after one fails. Pods left on the node — refused by the server (e.g. "Cannot evict pod
+/// as it would violate the pod's disruption budget.") or kept for want of an option — make the drain fail with
+/// a message that names each of them and why. The node stays cordoned. Does not wait for the evicted pods to
+/// terminate.
+///
+/// Each request is limited to [`STEP_TIMEOUT`]; an eviction without an answer stops the drain with a `timeout` error
+/// that names the pods already evicted and the pods not sent.
+pub async fn drain(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    node: &str,
+    options: DrainOptions,
+) -> CoreResult<()> {
+    drain_within(mgr, cluster, node, options, STEP_TIMEOUT).await
+}
+
+async fn drain_within(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    node: &str,
+    options: DrainOptions,
+    step: Duration,
+) -> CoreResult<()> {
+    with_timeout(
+        step,
+        &format!("cordoning node {node} (no pod was evicted)"),
+        cordon(mgr, cluster, node, true),
+    )
+    .await?;
     let client = eviction_client(mgr, cluster).await?;
-    let pods: Api<Pod> = Api::all(client.clone());
-    let on_node = pods
-        .list(&ListParams::default().fields(&format!("spec.nodeName={node}")))
-        .await?;
+    let pods = with_timeout(
+        step,
+        &format!("listing the pods of node {node} (it is cordoned, no pod was evicted)"),
+        pods_on_node(client.clone(), node),
+    )
+    .await?;
 
     let mut failures: Vec<(ErrorCode, String)> = Vec::new();
-    for pod in pods_to_evict(&on_node.items) {
-        let (Some(namespace), Some(name)) = (&pod.metadata.namespace, &pod.metadata.name) else {
+    let mut kept: Vec<String> = Vec::new();
+    let mut evicted: Vec<String> = Vec::new();
+    let mut queue = pods.iter().filter_map(drain_class);
+    while let Some(pod) = queue.next() {
+        let name = format!("{}/{}", pod.pod.namespace, pod.pod.name);
+        if pod.daemon_set {
             continue;
-        };
-        let api: Api<Pod> = Api::namespaced(client.clone(), namespace);
+        }
+        let needs = pod.missing_options(options);
+        if !needs.is_empty() {
+            kept.push(format!("{name}: {}", needs.join("; ")));
+            continue;
+        }
+        let api: Api<Pod> = Api::namespaced(client.clone(), &pod.pod.namespace);
         let params = EvictParams {
             post_options: post_params(),
             ..EvictParams::default()
         };
-        match api.evict(name, &params).await {
-            Ok(_) => {}
+        let answer = tokio::time::timeout(step, api.evict(&pod.pod.name, &params)).await;
+        let Ok(answer) = answer else {
+            // The server stopped answering: the rest is not sent.
+            let rest: Vec<String> = queue
+                .filter(|p| !p.daemon_set && p.missing_options(options).is_empty())
+                .map(|p| format!("{}/{}", p.pod.namespace, p.pod.name))
+                .collect();
+            let list = |items: &[String]| {
+                if items.is_empty() {
+                    "none".to_owned()
+                } else {
+                    items.join(", ")
+                }
+            };
+            let mut message = format!(
+                "node {node} is cordoned, but the eviction of {name} got no answer in {} s (it may still happen); \
+                 evicted: {}; not sent: {}",
+                step.as_secs(),
+                list(&evicted),
+                list(&rest)
+            );
+            let earlier: Vec<String> = failures
+                .into_iter()
+                .map(|(_, text)| text)
+                .chain(kept)
+                .collect();
+            if !earlier.is_empty() {
+                message.push_str(&format!("; could not be evicted: {}", earlier.join("; ")));
+            }
+            return Err(CoreError::new(ErrorCode::Timeout, message));
+        };
+        match answer {
+            Ok(_) => evicted.push(name),
             Err(err) => {
                 let err = CoreError::from(err);
                 if err.code != ErrorCode::NotFound {
-                    failures.push((err.code, format!("{namespace}/{name}: {}", err.message)));
+                    failures.push((err.code, format!("{name}: {}", err.message)));
                 }
             }
         }
     }
-    match failures.first() {
-        None => Ok(()),
-        Some((code, _)) => {
-            let reasons: Vec<&str> = failures.iter().map(|(_, text)| text.as_str()).collect();
-            Err(CoreError::new(
-                *code,
-                format!(
-                    "node {node} is cordoned, but {} pod(s) could not be evicted: {}",
-                    failures.len(),
-                    reasons.join("; ")
-                ),
-            ))
-        }
+    if failures.is_empty() && kept.is_empty() {
+        return Ok(());
     }
+    let code = failures.first().map_or(ErrorCode::Other, |(code, _)| *code);
+    let count = failures.len() + kept.len();
+    let reasons: Vec<String> = failures
+        .into_iter()
+        .map(|(_, text)| text)
+        .chain(kept)
+        .collect();
+    Err(CoreError::new(
+        code,
+        format!(
+            "node {node} is cordoned, but {count} pod(s) could not be evicted: {}",
+            reasons.join("; ")
+        ),
+    ))
 }
 
 /// Creates a Job from the CronJob's template, named `<cronjob>-manual-<unix seconds>`.
@@ -290,6 +402,7 @@ fn post_params() -> PostParams {
 /// The API server refuses an eviction that a PodDisruptionBudget forbids with 429. The connection's client retries
 /// 429 (kube's default: up to 15 times with growing pauses), so a drain would hang for minutes before reporting the
 /// budget — and would even report success if the pod disappeared meanwhile. Evictions are therefore sent once.
+/// Connecting may take as long as for the connection's client ([`CONNECT_TIMEOUT`]).
 async fn eviction_client(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<kube::Client> {
     // Only for a connected cluster, like every other action.
     mgr.client(cluster)?;
@@ -304,6 +417,7 @@ async fn eviction_client(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResul
     };
     let mut config = kube::Config::from_custom_kubeconfig(kubeconfig, &options).await?;
     config.default_retry = false;
+    config.connect_timeout = Some(CONNECT_TIMEOUT);
     Ok(kube::Client::try_from(config)?)
 }
 
@@ -508,23 +622,102 @@ fn job_from_cronjob(cronjob: &CronJob, name: &str) -> Job {
     }
 }
 
-/// Pods a drain evicts: all but mirror pods, pods owned by a DaemonSet (its controller would recreate them on the
-/// same node at once) and pods already being deleted.
-fn pods_to_evict(pods: &[Pod]) -> Vec<&Pod> {
-    pods.iter()
-        .filter(|pod| {
-            let meta = &pod.metadata;
-            let mirror = meta
-                .annotations
-                .as_ref()
-                .is_some_and(|a| a.contains_key(MIRROR_ANNOTATION));
-            let daemon = meta.owner_references.as_ref().is_some_and(|refs| {
-                refs.iter()
-                    .any(|o| o.controller == Some(true) && o.kind == "DaemonSet")
-            });
-            !mirror && !daemon && meta.deletion_timestamp.is_none()
-        })
-        .collect()
+/// Every pod scheduled to `node`, in every namespace.
+async fn pods_on_node(client: kube::Client, node: &str) -> CoreResult<Vec<Pod>> {
+    let pods: Api<Pod> = Api::all(client);
+    let list = pods
+        .list(&ListParams::default().fields(&format!("spec.nodeName={node}")))
+        .await?;
+    Ok(list.items)
+}
+
+/// How a drain treats one pod.
+struct DrainPod {
+    pod: PodRef,
+    /// Owned by a DaemonSet: never evicted (its controller would put it back at once).
+    daemon_set: bool,
+    /// No controller: nothing recreates it after an eviction.
+    unmanaged: bool,
+    /// Has an `emptyDir` volume: its data is gone after an eviction.
+    empty_dir: bool,
+}
+
+impl DrainPod {
+    /// Why `options` do not allow evicting this pod; empty when they do.
+    fn missing_options(&self, options: DrainOptions) -> Vec<&'static str> {
+        let mut needs = Vec::new();
+        if self.unmanaged && !options.force {
+            needs.push("it has no controller, evicted only with force");
+        }
+        if self.empty_dir && !options.delete_empty_dir_data {
+            needs.push("it has emptyDir data, evicted only with delete emptyDir data");
+        }
+        needs
+    }
+}
+
+/// `None` for pods a drain does not touch at all: mirror pods of static pods (evicting them does nothing) and pods
+/// already being deleted. Like `kubectl drain`, any controller counts, whatever its kind.
+fn drain_class(pod: &Pod) -> Option<DrainPod> {
+    let meta = &pod.metadata;
+    let mirror = meta
+        .annotations
+        .as_ref()
+        .is_some_and(|a| a.contains_key(MIRROR_ANNOTATION));
+    if mirror || meta.deletion_timestamp.is_some() {
+        return None;
+    }
+    let controller = meta
+        .owner_references
+        .iter()
+        .flatten()
+        .find(|o| o.controller == Some(true));
+    let empty_dir = pod
+        .spec
+        .as_ref()
+        .and_then(|spec| spec.volumes.as_ref())
+        .is_some_and(|volumes| volumes.iter().any(|v| v.empty_dir.is_some()));
+    Some(DrainPod {
+        pod: PodRef {
+            namespace: meta.namespace.clone().unwrap_or_default(),
+            name: meta.name.clone().unwrap_or_default(),
+        },
+        daemon_set: controller.is_some_and(|o| o.kind == "DaemonSet"),
+        unmanaged: controller.is_none(),
+        empty_dir,
+    })
+}
+
+/// The pods of a node sorted into the lists of [`DrainPreview`]. A pod without a controller that has `emptyDir`
+/// data is in both `unmanaged` and `empty_dir`: it needs both options. Each list is sorted by namespace and name.
+fn preview_of(pods: &[Pod]) -> DrainPreview {
+    let mut preview = DrainPreview::default();
+    for pod in pods.iter().filter_map(drain_class) {
+        if pod.daemon_set {
+            preview.daemon_set.push(pod.pod);
+            continue;
+        }
+        if !pod.unmanaged && !pod.empty_dir {
+            preview.evict.push(pod.pod);
+            continue;
+        }
+        if pod.unmanaged {
+            preview.unmanaged.push(pod.pod.clone());
+        }
+        if pod.empty_dir {
+            preview.empty_dir.push(pod.pod);
+        }
+    }
+    let by_name = |a: &PodRef, b: &PodRef| (&a.namespace, &a.name).cmp(&(&b.namespace, &b.name));
+    for list in [
+        &mut preview.evict,
+        &mut preview.unmanaged,
+        &mut preview.empty_dir,
+        &mut preview.daemon_set,
+    ] {
+        list.sort_by(by_name);
+    }
+    preview
 }
 
 #[cfg(test)]
@@ -539,23 +732,41 @@ mod tests {
         ) {
             meta.extend(more.clone());
         }
+        if let Some(spec) = extra.get("spec") {
+            value["spec"] = spec.clone();
+        }
         serde_json::from_value(value).unwrap()
     }
 
+    fn pod_ref(name: &str) -> PodRef {
+        PodRef {
+            namespace: "ns".into(),
+            name: name.into(),
+        }
+    }
+
     #[test]
-    fn drain_skips_daemon_set_mirror_and_terminating_pods() {
+    fn the_preview_sorts_pods_like_kubectl_drain() {
+        let controlled = |kind: &str| {
+            json!({ "metadata": { "ownerReferences": [
+                { "apiVersion": "apps/v1", "kind": kind, "name": "owner", "uid": "1", "controller": true }
+            ] } })
+        };
+        let with_volume = |mut value: Value| {
+            value["spec"] =
+                json!({ "containers": [], "volumes": [{ "name": "v", "emptyDir": {} }] });
+            value
+        };
         let pods = vec![
+            pod("replica", controlled("ReplicaSet")),
             pod("plain", json!({})),
+            pod("daemon", controlled("DaemonSet")),
+            pod("cache", with_volume(controlled("StatefulSet"))),
+            pod("scratch", with_volume(json!({}))),
             pod(
-                "replica",
+                "owned-not-controlled",
                 json!({ "metadata": { "ownerReferences": [
-                    { "apiVersion": "apps/v1", "kind": "ReplicaSet", "name": "rs", "uid": "1", "controller": true }
-                ] } }),
-            ),
-            pod(
-                "daemon",
-                json!({ "metadata": { "ownerReferences": [
-                    { "apiVersion": "apps/v1", "kind": "DaemonSet", "name": "ds", "uid": "2", "controller": true }
+                    { "apiVersion": "v1", "kind": "ConfigMap", "name": "c", "uid": "3" }
                 ] } }),
             ),
             pod(
@@ -567,11 +778,230 @@ mod tests {
                 json!({ "metadata": { "deletionTimestamp": "2026-10-11T10:00:00Z" } }),
             ),
         ];
-        let names: Vec<&str> = pods_to_evict(&pods)
-            .iter()
-            .filter_map(|p| p.metadata.name.as_deref())
-            .collect();
-        assert_eq!(names, ["plain", "replica"]);
+        let preview = preview_of(&pods);
+        assert_eq!(preview.evict, [pod_ref("replica")]);
+        assert_eq!(
+            preview.unmanaged,
+            [
+                pod_ref("owned-not-controlled"),
+                pod_ref("plain"),
+                pod_ref("scratch")
+            ]
+        );
+        assert_eq!(preview.empty_dir, [pod_ref("cache"), pod_ref("scratch")]);
+        assert_eq!(preview.daemon_set, [pod_ref("daemon")]);
+    }
+
+    /// A fake API server on localhost (plain HTTP) for the multi-step changes: discovery of pods, nodes and
+    /// ConfigMaps; node `n1` with pods `ns/a`, `ns/b`, `ns/c` (all controlled by a ReplicaSet). The eviction of `b`
+    /// and the apply of ConfigMap `two` never get an answer. Every request line is recorded.
+    mod fake {
+        use std::sync::{Arc, Mutex, RwLock};
+
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::{TcpListener, TcpStream};
+
+        use crate::cluster::ClusterManager;
+        use crate::kubeconfig::{ClusterId, KubeconfigEnv, KubeconfigRegistry};
+
+        pub type Requests = Arc<Mutex<Vec<String>>>;
+
+        const API_VERSIONS: &str =
+            r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+        const CORE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[
+            {"name":"pods","singularName":"pod","namespaced":true,"kind":"Pod","verbs":["get","list","watch"]},
+            {"name":"nodes","singularName":"node","namespaced":false,"kind":"Node","verbs":["get","list","patch"]},
+            {"name":"configmaps","singularName":"configmap","namespaced":true,"kind":"ConfigMap","verbs":["get","patch"]}]}"#;
+        const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[]}"#;
+        const NOT_FOUND: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#;
+        const NODE: &str = r#"{"apiVersion":"v1","kind":"Node","metadata":{"name":"n1"},"spec":{"unschedulable":true}}"#;
+        const EVICTED: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Success"}"#;
+
+        fn pod_list() -> String {
+            let pod = |name: &str| {
+                format!(
+                    r#"{{"metadata":{{"name":"{name}","namespace":"ns","uid":"uid-{name}","ownerReferences":[{{"apiVersion":"apps/v1","kind":"ReplicaSet","name":"rs","uid":"rs","controller":true}}]}},"spec":{{"nodeName":"n1","containers":[]}}}}"#
+                )
+            };
+            format!(
+                r#"{{"apiVersion":"v1","kind":"PodList","metadata":{{"resourceVersion":"1"}},"items":[{},{},{}]}}"#,
+                pod("a"),
+                pod("b"),
+                pod("c")
+            )
+        }
+
+        fn config_map(name: &str) -> String {
+            format!(
+                r#"{{"apiVersion":"v1","kind":"ConfigMap","metadata":{{"name":"{name}","namespace":"ns"}}}}"#
+            )
+        }
+
+        /// The server's URL and the record of its requests ("PATCH /api/v1/nodes/n1").
+        pub async fn server() -> (String, Requests) {
+            let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+            let url = format!("http://{}", listener.local_addr().unwrap());
+            let requests = Requests::default();
+            let record = Arc::clone(&requests);
+            tokio::spawn(async move {
+                while let Ok((conn, _)) = listener.accept().await {
+                    tokio::spawn(serve(conn, Arc::clone(&record)));
+                }
+            });
+            (url, requests)
+        }
+
+        async fn serve(mut conn: TcpStream, requests: Requests) {
+            let mut buf = Vec::new();
+            loop {
+                let head_end = loop {
+                    if let Some(end) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
+                        break end + 4;
+                    }
+                    let mut chunk = [0u8; 4096];
+                    match conn.read(&mut chunk).await {
+                        Ok(0) | Err(_) => return,
+                        Ok(n) => buf.extend_from_slice(&chunk[..n]),
+                    }
+                };
+                let head = String::from_utf8_lossy(&buf[..head_end]).into_owned();
+                buf.drain(..head_end);
+                let length: usize = head
+                    .lines()
+                    .filter_map(|l| l.split_once(':'))
+                    .find(|(k, _)| k.eq_ignore_ascii_case("content-length"))
+                    .and_then(|(_, v)| v.trim().parse().ok())
+                    .unwrap_or(0);
+                while buf.len() < length {
+                    let mut chunk = [0u8; 4096];
+                    match conn.read(&mut chunk).await {
+                        Ok(0) | Err(_) => return,
+                        Ok(n) => buf.extend_from_slice(&chunk[..n]),
+                    }
+                }
+                buf.drain(..length);
+                let mut words = head.split_whitespace();
+                let method = words.next().unwrap_or_default().to_owned();
+                let target = words.next().unwrap_or_default();
+                let path = target.split('?').next().unwrap_or_default().to_owned();
+                requests.lock().unwrap().push(format!("{method} {path}"));
+                let (status, body) = match (method.as_str(), path.as_str()) {
+                    ("GET", "/api") => ("200 OK", API_VERSIONS.to_owned()),
+                    ("GET", "/api/v1") => ("200 OK", CORE_RESOURCES.to_owned()),
+                    ("GET", "/apis") => ("200 OK", API_GROUPS.to_owned()),
+                    ("PATCH", "/api/v1/nodes/n1") => ("200 OK", NODE.to_owned()),
+                    ("GET", "/api/v1/pods") => ("200 OK", pod_list()),
+                    ("POST", "/api/v1/namespaces/ns/pods/b/eviction")
+                    | ("PATCH", "/api/v1/namespaces/ns/configmaps/two") => {
+                        // No answer, ever.
+                        futures::future::pending::<()>().await;
+                        return;
+                    }
+                    ("POST", p) if p.ends_with("/eviction") => ("201 Created", EVICTED.to_owned()),
+                    ("PATCH", p) if p.starts_with("/api/v1/namespaces/ns/configmaps/") => (
+                        "200 OK",
+                        config_map(p.rsplit('/').next().unwrap_or_default()),
+                    ),
+                    _ => ("404 Not Found", NOT_FOUND.to_owned()),
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
+                    body.len()
+                );
+                if conn.write_all(response.as_bytes()).await.is_err() {
+                    return;
+                }
+            }
+        }
+
+        /// A manager connected to `url` through a kubeconfig without credentials.
+        pub async fn connected_to(url: &str) -> (tempfile::TempDir, ClusterManager, ClusterId) {
+            let tmp = tempfile::tempdir().unwrap();
+            let path = tmp.path().join("kubeconfig");
+            std::fs::write(
+                &path,
+                format!(
+                    "apiVersion: v1\nkind: Config\nclusters:\n- name: fake\n  cluster:\n    server: {url}\n\
+                     contexts:\n- name: fake\n  context:\n    cluster: fake\n    user: fake\n\
+                     users:\n- name: fake\n  user: {{}}\ncurrent-context: fake\n"
+                ),
+            )
+            .unwrap();
+            let registry = KubeconfigRegistry::new(Vec::new(), tmp.path().join("state")).with_env(
+                KubeconfigEnv {
+                    kubeconfig: Some(path.into_os_string()),
+                    home: None,
+                },
+            );
+            let id = registry.clusters().unwrap()[0].id.clone();
+            let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
+            mgr.connect(&id).await.unwrap();
+            (tmp, mgr, id)
+        }
+    }
+
+    /// Short enough for a test, long enough for a local answer.
+    const TEST_STEP: Duration = Duration::from_millis(500);
+
+    #[tokio::test]
+    async fn a_drain_cut_by_the_timeout_names_the_evicted_pods_and_the_pods_not_sent() {
+        let (url, requests) = fake::server().await;
+        let (_tmp, mgr, id) = fake::connected_to(&url).await;
+        let result = tokio::time::timeout(
+            Duration::from_secs(10),
+            drain_within(&mgr, &id, "n1", DrainOptions::default(), TEST_STEP),
+        )
+        .await
+        .expect("the drain hung");
+        let err = result.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Timeout, "{err}");
+        assert!(err.message.contains("eviction of ns/b"), "{err}");
+        assert!(err.message.contains("evicted: ns/a;"), "{err}");
+        assert!(err.message.contains("not sent: ns/c"), "{err}");
+        let requests = requests.lock().unwrap().clone();
+        assert!(
+            !requests.contains(&"POST /api/v1/namespaces/ns/pods/c/eviction".to_owned()),
+            "{requests:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn an_apply_cut_by_the_timeout_names_what_was_applied_and_what_was_not_sent() {
+        let (url, requests) = fake::server().await;
+        let (_tmp, mgr, id) = fake::connected_to(&url).await;
+        let yaml = ["one", "two", "three"]
+            .map(|name| {
+                format!(
+                    "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: {name}\n  namespace: ns\n"
+                )
+            })
+            .join("---\n");
+        let result = tokio::time::timeout(
+            Duration::from_secs(10),
+            apply_yaml_within(&mgr, &id, &yaml, TEST_STEP),
+        )
+        .await
+        .expect("the apply hung");
+        let err = result.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Timeout, "{err}");
+        assert!(
+            err.message.starts_with("document 2 (ConfigMap two)"),
+            "{err}"
+        );
+        assert!(
+            err.message.contains("(already applied: ConfigMap ns/one)"),
+            "{err}"
+        );
+        assert!(
+            err.message
+                .contains("(not sent: document 3 (ConfigMap three))"),
+            "{err}"
+        );
+        let requests = requests.lock().unwrap().clone();
+        assert!(
+            !requests.contains(&"PATCH /api/v1/namespaces/ns/configmaps/three".to_owned()),
+            "{requests:?}"
+        );
     }
 
     #[test]

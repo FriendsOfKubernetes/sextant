@@ -9,15 +9,19 @@
 
 mod common;
 
+use std::future::Future;
+use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
-use futures::{Stream, StreamExt};
+use futures::{FutureExt, Stream, StreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
+use k8s_openapi::api::core::v1::{Namespace, Secret};
+use k8s_openapi::api::rbac::v1::{Role, RoleBinding};
 use kube::Api;
-use kube::api::{Patch, PatchParams};
+use kube::api::{DeleteParams, Patch, PatchParams, PostParams};
 use serde_json::{Value, json};
 use sextant_core::kubeconfig::KubeconfigEnv;
 use sextant_core::resources::{self, KindRef, ObjectRef, WatchSpec, WatchUpdate};
@@ -241,6 +245,30 @@ async fn secrets_without_permission_give_forbidden_and_end() {
         "the stream ends after a fatal error"
     );
 
+    // No permission in any of several namespaces: the same error, the stream ends.
+    let mut updates = start(
+        &mgr,
+        &id,
+        spec(
+            kind("", "v1", "Secret"),
+            Some(&[common::DEMO_NAMESPACE, "default"]),
+            None,
+        ),
+    )
+    .await;
+    loop {
+        match next(&mut updates, 30).await {
+            WatchUpdate::Forbidden { .. } => continue,
+            WatchUpdate::Error(err) => {
+                assert_eq!(err.code, ErrorCode::Forbidden, "{err}");
+                break;
+            }
+            other => panic!("expected forbidden, got {other:?}"),
+        }
+    }
+    let end = tokio::time::timeout(Duration::from_secs(5), updates.next()).await;
+    assert!(matches!(end, Ok(None)), "the stream ends");
+
     // Other kinds still work for the same account.
     let mut pods = start(
         &mgr,
@@ -253,6 +281,131 @@ async fn secrets_without_permission_give_forbidden_and_end() {
     )
     .await;
     assert_eq!(snapshot(next(&mut pods, 30).await).len(), 2);
+}
+
+/// Waits (up to `secs`) until `done` is true.
+async fn wait_until<F, Fut>(what: &str, secs: u64, mut done: F)
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = bool>,
+{
+    let deadline = Instant::now() + Duration::from_secs(secs);
+    while !done().await {
+        assert!(Instant::now() < deadline, "timed out waiting for {what}");
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+}
+
+/// Runs `body` with a fresh namespace `ns` (deleted before and after, also when `body` panics).
+async fn in_namespace<F, Fut>(client: &kube::Client, ns: &str, body: F)
+where
+    F: FnOnce() -> Fut,
+    Fut: Future<Output = ()>,
+{
+    let namespaces: Api<Namespace> = Api::all(client.clone());
+    let _ = namespaces.delete(ns, &DeleteParams::background()).await;
+    wait_until("the old namespace to go away", 180, || {
+        let namespaces = namespaces.clone();
+        async move { namespaces.get_opt(ns).await.unwrap().is_none() }
+    })
+    .await;
+    let namespace: Namespace =
+        serde_json::from_value(json!({ "metadata": { "name": ns } })).unwrap();
+    namespaces
+        .create(&PostParams::default(), &namespace)
+        .await
+        .unwrap();
+    let result = AssertUnwindSafe(body()).catch_unwind().await;
+    let _ = namespaces.delete(ns, &DeleteParams::background()).await;
+    if let Err(panic) = result {
+        std::panic::resume_unwind(panic);
+    }
+}
+
+async fn create_secret(client: &kube::Client, ns: &str, name: &str) {
+    let secret: Secret = serde_json::from_value(json!({
+        "metadata": { "name": name, "namespace": ns },
+        "stringData": { "key": "value" }
+    }))
+    .unwrap();
+    Api::<Secret>::namespaced(client.clone(), ns)
+        .create(&PostParams::default(), &secret)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn a_namespace_without_permission_is_reported_and_the_others_keep_streaming() {
+    let Some(cluster) = common::test_cluster() else {
+        return;
+    };
+    let admin = cluster.client().await;
+    // `limited` may read Secrets only in this namespace (a Role of its own), not in `sextant-demo`.
+    let ns = "sextant-watch-forbidden";
+    in_namespace(&admin, ns, || async {
+        let role: Role = serde_json::from_value(json!({
+            "metadata": { "name": "read-secrets", "namespace": ns },
+            "rules": [{ "apiGroups": [""], "resources": ["secrets"], "verbs": ["get", "list", "watch"] }]
+        }))
+        .unwrap();
+        Api::<Role>::namespaced(admin.clone(), ns)
+            .create(&PostParams::default(), &role)
+            .await
+            .unwrap();
+        let binding: RoleBinding = serde_json::from_value(json!({
+            "metadata": { "name": "read-secrets", "namespace": ns },
+            "roleRef": { "apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": "read-secrets" },
+            "subjects": [{ "kind": "ServiceAccount", "name": "limited", "namespace": common::DEMO_NAMESPACE }]
+        }))
+        .unwrap();
+        Api::<RoleBinding>::namespaced(admin.clone(), ns)
+            .create(&PostParams::default(), &binding)
+            .await
+            .unwrap();
+        create_secret(&admin, ns, "visible").await;
+        let limited = cluster.limited_client().await;
+        wait_until("the Role to take effect", 30, || {
+            let secrets: Api<Secret> = Api::namespaced(limited.clone(), ns);
+            async move { secrets.list(&Default::default()).await.is_ok() }
+        })
+        .await;
+
+        let (_tmp, mgr, id) = connected(&cluster.limited_kubeconfig).await;
+        let mut updates = start(
+            &mgr,
+            &id,
+            spec(
+                kind("", "v1", "Secret"),
+                Some(&[ns, common::DEMO_NAMESPACE]),
+                None,
+            ),
+        )
+        .await;
+        let (mut forbidden, mut items) = (None, None);
+        while forbidden.is_none() || items.is_none() {
+            match next(&mut updates, 30).await {
+                WatchUpdate::Forbidden { namespaces } => forbidden = Some(namespaces),
+                WatchUpdate::Snapshot { items: list } => items = Some(list),
+                other => panic!("expected forbidden and a snapshot, got {other:?}"),
+            }
+        }
+        assert_eq!(forbidden.unwrap(), [common::DEMO_NAMESPACE]);
+        assert_eq!(names(&items.unwrap()), ["visible"]);
+
+        // The allowed namespace keeps streaming.
+        create_secret(&admin, ns, "later").await;
+        let deadline = Instant::now() + Duration::from_secs(30);
+        let mut added = Vec::new();
+        while added.is_empty() && Instant::now() < deadline {
+            match next(&mut updates, 30).await {
+                WatchUpdate::Delta { upserted, .. } => added = names(&upserted),
+                WatchUpdate::Error(err) => panic!("the watch ended: {err}"),
+                _ => {}
+            }
+        }
+        assert_eq!(added, ["later"]);
+    })
+    .await;
 }
 
 #[tokio::test]

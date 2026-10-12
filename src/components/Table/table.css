@@ -25,6 +25,19 @@
   color: var(--color-text-muted);
 }
 
+/* "No permission in: …" — long lists are cut; the full list is in the tooltip. */
+.rt__forbidden {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.rt__forbidden .badge {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rt__toolbar {
   margin-left: auto;
   display: flex;

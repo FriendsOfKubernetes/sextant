@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
 import { usePopup } from "../../components";
+import { Checkbox } from "../../components/Table";
 import { selectNamespaces } from "./namespaces";
 import "./namespaces.css";
 
@@ -87,13 +88,13 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
             autoFocus
           />
           <label className="ns-filter__option ns-filter__option--all">
-            <input type="checkbox" checked={selected === null} onChange={() => choose(null)} />
+            <Checkbox checked={selected === null} onChange={() => choose(null)} />
             {t("resources:namespaces.all")}
           </label>
           <div className="ns-filter__list">
             {visible.map((ns) => (
               <label key={ns} className="ns-filter__option">
-                <input type="checkbox" checked={selected?.includes(ns) ?? false} onChange={() => toggle(ns)} />
+                <Checkbox checked={selected?.includes(ns) ?? false} onChange={() => toggle(ns)} />
                 {ns}
               </label>
             ))}

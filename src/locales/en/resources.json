@@ -116,6 +116,7 @@
     "emptyClusterScoped": "No {{kind}} found",
     "noMatches": "Nothing matches “{{search}}”",
     "forbidden": "You don't have permission to list {{kind}}",
+    "forbiddenIn": "No permission in: {{namespaces}}",
     "unknownKind": "The cluster does not serve {{kind}}",
     "search": "Search",
     "searchPlaceholder": "Search by name, namespace or label (app=web)…",

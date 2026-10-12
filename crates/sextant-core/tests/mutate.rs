@@ -27,7 +27,9 @@ use kube::{Api, Client};
 use serde_json::{Value, json};
 use sextant_core::kubeconfig::KubeconfigEnv;
 use sextant_core::resources::{self, KindRef, ObjectRef};
-use sextant_core::{ClusterId, ClusterManager, ErrorCode, KubeconfigRegistry};
+use sextant_core::{
+    ClusterId, ClusterManager, DrainOptions, ErrorCode, KubeconfigRegistry, PodRef,
+};
 
 const NGINX_IMAGE: &str = "nginx:stable-alpine";
 const BUSYBOX_IMAGE: &str = "busybox:stable";
@@ -550,8 +552,21 @@ async fn create_fake_node(client: &Client, name: &str) {
 
 /// A pod bound to `node` directly (no scheduler), shown as running and ready.
 async fn create_bound_pod(client: &Client, ns: &str, node: &str, name: &str) {
+    create_pod_on(client, ns, node, name, None, false).await;
+}
+
+/// Like [`create_bound_pod`], optionally controlled by `owner` (any object counts as a controller for a drain, as
+/// for `kubectl drain`) and with an `emptyDir` volume.
+async fn create_pod_on(
+    client: &Client,
+    ns: &str,
+    node: &str,
+    name: &str,
+    owner: Option<&ConfigMap>,
+    empty_dir: bool,
+) {
     let pods: Api<Pod> = Api::namespaced(client.clone(), ns);
-    let pod: Pod = serde_json::from_value(json!({
+    let mut value = json!({
         "metadata": { "name": name, "namespace": ns, "labels": { "app": name } },
         "spec": {
             "nodeName": node,
@@ -561,8 +576,20 @@ async fn create_bound_pod(client: &Client, ns: &str, node: &str, name: &str) {
             "tolerations": [{ "operator": "Exists" }],
             "containers": [{ "name": "c", "image": BUSYBOX_IMAGE }]
         }
-    }))
-    .unwrap();
+    });
+    if let Some(owner) = owner {
+        value["metadata"]["ownerReferences"] = json!([{
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "name": owner.metadata.name,
+            "uid": owner.metadata.uid,
+            "controller": true
+        }]);
+    }
+    if empty_dir {
+        value["spec"]["volumes"] = json!([{ "name": "scratch", "emptyDir": {} }]);
+    }
+    let pod: Pod = serde_json::from_value(value).unwrap();
     pods.create(&PostParams::default(), &pod).await.unwrap();
     pods.patch_status(
         name,
@@ -659,8 +686,29 @@ async fn cordon_uncordon_and_drain_that_skips_daemon_sets_and_reports_a_budget()
         })
         .await;
 
+        let preview = resources::drain_preview(&s.mgr, &s.id, &s.node)
+            .await
+            .unwrap();
+        let agent = pods.list(&agent_on_node).await.unwrap().items[0]
+            .metadata
+            .name
+            .clone()
+            .unwrap();
+        assert_eq!(preview.daemon_set, [pod_ref(&s.ns, &agent)]);
+        assert_eq!(
+            preview.unmanaged,
+            [pod_ref(&s.ns, "guarded"), pod_ref(&s.ns, "lonely")]
+        );
+        assert!(preview.evict.is_empty() && preview.empty_dir.is_empty());
+
         let started = Instant::now();
-        let err = resources::drain(&s.mgr, &s.id, &s.node).await.unwrap_err();
+        let force = DrainOptions {
+            force: true,
+            delete_empty_dir_data: false,
+        };
+        let err = resources::drain(&s.mgr, &s.id, &s.node, force)
+            .await
+            .unwrap_err();
         // The refusal (HTTP 429) is reported at once, not retried for minutes.
         assert!(
             started.elapsed() < Duration::from_secs(30),
@@ -682,6 +730,108 @@ async fn cordon_uncordon_and_drain_that_skips_daemon_sets_and_reports_a_budget()
             agents[0].metadata.deletion_timestamp.is_none(),
             "DaemonSet pod left alone"
         );
+    })
+    .await;
+}
+
+fn pod_ref(ns: &str, name: &str) -> PodRef {
+    PodRef {
+        namespace: ns.to_owned(),
+        name: name.to_owned(),
+    }
+}
+
+#[tokio::test]
+async fn drain_leaves_pods_without_a_controller_or_with_empty_dir_unless_asked() {
+    in_scratch("drain-options", |s| async move {
+        create_fake_node(&s.client, &s.node).await;
+        let owner = create_config_map(&s.client, &s.ns, "owner", json!({})).await;
+        create_pod_on(&s.client, &s.ns, &s.node, "managed", Some(&owner), false).await;
+        create_pod_on(&s.client, &s.ns, &s.node, "lonely", None, false).await;
+        create_pod_on(&s.client, &s.ns, &s.node, "scratch", Some(&owner), true).await;
+        create_pod_on(&s.client, &s.ns, &s.node, "lonely-scratch", None, true).await;
+        let pods: Api<Pod> = Api::namespaced(s.client.clone(), &s.ns);
+
+        // The preview changes nothing.
+        let preview = resources::drain_preview(&s.mgr, &s.id, &s.node)
+            .await
+            .unwrap();
+        assert_eq!(preview.evict, [pod_ref(&s.ns, "managed")]);
+        assert_eq!(
+            preview.unmanaged,
+            [pod_ref(&s.ns, "lonely"), pod_ref(&s.ns, "lonely-scratch")]
+        );
+        assert_eq!(
+            preview.empty_dir,
+            [pod_ref(&s.ns, "lonely-scratch"), pod_ref(&s.ns, "scratch")]
+        );
+        assert!(preview.daemon_set.is_empty());
+        assert!(
+            !unschedulable(&s.client, &s.node).await,
+            "preview cordons nothing"
+        );
+        for name in ["managed", "lonely", "scratch", "lonely-scratch"] {
+            assert!(
+                !being_deleted(&pods, name).await,
+                "{name} untouched by the preview"
+            );
+        }
+
+        // Without options: only the managed pod goes; the others stay and are named.
+        let err = resources::drain(&s.mgr, &s.id, &s.node, DrainOptions::default())
+            .await
+            .unwrap_err();
+        assert!(unschedulable(&s.client, &s.node).await, "drain cordons");
+        assert!(being_deleted(&pods, "managed").await, "managed pod evicted");
+        for name in ["lonely", "scratch", "lonely-scratch"] {
+            assert!(
+                !being_deleted(&pods, name).await,
+                "{name} kept without options"
+            );
+            assert!(
+                err.message.contains(&format!("{}/{name}", s.ns)),
+                "names {name}: {err}"
+            );
+        }
+        assert!(!err.message.contains("managed"), "{err}");
+
+        // `force` alone: pods without a controller go, pods with emptyDir data stay.
+        let force = DrainOptions {
+            force: true,
+            delete_empty_dir_data: false,
+        };
+        let err = resources::drain(&s.mgr, &s.id, &s.node, force)
+            .await
+            .unwrap_err();
+        assert!(
+            being_deleted(&pods, "lonely").await,
+            "lonely pod evicted with force"
+        );
+        for name in ["scratch", "lonely-scratch"] {
+            assert!(
+                !being_deleted(&pods, name).await,
+                "{name} kept without delete emptyDir data"
+            );
+            assert!(
+                err.message.contains(&format!("{}/{name}", s.ns)),
+                "names {name}: {err}"
+            );
+        }
+
+        // Both options: everything goes and the drain succeeds.
+        let both = DrainOptions {
+            force: true,
+            delete_empty_dir_data: true,
+        };
+        resources::drain(&s.mgr, &s.id, &s.node, both)
+            .await
+            .unwrap();
+        for name in ["scratch", "lonely-scratch"] {
+            assert!(
+                being_deleted(&pods, name).await,
+                "{name} evicted with both options"
+            );
+        }
     })
     .await;
 }

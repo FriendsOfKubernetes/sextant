@@ -7,6 +7,7 @@
 //
 // `status`: "loading" until the first snapshot (also while reconnecting before it) · "ready" · "reconnecting"
 // (connection lost, `items` keep the last data) · "error" (`error.code`, e.g. "forbidden" — the watch has ended).
+// `forbidden`: selected namespaces that cannot be listed (no permission); the others are shown.
 // Passing `null` for the cluster or the spec watches nothing. The spec is compared by value, so an inline object literal does not restart the watch.
 import { useEffect, useMemo, useState } from "react";
 import type { KubeObject } from "./commands";
@@ -23,6 +24,8 @@ export interface WatchState {
   items: Map<string, KubeObject>;
   status: WatchStatus;
   error?: ApiError;
+  /** Namespaces left out for lack of permission (the backend sends them all in each `forbidden` update). */
+  forbidden?: string[];
 }
 
 const EMPTY: WatchState = Object.freeze({ items: new Map(), status: "loading" }) as WatchState;
@@ -39,23 +42,26 @@ export function applyWatchUpdate(state: WatchState, update: WatchUpdate): WatchS
     case "snapshot": {
       const items = new Map<string, KubeObject>();
       for (const obj of update.items as KubeObject[]) items.set(uidOf(obj), obj);
-      return { items, status: "ready" };
+      return { items, status: "ready", forbidden: state.forbidden };
     }
     case "delta": {
       const items = new Map(state.items);
       for (const obj of update.upserted as KubeObject[]) items.set(uidOf(obj), obj);
       for (const uid of update.deleted) items.delete(uid);
       // Only a snapshot ends "loading": a delta before it is not the whole list.
-      return { items, status: state.status, error: state.error };
+      return { items, status: state.status, error: state.error, forbidden: state.forbidden };
     }
     case "reconnecting":
       // Nothing was listed yet: still loading (an empty `items` would read as "no objects").
-      return { items: state.items, status: state.status === "loading" ? "loading" : "reconnecting" };
+      return {
+        items: state.items,
+        status: state.status === "loading" ? "loading" : "reconnecting",
+        forbidden: state.forbidden,
+      };
     case "error":
-      return { items: state.items, status: "error", error: toApiError(update) };
+      return { items: state.items, status: "error", error: toApiError(update), forbidden: state.forbidden };
     case "forbidden":
-      // Not sent yet; the namespaces without permission are not shown.
-      return state;
+      return { ...state, forbidden: [...update.namespaces] };
   }
 }
 

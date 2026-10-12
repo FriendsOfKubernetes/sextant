@@ -145,12 +145,9 @@ pub async fn resource_apply(
     cluster_id: ClusterId,
     yaml: String,
 ) -> Result<Vec<ObjectRef>, CoreError> {
-    with_timeout(
-        CHANGE_TIMEOUT,
-        "applying the YAML",
-        resources::apply_yaml(&state.clusters, &cluster_id, &yaml),
-    )
-    .await
+    // Not limited as a whole: each document is one request, limited in the core (`resources::STEP_TIMEOUT`), and a
+    // `timeout` error names what was already applied and what was not sent.
+    resources::apply_yaml(&state.clusters, &cluster_id, &yaml).await
 }
 
 #[tauri::command]

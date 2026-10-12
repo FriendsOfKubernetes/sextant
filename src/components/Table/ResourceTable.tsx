@@ -27,6 +27,7 @@ import { getActionsFor, runAction, useActionsVersion, type RegisteredAction } fr
 import { refOf } from "../../resources/refs";
 import { useResourceDef, type ActionId, type CellContext, type ColumnDef } from "../../resources/registry";
 import { Badge } from "../Badge";
+import { Checkbox } from "./Checkbox";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
 import { usePopup } from "../usePopup";
@@ -213,6 +214,11 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
           <Badge tone="warning">{t("resources:table.reconnecting")}</Badge>
         </span>
       )}
+      {watch.forbidden && watch.forbidden.length > 0 && watch.status !== "error" && (
+        <span className="rt__forbidden" data-testid="rt-forbidden" title={watch.forbidden.join("\n")}>
+          <Badge tone="warning">{t("resources:table.forbiddenIn", { namespaces: watch.forbidden.join(", ") })}</Badge>
+        </span>
+      )}
       {selected.length > 0 && (
         <span className="rt__selected">{t("resources:table.selected", { count: selected.length })}</span>
       )}
@@ -263,8 +269,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
           <div className="rt__head" role="rowgroup">
             <div className="rt__row rt__row--head" role="row" aria-rowindex={1}>
               <div className="rt__cell rt__cell--check" role="columnheader">
-                <input
-                  type="checkbox"
+                <Checkbox
                   aria-label={t("resources:table.selectAll")}
                   checked={allSelected}
                   ref={(el) => {
@@ -331,8 +336,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                   }}
                 >
                   <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       aria-label={t("resources:table.selectRow", { name: obj.metadata?.name ?? "" })}
                       checked={isSelected}
                       onChange={() => undefined}

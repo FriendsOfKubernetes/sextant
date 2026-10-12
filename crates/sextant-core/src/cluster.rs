@@ -18,7 +18,7 @@ use crate::kubeconfig::{ClusterId, KubeconfigRegistry, kubeconfig_error};
 use crate::resources::{KindRef, PrinterColumn, ResourceKind};
 
 /// How long a TCP/TLS connect may take.
-const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+pub(crate) const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 /// How long the whole connection check (exec plugin + first request) may take.
 const CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 

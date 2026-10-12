@@ -161,11 +161,9 @@ describe("src/api commands", () => {
   });
 
   it("optional arguments left out are not sent", async () => {
-    backend = mockBackend({ node_drain: () => undefined, helm_repo_add: () => undefined });
-    await api.actions.drain("c1", "n1");
+    backend = mockBackend({ helm_repo_add: () => undefined });
     await api.helm.repoAdd("bitnami", "https://x");
     expect(backend.calls.map((c) => JSON.parse(JSON.stringify(c.args)) as unknown)).toEqual([
-      { clusterId: "c1", name: "n1" },
       { name: "bitnami", url: "https://x" },
     ]);
   });
