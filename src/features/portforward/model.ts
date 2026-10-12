@@ -41,9 +41,12 @@ export function targetName(target: ForwardTarget): string {
   return `${target.namespace}/${target.name}`;
 }
 
+/** How a browser talks to the forwarded port: plain HTTP, or HTTPS for a server with its own TLS (argocd-server). */
+export type UrlScheme = "http" | "https";
+
 /** The address a browser opens for a forward. */
-export function urlOf(forward: Pick<ForwardInfo, "localPort">): string {
-  return `http://localhost:${forward.localPort}`;
+export function urlOf(forward: Pick<ForwardInfo, "localPort">, scheme: UrlScheme = "http"): string {
+  return `${scheme}://localhost:${forward.localPort}`;
 }
 
 /** A valid local port typed by the user (1–65535), or `null`. */

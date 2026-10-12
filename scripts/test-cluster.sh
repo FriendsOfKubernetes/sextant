@@ -4,6 +4,10 @@
 #   scripts/test-cluster.sh up                  create (or reuse) the cluster and apply everything
 #   scripts/test-cluster.sh up --prometheus     the same, plus a minimal Prometheus in namespace `monitoring`
 #                                               (scripts/fixtures/prometheus/, service prometheus-operated:9090)
+#   scripts/test-cluster.sh up --gitops         the same, plus Flux (flux-system) and Argo CD (argocd) of fixed
+#                                               versions from their official manifests, and the fixtures of
+#                                               scripts/fixtures/gitops/ (namespaces sextant-flux, sextant-argo);
+#                                               flags combine: up --prometheus --gitops
 #   scripts/test-cluster.sh kubeconfig          print the path of the admin kubeconfig
 #   scripts/test-cluster.sh kubeconfig limited  print the path of a kubeconfig for the `limited`
 #                                               ServiceAccount (no access to Secrets)
@@ -24,6 +28,11 @@ ADMIN_KUBECONFIG="$STATE_DIR/kubeconfig"
 LIMITED_KUBECONFIG="$STATE_DIR/kubeconfig-limited"
 METRICS_SERVER_URL="${METRICS_SERVER_URL:-https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml}"
 DEMO_NS="sextant-demo"
+# GitOps tools for `up --gitops`: fixed versions, official release manifests (cached in $STATE_DIR).
+FLUX_VERSION="v2.9.6"
+ARGOCD_VERSION="v3.5.5"
+FLUX_URL="https://github.com/fluxcd/flux2/releases/download/$FLUX_VERSION/install.yaml"
+ARGOCD_URL="https://raw.githubusercontent.com/argoproj/argo-cd/$ARGOCD_VERSION/manifests/install.yaml"
 
 log() { printf '[test-cluster] %s\n' "$*" >&2; }
 die() { printf '[test-cluster] error: %s\n' "$*" >&2; exit 1; }
@@ -163,6 +172,51 @@ install_prometheus() {
   die "Prometheus did not collect metrics"
 }
 
+# Downloads `url` once into $STATE_DIR/`name` (kept for the next run) and prints the path.
+cached_manifest() {
+  local url="$1" name="$2"
+  local manifest="$STATE_DIR/$name"
+  if [[ ! -s "$manifest" ]]; then
+    curl -fsSL "$url" -o "$manifest.tmp"
+    mv "$manifest.tmp" "$manifest"
+  fi
+  echo "$manifest"
+}
+
+install_gitops() {
+  log "installing Flux $FLUX_VERSION (namespace flux-system)"
+  local flux argocd
+  flux="$(cached_manifest "$FLUX_URL" "flux-$FLUX_VERSION.yaml")"
+  # Server-side: the CRDs are too big for the last-applied annotation of a client-side apply.
+  kc apply --server-side --force-conflicts -f "$flux" >/dev/null
+  log "installing Argo CD $ARGOCD_VERSION (namespace argocd)"
+  argocd="$(cached_manifest "$ARGOCD_URL" "argocd-$ARGOCD_VERSION.yaml")"
+  kc create namespace argocd --dry-run=client -o yaml | kc apply -f - >/dev/null
+  kc -n argocd apply --server-side --force-conflicts -f "$argocd" >/dev/null
+
+  kc wait --for condition=established --timeout=120s \
+    crd/gitrepositories.source.toolkit.fluxcd.io crd/kustomizations.kustomize.toolkit.fluxcd.io \
+    crd/helmrepositories.source.toolkit.fluxcd.io crd/helmreleases.helm.toolkit.fluxcd.io \
+    crd/applications.argoproj.io crd/applicationsets.argoproj.io crd/appprojects.argoproj.io >/dev/null
+
+  log "waiting for the Flux and Argo CD controllers"
+  kc -n flux-system wait --for condition=available --timeout=300s deployment --all >/dev/null
+  kc -n argocd wait --for condition=available --timeout=300s deployment --all >/dev/null
+  kc -n argocd rollout status statefulset/argocd-application-controller --timeout=300s >/dev/null
+
+  log "applying GitOps fixtures"
+  local f
+  for f in "$FIXTURES_DIR"/gitops/*.yaml; do
+    kc apply -f "$f" >/dev/null
+  done
+  # The fixtures fetch public repositories: their readiness depends on the network, so it is waited for but
+  # not required.
+  if ! kc -n sextant-flux wait --for condition=ready --timeout=180s \
+    gitrepository/podinfo kustomization/podinfo helmrelease/podinfo-helm >/dev/null 2>&1; then
+    log "warning: Flux fixtures are not Ready yet (kubectl -n sextant-flux get gitrepository,kustomization,helmrelease)"
+  fi
+}
+
 cmd_kubeconfig() {
   local which="${1:-admin}"
   cluster_exists || die "cluster $CLUSTER_NAME is not running (run: scripts/test-cluster.sh up)"
@@ -185,19 +239,36 @@ cmd_down() {
   rm -f "$ADMIN_KUBECONFIG" "$LIMITED_KUBECONFIG"
 }
 
-if [[ "${1:-}" == "up" && "${2:-}" == "--prometheus" ]]; then
+# `up [--prometheus] [--gitops]`
+cmd_up_with() {
+  local prometheus=0 gitops=0 flag
+  for flag in "$@"; do
+    case "$flag" in
+      --prometheus) prometheus=1 ;;
+      --gitops) gitops=1 ;;
+      *) die "unknown flag '$flag' (expected: --prometheus, --gitops)" ;;
+    esac
+  done
   cmd_up
-  install_prometheus
-  log "Prometheus ready: monitoring/prometheus-operated:9090"
-  exit 0
-fi
+  if ((prometheus)); then
+    install_prometheus
+    log "Prometheus ready: monitoring/prometheus-operated:9090"
+  fi
+  if ((gitops)); then
+    install_gitops
+    log "GitOps ready: Flux $FLUX_VERSION in flux-system, Argo CD $ARGOCD_VERSION in argocd"
+  fi
+}
 
 case "${1:-}" in
-  up) cmd_up ;;
+  up)
+    shift
+    cmd_up_with "$@"
+    ;;
   kubeconfig) cmd_kubeconfig "${2:-admin}" ;;
   down) cmd_down ;;
   *)
-    echo "usage: $0 up | kubeconfig [limited] | down" >&2
+    echo "usage: $0 up [--prometheus] [--gitops] | kubeconfig [limited] | down" >&2
     exit 2
     ;;
 esac

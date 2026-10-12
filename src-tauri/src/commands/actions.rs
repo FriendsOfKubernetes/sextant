@@ -1,4 +1,5 @@
-//! Actions on workloads, nodes and CronJobs: thin wrappers over `sextant_core::resources`.
+//! Actions on workloads, nodes and CronJobs, and the patch any feature uses: thin wrappers over
+//! `sextant_core::resources`.
 //!
 //! Every change in the cluster is limited to [`CHANGE_TIMEOUT`]: an API server that does not answer (or keeps
 //! answering "try later") gives a `timeout` error instead of an action that hangs. A drain is the exception: it is
@@ -7,7 +8,7 @@
 use std::time::Duration;
 
 use sextant_core::error::with_timeout;
-use sextant_core::resources;
+use sextant_core::resources::{self, PatchType};
 use sextant_core::{ClusterId, CoreError, DrainOptions, DrainPreview, ObjectRef};
 use tauri::State;
 
@@ -121,6 +122,24 @@ pub async fn cronjob_suspend(
         CHANGE_TIMEOUT,
         "changing the CronJob",
         resources::suspend_cronjob(&state.clusters, &cluster_id, &_ref, suspend),
+    )
+    .await
+}
+
+/// Merge or JSON patch of one object of any kind, signed by `sextant` (Flux and Argo CD actions: annotations,
+/// `spec.suspend`, `operation`); returns the object as saved (a Secret without its values).
+#[tauri::command]
+pub async fn resource_patch(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    _ref: ObjectRef,
+    patch: serde_json::Value,
+    patch_type: PatchType,
+) -> Result<serde_json::Value, CoreError> {
+    with_timeout(
+        CHANGE_TIMEOUT,
+        "patching the object",
+        resources::patch(&state.clusters, &cluster_id, &_ref, &patch, patch_type),
     )
     .await
 }

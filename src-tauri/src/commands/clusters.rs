@@ -97,6 +97,17 @@ pub async fn cluster_kinds(
     state.clusters.kinds(&cluster_id).await
 }
 
+/// Forgets the cluster's discovery without reconnecting (a CRD was created or deleted); the next `cluster_kinds`
+/// asks the server again.
+#[tauri::command]
+pub async fn cluster_kinds_refresh(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+) -> Result<(), CoreError> {
+    state.clusters.refresh_kinds(&cluster_id);
+    Ok(())
+}
+
 /// Disconnects a cluster and stops its watch subscriptions, log streams and exec sessions.
 pub async fn disconnect_cluster(state: &AppState, id: &ClusterId) {
     state.clusters.disconnect(id).await;

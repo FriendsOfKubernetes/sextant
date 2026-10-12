@@ -10,7 +10,7 @@ import { getAction } from "../actions/registry";
 import "../actions";
 import podJson from "../details/fixtures/pod.json";
 import serviceJson from "../details/fixtures/service.json";
-import "./index";
+import { openInBrowser, urlOf } from "./index";
 
 const pod = podJson as KubeObject;
 const service = serviceJson as KubeObject;
@@ -263,5 +263,17 @@ describe("Port Forwarding page", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Stop" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("no port forward pf-1");
+  });
+});
+
+describe("opening a forward in the browser", () => {
+  it("uses http by default and https when asked (a TLS server such as argocd-server)", async () => {
+    setup();
+    expect(urlOf(info())).toBe("http://localhost:41234");
+    expect(urlOf(info(), "https")).toBe("https://localhost:41234");
+    openInBrowser(info({ localPort: 8443 }), "https");
+    openInBrowser(info());
+    await waitFor(() => expect(backend.openedUrls).toEqual(["https://localhost:8443", "http://localhost:41234"]));
+    expect(open).not.toHaveBeenCalled();
   });
 });

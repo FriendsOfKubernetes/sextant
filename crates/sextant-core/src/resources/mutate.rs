@@ -1,4 +1,4 @@
-//! Changes to objects: replace, server-side apply, delete, scale, restart, node and CronJob actions.
+//! Changes to objects: replace, server-side apply, patch, delete, scale, restart, node and CronJob actions.
 //!
 //! Every function changes exactly what its caller names; confirmation is the frontend's job. Errors from the API
 //! server keep their code (`forbidden`, `conflict`, `invalid`, …) and the server's own text.
@@ -16,8 +16,10 @@ use kube::api::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::get::{ResolvedKind, ensure_values_present, resolve_kind, to_json};
-use super::{DrainOptions, DrainPreview, KindRef, ObjectRef, PodRef};
+use super::get::{
+    ResolvedKind, VALUES_HIDDEN_ANNOTATION, ensure_values_present, resolve_kind, to_json,
+};
+use super::{DrainOptions, DrainPreview, KindRef, ObjectRef, PatchType, PodRef};
 use crate::cluster::{CONNECT_TIMEOUT, ClusterManager};
 use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::kubeconfig::ClusterId;
@@ -151,6 +153,46 @@ async fn apply_yaml_within(
         });
     }
     Ok(applied)
+}
+
+/// Patches one object of any kind (an annotation, `spec.suspend`, an operation of a GitOps object), signed by
+/// [`FIELD_MANAGER`]; returns the object as saved, through `to_json` (a Secret without its values).
+///
+/// A merge patch must be an object and a JSON patch a list of operations, otherwise `invalid`. A patch that names
+/// `VALUES_HIDDEN_ANNOTATION` is refused: that marker belongs to Secrets sent without their values.
+pub async fn patch(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    r: &ObjectRef,
+    patch: &Value,
+    patch_type: PatchType,
+) -> CoreResult<Value> {
+    let hidden_path = VALUES_HIDDEN_ANNOTATION.replace('/', "~1");
+    let text = patch.to_string();
+    if text.contains(VALUES_HIDDEN_ANNOTATION) || text.contains(&hidden_path) {
+        return Err(CoreError::new(
+            ErrorCode::Invalid,
+            format!("a patch cannot set the annotation {VALUES_HIDDEN_ANNOTATION}"),
+        ));
+    }
+    let body = match patch_type {
+        PatchType::Merge if patch.is_object() => Patch::Merge(patch),
+        PatchType::Merge => {
+            return Err(CoreError::new(
+                ErrorCode::Invalid,
+                "a merge patch must be a JSON object",
+            ));
+        }
+        PatchType::Json => Patch::Json(serde_json::from_value(patch.clone()).map_err(|err| {
+            CoreError::new(
+                ErrorCode::Invalid,
+                format!("a JSON patch must be a list of operations: {err}"),
+            )
+        })?),
+    };
+    let (api, kind) = object_api(mgr, cluster, r).await?;
+    let saved = api.patch(&r.name, &patch_params(), &body).await?;
+    to_json(saved, &kind.resource)
 }
 
 /// Deletes one object; dependents (a Deployment's ReplicaSets and pods) are removed in the background.

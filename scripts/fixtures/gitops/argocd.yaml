@@ -1,0 +1,24 @@
+# Argo CD fixtures for `scripts/test-cluster.sh up --gitops` (needs Argo CD in `argocd`).
+# The Application deploys the guestbook example (https://github.com/argoproj/argocd-example-apps) into
+# `sextant-argo`; it syncs automatically once and does not heal by itself, so a resource changed by hand stays
+# OutOfSync (for the diff).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/argoproj/argocd-example-apps
+    targetRevision: HEAD
+    path: guestbook
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sextant-argo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true

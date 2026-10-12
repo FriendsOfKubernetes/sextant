@@ -105,11 +105,12 @@ function Cluster() {
   );
 }
 
-/** The latest watch of a kind, once its listener is attached. */
+/** The latest watch of a kind by a table (not the sidebar's metadata-only watch of CRDs), once its listener is
+ * attached. */
 async function watchOf(kind: string): Promise<{ id: string; spec: WatchSpec }> {
   let found: { id: string; spec: WatchSpec } | undefined;
   await waitFor(() => {
-    found = [...watches].reverse().find((w) => w.spec.kind.kind === kind);
+    found = [...watches].reverse().find((w) => w.spec.kind.kind === kind && !w.spec.metadataOnly);
     expect(found && backend.listenerCount(`watch:${found.id}`)).toBe(1);
   });
   return found!;
@@ -181,8 +182,8 @@ describe("Sidebar and main view", () => {
     expect(within(sidebar()).getByRole("button", { name: "Definitions" })).toBeInTheDocument();
     fireEvent.click(await within(sidebar()).findByRole("button", { name: /demo\.sextant\.dev/ }));
     fireEvent.click(within(sidebar()).getByRole("button", { name: "Widget" }));
-    // The sidebar does not download the CRDs (with their schemas) to list them.
-    expect(watches.filter((w) => w.spec.kind.kind === "CustomResourceDefinition")).toEqual([]);
+    // The sidebar does not download the CRDs (with their schemas) to list them; it watches their metadata only.
+    expect(watches.filter((w) => w.spec.kind.kind === "CustomResourceDefinition" && !w.spec.metadataOnly)).toEqual([]);
 
     const widgets = await watchOf("Widget");
     expect(widgets.spec.kind).toEqual(kindRef("demo.sextant.dev", "v1", "Widget"));

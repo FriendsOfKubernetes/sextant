@@ -19,6 +19,7 @@ import type { LogOptions } from "./generated/LogOptions";
 import type { MetricsStatus } from "./generated/MetricsStatus";
 import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
+import type { PatchType } from "./generated/PatchType";
 import type { PodUsage } from "./generated/PodUsage";
 import type { ResourceKind } from "./generated/ResourceKind";
 import type { Series } from "./generated/Series";
@@ -49,6 +50,8 @@ export const clusters = {
   disconnect: (clusterId: ClusterId) => call<void>("cluster_disconnect", { clusterId }),
   state: (clusterId: ClusterId) => call<ConnectionState>("cluster_state", { clusterId }),
   kinds: (clusterId: ClusterId) => call<ResourceKind[]>("cluster_kinds", { clusterId }),
+  /** Forgets the backend's discovery of the cluster (a CRD was created or deleted); the next `kinds` asks again. */
+  refreshKinds: (clusterId: ClusterId) => call<void>("cluster_kinds_refresh", { clusterId }),
 };
 
 /** Every stream (watch, logs, terminal) gets its id from the frontend, which listens before it starts the stream. */
@@ -71,6 +74,12 @@ export const resources = {
   replace: (clusterId: ClusterId, yaml: string) => call<KubeObject>("resource_replace", { clusterId, yaml }),
   apply: (clusterId: ClusterId, yaml: string) => call<ObjectRef[]>("resource_apply", { clusterId, yaml }),
   delete: (clusterId: ClusterId, ref: ObjectRef) => call<void>("resource_delete", { clusterId, ref }),
+  /**
+   * Merge patch (an object) or JSON patch (a list of operations) of one object, signed by `sextant`; resolves to the
+   * object as saved (a Secret without its values).
+   */
+  patch: (clusterId: ClusterId, ref: ObjectRef, patch: unknown, patchType: PatchType) =>
+    call<KubeObject>("resource_patch", { clusterId, ref, patch, patchType }),
 };
 
 export const actions = {

@@ -30,7 +30,19 @@ export type ActionId =
   | "cordon"
   | "drain"
   | "trigger"
-  | "suspend";
+  | "suspend"
+  // Flux (src/features/flux)
+  | "reconcile"
+  | "reconcileWithSource"
+  | "fluxSuspend"
+  | "fluxResume"
+  // Argo CD (src/features/argocd)
+  | "argoSync"
+  | "argoRefresh"
+  | "argoHardRefresh"
+  | "argoTerminate"
+  | "argoDiff"
+  | "argoOpenUi";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {
@@ -60,7 +72,10 @@ export interface ColumnDef {
   before?: string;
 }
 
-/** Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. */
+/**
+ * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `flux` and `argocd` belong to
+ * tools installed in the cluster: see `DISCOVERED_SECTIONS`.
+ */
 export const SIDEBAR_SECTIONS = [
   "cluster",
   "nodes",
@@ -72,9 +87,18 @@ export const SIDEBAR_SECTIONS = [
   "events",
   "helm",
   "accessControl",
+  "flux",
+  "argocd",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
+
+/**
+ * Sections of tools a cluster may or may not have (Flux, Argo CD): their kinds are listed only once discovery says
+ * the cluster serves them, never before it comes, so a section without served kinds — the tool is not installed —
+ * is not drawn at all.
+ */
+export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>(["flux", "argocd"]);
 
 export interface SidebarEntry {
   section: SidebarSection;

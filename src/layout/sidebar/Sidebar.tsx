@@ -1,9 +1,11 @@
 // Section tree of a cluster, in Lens order: Cluster, Nodes, Workloads, Config, Network, Storage, Namespaces, Events,
-// Helm, Access Control, Custom Resources. Entries come from the resource registry (tables) and from `registerPage`
-// (overview, events, Helm, port forwarding, …); a section without entries is not shown. Custom Resources lists
+// Helm, Access Control, Flux, Argo CD, Custom Resources. Entries come from the resource registry (tables) and from
+// `registerPage` (overview, events, Helm, port forwarding, …); a section without entries is not shown. Flux and Argo CD
+// list only kinds that discovery says the cluster serves (`DISCOVERED_SECTIONS`). Custom Resources lists
 // "Definitions" and the cluster's custom kinds grouped by API group, from discovery (names, groups, versions — the
-// CRDs themselves, with their schemas, are not downloaded for the sidebar).
-import { useMemo, useState } from "react";
+// CRDs themselves, with their schemas, are not downloaded for the sidebar). The sidebar watches the cluster's CRDs,
+// so a kind created or deleted while connected appears or goes without reconnecting.
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
@@ -17,6 +19,9 @@ import {
   useRegistryVersion,
   viewIdOf,
 } from "../../resources";
+// Not re-exported from src/resources/index.ts: only the sidebar uses them.
+import { DISCOVERED_SECTIONS } from "../../resources/registry";
+import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages } from "../pages";
 import "./sidebar.css";
 
@@ -45,6 +50,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   const setSearch = useAppStore((s) => s.setSearch);
   const registryVersion = useRegistryVersion();
   const { kinds } = useClusterKinds(clusterId);
+  useEffect(() => watchCrdChanges(clusterId), [clusterId]);
 
   // `registryVersion` re-reads the registries when kinds are registered or extended.
   const sections = useMemo(() => buildSections(kinds, registryVersion), [kinds, registryVersion]);
@@ -144,8 +150,8 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
   };
   for (const def of getResourceDefs()) {
     if (!def.sidebar) continue;
-    // Once discovery is known, kinds the cluster does not serve are hidden.
-    if (kinds && !findKind(kinds, def.kind)) continue;
+    // Once discovery is known, kinds the cluster does not serve are hidden; kinds of installed tools wait for it.
+    if (kinds ? !findKind(kinds, def.kind) : DISCOVERED_SECTIONS.has(def.sidebar.section)) continue;
     add(def.sidebar.section, { id: viewIdOf(def.kind), order: def.sidebar.order, labelKey: def.sidebar.labelKey });
   }
   for (const page of getPages()) add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey });

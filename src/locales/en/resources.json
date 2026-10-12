@@ -10,6 +10,8 @@
     "events": "Events",
     "helm": "Helm",
     "accessControl": "Access Control",
+    "flux": "Flux",
+    "argocd": "Argo CD",
     "customResources": "Custom Resources"
   },
   "kinds": {

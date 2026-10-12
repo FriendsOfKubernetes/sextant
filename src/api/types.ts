@@ -25,6 +25,7 @@ export type { LogUpdate } from "./generated/LogUpdate";
 export type { MetricsStatus } from "./generated/MetricsStatus";
 export type { NodeUsage } from "./generated/NodeUsage";
 export type { ObjectRef } from "./generated/ObjectRef";
+export type { PatchType } from "./generated/PatchType";
 export type { PodRef } from "./generated/PodRef";
 export type { PodUsage } from "./generated/PodUsage";
 export type { PrinterColumn } from "./generated/PrinterColumn";

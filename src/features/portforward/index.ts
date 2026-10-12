@@ -4,6 +4,6 @@ import "./register";
 
 export { ForwardDialog, type ForwardDialogProps } from "./ForwardDialog";
 export { usePortForwards, type PortForwards } from "./hooks";
-export { isForwardable, parseLocalPort, portsOf, targetOf, urlOf } from "./model";
+export { isForwardable, parseLocalPort, portsOf, targetOf, urlOf, type UrlScheme } from "./model";
 export { openInBrowser } from "./openInBrowser";
 export { PortForwardPage } from "./PortForwardPage";

@@ -13,8 +13,8 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub use get::{get, get_full, secret_value};
 pub use mutate::{
-    STEP_TIMEOUT, apply_yaml, cordon, delete, drain, drain_preview, replace_yaml, restart, scale,
-    suspend_cronjob, trigger_cronjob,
+    STEP_TIMEOUT, apply_yaml, cordon, delete, drain, drain_preview, patch, replace_yaml, restart,
+    scale, suspend_cronjob, trigger_cronjob,
 };
 pub use watch::watch;
 
@@ -76,6 +76,16 @@ impl ObjectRef {
                 )
             })
     }
+}
+
+/// How the body of `resource_patch` is read: a JSON merge patch (RFC 7386, an object) or a JSON patch (RFC 6902, a
+/// list of operations).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum PatchType {
+    Merge,
+    Json,
 }
 
 /// What to watch. `namespaces: None` means all namespaces.

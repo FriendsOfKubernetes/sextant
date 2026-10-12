@@ -24,6 +24,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("cluster_disconnect", Some("clusterId")),
     ("cluster_state", Some("clusterId")),
     ("cluster_kinds", Some("clusterId")),
+    ("cluster_kinds_refresh", Some("clusterId")),
     ("watch_start", Some("clusterId")),
     ("watch_stop", Some("subscriptionId")),
     ("streams_reset", None),
@@ -40,6 +41,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("node_drain", Some("clusterId")),
     ("cronjob_trigger", Some("clusterId")),
     ("cronjob_suspend", Some("clusterId")),
+    ("resource_patch", Some("clusterId")),
     ("logs_start", Some("clusterId")),
     ("logs_stop", Some("streamId")),
     ("exec_start", Some("clusterId")),
@@ -245,6 +247,23 @@ fn unknown_cluster_cannot_connect_and_is_disconnected() {
     assert_eq!(state, json!({ "state": "disconnected" }));
     let err = invoke(&h, "cluster_kinds", json!({ "clusterId": "abc" })).unwrap_err();
     assert_eq!(err["code"], "notFound");
+    // Refreshing the kinds of a cluster that is not connected is harmless.
+    assert_eq!(
+        invoke(&h, "cluster_kinds_refresh", json!({ "clusterId": "abc" })).unwrap(),
+        Value::Null
+    );
+    let err = invoke(
+        &h,
+        "resource_patch",
+        json!({
+            "clusterId": "abc",
+            "ref": { "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "x" },
+            "patch": { "metadata": { "labels": { "a": "b" } } },
+            "patchType": "merge",
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
 }
 
 const PASTED: &str = "apiVersion: v1
@@ -444,6 +463,17 @@ fn later_argument_names_match_the_frontend() {
         ),
         ("resource_get_full", json!({ "clusterId": "c" }), "ref"),
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
+        ("resource_patch", json!({ "clusterId": "c" }), "ref"),
+        (
+            "resource_patch",
+            json!({ "clusterId": "c", "ref": { "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "x" } }),
+            "patch",
+        ),
+        (
+            "resource_patch",
+            json!({ "clusterId": "c", "ref": { "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "x" }, "patch": {} }),
+            "patchType",
+        ),
         (
             "node_drain",
             json!({ "clusterId": "c", "name": "n" }),

@@ -19,6 +19,7 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["cluster_disconnect", () => api.clusters.disconnect("c1"), { clusterId: "c1" }],
   ["cluster_state", () => api.clusters.state("c1"), { clusterId: "c1" }],
   ["cluster_kinds", () => api.clusters.kinds("c1"), { clusterId: "c1" }],
+  ["cluster_kinds_refresh", () => api.clusters.refreshKinds("c1"), { clusterId: "c1" }],
   ["watch_start", () => api.resources.watchStart("c1", spec, "s1"), { clusterId: "c1", spec, streamId: "s1" }],
   ["watch_stop", () => api.resources.watchStop("w1"), { subscriptionId: "w1" }],
   ["streams_reset", () => api.streams.reset(), undefined],
@@ -32,6 +33,11 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["resource_replace", () => api.resources.replace("c1", "y"), { clusterId: "c1", yaml: "y" }],
   ["resource_apply", () => api.resources.apply("c1", "y"), { clusterId: "c1", yaml: "y" }],
   ["resource_delete", () => api.resources.delete("c1", ref), { clusterId: "c1", ref }],
+  [
+    "resource_patch",
+    () => api.resources.patch("c1", ref, { spec: { suspend: true } }, "merge"),
+    { clusterId: "c1", ref, patch: { spec: { suspend: true } }, patchType: "merge" },
+  ],
   ["workload_scale", () => api.actions.scale("c1", ref, 3), { clusterId: "c1", ref, replicas: 3 }],
   ["workload_restart", () => api.actions.restart("c1", ref), { clusterId: "c1", ref }],
   ["node_cordon", () => api.actions.cordon("c1", "n1", true), { clusterId: "c1", name: "n1", unschedulable: true }],
@@ -129,7 +135,7 @@ describe("src/api commands", () => {
   it("covers every command of the contract", () => {
     const covered = new Set(cases.map(([cmd]) => cmd));
     covered.add("settings_update"); // checked below with a real settings object
-    expect(covered.size).toBe(57);
+    expect(covered.size).toBe(59);
   });
 
   it("settings_update sends the whole settings object", async () => {

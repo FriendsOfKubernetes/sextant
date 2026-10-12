@@ -1,6 +1,6 @@
 //! Connections to clusters: one `kube::Client` per connected cluster, connection states, discovery cache.
 //!
-//! Discovery runs once per connection: callers that ask while it runs wait for the same answer, and it stops when
+//! Discovery runs once per connection (and again after `refresh_kinds`, when CRDs change): callers that ask while it runs wait for the same answer, and it stops when
 //! the last of them gives up. It lists kinds only (two requests on servers with aggregated discovery); printer
 //! columns of custom resources are read from their one CRD when that kind is opened, never from the whole list.
 //!
@@ -198,8 +198,9 @@ impl ClusterManager {
     }
 
     /// Discovery: every resource kind the cluster serves (in the preferred version of its group when that version
-    /// serves it). Printer columns stay empty: they come from the kind's CRD. Cached until the cluster reconnects;
-    /// callers that ask while it runs share one discovery, which stops when all of them are dropped.
+    /// serves it). Printer columns stay empty: they come from the kind's CRD. Cached until the cluster reconnects or
+    /// [`ClusterManager::refresh_kinds`] drops it; callers that ask while it runs share one discovery, which stops
+    /// when all of them are dropped.
     pub async fn kinds(&self, id: &ClusterId) -> CoreResult<Vec<ResourceKind>> {
         let (discovery, generation) = {
             let mut clusters = self.lock();
@@ -237,6 +238,18 @@ impl ClusterManager {
             }
         });
         result
+    }
+
+    /// Forgets the cluster's discovery without reconnecting, so the next [`ClusterManager::kinds`] asks the server
+    /// again (a CRD was created or deleted). A discovery that is running keeps answering the callers that wait for
+    /// it, but its result is not cached: it may predate the change.
+    pub fn refresh_kinds(&self, id: &ClusterId) {
+        let mut clusters = self.lock();
+        if let Some(entry) = clusters.get_mut(id) {
+            entry.kinds = None;
+            // Its waiters keep their clones; `kinds` caches a result only while its discovery is the current one.
+            entry.discovery = None;
+        }
     }
 
     /// Builds a client for the cluster's context and checks it with an authenticated request.
@@ -770,6 +783,108 @@ mod tests {
             started.elapsed() < Duration::from_secs(2),
             "took {:?}",
             started.elapsed()
+        );
+    }
+
+    /// A fake API server without aggregated discovery that serves the core kinds and, in group `demo.sextant.dev`,
+    /// the kinds in `served` when the group is asked; the group's answer comes `delay` later.
+    async fn serving(served: Arc<Mutex<Vec<&'static str>>>, delay: Duration) -> FakeApi {
+        FakeApi::start(move |req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(
+                200,
+                r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+            ),
+            "/api/v1" => Reply::json(
+                200,
+                r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[{"name":"pods","singularName":"pod","namespaced":true,"kind":"Pod","verbs":["list","watch"]}]}"#,
+            ),
+            "/apis" => Reply::json(
+                200,
+                r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[{"name":"demo.sextant.dev","versions":[{"groupVersion":"demo.sextant.dev/v1","version":"v1"}],"preferredVersion":{"groupVersion":"demo.sextant.dev/v1","version":"v1"}}]}"#,
+            ),
+            "/apis/demo.sextant.dev/v1" => {
+                let resources: Vec<String> = served
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .map(|kind| {
+                        let plural = format!("{}s", kind.to_lowercase());
+                        format!(
+                            r#"{{"name":"{plural}","singularName":"","namespaced":true,"kind":"{kind}","verbs":["list","watch"]}}"#
+                        )
+                    })
+                    .collect();
+                Reply::json(
+                    200,
+                    format!(
+                        r#"{{"kind":"APIResourceList","groupVersion":"demo.sextant.dev/v1","resources":[{}]}}"#,
+                        resources.join(",")
+                    ),
+                )
+                .after(delay)
+            }
+            _ => Reply::not_found(),
+        })
+        .await
+    }
+
+    fn demo_kinds(kinds: &[ResourceKind]) -> Vec<String> {
+        kinds
+            .iter()
+            .filter(|k| k.kind_ref.group == "demo.sextant.dev")
+            .map(|k| k.kind_ref.kind.clone())
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn refreshed_kinds_show_created_and_deleted_kinds_without_reconnecting() {
+        let served = Arc::new(Mutex::new(vec!["Widget"]));
+        let api = serving(Arc::clone(&served), Duration::ZERO).await;
+        let (_tmp, mgr, id) = crate::fake_api::connected_to(api.url()).await;
+        assert_eq!(demo_kinds(&mgr.kinds(&id).await.unwrap()), ["Widget"]);
+
+        served.lock().unwrap().push("Gadget");
+        // Cached until refreshed.
+        assert_eq!(demo_kinds(&mgr.kinds(&id).await.unwrap()), ["Widget"]);
+        mgr.refresh_kinds(&id);
+        assert_eq!(
+            demo_kinds(&mgr.kinds(&id).await.unwrap()),
+            ["Gadget", "Widget"]
+        );
+
+        served.lock().unwrap().retain(|k| *k != "Widget");
+        mgr.refresh_kinds(&id);
+        assert_eq!(demo_kinds(&mgr.kinds(&id).await.unwrap()), ["Gadget"]);
+        assert_eq!(mgr.state(&id), ConnectionState::Connected);
+    }
+
+    #[tokio::test]
+    async fn a_discovery_running_during_a_refresh_does_not_cache_its_older_result() {
+        let served = Arc::new(Mutex::new(vec!["Widget"]));
+        let api = serving(Arc::clone(&served), Duration::from_millis(500)).await;
+        let (_tmp, mgr, id) = crate::fake_api::connected_to(api.url()).await;
+
+        let running = {
+            let (mgr, id) = (mgr.clone(), id.clone());
+            tokio::spawn(async move { mgr.kinds(&id).await })
+        };
+        // The group was asked before the change, so the running discovery answers with the old kinds.
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while api.count("/apis/demo.sextant.dev/v1") == 0 {
+            assert!(
+                std::time::Instant::now() < deadline,
+                "discovery did not start"
+            );
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        served.lock().unwrap().push("Gadget");
+        mgr.refresh_kinds(&id);
+        let old = running.await.unwrap().unwrap();
+        assert!(!demo_kinds(&old).contains(&"Gadget".to_owned()));
+
+        assert_eq!(
+            demo_kinds(&mgr.kinds(&id).await.unwrap()),
+            ["Gadget", "Widget"]
         );
     }
 
