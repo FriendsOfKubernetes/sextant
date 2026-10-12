@@ -402,9 +402,17 @@ pub fn spawn_local_shell_with(
                 .map_err(startup_files_error)?;
             // `ENV` is expanded before it is read: a path that would change is not used (the files are dropped).
             if rc.to_str().is_some_and(|p| !p.contains(['$', '`', '\\'])) {
-                // An interactive bash in POSIX mode reads only `$ENV` (`--rcfile` would also run the system bashrc,
-                // which `/etc/profile` runs again); the rc file leaves POSIX mode first.
-                command.args = vec!["--posix".into(), "-i".into()];
+                // An interactive bash in POSIX mode reads only `$ENV` (`--rcfile` alone would also run the system
+                // bashrc, which `/etc/profile` runs again); the rc file leaves POSIX mode first. Apple's bash 3.2
+                // (macOS `/bin/bash`) runs an interactive shell's startup files as if not in POSIX mode
+                // (`run_startup_files` shadows `posixly_correct` with 0): it never reads `$ENV`, but `--rcfile`
+                // instead of `~/.bashrc` — and has no system bashrc of its own. Any other bash ignores `--rcfile` here.
+                command.args = vec![
+                    "--posix".into(),
+                    "--rcfile".into(),
+                    rc.clone().into_os_string(),
+                    "-i".into(),
+                ];
                 set_var(platform, &mut env, "ENV", rc.as_os_str());
                 startup_files = Some(files);
             } else {
@@ -470,10 +478,11 @@ const STARTUP_FILE_HEADER: &str = "# Written by Sextant for one terminal session
 startup files, then sets\n# KUBECONFIG again, so a profile that exports its own does not point kubectl at another \
 cluster.\n";
 
-/// The `ENV` file of an interactive bash started in POSIX mode: leaves POSIX mode and undoes what it set before this
-/// file was read and `set +o posix` keeps (`HISTFILE=~/.sh_history` — unless the environment chose one, which
-/// `user_histfile` tells — and `inherit_errexit`), reads what a login bash reads (`/etc/profile` runs the system bashrc
-/// where the distribution has one), then sets the session's `KUBECONFIG`. bash loads the history after this file.
+/// The `ENV` file (and `--rcfile`, which Apple's bash 3.2 reads instead) of an interactive bash started in POSIX mode:
+/// leaves POSIX mode and undoes what it set before this file was read and `set +o posix` keeps
+/// (`HISTFILE=~/.sh_history` — unless the environment chose one, which `user_histfile` tells — and `inherit_errexit`),
+/// reads what a login bash reads (`/etc/profile` runs the system bashrc where the distribution has one), then sets the
+/// session's `KUBECONFIG`. bash loads the history after this file.
 fn bash_rc(kubeconfig: &OsStr, user_histfile: bool) -> Vec<u8> {
     let mut rc = STARTUP_FILE_HEADER.as_bytes().to_vec();
     rc.extend_from_slice(
@@ -1125,6 +1134,82 @@ mod tests {
                 "{text}"
             );
         }
+    }
+
+    /// Apple's bash 3.2 (`/bin/bash` on macOS) runs an interactive shell's startup files as if not in POSIX mode
+    /// (its `run_startup_files` shadows `posixly_correct` with 0): `--posix -i` reads `--rcfile`, else `~/.bashrc`,
+    /// and never `$ENV`, while `HISTFILE` already defaults to `~/.sh_history`. A stand-in `bash` starts the real one
+    /// that way, so the macOS order is checked on every system (on macOS the tests above check the real one).
+    #[cfg(unix)]
+    #[test]
+    fn bash_that_reads_the_rcfile_instead_of_env_keeps_the_session_kubeconfig_and_history() {
+        let Some(bash) = installed("bash") else {
+            eprintln!("skipped: bash is not installed");
+            return;
+        };
+        let home = tempfile::tempdir().unwrap();
+        std::fs::write(home.path().join(".bash_profile"), ". ~/.bashrc\n").unwrap();
+        std::fs::write(
+            home.path().join(".bashrc"),
+            "export KUBECONFIG=/other\nSEXTANT_USER_RC_RUNS=$((${SEXTANT_USER_RC_RUNS:-0}+1))\n",
+        )
+        .unwrap();
+        std::fs::write(
+            home.path().join(".bash_history"),
+            "echo from-the-bash-history\n",
+        )
+        .unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let stand_in = dir.path().join("bash");
+        write_script(
+            &stand_in,
+            &format!(
+                "#!{bash}\n\
+                 rc=~/.bashrc\n\
+                 while [ $# -gt 0 ]; do\n\
+                 \x20 case $1 in --rcfile) rc=$2; shift ;; esac\n\
+                 \x20 shift\n\
+                 done\n\
+                 export HISTFILE=~/.sh_history\n\
+                 exec {bash} --rcfile \"$rc\" -i\n",
+                bash = bash.display()
+            ),
+        );
+        let kubeconfig = home.path().join("it's the session.yaml");
+        let mut shell = spawn_local_shell_with(
+            &ShellCommand {
+                program: stand_in.into(),
+                args: vec!["-l".into()],
+            },
+            kubeconfig.as_os_str(),
+            &test_env(home.path()),
+            home.path(),
+            80,
+            24,
+        )
+        .unwrap();
+        shell
+            .session
+            .input
+            .blocking_send(
+                b"history | sed 's/^ *[0-9]* */H:/'; \
+                  echo \"KC=$KUBECONFIG RUNS=[$SEXTANT_USER_RC_RUNS] HF=[$HISTFILE]\"\n"
+                    .to_vec(),
+            )
+            .unwrap();
+        // The echoed command line has `HF=[$`; only the output has `HF=[/`.
+        let (text, exit) = read_until(&mut shell.session, |t| t.contains("HF=[/"));
+        assert_eq!(exit, None, "{text}");
+        let expected = format!(
+            "KC={} RUNS=[1] HF=[{}/.bash_history]",
+            kubeconfig.display(),
+            home.path().display()
+        );
+        assert!(text.contains(&expected), "{text}");
+        assert!(
+            text.contains("H:echo from-the-bash-history"),
+            "the user's history is not loaded: {text}"
+        );
     }
 
     #[cfg(unix)]
