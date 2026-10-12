@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { api, toApiError, useWatch, type ApiError, type ClusterId, type HelmRelease, type HelmStatus, type WatchSpec } from "../../api";
 
-// ---------- helm status (shared by every page; checked once, again after `refreshHelmStatus`) ----------
+// ---------- helm status (shared by every page; checked again whenever a Helm page opens, the window gets focus
+// or `refreshHelmStatus` is called — Helm installed while the app runs is picked up) ----------
 
 let status: HelmStatus | null = null;
 let pending: Promise<void> | null = null;
@@ -34,7 +35,11 @@ export function useHelmStatus(): HelmStatus | null {
     () => status,
   );
   useEffect(() => {
-    if (status === null) loadStatus();
+    // The last answer stays on screen while the new one comes.
+    loadStatus();
+    const onFocus = () => loadStatus();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
   return value;
 }

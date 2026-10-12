@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { HelmRelease } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { Age, EmptyState, ErrorState } from "../../components";
+import { Age, Badge, EmptyState, ErrorState } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { NamespaceFilter, useSelectedNamespaces } from "../namespaces";
 import { HelmMissing } from "./HelmMissing";
@@ -15,10 +15,12 @@ import "./helm.css";
 
 const keyOf = (r: { namespace: string; name: string }) => `${r.namespace}/${r.name}`;
 
-function matches(r: HelmRelease, search: string): boolean {
+function matches(r: HelmRelease, search: string, unreadableText: string): boolean {
   const q = search.trim().toLowerCase();
   if (!q) return true;
-  return [r.name, r.namespace, r.chart, r.chartVersion, r.appVersion, r.status].some((v) => v.toLowerCase().includes(q));
+  const fields = [r.name, r.namespace, r.chart, r.chartVersion, r.appVersion, r.status];
+  if (r.unreadableRevision !== null) fields.push(unreadableText);
+  return fields.some((v) => v.toLowerCase().includes(q));
 }
 
 export function ReleasesPage({ clusterId }: PageProps) {
@@ -33,9 +35,9 @@ export function ReleasesPage({ clusterId }: PageProps) {
   const shown = useMemo(
     () =>
       releases
-        .filter((r) => matches(r, search))
+        .filter((r) => matches(r, search, t("helm:releases.unreadable")))
         .sort((a, b) => a.namespace.localeCompare(b.namespace) || a.name.localeCompare(b.name)),
-    [releases, search],
+    [releases, search, t],
   );
   const selected = releases.find((r) => keyOf(r) === selectedKey) ?? null;
 
@@ -136,7 +138,12 @@ function ReleaseTable({
               <td>{r.chartVersion}</td>
               <td>{r.appVersion}</td>
               <td>
-                <StatusBadge status={r.status} />
+                <span className="helm-status">
+                  {!r.unreadable && <StatusBadge status={r.status} />}
+                  {r.unreadableRevision !== null && (
+                    <Badge tone="danger">{t("helm:releases.unreadableRevision", { revision: r.unreadableRevision })}</Badge>
+                  )}
+                </span>
               </td>
               <td>
                 <Age timestamp={r.updated} />

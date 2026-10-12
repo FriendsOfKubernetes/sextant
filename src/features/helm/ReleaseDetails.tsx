@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ClusterId, type HelmRelease } from "../../api";
-import { Age, ErrorState } from "../../components";
+import { Age, Badge, ErrorState } from "../../components";
 import { YamlViewer } from "../details";
 import { RollbackDialog, UninstallDialog, UpgradeDialog } from "./dialogs";
 import { useLoad } from "./hooks";
@@ -56,6 +56,13 @@ export function ReleaseDetails({
               revision: release.revision,
             })}
           </div>
+          {release.unreadableRevision !== null && (
+            <div className="helm-warning">
+              {release.unreadable
+                ? t("helm:details.nothingReadable", { revision: release.unreadableRevision })
+                : t("helm:details.unreadableLatest", { revision: release.unreadableRevision, shown: release.revision })}
+            </div>
+          )}
         </div>
         <button type="button" className="icon-btn" aria-label={t("helm:details.close")} onClick={onClose}>
           ×
@@ -206,33 +213,66 @@ function HistoryTable({
           <tr key={h.revision} data-revision={h.revision}>
             <td>
               {h.revision}
-              {h.revision === current && <span className="helm-muted">{` (${t("helm:details.current")})`}</span>}
-            </td>
-            <td>
-              <StatusBadge status={h.status} />
-            </td>
-            <td>{`${h.chart}-${h.chartVersion}`}</td>
-            <td>{h.appVersion}</td>
-            <td>
-              <Age timestamp={h.updated} />
-            </td>
-            <td>
-              {h.revision !== current && (
-                <button
-                  type="button"
-                  className="btn btn--small"
-                  disabled={!helmAvailable}
-                  title={helmAvailable ? undefined : t("helm:missing.short")}
-                  aria-label={t("helm:actions.rollbackTo", { revision: h.revision })}
-                  onClick={() => onRollback(h.revision)}
-                >
-                  {t("helm:actions.rollback")}
-                </button>
+              {h.revision === current && !h.unreadable && (
+                <span className="helm-muted">{` (${t("helm:details.current")})`}</span>
               )}
             </td>
+            {h.unreadable ? (
+              <>
+                <td>
+                  <Badge tone="danger">{t("helm:details.unreadable")}</Badge>
+                </td>
+                <td colSpan={4} className="helm-muted">
+                  {t("helm:details.unreadableText")}
+                </td>
+              </>
+            ) : (
+              <ReadableRevision h={h} current={current} helmAvailable={helmAvailable} onRollback={onRollback} />
+            )}
           </tr>
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** The cells of a readable history row after its revision number. */
+function ReadableRevision({
+  h,
+  current,
+  helmAvailable,
+  onRollback,
+}: {
+  h: HelmRelease;
+  current: number;
+  helmAvailable: boolean;
+  onRollback: (revision: number) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <td>
+        <StatusBadge status={h.status} />
+      </td>
+      <td>{`${h.chart}-${h.chartVersion}`}</td>
+      <td>{h.appVersion}</td>
+      <td>
+        <Age timestamp={h.updated} />
+      </td>
+      <td>
+        {h.revision !== current && (
+          <button
+            type="button"
+            className="btn btn--small"
+            disabled={!helmAvailable}
+            title={helmAvailable ? undefined : t("helm:missing.short")}
+            aria-label={t("helm:actions.rollbackTo", { revision: h.revision })}
+            onClick={() => onRollback(h.revision)}
+          >
+            {t("helm:actions.rollback")}
+          </button>
+        )}
+      </td>
+    </>
   );
 }

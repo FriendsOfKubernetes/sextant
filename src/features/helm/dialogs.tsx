@@ -246,6 +246,7 @@ export function InstallDialog({
       <div className="helm-dialog__editor">
         <YamlEditor value={values} onChange={setValues} label={t("helm:install.valuesLabel", { chart })} />
       </div>
+      <span className="action-dialog__hint">{t("helm:install.valuesHint")}</span>
     </ConfirmAction>
   );
 }

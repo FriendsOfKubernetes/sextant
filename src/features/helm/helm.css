@@ -222,3 +222,14 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.helm-warning {
+  margin: 4px 0;
+  color: var(--color-warning);
+}
+
+.helm-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

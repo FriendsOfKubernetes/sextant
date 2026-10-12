@@ -124,9 +124,69 @@ pub const REDIRECTING_ENV: &[&str] = &[
     "KUBECONFIG",
 ];
 
+/// Whether an inherited variable must not reach `helm`. Variable names are case-insensitive on Windows (`helm_kubetoken`
+/// is `HELM_KUBETOKEN` there), case-sensitive elsewhere.
 fn redirects_helm(key: &OsStr) -> bool {
+    redirects_helm_by(key, cfg!(windows))
+}
+
+fn redirects_helm_by(key: &OsStr, ignore_case: bool) -> bool {
     let key = key.to_string_lossy();
-    key.starts_with("HELM_KUBE") || REDIRECTING_ENV.contains(&key.as_ref())
+    let key = if ignore_case {
+        key.to_ascii_uppercase()
+    } else {
+        key.into_owned()
+    };
+    key.starts_with("HELM_KUBE") || REDIRECTING_ENV.contains(&key.as_str())
+}
+
+/// Whether two environment variable names are the same variable on this platform.
+fn same_env_name(a: &OsStr, b: &str) -> bool {
+    if cfg!(windows) {
+        a.to_string_lossy().eq_ignore_ascii_case(b)
+    } else {
+        a == b
+    }
+}
+
+/// Whether `url` carries a login (`scheme://user:password@host/…`).
+fn url_has_login(url: &str) -> bool {
+    url_without_login(url) != url
+}
+
+/// `url` without the `user:password@` part of its authority (unchanged when there is none).
+fn url_without_login(url: &str) -> String {
+    let Some((scheme, rest)) = url.split_once("://") else {
+        return url.to_owned();
+    };
+    let end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
+    match rest[..end].rfind('@') {
+        Some(at) => format!("{scheme}://{}", &rest[at + 1..]),
+        None => url.to_owned(),
+    }
+}
+
+/// `message` with every occurrence of `secret` hidden.
+fn redact(message: String, secret: Option<&str>) -> String {
+    match secret.filter(|s| !s.is_empty()) {
+        Some(secret) if message.contains(secret) => message.replace(secret, "[hidden]"),
+        _ => message,
+    }
+}
+
+/// Runs `cmd` to the end; `input` (if any) is written to its stdin, which is then closed.
+fn run_child(mut cmd: Command, input: Option<&str>) -> std::io::Result<std::process::Output> {
+    let Some(input) = input else {
+        return cmd.output();
+    };
+    cmd.stdin(Stdio::piped());
+    let mut child = cmd.spawn()?;
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        // `helm` may exit before reading (e.g. a refused flag); its exit status and stderr tell what happened.
+        let _ = stdin.write_all(input.as_bytes());
+    }
+    child.wait_with_output()
 }
 
 fn helm_missing() -> CoreError {
@@ -283,7 +343,7 @@ impl HelmCli {
                     .env
                     .iter()
                     .rev()
-                    .find(|(k, _)| k == "PATH")
+                    .find(|(k, _)| same_env_name(k, "PATH"))
                     .map(|(_, v)| v.clone())
                     .or_else(|| std::env::var_os("PATH"));
                 find_in_path(path.as_deref())
@@ -310,17 +370,28 @@ impl HelmCli {
     /// Runs `helm` with `args`; stdout on success, stderr as the error otherwise. `keep` (temporary files the
     /// call reads) lives until the process has exited.
     async fn run<K: Send + 'static>(&self, args: Args, keep: K) -> CoreResult<String> {
+        self.exec(args, keep, None).await
+    }
+
+    /// [`HelmCli::run`] with `secret_input` written to helm's stdin (a password: never an argument, which any
+    /// process can read). The secret is hidden in whatever error comes back.
+    async fn exec<K: Send + 'static>(
+        &self,
+        args: Args,
+        keep: K,
+        secret_input: Option<String>,
+    ) -> CoreResult<String> {
         let binary = self.binary().ok_or_else(helm_missing)?;
         let mut cmd = self.command(&binary);
         cmd.args(args.into_vec());
-        let output = tokio::task::spawn_blocking(move || {
-            let output = cmd.output();
+        let (output, secret) = tokio::task::spawn_blocking(move || {
+            let output = run_child(cmd, secret_input.as_deref());
             drop(keep);
-            output
+            (output, secret_input)
         })
         .await
-        .map_err(|e| CoreError::other(format!("helm call failed: {e}")))?
-        .map_err(|e| match e.kind() {
+        .map_err(|e| CoreError::other(format!("helm call failed: {e}")))?;
+        let output = output.map_err(|e| match e.kind() {
             std::io::ErrorKind::NotFound => helm_missing(),
             _ => CoreError::other(format!("cannot run helm: {e}")),
         })?;
@@ -338,7 +409,7 @@ impl HelmCli {
         } else {
             stderr
         };
-        Err(CoreError::other(message))
+        Err(CoreError::other(redact(message, secret.as_deref())))
     }
 
     /// `helm upgrade` with the given values (they replace the previous user values: `--reset-values`).
@@ -435,16 +506,58 @@ impl HelmCli {
             .await
         {
             Ok(out) if out.trim().is_empty() => Ok(Vec::new()),
-            Ok(out) => Ok(serde_json::from_str(&out)?),
+            // A login kept in a URL (added outside Sextant) is not shown.
+            Ok(out) => Ok(serde_json::from_str::<Vec<HelmRepo>>(&out)?
+                .into_iter()
+                .map(|r| HelmRepo {
+                    url: url_without_login(&r.url),
+                    ..r
+                })
+                .collect()),
             // Helm 3 fails with "no repositories to show"; Helm 4 prints `[]`.
             Err(e) if no_repositories(&e) => Ok(Vec::new()),
             Err(e) => Err(e),
         }
     }
 
-    pub async fn repo_add(&self, name: &str, url: &str) -> CoreResult<()> {
-        let args = Args::new(&["repo", "add"]).arg(name).arg(url);
-        self.run(args, ()).await.map(drop)
+    /// `helm repo add`. With a login, the user name is passed as `--username` and the password through stdin
+    /// (`--password-stdin`); a URL carrying a login itself is refused (`invalid`), since helm would keep it in its
+    /// repository list and show it everywhere the URL appears.
+    pub async fn repo_add(
+        &self,
+        name: &str,
+        url: &str,
+        username: Option<&str>,
+        password: Option<&str>,
+    ) -> CoreResult<()> {
+        if url_has_login(url) {
+            return Err(invalid(
+                "the repository URL contains a user name or password; remove them from the URL and enter them in \
+                 the Username and Password fields",
+            ));
+        }
+        let mut args = Args::new(&["repo", "add"]);
+        let input = match (
+            username.filter(|u| !u.is_empty()),
+            password.filter(|p| !p.is_empty()),
+        ) {
+            (Some(user), password) => {
+                // `--flag=value`: a user name starting with `-` stays a value.
+                args = args
+                    .switch(&format!("--username={user}"))
+                    .switch("--password-stdin");
+                Some(password.unwrap_or_default().to_owned())
+            }
+            (None, Some(_)) => {
+                return Err(invalid(
+                    "a repository password needs a user name: fill in the Username field",
+                ));
+            }
+            (None, None) => None,
+        };
+        self.exec(args.arg(name).arg(url), (), input)
+            .await
+            .map(drop)
     }
 
     pub async fn repo_remove(&self, name: &str) -> CoreResult<()> {
@@ -545,6 +658,438 @@ pub async fn upgrade_release(
             values_yaml,
         )
         .await
+    }
+}
+
+/// `helm install` of `chart` keeping as the release's user values only what `values_yaml` changes relative to the
+/// chart's default values (the dialog starts from the whole default file).
+#[allow(clippy::too_many_arguments)]
+pub async fn install_chart(
+    cli: &HelmCli,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    ns: &str,
+    release: &str,
+    chart: &str,
+    version: Option<&str>,
+    values_yaml: &str,
+) -> CoreResult<()> {
+    let values = if values_yaml.trim().is_empty() {
+        String::new()
+    } else {
+        changed_values(&cli.show_values(chart, version).await?, values_yaml)?
+    };
+    let target = kube_target(mgr, cluster)?;
+    cli.install(
+        &target.kubeconfig,
+        &target.context,
+        ns,
+        release,
+        chart,
+        version,
+        &values,
+    )
+    .await
+}
+
+/// What `edited` changes relative to `defaults` (both values YAML), as YAML for `helm -f`; empty when nothing
+/// changes.
+///
+/// Both texts are read the way Helm reads them — YAML 1.1 (see [`parse_values`]) — and the result is written so
+/// that Helm reads back the same values and types (see [`write_values`]). Maps are compared key by key,
+/// recursively; lists and scalars are changed or not as a whole. A default key left out of `edited` keeps its
+/// default, as Helm merges user values into the defaults anyway (`null` removes one). Comments, formatting and key
+/// order are not changes.
+pub fn changed_values(defaults: &str, edited: &str) -> CoreResult<String> {
+    let edited = parse_values(edited)?;
+    if edited.is_null() {
+        return Ok(String::new());
+    }
+    match values_diff(&edited, &parse_values(defaults)?) {
+        Some(changed) => {
+            let mut out = String::new();
+            write_values(&changed, &mut out);
+            out.push('\n');
+            Ok(out)
+        }
+        None => Ok(String::new()),
+    }
+}
+
+/// Values YAML read as Helm reads it: YAML 1.1 (go-yaml v2), where a plain `y`/`yes`/`on` (and `n`/`no`/`off`, in
+/// any of their spellings) is a boolean, `0644` is octal, `1_000` is a number — serde_yaml alone reads YAML 1.2.
+/// Quoted, block and explicitly tagged scalars stay text.
+fn parse_values(text: &str) -> CoreResult<serde_yaml::Value> {
+    if text.trim().is_empty() {
+        return Ok(serde_yaml::Value::Null);
+    }
+    use serde::de::DeserializeSeed as _;
+    let seed = Yaml11 {
+        src: text,
+        tagged: false,
+        key: false,
+    };
+    Ok(seed.deserialize(serde_yaml::Deserializer::from_str(text))?)
+}
+
+/// Reads a YAML node of `src` with YAML 1.1 types. serde_yaml resolves plain scalars by YAML 1.2 rules, which agree
+/// with YAML 1.1 on null, `true`/`false` and the numbers both know; any other plain scalar comes as a string
+/// borrowed from `src`, and its position there tells whether it was written plain (then resolved here) or quoted.
+#[derive(Clone, Copy)]
+struct Yaml11<'s> {
+    src: &'s str,
+    /// Inside a local tag (`!foo …`): scalars stay as serde_yaml reads them.
+    tagged: bool,
+    /// A map key: a plain `<<` (or `!!merge <<`) is the merge key, read as [`merge_key`].
+    key: bool,
+}
+
+impl Yaml11<'_> {
+    /// Whether `value` is a plain scalar of `src` without an explicit tag (`!!str yes` is text).
+    fn is_plain(&self, value: &str) -> bool {
+        self.tag_of(value) == Some("")
+    }
+
+    /// The explicit tag of `value`, an unquoted scalar of `src` (`""` without one); `None` when it is quoted or not
+    /// borrowed from `src`.
+    fn tag_of(&self, value: &str) -> Option<&str> {
+        let start = self.src.as_ptr() as usize;
+        let offset = (value.as_ptr() as usize).checked_sub(start)?;
+        if offset + value.len() > self.src.len() || !self.src.is_char_boundary(offset) {
+            return None;
+        }
+        if self.src[..offset].ends_with(['"', '\'']) {
+            return None;
+        }
+        let before = self.src[..offset].trim_end_matches([' ', '\t']);
+        let token = before
+            .rfind([' ', '\t', '\n', '\r', '[', '{', ','])
+            .map_or(before, |i| &before[i + 1..]);
+        Some(if token.starts_with('!') { token } else { "" })
+    }
+
+    /// Whether `value` is the merge key: in a key, a plain `<<` or one tagged `!!merge`.
+    fn is_merge_key(&self, value: &str) -> bool {
+        self.key && value == "<<" && matches!(self.tag_of(value), Some("" | "!!merge"))
+    }
+}
+
+impl<'de> serde::de::DeserializeSeed<'de> for Yaml11<'_> {
+    type Value = serde_yaml::Value;
+
+    fn deserialize<D: serde::Deserializer<'de>>(self, de: D) -> Result<Self::Value, D::Error> {
+        de.deserialize_any(self)
+    }
+}
+
+impl<'de> serde::de::Visitor<'de> for Yaml11<'_> {
+    type Value = serde_yaml::Value;
+
+    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("YAML values")
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Null)
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Null)
+    }
+
+    fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Bool(v))
+    }
+
+    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Number(v.into()))
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Number(v.into()))
+    }
+
+    // Beyond 64 bits YAML 1.1 (Go) reads a number as a float.
+    fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Number((v as f64).into()))
+    }
+
+    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Number((v as f64).into()))
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::Number(v.into()))
+    }
+
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E> {
+        if !self.tagged && self.is_merge_key(v) {
+            Ok(merge_key())
+        } else if !self.tagged && self.is_plain(v) {
+            Ok(resolve_plain_yaml11(v))
+        } else {
+            Ok(serde_yaml::Value::String(v.to_owned()))
+        }
+    }
+
+    // Not borrowed: quoted with escapes, a block scalar or a folded multi-line plain scalar — text either way.
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E> {
+        Ok(serde_yaml::Value::String(v.to_owned()))
+    }
+
+    fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        let item = Yaml11 {
+            tagged: false,
+            key: false,
+            ..self
+        };
+        let mut items = Vec::new();
+        while let Some(value) = seq.next_element_seed(item)? {
+            items.push(value);
+        }
+        Ok(serde_yaml::Value::Sequence(items))
+    }
+
+    fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        let key = Yaml11 {
+            tagged: false,
+            key: true,
+            ..self
+        };
+        let node = Yaml11 {
+            tagged: false,
+            key: false,
+            ..self
+        };
+        let mut mapping = serde_yaml::Mapping::new();
+        let mut explicit = std::collections::HashSet::new();
+        while let Some(key) = map.next_key_seed(key)? {
+            let value = map.next_value_seed(node)?;
+            if key == merge_key() {
+                merge_into(&mut mapping, value)?;
+                continue;
+            }
+            if !explicit.insert(key.clone()) {
+                return Err(serde::de::Error::custom(
+                    "a key appears twice in the values (YAML 1.1: `off` and `false` are the same key)",
+                ));
+            }
+            mapping.insert(key, value);
+        }
+        Ok(serde_yaml::Value::Mapping(mapping))
+    }
+
+    // A local tag (`!foo value`): the value without the tag.
+    fn visit_enum<A: serde::de::EnumAccess<'de>>(self, data: A) -> Result<Self::Value, A::Error> {
+        use serde::de::VariantAccess as _;
+        let (_tag, variant) = data.variant::<String>()?;
+        variant.newtype_variant_seed(Yaml11 {
+            tagged: true,
+            key: false,
+            ..self
+        })
+    }
+}
+
+/// The merge key `<<` as [`Yaml11`] reads it in a key: a value no YAML text gives otherwise (its local tags are
+/// dropped), told apart in [`Yaml11::visit_map`].
+fn merge_key() -> serde_yaml::Value {
+    serde_yaml::Value::Tagged(Box::new(serde_yaml::value::TaggedValue {
+        tag: serde_yaml::value::Tag::new("!!merge"),
+        value: serde_yaml::Value::Null,
+    }))
+}
+
+/// go-yaml v2's map merge: the keys of a map — or of each map in a list, the last first, so the earlier ones win —
+/// set into `mapping` over what is there; keys after the merge key replace them in turn.
+fn merge_into<E: serde::de::Error>(
+    mapping: &mut serde_yaml::Mapping,
+    value: serde_yaml::Value,
+) -> Result<(), E> {
+    let want_map = || E::custom("map merge requires map or sequence of maps as the value");
+    let maps = match value {
+        serde_yaml::Value::Mapping(map) => vec![map],
+        serde_yaml::Value::Sequence(items) => items
+            .into_iter()
+            .rev()
+            .map(|item| match item {
+                serde_yaml::Value::Mapping(map) => Ok(map),
+                _ => Err(want_map()),
+            })
+            .collect::<Result<_, _>>()?,
+        _ => return Err(want_map()),
+    };
+    for map in maps {
+        for (k, v) in map {
+            mapping.insert(k, v);
+        }
+    }
+    Ok(())
+}
+
+/// A plain scalar that YAML 1.2 left as text, typed by the YAML 1.1 rules of go-yaml v2 (`resolve`): the boolean
+/// words; for text starting with a digit or sign, Go's `ParseInt(s, 0, 64)` / `ParseUint` with `_` removed (so
+/// `0644` is octal and `0x`, `0o`, `0b` prefixes work), then a float of the YAML 1.1 shape.
+fn resolve_plain_yaml11(v: &str) -> serde_yaml::Value {
+    use serde_yaml::Value as Y;
+    match v {
+        "y" | "Y" | "yes" | "Yes" | "YES" | "on" | "On" | "ON" => return Y::Bool(true),
+        "n" | "N" | "no" | "No" | "NO" | "off" | "Off" | "OFF" => return Y::Bool(false),
+        _ => {}
+    }
+    let float = |t: &str| {
+        yaml11_float_shape(t)
+            .then(|| t.parse::<f64>().ok())
+            .flatten()
+            .filter(|f| f.is_finite())
+    };
+    match v.as_bytes().first() {
+        Some(b'0'..=b'9' | b'+' | b'-') => {
+            let plain = v.replace('_', "");
+            if let Some(number) = go_parse_int(&plain) {
+                return Y::Number(number);
+            }
+            if let Some(f) = float(&plain) {
+                return Y::Number(f.into());
+            }
+        }
+        Some(b'.') => {
+            if let Some(f) = float(v) {
+                return Y::Number(f.into());
+            }
+        }
+        _ => {}
+    }
+    Y::String(v.to_owned())
+}
+
+/// Go's `strconv.ParseInt(s, 0, 64)`, then `ParseUint(s, 0, 64)` (which takes no sign).
+fn go_parse_int(s: &str) -> Option<serde_yaml::Number> {
+    let (sign, body) = match s.as_bytes().first() {
+        Some(b'-') => (Some('-'), &s[1..]),
+        Some(b'+') => (Some('+'), &s[1..]),
+        _ => (None, s),
+    };
+    let prefixed = |p: [&str; 2]| body.strip_prefix(p[0]).or_else(|| body.strip_prefix(p[1]));
+    let (radix, digits) = if let Some(d) = prefixed(["0x", "0X"]) {
+        (16, d)
+    } else if let Some(d) = prefixed(["0o", "0O"]) {
+        (8, d)
+    } else if let Some(d) = prefixed(["0b", "0B"]) {
+        (2, d)
+    } else if body.len() > 1 && body.starts_with('0') {
+        (8, &body[1..])
+    } else {
+        (10, body)
+    };
+    if digits.is_empty() || !digits.chars().all(|c| c.is_digit(radix)) {
+        return None;
+    }
+    let magnitude = u64::from_str_radix(digits, radix).ok()?;
+    match sign {
+        Some('-') => i64::try_from(-i128::from(magnitude)).ok().map(Into::into),
+        Some(_) => i64::try_from(magnitude).ok().map(Into::into),
+        None => Some(match i64::try_from(magnitude) {
+            Ok(i) => i.into(),
+            Err(_) => magnitude.into(),
+        }),
+    }
+}
+
+/// go-yaml v2's float shape: `^[-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?$`.
+fn yaml11_float_shape(s: &str) -> bool {
+    let digits = |t: &str| t.bytes().all(|b| b.is_ascii_digit());
+    let s = s.strip_prefix(['-', '+']).unwrap_or(s);
+    let (mantissa, exponent) = match s.find(['e', 'E']) {
+        Some(i) => (&s[..i], Some(&s[i + 1..])),
+        None => (s, None),
+    };
+    let mantissa_ok = match mantissa.strip_prefix('.') {
+        Some(fraction) => !fraction.is_empty() && digits(fraction),
+        None => {
+            let (int, fraction) = mantissa.split_once('.').unwrap_or((mantissa, ""));
+            !int.is_empty() && digits(int) && digits(fraction)
+        }
+    };
+    let exponent_ok = exponent.is_none_or(|e| {
+        let e = e.strip_prefix(['-', '+']).unwrap_or(e);
+        !e.is_empty() && digits(e)
+    });
+    mantissa_ok && exponent_ok
+}
+
+/// Writes values in YAML flow style that YAML 1.1 and 1.2 read alike: every string double-quoted, numbers and
+/// booleans in their unambiguous spelling.
+fn write_values(value: &serde_yaml::Value, out: &mut String) {
+    use serde_yaml::Value as Y;
+    match value {
+        Y::Null => out.push_str("null"),
+        Y::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
+        Y::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                out.push_str(&i.to_string());
+            } else if let Some(u) = n.as_u64() {
+                out.push_str(&u.to_string());
+            } else {
+                let f = n.as_f64().unwrap_or(f64::NAN);
+                if f.is_nan() {
+                    out.push_str(".nan");
+                } else if f.is_infinite() {
+                    out.push_str(if f > 0.0 { ".inf" } else { "-.inf" });
+                } else {
+                    // `{:?}` always has a `.` or an exponent ("8.0", "1e300"): a float to YAML 1.1 too.
+                    out.push_str(&format!("{f:?}"));
+                }
+            }
+        }
+        Y::String(s) => super::write_quoted(s, out),
+        Y::Sequence(items) => {
+            out.push('[');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                write_values(item, out);
+            }
+            out.push(']');
+        }
+        Y::Mapping(map) => {
+            out.push('{');
+            for (i, (key, item)) in map.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                write_values(key, out);
+                out.push_str(": ");
+                write_values(item, out);
+            }
+            out.push('}');
+        }
+        Y::Tagged(tagged) => write_values(&tagged.value, out),
+    }
+}
+
+/// The part of `edited` that differs from `default`; `None` when nothing does.
+fn values_diff(
+    edited: &serde_yaml::Value,
+    default: &serde_yaml::Value,
+) -> Option<serde_yaml::Value> {
+    use serde_yaml::Value as Y;
+    match (edited, default) {
+        (Y::Mapping(edited), Y::Mapping(default)) => {
+            let mut changed = serde_yaml::Mapping::new();
+            for (key, value) in edited {
+                let diff = match default.get(key) {
+                    Some(default) => values_diff(value, default),
+                    None => Some(value.clone()),
+                };
+                if let Some(diff) = diff {
+                    changed.insert(key.clone(), diff);
+                }
+            }
+            (!changed.is_empty()).then_some(Y::Mapping(changed))
+        }
+        _ => (edited != default).then(|| edited.clone()),
     }
 }
 
@@ -652,6 +1197,187 @@ mod tests {
                 "--",
                 "--dry-run"
             ]
+        );
+    }
+
+    #[test]
+    fn on_windows_redirecting_variables_are_matched_without_case() {
+        let windows = |k: &str| redirects_helm_by(OsStr::new(k), true);
+        for key in [
+            "helm_kubetoken",
+            "Helm_KubeApiServer",
+            "HELM_KUBEASUSER",
+            "helm_kube_future_flag",
+            "Helm_Namespace",
+            "helm_driver",
+            "KubeConfig",
+        ] {
+            assert!(windows(key), "{key} must not reach helm on Windows");
+        }
+        for key in ["HELM_CONFIG_HOME", "helm_cache_home", "Path", "KUBECONFIGX"] {
+            assert!(!windows(key), "{key} is kept");
+        }
+        // Elsewhere names are case-sensitive: helm reads only the upper-case ones.
+        let unix = |k: &str| redirects_helm_by(OsStr::new(k), false);
+        assert!(unix("HELM_KUBETOKEN") && unix("KUBECONFIG") && unix("HELM_KUBE_FUTURE"));
+        assert!(!unix("helm_kubetoken") && !unix("Helm_KubeApiServer") && !unix("kubeconfig"));
+    }
+
+    #[test]
+    fn changed_values_keep_only_what_differs_from_the_defaults() {
+        let defaults = "# Defaults\nimage:\n  repository: nginx\n  tag: \"1.25\"\nports: [80, 443]\nreplicas: 1\n";
+        assert_eq!(changed_values(defaults, defaults).unwrap(), "");
+        assert_eq!(changed_values(defaults, "").unwrap(), "");
+        assert_eq!(
+            changed_values(defaults, &defaults.replace("1.25", "1.27")).unwrap(),
+            "{\"image\": {\"tag\": \"1.27\"}}\n"
+        );
+        // A list is one value; a new key is a change; a missing key keeps its default.
+        assert_eq!(
+            changed_values(defaults, "ports: [80]\nextra: {enabled: true}\n").unwrap(),
+            "{\"ports\": [80], \"extra\": {\"enabled\": true}}\n"
+        );
+        // `null` removes a default in Helm, so it is a change.
+        assert_eq!(
+            changed_values(defaults, "image: null\n").unwrap(),
+            "{\"image\": null}\n"
+        );
+        assert_eq!(
+            changed_values(defaults, "replicas: [").unwrap_err().code,
+            ErrorCode::Invalid
+        );
+    }
+
+    /// Helm reads values files as YAML 1.1: a plain `yes`, `on`, `N`, `off` is a boolean, `0644` is octal 420,
+    /// `1_000` is 1000, a plain key `off` is `false` — while quoted text stays text. What `changed_values` writes
+    /// must mean to Helm exactly what the user typed (expected values worked out by hand from the YAML 1.1 types).
+    #[test]
+    fn changed_values_mean_to_helm_what_the_user_typed() {
+        let defaults = "replicas: 1\n";
+        let cases = [
+            ("q: \"yes\"\n", r#"{"q": "yes"}"#),
+            ("q: 'on'\n", r#"{"q": "on"}"#),
+            ("q: \"N\"\n", r#"{"q": "N"}"#),
+            ("q: \"off\"\n", r#"{"q": "off"}"#),
+            ("q: yes\n", r#"{"q": true}"#),
+            ("q: On\n", r#"{"q": true}"#),
+            ("q: N\n", r#"{"q": false}"#),
+            ("q: off\n", r#"{"q": false}"#),
+            ("q: 0644\n", r#"{"q": 420}"#),
+            ("q: -0644\n", r#"{"q": -420}"#),
+            ("q: \"0644\"\n", r#"{"q": "0644"}"#),
+            ("q: 1_000\n", r#"{"q": 1000}"#),
+            ("q: \"1_000\"\n", r#"{"q": "1_000"}"#),
+            ("q: 0X1F\n", r#"{"q": 31}"#),
+            ("q: 08\n", r#"{"q": 8.0}"#),
+            ("q: 1_000.5\n", r#"{"q": 1000.5}"#),
+            ("q: .5\n", r#"{"q": 0.5}"#),
+            ("q: .inf\n", r#"{"q": .inf}"#),
+            ("q: ~\n", r#"{"q": null}"#),
+            ("q: \"true\"\n", r#"{"q": "true"}"#),
+            ("q: !!str yes\n", r#"{"q": "yes"}"#),
+            ("q: 1.2.3\n", r#"{"q": "1.2.3"}"#),
+            ("q: 2026-10-12\n", r#"{"q": "2026-10-12"}"#),
+            ("q: \"a \\\"b\\\" \\u007f\"\n", r#"{"q": "a \"b\" \u007F"}"#),
+            (
+                "q: \"a\\Lb\\Pc\\Nd\"\n",
+                r#"{"q": "a\u2028b\u2029c\u0085d"}"#,
+            ),
+            ("\"off\": x\n", r#"{"off": "x"}"#),
+            ("off: x\n", r#"{false: "x"}"#),
+            ("q: [yes, \"no\", 010]\n", r#"{"q": [true, "no", 8]}"#),
+        ];
+        for (edited, expected) in cases {
+            assert_eq!(
+                changed_values(defaults, edited).unwrap(),
+                format!("{expected}\n"),
+                "{edited}"
+            );
+        }
+        // Same value as the default, read the YAML 1.1 way: not a change.
+        assert_eq!(
+            changed_values("on: true\nmode: 420\n", "on: yes\nmode: 0644\n").unwrap(),
+            ""
+        );
+    }
+
+    /// A plain `<<` key merges a map (or a list of maps) into its map the way go-yaml v2 does, so the changed
+    /// values mean to Helm what `helm -f` of the edited text means: keys in document order, a later one replacing an
+    /// earlier one (explicit or merged); in a list of maps the earlier map wins; a quoted `"<<"` is an ordinary key.
+    /// Expected values are what `helm template` with `{{ toJson .Values }}` printed for the same texts (helm v4.3).
+    #[test]
+    fn merge_keys_are_applied_as_helm_applies_them() {
+        let defaults = "common: &c {tag: \"1.0\"}\nweb: {<<: *c, port: 80}\n";
+        let edited = "common: &c {tag: \"2.0\"}\nweb: {<<: *c, port: 80}\n";
+        assert_eq!(
+            changed_values(defaults, edited).unwrap(),
+            "{\"common\": {\"tag\": \"2.0\"}, \"web\": {\"tag\": \"2.0\"}}\n"
+        );
+        assert_eq!(changed_values(defaults, defaults).unwrap(), "");
+
+        let edited = "a: &a {x: 1, k: 1}\nb: &b {x: 2, z: 2}\nm1: {x: 0, <<: *a}\nm2: {<<: *a, x: 0}\n\
+            m3: {<<: [*a, *b]}\nm4: {<<: [*b, *a], w: 3}\nm5: {\"<<\": *a}\nm6: {<<: *a, <<: {x: 3}}\n\
+            m7: {!!merge <<: *b}\nm8: {? << : *b, <<: []}\nm9:\n  <<: *a\n  sub: {<<: *b}\n";
+        let from_helm: serde_json::Value = serde_json::from_str(
+            r#"{"a":{"k":1,"x":1},"b":{"x":2,"z":2},"m1":{"k":1,"x":1},"m2":{"k":1,"x":0},
+            "m3":{"k":1,"x":1,"z":2},"m4":{"k":1,"w":3,"x":2,"z":2},"m5":{"<<":{"k":1,"x":1}},
+            "m6":{"k":1,"x":3},"m7":{"x":2,"z":2},"m8":{"x":2,"z":2},
+            "m9":{"sub":{"x":2,"z":2},"k":1,"x":1}}"#,
+        )
+        .unwrap();
+        let changed = changed_values("replicas: 1\n", edited).unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&changed).unwrap(),
+            from_helm,
+            "{changed}"
+        );
+
+        // helm: "map merge requires map or sequence of maps as the value".
+        for edited in [
+            "m: {<<: 1}\n",
+            "n: &n ~\nm: {<<: *n}\n",
+            "m: {<<: [{x: 1}, 2]}\n",
+            "a: &a [1]\nm: {<<: *a}\n",
+        ] {
+            assert_eq!(
+                changed_values("replicas: 1\n", edited).unwrap_err().code,
+                ErrorCode::Invalid,
+                "{edited}"
+            );
+        }
+        // Not a key: plain text.
+        assert_eq!(
+            changed_values("replicas: 1\n", "q: <<\nr: [<<]\n").unwrap(),
+            "{\"q\": \"<<\", \"r\": [\"<<\"]}\n"
+        );
+    }
+
+    /// The values "Edit values" shows (`values_to_yaml` of the config Helm stored) read back by Helm's YAML 1.1
+    /// rules give the same config: same values, same types.
+    #[test]
+    fn shown_values_read_by_helm_give_back_the_stored_config() {
+        let configs = [
+            json!({ "q": "yes", "p": true, "letter": "N", "flag": false, "on": "On" }),
+            json!({ "mode": "0644", "octal": 420, "count": "1_000", "big": 1000, "hex": "0x1F", "eight": "08" }),
+            json!({ "off": "x", "false": "y", "null": "null", "tilde": "~", "empty": "" }),
+            json!({ "stamp": "2026-10-12", "version": "1.25", "semver": "1.2.3", "inf": ".inf", "float": 8.0 }),
+            json!({ "multi": "a\nb # c: d", "dash": "-", "lead": " x", "colon": "x: y", "hash": "#c", "end": "x:" }),
+            json!({ "image": "nginx:1.25", "path": "/a/b", "text": "Hello, world (1)", "pct": "50%" }),
+            json!({ "list": ["on", 2, "3", { "y": "~" }, [true, "no"]], "nested": { "y": { "deep": "Off" } } }),
+            json!({ "ctl": "a\u{7f}b\tc\"d\\e", "uni": "Привет", "emptyList": [], "emptyMap": {}, "nil": null }),
+        ];
+        for config in configs {
+            let shown = super::super::values_to_yaml(&config).unwrap();
+            let read = parse_values(&shown).unwrap();
+            assert_eq!(read, serde_yaml::to_value(&config).unwrap(), "{shown}");
+        }
+        // Plain text stays plain to read and edit.
+        assert_eq!(
+            super::super::values_to_yaml(
+                &json!({ "greeting": "hi there", "image": { "tag": "1.25" }, "ports": [80] })
+            )
+            .unwrap(),
+            "greeting: hi there\nimage:\n  tag: \"1.25\"\nports:\n- 80\n"
         );
     }
 

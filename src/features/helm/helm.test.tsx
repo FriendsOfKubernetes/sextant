@@ -28,6 +28,8 @@ function release(name: string, over: Partial<HelmRelease> = {}): HelmRelease {
     appVersion: "1.25.3",
     status: "deployed",
     updated: "2026-10-11T18:00:00.123456789+03:00",
+    unreadableRevision: null,
+    unreadable: false,
     ...over,
   };
 }
@@ -291,6 +293,80 @@ describe("Releases", () => {
   });
 });
 
+describe("Unreadable revisions", () => {
+  /** A revision whose Secret the backend cannot decode. */
+  const broken = (name: string, revision: number, over: Partial<HelmRelease> = {}): HelmRelease =>
+    release(name, {
+      revision,
+      chart: "",
+      chartVersion: "",
+      appVersion: "",
+      status: "",
+      updated: "",
+      unreadable: true,
+      ...over,
+    });
+
+  it("keep the release listed with its last readable revision and mark broken history rows", async () => {
+    helmBackend();
+    releases = [
+      release("web", { revision: 1, status: "superseded", unreadableRevision: 2 }),
+      broken("ghost", 3, { unreadableRevision: 3 }),
+    ];
+    wb.backend.on("helm_release_detail", () => ({ ...structuredClone(webDetail), release: releases[0]! }));
+    wb.backend.on("helm_release_history", () => [
+      release("web", { revision: 1, status: "superseded" }),
+      broken("web", 2),
+    ]);
+    wb.backend.on("helm_rollback", () => null);
+    renderPage("helm-releases");
+    const table = await screen.findByRole("table", { name: "Releases" });
+    await waitFor(() => expect(rows(table)).toHaveLength(2));
+    const [ghost, web] = rows(table);
+    expect(web).toHaveTextContent("superseded");
+    expect(web).toHaveTextContent("Unreadable revision 2");
+    expect(ghost).toHaveTextContent("Unreadable revision 3");
+
+    const details = await openRelease("web");
+    fireEvent.click(within(details).getByRole("tab", { name: "History" }));
+    const history = await within(details).findByRole("table", { name: "History" });
+    expect(rows(history).map((r) => r.getAttribute("data-revision"))).toEqual(["2", "1"]);
+    expect(rows(history)[0]).toHaveTextContent("Unreadable");
+    expect(rows(history)[0]).not.toHaveTextContent("-");
+    expect(within(history).queryByRole("button", { name: "Roll back to revision 2" })).toBeNull();
+    expect(rows(history)[1]).toHaveTextContent("(current)");
+  });
+});
+
+describe("Helm status", () => {
+  it("is checked again when a Helm page opens and when the window gets focus", async () => {
+    helmBackend();
+    let status = HELM_MISSING;
+    wb.backend.on("helm_status", () => status);
+    wb.backend.on("helm_repos", () => [] as HelmRepo[]);
+    const releasesPage = renderPage("helm-releases");
+    expect(await screen.findByRole("note")).toHaveTextContent("Helm is not installed");
+    expect(calls("helm_status")).toHaveLength(1);
+    releasesPage.unmount();
+
+    // Helm was installed meanwhile: the next Helm page sees it without a restart.
+    status = HELM_OK;
+    renderPage("helm-charts");
+    await waitFor(() => expect(calls("helm_status")).toHaveLength(2));
+    await waitFor(() => expect(screen.queryByRole("note")).toBeNull());
+    expect(screen.getByRole("button", { name: "Add repository" })).toBeDisabled(); // nothing typed yet
+    expect(screen.getByLabelText("Name")).toBeEnabled();
+
+    // …and so does a page that stays open, when the window comes back into focus.
+    status = HELM_MISSING;
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(await screen.findByRole("note")).toHaveTextContent("Helm is not installed");
+    expect(calls("helm_status")).toHaveLength(3);
+  });
+});
+
 describe("Charts", () => {
   let repos: HelmRepo[];
   const hit: ChartHit = { name: "bitnami/nginx", version: "15.1.0", appVersion: "1.25.3", description: "NGINX Open Source" };
@@ -363,6 +439,35 @@ describe("Charts", () => {
       version: "15.1.0",
       valuesYaml: "replicaCount: 2\n",
     });
+  });
+
+  it("adds a repository with a login; a URL with a login inside is refused with a hint", async () => {
+    chartsBackend();
+    renderPage("helm-charts");
+    await screen.findByText("No chart repositories yet. Add one to search its charts.");
+    const password = screen.getByLabelText("Password (optional)");
+    expect(password).toHaveAttribute("type", "password");
+    expect(password).toHaveAttribute("autocomplete", "off");
+
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "private" } });
+    fireEvent.change(screen.getByLabelText("URL"), { target: { value: "https://robot:hunter2@charts.example.test/stable" } });
+    expect(screen.getByText("Enter the user name and password in the Username and Password fields, not in the URL.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add repository" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("URL"), { target: { value: "https://charts.example.test/stable" } });
+    fireEvent.change(screen.getByLabelText("Username (optional)"), { target: { value: "robot" } });
+    fireEvent.change(password, { target: { value: "s3cret pass" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add repository" }));
+    const repoTable = await screen.findByRole("table", { name: "Repositories" });
+    expect(calls("helm_repo_add")[0]!.args).toEqual({
+      name: "private",
+      url: "https://charts.example.test/stable",
+      username: "robot",
+      password: "s3cret pass",
+    });
+    expect(rows(repoTable)[0]).toHaveTextContent("privatehttps://charts.example.test/stable");
+    expect(screen.getByLabelText("Password (optional)")).toHaveValue("");
+    expect(screen.getByLabelText("Username (optional)")).toHaveValue("");
   });
 
   it("removes a repository after confirmation", async () => {

@@ -5,7 +5,7 @@
   },
   "missing": {
     "title": "Helm is not installed",
-    "text": "Releases can be viewed, but changing them and installing charts needs the helm command. Install Helm, then pick it in Settings → Helm (found in PATH or a binary you choose) — no restart needed. Install guide:",
+    "text": "Releases can be viewed, but changing them and installing charts needs the helm command. Install Helm (it is picked up when you come back to this window) or pick a binary in Settings → Helm. Install guide:",
     "short": "Needs Helm — see the hint at the top of the page"
   },
   "releases": {
@@ -16,7 +16,9 @@
     "empty": "No Helm releases",
     "emptyText": "Releases installed with Helm in the selected namespaces appear here.",
     "noMatch": "No release matches the search",
-    "open": "Open release {{name}}"
+    "open": "Open release {{name}}",
+    "unreadable": "unreadable",
+    "unreadableRevision": "Unreadable revision {{revision}}"
   },
   "columns": {
     "name": "Name",
@@ -45,7 +47,11 @@
     "manifestLabel": "Manifest of {{name}}",
     "noValues": "No user values: the release uses the chart's defaults.",
     "noNotes": "The chart has no notes.",
-    "current": "current"
+    "current": "current",
+    "unreadable": "Unreadable",
+    "unreadableText": "The stored data of this revision cannot be read.",
+    "unreadableLatest": "Revision {{revision}} cannot be read; showing revision {{shown}}, the latest readable one.",
+    "nothingReadable": "No revision of this release can be read (latest: {{revision}})."
   },
   "actions": {
     "editValues": "Edit values",
@@ -86,6 +92,9 @@
     "repoUrl": "URL",
     "repoNamePlaceholder": "bitnami",
     "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "Username (optional)",
+    "repoPassword": "Password (optional)",
+    "loginInUrl": "Enter the user name and password in the Username and Password fields, not in the URL.",
     "add": "Add repository",
     "adding": "Adding…",
     "remove": "Remove",
@@ -116,7 +125,8 @@
     "invalidName": "Use lowercase letters, digits, - and . (at most 53 characters), starting and ending with a letter or digit.",
     "confirm": "Install",
     "done": "Release {{release}} installed in namespace {{namespace}}. It is listed under Releases.",
-    "failed": "Helm could not install the chart"
+    "failed": "Helm could not install the chart",
+    "valuesHint": "Only the values you change from the chart's defaults are saved with the release."
   },
   "status": {
     "loading": "Checking for Helm…"

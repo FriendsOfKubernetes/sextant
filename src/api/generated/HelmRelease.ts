@@ -2,11 +2,12 @@
 
 export type HelmRelease = { name: string, namespace: string, revision: number, chart: string, chartVersion: string, appVersion: string, status: string, updated: string, 
 /**
- * The latest revision, when it cannot be decoded (the release shows the last readable one). Not set yet;
- * optional in TypeScript so that existing fixtures stay valid until it is filled.
+ * In the release list: the latest revision, when its Secret cannot be decoded; the other fields then
+ * describe the last readable revision (or nothing, see `unreadable`).
  */
-unreadableRevision?: number | null, 
+unreadableRevision: number | null, 
 /**
- * A history row of a revision that cannot be decoded (only `revision` is meaningful).
+ * No readable data: a history row of a revision that cannot be decoded, or a listed release none of whose
+ * revisions can be. Only `name`, `namespace` and `revision` are meaningful.
  */
-unreadable?: boolean, };
+unreadable: boolean, };

@@ -222,6 +222,44 @@ async fn an_installed_release_is_read_with_values_manifest_notes_and_history() {
     .await;
 }
 
+/// "Edit values" shows the release's user values; sent back to `helm upgrade` unchanged they give Helm the same
+/// values and types (Helm reads YAML 1.1: an unquoted `yes` would turn the text "yes" into a boolean), and an edit
+/// of one key changes only that key.
+#[tokio::test]
+async fn shown_values_sent_back_unchanged_keep_their_values_and_types() {
+    in_scratch("roundtrip", |s| async move {
+        let typed = "quoted: \"yes\"\nplain: yes\nletter: \"N\"\nmode: \"0644\"\noctal: 0644\n\
+                     count: \"1_000\"\nbig: 1_000\n\"off\": kept\noff: flag\nstamp: \"2026-10-12\"\n\
+                     version: \"1.25\"\nempty: \"\"\n\"null\": \"null\"\nlist: [\"on\", 2, \"3\"]\n\
+                     nested: {\"y\": \"~\", multi: \"a\\nb # c: d\"}\n";
+        s.install("demo", chart_dir().to_str().unwrap(), None, typed)
+            .await;
+        let shown = |revision: i32| {
+            let s = &s;
+            async move {
+                helm::release_detail(&s.mgr, &s.id, &s.ns, "demo", Some(revision))
+                    .await
+                    .unwrap()
+                    .values_yaml
+            }
+        };
+        let first = shown(1).await;
+
+        cli::upgrade_release(&s.helm, &s.mgr, &s.id, &s.ns, "demo", "", &first)
+            .await
+            .unwrap();
+        assert_eq!(shown(2).await, first, "values sent back unchanged");
+
+        let edited = first.replacen("big: 1000\n", "big: 2000\n", 1);
+        assert_ne!(edited, first, "{first}");
+        cli::upgrade_release(&s.helm, &s.mgr, &s.id, &s.ns, "demo", "", &edited)
+            .await
+            .unwrap();
+        assert_eq!(shown(3).await, edited, "only the edited key changes");
+    })
+    .await;
+}
+
 #[tokio::test]
 async fn new_values_make_a_revision_and_rollback_brings_the_old_ones_back() {
     in_scratch("upgrade", |s| async move {
@@ -282,6 +320,191 @@ async fn new_values_make_a_revision_and_rollback_brings_the_old_ones_back() {
     .await;
 }
 
+/// Replaces the stored data of `release`'s revision `revision` with something that is not a release.
+async fn break_revision(s: &Scratch, release: &str, revision: i32) {
+    use k8s_openapi::api::core::v1::Secret;
+    use kube::api::{Patch, PatchParams};
+    let api = Api::<Secret>::namespaced(s.client.clone(), &s.ns);
+    // "not a release", base64 as the API wants Secret data.
+    let patch = serde_json::json!({ "data": { "release": "bm90IGEgcmVsZWFzZQ==" } });
+    api.patch(
+        &format!("sh.helm.release.v1.{release}.v{revision}"),
+        &PatchParams::default(),
+        &Patch::Merge(&patch),
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn a_release_with_an_unreadable_latest_revision_stays_listed_with_the_last_readable_one() {
+    in_scratch("unreadable", |s| async move {
+        s.install(
+            "demo",
+            chart_dir().to_str().unwrap(),
+            None,
+            "greeting: hi\n",
+        )
+        .await;
+        cli::upgrade_release(&s.helm, &s.mgr, &s.id, &s.ns, "demo", "", "greeting: two\n")
+            .await
+            .unwrap();
+        s.install("solo", chart_dir().to_str().unwrap(), None, "")
+            .await;
+        break_revision(&s, "demo", 2).await;
+        break_revision(&s, "solo", 1).await;
+
+        let list = s.releases().await;
+        let summary: Vec<_> = list
+            .iter()
+            .map(|r| {
+                (
+                    r.name.as_str(),
+                    r.revision,
+                    r.status.as_str(),
+                    r.unreadable_revision,
+                    r.unreadable,
+                )
+            })
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("demo", 1, "superseded", Some(2), false),
+                ("solo", 1, "", Some(1), true)
+            ],
+            "{list:?}"
+        );
+        assert_eq!(list[0].chart, "sextant-demo");
+
+        // History: the broken revision is a row of its own; the rest is read as usual.
+        let history = helm::release_history(&s.mgr, &s.id, &s.ns, "demo")
+            .await
+            .unwrap();
+        let rows: Vec<_> = history
+            .iter()
+            .map(|h| {
+                (
+                    h.revision,
+                    h.unreadable,
+                    h.status.as_str(),
+                    h.chart.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            rows,
+            [(1, false, "superseded", "sextant-demo"), (2, true, "", "")]
+        );
+
+        // Details work on the readable revisions; the broken one is `invalid`, not a crash.
+        let detail = helm::release_detail(&s.mgr, &s.id, &s.ns, "demo", None)
+            .await
+            .unwrap();
+        assert_eq!(
+            (detail.release.revision, detail.values_yaml.as_str()),
+            (1, "greeting: hi\n")
+        );
+        let err = helm::release_detail(&s.mgr, &s.id, &s.ns, "demo", Some(2))
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
+        let err = helm::release_detail(&s.mgr, &s.id, &s.ns, "solo", None)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+        let solo = helm::release_history(&s.mgr, &s.id, &s.ns, "solo")
+            .await
+            .unwrap();
+        assert_eq!(
+            solo.iter()
+                .map(|h| (h.revision, h.unreadable))
+                .collect::<Vec<_>>(),
+            [(1, true)]
+        );
+    })
+    .await;
+}
+
+/// The install dialog starts from the chart's whole default values; only what the user changed becomes the
+/// release's user values (`helm get values`), so later chart upgrades bring their new defaults.
+#[tokio::test]
+async fn installing_keeps_as_user_values_only_what_differs_from_the_chart_defaults() {
+    in_scratch("defaults", |s| async move {
+        let chart = chart_dir();
+        let chart = chart.to_str().unwrap();
+        let defaults = s.helm.show_values(chart, None).await.unwrap();
+        assert!(defaults.contains("replicas: 1"), "{defaults}");
+        let values = |release: &'static str| {
+            let s = &s;
+            async move {
+                helm::release_detail(&s.mgr, &s.id, &s.ns, release, None)
+                    .await
+                    .unwrap()
+                    .values_yaml
+            }
+        };
+
+        cli::install_chart(
+            &s.helm, &s.mgr, &s.id, &s.ns, "same", chart, None, &defaults,
+        )
+        .await
+        .unwrap();
+        assert_eq!(values("same").await, "", "no change, no user values");
+
+        let edited = defaults.replace("replicas: 1", "replicas: 2");
+        cli::install_chart(&s.helm, &s.mgr, &s.id, &s.ns, "one", chart, None, &edited)
+            .await
+            .unwrap();
+        assert_eq!(values("one").await, "replicas: 2\n");
+        assert_eq!(
+            s.greeting("one").await,
+            "hello",
+            "the default still applies"
+        );
+
+        // Comments and key order are not changes; a key left out keeps its default.
+        cli::install_chart(
+            &s.helm,
+            &s.mgr,
+            &s.id,
+            &s.ns,
+            "short",
+            chart,
+            None,
+            "replicas: 1 # one\ngreeting: hi\n",
+        )
+        .await
+        .unwrap();
+        assert_eq!(values("short").await, "greeting: hi\n");
+
+        // Helm reads YAML 1.1 (`yes` is a boolean, `0644` octal, `1_000` a number, quoted text stays text): the
+        // changed values mean to Helm exactly what the user's own text means to it.
+        let typed = "quoted: \"yes\"\nplain: yes\nletter: N\nmode: 0644\nquotedMode: \"0644\"\n\
+                     count: \"1_000\"\nbig: 1_000\n\"off\": kept\noff: flag\n";
+        cli::install_chart(
+            &s.helm,
+            &s.mgr,
+            &s.id,
+            &s.ns,
+            "typed",
+            chart,
+            None,
+            &format!("{defaults}{typed}"),
+        )
+        .await
+        .unwrap();
+        s.install("direct", chart, None, typed).await;
+        let direct = values("direct").await;
+        assert!(
+            direct.contains("plain: true"),
+            "helm's own reading: {direct}"
+        );
+        assert_eq!(values("typed").await, direct);
+    })
+    .await;
+}
+
 #[tokio::test]
 async fn helm_errors_come_back_with_helms_own_text() {
     in_scratch("error", |s| async move {
@@ -333,6 +556,14 @@ async fn uninstall_removes_the_release() {
 
 /// Serves the files of `dir` over HTTP on 127.0.0.1 until the returned task is aborted. Returns the base URL.
 async fn serve_dir(dir: PathBuf) -> (String, tokio::task::JoinHandle<()>) {
+    serve_dir_with_login(dir, None).await
+}
+
+/// [`serve_dir`] that answers 401 to a request without the `Authorization` header `auth`, when it is given.
+async fn serve_dir_with_login(
+    dir: PathBuf,
+    auth: Option<String>,
+) -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     let task = tokio::spawn(async move {
@@ -341,6 +572,7 @@ async fn serve_dir(dir: PathBuf) -> (String, tokio::task::JoinHandle<()>) {
                 return;
             };
             let dir = dir.clone();
+            let auth = auth.clone();
             tokio::spawn(async move {
                 let mut request = Vec::new();
                 let mut buf = [0u8; 4096];
@@ -351,6 +583,22 @@ async fn serve_dir(dir: PathBuf) -> (String, tokio::task::JoinHandle<()>) {
                     }
                 }
                 let line = String::from_utf8_lossy(&request);
+                if let Some(auth) = &auth {
+                    let allowed = line.lines().any(|h| {
+                        h.split_once(':').is_some_and(|(k, v)| {
+                            k.eq_ignore_ascii_case("authorization") && v.trim() == auth
+                        })
+                    });
+                    if !allowed {
+                        let _ = socket
+                            .write_all(
+                                b"HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                            )
+                            .await;
+                        let _ = socket.shutdown().await;
+                        return;
+                    }
+                }
                 let path = line.split_whitespace().nth(1).unwrap_or("/");
                 let name = path.trim_start_matches('/');
                 let body = (!name.contains("..") && !name.is_empty())
@@ -428,7 +676,9 @@ async fn repositories_are_added_searched_updated_and_removed() {
     );
     helm.repo_update().await.unwrap();
 
-    helm.repo_add("sextant-local", &url).await.unwrap();
+    helm.repo_add("sextant-local", &url, None, None)
+        .await
+        .unwrap();
     assert_eq!(
         helm.repos().await.unwrap(),
         vec![HelmRepo {
@@ -456,7 +706,7 @@ async fn repositories_are_added_searched_updated_and_removed() {
     assert!(values.contains("greeting: hello"), "{values}");
 
     let err = helm
-        .repo_add("broken", "http://127.0.0.1:1")
+        .repo_add("broken", "http://127.0.0.1:1", None, None)
         .await
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::Other);
@@ -471,6 +721,76 @@ async fn repositories_are_added_searched_updated_and_removed() {
     server.abort();
 }
 
+/// A repository behind a login: added with the password through stdin (real `helm`), used by later calls, and
+/// listed without any login — also one that `helm` keeps inside a URL added outside Sextant.
+#[tokio::test]
+async fn a_repository_with_a_login_is_added_and_listed_without_it() {
+    use base64::Engine as _;
+    const PASSWORD: &str = "sextant-repo-password-7f3a";
+    let tmp = tempfile::tempdir().unwrap();
+    let Some(helm) = helm_in(tmp.path()) else {
+        return;
+    };
+    let repo = tmp.path().join("repo");
+    std::fs::create_dir_all(&repo).unwrap();
+    let auth = format!(
+        "Basic {}",
+        base64::engine::general_purpose::STANDARD.encode(format!("robot:{PASSWORD}"))
+    );
+    let (url, server) = serve_dir_with_login(repo.clone(), Some(auth)).await;
+    build_repo(tmp.path(), &repo, &url);
+
+    let err = helm
+        .repo_add("private", &url, None, None)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Other, "no login, no index: {err:?}");
+    helm.repo_add("private", &url, Some("robot"), Some(PASSWORD))
+        .await
+        .unwrap();
+    assert_eq!(
+        helm.repos().await.unwrap(),
+        vec![HelmRepo {
+            name: "private".into(),
+            url: url.clone()
+        }]
+    );
+    helm.repo_update().await.unwrap();
+    let hits = helm.search("sextant-demo").await.unwrap();
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert_eq!(hits[0].name, "private/sextant-demo");
+
+    // Added outside Sextant with the login inside the URL: listed without it.
+    let with_login = url.replacen("http://", &format!("http://robot:{PASSWORD}@"), 1);
+    let mut add = std::process::Command::new("helm");
+    add.args(["repo", "add", "legacy", &with_login])
+        .env("HELM_CONFIG_HOME", tmp.path().join("config"))
+        .env("HELM_CACHE_HOME", tmp.path().join("cache"))
+        .env("HELM_DATA_HOME", tmp.path().join("data"));
+    // Off the runtime thread: the repository server runs on it.
+    let out = tokio::task::spawn_blocking(move || add.output())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let repos = helm.repos().await.unwrap();
+    assert!(
+        repos
+            .iter()
+            .all(|r| !r.url.contains(PASSWORD) && !r.url.contains('@')),
+        "{repos:?}"
+    );
+    assert!(repos.contains(&HelmRepo {
+        name: "legacy".into(),
+        url: url.clone()
+    }));
+    server.abort();
+}
+
 #[tokio::test]
 async fn a_chart_from_an_added_repository_installs_and_shows_up_in_releases() {
     in_scratch("repo", |s| async move {
@@ -478,7 +798,10 @@ async fn a_chart_from_an_added_repository_installs_and_shows_up_in_releases() {
         std::fs::create_dir_all(&repo).unwrap();
         let (url, server) = serve_dir(repo.clone()).await;
         build_repo(&s.home, &repo, &url);
-        s.helm.repo_add("sextant-local", &url).await.unwrap();
+        s.helm
+            .repo_add("sextant-local", &url, None, None)
+            .await
+            .unwrap();
         let hit = s.helm.search("sextant-demo").await.unwrap().remove(0);
 
         s.install(
@@ -691,4 +1014,114 @@ async fn helm_does_not_inherit_kube_overrides_from_the_app_environment() {
         vars.contains(&"HELM_NAMESPACE=explicit-namespace"),
         "an explicit with_env value is kept:\n{env}"
     );
+}
+
+/// A fake `helm` at `dir/helm` running `body` (a shell script).
+#[cfg(unix)]
+fn fake_helm(dir: &Path, body: &str) -> PathBuf {
+    use std::os::unix::fs::PermissionsExt;
+    let fake = dir.join("helm");
+    std::fs::write(&fake, format!("#!/bin/sh\n{body}\n")).unwrap();
+    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    fake
+}
+
+/// A repository login: the user name is an argument, the password reaches `helm` only on its standard input (never
+/// on the command line, where every process can read it); a URL carrying a login is refused before `helm` runs.
+#[cfg(unix)]
+#[tokio::test]
+async fn a_repository_password_goes_to_helms_stdin_never_to_its_arguments() {
+    const PASSWORD: &str = "sextant-repo-password-7f3a";
+    let tmp = tempfile::tempdir().unwrap();
+    let record = tmp.path().join("record");
+    let fake = fake_helm(
+        tmp.path(),
+        &format!(
+            "printf '%s\\n' \"$@\" > '{r}.args'\ncat > '{r}.stdin'",
+            r = record.display()
+        ),
+    );
+    let helm = HelmCli::default().with_binary(&fake);
+    let read =
+        |ext: &str| std::fs::read_to_string(tmp.path().join(format!("record.{ext}"))).unwrap();
+
+    helm.repo_add(
+        "private",
+        "https://charts.example.test/stable",
+        Some("robot"),
+        Some(PASSWORD),
+    )
+    .await
+    .unwrap();
+    let args = read("args");
+    assert!(
+        !args.contains(PASSWORD),
+        "the password is an argument: {args}"
+    );
+    assert!(args.starts_with("repo\nadd\n"), "{args}");
+    assert!(args.contains("--username=robot\n"), "{args}");
+    assert!(args.contains("--password-stdin\n"), "{args}");
+    assert!(
+        args.ends_with("--\nprivate\nhttps://charts.example.test/stable\n"),
+        "{args}"
+    );
+    assert_eq!(read("stdin"), PASSWORD);
+
+    // Without a login nothing is read from stdin and no login flag is passed.
+    helm.repo_add("public", "https://charts.example.test/public", None, None)
+        .await
+        .unwrap();
+    let args = read("args");
+    assert!(
+        !args.contains("--username") && !args.contains("--password"),
+        "{args}"
+    );
+    assert_eq!(read("stdin"), "");
+
+    // A login inside the URL: refused as `invalid`, with a hint, without running helm or echoing the URL.
+    std::fs::remove_file(tmp.path().join("record.args")).unwrap();
+    for url in [
+        "https://robot:hunter2@charts.example.test/stable",
+        "https://robot@charts.example.test/stable",
+        "HTTP://robot:hunter2@127.0.0.1:8080",
+        "oci://robot:hunter2@registry.example.test/charts",
+    ] {
+        let err = helm.repo_add("private", url, None, None).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid, "{url}: {err:?}");
+        assert!(err.message.contains("Username"), "{url}: {}", err.message);
+        assert!(!err.message.contains("hunter2"), "{url}: {}", err.message);
+    }
+    // A password without a user name cannot be used.
+    let err = helm
+        .repo_add(
+            "private",
+            "https://charts.example.test/stable",
+            None,
+            Some(PASSWORD),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+    assert!(!err.message.contains(PASSWORD));
+    assert!(
+        !tmp.path().join("record.args").exists(),
+        "helm ran for a refused login"
+    );
+
+    // Whatever helm prints, the password does not come back in the error.
+    let echo = tempfile::tempdir().unwrap();
+    let fake = fake_helm(echo.path(), "echo \"Error: bad login $(cat)\" >&2\nexit 1");
+    let err = HelmCli::default()
+        .with_binary(&fake)
+        .repo_add(
+            "private",
+            "https://charts.example.test/stable",
+            Some("robot"),
+            Some(PASSWORD),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Other);
+    assert!(err.message.contains("bad login"), "{}", err.message);
+    assert!(!err.message.contains(PASSWORD), "{}", err.message);
 }

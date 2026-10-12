@@ -125,6 +125,8 @@ pub async fn helm_uninstall<R: Runtime>(
         .await
 }
 
+/// Installs `chart`; of `values_yaml` (the dialog starts from the chart's defaults) only what differs from the
+/// chart's default values is kept as the release's user values.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn helm_install<R: Runtime>(
@@ -137,18 +139,17 @@ pub async fn helm_install<R: Runtime>(
     version: Option<String>,
     values_yaml: String,
 ) -> Result<(), CoreError> {
-    let target = cli::kube_target(&state.clusters, &cluster_id)?;
-    helm_cli(&app)
-        .install(
-            &target.kubeconfig,
-            &target.context,
-            &namespace,
-            &release,
-            &chart,
-            version.as_deref(),
-            &values_yaml,
-        )
-        .await
+    cli::install_chart(
+        &helm_cli(&app),
+        &state.clusters,
+        &cluster_id,
+        &namespace,
+        &release,
+        &chart,
+        version.as_deref(),
+        &values_yaml,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -156,6 +157,8 @@ pub async fn helm_repos<R: Runtime>(app: AppHandle<R>) -> Result<Vec<HelmRepo>, 
     helm_cli(&app).repos().await
 }
 
+/// Adds a chart repository, optionally with a login: the password reaches `helm` only through its stdin. A URL
+/// with `user:password@` is refused (`invalid`).
 #[tauri::command]
 pub async fn helm_repo_add<R: Runtime>(
     app: AppHandle<R>,
@@ -164,11 +167,9 @@ pub async fn helm_repo_add<R: Runtime>(
     username: Option<String>,
     password: Option<String>,
 ) -> Result<(), CoreError> {
-    // A repository with a login is not supported yet.
-    if username.is_some() || password.is_some() {
-        return Err(CoreError::not_implemented());
-    }
-    helm_cli(&app).repo_add(&name, &url).await
+    helm_cli(&app)
+        .repo_add(&name, &url, username.as_deref(), password.as_deref())
+        .await
 }
 
 #[tauri::command]

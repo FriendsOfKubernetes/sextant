@@ -14,6 +14,12 @@ import "./helm.css";
 
 const DEFAULT_NAMESPACE = "default";
 
+/** Whether a repository URL carries a login (`scheme://user:password@host/…`); Helm would keep it in plain sight. */
+export function urlHasLogin(url: string): boolean {
+  const authority = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i.exec(url.trim())?.[1];
+  return authority?.includes("@") ?? false;
+}
+
 export function ChartsPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
   const helm = useHelmStatus();
@@ -63,9 +69,14 @@ function Repositories({ available }: { available: boolean }) {
   const { t } = useTranslation();
   const nameId = useId();
   const urlId = useId();
+  const usernameId = useId();
+  const passwordId = useId();
   const repos = useLoad(available ? "repos" : null, () => api.helm.repos());
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const loginInUrl = urlHasLogin(url);
   const [busy, setBusy] = useState<"add" | "update" | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -89,9 +100,12 @@ function Repositories({ available }: { available: boolean }) {
   const add = (e: FormEvent) => {
     e.preventDefault();
     void run("add", async () => {
-      await api.helm.repoAdd(name.trim(), url.trim());
+      // The password goes to `helm` through its stdin, never on its command line.
+      await api.helm.repoAdd(name.trim(), url.trim(), username.trim() || undefined, password || undefined);
       setName("");
       setUrl("");
+      setUsername("");
+      setPassword("");
     });
   };
 
@@ -161,15 +175,34 @@ function Repositories({ available }: { available: boolean }) {
           placeholder={t("helm:charts.repoUrlPlaceholder")}
           onChange={(e) => setUrl(e.target.value)}
         />
+        <label htmlFor={usernameId}>{t("helm:charts.repoUsername")}</label>
+        <input
+          id={usernameId}
+          value={username}
+          disabled={!available}
+          spellCheck={false}
+          autoComplete="off"
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <label htmlFor={passwordId}>{t("helm:charts.repoPassword")}</label>
+        <input
+          id={passwordId}
+          type="password"
+          value={password}
+          disabled={!available}
+          autoComplete="off"
+          onChange={(e) => setPassword(e.target.value)}
+        />
         <button
           type="submit"
           className="btn btn--primary"
-          disabled={!available || busy !== null || name.trim() === "" || url.trim() === ""}
+          disabled={!available || busy !== null || name.trim() === "" || url.trim() === "" || loginInUrl}
           title={available ? undefined : t("helm:missing.short")}
         >
           {busy === "add" ? t("helm:charts.adding") : t("helm:charts.add")}
         </button>
       </form>
+      {loginInUrl && <p className="helm-warning">{t("helm:charts.loginInUrl")}</p>}
       {error && <ErrorState error={error} />}
       {notice && (
         <p className="helm-muted" role="status">
