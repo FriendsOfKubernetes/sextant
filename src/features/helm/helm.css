@@ -233,3 +233,10 @@
   flex-wrap: wrap;
   gap: 4px;
 }
+
+.helm-reveal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}

@@ -169,14 +169,16 @@ describe("Releases", () => {
     expect(within(table).getByText("redis")).toBeInTheDocument();
   });
 
-  it("shows the release's values, manifest, notes and history", async () => {
+  it("shows the release's values, manifest, notes and history; values and manifest only after Show", async () => {
     helmBackend();
     renderPage("helm-releases");
     const details = await openRelease("web");
     expect(calls("helm_release_detail")[0]!.args).toEqual({ clusterId: "c1", namespace: "apps", name: "web", revision: null });
+    fireEvent.click(within(details).getByRole("button", { name: "Show values" }));
     await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));
 
     fireEvent.click(within(details).getByRole("tab", { name: "Manifest" }));
+    fireEvent.click(within(details).getByRole("button", { name: "Show manifest" }));
     expect(editorView("Manifest of web").state.doc.toString()).toContain("kind: Service");
 
     fireEvent.click(within(details).getByRole("tab", { name: "Notes" }));
@@ -188,6 +190,85 @@ describe("Releases", () => {
     expect(rows(history)[0]).toHaveTextContent("(current)");
     expect(within(history).getByRole("button", { name: "Roll back to revision 1" })).toBeEnabled();
     expect(within(history).queryByRole("button", { name: "Roll back to revision 2" })).toBeNull();
+  });
+
+  it("keeps the values and the manifest hidden until Show, and Hide hides them again", async () => {
+    helmBackend();
+    renderPage("helm-releases");
+    const details = await openRelease("web");
+    await waitFor(() => expect(calls("helm_release_detail")).toHaveLength(1));
+    // Loaded, but not drawn: neither the editor nor the text is in the page.
+    const show = within(details).getByRole("button", { name: "Show values" });
+    expect(show).toHaveAttribute("aria-pressed", "false");
+    expect(within(details).getByText("Values are hidden until you press Show.")).toBeInTheDocument();
+    expect(document.querySelector('[aria-label="User values of web"]')).toBeNull();
+    expect(details).not.toHaveTextContent("replicaCount");
+
+    fireEvent.click(show);
+    await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));
+    const hide = within(details).getByRole("button", { name: "Hide values" });
+    expect(hide).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(hide);
+    expect(document.querySelector('[aria-label="User values of web"]')).toBeNull();
+    expect(details).not.toHaveTextContent("replicaCount");
+    expect(within(details).getByRole("button", { name: "Show values" })).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(within(details).getByRole("tab", { name: "Manifest" }));
+    expect(within(details).getByText("The manifest is hidden until you press Show.")).toBeInTheDocument();
+    expect(document.querySelector('[aria-label="Manifest of web"]')).toBeNull();
+    expect(details).not.toHaveTextContent("kind: Service");
+    fireEvent.click(within(details).getByRole("button", { name: "Show manifest" }));
+    expect(editorView("Manifest of web").state.doc.toString()).toContain("kind: Service");
+    // Showing the manifest does not show the values.
+    fireEvent.click(within(details).getByRole("tab", { name: "Values" }));
+    expect(document.querySelector('[aria-label="User values of web"]')).toBeNull();
+    fireEvent.click(within(details).getByRole("tab", { name: "Manifest" }));
+    fireEvent.click(within(details).getByRole("button", { name: "Hide manifest" }));
+    expect(document.querySelector('[aria-label="Manifest of web"]')).toBeNull();
+  });
+
+  it("hides the values again when another release or another revision is opened", async () => {
+    helmBackend();
+    wb.backend.on("helm_release_detail", (args) => {
+      const name = (args as { name: string }).name;
+      return name === "db"
+        ? { release: db, valuesYaml: "persistence: true\n", manifest: "kind: StatefulSet\n", notes: "" }
+        : structuredClone(webDetail);
+    });
+    renderPage("helm-releases");
+    const id = await watchOf(wb, "Secret");
+    let details = await openRelease("web");
+    fireEvent.click(within(details).getByRole("button", { name: "Show values" }));
+    await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));
+
+    // Another release.
+    fireEvent.click(screen.getByRole("button", { name: "Open release db" }));
+    details = await screen.findByRole("region", { name: "Release db" });
+    expect(within(details).getByRole("button", { name: "Show values" })).toHaveAttribute("aria-pressed", "false");
+    expect(details).not.toHaveTextContent("persistence");
+    fireEvent.click(screen.getByRole("button", { name: "Open release web" }));
+    details = await screen.findByRole("region", { name: "Release web" });
+    expect(within(details).getByRole("button", { name: "Show values" })).toBeInTheDocument();
+
+    // A new revision of the same release (helm upgrade elsewhere).
+    fireEvent.click(within(details).getByRole("button", { name: "Show values" }));
+    await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));
+    releases = [release("web", { revision: 3 }), db];
+    emitSnapshot(wb, id, [secret("web", 3), secret("db", 1)]);
+    await waitFor(() => expect(within(details).getByRole("button", { name: "Show values" })).toBeInTheDocument());
+    expect(document.querySelector('[aria-label="User values of web"]')).toBeNull();
+  });
+
+  it("shows the notes and the history without Show", async () => {
+    helmBackend();
+    renderPage("helm-releases");
+    const details = await openRelease("web");
+    fireEvent.click(within(details).getByRole("tab", { name: "Notes" }));
+    expect(await within(details).findByText("Open http://web.apps.svc to see nginx.")).toBeInTheDocument();
+    expect(within(details).queryByRole("button", { name: /^Show/ })).toBeNull();
+    fireEvent.click(within(details).getByRole("tab", { name: "History" }));
+    expect(await within(details).findByRole("table", { name: "History" })).toBeInTheDocument();
+    expect(within(details).queryByRole("button", { name: /^Show/ })).toBeNull();
   });
 
   it("edits values and upgrades with the same chart; Helm's error is shown in its own words", async () => {
@@ -300,6 +381,7 @@ describe("Releases", () => {
     open.mockRestore();
 
     const details = await openRelease("web");
+    fireEvent.click(within(details).getByRole("button", { name: "Show values" }));
     await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));
     for (const name of ["Edit values", "Uninstall"]) {
       const button = within(details).getByRole("button", { name });

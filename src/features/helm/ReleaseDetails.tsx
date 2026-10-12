@@ -31,6 +31,21 @@ export function ReleaseDetails({
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("values");
   const [dialog, setDialog] = useState<OpenDialog>(null);
+  // Values and manifest are hidden until "Show". What was shown belongs to one revision of one release: another
+  // release or a new revision hides them again.
+  const revisionId = `${clusterId}|${release.namespace}|${release.name}|${release.revision}`;
+  const [revealed, setRevealed] = useState<{ id: string; tabs: ReadonlySet<Tab> }>({ id: revisionId, tabs: new Set() });
+  const isShown = (id: Tab) => revealed.id === revisionId && revealed.tabs.has(id);
+  const valuesShown = isShown("values");
+  const manifestShown = isShown("manifest");
+  // Notes are plain text and always visible; values and manifest are drawn (and waited for) only after "Show".
+  const contentWanted = tab === "notes" || isShown(tab);
+  const toggleShown = (id: Tab) =>
+    setRevealed((prev) => {
+      const tabs = new Set(prev.id === revisionId ? prev.tabs : []);
+      if (!tabs.delete(id)) tabs.add(id);
+      return { id: revisionId, tabs };
+    });
   // A new revision (from the list's watch) reloads the details.
   const key = `${clusterId}|${release.namespace}|${release.name}|${release.revision}|${release.status}`;
   const detail = useLoad(key, () => api.helm.releaseDetail(clusterId, release.namespace, release.name, null));
@@ -107,19 +122,23 @@ export function ReleaseDetails({
 
       <div className="helm-details__body" role="tabpanel">
         {tab !== "history" && detail.error && <ErrorState error={detail.error} onRetry={detail.reload} />}
-        {tab !== "history" && !detail.data && !detail.error && (
+        {(tab === "values" || tab === "manifest") && (
+          <ShowToggle tab={tab} shown={isShown(tab)} onToggle={() => toggleShown(tab)} />
+        )}
+        {tab !== "history" && contentWanted && !detail.data && !detail.error && (
           <div className="helm-muted" role="status">
             {t("helm:details.loading")}
           </div>
         )}
         {tab === "values" &&
+          valuesShown &&
           detail.data &&
           (detail.data.valuesYaml.trim() === "" ? (
             <p className="helm-muted">{t("helm:details.noValues")}</p>
           ) : (
             <YamlViewer text={detail.data.valuesYaml} label={t("helm:details.valuesLabel", { name: release.name })} />
           ))}
-        {tab === "manifest" && detail.data && (
+        {tab === "manifest" && manifestShown && detail.data && (
           <YamlViewer text={detail.data.manifest} label={t("helm:details.manifestLabel", { name: release.name })} />
         )}
         {tab === "notes" &&
@@ -170,6 +189,25 @@ export function ReleaseDetails({
         />
       )}
     </section>
+  );
+}
+
+/** The hint and the "Show"/"Hide" button of the values and manifest tabs (the same pattern as a Secret's values). */
+function ShowToggle({ tab, shown, onToggle }: { tab: "values" | "manifest"; shown: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="helm-reveal">
+      {!shown && <span className="helm-muted">{t(`helm:details.hidden.${tab}`)}</span>}
+      <button
+        type="button"
+        className="btn"
+        aria-label={t(shown ? `helm:details.hide.${tab}` : `helm:details.show.${tab}`)}
+        aria-pressed={shown}
+        onClick={onToggle}
+      >
+        {t(shown ? "helm:details.hideButton" : "helm:details.showButton")}
+      </button>
+    </div>
   );
 }
 

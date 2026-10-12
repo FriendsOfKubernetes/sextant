@@ -45,6 +45,20 @@
     "tabsLabel": "Release details",
     "valuesLabel": "User values of {{name}}",
     "manifestLabel": "Manifest of {{name}}",
+    "showButton": "Show",
+    "hideButton": "Hide",
+    "show": {
+      "values": "Show values",
+      "manifest": "Show manifest"
+    },
+    "hide": {
+      "values": "Hide values",
+      "manifest": "Hide manifest"
+    },
+    "hidden": {
+      "values": "Values are hidden until you press Show.",
+      "manifest": "The manifest is hidden until you press Show."
+    },
     "noValues": "No user values: the release uses the chart's defaults.",
     "noNotes": "The chart has no notes.",
     "current": "current",
