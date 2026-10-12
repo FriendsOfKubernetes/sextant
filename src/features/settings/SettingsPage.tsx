@@ -1,4 +1,4 @@
-// The Settings page: appearance (theme, language), the `helm` binary (found in PATH or chosen) and the kubeconfig
+// The Settings page: appearance (theme, language), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen) and the kubeconfig
 // sources. Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
 import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
+import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
 import { languageName } from "./languages";
 import "./settings.css";
@@ -48,6 +49,7 @@ export function SettingsContent() {
     <div className="settings">
       {error && <SaveError error={error} />}
       <AppearanceSection settings={settings} save={save} />
+      <EditorSection settings={settings} save={save} />
       <HelmSection settings={settings} save={save} />
       <KubeconfigSection />
     </div>
@@ -118,6 +120,36 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
           ))}
         </select>
         <p className="settings__hint">{t("settings:appearance.languageHint")}</p>
+      </div>
+    </Section>
+  );
+}
+
+function EditorSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  const schemeId = useId();
+  return (
+    <Section title={t("settings:editor.title")} hint={t("settings:editor.hint")}>
+      <div className="settings__field">
+        <label className="settings__label" htmlFor={schemeId}>
+          {t("settings:editor.scheme")}
+        </label>
+        <select
+          id={schemeId}
+          className="settings__input settings__select"
+          value={parseEditorTheme(settings?.editorTheme)}
+          disabled={!settings}
+          onChange={(e) => {
+            const editorTheme = e.target.value;
+            void save((s) => ({ ...s, editorTheme }));
+          }}
+        >
+          {EDITOR_THEME_IDS.map((id) => (
+            <option key={id} value={id}>
+              {t(`settings:editor.schemes.${id}`)}
+            </option>
+          ))}
+        </select>
       </div>
     </Section>
   );

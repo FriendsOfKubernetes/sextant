@@ -22,6 +22,7 @@ export function defaultAppSettings(): AppSettings {
       maximized: false,
     },
     helmPath: null,
+    editorTheme: "auto",
   };
 }
 

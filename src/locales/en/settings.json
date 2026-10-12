@@ -15,6 +15,21 @@
     "language": "Language",
     "languageHint": "Translations live in src/locales/<language>/. A new folder there is a new language."
   },
+  "editor": {
+    "title": "Editor",
+    "scheme": "Color scheme",
+    "hint": "Colors of YAML in the resource editor, the details panel and Helm. Auto uses One Dark in the dark theme and GitHub Light in the light theme.",
+    "schemes": {
+      "auto": "Auto",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
   "helm": {
     "title": "Helm",
     "hint": "Installing and changing Helm releases runs the helm command. Viewing releases works without it.",

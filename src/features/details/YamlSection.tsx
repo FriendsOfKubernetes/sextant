@@ -4,6 +4,7 @@ import { yaml } from "@codemirror/lang-yaml";
 import { basicSetup, EditorView } from "codemirror";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useEditorTheme } from "../editor/editorTheme";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { maskSecret } from "./secrets";
 import { Block } from "./ui";
@@ -39,9 +40,10 @@ export function YamlSection({ obj, objectRef }: DetailsSectionProps) {
 export function YamlViewer({ text, label }: { text: string; label: string }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
+  const { scheme, initial } = useEditorTheme(view);
   const extensions = useMemo(
-    () => [basicSetup, yaml(), EditorView.editable.of(false), EditorView.contentAttributes.of({ "aria-label": label })],
-    [label],
+    () => [basicSetup, yaml(), initial(), EditorView.editable.of(false), EditorView.contentAttributes.of({ "aria-label": label })],
+    [label, initial],
   );
 
   useEffect(() => {
@@ -60,5 +62,5 @@ export function YamlViewer({ text, label }: { text: string; label: string }) {
     editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: text } });
   }, [text, extensions]);
 
-  return <div className="dt-yaml" ref={host} />;
+  return <div className="dt-yaml" data-editor-theme={scheme} ref={host} />;
 }

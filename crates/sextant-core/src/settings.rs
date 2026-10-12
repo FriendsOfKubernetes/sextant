@@ -80,6 +80,9 @@ pub struct AppSettings {
     pub window: WindowLayout,
     /// The `helm` binary chosen in Settings; `None` = look `helm` up in `PATH`.
     pub helm_path: Option<String>,
+    /// Colour scheme of the YAML editors: `auto` (follows the app theme) or a scheme id. Owned by the frontend,
+    /// which treats an unknown value as `auto`; kept as text so a value from another version never damages the file.
+    pub editor_theme: String,
 }
 
 impl Default for AppSettings {
@@ -91,6 +94,7 @@ impl Default for AppSettings {
             clusters: HashMap::new(),
             window: WindowLayout::default(),
             helm_path: None,
+            editor_theme: "auto".to_owned(),
         }
     }
 }
@@ -549,6 +553,18 @@ mod tests {
         assert!(s.window.dock_open);
         assert_eq!(s.window.dock_height, 300);
         assert_eq!(s.language, "en");
+        assert_eq!(s.editor_theme, "auto");
+    }
+
+    #[test]
+    fn unknown_editor_theme_is_kept_and_does_not_damage_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(&path, r#"{ "editorTheme": "from-a-newer-version" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert!(store.status().writable);
+        assert_eq!(store.status().backup_path, None);
+        assert_eq!(store.get().editor_theme, "from-a-newer-version");
     }
 
     #[test]

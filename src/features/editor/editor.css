@@ -45,10 +45,9 @@
   overflow: hidden;
 }
 
+/* Colours (text, gutter, selection, syntax) come from the colour scheme in editorTheme.ts. */
 .yaml-editor .cm-editor {
   height: 100%;
-  background: var(--color-main);
-  color: var(--color-text);
   font-size: 12px;
 }
 
@@ -58,24 +57,4 @@
 
 .yaml-editor .cm-scroller {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.yaml-editor .cm-gutters {
-  background: var(--color-dock-header);
-  color: var(--color-text-muted);
-  border-right: 1px solid var(--color-border);
-}
-
-.yaml-editor .cm-activeLine,
-.yaml-editor .cm-activeLineGutter {
-  background: var(--color-hover);
-}
-
-.yaml-editor .cm-cursor {
-  border-left-color: var(--color-text);
-}
-
-.yaml-editor .cm-selectionBackground,
-.yaml-editor .cm-editor.cm-focused .cm-selectionBackground {
-  background: var(--color-selected);
 }

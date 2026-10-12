@@ -3,6 +3,7 @@
 import { yaml } from "@codemirror/lang-yaml";
 import { basicSetup, EditorView } from "codemirror";
 import { useEffect, useRef } from "react";
+import { useEditorTheme } from "./editorTheme";
 
 export interface YamlEditorProps {
   value: string;
@@ -15,6 +16,7 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
+  const { scheme, initial } = useEditorTheme(view);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -28,6 +30,7 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
       extensions: [
         basicSetup,
         yaml(),
+        initial(),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ "aria-label": label }),
         EditorView.updateListener.of((update) => {
@@ -50,5 +53,5 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
     if (shown !== value) editor.dispatch({ changes: { from: 0, to: shown.length, insert: value } });
   }, [value]);
 
-  return <div className="yaml-editor" ref={host} />;
+  return <div className="yaml-editor" data-editor-theme={scheme} ref={host} />;
 }
