@@ -135,3 +135,7 @@
 .ov__usage .mx-bar {
   width: 120px;
 }
+
+.ov__loading {
+  padding: 32px 16px;
+}

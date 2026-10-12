@@ -423,14 +423,8 @@ fn uid_of(obj: &Value) -> String {
 #[cfg(test)]
 mod tests {
     //! `watch()` and discovery against a fake API server on localhost (plain HTTP, no cluster needed).
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::{Arc, Mutex, RwLock};
-
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    use tokio::net::{TcpListener, TcpStream};
-
     use super::*;
-    use crate::kubeconfig::{KubeconfigEnv, KubeconfigRegistry};
+    use crate::fake_api::{FakeApi, Reply, Request, connected_to};
     use crate::resources::KindRef;
 
     const API_VERSIONS: &str =
@@ -442,8 +436,6 @@ mod tests {
     const AGGREGATED_CORE: &str = r#"{"kind":"APIGroupDiscoveryList","apiVersion":"apidiscovery.k8s.io/v2","metadata":{},"items":[{"metadata":{},"versions":[{"version":"v1","resources":[{"resource":"pods","responseKind":{"group":"","version":"","kind":"Pod"},"scope":"Namespaced","singularResource":"pod","verbs":["get","list","watch"],"subresources":[{"subresource":"log","responseKind":{"group":"","version":"","kind":"Pod"},"verbs":["get"]}]},{"resource":"nodes","responseKind":{"group":"","version":"","kind":"Node"},"scope":"Cluster","singularResource":"node","verbs":["get","list","watch"]},{"resource":"secrets","responseKind":{"group":"","version":"","kind":"Secret"},"scope":"Namespaced","singularResource":"secret","verbs":["get","list","watch"]}],"freshness":"Current"}]}]}"#;
     const AGGREGATED_GROUPS: &str = r#"{"kind":"APIGroupDiscoveryList","apiVersion":"apidiscovery.k8s.io/v2","metadata":{},"items":[{"metadata":{"name":"demo.sextant.dev"},"versions":[{"version":"v1","resources":[{"resource":"widgets","responseKind":{"group":"demo.sextant.dev","version":"v1","kind":"Widget"},"scope":"Namespaced","singularResource":"widget","verbs":["get","list","watch"]}],"freshness":"Current"}]}]}"#;
     const CRD_LIST: &str = r#"{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinitionList","metadata":{"resourceVersion":"1"},"items":[]}"#;
-    const NOT_FOUND: &str =
-        r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#;
     const FORBIDDEN: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","message":"cannot watch secrets","code":403}"#;
     const POD_LIST: &str = r#"{"apiVersion":"v1","kind":"PodList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"a","namespace":"default","uid":"uid-a","resourceVersion":"1"}}]}"#;
     const POD_ADDED: &str = r#"{"type":"ADDED","object":{"apiVersion":"v1","kind":"Pod","metadata":{"name":"b","namespace":"default","uid":"uid-b","resourceVersion":"2"}}}"#;
@@ -463,189 +455,54 @@ mod tests {
         no_watch_in: Option<&'static str>,
     }
 
-    #[derive(Debug, Clone)]
-    struct Seen {
-        path: String,
-        accept_encoding: String,
-    }
-
     /// A fake API server: discovery (core `v1` with pods, nodes, secrets; group `demo.sextant.dev/v1` with
     /// widgets), lists of those, and watches that stay open (the pod watch first sends [`POD_ADDED`]).
-    struct FakeApi {
-        url: String,
-        seen: Arc<Mutex<Vec<Seen>>>,
-        /// `/apis` requests whose connection the client closed before the answer.
-        abandoned_discoveries: Arc<AtomicUsize>,
+    async fn fake_api(behaviour: Behaviour) -> FakeApi {
+        FakeApi::start(move |req: &Request| answer(behaviour, req)).await
     }
 
-    impl FakeApi {
-        async fn start(behaviour: Behaviour) -> Self {
-            let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
-            let url = format!("http://{}", listener.local_addr().unwrap());
-            let seen = Arc::new(Mutex::new(Vec::new()));
-            let abandoned_discoveries = Arc::new(AtomicUsize::new(0));
-            let (log, abandoned) = (Arc::clone(&seen), Arc::clone(&abandoned_discoveries));
-            tokio::spawn(async move {
-                while let Ok((conn, _)) = listener.accept().await {
-                    tokio::spawn(serve(
-                        conn,
-                        behaviour,
-                        Arc::clone(&log),
-                        Arc::clone(&abandoned),
-                    ));
-                }
+    fn answer(behaviour: Behaviour, req: &Request) -> Reply {
+        let path = req.path.as_str();
+        if path == "/apis" && behaviour.hang_discovery {
+            return Reply::hang();
+        }
+        let secrets_ns = path
+            .strip_prefix("/api/v1/namespaces/")
+            .and_then(|rest| rest.strip_suffix("/secrets"));
+        if req.query.contains("watch=") {
+            if secrets_ns.is_some() && secrets_ns == behaviour.no_watch_in {
+                return Reply::json(403, FORBIDDEN);
+            }
+            return Reply::stream(if path == "/api/v1/pods" {
+                format!("{POD_ADDED}\n")
+            } else {
+                String::new()
             });
-            Self {
-                url,
-                seen,
-                abandoned_discoveries,
-            }
         }
-
-        /// Requests to `path` (any query).
-        fn count(&self, path: &str) -> usize {
-            self.seen
-                .lock()
-                .unwrap()
-                .iter()
-                .filter(|s| s.path == path)
-                .count()
-        }
-
-        fn requests(&self) -> Vec<Seen> {
-            self.seen.lock().unwrap().clone()
-        }
-    }
-
-    fn header<'a>(head: &'a str, name: &str) -> &'a str {
-        head.lines()
-            .filter_map(|line| line.split_once(':'))
-            .find(|(key, _)| key.trim().eq_ignore_ascii_case(name))
-            .map_or("", |(_, value)| value.trim())
-    }
-
-    async fn serve(
-        mut conn: TcpStream,
-        behaviour: Behaviour,
-        seen: Arc<Mutex<Vec<Seen>>>,
-        abandoned: Arc<AtomicUsize>,
-    ) {
-        let mut buf = Vec::new();
-        loop {
-            // One request head (GET, no body) at a time on a kept-alive connection.
-            let head_end = loop {
-                if let Some(end) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
-                    break end + 4;
-                }
-                let mut chunk = [0u8; 4096];
-                match conn.read(&mut chunk).await {
-                    Ok(0) | Err(_) => return,
-                    Ok(n) => buf.extend_from_slice(&chunk[..n]),
-                }
-            };
-            let head = String::from_utf8_lossy(&buf[..head_end]).into_owned();
-            buf.drain(..head_end);
-            let target = head.split_whitespace().nth(1).unwrap_or_default();
-            let (path, query) = target.split_once('?').unwrap_or((target, ""));
-            let aggregated =
-                behaviour.aggregated && header(&head, "accept").contains("apidiscovery");
-            seen.lock().unwrap().push(Seen {
-                path: path.to_owned(),
-                accept_encoding: header(&head, "accept-encoding").to_owned(),
-            });
-
-            if path == "/apis" {
-                if behaviour.hang_discovery {
-                    // Wait for the client to give up: a read returns 0 once it closes the connection.
-                    let mut chunk = [0u8; 64];
-                    while matches!(conn.read(&mut chunk).await, Ok(n) if n > 0) {}
-                    abandoned.fetch_add(1, Ordering::SeqCst);
-                    return;
-                }
-                tokio::time::sleep(behaviour.discovery_delay).await;
+        let aggregated = behaviour.aggregated && req.header("accept").contains("apidiscovery");
+        match path {
+            "/api" if aggregated => Reply::json(200, AGGREGATED_CORE),
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/api/v1" => Reply::json(200, CORE_RESOURCES),
+            "/apis" if aggregated => {
+                Reply::json(200, AGGREGATED_GROUPS).after(behaviour.discovery_delay)
             }
-            let secrets_ns = path
-                .strip_prefix("/api/v1/namespaces/")
-                .and_then(|rest| rest.strip_suffix("/secrets"));
-            if query.contains("watch=") {
-                if secrets_ns.is_some() && secrets_ns == behaviour.no_watch_in {
-                    if write(&mut conn, "403 Forbidden", FORBIDDEN).await.is_err() {
-                        return;
-                    }
-                    continue;
-                }
-                let first = if path == "/api/v1/pods" {
-                    let line = format!("{POD_ADDED}\n");
-                    format!("{:x}\r\n{line}\r\n", line.len())
-                } else {
-                    String::new()
-                };
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ntransfer-encoding: chunked\r\n\r\n{first}"
-                );
-                if conn.write_all(response.as_bytes()).await.is_err() {
-                    return;
-                }
-                futures::future::pending::<()>().await;
-            }
-            let secret_list;
-            let (status, body) = match path {
-                "/api" if aggregated => ("200 OK", AGGREGATED_CORE),
-                "/api" => ("200 OK", API_VERSIONS),
-                "/api/v1" => ("200 OK", CORE_RESOURCES),
-                "/apis" if aggregated => ("200 OK", AGGREGATED_GROUPS),
-                "/apis" => ("200 OK", API_GROUPS),
-                "/apis/demo.sextant.dev/v1" => ("200 OK", DEMO_RESOURCES),
-                "/apis/apiextensions.k8s.io/v1/customresourcedefinitions" => ("200 OK", CRD_LIST),
-                "/api/v1/pods" => ("200 OK", POD_LIST),
-                "/api/v1/nodes" => ("200 OK", NODE_LIST),
-                "/apis/demo.sextant.dev/v1/widgets" => ("200 OK", WIDGET_LIST),
-                _ => match secrets_ns {
-                    Some(ns) => {
-                        secret_list = format!(
-                            r#"{{"apiVersion":"v1","kind":"SecretList","metadata":{{"resourceVersion":"1"}},"items":[{{"metadata":{{"name":"s-{ns}","namespace":"{ns}","uid":"uid-{ns}","resourceVersion":"1"}}}}]}}"#
-                        );
-                        ("200 OK", secret_list.as_str())
-                    }
-                    None => ("404 Not Found", NOT_FOUND),
-                },
-            };
-            if write(&mut conn, status, body).await.is_err() {
-                return;
-            }
+            "/apis" => Reply::json(200, API_GROUPS).after(behaviour.discovery_delay),
+            "/apis/demo.sextant.dev/v1" => Reply::json(200, DEMO_RESOURCES),
+            "/apis/apiextensions.k8s.io/v1/customresourcedefinitions" => Reply::json(200, CRD_LIST),
+            "/api/v1/pods" => Reply::json(200, POD_LIST),
+            "/api/v1/nodes" => Reply::json(200, NODE_LIST),
+            "/apis/demo.sextant.dev/v1/widgets" => Reply::json(200, WIDGET_LIST),
+            _ => match secrets_ns {
+                Some(ns) => Reply::json(
+                    200,
+                    format!(
+                        r#"{{"apiVersion":"v1","kind":"SecretList","metadata":{{"resourceVersion":"1"}},"items":[{{"metadata":{{"name":"s-{ns}","namespace":"{ns}","uid":"uid-{ns}","resourceVersion":"1"}}}}]}}"#
+                    ),
+                ),
+                None => Reply::not_found(),
+            },
         }
-    }
-
-    async fn write(conn: &mut TcpStream, status: &str, body: &str) -> std::io::Result<()> {
-        let response = format!(
-            "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
-            body.len()
-        );
-        conn.write_all(response.as_bytes()).await
-    }
-
-    /// A manager connected to the fake server through a kubeconfig without credentials.
-    async fn connected_to(url: &str) -> (tempfile::TempDir, ClusterManager, ClusterId) {
-        let tmp = tempfile::tempdir().unwrap();
-        let path = tmp.path().join("kubeconfig");
-        std::fs::write(
-            &path,
-            format!(
-                "apiVersion: v1\nkind: Config\nclusters:\n- name: fake\n  cluster:\n    server: {url}\n\
-                 contexts:\n- name: fake\n  context:\n    cluster: fake\n    user: fake\n\
-                 users:\n- name: fake\n  user: {{}}\ncurrent-context: fake\n"
-            ),
-        )
-        .unwrap();
-        let registry =
-            KubeconfigRegistry::new(Vec::new(), tmp.path().join("state")).with_env(KubeconfigEnv {
-                kubeconfig: Some(path.into_os_string()),
-                home: None,
-            });
-        let id = registry.clusters().unwrap()[0].id.clone();
-        let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
-        mgr.connect(&id).await.unwrap();
-        (tmp, mgr, id)
     }
 
     fn names(items: &[Value]) -> Vec<&str> {
@@ -682,8 +539,8 @@ mod tests {
     #[tokio::test]
     async fn the_first_snapshot_is_sent_as_soon_as_it_is_listed_and_later_batches_keep_the_interval()
      {
-        let api = FakeApi::start(Behaviour::default()).await;
-        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let api = fake_api(Behaviour::default()).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
         // Discovery first, so that only the list itself is timed.
         mgr.kinds(&id).await.unwrap();
         let started = Instant::now();
@@ -727,13 +584,13 @@ mod tests {
     #[tokio::test]
     async fn ten_watches_started_at_once_on_a_cold_cache_share_one_discovery() {
         for aggregated in [true, false] {
-            let api = FakeApi::start(Behaviour {
+            let api = fake_api(Behaviour {
                 aggregated,
                 discovery_delay: Duration::from_millis(300),
                 ..Behaviour::default()
             })
             .await;
-            let (_tmp, mgr, id) = connected_to(&api.url).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
             let starts =
                 (0..10).map(|_| watch(&mgr, &id, spec("demo.sextant.dev", "Widget", None)));
             for started in futures::future::join_all(starts).await {
@@ -757,12 +614,12 @@ mod tests {
 
     #[tokio::test]
     async fn built_in_kinds_are_watched_without_discovery() {
-        let api = FakeApi::start(Behaviour {
+        let api = fake_api(Behaviour {
             aggregated: true,
             ..Behaviour::default()
         })
         .await;
-        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
         let before = api.requests().len();
         assert_eq!(
             names(&first_snapshot(&mgr, &id, spec("", "Node", None)).await),
@@ -787,12 +644,12 @@ mod tests {
     #[tokio::test]
     async fn discovery_lists_custom_kinds_without_downloading_the_crds() {
         for aggregated in [true, false] {
-            let api = FakeApi::start(Behaviour {
+            let api = fake_api(Behaviour {
                 aggregated,
                 ..Behaviour::default()
             })
             .await;
-            let (_tmp, mgr, id) = connected_to(&api.url).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
             let kinds = mgr.kinds(&id).await.unwrap();
             let found: Vec<(String, String, bool)> = kinds
                 .iter()
@@ -822,24 +679,27 @@ mod tests {
 
     #[tokio::test]
     async fn requests_accept_gzip() {
-        let api = FakeApi::start(Behaviour::default()).await;
-        let (_tmp, _mgr, _id) = connected_to(&api.url).await;
+        let api = fake_api(Behaviour::default()).await;
+        let (_tmp, _mgr, _id) = connected_to(api.url()).await;
         let first = api
             .requests()
             .into_iter()
             .next()
             .expect("the connection check");
-        assert!(first.accept_encoding.contains("gzip"), "{first:?}");
+        assert!(
+            first.header("accept-encoding").contains("gzip"),
+            "{first:?}"
+        );
     }
 
     #[tokio::test]
     async fn a_watch_given_up_during_discovery_cancels_the_discovery() {
-        let api = FakeApi::start(Behaviour {
+        let api = fake_api(Behaviour {
             hang_discovery: true,
             ..Behaviour::default()
         })
         .await;
-        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
         let given_up = tokio::time::timeout(
             Duration::from_millis(300),
             watch(&mgr, &id, spec("demo.sextant.dev", "Widget", None)),
@@ -847,7 +707,7 @@ mod tests {
         .await;
         assert!(given_up.is_err(), "discovery never answers");
         let deadline = Instant::now() + Duration::from_secs(5);
-        while api.abandoned_discoveries.load(Ordering::SeqCst) == 0 {
+        while api.abandoned() == 0 {
             assert!(
                 Instant::now() < deadline,
                 "the discovery request is still running"
@@ -858,12 +718,12 @@ mod tests {
 
     #[tokio::test]
     async fn a_namespace_that_can_be_listed_but_not_watched_is_left_out_and_the_others_stay() {
-        let api = FakeApi::start(Behaviour {
+        let api = fake_api(Behaviour {
             no_watch_in: Some("b"),
             ..Behaviour::default()
         })
         .await;
-        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
         let mut updates = Box::pin(
             watch(&mgr, &id, spec("", "Secret", Some(&["a", "b"])))
                 .await

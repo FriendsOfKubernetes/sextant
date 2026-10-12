@@ -1,5 +1,5 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KubeObject, MetricsStatus, NodeUsage } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { MainView } from "../../layout/main/MainView";
@@ -87,6 +87,30 @@ describe("Cluster overview", () => {
     serveMetrics(status());
     render(<MainView clusterId="c1" />);
     expect(await screen.findByRole("heading", { name: "Cluster overview" })).toBeInTheDocument();
+  });
+
+  it("while the cluster answers slowly shows what loads, the seconds and after 5 s that the cluster is slow", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      serveMetrics(status());
+      wb.backend.on("metrics_nodes", () => new Promise<NodeUsage[]>(() => undefined));
+      render(<MainView clusterId="c1" />);
+      const nodes = within(await screen.findByRole("region", { name: "Nodes" })).getByRole("status");
+      const pods = within(screen.getByRole("region", { name: "Pods" })).getByRole("status");
+      const warnings = within(screen.getByRole("region", { name: "Warnings" })).getByRole("status");
+      expect(nodes).toHaveTextContent(/^Loading Nodes…/);
+      expect(pods).toHaveTextContent(/^Loading Pods…/);
+      expect(warnings).toHaveTextContent(/^Loading warnings…/);
+      await waitFor(() => expect(screen.getByText("Loading metrics…")).toBeInTheDocument());
+      expect(screen.queryByText("The cluster is slow to respond")).not.toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(6_000));
+      expect(nodes).toHaveTextContent(/^Loading Nodes…\s*[67] s\s*The cluster is slow to respond$/);
+      expect(warnings).toHaveTextContent(/^Loading warnings…\s*[67] s\s*The cluster is slow to respond$/);
+      expect(screen.getByText("Loading metrics…").closest("[role=status]")).toHaveTextContent(/[67] s/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("shows nodes, pods by phase, workload statuses and the latest warnings", async () => {

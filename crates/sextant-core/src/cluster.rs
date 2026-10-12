@@ -560,6 +560,7 @@ fn push_kinds(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::fake_api::{FakeApi, Reply, Request};
     use crate::kubeconfig::KubeconfigEnv;
 
     /// A kubeconfig with one context `test` for `server`, user given as YAML lines under `user:`.
@@ -720,65 +721,32 @@ mod tests {
         assert!(!pauses(503, Some("Wed, 21 Oct 2026 07:28:00 GMT")).is_empty());
     }
 
-    /// A plain-HTTP API server on 127.0.0.1 that answers every request with `status` (and `Retry-After`, if given).
-    /// Returns its URL and the number of requests it got.
-    async fn always_answering(
-        status: u16,
-        retry_after: Option<&'static str>,
-    ) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let url = format!("http://{}", listener.local_addr().unwrap());
-        let requests = Arc::new(AtomicUsize::new(0));
-        let counter = Arc::clone(&requests);
-        tokio::spawn(async move {
-            while let Ok((mut socket, _)) = listener.accept().await {
-                let counter = Arc::clone(&counter);
-                tokio::spawn(async move {
-                    let mut buf = Vec::new();
-                    let mut chunk = [0u8; 4096];
-                    loop {
-                        // One response per request head (GET requests have no body).
-                        while let Some(end) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
-                            buf.drain(..end + 4);
-                            counter.fetch_add(1, Ordering::SeqCst);
-                            let body = format!(
-                                r#"{{"kind":"Status","apiVersion":"v1","status":"Failure","message":"try later","code":{status}}}"#
-                            );
-                            let extra = retry_after
-                                .map(|v| format!("Retry-After: {v}\r\n"))
-                                .unwrap_or_default();
-                            let response = format!(
-                                "HTTP/1.1 {status} Try Later\r\nContent-Type: application/json\r\nContent-Length: {}\r\n{extra}\r\n{body}",
-                                body.len()
-                            );
-                            if socket.write_all(response.as_bytes()).await.is_err() {
-                                return;
-                            }
-                        }
-                        match socket.read(&mut chunk).await {
-                            Ok(0) | Err(_) => return,
-                            Ok(n) => buf.extend_from_slice(&chunk[..n]),
-                        }
-                    }
-                });
+    /// A fake API server that answers every request with `status` (and `Retry-After`, if given).
+    async fn always_answering(status: u16, retry_after: Option<&'static str>) -> FakeApi {
+        FakeApi::start(move |_: &Request| {
+            let reply = Reply::json(
+                status,
+                format!(
+                    r#"{{"kind":"Status","apiVersion":"v1","status":"Failure","message":"try later","code":{status}}}"#
+                ),
+            );
+            match retry_after {
+                Some(value) => reply.with_header("Retry-After", value),
+                None => reply,
             }
-        });
-        (url, requests)
+        })
+        .await
     }
 
     #[tokio::test]
     async fn the_client_repeats_429_503_504_at_most_3_times_within_about_5_seconds() {
-        use std::sync::atomic::Ordering;
         for status in [429, 503, 504] {
-            let (url, requests) = always_answering(status, None).await;
-            let (_dir, mgr, id) = manager(&kubeconfig(&url, "      token: abc\n"));
+            let api = always_answering(status, None).await;
+            let (_dir, mgr, id) = manager(&kubeconfig(api.url(), "      token: abc\n"));
             let started = std::time::Instant::now();
             let err = mgr.connect(&id).await.unwrap_err();
             let elapsed = started.elapsed();
-            let sent = requests.load(Ordering::SeqCst);
+            let sent = api.requests().len();
             assert!(
                 (2..=4).contains(&sent),
                 "{status}: {sent} requests (first + at most 3 repeats)"
@@ -793,12 +761,11 @@ mod tests {
 
     #[tokio::test]
     async fn the_client_gives_up_at_once_when_retry_after_exceeds_the_budget() {
-        use std::sync::atomic::Ordering;
-        let (url, requests) = always_answering(503, Some("30")).await;
-        let (_dir, mgr, id) = manager(&kubeconfig(&url, "      token: abc\n"));
+        let api = always_answering(503, Some("30")).await;
+        let (_dir, mgr, id) = manager(&kubeconfig(api.url(), "      token: abc\n"));
         let started = std::time::Instant::now();
         let err = mgr.connect(&id).await.unwrap_err();
-        assert_eq!(requests.load(Ordering::SeqCst), 1, "{err}");
+        assert_eq!(api.requests().len(), 1, "{err}");
         assert!(
             started.elapsed() < Duration::from_secs(2),
             "took {:?}",

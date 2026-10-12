@@ -723,6 +723,7 @@ fn preview_of(pods: &[Pod]) -> DrainPreview {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::fake_api::connected_to;
 
     fn pod(name: &str, extra: Value) -> Pod {
         let mut value = json!({ "metadata": { "name": name, "namespace": "ns" } });
@@ -794,17 +795,9 @@ mod tests {
 
     /// A fake API server on localhost (plain HTTP) for the multi-step changes: discovery of pods, nodes and
     /// ConfigMaps; node `n1` with pods `ns/a`, `ns/b`, `ns/c` (all controlled by a ReplicaSet). The eviction of `b`
-    /// and the apply of ConfigMap `two` never get an answer. Every request line is recorded.
+    /// and the apply of ConfigMap `two` never get an answer. Every request is recorded.
     mod fake {
-        use std::sync::{Arc, Mutex, RwLock};
-
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio::net::{TcpListener, TcpStream};
-
-        use crate::cluster::ClusterManager;
-        use crate::kubeconfig::{ClusterId, KubeconfigEnv, KubeconfigRegistry};
-
-        pub type Requests = Arc<Mutex<Vec<String>>>;
+        use crate::fake_api::{FakeApi, Reply, Request};
 
         const API_VERSIONS: &str =
             r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
@@ -813,7 +806,6 @@ mod tests {
             {"name":"nodes","singularName":"node","namespaced":false,"kind":"Node","verbs":["get","list","patch"]},
             {"name":"configmaps","singularName":"configmap","namespaced":true,"kind":"ConfigMap","verbs":["get","patch"]}]}"#;
         const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[]}"#;
-        const NOT_FOUND: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#;
         const NODE: &str = r#"{"apiVersion":"v1","kind":"Node","metadata":{"name":"n1"},"spec":{"unschedulable":true}}"#;
         const EVICTED: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Success"}"#;
 
@@ -837,106 +829,30 @@ mod tests {
             )
         }
 
-        /// The server's URL and the record of its requests ("PATCH /api/v1/nodes/n1").
-        pub async fn server() -> (String, Requests) {
-            let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
-            let url = format!("http://{}", listener.local_addr().unwrap());
-            let requests = Requests::default();
-            let record = Arc::clone(&requests);
-            tokio::spawn(async move {
-                while let Ok((conn, _)) = listener.accept().await {
-                    tokio::spawn(serve(conn, Arc::clone(&record)));
+        fn answer(req: &Request) -> Reply {
+            match (req.method.as_str(), req.path.as_str()) {
+                ("GET", "/api") => Reply::json(200, API_VERSIONS),
+                ("GET", "/api/v1") => Reply::json(200, CORE_RESOURCES),
+                ("GET", "/apis") => Reply::json(200, API_GROUPS),
+                ("PATCH", "/api/v1/nodes/n1") => Reply::json(200, NODE),
+                ("GET", "/api/v1/pods") => Reply::json(200, pod_list()),
+                ("POST", "/api/v1/namespaces/ns/pods/b/eviction")
+                | ("PATCH", "/api/v1/namespaces/ns/configmaps/two") => Reply::hang(),
+                ("POST", p) if p.ends_with("/eviction") => Reply::json(201, EVICTED),
+                ("PATCH", p) if p.starts_with("/api/v1/namespaces/ns/configmaps/") => {
+                    Reply::json(200, config_map(p.rsplit('/').next().unwrap_or_default()))
                 }
-            });
-            (url, requests)
-        }
-
-        async fn serve(mut conn: TcpStream, requests: Requests) {
-            let mut buf = Vec::new();
-            loop {
-                let head_end = loop {
-                    if let Some(end) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
-                        break end + 4;
-                    }
-                    let mut chunk = [0u8; 4096];
-                    match conn.read(&mut chunk).await {
-                        Ok(0) | Err(_) => return,
-                        Ok(n) => buf.extend_from_slice(&chunk[..n]),
-                    }
-                };
-                let head = String::from_utf8_lossy(&buf[..head_end]).into_owned();
-                buf.drain(..head_end);
-                let length: usize = head
-                    .lines()
-                    .filter_map(|l| l.split_once(':'))
-                    .find(|(k, _)| k.eq_ignore_ascii_case("content-length"))
-                    .and_then(|(_, v)| v.trim().parse().ok())
-                    .unwrap_or(0);
-                while buf.len() < length {
-                    let mut chunk = [0u8; 4096];
-                    match conn.read(&mut chunk).await {
-                        Ok(0) | Err(_) => return,
-                        Ok(n) => buf.extend_from_slice(&chunk[..n]),
-                    }
-                }
-                buf.drain(..length);
-                let mut words = head.split_whitespace();
-                let method = words.next().unwrap_or_default().to_owned();
-                let target = words.next().unwrap_or_default();
-                let path = target.split('?').next().unwrap_or_default().to_owned();
-                requests.lock().unwrap().push(format!("{method} {path}"));
-                let (status, body) = match (method.as_str(), path.as_str()) {
-                    ("GET", "/api") => ("200 OK", API_VERSIONS.to_owned()),
-                    ("GET", "/api/v1") => ("200 OK", CORE_RESOURCES.to_owned()),
-                    ("GET", "/apis") => ("200 OK", API_GROUPS.to_owned()),
-                    ("PATCH", "/api/v1/nodes/n1") => ("200 OK", NODE.to_owned()),
-                    ("GET", "/api/v1/pods") => ("200 OK", pod_list()),
-                    ("POST", "/api/v1/namespaces/ns/pods/b/eviction")
-                    | ("PATCH", "/api/v1/namespaces/ns/configmaps/two") => {
-                        // No answer, ever.
-                        futures::future::pending::<()>().await;
-                        return;
-                    }
-                    ("POST", p) if p.ends_with("/eviction") => ("201 Created", EVICTED.to_owned()),
-                    ("PATCH", p) if p.starts_with("/api/v1/namespaces/ns/configmaps/") => (
-                        "200 OK",
-                        config_map(p.rsplit('/').next().unwrap_or_default()),
-                    ),
-                    _ => ("404 Not Found", NOT_FOUND.to_owned()),
-                };
-                let response = format!(
-                    "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
-                    body.len()
-                );
-                if conn.write_all(response.as_bytes()).await.is_err() {
-                    return;
-                }
+                _ => Reply::not_found(),
             }
         }
 
-        /// A manager connected to `url` through a kubeconfig without credentials.
-        pub async fn connected_to(url: &str) -> (tempfile::TempDir, ClusterManager, ClusterId) {
-            let tmp = tempfile::tempdir().unwrap();
-            let path = tmp.path().join("kubeconfig");
-            std::fs::write(
-                &path,
-                format!(
-                    "apiVersion: v1\nkind: Config\nclusters:\n- name: fake\n  cluster:\n    server: {url}\n\
-                     contexts:\n- name: fake\n  context:\n    cluster: fake\n    user: fake\n\
-                     users:\n- name: fake\n  user: {{}}\ncurrent-context: fake\n"
-                ),
-            )
-            .unwrap();
-            let registry = KubeconfigRegistry::new(Vec::new(), tmp.path().join("state")).with_env(
-                KubeconfigEnv {
-                    kubeconfig: Some(path.into_os_string()),
-                    home: None,
-                },
-            );
-            let id = registry.clusters().unwrap()[0].id.clone();
-            let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
-            mgr.connect(&id).await.unwrap();
-            (tmp, mgr, id)
+        pub async fn server() -> FakeApi {
+            FakeApi::start(answer).await
+        }
+
+        /// The request lines so far ("PATCH /api/v1/nodes/n1").
+        pub fn lines(api: &FakeApi) -> Vec<String> {
+            api.requests().iter().map(Request::line).collect()
         }
     }
 
@@ -945,8 +861,8 @@ mod tests {
 
     #[tokio::test]
     async fn a_drain_cut_by_the_timeout_names_the_evicted_pods_and_the_pods_not_sent() {
-        let (url, requests) = fake::server().await;
-        let (_tmp, mgr, id) = fake::connected_to(&url).await;
+        let api = fake::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
         let result = tokio::time::timeout(
             Duration::from_secs(10),
             drain_within(&mgr, &id, "n1", DrainOptions::default(), TEST_STEP),
@@ -958,7 +874,7 @@ mod tests {
         assert!(err.message.contains("eviction of ns/b"), "{err}");
         assert!(err.message.contains("evicted: ns/a;"), "{err}");
         assert!(err.message.contains("not sent: ns/c"), "{err}");
-        let requests = requests.lock().unwrap().clone();
+        let requests = fake::lines(&api);
         assert!(
             !requests.contains(&"POST /api/v1/namespaces/ns/pods/c/eviction".to_owned()),
             "{requests:?}"
@@ -967,8 +883,8 @@ mod tests {
 
     #[tokio::test]
     async fn an_apply_cut_by_the_timeout_names_what_was_applied_and_what_was_not_sent() {
-        let (url, requests) = fake::server().await;
-        let (_tmp, mgr, id) = fake::connected_to(&url).await;
+        let api = fake::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
         let yaml = ["one", "two", "three"]
             .map(|name| {
                 format!(
@@ -997,7 +913,7 @@ mod tests {
                 .contains("(not sent: document 3 (ConfigMap three))"),
             "{err}"
         );
-        let requests = requests.lock().unwrap().clone();
+        let requests = fake::lines(&api);
         assert!(
             !requests.contains(&"PATCH /api/v1/namespaces/ns/configmaps/three".to_owned()),
             "{requests:?}"

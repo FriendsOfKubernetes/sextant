@@ -9,7 +9,8 @@
 # .msi with the updater key (secrets TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD; the public
 # half is `plugins.updater.pubkey` in src-tauri/tauri.conf.json). tauri-action uploads the .sig files and merges
 # every platform into the release asset `latest.json`; the publish job checks that all platforms are there, puts
-# the release notes into it and only then publishes. Installed apps read
+# the release notes into it and only then publishes. The notes list the closed issues of the milestone named like
+# the tag (v0.2.0). A rebuild of an older tag does not become the "latest" release. Installed apps read
 # https://github.com/<repo>/releases/latest/download/latest.json, so an update reaches them once it is published.
 #
 # To rebuild the release of an already pushed tag without moving it: Actions -> Release -> Run workflow, input `tag`.
@@ -39,10 +40,10 @@ jobs:
     outputs:
       release-id: ${{ steps.create.outputs.release-id }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: refs/tags/${{ inputs.tag || github.ref_name }}
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
       - name: Check that the tag equals the version in the manifests
@@ -70,6 +71,25 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent \
             || { echo "::error::Tag $TAG does not exist in $GITHUB_REPOSITORY"; exit 1; }
 
+          # The closed issues of the milestone named like the tag (v0.2.0), as a Markdown list; empty without one.
+          closed_issues() {
+            local number
+            number=$(gh api --paginate "repos/$GITHUB_REPOSITORY/milestones?state=all&per_page=100" \
+              --jq '.[] | select(.title == env.TAG) | .number')
+            number=$(printf '%s\n' "$number" | sed -n '1p')
+            if [ -z "$number" ]; then
+              echo "::warning::No milestone $TAG: the release notes list no closed issues" >&2
+              return 0
+            fi
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/issues?milestone=$number&state=closed&sort=created&direction=asc&per_page=100" \
+              --jq '.[] | select((.pull_request | not) and .state_reason != "not_planned") | "- \(.title) (#\(.number))"'
+          }
+          issues_heading="## Closed issues"
+          issues=$(closed_issues)
+          issues_section=""
+          [ -n "$issues" ] && issues_section=$(printf '%s\n\n%s\n' "$issues_heading" "$issues")
+
           id=""
           for attempt in 1 2 3; do
             id=$(find_release)
@@ -80,12 +100,20 @@ jobs:
           if [ -z "$id" ]; then
             echo "No release for $TAG yet, creating a draft"
             notes="Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY#installing) for how to open them on macOS and Windows. Sextant 0.2.0 and later installed from the AppImage, .dmg or .msi update themselves (Settings → Updates); a .deb is updated with the package manager."
+            [ -n "$issues_section" ] && notes=$(printf '%s\n\n%s' "$notes" "$issues_section")
             # The id comes straight from the creation response, not from the (possibly lagging) list.
             id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
               -f tag_name="$TAG" -f name="Sextant $TAG" -f body="$notes" \
               -F draft=true -F generate_release_notes=true --jq '.id')
           else
             echo "Found existing release $id for $TAG"
+            # Made before the milestone was closed (or by hand): add the list once.
+            body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$id" --jq '.body // ""')
+            if [ -n "$issues_section" ] && ! grep -qxF "$issues_heading" <<<"$body"; then
+              echo "Adding the closed issues of milestone $TAG to the release notes"
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" \
+                -f body="$(printf '%s\n\n%s' "$body" "$issues_section")" --silent
+            fi
           fi
 
           if ! [[ "$id" =~ ^[0-9]+$ ]]; then
@@ -113,7 +141,7 @@ jobs:
             args: --bundles msi
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: refs/tags/${{ inputs.tag || github.ref_name }}
 
@@ -124,23 +152,23 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libxdo-dev libssl-dev build-essential file patchelf
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
         with:
           # A universal macOS app needs both architectures.
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       - name: Install npm packages
         run: npm ci
 
       - name: Build installers and upload them to the release
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Signs the updater artifacts (bundle.createUpdaterArtifacts); without the key the build fails.
@@ -244,8 +272,32 @@ jobs:
             "https://uploads.github.com/$api/$RELEASE_ID/assets?name=latest.json" > /dev/null
           echo "latest.json: version $(jq -r .version latest.new.json), platforms $(jq -r '.platforms | keys | join(", ")' latest.new.json)"
 
-      - name: Publish (no longer a draft)
+      # Installed apps update from the "latest" release: a rebuild of an older tag must not take that place.
+      - name: Publish (no longer a draft; latest only if no newer release is)
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.create-release.outputs.release-id }}
-        run: gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -f make_latest=true --silent
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # The tag of the current latest release; none (404) before the first one. Any other failure stops here:
+          # on an error gh prints the error's JSON to stdout, which must never pass for a tag.
+          if current=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name' 2>gh-error.txt); then
+            if ! [[ "$current" =~ ^v[0-9] ]]; then
+              echo "::error::The latest release has an unexpected tag: '$current'"
+              exit 1
+            fi
+          elif grep -qF "(HTTP 404)" gh-error.txt; then
+            current=""
+          else
+            cat gh-error.txt
+            echo "::error::Could not read the latest release"
+            exit 1
+          fi
+          # Version order: `sort -V` with the pre-release dash as `~`, so v0.2.0-rc.1 is older than v0.2.0.
+          order_key() { printf '%s\n' "$1" | sed 's/^v//; s/-/~/'; }
+          newest=$(printf '%s\n%s\n' "$(order_key "${current:-$TAG}")" "$(order_key "$TAG")" | sort -V | tail -n 1)
+          if [ "$newest" = "$(order_key "$TAG")" ]; then make_latest=true; else make_latest=false; fi
+          echo "Latest release now: ${current:-none}; $TAG becomes latest: $make_latest"
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -F draft=false -f make_latest="$make_latest" --silent

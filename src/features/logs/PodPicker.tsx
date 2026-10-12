@@ -1,7 +1,7 @@
 // "Logs" on a Deployment, StatefulSet, DaemonSet or Job: choose which of its pods to read.
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KubeObject } from "../../api";
-import { Dialog, EmptyState, ErrorState } from "../../components";
+import { Dialog, EmptyState, ErrorState, LoadingIndicator } from "../../components";
 import { openLogsTab, POD_KIND } from "./openLogsTab";
 import { labelSelectorOf } from "./selector";
 
@@ -27,7 +27,7 @@ export function PodPicker({ clusterId, workload, close }: PodPickerProps) {
   let body;
   if (!selector) body = <EmptyState title={t("logs:picker.noSelector")} />;
   else if (watch.status === "error") body = <ErrorState error={watch.error} />;
-  else if (watch.status === "loading") body = <p>{t("logs:picker.loading")}</p>;
+  else if (watch.status === "loading") body = <LoadingIndicator text={t("logs:picker.loading")} />;
   else if (pods.length === 0) body = <EmptyState title={t("logs:picker.none")} />;
   else {
     body = (

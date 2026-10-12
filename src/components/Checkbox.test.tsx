@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { Checkbox } from "./Checkbox";
 
 // Read from disk: the test run does not process CSS (`css: false`).
-const checkboxCss = readFileSync(join(process.cwd(), "src/components/Table/checkbox.css"), "utf8");
+const checkboxCss = readFileSync(join(process.cwd(), "src/components/checkbox.css"), "utf8");
 const globalCss = readFileSync(join(process.cwd(), "src/styles/global.css"), "utf8");
 
 /** The declarations of the first rule whose selector list is exactly `selector`. */

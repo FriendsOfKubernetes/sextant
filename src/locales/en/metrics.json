@@ -73,7 +73,8 @@
     "charts": "Last hour",
     "warnings": "Warnings",
     "noWarnings": "No warnings.",
-    "loading": "Loading…",
+    "loadingPage": "Loading the cluster overview…",
+    "loadingWarnings": "Loading warnings…",
     "phase": {
       "Running": "Running",
       "Pending": "Pending",

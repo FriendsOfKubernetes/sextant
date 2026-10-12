@@ -1,0 +1,44 @@
+/* Loading indicator: "Loading Nodes… 7 s", and after 5 s that the cluster is slow. */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+}
+
+.loading-indicator__line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-indicator__spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: loading-indicator-spin 0.9s linear infinite;
+}
+
+.loading-indicator__seconds {
+  font-variant-numeric: tabular-nums;
+}
+
+.loading-indicator__slow {
+  color: var(--color-warning);
+  font-size: 12px;
+}
+
+@keyframes loading-indicator-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-indicator__spinner {
+    animation: none;
+  }
+}

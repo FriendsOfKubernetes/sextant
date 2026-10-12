@@ -109,11 +109,19 @@ git clone https://github.com/FriendsOfKubernetes/sextant.git
 cd sextant
 npm install
 npm run tauri dev      # run in development mode
-npm run tauri build    # build installers into target/release/bundle/
+# build installers into target/release/bundle/, without the in-app update files:
+npm run tauri -- build --config '{"bundle":{"createUpdaterArtifacts":false}}'
 ```
 
-On Linux `npm run tauri build` produces `.deb`, `.rpm` and `.AppImage` packages; on macOS `.app`/`.dmg`; on Windows
-`.msi` and an NSIS installer.
+The installers are built with the in-app updater on (`bundle.createUpdaterArtifacts` in `src-tauri/tauri.conf.json`):
+a plain `npm run tauri build` signs the update files with the project's private key from
+`TAURI_SIGNING_PRIVATE_KEY` and fails without it. The key is kept only in the repository's release workflow, so a
+build of your own turns the update files off as above. The installed build still offers the official releases as
+updates; installing one replaces it with the official build. In PowerShell write the option as
+`--config '{\"bundle\":{\"createUpdaterArtifacts\":false}}'`.
+
+On Linux the build produces `.deb`, `.rpm` and `.AppImage` packages; on macOS `.app`/`.dmg`; on Windows `.msi` and
+an NSIS installer.
 
 ## Development
 
@@ -173,7 +181,8 @@ The version lives in `Cargo.toml` (`[workspace.package]`), `src-tauri/tauri.conf
 both lock files); `npm run check` fails when they differ (`node scripts/check-version.mjs`). Pushing a tag `v*`
 equal to that version (for example `v0.2.0`) runs [`release.yml`](.github/workflows/release.yml): it refuses a tag
 that does not match, builds the installers for the three systems, signs the update bundles and publishes them with
-`latest.json` for the in-app updater as a GitHub Release. Signing needs the repository secrets
+`latest.json` for the in-app updater as a GitHub Release whose notes list the closed issues of the milestone named
+like the tag. A rebuild of an older tag (Actions → Release → Run workflow) does not become the latest release. Signing needs the repository secrets
 `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (the private half of the key whose public half
 is `plugins.updater.pubkey`); a local `npm run tauri build` without them fails at signing — build with
 `npm run tauri -- build --no-bundle`, or pass `--config '{"bundle":{"createUpdaterArtifacts":false}}'`. Every push

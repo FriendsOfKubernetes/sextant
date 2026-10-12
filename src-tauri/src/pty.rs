@@ -1097,7 +1097,9 @@ mod tests {
             .session
             .input
             .blocking_send(
-                b"history | sed 's/^ *[0-9]* */H:/'; shopt inherit_errexit; echo \"HF=[$HISTFILE]\"\n"
+                // `IE=[]`: a bash before 4.4 (macOS has 3.2) has no `inherit_errexit`.
+                b"history | sed 's/^ *[0-9]* */H:/'; echo \"IE=[$(shopt inherit_errexit 2>/dev/null)]\"; \
+                  echo \"HF=[$HISTFILE]\"\n"
                     .to_vec(),
             )
             .unwrap();
@@ -1110,11 +1112,19 @@ mod tests {
             text.contains("H:echo from-the-bash-history"),
             "the user's history is not loaded: {text}"
         );
-        assert!(
-            text.split(['\r', '\n'])
-                .any(|l| l.starts_with("inherit_errexit") && l.ends_with("off")),
-            "{text}"
-        );
+        // The echoed command line has `IE=[$`; only the output has `IE=[]` or `IE=[inherit_errexit…]`.
+        let inherit_errexit = text
+            .split(['\r', '\n'])
+            .find_map(|l| l.strip_prefix("IE=[").filter(|rest| !rest.starts_with('$')))
+            .unwrap_or_else(|| panic!("no shopt output: {text}"));
+        if inherit_errexit == "]" {
+            eprintln!("inherit_errexit not checked: this bash does not know it");
+        } else {
+            assert!(
+                inherit_errexit.starts_with("inherit_errexit") && inherit_errexit.ends_with("off]"),
+                "{text}"
+            );
+        }
     }
 
     #[cfg(unix)]

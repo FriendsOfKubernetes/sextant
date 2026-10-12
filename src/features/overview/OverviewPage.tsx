@@ -4,7 +4,7 @@
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
-import { Age, ErrorState } from "../../components";
+import { Age, ErrorState, LoadingIndicator } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { status } from "../../resources";
 import { byNewest, EVENT_KIND, InvolvedObjectLink } from "../events";
@@ -98,8 +98,8 @@ export function OverviewPage({ clusterId }: PageProps) {
   const namespaces = useSelectedNamespaces(clusterId);
   if (namespaces === undefined) {
     return (
-      <div className="ov" role="status">
-        {t("metrics:overview.loading")}
+      <div className="ov">
+        <LoadingIndicator className="ov__loading" text={t("metrics:overview.loadingPage")} />
       </div>
     );
   }
@@ -211,7 +211,7 @@ function Card({ title, watch, children }: { title: string; watch?: WatchState; c
   const { t } = useTranslation();
   let body = children;
   if (watch?.status === "error") body = <ErrorState error={watch.error} />;
-  else if (watch?.status === "loading") body = <div className="ov__sub">{t("metrics:overview.loading")}</div>;
+  else if (watch?.status === "loading") body = <LoadingIndicator text={t("resources:loading.kind", { kind: title })} />;
   return (
     <section className="ov__card" aria-label={title}>
       <h3 className="ov__heading">{title}</h3>
@@ -251,7 +251,7 @@ function UsageCard({ clusterId, nodes }: { clusterId: ClusterId; nodes: KubeObje
 
   let body: ReactNode;
   if (usageUnavailable(metricsStatus, usage)) body = <MetricsUnavailable clusterId={clusterId} />;
-  else if (!usage.data) body = <div className="ov__sub">{t("metrics:overview.loading")}</div>;
+  else if (!usage.data) body = <LoadingIndicator text={t("metrics:loading")} />;
   else {
     let cpu = 0;
     let memory = 0;
@@ -315,7 +315,7 @@ function Warnings({ watch }: { watch: WatchState }) {
   const { t } = useTranslation();
   const latest = useMemo(() => [...watch.items.values()].sort(byNewest).slice(0, WARNING_LIMIT), [watch.items]);
   if (watch.status === "error") return <ErrorState error={watch.error} />;
-  if (watch.status === "loading") return <div className="ov__sub">{t("metrics:overview.loading")}</div>;
+  if (watch.status === "loading") return <LoadingIndicator text={t("metrics:overview.loadingWarnings")} />;
   if (latest.length === 0) return <div className="ov__sub">{t("metrics:overview.noWarnings")}</div>;
   return (
     <ul className="events-list ov__warnings">

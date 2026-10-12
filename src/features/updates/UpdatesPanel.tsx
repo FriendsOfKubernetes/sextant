@@ -2,7 +2,7 @@
 // update found. Without an update signing key in the build everything is off and the section says why.
 import { useTranslation } from "react-i18next";
 import { api, useSettings, type AppSettings } from "../../api";
-import { Checkbox } from "../../components/Table";
+import { Checkbox } from "../../components";
 import { checkForUpdates, useAppInfo, useUpdates } from "./store";
 import { ReleasePageButton, UpdateDetails, UpdateError } from "./UpdateDetails";
 import "./updates.css";

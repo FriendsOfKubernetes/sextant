@@ -3,8 +3,7 @@
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { errorKey, useSettings, type ClusterInfo, type CoreError } from "../../api";
-import { EmptyState } from "../../components";
-import { useElapsedSeconds, SLOW_AFTER_S } from "../../components/Table";
+import { EmptyState, SLOW_AFTER_S, useElapsedSeconds } from "../../components";
 import { AddFileButton, PasteButton, SourceError } from "./AddClusterDialog";
 import { displayNameOf } from "./clusterSettings";
 import { connectCluster, disconnectCluster, openClusterSettings, useClustersStore } from "./clustersStore";

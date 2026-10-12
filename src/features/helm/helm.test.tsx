@@ -126,6 +126,23 @@ describe("Helm pages", () => {
 });
 
 describe("Releases", () => {
+  it("while the releases load shows what loads, the seconds and after 5 s that the cluster is slow", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      helmBackend();
+      wb.backend.on("helm_releases", () => new Promise<HelmRelease[]>(() => undefined));
+      renderPage("helm-releases");
+      const status = await screen.findByRole("status");
+      expect(status).toHaveTextContent(/^Loading releases…/);
+      expect(screen.queryByText("The cluster is slow to respond")).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(6_000));
+      expect(status).toHaveTextContent(/^Loading releases…\s*[67] s/);
+      expect(screen.getByText("The cluster is slow to respond")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("lists the releases of the selected namespaces and refreshes when their Secrets change", async () => {
     helmBackend();
     renderPage("helm-releases");

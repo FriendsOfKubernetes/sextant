@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { HelmRelease } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { Age, Badge, EmptyState, ErrorState } from "../../components";
+import { Age, Badge, EmptyState, ErrorState, LoadingIndicator } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { NamespaceFilter, useSelectedNamespaces } from "../namespaces";
 import { HelmMissing } from "./HelmMissing";
@@ -60,9 +60,7 @@ export function ReleasesPage({ clusterId }: PageProps) {
       <div className="helm-page__body">
         <div className="helm-page__list">
           {loading && releases.length === 0 && !error ? (
-            <div className="helm-muted" role="status">
-              {t("helm:releases.loading")}
-            </div>
+            <LoadingIndicator text={t("helm:releases.loading")} />
           ) : releases.length === 0 && !error ? (
             <EmptyState title={t("helm:releases.empty")} text={t("helm:releases.emptyText")} />
           ) : shown.length === 0 && !error ? (

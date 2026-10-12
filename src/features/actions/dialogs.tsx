@@ -14,8 +14,7 @@ import {
   type PodRef,
 } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Dialog, ErrorState } from "../../components";
-import { Checkbox } from "../../components/Table";
+import { Checkbox, Dialog, ErrorState } from "../../components";
 
 /** "demo/web" for a namespaced object, "node-1" otherwise. */
 export function displayName(r: ObjectRef): string {

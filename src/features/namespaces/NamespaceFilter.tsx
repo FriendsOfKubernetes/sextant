@@ -3,8 +3,7 @@ import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
-import { usePopup } from "../../components";
-import { Checkbox } from "../../components/Table";
+import { Checkbox, usePopup } from "../../components";
 import { selectNamespaces } from "./namespaces";
 import "./namespaces.css";
 

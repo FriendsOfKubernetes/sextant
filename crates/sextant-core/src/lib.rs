@@ -10,6 +10,8 @@
 pub mod cluster;
 pub mod error;
 pub mod exec;
+#[cfg(test)]
+mod fake_api;
 pub mod helm;
 pub mod kubeconfig;
 pub mod logs;

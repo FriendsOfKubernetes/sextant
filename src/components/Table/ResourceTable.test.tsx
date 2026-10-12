@@ -291,6 +291,35 @@ describe("ResourceTable", () => {
     }
   });
 
+  it("counts a new watch after a change of namespaces from its own start, also while still loading", () => {
+    vi.useFakeTimers();
+    try {
+      const askedAt = Date.now() - 6_000;
+      render(<ResourceTable clusterId="c1" kind={POD} loadingSince={askedAt} />);
+      act(() => vi.advanceTimersByTime(1_000));
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Pods…\s*7 s/);
+
+      act(() => useAppStore.getState().setNamespaces("c1", ["team-a"]));
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Pods…$/);
+      expect(screen.queryByText("The cluster is slow to respond")).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(2_000));
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Pods…\s*2 s$/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("counts a new watch after a change of namespaces from its own start when the table was already shown", async () => {
+    const askedAt = Date.now() - 60_000;
+    render(<ResourceTable clusterId="c1" kind={POD} loadingSince={askedAt} />);
+    await snapshot([pod(1)]);
+    expect(names()).toEqual(["pod-0001"]);
+
+    act(() => useAppStore.getState().setNamespaces("c1", ["team-a"]));
+    expect(screen.getByRole("status")).toHaveTextContent(/^Loading Pods…$/);
+    expect(screen.queryByText("The cluster is slow to respond")).not.toBeInTheDocument();
+  });
+
   it("says when the selected namespaces have no objects", async () => {
     act(() => useAppStore.getState().setNamespaces("c1", ["empty-ns"]));
     render(<ResourceTable clusterId="c1" kind={POD} />);

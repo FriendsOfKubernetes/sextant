@@ -27,11 +27,11 @@ import { getActionsFor, runAction, useActionsVersion, type RegisteredAction } fr
 import { refOf } from "../../resources/refs";
 import { useResourceDef, type ActionId, type CellContext, type ColumnDef } from "../../resources/registry";
 import { Badge } from "../Badge";
-import { Checkbox } from "./Checkbox";
+import { Checkbox } from "../Checkbox";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
 import { usePopup } from "../usePopup";
-import { LoadingIndicator } from "./LoadingIndicator";
+import { LoadingIndicator } from "../LoadingIndicator";
 import { matchesSearch } from "./search";
 import "./table.css";
 
@@ -62,7 +62,10 @@ export interface ResourceTableProps {
   defaultSort?: { id: string; desc?: boolean } | null;
   /** Discovery entry of the kind (printer columns and scope of custom resources). */
   resourceKind?: ResourceKind | null;
-  /** When the table was asked for (`Date.now()`): the loading indicator counts from it. Default: its first render. */
+  /**
+   * When the table was asked for (`Date.now()`): the loading indicator of its first watch counts from it (default: its
+   * first render); a later watch (other namespaces) counts from its own start.
+   */
   loadingSince?: number;
 }
 
@@ -98,6 +101,20 @@ function ariaSortOf(sorted: false | "asc" | "desc"): "ascending" | "descending" 
   return undefined;
 }
 
+/**
+ * When the current watch began: `askedAt` for the first one (the table was asked for before it mounted), the moment
+ * of the change for each later one (other namespaces, selectors or cluster) — a new watch is a new wait.
+ */
+function useWatchStart(watchKey: string, askedAt: number | undefined): number | undefined {
+  const [start, setStart] = useState({ watchKey, since: askedAt });
+  if (start.watchKey !== watchKey) {
+    const next = { watchKey, since: Date.now() };
+    setStart(next);
+    return next.since;
+  }
+  return start.since;
+}
+
 interface MenuState {
   x: number;
   y: number;
@@ -130,6 +147,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     [kind, namespaced, namespaces, props.labelSelector, props.fieldSelector],
   );
   const watch = useWatch(clusterId, spec);
+  const loadingSince = useWatchStart(JSON.stringify([clusterId, spec]), props.loadingSince);
 
   const data = useMemo(
     () => [...watch.items.values()].filter((obj) => matchesSearch(obj, search)),
@@ -248,7 +266,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       <LoadingIndicator
         className="rt__loading"
         text={t("resources:loading.kind", { kind: title })}
-        since={props.loadingSince}
+        since={loadingSince}
       />
     );
   } else if (rows.length === 0) {

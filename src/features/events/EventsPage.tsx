@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { Age } from "../../components";
+import { Age, LoadingIndicator } from "../../components";
 import { ResourceTable } from "../../components/Table";
 import type { PageProps } from "../../layout/pages";
 import { ObjectLink, type ColumnDef } from "../../resources";
@@ -79,9 +79,7 @@ export function EventsPage({ clusterId }: PageProps) {
   const setSearch = useAppStore((s) => s.setSearch);
   if (namespaces === undefined) {
     return (
-      <div className="rt__loading" role="status">
-        {t("events:loading")}
-      </div>
+      <LoadingIndicator className="rt__loading" text={t("events:loading")} />
     );
   }
   return (
