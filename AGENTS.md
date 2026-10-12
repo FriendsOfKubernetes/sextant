@@ -6,44 +6,54 @@
 Перед всем: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Всё ниже запускать из корня репозитория.
 
 - Установка: `npm ci`
-- Всё сразу (CI делает то же): `npm run check` — fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, тесты Rust, сверка TS-типов, tsc (+ `e2e/`), eslint, vitest. Зелёный: Rust 195, vitest 283.
+- Всё сразу (CI делает то же): `npm run check` — сверка имён файлов по регистру, `check:version`, fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, тесты Rust, сверка TS-типов, tsc (+ `e2e/`), eslint, vitest. Зелёный: Rust 280, vitest 387.
 - Запуск: `npm run tauri dev` (Vite на 1420, `strictPort`)
-- Установщики: `npm run tauri build`; бинарь без бандла: `npm run tauri -- build --debug --no-bundle` → `target/debug/sextant`
+- Установщики: `npm run tauri build` — нужен ключ подписи обновлений (см. «Подводные камни»); без ключа: `npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'`. Бинарь без бандла: `npm run tauri -- build --debug --no-bundle` → `target/debug/sextant`
+- Версия во всех манифестах: `npm run check:version`; совпадение с тегом релиза: `node scripts/check-version.mjs --tag vX.Y.Z`
 - Один тест: `cargo test -p sextant-core <имя>` · `npx vitest run <файл>`
 - Перегенерировать TS-типы из Rust: `npm run gen:types`
 - Тестовый кластер (kind `sextant-test`, нужны `kind`, `kubectl`, docker): `scripts/test-cluster.sh up` (`up --prometheus` — ещё Prometheus в `monitoring`), `scripts/test-cluster.sh kubeconfig` (путь, по умолчанию `~/.cache/sextant-test/kubeconfig`), `scripts/test-cluster.sh down`
-- Интеграционные тесты ядра против кластера: `SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --tests -- --test-threads=1`
+- Нагрузочная фикстура (150 CRD и 500 подов в неймспейсе `sextant-load`; нужна тесту `the_first_nodes_come_within_2_seconds_on_a_big_cluster`, без неё он пропускается): `scripts/fixtures/load/load.sh apply`, после замера `scripts/fixtures/load/load.sh delete`
+- Интеграционные тесты ядра против кластера: `SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --tests -- --test-threads=1` → 203 passed
 - E2E (WebdriverIO + tauri-driver, нужны `tauri-driver` и `webkit2gtk-driver`, кластер с `--prometheus`): `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` → 13 passing; без переменной сам собирает debug-бинарь. Скриншоты падений — `target/e2e/`.
 
 ## Где что
 
 - Архитектура, поток данных, границы модулей, реестры, соглашения: `docs/architecture.md`
-- Решения и их причины: `docs/adr/` (0001–0012); словарь предметной области: `CONTEXT.md`
-- Ядро (kubeconfig, watch, действия, логи, exec, port-forward, метрики, Helm, настройки): `crates/sextant-core/src/`; его интеграционные тесты: `crates/sextant-core/tests/<feature>.rs` + `tests/common/mod.rs`
-- Tauri-слой: команды `src-tauri/src/commands/<feature>.rs`, регистрация всех команд — `src-tauri/src/lib.rs` (`with_commands`), состояние и закрытие подписок — `src-tauri/src/state.rs`, PTY — `src-tauri/src/pty.rs`; тест на каждую команду — `src-tauri/tests/commands.rs`
-- Фронтенд-мост к backend: `src/api/` (`commands.ts`, `events.ts`, `stream.ts`, `mockBackend.ts`); типы — `src/api/generated/`
-- Фичи: `src/features/<name>/index.ts` (подхватываются сами, `src/app/features.ts`); таблицы и виды ресурсов — `src/resources/`; оболочка и реестры страниц/дока/деталей — `src/layout/`; UI-состояние — `src/app/store.ts`
+- Решения и их причины: `docs/adr/` (0001–0023; 0013–0023 — решения сборки 0.2.0); словарь предметной области: `CONTEXT.md`
+- Ядро (kubeconfig, discovery, watch, действия, логи, exec, port-forward, метрики, Helm, настройки): `crates/sextant-core/src/`; его интеграционные тесты: `crates/sextant-core/tests/<feature>.rs` + `tests/common/mod.rs`; юнит-тесты ядра без кластера ходят в поддельный API-сервер `crates/sextant-core/src/fake_api.rs` (`#[cfg(test)]`: `FakeApi::start(|req| Reply…)`, `connected_to(url)`)
+- Tauri-слой: команды `src-tauri/src/commands/<feature>.rs`, регистрация всех команд и плагинов (в т.ч. updater) — `src-tauri/src/lib.rs`, состояние и закрытие подписок — `src-tauri/src/state.rs`, PTY — `src-tauri/src/pty.rs`, окно и выход — `src-tauri/src/window.rs`, права плагинов — `src-tauri/capabilities/`; тест на каждую команду — `src-tauri/tests/commands.rs`
+- Фронтенд-мост к backend: `src/api/` (`commands.ts`, `events.ts`, `stream.ts`, `transport.ts`, `updater.ts`, `mockBackend.ts`); типы — `src/api/generated/`
+- Фичи: `src/features/<name>/index.ts` (подхватываются сами, `src/app/features.ts`); обновления приложения — `src/features/updates/` (проверка при старте, раздел Settings); таблицы и виды ресурсов — `src/resources/`; оболочка и реестры страниц/дока/деталей — `src/layout/`; UI-состояние — `src/app/store.ts`
+- Общие компоненты без знания о Kubernetes (`Checkbox`, `LoadingIndicator`, `Dialog`, `ConfirmDialog`, `ErrorState`, `Badge`, `Age`, `usePopup`) — `src/components/` (импорт из `src/components/index.ts`); таблица ресурсов — `src/components/Table/`
 - Строки интерфейса: `src/locales/en/<namespace>.json`; тестовый кластер и фикстуры: `scripts/`; E2E: `e2e/`; CI: `.github/workflows/ci.yml`, `release.yml`
 
 ## Подводные камни
 
 - `target/` раздувается до десятков ГБ (при проверке — 35 ГБ) из-за отладочной информации; для локальных сборок и проверок: `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 npm run check`.
 - Интеграционные тесты без `SEXTANT_TEST_KUBECONFIG` молча пропускаются и считаются пройденными (в stderr только «skipped»); зелёный `cargo test --workspace` без кластера ничего не доказывает про кластер. Тесты с остановкой контейнера kind (`connect.rs`, `watch.rs`) — только при `SEXTANT_TEST_DOCKER_RESTART=1`.
+- Крейт `sextant` встраивает собранный фронтенд из `dist/`: на чистом клоне перед `npm run check` нужен `npm run build` (CI делает так же).
 - `src/api/generated/` руками не править: `npm run check` сверяет его с тем, что генерирует Rust. Тип стал пересекать границу — `serde(rename_all = "camelCase")` + `ts-rs`, затем `npm run gen:types` и коммит результата.
 - Имена команд и событий в генерацию не входят: добавляя команду, правь вручную `src-tauri/src/lib.rs` (`generate_handler!`), `src/api/commands.ts` и `src-tauri/tests/commands.rs`; опечатка видна только в тесте или в рантайме.
-- Литералы строк в JSX запрещены eslint (`i18next/no-literal-string`); строка идёт через `src/locales/en/<ns>.json`, значение поля собирается вне JSX. `@tauri-apps/*` вне `src/api/` тоже запрещён eslint.
+- Литералы строк в JSX запрещены eslint (`i18next/no-literal-string`); строка идёт через `src/locales/en/<ns>.json`, значение поля собирается вне JSX. `@tauri-apps/*` вне `src/api/` тоже запрещён eslint (плагины — через `transport.ts`).
 - `sextant-core` не должен тянуть `tauri` и `portable-pty`: процессы ОС (`helm`) — за фичей `desktop`; нарушение ловит `node scripts/check-core-deps.mjs`.
-- Стримы: фронтенд вешает `listen` после `*_start`, поэтому backend придерживает ранний вывод: watch — батчи по 250 мс, логи — первая пачка через 300 мс (`LISTENER_GRACE`), терминал — до первого `term_resize`/`term_input`. Новый стрим без такой задержки и теста теряет вывод.
+- Стримы (watch, логи, терминал): id создаёт фронтенд, `openStream` (`src/api/stream.ts`) вешает `listen("<префикс>:<id>")` до `*_start(…, streamId)`, поэтому backend ничего не придерживает: первый снапшот watch уходит сразу, дальше пачки не чаще 250 мс (`BATCH_INTERVAL`), логи — 100 мс. Не добавляй задержек и не запускай стрим мимо `openStream`. id — `[A-Za-z0-9_-]`, ≤128, занятый или неверный — `invalid` (`check_stream_id`). Страница при загрузке один раз вызывает `streams_reset` (`resetStreams()`), старт, переживший сброс, отклоняется (`AppState::undo_if_reset`); команда `*_start` регистрирует подписку в `AppState` до работы ядра (`start_watch`), иначе остановка во время старта её не прервёт.
 - Новая подписка, стрим или сессия должна жить в `AppState` (`src-tauri/src/state.rs`), иначе `close_cluster` и закрытие окна её не закроют.
-- Фича подключается только через `src/features/<name>/index.ts` (`import.meta.glob`); каталог без `index.ts` в приложение не попадёт.
-- `settings_update` не перезаписывает то, что пишет backend (`kubeconfigSources`, размеры окна): новое backend-поле нужно добавить в `update_settings` (`src-tauri/src/commands/settings.rs`).
+- Значения Secret вырезаются в ядре (`resources::get::to_json`: значения `""`, аннотация `sextant.dev/values-hidden`, без last-applied), поэтому их нет ни в watch, ни в `resource_get`. Полное значение — только `secret_value` (один ключ) и `resource_get_full` (для редактора). `resource_replace`/`resource_apply` отвергают объект с аннотацией-маркером (`ensure_values_present` в `Document::from_value`) — не убирай этот вызов при правке `mutate.rs`.
+- Discovery одна на кластер (`ClusterManager::kinds`, общий результат для всех ждущих); `ResourceKind.printerColumns` из неё всегда пуст — колонки CRD читаются лениво одним CRD (`useCrdPrinterColumns` в `src/resources/crdColumns.ts`). Встроенные виды (`BUILT_IN_KINDS` в `crates/sextant-core/src/resources/get.rs`) открываются без discovery. CRD в сайдбаре берутся из discovery: новый CRD виден после переподключения.
+- `WatchSpec.metadata_only` (TS `metadataOnly`) отдаёт только `{apiVersion, kind, metadata}`; для списков, которым нужны одни метаданные (релизы Helm), а не целые объекты.
+- Время ожидания: подключение — 10 с на соединение и 20 с на проверку; изменения под `CHANGE_TIMEOUT` = 30 с на запрос (`src-tauri/src/commands/actions.rs`: scale, restart, cordon, trigger, suspend, replace, delete); drain и apply нескольких документов — по 30 с на каждый запрос (`resources::STEP_TIMEOUT`), без лимита на всю операцию. `timeout` не отменяет операцию на сервере. Клиент сам повторяет 429/503/504 не более 3 раз и не дольше 5 с (`cluster::RetryPolicy`; kube-овский `server_retry` выключен) и только запросы с клонируемым телом.
+- `settings_update` не перезаписывает то, что пишет backend (`kubeconfigSources`, размеры окна): новое backend-поле нужно добавить в `update_settings` (`src-tauri/src/commands/settings.rs`). Нечитаемый `settings.json` не перезаписывается (копия `.bak-…`, `settings_status`).
 - Все ошибки kube — через `error::kube_error` (вырезает секреты exec-плагина); `helm` запускать только через `HelmCli::command()` (чистит `HELM_KUBE*` и `KUBECONFIG`); настоящий helm в `src-tauri/tests/commands.rs` не запускается.
+- Временный kubeconfig терминала живёт в `TermSession.guard` и удаляется синхронно при остановке сессии; файлы `sextant-kubeconfig-*` после падения чистятся при старте (`remove_stale_temp_kubeconfigs`), каталоги `sextant-shell-*` — нет.
+- Фича подключается только через `src/features/<name>/index.ts` (`import.meta.glob`); каталог без `index.ts` в приложение не попадёт. Нативных чекбоксов нет: используй `Checkbox` из `src/components`.
+- Версия приложения записана в пяти местах (`Cargo.toml` `[workspace.package]`, `Cargo.lock`, `src-tauri/tauri.conf.json`, `package.json`, `package-lock.json`) и должна совпадать с тегом релиза; поднимай все сразу и проверяй `npm run check:version`.
+- Обновления: `bundle.createUpdaterArtifacts` включено в `src-tauri/tauri.conf.json`, поэтому релизная сборка подписывает артефакты ключом из `TAURI_SIGNING_PRIVATE_KEY` (+ `_PASSWORD`) и без него падает; локально — сборка с `--config` из «Команд». Публичный ключ — `plugins.updater.pubkey` в `tauri.conf.json`: без ключа или endpoint плагин не регистрируется (`updater_configured` в `src-tauri/src/lib.rs`, то же правило — `updaterConfiguredIn` в `src/api/updater.ts`), а интерфейс показывает обновления выключенными. Потеря приватного ключа — установленные копии не примут обновлений (ADR-0022).
+- `TypeScript` закреплён на `~6.0` (ограничение typescript-eslint) — не обновлять вслепую.
 - E2E: `e2e/wdio.conf.ts` зашивает порт tauri-driver 4444, native-port не задан (по умолчанию 4445); если порты заняты или совпали, driver падает при старте — помогает `tauri-driver --port 4447 --native-port 4448` (в конфиге сейчас не прописано).
 - E2E: WebKitWebDriver теряет повторы и пробелы в `browser.keys` (для текста есть `typeText` в `e2e/app.ts`) и неверно печатает `/` и `:` — такие символы через `browser.keys` не вводить.
-- TypeScript закреплён на `~6.0` (ограничение typescript-eslint) — не обновлять вслепую.
-- CI (`ci.yml`) срабатывает на push и PR в ветку `main`, три ОС, `core.autocrlf false`; по записям сборки ни разу не запускался на GitHub.
-- macOS и Windows здесь не проверить — только CI. Что ломалось там и не видно на Linux: имена файлов, различающиеся только регистром (ловит `scripts/check-case-collisions.mjs`), GNU-only утилиты в тестовых скриптах (`stat -c`), `/proc`, `Path::is_absolute` по правилам хоста, путь `tauri://localhost` в тестах IPC (на Windows — `http://tauri.localhost`), хэши путей с `/`.
-- Релиз: тег `v*` или ручной запуск `gh workflow run release.yml -f tag=vX.Y.Z` (пересобрать существующий тег без его переписывания).
+- CI (`ci.yml`) срабатывает на push и PR в ветку `main` и вручную, на ubuntu, macOS и Windows, `core.autocrlf false`. macOS и Windows здесь не проверить — только CI. Что ломалось там и не видно на Linux: имена файлов, различающиеся только регистром (ловит `scripts/check-case-collisions.mjs`), GNU-only утилиты в тестовых скриптах (`stat -c`), `/proc`, `Path::is_absolute` по правилам хоста, путь `tauri://localhost` в тестах IPC (на Windows — `http://tauri.localhost`), хэши путей с `/`.
+- Релиз: тег `v*` или ручной запуск `gh workflow run release.yml -f tag=vX.Y.Z` (пересобрать существующий тег без его переписывания). `release.yml` сверяет тег с версией, собирает .deb/.AppImage, универсальный .dmg и .msi, собирает `latest.json` и публикует релиз только если в нём есть все платформы; установщики не подписаны сертификатами ОС.
 
 ## Окружение
 
@@ -60,6 +70,7 @@
 - `TAURI_DEV_HOST` — хост dev-сервера Vite для запуска на мобильных устройствах
 - `CARGO_PROFILE_DEV_DEBUG`, `CARGO_INCREMENTAL` — отключают отладочную информацию и инкрементальную сборку, чтобы `target/` не разрастался
 - `METRICS_SERVER_URL` — откуда `scripts/test-cluster.sh` берёт манифест metrics-server
+- `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — секреты репозитория GitHub (только в GitHub Actions, `release.yml`): ключ подписи обновлений и его пароль; локально и в `.env.example` их нет
 
 ## Как здесь работает Autopilot
 
