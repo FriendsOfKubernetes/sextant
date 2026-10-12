@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, errorKey, toApiError, type ApiError, type ArgoStatus, type ClusterId, type ManagedResource, type ObjectRef } from "../../../api";
 import { Dialog, LoadingIndicator } from "../../../components";
+import { ambiguousInstallationText, isAmbiguousInstallation } from "../server";
 import { DiffView } from "./DiffView";
 import { LoginForm } from "./LoginForm";
 
@@ -125,9 +126,10 @@ function DiffError({ error, onRetry }: { error: ApiError; onRetry: () => void })
         : error.code === "notFound"
           ? "argocd:diff.errors.notFound"
           : errorKey(error.code);
+  const text = isAmbiguousInstallation(error) ? ambiguousInstallationText(error) : t(key);
   return (
     <div className="argo-diff__error" role="alert">
-      <p>{t(key)}</p>
+      <p>{text}</p>
       {error.message && <p className="argo-login__detail">{error.message}</p>}
       <button type="button" className="btn" onClick={onRetry}>
         {t("argocd:diff.retry")}

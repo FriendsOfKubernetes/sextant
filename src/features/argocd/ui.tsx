@@ -1,51 +1,12 @@
-// Small building blocks of the Argo CD details: a field list labelled from `argocd:fields.*`, chips, status words.
-// Values are prepared outside JSX (the i18n lint rule forbids string literals there).
+// Small building blocks of the Argo CD details: status words, times, links. The field list and chips are the
+// details panel's own (`Fields` with the prefix `argocd:fields`, `chips`). Values are prepared outside JSX (the i18n
+// lint rule forbids string literals there).
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
 import { Age } from "../../components";
 import { ObjectLink, StatusText } from "../../resources";
 import type { Tone } from "../../resources/status";
 
-/** `[key under argocd:fields, value]`; rows with an empty value are left out. */
-export type ArgoFieldRow = readonly [key: string, value: ReactNode];
-
 const isEmpty = (value: ReactNode) => value === null || value === undefined || value === false || value === "";
-
-export function ArgoFields({ rows }: { rows: ArgoFieldRow[] }) {
-  const { t } = useTranslation();
-  const shown = rows.filter(([, value]) => !isEmpty(value));
-  if (shown.length === 0) return null;
-  return (
-    <dl className="dt-fields">
-      {shown.map(([key, value]) => (
-        <FieldRow key={key} label={t(`argocd:fields.${key}`)} value={value} />
-      ))}
-    </dl>
-  );
-}
-
-function FieldRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <>
-      <dt className="dt-fields__label">{label}</dt>
-      <dd className="dt-fields__value">{value}</dd>
-    </>
-  );
-}
-
-export function chipList(values: (string | undefined)[]): ReactNode {
-  const list = values.filter((v): v is string => Boolean(v));
-  if (list.length === 0) return null;
-  return (
-    <span className="dt-chips">
-      {list.map((v, i) => (
-        <span key={`${i}:${v}`} className="dt-chip">
-          {v}
-        </span>
-      ))}
-    </span>
-  );
-}
 
 export function statusWord(value: string | undefined, tone: (v: string) => Tone): ReactNode {
   return value ? <StatusText value={value} tone={tone(value)} /> : null;

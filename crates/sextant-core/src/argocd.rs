@@ -8,6 +8,7 @@
 //! cross to the frontend (no type here that the frontend receives carries one). Values of Kubernetes Secrets in the
 //! resource states are hidden the same way `resources::get::to_json` hides them.
 
+use std::collections::BTreeSet;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
@@ -20,6 +21,7 @@ use http_body_util::{BodyExt, Full, Limited};
 use hyper::body::Bytes;
 use hyper_util::rt::TokioIo;
 use k8s_openapi::api::core::v1::{ConfigMap, Secret, Service};
+use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
 use kube::Api;
 use kube::api::ListParams;
 use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
@@ -36,7 +38,7 @@ use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::ClusterId;
 
-/// Namespace Argo CD is installed into when no `argocd-server` Service says otherwise.
+/// Namespace Argo CD's own manifests install it into; preferred among several candidates (see `installation_namespace`).
 pub const DEFAULT_NAMESPACE: &str = "argocd";
 /// Label of the `argocd-server` Service in the official manifests and the Helm chart.
 pub const SERVER_SELECTOR: &str = "app.kubernetes.io/name=argocd-server";
@@ -46,6 +48,9 @@ pub const INITIAL_ADMIN_SECRET: &str = "argocd-initial-admin-secret";
 pub const PART_OF_SELECTOR: &str = "app.kubernetes.io/part-of=argocd";
 /// Argo CD's settings: `admin.enabled`, local `accounts.*`, SSO (`dex.config`, `oidc.config`).
 pub const SETTINGS_CONFIG_MAP: &str = "argocd-cm";
+/// How the `notFound` error of [`find_server`] begins when several namespaces look like an Argo CD installation and
+/// nothing a namespace's tenant cannot create tells the real one.
+pub const AMBIGUOUS_INSTALLATION: &str = "ambiguous Argo CD installation";
 
 /// One request to the Argo CD API (connect, TLS, answer).
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
@@ -175,37 +180,36 @@ pub struct LoginOptions {
     pub sso: bool,
 }
 
-/// Finds the `argocd-server` Service: in any namespace by its label, otherwise `argocd/argocd-server`. The port is
-/// the one named `https` (or 443), otherwise the first.
+/// Finds the `argocd-server` Service of the Argo CD installation: only in the namespace Argo CD is installed in
+/// ([`installation_namespace`]) — by its label, otherwise by the name `argocd-server`. A Service with the same label
+/// in any other namespace is never chosen, so the password typed in the sign-in window and the credentials of the
+/// installation's Secrets (read from the same namespace) go to the installation's own server only. The port is the
+/// one named `https` (or 443), otherwise the first.
 pub async fn find_server(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<ArgoServer> {
     let client = mgr.client(cluster)?;
-    let labelled = Api::<Service>::all(client.clone())
+    let namespace = installation_namespace(&client).await?;
+    let api = Api::<Service>::namespaced(client, &namespace);
+    let mut services = match api
         .list(&ListParams::default().labels(SERVER_SELECTOR))
-        .await;
-    // No right to list Services in every namespace: look where Argo CD usually is.
-    let mut services = match labelled {
+        .await
+    {
         Ok(list) => list.items,
         Err(err) => absent_as_none(kube_error(err, None))?.unwrap_or_default(),
     };
     if services.is_empty() {
-        let usual = Api::<Service>::namespaced(client, DEFAULT_NAMESPACE)
-            .get("argocd-server")
-            .await;
-        match usual {
+        match api.get("argocd-server").await {
             Ok(svc) => services.push(svc),
             Err(err) => absent_as_none::<()>(kube_error(err, None)).map(|_| ())?,
         }
     }
-    // Prefer the usual namespace, then by name, so the choice does not change between calls.
-    services.sort_by_key(|svc| {
-        let ns = svc.metadata.namespace.clone().unwrap_or_default();
-        (ns != DEFAULT_NAMESPACE, ns, svc.metadata.name.clone())
-    });
+    // By name, so the choice does not change between calls.
+    services.sort_by_key(|svc| svc.metadata.name.clone());
     let not_found = || {
         CoreError::new(
             ErrorCode::NotFound,
             format!(
-                "Argo CD server not found: no Service with the label {SERVER_SELECTOR} and no {DEFAULT_NAMESPACE}/argocd-server"
+                "Argo CD server not found: no Service with the label {SERVER_SELECTOR} and no argocd-server in \
+                 {namespace}"
             ),
         )
     };
@@ -217,10 +221,122 @@ pub async fn find_server(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResul
         .or_else(|| ports.first())
         .ok_or_else(not_found)?;
     Ok(ArgoServer {
-        namespace: svc.metadata.namespace.unwrap_or_default(),
-        name: svc.metadata.name.unwrap_or_default(),
+        name: svc.metadata.name.clone().unwrap_or_default(),
         port: u16::try_from(port.port).map_err(|_| not_found())?,
+        namespace,
     })
+}
+
+/// The namespace Argo CD is installed in. A tenant who may write only in their own namespace can put an `argocd-cm`,
+/// a labelled Service and a token Secret there, so those alone do not decide:
+///
+/// 1. A cluster-wide installation is named by a ClusterRoleBinding of its `argocd-application-controller` or
+///    `argocd-server` (official manifests, Helm chart: `<release>-argocd-…`) to the component's ServiceAccount —
+///    cluster-scoped, so a namespace's tenant cannot create one. The namespace of that ServiceAccount (narrowed to
+///    the namespaces holding `argocd-cm` / `argocd-initial-admin-secret`, when some of them do) is the installation.
+/// 2. Without such a binding (a namespaced installation, or no right to list ClusterRoleBindings) the namespaces
+///    holding `argocd-cm` or `argocd-initial-admin-secret` are the candidates.
+///
+/// Out of the namespaces left: the only one, else [`DEFAULT_NAMESPACE`] when it is one of them; several others are a
+/// `notFound` error beginning with [`AMBIGUOUS_INSTALLATION`] that names them — none is picked. No namespace at all
+/// gives [`DEFAULT_NAMESPACE`]. Only names are read (metadata), never a Secret's values.
+async fn installation_namespace(client: &kube::Client) -> CoreResult<String> {
+    let marked = marked_namespaces(client).await?;
+    let candidates = candidate_namespaces(client).await?;
+    if marked.is_empty() {
+        return choose_namespace(candidates, "");
+    }
+    let live: BTreeSet<String> = marked.intersection(&candidates).cloned().collect();
+    choose_namespace(
+        if live.is_empty() { marked } else { live },
+        " named by ClusterRoleBindings of argocd-application-controller / argocd-server",
+    )
+}
+
+/// Argo CD components whose ClusterRoleBinding marks the namespace of a cluster-wide installation.
+const MARKING_COMPONENTS: [&str; 2] = ["argocd-application-controller", "argocd-server"];
+
+/// `name` is `component` or ends with `-<component>` (the Helm chart prefixes the release name).
+fn is_component(name: &str, component: &str) -> bool {
+    name == component
+        || name
+            .strip_suffix(component)
+            .is_some_and(|prefix| prefix.ends_with('-'))
+}
+
+/// Namespaces of the ServiceAccounts bound by the ClusterRoleBindings of [`MARKING_COMPONENTS`]; empty when there are
+/// none or they cannot be listed.
+async fn marked_namespaces(client: &kube::Client) -> CoreResult<BTreeSet<String>> {
+    let bindings = match Api::<ClusterRoleBinding>::all(client.clone())
+        .list(&ListParams::default())
+        .await
+    {
+        Ok(list) => list.items,
+        Err(err) => absent_as_none(kube_error(err, None))?.unwrap_or_default(),
+    };
+    let mut namespaces = BTreeSet::new();
+    for binding in bindings {
+        let name = binding.metadata.name.as_deref().unwrap_or_default();
+        let Some(component) = MARKING_COMPONENTS
+            .into_iter()
+            .find(|c| is_component(name, c))
+        else {
+            continue;
+        };
+        namespaces.extend(
+            binding
+                .subjects
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|s| s.kind == "ServiceAccount" && is_component(&s.name, component))
+                .filter_map(|s| s.namespace.filter(|ns| !ns.is_empty())),
+        );
+    }
+    Ok(namespaces)
+}
+
+/// The installation out of `namespaces` (see [`installation_namespace`]); `why` says where they came from.
+fn choose_namespace(namespaces: BTreeSet<String>, why: &str) -> CoreResult<String> {
+    if namespaces.len() <= 1 || namespaces.contains(DEFAULT_NAMESPACE) {
+        return Ok(if namespaces.len() == 1 {
+            namespaces.into_iter().next().unwrap_or_default()
+        } else {
+            DEFAULT_NAMESPACE.to_owned()
+        });
+    }
+    let names: Vec<String> = namespaces.into_iter().collect();
+    Err(CoreError::new(
+        ErrorCode::NotFound,
+        format!(
+            "{AMBIGUOUS_INSTALLATION}: several namespaces look like it ({}){why}, and nothing a namespace's tenant \
+             cannot create (a ClusterRoleBinding of argocd-application-controller or argocd-server) tells the real \
+             one; Sextant does not pick one",
+            names.join(", ")
+        ),
+    ))
+}
+
+/// Namespaces holding an `argocd-cm` or `argocd-initial-admin-secret`; empty when they cannot be listed.
+async fn candidate_namespaces(client: &kube::Client) -> CoreResult<BTreeSet<String>> {
+    let by_name = |name: &str| ListParams::default().fields(&format!("metadata.name={name}"));
+    let settings = Api::<ConfigMap>::all(client.clone())
+        .list_metadata(&by_name(SETTINGS_CONFIG_MAP))
+        .await;
+    let admin_secret = Api::<Secret>::all(client.clone())
+        .list_metadata(&by_name(INITIAL_ADMIN_SECRET))
+        .await;
+    let mut namespaces = BTreeSet::new();
+    for listed in [
+        settings.map(|l| l.items.into_iter().map(|o| o.metadata).collect::<Vec<_>>()),
+        admin_secret.map(|l| l.items.into_iter().map(|o| o.metadata).collect::<Vec<_>>()),
+    ] {
+        let found = match listed {
+            Ok(items) => items,
+            Err(err) => absent_as_none(kube_error(err, None))?.unwrap_or_default(),
+        };
+        namespaces.extend(found.into_iter().filter_map(|meta| meta.namespace));
+    }
+    Ok(namespaces)
 }
 
 /// The first password of `admin` from `argocd-initial-admin-secret` (key `password`), `None` when the Secret or the
@@ -230,9 +346,19 @@ pub async fn initial_admin_password(
     cluster: &ClusterId,
     namespace: &str,
 ) -> CoreResult<Option<SecretString>> {
+    Ok(initial_admin_secret(mgr, cluster, namespace)
+        .await?
+        .and_then(|secret| secret_key(&secret, "password")))
+}
+
+async fn initial_admin_secret(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    namespace: &str,
+) -> CoreResult<Option<Secret>> {
     let api = Api::<Secret>::namespaced(mgr.client(cluster)?, namespace);
     match api.get(INITIAL_ADMIN_SECRET).await {
-        Ok(secret) => Ok(secret_key(&secret, "password")),
+        Ok(secret) => Ok(Some(secret)),
         Err(err) => absent_as_none(kube_error(err, None)),
     }
 }
@@ -257,15 +383,44 @@ pub async fn standard_credentials(
     cluster: &ClusterId,
     namespace: &str,
 ) -> CoreResult<Vec<Credentials>> {
+    let found = standard_credentials_with_origin(mgr, cluster, namespace).await?;
+    Ok(found
+        .into_iter()
+        .map(|(_, credentials)| credentials)
+        .collect())
+}
+
+/// [`standard_credentials`], each with the Secret it came from as `<namespace>/<name>@<resourceVersion>`: a changed
+/// Secret gives a new origin, so a caller can tell a credential Argo CD already refused from a new one.
+pub async fn standard_credentials_with_origin(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    namespace: &str,
+) -> CoreResult<Vec<(String, Credentials)>> {
+    let origin = |secret: &Secret| {
+        format!(
+            "{namespace}/{}@{}",
+            secret.metadata.name.as_deref().unwrap_or_default(),
+            secret
+                .metadata
+                .resource_version
+                .as_deref()
+                .unwrap_or_default()
+        )
+    };
     let mut found = Vec::new();
     let settings = settings(mgr, cluster, namespace).await?;
     if admin_enabled(&settings)
-        && let Some(password) = initial_admin_password(mgr, cluster, namespace).await?
+        && let Some(secret) = initial_admin_secret(mgr, cluster, namespace).await?
+        && let Some(password) = secret_key(&secret, "password")
     {
-        found.push(Credentials::Password {
-            username: "admin".into(),
-            password,
-        });
+        found.push((
+            origin(&secret),
+            Credentials::Password {
+                username: "admin".into(),
+                password,
+            },
+        ));
     }
     let api = Api::<Secret>::namespaced(mgr.client(cluster)?, namespace);
     let mut secrets = match api
@@ -276,12 +431,9 @@ pub async fn standard_credentials(
         Err(err) => absent_as_none(kube_error(err, None))?.unwrap_or_default(),
     };
     secrets.sort_by(|a, b| a.metadata.name.cmp(&b.metadata.name));
-    found.extend(
-        secrets
-            .iter()
-            .filter_map(|s| secret_key(s, "token"))
-            .map(|token| Credentials::Token { token }),
-    );
+    found.extend(secrets.iter().filter_map(|secret| {
+        secret_key(secret, "token").map(|token| (origin(secret), Credentials::Token { token }))
+    }));
     Ok(found)
 }
 
@@ -300,7 +452,7 @@ pub async fn sign_in(
     for (source, credentials) in candidates {
         match client.login(&credentials).await {
             Ok(session) => return Ok((session, source, credentials)),
-            Err(err) if matches!(err.code, ErrorCode::Unauthorized | ErrorCode::Forbidden) => {}
+            Err(err) if is_refusal(&err) => {}
             Err(err) => return Err(err),
         }
     }
@@ -308,6 +460,11 @@ pub async fn sign_in(
         ErrorCode::Unauthorized,
         "sign in to Argo CD: the saved login and the standard secrets were refused",
     ))
+}
+
+/// Argo CD refused the credentials of a sign-in (as opposed to not being reachable).
+pub fn is_refusal(err: &CoreError) -> bool {
+    matches!(err.code, ErrorCode::Unauthorized | ErrorCode::Forbidden)
 }
 
 /// A client of the Argo CD API behind a local port forward. It talks only to `127.0.0.1`, over TLS without checking
@@ -1127,13 +1284,13 @@ mod tests {
                 ),
                 "/api/v1/namespaces/argocd/secrets/argocd-initial-admin-secret" if admin_secret => Reply::json(
                     200,
-                    json!({ "apiVersion": "v1", "kind": "Secret", "metadata": { "name": INITIAL_ADMIN_SECRET }, "data": { "password": b64("initial-pw") } }).to_string(),
+                    json!({ "apiVersion": "v1", "kind": "Secret", "metadata": { "name": INITIAL_ADMIN_SECRET, "namespace": "argocd", "resourceVersion": "7" }, "data": { "password": b64("initial-pw") } }).to_string(),
                 ),
                 "/api/v1/namespaces/argocd/secrets" if req.query.contains("part-of") => Reply::json(
                     200,
                     json!({ "apiVersion": "v1", "kind": "SecretList", "metadata": {}, "items": [
                         { "metadata": { "name": "argocd-secret" }, "data": { "admin.password": b64("$2a$10$hash") } },
-                        { "metadata": { "name": "ci-token" }, "data": { "token": b64("api-token\n") } }
+                        { "metadata": { "name": "ci-token", "namespace": "argocd", "resourceVersion": "9" }, "data": { "token": b64("api-token\n") } }
                     ]}).to_string(),
                 ),
                 _ => Reply::not_found(),
@@ -1162,6 +1319,27 @@ mod tests {
         let found = standard_credentials(&mgr, &id, "argocd").await.unwrap();
 
         assert_eq!(summary(&found), ["admin:initial-pw", "token:api-token"]);
+    }
+
+    #[tokio::test]
+    async fn standard_credentials_name_the_secret_and_the_version_they_came_from() {
+        let api = kube_with(json!({}), true).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let found = standard_credentials_with_origin(&mgr, &id, "argocd")
+            .await
+            .unwrap();
+
+        let origins: Vec<&str> = found.iter().map(|(origin, _)| origin.as_str()).collect();
+        assert_eq!(
+            origins,
+            ["argocd/argocd-initial-admin-secret@7", "argocd/ci-token@9"]
+        );
+        let credentials: Vec<Credentials> = found.into_iter().map(|(_, c)| c).collect();
+        assert_eq!(
+            summary(&credentials),
+            ["admin:initial-pw", "token:api-token"]
+        );
     }
 
     #[tokio::test]
@@ -1197,6 +1375,171 @@ mod tests {
             initial_admin_password(&mgr, &id, "argocd").await.unwrap(),
             None
         );
+    }
+
+    /// A kube API where Argo CD is installed in `gitops` (when `installed`: its `argocd-cm` and `argocd-server`) and
+    /// a stranger's Service in `aaa` carries the label of `argocd-server`.
+    async fn kube_with_a_stranger(installed: bool) -> FakeApi {
+        FakeApi::start(move |req: &Request| {
+            let list = |kind: &str, items: Value| {
+                Reply::json(
+                    200,
+                    json!({ "apiVersion": "v1", "kind": kind, "metadata": {}, "items": items })
+                        .to_string(),
+                )
+            };
+            let service = |ns: &str, name: &str| {
+                json!({
+                    "metadata": { "name": name, "namespace": ns, "labels": { "app.kubernetes.io/name": "argocd-server" } },
+                    "spec": { "ports": [{ "name": "https", "port": 443 }] }
+                })
+            };
+            let meta = |ns: &str, name: &str| {
+                json!({ "apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadata", "metadata": { "name": name, "namespace": ns } })
+            };
+            let stranger = service("aaa", "evil");
+            let server = service("gitops", "argocd-server");
+            match req.path.as_str() {
+                "/api" => Reply::json(200, API_VERSIONS),
+                "/api/v1/services" => list(
+                    "ServiceList",
+                    if installed { json!([stranger, server]) } else { json!([stranger]) },
+                ),
+                "/api/v1/configmaps" if installed => list(
+                    "PartialObjectMetadataList",
+                    json!([meta("gitops", SETTINGS_CONFIG_MAP)]),
+                ),
+                "/api/v1/configmaps" | "/api/v1/secrets" => list("PartialObjectMetadataList", json!([])),
+                "/api/v1/namespaces/aaa/services" => list("ServiceList", json!([stranger])),
+                "/api/v1/namespaces/gitops/services" if installed => list("ServiceList", json!([server])),
+                "/api/v1/namespaces/gitops/services/argocd-server" if installed => {
+                    Reply::json(200, server.to_string())
+                }
+                _ => Reply::not_found(),
+            }
+        })
+        .await
+    }
+
+    #[tokio::test]
+    async fn the_server_is_found_only_where_argo_cd_is_installed() {
+        let api = kube_with_a_stranger(true).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let server = find_server(&mgr, &id).await.unwrap();
+
+        assert_eq!(
+            server,
+            ArgoServer {
+                namespace: "gitops".into(),
+                name: "argocd-server".into(),
+                port: 443
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn a_labelled_service_where_argo_cd_is_not_installed_is_not_the_server() {
+        let api = kube_with_a_stranger(false).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let err = find_server(&mgr, &id).await.unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::NotFound, "{err}");
+    }
+
+    /// A kube API where Argo CD is installed in `gitops` and the tenant of `aaa` (who may write only there) planted
+    /// Argo CD's look-alikes: `argocd-cm`, a Service with the label of `argocd-server` and a token Secret. With
+    /// `marked`, the ClusterRoleBinding of `argocd-application-controller` names the controller's ServiceAccount in
+    /// `gitops`; a binding the tenant was given (`aaa-tenant`) names a ServiceAccount `argocd-server` in `aaa`.
+    async fn kube_with_a_tenant(marked: bool) -> FakeApi {
+        FakeApi::start(move |req: &Request| {
+            let b64 = |v: &str| base64::Engine::encode(&base64::engine::general_purpose::STANDARD, v);
+            let list = |kind: &str, items: Value| {
+                Reply::json(
+                    200,
+                    json!({ "apiVersion": "v1", "kind": kind, "metadata": {}, "items": items })
+                        .to_string(),
+                )
+            };
+            let service = |ns: &str| {
+                json!({
+                    "metadata": { "name": "argocd-server", "namespace": ns, "labels": { "app.kubernetes.io/name": "argocd-server" } },
+                    "spec": { "ports": [{ "name": "https", "port": 443 }] }
+                })
+            };
+            let meta = |ns: &str| {
+                json!({ "apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadata", "metadata": { "name": SETTINGS_CONFIG_MAP, "namespace": ns } })
+            };
+            let token_secret = |ns: &str, name: &str, token: &str| {
+                json!({ "metadata": { "name": name, "namespace": ns, "resourceVersion": "1" }, "data": { "token": b64(token) } })
+            };
+            let binding = |name: &str, sa: &str, ns: &str| {
+                json!({
+                    "metadata": { "name": name },
+                    "roleRef": { "apiGroup": "rbac.authorization.k8s.io", "kind": "ClusterRole", "name": name },
+                    "subjects": [{ "kind": "ServiceAccount", "name": sa, "namespace": ns }]
+                })
+            };
+            let bindings = if marked {
+                json!([
+                    binding("aaa-tenant", "argocd-server", "aaa"),
+                    binding("argocd-application-controller", "argocd-application-controller", "gitops")
+                ])
+            } else {
+                json!([binding("aaa-tenant", "argocd-server", "aaa")])
+            };
+            match req.path.as_str() {
+                "/api" => Reply::json(200, API_VERSIONS),
+                "/apis/rbac.authorization.k8s.io/v1/clusterrolebindings" => list("ClusterRoleBindingList", bindings),
+                "/api/v1/configmaps" => list("PartialObjectMetadataList", json!([meta("aaa"), meta("gitops")])),
+                "/api/v1/secrets" => list("PartialObjectMetadataList", json!([])),
+                "/api/v1/namespaces/aaa/services" => list("ServiceList", json!([service("aaa")])),
+                "/api/v1/namespaces/gitops/services" => list("ServiceList", json!([service("gitops")])),
+                "/api/v1/namespaces/aaa/secrets" => {
+                    list("SecretList", json!([token_secret("aaa", "planted", "tenant-token")]))
+                }
+                "/api/v1/namespaces/gitops/secrets" => {
+                    list("SecretList", json!([token_secret("gitops", "ci-token", "real-token")]))
+                }
+                _ => Reply::not_found(),
+            }
+        })
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_tenants_look_alike_does_not_win_over_the_installation_its_cluster_binding_names() {
+        let api = kube_with_a_tenant(true).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let server = find_server(&mgr, &id).await.unwrap();
+        let found = standard_credentials_with_origin(&mgr, &id, &server.namespace)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            server,
+            ArgoServer {
+                namespace: "gitops".into(),
+                name: "argocd-server".into(),
+                port: 443
+            }
+        );
+        let origins: Vec<&str> = found.iter().map(|(origin, _)| origin.as_str()).collect();
+        assert_eq!(origins, ["gitops/ci-token@1"]);
+    }
+
+    #[tokio::test]
+    async fn without_a_cluster_binding_two_look_alike_installations_are_an_error_naming_both() {
+        let api = kube_with_a_tenant(false).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let err = find_server(&mgr, &id).await.unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::NotFound, "{err}");
+        assert!(err.message.starts_with(AMBIGUOUS_INSTALLATION), "{err}");
+        assert!(err.message.contains("aaa, gitops"), "{err}");
     }
 
     #[test]

@@ -12,10 +12,10 @@
 
 mod common;
 
+use common::{connected, gitops_cluster, wait_until};
+
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
-use std::path::Path;
-use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 use futures::FutureExt;
@@ -29,48 +29,12 @@ use serde_json::{Value, json};
 use sextant_core::argocd::{
     self, ArgoClient, CredentialSource, Credentials, ManagedResource, SecretString,
 };
-use sextant_core::kubeconfig::KubeconfigEnv;
 use sextant_core::portforward::{ForwardTarget, PortForwarder};
-use sextant_core::{ClusterId, ClusterManager, ErrorCode, KubeconfigRegistry};
+use sextant_core::{ClusterId, ClusterManager, ErrorCode};
 
-const GITOPS_ENV: &str = "SEXTANT_TEST_GITOPS";
 const APP: &str = "sextant-argodiff";
 /// A value the diff must never carry.
 const PLAIN_VALUE: &str = "sextant-argodiff-plain-value";
-
-fn gitops_cluster() -> Option<common::TestCluster> {
-    let cluster = common::test_cluster()?;
-    if std::env::var(GITOPS_ENV).as_deref() != Ok("1") {
-        eprintln!("skipped: {GITOPS_ENV}=1 is not set (see scripts/test-cluster.sh up --gitops)");
-        return None;
-    }
-    Some(cluster)
-}
-
-async fn connected(kubeconfig: &Path) -> (tempfile::TempDir, ClusterManager, ClusterId) {
-    let tmp = tempfile::tempdir().unwrap();
-    let registry =
-        KubeconfigRegistry::new(Vec::new(), tmp.path().to_path_buf()).with_env(KubeconfigEnv {
-            kubeconfig: Some(kubeconfig.as_os_str().to_owned()),
-            home: None,
-        });
-    let id = registry.clusters().unwrap()[0].id.clone();
-    let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
-    mgr.connect(&id).await.unwrap();
-    (tmp, mgr, id)
-}
-
-async fn wait_until<F, Fut>(what: &str, secs: u64, mut done: F)
-where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = bool>,
-{
-    let deadline = Instant::now() + Duration::from_secs(secs);
-    while !done().await {
-        assert!(Instant::now() < deadline, "timed out waiting for {what}");
-        tokio::time::sleep(Duration::from_millis(500)).await;
-    }
-}
 
 fn application_api(client: Client) -> Api<DynamicObject> {
     let gvk = GroupVersionKind::gvk("argoproj.io", "v1alpha1", "Application");

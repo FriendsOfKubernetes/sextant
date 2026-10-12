@@ -7,9 +7,9 @@ import { useTranslation } from "react-i18next";
 import { useWatch, type KindRef, type KubeObject, type WatchSpec } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ObjectLink, status, StatusText } from "../../resources";
+import { apiVersionOf } from "../../resources/refs";
 import { Block } from "../details";
 import {
-  apiVersionOf,
   applicationDestination,
   descendantKinds,
   healthTone,
@@ -70,9 +70,11 @@ export function ResourceTreeSection({ clusterId, obj }: DetailsSectionProps) {
   const local = app ? isInCluster(applicationDestination(app)) : false;
   const needed = useMemo(() => (local ? descendantKinds(resources) : []), [local, resources]);
 
-  const replicaSets = useWatch(clusterId, specFor(LISTED[0]!, needed));
-  const jobs = useWatch(clusterId, specFor(LISTED[1]!, needed));
-  const pods = useWatch(clusterId, specFor(LISTED[2]!, needed));
+  const specs = LISTED.map((kind) => specFor(kind, needed));
+  const replicaSets = useWatch(clusterId, specs[0] ?? null);
+  const jobs = useWatch(clusterId, specs[1] ?? null);
+  const pods = useWatch(clusterId, specs[2] ?? null);
+  const loading = [replicaSets, jobs, pods].some((list, i) => specs[i] && list.status === "loading");
 
   const tree = useMemo(() => {
     const objects = new Map<string, KubeObject[]>([
@@ -109,13 +111,18 @@ export function ResourceTreeSection({ clusterId, obj }: DetailsSectionProps) {
           ))}
         </tbody>
       </table>
+      {loading && (
+        <p className="dt-muted" role="status">
+          {t("argocd:tree.loading")}
+        </p>
+      )}
     </Block>
   );
 }
 
 function TreeRow({ level, node, linked }: { level: number; node: TreeNode; linked: boolean }) {
   const { ref, managed, obj } = node;
-  const target = { apiVersion: apiVersionOf(ref.kind.group, ref.kind.version), kind: ref.kind.kind, name: ref.name };
+  const target = { apiVersion: apiVersionOf(ref.kind), kind: ref.kind.kind, name: ref.name };
   const name: ReactNode = linked ? (
     <ObjectLink target={target} namespace={ref.namespace}>
       {ref.name}

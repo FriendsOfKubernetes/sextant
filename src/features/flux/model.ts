@@ -3,6 +3,7 @@
 // objects use a source. Pure functions, no React.
 import type { KindRef, KubeObject, ObjectRef } from "../../api";
 import { kindFromApiVersion, status } from "../../resources";
+import { apiVersionOf } from "../../resources/refs";
 import type { Tone } from "../../resources/status";
 
 const { arr, get, str } = status;
@@ -132,10 +133,6 @@ export interface FluxRef {
   kind: string;
   name: string;
   namespace: string | null;
-}
-
-function apiVersionOf(kind: KindRef): string {
-  return kind.group ? `${kind.group}/${kind.version}` : kind.version;
 }
 
 /** A `sourceRef`/`chartRef`-like field as a reference; the namespace defaults to the object's own. */

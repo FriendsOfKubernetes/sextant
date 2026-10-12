@@ -280,4 +280,26 @@ describe("Argo CD diff", () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Deployment shop/guestbook-ui")).toBeInTheDocument();
   });
+
+  it("says Sextant does not pick between several look-alike installations and names them", async () => {
+    const ambiguous = {
+      code: "notFound",
+      message: "ambiguous Argo CD installation: several namespaces look like it (aaa, gitops), and nothing tells the real one",
+    };
+    backend = mockBackend({
+      argocd_diff: () => {
+        throw ambiguous;
+      },
+      argocd_status: () => {
+        throw ambiguous;
+      },
+    });
+    show();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Several namespaces of this cluster look like an Argo CD installation");
+    expect(alert).toHaveTextContent("aaa, gitops");
+    expect(alert).not.toHaveTextContent("there is no argocd-server Service");
+    expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
+  });
 });

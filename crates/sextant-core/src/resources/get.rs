@@ -279,6 +279,64 @@ pub(crate) async fn resolve_kind(
     ))
 }
 
+/// Finds the API of the kind a YAML document names, for `replace_yaml`/`apply_yaml`: the body carries the document's
+/// `apiVersion`, so it goes to the URL of exactly that version. A version discovery lists is used as is; any other is
+/// looked up in the group (`GET /apis/<group>/<version>`), because discovery keeps only one version of a kind — a
+/// served version that is not the preferred one (`v2beta2` beside `v2`) works, a version the group does not serve is
+/// `notFound`. Unlike [`resolve_kind`], the version of discovery is never put in its place.
+pub(crate) async fn resolve_document_kind(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    kind: &KindRef,
+) -> CoreResult<ResolvedKind> {
+    let found = resolve_kind(mgr, cluster, kind).await?;
+    if found.resource.version == kind.version {
+        return Ok(found);
+    }
+    let client = mgr.client(cluster)?;
+    let listed = if kind.group.is_empty() {
+        client.list_core_api_resources(&kind.version).await
+    } else {
+        client
+            .list_api_group_resources(&format!("{}/{}", kind.group, kind.version))
+            .await
+    };
+    let not_served = || {
+        CoreError::new(
+            ErrorCode::NotFound,
+            format!("the cluster does not serve {}", describe(kind)),
+        )
+    };
+    let resources = match listed {
+        Ok(list) => list.resources,
+        Err(kube::Error::Api(status)) if status.is_not_found() => return Err(not_served()),
+        Err(err) => return Err(err.into()),
+    };
+    let resource = resources
+        .into_iter()
+        .find(|r| r.kind == kind.kind && !r.name.contains('/'))
+        .ok_or_else(not_served)?;
+    Ok(ResolvedKind {
+        resource: ApiResource {
+            group: kind.group.clone(),
+            version: kind.version.clone(),
+            api_version: api_version_of(kind),
+            kind: kind.kind.clone(),
+            plural: resource.name,
+        },
+        namespaced: resource.namespaced,
+    })
+}
+
+/// "apps/v1", "v1" (the core group).
+fn api_version_of(kind: &KindRef) -> String {
+    if kind.group.is_empty() {
+        kind.version.clone()
+    } else {
+        format!("{}/{}", kind.group, kind.version)
+    }
+}
+
 /// "Deployment (apps/v1)", "Pod (v1)".
 fn describe(kind: &KindRef) -> String {
     if kind.group.is_empty() {

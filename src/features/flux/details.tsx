@@ -2,12 +2,13 @@
 // go into the panel's "fields" section; `FluxRelatedSection` (a section of its own, it needs the cluster) lists
 // what a Kustomization or HelmRelease created and which Kustomizations and HelmReleases use a source. Conditions are
 // the panel's own section.
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject, type ObjectRef, type WatchSpec } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findKind, kindFromApiVersion, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
-import { Block, chips } from "../details";
+import { apiVersionOf } from "../../resources/refs";
+import { Block, chips, Fields, type FieldRow } from "../details";
 import {
   ALERT,
   fluxKind,
@@ -40,10 +41,6 @@ const text = (value: unknown): string | undefined =>
     : typeof value === "number" || typeof value === "boolean"
       ? String(value)
       : undefined;
-
-function apiVersionOf(kind: KindRef): string {
-  return kind.group ? `${kind.group}/${kind.version}` : kind.version;
-}
 
 function refLink(ref: FluxRef | undefined, label?: string): ReactNode {
   if (!ref) return null;
@@ -94,29 +91,8 @@ function dependsOn(obj: KubeObject, kind: KindRef): ReactNode {
   return links.length > 0 ? <span className="dt-links">{links}</span> : null;
 }
 
-type Row = readonly [key: string, value: ReactNode];
-
-function Rows({ rows }: { rows: Row[] }) {
-  const { t } = useTranslation();
-  const shown = rows.filter(([, value]) => value !== null && value !== undefined && value !== "" && value !== false);
-  if (shown.length === 0) return null;
-  return (
-    <dl className="dt-fields">
-      {shown.map(([key, value]) => (
-        <FieldRow key={key} label={t(`flux:fields.${key}`)} value={value} />
-      ))}
-    </dl>
-  );
-}
-
-function FieldRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <>
-      <dt className="dt-fields__label">{label}</dt>
-      <dd className="dt-fields__value">{value}</dd>
-    </>
-  );
-}
+/** Labels of the fields: `flux:fields.*`. */
+const FIELD_LABELS = "flux:fields";
 
 /** The kind's own fields of any Flux object (the panel's "fields" section). */
 export function FluxFields({ obj }: { obj: KubeObject }) {
@@ -128,7 +104,7 @@ export function FluxFields({ obj }: { obj: KubeObject }) {
   const attempted = str(get(obj, "status", "lastAttemptedRevision"));
   const kustomization = isKind(kind, KUSTOMIZATION);
   const release = isKind(kind, HELM_RELEASE);
-  const rows: Row[] = [
+  const rows: FieldRow[] = [
     [
       "ready",
       ready ? (
@@ -179,7 +155,7 @@ export function FluxFields({ obj }: { obj: KubeObject }) {
     ["webhookPath", isKind(kind, RECEIVER) ? str(get(obj, "status", "webhookPath")) : null],
     ["lastHandledReconcileAt", str(get(obj, "status", "lastHandledReconcileAt"))],
   ];
-  return <Rows rows={rows} />;
+  return <Fields rows={rows} labelPrefix={FIELD_LABELS} />;
 }
 
 // ---------- Related objects ----------
@@ -191,12 +167,22 @@ export function hasRelated(kind: Pick<KindRef, "group" | "kind">): boolean {
 
 /**
  * The version to watch `kind` in: the one the cluster prefers; the registered one when discovery failed; `null`
- * while it is coming or when the cluster does not serve the kind (no such controller installed).
+ * when the cluster does not serve the kind (no such controller installed); `undefined` while discovery is coming.
  */
-function useServedKind(clusterId: ClusterId, kind: KindRef): KindRef | null {
+function useServedKind(clusterId: ClusterId, kind: KindRef): KindRef | null | undefined {
   const { kinds, error } = useClusterKinds(clusterId);
   if (kinds) return findKind(kinds, kind)?.kindRef ?? null;
-  return error ? kind : null;
+  return error ? kind : undefined;
+}
+
+/** The line a block shows while one of its lists is loading. */
+function LoadingLine() {
+  const { t } = useTranslation();
+  return (
+    <p className="dt-muted" role="status">
+      {t("flux:related.loading")}
+    </p>
+  );
 }
 
 function everywhere(kind: KindRef | null, labelSelector: string | null = null, metadataOnly = false): WatchSpec | null {
@@ -261,20 +247,29 @@ const LABELLED_KINDS: KindRef[] = [
   { group: "networking.k8s.io", version: "v1", kind: "Ingress" },
 ];
 
-/** Rows of the objects of `kind` with the HelmRelease's labels, except those in `known` (from the inventory). */
+/**
+ * Rows of the objects of `kind` with the HelmRelease's labels, except those in `known` (from the inventory);
+ * `onLoaded(kind)` once its list has come (or failed).
+ */
 function LabelledRows({
   clusterId,
   kind,
   selector,
   known,
+  onLoaded,
 }: {
   clusterId: ClusterId;
   kind: KindRef;
   selector: string;
   known: Set<string>;
+  onLoaded: (kind: string) => void;
 }) {
   // Only names are needed: metadata, nothing of a Secret.
-  const { items } = useWatch(clusterId, everywhere(kind, selector, true));
+  const { items, status: watchStatus } = useWatch(clusterId, everywhere(kind, selector, true));
+  const loaded = watchStatus !== "loading";
+  useEffect(() => {
+    if (loaded) onLoaded(kind.kind);
+  }, [loaded, kind.kind, onLoaded]);
   const refs = [...items.values()]
     .map((o) => objectRefOf(o, kind))
     .filter((r) => !known.has(refKey(r)))
@@ -293,6 +288,11 @@ function HelmReleaseResources({ clusterId, obj }: { clusterId: ClusterId; obj: K
   const inventory = inventoryOf(obj);
   const known = new Set(inventory.map(refKey));
   const selector = helmReleaseSelector(obj);
+  const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
+  const onLoaded = useCallback(
+    (kind: string) => setLoaded((prev) => (prev.has(kind) ? prev : new Set(prev).add(kind))),
+    [],
+  );
   return (
     <Block title={t("flux:related.resources")}>
       <RefTable>
@@ -300,9 +300,17 @@ function HelmReleaseResources({ clusterId, obj }: { clusterId: ClusterId; obj: K
           <RefRow key={refKey(r)} objectRef={r} />
         ))}
         {LABELLED_KINDS.map((kind) => (
-          <LabelledRows key={kind.kind} clusterId={clusterId} kind={kind} selector={selector} known={known} />
+          <LabelledRows
+            key={kind.kind}
+            clusterId={clusterId}
+            kind={kind}
+            selector={selector}
+            known={known}
+            onLoaded={onLoaded}
+          />
         ))}
       </RefTable>
+      {loaded.size < LABELLED_KINDS.length && <LoadingLine />}
     </Block>
   );
 }
@@ -312,22 +320,30 @@ function UsedBy({ clusterId, source }: { clusterId: ClusterId; source: KubeObjec
   const { t } = useTranslation();
   const kustomization = useServedKind(clusterId, KUSTOMIZATION);
   const release = useServedKind(clusterId, HELM_RELEASE);
-  const kustomizations = useWatch(clusterId, everywhere(kustomization));
-  const releases = useWatch(clusterId, everywhere(release));
+  const kustomizations = useWatch(clusterId, everywhere(kustomization ?? null));
+  const releases = useWatch(clusterId, everywhere(release ?? null));
+  const loading = (
+    [
+      [kustomization, kustomizations.status],
+      [release, releases.status],
+    ] as const
+  ).some(([kind, watchStatus]) => kind === undefined || (kind !== null && watchStatus === "loading"));
   const using = [
     ...[...kustomizations.items.values()]
       .filter((o) => usesSource(o, source))
       .map((o) => objectRefOf(o, KUSTOMIZATION)),
     ...[...releases.items.values()].filter((o) => usesSource(o, source)).map((o) => objectRefOf(o, HELM_RELEASE)),
   ].sort((a, b) => refKey(a).localeCompare(refKey(b)));
-  if (using.length === 0) return null;
   return (
     <Block title={t("flux:related.usedBy")}>
-      <RefTable>
-        {using.map((r) => (
-          <RefRow key={refKey(r)} objectRef={r} />
-        ))}
-      </RefTable>
+      {using.length > 0 && (
+        <RefTable>
+          {using.map((r) => (
+            <RefRow key={refKey(r)} objectRef={r} />
+          ))}
+        </RefTable>
+      )}
+      {loading ? <LoadingLine /> : using.length === 0 && <p className="dt-muted">{t("flux:related.notUsed")}</p>}
     </Block>
   );
 }
@@ -348,6 +364,9 @@ export function FluxRelatedSection({ clusterId, objectRef, obj }: DetailsSection
       </Block>
     );
   }
-  if (isKind(objectRef.kind, HELM_RELEASE)) return <HelmReleaseResources clusterId={clusterId} obj={obj} />;
+  if (isKind(objectRef.kind, HELM_RELEASE)) {
+    // Another release starts over (its lists load again).
+    return <HelmReleaseResources key={helmReleaseSelector(obj)} clusterId={clusterId} obj={obj} />;
+  }
   return <UsedBy clusterId={clusterId} source={obj} />;
 }

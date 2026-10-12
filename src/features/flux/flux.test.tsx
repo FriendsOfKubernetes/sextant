@@ -354,6 +354,38 @@ describe("details of a source", () => {
   });
 });
 
+describe("related objects while their lists load", () => {
+  it("a source says it is loading until its users are known, then that nothing uses it", async () => {
+    await openDetails(bucket);
+    const related = within(section("flux"));
+    expect(related.getByRole("status")).toHaveTextContent("Loading…");
+
+    emitSnapshot(wb, await listWatch("Kustomization"), []);
+    emitSnapshot(wb, await listWatch("HelmRelease"), []);
+
+    expect(related.queryByRole("status")).toBeNull();
+    expect(related.getByText("Used by")).toBeInTheDocument();
+    expect(related.getByText("No Kustomization or HelmRelease uses this source.")).toBeInTheDocument();
+  });
+
+  it("a HelmRelease says it is loading until every labelled kind is listed", async () => {
+    await openDetails(helmRelease);
+    const related = within(section("flux"));
+    expect(related.getByRole("status")).toHaveTextContent("Loading…");
+
+    const selector = "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux";
+    const kinds = ["Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob", "Service", "ConfigMap", "Secret"];
+    for (const kind of [...kinds, "ServiceAccount", "PersistentVolumeClaim"]) {
+      emitSnapshot(wb, await watchOf(wb, kind, (s) => s.labelSelector === selector), []);
+    }
+    expect(related.getByRole("status")).toBeInTheDocument();
+    emitSnapshot(wb, await watchOf(wb, "Ingress", (s) => s.labelSelector === selector), []);
+
+    expect(related.queryByRole("status")).toBeNull();
+    expect(related.getByRole("button", { name: "Open Deployment podinfo-helm" })).toBeInTheDocument();
+  });
+});
+
 describe("details of a HelmRelease", () => {
   it("show the chart, its source and the HelmChart as links", async () => {
     await openDetails(helmRelease);

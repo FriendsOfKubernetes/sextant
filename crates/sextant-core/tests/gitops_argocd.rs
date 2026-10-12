@@ -13,11 +13,11 @@
 
 mod common;
 
+use common::{connected, gitops_cluster, wait_until};
+
 use std::future::Future;
 use std::net::Ipv4Addr;
 use std::panic::AssertUnwindSafe;
-use std::path::Path;
-use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 use futures::FutureExt;
@@ -28,56 +28,17 @@ use kube::api::{
 };
 use kube::{Api, Client};
 use serde_json::{Value, json};
-use sextant_core::kubeconfig::KubeconfigEnv;
 use sextant_core::portforward::{ForwardTarget, PortForwarder};
 use sextant_core::resources::{self, KindRef, ObjectRef, PatchType};
-use sextant_core::{ClusterId, ClusterManager, KubeconfigRegistry};
+use sextant_core::{ClusterId, ClusterManager};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-/// Turns on the tests of the GitOps tools installed by `scripts/test-cluster.sh up --gitops`.
-const GITOPS_ENV: &str = "SEXTANT_TEST_GITOPS";
 /// Where `up --gitops` installs Argo CD.
 const ARGOCD_NAMESPACE: &str = "argocd";
 /// The label the window finds argocd-server by (`ARGOCD_SERVER_SELECTOR` in `src/features/argocd/server.ts`).
 const SERVER_SELECTOR: &str = "app.kubernetes.io/name=argocd-server";
 const REFRESH_ANNOTATION: &str = "argocd.argoproj.io/refresh";
-
-/// The test cluster when it has Flux and Argo CD (`SEXTANT_TEST_GITOPS=1`), otherwise `None` with a note.
-fn gitops_cluster() -> Option<common::TestCluster> {
-    let cluster = common::test_cluster()?;
-    if std::env::var(GITOPS_ENV).as_deref() != Ok("1") {
-        eprintln!("skipped: {GITOPS_ENV}=1 is not set (see scripts/test-cluster.sh up --gitops)");
-        return None;
-    }
-    Some(cluster)
-}
-
-/// A manager connected to the only context of `kubeconfig`.
-async fn connected(kubeconfig: &Path) -> (tempfile::TempDir, ClusterManager, ClusterId) {
-    let tmp = tempfile::tempdir().unwrap();
-    let registry =
-        KubeconfigRegistry::new(Vec::new(), tmp.path().to_path_buf()).with_env(KubeconfigEnv {
-            kubeconfig: Some(kubeconfig.as_os_str().to_owned()),
-            home: None,
-        });
-    let id = registry.clusters().unwrap()[0].id.clone();
-    let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
-    mgr.connect(&id).await.unwrap();
-    (tmp, mgr, id)
-}
-
-async fn wait_until<F, Fut>(what: &str, secs: u64, mut done: F)
-where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = bool>,
-{
-    let deadline = Instant::now() + Duration::from_secs(secs);
-    while !done().await {
-        assert!(Instant::now() < deadline, "timed out waiting for {what}");
-        tokio::time::sleep(Duration::from_millis(500)).await;
-    }
-}
 
 fn applications(client: &Client) -> Api<DynamicObject> {
     let gvk = GroupVersionKind::gvk("argoproj.io", "v1alpha1", "Application");

@@ -5,13 +5,16 @@
 //! ([`ArgoSessions`] in `AppState`). Without a session `argocd_diff` signs in by itself, in this order: the login typed
 //! in earlier in this run, the login saved in the OS credential store, `admin` with `argocd-initial-admin-secret`
 //! (unless `admin.enabled` is `"false"`), the `token` of a Secret labelled `app.kubernetes.io/part-of=argocd`;
-//! otherwise it answers `unauthorized` and the frontend shows the sign-in window. A saved login is a JSON
+//! otherwise it answers `unauthorized` and the frontend shows the sign-in window. A candidate Argo CD refused is not
+//! tried by itself again in this run until its source changes (a new `resourceVersion` of the Secret, a new login
+//! typed or saved), so a stale password does not pile up failed attempts. A saved login is a JSON
 //! `{"username","password"}` or `{"token"}` in the OS credential store (service `sextant`, user
 //! `argocd:<clusterId>:<namespace>`), never in `settings.json`. No password or token goes to the frontend, into an
 //! error message or into a log.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::future::Future;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
@@ -225,6 +228,9 @@ pub struct ArgoSessions {
     forwarder: PortForwarder,
     store: RwLock<Arc<dyn CredentialStore>>,
     clusters: Mutex<HashMap<ClusterId, Arc<tokio::sync::Mutex<ArgoConn>>>>,
+    /// Keys of the candidates Argo CD refused in this run of the application ([`Candidate::key`]); they are not tried
+    /// again by themselves, so a stale password does not pile up failed attempts (Argo CD locks the account out).
+    refused: Mutex<HashSet<String>>,
 }
 
 #[derive(Default)]
@@ -251,6 +257,7 @@ impl ArgoSessions {
             forwarder: PortForwarder::new(),
             store: RwLock::new(store),
             clusters: Mutex::new(HashMap::new()),
+            refused: Mutex::new(HashSet::new()),
         }
     }
 
@@ -334,7 +341,10 @@ impl ArgoSessions {
             conn.typed = Some(credentials.clone());
             conn.signed_out = false;
             conn.expired = false;
+            // A new login: the typed one (and, saved, the saved one) may be tried again by itself.
+            lock(&self.refused).remove(&typed_key(cluster));
             if login.remember {
+                lock(&self.refused).remove(&saved_key(cluster, &namespace));
                 let store = self.store();
                 let user = keyring_user(cluster, &namespace);
                 let value = serde_json::to_string(&credentials)?;
@@ -437,16 +447,33 @@ impl ArgoSessions {
         let namespace = server(conn, mgr, cluster).await?.namespace;
         let mut candidates = Vec::new();
         if let Some(typed) = &conn.typed {
-            candidates.push((CredentialSource::Manual, typed.clone()));
+            candidates.push(Candidate {
+                key: typed_key(cluster),
+                source: CredentialSource::Manual,
+                credentials: typed.clone(),
+            });
         }
         if !conn.signed_out {
             if let Some(saved) = self.saved(cluster, &namespace).await {
-                candidates.push((CredentialSource::Saved, saved));
+                candidates.push(Candidate {
+                    key: saved_key(cluster, &namespace),
+                    source: CredentialSource::Saved,
+                    credentials: saved,
+                });
             }
-            let standard = argocd::standard_credentials(mgr, cluster, &namespace).await?;
-            candidates.extend(standard.into_iter().map(|c| (CredentialSource::Secret, c)));
+            let standard =
+                argocd::standard_credentials_with_origin(mgr, cluster, &namespace).await?;
+            candidates.extend(standard.into_iter().map(|(origin, credentials)| Candidate {
+                key: format!("secret:{cluster}:{origin}"),
+                source: CredentialSource::Secret,
+                credentials,
+            }));
         }
-        let (session, source, _) = argocd::sign_in(&client, candidates).await?;
+        let login = |credentials: Credentials| {
+            let client = client.clone();
+            async move { client.login(&credentials).await }
+        };
+        let (session, source) = first_accepted(candidates, &self.refused, login).await?;
         conn.session = Some(SignedIn {
             session: session.clone(),
             source,
@@ -502,6 +529,59 @@ impl ArgoSessions {
         conn.forward = Some((info.id, client.clone()));
         Ok(client)
     }
+}
+
+/// One way to sign in by itself. `key` names its source — the typed login, the saved login of a namespace, or a
+/// Secret at one `resourceVersion` — so a changed source is a new candidate.
+#[derive(Clone)]
+struct Candidate {
+    key: String,
+    source: CredentialSource,
+    credentials: Credentials,
+}
+
+fn typed_key(cluster: &ClusterId) -> String {
+    format!("typed:{cluster}")
+}
+
+fn saved_key(cluster: &ClusterId, namespace: &str) -> String {
+    format!("saved:{}", keyring_user(cluster, namespace))
+}
+
+/// Signs in (`login`) with the first candidate Argo CD accepts, skipping those whose key is in `refused` and adding
+/// the key of every candidate it refuses. Only a refusal is remembered: an unreachable server ends the attempt and
+/// counts against nobody. Nothing left to try is `unauthorized`.
+async fn first_accepted<S, F, Fut>(
+    candidates: Vec<Candidate>,
+    refused: &Mutex<HashSet<String>>,
+    mut login: F,
+) -> Result<(S, CredentialSource), CoreError>
+where
+    F: FnMut(Credentials) -> Fut,
+    Fut: Future<Output = Result<S, CoreError>>,
+{
+    let any = !candidates.is_empty();
+    let fresh: Vec<Candidate> = candidates
+        .into_iter()
+        .filter(|c| !lock(refused).contains(&c.key))
+        .collect();
+    for candidate in fresh {
+        match login(candidate.credentials).await {
+            Ok(session) => return Ok((session, candidate.source)),
+            Err(err) if argocd::is_refusal(&err) => {
+                lock(refused).insert(candidate.key);
+            }
+            Err(err) => return Err(err),
+        }
+    }
+    Err(CoreError::new(
+        ErrorCode::Unauthorized,
+        if any {
+            "sign in to Argo CD: the saved login and the standard secrets were refused"
+        } else {
+            "sign in to Argo CD: there is no saved login and no standard secret with credentials"
+        },
+    ))
 }
 
 /// The server of the cluster, found once per connection.
@@ -682,6 +762,107 @@ mod tests {
             ..Default::default()
         };
         assert!(!format!("{login:?}").contains("hunter2"));
+    }
+
+    fn password(value: &str) -> Credentials {
+        Credentials::Password {
+            username: "admin".into(),
+            password: SecretString::new(value),
+        }
+    }
+
+    fn candidate(key: &str, source: CredentialSource, value: &str) -> Candidate {
+        Candidate {
+            key: key.into(),
+            source,
+            credentials: password(value),
+        }
+    }
+
+    /// Signs in through a fake Argo CD that accepts only `good` and counts the attempts per password.
+    async fn sign_in_counting(
+        candidates: Vec<Candidate>,
+        refused: &Mutex<HashSet<String>>,
+        tried: &Mutex<Vec<String>>,
+    ) -> Result<CredentialSource, CoreError> {
+        let login = |credentials: Credentials| async move {
+            let Credentials::Password { password, .. } = credentials else {
+                unreachable!()
+            };
+            lock(tried).push(password.expose().to_string());
+            if password.expose() == "good" {
+                Ok("session")
+            } else {
+                Err(CoreError::new(
+                    ErrorCode::Unauthorized,
+                    "invalid username or password",
+                ))
+            }
+        };
+        first_accepted(candidates, refused, login)
+            .await
+            .map(|(_, source)| source)
+    }
+
+    #[tokio::test]
+    async fn a_refused_candidate_is_not_tried_again_until_its_source_changes() {
+        let refused = Mutex::new(HashSet::new());
+        let tried = Mutex::new(Vec::new());
+        let stale = || {
+            vec![
+                candidate("saved:c1", CredentialSource::Saved, "old-saved"),
+                candidate(
+                    "secret:c1:argocd/argocd-initial-admin-secret@7",
+                    CredentialSource::Secret,
+                    "old-initial",
+                ),
+                candidate(
+                    "secret:c1:argocd/ci-token@9",
+                    CredentialSource::Secret,
+                    "good",
+                ),
+            ]
+        };
+
+        let first = sign_in_counting(stale(), &refused, &tried).await.unwrap();
+        let again = sign_in_counting(stale(), &refused, &tried).await.unwrap();
+        assert_eq!(first, CredentialSource::Secret);
+        assert_eq!(again, CredentialSource::Secret);
+        assert_eq!(
+            *lock(&tried),
+            ["old-saved", "old-initial", "good", "good"],
+            "refused candidates are tried once"
+        );
+
+        // Only refused candidates left: unauthorized at once, nothing sent to Argo CD.
+        lock(&tried).clear();
+        let err = sign_in_counting(stale()[..2].to_vec(), &refused, &tried)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Unauthorized);
+        assert!(lock(&tried).is_empty());
+
+        // A new version of the Secret is a new candidate.
+        let changed = vec![candidate(
+            "secret:c1:argocd/argocd-initial-admin-secret@8",
+            CredentialSource::Secret,
+            "good",
+        )];
+        assert_eq!(
+            sign_in_counting(changed, &refused, &tried).await.unwrap(),
+            CredentialSource::Secret
+        );
+        assert_eq!(*lock(&tried), ["good"]);
+
+        // A failure that is not a refusal (Argo CD unreachable) is not remembered.
+        let unreachable = Mutex::new(HashSet::new());
+        let down =
+            |_: Credentials| async { Err::<(), _>(CoreError::new(ErrorCode::Unreachable, "down")) };
+        let err = first_accepted(stale(), &unreachable, down)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Unreachable);
+        assert!(lock(&unreachable).is_empty());
     }
 
     /// An application state connected to the kind cluster with Argo CD, using the mock keyring `store`.

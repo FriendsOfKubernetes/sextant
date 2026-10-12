@@ -1,7 +1,12 @@
-// Where Argo CD runs in a cluster and how to reach its web UI: the `argocd-server` Service (found by its label), a
-// local port forwarded to it, and `https://localhost:<port>` (plain `http` when the server runs without TLS).
+// Where Argo CD runs in a cluster and how to reach its web UI: the namespace the backend found Argo CD installed in
+// (`argocd_status`, the same server the sign-in uses), the `argocd-server` Service there (by its label), a local port
+// forwarded to it, and `https://localhost:<port>` (plain `http` when the server runs without TLS). A Service with the
+// same label in any other namespace is never used. When several namespaces look like Argo CD and the backend cannot
+// tell the real one, nothing is opened: the error says so and names them.
 import {
   api,
+  ApiError,
+  toApiError,
   events,
   openStream,
   type ClusterId,
@@ -10,6 +15,7 @@ import {
   type WatchSpec,
   type WatchUpdate,
 } from "../../api";
+import { i18n } from "../../i18n";
 import { urlOf, type UrlScheme } from "../portforward";
 import { status } from "../../resources";
 
@@ -24,15 +30,56 @@ const PARAMS_CONFIG_MAP = "argocd-cmd-params-cm";
 /** How long to wait for the list of Services before falling back to the default namespace. */
 const LOOKUP_TIMEOUT_MS = 10_000;
 
-const SERVER_WATCH: WatchSpec = {
+const serverWatch = (namespace: string): WatchSpec => ({
   kind: { group: "", version: "v1", kind: "Service" },
-  namespaces: null,
+  namespaces: [namespace],
   labelSelector: ARGOCD_SERVER_SELECTOR,
   fieldSelector: null,
-};
+});
 
-/** The `argocd-server` Service of the cluster, listed once by its label; `null` when none is found or listable. */
-export function findArgocdServer(clusterId: ClusterId): Promise<KubeObject | null> {
+/** How the backend's `notFound` error begins when several namespaces look like Argo CD (`AMBIGUOUS_INSTALLATION`). */
+const AMBIGUOUS_INSTALLATION = "ambiguous Argo CD installation";
+
+/** The backend found several namespaces that look like an Argo CD installation and picked none of them. */
+export function isAmbiguousInstallation(err: unknown): boolean {
+  const error = toApiError(err);
+  return error.code === "notFound" && error.message.startsWith(AMBIGUOUS_INSTALLATION);
+}
+
+/** The plain-words text of an ambiguous installation, with the namespaces the backend listed ("aaa, gitops"). */
+export function ambiguousInstallationText(err: unknown): string {
+  const listed = /\(([^)]*)\)/.exec(toApiError(err).message)?.[1] ?? "?";
+  return i18n.t("argocd:installation.ambiguous", { namespaces: listed });
+}
+
+/**
+ * The namespace Argo CD is installed in, as the backend found it (where it signs in); `argocd` when the backend
+ * cannot find Argo CD. Several look-alike installations are not resolved here: that error is thrown, in plain words.
+ */
+export async function argocdNamespace(clusterId: ClusterId): Promise<string> {
+  try {
+    return (await api.argocd.status(clusterId)).namespace;
+  } catch (err) {
+    if (isAmbiguousInstallation(err)) throw new ApiError("notFound", ambiguousInstallationText(err));
+    return DEFAULT_ARGOCD_NAMESPACE;
+  }
+}
+
+/**
+ * The `argocd-server` Service in the namespace Argo CD is installed in, listed once by its label (the first by name,
+ * as the backend picks it); `null` when none is found or listable there, or the installation is ambiguous.
+ */
+export async function findArgocdServer(clusterId: ClusterId): Promise<KubeObject | null> {
+  let namespace: string;
+  try {
+    namespace = await argocdNamespace(clusterId);
+  } catch {
+    return null;
+  }
+  return serverIn(clusterId, namespace);
+}
+
+function serverIn(clusterId: ClusterId, namespace: string): Promise<KubeObject | null> {
   return new Promise((resolve) => {
     let done = false;
     let close: () => void = () => undefined;
@@ -45,14 +92,16 @@ export function findArgocdServer(clusterId: ClusterId): Promise<KubeObject | nul
     };
     const timer = setTimeout(() => finish(null), LOOKUP_TIMEOUT_MS);
     close = openStream<WatchUpdate>({
-      start: (id) => api.resources.watchStart(clusterId, SERVER_WATCH, id),
+      start: (id) => api.resources.watchStart(clusterId, serverWatch(namespace), id),
       listen: events.onWatch,
       stop: api.resources.watchStop,
       onEvent: (update) => {
         if (update.type === "snapshot") {
-          const items = update.items as KubeObject[];
-          // Several matches (a second instance): the one named as Argo CD names it, else the first.
-          finish(items.find((s) => s.metadata?.name === ARGOCD_SERVER) ?? items[0] ?? null);
+          const name = (s: KubeObject) => s.metadata?.name ?? "";
+          const here = (update.items as KubeObject[])
+            .filter((s) => s.metadata?.namespace === namespace)
+            .sort((a, b) => name(a).localeCompare(name(b)));
+          finish(here[0] ?? null);
         } else if (update.type === "error") {
           finish(null);
         }
@@ -61,12 +110,6 @@ export function findArgocdServer(clusterId: ClusterId): Promise<KubeObject | nul
     });
     if (done) close();
   });
-}
-
-/** The namespace Argo CD runs in: that of its `argocd-server` Service, `argocd` when it cannot be found. */
-export async function argocdNamespace(clusterId: ClusterId): Promise<string> {
-  const server = await findArgocdServer(clusterId);
-  return server?.metadata?.namespace ?? DEFAULT_ARGOCD_NAMESPACE;
 }
 
 /** The Service port of the UI: the one named `https` or 443, else the first. */
@@ -91,11 +134,12 @@ async function uiScheme(clusterId: ClusterId, namespace: string): Promise<UrlSch
 
 /**
  * Opens the Argo CD web UI in the system browser at `path` (e.g. `/applications/argocd/guestbook`), forwarding a
- * local port to `argocd-server` first unless such a forward is already running.
+ * local port to `argocd-server` first unless such a forward is already running. Rejects, opening nothing, when the
+ * backend cannot tell which of several namespaces is the installation.
  */
 export async function openArgoUi(clusterId: ClusterId, path = ""): Promise<void> {
-  const server = await findArgocdServer(clusterId);
-  const namespace = server?.metadata?.namespace ?? DEFAULT_ARGOCD_NAMESPACE;
+  const namespace = await argocdNamespace(clusterId);
+  const server = await serverIn(clusterId, namespace);
   const name = server?.metadata?.name ?? ARGOCD_SERVER;
   const port = uiPort(server);
   const [scheme, forwards] = await Promise.all([uiScheme(clusterId, namespace), api.portForward.list()]);

@@ -17,7 +17,8 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::get::{
-    ResolvedKind, VALUES_HIDDEN_ANNOTATION, ensure_values_present, resolve_kind, to_json,
+    ResolvedKind, VALUES_HIDDEN_ANNOTATION, ensure_values_present, resolve_document_kind,
+    resolve_kind, to_json,
 };
 use super::{DrainOptions, DrainPreview, KindRef, ObjectRef, PatchType, PodRef};
 use crate::cluster::{CONNECT_TIMEOUT, ClusterManager};
@@ -63,7 +64,7 @@ pub async fn replace_yaml(
         ));
     }
     let client = mgr.client(cluster)?;
-    let kind = resolve_kind(mgr, cluster, &doc.kind).await?;
+    let kind = resolve_document_kind(mgr, cluster, &doc.kind).await?;
     let api = kind.api(client.clone(), Some(doc.namespace_or(&client)));
     let obj: DynamicObject = serde_json::from_value(doc.value)?;
     let params = post_params();
@@ -104,7 +105,7 @@ async fn apply_yaml_within(
         let kind = with_timeout(
             step,
             "looking up the kind (nothing was applied)",
-            resolve_kind(mgr, cluster, &doc.kind),
+            resolve_document_kind(mgr, cluster, &doc.kind),
         )
         .await
         .map_err(|e| in_document(&label, &doc, e))?;
@@ -958,6 +959,121 @@ mod tests {
         let requests = fake::lines(&api);
         assert!(
             !requests.contains(&"PATCH /api/v1/namespaces/ns/configmaps/three".to_owned()),
+            "{requests:?}"
+        );
+    }
+
+    /// A cluster with Flux whose `helm.toolkit.fluxcd.io` serves `v2` (preferred) and `v2beta2`; discovery by group
+    /// version. Every request is recorded.
+    mod two_versions {
+        use crate::fake_api::{FakeApi, Reply, Request};
+
+        const API_VERSIONS: &str =
+            r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+        const CORE_RESOURCES: &str =
+            r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[]}"#;
+        const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[
+            {"name":"helm.toolkit.fluxcd.io","versions":[
+                {"groupVersion":"helm.toolkit.fluxcd.io/v2","version":"v2"},
+                {"groupVersion":"helm.toolkit.fluxcd.io/v2beta2","version":"v2beta2"}],
+             "preferredVersion":{"groupVersion":"helm.toolkit.fluxcd.io/v2","version":"v2"}}]}"#;
+
+        fn resources(version: &str) -> String {
+            format!(
+                r#"{{"kind":"APIResourceList","groupVersion":"helm.toolkit.fluxcd.io/{version}","resources":[
+                {{"name":"helmreleases","singularName":"helmrelease","namespaced":true,"kind":"HelmRelease","verbs":["get","list","watch","patch","update"]}},
+                {{"name":"helmreleases/status","singularName":"","namespaced":true,"kind":"HelmRelease","verbs":["get","patch","update"]}}]}}"#
+            )
+        }
+
+        fn release(version: &str) -> String {
+            format!(
+                r#"{{"apiVersion":"helm.toolkit.fluxcd.io/{version}","kind":"HelmRelease","metadata":{{"name":"app","namespace":"ns","uid":"h1","resourceVersion":"2"}}}}"#
+            )
+        }
+
+        fn answer(req: &Request) -> Reply {
+            match (req.method.as_str(), req.path.as_str()) {
+                ("GET", "/api") => Reply::json(200, API_VERSIONS),
+                ("GET", "/api/v1") => Reply::json(200, CORE_RESOURCES),
+                ("GET", "/apis") => Reply::json(200, API_GROUPS),
+                ("GET", "/apis/helm.toolkit.fluxcd.io/v2") => Reply::json(200, resources("v2")),
+                ("GET", "/apis/helm.toolkit.fluxcd.io/v2beta2") => {
+                    Reply::json(200, resources("v2beta2"))
+                }
+                ("PATCH" | "PUT", p)
+                    if p.starts_with("/apis/helm.toolkit.fluxcd.io/")
+                        && p.ends_with("/namespaces/ns/helmreleases/app") =>
+                {
+                    let version = p.split('/').nth(3).unwrap_or_default();
+                    Reply::json(200, release(version))
+                }
+                _ => Reply::not_found(),
+            }
+        }
+
+        pub async fn server() -> FakeApi {
+            FakeApi::start(answer).await
+        }
+
+        /// The request lines so far ("PATCH /apis/…").
+        pub fn lines(api: &FakeApi) -> Vec<String> {
+            api.requests().iter().map(Request::line).collect()
+        }
+    }
+
+    const RELEASE_V2BETA2: &str = "apiVersion: helm.toolkit.fluxcd.io/v2beta2\nkind: HelmRelease\nmetadata:\n  name: app\n  namespace: ns\n  resourceVersion: \"1\"\nspec:\n  interval: 5m\n";
+
+    #[tokio::test]
+    async fn apply_sends_a_served_version_that_is_not_preferred_to_its_own_url() {
+        let api = two_versions::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let applied = apply_yaml(&mgr, &id, RELEASE_V2BETA2).await.unwrap();
+        assert_eq!(applied[0].kind.version, "v2beta2");
+        let requests = two_versions::lines(&api);
+        assert!(
+            requests.iter().any(|r| r.starts_with(
+                "PATCH /apis/helm.toolkit.fluxcd.io/v2beta2/namespaces/ns/helmreleases/app"
+            )),
+            "{requests:?}"
+        );
+        assert!(
+            !requests
+                .iter()
+                .any(|r| r.starts_with("PATCH /apis/helm.toolkit.fluxcd.io/v2/")),
+            "{requests:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn replace_sends_a_served_version_that_is_not_preferred_to_its_own_url() {
+        let api = two_versions::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let saved = replace_yaml(&mgr, &id, RELEASE_V2BETA2).await.unwrap();
+        assert_eq!(saved["apiVersion"], "helm.toolkit.fluxcd.io/v2beta2");
+        let requests = two_versions::lines(&api);
+        assert!(
+            requests.iter().any(|r| r.starts_with(
+                "PUT /apis/helm.toolkit.fluxcd.io/v2beta2/namespaces/ns/helmreleases/app"
+            )),
+            "{requests:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn apply_of_a_version_the_group_does_not_serve_is_not_found_and_sends_nothing() {
+        let api = two_versions::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        let yaml = RELEASE_V2BETA2.replace("v2beta2", "v2beta1");
+        let err = apply_yaml(&mgr, &id, &yaml).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound, "{err}");
+        assert!(err.message.contains("v2beta1"), "{err}");
+        let requests = two_versions::lines(&api);
+        assert!(
+            !requests.iter().any(|r| r.starts_with("PATCH ")),
             "{requests:?}"
         );
     }

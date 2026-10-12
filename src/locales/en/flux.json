@@ -61,7 +61,9 @@
     "usedBy": "Used by",
     "kind": "Kind",
     "name": "Name",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "loading": "Loading…",
+    "notUsed": "No Kustomization or HelmRelease uses this source."
   },
   "actions": {
     "reconcile": "Reconcile now",

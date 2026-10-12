@@ -189,6 +189,18 @@ describe("details of an Application", () => {
     });
   });
 
+  it("the resource tree says it is loading until the lists of descendants come", async () => {
+    await openApplication(copy(application));
+    const tree = within(section("argocdResources"));
+    expect(tree.getByRole("status")).toHaveTextContent("Loading");
+    emitSnapshot(wb, await watchOf(wb, "ReplicaSet"), [copy(replicaSet)]);
+    expect(tree.getByRole("status")).toBeInTheDocument();
+
+    emitSnapshot(wb, await watchOf(wb, "Pod"), [copy(pod)]);
+
+    expect(tree.queryByRole("status")).toBeNull();
+  });
+
   it("a Job of the app shows its Pods", async () => {
     const app = copy(applicationManual);
     (app.status as { resources: unknown[] }).resources.push({
@@ -354,6 +366,17 @@ describe("Argo CD actions", () => {
   });
 });
 
+/** What `argocd_status` answers for an Argo CD installed in `namespace` (not signed in). */
+const argoStatus = (namespace: string) => ({
+  namespace,
+  signedIn: false,
+  source: null,
+  user: null,
+  localUsers: true,
+  sso: false,
+  expired: false,
+});
+
 describe("Open Argo CD UI", () => {
   const forward = (localPort: number, extra: Record<string, unknown> = {}) => ({
     id: "pf-1",
@@ -366,10 +389,13 @@ describe("Open Argo CD UI", () => {
   });
   let started: Record<string, unknown>[];
   let insecure: string | null;
+  let installedIn: string;
 
   beforeEach(() => {
     started = [];
     insecure = null;
+    installedIn = "argocd";
+    wb.backend.on("argocd_status", () => argoStatus(installedIn));
     wb.backend.on("portforward_list", () => []);
     wb.backend.on("portforward_start", (args) => {
       started.push(args);
@@ -384,13 +410,43 @@ describe("Open Argo CD UI", () => {
     });
   });
 
-  async function openUi(): Promise<void> {
+  async function openUi(services: KubeObject[] = [copy(argocdServer)]): Promise<void> {
     await openApplication(copy(application));
     fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Open Argo CD UI/ }));
     const id = await watchOf(wb, "Service", (s) => s.labelSelector === "app.kubernetes.io/name=argocd-server");
-    expect(wb.specs.get(id)?.namespaces).toBeNull();
-    emitSnapshot(wb, id, [copy(argocdServer)]);
+    expect(wb.specs.get(id)?.namespaces).toEqual([installedIn]);
+    emitSnapshot(wb, id, services);
   }
+
+  it("opens the server of the namespace Argo CD is installed in, not a labelled Service elsewhere", async () => {
+    installedIn = "gitops";
+    const inGitops = (name: string, namespace: string) => {
+      const svc = copy(argocdServer);
+      svc.metadata = { ...svc.metadata, name, namespace };
+      return svc;
+    };
+    await openUi([inGitops("evil", "aaa"), inGitops("argocd-server", "gitops")]);
+    await waitFor(() => expect(started).toHaveLength(1));
+    expect(started[0]?.target).toEqual({ type: "service", namespace: "gitops", name: "argocd-server" });
+    expect([...wb.specs.values()].some((s) => s.kind.kind === "Service" && s.namespaces === null)).toBe(false);
+  });
+
+  it("does not open any server when several namespaces look like Argo CD, and says why", async () => {
+    wb.backend.on("argocd_status", () => {
+      throw {
+        code: "notFound",
+        message: "ambiguous Argo CD installation: several namespaces look like it (aaa, gitops), and nothing tells the real one",
+      };
+    });
+    await openApplication(copy(application));
+    fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Open Argo CD UI/ }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Several namespaces of this cluster look like an Argo CD installation");
+    expect(alert).toHaveTextContent("aaa, gitops");
+    expect(started).toHaveLength(0);
+    expect(wb.backend.openedUrls).toEqual([]);
+  });
 
   it("forwards a local port to argocd-server and opens the app over https", async () => {
     await openUi();
@@ -415,25 +471,17 @@ describe("Open Argo CD UI", () => {
 });
 
 describe("argocdNamespace", () => {
-  it("is where the argocd-server Service is, by its label", async () => {
-    const found = argocdNamespace("c1");
-    const id = await watchOf(wb, "Service");
-    const server = copy(argocdServer);
-    server.metadata = { ...server.metadata, namespace: "gitops" };
-    emitSnapshot(wb, id, [server]);
-    expect(await found).toBe("gitops");
-    await waitFor(() => expect(wb.backend.calls.some((c) => c.cmd === "watch_stop")).toBe(true));
+  it("is the namespace the backend found Argo CD installed in, without listing Services everywhere", async () => {
+    wb.backend.on("argocd_status", () => argoStatus("gitops"));
+    expect(await argocdNamespace("c1")).toBe("gitops");
+    expect([...wb.specs.values()].some((s) => s.kind.kind === "Service")).toBe(false);
   });
 
-  it("is argocd when no such Service is found or the Services cannot be listed", async () => {
-    const empty = argocdNamespace("c1");
-    emitSnapshot(wb, await watchOf(wb, "Service"), []);
-    expect(await empty).toBe("argocd");
-
-    const refused = argocdNamespace("c1");
-    const id = await watchOf(wb, "Service");
-    wb.backend.emit(`watch:${id}`, { type: "error", code: "forbidden", message: "services is forbidden" });
-    expect(await refused).toBe("argocd");
+  it("is argocd when the backend cannot find Argo CD", async () => {
+    wb.backend.on("argocd_status", () => {
+      throw { code: "notFound", message: "Argo CD server not found" };
+    });
+    expect(await argocdNamespace("c1")).toBe("argocd");
   });
 });
 

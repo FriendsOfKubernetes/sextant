@@ -63,7 +63,8 @@
     "namespace": "Namespace",
     "sync": "Sync",
     "health": "Health / status",
-    "remote": "The app deploys to another cluster: its resources cannot be opened from here."
+    "remote": "The app deploys to another cluster: its resources cannot be opened from here.",
+    "loading": "Loading what the resources own…"
   },
   "history": {
     "title": "Sync history",
@@ -131,6 +132,9 @@
       "forbidden": "Argo CD does not show this application to the signed-in account.",
       "notFound": "Argo CD was not found in this cluster: there is no argocd-server Service."
     }
+  },
+  "installation": {
+    "ambiguous": "Several namespaces of this cluster look like an Argo CD installation ({{namespaces}}), and nothing their users cannot create themselves tells which one is real, so Sextant connects to none of them. A cluster-wide Argo CD is recognized by the ClusterRoleBinding of argocd-application-controller or argocd-server; ask the cluster administrator to check it."
   },
   "login": {
     "title": "Sign in to Argo CD",

@@ -25,21 +25,22 @@ export function Block({ title, children, actions }: { title?: string; children: 
   );
 }
 
-/** `[labelKey under details:fields, value]`; rows with an empty value are left out. */
+/** `[labelKey under labelPrefix (details:fields by default), value]`; rows with an empty value are left out. */
 export type FieldRow = readonly [labelKey: string, value: ReactNode];
 
 function isEmpty(value: ReactNode): boolean {
   return value === null || value === undefined || value === false || value === "";
 }
 
-export function Fields({ rows }: { rows: FieldRow[] }) {
+/** A list of fields labelled `t("<labelPrefix>.<labelKey>")`; a feature passes its own prefix ("flux:fields"). */
+export function Fields({ rows, labelPrefix = "details:fields" }: { rows: FieldRow[]; labelPrefix?: string }) {
   const { t } = useTranslation();
   const shown = rows.filter(([, value]) => !isEmpty(value));
   if (shown.length === 0) return null;
   return (
     <dl className="dt-fields">
       {shown.map(([labelKey, value]) => (
-        <FieldRowView key={labelKey} label={t(`details:fields.${labelKey}`)} value={value} />
+        <FieldRowView key={labelKey} label={t(`${labelPrefix}.${labelKey}`)} value={value} />
       ))}
     </dl>
   );
@@ -66,9 +67,9 @@ function Chips({ values }: { values: string[] }) {
   );
 }
 
-/** Chips of strings; `null` when there are none. */
-export function chips(values: string[]): ReactNode {
-  const list = values.filter(Boolean);
+/** Chips of strings (empty and missing ones are left out); `null` when there are none. */
+export function chips(values: readonly (string | null | undefined)[]): ReactNode {
+  const list = values.filter((v): v is string => Boolean(v));
   return list.length > 0 ? <Chips values={list} /> : null;
 }
 

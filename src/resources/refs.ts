@@ -25,6 +25,11 @@ export function refOf(obj: KubeObject, kind: KindRef): ObjectRef {
   return { kind, namespace: obj.metadata?.namespace ?? null, name: obj.metadata?.name ?? "" };
 }
 
+/** The `apiVersion` of a kind: "apps/v1", "v1" for the core group. Inverse of `kindFromApiVersion`. */
+export function apiVersionOf(kind: Pick<KindRef, "group" | "version">): string {
+  return kind.group ? `${kind.group}/${kind.version}` : kind.version;
+}
+
 /** `KindRef` from an `apiVersion` ("apps/v1", "v1") and a kind. */
 export function kindFromApiVersion(apiVersion: string, kind: string): KindRef {
   const slash = apiVersion.indexOf("/");

@@ -21,7 +21,13 @@
 //! ```
 #![allow(dead_code)]
 
+use std::future::Future;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
+
+use sextant_core::kubeconfig::KubeconfigEnv;
+use sextant_core::{ClusterId, ClusterManager, KubeconfigRegistry};
 
 /// Admin kubeconfig of the test cluster.
 pub const KUBECONFIG_ENV: &str = "SEXTANT_TEST_KUBECONFIG";
@@ -35,6 +41,8 @@ pub const DEMO_NAMESPACE: &str = "sextant-demo";
 pub const ADMIN_CONTEXT: &str = "kind-sextant-test";
 /// Context name inside the limited kubeconfig.
 pub const LIMITED_CONTEXT: &str = "sextant-test-limited";
+/// Turns on the tests of the GitOps tools installed by `scripts/test-cluster.sh up --gitops`.
+pub const GITOPS_ENV: &str = "SEXTANT_TEST_GITOPS";
 
 pub struct TestCluster {
     pub kubeconfig: PathBuf,
@@ -85,4 +93,41 @@ pub async fn client_from(path: &Path) -> kube::Client {
     .await
     .unwrap_or_else(|e| panic!("bad kubeconfig {}: {e}", path.display()));
     kube::Client::try_from(config).expect("kube client")
+}
+
+/// The test cluster when it has Flux and Argo CD (`SEXTANT_TEST_GITOPS=1`), otherwise `None` with a note.
+pub fn gitops_cluster() -> Option<TestCluster> {
+    let cluster = test_cluster()?;
+    if std::env::var(GITOPS_ENV).as_deref() != Ok("1") {
+        eprintln!("skipped: {GITOPS_ENV}=1 is not set (see scripts/test-cluster.sh up --gitops)");
+        return None;
+    }
+    Some(cluster)
+}
+
+/// A manager connected to the only context of `kubeconfig`.
+pub async fn connected(kubeconfig: &Path) -> (tempfile::TempDir, ClusterManager, ClusterId) {
+    let tmp = tempfile::tempdir().unwrap();
+    let registry =
+        KubeconfigRegistry::new(Vec::new(), tmp.path().to_path_buf()).with_env(KubeconfigEnv {
+            kubeconfig: Some(kubeconfig.as_os_str().to_owned()),
+            home: None,
+        });
+    let id = registry.clusters().unwrap()[0].id.clone();
+    let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
+    mgr.connect(&id).await.unwrap();
+    (tmp, mgr, id)
+}
+
+/// Polls `done` until it is true; panics after `secs` seconds naming `what`.
+pub async fn wait_until<F, Fut>(what: &str, secs: u64, mut done: F)
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = bool>,
+{
+    let deadline = Instant::now() + Duration::from_secs(secs);
+    while !done().await {
+        assert!(Instant::now() < deadline, "timed out waiting for {what}");
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
 }

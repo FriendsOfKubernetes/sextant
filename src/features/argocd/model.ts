@@ -1,7 +1,7 @@
 // What the Argo CD objects say, read the way the Argo CD UI shows it: sync and health of an Application, its sources
 // and destination, the sync history, the resources it manages, and the patches of the actions. No React here.
 import type { KindRef, KubeObject, ObjectRef } from "../../api";
-import { status } from "../../resources";
+import { kindFromApiVersion, status } from "../../resources";
 import type { Tone } from "../../resources/status";
 
 const { arr, get, num, record, str } = status;
@@ -212,8 +212,6 @@ export function managedResources(app: KubeObject): ManagedResource[] {
   }));
 }
 
-export const apiVersionOf = (group: string, version: string): string => (group ? `${group}/${version}` : version);
-
 /** Kinds whose objects own others the tree shows: what each one creates. */
 const CHILD_KINDS: Record<string, KindRef[]> = {
   "apps/Deployment": [{ group: "apps", version: "v1", kind: "ReplicaSet" }],
@@ -257,11 +255,6 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-function groupOfApiVersion(apiVersion: string): string {
-  const slash = apiVersion.indexOf("/");
-  return slash < 0 ? "" : apiVersion.slice(0, slash);
-}
-
 /** Whether `obj` is owned by the object `group/kind/name` of its own namespace. */
 function ownedBy(obj: KubeObject, group: string, kind: string, name: string, uid?: string): boolean {
   return arr(obj.metadata?.ownerReferences).some((o) => {
@@ -269,7 +262,7 @@ function ownedBy(obj: KubeObject, group: string, kind: string, name: string, uid
     return (
       str(get(o, "kind")) === kind &&
       str(get(o, "name")) === name &&
-      groupOfApiVersion(str(get(o, "apiVersion")) ?? "") === group
+      kindFromApiVersion(str(get(o, "apiVersion")) ?? "", kind).group === group
     );
   });
 }
@@ -278,10 +271,7 @@ function kindOfObject(obj: KubeObject, fallback: KindRef): KindRef {
   const apiVersion = str(obj.apiVersion);
   const kind = str(obj.kind);
   if (!apiVersion || !kind) return fallback;
-  const slash = apiVersion.indexOf("/");
-  return slash < 0
-    ? { group: "", version: apiVersion, kind }
-    : { group: apiVersion.slice(0, slash), version: apiVersion.slice(slash + 1), kind };
+  return kindFromApiVersion(apiVersion, kind);
 }
 
 /**
