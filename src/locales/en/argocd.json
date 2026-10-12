@@ -1,0 +1,100 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "Project",
+    "sync": "Sync",
+    "health": "Health",
+    "revision": "Revision",
+    "destination": "Destination",
+    "applications": "Applications",
+    "destinations": "Destinations",
+    "sources": "Sources"
+  },
+  "status": {
+    "syncing": "Syncing"
+  },
+  "fields": {
+    "project": "Project",
+    "sync": "Sync status",
+    "syncedRevision": "Synced revision",
+    "health": "Health",
+    "operation": "Last operation",
+    "operationStarted": "Operation started",
+    "operationFinished": "Operation finished",
+    "sources": "Source",
+    "destination": "Destination",
+    "syncPolicy": "Sync policy",
+    "syncOptions": "Sync options",
+    "reconciledAt": "Last compared",
+    "generators": "Generators",
+    "applications": "Applications",
+    "description": "Description",
+    "sourceRepos": "Source repositories",
+    "destinations": "Destinations",
+    "clusterResourceWhitelist": "Allowed cluster resources",
+    "clusterResourceBlacklist": "Denied cluster resources",
+    "namespaceResourceWhitelist": "Allowed namespaced resources",
+    "namespaceResourceBlacklist": "Denied namespaced resources",
+    "roles": "Roles"
+  },
+  "sources": {
+    "repo": "Repository",
+    "path": "Path / chart",
+    "targetRevision": "Target revision"
+  },
+  "destinations": {
+    "cluster": "Cluster",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "Manual",
+    "automated": "Automated",
+    "prune": "prune",
+    "selfHeal": "self-heal"
+  },
+  "tree": {
+    "title": "Resources",
+    "kind": "Kind",
+    "name": "Name",
+    "namespace": "Namespace",
+    "sync": "Sync",
+    "health": "Health / status",
+    "remote": "The app deploys to another cluster: its resources cannot be opened from here."
+  },
+  "history": {
+    "title": "Sync history",
+    "id": "ID",
+    "revision": "Revision",
+    "deployedAt": "Deployed",
+    "initiatedBy": "Started by",
+    "source": "Source",
+    "automated": "Automated"
+  },
+  "actions": {
+    "sync": "Sync…",
+    "refresh": "Refresh",
+    "hardRefresh": "Hard refresh",
+    "terminate": "Terminate…",
+    "openUi": "Open Argo CD UI"
+  },
+  "sync": {
+    "title": "Sync {{name}}",
+    "confirm": "Sync",
+    "revision": "Revision",
+    "revisionHint": "Branch, tag or commit; the app's target revision by default.",
+    "multiSource": "Each source syncs to its own target revision.",
+    "prune": "Prune",
+    "dryRun": "Dry run",
+    "started": "Sync of {{name}} started. Its progress shows in the details.",
+    "dryRunStarted": "Dry run of {{name}} started. Its result shows in the details."
+  },
+  "terminate": {
+    "title": "Terminate the operation of {{name}}?",
+    "text": "Argo CD stops the running sync of {{name}}. What it already applied stays as it is.",
+    "confirm": "Terminate"
+  }
+}

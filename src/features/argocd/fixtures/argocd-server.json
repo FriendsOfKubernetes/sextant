@@ -1,0 +1,49 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T16:50:34Z",
+    "labels": {
+      "app.kubernetes.io/component": "server",
+      "app.kubernetes.io/name": "argocd-server",
+      "app.kubernetes.io/part-of": "argocd"
+    },
+    "name": "argocd-server",
+    "namespace": "argocd",
+    "resourceVersion": "139079",
+    "uid": "a52fbea4-f81e-4b21-be0c-e42e2635421b"
+  },
+  "spec": {
+    "clusterIP": "10.96.30.23",
+    "clusterIPs": [
+      "10.96.30.23"
+    ],
+    "internalTrafficPolicy": "Cluster",
+    "ipFamilies": [
+      "IPv4"
+    ],
+    "ipFamilyPolicy": "SingleStack",
+    "ports": [
+      {
+        "name": "http",
+        "port": 80,
+        "protocol": "TCP",
+        "targetPort": 8080
+      },
+      {
+        "name": "https",
+        "port": 443,
+        "protocol": "TCP",
+        "targetPort": 8080
+      }
+    ],
+    "selector": {
+      "app.kubernetes.io/name": "argocd-server"
+    },
+    "sessionAffinity": "None",
+    "type": "ClusterIP"
+  },
+  "status": {
+    "loadBalancer": {}
+  }
+}

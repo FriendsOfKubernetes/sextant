@@ -1,0 +1,149 @@
+.argo-diff-dialog {
+  width: min(1200px, calc(100vw - 64px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.argo-diff__session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-text-muted, inherit);
+}
+
+.argo-diff__session-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.argo-diff {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) 1fr;
+  gap: 12px;
+  min-height: 360px;
+}
+
+.argo-diff__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.argo-diff__summary,
+.argo-diff__note,
+.argo-diff__empty {
+  margin: 0 0 8px;
+}
+
+.argo-diff__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.argo-diff__item[aria-current="true"] {
+  border-color: var(--color-border);
+  background: var(--color-hover, rgba(127, 127, 127, 0.12));
+}
+
+.argo-diff__name {
+  overflow-wrap: anywhere;
+}
+
+.argo-diff__state {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.argo-diff__item--changed .argo-diff__state,
+.argo-diff__item--missingLive .argo-diff__state,
+.argo-diff__item--missingTarget .argo-diff__state {
+  color: var(--color-warning, #b7791f);
+}
+
+.argo-diff__view {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.argo-diff__heads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.argo-diff__merge {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.argo-diff__error p {
+  margin: 0 0 8px;
+}
+
+.argo-login {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.argo-login h3,
+.argo-login p {
+  margin: 0;
+}
+
+.argo-login__note {
+  padding: 6px 8px;
+  border-left: 3px solid var(--color-warning, #b7791f);
+}
+
+.argo-login__modes {
+  display: flex;
+  gap: 8px;
+}
+
+.argo-login__fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.argo-login__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.argo-login__hint,
+.argo-login__detail {
+  font-size: 12px;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+
+.argo-login__error {
+  color: var(--color-danger, #c53030);
+}
+
+.argo-login__actions {
+  display: flex;
+  justify-content: flex-end;
+}

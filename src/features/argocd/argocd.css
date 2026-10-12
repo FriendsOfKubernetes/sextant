@@ -1,0 +1,43 @@
+/* Argo CD: details fields, the resource tree and the Sync dialog. */
+.argo-with-message,
+.argo-when {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.argo-tree__kind {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.argo-tree tr[data-level="1"] td {
+  font-weight: 500;
+}
+
+.argo-revision {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.argo-sync {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.argo-sync__revision {
+  width: 100%;
+  max-width: 320px;
+}
+
+.argo-sync__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.argo-sync__option .checkbox {
+  margin-top: 2px;
+}

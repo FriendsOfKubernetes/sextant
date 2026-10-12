@@ -1,0 +1,127 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "Application",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"argoproj.io/v1alpha1\",\"kind\":\"Application\",\"metadata\":{\"annotations\":{},\"name\":\"sextant-exp\",\"namespace\":\"argocd\"},\"spec\":{\"destination\":{\"namespace\":\"sextant-exp-dest\",\"server\":\"https://kubernetes.default.svc\"},\"project\":\"default\",\"source\":{\"path\":\"guestbook\",\"repoURL\":\"https://github.com/argoproj/argocd-example-apps\",\"targetRevision\":\"HEAD\"},\"syncPolicy\":{\"syncOptions\":[\"CreateNamespace=true\"]}}}\n"
+    },
+    "creationTimestamp": "2026-10-12T17:07:40Z",
+    "generation": 20,
+    "name": "sextant-exp",
+    "namespace": "argocd",
+    "resourceVersion": "143624",
+    "uid": "be11f643-bd42-4a10-9a60-634016b26b9f"
+  },
+  "spec": {
+    "destination": {
+      "namespace": "sextant-exp-dest",
+      "server": "https://kubernetes.default.svc"
+    },
+    "project": "default",
+    "source": {
+      "path": "guestbook",
+      "repoURL": "https://github.com/argoproj/argocd-example-apps",
+      "targetRevision": "HEAD"
+    },
+    "syncPolicy": {
+      "syncOptions": [
+        "CreateNamespace=true"
+      ]
+    }
+  },
+  "status": {
+    "controllerNamespace": "argocd",
+    "health": {
+      "lastTransitionTime": "2026-10-12T17:08:01Z",
+      "status": "Healthy"
+    },
+    "history": [
+      {
+        "deployStartedAt": "2026-10-12T17:08:00Z",
+        "deployedAt": "2026-10-12T17:08:00Z",
+        "id": 0,
+        "initiatedBy": {
+          "username": "sextant"
+        },
+        "revision": "8088f4c0d970abb09e250248cc97e35623447cb5",
+        "source": {
+          "path": "guestbook",
+          "repoURL": "https://github.com/argoproj/argocd-example-apps",
+          "targetRevision": "HEAD"
+        }
+      }
+    ],
+    "operationState": {
+      "finishedAt": "2026-10-12T17:08:37Z",
+      "message": "ComparisonError: Failed to load target state: failed to generate manifest for source 1 of 1: rpc error: code = Unknown desc = unable to resolve 'does-not-exist-sextant' to a commit SHA (retried 1 times).",
+      "operation": {
+        "initiatedBy": {
+          "username": "sextant"
+        },
+        "retry": {
+          "backoff": {
+            "duration": "3m"
+          },
+          "limit": 5
+        },
+        "sync": {
+          "revision": "does-not-exist-sextant",
+          "syncOptions": [
+            "CreateNamespace=true"
+          ]
+        }
+      },
+      "phase": "Error",
+      "retryCount": 1,
+      "startedAt": "2026-10-12T17:08:16Z",
+      "syncResult": {
+        "revision": "does-not-exist-sextant",
+        "source": {
+          "path": "guestbook",
+          "repoURL": "https://github.com/argoproj/argocd-example-apps",
+          "targetRevision": "HEAD"
+        }
+      }
+    },
+    "reconciledAt": "2026-10-12T17:08:37Z",
+    "resourceHealthSource": "appTree",
+    "resources": [
+      {
+        "kind": "Service",
+        "name": "guestbook-ui",
+        "namespace": "sextant-exp-dest",
+        "status": "Synced",
+        "version": "v1"
+      },
+      {
+        "group": "apps",
+        "kind": "Deployment",
+        "name": "guestbook-ui",
+        "namespace": "sextant-exp-dest",
+        "status": "Synced",
+        "version": "v1"
+      }
+    ],
+    "sourceType": "Directory",
+    "summary": {
+      "images": [
+        "gcr.io/google-samples/gb-frontend:v5"
+      ]
+    },
+    "sync": {
+      "comparedTo": {
+        "destination": {
+          "namespace": "sextant-exp-dest",
+          "server": "https://kubernetes.default.svc"
+        },
+        "source": {
+          "path": "guestbook",
+          "repoURL": "https://github.com/argoproj/argocd-example-apps",
+          "targetRevision": "HEAD"
+        }
+      },
+      "revision": "8088f4c0d970abb09e250248cc97e35623447cb5",
+      "status": "Synced"
+    }
+  }
+}
