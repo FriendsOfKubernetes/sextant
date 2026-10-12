@@ -38,6 +38,11 @@ pub struct KubeconfigSource {
     pub id: String,
     pub path: PathBuf,
     pub kind: SourceKind,
+    /// Why the source cannot be read right now (`null` when it is fine). Not set yet; optional in TypeScript so
+    /// that existing fixtures stay valid until it is filled.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub error: Option<CoreError>,
 }
 
 /// Stable cluster id: hex `sha256(normalized source path + "\0" + context)[..16]` (see `normalized_path`).
@@ -325,12 +330,13 @@ impl KubeconfigRegistry {
         ))
     }
 
-    /// Writes [`Self::kubeconfig_for`] to a temporary file with mode 0600 (for the terminal and `helm`).
+    /// Writes [`Self::kubeconfig_for`] to a temporary file with mode 0600 (for the terminal and `helm`), named
+    /// [`TEMP_KUBECONFIG_PREFIX`]`*` in the system temp directory.
     pub fn write_temp_kubeconfig(&self, id: &ClusterId) -> CoreResult<tempfile::TempPath> {
         let config = self.kubeconfig_for(id)?;
         let yaml = serde_yaml::to_string(&config)?;
         let mut file = tempfile::Builder::new()
-            .prefix("sextant-kubeconfig-")
+            .prefix(TEMP_KUBECONFIG_PREFIX)
             .suffix(".yaml")
             .tempfile()?;
         restrict_permissions(file.path())?;
@@ -338,6 +344,74 @@ impl KubeconfigRegistry {
         file.as_file().sync_all()?;
         Ok(file.into_temp_path())
     }
+}
+
+/// Name prefix of the temporary kubeconfig files ([`KubeconfigRegistry::write_temp_kubeconfig`]).
+pub const TEMP_KUBECONFIG_PREFIX: &str = "sextant-kubeconfig-";
+
+/// Removes temporary kubeconfig files ([`TEMP_KUBECONFIG_PREFIX`]`*`) left in `dir` by a Sextant that did not exit
+/// cleanly (a crash, a killed process). Only regular files of the current user are touched; returns how many were
+/// removed. Called once at start with [`std::env::temp_dir`], before any terminal or `helm` call writes a new one.
+pub fn remove_stale_temp_kubeconfigs(dir: &Path) -> usize {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return 0;
+    };
+    let Some(owner) = current_owner(dir) else {
+        return 0;
+    };
+    entries
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(TEMP_KUBECONFIG_PREFIX)
+        })
+        .filter(|entry| {
+            // `DirEntry::metadata` does not follow symlinks: a link is never a regular file here.
+            entry
+                .metadata()
+                .is_ok_and(|meta| meta.is_file() && owner.owns(&meta))
+        })
+        .filter(|entry| std::fs::remove_file(entry.path()).is_ok())
+        .count()
+}
+
+/// Who the current user is, as file ownership in `dir` sees it.
+#[cfg(unix)]
+struct Owner(u32);
+
+#[cfg(unix)]
+impl Owner {
+    fn owns(&self, meta: &std::fs::Metadata) -> bool {
+        use std::os::unix::fs::MetadataExt;
+        meta.uid() == self.0
+    }
+}
+
+/// The owner of a file this process creates in `dir` (its effective user), without calling into libc. `None` when
+/// nothing can be created there — then nothing could be removed either.
+#[cfg(unix)]
+fn current_owner(dir: &Path) -> Option<Owner> {
+    use std::os::unix::fs::MetadataExt;
+    let probe = tempfile::tempfile_in(dir).ok()?;
+    Some(Owner(probe.metadata().ok()?.uid()))
+}
+
+/// On Windows the temp directory (`%TEMP%`, in the user's profile) belongs to the user: everything in it is theirs.
+#[cfg(not(unix))]
+struct Owner;
+
+#[cfg(not(unix))]
+impl Owner {
+    fn owns(&self, _meta: &std::fs::Metadata) -> bool {
+        true
+    }
+}
+
+#[cfg(not(unix))]
+fn current_owner(_dir: &Path) -> Option<Owner> {
+    Some(Owner)
 }
 
 /// One readable source: its own contexts, and the config their names resolve in.
@@ -381,6 +455,7 @@ fn source(path: PathBuf, kind: SourceKind) -> KubeconfigSource {
         id: short_hash(normalized_path(&path).as_os_str().as_encoded_bytes()),
         path,
         kind,
+        error: None,
     }
 }
 
@@ -494,6 +569,41 @@ pub fn kubeconfig_error(err: KubeconfigError) -> CoreError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stale_temp_kubeconfigs_of_the_user_are_removed_and_nothing_else() {
+        let dir = tempfile::tempdir().unwrap();
+        let stale = [
+            dir.path().join("sextant-kubeconfig-abc123.yaml"),
+            dir.path().join("sextant-kubeconfig-x"),
+        ];
+        for path in &stale {
+            std::fs::write(path, "token: leaked").unwrap();
+        }
+        let kept_files = [
+            dir.path().join("other-kubeconfig-abc.yaml"),
+            dir.path().join("my-sextant-kubeconfig-1.yaml"),
+        ];
+        for path in &kept_files {
+            std::fs::write(path, "keep").unwrap();
+        }
+        let kept_dir = dir.path().join("sextant-kubeconfig-dir");
+        std::fs::create_dir(&kept_dir).unwrap();
+
+        assert_eq!(remove_stale_temp_kubeconfigs(dir.path()), 2);
+        for path in &stale {
+            assert!(!path.exists(), "{} was left", path.display());
+        }
+        for path in &kept_files {
+            assert!(path.exists(), "{} was removed", path.display());
+        }
+        assert!(kept_dir.is_dir(), "directories are not touched");
+        // A missing directory is nothing to clean.
+        assert_eq!(
+            remove_stale_temp_kubeconfigs(&dir.path().join("missing")),
+            0
+        );
+    }
 
     const SECRET_TOKEN: &str = "s3cr3t-t0ken-value";
 

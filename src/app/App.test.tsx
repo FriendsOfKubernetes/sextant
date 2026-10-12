@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockBackend, updateSettings, type MockBackend } from "../api";
+import { mockBackend, updateSettings, useWatch, type MockBackend } from "../api";
 import { App } from "./App";
 import { resetAppStore, useAppStore } from "./store";
 import { PERSIST_DELAY_MS } from "./useLayoutPersistence";
@@ -104,5 +104,42 @@ describe("window layout across restarts", () => {
     );
     // Debounced: several changes, one write.
     expect(backend.calls.filter((c) => c.cmd === "settings_update")).toHaveLength(1);
+  });
+});
+
+describe("streams of a previous page", () => {
+  it("are closed once at load, before the first stream of this page starts", async () => {
+    mockColorScheme(false);
+    let answer: () => void = () => undefined;
+    backend = mockBackend({
+      streams_reset: () => new Promise<void>((resolve) => (answer = resolve)),
+      watch_start: () => undefined,
+      watch_stop: () => undefined,
+    });
+    const spec = { kind: { group: "", version: "v1", kind: "Pod" }, namespaces: null, labelSelector: null, fieldSelector: null };
+    function Probe() {
+      useWatch("c1", spec);
+      return null;
+    }
+    const { rerender } = render(
+      <>
+        <App />
+        <Probe />
+      </>,
+    );
+    rerender(
+      <>
+        <App />
+        <Probe />
+      </>,
+    );
+    await new Promise((r) => setTimeout(r, 20));
+    const commands = () => backend.calls.map((c) => c.cmd);
+    expect(commands().filter((c) => c === "streams_reset")).toHaveLength(1);
+    expect(commands()).not.toContain("watch_start");
+
+    act(() => answer());
+    await waitFor(() => expect(commands()).toContain("watch_start"));
+    expect(commands().indexOf("streams_reset")).toBeLessThan(commands().indexOf("watch_start"));
   });
 });

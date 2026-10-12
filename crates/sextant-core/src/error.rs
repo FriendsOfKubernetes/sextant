@@ -31,6 +31,8 @@ pub enum ErrorCode {
     PortInUse,
     /// The kubeconfig cannot be read or is malformed.
     Kubeconfig,
+    /// The operation took longer than allowed (e.g. a change in the cluster that does not finish).
+    Timeout,
     /// Anything else, including "not implemented".
     Other,
 }

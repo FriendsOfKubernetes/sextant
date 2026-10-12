@@ -1,7 +1,7 @@
 // Live list of a kind (interfaces.md §3: `useWatch(clusterId, spec)`).
 //
-// The backend sends a full snapshot first (and after every reconnect), then deltas at most every 250 ms; each
-// update becomes exactly one new `items` map, so a batch of changes costs one render.
+// The backend sends a full snapshot as soon as it is listed (and after every reconnect), then deltas at most every
+// 250 ms; each update becomes exactly one new `items` map, so a batch of changes costs one render.
 //
 //   const { items, status, error } = useWatch(clusterId, { kind, namespaces: null, labelSelector: null, fieldSelector: null });
 //
@@ -53,6 +53,9 @@ export function applyWatchUpdate(state: WatchState, update: WatchUpdate): WatchS
       return { items: state.items, status: state.status === "loading" ? "loading" : "reconnecting" };
     case "error":
       return { items: state.items, status: "error", error: toApiError(update) };
+    case "forbidden":
+      // Not sent yet; the namespaces without permission are not shown.
+      return state;
   }
 }
 
@@ -68,7 +71,7 @@ export function useWatch(clusterId: ClusterId | null, spec: WatchSpec | null): W
       setState((prev) => ({ key, value: fn(prev.key === key ? prev.value : EMPTY) }));
 
     return openStream<WatchUpdate>({
-      start: () => resources.watchStart(cluster, watchSpec),
+      start: (id) => resources.watchStart(cluster, watchSpec, id),
       listen: events.onWatch,
       stop: resources.watchStop,
       onEvent: (u) => update((s) => applyWatchUpdate(s, u)),

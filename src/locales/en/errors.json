@@ -9,5 +9,6 @@
   "helmMissing": "Helm is not installed.",
   "portInUse": "The local port is already in use.",
   "kubeconfig": "The kubeconfig cannot be read or is not valid.",
+  "timeout": "The operation took too long.",
   "other": "Something went wrong."
 }

@@ -2,6 +2,7 @@
 // Used by Vitest; never imported by application code.
 import type { AppSettings } from "./generated/AppSettings";
 import { defaultAppSettings, resetSettingsCache } from "./settings";
+import { resetStreamsState } from "./stream";
 import { setTransport, type OpenFileOptions, type SaveFileOptions, type Transport } from "./transport";
 
 export type MockHandler = (args: Record<string, unknown>) => unknown;
@@ -29,8 +30,12 @@ export interface MockBackend {
   readonly openedUrls: string[];
   /** Adds or replaces a command handler. */
   on(cmd: string, handler: MockHandler): void;
-  /** Delivers a backend event to the current listeners. */
+  /**
+   * Delivers a backend event to the current listeners. A stream can be named by the string its `*_start` handler
+   * returned (`watch:watch-1`) as well as by the id the frontend chose (`watch:<uuid>`).
+   */
   emit(event: string, payload: unknown): void;
+  /** Listeners of an event; stream events can be named by the handler's name for the stream, as in `emit`. */
   listenerCount(event: string): number;
   /** Restores the real Tauri transport. */
   restore(): void;
@@ -42,12 +47,23 @@ const NOT_IMPLEMENTED = { code: "other", message: "not implemented" } as const;
  * Installs a mock backend. Commands without a handler reject like the backend stubs do
  * (`{ code: "other", message: "not implemented" }`); a handler that throws rejects with the thrown value.
  * `settings_get` / `settings_update` work out of the box on an in-memory copy.
+ *
+ * Stream ids come from the frontend (`streamId` of `*_start`). A `*_start` handler may still answer with a name of
+ * its own for the stream (`"watch-1"`); `emit` and `listenerCount` then accept that name in place of the id.
  */
 export function mockBackend(handlers: Record<string, MockHandler> = {}, options: MockBackendOptions = {}): MockBackend {
   const table = new Map<string, MockHandler>();
   const listeners = new Map<string, Set<(payload: unknown) => void>>();
   const calls: MockCall[] = [];
   const openedUrls: string[] = [];
+  // Name a `*_start` handler gave a stream → the id the frontend chose for it.
+  const streamNames = new Map<string, string>();
+  const resolve = (event: string) => {
+    const colon = event.indexOf(":");
+    if (colon < 0) return event;
+    const id = streamNames.get(event.slice(colon + 1));
+    return id ? `${event.slice(0, colon + 1)}${id}` : event;
+  };
   const defaults = defaultAppSettings();
   let settings: AppSettings = {
     ...defaults,
@@ -67,7 +83,11 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
       calls.push({ cmd, args });
       const handler = table.get(cmd);
       if (!handler) throw { ...NOT_IMPLEMENTED };
-      return (await handler(args)) as T;
+      const result = await handler(args);
+      if (typeof args.streamId === "string" && typeof result === "string" && result !== args.streamId) {
+        streamNames.set(result, args.streamId);
+      }
+      return result as T;
     },
     async listen<T>(event: string, handler: (payload: T) => void) {
       const set = listeners.get(event) ?? new Set();
@@ -90,6 +110,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   };
 
   resetSettingsCache();
+  resetStreamsState();
   setTransport(transport);
 
   return {
@@ -102,14 +123,15 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
       table.set(cmd, handler);
     },
     emit(event, payload) {
-      for (const fn of [...(listeners.get(event) ?? [])]) fn(payload);
+      for (const fn of [...(listeners.get(resolve(event)) ?? [])]) fn(payload);
     },
     listenerCount(event) {
-      return listeners.get(event)?.size ?? 0;
+      return listeners.get(resolve(event))?.size ?? 0;
     },
     restore() {
       setTransport(null);
       resetSettingsCache();
+      resetStreamsState();
     },
   };
 }

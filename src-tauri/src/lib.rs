@@ -25,13 +25,17 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         clusters::cluster_kinds,
         resources::watch_start,
         resources::watch_stop,
+        resources::streams_reset,
         resources::resource_get,
         resources::resource_replace,
         resources::resource_apply,
         resources::resource_delete,
+        secrets::secret_value,
+        secrets::resource_get_full,
         actions::workload_scale,
         actions::workload_restart,
         actions::node_cordon,
+        actions::node_drain_preview,
         actions::node_drain,
         actions::cronjob_trigger,
         actions::cronjob_suspend,
@@ -65,6 +69,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         helm::helm_show_values,
         settings::settings_get,
         settings::settings_update,
+        settings::settings_status,
         files::file_save,
     ])
 }
@@ -113,6 +118,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.
+            sextant_core::kubeconfig::remove_stale_temp_kubeconfigs(&std::env::temp_dir());
             let paths = app.path();
             let state = AppState::new(&paths.app_config_dir()?, &paths.app_data_dir()?);
             app.manage(state);
@@ -121,6 +128,7 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(window::on_window_event)
-        .run(tauri::generate_context!())
-        .expect("error while running Sextant");
+        .build(tauri::generate_context!())
+        .expect("error while building Sextant")
+        .run(|app, event| window::on_run_event(app, &event));
 }

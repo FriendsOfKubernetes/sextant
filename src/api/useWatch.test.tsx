@@ -38,12 +38,29 @@ describe("useWatch", () => {
     const { result } = renderHook(() => useWatch("c1", spec(["default"])));
     expect(result.current.status).toBe("loading");
     await listening(b, "watch-1");
-    expect(b.calls.find((c) => c.cmd === "watch_start")?.args).toEqual({ clusterId: "c1", spec: spec(["default"]) });
+    expect(b.calls.find((c) => c.cmd === "watch_start")?.args).toEqual({
+      clusterId: "c1",
+      spec: spec(["default"]),
+      streamId: expect.any(String),
+    });
 
     act(() => b.emit("watch:watch-1", { type: "snapshot", items: [pod("a"), pod("b")] }));
     expect(result.current.status).toBe("ready");
     expect([...result.current.items.keys()].sort()).toEqual(["a", "b"]);
     expect(result.current.items.get("a")?.metadata?.name).toBe("a");
+  });
+
+  it("a snapshot the backend sends while watch_start is still answering is not lost", async () => {
+    backend = mockBackend({
+      watch_start: (args) => {
+        // The backend lists at once and emits before its answer reaches the window.
+        backend!.emit(`watch:${args.streamId as string}`, { type: "snapshot", items: [pod("early")] });
+        return undefined;
+      },
+    });
+    const { result } = renderHook(() => useWatch("c1", spec()));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect([...result.current.items.keys()]).toEqual(["early"]);
   });
 
   it("applies a delta as one batch: one new map with every change", async () => {
@@ -119,15 +136,18 @@ describe("useWatch", () => {
     rerender({ ns: ["a"] });
     expect(b.calls.filter((c) => c.cmd === "watch_start")).toHaveLength(1);
 
+    const streamIds = () => b.calls.filter((c) => c.cmd === "watch_start").map((c) => c.args.streamId);
+    const [first] = streamIds();
     rerender({ ns: null });
     await listening(b, "watch-2");
-    expect(b.calls).toContainEqual({ cmd: "watch_stop", args: { subscriptionId: "watch-1" } });
+    expect(b.calls).toContainEqual({ cmd: "watch_stop", args: { subscriptionId: first } });
     expect(b.listenerCount("watch:watch-1")).toBe(0);
     expect(result.current.status).toBe("loading");
     expect(result.current.items.size).toBe(0);
 
     unmount();
-    await waitFor(() => expect(b.calls).toContainEqual({ cmd: "watch_stop", args: { subscriptionId: "watch-2" } }));
+    const [, second] = streamIds();
+    await waitFor(() => expect(b.calls).toContainEqual({ cmd: "watch_stop", args: { subscriptionId: second } }));
     expect(b.listenerCount("watch:watch-2")).toBe(0);
   });
 

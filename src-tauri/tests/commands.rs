@@ -26,13 +26,17 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("cluster_kinds", Some("clusterId")),
     ("watch_start", Some("clusterId")),
     ("watch_stop", Some("subscriptionId")),
+    ("streams_reset", None),
     ("resource_get", Some("clusterId")),
     ("resource_replace", Some("clusterId")),
     ("resource_apply", Some("clusterId")),
     ("resource_delete", Some("clusterId")),
+    ("secret_value", Some("clusterId")),
+    ("resource_get_full", Some("clusterId")),
     ("workload_scale", Some("clusterId")),
     ("workload_restart", Some("clusterId")),
     ("node_cordon", Some("clusterId")),
+    ("node_drain_preview", Some("clusterId")),
     ("node_drain", Some("clusterId")),
     ("cronjob_trigger", Some("clusterId")),
     ("cronjob_suspend", Some("clusterId")),
@@ -66,6 +70,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("helm_show_values", Some("chart")),
     ("settings_get", None),
     ("settings_update", Some("settings")),
+    ("settings_status", None),
     ("file_save", Some("path")),
 ];
 
@@ -148,6 +153,7 @@ const ERROR_CODES: &[&str] = &[
     "helmMissing",
     "portInUse",
     "kubeconfig",
+    "timeout",
     "other",
 ];
 
@@ -194,6 +200,36 @@ fn every_contract_command_is_registered_with_its_argument_names() {
             }
         }
     }
+}
+
+#[test]
+fn streams_reset_is_registered_without_arguments_and_answers() {
+    let h = harness();
+    assert_eq!(invoke(&h, "streams_reset", json!({})).unwrap(), Value::Null);
+    let state = h.window.state::<sextant_lib::AppState>();
+    assert!(state.subscriptions.is_empty() && state.sessions.is_empty());
+}
+
+#[test]
+fn optional_arguments_of_changed_commands_may_be_left_out() {
+    let h = harness();
+    // `options` of node_drain and the login of helm_repo_add are optional: without them the command runs.
+    let err = invoke(&h, "node_drain", json!({ "clusterId": "c", "name": "n" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "node_drain",
+        json!({ "clusterId": "c", "name": "n", "options": { "force": true, "deleteEmptyDirData": false } }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "helm_repo_add",
+        json!({ "name": "r", "url": "https://x" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "helmMissing", "{err}");
 }
 
 #[test]
@@ -382,6 +418,34 @@ fn later_argument_names_match_the_frontend() {
             "chartRef",
         ),
         ("file_save", json!({ "path": "/tmp/x" }), "contents"),
+        (
+            "watch_start",
+            json!({ "clusterId": "c", "spec": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespaces": null, "labelSelector": null, "fieldSelector": null } }),
+            "streamId",
+        ),
+        (
+            "logs_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "opts": { "container": "app", "follow": true, "tailLines": null, "timestamps": false, "previous": false } }),
+            "streamId",
+        ),
+        (
+            "exec_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": "app", "cols": 80, "rows": 24 }),
+            "streamId",
+        ),
+        (
+            "terminal_start",
+            json!({ "clusterId": "c", "cols": 80, "rows": 24 }),
+            "streamId",
+        ),
+        ("secret_value", json!({ "clusterId": "c" }), "namespace"),
+        (
+            "secret_value",
+            json!({ "clusterId": "c", "namespace": "n", "name": "s" }),
+            "key",
+        ),
+        ("resource_get_full", json!({ "clusterId": "c" }), "ref"),
+        ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
     ];
     for (cmd, args, next) in cases {
         let err = invoke(&h, cmd, args).expect_err(cmd);
@@ -406,6 +470,7 @@ fn settings_update_from_a_stale_copy_keeps_kubeconfig_sources_written_by_the_bac
         id: "src-1".to_owned(),
         path: std::path::PathBuf::from("/home/user/extra.yaml"),
         kind: sextant_core::SourceKind::AddedFile,
+        error: None,
     };
     state
         .settings

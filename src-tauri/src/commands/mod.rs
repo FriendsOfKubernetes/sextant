@@ -9,5 +9,6 @@ pub mod logs;
 pub mod metrics;
 pub mod portforward;
 pub mod resources;
+pub mod secrets;
 pub mod settings;
 pub mod terminal;

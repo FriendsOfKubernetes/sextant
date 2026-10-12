@@ -1,7 +1,7 @@
 //! Actions on workloads, nodes and CronJobs: thin wrappers over `sextant_core::resources`.
 
 use sextant_core::resources;
-use sextant_core::{ClusterId, CoreError, ObjectRef};
+use sextant_core::{ClusterId, CoreError, DrainOptions, DrainPreview, ObjectRef};
 use tauri::State;
 
 use crate::state::AppState;
@@ -38,13 +38,26 @@ pub async fn node_cordon(
     resources::cordon(&state.clusters, &cluster_id, &name, unschedulable).await
 }
 
-/// Cordons the node and evicts its pods (DaemonSet and mirror pods stay).
+/// What draining the node would do with its pods.
+#[tauri::command]
+pub async fn node_drain_preview(
+    _state: State<'_, AppState>,
+    _cluster_id: ClusterId,
+    _name: String,
+) -> Result<DrainPreview, CoreError> {
+    Err(CoreError::not_implemented())
+}
+
+/// Cordons the node and evicts its pods (DaemonSet and mirror pods stay). `options` is not applied yet and may be
+/// left out until the drain dialog sends it.
 #[tauri::command]
 pub async fn node_drain(
     state: State<'_, AppState>,
     cluster_id: ClusterId,
     name: String,
+    options: Option<DrainOptions>,
 ) -> Result<(), CoreError> {
+    let _ = options;
     resources::drain(&state.clusters, &cluster_id, &name).await
 }
 

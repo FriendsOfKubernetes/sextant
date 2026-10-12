@@ -1,22 +1,23 @@
 //! Terminal sessions: shell in a container (`exec_start`) and a local shell (`terminal_start`).
 //! Output arrives as `term:<sessionId>` events; input, resize and stop are shared by both kinds.
 //!
-//! The frontend subscribes to `term:<id>` only after `*_start` has answered, so a session keeps its output (the
-//! first prompt, an immediate exit) until the frontend shows it listens — by its first `term_resize` or
-//! `term_input` — and only then emits it.
-
-use std::collections::VecDeque;
+//! The frontend chooses the session id and subscribes to `term:<id>` before `*_start`, so output is emitted as soon
+//! as the shell prints it (the first prompt, an immediate exit) and nothing is held back.
 
 use sextant_core::exec::{self, ExecSession, TermEvent};
-use sextant_core::{ClusterId, CoreError, ErrorCode, ObjectRef};
+use std::future::Future;
+
+use sextant_core::{ClusterId, CoreError, CoreResult, ErrorCode, ObjectRef};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tokio::sync::{mpsc, oneshot};
 
 use crate::events::{TermPayload, term_event};
 use crate::pty::{self, ShellCommand};
-use crate::state::{AppState, TermSession, new_id};
+use crate::state::{AppState, SessionGuard, TermSession, check_stream_id};
 
+/// Shell in a container, under `stream_id` (chosen by the frontend, which already listens to `term:<streamId>`).
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn exec_start<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, AppState>,
@@ -25,13 +26,31 @@ pub async fn exec_start<R: Runtime>(
     container: String,
     cols: u16,
     rows: u16,
-) -> Result<String, CoreError> {
-    let session =
-        exec::exec_shell(&state.clusters, &cluster_id, &pod, &container, cols, rows).await?;
-    Ok(forward_term(&app, &state, Some(cluster_id), session, ()))
+    stream_id: String,
+) -> Result<(), CoreError> {
+    let open = exec::exec_shell(&state.clusters, &cluster_id, &pod, &container, cols, rows);
+    start_exec(&app, &state, stream_id, cluster_id.clone(), open).await
 }
 
-/// Local shell with `KUBECONFIG` pointing at a temporary kubeconfig of the cluster.
+/// `exec_start` once the container is known: waits for `open` (the core opening the exec connection), then
+/// registers and forwards the session — unless `streams_reset` ran meanwhile, then it is dropped and the start fails.
+pub async fn start_exec<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: String,
+    cluster: ClusterId,
+    open: impl Future<Output = CoreResult<ExecSession>>,
+) -> Result<(), CoreError> {
+    check_stream_id(&id)?;
+    let generation = state.streams_generation();
+    let session = open.await?;
+    forward_term(app, state, id.clone(), Some(cluster), session, None)?;
+    state.undo_if_reset(generation, || {
+        state.sessions.stop(&id);
+    })
+}
+
+/// Local shell with `KUBECONFIG` pointing at a temporary kubeconfig of the cluster, under `stream_id`.
 #[tauri::command]
 pub async fn terminal_start<R: Runtime>(
     app: AppHandle<R>,
@@ -39,28 +58,64 @@ pub async fn terminal_start<R: Runtime>(
     cluster_id: ClusterId,
     cols: u16,
     rows: u16,
-) -> Result<String, CoreError> {
-    start_local_terminal(&app, &state, cluster_id, &pty::user_shell(), cols, rows)
+    stream_id: String,
+) -> Result<(), CoreError> {
+    start_local_terminal(
+        &app,
+        &state,
+        stream_id,
+        cluster_id,
+        &pty::user_shell(),
+        cols,
+        rows,
+    )
 }
 
 /// Starts `shell` with `KUBECONFIG` set to a private (0600) temporary kubeconfig holding only `cluster`'s context.
-/// The file lives as long as the session: it is removed when the shell exits, the session is stopped, the cluster
-/// is disconnected or the window closes.
+/// The file lives as long as the session: it is removed when the shell exits, and before `term_stop`, disconnecting
+/// the cluster, `streams_reset`, closing the window or quitting the application return.
 pub fn start_local_terminal<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
+    id: String,
     cluster: ClusterId,
     shell: &ShellCommand,
     cols: u16,
     rows: u16,
-) -> Result<String, CoreError> {
+) -> Result<(), CoreError> {
+    start_local_session(app, state, id, cluster, |kubeconfig| {
+        pty::spawn_shell(shell, &[("KUBECONFIG", kubeconfig)], cols, rows)
+    })
+}
+
+/// [`start_local_terminal`] with the shell started by `spawn`, which gets the temporary kubeconfig's path.
+pub fn start_local_session<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: String,
+    cluster: ClusterId,
+    spawn: impl FnOnce(&std::ffi::OsStr) -> CoreResult<ExecSession>,
+) -> Result<(), CoreError> {
+    check_stream_id(&id)?;
+    // Commands run in parallel: a reset may come while the shell is being spawned.
+    let generation = state.streams_generation();
     let kubeconfig = state
         .registry
         .read()
         .unwrap_or_else(|e| e.into_inner())
         .write_temp_kubeconfig(&cluster)?;
-    let session = pty::spawn_shell(shell, &[("KUBECONFIG", kubeconfig.as_os_str())], cols, rows)?;
-    Ok(forward_term(app, state, Some(cluster), session, kubeconfig))
+    let session = spawn(kubeconfig.as_os_str())?;
+    forward_term(
+        app,
+        state,
+        id.clone(),
+        Some(cluster),
+        session,
+        Some(Box::new(kubeconfig)),
+    )?;
+    state.undo_if_reset(generation, || {
+        state.sessions.stop(&id);
+    })
 }
 
 /// `data` is the text typed into the terminal.
@@ -109,20 +164,20 @@ fn not_running(id: &str) -> CoreError {
     )
 }
 
-/// Registers `session` in `state.sessions` (under `cluster`, so disconnecting the cluster stops it) and emits its
-/// output as `term:<id>`. `guard` lives exactly as long as the session (e.g. its temporary kubeconfig).
-pub fn forward_term<R, G>(
+/// Registers `session` in `state.sessions` under `id` (and `cluster`, so disconnecting the cluster stops it) and
+/// emits its output as `term:<id>`. `guard` lives exactly as long as the session (e.g. its temporary kubeconfig) and
+/// is dropped synchronously when the session is stopped. A taken or malformed `id` is `invalid`.
+pub fn forward_term<R>(
     app: &AppHandle<R>,
     state: &AppState,
+    id: String,
     cluster: Option<ClusterId>,
     session: ExecSession,
-    guard: G,
-) -> String
+    guard: Option<SessionGuard>,
+) -> Result<(), CoreError>
 where
     R: Runtime,
-    G: Send + 'static,
 {
-    let id = new_id("term");
     let event = term_event(&id);
     let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(256);
     let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
@@ -130,7 +185,6 @@ where
     let handle = app.clone();
     let own_id = id.clone();
     let task = tauri::async_runtime::spawn(async move {
-        let _guard = guard;
         if registered_rx.await.is_err() {
             return;
         }
@@ -140,40 +194,23 @@ where
             mut output,
         } = session;
         let emit = |payload: &TermPayload| handle.emit(&event, payload).is_ok();
-        // Output held until the frontend listens; `None` once it does.
-        let mut backlog = Some(Backlog::default());
-        // The shell is gone (its last event is in the backlog or emitted).
-        let mut finished = false;
         loop {
             tokio::select! {
-                // Keystrokes and resizes come from the frontend, which therefore listens by now.
                 keys = input_rx.recv() => {
                     let Some(keys) = keys else { break };
-                    if !release(&mut backlog, emit) || finished {
-                        break;
-                    }
                     let _ = input.send(keys).await;
                 }
                 size = resize_rx.recv() => {
                     let Some(size) = size else { break };
-                    if !release(&mut backlog, emit) || finished {
-                        break;
-                    }
                     let _ = resize.send(size).await;
                 }
-                event_out = output.recv(), if !finished => {
+                event_out = output.recv() => {
                     let (payload, last) = match event_out {
                         Some(ev) => payload_of(ev),
                         None => (TermPayload::Exit { code: None }, true),
                     };
-                    finished = last;
-                    match backlog.as_mut() {
-                        Some(held) => held.push(payload),
-                        None => {
-                            if !emit(&payload) || last {
-                                break;
-                            }
-                        }
+                    if !emit(&payload) || last {
+                        break;
                     }
                 }
             }
@@ -183,16 +220,17 @@ where
         }
     });
     state.sessions.insert(
-        id.clone(),
+        id,
         TermSession {
             cluster,
             input: input_tx,
             resize: resize_tx,
             task: task.inner().abort_handle(),
+            guard,
         },
-    );
+    )?;
     let _ = registered_tx.send(());
-    id
+    Ok(())
 }
 
 /// The payload of `event`, and whether it ends the session.
@@ -201,46 +239,6 @@ fn payload_of(event: TermEvent) -> (TermPayload, bool) {
         TermEvent::Data(bytes) => (TermPayload::data(&bytes), false),
         TermEvent::Exit { code } => (TermPayload::Exit { code }, true),
         TermEvent::Error(error) => (TermPayload::Error { error }, true),
-    }
-}
-
-/// Emits the held output, if any is still held, and stops holding. `false` if the window is gone.
-fn release(backlog: &mut Option<Backlog>, emit: impl Fn(&TermPayload) -> bool) -> bool {
-    match backlog.take() {
-        Some(held) => held.items.iter().all(emit),
-        None => true,
-    }
-}
-
-/// Most output held before the frontend listens; older data is dropped beyond it (a shell prints a prompt, not
-/// megabytes, before anyone types).
-const BACKLOG_LIMIT: usize = 1 << 20;
-
-#[derive(Default)]
-struct Backlog {
-    items: VecDeque<TermPayload>,
-    data_bytes: usize,
-}
-
-impl Backlog {
-    fn push(&mut self, payload: TermPayload) {
-        self.data_bytes += data_len(&payload);
-        self.items.push_back(payload);
-        while self.data_bytes > BACKLOG_LIMIT {
-            let Some(index) = self.items.iter().position(|p| data_len(p) > 0) else {
-                break;
-            };
-            if let Some(dropped) = self.items.remove(index) {
-                self.data_bytes -= data_len(&dropped);
-            }
-        }
-    }
-}
-
-fn data_len(payload: &TermPayload) -> usize {
-    match payload {
-        TermPayload::Data { data } => data.len(),
-        _ => 0,
     }
 }
 
@@ -311,8 +309,14 @@ mod tests {
             .expect("a term event")
     }
 
+    fn temp_guard() -> (Option<SessionGuard>, std::path::PathBuf) {
+        let guard = tempfile::NamedTempFile::new().unwrap().into_temp_path();
+        let path = guard.to_path_buf();
+        (Some(Box::new(guard)), path)
+    }
+
     #[test]
-    fn output_before_the_frontend_listens_is_delivered_after_its_first_resize() {
+    fn output_right_after_the_start_reaches_a_listener_subscribed_before_it_without_input() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, mut shell) = fake_session();
@@ -321,43 +325,41 @@ mod tests {
             .output
             .try_send(TermEvent::Data(b"prompt$ ".to_vec()))
             .unwrap();
-        let id = forward_term(
+        // The window listens first, then starts the session under the id it chose; it types nothing.
+        let events = listen(&app, "t-early");
+        forward_term(
             app.handle(),
             &state,
+            "t-early".into(),
             Some(ClusterId::from("c")),
             session,
-            (),
-        );
-        // Give a naive implementation the time to emit into the void.
-        std::thread::sleep(Duration::from_millis(200));
-
-        let events = listen(&app, &id);
-        let (_, resize) = state.sessions.channels(&id).unwrap();
-        resize.blocking_send((100, 30)).unwrap();
+            None,
+        )
+        .unwrap();
         assert_eq!(
             next(&events),
             json!({ "type": "data", "data": "cHJvbXB0JCA=" })
         );
-        assert_eq!(shell.resize.blocking_recv(), Some((100, 30)));
 
-        // Afterwards output flows directly.
+        // Output keeps flowing; input and resizes reach the shell.
         shell
             .output
             .blocking_send(TermEvent::Data(b"ls".to_vec()))
             .unwrap();
         assert_eq!(next(&events), json!({ "type": "data", "data": "bHM=" }));
-        let (input, _) = state.sessions.channels(&id).unwrap();
+        let (input, resize) = state.sessions.channels("t-early").unwrap();
+        resize.blocking_send((100, 30)).unwrap();
+        assert_eq!(shell.resize.blocking_recv(), Some((100, 30)));
         input.blocking_send(b"x".to_vec()).unwrap();
         assert_eq!(shell.input.blocking_recv(), Some(b"x".to_vec()));
     }
 
     #[test]
-    fn an_exit_before_the_frontend_listens_is_kept_too_and_ends_the_session() {
+    fn an_immediate_exit_reaches_the_listener_and_ends_the_session() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, shell) = fake_session();
-        let guard = tempfile::NamedTempFile::new().unwrap().into_temp_path();
-        let guard_path = guard.to_path_buf();
+        let (guard, guard_path) = temp_guard();
         shell
             .output
             .try_send(TermEvent::Data(b"bye".to_vec()))
@@ -367,58 +369,83 @@ mod tests {
             .try_send(TermEvent::Exit { code: Some(2) })
             .unwrap();
         drop(shell);
-        let id = forward_term(app.handle(), &state, None, session, guard);
-        std::thread::sleep(Duration::from_millis(200));
-        assert_eq!(state.sessions.len(), 1, "kept until the frontend listens");
+        let events = listen(&app, "t-1");
+        forward_term(app.handle(), &state, "t-1".into(), None, session, guard).unwrap();
 
-        let events = listen(&app, &id);
-        let (input, _) = state.sessions.channels(&id).unwrap();
-        input.blocking_send(b"\r".to_vec()).unwrap();
         assert_eq!(next(&events), json!({ "type": "data", "data": "Ynll" }));
         assert_eq!(next(&events), json!({ "type": "exit", "code": 2 }));
-        wait_until("the session to be forgotten", || state.sessions.is_empty());
-        wait_until("the guard to be dropped", || !guard_path.exists());
+        // The guard goes with the session.
+        wait_until("the session and its guard to be gone", || {
+            state.sessions.is_empty() && !guard_path.exists()
+        });
     }
 
     #[test]
-    fn stop_disconnect_and_window_close_end_sessions_and_drop_their_guards() {
+    fn a_taken_session_id_is_invalid_and_drops_the_new_session() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
-        let start = |cluster: &str| {
+        let (session, first) = fake_session();
+        forward_term(app.handle(), &state, "t-1".into(), None, session, None).unwrap();
+        let (session, second) = fake_session();
+        let (guard, guard_path) = temp_guard();
+        let err = forward_term(app.handle(), &state, "t-1".into(), None, session, guard)
+            .expect_err("the id is taken");
+        assert_eq!(err.code, ErrorCode::Invalid, "{err}");
+        assert!(
+            !guard_path.exists(),
+            "the rejected session's guard is dropped"
+        );
+        wait_until("the rejected session to be dropped", || {
+            second.output.is_closed()
+        });
+        assert!(!first.output.is_closed());
+        assert_eq!(state.sessions.len(), 1);
+    }
+
+    #[test]
+    fn stop_disconnect_and_window_close_drop_the_guards_before_they_return() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let start = |id: &str, cluster: &str| {
             let (session, shell) = fake_session();
-            let guard = tempfile::NamedTempFile::new().unwrap().into_temp_path();
-            let path = guard.to_path_buf();
-            let id = forward_term(
+            let (guard, path) = temp_guard();
+            forward_term(
                 app.handle(),
                 &state,
+                id.into(),
                 Some(ClusterId::from(cluster)),
                 session,
                 guard,
-            );
-            (id, shell, path)
+            )
+            .unwrap();
+            (shell, path)
         };
 
-        let (id, shell, path) = start("a");
-        state.sessions.stop(&id);
-        wait_until("the stopped session's guard", || !path.exists());
+        let (shell, path) = start("t-1", "a");
+        state.sessions.stop("t-1");
+        assert!(!path.exists(), "stop returned with the guard still alive");
         wait_until("the stopped session's shell to see the hang-up", || {
             shell.output.is_closed()
         });
 
-        let (_, a_shell, a_path) = start("a");
-        let (_, b_shell, b_path) = start("b");
+        let (a_shell, a_path) = start("t-2", "a");
+        let (b_shell, b_path) = start("t-3", "b");
         state.close_cluster(&ClusterId::from("a"));
-        wait_until("cluster a's session to end", || {
-            !a_path.exists() && a_shell.output.is_closed()
-        });
+        assert!(
+            !a_path.exists(),
+            "close_cluster returned with the guard still alive"
+        );
+        wait_until("cluster a's session to end", || a_shell.output.is_closed());
         assert!(b_path.exists() && !b_shell.output.is_closed());
         assert_eq!(state.sessions.len(), 1);
 
         state.close_all();
-        wait_until("every session to end", || {
-            !b_path.exists() && b_shell.output.is_closed()
-        });
+        assert!(
+            !b_path.exists(),
+            "close_all returned with the guard still alive"
+        );
         assert!(state.sessions.is_empty());
+        wait_until("every session to end", || b_shell.output.is_closed());
     }
 
     /// A kubeconfig with one context; its token must never reach the window.
@@ -526,10 +553,18 @@ mod tests {
             program: "/bin/sh".into(),
             args: Vec::new(),
         };
-        let id = start_local_terminal(app.handle(), &state, cluster.clone(), &sh, 80, 24).unwrap();
-        let events = listen(&app, &id);
-        let (input, resize) = state.sessions.channels(&id).unwrap();
-        resize.blocking_send((80, 24)).unwrap();
+        let events = listen(&app, "local-1");
+        start_local_terminal(
+            app.handle(),
+            &state,
+            "local-1".into(),
+            cluster.clone(),
+            &sh,
+            80,
+            24,
+        )
+        .unwrap();
+        let (input, _) = state.sessions.channels("local-1").unwrap();
 
         let kubectl = kubectl_available();
         let line = if kubectl {
@@ -552,15 +587,23 @@ mod tests {
             assert_eq!(mode & 0o777, 0o600);
         }
 
-        // Closing the tab (term_stop) removes the file.
-        state.sessions.stop(&id);
-        wait_until("the temp kubeconfig to be removed", || !temp.exists());
+        // Closing the tab (term_stop) removes the file before it returns.
+        state.sessions.stop("local-1");
+        assert!(!temp.exists(), "the temp kubeconfig outlived term_stop");
 
         // So does the shell exiting by itself.
-        let id = start_local_terminal(app.handle(), &state, cluster.clone(), &sh, 80, 24).unwrap();
-        let events = listen(&app, &id);
-        let (input, resize) = state.sessions.channels(&id).unwrap();
-        resize.blocking_send((80, 24)).unwrap();
+        let events = listen(&app, "local-2");
+        start_local_terminal(
+            app.handle(),
+            &state,
+            "local-2".into(),
+            cluster.clone(),
+            &sh,
+            80,
+            24,
+        )
+        .unwrap();
+        let (input, _) = state.sessions.channels("local-2").unwrap();
         input
             .blocking_send(b"echo \"KC=$KUBECONFIG\"; exit 4\n".to_vec())
             .unwrap();
@@ -573,30 +616,73 @@ mod tests {
         wait_until("its temp kubeconfig to be removed", || !temp.exists());
 
         // And disconnecting the cluster / closing the window.
-        let id = start_local_terminal(app.handle(), &state, cluster.clone(), &sh, 80, 24).unwrap();
-        assert!(state.sessions.channels(&id).is_some());
+        start_local_terminal(
+            app.handle(),
+            &state,
+            "local-3".into(),
+            cluster.clone(),
+            &sh,
+            80,
+            24,
+        )
+        .unwrap();
+        assert!(state.sessions.channels("local-3").is_some());
         state.close_cluster(&cluster);
-        wait_until("the disconnected cluster's terminal to stop", || {
-            state.sessions.is_empty()
-        });
-        let id = start_local_terminal(app.handle(), &state, cluster, &sh, 80, 24).unwrap();
-        assert!(state.sessions.channels(&id).is_some());
+        assert!(state.sessions.is_empty());
+        start_local_terminal(app.handle(), &state, "local-4".into(), cluster, &sh, 80, 24).unwrap();
+        assert!(state.sessions.channels("local-4").is_some());
         state.close_all();
         assert!(state.sessions.is_empty());
-        // The window closed: no copy of these credentials is left in the temp directory.
-        wait_until("every temp kubeconfig of the fixture to be removed", || {
-            std::fs::read_dir(std::env::temp_dir())
-                .unwrap()
-                .filter_map(|e| e.ok())
-                .filter(|e| {
-                    e.file_name()
-                        .to_string_lossy()
-                        .starts_with("sextant-kubeconfig-")
-                })
-                .all(|e| {
-                    !std::fs::read_to_string(e.path()).is_ok_and(|t| t.contains(FIXTURE_TOKEN))
-                })
+        // The window closed: no copy of these credentials is left in the temp directory, right away.
+        let leftovers = std::fs::read_dir(std::env::temp_dir())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .starts_with("sextant-kubeconfig-")
+            })
+            .filter(|e| std::fs::read_to_string(e.path()).is_ok_and(|t| t.contains(FIXTURE_TOKEN)))
+            .count();
+        assert_eq!(leftovers, 0, "a temp kubeconfig outlived close_all");
+    }
+
+    #[test]
+    fn a_local_terminal_that_outlived_streams_reset_leaves_no_session_and_no_temp_kubeconfig() {
+        let (app, dir) = app();
+        let state = app.state::<AppState>();
+        let kubeconfig = dir.path().join("one-context.yaml");
+        std::fs::write(
+            &kubeconfig,
+            "apiVersion: v1\nkind: Config\ncurrent-context: ctx\n\
+             clusters:\n- name: c\n  cluster:\n    server: https://127.0.0.1:1\n\
+             users:\n- name: u\n  user:\n    token: t\n\
+             contexts:\n- name: ctx\n  context:\n    cluster: c\n    user: u\n",
+        )
+        .unwrap();
+        let cluster = {
+            let mut registry = state.registry.write().unwrap();
+            registry.set_env(sextant_core::kubeconfig::KubeconfigEnv {
+                kubeconfig: Some(kubeconfig.into_os_string()),
+                home: None,
+            });
+            registry.clusters().unwrap()[0].id.clone()
+        };
+
+        // A reloaded page resets the streams while the old page's shell is being spawned.
+        let mut temp = None;
+        let (session, shell) = fake_session();
+        let result = start_local_session(app.handle(), &state, "local-1".into(), cluster, |path| {
+            temp = Some(std::path::PathBuf::from(path));
+            state.reset_streams();
+            Ok(session)
         });
+
+        assert!(result.is_err(), "a start that outlived the reset succeeded");
+        assert!(state.sessions.is_empty(), "the session outlived the reset");
+        let temp = temp.expect("the shell was spawned");
+        assert!(!temp.exists(), "the temp kubeconfig outlived the reset");
+        wait_until("the late shell to be dropped", || shell.output.is_closed());
     }
 
     #[test]
@@ -606,6 +692,7 @@ mod tests {
         let err = start_local_terminal(
             app.handle(),
             &state,
+            "local-x".into(),
             ClusterId::from("missing"),
             &pty::user_shell(),
             80,

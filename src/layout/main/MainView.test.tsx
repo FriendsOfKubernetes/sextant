@@ -185,7 +185,11 @@ describe("Sidebar and main view", () => {
     expect(headers).toEqual(["Name", "Namespace", "Size", "Replicas", "Age"]);
     expect(within(table).getByText("large")).toBeInTheDocument();
 
+    const crdWatches = () => watches.filter((w) => w.spec.kind.kind === "CustomResourceDefinition").length;
+    const before = crdWatches();
     fireEvent.click(within(sidebar()).getByRole("button", { name: "Definitions" }));
+    // The table's own watch, not the sidebar's (a stream listens before it starts).
+    await waitFor(() => expect(crdWatches()).toBeGreaterThan(before));
     const defs = await watchOf("CustomResourceDefinition");
     emit(defs.id, [widgetsCrd]);
     const crdTable = await screen.findByRole("table", { name: "Definitions" });

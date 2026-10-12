@@ -13,6 +13,7 @@ export const api = {
   helm: commands.helm,
   settings: commands.settings,
   files: commands.files,
+  streams: commands.streams,
   dialog: { openFile: openFileDialog, saveFile: saveFileDialog },
   /** The operating system: `openUrl(url)` opens a link in the default browser. */
   shell: { openUrl: openExternalUrl },
@@ -24,6 +25,6 @@ export { events } from "./events";
 export { mockBackend, type MockBackend, type MockBackendOptions, type MockCall, type MockHandler } from "./mockBackend";
 export { defaultAppSettings, loadSettings, updateSettings, useSettings, type UseSettings } from "./settings";
 export type { FileFilter, OpenFileOptions, SaveFileOptions, Unsubscribe } from "./transport";
-export { openStream, type StreamSpec } from "./stream";
+export { newStreamId, openStream, resetStreams, type StreamSpec } from "./stream";
 export { applyWatchUpdate, uidOf, useWatch, type WatchState, type WatchStatus } from "./useWatch";
 export type * from "./types";

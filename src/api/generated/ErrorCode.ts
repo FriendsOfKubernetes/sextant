@@ -3,4 +3,4 @@
 /**
  * Machine-readable error category. Serialized in camelCase (`notFound`, `authPlugin`, …).
  */
-export type ErrorCode = "unreachable" | "unauthorized" | "forbidden" | "notFound" | "conflict" | "invalid" | "authPlugin" | "helmMissing" | "portInUse" | "kubeconfig" | "other";
+export type ErrorCode = "unreachable" | "unauthorized" | "forbidden" | "notFound" | "conflict" | "invalid" | "authPlugin" | "helmMissing" | "portInUse" | "kubeconfig" | "timeout" | "other";

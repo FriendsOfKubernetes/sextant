@@ -1,17 +1,17 @@
 // Connects an xterm.js terminal to a backend terminal session (container shell or local shell).
 //
-// Protocol (interfaces.md, «Правило для стримов»): start the session (`exec_start` / `terminal_start`), subscribe to
-// `term:<id>`, then send the first `term_resize` — the backend holds the session's output until that resize, so
-// nothing printed before the subscription is lost. Keystrokes go to `term_input`; the session is stopped when the
-// component unmounts (the dock tab is closed) or reconnects.
+// Protocol (interfaces.md §1): `openStream` chooses the session id and subscribes to `term:<id>` before the session
+// starts (`exec_start` / `terminal_start` with that id), so the first prompt is never lost; once the start answered,
+// keystrokes go to `term_input` and size changes to `term_resize`. The session is stopped when the component
+// unmounts (the dock tab is closed) or reconnects.
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { api, events, openStream, toApiError, type ApiError, type TermPayload } from "../../api";
 
-/** Starts a session of `cols`×`rows`; resolves to its id. */
-export type TerminalSessionFactory = (cols: number, rows: number) => Promise<string>;
+/** Starts a session of `cols`×`rows` under `streamId` (its output is already listened to). */
+export type TerminalSessionFactory = (cols: number, rows: number, streamId: string) => Promise<unknown>;
 
 export type TerminalStatus = "connecting" | "running" | "ended" | "error";
 
@@ -131,7 +131,7 @@ export function useTerminal(
     const cols = terminal.cols || DEFAULT_COLS;
     const rows = terminal.rows || DEFAULT_ROWS;
     const close = openStream<TermPayload>({
-      start: () => factoryRef.current(cols, rows),
+      start: (id) => factoryRef.current(cols, rows, id),
       listen: events.onTerm,
       stop: api.terminal.stop,
       onEvent: onPayload,
@@ -139,7 +139,7 @@ export function useTerminal(
         sessionId = id;
         sessionRef.current = id;
         setStatus((s) => (s === "connecting" ? "running" : s));
-        // We listen now: the first resize releases the output the backend held back.
+        // The terminal may have been fitted while the session started.
         lastSize = `${terminal.cols}x${terminal.rows}`;
         api.terminal.resize(id, terminal.cols, terminal.rows).catch(fail);
       },

@@ -23,7 +23,7 @@ export function ExecTab({ tab, active }: DockTabProps) {
   const { t } = useTranslation();
   const { clusterId, pod, container } = tab.payload as ExecTabPayload;
   const factory = useCallback(
-    (cols: number, rows: number) => api.terminal.exec(clusterId, pod, container, cols, rows),
+    (cols: number, rows: number, streamId: string) => api.terminal.exec(clusterId, pod, container, cols, rows, streamId),
     [clusterId, pod, container],
   );
   return <TerminalView factory={factory} active={active} label={t("terminal:terminal")} />;
@@ -33,7 +33,7 @@ export function LocalTerminalTab({ tab, active }: DockTabProps) {
   const { t } = useTranslation();
   const { clusterId } = tab.payload as LocalTerminalTabPayload;
   const factory = useCallback(
-    (cols: number, rows: number) => api.terminal.local(clusterId, cols, rows),
+    (cols: number, rows: number, streamId: string) => api.terminal.local(clusterId, cols, rows, streamId),
     [clusterId],
   );
   return <TerminalView factory={factory} active={active} label={t("terminal:terminal")} />;

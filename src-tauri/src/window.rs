@@ -1,10 +1,11 @@
-//! Main window geometry: restored on start, recorded (debounced) on resize, subscriptions closed on exit.
+//! Main window geometry: restored on start, recorded (debounced) on resize; subscriptions, sessions and port forwards
+//! closed when the window is destroyed and when the application exits.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use sextant_core::WindowLayout;
-use tauri::{Manager, Runtime, Window, WindowEvent};
+use tauri::{AppHandle, Manager, RunEvent, Runtime, Window, WindowEvent};
 
 use crate::state::AppState;
 
@@ -65,6 +66,17 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
     }
 }
 
+/// Application-level events. Quitting (Cmd+Q on macOS, the last window closed, `AppHandle::exit`) does not always
+/// destroy the window first, so everything is closed here too: terminal sessions remove their temporary kubeconfig
+/// before the process ends.
+pub fn on_run_event<R: Runtime>(app: &AppHandle<R>, event: &RunEvent) {
+    if let RunEvent::Exit | RunEvent::ExitRequested { .. } = event
+        && let Some(state) = app.try_state::<AppState>()
+    {
+        state.close_all();
+    }
+}
+
 /// Saves the size once resizing settles, so dragging the window edge does not write the file on every frame.
 fn schedule_geometry_save<R: Runtime>(window: &Window<R>) {
     let generation = RESIZE_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
@@ -99,6 +111,44 @@ fn schedule_geometry_save<R: Runtime>(window: &Window<R>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exiting_the_application_closes_every_session_and_removes_its_temp_kubeconfig() {
+        let dir = tempfile::tempdir().unwrap();
+        let app = tauri::test::mock_app();
+        app.manage(AppState::new(
+            &dir.path().join("config"),
+            &dir.path().join("data"),
+        ));
+        let state = app.state::<AppState>();
+        let guard = tempfile::NamedTempFile::new().unwrap().into_temp_path();
+        let guard_path = guard.to_path_buf();
+        let (input, _input_rx) = tokio::sync::mpsc::channel(1);
+        let (resize, _resize_rx) = tokio::sync::mpsc::channel(1);
+        let task = tauri::async_runtime::spawn(futures::future::pending::<()>());
+        state
+            .sessions
+            .insert(
+                "t-1".into(),
+                crate::state::TermSession {
+                    cluster: None,
+                    input,
+                    resize,
+                    task: task.inner().abort_handle(),
+                    guard: Some(Box::new(guard)),
+                },
+            )
+            .unwrap();
+
+        on_run_event(app.handle(), &RunEvent::Ready);
+        assert_eq!(state.sessions.len(), 1, "other events change nothing");
+        on_run_event(app.handle(), &RunEvent::Exit);
+        assert!(state.sessions.is_empty());
+        assert!(
+            !guard_path.exists(),
+            "the temp kubeconfig outlived the exit"
+        );
+    }
 
     #[test]
     fn nothing_to_restore_without_saved_size() {

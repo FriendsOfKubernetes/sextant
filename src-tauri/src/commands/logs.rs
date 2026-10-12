@@ -1,22 +1,18 @@
 //! Pod log streams; lines arrive as `logs:<streamId>` events.
 
-use std::time::Duration;
+use std::future::Future;
 
 use futures::{Stream, StreamExt};
 use sextant_core::logs::{self, LogOptions, LogUpdate};
-use sextant_core::{ClusterId, CoreError, ObjectRef};
+use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 use crate::events::logs_event;
-use crate::state::{AppState, Subscription, new_id};
+use crate::state::{AppState, Subscription, check_stream_id};
 
-/// The window can listen to `logs:<id>` only after `logs_start` has answered, so output that appears sooner
-/// would be lost. The first update is therefore held back by this long after the stream is registered (the
-/// core batches lines for 100 ms anyway); a log stream starts with a tail, so nothing visible is delayed more.
-pub const LISTENER_GRACE: Duration = Duration::from_millis(300);
-
-/// Opens the log stream of a container and emits its updates as `logs:<streamId>` (`LogUpdate`). The stream
-/// belongs to the cluster: `logs_stop`, disconnecting the cluster and closing the window stop it.
+/// Opens the log stream of a container under `stream_id`, which the frontend chose and already listens to, and
+/// emits its updates as `logs:<streamId>` (`LogUpdate`). A taken id is `invalid`. The stream belongs to the
+/// cluster: `logs_stop`, disconnecting the cluster, `streams_reset` and closing the window stop it.
 #[tauri::command]
 pub async fn logs_start<R: Runtime>(
     app: AppHandle<R>,
@@ -24,9 +20,32 @@ pub async fn logs_start<R: Runtime>(
     cluster_id: ClusterId,
     pod: ObjectRef,
     opts: LogOptions,
-) -> Result<String, CoreError> {
-    let updates = logs::stream_logs(&state.clusters, &cluster_id, &pod, opts).await?;
-    Ok(forward_logs(&app, &state, cluster_id, updates))
+    stream_id: String,
+) -> Result<(), CoreError> {
+    let open = logs::stream_logs(&state.clusters, &cluster_id, &pod, opts);
+    start_logs(&app, &state, stream_id, cluster_id.clone(), open).await
+}
+
+/// `logs_start` once the pod is known: waits for `open` (the core opening the log stream), then registers and
+/// forwards it — unless `streams_reset` ran meanwhile, then the stream is dropped and the start fails.
+pub async fn start_logs<R, S>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: String,
+    cluster: ClusterId,
+    open: impl Future<Output = CoreResult<S>>,
+) -> Result<(), CoreError>
+where
+    R: Runtime,
+    S: Stream<Item = LogUpdate> + Send + 'static,
+{
+    check_stream_id(&id)?;
+    let generation = state.streams_generation();
+    let updates = open.await?;
+    forward_logs(app, state, id.clone(), cluster, updates)?;
+    state.undo_if_reset(generation, || {
+        state.subscriptions.stop(&id);
+    })
 }
 
 /// Stops a log stream. Stopping one that already ended (or never existed) is not an error.
@@ -36,19 +55,20 @@ pub async fn logs_stop(state: State<'_, AppState>, stream_id: String) -> Result<
     Ok(())
 }
 
-/// Emits every update of `updates` as `logs:<id>`, starting [`LISTENER_GRACE`] after the stream is registered in
-/// `state.subscriptions` under `cluster`; the subscription forgets itself when the stream ends.
+/// Emits every update of `updates` as `logs:<id>` as soon as it comes (the window listens before the start), once
+/// the stream is registered in `state.subscriptions` under `id` and `cluster`; the subscription forgets itself when
+/// the stream ends. A taken or malformed `id` is `invalid` (nothing is emitted).
 pub fn forward_logs<R, S>(
     app: &AppHandle<R>,
     state: &AppState,
+    id: String,
     cluster: ClusterId,
     updates: S,
-) -> String
+) -> Result<(), CoreError>
 where
     R: Runtime,
     S: Stream<Item = LogUpdate> + Send + 'static,
 {
-    let id = new_id("logs");
     let event = logs_event(&id);
     let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
     let handle = app.clone();
@@ -57,7 +77,6 @@ where
         if registered_rx.await.is_err() {
             return;
         }
-        tokio::time::sleep(LISTENER_GRACE).await;
         let mut updates = std::pin::pin!(updates);
         while let Some(update) = updates.next().await {
             if handle.emit(&event, &update).is_err() {
@@ -69,19 +88,19 @@ where
         }
     });
     state.subscriptions.insert(
-        id.clone(),
+        id,
         Subscription {
             cluster,
             task: task.inner().abort_handle(),
         },
-    );
+    )?;
     let _ = registered_tx.send(());
-    id
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
 
     use futures::channel::mpsc;
     use tauri::Listener;
@@ -113,25 +132,30 @@ mod tests {
     }
 
     #[test]
-    fn output_produced_right_after_start_reaches_a_listener_that_attaches_after_the_start_returned()
-    {
+    fn output_produced_right_after_start_reaches_a_listener_subscribed_before_the_start() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
-        // The core already has output when the command runs.
-        let updates = futures::stream::iter([lines(&["first"]), LogUpdate::Ended]);
-        let id = forward_logs(app.handle(), &state, ClusterId::from("c"), updates);
-
-        // The window needs a moment between the answer of `logs_start` and its `listen` call.
-        std::thread::sleep(Duration::from_millis(60));
+        // The window listens first, then starts the stream under the id it chose.
         let (seen_tx, seen_rx) = std::sync::mpsc::channel::<String>();
-        app.listen_any(logs_event(&id), move |event| {
+        app.listen_any(logs_event("l-early"), move |event| {
             seen_tx.send(event.payload().to_owned()).unwrap();
         });
+        // The core already has output when the command runs.
+        let updates = futures::stream::iter([lines(&["first"]), LogUpdate::Ended]);
+        forward_logs(
+            app.handle(),
+            &state,
+            "l-early".into(),
+            ClusterId::from("c"),
+            updates,
+        )
+        .unwrap();
 
         let json = |s: String| serde_json::from_str::<serde_json::Value>(&s).unwrap();
+        // Nothing is held back for a listener that might come later: the batch is out at once.
         let first = seen_rx
-            .recv_timeout(Duration::from_secs(5))
-            .expect("the first batch was lost");
+            .recv_timeout(Duration::from_millis(250))
+            .expect("the first batch was held back or lost");
         assert_eq!(
             json(first),
             serde_json::json!({ "type": "lines", "lines": ["first"] })
@@ -144,14 +168,40 @@ mod tests {
     }
 
     #[test]
+    fn a_taken_stream_id_is_invalid() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let (tx, rx) = mpsc::unbounded::<LogUpdate>();
+        forward_logs(app.handle(), &state, "l-1".into(), ClusterId::from("c"), rx).unwrap();
+        let (_, again) = mpsc::unbounded::<LogUpdate>();
+        let err = forward_logs(
+            app.handle(),
+            &state,
+            "l-1".into(),
+            ClusterId::from("c"),
+            again,
+        )
+        .expect_err("the id is taken");
+        assert_eq!(err.code, sextant_core::ErrorCode::Invalid, "{err}");
+        assert!(!tx.is_closed());
+    }
+
+    #[test]
     fn disconnecting_the_cluster_stops_its_log_streams_and_logs_stop_is_idempotent() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let cluster = ClusterId::from("c1");
         let (tx, rx) = mpsc::unbounded::<LogUpdate>();
         let (other_tx, other_rx) = mpsc::unbounded::<LogUpdate>();
-        let first = forward_logs(app.handle(), &state, cluster.clone(), rx);
-        let second = forward_logs(app.handle(), &state, ClusterId::from("c2"), other_rx);
+        forward_logs(app.handle(), &state, "l-1".into(), cluster.clone(), rx).unwrap();
+        forward_logs(
+            app.handle(),
+            &state,
+            "l-2".into(),
+            ClusterId::from("c2"),
+            other_rx,
+        )
+        .unwrap();
         assert_eq!(state.subscriptions.len(), 2);
 
         state.close_cluster(&cluster);
@@ -159,11 +209,11 @@ mod tests {
         wait_until("the stream to stop", || tx.is_closed());
         assert!(!other_tx.is_closed());
 
-        tauri::async_runtime::block_on(logs_stop(app.state::<AppState>(), second)).unwrap();
+        tauri::async_runtime::block_on(logs_stop(app.state::<AppState>(), "l-2".into())).unwrap();
         wait_until("the stream to stop", || other_tx.is_closed());
         assert!(state.subscriptions.is_empty());
         // Already stopped, and never existed.
-        tauri::async_runtime::block_on(logs_stop(app.state::<AppState>(), first)).unwrap();
+        tauri::async_runtime::block_on(logs_stop(app.state::<AppState>(), "l-1".into())).unwrap();
         tauri::async_runtime::block_on(logs_stop(app.state::<AppState>(), "logs-999".into()))
             .unwrap();
     }

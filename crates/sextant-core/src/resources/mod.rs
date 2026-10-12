@@ -105,4 +105,43 @@ pub enum WatchUpdate {
     },
     Reconnecting,
     Error(CoreError),
+    /// Some of the selected namespaces cannot be listed (no permission); the others keep streaming.
+    Forbidden {
+        namespaces: Vec<String>,
+    },
+}
+
+/// A pod, by namespace and name.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PodRef {
+    pub namespace: String,
+    pub name: String,
+}
+
+/// What draining a node would do with its pods (`node_drain_preview`), like `kubectl drain --dry-run`.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DrainPreview {
+    /// Pods that are evicted.
+    pub evict: Vec<PodRef>,
+    /// Pods without a controller: evicted only with `force`.
+    pub unmanaged: Vec<PodRef>,
+    /// Pods with `emptyDir` volumes: evicted only with `deleteEmptyDirData`.
+    pub empty_dir: Vec<PodRef>,
+    /// DaemonSet pods: never evicted.
+    pub daemon_set: Vec<PodRef>,
+}
+
+/// Options of `node_drain`, as `kubectl drain --force --delete-emptydir-data`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DrainOptions {
+    /// Also evict pods without a controller.
+    pub force: bool,
+    /// Also evict pods with `emptyDir` volumes (their data is lost).
+    pub delete_empty_dir_data: bool,
 }

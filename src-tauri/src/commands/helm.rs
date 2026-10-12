@@ -161,7 +161,13 @@ pub async fn helm_repo_add<R: Runtime>(
     app: AppHandle<R>,
     name: String,
     url: String,
+    username: Option<String>,
+    password: Option<String>,
 ) -> Result<(), CoreError> {
+    // A repository with a login is not supported yet.
+    if username.is_some() || password.is_some() {
+        return Err(CoreError::not_implemented());
+    }
     helm_cli(&app).repo_add(&name, &url).await
 }
 

@@ -12,6 +12,7 @@ export const ERROR_CODES: readonly ErrorCode[] = [
   "helmMissing",
   "portInUse",
   "kubeconfig",
+  "timeout",
   "other",
 ];
 

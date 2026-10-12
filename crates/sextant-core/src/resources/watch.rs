@@ -10,8 +10,8 @@
 //! - `Error` — the watch cannot start (no permission to list the kind, unknown kind, rejected credentials); the
 //!   stream ends after it.
 //!
-//! At most one update per 250 ms, the first one no earlier than 250 ms after `watch` returns — so the caller has
-//! time to start listening before the snapshot is sent.
+//! The first snapshot is sent as soon as everything is listed (the caller listens before it starts the watch);
+//! after it, at most one update per 250 ms.
 
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
@@ -76,7 +76,7 @@ pub async fn watch(
         config = config.fields(fields);
     }
 
-    let state = Batcher::new(apis, config, kind.resource);
+    let state = Batcher::new(apis, config, kind.resource, BATCH_INTERVAL);
     Ok(futures::stream::unfold(state, |mut state| async move {
         let update = state.next_update().await?;
         Some((update, state))
@@ -122,8 +122,13 @@ enum Wake {
 }
 
 impl Batcher {
-    fn new(apis: Vec<Api<DynamicObject>>, config: watcher::Config, resource: ApiResource) -> Self {
-        let mut ticker = tokio::time::interval_at(Instant::now() + BATCH_INTERVAL, BATCH_INTERVAL);
+    fn new(
+        apis: Vec<Api<DynamicObject>>,
+        config: watcher::Config,
+        resource: ApiResource,
+        interval: Duration,
+    ) -> Self {
+        let mut ticker = tokio::time::interval_at(Instant::now() + interval, interval);
         ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
         let sources = apis.len();
         let mut batcher = Self {
@@ -183,7 +188,16 @@ impl Batcher {
                         return Some(update);
                     }
                 }
-                Wake::Event(Some((index, Ok(event)))) => self.apply(index, event),
+                Wake::Event(Some((index, Ok(event)))) => {
+                    self.apply(index, event);
+                    // The first full list goes out at once; the interval counts from it.
+                    if self.snapshot_pending && !self.snapshot_sent {
+                        self.ticker.reset();
+                        if let Some(update) = self.flush() {
+                            return Some(update);
+                        }
+                    }
+                }
                 Wake::Event(Some((_, Err(err)))) => self.fail(err),
                 // Watcher streams do not end by themselves; treat it like a lost connection.
                 Wake::Event(None) => self.lose_connection(),
@@ -327,5 +341,121 @@ fn uid_of(obj: &Value) -> String {
             meta["namespace"].as_str().unwrap_or_default(),
             meta["name"].as_str().unwrap_or_default()
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! The batcher against a fake API server on localhost (plain HTTP, no cluster needed).
+    use std::time::Duration;
+
+    use k8s_openapi::api::core::v1::Pod;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::{TcpListener, TcpStream};
+
+    use super::*;
+
+    const POD_LIST: &str = r#"{"apiVersion":"v1","kind":"PodList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"a","namespace":"default","uid":"uid-a","resourceVersion":"1"}}]}"#;
+    const POD_ADDED: &str = r#"{"type":"ADDED","object":{"apiVersion":"v1","kind":"Pod","metadata":{"name":"b","namespace":"default","uid":"uid-b","resourceVersion":"2"}}}"#;
+
+    /// Serves `GET /api/v1/pods`: the list answers [`POD_LIST`] at once; a watch sends [`POD_ADDED`] at once and then
+    /// stays open.
+    async fn fake_api_server() -> String {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move {
+            while let Ok((conn, _)) = listener.accept().await {
+                tokio::spawn(serve(conn));
+            }
+        });
+        url
+    }
+
+    async fn serve(mut conn: TcpStream) {
+        let mut buf = Vec::new();
+        loop {
+            // One request head (GET, no body) at a time on a kept-alive connection.
+            let head_end = loop {
+                if let Some(end) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
+                    break end + 4;
+                }
+                let mut chunk = [0u8; 4096];
+                match conn.read(&mut chunk).await {
+                    Ok(0) | Err(_) => return,
+                    Ok(n) => buf.extend_from_slice(&chunk[..n]),
+                }
+            };
+            let head = String::from_utf8_lossy(&buf[..head_end]).into_owned();
+            buf.drain(..head_end);
+            if head.lines().next().unwrap_or_default().contains("watch=") {
+                let line = format!("{POD_ADDED}\n");
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ntransfer-encoding: chunked\r\n\r\n{:x}\r\n{line}\r\n",
+                    line.len()
+                );
+                if conn.write_all(response.as_bytes()).await.is_err() {
+                    return;
+                }
+                futures::future::pending::<()>().await;
+            }
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{POD_LIST}",
+                POD_LIST.len()
+            );
+            if conn.write_all(response.as_bytes()).await.is_err() {
+                return;
+            }
+        }
+    }
+
+    fn names(items: &[Value]) -> Vec<&str> {
+        let mut names: Vec<&str> = items
+            .iter()
+            .map(|o| o["metadata"]["name"].as_str().unwrap_or_default())
+            .collect();
+        names.sort();
+        names
+    }
+
+    #[tokio::test]
+    async fn the_first_snapshot_is_sent_as_soon_as_it_is_listed_and_later_batches_keep_the_interval()
+     {
+        let url = fake_api_server().await;
+        let client = kube::Client::try_from(kube::Config::new(url.parse().unwrap())).unwrap();
+        let resource = ApiResource::erase::<Pod>(&());
+        let api = Api::<DynamicObject>::all_with(client, &resource);
+        // A long interval: a snapshot held back until the first tick could not arrive in time.
+        let interval = Duration::from_secs(2);
+        let started = Instant::now();
+        let mut batcher = Batcher::new(vec![api], watcher::Config::default(), resource, interval);
+
+        let first = tokio::time::timeout(interval / 2, batcher.next_update())
+            .await
+            .expect("the first snapshot waited for the batch interval")
+            .unwrap();
+        let snapshot_at = Instant::now();
+        match first {
+            WatchUpdate::Snapshot { items } => assert_eq!(names(&items), ["a"]),
+            other => panic!("expected a snapshot, got {other:?}"),
+        }
+        assert!(snapshot_at - started < interval);
+
+        // The pod added right after the list waits for the next tick: at most one batch per interval.
+        let next = tokio::time::timeout(interval * 3, batcher.next_update())
+            .await
+            .expect("the delta never came")
+            .unwrap();
+        match next {
+            WatchUpdate::Delta { upserted, deleted } => {
+                assert_eq!(names(&upserted), ["b"]);
+                assert!(deleted.is_empty());
+            }
+            other => panic!("expected a delta, got {other:?}"),
+        }
+        let gap = Instant::now() - snapshot_at;
+        assert!(
+            gap >= interval - Duration::from_millis(50),
+            "a batch {gap:?} after the snapshot"
+        );
     }
 }

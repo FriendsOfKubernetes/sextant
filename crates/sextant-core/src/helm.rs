@@ -42,6 +42,15 @@ pub struct HelmRelease {
     pub app_version: String,
     pub status: String,
     pub updated: String,
+    /// The latest revision, when it cannot be decoded (the release shows the last readable one). Not set yet;
+    /// optional in TypeScript so that existing fixtures stay valid until it is filled.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub unreadable_revision: Option<i32>,
+    /// A history row of a revision that cannot be decoded (only `revision` is meaningful).
+    #[serde(default)]
+    #[ts(as = "Option<bool>", optional)]
+    pub unreadable: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -108,6 +117,8 @@ impl StoredRelease {
             app_version: self.chart_field("appVersion"),
             status: self.info.status.clone(),
             updated: self.info.last_deployed.clone(),
+            unreadable_revision: None,
+            unreadable: false,
         }
     }
 
@@ -427,6 +438,8 @@ mod tests {
                 app_version: "1.0.0".into(),
                 status: "deployed".into(),
                 updated: "2026-10-11T22:19:14.665047041+03:00".into(),
+                unreadable_revision: None,
+                unreadable: false,
             }
         );
         let detail = r.detail().unwrap();

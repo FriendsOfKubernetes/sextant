@@ -60,6 +60,8 @@ afterEach(() => {
 });
 
 const calls = (cmd: string) => backend.calls.filter((c) => c.cmd === cmd).map((c) => c.args);
+/** The ids the tab chose for its streams, in start order. */
+const streamIds = () => calls("logs_start").map((args) => args.streamId);
 
 function renderTab(overrides: Partial<LogsPayload> = {}) {
   const tab = { id: "logs-1", type: "logs" as const, title: "web-1", payload: { ...payload, ...overrides } };
@@ -84,9 +86,10 @@ describe("log stream", () => {
         clusterId: "c1",
         pod: payload.pod,
         opts: { container: "app", follow: true, previous: false, timestamps: false, tailLines: 1000 },
+        streamId: expect.any(String),
       },
     ]);
-    expect(screen.getByRole("status")).toHaveTextContent("Live");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Live"));
     emitLines(["hello", "world"]);
     expect(screen.getByText("hello")).toBeInTheDocument();
     expect(screen.getByText("world")).toBeInTheDocument();
@@ -107,7 +110,7 @@ describe("log stream", () => {
 
     fireEvent.change(screen.getByRole("combobox", { name: "Container" }), { target: { value: "setup" } });
     await waitFor(() => expect(backend.listenerCount("logs:s2")).toBe(1));
-    expect(calls("logs_stop")).toEqual([{ streamId: "s1" }]);
+    expect(calls("logs_stop")).toEqual([{ streamId: streamIds()[0] }]);
     expect(calls("logs_start")[1]?.opts).toMatchObject({ container: "setup" });
     expect(screen.queryByText("from app")).not.toBeInTheDocument();
 
@@ -128,7 +131,7 @@ describe("log stream", () => {
   it("closing the tab stops the stream", async () => {
     const { unmount } = await opened();
     unmount();
-    await waitFor(() => expect(calls("logs_stop")).toEqual([{ streamId: "s1" }]));
+    await waitFor(() => expect(calls("logs_stop")).toEqual([{ streamId: streamIds()[0] }]));
     expect(backend.listenerCount("logs:s1")).toBe(0);
   });
 
@@ -138,9 +141,23 @@ describe("log stream", () => {
     const { unmount } = renderTab();
     await waitFor(() => expect(calls("logs_start")).toHaveLength(1));
     unmount();
+    expect(calls("logs_stop")).toEqual([]);
     answer("late");
-    await waitFor(() => expect(calls("logs_stop")).toEqual([{ streamId: "late" }]));
+    await waitFor(() => expect(calls("logs_stop")).toEqual([{ streamId: streamIds()[0] }]));
     expect(backend.listenerCount("logs:late")).toBe(0);
+  });
+});
+
+describe("first output", () => {
+  it("lines the backend sends before logs_start answers are shown", async () => {
+    backend.on("logs_start", (args) => {
+      // The backend streams the tail at once; its answer reaches the window later.
+      backend.emit(`logs:${args.streamId as string}`, { type: "lines", lines: ["first line"] });
+      return undefined;
+    });
+    renderTab();
+    expect(await screen.findByText("first line")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Live"));
   });
 });
 

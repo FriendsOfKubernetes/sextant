@@ -42,16 +42,22 @@ const b64 = (text: string) => btoa(text);
 
 let backend: MockBackend;
 let sessions: number;
-/** Number of `term:<id>` listeners when each `term_resize` arrived. */
+/** Number of `term:<id>` listeners when each `*_start` and each `term_resize` arrived. */
+let listenersAtStart: number[];
 let listenersAtResize: number[];
 
 beforeEach(() => {
   resetAppStore();
   sessions = 0;
+  listenersAtStart = [];
   listenersAtResize = [];
+  const start = (args: Record<string, unknown>) => {
+    listenersAtStart.push(backend.listenerCount(`term:${args.streamId as string}`));
+    return `term-${++sessions}`;
+  };
   backend = mockBackend({
-    exec_start: () => `term-${++sessions}`,
-    terminal_start: () => `term-${++sessions}`,
+    exec_start: start,
+    terminal_start: start,
     term_input: () => undefined,
     term_resize: (args) => {
       listenersAtResize.push(backend.listenerCount(`term:${args.sessionId as string}`));
@@ -82,6 +88,11 @@ function calls(cmd: string) {
   return backend.calls.filter((c) => c.cmd === cmd).map((c) => c.args);
 }
 
+/** The ids the frontend chose for its sessions, in start order. */
+function sessionIds() {
+  return backend.calls.filter((c) => c.cmd === "exec_start" || c.cmd === "terminal_start").map((c) => c.args.streamId);
+}
+
 describe("Shell action", () => {
   it("is offered for running pods only", () => {
     const running = pod("web", ["nginx"]);
@@ -92,7 +103,7 @@ describe("Shell action", () => {
     expect(getActionsFor([running], deployment, ["exec"])).toEqual([]);
   });
 
-  it("opens a shell tab, subscribes before the first resize and shows the output", async () => {
+  it("opens a shell tab, listens before the session starts and shows the output", async () => {
     render(<App />);
     await runShell(pod("web", ["nginx"]));
 
@@ -106,12 +117,23 @@ describe("Shell action", () => {
     });
     expect(start?.cols).toBeGreaterThan(0);
     expect(start?.rows).toBeGreaterThan(0);
-    // The backend holds early output until this resize; by then the frontend must be listening.
+    // The backend sends output as soon as the shell prints it: the frontend listens before the start.
+    expect(listenersAtStart).toEqual([1]);
     expect(listenersAtResize).toEqual([1]);
-    expect(calls("term_resize")[0]).toMatchObject({ sessionId: "term-1" });
+    expect(calls("term_resize")[0]).toMatchObject({ sessionId: start?.streamId });
 
     act(() => backend.emit("term:term-1", { type: "data", data: b64("root@web:/# ") }));
     await waitFor(() => expect(screenText()).toContain("root@web:/#"));
+  });
+
+  it("shows the prompt the shell prints before exec_start answers", async () => {
+    backend.on("exec_start", (args) => {
+      backend.emit(`term:${args.streamId as string}`, { type: "data", data: b64("early$ ") });
+      return undefined;
+    });
+    render(<App />);
+    await runShell(pod("web", ["nginx"]));
+    await waitFor(() => expect(screenText()).toContain("early$"));
   });
 
   it("sends keystrokes to the session", async () => {
@@ -122,7 +144,7 @@ describe("Shell action", () => {
     const input = document.querySelector("textarea.xterm-helper-textarea");
     if (!input) throw new Error("no xterm input");
     fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
-    await waitFor(() => expect(calls("term_input")).toContainEqual({ sessionId: "term-1", data: "\r" }));
+    await waitFor(() => expect(calls("term_input")).toContainEqual({ sessionId: sessionIds()[0], data: "\r" }));
   });
 
   it("asks for the container of a multi-container pod, the default container first", async () => {
@@ -157,8 +179,8 @@ describe("Shell action", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
     await waitFor(() => expect(calls("exec_start")).toHaveLength(2));
-    await waitFor(() => expect(calls("term_resize").at(-1)).toMatchObject({ sessionId: "term-2" }));
-    expect(calls("term_stop")).toContainEqual({ sessionId: "term-1" });
+    await waitFor(() => expect(calls("term_resize").at(-1)).toMatchObject({ sessionId: sessionIds()[1] }));
+    expect(calls("term_stop")).toContainEqual({ sessionId: sessionIds()[0] });
     expect(screen.queryByText(/Session ended/)).not.toBeInTheDocument();
   });
 
@@ -174,7 +196,7 @@ describe("Shell action", () => {
 
     backend.on("exec_start", () => "term-9");
     fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
-    await waitFor(() => expect(calls("term_resize").at(-1)).toMatchObject({ sessionId: "term-9" }));
+    await waitFor(() => expect(calls("term_resize").at(-1)).toMatchObject({ sessionId: sessionIds()[1] }));
     act(() =>
       backend.emit("term:term-9", { type: "error", error: { code: "unreachable", message: "connection reset" } }),
     );
@@ -188,7 +210,7 @@ describe("Shell action", () => {
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
 
     fireEvent.click(screen.getByRole("button", { name: /Close.*Shell: web/ }));
-    await waitFor(() => expect(calls("term_stop")).toEqual([{ sessionId: "term-1" }]));
+    await waitFor(() => expect(calls("term_stop")).toEqual([{ sessionId: sessionIds()[0] }]));
     expect(backend.listenerCount("term:term-1")).toBe(0);
   });
 });
@@ -218,7 +240,7 @@ describe("Terminal button", () => {
     expect(await screen.findByRole("tab", { name: "Terminal: kind-sextant-test" })).toBeInTheDocument();
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
     expect(calls("terminal_start")[0]).toMatchObject({ clusterId: "c1" });
-    expect(listenersAtResize).toEqual([1]);
+    expect(listenersAtStart).toEqual([1]);
     act(() => backend.emit("term:term-1", { type: "data", data: b64("$ kubectl get pods") }));
     await waitFor(() => expect(screenText()).toContain("$ kubectl get pods"));
   });

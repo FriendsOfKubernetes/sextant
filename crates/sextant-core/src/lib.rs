@@ -21,5 +21,8 @@ pub mod settings;
 pub use cluster::{ClusterManager, ConnectionState};
 pub use error::{CoreError, CoreResult, ErrorCode};
 pub use kubeconfig::{ClusterId, ClusterInfo, KubeconfigRegistry, KubeconfigSource, SourceKind};
-pub use resources::{KindRef, ObjectRef, PrinterColumn, ResourceKind, WatchSpec, WatchUpdate};
+pub use resources::{
+    DrainOptions, DrainPreview, KindRef, ObjectRef, PodRef, PrinterColumn, ResourceKind, WatchSpec,
+    WatchUpdate,
+};
 pub use settings::{AppSettings, ClusterSettings, SettingsStore, Theme, WindowLayout};

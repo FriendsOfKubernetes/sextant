@@ -19,26 +19,42 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["cluster_disconnect", () => api.clusters.disconnect("c1"), { clusterId: "c1" }],
   ["cluster_state", () => api.clusters.state("c1"), { clusterId: "c1" }],
   ["cluster_kinds", () => api.clusters.kinds("c1"), { clusterId: "c1" }],
-  ["watch_start", () => api.resources.watchStart("c1", spec), { clusterId: "c1", spec }],
+  ["watch_start", () => api.resources.watchStart("c1", spec, "s1"), { clusterId: "c1", spec, streamId: "s1" }],
   ["watch_stop", () => api.resources.watchStop("w1"), { subscriptionId: "w1" }],
+  ["streams_reset", () => api.streams.reset(), undefined],
   ["resource_get", () => api.resources.get("c1", ref), { clusterId: "c1", ref }],
+  ["resource_get_full", () => api.resources.getFull("c1", ref), { clusterId: "c1", ref }],
+  [
+    "secret_value",
+    () => api.resources.secretValue("c1", "ns", "db", "password"),
+    { clusterId: "c1", namespace: "ns", name: "db", key: "password" },
+  ],
   ["resource_replace", () => api.resources.replace("c1", "y"), { clusterId: "c1", yaml: "y" }],
   ["resource_apply", () => api.resources.apply("c1", "y"), { clusterId: "c1", yaml: "y" }],
   ["resource_delete", () => api.resources.delete("c1", ref), { clusterId: "c1", ref }],
   ["workload_scale", () => api.actions.scale("c1", ref, 3), { clusterId: "c1", ref, replicas: 3 }],
   ["workload_restart", () => api.actions.restart("c1", ref), { clusterId: "c1", ref }],
   ["node_cordon", () => api.actions.cordon("c1", "n1", true), { clusterId: "c1", name: "n1", unschedulable: true }],
-  ["node_drain", () => api.actions.drain("c1", "n1"), { clusterId: "c1", name: "n1" }],
+  ["node_drain_preview", () => api.actions.drainPreview("c1", "n1"), { clusterId: "c1", name: "n1" }],
+  [
+    "node_drain",
+    () => api.actions.drain("c1", "n1", { force: true, deleteEmptyDirData: false }),
+    { clusterId: "c1", name: "n1", options: { force: true, deleteEmptyDirData: false } },
+  ],
   ["cronjob_trigger", () => api.actions.triggerCronJob("c1", ref), { clusterId: "c1", ref }],
   ["cronjob_suspend", () => api.actions.suspendCronJob("c1", ref, true), { clusterId: "c1", ref, suspend: true }],
-  ["logs_start", () => api.logs.start("c1", pod, opts), { clusterId: "c1", pod, opts }],
+  ["logs_start", () => api.logs.start("c1", pod, opts, "s1"), { clusterId: "c1", pod, opts, streamId: "s1" }],
   ["logs_stop", () => api.logs.stop("l1"), { streamId: "l1" }],
   [
     "exec_start",
-    () => api.terminal.exec("c1", pod, "c", 80, 24),
-    { clusterId: "c1", pod, container: "c", cols: 80, rows: 24 },
+    () => api.terminal.exec("c1", pod, "c", 80, 24, "s1"),
+    { clusterId: "c1", pod, container: "c", cols: 80, rows: 24, streamId: "s1" },
   ],
-  ["terminal_start", () => api.terminal.local("c1", 80, 24), { clusterId: "c1", cols: 80, rows: 24 }],
+  [
+    "terminal_start",
+    () => api.terminal.local("c1", 80, 24, "s1"),
+    { clusterId: "c1", cols: 80, rows: 24, streamId: "s1" },
+  ],
   ["term_input", () => api.terminal.input("t1", "ls\r"), { sessionId: "t1", data: "ls\r" }],
   ["term_resize", () => api.terminal.resize("t1", 100, 30), { sessionId: "t1", cols: 100, rows: 30 }],
   ["term_stop", () => api.terminal.stop("t1"), { sessionId: "t1" }],
@@ -86,12 +102,17 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
     { clusterId: "c1", namespace: "ns", release: "r", chart: "repo/chart", version: "1.0.0", valuesYaml: "a: 1" },
   ],
   ["helm_repos", () => api.helm.repos(), undefined],
-  ["helm_repo_add", () => api.helm.repoAdd("bitnami", "https://x"), { name: "bitnami", url: "https://x" }],
+  [
+    "helm_repo_add",
+    () => api.helm.repoAdd("private", "https://x", "me", "pw"),
+    { name: "private", url: "https://x", username: "me", password: "pw" },
+  ],
   ["helm_repo_remove", () => api.helm.repoRemove("bitnami"), { name: "bitnami" }],
   ["helm_repo_update", () => api.helm.repoUpdate(), undefined],
   ["helm_search", () => api.helm.search("nginx"), { query: "nginx" }],
   ["helm_show_values", () => api.helm.showValues("repo/chart", null), { chart: "repo/chart", version: null }],
   ["settings_get", () => api.settings.get(), undefined],
+  ["settings_status", () => api.settings.status(), undefined],
   ["file_save", () => api.files.save("/tmp/x.log", "text"), { path: "/tmp/x.log", contents: "text" }],
 ];
 
@@ -108,7 +129,7 @@ describe("src/api commands", () => {
   it("covers every command of the contract", () => {
     const covered = new Set(cases.map(([cmd]) => cmd));
     covered.add("settings_update"); // checked below with a real settings object
-    expect(covered.size).toBe(52);
+    expect(covered.size).toBe(57);
   });
 
   it("settings_update sends the whole settings object", async () => {
@@ -137,6 +158,16 @@ describe("src/api commands", () => {
       code: "unreachable",
       message: "connection refused",
     });
+  });
+
+  it("optional arguments left out are not sent", async () => {
+    backend = mockBackend({ node_drain: () => undefined, helm_repo_add: () => undefined });
+    await api.actions.drain("c1", "n1");
+    await api.helm.repoAdd("bitnami", "https://x");
+    expect(backend.calls.map((c) => JSON.parse(JSON.stringify(c.args)) as unknown)).toEqual([
+      { clusterId: "c1", name: "n1" },
+      { name: "bitnami", url: "https://x" },
+    ]);
   });
 
   it("a plain string error (e.g. bad arguments) becomes code 'other'", async () => {
