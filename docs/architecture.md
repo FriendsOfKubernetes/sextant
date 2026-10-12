@@ -31,6 +31,14 @@ kubeconfig ──► KubeconfigRegistry ──► ClusterManager ──► kube:
 
 На кластер одна discovery: `ClusterManager::kinds` отдаёт общий результат всем ждущим и прекращается, когда ждать некому; сбрасывается при (пере)подключении и отключении. Сначала aggregated discovery (два запроса), иначе по версиям групп. `ResourceKind.printerColumns` из неё пуст: колонки CRD фронтенд читает лениво, одним CRD, когда вид открыт (`useCrdPrinterColumns`, `src/resources/crdColumns.ts`). Встроенные виды описаны в ядре (`BUILT_IN_KINDS` в `crates/sextant-core/src/resources/get.rs`), их watch не ждёт discovery. Сайдбар берёт CRD из discovery (`customResourceKinds` в `src/resources/useKinds.ts`). Решение — ADR-0015.
 
+### GitOps: Flux и Argo CD
+
+Flux и Argo CD — обычные CRD, поэтому всё идёт через Kubernetes API без CLI этих инструментов (ADR-0024). Их виды (`src/features/flux/`, `src/features/argocd/`) регистрируются в реестре видов в секциях сайдбара `flux` и `argocd`; раздел показывается, только если виды есть в discovery (ADR-0031). Действия (reconcile, suspend/resume, sync, refresh, terminate) — патчи объекта общей командой `resource_patch` (ADR-0025). Версию вида ядро выбирает через `resolve_kind`: get/watch/patch идут в версии из discovery, а `replace`/`apply` — в версии документа (ADR-0030).
+
+**Сброс discovery.** CRD Flux и Argo CD появляются уже после подключения, поэтому фронтенд следит за CRD (`watchCrdChanges`, `src/resources/useKinds.ts`) и при добавлении или удалении зовёт `cluster_kinds_refresh`: `ClusterManager::refresh_kinds` сбрасывает общую discovery кластера без переподключения (ADR-0026).
+
+**Argo CD: вход и дифф.** Ядро (`crates/sextant-core/src/argocd.rs`) находит установку Argo CD (ADR-0032) и говорит с её API через port-forward к `argocd-server`; проверка TLS отключена только для `127.0.0.1` (ADR-0027). Сессии живут в `ArgoSessions` (`src-tauri/src/commands/argocd.rs`, поле `AppState.argocd`) и закрываются вместе с кластером; команды — `src-tauri/src/commands/argocd.rs`. Источники входа и их порядок — ADR-0028, сохранённый вход в хранилище ОС — ADR-0029. Пароли и токены Argo остаются в backend. Дифф (`argocd_diff`) отдаёт управляемые ресурсы с желаемым и живым состоянием, значения Secret вырезаны; окно входа и вид диффа на `@codemirror/merge` — `src/features/argocd/diff/`, действие `argoDiff` подключает отдельная фича `src/features/argocd-diff/`.
+
 ### Клиент кластера: повторы и таймауты
 
 `kube::Client` собирается в `cluster.rs` со своим слоем повторов (`RetryPolicy`: 429/503/504, не больше 3 раз и 5 с, только запросы с клонируемым телом); соединение — `CONNECT_TIMEOUT`. Команды, меняющие кластер, обёрнуты в `error::with_timeout` (`CHANGE_TIMEOUT` в `src-tauri/src/commands/actions.rs`) и дают `ErrorCode::Timeout`; drain и apply нескольких документов лимитируют каждый запрос (`resources::STEP_TIMEOUT`). Решения — ADR-0016, ADR-0023.
@@ -52,6 +60,7 @@ kubeconfig ──► KubeconfigRegistry ──► ClusterManager ──► kube:
 - **`src/layout/`** — оболочка (`AppShell`: рейл кластеров, сайдбар, `MainView`, панель деталей, док). Не знает про конкретные виды ресурсов.
 - **`src/resources/`** — реестр видов (`ResourceDef`: колонки, детали, действия); для CRD колонки берутся из `printerColumns` самого CRD, прочитанного лениво (`crdColumns.ts`).
 - **`src/components/`** — общие компоненты без знания о Kubernetes-видах: `Checkbox` (нативных чекбоксов в приложении нет), `LoadingIndicator` (с подсказкой, если ждать долго), `Dialog`, `ConfirmDialog`, `ErrorState`, `EmptyState`, `Badge`, `Age`, `usePopup`; таблица ресурсов — `src/components/Table/` (`ResourceTable`, `LoadingTable`). Экспорт — `src/components/index.ts`; фичи импортируют отсюда, а не друг у друга.
+- **`src/features/flux/`, `src/features/argocd/`, `src/features/argocd-diff/`** — GitOps (см. «GitOps: Flux и Argo CD»); работают только через api и реестры, ядру нужны лишь `resource_patch`, `cluster_kinds_refresh` и модуль `argocd`.
 - **`src/features/updates/`** — обновления приложения и его версия (см. «Обновления приложения»); к реестрам не подключается, его компоненты встраивают `src/features/settings`.
 
 ## Точки расширения (реестры)
@@ -85,7 +94,7 @@ kubeconfig ──► KubeconfigRegistry ──► ClusterManager ──► kube:
 ## Швы для тестов
 
 1. Ядро без кластера: юнит-тесты рядом с кодом; те, что должны видеть HTTP, идут в поддельный API-сервер `crates/sextant-core/src/fake_api.rs` (виден только в `cfg(test)`; ответы задаёт тест, каждый запрос записывается).
-2. Ядро против kind: `crates/sextant-core/tests/<feature>.rs` + `tests/common/mod.rs`; без `SEXTANT_TEST_KUBECONFIG` тест возвращается и считается пройденным. Тяжёлые замеры (большой кластер) берут фикстуру `scripts/fixtures/load/load.sh`.
+2. Ядро против kind: `crates/sextant-core/tests/<feature>.rs` + `crates/sextant-core/tests/common/mod.rs`; тесты GitOps (`gitops*.rs`) нужны ещё `SEXTANT_TEST_GITOPS=1` и кластер `up --gitops`, без них пропускаются; без `SEXTANT_TEST_KUBECONFIG` тест возвращается и считается пройденным. Тяжёлые замеры (большой кластер) берут фикстуру `scripts/fixtures/load/load.sh`.
 3. Команды: `src-tauri/tests/commands.rs` вызывает каждую команду на mock-рантайме Tauri, изолирован от `KUBECONFIG` и `~/.kube/config` (`set_env`); команда, ходящая в сеть или запускающая `helm`, там подменяется.
 4. Фронтенд: Vitest + Testing Library без Tauri, backend подменяет `mockBackend` из `src/api` (включая обновления и версию приложения).
 5. Окно целиком: `e2e/` (WebdriverIO + `tauri-driver`) против kind, со своими XDG-каталогами во временной папке.
