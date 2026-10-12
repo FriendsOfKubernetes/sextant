@@ -105,7 +105,7 @@ async fn client_certificate_and_token_clusters_connect_at_the_same_time() {
 }
 
 #[tokio::test]
-async fn kinds_include_builtin_kinds_and_the_test_crd_with_printer_columns() {
+async fn kinds_include_builtin_kinds_and_the_test_crd_whose_columns_come_from_its_one_crd() {
     let Some(cluster) = common::test_cluster() else {
         return;
     };
@@ -129,25 +129,39 @@ async fn kinds_include_builtin_kinds_and_the_test_crd_with_printer_columns() {
     assert!(pod.verbs.iter().any(|v| v == "watch"));
     assert!(!kind("", "Node").namespaced);
     assert_eq!(kind("apps", "Deployment").kind_ref.version, "v1");
-    assert!(kind("apps", "Deployment").printer_columns.is_empty());
     assert!(
         !kinds.iter().any(|k| k.plural.contains('/')),
         "no subresources"
     );
 
+    // Discovery carries no printer columns (no CRD is downloaded for it); the table of a custom kind reads them
+    // from its one CRD.
     let widget = kind("demo.sextant.dev", "Widget");
     assert_eq!(widget.plural, "widgets");
-    let columns: Vec<_> = widget
-        .printer_columns
+    assert!(widget.namespaced);
+    assert!(kinds.iter().all(|k| k.printer_columns.is_empty()));
+    let crd = sextant_core::resources::get(
+        &mgr,
+        &id,
+        &sextant_core::ObjectRef {
+            kind: sextant_core::KindRef {
+                group: "apiextensions.k8s.io".into(),
+                version: "v1".into(),
+                kind: "CustomResourceDefinition".into(),
+            },
+            namespace: None,
+            name: format!("{}.{}", widget.plural, widget.kind_ref.group),
+        },
+    )
+    .await
+    .unwrap();
+    let columns: Vec<&str> = crd["spec"]["versions"][0]["additionalPrinterColumns"]
+        .as_array()
+        .unwrap()
         .iter()
-        .map(|c| (c.name.as_str(), c.json_path.as_str()))
+        .map(|c| c["name"].as_str().unwrap())
         .collect();
-    assert_eq!(columns.len(), 3, "{columns:?}");
-    assert_eq!(
-        columns.iter().map(|c| c.0).collect::<Vec<_>>(),
-        ["Size", "Replicas", "Age"]
-    );
-    assert!(columns[0].1.contains("size"), "{columns:?}");
+    assert_eq!(columns, ["Size", "Replicas", "Age"]);
 
     // Cached until reconnect.
     assert_eq!(mgr.kinds(&id).await.unwrap(), kinds);

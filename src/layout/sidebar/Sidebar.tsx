@@ -1,13 +1,14 @@
 // Section tree of a cluster, in Lens order: Cluster, Nodes, Workloads, Config, Network, Storage, Namespaces, Events,
 // Helm, Access Control, Custom Resources. Entries come from the resource registry (tables) and from `registerPage`
 // (overview, events, Helm, port forwarding, …); a section without entries is not shown. Custom Resources lists
-// "Definitions" and the cluster's CRDs grouped by API group.
+// "Definitions" and the cluster's custom kinds grouped by API group, from discovery (names, groups, versions — the
+// CRDs themselves, with their schemas, are not downloaded for the sidebar).
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useWatch, type ClusterId, type KubeObject, type WatchSpec } from "../../api";
+import type { ClusterId } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
 import {
-  CRD_KIND,
+  customResourceKinds,
   findKind,
   findResourceDef,
   getResourceDefs,
@@ -21,8 +22,6 @@ import "./sidebar.css";
 
 /** Sections shown as one link (their only entry) instead of a collapsible group. */
 const SINGLE_ENTRY = new Set(["cluster", "nodes", "namespaces", "events", "settings"]);
-
-const CRDS: WatchSpec = { kind: CRD_KIND, namespaces: null, labelSelector: null, fieldSelector: null };
 
 interface Entry {
   id: string;
@@ -46,13 +45,9 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   const setSearch = useAppStore((s) => s.setSearch);
   const registryVersion = useRegistryVersion();
   const { kinds } = useClusterKinds(clusterId);
-  const crds = useWatch(clusterId, CRDS);
 
   // `registryVersion` re-reads the registries when kinds are registered or extended.
-  const sections = useMemo(
-    () => buildSections(kinds, [...crds.items.values()], crds.status === "error", registryVersion),
-    [kinds, crds.items, crds.status, registryVersion],
-  );
+  const sections = useMemo(() => buildSections(kinds, registryVersion), [kinds, registryVersion]);
 
   const activeSection = sections.find(
     (s) => s.entries.some((e) => e.id === view) || s.groups?.some((g) => g.entries.some((e) => e.id === view)),
@@ -140,12 +135,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   );
 }
 
-function buildSections(
-  kinds: ReturnType<typeof useClusterKinds>["kinds"],
-  crds: KubeObject[],
-  crdsUnreadable: boolean,
-  _registryVersion: number,
-): Section[] {
+function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _registryVersion: number): Section[] {
   const bySection = new Map<string, Entry[]>();
   const add = (section: string, entry: Entry) => {
     const list = bySection.get(section) ?? [];
@@ -167,17 +157,9 @@ function buildSections(
     if (!list.some((e) => e.id === id)) list.push({ id, order: 0, label: kind });
     groups.set(group, list);
   };
-  for (const crd of crds) {
-    const spec = (crd as { spec?: { group?: string; names?: { kind?: string } } }).spec;
-    if (spec?.group && spec.names?.kind) addCustom(spec.group, spec.names.kind);
-  }
-  // Without the right to list CRDs, custom resources are found through discovery: API groups with a dot that are
-  // not Kubernetes' own (*.k8s.io).
-  if (crdsUnreadable) {
-    for (const k of kinds ?? []) {
-      const { group, kind } = k.kindRef;
-      if (group.includes(".") && !group.endsWith(".k8s.io") && !findResourceDef({ group, kind })) addCustom(group, kind);
-    }
+  for (const k of customResourceKinds(kinds)) {
+    const { group, kind } = k.kindRef;
+    if (!findResourceDef({ group, kind })) addCustom(group, kind);
   }
   const crGroups = [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))

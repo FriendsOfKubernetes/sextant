@@ -1,13 +1,21 @@
 // The main area of a cluster: the open page (`registerPage`) or the live table of the open kind, with the
 // namespace filter and the search box in the table header. With no section chosen yet it opens the first page of
 // the "cluster" section (the overview), if one is registered.
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, KindRef } from "../../api";
+import type { ClusterId, KindRef, ResourceKind } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
 import { EmptyState, ErrorState } from "../../components";
-import { ResourceTable } from "../../components/Table";
+import { LoadingTable, ResourceTable } from "../../components/Table";
 import { NamespaceFilter, useSelectedNamespaces } from "../../features/namespaces";
-import { findKind, findResourceDef, parseViewId, useClusterKinds, useResourceDef } from "../../resources";
+import {
+  findKind,
+  findResourceDef,
+  parseViewId,
+  useClusterKinds,
+  useCrdPrinterColumns,
+  useResourceDef,
+} from "../../resources";
 import { getPage, getPages } from "../pages";
 import { ActionDialogHost } from "./ActionDialogHost";
 import "./main.css";
@@ -32,9 +40,13 @@ export function MainView({ clusterId }: { clusterId: ClusterId }) {
   );
 }
 
-/** Resolves the version of the kind (built-in description, else discovery) and shows its table. */
+/**
+ * Resolves the version of the kind (built-in description, else discovery) and shows its table. The title and a
+ * loading indicator show at once, also while a custom kind waits for discovery; the indicator counts from here.
+ */
 function KindView({ clusterId, group, kind }: { clusterId: ClusterId; group: string; kind: string }) {
   const { t } = useTranslation();
+  const [openedAt] = useState(() => Date.now());
   const { kinds, error } = useClusterKinds(clusterId);
   const discovered = findKind(kinds, { group, kind }) ?? null;
   const registered = findResourceDef({ group, kind });
@@ -42,45 +54,55 @@ function KindView({ clusterId, group, kind }: { clusterId: ClusterId; group: str
   if (!registered && !discovered) {
     if (error) return <ErrorState error={error} />;
     if (kinds) return <EmptyState title={t("resources:table.unknownKind", { kind })} />;
-    return (
-      <div className="rt__loading" role="status">
-        {t("resources:table.loading")}
-      </div>
-    );
+    return <LoadingTable title={kind} since={openedAt} />;
   }
   // Built-in kinds use their GA version right away; custom resources the version the cluster prefers.
   const version = registered?.kind.version ?? discovered?.kindRef.version ?? "";
-  return <KindTable clusterId={clusterId} kind={{ group, version, kind }} resourceKind={discovered} />;
+  return (
+    <KindTable
+      clusterId={clusterId}
+      kind={{ group, version, kind }}
+      resourceKind={discovered}
+      custom={!registered}
+      openedAt={openedAt}
+    />
+  );
 }
 
 function KindTable({
   clusterId,
   kind,
   resourceKind,
+  custom,
+  openedAt,
 }: {
   clusterId: ClusterId;
   kind: KindRef;
-  resourceKind: ReturnType<typeof findKind> | null;
+  resourceKind: ResourceKind | null;
+  /** A custom resource: its printer columns come from its CRD. */
+  custom: boolean;
+  openedAt: number;
 }) {
   const { t } = useTranslation();
-  const def = useResourceDef(kind, resourceKind);
+  const columns = useCrdPrinterColumns(clusterId, custom ? resourceKind : null);
+  const withColumns = useMemo(
+    () => (resourceKind && columns ? { ...resourceKind, printerColumns: columns } : resourceKind),
+    [resourceKind, columns],
+  );
+  const def = useResourceDef(kind, withColumns);
   const namespaces = useSelectedNamespaces(clusterId);
   const search = useClusterView(clusterId).search;
   const setSearch = useAppStore((s) => s.setSearch);
   const namespaced = resourceKind?.namespaced ?? def.namespaced ?? true;
+  const title = def.sidebar ? t(def.sidebar.labelKey) : (def.title ?? kind.kind);
 
-  if (namespaces === undefined) {
-    return (
-      <div className="rt__loading" role="status">
-        {t("resources:table.loading")}
-      </div>
-    );
-  }
+  if (namespaces === undefined) return <LoadingTable title={title} since={openedAt} />;
   return (
     <ResourceTable
       clusterId={clusterId}
       kind={kind}
-      resourceKind={resourceKind}
+      resourceKind={withColumns}
+      loadingSince={openedAt}
       namespaces={namespaces}
       search={search}
       toolbar={

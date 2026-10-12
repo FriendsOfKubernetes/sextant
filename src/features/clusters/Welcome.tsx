@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { errorKey, useSettings, type ClusterInfo, type CoreError } from "../../api";
 import { EmptyState } from "../../components";
+import { useElapsedSeconds, SLOW_AFTER_S } from "../../components/Table";
 import { AddFileButton, PasteButton, SourceError } from "./AddClusterDialog";
 import { displayNameOf } from "./clusterSettings";
 import { connectCluster, disconnectCluster, openClusterSettings, useClustersStore } from "./clustersStore";
@@ -41,12 +42,13 @@ export function Welcome() {
   return <EmptyState title={t("clusters:welcome.title")} text={t("clusters:welcome.pick")} />;
 }
 
-/** "Connecting to …" or the connection error with Reconnect. */
+/** "Connecting to … 7 s" (after 5 s: the cluster is slow) or the connection error with Reconnect. */
 function Connection({ cluster }: { cluster: ClusterInfo }) {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const state = useClusterState(cluster.id);
   const name = displayNameOf(cluster, settings);
+  const seconds = useElapsedSeconds(state.state === "connecting");
 
   if (state.state === "error") {
     const { code, message } = state;
@@ -71,7 +73,13 @@ function Connection({ cluster }: { cluster: ClusterInfo }) {
   return (
     <div className="clusters-welcome" role="status">
       <div className="clusters-spinner" aria-hidden="true" />
-      <h1 className="clusters-welcome__title">{t("clusters:connection.connecting", { name })}</h1>
+      <h1 className="clusters-welcome__title">
+        <span>{t("clusters:connection.connecting", { name })}</span>
+        {seconds >= 1 && (
+          <span className="clusters-elapsed">{t("clusters:connection.seconds", { seconds })}</span>
+        )}
+      </h1>
+      {seconds >= SLOW_AFTER_S && <p className="clusters-slow">{t("clusters:connection.slow")}</p>}
       <p className="clusters-hint">{cluster.server}</p>
       <div className="clusters-buttons">
         <button type="button" className="btn" onClick={() => void disconnectCluster(cluster.id)}>

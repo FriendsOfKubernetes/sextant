@@ -1,5 +1,6 @@
-// Custom Resources → Definitions: the list of CRDs. The per-group tree of custom resources is built by the
-// sidebar from the same CRDs; each CR table uses the generic description (printer columns).
+// Custom Resources → Definitions: the list of CRDs (watched only while this table is open: CRDs carry their
+// schemas). The per-group tree of custom resources is built by the sidebar from discovery; each CR table uses the
+// generic description with the printer columns of its one CRD.
 import type { KubeObject } from "../../api";
 import { column, standardColumns } from "../columns";
 import { registerResource } from "../registry";

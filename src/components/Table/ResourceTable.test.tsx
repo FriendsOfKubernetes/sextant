@@ -253,13 +253,42 @@ describe("ResourceTable", () => {
     await waitFor(() => expect(backend.listenerCount("watch:watch-1")).toBe(1));
     act(() => backend.emit("watch:watch-1", { type: "reconnecting" }));
     expect(screen.queryByText(/No Pods found/)).not.toBeInTheDocument();
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(screen.getByText("Loading Pods…")).toBeInTheDocument();
     act(() => backend.emit("watch:watch-1", { type: "delta", upserted: [], deleted: ["uid-9"] }));
     expect(screen.queryByText(/No Pods found/)).not.toBeInTheDocument();
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(screen.getByText("Loading Pods…")).toBeInTheDocument();
 
     act(() => backend.emit("watch:watch-1", { type: "snapshot", items: [] }));
     expect(screen.getByText(/No Pods found/)).toBeInTheDocument();
+  });
+
+  it("while loading counts the seconds and after 5 s says that the cluster is slow", () => {
+    vi.useFakeTimers();
+    try {
+      render(<ResourceTable clusterId="c1" kind={{ group: "", version: "v1", kind: "Node" }} />);
+      const status = screen.getByRole("status");
+      expect(status).toHaveTextContent(/^Loading Nodes…$/);
+      act(() => vi.advanceTimersByTime(3_000));
+      expect(status).toHaveTextContent(/^Loading Nodes…\s*3 s$/);
+      expect(screen.queryByText("The cluster is slow to respond")).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(4_000));
+      expect(status).toHaveTextContent(/^Loading Nodes…\s*7 s/);
+      expect(screen.getByText("The cluster is slow to respond")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("counts the loading time from when the table was asked for", () => {
+    vi.useFakeTimers();
+    try {
+      const askedAt = Date.now() - 6_000;
+      render(<ResourceTable clusterId="c1" kind={POD} loadingSince={askedAt} />);
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Pods…\s*6 s/);
+      expect(screen.getByText("The cluster is slow to respond")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("says when the selected namespaces have no objects", async () => {

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
 import { useAppStore } from "../../app/store";
 import { Dialog, usePopup } from "../../components";
+import { SLOW_AFTER_S, useElapsedSeconds } from "../../components/Table";
 import { AddClusterDialog, SourceError } from "./AddClusterDialog";
 import { ClusterSettingsDialog } from "./ClusterSettingsDialog";
 import { colorOf, displayNameOf, initialsOf } from "./clusterSettings";
@@ -43,34 +44,19 @@ export function ClusterList() {
   return (
     <div className="cluster-list">
       <ul className="cluster-list__items" aria-label={t("clusters:rail.list")}>
-        {clusters.map((cluster) => {
-          const name = displayNameOf(cluster, settings);
-          const state = states[cluster.id] ?? DISCONNECTED;
-          const selected = cluster.id === activeClusterId || cluster.id === pendingId;
-          return (
-            <li key={cluster.id}>
-              <button
-                type="button"
-                className={selected ? "cluster-icon cluster-icon--active" : "cluster-icon"}
-                style={{ "--cluster-color": colorOf(cluster, settings) } as CSSProperties}
-                aria-label={name}
-                aria-current={cluster.id === activeClusterId ? "true" : undefined}
-                title={t("clusters:rail.tooltip", { name, state: t(`clusters:state.${state.state}`) })}
-                data-state={state.state}
-                onClick={() => selectCluster(cluster.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setMenu({ cluster, x: e.clientX, y: e.clientY });
-                }}
-              >
-                <span className="cluster-icon__initials" aria-hidden="true">
-                  {initialsOf(name)}
-                </span>
-                <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
-              </button>
-            </li>
-          );
-        })}
+        {clusters.map((cluster) => (
+          <li key={cluster.id}>
+            <ClusterIcon
+              cluster={cluster}
+              name={displayNameOf(cluster, settings)}
+              color={colorOf(cluster, settings)}
+              state={states[cluster.id] ?? DISCONNECTED}
+              selected={cluster.id === activeClusterId || cluster.id === pendingId}
+              active={cluster.id === activeClusterId}
+              onMenu={(x, y) => setMenu({ cluster, x, y })}
+            />
+          </li>
+        ))}
       </ul>
       <div className="cluster-list__actions">
         {broken.length > 0 && (
@@ -115,6 +101,56 @@ export function ClusterList() {
       <SourceProblemsDialog open={problemsOpen} sources={broken} onClose={() => setProblemsOpen(false)} />
       <ClusterSettingsDialog />
     </div>
+  );
+}
+
+/** One cluster in the rail; while it connects, the seconds so far (and, after 5 s, that it is slow, in the tooltip). */
+function ClusterIcon({
+  cluster,
+  name,
+  color,
+  state,
+  selected,
+  active,
+  onMenu,
+}: {
+  cluster: ClusterInfo;
+  name: string;
+  color: string;
+  state: ConnectionState;
+  selected: boolean;
+  active: boolean;
+  onMenu: (x: number, y: number) => void;
+}) {
+  const { t } = useTranslation();
+  const seconds = useElapsedSeconds(state.state === "connecting");
+  const tooltip = t("clusters:rail.tooltip", { name, state: t(`clusters:state.${state.state}`) });
+  const slow = seconds >= SLOW_AFTER_S ? t("clusters:rail.slow", { tooltip, seconds }) : null;
+  return (
+    <button
+      type="button"
+      className={selected ? "cluster-icon cluster-icon--active" : "cluster-icon"}
+      style={{ "--cluster-color": color } as CSSProperties}
+      aria-label={name}
+      aria-current={active ? "true" : undefined}
+      title={slow ?? tooltip}
+      data-state={state.state}
+      onClick={() => selectCluster(cluster.id)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onMenu(e.clientX, e.clientY);
+      }}
+    >
+      <span className="cluster-icon__initials" aria-hidden="true">
+        {initialsOf(name)}
+      </span>
+      <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
+      {seconds >= 1 && (
+        <span className="cluster-icon__elapsed" data-slow={slow ? "true" : undefined}>
+          {t("clusters:connection.seconds", { seconds })}
+        </span>
+      )}
+    </button>
   );
 }
 

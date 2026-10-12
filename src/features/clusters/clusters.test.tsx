@@ -99,6 +99,22 @@ describe("cluster rail", () => {
     expect(railButton("kind-alpha")).toHaveAttribute("aria-current", "true");
   });
 
+  it("a slow connection counts the seconds on the connection screen and in the rail, and after 5 s says so", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    setup([alpha], { connect: () => new Promise<void>(() => undefined) });
+    render(<AppShell />);
+    fireEvent.click(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+    expect(await screen.findByText("Connecting to kind-alpha…")).toBeInTheDocument();
+    expect(screen.queryByText("The cluster is slow to respond")).not.toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(7_000));
+    const connection = screen.getByText("Connecting to kind-alpha…").closest("[role=status]");
+    expect(connection).toHaveTextContent(/Connecting to kind-alpha…\s*7 s/);
+    expect(within(connection as HTMLElement).getByText("The cluster is slow to respond")).toBeInTheDocument();
+    expect(within(railButton("kind-alpha")).getByText("7 s")).toBeInTheDocument();
+    expect(railButton("kind-alpha")).toHaveAttribute("title", expect.stringContaining("The cluster is slow to respond"));
+  });
+
   it("an unreachable cluster shows the error in words and Reconnect connects it", async () => {
     let fail = true;
     setup([alpha], {

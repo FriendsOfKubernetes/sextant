@@ -3,7 +3,8 @@
     "list": "Cluster list",
     "tooltip": "{{name}} — {{state}}",
     "add": "Add cluster",
-    "refresh": "Refresh kubeconfig"
+    "refresh": "Refresh kubeconfig",
+    "slow": "{{tooltip}} for {{seconds}} s. The cluster is slow to respond"
   },
   "state": {
     "disconnected": "disconnected",
@@ -59,7 +60,9 @@
     "connecting": "Connecting to {{name}}…",
     "failed": "Cannot connect to {{name}}",
     "reconnect": "Reconnect",
-    "certificate": "The server certificate was not accepted."
+    "certificate": "The server certificate was not accepted.",
+    "seconds": "{{seconds}} s",
+    "slow": "The cluster is slow to respond"
   },
   "settings": {
     "title": "Cluster settings — {{name}}",

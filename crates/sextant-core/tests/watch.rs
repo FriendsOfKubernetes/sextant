@@ -5,7 +5,8 @@
 //! ```
 //!
 //! `watch_survives_a_cluster_restart` stops and starts the kind container; it runs only with
-//! `SEXTANT_TEST_DOCKER_RESTART=1` as well.
+//! `SEXTANT_TEST_DOCKER_RESTART=1` as well. `the_first_nodes_come_within_2_seconds_on_a_big_cluster` needs the load
+//! fixture (`scripts/fixtures/load/load.sh apply`, then `delete`); without it, it is skipped.
 
 mod common;
 
@@ -18,10 +19,11 @@ use std::time::{Duration, Instant};
 
 use futures::{FutureExt, Stream, StreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
-use k8s_openapi::api::core::v1::{Namespace, Secret};
+use k8s_openapi::api::core::v1::{Namespace, Pod, Secret};
 use k8s_openapi::api::rbac::v1::{Role, RoleBinding};
+use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use kube::Api;
-use kube::api::{DeleteParams, Patch, PatchParams, PostParams};
+use kube::api::{DeleteParams, ListParams, Patch, PatchParams, PostParams};
 use serde_json::{Value, json};
 use sextant_core::kubeconfig::KubeconfigEnv;
 use sextant_core::resources::{self, KindRef, ObjectRef, WatchSpec, WatchUpdate};
@@ -406,6 +408,165 @@ async fn a_namespace_without_permission_is_reported_and_the_others_keep_streamin
         assert_eq!(added, ["later"]);
     })
     .await;
+}
+
+/// A Role in `ns` that lets the `limited` ServiceAccount use `verbs` on Secrets.
+async fn grant_secrets(admin: &kube::Client, ns: &str, verbs: &[&str]) {
+    let role: Role = serde_json::from_value(json!({
+        "metadata": { "name": "secrets", "namespace": ns },
+        "rules": [{ "apiGroups": [""], "resources": ["secrets"], "verbs": verbs }]
+    }))
+    .unwrap();
+    Api::<Role>::namespaced(admin.clone(), ns)
+        .create(&PostParams::default(), &role)
+        .await
+        .unwrap();
+    let binding: RoleBinding = serde_json::from_value(json!({
+        "metadata": { "name": "secrets", "namespace": ns },
+        "roleRef": { "apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": "secrets" },
+        "subjects": [{ "kind": "ServiceAccount", "name": "limited", "namespace": common::DEMO_NAMESPACE }]
+    }))
+    .unwrap();
+    Api::<RoleBinding>::namespaced(admin.clone(), ns)
+        .create(&PostParams::default(), &binding)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn a_namespace_listed_but_not_watchable_is_left_out_after_its_list_and_the_others_keep_streaming()
+ {
+    let Some(cluster) = common::test_cluster() else {
+        return;
+    };
+    let admin = cluster.client().await;
+    // `limited` may list Secrets in `list_only` but not watch them; in `full` it may do both.
+    let (list_only, full) = ("sextant-watch-list-only", "sextant-watch-full");
+    in_namespace(&admin, list_only, || async {
+        in_namespace(&admin, full, || async {
+            grant_secrets(&admin, list_only, &["get", "list"]).await;
+            grant_secrets(&admin, full, &["get", "list", "watch"]).await;
+            create_secret(&admin, list_only, "listed").await;
+            create_secret(&admin, full, "kept").await;
+            let limited = cluster.limited_client().await;
+            wait_until("the Roles to take effect", 30, || {
+                let (a, b): (Api<Secret>, Api<Secret>) = (
+                    Api::namespaced(limited.clone(), list_only),
+                    Api::namespaced(limited.clone(), full),
+                );
+                async move {
+                    a.list(&Default::default()).await.is_ok()
+                        && b.list(&Default::default()).await.is_ok()
+                }
+            })
+            .await;
+
+            let (_tmp, mgr, id) = connected(&cluster.limited_kubeconfig).await;
+            let mut updates = start(
+                &mgr,
+                &id,
+                spec(kind("", "v1", "Secret"), Some(&[list_only, full]), None),
+            )
+            .await;
+            // The list of `list_only` succeeds; its watch is refused right after.
+            let (mut forbidden, mut items) = (None, Vec::new());
+            let deadline = Instant::now() + Duration::from_secs(30);
+            while forbidden.is_none() || names(&items) != ["kept"] {
+                assert!(
+                    Instant::now() < deadline,
+                    "forbidden {forbidden:?}, items {:?}",
+                    names(&items)
+                );
+                match next(&mut updates, 30).await {
+                    WatchUpdate::Forbidden { namespaces } => forbidden = Some(namespaces),
+                    WatchUpdate::Snapshot { items: list } => items = list,
+                    WatchUpdate::Delta { .. } => {}
+                    other => panic!("expected forbidden and snapshots, got {other:?}"),
+                }
+            }
+            assert_eq!(forbidden.unwrap(), [list_only]);
+
+            create_secret(&admin, full, "later").await;
+            let deadline = Instant::now() + Duration::from_secs(30);
+            let mut added = Vec::new();
+            while added.is_empty() && Instant::now() < deadline {
+                match next(&mut updates, 30).await {
+                    WatchUpdate::Delta { upserted, .. } => added = names(&upserted),
+                    WatchUpdate::Error(err) => panic!("the watch ended: {err}"),
+                    WatchUpdate::Reconnecting => panic!("the watch lost its connection"),
+                    _ => {}
+                }
+            }
+            assert_eq!(added, ["later"]);
+        })
+        .await;
+    })
+    .await;
+}
+
+/// Namespace and CRD label of `scripts/fixtures/load/load.sh`.
+const LOAD_NAMESPACE: &str = "sextant-load";
+const LOAD_CRDS: &str = "sextant.dev/fixture=load";
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn the_first_nodes_come_within_2_seconds_on_a_big_cluster() {
+    let Some(cluster) = common::test_cluster() else {
+        return;
+    };
+    let admin = cluster.client().await;
+    let crds = Api::<CustomResourceDefinition>::all(admin.clone())
+        .list_metadata(&ListParams::default().labels(LOAD_CRDS))
+        .await
+        .unwrap()
+        .items
+        .len();
+    let pods = Api::<Pod>::namespaced(admin, LOAD_NAMESPACE)
+        .list_metadata(&ListParams::default())
+        .await
+        .unwrap()
+        .items
+        .len();
+    if crds < 150 || pods < 450 {
+        eprintln!(
+            "skipped: the load fixture is not applied ({crds} CRDs, {pods} pods; scripts/fixtures/load/load.sh apply)"
+        );
+        return;
+    }
+
+    let (_tmp, mgr, id) = connected(&cluster.kubeconfig).await;
+    let started = Instant::now();
+    let first = |kind_ref: KindRef| {
+        let (mgr, id) = (mgr.clone(), id.clone());
+        async move {
+            let mut updates = start(&mgr, &id, spec(kind_ref, None, None)).await;
+            let items = snapshot(next(&mut updates, 60).await);
+            (started.elapsed(), items.len())
+        }
+    };
+    // What a fresh window starts at once: the Nodes table, the Pods table (all namespaces) and the sidebar's
+    // discovery (custom resources).
+    let ((nodes_at, nodes), (pods_at, pods), (kinds_at, kinds)) = tokio::join!(
+        first(kind("", "v1", "Node")),
+        first(kind("", "v1", "Pod")),
+        async {
+            let kinds = mgr.kinds(&id).await.unwrap();
+            (started.elapsed(), kinds)
+        }
+    );
+    eprintln!(
+        "first snapshot: Nodes {nodes_at:?} ({nodes}), Pods {pods_at:?} ({pods}); discovery {kinds_at:?} ({} kinds)",
+        kinds.len()
+    );
+    assert!(pods >= 450, "{pods} pods");
+    let load_kinds = kinds
+        .iter()
+        .filter(|k| k.kind_ref.group.ends_with(".load.sextant.dev"))
+        .count();
+    assert!(load_kinds >= 150, "{load_kinds} load kinds discovered");
+    assert!(
+        nodes_at < Duration::from_secs(2),
+        "the first Nodes snapshot took {nodes_at:?}"
+    );
 }
 
 #[tokio::test]

@@ -23,13 +23,13 @@ const KINDS: ResourceKind[] = [
   ...getResourceDefs()
     .filter((d) => d.kind.kind !== "DaemonSet")
     .map((d) => served(d.kind.group, d.kind.version, d.kind.kind, { namespaced: d.namespaced ?? true })),
-  served("demo.sextant.dev", "v1", "Widget", {
-    printerColumns: [
-      { name: "Size", jsonPath: ".spec.size", type: "string", priority: 0 },
-      { name: "Replicas", jsonPath: ".spec.replicas", type: "integer", priority: 0 },
-      { name: "Age", jsonPath: ".metadata.creationTimestamp", type: "date", priority: 0 },
-    ],
-  }),
+  // Discovery names custom kinds only; their printer columns come from their CRD.
+  served("demo.sextant.dev", "v1", "Widget"),
+  // A CRD in a Kubernetes-named group (Gateway API) is a custom resource too.
+  served("gateway.networking.k8s.io", "v1", "Gateway"),
+  // Kubernetes' own API groups and aggregated metrics are not custom resources.
+  served("metrics.k8s.io", "v1beta1", "PodMetrics", { verbs: ["get", "list"] }),
+  served("coordination.k8s.io", "v1", "Lease"),
 ];
 
 const widgetsCrd: KubeObject = {
@@ -40,7 +40,19 @@ const widgetsCrd: KubeObject = {
     group: "demo.sextant.dev",
     scope: "Namespaced",
     names: { kind: "Widget", plural: "widgets" },
-    versions: [{ name: "v1", served: true, storage: true }],
+    versions: [
+      {
+        name: "v1",
+        served: true,
+        storage: true,
+        additionalPrinterColumns: [
+          { name: "Size", jsonPath: ".spec.size", type: "string" },
+          { name: "Replicas", jsonPath: ".spec.replicas", type: "integer" },
+          { name: "Debug", jsonPath: ".spec.debug", type: "string", priority: 1 },
+          { name: "Age", jsonPath: ".metadata.creationTimestamp", type: "date" },
+        ],
+      },
+    ],
   },
 };
 
@@ -52,6 +64,11 @@ function setup(settings?: Partial<AppSettings>) {
   backend = mockBackend(
     {
       cluster_kinds: () => KINDS,
+      resource_get: (args) => {
+        const ref = args.ref as { kind: { kind: string }; name: string };
+        if (ref.kind.kind === "CustomResourceDefinition" && ref.name === "widgets.demo.sextant.dev") return widgetsCrd;
+        throw { code: "notFound", message: `${ref.name} not found` };
+      },
       watch_start: (args) => {
         const spec = args.spec as WatchSpec;
         const id = `${spec.kind.kind}-${watches.length + 1}`;
@@ -158,14 +175,14 @@ describe("Sidebar and main view", () => {
     }
   });
 
-  it("lists CRDs by group under Custom Resources; a CR table has the printer columns", async () => {
+  it("lists custom resources by group from discovery; a CR table reads its printer columns from its one CRD", async () => {
     render(<Cluster />);
-    const crds = await watchOf("CustomResourceDefinition");
-    emit(crds.id, [widgetsCrd]);
-    fireEvent.click(within(sidebar()).getByRole("button", { name: /Custom Resources/ }));
+    fireEvent.click(await within(sidebar()).findByRole("button", { name: /Custom Resources/ }));
     expect(within(sidebar()).getByRole("button", { name: "Definitions" })).toBeInTheDocument();
-    fireEvent.click(within(sidebar()).getByRole("button", { name: /demo\.sextant\.dev/ }));
+    fireEvent.click(await within(sidebar()).findByRole("button", { name: /demo\.sextant\.dev/ }));
     fireEvent.click(within(sidebar()).getByRole("button", { name: "Widget" }));
+    // The sidebar does not download the CRDs (with their schemas) to list them.
+    expect(watches.filter((w) => w.spec.kind.kind === "CustomResourceDefinition")).toEqual([]);
 
     const widgets = await watchOf("Widget");
     expect(widgets.spec.kind).toEqual(kindRef("demo.sextant.dev", "v1", "Widget"));
@@ -178,18 +195,19 @@ describe("Sidebar and main view", () => {
       },
     ]);
     const table = await screen.findByRole("table", { name: "Widget" });
-    const headers = within(table)
-      .getAllByRole("columnheader")
-      .map((h) => h.textContent?.replace(/[▲▼]/g, ""))
-      .filter(Boolean);
-    expect(headers).toEqual(["Name", "Namespace", "Size", "Replicas", "Age"]);
+    const headers = () =>
+      within(table)
+        .getAllByRole("columnheader")
+        .map((h) => h.textContent?.replace(/[▲▼]/g, ""))
+        .filter(Boolean);
+    await waitFor(() => expect(headers()).toEqual(["Name", "Namespace", "Size", "Replicas", "Age"]));
     expect(within(table).getByText("large")).toBeInTheDocument();
+    const crdReads = backend.calls.filter((c) => c.cmd === "resource_get");
+    expect(crdReads.map((c) => c.args.ref)).toEqual([
+      { kind: kindRef("apiextensions.k8s.io", "v1", "CustomResourceDefinition"), namespace: null, name: "widgets.demo.sextant.dev" },
+    ]);
 
-    const crdWatches = () => watches.filter((w) => w.spec.kind.kind === "CustomResourceDefinition").length;
-    const before = crdWatches();
     fireEvent.click(within(sidebar()).getByRole("button", { name: "Definitions" }));
-    // The table's own watch, not the sidebar's (a stream listens before it starts).
-    await waitFor(() => expect(crdWatches()).toBeGreaterThan(before));
     const defs = await watchOf("CustomResourceDefinition");
     emit(defs.id, [widgetsCrd]);
     const crdTable = await screen.findByRole("table", { name: "Definitions" });
@@ -197,15 +215,51 @@ describe("Sidebar and main view", () => {
     expect(within(crdTable).getByText("Namespaced")).toBeInTheDocument();
   });
 
-  it("finds custom resources through discovery when CRDs cannot be listed", async () => {
+  it("lists CRDs of Kubernetes-named groups, but not Kubernetes' own groups or kinds that cannot be watched", async () => {
     render(<Cluster />);
-    const crds = await watchOf("CustomResourceDefinition");
-    act(() => backend.emit(`watch:${crds.id}`, { type: "error", code: "forbidden", message: "forbidden" }));
-    fireEvent.click(within(sidebar()).getByRole("button", { name: /Custom Resources/ }));
-    fireEvent.click(within(sidebar()).getByRole("button", { name: /demo\.sextant\.dev/ }));
-    expect(within(sidebar()).getByRole("button", { name: "Widget" })).toBeInTheDocument();
-    // Built-in groups (apps, *.k8s.io) are not listed as custom resources.
+    fireEvent.click(await within(sidebar()).findByRole("button", { name: /Custom Resources/ }));
+    fireEvent.click(await within(sidebar()).findByRole("button", { name: /gateway\.networking\.k8s\.io/ }));
+    expect(within(sidebar()).getByRole("button", { name: "Gateway" })).toBeInTheDocument();
     expect(within(sidebar()).queryByRole("button", { name: /^apps$/ })).not.toBeInTheDocument();
+    expect(within(sidebar()).queryByRole("button", { name: /metrics\.k8s\.io/ })).not.toBeInTheDocument();
+    expect(within(sidebar()).queryByRole("button", { name: /coordination\.k8s\.io/ })).not.toBeInTheDocument();
+  });
+
+  it("a CR table without the right to read its CRD shows the standard columns", async () => {
+    act(() => useAppStore.getState().setView("c1", "kind:gateway.networking.k8s.io/Gateway"));
+    render(<Cluster />);
+    const gateways = await watchOf("Gateway");
+    emit(gateways.id, []);
+    await screen.findByText("No Gateway found in selected namespaces");
+    await waitFor(() => expect(backend.calls.some((c) => c.cmd === "resource_get")).toBe(true));
+    expect(screen.getByRole("heading", { name: "Gateway" })).toBeInTheDocument();
+  });
+
+  it("a section opened before its data shows its title and a loading counter at once", () => {
+    vi.useFakeTimers();
+    try {
+      // Discovery never answers: a custom kind waits for it, a built-in kind does not.
+      backend.restore();
+      watches = [];
+      backend = mockBackend({
+        cluster_kinds: () => new Promise(() => undefined),
+        watch_start: () => undefined,
+        watch_stop: () => undefined,
+      });
+      act(() => useAppStore.getState().setView("c1", "kind:demo.sextant.dev/Widget"));
+      render(<Cluster />);
+      expect(screen.getByRole("heading", { name: "Widget" })).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Widget…$/);
+      act(() => vi.advanceTimersByTime(6_000));
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Widget…\s*6 s/);
+      expect(screen.getByText("The cluster is slow to respond")).toBeInTheDocument();
+
+      act(() => useAppStore.getState().setView("c1", "kind:/Node"));
+      expect(screen.getByRole("heading", { name: "Nodes" })).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent(/^Loading Nodes…$/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("saves the namespace choice per cluster and uses it after a restart", async () => {

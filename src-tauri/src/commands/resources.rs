@@ -18,8 +18,9 @@ use crate::state::{AppState, Subscription, check_stream_id};
 
 /// Starts a watch under `stream_id`, which the frontend chose and already listens to: updates arrive as
 /// `watch:<streamId>` events (`WatchUpdate`), the first snapshot as soon as it is listed. A taken id is `invalid`.
-/// The subscription belongs to the cluster: `watch_stop`, disconnecting the cluster (`AppState::close_cluster`),
-/// `streams_reset` and closing the window stop it.
+/// The subscription belongs to the cluster and is registered before the core starts: `watch_stop`, disconnecting
+/// the cluster (`AppState::close_cluster`), `streams_reset` and closing the window stop it — also while the core
+/// is still finding the kind or listing, which drops that work and fails the start.
 #[tauri::command]
 pub async fn watch_start<R: Runtime>(
     app: AppHandle<R>,
@@ -28,18 +29,21 @@ pub async fn watch_start<R: Runtime>(
     spec: WatchSpec,
     stream_id: String,
 ) -> Result<(), CoreError> {
-    let open = resources::watch(&state.clusters, &cluster_id, spec);
-    start_watch(&app, &state, stream_id, cluster_id.clone(), open).await
+    let (mgr, cluster) = (state.clusters.clone(), cluster_id.clone());
+    let open = async move { resources::watch(&mgr, &cluster, spec).await };
+    start_watch(&app, &state, stream_id, cluster_id, open).await
 }
 
-/// `watch_start` once the cluster and spec are known: waits for `open` (the core starting the watch), then
-/// registers and forwards it — unless `streams_reset` ran meanwhile, then the watch is dropped and the start fails.
+/// `watch_start` once the cluster and spec are known: registers the subscription, runs `open` (the core starting
+/// the watch) inside it and forwards the updates; answers once `open` is done. A subscription stopped before that
+/// (`watch_stop`, `streams_reset`, the cluster closed) drops `open` and the start fails; so does a start that
+/// outlived a `streams_reset`.
 pub async fn start_watch<R, S>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
-    open: impl Future<Output = CoreResult<S>>,
+    open: impl Future<Output = CoreResult<S>> + Send + 'static,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -47,8 +51,23 @@ where
 {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
-    let updates = open.await?;
-    forward_watch(app, state, id.clone(), cluster, updates)?;
+    let (started_tx, started_rx) = tokio::sync::oneshot::channel::<CoreResult<()>>();
+    let updates = async move {
+        match open.await {
+            Ok(updates) => {
+                let _ = started_tx.send(Ok(()));
+                Some(updates)
+            }
+            Err(err) => {
+                let _ = started_tx.send(Err(err));
+                None
+            }
+        }
+    };
+    spawn_watch(app, state, id.clone(), cluster, updates)?;
+    started_rx
+        .await
+        .unwrap_or_else(|_| Err(CoreError::other("the watch was stopped before it started")))?;
     state.undo_if_reset(generation, || {
         state.subscriptions.stop(&id);
     })
@@ -63,7 +82,8 @@ pub async fn streams_reset(state: State<'_, AppState>) -> Result<(), CoreError> 
     Ok(())
 }
 
-/// Stops a subscription. Stopping one that already ended (or never existed) is not an error.
+/// Stops a subscription, also one whose start has not answered yet. Stopping one that already ended (or never
+/// existed) is not an error.
 #[tauri::command]
 pub async fn watch_stop(
     state: State<'_, AppState>,
@@ -87,6 +107,23 @@ where
     R: Runtime,
     S: Stream<Item = WatchUpdate> + Send + 'static,
 {
+    spawn_watch(app, state, id, cluster, async move { Some(updates) })
+}
+
+/// Registers the subscription `id` and runs it: waits for `updates` (`None`: the watch did not start), then emits
+/// each update as `watch:<id>`. Stopping the subscription at any point drops whatever it is waiting for.
+fn spawn_watch<R, F, S>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: String,
+    cluster: ClusterId,
+    updates: F,
+) -> Result<(), CoreError>
+where
+    R: Runtime,
+    F: Future<Output = Option<S>> + Send + 'static,
+    S: Stream<Item = WatchUpdate> + Send + 'static,
+{
     let event = watch_event(&id);
     let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
     let handle = app.clone();
@@ -95,10 +132,12 @@ where
         if registered_rx.await.is_err() {
             return;
         }
-        let mut updates = std::pin::pin!(updates);
-        while let Some(update) = updates.next().await {
-            if handle.emit(&event, &update).is_err() {
-                break;
+        if let Some(updates) = updates.await {
+            let mut updates = std::pin::pin!(updates);
+            while let Some(update) = updates.next().await {
+                if handle.emit(&event, &update).is_err() {
+                    break;
+                }
             }
         }
         if let Some(state) = handle.try_state::<AppState>() {
@@ -363,6 +402,65 @@ mod tests {
         wait_until("the streams to stop", || {
             watch_tx.is_closed() && logs_tx.is_closed()
         });
+    }
+
+    /// A core start that never answers; `dropped` fires when its work is dropped.
+    fn endless_open(
+        began: std::sync::mpsc::Sender<()>,
+    ) -> (
+        impl Future<Output = CoreResult<mpsc::UnboundedReceiver<WatchUpdate>>> + Send + 'static,
+        tokio::sync::oneshot::Receiver<()>,
+    ) {
+        let (dropped_tx, dropped_rx) = tokio::sync::oneshot::channel::<()>();
+        let open = async move {
+            // Dropping the future drops the sender, which the test sees as `dropped`.
+            let _alive = dropped_tx;
+            began.send(()).unwrap();
+            futures::future::pending::<()>().await;
+            let (_tx, rx) = mpsc::unbounded::<WatchUpdate>();
+            Ok(rx)
+        };
+        (open, dropped_rx)
+    }
+
+    #[test]
+    fn watch_stop_or_streams_reset_before_the_start_answers_drops_the_core_work() {
+        for reset in [false, true] {
+            let (app, _dir) = app();
+            let (began_tx, began_rx) = std::sync::mpsc::channel::<()>();
+            let (open, dropped) = endless_open(began_tx);
+            let (done_tx, done_rx) = tokio::sync::oneshot::channel::<Result<(), CoreError>>();
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state = handle.state::<AppState>();
+                let result =
+                    start_watch(&handle, &state, "w-1".into(), ClusterId::from("c"), open).await;
+                let _ = done_tx.send(result);
+            });
+            began_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+
+            // The window closed the table (or reloaded) while the core was still discovering.
+            if reset {
+                tauri::async_runtime::block_on(streams_reset(app.state::<AppState>())).unwrap();
+            } else {
+                tauri::async_runtime::block_on(watch_stop(app.state::<AppState>(), "w-1".into()))
+                    .unwrap();
+            }
+            let result = tauri::async_runtime::block_on(async {
+                tokio::time::timeout(Duration::from_secs(5), done_rx).await
+            })
+            .expect("the start still waits for the core")
+            .unwrap();
+            assert!(result.is_err(), "reset={reset}: a stopped start succeeded");
+            assert!(
+                tauri::async_runtime::block_on(async {
+                    tokio::time::timeout(Duration::from_secs(5), dropped).await
+                })
+                .is_ok(),
+                "reset={reset}: the core's work was not dropped"
+            );
+            assert!(app.state::<AppState>().subscriptions.is_empty());
+        }
     }
 
     #[test]

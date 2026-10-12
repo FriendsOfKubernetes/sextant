@@ -46,4 +46,13 @@ export {
   type SidebarSection,
 } from "./registry";
 export * as status from "./status";
-export { findKind, loadClusterKinds, refreshClusterKinds, resetClusterKinds, useClusterKinds, type ClusterKinds } from "./useKinds";
+export {
+  customResourceKinds,
+  findKind,
+  loadClusterKinds,
+  refreshClusterKinds,
+  resetClusterKinds,
+  useClusterKinds,
+  type ClusterKinds,
+} from "./useKinds";
+export { crdPrinterColumns, forgetCrdPrinterColumns, useCrdPrinterColumns } from "./crdColumns";

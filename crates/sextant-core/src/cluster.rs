@@ -1,5 +1,9 @@
 //! Connections to clusters: one `kube::Client` per connected cluster, connection states, discovery cache.
 //!
+//! Discovery runs once per connection: callers that ask while it runs wait for the same answer, and it stops when
+//! the last of them gives up. It lists kinds only (two requests on servers with aggregated discovery); printer
+//! columns of custom resources are read from their one CRD when that kind is opened, never from the whole list.
+//!
 //! `connect` builds a client from the cluster's kubeconfig context and proves it with an authenticated request
 //! (`GET /api`), so a wrong token, a missing exec plugin or an unreachable server shows up as the connection
 //! error, not later in a table. Credentials are only handed to kube-rs; they are never logged or returned.
@@ -8,6 +12,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
+use futures::FutureExt;
+use futures::future::{BoxFuture, Shared};
 use kube::config::KubeConfigOptions;
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
@@ -15,7 +21,7 @@ use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::{ClusterId, KubeconfigRegistry, kubeconfig_error};
-use crate::resources::{KindRef, PrinterColumn, ResourceKind};
+use crate::resources::{KindRef, ResourceKind};
 
 /// How long a TCP/TLS connect may take.
 pub(crate) const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -94,7 +100,12 @@ struct Entry {
     generation: u64,
     client: Option<kube::Client>,
     kinds: Option<Vec<ResourceKind>>,
+    /// The discovery that is running; every caller of `kinds` awaits this one.
+    discovery: Option<Discovery>,
 }
+
+/// A running discovery, shared by everyone waiting for it.
+type Discovery = Shared<BoxFuture<'static, CoreResult<Vec<ResourceKind>>>>;
 
 impl ClusterManager {
     pub fn new(registry: Arc<RwLock<KubeconfigRegistry>>) -> Self {
@@ -130,6 +141,7 @@ impl ClusterManager {
                 return None;
             }
             entry.kinds = None;
+            entry.discovery = None;
             Some(match &result {
                 Ok(client) => {
                     entry.client = Some(client.clone());
@@ -160,6 +172,7 @@ impl ClusterManager {
             entry.generation += 1;
             entry.client = None;
             entry.kinds = None;
+            entry.discovery = None;
             entry.state = ConnectionState::Disconnected;
         });
         self.broadcast(id, ConnectionState::Disconnected);
@@ -181,44 +194,49 @@ impl ClusterManager {
         self.lock()
             .get(id)
             .and_then(|e| e.client.clone())
-            .ok_or_else(|| {
-                CoreError::new(
-                    ErrorCode::NotFound,
-                    format!("cluster {id} is not connected"),
-                )
-            })
+            .ok_or_else(|| not_connected(id))
     }
 
     /// Discovery: every resource kind the cluster serves (in the preferred version of its group when that version
-    /// serves it), with the printer columns of CRDs. Cached until the cluster reconnects.
+    /// serves it). Printer columns stay empty: they come from the kind's CRD. Cached until the cluster reconnects;
+    /// callers that ask while it runs share one discovery, which stops when all of them are dropped.
     pub async fn kinds(&self, id: &ClusterId) -> CoreResult<Vec<ResourceKind>> {
-        let (client, generation) = {
-            let clusters = self.lock();
-            let entry = clusters.get(id);
-            if let Some(kinds) = entry.and_then(|e| e.kinds.clone()) {
-                return Ok(kinds);
+        let (discovery, generation) = {
+            let mut clusters = self.lock();
+            let entry = clusters.entry(id.clone()).or_default();
+            if let Some(kinds) = &entry.kinds {
+                return Ok(kinds.clone());
             }
-            (
-                self.client_locked(entry, id)?,
-                entry.map_or(0, |e| e.generation),
-            )
+            let client = entry.client.clone().ok_or_else(|| not_connected(id))?;
+            let discovery = entry
+                .discovery
+                .get_or_insert_with(|| discover(client).boxed().shared())
+                .clone();
+            (discovery, entry.generation)
         };
-        let kinds = discover(&client).await?;
+        let mut waiter = DiscoveryWaiter {
+            mgr: self,
+            id,
+            discovery: Some(discovery),
+        };
+        let result = match waiter.discovery.as_mut() {
+            Some(running) => running.await,
+            None => Err(CoreError::other("discovery was not started")),
+        };
+        let discovery = waiter.discovery.take();
         self.update(id, |entry| {
-            if entry.generation == generation && entry.client.is_some() {
-                entry.kinds = Some(kinds.clone());
+            let current = match (&entry.discovery, &discovery) {
+                (Some(running), Some(ours)) => running.ptr_eq(ours),
+                _ => false,
+            };
+            if entry.generation == generation && current {
+                entry.discovery = None;
+                if entry.client.is_some() {
+                    entry.kinds = result.as_ref().ok().cloned();
+                }
             }
         });
-        Ok(kinds)
-    }
-
-    fn client_locked(&self, entry: Option<&Entry>, id: &ClusterId) -> CoreResult<kube::Client> {
-        entry.and_then(|e| e.client.clone()).ok_or_else(|| {
-            CoreError::new(
-                ErrorCode::NotFound,
-                format!("cluster {id} is not connected"),
-            )
-        })
+        result
     }
 
     /// Builds a client for the cluster's context and checks it with an authenticated request.
@@ -294,6 +312,42 @@ impl ClusterManager {
     }
 }
 
+fn not_connected(id: &ClusterId) -> CoreError {
+    CoreError::new(
+        ErrorCode::NotFound,
+        format!("cluster {id} is not connected"),
+    )
+}
+
+/// One caller of `kinds` waiting for the shared discovery. Dropped before the answer (the caller gave up), it stops
+/// the discovery if nobody else waits for it. Clones of the discovery are made and dropped only under the
+/// manager's lock, so the count of waiters is exact.
+struct DiscoveryWaiter<'a> {
+    mgr: &'a ClusterManager,
+    id: &'a ClusterId,
+    discovery: Option<Discovery>,
+}
+
+impl Drop for DiscoveryWaiter<'_> {
+    fn drop(&mut self) {
+        let Some(ours) = self.discovery.take() else {
+            return;
+        };
+        let mut clusters = self.mgr.lock();
+        if let Some(entry) = clusters.get_mut(self.id) {
+            let alone = entry
+                .discovery
+                .as_ref()
+                .is_some_and(|running| running.ptr_eq(&ours) && ours.strong_count() == Some(2));
+            if alone {
+                // The last clone goes with `ours` below: the requests in flight are dropped.
+                entry.discovery = None;
+            }
+        }
+        drop(ours);
+    }
+}
+
 /// A client for `config` that repeats requests as [`RetryPolicy`] says. The retry layer needs a cloneable inner
 /// service, hence the buffer in front of kube's own stack.
 fn retrying_client(config: kube::Config) -> Result<kube::Client, kube::Error> {
@@ -342,11 +396,74 @@ impl<Res>
 }
 
 /// Lists every kind the cluster serves (core `v1` included), each once: in the preferred version of its group, or in
-/// the first other served version that has it. A group version that fails (e.g. an aggregated API whose backend is
-/// down) is skipped; only a failing core group fails the discovery.
-async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
+/// the first other served version that has it. Aggregated discovery (Kubernetes 1.26+) answers in two requests; an
+/// older server is asked per group version.
+async fn discover(client: kube::Client) -> CoreResult<Vec<ResourceKind>> {
+    let kinds = match discover_aggregated(&client).await {
+        Some(kinds) => kinds,
+        None => discover_by_group_version(&client).await?,
+    };
+    Ok(unique_sorted(kinds))
+}
+
+/// Aggregated discovery: `/api` and `/apis` with every version and resource. `None` when the server does not serve
+/// it (it answers with the plain lists, which carry no items) or a request fails; the caller then asks per group.
+async fn discover_aggregated(client: &kube::Client) -> Option<Vec<ResourceKind>> {
+    let (core, groups) = futures::join!(
+        client.list_core_api_versions_aggregated(),
+        client.list_api_groups_aggregated()
+    );
+    let (core, groups) = (core.ok()?, groups.ok()?);
+    if !core.items.iter().any(|g| !g.versions.is_empty()) {
+        return None;
+    }
+    let mut kinds = Vec::new();
+    for (is_core, group) in core
+        .items
+        .into_iter()
+        .map(|g| (true, g))
+        .chain(groups.items.into_iter().map(|g| (false, g)))
+    {
+        let name = if is_core {
+            String::new()
+        } else {
+            match group.metadata.and_then(|m| m.name) {
+                Some(name) => name,
+                None => continue,
+            }
+        };
+        // Versions come in the group's order of preference.
+        for version in group.versions {
+            let Some(version_name) = version.version else {
+                continue;
+            };
+            for res in version.resources {
+                let (Some(plural), Some(kind)) =
+                    (res.resource, res.response_kind.and_then(|k| k.kind))
+                else {
+                    continue;
+                };
+                kinds.push(ResourceKind {
+                    kind_ref: KindRef {
+                        group: name.clone(),
+                        version: version_name.clone(),
+                        kind,
+                    },
+                    plural,
+                    namespaced: res.scope.as_deref() == Some("Namespaced"),
+                    verbs: res.verbs,
+                    printer_columns: Vec::new(),
+                });
+            }
+        }
+    }
+    Some(kinds)
+}
+
+/// Discovery of a server without aggregated discovery: one request per group version. A group version that fails
+/// (e.g. an aggregated API whose backend is down) is skipped; only a failing core group fails the discovery.
+async fn discover_by_group_version(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     use futures::future::join_all;
-    use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 
     let core_versions = client
         .list_core_api_versions()
@@ -388,62 +505,35 @@ async fn discover(client: &kube::Client) -> CoreResult<Vec<ResourceKind>> {
     )
     .await;
 
-    // Printer columns come from the CRDs; without the right to list CRDs the columns stay empty.
-    let crds = kube::Api::<CustomResourceDefinition>::all(client.clone())
-        .list(&Default::default())
-        .await
-        .map(|list| list.items)
-        .unwrap_or_default();
-    let mut columns: HashMap<(String, String, String), Vec<PrinterColumn>> = HashMap::new();
-    for crd in crds {
-        for version in &crd.spec.versions {
-            let cols = version
-                .additional_printer_columns
-                .iter()
-                .flatten()
-                .map(|c| PrinterColumn {
-                    name: c.name.clone(),
-                    json_path: c.json_path.clone(),
-                    type_: c.type_.clone(),
-                    priority: c.priority.unwrap_or(0),
-                })
-                .collect();
-            columns.insert(
-                (
-                    crd.spec.group.clone(),
-                    version.name.clone(),
-                    crd.spec.names.kind.clone(),
-                ),
-                cols,
-            );
-        }
-    }
-
     let mut kinds = Vec::new();
     let mut core_ok = false;
     for list in core_lists {
         let list = list.map_err(CoreError::from)?;
         core_ok = true;
-        push_kinds(&mut kinds, list, &columns);
+        push_kinds(&mut kinds, list);
     }
     if !core_ok {
         return Err(CoreError::other("the cluster serves no core API version"));
     }
     for list in group_lists.into_iter().flatten() {
-        push_kinds(&mut kinds, list, &columns);
+        push_kinds(&mut kinds, list);
     }
+    Ok(kinds)
+}
+
+/// Keeps the first entry of each (group, kind) — the most preferred version — sorted by group and kind.
+fn unique_sorted(mut kinds: Vec<ResourceKind>) -> Vec<ResourceKind> {
     let mut seen = std::collections::HashSet::new();
     kinds.retain(|k| seen.insert((k.kind_ref.group.clone(), k.kind_ref.kind.clone())));
     kinds.sort_by(|a, b| {
         (&a.kind_ref.group, &a.kind_ref.kind).cmp(&(&b.kind_ref.group, &b.kind_ref.kind))
     });
-    Ok(kinds)
+    kinds
 }
 
 fn push_kinds(
     out: &mut Vec<ResourceKind>,
     list: k8s_openapi::apimachinery::pkg::apis::meta::v1::APIResourceList,
-    columns: &HashMap<(String, String, String), Vec<PrinterColumn>>,
 ) {
     let (group, version) = match list.group_version.split_once('/') {
         Some((g, v)) => (g.to_owned(), v.to_owned()),
@@ -453,9 +543,8 @@ fn push_kinds(
         if res.name.contains('/') {
             continue; // subresources: pods/log, deployments/scale, …
         }
-        let key = (group.clone(), version.clone(), res.kind.clone());
         out.push(ResourceKind {
-            printer_columns: columns.get(&key).cloned().unwrap_or_default(),
+            printer_columns: Vec::new(),
             kind_ref: KindRef {
                 group: group.clone(),
                 version: version.clone(),

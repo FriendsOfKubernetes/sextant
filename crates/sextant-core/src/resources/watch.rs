@@ -7,8 +7,10 @@
 //! - `Delta` — objects added/changed and uids deleted since the previous batch;
 //! - `Reconnecting` — the connection was lost; the data on screen stays, a new list follows with growing pauses
 //!   (1 s, 2 s, 4 s, 8 s, then every 15 s) until the API server answers, and then a fresh `Snapshot`;
-//! - `Forbidden` — some of the selected namespaces cannot be listed (no permission); they are left out for the rest
-//!   of the watch, the others keep streaming. Every `Forbidden` names all such namespaces so far;
+//! - `Forbidden` — some of the selected namespaces cannot be listed or watched (no permission), at the start or at
+//!   any later moment (e.g. the right was revoked); they are left out for the rest of the watch and a new
+//!   `Snapshot` without their objects follows, the others keep streaming. Every `Forbidden` names all such
+//!   namespaces so far;
 //! - `Error` — the watch cannot start (no permission to list the kind in any of the namespaces, unknown kind,
 //!   rejected credentials); the stream ends after it.
 //!
@@ -38,14 +40,15 @@ pub const BATCH_INTERVAL: Duration = Duration::from_millis(250);
 const FIRST_RETRY_DELAY: Duration = Duration::from_secs(1);
 const MAX_RETRY_DELAY: Duration = Duration::from_secs(15);
 
-/// Starts watching `spec.kind`. Fails right away when the cluster is not connected (`notFound`) or does not serve
-/// the kind (`notFound`); everything later (including "forbidden") arrives in the stream. Dropping the stream
-/// stops the watch.
+/// Starts watching `spec.kind`. Fails right away when the cluster is not connected (`notFound`) or its discovery
+/// does not list the kind (`notFound`); a built-in kind starts without discovery, so a version the server lacks
+/// arrives as `Error` in the stream, like everything else later (including "forbidden"). Dropping the stream (or
+/// this future, while discovery runs) stops the watch.
 pub async fn watch(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     spec: WatchSpec,
-) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + 'static> {
+) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + use<>> {
     let client = mgr.client(cluster)?;
     let kind = resolve_kind(mgr, cluster, &spec.kind).await?;
 
@@ -112,8 +115,6 @@ struct Batcher {
     forbidden: Vec<bool>,
     /// A `Forbidden` update waits to be sent.
     forbidden_pending: bool,
-    /// Sources listed at least once (a later refusal is not "no permission" but a hiccup).
-    ever_listed: Vec<bool>,
     /// uid → (index of the source api, object).
     store: HashMap<String, (usize, Value)>,
     /// Objects of a source's running relist (`Init` … `InitDone`).
@@ -161,7 +162,6 @@ impl Batcher {
             aborts: vec![None; count],
             forbidden: vec![false; count],
             forbidden_pending: false,
-            ever_listed: vec![false; count],
             store: HashMap::new(),
             init_buffers: vec![None; count],
             listed: vec![false; count],
@@ -277,7 +277,6 @@ impl Batcher {
                     self.store.insert(uid_of(&value), (index, value));
                 }
                 self.listed[index] = true;
-                self.ever_listed[index] = true;
                 if self.all_listed() {
                     self.snapshot_pending = true;
                     self.attempt = 0;
@@ -321,7 +320,7 @@ impl Batcher {
                 | ErrorCode::AuthPlugin
                 | ErrorCode::Kubeconfig
         );
-        // Once data was shown, any error is treated as a lost connection: an API server that is starting up
+        // Once data was shown, any other error is treated as a lost connection: an API server that is starting up
         // answers 401/403 for a moment.
         if fatal && !self.snapshot_sent {
             self.streams = SelectAll::new();
@@ -331,11 +330,12 @@ impl Batcher {
         }
     }
 
-    /// Leaves out a namespace that cannot be listed, if other sources remain: its watcher stops, the others go on.
-    /// `false` when it is not such a namespace (all namespaces, already listed once, or the last source).
+    /// Leaves out a namespace that cannot be listed or watched, if other sources remain: its watcher stops, the
+    /// others go on, and its objects leave the store (a new snapshot without them follows once everything left is
+    /// listed). `false` when it is not such a namespace (all namespaces, or the last source).
     fn forbid(&mut self, index: usize) -> bool {
         let others = (0..self.sources.len()).any(|i| i != index && !self.forbidden[i]);
-        if self.sources[index].namespace.is_none() || self.ever_listed[index] || !others {
+        if self.sources[index].namespace.is_none() || !others {
             return false;
         }
         self.forbidden[index] = true;
@@ -422,8 +422,9 @@ fn uid_of(obj: &Value) -> String {
 
 #[cfg(test)]
 mod tests {
-    //! `watch()` against a fake API server on localhost (plain HTTP, no cluster needed).
-    use std::sync::{Arc, RwLock};
+    //! `watch()` and discovery against a fake API server on localhost (plain HTTP, no cluster needed).
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Mutex, RwLock};
 
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::{TcpListener, TcpStream};
@@ -434,27 +435,101 @@ mod tests {
 
     const API_VERSIONS: &str =
         r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
-    const CORE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[{"name":"pods","singularName":"pod","namespaced":true,"kind":"Pod","verbs":["get","list","watch"]}]}"#;
-    const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[]}"#;
+    const CORE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[{"name":"pods","singularName":"pod","namespaced":true,"kind":"Pod","verbs":["get","list","watch"]},{"name":"pods/log","singularName":"","namespaced":true,"kind":"Pod","verbs":["get"]},{"name":"nodes","singularName":"node","namespaced":false,"kind":"Node","verbs":["get","list","watch"]},{"name":"secrets","singularName":"secret","namespaced":true,"kind":"Secret","verbs":["get","list","watch"]}]}"#;
+    const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[{"name":"demo.sextant.dev","versions":[{"groupVersion":"demo.sextant.dev/v1","version":"v1"}],"preferredVersion":{"groupVersion":"demo.sextant.dev/v1","version":"v1"}}]}"#;
+    const DEMO_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"demo.sextant.dev/v1","resources":[{"name":"widgets","singularName":"widget","namespaced":true,"kind":"Widget","verbs":["get","list","watch"]}]}"#;
+    /// Aggregated discovery (Kubernetes 1.30+): the core group and every other group in one answer each.
+    const AGGREGATED_CORE: &str = r#"{"kind":"APIGroupDiscoveryList","apiVersion":"apidiscovery.k8s.io/v2","metadata":{},"items":[{"metadata":{},"versions":[{"version":"v1","resources":[{"resource":"pods","responseKind":{"group":"","version":"","kind":"Pod"},"scope":"Namespaced","singularResource":"pod","verbs":["get","list","watch"],"subresources":[{"subresource":"log","responseKind":{"group":"","version":"","kind":"Pod"},"verbs":["get"]}]},{"resource":"nodes","responseKind":{"group":"","version":"","kind":"Node"},"scope":"Cluster","singularResource":"node","verbs":["get","list","watch"]},{"resource":"secrets","responseKind":{"group":"","version":"","kind":"Secret"},"scope":"Namespaced","singularResource":"secret","verbs":["get","list","watch"]}],"freshness":"Current"}]}]}"#;
+    const AGGREGATED_GROUPS: &str = r#"{"kind":"APIGroupDiscoveryList","apiVersion":"apidiscovery.k8s.io/v2","metadata":{},"items":[{"metadata":{"name":"demo.sextant.dev"},"versions":[{"version":"v1","resources":[{"resource":"widgets","responseKind":{"group":"demo.sextant.dev","version":"v1","kind":"Widget"},"scope":"Namespaced","singularResource":"widget","verbs":["get","list","watch"]}],"freshness":"Current"}]}]}"#;
+    const CRD_LIST: &str = r#"{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinitionList","metadata":{"resourceVersion":"1"},"items":[]}"#;
     const NOT_FOUND: &str =
         r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#;
+    const FORBIDDEN: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","message":"cannot watch secrets","code":403}"#;
     const POD_LIST: &str = r#"{"apiVersion":"v1","kind":"PodList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"a","namespace":"default","uid":"uid-a","resourceVersion":"1"}}]}"#;
     const POD_ADDED: &str = r#"{"type":"ADDED","object":{"apiVersion":"v1","kind":"Pod","metadata":{"name":"b","namespace":"default","uid":"uid-b","resourceVersion":"2"}}}"#;
+    const NODE_LIST: &str = r#"{"apiVersion":"v1","kind":"NodeList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"node-1","uid":"uid-node-1","resourceVersion":"1"}}]}"#;
+    const WIDGET_LIST: &str = r#"{"apiVersion":"demo.sextant.dev/v1","kind":"WidgetList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"w","namespace":"default","uid":"uid-w","resourceVersion":"1"}}]}"#;
 
-    /// Serves discovery (core `v1` with pods only) and `GET /api/v1/pods`: the list answers [`POD_LIST`] at once; a
-    /// watch sends [`POD_ADDED`] at once and then stays open.
-    async fn fake_api_server() -> String {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
-        let url = format!("http://{}", listener.local_addr().unwrap());
-        tokio::spawn(async move {
-            while let Ok((conn, _)) = listener.accept().await {
-                tokio::spawn(serve(conn));
-            }
-        });
-        url
+    /// How the fake API server behaves.
+    #[derive(Clone, Copy, Default)]
+    struct Behaviour {
+        /// Answers aggregated discovery like Kubernetes 1.30+; otherwise only the per-group-version discovery.
+        aggregated: bool,
+        /// Pause before answering `/apis`.
+        discovery_delay: Duration,
+        /// `/apis` never answers.
+        hang_discovery: bool,
+        /// Secrets in this namespace can be listed but not watched (403).
+        no_watch_in: Option<&'static str>,
     }
 
-    async fn serve(mut conn: TcpStream) {
+    #[derive(Debug, Clone)]
+    struct Seen {
+        path: String,
+        accept_encoding: String,
+    }
+
+    /// A fake API server: discovery (core `v1` with pods, nodes, secrets; group `demo.sextant.dev/v1` with
+    /// widgets), lists of those, and watches that stay open (the pod watch first sends [`POD_ADDED`]).
+    struct FakeApi {
+        url: String,
+        seen: Arc<Mutex<Vec<Seen>>>,
+        /// `/apis` requests whose connection the client closed before the answer.
+        abandoned_discoveries: Arc<AtomicUsize>,
+    }
+
+    impl FakeApi {
+        async fn start(behaviour: Behaviour) -> Self {
+            let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+            let url = format!("http://{}", listener.local_addr().unwrap());
+            let seen = Arc::new(Mutex::new(Vec::new()));
+            let abandoned_discoveries = Arc::new(AtomicUsize::new(0));
+            let (log, abandoned) = (Arc::clone(&seen), Arc::clone(&abandoned_discoveries));
+            tokio::spawn(async move {
+                while let Ok((conn, _)) = listener.accept().await {
+                    tokio::spawn(serve(
+                        conn,
+                        behaviour,
+                        Arc::clone(&log),
+                        Arc::clone(&abandoned),
+                    ));
+                }
+            });
+            Self {
+                url,
+                seen,
+                abandoned_discoveries,
+            }
+        }
+
+        /// Requests to `path` (any query).
+        fn count(&self, path: &str) -> usize {
+            self.seen
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|s| s.path == path)
+                .count()
+        }
+
+        fn requests(&self) -> Vec<Seen> {
+            self.seen.lock().unwrap().clone()
+        }
+    }
+
+    fn header<'a>(head: &'a str, name: &str) -> &'a str {
+        head.lines()
+            .filter_map(|line| line.split_once(':'))
+            .find(|(key, _)| key.trim().eq_ignore_ascii_case(name))
+            .map_or("", |(_, value)| value.trim())
+    }
+
+    async fn serve(
+        mut conn: TcpStream,
+        behaviour: Behaviour,
+        seen: Arc<Mutex<Vec<Seen>>>,
+        abandoned: Arc<AtomicUsize>,
+    ) {
         let mut buf = Vec::new();
         loop {
             // One request head (GET, no body) at a time on a kept-alive connection.
@@ -472,32 +547,81 @@ mod tests {
             buf.drain(..head_end);
             let target = head.split_whitespace().nth(1).unwrap_or_default();
             let (path, query) = target.split_once('?').unwrap_or((target, ""));
-            if path == "/api/v1/pods" && query.contains("watch=") {
-                let line = format!("{POD_ADDED}\n");
+            let aggregated =
+                behaviour.aggregated && header(&head, "accept").contains("apidiscovery");
+            seen.lock().unwrap().push(Seen {
+                path: path.to_owned(),
+                accept_encoding: header(&head, "accept-encoding").to_owned(),
+            });
+
+            if path == "/apis" {
+                if behaviour.hang_discovery {
+                    // Wait for the client to give up: a read returns 0 once it closes the connection.
+                    let mut chunk = [0u8; 64];
+                    while matches!(conn.read(&mut chunk).await, Ok(n) if n > 0) {}
+                    abandoned.fetch_add(1, Ordering::SeqCst);
+                    return;
+                }
+                tokio::time::sleep(behaviour.discovery_delay).await;
+            }
+            let secrets_ns = path
+                .strip_prefix("/api/v1/namespaces/")
+                .and_then(|rest| rest.strip_suffix("/secrets"));
+            if query.contains("watch=") {
+                if secrets_ns.is_some() && secrets_ns == behaviour.no_watch_in {
+                    if write(&mut conn, "403 Forbidden", FORBIDDEN).await.is_err() {
+                        return;
+                    }
+                    continue;
+                }
+                let first = if path == "/api/v1/pods" {
+                    let line = format!("{POD_ADDED}\n");
+                    format!("{:x}\r\n{line}\r\n", line.len())
+                } else {
+                    String::new()
+                };
                 let response = format!(
-                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ntransfer-encoding: chunked\r\n\r\n{:x}\r\n{line}\r\n",
-                    line.len()
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ntransfer-encoding: chunked\r\n\r\n{first}"
                 );
                 if conn.write_all(response.as_bytes()).await.is_err() {
                     return;
                 }
                 futures::future::pending::<()>().await;
             }
+            let secret_list;
             let (status, body) = match path {
+                "/api" if aggregated => ("200 OK", AGGREGATED_CORE),
                 "/api" => ("200 OK", API_VERSIONS),
                 "/api/v1" => ("200 OK", CORE_RESOURCES),
+                "/apis" if aggregated => ("200 OK", AGGREGATED_GROUPS),
                 "/apis" => ("200 OK", API_GROUPS),
+                "/apis/demo.sextant.dev/v1" => ("200 OK", DEMO_RESOURCES),
+                "/apis/apiextensions.k8s.io/v1/customresourcedefinitions" => ("200 OK", CRD_LIST),
                 "/api/v1/pods" => ("200 OK", POD_LIST),
-                _ => ("404 Not Found", NOT_FOUND),
+                "/api/v1/nodes" => ("200 OK", NODE_LIST),
+                "/apis/demo.sextant.dev/v1/widgets" => ("200 OK", WIDGET_LIST),
+                _ => match secrets_ns {
+                    Some(ns) => {
+                        secret_list = format!(
+                            r#"{{"apiVersion":"v1","kind":"SecretList","metadata":{{"resourceVersion":"1"}},"items":[{{"metadata":{{"name":"s-{ns}","namespace":"{ns}","uid":"uid-{ns}","resourceVersion":"1"}}}}]}}"#
+                        );
+                        ("200 OK", secret_list.as_str())
+                    }
+                    None => ("404 Not Found", NOT_FOUND),
+                },
             };
-            let response = format!(
-                "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
-                body.len()
-            );
-            if conn.write_all(response.as_bytes()).await.is_err() {
+            if write(&mut conn, status, body).await.is_err() {
                 return;
             }
         }
+    }
+
+    async fn write(conn: &mut TcpStream, status: &str, body: &str) -> std::io::Result<()> {
+        let response = format!(
+            "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
+            body.len()
+        );
+        conn.write_all(response.as_bytes()).await
     }
 
     /// A manager connected to the fake server through a kubeconfig without credentials.
@@ -533,25 +657,37 @@ mod tests {
         names
     }
 
+    fn spec(group: &str, kind: &str, namespaces: Option<&[&str]>) -> WatchSpec {
+        WatchSpec {
+            kind: KindRef {
+                group: group.into(),
+                version: "v1".into(),
+                kind: kind.into(),
+            },
+            namespaces: namespaces.map(|ns| ns.iter().map(|n| n.to_string()).collect()),
+            label_selector: None,
+            field_selector: None,
+        }
+    }
+
+    /// The first snapshot of a fresh watch.
+    async fn first_snapshot(mgr: &ClusterManager, id: &ClusterId, spec: WatchSpec) -> Vec<Value> {
+        let mut updates = Box::pin(watch(mgr, id, spec).await.unwrap());
+        match tokio::time::timeout(Duration::from_secs(5), updates.next()).await {
+            Ok(Some(WatchUpdate::Snapshot { items })) => items,
+            other => panic!("expected a snapshot, got {other:?}"),
+        }
+    }
+
     #[tokio::test]
     async fn the_first_snapshot_is_sent_as_soon_as_it_is_listed_and_later_batches_keep_the_interval()
      {
-        let url = fake_api_server().await;
-        let (_tmp, mgr, id) = connected_to(&url).await;
-        let spec = WatchSpec {
-            kind: KindRef {
-                group: String::new(),
-                version: "v1".into(),
-                kind: "Pod".into(),
-            },
-            namespaces: None,
-            label_selector: None,
-            field_selector: None,
-        };
+        let api = FakeApi::start(Behaviour::default()).await;
+        let (_tmp, mgr, id) = connected_to(&api.url).await;
         // Discovery first, so that only the list itself is timed.
         mgr.kinds(&id).await.unwrap();
         let started = Instant::now();
-        let mut updates = Box::pin(watch(&mgr, &id, spec).await.unwrap());
+        let mut updates = Box::pin(watch(&mgr, &id, spec("", "Pod", None)).await.unwrap());
 
         // A snapshot held back until the first batch tick would come BATCH_INTERVAL after the start.
         let first = tokio::time::timeout(BATCH_INTERVAL * 4, updates.next())
@@ -585,6 +721,177 @@ mod tests {
         assert!(
             gap >= BATCH_INTERVAL - Duration::from_millis(50),
             "a batch {gap:?} after the snapshot"
+        );
+    }
+
+    #[tokio::test]
+    async fn ten_watches_started_at_once_on_a_cold_cache_share_one_discovery() {
+        for aggregated in [true, false] {
+            let api = FakeApi::start(Behaviour {
+                aggregated,
+                discovery_delay: Duration::from_millis(300),
+                ..Behaviour::default()
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(&api.url).await;
+            let starts =
+                (0..10).map(|_| watch(&mgr, &id, spec("demo.sextant.dev", "Widget", None)));
+            for started in futures::future::join_all(starts).await {
+                assert!(started.is_ok(), "aggregated={aggregated}");
+            }
+            // Each discovery asks once for the groups (aggregated) or once for the group's resources (per group
+            // version, after an aggregated attempt the server did not understand).
+            let discoveries = || {
+                api.count(if aggregated {
+                    "/apis"
+                } else {
+                    "/apis/demo.sextant.dev/v1"
+                })
+            };
+            assert_eq!(discoveries(), 1, "aggregated={aggregated}: one discovery");
+            // Cached: a later watch asks nothing again.
+            first_snapshot(&mgr, &id, spec("demo.sextant.dev", "Widget", None)).await;
+            assert_eq!(discoveries(), 1, "aggregated={aggregated}: cached");
+        }
+    }
+
+    #[tokio::test]
+    async fn built_in_kinds_are_watched_without_discovery() {
+        let api = FakeApi::start(Behaviour {
+            aggregated: true,
+            ..Behaviour::default()
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let before = api.requests().len();
+        assert_eq!(
+            names(&first_snapshot(&mgr, &id, spec("", "Node", None)).await),
+            ["node-1"]
+        );
+        assert_eq!(
+            names(&first_snapshot(&mgr, &id, spec("", "Pod", None)).await),
+            ["a"]
+        );
+        let asked: Vec<String> = api.requests()[before..]
+            .iter()
+            .map(|s| s.path.clone())
+            .collect();
+        assert!(
+            asked
+                .iter()
+                .all(|p| p == "/api/v1/nodes" || p == "/api/v1/pods"),
+            "only the lists themselves: {asked:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn discovery_lists_custom_kinds_without_downloading_the_crds() {
+        for aggregated in [true, false] {
+            let api = FakeApi::start(Behaviour {
+                aggregated,
+                ..Behaviour::default()
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(&api.url).await;
+            let kinds = mgr.kinds(&id).await.unwrap();
+            let found: Vec<(String, String, bool)> = kinds
+                .iter()
+                .map(|k| (k.kind_ref.kind.clone(), k.plural.clone(), k.namespaced))
+                .collect();
+            for expected in [
+                ("Pod", "pods", true),
+                ("Node", "nodes", false),
+                ("Widget", "widgets", true),
+            ] {
+                assert!(
+                    found.contains(&(expected.0.into(), expected.1.into(), expected.2)),
+                    "aggregated={aggregated}: {expected:?} in {found:?}"
+                );
+            }
+            assert!(
+                !kinds.iter().any(|k| k.plural.contains('/')),
+                "no subresources"
+            );
+            assert_eq!(
+                api.count("/apis/apiextensions.k8s.io/v1/customresourcedefinitions"),
+                0,
+                "aggregated={aggregated}: the CRDs (with their schemas) are not downloaded"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn requests_accept_gzip() {
+        let api = FakeApi::start(Behaviour::default()).await;
+        let (_tmp, _mgr, _id) = connected_to(&api.url).await;
+        let first = api
+            .requests()
+            .into_iter()
+            .next()
+            .expect("the connection check");
+        assert!(first.accept_encoding.contains("gzip"), "{first:?}");
+    }
+
+    #[tokio::test]
+    async fn a_watch_given_up_during_discovery_cancels_the_discovery() {
+        let api = FakeApi::start(Behaviour {
+            hang_discovery: true,
+            ..Behaviour::default()
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let given_up = tokio::time::timeout(
+            Duration::from_millis(300),
+            watch(&mgr, &id, spec("demo.sextant.dev", "Widget", None)),
+        )
+        .await;
+        assert!(given_up.is_err(), "discovery never answers");
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while api.abandoned_discoveries.load(Ordering::SeqCst) == 0 {
+            assert!(
+                Instant::now() < deadline,
+                "the discovery request is still running"
+            );
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    }
+
+    #[tokio::test]
+    async fn a_namespace_that_can_be_listed_but_not_watched_is_left_out_and_the_others_stay() {
+        let api = FakeApi::start(Behaviour {
+            no_watch_in: Some("b"),
+            ..Behaviour::default()
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(&api.url).await;
+        let mut updates = Box::pin(
+            watch(&mgr, &id, spec("", "Secret", Some(&["a", "b"])))
+                .await
+                .unwrap(),
+        );
+        let mut forbidden = None;
+        let mut last_items = None;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while forbidden.is_none()
+            || last_items
+                .as_ref()
+                .is_none_or(|items: &Vec<Value>| items.len() != 1)
+        {
+            let left = deadline.saturating_duration_since(Instant::now());
+            match tokio::time::timeout(left, updates.next()).await {
+                Ok(Some(WatchUpdate::Snapshot { items })) => last_items = Some(items),
+                Ok(Some(WatchUpdate::Forbidden { namespaces })) => forbidden = Some(namespaces),
+                Ok(Some(WatchUpdate::Delta { .. })) => {}
+                other => panic!(
+                    "expected snapshots and forbidden, got {other:?} (forbidden {forbidden:?}, items {last_items:?})"
+                ),
+            }
+        }
+        assert_eq!(forbidden.unwrap(), ["b"]);
+        assert_eq!(
+            names(&last_items.unwrap()),
+            ["s-a"],
+            "the other namespace's data stays"
         );
     }
 }

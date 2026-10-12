@@ -115,13 +115,147 @@ impl ResolvedKind {
     }
 }
 
-/// Finds `kind` in the cluster's discovery (cached by `ClusterManager::kinds`). A version the cluster does not
-/// prefer is still used when the group serves the kind; an unknown kind is `notFound`.
+/// Kinds every Kubernetes API server serves, as (group, kind, plural, namespaced): they are used without waiting
+/// for discovery, so the first table of a fresh connection does not wait for it.
+const BUILT_IN_KINDS: &[(&str, &str, &str, bool)] = &[
+    ("", "Binding", "bindings", true),
+    ("", "ConfigMap", "configmaps", true),
+    ("", "Endpoints", "endpoints", true),
+    ("", "Event", "events", true),
+    ("", "LimitRange", "limitranges", true),
+    ("", "Namespace", "namespaces", false),
+    ("", "Node", "nodes", false),
+    ("", "PersistentVolume", "persistentvolumes", false),
+    ("", "PersistentVolumeClaim", "persistentvolumeclaims", true),
+    ("", "Pod", "pods", true),
+    ("", "PodTemplate", "podtemplates", true),
+    ("", "ReplicationController", "replicationcontrollers", true),
+    ("", "ResourceQuota", "resourcequotas", true),
+    ("", "Secret", "secrets", true),
+    ("", "Service", "services", true),
+    ("", "ServiceAccount", "serviceaccounts", true),
+    (
+        "admissionregistration.k8s.io",
+        "MutatingWebhookConfiguration",
+        "mutatingwebhookconfigurations",
+        false,
+    ),
+    (
+        "admissionregistration.k8s.io",
+        "ValidatingWebhookConfiguration",
+        "validatingwebhookconfigurations",
+        false,
+    ),
+    (
+        "apiextensions.k8s.io",
+        "CustomResourceDefinition",
+        "customresourcedefinitions",
+        false,
+    ),
+    ("apiregistration.k8s.io", "APIService", "apiservices", false),
+    ("apps", "ControllerRevision", "controllerrevisions", true),
+    ("apps", "DaemonSet", "daemonsets", true),
+    ("apps", "Deployment", "deployments", true),
+    ("apps", "ReplicaSet", "replicasets", true),
+    ("apps", "StatefulSet", "statefulsets", true),
+    (
+        "autoscaling",
+        "HorizontalPodAutoscaler",
+        "horizontalpodautoscalers",
+        true,
+    ),
+    ("batch", "CronJob", "cronjobs", true),
+    ("batch", "Job", "jobs", true),
+    (
+        "certificates.k8s.io",
+        "CertificateSigningRequest",
+        "certificatesigningrequests",
+        false,
+    ),
+    ("coordination.k8s.io", "Lease", "leases", true),
+    ("discovery.k8s.io", "EndpointSlice", "endpointslices", true),
+    ("events.k8s.io", "Event", "events", true),
+    ("networking.k8s.io", "Ingress", "ingresses", true),
+    ("networking.k8s.io", "IngressClass", "ingressclasses", false),
+    (
+        "networking.k8s.io",
+        "NetworkPolicy",
+        "networkpolicies",
+        true,
+    ),
+    ("node.k8s.io", "RuntimeClass", "runtimeclasses", false),
+    (
+        "policy",
+        "PodDisruptionBudget",
+        "poddisruptionbudgets",
+        true,
+    ),
+    (
+        "rbac.authorization.k8s.io",
+        "ClusterRole",
+        "clusterroles",
+        false,
+    ),
+    (
+        "rbac.authorization.k8s.io",
+        "ClusterRoleBinding",
+        "clusterrolebindings",
+        false,
+    ),
+    ("rbac.authorization.k8s.io", "Role", "roles", true),
+    (
+        "rbac.authorization.k8s.io",
+        "RoleBinding",
+        "rolebindings",
+        true,
+    ),
+    (
+        "scheduling.k8s.io",
+        "PriorityClass",
+        "priorityclasses",
+        false,
+    ),
+    ("storage.k8s.io", "CSIDriver", "csidrivers", false),
+    ("storage.k8s.io", "CSINode", "csinodes", false),
+    ("storage.k8s.io", "StorageClass", "storageclasses", false),
+    (
+        "storage.k8s.io",
+        "VolumeAttachment",
+        "volumeattachments",
+        false,
+    ),
+];
+
+/// Finds the API of `kind`: a built-in kind directly, any other through the cluster's discovery (cached by
+/// `ClusterManager::kinds`, shared by callers that ask at the same time). A version the cluster does not prefer is
+/// still used when the group serves the kind; an unknown kind is `notFound`.
 pub(crate) async fn resolve_kind(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     kind: &KindRef,
 ) -> CoreResult<ResolvedKind> {
+    let api_version = if kind.group.is_empty() {
+        kind.version.clone()
+    } else {
+        format!("{}/{}", kind.group, kind.version)
+    };
+    let resolved = |plural: String, namespaced: bool| ResolvedKind {
+        resource: ApiResource {
+            group: kind.group.clone(),
+            version: kind.version.clone(),
+            api_version: api_version.clone(),
+            kind: kind.kind.clone(),
+            plural,
+        },
+        namespaced,
+    };
+    if let Some((_, _, plural, namespaced)) = BUILT_IN_KINDS
+        .iter()
+        .find(|(group, name, _, _)| *group == kind.group && *name == kind.kind)
+    {
+        return Ok(resolved((*plural).to_owned(), *namespaced));
+    }
+
     let kinds = mgr.kinds(cluster).await?;
     let same_kind = |k: &&crate::resources::ResourceKind| {
         k.kind_ref.group == kind.group && k.kind_ref.kind == kind.kind
@@ -137,21 +271,7 @@ pub(crate) async fn resolve_kind(
                 format!("the cluster does not serve {}", describe(kind)),
             )
         })?;
-    let api_version = if kind.group.is_empty() {
-        kind.version.clone()
-    } else {
-        format!("{}/{}", kind.group, kind.version)
-    };
-    Ok(ResolvedKind {
-        resource: ApiResource {
-            group: kind.group.clone(),
-            version: kind.version.clone(),
-            api_version,
-            kind: kind.kind.clone(),
-            plural: found.plural.clone(),
-        },
-        namespaced: found.namespaced,
-    })
+    Ok(resolved(found.plural.clone(), found.namespaced))
 }
 
 /// "Deployment (apps/v1)", "Pod (v1)".

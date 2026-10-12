@@ -31,6 +31,7 @@ import { Checkbox } from "./Checkbox";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
 import { usePopup } from "../usePopup";
+import { LoadingIndicator } from "./LoadingIndicator";
 import { matchesSearch } from "./search";
 import "./table.css";
 
@@ -61,12 +62,18 @@ export interface ResourceTableProps {
   defaultSort?: { id: string; desc?: boolean } | null;
   /** Discovery entry of the kind (printer columns and scope of custom resources). */
   resourceKind?: ResourceKind | null;
+  /** When the table was asked for (`Date.now()`): the loading indicator counts from it. Default: its first render. */
+  loadingSince?: number;
 }
 
 /** Each retry ("Retry" after an error) starts a fresh watch. */
 export function ResourceTable(props: ResourceTableProps) {
   const [attempt, setAttempt] = useState(0);
-  return <ResourceTableView key={attempt} {...props} onRetry={() => setAttempt((n) => n + 1)} />;
+  // A retry is a new wait: its indicator counts from the retry.
+  const loadingSince = attempt === 0 ? props.loadingSince : undefined;
+  return (
+    <ResourceTableView key={attempt} {...props} loadingSince={loadingSince} onRetry={() => setAttempt((n) => n + 1)} />
+  );
 }
 
 const features = tableFeatures({
@@ -238,9 +245,11 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     );
   } else if (watch.status === "loading") {
     body = (
-      <div className="rt__loading" role="status">
-        {t("resources:table.loading")}
-      </div>
+      <LoadingIndicator
+        className="rt__loading"
+        text={t("resources:loading.kind", { kind: title })}
+        since={props.loadingSince}
+      />
     );
   } else if (rows.length === 0) {
     body = (
