@@ -227,23 +227,24 @@ const BUILT_IN_KINDS: &[(&str, &str, &str, bool)] = &[
 ];
 
 /// Finds the API of `kind`: a built-in kind directly, any other through the cluster's discovery (cached by
-/// `ClusterManager::kinds`, shared by callers that ask at the same time). A version the cluster does not prefer is
-/// still used when the group serves the kind; an unknown kind is `notFound`.
+/// `ClusterManager::kinds`, shared by callers that ask at the same time). The version asked for is used when
+/// discovery lists the kind in it; otherwise the version discovery lists (the one the cluster prefers among those
+/// serving the kind) — a frontend that registered `v1` still reads a cluster serving only `v1beta2`. An unknown kind
+/// is `notFound`.
 pub(crate) async fn resolve_kind(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     kind: &KindRef,
 ) -> CoreResult<ResolvedKind> {
-    let api_version = if kind.group.is_empty() {
-        kind.version.clone()
-    } else {
-        format!("{}/{}", kind.group, kind.version)
-    };
-    let resolved = |plural: String, namespaced: bool| ResolvedKind {
+    let resolved = |version: &str, plural: String, namespaced: bool| ResolvedKind {
         resource: ApiResource {
             group: kind.group.clone(),
-            version: kind.version.clone(),
-            api_version: api_version.clone(),
+            version: version.to_owned(),
+            api_version: if kind.group.is_empty() {
+                version.to_owned()
+            } else {
+                format!("{}/{}", kind.group, version)
+            },
             kind: kind.kind.clone(),
             plural,
         },
@@ -253,7 +254,7 @@ pub(crate) async fn resolve_kind(
         .iter()
         .find(|(group, name, _, _)| *group == kind.group && *name == kind.kind)
     {
-        return Ok(resolved((*plural).to_owned(), *namespaced));
+        return Ok(resolved(&kind.version, (*plural).to_owned(), *namespaced));
     }
 
     let kinds = mgr.kinds(cluster).await?;
@@ -271,7 +272,11 @@ pub(crate) async fn resolve_kind(
                 format!("the cluster does not serve {}", describe(kind)),
             )
         })?;
-    Ok(resolved(found.plural.clone(), found.namespaced))
+    Ok(resolved(
+        &found.kind_ref.version,
+        found.plural.clone(),
+        found.namespaced,
+    ))
 }
 
 /// "Deployment (apps/v1)", "Pod (v1)".
@@ -395,5 +400,145 @@ mod tests {
             "true"
         );
         assert!(ensure_values_present(&json).is_err());
+    }
+
+    /// A cluster with Flux older than 2.7: `image.toolkit.fluxcd.io` serves only `v1beta2`; `source.toolkit.fluxcd.io`
+    /// serves `v1`. Discovery by group version (no aggregated discovery); every request is recorded.
+    mod older_flux {
+        use crate::fake_api::{FakeApi, Reply, Request};
+
+        const API_VERSIONS: &str =
+            r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+        const CORE_RESOURCES: &str =
+            r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[]}"#;
+        const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[
+            {"name":"image.toolkit.fluxcd.io","versions":[{"groupVersion":"image.toolkit.fluxcd.io/v1beta2","version":"v1beta2"}],
+             "preferredVersion":{"groupVersion":"image.toolkit.fluxcd.io/v1beta2","version":"v1beta2"}},
+            {"name":"source.toolkit.fluxcd.io","versions":[{"groupVersion":"source.toolkit.fluxcd.io/v1","version":"v1"}],
+             "preferredVersion":{"groupVersion":"source.toolkit.fluxcd.io/v1","version":"v1"}}]}"#;
+        const IMAGE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"image.toolkit.fluxcd.io/v1beta2","resources":[
+            {"name":"imagepolicies","singularName":"imagepolicy","namespaced":true,"kind":"ImagePolicy","verbs":["get","list","watch"]}]}"#;
+        const SOURCE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"source.toolkit.fluxcd.io/v1","resources":[
+            {"name":"gitrepositories","singularName":"gitrepository","namespaced":true,"kind":"GitRepository","verbs":["get","list","watch"]}]}"#;
+        const POLICY: &str = r#"{"apiVersion":"image.toolkit.fluxcd.io/v1beta2","kind":"ImagePolicy","metadata":{"name":"app","namespace":"ns","uid":"p1"}}"#;
+        const POLICY_LIST: &str = r#"{"apiVersion":"image.toolkit.fluxcd.io/v1beta2","kind":"ImagePolicyList","metadata":{"resourceVersion":"1"},"items":[
+            {"metadata":{"name":"app","namespace":"ns","uid":"p1"}}]}"#;
+        const REPOSITORY: &str = r#"{"apiVersion":"source.toolkit.fluxcd.io/v1","kind":"GitRepository","metadata":{"name":"app","namespace":"ns","uid":"g1"}}"#;
+
+        fn answer(req: &Request) -> Reply {
+            if req.query.contains("watch=") {
+                return Reply::stream(String::new());
+            }
+            match req.path.as_str() {
+                "/api" => Reply::json(200, API_VERSIONS),
+                "/api/v1" => Reply::json(200, CORE_RESOURCES),
+                "/apis" => Reply::json(200, API_GROUPS),
+                "/apis/image.toolkit.fluxcd.io/v1beta2" => Reply::json(200, IMAGE_RESOURCES),
+                "/apis/source.toolkit.fluxcd.io/v1" => Reply::json(200, SOURCE_RESOURCES),
+                "/apis/image.toolkit.fluxcd.io/v1beta2/namespaces/ns/imagepolicies/app" => {
+                    Reply::json(200, POLICY)
+                }
+                "/apis/image.toolkit.fluxcd.io/v1beta2/imagepolicies" => {
+                    Reply::json(200, POLICY_LIST)
+                }
+                "/apis/source.toolkit.fluxcd.io/v1/namespaces/ns/gitrepositories/app" => {
+                    Reply::json(200, REPOSITORY)
+                }
+                _ => Reply::not_found(),
+            }
+        }
+
+        pub async fn server() -> FakeApi {
+            FakeApi::start(answer).await
+        }
+
+        /// The request lines so far ("GET /apis/…").
+        pub fn lines(api: &FakeApi) -> Vec<String> {
+            api.requests().iter().map(Request::line).collect()
+        }
+    }
+
+    fn flux_ref(group: &str, version: &str, kind: &str) -> ObjectRef {
+        ObjectRef {
+            kind: KindRef {
+                group: group.into(),
+                version: version.into(),
+                kind: kind.into(),
+            },
+            namespace: Some("ns".into()),
+            name: "app".into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_version_the_cluster_does_not_serve_is_read_in_the_version_it_serves() {
+        let api = older_flux::server().await;
+        let (_tmp, mgr, id) = crate::fake_api::connected_to(api.url()).await;
+
+        let policy = get(
+            &mgr,
+            &id,
+            &flux_ref("image.toolkit.fluxcd.io", "v1", "ImagePolicy"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(policy["apiVersion"], "image.toolkit.fluxcd.io/v1beta2");
+        let requests = older_flux::lines(&api);
+        assert!(
+            requests.iter().any(|r| r.starts_with(
+                "GET /apis/image.toolkit.fluxcd.io/v1beta2/namespaces/ns/imagepolicies/app"
+            )),
+            "{requests:?}"
+        );
+        assert!(
+            !requests
+                .iter()
+                .any(|r| r.contains("image.toolkit.fluxcd.io/v1/")),
+            "{requests:?}"
+        );
+
+        // The table of the kind (a watch) too.
+        let spec = crate::resources::WatchSpec {
+            kind: flux_ref("image.toolkit.fluxcd.io", "v1", "ImagePolicy").kind,
+            namespaces: None,
+            label_selector: None,
+            field_selector: None,
+            metadata_only: false,
+        };
+        let mut updates = Box::pin(crate::resources::watch(&mgr, &id, spec).await.unwrap());
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            futures::StreamExt::next(&mut updates),
+        )
+        .await
+        {
+            Ok(Some(crate::resources::WatchUpdate::Snapshot { items })) => {
+                assert_eq!(items.len(), 1);
+                assert_eq!(items[0]["apiVersion"], "image.toolkit.fluxcd.io/v1beta2");
+            }
+            other => panic!("expected a snapshot, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_version_the_cluster_serves_is_read_as_asked() {
+        let api = older_flux::server().await;
+        let (_tmp, mgr, id) = crate::fake_api::connected_to(api.url()).await;
+
+        let repo = get(
+            &mgr,
+            &id,
+            &flux_ref("source.toolkit.fluxcd.io", "v1", "GitRepository"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(repo["apiVersion"], "source.toolkit.fluxcd.io/v1");
+        let requests = older_flux::lines(&api);
+        assert!(
+            requests.iter().any(|r| r.starts_with(
+                "GET /apis/source.toolkit.fluxcd.io/v1/namespaces/ns/gitrepositories/app"
+            )),
+            "{requests:?}"
+        );
     }
 }

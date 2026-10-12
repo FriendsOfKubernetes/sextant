@@ -1,0 +1,19 @@
+{
+  "apiVersion": "notification.toolkit.fluxcd.io/v1beta3",
+  "kind": "Provider",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "webhook",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143540",
+    "uid": "dd4d6323-68c2-4dfa-abab-e3ab818faddb"
+  },
+  "spec": {
+    "address": "http://receiver.sextant-flux-fx.svc.cluster.local/",
+    "type": "generic"
+  }
+}

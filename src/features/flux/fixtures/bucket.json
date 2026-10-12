@@ -1,0 +1,52 @@
+{
+  "apiVersion": "source.toolkit.fluxcd.io/v1",
+  "kind": "Bucket",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "assets",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143687",
+    "uid": "71656ef8-0ff6-409c-81dc-57fe83dabd76"
+  },
+  "spec": {
+    "bucketName": "assets",
+    "endpoint": "minio.sextant-flux-fx.svc.cluster.local:9000",
+    "insecure": true,
+    "interval": "1h",
+    "provider": "generic",
+    "timeout": "5s"
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:08:51Z",
+        "message": "building artifact",
+        "observedGeneration": 1,
+        "reason": "ProgressingWithRetry",
+        "status": "True",
+        "type": "Reconciling"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T17:08:51Z",
+        "message": "failed to confirm existence of 'assets' bucket: Get \"http://minio.sextant-flux-fx.svc.cluster.local:9000/assets/ dial tcp: lookup minio.sextant-flux-fx.svc.cluster.local on 10.96.0.10:53: no such host",
+        "observedGeneration": 1,
+        "reason": "BucketOperationFailed",
+        "status": "False",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T17:08:29Z",
+        "message": "failed to confirm existence of 'assets' bucket: Get \"http://minio.sextant-flux-fx.svc.cluster.local:9000/assets/ dial tcp: lookup minio.sextant-flux-fx.svc.cluster.local on 10.96.0.10:53: no such host",
+        "observedGeneration": 1,
+        "reason": "BucketOperationFailed",
+        "status": "True",
+        "type": "FetchFailed"
+      }
+    ],
+    "observedGeneration": -1
+  }
+}

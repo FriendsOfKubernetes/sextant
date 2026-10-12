@@ -1,0 +1,77 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Ready",
+    "status": "Status",
+    "revision": "Revision",
+    "suspended": "Suspended",
+    "source": "Source"
+  },
+  "suspended": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "fields": {
+    "ready": "Ready",
+    "message": "Status",
+    "revision": "Revision",
+    "lastAttemptedRevision": "Last attempted revision",
+    "suspended": "Suspended",
+    "interval": "Interval",
+    "timeout": "Timeout",
+    "source": "Source",
+    "chart": "Chart",
+    "helmChart": "Helm chart",
+    "url": "URL",
+    "ref": "Reference",
+    "endpoint": "Endpoint",
+    "bucketName": "Bucket",
+    "path": "Path",
+    "targetNamespace": "Target namespace",
+    "releaseName": "Release name",
+    "prune": "Prune",
+    "dependsOn": "Depends on",
+    "image": "Image",
+    "imageRepository": "Image repository",
+    "provider": "Provider",
+    "eventSeverity": "Event severity",
+    "eventSources": "Event sources",
+    "type": "Type",
+    "channel": "Channel",
+    "webhookPath": "Webhook path",
+    "lastHandledReconcileAt": "Last reconcile request"
+  },
+  "related": {
+    "inventory": "Applied resources",
+    "resources": "Resources",
+    "usedBy": "Used by",
+    "kind": "Kind",
+    "name": "Name",
+    "namespace": "Namespace"
+  },
+  "actions": {
+    "reconcile": "Reconcile now",
+    "reconcileWithSource": "Reconcile with source",
+    "suspend": "Suspend",
+    "resume": "Resume"
+  },
+  "suspend": {
+    "title": "Suspend {{kind}} {{name}}?",
+    "confirm": "Suspend",
+    "text": "Flux stops reconciling {{kind}} {{name}} until it is resumed: changes in Git or in the cluster are not applied or corrected meanwhile."
+  }
+}

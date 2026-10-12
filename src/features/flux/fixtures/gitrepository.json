@@ -1,0 +1,52 @@
+{
+  "apiVersion": "source.toolkit.fluxcd.io/v1",
+  "kind": "GitRepository",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T16:51:54Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo",
+    "namespace": "sextant-flux",
+    "resourceVersion": "139662",
+    "uid": "abf88a8b-6af6-494f-896b-4c2a2aa424c2"
+  },
+  "spec": {
+    "interval": "10m",
+    "ref": {
+      "branch": "master"
+    },
+    "timeout": "60s",
+    "url": "https://github.com/stefanprodan/podinfo"
+  },
+  "status": {
+    "artifact": {
+      "digest": "sha256:903f57ee8629b67dbd50bba241633df24168efbd09c2f2cab02ba8172360a954",
+      "lastUpdateTime": "2026-10-12T16:51:56Z",
+      "path": "gitrepository/sextant-flux/podinfo/3e0ff8ae123b710bc91de1315cba0f996a8896c2.tar.gz",
+      "revision": "master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2",
+      "size": 402545,
+      "url": "http://source-controller.flux-system.svc.cluster.local./gitrepository/sextant-flux/podinfo/3e0ff8ae123b710bc91de1315cba0f996a8896c2.tar.gz"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T16:51:56Z",
+        "message": "stored artifact for revision 'master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2'",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T16:51:56Z",
+        "message": "stored artifact for revision 'master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2'",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "ArtifactInStorage"
+      }
+    ],
+    "observedGeneration": 1
+  }
+}

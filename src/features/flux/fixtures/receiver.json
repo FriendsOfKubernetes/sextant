@@ -1,0 +1,43 @@
+{
+  "apiVersion": "notification.toolkit.fluxcd.io/v1",
+  "kind": "Receiver",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "github",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143560",
+    "uid": "2995a688-99ab-4893-9e1a-213fa85a8c18"
+  },
+  "spec": {
+    "interval": "10m",
+    "resources": [
+      {
+        "apiVersion": "source.toolkit.fluxcd.io/v1",
+        "kind": "GitRepository",
+        "name": "podinfo"
+      }
+    ],
+    "secretRef": {
+      "name": "receiver-token"
+    },
+    "type": "generic"
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:08:29Z",
+        "message": "Receiver initialized for path: /hook/55d86edf423c2a333a6335f7aca15e088ae7b5ea87880acbe0a6c397419708cc",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "Ready"
+      }
+    ],
+    "observedGeneration": 1,
+    "webhookPath": "/hook/55d86edf423c2a333a6335f7aca15e088ae7b5ea87880acbe0a6c397419708cc"
+  }
+}

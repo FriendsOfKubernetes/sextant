@@ -1,0 +1,57 @@
+{
+  "apiVersion": "image.toolkit.fluxcd.io/v1",
+  "kind": "ImageRepository",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143564",
+    "uid": "d40d2542-5c00-4a58-ba4e-3416adb5de92"
+  },
+  "spec": {
+    "exclusionList": [
+      "^.*\\.sig$"
+    ],
+    "image": "ghcr.io/stefanprodan/podinfo",
+    "interval": "1h",
+    "provider": "generic"
+  },
+  "status": {
+    "canonicalImageName": "ghcr.io/stefanprodan/podinfo",
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:08:30Z",
+        "message": "successful scan: found 97 tags with checksum 3282451018",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "Ready"
+      }
+    ],
+    "lastScanResult": {
+      "latestTags": [
+        "sha256-f9537f729129d339aaef049b76ab2cd4ff06a424f99e5f6a5923c10621018fb1",
+        "sha256-f107b0acc7f9350212571d8eb223ec004f6e20cf22083fc19b112280278827c9",
+        "sha256-ec73780a8425f59ea49f5bc8cdff0d598805a224fbaa1f86c67a244f250fa9da",
+        "sha256-e0b621e0083e2248ffeae460c2752d81763e067ef03497da86244218fa915ea3",
+        "sha256-d2b3cd93a48acdc91327533ce28fcb3169b2d9feaf73817dc2eb68858df64edb",
+        "sha256-cab90e04829cdae73199a8402882a4e3ccaf251b8a0d50bdefede0ab3f6371e7",
+        "sha256-c78ef84125743b9492b59c20e6638d46d737c089baec3ae6fa026520b60e7d4c",
+        "sha256-c04843c796025fbaa2574344994cb2461041b5e1d6b7a0de76b2b9fa46318e08",
+        "sha256-b1e974022d6603c8ceea4a05c6ff9d9f4e6bf6a6590fb740251811283458c4ea",
+        "sha256-8fa56908408de98f24aed2a162b1bb42c0b98df7abfcc5a76a14a8be510457c5"
+      ],
+      "revision": "3282451018",
+      "scanTime": "2026-10-12T17:08:30Z",
+      "tagCount": 97
+    },
+    "observedExclusionList": [
+      "^.*\\.sig$"
+    ],
+    "observedGeneration": 1
+  }
+}

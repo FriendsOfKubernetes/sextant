@@ -1,0 +1,63 @@
+{
+  "apiVersion": "image.toolkit.fluxcd.io/v1",
+  "kind": "ImageUpdateAutomation",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143610",
+    "uid": "27288b7f-7930-495d-8d0f-15c30ebd2318"
+  },
+  "spec": {
+    "git": {
+      "checkout": {
+        "ref": {
+          "branch": "master"
+        }
+      },
+      "commit": {
+        "author": {
+          "email": "fluxbot@example.com",
+          "name": "fluxbot"
+        }
+      },
+      "push": {
+        "branch": "sextant-never-pushed"
+      }
+    },
+    "interval": "1h",
+    "sourceRef": {
+      "kind": "GitRepository",
+      "name": "podinfo"
+    },
+    "update": {
+      "path": "./kustomize",
+      "strategy": "Setters"
+    }
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:08:31Z",
+        "message": "repository up-to-date",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "Ready"
+      }
+    ],
+    "lastAutomationRunTime": "2026-10-12T17:08:34Z",
+    "observedGeneration": 1,
+    "observedPolicies": {
+      "podinfo": {
+        "name": "ghcr.io/stefanprodan/podinfo",
+        "tag": "6.15.0"
+      }
+    },
+    "observedSourceRevision": "master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2"
+  }
+}

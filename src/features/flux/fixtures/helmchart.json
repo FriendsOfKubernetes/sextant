@@ -1,0 +1,61 @@
+{
+  "apiVersion": "source.toolkit.fluxcd.io/v1",
+  "kind": "HelmChart",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T16:51:54Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "labels": {
+      "helm.toolkit.fluxcd.io/name": "podinfo-helm",
+      "helm.toolkit.fluxcd.io/namespace": "sextant-flux"
+    },
+    "name": "sextant-flux-podinfo-helm",
+    "namespace": "sextant-flux",
+    "resourceVersion": "139638",
+    "uid": "d2f8845b-4946-4718-8145-862197cdaa5c"
+  },
+  "spec": {
+    "chart": "podinfo",
+    "interval": "10m0s",
+    "reconcileStrategy": "ChartVersion",
+    "sourceRef": {
+      "kind": "HelmRepository",
+      "name": "podinfo"
+    },
+    "version": "6.x"
+  },
+  "status": {
+    "artifact": {
+      "digest": "sha256:5ca7896889b539e04cdad4df2093ff1ff7576295e7e3ef90a1e1845e3a334d75",
+      "lastUpdateTime": "2026-10-12T16:51:55Z",
+      "path": "helmchart/sextant-flux/sextant-flux-podinfo-helm/podinfo-6.15.0.tgz",
+      "revision": "6.15.0",
+      "size": 16912,
+      "url": "http://source-controller.flux-system.svc.cluster.local./helmchart/sextant-flux/sextant-flux-podinfo-helm/podinfo-6.15.0.tgz"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T16:51:55Z",
+        "message": "pulled 'podinfo' chart with version '6.15.0'",
+        "observedGeneration": 1,
+        "reason": "ChartPullSucceeded",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T16:51:55Z",
+        "message": "pulled 'podinfo' chart with version '6.15.0'",
+        "observedGeneration": 1,
+        "reason": "ChartPullSucceeded",
+        "status": "True",
+        "type": "ArtifactInStorage"
+      }
+    ],
+    "observedChartName": "podinfo",
+    "observedGeneration": 1,
+    "observedSourceArtifactRevision": "sha256:e7dc68a4dec90a35c2c6d8cdfedb7eaaee17fde45dced5898289df85069ec089",
+    "url": "http://source-controller.flux-system.svc.cluster.local./helmchart/sextant-flux/sextant-flux-podinfo-helm/latest.tar.gz"
+  }
+}
