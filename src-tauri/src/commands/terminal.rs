@@ -71,9 +71,10 @@ pub async fn terminal_start<R: Runtime>(
     )
 }
 
-/// Starts `shell` with `KUBECONFIG` set to a private (0600) temporary kubeconfig holding only `cluster`'s context.
-/// The file lives as long as the session: it is removed when the shell exits, and before `term_stop`, disconnecting
-/// the cluster, `streams_reset`, closing the window or quitting the application return.
+/// Starts `shell` with `KUBECONFIG` set to a private (0600) temporary kubeconfig holding only `cluster`'s context
+/// ([`pty::spawn_local_shell`]). The file, and the shell's temporary startup files, live as long as the session: they
+/// are removed when the shell exits, and before `term_stop`, disconnecting the cluster, `streams_reset`, closing the
+/// window or quitting the application return.
 pub fn start_local_terminal<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -84,17 +85,17 @@ pub fn start_local_terminal<R: Runtime>(
     rows: u16,
 ) -> Result<(), CoreError> {
     start_local_session(app, state, id, cluster, |kubeconfig| {
-        pty::spawn_shell(shell, &[("KUBECONFIG", kubeconfig)], cols, rows)
+        pty::spawn_local_shell(shell, kubeconfig, cols, rows)
     })
 }
 
 /// [`start_local_terminal`] with the shell started by `spawn`, which gets the temporary kubeconfig's path.
-pub fn start_local_session<R: Runtime>(
+pub fn start_local_session<R: Runtime, S: Into<pty::LocalShell>>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
-    spawn: impl FnOnce(&std::ffi::OsStr) -> CoreResult<ExecSession>,
+    spawn: impl FnOnce(&std::ffi::OsStr) -> CoreResult<S>,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     // Commands run in parallel: a reset may come while the shell is being spawned.
@@ -104,14 +105,17 @@ pub fn start_local_session<R: Runtime>(
         .read()
         .unwrap_or_else(|e| e.into_inner())
         .write_temp_kubeconfig(&cluster)?;
-    let session = spawn(kubeconfig.as_os_str())?;
+    let pty::LocalShell {
+        session,
+        startup_files,
+    } = spawn(kubeconfig.as_os_str())?.into();
     forward_term(
         app,
         state,
         id.clone(),
         Some(cluster),
         session,
-        Some(Box::new(kubeconfig)),
+        Some(Box::new((kubeconfig, startup_files))),
     )?;
     state.undo_if_reset(generation, || {
         state.sessions.stop(&id);

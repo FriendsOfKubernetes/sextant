@@ -36,7 +36,7 @@ export function LocalTerminalTab({ tab, active }: DockTabProps) {
     (cols: number, rows: number, streamId: string) => api.terminal.local(clusterId, cols, rows, streamId),
     [clusterId],
   );
-  return <TerminalView factory={factory} active={active} label={t("terminal:terminal")} />;
+  return <TerminalView factory={factory} active={active} label={t("terminal:terminal")} kubeconfigNotice />;
 }
 
 /** Containers a shell can be opened in (regular containers; init containers are gone once the pod runs). */

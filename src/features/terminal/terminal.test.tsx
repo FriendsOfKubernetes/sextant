@@ -246,6 +246,56 @@ describe("Terminal button", () => {
   });
 });
 
+describe("KUBECONFIG notice", () => {
+  // What the backend (src-tauri/src/pty.rs) sends first for a shell whose profile may still set KUBECONFIG.
+  const NOTICE = "\x1b]7719;kubeconfig-not-pinned\x07";
+
+  async function openLocalTerminal() {
+    useClustersStore.setState({
+      clusters: [
+        {
+          id: "c1",
+          context: "kind-sextant-test",
+          clusterName: "kind-sextant-test",
+          server: "https://127.0.0.1:6443",
+          user: "admin",
+          namespace: null,
+          sourceId: "default",
+        },
+      ],
+    });
+    act(() => useAppStore.getState().setActiveCluster("c1"));
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Terminal" }));
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+  }
+
+  it("is shown in a local terminal whose shell may override KUBECONFIG", async () => {
+    await openLocalTerminal();
+    act(() => backend.emit("term:term-1", { type: "data", data: b64(`${NOTICE}$ `) }));
+    await waitFor(() => expect(screenText()).toContain("$"));
+    const note = await screen.findByRole("note");
+    expect(note).toHaveTextContent(/profile may override KUBECONFIG/);
+    expect(screenText()).not.toContain("kubeconfig-not-pinned");
+  });
+
+  it("is not shown for a shell that keeps the session's KUBECONFIG", async () => {
+    await openLocalTerminal();
+    act(() => backend.emit("term:term-1", { type: "data", data: b64("$ ") }));
+    await waitFor(() => expect(screenText()).toContain("$"));
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("is not shown in a container shell", async () => {
+    render(<App />);
+    await runShell(pod("web", ["nginx"]));
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    act(() => backend.emit("term:term-1", { type: "data", data: b64(`${NOTICE}# `) }));
+    await waitFor(() => expect(screenText()).toContain("#"));
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+});
+
 describe("useTerminal", () => {
   it("copies the selection with Ctrl+Shift+C instead of sending it to the shell", async () => {
     const writeText = vi.fn(() => Promise.resolve());

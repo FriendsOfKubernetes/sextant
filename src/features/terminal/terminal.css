@@ -19,6 +19,14 @@
   height: 100%;
 }
 
+.terminal__notice {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-dock-header);
+  color: var(--color-warning);
+  font-size: 12px;
+}
+
 .terminal__status {
   display: flex;
   align-items: center;

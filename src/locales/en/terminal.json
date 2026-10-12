@@ -8,7 +8,8 @@
   },
   "local": {
     "open": "Terminal",
-    "tabTitle": "Terminal: {{cluster}}"
+    "tabTitle": "Terminal: {{cluster}}",
+    "kubeconfigNotice": "This shell's profile may override KUBECONFIG. Sextant sets it to this cluster, but a KUBECONFIG exported in the profile wins: check kubectl config current-context before changing anything."
   },
   "status": {
     "connecting": "Connecting…",
