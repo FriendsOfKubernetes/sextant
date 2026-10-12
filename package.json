@@ -1,7 +1,7 @@
 {
   "name": "sextant",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sextant — desktop Kubernetes client",
   "license": "MIT OR Apache-2.0",
   "type": "module",
@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "gen:types": "node scripts/bindings.mjs clean && cargo test --workspace export_bindings && node scripts/bindings.mjs sync",
-    "check": "node scripts/check-case-collisions.mjs && npm run check:rust && npm run check:web",
+    "check": "node scripts/check-case-collisions.mjs && npm run check:version && npm run check:rust && npm run check:web",
+    "check:version": "node scripts/check-version.mjs && node --test scripts/check-version.test.mjs",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && node scripts/check-core-deps.mjs && node scripts/bindings.mjs clean && cargo test --workspace && node scripts/bindings.mjs verify",
     "check:web": "tsc --noEmit && tsc --noEmit -p e2e && eslint . && vitest run",
     "e2e": "wdio run e2e/wdio.conf.ts"
@@ -27,6 +28,8 @@
     "@tauri-apps/api": "^2.12.3",
     "@tauri-apps/plugin-dialog": "^2.8.2",
     "@tauri-apps/plugin-opener": "^2.7.1",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.13.3",
     "@uiw/codemirror-theme-dracula": "^4.25.12",
     "@uiw/codemirror-theme-github": "^4.25.12",
     "@uiw/codemirror-theme-nord": "^4.25.12",

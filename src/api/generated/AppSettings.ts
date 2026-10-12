@@ -21,4 +21,8 @@ helmPath: string | null,
  * Colour scheme of the YAML editors: `auto` (follows the app theme) or a scheme id. Owned by the frontend,
  * which treats an unknown value as `auto`; kept as text so a value from another version never damages the file.
  */
-editorTheme: string, };
+editorTheme: string, 
+/**
+ * Look for a new Sextant release when the application starts (the "Check for updates" button works anyway).
+ */
+checkForUpdates: boolean, };

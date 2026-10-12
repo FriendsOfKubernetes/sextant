@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Sextant",
   "mainBinaryName": "sextant",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "dev.sextant.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -30,6 +30,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "category": "DeveloperTool",
     "shortDescription": "Desktop Kubernetes client",
     "longDescription": "Sextant is a desktop client for managing Kubernetes clusters: resources, logs, shells, port forwarding, metrics and Helm.",
@@ -45,6 +46,17 @@
     "linux": {
       "deb": {
         "section": "devel"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZFNzk1ODIwNDk1NjNFMzkKUldRNVBsWkpJRmg1YmxxTzhTa2NmcE9nSmFuZ3EwZC9iZ3JXdmNRbkIzQlRqb0R1U2dWdkNpU3oK",
+      "endpoints": [
+        "https://github.com/FriendsOfKubernetes/sextant/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

@@ -61,6 +61,39 @@ Optional tools used by some features: `kubectl` (in the local terminal) and [`he
 (installing and changing Helm releases; viewing releases works without it). If `helm` is not in `PATH`, choose the
 binary in **Settings** (the gear at the bottom of the cluster rail).
 
+### Updates
+
+Sextant 0.2.0 and later update themselves. When Sextant starts it looks at the
+[latest release](https://github.com/FriendsOfKubernetes/sextant/releases/latest) (turn this off in
+**Settings → Updates**, where **Check for updates** also checks on demand and the running version is shown). A newer
+release is offered with its notes; **Install and restart** downloads it, verifies its signature against the key
+built into Sextant and restarts into the new version.
+
+| Installed from | How it updates |
+|---|---|
+| AppImage (Linux) | in place, by Sextant |
+| `.dmg` (macOS) | in place, by Sextant |
+| `.msi` (Windows) | by Sextant: the installer runs and starts the new version |
+| `.deb` (Linux) | with the package manager: download the new `.deb` and `sudo apt install ./Sextant_<version>_amd64.deb` (Sextant shows the new version and links the release page) |
+
+Updates come only from releases signed with the project's updater key. A copy that is not an installed package
+(`npm run tauri dev`, a bare binary) does not check at start and cannot install an update, but **Check for updates**
+still shows whether there is one; a build whose `src-tauri/tauri.conf.json` has no `plugins.updater.pubkey` does
+not check at all and says so in Settings.
+
+## Roadmap
+
+The plan lives in [GitHub Issues](https://github.com/FriendsOfKubernetes/sextant/issues), one issue per bug or
+improvement:
+
+- [**v0.2.0**](https://github.com/FriendsOfKubernetes/sextant/milestone/1) — fixes and improvements after 0.1.0:
+  Secret values on request only, a terminal that targets the right cluster, no lost stream output, timeouts and
+  retries, settings that are never lost, partial permissions, drain like `kubectl drain`, faster first load, YAML
+  color schemes, in-app updates.
+- [**Later**](https://github.com/FriendsOfKubernetes/sextant/milestone/2) — larger pieces for separate releases:
+  a mobile version, cloud cluster sign-in, a shell on a node, code-signed installers, live testing on macOS and
+  Windows.
+
 ## Building from source
 
 Requirements:
@@ -136,9 +169,15 @@ screenshot in `target/e2e/`. `SEXTANT_E2E_SKIP_BUILD=1` reuses the last build.
 
 ### Releases
 
-Pushing a tag `v*` (for example `v0.1.0`) runs [`release.yml`](.github/workflows/release.yml): installers for the
-three systems are built and published as a GitHub Release. Every push and pull request to `main` runs
-[`ci.yml`](.github/workflows/ci.yml) (`npm run check` on Linux, macOS and Windows).
+The version lives in `Cargo.toml` (`[workspace.package]`), `src-tauri/tauri.conf.json` and `package.json` (plus
+both lock files); `npm run check` fails when they differ (`node scripts/check-version.mjs`). Pushing a tag `v*`
+equal to that version (for example `v0.2.0`) runs [`release.yml`](.github/workflows/release.yml): it refuses a tag
+that does not match, builds the installers for the three systems, signs the update bundles and publishes them with
+`latest.json` for the in-app updater as a GitHub Release. Signing needs the repository secrets
+`TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (the private half of the key whose public half
+is `plugins.updater.pubkey`); a local `npm run tauri build` without them fails at signing — build with
+`npm run tauri -- build --no-bundle`, or pass `--config '{"bundle":{"createUpdaterArtifacts":false}}'`. Every push
+and pull request to `main` runs [`ci.yml`](.github/workflows/ci.yml) (`npm run check` on Linux, macOS and Windows).
 
 ## License
 

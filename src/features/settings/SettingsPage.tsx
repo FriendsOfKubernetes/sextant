@@ -1,5 +1,5 @@
-// The Settings page: appearance (theme, language), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen) and the kubeconfig
-// sources. Everything is saved right away through `updateSettings`; the window applies theme and language itself.
+// The Settings page: appearance (theme, language), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
+// sources, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, useSettings, type ApiError, type AppSettings, type KubeconfigSource, type Theme } from "../../api";
@@ -11,6 +11,7 @@ import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
 import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
+import { UpdatesPanel } from "../updates";
 import { languageName } from "./languages";
 import "./settings.css";
 
@@ -52,6 +53,7 @@ export function SettingsContent() {
       <EditorSection settings={settings} save={save} />
       <HelmSection settings={settings} save={save} />
       <KubeconfigSection />
+      <UpdatesSection save={save} />
     </div>
   );
 }
@@ -304,6 +306,15 @@ function KubeconfigSection() {
         <p>{t(removing?.kind === "pasted" ? "clusters:sources.confirmPasted" : "clusters:sources.confirmFile")}</p>
         <p className="settings__source-path">{removing?.path}</p>
       </ConfirmDialog>
+    </Section>
+  );
+}
+
+function UpdatesSection({ save }: { save: Save }) {
+  const { t } = useTranslation();
+  return (
+    <Section title={t("updates:title")}>
+      <UpdatesPanel save={save} />
     </Section>
   );
 }

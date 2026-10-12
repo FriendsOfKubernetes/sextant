@@ -1,7 +1,16 @@
-# A tag `v*` (e.g. v0.1.0) builds the installers on Linux (.deb, .AppImage), macOS (universal .dmg) and Windows
+# A tag `v*` (e.g. v0.2.0) builds the installers on Linux (.deb, .AppImage), macOS (universal .dmg) and Windows
 # (.msi) and publishes them as a GitHub Release with generated notes. Installers are not code-signed.
 #
-#   git tag v0.1.0 && git push origin v0.1.0
+#   git tag v0.2.0 && git push origin v0.2.0
+#
+# The tag must equal the version in the manifests (`node scripts/check-version.mjs --tag <tag>`), or nothing is built.
+#
+# In-app updates: `bundle.createUpdaterArtifacts` makes the build sign the AppImage, the macOS .app.tar.gz and the
+# .msi with the updater key (secrets TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD; the public
+# half is `plugins.updater.pubkey` in src-tauri/tauri.conf.json). tauri-action uploads the .sig files and merges
+# every platform into the release asset `latest.json`; the publish job checks that all platforms are there, puts
+# the release notes into it and only then publishes. Installed apps read
+# https://github.com/<repo>/releases/latest/download/latest.json, so an update reaches them once it is published.
 #
 # To rebuild the release of an already pushed tag without moving it: Actions -> Release -> Run workflow, input `tag`.
 name: Release
@@ -33,6 +42,13 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: refs/tags/${{ inputs.tag || github.ref_name }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Check that the tag equals the version in the manifests
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: node scripts/check-version.mjs --tag "$TAG"
       - name: Find or create the draft release and output its id
         id: create
         env:
@@ -63,7 +79,7 @@ jobs:
 
           if [ -z "$id" ]; then
             echo "No release for $TAG yet, creating a draft"
-            notes="Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY#installing) for how to open them on macOS and Windows."
+            notes="Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY#installing) for how to open them on macOS and Windows. Sextant 0.2.0 and later installed from the AppImage, .dmg or .msi update themselves (Settings → Updates); a .deb is updated with the package manager."
             # The id comes straight from the creation response, not from the (possibly lagging) list.
             id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
               -f tag_name="$TAG" -f name="Sextant $TAG" -f body="$notes" \
@@ -127,15 +143,107 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the updater artifacts (bundle.createUpdaterArtifacts); without the key the build fails.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.create-release.outputs.release-id }}
+          # Only names the tag in the download URLs of latest.json (a draft's asset URLs are "untagged-…").
+          tagName: ${{ inputs.tag || github.ref_name }}
           args: ${{ matrix.args }}
+          # Upload the .sig files and add this platform to the release asset latest.json (read by the updater).
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: false
+          retryAttempts: 2
 
   publish:
     name: Publish the release
     needs: [create-release, build]
     runs-on: ubuntu-latest
     steps:
+      # The build jobs merge latest.json one after another and may overwrite each other when they finish together;
+      # an update manifest without a platform would leave that platform without updates, so check before publishing.
+      # A rebuild of the tag re-uploads the bundles and their .sig files, but tauri-action keeps the darwin entries
+      # of the old latest.json ("don't overwrite native builds"), so every signature is taken again from the .sig
+      # asset of the file its url names. tauri-action writes no notes into it: take them from the release body.
+      - name: Check latest.json, refresh its signatures and put the release notes into it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release-id }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          api="repos/$GITHUB_REPOSITORY/releases"
+
+          asset_id=$(gh api "$api/$RELEASE_ID/assets?per_page=100" --jq '.[] | select(.name == "latest.json") | .id')
+          if [ -z "$asset_id" ]; then
+            echo "::error::The release has no latest.json: the updater artifacts were not signed or uploaded"
+            exit 1
+          fi
+          gh api -H "Accept: application/octet-stream" "$api/assets/$asset_id" > latest.json
+
+          missing=$(jq -r '[ "linux-x86_64", "darwin-x86_64", "darwin-aarch64", "windows-x86_64" ][] as $p
+            | select((.platforms[$p].url // "") == "" or (.platforms[$p].signature // "") == "") | $p' latest.json)
+          if [ -n "$missing" ]; then
+            echo "::error::latest.json lacks platforms: $(echo "$missing" | tr '\n' ' ')- re-run the failed build jobs"
+            cat latest.json
+            exit 1
+          fi
+
+          stray=$(jq -r --arg dir "/releases/download/$TAG/" \
+            '.platforms | to_entries[] | select(.value.url | contains($dir) | not) | "\(.key): \(.value.url)"' latest.json)
+          if [ -n "$stray" ]; then
+            echo "::error::latest.json links files outside the release $TAG:"
+            echo "$stray"
+            exit 1
+          fi
+
+          assets=$(gh api "$api/$RELEASE_ID/assets?per_page=100")
+          find_asset() { jq -r --arg n "$1" '.[] | select(.name == $n) | .id' <<<"$assets"; }
+          mapfile -t platforms < <(jq -r '.platforms | keys[]' latest.json)
+          for p in "${platforms[@]}"; do
+            url=$(jq -r --arg p "$p" '.platforms[$p].url' latest.json)
+            file=${url##*/}
+            case "$p" in
+              *-deb) want=.deb ;;
+              *-rpm) want=.rpm ;;
+              *-nsis) want=-setup.exe ;;
+              linux-*) want=.AppImage ;;
+              darwin-*) want=.app.tar.gz ;;
+              windows-*) want=.msi ;;
+              *) want="" ;;
+            esac
+            if [ -z "$want" ] || [[ "$file" != *"$want" ]]; then
+              echo "::error::latest.json: $p links $file, expected a *${want:-<known bundle>} file"
+              exit 1
+            fi
+            if [ -z "$(find_asset "$file")" ]; then
+              echo "::error::latest.json: $p links $file, which is not an asset of the release"
+              exit 1
+            fi
+            sig_id=$(find_asset "$file.sig")
+            if [ -z "$sig_id" ]; then
+              echo "::error::latest.json: $p: the release has no $file.sig"
+              exit 1
+            fi
+            gh api -H "Accept: application/octet-stream" "$api/assets/$sig_id" > signature.txt
+            if [ "$(jq -r --arg p "$p" '.platforms[$p].signature' latest.json)" != "$(cat signature.txt)" ]; then
+              echo "::notice::latest.json: $p had a stale signature, replaced with $file.sig of this release"
+            fi
+            jq --arg p "$p" --rawfile sig signature.txt '.platforms[$p].signature = $sig' latest.json > latest.tmp.json
+            mv latest.tmp.json latest.json
+          done
+
+          gh api "$api/$RELEASE_ID" --jq '.body // ""' > notes.md
+          jq --rawfile notes notes.md '.notes = $notes' latest.json > latest.new.json
+          gh api -X DELETE "$api/assets/$asset_id" --silent
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @latest.new.json \
+            "https://uploads.github.com/$api/$RELEASE_ID/assets?name=latest.json" > /dev/null
+          echo "latest.json: version $(jq -r .version latest.new.json), platforms $(jq -r '.platforms | keys | join(", ")' latest.new.json)"
+
       - name: Publish (no longer a draft)
         env:
           GH_TOKEN: ${{ github.token }}

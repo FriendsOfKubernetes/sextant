@@ -4,6 +4,7 @@ import type { AppSettings } from "./generated/AppSettings";
 import { defaultAppSettings, resetSettingsCache } from "./settings";
 import { resetStreamsState } from "./stream";
 import { setTransport, type OpenFileOptions, type SaveFileOptions, type Transport } from "./transport";
+import type { AppInfo, UpdateInfo } from "./updater";
 
 export type MockHandler = (args: Record<string, unknown>) => unknown;
 
@@ -19,6 +20,10 @@ export interface MockBackendOptions {
   openFile?: (options: OpenFileOptions) => string | null;
   /** Result of the "save file" dialog. */
   saveFile?: (options: SaveFileOptions) => string | null;
+  /** Whether the build has an update signing key (default `true`). */
+  updaterConfigured?: boolean;
+  /** Version and bundle kind of the app (default `0.2.0`, no bundle: not installed from a release package). */
+  app?: Partial<AppInfo>;
 }
 
 export interface MockBackend {
@@ -42,6 +47,16 @@ export interface MockBackend {
 }
 
 const NOT_IMPLEMENTED = { code: "other", message: "not implemented" } as const;
+
+/** Mock command names of the Tauri plugins behind `api.updates` (the commands the plugins invoke). */
+export const UPDATER_COMMANDS = {
+  /** Handler returns an `UpdateInfo` or `null`; may throw (network error). Args: `{}`. */
+  check: "plugin:updater|check",
+  /** Handler installs the update; may throw. Args: `{ version }`. */
+  install: "plugin:updater|download_and_install",
+  /** Restart of the application; resolves by default. Args: `{}`. */
+  relaunch: "plugin:process|restart",
+} as const;
 
 /**
  * Installs a mock backend. Commands without a handler reject like the backend stubs do
@@ -71,6 +86,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
     window: { ...defaults.window, ...options.settings?.window },
   };
 
+  table.set(UPDATER_COMMANDS.relaunch, () => undefined);
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);
@@ -106,6 +122,21 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
     },
     async openUrl(url) {
       openedUrls.push(url);
+    },
+    updaterConfigured: () => options.updaterConfigured ?? true,
+    appInfo: async () => ({ version: "0.2.0", bundleKind: null, ...options.app }),
+    async checkUpdate() {
+      const info = await transport.invoke<UpdateInfo | null>(UPDATER_COMMANDS.check, {});
+      if (!info) return null;
+      return {
+        ...info,
+        install: async () => {
+          await transport.invoke<void>(UPDATER_COMMANDS.install, { version: info.version });
+        },
+      };
+    },
+    async relaunch() {
+      await transport.invoke<void>(UPDATER_COMMANDS.relaunch, {});
     },
   };
 

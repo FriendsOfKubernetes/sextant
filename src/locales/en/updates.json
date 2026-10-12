@@ -1,0 +1,32 @@
+{
+  "title": "Updates",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (version unknown)",
+  "auto": "Check for updates when Sextant starts",
+  "check": "Check for updates",
+  "checking": "Checking for updates…",
+  "upToDate": "You have the latest version.",
+  "available": "Sextant {{version}} is available (you have {{current}}).",
+  "notesLabel": "Release notes",
+  "install": "Install and restart",
+  "installing": "Downloading and installing…",
+  "installingProgress": "Downloading and installing… {{percent}}%",
+  "restarting": "Restarting…",
+  "later": "Later",
+  "dialogTitle": "Update available",
+  "openReleasePage": "Open the release page",
+  "notConfigured": "Updates are turned off in this build: it has no update signing key (plugins.updater.pubkey in src-tauri/tauri.conf.json). Download new versions from the release page.",
+  "manual": {
+    "deb": "Sextant was installed from a .deb package, so it does not replace itself. Download the new .deb from the release page and install it with your package manager, for example: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant was installed from an .rpm package, so it does not replace itself. Download the new package from the release page and install it with your package manager.",
+    "other": "This copy of Sextant was not installed from a release package (AppImage, .dmg or .msi), so it cannot update itself. Download the new version from the release page."
+  },
+  "error": {
+    "network": "Could not reach GitHub to check for updates. Check your internet connection or proxy and try again.",
+    "noRelease": "The latest release on GitHub has no update for this system yet. Try again later.",
+    "signature": "The downloaded update is not signed with the Sextant release key, so it was not installed.",
+    "otherCheck": "Could not check for updates.",
+    "otherInstall": "Could not install the update.",
+    "networkInstall": "Could not download the update. Check your internet connection or proxy and try again."
+  }
+}

@@ -83,6 +83,8 @@ pub struct AppSettings {
     /// Colour scheme of the YAML editors: `auto` (follows the app theme) or a scheme id. Owned by the frontend,
     /// which treats an unknown value as `auto`; kept as text so a value from another version never damages the file.
     pub editor_theme: String,
+    /// Look for a new Sextant release when the application starts (the "Check for updates" button works anyway).
+    pub check_for_updates: bool,
 }
 
 impl Default for AppSettings {
@@ -95,6 +97,7 @@ impl Default for AppSettings {
             window: WindowLayout::default(),
             helm_path: None,
             editor_theme: "auto".to_owned(),
+            check_for_updates: true,
         }
     }
 }
@@ -554,6 +557,7 @@ mod tests {
         assert_eq!(s.window.dock_height, 300);
         assert_eq!(s.language, "en");
         assert_eq!(s.editor_theme, "auto");
+        assert!(s.check_for_updates);
     }
 
     #[test]

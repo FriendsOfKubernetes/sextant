@@ -112,11 +112,52 @@ fn spawn_event_forwarders<R: Runtime>(app: &tauri::AppHandle<R>) {
     });
 }
 
+/// Whether `plugins.updater` of the configuration has a public key and an endpoint. Without them the updater
+/// plugin is not registered (it would fail at start); the frontend then shows updates as turned off.
+pub fn updater_configured(config: &tauri::Config) -> bool {
+    let Some(updater) = config.plugins.0.get("updater") else {
+        return false;
+    };
+    let pubkey = updater.get("pubkey").and_then(|v| v.as_str()).unwrap_or("");
+    let has_endpoint = updater
+        .get("endpoints")
+        .and_then(|v| v.as_array())
+        .is_some_and(|list| {
+            list.iter()
+                .any(|e| e.as_str().is_some_and(|s| !s.trim().is_empty()))
+        });
+    !pubkey.trim().is_empty() && has_endpoint
+}
+
+/// In-app updates (desktop only): the updater checks and installs signed releases, `process` restarts the app.
+#[cfg(desktop)]
+fn with_updates<R: Runtime>(
+    builder: tauri::Builder<R>,
+    config: &tauri::Config,
+) -> tauri::Builder<R> {
+    let builder = builder.plugin(tauri_plugin_process::init());
+    if updater_configured(config) {
+        builder.plugin(tauri_plugin_updater::Builder::new().build())
+    } else {
+        builder
+    }
+}
+
+#[cfg(not(desktop))]
+fn with_updates<R: Runtime>(
+    builder: tauri::Builder<R>,
+    _config: &tauri::Config,
+) -> tauri::Builder<R> {
+    builder
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    with_commands(tauri::Builder::default())
+    let context = tauri::generate_context!();
+    let builder = with_commands(tauri::Builder::default())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_opener::init());
+    with_updates(builder, context.config())
         .setup(|app| {
             // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.
             sextant_core::kubeconfig::remove_stale_temp_kubeconfigs(&std::env::temp_dir());
@@ -128,7 +169,45 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(window::on_window_event)
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building Sextant")
         .run(|app, event| window::on_run_event(app, &event));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::updater_configured;
+
+    fn config(plugins: serde_json::Value) -> tauri::Config {
+        let mut config: tauri::Config =
+            serde_json::from_value(serde_json::json!({ "identifier": "dev.sextant.test" }))
+                .unwrap();
+        config.plugins = serde_json::from_value(plugins).unwrap();
+        config
+    }
+
+    #[test]
+    fn updater_needs_a_public_key_and_an_endpoint() {
+        let endpoint = "https://example.invalid/latest.json";
+        assert!(updater_configured(&config(
+            serde_json::json!({ "updater": { "pubkey": "key", "endpoints": [endpoint] } })
+        )));
+        assert!(!updater_configured(&config(serde_json::json!({}))));
+        assert!(!updater_configured(&config(
+            serde_json::json!({ "updater": { "pubkey": " ", "endpoints": [endpoint] } })
+        )));
+        assert!(!updater_configured(&config(
+            serde_json::json!({ "updater": { "endpoints": [endpoint] } })
+        )));
+        assert!(!updater_configured(&config(
+            serde_json::json!({ "updater": { "pubkey": "key", "endpoints": [] } })
+        )));
+    }
+
+    #[test]
+    fn the_shipped_configuration_has_the_updater() {
+        let config: tauri::Config =
+            serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        assert!(updater_configured(&config));
+    }
 }

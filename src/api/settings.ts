@@ -23,6 +23,7 @@ export function defaultAppSettings(): AppSettings {
     },
     helmPath: null,
     editorTheme: "auto",
+    checkForUpdates: true,
   };
 }
 
