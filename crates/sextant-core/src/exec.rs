@@ -1,4 +1,4 @@
-//! Interactive shell in a container (tries `bash`, then `sh`).
+//! Interactive shell in a container (tries `bash`, then `sh`), and one command run without a terminal.
 //!
 //! [`exec_shell`] opens a TTY exec session over the API server's websocket and hands back channels: keystrokes go
 //! into `input`, `(cols, rows)` into `resize`, and the output arrives on `output` as [`TermEvent`]s, ending with
@@ -14,6 +14,7 @@ use k8s_openapi::api::core::v1::Pod;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::Status;
 use kube::Api;
 use kube::api::{AttachParams, AttachedProcess, TerminalSize};
+use serde::Serialize;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::mpsc;
 
@@ -36,6 +37,22 @@ pub struct ExecSession {
     pub resize: mpsc::Sender<(u16, u16)>,
     pub output: mpsc::Receiver<TermEvent>,
 }
+
+/// What [`run_command`] gives back. Each stream holds at most `max_output` bytes (decoded lossily as UTF-8);
+/// `truncated` when either had more. `exit_code` is `None` when the command was stopped by the timeout
+/// (`timed_out`) or the server did not report it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommandOutput {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: Option<i32>,
+    pub truncated: bool,
+    pub timed_out: bool,
+}
+
+/// The longest a [`run_command`] may run.
+pub const MAX_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// Shells tried in order: the first one the container has wins.
 pub const SHELLS: [&str; 2] = ["bash", "sh"];
@@ -76,6 +93,160 @@ pub async fn exec_shell(
     ))
 }
 
+/// Runs `command` (program and arguments, no shell) in `container` of `pod` (when `None`, the container `kubectl`
+/// would pick: see `default_container`)
+/// without a terminal and without stdin, and collects its output. After `timeout` (at most
+/// [`MAX_COMMAND_TIMEOUT`]) the session is closed and what was collected so far comes back with `timed_out`; the
+/// process may go on running in the container. An empty command is `invalid`; a program the container does not have
+/// is `notFound`; a missing pod or container is the same error as for a shell.
+pub async fn run_command(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    pod: &ObjectRef,
+    container: Option<&str>,
+    command: &[String],
+    timeout: Duration,
+    max_output: usize,
+) -> CoreResult<CommandOutput> {
+    let Some(program) = command.first().filter(|p| !p.is_empty()) else {
+        return Err(CoreError::new(ErrorCode::Invalid, "the command is empty"));
+    };
+    let client = mgr.client(cluster)?;
+    let api: Api<Pod> = Api::namespaced(client, pod.required_namespace()?);
+    let container = match container.filter(|c| !c.is_empty()) {
+        Some(name) => name.to_owned(),
+        None => default_container(&api, &pod.name).await?,
+    };
+    let params = AttachParams::default()
+        .container(container.as_str())
+        .stdin(false)
+        .stdout(true)
+        .stderr(true)
+        .max_stdout_buf_size(READ_BUF)
+        .max_stderr_buf_size(READ_BUF);
+    let mut attached = api
+        .exec(&pod.name, command.iter().map(String::as_str), &params)
+        .await
+        .map_err(|e| exec_error(e, pod, &container, "run a command"))?;
+    let (Some(stdout), Some(stderr), Some(status)) =
+        (attached.stdout(), attached.stderr(), attached.take_status())
+    else {
+        return Err(CoreError::other("exec session without output streams"));
+    };
+
+    let mut out = Collected::new(max_output);
+    let mut err = Collected::new(max_output);
+    let deadline = tokio::time::Instant::now() + timeout.min(MAX_COMMAND_TIMEOUT);
+    let finished = tokio::time::timeout_at(deadline, async {
+        let (_, _, status) = tokio::join!(out.drain(stdout), err.drain(stderr), status);
+        status
+    })
+    .await;
+    let truncated = out.truncated || err.truncated;
+    let (stdout, stderr) = (out.text(), err.text());
+    let status = match finished {
+        Ok(status) => status,
+        Err(_) => {
+            attached.abort();
+            return Ok(CommandOutput {
+                stdout,
+                stderr,
+                exit_code: None,
+                truncated,
+                timed_out: true,
+            });
+        }
+    };
+    let exit_code = match status {
+        None => None,
+        Some(status) => match exit_code(&status) {
+            Some(code) => Some(code),
+            None => {
+                let code = if is_missing_binary(Some(&status)) {
+                    ErrorCode::NotFound
+                } else {
+                    ErrorCode::Other
+                };
+                return Err(CoreError::new(
+                    code,
+                    format!(
+                        "cannot run {program} in pod {}/{}: {}",
+                        pod.namespace.as_deref().unwrap_or_default(),
+                        pod.name,
+                        status_message(Some(&status))
+                    ),
+                ));
+            }
+        },
+    };
+    Ok(CommandOutput {
+        stdout,
+        stderr,
+        exit_code,
+        truncated,
+        timed_out: false,
+    })
+}
+
+/// Annotation naming the container `kubectl` picks when none is given.
+const DEFAULT_CONTAINER_ANNOTATION: &str = "kubectl.kubernetes.io/default-container";
+
+/// The container used when none is named, as `kubectl` picks it: the one the pod's
+/// `kubectl.kubernetes.io/default-container` annotation names, else the first one. A missing pod is `notFound`.
+pub(crate) async fn default_container(api: &Api<Pod>, pod: &str) -> CoreResult<String> {
+    let pod = api.get(pod).await?;
+    let containers: Vec<String> = pod
+        .spec
+        .map(|spec| spec.containers.into_iter().map(|c| c.name).collect())
+        .unwrap_or_default();
+    let annotated = pod
+        .metadata
+        .annotations
+        .and_then(|mut a| a.remove(DEFAULT_CONTAINER_ANNOTATION))
+        .filter(|name| containers.contains(name));
+    annotated
+        .or_else(|| containers.into_iter().next())
+        .ok_or_else(|| CoreError::new(ErrorCode::NotFound, "the pod has no containers"))
+}
+
+/// One output stream of [`run_command`]: the first `limit` bytes are kept, the rest is read and dropped so the
+/// command is never blocked on a full pipe.
+struct Collected {
+    bytes: Vec<u8>,
+    limit: usize,
+    truncated: bool,
+}
+
+impl Collected {
+    fn new(limit: usize) -> Self {
+        Self {
+            bytes: Vec::new(),
+            limit,
+            truncated: false,
+        }
+    }
+
+    async fn drain(&mut self, mut reader: impl AsyncRead + Unpin) {
+        let mut buf = vec![0u8; READ_BUF];
+        loop {
+            match reader.read(&mut buf).await {
+                Ok(n) if n > 0 => {
+                    let room = self.limit.saturating_sub(self.bytes.len());
+                    if n > room {
+                        self.truncated = true;
+                    }
+                    self.bytes.extend_from_slice(&buf[..n.min(room)]);
+                }
+                _ => return,
+            }
+        }
+    }
+
+    fn text(&self) -> String {
+        String::from_utf8_lossy(&self.bytes).into_owned()
+    }
+}
+
 type StatusFuture = Pin<Box<dyn Future<Output = Option<Status>> + Send>>;
 type Reader = Box<dyn AsyncRead + Send + Unpin>;
 type Writer = Box<dyn AsyncWrite + Send + Unpin>;
@@ -112,7 +283,7 @@ async fn start(
     let mut attached = api
         .exec(&pod.name, [shell], &params)
         .await
-        .map_err(|e| exec_error(e, pod, container))?;
+        .map_err(|e| exec_error(e, pod, container, "open a shell"))?;
     let (Some(stdin), Some(stdout), Some(status)) =
         (attached.stdin(), attached.stdout(), attached.take_status())
     else {
@@ -168,7 +339,8 @@ async fn start(
 
 /// The API server refuses the websocket upgrade with a bare HTTP status (its explanation is lost), so the message
 /// is rebuilt from what was asked for.
-fn exec_error(err: kube::Error, pod: &ObjectRef, container: &str) -> CoreError {
+/// `what` is the action, as in "not allowed to open a shell in pod …".
+fn exec_error(err: kube::Error, pod: &ObjectRef, container: &str, what: &str) -> CoreError {
     use kube::client::UpgradeConnectionError;
     let kube::Error::UpgradeConnection(UpgradeConnectionError::ProtocolSwitch(status)) = &err
     else {
@@ -181,11 +353,11 @@ fn exec_error(err: kube::Error, pod: &ObjectRef, container: &str) -> CoreError {
     );
     let message = match status.as_u16() {
         404 => format!("pod {target} not found"),
-        403 => format!("not allowed to open a shell in pod {target}"),
+        403 => format!("not allowed to {what} in pod {target}"),
         400 => format!(
-            "cannot open a shell in container {container} of pod {target}: the container does not exist or is not running"
+            "cannot {what} in container {container} of pod {target}: the container does not exist or is not running"
         ),
-        _ => format!("cannot open a shell in container {container} of pod {target}: {status}"),
+        _ => format!("cannot {what} in container {container} of pod {target}: {status}"),
     };
     CoreError::new(code_for_http_status(status.as_u16()), message)
 }

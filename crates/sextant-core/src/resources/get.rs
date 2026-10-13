@@ -226,6 +226,13 @@ const BUILT_IN_KINDS: &[(&str, &str, &str, bool)] = &[
     ),
 ];
 
+/// Whether the kind is one of `BUILT_IN_KINDS` (answered without discovery).
+pub(crate) fn is_built_in(group: &str, kind: &str) -> bool {
+    BUILT_IN_KINDS
+        .iter()
+        .any(|(g, k, _, _)| *g == group && *k == kind)
+}
+
 /// Finds the API of `kind`: a built-in kind directly, any other through the cluster's discovery (cached by
 /// `ClusterManager::kinds`, shared by callers that ask at the same time). The version asked for is used when
 /// discovery lists the kind in it; otherwise the version discovery lists (the one the cluster prefers among those

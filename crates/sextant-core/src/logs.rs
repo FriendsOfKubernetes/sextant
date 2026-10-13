@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use futures::Stream;
-use futures::io::{AsyncBufRead, AsyncBufReadExt};
+use futures::io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt};
 use k8s_openapi::api::core::v1::Pod;
 use kube::Api;
 use kube::api::LogParams;
@@ -41,6 +41,8 @@ pub enum LogUpdate {
 pub const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 /// A batch that grows to this many lines is sent without waiting for the interval.
 const MAX_BATCH_LINES: usize = 2_000;
+/// The most lines [`tail`] reads.
+pub const MAX_TAIL_LINES: u32 = 2_000;
 
 /// Streams the logs of one container of a pod as batches of lines (at most one batch per [`BATCH_INTERVAL`]).
 ///
@@ -68,6 +70,41 @@ pub async fn stream_logs(
         .log_stream(&pod.name, &params)
         .await?;
     Ok(Box::pin(batch_lines(Box::pin(reader), BATCH_INTERVAL)))
+}
+
+/// The last `lines` lines (at most [`MAX_TAIL_LINES`]) of the log of `container` of `pod` (when `None`, the
+/// container `kubectl` would pick: the `kubectl.kubernetes.io/default-container` annotation, else the first one), of its previous instance when `previous`. One string, lines separated by `\n`;
+/// bytes that are not UTF-8 are decoded lossily. No such pod, container or previous instance is the server's error.
+pub async fn tail(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    pod: &ObjectRef,
+    container: Option<&str>,
+    lines: u32,
+    previous: bool,
+) -> CoreResult<String> {
+    let client = mgr.client(cluster)?;
+    let namespace = pod.required_namespace()?;
+    let api = Api::<Pod>::namespaced(client, namespace);
+    let container = match container.filter(|c| !c.is_empty()) {
+        Some(name) => name.to_owned(),
+        None => crate::exec::default_container(&api, &pod.name).await?,
+    };
+    let params = LogParams {
+        container: Some(container),
+        previous,
+        tail_lines: Some(i64::from(lines.min(MAX_TAIL_LINES))),
+        ..LogParams::default()
+    };
+    let mut reader = api.log_stream(&pod.name, &params).await?;
+    let mut bytes = Vec::new();
+    reader.read_to_end(&mut bytes).await.map_err(|err| {
+        CoreError::new(
+            ErrorCode::Unreachable,
+            format!("the log stream broke: {err}"),
+        )
+    })?;
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 struct Batcher<R> {
@@ -247,6 +284,77 @@ mod tests {
             other => panic!("expected an error, got {other:?}"),
         }
         assert_eq!(updates.next().await, None);
+    }
+
+    mod tail {
+        use crate::error::ErrorCode;
+        use crate::fake_api::{FakeApi, Reply, Request, connected_to};
+        use crate::resources::{KindRef, ObjectRef};
+
+        fn pod(namespace: Option<&str>) -> ObjectRef {
+            ObjectRef {
+                kind: KindRef {
+                    group: String::new(),
+                    version: "v1".into(),
+                    kind: "Pod".into(),
+                },
+                namespace: namespace.map(str::to_owned),
+                name: "web".into(),
+            }
+        }
+
+        async fn server() -> FakeApi {
+            FakeApi::start(|req: &Request| match req.path.as_str() {
+                "/api" => Reply::json(
+                    200,
+                    r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+                ),
+                "/api/v1/namespaces/ns/pods/web/log" => Reply::json(200, "one\ntwo\n"),
+                _ => Reply::not_found(),
+            })
+            .await
+        }
+
+        #[tokio::test]
+        async fn tail_reads_the_last_lines_of_the_container_capped_at_the_maximum() {
+            let api = server().await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let text = super::super::tail(&mgr, &id, &pod(Some("ns")), Some("app"), 5_000, true)
+                .await
+                .unwrap();
+            assert_eq!(text, "one\ntwo\n");
+            let request = api
+                .requests()
+                .into_iter()
+                .find(|r| r.path.ends_with("/log"))
+                .expect("a log request");
+            assert!(
+                request.query.contains("tailLines=2000"),
+                "{}",
+                request.query
+            );
+            assert!(request.query.contains("previous=true"), "{}", request.query);
+            assert!(request.query.contains("container=app"), "{}", request.query);
+            assert!(!request.query.contains("follow=true"), "{}", request.query);
+        }
+
+        #[tokio::test]
+        async fn tail_of_a_missing_pod_is_not_found_and_without_a_namespace_invalid() {
+            let api = server().await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let mut other = pod(Some("ns"));
+            other.name = "gone".into();
+            let err = super::super::tail(&mgr, &id, &other, None, 10, false)
+                .await
+                .unwrap_err();
+            assert_eq!(err.code, ErrorCode::NotFound);
+            let err = super::super::tail(&mgr, &id, &pod(None), None, 10, false)
+                .await
+                .unwrap_err();
+            assert_eq!(err.code, ErrorCode::Invalid);
+        }
     }
 
     #[tokio::test]

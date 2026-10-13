@@ -1,8 +1,10 @@
 //! Resources of any kind (built-in and custom) handled as dynamic JSON objects.
 //!
-//! Types live here; `watch.rs` / `get.rs` (watch and read) and `mutate.rs` (changes) hold the functions.
+//! Types live here; `watch.rs` / `get.rs` (watch and read), `list.rs` (one-shot lists and events) and `mutate.rs`
+//! (changes) hold the functions.
 
 mod get;
+mod list;
 mod mutate;
 mod watch;
 
@@ -12,6 +14,7 @@ use ts_rs::TS;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub use get::{get, get_full, secret_value};
+pub use list::{ListPage, events, list, resolve};
 pub use mutate::{
     STEP_TIMEOUT, apply_yaml, cordon, delete, drain, drain_preview, patch, replace_yaml, restart,
     scale, suspend_cronjob, trigger_cronjob,
