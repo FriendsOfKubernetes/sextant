@@ -18,6 +18,7 @@ pub mod server;
 pub mod token;
 pub mod tools;
 pub mod tools_read;
+pub mod tools_write;
 
 #[cfg(test)]
 mod tests;

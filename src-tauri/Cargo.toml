@@ -29,6 +29,8 @@ tokio.workspace = true
 futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# The MCP tool `apply_yaml` reads the documents (as the core does) to check the agent's rights before applying.
+serde_yaml.workspace = true
 ts-rs.workspace = true
 portable-pty.workspace = true
 base64.workspace = true

@@ -80,9 +80,7 @@ pub fn all_tools() -> ToolSet {
     tools
 }
 
-/// Tools that change the cluster: task 04 replaces this stub with `use super::tools_write::register_write_tools;`
-/// (and declares `pub mod tools_write;` in `mcp/mod.rs`).
-fn register_write_tools(_tools: &mut ToolSet) {}
+use super::tools_write::register_write_tools;
 
 /// The MCP handler: one per session, all sharing the context and the tools.
 #[derive(Clone)]
