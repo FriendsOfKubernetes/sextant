@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type KubeObject, type MockBackend, type ResourceKind } from "../../api";
@@ -168,5 +170,46 @@ describe("icons", () => {
     const pages = getPages();
     expect(pages.length).toBeGreaterThanOrEqual(6);
     for (const page of pages) expect(page.icon && isIconName(page.icon), page.id).toBe(true);
+  });
+});
+
+// Read from disk: the test run does not process CSS (`css: false`).
+const sidebarCss = readFileSync(join(process.cwd(), "src/layout/sidebar/sidebar.css"), "utf8");
+const layoutCss = readFileSync(join(process.cwd(), "src/layout/layout.css"), "utf8");
+
+/** The declarations of the first rule whose selector list is exactly `selector`. */
+function rule(css: string, selector: string): Record<string, string> {
+  const blocks = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^}]*)\}/g)];
+  const block = blocks.find(([, sel]) => sel!.split(",").map((s) => s.trim()).join(",") === selector);
+  if (!block) throw new Error(`no rule for ${selector}`);
+  return Object.fromEntries(
+    block[2]!
+      .split(";")
+      .map((d) => d.trim())
+      .filter(Boolean)
+      .map((d) => [d.slice(0, d.indexOf(":")).trim(), d.slice(d.indexOf(":") + 1).trim()]),
+  );
+}
+
+describe("long labels", () => {
+  it("a custom resource group, a section and an entry keep the full name in a tooltip", async () => {
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(sections()).toContain("Custom Resources"));
+    for (const name of [/Flux/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
+    expect(await screen.findByRole("button", { name: "demo.sextant.dev" })).toHaveAttribute("title", "demo.sextant.dev");
+    expect(screen.getByRole("button", { name: "Flux" })).toHaveAttribute("title", "Flux");
+    expect(screen.getByRole("button", { name: "GitRepositories" })).toHaveAttribute("title", "GitRepositories");
+  });
+
+  it("the label is one line cut with an ellipsis, never broken inside a word; icon and chevron do not shrink", () => {
+    const label = rule(sidebarCss, ".sidebar__label");
+    expect(label["white-space"]).toBe("nowrap");
+    expect(label["text-overflow"]).toBe("ellipsis");
+    expect(label["overflow"]).toBe("hidden");
+    expect(label["min-width"]).toBe("0");
+    expect(label["overflow-wrap"]).toBeUndefined();
+    expect(sidebarCss + layoutCss).not.toMatch(/overflow-wrap:\s*anywhere/);
+    expect(rule(sidebarCss, ".sidebar__icon")["flex"]).toBe("none");
+    expect(rule(sidebarCss, ".sidebar__chevron")["flex"]).toBe("none");
   });
 });
