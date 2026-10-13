@@ -59,9 +59,22 @@ Flux и Argo CD — обычные CRD, поэтому всё идёт чере�
 - **`src/features/<name>/`** — вертикальные фичи. Каталог с `index.ts` подхватывается сам (`import.meta.glob` в `src/app/features.ts`); фича подключает себя регистрациями, не правя чужие файлы.
 - **`src/layout/`** — оболочка (`AppShell`: рейл кластеров, сайдбар, `MainView`, панель деталей, док). Не знает про конкретные виды ресурсов.
 - **`src/resources/`** — реестр видов (`ResourceDef`: колонки, детали, действия); для CRD колонки берутся из `printerColumns` самого CRD, прочитанного лениво (`crdColumns.ts`).
-- **`src/components/`** — общие компоненты без знания о Kubernetes-видах: `Checkbox` (нативных чекбоксов в приложении нет), `LoadingIndicator` (с подсказкой, если ждать долго), `Dialog`, `ConfirmDialog`, `ErrorState`, `EmptyState`, `Badge`, `Age`, `usePopup`; таблица ресурсов — `src/components/Table/` (`ResourceTable`, `LoadingTable`). Экспорт — `src/components/index.ts`; фичи импортируют отсюда, а не друг у друга.
+- **`src/components/`** — общие компоненты без знания о Kubernetes-видах: `Button` (`variant`, `size`, `icon`, `iconOnly` + обязательный `label`), `Checkbox` и `Radio` (нативных чекбоксов и радиокнопок в приложении нет), `Tabs` (`tablist` с клавишами ←/→/Home/End), `icons.tsx` (`Icon`, `IconName`, `IconSpec`, `renderIcon`), `LoadingIndicator` (с подсказкой, если ждать долго), `Dialog`, `ConfirmDialog`, `ErrorState`, `EmptyState`, `Badge`, `Age`, `usePopup`; таблица ресурсов — `src/components/Table/` (`ResourceTable`, `LoadingTable`). Экспорт — `src/components/index.ts`; фичи импортируют отсюда, а не друг у друга.
 - **`src/features/flux/`, `src/features/argocd/`, `src/features/argocd-diff/`** — GitOps (см. «GitOps: Flux и Argo CD»); работают только через api и реестры, ядру нужны лишь `resource_patch`, `cluster_kinds_refresh` и модуль `argocd`.
 - **`src/features/updates/`** — обновления приложения и его версия (см. «Обновления приложения»); к реестрам не подключается, его компоненты встраивают `src/features/settings`.
+
+## Кнопки, иконки, вкладки
+
+- Все иконки — набор `lucide-react`, подключённый только в `src/components/icons.tsx`: `IconName` — имена набора, `IconSpec` — имя или текстовый глиф (совместимость), `renderIcon(spec)` рисует SVG (`aria-hidden`, без текста и `<title>`) либо глиф. Фичи импортируют `Icon`/`renderIcon` из `src/components`, не `lucide-react` (ADR-0033). `icons.test.tsx` требует использования каждого имени.
+- Размеры — токены `:root` в `src/styles/global.css`: `--control-height` 32 px, `--control-height-compact` 28 px (кнопка «⋮» и кнопки строк таблиц, закрытие вкладки дока), `--control-font-size`, `--icon-size`; `.btn`, `.btn--compact`, `.btn--icon`, `.icon-btn` берут размеры оттуда (ADR-0034).
+- Кнопка с иконкой вместо подписи (`iconOnly`) держит прежнюю подпись в `aria-label` и `title`; по этим именам находят кнопки vitest и e2e.
+- Иконки в реестрах: `ActionDef.icon: IconSpec` (`src/features/actions/registry.ts`, рендер в `ActionBar` и `ActionMenu` таблицы), `DockActionDef.icon?: IconSpec`, `SidebarEntry.icon?: IconName` и `SECTION_ICONS` (иконка секции и одиночных разделов, ключ — `SidebarSection | "settings"`) с запасной `DEFAULT_ENTRY_ICON` — `src/resources/registry.ts`, `PageDef.icon?: IconName` — `src/layout/pages.ts`. Фича задаёт иконку полем `icon` в своей регистрации; сайдбар рисует её слева от подписи.
+- `Tabs` — состояние выбранной вкладки хранит вызывающий; вкладки контейнеров пода (`ContainerList`, `src/features/details/kinds/pods.tsx`) держат выбор по ключу объекта `clusterId|namespace|name`, чтобы обновление пода его не сбрасывало.
+- Requests и limits пода считает фронтенд: `podResourceAmounts` (`src/features/metrics/requests.ts`, CPU в милликорах, память в байтах) — видны и без metrics-server (ADR-0037).
+
+## Иконка кластера и полоса
+
+`ClusterSettings.icon` (Rust `ClusterIcon`: `Text { text }` или `Image { dataUrl }`) и `WindowLayout.railExpanded` лежат в `settings.json` и пишутся фронтендом (`settings_update`). Картинку вписывает в 96×96 PNG `readIconImage` (`src/features/clusters/iconImage.ts`, тип до 5 МБ); `iconOf` (`clusterSettings.ts`) отдаёт картинку, только если это `data:image/png;base64,`, иначе текст (`icon.text` или инициалы имени); общий рендер — `ClusterAvatar` для полосы и предпросмотра. `ClusterRail` (`src/layout/ClusterRail.tsx`) читает `railExpanded` из store (`setRailExpanded`) и в развёрнутом виде показывает имена; разворачивается узкая полоса кластеров, не меню разделов (ADR-0035, ADR-0036).
 
 ## Точки расширения (реестры)
 
