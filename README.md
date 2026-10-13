@@ -13,9 +13,11 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 ## Features
 
 - **Your kubeconfig** — every context is a cluster; several can be connected at once.
+- **Cloud clusters** — find your Amazon EKS, Google GKE and Azure AKS clusters through the `aws`, `gcloud` and `az`
+  you already use, and add them in a few clicks.
 - **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions.
-- **Logs, shells and port forwarding** — container logs with search, a shell in any container, a local terminal
-  already pointed at the cluster.
+- **Logs, shells and port forwarding** — container logs with search, a shell in any container, a shell on a node
+  (a temporary privileged pod, removed when you close it), a local terminal already pointed at the cluster.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
 - **MCP server for AI agents** — connect Claude Code, Claude Desktop or Cursor to your clusters, with permissions you
   set per cluster, confirmations in the window and an activity log.
@@ -32,8 +34,8 @@ so macOS and Windows warn on first start — see [Installation](https://github.c
 The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everything:
 
 - [Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation) — installers, unsigned builds, updates
-- [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, connecting, the window
-- [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells, port forwarding, Helm, Flux, Argo CD
+- [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, cloud clusters (EKS, GKE, AKS), connecting, the window
+- [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells (containers and nodes), port forwarding, Helm, Flux, Argo CD
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
 - [Settings](https://github.com/FriendsOfKubernetes/sextant/wiki/Settings) and [Troubleshooting](https://github.com/FriendsOfKubernetes/sextant/wiki/Troubleshooting)
 - [Building from source](https://github.com/FriendsOfKubernetes/sextant/wiki/Building-from-source) and [Development](https://github.com/FriendsOfKubernetes/sextant/wiki/Development)
