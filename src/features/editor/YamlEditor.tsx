@@ -1,9 +1,13 @@
 // CodeMirror 6 with YAML highlighting. Controlled: `value` replaces the text when it differs from what is shown
 // (load, reload, save result); every edit reports the whole text through `onChange`.
 import { yaml } from "@codemirror/lang-yaml";
+import { Annotation } from "@codemirror/state";
 import { basicSetup, EditorView } from "codemirror";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useEditorTheme } from "./editorTheme";
+
+/** Marks a change made by this component from `value`, so it is not reported back as an edit. */
+const fromProp = Annotation.define<boolean>();
 
 export interface YamlEditorProps {
   value: string;
@@ -22,7 +26,9 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  useEffect(() => {
+  // Layout effects: the shown text is in step with `value` in the same commit, so whatever the parent renders next to
+  // the editor ("Saved.") never appears before the text it refers to.
+  useLayoutEffect(() => {
     if (!host.current) return;
     const editor = new EditorView({
       parent: host.current,
@@ -34,7 +40,8 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ "aria-label": label }),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) onChangeRef.current(update.state.doc.toString());
+          const edited = update.docChanged && !update.transactions.some((tr) => tr.annotation(fromProp));
+          if (edited) onChangeRef.current(update.state.doc.toString());
         }),
       ],
     });
@@ -46,11 +53,11 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
     // Created once per mount; later `value` changes are applied by the effect below.
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const editor = view.current;
     if (!editor) return;
     const shown = editor.state.doc.toString();
-    if (shown !== value) editor.dispatch({ changes: { from: 0, to: shown.length, insert: value } });
+    if (shown !== value) editor.dispatch({ changes: { from: 0, to: shown.length, insert: value }, annotations: fromProp.of(true) });
   }, [value]);
 
   return <div className="yaml-editor" data-editor-theme={scheme} ref={host} />;

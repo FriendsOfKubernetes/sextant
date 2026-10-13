@@ -90,6 +90,9 @@ describe("Edit tab", () => {
     expect(backend.calls.find((c) => c.cmd === "resource_replace")?.args.clusterId).toBe("c1");
     // The editor now holds what the server stored (new resourceVersion), ready for the next save.
     expect(editorText()).toContain('resourceVersion: "2"');
+    // The editor taking the server's text is not an edit: the status stays "Saved." and does not turn into "Unsaved changes".
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText("Saved.")).toBeInTheDocument();
   });
 
   it("shows a YAML or validation error above the editor and keeps the text", async () => {
