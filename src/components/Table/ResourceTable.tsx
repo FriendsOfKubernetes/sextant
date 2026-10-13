@@ -18,7 +18,7 @@ import {
   type SortFn,
   type SortingState,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { uidOf, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
@@ -148,7 +148,8 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     [kind, namespaced, namespaces, props.labelSelector, props.fieldSelector],
   );
   const watch = useWatch(clusterId, spec);
-  const loadingSince = useWatchStart(JSON.stringify([clusterId, spec]), props.loadingSince);
+  const watchKey = JSON.stringify([clusterId, spec]);
+  const loadingSince = useWatchStart(watchKey, props.loadingSince);
 
   const data = useMemo(
     () => [...watch.items.values()].filter((obj) => matchesSearch(obj, search)),
@@ -206,16 +207,6 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const now = useNow(AGE_TICK_MS);
   const cellContext: CellContext = useMemo(() => ({ clusterId, kind, now }), [clusterId, kind, now]);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    getItemKey: (index) => rows[index]?.id ?? index,
-    overscan: 10,
-    scrollMargin: HEADER_HEIGHT,
-  });
-
   const [menu, setMenu] = useState<MenuState | null>(null);
   const openMenu = (obj: KubeObject, x: number, y: number) => {
     const uid = uidOf(obj);
@@ -252,10 +243,11 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     </header>
   );
 
-  let body: ReactNode;
+  // Instead of the rows: an error, the loading indicator or "nothing here" — inside the same scroll container.
+  let state: ReactNode = null;
   if (watch.status === "error") {
     const forbidden = watch.error?.code === "forbidden";
-    body = (
+    state = (
       <ErrorState
         error={watch.error}
         title={forbidden ? t("resources:table.forbidden", { kind: title }) : undefined}
@@ -263,7 +255,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       />
     );
   } else if (watch.status === "loading") {
-    body = (
+    state = (
       <LoadingIndicator
         className="rt__loading"
         text={t("resources:loading.kind", { kind: title })}
@@ -271,7 +263,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       />
     );
   } else if (rows.length === 0) {
-    body = (
+    state = (
       <EmptyState
         title={
           search.trim() && total > 0
@@ -282,128 +274,138 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         }
       />
     );
-  } else {
+  }
+
+  const renderGrid = (virtualizer: Virtualizer<HTMLDivElement, Element>) => {
     const allSelected = table.getIsAllRowsSelected();
-    body = (
-      <div className="rt__scroll" ref={scrollRef}>
-        <div
-          className="rt__grid"
-          role="table"
-          aria-label={title}
-          aria-rowcount={rows.length + 1}
-          aria-multiselectable
-          style={gridStyle}
-        >
-          <div className="rt__head" role="rowgroup">
-            <div className="rt__row rt__row--head" role="row" aria-rowindex={1}>
-              <div className="rt__cell rt__cell--check" role="columnheader">
-                <Checkbox
-                  aria-label={t("resources:table.selectAll")}
-                  checked={allSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = !allSelected && table.getIsSomeRowsSelected();
-                  }}
-                  onChange={() => table.toggleAllRowsSelected(!allSelected)}
-                />
-              </div>
-              {columns.map((c) => {
-                const column = table.getColumn(c.id);
-                const sorted = column?.getIsSorted() ?? false;
-                const ariaSort = ariaSortOf(sorted);
-                const label = c.titleKey ? t(c.titleKey) : (c.title ?? c.id);
-                return (
-                  <div key={c.id} className="rt__cell rt__cell--head" role="columnheader" aria-sort={ariaSort}>
-                    {column?.getCanSort() ? (
-                      <button type="button" className="rt__sort" onClick={() => column.toggleSorting()}>
-                        {label}
-                        <span className="rt__sort-icon" aria-hidden>
-                          {sorted && <Icon name={sorted === "asc" ? "sortAsc" : "sortDesc"} size={12} />}
-                        </span>
-                      </button>
-                    ) : (
-                      label
-                    )}
-                  </div>
-                );
-              })}
-              <div className="rt__cell rt__cell--menu" role="columnheader" />
+    return (
+      <div
+        className="rt__grid"
+        role="table"
+        aria-label={title}
+        aria-rowcount={rows.length + 1}
+        aria-multiselectable
+        style={gridStyle}
+      >
+        <div className="rt__head" role="rowgroup">
+          <div className="rt__row rt__row--head" role="row" aria-rowindex={1}>
+            <div className="rt__cell rt__cell--check" role="columnheader">
+              <Checkbox
+                aria-label={t("resources:table.selectAll")}
+                checked={allSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = !allSelected && table.getIsSomeRowsSelected();
+                }}
+                onChange={() => table.toggleAllRowsSelected(!allSelected)}
+              />
             </div>
-          </div>
-          <div className="rt__body" role="rowgroup" style={{ height: virtualizer.getTotalSize() }}>
-            {virtualizer.getVirtualItems().map((item) => {
-              const row = rows[item.index];
-              if (!row) return null;
-              const obj = row.original;
-              const isSelected = row.getIsSelected();
-              const active =
-                details !== null &&
-                details.kind.kind === kind.kind &&
-                details.kind.group === kind.group &&
-                details.name === obj.metadata?.name &&
-                (details.namespace ?? null) === (obj.metadata?.namespace ?? null);
+            {columns.map((c) => {
+              const column = table.getColumn(c.id);
+              const sorted = column?.getIsSorted() ?? false;
+              const ariaSort = ariaSortOf(sorted);
+              const label = c.titleKey ? t(c.titleKey) : (c.title ?? c.id);
               return (
-                <div
-                  key={row.id}
-                  className={`rt__row${isSelected ? " rt__row--selected" : ""}${active ? " rt__row--active" : ""}`}
-                  role="row"
-                  aria-rowindex={item.index + 2}
-                  aria-selected={isSelected}
-                  data-uid={row.id}
-                  tabIndex={0}
-                  style={{ transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}
-                  onClick={() => (props.onRowClick ? props.onRowClick(obj) : openDetails(refOf(obj, kind)))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      if (props.onRowClick) props.onRowClick(obj);
-                      else openDetails(refOf(obj, kind));
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    openMenu(obj, e.clientX, e.clientY);
-                  }}
-                >
-                  <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      aria-label={t("resources:table.selectRow", { name: obj.metadata?.name ?? "" })}
-                      checked={isSelected}
-                      onChange={() => undefined}
-                      onClick={row.getToggleSelectedHandler()}
-                    />
-                  </div>
-                  {columns.map((c) => (
-                    <div key={c.id} className="rt__cell" role="cell">
-                      {c.render ? c.render(obj, cellContext) : formatValue(c.value(obj))}
-                    </div>
-                  ))}
-                  <div className="rt__cell rt__cell--menu" role="cell">
-                    <button
-                      type="button"
-                      className="icon-btn icon-btn--small"
-                      aria-label={t("resources:table.actionsFor", { name: obj.metadata?.name ?? "" })}
-                      aria-haspopup="menu"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        openMenu(obj, rect.left, rect.bottom);
-                      }}
-                    >
-                      <Icon name="more" />
+                <div key={c.id} className="rt__cell rt__cell--head" role="columnheader" aria-sort={ariaSort}>
+                  {column?.getCanSort() ? (
+                    <button type="button" className="rt__sort" onClick={() => column.toggleSorting()}>
+                      {label}
+                      {/* Only the sorted column has the icon: an empty slot cut narrow headers ("Repl…"). */}
+                      {sorted && (
+                        <span className="rt__sort-icon" aria-hidden>
+                          <Icon name={sorted === "asc" ? "sortAsc" : "sortDesc"} size={12} />
+                        </span>
+                      )}
                     </button>
-                  </div>
+                  ) : (
+                    label
+                  )}
                 </div>
               );
             })}
+            <div className="rt__cell rt__cell--menu" role="columnheader" />
           </div>
+        </div>
+        <div className="rt__body" role="rowgroup" style={{ height: virtualizer.getTotalSize() }}>
+          {virtualizer.getVirtualItems().map((item) => {
+            const row = rows[item.index];
+            if (!row) return null;
+            const obj = row.original;
+            const isSelected = row.getIsSelected();
+            const active =
+              details !== null &&
+              details.kind.kind === kind.kind &&
+              details.kind.group === kind.group &&
+              details.name === obj.metadata?.name &&
+              (details.namespace ?? null) === (obj.metadata?.namespace ?? null);
+            return (
+              <div
+                key={row.id}
+                className={`rt__row${isSelected ? " rt__row--selected" : ""}${active ? " rt__row--active" : ""}`}
+                role="row"
+                aria-rowindex={item.index + 2}
+                aria-selected={isSelected}
+                data-uid={row.id}
+                tabIndex={0}
+                style={{ transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}
+                onClick={() => (props.onRowClick ? props.onRowClick(obj) : openDetails(refOf(obj, kind)))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (props.onRowClick) props.onRowClick(obj);
+                    else openDetails(refOf(obj, kind));
+                  }
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  openMenu(obj, e.clientX, e.clientY);
+                }}
+              >
+                <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    aria-label={t("resources:table.selectRow", { name: obj.metadata?.name ?? "" })}
+                    checked={isSelected}
+                    onChange={() => undefined}
+                    onClick={row.getToggleSelectedHandler()}
+                  />
+                </div>
+                {columns.map((c) => (
+                  <div key={c.id} className="rt__cell" role="cell">
+                    {c.render ? c.render(obj, cellContext) : formatValue(c.value(obj))}
+                  </div>
+                ))}
+                <div className="rt__cell rt__cell--menu" role="cell">
+                  <button
+                    type="button"
+                    className="icon-btn icon-btn--small"
+                    aria-label={t("resources:table.actionsFor", { name: obj.metadata?.name ?? "" })}
+                    aria-haspopup="menu"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      openMenu(obj, rect.left, rect.bottom);
+                    }}
+                  >
+                    <Icon name="more" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <section className="rt" aria-label={title} data-kind={kind.kind}>
       {header}
-      {body}
+      {/* A new set of rows (cluster, namespaces, selectors, search) gets a new scroller, from its first row. */}
+      <RowsScroller
+        key={JSON.stringify([watchKey, search])}
+        count={rows.length}
+        getItemKey={(index) => rows[index]?.id ?? index}
+      >
+        {(virtualizer) => state ?? renderGrid(virtualizer)}
+      </RowsScroller>
       {menu && (
         <ActionMenu
           x={menu.x}
@@ -417,6 +419,37 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         />
       )}
     </section>
+  );
+}
+
+/**
+ * The scroll container of the table and its virtual list of rows. It stays mounted while its set of rows loads, is
+ * empty or fails, so the list never meets a new container; the table gives it a `key` per set of rows (issue #37:
+ * a list that outlived its container kept the old scroll offset — an empty band under the header and only the tail
+ * of the new rows). A new snapshot of the same set keeps the user's scroll position.
+ */
+function RowsScroller({
+  count,
+  getItemKey,
+  children,
+}: {
+  count: number;
+  getItemKey: (index: number) => string | number;
+  children: (virtualizer: Virtualizer<HTMLDivElement, Element>) => ReactNode;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    getItemKey,
+    overscan: 10,
+    scrollMargin: HEADER_HEIGHT,
+  });
+  return (
+    <div className="rt__scroll" ref={scrollRef}>
+      {children(virtualizer)}
+    </div>
   );
 }
 

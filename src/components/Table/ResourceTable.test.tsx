@@ -114,6 +114,72 @@ describe("ResourceTable", () => {
     expect(bodyRows().length).toBeLessThan(60);
   });
 
+  // Issue #37: after a scroll down, another set of rows (namespaces, search) showed an empty band under the header
+  // and only the tail of the list — the virtual list kept the old offset while the new container was at the top.
+  // No scroll event follows the change here, just as none came in the app.
+  it("shows a new set of rows from its first row after a scroll down", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await snapshot(Array.from({ length: 5000 }, (_, i) => pod(i)));
+    const scrollDown = () =>
+      act(() => {
+        const scroller = document.querySelector(".rt__scroll") as HTMLElement;
+        scroller.scrollTop = 33 * 2500;
+        fireEvent.scroll(scroller);
+      });
+    scrollDown();
+    await waitFor(() => expect(screen.getByText("pod-2500")).toBeInTheDocument());
+
+    act(() => useAppStore.getState().setNamespaces("c1", ["team-a"]));
+    expect(screen.getByRole("status")).toHaveTextContent("Loading");
+    await snapshot(Array.from({ length: 41 }, (_, i) => pod(i, { namespace: "team-a" })), "watch-2");
+    expect(screen.getByTestId("rt-count")).toHaveTextContent("41 items");
+    expect(screen.getByRole("table")).toHaveAttribute("aria-rowcount", "42");
+    // The rendered rows begin right under the header with the first pod.
+    expect(names().slice(0, 3)).toEqual(["pod-0000", "pod-0001", "pod-0002"]);
+    expect(bodyRows()[0]!.style.transform).toBe("translateY(0px)");
+
+    // A search that finds nothing and back: the same, the list starts at its first row.
+    act(() => useAppStore.getState().setNamespaces("c1", null));
+    await snapshot(Array.from({ length: 5000 }, (_, i) => pod(i)), "watch-3");
+    scrollDown();
+    await waitFor(() => expect(screen.getByText("pod-2500")).toBeInTheDocument());
+    act(() => useAppStore.getState().setSearch("c1", "nothing-like-this"));
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    act(() => useAppStore.getState().setSearch("c1", ""));
+    expect(names()[0]).toBe("pod-0000");
+  });
+
+  it("keeps the scroll position on a new snapshot of the same rows", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    const items = Array.from({ length: 5000 }, (_, i) => pod(i));
+    await snapshot(items);
+    const scroller = document.querySelector(".rt__scroll") as HTMLElement;
+    act(() => {
+      scroller.scrollTop = 33 * 2500;
+      fireEvent.scroll(scroller);
+    });
+    await waitFor(() => expect(screen.getByText("pod-2500")).toBeInTheDocument());
+
+    act(() => backend.emit("watch:watch-1", { type: "snapshot", items: [...items, pod(5000)] }));
+    act(() => backend.emit("watch:watch-1", { type: "delta", upserted: [pod(5001)], deleted: ["uid-1"] }));
+    expect(document.querySelector(".rt__scroll")).toBe(scroller);
+    expect(scroller.scrollTop).toBe(33 * 2500);
+    expect(screen.getByText("pod-2500")).toBeInTheDocument();
+    expect(screen.queryByText("pod-0000")).not.toBeInTheDocument();
+  });
+
+  it("gives a sort icon only to the sorted column, so an unsorted narrow header is not cut", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await snapshot([pod(1)]);
+    const name = screen.getByRole("button", { name: "Name" });
+    const restarts = screen.getByRole("button", { name: "Restarts" });
+    expect(name.querySelector(".rt__sort-icon svg")).not.toBeNull();
+    expect(restarts.querySelector(".rt__sort-icon")).toBeNull();
+    fireEvent.click(restarts);
+    expect(restarts.querySelector(".rt__sort-icon svg")).not.toBeNull();
+    expect(name.querySelector(".rt__sort-icon")).toBeNull();
+  });
+
   it("applies a delta batch at once: new, changed and deleted rows", async () => {
     render(<ResourceTable clusterId="c1" kind={POD} />);
     await snapshot([pod(1), pod(2), pod(3)]);
