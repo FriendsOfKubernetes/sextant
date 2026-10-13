@@ -1,0 +1,75 @@
+{
+  "title": "AI agent access",
+  "intro": "What AI agents connected through the MCP server may do in this cluster. Nothing is allowed until you choose a set.",
+  "preset": {
+    "legend": "Access set",
+    "off": "Off",
+    "readOnly": "Read-only",
+    "readWrite": "Read + write (no delete)",
+    "full": "Full",
+    "custom": "Custom"
+  },
+  "description": {
+    "off": "The agent has no access to this cluster. It sees the cluster in its list, but every call is refused.",
+    "readOnly": "The agent can read all resources in all namespaces and fetch pod logs. Secret values are hidden. It cannot change anything.",
+    "readWrite": "The agent can read everything and fetch logs, and can also change resources, run commands in containers and open port forwards. It asks you first each time. It cannot delete. Secret values are hidden.",
+    "full": "The agent can do everything in all namespaces, including deleting. Changes, deletes, commands and port forwards ask you first each time. Secret values are hidden.",
+    "custom": "You decide: each rule covers namespaces, kinds and actions. An action is allowed when at least one rule covers it."
+  },
+  "customizeHint": "Choose Custom to start from this set's rules and edit them.",
+  "saveFailed": "Could not save the access rules.",
+  "rules": {
+    "title": "Rules",
+    "none": "There are no rules, so the agent has no access to this cluster.",
+    "rule": "Rule {{number}}",
+    "add": "Add rule",
+    "remove": "Remove rule {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespaces",
+    "all": "All namespaces",
+    "only": "Selected namespaces",
+    "filter": "Filter namespaces",
+    "add": "Add a namespace by name",
+    "addPlaceholder": "namespace name",
+    "addButton": "Add namespace",
+    "invalid": "Not a valid namespace name.",
+    "empty": "No namespace is selected, so this rule covers nothing.",
+    "clusterOnly": "Resources that belong to no namespace (nodes, namespaces, CRDs, cluster roles) are covered only by a rule with all namespaces."
+  },
+  "kinds": {
+    "legend": "Kinds",
+    "all": "All kinds",
+    "only": "Selected kinds",
+    "filter": "Filter kinds",
+    "add": "Add a kind by name",
+    "addPlaceholder": "Kind or group/Kind",
+    "addButton": "Add kind",
+    "invalid": "Use Kind or group/Kind, for example Pod or apps/Deployment.",
+    "empty": "No kind is selected, so this rule covers nothing.",
+    "helm": "Helm releases",
+    "coreGroup": "core",
+    "more": "Showing the first {{count}}. Type in the filter to narrow the list."
+  },
+  "picker": {
+    "noMatch": "Nothing matches.",
+    "notConnected": "Connect to this cluster to choose from its list. You can still type a name below.",
+    "loading": "Loading the list…",
+    "failed": "The cluster's list is unavailable. You can still type a name below."
+  },
+  "actions": {
+    "legend": "Actions",
+    "read": "Read",
+    "modify": "Modify",
+    "delete": "Delete",
+    "logs": "Logs",
+    "exec": "Exec / shell",
+    "portForward": "Port forward",
+    "secretValues": "Secret values"
+  },
+  "confirm": {
+    "label": "Ask before running",
+    "hint": "Modify, Delete, Exec and Port forward in this rule wait for your answer in Sextant (120 s, then they are refused)."
+  },
+  "secretWarning": "Secret values lets the agent read Secret data and the values of Helm releases in clear text. Only allow it for namespaces the agent really needs."
+}

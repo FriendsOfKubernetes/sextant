@@ -1,0 +1,170 @@
+/* "AI agent access" in the cluster settings. */
+.aa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aa p {
+  margin: 0;
+}
+
+.aa-note {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.aa-description {
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-hover);
+  border-radius: 0 4px 4px 0;
+}
+
+.aa-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.aa-group > legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.aa-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.aa-subtitle {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.aa-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.aa-rule {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.aa-rule__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aa-rule__header h5 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.aa-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 12px;
+}
+
+.aa-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-warning);
+  border-radius: 4px;
+  color: var(--color-warning);
+}
+
+.aa-warning span {
+  color: var(--color-text);
+}
+
+.aa-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aa-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aa-picker__list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.aa-picker__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.aa-picker__row:hover {
+  background: var(--color-hover);
+}
+
+.aa-picker__hint {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aa-picker__add {
+  display: flex;
+  gap: 8px;
+}
+
+.aa-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-height);
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+/* In the column of the picker the field keeps its height; next to the button it takes the rest of the row. */
+.aa-picker > .aa-input {
+  flex: none;
+}
+
+.aa-invalid {
+  color: var(--color-danger);
+  font-size: 12px;
+}
