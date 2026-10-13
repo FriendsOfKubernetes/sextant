@@ -4,7 +4,7 @@ import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ArgoStatus, type ClusterId } from "../../../api";
 import { Button, Checkbox } from "../../../components";
-import { loginErrorKey, type LoginMode } from "./model";
+import { loginErrorDetail, loginErrorKey, type LoginMode } from "./model";
 
 export interface LoginFormProps {
   clusterId: ClusterId;
@@ -122,7 +122,7 @@ export function LoginForm({ clusterId, status, reason, onSignedIn }: LoginFormPr
       {error && (
         <div className="argo-login__error" role="alert">
           <p>{t(loginErrorKey(error, status, mode))}</p>
-          {error.message && <p className="argo-login__detail">{error.message}</p>}
+          {loginErrorDetail(error) && <p className="argo-login__detail">{loginErrorDetail(error)}</p>}
         </div>
       )}
       <div className="argo-login__actions">

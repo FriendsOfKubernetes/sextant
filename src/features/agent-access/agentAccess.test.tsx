@@ -17,7 +17,7 @@ const cluster: ClusterInfo = {
   sourceId: "default",
 };
 
-/** What the backend's `access_preset_rules` answers (spec "Решения": the sets). */
+/** What the backend's `access_preset_rules` answers (spec "Decisions": the sets). */
 const PRESET_RULES: Record<AccessPreset, AccessRule[]> = {
   off: [],
   custom: [],

@@ -230,6 +230,26 @@ describe("Argo CD diff", () => {
     expect(await within(form).findByRole("alert")).toHaveTextContent(text);
   });
 
+  it("a refused password gives one error, not the same sentence twice", async () => {
+    backend = mockBackend({
+      argocd_diff: () => {
+        throw unauthorized;
+      },
+      argocd_status: () => status({ signedIn: false }),
+      argocd_login: () => {
+        throw { code: "unauthorized", message: 'Argo CD refused the user name or password of "admin"' };
+      },
+    });
+    show();
+
+    const form = await screen.findByRole("form", { name: "Sign in to Argo CD" });
+    fireEvent.change(within(form).getByLabelText("Password"), { target: { value: "pw" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Sign in" }));
+
+    const alert = await within(form).findByRole("alert");
+    expect(alert.textContent).toBe("Argo CD refused the user name or password.");
+  });
+
   it("tells about SSO and an expired session, and offers the token first without local users", async () => {
     backend = mockBackend({
       argocd_diff: () => {

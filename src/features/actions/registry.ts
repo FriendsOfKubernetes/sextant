@@ -1,4 +1,4 @@
-// Registry of actions on resources (interfaces.md, «Действия над ресурсами регистрируются»).
+// Registry of actions on resources (interfaces.md, "Actions on resources are registered").
 //
 // A feature registers its actions from its own index.ts:
 //

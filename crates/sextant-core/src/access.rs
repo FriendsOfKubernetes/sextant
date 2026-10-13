@@ -531,7 +531,7 @@ mod tests {
 
     #[test]
     fn presets_follow_the_spec() {
-        // spec «Наборы»: Read-only = all namespaces, all kinds, Read + Logs; Read + write (no delete) = Read, Logs,
+        // The presets of the spec: Read-only = all namespaces, all kinds, Read + Logs; Read + write (no delete) = Read, Logs,
         // Modify, Exec, Port forward, asked; Full = all but Secret values, asked.
         let expect = |preset, actions: &[AccessAction], confirm| {
             assert_eq!(

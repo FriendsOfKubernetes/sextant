@@ -160,7 +160,7 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
           className="clusters-add-tabs"
         >
           {tab === "cloud" ? (
-            <CloudClusters />
+            <CloudClusters onTerminalOpened={onClose} />
           ) : (
             <div className="clusters-buttons">
               <AddFileButton className="btn btn--primary" />

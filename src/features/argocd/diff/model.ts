@@ -68,3 +68,12 @@ export function loginErrorKey(error: ApiError, status: ArgoStatus | null, mode: 
       return "argocd:login.errors.other";
   }
 }
+
+/**
+ * The server's own sentence under a failed sign-in, if it adds something: for a refusal or a missing field the
+ * text of {@link loginErrorKey} already says it, so repeating it would show the same error twice.
+ */
+export function loginErrorDetail(error: ApiError): string | null {
+  if (error.code === "unauthorized" || error.code === "invalid") return null;
+  return error.message || null;
+}

@@ -1,4 +1,4 @@
-// One function per backend command (interfaces.md, «Команды»). Argument names are the camelCase names the
+// One function per backend command (interfaces.md, "Commands"). Argument names are the camelCase names the
 // Rust commands expect. Every function rejects with `ApiError`.
 import type { AccessPreset } from "./generated/AccessPreset";
 import type { AccessRule } from "./generated/AccessRule";

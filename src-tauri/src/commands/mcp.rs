@@ -56,7 +56,14 @@ pub async fn mcp_confirm_answer(
 #[tauri::command]
 pub async fn mcp_binary_path() -> Result<String, CoreError> {
     let path = std::env::current_exe().map_err(CoreError::from)?;
-    Ok(path.to_string_lossy().into_owned())
+    Ok(executable_text(&path))
+}
+
+/// The path as text for the snippet. Linux appends " (deleted)" to `/proc/self/exe` when the file was replaced while
+/// the application runs (an updated package); the new file is at the path without it.
+fn executable_text(path: &std::path::Path) -> String {
+    let text = path.to_string_lossy();
+    text.strip_suffix(" (deleted)").unwrap_or(&text).to_string()
 }
 
 /// The token file could not be read or written; the message names no token.
@@ -65,4 +72,23 @@ fn token_error(error: std::io::Error) -> CoreError {
         ErrorCode::Other,
         format!("the MCP token file cannot be used: {error}"),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::executable_text;
+
+    #[test]
+    fn a_replaced_binary_gives_its_path_without_the_deleted_mark() {
+        assert_eq!(
+            executable_text(Path::new("/usr/bin/sextant (deleted)")),
+            "/usr/bin/sextant"
+        );
+        assert_eq!(
+            executable_text(Path::new("/usr/bin/sextant")),
+            "/usr/bin/sextant"
+        );
+    }
 }

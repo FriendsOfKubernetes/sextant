@@ -30,9 +30,9 @@ async function writeClipboard(text: string): Promise<void> {
 
 /**
  * A command for the user to run, with "Copy command" and "Open terminal" (a local terminal in the dock with the
- * command typed in; the user presses Enter).
+ * command typed in; the user presses Enter). `onTerminalOpened` lets a window that would cover the dock close itself.
  */
-function CommandLine({ command }: { command: string }) {
+function CommandLine({ command, onTerminalOpened }: { command: string; onTerminalOpened?: () => void }) {
   const { t } = useTranslation();
   const [feedback, setFeedback] = useState<"copied" | "copyFailed" | "opened" | null>(null);
   const copy = async () => {
@@ -46,6 +46,7 @@ function CommandLine({ command }: { command: string }) {
   const openTerminal = () => {
     openCommandTerminalTab(command);
     setFeedback("opened");
+    onTerminalOpened?.();
   };
   const feedbackKey = {
     copied: "clusters:cloud.copied",
@@ -71,7 +72,7 @@ function CommandLine({ command }: { command: string }) {
 }
 
 /** What went wrong with a cloud CLI and what to do about it. */
-export function CloudProblemView({ problem }: { problem: CloudProblem }) {
+export function CloudProblemView({ problem, onTerminalOpened }: { problem: CloudProblem; onTerminalOpened?: () => void }) {
   const { t } = useTranslation();
   const cli = t(`clusters:cloud.cli.${problem.provider}`);
   const scope = problem.scope ? t("clusters:cloud.scope", { scope: problem.scope }) : "";
@@ -83,7 +84,7 @@ export function CloudProblemView({ problem }: { problem: CloudProblem }) {
       {problem.command && (
         <>
           <p className="clusters-hint">{t(`clusters:cloud.problemHint.${problem.kind}`)}</p>
-          <CommandLine command={problem.command} />
+          <CommandLine command={problem.command} onTerminalOpened={onTerminalOpened} />
         </>
       )}
       {problem.url && (
@@ -127,7 +128,7 @@ function StatusLine({ status }: { status: CloudCliStatus }) {
 }
 
 /** "Not installed" with the install guide, or the missing credential plugin with its install command. */
-function ProviderHints({ status }: { status: CloudCliStatus }) {
+function ProviderHints({ status, onTerminalOpened }: { status: CloudCliStatus; onTerminalOpened?: () => void }) {
   const { t } = useTranslation();
   if (!status.available) {
     return (
@@ -142,7 +143,7 @@ function ProviderHints({ status }: { status: CloudCliStatus }) {
     return (
       <div className="cloud-provider__hint">
         <p className="clusters-hint">{t("clusters:cloud.pluginMissing", { plugin: status.plugin.name })}</p>
-        <CommandLine command={status.plugin.installCommand} />
+        <CommandLine command={status.plugin.installCommand} onTerminalOpened={onTerminalOpened} />
       </div>
     );
   }
@@ -153,7 +154,8 @@ function clusterKey(cluster: CloudCluster): string {
   return `${cluster.provider}:${cluster.context}`;
 }
 
-export function CloudClusters() {
+/** `onTerminalOpened`: a terminal tab was opened in the dock (the window around this view closes, so it is seen). */
+export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => void }) {
   const { t } = useTranslation();
   const [statuses, setStatuses] = useState<CloudCliStatus[] | null>(null);
   const [provider, setProvider] = useState<CloudProvider | null>(null);
@@ -281,13 +283,13 @@ export function CloudClusters() {
               <span className="cloud-provider__name">{t(`clusters:cloud.provider.${status.provider}`)}</span>
               <StatusLine status={status} />
             </label>
-            <ProviderHints status={status} />
+            <ProviderHints status={status} onTerminalOpened={onTerminalOpened} />
           </div>
         ))}
       </div>
 
       {provider && busy === "accounts" && <p role="status">{t("clusters:cloud.loadingAccounts")}</p>}
-      {accounts?.problem && <CloudProblemView problem={accounts.problem} />}
+      {accounts?.problem && <CloudProblemView problem={accounts.problem} onTerminalOpened={onTerminalOpened} />}
 
       {provider && accounts && accounts.accounts.length > 0 && (
         <div className="cloud-query">
@@ -328,7 +330,11 @@ export function CloudClusters() {
       {search && (
         <div className="cloud-results">
           {search.problems.map((problem, index) => (
-            <CloudProblemView key={`${problem.kind}-${problem.scope ?? ""}-${index}`} problem={problem} />
+            <CloudProblemView
+              key={`${problem.kind}-${problem.scope ?? ""}-${index}`}
+              problem={problem}
+              onTerminalOpened={onTerminalOpened}
+            />
           ))}
           {search.clusters.length === 0 ? (
             <p className="clusters-hint">{t("clusters:cloud.noClusters")}</p>
@@ -375,7 +381,11 @@ export function CloudClusters() {
             <p role="status">{t("clusters:cloud.added", { count: result.contexts.length })}</p>
           )}
           {result.problems.map((problem, index) => (
-            <CloudProblemView key={`${problem.kind}-${problem.scope ?? ""}-${index}`} problem={problem} />
+            <CloudProblemView
+              key={`${problem.kind}-${problem.scope ?? ""}-${index}`}
+              problem={problem}
+              onTerminalOpened={onTerminalOpened}
+            />
           ))}
         </div>
       )}

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { ObjectRef } from "./generated/ObjectRef";
 import { api, ApiError, events, mockBackend, type MockBackend } from "./index";
 
-// Command names and argument names from the IPC contract (interfaces.md, «Команды»).
+// Command names and argument names from the IPC contract (interfaces.md, "Commands").
 const ref: ObjectRef = { kind: { group: "apps", version: "v1", kind: "Deployment" }, namespace: "ns", name: "web" };
 const pod: ObjectRef = { kind: { group: "", version: "v1", kind: "Pod" }, namespace: "ns", name: "web-1" };
 const spec = { kind: pod.kind, namespaces: null, labelSelector: null, fieldSelector: null };

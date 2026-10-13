@@ -1,4 +1,4 @@
-// Backend events (interfaces.md, «События»). Each `on*` resolves to an unsubscribe function.
+// Backend events (interfaces.md, "Events"). Each `on*` resolves to an unsubscribe function.
 import type { AuditEntry } from "./generated/AuditEntry";
 import type { ClusterStatePayload } from "./generated/ClusterStatePayload";
 import type { ConfirmRequest } from "./generated/ConfirmRequest";

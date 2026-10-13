@@ -4,7 +4,7 @@
 //! the server has stopped); what the agent named is checked for sense before that, so the user is not asked about a
 //! call that cannot run. The details shown in the dialog (YAML, a command, a port) never reach the journal.
 //!
-//! What each tool needs (spec "Решения", table of actions):
+//! What each tool needs (spec "Decisions", table of actions):
 //!
 //! | tool | needs |
 //! |---|---|

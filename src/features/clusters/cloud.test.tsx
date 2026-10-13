@@ -11,7 +11,7 @@ import {
   type KubeconfigSource,
   type MockBackend,
 } from "../../api";
-import { resetAppStore } from "../../app/store";
+import { resetAppStore, useAppStore } from "../../app/store";
 import { AppShell } from "../../layout";
 import { resetClustersStore } from "./clustersStore";
 import "./index";
@@ -193,6 +193,35 @@ describe("Add cluster → From cloud", () => {
     expect(within(dialog).getByText("gcloud is not signed in, or the sign-in expired")).toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Find clusters" })).not.toBeInTheDocument();
     expect(commands("cloud_find")).toHaveLength(0);
+  });
+
+  it("Open terminal closes the Add cluster window, so the terminal tab is not left under it", async () => {
+    setup({
+      cloud_status: () => [{ ...STATUS[1]!, available: true, version: "470.0.0", path: "/usr/bin/gcloud" }],
+      cloud_accounts: () => ({
+        provider: "gcp",
+        accounts: [],
+        regions: [],
+        problem: {
+          provider: "gcp",
+          kind: "notLoggedIn",
+          scope: null,
+          message: "You do not currently have an active account selected.",
+          command: "gcloud auth login",
+          url: null,
+        },
+      }),
+    });
+    const dialog = await openFromCloud();
+    expect(await within(dialog).findByText("gcloud auth login")).toBeInTheDocument();
+
+    const problem = within(dialog).getAllByRole("note").find((note) => note.dataset.kind === "notLoggedIn")!;
+    fireEvent.click(within(problem).getByRole("button", { name: "Open terminal" }));
+
+    expect(screen.queryByRole("dialog", { name: "Add cluster" })).not.toBeInTheDocument();
+    const tabs = useAppStore.getState().dock.tabs;
+    expect(tabs.map((tab) => tab.type)).toEqual(["terminal"]);
+    expect(tabs[0]?.payload).toMatchObject({ input: "gcloud auth login" });
   });
 
   it("a cloud cluster whose sign-in failed shows the command to sign in again", async () => {

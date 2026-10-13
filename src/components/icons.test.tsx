@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Icon, isIconName, renderIcon, type IconName } from "./icons";
 
-// Names the other tasks of this release rely on (interfaces.md §1, spec «Иконки разделов»): actions and glyphs of
+// Names the other tasks of this release rely on (interfaces.md §1, spec "Section icons"): actions and glyphs of
 // story 7, the eye toggle, the cluster rail (expand, picture, reset) and every sidebar section and entry.
 const REQUIRED: IconName[] = [
   // actions and glyphs

@@ -342,12 +342,10 @@ impl ArgoSessions {
                     return Err(explain_refusal(err, &credentials, mgr, cluster, &namespace).await);
                 }
             };
-            let source = if login.remember {
-                CredentialSource::Saved
-            } else {
-                CredentialSource::Manual
-            };
-            conn.session = Some(SignedIn { session, source });
+            conn.session = Some(SignedIn {
+                session,
+                source: CredentialSource::Manual,
+            });
             conn.typed = Some(credentials.clone());
             conn.signed_out = false;
             conn.expired = false;
@@ -356,6 +354,9 @@ impl ArgoSessions {
             if login.remember {
                 lock(&self.refused).remove(&saved_key(cluster, &namespace));
                 save_error = self.remember(cluster, &namespace, &credentials).await?;
+            }
+            if let Some(signed) = conn.session.as_mut() {
+                signed.source = login_source(login.remember, save_error.as_deref());
             }
         }
         let mut status = self.status(mgr, cluster).await?;
@@ -571,6 +572,16 @@ fn typed_key(cluster: &ClusterId) -> String {
 
 fn saved_key(cluster: &ClusterId, namespace: &str) -> String {
     format!("saved:{}", keyring_user(cluster, namespace))
+}
+
+/// Where a login typed into the window counts as coming from: the credential store only when "Remember" was asked
+/// and the store took it (`save_error` is `None`); a login the store refused lives in memory until Sextant closes.
+fn login_source(remember: bool, save_error: Option<&str>) -> CredentialSource {
+    if remember && save_error.is_none() {
+        CredentialSource::Saved
+    } else {
+        CredentialSource::Manual
+    }
 }
 
 /// Signs in (`login`) with the first candidate Argo CD accepts, skipping those whose key is in `refused` and adding
@@ -829,6 +840,16 @@ mod tests {
         assert_eq!(
             reason.as_deref(),
             Some("the system credential store: no secret service is running")
+        );
+    }
+
+    #[test]
+    fn a_login_the_store_refused_is_not_called_saved() {
+        assert_eq!(login_source(true, None), CredentialSource::Saved);
+        assert_eq!(login_source(false, None), CredentialSource::Manual);
+        assert_eq!(
+            login_source(true, Some("no secret service is running")),
+            CredentialSource::Manual
         );
     }
 
