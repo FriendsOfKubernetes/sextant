@@ -148,6 +148,10 @@
   "pod": {
     "containers": "Containers",
     "initContainers": "Init containers",
+    "tabs": "Containers",
+    "init": "init",
+    "restartCount_one": "{{count}} restart",
+    "restartCount_other": "{{count}} restarts",
     "volumes": "Volumes",
     "env": "Environment",
     "envFrom": "Environment from",
@@ -171,7 +175,8 @@
     "daemonPods": "{{desired}} desired, {{current}} scheduled, {{updated}} updated, {{ready}} ready, {{available}} available",
     "jobPods": "{{active}} active, {{succeeded}} succeeded, {{failed}} failed",
     "rollingUpdate": "{{type}} (max surge {{maxSurge}}, max unavailable {{maxUnavailable}})",
-    "templateContainers": "Pod template containers"
+    "templateContainers": "Pod template containers",
+    "templateInitContainers": "Pod template init containers"
   },
   "service": {
     "ports": "Ports"

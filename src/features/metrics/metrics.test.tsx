@@ -378,3 +378,179 @@ describe("Metrics cluster settings", () => {
     await waitFor(() => expect(calls("metrics_pods")).toHaveLength(2));
   });
 });
+
+describe("requests and limits in the Metrics section of a pod", () => {
+  const REF = {
+    kind: POD,
+    namespace: "sextant-demo",
+    name: "nginx-9f755754d-g85tv",
+  };
+
+  /** The pod fixture with these containers (name and `resources`) in place of its own. */
+  function podWith(containers: Array<{ name: string; resources?: unknown }>): KubeObject {
+    const obj = copy(pod);
+    (obj.spec as { containers: unknown[] }).containers = containers.map((c) => ({ image: "busybox", ...c }));
+    return obj;
+  }
+
+  function usageOf(...containers: Array<[string, number, number]>): PodUsage {
+    const sum = (i: 1 | 2) => containers.reduce((acc, c) => acc + c[i], 0);
+    return {
+      ...nginxUsage,
+      usage: { cpuMillicores: sum(1), memoryBytes: sum(2) },
+      containers: containers.map(([name, cpu, memory]) => [name, { cpuMillicores: cpu, memoryBytes: memory }]),
+    };
+  }
+
+  /** The value cell of the "CPU" / "Memory" / container row of the current values. */
+  function valueOf(label: string): HTMLElement {
+    const term = screen.getByText(label, { selector: "dt" });
+    return term.nextElementSibling as HTMLElement;
+  }
+
+  async function show(obj: KubeObject) {
+    const Section = section(POD);
+    render(<Section clusterId="c1" objectRef={REF} obj={obj} />);
+  }
+
+  const MIB = 1024 ** 2;
+
+  it("shows request and limit next to the usage, and the usage as a share of the limit", async () => {
+    serve(status(), { pods: [usageOf(["app", 25, 32 * MIB])] });
+    await show(
+      podWith([
+        {
+          name: "app",
+          resources: {
+            requests: { cpu: "100m", memory: "64Mi" },
+            limits: { cpu: "200m", memory: "128Mi" },
+          },
+        },
+      ]),
+    );
+    expect(await screen.findByText("32.0MiB")).toBeInTheDocument();
+    const cpu = valueOf("CPU");
+    expect(within(cpu).getByText("25m")).toBeInTheDocument();
+    expect(within(cpu).getByText("request 100m")).toBeInTheDocument();
+    expect(within(cpu).getByText("limit 200m")).toBeInTheDocument();
+    expect(within(cpu).getByText("13% of limit")).toBeInTheDocument();
+    const memory = valueOf("Memory");
+    expect(within(memory).getByText("request 64.0MiB")).toBeInTheDocument();
+    expect(within(memory).getByText("limit 128MiB")).toBeInTheDocument();
+    expect(within(memory).getByText("25% of limit")).toBeInTheDocument();
+    expect(within(cpu).queryByText("no limit")).toBeNull();
+  });
+
+  it("without a limit says so and measures the usage against the request, even above it", async () => {
+    serve(status(), { pods: [usageOf(["app", 150, 32 * MIB])] });
+    await show(
+      podWith([
+        {
+          name: "app",
+          resources: { requests: { cpu: "100m", memory: "64Mi" } },
+        },
+      ]),
+    );
+    await screen.findByText("150m");
+    const cpu = valueOf("CPU");
+    expect(within(cpu).getByText("request 100m")).toBeInTheDocument();
+    expect(within(cpu).getByText("no limit")).toBeInTheDocument();
+    expect(within(cpu).getByText("150% of request")).toBeInTheDocument();
+    expect(within(valueOf("Memory")).getByText("50% of request")).toBeInTheDocument();
+    // The bar itself never grows past its track.
+    expect(cpu.querySelector<HTMLElement>(".mx-bar__fill")!.style.width).toBe("100%");
+  });
+
+  it("says when the request or the limit is not set on every container", async () => {
+    serve(status(), { pods: [usageOf(["app", 10, MIB], ["sidecar", 5, MIB])] });
+    await show(
+      podWith([
+        {
+          name: "app",
+          resources: {
+            requests: { cpu: "100m" },
+            limits: { cpu: "300m", memory: "64Mi" },
+          },
+        },
+        {
+          name: "sidecar",
+          resources: { requests: { cpu: "50m", memory: "16Mi" } },
+        },
+      ]),
+    );
+    await screen.findByText("15m");
+    const cpu = valueOf("CPU");
+    expect(within(cpu).getByText("request 150m")).toBeInTheDocument();
+    expect(within(cpu).getByText("no limit")).toBeInTheDocument();
+    // Only the limit is partial: the note stands next to "no limit", the request is on both containers.
+    expect(within(cpu).getByText("no limit").textContent).toContain("(set on 1 of 2 containers)");
+    expect(within(cpu).getByText("request 150m").textContent).not.toContain("set on");
+    const memory = valueOf("Memory");
+    expect(within(memory).getByText("request 16.0MiB")).toBeInTheDocument();
+    // Memory: the request is on one container (sidecar) and so is the limit (app).
+    expect(within(memory).getAllByText("(set on 1 of 2 containers)")).toHaveLength(2);
+    // The limit is on one container only, but every container has a request: the bar measures against that.
+    expect(within(cpu).getByText("10% of request")).toBeInTheDocument();
+    // A share of a request that only some containers have would be misleading.
+    expect(memory.querySelector(".mx-bar")).toBeNull();
+  });
+
+  it("lists each container with its usage, request and limit", async () => {
+    serve(status(), {
+      pods: [usageOf(["app", 10, 8 * MIB], ["sidecar", 5, 2 * MIB])],
+    });
+    await show(
+      podWith([
+        {
+          name: "app",
+          resources: {
+            requests: { cpu: "100m", memory: "64Mi" },
+            limits: { cpu: "200m", memory: "128Mi" },
+          },
+        },
+        { name: "sidecar" },
+      ]),
+    );
+    await screen.findByText("15m");
+    const app = valueOf("app");
+    expect(app.textContent).toContain("10m · 8.00MiB");
+    expect(app.textContent).toContain("CPU request 100m, limit 200m");
+    expect(app.textContent).toContain("Memory request 64.0MiB, limit 128MiB");
+    const sidecar = valueOf("sidecar");
+    expect(sidecar.textContent).toContain("5m · 2.00MiB");
+    expect(sidecar.textContent).not.toMatch(/request|limit/);
+  });
+
+  it("shows nothing about requests and limits when no container has any", async () => {
+    serve(status(), { pods: [usageOf(["app", 25, 32 * MIB])] });
+    await show(podWith([{ name: "app" }]));
+    expect(await screen.findByText("25m")).toBeInTheDocument();
+    expect(screen.queryByText(/request|limit/)).toBeNull();
+  });
+
+  it("shows them without any metrics, next to the notice that metrics are unavailable", async () => {
+    serve(NOTHING);
+    await show(
+      podWith([
+        {
+          name: "app",
+          resources: {
+            requests: { cpu: "100m", memory: "64Mi" },
+            limits: { cpu: "200m" },
+          },
+        },
+        {
+          name: "sidecar",
+          resources: { requests: { cpu: "50m" }, limits: { cpu: "100m" } },
+        },
+      ]),
+    );
+    expect(await screen.findByText("Metrics are unavailable")).toBeInTheDocument();
+    const cpu = valueOf("CPU");
+    expect(within(cpu).getByText("request 150m")).toBeInTheDocument();
+    expect(within(cpu).getByText("limit 300m")).toBeInTheDocument();
+    expect(cpu.querySelector(".mx-bar")).toBeNull();
+    expect(within(valueOf("Memory")).getByText("request 64.0MiB")).toBeInTheDocument();
+    expect(valueOf("sidecar").textContent).toContain("CPU request 50m, limit 100m");
+  });
+});

@@ -20,13 +20,14 @@ import {
   tolerations,
   type FieldRow,
 } from "../ui";
-import { ContainerList } from "./pods";
+import type { KindViewProps } from "./index";
+import { ContainerList, objectKeyOf } from "./pods";
 
 const { arr, get, num, str } = status;
 
 const n = (value: unknown) => num(value) ?? 0;
 
-function Template({ obj }: { obj: KubeObject }) {
+function Template({ obj, clusterId, objectRef }: KindViewProps) {
   const { t } = useTranslation();
   const spec = get(obj, "spec", "template", "spec");
   const ns = nsOf(obj);
@@ -35,12 +36,19 @@ function Template({ obj }: { obj: KubeObject }) {
     ["tolerations", chips(tolerations(get(spec, "tolerations")))],
     ["serviceAccount", link(KINDS.serviceAccount, str(get(spec, "serviceAccountName")), ns)],
   ];
-  const containers = [...arr(get(spec, "initContainers")), ...arr(get(spec, "containers"))];
-  const title = t("details:workload.templateContainers");
+  const containers = get(spec, "containers");
+  const initContainers = get(spec, "initContainers");
   return (
     <>
       <Fields rows={rows} />
-      <ContainerList title={title} containers={containers} namespace={ns} />
+      <ContainerList
+        objectKey={objectKeyOf(clusterId, objectRef)}
+        title={t("details:workload.templateContainers")}
+        containers={containers}
+        initTitle={t("details:workload.templateInitContainers")}
+        initContainers={initContainers}
+        namespace={ns}
+      />
     </>
   );
 }
@@ -60,7 +68,7 @@ function strategy(obj: KubeObject, field: string, t: TFunction): ReactNode {
 }
 
 /** Deployment, StatefulSet and ReplicaSet. */
-export function ReplicatedDetails({ obj }: { obj: KubeObject }) {
+export function ReplicatedDetails({ obj, clusterId, objectRef }: KindViewProps) {
   const { t } = useTranslation();
   const s = get(obj, "status");
   const replicaSet = obj.kind === "ReplicaSet";
@@ -88,12 +96,12 @@ export function ReplicatedDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      <Template obj={obj} />
+      <Template obj={obj} clusterId={clusterId} objectRef={objectRef} />
     </>
   );
 }
 
-export function DaemonSetDetails({ obj }: { obj: KubeObject }) {
+export function DaemonSetDetails({ obj, clusterId, objectRef }: KindViewProps) {
   const { t } = useTranslation();
   const s = get(obj, "status");
   const rows: FieldRow[] = [
@@ -113,12 +121,12 @@ export function DaemonSetDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      <Template obj={obj} />
+      <Template obj={obj} clusterId={clusterId} objectRef={objectRef} />
     </>
   );
 }
 
-export function JobDetails({ obj }: { obj: KubeObject }) {
+export function JobDetails({ obj, clusterId, objectRef }: KindViewProps) {
   const { t } = useTranslation();
   const s = get(obj, "status");
   const spec = get(obj, "spec");
@@ -128,7 +136,11 @@ export function JobDetails({ obj }: { obj: KubeObject }) {
     ["backoffLimit", text(get(spec, "backoffLimit"))],
     [
       "pods",
-      t("details:workload.jobPods", { active: n(get(s, "active")), succeeded: n(get(s, "succeeded")), failed: n(get(s, "failed")) }),
+      t("details:workload.jobPods", {
+        active: n(get(s, "active")),
+        succeeded: n(get(s, "succeeded")),
+        failed: n(get(s, "failed")),
+      }),
     ],
     ["started", str(get(s, "startTime"))],
     ["completed", str(get(s, "completionTime"))],
@@ -137,7 +149,7 @@ export function JobDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      <Template obj={obj} />
+      <Template obj={obj} clusterId={clusterId} objectRef={objectRef} />
     </>
   );
 }
@@ -152,7 +164,9 @@ export function CronJobDetails({ obj }: { obj: KubeObject }) {
   const s = get(obj, "status");
   const ns = nsOf(obj);
   const jobs = arr(get(s, "active")).map((j) => link(KINDS.job, str(get(j, "name")), str(get(j, "namespace")) ?? ns));
-  const images = strings(arr(get(spec, "jobTemplate", "spec", "template", "spec", "containers")).map((c) => get(c, "image")));
+  const images = strings(
+    arr(get(spec, "jobTemplate", "spec", "template", "spec", "containers")).map((c) => get(c, "image")),
+  );
   const rows: FieldRow[] = [
     ["schedule", str(get(spec, "schedule"))],
     ["timeZone", str(get(spec, "timeZone"))],

@@ -1,9 +1,10 @@
 // Pod details: status, node, IPs, service account, QoS, volumes and every container (image, ports, env, mounts,
 // state, restarts). `ContainerList` also shows the pod template of workloads (without statuses).
 import type { TFunction } from "i18next";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { KubeObject } from "../../../api";
+import type { ClusterId, KubeObject, ObjectRef } from "../../../api";
+import { Tabs } from "../../../components";
 import { status } from "../../../resources";
 import type { Tone } from "../../../resources/status";
 import {
@@ -26,7 +27,20 @@ import {
 
 const { arr, get, num, podStatus, record, str } = status;
 
-export function PodDetails({ obj }: { obj: KubeObject }) {
+/** What tells one opened object from another: the container selection starts over when it changes. */
+export function objectKeyOf(clusterId: ClusterId, ref: ObjectRef): string {
+  return [clusterId, ref.namespace ?? "", ref.name].join("|");
+}
+
+export function PodDetails({
+  obj,
+  clusterId,
+  objectRef,
+}: {
+  obj: KubeObject;
+  clusterId: ClusterId;
+  objectRef: ObjectRef;
+}) {
   const { t } = useTranslation();
   const spec = get(obj, "spec");
   const st = get(obj, "status");
@@ -48,19 +62,25 @@ export function PodDetails({ obj }: { obj: KubeObject }) {
     ["tolerations", chips(tolerations(get(spec, "tolerations")))],
     ["statusMessage", str(get(st, "message"))],
   ];
-  const initTitle = t("details:pod.initContainers");
-  const title = t("details:pod.containers");
-  const initContainers = get(spec, "initContainers");
-  const initStatuses = get(st, "initContainerStatuses");
+  const volumes = get(spec, "volumes");
   const containers = get(spec, "containers");
   const statuses = get(st, "containerStatuses");
-  const volumes = get(spec, "volumes");
+  const initContainers = get(spec, "initContainers");
+  const initStatuses = get(st, "initContainerStatuses");
   return (
     <>
       <Fields rows={rows} />
       <Volumes volumes={volumes} namespace={ns} />
-      <ContainerList title={initTitle} containers={initContainers} statuses={initStatuses} namespace={ns} />
-      <ContainerList title={title} containers={containers} statuses={statuses} namespace={ns} />
+      <ContainerList
+        objectKey={objectKeyOf(clusterId, objectRef)}
+        title={t("details:pod.containers")}
+        containers={containers}
+        statuses={statuses}
+        initTitle={t("details:pod.initContainers")}
+        initContainers={initContainers}
+        initStatuses={initStatuses}
+        namespace={ns}
+      />
     </>
   );
 }
@@ -84,25 +104,119 @@ function Volumes({ volumes, namespace }: { volumes: unknown; namespace: string |
   return <Block title={t("details:pod.volumes")}>{content}</Block>;
 }
 
+interface ContainerItem {
+  name: string;
+  init: boolean;
+  container: unknown;
+  status: unknown;
+}
+
+function itemsOf(containers: unknown, statuses: unknown, init: boolean): ContainerItem[] {
+  const byName = new Map(arr(statuses).map((s) => [str(get(s, "name")), s]));
+  return arr(containers).map((container) => {
+    const name = str(get(container, "name")) ?? "";
+    return { name, init, container, status: byName.get(name) };
+  });
+}
+
+/**
+ * The containers of a pod, or of a pod template (without statuses). Two or more (init containers included, they come
+ * first) are tabs, one container at a time; one is shown as it is. The tab survives updates of the object `objectKey`
+ * names; another object starts at the first container.
+ */
 export function ContainerList({
+  objectKey,
   title,
   containers,
   statuses,
+  initTitle,
+  initContainers,
+  initStatuses,
   namespace,
 }: {
+  objectKey: string;
   title: string;
   containers: unknown;
   statuses?: unknown;
+  initTitle: string;
+  initContainers?: unknown;
+  initStatuses?: unknown;
   namespace: string | null;
 }) {
-  const list = arr(containers);
-  if (list.length === 0) return null;
-  const byName = new Map(arr(statuses).map((s) => [str(get(s, "name")), s]));
-  const items = list.map((c) => {
-    const name = str(get(c, "name")) ?? "";
-    return <Container key={name} container={c} status={byName.get(name)} namespace={namespace} />;
+  const init = itemsOf(initContainers, initStatuses, true);
+  const regular = itemsOf(containers, statuses, false);
+  if (init.length + regular.length === 0) return null;
+  if (init.length + regular.length > 1)
+    return <ContainerTabs key={objectKey} title={title} items={[...init, ...regular]} namespace={namespace} />;
+  const render = (items: ContainerItem[], blockTitle: string) =>
+    items.length > 0 && (
+      <Block title={blockTitle}>
+        {items.map((item) => (
+          <Container key={item.name} container={item.container} status={item.status} namespace={namespace} />
+        ))}
+      </Block>
+    );
+  return (
+    <>
+      {render(init, initTitle)}
+      {render(regular, title)}
+    </>
+  );
+}
+
+function ContainerTabs({
+  title,
+  items,
+  namespace,
+}: {
+  title: string;
+  items: ContainerItem[];
+  namespace: string | null;
+}) {
+  const { t } = useTranslation();
+  const [chosen, setChosen] = useState<string | undefined>();
+  // A container that is gone from the list gives way to the first one.
+  const selected = items.find((item) => item.name === chosen) ?? items[0]!;
+  const tabs = items.map((item) => {
+    const current = item.status ? stateOf(item.status, t) : undefined;
+    const restarts = item.status ? (num(get(item.status, "restartCount")) ?? 0) : 0;
+    return {
+      id: item.name,
+      title: current && [current.state, current.reason].filter(Boolean).join(": "),
+      label: (
+        <>
+          {/* The spaces are for screen readers: the tab lays its parts out in a row on its own. */}
+          <span className="dt-tab__name">{item.name}</span>
+          {item.init && (
+            <>
+              {" "}
+              <span className="dt-tag">{t("details:pod.init")}</span>
+            </>
+          )}
+          {current && <> {statusText(current.state, stateTone(current.state, current.reason))}</>}
+          {restarts > 0 && (
+            <>
+              {" "}
+              <span className="dt-muted">{t("details:pod.restartCount", { count: restarts })}</span>
+            </>
+          )}
+        </>
+      ),
+    };
   });
-  return <Block title={title}>{items}</Block>;
+  return (
+    <Block title={title}>
+      <Tabs
+        label={t("details:pod.tabs")}
+        tabs={tabs}
+        selected={selected.name}
+        onSelect={setChosen}
+        className="dt-container-tabs"
+      >
+        <Container container={selected.container} status={selected.status} namespace={namespace} />
+      </Tabs>
+    </Block>
+  );
 }
 
 interface State {
@@ -135,16 +249,32 @@ function envValue(env: unknown, t: TFunction): ReactNode {
   const value = get(env, "value");
   if (typeof value === "string") return pre(value);
   const from = get(env, "valueFrom");
-  const ref = (field: string) => ({ name: str(get(from, field, "name")), key: str(get(from, field, "key")) });
+  const ref = (field: string) => ({
+    name: str(get(from, field, "name")),
+    key: str(get(from, field, "key")),
+  });
   if (get(from, "secretKeyRef")) return t("details:env.secretKey", ref("secretKeyRef"));
   if (get(from, "configMapKeyRef")) return t("details:env.configMapKey", ref("configMapKeyRef"));
-  if (get(from, "fieldRef")) return t("details:env.field", { path: str(get(from, "fieldRef", "fieldPath")) });
+  if (get(from, "fieldRef"))
+    return t("details:env.field", {
+      path: str(get(from, "fieldRef", "fieldPath")),
+    });
   if (get(from, "resourceFieldRef"))
-    return t("details:env.resource", { resource: str(get(from, "resourceFieldRef", "resource")) });
+    return t("details:env.resource", {
+      resource: str(get(from, "resourceFieldRef", "resource")),
+    });
   return null;
 }
 
-function Container({ container, status: st, namespace }: { container: unknown; status: unknown; namespace: string | null }) {
+function Container({
+  container,
+  status: st,
+  namespace,
+}: {
+  container: unknown;
+  status: unknown;
+  namespace: string | null;
+}) {
   const { t } = useTranslation();
   const name = str(get(container, "name")) ?? "";
   const current = st ? stateOf(st, t) : undefined;

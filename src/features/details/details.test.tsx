@@ -93,6 +93,149 @@ describe("details of a pod", () => {
   });
 });
 
+describe("containers of a pod in tabs", () => {
+  const OTHER_REF: ObjectRef = { ...POD_REF, name: "other-pod" };
+
+  function containerStatus(name: string, state: Record<string, unknown>, restartCount = 0) {
+    return {
+      name,
+      ready: Object.keys(state)[0] === "running",
+      restartCount,
+      state,
+    };
+  }
+
+  /** The nginx pod with a `web` and a `proxy` container and a `setup` init container. */
+  function crowded(name = POD_REF.name): KubeObject {
+    const obj = copy(pod);
+    obj.metadata!.name = name;
+    obj.spec = {
+      ...(obj.spec as object),
+      initContainers: [{ name: "setup", image: "busybox:1.36", command: ["sh", "-c", "true"] }],
+      containers: [
+        {
+          name: "web",
+          image: "nginx:stable-alpine",
+          ports: [{ containerPort: 80 }],
+        },
+        { name: "proxy", image: "envoy:v1.30" },
+      ],
+    };
+    obj.status = {
+      ...(obj.status as object),
+      initContainerStatuses: [
+        containerStatus("setup", {
+          terminated: { reason: "Completed", exitCode: 0 },
+        }),
+      ],
+      containerStatuses: [
+        containerStatus("web", { running: { startedAt: "2026-10-11T18:26:13Z" } }, 2),
+        containerStatus("proxy", { waiting: { reason: "CrashLoopBackOff" } }, 5),
+      ],
+    };
+    return obj;
+  }
+
+  const tabNames = () => screen.getAllByRole("tab").map((tab) => tab.textContent);
+  const shownContainers = () =>
+    [...document.querySelectorAll<HTMLElement>("[data-container]")].map((el) => el.getAttribute("data-container"));
+
+  it("shows init containers first, marked, with state and restarts, and one container at a time", async () => {
+    await openDetails(crowded(), POD_REF);
+    expect(screen.getByRole("tablist", { name: "Containers" })).toBeInTheDocument();
+    expect(tabNames()).toEqual(["setup init terminated", "web running 2 restarts", "proxy waiting 5 restarts"]);
+    expect(screen.getByRole("tab", { name: /^setup/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^proxy/ })).toHaveAttribute("title", "waiting: CrashLoopBackOff");
+    expect(shownContainers()).toEqual(["setup"]);
+    expect(within(screen.getByRole("tabpanel")).getByText("busybox:1.36")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /^proxy/ }));
+    expect(shownContainers()).toEqual(["proxy"]);
+    expect(within(screen.getByRole("tabpanel")).getByText("envoy:v1.30")).toBeInTheDocument();
+    expect(screen.queryByText("busybox:1.36")).toBeNull();
+  });
+
+  it("is operated from the keyboard: arrows, Home and End move the selection", async () => {
+    await openDetails(crowded(), POD_REF);
+    const selected = () => screen.getByRole("tab", { selected: true }).textContent;
+    screen.getByRole("tab", { name: /^setup/ }).focus();
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
+    expect(selected()).toMatch(/^web/);
+    expect(document.activeElement).toBe(screen.getByRole("tab", { name: /^web/ }));
+    fireEvent.keyDown(document.activeElement!, { key: "End" });
+    expect(selected()).toMatch(/^proxy/);
+    expect(shownContainers()).toEqual(["proxy"]);
+    fireEvent.keyDown(document.activeElement!, { key: "Home" });
+    expect(selected()).toMatch(/^setup/);
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowLeft" });
+    expect(selected()).toMatch(/^proxy/);
+  });
+
+  it("keeps the selected container when the same pod is updated", async () => {
+    const id = await openDetails(crowded(), POD_REF);
+    fireEvent.click(screen.getByRole("tab", { name: /^web/ }));
+    const updated = crowded();
+    (updated.status as { containerStatuses: { restartCount: number }[] }).containerStatuses[0]!.restartCount = 3;
+    emitDelta(wb, id, [updated]);
+    expect(tabNames()[1]).toBe("web running 3 restarts");
+    expect(screen.getByRole("tab", { selected: true }).textContent).toMatch(/^web/);
+    expect(shownContainers()).toEqual(["web"]);
+  });
+
+  it("falls back to the first container when the selected one is gone", async () => {
+    const id = await openDetails(crowded(), POD_REF);
+    fireEvent.click(screen.getByRole("tab", { name: /^proxy/ }));
+    const updated = crowded();
+    (updated.spec as { containers: unknown[] }).containers.pop();
+    (updated.status as { containerStatuses: unknown[] }).containerStatuses.pop();
+    emitDelta(wb, id, [updated]);
+    expect(tabNames()).toHaveLength(2);
+    expect(screen.getByRole("tab", { selected: true }).textContent).toMatch(/^setup/);
+    expect(shownContainers()).toEqual(["setup"]);
+  });
+
+  it("starts at the first container again for another pod", async () => {
+    const view = render(<DetailsPanel clusterId="c1" objectRef={POD_REF} />);
+    emitSnapshot(wb, await watchOf(wb, "Pod", (s) => s.fieldSelector === `metadata.name=${POD_REF.name}`), [crowded()]);
+    fireEvent.click(await screen.findByRole("tab", { name: /^proxy/ }));
+    expect(shownContainers()).toEqual(["proxy"]);
+
+    view.rerender(<DetailsPanel clusterId="c1" objectRef={OTHER_REF} />);
+    emitSnapshot(wb, await watchOf(wb, "Pod", (s) => s.fieldSelector === `metadata.name=${OTHER_REF.name}`), [
+      crowded(OTHER_REF.name),
+    ]);
+    await waitFor(() => expect(screen.getByRole("tab", { selected: true }).textContent).toMatch(/^setup/));
+    expect(shownContainers()).toEqual(["setup"]);
+  });
+
+  it("shows a pod with a single container as before, without tabs", async () => {
+    await openDetails(pod, POD_REF);
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(shownContainers()).toEqual(["nginx"]);
+    expect(screen.getByRole("heading", { name: "Containers" })).toBeInTheDocument();
+  });
+
+  it("puts the containers of a pod template in tabs too, without states", async () => {
+    const obj = copy(deployment);
+    const spec = (obj.spec as { template: { spec: Record<string, unknown> } }).template.spec;
+    spec.initContainers = [{ name: "migrate", image: "app:1" }];
+    (spec.containers as unknown[]).push({
+      name: "metrics",
+      image: "exporter:2",
+    });
+    await openDetails(obj, {
+      kind: { group: "apps", version: "v1", kind: "Deployment" },
+      namespace: "sextant-demo",
+      name: "nginx",
+    });
+    expect(screen.getByRole("tablist", { name: "Containers" })).toBeInTheDocument();
+    expect(tabNames()).toEqual(["migrate init", "nginx", "metrics"]);
+    expect(shownContainers()).toEqual(["migrate"]);
+    fireEvent.click(screen.getByRole("tab", { name: "metrics" }));
+    expect(within(screen.getByRole("tabpanel")).getByText("exporter:2")).toBeInTheDocument();
+  });
+});
+
 describe("links between objects", () => {
   it("opens the ReplicaSet owning a pod and the node it runs on", async () => {
     await openDetails(pod, POD_REF);

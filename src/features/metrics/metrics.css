@@ -84,6 +84,34 @@
   min-width: 0;
 }
 
+.mx-amount {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.mx-amount__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.mx-amount__spec {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mx-amount__note {
+  opacity: 0.8;
+  font-size: 12px;
+}
+
+div.mx-amount__spec {
+  display: flex;
+}
+
 .mx-current__container {
   padding-left: 12px;
 }

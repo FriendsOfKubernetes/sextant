@@ -8,6 +8,17 @@
   "percentOf": "{{value}}% · {{text}}",
   "usedOf": "{{used}} of {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "request {{value}}",
+    "limit": "limit {{value}}",
+    "noLimit": "no limit",
+    "requestSetOn": "(set on {{count}} of {{total}} containers)",
+    "limitSetOn": "(set on {{count}} of {{total}} containers)",
+    "shareOfLimit": "{{value}}% of limit",
+    "shareOfRequest": "{{value}}% of request",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "Memory {{amounts}}"
+  },
   "columns": {
     "cpu": "CPU",
     "memory": "Memory"
