@@ -11,6 +11,8 @@ import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
 import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
+// Not "../mcp": that feature draws the Settings button in its rail footer, so it imports this page.
+import { McpPanel } from "../mcp/McpPanel";
 import { UpdatesPanel } from "../updates";
 import { languageName } from "./languages";
 import "./settings.css";
@@ -53,6 +55,7 @@ export function SettingsContent() {
       <EditorSection settings={settings} save={save} />
       <HelmSection settings={settings} save={save} />
       <KubeconfigSection />
+      <McpSection settings={settings} save={save} />
       <UpdatesSection save={save} />
     </div>
   );
@@ -301,6 +304,15 @@ function KubeconfigSection() {
         <p>{t(removing?.kind === "pasted" ? "clusters:sources.confirmPasted" : "clusters:sources.confirmFile")}</p>
         <p className="settings__source-path">{removing?.path}</p>
       </ConfirmDialog>
+    </Section>
+  );
+}
+
+function McpSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  return (
+    <Section title={t("mcp:title")} hint={t("mcp:hint")}>
+      <McpPanel settings={settings} save={save} />
     </Section>
   );
 }

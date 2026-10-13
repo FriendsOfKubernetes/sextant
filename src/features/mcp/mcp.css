@@ -1,0 +1,212 @@
+.mcp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mcp__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.mcp__port {
+  margin: 8px 0 0;
+}
+
+.mcp__port-input {
+  width: 8ch;
+  min-width: 80px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.mcp__port-input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.settings__hint[data-invalid] {
+  color: var(--color-danger);
+}
+
+.mcp__status[data-state="running"] {
+  color: var(--color-success);
+}
+
+.mcp__status[data-state="error"] {
+  color: var(--color-danger);
+}
+
+.mcp__token {
+  flex: 1 1 200px;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-sidebar);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.mcp__notice[data-kind="error"],
+.mcp__feedback[data-kind="error"] {
+  color: var(--color-danger);
+}
+
+.mcp__feedback {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.mcp__snippet {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-sidebar);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 260px;
+  overflow: auto;
+}
+
+/* Rail button with the activity dot. */
+.mcp-rail-button {
+  position: relative;
+}
+
+.mcp-rail-button__dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 2px var(--color-rail);
+}
+
+/* Agent activity log. */
+.mcp-activity {
+  width: min(1040px, calc(100vw - 64px));
+  min-width: 0;
+}
+
+.mcp-activity__filter-label {
+  margin: 0;
+}
+
+.mcp-activity__scroll {
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.mcp-activity__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.mcp-activity__table th,
+.mcp-activity__table td {
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mcp-activity__table th {
+  position: sticky;
+  top: 0;
+  background: var(--color-dock-header);
+  white-space: nowrap;
+}
+
+.mcp-activity__time,
+.mcp-activity__duration {
+  white-space: nowrap;
+}
+
+.mcp-activity__target {
+  min-width: 160px;
+  overflow-wrap: anywhere;
+}
+
+.mcp-activity__empty {
+  color: var(--color-text-muted);
+}
+
+/* Confirmation of what an agent asks to do: above every other dialog. */
+.mcp-confirm {
+  z-index: 300;
+}
+
+.mcp-confirm__dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.mcp-confirm__intro {
+  margin: 0 0 12px;
+}
+
+.mcp-confirm__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.mcp-confirm__facts dt {
+  color: var(--color-text-muted);
+}
+
+.mcp-confirm__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mcp-confirm__tool {
+  margin-left: 8px;
+  color: var(--color-text-muted);
+}
+
+.mcp-confirm__target {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.mcp-confirm__details-title {
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+
+.mcp-confirm__details {
+  margin: 0;
+  padding: 8px 12px;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-sidebar);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mcp-confirm__footer {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mcp-confirm__countdown {
+  margin-right: auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

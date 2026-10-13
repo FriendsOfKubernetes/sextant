@@ -5,6 +5,7 @@ import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
 import type { ArgoLogin } from "./generated/ArgoLogin";
 import type { ArgoStatus } from "./generated/ArgoStatus";
+import type { AuditEntry } from "./generated/AuditEntry";
 import type { ChartHit } from "./generated/ChartHit";
 import type { ChartTarget } from "./generated/ChartTarget";
 import type { ClusterId } from "./generated/ClusterId";
@@ -21,6 +22,7 @@ import type { HelmStatus } from "./generated/HelmStatus";
 import type { KubeconfigSource } from "./generated/KubeconfigSource";
 import type { LogOptions } from "./generated/LogOptions";
 import type { ManagedResource } from "./generated/ManagedResource";
+import type { McpStatus } from "./generated/McpStatus";
 import type { MetricsStatus } from "./generated/MetricsStatus";
 import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
@@ -202,4 +204,23 @@ export const argocd = {
 export const access = {
   /** The rules a preset stands for (empty for `off` and `custom`); the only source of preset rules. */
   presetRules: (preset: AccessPreset) => call<AccessRule[]>("access_preset_rules", { preset }),
+};
+
+/**
+ * The built-in MCP server for AI agents: status, token, the journal of calls and the answers to confirmation requests
+ * (`mcp-confirm`). The server starts and stops with `settings.mcp`.
+ */
+export const mcp = {
+  status: () => call<McpStatus>("mcp_status"),
+  /** The real token (created on first use); ask only when the user shows or copies it. */
+  token: () => call<string>("mcp_token"),
+  /** A new token: the old one stops working at once and agent sessions end. Resolves to the new token. */
+  regenerateToken: () => call<string>("mcp_regenerate_token"),
+  /** Calls of agents, newest first; one cluster's only when `clusterId` is given. */
+  auditList: (clusterId: ClusterId | null = null) => call<AuditEntry[]>("mcp_audit_list", { clusterId }),
+  auditClear: () => call<void>("mcp_audit_clear"),
+  /** Answers an `mcp-confirm` request; rejects with `notFound` when it no longer waits. */
+  confirmAnswer: (id: string, approved: boolean) => call<void>("mcp_confirm_answer", { id, approved }),
+  /** Path of the running Sextant executable, for the Claude Desktop snippet. */
+  binaryPath: () => call<string>("mcp_binary_path"),
 };

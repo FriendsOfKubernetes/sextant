@@ -142,6 +142,8 @@ const ICONS = {
   download: Download,
   eye: Eye,
   eyeOff: EyeOff,
+  copy: Copy,
+  agent: Bot, // AI agents (MCP)
   // Cluster rail.
   expandRail: PanelLeftOpen,
   collapseRail: PanelLeftClose,
