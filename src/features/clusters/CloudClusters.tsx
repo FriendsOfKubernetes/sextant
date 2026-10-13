@@ -1,6 +1,7 @@
 // "Add cluster → From cloud": the cloud CLIs found on this machine (`aws`, `gcloud`, `az`), an account of the chosen
 // one (and the regions for AWS), the clusters it lists, and "Add". Sextant never signs in: when a CLI is signed out or
-// a plugin is missing, the problem shows the command the user runs (copied with one click) or the install guide.
+// a plugin is missing, the problem shows the command the user runs (copied with one click, or typed — not run — into a
+// local terminal in the dock) or the install guide.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,6 +19,8 @@ import {
   type CloudSearch,
 } from "../../api";
 import { Button, Checkbox, ErrorState, Radio } from "../../components";
+// Not "../terminal": that feature imports the clusters store, and its index registers actions.
+import { openCommandTerminalTab } from "../terminal/tabs";
 import { refreshClusters } from "./clustersStore";
 
 async function writeClipboard(text: string): Promise<void> {
@@ -25,27 +28,42 @@ async function writeClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text);
 }
 
-/** A command for the user to run, with "Copy command". */
+/**
+ * A command for the user to run, with "Copy command" and "Open terminal" (a local terminal in the dock with the
+ * command typed in; the user presses Enter).
+ */
 function CommandLine({ command }: { command: string }) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
+  const [feedback, setFeedback] = useState<"copied" | "copyFailed" | "opened" | null>(null);
   const copy = async () => {
     try {
       await writeClipboard(command);
-      setCopied("yes");
+      setFeedback("copied");
     } catch {
-      setCopied("failed");
+      setFeedback("copyFailed");
     }
   };
+  const openTerminal = () => {
+    openCommandTerminalTab(command);
+    setFeedback("opened");
+  };
+  const feedbackKey = {
+    copied: "clusters:cloud.copied",
+    copyFailed: "clusters:cloud.copyFailed",
+    opened: "terminal:local.openedWithCommand",
+  } as const;
   return (
     <div className="cloud-command">
       <code className="cloud-command__text">{command}</code>
       <Button size="compact" onClick={() => void copy()}>
         {t("clusters:cloud.copyCommand")}
       </Button>
-      {copied && (
+      <Button size="compact" onClick={openTerminal}>
+        {t("terminal:local.openWithCommand")}
+      </Button>
+      {feedback && (
         <span className="cloud-command__feedback" role="status">
-          {t(copied === "yes" ? "clusters:cloud.copied" : "clusters:cloud.copyFailed")}
+          {t(feedbackKey[feedback])}
         </span>
       )}
     </div>

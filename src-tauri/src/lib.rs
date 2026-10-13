@@ -52,6 +52,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         logs::logs_stop,
         terminal::exec_start,
         terminal::terminal_start,
+        terminal::node_shell_start,
         terminal::term_input,
         terminal::term_resize,
         terminal::term_stop,

@@ -9,6 +9,7 @@
 //! error, not later in a table. Credentials are only handed to kube-rs; they are never logged or returned.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
@@ -90,6 +91,8 @@ struct Inner {
     registry: Arc<RwLock<KubeconfigRegistry>>,
     clusters: Mutex<HashMap<ClusterId, Entry>>,
     state_tx: broadcast::Sender<(ClusterId, ConnectionState)>,
+    /// See [`ClusterManager::sweep_node_shells_on_connect`].
+    sweep_node_shells: AtomicBool,
 }
 
 /// Everything known about one cluster. `generation` grows with every connect/disconnect, so a slow connect
@@ -115,6 +118,7 @@ impl ClusterManager {
                 registry,
                 clusters: Mutex::new(HashMap::new()),
                 state_tx,
+                sweep_node_shells: AtomicBool::new(false),
             }),
         }
     }
@@ -122,6 +126,14 @@ impl ClusterManager {
     /// The kubeconfig registry this manager reads contexts from.
     pub fn registry(&self) -> Arc<RwLock<KubeconfigRegistry>> {
         Arc::clone(&self.inner.registry)
+    }
+
+    /// From now on every successful [`ClusterManager::connect`] starts [`crate::node_shell::sweep`] in the background:
+    /// node shell pods left by an earlier run (or older than 8 hours) are deleted. The application turns it on; a
+    /// manager in tests does not sweep unless asked to. Errors (no right to list or delete pods in `kube-system`) are
+    /// ignored.
+    pub fn sweep_node_shells_on_connect(&self) {
+        self.inner.sweep_node_shells.store(true, Ordering::SeqCst);
     }
 
     /// Connects (or reconnects) a cluster: `connecting`, then `connected` or `error`. The discovery cache is
@@ -155,6 +167,14 @@ impl ClusterManager {
                 }
             })
         });
+        if let (Some(ConnectionState::Connected), Ok(client)) = (&applied, &result)
+            && self.inner.sweep_node_shells.load(Ordering::SeqCst)
+        {
+            let client = client.clone();
+            tokio::spawn(async move {
+                let _ = crate::node_shell::sweep(client).await;
+            });
+        }
         match applied {
             Some(state) => self.broadcast(id, state),
             None => {

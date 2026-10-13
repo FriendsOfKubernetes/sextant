@@ -7,6 +7,7 @@ import { Dock } from "../../layout/dock/Dock";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import { getAction, getActionsFor, runAction } from "../actions/registry";
 import { useClustersStore } from "../clusters/clustersStore";
+import { CloudProblemView } from "../clusters/CloudClusters";
 import "./index";
 import { useTerminal } from "./useTerminal";
 
@@ -58,6 +59,7 @@ beforeEach(() => {
   backend = mockBackend({
     exec_start: start,
     terminal_start: start,
+    node_shell_start: start,
     term_input: () => undefined,
     term_resize: (args) => {
       listenersAtResize.push(backend.listenerCount(`term:${args.sessionId as string}`));
@@ -90,7 +92,9 @@ function calls(cmd: string) {
 
 /** The ids the frontend chose for its sessions, in start order. */
 function sessionIds() {
-  return backend.calls.filter((c) => c.cmd === "exec_start" || c.cmd === "terminal_start").map((c) => c.args.streamId);
+  return backend.calls
+    .filter((c) => c.cmd === "exec_start" || c.cmd === "terminal_start" || c.cmd === "node_shell_start")
+    .map((c) => c.args.streamId);
 }
 
 describe("Shell action", () => {
@@ -212,6 +216,149 @@ describe("Shell action", () => {
     fireEvent.click(screen.getByRole("button", { name: /Close.*Shell: web/ }));
     await waitFor(() => expect(calls("term_stop")).toEqual([{ sessionId: sessionIds()[0] }]));
     expect(backend.listenerCount("term:term-1")).toBe(0);
+  });
+});
+
+const NODE: KindRef = { group: "", version: "v1", kind: "Node" };
+
+function node(name: string): KubeObject {
+  return { apiVersion: "v1", kind: "Node", metadata: { name, uid: `uid-${name}` }, spec: {}, status: {} };
+}
+
+describe("Shell on a node", () => {
+  it("is offered for nodes", () => {
+    expect(getActionsFor([node("worker-1")], NODE, ["exec"]).map((a) => a.id)).toEqual(["exec"]);
+  });
+
+  it("asks first and creates nothing when cancelled", async () => {
+    render(<App />);
+    const action = getAction("exec")!;
+    await act(() => runAction(action, "c1", NODE, [node("worker-1")]));
+    const dialog = await screen.findByRole("dialog", { name: "Open a shell on node worker-1?" });
+    expect(dialog).toHaveTextContent(
+      "Sextant will create a privileged pod on node worker-1 in kube-system. It is deleted when you close the shell.",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(calls("node_shell_start")).toEqual([]);
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+  });
+
+  it("after Open runs the node's shell in a dock tab named after the node, and closing the tab stops it", async () => {
+    render(<App />);
+    const action = getAction("exec")!;
+    await act(() => runAction(action, "c1", NODE, [node("worker-1")]));
+    const dialog = await screen.findByRole("dialog", { name: "Open a shell on node worker-1?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Open" }));
+
+    expect(await screen.findByRole("tab", { name: "Node: worker-1" })).toBeInTheDocument();
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    expect(calls("node_shell_start")[0]).toMatchObject({ clusterId: "c1", node: "worker-1" });
+    expect(listenersAtStart).toEqual([1]);
+
+    fireEvent.click(screen.getByRole("button", { name: /Close.*Node: worker-1/ }));
+    await waitFor(() => expect(calls("term_stop")).toEqual([{ sessionId: sessionIds()[0] }]));
+  });
+
+  it("says why the pod could not start", async () => {
+    backend.on("node_shell_start", () => {
+      throw { code: "forbidden", message: "You need permission to create privileged pods in kube-system" };
+    });
+    render(<App />);
+    const action = getAction("exec")!;
+    await act(() => runAction(action, "c1", NODE, [node("worker-1")]));
+    fireEvent.click(
+      within(await screen.findByRole("dialog", { name: "Open a shell on node worker-1?" })).getByRole("button", {
+        name: "Open",
+      }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "You need permission to create privileged pods in kube-system",
+    );
+  });
+});
+
+describe("Reconnect in a node shell tab", () => {
+  it("asks again before it makes a new privileged pod", async () => {
+    let starts = 0;
+    backend.on("node_shell_start", () => {
+      starts++;
+      throw { code: "timeout", message: "The node shell pod did not start" };
+    });
+    render(<App />);
+    await act(() => runAction(getAction("exec")!, "c1", NODE, [node("worker-1")]));
+    fireEvent.click(
+      within(await screen.findByRole("dialog", { name: "Open a shell on node worker-1?" })).getByRole("button", {
+        name: "Open",
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Reconnect" }));
+    const again = await screen.findByRole("dialog", { name: "Open a shell on node worker-1?" });
+    expect(again).toHaveTextContent("Sextant will create a privileged pod on node worker-1 in kube-system.");
+    fireEvent.click(within(again).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(starts).toBe(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog", { name: "Open a shell on node worker-1?" })).getByRole("button", {
+        name: "Open",
+      }),
+    );
+    await waitFor(() => expect(starts).toBe(2));
+  });
+
+  it("a container shell reconnects without asking", async () => {
+    render(<App />);
+    await runShell(pod("web", ["nginx"]));
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    act(() => backend.emit(`term:${sessionIds()[0] as string}`, { type: "exit", code: 0 }));
+    fireEvent.click(await screen.findByRole("button", { name: "Reconnect" }));
+    await waitFor(() => expect(calls("exec_start")).toHaveLength(2));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+
+describe("Open terminal with a sign-in command", () => {
+  const COMMAND = "aws sso login --profile dev";
+
+  it("opens a terminal without a cluster and types the command without running it", async () => {
+    render(
+      <>
+        <CloudProblemView
+          problem={{ provider: "aws", kind: "notLoggedIn", scope: "dev", message: "", command: COMMAND, url: null }}
+        />
+        <App />
+      </>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open terminal" }));
+
+    expect(await screen.findByRole("tab", { name: "Terminal" })).toBeInTheDocument();
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    expect(calls("terminal_start")[0]).toMatchObject({ clusterId: null });
+    // Typed once the shell printed its prompt; never with Enter.
+    act(() => backend.emit(`term:${sessionIds()[0] as string}`, { type: "data", data: b64("$ ") }));
+    await waitFor(() => expect(calls("term_input")).toEqual([{ sessionId: sessionIds()[0], data: COMMAND }]), {
+      timeout: 3000,
+    });
+    // Without a cluster there is no KUBECONFIG to warn about.
+    expect(screen.queryByRole("note", { name: /KUBECONFIG/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("a command typed into a terminal", () => {
+  it("loses every control character: no Enter, no escape sequences", async () => {
+    const { openCommandTerminalTab } = await import("./tabs");
+    render(<App />);
+    act(() => {
+      openCommandTerminalTab("aws sso login\r\n--profile dev\x1b[201~\x03\x7f\x00x\u009b\t");
+    });
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    act(() => backend.emit(`term:${sessionIds()[0] as string}`, { type: "data", data: b64("$ ") }));
+    await waitFor(() => expect(calls("term_input")).toHaveLength(1), { timeout: 3000 });
+    const typed = calls("term_input")[0]!.data as string;
+    expect(typed).toBe("aws sso login --profile dev [201~ x");
+    expect([...typed].every((c) => c.charCodeAt(0) >= 0x20 && c.charCodeAt(0) !== 0x7f)).toBe(true);
   });
 });
 

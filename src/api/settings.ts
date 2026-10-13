@@ -26,6 +26,7 @@ export function defaultAppSettings(): AppSettings {
     editorTheme: "auto",
     checkForUpdates: true,
     mcp: { enabled: false, port: 47391 },
+    nodeShellImage: "busybox:stable",
   };
 }
 

@@ -60,5 +60,10 @@
     "backup": "The settings file was damaged, so Sextant started with default settings. The old file was copied to {{path}}.",
     "unwritable": "Changes are not saved: the settings file cannot be read or written. Fix its permissions and restart Sextant.",
     "dismiss": "Dismiss"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "nodeShellImage": "Node shell image",
+    "nodeShellImageHint": "Image of the temporary privileged pod behind \"Shell\" on a node. It needs nsenter (busybox has it); the shell itself is the node's. AI agents never get a node shell."
   }
 }

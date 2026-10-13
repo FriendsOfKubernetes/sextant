@@ -24,7 +24,8 @@ registerResource({
       ),
     }),
   ],
-  actions: ["cordon", "drain", "edit", "delete"],
+  // "exec" is "Shell" (features/terminal): on a node, through a temporary privileged pod, after a confirmation.
+  actions: ["exec", "cordon", "drain", "edit", "delete"],
 });
 
 registerResource({

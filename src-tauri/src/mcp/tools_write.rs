@@ -12,7 +12,7 @@
 //! | `patch_resource`, `scale`, `restart`, `trigger_cronjob`, `suspend_cronjob`, `gitops_action`, `cordon_node` | Modify on the kind |
 //! | `delete_resource` | Delete on the kind |
 //! | `drain_node` | Modify on `Node` and Delete on `Pod` in all namespaces |
-//! | `exec_command` | Exec on `Pod` |
+//! | `exec_command` | Exec on `Pod`; never in a node shell pod (`sextant.dev/node-shell=true`) |
 //! | `port_forward_start` | Port forward on `Pod` / `Service`; list and stop see only the agents' own forwards |
 //! | `helm_install`, `helm_upgrade`, `helm_rollback` | Modify on `helm.sh/Release`; `helm_uninstall` — Delete |
 
@@ -27,7 +27,7 @@ use sextant_core::exec;
 use sextant_core::helm::cli::{self as helm_cli, HelmCli};
 use sextant_core::portforward::ForwardTarget;
 use sextant_core::resources::{self, KindRef, ObjectRef, PatchType};
-use sextant_core::{CoreError, CoreResult, DrainOptions, ErrorCode};
+use sextant_core::{ClusterId, CoreError, CoreResult, DrainOptions, ErrorCode};
 
 use super::confirm::first_lines;
 use super::context::McpContext;
@@ -928,6 +928,13 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
         details.push_str(&format!("\ncontainer: {container}"));
     }
     let summary = plain("exec_command", describe(&pod), Some(first_lines(&details)));
+    if is_node_shell_pod(&call, &cluster.id, &pod).await {
+        return Err(CoreError::new(
+            ErrorCode::Denied,
+            "Sextant does not let agents use node shells",
+        )
+        .into());
+    }
     call.guard
         .check(
             &cluster,
@@ -957,6 +964,15 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
         "truncated": output.truncated,
         "timedOut": output.timed_out,
     })))
+}
+
+/// A node shell pod (`sextant.dev/node-shell=true`): a command in it runs on the node itself, so agents never get it,
+/// whatever the rules say. A pod that cannot be read is left to the usual checks and errors.
+async fn is_node_shell_pod(call: &ToolCall, cluster: &ClusterId, pod: &ObjectRef) -> bool {
+    let Ok(object) = resources::get(&call.ctx().clusters, cluster, pod).await else {
+        return false;
+    };
+    object["metadata"]["labels"][sextant_core::node_shell::LABEL_NODE_SHELL] == "true"
 }
 
 async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResult {
@@ -2618,6 +2634,42 @@ spec:
                 .iter()
                 .all(|e| !e.target.contains('\n') && !e.target.contains("echo hi"))
         );
+        remove_namespace(&state, &id, NS).await;
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn an_agent_never_runs_commands_in_a_node_shell_pod_whatever_the_rules() {
+        const NS: &str = "sextant-mcp-node-shell";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        namespace(&state, &id, NS, false).await;
+        let pod = format!(
+            "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shell\n  namespace: {NS}\n  labels:\n    \
+             sextant.dev/node-shell: \"true\"\nspec:\n  terminationGracePeriodSeconds: 0\n  containers:\n  \
+             - name: shell\n    image: busybox:stable\n    imagePullPolicy: IfNotPresent\n    \
+             command: [sleep, \"600\"]\n"
+        );
+        resources::apply_yaml(&state.clusters, &id, &pod)
+            .await
+            .unwrap();
+        use AccessAction::{Exec, Read};
+        set_rules(&state, &id, vec![rule(&[], &[], &[Read, Exec], false)]);
+
+        let refused = tool(
+            &state,
+            "exec_command",
+            json!({ "cluster": id.0.as_str(), "namespace": NS, "pod": "shell", "command": ["hostname"] }),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            refused.contains("Sextant does not let agents use node shells"),
+            "{refused}"
+        );
+        assert_eq!(window.count(), 0, "the refused call was asked about");
         remove_namespace(&state, &id, NS).await;
         state.close_all();
     }

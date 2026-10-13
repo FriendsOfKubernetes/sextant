@@ -1,8 +1,17 @@
 // The Settings page: appearance (theme, language), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
-// sources, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
+// sources, the node shell image, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, useSettings, type ApiError, type AppSettings, type KubeconfigSource, type Theme } from "../../api";
+import {
+  api,
+  defaultAppSettings,
+  toApiError,
+  useSettings,
+  type ApiError,
+  type AppSettings,
+  type KubeconfigSource,
+  type Theme,
+} from "../../api";
 import { Button, ConfirmDialog, ErrorState, Radio } from "../../components";
 import { availableLanguages } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
@@ -18,7 +27,13 @@ import { languageName } from "./languages";
 import "./settings.css";
 
 const THEMES: Theme[] = ["system", "light", "dark"];
-const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted"]);
+const DEFAULT_NODE_SHELL_IMAGE = defaultAppSettings().nodeShellImage;
+const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted", "cloud"]);
+/** What removing a source does, by its kind. */
+const REMOVE_CONFIRM: Partial<Record<KubeconfigSource["kind"], string>> = {
+  pasted: "clusters:sources.confirmPasted",
+  cloud: "clusters:sources.confirmCloud",
+};
 
 /** The sidebar page (`registerPage`). */
 export function SettingsPage(_props: PageProps) {
@@ -55,6 +70,7 @@ export function SettingsContent() {
       <EditorSection settings={settings} save={save} />
       <HelmSection settings={settings} save={save} />
       <KubeconfigSection />
+      <TerminalSection settings={settings} save={save} />
       <McpSection settings={settings} save={save} />
       <UpdatesSection save={save} />
     </div>
@@ -301,9 +317,50 @@ function KubeconfigSection() {
         onCancel={() => setRemoving(null)}
         onConfirm={() => removing && void remove(removing)}
       >
-        <p>{t(removing?.kind === "pasted" ? "clusters:sources.confirmPasted" : "clusters:sources.confirmFile")}</p>
+        <p>{t((removing && REMOVE_CONFIRM[removing.kind]) ?? "clusters:sources.confirmFile")}</p>
         <p className="settings__source-path">{removing?.path}</p>
       </ConfirmDialog>
+    </Section>
+  );
+}
+
+/** The image of the privileged pod behind a shell on a node; saved on Enter or when the field loses focus. */
+function TerminalSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  const imageId = useId();
+  const saved = settings?.nodeShellImage ?? "";
+  const [image, setImage] = useState(saved);
+  useEffect(() => setImage(saved), [saved]);
+  const apply = () => {
+    const nodeShellImage = image.trim() || DEFAULT_NODE_SHELL_IMAGE;
+    setImage(nodeShellImage);
+    if (nodeShellImage !== saved) void save((s) => ({ ...s, nodeShellImage }));
+  };
+  return (
+    <Section title={t("settings:terminal.title")}>
+      <form
+        className="settings__field"
+        onSubmit={(e) => {
+          e.preventDefault();
+          apply();
+        }}
+      >
+        <label className="settings__label" htmlFor={imageId}>
+          {t("settings:terminal.nodeShellImage")}
+        </label>
+        <input
+          id={imageId}
+          className="settings__input settings__path"
+          type="text"
+          spellCheck={false}
+          value={image}
+          disabled={!settings}
+          placeholder={DEFAULT_NODE_SHELL_IMAGE}
+          onChange={(e) => setImage(e.target.value)}
+          onBlur={apply}
+        />
+        <p className="settings__hint">{t("settings:terminal.nodeShellImageHint")}</p>
+      </form>
     </Section>
   );
 }

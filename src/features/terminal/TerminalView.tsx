@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { errorKey } from "../../api";
 import { Button } from "../../components";
@@ -15,6 +15,14 @@ export interface TerminalViewProps {
    * Sextant cannot make keep the cluster's kubeconfig).
    */
   kubeconfigNotice?: boolean;
+  /** Typed into the session once its shell is ready, without Enter (see `useTerminal`). */
+  initialInput?: string;
+  /** Shown while the session starts instead of "Connecting…". Already translated. */
+  connectingText?: string;
+  /**
+   * When set, "Reconnect" first shows what this returns (a confirmation) and reconnects only on `proceed`.
+   */
+  confirmReconnect?: (proceed: () => void, cancel: () => void) => ReactNode;
 }
 
 /**
@@ -25,10 +33,20 @@ const KUBECONFIG_NOTICE_OSC = 7719;
 const KUBECONFIG_NOTICE = "kubeconfig-not-pinned";
 
 /** An xterm.js terminal bound to one backend session, with a status bar and "Reconnect" once it ends. */
-export function TerminalView({ factory, active, label, kubeconfigNotice = false }: TerminalViewProps) {
+export function TerminalView({
+  factory,
+  active,
+  label,
+  kubeconfigNotice = false,
+  initialInput,
+  connectingText,
+  confirmReconnect,
+}: TerminalViewProps) {
   const { t } = useTranslation();
   const container = useRef<HTMLDivElement | null>(null);
-  const session = useTerminal(container, factory, active);
+  const session = useTerminal(container, factory, active, initialInput);
+  const [asking, setAsking] = useState(false);
+  const reconnect = confirmReconnect ? () => setAsking(true) : session.reconnect;
   const notice = useKubeconfigNotice(session, kubeconfigNotice);
   return (
     <div className="terminal">
@@ -38,7 +56,15 @@ export function TerminalView({ factory, active, label, kubeconfigNotice = false 
         </div>
       )}
       <div ref={container} className="terminal__screen" role="region" aria-label={label} />
-      <StatusBar session={session} />
+      <StatusBar session={session} connectingText={connectingText} onReconnect={reconnect} />
+      {asking &&
+        confirmReconnect?.(
+          () => {
+            setAsking(false);
+            session.reconnect();
+          },
+          () => setAsking(false),
+        )}
     </div>
   );
 }
@@ -61,12 +87,20 @@ function useKubeconfigNotice(session: UseTerminal, enabled: boolean): boolean {
   return enabled && seen;
 }
 
-function StatusBar({ session }: { session: UseTerminal }) {
+function StatusBar({
+  session,
+  connectingText,
+  onReconnect,
+}: {
+  session: UseTerminal;
+  connectingText?: string;
+  onReconnect: () => void;
+}) {
   const { t } = useTranslation();
-  const { status, exitCode, error, reconnect } = session;
+  const { status, exitCode, error } = session;
   if (status === "running") return null;
   let text: string;
-  if (status === "connecting") text = t("terminal:status.connecting");
+  if (status === "connecting") text = connectingText ?? t("terminal:status.connecting");
   else if (status === "ended")
     text = exitCode === null ? t("terminal:status.ended") : t("terminal:status.endedWithCode", { code: exitCode });
   else {
@@ -77,7 +111,7 @@ function StatusBar({ session }: { session: UseTerminal }) {
     <div className={`terminal__status terminal__status--${status}`} role="status">
       <span className="terminal__status-text">{text}</span>
       {status !== "connecting" && (
-        <Button variant="primary" onClick={reconnect}>
+        <Button variant="primary" onClick={onReconnect}>
           {t("terminal:reconnect")}
         </Button>
       )}

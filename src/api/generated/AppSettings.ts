@@ -30,4 +30,9 @@ checkForUpdates: boolean,
 /**
  * The built-in MCP server.
  */
-mcp: McpSettings, };
+mcp: McpSettings, 
+/**
+ * Image of the temporary privileged pod behind a shell on a node (`node_shell`); empty means the default
+ * (`node_shell::DEFAULT_IMAGE`). The image needs `nsenter`; `sleep` runs on the node.
+ */
+nodeShellImage: string, };

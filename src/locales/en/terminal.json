@@ -9,7 +9,10 @@
   "local": {
     "open": "Terminal",
     "tabTitle": "Terminal: {{cluster}}",
-    "kubeconfigNotice": "This shell's profile may override KUBECONFIG. Sextant sets it to this cluster, but a KUBECONFIG exported in the profile wins: check kubectl config current-context before changing anything."
+    "kubeconfigNotice": "This shell's profile may override KUBECONFIG. Sextant sets it to this cluster, but a KUBECONFIG exported in the profile wins: check kubectl config current-context before changing anything.",
+    "tabTitlePlain": "Terminal",
+    "openWithCommand": "Open terminal",
+    "openedWithCommand": "Opened in a terminal tab below; press Enter there to run it."
   },
   "status": {
     "connecting": "Connecting…",
@@ -18,5 +21,13 @@
     "failed": "Session failed: {{message}}"
   },
   "reconnect": "Reconnect",
-  "terminal": "Terminal"
+  "terminal": "Terminal",
+  "node": {
+    "confirmTitle": "Open a shell on node {{node}}?",
+    "confirm": "Sextant will create a privileged pod on node {{node}} in kube-system. It is deleted when you close the shell.",
+    "open": "Open",
+    "tabTitle": "Node: {{node}}",
+    "label": "Shell on node {{node}}",
+    "starting": "Starting a privileged pod on node {{node}}…"
+  }
 }

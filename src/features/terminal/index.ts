@@ -1,5 +1,6 @@
-// Terminals (task 07): the "Shell" action on pods (a shell in a container) and the dock's "Terminal" button (a local
-// shell whose `kubectl` talks to the active cluster). Both run in "exec" / "terminal" dock tabs with xterm.js.
+// Terminals (task 07): the "Shell" action on pods (a shell in a container) and on nodes (a shell on the node through a
+// temporary privileged pod, after a confirmation), and the dock's "Terminal" button (a local shell whose `kubectl`
+// talks to the active cluster). They run in "exec" / "terminal" dock tabs with xterm.js.
 import { createElement } from "react";
 import { loadSettings, type ClusterId } from "../../api";
 import { registerDockAction, registerDockTab } from "../../layout/dock/registry";
@@ -7,7 +8,16 @@ import { registerAction } from "../actions/registry";
 import { displayNameOf } from "../clusters/clusterSettings";
 import { useClustersStore } from "../clusters/clustersStore";
 import { ContainerPicker } from "./ContainerPicker";
-import { defaultContainer, ExecTab, LocalTerminalTab, openExecTab, openLocalTerminalTab, shellContainers } from "./tabs";
+import { NodeShellConfirm } from "./NodeShellConfirm";
+import {
+  defaultContainer,
+  ExecTab,
+  LocalTerminalTab,
+  openExecTab,
+  openLocalTerminalTab,
+  openNodeShellTab,
+  shellContainers,
+} from "./tabs";
 import "./terminal.css";
 
 registerDockTab("exec", ExecTab);
@@ -18,13 +28,28 @@ registerAction("exec", {
   icon: "shell",
   appliesTo: (obj, kind) =>
     kind.group === "" &&
-    kind.kind === "Pod" &&
-    (obj.status as { phase?: string } | undefined)?.phase === "Running" &&
-    shellContainers(obj).length > 0,
-  run: ({ clusterId, objects, refs, openDialog }) => {
+    ((kind.kind === "Node" && typeof obj.metadata?.name === "string") ||
+      (kind.kind === "Pod" &&
+        (obj.status as { phase?: string } | undefined)?.phase === "Running" &&
+        shellContainers(obj).length > 0)),
+  run: ({ clusterId, kind, objects, refs, openDialog }) => {
     const obj = objects[0];
     const pod = refs[0];
     if (!obj || !pod) return;
+    if (kind.kind === "Node") {
+      const node = pod.name;
+      openDialog((close) =>
+        createElement(NodeShellConfirm, {
+          node,
+          onCancel: close,
+          onConfirm: () => {
+            openNodeShellTab(clusterId, node);
+            close();
+          },
+        }),
+      );
+      return;
+    }
     const containers = shellContainers(obj);
     const preferred = defaultContainer(obj);
     if (containers.length === 1 && preferred) {
@@ -56,11 +81,14 @@ export async function openLocalTerminal(clusterId: ClusterId): Promise<string> {
 export { ContainerPicker, type ContainerPickerProps } from "./ContainerPicker";
 export {
   defaultContainer,
+  openCommandTerminalTab,
   openExecTab,
   openLocalTerminalTab,
+  openNodeShellTab,
   shellContainers,
   type ExecTabPayload,
   type LocalTerminalTabPayload,
+  type NodeShellTabPayload,
 } from "./tabs";
 export { TerminalView, type TerminalViewProps } from "./TerminalView";
 export { useTerminal, type TerminalSessionFactory, type TerminalStatus, type UseTerminal } from "./useTerminal";

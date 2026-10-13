@@ -139,9 +139,18 @@ export const terminal = {
   /** Shell in a container, session `streamId` (output: `events.onTerm(streamId, …)`). */
   exec: (clusterId: ClusterId, pod: ObjectRef, container: string, cols: number, rows: number, streamId: string) =>
     call<void>("exec_start", { clusterId, pod, container, cols, rows, streamId }),
-  /** Local shell with `KUBECONFIG` set to the cluster, session `streamId`. */
-  local: (clusterId: ClusterId, cols: number, rows: number, streamId: string) =>
+  /**
+   * Local shell, session `streamId`: with `KUBECONFIG` set to the cluster, or — `clusterId` null — without any
+   * `KUBECONFIG` from Sextant (e.g. to sign in to a cloud CLI).
+   */
+  local: (clusterId: ClusterId | null, cols: number, rows: number, streamId: string) =>
     call<void>("terminal_start", { clusterId, cols, rows, streamId }),
+  /**
+   * Shell on `node` through a temporary privileged pod in `kube-system` (deleted when the session ends), session
+   * `streamId`. Never offered to AI agents.
+   */
+  nodeShell: (clusterId: ClusterId, node: string, cols: number, rows: number, streamId: string) =>
+    call<void>("node_shell_start", { clusterId, node, cols, rows, streamId }),
   input: (sessionId: string, data: string) => call<void>("term_input", { sessionId, data }),
   resize: (sessionId: string, cols: number, rows: number) => call<void>("term_resize", { sessionId, cols, rows }),
   stop: (sessionId: string) => call<void>("term_stop", { sessionId }),

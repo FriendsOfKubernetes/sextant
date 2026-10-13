@@ -10,6 +10,7 @@ import { SETTINGS_PAGE_ID } from "./index";
 
 const home: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default", error: null };
 const pasted: KubeconfigSource = { id: "src-pasted", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted", error: null };
+const cloud: KubeconfigSource = { id: "src-cloud", path: "/data/kubeconfigs/cloud-aws.yaml", kind: "cloud", error: null };
 const FOUND: HelmStatus = { available: true, version: "v4.3.0", path: "/usr/local/bin/helm" };
 const MISSING: HelmStatus = { available: false, version: null, path: null };
 
@@ -142,6 +143,38 @@ describe("Settings page", () => {
     await waitFor(() => expect(calls("kubeconfig_remove")).toHaveLength(1));
     expect(calls("kubeconfig_remove")[0]!.args).toEqual({ sourceId: "src-pasted" });
     await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(1));
+  });
+
+  it("removes a cloud source like any other, saying what goes with it", async () => {
+    setup();
+    sources = [home, cloud];
+    renderPage();
+    const list = within(screen.getByRole("region", { name: "Kubeconfig" })).getByRole("list", {
+      name: "Kubeconfig sources",
+    });
+    fireEvent.click(await within(list).findByRole("button", { name: `Remove ${cloud.path}` }));
+    const confirm = await screen.findByRole("dialog", { name: "Remove kubeconfig source?" });
+    expect(confirm).toHaveTextContent("Sextant's kubeconfig of these cloud clusters is deleted");
+    fireEvent.click(within(confirm).getByRole("button", { name: "Remove" }));
+    await waitFor(() => expect(calls("kubeconfig_remove")).toHaveLength(1));
+    expect(calls("kubeconfig_remove")[0]!.args).toEqual({ sourceId: "src-cloud" });
+  });
+
+  it("saves the node shell image, and an emptied field goes back to busybox", async () => {
+    setup();
+    renderPage();
+    const section = screen.getByRole("region", { name: "Terminal" });
+    const field = within(section).getByRole("textbox", { name: "Node shell image" });
+    await waitFor(() => expect(field).toHaveValue("busybox:stable"));
+
+    fireEvent.change(field, { target: { value: " registry.example/tools:1 " } });
+    fireEvent.blur(field);
+    await waitFor(() => expect(backend.settings.nodeShellImage).toBe("registry.example/tools:1"));
+
+    fireEvent.change(field, { target: { value: "" } });
+    fireEvent.submit(field);
+    await waitFor(() => expect(backend.settings.nodeShellImage).toBe("busybox:stable"));
+    expect(field).toHaveValue("busybox:stable");
   });
 });
 

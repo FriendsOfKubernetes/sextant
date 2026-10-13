@@ -134,6 +134,9 @@ pub struct AppSettings {
     pub check_for_updates: bool,
     /// The built-in MCP server.
     pub mcp: McpSettings,
+    /// Image of the temporary privileged pod behind a shell on a node (`node_shell`); empty means the default
+    /// (`node_shell::DEFAULT_IMAGE`). The image needs `nsenter`; `sleep` runs on the node.
+    pub node_shell_image: String,
 }
 
 impl Default for AppSettings {
@@ -148,6 +151,7 @@ impl Default for AppSettings {
             editor_theme: "auto".to_owned(),
             check_for_updates: true,
             mcp: McpSettings::default(),
+            node_shell_image: crate::node_shell::DEFAULT_IMAGE.to_owned(),
         }
     }
 }
@@ -814,5 +818,24 @@ mod tests {
         assert_eq!(s.clusters["c1"].agent_access, ClusterAccess::default());
         assert!(s.mcp.enabled);
         assert_eq!(s.mcp.port, 47391);
+    }
+
+    #[test]
+    fn the_node_shell_image_defaults_to_busybox_and_round_trips() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(&path, r#"{ "theme": "dark" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert_eq!(store.get().node_shell_image, "busybox:stable");
+        store
+            .update(|s| s.node_shell_image = "registry.example/tools:1".to_owned())
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["nodeShellImage"], "registry.example/tools:1");
+        assert_eq!(
+            SettingsStore::open(path).get().node_shell_image,
+            "registry.example/tools:1"
+        );
     }
 }

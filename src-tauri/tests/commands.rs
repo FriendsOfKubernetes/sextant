@@ -50,7 +50,9 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("logs_start", Some("clusterId")),
     ("logs_stop", Some("streamId")),
     ("exec_start", Some("clusterId")),
-    ("terminal_start", Some("clusterId")),
+    // `clusterId` is optional (a terminal without a cluster), so the first required argument is `cols`.
+    ("terminal_start", Some("cols")),
+    ("node_shell_start", Some("clusterId")),
     ("term_input", Some("sessionId")),
     ("term_resize", Some("sessionId")),
     ("term_stop", Some("sessionId")),
@@ -670,6 +672,17 @@ fn later_argument_names_match_the_frontend() {
         (
             "terminal_start",
             json!({ "clusterId": "c", "cols": 80, "rows": 24 }),
+            "streamId",
+        ),
+        (
+            "terminal_start",
+            json!({ "clusterId": null, "cols": 80, "rows": 24 }),
+            "streamId",
+        ),
+        ("node_shell_start", json!({ "clusterId": "c" }), "node"),
+        (
+            "node_shell_start",
+            json!({ "clusterId": "c", "node": "n", "cols": 80, "rows": 24 }),
             "streamId",
         ),
         ("secret_value", json!({ "clusterId": "c" }), "namespace"),

@@ -6,6 +6,7 @@ use std::collections::hash_map::Entry;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
+use std::time::Duration;
 
 use sextant_core::portforward::PortForwarder;
 use sextant_core::{
@@ -17,6 +18,9 @@ use tokio::task::AbortHandle;
 use crate::commands::argocd::{ArgoSessions, KeyringStore};
 use crate::mcp::{McpContext, McpServer};
 
+/// How long closing the window (or quitting) waits for the node shell pods to be deleted.
+pub const NODE_SHELL_DELETE_WAIT: Duration = Duration::from_secs(5);
+
 /// Everything the commands share. Registered with `app.manage(AppState::new(..))`.
 pub struct AppState {
     pub registry: Arc<RwLock<KubeconfigRegistry>>,
@@ -25,7 +29,8 @@ pub struct AppState {
     pub settings: Arc<SettingsStore>,
     /// Watch subscriptions and log streams (`watch_start`, `logs_start`).
     pub subscriptions: Subscriptions,
-    /// Terminal sessions: container exec and local shells.
+    /// Terminal sessions: container exec, node shells (their guard is the node's pod; while one starts, a placeholder
+    /// whose guard calls the start off) and local shells.
     pub sessions: Sessions,
     /// Argo CD sessions (tokens in memory only) and their port forwards to `argocd-server`.
     pub argocd: ArgoSessions,
@@ -45,6 +50,8 @@ impl AppState {
             data_dir.join("kubeconfigs"),
         )));
         let clusters = ClusterManager::new(Arc::clone(&registry));
+        // Node shell pods left by an earlier run go when their cluster connects.
+        clusters.sweep_node_shells_on_connect();
         let forwarder = Arc::new(PortForwarder::new());
         let mcp = McpServer::new(McpContext::new(
             Arc::clone(&registry),
@@ -78,12 +85,14 @@ impl AppState {
 
     /// Stops everything (window closed, application exiting): the MCP server first (no agent starts anything new,
     /// waiting confirmations are refused), then everything it or the window started. Terminal sessions drop their
-    /// temporary kubeconfig before this returns.
+    /// temporary kubeconfig before this returns; node shells start deleting their pods, and this waits up to
+    /// [`NODE_SHELL_DELETE_WAIT`] for those deletions, so the process does not end before them.
     pub fn close_all(&self) {
         self.mcp.stop();
         self.reset_streams();
         self.forwarder.stop_all();
         self.argocd.close_all();
+        sextant_core::node_shell::wait_for_deletions(NODE_SHELL_DELETE_WAIT);
     }
 
     /// Stops every watch subscription, log stream and terminal session, but keeps connections and port forwards
@@ -267,6 +276,21 @@ impl Sessions {
                 true
             }
             None => false,
+        }
+    }
+
+    /// Takes the session `id` out if `is_it` says it is the expected one, without ending it: its task keeps running and
+    /// its guard stays alive in the returned session (a starting node shell swaps its placeholder for the real session).
+    pub fn take_if(
+        &self,
+        id: &str,
+        is_it: impl FnOnce(&TermSession) -> bool,
+    ) -> Option<TermSession> {
+        let mut map = lock(&self.map);
+        if map.get(id).is_some_and(is_it) {
+            map.remove(id)
+        } else {
+            None
         }
     }
 

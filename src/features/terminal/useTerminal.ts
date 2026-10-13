@@ -28,15 +28,21 @@ export interface UseTerminal {
 
 const DEFAULT_COLS = 80;
 const DEFAULT_ROWS = 24;
+/** The initial input is typed once the shell has been quiet this long after printing (its prompt is up). */
+const INPUT_QUIET_MS = 300;
+/** …or this long after the session started, if the shell prints nothing. */
+const INPUT_FALLBACK_MS = 2000;
 
 /**
  * Renders a terminal into `container` and runs a session from `factory` in it. `active` tells that the terminal is
- * visible (the dock tab is selected and the dock open): it is refitted and focused then.
+ * visible (the dock tab is selected and the dock open): it is refitted and focused then. `initialInput` is typed into
+ * a new session once its shell is ready, on one line and without Enter: the user reads it and runs it.
  */
 export function useTerminal(
   container: RefObject<HTMLElement | null>,
   factory: TerminalSessionFactory,
   active = true,
+  initialInput?: string,
 ): UseTerminal {
   const [terminal, setTerminal] = useState<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -47,6 +53,8 @@ export function useTerminal(
   const [error, setError] = useState<ApiError | null>(null);
   const factoryRef = useRef(factory);
   factoryRef.current = factory;
+  const initialInputRef = useRef(initialInput);
+  initialInputRef.current = initialInput;
 
   // The xterm instance lives as long as the component.
   useEffect(() => {
@@ -87,6 +95,22 @@ export function useTerminal(
     let cancelled = false;
     let sessionId: string | null = null;
     let lastSize = "";
+    // Never Enter, nor any other control character: the command is shown, not run.
+    let pendingInput = printable(initialInputRef.current ?? "") || null;
+    let inputTimer: ReturnType<typeof setTimeout> | undefined;
+    let sawOutput = false;
+    const typeInitialInput = () => {
+      const id = sessionId;
+      if (!pendingInput || !id || cancelled) return;
+      const text = pendingInput;
+      pendingInput = null;
+      api.terminal.input(id, text).catch(() => undefined);
+    };
+    const scheduleInput = (delay: number) => {
+      if (!pendingInput) return;
+      clearTimeout(inputTimer);
+      inputTimer = setTimeout(typeInitialInput, delay);
+    };
     setStatus("connecting");
     setExitCode(null);
     setError(null);
@@ -110,6 +134,8 @@ export function useTerminal(
       switch (payload.type) {
         case "data":
           terminal.write(decodeBase64(payload.data));
+          sawOutput = true;
+          scheduleInput(INPUT_QUIET_MS);
           break;
         case "exit":
           setExitCode(payload.code);
@@ -142,12 +168,15 @@ export function useTerminal(
         // The terminal may have been fitted while the session started.
         lastSize = `${terminal.cols}x${terminal.rows}`;
         api.terminal.resize(id, terminal.cols, terminal.rows).catch(fail);
+        // The prompt may have come before the start answered; otherwise wait for it (or give up waiting).
+        scheduleInput(sawOutput ? INPUT_QUIET_MS : INPUT_FALLBACK_MS);
       },
       onStartError: fail,
     });
 
     return () => {
       cancelled = true;
+      clearTimeout(inputTimer);
       input.dispose();
       resize.dispose();
       close();
@@ -176,6 +205,26 @@ export function useTerminal(
   }, [terminal]);
 
   return { status, exitCode, error, reconnect, terminal };
+}
+
+/**
+ * `text` on one line without control characters (C0 including ESC, DEL, C1): each run of them becomes a space, so a
+ * command typed into a shell can neither run itself (Enter, Ctrl+J) nor send key sequences.
+ */
+export function printable(text: string): string {
+  let out = "";
+  let gap = false;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code <= 0x1f || (code >= 0x7f && code <= 0x9f)) {
+      gap = true;
+      continue;
+    }
+    if (gap && out) out += " ";
+    gap = false;
+    out += ch;
+  }
+  return out.trim();
 }
 
 /** Ctrl+Shift+C copies the selection, Ctrl+Shift+V pastes (the browser's own paste, handled by xterm). */
