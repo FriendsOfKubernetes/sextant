@@ -6,7 +6,7 @@
 Перед всем: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Всё ниже запускать из корня репозитория.
 
 - Установка: `npm ci`
-- Всё сразу (CI делает то же): `npm run check` — сверка имён файлов по регистру, `check:version`, fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, тесты Rust, сверка TS-типов, tsc (+ `e2e/`), eslint, vitest. Зелёный: Rust 342, vitest 541.
+- Всё сразу (CI делает то же): `npm run check` — сверка имён файлов по регистру, `check:version`, fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, тесты Rust, сверка TS-типов, tsc (+ `e2e/`), eslint, vitest. Зелёный: Rust 342, vitest 546.
 - Запуск: `npm run tauri dev` (Vite на 1420, `strictPort`)
 - Установщики: `npm run tauri build` — нужен ключ подписи обновлений (см. «Подводные камни»); без ключа: `npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'`. Бинарь без бандла: `npm run tauri -- build --debug --no-bundle` → `target/debug/sextant`
 - Версия во всех манифестах: `npm run check:version`; совпадение с тегом релиза: `node scripts/check-version.mjs --tag vX.Y.Z`

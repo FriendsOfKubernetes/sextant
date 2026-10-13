@@ -4311,7 +4311,7 @@ dependencies = [
 
 [[package]]
 name = "sextant"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "base64 0.23.1",
  "futures",
@@ -4333,7 +4333,7 @@ dependencies = [
 
 [[package]]
 name = "sextant-core"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "base64 0.23.1",
  "flate2",
