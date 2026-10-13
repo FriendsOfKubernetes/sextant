@@ -1,24 +1,24 @@
-# ADR-0005: Helm — релизы читаются нативно, изменения делает установленный `helm`
+# ADR-0005: Helm — releases are read natively, changes are made by the installed `helm`
 
-## Контекст
+## Context
 
-Нужны просмотр релизов, откат, обновление и установка чартов. Пользователь согласился на схему «просмотр без helm, изменения с helm»; у части пользователей Helm 3, у разработчика Helm 4.
+Viewing releases, rollback, upgrade and chart installation are needed. The user agreed to the scheme "viewing without helm, changes with helm"; some users have Helm 3, the developer has Helm 4.
 
-## Решение
+## Decision
 
-Релизы читаются из кластера нативно: Secret `sh.helm.release.v1.*` разбирается как base64, затем gzip, затем JSON. Любое изменение (upgrade, rollback, uninstall, install, репозитории, поиск, значения по умолчанию) выполняется вызовом установленного `helm` с `--kube-context` и `--kubeconfig`.
+Releases are read from the cluster natively: the `sh.helm.release.v1.*` Secret is decoded as base64, then gzip, then JSON. Any change (upgrade, rollback, uninstall, install, repositories, search, default values) is performed by calling the installed `helm` with `--kube-context` and `--kubeconfig`.
 
-## Почему
+## Why
 
-- Переписать шаблонизатор Helm на Rust нереально, поэтому изменения делегированы бинарю.
-- Чтение всё равно сделано нативно, а не через `helm`: без бинаря в PATH просмотр релизов должен работать, а кнопки действий — быть неактивны с подсказкой (R16i.3).
-- Встраивание собственной копии `helm` в установщик в материалах не рассматривалось.
+- Rewriting the Helm templating engine in Rust is unrealistic, so changes are delegated to the binary.
+- Reading is still done natively rather than through `helm`: without the binary in PATH, viewing releases must work, while the action buttons are disabled with a hint (R16i.3).
+- Bundling our own copy of `helm` into the installer was not considered in the materials.
 
-## Последствия
+## Consequences
 
-- Для изменений у пользователя должен стоять `helm`. Поиск идёт по PATH, путь можно задать в Settings.
-- Формат хранения живёт в чужой системе. Helm 4.3 проверен на живом кластере, Helm 3 — только юнит-тестами.
-- Разбор покрывает хранилище в Secret. Релизы, записанные другим драйвером хранения, ядро, по-видимому, не увидит. Это следует из способа чтения, а не из проверки.
-- Чтение релизов зависит от прав на Secret: без них список Helm будет пуст или откажет.
-- Вызовы `helm` изолированы: переменные, перенаправляющие кластер (`HELM_KUBE*`, `KUBECONFIG` и др.), вычищаются, значения передаются через временный файл. Ошибка `helm` показывается его собственным текстом.
-- У чарта с зависимостями обновление требует ссылку на репозиторий, а не только имя чарта из релиза.
+- For changes the user must have `helm` installed. It is looked up in PATH, and the path can be set in Settings.
+- The storage format lives in someone else's system. Helm 4.3 was verified on a live cluster, Helm 3 only by unit tests.
+- Parsing covers storage in Secrets. Releases written by another storage driver will apparently not be seen by the core. This follows from the way of reading, not from a check.
+- Reading releases depends on permissions on Secrets: without them the Helm list will be empty or will fail.
+- `helm` calls are isolated: variables that redirect the cluster (`HELM_KUBE*`, `KUBECONFIG` and others) are scrubbed, and values are passed through a temporary file. A `helm` error is shown in its own words.
+- For a chart with dependencies, an upgrade needs a reference to the repository, not only the chart name from the release.

@@ -1,23 +1,23 @@
-# ADR-0008: Ошибки доходят до интерфейса кодом и исходным текстом, формулировки берутся из переводов
+# ADR-0008: Errors reach the UI as a code and the original text, wording comes from translations
 
-## Контекст
+## Context
 
-Спецификация требует понятных человеку ошибок («сервер недоступен», «нет прав», «не найден exec-плагин»), а язык интерфейса должен браться из файлов переводов (G04).
+The specification requires errors a human can understand ("server unreachable", "no permissions", "exec plugin not found"), and the UI language must come from translation files (G04).
 
-## Решение
+## Decision
 
-Ядро возвращает один тип ошибки: код из закрытого набора плюс исходный текст. Интерфейс по коду выбирает формулировку из файла переводов `errors`, а исходный текст показывает рядом.
+The core returns one error type: a code from a closed set plus the original text. The UI picks the wording by code from the `errors` translation file and shows the original text next to it.
 
-## Почему
+## Why
 
-- Готовые английские фразы из Rust отвергнуты: они обходят файлы переводов, и новый язык не покрыл бы ошибки.
-- Передача сырой ошибки `kube` без кода отвергнута: интерфейсу пришлось бы разбирать текст самому, а в ошибках exec-плагинов встречаются секреты.
-- Код нужен и для решений интерфейса, не только для текста: «Reconnect» при `unreachable`, «нет прав» в таблице при `forbidden`, конфликт `resourceVersion` при `conflict`.
+- Ready-made English phrases from Rust were rejected: they bypass the translation files, and a new language would not cover the errors.
+- Passing a raw `kube` error without a code was rejected: the UI would have to parse the text itself, and exec-plugin errors contain secrets.
+- The code is needed for UI decisions as well, not only for text: "Reconnect" on `unreachable`, "no permissions" in a table on `forbidden`, a `resourceVersion` conflict on `conflict`.
 
-## Последствия
+## Consequences
 
-- Набор кодов — часть контракта, и расширять его дорого. В спецификации перечислено десять кодов, а в `interfaces.md` одиннадцатый, `kubeconfig` (неверный kubeconfig). Расхождение осталось, верить стоит `interfaces.md`.
-- Код грубее причины. Отказ сертификата и недоступность сервера оба приходят как `unreachable`, а интерфейс различает их по тексту сообщения. Отказ апгрейда websocket в exec и port-forward (404, 403, 400) тоже сворачивается в `unreachable`.
-- Ошибки `helm` приходят как `other` с текстом stderr и показываются его же словами. Они не переводятся.
-- Исходный текст ошибки остаётся английским в любом языке интерфейса.
-- Запись без `resourceVersion` отклоняется кодом `invalid`: слепая перезапись объекта невозможна.
+- The set of codes is part of the contract, and extending it is expensive. The specification lists ten codes, while `interfaces.md` has an eleventh, `kubeconfig` (invalid kubeconfig). The discrepancy remains; `interfaces.md` is the one to trust.
+- A code is coarser than the cause. A certificate rejection and an unreachable server both arrive as `unreachable`, and the UI tells them apart by the message text. A websocket upgrade refusal in exec and port-forward (404, 403, 400) is also collapsed into `unreachable`.
+- `helm` errors arrive as `other` with the stderr text and are shown in its own words. They are not translated.
+- The original error text stays English in any UI language.
+- A write without `resourceVersion` is rejected with the code `invalid`: blind overwriting of an object is impossible.

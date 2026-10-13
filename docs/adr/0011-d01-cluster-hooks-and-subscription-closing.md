@@ -1,21 +1,21 @@
-# ADR-0011 (D01): Хуки кластеров живут в features/clusters, подписки закрывает AppState
+# ADR-0011 (D01): Cluster hooks live in features/clusters, AppState closes subscriptions
 
-## Контекст
+## Context
 
-План предполагал, что хуки `useClusters` и `useClusterState` лягут в `src/api`, а подписки при отключении кластера будет закрывать хук внутри `ClusterManager`.
+The plan assumed that the hooks `useClusters` and `useClusterState` would go into `src/api`, and that a hook inside `ClusterManager` would close subscriptions when a cluster is disconnected.
 
-## Решение
+## Decision
 
-Хуки кластеров живут в `src/features/clusters` и экспортируются из его `index.ts`. Подписки, стримы и локальные терминалы при отключении закрывает `AppState::close_cluster` в команде отключения, а не хук в `ClusterManager`. Каждая новая разновидность подписки или сессии регистрируется в `AppState`, чтобы закрываться там же.
+The cluster hooks live in `src/features/clusters` and are exported from its `index.ts`. Subscriptions, streams and local terminals are closed on disconnect by `AppState::close_cluster` in the disconnect command, not by a hook in `ClusterManager`. Every new kind of subscription or session is registered in `AppState` so that it is closed there too.
 
-## Почему
+## Why
 
-- `ClusterManager` находится в ядре и не видит `AppState` приложения. Чтобы закрыть подписки из ядра, оно должно было бы знать о них, а это переворачивает зависимость, закреплённую в ADR-0002.
-- Хуки не в `src/api`, потому что эта зона была вне задач таска 02, а фича-каталог, который подхватывается сам, не требовал правки чужих файлов. Технической причины держать их вне `src/api` не найдено, так что это решение скорее про границы зон исполнителей.
+- `ClusterManager` is in the core and does not see the app's `AppState`. To close subscriptions from the core, it would have to know about them, and that inverts the dependency fixed in ADR-0002.
+- The hooks are not in `src/api` because that zone was outside the scope of task 02, and a feature directory, which is picked up automatically, did not require editing other people's files. No technical reason to keep them out of `src/api` was found, so this decision is rather about the boundaries of executors' zones.
 
-## Последствия
+## Consequences
 
-- Закрытие подписок держится на дисциплине: пропущенная регистрация в `AppState` оставляет подписку жить после отключения кластера. Именно так было с пробросами в таске 09 (ADR-0012).
-- Проброс закрывается двумя путями: сам по событию `Disconnected` от `ClusterManager` и через `close_cluster`. Два механизма на одно и то же.
-- Раздел 3 `interfaces.md` всё ещё перечисляет `useClusters` и `useClusterState` среди экспорта `src/api`, а фактически они в `features/clusters`. Правда — абзац таска 02.
-- Правило «frontend ходит в backend только через `src/api`» получило видимое исключение в структуре импортов (ADR-0007).
+- Closing subscriptions relies on discipline: a missed registration in `AppState` leaves a subscription alive after the cluster is disconnected. This is exactly what happened with port forwards in task 09 (ADR-0012).
+- A port forward is closed in two ways: by itself on the `Disconnected` event from `ClusterManager`, and through `close_cluster`. Two mechanisms for the same thing.
+- Section 3 of `interfaces.md` still lists `useClusters` and `useClusterState` among the exports of `src/api`, while in fact they are in `features/clusters`. The truth is the paragraph of task 02.
+- The rule "the frontend talks to the backend only through `src/api`" got a visible exception in the import structure (ADR-0007).

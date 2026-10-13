@@ -1,25 +1,25 @@
-> Частично заменён ADR-0013 (первая пачка не ждёт 250 мс) и ADR-0014 (данные Secret не приходят в окно без запроса).
+> Partially superseded by ADR-0013 (the first batch does not wait 250 ms) and ADR-0014 (Secret data does not reach the window without a request).
 
-# ADR-0004: Живые данные — один watcher на подписку, во фронтенд снапшот и дельты пачками
+# ADR-0004: Live data — one watcher per subscription, a snapshot and batched deltas to the frontend
 
-## Контекст
+## Context
 
-Таблицы, детали и события должны обновляться сами (R18i), а 5 000 строк не должны тормозить: обновления не чаще четырёх раз в секунду.
+Tables, details and events must update on their own (R18i), and 5,000 rows must not lag: updates no more than four times a second.
 
-## Решение
+## Decision
 
-На каждую подписку (кластер, вид, неймспейсы, селекторы) заводится один watcher из `kube::runtime` со своим хранилищем. Во фронтенд идёт первый снапшот, затем дельты, и всё это пачками раз в 250 мс. `managedFields` вырезаются до отправки.
+Each subscription (cluster, kind, namespaces, selectors) gets one `kube::runtime` watcher with its own store. The frontend receives the first snapshot, then deltas, all in batches every 250 ms. `managedFields` are stripped before sending.
 
-## Почему
+## Why
 
-- Пересылка каждого события отдельным сообщением отвергнута: начальная выгрузка тысяч подов превратилась бы в поток тысяч сообщений, а приёмка ограничивает частоту четырьмя обновлениями в секунду.
-- Кнопка «обновить» отвергнута самим требованием R18i.
-- Один общий watcher на вид с раздачей подписчикам не выбран. Почему именно по watcher'у на подписку, в материалах не записано. Выбор прост и изолирует подписки друг от друга.
+- Forwarding every event as a separate message was rejected: the initial load of thousands of pods would turn into a stream of thousands of messages, and the acceptance criteria cap the rate at four updates a second.
+- A "refresh" button was rejected by requirement R18i itself.
+- One shared watcher per kind, handed out to subscribers, was not chosen. The materials do not record why exactly one watcher per subscription. The choice is simple and isolates subscriptions from one another.
 
-## Последствия
+## Consequences
 
-- Первая пачка приходит не раньше чем через 250 мс: это задержка по построению, а не медленная сеть.
-- Одинаковые подписки не разделяют watcher. Панель деталей открывает собственный watch одного объекта по имени, помимо watch таблицы.
-- При обрыве поток отдаёт `Reconnecting`, а переподключение идёт с паузами 1, 2, 4, 8, 15 с. `Error` завершает поток только до первого снапшота, после него данные остаются на экране.
-- Данные Secret приходят во фронтенд вместе с остальными объектами: скрыты они только при показе. Правило «секреты не уходят во фронтенд, кроме показа по клику» на уровне данных не выполняется, а только на уровне интерфейса.
-- Каждая подписка регистрируется в `AppState`, иначе её никто не закроет при отключении кластера (ADR-0011).
+- The first batch arrives no sooner than 250 ms: this is a delay by construction, not a slow network.
+- Identical subscriptions do not share a watcher. The details panel opens its own watch of a single object by name, in addition to the table's watch.
+- On a drop the stream emits `Reconnecting`, and reconnection proceeds with pauses of 1, 2, 4, 8, 15 s. `Error` ends the stream only before the first snapshot; after it the data stays on screen.
+- Secret data reaches the frontend together with the other objects: it is hidden only when displayed. The rule "secrets do not go to the frontend except for display on click" is met at the interface level only, not at the data level.
+- Every subscription is registered in `AppState`, otherwise nobody will close it when the cluster is disconnected (ADR-0011).

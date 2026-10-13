@@ -1,23 +1,23 @@
-# ADR-0006: Метрики — два источника с автопоиском и ручной настройкой, Prometheus через proxy API-сервера
+# ADR-0006: Metrics — two sources with auto-detection and manual configuration, Prometheus through the API server proxy
 
-## Контекст
+## Context
 
-Пользователь на вопрос «metrics-server или Prometheus» ответил: «Делай оба варианта, должна быть возможность автоопределения и ручной настройки».
+To the question "metrics-server or Prometheus" the user answered: "Do both, there must be a way to auto-detect and to configure manually".
 
-## Решение
+## Decision
 
-Текущие значения CPU и памяти берутся из metrics-server, а графики за последний час — из Prometheus. Оба источника определяются автоматически и настраиваются вручную для каждого кластера: режим Prometheus (авто, вручную, выкл.) и источник текущих значений (авто, metrics-server, Prometheus, выкл.). В режиме авто при наличии обоих источников значения идут из metrics-server, графики из Prometheus. Prometheus опрашивается через service proxy API-сервера, без прямого сетевого доступа к кластеру.
+Current CPU and memory values come from metrics-server, and charts for the last hour come from Prometheus. Both sources are detected automatically and configured manually per cluster: the Prometheus mode (auto, manual, off) and the current values source (auto, metrics-server, Prometheus, off). In auto mode, when both sources are present, values come from metrics-server and charts from Prometheus. Prometheus is queried through the API server's service proxy, with no direct network access to the cluster.
 
-## Почему
+## Why
 
-- Только metrics-server отвергнут: он не хранит историю, графиков из него не построить.
-- Только Prometheus отвергнут: его нет на голом кластере, а текущие значения тогда были бы недоступны.
-- Прямое обращение к адресу Prometheus отвергнуто: у приложения нет сетевого пути в кластер, а proxy API-сервера использует уже имеющиеся учётные данные.
-- Автопоиск идёт по списку известных сервисов в типичных неймспейсах. Ручной адрес нужен именно потому, что список не может охватить всё.
+- Only metrics-server was rejected: it keeps no history, so charts cannot be built from it.
+- Only Prometheus was rejected: it is absent on a bare cluster, and current values would then be unavailable.
+- Direct access to the Prometheus address was rejected: the app has no network path into the cluster, while the API server proxy uses the credentials already at hand.
+- Auto-detection goes through a list of known services in typical namespaces. A manual address is needed precisely because the list cannot cover everything.
 
-## Последствия
+## Consequences
 
-- Нестандартно развёрнутый Prometheus автопоиск не найдёт. Придётся задавать вручную в настройках кластера.
-- Результат автопоиска кэшируется на 60 секунд. После установки Prometheus интерфейс может несколько секунд показывать «Metrics are unavailable».
-- Проксирование требует прав на `services/proxy`. При отказе пользователь увидит отсутствие источника, а не причину.
-- Текущие значения опрашиваются раз в 30 секунд, а не приходят через watch, поэтому они отстают от таблиц, которые обновляются сами. Окно графиков фиксировано в один час.
+- A Prometheus deployed in a non-standard way will not be found by auto-detection. It will have to be set manually in the cluster settings.
+- The auto-detection result is cached for 60 seconds. After Prometheus is installed, the interface may show "Metrics are unavailable" for a few seconds.
+- Proxying requires permissions on `services/proxy`. On a refusal the user will see the absence of a source, not the reason.
+- Current values are polled every 30 seconds rather than arriving through a watch, so they lag behind tables that update on their own. The chart window is fixed at one hour.

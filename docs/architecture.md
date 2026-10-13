@@ -1,113 +1,113 @@
-# Архитектура Sextant
+# Sextant architecture
 
-Три слоя, зависимости только сверху вниз: `src/` (React) → `src-tauri/` (крейт `sextant`) → `crates/sextant-core/`.
-Почему так решено — `docs/adr/`; значение слов — `CONTEXT.md`.
+Three layers, dependencies only point downward: `src/` (React) → `src-tauri/` (the `sextant` crate) → `crates/sextant-core/`.
+For why things are the way they are, see `docs/adr/`; for what the words mean, see `CONTEXT.md`.
 
-## Поток данных
+## Data flow
 
 ```
-kubeconfig ──► KubeconfigRegistry ──► ClusterManager ──► kube::Client (повторы, таймауты)
+kubeconfig ──► KubeconfigRegistry ──► ClusterManager ──► kube::Client (retries, timeouts)
                                           │                  │
-                           ConnectionState (broadcast)       ├─ resources::watch  ─► Stream<WatchUpdate>   (пачки ≤ 1 в 250 мс)
-                                          │                  ├─ logs::stream_logs ─► Stream<LogUpdate>     (пачки 100 мс)
+                           ConnectionState (broadcast)       ├─ resources::watch  ─► Stream<WatchUpdate>   (batches, at most 1 per 250 ms)
+                                          │                  ├─ logs::stream_logs ─► Stream<LogUpdate>     (100 ms batches)
                                           │                  ├─ exec::exec_shell  ─► ExecSession
                                           │                  ├─ PortForwarder     ─► broadcast<Vec<ForwardInfo>>
-                                          ▼                  └─ get / mutate / metrics / helm (запрос-ответ)
-                        src-tauri: команды (invoke) и события (emit)
+                                          ▼                  └─ get / mutate / metrics / helm (request-response)
+                        src-tauri: commands (invoke) and events (emit)
                                           │
-                        src/api: invoke / listen / openStream (transport.ts), mockBackend для тестов
+                        src/api: invoke / listen / openStream (transport.ts), mockBackend for tests
                                           │
-                        хуки (useWatch, useClusters, …) ─► zustand store + реестры ─► компоненты
+                        hooks (useWatch, useClusters, …) ─► zustand store + registries ─► components
 ```
 
-- Запрос-ответ: компонент → `api.<группа>.<метод>` → `invoke("<command>")` → тонкая команда в `src-tauri/src/commands/<feature>.rs` → функция ядра → `Result<T, CoreError>`.
-- Живые данные (watch, логи, терминал): id потока создаёт фронтенд (`newStreamId()`), `openStream` (`src/api/stream.ts`) вешает `listen("<префикс>:<id>")` и только потом вызывает `*_start(…, streamId)`; backend пересылает поток ядра событиями `watch:<id>`, `logs:<id>`, `term:<id>`. Порядок id → listen → start → unlisten → stop держит один `openStream`. Закрытие в любой точке ничего не оставляет: старт, ещё не ответивший, останавливается по ответу.
-- `streams_reset` (`resetStreams()` в `src/api/stream.ts`) вызывается один раз при загрузке страницы до первого стрима: останавливает подписки и терминалы, оставшиеся от прежней страницы окна; подключения и пробросы портов не трогает. Старт, начатый до сброса, отклоняется (`AppState::undo_if_reset`).
-- Watch: на подписку один набор watcher'ов (по одному на неймспейс); фронтенд получает `Snapshot`, затем `Delta { upserted, deleted(uid) }`, `Reconnecting`, `Forbidden { namespaces }` (часть неймспейсов недоступна, остальные идут дальше), `Error` (запуск невозможен). `managedFields` вырезаны в ядре. `useWatch` складывает объекты в `Map<uid, obj>`. С `WatchSpec.metadataOnly` объекты приходят только как `{apiVersion, kind, metadata}`.
-- События без id: `cluster-state` (`{ clusterId, state }`) и `portforwards` (`ForwardInfo[]`).
-- Подписки, стримы и сессии лежат в `AppState` (`subscriptions`, `sessions`); их закрывает `*_stop`, `streams_reset`, закрытие окна (`window::on_run_event` → `close_all`) и `AppState::close_cluster` (отключение кластера закрывает и его проброски, и его локальные терминалы).
+- Request-response: component → `api.<group>.<method>` → `invoke("<command>")` → a thin command in `src-tauri/src/commands/<feature>.rs` → a core function → `Result<T, CoreError>`.
+- Live data (watch, logs, terminal): the frontend creates the stream id (`newStreamId()`), `openStream` (`src/api/stream.ts`) attaches `listen("<prefix>:<id>")` and only then calls `*_start(…, streamId)`; the backend forwards the core stream as the events `watch:<id>`, `logs:<id>`, `term:<id>`. A single `openStream` keeps the order id → listen → start → unlisten → stop. Closing at any point leaves nothing behind: a start that has not answered yet is stopped when it does.
+- `streams_reset` (`resetStreams()` in `src/api/stream.ts`) is called once when the page loads, before the first stream: it stops the subscriptions and terminals left over from the window's previous page; connections and port forwards are not touched. A start that began before the reset is rejected (`AppState::undo_if_reset`).
+- Watch: one set of watchers per subscription (one per namespace); the frontend receives `Snapshot`, then `Delta { upserted, deleted(uid) }`, `Reconnecting`, `Forbidden { namespaces }` (some namespaces are inaccessible, the rest carry on), `Error` (cannot start). `managedFields` is stripped in the core. `useWatch` puts objects into a `Map<uid, obj>`. With `WatchSpec.metadataOnly`, objects arrive only as `{apiVersion, kind, metadata}`.
+- Events without an id: `cluster-state` (`{ clusterId, state }`) and `portforwards` (`ForwardInfo[]`).
+- Subscriptions, streams and sessions live in `AppState` (`subscriptions`, `sessions`); they are closed by `*_stop`, `streams_reset`, window close (`window::on_run_event` → `close_all`) and `AppState::close_cluster` (disconnecting a cluster also closes its port forwards and its local terminals).
 
 ### Discovery
 
-На кластер одна discovery: `ClusterManager::kinds` отдаёт общий результат всем ждущим и прекращается, когда ждать некому; сбрасывается при (пере)подключении и отключении. Сначала aggregated discovery (два запроса), иначе по версиям групп. `ResourceKind.printerColumns` из неё пуст: колонки CRD фронтенд читает лениво, одним CRD, когда вид открыт (`useCrdPrinterColumns`, `src/resources/crdColumns.ts`). Встроенные виды описаны в ядре (`BUILT_IN_KINDS` в `crates/sextant-core/src/resources/get.rs`), их watch не ждёт discovery. Сайдбар берёт CRD из discovery (`customResourceKinds` в `src/resources/useKinds.ts`). Решение — ADR-0015.
+There is one discovery per cluster: `ClusterManager::kinds` hands the shared result to everyone waiting and stops when nobody is left waiting; it is reset on (re)connect and disconnect. Aggregated discovery comes first (two requests), otherwise it goes group version by group version. `ResourceKind.printerColumns` is empty in it: the frontend reads CRD columns lazily, one CRD at a time, when the kind is opened (`useCrdPrinterColumns`, `src/resources/crdColumns.ts`). Built-in kinds are described in the core (`BUILT_IN_KINDS` in `crates/sextant-core/src/resources/get.rs`), and their watch does not wait for discovery. The sidebar takes CRDs from discovery (`customResourceKinds` in `src/resources/useKinds.ts`). Decision: ADR-0015.
 
-### GitOps: Flux и Argo CD
+### GitOps: Flux and Argo CD
 
-Flux и Argo CD — обычные CRD, поэтому всё идёт через Kubernetes API без CLI этих инструментов (ADR-0024). Их виды (`src/features/flux/`, `src/features/argocd/`) регистрируются в реестре видов в секциях сайдбара `flux` и `argocd`; раздел показывается, только если виды есть в discovery (ADR-0031). Действия (reconcile, suspend/resume, sync, refresh, terminate) — патчи объекта общей командой `resource_patch` (ADR-0025). Версию вида ядро выбирает через `resolve_kind`: get/watch/patch идут в версии из discovery, а `replace`/`apply` — в версии документа (ADR-0030).
+Flux and Argo CD are ordinary CRDs, so everything goes through the Kubernetes API with no CLI of these tools (ADR-0024). Their kinds (`src/features/flux/`, `src/features/argocd/`) are registered in the kind registry under the `flux` and `argocd` sidebar sections; a section is shown only if its kinds are in discovery (ADR-0031). Actions (reconcile, suspend/resume, sync, refresh, terminate) are object patches through the shared `resource_patch` command (ADR-0025). The core picks the kind version through `resolve_kind`: get/watch/patch use the version from discovery, while `replace`/`apply` use the document's version (ADR-0030).
 
-**Сброс discovery.** CRD Flux и Argo CD появляются уже после подключения, поэтому фронтенд следит за CRD (`watchCrdChanges`, `src/resources/useKinds.ts`) и при добавлении или удалении зовёт `cluster_kinds_refresh`: `ClusterManager::refresh_kinds` сбрасывает общую discovery кластера без переподключения (ADR-0026).
+**Discovery reset.** The Flux and Argo CD CRDs show up after the connection is made, so the frontend watches CRDs (`watchCrdChanges`, `src/resources/useKinds.ts`) and calls `cluster_kinds_refresh` when one is added or removed: `ClusterManager::refresh_kinds` resets the cluster's shared discovery without reconnecting (ADR-0026).
 
-**Argo CD: вход и дифф.** Ядро (`crates/sextant-core/src/argocd.rs`) находит установку Argo CD (ADR-0032) и говорит с её API через port-forward к `argocd-server`; проверка TLS отключена только для `127.0.0.1` (ADR-0027). Сессии живут в `ArgoSessions` (`src-tauri/src/commands/argocd.rs`, поле `AppState.argocd`) и закрываются вместе с кластером; команды — `src-tauri/src/commands/argocd.rs`. Источники входа и их порядок — ADR-0028, сохранённый вход в хранилище ОС — ADR-0029. Пароли и токены Argo остаются в backend. Дифф (`argocd_diff`) отдаёт управляемые ресурсы с желаемым и живым состоянием, значения Secret вырезаны; окно входа и вид диффа на `@codemirror/merge` — `src/features/argocd/diff/`, действие `argoDiff` подключает отдельная фича `src/features/argocd-diff/`.
+**Argo CD: login and diff.** The core (`crates/sextant-core/src/argocd.rs`) finds the Argo CD installation (ADR-0032) and talks to its API through a port-forward to `argocd-server`; TLS verification is disabled only for `127.0.0.1` (ADR-0027). Sessions live in `ArgoSessions` (`src-tauri/src/commands/argocd.rs`, field `AppState.argocd`) and are closed together with the cluster; the commands are in `src-tauri/src/commands/argocd.rs`. The login sources and their order are in ADR-0028, the saved login in the OS keyring is in ADR-0029. Argo passwords and tokens stay in the backend. The diff (`argocd_diff`) returns the managed resources with their desired and live state, with Secret values stripped; the login dialog and the diff view built on `@codemirror/merge` are in `src/features/argocd/diff/`, and the `argoDiff` action is attached by a separate feature, `src/features/argocd-diff/`.
 
-### Клиент кластера: повторы и таймауты
+### Cluster client: retries and timeouts
 
-`kube::Client` собирается в `cluster.rs` со своим слоем повторов (`RetryPolicy`: 429/503/504, не больше 3 раз и 5 с, только запросы с клонируемым телом); соединение — `CONNECT_TIMEOUT`. Команды, меняющие кластер, обёрнуты в `error::with_timeout` (`CHANGE_TIMEOUT` в `src-tauri/src/commands/actions.rs`) и дают `ErrorCode::Timeout`; drain и apply нескольких документов лимитируют каждый запрос (`resources::STEP_TIMEOUT`). Решения — ADR-0016, ADR-0023.
+`kube::Client` is built in `cluster.rs` with its own retry layer (`RetryPolicy`: 429/503/504, at most 3 times and 5 s, only requests with a cloneable body); the connection uses `CONNECT_TIMEOUT`. Commands that change the cluster are wrapped in `error::with_timeout` (`CHANGE_TIMEOUT` in `src-tauri/src/commands/actions.rs`) and yield `ErrorCode::Timeout`; drain and multi-document apply limit each request (`resources::STEP_TIMEOUT`). Decisions: ADR-0016, ADR-0023.
 
-### Секреты
+### Secrets
 
-Ядро не отдаёт значения Kubernetes Secret во фронтенд: `resources::get::to_json` у `core/v1 Secret` заменяет значения `data`/`stringData` на `""`, ставит аннотацию `sextant.dev/values-hidden` и убирает `last-applied-configuration` — это относится и к watch, и к `resource_get`. Значение одного ключа — `secret_value`; объект целиком — `resource_get_full`, только для редактирования. Сохранение объекта с маркером `values-hidden` ядро отвергает (`ensure_values_present`). Решение — ADR-0014.
+The core does not hand Kubernetes Secret values to the frontend: `resources::get::to_json` for `core/v1 Secret` replaces the `data`/`stringData` values with `""`, sets the `sextant.dev/values-hidden` annotation and removes `last-applied-configuration` — this applies to both watch and `resource_get`. The value of a single key is `secret_value`; the whole object is `resource_get_full`, for editing only. The core rejects saving an object that carries the `values-hidden` marker (`ensure_values_present`). Decision: ADR-0014.
 
-### Обновления приложения
+### Application updates
 
-Проверка и установка идут через плагины Tauri `updater` и `process`, обёрнутые в `src/api/updater.ts` (`api.updates`, транспорт — `src/api/transport.ts`, в тестах подменяется `mockBackend`). Состояние — `src/features/updates/store.ts`; интерфейс — `UpdateNotice` (проверка при старте, монтируется из `SettingsButton`) и `UpdatesPanel` (раздел Settings). Плагин updater регистрируется в `src-tauri/src/lib.rs` только при `plugins.updater.pubkey` и endpoint в `src-tauri/tauri.conf.json` (`updater_configured`); права окна — `src-tauri/capabilities/updates.json`. Релиз, подпись и `latest.json` — `.github/workflows/release.yml`, ADR-0022.
+Checking and installing go through the Tauri `updater` and `process` plugins, wrapped in `src/api/updater.ts` (`api.updates`, transport in `src/api/transport.ts`, replaced by `mockBackend` in tests). State is in `src/features/updates/store.ts`; the UI is `UpdateNotice` (the check at startup, mounted from `SettingsButton`) and `UpdatesPanel` (the Settings section). The updater plugin is registered in `src-tauri/src/lib.rs` only when `plugins.updater.pubkey` and an endpoint are set in `src-tauri/tauri.conf.json` (`updater_configured`); the window permissions are in `src-tauri/capabilities/updates.json`. The release, the signature and `latest.json` are in `.github/workflows/release.yml`, ADR-0022.
 
-## Границы модулей
+## Module boundaries
 
-- **`sextant-core`** владеет всем про кластеры: kubeconfig, подключение и discovery, watch, действия над ресурсами, логи, exec, port-forward, метрики (metrics-server и Prometheus), Helm, настройки на диске. Прячет `kube-rs`, reflector'ы, разбор Helm-секретов, автопоиск Prometheus. Не зависит от `tauri` и `portable-pty`; всё, что запускает процессы ОС (бинарь `helm`), — за фичей `desktop` (в default). Это проверяет `scripts/check-core-deps.mjs`.
-- **`sextant`** (`src-tauri/`) владеет `AppState`, командами, событиями, локальным PTY (`pty.rs`), геометрией окна (`window.rs`). Команда не содержит логики кластера — вызывает ядро. Новый вид подписки или сессии регистрируется в `AppState`, иначе его не закроет `close_cluster`.
-- **`src/api/`** — единственное место, где вызываются `invoke` / `listen` и импортируется `@tauri-apps/api` (eslint запрещает в остальных местах). Исключение по ADR-0011: хуки кластеров лежат в `src/features/clusters`.
-- **`src/features/<name>/`** — вертикальные фичи. Каталог с `index.ts` подхватывается сам (`import.meta.glob` в `src/app/features.ts`); фича подключает себя регистрациями, не правя чужие файлы.
-- **`src/layout/`** — оболочка (`AppShell`: рейл кластеров, сайдбар, `MainView`, панель деталей, док). Не знает про конкретные виды ресурсов.
-- **`src/resources/`** — реестр видов (`ResourceDef`: колонки, детали, действия); для CRD колонки берутся из `printerColumns` самого CRD, прочитанного лениво (`crdColumns.ts`).
-- **`src/components/`** — общие компоненты без знания о Kubernetes-видах: `Button` (`variant`, `size`, `icon`, `iconOnly` + обязательный `label`), `Checkbox` и `Radio` (нативных чекбоксов и радиокнопок в приложении нет), `Tabs` (`tablist` с клавишами ←/→/Home/End), `icons.tsx` (`Icon`, `IconName`, `IconSpec`, `renderIcon`), `LoadingIndicator` (с подсказкой, если ждать долго), `Dialog`, `ConfirmDialog`, `ErrorState`, `EmptyState`, `Badge`, `Age`, `usePopup`; таблица ресурсов — `src/components/Table/` (`ResourceTable`, `LoadingTable`). Экспорт — `src/components/index.ts`; фичи импортируют отсюда, а не друг у друга.
-- **`src/features/flux/`, `src/features/argocd/`, `src/features/argocd-diff/`** — GitOps (см. «GitOps: Flux и Argo CD»); работают только через api и реестры, ядру нужны лишь `resource_patch`, `cluster_kinds_refresh` и модуль `argocd`.
-- **`src/features/updates/`** — обновления приложения и его версия (см. «Обновления приложения»); к реестрам не подключается, его компоненты встраивают `src/features/settings`.
+- **`sextant-core`** owns everything about clusters: kubeconfig, connection and discovery, watch, actions on resources, logs, exec, port-forward, metrics (metrics-server and Prometheus), Helm, settings on disk. It hides `kube-rs`, reflectors, Helm secret parsing, Prometheus auto-detection. It does not depend on `tauri` or `portable-pty`; everything that launches OS processes (the `helm` binary) sits behind the `desktop` feature (in default). `scripts/check-core-deps.mjs` verifies this.
+- **`sextant`** (`src-tauri/`) owns `AppState`, commands, events, the local PTY (`pty.rs`), the window geometry (`window.rs`). A command contains no cluster logic — it calls the core. A new kind of subscription or session is registered in `AppState`, otherwise `close_cluster` will not close it.
+- **`src/api/`** is the only place where `invoke` / `listen` are called and `@tauri-apps/api` is imported (eslint forbids it everywhere else). An exception under ADR-0011: the cluster hooks live in `src/features/clusters`.
+- **`src/features/<name>/`** are vertical features. A directory with `index.ts` is picked up automatically (`import.meta.glob` in `src/app/features.ts`); a feature wires itself in through registrations, without editing other people's files.
+- **`src/layout/`** is the shell (`AppShell`: cluster rail, sidebar, `MainView`, details panel, dock). It knows nothing about specific resource kinds.
+- **`src/resources/`** is the kind registry (`ResourceDef`: columns, details, actions); for CRDs the columns come from the CRD's own `printerColumns`, read lazily (`crdColumns.ts`).
+- **`src/components/`** are shared components with no knowledge of Kubernetes kinds: `Button` (`variant`, `size`, `icon`, `iconOnly` + a required `label`), `Checkbox` and `Radio` (the app has no native checkboxes or radio buttons), `Tabs` (a `tablist` with the ←/→/Home/End keys), `icons.tsx` (`Icon`, `IconName`, `IconSpec`, `renderIcon`), `LoadingIndicator` (with a hint if the wait is long), `Dialog`, `ConfirmDialog`, `ErrorState`, `EmptyState`, `Badge`, `Age`, `usePopup`; the resource table is in `src/components/Table/` (`ResourceTable`, `LoadingTable`). Exports are in `src/components/index.ts`; features import from there, not from one another.
+- **`src/features/flux/`, `src/features/argocd/`, `src/features/argocd-diff/`** are GitOps (see "GitOps: Flux and Argo CD"); they work only through the api and registries, and the core needs only `resource_patch`, `cluster_kinds_refresh` and the `argocd` module for them.
+- **`src/features/updates/`** are the application updates and its version (see "Application updates"); it does not hook into the registries, and its components are embedded by `src/features/settings`.
 
-## Кнопки, иконки, вкладки
+## Buttons, icons, tabs
 
-- Все иконки — набор `lucide-react`, подключённый только в `src/components/icons.tsx`: `IconName` — имена набора, `IconSpec` — имя или текстовый глиф (совместимость), `renderIcon(spec)` рисует SVG (`aria-hidden`, без текста и `<title>`) либо глиф. Фичи импортируют `Icon`/`renderIcon` из `src/components`, не `lucide-react` (ADR-0033). `icons.test.tsx` требует использования каждого имени.
-- Размеры — токены `:root` в `src/styles/global.css`: `--control-height` 32 px, `--control-height-compact` 28 px (кнопка «⋮» и кнопки строк таблиц, закрытие вкладки дока), `--control-font-size`, `--icon-size`; `.btn`, `.btn--compact`, `.btn--icon`, `.icon-btn` берут размеры оттуда (ADR-0034).
-- Кнопка с иконкой вместо подписи (`iconOnly`) держит прежнюю подпись в `aria-label` и `title`; по этим именам находят кнопки vitest и e2e.
-- Иконки в реестрах: `ActionDef.icon: IconSpec` (`src/features/actions/registry.ts`, рендер в `ActionBar` и `ActionMenu` таблицы), `DockActionDef.icon?: IconSpec`, `SidebarEntry.icon?: IconName` и `SECTION_ICONS` (иконка секции и одиночных разделов, ключ — `SidebarSection | "settings"`) с запасной `DEFAULT_ENTRY_ICON` — `src/resources/registry.ts`, `PageDef.icon?: IconName` — `src/layout/pages.ts`. Фича задаёт иконку полем `icon` в своей регистрации; сайдбар рисует её слева от подписи.
-- `Tabs` — состояние выбранной вкладки хранит вызывающий; вкладки контейнеров пода (`ContainerList`, `src/features/details/kinds/pods.tsx`) держат выбор по ключу объекта `clusterId|namespace|name`, чтобы обновление пода его не сбрасывало.
-- Requests и limits пода считает фронтенд: `podResourceAmounts` (`src/features/metrics/requests.ts`, CPU в милликорах, память в байтах) — видны и без metrics-server (ADR-0037).
+- All icons come from the `lucide-react` set, imported only in `src/components/icons.tsx`: `IconName` holds the names from the set, `IconSpec` is a name or a text glyph (for compatibility), `renderIcon(spec)` draws an SVG (`aria-hidden`, no text and no `<title>`) or the glyph. Features import `Icon`/`renderIcon` from `src/components`, not `lucide-react` (ADR-0033). `icons.test.tsx` requires every name to be used.
+- Sizes are `:root` tokens in `src/styles/global.css`: `--control-height` 32 px, `--control-height-compact` 28 px (the "⋮" button and table row buttons, closing a dock tab), `--control-font-size`, `--icon-size`; `.btn`, `.btn--compact`, `.btn--icon`, `.icon-btn` take their sizes from there (ADR-0034).
+- A button with an icon instead of a label (`iconOnly`) keeps the former label in `aria-label` and `title`; vitest and e2e find buttons by these names.
+- Icons in the registries: `ActionDef.icon: IconSpec` (`src/features/actions/registry.ts`, rendered in `ActionBar` and in the table's `ActionMenu`), `DockActionDef.icon?: IconSpec`, `SidebarEntry.icon?: IconName` and `SECTION_ICONS` (the icon of a section and of single pages, keyed by `SidebarSection | "settings"`) with the fallback `DEFAULT_ENTRY_ICON` — `src/resources/registry.ts`, `PageDef.icon?: IconName` — `src/layout/pages.ts`. A feature sets the icon with the `icon` field in its registration; the sidebar draws it to the left of the label.
+- `Tabs` — the caller holds the selected-tab state; the pod's container tabs (`ContainerList`, `src/features/details/kinds/pods.tsx`) keep the selection by the object key `clusterId|namespace|name`, so a pod update does not reset it.
+- Pod requests and limits are computed by the frontend: `podResourceAmounts` (`src/features/metrics/requests.ts`, CPU in millicores, memory in bytes) — they are visible even without metrics-server (ADR-0037).
 
-## Иконка кластера и полоса
+## Cluster icon and rail
 
-`ClusterSettings.icon` (Rust `ClusterIcon`: `Text { text }` или `Image { dataUrl }`) и `WindowLayout.railExpanded` лежат в `settings.json` и пишутся фронтендом (`settings_update`). Картинку вписывает в 96×96 PNG `readIconImage` (`src/features/clusters/iconImage.ts`, тип до 5 МБ); `iconOf` (`clusterSettings.ts`) отдаёт картинку, только если это `data:image/png;base64,`, иначе текст (`icon.text` или инициалы имени); общий рендер — `ClusterAvatar` для полосы и предпросмотра. `ClusterRail` (`src/layout/ClusterRail.tsx`) читает `railExpanded` из store (`setRailExpanded`) и в развёрнутом виде показывает имена; разворачивается узкая полоса кластеров, не меню разделов (ADR-0035, ADR-0036).
+`ClusterSettings.icon` (Rust `ClusterIcon`: `Text { text }` or `Image { dataUrl }`) and `WindowLayout.railExpanded` live in `settings.json` and are written by the frontend (`settings_update`). `readIconImage` (`src/features/clusters/iconImage.ts`, input up to 5 MB) fits the image into a 96×96 PNG; `iconOf` (`clusterSettings.ts`) returns the image only if it is `data:image/png;base64,`, otherwise text (`icon.text` or the name's initials); the shared renderer is `ClusterAvatar`, used for the rail and the preview. `ClusterRail` (`src/layout/ClusterRail.tsx`) reads `railExpanded` from the store (`setRailExpanded`) and shows names when expanded; what expands is the narrow cluster rail, not the section menu (ADR-0035, ADR-0036).
 
-## Точки расширения (реестры)
+## Extension points (registries)
 
-| Что добавляется | Функция | Где реестр |
+| What is added | Function | Where the registry is |
 |---|---|---|
-| вид ресурса | `registerResource`, `extendColumns` | `src/resources/registry.ts` |
-| действие над объектом | `registerAction(id, def)` | `src/features/actions/registry.ts` |
-| вкладка дока / кнопка дока | `registerDockTab`, `registerDockAction` | `src/layout/dock/registry.ts` |
-| секция панели деталей | `registerDetailsSection` | `src/layout/details/registry.ts` |
-| страница сайдбара | `registerPage` | `src/layout/pages.ts` |
-| слот (`clusterRail`, `railFooter`, `welcome`) | `registerSlot` | `src/layout/slots.ts` |
-| секция настроек кластера | `registerClusterSettingsSection` | `src/features/clusters/settingsRegistry.ts` |
+| resource kind | `registerResource`, `extendColumns` | `src/resources/registry.ts` |
+| action on an object | `registerAction(id, def)` | `src/features/actions/registry.ts` |
+| dock tab / dock button | `registerDockTab`, `registerDockAction` | `src/layout/dock/registry.ts` |
+| details panel section | `registerDetailsSection` | `src/layout/details/registry.ts` |
+| sidebar page | `registerPage` | `src/layout/pages.ts` |
+| slot (`clusterRail`, `railFooter`, `welcome`) | `registerSlot` | `src/layout/slots.ts` |
+| cluster settings section | `registerClusterSettingsSection` | `src/features/clusters/settingsRegistry.ts` |
 
-Новое действие — это ещё и новый вариант в union `ActionId`. Страницы настроек и обновлений реестров не используют: `src/features/settings` показывает их сам (слот `railFooter` — кнопка Settings).
+A new action is also a new member of the `ActionId` union. The settings and updates pages do not use the registries: `src/features/settings` shows them itself (the `railFooter` slot is the Settings button).
 
-## Соглашения
+## Conventions
 
-- Имена в коде английские. Всё, что уходит во фронтенд, — `#[serde(rename_all = "camelCase")]` и `ts-rs`; TS-типы генерируются в `src/api/generated/` (`npm run gen:types`), руками не правятся, сгенерированные коммитятся. Имена команд и событий в генерацию не входят: они заданы вручную в `src/api/commands.ts` и `src/api/events.ts` и `src-tauri/src/lib.rs`, опечатку ловит только тест или рантайм.
-- Любая строка интерфейса — ключ i18next в `src/locales/<lang>/<namespace>.json`, по неймспейсу на фичу; список языков строится из найденных каталогов. Литералы в JSX запрещает eslint.
-- Одна ошибка на всё ядро: `CoreError { code: ErrorCode, message }`. Ошибки kube всегда идут через `error::kube_error` (вырезает секреты exec-плагина). Во фронтенде — `ApiError { code, message }`, код `ErrorCode` переводится по ключу из `errorKey`.
-- Секреты из kubeconfig не логируются и не уходят во фронтенд. Значения Kubernetes Secret уходят только по явному запросу (`secret_value`, `resource_get_full`); любой новый путь, по которому объект Secret попадает во фронтенд, обязан идти через `resources::get::to_json`.
-- Терминал и `helm` получают временный kubeconfig с одним контекстом, права 0600 (`write_temp_kubeconfig`, ADR-0010). Файл терминала принадлежит сессии (`TermSession.guard`) и удаляется синхронно при её остановке, остатки после падения чистятся при старте (ADR-0019); оболочка пользователя получает `KUBECONFIG` обратно после его rc (ADR-0018). Из окружения вызова `helm` вычищаются `HELM_KUBE*`, `HELM_NAMESPACE`, `HELM_DRIVER`, `KUBECONFIG`; единственная точка запуска — `HelmCli::command()`.
-- Изменяющие вызовы ядра подписаны field manager `sextant`. Namespaced-ссылка без неймспейса даёт `invalid` (`ObjectRef::required_namespace`). Замена YAML без `resourceVersion` — `invalid`.
-- Правило стримов: фронтенд создаёт id и вешает `listen` до `*_start(…, streamId)`, поэтому backend не придерживает вывод ни паузами, ни буфером: watch отдаёт первый снапшот сразу и дальше не чаще раза в 250 мс (`resources::watch::BATCH_INTERVAL`), логи — пачками по 100 мс (`logs::BATCH_INTERVAL`), терминал — сразу. Стрим открывается только через `openStream`; id проверяется `check_stream_id` (`[A-Za-z0-9_-]`, ≤128, занятый — `invalid`), подписка регистрируется в `AppState` до работы ядра. Решение — ADR-0013.
-- Настройки: `settings_update` меняет только поля фронтенда; поля, которые пишет backend (`kubeconfigSources`, геометрия окна), сохраняются как записал backend. Новое поле backend'а — добавить в список сохраняемых в `update_settings`. Нечитаемый `settings.json` не перезаписывается (`settings_status`, ADR-0017).
-- Версия приложения одна на пять манифестов (`Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `package.json`, `package-lock.json`); сверяет `scripts/check-version.mjs` (`npm run check:version`, в `npm run check` и в `release.yml`).
-- Порты проброса слушают только 127.0.0.1.
-- Слово «Lens» в продукте не используется, продукт — Sextant (`dev.sextant.app`).
+- Names in code are English. Everything that goes to the frontend is `#[serde(rename_all = "camelCase")]` and `ts-rs`; TS types are generated into `src/api/generated/` (`npm run gen:types`), are not edited by hand, and the generated files are committed. Command and event names are not part of the generation: they are written by hand in `src/api/commands.ts`, `src/api/events.ts` and `src-tauri/src/lib.rs`, and a typo is caught only by a test or at runtime.
+- Every UI string is an i18next key in `src/locales/<lang>/<namespace>.json`, one namespace per feature; the list of languages is built from the directories found. eslint forbids literals in JSX.
+- One error for the whole core: `CoreError { code: ErrorCode, message }`. kube errors always go through `error::kube_error` (it strips exec-plugin secrets). In the frontend it is `ApiError { code, message }`, and the `ErrorCode` is translated by the key from `errorKey`.
+- Secrets from kubeconfig are not logged and do not go to the frontend. Kubernetes Secret values go out only on explicit request (`secret_value`, `resource_get_full`); any new path by which a Secret object reaches the frontend must go through `resources::get::to_json`.
+- The terminal and `helm` get a temporary single-context kubeconfig with mode 0600 (`write_temp_kubeconfig`, ADR-0010). The terminal's file belongs to the session (`TermSession.guard`) and is removed synchronously when it stops, leftovers after a crash are cleaned up at startup (ADR-0019); the user's shell gets `KUBECONFIG` back after its rc (ADR-0018). `HELM_KUBE*`, `HELM_NAMESPACE`, `HELM_DRIVER`, `KUBECONFIG` are scrubbed from the environment of a `helm` call; the only launch point is `HelmCli::command()`.
+- Mutating core calls are signed with the field manager `sextant`. A namespaced reference without a namespace yields `invalid` (`ObjectRef::required_namespace`). A YAML replace without `resourceVersion` is `invalid`.
+- The streams rule: the frontend creates the id and attaches `listen` before `*_start(…, streamId)`, so the backend holds back output with neither pauses nor a buffer: watch delivers the first snapshot immediately and then no more than once per 250 ms (`resources::watch::BATCH_INTERVAL`), logs in 100 ms batches (`logs::BATCH_INTERVAL`), the terminal immediately. A stream is opened only through `openStream`; the id is checked by `check_stream_id` (`[A-Za-z0-9_-]`, ≤128, an id already in use is `invalid`), and the subscription is registered in `AppState` before the core starts working. Decision: ADR-0013.
+- Settings: `settings_update` changes only the frontend's fields; the fields written by the backend (`kubeconfigSources`, window geometry) are kept as the backend wrote them. A new backend field must be added to the list of preserved ones in `update_settings`. An unreadable `settings.json` is not overwritten (`settings_status`, ADR-0017).
+- The application version is one across five manifests (`Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `package.json`, `package-lock.json`); `scripts/check-version.mjs` checks it (`npm run check:version`, in `npm run check` and in `release.yml`).
+- Forwarded ports listen only on 127.0.0.1.
+- The word "Lens" is not used in the product; the product is Sextant (`dev.sextant.app`).
 
-## Швы для тестов
+## Test seams
 
-1. Ядро без кластера: юнит-тесты рядом с кодом; те, что должны видеть HTTP, идут в поддельный API-сервер `crates/sextant-core/src/fake_api.rs` (виден только в `cfg(test)`; ответы задаёт тест, каждый запрос записывается).
-2. Ядро против kind: `crates/sextant-core/tests/<feature>.rs` + `crates/sextant-core/tests/common/mod.rs`; тесты GitOps (`gitops*.rs`) нужны ещё `SEXTANT_TEST_GITOPS=1` и кластер `up --gitops`, без них пропускаются; без `SEXTANT_TEST_KUBECONFIG` тест возвращается и считается пройденным. Тяжёлые замеры (большой кластер) берут фикстуру `scripts/fixtures/load/load.sh`.
-3. Команды: `src-tauri/tests/commands.rs` вызывает каждую команду на mock-рантайме Tauri, изолирован от `KUBECONFIG` и `~/.kube/config` (`set_env`); команда, ходящая в сеть или запускающая `helm`, там подменяется.
-4. Фронтенд: Vitest + Testing Library без Tauri, backend подменяет `mockBackend` из `src/api` (включая обновления и версию приложения).
-5. Окно целиком: `e2e/` (WebdriverIO + `tauri-driver`) против kind, со своими XDG-каталогами во временной папке.
+1. Core without a cluster: unit tests next to the code; those that need to see HTTP go to the fake API server `crates/sextant-core/src/fake_api.rs` (visible only under `cfg(test)`; the test sets the replies, every request is recorded).
+2. Core against kind: `crates/sextant-core/tests/<feature>.rs` + `crates/sextant-core/tests/common/mod.rs`; the GitOps tests (`gitops*.rs`) additionally need `SEXTANT_TEST_GITOPS=1` and a cluster brought up with `up --gitops`, and are skipped without them; without `SEXTANT_TEST_KUBECONFIG` a test returns early and counts as passed. Heavy measurements (a big cluster) use the fixture `scripts/fixtures/load/load.sh`.
+3. Commands: `src-tauri/tests/commands.rs` calls every command on the Tauri mock runtime, isolated from `KUBECONFIG` and `~/.kube/config` (`set_env`); a command that goes to the network or launches `helm` is replaced there.
+4. Frontend: Vitest + Testing Library without Tauri, the backend is replaced by `mockBackend` from `src/api` (including updates and the application version).
+5. The whole window: `e2e/` (WebdriverIO + `tauri-driver`) against kind, with its own XDG directories in a temporary folder.

@@ -1,22 +1,22 @@
-# ADR-0009: Переводы — каталог на язык, файл на неймспейс
+# ADR-0009: Translations — a directory per language, a file per namespace
 
-## Контекст
+## Context
 
-Многоязычная поддержка через файлы переводов обязательна (G04), хотя на старте язык только английский; интерфейс строят параллельные исполнители.
+Multilingual support through translation files is mandatory (G04), although at the start the only language is English; the UI is built by parallel executors.
 
-## Решение
+## Decision
 
-Переводы лежат в `src/locales/<lang>/<namespace>.json`, по неймспейсу на фичу (`common`, `errors`, `clusters`, `resources`, `details`, `actions`, `logs`, `terminal`, `metrics`, `portforward`, `helm`, `settings`). Новый язык — новый каталог, список языков в Settings строится из найденных каталогов. Литералы в JSX запрещены правилом ESLint.
+Translations live in `src/locales/<lang>/<namespace>.json`, one namespace per feature (`common`, `errors`, `clusters`, `resources`, `details`, `actions`, `logs`, `terminal`, `metrics`, `portforward`, `helm`, `settings`). A new language is a new directory, and the list of languages in Settings is built from the directories found. Literals in JSX are forbidden by an ESLint rule.
 
-## Почему
+## Why
 
-- Один файл на язык, как написано в G04 (`locales/<lang>.json`), отвергнут: параллельные исполнители писали бы в один файл. Правило проекта — каждый пишет только в свои неймспейсы.
-- Список языков в настройках, а не из каталогов, отвергнут: тогда добавление языка требовало бы ещё и правки кода.
-- Линтер, а не договорённость, потому что строка, попавшая в разметку литералом, не переводится и это не видно при просмотре на английском.
+- One file per language, as G04 says (`locales/<lang>.json`), was rejected: parallel executors would write to the same file. The project rule is that each writes only to their own namespaces.
+- A list of languages in settings rather than from directories was rejected: adding a language would then also require a code change.
+- A linter rather than an agreement, because a string that lands in markup as a literal is not translated, and that is not visible when looking at the English version.
 
-## Последствия
+## Consequences
 
-- Текст G04 про `locales/<lang>.json` устарел, а критерий «удаление ключа из `en.json`» надо читать как удаление ключа из файла неймспейса. Отсутствующий ключ виден как ключ, а не как падение.
-- Новый язык — это дюжина файлов, а не один, и все неймспейсы нужно вести согласованно.
-- Правило проверяет только литералы внутри JSX. Строки можно собрать вне JSX (так и делается для значений полей), а определение колонки допускает и ключ, и готовое название. Обойти защиту можно, не нарушая линтер.
-- Сообщения об ошибках приходят с backend английским текстом (ADR-0008), и перевод их не затрагивает.
+- The G04 text about `locales/<lang>.json` is out of date, and the criterion "deleting a key from `en.json`" must be read as deleting a key from a namespace file. A missing key is visible as the key itself, not as a crash.
+- A new language is a dozen files, not one, and all namespaces must be kept consistent.
+- The rule checks only literals inside JSX. Strings can be assembled outside JSX (this is how field values are done), and a column definition accepts both a key and a ready-made title. The protection can be bypassed without violating the linter.
+- Error messages come from the backend as English text (ADR-0008), and translation does not affect them.

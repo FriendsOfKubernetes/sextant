@@ -1,21 +1,21 @@
-# ADR-0007: Контракт между Rust и интерфейсом — единственный мост `src/api` и типы, сгенерированные из Rust
+# ADR-0007: The contract between Rust and the UI — the single `src/api` bridge and types generated from Rust
 
-## Контекст
+## Context
 
-Проект ведут несколько параллельных исполнителей, а по требованию R01 интерфейс не должен обращаться к Kubernetes мимо Rust-команд.
+The project is run by several parallel executors, and by requirement R01 the UI must not reach Kubernetes bypassing Rust commands.
 
-## Решение
+## Decision
 
-Типы IPC генерируются из Rust через `ts-rs` в `src/api/generated/` и коммитятся, вручную их не правят. Компоненты вызывают backend только через `src/api/`, прямой импорт `@tauri-apps/api` запрещён. Все сериализуемые типы используют `camelCase`.
+IPC types are generated from Rust through `ts-rs` into `src/api/generated/` and committed; they are not edited by hand. Components call the backend only through `src/api/`, and importing `@tauri-apps/api` directly is forbidden. All serializable types use `camelCase`.
 
-## Почему
+## Why
 
-- Типы TypeScript, написанные вручную, отвергнуты: они могут молча разойтись с Rust. Генерация и проверка в `npm run check` делают расхождение видимым.
-- Единственный мост делает возможной подмену backend в Vitest (`mockBackend`) и сводит проверку R01 к поиску прямых обращений.
+- Hand-written TypeScript types were rejected: they can silently drift from Rust. Generation and the check in `npm run check` make a mismatch visible.
+- A single bridge makes it possible to replace the backend in Vitest (`mockBackend`) and reduces checking R01 to searching for direct calls.
 
-## Последствия
+## Consequences
 
-- Любой тип, пересекающий границу, обязан нести `serde` с `camelCase` и производные `ts-rs`. Типы собираются из двух крейтов (`sextant-core` и `sextant`), и `npm run gen:types` обязан отработать после каждого изменения.
-- Сгенерированный код нельзя чинить правкой: менять надо Rust-источник.
-- Генерация покрывает типы, но не имена команд и событий. Они заданы таблицей в `interfaces.md` и вручную в `src/api`, опечатка в них ловится только тестом или в рантайме.
-- Хуки для кластеров из-за ограничений зоны лежат не в `src/api`, а в `src/features/clusters` (ADR-0011), то есть «единственный мост» на деле допускает исключения.
+- Every type crossing the boundary must carry `serde` with `camelCase` and the `ts-rs` derives. Types are collected from two crates (`sextant-core` and `sextant`), and `npm run gen:types` must run after every change.
+- Generated code cannot be fixed by editing it: the Rust source must be changed.
+- Generation covers types but not command and event names. They are set by a table in `interfaces.md` and by hand in `src/api`, and a typo in them is caught only by a test or at runtime.
+- Because of zone restrictions, the cluster hooks live not in `src/api` but in `src/features/clusters` (ADR-0011), so the "single bridge" in practice allows exceptions.
