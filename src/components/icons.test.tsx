@@ -23,8 +23,15 @@ const REQUIRED: IconName[] = [
   "portForwarding", "helmChart", "helmRelease", "overview", "customResource", "customResourceDefinition",
   "gitRepository", "ociRepository", "helmRepository", "fluxHelmChart", "bucket", "kustomization", "fluxHelmRelease",
   "imageRepository", "imagePolicy", "imageUpdateAutomation", "alert", "provider", "receiver", "argoApplication",
-  "argoApplicationSet", "argoAppProject", "default",
+  "argoApplicationSet", "argoAppProject",
 ];
+
+/** Names of the set, read from the `ICONS` table of icons.tsx. */
+function namesOfTheSet(): string[] {
+  const source = import.meta.glob<string>("./icons.tsx", { query: "?raw", import: "default", eager: true })["./icons.tsx"]!;
+  const table = /const ICONS = \{([\s\S]*?)\n\} satisfies/.exec(source)![1]!;
+  return [...table.matchAll(/^\s+(\w+): \w+,/gm)].map((m) => m[1]!);
+}
 
 describe("Icon", () => {
   it("has every icon the release needs, each one an SVG drawn in the text color", () => {
@@ -65,6 +72,24 @@ describe("Icon", () => {
     expect(plain!.style.height).toBe("var(--icon-size)");
     expect(sized!.style.width).toBe("20px");
     expect(sized).toHaveClass("extra");
+  });
+});
+
+describe("the set", () => {
+  it("has no unused names: every name is used by the app outside icons.tsx", () => {
+    const names = namesOfTheSet();
+    expect(names.length).toBeGreaterThan(50);
+    for (const name of names) expect(isIconName(name), name).toBe(true);
+    const sources = import.meta.glob<string>(["/src/**/*.{ts,tsx}", "!/src/**/*.test.{ts,tsx}", "!/src/components/icons.tsx"], {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    });
+    const text = Object.values(sources).join("\n");
+    const unused = names.filter((name) => !new RegExp(`["'\`]${name}["'\`]`).test(text));
+    expect(unused).toEqual([]);
+    // "default" is a common word in the sources, so the search above cannot tell; the set has no such name.
+    expect(isIconName("default")).toBe(false);
   });
 });
 

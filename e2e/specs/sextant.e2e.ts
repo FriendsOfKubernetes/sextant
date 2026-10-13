@@ -67,7 +67,9 @@ describe("Sextant against sextant-test", () => {
     await openSection("Pods", "Workloads");
     // Pods of every namespace, the window as a user first sees it: the README screenshot.
     await expect(row(pod)).toBeDisplayed({ wait: 30_000 });
-    await eventually(async () => (await textOf(row("prometheus"))).includes("Running"), "the pods of every namespace");
+    // A pod of kube-system, high in the list by name: rows below the fold are not drawn (`monitoring/prometheus…` is
+    // there once a GitOps cluster adds the pods of flux-system and argocd).
+    await eventually(async () => (await textOf(row("etcd-sextant-test"))).includes("Running"), "the pods of every namespace");
     await browser.pause(1_000);
     await browser.saveScreenshot(SCREENSHOT);
     await searchTable("e2e-web");

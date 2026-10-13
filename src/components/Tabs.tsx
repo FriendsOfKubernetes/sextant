@@ -1,4 +1,5 @@
-// Tabs with one panel: the tab list, and the content of the selected tab (`children`) in a tab panel. The caller
+// Tabs with one panel: the tab list, and the content of the selected tab (`children`) in a tab panel (only the
+// selected tab has `aria-controls`: the other panels are not rendered). The caller
 // holds the selection. Keyboard as in the WAI-ARIA tabs pattern: only the selected tab is in the tab order, ←/→ move
 // to the previous/next tab (wrapping around), Home/End to the first/last; moving selects the tab and focuses it.
 //
@@ -77,7 +78,7 @@ export function Tabs<T extends string>({ label, tabs, selected, onSelect, childr
               id={tabId(tab.id)}
               className="tabs__tab"
               aria-selected={active}
-              aria-controls={panelId(tab.id)}
+              aria-controls={active ? panelId(tab.id) : undefined}
               tabIndex={active ? 0 : -1}
               title={tab.title}
               onClick={() => onSelect(tab.id)}

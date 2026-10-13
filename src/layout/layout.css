@@ -244,13 +244,20 @@
   gap: 2px;
 }
 
+/* Square icon buttons of the standard size (as `.icon-btn` next to them); a text label widens the button. */
 .dock__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
   border: none;
   background: transparent;
   border-radius: 4px;
-  min-width: 28px;
-  height: 28px;
+  min-width: var(--control-height);
+  height: var(--control-height);
   padding: 0 6px;
+  font-size: var(--control-font-size);
+  white-space: nowrap;
   cursor: pointer;
   color: var(--color-text-muted);
 }

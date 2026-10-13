@@ -72,7 +72,7 @@ const sections = () =>
   screen
     .getAllByRole("button")
     .filter((b) => b.hasAttribute("aria-expanded"))
-    .map((b) => b.textContent?.replace(/[▸▾]/g, ""));
+    .map((b) => b.textContent);
 
 const crd = (uid: string): KubeObject => ({ metadata: { name: uid, uid, generation: 1 } });
 
@@ -119,7 +119,7 @@ describe("Flux and Argo CD sections", () => {
 });
 
 describe("icons", () => {
-  const iconOf = (el: HTMLElement) => el.querySelector("svg");
+  const iconOf = (el: HTMLElement) => el.querySelector("svg.sidebar__icon");
 
   it("every section header, entry, custom resource group and custom resource has a hidden icon, and the names are unchanged", async () => {
     render(<Sidebar clusterId="c1" />);
@@ -139,10 +139,16 @@ describe("icons", () => {
     expect(screen.getByRole("button", { name: "Widget" })).toHaveTextContent(/^Widget$/);
     expect(screen.getByRole("button", { name: "GitRepositories" })).toHaveTextContent(/^GitRepositories$/);
     expect(screen.getByRole("button", { name: "Pods" })).toHaveTextContent(/^Pods$/);
-    // A section keeps its chevron next to the icon.
-    const flux = screen.getByRole("button", { name: /Flux/ });
-    expect(flux.querySelectorAll("svg").length).toBe(1);
-    expect(flux.querySelector(".sidebar__chevron")).not.toBeNull();
+    // A section and a group of custom resources keep a chevron next to the icon: an SVG of the set that adds no
+    // text either, so their whole text is the label (e2e clicks `button[aria-expanded]=<label>`).
+    for (const name of ["Flux", "demo.sextant.dev"]) {
+      const group = screen.getByRole("button", { name });
+      expect(group, name).toHaveTextContent(new RegExp(`^${name.replace(/\./g, "\\.")}$`));
+      const chevron = group.querySelector(".sidebar__chevron");
+      expect(chevron?.tagName.toLowerCase(), name).toBe("svg");
+      expect(chevron).toHaveAttribute("aria-hidden", "true");
+      expect(group.querySelectorAll("svg").length, name).toBe(2);
+    }
     // A section shown as one link has an icon too.
     expect(iconOf(screen.getByRole("button", { name: "Cluster" }))).not.toBeNull();
   });

@@ -44,8 +44,6 @@
 
 .sidebar__chevron {
   flex: none;
-  width: 12px;
-  font-size: 10px;
   color: var(--color-text-muted);
 }
 

@@ -106,9 +106,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
               aria-expanded={sectionOpen}
               onClick={() => toggle(section.id)}
             >
-              <span className="sidebar__chevron" aria-hidden>
-                {sectionOpen ? "▾" : "▸"}
-              </span>
+              <Icon name={sectionOpen ? "chevronDown" : "chevronRight"} size={12} className="sidebar__chevron" />
               <Icon name={sectionIcon(section.id) ?? DEFAULT_ENTRY_ICON} className="sidebar__icon" />
               <span className="sidebar__label">{t(`resources:sections.${section.id}`, { defaultValue: section.id })}</span>
             </button>
@@ -126,9 +124,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
                         aria-expanded={groupOpen}
                         onClick={() => toggle(groupKey)}
                       >
-                        <span className="sidebar__chevron" aria-hidden>
-                          {groupOpen ? "▾" : "▸"}
-                        </span>
+                        <Icon name={groupOpen ? "chevronDown" : "chevronRight"} size={12} className="sidebar__chevron" />
                         <Icon name="customResources" className="sidebar__icon" />
                         <span className="sidebar__label">{g.group}</span>
                       </button>

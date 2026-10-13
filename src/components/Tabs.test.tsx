@@ -37,6 +37,22 @@ describe("Tabs", () => {
     expect(screen.getAllByRole("tabpanel")).toHaveLength(1);
   });
 
+  it("only the selected tab names a controlled panel: the others have no panel to point at", () => {
+    render(<Harness />);
+    expect(screen.getByRole("tab", { name: "init" })).not.toHaveAttribute("aria-controls");
+    expect(screen.getByRole("tab", { name: "sidecar" })).not.toHaveAttribute("aria-controls");
+
+    fireEvent.click(screen.getByRole("tab", { name: "sidecar" }));
+    const panel = screen.getByRole("tabpanel", { name: "sidecar" });
+    expect(screen.getByRole("tab", { name: "sidecar" })).toHaveAttribute("aria-controls", panel.id);
+    expect(screen.getByRole("tab", { name: "app" })).not.toHaveAttribute("aria-controls");
+    // Every aria-controls points at an element that exists.
+    for (const tab of screen.getAllByRole("tab")) {
+      const controls = tab.getAttribute("aria-controls");
+      if (controls) expect(document.getElementById(controls)).not.toBeNull();
+    }
+  });
+
   it("only the selected tab is in the tab order (roving tabindex)", () => {
     render(<Harness />);
     expect(screen.getAllByRole("tab").map((t) => t.tabIndex)).toEqual([-1, 0, -1]);

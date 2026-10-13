@@ -29,7 +29,6 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
-  Circle,
   Clock,
   Container,
   Copy,
@@ -214,8 +213,6 @@ const ICONS = {
   argoApplication: AppWindow,
   argoApplicationSet: LayoutGrid,
   argoAppProject: FolderKanban,
-  /** For entries without an icon of their own. */
-  default: Circle,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */
