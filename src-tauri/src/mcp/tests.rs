@@ -453,17 +453,40 @@ async fn a_body_over_4_mb_is_refused() {
         "POST /mcp HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: {auth}\r\nContent-Type: application/json\r\n\
          Accept: application/json, text/event-stream\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
     );
+    // The server answers and closes while the body is still being sent. Closing a socket with unread
+    // data resets the connection, and on Windows a reset discards an answer the client has not read
+    // yet. So the answer is read while the body is written, and the writer's errors are expected.
     let writing = tokio::spawn(async move {
-        writer.write_all(head.as_bytes()).await?;
+        if writer.write_all(head.as_bytes()).await.is_err() {
+            return;
+        }
         let chunk = format!("{:x}\r\n{}\r\n", 64 * 1024, "x".repeat(64 * 1024));
         for _ in 0..80 {
-            writer.write_all(chunk.as_bytes()).await?;
+            if writer.write_all(chunk.as_bytes()).await.is_err() {
+                return;
+            }
         }
-        writer.write_all(b"0\r\n\r\n").await
+        let _ = writer.write_all(b"0\r\n\r\n").await;
     });
     let mut raw = Vec::new();
-    let _ = tokio::time::timeout(Duration::from_secs(10), reader.read_to_end(&mut raw)).await;
-    let _ = writing.await;
+    let read = tokio::time::timeout(Duration::from_secs(10), async {
+        let mut buf = [0u8; 8192];
+        // The status line and headers are enough; a reset after them does not matter.
+        while !raw.windows(4).any(|w| w == b"\r\n\r\n") {
+            match reader.read(&mut buf).await {
+                Ok(0) | Err(_) => break,
+                Ok(n) => raw.extend_from_slice(&buf[..n]),
+            }
+        }
+    })
+    .await;
+    assert!(
+        read.is_ok(),
+        "no answer in 10 s: {:?}",
+        String::from_utf8_lossy(&raw)
+    );
+    drop(reader);
+    writing.abort();
     assert_eq!(parse_reply(&raw).status, 413);
     state.close_all();
 }
