@@ -99,7 +99,7 @@ jobs:
 
           if [ -z "$id" ]; then
             echo "No release for $TAG yet, creating a draft"
-            notes="Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY#installing) for how to open them on macOS and Windows. Sextant 0.2.0 and later installed from the AppImage, .dmg or .msi update themselves (Settings → Updates); a .deb is updated with the package manager."
+            notes="Installers for Linux (.deb, .AppImage), macOS (universal .dmg) and Windows (.msi). They are not code-signed — see [Installing](https://github.com/$GITHUB_REPOSITORY/wiki/Installation) for how to open them on macOS and Windows. Sextant 0.2.0 and later installed from the AppImage, .dmg or .msi update themselves (Settings → Updates); a .deb is updated with the package manager."
             [ -n "$issues_section" ] && notes=$(printf '%s\n\n%s' "$notes" "$issues_section")
             # The id comes straight from the creation response, not from the (possibly lagging) list.
             id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
