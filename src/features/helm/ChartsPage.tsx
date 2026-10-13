@@ -3,7 +3,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ChartHit, type HelmRepo } from "../../api";
-import { ErrorState } from "../../components";
+import { Button, ErrorState } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { YamlViewer } from "../details";
 import { useSelectedNamespaces } from "../namespaces";
@@ -114,15 +114,13 @@ function Repositories({ available }: { available: boolean }) {
     <section className="helm-section" aria-label={t("helm:charts.repositories")}>
       <div className="helm-section__header">
         <h3>{t("helm:charts.repositories")}</h3>
-        <button
-          type="button"
-          className="btn"
+        <Button
           disabled={!available || busy !== null || list.length === 0}
           title={available ? undefined : t("helm:missing.short")}
           onClick={() => void run("update", () => api.helm.repoUpdate(), t("helm:charts.updated"))}
         >
           {busy === "update" ? t("helm:charts.updating") : t("helm:charts.update")}
-        </button>
+        </Button>
       </div>
       {repos.error && <ErrorState error={repos.error} onRetry={repos.reload} />}
       {available && repos.data && list.length === 0 && <p className="helm-muted">{t("helm:charts.noRepos")}</p>}
@@ -141,15 +139,14 @@ function Repositories({ available }: { available: boolean }) {
                 <td>{r.name}</td>
                 <td className="helm-url">{r.url}</td>
                 <td>
-                  <button
-                    type="button"
-                    className="btn btn--small"
+                  <Button
+                    size="compact"
                     disabled={!available}
                     aria-label={t("helm:charts.removeLabel", { name: r.name })}
                     onClick={() => setRemoving(r)}
                   >
                     {t("helm:charts.remove")}
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -193,14 +190,14 @@ function Repositories({ available }: { available: boolean }) {
           autoComplete="off"
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button
+        <Button
           type="submit"
-          className="btn btn--primary"
+          variant="primary"
           disabled={!available || busy !== null || name.trim() === "" || url.trim() === "" || loginInUrl}
           title={available ? undefined : t("helm:missing.short")}
         >
           {busy === "add" ? t("helm:charts.adding") : t("helm:charts.add")}
-        </button>
+        </Button>
       </form>
       {loginInUrl && <p className="helm-warning">{t("helm:charts.loginInUrl")}</p>}
       {error && <ErrorState error={error} />}
@@ -268,14 +265,14 @@ function ChartSearch({
           placeholder={t("helm:charts.searchPlaceholder")}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button
+        <Button
           type="submit"
-          className="btn btn--primary"
+          variant="primary"
           disabled={!available || busy}
           title={available ? undefined : t("helm:missing.short")}
         >
           {busy ? t("helm:charts.searching") : t("helm:charts.searchButton")}
-        </button>
+        </Button>
       </form>
       {error && <ErrorState error={error} />}
       {hits && hits.length === 0 && <p className="helm-muted">{t("helm:charts.noResults")}</p>}
@@ -344,15 +341,14 @@ function ChartDetails({
     <section className="helm-section" aria-label={chart.name}>
       <div className="helm-section__header">
         <h3>{`${chart.name} ${chart.version}`}</h3>
-        <button
-          type="button"
-          className="btn btn--primary"
+        <Button
+          variant="primary"
           disabled={!available || values.data === null}
           title={available ? undefined : t("helm:missing.short")}
           onClick={() => setInstalling(true)}
         >
           {t("helm:charts.install")}
-        </button>
+        </Button>
       </div>
       {chart.description && <p className="helm-muted">{chart.description}</p>}
       <h4>{t("helm:charts.defaultValues")}</h4>

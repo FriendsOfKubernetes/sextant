@@ -317,7 +317,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                       <button type="button" className="rt__sort" onClick={() => column.toggleSorting()}>
                         {label}
                         <span className="rt__sort-icon" aria-hidden>
-                          {sorted === "asc" ? "▲" : sorted === "desc" ? "▼" : ""}
+                          {sorted && <Icon name={sorted === "asc" ? "sortAsc" : "sortDesc"} size={12} />}
                         </span>
                       </button>
                     ) : (

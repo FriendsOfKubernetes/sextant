@@ -54,7 +54,7 @@ const isFlux = (kind: KindRef) => Boolean(fluxKind(kind));
 
 registerAction("reconcile", {
   labelKey: "flux:actions.reconcile",
-  icon: "↻",
+  icon: "reconcile",
   multiple: true,
   appliesTo: (_obj, kind) => isFlux(kind),
   run: async ({ clusterId, refs }) => {
@@ -64,7 +64,7 @@ registerAction("reconcile", {
 
 registerAction("reconcileWithSource", {
   labelKey: "flux:actions.reconcileWithSource",
-  icon: "⟳",
+  icon: "reconcileWithSource",
   appliesTo: (obj, kind) => isKind(kind, KUSTOMIZATION, HELM_RELEASE) && Boolean(sourceRefOf(obj)),
   run: async ({ clusterId, objects, refs }) => {
     const [obj, ref] = [objects[0], refs[0]];
@@ -75,7 +75,7 @@ registerAction("reconcileWithSource", {
 
 registerAction("fluxSuspend", {
   labelKey: "flux:actions.suspend",
-  icon: "⏸",
+  icon: "suspend",
   appliesTo: (obj, kind) => isFlux(kind) && !isSuspended(obj),
   run: ({ clusterId, refs, openDialog }) => {
     const ref = refs[0];
@@ -98,7 +98,7 @@ registerAction("fluxSuspend", {
 
 registerAction("fluxResume", {
   labelKey: "flux:actions.resume",
-  icon: "▶",
+  icon: "resume",
   multiple: true,
   appliesTo: (obj, kind) => isFlux(kind) && isSuspended(obj),
   run: async ({ clusterId, refs }) => {

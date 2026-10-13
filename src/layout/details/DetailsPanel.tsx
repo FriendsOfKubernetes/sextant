@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, ObjectRef } from "../../api";
 import { useAppStore } from "../../app/store";
-import { ErrorState } from "../../components";
+import { ErrorState, Icon } from "../../components";
 import { getDetailsSections, useDetailsObject } from "./registry";
 
 /** Panel that slides in from the right with the registered sections for the selected object. */
@@ -32,7 +32,7 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
           )}
         </div>
         <button type="button" className="icon-btn" aria-label={t("common:actions.closeDetails")} onClick={closeDetails}>
-          ×
+          <Icon name="close" />
         </button>
       </header>
       <div className="details__body">

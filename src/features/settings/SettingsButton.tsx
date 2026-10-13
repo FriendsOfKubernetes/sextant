@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
-import { Dialog } from "../../components";
+import { Dialog, Icon } from "../../components";
 import { UpdateNotice } from "../updates";
 import { SETTINGS_PAGE_ID } from "./constants";
 import { SettingsFileBanner } from "./SettingsFileBanner";
@@ -29,12 +29,12 @@ export function SettingsButton() {
     <>
       <button
         type="button"
-        className="icon-btn settings-button"
+        className="icon-btn"
         aria-label={t("settings:page.open")}
         title={t("settings:page.open")}
         onClick={open}
       >
-        ⚙
+        <Icon name="settings" />
       </button>
       <SettingsFileBanner />
       <UpdateNotice />

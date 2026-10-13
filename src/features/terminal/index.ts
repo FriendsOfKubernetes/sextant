@@ -15,7 +15,7 @@ registerDockTab("terminal", LocalTerminalTab);
 
 registerAction("exec", {
   labelKey: "terminal:shell.action",
-  icon: ">_",
+  icon: "shell",
   appliesTo: (obj, kind) =>
     kind.group === "" &&
     kind.kind === "Pod" &&

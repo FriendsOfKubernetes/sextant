@@ -22,7 +22,7 @@ registerPage({
 
 registerAction("portForward", {
   labelKey: "portforward:action.label",
-  icon: "⇄",
+  icon: "portForward",
   appliesTo: (obj, kind) => portsOf(obj, kind).length > 0,
   run: ({ clusterId, kind, objects, refs, openDialog }) => {
     const [obj, ref] = [objects[0], refs[0]];

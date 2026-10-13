@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { api, type SettingsStatus } from "../../api";
+import { Icon } from "../../components";
 
 export function SettingsFileBanner() {
   const { t } = useTranslation();
@@ -43,7 +44,7 @@ export function SettingsFileBanner() {
         title={t("settings:file.dismiss")}
         onClick={() => setDismissed(true)}
       >
-        ×
+        <Icon name="close" />
       </button>
     </div>,
     document.body,

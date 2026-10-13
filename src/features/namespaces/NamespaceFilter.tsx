@@ -3,7 +3,7 @@ import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Checkbox, usePopup } from "../../components";
+import { Button, Checkbox, Icon, usePopup } from "../../components";
 import { selectNamespaces } from "./namespaces";
 import "./namespaces.css";
 
@@ -54,18 +54,17 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
 
   return (
     <div className="ns-filter" ref={ref}>
-      <button
-        type="button"
-        className="btn ns-filter__button"
+      <Button
+        className="ns-filter__button"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? popupId : undefined}
         aria-label={t("resources:namespaces.label", { value: label })}
         onClick={() => setOpen((v) => !v)}
       >
-        {label}
-        <span aria-hidden>▾</span>
-      </button>
+        <span className="ns-filter__label">{label}</span>
+        <Icon name="chevronDown" />
+      </Button>
       {open && (
         <div id={popupId} className="ns-filter__popup" role="dialog" aria-label={t("resources:namespaces.title")}>
           <input

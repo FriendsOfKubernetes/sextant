@@ -8,8 +8,8 @@ const REQUIRED: IconName[] = [
   // actions and glyphs
   "logs", "shell", "portForward", "edit", "delete", "scale", "restart", "cordon", "drain", "trigger", "suspend",
   "resume", "reconcile", "reconcileWithSource", "sync", "refresh", "hardRefresh", "terminate", "external", "diff",
-  "more", "close", "chevronDown", "chevronUp", "chevronRight", "chevronLeft", "settings", "menu", "add", "warning",
-  "eye", "eyeOff",
+  "more", "close", "chevronDown", "chevronUp", "chevronRight", "settings", "menu", "add", "warning",
+  "eye", "eyeOff", "download", "rollback", "sortAsc", "sortDesc",
   // cluster rail
   "expandRail", "collapseRail", "image", "reset",
   // sidebar sections

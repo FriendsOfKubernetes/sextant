@@ -144,7 +144,9 @@
 }
 
 .rt__sort-icon {
-  font-size: 9px;
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
 }
 
 .rt-name {

@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, toApiError, type ClusterId, type ObjectRef } from "../../api";
-import { ConfirmDialog, ErrorState } from "../../components";
+import { Button, ConfirmDialog, ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { openActionDialog } from "../actions/registry";
 import { YamlEditor } from "./YamlEditor";
@@ -118,17 +118,16 @@ export function EditTab({ tab }: DockTabProps) {
   return (
     <div className="editor-tab">
       <div className="editor-tab__toolbar">
-        <button
-          type="button"
-          className="btn btn--primary"
+        <Button
+          variant="primary"
           disabled={phase !== "ready" || loadError !== null}
           onClick={() => void save()}
         >
           {phase === "saving" ? t("actions:editor.saving") : t("actions:editor.save")}
-        </button>
-        <button type="button" className="btn" disabled={phase !== "ready"} onClick={reload}>
+        </Button>
+        <Button disabled={phase !== "ready"} onClick={reload}>
           {t("actions:editor.reload")}
-        </button>
+        </Button>
         <span className="editor-tab__status" aria-live="polite">
           {phase === "loading" && t("actions:editor.loading")}
           {phase !== "loading" && dirty && t("actions:editor.unsaved")}
@@ -142,9 +141,9 @@ export function EditTab({ tab }: DockTabProps) {
             error={saveError}
             title={t("actions:editor.conflict", names)}
             actions={
-              <button type="button" className="btn" onClick={reload}>
+              <Button onClick={reload}>
                 {t("actions:editor.reload")}
-              </button>
+              </Button>
             }
           />
         ) : (

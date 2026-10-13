@@ -8,7 +8,7 @@ import {
   useAppStore,
   useClusterView,
 } from "../app/store";
-import { EmptyState } from "../components";
+import { EmptyState, Icon } from "../components";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
 import { Dock } from "./dock/Dock";
@@ -138,7 +138,7 @@ function NarrowMenu({ clusterId, children }: { clusterId: string | null; childre
           aria-controls={drawerId}
           onClick={() => setOpen((v) => !v)}
         >
-          ☰
+          <Icon name="menu" />
         </button>
         <span className="topbar__title">{t("common:app.name")}</span>
       </header>

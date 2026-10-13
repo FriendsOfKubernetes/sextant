@@ -23,7 +23,7 @@ const t = (key: string, options?: Record<string, unknown>) => i18n.t(key, option
 
 registerAction("edit", {
   labelKey: "actions:edit.label",
-  icon: "✎",
+  icon: "edit",
   appliesTo: () => true,
   run: ({ clusterId, refs }) => {
     if (refs[0]) openEditTab(clusterId, refs[0]);
@@ -32,7 +32,7 @@ registerAction("edit", {
 
 registerAction("delete", {
   labelKey: "actions:delete.label",
-  icon: "×",
+  icon: "delete",
   danger: true,
   multiple: true,
   appliesTo: () => true,
@@ -43,7 +43,7 @@ registerAction("delete", {
 
 registerAction("scale", {
   labelKey: "actions:scale.label",
-  icon: "↕",
+  icon: "scale",
   appliesTo: (_obj, kind) => is(kind, "apps", "Deployment", "StatefulSet", "ReplicaSet"),
   run: ({ clusterId, objects, refs, openDialog }) => {
     const [obj, ref] = [objects[0], refs[0]];
@@ -56,7 +56,7 @@ registerAction("scale", {
 
 registerAction("restart", {
   labelKey: "actions:restart.label",
-  icon: "↻",
+  icon: "restart",
   appliesTo: (_obj, kind) => is(kind, "apps", "Deployment", "StatefulSet", "DaemonSet"),
   run: ({ clusterId, refs, openDialog }) => {
     const ref = refs[0];
@@ -77,7 +77,7 @@ registerAction("restart", {
 
 registerAction("cordon", {
   labelKey: "actions:cordon.label",
-  icon: "⊘",
+  icon: "cordon",
   appliesTo: (_obj, kind) => is(kind, "", "Node"),
   run: ({ clusterId, objects, refs, openDialog }) => {
     const [obj, ref] = [objects[0], refs[0]];
@@ -99,7 +99,7 @@ registerAction("cordon", {
 
 registerAction("drain", {
   labelKey: "actions:drain.label",
-  icon: "⇣",
+  icon: "drain",
   danger: true,
   appliesTo: (_obj, kind) => is(kind, "", "Node"),
   run: ({ clusterId, refs, openDialog }) => {
@@ -111,7 +111,7 @@ registerAction("drain", {
 
 registerAction("trigger", {
   labelKey: "actions:trigger.label",
-  icon: "▶",
+  icon: "trigger",
   appliesTo: (_obj, kind) => is(kind, "batch", "CronJob"),
   run: ({ clusterId, refs, openDialog }) => {
     const ref = refs[0];
@@ -134,7 +134,7 @@ registerAction("trigger", {
 
 registerAction("suspend", {
   labelKey: "actions:suspend.label",
-  icon: "⏸",
+  icon: "suspend",
   appliesTo: (_obj, kind) => is(kind, "batch", "CronJob"),
   run: ({ clusterId, objects, refs, openDialog }) => {
     const [obj, ref] = [objects[0], refs[0]];

@@ -2,7 +2,7 @@
 // update found. Without an update signing key in the build everything is off and the section says why.
 import { useTranslation } from "react-i18next";
 import { api, useSettings, type AppSettings } from "../../api";
-import { Checkbox } from "../../components";
+import { Button, Checkbox } from "../../components";
 import { checkForUpdates, useAppInfo, useUpdates } from "./store";
 import { ReleasePageButton, UpdateDetails, UpdateError } from "./UpdateDetails";
 import "./updates.css";
@@ -43,9 +43,9 @@ export function UpdatesPanel({ save }: UpdatesPanelProps) {
         {t("updates:auto")}
       </label>
       <div className="updates__row">
-        <button type="button" className="btn" disabled={!configured || busy} onClick={() => void checkForUpdates()}>
+        <Button disabled={!configured || busy} onClick={() => void checkForUpdates()}>
           {t("updates:check")}
-        </button>
+        </Button>
         {state.phase === "checking" && (
           <span className="updates__status" role="status">
             {t("updates:checking")}

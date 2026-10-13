@@ -2,7 +2,7 @@
 // "Install and restart" or, for a copy that cannot replace itself (.deb, .rpm, a bare binary), how to update by hand.
 import { useTranslation } from "react-i18next";
 import { api, RELEASES_URL, type AppInfo, type AvailableUpdate } from "../../api";
-import { ErrorState } from "../../components";
+import { Button, ErrorState } from "../../components";
 import { canInstall, installUpdate, type UpdateFailure, type UpdatesState } from "./store";
 
 export function UpdateDetails({ update, info, state }: { update: AvailableUpdate; info: AppInfo | null; state: UpdatesState }) {
@@ -33,9 +33,9 @@ export function UpdateDetails({ update, info, state }: { update: AvailableUpdate
       )}
       {canInstall(kind) ? (
         <div className="updates__row">
-          <button type="button" className="btn btn--primary" disabled={busy} onClick={() => void installUpdate()}>
+          <Button variant="primary" disabled={busy} onClick={() => void installUpdate()}>
             {t("updates:install")}
-          </button>
+          </Button>
           {progressText && (
             <span className="updates__status" role="status">
               {progressText}
@@ -61,9 +61,9 @@ export function ReleasePageButton() {
   const { t } = useTranslation();
   return (
     <div className="updates__row">
-      <button type="button" className="btn" onClick={() => void api.shell.openUrl(RELEASES_URL).catch(() => undefined)}>
+      <Button onClick={() => void api.shell.openUrl(RELEASES_URL).catch(() => undefined)}>
         {t("updates:openReleasePage")}
-      </button>
+      </Button>
     </div>
   );
 }

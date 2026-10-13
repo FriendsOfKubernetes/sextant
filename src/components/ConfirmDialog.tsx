@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 
 export interface ConfirmDialogProps {
@@ -25,12 +26,12 @@ export function ConfirmDialog({ open, title, children, confirmLabel, danger, onC
       onClose={onCancel}
       footer={
         <>
-          <button type="button" className="btn" onClick={onCancel}>
+          <Button onClick={onCancel}>
             {t("common:actions.cancel")}
-          </button>
-          <button type="button" className={danger ? "btn btn--danger" : "btn btn--primary"} onClick={onConfirm}>
+          </Button>
+          <Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>
             {confirmLabel ?? t("common:actions.confirm")}
-          </button>
+          </Button>
         </>
       }
     >

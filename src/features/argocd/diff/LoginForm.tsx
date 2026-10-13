@@ -3,7 +3,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ArgoStatus, type ClusterId } from "../../../api";
-import { Checkbox } from "../../../components";
+import { Button, Checkbox } from "../../../components";
 import { loginErrorKey, type LoginMode } from "./model";
 
 export interface LoginFormProps {
@@ -68,10 +68,8 @@ export function LoginForm({ clusterId, status, reason, onSignedIn }: LoginFormPr
       ))}
       <div className="argo-login__modes" role="group" aria-label={t("argocd:login.mode.label")}>
         {modes.map((m) => (
-          <button
+          <Button
             key={m.id}
-            type="button"
-            className="btn"
             aria-pressed={mode === m.id}
             onClick={() => {
               setMode(m.id);
@@ -79,7 +77,7 @@ export function LoginForm({ clusterId, status, reason, onSignedIn }: LoginFormPr
             }}
           >
             {m.label}
-          </button>
+          </Button>
         ))}
       </div>
       <div className="argo-login__fields">
@@ -128,9 +126,9 @@ export function LoginForm({ clusterId, status, reason, onSignedIn }: LoginFormPr
         </div>
       )}
       <div className="argo-login__actions">
-        <button type="submit" className="btn btn--primary" disabled={!ready || busy}>
+        <Button type="submit" variant="primary" disabled={!ready || busy}>
           {t(busy ? "argocd:login.signingIn" : "argocd:login.submit")}
-        </button>
+        </Button>
       </div>
     </form>
   );

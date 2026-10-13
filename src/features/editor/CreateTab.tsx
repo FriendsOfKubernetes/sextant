@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, toApiError, type ClusterId, type ObjectRef } from "../../api";
-import { ErrorState } from "../../components";
+import { Button, ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { hasHiddenValues } from "../details/secrets";
 import { YamlEditor } from "./YamlEditor";
@@ -49,15 +49,14 @@ export function CreateTab({ tab }: DockTabProps) {
   return (
     <div className="editor-tab">
       <div className="editor-tab__toolbar">
-        <button
-          type="button"
-          className="btn btn--primary"
+        <Button
+          variant="primary"
           disabled={applying || empty}
           title={empty ? t("actions:create.empty") : undefined}
           onClick={() => void apply()}
         >
           {applying ? t("actions:create.applying") : t("actions:create.apply")}
-        </button>
+        </Button>
         <span className="editor-tab__hint">{t("actions:create.placeholder")}</span>
       </div>
       {error && <ErrorState error={error} title={t("actions:create.failed")} />}

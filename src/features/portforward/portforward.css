@@ -127,10 +127,3 @@
   gap: 6px;
   justify-content: flex-end;
 }
-
-.pf-section .btn--small,
-.pf-table .btn--small,
-.pf-dialog .btn--small {
-  padding: 2px 8px;
-  font-size: 12px;
-}

@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ClusterId, type ForwardInfo, type ForwardTarget } from "../../api";
-import { Dialog, ErrorState, Radio } from "../../components";
+import { Button, Dialog, ErrorState, Radio } from "../../components";
 import { parseLocalPort, targetName } from "./model";
 import { openInBrowser } from "./openInBrowser";
 
@@ -55,12 +55,12 @@ export function ForwardDialog({ clusterId, target, ports, initialPort, close }: 
         onClose={close}
         footer={
           <>
-            <button type="button" className="btn" onClick={close}>
+            <Button onClick={close}>
               {t("portforward:dialog.close")}
-            </button>
-            <button type="button" className="btn btn--primary" onClick={() => openInBrowser(started)}>
+            </Button>
+            <Button variant="primary" onClick={() => openInBrowser(started)}>
               {t("portforward:actions.open")}
-            </button>
+            </Button>
           </>
         }
       >
@@ -78,17 +78,16 @@ export function ForwardDialog({ clusterId, target, ports, initialPort, close }: 
       onClose={close}
       footer={
         <>
-          <button type="button" className="btn" onClick={close}>
+          <Button onClick={close}>
             {t("common:actions.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn btn--primary"
+          </Button>
+          <Button
+            variant="primary"
             disabled={busy || !valid}
             onClick={() => void start(localPort)}
           >
             {busy ? t("portforward:dialog.starting") : t("portforward:dialog.start")}
-          </button>
+          </Button>
         </>
       }
     >
@@ -134,9 +133,9 @@ export function ForwardDialog({ clusterId, target, ports, initialPort, close }: 
         {taken !== null && (
           <div className="pf-dialog__taken" role="alert">
             <span>{t("portforward:dialog.inUse", { port: taken })}</span>
-            <button type="button" className="btn btn--small" disabled={busy} onClick={() => void start(null)}>
+            <Button disabled={busy} onClick={() => void start(null)}>
               {t("portforward:dialog.useFree")}
-            </button>
+            </Button>
           </div>
         )}
         {error && <ErrorState error={error} />}

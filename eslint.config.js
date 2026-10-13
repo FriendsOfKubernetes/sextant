@@ -43,6 +43,11 @@ export default tseslint.config(
               "orientation",
               "direction",
               "tone",
+              // `Button` props that pick a look or an icon of the set (src/components/Button.tsx), and callbacks.
+              "variant",
+              "size",
+              "icon",
+              "on[A-Z].*",
               "src",
               "href",
               "rel",

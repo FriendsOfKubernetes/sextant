@@ -65,6 +65,7 @@
 
 .terminal-picker .btn {
   width: 100%;
+  justify-content: flex-start;
   text-align: left;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

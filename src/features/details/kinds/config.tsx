@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ClusterId, type KubeObject } from "../../../api";
+import { Button } from "../../../components";
 import { status } from "../../../resources";
 import { Block, Fields, KINDS, link, muted, nsOf, pre, table, type FieldRow } from "../ui";
 import type { KindViewProps } from "./index";
@@ -42,7 +43,9 @@ export function SecretDetails({ obj, clusterId }: KindViewProps) {
   const data = table(
     [t("details:columns.key"), t("details:columns.value")],
     Object.keys(record(get(obj, "data"))).map((field) => [
-      field,
+      <span key="key" className="dt-secret-key">
+        {field}
+      </span>,
       <SecretValue key={field} clusterId={clusterId} namespace={namespace} name={name} field={field} />,
     ]),
   );
@@ -104,9 +107,7 @@ function SecretValue({ clusterId, namespace, name, field }: SecretValueProps) {
   return (
     <span className="dt-secret-value">
       {content}
-      <button type="button" className="btn" aria-label={label} aria-pressed={open} onClick={toggle}>
-        {t(open ? "details:secret.hide" : "details:secret.show")}
-      </button>
+      <Button iconOnly icon={open ? "eyeOff" : "eye"} label={label} aria-pressed={open} onClick={toggle} />
     </span>
   );
 }

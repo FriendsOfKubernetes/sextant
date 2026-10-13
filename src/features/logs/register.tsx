@@ -14,7 +14,7 @@ const WORKLOADS: Record<string, string[]> = { apps: ["Deployment", "StatefulSet"
 
 registerAction("logs", {
   labelKey: "logs:action.label",
-  icon: "≡",
+  icon: "logs",
   appliesTo: (obj, kind) => {
     if (kind.group === "" && kind.kind === "Pod") return true;
     return (WORKLOADS[kind.group]?.includes(kind.kind) ?? false) && labelSelectorOf(obj) !== null;

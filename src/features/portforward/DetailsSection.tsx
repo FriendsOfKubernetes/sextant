@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
+import { Button } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ForwardDialog } from "./ForwardDialog";
 import { usePortForwards } from "./hooks";
@@ -30,14 +31,12 @@ function PortList({ clusterId, objectRef, ports }: Pick<DetailsSectionProps, "cl
         {ports.map((port) => (
           <li key={port}>
             <span className="pf-section__port">{port}</span>
-            <button
-              type="button"
-              className="btn btn--small"
+            <Button
               aria-label={t("portforward:section.forwardPort", { port })}
               onClick={() => setDialogPort(port)}
             >
               {t("portforward:section.forward")}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
@@ -46,9 +45,9 @@ function PortList({ clusterId, objectRef, ports }: Pick<DetailsSectionProps, "cl
           {mine.map((f) => (
             <li key={f.id} className={f.status.state === "error" ? "pf-section__error" : undefined}>
               <span>{t("portforward:section.active", { local: f.localPort, remote: f.remotePort })}</span>
-              <button type="button" className="btn btn--small" onClick={() => openInBrowser(f)}>
+              <Button onClick={() => openInBrowser(f)}>
                 {t("portforward:actions.open")}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

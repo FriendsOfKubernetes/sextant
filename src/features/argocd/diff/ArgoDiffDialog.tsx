@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, errorKey, toApiError, type ApiError, type ArgoStatus, type ClusterId, type ManagedResource, type ObjectRef } from "../../../api";
-import { Dialog, LoadingIndicator } from "../../../components";
+import { Button, Dialog, LoadingIndicator } from "../../../components";
 import { ambiguousInstallationText, isAmbiguousInstallation } from "../server";
 import { DiffView } from "./DiffView";
 import { LoginForm } from "./LoginForm";
@@ -100,16 +100,16 @@ function SessionBar({
     <div className="argo-diff__session">
       <span>{how ? `${who} · ${how}` : who}</span>
       <span className="argo-diff__session-actions">
-        <button type="button" className="btn" onClick={onReload}>
+        <Button onClick={onReload}>
           {t("argocd:diff.reload")}
-        </button>
-        <button type="button" className="btn" onClick={() => onSignOut(false)}>
+        </Button>
+        <Button onClick={() => onSignOut(false)}>
           {t("argocd:diff.signOut")}
-        </button>
+        </Button>
         {status?.source === "saved" && (
-          <button type="button" className="btn" onClick={() => onSignOut(true)}>
+          <Button onClick={() => onSignOut(true)}>
             {t("argocd:diff.forget")}
-          </button>
+          </Button>
         )}
       </span>
     </div>
@@ -131,9 +131,9 @@ function DiffError({ error, onRetry }: { error: ApiError; onRetry: () => void })
     <div className="argo-diff__error" role="alert">
       <p>{text}</p>
       {error.message && <p className="argo-login__detail">{error.message}</p>}
-      <button type="button" className="btn" onClick={onRetry}>
+      <Button onClick={onRetry}>
         {t("argocd:diff.retry")}
-      </button>
+      </Button>
     </div>
   );
 }

@@ -124,15 +124,6 @@
   padding: 4px 0;
 }
 
-.dt-actions .btn {
-  padding: 2px 10px;
-  font-size: 12px;
-}
-
-.dt-actions__icon {
-  margin-right: 4px;
-}
-
 .dt-container {
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -160,15 +151,15 @@
   color: var(--color-text-muted);
 }
 
+/* A long value must not squeeze the key column down to a letter: `anywhere` (set on cells) counts in min-content. */
+.dt-secret-key {
+  overflow-wrap: break-word;
+}
+
 .dt-secret-value {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-}
-
-.dt-secret-value .btn {
-  padding: 0 8px;
-  font-size: 12px;
 }
 
 .dt-yaml .cm-editor {

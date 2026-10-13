@@ -160,7 +160,7 @@ describe("Shell action", () => {
     await runShell(obj);
 
     const dialog = screen.getByRole("dialog", { name: "Open a shell in api" });
-    const buttons = within(dialog).getAllByRole("button").filter((b) => b.textContent !== "×");
+    const buttons = within(dialog).getAllByRole("button").filter((b) => b.getAttribute("aria-label") !== "Close");
     expect(buttons.map((b) => b.textContent)).toEqual(["sidecar", "app"]);
     fireEvent.click(within(dialog).getByRole("button", { name: "app" }));
 

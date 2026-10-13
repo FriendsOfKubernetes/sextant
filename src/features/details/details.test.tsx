@@ -209,6 +209,24 @@ describe("secrets", () => {
     expect(panel.textContent).not.toContain("not-a-real-password");
   });
 
+  it("toggles with an eye button that has no text, a tooltip and aria-pressed", async () => {
+    await openDetails(secret, SECRET_REF);
+    const show = screen.getByRole("button", { name: "Show value of password" });
+    expect(show).toHaveAttribute("title", "Show value of password");
+    expect(show).toHaveAttribute("aria-pressed", "false");
+    expect(show).toHaveTextContent("");
+    expect(show.className).toContain("btn--icon");
+    expect(show.querySelector("svg")).not.toBeNull();
+    const eye = show.innerHTML;
+
+    fireEvent.click(show);
+    await screen.findByText("not-a-real-password");
+    const hide = screen.getByRole("button", { name: "Hide value of password" });
+    expect(hide).toHaveAttribute("title", "Hide value of password");
+    expect(hide).toHaveAttribute("aria-pressed", "true");
+    expect(hide.innerHTML).not.toBe(eye);
+  });
+
   it("shows why a binary value cannot be shown", async () => {
     wb.backend.on("secret_value", () => {
       throw { code: "invalid", message: "binary value, 3 bytes" };

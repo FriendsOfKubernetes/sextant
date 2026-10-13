@@ -8,7 +8,7 @@ import "./diff.css";
 
 registerAction("argoDiff", {
   labelKey: "argocd:diff.action",
-  icon: "±",
+  icon: "diff",
   appliesTo: (_obj, kind) => kind.group === "argoproj.io" && kind.kind === "Application",
   run: ({ clusterId, refs, openDialog }) => {
     const app = refs[0];

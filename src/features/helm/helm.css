@@ -209,11 +209,6 @@
   border-radius: 4px;
 }
 
-.btn.btn--small {
-  padding: 1px 8px;
-  font-size: 12px;
-}
-
 .helm-visually-hidden {
   position: absolute;
   width: 1px;

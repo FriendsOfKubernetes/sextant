@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ForwardInfo } from "../../api";
-import { Badge, EmptyState, ErrorState } from "../../components";
+import { Button, Badge, EmptyState, ErrorState } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { usePortForwards } from "./hooks";
 import { targetName } from "./model";
@@ -72,12 +72,12 @@ function ForwardRow({ forward, onStop }: { forward: ForwardInfo; onStop: () => v
         {forward.status.state === "error" && <span className="pf-table__message">{forward.status.message}</span>}
       </td>
       <td className="pf-table__actions">
-        <button type="button" className="btn btn--small" onClick={() => openInBrowser(forward)}>
+        <Button size="compact" onClick={() => openInBrowser(forward)}>
           {t("portforward:actions.open")}
-        </button>
-        <button type="button" className="btn btn--small" onClick={onStop}>
+        </Button>
+        <Button size="compact" onClick={onStop}>
           {t("portforward:actions.stop")}
-        </button>
+        </Button>
       </td>
     </tr>
   );

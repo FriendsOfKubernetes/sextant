@@ -14,7 +14,7 @@ import {
   type PodRef,
 } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Checkbox, Dialog, ErrorState } from "../../components";
+import { Button, Checkbox, Dialog, ErrorState } from "../../components";
 
 /** "demo/web" for a namespaced object, "node-1" otherwise. */
 export function displayName(r: ObjectRef): string {
@@ -68,22 +68,21 @@ export function ConfirmAction({
   };
 
   const footer = result ? (
-    <button type="button" className="btn btn--primary" onClick={close}>
+    <Button variant="primary" onClick={close}>
       {t("actions:dialog.close")}
-    </button>
+    </Button>
   ) : (
     <>
-      <button type="button" className="btn" onClick={close}>
+      <Button onClick={close}>
         {t("common:actions.cancel")}
-      </button>
-      <button
-        type="button"
-        className={danger ? "btn btn--danger" : "btn btn--primary"}
+      </Button>
+      <Button
+        variant={danger ? "danger" : "primary"}
         disabled={busy || !canConfirm}
         onClick={() => void confirm()}
       >
         {busy ? t("actions:dialog.working") : confirmLabel}
-      </button>
+      </Button>
     </>
   );
 
@@ -145,9 +144,9 @@ export function DeleteDialog({
         title={t("actions:delete.title", { count, kind: kind.kind })}
         onClose={close}
         footer={
-          <button type="button" className="btn btn--primary" onClick={close}>
+          <Button variant="primary" onClick={close}>
             {t("actions:dialog.close")}
-          </button>
+          </Button>
         }
       >
         <p>{t("actions:delete.partial", { done: count - failures.length, total: count })}</p>
@@ -174,12 +173,12 @@ export function DeleteDialog({
       onClose={closeUnlessBusy}
       footer={
         <>
-          <button type="button" className="btn" disabled={busy} onClick={close}>
+          <Button disabled={busy} onClick={close}>
             {t("common:actions.cancel")}
-          </button>
-          <button type="button" className="btn btn--danger" disabled={busy} onClick={() => void confirm()}>
+          </Button>
+          <Button variant="danger" disabled={busy} onClick={() => void confirm()}>
             {busy ? t("actions:dialog.working") : t("actions:delete.confirm")}
-          </button>
+          </Button>
         </>
       }
     >

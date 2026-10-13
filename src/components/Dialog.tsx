@@ -1,5 +1,6 @@
 import { useEffect, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "./icons";
 
 export interface DialogProps {
   open: boolean;
@@ -29,7 +30,7 @@ export function Dialog({ open, title, onClose, children, footer }: DialogProps) 
         <header className="dialog__header">
           <h2 id={titleId}>{title}</h2>
           <button type="button" className="icon-btn" aria-label={t("common:actions.close")} onClick={onClose}>
-            ×
+            <Icon name="close" />
           </button>
         </header>
         <div className="dialog__body">{children}</div>

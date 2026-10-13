@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorKey } from "../../api";
+import { Button } from "../../components";
 import { useTerminal, type TerminalSessionFactory, type UseTerminal } from "./useTerminal";
 
 export interface TerminalViewProps {
@@ -76,9 +77,9 @@ function StatusBar({ session }: { session: UseTerminal }) {
     <div className={`terminal__status terminal__status--${status}`} role="status">
       <span className="terminal__status-text">{text}</span>
       {status !== "connecting" && (
-        <button type="button" className="btn btn--primary" onClick={reconnect}>
+        <Button variant="primary" onClick={reconnect}>
           {t("terminal:reconnect")}
-        </button>
+        </Button>
       )}
     </div>
   );

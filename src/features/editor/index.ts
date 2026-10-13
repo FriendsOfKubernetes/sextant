@@ -19,7 +19,7 @@ registerDockAction({
   id: "create-resource",
   order: 10,
   labelKey: "actions:create.open",
-  icon: "+",
+  icon: "add",
   available: ({ activeClusterId }) => activeClusterId !== null,
   run: ({ activeClusterId }) => {
     if (activeClusterId) openCreateTab(activeClusterId);

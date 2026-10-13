@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { ClusterId, ObjectRef } from "../../api";
-import { Dialog } from "../../components";
+import { Button, Dialog } from "../../components";
 import { openExecTab } from "./tabs";
 
 export interface ContainerPickerProps {
@@ -26,14 +26,13 @@ export function ContainerPicker({ clusterId, pod, containers, preferred, close }
       <ul className="terminal-picker">
         {ordered.map((name, i) => (
           <li key={name}>
-            <button
-              type="button"
-              className={i === 0 ? "btn btn--primary" : "btn"}
+            <Button
+              variant={i === 0 ? "primary" : "default"}
               autoFocus={i === 0}
               onClick={() => pick(name)}
             >
               {name}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

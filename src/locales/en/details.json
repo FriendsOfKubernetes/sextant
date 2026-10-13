@@ -192,8 +192,6 @@
   },
   "secret": {
     "data": "Data",
-    "show": "Show",
-    "hide": "Hide",
     "showKey": "Show value of {{key}}",
     "hideKey": "Hide value of {{key}}",
     "hidden": "••••••",

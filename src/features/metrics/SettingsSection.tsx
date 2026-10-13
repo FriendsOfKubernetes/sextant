@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toApiError, type ApiError, type ClusterId, type PrometheusMode, type PrometheusTarget, type UsageSource } from "../../api";
-import { ErrorState, Radio } from "../../components";
+import { Button, ErrorState, Radio } from "../../components";
 import { updateClusterSettings } from "../clusters/clusterSettings";
 import type { ClusterSettingsSectionProps } from "../clusters/settingsRegistry";
 import { useMetricsSettings, useMetricsStatus } from "./hooks";
@@ -140,9 +140,9 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
                 {t(kind === "service" ? "metrics:settings.invalidService" : "metrics:settings.invalidUrl")}
               </div>
             )}
-            <button type="button" className="btn" onClick={saveManual}>
+            <Button onClick={saveManual}>
               {t("metrics:settings.save")}
-            </button>
+            </Button>
           </div>
         )}
       </fieldset>

@@ -4,7 +4,7 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ClusterId, type KubeObject, type ObjectRef } from "../../api";
-import { Checkbox } from "../../components";
+import { Checkbox, type IconName } from "../../components";
 import { i18n } from "../../i18n";
 import { ConfirmAction } from "../actions";
 import { registerAction } from "../actions/registry";
@@ -89,7 +89,7 @@ export function SyncDialog({
 
 registerAction("argoSync", {
   labelKey: "argocd:actions.sync",
-  icon: "⟳",
+  icon: "sync",
   appliesTo: (obj, kind) => isApplication(kind) && !operationRunning(obj),
   run: ({ clusterId, objects, refs, openDialog }) => {
     const [app, ref] = [objects[0], refs[0]];
@@ -98,7 +98,7 @@ registerAction("argoSync", {
   },
 });
 
-function registerRefresh(id: "argoRefresh" | "argoHardRefresh", refresh: RefreshKind, labelKey: string, icon: string) {
+function registerRefresh(id: "argoRefresh" | "argoHardRefresh", refresh: RefreshKind, labelKey: string, icon: IconName) {
   registerAction(id, {
     labelKey,
     icon,
@@ -110,12 +110,12 @@ function registerRefresh(id: "argoRefresh" | "argoHardRefresh", refresh: Refresh
   });
 }
 
-registerRefresh("argoRefresh", "normal", "argocd:actions.refresh", "↻");
-registerRefresh("argoHardRefresh", "hard", "argocd:actions.hardRefresh", "↺");
+registerRefresh("argoRefresh", "normal", "argocd:actions.refresh", "refresh");
+registerRefresh("argoHardRefresh", "hard", "argocd:actions.hardRefresh", "hardRefresh");
 
 registerAction("argoTerminate", {
   labelKey: "argocd:actions.terminate",
-  icon: "■",
+  icon: "terminate",
   danger: true,
   appliesTo: (obj, kind) => isApplication(kind) && operationRunning(obj),
   run: ({ clusterId, refs, openDialog }) => {
@@ -140,7 +140,7 @@ registerAction("argoTerminate", {
 
 registerAction("argoOpenUi", {
   labelKey: "argocd:actions.openUi",
-  icon: "↗",
+  icon: "external",
   appliesTo: (_obj, kind) => kind.group === ARGO_GROUP,
   run: async ({ clusterId, kind, refs }) => {
     const ref = refs[0];

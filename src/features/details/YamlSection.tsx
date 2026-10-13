@@ -4,6 +4,7 @@ import { yaml } from "@codemirror/lang-yaml";
 import { basicSetup, EditorView } from "codemirror";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "../../components";
 import { useEditorTheme } from "../editor/editorTheme";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { maskSecret } from "./secrets";
@@ -18,9 +19,9 @@ export function YamlSection({ obj, objectRef }: DetailsSectionProps) {
     <Block
       title={t("details:sections.yaml")}
       actions={
-        <button type="button" className="btn" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <Button aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           {t(open ? "details:yaml.hide" : "details:yaml.show")}
-        </button>
+        </Button>
       }
     >
       {open && (

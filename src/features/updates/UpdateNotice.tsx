@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { api, useSettings } from "../../api";
-import { Dialog } from "../../components";
+import { Button, Dialog } from "../../components";
 import { checkAtStart, closeUpdateDialog, useAppInfo, useUpdates } from "./store";
 import { UpdateDetails } from "./UpdateDetails";
 import "./updates.css";
@@ -28,9 +28,9 @@ export function UpdateNotice() {
       title={t("updates:dialogTitle")}
       onClose={() => !busy && closeUpdateDialog()}
       footer={
-        <button type="button" className="btn" disabled={busy} onClick={closeUpdateDialog}>
+        <Button disabled={busy} onClick={closeUpdateDialog}>
           {t("updates:later")}
-        </button>
+        </Button>
       }
     >
       {state.update && <UpdateDetails update={state.update} info={info} state={state} />}

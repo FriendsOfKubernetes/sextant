@@ -26,13 +26,10 @@ import {
   BrickWall,
   Cable,
   ChartPie,
-  Check,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   ChevronUp,
   Circle,
-  CircleAlert,
   Clock,
   Container,
   Copy,
@@ -60,7 +57,6 @@ import {
   History,
   ImagePlus,
   Images,
-  Info,
   KeyRound,
   Layers,
   Layers2,
@@ -86,7 +82,6 @@ import {
   RotateCw,
   Ruler,
   ScrollText,
-  Search,
   Send,
   Server,
   Settings,
@@ -102,7 +97,6 @@ import {
   Trash2,
   TrendingUp,
   TriangleAlert,
-  Upload,
   UserCog,
   Waves,
   Waypoints,
@@ -140,20 +134,13 @@ const ICONS = {
   chevronDown: ChevronDown, // ▾
   chevronUp: ChevronUp, // ▴
   chevronRight: ChevronRight, // ▸
-  chevronLeft: ChevronLeft,
   sortAsc: ArrowUp, // ▲
   sortDesc: ArrowDown, // ▼
   settings: Settings, // ⚙ (also the Settings section)
   menu: Menu, // ☰
   add: Plus, // +
   warning: TriangleAlert, // !
-  error: CircleAlert,
-  info: Info,
-  check: Check,
-  search: Search,
-  copy: Copy,
-  save: Download,
-  upload: Upload,
+  download: Download,
   eye: Eye,
   eyeOff: EyeOff,
   // Cluster rail.

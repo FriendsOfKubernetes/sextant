@@ -4,7 +4,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
-import { Checkbox, ErrorState } from "../../components";
+import { Button, Checkbox, ErrorState, Icon } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { LOG_BUFFER_LIMIT } from "./buffer";
 import { findMatches, MAX_MATCHES, splitLine } from "./search";
@@ -187,14 +187,14 @@ export function LogsTab({ tab, active }: DockTabProps) {
           </span>
         )}
         <button type="button" className="icon-btn" aria-label={t("logs:search.previous")} disabled={matches.length === 0} onClick={() => step(-1)}>
-          ▴
+          <Icon name="chevronUp" />
         </button>
         <button type="button" className="icon-btn" aria-label={t("logs:search.next")} disabled={matches.length === 0} onClick={() => step(1)}>
-          ▾
+          <Icon name="chevronDown" />
         </button>
-        <button type="button" className="btn" onClick={() => void save()}>
+        <Button icon="download" onClick={() => void save()}>
           {t("logs:toolbar.save")}
-        </button>
+        </Button>
       </div>
 
       <div className="logs__statusbar">
@@ -203,9 +203,9 @@ export function LogsTab({ tab, active }: DockTabProps) {
         </span>
         <span data-testid="logs-count">{t("logs:lines", { count: lines.length })}</span>
         {canReconnect && (
-          <button type="button" className="btn" onClick={stream.reconnect}>
+          <Button onClick={stream.reconnect}>
             {t("logs:toolbar.reconnect")}
-          </button>
+          </Button>
         )}
       </div>
       {stream.status === "error" && stream.error && <ErrorState error={stream.error} />}

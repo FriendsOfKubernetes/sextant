@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "./Button";
 import { errorKey, toApiError, type CoreError } from "../api";
 
 export interface ErrorStateProps {
@@ -23,9 +24,9 @@ export function ErrorState({ error, title, onRetry, actions, className }: ErrorS
       <div className="error-state__title">{title ?? t(errorKey(err.code))}</div>
       {err.message && <div className="error-state__message">{t("common:error.details", { message: err.message })}</div>}
       {onRetry && (
-        <button type="button" className="btn" onClick={onRetry}>
+        <Button onClick={onRetry}>
           {t("common:actions.retry")}
-        </button>
+        </Button>
       )}
       {actions}
     </div>

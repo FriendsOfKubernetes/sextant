@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ClusterId, type HelmRelease } from "../../api";
-import { Age, Badge, ErrorState } from "../../components";
+import { Age, Badge, Button, ErrorState, Icon } from "../../components";
 import { YamlViewer } from "../details";
 import { RollbackDialog, UninstallDialog, UpgradeDialog } from "./dialogs";
 import { useLoad } from "./hooks";
@@ -80,29 +80,26 @@ export function ReleaseDetails({
           )}
         </div>
         <button type="button" className="icon-btn" aria-label={t("helm:details.close")} onClick={onClose}>
-          ×
+          <Icon name="close" />
         </button>
       </header>
 
       <div className="helm-details__actions">
-        <button
-          type="button"
-          className="btn"
+        <Button
           disabled={!helmAvailable || !detail.data}
           title={disabledHint}
           onClick={() => setDialog({ type: "upgrade" })}
         >
           {t("helm:actions.editValues")}
-        </button>
-        <button
-          type="button"
-          className="btn btn--danger"
+        </Button>
+        <Button
+          variant="danger"
           disabled={!helmAvailable}
           title={disabledHint}
           onClick={() => setDialog({ type: "uninstall" })}
         >
           {t("helm:actions.uninstall")}
-        </button>
+        </Button>
       </div>
 
       <div className="helm-tabs" role="tablist" aria-label={t("helm:details.tabsLabel")}>
@@ -192,21 +189,19 @@ export function ReleaseDetails({
   );
 }
 
-/** The hint and the "Show"/"Hide" button of the values and manifest tabs (the same pattern as a Secret's values). */
+/** The hint and the eye button of the values and manifest tabs (the same pattern as a Secret's values). */
 function ShowToggle({ tab, shown, onToggle }: { tab: "values" | "manifest"; shown: boolean; onToggle: () => void }) {
   const { t } = useTranslation();
   return (
     <div className="helm-reveal">
       {!shown && <span className="helm-muted">{t(`helm:details.hidden.${tab}`)}</span>}
-      <button
-        type="button"
-        className="btn"
-        aria-label={t(shown ? `helm:details.hide.${tab}` : `helm:details.show.${tab}`)}
+      <Button
+        iconOnly
+        icon={shown ? "eyeOff" : "eye"}
+        label={t(shown ? `helm:details.hide.${tab}` : `helm:details.show.${tab}`)}
         aria-pressed={shown}
         onClick={onToggle}
-      >
-        {t(shown ? "helm:details.hideButton" : "helm:details.showButton")}
-      </button>
+      />
     </div>
   );
 }
@@ -299,16 +294,16 @@ function ReadableRevision({
       </td>
       <td>
         {h.revision !== current && (
-          <button
-            type="button"
-            className="btn btn--small"
+          <Button
+            size="compact"
+            icon="rollback"
             disabled={!helmAvailable}
             title={helmAvailable ? undefined : t("helm:missing.short")}
             aria-label={t("helm:actions.rollbackTo", { revision: h.revision })}
             onClick={() => onRollback(h.revision)}
           >
             {t("helm:actions.rollback")}
-          </button>
+          </Button>
         )}
       </td>
     </>

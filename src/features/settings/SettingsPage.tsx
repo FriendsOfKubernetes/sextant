@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, useSettings, type ApiError, type AppSettings, type KubeconfigSource, type Theme } from "../../api";
-import { ConfirmDialog, ErrorState, Radio } from "../../components";
+import { Button, ConfirmDialog, ErrorState, Radio } from "../../components";
 import { availableLanguages } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
@@ -235,12 +235,12 @@ function HelmSection({ settings, save }: { settings: AppSettings | null; save: S
             value={path}
             onChange={(e) => setPath(e.target.value)}
           />
-          <button type="button" className="btn" onClick={() => void browse()}>
+          <Button onClick={() => void browse()}>
             {t("settings:helm.browse")}
-          </button>
-          <button type="submit" className="btn btn--primary" disabled={!path.trim()}>
+          </Button>
+          <Button type="submit" variant="primary" disabled={!path.trim()}>
             {t("settings:helm.apply")}
-          </button>
+          </Button>
         </form>
       )}
       <p className="settings__status" role="status" data-available={status?.available ?? undefined}>
@@ -274,14 +274,12 @@ function KubeconfigSection() {
             <span className="settings__source-path">{source.path}</span>
             <span className="settings__source-kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
             {REMOVABLE.has(source.kind) && (
-              <button
-                type="button"
-                className="btn"
+              <Button
                 aria-label={t("clusters:sources.removeNamed", { path: source.path })}
                 onClick={() => setRemoving(source)}
               >
                 {t("clusters:sources.remove")}
-              </button>
+              </Button>
             )}
             {source.error && <SourceError error={source.error} />}
           </li>

@@ -200,9 +200,14 @@ describe("Releases", () => {
     // Loaded, but not drawn: neither the editor nor the text is in the page.
     const show = within(details).getByRole("button", { name: "Show values" });
     expect(show).toHaveAttribute("aria-pressed", "false");
-    expect(within(details).getByText("Values are hidden until you press Show.")).toBeInTheDocument();
+    expect(within(details).getByText("Values are hidden. Use the eye button to show them.")).toBeInTheDocument();
     expect(document.querySelector('[aria-label="User values of web"]')).toBeNull();
     expect(details).not.toHaveTextContent("replicaCount");
+
+    // An eye without text; the name is also the tooltip.
+    expect(show).toHaveTextContent("");
+    expect(show).toHaveAttribute("title", "Show values");
+    expect(show.className).toContain("btn--icon");
 
     fireEvent.click(show);
     await waitFor(() => expect(editorView("User values of web").state.doc.toString()).toBe("replicaCount: 3\n"));
@@ -214,7 +219,7 @@ describe("Releases", () => {
     expect(within(details).getByRole("button", { name: "Show values" })).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(within(details).getByRole("tab", { name: "Manifest" }));
-    expect(within(details).getByText("The manifest is hidden until you press Show.")).toBeInTheDocument();
+    expect(within(details).getByText("The manifest is hidden. Use the eye button to show it.")).toBeInTheDocument();
     expect(document.querySelector('[aria-label="Manifest of web"]')).toBeNull();
     expect(details).not.toHaveTextContent("kind: Service");
     fireEvent.click(within(details).getByRole("button", { name: "Show manifest" }));
