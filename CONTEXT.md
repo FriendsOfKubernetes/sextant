@@ -10,7 +10,7 @@ One entry in the list on the left: one context from kubeconfig, not a separate K
 _Avoid_: connection, server, profile
 
 **Kubeconfig source**:
-Where the app gets contexts from: the default path, the `KUBECONFIG` variable, an added file or pasted text. One source yields several clusters.
+Where the app gets contexts from: the default path, the `KUBECONFIG` variable, an added file, pasted text or a cloud source. One source yields several clusters.
 _Avoid_: config, kubeconfig file
 
 **Failed source**:
@@ -18,7 +18,7 @@ A kubeconfig source that could not be read or parsed. Its clusters do not appear
 _Avoid_: broken config, skipped file
 
 **Cluster rail**:
-The column on the left with the list of clusters: each has its own icon and a connection state dot. A button at the bottom expands the rail to show names next to the icons; the choice is remembered and applies in a narrow window too.
+The column on the left with the list of clusters: each has its own icon and a connection state dot. A button at the bottom expands the rail to show names next to the icons; the choice is remembered and applies in a narrow window too. While the MCP server is on, the rail also has a button for the agent activity log.
 _Avoid_: rail, cluster sidebar, cluster panel
 
 **Resource kind**:
@@ -54,7 +54,7 @@ The bottom area with tabs: logs, a shell into a container, a local terminal, cre
 _Avoid_: console, bottom panel, terminal
 
 **Port forward**:
-A local port on this machine connected to a pod or service port in the cluster. Bound to 127.0.0.1 only.
+A local port on this machine connected to a pod or service port in the cluster. Bound to 127.0.0.1 only. Forwards started by an agent are listed with the user's own and closed with the cluster or the app.
 _Avoid_: tunnel, proxy
 
 **Current values source**:
@@ -148,3 +148,47 @@ _Avoid_: container list, accordion
 **Pod requests and limits**:
 How many resources a pod asks for and how many it is allowed, shown next to its consumption. The request is the sum of those set on containers, with a note if it is not set on all of them; the limit is shown only if it is set on every container, otherwise "no limit". Init containers are not summed.
 _Avoid_: quota, pod limits (when the sum is meant)
+
+**MCP server**:
+A server inside the app that lets an AI agent (Claude Code, Claude Desktop, Cursor) read and change clusters through tools. Off by default; it listens on this machine only, needs the MCP token, and runs only while Sextant is open.
+_Avoid_: agent API, AI integration, plugin
+
+**MCP token**:
+The secret the agent's client sends to the MCP server. It is created on first enable, hidden in Settings, and can be shown, copied or regenerated; regenerating cuts all connected clients off at once.
+_Avoid_: API key, password
+
+**Stdio bridge**:
+The command `sextant mcp`, for clients that can only start a program and talk over stdin and stdout. It forwards the client's messages to the running app and does no work itself; without a running app with the server on, it reports that and exits.
+_Avoid_: CLI mode, second server
+
+**Agent access**:
+What the agent may do in one cluster. Off by default: a cluster the user never opened to agents refuses every call. Set per cluster and shared by all agents.
+_Avoid_: permissions (bare), AI mode
+
+**Access preset**:
+A ready set of rules for agent access: Read-only, Read + write (no delete), Full, or Custom for the user's own rules. Choosing Custom starts from a copy of the preset's rules.
+_Avoid_: role, profile
+
+**Access rule**:
+Namespaces, kinds (CRDs and Helm releases included) and actions that a part of agent access covers. A call is allowed if any rule covers it. Resources with no namespace, such as Nodes, are covered only by a rule for all namespaces.
+_Avoid_: policy, permission
+
+**Ask before running**:
+A switch on an access rule: the agent's modify, delete, exec and port-forward calls wait for the user to Allow or Deny in the Sextant window. No answer in 120 s counts as a refusal.
+_Avoid_: confirmation mode, approval
+
+**Secret values**:
+The agent action that gives the values of Secrets and of Helm releases (values and manifest). It is never part of a preset; without it the agent sees Secrets as the window does, with values hidden.
+_Avoid_: secret access, reveal
+
+**Agent activity log**:
+The record of everything agents did through the MCP server: time, client, cluster, tool, target, decision, result and duration. The last 2000 entries are kept between runs; it holds summaries, never values, YAML or command output.
+_Avoid_: audit, history
+
+**Node shell**:
+A shell on a node, opened through a temporary privileged pod in `kube-system` that is deleted when the shell closes. Leftovers from earlier runs are removed on connect, but only the user's own; the agent has no node shell.
+_Avoid_: SSH to a node, debug pod
+
+**Cloud source**:
+A kubeconfig source made by Sextant from the clusters found through the installed `aws`, `gcloud` or `az` CLI. It is kept in a file of the app's own, authenticates through the CLI, and never changes the user's `~/.kube/config`. Sextant does not sign in for the user; it shows the login command.
+_Avoid_: cloud account, cloud connection

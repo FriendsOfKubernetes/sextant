@@ -47,6 +47,36 @@ Flux and Argo CD are ordinary CRDs, so everything goes through the Kubernetes AP
 
 The core does not hand Kubernetes Secret values to the frontend: `resources::get::to_json` for `core/v1 Secret` replaces the `data`/`stringData` values with `""`, sets the `sextant.dev/values-hidden` annotation and removes `last-applied-configuration` — this applies to both watch and `resource_get`. The value of a single key is `secret_value`; the whole object is `resource_get_full`, for editing only. The core rejects saving an object that carries the `values-hidden` marker (`ensure_values_present`). Decision: ADR-0014.
 
+### MCP server for AI agents
+
+Sextant can serve MCP to local agents (Claude Code, Claude Desktop, Cursor). It is optional, off by default (`AppSettings.mcp.enabled`), lives in the app process under `src-tauri/src/mcp/` and stops with the app (ADR-0038). Data flow of one call:
+
+```
+MCP client ──► 127.0.0.1:<port>/mcp ──► http.rs: Host / Origin / Bearer / 4 MB body ──► rmcp tool (tools_read / tools_write)
+                                                                                              │
+   audit.rs (ring of 2000 + mcp-audit.jsonl, event mcp-audit) ◄── result ◄── core call ◄── Guard::check ──► access::decide
+                                                                                              │ needs "ask"
+                                                                       event mcp-confirm ◄────┘ ──► window dialog ──► command mcp_confirm_answer(id, approved)
+```
+
+- The server is a field of `AppState` (`AppState.mcp`); `settings_update` calls `apply_settings` after saving, `close_all` calls `stop`. The state is announced by the event `mcp-status`; the commands are `mcp_status`, `mcp_token`, `mcp_regenerate_token`, `mcp_audit_list`, `mcp_audit_clear`, `mcp_confirm_answer`, `mcp_binary_path`.
+- The token is the file `mcp-token` (0600) in the settings directory, shared with `sextant mcp`; the directories are computed without Tauri (`mcp/paths.rs`, ADR-0039).
+- Tools do no cluster logic: they call the core (`resources::list/events/resolve`, `logs::tail`, `exec::run_command`, the existing mutate, Helm and port-forward functions). Every tool states the permissions it needs as `(namespace, kind, action)` triples and calls `Guard::check` right before each side effect; the results are truncated and Secret values are cut out unless the Secret values action is granted. A call that needs confirmation waits at most 120 s for the window; without an answer, without a window, or after a stop it is refused.
+- Every call, allowed or not, is one record in the activity log (summaries only, no values, YAML or output; ADR-0042). The frontend (`src/features/mcp/`) shows the Settings section, the global confirmation dialog and the log.
+- **`sextant mcp`** is the same binary started with the first argument `mcp`: `main.rs` runs `mcp_proxy::run()` without Tauri and bridges stdin/stdout JSON-RPC lines to the running server, reading the port from `settings.json` and the token from `mcp-token`. It starts no cluster work of its own and never creates the token (ADR-0040).
+
+### Agent access model
+
+Policy is a pure module of the core, `crates/sextant-core/src/access.rs`: per cluster, `ClusterSettings.agent_access` holds a preset (Off, Read-only, Read + write, Full, Custom) and rules `namespaces × kinds × actions (+ "ask")`; the actions are Read, Modify, Delete, Logs, Exec, Port forward and Secret values. A call is allowed if some rule covers `(namespace, kind, action)`; there are no deny rules. Off is the default, and a value that does not parse is read as Off. A preset other than Custom is a function producing rules (`preset_rules`, the only source: the frontend asks for them with `access_preset_rules`); Custom uses the stored rules. Kinds without a namespace are checked with namespace `None`; a Helm release is the pseudo-kind `helm.sh/Release`. The rules are in `settings.json`, written by the frontend (`src/features/agent-access/`), and the server re-reads them on every call. Denials use `ErrorCode::Denied`. Decision: ADR-0041; the JSON patch limit on Secrets is ADR-0043.
+
+### Cloud cluster sources
+
+"Add cluster → From cloud" finds EKS, GKE and AKS clusters through the user's installed CLIs (`aws`, `gcloud`, `az`), run by `crates/sextant-core/src/cloud.rs` without a shell, with a cleaned environment and a 60 s timeout, behind the `desktop` feature. The chosen clusters are written to `kubeconfigs/cloud-<provider>.yaml` in the app data directory (0600) with an exec-based authentication that calls the CLI again at each connection; the file is registered as an ordinary kubeconfig source. Sextant never performs a login and never touches `~/.kube/config`; an expired login yields a message with the login command, which the UI can put into a terminal without running it. Commands: `src-tauri/src/commands/cloud.rs`; UI: `src/features/clusters/CloudClusters.tsx`. Decision: ADR-0044.
+
+### Node shell
+
+A shell on a node is the existing pod exec into a temporary pod `sextant-node-shell-<node>-<rand>` in `kube-system` (privileged, `hostPID`, `hostNetwork`, `nodeName`, `activeDeadlineSeconds` 8 h; image from `AppSettings.node_shell_image`), running `nsenter` into the host (`crates/sextant-core/src/node_shell.rs`, `start_node_shell` in `src-tauri/src/commands/terminal.rs`). The session is registered in `AppState` before the pod is created; the pod is deleted when the tab closes, the cluster is disconnected or the app exits. On connect the core removes only leftovers of the same owner (label `sextant.dev/owner`, a hash of the OS user and machine) and any labelled pod older than 8 h. The user confirms in a dialog first; the MCP server has no tool for it. Decision: ADR-0045.
+
 ### Application updates
 
 Checking and installing go through the Tauri `updater` and `process` plugins, wrapped in `src/api/updater.ts` (`api.updates`, transport in `src/api/transport.ts`, replaced by `mockBackend` in tests). State is in `src/features/updates/store.ts`; the UI is `UpdateNotice` (the check at startup, mounted from `SettingsButton`) and `UpdatesPanel` (the Settings section). The updater plugin is registered in `src-tauri/src/lib.rs` only when `plugins.updater.pubkey` and an endpoint are set in `src-tauri/tauri.conf.json` (`updater_configured`); the window permissions are in `src-tauri/capabilities/updates.json`. The release, the signature and `latest.json` are in `.github/workflows/release.yml`, ADR-0022.
@@ -54,13 +84,14 @@ Checking and installing go through the Tauri `updater` and `process` plugins, wr
 ## Module boundaries
 
 - **`sextant-core`** owns everything about clusters: kubeconfig, connection and discovery, watch, actions on resources, logs, exec, port-forward, metrics (metrics-server and Prometheus), Helm, settings on disk. It hides `kube-rs`, reflectors, Helm secret parsing, Prometheus auto-detection. It does not depend on `tauri` or `portable-pty`; everything that launches OS processes (the `helm` binary) sits behind the `desktop` feature (in default). `scripts/check-core-deps.mjs` verifies this.
-- **`sextant`** (`src-tauri/`) owns `AppState`, commands, events, the local PTY (`pty.rs`), the window geometry (`window.rs`). A command contains no cluster logic — it calls the core. A new kind of subscription or session is registered in `AppState`, otherwise `close_cluster` will not close it.
+- **`sextant`** (`src-tauri/`) owns `AppState`, commands, events, the local PTY (`pty.rs`), the window geometry (`window.rs`), the MCP server (`mcp/`) and the `sextant mcp` bridge (`mcp_proxy.rs`); `rmcp` and `axum` are its dependencies only. A command contains no cluster logic — it calls the core. A new kind of subscription or session is registered in `AppState`, otherwise `close_cluster` will not close it.
 - **`src/api/`** is the only place where `invoke` / `listen` are called and `@tauri-apps/api` is imported (eslint forbids it everywhere else). An exception under ADR-0011: the cluster hooks live in `src/features/clusters`.
 - **`src/features/<name>/`** are vertical features. A directory with `index.ts` is picked up automatically (`import.meta.glob` in `src/app/features.ts`); a feature wires itself in through registrations, without editing other people's files.
 - **`src/layout/`** is the shell (`AppShell`: cluster rail, sidebar, `MainView`, details panel, dock). It knows nothing about specific resource kinds.
 - **`src/resources/`** is the kind registry (`ResourceDef`: columns, details, actions); for CRDs the columns come from the CRD's own `printerColumns`, read lazily (`crdColumns.ts`).
 - **`src/components/`** are shared components with no knowledge of Kubernetes kinds: `Button` (`variant`, `size`, `icon`, `iconOnly` + a required `label`), `Checkbox` and `Radio` (the app has no native checkboxes or radio buttons), `Tabs` (a `tablist` with the ←/→/Home/End keys), `icons.tsx` (`Icon`, `IconName`, `IconSpec`, `renderIcon`), `LoadingIndicator` (with a hint if the wait is long), `Dialog`, `ConfirmDialog`, `ErrorState`, `EmptyState`, `Badge`, `Age`, `usePopup`; the resource table is in `src/components/Table/` (`ResourceTable`, `LoadingTable`). Exports are in `src/components/index.ts`; features import from there, not from one another.
 - **`src/features/flux/`, `src/features/argocd/`, `src/features/argocd-diff/`** are GitOps (see "GitOps: Flux and Argo CD"); they work only through the api and registries, and the core needs only `resource_patch`, `cluster_kinds_refresh` and the `argocd` module for them.
+- **`src/features/mcp/`, `src/features/agent-access/`** are the agent features (see "MCP server for AI agents", "Agent access model"); the first embeds into Settings and the cluster rail (`railFooter`), the second into cluster settings (`registerClusterSettingsSection`).
 - **`src/features/updates/`** are the application updates and its version (see "Application updates"); it does not hook into the registries, and its components are embedded by `src/features/settings`.
 
 ## Buttons, icons, tabs
@@ -99,9 +130,10 @@ A new action is also a new member of the `ActionId` union. The settings and upda
 - The terminal and `helm` get a temporary single-context kubeconfig with mode 0600 (`write_temp_kubeconfig`, ADR-0010). The terminal's file belongs to the session (`TermSession.guard`) and is removed synchronously when it stops, leftovers after a crash are cleaned up at startup (ADR-0019); the user's shell gets `KUBECONFIG` back after its rc (ADR-0018). `HELM_KUBE*`, `HELM_NAMESPACE`, `HELM_DRIVER`, `KUBECONFIG` are scrubbed from the environment of a `helm` call; the only launch point is `HelmCli::command()`.
 - Mutating core calls are signed with the field manager `sextant`. A namespaced reference without a namespace yields `invalid` (`ObjectRef::required_namespace`). A YAML replace without `resourceVersion` is `invalid`.
 - The streams rule: the frontend creates the id and attaches `listen` before `*_start(…, streamId)`, so the backend holds back output with neither pauses nor a buffer: watch delivers the first snapshot immediately and then no more than once per 250 ms (`resources::watch::BATCH_INTERVAL`), logs in 100 ms batches (`logs::BATCH_INTERVAL`), the terminal immediately. A stream is opened only through `openStream`; the id is checked by `check_stream_id` (`[A-Za-z0-9_-]`, ≤128, an id already in use is `invalid`), and the subscription is registered in `AppState` before the core starts working. Decision: ADR-0013.
-- Settings: `settings_update` changes only the frontend's fields; the fields written by the backend (`kubeconfigSources`, window geometry) are kept as the backend wrote them. A new backend field must be added to the list of preserved ones in `update_settings`. An unreadable `settings.json` is not overwritten (`settings_status`, ADR-0017).
+- Settings: `settings_update` changes only the frontend's fields; the fields written by the backend (`kubeconfigSources`, window geometry) are kept as the backend wrote them. A new backend field must be added to the list of preserved ones in `update_settings`; `clusters[id].agentAccess`, `AppSettings.mcp` and `node_shell_image` are frontend fields. An unreadable `settings.json` is not overwritten (`settings_status`, ADR-0017).
 - The application version is one across five manifests (`Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `package.json`, `package-lock.json`); `scripts/check-version.mjs` checks it (`npm run check:version`, in `npm run check` and in `release.yml`).
-- Forwarded ports listen only on 127.0.0.1.
+- Forwarded ports listen only on 127.0.0.1, and so does the MCP server. Secrets that guard agent access (the MCP token) are files with mode 0600 and are never printed.
+- Docs, ADR, the glossary and `AGENTS.md` are written in English (ADR-0046).
 - The word "Lens" is not used in the product; the product is Sextant (`dev.sextant.app`).
 
 ## Test seams

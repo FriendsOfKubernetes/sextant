@@ -12,5 +12,5 @@ __pycache__/
 /src-tauri/gen/schemas/
 *.tsbuildinfo
 
-# Autopilot — локально, не публикуется
+# Autopilot — local only, not published
 .autopilot/

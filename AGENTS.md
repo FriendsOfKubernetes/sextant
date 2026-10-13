@@ -1,137 +1,154 @@
 <!-- autopilot:start -->
-# Sextant — десктоп-клиент Kubernetes (Rust/Tauri 2 + React/TS, аналог Lens) для разработчиков и SRE
+# Sextant — a Kubernetes desktop client (Rust/Tauri 2 + React/TS, a Lens analogue) for developers and SREs, with a built-in MCP server for AI agents
 
-## Команды
+## Commands
 
-Перед всем: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Всё ниже запускать из корня репозитория.
+First of all: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Run everything below from the repository root.
 
-- Установка: `npm ci`
-- Всё сразу (CI делает то же): `npm run check` — сверка имён файлов по регистру, `check:version`, fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, тесты Rust, сверка TS-типов, tsc (+ `e2e/`), eslint, vitest. Зелёный: Rust 342, vitest 546.
-- Запуск: `npm run tauri dev` (Vite на 1420, `strictPort`)
-- Установщики: `npm run tauri build` — нужен ключ подписи обновлений (см. «Подводные камни»); без ключа: `npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'`. Бинарь без бандла: `npm run tauri -- build --debug --no-bundle` → `target/debug/sextant`
-- Версия во всех манифестах: `npm run check:version`; совпадение с тегом релиза: `node scripts/check-version.mjs --tag vX.Y.Z`
-- Один тест: `cargo test -p sextant-core <имя>` · `npx vitest run <файл>`
-- Перегенерировать TS-типы из Rust: `npm run gen:types`
-- Тестовый кластер (kind `sextant-test`, нужны `kind`, `kubectl`, docker): `scripts/test-cluster.sh up` (`up --prometheus` — ещё Prometheus в `monitoring`; `up --gitops` — ещё Flux v2.9.6 (`flux-system`) и Argo CD v3.5.5 (`argocd`) из официальных манифестов и фикстуры `scripts/fixtures/gitops/`; флаги сочетаются), `scripts/test-cluster.sh kubeconfig` (путь, по умолчанию `~/.cache/sextant-test/kubeconfig`), `scripts/test-cluster.sh down`
-- Нагрузочная фикстура (150 CRD и 500 подов в неймспейсе `sextant-load`; нужна тесту `the_first_nodes_come_within_2_seconds_on_a_big_cluster`, без неё он пропускается): `scripts/fixtures/load/load.sh apply`, после замера `scripts/fixtures/load/load.sh delete`
-- Интеграционные тесты ядра против кластера: `SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --tests -- --test-threads=1` → 203 passed
-- Интеграционные тесты GitOps (`crates/sextant-core/tests/gitops*.rs`) нужны `SEXTANT_TEST_GITOPS=1` и кластер, поднятый с `--gitops`: `SEXTANT_TEST_GITOPS=1 SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --test gitops --test gitops_flux --test gitops_argocd --test gitops_argocd_diff -- --test-threads=1`; без `SEXTANT_TEST_GITOPS=1` они пропускаются (и считаются пройденными)
-- E2E (WebdriverIO + tauri-driver, нужны `tauri-driver` и `webkit2gtk-driver`, кластер с `--prometheus`): `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` → 13 passing; без переменной сам собирает debug-бинарь. Скриншоты падений — `target/e2e/`. Прогон перезаписывает `docs/screenshot.png`: после него `git checkout -- docs/screenshot.png`.
+- Install: `npm ci`
+- Frontend bundle (the `sextant` crate embeds `dist/`): `npm run build`
+- Everything at once (CI does the same): `npm run check` — file-name case collisions, `check:version`, fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, Rust tests, TS type check against Rust, tsc (+ `e2e/`), eslint, vitest. Green: Rust 513 tests, vitest 620.
+- Run: `npm run tauri dev` (Vite on 1420, `strictPort`)
+- Installers: `npm run tauri build` — needs the updater signing key (see Pitfalls); without the key: `npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'`. Binary without a bundle: `npm run tauri -- build --debug --no-bundle` → `target/debug/sextant`
+- Trap: `npm run check` rebuilds `target/debug/sextant` WITHOUT the embedded frontend. Before `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` or running the binary by hand, run `npm run build && npm run tauri -- build --debug --no-bundle` again.
+- On a loaded machine vitest can fail on its 5-second timeouts: `npx vitest run --maxWorkers=4`.
+- Version in all manifests: `npm run check:version`; match with the release tag: `node scripts/check-version.mjs --tag vX.Y.Z`
+- One test: `cargo test -p sextant-core <name>` · `cargo test -p sextant <name>` · `npx vitest run <file>`
+- Regenerate TS types from Rust: `npm run gen:types`
+- Test cluster (kind `sextant-test`; needs `kind`, `kubectl`, docker): `scripts/test-cluster.sh up` (`up --prometheus` also installs Prometheus in `monitoring`; `up --gitops` also installs Flux v2.9.6 (`flux-system`) and Argo CD v3.5.5 (`argocd`) from the official manifests and the fixtures in `scripts/fixtures/gitops/`; the flags combine), `scripts/test-cluster.sh kubeconfig` (the path, `~/.cache/sextant-test/kubeconfig` by default), `scripts/test-cluster.sh down`
+- Load fixture (150 CRDs and 500 pods in the `sextant-load` namespace; needed by the test `the_first_nodes_come_within_2_seconds_on_a_big_cluster`, which is skipped without it): `scripts/fixtures/load/load.sh apply`, after measuring `scripts/fixtures/load/load.sh delete`
+- Core integration tests against a cluster: `SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --tests -- --test-threads=1`
+- GitOps integration tests (`crates/sextant-core/tests/gitops*.rs`) need `SEXTANT_TEST_GITOPS=1` and a cluster brought up with `--gitops`: `SEXTANT_TEST_GITOPS=1 SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --test gitops --test gitops_flux --test gitops_argocd --test gitops_argocd_diff -- --test-threads=1`; without `SEXTANT_TEST_GITOPS=1` they are skipped (and count as passed)
+- E2E (WebdriverIO + tauri-driver; needs `tauri-driver` and `webkit2gtk-driver`, and a cluster with `--prometheus`): `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` → 13 passing; without the variable it builds the debug binary itself (see the trap above). Failure screenshots are in `target/e2e/`. A run overwrites `docs/screenshot.png`: afterwards `git checkout -- docs/screenshot.png`.
 
-## Где что
+## Where things are
 
-- Архитектура, поток данных, границы модулей, реестры, соглашения: `docs/architecture.md`
-- Решения и их причины: `docs/adr/` (0001–0037; 0013–0023 — решения сборки 0.2.0, 0024–0032 — GitOps: Flux и Argo CD, 0033–0037 — сборка 0.4.0: иконки, кнопки, иконка кластера, полоса, requests/limits); словарь предметной области: `CONTEXT.md`
-- Ядро (kubeconfig, discovery, watch, действия, логи, exec, port-forward, метрики, Helm, настройки): `crates/sextant-core/src/`; его интеграционные тесты: `crates/sextant-core/tests/<feature>.rs` + `crates/sextant-core/tests/common/mod.rs` (там же помощники GitOps: `GITOPS_ENV`, `gitops_cluster`, `connected`, `wait_until`); юнит-тесты ядра без кластера ходят в поддельный API-сервер `crates/sextant-core/src/fake_api.rs` (`#[cfg(test)]`: `FakeApi::start(|req| Reply…)`, `connected_to(url)`)
-- Argo CD (вход и дифф): ядро — `crates/sextant-core/src/argocd.rs` (`ArgoClient`, поиск установки, учётные данные), команды `argocd_status`/`argocd_login`/`argocd_logout`/`argocd_diff` — `src-tauri/src/commands/argocd.rs`, сессии — `ArgoSessions` (там же), поле `AppState.argocd` в `src-tauri/src/state.rs`
-- Tauri-слой: команды `src-tauri/src/commands/<feature>.rs`, регистрация всех команд и плагинов (в т.ч. updater) — `src-tauri/src/lib.rs`, состояние и закрытие подписок — `src-tauri/src/state.rs`, PTY — `src-tauri/src/pty.rs`, окно и выход — `src-tauri/src/window.rs`, права плагинов — `src-tauri/capabilities/`; тест на каждую команду — `src-tauri/tests/commands.rs`
-- Фронтенд-мост к backend: `src/api/` (`commands.ts`, `events.ts`, `stream.ts`, `transport.ts`, `updater.ts`, `mockBackend.ts`); типы — `src/api/generated/`
-- Фичи: `src/features/<name>/index.ts` (подхватываются сами, `src/app/features.ts`); обновления приложения — `src/features/updates/` (проверка при старте, раздел Settings); таблицы и виды ресурсов — `src/resources/`; оболочка и реестры страниц/дока/деталей — `src/layout/`; UI-состояние — `src/app/store.ts`
-- GitOps на фронтенде: Flux — `src/features/flux/`, Argo CD (виды, детали, действия, «Open Argo CD UI») — `src/features/argocd/`, вход и дифф — `src/features/argocd/diff/`, подключаемые отдельной фичей `src/features/argocd-diff/` (регистрирует действие `argoDiff`)
-- Общие компоненты без знания о Kubernetes (`Button`, `Checkbox`, `Radio`, `Tabs`, `LoadingIndicator`, `Dialog`, `ConfirmDialog`, `ErrorState`, `Badge`, `Age`, `usePopup`, иконки `icons.tsx`: `Icon`, `IconName`, `renderIcon`) — `src/components/` (импорт из `src/components/index.ts`); таблица ресурсов — `src/components/Table/`; токены размеров и `.btn` — `src/styles/global.css`
-- Иконка кластера и вид полосы: Rust `ClusterSettings.icon` / `WindowLayout.rail_expanded` в `crates/sextant-core/src/settings.rs`, на фронтенде `clusters[id].icon` и `window.railExpanded` (`src/api/settings.ts`), `iconOf`/`normalizeIconText` — `src/features/clusters/clusterSettings.ts`, загрузка картинки — `iconImage.ts`, рисует `ClusterAvatar.tsx`; полоса — `src/layout/ClusterRail.tsx`
-- Иконки бокового меню: `SidebarEntry.icon`, `SECTION_ICONS`, `DEFAULT_ENTRY_ICON` — `src/resources/registry.ts`, `PageDef.icon` — `src/layout/pages.ts`
-- Под: requests/limits — `src/features/metrics/requests.ts` (показ — `DetailsSection.tsx`), вкладки контейнеров — `ContainerList` в `src/features/details/kinds/pods.tsx`
-- Строки интерфейса: `src/locales/en/<namespace>.json`; тестовый кластер и фикстуры: `scripts/`; E2E: `e2e/`; CI: `.github/workflows/ci.yml`, `release.yml`
+- Architecture, data flow, module boundaries, registries, conventions (including the MCP server, agent access, cloud sources, node shell): `docs/architecture.md`
+- Decisions and their reasons: `docs/adr/` (0001–0046; 0013–0023 — 0.2.0 build decisions, 0024–0032 — GitOps: Flux and Argo CD, 0033–0037 — 0.4.0 build: icons, buttons, cluster icon, rail, requests/limits, 0038–0046 — MCP server, its token, the stdio bridge, agent access, confirmations and activity log, Secret patches, cloud clusters through CLIs, node shell (D01), English docs); glossary of the domain: `CONTEXT.md`
+- Core (kubeconfig, discovery, watch, actions, logs, exec, port-forward, metrics, Helm, settings): `crates/sextant-core/src/`; its integration tests: `crates/sextant-core/tests/<feature>.rs` + `crates/sextant-core/tests/common/mod.rs` (also the GitOps helpers: `GITOPS_ENV`, `gitops_cluster`, `connected`, `wait_until`); core unit tests without a cluster talk to the fake API server `crates/sextant-core/src/fake_api.rs` (`#[cfg(test)]`: `FakeApi::start(|req| Reply…)`, `connected_to(url)`)
+- MCP server (inside the app, Streamable HTTP on `127.0.0.1:<port>/mcp`): `src-tauri/src/mcp/` — `server.rs`, `http.rs` (Host/Origin/Bearer checks), `guard.rs`, `confirm.rs`, `audit.rs`, `token.rs`, `paths.rs`, `context.rs`, `tools.rs` (tool set), `tools_read.rs`, `tools_write.rs`; the stdio bridge `sextant mcp` — `src-tauri/src/mcp_proxy.rs` (entered from `src-tauri/src/main.rs`); commands `mcp_*` — `src-tauri/src/commands/mcp.rs`; field `AppState.mcp` in `src-tauri/src/state.rs`; UI (Settings section, confirmation dialog, activity log) — `src/features/mcp/`
+- Agent access: policy in `crates/sextant-core/src/access.rs` (`decide`, `preset_rules`), per-cluster `clusters[id].agentAccess` and app-wide `AppSettings.mcp` in `settings.json` (`crates/sextant-core/src/settings.rs`), command `access_preset_rules` — `src-tauri/src/commands/access.rs`, UI in cluster settings — `src/features/agent-access/`
+- Core operations for the agent: `resources::list` / `resources::events` / `resources::resolve` (`crates/sextant-core/src/resources/list.rs`), `logs::tail` (`logs.rs`), `exec::run_command` (`exec.rs`)
+- Cloud clusters (EKS, GKE, AKS from the installed CLIs): `crates/sextant-core/src/cloud.rs`, commands `cloud_*` — `src-tauri/src/commands/cloud.rs`, UI — `src/features/clusters/CloudClusters.tsx`, the file `kubeconfigs/cloud-<provider>.yaml` in the app data directory
+- Node shell (a shell on a node through a temporary privileged pod): `crates/sextant-core/src/node_shell.rs`, `start_node_shell` in `src-tauri/src/commands/terminal.rs`, setting `AppSettings.node_shell_image`
+- Argo CD (login and diff): core — `crates/sextant-core/src/argocd.rs` (`ArgoClient`, installation lookup, credentials), commands `argocd_status`/`argocd_login`/`argocd_logout`/`argocd_diff` — `src-tauri/src/commands/argocd.rs`, sessions — `ArgoSessions` (same file), field `AppState.argocd` in `src-tauri/src/state.rs`
+- Tauri layer: commands `src-tauri/src/commands/<feature>.rs`, registration of all commands and plugins (including the updater) — `src-tauri/src/lib.rs`, state and closing of subscriptions — `src-tauri/src/state.rs`, PTY — `src-tauri/src/pty.rs`, window and exit — `src-tauri/src/window.rs`, plugin permissions — `src-tauri/capabilities/`; a test for every command — `src-tauri/tests/commands.rs`
+- Frontend bridge to the backend: `src/api/` (`commands.ts`, `events.ts`, `stream.ts`, `transport.ts`, `updater.ts`, `mockBackend.ts`); types — `src/api/generated/`
+- Features: `src/features/<name>/index.ts` (picked up automatically, `src/app/features.ts`); application updates — `src/features/updates/` (check at startup, Settings section); resource tables and views — `src/resources/`; shell and registries of pages/dock/details — `src/layout/`; UI state — `src/app/store.ts`
+- GitOps on the frontend: Flux — `src/features/flux/`, Argo CD (kinds, details, actions, "Open Argo CD UI") — `src/features/argocd/`, login and diff — `src/features/argocd/diff/`, attached by a separate feature `src/features/argocd-diff/` (registers the action `argoDiff`)
+- Shared components with no knowledge of Kubernetes (`Button`, `Checkbox`, `Radio`, `Tabs`, `LoadingIndicator`, `Dialog`, `ConfirmDialog`, `ErrorState`, `Badge`, `Age`, `usePopup`, icons from `icons.tsx`: `Icon`, `IconName`, `renderIcon`) — `src/components/` (import from `src/components/index.ts`); resource table — `src/components/Table/`; size tokens and `.btn` — `src/styles/global.css`
+- Cluster icon and rail view: Rust `ClusterSettings.icon` / `WindowLayout.rail_expanded` in `crates/sextant-core/src/settings.rs`, on the frontend `clusters[id].icon` and `window.railExpanded` (`src/api/settings.ts`), `iconOf`/`normalizeIconText` — `src/features/clusters/clusterSettings.ts`, image loading — `iconImage.ts`, drawn by `ClusterAvatar.tsx`; the rail — `src/layout/ClusterRail.tsx`
+- Sidebar icons: `SidebarEntry.icon`, `SECTION_ICONS`, `DEFAULT_ENTRY_ICON` — `src/resources/registry.ts`, `PageDef.icon` — `src/layout/pages.ts`
+- Pod: requests/limits — `src/features/metrics/requests.ts` (shown in `DetailsSection.tsx`), container tabs — `ContainerList` in `src/features/details/kinds/pods.tsx`
+- UI strings: `src/locales/en/<namespace>.json`; test cluster and fixtures: `scripts/`; E2E: `e2e/`; CI: `.github/workflows/ci.yml`, `release.yml`
 
-## Подводные камни
+## Pitfalls
 
-- `target/` раздувается до десятков ГБ (при проверке — 35 ГБ) из-за отладочной информации; для локальных сборок и проверок: `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 npm run check`.
-- Интеграционные тесты без `SEXTANT_TEST_KUBECONFIG` молча пропускаются и считаются пройденными (в stderr только «skipped»); зелёный `cargo test --workspace` без кластера ничего не доказывает про кластер. Тесты с остановкой контейнера kind (`connect.rs`, `watch.rs`) — только при `SEXTANT_TEST_DOCKER_RESTART=1`.
-- Крейт `sextant` встраивает собранный фронтенд из `dist/`: на чистом клоне перед `npm run check` нужен `npm run build` (CI делает так же).
-- `src/api/generated/` руками не править: `npm run check` сверяет его с тем, что генерирует Rust. Тип стал пересекать границу — `serde(rename_all = "camelCase")` + `ts-rs`, затем `npm run gen:types` и коммит результата.
-- Имена команд и событий в генерацию не входят: добавляя команду, правь вручную `src-tauri/src/lib.rs` (`generate_handler!`), `src/api/commands.ts` и `src-tauri/tests/commands.rs`; опечатка видна только в тесте или в рантайме.
-- Литералы строк в JSX запрещены eslint (`i18next/no-literal-string`); строка идёт через `src/locales/en/<ns>.json`, значение поля собирается вне JSX. `@tauri-apps/*` вне `src/api/` тоже запрещён eslint (плагины — через `transport.ts`).
-- `sextant-core` не должен тянуть `tauri` и `portable-pty`: процессы ОС (`helm`) — за фичей `desktop`; нарушение ловит `node scripts/check-core-deps.mjs`.
-- Стримы (watch, логи, терминал): id создаёт фронтенд, `openStream` (`src/api/stream.ts`) вешает `listen("<префикс>:<id>")` до `*_start(…, streamId)`, поэтому backend ничего не придерживает: первый снапшот watch уходит сразу, дальше пачки не чаще 250 мс (`BATCH_INTERVAL`), логи — 100 мс. Не добавляй задержек и не запускай стрим мимо `openStream`. id — `[A-Za-z0-9_-]`, ≤128, занятый или неверный — `invalid` (`check_stream_id`). Страница при загрузке один раз вызывает `streams_reset` (`resetStreams()`), старт, переживший сброс, отклоняется (`AppState::undo_if_reset`); команда `*_start` регистрирует подписку в `AppState` до работы ядра (`start_watch`), иначе остановка во время старта её не прервёт.
-- Новая подписка, стрим или сессия должна жить в `AppState` (`src-tauri/src/state.rs`), иначе `close_cluster` и закрытие окна её не закроют.
-- Значения Secret вырезаются в ядре (`resources::get::to_json`: значения `""`, аннотация `sextant.dev/values-hidden`, без last-applied), поэтому их нет ни в watch, ни в `resource_get`. Полное значение — только `secret_value` (один ключ) и `resource_get_full` (для редактора). `resource_replace`/`resource_apply` отвергают объект с аннотацией-маркером (`ensure_values_present` в `Document::from_value`) — не убирай этот вызов при правке `mutate.rs`.
-- Discovery одна на кластер (`ClusterManager::kinds`, общий результат для всех ждущих); `ResourceKind.printerColumns` из неё всегда пуст — колонки CRD читаются лениво одним CRD (`useCrdPrinterColumns` в `src/resources/crdColumns.ts`). Встроенные виды (`BUILT_IN_KINDS` в `crates/sextant-core/src/resources/get.rs`) открываются без discovery. CRD в сайдбаре берутся из discovery (новые CRD подхватываются без переподключения, см. ниже про `watchCrdChanges`). Кэш колонок хранит пустой список только при `forbidden`/`notFound`; другая ошибка (сеть, 5xx) ключ из кэша убирает и следующее открытие читает CRD заново.
-- `WatchSpec.metadata_only` (TS `metadataOnly`) отдаёт только `{apiVersion, kind, metadata}`; для списков, которым нужны одни метаданные (релизы Helm), а не целые объекты.
-- Время ожидания: подключение — 10 с на соединение и 20 с на проверку; изменения под `CHANGE_TIMEOUT` = 30 с на запрос (`src-tauri/src/commands/actions.rs`: scale, restart, cordon, trigger, suspend, replace, delete); drain и apply нескольких документов — по 30 с на каждый запрос (`resources::STEP_TIMEOUT`), без лимита на всю операцию. `timeout` не отменяет операцию на сервере. Клиент сам повторяет 429/503/504 не более 3 раз и не дольше 5 с (`cluster::RetryPolicy`; kube-овский `server_retry` выключен) и только запросы с клонируемым телом.
-- `settings_update` не перезаписывает то, что пишет backend (`kubeconfigSources`, размеры окна): новое backend-поле нужно добавить в `update_settings` (`src-tauri/src/commands/settings.rs`). Нечитаемый `settings.json` не перезаписывается (копия `.bak-…`, `settings_status`).
-- Все ошибки kube — через `error::kube_error` (вырезает секреты exec-плагина); `helm` запускать только через `HelmCli::command()` (чистит `HELM_KUBE*` и `KUBECONFIG`); настоящий helm в `src-tauri/tests/commands.rs` не запускается.
-- Временный kubeconfig терминала живёт в `TermSession.guard` и удаляется синхронно при остановке сессии; файлы `sextant-kubeconfig-*` после падения чистятся при старте (`remove_stale_temp_kubeconfigs`), каталоги `sextant-shell-*` — нет.
-- Фича подключается только через `src/features/<name>/index.ts` (`import.meta.glob`); каталог без `index.ts` в приложение не попадёт. Нативных чекбоксов и радиокнопок нет: используй `Checkbox` и `Radio` из `src/components`.
-- Версия приложения записана в пяти местах (`Cargo.toml` `[workspace.package]`, `Cargo.lock`, `src-tauri/tauri.conf.json`, `package.json`, `package-lock.json`) и должна совпадать с тегом релиза; поднимай все сразу и проверяй `npm run check:version`.
-- Обновления: `bundle.createUpdaterArtifacts` включено в `src-tauri/tauri.conf.json`, поэтому релизная сборка подписывает артефакты ключом из `TAURI_SIGNING_PRIVATE_KEY` (+ `_PASSWORD`) и без него падает; локально — сборка с `--config` из «Команд». Публичный ключ — `plugins.updater.pubkey` в `tauri.conf.json`: без ключа или endpoint плагин не регистрируется (`updater_configured` в `src-tauri/src/lib.rs`, то же правило — `updaterConfiguredIn` в `src/api/updater.ts`), а интерфейс показывает обновления выключенными. Потеря приватного ключа — установленные копии не примут обновлений (ADR-0022).
-- GitOps (Flux, Argo CD) работает только через Kubernetes API: действия — `resource_patch` (`api.resources.patch`, `PatchType` merge/json), ни `flux`/`argocd` CLI, ни установки из утилиты (ADR-0024, ADR-0025). Патч, называющий `sextant.dev/values-hidden`, — `invalid`.
-- Новый CRD (в т.ч. поставленный Flux/Argo уже после подключения) виден без переподключения: `watchCrdChanges` (`src/resources/useKinds.ts`, metadata-watch на CRD, антидребезг `CRD_REFRESH_DELAY` = 1 с) зовёт `cluster_kinds_refresh` (`ClusterManager::refresh_kinds`), сбрасывающую кэш discovery (ADR-0026). Не возвращай «только после переподключения».
-- Разделы Flux и Argo CD — это виды реестра в секциях `flux`/`argocd` (`SidebarSection` в `src/resources/registry.ts`, ADR-0031); без видов в discovery раздел скрыт. Страницы `registerPage` в этих секциях discovery не проверяет: страницу регистрируй только со своей проверкой наличия инструмента (`useClusterKinds` + `findKind`).
-- `resolve_kind` (`crates/sextant-core/src/resources/get.rs`): запрошенная версия вида, если discovery её даёт, иначе версия из discovery (discovery хранит одну, предпочтительную) — это для get/watch/patch по `ObjectRef`; `replace_yaml`/`apply_yaml` идут в версии из документа (`resolve_document_kind`), если группа её обслуживает, иначе `notFound` без запроса (ADR-0030).
-- Вход в Argo CD — только через `ArgoSessions` (`AppState.argocd`): API Argo доступен через port-forward к `argocd-server`, TLS не проверяется только для `127.0.0.1` (ADR-0027); порядок источников — сохранённое, `argocd-initial-admin-secret`, Secret с меткой `app.kubernetes.io/part-of=argocd` и ключом `token`, иначе `unauthorized` (ADR-0028). Пароли и токены Argo никогда не уходят во фронтенд (`SecretString` печатается `<hidden>`, в `ManagedResource` значения Secret вырезаны) и не логируются.
-- Сохранённый вход Argo — keyring ОС: сервис `sextant`, пользователь `argocd:<clusterId>:<ns>`, значение JSON `{username,password}` или `{token}` (ADR-0029). Кандидат, отвергнутый Argo CD, не пробуется снова, пока не изменится его источник (resourceVersion секрета, новое сохранение, новый ввод; `is_refusal`, `standard_credentials_with_origin`); недоступность сервера не запоминается.
-- Сервер Argo CD ищется только в неймспейсе установки; установку определяют ClusterRoleBinding `argocd-application-controller`/`argocd-server` (имя привязки и имя SA, в т.ч. `<release>-…` Helm), без него (namespaced-установка, нет прав на CRB) — кандидаты по `argocd-cm`/`argocd-initial-admin-secret`; неоднозначность — `notFound` с префиксом `argocd::AMBIGUOUS_INSTALLATION`, фронтенд ничего не открывает (ADR-0032). `argocdNamespace` во фронтенде — `api.argocd.status().namespace`.
-- Иконки — только через `src/components/icons.tsx` (`Icon`, `renderIcon`); `lucide-react` напрямую не импортировать (ADR-0033). `icons.test.tsx` требует, чтобы каждое имя набора где-то использовалось: добавил имя без использования или убрал последнее использование — тест красный. `ActionDef.icon` и `DockActionDef.icon` — `IconSpec` (имя набора или текстовый глиф).
-- Размеры кнопок — токены `--control-height` (32 px) и `--control-height-compact` (28 px, строки таблиц) в `src/styles/global.css`; общая `Button` (`variant`, `size`, `iconOnly`+`label`); локальные переопределения высоты и шрифта кнопок не заводить, `.btn--small` больше нет (ADR-0034).
-- Кнопка, ставшая иконкой, сохраняет прежний текст в `aria-label` (+ `title`): на этих именах стоят vitest и e2e. E2E находит пункты меню по прямому текстовому узлу кнопки (`button=<текст>`), поэтому иконки и шевроны в них — SVG без текста и без `<title>`.
-- eslint: атрибуты `variant`, `size`, `icon` и `on[A-Z].*` исключены из `i18next/no-literal-string` (`eslint.config.js`).
-- Иконка кластера в `settings.json` — `clusters[id].icon`: `{type:"text",text}` или `{type:"image",dataUrl}`; `dataUrl` — PNG 96×96, рисуется только с префиксом `data:image/png;base64,`. Вид полосы — `window.railExpanded` (пишет фронтенд, ADR-0035, ADR-0036). Новое поле настроек — ещё и в `defaultAppSettings()` (`src/api/settings.ts`) и `defaultClusterSettings()` (`src/features/clusters/clusterSettings.ts`).
-- Лимит пода показывается, только если задан у всех контейнеров (иначе «no limit (set on N of M containers)»); считает `podResourceAmounts` на фронтенде по `spec.containers` (ADR-0037).
-- `TypeScript` закреплён на `~6.0` (ограничение typescript-eslint) — не обновлять вслепую.
-- E2E: `e2e/wdio.conf.ts` зашивает порт tauri-driver 4444, native-port не задан (по умолчанию 4445); если порты заняты или совпали, driver падает при старте — помогает `tauri-driver --port 4447 --native-port 4448` (в конфиге сейчас не прописано).
-- E2E: WebKitWebDriver теряет повторы и пробелы в `browser.keys` (для текста есть `typeText` в `e2e/app.ts`) и неверно печатает `/` и `:` — такие символы через `browser.keys` не вводить.
-- CI (`ci.yml`) срабатывает на push и PR в ветку `main` и вручную, на ubuntu, macOS и Windows, `core.autocrlf false`. macOS и Windows здесь не проверить — только CI. Что ломалось там и не видно на Linux: имена файлов, различающиеся только регистром (ловит `scripts/check-case-collisions.mjs`), GNU-only утилиты в тестовых скриптах (`stat -c`), `/proc`, `Path::is_absolute` по правилам хоста, путь `tauri://localhost` в тестах IPC (на Windows — `http://tauri.localhost`), хэши путей с `/`.
-- Релиз: тег `v*` или ручной запуск `gh workflow run release.yml -f tag=vX.Y.Z` (пересобрать существующий тег без его переписывания). `release.yml` сверяет тег с версией, собирает .deb/.AppImage, универсальный .dmg и .msi, собирает `latest.json` и публикует релиз только если в нём есть все платформы; установщики не подписаны сертификатами ОС.
+- `target/` bloats to tens of GB (35 GB when checked) because of debug info; for local builds and checks: `CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 npm run check`.
+- Integration tests without `SEXTANT_TEST_KUBECONFIG` are silently skipped and count as passed (stderr only says "skipped"); a green `cargo test --workspace` without a cluster proves nothing about the cluster. Tests that stop the kind container (`connect.rs`, `watch.rs`) run only with `SEXTANT_TEST_DOCKER_RESTART=1`.
+- The `sextant` crate embeds the built frontend from `dist/`: on a clean clone `npm run build` is needed before `npm run check` (CI does the same).
+- Do not edit `src/api/generated/` by hand: `npm run check` compares it with what Rust generates. A type that starts crossing the boundary gets `serde(rename_all = "camelCase")` + `ts-rs`, then `npm run gen:types` and commit the result.
+- Command and event names are not part of the generation: when adding a command, edit by hand `src-tauri/src/lib.rs` (`generate_handler!`), `src/api/commands.ts` and `src-tauri/tests/commands.rs`; a typo shows up only in a test or at runtime.
+- String literals in JSX are forbidden by eslint (`i18next/no-literal-string`); a string goes through `src/locales/en/<ns>.json`, a field value is built outside JSX. `@tauri-apps/*` outside `src/api/` is forbidden by eslint too (plugins go through `transport.ts`).
+- `sextant-core` must not pull in `tauri` and `portable-pty`: OS processes (`helm`, the cloud CLIs) sit behind the `desktop` feature; a violation is caught by `node scripts/check-core-deps.mjs`.
+- Streams (watch, logs, terminal): the frontend creates the id, `openStream` (`src/api/stream.ts`) attaches `listen("<prefix>:<id>")` before `*_start(…, streamId)`, so the backend holds nothing back: the first watch snapshot goes out at once, then batches no more often than every 250 ms (`BATCH_INTERVAL`), logs every 100 ms. Do not add delays and do not start a stream bypassing `openStream`. The id is `[A-Za-z0-9_-]`, ≤128; an id in use or malformed is `invalid` (`check_stream_id`). The page calls `streams_reset` (`resetStreams()`) once on load, and a start that outlived the reset is rejected (`AppState::undo_if_reset`); a `*_start` command registers the subscription in `AppState` before the core works (`start_watch`), otherwise a stop during the start will not interrupt it.
+- A new subscription, stream or session must live in `AppState` (`src-tauri/src/state.rs`), otherwise `close_cluster` and closing the window will not close it.
+- Secret values are stripped in the core (`resources::get::to_json`: values `""`, annotation `sextant.dev/values-hidden`, no last-applied), so they are in neither watch nor `resource_get`. The full value is available only through `secret_value` (one key) and `resource_get_full` (for the editor). `resource_replace`/`resource_apply` reject an object with the marker annotation (`ensure_values_present` in `Document::from_value`) — do not remove that call when editing `mutate.rs`.
+- Discovery is one per cluster (`ClusterManager::kinds`, a shared result for everyone waiting); `ResourceKind.printerColumns` from it is always empty — CRD columns are read lazily, one CRD at a time (`useCrdPrinterColumns` in `src/resources/crdColumns.ts`). Built-in kinds (`BUILT_IN_KINDS` in `crates/sextant-core/src/resources/get.rs`) open without discovery. CRDs in the sidebar come from discovery (new CRDs are picked up without reconnecting, see `watchCrdChanges` below). The column cache keeps an empty list only for `forbidden`/`notFound`; another error (network, 5xx) removes the key from the cache and the next open reads the CRD again.
+- `WatchSpec.metadata_only` (TS `metadataOnly`) returns only `{apiVersion, kind, metadata}`; for lists that need metadata alone (Helm releases) rather than whole objects.
+- Timeouts: connecting — 10 s per connection and 20 s per check; changes are under `CHANGE_TIMEOUT` = 30 s per request (`src-tauri/src/commands/actions.rs`: scale, restart, cordon, trigger, suspend, replace, delete); drain and applying several documents — 30 s per request (`resources::STEP_TIMEOUT`), with no limit on the whole operation. A `timeout` does not cancel the operation on the server. The client itself retries 429/503/504 at most 3 times and for no longer than 5 s (`cluster::RetryPolicy`; kube's `server_retry` is off), and only requests with a cloneable body.
+- `settings_update` does not overwrite what the backend writes (`kubeconfigSources`, window sizes): a new backend field has to be added to `update_settings` (`src-tauri/src/commands/settings.rs`); frontend fields (`clusters[id].agentAccess`, `AppSettings.mcp`, `node_shell_image`) are written by the frontend and are not in that list. An unreadable `settings.json` is not overwritten (copy `.bak-…`, `settings_status`).
+- All kube errors go through `error::kube_error` (it strips exec-plugin secrets); run `helm` only through `HelmCli::command()` (it scrubs `HELM_KUBE*` and `KUBECONFIG`); a real helm is not run in `src-tauri/tests/commands.rs`.
+- The terminal's temporary kubeconfig lives in `TermSession.guard` and is deleted synchronously when the session stops; `sextant-kubeconfig-*` files are cleaned at startup after a crash (`remove_stale_temp_kubeconfigs`), `sextant-shell-*` directories are not.
+- A feature is wired in only through `src/features/<name>/index.ts` (`import.meta.glob`); a directory without `index.ts` does not reach the app. There are no native checkboxes or radio buttons: use `Checkbox` and `Radio` from `src/components`.
+- The application version is written in five places (`Cargo.toml` `[workspace.package]`, `Cargo.lock`, `src-tauri/tauri.conf.json`, `package.json`, `package-lock.json`) and must match the release tag; bump all of them at once and check with `npm run check:version`.
+- Updates: `bundle.createUpdaterArtifacts` is on in `src-tauri/tauri.conf.json`, so a release build signs the artifacts with the key from `TAURI_SIGNING_PRIVATE_KEY` (+ `_PASSWORD`) and fails without it; locally, build with the `--config` from Commands. The public key is `plugins.updater.pubkey` in `tauri.conf.json`: without a key or an endpoint the plugin is not registered (`updater_configured` in `src-tauri/src/lib.rs`, the same rule is `updaterConfiguredIn` in `src/api/updater.ts`) and the interface shows updates as disabled. If the private key is lost, installed copies will not accept updates (ADR-0022).
+- GitOps (Flux, Argo CD) works only through the Kubernetes API: actions are `resource_patch` (`api.resources.patch`, `PatchType` merge/json), no `flux`/`argocd` CLI and no installs from the tool (ADR-0024, ADR-0025). A patch that names `sextant.dev/values-hidden` is `invalid`.
+- A new CRD (including one installed by Flux/Argo after connecting) is visible without reconnecting: `watchCrdChanges` (`src/resources/useKinds.ts`, a metadata watch on CRDs, debounce `CRD_REFRESH_DELAY` = 1 s) calls `cluster_kinds_refresh` (`ClusterManager::refresh_kinds`), which resets the discovery cache (ADR-0026). Do not bring back "only after reconnecting".
+- The Flux and Argo CD sections are registry kinds in the `flux`/`argocd` sections (`SidebarSection` in `src/resources/registry.ts`, ADR-0031); without the kinds in discovery the section is hidden. `registerPage` pages in these sections are not checked against discovery: register a page only together with its own check that the tool is present (`useClusterKinds` + `findKind`).
+- `resolve_kind` (`crates/sextant-core/src/resources/get.rs`): the requested kind version if discovery serves it, otherwise the version from discovery (discovery keeps one, the preferred) — this is for get/watch/patch by `ObjectRef`; `replace_yaml`/`apply_yaml` use the version from the document (`resolve_document_kind`) if the group serves it, otherwise `notFound` without a request (ADR-0030).
+- Logging in to Argo CD goes only through `ArgoSessions` (`AppState.argocd`): the Argo API is reached by a port-forward to `argocd-server`, TLS is not verified only for `127.0.0.1` (ADR-0027); the source order is the saved login, `argocd-initial-admin-secret`, a Secret labelled `app.kubernetes.io/part-of=argocd` with a `token` key, otherwise `unauthorized` (ADR-0028). Argo passwords and tokens never go to the frontend (`SecretString` prints `<hidden>`, Secret values are stripped in `ManagedResource`) and are never logged.
+- The saved Argo login is in the OS keyring: service `sextant`, user `argocd:<clusterId>:<ns>`, value JSON `{username,password}` or `{token}` (ADR-0029). A candidate rejected by Argo CD is not tried again until its source changes (the secret's resourceVersion, a new save, a new input; `is_refusal`, `standard_credentials_with_origin`); an unreachable server is not remembered.
+- The Argo CD server is looked up only in the installation namespace; the installation is determined by the ClusterRoleBinding `argocd-application-controller`/`argocd-server` (binding name and SA name, including Helm's `<release>-…`), without it (a namespaced install, no rights on CRBs) — candidates by `argocd-cm`/`argocd-initial-admin-secret`; ambiguity is `notFound` with the prefix `argocd::AMBIGUOUS_INSTALLATION`, and the frontend opens nothing (ADR-0032). `argocdNamespace` in the frontend is `api.argocd.status().namespace`.
+- Icons go only through `src/components/icons.tsx` (`Icon`, `renderIcon`); do not import `lucide-react` directly (ADR-0033). `icons.test.tsx` requires every name of the set to be used somewhere: adding a name without a use, or removing the last use, turns it red. `ActionDef.icon` and `DockActionDef.icon` are `IconSpec` (a set name or a text glyph); icon props of newer components accept only `IconName`.
+- Button sizes are the tokens `--control-height` (32 px) and `--control-height-compact` (28 px, table rows) in `src/styles/global.css`; use the shared `Button` (`variant`, `size`, `iconOnly`+`label`); do not add local overrides of button height and font, `.btn--small` is gone (ADR-0034).
+- A button that became an icon keeps its former text in `aria-label` (+ `title`): vitest and e2e depend on these names. E2E finds menu items by the button's direct text node (`button=<text>`), so icons and chevrons in them are SVG with no text and no `<title>`.
+- eslint: the attributes `variant`, `size`, `icon` and `on[A-Z].*` are excluded from `i18next/no-literal-string` (`eslint.config.js`).
+- The cluster icon in `settings.json` is `clusters[id].icon`: `{type:"text",text}` or `{type:"image",dataUrl}`; `dataUrl` is a 96×96 PNG, drawn only with the prefix `data:image/png;base64,`. The rail view is `window.railExpanded` (written by the frontend, ADR-0035, ADR-0036). A new settings field also goes into `defaultAppSettings()` (`src/api/settings.ts`) and `defaultClusterSettings()` (`src/features/clusters/clusterSettings.ts`).
+- A pod limit is shown only if it is set on all containers (otherwise "no limit (set on N of M containers)"); `podResourceAmounts` on the frontend computes it from `spec.containers` (ADR-0037).
+- MCP access rules parse strictly (ADR-0041): any unknown field or action reads as Off, so the rules editor must write exactly the shapes of `access.rs` (`{"type":"all"}` / `{"type":"only",…}`); preset rules come only from `access_preset_rules`, do not duplicate them on the frontend. Agent access is closed by default; "Secret values" is its own action that no preset grants.
+- `Guard::check` (`src-tauri/src/mcp/guard.rs`) must run right before every side effect of a tool, not at the start of the handler: it re-reads the settings, asks for confirmation and refuses after a server stop. A tool that touches several objects checks all of them before sending anything. For a kind without a namespace pass `None` (the empty string `""` also counts as `None`) whatever the agent sent, otherwise "team-a × all kinds × Delete" would delete a Node.
+- A JSON patch on a core Secret, when the agent lacks Secret values, may contain only `add`/`replace`/`remove`; every `path`/`from` must be a string starting with `/` (ADR-0043). Helm names, namespace, chart and version are validated before the Guard.
+- The MCP token is the file `mcp-token` (mode 0600 on Unix) in the settings directory, read by the app and by `sextant mcp` (ADR-0039): never print it to logs, errors, the activity log or test output (`Token` prints `<hidden>`); `sextant mcp` must not create it (`token::load` creates nothing). The directories are computed without Tauri (`src-tauri/src/mcp/paths.rs`), and a test keeps them equal to Tauri's `app_config_dir`.
+- The server listens on `127.0.0.1` only; a request with `Origin`, a foreign `Host`, a wrong Bearer or a body over 4 MB is refused before the MCP layer. Stopping the server (`McpServer::stop`, from `close_all`) cancels in-flight calls, refuses pending confirmations and closes what the agent started (`McpContext.agent_forwards`); an agent may stop only its own port forwards. `sextant mcp` may print nothing but JSON-RPC to stdout (diagnostics go to stderr, ADR-0040).
+- The activity log (`mcp-audit.jsonl`, ring of 2000) holds summaries only: no Secret values, YAML or command output, and text is clipped (`audit::clip`). A confirmation is answered in 120 s or counts as refused; without a window it is declined (ADR-0042).
+- Cloud CLIs (`aws`, `gcloud`, `az`) run without a shell, with a cleaned environment (`pty::shell_environment`; `KUBECONFIG` removed), a 60 s timeout, only through the one launch function behind the `desktop` feature; Sextant never runs a login — it shows the login command and puts it into a terminal without executing it. Clusters go to `kubeconfigs/cloud-<provider>.yaml`; `~/.kube/config` is never touched (ADR-0044). Tests use fake CLIs in `PATH`; real accounts were not tried.
+- Node shell (ADR-0045): the pod `sextant-node-shell-<node>-<rand>` in `kube-system` is registered in `AppState` before it is created and deleted on tab close, disconnect and app exit; the sweep on connect deletes only pods with the user's own `sextant.dev/owner` label, plus any labelled pod older than 8 h — never a colleague's live shell. The agent gets no node shell and cannot `exec_command` into these pods.
+- `TypeScript` is pinned to `~6.0` (a typescript-eslint limit) — do not upgrade blindly.
+- E2E: `e2e/wdio.conf.ts` hardcodes the tauri-driver port 4444, the native port is not set (default 4445); if the ports are taken or coincide, the driver fails at start — `tauri-driver --port 4447 --native-port 4448` helps (not currently in the config). A run overwrites `docs/screenshot.png`.
+- E2E: WebKitWebDriver loses repeats and spaces in `browser.keys` (for text there is `typeText` in `e2e/app.ts`) and prints `/` and `:` wrongly — do not enter such characters through `browser.keys`.
+- CI (`ci.yml`) runs on push and PR to the `main` branch and manually, on ubuntu, macOS and Windows, `core.autocrlf false`. macOS and Windows cannot be checked here — CI only. What broke there and does not show on Linux: file names that differ only by case (caught by `scripts/check-case-collisions.mjs`), GNU-only utilities in test scripts (`stat -c`), `/proc`, `Path::is_absolute` by the host's rules, the path `tauri://localhost` in IPC tests (on Windows it is `http://tauri.localhost`), hashes of paths with `/`.
+- Release: a `v*` tag or a manual run `gh workflow run release.yml -f tag=vX.Y.Z` (rebuilds an existing tag without rewriting it). `release.yml` checks the tag against the version, builds .deb/.AppImage, a universal .dmg and .msi, assembles `latest.json` and publishes the release only if it has all platforms; the installers are not signed with OS certificates.
 
-## Окружение
+## Environment
 
-Значения нигде не хранятся; `.env.example` — лишь список имён, `.env` ничем не подгружается.
+Values are stored nowhere; `.env.example` is only a list of names, and `.env` is not loaded by anything. This build added no new environment variables.
 
-- `SEXTANT_TEST_KUBECONFIG` — путь к admin-kubeconfig тестового кластера; включает интеграционные тесты (`crates/sextant-core/tests`, `src-tauri/src/state.rs`) и e2e
-- `SEXTANT_TEST_KUBECONFIG_LIMITED` — kubeconfig ServiceAccount `limited` (без доступа к Secret); по умолчанию `kubeconfig-limited` рядом с admin
-- `SEXTANT_TEST_DIR` — каталог файлов тестового кластера (по умолчанию `~/.cache/sextant-test`)
-- `SEXTANT_TEST_DOCKER_RESTART` — разрешает тестам останавливать и запускать контейнер kind
-- `SEXTANT_TEST_GITOPS` — `1` включает интеграционные тесты GitOps (Flux и Argo CD; кластер `scripts/test-cluster.sh up --gitops`); без неё они пропускаются
-- `SEXTANT_E2E_SKIP_BUILD` — e2e использует готовый `target/debug/sextant`
-- `SEXTANT_BINDINGS_OUT`, `SEXTANT_BINDINGS_COMMITTED` — каталоги для `scripts/bindings.mjs` (где ts-rs пишет / где лежит закоммиченное); по умолчанию `target/ts-bindings` и `src/api/generated`
-- `KUBECONFIG` — приложение читает его как источник kubeconfig; в e2e указывает только на тестовый кластер
-- `SHELL` — оболочка локального терминала (Unix), иначе `/bin/sh`
-- `TAURI_DEV_HOST` — хост dev-сервера Vite для запуска на мобильных устройствах
-- `CARGO_PROFILE_DEV_DEBUG`, `CARGO_INCREMENTAL` — отключают отладочную информацию и инкрементальную сборку, чтобы `target/` не разрастался
-- `METRICS_SERVER_URL` — откуда `scripts/test-cluster.sh` берёт манифест metrics-server
-- `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — секреты репозитория GitHub (только в GitHub Actions, `release.yml`): ключ подписи обновлений и его пароль; локально и в `.env.example` их нет
+- `SEXTANT_TEST_KUBECONFIG` — path to the admin kubeconfig of the test cluster; enables the integration tests (`crates/sextant-core/tests`, `src-tauri/src/state.rs`) and e2e
+- `SEXTANT_TEST_KUBECONFIG_LIMITED` — kubeconfig of the `limited` ServiceAccount (no access to Secrets); defaults to `kubeconfig-limited` next to the admin one
+- `SEXTANT_TEST_DIR` — directory of the test cluster files (default `~/.cache/sextant-test`)
+- `SEXTANT_TEST_DOCKER_RESTART` — lets tests stop and start the kind container
+- `SEXTANT_TEST_GITOPS` — `1` enables the GitOps integration tests (Flux and Argo CD; cluster `scripts/test-cluster.sh up --gitops`); without it they are skipped
+- `SEXTANT_E2E_SKIP_BUILD` — e2e uses the ready `target/debug/sextant`
+- `SEXTANT_BINDINGS_OUT`, `SEXTANT_BINDINGS_COMMITTED` — directories for `scripts/bindings.mjs` (where ts-rs writes / where the committed files are); default `target/ts-bindings` and `src/api/generated`
+- `KUBECONFIG` — the app reads it as a kubeconfig source; in e2e it points only at the test cluster
+- `SHELL` — the local terminal's shell (Unix), otherwise `/bin/sh`
+- `TAURI_DEV_HOST` — host of the Vite dev server for running on mobile devices
+- `CARGO_PROFILE_DEV_DEBUG`, `CARGO_INCREMENTAL` — turn off debug info and incremental builds so `target/` does not grow
+- `METRICS_SERVER_URL` — where `scripts/test-cluster.sh` takes the metrics-server manifest from
+- `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — GitHub repository secrets (only in GitHub Actions, `release.yml`): the update signing key and its password; they are not present locally or in `.env.example`
 
-## Как здесь работает Autopilot
+## How Autopilot works here
 
-Сборка ведётся навыком `/autopilot`. Требования, спецификация и таски — в `.autopilot/`.
-Прогресс — `.autopilot/dashboard.html`. Требование из `manifest.md` может снять
-только пользователь. Прерванную сборку продолжает «продолжи автопилот».
+Builds are run by the `/autopilot` skill. Requirements, the specification and tasks are in `.autopilot/`.
+Progress is in `.autopilot/dashboard.html`. A requirement from `manifest.md` can be dropped
+only by the user. An interrupted build is resumed by the phrase «продолжи автопилот» (the user types it in Russian; keep it as is).
 
-### Правка без автопилота
+### Changes without Autopilot
 
-Мелкий баг или доводка после сборки — обычная сессия, без прогона.
+A small bug or a polish after a build is an ordinary session, without a run.
 
-Сначала прочитай:
-1. `.autopilot/PROGRESS.md` — что не доделано, известные баги, о чём договорились с пользователем.
-2. Что правили после последней сборки — первая строка таблицы в «История git».
-3. Только если правка их касается: почему сделано так — `docs/adr/`; что значат слова — `CONTEXT.md`;
-   что именно просили — `manifest.md` в папке сборки (указана в начале `PROGRESS.md`).
+Read first:
+1. `.autopilot/PROGRESS.md` — what is unfinished, known bugs, what was agreed with the user.
+2. What was changed after the last build — the first row of the table in "Git history".
+3. Only if the change touches them: why it is done this way — `docs/adr/`; what the words mean — `CONTEXT.md`;
+   what exactly was asked — `manifest.md` in the build folder (named at the top of `PROGRESS.md`).
 
-После правки:
-- коммит — по правилам из «История git»;
-- строка в «Правки без автопилота» в `PROGRESS.md`: дата — что — почему;
-- починенный пункт из «Не доделано» или «Известные баги» — удали;
-- договорились с пользователем о том, что следующая сборка не должна пересматривать, —
-  строка в «Договорились», его словами.
+After the change:
+- commit — by the rules in "Git history";
+- a line in "Changes without Autopilot" in `PROGRESS.md`: date — what — why;
+- a fixed item from "Unfinished" or "Known bugs" — delete it;
+- if something was agreed with the user that the next build must not revisit, add a line
+  to "Agreed", in the user's words.
+- Write ADRs, `docs/architecture.md`, `CONTEXT.md` and this file in English (ADR-0046).
 
-### История git
+### Git history
 
-Целиком не читай — бери срез под вопрос:
+Do not read it whole — take a slice for the question:
 
-| Вопрос | Команда |
+| Question | Command |
 |---|---|
-| что правили после последней сборки | `git log --oneline "$(git log -1 --format=%h -E --grep='^Autopilot: (build landed|сборка сдана)$')"..HEAD -- . ':(exclude).autopilot'` |
-| всё, что делали ради требования | `git log --oneline --grep="R02"` |
-| история файла | `git log --oneline -10 -- <файл>` |
-| когда появился или исчез код | `git log --oneline -S "<фрагмент>"` |
-| почему строка такая | `git blame -L <с>,<по> <файл>`, затем `git show <sha>` |
-| что внутри коммита | `git show --stat <sha>` |
+| what was changed after the last build | `git log --oneline "$(git log -1 --format=%h -E --grep='^Autopilot: (build landed|сборка сдана)$')"..HEAD -- . ':(exclude).autopilot'` |
+| everything done for a requirement | `git log --oneline --grep="R02"` |
+| history of a file | `git log --oneline -10 -- <file>` |
+| when code appeared or disappeared | `git log --oneline -S "<fragment>"` |
+| why a line is the way it is | `git blame -L <from>,<to> <file>`, then `git show <sha>` |
+| what is inside a commit | `git show --stat <sha>` |
 
-Срез длиннее ~30 коммитов — отдай его субагенту и возьми выжимку в десять строк.
+A slice longer than ~30 commits — give it to a subagent and take a ten-line digest.
 
-Коммит — только на английском: заголовок — что (`fix: one date format`), тело — почему, трейлер
-`--trailer "Requirements: R02"`, если правка касается требования из `manifest.md`.
-Заголовок `Autopilot: build landed` (в старых сборках — `Autopilot: сборка сдана`) пишет только автопилот — по нему находят последнюю сборку.
-Issues, вехи и комментарии на GitHub — только на английском.
+Commits are in English only: the title says what (`fix: one date format`), the body says why, the trailer
+`--trailer "Requirements: R02"` if the change touches a requirement from `manifest.md`.
+The title `Autopilot: build landed` (in older builds `Autopilot: сборка сдана`, a literal kept for grep) is written only by Autopilot — it is how the last build is found.
+Issues, milestones and comments on GitHub are in English only.
 <!-- autopilot:end -->
