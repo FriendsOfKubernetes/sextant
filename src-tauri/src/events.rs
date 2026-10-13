@@ -8,6 +8,12 @@ use ts_rs::TS;
 pub const CLUSTER_STATE: &str = "cluster-state";
 /// `portforwards` — payload `ForwardInfo[]`.
 pub const PORTFORWARDS: &str = "portforwards";
+/// `mcp-status` — payload `McpStatus` (the MCP server started, stopped or failed).
+pub const MCP_STATUS: &str = "mcp-status";
+/// `mcp-confirm` — payload `ConfirmRequest`; answered with the command `mcp_confirm_answer`.
+pub const MCP_CONFIRM: &str = "mcp-confirm";
+/// `mcp-audit` — payload `AuditEntry` (one more call of an agent in the journal).
+pub const MCP_AUDIT: &str = "mcp-audit";
 
 /// `watch:<subscriptionId>` — payload `WatchUpdate`.
 pub fn watch_event(subscription_id: &str) -> String {
@@ -81,5 +87,9 @@ mod tests {
         assert_eq!(watch_event("watch-1"), "watch:watch-1");
         assert_eq!(logs_event("logs-2"), "logs:logs-2");
         assert_eq!(term_event("term-3"), "term:term-3");
+        assert_eq!(
+            [MCP_STATUS, MCP_CONFIRM, MCP_AUDIT],
+            ["mcp-status", "mcp-confirm", "mcp-audit"]
+        );
     }
 }

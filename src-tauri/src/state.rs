@@ -15,6 +15,7 @@ use tokio::sync::mpsc;
 use tokio::task::AbortHandle;
 
 use crate::commands::argocd::{ArgoSessions, KeyringStore};
+use crate::mcp::{McpContext, McpServer};
 
 /// Everything the commands share. Registered with `app.manage(AppState::new(..))`.
 pub struct AppState {
@@ -28,6 +29,9 @@ pub struct AppState {
     pub sessions: Sessions,
     /// Argo CD sessions (tokens in memory only) and their port forwards to `argocd-server`.
     pub argocd: ArgoSessions,
+    /// The MCP server for AI agents (off unless `settings.mcp.enabled`); its token is `<config_dir>/mcp-token`, its
+    /// journal `<data_dir>/mcp-audit.jsonl`.
+    pub mcp: McpServer,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -40,14 +44,25 @@ impl AppState {
             settings.get().kubeconfig_sources,
             data_dir.join("kubeconfigs"),
         )));
+        let clusters = ClusterManager::new(Arc::clone(&registry));
+        let forwarder = Arc::new(PortForwarder::new());
+        let mcp = McpServer::new(McpContext::new(
+            Arc::clone(&registry),
+            clusters.clone(),
+            Arc::clone(&forwarder),
+            Arc::clone(&settings),
+            config_dir,
+            data_dir,
+        ));
         Self {
-            clusters: ClusterManager::new(Arc::clone(&registry)),
+            clusters,
             registry,
-            forwarder: Arc::new(PortForwarder::new()),
+            forwarder,
             settings,
             subscriptions: Subscriptions::default(),
             sessions: Sessions::default(),
             argocd: ArgoSessions::new(Arc::new(KeyringStore::os())),
+            mcp,
             streams_generation: AtomicU64::new(0),
         }
     }
@@ -61,9 +76,11 @@ impl AppState {
         self.argocd.close_cluster(cluster);
     }
 
-    /// Stops everything (window closed, application exiting). Terminal sessions drop their temporary kubeconfig
-    /// before this returns.
+    /// Stops everything (window closed, application exiting): the MCP server first (no agent starts anything new,
+    /// waiting confirmations are refused), then everything it or the window started. Terminal sessions drop their
+    /// temporary kubeconfig before this returns.
     pub fn close_all(&self) {
+        self.mcp.stop();
         self.reset_streams();
         self.forwarder.stop_all();
         self.argocd.close_all();

@@ -44,12 +44,16 @@ pub async fn settings_get(state: State<'_, AppState>) -> Result<AppSettings, Cor
 /// Fields the backend writes itself are kept as stored, so a stale copy from the frontend cannot erase them:
 /// `kubeconfigSources` (changed only by the `kubeconfig_*` commands) and the window geometry
 /// (`window.width`, `window.height`, `window.maximized`, recorded on resize).
+///
+/// The MCP server follows the saved `mcp` (started, stopped or moved to the new port) before this returns.
 #[tauri::command]
 pub async fn settings_update(
     state: State<'_, AppState>,
     settings: AppSettings,
 ) -> Result<AppSettings, CoreError> {
-    update_settings(&state, settings)
+    let saved = update_settings(&state, settings)?;
+    state.mcp.apply_settings(&saved).await;
+    Ok(saved)
 }
 
 pub fn update_settings(state: &AppState, settings: AppSettings) -> Result<AppSettings, CoreError> {

@@ -79,6 +79,13 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("argocd_logout", Some("clusterId")),
     ("argocd_diff", Some("clusterId")),
     ("access_preset_rules", Some("preset")),
+    ("mcp_status", None),
+    ("mcp_token", None),
+    ("mcp_regenerate_token", None),
+    ("mcp_audit_list", None),
+    ("mcp_audit_clear", None),
+    ("mcp_confirm_answer", Some("id")),
+    ("mcp_binary_path", None),
 ];
 
 struct Harness {
@@ -431,6 +438,74 @@ fn settings_roundtrip_through_commands() {
 }
 
 #[test]
+fn the_mcp_server_starts_and_stops_with_settings_update() {
+    let h = harness();
+    let status = invoke(&h, "mcp_status", json!({})).unwrap();
+    assert_eq!(
+        status,
+        json!({ "state": "off", "url": null, "error": null })
+    );
+
+    let port = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    let mut settings = invoke(&h, "settings_get", json!({})).unwrap();
+    assert_eq!(settings["mcp"], json!({ "enabled": false, "port": 47391 }));
+    settings["mcp"] = json!({ "enabled": true, "port": port });
+    invoke(
+        &h,
+        "settings_update",
+        json!({ "settings": settings.clone() }),
+    )
+    .unwrap();
+    let status = invoke(&h, "mcp_status", json!({})).unwrap();
+    assert_eq!(status["state"], "running", "{status}");
+    assert_eq!(status["url"], format!("http://127.0.0.1:{port}/mcp"));
+    assert!(std::net::TcpStream::connect(("127.0.0.1", port)).is_ok());
+
+    settings["mcp"]["enabled"] = json!(false);
+    invoke(&h, "settings_update", json!({ "settings": settings })).unwrap();
+    let status = invoke(&h, "mcp_status", json!({})).unwrap();
+    assert_eq!(status["state"], "off");
+    assert!(std::net::TcpStream::connect(("127.0.0.1", port)).is_err());
+}
+
+#[test]
+fn mcp_token_journal_and_confirmation_commands() {
+    let h = harness();
+    let token = invoke(&h, "mcp_token", json!({})).unwrap();
+    let token = token.as_str().unwrap().to_owned();
+    assert_eq!(token.len(), 43);
+    assert_eq!(invoke(&h, "mcp_token", json!({})).unwrap(), token.as_str());
+    let new = invoke(&h, "mcp_regenerate_token", json!({})).unwrap();
+    assert_ne!(new, token.as_str());
+    assert_eq!(invoke(&h, "mcp_token", json!({})).unwrap(), new);
+
+    assert_eq!(invoke(&h, "mcp_audit_list", json!({})).unwrap(), json!([]));
+    assert_eq!(
+        invoke(&h, "mcp_audit_list", json!({ "clusterId": "abc" })).unwrap(),
+        json!([])
+    );
+    assert_eq!(
+        invoke(&h, "mcp_audit_clear", json!({})).unwrap(),
+        Value::Null
+    );
+
+    let err = invoke(
+        &h,
+        "mcp_confirm_answer",
+        json!({ "id": "confirm-1", "approved": true }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+
+    let path = invoke(&h, "mcp_binary_path", json!({})).unwrap();
+    assert!(std::path::Path::new(path.as_str().unwrap()).is_absolute());
+}
+
+#[test]
 fn settings_update_keeps_window_geometry_recorded_by_the_backend() {
     let h = harness();
     let state = h.window.state::<sextant_lib::AppState>();
@@ -527,6 +602,7 @@ fn later_argument_names_match_the_frontend() {
         ("argocd_login", json!({ "clusterId": "c" }), "login"),
         ("argocd_logout", json!({ "clusterId": "c" }), "options"),
         ("argocd_diff", json!({ "clusterId": "c" }), "app"),
+        ("mcp_confirm_answer", json!({ "id": "x" }), "approved"),
     ];
     for (cmd, args, next) in cases {
         let err = invoke(&h, cmd, args).expect_err(cmd);

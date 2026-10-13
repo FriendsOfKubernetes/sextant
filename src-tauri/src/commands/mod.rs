@@ -8,6 +8,7 @@ pub mod clusters;
 pub mod files;
 pub mod helm;
 pub mod logs;
+pub mod mcp;
 pub mod metrics;
 pub mod portforward;
 pub mod resources;
