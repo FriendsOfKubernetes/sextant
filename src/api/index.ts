@@ -15,6 +15,7 @@ export const api = {
   settings: commands.settings,
   files: commands.files,
   argocd: commands.argocd,
+  access: commands.access,
   streams: commands.streams,
   dialog: { openFile: openFileDialog, saveFile: saveFileDialog },
   /** The operating system: `openUrl(url)` opens a link in the default browser. */

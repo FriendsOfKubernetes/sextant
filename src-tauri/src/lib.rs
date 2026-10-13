@@ -77,6 +77,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         argocd::argocd_login,
         argocd::argocd_logout,
         argocd::argocd_diff,
+        access::access_preset_rules,
     ])
 }
 

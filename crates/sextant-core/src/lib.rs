@@ -7,6 +7,7 @@
 //! Every type that crosses the IPC boundary derives `ts_rs::TS`; `cargo test` regenerates the TypeScript
 //! bindings (see `.cargo/config.toml` and `npm run gen:types`).
 
+pub mod access;
 pub mod argocd;
 pub mod cluster;
 pub mod error;
@@ -28,4 +29,4 @@ pub use resources::{
     DrainOptions, DrainPreview, KindRef, ObjectRef, PodRef, PrinterColumn, ResourceKind, WatchSpec,
     WatchUpdate,
 };
-pub use settings::{AppSettings, ClusterSettings, SettingsStore, Theme, WindowLayout};
+pub use settings::{AppSettings, ClusterSettings, McpSettings, SettingsStore, Theme, WindowLayout};

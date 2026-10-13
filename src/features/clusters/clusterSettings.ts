@@ -12,6 +12,7 @@ export function defaultClusterSettings(): ClusterSettings {
     prometheus: { mode: "auto" },
     usageSource: "auto",
     icon: null,
+    agentAccess: { preset: "off", rules: [] },
   };
 }
 

@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::access::ClusterAccess;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::KubeconfigSource;
 use crate::metrics::{PrometheusMode, UsageSource};
@@ -39,6 +40,9 @@ pub struct ClusterSettings {
     /// The user's own icon in the cluster rail; `None` = initials of the name on the label color. Owned by the
     /// frontend, like `color`.
     pub icon: Option<ClusterIcon>,
+    /// What an AI agent connected through the MCP server may do in this cluster; closed by default. Owned by the
+    /// frontend; the MCP server reads it fresh on every call.
+    pub agent_access: ClusterAccess,
 }
 
 /// A cluster's own rail icon (`ClusterSettings::icon`).
@@ -53,6 +57,29 @@ pub enum ClusterIcon {
         #[serde(rename = "dataUrl")]
         data_url: String,
     },
+}
+
+/// Port the MCP server listens on by default (on 127.0.0.1).
+pub const DEFAULT_MCP_PORT: u16 = 47391;
+
+/// The built-in MCP server for AI agents (Settings → AI agents (MCP)). Owned by the frontend.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct McpSettings {
+    /// The server runs while Sextant is open; off by default.
+    pub enabled: bool,
+    /// Port on 127.0.0.1.
+    pub port: u16,
+}
+
+impl Default for McpSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            port: DEFAULT_MCP_PORT,
+        }
+    }
 }
 
 /// Window geometry and panel sizes, restored on start.
@@ -105,6 +132,8 @@ pub struct AppSettings {
     pub editor_theme: String,
     /// Look for a new Sextant release when the application starts (the "Check for updates" button works anyway).
     pub check_for_updates: bool,
+    /// The built-in MCP server.
+    pub mcp: McpSettings,
 }
 
 impl Default for AppSettings {
@@ -118,6 +147,7 @@ impl Default for AppSettings {
             helm_path: None,
             editor_theme: "auto".to_owned(),
             check_for_updates: true,
+            mcp: McpSettings::default(),
         }
     }
 }
@@ -683,5 +713,106 @@ mod tests {
         assert_eq!(s.clusters["c1"].icon, None);
         assert_eq!(s.clusters["c1"].display_name.as_deref(), Some("prod"));
         assert!(!AppSettings::default().window.rail_expanded);
+    }
+
+    #[test]
+    fn agent_access_and_mcp_round_trip_through_the_file() {
+        use crate::access::{
+            AccessAction, AccessPreset, AccessRule, KindPattern, KindScope, NamespaceScope,
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let (path, store) = store_in(&dir);
+        let access = ClusterAccess {
+            preset: AccessPreset::Custom,
+            rules: vec![AccessRule {
+                namespaces: NamespaceScope::Only {
+                    namespaces: vec!["prod".to_owned()],
+                },
+                kinds: KindScope::Only {
+                    kinds: vec![KindPattern::helm_release()],
+                },
+                actions: vec![AccessAction::Read, AccessAction::Delete],
+                confirm: true,
+            }],
+        };
+        store
+            .update(|s| {
+                s.mcp = McpSettings {
+                    enabled: true,
+                    port: 50123,
+                };
+                s.clusters.insert(
+                    "c1".to_owned(),
+                    ClusterSettings {
+                        agent_access: access.clone(),
+                        ..Default::default()
+                    },
+                );
+            })
+            .unwrap();
+
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            json["mcp"],
+            serde_json::json!({ "enabled": true, "port": 50123 })
+        );
+        assert_eq!(json["clusters"]["c1"]["agentAccess"]["preset"], "custom");
+        assert_eq!(
+            json["clusters"]["c1"]["agentAccess"]["rules"][0]["actions"],
+            serde_json::json!(["read", "delete"])
+        );
+
+        let s = SettingsStore::open(path).get();
+        assert_eq!(
+            s.mcp,
+            McpSettings {
+                enabled: true,
+                port: 50123
+            }
+        );
+        assert_eq!(s.clusters["c1"].agent_access, access);
+    }
+
+    #[test]
+    fn a_file_without_agent_access_or_mcp_reads_closed_and_off() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(
+            &path,
+            r##"{ "theme": "dark", "clusters": { "c1": { "displayName": "prod", "color": "#3d90ce" } } }"##,
+        )
+        .unwrap();
+        let store = SettingsStore::open(path);
+        assert_eq!(store.status().backup_path, None);
+        let s = store.get();
+        assert_eq!(s.clusters["c1"].agent_access, ClusterAccess::default());
+        assert_eq!(
+            s.clusters["c1"].agent_access.preset,
+            crate::access::AccessPreset::Off
+        );
+        assert!(!s.mcp.enabled);
+        assert_eq!(s.mcp.port, 47391);
+        assert_eq!(AppSettings::default().mcp, s.mcp);
+    }
+
+    #[test]
+    fn agent_access_from_a_newer_version_closes_access_and_keeps_the_rest() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(
+            &path,
+            r##"{ "helmPath": "/opt/helm", "mcp": { "enabled": true },
+                 "clusters": { "c1": { "displayName": "prod", "agentAccess": { "preset": "superUser" } } } }"##,
+        )
+        .unwrap();
+        let store = SettingsStore::open(path);
+        assert_eq!(store.status().backup_path, None);
+        let s = store.get();
+        assert_eq!(s.helm_path.as_deref(), Some("/opt/helm"));
+        assert_eq!(s.clusters["c1"].display_name.as_deref(), Some("prod"));
+        assert_eq!(s.clusters["c1"].agent_access, ClusterAccess::default());
+        assert!(s.mcp.enabled);
+        assert_eq!(s.mcp.port, 47391);
     }
 }

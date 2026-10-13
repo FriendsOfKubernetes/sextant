@@ -1,6 +1,7 @@
 //! Tauri commands. Every command is a thin wrapper over `sextant-core` and returns `Result<T, CoreError>`.
 //! One file per feature; `lib.rs` registers them all.
 
+pub mod access;
 pub mod actions;
 pub mod argocd;
 pub mod clusters;

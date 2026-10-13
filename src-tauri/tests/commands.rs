@@ -78,6 +78,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("argocd_login", Some("clusterId")),
     ("argocd_logout", Some("clusterId")),
     ("argocd_diff", Some("clusterId")),
+    ("access_preset_rules", Some("preset")),
 ];
 
 struct Harness {
@@ -160,6 +161,7 @@ const ERROR_CODES: &[&str] = &[
     "portInUse",
     "kubeconfig",
     "timeout",
+    "denied",
     "other",
 ];
 
@@ -601,4 +603,27 @@ fn helm_path_from_settings_is_used_by_helm_commands() {
     invoke(&h, "settings_update", json!({ "settings": settings })).unwrap();
     let status = invoke(&h, "helm_status", json!({})).unwrap();
     assert_eq!(status["available"], false, "{status}");
+}
+
+#[test]
+fn access_preset_rules_answer_the_rules_of_each_preset() {
+    let h = harness();
+    let all = json!({ "type": "all" });
+    // spec «Наборы».
+    let rules = |preset: &str| invoke(&h, "access_preset_rules", json!({ "preset": preset }));
+    assert_eq!(
+        rules("readOnly").unwrap(),
+        json!([{ "namespaces": all, "kinds": all, "actions": ["read", "logs"], "confirm": false }])
+    );
+    assert_eq!(
+        rules("readWrite").unwrap(),
+        json!([{ "namespaces": all, "kinds": all, "actions": ["read", "logs", "modify", "exec", "portForward"], "confirm": true }])
+    );
+    assert_eq!(
+        rules("full").unwrap(),
+        json!([{ "namespaces": all, "kinds": all, "actions": ["read", "logs", "modify", "delete", "exec", "portForward"], "confirm": true }])
+    );
+    assert_eq!(rules("off").unwrap(), json!([]));
+    assert_eq!(rules("custom").unwrap(), json!([]));
+    assert!(rules("everything").is_err());
 }

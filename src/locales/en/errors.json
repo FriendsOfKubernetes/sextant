@@ -10,5 +10,6 @@
   "portInUse": "The local port is already in use.",
   "kubeconfig": "The kubeconfig cannot be read or is not valid.",
   "timeout": "The operation took too long.",
+  "denied": "The cluster's AI agent access settings do not allow this.",
   "other": "Something went wrong."
 }

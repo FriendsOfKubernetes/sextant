@@ -120,6 +120,7 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["settings_get", () => api.settings.get(), undefined],
   ["settings_status", () => api.settings.status(), undefined],
   ["file_save", () => api.files.save("/tmp/x.log", "text"), { path: "/tmp/x.log", contents: "text" }],
+  ["access_preset_rules", () => api.access.presetRules("readOnly"), { preset: "readOnly" }],
 ];
 
 let backend: MockBackend | undefined;
@@ -135,7 +136,7 @@ describe("src/api commands", () => {
   it("covers every command of the contract", () => {
     const covered = new Set(cases.map(([cmd]) => cmd));
     covered.add("settings_update"); // checked below with a real settings object
-    expect(covered.size).toBe(59);
+    expect(covered.size).toBe(60);
   });
 
   it("settings_update sends the whole settings object", async () => {

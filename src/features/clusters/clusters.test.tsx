@@ -458,7 +458,7 @@ describe("cluster icon", () => {
       backend: {
         settings: {
           clusters: {
-            aaaa: { displayName: null, color: null, namespaces: null, lastView: null, prometheus: { mode: "auto" }, usageSource: "auto", icon: { type: "text", text: "Z" } },
+            aaaa: { displayName: null, color: null, namespaces: null, lastView: null, prometheus: { mode: "auto" }, usageSource: "auto", icon: { type: "text", text: "Z" }, agentAccess: { preset: "off", rules: [] } },
           },
         },
       },
@@ -510,7 +510,7 @@ describe("restart", () => {
         settings: {
           window: { sidebarWidth: 220, dockHeight: 300, dockOpen: false, lastCluster: "bbbb", width: null, height: null, maximized: false, railExpanded: false },
           clusters: {
-            bbbb: { displayName: null, color: null, namespaces: null, lastView: "nodes", prometheus: { mode: "auto" }, usageSource: "auto", icon: null },
+            bbbb: { displayName: null, color: null, namespaces: null, lastView: "nodes", prometheus: { mode: "auto" }, usageSource: "auto", icon: null, agentAccess: { preset: "off", rules: [] } },
           },
         },
       },

@@ -34,6 +34,8 @@ pub enum ErrorCode {
     Kubeconfig,
     /// The operation took longer than allowed (e.g. a change in the cluster that does not finish).
     Timeout,
+    /// Sextant's own rules refused it: the cluster's AI agent access does not allow the call.
+    Denied,
     /// Anything else, including "not implemented".
     Other,
 }

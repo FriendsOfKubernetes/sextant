@@ -35,6 +35,18 @@ base64.workspace = true
 # Saved Argo CD logins in the OS credential store: Keychain (macOS), Credential Manager (Windows), Secret Service
 # over D-Bus (Linux; libdbus is already linked by tao), encrypted with pure-Rust crypto.
 keyring = { version = "3.6.3", default-features = false, features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+# Built-in MCP server for AI agents: Streamable HTTP (sessions, SSE) on 127.0.0.1, tools declared with `#[tool]`.
+rmcp = { version = "3.5.1", default-features = false, features = ["server", "macros", "schemars", "transport-streamable-http-server"] }
+# The HTTP server under rmcp's `StreamableHttpService` (a tower service): routing, Host/Origin/token checks, body limit.
+axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
+# JSON Schema of tool arguments (`#[derive(JsonSchema)]`); the same major version rmcp uses.
+schemars = "1.2.2"
+# `CancellationToken` that stops rmcp's server and its sessions.
+tokio-util = "0.7.20"
+# The MCP token: 32 bytes from the OS random source.
+getrandom = "0.3.4"
+# Config and data directories for `sextant mcp`, which runs without Tauri; the same crate and rule Tauri uses.
+dirs = "7.0.0"
 
 # In-app updates (desktop only): checks and installs signed releases; `process` relaunches after installing.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

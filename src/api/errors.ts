@@ -13,6 +13,7 @@ export const ERROR_CODES: readonly ErrorCode[] = [
   "portInUse",
   "kubeconfig",
   "timeout",
+  "denied",
   "other",
 ];
 

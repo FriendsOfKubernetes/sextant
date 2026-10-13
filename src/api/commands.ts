@@ -1,5 +1,7 @@
 // One function per backend command (interfaces.md, «Команды»). Argument names are the camelCase names the
 // Rust commands expect. Every function rejects with `ApiError`.
+import type { AccessPreset } from "./generated/AccessPreset";
+import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
 import type { ArgoLogin } from "./generated/ArgoLogin";
 import type { ArgoStatus } from "./generated/ArgoStatus";
@@ -194,4 +196,10 @@ export const argocd = {
    * saved login or the standard secrets; rejects with `unauthorized` when none works (show the sign-in window).
    */
   diff: (clusterId: ClusterId, app: ObjectRef) => call<ManagedResource[]>("argocd_diff", { clusterId, app }),
+};
+
+/** AI agent access rules of a cluster (`ClusterSettings.agentAccess`). */
+export const access = {
+  /** The rules a preset stands for (empty for `off` and `custom`); the only source of preset rules. */
+  presetRules: (preset: AccessPreset) => call<AccessRule[]>("access_preset_rules", { preset }),
 };
