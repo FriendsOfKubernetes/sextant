@@ -26,7 +26,10 @@
     "title": "Add cluster",
     "file": "Add kubeconfig file",
     "paste": "Paste kubeconfig",
-    "fileDialogTitle": "Choose a kubeconfig file"
+    "fileDialogTitle": "Choose a kubeconfig file",
+    "tabs": "How to add",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "From cloud"
   },
   "paste": {
     "title": "Paste kubeconfig",
@@ -40,7 +43,8 @@
       "default": "default",
       "env": "KUBECONFIG",
       "addedFile": "added file",
-      "pasted": "pasted"
+      "pasted": "pasted",
+      "cloud": "cloud"
     },
     "remove": "Remove",
     "removeNamed": "Remove {{path}}",
@@ -49,7 +53,8 @@
     "confirmPasted": "Its clusters disappear from the list and the pasted copy is deleted.",
     "problems": "Some kubeconfig files cannot be read",
     "problemsTitle": "Kubeconfig problems",
-    "problemsHint": "Clusters from the other files keep working. Fix the file, then press Refresh."
+    "problemsHint": "Clusters from the other files keep working. Fix the file, then press Refresh.",
+    "confirmCloud": "Its clusters disappear from the list and Sextant's kubeconfig of these cloud clusters is deleted. Your cloud CLI and ~/.kube/config are not touched."
   },
   "welcome": {
     "loading": "Reading kubeconfig…",
@@ -92,5 +97,59 @@
     "server": "Server",
     "user": "User",
     "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant uses the aws, gcloud and az already installed and signed in on this computer. It writes its own kubeconfig and never changes ~/.kube/config or signs in for you.",
+    "detecting": "Looking for aws, gcloud and az…",
+    "providers": "Cloud",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(version unknown)",
+    "notInstalled": "{{cli}} is not installed",
+    "installGuide": "Installation guide",
+    "pluginMissing": "{{plugin}} is not installed. The clusters can be added, but connecting needs it. Install it with:",
+    "loadingAccounts": "Reading accounts…",
+    "account": {
+      "aws": "Profile",
+      "gcp": "Project",
+      "azure": "Subscription"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Credentials from the environment",
+    "regions": "Regions",
+    "find": "Find clusters",
+    "finding": "Searching…",
+    "noClusters": "No clusters found.",
+    "found": "Clusters found",
+    "separator": " · ",
+    "add_one": "Add {{count}} cluster",
+    "add_other": "Add {{count}} clusters",
+    "added_one": "Added {{count}} cluster. It is in the cluster list.",
+    "added_other": "Added {{count}} clusters. They are in the cluster list.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} is not installed{{scope}}",
+      "notLoggedIn": "{{cli}} is not signed in, or the sign-in expired{{scope}}",
+      "pluginMissing": "The sign-in plugin for {{cli}} is not installed{{scope}}",
+      "failed": "{{cli}} failed{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Install it, then try again.",
+      "notLoggedIn": "Sextant does not sign in for you. Run this command in a terminal, then try again:",
+      "pluginMissing": "Run this command in a terminal, then try again:",
+      "failed": "Run this command in a terminal, then try again:"
+    },
+    "copyCommand": "Copy command",
+    "copied": "Copied",
+    "copyFailed": "The clipboard is not available; select the command and copy it."
   }
 }

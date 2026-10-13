@@ -20,6 +20,15 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["cluster_state", () => api.clusters.state("c1"), { clusterId: "c1" }],
   ["cluster_kinds", () => api.clusters.kinds("c1"), { clusterId: "c1" }],
   ["cluster_kinds_refresh", () => api.clusters.refreshKinds("c1"), { clusterId: "c1" }],
+  ["cloud_status", () => api.cloud.status(), undefined],
+  ["cloud_accounts", () => api.cloud.accounts("aws"), { provider: "aws" }],
+  [
+    "cloud_find",
+    () => api.cloud.find({ provider: "aws", account: "dev", regions: ["eu-west-1"] }),
+    { query: { provider: "aws", account: "dev", regions: ["eu-west-1"] } },
+  ],
+  ["cloud_import", () => api.cloud.importClusters([]), { clusters: [] }],
+  ["cloud_login_hint", () => api.cloud.loginHint("c1"), { clusterId: "c1" }],
   ["watch_start", () => api.resources.watchStart("c1", spec, "s1"), { clusterId: "c1", spec, streamId: "s1" }],
   ["watch_stop", () => api.resources.watchStop("w1"), { subscriptionId: "w1" }],
   ["streams_reset", () => api.streams.reset(), undefined],
@@ -136,7 +145,7 @@ describe("src/api commands", () => {
   it("covers every command of the contract", () => {
     const covered = new Set(cases.map(([cmd]) => cmd));
     covered.add("settings_update"); // checked below with a real settings object
-    expect(covered.size).toBe(60);
+    expect(covered.size).toBe(65);
   });
 
   it("settings_update sends the whole settings object", async () => {

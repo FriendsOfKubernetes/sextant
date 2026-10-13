@@ -3,4 +3,4 @@
 /**
  * Where a kubeconfig file came from.
  */
-export type SourceKind = "default" | "env" | "addedFile" | "pasted";
+export type SourceKind = "default" | "env" | "addedFile" | "pasted" | "cloud";

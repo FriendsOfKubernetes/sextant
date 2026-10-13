@@ -5,6 +5,7 @@ import type { TFunction } from "i18next";
 import { errorKey, useSettings, type ClusterInfo, type CoreError } from "../../api";
 import { EmptyState, SLOW_AFTER_S, useElapsedSeconds } from "../../components";
 import { AddFileButton, PasteButton, SourceError } from "./AddClusterDialog";
+import { CloudLoginHint } from "./CloudClusters";
 import { displayNameOf } from "./clusterSettings";
 import { connectCluster, disconnectCluster, openClusterSettings, useClustersStore } from "./clustersStore";
 import { useClusters, useClusterState } from "./hooks";
@@ -58,6 +59,7 @@ function Connection({ cluster }: { cluster: ClusterInfo }) {
         </h1>
         <p>{connectionErrorText(t, { code, message })}</p>
         {message && <p className="clusters-error__details">{t("common:error.details", { message })}</p>}
+        {(code === "authPlugin" || code === "unauthorized") && <CloudLoginHint clusterId={cluster.id} />}
         <div className="clusters-buttons">
           <button type="button" className="btn btn--primary" onClick={() => void connectCluster(cluster.id)}>
             {t("clusters:connection.reconnect")}

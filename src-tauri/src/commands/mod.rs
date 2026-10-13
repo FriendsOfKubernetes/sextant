@@ -4,6 +4,7 @@
 pub mod access;
 pub mod actions;
 pub mod argocd;
+pub mod cloud;
 pub mod clusters;
 pub mod files;
 pub mod helm;

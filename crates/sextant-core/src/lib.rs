@@ -9,6 +9,8 @@
 
 pub mod access;
 pub mod argocd;
+#[cfg(feature = "desktop")]
+pub mod cloud;
 pub mod cluster;
 pub mod error;
 pub mod exec;

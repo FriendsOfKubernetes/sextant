@@ -1,8 +1,10 @@
-// Adding kubeconfig files or pasted text, and the list of kubeconfig sources with "Remove" for added ones.
+// Adding kubeconfig files or pasted text, and the list of kubeconfig sources with "Remove" for added ones; the
+// "From cloud" tab adds EKS/GKE/AKS clusters through the cloud CLIs (CloudClusters).
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type CoreError, type KubeconfigSource } from "../../api";
-import { ConfirmDialog, Dialog, ErrorState } from "../../components";
+import { ConfirmDialog, Dialog, ErrorState, Tabs, type TabItem } from "../../components";
+import { CloudClusters } from "./CloudClusters";
 import { addKubeconfigFile, addPastedKubeconfig, removeKubeconfigSource, useClustersStore } from "./clustersStore";
 
 /** Opens the system file dialog and adds the chosen kubeconfig. Resolves to an error to show, if any. */
@@ -106,13 +108,27 @@ export function PasteButton({ className = "btn" }: { className?: string }) {
   );
 }
 
-const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted"]);
+const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted", "cloud"]);
+
+/** What removing a source does to its file: an added file stays on disk, Sextant's own copies are deleted. */
+function removeTextKey(kind: KubeconfigSource["kind"] | undefined): string {
+  if (kind === "pasted") return "clusters:sources.confirmPasted";
+  if (kind === "cloud") return "clusters:sources.confirmCloud";
+  return "clusters:sources.confirmFile";
+}
+
+type AddTab = "kubeconfig" | "cloud";
 
 export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const sources = useClustersStore((s) => s.sources);
   const [removing, setRemoving] = useState<KubeconfigSource | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
+  const [tab, setTab] = useState<AddTab>("kubeconfig");
+  const addTabs: Array<TabItem<AddTab>> = [
+    { id: "kubeconfig", label: t("clusters:add.kubeconfigTab") },
+    { id: "cloud", label: t("clusters:add.cloudTab") },
+  ];
 
   const remove = async (source: KubeconfigSource) => {
     setRemoving(null);
@@ -136,10 +152,22 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
           </button>
         }
       >
-        <div className="clusters-buttons">
-          <AddFileButton className="btn btn--primary" />
-          <PasteButton />
-        </div>
+        <Tabs
+          label={t("clusters:add.tabs")}
+          tabs={addTabs}
+          selected={tab}
+          onSelect={setTab}
+          className="clusters-add-tabs"
+        >
+          {tab === "cloud" ? (
+            <CloudClusters />
+          ) : (
+            <div className="clusters-buttons">
+              <AddFileButton className="btn btn--primary" />
+              <PasteButton />
+            </div>
+          )}
+        </Tabs>
         <h3 className="clusters-subtitle">{t("clusters:sources.title")}</h3>
         <ul className="clusters-sources" aria-label={t("clusters:sources.title")}>
           {sources.map((source) => (
@@ -169,7 +197,7 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
         onCancel={() => setRemoving(null)}
         onConfirm={() => removing && void remove(removing)}
       >
-        <p>{t(removing?.kind === "pasted" ? "clusters:sources.confirmPasted" : "clusters:sources.confirmFile")}</p>
+        <p>{t(removeTextKey(removing?.kind))}</p>
         <p className="clusters-sources__path">{removing?.path}</p>
       </ConfirmDialog>
     </>

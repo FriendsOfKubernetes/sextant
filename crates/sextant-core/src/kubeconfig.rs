@@ -29,6 +29,9 @@ pub enum SourceKind {
     AddedFile,
     /// Text the user pasted; stored in the app data directory.
     Pasted,
+    /// Clusters imported from a cloud CLI (`aws`, `gcloud`, `az`); Sextant's own file `cloud-<provider>.yaml` in the
+    /// app data directory.
+    Cloud,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -306,7 +309,79 @@ impl KubeconfigRegistry {
         Ok(added)
     }
 
-    /// Forgets an added or pasted source; a pasted file is deleted. `KUBECONFIG` and `~/.kube/config` cannot
+    /// Merges the contexts of `entries` (with their clusters and users) into Sextant's own kubeconfig `file_name` in
+    /// the data directory (mode 0600) and registers that file as a [`SourceKind::Cloud`] source (once). Entries with
+    /// the same names are replaced, so importing a cluster again does not add a second context. `file_name` is a bare
+    /// file name (`cloud-aws.yaml`).
+    pub fn add_cloud(
+        &mut self,
+        file_name: &str,
+        entries: &Kubeconfig,
+    ) -> CoreResult<KubeconfigSource> {
+        let bare = Path::new(file_name)
+            .file_name()
+            .is_some_and(|name| name == std::ffi::OsStr::new(file_name));
+        let stem = file_name.strip_suffix(".yaml").unwrap_or_default();
+        if !bare
+            || stem.is_empty()
+            || !stem
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
+            return Err(CoreError::new(
+                ErrorCode::Invalid,
+                format!("not a kubeconfig file name: {file_name:?}"),
+            ));
+        }
+        ensure_contexts(entries)?;
+
+        let path = self.pasted_dir.join(file_name);
+        let mut config = if path.exists() {
+            Kubeconfig::read_from(&path).map_err(kubeconfig_error)?
+        } else {
+            Kubeconfig {
+                api_version: Some("v1".to_owned()),
+                kind: Some("Config".to_owned()),
+                ..Default::default()
+            }
+        };
+        for named in &entries.contexts {
+            config.contexts.retain(|c| c.name != named.name);
+        }
+        for named in &entries.clusters {
+            config.clusters.retain(|c| c.name != named.name);
+        }
+        for named in &entries.auth_infos {
+            config.auth_infos.retain(|u| u.name != named.name);
+        }
+        config.contexts.extend(entries.contexts.iter().cloned());
+        config.clusters.extend(entries.clusters.iter().cloned());
+        config.auth_infos.extend(entries.auth_infos.iter().cloned());
+        if config.current_context.is_none() {
+            config.current_context = config.contexts.first().map(|c| c.name.clone());
+        }
+
+        // A new private file next to the old one, then renamed over it: a crash never leaves half a kubeconfig.
+        std::fs::create_dir_all(&self.pasted_dir)?;
+        let yaml = serde_yaml::to_string(&config)?;
+        let mut file = tempfile::Builder::new()
+            .prefix(".cloud-")
+            .suffix(".yaml")
+            .tempfile_in(&self.pasted_dir)?;
+        restrict_permissions(file.path())?;
+        file.write_all(yaml.as_bytes())?;
+        file.as_file().sync_all()?;
+        file.persist(&path).map_err(|e| CoreError::from(e.error))?;
+
+        if let Some(existing) = self.listed_sources().into_iter().find(|s| s.path == path) {
+            return Ok(existing);
+        }
+        let added = source(path, SourceKind::Cloud);
+        self.extra_sources.push(added.clone());
+        Ok(added)
+    }
+
+    /// Forgets an added, pasted or cloud source; a pasted or cloud file (Sextant's own copy) is deleted. `KUBECONFIG` and `~/.kube/config` cannot
     /// be removed.
     pub fn remove_source(&mut self, source_id: &str) -> CoreResult<()> {
         let Some(index) = self.extra_sources.iter().position(|s| s.id == source_id) else {
@@ -322,7 +397,8 @@ impl KubeconfigRegistry {
             );
         };
         let removed = self.extra_sources.remove(index);
-        if removed.kind == SourceKind::Pasted && removed.path.starts_with(&self.pasted_dir) {
+        let own_file = matches!(removed.kind, SourceKind::Pasted | SourceKind::Cloud);
+        if own_file && removed.path.starts_with(&self.pasted_dir) {
             match std::fs::remove_file(&removed.path) {
                 Err(err) if err.kind() != std::io::ErrorKind::NotFound => return Err(err.into()),
                 _ => {}
@@ -895,6 +971,125 @@ current-context: {name}
             file.exists(),
             "removing an added file keeps the user's file"
         );
+    }
+
+    /// A kubeconfig of one cloud cluster `name` (exec authentication, no credentials), as the cloud import builds it.
+    fn cloud_entry(name: &str, server: &str) -> Kubeconfig {
+        Kubeconfig::from_yaml(&format!(
+            r#"apiVersion: v1
+kind: Config
+clusters:
+  - name: {name}
+    cluster:
+      server: {server}
+      certificate-authority-data: Y2E=
+users:
+  - name: {name}
+    user:
+      exec:
+        apiVersion: client.authentication.k8s.io/v1beta1
+        command: aws
+        args: [eks, get-token, --cluster-name, {name}, --region, eu-west-1, --output, json]
+contexts:
+  - name: {name}
+    context:
+      cluster: {name}
+      user: {name}
+"#
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn cloud_clusters_go_to_one_private_file_and_a_second_import_replaces_the_context() {
+        let fx = Fixture::new();
+        let home_config = fx.write(
+            "home/.kube/config",
+            &one_context("home", "https://home:6443"),
+        );
+        let before = std::fs::read_to_string(&home_config).unwrap();
+        let mut registry = fx.registry();
+
+        let source = registry
+            .add_cloud("cloud-aws.yaml", &cloud_entry("eks-a", "https://a.example"))
+            .unwrap();
+        assert_eq!(source.kind, SourceKind::Cloud);
+        assert_eq!(source.path, fx.path("data/kubeconfigs/cloud-aws.yaml"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(&source.path)
+                .unwrap()
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+        let again = registry
+            .add_cloud("cloud-aws.yaml", &cloud_entry("eks-b", "https://b.example"))
+            .unwrap();
+        assert_eq!(again, source, "the same file is one source");
+        // Importing eks-a again (its endpoint changed) replaces it.
+        registry
+            .add_cloud(
+                "cloud-aws.yaml",
+                &cloud_entry("eks-a", "https://a2.example"),
+            )
+            .unwrap();
+
+        let clusters = registry.clusters().unwrap();
+        assert_eq!(contexts(&clusters), ["home", "eks-b", "eks-a"]);
+        let a = clusters.iter().find(|c| c.context == "eks-a").unwrap();
+        assert_eq!(a.server, "https://a2.example");
+        assert_eq!(a.id, ClusterId::for_context(&source.path, "eks-a"));
+        let config = registry.kubeconfig_for(&a.id).unwrap();
+        let exec = config.auth_infos[0]
+            .auth_info
+            .as_ref()
+            .unwrap()
+            .exec
+            .as_ref()
+            .unwrap();
+        assert_eq!(exec.command.as_deref(), Some("aws"));
+        assert_eq!(registry.added_sources(), std::slice::from_ref(&source));
+        assert_eq!(
+            std::fs::read_to_string(&home_config).unwrap(),
+            before,
+            "~/.kube/config is not touched"
+        );
+
+        let restarted = fx.registry_with(registry.added_sources(), None);
+        assert_eq!(
+            contexts(&restarted.clusters().unwrap()),
+            ["home", "eks-b", "eks-a"]
+        );
+
+        registry.remove_source(&source.id).unwrap();
+        assert!(
+            !source.path.exists(),
+            "removing the source deletes Sextant's own file"
+        );
+        assert_eq!(contexts(&registry.clusters().unwrap()), ["home"]);
+    }
+
+    #[test]
+    fn a_cloud_file_name_must_be_a_bare_yaml_name() {
+        let fx = Fixture::new();
+        let mut registry = fx.registry();
+        for name in ["../cloud.yaml", "a/b.yaml", "", "cloud-aws", ".yaml"] {
+            let err = registry
+                .add_cloud(name, &cloud_entry("x", "https://x"))
+                .unwrap_err();
+            assert_eq!(err.code, ErrorCode::Invalid, "{name}");
+        }
+        let empty = Kubeconfig::default();
+        assert_eq!(
+            registry
+                .add_cloud("cloud-aws.yaml", &empty)
+                .unwrap_err()
+                .code,
+            ErrorCode::Kubeconfig
+        );
+        assert!(registry.added_sources().is_empty());
     }
 
     #[test]

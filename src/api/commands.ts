@@ -8,6 +8,14 @@ import type { ArgoStatus } from "./generated/ArgoStatus";
 import type { AuditEntry } from "./generated/AuditEntry";
 import type { ChartHit } from "./generated/ChartHit";
 import type { ChartTarget } from "./generated/ChartTarget";
+import type { CloudAccounts } from "./generated/CloudAccounts";
+import type { CloudCliStatus } from "./generated/CloudCliStatus";
+import type { CloudCluster } from "./generated/CloudCluster";
+import type { CloudImport } from "./generated/CloudImport";
+import type { CloudProblem } from "./generated/CloudProblem";
+import type { CloudProvider } from "./generated/CloudProvider";
+import type { CloudQuery } from "./generated/CloudQuery";
+import type { CloudSearch } from "./generated/CloudSearch";
 import type { ClusterId } from "./generated/ClusterId";
 import type { ClusterInfo } from "./generated/ClusterInfo";
 import type { ConnectionState } from "./generated/ConnectionState";
@@ -59,6 +67,23 @@ export const clusters = {
   kinds: (clusterId: ClusterId) => call<ResourceKind[]>("cluster_kinds", { clusterId }),
   /** Forgets the backend's discovery of the cluster (a CRD was created or deleted); the next `kinds` asks again. */
   refreshKinds: (clusterId: ClusterId) => call<void>("cluster_kinds_refresh", { clusterId }),
+};
+
+/**
+ * Cloud clusters (EKS, GKE, AKS) through the user's own `aws`, `gcloud` and `az`. Sextant never signs in: a problem
+ * carries the command the user runs (`aws sso login --profile …`, `gcloud auth login`, `az login`).
+ */
+export const cloud = {
+  /** The three CLIs: installed or not, version, credential plugin. */
+  status: () => call<CloudCliStatus[]>("cloud_status"),
+  /** AWS profiles (and regions), GCP projects or Azure subscriptions; `problem` when the CLI is missing or signed out. */
+  accounts: (provider: CloudProvider) => call<CloudAccounts>("cloud_accounts", { provider }),
+  /** Clusters of an account (in the chosen regions for AWS). */
+  find: (query: CloudQuery) => call<CloudSearch>("cloud_find", { query }),
+  /** Writes the clusters to Sextant's own `cloud-<provider>.yaml` and saves the sources; refresh the cluster list after. */
+  importClusters: (clusters: CloudCluster[]) => call<CloudImport>("cloud_import", { clusters }),
+  /** How to sign in again (or what to install) for a cluster whose sign-in failed; `null` if not a cloud cluster. */
+  loginHint: (clusterId: ClusterId) => call<CloudProblem | null>("cloud_login_hint", { clusterId }),
 };
 
 /** Every stream (watch, logs, terminal) gets its id from the frontend, which listens before it starts the stream. */

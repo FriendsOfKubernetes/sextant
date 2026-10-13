@@ -5,6 +5,7 @@ import { updates } from "./updater";
 
 export const api = {
   clusters: commands.clusters,
+  cloud: commands.cloud,
   resources: commands.resources,
   actions: commands.actions,
   logs: commands.logs,

@@ -25,6 +25,11 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("cluster_state", Some("clusterId")),
     ("cluster_kinds", Some("clusterId")),
     ("cluster_kinds_refresh", Some("clusterId")),
+    ("cloud_status", None),
+    ("cloud_accounts", Some("provider")),
+    ("cloud_find", Some("query")),
+    ("cloud_import", Some("clusters")),
+    ("cloud_login_hint", Some("clusterId")),
     ("watch_start", Some("clusterId")),
     ("watch_stop", Some("subscriptionId")),
     ("streams_reset", None),
@@ -122,6 +127,10 @@ fn harness_in(dirs: tempfile::TempDir) -> Harness {
     // ~/.config/helm, ~/.cache/helm) — they answer `helmMissing` instead.
     app.manage(
         sextant_core::helm::cli::HelmCli::default().with_binary(dirs.path().join("no-helm")),
+    );
+    // Cloud commands look for `aws`/`gcloud`/`az` in an empty directory: no test runs the developer's cloud CLIs.
+    app.manage(
+        sextant_core::cloud::CloudCli::default().with_env([("PATH", dirs.path().join("no-cli"))]),
     );
     let window = WebviewWindowBuilder::new(&app, "main", Default::default())
         .build()
@@ -419,6 +428,94 @@ fn pasted_and_added_kubeconfigs_survive_a_restart_and_are_removed() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid");
+}
+
+#[test]
+fn cloud_clusters_are_imported_into_sextants_own_file_and_saved_as_a_source() {
+    let dirs = tempfile::tempdir().unwrap();
+    let root = dirs.path().to_path_buf();
+    let h = harness_in(dirs);
+
+    // No CLI is installed (the harness's PATH is empty): every provider says so, nothing fails.
+    let status = invoke(&h, "cloud_status", json!({})).unwrap();
+    let providers: Vec<_> = status
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| s["provider"].clone())
+        .collect();
+    assert_eq!(providers, [json!("aws"), json!("gcp"), json!("azure")]);
+    assert!(
+        status
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|s| s["available"] == false)
+    );
+    let accounts = invoke(&h, "cloud_accounts", json!({ "provider": "aws" })).unwrap();
+    assert_eq!(accounts["problem"]["kind"], "cliMissing");
+
+    // An EKS cluster as `cloud_find` returns it: endpoint and CA are known, no CLI call is needed.
+    let cluster = json!({
+        "provider": "aws", "name": "prod", "account": "dev", "location": "eu-west-1", "resourceGroup": null,
+        "cloudId": "arn:aws:eks:eu-west-1:111122223333:cluster/prod",
+        "endpoint": "https://abc.eks.amazonaws.com", "certificateAuthority": "Y2E=",
+        "version": "1.29", "status": "ACTIVE", "context": "arn:aws:eks:eu-west-1:111122223333:cluster/prod",
+    });
+    let import = invoke(&h, "cloud_import", json!({ "clusters": [cluster.clone()] })).unwrap();
+    assert_eq!(import["problems"], json!([]));
+    assert_eq!(
+        import["contexts"],
+        json!(["arn:aws:eks:eu-west-1:111122223333:cluster/prod"])
+    );
+    let source = &import["sources"][0];
+    assert_eq!(source["kind"], "cloud");
+    assert_eq!(
+        source["path"].as_str().unwrap(),
+        root.join("data")
+            .join("kubeconfigs")
+            .join("cloud-aws.yaml")
+            .to_str()
+            .unwrap()
+    );
+    invoke(&h, "cloud_import", json!({ "clusters": [cluster] })).unwrap();
+
+    let clusters = invoke(&h, "clusters_list", json!({})).unwrap();
+    assert_eq!(
+        clusters.as_array().unwrap().len(),
+        1,
+        "a second import does not duplicate"
+    );
+    assert_eq!(clusters[0]["server"], "https://abc.eks.amazonaws.com");
+    let saved = invoke(&h, "settings_get", json!({})).unwrap();
+    assert_eq!(saved["kubeconfigSources"], json!([source.clone()]));
+    let restarted = isolated_state(&root);
+    assert_eq!(
+        sextant_lib::commands::clusters::list_clusters(&restarted)
+            .unwrap()
+            .len(),
+        1
+    );
+
+    // Its sign-in goes through `aws`, which is not installed here.
+    let hint = invoke(
+        &h,
+        "cloud_login_hint",
+        json!({ "clusterId": clusters[0]["id"] }),
+    )
+    .unwrap();
+    assert_eq!(hint["kind"], "cliMissing");
+    assert_eq!(hint["provider"], "aws");
+
+    invoke(&h, "kubeconfig_remove", json!({ "sourceId": source["id"] })).unwrap();
+    assert_eq!(invoke(&h, "clusters_list", json!({})).unwrap(), json!([]));
+    assert!(
+        !root
+            .join("data")
+            .join("kubeconfigs")
+            .join("cloud-aws.yaml")
+            .exists()
+    );
 }
 
 #[test]
