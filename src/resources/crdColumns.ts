@@ -1,7 +1,7 @@
 // Printer columns of a custom resource, read from its one CRD (`<plural>.<group>`) when its table opens: discovery
 // carries no columns, and the list of all CRDs (with their schemas, megabytes on a big cluster) is never needed.
 import { useEffect, useSyncExternalStore } from "react";
-import { api, type ClusterId, type PrinterColumn, type ResourceKind } from "../api";
+import { api, ApiError, type ClusterId, type PrinterColumn, type ResourceKind } from "../api";
 import { CRD_KIND } from "./kinds/custom";
 
 /** Columns by `cluster|group|plural|version`; `null` while being read. */
@@ -50,10 +50,18 @@ function load(clusterId: ClusterId, kind: ResourceKind): void {
     cache.set(key, columns);
     notify();
   };
-  // Without the right to read the CRD (or for a kind no CRD defines) the table has the standard columns only.
+  // Without the right to read the CRD (or for a kind no CRD defines) the table has the standard columns only, and that
+  // is remembered. Any other failure (timeout, network, 429/503, a cluster not ready yet) is temporary: it is not
+  // remembered, so the next table of the kind reads the CRD again.
   api.resources.get(clusterId, ref).then(
     (crd) => done(crdPrinterColumns(crd, kind.kindRef.version)),
-    () => done([]),
+    (err: unknown) => {
+      const code = err instanceof ApiError ? err.code : undefined;
+      if (code === "forbidden" || code === "notFound") return done([]);
+      if (!cache.has(key)) return;
+      cache.delete(key);
+      notify();
+    },
   );
 }
 

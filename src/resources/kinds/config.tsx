@@ -9,14 +9,14 @@ const keysColumn = column("keys", (o) => keyCount(get(o, "data"), get(o, "binary
 
 registerResource({
   kind: { group: "", version: "v1", kind: "ConfigMap" },
-  sidebar: { section: "config", order: 10, labelKey: "resources:kinds.configmaps" },
+  sidebar: { section: "config", order: 10, labelKey: "resources:kinds.configmaps", icon: "configMap" },
   columns: standardColumns(true, keysColumn),
   actions: ["edit", "delete"],
 });
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Secret" },
-  sidebar: { section: "config", order: 20, labelKey: "resources:kinds.secrets" },
+  sidebar: { section: "config", order: 20, labelKey: "resources:kinds.secrets", icon: "secret" },
   columns: standardColumns(
     true,
     labelsColumn,
@@ -28,14 +28,14 @@ registerResource({
 
 registerResource({
   kind: { group: "", version: "v1", kind: "ResourceQuota" },
-  sidebar: { section: "config", order: 30, labelKey: "resources:kinds.resourcequotas" },
+  sidebar: { section: "config", order: 30, labelKey: "resources:kinds.resourcequotas", icon: "resourceQuota" },
   columns: standardColumns(true),
   actions: ["edit", "delete"],
 });
 
 registerResource({
   kind: { group: "", version: "v1", kind: "LimitRange" },
-  sidebar: { section: "config", order: 40, labelKey: "resources:kinds.limitranges" },
+  sidebar: { section: "config", order: 40, labelKey: "resources:kinds.limitranges", icon: "limitRange" },
   columns: standardColumns(true),
   actions: ["edit", "delete"],
 });
@@ -61,7 +61,7 @@ function hpaMetrics(o: unknown): string {
 
 registerResource({
   kind: { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler" },
-  sidebar: { section: "config", order: 50, labelKey: "resources:kinds.horizontalpodautoscalers" },
+  sidebar: { section: "config", order: 50, labelKey: "resources:kinds.horizontalpodautoscalers", icon: "horizontalPodAutoscaler" },
   columns: [
     ...standardColumns(
       true,
@@ -80,7 +80,7 @@ registerResource({
 
 registerResource({
   kind: { group: "policy", version: "v1", kind: "PodDisruptionBudget" },
-  sidebar: { section: "config", order: 60, labelKey: "resources:kinds.poddisruptionbudgets" },
+  sidebar: { section: "config", order: 60, labelKey: "resources:kinds.poddisruptionbudgets", icon: "podDisruptionBudget" },
   columns: standardColumns(
     true,
     column("minAvailable", (o) => String(get(o, "spec", "minAvailable") ?? "N/A"), { width: "100px" }),
@@ -93,7 +93,7 @@ registerResource({
 
 registerResource({
   kind: { group: "scheduling.k8s.io", version: "v1", kind: "PriorityClass" },
-  sidebar: { section: "config", order: 70, labelKey: "resources:kinds.priorityclasses" },
+  sidebar: { section: "config", order: 70, labelKey: "resources:kinds.priorityclasses", icon: "priorityClass" },
   namespaced: false,
   columns: standardColumns(
     false,

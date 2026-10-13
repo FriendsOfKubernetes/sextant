@@ -5,7 +5,7 @@ import { arr, get, nodeConditions, nodeRoles, str } from "../status";
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Node" },
-  sidebar: { section: "nodes", order: 0, labelKey: "resources:kinds.nodes" },
+  sidebar: { section: "nodes", order: 0, labelKey: "resources:kinds.nodes", icon: "node" },
   namespaced: false,
   columns: [
     ...standardColumns(
@@ -29,7 +29,7 @@ registerResource({
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Namespace" },
-  sidebar: { section: "namespaces", order: 0, labelKey: "resources:kinds.namespaces" },
+  sidebar: { section: "namespaces", order: 0, labelKey: "resources:kinds.namespaces", icon: "namespace" },
   namespaced: false,
   columns: [
     ...standardColumns(false, labelsColumn),

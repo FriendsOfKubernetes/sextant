@@ -13,6 +13,7 @@
 //                                              value: (obj) => usage(obj)?.cpu, render: (obj) => … }]);
 import { useMemo, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import type { ClusterId, KindRef, KubeObject, ResourceKind } from "../api";
+import type { IconName } from "../components";
 import { genericResourceDef } from "./generic";
 import { kindKey } from "./refs";
 
@@ -100,12 +101,35 @@ export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
  */
 export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>(["flux", "argocd"]);
 
+/** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
+export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
+  cluster: "cluster",
+  nodes: "nodes",
+  workloads: "workloads",
+  config: "config",
+  network: "network",
+  storage: "storage",
+  namespaces: "namespaces",
+  events: "events",
+  helm: "helm",
+  accessControl: "accessControl",
+  flux: "flux",
+  argocd: "argocd",
+  customResources: "customResources",
+  settings: "settings",
+};
+
+/** For entries without an icon of their own: custom resources from discovery, a registration that names none. */
+export const DEFAULT_ENTRY_ICON: IconName = "customResource";
+
 export interface SidebarEntry {
   section: SidebarSection;
   /** Position inside the section (ascending), shared with pages of the same section. */
   order: number;
   /** i18n key of the label, plural ("Pods"); also the table title. */
   labelKey: string;
+  /** Icon left of the label; without one the sidebar draws `DEFAULT_ENTRY_ICON`. */
+  icon?: IconName;
 }
 
 export interface ResourceDef {

@@ -7,12 +7,15 @@ import { ReleasesPage } from "./ReleasesPage";
 export const HELM_CHARTS_PAGE = "helm-charts";
 export const HELM_RELEASES_PAGE = "helm-releases";
 
-registerPage({ id: HELM_CHARTS_PAGE, section: "helm", order: 10, labelKey: "helm:sidebar.charts", Component: ChartsPage });
+registerPage({ id: HELM_CHARTS_PAGE, section: "helm", order: 10, labelKey: "helm:sidebar.charts",
+  icon: "helmChart",
+  Component: ChartsPage });
 registerPage({
   id: HELM_RELEASES_PAGE,
   section: "helm",
   order: 20,
   labelKey: "helm:sidebar.releases",
+  icon: "helmRelease",
   Component: ReleasesPage,
 });
 

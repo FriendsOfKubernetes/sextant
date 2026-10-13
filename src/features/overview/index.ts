@@ -10,6 +10,7 @@ registerPage({
   section: "cluster",
   order: 0,
   labelKey: "metrics:overview.sidebar",
+  icon: "overview",
   Component: OverviewPage,
 });
 

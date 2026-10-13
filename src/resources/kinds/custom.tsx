@@ -17,7 +17,7 @@ export function crdVersion(crd: KubeObject): string {
 
 registerResource({
   kind: CRD_KIND,
-  sidebar: { section: "customResources", order: 0, labelKey: "resources:kinds.definitions" },
+  sidebar: { section: "customResources", order: 0, labelKey: "resources:kinds.definitions", icon: "customResourceDefinition" },
   namespaced: false,
   columns: standardColumns(
     false,

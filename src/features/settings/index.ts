@@ -11,6 +11,7 @@ registerPage({
   section: SETTINGS_SECTION,
   order: 0,
   labelKey: "settings:page.title",
+  icon: "settings",
   Component: SettingsPage,
 });
 registerSlot("railFooter", SettingsButton);

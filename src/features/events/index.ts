@@ -4,7 +4,7 @@ import { registerPage } from "../../layout/pages";
 import { EventsPage } from "./EventsPage";
 import { ObjectEventsSection } from "./ObjectEvents";
 
-registerPage({ id: "events", section: "events", order: 0, labelKey: "events:sidebar", Component: EventsPage });
+registerPage({ id: "events", section: "events", order: 0, labelKey: "events:sidebar", icon: "events", Component: EventsPage });
 
 registerDetailsSection({
   id: "events",

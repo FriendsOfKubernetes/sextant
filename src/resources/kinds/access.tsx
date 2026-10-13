@@ -18,14 +18,14 @@ const RBAC = "rbac.authorization.k8s.io";
 
 registerResource({
   kind: { group: "", version: "v1", kind: "ServiceAccount" },
-  sidebar: { section: "accessControl", order: 10, labelKey: "resources:kinds.serviceaccounts" },
+  sidebar: { section: "accessControl", order: 10, labelKey: "resources:kinds.serviceaccounts", icon: "serviceAccount" },
   columns: standardColumns(true),
   actions: ["edit", "delete"],
 });
 
 registerResource({
   kind: { group: RBAC, version: "v1", kind: "ClusterRole" },
-  sidebar: { section: "accessControl", order: 20, labelKey: "resources:kinds.clusterroles" },
+  sidebar: { section: "accessControl", order: 20, labelKey: "resources:kinds.clusterroles", icon: "clusterRole" },
   namespaced: false,
   columns: standardColumns(false),
   actions: ["edit", "delete"],
@@ -33,14 +33,14 @@ registerResource({
 
 registerResource({
   kind: { group: RBAC, version: "v1", kind: "Role" },
-  sidebar: { section: "accessControl", order: 30, labelKey: "resources:kinds.roles" },
+  sidebar: { section: "accessControl", order: 30, labelKey: "resources:kinds.roles", icon: "role" },
   columns: standardColumns(true),
   actions: ["edit", "delete"],
 });
 
 registerResource({
   kind: { group: RBAC, version: "v1", kind: "ClusterRoleBinding" },
-  sidebar: { section: "accessControl", order: 40, labelKey: "resources:kinds.clusterrolebindings" },
+  sidebar: { section: "accessControl", order: 40, labelKey: "resources:kinds.clusterrolebindings", icon: "clusterRoleBinding" },
   namespaced: false,
   columns: standardColumns(false, bindingsColumn),
   actions: ["edit", "delete"],
@@ -48,7 +48,7 @@ registerResource({
 
 registerResource({
   kind: { group: RBAC, version: "v1", kind: "RoleBinding" },
-  sidebar: { section: "accessControl", order: 50, labelKey: "resources:kinds.rolebindings" },
+  sidebar: { section: "accessControl", order: 50, labelKey: "resources:kinds.rolebindings", icon: "roleBinding" },
   columns: standardColumns(true, bindingsColumn),
   actions: ["edit", "delete"],
 });

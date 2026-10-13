@@ -17,6 +17,7 @@ registerPage({
   section: "network",
   order: 100,
   labelKey: "portforward:sidebar",
+  icon: "portForwarding",
   Component: PortForwardPage,
 });
 

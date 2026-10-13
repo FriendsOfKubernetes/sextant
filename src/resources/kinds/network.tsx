@@ -5,7 +5,7 @@ import { arr, externalIps, get, selectorText, servicePorts, str } from "../statu
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Service" },
-  sidebar: { section: "network", order: 10, labelKey: "resources:kinds.services" },
+  sidebar: { section: "network", order: 10, labelKey: "resources:kinds.services", icon: "service" },
   columns: [
     ...standardColumns(
       true,
@@ -44,7 +44,7 @@ function endpointAddresses(o: unknown): string {
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Endpoints" },
-  sidebar: { section: "network", order: 20, labelKey: "resources:kinds.endpoints" },
+  sidebar: { section: "network", order: 20, labelKey: "resources:kinds.endpoints", icon: "endpoints" },
   columns: standardColumns(true, column("endpoints", endpointAddresses, { width: "minmax(200px, 4fr)" })),
   actions: ["edit", "delete"],
 });
@@ -65,7 +65,7 @@ function ingressRules(o: unknown): string {
 
 registerResource({
   kind: { group: "networking.k8s.io", version: "v1", kind: "Ingress" },
-  sidebar: { section: "network", order: 30, labelKey: "resources:kinds.ingresses" },
+  sidebar: { section: "network", order: 30, labelKey: "resources:kinds.ingresses", icon: "ingress" },
   columns: standardColumns(
     true,
     column(
@@ -83,7 +83,7 @@ registerResource({
 
 registerResource({
   kind: { group: "networking.k8s.io", version: "v1", kind: "IngressClass" },
-  sidebar: { section: "network", order: 40, labelKey: "resources:kinds.ingressclasses" },
+  sidebar: { section: "network", order: 40, labelKey: "resources:kinds.ingressclasses", icon: "ingressClass" },
   namespaced: false,
   columns: standardColumns(
     false,
@@ -97,7 +97,7 @@ registerResource({
 
 registerResource({
   kind: { group: "networking.k8s.io", version: "v1", kind: "NetworkPolicy" },
-  sidebar: { section: "network", order: 50, labelKey: "resources:kinds.networkpolicies" },
+  sidebar: { section: "network", order: 50, labelKey: "resources:kinds.networkpolicies", icon: "networkPolicy" },
   columns: standardColumns(
     true,
     column("policyTypes", (o) => arr(get(o, "spec", "policyTypes")).map(String).join(", "), {

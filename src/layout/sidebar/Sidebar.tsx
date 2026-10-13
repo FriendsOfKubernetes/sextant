@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
+import { Icon, type IconName } from "../../components";
 import {
   customResourceKinds,
   findKind,
@@ -20,7 +21,7 @@ import {
   viewIdOf,
 } from "../../resources";
 // Not re-exported from src/resources/index.ts: only the sidebar uses them.
-import { DISCOVERED_SECTIONS } from "../../resources/registry";
+import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../resources/registry";
 import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages } from "../pages";
 import "./sidebar.css";
@@ -34,6 +35,7 @@ interface Entry {
   /** i18n key, or a literal label from cluster data (CRD kinds). */
   labelKey?: string;
   label?: string;
+  icon?: IconName;
 }
 
 interface Section {
@@ -73,15 +75,16 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
     setView(clusterId, id);
   };
   const label = (e: Entry) => (e.labelKey ? t(e.labelKey) : (e.label ?? e.id));
-  const item = (e: Entry, nested = true) => (
+  const item = (e: Entry, nested = true, icon: IconName | undefined = e.icon) => (
     <li key={e.id}>
       <button
         type="button"
-        className={`sidebar__item${nested ? " sidebar__item--nested" : ""}${e.id === view ? " sidebar__item--active" : ""}`}
+        className={`sidebar__item${nested ? " sidebar__item--nested" : " sidebar__item--single"}${e.id === view ? " sidebar__item--active" : ""}`}
         aria-current={e.id === view ? "page" : undefined}
         onClick={() => open(e.id)}
       >
-        {label(e)}
+        <Icon name={icon ?? DEFAULT_ENTRY_ICON} className="sidebar__icon" />
+        <span className="sidebar__label">{label(e)}</span>
       </button>
     </li>
   );
@@ -91,7 +94,8 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
       {sections.map((section) => {
         const only = section.entries[0];
         if (SINGLE_ENTRY.has(section.id) && section.entries.length === 1 && !section.groups?.length && only) {
-          return item(only, false);
+          // The link stands for the whole section: it wears the section's icon.
+          return item(only, false, sectionIcon(section.id));
         }
         const sectionOpen = isOpen(section.id);
         return (
@@ -105,7 +109,8 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
               <span className="sidebar__chevron" aria-hidden>
                 {sectionOpen ? "▾" : "▸"}
               </span>
-              {t(`resources:sections.${section.id}`, { defaultValue: section.id })}
+              <Icon name={sectionIcon(section.id) ?? DEFAULT_ENTRY_ICON} className="sidebar__icon" />
+              <span className="sidebar__label">{t(`resources:sections.${section.id}`, { defaultValue: section.id })}</span>
             </button>
             {sectionOpen && (
               <ul className="sidebar__list sidebar__list--nested">
@@ -124,7 +129,8 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
                         <span className="sidebar__chevron" aria-hidden>
                           {groupOpen ? "▾" : "▸"}
                         </span>
-                        {g.group}
+                        <Icon name="customResources" className="sidebar__icon" />
+                        <span className="sidebar__label">{g.group}</span>
                       </button>
                       {groupOpen && (
                         <ul className="sidebar__list sidebar__list--nested">{g.entries.map((e) => item(e))}</ul>
@@ -141,6 +147,10 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   );
 }
 
+function sectionIcon(id: string): IconName | undefined {
+  return (SECTION_ICONS as Record<string, IconName | undefined>)[id];
+}
+
 function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _registryVersion: number): Section[] {
   const bySection = new Map<string, Entry[]>();
   const add = (section: string, entry: Entry) => {
@@ -152,15 +162,15 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
     if (!def.sidebar) continue;
     // Once discovery is known, kinds the cluster does not serve are hidden; kinds of installed tools wait for it.
     if (kinds ? !findKind(kinds, def.kind) : DISCOVERED_SECTIONS.has(def.sidebar.section)) continue;
-    add(def.sidebar.section, { id: viewIdOf(def.kind), order: def.sidebar.order, labelKey: def.sidebar.labelKey });
+    add(def.sidebar.section, { id: viewIdOf(def.kind), order: def.sidebar.order, labelKey: def.sidebar.labelKey, icon: def.sidebar.icon });
   }
-  for (const page of getPages()) add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey });
+  for (const page of getPages()) add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey, icon: page.icon });
 
   const groups = new Map<string, Entry[]>();
   const addCustom = (group: string, kind: string) => {
     const list = groups.get(group) ?? [];
     const id = viewIdOf({ group, kind });
-    if (!list.some((e) => e.id === id)) list.push({ id, order: 0, label: kind });
+    if (!list.some((e) => e.id === id)) list.push({ id, order: 0, label: kind, icon: "customResource" });
     groups.set(group, list);
   };
   for (const k of customResourceKinds(kinds)) {

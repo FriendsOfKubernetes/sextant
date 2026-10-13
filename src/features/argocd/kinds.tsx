@@ -70,7 +70,7 @@ const appProjectColumns: ColumnDef[] = standardColumns(
 
 registerResource({
   kind: APPLICATION,
-  sidebar: { section: "argocd", order: 10, labelKey: "argocd:sidebar.applications" },
+  sidebar: { section: "argocd", order: 10, labelKey: "argocd:sidebar.applications", icon: "argoApplication" },
   columns: applicationColumns,
   details: ApplicationDetails,
   actions: ["argoSync", "argoRefresh", "argoHardRefresh", "argoTerminate", "argoDiff", "argoOpenUi", "edit", "delete"],
@@ -78,7 +78,7 @@ registerResource({
 
 registerResource({
   kind: APPLICATION_SET,
-  sidebar: { section: "argocd", order: 20, labelKey: "argocd:sidebar.applicationSets" },
+  sidebar: { section: "argocd", order: 20, labelKey: "argocd:sidebar.applicationSets", icon: "argoApplicationSet" },
   columns: applicationSetColumns,
   details: ApplicationSetDetails,
   actions: ["argoOpenUi", "edit", "delete"],
@@ -86,7 +86,7 @@ registerResource({
 
 registerResource({
   kind: APP_PROJECT,
-  sidebar: { section: "argocd", order: 30, labelKey: "argocd:sidebar.appProjects" },
+  sidebar: { section: "argocd", order: 30, labelKey: "argocd:sidebar.appProjects", icon: "argoAppProject" },
   columns: appProjectColumns,
   details: AppProjectDetails,
   actions: ["argoOpenUi", "edit", "delete"],

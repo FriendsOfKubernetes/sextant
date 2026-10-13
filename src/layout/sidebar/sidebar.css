@@ -3,7 +3,8 @@
  * `.sidebar__item`; the rules here are compound selectors so they win regardless of the order.
  *
  * Columns: a group's chevron (12px) + gap (4px) puts its label 16px right of the row's padding, which is exactly the
- * extra indent of the entries inside it — the label lines up with its entries.
+ * extra indent of the entries inside it — the icon of a group lines up with the icons of its entries, and so do the
+ * labels. A section shown as one link has no chevron; its padding puts its icon in the same column as the groups'.
  */
 .sidebar__list.sidebar__list--nested {
   list-style: none;
@@ -13,6 +14,17 @@
 
 .sidebar__item.sidebar__item--nested {
   padding-left: 32px;
+}
+
+.sidebar__item.sidebar__item--single {
+  padding-left: 32px;
+}
+
+.sidebar__item.sidebar__item--nested,
+.sidebar__item.sidebar__item--single {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .sidebar__list--nested .sidebar__list--nested .sidebar__item.sidebar__item--nested {
@@ -35,4 +47,23 @@
   width: 12px;
   font-size: 10px;
   color: var(--color-text-muted);
+}
+
+/* 16px icon left of the label: muted, in the accent colour on the active entry. */
+.sidebar__icon {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.sidebar__item.sidebar__group .sidebar__icon {
+  margin-right: 4px;
+}
+
+.sidebar__item--active .sidebar__icon {
+  color: inherit;
+}
+
+.sidebar__label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

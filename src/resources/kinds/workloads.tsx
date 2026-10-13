@@ -91,14 +91,14 @@ const conditionsColumn = column("conditions", (o) => trueConditions(o).join(" ")
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Pod" },
-  sidebar: { section: "workloads", order: 10, labelKey: "resources:kinds.pods" },
+  sidebar: { section: "workloads", order: 10, labelKey: "resources:kinds.pods", icon: "pod" },
   columns: pods,
   actions: ["logs", "exec", "portForward", "edit", "delete"],
 });
 
 registerResource({
   kind: { group: "apps", version: "v1", kind: "Deployment" },
-  sidebar: { section: "workloads", order: 20, labelKey: "resources:kinds.deployments" },
+  sidebar: { section: "workloads", order: 20, labelKey: "resources:kinds.deployments", icon: "deployment" },
   columns: [
     ...standardColumns(
       true,
@@ -112,7 +112,7 @@ registerResource({
 
 registerResource({
   kind: { group: "apps", version: "v1", kind: "DaemonSet" },
-  sidebar: { section: "workloads", order: 30, labelKey: "resources:kinds.daemonsets" },
+  sidebar: { section: "workloads", order: 30, labelKey: "resources:kinds.daemonsets", icon: "daemonSet" },
   columns: standardColumns(
     true,
     column(
@@ -129,7 +129,7 @@ registerResource({
 
 registerResource({
   kind: { group: "apps", version: "v1", kind: "StatefulSet" },
-  sidebar: { section: "workloads", order: 40, labelKey: "resources:kinds.statefulsets" },
+  sidebar: { section: "workloads", order: 40, labelKey: "resources:kinds.statefulsets", icon: "statefulSet" },
   columns: standardColumns(
     true,
     column("pods", readyOfDesired, { width: "80px" }),
@@ -140,7 +140,7 @@ registerResource({
 
 registerResource({
   kind: { group: "apps", version: "v1", kind: "ReplicaSet" },
-  sidebar: { section: "workloads", order: 50, labelKey: "resources:kinds.replicasets" },
+  sidebar: { section: "workloads", order: 50, labelKey: "resources:kinds.replicasets", icon: "replicaSet" },
   columns: standardColumns(
     true,
     column("desired", (o) => num(get(o, "spec", "replicas")) ?? 0, { width: "80px" }),
@@ -159,7 +159,7 @@ function jobConditions(job: KubeObject): string[] {
 
 registerResource({
   kind: { group: "batch", version: "v1", kind: "Job" },
-  sidebar: { section: "workloads", order: 60, labelKey: "resources:kinds.jobs" },
+  sidebar: { section: "workloads", order: 60, labelKey: "resources:kinds.jobs", icon: "job" },
   columns: [
     ...standardColumns(
       true,
@@ -179,7 +179,7 @@ registerResource({
 
 registerResource({
   kind: { group: "batch", version: "v1", kind: "CronJob" },
-  sidebar: { section: "workloads", order: 70, labelKey: "resources:kinds.cronjobs" },
+  sidebar: { section: "workloads", order: 70, labelKey: "resources:kinds.cronjobs", icon: "cronJob" },
   columns: standardColumns(
     true,
     column("schedule", (o) => str(get(o, "spec", "schedule")), { width: "minmax(110px, 1fr)" }),

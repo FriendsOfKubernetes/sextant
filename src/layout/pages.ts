@@ -2,6 +2,7 @@
 // A feature calls `registerPage` from its `index.ts`; the sidebar and the main view read the registry.
 import type { ComponentType } from "react";
 import type { ClusterId } from "../api";
+import type { IconName } from "../components";
 
 export interface PageProps {
   clusterId: ClusterId;
@@ -16,6 +17,8 @@ export interface PageDef {
   order: number;
   /** i18n key of the sidebar label, e.g. "helm:sidebar.releases". */
   labelKey: string;
+  /** Icon left of the label in the sidebar; without one the sidebar draws `DEFAULT_ENTRY_ICON`. */
+  icon?: IconName;
   Component: ComponentType<PageProps>;
 }
 

@@ -5,7 +5,7 @@ import { get, labelsOf, str } from "../status";
 
 registerResource({
   kind: { group: "", version: "v1", kind: "PersistentVolumeClaim" },
-  sidebar: { section: "storage", order: 10, labelKey: "resources:kinds.persistentvolumeclaims" },
+  sidebar: { section: "storage", order: 10, labelKey: "resources:kinds.persistentvolumeclaims", icon: "persistentVolumeClaim" },
   columns: [
     ...standardColumns(
       true,
@@ -23,7 +23,7 @@ registerResource({
 
 registerResource({
   kind: { group: "", version: "v1", kind: "PersistentVolume" },
-  sidebar: { section: "storage", order: 20, labelKey: "resources:kinds.persistentvolumes" },
+  sidebar: { section: "storage", order: 20, labelKey: "resources:kinds.persistentvolumes", icon: "persistentVolume" },
   namespaced: false,
   columns: [
     ...standardColumns(
@@ -60,7 +60,7 @@ const DEFAULT_CLASS = "storageclass.kubernetes.io/is-default-class";
 
 registerResource({
   kind: { group: "storage.k8s.io", version: "v1", kind: "StorageClass" },
-  sidebar: { section: "storage", order: 30, labelKey: "resources:kinds.storageclasses" },
+  sidebar: { section: "storage", order: 30, labelKey: "resources:kinds.storageclasses", icon: "storageClass" },
   namespaced: false,
   columns: standardColumns(
     false,
