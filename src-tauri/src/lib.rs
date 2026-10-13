@@ -3,6 +3,7 @@
 pub mod commands;
 pub mod events;
 pub mod mcp;
+pub mod mcp_proxy;
 pub mod pty;
 pub mod state;
 mod window;
