@@ -160,7 +160,7 @@ describe("AppShell", () => {
     }
     registerDockTab("logs", LogsTab);
     let ran = 0;
-    registerDockAction({ id: "t-create", order: 1, labelKey: "common:actions.confirm", icon: "+", run: () => ran++ });
+    registerDockAction({ id: "t-create", order: 1, labelKey: "common:actions.confirm", icon: "add", run: () => ran++ });
     try {
       render(<AppShell />);
       act(() => {

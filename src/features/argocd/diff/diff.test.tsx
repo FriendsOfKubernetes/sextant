@@ -80,6 +80,8 @@ function status(over: Partial<ArgoStatus> = {}): ArgoStatus {
     localUsers: true,
     sso: false,
     expired: false,
+    saved: false,
+    saveError: null,
     ...over,
   };
 }
@@ -250,7 +252,7 @@ describe("Argo CD diff", () => {
   it("forgets the saved login and shows the sign-in window", async () => {
     backend = mockBackend({
       argocd_diff: () => [changed],
-      argocd_status: () => status({ source: "saved" }),
+      argocd_status: () => status({ source: "saved", saved: true }),
       argocd_logout: () => status({ signedIn: false, source: null, user: null }),
     });
     show();
@@ -262,6 +264,56 @@ describe("Argo CD diff", () => {
       clusterId: "c1",
       options: { forget: true },
     });
+  });
+
+  it("offers to forget a saved login also when the session came from somewhere else", async () => {
+    backend = mockBackend({
+      argocd_diff: () => [changed],
+      argocd_status: () => status({ source: "secret", saved: true }),
+    });
+    show();
+
+    expect(await screen.findByRole("button", { name: "Forget saved login" })).toBeInTheDocument();
+  });
+
+  it("does not offer to forget a login that is not saved", async () => {
+    backend = mockBackend({
+      argocd_diff: () => [changed],
+      argocd_status: () => status({ source: "secret", saved: false }),
+    });
+    show();
+
+    await screen.findByText("Deployment shop/guestbook-ui");
+    expect(screen.queryByRole("button", { name: "Forget saved login" })).toBeNull();
+  });
+
+  it("says once that the login was not saved when the system keychain refuses it, and still shows the diff", async () => {
+    let signedIn = false;
+    backend = mockBackend({
+      argocd_diff: () => {
+        if (!signedIn) throw unauthorized;
+        return [changed];
+      },
+      argocd_status: () => status({ signedIn, source: signedIn ? "manual" : null, user: signedIn ? "admin" : null }),
+      argocd_login: () => {
+        signedIn = true;
+        return status({ source: "manual", saveError: "the system credential store: no secret service is running" });
+      },
+    });
+    show();
+
+    const form = await screen.findByRole("form", { name: "Sign in to Argo CD" });
+    fireEvent.change(within(form).getByLabelText("Password"), { target: { value: "pw-1" } });
+    fireEvent.click(within(form).getByLabelText("Remember on this computer (system keychain)"));
+    fireEvent.click(within(form).getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("Deployment shop/guestbook-ui")).toBeInTheDocument();
+    const notes = screen.getAllByText(/could not be saved|was not saved|signed in, but/i);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toHaveTextContent(
+      "Signed in, but the login could not be saved: the system credential store: no secret service is running",
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("shows other errors with a retry", async () => {

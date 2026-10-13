@@ -39,6 +39,7 @@ registerDockAction({
   id: "terminal",
   order: 20,
   labelKey: "terminal:local.open",
+  icon: "shell",
   available: ({ activeClusterId }) => activeClusterId !== null,
   run: ({ activeClusterId }) => {
     if (activeClusterId) void openLocalTerminal(activeClusterId);

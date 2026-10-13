@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { KindRef, KubeObject, ObjectRef, ResourceKind } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { DetailsPanel } from "../../layout/details/DetailsPanel";
+import { ResourceTable } from "../../components/Table";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import { Sidebar } from "../../layout/sidebar/Sidebar";
 import { getResourceDef, kindFromApiVersion, resetClusterKinds, type ColumnDef } from "../../resources";
@@ -382,6 +383,57 @@ describe("related objects while their lists load", () => {
     emitSnapshot(wb, await watchOf(wb, "Ingress", (s) => s.labelSelector === selector), []);
 
     expect(related.queryByRole("status")).toBeNull();
+    expect(related.getByRole("button", { name: "Open Deployment podinfo-helm" })).toBeInTheDocument();
+  });
+});
+
+function emitWatchError(id: string, code: string, message: string): void {
+  act(() => wb.backend.emit(`watch:${id}`, { type: "error", code, message }));
+}
+
+describe("a Flux list when its watch fails", () => {
+  it("shows the error with Retry, not an empty list", async () => {
+    render(<ResourceTable clusterId="c1" kind={kindOf(kustomization)} />);
+    emitWatchError(await listWatch("Kustomization"), "unreachable", "connection refused");
+    expect(screen.getByRole("alert")).toHaveTextContent("connection refused");
+    expect(screen.queryByText(/No .* found/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+});
+
+describe("related objects when a list fails", () => {
+  it("a source shows the error of the list with Retry instead of saying nothing uses it, and Retry lists again", async () => {
+    await openDetails(bucket);
+    const related = within(section("flux"));
+    const failed = await listWatch("Kustomization");
+    emitWatchError(failed, "forbidden", "kustomizations.kustomize.toolkit.fluxcd.io is forbidden");
+    emitSnapshot(wb, await listWatch("HelmRelease"), []);
+
+    const alert = related.getByRole("alert");
+    expect(alert).toHaveAttribute("data-code", "forbidden");
+    expect(alert).toHaveTextContent("kustomizations.kustomize.toolkit.fluxcd.io is forbidden");
+    expect(related.queryByText("No Kustomization or HelmRelease uses this source.")).toBeNull();
+    expect(related.queryByRole("status")).toBeNull();
+
+    fireEvent.click(related.getByRole("button", { name: "Retry" }));
+    const again = await listWatch("Kustomization");
+    expect(again).not.toBe(failed);
+    emitSnapshot(wb, again, []);
+    emitSnapshot(wb, await listWatch("HelmRelease"), []);
+    expect(related.queryByRole("alert")).toBeNull();
+    expect(related.getByText("No Kustomization or HelmRelease uses this source.")).toBeInTheDocument();
+  });
+
+  it("a HelmRelease shows the error of a labelled list with Retry next to the rows that did load", async () => {
+    await openDetails(helmRelease);
+    const related = within(section("flux"));
+    const selector = "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux";
+    emitWatchError(await watchOf(wb, "Secret", (s) => s.labelSelector === selector), "forbidden", "secrets is forbidden");
+
+    const alert = related.getByRole("alert");
+    expect(alert).toHaveTextContent("secrets is forbidden");
+    expect(related.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    // The inventory of the release is still listed.
     expect(related.getByRole("button", { name: "Open Deployment podinfo-helm" })).toBeInTheDocument();
   });
 });

@@ -2,7 +2,7 @@
 // (`IconName`) and never import `lucide-react` themselves, so the set can be swapped here in one place.
 //
 //   <Icon name="logs" />                    // 16 px (`--icon-size`), drawn in the text color, hidden from screen readers
-//   renderIcon(action.icon)                 // an `IconName` → SVG, any other string → the glyph as text
+//   renderIcon(action.icon)                 // an `IconName` → SVG, `undefined` → nothing
 //
 // An icon is decoration: the button it is in keeps its name as visible text or `aria-label`, so the SVG is
 // `aria-hidden` and has no <title>. No trademark logos (Flux, Argo CD get icons close in meaning).
@@ -220,9 +220,6 @@ const ICONS = {
 /** Name of an icon of the set. */
 export type IconName = keyof typeof ICONS;
 
-/** An icon name, or (for compatibility) a short text glyph drawn as text. */
-export type IconSpec = IconName | (string & {});
-
 export interface IconProps {
   name: IconName;
   /** Pixels; default `var(--icon-size)` (16 px). */
@@ -248,13 +245,8 @@ export function isIconName(spec: string): spec is IconName {
   return Object.hasOwn(ICONS, spec);
 }
 
-/** `spec` as an SVG icon if it names one, otherwise as a hidden text glyph; `undefined` → nothing. */
-export function renderIcon(spec: IconSpec | undefined, size?: number): ReactNode {
-  if (spec === undefined) return null;
-  if (isIconName(spec)) return <Icon name={spec} size={size} />;
-  return (
-    <span aria-hidden="true" className="icon-glyph">
-      {spec}
-    </span>
-  );
+/** `name` as an SVG icon; `undefined` → nothing. */
+export function renderIcon(name: IconName | undefined, size?: number): ReactNode {
+  if (name === undefined) return null;
+  return <Icon name={name} size={size} />;
 }

@@ -24,4 +24,14 @@ sso: boolean,
 /**
  * The last session was refused by Argo CD (expired or revoked) and signing in again did not work.
  */
-expired: boolean, };
+expired: boolean, 
+/**
+ * The OS credential store holds a login for this Argo CD (whatever the current session came from), so "Forget"
+ * has something to delete.
+ */
+saved: boolean, 
+/**
+ * Only in the answer of `argocd_login` with "Remember": signed in, but the OS credential store refused the
+ * login. The reason, without any secret.
+ */
+saveError: string | null, };

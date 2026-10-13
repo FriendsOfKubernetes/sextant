@@ -62,11 +62,13 @@ describe("Button", () => {
     expect(button).not.toHaveClass("btn--icon");
   });
 
-  it("draws a glyph that is not a name of the set as text, hidden from the name", () => {
-    render(<Button icon="≡">Logs</Button>);
-    const button = screen.getByRole("button", { name: "Logs" });
-    expect(button).toHaveTextContent("≡Logs");
-    expect(button.querySelector("svg")).toBeNull();
+  it("takes only names of the set as `icon`: a text glyph does not type-check", () => {
+    // Checked by `tsc` (npm run check): the directive fails when the line below stops being a type error.
+    const wrong = () => (
+      // @ts-expect-error a glyph is not an IconName
+      <Button icon="≡">Logs</Button>
+    );
+    expect(wrong).toBeTypeOf("function");
   });
 
   it("icon only: the label is the accessible name and the tooltip, the content only the icon", () => {

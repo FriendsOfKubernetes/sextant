@@ -216,6 +216,15 @@ describe("Shell action", () => {
 });
 
 describe("Terminal button", () => {
+  it("is drawn with an icon of the set, like the other dock buttons", () => {
+    useClustersStore.setState({ clusters: [] });
+    act(() => useAppStore.getState().setActiveCluster("c1"));
+    render(<App />);
+    const button = screen.getByRole("button", { name: "Terminal" });
+    expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(button.textContent).toBe("");
+  });
+
   it("is shown with an active cluster and opens a local terminal for it", async () => {
     useClustersStore.setState({
       clusters: [

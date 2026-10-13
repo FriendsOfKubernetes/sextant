@@ -400,7 +400,7 @@ describe("actions", () => {
     let ran: string[] = [];
     registerAction("delete", {
       labelKey: "details:actions",
-      icon: "x",
+      icon: "delete",
       appliesTo: () => true,
       run: (ctx) => {
         ran = ctx.refs.map((r) => r.name);

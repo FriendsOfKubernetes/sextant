@@ -12,10 +12,10 @@ const pod = podJson as KubeObject;
 beforeEach(() => resetActions());
 
 describe("ActionBar", () => {
-  it("shows each action as a standard button with its icon and its label; a glyph still works", async () => {
+  it("shows each action as a standard button with its icon and its label", async () => {
     const logs = vi.fn();
     registerAction("logs", { labelKey: "Logs", icon: "logs", appliesTo: () => true, run: logs });
-    registerAction("delete", { labelKey: "Delete", icon: "×", danger: true, appliesTo: () => true, run: vi.fn() });
+    registerAction("delete", { labelKey: "Delete", icon: "delete", danger: true, appliesTo: () => true, run: vi.fn() });
     render(<ActionBar clusterId="c1" kind={POD} obj={pod} />);
 
     const bar = screen.getByRole("toolbar");
@@ -28,8 +28,8 @@ describe("ActionBar", () => {
 
     const deleteButton = within(bar).getByRole("button", { name: "Delete" });
     expect(deleteButton).toHaveClass("btn", "btn--danger");
-    expect(deleteButton.querySelector("svg")).toBeNull();
-    expect(deleteButton).toHaveTextContent("×Delete");
+    expect(deleteButton.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(deleteButton).toHaveTextContent(/^Delete$/);
 
     fireEvent.click(logsButton);
     await waitFor(() => expect(logs).toHaveBeenCalledTimes(1));

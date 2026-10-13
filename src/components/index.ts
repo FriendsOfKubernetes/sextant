@@ -6,7 +6,7 @@ export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog";
 export { Dialog, type DialogProps } from "./Dialog";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export { ErrorState, type ErrorStateProps } from "./ErrorState";
-export { Icon, isIconName, renderIcon, type IconName, type IconProps, type IconSpec } from "./icons";
+export { Icon, isIconName, renderIcon, type IconName, type IconProps } from "./icons";
 export { LoadingIndicator, SLOW_AFTER_S, useElapsedSeconds, type LoadingIndicatorProps } from "./LoadingIndicator";
 export { Radio, type RadioProps } from "./Radio";
 export { Tabs, type TabItem, type TabsProps } from "./Tabs";

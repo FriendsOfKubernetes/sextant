@@ -24,6 +24,8 @@ export interface ArgoDiffDialogProps {
 export function ArgoDiffDialog({ clusterId, app, close }: ArgoDiffDialogProps) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>({ type: "loading" });
+  // Why the login typed in with "Remember" was not saved (the OS credential store refused it); until signing out.
+  const [saveError, setSaveError] = useState<string | null>(null);
   // Answers of an older request (or after the dialog closed) are dropped.
   const request = useRef(0);
 
@@ -58,6 +60,7 @@ export function ArgoDiffDialog({ clusterId, app, close }: ArgoDiffDialogProps) {
     const id = ++request.current;
     try {
       const after = await api.argocd.logout(clusterId, forget);
+      setSaveError(null);
       if (id === request.current) setPhase({ type: "login", status: after, reason: null });
     } catch (err) {
       if (id === request.current) setPhase({ type: "error", error: toApiError(err) });
@@ -70,12 +73,16 @@ export function ArgoDiffDialog({ clusterId, app, close }: ArgoDiffDialogProps) {
       <div className="argo-diff-dialog">
         {phase.type === "loading" && <LoadingIndicator text={t("argocd:diff.loading")} />}
         {phase.type === "login" && (
-          <LoginForm clusterId={clusterId} status={phase.status} reason={phase.reason} onSignedIn={() => void load()} />
+          <LoginForm clusterId={clusterId} status={phase.status} reason={phase.reason} onSignedIn={(signed) => {
+              setSaveError(signed.saveError);
+              void load();
+            }}
+          />
         )}
         {phase.type === "error" && <DiffError error={phase.error} onRetry={() => void load()} />}
         {phase.type === "diff" && (
           <>
-            <SessionBar status={phase.status} onReload={() => void load()} onSignOut={signOut} />
+            <SessionBar status={phase.status} saveError={saveError} onReload={() => void load()} onSignOut={signOut} />
             <DiffView items={phase.items} />
           </>
         )}
@@ -86,10 +93,12 @@ export function ArgoDiffDialog({ clusterId, app, close }: ArgoDiffDialogProps) {
 
 function SessionBar({
   status,
+  saveError,
   onReload,
   onSignOut,
 }: {
   status: ArgoStatus | null;
+  saveError: string | null;
   onReload: () => void;
   onSignOut: (forget: boolean) => void;
 }) {
@@ -97,22 +106,21 @@ function SessionBar({
   const who = status?.user ? t("argocd:diff.signedInAs", { user: status.user }) : t("argocd:diff.signedIn");
   const how = status?.source ? t(`argocd:diff.source.${status.source}`) : "";
   return (
-    <div className="argo-diff__session">
-      <span>{how ? `${who} · ${how}` : who}</span>
-      <span className="argo-diff__session-actions">
-        <Button onClick={onReload}>
-          {t("argocd:diff.reload")}
-        </Button>
-        <Button onClick={() => onSignOut(false)}>
-          {t("argocd:diff.signOut")}
-        </Button>
-        {status?.source === "saved" && (
-          <Button onClick={() => onSignOut(true)}>
-            {t("argocd:diff.forget")}
-          </Button>
-        )}
-      </span>
-    </div>
+    <>
+      <div className="argo-diff__session">
+        <span>{how ? `${who} · ${how}` : who}</span>
+        <span className="argo-diff__session-actions">
+          <Button onClick={onReload}>{t("argocd:diff.reload")}</Button>
+          <Button onClick={() => onSignOut(false)}>{t("argocd:diff.signOut")}</Button>
+          {status?.saved && <Button onClick={() => onSignOut(true)}>{t("argocd:diff.forget")}</Button>}
+        </span>
+      </div>
+      {saveError !== null && (
+        <p className="argo-diff__note" role="status">
+          {t("argocd:diff.notSaved", { reason: saveError })}
+        </p>
+      )}
+    </>
   );
 }
 

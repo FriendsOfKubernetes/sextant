@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { KindRef, KubeObject, ObjectRef, ResourceKind } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { i18n } from "../../i18n";
 import { DetailsPanel } from "../../layout/details/DetailsPanel";
+import { ResourceTable } from "../../components/Table";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import { Sidebar } from "../../layout/sidebar/Sidebar";
 import "../../resources";
@@ -146,6 +147,17 @@ function treeRows(): string[] {
     .map((r) => [r.getAttribute("aria-level"), ...within(r).getAllByRole("cell").map((c) => c.textContent)].join(" "));
 }
 
+describe("an Argo CD list when its watch fails", () => {
+  it("shows the error with Retry, not an empty list", async () => {
+    render(<ResourceTable clusterId="c1" kind={APPLICATION} />);
+    const id = await watchOf(wb, "Application");
+    act(() => wb.backend.emit(`watch:${id}`, { type: "error", code: "unreachable", message: "connection refused" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("connection refused");
+    expect(screen.queryByText(/No .* found/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+});
+
 describe("details of an Application", () => {
   it("show sync and health, the source, the destination and the sync policy", async () => {
     await openApplication(copy(application));
@@ -199,6 +211,27 @@ describe("details of an Application", () => {
     emitSnapshot(wb, await watchOf(wb, "Pod"), [copy(pod)]);
 
     expect(tree.queryByRole("status")).toBeNull();
+  });
+
+  it("the resource tree shows the error of a list of descendants with Retry, and Retry lists again", async () => {
+    await openApplication(copy(application));
+    const failed = await watchOf(wb, "Pod");
+    emitSnapshot(wb, await watchOf(wb, "ReplicaSet"), [copy(replicaSet)]);
+    act(() => wb.backend.emit(`watch:${failed}`, { type: "error", code: "forbidden", message: "pods is forbidden" }));
+
+    const tree = within(section("argocdResources"));
+    expect(tree.getByRole("alert")).toHaveTextContent("pods is forbidden");
+    expect(tree.queryByRole("status")).toBeNull();
+    // The managed resources of the app are still listed.
+    expect(treeRows()).toContain("1 Deployment guestbook-ui sextant-argo Synced ");
+
+    fireEvent.click(tree.getByRole("button", { name: "Retry" }));
+    const again = await watchOf(wb, "Pod");
+    expect(again).not.toBe(failed);
+    emitSnapshot(wb, again, [copy(pod)]);
+    emitSnapshot(wb, await watchOf(wb, "ReplicaSet"), [copy(replicaSet)]);
+    expect(tree.queryByRole("alert")).toBeNull();
+    expect(treeRows()).toContain("3 Pod guestbook-ui-6d476cf4df-sfw78 sextant-argo  Running");
   });
 
   it("a Job of the app shows its Pods", async () => {
@@ -375,6 +408,8 @@ const argoStatus = (namespace: string) => ({
   localUsers: true,
   sso: false,
   expired: false,
+  saved: false,
+  saveError: null,
 });
 
 describe("Open Argo CD UI", () => {

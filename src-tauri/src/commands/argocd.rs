@@ -58,6 +58,12 @@ pub struct ArgoStatus {
     pub sso: bool,
     /// The last session was refused by Argo CD (expired or revoked) and signing in again did not work.
     pub expired: bool,
+    /// The OS credential store holds a login for this Argo CD (whatever the current session came from), so "Forget"
+    /// has something to delete.
+    pub saved: bool,
+    /// Only in the answer of `argocd_login` with "Remember": signed in, but the OS credential store refused the
+    /// login. The reason, without any secret.
+    pub save_error: Option<String>,
 }
 
 /// What the sign-in window sends: a user name and password, or an API token.
@@ -299,9 +305,10 @@ impl ArgoSessions {
         let conn = self.conn(cluster);
         let mut conn = conn.lock().await;
         let server = server(&mut conn, mgr, cluster).await?;
-        let options = argocd::login_options(mgr, cluster, &server.namespace).await?;
+        let namespace = server.namespace;
+        let options = argocd::login_options(mgr, cluster, &namespace).await?;
         Ok(ArgoStatus {
-            namespace: server.namespace,
+            namespace: namespace.clone(),
             signed_in: conn.session.is_some(),
             source: conn.session.as_ref().map(|s| s.source),
             user: conn
@@ -311,6 +318,8 @@ impl ArgoSessions {
             local_users: options.local_users,
             sso: options.sso,
             expired: conn.expired,
+            saved: self.has_saved(cluster, &namespace).await,
+            save_error: None,
         })
     }
 
@@ -321,6 +330,7 @@ impl ArgoSessions {
         login: ArgoLogin,
     ) -> Result<ArgoStatus, CoreError> {
         let credentials = credentials_of(login.clone())?;
+        let mut save_error = None;
         {
             let conn = self.conn(cluster);
             let mut conn = conn.lock().await;
@@ -345,20 +355,35 @@ impl ArgoSessions {
             lock(&self.refused).remove(&typed_key(cluster));
             if login.remember {
                 lock(&self.refused).remove(&saved_key(cluster, &namespace));
-                let store = self.store();
-                let user = keyring_user(cluster, &namespace);
-                let value = serde_json::to_string(&credentials)?;
-                blocking(move || store.save(&user, &value))
-                    .await
-                    .map_err(|err| {
-                        CoreError::new(
-                            err.code,
-                            format!("signed in, but the login was not saved: {}", err.message),
-                        )
-                    })?;
+                save_error = self.remember(cluster, &namespace, &credentials).await?;
             }
         }
-        self.status(mgr, cluster).await
+        let mut status = self.status(mgr, cluster).await?;
+        status.save_error = save_error;
+        Ok(status)
+    }
+
+    /// Saves the login in the credential store. The sign-in itself worked, so a store that refuses is not an error
+    /// of the call: the reason comes back (`Some`) for the window to say it once. `Err` only when the login cannot be
+    /// written as JSON.
+    async fn remember(
+        &self,
+        cluster: &ClusterId,
+        namespace: &str,
+        credentials: &Credentials,
+    ) -> Result<Option<String>, CoreError> {
+        let store = self.store();
+        let user = keyring_user(cluster, namespace);
+        let value = serde_json::to_string(credentials)?;
+        Ok(blocking(move || store.save(&user, &value))
+            .await
+            .err()
+            .map(|err| err.message))
+    }
+
+    /// Whether the credential store holds a readable login for the Argo CD of `namespace`, whoever signed in now.
+    async fn has_saved(&self, cluster: &ClusterId, namespace: &str) -> bool {
+        self.saved(cluster, namespace).await.is_some()
     }
 
     pub async fn logout(
@@ -731,6 +756,82 @@ mod tests {
         assert!(store.forget(&user).is_ok(), "forgetting twice is fine");
     }
 
+    /// A credential store that cannot be written to (a locked keyring, no Secret Service on Linux).
+    struct LockedStore;
+
+    impl CredentialStore for LockedStore {
+        fn load(&self, _user: &str) -> Result<Option<String>, CoreError> {
+            Err(CoreError::new(ErrorCode::Other, "locked"))
+        }
+
+        fn save(&self, _user: &str, _value: &str) -> Result<(), CoreError> {
+            Err(CoreError::new(
+                ErrorCode::Other,
+                "the system credential store: no secret service is running",
+            ))
+        }
+
+        fn forget(&self, _user: &str) -> Result<(), CoreError> {
+            Err(CoreError::new(ErrorCode::Other, "locked"))
+        }
+    }
+
+    fn token_login() -> Credentials {
+        Credentials::Token {
+            token: SecretString::new("tok"),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_saved_login_is_reported_whatever_the_session_came_from() {
+        let (store, _saved) = mock_store();
+        let sessions = ArgoSessions::new(store.clone());
+        let cluster = ClusterId::from("c1");
+
+        assert!(!sessions.has_saved(&cluster, "argocd").await);
+        store
+            .save(
+                &keyring_user(&cluster, "argocd"),
+                &serde_json::to_string(&token_login()).unwrap(),
+            )
+            .unwrap();
+
+        assert!(sessions.has_saved(&cluster, "argocd").await);
+        assert!(
+            !sessions.has_saved(&cluster, "other").await,
+            "a login is saved per namespace of the installation"
+        );
+        sessions.set_store(Arc::new(LockedStore));
+        assert!(
+            !sessions.has_saved(&cluster, "argocd").await,
+            "a store that cannot be read counts as none"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_login_that_could_not_be_saved_gives_one_plain_reason() {
+        let (store, saved) = mock_store();
+        let sessions = ArgoSessions::new(store);
+        let cluster = ClusterId::from("c1");
+
+        let ok = sessions
+            .remember(&cluster, "argocd", &token_login())
+            .await
+            .unwrap();
+        assert_eq!(ok, None);
+        assert_eq!(lock(&saved).len(), 1);
+
+        sessions.set_store(Arc::new(LockedStore));
+        let reason = sessions
+            .remember(&cluster, "argocd", &token_login())
+            .await
+            .unwrap();
+        assert_eq!(
+            reason.as_deref(),
+            Some("the system credential store: no secret service is running")
+        );
+    }
+
     #[test]
     fn the_sign_in_window_needs_a_password_or_a_token() {
         let typed = |username: Option<&str>, password: Option<&str>, token: Option<&str>| {
@@ -987,6 +1088,8 @@ mod tests {
             .unwrap();
         let stored: serde_json::Value = serde_json::from_slice(&lock(&saved)[&key]).unwrap();
         assert_eq!(status.source, Some(CredentialSource::Saved));
+        assert!(status.saved);
+        assert_eq!(status.save_error, None);
         assert_eq!(stored["username"], "admin");
         assert_eq!(stored["password"], password.as_str());
         assert!(!serde_json::to_string(&status).unwrap().contains(&password));
@@ -1012,6 +1115,7 @@ mod tests {
             .await
             .unwrap();
         assert!(!out.signed_in);
+        assert!(!out.saved);
         assert!(
             !lock(&saved).contains_key(&key),
             "Forget deletes the saved login"

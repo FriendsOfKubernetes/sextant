@@ -15,7 +15,7 @@
 // opens it with `ctx.openDialog`; a rejected `run` is shown to the user as an error dialog.
 import { useSyncExternalStore, type ReactNode } from "react";
 import type { ClusterId, KindRef, KubeObject, ObjectRef } from "../../api";
-import type { IconSpec } from "../../components/icons";
+import type { IconName } from "../../components/icons";
 import type { ActionId } from "../../resources/registry";
 import { refOf } from "../../resources/refs";
 
@@ -35,8 +35,8 @@ export interface ActionContext {
 export interface ActionDef {
   /** i18n key of the label, e.g. "actions:delete". */
   labelKey: string;
-  /** Icon shown before the label: a name of the set (`IconName`), or a short text glyph (drawn as text). */
-  icon: IconSpec;
+  /** Icon of the set (`IconName`) shown before the label. */
+  icon: IconName;
   /** Whether the action is offered for `obj` (called for every selected object). */
   appliesTo: (obj: KubeObject, kind: KindRef) => boolean;
   run: (ctx: ActionContext) => void | Promise<void>;

@@ -4,8 +4,9 @@
 // the panel's own section.
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useWatch, type ClusterId, type KindRef, type KubeObject, type ObjectRef, type WatchSpec } from "../../api";
+import { useWatch, type ApiError, type ClusterId, type KindRef, type KubeObject, type ObjectRef, type WatchSpec } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
+import { ErrorState } from "../../components";
 import { findKind, kindFromApiVersion, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
 import { apiVersionOf } from "../../resources/refs";
 import { Block, chips, Fields, type FieldRow } from "../details";
@@ -262,14 +263,15 @@ function LabelledRows({
   kind: KindRef;
   selector: string;
   known: Set<string>;
-  onLoaded: (kind: string) => void;
+  onLoaded: (kind: string, error: ApiError | null) => void;
 }) {
   // Only names are needed: metadata, nothing of a Secret.
-  const { items, status: watchStatus } = useWatch(clusterId, everywhere(kind, selector, true));
+  const { items, status: watchStatus, error } = useWatch(clusterId, everywhere(kind, selector, true));
   const loaded = watchStatus !== "loading";
+  const failure = watchStatus === "error" ? (error ?? null) : null;
   useEffect(() => {
-    if (loaded) onLoaded(kind.kind);
-  }, [loaded, kind.kind, onLoaded]);
+    if (loaded) onLoaded(kind.kind, failure);
+  }, [loaded, failure, kind.kind, onLoaded]);
   const refs = [...items.values()]
     .map((o) => objectRefOf(o, kind))
     .filter((r) => !known.has(refKey(r)))
@@ -283,16 +285,40 @@ function LabelledRows({
   );
 }
 
+/** Each retry ("Retry" after an error) starts the lists again. */
 function HelmReleaseResources({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
+  const [attempt, setAttempt] = useState(0);
+  return (
+    <HelmReleaseResourcesView
+      key={attempt}
+      clusterId={clusterId}
+      obj={obj}
+      onRetry={() => setAttempt((n) => n + 1)}
+    />
+  );
+}
+
+function HelmReleaseResourcesView({
+  clusterId,
+  obj,
+  onRetry,
+}: {
+  clusterId: ClusterId;
+  obj: KubeObject;
+  onRetry: () => void;
+}) {
   const { t } = useTranslation();
   const inventory = inventoryOf(obj);
   const known = new Set(inventory.map(refKey));
   const selector = helmReleaseSelector(obj);
-  const [loaded, setLoaded] = useState<ReadonlySet<string>>(() => new Set());
+  // The kinds whose list has come, with the error of the list if it ended in one.
+  const [loaded, setLoaded] = useState<ReadonlyMap<string, ApiError | null>>(() => new Map());
   const onLoaded = useCallback(
-    (kind: string) => setLoaded((prev) => (prev.has(kind) ? prev : new Set(prev).add(kind))),
+    (kind: string, error: ApiError | null) =>
+      setLoaded((prev) => (prev.get(kind) === error && prev.has(kind) ? prev : new Map(prev).set(kind, error))),
     [],
   );
+  const failure = [...loaded.values()].find((error) => error !== null);
   return (
     <Block title={t("flux:related.resources")}>
       <RefTable>
@@ -310,13 +336,22 @@ function HelmReleaseResources({ clusterId, obj }: { clusterId: ClusterId; obj: K
           />
         ))}
       </RefTable>
-      {loaded.size < LABELLED_KINDS.length && <LoadingLine />}
+      {failure ? (
+        <ErrorState error={failure} onRetry={onRetry} />
+      ) : (
+        loaded.size < LABELLED_KINDS.length && <LoadingLine />
+      )}
     </Block>
   );
 }
 
-/** Kustomizations and HelmReleases (in any namespace) that take their artifact from `source`. */
+/** Kustomizations and HelmReleases (in any namespace) that take their artifact from `source`; Retry lists again. */
 function UsedBy({ clusterId, source }: { clusterId: ClusterId; source: KubeObject }) {
+  const [attempt, setAttempt] = useState(0);
+  return <UsedByView key={attempt} clusterId={clusterId} source={source} onRetry={() => setAttempt((n) => n + 1)} />;
+}
+
+function UsedByView({ clusterId, source, onRetry }: { clusterId: ClusterId; source: KubeObject; onRetry: () => void }) {
   const { t } = useTranslation();
   const kustomization = useServedKind(clusterId, KUSTOMIZATION);
   const release = useServedKind(clusterId, HELM_RELEASE);
@@ -328,6 +363,7 @@ function UsedBy({ clusterId, source }: { clusterId: ClusterId; source: KubeObjec
       [release, releases.status],
     ] as const
   ).some(([kind, watchStatus]) => kind === undefined || (kind !== null && watchStatus === "loading"));
+  const failed = [kustomizations, releases].find((list) => list.status === "error");
   const using = [
     ...[...kustomizations.items.values()]
       .filter((o) => usesSource(o, source))
@@ -343,7 +379,13 @@ function UsedBy({ clusterId, source }: { clusterId: ClusterId; source: KubeObjec
           ))}
         </RefTable>
       )}
-      {loading ? <LoadingLine /> : using.length === 0 && <p className="dt-muted">{t("flux:related.notUsed")}</p>}
+      {failed ? (
+        <ErrorState error={failed.error} onRetry={onRetry} />
+      ) : loading ? (
+        <LoadingLine />
+      ) : (
+        using.length === 0 && <p className="dt-muted">{t("flux:related.notUsed")}</p>
+      )}
     </Block>
   );
 }

@@ -240,17 +240,17 @@ describe("ResourceTable", () => {
   it("builds the context menu from registered actions and runs them on the selection", async () => {
     const logs = vi.fn();
     const remove = vi.fn();
-    registerAction("logs", { labelKey: "Logs", icon: "≡", appliesTo: (_o, k) => k.kind === "Pod", run: logs });
-    registerAction("delete", { labelKey: "Delete", icon: "×", danger: true, multiple: true, appliesTo: () => true, run: remove });
-    registerAction("scale", { labelKey: "Scale", icon: "↕", appliesTo: () => false, run: vi.fn() });
-    registerAction("edit", { labelKey: "Edit", icon: "✎", appliesTo: () => true, run: vi.fn() });
+    registerAction("logs", { labelKey: "Logs", icon: "logs", appliesTo: (_o, k) => k.kind === "Pod", run: logs });
+    registerAction("delete", { labelKey: "Delete", icon: "delete", danger: true, multiple: true, appliesTo: () => true, run: remove });
+    registerAction("scale", { labelKey: "Scale", icon: "scale", appliesTo: () => false, run: vi.fn() });
+    registerAction("edit", { labelKey: "Edit", icon: "edit", appliesTo: () => true, run: vi.fn() });
     render(<ResourceTable clusterId="c1" kind={POD} actions={["logs", "scale", "delete", "exec"]} />);
     await snapshot([pod(1), pod(2), pod(3)]);
 
     fireEvent.contextMenu(screen.getByText("pod-0001"));
     const menu = screen.getByRole("menu");
     // Only listed ids that are registered and apply; in the order of the list.
-    expect(within(menu).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["≡Logs", "×Delete"]);
+    expect(within(menu).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Logs", "Delete"]);
     fireEvent.click(within(menu).getByRole("menuitem", { name: "Logs" }));
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     expect(logs).toHaveBeenCalledTimes(1);
@@ -266,14 +266,14 @@ describe("ResourceTable", () => {
     expect(screen.getByText("2 selected")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Actions for pod-0003" }));
     const multi = screen.getByRole("menu");
-    expect(within(multi).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["×Delete"]);
+    expect(within(multi).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Delete"]);
     fireEvent.click(within(multi).getByRole("menuitem", { name: "Delete" }));
     expect(remove.mock.calls[0]![0].refs.map((r: { name: string }) => r.name)).toEqual(["pod-0001", "pod-0003"]);
   });
 
-  it("draws an icon name of an action as an SVG in the menu and a glyph as text; the row button is the ⋮ icon", async () => {
+  it("draws the icon of an action as an SVG in the menu; the row button is the ⋮ icon", async () => {
     registerAction("logs", { labelKey: "Logs", icon: "logs", appliesTo: () => true, run: vi.fn() });
-    registerAction("edit", { labelKey: "Edit", icon: "✎", appliesTo: () => true, run: vi.fn() });
+    registerAction("edit", { labelKey: "Edit", icon: "edit", appliesTo: () => true, run: vi.fn() });
     render(<ResourceTable clusterId="c1" kind={POD} actions={["logs", "edit"]} />);
     await snapshot([pod(1)]);
 
@@ -286,12 +286,12 @@ describe("ResourceTable", () => {
     expect(logs.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(logs).toHaveTextContent(/^Logs$/);
     const edit = within(menu).getByRole("menuitem", { name: "Edit" });
-    expect(edit.querySelector("svg")).toBeNull();
-    expect(edit).toHaveTextContent("✎Edit");
+    expect(edit.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(edit).toHaveTextContent(/^Edit$/);
   });
 
   it("Escape closes the open context menu and leaves the details panel open", async () => {
-    registerAction("edit", { labelKey: "Edit", icon: "✎", appliesTo: () => true, run: vi.fn() });
+    registerAction("edit", { labelKey: "Edit", icon: "edit", appliesTo: () => true, run: vi.fn() });
     const ref = { kind: POD, namespace: "default", name: "web-1" };
     act(() => useAppStore.getState().openDetails(ref));
     render(
@@ -316,7 +316,7 @@ describe("ResourceTable", () => {
   it("shows a failed action as an error dialog", async () => {
     registerAction("edit", {
       labelKey: "Edit",
-      icon: "✎",
+      icon: "edit",
       appliesTo: () => true,
       run: () => Promise.reject({ code: "forbidden", message: "pods is forbidden" }),
     });

@@ -104,19 +104,15 @@ describe("isIconName", () => {
 });
 
 describe("renderIcon", () => {
-  it("draws a name of the set as an SVG and any other string as a hidden glyph; nothing for undefined", () => {
+  it("draws a name of the set as an SVG hidden from assistive technology; nothing for undefined", () => {
     const { container } = render(
       <>
         <span data-testid="name">{renderIcon("delete")}</span>
-        <span data-testid="glyph">{renderIcon("⋯")}</span>
         <span data-testid="none">{renderIcon(undefined)}</span>
       </>,
     );
-    const [name, glyph, none] = ["name", "glyph", "none"].map((id) => container.querySelector(`[data-testid=${id}]`)!);
+    const [name, none] = ["name", "none"].map((id) => container.querySelector(`[data-testid=${id}]`)!);
     expect(name!.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
-    expect(glyph!.querySelector("svg")).toBeNull();
-    expect(glyph!.textContent).toBe("⋯");
-    expect(glyph!.firstElementChild).toHaveAttribute("aria-hidden", "true");
     expect(none!.childNodes).toHaveLength(0);
   });
 });

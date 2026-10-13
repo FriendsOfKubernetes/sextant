@@ -9,19 +9,19 @@
 // An icon-only button has no visible text, so `label` is required: it becomes the accessible name (`aria-label`)
 // and the tooltip (`title`).
 import type { ButtonHTMLAttributes, Ref } from "react";
-import { renderIcon, type IconSpec } from "./icons";
+import { renderIcon, type IconName } from "./icons";
 
 type BaseProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "default" | "primary" | "danger";
   size?: "regular" | "compact";
-  /** An icon name of the set (src/components/icons.tsx) or a text glyph, shown before the text. */
-  icon?: IconSpec;
+  /** An icon of the set (src/components/icons.tsx), shown before the text. */
+  icon?: IconName;
   ref?: Ref<HTMLButtonElement>;
 };
 
 export type ButtonProps = BaseProps &
   (
-    | { iconOnly: true; icon: IconSpec; /** Accessible name and tooltip. */ label: string }
+    | { iconOnly: true; icon: IconName; /** Accessible name and tooltip. */ label: string }
     | { iconOnly?: false; label?: undefined }
   );
 

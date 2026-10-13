@@ -2,9 +2,10 @@
 // each, what they own (Deployment → ReplicaSet → Pod, Job → Pod, …), found by `ownerReferences` among live lists
 // of those kinds in the app's namespaces. Every row opens its object. Resources in another cluster (the app deploys
 // elsewhere) are listed without links or descendants: this cluster cannot show them.
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type KindRef, type KubeObject, type WatchSpec } from "../../api";
+import { ErrorState } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ObjectLink, status, StatusText } from "../../resources";
 import { apiVersionOf } from "../../resources/refs";
@@ -63,7 +64,13 @@ function flatten(nodes: TreeNode[], level = 1, rows: Row[] = []): Row[] {
   return rows;
 }
 
-export function ResourceTreeSection({ clusterId, obj }: DetailsSectionProps) {
+/** Each retry ("Retry" after an error) lists the descendants again. */
+export function ResourceTreeSection(props: DetailsSectionProps) {
+  const [attempt, setAttempt] = useState(0);
+  return <ResourceTreeView key={attempt} {...props} onRetry={() => setAttempt((n) => n + 1)} />;
+}
+
+function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { onRetry: () => void }) {
   const { t } = useTranslation();
   const app = obj;
   const resources = useMemo(() => (app ? managedResources(app) : []), [app]);
@@ -75,6 +82,7 @@ export function ResourceTreeSection({ clusterId, obj }: DetailsSectionProps) {
   const jobs = useWatch(clusterId, specs[1] ?? null);
   const pods = useWatch(clusterId, specs[2] ?? null);
   const loading = [replicaSets, jobs, pods].some((list, i) => specs[i] && list.status === "loading");
+  const failed = [replicaSets, jobs, pods].find((list, i) => specs[i] && list.status === "error");
 
   const tree = useMemo(() => {
     const objects = new Map<string, KubeObject[]>([
@@ -111,10 +119,14 @@ export function ResourceTreeSection({ clusterId, obj }: DetailsSectionProps) {
           ))}
         </tbody>
       </table>
-      {loading && (
-        <p className="dt-muted" role="status">
-          {t("argocd:tree.loading")}
-        </p>
+      {failed ? (
+        <ErrorState error={failed.error} onRetry={onRetry} />
+      ) : (
+        loading && (
+          <p className="dt-muted" role="status">
+            {t("argocd:tree.loading")}
+          </p>
+        )
       )}
     </Block>
   );
