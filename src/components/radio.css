@@ -1,0 +1,35 @@
+/* Radio buttons in the theme's colors (see Radio.tsx): a light circle in the light theme, a dark one in the dark
+   theme, an accent ring with an accent dot when checked. */
+.radio {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 1px solid var(--color-text-muted);
+  border-radius: 50%;
+  background-color: var(--color-main);
+  accent-color: var(--color-accent);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.radio:hover {
+  border-color: var(--color-accent);
+}
+
+.radio:checked {
+  border-color: var(--color-accent);
+  background-image: radial-gradient(circle, var(--color-accent) 0 3.5px, transparent 4px);
+}
+
+.radio:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.radio:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

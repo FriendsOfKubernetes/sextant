@@ -1,3 +1,12 @@
+/* Control sizes, the same in both themes: every button is --control-height high (compact: in table rows and dense
+   lists), icons are --icon-size. */
+:root {
+  --control-height: 32px;
+  --control-height-compact: 28px;
+  --control-font-size: 13px;
+  --icon-size: 16px;
+}
+
 /* Theme tokens. `data-theme` on <html> is set by useApplyTheme (system → follows the OS). */
 :root,
 :root[data-theme="light"] {
@@ -88,51 +97,117 @@ button {
   color: inherit;
 }
 
+/* Buttons (src/components/Button.tsx). One fixed height; the text never wraps and the button never shrinks in a flex
+   row, so a long neighbour (a Secret value) wraps instead of the label. */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  height: var(--control-height);
+  padding: 0 12px;
   border: 1px solid var(--color-border);
-  background: transparent;
   border-radius: 4px;
-  padding: 4px 12px;
+  background: transparent;
+  font-size: var(--control-font-size);
+  line-height: 1;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  vertical-align: middle;
   cursor: pointer;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
   background: var(--color-hover);
 }
 
-.btn--primary {
+.btn--primary,
+.btn--primary:hover:not(:disabled) {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-accent-text);
 }
 
-.btn--danger {
+.btn--danger,
+.btn--danger:hover:not(:disabled) {
   background: var(--color-danger);
   border-color: var(--color-danger);
   color: #ffffff;
 }
 
+.btn--primary:hover:not(:disabled),
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn--compact {
+  height: var(--control-height-compact);
+  padding: 0 8px;
+}
+
+/* Icon only: a square. */
+.btn--icon {
+  width: var(--control-height);
+  padding: 0;
+}
+
+.btn--icon.btn--compact {
+  width: var(--control-height-compact);
+}
+
+/* A borderless icon button (close, menu, toggles), the size of an icon-only .btn. */
 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--control-height);
+  height: var(--control-height);
+  padding: 0;
   border: none;
-  background: transparent;
   border-radius: 4px;
-  width: 28px;
-  height: 28px;
+  background: transparent;
   font-size: 16px;
   line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
   color: var(--color-text-muted);
 }
 
-.icon-btn:hover {
+.icon-btn:hover:not(:disabled) {
   background: var(--color-hover);
   color: var(--color-text);
 }
 
 .icon-btn--small {
-  width: 20px;
-  height: 20px;
-  font-size: 13px;
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
+  font-size: 14px;
+}
+
+.btn:disabled,
+.icon-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* SVG icons (src/components/icons.tsx) and text glyphs drawn in their place. */
+.icon {
+  flex: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.icon-glyph {
+  flex: none;
+  line-height: 1;
 }
 
 .empty-state,

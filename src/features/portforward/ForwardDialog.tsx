@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ClusterId, type ForwardInfo, type ForwardTarget } from "../../api";
-import { Dialog, ErrorState } from "../../components";
+import { Dialog, ErrorState, Radio } from "../../components";
 import { parseLocalPort, targetName } from "./model";
 import { openInBrowser } from "./openInBrowser";
 
@@ -105,11 +105,11 @@ export function ForwardDialog({ clusterId, target, ports, initialPort, close }: 
         </div>
         <div className="pf-dialog__choice" role="radiogroup" aria-label={t("portforward:dialog.localPortChoice")}>
           <label>
-            <input type="radio" name={ids.local} checked={!custom} onChange={() => setCustom(false)} />
+            <Radio name={ids.local} checked={!custom} onChange={() => setCustom(false)} />
             {t("portforward:dialog.auto")}
           </label>
           <label>
-            <input type="radio" name={ids.local} checked={custom} onChange={() => setCustom(true)} />
+            <Radio name={ids.local} checked={custom} onChange={() => setCustom(true)} />
             {t("portforward:dialog.custom")}
           </label>
         </div>

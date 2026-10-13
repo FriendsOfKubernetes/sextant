@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, useSettings, type ApiError, type AppSettings, type KubeconfigSource, type Theme } from "../../api";
-import { ConfirmDialog, ErrorState } from "../../components";
+import { ConfirmDialog, ErrorState, Radio } from "../../components";
 import { availableLanguages } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
@@ -87,8 +87,7 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
         <div className="settings__choices" role="radiogroup" aria-label={t("settings:appearance.theme")}>
           {THEMES.map((value) => (
             <label key={value} className="settings__choice">
-              <input
-                type="radio"
+              <Radio
                 name="settings-theme"
                 value={value}
                 checked={theme === value}
@@ -193,8 +192,7 @@ function HelmSection({ settings, save }: { settings: AppSettings | null; save: S
     <Section title={t("settings:helm.title")} hint={t("settings:helm.hint")}>
       <div className="settings__choices settings__choices--column" role="radiogroup" aria-label={t("settings:helm.title")}>
         <label className="settings__choice">
-          <input
-            type="radio"
+          <Radio
             name="settings-helm"
             checked={!manual}
             disabled={!settings}
@@ -206,8 +204,7 @@ function HelmSection({ settings, save }: { settings: AppSettings | null; save: S
           {t("settings:helm.auto")}
         </label>
         <label className="settings__choice">
-          <input
-            type="radio"
+          <Radio
             name="settings-helm"
             checked={manual}
             disabled={!settings}

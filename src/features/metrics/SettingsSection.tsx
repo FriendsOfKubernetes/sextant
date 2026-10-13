@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toApiError, type ApiError, type ClusterId, type PrometheusMode, type PrometheusTarget, type UsageSource } from "../../api";
-import { ErrorState } from "../../components";
+import { ErrorState, Radio } from "../../components";
 import { updateClusterSettings } from "../clusters/clusterSettings";
 import type { ClusterSettingsSectionProps } from "../clusters/settingsRegistry";
 import { useMetricsSettings, useMetricsStatus } from "./hooks";
 import "./metrics.css";
 
 const MODES = ["auto", "manual", "off"] as const;
+const TARGET_KINDS = ["service", "url"] as const;
 type Mode = (typeof MODES)[number];
 const SOURCES: UsageSource[] = ["auto", "metricsServer", "prometheus", "off"];
 
@@ -93,20 +94,18 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
         <legend>{t("metrics:settings.prometheus")}</legend>
         {MODES.map((m) => (
           <label key={m} className="mx-settings__radio">
-            <input type="radio" name={`prometheus-${clusterId}`} checked={mode === m} onChange={() => chooseMode(m)} />
+            <Radio name={`prometheus-${clusterId}`} checked={mode === m} onChange={() => chooseMode(m)} />
             {t(`metrics:settings.mode.${m}`)}
           </label>
         ))}
         {mode === "manual" && (
           <div className="mx-settings__manual">
-            <label className="mx-settings__radio">
-              <input type="radio" name={`target-${clusterId}`} checked={kind === "service"} onChange={() => setKind("service")} />
-              {t("metrics:settings.serviceKind")}
-            </label>
-            <label className="mx-settings__radio">
-              <input type="radio" name={`target-${clusterId}`} checked={kind === "url"} onChange={() => setKind("url")} />
-              {t("metrics:settings.urlKind")}
-            </label>
+            {TARGET_KINDS.map((k) => (
+              <label key={k} className="mx-settings__radio">
+                <Radio name={`target-${clusterId}`} checked={kind === k} onChange={() => setKind(k)} />
+                {t(`metrics:settings.${k}Kind`)}
+              </label>
+            ))}
             {kind === "service" ? (
               <>
                 <label className="mx-settings__field">

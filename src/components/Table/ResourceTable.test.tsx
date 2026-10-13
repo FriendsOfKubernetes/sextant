@@ -205,6 +205,25 @@ describe("ResourceTable", () => {
     expect(remove.mock.calls[0]![0].refs.map((r: { name: string }) => r.name)).toEqual(["pod-0001", "pod-0003"]);
   });
 
+  it("draws an icon name of an action as an SVG in the menu and a glyph as text; the row button is the ⋮ icon", async () => {
+    registerAction("logs", { labelKey: "Logs", icon: "logs", appliesTo: () => true, run: vi.fn() });
+    registerAction("edit", { labelKey: "Edit", icon: "✎", appliesTo: () => true, run: vi.fn() });
+    render(<ResourceTable clusterId="c1" kind={POD} actions={["logs", "edit"]} />);
+    await snapshot([pod(1)]);
+
+    const more = screen.getByRole("button", { name: "Actions for pod-0001" });
+    expect(more.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(more.textContent).toBe("");
+    fireEvent.click(more);
+    const menu = screen.getByRole("menu");
+    const logs = within(menu).getByRole("menuitem", { name: "Logs" });
+    expect(logs.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(logs).toHaveTextContent(/^Logs$/);
+    const edit = within(menu).getByRole("menuitem", { name: "Edit" });
+    expect(edit.querySelector("svg")).toBeNull();
+    expect(edit).toHaveTextContent("✎Edit");
+  });
+
   it("Escape closes the open context menu and leaves the details panel open", async () => {
     registerAction("edit", { labelKey: "Edit", icon: "✎", appliesTo: () => true, run: vi.fn() });
     const ref = { kind: POD, namespace: "default", name: "web-1" };

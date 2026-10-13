@@ -30,6 +30,7 @@ import { Badge } from "../Badge";
 import { Checkbox } from "../Checkbox";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
+import { Icon, renderIcon } from "../icons";
 import { usePopup } from "../usePopup";
 import { LoadingIndicator } from "../LoadingIndicator";
 import { matchesSearch } from "./search";
@@ -387,7 +388,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                         openMenu(obj, rect.left, rect.bottom);
                       }}
                     >
-                      ⋮
+                      <Icon name="more" />
                     </button>
                   </div>
                 </div>
@@ -457,7 +458,7 @@ function ActionMenu({
             onClick={() => onRun(action)}
           >
             <span className="rt-menu__icon" aria-hidden>
-              {action.icon}
+              {renderIcon(action.icon)}
             </span>
             {t(action.labelKey)}
           </button>

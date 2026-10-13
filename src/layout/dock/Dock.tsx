@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
-import { EmptyState } from "../../components";
+import { EmptyState, Icon, renderIcon } from "../../components";
 import { getDockActions, getDockTabComponent } from "./registry";
 
 /**
@@ -42,7 +42,7 @@ export function Dock() {
                 aria-label={t("common:actions.closeTab", { title: tab.title })}
                 onClick={() => closeDockTab(tab.id)}
               >
-                ×
+                <Icon name="close" />
               </button>
             </div>
           ))}
@@ -57,7 +57,7 @@ export function Dock() {
               aria-label={t(action.labelKey)}
               onClick={() => action.run(ctx)}
             >
-              {action.icon ?? t(action.labelKey)}
+              {action.icon === undefined ? t(action.labelKey) : renderIcon(action.icon)}
             </button>
           ))}
           <button
@@ -67,7 +67,7 @@ export function Dock() {
             aria-label={t(dock.open ? "common:actions.closeDock" : "common:actions.openDock")}
             onClick={toggleDock}
           >
-            {dock.open ? "▾" : "▴"}
+            <Icon name={dock.open ? "chevronDown" : "chevronUp"} />
           </button>
         </div>
       </div>

@@ -1,9 +1,15 @@
 // Buttons of the registered actions (src/features/actions/registry.ts) that apply to one object, in the order of
 // its kind's `ResourceDef.actions`. Used at the top of the details panel; nothing is rendered when no action fits.
+// Standard-size buttons with the action's icon and label; the toolbar wraps whole buttons onto the next line.
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KindRef, KubeObject } from "../../api";
+import { Button } from "../../components";
 import { useResourceDef } from "../../resources";
-import { getActionsFor, runAction, useActionsVersion } from "../actions/registry";
+import { getActionsFor, runAction, useActionsVersion, type ActionDef } from "../actions/registry";
+
+function variantOf(action: ActionDef): "danger" | "default" {
+  return action.danger ? "danger" : "default";
+}
 
 export function ActionBar({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
   const { t } = useTranslation();
@@ -14,17 +20,14 @@ export function ActionBar({ clusterId, kind, obj }: { clusterId: ClusterId; kind
   return (
     <div className="dt-actions" role="toolbar" aria-label={t("details:actions")}>
       {actions.map((action) => (
-        <button
+        <Button
           key={action.id}
-          type="button"
-          className={`btn btn--small${action.danger ? " btn--danger" : ""}`}
+          variant={variantOf(action)}
+          icon={action.icon}
           onClick={() => void runAction(action, clusterId, kind, [obj])}
         >
-          <span aria-hidden className="dt-actions__icon">
-            {action.icon}
-          </span>
           {t(action.labelKey)}
-        </button>
+        </Button>
       ))}
     </div>
   );

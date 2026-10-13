@@ -4,7 +4,7 @@
 //
 //   registerAction("logs", {
 //     labelKey: "logs:action",            // i18n key of the menu item / button
-//     icon: "≡",                          // short symbol shown before the label
+//     icon: "logs",                       // icon of the set (src/components/icons.tsx) before the label
 //     appliesTo: (obj, kind) => kind.kind === "Pod",
 //     run: ({ clusterId, objects, refs, openDialog }) => { … },
 //   });
@@ -15,6 +15,7 @@
 // opens it with `ctx.openDialog`; a rejected `run` is shown to the user as an error dialog.
 import { useSyncExternalStore, type ReactNode } from "react";
 import type { ClusterId, KindRef, KubeObject, ObjectRef } from "../../api";
+import type { IconSpec } from "../../components/icons";
 import type { ActionId } from "../../resources/registry";
 import { refOf } from "../../resources/refs";
 
@@ -34,8 +35,8 @@ export interface ActionContext {
 export interface ActionDef {
   /** i18n key of the label, e.g. "actions:delete". */
   labelKey: string;
-  /** A short symbol or text shown before the label. */
-  icon: string;
+  /** Icon shown before the label: a name of the set (`IconName`), or a short text glyph (drawn as text). */
+  icon: IconSpec;
   /** Whether the action is offered for `obj` (called for every selected object). */
   appliesTo: (obj: KubeObject, kind: KindRef) => boolean;
   run: (ctx: ActionContext) => void | Promise<void>;

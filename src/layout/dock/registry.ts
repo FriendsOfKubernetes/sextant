@@ -2,6 +2,7 @@
 import type { ComponentType } from "react";
 import type { ClusterId } from "../../api";
 import type { DockTab, DockTabType } from "../../app/store";
+import type { IconSpec } from "../../components/icons";
 
 export interface DockTabProps {
   tab: DockTab;
@@ -28,14 +29,14 @@ export interface DockActionContext {
   activeClusterId: ClusterId | null;
 }
 
-/** A button in the dock header, e.g. "+" (create resource) or "Terminal". */
+/** A button in the dock header, e.g. the "add" icon (create resource) or "Terminal". */
 export interface DockActionDef {
   id: string;
   order: number;
   /** i18n key of the button label / tooltip. */
   labelKey: string;
-  /** Short text or symbol shown on the button instead of the label (e.g. "+"), if any. */
-  icon?: string;
+  /** Icon shown on the button instead of the label (an `IconName` such as "add", or a short text glyph), if any. */
+  icon?: IconSpec;
   /** Hidden when it returns false (e.g. a terminal needs an active cluster). */
   available?: (ctx: DockActionContext) => boolean;
   run: (ctx: DockActionContext) => void;
