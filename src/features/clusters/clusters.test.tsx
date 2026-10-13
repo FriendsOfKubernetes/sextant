@@ -378,14 +378,139 @@ describe("cluster settings", () => {
   });
 });
 
+describe("cluster icon", () => {
+  /** jsdom has neither canvas nor image decoding: a picture of 200×100 that "draws" into a canvas of any size. */
+  function stubPictures() {
+    class FakeImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      naturalWidth = 200;
+      naturalHeight = 100;
+      set src(_value: string) {
+        setTimeout(() => this.onload?.());
+      }
+    }
+    vi.stubGlobal("Image", FakeImage);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => ({ drawImage: vi.fn() }) as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockImplementation(function (this: HTMLCanvasElement) {
+      return `data:image/png;base64,${this.width}x${this.height}`;
+    });
+  }
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  async function openIconSettings() {
+    fireEvent.contextMenu(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Change icon…" }));
+    return screen.getByRole("dialog", { name: "Cluster settings — kind-alpha" });
+  }
+  const preview = (dialog: HTMLElement) => within(dialog).getByRole("img", { name: "Icon preview" });
+  const chooseFile = (dialog: HTMLElement, file: File) =>
+    fireEvent.change(dialog.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [file] } });
+
+  it("“Change icon…” opens the cluster settings; one or two letters or an emoji replace the initials", async () => {
+    setup([alpha]);
+    render(<AppShell />);
+    const dialog = await openIconSettings();
+    expect(preview(dialog)).toHaveTextContent("KA");
+
+    const text = within(dialog).getByRole("textbox", { name: "Icon text" });
+    expect(text).toHaveFocus();
+    fireEvent.change(text, { target: { value: "🚀ab" } });
+    expect(text).toHaveValue("🚀a");
+    expect(preview(dialog)).toHaveTextContent("🚀a");
+    fireEvent.blur(text);
+    await waitFor(() => expect(backend.settings.clusters.aaaa?.icon).toEqual({ type: "text", text: "🚀a" }));
+    expect(railButton("kind-alpha")).toHaveTextContent("🚀a");
+    expect(railButton("kind-alpha")).toHaveAttribute("data-state", "disconnected");
+  });
+
+  it("a picture from disk is stored as a 96×96 PNG and shown instead of the letters; Reset icon brings them back", async () => {
+    stubPictures();
+    setup([alpha]);
+    render(<AppShell />);
+    const dialog = await openIconSettings();
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Color 2" }));
+    await waitFor(() => expect(backend.settings.clusters.aaaa?.color).toBe("#48a868"));
+
+    expect(within(dialog).getByRole("button", { name: "Choose image…" })).toBeInTheDocument();
+    chooseFile(dialog, new File(["<svg/>"], "logo.svg", { type: "image/svg+xml" }));
+    const png = "data:image/png;base64,96x96";
+    await waitFor(() => expect(backend.settings.clusters.aaaa?.icon).toEqual({ type: "image", dataUrl: png }));
+    expect(preview(dialog).querySelector("img")).toHaveAttribute("src", png);
+    expect(railButton("kind-alpha").querySelector("img")).toHaveAttribute("src", png);
+    expect(railButton("kind-alpha")).not.toHaveTextContent("KA");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reset icon" }));
+    await waitFor(() => expect(backend.settings.clusters.aaaa?.icon).toBeNull());
+    expect(railButton("kind-alpha").querySelector("img")).toBeNull();
+    expect(railButton("kind-alpha")).toHaveTextContent("KA");
+    // The color is not part of the icon.
+    expect(backend.settings.clusters.aaaa?.color).toBe("#48a868");
+    expect(railButton("kind-alpha").style.getPropertyValue("--cluster-color")).toBe("#48a868");
+  });
+
+  it("a file that is not a picture or is over 5 MB is refused with a message and the icon stays", async () => {
+    stubPictures();
+    setup([alpha], {
+      backend: {
+        settings: {
+          clusters: {
+            aaaa: { displayName: null, color: null, namespaces: null, lastView: null, prometheus: { mode: "auto" }, usageSource: "auto", icon: { type: "text", text: "Z" } },
+          },
+        },
+      },
+    });
+    render(<AppShell />);
+    const dialog = await openIconSettings();
+
+    chooseFile(dialog, new File(["hello"], "notes.txt", { type: "text/plain" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("The file is not a supported image");
+    chooseFile(dialog, new File([new Uint8Array(5 * 1024 * 1024 + 1)], "huge.png", { type: "image/png" }));
+    await waitFor(() => expect(within(dialog).getByRole("alert")).toHaveTextContent("The image is larger than 5 MB"));
+
+    expect(commands("settings_update")).toHaveLength(0);
+    expect(backend.settings.clusters.aaaa?.icon).toEqual({ type: "text", text: "Z" });
+    expect(railButton("kind-alpha")).toHaveTextContent("Z");
+  });
+});
+
+describe("expandable rail", () => {
+  it("shows names next to the icons and folds back", async () => {
+    setup([alpha, beta]);
+    render(<AppShell />);
+    await within(rail()).findByRole("button", { name: "kind-alpha" });
+    expect(rail()).not.toHaveClass("rail--expanded");
+    expect(railButton("kind-alpha")).not.toHaveTextContent("kind-alpha");
+
+    const expand = railButton("Expand cluster list");
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(expand);
+
+    expect(rail()).toHaveClass("rail--expanded");
+    expect(useAppStore.getState().railExpanded).toBe(true);
+    // The accessible name stays the cluster name; the visible name is extra text inside the button.
+    expect(railButton("kind-alpha")).toHaveTextContent("kind-alpha");
+    expect(railButton("kind-beta")).toHaveTextContent("kind-beta");
+    const collapse = railButton("Collapse cluster list");
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(collapse);
+    expect(rail()).not.toHaveClass("rail--expanded");
+    expect(railButton("kind-alpha")).not.toHaveTextContent("kind-alpha");
+  });
+});
+
 describe("restart", () => {
   it("reopens the last active cluster in its last section and connects to it", async () => {
     setup([alpha, beta], {
       backend: {
         settings: {
-          window: { sidebarWidth: 220, dockHeight: 300, dockOpen: false, lastCluster: "bbbb", width: null, height: null, maximized: false },
+          window: { sidebarWidth: 220, dockHeight: 300, dockOpen: false, lastCluster: "bbbb", width: null, height: null, maximized: false, railExpanded: false },
           clusters: {
-            bbbb: { displayName: null, color: null, namespaces: null, lastView: "nodes", prometheus: { mode: "auto" }, usageSource: "auto" },
+            bbbb: { displayName: null, color: null, namespaces: null, lastView: "nodes", prometheus: { mode: "auto" }, usageSource: "auto", icon: null },
           },
         },
       },

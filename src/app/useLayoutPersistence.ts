@@ -5,12 +5,12 @@ import { useAppStore, type AppState } from "./store";
 export const PERSIST_DELAY_MS = 300;
 
 function layoutKey(s: AppState): string {
-  return `${s.sidebarWidth}|${s.dock.height}|${s.dock.open}|${s.activeClusterId ?? ""}`;
+  return `${s.sidebarWidth}|${s.dock.height}|${s.dock.open}|${s.railExpanded}|${s.activeClusterId ?? ""}`;
 }
 
 /**
- * Restores sidebar width and dock size/visibility from the settings once they are loaded, then saves later
- * changes (debounced) into `settings.window`. Window size itself is saved by the backend.
+ * Restores sidebar width, dock size/visibility and the rail view from the settings once they are loaded, then
+ * saves later changes (debounced) into `settings.window`. Window size itself is saved by the backend.
  */
 export function useLayoutPersistence(settings: AppSettings | null): void {
   const [ready, setReady] = useState(false);
@@ -39,6 +39,7 @@ export function useLayoutPersistence(settings: AppSettings | null): void {
             sidebarWidth: s.sidebarWidth,
             dockHeight: s.dock.height,
             dockOpen: s.dock.open,
+            railExpanded: s.railExpanded,
             lastCluster: s.activeClusterId ?? current.window.lastCluster,
           },
         })).catch(() => {

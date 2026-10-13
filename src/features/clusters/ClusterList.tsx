@@ -1,14 +1,16 @@
-// Content of the cluster rail: one icon per kubeconfig context with its connection state, a context menu
-// (connect / reconnect / disconnect / settings), the "add" and "refresh" buttons and, when a kubeconfig source cannot
-// be read, a warning that lists those sources with their errors.
+// Content of the cluster rail: one icon per kubeconfig context with its connection state (and, when the rail is
+// expanded, its name), a context menu (connect / reconnect / disconnect / settings / change icon), the "add" and
+// "refresh" buttons and, when a kubeconfig source cannot be read, a warning that lists those sources with their
+// errors.
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
+import { useSettings, type AppSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Dialog, SLOW_AFTER_S, useElapsedSeconds, usePopup } from "../../components";
+import { Dialog, Icon, SLOW_AFTER_S, useElapsedSeconds, usePopup } from "../../components";
 import { AddClusterDialog, SourceError } from "./AddClusterDialog";
+import { ClusterAvatar } from "./ClusterAvatar";
 import { ClusterSettingsDialog } from "./ClusterSettingsDialog";
-import { colorOf, displayNameOf, initialsOf } from "./clusterSettings";
+import { colorOf, displayNameOf } from "./clusterSettings";
 import {
   connectCluster,
   disconnectCluster,
@@ -35,20 +37,23 @@ export function ClusterList() {
   const states = useClustersStore((s) => s.states);
   const pendingId = useClustersStore((s) => s.pendingId);
   const activeClusterId = useAppStore((s) => s.activeClusterId);
+  const expanded = useAppStore((s) => s.railExpanded);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
   const broken = sources.filter((s) => s.error);
 
   return (
-    <div className="cluster-list">
+    <div className={expanded ? "cluster-list cluster-list--expanded" : "cluster-list"}>
       <ul className="cluster-list__items" aria-label={t("clusters:rail.list")}>
         {clusters.map((cluster) => (
           <li key={cluster.id}>
             <ClusterIcon
               cluster={cluster}
+              settings={settings}
               name={displayNameOf(cluster, settings)}
               color={colorOf(cluster, settings)}
+              expanded={expanded}
               state={states[cluster.id] ?? DISCONNECTED}
               selected={cluster.id === activeClusterId || cluster.id === pendingId}
               active={cluster.id === activeClusterId}
@@ -66,7 +71,7 @@ export function ClusterList() {
             title={t("clusters:sources.problems")}
             onClick={() => setProblemsOpen(true)}
           >
-            !
+            <Icon name="warning" />
           </button>
         )}
         <button
@@ -76,7 +81,7 @@ export function ClusterList() {
           title={t("clusters:rail.add")}
           onClick={() => setAddOpen(true)}
         >
-          +
+          <Icon name="add" />
         </button>
         <button
           type="button"
@@ -86,7 +91,7 @@ export function ClusterList() {
           disabled={loading}
           onClick={() => void refreshClusters()}
         >
-          ⟳
+          <Icon name="refresh" />
         </button>
       </div>
       {menu && (
@@ -103,19 +108,26 @@ export function ClusterList() {
   );
 }
 
-/** One cluster in the rail; while it connects, the seconds so far (and, after 5 s, that it is slow, in the tooltip). */
+/**
+ * One cluster in the rail; while it connects, the seconds so far (and, after 5 s, that it is slow, in the tooltip).
+ * Its accessible name is always the cluster name; the expanded rail also shows that name next to the icon.
+ */
 function ClusterIcon({
   cluster,
+  settings,
   name,
   color,
+  expanded,
   state,
   selected,
   active,
   onMenu,
 }: {
   cluster: ClusterInfo;
+  settings: AppSettings | null;
   name: string;
   color: string;
+  expanded: boolean;
   state: ConnectionState;
   selected: boolean;
   active: boolean;
@@ -140,13 +152,18 @@ function ClusterIcon({
         onMenu(e.clientX, e.clientY);
       }}
     >
-      <span className="cluster-icon__initials" aria-hidden="true">
-        {initialsOf(name)}
+      <span className="cluster-icon__badge">
+        <ClusterAvatar cluster={cluster} settings={settings} />
+        <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
+        {seconds >= 1 && (
+          <span className="cluster-icon__elapsed" data-slow={slow ? "true" : undefined}>
+            {t("clusters:connection.seconds", { seconds })}
+          </span>
+        )}
       </span>
-      <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
-      {seconds >= 1 && (
-        <span className="cluster-icon__elapsed" data-slow={slow ? "true" : undefined}>
-          {t("clusters:connection.seconds", { seconds })}
+      {expanded && (
+        <span className="cluster-icon__name" aria-hidden="true">
+          {name}
         </span>
       )}
     </button>
@@ -191,6 +208,11 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
       <li role="none">
         <button type="button" role="menuitem" onClick={run(() => openClusterSettings(id))}>
           {t("clusters:menu.settings")}
+        </button>
+      </li>
+      <li role="none">
+        <button type="button" role="menuitem" onClick={run(() => openClusterSettings(id, "icon"))}>
+          {t("clusters:menu.changeIcon")}
         </button>
       </li>
     </ul>

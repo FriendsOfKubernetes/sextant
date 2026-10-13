@@ -67,6 +67,7 @@ describe("app store", () => {
       width: null,
       height: null,
       maximized: false,
+      railExpanded: false,
     });
     const s = useAppStore.getState();
     expect(s.sidebarWidth).toBe(300);

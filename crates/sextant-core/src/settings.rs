@@ -36,6 +36,23 @@ pub struct ClusterSettings {
     pub last_view: Option<String>,
     pub prometheus: PrometheusMode,
     pub usage_source: UsageSource,
+    /// The user's own icon in the cluster rail; `None` = initials of the name on the label color. Owned by the
+    /// frontend, like `color`.
+    pub icon: Option<ClusterIcon>,
+}
+
+/// A cluster's own rail icon (`ClusterSettings::icon`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(tag = "type", rename_all = "camelCase")]
+#[ts(export)]
+pub enum ClusterIcon {
+    /// One or two letters or an emoji on the label color.
+    Text { text: String },
+    /// A picture chosen from disk, already shrunk to a 96×96 PNG by the frontend: `data:image/png;base64,…`.
+    Image {
+        #[serde(rename = "dataUrl")]
+        data_url: String,
+    },
 }
 
 /// Window geometry and panel sizes, restored on start.
@@ -51,6 +68,8 @@ pub struct WindowLayout {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub maximized: bool,
+    /// The cluster rail shows names next to the icons. Written by the frontend.
+    pub rail_expanded: bool,
 }
 
 impl Default for WindowLayout {
@@ -63,6 +82,7 @@ impl Default for WindowLayout {
             width: None,
             height: None,
             maximized: false,
+            rail_expanded: false,
         }
     }
 }
@@ -587,5 +607,81 @@ mod tests {
             .map(|e| e.unwrap().file_name().into_string().unwrap())
             .collect();
         assert_eq!(names, vec!["settings.json".to_owned()]);
+    }
+
+    #[test]
+    fn cluster_icon_and_rail_view_round_trip_through_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let (path, store) = store_in(&dir);
+        store
+            .update(|s| {
+                s.window.rail_expanded = true;
+                s.clusters.insert(
+                    "text".to_owned(),
+                    ClusterSettings {
+                        icon: Some(ClusterIcon::Text {
+                            text: "🚀".to_owned(),
+                        }),
+                        ..Default::default()
+                    },
+                );
+                s.clusters.insert(
+                    "image".to_owned(),
+                    ClusterSettings {
+                        icon: Some(ClusterIcon::Image {
+                            data_url: "data:image/png;base64,iVBORw0KGgo=".to_owned(),
+                        }),
+                        ..Default::default()
+                    },
+                );
+            })
+            .unwrap();
+
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["window"]["railExpanded"], true);
+        assert_eq!(
+            json["clusters"]["text"]["icon"],
+            serde_json::json!({ "type": "text", "text": "🚀" })
+        );
+        assert_eq!(
+            json["clusters"]["image"]["icon"],
+            serde_json::json!({ "type": "image", "dataUrl": "data:image/png;base64,iVBORw0KGgo=" })
+        );
+
+        let s = SettingsStore::open(path).get();
+        assert!(s.window.rail_expanded);
+        assert_eq!(
+            s.clusters["text"].icon,
+            Some(ClusterIcon::Text {
+                text: "🚀".to_owned()
+            })
+        );
+        assert_eq!(
+            s.clusters["image"].icon,
+            Some(ClusterIcon::Image {
+                data_url: "data:image/png;base64,iVBORw0KGgo=".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn a_file_without_cluster_icons_or_rail_view_reads_with_defaults() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(
+            &path,
+            r##"{ "window": { "sidebarWidth": 300, "dockHeight": 250, "dockOpen": true, "lastCluster": "c1" },
+                 "clusters": { "c1": { "displayName": "prod", "color": "#3d90ce", "lastView": "nodes" } } }"##,
+        )
+        .unwrap();
+        let store = SettingsStore::open(path);
+        assert_eq!(store.status().backup_path, None);
+        let s = store.get();
+        assert!(!s.window.rail_expanded);
+        assert_eq!(s.window.sidebar_width, 300);
+        assert_eq!(s.clusters["c1"].icon, None);
+        assert_eq!(s.clusters["c1"].display_name.as_deref(), Some("prod"));
+        assert!(!AppSettings::default().window.rail_expanded);
     }
 }

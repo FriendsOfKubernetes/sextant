@@ -23,23 +23,63 @@
   gap: 4px;
 }
 
+/* The expanded rail: list items and actions stretch to its width. */
+.cluster-list--expanded {
+  align-items: stretch;
+}
+
+.cluster-list--expanded .cluster-list__items {
+  align-items: stretch;
+  gap: 4px;
+}
+
+.cluster-list--expanded .cluster-list__actions {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
+/* A cluster in the rail: the icon with its state (and, in the expanded rail, the name). */
 .cluster-icon {
   position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
   border: none;
+  border-radius: 8px;
   padding: 0;
   cursor: pointer;
-  background: var(--cluster-color, var(--color-accent));
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 14px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+}
+
+.cluster-list--expanded .cluster-icon {
+  width: 100%;
+  padding: 4px 8px;
+}
+
+.cluster-list--expanded .cluster-icon:hover,
+.cluster-list--expanded .cluster-icon--active {
+  background: var(--color-hover);
+}
+
+.cluster-icon:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.cluster-icon__badge {
+  position: relative;
+  flex: none;
+  display: flex;
   opacity: 0.8;
 }
 
-.cluster-icon:hover,
-.cluster-icon--active {
+.cluster-icon:hover .cluster-icon__badge,
+.cluster-icon--active .cluster-icon__badge {
   opacity: 1;
 }
 
@@ -52,6 +92,45 @@
   width: 4px;
   border-radius: 0 3px 3px 0;
   background: var(--color-text);
+}
+
+.cluster-list--expanded .cluster-icon--active::before {
+  left: -8px;
+}
+
+.cluster-icon__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The icon itself (rail and settings preview): a picture, or letters on the label color. */
+.cluster-avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--cluster-color, var(--color-accent));
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.cluster-avatar--image {
+  background: var(--color-hover);
+}
+
+.cluster-avatar__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .cluster-icon__status {
@@ -274,6 +353,54 @@
   border-radius: 4px;
   background: var(--color-main);
   color: var(--color-text);
+}
+
+.clusters-icon {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.clusters-icon__preview {
+  display: inline-flex;
+  flex: none;
+}
+
+.clusters-icon__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.clusters-icon__text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.clusters-icon__text input {
+  width: 6em;
+}
+
+.clusters-icon__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clusters-icon__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.clusters-icon__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-danger);
 }
 
 .clusters-colors {

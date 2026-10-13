@@ -16,10 +16,24 @@
   padding: 12px 0;
   gap: 12px;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Expanded: icons with names (the rail button "Expand cluster list"); items stretch, the icons stay where the
+   collapsed rail has them (16 px from the left edge). */
+.rail--expanded {
+  width: 220px;
+  align-items: stretch;
+  padding: 12px 8px;
 }
 
 .rail__logo {
   border-radius: 8px;
+}
+
+.rail--expanded .rail__logo {
+  align-self: flex-start;
+  margin-left: 12px;
 }
 
 .rail__content {
@@ -28,6 +42,10 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+.rail--expanded .rail__content {
+  align-items: stretch;
 }
 
 .sidebar {
@@ -262,6 +280,12 @@
   gap: 8px;
 }
 
+.rail--expanded .rail__footer {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
 /* ---------- narrow window (≤ 768 px, see useNarrowLayout.ts) ---------- */
 
 .topbar {
@@ -333,6 +357,15 @@
 
 .drawer .sidebar {
   width: min(260px, calc(100vw - 112px));
+}
+
+/* In the drawer the expanded rail and the sidebar share the screen: neither pushes the other off it. */
+.drawer .rail--expanded {
+  width: min(220px, calc(50vw - 20px));
+}
+
+.drawer .rail--expanded + .sidebar {
+  width: min(260px, calc(100vw - 40px - min(220px, calc(50vw - 20px))));
 }
 
 .drawer-backdrop {

@@ -41,6 +41,8 @@ export interface AppState {
   details: ObjectRef | null;
   dock: DockState;
   sidebarWidth: number;
+  /** The cluster rail shows names next to the icons. */
+  railExpanded: boolean;
 
   setActiveCluster(clusterId: ClusterId | null): void;
   setView(clusterId: ClusterId, view: string | null): void;
@@ -58,6 +60,7 @@ export interface AppState {
   toggleDock(): void;
   setDockHeight(height: number): void;
   setSidebarWidth(width: number): void;
+  setRailExpanded(expanded: boolean): void;
 
   /** Applies the saved window layout (on start). */
   hydrateLayout(layout: WindowLayout): void;
@@ -73,6 +76,7 @@ export const initialAppState = {
   details: null,
   dock: { open: false, height: 300, tabs: [], activeTabId: null },
   sidebarWidth: 220,
+  railExpanded: false,
 } satisfies Partial<AppState>;
 
 export const useAppStore = create<AppState>()((set, get) => {
@@ -124,10 +128,13 @@ export const useAppStore = create<AppState>()((set, get) => {
     setDockHeight: (height) =>
       set((s) => ({ dock: { ...s.dock, height: clamp(height, DOCK_MIN_HEIGHT, DOCK_MAX_HEIGHT) } })),
     setSidebarWidth: (width) => set({ sidebarWidth: clamp(width, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH) }),
+    setRailExpanded: (expanded) => set({ railExpanded: expanded }),
 
     hydrateLayout: (layout) =>
       set((s) => ({
         sidebarWidth: clamp(layout.sidebarWidth, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH),
+        // A file from before the rail could be expanded has no such field.
+        railExpanded: layout.railExpanded === true,
         dock: {
           ...s.dock,
           open: layout.dockOpen,

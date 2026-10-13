@@ -1,4 +1,5 @@
-// Per-cluster settings (`AppSettings.clusters[clusterId]`) owned by this feature: display name, color, last view.
+// Per-cluster settings (`AppSettings.clusters[clusterId]`) owned by this feature: display name, color, icon, last
+// view.
 import { updateSettings, type AppSettings, type ClusterId, type ClusterInfo, type ClusterSettings } from "../../api";
 
 /** Same defaults as `ClusterSettings::default()` in Rust. */
@@ -10,6 +11,7 @@ export function defaultClusterSettings(): ClusterSettings {
     lastView: null,
     prometheus: { mode: "auto" },
     usageSource: "auto",
+    icon: null,
   };
 }
 
@@ -48,4 +50,34 @@ export function initialsOf(name: string): string {
   const words = name.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
   if (words.length >= 2) return (words[0]![0]! + words[1]![0]!).toUpperCase();
   return (words[0] ?? name).slice(0, 2).toUpperCase();
+}
+
+/** A cluster's own rail icon as stored in the settings. */
+export type ClusterIcon = NonNullable<ClusterSettings["icon"]>;
+
+/** What the rail draws for a cluster: a picture or one or two characters on the label color. */
+export type ShownIcon = { kind: "image"; src: string } | { kind: "text"; text: string };
+
+/** The only pictures drawn: PNG data URLs made by `readIconImage` (never a link or another format). */
+const PNG_DATA_URL = "data:image/png;base64,";
+
+/** Text of an icon: trimmed, at most two characters as the user sees them (an emoji counts as one). */
+export function normalizeIconText(input: string): string {
+  const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+  let text = "";
+  let count = 0;
+  for (const { segment } of segmenter.segment(input.trim())) {
+    if (count === 2) break;
+    text += segment;
+    count++;
+  }
+  return text.trim();
+}
+
+/** The icon the rail shows: the chosen picture or text, else the initials of the shown name. */
+export function iconOf(cluster: ClusterInfo, settings: AppSettings | null): ShownIcon {
+  const icon = settings?.clusters[cluster.id]?.icon;
+  if (icon?.type === "image" && icon.dataUrl.startsWith(PNG_DATA_URL)) return { kind: "image", src: icon.dataUrl };
+  const text = icon?.type === "text" ? normalizeIconText(icon.text) : "";
+  return { kind: "text", text: text || initialsOf(displayNameOf(cluster, settings)) };
 }

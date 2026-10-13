@@ -71,16 +71,18 @@ describe("theme", () => {
 });
 
 describe("window layout across restarts", () => {
-  it("restores sidebar width and dock height/visibility from the saved settings", async () => {
+  it("restores sidebar width, dock height/visibility and the expanded rail from the saved settings", async () => {
     mockColorScheme(false);
     backend = mockBackend(
       {},
-      { settings: { window: { sidebarWidth: 300, dockHeight: 250, dockOpen: true, lastCluster: null, width: 1400, height: 900, maximized: false } } },
+      { settings: { window: { sidebarWidth: 300, dockHeight: 250, dockOpen: true, lastCluster: null, width: 1400, height: 900, maximized: false, railExpanded: true } } },
     );
     render(<App />);
     act(() => useAppStore.getState().setActiveCluster("c1"));
     await waitFor(() => expect(screen.getByRole("region", { name: "Dock" })).toHaveStyle({ height: "250px" }));
     expect(screen.getByRole("navigation", { name: "Sections" })).toHaveStyle({ width: "300px" });
+    expect(screen.getByRole("navigation", { name: "Clusters" })).toHaveClass("rail--expanded");
+    expect(screen.getByRole("button", { name: "Collapse cluster list" })).toHaveAttribute("aria-expanded", "true");
   });
 
   it("saves dock and sidebar changes into settings.window", async () => {
@@ -98,9 +100,16 @@ describe("window layout across restarts", () => {
     const splitter = screen.getByRole("separator", { name: "Resize dock" });
     fireEvent.keyDown(splitter, { key: "ArrowUp" });
     fireEvent.keyDown(screen.getByRole("separator", { name: "Resize sidebar" }), { key: "ArrowRight" });
+    fireEvent.click(screen.getByRole("button", { name: "Expand cluster list" }));
 
     await waitFor(() =>
-      expect(backend.settings.window).toMatchObject({ dockOpen: true, dockHeight: 316, sidebarWidth: 236, lastCluster: "c1" }),
+      expect(backend.settings.window).toMatchObject({
+        dockOpen: true,
+        dockHeight: 316,
+        sidebarWidth: 236,
+        lastCluster: "c1",
+        railExpanded: true,
+      }),
     );
     // Debounced: several changes, one write.
     expect(backend.calls.filter((c) => c.cmd === "settings_update")).toHaveLength(1);

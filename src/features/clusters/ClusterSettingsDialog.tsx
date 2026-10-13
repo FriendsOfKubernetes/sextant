@@ -1,7 +1,7 @@
 // The cluster settings dialog: registered sections (general here; metrics adds its own) for one cluster.
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../../api";
-import { Dialog } from "../../components";
+import { Button, Dialog } from "../../components";
 import { displayNameOf } from "./clusterSettings";
 import { openClusterSettings, useClustersStore } from "./clustersStore";
 import { getClusterSettingsSections } from "./settingsRegistry";
@@ -20,9 +20,7 @@ export function ClusterSettingsDialog() {
       title={t("clusters:settings.title", { name: displayNameOf(cluster, settings) })}
       onClose={close}
       footer={
-        <button type="button" className="btn" onClick={close}>
-          {t("common:actions.close")}
-        </button>
+        <Button onClick={close}>{t("common:actions.close")}</Button>
       }
     >
       <div className="cluster-settings">

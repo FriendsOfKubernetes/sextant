@@ -20,6 +20,7 @@ export function defaultAppSettings(): AppSettings {
       width: null,
       height: null,
       maximized: false,
+      railExpanded: false,
     },
     helmPath: null,
     editorTheme: "auto",

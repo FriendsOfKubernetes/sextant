@@ -31,6 +31,8 @@ export interface ClustersState {
   pendingId: ClusterId | null;
   /** Cluster whose settings dialog is open. */
   settingsFor: ClusterId | null;
+  /** What the settings dialog puts the focus on when it opens ("Change icon…" — the icon). */
+  settingsFocus: "icon" | null;
 }
 
 const initialState = (): ClustersState => ({
@@ -42,6 +44,7 @@ const initialState = (): ClustersState => ({
   states: {},
   pendingId: null,
   settingsFor: null,
+  settingsFocus: null,
 });
 
 export const useClustersStore = create<ClustersState>()(initialState);
@@ -188,8 +191,8 @@ export async function removeKubeconfigSource(sourceId: string): Promise<void> {
   await refreshClusters();
 }
 
-export function openClusterSettings(id: ClusterId | null): void {
-  useClustersStore.setState({ settingsFor: id });
+export function openClusterSettings(id: ClusterId | null, focus: "icon" | null = null): void {
+  useClustersStore.setState({ settingsFor: id, settingsFocus: id ? focus : null });
 }
 
 /** Forgets everything (tests). */

@@ -7,4 +7,8 @@ export type WindowLayout = { sidebarWidth: number, dockHeight: number, dockOpen:
 /**
  * Logical window size; written by the application when the window is resized.
  */
-width: number | null, height: number | null, maximized: boolean, };
+width: number | null, height: number | null, maximized: boolean, 
+/**
+ * The cluster rail shows names next to the icons. Written by the frontend.
+ */
+railExpanded: boolean, };

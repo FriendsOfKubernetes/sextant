@@ -4,7 +4,9 @@
     "tooltip": "{{name}} — {{state}}",
     "add": "Add cluster",
     "refresh": "Refresh kubeconfig",
-    "slow": "{{tooltip}} for {{seconds}} s. The cluster is slow to respond"
+    "slow": "{{tooltip}} for {{seconds}} s. The cluster is slow to respond",
+    "expand": "Expand cluster list",
+    "collapse": "Collapse cluster list"
   },
   "state": {
     "disconnected": "disconnected",
@@ -17,7 +19,8 @@
     "connect": "Connect",
     "reconnect": "Reconnect",
     "disconnect": "Disconnect",
-    "settings": "Settings"
+    "settings": "Settings",
+    "changeIcon": "Change icon…"
   },
   "add": {
     "title": "Add cluster",
@@ -69,7 +72,19 @@
     "displayName": "Display name",
     "color": "Color label",
     "autoColor": "Auto",
-    "colorOption": "Color {{index}}"
+    "colorOption": "Color {{index}}",
+    "icon": "Icon",
+    "iconPreview": "Icon preview",
+    "iconText": "Icon text",
+    "iconTextPlaceholder": "Initials",
+    "iconChoose": "Choose image…",
+    "iconReset": "Reset icon",
+    "iconHint": "One or two letters or an emoji on the color label, or a PNG, JPEG, SVG or WebP picture up to 5 MB. Empty — the initials of the name.",
+    "iconErrors": {
+      "type": "The file is not a supported image",
+      "size": "The image is larger than 5 MB",
+      "read": "The file cannot be read"
+    }
   },
   "info": {
     "context": "Context",
