@@ -179,6 +179,8 @@ pub struct CallRecord {
     pub cluster: Option<ClusterTarget>,
     pub target: String,
     pub decision: Option<AuditDecision>,
+    /// A check let the call act: from then on a stop does not undo the decision, and the call may have run.
+    pub passed: bool,
 }
 
 /// Checks one call. Made per call with the client's name; [`Guard::record`] gives what it learned.
@@ -301,6 +303,7 @@ impl Guard {
         // The kind lookup may have waited: the server may have stopped meanwhile.
         self.running()?;
         if !confirm {
+            self.lock().passed = true;
             return Ok(());
         }
         let request = ConfirmRequest {
@@ -327,6 +330,7 @@ impl Guard {
         match outcome {
             ConfirmOutcome::Approved => {
                 self.decide(AuditDecision::Approved);
+                self.lock().passed = true;
                 Ok(())
             }
             ConfirmOutcome::Declined => {
@@ -388,6 +392,7 @@ impl Guard {
                 cluster: cluster.name.clone(),
             });
         }
+        self.lock().passed = true;
         Ok(scope)
     }
 
@@ -428,10 +433,13 @@ impl Guard {
         })
     }
 
-    /// Refuses once the server the call came through has stopped.
+    /// Refuses once the server the call came through has stopped; the journal says denied unless an earlier check
+    /// of the call already let it act.
     fn running(&self) -> Result<(), Refusal> {
         if self.stopped.is_cancelled() {
-            self.decide(AuditDecision::Denied);
+            if !self.lock().passed {
+                self.decide(AuditDecision::Denied);
+            }
             return Err(Refusal::Stopped);
         }
         Ok(())

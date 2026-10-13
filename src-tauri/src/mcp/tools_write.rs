@@ -494,7 +494,7 @@ async fn apply_yaml(call: ToolCall, args: ApplyArgs) -> ToolResult {
     let summary = CallSummary {
         tool: "apply_yaml".into(),
         target: targets(&objects),
-        details: Some(first_lines(&args.yaml)),
+        details: Some(apply_details(&objects, &args.yaml)),
     };
     call.guard.check(&cluster, &requirements, &summary).await?;
     // Each request is limited by the core (`STEP_TIMEOUT`), not the whole apply.
@@ -1442,6 +1442,17 @@ fn targets(objects: &[ObjectRef]) -> String {
             many.iter().map(describe).collect::<Vec<_>>().join(", ")
         ),
     }
+}
+
+/// What the confirmation of an apply shows: every object in full (the target is cut, and so is the YAML), then the
+/// first lines of the YAML.
+fn apply_details(objects: &[ObjectRef], yaml: &str) -> String {
+    let count = match objects.len() {
+        1 => "1 object".to_owned(),
+        n => format!("{n} objects"),
+    };
+    let list: Vec<String> = objects.iter().map(describe).collect();
+    format!("{count}:\n{}\n\n{}", list.join("\n"), first_lines(yaml))
 }
 
 /// The `helm` the application uses: from `PATH`, or the one chosen in Settings.
@@ -2466,6 +2477,49 @@ spec:
     }
 
     #[tokio::test]
+    async fn the_confirmation_of_a_long_apply_names_every_object() {
+        // Nothing is applied (the window denies), so the namespace need not exist.
+        const NS: &str = "sextant-mcp-write-many";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        set_rules(
+            &state,
+            &id,
+            vec![rule(&[NS], &[], &[AccessAction::Modify], true)],
+        );
+        // 30 objects of 8 lines: the target and the first 200 lines of YAML both miss the last one.
+        let yaml: String = (1..=30)
+            .map(|n| {
+                format!(
+                    "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings-number-{n:02}\n  \
+                     namespace: {NS}\ndata:\n  color: green\n"
+                )
+            })
+            .collect();
+        window.answer(Answer::Deny);
+        let declined = tool(
+            &state,
+            "apply_yaml",
+            json!({ "cluster": id.0.as_str(), "yaml": yaml }),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            declined.starts_with("The user declined apply_yaml"),
+            "{declined}"
+        );
+        let asked = window.last();
+        let shown = format!("{}\n{}", asked.target, asked.details.unwrap_or_default());
+        for n in 1..=30 {
+            let object = format!("ConfigMap {NS}/settings-number-{n:02}");
+            assert!(shown.contains(&object), "{object} is not shown:\n{shown}");
+        }
+        state.close_all();
+    }
+
+    #[tokio::test]
     async fn changes_that_ask_run_only_when_the_user_allows_them() {
         const NS: &str = "sextant-mcp-write-asked";
         let dir = tempfile::tempdir().unwrap();
@@ -2504,7 +2558,10 @@ spec:
             ("test", "apply_yaml")
         );
         assert_eq!(asked.target, format!("ConfigMap {NS}/asked"));
-        assert_eq!(asked.details.as_deref(), Some(yaml.as_str()));
+        assert_eq!(
+            asked.details,
+            Some(format!("1 object:\nConfigMap {NS}/asked\n\n{yaml}"))
+        );
         assert!(get(&state, &id, &config_map(NS, "asked")).await.is_none());
 
         let declined = tool(

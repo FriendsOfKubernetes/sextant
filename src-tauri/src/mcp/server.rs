@@ -139,9 +139,18 @@ impl SextantMcp {
             () = self.stopped.cancelled() => Err(ToolError::Refused(Refusal::Stopped)),
             result = run => result,
         };
-        if matches!(result, Err(ToolError::Refused(Refusal::Stopped))) {
-            lock(&record).decision = Some(AuditDecision::Denied);
-        }
+        let result = match result {
+            // Allowed and under way when the server stopped: the decision stands, and the agent must not think
+            // nothing happened.
+            Err(ToolError::Refused(Refusal::Stopped)) if lock(&record).passed => Err(
+                ToolError::Failed(CoreError::new(ErrorCode::Other, STOPPED_AFTER_START)),
+            ),
+            Err(ToolError::Refused(Refusal::Stopped)) => {
+                lock(&record).decision = Some(AuditDecision::Denied);
+                result
+            }
+            other => other,
+        };
         let record = lock(&record).clone();
         let entry = AuditEntry {
             at,
@@ -162,6 +171,9 @@ impl SextantMcp {
         result
     }
 }
+
+const STOPPED_AFTER_START: &str = "Sextant's MCP server stopped (turned off, restarted or closed) after this \
+call was allowed and had started: it may have run in full or in part. Check the cluster before repeating it.";
 
 fn error_code_name(error: &ToolError) -> String {
     serde_json::to_value(error.code())

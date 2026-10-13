@@ -198,16 +198,11 @@ button {
   outline-offset: 1px;
 }
 
-/* SVG icons (src/components/icons.tsx) and text glyphs drawn in their place. */
+/* SVG icons (src/components/icons.tsx). */
 .icon {
   flex: none;
   display: inline-block;
   vertical-align: middle;
-}
-
-.icon-glyph {
-  flex: none;
-  line-height: 1;
 }
 
 .empty-state,

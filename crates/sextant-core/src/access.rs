@@ -84,8 +84,14 @@ pub enum AccessPreset {
 pub enum NamespaceScope {
     /// Every namespace, and objects without a namespace.
     All,
-    /// Only these namespaces; never objects without a namespace.
+    /// Only these namespaces; never objects without a namespace. An empty or blank name covers nothing (the core
+    /// reads an empty namespace as "all namespaces").
     Only { namespaces: Vec<String> },
+}
+
+/// Whether a namespace name in a rule names a namespace at all.
+fn is_namespace_name(name: &str) -> bool {
+    !name.trim().is_empty()
 }
 
 impl NamespaceScope {
@@ -93,7 +99,9 @@ impl NamespaceScope {
         match (self, namespace) {
             (NamespaceScope::All, _) => true,
             (NamespaceScope::Only { .. }, None) => false,
-            (NamespaceScope::Only { namespaces }, Some(ns)) => namespaces.iter().any(|n| n == ns),
+            (NamespaceScope::Only { namespaces }, Some(ns)) => {
+                is_namespace_name(ns) && namespaces.iter().any(|n| n == ns)
+            }
         }
     }
 }
@@ -308,7 +316,7 @@ pub fn decide(
 }
 
 /// Namespaces where `action` on `kind` is allowed — for listing across namespaces: `All`, or the union of the
-/// namespaces named by covering rules (sorted; empty — nowhere).
+/// namespaces named by covering rules (sorted, without empty or blank names; empty — nowhere).
 pub fn allowed_namespaces(
     access: &ClusterAccess,
     kind: &KindPattern,
@@ -321,7 +329,9 @@ pub fn allowed_namespaces(
         }
         match rule.namespaces {
             NamespaceScope::All => return NamespaceScope::All,
-            NamespaceScope::Only { namespaces: more } => namespaces.extend(more),
+            NamespaceScope::Only { namespaces: more } => {
+                namespaces.extend(more.into_iter().filter(|n| is_namespace_name(n)))
+            }
         }
     }
     namespaces.sort();
@@ -660,6 +670,32 @@ mod tests {
     }
 
     #[test]
+    fn empty_and_blank_namespace_names_cover_nothing() {
+        // The core reads an empty namespace as "all namespaces": a rule naming one must not widen access.
+        let access = custom(vec![rule(&["", " ", "\t"], &[pod()], &[Read])]);
+        for ns in ["", " ", "\t"] {
+            assert_eq!(
+                decide(&access, Some(ns), &pod(), Read),
+                Decision::Denied,
+                "{ns:?}"
+            );
+        }
+        assert_eq!(
+            allowed_namespaces(&access, &pod(), Read),
+            NamespaceScope::Only { namespaces: vec![] }
+        );
+        // Next to a real name only the real name is left.
+        let mixed = custom(vec![rule(&["", "team-a"], &[pod()], &[Read])]);
+        assert_eq!(
+            allowed_namespaces(&mixed, &pod(), Read),
+            NamespaceScope::Only {
+                namespaces: vec!["team-a".into()]
+            }
+        );
+        assert_eq!(decide(&mixed, Some("team-a"), &pod(), Read), ALLOWED);
+    }
+
+    #[test]
     fn any_permission_on_a_kind_shows_it() {
         let access = custom(vec![
             rule(&["a"], &[pod()], &[Logs]),
@@ -730,9 +766,22 @@ mod tests {
 
     #[test]
     fn access_that_does_not_parse_reads_as_off() {
+        // A complete rule, so only the action it names decides whether it parses.
+        let rule_with = |actions: serde_json::Value| {
+            json!({ "preset": "custom", "rules": [{
+                "namespaces": { "type": "only", "namespaces": ["a"] },
+                "kinds": { "type": "only", "kinds": [{ "group": "", "kind": "Pod" }] },
+                "actions": actions,
+                "confirm": true
+            }] })
+        };
+        assert_ne!(
+            serde_json::from_value::<ClusterAccess>(rule_with(json!(["read"]))).unwrap(),
+            ClusterAccess::default()
+        );
         for broken in [
             json!({ "preset": "fromTheFuture" }),
-            json!({ "preset": "full", "rules": [{ "actions": ["teleport"] }] }),
+            rule_with(json!(["read", "teleport"])),
             json!("full"),
         ] {
             assert_eq!(

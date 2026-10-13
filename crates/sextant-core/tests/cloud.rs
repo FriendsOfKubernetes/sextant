@@ -71,6 +71,29 @@ contexts:
 users:
 - name: clusterUser_rg-prod_aks-prod
   user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      command: kubelogin
+      args: [get-token, --environment, AzurePublicCloud, --server-id, 6dae42f8-4368-4678-94ff-3960e28e3630, --login, devicecode]
+      interactiveMode: IfAvailable
+      provideClusterInfo: false
+YAML
+    ;;
+  "aks get-credentials --subscription=sub-1 --resource-group=rg-prod --name=aks-local --file=- --only-show-errors")
+    cat <<YAML
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority-data: Y2EtYWtz
+    server: https://aks-local.hcp.westeurope.azmk8s.io:443
+  name: aks-local
+contexts:
+- context: {cluster: aks-local, user: clusterUser_rg-prod_aks-local}
+  name: aks-local
+users:
+- name: clusterUser_rg-prod_aks-local
+  user:
     token: $AKS_TOKEN
 YAML
     ;;
@@ -386,6 +409,49 @@ async fn a_missing_cli_or_plugin_says_how_to_install_it_and_a_failed_sign_in_say
     assert_eq!(
         eks_hint.command.as_deref(),
         Some("aws sso login --profile dev")
+    );
+}
+
+#[tokio::test]
+async fn an_aks_cluster_without_entra_id_sign_in_is_refused_and_not_written() {
+    let fake = Fake::new();
+    let cli = fake.cli();
+    let aks = cli
+        .find_clusters(&CloudQuery {
+            provider: CloudProvider::Azure,
+            account: "sub-1".into(),
+            regions: vec![],
+        })
+        .await
+        .unwrap();
+    // A cluster with local accounts: `az aks get-credentials` prints a token user, not kubelogin.
+    let local = sextant_core::cloud::CloudCluster {
+        name: "aks-local".into(),
+        context: "aks_sub-1_rg-prod_aks-local".into(),
+        ..aks.clusters[0].clone()
+    };
+    let mut registry = fake.registry(Vec::new());
+    let import = cli
+        .prepare_import(&[local])
+        .await
+        .apply(&mut registry)
+        .unwrap();
+    assert!(import.sources.is_empty() && import.contexts.is_empty());
+    assert_eq!(import.problems.len(), 1, "{:?}", import.problems);
+    let problem = &import.problems[0];
+    assert_eq!(problem.kind, CloudProblemKind::Failed);
+    assert_eq!(problem.scope.as_deref(), Some("aks-local"));
+    assert!(problem.message.contains("Entra ID"), "{}", problem.message);
+    assert!(!problem.message.contains(AKS_TOKEN));
+    // Not "az login": signing in again would not help.
+    assert_eq!(problem.command, None);
+    assert!(registry.clusters().unwrap().is_empty());
+    assert!(
+        !fake
+            .dir
+            .path()
+            .join("data/kubeconfigs/cloud-azure.yaml")
+            .exists()
     );
 }
 

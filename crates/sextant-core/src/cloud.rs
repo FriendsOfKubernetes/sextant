@@ -376,8 +376,8 @@ fn same_name(a: &OsStr, b: &str) -> bool {
 }
 
 impl CloudCli {
-    /// Replaces the environment the CLIs inherit (instead of the app's own; tests). `KUBECONFIG`/`HELM_*` are still
-    /// removed from it.
+    /// Replaces the environment the CLIs inherit (the app passes its own, cleaned like a local terminal's; tests pass
+    /// theirs). `KUBECONFIG`/`HELM_*` are still removed from it.
     pub fn with_env<K: Into<OsString>, V: Into<OsString>>(
         mut self,
         env: impl IntoIterator<Item = (K, V)>,
@@ -914,6 +914,15 @@ impl CloudCli {
             )
             .await?;
         let (server, ca) = cluster_part(&text).map_err(failed)?;
+        // Without Entra ID (local accounts) az prints a token or certificate user: the `kubelogin --login azurecli`
+        // user Sextant writes could never sign in, and `az login` would not help.
+        if !signs_in_with_kubelogin(&text) {
+            return Err(failed(format!(
+                "{} does not use Microsoft Entra ID sign-in (az prints no kubelogin user for it), so Sextant cannot \
+                 sign in to it through az. Enable Entra ID integration on the cluster, or add a kubeconfig file for it.",
+                cluster.name
+            )));
+        }
         cluster.endpoint = Some(server);
         cluster.certificate_authority = Some(ca);
         Ok(cluster)
@@ -1025,17 +1034,40 @@ fn flag_value(args: &[String], flag: &str) -> Option<String> {
     })
 }
 
-/// `value` as one word of a shell command: quoted when it has anything but letters, digits and `._-@/:`.
+/// `value` as one word of a command the user runs in the local terminal (PowerShell on Windows, a POSIX shell
+/// elsewhere): as is when it has only letters, digits and `._-@/:`, otherwise in single quotes, so `$(…)`, backquotes
+/// and `"` stay text.
 fn shell_word(value: &str) -> String {
+    shell_word_for(value, cfg!(windows))
+}
+
+fn shell_word_for(value: &str, powershell: bool) -> String {
+    // A leading `@` is splatting in PowerShell.
+    let splat = powershell && value.starts_with('@');
     if !value.is_empty()
+        && !splat
         && value
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || "._-@/:".contains(c))
     {
-        value.to_owned()
-    } else {
-        format!("\"{}\"", value.replace('"', ""))
+        return value.to_owned();
     }
+    let mut word = String::with_capacity(value.len() + 2);
+    word.push('\'');
+    for c in value.chars() {
+        match c {
+            // POSIX: close the quotes, an escaped quote, open them again.
+            '\'' if !powershell => word.push_str("'\\''"),
+            // PowerShell ends a single-quoted string at any of these; doubled, it is one character.
+            '\'' | '\u{2018}' | '\u{2019}' | '\u{201A}' | '\u{201B}' if powershell => {
+                word.push(c);
+                word.push(c);
+            }
+            _ => word.push(c),
+        }
+    }
+    word.push('\'');
+    word
 }
 
 /// A value that goes to a CLI as `--flag=value` and into a kubeconfig's exec arguments: no leading `-` (it would be
@@ -1382,6 +1414,18 @@ fn cluster_part(text: &str) -> Result<(String, String), String> {
         .clone()
         .ok_or("the CLI printed a cluster without a CA")?;
     Ok((server, ca))
+}
+
+/// Whether the first user of a kubeconfig printed by `az aks get-credentials` signs in through `kubelogin` (Microsoft
+/// Entra ID). Credentials are not read.
+fn signs_in_with_kubelogin(text: &str) -> bool {
+    Kubeconfig::from_yaml(text)
+        .ok()
+        .and_then(|config| config.auth_infos.into_iter().next())
+        .and_then(|user| user.auth_info)
+        .and_then(|auth| auth.exec)
+        .and_then(|exec| exec.command)
+        .is_some_and(|command| command_name(&command) == "kubelogin")
 }
 
 /// The kubeconfig (one context, cluster and user, all named [`CloudCluster::context`]) of a cluster, with exec
@@ -1996,7 +2040,29 @@ users:
         assert_eq!(flag_value(&args, "--profile").as_deref(), Some("dev"));
         assert_eq!(flag_value(&args, "--region").as_deref(), Some("eu-west-1"));
         assert_eq!(flag_value(&args, "--missing"), None);
-        assert_eq!(shell_word("dev"), "dev");
-        assert_eq!(shell_word("my profile"), "\"my profile\"");
+    }
+
+    #[test]
+    fn values_in_a_shown_command_stay_one_word_and_run_nothing() {
+        for powershell in [false, true] {
+            assert_eq!(shell_word_for("dev", powershell), "dev");
+            assert_eq!(
+                shell_word_for("team@corp/x:1.2_a-b", powershell),
+                "team@corp/x:1.2_a-b"
+            );
+            assert_eq!(shell_word_for("", powershell), "''");
+            assert_eq!(shell_word_for("my profile", powershell), "'my profile'");
+            assert_eq!(shell_word_for("$(x)", powershell), "'$(x)'");
+            assert_eq!(shell_word_for("`x`", powershell), "'`x`'");
+            assert_eq!(shell_word_for("a\"b", powershell), "'a\"b'");
+        }
+        // POSIX shells: a quote ends the quoted part, an escaped one, a new part.
+        assert_eq!(shell_word_for("a'b", false), "'a'\\''b'");
+        // PowerShell: a quote inside single quotes is doubled (typographic ones end the string too).
+        assert_eq!(shell_word_for("a'b", true), "'a''b'");
+        assert_eq!(shell_word_for("@x", true), "'@x'");
+        assert_eq!(shell_word_for("@x", false), "@x");
+        assert_eq!(shell_word_for("a\u{2019}b", true), "'a\u{2019}\u{2019}b'");
+        assert_eq!(shell_word("my profile"), "'my profile'");
     }
 }

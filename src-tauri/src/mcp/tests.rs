@@ -1075,6 +1075,45 @@ async fn rules_for_some_namespaces_limit_lists_and_refuse_cluster_wide_kinds() {
     state.close_all();
 }
 
+#[tokio::test]
+async fn a_rule_naming_an_empty_namespace_lists_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some((state, id)) = cluster_state(dir.path()) else {
+        return;
+    };
+    // The core reads an empty namespace as "all namespaces": such a rule must not open them.
+    let access: ClusterAccess = serde_json::from_value(json!({
+        "preset": "custom",
+        "rules": [{
+            "namespaces": { "type": "only", "namespaces": ["", " "] },
+            "kinds": { "type": "only", "kinds": [{ "group": "", "kind": "Pod" }, { "group": "", "kind": "Event" }] },
+            "actions": ["read"],
+            "confirm": false
+        }]
+    }))
+    .unwrap();
+    set_access(&state, &id, access);
+    let cluster = id.0.as_str();
+    for (name, args) in [
+        (
+            "list_resources",
+            json!({ "cluster": cluster, "kind": "Pod" }),
+        ),
+        (
+            "list_resources",
+            json!({ "cluster": cluster, "kind": "Pod", "namespace": "" }),
+        ),
+        ("get_events", json!({ "cluster": cluster })),
+    ] {
+        let refused = tool(&state, name, args.clone()).await.unwrap_err();
+        assert!(
+            refused.starts_with("Sextant denied read on"),
+            "{args}: {refused}"
+        );
+    }
+    state.close_all();
+}
+
 // -----------------------------------------------------------------------------------------------------------------
 // Stopping, limits of what the journal keeps.
 
@@ -1126,6 +1165,37 @@ fn probe(state: &AppState) -> Probe {
                 call.guard.check(&cluster, &[need], &summary).await?;
                 done.store(true, Ordering::SeqCst);
                 Ok(ToolOutput::Text("changed".into()))
+            }
+        },
+    );
+    // `act`: the same check, then `done`, then works until the server stops (the action is under way).
+    let (go_in, done_in) = (Arc::clone(&go), Arc::clone(&done));
+    tools.add(
+        "act",
+        "test",
+        ToolKind::Change,
+        move |call: ToolCall, args: Args| {
+            let (go, done) = (Arc::clone(&go_in), Arc::clone(&done_in));
+            async move {
+                go.notified().await;
+                let cluster = ClusterTarget {
+                    id: ClusterId::from("c1"),
+                    name: "c1".into(),
+                };
+                let summary = CallSummary {
+                    tool: "act".into(),
+                    target: format!("Pod team-a/{}", args.name),
+                    details: None,
+                };
+                let need = (
+                    Some("team-a".to_owned()),
+                    KindPattern::new("", "Pod"),
+                    AccessAction::Modify,
+                );
+                call.guard.check(&cluster, &[need], &summary).await?;
+                done.store(true, Ordering::SeqCst);
+                std::future::pending::<()>().await;
+                Ok(ToolOutput::Text("acted".into()))
             }
         },
     );
@@ -1314,4 +1384,39 @@ async fn long_clients_and_targets_are_cut_in_the_journal_and_the_dialog() {
     }
     assert!(entry.target.starts_with("Pod team-a/nnn"));
     probe.server.stop();
+}
+
+#[tokio::test]
+async fn a_stop_after_the_check_passed_keeps_the_decision_and_does_not_say_nothing_ran() {
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    let probe = probe(&state);
+    start_probe(&probe).await;
+    let handler = probe.server.handler();
+    let call = tokio::spawn(async move { handler.call("agent", "act", args("web")).await });
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    probe.go.notify_waiters();
+    for _ in 0..200 {
+        if probe.done.load(std::sync::atomic::Ordering::SeqCst) {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert!(
+        probe.done.load(std::sync::atomic::Ordering::SeqCst),
+        "the action did not start"
+    );
+    probe.server.stop();
+    let error = call.await.unwrap().unwrap_err();
+    let text = error.message();
+    assert!(!text.contains("nothing was run"), "{text}");
+    assert!(text.contains("may have"), "{text}");
+    assert_ne!(error.code(), sextant_core::ErrorCode::Denied);
+
+    let entry = probe.server.context().audit.list(None)[0].clone();
+    assert_eq!(entry.tool, "act");
+    // Read + write asks before a change; the window allowed it.
+    assert_eq!(entry.decision, AuditDecision::Approved);
+    assert_eq!(entry.result, "other");
 }
