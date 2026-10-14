@@ -27,6 +27,7 @@ export function defaultAppSettings(): AppSettings {
     checkForUpdates: true,
     mcp: { enabled: false, port: 47391 },
     nodeShellImage: "busybox:stable",
+    extensions: [],
   };
 }
 

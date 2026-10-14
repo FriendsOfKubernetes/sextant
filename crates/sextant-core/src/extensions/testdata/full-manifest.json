@@ -1,0 +1,61 @@
+{
+  "$schema": "https://github.com/FriendsOfKubernetes/sextant/extension-manifest.schema.json",
+  "id": "dev.example.widgets",
+  "name": "Widgets",
+  "version": "1.2.0-beta.1+build.7",
+  "description": "Pages, panels and actions for the Widget custom resource.",
+  "author": "Example Team",
+  "sextantApi": 1,
+  "entry": "dist/index.html",
+  "icon": "customResource",
+  "permissions": {
+    "clusters": { "type": "only", "names": ["kind-sextant-test", "staging"] },
+    "rules": [
+      {
+        "namespaces": { "type": "all" },
+        "kinds": { "type": "only", "kinds": [{ "group": "example.dev", "kind": "Widget" }, { "group": "", "kind": "Pod" }] },
+        "actions": ["read", "logs"]
+      },
+      {
+        "namespaces": { "type": "only", "namespaces": ["team-a"] },
+        "kinds": { "type": "only", "kinds": [{ "group": "example.dev", "kind": "Widget" }] },
+        "actions": ["modify", "delete"],
+        "confirm": true
+      },
+      {
+        "namespaces": { "type": "only", "namespaces": ["team-a"] },
+        "kinds": { "type": "only", "kinds": [{ "group": "", "kind": "ConfigMap" }] },
+        "actions": ["modify"],
+        "confirm": false
+      },
+      {
+        "namespaces": { "type": "only", "namespaces": ["team-a"] },
+        "kinds": { "type": "only", "kinds": [{ "group": "", "kind": "Secret" }] },
+        "actions": ["secretValues"]
+      }
+    ]
+  },
+  "contributes": {
+    "pages": [
+      { "id": "overview", "title": "Widgets overview", "section": "widgets", "sectionTitle": "Widgets", "icon": "workloads", "order": 1 },
+      { "id": "health", "title": "Widget health", "section": "customResources" }
+    ],
+    "detailsSections": [
+      { "id": "status", "title": "Widget status", "kinds": [{ "group": "example.dev", "kind": "Widget" }], "order": 10, "placement": "section" },
+      { "id": "history", "title": "History", "kinds": [{ "group": "example.dev", "kind": "Widget" }, { "group": "apps", "kind": "Deployment" }], "placement": "tab" }
+    ],
+    "actions": [
+      { "id": "scale", "title": "Scale widget", "icon": "scale", "kinds": [{ "group": "example.dev", "kind": "Widget" }] },
+      { "id": "purge", "title": "Purge widgets", "kinds": [{ "group": "example.dev", "kind": "Widget" }], "danger": true, "multiple": true }
+    ],
+    "columns": [
+      { "kind": { "group": "example.dev", "kind": "Widget" }, "id": "size", "title": "Size", "jsonPath": ".spec.size", "after": "Name" },
+      { "kind": { "group": "example.dev", "kind": "Widget" }, "id": "ready", "title": "Ready", "jsonPath": ".status.conditions[?(@.type==\"Ready\")].status" },
+      { "kind": { "group": "", "kind": "Pod" }, "id": "app", "title": "App", "jsonPath": "{.metadata.labels['app\\.kubernetes\\.io/name']}" }
+    ],
+    "dockActions": [
+      { "id": "console", "title": "Widget console", "icon": "terminal" }
+    ],
+    "settings": { "title": "Widgets" }
+  }
+}

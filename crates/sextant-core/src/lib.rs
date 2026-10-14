@@ -14,6 +14,7 @@ pub mod cloud;
 pub mod cluster;
 pub mod error;
 pub mod exec;
+pub mod extensions;
 #[cfg(test)]
 mod fake_api;
 pub mod helm;

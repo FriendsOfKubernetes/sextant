@@ -1,0 +1,342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FriendsOfKubernetes/sextant/extension-manifest.schema.json",
+  "title": "Sextant extension manifest (sextant-extension.json)",
+  "description": "Sextant reads this schema itself (crates/sextant-core/src/extensions/schema.rs) and adds checks a schema cannot express: sextantApi must be one Sextant supports, contribution ids are unique per contribution type. `format` names Sextant's own formats (extension-id, contribution-id, semver, entry-path, identifier, non-blank, json-path); `pattern` says the same as a regular expression for other validators (json-path has none: it is the JSONPath subset of CRD printer columns).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "version", "description", "author", "sextantApi", "entry", "permissions", "contributes"],
+  "properties": {
+    "$schema": {
+      "description": "Lets an editor find this schema; Sextant ignores it.",
+      "type": "string",
+      "maxLength": 2048
+    },
+    "id": {
+      "description": "Unique id: 3–64 characters, lowercase letters, digits, `.` and `-`; starts with a letter or digit, does not end with `.`, no `..`, not a Windows device name (`nul`, `con.x`, `com0`, …).",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64,
+      "format": "extension-id",
+      "pattern": "^(?!.*\\.\\.)(?!(?:con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³])(?:\\.|$))[a-z0-9][a-z0-9.-]{1,62}[a-z0-9-]$"
+    },
+    "name": { "$ref": "#/$defs/title" },
+    "version": {
+      "description": "Semantic version (https://semver.org), e.g. 1.2.0 or 1.2.0-beta.1.",
+      "type": "string",
+      "maxLength": 64,
+      "format": "semver",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "format": "non-blank",
+      "pattern": "\\S"
+    },
+    "sextantApi": {
+      "description": "Major version of the extension API the extension is written for; Sextant supports 1.",
+      "type": "integer",
+      "enum": [1]
+    },
+    "entry": {
+      "description": "The HTML file every view opens, relative to the package root, e.g. index.html or dist/index.html; no part may start with `.`, be `node_modules` (any case), end with `.` or a space, or be a Windows device name.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "format": "entry-path",
+      "pattern": "^(?!/)(?!.*//)(?!(?:.*/)?(?:\\.|[nN][oO][dD][eE]_[mM][oO][dD][uU][lL][eE][sS](?:/|$)))(?!.*[. ](?:/|$))(?!(?:.*/)?(?:[cC][oO][nN]|[pP][rR][nN]|[aA][uU][xX]|[nN][uU][lL]|[cC][oO][mM][0-9¹²³]|[lL][pP][tT][0-9¹²³]|[cC][oO][nN][iI][nN]\\$|[cC][oO][nN][oO][uU][tT]\\$) *(?:\\.[^/]*)?(?:/|$))[^\\\\:*?\\\"<>|\\u0000-\\u001f]*\\.[hH][tT][mM][lL]?$"
+    },
+    "icon": { "$ref": "#/$defs/icon" },
+    "permissions": { "$ref": "#/$defs/permissions" },
+    "contributes": { "$ref": "#/$defs/contributes" }
+  },
+  "$defs": {
+    "title": {
+      "description": "Text shown to the user: 1–80 characters, not only spaces.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "format": "non-blank",
+      "pattern": "\\S"
+    },
+    "contributionId": {
+      "description": "1–40 characters: lowercase letters, digits and `-`; unique among contributions of the same type.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "format": "contribution-id",
+      "pattern": "^[a-z0-9-]{1,40}$"
+    },
+    "icon": {
+      "description": "Name of an icon from Sextant's set (e.g. `workloads`, `customResource`); an unknown name shows the default icon.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "format": "identifier",
+      "pattern": "^[A-Za-z][A-Za-z0-9-]{0,39}$"
+    },
+    "order": {
+      "description": "Position among siblings; smaller comes first.",
+      "type": "integer",
+      "minimum": -10000,
+      "maximum": 10000
+    },
+    "kind": {
+      "description": "A kind without a version: API group (`\"\"` for the core group) and kind, compared ignoring case.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group", "kind"],
+      "properties": {
+        "group": { "type": "string", "maxLength": 253 },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "format": "non-blank",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "kinds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/kind" }
+    },
+    "permissions": {
+      "description": "What the extension may do in clusters: clusters × namespaces × kinds × actions, as AI agent access rules.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clusters", "rules"],
+      "properties": {
+        "clusters": {
+          "description": "Clusters by kubeconfig context name: all of them, or only these.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type"],
+              "properties": { "type": { "const": "all" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "names"],
+              "properties": {
+                "type": { "const": "only" },
+                "names": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 253,
+                    "format": "non-blank",
+                    "pattern": "\\S"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "rules": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "$ref": "#/$defs/rule" }
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespaces", "kinds", "actions"],
+      "properties": {
+        "namespaces": {
+          "description": "All namespaces (and objects without a namespace), or only these namespaces.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type"],
+              "properties": { "type": { "const": "all" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "namespaces"],
+              "properties": {
+                "type": { "const": "only" },
+                "namespaces": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 100,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 63,
+                    "format": "non-blank",
+                    "pattern": "\\S"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "kinds": {
+          "description": "All kinds, or only these.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type"],
+              "properties": { "type": { "const": "all" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "kinds"],
+              "properties": {
+                "type": { "const": "only" },
+                "kinds": { "$ref": "#/$defs/kinds" }
+              }
+            }
+          ]
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["read", "modify", "delete", "logs", "secretValues"]
+          }
+        },
+        "confirm": {
+          "description": "Ask the user before every Modify or Delete this rule allows. Default: true.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "contributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pages": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "section"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "section": {
+                "description": "A sidebar section of Sextant (`workloads`, `config`, `customResources`, …) or the extension's own.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "format": "identifier",
+                "pattern": "^[A-Za-z][A-Za-z0-9-]{0,39}$"
+              },
+              "sectionTitle": { "$ref": "#/$defs/title" },
+              "icon": { "$ref": "#/$defs/icon" },
+              "order": { "$ref": "#/$defs/order" }
+            }
+          }
+        },
+        "detailsSections": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "kinds", "placement"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "kinds": { "$ref": "#/$defs/kinds" },
+              "order": { "$ref": "#/$defs/order" },
+              "placement": { "type": "string", "enum": ["section", "tab"] }
+            }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "kinds"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "icon": { "$ref": "#/$defs/icon" },
+              "kinds": { "$ref": "#/$defs/kinds" },
+              "danger": { "type": "boolean", "default": false },
+              "multiple": { "type": "boolean", "default": false }
+            }
+          }
+        },
+        "columns": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "id", "title", "jsonPath"],
+            "properties": {
+              "kind": { "$ref": "#/$defs/kind" },
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "jsonPath": {
+                "description": "JSONPath as in CRD printer columns: .spec.size, .status.conditions[?(@.type==\"Ready\")].status, .metadata.labels['app\\.kubernetes\\.io/name'].",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500,
+                "format": "json-path"
+              },
+              "after": {
+                "description": "Title of the column this one goes after; at the end when omitted or unknown.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            }
+          }
+        },
+        "dockActions": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "icon": { "$ref": "#/$defs/icon" }
+            }
+          }
+        },
+        "settings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title"],
+          "properties": {
+            "title": { "$ref": "#/$defs/title" }
+          }
+        }
+      }
+    }
+  }
+}

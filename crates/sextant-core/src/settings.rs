@@ -10,6 +10,7 @@ use ts_rs::TS;
 
 use crate::access::ClusterAccess;
 use crate::error::{CoreError, CoreResult, ErrorCode};
+use crate::extensions::InstalledExtension;
 use crate::kubeconfig::KubeconfigSource;
 use crate::metrics::{PrometheusMode, UsageSource};
 
@@ -137,6 +138,12 @@ pub struct AppSettings {
     /// Image of the temporary privileged pod behind a shell on a node (`node_shell`); empty means the default
     /// (`node_shell::DEFAULT_IMAGE`). The image needs `nsenter`; `sleep` runs on the node.
     pub node_shell_image: String,
+    /// Installed extensions and what the user granted them. Written only by the backend (install, consent, enable,
+    /// remove); `settings_update` keeps the stored list whatever the frontend sends. An entry this version cannot
+    /// read is left out rather than failing the file.
+    #[serde(with = "crate::extensions::installed::lenient_list")]
+    #[ts(as = "Vec<InstalledExtension>")]
+    pub extensions: Vec<InstalledExtension>,
 }
 
 impl Default for AppSettings {
@@ -152,6 +159,7 @@ impl Default for AppSettings {
             check_for_updates: true,
             mcp: McpSettings::default(),
             node_shell_image: crate::node_shell::DEFAULT_IMAGE.to_owned(),
+            extensions: Vec::new(),
         }
     }
 }
@@ -837,5 +845,77 @@ mod tests {
             SettingsStore::open(path).get().node_shell_image,
             "registry.example/tools:1"
         );
+    }
+
+    #[test]
+    fn installed_extensions_round_trip_through_the_file() {
+        use crate::extensions::{ExtensionPermissions, ExtensionSource, InstalledExtension};
+        let dir = tempfile::tempdir().unwrap();
+        let (path, store) = store_in(&dir);
+        assert!(store.get().extensions.is_empty());
+        let installed = InstalledExtension {
+            id: "dev.example.widgets".to_owned(),
+            version: "1.0.0".to_owned(),
+            name: "Widgets".to_owned(),
+            source: ExtensionSource::Url {
+                url: "https://github.com/o/r/releases/download/v1/w.sextant-ext".to_owned(),
+            },
+            enabled: true,
+            granted: ExtensionPermissions::none(),
+            installed_at: 1_760_000_000_000,
+        };
+        store
+            .update(|s| s.extensions.push(installed.clone()))
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["extensions"][0]["source"]["type"], "url");
+        assert_eq!(json["extensions"][0]["installedAt"], 1_760_000_000_000u64);
+        assert_eq!(json["extensions"][0]["granted"]["clusters"]["type"], "only");
+        assert_eq!(SettingsStore::open(path).get().extensions, vec![installed]);
+    }
+
+    #[test]
+    fn a_bad_extensions_entry_is_left_out_and_never_damages_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        let good = r#"{ "id": "good", "version": "1.0.0", "name": "Good", "source": { "type": "folder", "path": "/src/good" },
+                        "enabled": true, "installedAt": 1,
+                        "granted": { "clusters": { "type": "all" }, "rules": [] } }"#;
+        let unknown_source = r#"{ "id": "odd", "version": "1.0.0", "name": "Odd", "source": { "type": "ftp", "host": "x" },
+                        "enabled": true, "installedAt": 1, "granted": { "clusters": { "type": "all" }, "rules": [] } }"#;
+        let newer_rules = r#"{ "id": "newer", "version": "1.0.0", "name": "Newer", "source": { "type": "file", "name": "n.zip" },
+                        "enabled": true, "installedAt": 1,
+                        "granted": { "clusters": { "type": "all" }, "rules": [], "deny": [] } }"#;
+        let duplicate = good.replace("Good", "Second");
+        std::fs::write(
+            &path,
+            format!(
+                r#"{{ "theme": "dark", "extensions": [{good}, {unknown_source}, {{ "id": 5 }}, {newer_rules}, {duplicate}] }}"#
+            ),
+        )
+        .unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert_eq!(store.status().backup_path, None);
+        let s = store.get();
+        assert_eq!(s.theme, Theme::Dark);
+        let ids: Vec<&str> = s.extensions.iter().map(|e| e.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec!["good", "newer"],
+            "unreadable entries and a second `good` are left out"
+        );
+        assert_eq!(s.extensions[0].name, "Good");
+        assert_eq!(
+            s.extensions[1].granted,
+            crate::extensions::ExtensionPermissions::none(),
+            "permissions this version cannot read are closed"
+        );
+
+        std::fs::write(&path, r#"{ "theme": "dark", "extensions": { "id": "x" } }"#).unwrap();
+        let store = SettingsStore::open(path);
+        assert_eq!(store.status().backup_path, None);
+        assert_eq!(store.get().theme, Theme::Dark);
+        assert!(store.get().extensions.is_empty());
     }
 }
