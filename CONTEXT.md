@@ -42,15 +42,15 @@ A group in the tree on the left: Workloads, Config, Network, Storage, Access Con
 _Avoid_: category, menu
 
 **Page**:
-The content of a tree item that is not a table of one kind: overview, events, Helm, Port Forwarding, settings.
+The content of a tree item that is not a table of one kind: overview, events, Helm, Port Forwarding, settings, and the pages an extension adds.
 _Avoid_: screen, tab
 
 **Details panel**:
-The panel that slides out on the right for the selected object: metadata, kind fields, events, YAML.
+The panel that slides out on the right for the selected object: metadata, kind fields, events, YAML. Extensions can add sections to it, or tabs next to "Overview", which holds the built-in sections.
 _Avoid_: inspector, side panel
 
 **Dock**:
-The bottom area with tabs: logs, a shell into a container, a local terminal, creating and editing YAML. A terminal is just one of the dock tab types.
+The bottom area with tabs: logs, a shell into a container, a local terminal, creating and editing YAML, and the tabs extensions open. A terminal is just one of the dock tab types.
 _Avoid_: console, bottom panel, terminal
 
 **Port forward**:
@@ -82,7 +82,7 @@ A set of YAML highlighting colors: Auto, One Dark, GitHub Dark, GitHub Light, Dr
 _Avoid_: editor theme (a theme is the light or dark look of the whole app)
 
 **Unreadable settings**:
-A settings file that could not be read or parsed. The app copies it to `settings.json.bak-<time>` and starts with defaults; when access is denied, writing is disabled and the settings live until the window is closed. The window shows a banner with the path.
+A settings file that could not be read or parsed, or that cannot be written (for example it belongs to root or is read-only). An unreadable file is copied to `settings.json.bak-<time>` and the app starts with defaults; when writing is not possible, changes live only until the window is closed. The window shows a banner with the path and the reason.
 _Avoid_: settings reset
 
 **Layer**:
@@ -162,23 +162,23 @@ The command `sextant mcp`, for clients that can only start a program and talk ov
 _Avoid_: CLI mode, second server
 
 **Agent access**:
-What the agent may do in one cluster. Off by default: a cluster the user never opened to agents refuses every call. Set per cluster and shared by all agents.
+What the agent may do in one cluster. Off by default: a cluster the user never opened to agents refuses every call. Set per cluster and shared by all agents. Rules this version does not understand are kept as they are, act as Off, and are shown with a notice and "Reset to Off".
 _Avoid_: permissions (bare), AI mode
 
 **Access preset**:
-A ready set of rules for agent access: Read-only, Read + write (no delete), Full, or Custom for the user's own rules. Choosing Custom starts from a copy of the preset's rules.
+A ready set of rules for agent access: Read-only, Read + write (no delete), Full, or Custom for the user's own rules. Choosing Custom starts from a copy of the preset's rules; the user's own rules are kept when another preset is chosen and come back with Custom.
 _Avoid_: role, profile
 
 **Access rule**:
-Namespaces, kinds (CRDs and Helm releases included) and actions that a part of agent access covers. A call is allowed if any rule covers it. Resources with no namespace, such as Nodes, are covered only by a rule for all namespaces.
+Namespaces, kinds (CRDs and Helm releases included) and actions that a part of agent access or of an extension's permissions covers. A call is allowed if any rule covers it. Resources with no namespace, such as Nodes, are covered only by a rule for all namespaces.
 _Avoid_: policy, permission
 
 **Ask before running**:
-A switch on an access rule: the agent's modify, delete, exec and port-forward calls wait for the user to Allow or Deny in the Sextant window. No answer in 120 s counts as a refusal.
+A switch on an access rule: the agent's modify, delete, exec and port-forward calls (an extension's modify and delete calls) wait for the user to Allow or Deny in the Sextant window, which says who is asking. No answer in 120 s counts as a refusal.
 _Avoid_: confirmation mode, approval
 
 **Secret values**:
-The agent action that gives the values of Secrets and of Helm releases (values and manifest). It is never part of a preset; without it the agent sees Secrets as the window does, with values hidden.
+The action that gives the values of Secrets (and, for the agent, of Helm releases: values and manifest). It is never part of a preset; without it an agent or an extension sees Secrets as the window does, with values hidden. On the install screen an extension that asks for it gets a warning.
 _Avoid_: secret access, reveal
 
 **Agent activity log**:
@@ -186,9 +186,42 @@ The record of everything agents did through the MCP server: time, client, cluste
 _Avoid_: audit, history
 
 **Node shell**:
-A shell on a node, opened through a temporary privileged pod in `kube-system` that is deleted when the shell closes. Leftovers from earlier runs are removed on connect, but only the user's own; the agent has no node shell.
+A shell on a node, opened through a temporary privileged pod in `kube-system` that is deleted when the shell closes. Leftovers from earlier runs are removed on connect, but only the user's own. Neither the agent nor an extension has a node shell, and neither can run commands in, change or delete such a pod.
 _Avoid_: SSH to a node, debug pod
 
 **Cloud source**:
 A kubeconfig source made by Sextant from the clusters found through the installed `aws`, `gcloud` or `az` CLI. It is kept in a file of the app's own, authenticates through the CLI, and never changes the user's `~/.kube/config`. Sextant does not sign in for the user; it shows the login command.
 _Avoid_: cloud account, cloud connection
+
+**Extension**:
+A package of web pages and a manifest that adds its own pages, details sections, actions, table columns, dock buttons and a settings section to Sextant. It runs in an isolated frame, reaches clusters only through Sextant and only within the permissions the user accepted. It has no part that runs on this machine outside the frame.
+_Avoid_: plugin (that word is taken by Tauri plugins), add-on, app
+
+**Extension package**:
+The folder or the `.sextant-ext` / `.zip` archive of an extension, with `sextant-extension.json` at its root. It is checked before the user is asked anything, and nothing is installed until the user agrees.
+_Avoid_: bundle, plugin file
+
+**Contribution**:
+One thing an extension adds to the interface, written in its manifest: a page, a details section or tab, an action, a column, a dock button or a settings section. Sextant puts it in place without running the extension's code.
+_Avoid_: hook, widget, extension point
+
+**Extension frame**:
+The isolated window inside Sextant in which a contribution's content is shown. It cannot touch the rest of the app or the network and talks to Sextant only by messages.
+_Avoid_: iframe (to the user), webview, popup
+
+**Extension permissions**:
+What an extension asks for in its manifest and what is granted when the user presses Install: which clusters, and rules in the same form as agent access (namespaces, kinds, actions). Nothing outside the grant is possible; asking for more later needs a new agreement.
+_Avoid_: scopes, capabilities, access (bare)
+
+**Consent**:
+The install screen where the user reads who made the extension, where it came from, what it adds and what it may do in plain words, and presses Install or Cancel. Updating to a version that asks for more brings the screen back.
+_Avoid_: approval, confirmation (that is the Allow question while an action runs)
+
+**Developer mode (extension)**:
+Loading an unpacked folder: the extension runs straight from the folder, is marked "Development", and reloads when files change. If a change widens its permissions it is paused until the user reviews them.
+_Avoid_: debug mode, symlink install
+
+**Extension activity log**:
+The record of everything extensions did through the Sextant API: time, extension, cluster, method, target, decision and result. It holds summaries, never values or YAML. Agents have their own log.
+_Avoid_: audit, history
+
