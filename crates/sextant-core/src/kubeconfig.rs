@@ -424,12 +424,13 @@ impl KubeconfigRegistry {
     }
 
     /// Writes [`Self::kubeconfig_for`] to a temporary file with mode 0600 (for the terminal and `helm`), named
-    /// [`TEMP_KUBECONFIG_PREFIX`]`*` in the system temp directory.
+    /// [`TEMP_KUBECONFIG_PREFIX`]`<pid>-*` (this process's ID) in the system temp directory.
     pub fn write_temp_kubeconfig(&self, id: &ClusterId) -> CoreResult<tempfile::TempPath> {
         let config = self.kubeconfig_for(id)?;
         let yaml = serde_yaml::to_string(&config)?;
+        let prefix = format!("{TEMP_KUBECONFIG_PREFIX}{}-", std::process::id());
         let mut file = tempfile::Builder::new()
-            .prefix(TEMP_KUBECONFIG_PREFIX)
+            .prefix(&prefix)
             .suffix(".yaml")
             .tempfile()?;
         restrict_permissions(file.path())?;
@@ -442,9 +443,14 @@ impl KubeconfigRegistry {
 /// Name prefix of the temporary kubeconfig files ([`KubeconfigRegistry::write_temp_kubeconfig`]).
 pub const TEMP_KUBECONFIG_PREFIX: &str = "sextant-kubeconfig-";
 
-/// Removes temporary kubeconfig files ([`TEMP_KUBECONFIG_PREFIX`]`*`) left in `dir` by a Sextant that did not exit
-/// cleanly (a crash, a killed process). Only regular files of the current user are touched; returns how many were
-/// removed. Called once at start with [`std::env::temp_dir`], before any terminal or `helm` call writes a new one.
+/// How old a temporary kubeconfig without a PID in its name (written by Sextant before 0.6) must be to be removed.
+const OLD_TEMP_KUBECONFIG_AGE: std::time::Duration = std::time::Duration::from_secs(24 * 60 * 60);
+
+/// Removes temporary kubeconfig files left in `dir` by a Sextant that did not exit cleanly (a crash, a killed
+/// process): [`TEMP_KUBECONFIG_PREFIX`]`<pid>-*` of a process that no longer runs — another running Sextant keeps its
+/// files — and, of the older names without a PID, those older than a day. Only regular files of the current user are
+/// touched; when it cannot be told whether a process runs, its files stay. Returns how many were removed. Called once
+/// at start with [`std::env::temp_dir`].
 pub fn remove_stale_temp_kubeconfigs(dir: &Path) -> usize {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return 0;
@@ -452,22 +458,89 @@ pub fn remove_stale_temp_kubeconfigs(dir: &Path) -> usize {
     let Some(owner) = current_owner(dir) else {
         return 0;
     };
+    let mut alive: std::collections::HashMap<u32, bool> = std::collections::HashMap::new();
+    let now = std::time::SystemTime::now();
     entries
         .filter_map(Result::ok)
-        .filter(|entry| {
-            entry
-                .file_name()
-                .to_string_lossy()
-                .starts_with(TEMP_KUBECONFIG_PREFIX)
-        })
-        .filter(|entry| {
+        .filter_map(|entry| {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let rest = name.strip_prefix(TEMP_KUBECONFIG_PREFIX)?.to_owned();
             // `DirEntry::metadata` does not follow symlinks: a link is never a regular file here.
-            entry
-                .metadata()
-                .is_ok_and(|meta| meta.is_file() && owner.owns(&meta))
+            let meta = entry.metadata().ok()?;
+            (meta.is_file() && owner.owns(&meta)).then_some((entry.path(), rest, meta))
         })
-        .filter(|entry| std::fs::remove_file(entry.path()).is_ok())
+        .filter(|(_, rest, meta)| match temp_kubeconfig_pid(rest) {
+            Some(pid) => !*alive.entry(pid).or_insert_with(|| process_runs(pid)),
+            None => meta
+                .modified()
+                .ok()
+                .and_then(|at| now.duration_since(at).ok())
+                .is_some_and(|age| age > OLD_TEMP_KUBECONFIG_AGE),
+        })
+        .filter(|(path, _, _)| std::fs::remove_file(path).is_ok())
         .count()
+}
+
+/// The PID in a temporary kubeconfig's name after [`TEMP_KUBECONFIG_PREFIX`] (`<pid>-<random>`); `None` for the older
+/// names without one (`<random>`, letters and digits only).
+fn temp_kubeconfig_pid(rest: &str) -> Option<u32> {
+    let (pid, _) = rest.split_once('-')?;
+    if pid.is_empty() || !pid.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    pid.parse().ok()
+}
+
+/// Whether a process with `pid` runs (whatever program it is). `true` when that cannot be told, so nothing of a live
+/// process is ever removed.
+fn process_runs(pid: u32) -> bool {
+    pid == std::process::id() || os_process_runs(pid).unwrap_or(true)
+}
+
+/// `kill -0 <pid>` sends no signal; it fails when no such process runs. It also fails for another user's process —
+/// then the PID is not the one of the Sextant whose file (this user's) it is, which has exited.
+#[cfg(all(unix, feature = "desktop"))]
+fn os_process_runs(pid: u32) -> Option<bool> {
+    use std::process::{Command, Stdio};
+    let status = Command::new("kill")
+        .args(["-0", &pid.to_string()])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .ok()?;
+    Some(status.success())
+}
+
+/// `tasklist` lists the process with `pid` as a CSV row whose second field is the PID, or prints no row at all.
+#[cfg(all(windows, feature = "desktop"))]
+fn os_process_runs(pid: u32) -> Option<bool> {
+    use std::os::windows::process::CommandExt;
+    use std::process::{Command, Stdio};
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let output = Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let wanted = format!("\"{pid}\"");
+    let listed = String::from_utf8_lossy(&output.stdout).lines().any(|row| {
+        row.split(',')
+            .nth(1)
+            .is_some_and(|field| field.trim() == wanted)
+    });
+    Some(listed)
+}
+
+/// Without the `desktop` feature no process is started: nothing tells whether another process runs.
+#[cfg(not(all(any(unix, windows), feature = "desktop")))]
+fn os_process_runs(_pid: u32) -> Option<bool> {
+    None
 }
 
 /// Who the current user is, as file ownership in `dir` sees it.
@@ -663,34 +736,94 @@ pub fn kubeconfig_error(err: KubeconfigError) -> CoreError {
 mod tests {
     use super::*;
 
+    /// A process that runs until killed (`long`) or one that exits at once.
+    fn spawn_process(long: bool) -> std::process::Child {
+        use std::process::{Command, Stdio};
+        #[cfg(unix)]
+        let mut command = if long {
+            let mut c = Command::new("sleep");
+            c.arg("60");
+            c
+        } else {
+            Command::new("true")
+        };
+        #[cfg(windows)]
+        let mut command = {
+            let mut c = Command::new("cmd");
+            c.args([
+                "/C",
+                if long {
+                    "ping -n 60 127.0.0.1"
+                } else {
+                    "exit 0"
+                },
+            ]);
+            c
+        };
+        command
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap()
+    }
+
+    /// The PID of a process that has exited and been reaped.
+    fn exited_pid() -> u32 {
+        let mut child = spawn_process(false);
+        child.wait().unwrap();
+        child.id()
+    }
+
     #[test]
-    fn stale_temp_kubeconfigs_of_the_user_are_removed_and_nothing_else() {
+    fn only_temp_kubeconfigs_of_dead_processes_are_removed() {
         let dir = tempfile::tempdir().unwrap();
+        let mut running = spawn_process(true);
+        let exited = exited_pid();
+        let day_ago = std::time::SystemTime::now() - std::time::Duration::from_secs(25 * 3600);
+        let write = |name: &str| {
+            let path = dir.path().join(name);
+            std::fs::write(&path, "token: leaked").unwrap();
+            path
+        };
         let stale = [
-            dir.path().join("sextant-kubeconfig-abc123.yaml"),
-            dir.path().join("sextant-kubeconfig-x"),
+            write(&format!("sextant-kubeconfig-{exited}-abc123.yaml")),
+            write(&format!("sextant-kubeconfig-{exited}-x")),
         ];
-        for path in &stale {
-            std::fs::write(path, "token: leaked").unwrap();
-        }
+        // The old name without a PID: removed only once it is older than a day.
+        let old_format = write("sextant-kubeconfig-AbC123.yaml");
+        std::fs::File::options()
+            .write(true)
+            .open(&old_format)
+            .unwrap()
+            .set_modified(day_ago)
+            .unwrap();
         let kept_files = [
-            dir.path().join("other-kubeconfig-abc.yaml"),
-            dir.path().join("my-sextant-kubeconfig-1.yaml"),
+            // This process and another running Sextant.
+            write(&format!(
+                "sextant-kubeconfig-{}-abc123.yaml",
+                std::process::id()
+            )),
+            write(&format!("sextant-kubeconfig-{}-def456.yaml", running.id())),
+            write("sextant-kubeconfig-XyZ789.yaml"),
+            write("other-kubeconfig-abc.yaml"),
+            write("my-sextant-kubeconfig-1.yaml"),
         ];
-        for path in &kept_files {
-            std::fs::write(path, "keep").unwrap();
-        }
-        let kept_dir = dir.path().join("sextant-kubeconfig-dir");
+        let kept_dir = dir.path().join(format!("sextant-kubeconfig-{exited}-dir"));
         std::fs::create_dir(&kept_dir).unwrap();
 
-        assert_eq!(remove_stale_temp_kubeconfigs(dir.path()), 2);
-        for path in &stale {
+        let removed = remove_stale_temp_kubeconfigs(dir.path());
+        let _ = running.kill();
+        let _ = running.wait();
+
+        for path in stale.iter().chain([&old_format]) {
             assert!(!path.exists(), "{} was left", path.display());
         }
         for path in &kept_files {
             assert!(path.exists(), "{} was removed", path.display());
         }
         assert!(kept_dir.is_dir(), "directories are not touched");
+        assert_eq!(removed, 3);
         // A missing directory is nothing to clean.
         assert_eq!(
             remove_stale_temp_kubeconfigs(&dir.path().join("missing")),
@@ -1272,6 +1405,12 @@ contexts:
         let alpha = registry.clusters().unwrap()[0].id.clone();
 
         let temp = registry.write_temp_kubeconfig(&alpha).unwrap();
+        let name = temp.file_name().unwrap().to_string_lossy().into_owned();
+        let own = format!("sextant-kubeconfig-{}-", std::process::id());
+        assert!(
+            name.starts_with(&own),
+            "{name}: the name carries this process's PID"
+        );
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

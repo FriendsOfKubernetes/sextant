@@ -35,6 +35,10 @@ const CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 /// it fits into what is left of the budget; otherwise the server's answer is returned at once. One value per request:
 /// a copy starts from zero.
 ///
+/// Only reads (`GET`, `HEAD`: get, list, watch, logs) are repeated. A change (`POST`, `PUT`, `PATCH`, `DELETE`) is sent
+/// once: after a 503 or 504 the first attempt may have been applied, and a repeat would answer "already exists" or
+/// "conflict" for a change that succeeded. A change answered with 504 fails with [`CHANGE_TIMED_OUT`].
+///
 /// It replaces kube's `server_retry` (15 repeats, pauses up to 1000 s, any `Retry-After`), with which an action could
 /// hang for minutes.
 #[derive(Debug, Clone, Default)]
@@ -390,24 +394,64 @@ fn retrying_client(config: kube::Config) -> Result<kube::Client, kube::Error> {
     Ok(builder.build())
 }
 
-impl<Res>
-    tower::retry::Policy<http::Request<kube::client::Body>, http::Response<Res>, tower::BoxError>
-    for RetryPolicy
+/// The message of a change (`POST`, `PUT`, `PATCH`, `DELETE`) answered with 504 Gateway Timeout: the server may have
+/// applied it before the answer was lost, and it is not repeated ([`RetryPolicy`]).
+pub const CHANGE_TIMED_OUT: &str =
+    "The server timed out; the change may have been applied — check the object";
+
+/// Whether a request only reads, so repeating it cannot change anything.
+fn is_read(method: &http::Method) -> bool {
+    matches!(*method, http::Method::GET | http::Method::HEAD)
+}
+
+/// A 504 `Status` whose message is [`CHANGE_TIMED_OUT`], in place of the server's answer to a change.
+fn change_timed_out(response: &mut http::Response<Box<kube::client::DynBody>>) {
+    use http_body_util::BodyExt;
+    let status = serde_json::json!({
+        "kind": "Status",
+        "apiVersion": "v1",
+        "status": "Failure",
+        "message": CHANGE_TIMED_OUT,
+        "reason": "Timeout",
+        "code": 504,
+    })
+    .to_string();
+    let body = kube::client::Body::from(status.into_bytes()).map_err(tower::BoxError::from);
+    *response.body_mut() = Box::new(body);
+    response.headers_mut().remove(http::header::CONTENT_LENGTH);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("application/json"),
+    );
+}
+
+impl
+    tower::retry::Policy<
+        http::Request<kube::client::Body>,
+        http::Response<Box<kube::client::DynBody>>,
+        tower::BoxError,
+    > for RetryPolicy
 {
     type Future = tokio::time::Sleep;
 
     fn retry(
         &mut self,
-        _request: &mut http::Request<kube::client::Body>,
-        result: &mut Result<http::Response<Res>, tower::BoxError>,
+        request: &mut http::Request<kube::client::Body>,
+        result: &mut Result<http::Response<Box<kube::client::DynBody>>, tower::BoxError>,
     ) -> Option<Self::Future> {
-        let response = result.as_ref().ok()?;
+        let response = result.as_mut().ok()?;
+        let status = response.status().as_u16();
+        if !is_read(request.method()) {
+            if status == 504 {
+                change_timed_out(response);
+            }
+            return None;
+        }
         let retry_after = response
             .headers()
             .get(http::header::RETRY_AFTER)
             .and_then(|v| v.to_str().ok());
-        self.next_delay(response.status().as_u16(), retry_after)
-            .map(tokio::time::sleep)
+        self.next_delay(status, retry_after).map(tokio::time::sleep)
     }
 
     /// Requests whose body cannot be cloned (a stream) are sent once.
@@ -803,6 +847,80 @@ mod tests {
             started.elapsed() < Duration::from_secs(2),
             "took {:?}",
             started.elapsed()
+        );
+    }
+
+    #[tokio::test]
+    async fn changes_are_sent_once_and_a_504_says_the_change_may_have_been_applied() {
+        use k8s_openapi::api::core::v1::ConfigMap;
+        use kube::api::{DeleteParams, Patch, PatchParams, PostParams};
+
+        let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#),
+            _ => Reply::json(
+                504,
+                r#"{"kind":"Status","apiVersion":"v1","status":"Failure","message":"Timeout: request did not complete within requested timeout - context deadline exceeded","reason":"Timeout","code":504}"#,
+            ),
+        })
+        .await;
+        let (_dir, mgr, id) = manager(&kubeconfig(api.url(), "      token: abc\n"));
+        mgr.connect(&id).await.unwrap();
+        let cms: kube::Api<ConfigMap> = kube::Api::namespaced(mgr.client(&id).unwrap(), "default");
+        let cm: ConfigMap = serde_json::from_value(
+            serde_json::json!({ "metadata": { "name": "cm", "namespace": "default" } }),
+        )
+        .unwrap();
+        const MAY_HAVE_BEEN_APPLIED: &str =
+            "The server timed out; the change may have been applied — check the object";
+
+        let errors = [
+            (
+                "POST",
+                cms.create(&PostParams::default(), &cm).await.map(drop),
+            ),
+            (
+                "PUT",
+                cms.replace("cm", &PostParams::default(), &cm)
+                    .await
+                    .map(drop),
+            ),
+            (
+                "DELETE",
+                cms.delete("cm", &DeleteParams::default()).await.map(drop),
+            ),
+            (
+                "PATCH",
+                cms.patch(
+                    "cm",
+                    &PatchParams::default(),
+                    &Patch::Merge(serde_json::json!({})),
+                )
+                .await
+                .map(drop),
+            ),
+        ];
+        for (method, result) in errors {
+            let sent = api.requests().iter().filter(|r| r.method == method).count();
+            assert_eq!(sent, 1, "{method} is sent once, never repeated");
+            let err = kube_error(result.expect_err("504"), None);
+            assert_eq!(err.message, MAY_HAVE_BEEN_APPLIED, "{method}");
+            assert_eq!(err.code, ErrorCode::Timeout, "{method}");
+        }
+
+        // Reads are repeated as before and keep the server's message.
+        let read = kube_error(cms.get("cm").await.expect_err("504"), None);
+        let gets = api
+            .requests()
+            .iter()
+            .filter(|r| r.method == "GET" && r.path.ends_with("/configmaps/cm"))
+            .count();
+        assert!((2..=4).contains(&gets), "{gets} GETs");
+        assert_eq!(read.code, ErrorCode::Unreachable, "a read keeps its code");
+        assert!(
+            read.message
+                .starts_with("Timeout: request did not complete"),
+            "{}",
+            read.message
         );
     }
 

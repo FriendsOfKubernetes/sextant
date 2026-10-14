@@ -235,7 +235,7 @@ pub struct TermSession {
 
 impl TermSession {
     /// Ends the session: aborts its task and drops its guard now.
-    fn end(self) {
+    pub fn end(self) {
         self.task.abort();
         drop(self.guard);
     }
@@ -247,12 +247,21 @@ pub struct Sessions {
 }
 
 impl Sessions {
-    /// Registers a session under the id the frontend chose; a taken or malformed id is `invalid` and the session
-    /// (with its guard) is dropped.
+    /// Registers a session under the id the frontend chose; a taken or malformed id is `invalid` and the session is
+    /// ended (its task aborted, its guard dropped) before this returns — the session holding the id is not touched.
     pub fn insert(&self, id: String, session: TermSession) -> Result<(), CoreError> {
-        check_stream_id(&id)?;
-        match lock(&self.map).entry(id) {
-            Entry::Occupied(taken) => Err(busy(taken.key())),
+        if let Err(err) = check_stream_id(&id) {
+            session.end();
+            return Err(err);
+        }
+        let mut map = lock(&self.map);
+        match map.entry(id) {
+            Entry::Occupied(taken) => {
+                let err = busy(taken.key());
+                drop(map);
+                session.end();
+                Err(err)
+            }
             Entry::Vacant(free) => {
                 free.insert(session);
                 Ok(())
@@ -291,6 +300,28 @@ impl Sessions {
             map.remove(id)
         } else {
             None
+        }
+    }
+
+    /// Puts `session` in place of the session `id` if `is_it` says that one is the expected one, in one step, so the
+    /// id is never free in between (a starting node shell swaps its placeholder for the running shell): `term_stop`,
+    /// `close_cluster` or a reset find either the old session or the new one. Returns the old session, not ended (its
+    /// task keeps running, its guard stays alive in it). When it is not there any more (it was stopped), `session` is
+    /// ended — its task aborted and its guard dropped before this returns — and `None` is returned.
+    pub fn replace_if(
+        &self,
+        id: &str,
+        is_it: impl FnOnce(&TermSession) -> bool,
+        session: TermSession,
+    ) -> Option<TermSession> {
+        let mut map = lock(&self.map);
+        match map.get_mut(id) {
+            Some(current) if is_it(current) => Some(std::mem::replace(current, session)),
+            _ => {
+                drop(map);
+                session.end();
+                None
+            }
         }
     }
 
@@ -393,6 +424,91 @@ mod tests {
             );
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
+    }
+
+    /// A session whose task runs until aborted and whose guard reports being dropped.
+    fn pending_session() -> (
+        TermSession,
+        tokio::task::JoinHandle<()>,
+        std::sync::mpsc::Receiver<()>,
+    ) {
+        struct Dropped(std::sync::mpsc::Sender<()>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                let _ = self.0.send(());
+            }
+        }
+        let task = tokio::spawn(std::future::pending::<()>());
+        let (dropped_tx, dropped) = std::sync::mpsc::channel();
+        let (input, _) = mpsc::channel(1);
+        let (resize, _) = mpsc::channel(1);
+        let session = TermSession {
+            cluster: None,
+            input,
+            resize,
+            task: task.abort_handle(),
+            guard: Some(Box::new(Dropped(dropped_tx))),
+        };
+        (session, task, dropped)
+    }
+
+    async fn aborted(task: tokio::task::JoinHandle<()>) -> bool {
+        tokio::time::timeout(Duration::from_secs(2), task)
+            .await
+            .is_ok_and(|end| end.is_err_and(|e| e.is_cancelled()))
+    }
+
+    #[tokio::test]
+    async fn a_session_refused_for_a_taken_id_is_ended_not_left_running() {
+        let sessions = Sessions::default();
+        let (first, first_task, _first_dropped) = pending_session();
+        sessions.insert("t-1".into(), first).unwrap();
+        let (second, second_task, second_dropped) = pending_session();
+
+        let err = sessions.insert("t-1".into(), second).unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::Invalid);
+        assert!(
+            aborted(second_task).await,
+            "the refused session's task ends"
+        );
+        assert!(second_dropped.try_recv().is_ok(), "its guard is dropped");
+        assert!(
+            !first_task.is_finished(),
+            "the session holding the id runs on"
+        );
+        assert_eq!(sessions.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_placeholder_is_swapped_for_its_session_at_once_or_the_session_is_ended() {
+        let sessions = Sessions::default();
+        let (placeholder, placeholder_task, placeholder_dropped) = pending_session();
+        sessions.insert("t-1".into(), placeholder).unwrap();
+        let (session, session_task, session_dropped) = pending_session();
+
+        let old = sessions
+            .replace_if("t-1", |s| s.cluster.is_none(), session)
+            .expect("the placeholder is still there");
+        // The id never was free: the running session is registered in the same step.
+        assert_eq!(sessions.len(), 1);
+        assert!(
+            placeholder_dropped.try_recv().is_err(),
+            "the caller decides about the old one"
+        );
+        old.end();
+        assert!(aborted(placeholder_task).await);
+        assert!(sessions.channels("t-1").is_some());
+
+        // Stopped before the swap: the new session is ended, nothing is registered.
+        sessions.stop("t-1");
+        assert!(aborted(session_task).await);
+        assert!(session_dropped.try_recv().is_ok());
+        let (late, late_task, late_dropped) = pending_session();
+        assert!(sessions.replace_if("t-1", |_| true, late).is_none());
+        assert!(aborted(late_task).await, "a session nobody waits for ends");
+        assert!(late_dropped.try_recv().is_ok());
+        assert!(sessions.is_empty());
     }
 
     #[tokio::test]

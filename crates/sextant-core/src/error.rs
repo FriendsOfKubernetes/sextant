@@ -130,6 +130,8 @@ pub fn kube_error(err: kube::Error, plugin: Option<&str>) -> CoreError {
         return auth_error(auth, plugin);
     }
     let code = match &err {
+        // A change answered with 504 ([`crate::cluster::CHANGE_TIMED_OUT`]) timed out; the server is not unreachable.
+        E::Api(status) if status.message == crate::cluster::CHANGE_TIMED_OUT => ErrorCode::Timeout,
         E::Api(status) => code_for_http_status(status.code),
         E::HyperError(_) | E::Service(_) | E::UpgradeConnection(_) | E::ReadEvents(_) => {
             ErrorCode::Unreachable

@@ -72,7 +72,8 @@ pub async fn node_shell_start<R: Runtime>(
 /// the shell runs, its entry is a placeholder whose guard ([`StartingGuard`]) calls the start off when it is dropped —
 /// by `term_stop`, `close_cluster`, `streams_reset` or closing the window — and the start then deletes the pod
 /// ([`node_shell::create_until`]; closing the window waits for that). Once the shell runs, the placeholder is replaced
-/// by the session, whose guard is the pod itself, so the pod is deleted together with the session.
+/// by the session in one step ([`finish_node_shell`]), whose guard is the pod itself, so the pod is deleted together
+/// with the session. A taken `id` is `invalid` before anything starts.
 pub async fn start_node_shell<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -86,20 +87,7 @@ pub async fn start_node_shell<R: Runtime>(
     let generation = state.streams_generation();
     let image = state.settings.get().node_shell_image;
     let cancel = node_shell::StartCancel::new();
-    // Nothing reads or ends this task: the placeholder only needs an abort handle.
-    let idle = tauri::async_runtime::spawn(std::future::pending::<()>());
-    let (input, _) = mpsc::channel(1);
-    let (resize, _) = mpsc::channel(1);
-    state.sessions.insert(
-        id.clone(),
-        TermSession {
-            cluster: Some(cluster.clone()),
-            input,
-            resize,
-            task: idle.inner().abort_handle(),
-            guard: Some(Box::new(StartingGuard(Some(cancel.clone())))),
-        },
-    )?;
+    insert_placeholder(state, &id, &cluster, &cancel)?;
     if state.streams_generation() != generation {
         // A reset came before the placeholder was in place.
         cancel.cancel();
@@ -121,40 +109,93 @@ pub async fn start_node_shell<R: Runtime>(
         Ok((pod, session))
     }
     .await;
-    // Still wanted only if nobody stopped the placeholder meanwhile.
-    let wanted = match state
-        .sessions
-        .take_if(&id, |s| is_placeholder_of(s, &cancel))
-    {
-        Some(mut placeholder) => {
-            placeholder.task.abort();
-            if let Some(guard) = placeholder
-                .guard
-                .as_mut()
-                .and_then(|g| g.downcast_mut::<StartingGuard>())
-            {
-                guard.0 = None;
-            }
-            true
-        }
-        None => false,
-    };
     // On every error below the pod (if any) is dropped, which deletes it.
-    let (pod, session) = started?;
-    if !wanted || cancel.is_cancelled() {
-        return Err(node_shell::StartCancel::error());
+    let finished = started.and_then(|(pod, session)| {
+        finish_node_shell(
+            app,
+            state,
+            id.clone(),
+            cluster,
+            &cancel,
+            session,
+            Box::new(pod),
+        )
+    });
+    if let Err(err) = finished {
+        if let Some(placeholder) = state
+            .sessions
+            .take_if(&id, |s| is_placeholder_of(s, &cancel))
+        {
+            retire_placeholder(placeholder);
+        }
+        return Err(err);
     }
-    forward_term(
-        app,
-        state,
-        id.clone(),
-        Some(cluster),
-        session,
-        Some(Box::new(pod)),
-    )?;
     state.undo_if_reset(generation, || {
         state.sessions.stop(&id);
     })
+}
+
+/// Registers the placeholder of a starting node shell under `id` (with `cluster`, so disconnecting it calls the start
+/// off). A taken or malformed `id` is `invalid`, and the start is called off at once.
+fn insert_placeholder(
+    state: &AppState,
+    id: &str,
+    cluster: &ClusterId,
+    cancel: &node_shell::StartCancel,
+) -> Result<(), CoreError> {
+    // Nothing reads or ends this task: the placeholder only needs an abort handle. Ending the placeholder (also a
+    // refused one) aborts it.
+    let idle = tauri::async_runtime::spawn(std::future::pending::<()>());
+    let (input, _) = mpsc::channel(1);
+    let (resize, _) = mpsc::channel(1);
+    state.sessions.insert(
+        id.to_owned(),
+        TermSession {
+            cluster: Some(cluster.clone()),
+            input,
+            resize,
+            task: idle.inner().abort_handle(),
+            guard: Some(Box::new(StartingGuard(Some(cancel.clone())))),
+        },
+    )
+}
+
+/// Puts the running node shell `session` (and `pod`, its guard) in place of its placeholder in one step, so
+/// `term_stop`, `close_cluster` or a reset at any moment finds one of the two and the pod never outlives them. When the
+/// start was called off or the placeholder is gone, the session is dropped with `pod` (which deletes it) and the
+/// start fails with [`node_shell::StartCancel::error`].
+fn finish_node_shell<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: String,
+    cluster: ClusterId,
+    cancel: &node_shell::StartCancel,
+    session: ExecSession,
+    pod: SessionGuard,
+) -> Result<(), CoreError> {
+    if cancel.is_cancelled() {
+        return Err(node_shell::StartCancel::error());
+    }
+    let (running, registered) = term_session(app, &id, Some(cluster), session, Some(pod));
+    let placeholder = state
+        .sessions
+        .replace_if(&id, |s| is_placeholder_of(s, cancel), running)
+        .ok_or_else(node_shell::StartCancel::error)?;
+    retire_placeholder(placeholder);
+    let _ = registered.send(());
+    Ok(())
+}
+
+/// Ends a placeholder the start no longer needs, without calling the start off.
+fn retire_placeholder(mut placeholder: TermSession) {
+    if let Some(guard) = placeholder
+        .guard
+        .as_mut()
+        .and_then(|g| g.downcast_mut::<StartingGuard>())
+    {
+        guard.0 = None;
+    }
+    placeholder.end();
 }
 
 /// The guard of a starting node shell's placeholder in `state.sessions`: dropping it calls the start off. `None` once
@@ -326,12 +367,30 @@ pub fn forward_term<R>(
 where
     R: Runtime,
 {
-    let event = term_event(&id);
+    let (running, registered) = term_session(app, &id, cluster, session, guard);
+    state.sessions.insert(id, running)?;
+    let _ = registered.send(());
+    Ok(())
+}
+
+/// The entry of `session` for `state.sessions` and the task that emits its output as `term:<id>`, which starts once
+/// the returned sender is used (after the entry is registered); dropping the sender or ending the entry ends the task.
+fn term_session<R>(
+    app: &AppHandle<R>,
+    id: &str,
+    cluster: Option<ClusterId>,
+    session: ExecSession,
+    guard: Option<SessionGuard>,
+) -> (TermSession, oneshot::Sender<()>)
+where
+    R: Runtime,
+{
+    let event = term_event(id);
     let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(256);
     let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
     let (registered_tx, registered_rx) = oneshot::channel::<()>();
     let handle = app.clone();
-    let own_id = id.clone();
+    let own_id = id.to_owned();
     let task = tauri::async_runtime::spawn(async move {
         if registered_rx.await.is_err() {
             return;
@@ -367,18 +426,14 @@ where
             state.sessions.remove(&own_id);
         }
     });
-    state.sessions.insert(
-        id,
-        TermSession {
-            cluster,
-            input: input_tx,
-            resize: resize_tx,
-            task: task.inner().abort_handle(),
-            guard,
-        },
-    )?;
-    let _ = registered_tx.send(());
-    Ok(())
+    let running = TermSession {
+        cluster,
+        input: input_tx,
+        resize: resize_tx,
+        task: task.inner().abort_handle(),
+        guard,
+    };
+    (running, registered_tx)
 }
 
 /// The payload of `event`, and whether it ends the session.
@@ -548,6 +603,89 @@ mod tests {
         });
         assert!(!first.output.is_closed());
         assert_eq!(state.sessions.len(), 1);
+    }
+
+    #[test]
+    fn a_running_node_shell_takes_its_placeholders_place_and_goes_with_its_cluster() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let cluster = ClusterId::from("c-1");
+        let cancel = node_shell::StartCancel::new();
+        insert_placeholder(&state, "n-1", &cluster, &cancel).unwrap();
+        let (session, shell) = fake_session();
+        let (guard, pod) = temp_guard();
+
+        finish_node_shell(
+            app.handle(),
+            &state,
+            "n-1".into(),
+            cluster.clone(),
+            &cancel,
+            session,
+            guard.unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(state.sessions.len(), 1);
+        assert!(state.sessions.channels("n-1").is_some());
+        assert!(
+            !cancel.is_cancelled(),
+            "retiring the placeholder does not call the start off"
+        );
+        assert!(pod.exists(), "the pod lives with the session");
+        state.close_cluster(&cluster);
+        assert!(
+            !pod.exists(),
+            "closing the cluster deletes the pod before it returns"
+        );
+        assert!(state.sessions.is_empty());
+        wait_until("the shell to be dropped", || shell.output.is_closed());
+    }
+
+    #[test]
+    fn a_node_shell_stopped_before_its_shell_registers_keeps_no_session_and_no_pod() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let cluster = ClusterId::from("c-1");
+        let cancel = node_shell::StartCancel::new();
+        insert_placeholder(&state, "n-1", &cluster, &cancel).unwrap();
+        state.sessions.stop("n-1");
+        assert!(cancel.is_cancelled(), "term_stop calls the start off");
+        let (session, shell) = fake_session();
+        let (guard, pod) = temp_guard();
+
+        let err = finish_node_shell(
+            app.handle(),
+            &state,
+            "n-1".into(),
+            cluster,
+            &cancel,
+            session,
+            guard.unwrap(),
+        )
+        .expect_err("nobody wants it");
+
+        assert_eq!(err.message, node_shell::StartCancel::error().message);
+        assert!(!pod.exists(), "the pod is deleted");
+        assert!(state.sessions.is_empty());
+        wait_until("the shell to be dropped", || shell.output.is_closed());
+    }
+
+    #[test]
+    fn a_node_shell_whose_id_is_taken_is_invalid_and_leaves_the_other_session() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let (session, first) = fake_session();
+        forward_term(app.handle(), &state, "t-1".into(), None, session, None).unwrap();
+        let cancel = node_shell::StartCancel::new();
+
+        let err = insert_placeholder(&state, "t-1", &ClusterId::from("c-1"), &cancel)
+            .expect_err("the id is taken");
+
+        assert_eq!(err.code, ErrorCode::Invalid, "{err}");
+        assert!(cancel.is_cancelled(), "the start is called off at once");
+        assert_eq!(state.sessions.len(), 1);
+        assert!(!first.output.is_closed());
     }
 
     #[test]

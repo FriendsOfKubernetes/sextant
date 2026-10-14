@@ -20,7 +20,7 @@
 //! `sextant.dev/session=<`[`session_id`]`>` (one value per run of the application) and
 //! `sextant.dev/owner=<`[`owner_id`]`>` (a hash of the OS user and the machine).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::hash::{BuildHasher, Hasher};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
@@ -57,8 +57,26 @@ const NAME_PREFIX: &str = "sextant-node-shell-";
 /// Pod names are kept within a DNS label (63), so the node's name is cut to fit.
 const MAX_NODE_PART: usize = 63 - NAME_PREFIX.len() - 6;
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
-/// A deletion request may take this long.
+/// A deletion may take this long, repeats included ([`delete_pod`]).
 const DELETE_TIMEOUT: Duration = Duration::from_secs(10);
+/// The first pause before repeating a deletion or a lookup; it doubles each time.
+const FIRST_PAUSE: Duration = Duration::from_millis(250);
+/// The longest pause between two lookups of a pod whose creation was not answered.
+const MAX_LOOKUP_PAUSE: Duration = Duration::from_secs(10);
+/// The creation request may take this long; after that its pod is looked up and deleted.
+const CREATE_TIMEOUT: Duration = if cfg!(test) {
+    Duration::from_secs(1)
+} else {
+    Duration::from_secs(30)
+};
+/// How long, from sending the creation, its pod may still appear: kube-apiserver gives a request up to 60 s (its
+/// `--request-timeout`, admission webhooks included), plus a margin. A pod whose creation was not answered is looked up
+/// until then.
+const LOST_POD_WINDOW: Duration = if cfg!(test) {
+    Duration::from_secs(3)
+} else {
+    Duration::from_secs(75)
+};
 /// Waiting reasons of a container that will not start without a change (a retry does not help).
 const FATAL_WAITING: [&str; 7] = [
     "ErrImagePull",
@@ -343,7 +361,10 @@ pub async fn create(
 /// most [`START_TIMEOUT`]. A pod that does not start is deleted, and the error says why (from its events). When
 /// `cancel` is called off, the pod is deleted (a request already sent is answered first, so a pod made meanwhile is
 /// not missed) and the start fails with [`StartCancel::error`]. [`wait_for_deletions`] counts the start from before
-/// its request.
+/// its request. When the creation's answer is lost (a transport error, a 5xx such as 504, no answer in
+/// `CREATE_TIMEOUT`), the pod may exist all the same: the start fails at once, and in the background the pod is looked
+/// up by its labels and deleted for as long as it may still appear (`LOST_POD_WINDOW` from sending the request), or
+/// kept for the next [`sweep`].
 ///
 /// Errors: no permission to create pods in `kube-system` — `forbidden`, "You need permission to create privileged pods
 /// in kube-system"; Pod Security admission refuses privileged pods there — `forbidden` with the server's reason; the
@@ -371,9 +392,32 @@ pub async fn create_until(
     let api: Api<Pod> = Api::namespaced(client.clone(), NAMESPACE);
     let name = pod_name(node);
     let manifest = pod_manifest(&name, node, image)?;
-    api.create(&PostParams::default(), &manifest)
-        .await
-        .map_err(create_error)?;
+    let sent = tokio::time::Instant::now();
+    let created = tokio::time::timeout(
+        CREATE_TIMEOUT,
+        api.create(&PostParams::default(), &manifest),
+    )
+    .await;
+    let lost = match created {
+        Ok(Ok(_)) => None,
+        Ok(Err(err)) if may_have_been_made(&err) => Some(create_error(err)),
+        Ok(Err(err)) => return Err(create_error(err)),
+        Err(_) => Some(CoreError::new(
+            ErrorCode::Timeout,
+            format!(
+                "no answer to creating the node shell pod in {} seconds",
+                CREATE_TIMEOUT.as_secs()
+            ),
+        )),
+    };
+    if let Some(err) = lost {
+        // The pod may exist or still appear; [`wait_for_deletions`] counts it until it is found and deleted.
+        tokio::spawn(async move {
+            let _tracked = tracked;
+            remove_unconfirmed(&client, &name, sent).await;
+        });
+        return Err(err);
+    }
     // From here on, dropping the handle (the caller gave up) deletes the pod. The request above is not raced with
     // `cancel`: once sent, the pod may exist, and only its answer says so.
     let shell = NodeShellPod {
@@ -404,6 +448,77 @@ pub async fn create_until(
             Err(err)
         }
     }
+}
+
+/// Whether the pod may exist although its creation failed: the request may have reached the API server and only the
+/// answer was lost (a transport error, a 5xx such as 504, 408). A 4xx answer is a refusal: nothing was made.
+fn may_have_been_made(err: &kube::Error) -> bool {
+    match err {
+        kube::Error::Api(status) => status.code >= 500 || status.code == 408,
+        _ => true,
+    }
+}
+
+/// Pods whose creation was not answered and which could not be found and deleted: the next [`sweep`] deletes them
+/// although they belong to this run.
+static UNCONFIRMED: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
+
+fn unconfirmed() -> std::sync::MutexGuard<'static, BTreeSet<String>> {
+    UNCONFIRMED.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// After a creation (sent at `sent`) whose answer was lost: looks the pod up by the labels of this run and user (and
+/// its name) and deletes it, pausing longer each time, until [`LOST_POD_WINDOW`] after `sent` — the API server may
+/// still be making it. When by then no lookup said the pod is not there (they failed, or its deletion did), the name
+/// is kept for the next [`sweep`] and reported on stderr.
+async fn remove_unconfirmed(client: &kube::Client, name: &str, sent: tokio::time::Instant) {
+    let api: Api<Pod> = Api::namespaced(client.clone(), NAMESPACE);
+    let labels = format!(
+        "{LABEL_MANAGED_BY}=sextant,{LABEL_NODE_SHELL}=true,{LABEL_SESSION}={},{LABEL_OWNER}={}",
+        session_id(),
+        owner_id()
+    );
+    let params = ListParams::default()
+        .labels(&labels)
+        .fields(&format!("metadata.name={name}"));
+    let deadline = sent + LOST_POD_WINDOW;
+    let mut pause = FIRST_PAUSE;
+    let absent = loop {
+        let left = deadline.saturating_duration_since(tokio::time::Instant::now());
+        let looked_up = tokio::time::timeout(left.max(FIRST_PAUSE), api.list(&params)).await;
+        let absent = match looked_up {
+            Ok(Ok(pods))
+                if pods
+                    .items
+                    .iter()
+                    .any(|p| p.metadata.name.as_deref() == Some(name)) =>
+            {
+                if delete_pod(client, name).await.is_ok() {
+                    return;
+                }
+                false
+            }
+            Ok(Ok(_)) => true,
+            _ => false,
+        };
+        if tokio::time::Instant::now() + pause > deadline {
+            break absent;
+        }
+        tokio::time::sleep(pause).await;
+        pause = (pause * 2).min(MAX_LOOKUP_PAUSE);
+    };
+    if !absent {
+        unconfirmed().insert(name.to_owned());
+        eprintln!(
+            "sextant: the node shell pod {NAMESPACE}/{name} may exist although its creation failed; it could not \
+             be looked up and is deleted when the cluster connects next"
+        );
+    }
+}
+
+#[cfg(test)]
+fn is_unconfirmed(name: &str) -> bool {
+    unconfirmed().contains(name)
 }
 
 fn create_error(err: kube::Error) -> CoreError {
@@ -568,25 +683,51 @@ async fn event_reason(client: &kube::Client, name: &str) -> Option<String> {
         .map(|(_, message)| message.clone())
 }
 
+/// Deletes the pod; one that is already gone is fine. A deletion answered with 429, a 5xx or a transport error is
+/// repeated (a repeat of one that was applied answers 404), pausing longer each time, within [`DELETE_TIMEOUT`] in all:
+/// the client itself never repeats a `DELETE` ([`crate::cluster::RetryPolicy`]).
 async fn delete_pod(client: &kube::Client, name: &str) -> CoreResult<()> {
     let api: Api<Pod> = Api::namespaced(client.clone(), NAMESPACE);
     let params = DeleteParams {
         grace_period_seconds: Some(1),
         ..Default::default()
     };
-    match tokio::time::timeout(DELETE_TIMEOUT, api.delete(name, &params)).await {
-        Ok(Ok(_)) => Ok(()),
-        Ok(Err(kube::Error::Api(status))) if status.code == 404 => Ok(()),
-        Ok(Err(err)) => Err(kube_error(err, None)),
-        Err(_) => Err(CoreError::new(
-            ErrorCode::Timeout,
-            format!("no answer to deleting pod {NAMESPACE}/{name}"),
-        )),
+    let deadline = tokio::time::Instant::now() + DELETE_TIMEOUT;
+    let mut pause = FIRST_PAUSE;
+    loop {
+        let left = deadline.saturating_duration_since(tokio::time::Instant::now());
+        let err = match tokio::time::timeout(left, api.delete(name, &params)).await {
+            Ok(Ok(_)) => return Ok(()),
+            Ok(Err(kube::Error::Api(status))) if status.code == 404 => return Ok(()),
+            Ok(Err(err)) if worth_repeating(&err) => kube_error(err, None),
+            Ok(Err(err)) => return Err(kube_error(err, None)),
+            Err(_) => {
+                return Err(CoreError::new(
+                    ErrorCode::Timeout,
+                    format!("no answer to deleting pod {NAMESPACE}/{name}"),
+                ));
+            }
+        };
+        if tokio::time::Instant::now() + pause >= deadline {
+            return Err(err);
+        }
+        tokio::time::sleep(pause).await;
+        pause *= 2;
+    }
+}
+
+/// Whether a failed deletion may succeed when sent again: the server was busy or its answer was lost.
+fn worth_repeating(err: &kube::Error) -> bool {
+    match err {
+        kube::Error::Api(status) => status.code == 429 || status.code >= 500,
+        kube::Error::HyperError(_) | kube::Error::Service(_) => true,
+        _ => false,
     }
 }
 
 /// Deletes node shell pods left behind: this user's ([`owner_id`]) pods of another run of the application
-/// ([`session_id`]), and anyone's pods older than [`MAX_AGE`] — a colleague's live shell stays. Returns how many were
+/// ([`session_id`]) or of this run whose creation was never answered and could not be deleted then, and anyone's pods
+/// older than [`MAX_AGE`] — a colleague's live shell stays. Returns how many were
 /// deleted. Only pods in `kube-system` with both `app.kubernetes.io/managed-by=sextant` and
 /// `sextant.dev/node-shell=true` are ever touched.
 pub async fn sweep(client: kube::Client) -> CoreResult<usize> {
@@ -610,15 +751,18 @@ pub async fn sweep(client: kube::Client) -> CoreResult<usize> {
         if !ours {
             continue;
         }
-        let my_other_run =
-            label(LABEL_OWNER) == Some(owner_id()) && label(LABEL_SESSION) != Some(session_id());
+        let mine = label(LABEL_OWNER) == Some(owner_id());
+        let my_other_run = mine && label(LABEL_SESSION) != Some(session_id());
+        // Of this run, but its creation was never answered and nobody holds it.
+        let lost = mine && unconfirmed().contains(&name);
         let too_old = pod
             .metadata
             .creation_timestamp
             .as_ref()
             .and_then(|t| now.duration_since(t.0).try_into().ok())
             .is_some_and(|age: Duration| age > MAX_AGE);
-        if (my_other_run || too_old) && delete_pod(&client, &name).await.is_ok() {
+        if (my_other_run || lost || too_old) && delete_pod(&client, &name).await.is_ok() {
+            unconfirmed().remove(&name);
             deleted += 1;
         }
     }
@@ -759,6 +903,170 @@ mod tests {
             let err = create(&mgr, &id, "node-1", "").await.expect_err("refused");
             assert_eq!(err.code, ErrorCode::Forbidden);
             assert!(err.message.starts_with(&expected), "{}", err.message);
+        }
+    }
+
+    /// How the fake API server answers the creation of the pod (it is made all the same).
+    #[derive(Clone, Copy)]
+    enum Lost {
+        /// 504 Gateway Timeout.
+        GatewayTimeout,
+        /// No answer at all (the client's own time limit ends the wait).
+        NoAnswer,
+        /// An answer the client cannot read (two different `Content-Length`s): a transport error.
+        Broken,
+    }
+
+    /// A fake API server that makes the node shell pod when it is posted but loses the answer as `lost` says; lookups
+    /// by name fail with 500 while `lookups_fail` is set. Returns the server and the posted pod.
+    async fn losing_creations(
+        lost: Lost,
+        lookups_fail: Arc<AtomicBool>,
+    ) -> (FakeApi, Arc<Mutex<Option<serde_json::Value>>>) {
+        let made: Arc<Mutex<Option<serde_json::Value>>> = Arc::default();
+        let seen = Arc::clone(&made);
+        let api = FakeApi::start(move |req| match (req.method.as_str(), req.path.as_str()) {
+            ("GET", "/api") => Reply::json(200, API_VERSIONS),
+            ("POST", PODS) => {
+                *seen.lock().unwrap() = serde_json::from_slice(&req.body).ok();
+                let status = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Timeout","code":504}"#;
+                match lost {
+                    Lost::GatewayTimeout => Reply::json(504, status),
+                    Lost::NoAnswer => Reply::hang(),
+                    Lost::Broken => Reply::json(201, "{}").with_header("Content-Length", "100000"),
+                }
+            }
+            ("GET", PODS)
+                if req.query.contains("fieldSelector") && lookups_fail.load(Ordering::SeqCst) =>
+            {
+                Reply::json(500, r#"{"kind":"Status","apiVersion":"v1","status":"Failure","code":500}"#)
+            }
+            ("GET", PODS) => {
+                let items: Vec<serde_json::Value> = seen.lock().unwrap().iter().cloned().collect();
+                Reply::json(200, listed(json!(items)))
+            }
+            ("DELETE", _) => Reply::json(200, "{}"),
+            _ => Reply::not_found(),
+        })
+        .await;
+        (api, made)
+    }
+
+    async fn eventually(what: &str, mut done: impl FnMut() -> bool) {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(20);
+        while !done() {
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "timed out waiting for {what}"
+            );
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    }
+
+    fn deletions(api: &FakeApi) -> Vec<String> {
+        api.requests()
+            .into_iter()
+            .filter(|r| r.method == "DELETE")
+            .map(|r| r.path)
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn a_pod_whose_create_answer_is_lost_is_looked_up_by_its_labels_and_deleted() {
+        for (lost, label) in [
+            (Lost::GatewayTimeout, "504"),
+            (Lost::NoAnswer, "no answer"),
+            (Lost::Broken, "transport error"),
+        ] {
+            let (api, made) = losing_creations(lost, Arc::default()).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            create(&mgr, &id, "node-1", "").await.expect_err(label);
+
+            let pod = made.lock().unwrap().clone().expect("the pod was requested");
+            let name = pod["metadata"]["name"].as_str().unwrap().to_owned();
+            eventually("the pod's deletion", || !deletions(&api).is_empty()).await;
+            let lookup = api
+                .requests()
+                .into_iter()
+                .find(|r| r.method == "GET" && r.path == PODS)
+                .expect("the pod was looked up");
+            let session = format!("sextant.dev%2Fsession%3D{}", session_id());
+            let owner = format!("sextant.dev%2Fowner%3D{}", owner_id());
+            let by_name = format!("fieldSelector=metadata.name%3D{name}");
+            for part in [&session, &owner, &by_name] {
+                assert!(
+                    lookup.query.contains(part.as_str()),
+                    "{label}: {}",
+                    lookup.query
+                );
+            }
+            assert_eq!(deletions(&api), [format!("{PODS}/{name}")], "{label}");
+            assert_eq!(
+                api.requests().iter().filter(|r| r.method == "POST").count(),
+                1,
+                "{label}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_lost_pod_that_cannot_be_looked_up_is_deleted_by_the_next_sweep() {
+        let lookups_fail = Arc::new(AtomicBool::new(true));
+        let (api, made) = losing_creations(Lost::GatewayTimeout, Arc::clone(&lookups_fail)).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+        create(&mgr, &id, "node-1", "").await.expect_err("504");
+        let name = made.lock().unwrap().as_ref().unwrap()["metadata"]["name"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        eventually("the lookups to give up", || is_unconfirmed(&name)).await;
+        let lookups = api
+            .requests()
+            .iter()
+            .filter(|r| r.method == "GET" && r.query.contains("fieldSelector"))
+            .count();
+        assert!(lookups >= 2, "the lookup is repeated: {lookups}");
+        assert!(deletions(&api).is_empty());
+
+        // The pod is of this run, which the sweep otherwise leaves alone; this one nobody holds.
+        lookups_fail.store(false, Ordering::SeqCst);
+        assert_eq!(sweep(mgr.client(&id).unwrap()).await.unwrap(), 1);
+        assert_eq!(deletions(&api), [format!("{PODS}/{name}")]);
+        assert!(!is_unconfirmed(&name));
+    }
+
+    #[tokio::test]
+    async fn a_deletion_answered_429_or_503_is_repeated() {
+        for status in [429u16, 503] {
+            let deletes = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let counted = Arc::clone(&deletes);
+            let old = (Timestamp::now() - std::time::Duration::from_secs(9 * 3600)).to_string();
+            let items = json!([shell_pod("forgotten", true, Some(owner_id()), "s", &old)]);
+            let api = FakeApi::start(move |req| match (req.method.as_str(), req.path.as_str()) {
+                ("GET", "/api") => Reply::json(200, API_VERSIONS),
+                ("GET", PODS) => Reply::json(200, listed(items.clone())),
+                ("DELETE", _) if counted.fetch_add(1, Ordering::SeqCst) == 0 => Reply::json(
+                    status,
+                    format!(r#"{{"kind":"Status","apiVersion":"v1","status":"Failure","code":{status}}}"#),
+                ),
+                ("DELETE", _) => Reply::json(200, "{}"),
+                _ => Reply::not_found(),
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            assert_eq!(
+                sweep(mgr.client(&id).unwrap()).await.unwrap(),
+                1,
+                "{status}"
+            );
+            assert_eq!(
+                deletions(&api),
+                [format!("{PODS}/forgotten"), format!("{PODS}/forgotten")],
+                "{status}"
+            );
         }
     }
 
