@@ -14,11 +14,15 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "gen:types": "node scripts/bindings.mjs clean && cargo test --workspace export_bindings && node scripts/bindings.mjs sync",
-    "check": "node scripts/check-case-collisions.mjs && npm run check:version && npm run check:rust && npm run check:web",
+    "check": "node scripts/check-case-collisions.mjs && npm run check:version && npm run check:rust && npm run check:web && npm run sdk:check",
     "check:version": "node scripts/check-version.mjs && node --test scripts/check-version.test.mjs",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && node scripts/check-core-deps.mjs && node scripts/bindings.mjs clean && cargo test --workspace && node scripts/bindings.mjs verify",
     "check:web": "tsc --noEmit && tsc --noEmit -p e2e && eslint . && vitest run",
-    "e2e": "wdio run e2e/wdio.conf.ts"
+    "e2e": "wdio run e2e/wdio.conf.ts",
+    "sdk:check": "tsc -p sdk && tsc -p sdk/tsconfig.test.json && vitest run --config sdk/vitest.config.ts && node sdk/scripts/check.mjs",
+    "sdk:build": "node sdk/scripts/build.mjs",
+    "sdk:pack": "node sdk/scripts/pack.mjs",
+    "sdk:sync-types": "node sdk/scripts/sync-types.mjs"
   },
   "dependencies": {
     "@codemirror/lang-yaml": "^6.1.3",

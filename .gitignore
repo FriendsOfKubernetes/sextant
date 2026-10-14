@@ -14,3 +14,10 @@ __pycache__/
 
 # Autopilot — local only, not published
 .autopilot/
+
+# IDE
+.idea/
+
+# Extension SDK build output
+sdk/**/dist/
+*.sextant-ext

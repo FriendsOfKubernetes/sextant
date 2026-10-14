@@ -1,0 +1,18 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "example.hello",
+  "name": "Hello",
+  "version": "0.1.0",
+  "description": "A minimal Sextant extension: one page.",
+  "author": "Your name",
+  "sextantApi": 1,
+  "entry": "index.html",
+  "icon": "overview",
+  "permissions": {
+    "clusters": { "type": "all" },
+    "rules": []
+  },
+  "contributes": {
+    "pages": [{ "id": "hello", "title": "Hello", "section": "hello", "sectionTitle": "Hello", "icon": "overview" }]
+  }
+}

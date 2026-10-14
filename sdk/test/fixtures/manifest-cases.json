@@ -1,0 +1,1491 @@
+{
+  "$comment": "Manifests Sextant accepts and refuses, shared by the SDK's validator (sdk/scripts/manifest.mjs, sdk/test/manifest.test.ts) and Sextant's own check (parse_manifest in crates/sextant-core/src/extensions/manifest.rs). A case is `bases[base]` with every JSON pointer of `set` set (an object gets the key; an array gets the item at that index replaced, or appended when the index is its length) and every pointer of `remove` removed. A refused case names the field (`path`, empty for the whole file) and a part of the message.",
+  "bases": {
+    "minimal": {
+      "id": "hello",
+      "name": "Hello",
+      "version": "0.1.0",
+      "description": "",
+      "author": "Me",
+      "sextantApi": 1,
+      "entry": "index.html",
+      "permissions": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": []
+      },
+      "contributes": {}
+    },
+    "full": {
+      "$schema": "https://github.com/FriendsOfKubernetes/sextant/extension-manifest.schema.json",
+      "id": "dev.example.widgets",
+      "name": "Widgets",
+      "version": "1.2.0-beta.1+build.7",
+      "description": "Pages, panels and actions for the Widget custom resource.",
+      "author": "Example Team",
+      "sextantApi": 1,
+      "entry": "dist/index.html",
+      "icon": "customResource",
+      "permissions": {
+        "clusters": {
+          "type": "only",
+          "names": [
+            "kind-sextant-test",
+            "staging"
+          ]
+        },
+        "rules": [
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "example.dev",
+                  "kind": "Widget"
+                },
+                {
+                  "group": "",
+                  "kind": "Pod"
+                }
+              ]
+            },
+            "actions": [
+              "read",
+              "logs"
+            ]
+          },
+          {
+            "namespaces": {
+              "type": "only",
+              "namespaces": [
+                "team-a"
+              ]
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "example.dev",
+                  "kind": "Widget"
+                }
+              ]
+            },
+            "actions": [
+              "modify",
+              "delete"
+            ],
+            "confirm": true
+          },
+          {
+            "namespaces": {
+              "type": "only",
+              "namespaces": [
+                "team-a"
+              ]
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "",
+                  "kind": "ConfigMap"
+                }
+              ]
+            },
+            "actions": [
+              "modify"
+            ],
+            "confirm": false
+          },
+          {
+            "namespaces": {
+              "type": "only",
+              "namespaces": [
+                "team-a"
+              ]
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "",
+                  "kind": "Secret"
+                }
+              ]
+            },
+            "actions": [
+              "secretValues"
+            ]
+          }
+        ]
+      },
+      "contributes": {
+        "pages": [
+          {
+            "id": "overview",
+            "title": "Widgets overview",
+            "section": "widgets",
+            "sectionTitle": "Widgets",
+            "icon": "workloads",
+            "order": 1
+          },
+          {
+            "id": "health",
+            "title": "Widget health",
+            "section": "customResources"
+          }
+        ],
+        "detailsSections": [
+          {
+            "id": "status",
+            "title": "Widget status",
+            "kinds": [
+              {
+                "group": "example.dev",
+                "kind": "Widget"
+              }
+            ],
+            "order": 10,
+            "placement": "section"
+          },
+          {
+            "id": "history",
+            "title": "History",
+            "kinds": [
+              {
+                "group": "example.dev",
+                "kind": "Widget"
+              },
+              {
+                "group": "apps",
+                "kind": "Deployment"
+              }
+            ],
+            "placement": "tab"
+          }
+        ],
+        "actions": [
+          {
+            "id": "scale",
+            "title": "Scale widget",
+            "icon": "scale",
+            "kinds": [
+              {
+                "group": "example.dev",
+                "kind": "Widget"
+              }
+            ]
+          },
+          {
+            "id": "purge",
+            "title": "Purge widgets",
+            "kinds": [
+              {
+                "group": "example.dev",
+                "kind": "Widget"
+              }
+            ],
+            "danger": true,
+            "multiple": true
+          }
+        ],
+        "columns": [
+          {
+            "kind": {
+              "group": "example.dev",
+              "kind": "Widget"
+            },
+            "id": "size",
+            "title": "Size",
+            "jsonPath": ".spec.size",
+            "after": "Name"
+          },
+          {
+            "kind": {
+              "group": "example.dev",
+              "kind": "Widget"
+            },
+            "id": "ready",
+            "title": "Ready",
+            "jsonPath": ".status.conditions[?(@.type==\"Ready\")].status"
+          },
+          {
+            "kind": {
+              "group": "",
+              "kind": "Pod"
+            },
+            "id": "app",
+            "title": "App",
+            "jsonPath": "{.metadata.labels['app\\.kubernetes\\.io/name']}"
+          }
+        ],
+        "dockActions": [
+          {
+            "id": "console",
+            "title": "Widget console",
+            "icon": "terminal"
+          }
+        ],
+        "settings": {
+          "title": "Widgets"
+        }
+      }
+    },
+    "list": []
+  },
+  "valid": [
+    {
+      "name": "the minimal manifest",
+      "base": "minimal"
+    },
+    {
+      "name": "the full manifest",
+      "base": "full"
+    },
+    {
+      "name": "a manifest with its $schema",
+      "base": "minimal",
+      "set": {
+        "/$schema": "../schema.json"
+      }
+    },
+    {
+      "name": "id console",
+      "base": "minimal",
+      "set": {
+        "/id": "console"
+      }
+    },
+    {
+      "name": "id null-check",
+      "base": "minimal",
+      "set": {
+        "/id": "null-check"
+      }
+    },
+    {
+      "name": "id com10",
+      "base": "minimal",
+      "set": {
+        "/id": "com10"
+      }
+    },
+    {
+      "name": "id auxiliary",
+      "base": "minimal",
+      "set": {
+        "/id": "auxiliary"
+      }
+    },
+    {
+      "name": "id lpt-tools",
+      "base": "minimal",
+      "set": {
+        "/id": "lpt-tools"
+      }
+    },
+    {
+      "name": "id my.con",
+      "base": "minimal",
+      "set": {
+        "/id": "my.con"
+      }
+    },
+    {
+      "name": "id a-b",
+      "base": "minimal",
+      "set": {
+        "/id": "a-b"
+      }
+    },
+    {
+      "name": "id 0ab",
+      "base": "minimal",
+      "set": {
+        "/id": "0ab"
+      }
+    },
+    {
+      "name": "id x.y-z",
+      "base": "minimal",
+      "set": {
+        "/id": "x.y-z"
+      }
+    },
+    {
+      "name": "entry console.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "console.html"
+      }
+    },
+    {
+      "name": "entry dist/index.htm",
+      "base": "minimal",
+      "set": {
+        "/entry": "dist/index.htm"
+      }
+    },
+    {
+      "name": "entry a.b/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a.b/index.html"
+      }
+    },
+    {
+      "name": "entry nullable/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "nullable/index.html"
+      }
+    },
+    {
+      "name": "entry INDEX.HTML",
+      "base": "minimal",
+      "set": {
+        "/entry": "INDEX.HTML"
+      }
+    },
+    {
+      "name": "entry a b/c.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a b/c.html"
+      }
+    },
+    {
+      "name": "version 0.0.0",
+      "base": "minimal",
+      "set": {
+        "/version": "0.0.0"
+      }
+    },
+    {
+      "name": "version 1.2.3-alpha.1",
+      "base": "minimal",
+      "set": {
+        "/version": "1.2.3-alpha.1"
+      }
+    },
+    {
+      "name": "version 1.2.3+build.5",
+      "base": "minimal",
+      "set": {
+        "/version": "1.2.3+build.5"
+      }
+    },
+    {
+      "name": "version 1.2.3-0.a-b+x.y",
+      "base": "minimal",
+      "set": {
+        "/version": "1.2.3-0.a-b+x.y"
+      }
+    },
+    {
+      "name": "version 10.20.30",
+      "base": "minimal",
+      "set": {
+        "/version": "10.20.30"
+      }
+    },
+    {
+      "name": "jsonPath .spec.size",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".spec.size"
+      }
+    },
+    {
+      "name": "jsonPath $.spec.size",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": "$.spec.size"
+      }
+    },
+    {
+      "name": "jsonPath {.spec.size}",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": "{.spec.size}"
+      }
+    },
+    {
+      "name": "jsonPath .items[0].name",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".items[0].name"
+      }
+    },
+    {
+      "name": "jsonPath .items[-1]",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".items[-1]"
+      }
+    },
+    {
+      "name": "jsonPath .items[*].name",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".items[*].name"
+      }
+    },
+    {
+      "name": "jsonPath .metadata.*",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".metadata.*"
+      }
+    },
+    {
+      "name": "jsonPath .metadata.labels['app\\.kubernetes\\.io/name']",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".metadata.labels['app\\.kubernetes\\.io/name']"
+      }
+    },
+    {
+      "name": "jsonPath .metadata.labels[\"a\"]",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".metadata.labels[\"a\"]"
+      }
+    },
+    {
+      "name": "jsonPath .status.conditions[?(@.type==\"Ready\")].status",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".status.conditions[?(@.type==\"Ready\")].status"
+      }
+    },
+    {
+      "name": "jsonPath .status.conditions[?(@.type != 'Ready')].status",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".status.conditions[?(@.type != 'Ready')].status"
+      }
+    },
+    {
+      "name": "jsonPath .status.conditions[?(@.reason)]",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".status.conditions[?(@.reason)]"
+      }
+    },
+    {
+      "name": "jsonPath .a\\.b",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a\\.b"
+      }
+    },
+    {
+      "name": "the same id in different contribution types",
+      "base": "full",
+      "set": {
+        "/contributes/dockActions/0/id": "overview",
+        "/contributes/actions/0/id": "overview"
+      }
+    },
+    {
+      "name": "rules without confirm",
+      "base": "minimal",
+      "set": {
+        "/permissions/rules": [
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "all"
+            },
+            "actions": [
+              "read"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "id with capitals",
+      "base": "minimal",
+      "set": {
+        "/id": "Hello"
+      },
+      "path": "id",
+      "message": "lowercase letters"
+    },
+    {
+      "name": "id too short",
+      "base": "minimal",
+      "set": {
+        "/id": "ab"
+      },
+      "path": "id",
+      "message": "must be at least 3 characters"
+    },
+    {
+      "name": "id starting with -",
+      "base": "minimal",
+      "set": {
+        "/id": "-hello"
+      },
+      "path": "id",
+      "message": "starting with a letter or digit"
+    },
+    {
+      "name": "id ending with .",
+      "base": "minimal",
+      "set": {
+        "/id": "hello."
+      },
+      "path": "id",
+      "message": "not ending with `.`"
+    },
+    {
+      "name": "id with ..",
+      "base": "minimal",
+      "set": {
+        "/id": "a..b"
+      },
+      "path": "id",
+      "message": "without `..`"
+    },
+    {
+      "name": "id too long",
+      "base": "minimal",
+      "set": {
+        "/id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "path": "id",
+      "message": "must be at most 64 characters"
+    },
+    {
+      "name": "id a number",
+      "base": "minimal",
+      "set": {
+        "/id": 5
+      },
+      "path": "id",
+      "message": "must be a string"
+    },
+    {
+      "name": "id nul",
+      "base": "minimal",
+      "set": {
+        "/id": "nul"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id con",
+      "base": "minimal",
+      "set": {
+        "/id": "con"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id aux",
+      "base": "minimal",
+      "set": {
+        "/id": "aux"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id prn",
+      "base": "minimal",
+      "set": {
+        "/id": "prn"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id com1",
+      "base": "minimal",
+      "set": {
+        "/id": "com1"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id lpt9",
+      "base": "minimal",
+      "set": {
+        "/id": "lpt9"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id con.tools",
+      "base": "minimal",
+      "set": {
+        "/id": "con.tools"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "id nul.x-y",
+      "base": "minimal",
+      "set": {
+        "/id": "nul.x-y"
+      },
+      "path": "id",
+      "message": "Windows device name"
+    },
+    {
+      "name": "empty name",
+      "base": "minimal",
+      "set": {
+        "/name": ""
+      },
+      "path": "name",
+      "message": "must not be empty"
+    },
+    {
+      "name": "blank name",
+      "base": "minimal",
+      "set": {
+        "/name": "   "
+      },
+      "path": "name",
+      "message": "must not be blank"
+    },
+    {
+      "name": "name too long",
+      "base": "minimal",
+      "set": {
+        "/name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+      },
+      "path": "name",
+      "message": "must be at most 80 characters"
+    },
+    {
+      "name": "version 1.0",
+      "base": "minimal",
+      "set": {
+        "/version": "1.0"
+      },
+      "path": "version",
+      "message": "semantic version"
+    },
+    {
+      "name": "version 01.0.0",
+      "base": "minimal",
+      "set": {
+        "/version": "01.0.0"
+      },
+      "path": "version",
+      "message": "semantic version"
+    },
+    {
+      "name": "version 1.0.0-01",
+      "base": "minimal",
+      "set": {
+        "/version": "1.0.0-01"
+      },
+      "path": "version",
+      "message": "semantic version"
+    },
+    {
+      "name": "version 1.0.0+",
+      "base": "minimal",
+      "set": {
+        "/version": "1.0.0+"
+      },
+      "path": "version",
+      "message": "semantic version"
+    },
+    {
+      "name": "version v1.0.0",
+      "base": "minimal",
+      "set": {
+        "/version": "v1.0.0"
+      },
+      "path": "version",
+      "message": "semantic version"
+    },
+    {
+      "name": "version 1.0.0-",
+      "base": "minimal",
+      "set": {
+        "/version": "1.0.0-"
+      },
+      "path": "version",
+      "message": "semantic version"
+    },
+    {
+      "name": "empty author",
+      "base": "minimal",
+      "set": {
+        "/author": ""
+      },
+      "path": "author",
+      "message": "must not be empty"
+    },
+    {
+      "name": "description too long",
+      "base": "minimal",
+      "set": {
+        "/description": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "path": "description",
+      "message": "at most 500"
+    },
+    {
+      "name": "entry /index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry ../index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "../index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry a/./index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a/./index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry a\\index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a\\index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry C:/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "C:/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry main.js",
+      "base": "minimal",
+      "set": {
+        "/entry": "main.js"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry nul.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "nul.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry CON/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "CON/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry com1.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "com1.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry COM0.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "COM0.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry lpt0/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "lpt0/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry Lpt3 .html",
+      "base": "minimal",
+      "set": {
+        "/entry": "Lpt3 .html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry NODE_MODULES/x/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "NODE_MODULES/x/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry dist./index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "dist./index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry dist /index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "dist /index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry .hidden/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": ".hidden/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry node_modules/x/index.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "node_modules/x/index.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry a?b.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a?b.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry a|b.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a|b.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "entry a//b.html",
+      "base": "minimal",
+      "set": {
+        "/entry": "a//b.html"
+      },
+      "path": "entry",
+      "message": ".html file inside the package"
+    },
+    {
+      "name": "icon with a space",
+      "base": "minimal",
+      "set": {
+        "/icon": "my icon"
+      },
+      "path": "icon",
+      "message": "must be a name"
+    },
+    {
+      "name": "empty icon",
+      "base": "minimal",
+      "set": {
+        "/icon": ""
+      },
+      "path": "icon",
+      "message": "must not be empty"
+    },
+    {
+      "name": "clusters as a string",
+      "base": "minimal",
+      "set": {
+        "/permissions/clusters": "all"
+      },
+      "path": "permissions.clusters",
+      "message": "must be an object"
+    },
+    {
+      "name": "clusters of an unknown type",
+      "base": "minimal",
+      "set": {
+        "/permissions/clusters": {
+          "type": "some"
+        }
+      },
+      "path": "permissions.clusters.type",
+      "message": "must be one of: `all`, `only`"
+    },
+    {
+      "name": "clusters without a type",
+      "base": "minimal",
+      "set": {
+        "/permissions/clusters": {
+          "names": []
+        }
+      },
+      "path": "permissions.clusters.type",
+      "message": "is required"
+    },
+    {
+      "name": "a cluster listed twice",
+      "base": "minimal",
+      "set": {
+        "/permissions/clusters": {
+          "type": "only",
+          "names": [
+            "a",
+            "a"
+          ]
+        }
+      },
+      "path": "permissions.clusters.names[1]",
+      "message": "listed twice"
+    },
+    {
+      "name": "a blank cluster name",
+      "base": "minimal",
+      "set": {
+        "/permissions/clusters": {
+          "type": "only",
+          "names": [
+            " "
+          ]
+        }
+      },
+      "path": "permissions.clusters.names[0]",
+      "message": "must not be blank"
+    },
+    {
+      "name": "names on all clusters",
+      "base": "minimal",
+      "set": {
+        "/permissions/clusters": {
+          "type": "all",
+          "names": []
+        }
+      },
+      "path": "permissions.clusters.names",
+      "message": "unknown field"
+    },
+    {
+      "name": "the exec action",
+      "base": "full",
+      "set": {
+        "/permissions/rules/0/actions": [
+          "read",
+          "exec"
+        ]
+      },
+      "path": "permissions.rules[0].actions[1]",
+      "message": "must be one of: `read`, `modify`, `delete`, `logs`, `secretValues`"
+    },
+    {
+      "name": "the portForward action",
+      "base": "full",
+      "set": {
+        "/permissions/rules/0/actions": [
+          "portForward"
+        ]
+      },
+      "path": "permissions.rules[0].actions[0]",
+      "message": "must be one of"
+    },
+    {
+      "name": "no actions",
+      "base": "full",
+      "set": {
+        "/permissions/rules/0/actions": []
+      },
+      "path": "permissions.rules[0].actions",
+      "message": "must not be empty"
+    },
+    {
+      "name": "an action twice",
+      "base": "full",
+      "set": {
+        "/permissions/rules/0/actions": [
+          "read",
+          "read"
+        ]
+      },
+      "path": "permissions.rules[0].actions[1]",
+      "message": "listed twice"
+    },
+    {
+      "name": "confirm as a string",
+      "base": "full",
+      "set": {
+        "/permissions/rules/1/confirm": "yes"
+      },
+      "path": "permissions.rules[1].confirm",
+      "message": "true or false"
+    },
+    {
+      "name": "no namespaces",
+      "base": "full",
+      "set": {
+        "/permissions/rules/1/namespaces": {
+          "type": "only",
+          "namespaces": []
+        }
+      },
+      "path": "permissions.rules[1].namespaces.namespaces",
+      "message": "must not be empty"
+    },
+    {
+      "name": "an empty kind",
+      "base": "full",
+      "set": {
+        "/permissions/rules/1/kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "",
+              "kind": ""
+            }
+          ]
+        }
+      },
+      "path": "permissions.rules[1].kinds.kinds[0].kind",
+      "message": "must not be empty"
+    },
+    {
+      "name": "a kind without a group",
+      "base": "full",
+      "set": {
+        "/permissions/rules/1/kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "kind": "Pod"
+            }
+          ]
+        }
+      },
+      "path": "permissions.rules[1].kinds.kinds[0].group",
+      "message": "is required"
+    },
+    {
+      "name": "pages as an object",
+      "base": "full",
+      "set": {
+        "/contributes/pages": {}
+      },
+      "path": "contributes.pages",
+      "message": "must be a list"
+    },
+    {
+      "name": "page id with capitals",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/id": "Overview"
+      },
+      "path": "contributes.pages[0].id",
+      "message": "lowercase letters"
+    },
+    {
+      "name": "page id too long",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "path": "contributes.pages[0].id",
+      "message": "at most 40"
+    },
+    {
+      "name": "empty page title",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/title": ""
+      },
+      "path": "contributes.pages[0].title",
+      "message": "must not be empty"
+    },
+    {
+      "name": "page title too long",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/title": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+      },
+      "path": "contributes.pages[0].title",
+      "message": "at most 80"
+    },
+    {
+      "name": "section with a space",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/section": "my section"
+      },
+      "path": "contributes.pages[0].section",
+      "message": "must be a name"
+    },
+    {
+      "name": "a fractional order",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/order": 1.5
+      },
+      "path": "contributes.pages[0].order",
+      "message": "whole number"
+    },
+    {
+      "name": "order too large",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/order": 10001
+      },
+      "path": "contributes.pages[0].order",
+      "message": "at most 10000"
+    },
+    {
+      "name": "order too small",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/order": -10001
+      },
+      "path": "contributes.pages[0].order",
+      "message": "at least -10000"
+    },
+    {
+      "name": "an unknown placement",
+      "base": "full",
+      "set": {
+        "/contributes/detailsSections/0/placement": "panel"
+      },
+      "path": "contributes.detailsSections[0].placement",
+      "message": "must be one of: `section`, `tab`"
+    },
+    {
+      "name": "details section without kinds",
+      "base": "full",
+      "set": {
+        "/contributes/detailsSections/0/kinds": []
+      },
+      "path": "contributes.detailsSections[0].kinds",
+      "message": "must not be empty"
+    },
+    {
+      "name": "danger as a number",
+      "base": "full",
+      "set": {
+        "/contributes/actions/0/danger": 1
+      },
+      "path": "contributes.actions[0].danger",
+      "message": "true or false"
+    },
+    {
+      "name": "jsonPath \"spec.size\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": "spec.size"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".spec[\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".spec["
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".spec[?(x)]\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".spec[?(x)]"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \"$\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": "$"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".a..b\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a..b"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \"\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ""
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "must not be empty"
+    },
+    {
+      "name": "jsonPath \"{}\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": "{}"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": "."
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".a.\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a."
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".a[]\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a[]"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".a[x]\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a[x]"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".a[?(@)]\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a[?(@)]"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "jsonPath \".a[?(type==1)]\"",
+      "base": "full",
+      "set": {
+        "/contributes/columns/0/jsonPath": ".a[?(type==1)]"
+      },
+      "path": "contributes.columns[0].jsonPath",
+      "message": "JSONPath"
+    },
+    {
+      "name": "settings as a list",
+      "base": "full",
+      "set": {
+        "/contributes/settings": []
+      },
+      "path": "contributes.settings",
+      "message": "must be an object"
+    },
+    {
+      "name": "an unknown top-level field",
+      "base": "minimal",
+      "set": {
+        "/extra": 1
+      },
+      "path": "extra",
+      "message": "unknown field"
+    },
+    {
+      "name": "an unknown field in a page",
+      "base": "full",
+      "set": {
+        "/contributes/pages/0/badge": "x"
+      },
+      "path": "contributes.pages[0].badge",
+      "message": "unknown field"
+    },
+    {
+      "name": "an unknown contribution type",
+      "base": "minimal",
+      "set": {
+        "/contributes/widgets": []
+      },
+      "path": "contributes.widgets",
+      "message": "unknown field"
+    },
+    {
+      "name": "no entry",
+      "base": "minimal",
+      "remove": [
+        "/entry"
+      ],
+      "path": "entry",
+      "message": "is required"
+    },
+    {
+      "name": "no permissions",
+      "base": "minimal",
+      "remove": [
+        "/permissions"
+      ],
+      "path": "permissions",
+      "message": "is required"
+    },
+    {
+      "name": "no contributes",
+      "base": "minimal",
+      "remove": [
+        "/contributes"
+      ],
+      "path": "contributes",
+      "message": "is required"
+    },
+    {
+      "name": "a page without a section",
+      "base": "full",
+      "remove": [
+        "/contributes/pages/0/section"
+      ],
+      "path": "contributes.pages[0].section",
+      "message": "is required"
+    },
+    {
+      "name": "sextantApi 0 with an unknown field",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 0,
+        "/futureField": true
+      },
+      "path": "sextantApi",
+      "message": "supports 1"
+    },
+    {
+      "name": "sextantApi 2 with an unknown field",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/futureField": true
+      },
+      "path": "sextantApi",
+      "message": "supports 1"
+    },
+    {
+      "name": "sextantApi 99 with an unknown field",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 99,
+        "/futureField": true
+      },
+      "path": "sextantApi",
+      "message": "supports 1"
+    },
+    {
+      "name": "sextantApi as a string",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": "1"
+      },
+      "path": "sextantApi",
+      "message": "must be a whole number"
+    },
+    {
+      "name": "a page id twice",
+      "base": "full",
+      "set": {
+        "/contributes/pages/2": {
+          "id": "overview",
+          "title": "Again",
+          "section": "workloads"
+        }
+      },
+      "path": "contributes.pages[2].id",
+      "message": "duplicate id `overview` (also contributes.pages[0])"
+    },
+    {
+      "name": "a column id twice",
+      "base": "full",
+      "set": {
+        "/contributes/columns/3": {
+          "kind": {
+            "group": "",
+            "kind": "Pod"
+          },
+          "id": "size",
+          "title": "Size",
+          "jsonPath": ".a"
+        }
+      },
+      "path": "contributes.columns[3].id",
+      "message": "duplicate id `size`"
+    },
+    {
+      "name": "the manifest is a list",
+      "base": "list",
+      "path": "",
+      "message": "must be an object"
+    }
+  ]
+}

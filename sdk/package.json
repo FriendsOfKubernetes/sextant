@@ -1,0 +1,21 @@
+{
+  "name": "@sextant/extension-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Types, the frame client and tools for Sextant extensions (not published; use it with a file: link)",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "types": "./src/index.ts",
+  "bin": {
+    "sextant-ext": "./scripts/cli.mjs"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "template"
+  ]
+}

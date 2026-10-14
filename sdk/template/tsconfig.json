@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [],
+    // Inside the Sextant repository the SDK is next door; in a copy, `npm install` puts it in node_modules.
+    "paths": {
+      "@sextant/extension-sdk": ["../src/index.ts", "./node_modules/@sextant/extension-sdk/src/index.ts"],
+      "@sextant/extension-sdk/testing": ["../src/testing.ts", "./node_modules/@sextant/extension-sdk/src/testing.ts"]
+    }
+  },
+  "include": ["src"]
+}

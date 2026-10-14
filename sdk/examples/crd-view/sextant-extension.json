@@ -1,0 +1,55 @@
+{
+  "$schema": "../../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.example.crd-view",
+  "name": "Widgets",
+  "version": "1.0.0",
+  "description": "Example: a view of the test cluster's Widget custom resource — a table column, a details section, a Scale action and a settings section.",
+  "author": "Sextant",
+  "sextantApi": 1,
+  "entry": "index.html",
+  "icon": "customResource",
+  "permissions": {
+    "clusters": { "type": "all" },
+    "rules": [
+      {
+        "namespaces": { "type": "all" },
+        "kinds": { "type": "only", "kinds": [{ "group": "demo.sextant.dev", "kind": "Widget" }] },
+        "actions": ["read"]
+      },
+      {
+        "namespaces": { "type": "all" },
+        "kinds": { "type": "only", "kinds": [{ "group": "demo.sextant.dev", "kind": "Widget" }] },
+        "actions": ["modify"],
+        "confirm": true
+      }
+    ]
+  },
+  "contributes": {
+    "columns": [
+      {
+        "kind": { "group": "demo.sextant.dev", "kind": "Widget" },
+        "id": "generation",
+        "title": "Generation",
+        "jsonPath": ".metadata.generation",
+        "after": "Replicas"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "summary",
+        "title": "Widget summary",
+        "kinds": [{ "group": "demo.sextant.dev", "kind": "Widget" }],
+        "placement": "section"
+      }
+    ],
+    "actions": [
+      {
+        "id": "scale",
+        "title": "Scale widget",
+        "icon": "scale",
+        "kinds": [{ "group": "demo.sextant.dev", "kind": "Widget" }]
+      }
+    ],
+    "settings": { "title": "Widgets" }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.example.hello-page",
+  "name": "Hello pods",
+  "version": "1.0.0",
+  "description": "Example: a page that lists the pods of a namespace, live, in Sextant's theme.",
+  "author": "Sextant",
+  "sextantApi": 1,
+  "entry": "index.html",
+  "icon": "pod",
+  "permissions": {
+    "clusters": { "type": "all" },
+    "rules": [
+      {
+        "namespaces": { "type": "all" },
+        "kinds": { "type": "only", "kinds": [{ "group": "", "kind": "Pod" }, { "group": "", "kind": "Namespace" }] },
+        "actions": ["read"]
+      }
+    ]
+  },
+  "contributes": {
+    "pages": [{ "id": "pods", "title": "Hello pods", "section": "workloads", "icon": "pod", "order": 100 }]
+  }
+}

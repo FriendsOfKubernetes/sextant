@@ -1,0 +1,26 @@
+{
+  // The code that runs in an extension's frame: the SDK, the template and the examples (browser only, no Node).
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [],
+    "paths": {
+      "@sextant/extension-sdk": ["./src/index.ts"],
+      "@sextant/extension-sdk/testing": ["./src/testing.ts"]
+    }
+  },
+  "include": ["src", "template/src", "examples/*/src"],
+  "exclude": ["**/*.test.ts", "**/dist"]
+}
