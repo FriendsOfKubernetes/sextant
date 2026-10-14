@@ -1,0 +1,176 @@
+{
+  "title": "Extensions",
+  "hint": "Extensions add pages, panels, actions and columns to Sextant. Each one runs in an isolated frame and can reach your clusters only through the permissions you give it when you install it.",
+  "host": {
+    "failed": "Extension failed: {{message}}",
+    "failedUnknown": "the extension stopped with an error",
+    "reload": "Reload",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Overview",
+    "detailsTabs": "Details views",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "Dismiss"
+  },
+  "install": {
+    "file": "Install from file…",
+    "url": "Install from URL…",
+    "folder": "Load unpacked folder…",
+    "fileTitle": "Choose an extension package",
+    "fileFilter": "Sextant extension",
+    "folderTitle": "Choose the folder of an extension",
+    "checking": "Checking the package…",
+    "installed": "Installed version {{version}}.",
+    "updated": "Updated to version {{version}}."
+  },
+  "source": {
+    "folder": "Folder {{path}}",
+    "file": "File {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "Install from URL",
+    "label": "Link to a file in a GitHub release",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "Only links of the form https://github.com/<owner>/<repo>/releases/download/<tag>/<file> are accepted. The file may be up to 20 MB. Nothing is installed until you agree to the permissions.",
+    "invalid": "This is not a link to a file in a GitHub release.",
+    "check": "Download and check"
+  },
+  "errors": {
+    "invalid": "This package cannot be installed",
+    "conflict": "Another extension with this id is already installed",
+    "notFound": "This install is no longer available",
+    "timeout": "The download took too long",
+    "unreachable": "The file could not be downloaded",
+    "other": "The extension could not be installed"
+  },
+  "consent": {
+    "titleInstall": "Install {{name}}?",
+    "titleUpdate": "Update {{name}}?",
+    "titleReview": "Review the permissions of {{name}}",
+    "install": "Install",
+    "update": "Update",
+    "author": "Author",
+    "version": "Version",
+    "source": "Source",
+    "devHint": "It runs straight from this folder, and changes to its files are picked up while Sextant is open. It is marked Development.",
+    "replaces": "Replaces the installed version {{version}}.",
+    "newPermissions": "New permissions",
+    "newPermissionsHint": "This version asks for more than you allowed before. Read the permissions below.",
+    "samePermissions": "Same permissions",
+    "samePermissionsHint": "This version asks for nothing new.",
+    "reviewHint": "The files of this extension now ask for more than you allowed. It stays paused until you agree.",
+    "adds": "What it adds",
+    "permissions": "What it may do",
+    "noContributions": "Nothing is added to the interface.",
+    "secretWarning": "Reads the values of Secrets",
+    "secretWarningHint": "This extension asks to read Secret values: passwords, tokens and keys. Allow it only if you trust its author."
+  },
+  "contributes": {
+    "pages": "Pages in the sidebar",
+    "detailsSections": "Sections in the details panel",
+    "actions": "Actions on resources",
+    "columns": "Table columns",
+    "dockActions": "Dock buttons",
+    "settings": "Section in Settings"
+  },
+  "permissions": {
+    "clusters": "Clusters",
+    "clustersAll": "All clusters",
+    "clustersOnly_one": "Only the cluster named {{names}}",
+    "clustersOnly_other": "Only the clusters named {{names}}",
+    "clustersNote": "A name covers every cluster context with that name, from every kubeconfig source.",
+    "access": "Access",
+    "none": "No access to the data of any cluster.",
+    "rule": "{{actions}} {{kinds}} {{namespaces}}",
+    "allKinds": "all kinds",
+    "namespacesAll": "in all namespaces",
+    "namespacesOnly_one": "in the namespace {{names}}",
+    "namespacesOnly_other": "in the namespaces {{names}}",
+    "asks": "Asks before running",
+    "noAsk": "Runs without asking",
+    "secretValues": "Can read the values of Secrets {{namespaces}}",
+    "clusterWide": "Objects that belong to no namespace (such as Nodes) are covered only by rules for all namespaces.",
+    "actionNames": {
+      "read": "Read",
+      "modify": "Modify",
+      "delete": "Delete",
+      "logs": "Read the logs of",
+      "exec": "Run commands in",
+      "portForward": "Forward ports of",
+      "secretValues": "Read the Secret values of"
+    }
+  },
+  "state": {
+    "active": "Active",
+    "disabled": "Disabled",
+    "needsConsent": "Needs your approval",
+    "failed": "Failed"
+  },
+  "list": {
+    "loading": "Loading extensions…",
+    "empty": "No extensions are installed.",
+    "failed": "The list of extensions could not be read",
+    "development": "Development",
+    "version": "Version {{version}}",
+    "enable": "Enable",
+    "disable": "Disable",
+    "permissions": "Permissions",
+    "reload": "Reload",
+    "activity": "Activity",
+    "remove": "Remove",
+    "reviewPermissions": "Review permissions",
+    "pausedHint": "This extension asks for more than you allowed. It is paused until you review its permissions.",
+    "failedHint": "This extension cannot run: {{error}}",
+    "actionFailed": "The change could not be made",
+    "namedAction": "{{action}} {{name}}"
+  },
+  "permissionsDialog": {
+    "title": "Permissions of {{name}}",
+    "granted": "You allowed",
+    "requested": "It asks for now",
+    "close": "Close"
+  },
+  "remove": {
+    "title": "Remove {{name}}?",
+    "body": "The extension, its files and the data it stored are deleted from this computer. Your clusters are not changed."
+  },
+  "settingsFrame": "Settings of {{name}}",
+  "notice": {
+    "text_one": "{{names}} asks for more permissions than you allowed and is paused.",
+    "text_other": "{{names}} ask for more permissions than you allowed and are paused.",
+    "review": "Review permissions",
+    "dismiss": "Dismiss"
+  },
+  "activity": {
+    "title": "Extension activity",
+    "hint": "What extensions asked for. Values of secrets, YAML and command output are not recorded.",
+    "extension": "Extension",
+    "allExtensions": "All extensions",
+    "loading": "Loading the log…",
+    "empty": "No calls yet.",
+    "failed": "The log could not be read",
+    "clear": "Clear",
+    "clearTitle": "Clear the activity log?",
+    "clearBody": "All recorded calls of extensions are deleted from this computer.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Time",
+      "extension": "Extension",
+      "cluster": "Cluster",
+      "method": "Method",
+      "target": "Target",
+      "decision": "Decision",
+      "result": "Result",
+      "duration": "Took"
+    },
+    "decisions": {
+      "allowed": "Allowed",
+      "denied": "Denied",
+      "approved": "Approved by you",
+      "declined": "Declined by you",
+      "timedOut": "No answer"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

@@ -66,9 +66,9 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
       ) : (
         <Tabs
           className="details__tabs"
-          label={t("mcp:extensionHost.detailsTabs")}
+          label={t("extensions:host.detailsTabs")}
           tabs={[
-            { id: OVERVIEW, label: t("mcp:extensionHost.overview") },
+            { id: OVERVIEW, label: t("extensions:host.overview") },
             ...tabs.map((s) => ({ id: s.id, label: s.label ?? s.id })),
           ]}
           selected={openTab ? tab : OVERVIEW}

@@ -119,15 +119,5 @@
       "patch": "Patch a resource",
       "delete": "Delete a resource"
     }
-  },
-  "extensionHost": {
-    "failed": "Extension failed: {{message}}",
-    "failedUnknown": "the extension stopped with an error",
-    "reload": "Reload",
-    "frameTitle": "{{title}} ({{extension}})",
-    "overview": "Overview",
-    "detailsTabs": "Details views",
-    "notice": "{{extension}}: {{text}}",
-    "dismiss": "Dismiss"
   }
 }

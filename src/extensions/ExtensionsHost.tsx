@@ -24,13 +24,13 @@ function ExtensionNotices() {
       {notices.map((notice) => (
         <div key={notice.id} className="ext-notice">
           <span className="ext-notice__text">
-            {t("mcp:extensionHost.notice", { extension: notice.extension, text: notice.text })}
+            {t("extensions:host.notice", { extension: notice.extension, text: notice.text })}
           </span>
           <Button
             iconOnly
             icon="close"
             size="compact"
-            label={t("mcp:extensionHost.dismiss")}
+            label={t("extensions:host.dismiss")}
             onClick={() => dismissNotice(notice.id)}
           />
         </div>

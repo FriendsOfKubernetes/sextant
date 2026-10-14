@@ -1,5 +1,5 @@
 // The Settings page: appearance (theme, language), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
-// sources, the node shell image, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
+// sources, the node shell image, the MCP server, extensions, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,6 +20,8 @@ import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
 import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
+// The panel itself, not "../extensions": the feature's index registers a rail footer slot.
+import { ExtensionsPanel } from "../extensions/ExtensionsPanel";
 // Not "../mcp": that feature draws the Settings button in its rail footer, so it imports this page.
 import { McpPanel } from "../mcp/McpPanel";
 import { UpdatesPanel } from "../updates";
@@ -72,6 +74,7 @@ export function SettingsContent() {
       <KubeconfigSection />
       <TerminalSection settings={settings} save={save} />
       <McpSection settings={settings} save={save} />
+      <ExtensionsSection />
       <UpdatesSection save={save} />
     </div>
   );
@@ -370,6 +373,15 @@ function McpSection({ settings, save }: { settings: AppSettings | null; save: Sa
   return (
     <Section title={t("mcp:title")} hint={t("mcp:hint")}>
       <McpPanel settings={settings} save={save} />
+    </Section>
+  );
+}
+
+function ExtensionsSection() {
+  const { t } = useTranslation();
+  return (
+    <Section title={t("extensions:title")} hint={t("extensions:hint")}>
+      <ExtensionsPanel />
     </Section>
   );
 }

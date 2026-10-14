@@ -125,12 +125,12 @@ class FrameBoundary extends Component<BoundaryProps, BoundaryState> {
 
 function FrameFailure({ message, onReload, className }: { message: string; onReload: () => void; className?: string }) {
   const { t } = useTranslation();
-  const text = message.trim() || t("mcp:extensionHost.failedUnknown");
+  const text = message.trim() || t("extensions:host.failedUnknown");
   return (
     <div className={className ? `ext-failed ${className}` : "ext-failed"} role="alert">
-      <span className="ext-failed__text">{t("mcp:extensionHost.failed", { message: text })}</span>
+      <span className="ext-failed__text">{t("extensions:host.failed", { message: text })}</span>
       <Button size="compact" onClick={onReload}>
-        {t("mcp:extensionHost.reload")}
+        {t("extensions:host.reload")}
       </Button>
     </div>
   );
@@ -200,7 +200,7 @@ function FrameView({
     <iframe
       ref={frame}
       className={className ? `ext-frame ${className}` : "ext-frame"}
-      title={t("mcp:extensionHost.frameTitle", { title, extension: info.name })}
+      title={t("extensions:host.frameTitle", { title, extension: info.name })}
       src={frameUrl(entryUrl, view, contribution)}
       sandbox={FRAME_SANDBOX}
       referrerPolicy="no-referrer"

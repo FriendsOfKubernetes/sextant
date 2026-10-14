@@ -1,0 +1,269 @@
+/* Settings → Extensions (ExtensionsPanel and its dialogs). */
+.ext-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ext-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ext-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-panel);
+}
+
+.ext-row[data-state="disabled"] .ext-row__main {
+  opacity: 0.7;
+}
+
+.ext-row__main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ext-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
+
+.ext-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ext-row__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.ext-row__version,
+.ext-row__meta {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.ext-row__meta {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.ext-row__description {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.ext-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ext-row__alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  border-radius: 3px;
+  background: var(--color-hover);
+  overflow-wrap: anywhere;
+}
+
+.ext-row__alert[data-tone="danger"] {
+  border-left-color: var(--color-danger);
+}
+
+.ext-row__settings {
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+/* The window of consent and the permission texts. */
+.ext-consent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 560px;
+}
+
+.ext-consent__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ext-consent__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.ext-consent__description {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.ext-consent__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px 12px;
+  margin: 4px 0;
+}
+
+.ext-consent__facts dt {
+  color: var(--color-text-muted);
+}
+
+.ext-consent__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ext-consent__heading {
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+
+.ext-consent__review,
+.ext-consent__update p {
+  margin: 4px 0;
+}
+
+.ext-consent__warning {
+  padding: 8px 12px;
+  border: 1px solid var(--color-warning);
+  border-left-width: 4px;
+  border-radius: 4px;
+  background: var(--color-hover);
+}
+
+.ext-consent__warning p {
+  margin: 4px 0 0;
+}
+
+.ext-perms__heading {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.ext-perms__line {
+  margin: 0;
+}
+
+.ext-perms__rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ext-perms__rule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--color-hover);
+  overflow-wrap: anywhere;
+}
+
+.ext-perms__rule[data-secret] {
+  border-left: 3px solid var(--color-warning);
+}
+
+.ext-perms__secret {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.ext-contributes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ext-contributes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 2px 0;
+}
+
+.ext-contributes__kind {
+  color: var(--color-text-muted);
+}
+
+.ext-url__input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ext-url__input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+/* The notice that an extension is paused (ConsentNotice), across the top of the window like the settings banner. */
+.ext-consent-notice {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 880;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: min(640px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--color-warning);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: var(--color-panel);
+  color: var(--color-text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.ext-consent-notice__text {
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
