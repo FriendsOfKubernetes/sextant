@@ -7,8 +7,12 @@
 //! Works with Helm 3 and Helm 4 (same flags, same JSON output, same release storage).
 
 use std::ffi::{OsStr, OsString};
+use std::io::Read;
 use std::path::{Component, Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Output, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -174,19 +178,95 @@ fn redact(message: String, secret: Option<&str>) -> String {
     }
 }
 
-/// Runs `cmd` to the end; `input` (if any) is written to its stdin, which is then closed.
-fn run_child(mut cmd: Command, input: Option<&str>) -> std::io::Result<std::process::Output> {
-    let Some(input) = input else {
-        return cmd.output();
-    };
-    cmd.stdin(Stdio::piped());
-    let mut child = cmd.spawn()?;
-    if let Some(mut stdin) = child.stdin.take() {
-        use std::io::Write;
-        // `helm` may exit before reading (e.g. a refused flag); its exit status and stderr tell what happened.
-        let _ = stdin.write_all(input.as_bytes());
+/// How often a running `helm` is checked for having exited.
+const EXIT_POLL: Duration = Duration::from_millis(20);
+
+/// A started `helm`, killed when this value is dropped while the process still runs: the call that started it was
+/// dropped (its time limit passed, the MCP server stopped), so nobody waits for it any more.
+struct KillOnDrop {
+    child: Arc<Mutex<Child>>,
+    killed: Arc<AtomicBool>,
+}
+
+impl Drop for KillOnDrop {
+    fn drop(&mut self) {
+        let mut child = self.child.lock().unwrap_or_else(|e| e.into_inner());
+        if let Ok(None) = child.try_wait() {
+            self.killed.store(true, Ordering::SeqCst);
+            let _ = child.kill();
+        }
     }
-    child.wait_with_output()
+}
+
+/// Runs `cmd` to the end; `input` (if any) is written to its stdin, which is then closed. Waits without blocking the
+/// runtime, and kills the process when the returned future is dropped before it has exited (kill on drop). `keep`
+/// (temporary files the call reads) lives until the process has exited.
+async fn run_child<K: Send + 'static>(
+    mut cmd: Command,
+    input: Option<String>,
+    keep: K,
+) -> std::io::Result<Output> {
+    if input.is_some() {
+        cmd.stdin(Stdio::piped());
+    }
+    let mut child = cmd.spawn()?;
+    if let (Some(mut stdin), Some(input)) = (child.stdin.take(), input) {
+        // `helm` may exit before reading (e.g. a refused flag); its exit status and stderr tell what happened.
+        std::thread::spawn(move || {
+            use std::io::Write;
+            let _ = stdin.write_all(input.as_bytes());
+        });
+    }
+    let reader = |pipe: Option<Box<dyn Read + Send>>| {
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            if let Some(mut pipe) = pipe {
+                let _ = pipe.read_to_end(&mut bytes);
+            }
+            bytes
+        })
+    };
+    let stdout = reader(
+        child
+            .stdout
+            .take()
+            .map(|p| Box::new(p) as Box<dyn Read + Send>),
+    );
+    let stderr = reader(
+        child
+            .stderr
+            .take()
+            .map(|p| Box::new(p) as Box<dyn Read + Send>),
+    );
+    let guard = KillOnDrop {
+        child: Arc::new(Mutex::new(child)),
+        killed: Arc::new(AtomicBool::new(false)),
+    };
+    let (child, killed) = (Arc::clone(&guard.child), Arc::clone(&guard.killed));
+    let waited = tokio::task::spawn_blocking(move || {
+        let status = loop {
+            let exited = child.lock().unwrap_or_else(|e| e.into_inner()).try_wait();
+            match exited {
+                Ok(None) => std::thread::sleep(EXIT_POLL),
+                other => break other,
+            }
+        };
+        drop(keep);
+        let status = status?.ok_or_else(|| std::io::Error::other("helm did not exit"))?;
+        if killed.load(Ordering::SeqCst) {
+            // Its pipes may still be held open by a process it started: they are left behind, not waited for.
+            return Err(std::io::Error::other("helm was stopped"));
+        }
+        let bytes = |reader: std::thread::JoinHandle<Vec<u8>>| reader.join().unwrap_or_default();
+        Ok(Output {
+            status,
+            stdout: bytes(stdout),
+            stderr: bytes(stderr),
+        })
+    })
+    .await;
+    drop(guard);
+    waited.map_err(std::io::Error::other)?
 }
 
 fn helm_missing() -> CoreError {
@@ -384,17 +464,13 @@ impl HelmCli {
         let binary = self.binary().ok_or_else(helm_missing)?;
         let mut cmd = self.command(&binary);
         cmd.args(args.into_vec());
-        let (output, secret) = tokio::task::spawn_blocking(move || {
-            let output = run_child(cmd, secret_input.as_deref());
-            drop(keep);
-            (output, secret_input)
-        })
-        .await
-        .map_err(|e| CoreError::other(format!("helm call failed: {e}")))?;
-        let output = output.map_err(|e| match e.kind() {
-            std::io::ErrorKind::NotFound => helm_missing(),
-            _ => CoreError::other(format!("cannot run helm: {e}")),
-        })?;
+        let secret = secret_input.clone();
+        let output = run_child(cmd, secret_input, keep)
+            .await
+            .map_err(|e| match e.kind() {
+                std::io::ErrorKind::NotFound => helm_missing(),
+                _ => CoreError::other(format!("cannot run helm: {e}")),
+            })?;
         if output.status.success() {
             return Ok(String::from_utf8_lossy(&output.stdout).into_owned());
         }
@@ -1412,6 +1488,63 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(err.code, ErrorCode::HelmMissing);
+    }
+
+    /// A fake `helm` in `dir` that writes its PID to `dir/pid` and then sleeps for 30 s (as the same process).
+    #[cfg(unix)]
+    fn sleeping_helm(dir: &Path) -> (HelmCli, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let pid = dir.join("pid");
+        let fake = dir.join("helm");
+        std::fs::write(
+            &fake,
+            format!("#!/bin/sh\necho $$ > '{}'\nexec sleep 30\n", pid.display()),
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        (HelmCli::default().with_binary(fake), pid)
+    }
+
+    #[cfg(unix)]
+    fn alive(pid: &str) -> bool {
+        Command::new("kill")
+            .args(["-0", pid])
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|s| s.success())
+    }
+
+    /// Dropping a call (its caller gave up: a time limit, a stopped MCP server) kills the `helm` it started.
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_dropped_call_kills_its_helm() {
+        let dir = tempfile::tempdir().unwrap();
+        let (cli, pid_file) = sleeping_helm(dir.path());
+        let mut call = Box::pin(cli.uninstall(Path::new("/nonexistent"), "ctx", "ns", "web"));
+        let pid = tokio::time::timeout(Duration::from_secs(10), async {
+            loop {
+                tokio::select! {
+                    result = &mut call => panic!("helm ended: {result:?}"),
+                    () = tokio::time::sleep(Duration::from_millis(20)) => {}
+                }
+                let pid = std::fs::read_to_string(&pid_file).unwrap_or_default();
+                if !pid.trim().is_empty() {
+                    return pid.trim().to_owned();
+                }
+            }
+        })
+        .await
+        .expect("helm did not start");
+        assert!(alive(&pid));
+        drop(call);
+        for _ in 0..250 {
+            if !alive(&pid) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        let _ = Command::new("kill").args(["-9", &pid]).status();
+        panic!("helm {pid} outlived its call");
     }
 
     #[test]

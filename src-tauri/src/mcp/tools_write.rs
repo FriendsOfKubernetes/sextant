@@ -12,9 +12,14 @@
 //! | `patch_resource`, `scale`, `restart`, `trigger_cronjob`, `suspend_cronjob`, `gitops_action`, `cordon_node` | Modify on the kind |
 //! | `delete_resource` | Delete on the kind |
 //! | `drain_node` | Modify on `Node` and Delete on `Pod` in all namespaces |
-//! | `exec_command` | Exec on `Pod`; never in a node shell pod (`sextant.dev/node-shell=true`) |
+//! | `exec_command` | Exec on `Pod` |
 //! | `port_forward_start` | Port forward on `Pod` / `Service`; list and stop see only the agents' own forwards |
-//! | `helm_install`, `helm_upgrade`, `helm_rollback` | Modify on `helm.sh/Release`; `helm_uninstall` — Delete |
+//! | `helm_install`, `helm_upgrade` (5 min), `helm_rollback`, `helm_uninstall` (2 min) | Modify on `helm.sh/Release`; `helm_uninstall` — Delete |
+//!
+//! Whatever the rules say, an agent never runs a command in a node shell pod, changes one or deletes one
+//! (`exec_command`, `patch_resource`, `apply_yaml`, `delete_resource`; see [`refuse_named_node_shell`] and
+//! [`refuse_live_node_shell`]): a command there runs on the node itself. A Helm call past its time limit, or whose
+//! server stops, has its `helm` killed.
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -25,6 +30,7 @@ use sextant_core::access::{AccessAction, KindPattern};
 use sextant_core::error::with_timeout;
 use sextant_core::exec;
 use sextant_core::helm::cli::{self as helm_cli, HelmCli};
+use sextant_core::node_shell;
 use sextant_core::portforward::ForwardTarget;
 use sextant_core::resources::{self, KindRef, ObjectRef, PatchType};
 use sextant_core::{ClusterId, CoreError, CoreResult, DrainOptions, ErrorCode};
@@ -453,52 +459,32 @@ pub struct ForwardStopArgs {
 // Tools
 
 async fn apply_yaml(call: ToolCall, args: ApplyArgs) -> ToolResult {
-    let docs = documents(&args.yaml)?;
+    // The core's own reading of the text: what is checked below is what is applied. A Secret loaded without its
+    // values is refused here, before anyone is asked.
+    let docs = resources::parse_documents(&args.yaml)?;
     if docs.is_empty() {
         return Err(invalid("the text has no objects to apply").into());
     }
     let cluster = call.open(&args.cluster).await?;
     let mgr = &call.ctx().clusters;
-    // The namespace the core gives a document without one.
-    let default_namespace = mgr.client(&cluster.id)?.default_namespace().to_owned();
-    let mut objects = Vec::with_capacity(docs.len());
-    for doc in docs {
-        let kind = read(
-            "looking up the kind (nothing was applied)",
-            resources::resolve(mgr, &cluster.id, &doc.kind),
-        )
-        .await
-        .map_err(|e| CoreError::new(e.code, format!("{}: {}", doc.label, e.message)))?;
-        let namespace = kind
-            .namespaced
-            .then(|| doc.namespace.unwrap_or_else(|| default_namespace.clone()));
-        objects.push(ObjectRef {
-            kind: KindRef {
-                version: doc.kind.version,
-                ..kind.kind_ref
-            },
-            namespace,
-            name: doc.name,
-        });
+    // Each lookup is limited by the core (`STEP_TIMEOUT`); nothing is sent.
+    let targets = resources::plan_apply(mgr, &cluster.id, docs).await?;
+    for target in &targets {
+        refuse_named_node_shell(target.object(), Some(target.document().value()))?;
     }
-    let requirements: Vec<Requirement> = objects
-        .iter()
-        .map(|o| {
-            need(
-                o.namespace.as_deref(),
-                &pattern_of(&o.kind),
-                AccessAction::Modify,
-            )
-        })
-        .collect();
+    let objects: Vec<ObjectRef> = targets.iter().map(|t| t.object().clone()).collect();
+    let requirements: Vec<Requirement> = objects.iter().map(modify).collect();
     let summary = CallSummary {
         tool: "apply_yaml".into(),
-        target: targets(&objects),
+        target: targets_text(&objects),
         details: Some(apply_details(&objects, &args.yaml)),
     };
     call.guard.check(&cluster, &requirements, &summary).await?;
+    for object in &objects {
+        refuse_live_node_shell(&call, &cluster.id, object, true).await?;
+    }
     // Each request is limited by the core (`STEP_TIMEOUT`), not the whole apply.
-    let applied = resources::apply_yaml(mgr, &cluster.id, &args.yaml).await?;
+    let applied = resources::apply_planned(mgr, &cluster.id, targets).await?;
     let applied: Vec<String> = applied.iter().map(describe).collect();
     Ok(ToolOutput::Json(json!({ "applied": applied })))
 }
@@ -521,6 +507,7 @@ async fn patch_resource(call: ToolCall, args: PatchArgs) -> ToolResult {
     let mgr = &call.ctx().clusters;
     let kind = find_kind(mgr, &cluster.id, args.api_version.as_deref(), &args.kind).await?;
     let object = object_ref(&kind, args.namespace.as_deref(), &args.name)?;
+    refuse_named_node_shell(&object, None)?;
     let shown = serde_json::to_string_pretty(&args.patch).unwrap_or_default();
     let summary = CallSummary {
         tool: "patch_resource".into(),
@@ -540,6 +527,7 @@ async fn patch_resource(call: ToolCall, args: PatchArgs) -> ToolResult {
         ));
     }
     call.guard.check(&cluster, &requirements, &summary).await?;
+    refuse_live_node_shell(&call, &cluster.id, &object, false).await?;
     let saved = change(
         "patching the object",
         resources::patch(mgr, &cluster.id, &object, &args.patch, patch_type),
@@ -553,6 +541,7 @@ async fn delete_resource(call: ToolCall, args: ObjectArgs) -> ToolResult {
     let mgr = &call.ctx().clusters;
     let kind = find_kind(mgr, &cluster.id, args.api_version.as_deref(), &args.kind).await?;
     let object = object_ref(&kind, args.namespace.as_deref(), &args.name)?;
+    refuse_named_node_shell(&object, None)?;
     let summary = plain("delete_resource", describe(&object), None);
     let requirement = need(
         object.namespace.as_deref(),
@@ -560,6 +549,7 @@ async fn delete_resource(call: ToolCall, args: ObjectArgs) -> ToolResult {
         AccessAction::Delete,
     );
     call.guard.check(&cluster, &[requirement], &summary).await?;
+    refuse_live_node_shell(&call, &cluster.id, &object, false).await?;
     change("deleting", resources::delete(mgr, &cluster.id, &object)).await?;
     Ok(ToolOutput::Text(format!("deleted {}", describe(&object))))
 }
@@ -763,7 +753,12 @@ async fn helm_install(call: ToolCall, args: HelmInstallArgs) -> ToolResult {
     let cluster = call.open(&args.cluster).await?;
     let ctx = call.ctx();
     let cli = helm_of(ctx);
-    ensure_connected_chart(&cli, chart).await?;
+    with_timeout(
+        HELM_ROLLBACK_LIMIT,
+        "helm repo list",
+        ensure_connected_chart(&cli, chart),
+    )
+    .await?;
     let values = args.values.as_deref().unwrap_or_default();
     let mut details = format!("chart: {chart}");
     if let Some(version) = version {
@@ -784,15 +779,19 @@ async fn helm_install(call: ToolCall, args: HelmInstallArgs) -> ToolResult {
             &summary,
         )
         .await?;
-    helm_cli::install_chart(
-        &cli,
-        &ctx.clusters,
-        &cluster.id,
-        namespace,
-        release,
-        chart,
-        version,
-        values,
+    helm_change(
+        HELM_INSTALL_LIMIT,
+        "helm install",
+        helm_cli::install_chart(
+            &cli,
+            &ctx.clusters,
+            &cluster.id,
+            namespace,
+            release,
+            chart,
+            version,
+            values,
+        ),
     )
     .await?;
     Ok(ToolOutput::Text(format!(
@@ -811,7 +810,12 @@ async fn helm_upgrade(call: ToolCall, args: HelmUpgradeArgs) -> ToolResult {
     let ctx = call.ctx();
     let cli = helm_of(ctx);
     if !chart.is_empty() {
-        ensure_connected_chart(&cli, chart).await?;
+        with_timeout(
+            HELM_ROLLBACK_LIMIT,
+            "helm repo list",
+            ensure_connected_chart(&cli, chart),
+        )
+        .await?;
     }
     let mut details = String::new();
     if !chart.is_empty() {
@@ -834,14 +838,18 @@ async fn helm_upgrade(call: ToolCall, args: HelmUpgradeArgs) -> ToolResult {
             &summary,
         )
         .await?;
-    helm_cli::upgrade_release(
-        &cli,
-        &ctx.clusters,
-        &cluster.id,
-        namespace,
-        release,
-        chart,
-        &args.values,
+    helm_change(
+        HELM_INSTALL_LIMIT,
+        "helm upgrade",
+        helm_cli::upgrade_release(
+            &cli,
+            &ctx.clusters,
+            &cluster.id,
+            namespace,
+            release,
+            chart,
+            &args.values,
+        ),
     )
     .await?;
     Ok(ToolOutput::Text(format!(
@@ -870,15 +878,18 @@ async fn helm_rollback(call: ToolCall, args: HelmRollbackArgs) -> ToolResult {
         )
         .await?;
     let target = helm_cli::kube_target(&ctx.clusters, &cluster.id)?;
-    helm_of(ctx)
-        .rollback(
+    helm_change(
+        HELM_ROLLBACK_LIMIT,
+        "helm rollback",
+        helm_of(ctx).rollback(
             &target.kubeconfig,
             &target.context,
             namespace,
             release,
             args.revision,
-        )
-        .await?;
+        ),
+    )
+    .await?;
     Ok(ToolOutput::Text(format!(
         "rolled release {namespace}/{release} back to revision {}",
         args.revision
@@ -903,9 +914,12 @@ async fn helm_uninstall(call: ToolCall, args: HelmReleaseArgs) -> ToolResult {
         )
         .await?;
     let target = helm_cli::kube_target(&ctx.clusters, &cluster.id)?;
-    helm_of(ctx)
-        .uninstall(&target.kubeconfig, &target.context, namespace, release)
-        .await?;
+    helm_change(
+        HELM_ROLLBACK_LIMIT,
+        "helm uninstall",
+        helm_of(ctx).uninstall(&target.kubeconfig, &target.context, namespace, release),
+    )
+    .await?;
     Ok(ToolOutput::Text(format!(
         "uninstalled release {namespace}/{release}"
     )))
@@ -928,13 +942,7 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
         details.push_str(&format!("\ncontainer: {container}"));
     }
     let summary = plain("exec_command", describe(&pod), Some(first_lines(&details)));
-    if is_node_shell_pod(&call, &cluster.id, &pod).await {
-        return Err(CoreError::new(
-            ErrorCode::Denied,
-            "Sextant does not let agents use node shells",
-        )
-        .into());
-    }
+    refuse_named_node_shell(&pod, None)?;
     call.guard
         .check(
             &cluster,
@@ -947,6 +955,7 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
             &summary,
         )
         .await?;
+    refuse_live_node_shell(&call, &cluster.id, &pod, false).await?;
     let output = exec::run_command(
         &call.ctx().clusters,
         &cluster.id,
@@ -966,13 +975,61 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
     })))
 }
 
-/// A node shell pod (`sextant.dev/node-shell=true`): a command in it runs on the node itself, so agents never get it,
-/// whatever the rules say. A pod that cannot be read is left to the usual checks and errors.
-async fn is_node_shell_pod(call: &ToolCall, cluster: &ClusterId, pod: &ObjectRef) -> bool {
-    let Ok(object) = resources::get(&call.ctx().clusters, cluster, pod).await else {
-        return false;
-    };
-    object["metadata"]["labels"][sextant_core::node_shell::LABEL_NODE_SHELL] == "true"
+const NODE_SHELL_REFUSAL: &str = "Sextant does not let agents use node shells";
+
+fn is_pod(kind: &KindRef) -> bool {
+    kind.group.is_empty() && kind.kind.eq_ignore_ascii_case("Pod")
+}
+
+fn node_shell_refusal() -> CoreError {
+    CoreError::new(ErrorCode::Denied, NODE_SHELL_REFUSAL)
+}
+
+/// Before the access check: a pod named like a node shell (`sextant-node-shell-…` in `kube-system`; a name cannot
+/// change) or, for an apply, a pod document that is one ([`node_shell::is_node_shell_object`]). Refused without
+/// asking the user and without reading the cluster.
+fn refuse_named_node_shell(object: &ObjectRef, document: Option<&Value>) -> CoreResult<()> {
+    if !is_pod(&object.kind) {
+        return Ok(());
+    }
+    let named = node_shell::is_node_shell_name(object.namespace.as_deref(), &object.name);
+    if named || document.is_some_and(node_shell::is_node_shell_object) {
+        return Err(node_shell_refusal());
+    }
+    Ok(())
+}
+
+/// After the access check, right before acting on a pod: the pod as the cluster has it now. A node shell (by name or
+/// by any of its labels) is refused; so is a pod that cannot be read (fail closed) — except, for an apply
+/// (`creates`), one that does not exist yet: it is made from the document [`refuse_named_node_shell`] checked. Read
+/// after the check, so an agent learns nothing about pods the rules keep from it.
+async fn refuse_live_node_shell(
+    call: &ToolCall,
+    cluster: &ClusterId,
+    object: &ObjectRef,
+    creates: bool,
+) -> CoreResult<()> {
+    if !is_pod(&object.kind) {
+        return Ok(());
+    }
+    let live = read(
+        "reading the pod",
+        resources::get(&call.ctx().clusters, cluster, object),
+    )
+    .await;
+    match live {
+        Ok(pod) if node_shell::is_node_shell_object(&pod) => Err(node_shell_refusal()),
+        Ok(_) => Ok(()),
+        Err(e) if creates && e.code == ErrorCode::NotFound => Ok(()),
+        Err(e) => Err(CoreError::new(
+            e.code,
+            format!(
+                "Sextant could not read {} to make sure it is not a node shell, so nothing was done: {}",
+                describe(object),
+                e.message
+            ),
+        )),
+    }
 }
 
 async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResult {
@@ -1059,79 +1116,6 @@ async fn port_forward_stop(call: ToolCall, args: ForwardStopArgs) -> ToolResult 
 
 // ---------------------------------------------------------------------------------------------------------------
 // Helpers
-
-/// One object of an `apply_yaml` text, read the way the core reads it (`resources::apply_yaml`).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Document {
-    /// `document 2`, `document 1, item 3`.
-    pub label: String,
-    /// As written: the version is the document's.
-    pub kind: KindRef,
-    pub name: String,
-    /// `None` when the document has none (the context's default namespace, for a kind that has namespaces).
-    pub namespace: Option<String>,
-}
-
-/// The objects of a multi-document YAML text, in the order the core applies them: empty documents are skipped, a
-/// `…List` with `items` gives its items. Every object needs `apiVersion`, `kind` and `metadata.name`.
-pub fn documents(yaml: &str) -> CoreResult<Vec<Document>> {
-    let mut docs = Vec::new();
-    for (index, de) in serde_yaml::Deserializer::from_str(yaml).enumerate() {
-        let label = format!("document {}", index + 1);
-        let value = Value::deserialize(de)
-            .map_err(|e| CoreError::new(ErrorCode::Invalid, format!("{label}: {e}")))?;
-        if value.is_null() {
-            continue;
-        }
-        let is_list = value
-            .get("kind")
-            .and_then(Value::as_str)
-            .is_some_and(|k| k.ends_with("List"))
-            && value.get("items").is_some_and(Value::is_array);
-        if is_list {
-            let items = value["items"].as_array().cloned().unwrap_or_default();
-            for (i, item) in items.iter().enumerate() {
-                docs.push(document(format!("{label}, item {}", i + 1), item)?);
-            }
-        } else {
-            docs.push(document(label, &value)?);
-        }
-    }
-    Ok(docs)
-}
-
-fn document(label: String, value: &Value) -> CoreResult<Document> {
-    let fail = |message: String| CoreError::new(ErrorCode::Invalid, format!("{label}: {message}"));
-    if !value.is_object() {
-        return Err(fail(
-            "expected an object with apiVersion, kind and metadata".into(),
-        ));
-    }
-    let text = |key: &str| value.get(key).and_then(Value::as_str).unwrap_or_default();
-    let (api_version, kind) = (text("apiVersion"), text("kind"));
-    if api_version.is_empty() || kind.is_empty() {
-        return Err(fail("apiVersion and kind are required".into()));
-    }
-    let meta = |key: &str| {
-        value
-            .pointer(&format!("/metadata/{key}"))
-            .and_then(Value::as_str)
-            .filter(|s| !s.is_empty())
-            .map(str::to_owned)
-    };
-    let name = meta("name").ok_or_else(|| fail(format!("{kind}: metadata.name is required")))?;
-    let (group, version) = api_version.split_once('/').unwrap_or(("", api_version));
-    Ok(Document {
-        label,
-        kind: KindRef {
-            group: group.to_owned(),
-            version: version.to_owned(),
-            kind: kind.to_owned(),
-        },
-        name,
-        namespace: meta("namespace"),
-    })
-}
 
 /// What `drain_node` needs: Modify on the node and Delete on pods in all namespaces (the node's pods may be anywhere).
 pub fn drain_requirements() -> Vec<Requirement> {
@@ -1433,7 +1417,7 @@ fn pod_ref(namespace: &str, name: &str) -> CoreResult<ObjectRef> {
 }
 
 /// `ConfigMap team-a/web`, or `3 objects: …`.
-fn targets(objects: &[ObjectRef]) -> String {
+fn targets_text(objects: &[ObjectRef]) -> String {
     match objects {
         [one] => describe(one),
         many => format!(
@@ -1453,6 +1437,38 @@ fn apply_details(objects: &[ObjectRef], yaml: &str) -> String {
     };
     let list: Vec<String> = objects.iter().map(describe).collect();
     format!("{count}:\n{}\n\n{}", list.join("\n"), first_lines(yaml))
+}
+
+/// How long `helm_install` and `helm_upgrade` may take.
+pub const HELM_INSTALL_LIMIT: Duration = Duration::from_secs(5 * 60);
+/// How long `helm_rollback` and `helm_uninstall` may take.
+pub const HELM_ROLLBACK_LIMIT: Duration = Duration::from_secs(2 * 60);
+
+/// A Helm call of an agent within `limit`. When the limit passes the call is dropped, and with it the `helm` it runs
+/// is killed (the core kills a `helm` whose call is dropped — also when the MCP server stops and drops its calls).
+async fn helm_change<T>(
+    limit: Duration,
+    what: &str,
+    call: impl std::future::Future<Output = CoreResult<T>>,
+) -> CoreResult<T> {
+    match tokio::time::timeout(limit, call).await {
+        Ok(result) => result,
+        Err(_) => {
+            let secs = limit.as_secs();
+            let shown = if secs >= 60 && secs.is_multiple_of(60) {
+                format!("{} min", secs / 60)
+            } else {
+                format!("{secs} s")
+            };
+            Err(CoreError::new(
+                ErrorCode::Timeout,
+                format!(
+                    "{what} did not finish in {shown} and was stopped; the release may be left mid-change \
+                     (pending): check it with helm_get_release before repeating"
+                ),
+            ))
+        }
+    }
 }
 
 /// The `helm` the application uses: from `PATH`, or the one chosen in Settings.
@@ -1726,76 +1742,6 @@ mod tests {
         assert_eq!(hints("helm_uninstall"), (Some(false), Some(true)));
         assert_eq!(hints("restart"), (Some(false), Some(false)));
         assert_eq!(hints("port_forward_list"), (Some(true), Some(false)));
-    }
-
-    #[test]
-    fn documents_are_read_as_the_core_applies_them() {
-        let yaml = "\
-apiVersion: v1
-kind: ConfigMap
-metadata: {name: a, namespace: team-a}
----
----
-apiVersion: v1
-kind: List
-items:
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata: {name: web}
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata: {name: reader}
-";
-        let docs = documents(yaml).unwrap();
-        let seen: Vec<(String, String, String, String, Option<String>)> = docs
-            .into_iter()
-            .map(|d| (d.label, d.kind.group, d.kind.kind, d.name, d.namespace))
-            .collect();
-        assert_eq!(
-            seen,
-            vec![
-                (
-                    "document 1".into(),
-                    "".into(),
-                    "ConfigMap".into(),
-                    "a".into(),
-                    Some("team-a".into())
-                ),
-                (
-                    "document 3, item 1".into(),
-                    "apps".into(),
-                    "Deployment".into(),
-                    "web".into(),
-                    None
-                ),
-                (
-                    "document 3, item 2".into(),
-                    "rbac.authorization.k8s.io".into(),
-                    "ClusterRole".into(),
-                    "reader".into(),
-                    None
-                ),
-            ]
-        );
-
-        let unnamed = documents("apiVersion: v1\nkind: ConfigMap\n---\nkind: [").unwrap_err();
-        assert_eq!(unnamed.code, ErrorCode::Invalid);
-        assert!(
-            unnamed
-                .message
-                .starts_with("document 1: ConfigMap: metadata.name"),
-            "{}",
-            unnamed.message
-        );
-        let broken =
-            documents("apiVersion: v1\nkind: ConfigMap\nmetadata: {name: a}\n---\nkind: [")
-                .unwrap_err();
-        assert!(
-            broken.message.starts_with("document 2:"),
-            "{}",
-            broken.message
-        );
-        assert!(documents("").unwrap().is_empty());
     }
 
     #[test]
@@ -2121,6 +2067,116 @@ items:
             stopped,
             "no port forward pf-1 started by an agent; port_forward_list lists them"
         );
+    }
+
+    #[tokio::test]
+    async fn a_document_with_hidden_values_is_refused_before_anything_is_asked() {
+        let dir = tempfile::tempdir().unwrap();
+        let (state, window) = state_in(dir.path(), None);
+        window.answer(Answer::Allow);
+        let id = first_cluster(&state);
+        set_rules(
+            &state,
+            &id,
+            vec![rule(&[], &[], &[AccessAction::Modify], true)],
+        );
+        let yaml = format!(
+            "apiVersion: v1\nkind: Secret\nmetadata:\n  name: s\n  namespace: a\n  annotations:\n    \
+             {}: \"true\"\ndata: {{password: \"\"}}\n",
+            "sextant.dev/values-hidden"
+        );
+        let refused = tool(
+            &state,
+            "apply_yaml",
+            json!({ "cluster": id.0.as_str(), "yaml": yaml }),
+        )
+        .await
+        .unwrap_err();
+        assert!(refused.contains("loaded without its values"), "{refused}");
+        assert_eq!(window.count(), 0, "the user was asked about it");
+    }
+
+    /// A fake `helm` in `dir` that writes its PID to `dir/pid` and then sleeps for 30 s (as the same process).
+    #[cfg(unix)]
+    fn sleeping_helm(dir: &Path) -> (std::path::PathBuf, std::path::PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let pid = dir.join("pid");
+        let fake = dir.join("helm");
+        std::fs::write(
+            &fake,
+            format!("#!/bin/sh\necho $$ > '{}'\nexec sleep 30\n", pid.display()),
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        (fake, pid)
+    }
+
+    /// The PID the fake `helm` wrote, once it runs.
+    #[cfg(unix)]
+    async fn started(pid_file: &Path) -> String {
+        for _ in 0..500 {
+            let pid = std::fs::read_to_string(pid_file).unwrap_or_default();
+            if !pid.trim().is_empty() {
+                return pid.trim().to_owned();
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        panic!("helm did not start in 10 s");
+    }
+
+    /// Waits up to 5 s for the process to be gone; kills it and fails when it is not.
+    #[cfg(unix)]
+    async fn assert_gone(pid: &str) {
+        let alive = || {
+            std::process::Command::new("kill")
+                .args(["-0", pid])
+                .stderr(std::process::Stdio::null())
+                .status()
+                .is_ok_and(|s| s.success())
+        };
+        for _ in 0..250 {
+            if !alive() {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        let _ = std::process::Command::new("kill")
+            .args(["-9", pid])
+            .status();
+        panic!("helm {pid} is still running");
+    }
+
+    #[test]
+    fn agent_helm_changes_have_time_limits() {
+        assert_eq!(HELM_INSTALL_LIMIT, Duration::from_secs(5 * 60));
+        assert_eq!(HELM_ROLLBACK_LIMIT, Duration::from_secs(2 * 60));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_helm_change_past_its_time_limit_is_stopped_and_says_so() {
+        let dir = tempfile::tempdir().unwrap();
+        let (fake, pid_file) = sleeping_helm(dir.path());
+        let cli = HelmCli::default().with_binary(fake);
+        let started_at = std::time::Instant::now();
+        let call = tokio::spawn(async move {
+            helm_change(
+                Duration::from_millis(500),
+                "helm uninstall",
+                cli.uninstall(Path::new("/nonexistent"), "ctx", "ns", "web"),
+            )
+            .await
+        });
+        let pid = started(&pid_file).await;
+        let err = call.await.unwrap().unwrap_err();
+        assert!(started_at.elapsed() < Duration::from_secs(10));
+        assert_eq!(err.code, ErrorCode::Timeout, "{err}");
+        assert!(
+            err.message.starts_with("helm uninstall did not finish"),
+            "{err}"
+        );
+        assert!(err.message.contains("helm_get_release"), "{err}");
+        assert_gone(&pid).await;
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -2698,36 +2754,220 @@ spec:
     #[tokio::test]
     async fn an_agent_never_runs_commands_in_a_node_shell_pod_whatever_the_rules() {
         const NS: &str = "sextant-mcp-node-shell";
+        const REFUSAL: &str = "Sextant does not let agents use node shells";
         let dir = tempfile::tempdir().unwrap();
         let Some((state, id, window)) = cluster_state(dir.path()) else {
             return;
         };
         namespace(&state, &id, NS, false).await;
-        let pod = format!(
-            "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shell\n  namespace: {NS}\n  labels:\n    \
-             sextant.dev/node-shell: \"true\"\nspec:\n  terminationGracePeriodSeconds: 0\n  containers:\n  \
-             - name: shell\n    image: busybox:stable\n    imagePullPolicy: IfNotPresent\n    \
-             command: [sleep, \"600\"]\n"
+        let pod_yaml = |labels: &str| {
+            format!(
+                "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shell\n  namespace: {NS}\n  labels: {{{labels}}}\n\
+                 spec:\n  terminationGracePeriodSeconds: 0\n  containers:\n  \
+                 - name: shell\n    image: busybox:stable\n    imagePullPolicy: IfNotPresent\n    \
+                 command: [sleep, \"600\"]\n"
+            )
+        };
+        resources::apply_yaml(
+            &state.clusters,
+            &id,
+            &pod_yaml("sextant.dev/node-shell: \"true\""),
+        )
+        .await
+        .unwrap();
+        use AccessAction::{Delete, Exec, Modify, Read};
+        set_rules(
+            &state,
+            &id,
+            vec![rule(&[], &[], &[Read, Modify, Delete, Exec], false)],
         );
-        resources::apply_yaml(&state.clusters, &id, &pod)
-            .await
-            .unwrap();
-        use AccessAction::{Exec, Read};
-        set_rules(&state, &id, vec![rule(&[], &[], &[Read, Exec], false)]);
+        let c = id.0.as_str();
+        let shell = object(kind("", "v1", "Pod"), Some(NS), "shell");
 
         let refused = tool(
             &state,
             "exec_command",
-            json!({ "cluster": id.0.as_str(), "namespace": NS, "pod": "shell", "command": ["hostname"] }),
+            json!({ "cluster": c, "namespace": NS, "pod": "shell", "command": ["hostname"] }),
         )
         .await
         .unwrap_err();
-        assert!(
-            refused.contains("Sextant does not let agents use node shells"),
-            "{refused}"
-        );
-        assert_eq!(window.count(), 0, "the refused call was asked about");
+        assert!(refused.contains(REFUSAL), "{refused}");
+
+        // The label cannot be taken off — by a merge patch, a JSON patch or an apply — and the pod cannot be deleted.
+        let attempts = [
+            (
+                "patch_resource",
+                json!({ "cluster": c, "kind": "Pod", "namespace": NS, "name": "shell",
+                        "patch": { "metadata": { "labels": { "sextant.dev/node-shell": null } } } }),
+            ),
+            (
+                "patch_resource",
+                json!({ "cluster": c, "kind": "Pod", "namespace": NS, "name": "shell", "patchType": "json",
+                        "patch": [{ "op": "remove", "path": "/metadata/labels/sextant.dev~1node-shell" }] }),
+            ),
+            (
+                "apply_yaml",
+                json!({ "cluster": c, "yaml": pod_yaml("app: shell") }),
+            ),
+            (
+                "delete_resource",
+                json!({ "cluster": c, "kind": "Pod", "namespace": NS, "name": "shell" }),
+            ),
+        ];
+        for (name, args) in attempts {
+            let refused = tool(&state, name, args).await.unwrap_err();
+            assert!(refused.contains(REFUSAL), "{name}: {refused}");
+        }
+        let live = get(&state, &id, &shell).await.expect("the pod is gone");
+        assert_eq!(live["metadata"]["labels"]["sextant.dev/node-shell"], "true");
+        assert!(live["metadata"].get("deletionTimestamp").is_none());
+
+        // A pod named like a node shell in kube-system is one, whatever its labels: refused without reading it (there
+        // is no such pod) and without asking.
+        let named = "sextant-node-shell-mcp-test-x";
+        let by_name = [
+            (
+                "exec_command",
+                json!({ "cluster": c, "namespace": "kube-system", "pod": named, "command": ["id"] }),
+            ),
+            (
+                "patch_resource",
+                json!({ "cluster": c, "kind": "Pod", "namespace": "kube-system", "name": named,
+                        "patch": { "metadata": { "labels": { "a": "b" } } } }),
+            ),
+            (
+                "delete_resource",
+                json!({ "cluster": c, "kind": "Pod", "namespace": "kube-system", "name": named }),
+            ),
+            // No containers: the server would refuse it anyway, so nothing is made in kube-system whatever happens.
+            (
+                "apply_yaml",
+                json!({ "cluster": c, "yaml": format!(
+                    "apiVersion: v1\nkind: Pod\nmetadata: {{name: {named}, namespace: kube-system}}\nspec: {{containers: []}}\n") }),
+            ),
+            // A new pod carrying a node shell label is not made either.
+            (
+                "apply_yaml",
+                json!({ "cluster": c, "yaml": format!(
+                    "apiVersion: v1\nkind: Pod\nmetadata:\n  name: lookalike\n  namespace: {NS}\n  labels: {{sextant.dev/owner: x}}\n\
+                     spec: {{containers: []}}\n") }),
+            ),
+        ];
+        for (name, args) in by_name {
+            let refused = tool(&state, name, args).await.unwrap_err();
+            assert!(refused.contains(REFUSAL), "{name}: {refused}");
+        }
+        assert_eq!(window.count(), 0, "a refused call was asked about");
         remove_namespace(&state, &id, NS).await;
+        state.close_all();
+    }
+
+    /// A kubeconfig for the test cluster's admin acting as the ServiceAccount `namespace/name` (impersonation).
+    fn kubeconfig_as(
+        dir: &Path,
+        admin: &std::ffi::OsStr,
+        namespace: &str,
+        name: &str,
+    ) -> std::ffi::OsString {
+        let text = std::fs::read_to_string(admin).unwrap();
+        let mut config: serde_yaml::Value = serde_yaml::from_str(&text).unwrap();
+        for user in config["users"].as_sequence_mut().unwrap() {
+            user["user"]["as"] = format!("system:serviceaccount:{namespace}:{name}").into();
+        }
+        let path = dir.join("kubeconfig-as");
+        std::fs::write(&path, serde_yaml::to_string(&config).unwrap()).unwrap();
+        path.into_os_string()
+    }
+
+    #[tokio::test]
+    async fn a_pod_sextant_cannot_read_gets_no_command() {
+        const NS: &str = "sextant-mcp-exec-unread";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((admin, id, _)) = cluster_state(dir.path()) else {
+            return;
+        };
+        namespace(&admin, &id, NS, true).await;
+        let pod = web_pod(&admin, &id, NS).await;
+        // The cluster lets `exec-only` run commands in pods but not read them.
+        let rbac = format!(
+            "apiVersion: v1\nkind: ServiceAccount\nmetadata: {{name: exec-only, namespace: {NS}}}\n---\n\
+             apiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata: {{name: exec-only, namespace: {NS}}}\n\
+             rules:\n- apiGroups: [\"\"]\n  resources: [pods/exec]\n  verbs: [create, get]\n---\n\
+             apiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata: {{name: exec-only, namespace: {NS}}}\n\
+             roleRef: {{apiGroup: rbac.authorization.k8s.io, kind: Role, name: exec-only}}\n\
+             subjects:\n- {{kind: ServiceAccount, name: exec-only, namespace: {NS}}}\n"
+        );
+        resources::apply_yaml(&admin.clusters, &id, &rbac)
+            .await
+            .unwrap();
+
+        let as_dir = tempfile::tempdir().unwrap();
+        let admin_kubeconfig = std::env::var_os("SEXTANT_TEST_KUBECONFIG").unwrap();
+        let kubeconfig = kubeconfig_as(as_dir.path(), &admin_kubeconfig, NS, "exec-only");
+        let (state, window) = state_in(as_dir.path(), Some(kubeconfig));
+        let exec_id = first_cluster(&state);
+        set_rules(
+            &state,
+            &exec_id,
+            vec![rule(&[], &[], &[AccessAction::Exec], false)],
+        );
+        let refused = tool(
+            &state,
+            "exec_command",
+            // The container is named, so running the command needs no read of the pod.
+            json!({ "cluster": exec_id.0.as_str(), "namespace": NS, "pod": pod, "container": "web",
+                    "command": ["true"] }),
+        )
+        .await
+        .unwrap_err();
+        assert!(refused.contains("is not a node shell"), "{refused}");
+        assert_eq!(window.count(), 0);
+        state.close_all();
+        remove_namespace(&admin, &id, NS).await;
+        admin.close_all();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn stopping_the_server_kills_an_agents_helm() {
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, _)) = cluster_state(dir.path()) else {
+            return;
+        };
+        let (fake, pid_file) = sleeping_helm(dir.path());
+        state
+            .settings
+            .update(|s| s.helm_path = Some(fake.display().to_string()))
+            .unwrap();
+        set_rules(
+            &state,
+            &id,
+            vec![AccessRule {
+                kinds: KindScope::Only {
+                    kinds: vec![KindPattern::helm_release()],
+                },
+                ..rule(
+                    &["sextant-mcp-helm-stop"],
+                    &[],
+                    &[AccessAction::Delete],
+                    false,
+                )
+            }],
+        );
+        let handler = state.mcp.handler();
+        let args = json!({ "cluster": id.0.as_str(), "namespace": "sextant-mcp-helm-stop", "release": "web" });
+        let Value::Object(args) = args else {
+            unreachable!()
+        };
+        let call = tokio::spawn(async move { handler.call("test", "helm_uninstall", args).await });
+        let pid = started(&pid_file).await;
+        state.mcp.stop();
+        let result = tokio::time::timeout(Duration::from_secs(10), call)
+            .await
+            .expect("the call outlived the server")
+            .unwrap();
+        assert!(result.is_err(), "{result:?}");
+        assert_gone(&pid).await;
         state.close_all();
     }
 

@@ -16,8 +16,9 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 pub use get::{get, get_full, secret_value};
 pub use list::{ListPage, events, list, resolve};
 pub use mutate::{
-    STEP_TIMEOUT, apply_yaml, cordon, delete, drain, drain_preview, patch, replace_yaml, restart,
-    scale, suspend_cronjob, trigger_cronjob,
+    ApplyTarget, Document, STEP_TIMEOUT, apply_planned, apply_yaml, cordon, delete, drain,
+    drain_preview, parse_documents, patch, plan_apply, replace_yaml, restart, scale,
+    suspend_cronjob, trigger_cronjob,
 };
 pub use watch::watch;
 

@@ -143,6 +143,39 @@ fn random_text(len: usize) -> String {
     out
 }
 
+/// Labels that mark a node shell pod; any one of them is enough for [`is_node_shell_object`].
+const NODE_SHELL_LABELS: [&str; 3] = [LABEL_NODE_SHELL, LABEL_SESSION, LABEL_OWNER];
+
+/// Whether a pod named `name` in `namespace` is a node shell by its name alone: `sextant-node-shell-…` in
+/// [`NAMESPACE`]. A pod's name and namespace cannot change, so this holds whatever was done to its labels.
+pub fn is_node_shell_name(namespace: Option<&str>, name: &str) -> bool {
+    namespace == Some(NAMESPACE) && name.starts_with(NAME_PREFIX)
+}
+
+/// Whether `object` (a pod as the API gives it, or a pod document about to be applied) is a node shell pod: named
+/// like one (see [`is_node_shell_name`]) or carrying any of the labels Sextant puts on one
+/// (`sextant.dev/node-shell`, `sextant.dev/session`, `sextant.dev/owner`), whatever their values. An object of
+/// another kind is not one; an object without `kind` is judged by its metadata. A command in such a pod runs on the
+/// node itself, so agents and extensions never get to run one there, change the pod or delete it.
+pub fn is_node_shell_object(object: &serde_json::Value) -> bool {
+    if !object.is_object() {
+        return false;
+    }
+    let text = |pointer: &str| object.pointer(pointer).and_then(serde_json::Value::as_str);
+    let core_group = text("/apiVersion").is_none_or(|v| !v.contains('/'));
+    let pod = text("/kind").is_none_or(|k| k.eq_ignore_ascii_case("Pod"));
+    if !core_group || !pod {
+        return false;
+    }
+    let named = text("/metadata/name")
+        .is_some_and(|name| is_node_shell_name(text("/metadata/namespace"), name));
+    let labelled = object
+        .pointer("/metadata/labels")
+        .and_then(serde_json::Value::as_object)
+        .is_some_and(|labels| NODE_SHELL_LABELS.iter().any(|l| labels.contains_key(*l)));
+    named || labelled
+}
+
 /// `sextant-node-shell-<node>-<rand>`, within 63 characters.
 fn pod_name(node: &str) -> String {
     let node: String = node
@@ -1085,5 +1118,52 @@ mod tests {
             "{name}"
         );
         assert_ne!(pod_name("n"), pod_name("n"));
+    }
+
+    #[test]
+    fn a_node_shell_pod_is_known_by_its_name_or_by_any_of_its_labels() {
+        let made = serde_json::to_value(
+            pod_manifest("sextant-node-shell-n1-abcde", "n1", DEFAULT_IMAGE).unwrap(),
+        )
+        .unwrap();
+        assert!(is_node_shell_object(&made));
+
+        // Every label stripped: the name in kube-system still tells.
+        let renamed_labels = json!({
+            "apiVersion": "v1", "kind": "Pod",
+            "metadata": { "name": "sextant-node-shell-n1-abcde", "namespace": "kube-system", "labels": {} },
+        });
+        assert!(is_node_shell_object(&renamed_labels));
+        assert!(is_node_shell_name(
+            Some("kube-system"),
+            "sextant-node-shell-x"
+        ));
+        assert!(!is_node_shell_name(Some("team-a"), "sextant-node-shell-x"));
+        assert!(!is_node_shell_name(None, "sextant-node-shell-x"));
+        assert!(!is_node_shell_name(Some("kube-system"), "coredns-abc"));
+
+        // Any one label, with any value, anywhere.
+        for label in [LABEL_NODE_SHELL, LABEL_SESSION, LABEL_OWNER] {
+            let pod = json!({
+                "kind": "Pod",
+                "metadata": { "name": "shell", "namespace": "team-a", "labels": { label: "x" } },
+            });
+            assert!(is_node_shell_object(&pod), "{label}");
+        }
+
+        let ordinary = json!({
+            "apiVersion": "v1", "kind": "Pod",
+            "metadata": { "name": "web", "namespace": "kube-system",
+                          "labels": { LABEL_MANAGED_BY: "sextant", "app": "web" } },
+        });
+        assert!(!is_node_shell_object(&ordinary));
+        // Another kind with the same name and labels is not a pod.
+        let config = json!({
+            "apiVersion": "v1", "kind": "ConfigMap",
+            "metadata": { "name": "sextant-node-shell-x", "namespace": "kube-system",
+                          "labels": { LABEL_NODE_SHELL: "true" } },
+        });
+        assert!(!is_node_shell_object(&config));
+        assert!(!is_node_shell_object(&json!("not an object")));
     }
 }

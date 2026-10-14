@@ -72,7 +72,8 @@ pub async fn replace_yaml(
     to_json(saved, &kind.resource)
 }
 
-/// Multi-document server-side apply with field manager `sextant`.
+/// Multi-document server-side apply with field manager `sextant`: [`parse_documents`], [`plan_apply`] and
+/// [`apply_planned`] in one call.
 ///
 /// Every document is parsed and its kind resolved before anything is sent, so a typo in the third document
 /// changes nothing. Documents are then applied in order; a failure (also a `timeout` after [`STEP_TIMEOUT`] without
@@ -92,7 +93,49 @@ async fn apply_yaml_within(
     yaml: &str,
     step: Duration,
 ) -> CoreResult<Vec<ObjectRef>> {
-    let docs = parse_documents(yaml)?;
+    let targets = plan_within(mgr, cluster, parse_documents(yaml)?, step).await?;
+    apply_within(mgr, cluster, targets, step).await
+}
+
+/// One document of an apply with its kind looked up in the cluster: [`plan_apply`] makes it, [`apply_planned`]
+/// sends it. [`ApplyTarget::object`] is exactly the object the apply changes, so a caller that checks access on it
+/// checks what is sent.
+#[derive(Debug, Clone)]
+pub struct ApplyTarget {
+    doc: Document,
+    kind: ResolvedKind,
+    object: ObjectRef,
+}
+
+impl ApplyTarget {
+    /// The object the apply changes: the document's kind and name, and for a kind with namespaces the document's
+    /// namespace or, without one, the context's default namespace; `None` for a cluster-scoped kind.
+    pub fn object(&self) -> &ObjectRef {
+        &self.object
+    }
+
+    /// The document as parsed.
+    pub fn document(&self) -> &Document {
+        &self.doc
+    }
+}
+
+/// Looks up the kind of every document (each lookup limited to [`STEP_TIMEOUT`]) and the object it changes; sends
+/// no change. No documents is `invalid`; a kind the cluster does not serve names its document.
+pub async fn plan_apply(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    docs: Vec<Document>,
+) -> CoreResult<Vec<ApplyTarget>> {
+    plan_within(mgr, cluster, docs, STEP_TIMEOUT).await
+}
+
+async fn plan_within(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    docs: Vec<Document>,
+    step: Duration,
+) -> CoreResult<Vec<ApplyTarget>> {
     if docs.is_empty() {
         return Err(CoreError::new(
             ErrorCode::Invalid,
@@ -101,38 +144,66 @@ async fn apply_yaml_within(
     }
     let client = mgr.client(cluster)?;
     let mut targets = Vec::with_capacity(docs.len());
-    for (label, doc) in docs {
+    for doc in docs {
         let kind = with_timeout(
             step,
             "looking up the kind (nothing was applied)",
             resolve_document_kind(mgr, cluster, &doc.kind),
         )
         .await
-        .map_err(|e| in_document(&label, &doc, e))?;
-        targets.push((label, doc, kind));
+        .map_err(|e| in_document(&doc, e))?;
+        let object = ObjectRef {
+            kind: doc.kind.clone(),
+            namespace: kind
+                .namespaced
+                .then(|| doc.namespace_or(&client).to_owned()),
+            name: doc.name.clone(),
+        };
+        targets.push(ApplyTarget { doc, kind, object });
     }
+    Ok(targets)
+}
 
+/// Server-side applies what [`plan_apply`] gave, in order, each request limited to [`STEP_TIMEOUT`]; returns the
+/// objects applied. A failure names the document, what was already applied and what was not sent.
+pub async fn apply_planned(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    targets: Vec<ApplyTarget>,
+) -> CoreResult<Vec<ObjectRef>> {
+    apply_within(mgr, cluster, targets, STEP_TIMEOUT).await
+}
+
+async fn apply_within(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    targets: Vec<ApplyTarget>,
+    step: Duration,
+) -> CoreResult<Vec<ObjectRef>> {
+    let client = mgr.client(cluster)?;
     let params = PatchParams::apply(FIELD_MANAGER);
     let mut applied: Vec<ObjectRef> = Vec::with_capacity(targets.len());
     let total = targets.len();
     let mut targets = targets.into_iter();
-    while let Some((label, mut doc, kind)) = targets.next() {
-        let namespace = kind
-            .namespaced
-            .then(|| doc.namespace_or(&client).to_owned());
+    while let Some(ApplyTarget {
+        mut doc,
+        kind,
+        object,
+    }) = targets.next()
+    {
         if let Some(meta) = doc.value.get_mut("metadata").and_then(Value::as_object_mut) {
             // Server-side apply rejects a body that sets managedFields (YAML copied from an editor may have them).
             meta.remove("managedFields");
         }
-        let api = kind.api(client.clone(), namespace.as_deref());
+        let api = kind.api(client.clone(), object.namespace.as_deref());
         let sent = with_timeout(step, "applying it", async {
-            api.patch(&doc.name, &params, &Patch::Apply(&doc.value))
+            api.patch(&object.name, &params, &Patch::Apply(&doc.value))
                 .await
                 .map_err(CoreError::from)
         })
         .await;
         if let Err(err) = sent {
-            let mut err = in_document(&label, &doc, err);
+            let mut err = in_document(&doc, err);
             if !applied.is_empty() {
                 let done: Vec<String> = applied.iter().map(describe_ref).collect();
                 err.message
@@ -140,18 +211,14 @@ async fn apply_yaml_within(
             }
             if applied.len() + 1 < total {
                 let rest: Vec<String> = targets
-                    .map(|(label, doc, _)| format!("{label} ({} {})", doc.kind.kind, doc.name))
+                    .map(|t| format!("{} ({} {})", t.doc.label, t.doc.kind.kind, t.doc.name))
                     .collect();
                 err.message
                     .push_str(&format!(" (not sent: {})", rest.join(", ")));
             }
             return Err(err);
         }
-        applied.push(ObjectRef {
-            kind: doc.kind,
-            namespace,
-            name: doc.name,
-        });
+        applied.push(object);
     }
     Ok(applied)
 }
@@ -464,9 +531,11 @@ async fn eviction_client(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResul
     Ok(kube::Client::try_from(config)?)
 }
 
-/// One object from YAML: its JSON, kind and name.
+/// One object of a YAML text, as [`parse_documents`] reads it: its JSON, kind, name and namespace as written.
 #[derive(Debug, Clone)]
-struct Document {
+pub struct Document {
+    /// `document 2`, `document 1, item 3`; empty for a single object read by [`replace_yaml`].
+    label: String,
     value: Value,
     kind: KindRef,
     name: String,
@@ -474,6 +543,8 @@ struct Document {
 }
 
 impl Document {
+    /// An object with `apiVersion`, `kind` and `metadata.name`; one that carries [`VALUES_HIDDEN_ANNOTATION`] (a
+    /// Secret loaded without its values) is `invalid`.
     fn from_value(value: Value) -> CoreResult<Self> {
         let Some(map) = value.as_object() else {
             return Err(CoreError::new(
@@ -505,11 +576,43 @@ impl Document {
         let namespace = meta("namespace");
         ensure_values_present(&value)?;
         Ok(Self {
+            label: String::new(),
             kind: kind_ref(api_version, kind),
             name,
             namespace,
             value,
         })
+    }
+
+    /// `document 2`, `document 1, item 3`: how errors name the document.
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    /// The kind as written: the version is the document's.
+    pub fn kind_ref(&self) -> &KindRef {
+        &self.kind
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// The namespace as written; `None` when the document has none (the context's default namespace, for a kind
+    /// with namespaces — see [`ApplyTarget::object`]).
+    pub fn namespace(&self) -> Option<&str> {
+        self.namespace.as_deref()
+    }
+
+    /// The object as written.
+    pub fn value(&self) -> &Value {
+        &self.value
+    }
+
+    /// Whether the object carries [`VALUES_HIDDEN_ANNOTATION`]. Never for a document [`parse_documents`] gave: it
+    /// refuses such a document, so it is refused before anyone is asked to allow the apply.
+    pub fn values_hidden(&self) -> bool {
+        ensure_values_present(&self.value).is_err()
     }
 
     /// The object's namespace, or the context's default namespace when the YAML has none.
@@ -531,8 +634,12 @@ fn kind_ref(api_version: &str, kind: &str) -> KindRef {
 }
 
 /// Splits multi-document YAML into objects labelled "document N" (1-based, counting every `---` section) or
-/// "document N, item M" for the items of a `List`. Empty documents are skipped.
-fn parse_documents(yaml: &str) -> CoreResult<Vec<(String, Document)>> {
+/// "document N, item M" for the items of a `List`. Empty documents are skipped. Every object needs `apiVersion`,
+/// `kind` and `metadata.name`; an object with [`VALUES_HIDDEN_ANNOTATION`] is `invalid`.
+///
+/// The one reading of an apply's text: [`apply_yaml`] applies what this returns, and a caller that checks access
+/// first checks the same objects ([`plan_apply`] then [`apply_planned`]).
+pub fn parse_documents(yaml: &str) -> CoreResult<Vec<Document>> {
     let mut docs = Vec::new();
     for (index, de) in serde_yaml::Deserializer::from_str(yaml).enumerate() {
         let label = format!("document {}", index + 1);
@@ -549,16 +656,19 @@ fn parse_documents(yaml: &str) -> CoreResult<Vec<(String, Document)>> {
         if is_list {
             let items = value["items"].as_array().cloned().unwrap_or_default();
             for (i, item) in items.into_iter().enumerate() {
-                let label = format!("{label}, item {}", i + 1);
-                let doc = Document::from_value(item).map_err(|e| prefixed(&label, e))?;
-                docs.push((label, doc));
+                docs.push(labelled(format!("{label}, item {}", i + 1), item)?);
             }
         } else {
-            let doc = Document::from_value(value).map_err(|e| prefixed(&label, e))?;
-            docs.push((label, doc));
+            docs.push(labelled(label, value)?);
         }
     }
     Ok(docs)
+}
+
+fn labelled(label: String, value: Value) -> CoreResult<Document> {
+    let mut doc = Document::from_value(value).map_err(|e| prefixed(&label, e))?;
+    doc.label = label;
+    Ok(doc)
 }
 
 fn prefixed(label: &str, err: CoreError) -> CoreError {
@@ -566,8 +676,11 @@ fn prefixed(label: &str, err: CoreError) -> CoreError {
 }
 
 /// "document 2 (Deployment web): <reason>".
-fn in_document(label: &str, doc: &Document, err: CoreError) -> CoreError {
-    prefixed(&format!("{label} ({} {})", doc.kind.kind, doc.name), err)
+fn in_document(doc: &Document, err: CoreError) -> CoreError {
+    prefixed(
+        &format!("{} ({} {})", doc.label, doc.kind.kind, doc.name),
+        err,
+    )
 }
 
 /// "Deployment demo/web", "Namespace demo".
@@ -787,6 +900,98 @@ mod tests {
             namespace: "ns".into(),
             name: name.into(),
         }
+    }
+
+    #[test]
+    fn documents_are_read_with_their_labels_lists_unfolded_and_empty_ones_skipped() {
+        let yaml = "\
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: a, namespace: team-a}
+---
+---
+apiVersion: v1
+kind: List
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata: {name: web}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata: {name: reader}
+";
+        let seen: Vec<(String, KindRef, String, Option<String>)> = parse_documents(yaml)
+            .unwrap()
+            .iter()
+            .map(|d| {
+                (
+                    d.label().to_owned(),
+                    d.kind_ref().clone(),
+                    d.name().to_owned(),
+                    d.namespace().map(str::to_owned),
+                )
+            })
+            .collect();
+        let kind = |group: &str, version: &str, kind: &str| KindRef {
+            group: group.into(),
+            version: version.into(),
+            kind: kind.into(),
+        };
+        assert_eq!(
+            seen,
+            vec![
+                (
+                    "document 1".into(),
+                    kind("", "v1", "ConfigMap"),
+                    "a".into(),
+                    Some("team-a".into())
+                ),
+                (
+                    "document 3, item 1".into(),
+                    kind("apps", "v1", "Deployment"),
+                    "web".into(),
+                    None
+                ),
+                (
+                    "document 3, item 2".into(),
+                    kind("rbac.authorization.k8s.io", "v1", "ClusterRole"),
+                    "reader".into(),
+                    None
+                ),
+            ]
+        );
+
+        let unnamed = parse_documents("apiVersion: v1\nkind: ConfigMap\n---\nkind: [").unwrap_err();
+        assert_eq!(unnamed.code, ErrorCode::Invalid);
+        assert!(
+            unnamed
+                .message
+                .starts_with("document 1: ConfigMap: metadata.name"),
+            "{}",
+            unnamed.message
+        );
+        let broken =
+            parse_documents("apiVersion: v1\nkind: ConfigMap\nmetadata: {name: a}\n---\nkind: [")
+                .unwrap_err();
+        assert!(
+            broken.message.starts_with("document 2:"),
+            "{}",
+            broken.message
+        );
+        assert!(parse_documents("").unwrap().is_empty());
+    }
+
+    #[test]
+    fn a_document_with_the_hidden_values_marker_is_refused_when_read() {
+        let yaml = format!(
+            "apiVersion: v1\nkind: ConfigMap\nmetadata: {{name: a}}\n---\n\
+             apiVersion: v1\nkind: Secret\nmetadata:\n  name: s\n  annotations: {{{VALUES_HIDDEN_ANNOTATION}: \"true\"}}\n"
+        );
+        let err = parse_documents(&yaml).unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
+        assert!(err.message.starts_with("document 2:"), "{err}");
+        let plain = parse_documents("apiVersion: v1\nkind: Secret\nmetadata: {name: s}\n").unwrap();
+        assert!(!plain[0].values_hidden());
     }
 
     #[test]
