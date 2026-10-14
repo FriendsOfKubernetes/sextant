@@ -93,6 +93,14 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("mcp_audit_clear", None),
     ("mcp_confirm_answer", Some("id")),
     ("mcp_binary_path", None),
+    ("extensions_list", None),
+    ("extension_inspect_file", Some("path")),
+    ("extension_inspect_url", Some("url")),
+    ("extension_inspect_folder", Some("path")),
+    ("extension_install", Some("token")),
+    ("extension_set_enabled", Some("id")),
+    ("extension_remove", Some("id")),
+    ("extension_reload", Some("id")),
 ];
 
 struct Harness {
@@ -124,7 +132,12 @@ fn harness_in(dirs: tempfile::TempDir) -> Harness {
     let app = sextant_lib::with_commands(mock_builder())
         .build(mock_context(noop_assets()))
         .unwrap();
-    app.manage(isolated_state(dirs.path()));
+    let state = isolated_state(dirs.path());
+    app.manage(sextant_lib::extensions::ExtensionHost::new(
+        &dirs.path().join("data"),
+        std::sync::Arc::clone(&state.settings),
+    ));
+    app.manage(state);
     // Helm commands use this `helm`: a path that does not exist, so no test runs the developer's helm (network,
     // ~/.config/helm, ~/.cache/helm) — they answer `helmMissing` instead.
     app.manage(
@@ -812,4 +825,26 @@ fn access_preset_rules_answer_the_rules_of_each_preset() {
     assert_eq!(rules("off").unwrap(), json!([]));
     assert_eq!(rules("custom").unwrap(), json!([]));
     assert!(rules("everything").is_err());
+}
+
+#[test]
+fn extension_commands_answer_with_the_installed_list_and_core_errors() {
+    let h = harness();
+    assert_eq!(invoke(&h, "extensions_list", json!({})).unwrap(), json!([]));
+    let err = invoke(&h, "extension_install", json!({ "token": "nope" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "extension_set_enabled",
+        json!({ "id": "w", "enabled": true }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "extension_inspect_url",
+        json!({ "url": "https://example.com/w.zip" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
 }

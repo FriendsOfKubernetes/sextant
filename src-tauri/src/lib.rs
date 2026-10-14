@@ -2,6 +2,7 @@
 
 pub mod commands;
 pub mod events;
+pub mod extensions;
 pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
@@ -93,6 +94,14 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::mcp::mcp_audit_clear,
         commands::mcp::mcp_confirm_answer,
         commands::mcp::mcp_binary_path,
+        extensions::manage::extensions_list,
+        extensions::manage::extension_inspect_file,
+        extensions::manage::extension_inspect_url,
+        extensions::manage::extension_inspect_folder,
+        extensions::manage::extension_install,
+        extensions::manage::extension_set_enabled,
+        extensions::manage::extension_remove,
+        extensions::manage::extension_reload,
     ])
 }
 
@@ -162,6 +171,23 @@ fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
     });
 }
 
+/// Sends the extension host's events to the window and starts looking at development folders.
+fn start_extensions<R: Runtime>(app: &tauri::AppHandle<R>) {
+    let host = app.state::<extensions::ExtensionHost>().inner().clone();
+    let handle = app.clone();
+    host.set_emitter(std::sync::Arc::new(move |event| {
+        use extensions::HostEvent;
+        let _ = match event {
+            HostEvent::ListChanged => handle.emit(events::EXTENSIONS_CHANGED, ()),
+            HostEvent::FilesChanged { id } => handle.emit(
+                events::EXTENSION_FILES_CHANGED,
+                events::ExtensionFilesChangedPayload { id },
+            ),
+        };
+    }));
+    extensions::dev::spawn_poller(host);
+}
+
 /// Whether `plugins.updater` of the configuration has a public key and an endpoint. Without them the updater
 /// plugin is not registered (it would fail at start); the frontend then shows updates as turned off.
 pub fn updater_configured(config: &tauri::Config) -> bool {
@@ -204,7 +230,7 @@ fn with_updates<R: Runtime>(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let builder = with_commands(tauri::Builder::default())
+    let builder = extensions::protocol::register(with_commands(tauri::Builder::default()))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init());
     with_updates(builder, context.config())
@@ -212,10 +238,15 @@ pub fn run() {
             // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.
             sextant_core::kubeconfig::remove_stale_temp_kubeconfigs(&std::env::temp_dir());
             let paths = app.path();
-            let state = AppState::new(&paths.app_config_dir()?, &paths.app_data_dir()?);
+            let data_dir = paths.app_data_dir()?;
+            let state = AppState::new(&paths.app_config_dir()?, &data_dir);
+            let extensions =
+                extensions::ExtensionHost::new(&data_dir, std::sync::Arc::clone(&state.settings));
             app.manage(state);
+            app.manage(extensions);
             spawn_event_forwarders(app.handle());
             start_mcp(app.handle());
+            start_extensions(app.handle());
             window::restore_main_window(app.handle());
             Ok(())
         })

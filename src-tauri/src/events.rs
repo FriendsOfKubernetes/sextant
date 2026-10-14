@@ -14,6 +14,12 @@ pub const MCP_STATUS: &str = "mcp-status";
 pub const MCP_CONFIRM: &str = "mcp-confirm";
 /// `mcp-audit` — payload `AuditEntry` (one more call of an agent in the journal).
 pub const MCP_AUDIT: &str = "mcp-audit";
+/// `extensions-changed` — no payload (`null`): installed extensions, a state or a manifest changed; read
+/// `extensions_list` again.
+pub const EXTENSIONS_CHANGED: &str = "extensions-changed";
+/// `extension-files-changed` — payload [`ExtensionFilesChangedPayload`]: files of an extension changed (development
+/// folder, reload, update); reload its frames.
+pub const EXTENSION_FILES_CHANGED: &str = "extension-files-changed";
 
 /// `watch:<subscriptionId>` — payload `WatchUpdate`.
 pub fn watch_event(subscription_id: &str) -> String {
@@ -36,6 +42,13 @@ pub fn term_event(session_id: &str) -> String {
 pub struct ClusterStatePayload {
     pub cluster_id: ClusterId,
     pub state: ConnectionState,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ExtensionFilesChangedPayload {
+    pub id: String,
 }
 
 /// Terminal output. Serialized with a `type` tag; `data` is base64.
