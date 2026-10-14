@@ -140,8 +140,12 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 id: id.to_owned(),
                 version: "1.0.0".into(),
                 name: format!("Ext {id}"),
+                // Canonical, as the host records a folder (on macOS the temp dir is behind the /var symlink).
                 source: ExtensionSource::Folder {
-                    path: folder.to_string_lossy().into_owned(),
+                    path: std::fs::canonicalize(&folder)
+                        .unwrap()
+                        .to_string_lossy()
+                        .into_owned(),
                 },
                 enabled: true,
                 granted,
