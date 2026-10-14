@@ -1,5 +1,6 @@
 //! Sextant desktop application: Tauri state, commands, events, local PTY.
 
+pub mod access_guard;
 pub mod commands;
 pub mod events;
 pub mod extensions;
@@ -102,6 +103,10 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         extensions::manage::extension_set_enabled,
         extensions::manage::extension_remove,
         extensions::manage::extension_reload,
+        extensions::api::extension_call,
+        extensions::api::extension_watch_stop,
+        extensions::api::extension_audit_list,
+        extensions::api::extension_audit_clear,
     ])
 }
 
@@ -171,20 +176,44 @@ fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
     });
 }
 
-/// Sends the extension host's events to the window and starts looking at development folders.
+/// Sends the extension host's and the extension API's events to the window and starts looking at development folders.
+/// An extension that stops being active (disabled, removed, waiting for consent) or is granted anything else loses its
+/// watch streams at once.
 fn start_extensions<R: Runtime>(app: &tauri::AppHandle<R>) {
     let host = app.state::<extensions::ExtensionHost>().inner().clone();
+    let streams = std::sync::Arc::clone(&app.state::<AppState>().ext_api.streams);
     let handle = app.clone();
-    host.set_emitter(std::sync::Arc::new(move |event| {
-        use extensions::HostEvent;
-        let _ = match event {
-            HostEvent::ListChanged => handle.emit(events::EXTENSIONS_CHANGED, ()),
-            HostEvent::FilesChanged { id } => handle.emit(
-                events::EXTENSION_FILES_CHANGED,
-                events::ExtensionFilesChangedPayload { id },
-            ),
-        };
-    }));
+    host.set_emitter(extensions::api::host_emitter(
+        streams,
+        host.downgrade(),
+        move |event| {
+            use extensions::HostEvent;
+            let _ = match event {
+                HostEvent::ListChanged => handle.emit(events::EXTENSIONS_CHANGED, ()),
+                HostEvent::FilesChanged { id } => handle.emit(
+                    events::EXTENSION_FILES_CHANGED,
+                    events::ExtensionFilesChangedPayload { id },
+                ),
+            };
+        },
+    ));
+    let handle = app.clone();
+    app.state::<AppState>()
+        .ext_api
+        .set_emitter(std::sync::Arc::new(move |event| {
+            use extensions::api::ApiEvent;
+            match event {
+                ApiEvent::Audit(entry) => handle.emit(extensions::api::EXT_AUDIT, entry).is_ok(),
+                ApiEvent::Confirm(request) => {
+                    let Some(window) = handle.get_webview_window(window::MAIN_WINDOW) else {
+                        return false;
+                    };
+                    #[cfg(desktop)]
+                    let _ = window.request_user_attention(Some(tauri::UserAttentionType::Critical));
+                    window.emit(events::MCP_CONFIRM, request).is_ok()
+                }
+            }
+        }));
     extensions::dev::spawn_poller(host);
 }
 

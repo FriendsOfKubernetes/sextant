@@ -5,7 +5,7 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, Implementation, JsonObject, ListToolsResult,
@@ -19,6 +19,7 @@ use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 use super::audit::{AuditDecision, AuditEntry};
+use super::confirm::ConfirmSource;
 use super::context::{Emitter, McpContext, McpEvent};
 use super::guard::{ClusterKinds, Guard, KindLookup, Refusal};
 use super::http;
@@ -154,6 +155,8 @@ impl SextantMcp {
         let record = lock(&record).clone();
         let entry = AuditEntry {
             at,
+            source: ConfirmSource::Agent,
+            principal: client.clone(),
             client,
             cluster_id: record.cluster.as_ref().map(|c| c.id.clone()),
             cluster_name: record.cluster.as_ref().map(|c| c.name.clone()),
@@ -182,12 +185,7 @@ fn error_code_name(error: &ToolError) -> String {
         .unwrap_or_else(|| "other".to_owned())
 }
 
-fn now_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
-}
+use crate::access_guard::now_ms;
 
 /// The client's name: from `initialize`, else its `User-Agent`, else `unknown`.
 fn client_name(context: &RequestContext<RoleServer>) -> String {
@@ -363,7 +361,7 @@ impl McpServer {
             lock(&self.serving).cancel();
             running.take()
         };
-        self.ctx.confirmations.close();
+        self.ctx.confirmations.close(ConfirmSource::Agent);
         if let Some(running) = running {
             running.task.abort();
         }
@@ -401,7 +399,7 @@ impl McpServer {
         }
         let serving = CancellationToken::new();
         *lock(&self.serving) = serving.clone();
-        self.ctx.confirmations.open();
+        self.ctx.confirmations.open(ConfirmSource::Agent);
         let router = http::router(self.handler_with(serving.clone()), port, serving.clone());
         let shutdown = serving.cancelled_owned();
         let task = tokio::spawn(async move {
@@ -425,7 +423,7 @@ impl McpServer {
             lock(&self.serving).cancel();
             running.take()
         };
-        self.ctx.confirmations.close();
+        self.ctx.confirmations.close(ConfirmSource::Agent);
         let Some(Running { task, .. }) = running else {
             return;
         };

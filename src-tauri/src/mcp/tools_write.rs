@@ -30,7 +30,6 @@ use sextant_core::access::{AccessAction, KindPattern};
 use sextant_core::error::with_timeout;
 use sextant_core::exec;
 use sextant_core::helm::cli::{self as helm_cli, HelmCli};
-use sextant_core::node_shell;
 use sextant_core::portforward::ForwardTarget;
 use sextant_core::resources::{self, KindRef, ObjectRef, PatchType};
 use sextant_core::{ClusterId, CoreError, CoreResult, DrainOptions, ErrorCode};
@@ -977,59 +976,28 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let agents use node shells";
 
-fn is_pod(kind: &KindRef) -> bool {
-    kind.group.is_empty() && kind.kind.eq_ignore_ascii_case("Pod")
-}
-
-fn node_shell_refusal() -> CoreError {
-    CoreError::new(ErrorCode::Denied, NODE_SHELL_REFUSAL)
-}
-
-/// Before the access check: a pod named like a node shell (`sextant-node-shell-…` in `kube-system`; a name cannot
-/// change) or, for an apply, a pod document that is one ([`node_shell::is_node_shell_object`]). Refused without
-/// asking the user and without reading the cluster.
+/// Before the access check: a pod named like a node shell, or a pod document that is one (the shared
+/// [`crate::access_guard::refuse_named_node_shell`] with the agents' text).
 fn refuse_named_node_shell(object: &ObjectRef, document: Option<&Value>) -> CoreResult<()> {
-    if !is_pod(&object.kind) {
-        return Ok(());
-    }
-    let named = node_shell::is_node_shell_name(object.namespace.as_deref(), &object.name);
-    if named || document.is_some_and(node_shell::is_node_shell_object) {
-        return Err(node_shell_refusal());
-    }
-    Ok(())
+    crate::access_guard::refuse_named_node_shell(object, document, NODE_SHELL_REFUSAL)
 }
 
-/// After the access check, right before acting on a pod: the pod as the cluster has it now. A node shell (by name or
-/// by any of its labels) is refused; so is a pod that cannot be read (fail closed) — except, for an apply
-/// (`creates`), one that does not exist yet: it is made from the document [`refuse_named_node_shell`] checked. Read
-/// after the check, so an agent learns nothing about pods the rules keep from it.
+/// After the access check, right before acting on a pod: the pod as the cluster has it now, failing closed (the
+/// shared [`crate::access_guard::refuse_live_node_shell`] with the agents' text).
 async fn refuse_live_node_shell(
     call: &ToolCall,
     cluster: &ClusterId,
     object: &ObjectRef,
     creates: bool,
 ) -> CoreResult<()> {
-    if !is_pod(&object.kind) {
-        return Ok(());
-    }
-    let live = read(
-        "reading the pod",
-        resources::get(&call.ctx().clusters, cluster, object),
+    crate::access_guard::refuse_live_node_shell(
+        &call.ctx().clusters,
+        cluster,
+        object,
+        creates,
+        NODE_SHELL_REFUSAL,
     )
-    .await;
-    match live {
-        Ok(pod) if node_shell::is_node_shell_object(&pod) => Err(node_shell_refusal()),
-        Ok(_) => Ok(()),
-        Err(e) if creates && e.code == ErrorCode::NotFound => Ok(()),
-        Err(e) => Err(CoreError::new(
-            e.code,
-            format!(
-                "Sextant could not read {} to make sure it is not a node shell, so nothing was done: {}",
-                describe(object),
-                e.message
-            ),
-        )),
-    }
+    .await
 }
 
 async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResult {

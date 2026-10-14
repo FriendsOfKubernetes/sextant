@@ -732,6 +732,8 @@ async fn the_server_follows_the_settings_and_stops_with_the_application() {
             .ask(
                 super::confirm::ConfirmRequest {
                     id: String::new(),
+                    source: super::confirm::ConfirmSource::Agent,
+                    principal: "c".into(),
                     client: "c".into(),
                     cluster_id: ClusterId::from("x"),
                     cluster_name: "x".into(),
@@ -1333,6 +1335,8 @@ async fn a_call_begun_before_the_server_stopped_neither_asks_nor_acts() {
         .ask(
             super::confirm::ConfirmRequest {
                 id: String::new(),
+                source: super::confirm::ConfirmSource::Agent,
+                principal: "c".into(),
                 client: "c".into(),
                 cluster_id: ClusterId::from("c1"),
                 cluster_name: "c1".into(),

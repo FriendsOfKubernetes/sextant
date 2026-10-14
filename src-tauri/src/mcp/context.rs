@@ -35,7 +35,8 @@ pub struct McpContext {
     pub forwarder: Arc<PortForwarder>,
     pub settings: Arc<SettingsStore>,
     pub audit: AuditLog,
-    pub confirmations: Confirmations,
+    /// Shared with the extensions' API (`AppState::ext_api`): one pending map, one answer command.
+    pub confirmations: Arc<Confirmations>,
     /// Ids of the port forwards agents started: `port_forward_list`/`port_forward_stop` see only these.
     pub agent_forwards: Mutex<HashSet<String>>,
     token_path: PathBuf,
@@ -60,7 +61,7 @@ impl McpContext {
             forwarder,
             settings,
             audit: AuditLog::open(AuditLog::path_in(data_dir)),
-            confirmations: Confirmations::default(),
+            confirmations: Arc::new(Confirmations::default()),
             agent_forwards: Mutex::new(HashSet::new()),
             token_path: paths::token_path(config_dir),
             token: RwLock::new(None),

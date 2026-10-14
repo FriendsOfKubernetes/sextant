@@ -101,6 +101,10 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("extension_set_enabled", Some("id")),
     ("extension_remove", Some("id")),
     ("extension_reload", Some("id")),
+    ("extension_call", Some("extensionId")),
+    ("extension_watch_stop", Some("extensionId")),
+    ("extension_audit_list", None),
+    ("extension_audit_clear", None),
 ];
 
 struct Harness {
@@ -847,4 +851,45 @@ fn extension_commands_answer_with_the_installed_list_and_core_errors() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn extension_api_commands_refuse_an_extension_that_is_not_installed_and_journal_it() {
+    let h = harness();
+    let err = invoke(
+        &h,
+        "extension_call",
+        json!({ "extensionId": "ghost", "method": "clusters.list" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "denied", "{err}");
+    let journal = invoke(
+        &h,
+        "extension_audit_list",
+        json!({ "extensionId": "ghost" }),
+    )
+    .unwrap();
+    assert_eq!(journal[0]["client"], "ghost");
+    assert_eq!(journal[0]["source"], "extension");
+    assert_eq!(journal[0]["decision"], "denied");
+    assert_eq!(
+        invoke(
+            &h,
+            "extension_audit_list",
+            json!({ "extensionId": "other" })
+        )
+        .unwrap(),
+        json!([])
+    );
+    invoke(&h, "extension_audit_clear", json!({})).unwrap();
+    assert_eq!(
+        invoke(&h, "extension_audit_list", json!({})).unwrap(),
+        json!([])
+    );
+    invoke(
+        &h,
+        "extension_watch_stop",
+        json!({ "extensionId": "ghost", "streamId": "nothing" }),
+    )
+    .unwrap();
 }

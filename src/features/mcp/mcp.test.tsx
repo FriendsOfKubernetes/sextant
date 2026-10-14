@@ -36,6 +36,8 @@ let clipboard: string[];
 
 const entry = (over: Partial<AuditEntry> = {}): AuditEntry => ({
   at: Date.UTC(2026, 9, 13, 10, 30, 0),
+  source: "agent",
+  principal: "claude-code",
   client: "claude-code",
   clusterId: "prod",
   clusterName: "prod-admin",
@@ -49,6 +51,8 @@ const entry = (over: Partial<AuditEntry> = {}): AuditEntry => ({
 
 const request = (over: Partial<ConfirmRequest> = {}): ConfirmRequest => ({
   id: "r1",
+  source: "agent",
+  principal: "claude-code",
   client: "claude-code",
   clusterId: "prod",
   clusterName: "prod-admin",

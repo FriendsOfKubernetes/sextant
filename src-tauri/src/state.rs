@@ -16,6 +16,7 @@ use tokio::sync::mpsc;
 use tokio::task::AbortHandle;
 
 use crate::commands::argocd::{ArgoSessions, KeyringStore};
+use crate::extensions::api::ExtensionApi;
 use crate::mcp::{McpContext, McpServer};
 
 /// How long closing the window (or quitting) waits for the node shell pods to be deleted.
@@ -37,6 +38,9 @@ pub struct AppState {
     /// The MCP server for AI agents (off unless `settings.mcp.enabled`); its token is `<config_dir>/mcp-token`, its
     /// journal `<data_dir>/mcp-audit.jsonl`.
     pub mcp: McpServer,
+    /// The extensions' API (`extension_call`): its watch streams, its journal `<data_dir>/extensions-audit.jsonl`;
+    /// confirmations shared with `mcp`.
+    pub ext_api: ExtensionApi,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -61,6 +65,12 @@ impl AppState {
             config_dir,
             data_dir,
         ));
+        let ext_api = ExtensionApi::new(
+            clusters.clone(),
+            Arc::clone(&settings),
+            Arc::clone(&mcp.context().confirmations),
+            data_dir,
+        );
         Self {
             clusters,
             registry,
@@ -70,14 +80,16 @@ impl AppState {
             sessions: Sessions::default(),
             argocd: ArgoSessions::new(Arc::new(KeyringStore::os())),
             mcp,
+            ext_api,
             streams_generation: AtomicU64::new(0),
         }
     }
 
-    /// Stops every subscription, session and port forward of a cluster (on disconnect), and forgets its Argo CD
-    /// session.
+    /// Stops every subscription (extensions' streams too), session and port forward of a cluster (on disconnect), and
+    /// forgets its Argo CD session.
     pub fn close_cluster(&self, cluster: &ClusterId) {
         self.subscriptions.stop_cluster(cluster);
+        self.ext_api.streams.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
         self.forwarder.stop_cluster(cluster);
         self.argocd.close_cluster(cluster);
@@ -89,19 +101,22 @@ impl AppState {
     /// [`NODE_SHELL_DELETE_WAIT`] for those deletions, so the process does not end before them.
     pub fn close_all(&self) {
         self.mcp.stop();
+        self.ext_api.close();
         self.reset_streams();
         self.forwarder.stop_all();
         self.argocd.close_all();
         sextant_core::node_shell::wait_for_deletions(NODE_SHELL_DELETE_WAIT);
     }
 
-    /// Stops every watch subscription, log stream and terminal session, but keeps connections and port forwards
-    /// (`streams_reset`: the window was reloaded and nobody listens to the old streams any more).
+    /// Stops every watch subscription (extensions' too), log stream and terminal session, but keeps connections and
+    /// port forwards (`streams_reset`: the window was reloaded and nobody listens to the old streams any more).
     pub fn reset_streams(&self) {
         // First: a start that registers from now on sees the reset and undoes itself.
         self.streams_generation.fetch_add(1, Ordering::SeqCst);
         self.subscriptions.stop_all();
         self.sessions.stop_all();
+        // Extensions' streams; the confirmations the old page was showing are declined.
+        self.ext_api.reset();
     }
 
     /// Taken by a `*_start` before it waits for the core; passed to [`AppState::undo_if_reset`] after registering.

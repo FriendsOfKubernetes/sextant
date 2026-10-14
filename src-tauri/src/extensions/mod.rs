@@ -9,6 +9,7 @@
 //! granted. A development folder whose manifest starts asking for more is paused (`needsConsent`) until the user
 //! agrees again (`extension_inspect_folder` + `extension_install`).
 
+pub mod api;
 pub mod dev;
 pub mod manage;
 pub mod protocol;
@@ -116,6 +117,18 @@ pub struct ExtensionHost {
     inner: Arc<Inner>,
 }
 
+/// An [`ExtensionHost`] that does not keep it alive (for its own emitter, which the host keeps).
+#[derive(Clone)]
+pub struct WeakExtensionHost {
+    inner: std::sync::Weak<Inner>,
+}
+
+impl WeakExtensionHost {
+    pub fn upgrade(&self) -> Option<ExtensionHost> {
+        self.inner.upgrade().map(|inner| ExtensionHost { inner })
+    }
+}
+
 impl ExtensionHost {
     /// Installed versions go to `<data_dir>/extensions`. Leftovers of an interrupted install or remove, and archives
     /// that were waiting for consent when the app stopped, are deleted.
@@ -146,6 +159,13 @@ impl ExtensionHost {
                 emitter: Mutex::new(None),
                 downloader,
             }),
+        }
+    }
+
+    /// A handle that does not keep the host alive.
+    pub fn downgrade(&self) -> WeakExtensionHost {
+        WeakExtensionHost {
+            inner: Arc::downgrade(&self.inner),
         }
     }
 

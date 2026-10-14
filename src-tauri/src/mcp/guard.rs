@@ -9,31 +9,18 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use futures::future::BoxFuture;
 use sextant_core::access::{
     self, AccessAction, AccessPreset, ClusterAccess, Decision, KindPattern, NamespaceScope,
 };
-use sextant_core::resources::{self, KindRef};
-use sextant_core::{ClusterId, ClusterManager, ConnectionState, CoreError, ErrorCode};
+use sextant_core::{ClusterId, ConnectionState, CoreError, ErrorCode};
 use tokio_util::sync::CancellationToken;
 
+pub use crate::access_guard::{CallSummary, ClusterKinds, KindLookup, Requirement, action_name};
+use crate::access_guard::{effective_namespace, refused_object, stronger};
+
 use super::audit::{AuditDecision, clip};
-use super::confirm::{CONFIRM_TIMEOUT, ConfirmOutcome, ConfirmRequest};
+use super::confirm::{CONFIRM_TIMEOUT, ConfirmOutcome, ConfirmRequest, ConfirmSource};
 use super::context::{McpContext, McpEvent};
-
-/// What a call needs: (namespace, kind, action). `None` (or `""`) — no namespace, or all namespaces at once.
-pub type Requirement = (Option<String>, KindPattern, AccessAction);
-
-/// What a call is about, for the confirmation dialog, the journal and refusals.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct CallSummary {
-    /// The tool, e.g. `delete_resource`.
-    pub tool: String,
-    /// What it acts on, e.g. `Pod team-a/web-1`, `Pod in namespace team-a`, `Node worker-1`.
-    pub target: String,
-    /// Shown in the confirmation dialog only: YAML, a command, a port.
-    pub details: Option<String>,
-}
 
 /// Why a call does not run. Its text goes to the agent as the tool's error.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -114,54 +101,6 @@ fn or_cluster(target: &str) -> &str {
         "the cluster"
     } else {
         target
-    }
-}
-
-/// The action as refusals name it.
-pub fn action_name(action: AccessAction) -> &'static str {
-    match action {
-        AccessAction::Read => "read",
-        AccessAction::Modify => "modify",
-        AccessAction::Delete => "delete",
-        AccessAction::Logs => "logs",
-        AccessAction::Exec => "exec",
-        AccessAction::PortForward => "port forward",
-        AccessAction::SecretValues => "secret values",
-    }
-}
-
-/// Whether objects of a kind have a namespace; `None` when the kind cannot be looked up.
-pub trait KindLookup: Send + Sync + 'static {
-    fn namespaced<'a>(
-        &'a self,
-        cluster: &'a ClusterId,
-        kind: &'a KindPattern,
-    ) -> BoxFuture<'a, Option<bool>>;
-}
-
-/// The kinds the cluster really serves (`resources::resolve`); Helm releases live in namespaces.
-pub struct ClusterKinds(pub ClusterManager);
-
-impl KindLookup for ClusterKinds {
-    fn namespaced<'a>(
-        &'a self,
-        cluster: &'a ClusterId,
-        kind: &'a KindPattern,
-    ) -> BoxFuture<'a, Option<bool>> {
-        Box::pin(async move {
-            if kind == &KindPattern::helm_release() {
-                return Some(true);
-            }
-            let kind_ref = KindRef {
-                group: kind.group.clone(),
-                version: String::new(),
-                kind: kind.kind.clone(),
-            };
-            resources::resolve(&self.0, cluster, &kind_ref)
-                .await
-                .ok()
-                .map(|k| k.namespaced)
-        })
     }
 }
 
@@ -308,6 +247,8 @@ impl Guard {
         }
         let request = ConfirmRequest {
             id: String::new(),
+            source: ConfirmSource::Agent,
+            principal: self.client.clone(),
             client: self.client.clone(),
             cluster_id: cluster.id.clone(),
             cluster_name: cluster.name.clone(),
@@ -462,27 +403,13 @@ impl Guard {
         namespace: &Option<String>,
         kind: &KindPattern,
     ) -> Option<String> {
-        let namespace = namespace.as_deref().filter(|ns| !ns.is_empty())?;
-        match self.kinds.namespaced(&cluster.id, kind).await {
-            Some(true) => Some(namespace.to_owned()),
-            _ => None,
-        }
+        effective_namespace(&*self.kinds, &cluster.id, namespace.as_deref(), kind).await
     }
 
     /// Keeps the strongest decision of the call: a refusal over an approval over a plain allow.
     fn decide(&self, decision: AuditDecision) {
-        let rank = |d: AuditDecision| match d {
-            AuditDecision::Allowed => 0,
-            AuditDecision::Approved => 1,
-            AuditDecision::Denied | AuditDecision::Declined | AuditDecision::TimedOut => 2,
-        };
         let mut record = self.lock();
-        if record
-            .decision
-            .is_none_or(|old| rank(decision) >= rank(old))
-        {
-            record.decision = Some(decision);
-        }
+        record.decision = Some(stronger(record.decision, decision));
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, CallRecord> {
@@ -497,18 +424,7 @@ impl Guard {
 
 /// What a refusal names: the call's target when it is about this kind, else the kind and where.
 fn object(summary: &CallSummary, namespace: Option<&str>, kind: &KindPattern) -> String {
-    let about_kind = summary
-        .target
-        .split_whitespace()
-        .next()
-        .is_some_and(|first| first.eq_ignore_ascii_case(&kind.kind));
-    if about_kind {
-        return summary.target.clone();
-    }
-    match namespace {
-        Some(ns) => format!("{} in namespace {ns}", kind.kind),
-        None => format!("{} in all namespaces", kind.kind),
-    }
+    refused_object(&summary.target, namespace, kind)
 }
 
 #[cfg(test)]
@@ -517,6 +433,8 @@ mod tests {
     use std::path::Path;
     use std::sync::RwLock;
 
+    use futures::future::BoxFuture;
+    use sextant_core::ClusterManager;
     use sextant_core::access::{AccessRule, KindScope};
     use sextant_core::kubeconfig::KubeconfigEnv;
     use sextant_core::portforward::PortForwarder;
