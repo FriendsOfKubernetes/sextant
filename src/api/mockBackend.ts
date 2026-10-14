@@ -22,7 +22,7 @@ export interface MockBackendOptions {
   saveFile?: (options: SaveFileOptions) => string | null;
   /** Whether the build has an update signing key (default `true`). */
   updaterConfigured?: boolean;
-  /** Version and bundle kind of the app (default `0.5.0`, no bundle: not installed from a release package). */
+  /** Version and bundle kind of the app (default `0.6.0`, no bundle: not installed from a release package). */
   app?: Partial<AppInfo>;
 }
 
@@ -126,7 +126,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
       openedUrls.push(url);
     },
     updaterConfigured: () => options.updaterConfigured ?? true,
-    appInfo: async () => ({ version: "0.5.0", bundleKind: null, ...options.app }),
+    appInfo: async () => ({ version: "0.6.0", bundleKind: null, ...options.app }),
     async checkUpdate() {
       const info = await transport.invoke<UpdateInfo | null>(UPDATER_COMMANDS.check, {});
       if (!info) return null;
