@@ -3,9 +3,11 @@ import type { ClusterAccess } from "./ClusterAccess";
 import type { ClusterIcon } from "./ClusterIcon";
 import type { PrometheusMode } from "./PrometheusMode";
 import type { UsageSource } from "./UsageSource";
+import type { JsonValue } from "./serde_json/JsonValue";
 
 /**
- * Per-cluster settings, keyed by `ClusterId` in [`AppSettings::clusters`].
+ * Per-cluster settings, keyed by `ClusterId` in [`AppSettings::clusters`]. `Deserialize` is written by hand
+ * (below) so that an `agentAccess` this version cannot read is kept.
  */
 export type ClusterSettings = { displayName: string | null, color: string | null, 
 /**
@@ -25,4 +27,11 @@ icon: ClusterIcon | null,
  * What an AI agent connected through the MCP server may do in this cluster; closed by default. Owned by the
  * frontend; the MCP server reads it fresh on every call.
  */
-agentAccess: ClusterAccess, };
+agentAccess: ClusterAccess, 
+/**
+ * The `agentAccess` value this version could not read (written by a newer Sextant or edited by hand), kept as
+ * found. While it is set, `agent_access` is the default (Off), so nothing is allowed; the file gets the original
+ * value back under `agentAccess` on every write, until the user resets the access or chooses a set. Owned by the
+ * frontend, like `agent_access`.
+ */
+agentAccessUnrecognised?: JsonValue, };

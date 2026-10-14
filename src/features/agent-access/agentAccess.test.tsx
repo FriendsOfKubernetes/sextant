@@ -48,7 +48,10 @@ const KINDS = [kind("", "Pod"), kind("apps", "Deployment"), kind("", "Node", fal
 
 let wb: WatchBackend;
 
-function setup(saved?: ClusterAccess, kinds: ResourceKind[] | Error = KINDS) {
+/** An `agentAccess` the core could not read: it arrives beside a closed access and is sent back until the user decides. */
+const KEPT = { preset: "custom", rules: [{ actions: ["read"], expires: "2027-01-01" }] };
+
+function setup(saved?: ClusterAccess, kinds: ResourceKind[] | Error = KINDS, kept?: unknown) {
   wb = watchBackend();
   wb.backend.on("access_preset_rules", (args) => copy(PRESET_RULES[args.preset as AccessPreset]));
   wb.backend.on("cluster_kinds", () => {
@@ -65,6 +68,7 @@ function setup(saved?: ClusterAccess, kinds: ResourceKind[] | Error = KINDS) {
       usageSource: "auto",
       icon: null,
       agentAccess: saved,
+      ...(kept === undefined ? {} : { agentAccessUnrecognised: kept as never }),
     };
   }
 }
@@ -152,6 +156,67 @@ describe("sets", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Custom" }));
     await waitFor(() => expect(saved()).toEqual({ preset: "custom", rules: [] }));
     expect(await screen.findByText(/no rules, so the agent has no access/)).toBeInTheDocument();
+  });
+});
+
+describe("custom rules kept apart from the sets", () => {
+  const MINE: AccessRule[] = [
+    { namespaces: { type: "only", namespaces: ["prod"] }, kinds: { type: "all" }, actions: ["read", "delete"], confirm: true },
+  ];
+
+  it("returning to Custom restores the user's rules instead of copying the previous set", async () => {
+    setup({ preset: "off", rules: copy(MINE) });
+    await section();
+    fireEvent.click(screen.getByRole("radio", { name: "Custom" }));
+    await waitFor(() => expect(saved()).toEqual({ preset: "custom", rules: MINE }));
+    expect(wb.backend.calls.filter((c) => c.cmd === "access_preset_rules")).toEqual([]);
+    expect(await screen.findByRole("group", { name: "Rule 1" })).toBeInTheDocument();
+  });
+
+  it("Custom -> Read-only -> Custom keeps the same rules", async () => {
+    setup({ preset: "custom", rules: copy(MINE) });
+    await section();
+    fireEvent.click(screen.getByRole("radio", { name: "Read-only" }));
+    await waitFor(() => expect(saved()).toEqual({ preset: "readOnly", rules: MINE }));
+    fireEvent.click(screen.getByRole("radio", { name: "Custom" }));
+    await waitFor(() => expect(saved()).toEqual({ preset: "custom", rules: MINE }));
+  });
+
+  it("restored rules are cleaned like any rule the editor writes (a stray field is dropped)", async () => {
+    setup({ preset: "off", rules: [{ ...copy(MINE[0]!), stray: 1 } as AccessRule] });
+    await section();
+    fireEvent.click(screen.getByRole("radio", { name: "Custom" }));
+    await waitFor(() => expect(saved()).toEqual({ preset: "custom", rules: MINE }));
+  });
+});
+
+describe("rules this version cannot read", () => {
+  it("shows a notice, acts as Off, and offers Reset to Off", async () => {
+    setup({ preset: "off", rules: [] }, KINDS, KEPT);
+    await section();
+    expect(screen.getByRole("radio", { name: "Off" })).toBeChecked();
+    expect(screen.getByText(/written by a newer Sextant or edited by hand; they are kept but not applied/)).toBeInTheDocument();
+    expect(screen.queryByText("Rules")).toBeNull();
+    // Nothing was written just by looking.
+    expect(wb.backend.settings.clusters["c1"]?.agentAccessUnrecognised).toEqual(KEPT);
+  });
+
+  it("Reset to Off drops the kept value and saves Off", async () => {
+    setup({ preset: "off", rules: [] }, KINDS, KEPT);
+    await section();
+    fireEvent.click(screen.getByRole("button", { name: "Reset to Off" }));
+    await waitFor(() => expect(wb.backend.settings.clusters["c1"]?.agentAccessUnrecognised).toBeUndefined());
+    expect(saved()).toEqual({ preset: "off", rules: [] });
+    await waitFor(() => expect(screen.queryByText(/kept but not applied/)).toBeNull());
+  });
+
+  it("choosing a set replaces the kept value", async () => {
+    setup({ preset: "off", rules: [] }, KINDS, KEPT);
+    await section();
+    fireEvent.click(screen.getByRole("radio", { name: "Read-only" }));
+    await waitFor(() => expect(saved()).toEqual({ preset: "readOnly", rules: [] }));
+    expect(wb.backend.settings.clusters["c1"]?.agentAccessUnrecognised).toBeUndefined();
+    expect(screen.queryByText(/kept but not applied/)).toBeNull();
   });
 });
 

@@ -25,8 +25,9 @@ pub enum Theme {
     Dark,
 }
 
-/// Per-cluster settings, keyed by `ClusterId` in [`AppSettings::clusters`].
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+/// Per-cluster settings, keyed by `ClusterId` in [`AppSettings::clusters`]. `Deserialize` is written by hand
+/// (below) so that an `agentAccess` this version cannot read is kept.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
 pub struct ClusterSettings {
@@ -44,6 +45,57 @@ pub struct ClusterSettings {
     /// What an AI agent connected through the MCP server may do in this cluster; closed by default. Owned by the
     /// frontend; the MCP server reads it fresh on every call.
     pub agent_access: ClusterAccess,
+    /// The `agentAccess` value this version could not read (written by a newer Sextant or edited by hand), kept as
+    /// found. While it is set, `agent_access` is the default (Off), so nothing is allowed; the file gets the original
+    /// value back under `agentAccess` on every write, until the user resets the access or chooses a set. Owned by the
+    /// frontend, like `agent_access`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub agent_access_unrecognised: Option<serde_json::Value>,
+}
+
+/// `ClusterSettings` as stored, with `agentAccess` still unread.
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct StoredClusterSettings {
+    display_name: Option<String>,
+    color: Option<String>,
+    namespaces: Option<Vec<String>>,
+    last_view: Option<String>,
+    prometheus: PrometheusMode,
+    usage_source: UsageSource,
+    icon: Option<ClusterIcon>,
+    agent_access: Option<serde_json::Value>,
+    agent_access_unrecognised: Option<serde_json::Value>,
+}
+
+impl<'de> Deserialize<'de> for ClusterSettings {
+    /// An `agentAccess` that does not read strictly ([`ClusterAccess::parse_strict`]) acts as Off and its JSON is kept
+    /// in `agent_access_unrecognised`. A kept value always wins over `agentAccess` beside it: the frontend clears it
+    /// by sending `agentAccess` alone, so a stale or forged pair can never open access.
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let stored = StoredClusterSettings::deserialize(deserializer)?;
+        let (agent_access, agent_access_unrecognised) =
+            match (stored.agent_access_unrecognised, stored.agent_access) {
+                (Some(kept), _) => (ClusterAccess::default(), Some(kept)),
+                (None, None) => (ClusterAccess::default(), None),
+                (None, Some(raw)) => match ClusterAccess::parse_strict(&raw) {
+                    Some(access) => (access, None),
+                    None => (ClusterAccess::default(), Some(raw)),
+                },
+            };
+        Ok(Self {
+            display_name: stored.display_name,
+            color: stored.color,
+            namespaces: stored.namespaces,
+            last_view: stored.last_view,
+            prometheus: stored.prometheus,
+            usage_source: stored.usage_source,
+            icon: stored.icon,
+            agent_access,
+            agent_access_unrecognised,
+        })
+    }
 }
 
 /// A cluster's own rail icon (`ClusterSettings::icon`).
@@ -246,7 +298,11 @@ fn load(path: &Path) -> (AppSettings, SettingsFileStatus) {
     let bytes = match std::fs::read(path) {
         Ok(bytes) => bytes,
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-            return (AppSettings::default(), SettingsFileStatus::healthy());
+            let status = match probe_write(path) {
+                Ok(()) => SettingsFileStatus::healthy(),
+                Err(error) => not_writable(error),
+            };
+            return (AppSettings::default(), status);
         }
         Err(err) => {
             let error = CoreError::new(
@@ -268,7 +324,10 @@ fn load(path: &Path) -> (AppSettings, SettingsFileStatus) {
     };
     match serde_json::from_slice::<AppSettings>(&bytes) {
         Ok(settings) if read_only => (settings, not_writable(read_only_error())),
-        Ok(settings) => (settings, SettingsFileStatus::healthy()),
+        Ok(settings) => match probe_write(path) {
+            Ok(()) => (settings, SettingsFileStatus::healthy()),
+            Err(error) => (settings, not_writable(error)),
+        },
         Err(parse) => {
             let status = match write_backup(path, &bytes) {
                 Ok(backup) => SettingsFileStatus {
@@ -294,6 +353,31 @@ fn load(path: &Path) -> (AppSettings, SettingsFileStatus) {
             (AppSettings::default(), status)
         }
     }
+}
+
+/// Whether a settings write would work, tried for real: a temporary file next to `path` (what [`write_atomic`] makes
+/// before renaming it over the file), removed again. File mode bits alone miss a directory owned by root (after a
+/// run with `sudo`), a read-only mount and the like.
+fn probe_write(path: &Path) -> Result<(), CoreError> {
+    let dir = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .ok_or_else(|| CoreError::other(format!("invalid settings path: {}", path.display())))?;
+    let unwritable = |err: std::io::Error| {
+        CoreError::new(
+            io_code(&err),
+            format!(
+                "cannot write to {}: {err}; changes are not saved",
+                dir.display()
+            ),
+        )
+    };
+    std::fs::create_dir_all(dir).map_err(unwritable)?;
+    tempfile::Builder::new()
+        .prefix(".settings-probe-")
+        .tempfile_in(dir)
+        .map(drop)
+        .map_err(unwritable)
 }
 
 fn not_writable(error: CoreError) -> SettingsFileStatus {
@@ -374,13 +458,32 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     (year, month, day)
 }
 
+/// For the file, puts the `agentAccess` value that could not be read back where it was found, so a newer Sextant (or
+/// the person who edited it) finds it as written. The frontend sees it beside a closed access instead
+/// (`agentAccessUnrecognised`).
+fn restore_unrecognised_access(settings: &mut serde_json::Value) {
+    let Some(clusters) = settings
+        .get_mut("clusters")
+        .and_then(serde_json::Value::as_object_mut)
+    else {
+        return;
+    };
+    for cluster in clusters.values_mut().filter_map(|c| c.as_object_mut()) {
+        if let Some(kept) = cluster.remove("agentAccessUnrecognised") {
+            cluster.insert("agentAccess".to_owned(), kept);
+        }
+    }
+}
+
 fn write_atomic(path: &Path, settings: &AppSettings) -> CoreResult<()> {
     let dir = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
         .ok_or_else(|| CoreError::other(format!("invalid settings path: {}", path.display())))?;
     std::fs::create_dir_all(dir)?;
-    let json = serde_json::to_vec_pretty(settings)?;
+    let mut value = serde_json::to_value(settings)?;
+    restore_unrecognised_access(&mut value);
+    let json = serde_json::to_vec_pretty(&value)?;
     let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
     tmp.write_all(&json)?;
     tmp.as_file().sync_all()?;
@@ -917,5 +1020,202 @@ mod tests {
         assert_eq!(store.status().backup_path, None);
         assert_eq!(store.get().theme, Theme::Dark);
         assert!(store.get().extensions.is_empty());
+    }
+    #[cfg(unix)]
+    #[test]
+    fn a_directory_that_cannot_be_written_is_reported_before_anything_is_saved() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let config = dir.path().join("config");
+        std::fs::create_dir(&config).unwrap();
+        let path = config.join("settings.json");
+        let text = r#"{ "theme": "dark" }"#;
+        std::fs::write(&path, text).unwrap();
+        std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o555)).unwrap();
+        let restore = || {
+            std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o755)).unwrap();
+        };
+        if std::fs::File::create(config.join("probe")).is_ok() {
+            restore();
+            eprintln!("skipped: running as a user that ignores directory permissions (root)");
+            return;
+        }
+
+        let store = SettingsStore::open(path.clone());
+        let status = store.status();
+        assert!(!status.writable, "{status:?}");
+        let error = status.error.expect("the reason is reported");
+        assert_eq!(error.code, ErrorCode::Forbidden);
+        assert!(
+            error.message.contains(&config.display().to_string()),
+            "names the directory: {error}"
+        );
+        assert_eq!(store.get().theme, Theme::Dark);
+
+        // The session works in memory; the file is untouched.
+        store.update(|s| s.theme = Theme::Light).unwrap();
+        assert_eq!(store.get().theme, Theme::Light);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+
+        restore();
+        // The probe leaves nothing behind in a directory it could write to.
+        assert!(SettingsStore::open(path).status().writable);
+        let names: Vec<_> = std::fs::read_dir(&config)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        assert_eq!(names, vec!["settings.json".to_owned()]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_missing_file_in_a_directory_that_cannot_be_written_is_not_writable() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o555)).unwrap();
+        let restore = || {
+            std::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o755)).unwrap();
+        };
+        if std::fs::File::create(dir.path().join("probe")).is_ok() {
+            restore();
+            eprintln!("skipped: running as a user that ignores directory permissions (root)");
+            return;
+        }
+        let store = SettingsStore::open(dir.path().join("settings.json"));
+        let status = store.status();
+        restore();
+        assert!(!status.writable, "{status:?}");
+        assert!(status.error.is_some());
+    }
+
+    /// An `agentAccess` this version cannot read: a field it does not know could narrow a rule.
+    fn unrecognised_access() -> serde_json::Value {
+        serde_json::json!({
+            "preset": "custom",
+            "rules": [{
+                "namespaces": { "type": "only", "namespaces": ["prod"] },
+                "kinds": { "type": "all" },
+                "actions": ["read"],
+                "confirm": true,
+                "expires": "2027-01-01"
+            }]
+        })
+    }
+
+    fn file_json(path: &Path) -> serde_json::Value {
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn unrecognised_agent_access_acts_as_off_and_is_written_back_unchanged() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        let original = unrecognised_access();
+        std::fs::write(
+            &path,
+            serde_json::json!({ "theme": "dark", "clusters": { "c1": { "displayName": "prod", "agentAccess": original } } })
+                .to_string(),
+        )
+        .unwrap();
+
+        let store = SettingsStore::open(path.clone());
+        let c1 = store.get().clusters["c1"].clone();
+        assert_eq!(c1.agent_access, ClusterAccess::default(), "closed");
+        assert_eq!(c1.agent_access_unrecognised.as_ref(), Some(&original));
+
+        // Any other settings write keeps the value as found, under its own key and without extra keys.
+        store.update(|s| s.theme = Theme::Light).unwrap();
+        let written = file_json(&path);
+        assert_eq!(written["clusters"]["c1"]["agentAccess"], original);
+        assert!(
+            written["clusters"]["c1"]
+                .get("agentAccessUnrecognised")
+                .is_none()
+        );
+        assert_eq!(written["clusters"]["c1"]["displayName"], "prod");
+
+        // And it survives another start, still closed.
+        let reopened = SettingsStore::open(path).get().clusters["c1"].clone();
+        assert_eq!(reopened.agent_access, ClusterAccess::default());
+        assert_eq!(reopened.agent_access_unrecognised.as_ref(), Some(&original));
+    }
+
+    #[test]
+    fn the_frontend_gets_the_unrecognised_value_beside_a_closed_access_and_sends_it_back() {
+        let original = unrecognised_access();
+        let c1: ClusterSettings =
+            serde_json::from_value(serde_json::json!({ "agentAccess": original })).unwrap();
+        let to_frontend = serde_json::to_value(&c1).unwrap();
+        assert_eq!(
+            to_frontend["agentAccess"],
+            serde_json::json!({ "preset": "off", "rules": [] })
+        );
+        assert_eq!(to_frontend["agentAccessUnrecognised"], original);
+
+        // A copy that went through the frontend (and came back unchanged) is the same.
+        let back: ClusterSettings = serde_json::from_value(to_frontend).unwrap();
+        assert_eq!(back, c1);
+
+        // Whatever `agentAccess` says next to a kept value, nothing is allowed: it never widens.
+        let both: ClusterSettings = serde_json::from_value(serde_json::json!({
+            "agentAccess": { "preset": "full", "rules": [] },
+            "agentAccessUnrecognised": original
+        }))
+        .unwrap();
+        assert_eq!(both.agent_access, ClusterAccess::default());
+        assert_eq!(both.agent_access_unrecognised.as_ref(), Some(&original));
+    }
+
+    #[test]
+    fn choosing_access_after_an_unrecognised_value_replaces_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(
+            &path,
+            serde_json::json!({ "clusters": { "c1": { "agentAccess": unrecognised_access() } } })
+                .to_string(),
+        )
+        .unwrap();
+        let store = SettingsStore::open(path.clone());
+        // What the frontend sends after "Reset to Off" or choosing a set: `agentAccess` only.
+        let chosen: ClusterSettings = serde_json::from_value(serde_json::json!({
+            "agentAccess": { "preset": "readOnly", "rules": [] }
+        }))
+        .unwrap();
+        assert_eq!(chosen.agent_access_unrecognised, None);
+        store
+            .update(|s| {
+                s.clusters.insert("c1".to_owned(), chosen);
+            })
+            .unwrap();
+        assert_eq!(
+            file_json(&path)["clusters"]["c1"]["agentAccess"],
+            serde_json::json!({ "preset": "readOnly", "rules": [] })
+        );
+        assert_eq!(
+            SettingsStore::open(path).get().clusters["c1"]
+                .agent_access
+                .preset,
+            crate::access::AccessPreset::ReadOnly
+        );
+    }
+
+    #[test]
+    fn readable_agent_access_is_stored_as_before() {
+        let c1: ClusterSettings = serde_json::from_value(serde_json::json!({
+            "agentAccess": { "preset": "readWrite", "rules": [] }
+        }))
+        .unwrap();
+        assert_eq!(
+            c1.agent_access.preset,
+            crate::access::AccessPreset::ReadWrite
+        );
+        assert_eq!(c1.agent_access_unrecognised, None);
+        assert!(
+            serde_json::to_value(&c1)
+                .unwrap()
+                .get("agentAccessUnrecognised")
+                .is_none()
+        );
     }
 }

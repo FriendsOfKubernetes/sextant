@@ -203,21 +203,26 @@ impl Default for ClusterAccessRepr {
     }
 }
 
-impl<'de> Deserialize<'de> for ClusterAccess {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let value = serde_json::Value::deserialize(deserializer)?;
-        let Ok(ClusterAccessRepr { preset, rules }) =
-            serde_json::from_value::<ClusterAccessRepr>(value.clone())
-        else {
-            return Ok(ClusterAccess::default());
-        };
+impl ClusterAccess {
+    /// Reads `value` exactly: `None` when anything in it is not understood — a preset or action this version does not
+    /// know, or a field it would drop (an unknown field could narrow a rule, so a value that loses one is rejected).
+    pub fn parse_strict(value: &serde_json::Value) -> Option<ClusterAccess> {
+        let ClusterAccessRepr { preset, rules } =
+            serde_json::from_value::<ClusterAccessRepr>(value.clone()).ok()?;
         let access = ClusterAccess { preset, rules };
         // serde drops unknown fields (and `deny_unknown_fields` misses extra fields of a tagged unit variant such as
         // `{"type":"all", …}`): every field read must survive writing the result back, or access stays closed.
-        match serde_json::to_value(&access) {
-            Ok(written) if only_known_fields(&value, &written) => Ok(access),
-            _ => Ok(ClusterAccess::default()),
-        }
+        let written = serde_json::to_value(&access).ok()?;
+        only_known_fields(value, &written).then_some(access)
+    }
+}
+
+impl<'de> Deserialize<'de> for ClusterAccess {
+    /// Never fails on content: what [`ClusterAccess::parse_strict`] rejects reads as the default (Off). Callers that
+    /// must not lose the original (the settings file) read the value first and call `parse_strict` themselves.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Ok(ClusterAccess::parse_strict(&value).unwrap_or_default())
     }
 }
 

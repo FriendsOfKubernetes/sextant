@@ -6,7 +6,8 @@ import type { CoreError } from "./CoreError";
  */
 export type SettingsStatus = { 
 /**
- * `false` when changes are not written (the file could not be read or is read-only); they last for the session.
+ * `false` when changes are not written (the file could not be read, is read-only, or a test write next to it
+ * failed, e.g. a directory owned by root); they last for the session. `error` says why.
  */
 writable: boolean, 
 /**
