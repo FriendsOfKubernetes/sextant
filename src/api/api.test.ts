@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ObjectRef } from "./generated/ObjectRef";
 import { api, ApiError, events, mockBackend, type MockBackend } from "./index";
 
@@ -130,6 +130,30 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["settings_status", () => api.settings.status(), undefined],
   ["file_save", () => api.files.save("/tmp/x.log", "text"), { path: "/tmp/x.log", contents: "text" }],
   ["access_preset_rules", () => api.access.presetRules("readOnly"), { preset: "readOnly" }],
+  ["extensions_list", () => api.extensions.list(), undefined],
+  ["extension_inspect_file", () => api.extensions.inspectFile("/tmp/x.sextant-ext"), { path: "/tmp/x.sextant-ext" }],
+  [
+    "extension_inspect_url",
+    () => api.extensions.inspectUrl("https://github.com/o/r/releases/download/v1/x.sextant-ext"),
+    { url: "https://github.com/o/r/releases/download/v1/x.sextant-ext" },
+  ],
+  ["extension_inspect_folder", () => api.extensions.inspectFolder("/src/ext"), { path: "/src/ext" }],
+  ["extension_install", () => api.extensions.install("tok-1"), { token: "tok-1" }],
+  ["extension_set_enabled", () => api.extensions.setEnabled("demo.ext", false), { id: "demo.ext", enabled: false }],
+  ["extension_remove", () => api.extensions.remove("demo.ext"), { id: "demo.ext" }],
+  ["extension_reload", () => api.extensions.reload("demo.ext"), { id: "demo.ext" }],
+  [
+    "extension_call",
+    () => api.extensions.call("demo.ext", "resources.watch", { clusterId: "c1" }, "s-1"),
+    { extensionId: "demo.ext", method: "resources.watch", params: { clusterId: "c1" }, streamId: "s-1" },
+  ],
+  [
+    "extension_watch_stop",
+    () => api.extensions.watchStop("demo.ext", "s-1"),
+    { extensionId: "demo.ext", streamId: "s-1" },
+  ],
+  ["extension_audit_list", () => api.extensions.auditList("demo.ext"), { extensionId: "demo.ext" }],
+  ["extension_audit_clear", () => api.extensions.auditClear(), undefined],
 ];
 
 let backend: MockBackend | undefined;
@@ -145,7 +169,7 @@ describe("src/api commands", () => {
   it("covers every command of the contract", () => {
     const covered = new Set(cases.map(([cmd]) => cmd));
     covered.add("settings_update"); // checked below with a real settings object
-    expect(covered.size).toBe(65);
+    expect(covered.size).toBe(77);
   });
 
   it("settings_update sends the whole settings object", async () => {
@@ -217,5 +241,32 @@ describe("src/api events", () => {
     for (const name of ["cluster-state", "logs:l1", "term:t1", "portforwards"]) {
       expect(backend.listenerCount(name)).toBe(1);
     }
+  });
+
+  it("uses the extension event names", async () => {
+    backend = mockBackend();
+    const changed = vi.fn();
+    const files: unknown[] = [];
+    await events.onExtensionsChanged(changed);
+    await events.onExtensionFilesChanged((p) => files.push(p));
+    await events.onExtWatch("s1", () => {});
+    await events.onExtAudit(() => {});
+    for (const name of ["extensions-changed", "extension-files-changed", "ext-watch:s1", "ext-audit"]) {
+      expect(backend.listenerCount(name)).toBe(1);
+    }
+    backend.emit("extensions-changed", null);
+    backend.emit("extension-files-changed", { id: "demo.ext" });
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(files).toEqual([{ id: "demo.ext" }]);
+  });
+});
+
+describe("mock backend", () => {
+  it("lists no extensions by default and passes the folder option to the open dialog", async () => {
+    const asked: unknown[] = [];
+    backend = mockBackend({}, { openFile: (o) => (asked.push(o), "/src/ext") });
+    expect(await api.extensions.list()).toEqual([]);
+    expect(await api.dialog.openFile({ directory: true })).toBe("/src/ext");
+    expect(asked).toEqual([{ directory: true }]);
   });
 });

@@ -1,7 +1,9 @@
 // Sections of the details panel. Features add blocks (metadata, events, metrics, port forwarding, …)
-// by registering them; the panel shows every section whose `appliesTo(kind)` is true, by `order`.
+// by registering them; the panel shows every section whose `appliesTo(kind)` is true, by `order`. A section placed as
+// a tab (`placement: "tab"`, extensions) gets a tab of its own next to "Overview", which holds all the other sections.
 import { useEffect, useState, type ComponentType } from "react";
 import { api, toApiError, type ApiError, type ClusterId, type KindRef, type KubeObject, type ObjectRef } from "../../api";
+import { createRegistryVersion } from "../registryVersion";
 
 export interface DetailsSectionProps {
   clusterId: ClusterId;
@@ -15,16 +17,27 @@ export interface DetailsSectionDef {
   order: number;
   appliesTo: (kind: KindRef) => boolean;
   Component: ComponentType<DetailsSectionProps>;
+  /** `section` (default): stacked with the others; `tab`: a tab of its own, filling the panel. */
+  placement?: "section" | "tab";
+  /** Title as shown (the tab's label); a `section` draws its own heading. */
+  label?: string;
 }
 
 const sections = new Map<string, DetailsSectionDef>();
+const version = createRegistryVersion();
 
 export function registerDetailsSection(def: DetailsSectionDef): void {
   sections.set(def.id, def);
+  version.bump();
 }
 
 export function unregisterDetailsSection(id: string): void {
-  sections.delete(id);
+  if (sections.delete(id)) version.bump();
+}
+
+/** Re-renders the caller when sections are registered or removed. */
+export function useDetailsSectionsVersion(): number {
+  return version.use();
 }
 
 export function getDetailsSections(kind: KindRef): DetailsSectionDef[] {

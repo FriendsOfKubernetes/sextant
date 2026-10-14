@@ -1,8 +1,10 @@
-// Dock tabs and dock header buttons are registered by features, not listed in the dock.
+// Dock tabs and dock header buttons are registered by features, not listed in the dock. The dock re-renders when
+// they change (`useDockVersion`).
 import type { ComponentType } from "react";
 import type { ClusterId } from "../../api";
 import type { DockTab, DockTabType } from "../../app/store";
 import type { IconName } from "../../components/icons";
+import { createRegistryVersion } from "../registryVersion";
 
 export interface DockTabProps {
   tab: DockTab;
@@ -11,10 +13,12 @@ export interface DockTabProps {
 }
 
 const tabComponents = new Map<DockTabType, ComponentType<DockTabProps>>();
+const version = createRegistryVersion();
 
 /** The component that renders every dock tab of `type` (e.g. "logs" → the log viewer). */
 export function registerDockTab(type: DockTabType, Component: ComponentType<DockTabProps>): void {
   tabComponents.set(type, Component);
+  version.bump();
 }
 
 export function getDockTabComponent(type: DockTabType): ComponentType<DockTabProps> | undefined {
@@ -22,7 +26,7 @@ export function getDockTabComponent(type: DockTabType): ComponentType<DockTabPro
 }
 
 export function unregisterDockTab(type: DockTabType): void {
-  tabComponents.delete(type);
+  if (tabComponents.delete(type)) version.bump();
 }
 
 export interface DockActionContext {
@@ -34,7 +38,9 @@ export interface DockActionDef {
   id: string;
   order: number;
   /** i18n key of the button label / tooltip. */
-  labelKey: string;
+  labelKey?: string;
+  /** The label as shown (an extension's title), when there is no i18n key. */
+  label?: string;
   /** Icon shown on the button instead of the label (an `IconName` of the set such as "add"), if any. */
   icon?: IconName;
   /** Hidden when it returns false (e.g. a terminal needs an active cluster). */
@@ -46,6 +52,7 @@ const actions = new Map<string, DockActionDef>();
 
 export function registerDockAction(def: DockActionDef): void {
   actions.set(def.id, def);
+  version.bump();
 }
 
 export function getDockActions(): DockActionDef[] {
@@ -53,5 +60,10 @@ export function getDockActions(): DockActionDef[] {
 }
 
 export function unregisterDockAction(id: string): void {
-  actions.delete(id);
+  if (actions.delete(id)) version.bump();
+}
+
+/** Re-renders the caller when dock tabs or buttons are registered or removed. */
+export function useDockVersion(): number {
+  return version.use();
 }

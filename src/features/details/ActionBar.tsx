@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { ClusterId, KindRef, KubeObject } from "../../api";
 import { Button } from "../../components";
 import { useResourceDef } from "../../resources";
-import { getActionsFor, runAction, useActionsVersion, type ActionDef } from "../actions/registry";
+import { actionLabel, getActionsFor, runAction, useActionsVersion, type ActionDef } from "../actions/registry";
 
 function variantOf(action: ActionDef): "danger" | "default" {
   return action.danger ? "danger" : "default";
@@ -26,7 +26,7 @@ export function ActionBar({ clusterId, kind, obj }: { clusterId: ClusterId; kind
           icon={action.icon}
           onClick={() => void runAction(action, clusterId, kind, [obj])}
         >
-          {t(action.labelKey)}
+          {actionLabel(action, t)}
         </Button>
       ))}
     </div>

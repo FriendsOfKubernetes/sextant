@@ -184,6 +184,32 @@
   padding: 8px 16px 16px;
 }
 
+/* With extension tabs: "Overview" and the tabs over the body, which fills the rest of the panel. */
+.details__tabs {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.details__tabs > .tabs__list {
+  padding: 0 16px;
+}
+
+.details__tabs > .tabs__panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+}
+
+.details__body--tab {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
 .details__loading {
   padding: 16px 0;
   color: var(--color-text-muted);

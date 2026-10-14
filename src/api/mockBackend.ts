@@ -16,7 +16,7 @@ export interface MockCall {
 export interface MockBackendOptions {
   /** Initial settings served by the default `settings_get` / `settings_update` handlers. */
   settings?: Partial<AppSettings>;
-  /** Result of the "open file" dialog. */
+  /** Result of the "open file" dialog (`options.directory` when a folder is asked for). */
   openFile?: (options: OpenFileOptions) => string | null;
   /** Result of the "save file" dialog. */
   saveFile?: (options: SaveFileOptions) => string | null;
@@ -61,7 +61,7 @@ export const UPDATER_COMMANDS = {
 /**
  * Installs a mock backend. Commands without a handler reject like the backend stubs do
  * (`{ code: "other", message: "not implemented" }`); a handler that throws rejects with the thrown value.
- * `settings_get` / `settings_update` work out of the box on an in-memory copy.
+ * `settings_get` / `settings_update` work out of the box on an in-memory copy, and `extensions_list` answers `[]`.
  *
  * Stream ids come from the frontend (`streamId` of `*_start`). A `*_start` handler may still answer with a name of
  * its own for the stream (`"watch-1"`); `emit` and `listenerCount` then accept that name in place of the id.
@@ -87,6 +87,8 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   };
 
   table.set(UPDATER_COMMANDS.relaunch, () => undefined);
+  // The window asks for the installed extensions on start; none unless a test says otherwise.
+  table.set("extensions_list", () => []);
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);

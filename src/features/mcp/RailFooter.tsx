@@ -1,13 +1,11 @@
-// The bottom of the cluster rail (slot "railFooter"): the Settings button, then the agent activity button (visible
-// while the MCP server is on, with a dot for ten seconds after each call of an agent), and the window-wide dialogs of
-// this feature: the confirmation of what an agent asks to do and the activity log.
+// The agent part of the bottom of the cluster rail (slot "railFooter", after the Settings button of features/settings):
+// the agent activity button (visible while the MCP server is on, with a dot for ten seconds after each call of an
+// agent) and the activity log it opens. The confirmation dialog is the window's (`ConfirmHost` in `AppShell`).
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { events, useSettings } from "../../api";
 import { Icon } from "../../components";
-import { SettingsButton } from "../settings";
 import { ActivityDialog } from "./ActivityDialog";
-import { ConfirmHost } from "./ConfirmHost";
 import "./mcp.css";
 import { useMcpUi } from "./store";
 
@@ -19,9 +17,7 @@ export function McpRailFooter() {
   const close = useMcpUi((s) => s.closeActivity);
   return (
     <>
-      <SettingsButton />
       <ActivityButton />
-      <ConfirmHost />
       <ActivityDialog open={open} onClose={close} />
     </>
   );

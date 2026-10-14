@@ -23,7 +23,13 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { useTranslation } from "react-i18next";
 import { uidOf, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { getActionsFor, runAction, useActionsVersion, type RegisteredAction } from "../../features/actions/registry";
+import {
+  actionLabel,
+  getActionsFor,
+  runAction,
+  useActionsVersion,
+  type RegisteredAction,
+} from "../../features/actions/registry";
 import { refOf } from "../../resources/refs";
 import { useResourceDef, type ActionId, type CellContext, type ColumnDef } from "../../resources/registry";
 import { Badge } from "../Badge";
@@ -493,7 +499,7 @@ function ActionMenu({
             <span className="rt-menu__icon" aria-hidden>
               {renderIcon(action.icon)}
             </span>
-            {t(action.labelKey)}
+            {actionLabel(action, t)}
           </button>
         ))
       )}

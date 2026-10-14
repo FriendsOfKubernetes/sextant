@@ -1,10 +1,13 @@
 // AI agents (MCP): the Settings section (`McpPanel`, mounted by features/settings), the confirmation dialog for what
-// an agent asks to do, and the agent activity log with its button in the cluster rail. The rail footer is a single
-// slot, so this feature takes it over and draws the Settings button inside its own footer.
+// an agent or an extension asks to do (`ConfirmHost`, mounted once by `AppShell`), and the agent activity log with its
+// button in the cluster rail, after the Settings button.
 import { registerSlot } from "../../layout/slots";
 import { McpRailFooter } from "./RailFooter";
 
-registerSlot("railFooter", McpRailFooter);
+/** Position of the activity button in the rail footer (the Settings button is at 0). */
+const RAIL_FOOTER_ORDER = 10;
+
+registerSlot("railFooter", McpRailFooter, RAIL_FOOTER_ORDER);
 
 export { ActivityDialog } from "./ActivityDialog";
 export { ConfirmHost, CONFIRM_TIMEOUT_MS } from "./ConfirmHost";

@@ -1,8 +1,10 @@
-// Sidebar pages that are not a resource table (cluster overview, events, Helm, port forwarding, settings).
-// A feature calls `registerPage` from its `index.ts`; the sidebar and the main view read the registry.
+// Sidebar pages that are not a resource table (cluster overview, events, Helm, port forwarding, settings, pages of
+// extensions). A feature calls `registerPage` from its `index.ts`; the sidebar and the main view read the registry and
+// re-render when it changes (`usePagesVersion`), so pages registered or removed later show up at once.
 import type { ComponentType } from "react";
 import type { ClusterId } from "../api";
 import type { IconName } from "../components";
+import { createRegistryVersion } from "./registryVersion";
 
 export interface PageProps {
   clusterId: ClusterId;
@@ -11,22 +13,28 @@ export interface PageProps {
 export interface PageDef {
   /** Also the `view` value in the store when the page is open. */
   id: string;
-  /** Sidebar section the entry belongs to, e.g. "cluster", "workloads", "network", "helm", "app". */
+  /** Sidebar section the entry belongs to, e.g. "cluster", "workloads", "network", "helm", or a section of its own. */
   section: string;
+  /** Header of a section of its own (not one of Sextant's), as shown; without it the section id is shown. */
+  sectionTitle?: string;
   /** Position inside the section (ascending). */
   order: number;
   /** i18n key of the sidebar label, e.g. "helm:sidebar.releases". */
-  labelKey: string;
+  labelKey?: string;
+  /** The label as shown (an extension's title), when there is no i18n key. */
+  label?: string;
   /** Icon left of the label in the sidebar; without one the sidebar draws `DEFAULT_ENTRY_ICON`. */
   icon?: IconName;
   Component: ComponentType<PageProps>;
 }
 
 const pages = new Map<string, PageDef>();
+const version = createRegistryVersion();
 
 /** Registers a page; registering the same id again replaces it. */
 export function registerPage(def: PageDef): void {
   pages.set(def.id, def);
+  version.bump();
 }
 
 export function getPage(id: string): PageDef | undefined {
@@ -41,5 +49,10 @@ export function getPages(section?: string): PageDef[] {
 }
 
 export function unregisterPage(id: string): void {
-  pages.delete(id);
+  if (pages.delete(id)) version.bump();
+}
+
+/** Re-renders the caller when pages are registered or removed. */
+export function usePagesVersion(): number {
+  return version.use();
 }

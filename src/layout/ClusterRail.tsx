@@ -2,15 +2,16 @@ import { useTranslation } from "react-i18next";
 import { useAppStore } from "../app/store";
 import logoUrl from "../assets/sextant.svg";
 import { Icon } from "../components";
-import { getSlot } from "./slots";
+import { getSlot, useSlotsVersion } from "./slots";
 
 /**
  * Leftmost column: app logo, the cluster list (filled by features/clusters via the "clusterRail" slot) and, at the
  * bottom, the button that expands the rail (icons with names) or folds it back to icons, above the "railFooter" slot
- * (the Settings button). The view is `useAppStore().railExpanded`, saved in `settings.window.railExpanded`.
+ * (the Settings button, the agent activity button). The view is `useAppStore().railExpanded`, saved in `settings.window.railExpanded`.
  */
 export function ClusterRail() {
   const { t } = useTranslation();
+  useSlotsVersion();
   const Content = getSlot("clusterRail");
   const Footer = getSlot("railFooter");
   const expanded = useAppStore((s) => s.railExpanded);

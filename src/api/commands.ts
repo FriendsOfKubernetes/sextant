@@ -21,6 +21,7 @@ import type { ClusterInfo } from "./generated/ClusterInfo";
 import type { ConnectionState } from "./generated/ConnectionState";
 import type { DrainOptions } from "./generated/DrainOptions";
 import type { DrainPreview } from "./generated/DrainPreview";
+import type { ExtensionInfo } from "./generated/ExtensionInfo";
 import type { ForwardInfo } from "./generated/ForwardInfo";
 import type { ForwardTarget } from "./generated/ForwardTarget";
 import type { HelmRelease } from "./generated/HelmRelease";
@@ -35,6 +36,7 @@ import type { MetricsStatus } from "./generated/MetricsStatus";
 import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
 import type { PatchType } from "./generated/PatchType";
+import type { PendingInstall } from "./generated/PendingInstall";
 import type { PodUsage } from "./generated/PodUsage";
 import type { ResourceKind } from "./generated/ResourceKind";
 import type { Series } from "./generated/Series";
@@ -257,4 +259,37 @@ export const mcp = {
   confirmAnswer: (id: string, approved: boolean) => call<void>("mcp_confirm_answer", { id, approved }),
   /** Path of the running Sextant executable, for the Claude Desktop snippet. */
   binaryPath: () => call<string>("mcp_binary_path"),
+};
+
+/**
+ * Installed extensions (`ExtensionInfo`), installing one after the user's consent, and the API their frames call.
+ * Installing is two steps: `inspect*` checks a package and keeps it for 10 minutes under a token; `install(token)` is
+ * the consent click. Changes of the list come as `events.onExtensionsChanged`.
+ */
+export const extensions = {
+  list: () => call<ExtensionInfo[]>("extensions_list"),
+  /** Checks a `.sextant-ext` / `.zip` file; installs nothing. */
+  inspectFile: (path: string) => call<PendingInstall>("extension_inspect_file", { path }),
+  /** Downloads a GitHub release asset (`https://github.com/…/releases/download/…`) and checks it. */
+  inspectUrl: (url: string) => call<PendingInstall>("extension_inspect_url", { url }),
+  /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
+  inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
+  /** The user's consent to what `PendingInstall.manifest` asks for: installs it and grants its permissions. */
+  install: (token: string) => call<ExtensionInfo>("extension_install", { token }),
+  setEnabled: (id: string, enabled: boolean) => call<ExtensionInfo>("extension_set_enabled", { id, enabled }),
+  /** Removes the extension, its files and its `storage` data. */
+  remove: (id: string) => call<void>("extension_remove", { id }),
+  /** Reads the manifest and the files again (development mode). */
+  reload: (id: string) => call<ExtensionInfo>("extension_reload", { id }),
+  /**
+   * One API method for an extension's frame (src/extensions/protocol.ts), checked in the backend against what the
+   * user granted. `streamId` is needed by `resources.watch`: its updates come as `events.onExtWatch(streamId, …)`.
+   */
+  call: (extensionId: string, method: string, params?: unknown, streamId?: string) =>
+    call<unknown>("extension_call", { extensionId, method, params, streamId }),
+  /** Stops a `resources.watch` stream of the extension; an ended one is not an error. */
+  watchStop: (extensionId: string, streamId: string) => call<void>("extension_watch_stop", { extensionId, streamId }),
+  /** Calls of extensions, newest first; one extension's only when `extensionId` is given. */
+  auditList: (extensionId: string | null = null) => call<AuditEntry[]>("extension_audit_list", { extensionId }),
+  auditClear: () => call<void>("extension_audit_clear"),
 };

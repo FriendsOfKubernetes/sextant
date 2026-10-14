@@ -14,13 +14,19 @@
 import { useMemo, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import type { ClusterId, KindRef, KubeObject, ResourceKind } from "../api";
 import type { IconName } from "../components";
+import { i18n } from "../i18n";
 import { genericResourceDef } from "./generic";
 import { kindKey } from "./refs";
 
 export { kindFromApiVersion, kindKey, parseViewId, refOf, viewIdOf } from "./refs";
 
-/** Actions a row can offer. Implementations are registered in src/features/actions/registry.ts. */
-export type ActionId =
+/**
+ * Actions a row can offer. Implementations are registered in src/features/actions/registry.ts. An extension's action
+ * is `ext:<extensionId>:<id>` (src/extensions), offered for kinds through `extendActions`.
+ */
+export type ActionId = BuiltInActionId | `ext:${string}`;
+
+export type BuiltInActionId =
   | "edit"
   | "delete"
   | "scale"
@@ -71,6 +77,10 @@ export interface ColumnDef {
   /** Placement when added through `extendColumns`: right after / before the column with this id. */
   after?: string;
   before?: string;
+  /** Placement after the column with this header as shown (extensions name columns by their titles). */
+  afterTitle?: string;
+  /** Where it goes when the column it should follow is not there: at the end (default: before "age"). */
+  fallback?: "end" | "beforeAge";
 }
 
 /**
@@ -147,7 +157,9 @@ export interface ResourceDef {
 }
 
 const defs = new Map<string, ResourceDef>();
+// Additions by kind, keyed ignoring case (`extensionKey`): kinds in extension manifests are compared ignoring case.
 const extensions = new Map<string, Map<string, ColumnDef[]>>();
+const extraActions = new Map<string, Map<string, ActionId[]>>();
 let version = 0;
 const listeners = new Set<() => void>();
 
@@ -174,7 +186,7 @@ let extensionCounter = 0;
  * `after`/`before`, otherwise before "age". Returns a function that removes them again.
  */
 export function extendColumns(kind: Pick<KindRef, "group" | "kind">, columns: ColumnDef[]): () => void {
-  const key = kindKey(kind);
+  const key = extensionKey(kind);
   const token = `ext-${++extensionCounter}`;
   const byKind = extensions.get(key) ?? new Map<string, ColumnDef[]>();
   byKind.set(token, columns);
@@ -184,6 +196,26 @@ export function extendColumns(kind: Pick<KindRef, "group" | "kind">, columns: Co
     extensions.get(key)?.delete(token);
     changed();
   };
+}
+
+/**
+ * Offers more actions (registered with `registerAction`) for a kind, after its own `ResourceDef.actions`, in the table's
+ * row menu and the details panel. The kind is matched ignoring case. Returns a function that removes them again.
+ */
+export function extendActions(kind: Pick<KindRef, "group" | "kind">, ids: readonly ActionId[]): () => void {
+  const key = extensionKey(kind);
+  const token = `ext-${++extensionCounter}`;
+  const byKind = extraActions.get(key) ?? new Map<string, ActionId[]>();
+  byKind.set(token, [...ids]);
+  extraActions.set(key, byKind);
+  changed();
+  return () => {
+    if (extraActions.get(key)?.delete(token)) changed();
+  };
+}
+
+function extensionKey(kind: Pick<KindRef, "group" | "kind">): string {
+  return kindKey(kind).toLowerCase();
 }
 
 /** The registered description of a kind (without column extensions), if any. */
@@ -205,9 +237,16 @@ export function getResourceDef(kind: KindRef, resourceKind?: ResourceKind | null
   const base: ResourceDef = registered
     ? { ...registered, kind: { ...registered.kind, version: kind.version || registered.kind.version } }
     : genericResourceDef(kind, resourceKind ?? null);
-  const extra = extensions.get(kindKey(kind));
-  if (!extra || extra.size === 0) return base;
-  return { ...base, columns: placeColumns(base.columns, [...extra.values()].flat()) };
+  const key = extensionKey(kind);
+  const extra = extensions.get(key);
+  const actions = extraActions.get(key);
+  let def = base;
+  if (extra && extra.size > 0) def = { ...def, columns: placeColumns(base.columns, [...extra.values()].flat()) };
+  if (actions && actions.size > 0) {
+    const added = [...actions.values()].flat().filter((id) => !base.actions.includes(id));
+    def = { ...def, actions: [...base.actions, ...new Set(added)] };
+  }
+  return def;
 }
 
 function placeColumns(columns: ColumnDef[], added: ColumnDef[]): ColumnDef[] {
@@ -220,15 +259,24 @@ function placeColumns(columns: ColumnDef[], added: ColumnDef[]): ColumnDef[] {
       if (at >= 0) index = at + 1;
     } else if (col.before) {
       index = without.findIndex((c) => c.id === col.before);
+    } else if (col.afterTitle) {
+      const wanted = col.afterTitle.toLowerCase();
+      const at = without.findIndex((c) => headerOf(c)?.toLowerCase() === wanted);
+      if (at >= 0) index = at + 1;
     }
     if (index < 0) {
-      const age = without.findIndex((c) => c.id === "age");
+      const age = col.fallback === "end" ? -1 : without.findIndex((c) => c.id === "age");
       index = age >= 0 ? age : without.length;
     }
     without.splice(index, 0, col);
     result.splice(0, result.length, ...without);
   }
   return result;
+}
+
+/** The header of a column as shown. */
+function headerOf(column: ColumnDef): string | undefined {
+  return column.titleKey ? i18n.t(column.titleKey) : column.title;
 }
 
 /** Hook form of `getResourceDef` that re-renders when the registry or column extensions change. */

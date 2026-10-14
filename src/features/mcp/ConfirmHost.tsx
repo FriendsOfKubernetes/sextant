@@ -1,6 +1,7 @@
-// The window-wide dialog for what an AI agent asks to do (`mcp-confirm`). Requests wait in a queue and are shown one
-// at a time. Each one is refused by the backend after 120 s without an answer, so it also leaves the queue here
-// then; nothing runs without a click on "Allow".
+// The window-wide dialog for what an AI agent or an extension asks to do (`mcp-confirm`, `request.source`), mounted
+// once by the window shell (`AppShell`). Requests of both wait in one queue and are shown one at a time, naming who
+// asks (`request.principal`). Each one is refused by the backend after 120 s without an answer, so it also leaves the
+// queue here then; nothing runs without a click on "Allow".
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, events, type ConfirmRequest } from "../../api";
@@ -9,8 +10,13 @@ import "./mcp.css";
 
 /** How long the backend waits for an answer (`confirm.rs`). */
 export const CONFIRM_TIMEOUT_MS = 120_000;
-/** Tools whose confirmation button is drawn as dangerous. */
-const DANGEROUS_TOOLS: ReadonlySet<string> = new Set(["delete_resource", "drain_node", "helm_uninstall"]);
+/** Tools (of agents) and methods (of extensions) whose confirmation button is drawn as dangerous. */
+const DANGEROUS_TOOLS: ReadonlySet<string> = new Set([
+  "delete_resource",
+  "drain_node",
+  "helm_uninstall",
+  "resources.delete",
+]);
 
 interface Pending {
   request: ConfirmRequest;
@@ -67,7 +73,12 @@ export function ConfirmHost() {
   const left = Math.max(0, Math.ceil((first.deadline - now) / 1000));
   const time = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
   const more = queue.length - 1;
-  const action = t(`mcp:tools.${request.tool}`, { defaultValue: request.tool });
+  const extension = request.source === "extension";
+  // Agents call tools (`delete_resource`), extensions methods (`resources.delete`).
+  const action = t(extension ? `mcp:methods.${request.tool}` : `mcp:tools.${request.tool}`, {
+    defaultValue: request.tool,
+  });
+  const who = extension ? request.principal : request.client;
 
   return (
     <div className="dialog-backdrop mcp-confirm" key={request.id}>
@@ -82,15 +93,15 @@ export function ConfirmHost() {
         }}
       >
         <header className="dialog__header">
-          <h2 id="mcp-confirm-title">{t("mcp:confirm.title")}</h2>
+          <h2 id="mcp-confirm-title">{t(extension ? "mcp:confirm.extensionTitle" : "mcp:confirm.title")}</h2>
         </header>
         <div className="dialog__body">
           <p id="mcp-confirm-intro" className="mcp-confirm__intro">
-            {t("mcp:confirm.intro", { client: request.client, cluster: request.clusterName })}
+            {t("mcp:confirm.intro", { client: who, cluster: request.clusterName })}
           </p>
           <dl className="mcp-confirm__facts">
-            <dt>{t("mcp:confirm.client")}</dt>
-            <dd>{request.client}</dd>
+            <dt>{t(extension ? "mcp:confirm.extension" : "mcp:confirm.client")}</dt>
+            <dd>{who}</dd>
             <dt>{t("mcp:confirm.cluster")}</dt>
             <dd>{request.clusterName}</dd>
             <dt>{t("mcp:confirm.action")}</dt>

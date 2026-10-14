@@ -1,6 +1,7 @@
 // The main area of a cluster: the open page (`registerPage`) or the live table of the open kind, with the
 // namespace filter and the search box in the table header. With no section chosen yet it opens the first page of
-// the "cluster" section (the overview), if one is registered.
+// the "cluster" section (the overview), if one is registered; so does a page of an extension that was disabled or
+// removed meanwhile.
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KindRef, ResourceKind } from "../../api";
@@ -16,14 +17,18 @@ import {
   useCrdPrinterColumns,
   useResourceDef,
 } from "../../resources";
-import { getPage, getPages } from "../pages";
+import { getPage, getPages, usePagesVersion } from "../pages";
 import { ActionDialogHost } from "./ActionDialogHost";
 import "./main.css";
 
 export function MainView({ clusterId }: { clusterId: ClusterId }) {
   const { t } = useTranslation();
   const { view } = useClusterView(clusterId);
-  const current = view ?? getPages("cluster")[0]?.id ?? null;
+  usePagesVersion();
+  // Sextant's own first page of the cluster section; never an extension's, whatever its order.
+  const overview = getPages("cluster").find((p) => !p.id.startsWith("ext:"))?.id ?? null;
+  // An extension's page (`ext:<id>:<page>`) that is gone falls back to the overview.
+  const current = view && !(view.startsWith("ext:") && !getPage(view)) ? view : overview;
   const page = current ? getPage(current) : undefined;
   const kind = parseViewId(current);
 

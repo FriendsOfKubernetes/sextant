@@ -1,0 +1,86 @@
+/* Extension frames (ExtensionFrame.tsx): borderless, in the colors of the place they fill. */
+.ext-frame {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color-scheme: normal;
+}
+
+.ext-frame--page {
+  height: 100%;
+  min-height: 320px;
+}
+
+.ext-frame--section,
+.ext-frame--settings {
+  min-height: 48px;
+}
+
+.ext-frame--tab {
+  flex: 1;
+  min-height: 0;
+}
+
+.ext-frame--dock {
+  height: 100%;
+}
+
+.ext-frame--action {
+  width: min(720px, calc(100vw - 64px));
+  height: min(480px, calc(100vh - 160px));
+}
+
+.ext-section__title {
+  margin: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* "Extension failed: … · Reload" in place of the frame. */
+.ext-failed {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  color: var(--color-danger);
+}
+
+.ext-failed__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Notices of `ui.notify`, bottom right above everything but dialogs. */
+.ext-notices {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 32px));
+  z-index: 50;
+  pointer-events: none;
+}
+
+.ext-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  background: var(--color-panel);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-panel);
+  pointer-events: auto;
+}
+
+.ext-notice__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

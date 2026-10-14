@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type MockBackend } from "../api";
 import { resetAppStore, useAppStore } from "../app/store";
 import { AppShell } from "./AppShell";
@@ -44,6 +44,43 @@ describe("AppShell", () => {
       expect(screen.getByRole("main")).toHaveTextContent("no clusters here");
     } finally {
       unregisterSlot("welcome");
+    }
+  });
+
+  it("shows the confirmation dialog of agents and extensions once, outside the cluster rail", async () => {
+    backend.on("mcp_confirm_answer", () => undefined);
+    render(<AppShell />);
+    await vi.waitFor(() => expect(backend.listenerCount("mcp-confirm")).toBe(1));
+    act(() =>
+      backend.emit("mcp-confirm", {
+        id: "r1",
+        source: "extension",
+        principal: "Extension Widgets",
+        client: "demo.widgets",
+        clusterId: "c1",
+        clusterName: "kind-test",
+        tool: "resources.delete",
+        target: "Widget team-a/w1",
+        details: null,
+      }),
+    );
+    const dialog = screen.getByRole("alertdialog", { name: "An extension asks to act" });
+    expect(screen.getByRole("navigation", { name: "Clusters" })).not.toContainElement(dialog);
+  });
+
+  it("draws every component registered for the rail footer, in order", () => {
+    const Second = () => <button>second</button>;
+    const First = () => <button>first</button>;
+    registerSlot("railFooter", Second, 10);
+    registerSlot("railFooter", First);
+    try {
+      render(<AppShell />);
+      const rail = screen.getByRole("navigation", { name: "Clusters" });
+      const names = within(rail).getAllByRole("button").map((b) => b.textContent);
+      expect(names.slice(-2)).toEqual(["first", "second"]);
+    } finally {
+      unregisterSlot("railFooter", First);
+      unregisterSlot("railFooter", Second);
     }
   });
 

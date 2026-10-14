@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
 import { EmptyState, Icon, renderIcon } from "../../components";
-import { getDockActions, getDockTabComponent } from "./registry";
+import { getDockActions, getDockTabComponent, useDockVersion, type DockActionDef } from "./registry";
 
 /**
  * Bottom dock: a header with tabs, registered actions and an open/close toggle; the body shows the active tab.
@@ -12,6 +12,8 @@ export function Dock() {
   const dock = useAppStore((s) => s.dock);
   const activeClusterId = useAppStore((s) => s.activeClusterId);
   const { setActiveDockTab, closeDockTab, toggleDock } = useAppStore.getState();
+  useDockVersion();
+  const labelOf = (action: DockActionDef) => action.label ?? (action.labelKey ? t(action.labelKey) : action.id);
   const ctx = { activeClusterId };
   const actions = getDockActions().filter((a) => a.available?.(ctx) ?? true);
 
@@ -53,11 +55,11 @@ export function Dock() {
               key={action.id}
               type="button"
               className="dock__action"
-              title={t(action.labelKey)}
-              aria-label={t(action.labelKey)}
+              title={labelOf(action)}
+              aria-label={labelOf(action)}
               onClick={() => action.run(ctx)}
             >
-              {action.icon === undefined ? t(action.labelKey) : renderIcon(action.icon)}
+              {action.icon === undefined ? labelOf(action) : renderIcon(action.icon)}
             </button>
           ))}
           <button

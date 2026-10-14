@@ -17,6 +17,7 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import type { ClusterId, KindRef, KubeObject, ObjectRef } from "../../api";
 import type { IconName } from "../../components/icons";
 import type { ActionId } from "../../resources/registry";
+import { i18n } from "../../i18n";
 import { refOf } from "../../resources/refs";
 
 export type { ActionId };
@@ -33,8 +34,13 @@ export interface ActionContext {
 }
 
 export interface ActionDef {
-  /** i18n key of the label, e.g. "actions:delete". */
-  labelKey: string;
+  /** i18n key of the label, e.g. "actions:delete"; Sextant's own actions have one. */
+  labelKey?: string;
+  /**
+   * The label as shown, never translated or interpolated (an extension's title); takes precedence over `labelKey`.
+   * Show labels with `actionLabel`.
+   */
+  label?: string;
   /** Icon of the set (`IconName`) shown before the label. */
   icon: IconName;
   /** Whether the action is offered for `obj` (called for every selected object). */
@@ -104,6 +110,11 @@ function safeApplies(action: ActionDef, obj: KubeObject, kind: KindRef): boolean
   }
 }
 
+/** The label of an action as shown: its literal `label`, else the translation of `labelKey`. */
+export function actionLabel(action: Pick<ActionDef, "label" | "labelKey">, t: (key: string) => string): string {
+  return action.label ?? (action.labelKey ? t(action.labelKey) : "");
+}
+
 /** Starts `action` on `objects`; a thrown error or rejected promise is shown in an error dialog. */
 export async function runAction(
   action: ActionDef,
@@ -146,7 +157,8 @@ export interface ActionDialog {
 /** A failed action, shown by the dialog host with the action's label and the error. */
 export interface ActionFailure {
   id: number;
-  labelKey: string;
+  /** The action's label as shown (`actionLabel` of it). */
+  label: string;
   error: unknown;
   close: () => void;
 }
@@ -180,7 +192,7 @@ function reportActionError(action: ActionDef, error: unknown): void {
     failures = failures.filter((f) => f.id !== id);
     dialogsChanged();
   };
-  failures = [...failures, { id, labelKey: action.labelKey, error, close }];
+  failures = [...failures, { id, label: actionLabel(action, (key) => i18n.t(key)), error, close }];
   dialogsChanged();
 }
 

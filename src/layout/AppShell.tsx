@@ -9,12 +9,15 @@ import {
   useClusterView,
 } from "../app/store";
 import { EmptyState, Icon } from "../components";
+import { ExtensionsHost } from "../extensions/ExtensionsHost";
+// The file, not the feature's index: the shell mounts the dialog, the feature registers the rest.
+import { ConfirmHost } from "../features/mcp/ConfirmHost";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
 import { Dock } from "./dock/Dock";
 import { MainView } from "./main/MainView";
 import { Sidebar } from "./sidebar/Sidebar";
-import { getSlot } from "./slots";
+import { getSlot, useSlotsVersion } from "./slots";
 import { Splitter } from "./Splitter";
 import { useNarrowLayout } from "./useNarrowLayout";
 import "./layout.css";
@@ -25,6 +28,9 @@ import "./layout.css";
  *
  * In a narrow window (up to 768 px) the rail and the sidebar move into a menu opened from a top bar; the details
  * panel and the dock take the full width.
+ *
+ * Window-wide, mounted once: the confirmation dialog for what an AI agent or an extension asks to do (`ConfirmHost`)
+ * and the extension host, which keeps extension contributions registered (`ExtensionsHost`).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -35,6 +41,7 @@ export function AppShell() {
   const dockOpen = useAppStore((s) => s.dock.open);
   const dockHeight = useAppStore((s) => s.dock.height);
   const { setSidebarWidth, setDockHeight } = useAppStore.getState();
+  useSlotsVersion();
   const Welcome = getSlot("welcome");
 
   const sidebar = activeClusterId && (
@@ -101,6 +108,8 @@ export function AppShell() {
         )}
         <Dock />
       </div>
+      <ConfirmHost />
+      <ExtensionsHost />
     </div>
   );
 }

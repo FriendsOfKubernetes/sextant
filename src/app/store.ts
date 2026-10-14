@@ -2,7 +2,8 @@
 import { create } from "zustand";
 import type { ClusterId, ObjectRef, WindowLayout } from "../api";
 
-export type DockTabType = "logs" | "exec" | "terminal" | "create" | "edit";
+/** Built-in tab kinds, and `ext:<extensionId>:<id>` for an extension's dock tab. */
+export type DockTabType = "logs" | "exec" | "terminal" | "create" | "edit" | `ext:${string}`;
 
 export interface DockTab {
   id: string;

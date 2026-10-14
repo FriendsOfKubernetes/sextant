@@ -1,16 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, ObjectRef } from "../../api";
+import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import { useAppStore } from "../../app/store";
-import { ErrorState, Icon } from "../../components";
-import { getDetailsSections, useDetailsObject } from "./registry";
+import { ErrorState, Icon, Tabs } from "../../components";
+import { getDetailsSections, useDetailsObject, useDetailsSectionsVersion, type DetailsSectionDef } from "./registry";
 
-/** Panel that slides in from the right with the registered sections for the selected object. */
+const OVERVIEW = "overview";
+
+/**
+ * Panel that slides in from the right with the registered sections for the selected object. When a section placed as
+ * a tab applies (an extension's), the panel gets a tab strip: "Overview" with the stacked sections, then those tabs.
+ */
 export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; objectRef: ObjectRef }) {
   const { t } = useTranslation();
   const closeDetails = useAppStore((s) => s.closeDetails);
   const { obj, loading, error } = useDetailsObject(clusterId, objectRef);
-  const sections = getDetailsSections(objectRef.kind);
+  useDetailsSectionsVersion();
+  const all = getDetailsSections(objectRef.kind);
+  const sections = all.filter((s) => s.placement !== "tab");
+  const tabs = all.filter((s) => s.placement === "tab");
+  const [tab, setTab] = useState(OVERVIEW);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -20,6 +29,20 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [closeDetails]);
+
+  const state = (
+    <>
+      {error && <ErrorState error={error} />}
+      {loading && !obj && !error && <div className="details__loading">{t("common:details.loading")}</div>}
+    </>
+  );
+  const stacked = sections.map(({ id, Component }) => (
+    <section key={id} className="details__section" data-section={id}>
+      <Component clusterId={clusterId} objectRef={objectRef} obj={obj} />
+    </section>
+  ));
+  // A tab that went away (its extension was disabled) leaves the panel on "Overview".
+  const openTab = tabs.find((s) => s.id === tab);
 
   return (
     <aside className="details" aria-label={t("common:layout.details")}>
@@ -35,15 +58,51 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
           <Icon name="close" />
         </button>
       </header>
-      <div className="details__body">
-        {error && <ErrorState error={error} />}
-        {loading && !obj && !error && <div className="details__loading">{t("common:details.loading")}</div>}
-        {sections.map(({ id, Component }) => (
-          <section key={id} className="details__section" data-section={id}>
-            <Component clusterId={clusterId} objectRef={objectRef} obj={obj} />
-          </section>
-        ))}
-      </div>
+      {tabs.length === 0 ? (
+        <div className="details__body">
+          {state}
+          {stacked}
+        </div>
+      ) : (
+        <Tabs
+          className="details__tabs"
+          label={t("mcp:extensionHost.detailsTabs")}
+          tabs={[
+            { id: OVERVIEW, label: t("mcp:extensionHost.overview") },
+            ...tabs.map((s) => ({ id: s.id, label: s.label ?? s.id })),
+          ]}
+          selected={openTab ? tab : OVERVIEW}
+          onSelect={setTab}
+        >
+          {openTab ? (
+            <TabBody section={openTab} clusterId={clusterId} objectRef={objectRef} obj={obj} />
+          ) : (
+            <div className="details__body">
+              {state}
+              {stacked}
+            </div>
+          )}
+        </Tabs>
+      )}
     </aside>
+  );
+}
+
+function TabBody({
+  section,
+  clusterId,
+  objectRef,
+  obj,
+}: {
+  section: DetailsSectionDef;
+  clusterId: ClusterId;
+  objectRef: ObjectRef;
+  obj: KubeObject | null;
+}) {
+  const { Component } = section;
+  return (
+    <div className="details__body details__body--tab" data-section={section.id}>
+      <Component clusterId={clusterId} objectRef={objectRef} obj={obj} />
+    </div>
   );
 }

@@ -14,6 +14,7 @@ import { getSlot } from "../../layout/slots";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
 import { SETTINGS_PAGE_ID } from "../settings";
+import { ConfirmHost } from "./ConfirmHost";
 import { resetMcpUi } from "./store";
 import "./index";
 
@@ -86,6 +87,10 @@ function renderSettings() {
   const page = getPage(SETTINGS_PAGE_ID);
   if (!page) throw new Error("the settings page is not registered");
   return render(<page.Component clusterId="c1" />);
+}
+
+function renderConfirm() {
+  return render(<ConfirmHost />);
 }
 
 function renderFooter() {
@@ -294,7 +299,7 @@ describe("Settings → AI agents (MCP)", () => {
 describe("Confirmation of what an agent asks to do", () => {
   it("shows who asks, where, what and on what, and sends the answer", async () => {
     setup();
-    renderFooter();
+    renderConfirm();
     await listening("mcp-confirm");
     expect(screen.queryByRole("alertdialog")).toBeNull();
 
@@ -320,7 +325,7 @@ describe("Confirmation of what an agent asks to do", () => {
 
   it("puts Deny first in the focus order and sends a refusal", async () => {
     setup();
-    renderFooter();
+    renderConfirm();
     await listening("mcp-confirm");
     act(() => backend.emit("mcp-confirm", request()));
     const dialog = screen.getByRole("alertdialog");
@@ -332,7 +337,7 @@ describe("Confirmation of what an agent asks to do", () => {
 
   it("treats Escape as a refusal", async () => {
     setup();
-    renderFooter();
+    renderConfirm();
     await listening("mcp-confirm");
     act(() => backend.emit("mcp-confirm", request()));
     fireEvent.keyDown(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Deny" }), { key: "Escape" });
@@ -342,7 +347,7 @@ describe("Confirmation of what an agent asks to do", () => {
 
   it("asks one request at a time, in the order they came", async () => {
     setup();
-    renderFooter();
+    renderConfirm();
     await listening("mcp-confirm");
     act(() => {
       backend.emit("mcp-confirm", request({ id: "a", target: "Deployment team-a/first" }));
@@ -368,7 +373,7 @@ describe("Confirmation of what an agent asks to do", () => {
 
   it("counts down from two minutes and drops a request nobody answered", async () => {
     setup();
-    renderFooter();
+    renderConfirm();
     await listening("mcp-confirm");
     vi.useFakeTimers();
     act(() => backend.emit("mcp-confirm", request()));
@@ -388,7 +393,7 @@ describe("Confirmation of what an agent asks to do", () => {
         throw { code: "notFound", message: "no such request" };
       },
     });
-    renderFooter();
+    renderConfirm();
     await listening("mcp-confirm");
     act(() => backend.emit("mcp-confirm", request()));
     fireEvent.click(screen.getByRole("button", { name: "Allow" }));
@@ -396,9 +401,46 @@ describe("Confirmation of what an agent asks to do", () => {
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
   });
+
+  it("names the extension that asks, with its method, in the same dialog", async () => {
+    setup();
+    renderConfirm();
+    await listening("mcp-confirm");
+    act(() =>
+      backend.emit(
+        "mcp-confirm",
+        request({
+          id: "e1",
+          source: "extension",
+          principal: "Extension Widgets",
+          client: "demo.widgets",
+          tool: "resources.patch",
+          target: "Widget team-a/w1",
+        }),
+      ),
+    );
+    const dialog = screen.getByRole("alertdialog", { name: "An extension asks to act" });
+    expect(within(dialog).getByText("Extension")).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("Extension Widgets wants to do the following in prod-admin.");
+    expect(dialog).toHaveTextContent("Patch a resource");
+    expect(dialog).toHaveTextContent("resources.patch");
+    expect(dialog).not.toHaveTextContent("Agent");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Allow" }));
+    await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(1));
+    expect(calls("mcp_confirm_answer")[0]!.args).toEqual({ id: "e1", approved: true });
+  });
 });
 
 describe("Agent activity", () => {
+  it("sits in the rail footer next to the Settings button, without the confirmation dialog (#47)", async () => {
+    setup();
+    renderFooter();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Agent activity" })).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(backend.listenerCount("mcp-confirm")).toBe(0);
+  });
+
   it("has no button in the rail while the server is off", async () => {
     setup({ enabled: false, port: 47391 });
     renderFooter();

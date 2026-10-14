@@ -5,6 +5,7 @@ export {
   setDetailsObjectSource,
   unregisterDetailsSection,
   useDetailsObject,
+  useDetailsSectionsVersion,
   type DetailsObject,
   type DetailsObjectSource,
   type DetailsSectionDef,
@@ -17,9 +18,18 @@ export {
   registerDockTab,
   unregisterDockAction,
   unregisterDockTab,
+  useDockVersion,
   type DockActionContext,
   type DockActionDef,
   type DockTabProps,
 } from "./dock/registry";
-export { getPage, getPages, registerPage, unregisterPage, type PageDef, type PageProps } from "./pages";
-export { getSlot, registerSlot, unregisterSlot, type SlotName } from "./slots";
+export {
+  getPage,
+  getPages,
+  registerPage,
+  unregisterPage,
+  usePagesVersion,
+  type PageDef,
+  type PageProps,
+} from "./pages";
+export { getSlot, registerSlot, unregisterSlot, useSlotsVersion, type SlotName } from "./slots";

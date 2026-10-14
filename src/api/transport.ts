@@ -22,6 +22,8 @@ export interface OpenFileOptions {
   title?: string;
   filters?: FileFilter[];
   defaultPath?: string;
+  /** Pick a folder instead of a file (`filters` do not apply). */
+  directory?: boolean;
 }
 
 export interface SaveFileOptions {
@@ -53,7 +55,7 @@ export const tauriTransport: Transport = {
   invoke: (cmd, args) => tauriInvoke(cmd, args),
   listen: async (event, handler) => tauriListen(event, (e) => handler(e.payload as never)),
   openFile: async (options) => {
-    const picked = await tauriOpen({ ...options, multiple: false, directory: false });
+    const picked = await tauriOpen({ ...options, multiple: false, directory: options.directory ?? false });
     return typeof picked === "string" ? picked : null;
   },
   saveFile: (options) => tauriSave(options),

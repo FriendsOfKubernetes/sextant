@@ -80,8 +80,10 @@
   },
   "confirm": {
     "title": "An AI agent asks to act",
+    "extensionTitle": "An extension asks to act",
     "intro": "{{client}} wants to do the following in {{cluster}}.",
     "client": "Agent",
+    "extension": "Extension",
     "cluster": "Cluster",
     "action": "Action",
     "target": "Target",
@@ -110,5 +112,22 @@
     "exec_command": "Run a command in a container",
     "port_forward_start": "Open a port forward",
     "port_forward_stop": "Close a port forward"
+  },
+  "methods": {
+    "resources": {
+      "apply": "Apply YAML",
+      "patch": "Patch a resource",
+      "delete": "Delete a resource"
+    }
+  },
+  "extensionHost": {
+    "failed": "Extension failed: {{message}}",
+    "failedUnknown": "the extension stopped with an error",
+    "reload": "Reload",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Overview",
+    "detailsTabs": "Details views",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "Dismiss"
   }
 }

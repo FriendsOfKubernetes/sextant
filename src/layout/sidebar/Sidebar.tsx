@@ -23,7 +23,7 @@ import {
 // Not re-exported from src/resources/index.ts: only the sidebar uses them.
 import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../resources/registry";
 import { watchCrdChanges } from "../../resources/useKinds";
-import { getPages } from "../pages";
+import { getPages, usePagesVersion } from "../pages";
 import "./sidebar.css";
 
 /** Sections shown as one link (their only entry) instead of a collapsible group. */
@@ -40,6 +40,8 @@ interface Entry {
 
 interface Section {
   id: string;
+  /** Header as shown, for a section of its own (an extension's `sectionTitle`). */
+  title?: string;
   entries: Entry[];
   /** Custom resources by API group. */
   groups?: { group: string; entries: Entry[] }[];
@@ -51,11 +53,15 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   const setView = useAppStore((s) => s.setView);
   const setSearch = useAppStore((s) => s.setSearch);
   const registryVersion = useRegistryVersion();
+  const pagesVersion = usePagesVersion();
   const { kinds } = useClusterKinds(clusterId);
   useEffect(() => watchCrdChanges(clusterId), [clusterId]);
 
-  // `registryVersion` re-reads the registries when kinds are registered or extended.
-  const sections = useMemo(() => buildSections(kinds, registryVersion), [kinds, registryVersion]);
+  // The versions re-read the registries when kinds or pages are registered, extended or removed.
+  const sections = useMemo(
+    () => buildSections(kinds, registryVersion + pagesVersion),
+    [kinds, registryVersion, pagesVersion],
+  );
 
   const activeSection = sections.find(
     (s) => s.entries.some((e) => e.id === view) || s.groups?.some((g) => g.entries.some((e) => e.id === view)),
@@ -99,7 +105,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
           return item(only, false, sectionIcon(section.id));
         }
         const sectionOpen = isOpen(section.id);
-        const sectionLabel = t(`resources:sections.${section.id}`, { defaultValue: section.id });
+        const sectionLabel = section.title ?? t(`resources:sections.${section.id}`, { defaultValue: section.id });
         return (
           <li key={section.id} className="sidebar__section">
             <button
@@ -164,7 +170,12 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
     if (kinds ? !findKind(kinds, def.kind) : DISCOVERED_SECTIONS.has(def.sidebar.section)) continue;
     add(def.sidebar.section, { id: viewIdOf(def.kind), order: def.sidebar.order, labelKey: def.sidebar.labelKey, icon: def.sidebar.icon });
   }
-  for (const page of getPages()) add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey, icon: page.icon });
+  // Header of a section of its own: the first `sectionTitle` its pages give.
+  const titles = new Map<string, string>();
+  for (const page of getPages()) {
+    add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey, label: page.label, icon: page.icon });
+    if (page.sectionTitle && !titles.has(page.section)) titles.set(page.section, page.sectionTitle);
+  }
 
   const groups = new Map<string, Entry[]>();
   const addCustom = (group: string, kind: string) => {
@@ -187,7 +198,8 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
     const entries = (bySection.get(id) ?? []).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
     const sectionGroups = id === "customResources" ? crGroups : undefined;
     if (entries.length === 0 && !sectionGroups?.length) continue;
-    sections.push({ id, entries, groups: sectionGroups });
+    const known = (SIDEBAR_SECTIONS as readonly string[]).includes(id) || id === "settings";
+    sections.push({ id, title: known ? undefined : titles.get(id), entries, groups: sectionGroups });
   }
   return sections;
 }

@@ -13,7 +13,7 @@ export function ActionDialogHost() {
         <Fragment key={d.id}>{d.render(d.close)}</Fragment>
       ))}
       {failures.map((f) => (
-        <Dialog key={f.id} open title={t("resources:actions.failed", { action: t(f.labelKey) })} onClose={f.close}>
+        <Dialog key={f.id} open title={t("resources:actions.failed", { action: f.label })} onClose={f.close}>
           <ErrorState error={f.error} />
         </Dialog>
       ))}
