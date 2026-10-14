@@ -1,0 +1,24 @@
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you make?
+      description: Tell us what it is and how it works with Sextant.
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link
+      description: Optional. A repository, blog post, video or demo.
+      placeholder: https://
+    validations:
+      required: false
+  - type: input
+    id: extension
+    attributes:
+      label: Extension repository or release
+      description: Optional. If this is a Sextant extension, link its repository or release.
+      placeholder: https://github.com/<owner>/<repo>
+    validations:
+      required: false

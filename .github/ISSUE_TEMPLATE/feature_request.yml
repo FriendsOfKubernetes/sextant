@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a small, focused improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For bigger ideas and open-ended discussion, please use [Discussions → Ideas](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/ideas) first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+    validations:
+      required: true

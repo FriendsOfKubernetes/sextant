@@ -1,0 +1,39 @@
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve?
+      description: Describe what is hard or impossible today and who runs into it.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed idea
+      description: How should it work? Sketches and examples are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways you solve this today, or other approaches you considered.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Clusters & kubeconfig
+        - Resources & tables
+        - Details & editor
+        - Logs / terminal / port-forward
+        - Helm
+        - Flux / Argo CD
+        - Metrics
+        - MCP server / AI agents
+        - Extensions
+        - Other
+    validations:
+      required: true

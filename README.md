@@ -40,6 +40,14 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Settings](https://github.com/FriendsOfKubernetes/sextant/wiki/Settings) and [Troubleshooting](https://github.com/FriendsOfKubernetes/sextant/wiki/Troubleshooting)
 - [Building from source](https://github.com/FriendsOfKubernetes/sextant/wiki/Building-from-source) and [Development](https://github.com/FriendsOfKubernetes/sextant/wiki/Development)
 
+## Community
+
+Questions, ideas and projects go to [Discussions](https://github.com/FriendsOfKubernetes/sextant/discussions):
+[Q&A](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/q-a) for help,
+[Ideas](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/ideas) for suggestions,
+[Show and tell](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/show-and-tell) for what you built.
+Found a bug? [Open an issue](https://github.com/FriendsOfKubernetes/sextant/issues/new/choose).
+
 ## Roadmap
 
 See the [milestones](https://github.com/FriendsOfKubernetes/sextant/milestones); the plan lives in

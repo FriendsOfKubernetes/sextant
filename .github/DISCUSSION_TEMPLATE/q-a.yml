@@ -1,0 +1,48 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking. Please check the [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki), especially Troubleshooting, first.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+      description: Describe the task or the result you want.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: |
+        What did you try, and what did you see instead? Error messages and screenshots help.
+
+        **Never paste kubeconfigs, tokens, passwords or Secret values.** Remove them before posting.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Sextant version
+      description: Settings → Updates.
+      placeholder: e.g. 0.5.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+    validations:
+      required: true
+  - type: input
+    id: cluster
+    attributes:
+      label: Cluster kind
+      description: Optional. What kind of cluster is this about?
+      placeholder: e.g. kind, EKS, GKE, AKS, on-prem
+    validations:
+      required: false

@@ -1,0 +1,59 @@
+name: Bug report
+description: Something does not work as it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question rather than a bug? Ask in [Discussions → Q&A](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/q-a).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Sextant version
+      description: Settings → Updates.
+      placeholder: e.g. 0.5.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: |
+        Error messages, logs or screenshots, if any.
+
+        **Never paste kubeconfigs, tokens, passwords or Secret values.** Remove them before posting.
+      render: shell
+    validations:
+      required: false
