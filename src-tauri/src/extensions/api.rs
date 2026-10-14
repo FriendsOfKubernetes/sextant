@@ -46,7 +46,8 @@ use tokio::task::AbortHandle;
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, AuditLog, clip};
 use crate::access_guard::confirm::{
-    CONFIRM_TIMEOUT, ConfirmOutcome, ConfirmRequest, ConfirmSource, Confirmations, first_lines,
+    CONFIRM_TIMEOUT, ConfirmOutcome, ConfirmRequest, ConfirmSource, Confirmations,
+    MAX_PENDING_PER_EXTENSION, first_lines,
 };
 use crate::access_guard::{
     CallSummary, ClusterKinds, KindLookup, Requirement, action_name, effective_namespace, now_ms,
@@ -475,7 +476,7 @@ impl ExtensionApi {
         // Disabled, removed or granted anything else since the checks: a change from now on stops the stream
         // (`stop_changed` on `extensions-changed`), one before this is caught here.
         if host.active(extension).map(|e| e.granted) != Some(granted) {
-            self.streams.stop(&id);
+            self.streams.stop_of(extension, &id);
             return Err(CoreError::new(
                 ErrorCode::Denied,
                 format!(
@@ -489,7 +490,7 @@ impl ExtensionApi {
             .await
             .unwrap_or_else(|_| Err(CoreError::other("the watch was stopped before it started")))?;
         if self.streams.generation() != generation {
-            self.streams.stop(&id);
+            self.streams.stop_of(extension, &id);
             return Err(CoreError::other(
                 "the streams were reset while this one was starting",
             ));
@@ -780,12 +781,25 @@ impl<'a> ExtCall<'a> {
         let outcome = self
             .api
             .confirmations
-            .ask(request, |r| api.emit(ApiEvent::Confirm(r.clone())))
+            .ask_at_most(request, MAX_PENDING_PER_EXTENSION, |r| {
+                api.emit(ApiEvent::Confirm(r.clone()))
+            })
             .await;
         let what = if target.is_empty() {
             "the cluster"
         } else {
             &target
+        };
+        let Some(outcome) = outcome else {
+            self.decide(AuditDecision::Denied);
+            return Err(CoreError::new(
+                ErrorCode::Denied,
+                format!(
+                    "Extension {} already has {MAX_PENDING_PER_EXTENSION} requests waiting for the user: {} on \
+                     {what} in cluster {} was not asked and not run.",
+                    self.id, self.method, cluster.name
+                ),
+            ));
         };
         match outcome {
             ConfirmOutcome::Approved => {

@@ -20,9 +20,9 @@ import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
 import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
-// The panel itself, not "../extensions": the feature's index registers a rail footer slot.
+// The panels themselves, not the features' index files: those register UI of their own (features/mcp: the agent
+// activity button in the rail footer), loaded with every feature (`src/app/features.ts`).
 import { ExtensionsPanel } from "../extensions/ExtensionsPanel";
-// Not "../mcp": that feature draws the Settings button in its rail footer, so it imports this page.
 import { McpPanel } from "../mcp/McpPanel";
 import { UpdatesPanel } from "../updates";
 import { languageName } from "./languages";

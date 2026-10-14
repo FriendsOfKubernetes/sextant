@@ -420,7 +420,10 @@ describe("Confirmation of what an agent asks to do", () => {
       ),
     );
     const dialog = screen.getByRole("alertdialog", { name: "An extension asks to act" });
-    expect(within(dialog).getByText("Extension")).toBeInTheDocument();
+    // The facts name it once: the label "Extension", then its name (#96).
+    const label = within(dialog).getByText("Extension", { selector: "dt" });
+    expect(label.nextElementSibling).toHaveTextContent(/^Widgets$/);
+    expect(dialog).not.toHaveTextContent("Extension Extension");
     expect(dialog).toHaveTextContent("Extension Widgets wants to do the following in prod-admin.");
     expect(dialog).toHaveTextContent("Patch a resource");
     expect(dialog).toHaveTextContent("resources.patch");

@@ -162,4 +162,10 @@ pub struct DrainOptions {
     pub force: bool,
     /// Also evict pods with `emptyDir` volumes (their data is lost).
     pub delete_empty_dir_data: bool,
+    /// Never evict node shell pods ([`crate::node_shell::is_node_shell_object`]), whatever the other options: they
+    /// stay on the node and the drain names them. Set only by the backend for agents (MCP); never read from or sent
+    /// to the frontend.
+    #[serde(skip)]
+    #[ts(skip)]
+    pub keep_node_shells: bool,
 }

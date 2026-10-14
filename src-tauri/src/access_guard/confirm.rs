@@ -20,6 +20,10 @@ pub const CONFIRM_TIMEOUT: Duration = Duration::from_secs(120);
 /// Lines of YAML (or another long text) a request shows at most.
 pub const MAX_DETAIL_LINES: usize = 200;
 
+/// Requests of one extension that may wait for the user at once; more are refused without being shown, so an
+/// extension cannot bury the window in dialogs.
+pub const MAX_PENDING_PER_EXTENSION: usize = 4;
+
 /// Who asks for a confirmation (and whose call a journal entry is).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -63,9 +67,16 @@ pub enum ConfirmOutcome {
     TimedOut,
 }
 
+struct Waiting {
+    source: ConfirmSource,
+    client: String,
+    answer: oneshot::Sender<bool>,
+}
+
 #[derive(Default)]
 struct Pending {
-    waiting: HashMap<String, (ConfirmSource, oneshot::Sender<bool>)>,
+    /// By request id: who asks (source, client) and where the answer goes.
+    waiting: HashMap<String, Waiting>,
     /// Sources whose requests are declined at once (the MCP server stopped) until they are opened again.
     closed: HashSet<ConfirmSource>,
 }
@@ -96,18 +107,46 @@ impl Confirmations {
     /// show it in, so the request is declined) and waits for the answer.
     pub async fn ask(
         &self,
-        mut request: ConfirmRequest,
+        request: ConfirmRequest,
         notify: impl FnOnce(&ConfirmRequest) -> bool,
     ) -> ConfirmOutcome {
+        self.ask_at_most(request, usize::MAX, notify)
+            .await
+            .unwrap_or(ConfirmOutcome::Declined)
+    }
+
+    /// [`Confirmations::ask`], unless `most` requests of the same source and client (an extension's id) are waiting
+    /// already: then `None` at once, and nothing is shown.
+    pub async fn ask_at_most(
+        &self,
+        mut request: ConfirmRequest,
+        most: usize,
+        notify: impl FnOnce(&ConfirmRequest) -> bool,
+    ) -> Option<ConfirmOutcome> {
         let id = format!("confirm-{}", self.next_id.fetch_add(1, Ordering::Relaxed));
         request.id = id.clone();
         let (tx, rx) = oneshot::channel();
         {
             let mut pending = self.lock();
             if pending.closed.contains(&request.source) {
-                return ConfirmOutcome::Declined;
+                return Some(ConfirmOutcome::Declined);
             }
-            pending.waiting.insert(id.clone(), (request.source, tx));
+            let same = pending
+                .waiting
+                .values()
+                .filter(|w| w.source == request.source && w.client == request.client)
+                .count();
+            if same >= most {
+                return None;
+            }
+            pending.waiting.insert(
+                id.clone(),
+                Waiting {
+                    source: request.source,
+                    client: request.client.clone(),
+                    answer: tx,
+                },
+            );
         }
         // The call may be dropped while it waits (the agent went away): the request goes with it.
         let _forget = Forget {
@@ -115,25 +154,25 @@ impl Confirmations {
             id: &id,
         };
         if !notify(&request) {
-            return ConfirmOutcome::Declined;
+            return Some(ConfirmOutcome::Declined);
         }
-        match tokio::time::timeout(self.timeout, rx).await {
+        Some(match tokio::time::timeout(self.timeout, rx).await {
             Ok(Ok(true)) => ConfirmOutcome::Approved,
             Ok(Ok(false)) | Ok(Err(_)) => ConfirmOutcome::Declined,
             Err(_) => ConfirmOutcome::TimedOut,
-        }
+        })
     }
 
     /// The user's answer to request `id`; `notFound` when it is no longer waiting (answered, timed out, stopped).
     pub fn answer(&self, id: &str, approved: bool) -> Result<(), CoreError> {
-        let (_, sender) = self.lock().waiting.remove(id).ok_or_else(|| {
+        let waiting = self.lock().waiting.remove(id).ok_or_else(|| {
             CoreError::new(
                 ErrorCode::NotFound,
                 format!("confirmation {id} is no longer waiting"),
             )
         })?;
         // The asking call may have just been dropped; then nobody waits for the answer.
-        let _ = sender.send(approved);
+        let _ = waiting.answer.send(approved);
         Ok(())
     }
 
@@ -159,12 +198,12 @@ impl Confirmations {
         let ids: Vec<String> = pending
             .waiting
             .iter()
-            .filter(|(_, (s, _))| *s == source)
+            .filter(|(_, w)| w.source == source)
             .map(|(id, _)| id.clone())
             .collect();
         for id in ids {
-            if let Some((_, sender)) = pending.waiting.remove(&id) {
-                let _ = sender.send(false);
+            if let Some(waiting) = pending.waiting.remove(&id) {
+                let _ = waiting.answer.send(false);
             }
         }
     }
@@ -334,6 +373,57 @@ mod tests {
         let (later, later_task) = ask_from(&confirmations, extension_request()).await;
         confirmations.answer(&later.id, true).unwrap();
         assert_eq!(later_task.await.unwrap(), ConfirmOutcome::Approved);
+    }
+
+    #[tokio::test]
+    async fn an_extension_has_at_most_four_requests_waiting_and_the_next_is_not_shown() {
+        assert_eq!(MAX_PENDING_PER_EXTENSION, 4);
+        let confirmations = Arc::new(Confirmations::default());
+        let mut waiting = Vec::new();
+        for _ in 0..MAX_PENDING_PER_EXTENSION {
+            waiting.push(ask_from(&confirmations, extension_request()).await);
+        }
+        let fifth = confirmations
+            .ask_at_most(extension_request(), MAX_PENDING_PER_EXTENSION, |_| {
+                panic!("shown")
+            })
+            .await;
+        assert_eq!(fifth, None);
+        assert_eq!(confirmations.pending(), MAX_PENDING_PER_EXTENSION);
+
+        // Another extension, and agents, are asked as before.
+        let gadgets = ConfirmRequest {
+            principal: "Extension Gadgets".into(),
+            client: "gadgets".into(),
+            ..extension_request()
+        };
+        let (other, other_task) = ask_from(&confirmations, gadgets).await;
+        confirmations.answer(&other.id, true).unwrap();
+        assert_eq!(other_task.await.unwrap(), ConfirmOutcome::Approved);
+        let (agent, agent_task) = ask_in_background(&confirmations).await;
+        confirmations.answer(&agent.id, false).unwrap();
+        assert_eq!(agent_task.await.unwrap(), ConfirmOutcome::Declined);
+
+        // One answered: one more may wait.
+        let (first, first_task) = waiting.remove(0);
+        confirmations.answer(&first.id, false).unwrap();
+        assert_eq!(first_task.await.unwrap(), ConfirmOutcome::Declined);
+        let (shown_tx, shown_rx) = oneshot::channel();
+        let c = Arc::clone(&confirmations);
+        let next = tokio::spawn(async move {
+            c.ask_at_most(extension_request(), MAX_PENDING_PER_EXTENSION, move |r| {
+                shown_tx.send(r.clone()).unwrap();
+                true
+            })
+            .await
+        });
+        let shown = shown_rx.await.unwrap();
+        confirmations.answer(&shown.id, true).unwrap();
+        assert_eq!(next.await.unwrap(), Some(ConfirmOutcome::Approved));
+        for (request, task) in waiting {
+            confirmations.answer(&request.id, false).unwrap();
+            assert_eq!(task.await.unwrap(), ConfirmOutcome::Declined);
+        }
     }
 
     #[tokio::test]

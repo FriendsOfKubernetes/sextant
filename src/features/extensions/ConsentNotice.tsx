@@ -1,6 +1,7 @@
 // A notice across the window when an extension that runs from a folder now asks for more than you allowed: it is
-// paused, and "Review permissions" opens the window of consent. Drawn into <body> from the rail footer, so it shows
-// whatever the main area holds (like the settings file banner).
+// paused, and "Review permissions" opens the window of consent. Mounted once by the window shell (`AppShell`), so
+// folding the rail or narrowing the window keeps the notice dismissed and the window open; drawn into <body>, so it
+// shows whatever the main area holds (like the settings file banner).
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Copies the TypeScript types the SDK shares with Sextant from `src/api/generated/` (written by ts-rs from the Rust
-// types) to `sdk/src/generated/`, with everything they import. The SDK is self-contained; `test/types.test.ts` fails
-// when the copies drift from the originals — run `npm run sdk:sync-types` then.
+// types) to `sdk/src/generated/`, with everything they import. The SDK is self-contained; `test/generated.test.ts`
+// fails when the copies drift from the originals — run `npm run sdk:sync-types` then.
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import process from "node:process";

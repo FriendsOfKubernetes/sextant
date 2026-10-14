@@ -1,6 +1,6 @@
 // The manifest: the SDK's validator against the cases Sextant's own check agrees on (test/fixtures/manifest-cases.json),
 // and the SDK's manifest types against the JSON schema Sextant reads (the types themselves are compared with the
-// generated ones in test/types.test.ts, by the compiler).
+// generated ones in test/protocol.test.ts, by the compiler).
 import { describe, expect, it } from "vitest";
 import {
   checkManifestBytes,

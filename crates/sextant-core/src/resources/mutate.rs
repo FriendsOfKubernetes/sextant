@@ -24,6 +24,7 @@ use super::{DrainOptions, DrainPreview, KindRef, ObjectRef, PatchType, PodRef};
 use crate::cluster::{CONNECT_TIMEOUT, ClusterManager};
 use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::kubeconfig::ClusterId;
+use crate::node_shell;
 
 /// Field manager of every change Sextant makes (server-side apply and updates).
 pub const FIELD_MANAGER: &str = "sextant";
@@ -327,7 +328,8 @@ pub async fn drain_preview(
 
 /// Cordon + eviction, like `kubectl drain`: pods of DaemonSets and mirror pods stay; pods without a controller are
 /// evicted only with `options.force` (nothing would recreate them), pods with `emptyDir` volumes only with
-/// `options.delete_empty_dir_data` (the data is lost). The pods are looked at again here, so a pod that appeared
+/// `options.delete_empty_dir_data` (the data is lost); node shell pods are never evicted with
+/// `options.keep_node_shells` (agents). The pods are looked at again here, so a pod that appeared
 /// after the preview is never evicted without the option it needs.
 ///
 /// Every pod is tried, also after one fails. Pods left on the node — refused by the server (e.g. "Cannot evict pod
@@ -796,11 +798,17 @@ struct DrainPod {
     unmanaged: bool,
     /// Has an `emptyDir` volume: its data is gone after an eviction.
     empty_dir: bool,
+    /// A node shell pod (by name or label, [`node_shell::is_node_shell_object`]): kept with
+    /// [`DrainOptions::keep_node_shells`].
+    node_shell: bool,
 }
 
 impl DrainPod {
     /// Why `options` do not allow evicting this pod; empty when they do.
     fn missing_options(&self, options: DrainOptions) -> Vec<&'static str> {
+        if self.node_shell && options.keep_node_shells {
+            return vec!["it is a node shell, never evicted for an agent"];
+        }
         let mut needs = Vec::new();
         if self.unmanaged && !options.force {
             needs.push("it has no controller, evicted only with force");
@@ -841,7 +849,14 @@ fn drain_class(pod: &Pod) -> Option<DrainPod> {
         daemon_set: controller.is_some_and(|o| o.kind == "DaemonSet"),
         unmanaged: controller.is_none(),
         empty_dir,
+        node_shell: is_node_shell(meta),
     })
+}
+
+/// Whether a pod with this metadata is a node shell, by name or by any of its labels.
+fn is_node_shell(meta: &ObjectMeta) -> bool {
+    let metadata = json!({ "name": meta.name, "namespace": meta.namespace, "labels": meta.labels });
+    node_shell::is_node_shell_object(&json!({ "metadata": metadata }))
 }
 
 /// The pods of a node sorted into the lists of [`DrainPreview`]. A pod without a controller that has `emptyDir`
@@ -1047,15 +1062,15 @@ items:
     mod fake {
         use crate::fake_api::{FakeApi, Reply, Request};
 
-        const API_VERSIONS: &str =
+        pub const API_VERSIONS: &str =
             r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
-        const CORE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[
+        pub const CORE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[
             {"name":"pods","singularName":"pod","namespaced":true,"kind":"Pod","verbs":["get","list","watch"]},
             {"name":"nodes","singularName":"node","namespaced":false,"kind":"Node","verbs":["get","list","patch"]},
             {"name":"configmaps","singularName":"configmap","namespaced":true,"kind":"ConfigMap","verbs":["get","patch"]}]}"#;
-        const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[]}"#;
-        const NODE: &str = r#"{"apiVersion":"v1","kind":"Node","metadata":{"name":"n1"},"spec":{"unschedulable":true}}"#;
-        const EVICTED: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Success"}"#;
+        pub const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[]}"#;
+        pub const NODE: &str = r#"{"apiVersion":"v1","kind":"Node","metadata":{"name":"n1"},"spec":{"unschedulable":true}}"#;
+        pub const EVICTED: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Success"}"#;
 
         fn pod_list() -> String {
             let pod = |name: &str| {
@@ -1125,6 +1140,99 @@ items:
         let requests = fake::lines(&api);
         assert!(
             !requests.contains(&"POST /api/v1/namespaces/ns/pods/c/eviction".to_owned()),
+            "{requests:?}"
+        );
+    }
+
+    /// A node `n1` with a node shell pod (by name in `kube-system`), a pod that carries only a node shell label, and an
+    /// ordinary pod without a controller; every eviction succeeds.
+    mod shells {
+        use super::fake::{API_GROUPS, API_VERSIONS, CORE_RESOURCES, EVICTED, NODE};
+        use crate::fake_api::{FakeApi, Reply, Request};
+
+        fn pod_list() -> String {
+            let pod = |namespace: &str, name: &str, labels: &str| {
+                format!(
+                    r#"{{"metadata":{{"name":"{name}","namespace":"{namespace}","uid":"uid-{name}","labels":{{{labels}}}}},"spec":{{"nodeName":"n1","hostNetwork":true,"containers":[]}}}}"#
+                )
+            };
+            format!(
+                r#"{{"apiVersion":"v1","kind":"PodList","metadata":{{"resourceVersion":"1"}},"items":[{},{},{}]}}"#,
+                pod("kube-system", "sextant-node-shell-n1-abcde", ""),
+                pod("ns", "renamed", r#""sextant.dev/owner":"someone""#),
+                pod("ns", "loose", r#""app":"loose""#),
+            )
+        }
+
+        fn answer(req: &Request) -> Reply {
+            match (req.method.as_str(), req.path.as_str()) {
+                ("GET", "/api") => Reply::json(200, API_VERSIONS),
+                ("GET", "/api/v1") => Reply::json(200, CORE_RESOURCES),
+                ("GET", "/apis") => Reply::json(200, API_GROUPS),
+                ("PATCH", "/api/v1/nodes/n1") => Reply::json(200, NODE),
+                ("GET", "/api/v1/pods") => Reply::json(200, pod_list()),
+                ("POST", p) if p.ends_with("/eviction") => Reply::json(201, EVICTED),
+                _ => Reply::not_found(),
+            }
+        }
+
+        pub async fn server() -> FakeApi {
+            FakeApi::start(answer).await
+        }
+    }
+
+    #[tokio::test]
+    async fn a_drain_that_keeps_node_shells_never_evicts_one_and_says_it_was_left() {
+        let api = shells::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let options = DrainOptions {
+            force: true,
+            delete_empty_dir_data: true,
+            keep_node_shells: true,
+        };
+        let err = drain_within(&mgr, &id, "n1", options, TEST_STEP)
+            .await
+            .unwrap_err();
+        assert!(
+            err.message
+                .contains("kube-system/sextant-node-shell-n1-abcde: it is a node shell"),
+            "{err}"
+        );
+        assert!(
+            err.message.contains("ns/renamed: it is a node shell"),
+            "{err}"
+        );
+        assert!(
+            err.message.contains("2 pod(s) could not be evicted"),
+            "{err}"
+        );
+        let requests = fake::lines(&api);
+        assert!(
+            requests.contains(&"POST /api/v1/namespaces/ns/pods/loose/eviction".to_owned()),
+            "{requests:?}"
+        );
+        assert!(
+            requests.iter().all(|r| !r.contains("sextant-node-shell")
+                && r != "POST /api/v1/namespaces/ns/pods/renamed/eviction"),
+            "{requests:?}"
+        );
+
+        // The user's drain (the default options plus force) evicts them as before.
+        let api = shells::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let options = DrainOptions {
+            force: true,
+            ..DrainOptions::default()
+        };
+        drain_within(&mgr, &id, "n1", options, TEST_STEP)
+            .await
+            .unwrap();
+        let requests = fake::lines(&api);
+        assert!(
+            requests.contains(
+                &"POST /api/v1/namespaces/kube-system/pods/sextant-node-shell-n1-abcde/eviction"
+                    .to_owned()
+            ),
             "{requests:?}"
         );
     }

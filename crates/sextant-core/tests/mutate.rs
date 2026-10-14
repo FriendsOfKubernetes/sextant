@@ -705,6 +705,7 @@ async fn cordon_uncordon_and_drain_that_skips_daemon_sets_and_reports_a_budget()
         let force = DrainOptions {
             force: true,
             delete_empty_dir_data: false,
+            keep_node_shells: false,
         };
         let err = resources::drain(&s.mgr, &s.id, &s.node, force)
             .await
@@ -799,6 +800,7 @@ async fn drain_leaves_pods_without_a_controller_or_with_empty_dir_unless_asked()
         let force = DrainOptions {
             force: true,
             delete_empty_dir_data: false,
+            keep_node_shells: false,
         };
         let err = resources::drain(&s.mgr, &s.id, &s.node, force)
             .await
@@ -822,6 +824,7 @@ async fn drain_leaves_pods_without_a_controller_or_with_empty_dir_unless_asked()
         let both = DrainOptions {
             force: true,
             delete_empty_dir_data: true,
+            keep_node_shells: false,
         };
         resources::drain(&s.mgr, &s.id, &s.node, both)
             .await

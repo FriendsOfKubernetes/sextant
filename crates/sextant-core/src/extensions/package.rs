@@ -668,8 +668,7 @@ pub fn install(package: &Package, extensions_dir: &Path) -> CoreResult<Installed
                 contents
             }
         };
-        std::fs::write(&destination, &contents)
-            .map_err(|err| io_error("cannot write", &destination, err))?;
+        write_new(&destination, &contents, &file.path)?;
         bytes += contents.len() as u64;
     }
     let staged = staging.keep();
@@ -698,6 +697,29 @@ pub fn install(package: &Package, extensions_dir: &Path) -> CoreResult<Installed
         files: package.files.len(),
         bytes,
     })
+}
+
+/// Creates `destination` (never opening a file that is there already) and writes `contents`. A file that exists means
+/// two entries of the package are one file on this disk (a file system that folds case or Unicode forms the check by
+/// name did not): refused, rather than one silently overwriting the other.
+fn write_new(destination: &Path, contents: &[u8], name: &str) -> CoreResult<()> {
+    use std::io::Write;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(destination)
+        .map_err(|err| {
+            if err.kind() == std::io::ErrorKind::AlreadyExists {
+                invalid(format!(
+                    "the package is not safe to install: `{name}` is the same file on this disk as another file of \
+                     the package"
+                ))
+            } else {
+                io_error("cannot write", destination, err)
+            }
+        })?;
+    file.write_all(contents)
+        .map_err(|err| io_error("cannot write", destination, err))
 }
 
 /// Deletes every installed version of `id` but `keep`.
@@ -998,6 +1020,40 @@ mod tests {
             let message = invalid_message(inspect_zip(&bytes));
             assert!(message.contains(b), "{a} / {b}: {message}");
         }
+    }
+
+    /// Two entries that are one file on disk (`café.js` composed and decomposed on macOS, which folds them; made
+    /// here as one name twice, as such a disk sees it): the second would overwrite the first, so nothing is installed.
+    #[test]
+    fn two_entries_that_are_one_file_on_disk_are_not_installed() {
+        let m = manifest("hello", "1.0.0", "index.html");
+        let composed = "caf\u{e9}.js";
+        let decomposed = "cafe\u{301}.js";
+        let bytes = zip_of(&[
+            (MANIFEST_FILE, m.as_bytes()),
+            ("index.html", b"x"),
+            (composed, b"1"),
+            (decomposed, b"2"),
+        ]);
+        let mut package = inspect_zip(&bytes).expect("other names on this check");
+        for file in &mut package.files {
+            if file.path == decomposed {
+                file.path = composed.to_owned();
+            }
+        }
+        let data = tempfile::tempdir().unwrap();
+        let extensions = data.path().join("extensions");
+        let err = install(&package, &extensions).expect_err("one file written twice");
+        assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+        assert!(err.message.contains(composed), "{err}");
+        assert!(!extensions.join("hello").join("1.0.0").exists());
+        let left: Vec<_> = std::fs::read_dir(&extensions)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name())
+            .filter(|name| name != "hello")
+            .collect();
+        assert!(left.is_empty(), "{left:?}");
     }
 
     #[test]

@@ -1,6 +1,6 @@
 // The messages between Sextant (the window) and an extension's frame, as the frame sees them. Sextant's side is
-// `src/extensions/protocol.ts` (the source of truth); `test/types.test.ts` and `test/protocol.test.ts` keep this copy
-// equal to it.
+// `src/extensions/protocol.ts` (the source of truth); `test/protocol.test.ts` keeps this copy equal to it (the
+// constants at run time, the types by the compiler).
 import type { ClusterId } from "./generated/ClusterId";
 import type { ErrorCode } from "./generated/ErrorCode";
 import type { ObjectRef } from "./generated/ObjectRef";

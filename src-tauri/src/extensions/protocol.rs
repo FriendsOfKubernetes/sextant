@@ -9,8 +9,9 @@
 //! The handler accepts all three: host `localhost` or `sextant-ext.localhost` means the id is the first path part.
 //! The query and fragment are ignored (the frame reads `?view=…` itself). The path is percent-decoded and then opened
 //! only through [`resolve_package_file`]: exact names inside the extension's folder, no `..`, no dot-files, no links.
-//! A disabled, unknown or paused extension, or any file that cannot be served, is `404`. Every answer carries the
-//! extension CSP (no network), `nosniff` and `no-store`.
+//! A disabled, unknown or paused extension, or any file that cannot be served, is `404`. A file carries the CSP of
+//! its extension ([`extension_csp`]: sources only from its own folder, no network, a sandbox); a `404` or `405`
+//! carries [`ERROR_CSP`]. Every answer has `nosniff` and `no-store`.
 
 use std::path::Path;
 
@@ -23,13 +24,33 @@ use super::ExtensionHost;
 /// The scheme name.
 pub const SCHEME: &str = "sextant-ext";
 
-/// The `Content-Security-Policy` of every extension file (spec story 10): only its own scripts, styles, images and
-/// fonts (inline allowed), no network at all.
-pub const EXTENSION_CSP: &str = "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'";
+/// The `Content-Security-Policy` of a `404` or `405`: nothing loads, nothing runs.
+pub const ERROR_CSP: &str = "default-src 'none'; sandbox";
+
+/// The `Content-Security-Policy` of a file of the extension served from `base` ([`base_url`]), spec story 10: only
+/// its own scripts, styles, images and fonts (inline allowed), no network, no form submission, and a sandbox like the
+/// frame's should the document ever be opened outside it.
+///
+/// The sources name the extension's own folder instead of `'self'`: the frame is sandboxed without
+/// `allow-same-origin`, so its origin is opaque and `'self'` matches nothing (WebKitGTK then blocks the package's own
+/// `<script src>` and stylesheets); and on Windows every extension shares the origin `http://sextant-ext.localhost`,
+/// where the path prefix `/<id>/` is what keeps one extension from loading another's files.
+pub fn extension_csp(base: &str) -> String {
+    format!(
+        "default-src 'none'; script-src {base} 'unsafe-inline'; style-src {base} 'unsafe-inline'; \
+         img-src {base} data:; font-src {base} data:; connect-src 'none'; form-action 'none'; \
+         sandbox allow-scripts allow-forms allow-popups-to-escape-sandbox"
+    )
+}
 
 /// Where the files of `id` are served from, ending with `/`, in this OS's form (see the module docs).
 pub fn base_url(id: &str) -> String {
-    if cfg!(any(windows, target_os = "android")) {
+    base_url_in(id, cfg!(any(windows, target_os = "android")))
+}
+
+/// [`base_url`] in the Windows form (`windows`) or the Linux/macOS one.
+fn base_url_in(id: &str, windows: bool) -> String {
+    if windows {
         format!("http://{SCHEME}.localhost/{id}/")
     } else if is_path_form_host(id) {
         format!("{SCHEME}://localhost/{id}/")
@@ -114,16 +135,16 @@ fn content_type(path: &str) -> &'static str {
     }
 }
 
-fn response(status: StatusCode, content_type: &str, body: Vec<u8>) -> Response<Vec<u8>> {
+fn response(status: StatusCode, content_type: &str, csp: &str, body: Vec<u8>) -> Response<Vec<u8>> {
     Response::builder()
         .status(status)
         .header(header::CONTENT_TYPE, content_type)
-        .header(header::CONTENT_SECURITY_POLICY, EXTENSION_CSP)
+        .header(header::CONTENT_SECURITY_POLICY, csp)
         .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
         .header(header::CACHE_CONTROL, "no-store")
         // The frame is sandboxed without `allow-same-origin`, so its origin is opaque (`null`) and module scripts
         // (`<script type="module">`, fetched in CORS mode) load only with this. Other extensions cannot read the
-        // files anyway: their CSP allows no `connect-src` and only their own scripts.
+        // files anyway: their CSP allows no `connect-src` and only scripts from their own folder.
         .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(body)
         .unwrap_or_else(|_| Response::new(Vec::new()))
@@ -133,6 +154,7 @@ fn not_found() -> Response<Vec<u8>> {
     response(
         StatusCode::NOT_FOUND,
         "text/plain; charset=utf-8",
+        ERROR_CSP,
         b"Not found".to_vec(),
     )
 }
@@ -144,6 +166,7 @@ pub fn serve(host: &ExtensionHost, request: &Request<Vec<u8>>) -> Response<Vec<u
         return response(
             StatusCode::METHOD_NOT_ALLOWED,
             "text/plain; charset=utf-8",
+            ERROR_CSP,
             Vec::new(),
         );
     }
@@ -164,7 +187,8 @@ pub fn serve(host: &ExtensionHost, request: &Request<Vec<u8>>) -> Response<Vec<u
     match read_file(&root, &file) {
         Some(body) => {
             let body = if head { Vec::new() } else { body };
-            response(StatusCode::OK, content_type(&file), body)
+            let csp = extension_csp(&base_url(&id));
+            response(StatusCode::OK, content_type(&file), &csp, body)
         }
         None => not_found(),
     }
@@ -238,7 +262,7 @@ mod tests {
             );
             assert_eq!(
                 header_of(&answer, header::CONTENT_SECURITY_POLICY),
-                "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'"
+                extension_csp(&base_url("widgets"))
             );
             assert_eq!(
                 header_of(&answer, header::X_CONTENT_TYPE_OPTIONS),
@@ -356,6 +380,70 @@ mod tests {
                 .unwrap(),
         );
         assert_eq!(post.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    /// The CSP of each URL form, written out: sources are the extension's own folder, never `'self'`.
+    #[test]
+    fn the_csp_names_the_extensions_own_folder_in_every_url_form() {
+        let csp = |base: &str| {
+            format!(
+                "default-src 'none'; script-src {base} 'unsafe-inline'; style-src {base} 'unsafe-inline'; \
+                 img-src {base} data:; font-src {base} data:; connect-src 'none'; form-action 'none'; \
+                 sandbox allow-scripts allow-forms allow-popups-to-escape-sandbox"
+            )
+        };
+        let forms = [
+            (base_url_in("widgets", false), "sextant-ext://widgets/"),
+            (
+                base_url_in("localhost", false),
+                "sextant-ext://localhost/localhost/",
+            ),
+            (
+                base_url_in("widgets", true),
+                "http://sextant-ext.localhost/widgets/",
+            ),
+            (
+                base_url_in("localhost", true),
+                "http://sextant-ext.localhost/localhost/",
+            ),
+        ];
+        for (base, expected) in forms {
+            assert_eq!(base, expected);
+            let policy = extension_csp(&base);
+            assert_eq!(policy, csp(expected));
+            assert!(!policy.contains("'self'"), "{policy}");
+        }
+    }
+
+    #[test]
+    fn every_answer_carries_the_csp_of_its_extension_and_errors_a_closed_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let host = dev_host(dir.path());
+        for uri in [
+            "sextant-ext://widgets/index.html",
+            "sextant-ext://localhost/widgets/index.html",
+            "http://sextant-ext.localhost/widgets/index.html",
+        ] {
+            let answer = get(&host, uri);
+            assert_eq!(answer.status(), StatusCode::OK, "{uri}");
+            let policy = header_of(&answer, header::CONTENT_SECURITY_POLICY);
+            assert_eq!(policy, extension_csp(&base_url("widgets")), "{uri}");
+            assert!(!policy.contains("'self'"), "{policy}");
+        }
+        let missing = get(&host, "sextant-ext://widgets/missing.js");
+        let post = serve(
+            &host,
+            &Request::post("sextant-ext://widgets/index.html")
+                .body(Vec::new())
+                .unwrap(),
+        );
+        for answer in [missing, post] {
+            assert_ne!(answer.status(), StatusCode::OK);
+            assert_eq!(
+                header_of(&answer, header::CONTENT_SECURITY_POLICY),
+                "default-src 'none'; sandbox"
+            );
+        }
     }
 
     #[test]

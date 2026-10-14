@@ -11,7 +11,7 @@ import {
 } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { ExtensionsHost, resetExtensionsStore, resetNotices } from "../../extensions";
-import { getSlot } from "../../layout/slots";
+import { AppShell } from "../../layout/AppShell";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
 import { SettingsContent } from "../settings";
@@ -543,8 +543,7 @@ describe("an extension paused for new permissions", () => {
     list = [paused()];
     pending = pendingOf({ manifest: withSecrets, source: { type: "folder", path: folder }, replaces: "1.0.0" });
     setup();
-    const Footer = getSlot("railFooter")!;
-    render(<Footer />);
+    render(<AppShell />);
     const notice = await screen.findByRole("alert");
     expect(notice).toHaveTextContent("Widgets asks for more permissions than you allowed and is paused.");
     fireEvent.click(within(notice).getByRole("button", { name: "Review permissions" }));
@@ -552,6 +551,55 @@ describe("an extension paused for new permissions", () => {
     fireEvent.click(within(consent).getByRole("button", { name: "Install" }));
     await waitFor(() => expect(calls("extension_install")).toHaveLength(1));
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  });
+
+  it("is drawn once by the window, so folding the rail or narrowing the window keeps its window and its dismissal", async () => {
+    let width = 1280;
+    const listeners = new Set<() => void>();
+    const original = window.matchMedia;
+    // jsdom has no layout: answer max-width queries from `width`.
+    window.matchMedia = ((query: string) => {
+      const max = /max-width:\s*(\d+)px/.exec(query);
+      return {
+        get matches() {
+          return max ? width <= Number(max[1]) : false;
+        },
+        media: query,
+        addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+        removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+      };
+    }) as unknown as typeof window.matchMedia;
+    const resizeTo = (next: number) => {
+      width = next;
+      act(() => listeners.forEach((fn) => fn()));
+    };
+    try {
+      list = [paused()];
+      pending = pendingOf({ manifest: withSecrets, source: { type: "folder", path: folder }, replaces: "1.0.0" });
+      setup();
+      render(<AppShell />);
+      const rail = screen.getByRole("navigation", { name: "Clusters" });
+      const notice = await screen.findByRole("alert");
+      expect(rail).not.toContainElement(notice);
+
+      fireEvent.click(within(notice).getByRole("button", { name: "Review permissions" }));
+      await loadedConsent("Review the permissions of Widgets");
+      fireEvent.click(screen.getByRole("button", { name: "Expand cluster list" }));
+      resizeTo(400);
+      expect(screen.getByRole("dialog", { name: "Review the permissions of Widgets" })).toBeInTheDocument();
+      expect(calls("extension_inspect_folder")).toHaveLength(1);
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+      expect(screen.queryByRole("dialog")).toBeNull();
+
+      fireEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Dismiss" }));
+      expect(screen.queryByRole("alert")).toBeNull();
+      resizeTo(1280);
+      fireEvent.click(screen.getByRole("button", { name: "Collapse cluster list" }));
+      await act(async () => undefined);
+      expect(screen.queryByRole("alert")).toBeNull();
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it("no notice while every extension is within its permissions, and it can be dismissed", async () => {

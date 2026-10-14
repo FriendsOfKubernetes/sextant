@@ -1312,4 +1312,91 @@ mod tests {
             assert!(schema::validate(&schema, &value).is_err(), "{value}");
         }
     }
+
+    /// The cases the SDK's validator is tested against (`sdk/test/fixtures/manifest-cases.json`, built as
+    /// `sdk/test/cases.ts` builds them): Sextant accepts and refuses the same manifests, with the same `path` and a
+    /// message that contains the case's.
+    #[test]
+    fn the_shared_manifest_cases_are_accepted_and_refused_as_the_sdk_does() {
+        const CASES: &str = include_str!("../../../../sdk/test/fixtures/manifest-cases.json");
+        let cases: Value = serde_json::from_str(CASES).unwrap();
+        /// A JSON pointer's parent segments and its last one (`~1` and `~0` undone).
+        fn split(pointer: &str) -> (Vec<String>, String) {
+            let mut parts: Vec<String> = pointer
+                .split('/')
+                .skip(1)
+                .map(|part| part.replace("~1", "/").replace("~0", "~"))
+                .collect();
+            let last = parts.pop().unwrap_or_else(|| panic!("pointer {pointer:?}"));
+            (parts, last)
+        }
+        fn parent_of<'a>(mut node: &'a mut Value, parents: &[String]) -> &'a mut Value {
+            for part in parents {
+                node = match node {
+                    Value::Array(items) => &mut items[part.parse::<usize>().unwrap()],
+                    other => &mut other[part.as_str()],
+                };
+            }
+            node
+        }
+        let build = |case: &Value| -> Value {
+            let base = case["base"].as_str().unwrap();
+            let mut value = cases["bases"][base].clone();
+            assert!(!value.is_null(), "no base {base}");
+            for (pointer, field) in case["set"].as_object().into_iter().flatten() {
+                let (parents, last) = split(pointer);
+                match parent_of(&mut value, &parents) {
+                    Value::Array(items) => {
+                        let index: usize = last.parse().unwrap();
+                        if index == items.len() {
+                            items.push(field.clone());
+                        } else {
+                            items[index] = field.clone();
+                        }
+                    }
+                    Value::Object(object) => {
+                        object.insert(last, field.clone());
+                    }
+                    other => panic!("{pointer}: the parent is {other}"),
+                }
+            }
+            for pointer in case["remove"].as_array().into_iter().flatten() {
+                let (parents, last) = split(pointer.as_str().unwrap());
+                if let Value::Object(object) = parent_of(&mut value, &parents) {
+                    object.remove(&last);
+                }
+            }
+            value
+        };
+
+        let valid = cases["valid"].as_array().unwrap();
+        let invalid = cases["invalid"].as_array().unwrap();
+        assert!(
+            valid.len() + invalid.len() >= 100,
+            "the fixture lost its cases"
+        );
+        let mut wrong = Vec::new();
+        for case in valid {
+            if let Err(err) = parse(&build(case)) {
+                wrong.push(format!("{}: refused ({err})", case["name"]));
+            }
+        }
+        for case in invalid {
+            let (path, message) = (
+                case["path"].as_str().unwrap(),
+                case["message"].as_str().unwrap(),
+            );
+            match parse(&build(case)) {
+                Ok(_) => wrong.push(format!("{}: accepted", case["name"])),
+                Err(err) if err.path != path || !err.message.contains(message) => {
+                    wrong.push(format!(
+                        "{}: refused as {:?}: {:?}, the case says {path:?}: {message:?}",
+                        case["name"], err.path, err.message
+                    ))
+                }
+                Err(_) => {}
+            }
+        }
+        assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+    }
 }

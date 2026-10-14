@@ -8,6 +8,8 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      // Built extensions (`sdk/scripts/build.mjs`): bundled output, not source.
+      "sdk/**/dist/**",
       "target/**",
       "src-tauri/**",
       "crates/**",

@@ -427,6 +427,59 @@ async fn without_a_window_a_call_that_asks_is_declined() {
 }
 
 #[tokio::test]
+async fn a_fifth_waiting_request_of_an_extension_is_denied_without_a_dialog() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["delete"], true));
+    let seen = Arc::new(Mutex::new(Vec::<ConfirmRequest>::new()));
+    let seen_in = Arc::clone(&seen);
+    // The window shows the requests and leaves them waiting.
+    env.api.set_emitter(Arc::new(move |event| {
+        if let ApiEvent::Confirm(request) = event {
+            seen_in.lock().unwrap().push(request.clone());
+        }
+        true
+    }));
+    let delete = [need(Some("team-a"), "Pod", AccessAction::Delete)];
+    let target = about("Pod team-a/web");
+    let calls: Vec<ExtCall<'_>> = (0..MAX_PENDING_PER_EXTENSION)
+        .map(|_| env.call("widgets", "resources.delete"))
+        .collect();
+    let cluster = calls[0].target("ctx-a").unwrap();
+    let waiting =
+        futures::future::join_all(calls.iter().map(|c| c.check(&cluster, &delete, &target)));
+    let fifth = async {
+        while env.api.confirmations.pending() < MAX_PENDING_PER_EXTENSION {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+        let call = env.call("widgets", "resources.delete");
+        let err = call.check(&cluster, &delete, &target).await.unwrap_err();
+        assert_eq!(call.record().decision, Some(AuditDecision::Denied));
+        assert_eq!(
+            seen.lock().unwrap().len(),
+            MAX_PENDING_PER_EXTENSION,
+            "a dialog was shown"
+        );
+        for request in seen.lock().unwrap().iter() {
+            env.api.confirmations.answer(&request.id, false).unwrap();
+        }
+        err
+    };
+    let (results, err) = tokio::join!(waiting, fifth);
+    assert_eq!(err.code, ErrorCode::Denied);
+    assert_eq!(
+        err.message,
+        "Extension widgets already has 4 requests waiting for the user: resources.delete on Pod team-a/web in \
+         cluster ctx-a was not asked and not run."
+    );
+    assert!(results.iter().all(|r| {
+        r.as_ref()
+            .unwrap_err()
+            .message
+            .starts_with("The user declined")
+    }));
+}
+
+#[tokio::test]
 async fn an_extension_disabled_while_its_dialog_is_open_does_not_run() {
     let env = Env::new();
     env.install("widgets", perms(all_clusters(), &[], &["modify"], true));

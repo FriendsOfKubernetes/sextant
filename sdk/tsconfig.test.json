@@ -1,5 +1,5 @@
 {
-  // Tests (run by Node with jsdom) and the type checks in test/types.test.ts. They load Sextant's host side
+  // Tests (run by Node with jsdom) and the type checks in test/protocol.test.ts. They load Sextant's host side
   // (src/extensions/bridge.ts), so the options match the app's tsconfig.
   "extends": "./tsconfig.json",
   "compilerOptions": {

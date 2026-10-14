@@ -11,6 +11,7 @@ import {
 import { EmptyState, Icon } from "../components";
 import { ExtensionsHost } from "../extensions/ExtensionsHost";
 // The file, not the feature's index: the shell mounts the dialog, the feature registers the rest.
+import { ConsentNotice } from "../features/extensions/ConsentNotice";
 import { ConfirmHost } from "../features/mcp/ConfirmHost";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
@@ -29,8 +30,9 @@ import "./layout.css";
  * In a narrow window (up to 768 px) the rail and the sidebar move into a menu opened from a top bar; the details
  * panel and the dock take the full width.
  *
- * Window-wide, mounted once: the confirmation dialog for what an AI agent or an extension asks to do (`ConfirmHost`)
- * and the extension host, which keeps extension contributions registered (`ExtensionsHost`).
+ * Window-wide, mounted once: the confirmation dialog for what an AI agent or an extension asks to do (`ConfirmHost`),
+ * the notice that an extension is paused for new permissions with its review window (`ConsentNotice`), and the
+ * extension host, which keeps extension contributions registered (`ExtensionsHost`).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -109,6 +111,7 @@ export function AppShell() {
         <Dock />
       </div>
       <ConfirmHost />
+      <ConsentNotice />
       <ExtensionsHost />
     </div>
   );

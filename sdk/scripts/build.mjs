@@ -4,9 +4,8 @@
 // copied as is, and `sextant-extension.json` is checked and copied to the top of the output.
 //
 // The bundled script and styles are then put inside `index.html` (`<script type="module">…</script>`, `<style>`), and
-// small assets become `data:` URLs. An extension's frame is sandboxed without `allow-same-origin`: its origin is
-// opaque, and on Linux (WebKitGTK) the CSP's `'self'` then matches none of the package's files, so a
-// `<script src="…">` or a stylesheet link is blocked while inline code runs. `--no-inline` keeps separate files.
+// small assets become `data:` URLs: one file to serve and nothing to lose on the way. Separate files work too — the
+// extension's CSP allows scripts, styles, images and fonts from its own folder — and `--no-inline` keeps them.
 //
 //   node sdk/scripts/build.mjs <project> [--out <dir>] [--no-inline]      (default <project>/dist)
 //

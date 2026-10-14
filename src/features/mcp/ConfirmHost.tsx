@@ -18,6 +18,18 @@ const DANGEROUS_TOOLS: ReadonlySet<string> = new Set([
   "resources.delete",
 ]);
 
+/** How the backend names an extension that asks (`principal` is `Extension <name>`, `extensions/api.rs`). */
+const EXTENSION_PRINCIPAL_PREFIX = "Extension ";
+
+/** The extension's own name: the facts already label it "Extension". */
+function extensionName(request: ConfirmRequest): string {
+  const { principal } = request;
+  const name = principal.startsWith(EXTENSION_PRINCIPAL_PREFIX)
+    ? principal.slice(EXTENSION_PRINCIPAL_PREFIX.length)
+    : principal;
+  return name.trim() || request.client;
+}
+
 interface Pending {
   request: ConfirmRequest;
   /** When the backend stops waiting. */
@@ -101,7 +113,7 @@ export function ConfirmHost() {
           </p>
           <dl className="mcp-confirm__facts">
             <dt>{t(extension ? "mcp:confirm.extension" : "mcp:confirm.client")}</dt>
-            <dd>{who}</dd>
+            <dd>{extension ? extensionName(request) : who}</dd>
             <dt>{t("mcp:confirm.cluster")}</dt>
             <dd>{request.clusterName}</dd>
             <dt>{t("mcp:confirm.action")}</dt>

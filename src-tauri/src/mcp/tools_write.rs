@@ -18,7 +18,9 @@
 //!
 //! Whatever the rules say, an agent never runs a command in a node shell pod, changes one or deletes one
 //! (`exec_command`, `patch_resource`, `apply_yaml`, `delete_resource`; see [`refuse_named_node_shell`] and
-//! [`refuse_live_node_shell`]): a command there runs on the node itself. A Helm call past its time limit, or whose
+//! [`refuse_live_node_shell`]): a command there runs on the node itself. `drain_node` leaves node shell pods on the
+//! node (`DrainOptions::keep_node_shells`), and `port_forward_start` refuses a pod that is a node shell or uses the
+//! node's network (`spec.hostNetwork`): its ports are the node's own. A Helm call past its time limit, or whose
 //! server stops, has its `helm` killed.
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -102,7 +104,8 @@ pub fn register_write_tools(tools: &mut ToolSet) {
         .add(
             "drain_node",
             "Cordons a node and evicts its pods like `kubectl drain`: DaemonSet and mirror pods stay; pods without a \
-             controller go only with `force`, pods with emptyDir data only with `deleteEmptyDirData`.",
+             controller go only with `force`, pods with emptyDir data only with `deleteEmptyDirData`; Sextant node \
+             shell pods always stay (the result names them).",
             ToolKind::Destructive,
             drain_node,
         )
@@ -652,6 +655,8 @@ async fn drain_node(call: ToolCall, args: DrainArgs) -> ToolResult {
         DrainOptions {
             force: args.force,
             delete_empty_dir_data: args.delete_empty_dir_data,
+            // An agent never evicts a node shell pod (it may not delete one); the drain names it as left.
+            keep_node_shells: true,
         },
     )
     .await?;
@@ -1000,6 +1005,38 @@ async fn refuse_live_node_shell(
     .await
 }
 
+const HOST_NETWORK_REFUSAL: &str = "Sextant does not let agents forward ports of pods that use the node's network (spec.hostNetwork)";
+
+/// After the access check, right before forwarding to a pod: a pod on the node's network (`spec.hostNetwork: true`)
+/// is refused, its ports being the node's own. A pod that cannot be read is refused too (fail closed).
+async fn refuse_host_network(
+    call: &ToolCall,
+    cluster: &ClusterId,
+    pod: &ObjectRef,
+) -> CoreResult<()> {
+    let live = with_timeout(
+        crate::access_guard::NODE_SHELL_READ_TIMEOUT,
+        "reading the pod",
+        resources::get(&call.ctx().clusters, cluster, pod),
+    )
+    .await
+    .map_err(|e| {
+        CoreError::new(
+            e.code,
+            format!(
+                "Sextant could not read {} to make sure it does not use the node's network, so nothing was \
+                 done: {}",
+                describe(pod),
+                e.message
+            ),
+        )
+    })?;
+    if live.pointer("/spec/hostNetwork") == Some(&Value::Bool(true)) {
+        return Err(CoreError::new(ErrorCode::Denied, HOST_NETWORK_REFUSAL));
+    }
+    Ok(())
+}
+
 async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResult {
     if args.remote_port == 0 {
         return Err(invalid("remotePort must be 1–65535").into());
@@ -1007,6 +1044,10 @@ async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResul
     let namespace = required("namespace", &args.namespace)?.to_owned();
     let name = required("name", &args.name)?.to_owned();
     let cluster = call.open(&args.cluster).await?;
+    let pod = match args.target {
+        ForwardKind::Pod => Some(pod_ref(&namespace, &name)?),
+        ForwardKind::Service => None,
+    };
     let (kind, target) = match args.target {
         ForwardKind::Pod => ("Pod", ForwardTarget::Pod { namespace, name }),
         ForwardKind::Service => ("Service", ForwardTarget::Service { namespace, name }),
@@ -1024,6 +1065,9 @@ async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResul
             kind.to_lowercase()
         )),
     );
+    if let Some(pod) = &pod {
+        refuse_named_node_shell(pod, None)?;
+    }
     call.guard
         .check(
             &cluster,
@@ -1035,6 +1079,10 @@ async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResul
             &summary,
         )
         .await?;
+    if let Some(pod) = &pod {
+        refuse_live_node_shell(&call, &cluster.id, pod, false).await?;
+        refuse_host_network(&call, &cluster.id, pod).await?;
+    }
     let ctx = call.ctx();
     let info = ctx
         .forwarder
@@ -2825,6 +2873,66 @@ spec:
             let refused = tool(&state, name, args).await.unwrap_err();
             assert!(refused.contains(REFUSAL), "{name}: {refused}");
         }
+        assert_eq!(window.count(), 0, "a refused call was asked about");
+        remove_namespace(&state, &id, NS).await;
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn an_agent_forwards_no_port_of_a_node_shell_or_a_pod_on_the_node_network() {
+        const NS: &str = "sextant-mcp-forward-node";
+        const NODE_SHELL: &str = "Sextant does not let agents use node shells";
+        const HOST_NETWORK: &str =
+            "Sextant does not let agents forward ports of pods that use the node's network";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        namespace(&state, &id, NS, false).await;
+        let pod_yaml = |name: &str, labels: &str, host_network: bool| {
+            format!(
+                "apiVersion: v1\nkind: Pod\nmetadata:\n  name: {name}\n  namespace: {NS}\n  labels: {{{labels}}}\n\
+                 spec:\n  hostNetwork: {host_network}\n  terminationGracePeriodSeconds: 0\n  containers:\n  \
+                 - name: main\n    image: busybox:stable\n    imagePullPolicy: IfNotPresent\n    \
+                 command: [sleep, \"600\"]\n"
+            )
+        };
+        let yaml = [
+            pod_yaml("shell", "sextant.dev/node-shell: \"true\"", false),
+            pod_yaml("host", "app: host", true),
+        ]
+        .join("---\n");
+        resources::apply_yaml(&state.clusters, &id, &yaml)
+            .await
+            .unwrap();
+        set_rules(
+            &state,
+            &id,
+            vec![rule(
+                &[],
+                &[],
+                &[AccessAction::Read, AccessAction::PortForward],
+                false,
+            )],
+        );
+        let c = id.0.as_str();
+        let forward = |namespace: &str, name: &str| json!({ "cluster": c, "namespace": namespace, "target": "pod", "name": name, "remotePort": 22 });
+        let cases = [
+            (forward(NS, "shell"), NODE_SHELL),
+            // Named like a node shell in kube-system: refused without reading it (there is no such pod).
+            (
+                forward("kube-system", "sextant-node-shell-mcp-test-x"),
+                NODE_SHELL,
+            ),
+            (forward(NS, "host"), HOST_NETWORK),
+        ];
+        for (args, refusal) in cases {
+            let refused = tool(&state, "port_forward_start", args.clone())
+                .await
+                .unwrap_err();
+            assert!(refused.contains(refusal), "{args}: {refused}");
+        }
+        assert!(state.forwarder.list().is_empty());
         assert_eq!(window.count(), 0, "a refused call was asked about");
         remove_namespace(&state, &id, NS).await;
         state.close_all();
