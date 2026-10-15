@@ -2,8 +2,12 @@
 //! `extensions-audit.jsonl`), each the last [`CAPACITY`] calls in memory and in its file in the application data
 //! directory, so they survive a restart. An entry is a summary only — who, tool or method, target, decision, result
 //! code and duration; never secret values, YAML, command output or the token.
+//!
+//! The agents' journal drops its oldest entry when full. The extensions' journal is shared by every extension, so it
+//! evicts fairly (`Eviction::PerExtension`): one extension flooding it with cheap calls pushes out only its own
+//! cheap entries, never another extension's entries nor its own writes and secret reads.
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -82,10 +86,80 @@ pub struct AuditEntry {
     pub duration_ms: u64,
 }
 
-/// The journal. Writes are small appends; the file is rewritten with the last [`CAPACITY`] entries when it has
-/// grown to twice as many lines.
+/// Which entry goes when a journal holds more than [`CAPACITY`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Eviction {
+    /// The oldest entry (the agents' journal).
+    OldestFirst,
+    /// An entry of the extension (`client`) with the most entries — on a tie, the one whose entries began earliest:
+    /// its oldest cheap entry ([`is_cheap`]), or its oldest entry when it has no cheap ones left (the extensions'
+    /// journal).
+    PerExtension,
+}
+
+impl Eviction {
+    /// The extensions' journal is told apart by its file name ([`EXTENSIONS_AUDIT_FILE`]).
+    fn for_path(path: &Path) -> Self {
+        if path.file_name().is_some_and(|n| n == EXTENSIONS_AUDIT_FILE) {
+            Self::PerExtension
+        } else {
+            Self::OldestFirst
+        }
+    }
+
+    /// Drops entries until at most [`CAPACITY`] are left.
+    fn trim(self, entries: &mut VecDeque<AuditEntry>) {
+        while entries.len() > CAPACITY {
+            let index = match self {
+                Self::OldestFirst => 0,
+                Self::PerExtension => victim_per_extension(entries),
+            };
+            entries.remove(index);
+        }
+    }
+}
+
+/// Extension methods whose record is kept as long as the extension has cheap entries to lose instead.
+const KEPT_METHODS: &[&str] = &[
+    "resources.apply",
+    "resources.patch",
+    "resources.delete",
+    "secret.value",
+];
+
+/// A cheap entry of an extension, one it can repeat as often as it likes: a read (`clusters.list`, `kinds`,
+/// `resources.list/get/watch`, `logs.tail`), a call the rules denied, or an unknown method. A write, a delete, a
+/// secret value read ([`KEPT_METHODS`]) and any call the user answered (approved, declined, timed out) are not cheap.
+fn is_cheap(entry: &AuditEntry) -> bool {
+    match entry.decision {
+        AuditDecision::Denied => true,
+        AuditDecision::Approved | AuditDecision::Declined | AuditDecision::TimedOut => false,
+        AuditDecision::Allowed => !KEPT_METHODS.contains(&entry.tool.as_str()),
+    }
+}
+
+/// The index of the entry [`Eviction::PerExtension`] drops; `entries` is not empty.
+fn victim_per_extension(entries: &VecDeque<AuditEntry>) -> usize {
+    // Per extension: (entries, index of its first entry, index of its first cheap entry).
+    let mut per: HashMap<&str, (usize, usize, Option<usize>)> = HashMap::new();
+    for (index, entry) in entries.iter().enumerate() {
+        let slot = per.entry(entry.client.as_str()).or_insert((0, index, None));
+        slot.0 += 1;
+        if slot.2.is_none() && is_cheap(entry) {
+            slot.2 = Some(index);
+        }
+    }
+    per.values()
+        .max_by(|a, b| a.0.cmp(&b.0).then(b.1.cmp(&a.1)))
+        .map(|&(_, first, cheap)| cheap.unwrap_or(first))
+        .unwrap_or(0)
+}
+
+/// The journal. Writes are small appends; the file is rewritten with the kept entries when it has grown to twice
+/// [`CAPACITY`] lines. Reading the file replays the same eviction, so a restart keeps the same entries.
 pub struct AuditLog {
     path: PathBuf,
+    eviction: Eviction,
     inner: Mutex<Inner>,
 }
 
@@ -96,12 +170,14 @@ struct Inner {
 }
 
 impl AuditLog {
-    /// Reads the last [`CAPACITY`] entries of `path`; a missing file is an empty journal, unreadable lines are
-    /// skipped.
+    /// Reads the kept [`CAPACITY`] entries of `path`; a missing file is an empty journal, unreadable lines are
+    /// skipped. A file named [`EXTENSIONS_AUDIT_FILE`] is the extensions' journal and evicts per extension.
     pub fn open(path: PathBuf) -> Self {
-        let (entries, lines_in_file) = read_entries(&path);
+        let eviction = Eviction::for_path(&path);
+        let (entries, lines_in_file) = read_entries(&path, eviction);
         let log = Self {
             path,
+            eviction,
             inner: Mutex::new(Inner {
                 entries,
                 lines_in_file,
@@ -124,14 +200,12 @@ impl AuditLog {
         data_dir.join(EXTENSIONS_AUDIT_FILE)
     }
 
-    /// Adds an entry (the oldest goes when there are [`CAPACITY`]). A file that cannot be written loses the entry
-    /// only on disk.
+    /// Adds an entry (when there are [`CAPACITY`], one goes by the journal's [`Eviction`]). A file that cannot be
+    /// written loses the entry only on disk.
     pub fn record(&self, entry: AuditEntry) {
         let mut inner = self.lock();
         inner.entries.push_back(entry.clone());
-        while inner.entries.len() > CAPACITY {
-            inner.entries.pop_front();
-        }
+        self.eviction.trim(&mut inner.entries);
         if inner.lines_in_file + 1 >= 2 * CAPACITY {
             self.rewrite(&mut inner);
         } else if append_line(&self.path, &entry).is_ok() {
@@ -183,7 +257,7 @@ impl AuditLog {
     }
 }
 
-fn read_entries(path: &Path) -> (VecDeque<AuditEntry>, usize) {
+fn read_entries(path: &Path, eviction: Eviction) -> (VecDeque<AuditEntry>, usize) {
     let mut entries = VecDeque::new();
     let mut lines = 0;
     let Ok(file) = std::fs::File::open(path) else {
@@ -194,9 +268,7 @@ fn read_entries(path: &Path) -> (VecDeque<AuditEntry>, usize) {
         lines += 1;
         if let Ok(entry) = serde_json::from_str::<AuditEntry>(&line) {
             entries.push_back(entry);
-            if entries.len() > CAPACITY {
-                entries.pop_front();
-            }
+            eviction.trim(&mut entries);
         }
     }
     (entries, lines)
@@ -353,6 +425,151 @@ mod tests {
         let good = serde_json::to_string(&entry(1, "c1")).unwrap();
         std::fs::write(&path, format!("not json\n{good}\n{{\"at\":1}}\n")).unwrap();
         assert_eq!(AuditLog::open(path).list(None), vec![entry(1, "c1")]);
+    }
+
+    fn ext_entry(n: u64, extension: &str, method: &str, decision: AuditDecision) -> AuditEntry {
+        AuditEntry {
+            at: 1_700_000_000_000 + n,
+            source: ConfirmSource::Extension,
+            principal: format!("Extension {extension}"),
+            client: extension.into(),
+            cluster_id: Some(ClusterId::from("c1")),
+            cluster_name: Some("c1-name".into()),
+            tool: method.into(),
+            target: format!("Secret team-a/db-{n}"),
+            decision,
+            result: "ok".into(),
+            duration_ms: 3,
+        }
+    }
+
+    fn count(entries: &[AuditEntry], keep: impl Fn(&AuditEntry) -> bool) -> usize {
+        entries.iter().filter(|e| keep(e)).count()
+    }
+
+    #[test]
+    fn a_flooding_extension_pushes_out_only_its_own_cheap_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = AuditLog::extensions_path_in(dir.path());
+        let log = AuditLog::open(path.clone());
+        let allowed = AuditDecision::Allowed;
+        // B's history: reads and writes; A's own secret read, write, delete, approved patch and declined apply.
+        let mut n = 0;
+        for method in [
+            "resources.get",
+            "resources.apply",
+            "resources.delete",
+            "logs.tail",
+        ] {
+            log.record(ext_entry(n, "b", method, allowed));
+            n += 1;
+        }
+        for (method, decision) in [
+            ("secret.value", allowed),
+            ("resources.apply", allowed),
+            ("resources.delete", allowed),
+            ("resources.patch", AuditDecision::Approved),
+            ("resources.apply", AuditDecision::Declined),
+        ] {
+            log.record(ext_entry(n, "a", method, decision));
+            n += 1;
+        }
+        // A floods: cheap reads, denied calls and unknown methods, far over the capacity.
+        for i in 0..(3 * CAPACITY as u64) {
+            let (method, decision) = match i % 3 {
+                0 => ("clusters.list", allowed),
+                1 => ("secret.value", AuditDecision::Denied),
+                _ => ("no.such.method", allowed),
+            };
+            log.record(ext_entry(n, "a", method, decision));
+            n += 1;
+        }
+
+        let check = |kept: &[AuditEntry]| {
+            assert_eq!(kept.len(), CAPACITY);
+            assert_eq!(count(kept, |e| e.client == "b"), 4, "B keeps every entry");
+            let a_important = |method: &str, decision: AuditDecision| {
+                count(kept, |e| {
+                    e.client == "a" && e.tool == method && e.decision == decision
+                })
+            };
+            assert_eq!(
+                a_important("secret.value", allowed),
+                1,
+                "A's secret read stays"
+            );
+            assert_eq!(a_important("resources.apply", allowed), 1);
+            assert_eq!(a_important("resources.delete", allowed), 1);
+            assert_eq!(a_important("resources.patch", AuditDecision::Approved), 1);
+            assert_eq!(a_important("resources.apply", AuditDecision::Declined), 1);
+            assert_eq!(
+                kept[0].at,
+                1_700_000_000_000 + n - 1,
+                "the newest call is kept"
+            );
+        };
+        check(&log.list(None));
+        // The same entries come back after a restart, from a file not yet rewritten and from a rewritten one.
+        check(&AuditLog::open(path.clone()).list(None));
+        check(&AuditLog::open(path).list(None));
+    }
+
+    #[test]
+    fn the_extension_with_the_most_entries_loses_its_oldest_read_first() {
+        let dir = tempfile::tempdir().unwrap();
+        let log = AuditLog::open(AuditLog::extensions_path_in(dir.path()));
+        let allowed = AuditDecision::Allowed;
+        log.record(ext_entry(0, "a", "resources.delete", allowed));
+        log.record(ext_entry(1, "a", "resources.list", allowed));
+        for n in 2..(CAPACITY as u64) {
+            let who = if n % 2 == 0 { "a" } else { "b" };
+            log.record(ext_entry(n, who, "resources.get", allowed));
+        }
+        // Full: A has 1001 entries, B 999. The next call goes over the capacity: A's oldest read (n = 1) goes.
+        log.record(ext_entry(CAPACITY as u64, "b", "resources.get", allowed));
+        let kept = log.list(None);
+        assert_eq!(kept.len(), CAPACITY);
+        assert!(kept.iter().any(|e| e.at % 10_000 == 0), "A's delete stays");
+        assert!(
+            !kept.iter().any(|e| e.at % 10_000 == 1),
+            "A's oldest read goes"
+        );
+        assert_eq!(count(&kept, |e| e.client == "b"), 1_000);
+
+        // A, now at 1000 entries like B, ties with it when a third extension calls; the tie goes to the one whose
+        // entries began earlier (A).
+        log.record(ext_entry(
+            CAPACITY as u64 + 1,
+            "c",
+            "resources.get",
+            allowed,
+        ));
+        let kept = log.list(None);
+        assert_eq!(count(&kept, |e| e.client == "a"), 999);
+        assert_eq!(count(&kept, |e| e.client == "b"), 1_000);
+        assert!(
+            !kept.iter().any(|e| e.at % 10_000 == 2),
+            "A's next oldest read goes"
+        );
+    }
+
+    #[test]
+    fn the_agents_journal_still_drops_the_oldest_entry() {
+        let dir = tempfile::tempdir().unwrap();
+        let log = AuditLog::open(AuditLog::path_in(dir.path()));
+        let mut first = entry(0, "c1");
+        first.tool = "delete_resource".into();
+        log.record(first);
+        for n in 1..=(CAPACITY as u64) {
+            log.record(entry(n, "c1"));
+        }
+        let kept = log.list(None);
+        assert_eq!(kept.len(), CAPACITY);
+        assert_eq!(
+            kept.last().unwrap().at,
+            entry(1, "c1").at,
+            "the oldest entry went"
+        );
     }
 
     #[cfg(unix)]
