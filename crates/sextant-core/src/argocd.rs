@@ -21,7 +21,7 @@ use http::{Method, Request, StatusCode};
 use http_body_util::{BodyExt, Full, Limited};
 use hyper::body::Bytes;
 use hyper_util::rt::TokioIo;
-use k8s_openapi::api::core::v1::{ConfigMap, Secret, Service};
+use k8s_openapi::api::core::v1::{ConfigMap, Namespace, Secret, Service};
 use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
 use kube::Api;
 use kube::api::ListParams;
@@ -244,9 +244,43 @@ pub async fn find_server(
     })
 }
 
-/// The Kubernetes API server URL of `cluster`, from its kubeconfig cluster entry (without a trailing `/`): what a
-/// saved Argo CD login belongs to, so the same API server reached through another context finds the same login and
-/// another server behind a reused context name does not.
+/// The cluster's own identity: the UID of its `kube-system` Namespace. A saved Argo CD login belongs to it (with the
+/// installation namespace), so the same cluster reached through another context or proxy finds the same login, and
+/// two clusters behind one URL (a Teleport proxy, `kubectl proxy` on 127.0.0.1:8001, a reused local tunnel or kind
+/// port) never share one.
+///
+/// `Ok(None)` when it cannot be read — no right to get Namespaces, no `kube-system`, an answer without a well-formed
+/// UID: the caller then keys the login by the kubeconfig entry (source path + context), never by the URL. A server
+/// that cannot be reached or credentials it rejects are an error: nothing is decided from them.
+pub async fn cluster_uid(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<Option<String>> {
+    let api = Api::<Namespace>::all(mgr.client(cluster)?);
+    match api.get(KUBE_SYSTEM).await {
+        Ok(ns) => Ok(ns.metadata.uid.filter(|uid| is_uid(uid))),
+        Err(err) => {
+            let err = kube_error(err, None);
+            match err.code {
+                ErrorCode::Unreachable
+                | ErrorCode::Timeout
+                | ErrorCode::Unauthorized
+                | ErrorCode::AuthPlugin => Err(err),
+                _ => Ok(None),
+            }
+        }
+    }
+}
+
+/// The namespace whose UID identifies a cluster ([`cluster_uid`]).
+const KUBE_SYSTEM: &str = "kube-system";
+
+/// A UID as Kubernetes writes it (a UUID): letters, digits and `-`, at most 64 characters — so whatever the server
+/// answers cannot reshape the keychain entry it becomes part of.
+fn is_uid(uid: &str) -> bool {
+    !uid.is_empty() && uid.len() <= 64 && uid.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
+/// The Kubernetes API server URL of `cluster`, from its kubeconfig cluster entry (without a trailing `/`). Never what
+/// a login is keyed by (one URL can front several clusters): used only to delete the logins an unreleased build saved
+/// under it.
 pub fn api_server_url(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<String> {
     let registry = mgr.registry();
     let clusters = registry
@@ -299,9 +333,9 @@ async fn server_insecure(
 /// 2. Without such a binding (a namespaced installation, or no right to list ClusterRoleBindings) the namespaces
 ///    holding `argocd-cm` or `argocd-initial-admin-secret` are the candidates.
 ///
-/// Out of the namespaces left: `preferred` when it is one of them (the user's choice), else the only one, else
-/// [`DEFAULT_NAMESPACE`] when it is one of them; several others are a `notFound` error beginning with
-/// [`AMBIGUOUS_INSTALLATION`] that names them in parentheses — none is picked. No namespace at all gives
+/// Out of the namespaces left: `preferred` when two or more are left and it is one of them (the user's choice), else
+/// the only one, else [`DEFAULT_NAMESPACE`] when it is one of them; several others are a `notFound` error beginning
+/// with [`AMBIGUOUS_INSTALLATION`] that names them in parentheses — none is picked. No namespace at all gives
 /// [`DEFAULT_NAMESPACE`]. Only names are read (metadata), never a Secret's values.
 async fn installation_namespace(
     client: &kube::Client,
@@ -368,7 +402,10 @@ fn choose_namespace(
     preferred: Option<&str>,
     why: &str,
 ) -> CoreResult<String> {
-    if let Some(chosen) = preferred.filter(|ns| namespaces.contains(*ns)) {
+    // The user's choice only settles between several; with one candidate (or none) the normal result wins.
+    if namespaces.len() >= 2
+        && let Some(chosen) = preferred.filter(|ns| namespaces.contains(*ns))
+    {
         return Ok(chosen.to_owned());
     }
     if namespaces.len() <= 1 || namespaces.contains(DEFAULT_NAMESPACE) {
@@ -1761,6 +1798,141 @@ mod tests {
                 .code,
             ErrorCode::NotFound
         );
+    }
+
+    /// A manager connected to both contexts of one kubeconfig whose two entries name the same server URL with
+    /// different tokens — two clusters behind one proxy.
+    async fn two_entries_behind(
+        url: &str,
+    ) -> (tempfile::TempDir, ClusterManager, ClusterId, ClusterId) {
+        use std::sync::RwLock;
+
+        use crate::kubeconfig::{KubeconfigEnv, KubeconfigRegistry};
+
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("kubeconfig");
+        std::fs::write(
+            &path,
+            format!(
+                "apiVersion: v1\nkind: Config\nclusters:\n- name: proxy\n  cluster:\n    server: {url}\n\
+                 contexts:\n- name: a\n  context:\n    cluster: proxy\n    user: a\n\
+                 - name: b\n  context:\n    cluster: proxy\n    user: b\n\
+                 users:\n- name: a\n  user:\n    token: token-a\n- name: b\n  user:\n    token: token-b\n\
+                 current-context: a\n"
+            ),
+        )
+        .unwrap();
+        let registry =
+            KubeconfigRegistry::new(Vec::new(), tmp.path().join("state")).with_env(KubeconfigEnv {
+                kubeconfig: Some(path.into_os_string()),
+                home: None,
+            });
+        let clusters = registry.clusters().unwrap();
+        let id = |context: &str| {
+            clusters
+                .iter()
+                .find(|c| c.context == context)
+                .unwrap()
+                .id
+                .clone()
+        };
+        let (a, b) = (id("a"), id("b"));
+        let mgr = ClusterManager::new(Arc::new(RwLock::new(registry)));
+        mgr.connect(&a).await.unwrap();
+        mgr.connect(&b).await.unwrap();
+        (tmp, mgr, a, b)
+    }
+
+    #[tokio::test]
+    async fn two_clusters_behind_one_url_have_different_identities() {
+        let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/api/v1/namespaces/kube-system" => {
+                let uid = match req.header("authorization") {
+                    "Bearer token-a" => "11111111-aaaa-4000-8000-000000000001",
+                    "Bearer token-b" => "22222222-bbbb-4000-8000-000000000002",
+                    _ => return Reply::json(401, r#"{"kind":"Status","code":401}"#),
+                };
+                Reply::json(
+                    200,
+                    json!({ "apiVersion": "v1", "kind": "Namespace",
+                        "metadata": { "name": "kube-system", "uid": uid } })
+                    .to_string(),
+                )
+            }
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, a, b) = two_entries_behind(api.url()).await;
+
+        let uid_a = cluster_uid(&mgr, &a).await.unwrap();
+        let uid_b = cluster_uid(&mgr, &b).await.unwrap();
+
+        assert_eq!(
+            api_server_url(&mgr, &a).unwrap(),
+            api_server_url(&mgr, &b).unwrap()
+        );
+        assert_eq!(
+            uid_a.as_deref(),
+            Some("11111111-aaaa-4000-8000-000000000001")
+        );
+        assert_eq!(
+            uid_b.as_deref(),
+            Some("22222222-bbbb-4000-8000-000000000002")
+        );
+    }
+
+    #[tokio::test]
+    async fn a_cluster_without_a_readable_kube_system_has_no_identity_and_a_dead_one_is_an_error() {
+        let identity = |status: u16, body: String| async move {
+            let api = FakeApi::start(move |req: &Request| match req.path.as_str() {
+                "/api" => Reply::json(200, API_VERSIONS),
+                "/api/v1/namespaces/kube-system" => Reply::json(status, body.clone()),
+                _ => Reply::not_found(),
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+            cluster_uid(&mgr, &id).await
+        };
+        let failure = |code: u16, reason: &str| {
+            json!({ "kind": "Status", "apiVersion": "v1", "status": "Failure", "reason": reason, "code": code })
+                .to_string()
+        };
+        let namespace = |uid: &str| {
+            json!({ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "kube-system", "uid": uid } })
+                .to_string()
+        };
+
+        let forbidden = identity(403, failure(403, "Forbidden")).await;
+        let missing = identity(404, failure(404, "NotFound")).await;
+        let odd_uid = identity(200, namespace("x:argocd@y")).await;
+        let rejected = identity(401, failure(401, "Unauthorized")).await;
+
+        assert_eq!(forbidden.unwrap(), None, "no right to read kube-system");
+        assert_eq!(missing.unwrap(), None);
+        assert_eq!(odd_uid.unwrap(), None, "a UID that is not one is not taken");
+        assert_eq!(rejected.unwrap_err().code, ErrorCode::Unauthorized);
+    }
+
+    #[test]
+    fn a_chosen_namespace_settles_only_between_several_candidates() {
+        let set =
+            |names: &[&str]| -> BTreeSet<String> { names.iter().map(|n| n.to_string()).collect() };
+
+        let one = choose_namespace(set(&["gitops"]), Some("argocd"), "").unwrap();
+        let one_chosen = choose_namespace(set(&["gitops"]), Some("gitops"), "").unwrap();
+        let none = choose_namespace(set(&[]), Some("gitops"), "").unwrap();
+        let several = choose_namespace(set(&["argocd", "gitops"]), Some("gitops"), "").unwrap();
+        let several_unchosen = choose_namespace(set(&["argocd", "gitops"]), None, "").unwrap();
+
+        assert_eq!(
+            one, "gitops",
+            "with one candidate the choice changes nothing"
+        );
+        assert_eq!(one_chosen, "gitops");
+        assert_eq!(none, DEFAULT_NAMESPACE);
+        assert_eq!(several, "gitops");
+        assert_eq!(several_unchosen, DEFAULT_NAMESPACE);
     }
 
     #[test]
