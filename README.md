@@ -8,7 +8,7 @@ Sextant is a desktop application for managing Kubernetes clusters — an alterna
 [Tauri 2](https://tauri.app). It reads your kubeconfig, shows the resources of every cluster in live tables and
 lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 
-![Sextant: the pods of a kind cluster](docs/screenshot.png)
+![Sextant: connecting to a cluster, the pods, their details, logs and a shell](docs/demo.gif)
 
 ## Features
 
@@ -22,6 +22,10 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **MCP server for AI agents** — connect Claude Code, Claude Desktop or Cursor to your clusters, with permissions you
   set per cluster, confirmations in the window and an activity log.
 - No account, no server, no telemetry.
+
+An AI agent asks to scale a deployment; Sextant asks you first and records the call:
+
+![An AI agent asks through the MCP server, the user allows it in the window, the call is in the activity log](docs/demo-mcp.gif)
 
 ## Install
 
