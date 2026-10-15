@@ -8,25 +8,36 @@
 //! - `Reconnecting` — the connection was lost; the data on screen stays, a new list follows with growing pauses
 //!   (1 s, 2 s, 4 s, 8 s, then every 15 s) until the API server answers, and then a fresh `Snapshot`;
 //! - `Forbidden` — some of the selected namespaces cannot be listed or watched (no permission), at the start or at
-//!   any later moment (e.g. the right was revoked); they are left out for the rest of the watch and a new
-//!   `Snapshot` without their objects follows, the others keep streaming. Every `Forbidden` names all such
-//!   namespaces so far;
+//!   any later moment (e.g. the right was revoked); they are left out and a new `Snapshot` without their objects
+//!   follows, the others keep streaming. A left-out namespace is checked again after 30 s, then after pauses that
+//!   double up to 5 min: a one-item list and a watch request. Only when both are accepted is it watched again, and
+//!   once its list is in, a `Forbidden` naming the namespaces still left out (maybe none) and a `Snapshot` with its
+//!   objects follow; a refused check changes nothing on screen. Every `Forbidden` names all namespaces left out at
+//!   that moment;
 //! - `Error` — the watch cannot start (no permission to list the kind in any of the namespaces, unknown kind,
 //!   rejected credentials); the stream ends after it.
 //!
 //! With `WatchSpec::metadata_only`, the lists and watches ask the API server for metadata only
 //! (`PartialObjectMetadata`): every object is `apiVersion`, `kind` and `metadata`.
 //!
+//! A whole-object watch of core/v1 Secrets has two sources per namespace: `type!=helm.sh/release.v1` as whole
+//! objects, and `type=helm.sh/release.v1` as metadata only, so the release payloads (often megabytes each) are never
+//! downloaded. A release Secret gets `type` and one empty `release` key, so its row looks as if it were whole. Values
+//! are hidden as everywhere (`get::to_json`).
+//!
 //! The first snapshot is sent as soon as everything is listed (the caller listens before it starts the watch);
 //! after it, at most one update per 250 ms.
 
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use std::time::Duration;
 
-use futures::stream::{AbortHandle, BoxStream, SelectAll};
-use futures::{Stream, StreamExt};
+use futures::future::BoxFuture;
+use futures::stream::{AbortHandle, BoxStream, FuturesUnordered, SelectAll};
+use futures::{Stream, StreamExt, TryStreamExt};
 use kube::Api;
-use kube::api::{ApiResource, DynamicObject, PartialObjectMeta};
+use kube::api::{ApiResource, DynamicObject, ListParams, PartialObjectMeta, WatchParams};
+use kube::core::ObjectList;
 use kube::runtime::watcher;
 use serde_json::Value;
 use tokio::time::{Instant, Interval, MissedTickBehavior};
@@ -43,6 +54,18 @@ pub const BATCH_INTERVAL: Duration = Duration::from_millis(250);
 const FIRST_RETRY_DELAY: Duration = Duration::from_secs(1);
 const MAX_RETRY_DELAY: Duration = Duration::from_secs(15);
 
+/// Pauses before a namespace that answered 403 is listed again: `first`, doubling up to `max`.
+#[derive(Debug, Clone, Copy)]
+struct ForbiddenRetry {
+    first: Duration,
+    max: Duration,
+}
+
+const FORBIDDEN_RETRY: ForbiddenRetry = ForbiddenRetry {
+    first: Duration::from_secs(30),
+    max: Duration::from_secs(5 * 60),
+};
+
 /// Starts watching `spec.kind`. Fails right away when the cluster is not connected (`notFound`) or its discovery
 /// does not list the kind (`notFound`); a built-in kind starts without discovery, so a version the server lacks
 /// arrives as `Error` in the stream, like everything else later (including "forbidden"). Dropping the stream (or
@@ -52,6 +75,16 @@ pub async fn watch(
     cluster: &ClusterId,
     spec: WatchSpec,
 ) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + use<>> {
+    watch_with(mgr, cluster, spec, FORBIDDEN_RETRY).await
+}
+
+/// [`watch`] with its own pauses before a forbidden namespace is tried again (tests make them short).
+async fn watch_with(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    spec: WatchSpec,
+    forbidden_retry: ForbiddenRetry,
+) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + use<>> {
     let client = mgr.client(cluster)?;
     let kind = resolve_kind(mgr, cluster, &spec.kind).await?;
 
@@ -59,74 +92,120 @@ pub async fn watch(
     let mut namespaces: Vec<String> = spec.namespaces.unwrap_or_default();
     namespaces.sort();
     namespaces.dedup();
-    let source = |namespace: Option<String>| Source {
-        api: SourceApi::new(
-            &kind,
-            client.clone(),
-            namespace.as_deref(),
-            spec.metadata_only,
-        ),
-        namespace,
-    };
-    let sources: Vec<Source> = if kind.namespaced && !namespaces.is_empty() {
-        namespaces.into_iter().map(|ns| source(Some(ns))).collect()
+    let namespaces: Vec<Option<String>> = if kind.namespaced && !namespaces.is_empty() {
+        namespaces.into_iter().map(Some).collect()
     } else {
-        vec![source(None)]
+        vec![None]
     };
 
-    let mut config = watcher::Config::default();
-    if let Some(labels) = spec
+    let labels = spec
         .label_selector
         .as_deref()
-        .filter(|s| !s.trim().is_empty())
-    {
-        config = config.labels(labels);
-    }
-    if let Some(fields) = spec
+        .filter(|s| !s.trim().is_empty());
+    let fields = spec
         .field_selector
         .as_deref()
-        .filter(|s| !s.trim().is_empty())
-    {
-        config = config.fields(fields);
+        .filter(|s| !s.trim().is_empty());
+    let config = |fields: Option<&str>| {
+        let mut config = watcher::Config::default();
+        if let Some(labels) = labels {
+            config = config.labels(labels);
+        }
+        if let Some(fields) = fields {
+            config = config.fields(fields);
+        }
+        config
+    };
+    // The caller's field selector and `type<op>helm.sh/release.v1`.
+    let with_type = |op: &str| {
+        let by_type = format!("type{op}{HELM_RELEASE_TYPE}");
+        match fields {
+            Some(fields) => format!("{fields},{by_type}"),
+            None => by_type,
+        }
+    };
+    // Whole Secrets: Helm release payloads (megabytes each, values hidden anyway) are not downloaded.
+    let split_secrets = !spec.metadata_only && is_secret(&kind.resource);
+
+    let mut sources = Vec::new();
+    for namespace in namespaces {
+        let ns = namespace.as_deref();
+        if split_secrets {
+            sources.push(Source {
+                api: SourceApi::Whole(kind.api(client.clone(), ns)),
+                config: config(Some(&with_type("!="))),
+                namespace: namespace.clone(),
+            });
+            sources.push(Source {
+                api: SourceApi::metadata(&kind, client.clone(), ns, true),
+                config: config(Some(&with_type("="))),
+                namespace,
+            });
+        } else if spec.metadata_only {
+            sources.push(Source {
+                api: SourceApi::metadata(&kind, client.clone(), ns, false),
+                config: config(fields),
+                namespace,
+            });
+        } else {
+            sources.push(Source {
+                api: SourceApi::Whole(kind.api(client.clone(), ns)),
+                config: config(fields),
+                namespace,
+            });
+        }
     }
 
-    let state = Batcher::new(sources, config, kind.resource, BATCH_INTERVAL);
+    let state = Batcher::new(sources, kind.resource, BATCH_INTERVAL, forbidden_retry);
     Ok(futures::stream::unfold(state, |mut state| async move {
         let update = state.next_update().await?;
         Some((update, state))
     }))
 }
 
+/// The `type` of the Secrets in which Helm keeps its releases.
+const HELM_RELEASE_TYPE: &str = "helm.sh/release.v1";
+
+/// A core/v1 Secret.
+fn is_secret(resource: &ApiResource) -> bool {
+    resource.group.is_empty() && resource.kind == "Secret"
+}
+
 type Events = BoxStream<'static, (usize, watcher::Result<watcher::Event<DynamicObject>>)>;
 
-/// One watched API: a namespace, or all of them (`namespace: None`).
+/// One watched API: a namespace, or all of them (`namespace: None`), with its selectors. A whole-object Secret
+/// watch has two sources per namespace (see [`watch`]).
 struct Source {
     api: SourceApi,
+    config: watcher::Config,
     namespace: Option<String>,
 }
 
-/// The API of a source: whole objects, or only their metadata (`WatchSpec::metadata_only`).
+/// The API of a source: whole objects, or only their metadata (`WatchSpec::metadata_only`, Helm release Secrets).
 #[derive(Clone)]
 enum SourceApi {
     Whole(Api<DynamicObject>),
-    Metadata(Api<PartialObjectMeta<DynamicObject>>),
+    /// `helm_release`: the objects are Helm release Secrets, and each gets the `type` and the one `release` key
+    /// (empty) such a Secret has, so its row looks like the row of a whole Secret with its values hidden.
+    Metadata {
+        api: Api<PartialObjectMeta<DynamicObject>>,
+        helm_release: bool,
+    },
 }
 
 impl SourceApi {
     /// Like `ResolvedKind::api`: `namespace` is ignored for a cluster-scoped kind.
-    fn new(
+    fn metadata(
         kind: &ResolvedKind,
         client: kube::Client,
         namespace: Option<&str>,
-        metadata_only: bool,
+        helm_release: bool,
     ) -> Self {
-        if !metadata_only {
-            return Self::Whole(kind.api(client, namespace));
-        }
-        Self::Metadata(match namespace {
+        let api = match namespace {
             Some(ns) if kind.namespaced => Api::namespaced_with(client, ns, &kind.resource),
             _ => Api::all_with(client, &kind.resource),
-        })
+        };
+        Self::Metadata { api, helm_release }
     }
 
     /// A watcher of this API; metadata-only objects come as `DynamicObject`s without any other field.
@@ -136,24 +215,170 @@ impl SourceApi {
     ) -> BoxStream<'static, watcher::Result<watcher::Event<DynamicObject>>> {
         match self {
             Self::Whole(api) => watcher(api.clone(), config).boxed(),
-            Self::Metadata(api) => watcher(api.clone(), config)
-                .map(|event| event.map(metadata_event))
-                .boxed(),
+            Self::Metadata { api, helm_release } => {
+                let helm_release = *helm_release;
+                let refused = Arc::new((
+                    api.clone(),
+                    config.label_selector.clone(),
+                    config.field_selector.clone(),
+                ));
+                watcher(api.clone(), config)
+                    .then(move |event| {
+                        let refused = Arc::clone(&refused);
+                        async move {
+                            let event = match event {
+                                Err(watcher::Error::WatchFailed(kube::Error::SerdeError(err))) => {
+                                    let (api, labels, fields) = &*refused;
+                                    Err(watcher::Error::WatchFailed(
+                                        refused_metadata_watch(
+                                            api,
+                                            labels.as_deref(),
+                                            fields.as_deref(),
+                                        )
+                                        .await
+                                        .unwrap_or(kube::Error::SerdeError(err)),
+                                    ))
+                                }
+                                other => other,
+                            };
+                            event.map(|event| metadata_event(event, helm_release))
+                        }
+                    })
+                    .boxed()
+            }
         }
     }
 }
 
+impl Source {
+    /// Whether this source may now be listed and watched (see [`may_list_and_watch`]).
+    fn access_check(&self, index: usize) -> BoxFuture<'static, (usize, bool)> {
+        let (url, client) = match &self.api {
+            SourceApi::Whole(api) => (api.resource_url().to_owned(), api.clone().into_client()),
+            SourceApi::Metadata { api, .. } => {
+                (api.resource_url().to_owned(), api.clone().into_client())
+            }
+        };
+        let labels = self.config.label_selector.clone();
+        let fields = self.config.field_selector.clone();
+        Box::pin(async move {
+            let allowed =
+                may_list_and_watch(client, url, labels.as_deref(), fields.as_deref()).await;
+            (index, allowed)
+        })
+    }
+}
+
+/// Whether the objects at `url` may be listed and watched: a one-item metadata list for a `resourceVersion`, then
+/// a metadata watch from it, of which only the answer's status is read. Any failure counts as "not yet".
+async fn may_list_and_watch(
+    client: kube::Client,
+    url: String,
+    labels: Option<&str>,
+    fields: Option<&str>,
+) -> bool {
+    let request = kube::core::Request::new(url);
+    let (mut list, mut watch) = (
+        ListParams::default().limit(1),
+        WatchParams::default().timeout(1),
+    );
+    if let Some(labels) = labels {
+        list = list.labels(labels);
+        watch = watch.labels(labels);
+    }
+    if let Some(fields) = fields {
+        list = list.fields(fields);
+        watch = watch.fields(fields);
+    }
+    let check = async {
+        let listed: ObjectList<PartialObjectMeta<DynamicObject>> = client
+            .request(request.list_metadata(&list).ok()?)
+            .await
+            .ok()?;
+        let version = listed.metadata.resource_version.unwrap_or_default();
+        let mut watch = request.watch_metadata(&watch, &version).ok()?;
+        watch.headers_mut().insert(
+            http::header::ACCEPT,
+            http::HeaderValue::from_static(METADATA_WATCH_ACCEPT),
+        );
+        // The answer is dropped right after its status: no events are read.
+        let answer = client
+            .send(watch.map(kube::client::Body::from))
+            .await
+            .ok()?;
+        Some(answer.status().is_success())
+    };
+    tokio::time::timeout(REFUSAL_CHECK_TIMEOUT, check)
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or(false)
+}
+
+/// `Accept` of a metadata-only watch with a JSON fallback.
+const METADATA_WATCH_ACCEPT: &str =
+    "application/json;as=PartialObjectMetadata;g=meta.k8s.io;v=v1, application/json";
+
+/// The error of a metadata-only watch the API server refused. It answers kube's `Accept` (metadata, no fallback)
+/// with an indented `Status`, which kube reads line by line and reports as a serde error, so a 403 would look like
+/// a broken response. The same watch with a JSON fallback in `Accept` gets a one-line `Status`: its error, or
+/// `None` when that watch starts (then the serde error was something else).
+async fn refused_metadata_watch(
+    api: &Api<PartialObjectMeta<DynamicObject>>,
+    labels: Option<&str>,
+    fields: Option<&str>,
+) -> Option<kube::Error> {
+    let mut params = WatchParams::default().timeout(1);
+    if let Some(labels) = labels {
+        params = params.labels(labels);
+    }
+    if let Some(fields) = fields {
+        params = params.fields(fields);
+    }
+    let mut request = kube::core::Request::new(api.resource_url())
+        .watch_metadata(&params, "0")
+        .ok()?;
+    request.headers_mut().insert(
+        http::header::ACCEPT,
+        http::HeaderValue::from_static(METADATA_WATCH_ACCEPT),
+    );
+    let client = api.clone().into_client();
+    let first = tokio::time::timeout(REFUSAL_CHECK_TIMEOUT, async {
+        let events = client
+            .request_events::<PartialObjectMeta<DynamicObject>>(request)
+            .await?;
+        Box::pin(events).try_next().await
+    })
+    .await
+    .ok()?;
+    match first {
+        Err(err @ kube::Error::Api(_)) => Some(err),
+        _ => None,
+    }
+}
+
+/// How long [`refused_metadata_watch`] and [`may_list_and_watch`] wait for the API server.
+const REFUSAL_CHECK_TIMEOUT: Duration = Duration::from_secs(10);
+
 /// Watcher streams + store + pending batch.
 struct Batcher {
     sources: Vec<Source>,
-    config: watcher::Config,
     resource: ApiResource,
     /// Empty while waiting for a reconnect.
     streams: SelectAll<Events>,
     /// Stops the stream of one source (index = source) without touching the others.
     aborts: Vec<Option<AbortHandle>>,
-    /// Sources whose namespace cannot be listed; they are not watched any more.
+    /// Sources whose namespace cannot be listed or watched (403); they are left out until a retry lists them.
     forbidden: Vec<bool>,
+    /// When a forbidden source is tried again; `None` while that retry runs (or when it is not forbidden).
+    retry_forbidden_at: Vec<Option<Instant>>,
+    /// Retries of a source since it was forbidden; the pause doubles with each.
+    forbidden_attempt: Vec<u32>,
+    /// When a retry brought a forbidden source back.
+    restored_at: Vec<Option<Instant>>,
+    /// Running checks whether a forbidden source may be listed and watched again: (source, allowed).
+    access_checks: FuturesUnordered<BoxFuture<'static, (usize, bool)>>,
+    forbidden_retry: ForbiddenRetry,
     /// A `Forbidden` update waits to be sent.
     forbidden_pending: bool,
     /// uid → (index of the source api, object).
@@ -183,25 +408,31 @@ enum Wake {
     Tick,
     Event(Option<(usize, watcher::Result<watcher::Event<DynamicObject>>)>),
     Retry,
+    RetryForbidden,
+    Checked(Option<(usize, bool)>),
 }
 
 impl Batcher {
     fn new(
         sources: Vec<Source>,
-        config: watcher::Config,
         resource: ApiResource,
         interval: Duration,
+        forbidden_retry: ForbiddenRetry,
     ) -> Self {
         let mut ticker = tokio::time::interval_at(Instant::now() + interval, interval);
         ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
         let count = sources.len();
         let mut batcher = Self {
             sources,
-            config,
             resource,
             streams: SelectAll::new(),
             aborts: vec![None; count],
             forbidden: vec![false; count],
+            retry_forbidden_at: vec![None; count],
+            forbidden_attempt: vec![0; count],
+            restored_at: vec![None; count],
+            access_checks: FuturesUnordered::new(),
+            forbidden_retry,
             forbidden_pending: false,
             store: HashMap::new(),
             init_buffers: vec![None; count],
@@ -225,22 +456,36 @@ impl Batcher {
     /// (Re)starts the watchers of every source that may be listed.
     fn start_streams(&mut self) {
         self.streams = SelectAll::new();
-        for (index, source) in self.sources.iter().enumerate() {
+        for index in 0..self.sources.len() {
             self.aborts[index] = None;
-            if self.forbidden[index] {
-                continue;
+            if !self.forbidden[index] {
+                self.start_source(index);
             }
-            let events = source
-                .api
-                .watch(self.config.clone())
-                .map(move |event| (index, event));
-            let (events, abort) = futures::stream::abortable(events);
-            self.aborts[index] = Some(abort);
-            self.streams.push(events.boxed());
         }
         self.listed.iter_mut().for_each(|l| *l = false);
         self.init_buffers.iter_mut().for_each(|b| *b = None);
         self.retry_at = None;
+    }
+
+    /// Starts the watcher of one source next to the running ones.
+    fn start_source(&mut self, index: usize) {
+        let source = &self.sources[index];
+        let events = source
+            .api
+            .watch(source.config.clone())
+            .map(move |event| (index, event));
+        let (events, abort) = futures::stream::abortable(events);
+        self.aborts[index] = Some(abort);
+        self.streams.push(events.boxed());
+    }
+
+    /// Stops the watcher of one source and drops its objects.
+    fn stop_source(&mut self, index: usize) {
+        if let Some(abort) = self.aborts[index].take() {
+            abort.abort();
+        }
+        self.init_buffers[index] = None;
+        self.store.retain(|_, (source, _)| *source != index);
     }
 
     /// Every source that is still watched has finished its (re)list.
@@ -249,6 +494,14 @@ impl Batcher {
             .iter()
             .zip(&self.forbidden)
             .all(|(listed, forbidden)| *listed || *forbidden)
+    }
+
+    /// The earliest retry of a forbidden source; none while the watch waits for a reconnect or its relist.
+    fn next_forbidden_retry(&self) -> Option<Instant> {
+        if self.retry_at.is_some() || self.reconnecting {
+            return None;
+        }
+        self.retry_forbidden_at.iter().flatten().min().copied()
     }
 
     async fn next_update(&mut self) -> Option<WatchUpdate> {
@@ -262,13 +515,15 @@ impl Batcher {
             }
             if self.forbidden_pending {
                 self.forbidden_pending = false;
-                let namespaces = self
+                let mut namespaces: Vec<String> = self
                     .sources
                     .iter()
                     .zip(&self.forbidden)
                     .filter(|(_, forbidden)| **forbidden)
                     .filter_map(|(source, _)| source.namespace.clone())
                     .collect();
+                // Sources are sorted by namespace; a Secret watch has two per namespace.
+                namespaces.dedup();
                 return Some(WatchUpdate::Forbidden { namespaces });
             }
             // The first full list goes out at once; the interval counts from it.
@@ -280,10 +535,14 @@ impl Batcher {
             }
             let streaming = !self.streams.is_empty();
             let retry_at = self.retry_at;
+            let retry_forbidden_at = self.next_forbidden_retry();
+            let checking = !self.access_checks.is_empty();
             let wake = tokio::select! {
                 _ = self.ticker.tick() => Wake::Tick,
                 event = self.streams.next(), if streaming => Wake::Event(event),
                 _ = sleep_until(retry_at), if retry_at.is_some() => Wake::Retry,
+                _ = sleep_until(retry_forbidden_at), if retry_forbidden_at.is_some() => Wake::RetryForbidden,
+                checked = self.access_checks.next(), if checking => Wake::Checked(checked),
             };
             match wake {
                 Wake::Tick => {
@@ -296,6 +555,9 @@ impl Batcher {
                 // Watcher streams do not end by themselves; treat it like a lost connection.
                 Wake::Event(None) => self.lose_connection(),
                 Wake::Retry => self.start_streams(),
+                Wake::RetryForbidden => self.retry_forbidden(),
+                Wake::Checked(Some((index, allowed))) => self.checked(index, allowed),
+                Wake::Checked(None) => {}
             }
         }
     }
@@ -318,6 +580,12 @@ impl Batcher {
                 self.store.retain(|_, (source, _)| *source != index);
                 for value in items {
                     self.store.insert(uid_of(&value), (index, value));
+                }
+                if self.forbidden[index] {
+                    // A retry listed the forbidden namespace: it is back, and a snapshot with its objects follows.
+                    self.forbidden[index] = false;
+                    self.restored_at[index] = Some(Instant::now());
+                    self.forbidden_pending = true;
                 }
                 self.listed[index] = true;
                 if self.all_listed() {
@@ -350,6 +618,13 @@ impl Batcher {
         if matches!(&err, watcher::Error::WatchError(status) if status.code == 410) {
             return;
         }
+        // A retry of a forbidden namespace failed (403 again, or anything else): it stays out and is tried later;
+        // the other namespaces are not disturbed.
+        if self.forbidden[index] {
+            self.stop_source(index);
+            self.schedule_forbidden_retry(index);
+            return;
+        }
         let err = CoreError::from(err);
         if err.code == ErrorCode::Forbidden && self.forbid(index) {
             return;
@@ -373,21 +648,38 @@ impl Batcher {
         }
     }
 
-    /// Leaves out a namespace that cannot be listed or watched, if other sources remain: its watcher stops, the
-    /// others go on, and its objects leave the store (a new snapshot without them follows once everything left is
-    /// listed). `false` when it is not such a namespace (all namespaces, or the last source).
+    /// Leaves out a namespace that cannot be listed or watched, if other namespaces remain: the watchers of its
+    /// sources stop, the others go on, and its objects leave the store (a new snapshot without them follows once
+    /// everything left is listed). It is tried again after [`ForbiddenRetry`] pauses. `false` when it is not such
+    /// a namespace (all namespaces, or the last one).
     fn forbid(&mut self, index: usize) -> bool {
-        let others = (0..self.sources.len()).any(|i| i != index && !self.forbidden[i]);
-        if self.sources[index].namespace.is_none() || !others {
+        let Some(namespace) = self.sources[index].namespace.clone() else {
+            return false;
+        };
+        let same = |source: &Source| source.namespace.as_deref() == Some(namespace.as_str());
+        let others = self
+            .sources
+            .iter()
+            .zip(&self.forbidden)
+            .any(|(source, forbidden)| !same(source) && !*forbidden);
+        if !others {
             return false;
         }
-        self.forbidden[index] = true;
-        self.forbidden_pending = true;
-        if let Some(abort) = self.aborts[index].take() {
-            abort.abort();
+        let now = Instant::now();
+        for i in 0..self.sources.len() {
+            if !same(&self.sources[i]) || self.forbidden[i] {
+                continue;
+            }
+            self.forbidden[i] = true;
+            // Lost again soon after a retry brought it back (e.g. it may be listed but not watched): the pauses
+            // keep growing instead of starting over.
+            if self.restored_at[i].is_none_or(|at| now - at >= self.forbidden_retry.max) {
+                self.forbidden_attempt[i] = 0;
+            }
+            self.stop_source(i);
+            self.schedule_forbidden_retry(i);
         }
-        self.init_buffers[index] = None;
-        self.store.retain(|_, (source, _)| *source != index);
+        self.forbidden_pending = true;
         if self.all_listed() {
             self.snapshot_pending = true;
             self.attempt = 0;
@@ -395,9 +687,56 @@ impl Batcher {
         true
     }
 
+    /// The next retry of a forbidden source, after a pause that doubles with each attempt.
+    fn schedule_forbidden_retry(&mut self, index: usize) {
+        let attempt = self.forbidden_attempt[index];
+        let delay = self
+            .forbidden_retry
+            .first
+            .saturating_mul(1u32 << attempt.min(16))
+            .min(self.forbidden_retry.max);
+        self.forbidden_attempt[index] = attempt.saturating_add(1);
+        self.retry_forbidden_at[index] = Some(Instant::now() + delay);
+    }
+
+    /// Checks every forbidden source whose pause is over: may it be listed and watched again?
+    fn retry_forbidden(&mut self) {
+        let now = Instant::now();
+        for index in 0..self.sources.len() {
+            if self.retry_forbidden_at[index].is_some_and(|at| at <= now) {
+                self.retry_forbidden_at[index] = None;
+                self.access_checks
+                    .push(self.sources[index].access_check(index));
+            }
+        }
+    }
+
+    /// The answer of an access check. Refused: the source stays out without a word and waits longer. Allowed: its
+    /// watcher starts, and the source is back once its list completes.
+    fn checked(&mut self, index: usize, allowed: bool) {
+        if !self.forbidden[index] {
+            return;
+        }
+        if !allowed {
+            self.schedule_forbidden_retry(index);
+        } else if self.retry_at.is_some() || self.reconnecting {
+            // The others are reconnecting: check it again once they are back.
+            self.retry_forbidden_at[index] = Some(Instant::now());
+        } else {
+            self.start_source(index);
+        }
+    }
+
     /// Drops the watchers and schedules a fresh list after a growing pause.
     fn lose_connection(&mut self) {
         self.streams = SelectAll::new();
+        // A retry of a forbidden namespace that was running is tried again as soon as the others are back.
+        for index in 0..self.sources.len() {
+            if self.forbidden[index] && self.aborts[index].take().is_some() {
+                self.init_buffers[index] = None;
+                self.retry_forbidden_at[index] = Some(Instant::now());
+            }
+        }
         if !self.reconnecting {
             self.reconnecting = true;
             self.reconnect_pending = true;
@@ -443,14 +782,20 @@ impl Batcher {
     }
 }
 
-/// An event of a metadata-only watcher as the batcher handles every event: objects with only `metadata`.
+/// An event of a metadata-only watcher as the batcher handles every event: objects with only `metadata`, plus
+/// `type` and an empty `release` key for Helm release Secrets (`to_json` then marks their values hidden).
 fn metadata_event(
     event: watcher::Event<PartialObjectMeta<DynamicObject>>,
+    helm_release: bool,
 ) -> watcher::Event<DynamicObject> {
     let object = |meta: PartialObjectMeta<DynamicObject>| DynamicObject {
         types: None,
         metadata: meta.metadata,
-        data: Value::Object(serde_json::Map::new()),
+        data: if helm_release {
+            serde_json::json!({ "type": HELM_RELEASE_TYPE, "data": { "release": "" } })
+        } else {
+            Value::Object(serde_json::Map::new())
+        },
     };
     match event {
         watcher::Event::Apply(meta) => watcher::Event::Apply(object(meta)),
@@ -778,14 +1123,66 @@ mod tests {
         }
     }
 
-    /// A Secret as the fake server lists it: always whole, whatever the client asks for.
-    const FULL_SECRET_LIST: &str = r#"{"apiVersion":"v1","kind":"SecretList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"sh.helm.release.v1.web.v1","namespace":"apps","uid":"uid-web-1","resourceVersion":"1","labels":{"owner":"helm"}},"type":"helm.sh/release.v1","data":{"release":"eA=="}}]}"#;
+    /// A Helm release Secret and an ordinary one, as the fake server lists them: always whole, whatever the client
+    /// asks for, but filtered by a `type=` / `type!=` field selector like a real API server.
+    const HELM_SECRET: &str = r#"{"metadata":{"name":"sh.helm.release.v1.web.v1","namespace":"apps","uid":"uid-web-1","resourceVersion":"1","labels":{"owner":"helm"}},"type":"helm.sh/release.v1","data":{"release":"eA=="}}"#;
+    const OPAQUE_SECRET: &str = r#"{"metadata":{"name":"db","namespace":"apps","uid":"uid-db","resourceVersion":"1"},"type":"Opaque","data":{"password":"cA==","user":"dQ=="}}"#;
+    const HELM_RELEASE_TYPE: &str = "helm.sh/release.v1";
+
+    /// `%XX` and `+` decoded.
+    fn decoded(query: &str) -> String {
+        let bytes = query.as_bytes();
+        let mut out = Vec::with_capacity(bytes.len());
+        let mut i = 0;
+        while i < bytes.len() {
+            match bytes[i] {
+                b'%' if i + 2 < bytes.len() => {
+                    let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("");
+                    out.push(u8::from_str_radix(hex, 16).unwrap_or(b'?'));
+                    i += 3;
+                }
+                b'+' => {
+                    out.push(b' ');
+                    i += 1;
+                }
+                b => {
+                    out.push(b);
+                    i += 1;
+                }
+            }
+        }
+        String::from_utf8_lossy(&out).into_owned()
+    }
+
+    /// The `fieldSelector` of a request, decoded; empty if none.
+    fn field_selector(req: &Request) -> String {
+        decoded(&req.query)
+            .split('&')
+            .find_map(|pair| pair.strip_prefix("fieldSelector="))
+            .unwrap_or_default()
+            .to_owned()
+    }
 
     fn secrets_server() -> impl Fn(&Request) -> Reply + Send + Sync + 'static {
         |req: &Request| match req.path.as_str() {
             "/api" => Reply::json(200, API_VERSIONS),
             "/api/v1/namespaces/apps/secrets" if req.query.contains("watch=") => Reply::stream(""),
-            "/api/v1/namespaces/apps/secrets" => Reply::json(200, FULL_SECRET_LIST),
+            "/api/v1/namespaces/apps/secrets" => {
+                let selector = field_selector(req);
+                let items = if selector.contains(&format!("type!={HELM_RELEASE_TYPE}")) {
+                    OPAQUE_SECRET.to_owned()
+                } else if selector.contains(&format!("type={HELM_RELEASE_TYPE}")) {
+                    HELM_SECRET.to_owned()
+                } else {
+                    format!("{HELM_SECRET},{OPAQUE_SECRET}")
+                };
+                Reply::json(
+                    200,
+                    format!(
+                        r#"{{"apiVersion":"v1","kind":"SecretList","metadata":{{"resourceVersion":"1"}},"items":[{items}]}}"#
+                    ),
+                )
+            }
             _ => Reply::not_found(),
         }
     }
@@ -808,8 +1205,10 @@ mod tests {
             ..spec("", "Secret", Some(&["apps"]))
         };
         let items = first_snapshot(&mgr, &id, spec).await;
-        assert_eq!(names(&items), ["sh.helm.release.v1.web.v1"]);
-        let secret = items[0].as_object().unwrap();
+        assert_eq!(names(&items), ["db", "sh.helm.release.v1.web.v1"]);
+        let secret = by_name(&items, "sh.helm.release.v1.web.v1")
+            .as_object()
+            .unwrap();
         assert_eq!(
             (secret["apiVersion"].as_str(), secret["kind"].as_str()),
             (Some("v1"), Some("Secret"))
@@ -826,14 +1225,290 @@ mod tests {
         );
     }
 
+    fn by_name<'a>(items: &'a [Value], name: &str) -> &'a Value {
+        items
+            .iter()
+            .find(|o| o["metadata"]["name"] == name)
+            .unwrap_or_else(|| panic!("no {name} in {items:?}"))
+    }
+
     #[tokio::test]
-    async fn a_watch_without_metadata_only_gets_whole_objects() {
+    async fn a_secret_watch_gets_helm_releases_as_metadata_and_other_secrets_whole() {
         let api = FakeApi::start(secrets_server()).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let items = first_snapshot(&mgr, &id, spec("", "Secret", Some(&["apps"]))).await;
-        assert_eq!(items[0]["type"], "helm.sh/release.v1");
-        assert_eq!(items[0]["data"]["release"], "", "values hidden, keys kept");
-        assert!(asked_for_metadata(&api).iter().all(|m| !*m));
+        assert_eq!(names(&items), ["db", "sh.helm.release.v1.web.v1"]);
+
+        // An ordinary Secret: whole, values hidden, keys kept.
+        let db = by_name(&items, "db");
+        assert_eq!(db["type"], "Opaque");
+        assert_eq!(db["data"], serde_json::json!({"password": "", "user": ""}));
+        assert_eq!(
+            db["metadata"]["annotations"][super::super::get::VALUES_HIDDEN_ANNOTATION],
+            "true"
+        );
+
+        // A Helm release: the row looks as before (type, one `release` key), from metadata alone.
+        let release = by_name(&items, "sh.helm.release.v1.web.v1");
+        assert_eq!(release["type"], HELM_RELEASE_TYPE);
+        assert_eq!(release["data"], serde_json::json!({"release": ""}));
+        assert_eq!(release["metadata"]["labels"]["owner"], "helm");
+        assert_eq!(
+            release["metadata"]["annotations"][super::super::get::VALUES_HIDDEN_ANNOTATION],
+            "true"
+        );
+        assert_eq!(
+            (release["apiVersion"].as_str(), release["kind"].as_str()),
+            (Some("v1"), Some("Secret"))
+        );
+
+        // The data of release Secrets is never asked for: every request that may return them is metadata-only.
+        let requests: Vec<Request> = api
+            .requests()
+            .into_iter()
+            .filter(|r| r.path == "/api/v1/namespaces/apps/secrets")
+            .collect();
+        assert!(!requests.is_empty());
+        for req in &requests {
+            let whole = !req.header("accept").contains("as=PartialObjectMetadata");
+            if whole {
+                assert!(
+                    field_selector(req).contains(&format!("type!={HELM_RELEASE_TYPE}")),
+                    "a whole-object request that would return release payloads: {:?} {:?}",
+                    req.line(),
+                    decoded(&req.query)
+                );
+            } else {
+                assert!(
+                    field_selector(req).contains(&format!("type={HELM_RELEASE_TYPE}")),
+                    "a metadata request for other Secrets: {:?}",
+                    decoded(&req.query)
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn a_secret_watch_keeps_the_callers_field_selector_on_both_halves() {
+        let api = FakeApi::start(secrets_server()).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let spec = WatchSpec {
+            field_selector: Some("metadata.name!=other".into()),
+            ..spec("", "Secret", Some(&["apps"]))
+        };
+        first_snapshot(&mgr, &id, spec).await;
+        let selectors: Vec<String> = api
+            .requests()
+            .iter()
+            .filter(|r| r.path == "/api/v1/namespaces/apps/secrets")
+            .map(field_selector)
+            .collect();
+        assert!(!selectors.is_empty());
+        assert!(
+            selectors
+                .iter()
+                .all(|s| s.contains("metadata.name!=other") && s.contains("type")),
+            "{selectors:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_metadata_watch_refused_with_an_indented_status_leaves_the_namespace_out() {
+        // Like a real API server: a refused watch with kube's metadata `Accept` (no fallback) gets an indented
+        // `Status`, which kube cannot read as watch events.
+        let indented: String =
+            serde_json::to_string_pretty(&serde_json::from_str::<Value>(FORBIDDEN).unwrap())
+                .unwrap();
+        let api = FakeApi::start(move |req: &Request| {
+            let ns = req
+                .path
+                .strip_prefix("/api/v1/namespaces/")
+                .and_then(|rest| rest.strip_suffix("/secrets"));
+            match (req.path.as_str(), ns) {
+                ("/api", _) => Reply::json(200, API_VERSIONS),
+                (_, Some("b")) if req.query.contains("watch=") => {
+                    if req.header("accept").contains(',') {
+                        Reply::json(403, FORBIDDEN)
+                    } else {
+                        Reply::json(403, indented.clone())
+                    }
+                }
+                (_, Some(_)) if req.query.contains("watch=") => Reply::stream(""),
+                (_, Some(ns)) => Reply::json(
+                    200,
+                    format!(
+                        r#"{{"apiVersion":"v1","kind":"SecretList","metadata":{{"resourceVersion":"1"}},"items":[{{"metadata":{{"name":"s-{ns}","namespace":"{ns}","uid":"uid-{ns}","resourceVersion":"1"}}}}]}}"#
+                    ),
+                ),
+                _ => Reply::not_found(),
+            }
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let spec = WatchSpec {
+            metadata_only: true,
+            ..spec("", "Secret", Some(&["a", "b"]))
+        };
+        let mut updates = Box::pin(watch(&mgr, &id, spec).await.unwrap());
+        let (mut forbidden, mut last_items) = (None, Vec::new());
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while forbidden.is_none() || names(&last_items) != ["s-a"] {
+            let left = deadline.saturating_duration_since(Instant::now());
+            match tokio::time::timeout(left, updates.next()).await {
+                Ok(Some(WatchUpdate::Snapshot { items })) => last_items = items,
+                Ok(Some(WatchUpdate::Forbidden { namespaces })) => forbidden = Some(namespaces),
+                Ok(Some(WatchUpdate::Delta { .. })) => {}
+                other => panic!(
+                    "expected forbidden and a snapshot, got {other:?} (forbidden {forbidden:?}, items {last_items:?})"
+                ),
+            }
+        }
+        assert_eq!(forbidden.unwrap(), ["b"]);
+    }
+
+    /// ConfigMaps in `a` and `b`; in `b` the first `refused_lists` lists and the first `refused_watches` watches
+    /// answer 403 (an access check's requests count too).
+    fn flaky_namespace_server(
+        refused_lists: usize,
+        refused_watches: usize,
+    ) -> impl Fn(&Request) -> Reply + Send + Sync + 'static {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let (lists_in_b, watches_in_b) = (AtomicUsize::new(0), AtomicUsize::new(0));
+        move |req: &Request| {
+            let ns = req
+                .path
+                .strip_prefix("/api/v1/namespaces/")
+                .and_then(|rest| rest.strip_suffix("/configmaps"));
+            let watching = req.query.contains("watch=");
+            match (req.path.as_str(), ns) {
+                ("/api", _) => Reply::json(200, API_VERSIONS),
+                (_, Some(ns)) => {
+                    let refused = ns == "b"
+                        && if watching {
+                            watches_in_b.fetch_add(1, Ordering::SeqCst) < refused_watches
+                        } else {
+                            lists_in_b.fetch_add(1, Ordering::SeqCst) < refused_lists
+                        };
+                    if refused {
+                        Reply::json(403, FORBIDDEN)
+                    } else if watching {
+                        Reply::stream("")
+                    } else {
+                        Reply::json(
+                            200,
+                            format!(
+                                r#"{{"apiVersion":"v1","kind":"ConfigMapList","metadata":{{"resourceVersion":"1"}},"items":[{{"metadata":{{"name":"cm-{ns}","namespace":"{ns}","uid":"uid-{ns}","resourceVersion":"1"}}}}]}}"#
+                            ),
+                        )
+                    }
+                }
+                _ => Reply::not_found(),
+            }
+        }
+    }
+
+    /// Short pauses for the retries of a forbidden namespace.
+    const SHORT_RETRY: ForbiddenRetry = ForbiddenRetry {
+        first: Duration::from_millis(50),
+        max: Duration::from_millis(200),
+    };
+
+    /// Every `Forbidden` and the last `Snapshot` of a ConfigMap watch of `a` and `b`, until `done(forbidden, items)`
+    /// or `wait` is over (then `done` must accept what came, else it panics).
+    async fn watch_flaky_namespace(
+        api: &FakeApi,
+        wait: Duration,
+        done: impl Fn(&[Vec<String>], &[Value]) -> bool,
+    ) -> (Vec<Vec<String>>, Vec<Vec<Value>>) {
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let mut updates = Box::pin(
+            watch_with(
+                &mgr,
+                &id,
+                spec("", "ConfigMap", Some(&["a", "b"])),
+                SHORT_RETRY,
+            )
+            .await
+            .unwrap(),
+        );
+        let (mut forbidden, mut snapshots): (Vec<Vec<String>>, Vec<Vec<Value>>) =
+            (Vec::new(), Vec::new());
+        let deadline = Instant::now() + wait;
+        while !done(&forbidden, snapshots.last().map_or(&[], |s| s.as_slice())) {
+            let left = deadline.saturating_duration_since(Instant::now());
+            match tokio::time::timeout(left, updates.next()).await {
+                Ok(Some(WatchUpdate::Snapshot { items })) => snapshots.push(items),
+                Ok(Some(WatchUpdate::Forbidden { namespaces })) => forbidden.push(namespaces),
+                Ok(Some(WatchUpdate::Delta { .. })) => {}
+                Err(_) => break,
+                other => panic!("unexpected {other:?} (forbidden {forbidden:?})"),
+            }
+        }
+        (forbidden, snapshots)
+    }
+
+    fn requests_in_b(api: &FakeApi, watches: bool) -> usize {
+        api.requests()
+            .iter()
+            .filter(|r| {
+                r.path == "/api/v1/namespaces/b/configmaps" && r.query.contains("watch=") == watches
+            })
+            .count()
+    }
+
+    #[tokio::test]
+    async fn a_namespace_that_answered_403_comes_back_when_access_returns() {
+        let api = FakeApi::start(flaky_namespace_server(2, 0)).await;
+        let (forbidden, snapshots) =
+            watch_flaky_namespace(&api, Duration::from_secs(5), |forbidden, items| {
+                forbidden.last().is_some_and(Vec::is_empty) && names(items) == ["cm-a", "cm-b"]
+            })
+            .await;
+        assert_eq!(forbidden, [vec!["b".to_owned()], vec![]], "{snapshots:?}");
+        assert_eq!(names(snapshots.last().unwrap()), ["cm-a", "cm-b"]);
+        // The watch's list, a check refused at its list, a check let through, the list that brought it back.
+        assert_eq!(requests_in_b(&api, false), 4);
+    }
+
+    #[tokio::test]
+    async fn a_namespace_still_refused_on_its_watch_stays_out_without_flicker() {
+        let api = FakeApi::start(flaky_namespace_server(0, usize::MAX)).await;
+        let (forbidden, snapshots) =
+            watch_flaky_namespace(&api, Duration::from_millis(1500), |_, _| false).await;
+        assert_eq!(forbidden, [vec!["b".to_owned()]], "{snapshots:?}");
+        assert_eq!(
+            names(snapshots.last().unwrap()),
+            ["cm-a"],
+            "the namespace stays out"
+        );
+        // After the namespace was left out, no snapshot brings its objects back even for a moment.
+        let left_out_at = snapshots
+            .iter()
+            .position(|items| names(items) == ["cm-a"])
+            .unwrap();
+        assert!(
+            snapshots[left_out_at..]
+                .iter()
+                .all(|items| names(items) == ["cm-a"]),
+            "{snapshots:?}"
+        );
+        assert!(
+            requests_in_b(&api, true) >= 4,
+            "it is checked again and again: {} watches",
+            requests_in_b(&api, true)
+        );
+    }
+
+    #[tokio::test]
+    async fn a_namespace_whose_watch_is_accepted_again_comes_back() {
+        let api = FakeApi::start(flaky_namespace_server(0, 2)).await;
+        let (forbidden, snapshots) =
+            watch_flaky_namespace(&api, Duration::from_secs(5), |forbidden, items| {
+                forbidden.last().is_some_and(Vec::is_empty) && names(items) == ["cm-a", "cm-b"]
+            })
+            .await;
+        assert_eq!(forbidden, [vec!["b".to_owned()], vec![]], "{snapshots:?}");
+        assert_eq!(names(snapshots.last().unwrap()), ["cm-a", "cm-b"]);
     }
 
     #[tokio::test]
