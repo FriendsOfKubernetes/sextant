@@ -382,15 +382,15 @@ struct Batcher {
     /// A `Forbidden` update waits to be sent.
     forbidden_pending: bool,
     /// uid → (index of the source api, object).
-    store: HashMap<String, (usize, Value)>,
+    store: HashMap<String, (usize, Arc<Value>)>,
     /// Objects of a source's running relist (`Init` … `InitDone`).
-    init_buffers: Vec<Option<Vec<Value>>>,
+    init_buffers: Vec<Option<Vec<Arc<Value>>>>,
     /// Sources whose (re)list finished.
     listed: Vec<bool>,
     /// A full list was sent at least once (errors after that are never fatal).
     snapshot_sent: bool,
     snapshot_pending: bool,
-    upserted: HashMap<String, Value>,
+    upserted: HashMap<String, Arc<Value>>,
     deleted: HashSet<String>,
     reconnecting: bool,
     reconnect_pending: bool,
@@ -597,7 +597,7 @@ impl Batcher {
                 if let Some(value) = self.json(obj) {
                     let uid = uid_of(&value);
                     self.deleted.remove(&uid);
-                    self.upserted.insert(uid.clone(), value.clone());
+                    self.upserted.insert(uid.clone(), Arc::clone(&value));
                     self.store.insert(uid, (index, value));
                 }
             }
@@ -760,7 +760,8 @@ impl Batcher {
             self.reconnecting = false;
             self.upserted.clear();
             self.deleted.clear();
-            let items = self.store.values().map(|(_, v)| v.clone()).collect();
+            // Pointers to the stored objects, not copies: a deep copy of a large list was several times its size.
+            let items = self.store.values().map(|(_, v)| Arc::clone(v)).collect();
             return Some(WatchUpdate::Snapshot { items });
         }
         // Changes wait until the first (or the post-reconnect) snapshot; it includes them.
@@ -776,9 +777,9 @@ impl Batcher {
         })
     }
 
-    fn json(&self, obj: DynamicObject) -> Option<Value> {
+    fn json(&self, obj: DynamicObject) -> Option<Arc<Value>> {
         // A DynamicObject always serializes; `None` only guards against the impossible.
-        to_json(obj, &self.resource).ok()
+        to_json(obj, &self.resource).ok().map(Arc::new)
     }
 }
 
@@ -911,7 +912,7 @@ mod tests {
         }
     }
 
-    fn names(items: &[Value]) -> Vec<&str> {
+    fn names(items: &[Arc<Value>]) -> Vec<&str> {
         let mut names: Vec<&str> = items
             .iter()
             .map(|o| o["metadata"]["name"].as_str().unwrap_or_default())
@@ -935,7 +936,11 @@ mod tests {
     }
 
     /// The first snapshot of a fresh watch.
-    async fn first_snapshot(mgr: &ClusterManager, id: &ClusterId, spec: WatchSpec) -> Vec<Value> {
+    async fn first_snapshot(
+        mgr: &ClusterManager,
+        id: &ClusterId,
+        spec: WatchSpec,
+    ) -> Vec<Arc<Value>> {
         let mut updates = Box::pin(watch(mgr, id, spec).await.unwrap());
         match tokio::time::timeout(Duration::from_secs(5), updates.next()).await {
             Ok(Some(WatchUpdate::Snapshot { items })) => items,
@@ -986,6 +991,55 @@ mod tests {
             gap >= BATCH_INTERVAL - Duration::from_millis(50),
             "a batch {gap:?} after the snapshot"
         );
+    }
+
+    #[test]
+    fn shared_items_serialize_exactly_as_plain_values() {
+        let pod = serde_json::json!({
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": { "name": "a", "namespace": "default", "uid": "uid-a", "labels": { "app": "x" } },
+            "spec": { "containers": [{ "name": "c", "image": "busybox", "ports": [{ "containerPort": 80 }] }] },
+            "status": { "phase": "Running", "restartCount": 0, "ready": true, "ratio": 0.5, "none": null }
+        });
+        let node = serde_json::json!({ "metadata": { "name": "node-1", "uid": "uid-node-1" } });
+        let snapshot = WatchUpdate::Snapshot {
+            items: vec![Arc::new(pod.clone()), Arc::new(node.clone())],
+        };
+        let delta = WatchUpdate::Delta {
+            upserted: vec![Arc::new(pod.clone())],
+            deleted: vec!["uid-node-1".into()],
+        };
+        // The bytes of the old `Vec<Value>` payloads: the tag first, then the fields, each object as it serializes.
+        let (pod, node) = (pod.to_string(), node.to_string());
+        assert_eq!(
+            serde_json::to_string(&snapshot).unwrap(),
+            format!(r#"{{"type":"snapshot","items":[{pod},{node}]}}"#)
+        );
+        assert_eq!(
+            serde_json::to_string(&delta).unwrap(),
+            format!(r#"{{"type":"delta","upserted":[{pod}],"deleted":["uid-node-1"]}}"#)
+        );
+        for update in [snapshot, delta] {
+            let json = serde_json::to_string(&update).unwrap();
+            assert_eq!(serde_json::from_str::<WatchUpdate>(&json).unwrap(), update);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_snapshot_shares_the_stored_objects_instead_of_copying_them() {
+        let api = fake_api(Behaviour::default()).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let mut updates = Box::pin(watch(&mgr, &id, spec("", "Pod", None)).await.unwrap());
+        let items = match tokio::time::timeout(Duration::from_secs(5), updates.next()).await {
+            Ok(Some(WatchUpdate::Snapshot { items })) => items,
+            other => panic!("expected a snapshot, got {other:?}"),
+        };
+        assert_eq!(names(&items), ["a"]);
+        // The running watch keeps the object in its store: the snapshot holds a second pointer to it, not a copy.
+        assert_eq!(Arc::strong_count(&items[0]), 2);
+        drop(updates);
+        assert_eq!(Arc::strong_count(&items[0]), 1);
     }
 
     #[tokio::test]
@@ -1225,7 +1279,7 @@ mod tests {
         );
     }
 
-    fn by_name<'a>(items: &'a [Value], name: &str) -> &'a Value {
+    fn by_name<'a>(items: &'a [Arc<Value>], name: &str) -> &'a Value {
         items
             .iter()
             .find(|o| o["metadata"]["name"] == name)
@@ -1418,8 +1472,8 @@ mod tests {
     async fn watch_flaky_namespace(
         api: &FakeApi,
         wait: Duration,
-        done: impl Fn(&[Vec<String>], &[Value]) -> bool,
-    ) -> (Vec<Vec<String>>, Vec<Vec<Value>>) {
+        done: impl Fn(&[Vec<String>], &[Arc<Value>]) -> bool,
+    ) -> (Vec<Vec<String>>, Vec<Vec<Arc<Value>>>) {
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let mut updates = Box::pin(
             watch_with(
@@ -1431,7 +1485,7 @@ mod tests {
             .await
             .unwrap(),
         );
-        let (mut forbidden, mut snapshots): (Vec<Vec<String>>, Vec<Vec<Value>>) =
+        let (mut forbidden, mut snapshots): (Vec<Vec<String>>, Vec<Vec<Arc<Value>>>) =
             (Vec::new(), Vec::new());
         let deadline = Instant::now() + wait;
         while !done(&forbidden, snapshots.last().map_or(&[], |s| s.as_slice())) {
@@ -1530,7 +1584,7 @@ mod tests {
         while forbidden.is_none()
             || last_items
                 .as_ref()
-                .is_none_or(|items: &Vec<Value>| items.len() != 1)
+                .is_none_or(|items: &Vec<Arc<Value>>| items.len() != 1)
         {
             let left = deadline.saturating_duration_since(Instant::now());
             match tokio::time::timeout(left, updates.next()).await {

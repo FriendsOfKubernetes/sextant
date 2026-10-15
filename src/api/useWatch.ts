@@ -1,7 +1,8 @@
 // Live list of a kind (interfaces.md §3: `useWatch(clusterId, spec)`).
 //
 // The backend sends a full snapshot as soon as it is listed (and after every reconnect), then deltas at most every
-// 250 ms; each update becomes exactly one new `items` map, so a batch of changes costs one render.
+// 250 ms; each update becomes exactly one new `items` map, so a batch of changes costs one render (a batch that
+// changes nothing costs none).
 //
 //   const { items, status, error } = useWatch(clusterId, { kind, namespaces: null, labelSelector: null, fieldSelector: null });
 //
@@ -20,7 +21,7 @@ import type { ClusterId, WatchSpec, WatchUpdate } from "./types";
 export type WatchStatus = "loading" | "ready" | "reconnecting" | "error";
 
 export interface WatchState {
-  /** Objects by `metadata.uid`. A new map after every update; never mutated. */
+  /** Objects by `metadata.uid`. A new map after every update that changes it; never mutated. */
   items: Map<string, KubeObject>;
   status: WatchStatus;
   error?: ApiError;
@@ -45,9 +46,14 @@ export function applyWatchUpdate(state: WatchState, update: WatchUpdate): WatchS
       return { items, status: "ready", forbidden: state.forbidden };
     }
     case "delta": {
+      // Deletions of objects the window never had (the backend reports one deleted before it was listed) change
+      // nothing; a delta of only those keeps the state, so React skips the render and nothing copies the map.
+      const deleted = update.deleted.filter((uid) => state.items.has(uid));
+      if (update.upserted.length === 0 && deleted.length === 0) return state;
+      // A new map per batch (consumers memoize on `items` identity); the objects themselves are not copied.
       const items = new Map(state.items);
       for (const obj of update.upserted as KubeObject[]) items.set(uidOf(obj), obj);
-      for (const uid of update.deleted) items.delete(uid);
+      for (const uid of deleted) items.delete(uid);
       // Only a snapshot ends "loading": a delta before it is not the whole list.
       return { items, status: state.status, error: state.error, forbidden: state.forbidden };
     }
@@ -74,7 +80,12 @@ export function useWatch(clusterId: ClusterId | null, spec: WatchSpec | null): W
     if (!key) return;
     const [cluster, watchSpec] = JSON.parse(key) as [ClusterId, WatchSpec];
     const update = (fn: (s: WatchState) => WatchState) =>
-      setState((prev) => ({ key, value: fn(prev.key === key ? prev.value : EMPTY) }));
+      setState((prev) => {
+        const base = prev.key === key ? prev.value : EMPTY;
+        const value = fn(base);
+        // An update that changed nothing keeps the same state object: no render.
+        return value === base && prev.key === key ? prev : { key, value };
+      });
 
     return openStream<WatchUpdate>({
       start: (id) => resources.watchStart(cluster, watchSpec, id),

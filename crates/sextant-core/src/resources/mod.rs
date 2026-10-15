@@ -8,6 +8,8 @@ mod list;
 mod mutate;
 mod watch;
 
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -112,13 +114,14 @@ pub struct WatchSpec {
 #[serde(tag = "type", rename_all = "camelCase")]
 #[ts(export)]
 pub enum WatchUpdate {
-    /// Full list (first batch and after every relist).
+    /// Full list (first batch and after every relist). The objects are shared with the watch's store (`Arc`), not
+    /// copied: a snapshot of a large list costs pointers, and the JSON is the same as of plain values.
     Snapshot {
-        items: Vec<serde_json::Value>,
+        items: Vec<Arc<serde_json::Value>>,
     },
-    /// Changes since the previous batch; `deleted` holds uids.
+    /// Changes since the previous batch; `deleted` holds uids. Shared with the store like a snapshot's items.
     Delta {
-        upserted: Vec<serde_json::Value>,
+        upserted: Vec<Arc<serde_json::Value>>,
         deleted: Vec<String>,
     },
     Reconnecting,

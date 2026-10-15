@@ -75,14 +75,14 @@ async fn next(updates: &mut Updates, secs: u64) -> WatchUpdate {
         .expect("the watch stream ended")
 }
 
-fn snapshot(update: WatchUpdate) -> Vec<Value> {
+fn snapshot(update: WatchUpdate) -> Vec<Arc<Value>> {
     match update {
         WatchUpdate::Snapshot { items } => items,
         other => panic!("expected a snapshot, got {other:?}"),
     }
 }
 
-fn names(items: &[Value]) -> Vec<String> {
+fn names(items: &[Arc<Value>]) -> Vec<String> {
     let mut names: Vec<String> = items
         .iter()
         .map(|o| o["metadata"]["name"].as_str().unwrap().to_owned())
@@ -219,7 +219,10 @@ async fn empty_namespace_gives_an_empty_snapshot() {
         spec(kind("", "v1", "Pod"), Some(&["default"]), None),
     )
     .await;
-    assert_eq!(snapshot(next(&mut updates, 30).await), Vec::<Value>::new());
+    assert_eq!(
+        snapshot(next(&mut updates, 30).await),
+        Vec::<Arc<Value>>::new()
+    );
 }
 
 #[tokio::test]

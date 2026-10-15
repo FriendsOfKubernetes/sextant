@@ -89,6 +89,33 @@ describe("useWatch", () => {
     expect(before.size).toBe(3);
   });
 
+  it("a delta that changes nothing keeps the state and its map; the next real one still renders", async () => {
+    const b = setup();
+    const seen: WatchState[] = [];
+    const { result } = renderHook(() => {
+      const state = useWatch("c1", spec());
+      seen.push(state);
+      return state;
+    });
+    await listening(b, "watch-1");
+    act(() => b.emit("watch:watch-1", { type: "snapshot", items: [pod("a"), pod("b")] }));
+    const before = result.current;
+
+    // The backend reports deletions of objects the window never had (deleted before they were listed).
+    act(() => b.emit("watch:watch-1", { type: "delta", upserted: [], deleted: ["gone"] }));
+    act(() => b.emit("watch:watch-1", { type: "delta", upserted: [], deleted: [] }));
+    // The same state object: memoized consumers recompute nothing (React may still call the hook once to bail out).
+    expect(result.current).toBe(before);
+    expect(result.current.items).toBe(before.items);
+    const quiet = seen.length;
+
+    act(() => b.emit("watch:watch-1", { type: "delta", upserted: [pod("c")], deleted: ["a", "gone"] }));
+    expect(seen.length).toBe(quiet + 1);
+    expect(result.current.items).not.toBe(before.items);
+    expect([...result.current.items.keys()].sort()).toEqual(["b", "c"]);
+    expect(before.items.size).toBe(2);
+  });
+
   it("keeps the data while reconnecting and replaces it with the next snapshot", async () => {
     const b = setup();
     const { result } = renderHook(() => useWatch("c1", spec()));

@@ -144,7 +144,7 @@ fn object(kind: &str, ns: &str, name: &str) -> ObjectRef {
 }
 
 /// The first snapshot of a watch on `kind` in `ns`.
-async fn watched(s: &Scratch, kind: &str) -> Vec<Value> {
+async fn watched(s: &Scratch, kind: &str) -> Vec<Arc<Value>> {
     let spec = WatchSpec {
         kind: core_kind(kind),
         namespaces: Some(vec![s.ns.clone()]),

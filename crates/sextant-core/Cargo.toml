@@ -17,7 +17,8 @@ kube.workspace = true
 k8s-openapi.workspace = true
 tokio.workspace = true
 futures.workspace = true
-serde.workspace = true
+# `rc`: watch batches share the stored objects (`Arc<Value>`) instead of deep-copying them.
+serde = { workspace = true, features = ["rc"] }
 serde_json.workspace = true
 serde_yaml.workspace = true
 ts-rs.workspace = true
