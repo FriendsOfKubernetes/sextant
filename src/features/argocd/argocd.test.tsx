@@ -410,6 +410,8 @@ const argoStatus = (namespace: string) => ({
   expired: false,
   saved: false,
   saveError: null,
+  insecure: false,
+  refused: [],
 });
 
 describe("Open Argo CD UI", () => {

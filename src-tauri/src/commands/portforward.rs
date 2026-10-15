@@ -24,6 +24,7 @@ pub async fn portforward_start(
             target,
             remote_port,
             local_port,
+            sextant_core::portforward::PodFilter::Any,
         )
         .await
 }

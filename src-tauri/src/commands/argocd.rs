@@ -5,12 +5,15 @@
 //! ([`ArgoSessions`] in `AppState`). Without a session `argocd_diff` signs in by itself, in this order: the login typed
 //! in earlier in this run, the login saved in the OS credential store, `admin` with `argocd-initial-admin-secret`
 //! (unless `admin.enabled` is `"false"`), the `token` of a Secret labelled `app.kubernetes.io/part-of=argocd`;
-//! otherwise it answers `unauthorized` and the frontend shows the sign-in window. A candidate Argo CD refused is not
-//! tried by itself again in this run until its source changes (a new `resourceVersion` of the Secret, a new login
-//! typed or saved), so a stale password does not pile up failed attempts. A saved login is a JSON
-//! `{"username","password"}` or `{"token"}` in the OS credential store (service `sextant`, user
-//! `argocd:<clusterId>:<namespace>`), never in `settings.json`. No password or token goes to the frontend, into an
-//! error message or into a log.
+//! otherwise it answers `unauthorized` and the frontend shows the sign-in window, which says which logins Argo CD
+//! refused ([`ArgoStatus::refused`]). A candidate Argo CD refused is not tried by itself again until its source changes
+//! (a new `resourceVersion` of the Secret, a new login typed or saved), the user signs out, or the cluster is closed,
+//! so a stale password does not pile up failed attempts. A saved login is a JSON `{"username","password"}` or
+//! `{"token"}` in the OS credential store (service `sextant`, user `argocd:<namespace>@<apiServerUrl>`, see
+//! [`keyring_user`]), never in `settings.json`; the store is read once per login and run (the answer is kept in
+//! memory and follows "Remember" and "Forget"). No password or token goes to the frontend, into an error message or
+//! into a log. The API is talked to in plain HTTP only when the installation runs its server without TLS
+//! (`server.insecure` in `argocd-cmd-params-cm`, [`ArgoStatus::insecure`]).
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -36,8 +39,17 @@ pub const KEYRING_SERVICE: &str = "sextant";
 /// Signing in (finding the server, the forward, the requests) and reading a diff.
 const ARGO_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// User name of the saved login of the Argo CD in `namespace` of `cluster` in the OS credential store.
-pub fn keyring_user(cluster: &ClusterId, namespace: &str) -> String {
+/// User name of the saved login of the Argo CD in `namespace` behind the Kubernetes API server `api_server` (the URL
+/// of the kubeconfig cluster entry, [`argocd::api_server_url`]) in the OS credential store. Keyed by the server, not
+/// by the context: the same Argo CD reached through another context finds the same login, and another cluster behind
+/// a reused context name does not.
+pub fn keyring_user(api_server: &str, namespace: &str) -> String {
+    format!("argocd:{namespace}@{api_server}")
+}
+
+/// The user name saved logins had before v0.6.1 (by the context-derived cluster id); moved to [`keyring_user`] the
+/// first time it is read.
+pub fn legacy_keyring_user(cluster: &ClusterId, namespace: &str) -> String {
     format!("argocd:{cluster}:{namespace}")
 }
 
@@ -64,6 +76,27 @@ pub struct ArgoStatus {
     /// Only in the answer of `argocd_login` with "Remember": signed in, but the OS credential store refused the
     /// login. The reason, without any secret.
     pub save_error: Option<String>,
+    /// The installation runs `argocd-server` without TLS (`server.insecure` in `argocd-cmd-params-cm`): the API is
+    /// talked to in plain HTTP inside the port forward.
+    pub insecure: bool,
+    /// The logins Argo CD refused on the last sign-in Sextant tried by itself; they are not tried again by
+    /// themselves until their source changes or the user signs out.
+    pub refused: Vec<RefusedLogin>,
+}
+
+/// A login Sextant tried by itself and Argo CD refused.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RefusedLogin {
+    /// The login typed in earlier in this run.
+    Typed,
+    /// The login saved in the OS credential store.
+    Saved,
+    /// `admin` with the password of `argocd-initial-admin-secret` (it may have been changed in Argo CD).
+    AdminSecret,
+    /// The `token` of a Secret labelled `app.kubernetes.io/part-of=argocd`.
+    TokenSecret,
 }
 
 /// What the sign-in window sends: a user name and password, or an API token.
@@ -234,14 +267,17 @@ pub struct ArgoSessions {
     forwarder: PortForwarder,
     store: RwLock<Arc<dyn CredentialStore>>,
     clusters: Mutex<HashMap<ClusterId, Arc<tokio::sync::Mutex<ArgoConn>>>>,
-    /// Keys of the candidates Argo CD refused in this run of the application ([`Candidate::key`]); they are not tried
-    /// again by themselves, so a stale password does not pile up failed attempts (Argo CD locks the account out).
-    refused: Mutex<HashSet<String>>,
+    /// The saved login of each [`keyring_user`] as last read from or written to the credential store (`None`: none,
+    /// or the store could not be read), so the store — and the OS prompt an unsigned build may raise for it — is
+    /// reached once per login and run, not on every status.
+    saved: Mutex<HashMap<String, Option<Credentials>>>,
 }
 
 #[derive(Default)]
 struct ArgoConn {
     server: Option<ArgoServer>,
+    /// The Kubernetes API server URL of the cluster: what saved logins are keyed by.
+    api_server: Option<String>,
     /// Id of the forward to `argocd-server` and the client on its local port.
     forward: Option<(String, ArgoClient)>,
     session: Option<SignedIn>,
@@ -250,6 +286,12 @@ struct ArgoConn {
     /// Signed out by hand: the saved login and the standard secrets wait for the next sign-in.
     signed_out: bool,
     expired: bool,
+    /// Keys of the candidates Argo CD refused ([`Candidate::key`]); they are not tried again by themselves, so a stale
+    /// password does not pile up failed attempts (Argo CD locks the account out). Emptied by signing out, and gone
+    /// with the cluster when it closes.
+    refused: HashSet<String>,
+    /// What Argo CD refused on the last sign-in Sextant tried by itself ([`ArgoStatus::refused`]).
+    last_refused: Vec<RefusedLogin>,
 }
 
 struct SignedIn {
@@ -263,13 +305,14 @@ impl ArgoSessions {
             forwarder: PortForwarder::new(),
             store: RwLock::new(store),
             clusters: Mutex::new(HashMap::new()),
-            refused: Mutex::new(HashSet::new()),
+            saved: Mutex::new(HashMap::new()),
         }
     }
 
-    /// Replaces the credential store (tests use a mock `keyring` backend).
+    /// Replaces the credential store (tests use a mock `keyring` backend); what was read from the old one is dropped.
     pub fn set_store(&self, store: Arc<dyn CredentialStore>) {
         *self.store.write().unwrap_or_else(|e| e.into_inner()) = store;
+        lock(&self.saved).clear();
     }
 
     fn store(&self) -> Arc<dyn CredentialStore> {
@@ -281,7 +324,8 @@ impl ArgoSessions {
         self.forwarder.list().len()
     }
 
-    /// Ends the session and closes the forward of a cluster (it was disconnected).
+    /// Ends the session and closes the forward of a cluster (it was disconnected); the logins Argo CD refused are
+    /// tried again after it reconnects.
     pub fn close_cluster(&self, cluster: &ClusterId) {
         lock(&self.clusters).remove(cluster);
         self.forwarder.stop_cluster(cluster);
@@ -307,6 +351,7 @@ impl ArgoSessions {
         let server = server(&mut conn, mgr, cluster).await?;
         let namespace = server.namespace;
         let options = argocd::login_options(mgr, cluster, &namespace).await?;
+        let api_server = api_server(&mut conn, mgr, cluster)?;
         Ok(ArgoStatus {
             namespace: namespace.clone(),
             signed_in: conn.session.is_some(),
@@ -318,8 +363,10 @@ impl ArgoSessions {
             local_users: options.local_users,
             sso: options.sso,
             expired: conn.expired,
-            saved: self.has_saved(cluster, &namespace).await,
+            saved: self.has_saved(cluster, &api_server, &namespace).await,
             save_error: None,
+            insecure: server.insecure,
+            refused: conn.last_refused.clone(),
         })
     }
 
@@ -336,6 +383,7 @@ impl ArgoSessions {
             let mut conn = conn.lock().await;
             let client = self.client(&mut conn, mgr, cluster).await?;
             let namespace = server(&mut conn, mgr, cluster).await?.namespace;
+            let api_server = api_server(&mut conn, mgr, cluster)?;
             let session = match client.login(&credentials).await {
                 Ok(session) => session,
                 Err(err) => {
@@ -349,11 +397,14 @@ impl ArgoSessions {
             conn.typed = Some(credentials.clone());
             conn.signed_out = false;
             conn.expired = false;
+            conn.last_refused.clear();
             // A new login: the typed one (and, saved, the saved one) may be tried again by itself.
-            lock(&self.refused).remove(&typed_key(cluster));
+            conn.refused.remove(TYPED_KEY);
             if login.remember {
-                lock(&self.refused).remove(&saved_key(cluster, &namespace));
-                save_error = self.remember(cluster, &namespace, &credentials).await?;
+                conn.refused.remove(&saved_key(&api_server, &namespace));
+                save_error = self
+                    .remember(cluster, &api_server, &namespace, &credentials)
+                    .await?;
             }
             if let Some(signed) = conn.session.as_mut() {
                 signed.source = login_source(login.remember, save_error.as_deref());
@@ -364,27 +415,36 @@ impl ArgoSessions {
         Ok(status)
     }
 
-    /// Saves the login in the credential store. The sign-in itself worked, so a store that refuses is not an error
-    /// of the call: the reason comes back (`Some`) for the window to say it once. `Err` only when the login cannot be
-    /// written as JSON.
+    /// Saves the login in the credential store (and drops a login saved under the [`legacy_keyring_user`]). The
+    /// sign-in itself worked, so a store that refuses is not an error of the call: the reason comes back (`Some`) for
+    /// the window to say it once. `Err` only when the login cannot be written as JSON.
     async fn remember(
         &self,
         cluster: &ClusterId,
+        api_server: &str,
         namespace: &str,
         credentials: &Credentials,
     ) -> Result<Option<String>, CoreError> {
         let store = self.store();
-        let user = keyring_user(cluster, namespace);
+        let user = keyring_user(api_server, namespace);
+        let legacy = legacy_keyring_user(cluster, namespace);
         let value = serde_json::to_string(credentials)?;
-        Ok(blocking(move || store.save(&user, &value))
-            .await
-            .err()
-            .map(|err| err.message))
+        let saved_as = user.clone();
+        let result = blocking(move || {
+            store.save(&user, &value)?;
+            let _ = store.forget(&legacy);
+            Ok(())
+        })
+        .await;
+        if result.is_ok() {
+            lock(&self.saved).insert(saved_as, Some(credentials.clone()));
+        }
+        Ok(result.err().map(|err| err.message))
     }
 
     /// Whether the credential store holds a readable login for the Argo CD of `namespace`, whoever signed in now.
-    async fn has_saved(&self, cluster: &ClusterId, namespace: &str) -> bool {
-        self.saved(cluster, namespace).await.is_some()
+    async fn has_saved(&self, cluster: &ClusterId, api_server: &str, namespace: &str) -> bool {
+        self.saved(cluster, api_server, namespace).await.is_some()
     }
 
     pub async fn logout(
@@ -401,10 +461,12 @@ impl ArgoSessions {
             conn.typed = None;
             conn.signed_out = true;
             conn.expired = false;
+            // The next sign-in starts afresh: what Argo CD refused (a changed admin password, say) may be tried again.
+            conn.refused.clear();
+            conn.last_refused.clear();
             if forget {
-                let store = self.store();
-                let user = keyring_user(cluster, &namespace);
-                blocking(move || store.forget(&user)).await?;
+                let api_server = api_server(&mut conn, mgr, cluster)?;
+                self.forget(cluster, &api_server, &namespace).await?;
             }
         }
         self.status(mgr, cluster).await
@@ -474,24 +536,31 @@ impl ArgoSessions {
         let mut candidates = Vec::new();
         if let Some(typed) = &conn.typed {
             candidates.push(Candidate {
-                key: typed_key(cluster),
+                key: TYPED_KEY.into(),
                 source: CredentialSource::Manual,
+                refused_as: RefusedLogin::Typed,
                 credentials: typed.clone(),
             });
         }
         if !conn.signed_out {
-            if let Some(saved) = self.saved(cluster, &namespace).await {
+            let api_server = api_server(conn, mgr, cluster)?;
+            if let Some(saved) = self.saved(cluster, &api_server, &namespace).await {
                 candidates.push(Candidate {
-                    key: saved_key(cluster, &namespace),
+                    key: saved_key(&api_server, &namespace),
                     source: CredentialSource::Saved,
+                    refused_as: RefusedLogin::Saved,
                     credentials: saved,
                 });
             }
             let standard =
                 argocd::standard_credentials_with_origin(mgr, cluster, &namespace).await?;
             candidates.extend(standard.into_iter().map(|(origin, credentials)| Candidate {
-                key: format!("secret:{cluster}:{origin}"),
+                key: format!("secret:{origin}"),
                 source: CredentialSource::Secret,
+                refused_as: match credentials {
+                    Credentials::Password { .. } => RefusedLogin::AdminSecret,
+                    Credentials::Token { .. } => RefusedLogin::TokenSecret,
+                },
                 credentials,
             }));
         }
@@ -499,7 +568,13 @@ impl ArgoSessions {
             let client = client.clone();
             async move { client.login(&credentials).await }
         };
-        let (session, source) = first_accepted(candidates, &self.refused, login).await?;
+        let kinds: Vec<(String, RefusedLogin)> = candidates
+            .iter()
+            .map(|c| (c.key.clone(), c.refused_as))
+            .collect();
+        let result = first_accepted(candidates, &mut conn.refused, login).await;
+        conn.last_refused = refused_of(&kinds, &conn.refused);
+        let (session, source) = result?;
         conn.session = Some(SignedIn {
             session: session.clone(),
             source,
@@ -508,12 +583,47 @@ impl ArgoSessions {
         Ok((client, session))
     }
 
-    /// The saved login, if the store has a readable one (a store that cannot be reached counts as none).
-    async fn saved(&self, cluster: &ClusterId, namespace: &str) -> Option<Credentials> {
+    /// The saved login, if the store has a readable one (a store that cannot be reached counts as none). The store
+    /// is read once per [`keyring_user`]; a login still saved under the [`legacy_keyring_user`] is moved to it then.
+    async fn saved(
+        &self,
+        cluster: &ClusterId,
+        api_server: &str,
+        namespace: &str,
+    ) -> Option<Credentials> {
+        let user = keyring_user(api_server, namespace);
+        if let Some(known) = lock(&self.saved).get(&user) {
+            return known.clone();
+        }
         let store = self.store();
-        let user = keyring_user(cluster, namespace);
-        let text = blocking(move || store.load(&user)).await.ok().flatten()?;
-        serde_json::from_str(&text).ok()
+        let legacy = legacy_keyring_user(cluster, namespace);
+        let key = user.clone();
+        let found = blocking(move || load_migrating(&*store, &key, &legacy))
+            .await
+            .ok()
+            .flatten();
+        lock(&self.saved).insert(user, found.clone());
+        found
+    }
+
+    /// Deletes the saved login (also one under the [`legacy_keyring_user`]).
+    async fn forget(
+        &self,
+        cluster: &ClusterId,
+        api_server: &str,
+        namespace: &str,
+    ) -> Result<(), CoreError> {
+        let store = self.store();
+        let user = keyring_user(api_server, namespace);
+        let legacy = legacy_keyring_user(cluster, namespace);
+        let key = user.clone();
+        blocking(move || {
+            store.forget(&key)?;
+            store.forget(&legacy)
+        })
+        .await?;
+        lock(&self.saved).insert(user, None);
+        Ok(())
     }
 
     /// The client on the forward to `argocd-server`, opening the forward when there is none (or it broke).
@@ -542,7 +652,14 @@ impl ArgoSessions {
         };
         let info = self
             .forwarder
-            .start(mgr, cluster, target, server.port, None)
+            .start(
+                mgr,
+                cluster,
+                target,
+                server.port,
+                None,
+                sextant_core::portforward::PodFilter::Any,
+            )
             .await
             .map_err(|err| match err.code {
                 ErrorCode::NotFound | ErrorCode::Other => CoreError::new(
@@ -551,7 +668,7 @@ impl ArgoSessions {
                 ),
                 _ => err,
             })?;
-        let client = ArgoClient::new(info.local_port);
+        let client = ArgoClient::for_server(&server, info.local_port);
         conn.forward = Some((info.id, client.clone()));
         Ok(client)
     }
@@ -563,15 +680,53 @@ impl ArgoSessions {
 struct Candidate {
     key: String,
     source: CredentialSource,
+    /// How the sign-in window names it when Argo CD refuses it.
+    refused_as: RefusedLogin,
     credentials: Credentials,
 }
 
-fn typed_key(cluster: &ClusterId) -> String {
-    format!("typed:{cluster}")
+/// [`Candidate::key`] of the login typed in this run.
+const TYPED_KEY: &str = "typed";
+
+fn saved_key(api_server: &str, namespace: &str) -> String {
+    format!("saved:{}", keyring_user(api_server, namespace))
 }
 
-fn saved_key(cluster: &ClusterId, namespace: &str) -> String {
-    format!("saved:{}", keyring_user(cluster, namespace))
+/// The kinds of the candidates (`key`, kind) whose key is in `refused`, sorted, each once.
+fn refused_of(
+    candidates: &[(String, RefusedLogin)],
+    refused: &HashSet<String>,
+) -> Vec<RefusedLogin> {
+    let mut kinds: Vec<RefusedLogin> = candidates
+        .iter()
+        .filter(|(key, _)| refused.contains(key))
+        .map(|(_, kind)| *kind)
+        .collect();
+    kinds.sort();
+    kinds.dedup();
+    kinds
+}
+
+/// The saved login of `user`; when there is none, one saved under `legacy` is moved to `user` (written there, then
+/// deleted under `legacy` — only once it is written). An entry that is not a login reads as none.
+fn load_migrating(
+    store: &dyn CredentialStore,
+    user: &str,
+    legacy: &str,
+) -> Result<Option<Credentials>, CoreError> {
+    if let Some(text) = store.load(user)? {
+        return Ok(serde_json::from_str(&text).ok());
+    }
+    let Some(text) = store.load(legacy)? else {
+        return Ok(None);
+    };
+    let Ok(credentials) = serde_json::from_str::<Credentials>(&text) else {
+        return Ok(None);
+    };
+    if store.save(user, &text).is_ok() {
+        let _ = store.forget(legacy);
+    }
+    Ok(Some(credentials))
 }
 
 /// Where a login typed into the window counts as coming from: the credential store only when "Remember" was asked
@@ -589,7 +744,7 @@ fn login_source(remember: bool, save_error: Option<&str>) -> CredentialSource {
 /// counts against nobody. Nothing left to try is `unauthorized`.
 async fn first_accepted<S, F, Fut>(
     candidates: Vec<Candidate>,
-    refused: &Mutex<HashSet<String>>,
+    refused: &mut HashSet<String>,
     mut login: F,
 ) -> Result<(S, CredentialSource), CoreError>
 where
@@ -599,13 +754,13 @@ where
     let any = !candidates.is_empty();
     let fresh: Vec<Candidate> = candidates
         .into_iter()
-        .filter(|c| !lock(refused).contains(&c.key))
+        .filter(|c| !refused.contains(&c.key))
         .collect();
     for candidate in fresh {
         match login(candidate.credentials).await {
             Ok(session) => return Ok((session, candidate.source)),
             Err(err) if argocd::is_refusal(&err) => {
-                lock(refused).insert(candidate.key);
+                refused.insert(candidate.key);
             }
             Err(err) => return Err(err),
         }
@@ -629,9 +784,23 @@ async fn server(
     if let Some(server) = &conn.server {
         return Ok(server.clone());
     }
-    let server = argocd::find_server(mgr, cluster).await?;
+    let server = argocd::find_server(mgr, cluster, None).await?;
     conn.server = Some(server.clone());
     Ok(server)
+}
+
+/// The Kubernetes API server URL of the cluster, read once per connection.
+fn api_server(
+    conn: &mut ArgoConn,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+) -> Result<String, CoreError> {
+    if let Some(url) = &conn.api_server {
+        return Ok(url.clone());
+    }
+    let url = argocd::api_server_url(mgr, cluster)?;
+    conn.api_server = Some(url.clone());
+    Ok(url)
 }
 
 /// The credentials of the sign-in window: a token, or a user name (default `admin`) with a password.
@@ -750,18 +919,21 @@ mod tests {
         (Arc::new(store), saved)
     }
 
+    /// The Kubernetes API server the unit tests' saved logins belong to.
+    const SERVER: &str = "https://10.0.0.1:6443";
+
     #[test]
     fn a_login_is_saved_under_the_documented_key_and_forgotten() {
         let (store, saved) = mock_store();
-        let user = keyring_user(&ClusterId::from("c1"), "argocd");
+        let user = keyring_user(SERVER, "argocd");
 
         store.save(&user, r#"{"token":"t"}"#).unwrap();
         let loaded = store.load(&user).unwrap();
         let keys: Vec<String> = lock(&saved).keys().cloned().collect();
         store.forget(&user).unwrap();
 
-        assert_eq!(user, "argocd:c1:argocd");
-        assert_eq!(keys, ["sextant/argocd:c1:argocd"]);
+        assert_eq!(user, "argocd:argocd@https://10.0.0.1:6443");
+        assert_eq!(keys, ["sextant/argocd:argocd@https://10.0.0.1:6443"]);
         assert_eq!(loaded.as_deref(), Some(r#"{"token":"t"}"#));
         assert_eq!(store.load(&user).unwrap(), None);
         assert!(store.forget(&user).is_ok(), "forgetting twice is fine");
@@ -796,26 +968,171 @@ mod tests {
     #[tokio::test]
     async fn a_saved_login_is_reported_whatever_the_session_came_from() {
         let (store, _saved) = mock_store();
-        let sessions = ArgoSessions::new(store.clone());
-        let cluster = ClusterId::from("c1");
-
-        assert!(!sessions.has_saved(&cluster, "argocd").await);
         store
             .save(
-                &keyring_user(&cluster, "argocd"),
+                &keyring_user(SERVER, "argocd"),
                 &serde_json::to_string(&token_login()).unwrap(),
             )
             .unwrap();
+        let sessions = ArgoSessions::new(store.clone());
+        let cluster = ClusterId::from("c1");
 
-        assert!(sessions.has_saved(&cluster, "argocd").await);
+        assert!(sessions.has_saved(&cluster, SERVER, "argocd").await);
         assert!(
-            !sessions.has_saved(&cluster, "other").await,
+            !sessions.has_saved(&cluster, SERVER, "other").await,
             "a login is saved per namespace of the installation"
+        );
+        assert!(
+            !sessions
+                .has_saved(&cluster, "https://10.0.0.2:6443", "argocd")
+                .await,
+            "a login is saved per Kubernetes API server"
         );
         sessions.set_store(Arc::new(LockedStore));
         assert!(
-            !sessions.has_saved(&cluster, "argocd").await,
+            !sessions.has_saved(&cluster, SERVER, "argocd").await,
             "a store that cannot be read counts as none"
+        );
+    }
+
+    /// A store that counts how often each user is read.
+    struct CountingStore {
+        inner: Arc<KeyringStore>,
+        loads: Mutex<HashMap<String, usize>>,
+    }
+
+    impl CredentialStore for CountingStore {
+        fn load(&self, user: &str) -> Result<Option<String>, CoreError> {
+            *lock(&self.loads).entry(user.to_string()).or_default() += 1;
+            self.inner.load(user)
+        }
+
+        fn save(&self, user: &str, value: &str) -> Result<(), CoreError> {
+            self.inner.save(user, value)
+        }
+
+        fn forget(&self, user: &str) -> Result<(), CoreError> {
+            self.inner.forget(user)
+        }
+    }
+
+    #[tokio::test]
+    async fn the_credential_store_is_read_once_and_follows_remember_and_forget() {
+        let (inner, _saved) = mock_store();
+        let store = Arc::new(CountingStore {
+            inner,
+            loads: Mutex::new(HashMap::new()),
+        });
+        let sessions = ArgoSessions::new(store.clone());
+        let cluster = ClusterId::from("c1");
+
+        for _ in 0..5 {
+            assert!(!sessions.has_saved(&cluster, SERVER, "argocd").await);
+        }
+        let user = keyring_user(SERVER, "argocd");
+        assert_eq!(
+            lock(&store.loads).get(&user).copied(),
+            Some(1),
+            "a status does not read the store every time"
+        );
+
+        sessions
+            .remember(&cluster, SERVER, "argocd", &token_login())
+            .await
+            .unwrap();
+        assert!(sessions.has_saved(&cluster, SERVER, "argocd").await);
+        sessions.forget(&cluster, SERVER, "argocd").await.unwrap();
+        assert!(!sessions.has_saved(&cluster, SERVER, "argocd").await);
+        assert_eq!(lock(&store.loads).get(&user).copied(), Some(1));
+    }
+
+    #[tokio::test]
+    async fn a_login_saved_by_cluster_id_moves_to_the_api_server_key_once() {
+        let (store, saved) = mock_store();
+        let cluster = ClusterId::from("c1");
+        let legacy = legacy_keyring_user(&cluster, "argocd");
+        store
+            .save(&legacy, &serde_json::to_string(&token_login()).unwrap())
+            .unwrap();
+        let sessions = ArgoSessions::new(store.clone());
+
+        assert_eq!(legacy, "argocd:c1:argocd");
+        assert_eq!(
+            sessions.saved(&cluster, SERVER, "argocd").await,
+            Some(token_login())
+        );
+        let keys: Vec<String> = lock(&saved).keys().cloned().collect();
+        assert_eq!(
+            keys,
+            ["sextant/argocd:argocd@https://10.0.0.1:6443"],
+            "the old entry is deleted once the new one is written"
+        );
+
+        // The same API server reached through another context finds the same login.
+        let other_context = ArgoSessions::new(store);
+        assert!(
+            other_context
+                .has_saved(&ClusterId::from("c2"), SERVER, "argocd")
+                .await
+        );
+    }
+
+    #[tokio::test]
+    async fn a_legacy_login_stays_where_it_is_when_the_new_key_cannot_be_written() {
+        /// Reads like the mock store, refuses every write.
+        struct ReadOnly(Arc<KeyringStore>);
+        impl CredentialStore for ReadOnly {
+            fn load(&self, user: &str) -> Result<Option<String>, CoreError> {
+                self.0.load(user)
+            }
+            fn save(&self, _user: &str, _value: &str) -> Result<(), CoreError> {
+                Err(CoreError::new(ErrorCode::Other, "read only"))
+            }
+            fn forget(&self, user: &str) -> Result<(), CoreError> {
+                self.0.forget(user)
+            }
+        }
+        let (store, saved) = mock_store();
+        let cluster = ClusterId::from("c1");
+        store
+            .save(
+                &legacy_keyring_user(&cluster, "argocd"),
+                &serde_json::to_string(&token_login()).unwrap(),
+            )
+            .unwrap();
+        let sessions = ArgoSessions::new(Arc::new(ReadOnly(store)));
+
+        assert!(sessions.has_saved(&cluster, SERVER, "argocd").await);
+        let keys: Vec<String> = lock(&saved).keys().cloned().collect();
+        assert_eq!(keys, ["sextant/argocd:c1:argocd"]);
+    }
+
+    #[test]
+    fn the_sign_in_window_is_told_which_current_logins_were_refused() {
+        let kinds = vec![
+            ("typed".to_string(), RefusedLogin::Typed),
+            ("saved:x".to_string(), RefusedLogin::Saved),
+            (
+                "secret:argocd/argocd-initial-admin-secret@8".to_string(),
+                RefusedLogin::AdminSecret,
+            ),
+            ("secret:argocd/ci@1".to_string(), RefusedLogin::TokenSecret),
+            ("secret:argocd/ci2@1".to_string(), RefusedLogin::TokenSecret),
+        ];
+        let refused: HashSet<String> = [
+            "saved:x",
+            "secret:argocd/ci@1",
+            "secret:argocd/ci2@1",
+            // An older version of the admin secret: not a current candidate.
+            "secret:argocd/argocd-initial-admin-secret@7",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+
+        assert_eq!(
+            refused_of(&kinds, &refused),
+            [RefusedLogin::Saved, RefusedLogin::TokenSecret]
         );
     }
 
@@ -826,7 +1143,7 @@ mod tests {
         let cluster = ClusterId::from("c1");
 
         let ok = sessions
-            .remember(&cluster, "argocd", &token_login())
+            .remember(&cluster, SERVER, "argocd", &token_login())
             .await
             .unwrap();
         assert_eq!(ok, None);
@@ -834,7 +1151,7 @@ mod tests {
 
         sessions.set_store(Arc::new(LockedStore));
         let reason = sessions
-            .remember(&cluster, "argocd", &token_login())
+            .remember(&cluster, SERVER, "argocd", &token_login())
             .await
             .unwrap();
         assert_eq!(
@@ -897,6 +1214,7 @@ mod tests {
         Candidate {
             key: key.into(),
             source,
+            refused_as: RefusedLogin::Saved,
             credentials: password(value),
         }
     }
@@ -904,7 +1222,7 @@ mod tests {
     /// Signs in through a fake Argo CD that accepts only `good` and counts the attempts per password.
     async fn sign_in_counting(
         candidates: Vec<Candidate>,
-        refused: &Mutex<HashSet<String>>,
+        refused: &mut HashSet<String>,
         tried: &Mutex<Vec<String>>,
     ) -> Result<CredentialSource, CoreError> {
         let login = |credentials: Credentials| async move {
@@ -928,7 +1246,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_refused_candidate_is_not_tried_again_until_its_source_changes() {
-        let refused = Mutex::new(HashSet::new());
+        let mut refused = HashSet::new();
         let tried = Mutex::new(Vec::new());
         let stale = || {
             vec![
@@ -946,8 +1264,12 @@ mod tests {
             ]
         };
 
-        let first = sign_in_counting(stale(), &refused, &tried).await.unwrap();
-        let again = sign_in_counting(stale(), &refused, &tried).await.unwrap();
+        let first = sign_in_counting(stale(), &mut refused, &tried)
+            .await
+            .unwrap();
+        let again = sign_in_counting(stale(), &mut refused, &tried)
+            .await
+            .unwrap();
         assert_eq!(first, CredentialSource::Secret);
         assert_eq!(again, CredentialSource::Secret);
         assert_eq!(
@@ -958,7 +1280,7 @@ mod tests {
 
         // Only refused candidates left: unauthorized at once, nothing sent to Argo CD.
         lock(&tried).clear();
-        let err = sign_in_counting(stale()[..2].to_vec(), &refused, &tried)
+        let err = sign_in_counting(stale()[..2].to_vec(), &mut refused, &tried)
             .await
             .unwrap_err();
         assert_eq!(err.code, ErrorCode::Unauthorized);
@@ -971,20 +1293,22 @@ mod tests {
             "good",
         )];
         assert_eq!(
-            sign_in_counting(changed, &refused, &tried).await.unwrap(),
+            sign_in_counting(changed, &mut refused, &tried)
+                .await
+                .unwrap(),
             CredentialSource::Secret
         );
         assert_eq!(*lock(&tried), ["good"]);
 
         // A failure that is not a refusal (Argo CD unreachable) is not remembered.
-        let unreachable = Mutex::new(HashSet::new());
+        let mut unreachable = HashSet::new();
         let down =
             |_: Credentials| async { Err::<(), _>(CoreError::new(ErrorCode::Unreachable, "down")) };
-        let err = first_accepted(stale(), &unreachable, down)
+        let err = first_accepted(stale(), &mut unreachable, down)
             .await
             .unwrap_err();
         assert_eq!(err.code, ErrorCode::Unreachable);
-        assert!(lock(&unreachable).is_empty());
+        assert!(unreachable.is_empty());
     }
 
     /// An application state connected to the kind cluster with Argo CD, using the mock keyring `store`.
@@ -1061,6 +1385,8 @@ mod tests {
         let after = state.argocd.status(&state.clusters, &id).await.unwrap();
 
         assert!(!before.signed_in);
+        assert!(!after.insecure, "the test installation runs with TLS");
+        assert!(after.refused.is_empty());
         assert_eq!(after.namespace, "argocd");
         assert!(after.signed_in);
         assert_eq!(after.source, Some(CredentialSource::Secret));
@@ -1091,7 +1417,8 @@ mod tests {
             return;
         };
         let password = initial_password(&state, &id).await;
-        let key = format!("sextant/argocd:{id}:argocd");
+        let server = argocd::api_server_url(&state.clusters, &id).unwrap();
+        let key = format!("sextant/argocd:argocd@{server}");
 
         let status = state
             .argocd
@@ -1202,6 +1529,7 @@ mod tests {
                 },
                 443,
                 None,
+                sextant_core::portforward::PodFilter::Any,
             )
             .await
             .unwrap();
@@ -1249,6 +1577,47 @@ mod tests {
 
         assert_eq!(err.code, ErrorCode::Unauthorized);
         assert!(!status.signed_in);
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn a_refused_saved_login_is_named_and_tried_again_after_signing_out() {
+        let dirs = tempfile::tempdir().unwrap();
+        let (store, _saved) = mock_store();
+        let Some((state, id)) = gitops_state(dirs.path(), Arc::clone(&store)).await else {
+            return;
+        };
+        let server = argocd::api_server_url(&state.clusters, &id).unwrap();
+        store
+            .save(
+                &keyring_user(&server, "argocd"),
+                &serde_json::to_string(&password("not-the-admin-password-42")).unwrap(),
+            )
+            .unwrap();
+
+        state
+            .argocd
+            .diff(&state.clusters, &id, &guestbook())
+            .await
+            .unwrap();
+        let signed = state.argocd.status(&state.clusters, &id).await.unwrap();
+        let out = state
+            .argocd
+            .logout(&state.clusters, &id, false)
+            .await
+            .unwrap();
+
+        assert_eq!(signed.source, Some(CredentialSource::Secret));
+        assert_eq!(signed.refused, [RefusedLogin::Saved]);
+        assert!(
+            out.refused.is_empty(),
+            "signing out forgets what Argo CD refused"
+        );
+        assert!(
+            !serde_json::to_string(&signed)
+                .unwrap()
+                .contains("not-the-admin-password-42")
+        );
         state.close_all();
     }
 

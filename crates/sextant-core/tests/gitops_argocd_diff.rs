@@ -29,7 +29,7 @@ use serde_json::{Value, json};
 use sextant_core::argocd::{
     self, ArgoClient, CredentialSource, Credentials, ManagedResource, SecretString,
 };
-use sextant_core::portforward::{ForwardTarget, PortForwarder};
+use sextant_core::portforward::{ForwardTarget, PodFilter, PortForwarder};
 use sextant_core::{ClusterId, ClusterManager, ErrorCode};
 
 const APP: &str = "sextant-argodiff";
@@ -86,25 +86,26 @@ where
         create_namespace(&client, ns).await;
     }
     let (tmp, mgr, id) = connected(&cluster.kubeconfig).await;
-    let server = argocd::find_server(&mgr, &id).await.unwrap();
+    let server = argocd::find_server(&mgr, &id, None).await.unwrap();
     assert_eq!(
         (server.namespace.as_str(), server.name.as_str(), server.port),
         ("argocd", "argocd-server", 443)
     );
     let forwarder = PortForwarder::new();
+    let server_found = server.clone();
     let target = ForwardTarget::Service {
         namespace: server.namespace,
         name: server.name,
     };
     let info = forwarder
-        .start(&mgr, &id, target, server.port, None)
+        .start(&mgr, &id, target, server.port, None, PodFilter::Any)
         .await
         .unwrap();
     let argo = Argo {
         mgr,
         id,
         client: client.clone(),
-        argo: ArgoClient::new(info.local_port),
+        argo: ArgoClient::for_server(&server_found, info.local_port),
     };
     let result = AssertUnwindSafe(body(argo)).catch_unwind().await;
     // The forward and the kubeconfig copy live until the body is done.

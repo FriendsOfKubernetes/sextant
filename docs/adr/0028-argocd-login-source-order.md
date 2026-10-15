@@ -26,3 +26,5 @@ If there is no session, `argocd_diff` goes through the sources in order: (1) the
 - On an SSO-only server with no local users, login is impossible altogether; the error says so in words (story 13).
 - The memory of refusals lives until the app is closed and is cleared only by a change of the candidate's source. A password corrected in Argo CD itself while the secret in the cluster is unchanged will not be tried until Sextant restarts, a new save or an input. For an expired token the scenario "log in again with the saved one" remains; the `expired` flag is in `argocd_status`.
 - While a session exists in memory, the sources are not tried.
+
+> Amended (v0.6.1): refusals are remembered per cluster connection and forgotten on "Sign out" and when the cluster is closed, so a password changed in Argo CD while `argocd-initial-admin-secret` stays the same is tried again after either, not only after a restart. `argocd_status.refused` names what the last automatic sign-in had refused (`typed`, `saved`, `adminSecret`, `tokenSecret`), and the login dialog says so, e.g. that the admin password from the secret may have been changed and the current one should be typed in (#57).

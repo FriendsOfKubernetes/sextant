@@ -3,6 +3,8 @@
 //! The API is reached through a local port forward (`PortForwarder`, owned by the caller) on `127.0.0.1`. Argo CD
 //! serves it with a self-signed certificate, so [`ArgoClient`] does not check the certificate — and it can only talk to
 //! the loopback address: the channel behind the forward is the Kubernetes API connection, already protected by TLS.
+//! Plain HTTP is used only when the installation says its server runs without TLS (`server.insecure: "true"` in
+//! `argocd-cmd-params-cm`, [`ArgoServer::insecure`]); a failed TLS handshake is never retried in plain HTTP.
 //!
 //! Passwords and tokens are [`SecretString`]s: they print as `<hidden>`, never go into an error message and never
 //! cross to the frontend (no type here that the frontend receives carries one). Values of Kubernetes Secrets in the
@@ -12,7 +14,6 @@ use std::collections::BTreeSet;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use http::header::{AUTHORIZATION, CONTENT_TYPE, HOST, HeaderValue};
@@ -48,6 +49,8 @@ pub const INITIAL_ADMIN_SECRET: &str = "argocd-initial-admin-secret";
 pub const PART_OF_SELECTOR: &str = "app.kubernetes.io/part-of=argocd";
 /// Argo CD's settings: `admin.enabled`, local `accounts.*`, SSO (`dex.config`, `oidc.config`).
 pub const SETTINGS_CONFIG_MAP: &str = "argocd-cm";
+/// Parameters of Argo CD's components; `server.insecure: "true"` runs `argocd-server` without TLS.
+pub const PARAMS_CONFIG_MAP: &str = "argocd-cmd-params-cm";
 /// How the `notFound` error of [`find_server`] begins when several namespaces look like an Argo CD installation and
 /// nothing a namespace's tenant cannot create tells the real one.
 pub const AMBIGUOUS_INSTALLATION: &str = "ambiguous Argo CD installation";
@@ -168,6 +171,9 @@ pub struct ArgoServer {
     pub namespace: String,
     pub name: String,
     pub port: u16,
+    /// The installation runs the server without TLS (`server.insecure: "true"` in `argocd-cmd-params-cm`): the
+    /// API is talked to in plain HTTP. Otherwise only TLS is used.
+    pub insecure: bool,
 }
 
 /// What the sign-in window can offer, from `argocd-cm`.
@@ -185,9 +191,17 @@ pub struct LoginOptions {
 /// in any other namespace is never chosen, so the password typed in the sign-in window and the credentials of the
 /// installation's Secrets (read from the same namespace) go to the installation's own server only. The port is the
 /// one named `https` (or 443), otherwise the first.
-pub async fn find_server(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<ArgoServer> {
+///
+/// `preferred` is the namespace the user chose when several looked like the installation: it is taken only when it
+/// is one of the namespaces [`installation_namespace`] would choose from, so a choice can never point the sign-in at a
+/// namespace those rules ruled out (a tenant's look-alike next to an installation a ClusterRoleBinding names).
+pub async fn find_server(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    preferred: Option<&str>,
+) -> CoreResult<ArgoServer> {
     let client = mgr.client(cluster)?;
-    let namespace = installation_namespace(&client).await?;
+    let namespace = installation_namespace(&client, preferred).await?;
     let api = Api::<Service>::namespaced(client, &namespace);
     let mut services = match api
         .list(&ListParams::default().labels(SERVER_SELECTOR))
@@ -220,11 +234,59 @@ pub async fn find_server(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResul
         .find(|p| p.name.as_deref() == Some("https") || p.port == 443)
         .or_else(|| ports.first())
         .ok_or_else(not_found)?;
+    let port = u16::try_from(port.port).map_err(|_| not_found())?;
+    let insecure = server_insecure(mgr, cluster, &namespace).await?;
     Ok(ArgoServer {
         name: svc.metadata.name.clone().unwrap_or_default(),
-        port: u16::try_from(port.port).map_err(|_| not_found())?,
+        port,
         namespace,
+        insecure,
     })
+}
+
+/// The Kubernetes API server URL of `cluster`, from its kubeconfig cluster entry (without a trailing `/`): what a
+/// saved Argo CD login belongs to, so the same API server reached through another context finds the same login and
+/// another server behind a reused context name does not.
+pub fn api_server_url(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<String> {
+    let registry = mgr.registry();
+    let clusters = registry
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .clusters()?;
+    let info = clusters
+        .into_iter()
+        .find(|info| &info.id == cluster)
+        .ok_or_else(|| {
+            CoreError::new(
+                ErrorCode::NotFound,
+                format!("the cluster {cluster} is not in the kubeconfig any more"),
+            )
+        })?;
+    let server = info.server.trim().trim_end_matches('/');
+    if server.is_empty() {
+        return Err(CoreError::new(
+            ErrorCode::Invalid,
+            format!("the kubeconfig cluster of {cluster} has no server"),
+        ));
+    }
+    Ok(server.to_owned())
+}
+
+/// Whether `argocd-cmd-params-cm` in `namespace` turns TLS of `argocd-server` off (`server.insecure: "true"`).
+/// Without the ConfigMap (or the right to read it) the server is taken to speak TLS, Argo CD's default.
+async fn server_insecure(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    namespace: &str,
+) -> CoreResult<bool> {
+    let api = Api::<ConfigMap>::namespaced(mgr.client(cluster)?, namespace);
+    let params = match api.get(PARAMS_CONFIG_MAP).await {
+        Ok(cm) => cm.data.unwrap_or_default(),
+        Err(err) => absent_as_none(kube_error(err, None))?.unwrap_or_default(),
+    };
+    Ok(params
+        .get("server.insecure")
+        .is_some_and(|v| v.trim().eq_ignore_ascii_case("true")))
 }
 
 /// The namespace Argo CD is installed in. A tenant who may write only in their own namespace can put an `argocd-cm`,
@@ -237,18 +299,23 @@ pub async fn find_server(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResul
 /// 2. Without such a binding (a namespaced installation, or no right to list ClusterRoleBindings) the namespaces
 ///    holding `argocd-cm` or `argocd-initial-admin-secret` are the candidates.
 ///
-/// Out of the namespaces left: the only one, else [`DEFAULT_NAMESPACE`] when it is one of them; several others are a
-/// `notFound` error beginning with [`AMBIGUOUS_INSTALLATION`] that names them — none is picked. No namespace at all
-/// gives [`DEFAULT_NAMESPACE`]. Only names are read (metadata), never a Secret's values.
-async fn installation_namespace(client: &kube::Client) -> CoreResult<String> {
+/// Out of the namespaces left: `preferred` when it is one of them (the user's choice), else the only one, else
+/// [`DEFAULT_NAMESPACE`] when it is one of them; several others are a `notFound` error beginning with
+/// [`AMBIGUOUS_INSTALLATION`] that names them in parentheses — none is picked. No namespace at all gives
+/// [`DEFAULT_NAMESPACE`]. Only names are read (metadata), never a Secret's values.
+async fn installation_namespace(
+    client: &kube::Client,
+    preferred: Option<&str>,
+) -> CoreResult<String> {
     let marked = marked_namespaces(client).await?;
     let candidates = candidate_namespaces(client).await?;
     if marked.is_empty() {
-        return choose_namespace(candidates, "");
+        return choose_namespace(candidates, preferred, "");
     }
     let live: BTreeSet<String> = marked.intersection(&candidates).cloned().collect();
     choose_namespace(
         if live.is_empty() { marked } else { live },
+        preferred,
         " named by ClusterRoleBindings of argocd-application-controller / argocd-server",
     )
 }
@@ -296,7 +363,14 @@ async fn marked_namespaces(client: &kube::Client) -> CoreResult<BTreeSet<String>
 }
 
 /// The installation out of `namespaces` (see [`installation_namespace`]); `why` says where they came from.
-fn choose_namespace(namespaces: BTreeSet<String>, why: &str) -> CoreResult<String> {
+fn choose_namespace(
+    namespaces: BTreeSet<String>,
+    preferred: Option<&str>,
+    why: &str,
+) -> CoreResult<String> {
+    if let Some(chosen) = preferred.filter(|ns| namespaces.contains(*ns)) {
+        return Ok(chosen.to_owned());
+    }
     if namespaces.len() <= 1 || namespaces.contains(DEFAULT_NAMESPACE) {
         return Ok(if namespaces.len() == 1 {
             namespaces.into_iter().next().unwrap_or_default()
@@ -310,7 +384,7 @@ fn choose_namespace(namespaces: BTreeSet<String>, why: &str) -> CoreResult<Strin
         format!(
             "{AMBIGUOUS_INSTALLATION}: several namespaces look like it ({}){why}, and nothing a namespace's tenant \
              cannot create (a ClusterRoleBinding of argocd-application-controller or argocd-server) tells the real \
-             one; Sextant does not pick one",
+             one; Sextant does not pick one by itself",
             names.join(", ")
         ),
     ))
@@ -468,13 +542,14 @@ pub fn is_refusal(err: &CoreError) -> bool {
 }
 
 /// A client of the Argo CD API behind a local port forward. It talks only to `127.0.0.1`, over TLS without checking
-/// the (self-signed) certificate; a server without TLS (`server.insecure`) is talked to in plain HTTP.
+/// the (self-signed) certificate, or — made with [`ArgoClient::plain_http`] for a server the installation runs without
+/// TLS — in plain HTTP. A client made for TLS never falls back to plain HTTP: a failed handshake is `unreachable`.
 #[derive(Clone)]
 pub struct ArgoClient {
     port: u16,
     tls: tokio_rustls::TlsConnector,
-    /// The server does not speak TLS (found on the first request).
-    plain: Arc<AtomicBool>,
+    /// Plain HTTP (the installation runs `argocd-server` with `server.insecure`).
+    plain: bool,
 }
 
 impl fmt::Debug for ArgoClient {
@@ -484,7 +559,7 @@ impl fmt::Debug for ArgoClient {
 }
 
 impl ArgoClient {
-    /// A client of the API forwarded to `127.0.0.1:<local_port>`.
+    /// A client of the API forwarded to `127.0.0.1:<local_port>`, over TLS.
     pub fn new(local_port: u16) -> Self {
         let provider = Arc::new(rustls::crypto::ring::default_provider());
         let mut config = rustls::ClientConfig::builder_with_provider(Arc::clone(&provider))
@@ -497,24 +572,35 @@ impl ArgoClient {
         Self {
             port: local_port,
             tls: tokio_rustls::TlsConnector::from(Arc::new(config)),
-            plain: Arc::new(AtomicBool::new(false)),
+            plain: false,
         }
     }
 
-    /// A client that speaks plain HTTP from the start (tests against a fake server).
-    #[cfg(test)]
-    fn plain(local_port: u16) -> Self {
-        let client = Self::new(local_port);
-        client.plain.store(true, Ordering::Relaxed);
-        client
+    /// A client that speaks plain HTTP: only for a server the installation runs without TLS
+    /// ([`ArgoServer::insecure`]).
+    pub fn plain_http(local_port: u16) -> Self {
+        Self {
+            plain: true,
+            ..Self::new(local_port)
+        }
+    }
+
+    /// The client `server` needs on the local port forwarded to it: plain HTTP only when it is insecure.
+    pub fn for_server(server: &ArgoServer, local_port: u16) -> Self {
+        if server.insecure {
+            Self::plain_http(local_port)
+        } else {
+            Self::new(local_port)
+        }
+    }
+
+    /// The connection is plain HTTP.
+    pub fn is_plain_http(&self) -> bool {
+        self.plain
     }
 
     pub fn base_url(&self) -> String {
-        let scheme = if self.plain.load(Ordering::Relaxed) {
-            "http"
-        } else {
-            "https"
-        };
+        let scheme = if self.plain { "http" } else { "https" };
         format!("{scheme}://127.0.0.1:{}", self.port)
     }
 
@@ -666,31 +752,24 @@ impl ArgoClient {
         session: Option<&Session>,
         body: Option<Value>,
     ) -> CoreResult<(StatusCode, Bytes)> {
-        let request = || self.request(method.clone(), path, session, body.as_ref());
+        let request = self.request(method, path, session, body.as_ref())?;
         let tcp = self.connect().await?;
-        if self.plain.load(Ordering::Relaxed) {
-            return exchange(tcp, request()?).await;
+        if self.plain {
+            return exchange(tcp, request).await;
         }
         let name = ServerName::IpAddress(IpAddr::V4(Ipv4Addr::LOCALHOST).into());
-        match self.tls.connect(name, tcp).await {
-            Ok(tls) => exchange(tls, request()?).await,
-            Err(tls_err) => {
-                // A server without TLS answers the handshake with plain HTTP; talk HTTP to it from now on.
-                let answer = exchange(self.connect().await?, request()?).await;
-                match answer {
-                    Ok(answer) if !answer.0.is_redirection() => {
-                        self.plain.store(true, Ordering::Relaxed);
-                        Ok(answer)
-                    }
-                    _ => Err(CoreError::new(
-                        ErrorCode::Unreachable,
-                        format!(
-                            "Argo CD cannot be reached through the port forward: TLS: {tls_err}"
-                        ),
-                    )),
-                }
-            }
-        }
+        // No retry in plain HTTP: the request may carry a password or a token, and only the installation's own
+        // `server.insecure` says the server has no TLS.
+        let tls = self.tls.connect(name, tcp).await.map_err(|tls_err| {
+            CoreError::new(
+                ErrorCode::Unreachable,
+                format!(
+                    "Argo CD cannot be reached through the port forward: TLS: {tls_err} (a server without TLS \
+                     is used only when {PARAMS_CONFIG_MAP} sets server.insecure: \"true\")"
+                ),
+            )
+        })?;
+        exchange(tls, request).await
     }
 
     async fn connect(&self) -> CoreResult<TcpStream> {
@@ -1067,7 +1146,7 @@ mod tests {
             _ => Reply::not_found(),
         })
         .await;
-        let client = ArgoClient::plain(port_of(&api));
+        let client = ArgoClient::plain_http(port_of(&api));
 
         let items = client
             .managed_resources(&session("tok-1"), "guestbook", Some("argocd"), None)
@@ -1123,7 +1202,7 @@ mod tests {
             _ => Reply::not_found(),
         })
         .await;
-        let client = ArgoClient::plain(port_of(&api));
+        let client = ArgoClient::plain_http(port_of(&api));
 
         let err = client
             .login_password("admin", &SecretString::new(PLAIN_VALUE))
@@ -1151,7 +1230,7 @@ mod tests {
             _ => Reply::json(401, r#"{"error":"no session information"}"#),
         })
         .await;
-        let client = ArgoClient::plain(port_of(&api));
+        let client = ArgoClient::plain_http(port_of(&api));
 
         let session = client
             .login_password("admin", &SecretString::new("pw"))
@@ -1182,7 +1261,7 @@ mod tests {
             }
         })
         .await;
-        let client = ArgoClient::plain(port_of(&api));
+        let client = ArgoClient::plain_http(port_of(&api));
 
         let err = client
             .login_token(&SecretString::new("bad"))
@@ -1206,7 +1285,7 @@ mod tests {
             _ => Reply::json(403, r#"{"error":"permission denied","code":7}"#),
         })
         .await;
-        let client = ArgoClient::plain(port_of(&api));
+        let client = ArgoClient::plain_http(port_of(&api));
 
         let expired = client
             .managed_resources(&session("t"), "old", None, None)
@@ -1235,6 +1314,69 @@ mod tests {
         assert_eq!(err.code, ErrorCode::Unreachable);
     }
 
+    /// A server without TLS, as `argocd-server` with `server.insecure`: it answers a TLS handshake with an HTTP
+    /// `400` and a plain request with a token. Every byte it received is kept.
+    async fn plain_http_server() -> (u16, Arc<std::sync::Mutex<Vec<u8>>>) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let received = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let seen = Arc::clone(&received);
+        tokio::spawn(async move {
+            while let Ok((mut socket, _)) = listener.accept().await {
+                let seen = Arc::clone(&seen);
+                tokio::spawn(async move {
+                    let mut buf = vec![0u8; 64 * 1024];
+                    let Ok(n) = socket.read(&mut buf).await else {
+                        return;
+                    };
+                    seen.lock().unwrap().extend_from_slice(&buf[..n]);
+                    let answer: &[u8] = if buf.first() == Some(&0x16) {
+                        b"HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    } else {
+                        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 15\r\nConnection: close\r\n\r\n{\"token\":\"jwt\"}"
+                    };
+                    let _ = socket.write_all(answer).await;
+                    let _ = socket.shutdown().await;
+                });
+            }
+        });
+        (port, received)
+    }
+
+    #[tokio::test]
+    async fn after_a_tls_failure_the_password_is_not_sent_over_plain_http() {
+        let (port, received) = plain_http_server().await;
+
+        let err = ArgoClient::new(port)
+            .login_password("admin", &SecretString::new(PLAIN_VALUE))
+            .await
+            .unwrap_err();
+
+        assert_eq!(err.code, ErrorCode::Unreachable, "{err}");
+        assert!(!err.message.contains(PLAIN_VALUE), "{err}");
+        let leaked = String::from_utf8_lossy(&received.lock().unwrap()).contains(PLAIN_VALUE);
+        assert!(!leaked, "the password reached the server over plain HTTP");
+    }
+
+    #[tokio::test]
+    async fn a_server_the_installation_marks_insecure_is_talked_to_in_plain_http() {
+        let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api/v1/session" => Reply::json(200, r#"{"token":"jwt"}"#),
+            _ => Reply::not_found(),
+        })
+        .await;
+
+        let client = ArgoClient::plain_http(port_of(&api));
+        let session = client
+            .login_password("admin", &SecretString::new("pw"))
+            .await
+            .unwrap();
+
+        assert_eq!(session.username.as_deref(), Some("admin"));
+        assert!(client.base_url().starts_with("http://"), "{client:?}");
+    }
+
     #[tokio::test]
     async fn sign_in_takes_the_first_accepted_candidate_and_without_any_is_unauthorized() {
         let api = FakeApi::start(|req: &Request| {
@@ -1246,7 +1388,7 @@ mod tests {
             }
         })
         .await;
-        let client = ArgoClient::plain(port_of(&api));
+        let client = ArgoClient::plain_http(port_of(&api));
         let password = |p: &str| Credentials::Password {
             username: "admin".into(),
             password: SecretString::new(p),
@@ -1426,14 +1568,15 @@ mod tests {
         let api = kube_with_a_stranger(true).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
 
-        let server = find_server(&mgr, &id).await.unwrap();
+        let server = find_server(&mgr, &id, None).await.unwrap();
 
         assert_eq!(
             server,
             ArgoServer {
                 namespace: "gitops".into(),
                 name: "argocd-server".into(),
-                port: 443
+                port: 443,
+                insecure: false,
             }
         );
     }
@@ -1443,7 +1586,7 @@ mod tests {
         let api = kube_with_a_stranger(false).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
 
-        let err = find_server(&mgr, &id).await.unwrap_err();
+        let err = find_server(&mgr, &id, None).await.unwrap_err();
 
         assert_eq!(err.code, ErrorCode::NotFound, "{err}");
     }
@@ -1513,7 +1656,7 @@ mod tests {
         let api = kube_with_a_tenant(true).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
 
-        let server = find_server(&mgr, &id).await.unwrap();
+        let server = find_server(&mgr, &id, None).await.unwrap();
         let found = standard_credentials_with_origin(&mgr, &id, &server.namespace)
             .await
             .unwrap();
@@ -1523,7 +1666,8 @@ mod tests {
             ArgoServer {
                 namespace: "gitops".into(),
                 name: "argocd-server".into(),
-                port: 443
+                port: 443,
+                insecure: false,
             }
         );
         let origins: Vec<&str> = found.iter().map(|(origin, _)| origin.as_str()).collect();
@@ -1531,15 +1675,92 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_chosen_namespace_is_taken_only_when_it_is_one_of_the_candidates() {
+        let ambiguous = kube_with_a_tenant(false).await;
+        let (_tmp, mgr, id) = connected_to(ambiguous.url()).await;
+        let marked = kube_with_a_tenant(true).await;
+        let (_tmp2, marked_mgr, marked_id) = connected_to(marked.url()).await;
+
+        let chosen = find_server(&mgr, &id, Some("gitops")).await.unwrap();
+        let elsewhere = find_server(&mgr, &id, Some("kube-system"))
+            .await
+            .unwrap_err();
+        let tenant = find_server(&marked_mgr, &marked_id, Some("aaa"))
+            .await
+            .unwrap();
+
+        assert_eq!(chosen.namespace, "gitops");
+        assert!(
+            elsewhere.message.starts_with(AMBIGUOUS_INSTALLATION),
+            "a namespace that is not a candidate is not taken: {elsewhere}"
+        );
+        assert_eq!(
+            tenant.namespace, "gitops",
+            "a choice cannot override the installation a ClusterRoleBinding names"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_server_is_insecure_only_when_argocd_cmd_params_cm_says_so() {
+        let found = |insecure: Option<&'static str>| async move {
+            let api = FakeApi::start(move |req: &Request| {
+                let list = |kind: &str, items: Value| {
+                    Reply::json(200, json!({ "apiVersion": "v1", "kind": kind, "metadata": {}, "items": items }).to_string())
+                };
+                match req.path.as_str() {
+                    "/api" => Reply::json(200, API_VERSIONS),
+                    "/api/v1/configmaps" | "/api/v1/secrets" => list("PartialObjectMetadataList", json!([])),
+                    "/api/v1/namespaces/argocd/services" => list("ServiceList", json!([{
+                        "metadata": { "name": "argocd-server", "namespace": "argocd" },
+                        "spec": { "ports": [{ "name": "http", "port": 80 }, { "name": "https", "port": 443 }] }
+                    }])),
+                    "/api/v1/namespaces/argocd/configmaps/argocd-cmd-params-cm" => match insecure {
+                        Some(value) => Reply::json(200, json!({ "apiVersion": "v1", "kind": "ConfigMap",
+                            "metadata": { "name": PARAMS_CONFIG_MAP }, "data": { "server.insecure": value } }).to_string()),
+                        None => Reply::not_found(),
+                    },
+                    _ => Reply::not_found(),
+                }
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+            find_server(&mgr, &id, None).await.unwrap()
+        };
+
+        assert!(found(Some("true")).await.insecure);
+        assert!(!found(Some("false")).await.insecure);
+        assert!(!found(None).await.insecure, "TLS is the default");
+        assert_eq!(found(None).await.port, 443);
+    }
+
+    #[tokio::test]
     async fn without_a_cluster_binding_two_look_alike_installations_are_an_error_naming_both() {
         let api = kube_with_a_tenant(false).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
 
-        let err = find_server(&mgr, &id).await.unwrap_err();
+        let err = find_server(&mgr, &id, None).await.unwrap_err();
 
         assert_eq!(err.code, ErrorCode::NotFound, "{err}");
         assert!(err.message.starts_with(AMBIGUOUS_INSTALLATION), "{err}");
         assert!(err.message.contains("aaa, gitops"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn the_api_server_url_comes_from_the_kubeconfig_cluster_entry() {
+        let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(&format!("{}/", api.url())).await;
+
+        assert_eq!(api_server_url(&mgr, &id).unwrap(), api.url());
+        assert_eq!(
+            api_server_url(&mgr, &ClusterId::from("gone"))
+                .unwrap_err()
+                .code,
+            ErrorCode::NotFound
+        );
     }
 
     #[test]

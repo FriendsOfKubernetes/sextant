@@ -17,7 +17,9 @@ use kube::Api;
 use kube::api::{DeleteParams, PostParams};
 use serde_json::json;
 use sextant_core::kubeconfig::KubeconfigEnv;
-use sextant_core::portforward::{ForwardInfo, ForwardStatus, ForwardTarget, PortForwarder};
+use sextant_core::portforward::{
+    ForwardInfo, ForwardStatus, ForwardTarget, PodFilter, PortForwarder,
+};
 use sextant_core::{ClusterId, ClusterManager, ErrorCode, KubeconfigRegistry};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -84,7 +86,7 @@ async fn forwarding_the_nginx_service_answers_over_the_local_port() {
     let forwarder = PortForwarder::new();
 
     let info = forwarder
-        .start(&mgr, &id, nginx_service(), 80, None)
+        .start(&mgr, &id, nginx_service(), 80, None, PodFilter::Any)
         .await
         .unwrap();
 
@@ -109,11 +111,11 @@ async fn automatic_local_ports_are_free_and_distinct() {
     let forwarder = PortForwarder::new();
 
     let first = forwarder
-        .start(&mgr, &id, nginx_service(), 80, None)
+        .start(&mgr, &id, nginx_service(), 80, None, PodFilter::Any)
         .await
         .unwrap();
     let second = forwarder
-        .start(&mgr, &id, nginx_service(), 80, None)
+        .start(&mgr, &id, nginx_service(), 80, None, PodFilter::Any)
         .await
         .unwrap();
 
@@ -136,7 +138,7 @@ async fn a_taken_local_port_gives_port_in_use() {
     let taken = squatter.local_addr().unwrap().port();
 
     let err = forwarder
-        .start(&mgr, &id, nginx_service(), 80, Some(taken))
+        .start(&mgr, &id, nginx_service(), 80, Some(taken), PodFilter::Any)
         .await
         .unwrap_err();
 
@@ -159,7 +161,7 @@ async fn stopping_a_forward_frees_the_port_and_publishes_the_list() {
     let mut updates = forwarder.subscribe();
 
     let info = forwarder
-        .start(&mgr, &id, nginx_service(), 80, None)
+        .start(&mgr, &id, nginx_service(), 80, None, PodFilter::Any)
         .await
         .unwrap();
     let started: Vec<ForwardInfo> = updates.recv().await.unwrap();
@@ -172,7 +174,14 @@ async fn stopping_a_forward_frees_the_port_and_publishes_the_list() {
     assert!(port_is_free(info.local_port).await, "the port is released");
     // The same port can be forwarded again, and stopping an unknown id is a notFound error.
     let again = forwarder
-        .start(&mgr, &id, nginx_service(), 80, Some(info.local_port))
+        .start(
+            &mgr,
+            &id,
+            nginx_service(),
+            80,
+            Some(info.local_port),
+            PodFilter::Any,
+        )
         .await
         .unwrap();
     assert_eq!(again.local_port, info.local_port);
@@ -189,7 +198,7 @@ async fn disconnecting_the_cluster_closes_its_forwards() {
     let (_tmp, mgr, id) = connected(&cluster.kubeconfig).await;
     let forwarder = PortForwarder::new();
     let info = forwarder
-        .start(&mgr, &id, nginx_service(), 80, None)
+        .start(&mgr, &id, nginx_service(), 80, None, PodFilter::Any)
         .await
         .unwrap();
 
@@ -210,7 +219,7 @@ async fn a_service_without_ready_pods_or_with_an_unknown_port_is_an_error() {
     let forwarder = PortForwarder::new();
 
     let no_port = forwarder
-        .start(&mgr, &id, nginx_service(), 8081, None)
+        .start(&mgr, &id, nginx_service(), 8081, None, PodFilter::Any)
         .await
         .unwrap_err();
     let missing = forwarder
@@ -223,6 +232,7 @@ async fn a_service_without_ready_pods_or_with_an_unknown_port_is_an_error() {
             },
             80,
             None,
+            PodFilter::Any,
         )
         .await
         .unwrap_err();
@@ -293,6 +303,7 @@ async fn a_deleted_pod_turns_its_forward_into_an_error() {
                 },
                 80,
                 None,
+                PodFilter::Any,
             )
             .await
             .unwrap();

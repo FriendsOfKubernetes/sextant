@@ -82,6 +82,8 @@ function status(over: Partial<ArgoStatus> = {}): ArgoStatus {
     expired: false,
     saved: false,
     saveError: null,
+    insecure: false,
+    refused: [],
     ...over,
   };
 }
@@ -267,6 +269,36 @@ describe("Argo CD diff", () => {
       "Sign-in through SSO is not supported in Sextant.",
     ]);
     expect(within(form).getByRole("button", { name: "API token" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("names the logins Argo CD refused, so a changed admin password can be typed in", async () => {
+    backend = mockBackend({
+      argocd_diff: () => {
+        throw unauthorized;
+      },
+      argocd_status: () => status({ signedIn: false, source: null, refused: ["saved", "adminSecret"] }),
+    });
+    show();
+
+    const form = await screen.findByRole("form", { name: "Sign in to Argo CD" });
+    const notes = within(form).getAllByRole("note").map((n) => n.textContent);
+    expect(notes).toEqual([
+      "Argo CD refused the saved login: its password or token may have changed. Sign in with the current one (with Remember to replace the saved login).",
+      "Argo CD refused the admin password from argocd-initial-admin-secret: it may have been changed in Argo CD. Enter the current password.",
+    ]);
+  });
+
+  it("says when the connection to Argo CD is plain HTTP", async () => {
+    backend = mockBackend({
+      argocd_diff: () => {
+        throw unauthorized;
+      },
+      argocd_status: () => status({ signedIn: false, insecure: true }),
+    });
+    show();
+
+    const form = await screen.findByRole("form", { name: "Sign in to Argo CD" });
+    expect(within(form).getByRole("note")).toHaveTextContent(/without TLS .*plain HTTP/);
   });
 
   it("forgets the saved login and shows the sign-in window", async () => {

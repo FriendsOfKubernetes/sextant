@@ -21,3 +21,5 @@ One function in the core decides whether an object is a node-shell pod: its name
 - A pod in `kube-system` whose name starts with the prefix is refused even if it is not ours.
 - A genuine read error blocks a call that would have been harmless; the message says why.
 - Port forwards and logs for such a pod were not part of the build (the stories name exec, change and delete).
+
+Amended (v0.6.1): an agent's port forward never reaches a node-shell pod or a pod with `spec.hostNetwork: true` (its ports are the node's own). A Pod target is refused — by name before the access guard, by label or `hostNetwork` from the forwarder's own read of the pod after it; a Service forward skips such pods every time it picks a pod and is refused when they are all the service has (`PodFilter::NoNodeAccess` in `crates/sextant-core/src/portforward.rs`). The user's own forwards are unchanged.

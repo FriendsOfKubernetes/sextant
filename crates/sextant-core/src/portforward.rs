@@ -18,6 +18,7 @@ use ts_rs::TS;
 use crate::cluster::{ClusterManager, ConnectionState};
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::ClusterId;
+use crate::node_shell;
 
 /// How often a forward checks that its pod is still there.
 const HEALTH_INTERVAL: Duration = Duration::from_secs(2);
@@ -29,6 +30,19 @@ const HEALTH_INTERVAL: Duration = Duration::from_secs(2);
 pub enum ForwardTarget {
     Pod { namespace: String, name: String },
     Service { namespace: String, name: String },
+}
+
+/// Which pods a forward may go to; checked on every pick of a pod (at the start and whenever a service forward
+/// moves to another pod).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum PodFilter {
+    /// Any pod: the user's own forwards.
+    #[default]
+    Any,
+    /// No pod whose ports are the node's own: neither a node shell ([`node_shell::is_node_shell_object`]) nor a
+    /// pod on the node's network (`spec.hostNetwork: true`). A pod target that is one is refused (`denied`); a
+    /// service target skips such pods, and is refused when they are all it has. Agents' forwards.
+    NoNodeAccess,
 }
 
 /// Serialized with a `state` tag: `{ "state": "active" }`, `{ "state": "error", "code": …, "message": … }`.
@@ -118,7 +132,7 @@ impl PortForwarder {
     ///
     /// A pod target is forwarded as is. A service target is resolved to one of its ready pods (the service port
     /// is translated to the pod's `targetPort`); when that pod goes away the forward turns to `Error` and
-    /// recovers by itself as soon as the service has another ready pod.
+    /// recovers by itself as soon as the service has another ready pod. `pods` says which pods may be picked.
     pub async fn start(
         &self,
         mgr: &ClusterManager,
@@ -126,11 +140,12 @@ impl PortForwarder {
         target: ForwardTarget,
         remote_port: u16,
         local_port: Option<u16>,
+        pods: PodFilter,
     ) -> CoreResult<ForwardInfo> {
         let client = mgr.client(cluster)?;
         let listener = bind_local(local_port.unwrap_or(0)).await?;
         let local_port = listener.local_addr()?.port();
-        let resolved = resolve(&client, &target, remote_port).await?;
+        let resolved = resolve(&client, &target, remote_port, pods).await?;
         self.watch_clusters(mgr);
 
         let id = format!("pf-{}", self.inner.next_id.fetch_add(1, Ordering::Relaxed));
@@ -150,6 +165,7 @@ impl PortForwarder {
             client,
             target,
             remote_port,
+            pods,
             current,
         ));
         self.inner.lock().push(Entry {
@@ -285,11 +301,12 @@ async fn bind_local(port: u16) -> CoreResult<TcpListener> {
         })
 }
 
-/// Finds the pod and the port inside it for a target.
+/// Finds the pod (one `pods` lets through) and the port inside it for a target.
 async fn resolve(
     client: &kube::Client,
     target: &ForwardTarget,
     remote_port: u16,
+    pods: PodFilter,
 ) -> CoreResult<Resolved> {
     match target {
         ForwardTarget::Pod { namespace, name } => {
@@ -297,7 +314,7 @@ async fn resolve(
                 .get(name)
                 .await
                 .map_err(|e| kube_error(e, None))?;
-            if let Some(problem) = pod_problem(&pod, None) {
+            if let Some(problem) = pod_problem(&pod, None, pods) {
                 return Err(problem);
             }
             Ok(Resolved {
@@ -338,17 +355,27 @@ async fn resolve(
                 .map(|(k, v)| format!("{k}={v}"))
                 .collect::<Vec<_>>()
                 .join(",");
-            let mut pods = Api::<Pod>::namespaced(client.clone(), namespace)
+            let mut candidates = Api::<Pod>::namespaced(client.clone(), namespace)
                 .list(&ListParams::default().labels(&labels))
                 .await
                 .map_err(|e| kube_error(e, None))?
                 .items;
-            pods.retain(is_ready);
-            pods.sort_by(|a, b| a.metadata.name.cmp(&b.metadata.name));
-            let pod = pods.into_iter().next().ok_or_else(|| {
-                CoreError::new(
+            candidates.retain(is_ready);
+            if candidates.is_empty() {
+                return Err(CoreError::new(
                     ErrorCode::NotFound,
                     format!("service {namespace}/{name} has no ready pods"),
+                ));
+            }
+            candidates.retain(|pod| node_access(pod, pods).is_none());
+            candidates.sort_by(|a, b| a.metadata.name.cmp(&b.metadata.name));
+            let pod = candidates.into_iter().next().ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::Denied,
+                    format!(
+                        "service {namespace}/{name} has no ready pods this port forward may go to: node shells \
+                         and pods on the node's network (spec.hostNetwork) are left out"
+                    ),
                 )
             })?;
             let port = pod_port(&pod, service_port.target_port.as_ref(), remote_port)?;
@@ -398,8 +425,45 @@ fn is_ready(pod: &Pod) -> bool {
             .any(|c| c.type_ == "Ready" && c.status == "True")
 }
 
-/// Why a pod cannot be forwarded to any more; `uid` is the identity the forward was made for.
-fn pod_problem(pod: &Pod, uid: Option<&str>) -> Option<CoreError> {
+/// Why `pods` does not let a forward reach `pod`: its ports are the node's own (`denied`).
+fn node_access(pod: &Pod, pods: PodFilter) -> Option<CoreError> {
+    if pods == PodFilter::Any {
+        return None;
+    }
+    let what = format!(
+        "pod {}/{}",
+        pod.metadata.namespace.as_deref().unwrap_or("?"),
+        pod.metadata.name.as_deref().unwrap_or("?")
+    );
+    // Fail closed: a pod that cannot be judged is not forwarded to.
+    let Ok(judged) = serde_json::to_value(pod) else {
+        return Some(CoreError::new(
+            ErrorCode::Denied,
+            format!("{what} cannot be checked, so this port forward may not go to it"),
+        ));
+    };
+    if node_shell::is_node_shell_object(&judged) {
+        return Some(CoreError::new(
+            ErrorCode::Denied,
+            format!("{what} is a node shell, so this port forward may not go to it"),
+        ));
+    }
+    if pod.spec.as_ref().and_then(|s| s.host_network) == Some(true) {
+        return Some(CoreError::new(
+            ErrorCode::Denied,
+            format!(
+                "{what} uses the node's network (spec.hostNetwork), so this port forward may not go to it"
+            ),
+        ));
+    }
+    None
+}
+
+/// Why a pod cannot be forwarded to (any more); `uid` is the identity the forward was made for.
+fn pod_problem(pod: &Pod, uid: Option<&str>, pods: PodFilter) -> Option<CoreError> {
+    if let Some(refused) = node_access(pod, pods) {
+        return Some(refused);
+    }
     let name = pod.metadata.name.as_deref().unwrap_or("?");
     if uid.is_some() && pod.metadata.uid.as_deref() != uid {
         return Some(CoreError::new(
@@ -467,6 +531,7 @@ async fn monitor(
     client: kube::Client,
     target: ForwardTarget,
     remote_port: u16,
+    pods: PodFilter,
     current: Arc<Mutex<Resolved>>,
 ) {
     loop {
@@ -476,7 +541,7 @@ async fn monitor(
             .get(&pod.name)
             .await
         {
-            Ok(found) => pod_problem(&found, pod.uid.as_deref()),
+            Ok(found) => pod_problem(&found, pod.uid.as_deref(), pods),
             Err(kube::Error::Api(status)) if status.code == 404 => Some(CoreError::new(
                 ErrorCode::NotFound,
                 format!("pod {} was deleted", pod.name),
@@ -490,13 +555,208 @@ async fn monitor(
                 inner.set_status(&id, ForwardStatus::Error(problem));
                 return;
             }
-            ForwardTarget::Service { .. } => match resolve(&client, &target, remote_port).await {
-                Ok(next) => {
-                    *current.lock().unwrap_or_else(|e| e.into_inner()) = next;
-                    inner.set_status(&id, ForwardStatus::Active);
+            ForwardTarget::Service { .. } => {
+                match resolve(&client, &target, remote_port, pods).await {
+                    Ok(next) => {
+                        *current.lock().unwrap_or_else(|e| e.into_inner()) = next;
+                        inner.set_status(&id, ForwardStatus::Active);
+                    }
+                    Err(error) => inner.set_status(&id, ForwardStatus::Error(error)),
                 }
-                Err(error) => inner.set_status(&id, ForwardStatus::Error(error)),
-            },
+            }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fake_api::{FakeApi, Reply, Request, connected_to};
+
+    const API_VERSIONS: &str =
+        r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+
+    fn pod(namespace: &str, name: &str, labels: &str, host_network: bool) -> String {
+        format!(
+            r#"{{"apiVersion":"v1","kind":"Pod","metadata":{{"name":"{name}","namespace":"{namespace}","uid":"uid-{name}","labels":{{{labels}}}}},
+               "spec":{{"hostNetwork":{host_network},"containers":[{{"name":"main","image":"busybox"}}]}},
+               "status":{{"phase":"Running","conditions":[{{"type":"Ready","status":"True"}}]}}}}"#
+        )
+    }
+
+    /// A node shell by its label, a pod on the node's network and an ordinary pod, all ready and all selected by the
+    /// service `ns/web` (by name, the ordinary pod comes last); the service `ns/node` selects only the first two. Plus
+    /// a pod in `kube-system` named like a node shell.
+    async fn server() -> FakeApi {
+        let shell = pod(
+            "ns",
+            "a-shell",
+            r#""app":"web","sextant.dev/node-shell":"true""#,
+            false,
+        );
+        let host = pod("ns", "b-host", r#""app":"web""#, true);
+        let web = pod("ns", "c-web", r#""app":"web""#, false);
+        let named = pod(
+            "kube-system",
+            "sextant-node-shell-n1-abcde",
+            r#""app":"kube""#,
+            false,
+        );
+        let service = |name: &str, app: &str| {
+            format!(
+                r#"{{"apiVersion":"v1","kind":"Service","metadata":{{"name":"{name}","namespace":"ns"}},
+                   "spec":{{"selector":{{"app":"{app}"}},"ports":[{{"port":80,"targetPort":8080}}]}}}}"#
+            )
+        };
+        let list = |items: &[&String]| {
+            format!(
+                r#"{{"apiVersion":"v1","kind":"PodList","metadata":{{}},"items":[{}]}}"#,
+                items
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        };
+        let web_list = list(&[&shell, &host, &web]);
+        let node_list = list(&[&shell, &host]);
+        let web_service = service("web", "web");
+        let node_service = service("node", "node");
+        FakeApi::start(move |req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/api/v1/namespaces/ns/services/web" => Reply::json(200, web_service.clone()),
+            "/api/v1/namespaces/ns/services/node" => Reply::json(200, node_service.clone()),
+            "/api/v1/namespaces/ns/pods" if req.query.contains("app%3Dweb") => {
+                Reply::json(200, web_list.clone())
+            }
+            "/api/v1/namespaces/ns/pods" if req.query.contains("app%3Dnode") => {
+                Reply::json(200, node_list.clone())
+            }
+            "/api/v1/namespaces/ns/pods/a-shell" => Reply::json(200, shell.clone()),
+            "/api/v1/namespaces/ns/pods/b-host" => Reply::json(200, host.clone()),
+            "/api/v1/namespaces/ns/pods/c-web" => Reply::json(200, web.clone()),
+            "/api/v1/namespaces/kube-system/pods/sextant-node-shell-n1-abcde" => {
+                Reply::json(200, named.clone())
+            }
+            _ => Reply::not_found(),
+        })
+        .await
+    }
+
+    fn service(name: &str) -> ForwardTarget {
+        ForwardTarget::Service {
+            namespace: "ns".into(),
+            name: name.into(),
+        }
+    }
+
+    fn pod_target(namespace: &str, name: &str) -> ForwardTarget {
+        ForwardTarget::Pod {
+            namespace: namespace.into(),
+            name: name.into(),
+        }
+    }
+
+    /// The pod a connection to the forward's local port goes to.
+    async fn pod_reached(api: &FakeApi, info: &ForwardInfo) -> String {
+        let _conn = TcpStream::connect((Ipv4Addr::LOCALHOST, info.local_port))
+            .await
+            .unwrap();
+        for _ in 0..250 {
+            let reached = api
+                .requests()
+                .into_iter()
+                .find_map(|r| r.path.strip_suffix("/portforward").map(str::to_owned));
+            if let Some(path) = reached {
+                return path.rsplit('/').next().unwrap().to_owned();
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        panic!("no port forward request reached the server");
+    }
+
+    #[tokio::test]
+    async fn a_forward_without_node_access_skips_node_shells_and_host_network_pods_of_a_service() {
+        let api = server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let forwarder = PortForwarder::new();
+        let info = forwarder
+            .start(&mgr, &id, service("web"), 80, None, PodFilter::NoNodeAccess)
+            .await
+            .unwrap();
+        assert_eq!(pod_reached(&api, &info).await, "c-web");
+    }
+
+    #[tokio::test]
+    async fn the_users_forward_to_a_service_picks_any_ready_pod() {
+        let api = server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let forwarder = PortForwarder::new();
+        let info = forwarder
+            .start(&mgr, &id, service("web"), 80, None, PodFilter::Any)
+            .await
+            .unwrap();
+        assert_eq!(pod_reached(&api, &info).await, "a-shell");
+    }
+
+    #[tokio::test]
+    async fn a_service_with_only_excluded_pods_is_refused_at_once() {
+        let api = server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let forwarder = PortForwarder::new();
+        let err = forwarder
+            .start(
+                &mgr,
+                &id,
+                service("node"),
+                80,
+                None,
+                PodFilter::NoNodeAccess,
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Denied);
+        assert!(
+            err.message
+                .contains("no ready pods this port forward may go to"),
+            "{}",
+            err.message
+        );
+        assert!(forwarder.list().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_pod_target_with_node_access_is_refused_with_one_read() {
+        let api = server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let forwarder = PortForwarder::new();
+        let cases = [
+            (pod_target("ns", "a-shell"), "is a node shell"),
+            (
+                pod_target("kube-system", "sextant-node-shell-n1-abcde"),
+                "is a node shell",
+            ),
+            (pod_target("ns", "b-host"), "uses the node's network"),
+        ];
+        for (target, why) in cases {
+            let err = forwarder
+                .start(&mgr, &id, target.clone(), 22, None, PodFilter::NoNodeAccess)
+                .await
+                .unwrap_err();
+            assert_eq!(err.code, ErrorCode::Denied, "{target:?}");
+            assert!(err.message.contains(why), "{target:?}: {}", err.message);
+        }
+        assert!(forwarder.list().is_empty());
+        assert_eq!(api.count("/api/v1/namespaces/ns/pods/a-shell"), 1);
+        assert_eq!(api.count("/api/v1/namespaces/ns/pods/b-host"), 1);
+
+        // The user's own forwards go to them.
+        for target in [pod_target("ns", "a-shell"), pod_target("ns", "b-host")] {
+            forwarder
+                .start(&mgr, &id, target, 22, None, PodFilter::Any)
+                .await
+                .unwrap();
+        }
+        assert_eq!(forwarder.list().len(), 2);
     }
 }

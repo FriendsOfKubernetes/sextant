@@ -49,6 +49,10 @@ export function LoginForm({ clusterId, status, reason, onSignedIn }: LoginFormPr
 
   const notes: string[] = [];
   if (reason && status?.expired) notes.push(t("argocd:login.expired"));
+  // What Sextant tried by itself and Argo CD refused (a changed admin password, a revoked token): typing the
+  // current login here replaces it.
+  for (const refused of status?.refused ?? []) notes.push(t(`argocd:login.refused.${refused}`));
+  if (status?.insecure) notes.push(t("argocd:login.insecure"));
   if (status && !status.localUsers) notes.push(t("argocd:login.noLocalUsers"));
   if (status?.sso) notes.push(t("argocd:login.sso"));
   const intro = t("argocd:login.intro", { namespace: status?.namespace ?? "argocd" });

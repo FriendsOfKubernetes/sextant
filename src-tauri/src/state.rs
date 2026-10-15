@@ -417,7 +417,14 @@ mod tests {
         };
         let info = state
             .forwarder
-            .start(&state.clusters, id, target, 80, None)
+            .start(
+                &state.clusters,
+                id,
+                target,
+                80,
+                None,
+                sextant_core::portforward::PodFilter::Any,
+            )
             .await
             .unwrap();
         info.local_port

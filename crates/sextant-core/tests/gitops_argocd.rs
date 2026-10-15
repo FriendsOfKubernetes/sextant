@@ -28,7 +28,7 @@ use kube::api::{
 };
 use kube::{Api, Client};
 use serde_json::{Value, json};
-use sextant_core::portforward::{ForwardTarget, PortForwarder};
+use sextant_core::portforward::{ForwardTarget, PodFilter, PortForwarder};
 use sextant_core::resources::{self, KindRef, ObjectRef, PatchType};
 use sextant_core::{ClusterId, ClusterManager};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -383,6 +383,7 @@ async fn the_web_ui_answers_through_a_forward_to_argocd_server_found_by_its_labe
             },
             443,
             None,
+            PodFilter::Any,
         )
         .await
         .unwrap();
