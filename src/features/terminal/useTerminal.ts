@@ -2,7 +2,7 @@
 //
 // Protocol (interfaces.md §1): `openStream` chooses the session id and subscribes to `term:<id>` before the session
 // starts (`exec_start` / `terminal_start` with that id), so the first prompt is never lost; once the start answered,
-// keystrokes go to `term_input` and size changes to `term_resize`. The session is stopped when the component
+// keystrokes go to `term_input` (those typed before it are kept and sent first) and size changes to `term_resize`. The session is stopped when the component
 // unmounts (the dock tab is closed) or reconnects.
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal, type ITheme } from "@xterm/xterm";
@@ -148,8 +148,11 @@ export function useTerminal(
       }
     };
 
+    // Keys typed before the start answered (the prompt may already be on screen) wait here and go first (#107).
+    let typedEarly = "";
     const input = terminal.onData((data) => {
       if (sessionId) api.terminal.input(sessionId, data).catch(() => undefined);
+      else typedEarly += data;
     });
     const resize = terminal.onResize(() => sendSize());
 
@@ -164,6 +167,11 @@ export function useTerminal(
       onListening: (id) => {
         sessionId = id;
         sessionRef.current = id;
+        if (typedEarly) {
+          // One call keeps the keys in the order they were typed.
+          api.terminal.input(id, typedEarly).catch(() => undefined);
+          typedEarly = "";
+        }
         setStatus((s) => (s === "connecting" ? "running" : s));
         // The terminal may have been fitted while the session started.
         lastSize = `${terminal.cols}x${terminal.rows}`;

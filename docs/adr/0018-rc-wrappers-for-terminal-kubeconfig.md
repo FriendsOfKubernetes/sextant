@@ -26,3 +26,5 @@ Supersedes ADR-0010 in the part "the shell is started as a login shell, and the 
 - The temporary `sextant-shell-*` directories are not cleaned up at startup after a crash (ADR-0019).
 
 > Clarification after the build (2026-10-12): bash is started as `--posix --rcfile <rc> -i` with `ENV=<rc>`. `/bin/bash` on macOS (bash 3.2 with Apple's patch) in `--posix -i` does not read `$ENV` but does read `--rcfile`; any other bash in POSIX mode ignores `--rcfile` and reads `ENV`.
+
+> Amended (v0.6.1): the bash rc defines `logout` as `builtin exit`, since the shell is not a login shell and its own `logout` refused (#71); `~/.bash_logout` is not run. Before starting zsh the app runs `zsh -f -c` with the wrapper's `ZDOTDIR` (2 s limit) to see what `/etc/zshenv` leaves: if `/etc/zshenv` sets its own `ZDOTDIR`, zsh would never read the wrapper, so that zsh starts without it and its tab gets the OSC 7719 notice like other shells (#72).

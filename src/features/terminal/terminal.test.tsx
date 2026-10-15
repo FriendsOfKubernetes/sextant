@@ -475,4 +475,37 @@ describe("useTerminal", () => {
     expect(calls("term_input")).toEqual([]);
     el.remove();
   });
+
+  it("keeps what is typed before the start answers and sends it first, in order", async () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    let answer: () => void = () => undefined;
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLElement | null>(el);
+      // The shell prints its prompt before the start answers (#107).
+      return useTerminal(ref, (_cols, _rows, streamId) => {
+        backend.emit(`term:${streamId}`, { type: "data", data: b64("$ ") });
+        return new Promise((resolve) => {
+          answer = () => resolve(undefined);
+        });
+      });
+    });
+    await waitFor(() => expect(screenText()).toContain("$"));
+    const term = result.current.terminal;
+    if (!term) throw new Error("no terminal");
+    term.input("e");
+    term.input("cho hi");
+    expect(calls("term_input")).toEqual([]);
+
+    await act(async () => answer());
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    term.input("\r");
+    await waitFor(() => expect(calls("term_input")).toHaveLength(2));
+    const sent = calls("term_input");
+    expect(sent.map((c) => c.data).join("")).toBe("echo hi\r");
+    expect(new Set(sent.map((c) => c.sessionId)).size).toBe(1);
+    const order = backend.calls.map((c) => c.cmd).filter((cmd) => cmd === "term_input" || cmd === "term_resize");
+    expect(order[0]).toBe("term_input");
+    el.remove();
+  });
 });

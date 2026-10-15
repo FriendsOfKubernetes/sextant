@@ -133,7 +133,8 @@ pub fn spawn_shell(
 /// How a local shell is made to keep the session's `KUBECONFIG` after the user's startup files, which may export
 /// their own (`export KUBECONFIG=…` in `~/.zshrc`): bash reads an rc file ([`StartupFiles`]) that sources the user's
 /// files and then sets it again; zsh's wrapper `.zshenv` hands the rest of startup back to the user's `ZDOTDIR` and sets
-/// it in a one-time `precmd` hook; fish sets it in `--init-command`, which runs after its config. Other
+/// it in a one-time `precmd` hook — unless `/etc/zshenv` sets a `ZDOTDIR` of its own, which bypasses the wrapper, and
+/// such a zsh is treated as an other shell; fish sets it in `--init-command`, which runs after its config. Other
 /// shells (sh, PowerShell, …) only get it in the environment, and their terminal starts with the
 /// [`KUBECONFIG_NOTICE`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -426,11 +427,22 @@ pub fn spawn_local_shell_with(
                 .find(|(name, _)| same_name(platform, name, "ZDOTDIR"))
                 .map(|(_, value)| value.clone())
                 .filter(|value| !value.is_empty());
-            files
-                .write(".zshenv", &zsh_env(user_zdotdir.as_deref(), kubeconfig))
-                .map_err(startup_files_error)?;
-            set_var(platform, &mut env, "ZDOTDIR", files.path().as_os_str());
-            startup_files = Some(files);
+            let mut wrapped = env.clone();
+            set_var(platform, &mut wrapped, "ZDOTDIR", files.path().as_os_str());
+            set_var(platform, &mut wrapped, "KUBECONFIG", kubeconfig);
+            // `/etc/zshenv` runs first and may set its own `ZDOTDIR`: zsh would then never read the wrapper (#72).
+            if probe_zdotdir(&command.program, &wrapped).as_deref()
+                == Some(files.path().as_os_str())
+            {
+                files
+                    .write(".zshenv", &zsh_env(user_zdotdir.as_deref(), kubeconfig))
+                    .map_err(startup_files_error)?;
+                env = wrapped;
+                startup_files = Some(files);
+            } else {
+                // The unused directory is removed here.
+                preamble = Some(kubeconfig_notice());
+            }
         }
         ShellKind::Fish => {
             command
@@ -447,6 +459,72 @@ pub fn spawn_local_shell_with(
         session,
         startup_files,
     })
+}
+
+/// What [`probe_zdotdir`] prints before the value; anything `/etc/zshenv` itself prints comes before it.
+const ZDOTDIR_PROBE_MARKER: &str = "sextant-zdotdir:";
+/// zsh's command for [`probe_zdotdir`].
+const ZDOTDIR_PROBE: &str = "print -rn -- \"sextant-zdotdir:$ZDOTDIR\"";
+/// How long [`probe_zdotdir`] waits for zsh.
+const ZDOTDIR_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// The `ZDOTDIR` a zsh (`program`) started with exactly `env` has once `/etc/zshenv` — which zsh always reads first,
+/// even with `-f` — has run: `zsh -f -c 'print …'` reads no other startup file. `None` when zsh fails, prints no
+/// value or takes longer than [`ZDOTDIR_PROBE_TIMEOUT`] (it is killed then).
+fn probe_zdotdir(program: &OsStr, env: &[(OsString, OsString)]) -> Option<OsString> {
+    use std::process::{Command, Stdio};
+    let mut child = Command::new(program)
+        .args(["-f", "-c", ZDOTDIR_PROBE])
+        .env_clear()
+        .envs(env.iter().map(|(name, value)| (name, value)))
+        .envs(TERMINAL_VARS)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
+    let deadline = std::time::Instant::now() + ZDOTDIR_PROBE_TIMEOUT;
+    // Read on a thread: a process `/etc/zshenv` left behind may hold the pipe open after zsh exits.
+    let (tx, rx) = std::sync::mpsc::channel();
+    if let Some(mut stdout) = child.stdout.take() {
+        let _ = std::thread::Builder::new()
+            .name("zsh-probe".into())
+            .spawn(move || {
+                let mut out = Vec::new();
+                let _ = stdout.read_to_end(&mut out);
+                let _ = tx.send(out);
+            });
+    }
+    let out = rx.recv_timeout(ZDOTDIR_PROBE_TIMEOUT).ok();
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break Some(status),
+            Ok(None) if out.is_some() && std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(10))
+            }
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                break None;
+            }
+        }
+    };
+    if !status?.success() {
+        return None;
+    }
+    let out = out?;
+    let marker = ZDOTDIR_PROBE_MARKER.as_bytes();
+    let at = out.windows(marker.len()).rposition(|w| w == marker)?;
+    let value = out[at + marker.len()..].to_vec();
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStringExt;
+        Some(OsString::from_vec(value))
+    }
+    #[cfg(not(unix))]
+    {
+        String::from_utf8(value).ok().map(OsString::from)
+    }
 }
 
 fn startup_files_error(e: std::io::Error) -> CoreError {
@@ -481,14 +559,16 @@ cluster.\n";
 /// The `ENV` file (and `--rcfile`, which Apple's bash 3.2 reads instead) of an interactive bash started in POSIX mode:
 /// leaves POSIX mode and undoes what it set before this file was read and `set +o posix` keeps
 /// (`HISTFILE=~/.sh_history` — unless the environment chose one, which `user_histfile` tells — and `inherit_errexit`),
-/// reads what a login bash reads (`/etc/profile` runs the system bashrc where the distribution has one), then sets the
+/// defines `logout` as `exit` (this bash is not a login shell, so its own `logout` refuses; `~/.bash_logout` is not
+/// run), reads what a login bash reads (`/etc/profile` runs the system bashrc where the distribution has one), then sets the
 /// session's `KUBECONFIG`. bash loads the history after this file.
 fn bash_rc(kubeconfig: &OsStr, user_histfile: bool) -> Vec<u8> {
     let mut rc = STARTUP_FILE_HEADER.as_bytes().to_vec();
     rc.extend_from_slice(
         b"set +o posix\n\
           unset ENV\n\
-          shopt -u inherit_errexit 2>/dev/null\n",
+          shopt -u inherit_errexit 2>/dev/null\n\
+          logout() { builtin exit \"$@\"; }\n",
     );
     if !user_histfile {
         rc.extend_from_slice(b"HISTFILE=~/.bash_history\n");
@@ -543,7 +623,10 @@ const FISH_KUBECONFIG_VAR: &str = "SEXTANT_KUBECONFIG";
 /// fish runs `--init-command` after its config files.
 const FISH_INIT_COMMAND: &str = "set -gx KUBECONFIG $SEXTANT_KUBECONFIG; set -e SEXTANT_KUBECONFIG";
 
-/// Starts `command` with exactly `env` (plus `TERM` and `COLORTERM`); `preamble` is the session's first output.
+/// What every shell started here is told about its terminal.
+const TERMINAL_VARS: [(&str, &str); 2] = [("TERM", "xterm-256color"), ("COLORTERM", "truecolor")];
+
+/// Starts `command` with exactly `env` (plus [`TERMINAL_VARS`]); `preamble` is the session's first output.
 fn spawn(
     command: &ShellCommand,
     env: Vec<(OsString, OsString)>,
@@ -560,8 +643,9 @@ fn spawn(
     for (key, value) in &env {
         cmd.env(key, value);
     }
-    cmd.env("TERM", "xterm-256color");
-    cmd.env("COLORTERM", "truecolor");
+    for (name, value) in TERMINAL_VARS {
+        cmd.env(name, value);
+    }
     // The error names the program only, never the environment (which carries the kubeconfig path).
     let mut child = pair.slave.spawn_command(cmd).map_err(|e| {
         CoreError::other(format!(
@@ -973,6 +1057,15 @@ mod tests {
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
 
+    /// The line of a stand-in `zsh` (a sh script) that answers the `ZDOTDIR` probe like a zsh whose `/etc/zshenv`
+    /// leaves `ZDOTDIR` alone.
+    #[cfg(unix)]
+    fn answers_the_probe() -> String {
+        format!(
+            "if [ \"$1\" = -f ]; then printf '{ZDOTDIR_PROBE_MARKER}%s' \"$ZDOTDIR\"; exit 0; fi\n"
+        )
+    }
+
     #[cfg(unix)]
     fn notice() -> String {
         format!("\x1b]{KUBECONFIG_NOTICE_OSC};{KUBECONFIG_NOTICE}\x07")
@@ -1014,6 +1107,37 @@ mod tests {
         let (text, exit) = read_until(&mut shell.session, |t| t.contains(&expected));
         assert_eq!(exit, None, "{text}");
         assert!(!text.contains(&notice()), "bash needs no notice: {text:?}");
+    }
+
+    /// bash started through the rc file is not a login shell, so its `logout` refused ("not login shell", #71);
+    /// in a terminal tab it ends the shell like `exit`.
+    #[cfg(unix)]
+    #[test]
+    fn bash_logout_ends_the_shell_like_exit() {
+        let Some(bash) = installed("bash") else {
+            eprintln!("skipped: bash is not installed");
+            return;
+        };
+        let home = tempfile::tempdir().unwrap();
+        let mut shell = spawn_local_shell_with(
+            &ShellCommand {
+                program: bash.into(),
+                args: vec!["-l".into()],
+            },
+            OsStr::new("/session/kubeconfig.yaml"),
+            &test_env(home.path()),
+            home.path(),
+            80,
+            24,
+        )
+        .unwrap();
+        shell
+            .session
+            .input
+            .blocking_send(b"logout 5\necho \"STILL-$((1+1))\"\n".to_vec())
+            .unwrap();
+        let (text, exit) = read_until(&mut shell.session, |t| t.contains("STILL-2"));
+        assert_eq!(exit, Some(Some(5)), "logout did not end the shell: {text}");
     }
 
     /// `bash --rcfile` would read the system bashrc itself (Debian, Arch: `SYS_BASHRC`) and again through
@@ -1299,7 +1423,7 @@ mod tests {
         write_script(
             &zsh,
             &format!(
-                "#!{bash}\n\
+                "#!{bash}\n{probe}\
                  . \"$ZDOTDIR/.zshenv\"\n\
                  for f in .zprofile SYSTEM .zshrc .zlogin; do\n\
                  \x20 if [ $f = SYSTEM ]; then {system_rc}\n\
@@ -1308,7 +1432,8 @@ mod tests {
                  for hook in \"${{precmd_functions[@]}}\"; do \"$hook\"; done\n\
                  echo \"KC=$KUBECONFIG RC=$SEXTANT_USER_RC HF=$HISTFILE CD=$ZCOMPDUMP hooks=[${{precmd_functions[*]}}]\"\n\
                  exec sleep 30\n",
-                bash = bash.display()
+                bash = bash.display(),
+                probe = answers_the_probe()
             ),
         );
         let kubeconfig = home.path().join("it's the session.yaml");
@@ -1338,6 +1463,87 @@ mod tests {
             .collect();
         inside.sort();
         assert_eq!(inside, [".zshenv"], "only the wrapper is there");
+    }
+
+    /// A stand-in `zsh` whose `/etc/zshenv` sets `ZDOTDIR`; it answers the probe (`-f -c …`) the way zsh would.
+    #[cfg(unix)]
+    fn zsh_with_a_system_zdotdir(dir: &Path, probe_answer: &str) -> PathBuf {
+        let zsh = dir.join("zsh");
+        write_script(
+            &zsh,
+            &format!(
+                "#!/bin/sh\nZDOTDIR=/etc/zsh-system\n\
+                 if [ \"$1\" = -f ]; then {probe_answer}; fi\n\
+                 printf 'ZD=%s KC=%s.\\n' \"$ZDOTDIR\" \"$KUBECONFIG\"\nexec sleep 30\n"
+            ),
+        );
+        zsh
+    }
+
+    /// `/etc/zshenv` runs before anything else and here sets `ZDOTDIR`, so zsh never reads the wrapper (#72): the
+    /// tab says the kubeconfig is not pinned, and no startup files are left behind.
+    #[cfg(unix)]
+    #[test]
+    fn zsh_whose_system_zshenv_sets_zdotdir_starts_with_the_notice() {
+        let dir = tempfile::tempdir().unwrap();
+        let zsh = zsh_with_a_system_zdotdir(
+            dir.path(),
+            &format!("printf 'from /etc/zshenv\\n{ZDOTDIR_PROBE_MARKER}%s' \"$ZDOTDIR\"; exit 0"),
+        );
+        let temp = tempfile::tempdir().unwrap();
+        let mut shell = spawn_local_shell_with(
+            &ShellCommand {
+                program: zsh.into(),
+                args: vec!["-l".into()],
+            },
+            OsStr::new("/session/kubeconfig.yaml"),
+            &test_env(dir.path()),
+            temp.path(),
+            80,
+            24,
+        )
+        .unwrap();
+        assert!(shell.startup_files.is_none());
+        assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);
+        let expected = "ZD=/etc/zsh-system KC=/session/kubeconfig.yaml.";
+        let (text, exit) = read_until(&mut shell.session, |t| t.contains(expected));
+        assert_eq!(exit, None, "{text}");
+        assert!(
+            text.starts_with(&notice()),
+            "the notice comes first: {text:?}"
+        );
+    }
+
+    /// A zsh that does not answer the probe in time is not trusted with the wrapper either.
+    #[cfg(unix)]
+    #[test]
+    fn zsh_that_does_not_answer_the_probe_starts_with_the_notice() {
+        let dir = tempfile::tempdir().unwrap();
+        let zsh = zsh_with_a_system_zdotdir(dir.path(), "exec sleep 30");
+        let temp = tempfile::tempdir().unwrap();
+        let started = Instant::now();
+        let mut shell = spawn_local_shell_with(
+            &ShellCommand {
+                program: zsh.into(),
+                args: vec!["-l".into()],
+            },
+            OsStr::new("/session/kubeconfig.yaml"),
+            &test_env(dir.path()),
+            temp.path(),
+            80,
+            24,
+        )
+        .unwrap();
+        assert!(started.elapsed() < ZDOTDIR_PROBE_TIMEOUT + Duration::from_secs(2));
+        assert!(shell.startup_files.is_none());
+        let (text, exit) = read_until(&mut shell.session, |t| {
+            t.contains("KC=/session/kubeconfig.yaml.")
+        });
+        assert_eq!(exit, None, "{text}");
+        assert!(
+            text.starts_with(&notice()),
+            "the notice comes first: {text:?}"
+        );
     }
 
     #[cfg(unix)]
@@ -1389,7 +1595,10 @@ mod tests {
         let zsh = dir.path().join("zsh");
         write_script(
             &zsh,
-            "#!/bin/sh\nprintf 'ZD=%s.\\n' \"$ZDOTDIR\"\nexec sleep 30\n",
+            &format!(
+                "#!/bin/sh\n{}printf 'ZD=%s.\\n' \"$ZDOTDIR\"\nexec sleep 30\n",
+                answers_the_probe()
+            ),
         );
         let temp = tempfile::tempdir().unwrap();
         let mut shell = spawn_local_shell_with(
