@@ -1065,13 +1065,26 @@ mod tests {
         });
         assert_eq!(exit, None, "{text}");
 
+        // Resizes and keystrokes go through separate threads, so the first `stty size` may run before the resize:
+        // ask again until it reports the new size. Each answer ends with a marker the echoed command line lacks.
         session.resize.blocking_send((100, 30)).unwrap();
-        session
-            .input
-            .blocking_send(b"stty size\n".to_vec())
-            .unwrap();
-        let (text, exit) = read_until(&mut session, |t| t.contains("30 100"));
-        assert_eq!(exit, None, "{text}");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        for attempt in 0.. {
+            assert!(
+                Instant::now() < deadline,
+                "the resize never reached the shell"
+            );
+            session
+                .input
+                .blocking_send(format!("stty size; echo \"m{attempt}=$((40+2))\"\n").into_bytes())
+                .unwrap();
+            let marker = format!("m{attempt}=42");
+            let (text, exit) = read_until(&mut session, |t| t.contains(&marker));
+            assert_eq!(exit, None, "{text}");
+            if text.contains("30 100") {
+                break;
+            }
+        }
 
         session.input.blocking_send(b"exit 7\n".to_vec()).unwrap();
         let (_, exit) = read_until(&mut session, |_| false);
