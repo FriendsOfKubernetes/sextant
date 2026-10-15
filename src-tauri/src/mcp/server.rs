@@ -5,6 +5,7 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::task::Poll;
 use std::time::{Duration, Instant};
 
 use rmcp::model::{
@@ -258,10 +259,67 @@ impl ServerHandler for SextantMcp {
 /// A running HTTP server.
 struct Running {
     port: u16,
-    /// The bound port, held here while the HTTP server accepts on a clone of it: ending the sessions (a new token)
-    /// restarts the HTTP server on another clone without letting go of the port.
-    listener: std::net::TcpListener,
+    /// The bound port, shared with the HTTP task: ending the sessions (a new token) restarts the HTTP server on the
+    /// same socket without letting go of the port, and [`McpServer::stop`] closes it at once.
+    listener: SharedListener,
     task: tokio::task::JoinHandle<()>,
+}
+
+/// The one listening socket of a server, which its HTTP task accepts on but does not own.
+///
+/// [`McpServer::stop`] cannot wait for the task it aborts, and an aborted task drops its future (and whatever
+/// socket it owns) only when the runtime next gets to it: until then the port still listens and the system completes
+/// connections to it (Windows reports them as connected). Taking the socket out of here and dropping it closes the
+/// port at once instead. Not a duplicated socket handle (`try_clone`): the socket is closed only when every handle
+/// to it is.
+#[derive(Clone)]
+struct SharedListener(Arc<Mutex<Option<tokio::net::TcpListener>>>);
+
+impl SharedListener {
+    fn new(listener: tokio::net::TcpListener) -> Self {
+        Self(Arc::new(Mutex::new(Some(listener))))
+    }
+
+    /// Closes the socket: the port is free on return, whatever task still accepts on it.
+    fn close(&self) {
+        drop(lock(&self.0).take());
+    }
+}
+
+impl axum::serve::Listener for SharedListener {
+    type Io = tokio::net::TcpStream;
+    type Addr = SocketAddr;
+
+    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
+        loop {
+            let accepted = std::future::poll_fn(|cx| match lock(&self.0).as_ref() {
+                Some(listener) => listener.poll_accept(cx),
+                // Closed: the server stopped and the task is being aborted or shut down; nothing comes any more.
+                None => Poll::Pending,
+            })
+            .await;
+            match accepted {
+                Ok(accepted) => return accepted,
+                // The client gave up on this one; take the next.
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        io::ErrorKind::ConnectionRefused
+                            | io::ErrorKind::ConnectionAborted
+                            | io::ErrorKind::ConnectionReset
+                    ) => {}
+                // Out of file descriptors and the like: as axum's own listener, wait a moment.
+                Err(_) => tokio::time::sleep(Duration::from_secs(1)).await,
+            }
+        }
+    }
+
+    fn local_addr(&self) -> io::Result<Self::Addr> {
+        match lock(&self.0).as_ref() {
+            Some(listener) => listener.local_addr(),
+            None => Err(io::ErrorKind::NotConnected.into()),
+        }
+    }
 }
 
 /// The server's life: kept in `AppState.mcp`.
@@ -415,7 +473,8 @@ impl McpServer {
         self.ctx.confirmations.close(ConfirmSource::Agent);
         if let Some(running) = running {
             running.task.abort();
-            drop(running.listener);
+            // Now, not when the runtime gets to the aborted task (see `SharedListener`).
+            running.listener.close();
         }
         if self.status().state != McpState::Off {
             self.set_status(McpStatus::off());
@@ -423,7 +482,7 @@ impl McpServer {
     }
 
     /// Binds `port` for a server; the error is the status text.
-    async fn bind(&self, port: u16) -> Result<std::net::TcpListener, String> {
+    async fn bind(&self, port: u16) -> Result<SharedListener, String> {
         if !PORT_RANGE.contains(&port) {
             return Err(format!(
                 "Port {port} is outside {}–{}",
@@ -435,8 +494,8 @@ impl McpServer {
             return Err(format!("Cannot create the MCP token: {e}"));
         }
         let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
-        match bind(address).await.and_then(|l| l.into_std()) {
-            Ok(listener) => Ok(listener),
+        match bind(address).await {
+            Ok(listener) => Ok(SharedListener::new(listener)),
             Err(e) if e.kind() == io::ErrorKind::AddrInUse => Err(format!(
                 "Port {port} is in use — another Sextant or program?"
             )),
@@ -445,27 +504,15 @@ impl McpServer {
     }
 
     /// Serves on `listener` (bound to `port`) with new sessions and sets `status`, unless [`McpServer::stop`] ran
-    /// since `stops` was read (the listener is dropped then).
-    fn launch(&self, port: u16, listener: std::net::TcpListener, stops: u64, status: McpStatus) {
+    /// since `stops` was read (the listener is closed then).
+    fn launch(&self, port: u16, listener: SharedListener, stops: u64, status: McpStatus) {
         let mut running = lock(&self.running);
         if self.stops.load(Ordering::SeqCst) != stops {
             // Stopped (window closed) while binding: the listener goes, nothing runs.
+            listener.close();
             return;
         }
-        let accepting = listener
-            .try_clone()
-            .and_then(|l| {
-                l.set_nonblocking(true)?;
-                Ok(l)
-            })
-            .and_then(tokio::net::TcpListener::from_std);
-        let accepting = match accepting {
-            Ok(accepting) => accepting,
-            Err(e) => {
-                drop(running);
-                return self.set_error(format!("Cannot listen on port {port}: {e}"));
-            }
-        };
+        let accepting = listener.clone();
         let serving = CancellationToken::new();
         *lock(&self.serving) = serving.clone();
         self.ctx.confirmations.open(ConfirmSource::Agent);
@@ -487,7 +534,7 @@ impl McpServer {
 
     /// Ends the sessions and the calls of the running server and refuses its confirmations; gives back its port,
     /// the still bound listener and the HTTP task that is finishing.
-    fn end_sessions(&self) -> Option<(u16, std::net::TcpListener, tokio::task::JoinHandle<()>)> {
+    fn end_sessions(&self) -> Option<(u16, SharedListener, tokio::task::JoinHandle<()>)> {
         let running = {
             let mut running = lock(&self.running);
             lock(&self.serving).cancel();
@@ -501,7 +548,7 @@ impl McpServer {
     async fn shut_down(&self) {
         if let Some((_, listener, task)) = self.end_sessions() {
             wait_or_abort(task).await;
-            drop(listener);
+            listener.close();
         }
     }
 
@@ -519,7 +566,7 @@ impl McpServer {
     }
 }
 
-/// Waits [`STOP_GRACE`] for a stopping HTTP task, then aborts it; its clone of the listener is closed on return.
+/// Waits [`STOP_GRACE`] for a stopping HTTP task, then aborts it; it no longer accepts on return.
 async fn wait_or_abort(mut task: tokio::task::JoinHandle<()>) {
     if tokio::time::timeout(STOP_GRACE, &mut task).await.is_err() {
         task.abort();

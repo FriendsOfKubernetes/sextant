@@ -388,6 +388,12 @@ async fn port_is_closed(port: u16) -> bool {
         .is_err()
 }
 
+/// Whether the port refuses a connection right now, before the runtime runs anything else (a blocking connect):
+/// what [`McpServer::stop`](super::server::McpServer::stop) promises, whatever a task it aborted still holds.
+fn port_is_closed_now(port: u16) -> bool {
+    std::net::TcpStream::connect((Ipv4Addr::LOCALHOST, port)).is_err()
+}
+
 #[tokio::test]
 async fn only_requests_with_the_token_and_without_browser_headers_get_through() {
     let _turn = SERVERS.lock().await;
@@ -754,13 +760,10 @@ async fn the_server_follows_the_settings_and_stops_with_the_application() {
         super::confirm::ConfirmOutcome::Declined
     );
     assert_eq!(state.mcp.status().state, McpState::Off);
-    for _ in 0..50 {
-        if port_is_closed(taken_port).await {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(20)).await;
-    }
-    assert!(port_is_closed(taken_port).await);
+    assert!(
+        port_is_closed_now(taken_port),
+        "the port still listens after close_all"
+    );
 
     let mut states: Vec<McpState> = events.statuses().iter().map(|s| s.state).collect();
     states.dedup();
@@ -1541,7 +1544,10 @@ async fn a_new_token_keeps_the_port_bound_while_the_sessions_end() {
         200
     );
     state.close_all();
-    assert!(port_is_closed(port).await);
+    assert!(
+        port_is_closed_now(port),
+        "the port still listens after close_all"
+    );
 }
 
 #[tokio::test]
