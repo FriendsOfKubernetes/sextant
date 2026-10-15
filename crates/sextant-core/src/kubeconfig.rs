@@ -497,48 +497,51 @@ fn process_runs(pid: u32) -> bool {
     pid == std::process::id() || os_process_runs(pid).unwrap_or(true)
 }
 
-/// `kill -0 <pid>` sends no signal; it fails when no such process runs. It also fails for another user's process —
-/// then the PID is not the one of the Sextant whose file (this user's) it is, which has exited.
-#[cfg(all(unix, feature = "desktop"))]
+/// `kill(pid, 0)` (no process is started, no signal is sent): `ESRCH` — no such process. `EPERM` — a process of
+/// another user has this PID, so it is not the Sextant that wrote this user's file, which has exited: counted as not
+/// running (the meaning `kill -0` had before). Any other error tells nothing.
+#[cfg(unix)]
 fn os_process_runs(pid: u32) -> Option<bool> {
-    use std::process::{Command, Stdio};
-    let status = Command::new("kill")
-        .args(["-0", &pid.to_string()])
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .ok()?;
-    Some(status.success())
-}
-
-/// `tasklist` lists the process with `pid` as a CSV row whose second field is the PID, or prints no row at all.
-#[cfg(all(windows, feature = "desktop"))]
-fn os_process_runs(pid: u32) -> Option<bool> {
-    use std::os::windows::process::CommandExt;
-    use std::process::{Command, Stdio};
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let output = Command::new("tasklist")
-        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
-        .creation_flags(CREATE_NO_WINDOW)
-        .stdin(Stdio::null())
-        .stderr(Stdio::null())
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
+    use rustix::io::Errno;
+    let pid = rustix::process::Pid::from_raw(i32::try_from(pid).ok()?)?;
+    match rustix::process::test_kill_process(pid) {
+        Ok(()) => Some(true),
+        Err(Errno::SRCH | Errno::PERM) => Some(false),
+        Err(_) => None,
     }
-    let wanted = format!("\"{pid}\"");
-    let listed = String::from_utf8_lossy(&output.stdout).lines().any(|row| {
-        row.split(',')
-            .nth(1)
-            .is_some_and(|field| field.trim() == wanted)
-    });
-    Some(listed)
 }
 
-/// Without the `desktop` feature no process is started: nothing tells whether another process runs.
-#[cfg(not(all(any(unix, windows), feature = "desktop")))]
+/// `OpenProcess` (no process is started): no such PID — it does not run; access denied — some process (of another
+/// user or protected) has it, so it runs; a handle — it runs until it has an exit code. A process whose exit code is
+/// `STILL_ACTIVE` (259) counts as running. Any other failure tells nothing.
+#[cfg(windows)]
+fn os_process_runs(pid: u32) -> Option<bool> {
+    use windows_sys::Win32::Foundation::{
+        CloseHandle, ERROR_ACCESS_DENIED, ERROR_INVALID_PARAMETER, GetLastError, STILL_ACTIVE,
+    };
+    use windows_sys::Win32::System::Threading::{
+        GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    // SAFETY: a plain query with no pointers; the returned handle is closed below.
+    let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+    if handle.is_null() {
+        // SAFETY: reads this thread's last error, set by the failed `OpenProcess` above.
+        return match unsafe { GetLastError() } {
+            ERROR_INVALID_PARAMETER => Some(false),
+            ERROR_ACCESS_DENIED => Some(true),
+            _ => None,
+        };
+    }
+    let mut code = 0u32;
+    // SAFETY: `handle` is a live process handle and `code` a valid place for the exit code.
+    let read = unsafe { GetExitCodeProcess(handle, &mut code) } != 0;
+    // SAFETY: `handle` was opened above and is closed once.
+    unsafe { CloseHandle(handle) };
+    read.then_some(code == STILL_ACTIVE as u32)
+}
+
+/// Elsewhere nothing tells whether another process runs.
+#[cfg(not(any(unix, windows)))]
 fn os_process_runs(_pid: u32) -> Option<bool> {
     None
 }

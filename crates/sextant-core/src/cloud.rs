@@ -1034,9 +1034,15 @@ fn flag_value(args: &[String], flag: &str) -> Option<String> {
     })
 }
 
-/// `value` as one word of a command the user runs in the local terminal (PowerShell on Windows, a POSIX shell
-/// elsewhere): as is when it has only letters, digits and `._-@/:`, otherwise in single quotes, so `$(…)`, backquotes
-/// and `"` stay text.
+/// `value` as one word of a command the user runs in the local terminal (Windows PowerShell 5.1 on Windows, a POSIX
+/// shell elsewhere): as is when it has only letters, digits and `._-@/:`, otherwise in single quotes, so `$(…)`,
+/// backquotes and `"` stay text.
+///
+/// Windows PowerShell 5.1 builds a native program's command line without escaping `"` (and wraps a word with
+/// whitespace in `"…"` without doubling its trailing backslashes), so the program's C runtime would drop or misread
+/// them. In PowerShell mode the word is therefore written for the C runtime inside the single quotes: `"` as `\"`
+/// with the backslashes right before it doubled, and trailing backslashes doubled when the value has whitespace.
+/// PowerShell 7.3+ escapes by itself and would pass such a value with extra backslashes.
 fn shell_word(value: &str) -> String {
     shell_word_for(value, cfg!(windows))
 }
@@ -1054,6 +1060,8 @@ fn shell_word_for(value: &str, powershell: bool) -> String {
     }
     let mut word = String::with_capacity(value.len() + 2);
     word.push('\'');
+    // Backslashes right before the current character (PowerShell mode only needs them).
+    let mut backslashes = 0;
     for c in value.chars() {
         match c {
             // POSIX: close the quotes, an escaped quote, open them again.
@@ -1063,8 +1071,18 @@ fn shell_word_for(value: &str, powershell: bool) -> String {
                 word.push(c);
                 word.push(c);
             }
+            // For the native program's C runtime: the backslashes before it doubled, then `\"`.
+            '"' if powershell => {
+                word.extend(std::iter::repeat_n('\\', backslashes + 1));
+                word.push('"');
+            }
             _ => word.push(c),
         }
+        backslashes = if c == '\\' { backslashes + 1 } else { 0 };
+    }
+    // PowerShell 5.1 wraps a word with whitespace in `"…"`: trailing backslashes would escape its closing quote.
+    if powershell && value.chars().any(char::is_whitespace) {
+        word.extend(std::iter::repeat_n('\\', backslashes));
     }
     word.push('\'');
     word
@@ -1555,10 +1573,14 @@ enum RunError {
     Timeout,
 }
 
-/// Runs `cmd` to the end or until `timeout`, then kills it. The output pipes are read on their own threads; after a
-/// kill they are left behind (a grandchild may still hold them open) instead of being waited for.
+/// Runs `cmd` to the end or until `timeout`, then kills it together with every process it started (`az` on Linux is
+/// a shell wrapper around python, `az.cmd` and `gcloud` on Windows start python): see [`ProcessTree`]. The output
+/// pipes are read on their own threads; after a kill they are left behind (a process that escaped may still hold them
+/// open) instead of being waited for.
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<CliOutput, RunError> {
+    ProcessTree::prepare(&mut cmd);
     let mut child = cmd.spawn().map_err(RunError::Io)?;
+    let tree = ProcessTree::of(&child);
     let reader = |pipe: Option<Box<dyn Read + Send>>| {
         std::thread::spawn(move || {
             let mut bytes = Vec::new();
@@ -1582,16 +1604,25 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<CliOutput, Ru
     );
     let deadline = Instant::now() + timeout;
     let status = loop {
-        match child.try_wait().map_err(RunError::Io)? {
+        let waited = match child.try_wait() {
+            Ok(waited) => waited,
+            Err(e) => {
+                tree.kill(&mut child);
+                let _ = child.wait();
+                return Err(RunError::Io(e));
+            }
+        };
+        match waited {
             Some(status) => break status,
             None if Instant::now() >= deadline => {
-                let _ = child.kill();
+                tree.kill(&mut child);
                 let _ = child.wait();
                 return Err(RunError::Timeout);
             }
             None => std::thread::sleep(Duration::from_millis(20)),
         }
     };
+    tree.close();
     let text = |handle: std::thread::JoinHandle<Vec<u8>>| {
         String::from_utf8_lossy(&handle.join().unwrap_or_default()).into_owned()
     };
@@ -1600,6 +1631,136 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<CliOutput, Ru
         stdout: text(stdout),
         stderr: text(stderr),
     })
+}
+
+/// A CLI and every process it starts, so that a timed-out call stops all of them.
+///
+/// Unix: the CLI leads a process group of its own (`process_group(0)`, its PID is the group ID) and the whole group
+/// gets `SIGKILL`. Only a process that leaves the group on purpose (`setsid`, a daemon) escapes. A CLI that exits in
+/// time is not followed further: what it left running is not touched.
+///
+/// Windows: the CLI runs without a console window (`CREATE_NO_WINDOW`) in a job object with
+/// `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`; everything it starts belongs to the job, which is terminated at the time
+/// limit and closed once the call ends (what the CLI left running ends then too, and on a Sextant crash). The CLI is
+/// put into the job right after it starts, so a process it starts before that escapes; when the job cannot be made,
+/// only the CLI is killed.
+struct ProcessTree {
+    #[cfg(windows)]
+    job: Option<job::Job>,
+}
+
+impl ProcessTree {
+    #[cfg(unix)]
+    fn prepare(cmd: &mut Command) {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
+
+    #[cfg(windows)]
+    fn prepare(cmd: &mut Command) {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    #[cfg(not(any(unix, windows)))]
+    fn prepare(_cmd: &mut Command) {}
+
+    #[cfg(windows)]
+    fn of(child: &std::process::Child) -> Self {
+        Self {
+            job: job::Job::with(child),
+        }
+    }
+
+    #[cfg(not(windows))]
+    fn of(_child: &std::process::Child) -> Self {
+        Self {}
+    }
+
+    /// The CLI has exited. On Windows this closes the job: what the CLI left running ends with it and cannot hold the
+    /// output pipes open.
+    fn close(self) {
+        #[cfg(windows)]
+        drop(self.job);
+    }
+
+    /// Kills the CLI and what it started; the caller still waits for the CLI.
+    fn kill(&self, child: &mut std::process::Child) {
+        #[cfg(unix)]
+        {
+            // The CLI is not reaped yet, so its PID (the group's ID) cannot belong to anything else.
+            if let Some(group) = i32::try_from(child.id())
+                .ok()
+                .and_then(rustix::process::Pid::from_raw)
+            {
+                let _ = rustix::process::kill_process_group(group, rustix::process::Signal::KILL);
+            }
+        }
+        #[cfg(windows)]
+        {
+            if let Some(job) = &self.job {
+                job.terminate();
+            }
+        }
+        let _ = child.kill();
+    }
+}
+
+#[cfg(windows)]
+mod job {
+    use std::os::windows::io::AsRawHandle;
+
+    use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+    use windows_sys::Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectW, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, TerminateJobObject,
+    };
+
+    /// An unnamed job object that kills its processes when its (only) handle is closed.
+    pub(super) struct Job(HANDLE);
+
+    impl Job {
+        /// A new job with `child` in it; `None` when Windows refuses (then only the CLI itself can be killed).
+        pub(super) fn with(child: &std::process::Child) -> Option<Self> {
+            // SAFETY: no security attributes and no name are valid arguments; the handle is owned by `Job` from here
+            // on and closed in its `Drop`.
+            let handle = unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) };
+            if handle.is_null() {
+                return None;
+            }
+            let job = Job(handle);
+            let mut limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+            limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            // SAFETY: `job.0` is a live job handle; the pointer and size describe `limits`, which outlives the call.
+            let limited = unsafe {
+                SetInformationJobObject(
+                    job.0,
+                    JobObjectExtendedLimitInformation,
+                    std::ptr::from_ref(&limits).cast(),
+                    std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+                )
+            } != 0;
+            // SAFETY: both handles are live: the job's is owned here, the child's by `child`, which is not waited
+            // for yet.
+            let assigned =
+                limited && unsafe { AssignProcessToJobObject(job.0, child.as_raw_handle()) } != 0;
+            assigned.then_some(job)
+        }
+
+        pub(super) fn terminate(&self) {
+            // SAFETY: `self.0` is a live job handle owned by `self`.
+            unsafe { TerminateJobObject(self.0, 1) };
+        }
+    }
+
+    impl Drop for Job {
+        fn drop(&mut self) {
+            // SAFETY: the handle is owned by `self` and closed only here.
+            unsafe { CloseHandle(self.0) };
+        }
+    }
 }
 
 #[cfg(test)]
@@ -2054,10 +2215,20 @@ users:
             assert_eq!(shell_word_for("my profile", powershell), "'my profile'");
             assert_eq!(shell_word_for("$(x)", powershell), "'$(x)'");
             assert_eq!(shell_word_for("`x`", powershell), "'`x`'");
-            assert_eq!(shell_word_for("a\"b", powershell), "'a\"b'");
+            assert_eq!(shell_word_for(r"C:\dir\", powershell), r"'C:\dir\'");
         }
         // POSIX shells: a quote ends the quoted part, an escaped one, a new part.
         assert_eq!(shell_word_for("a'b", false), "'a'\\''b'");
+        assert_eq!(shell_word_for("a\"b", false), "'a\"b'");
+        // Windows PowerShell 5.1 hands `"` to a native program as is, which the program's C runtime then drops: it
+        // goes as `\"`, with the backslashes right before it doubled; other backslashes stay single.
+        assert_eq!(shell_word_for("a\"b", true), r#"'a\"b'"#);
+        assert_eq!(shell_word_for("a \"b\" c", true), r#"'a \"b\" c'"#);
+        assert_eq!(shell_word_for(r#"a\"b"#, true), r#"'a\\\"b'"#);
+        assert_eq!(shell_word_for(r#"a\\"b\c"#, true), r#"'a\\\\\"b\c'"#);
+        // PowerShell 5.1 wraps a value with whitespace in `"…"`: its trailing backslashes are doubled.
+        assert_eq!(shell_word_for(r"C:\my dir\", true), r"'C:\my dir\\'");
+        assert_eq!(shell_word_for(r"C:\my dir\", false), r"'C:\my dir\'");
         // PowerShell: a quote inside single quotes is doubled (typographic ones end the string too).
         assert_eq!(shell_word_for("a'b", true), "'a''b'");
         assert_eq!(shell_word_for("@x", true), "'@x'");

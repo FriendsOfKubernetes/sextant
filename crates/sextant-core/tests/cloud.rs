@@ -473,3 +473,38 @@ async fn a_cli_that_hangs_is_stopped_at_the_time_limit() {
         problem.message
     );
 }
+
+/// `az` on Linux is a shell wrapper around python: at the time limit the processes the CLI started are stopped too,
+/// not only the wrapper.
+#[tokio::test]
+async fn processes_a_hung_cli_started_are_stopped_with_it() {
+    use rustix::process::{Pid, Signal, kill_process, test_kill_process};
+    let fake = Fake::new();
+    fake.script(
+        "az",
+        "#!/bin/sh\nsleep 30 &\necho $! > \"$FAKE_LOG/sleeper.pid\"\nwait\n",
+    );
+    let cli = fake.cli().with_timeout(std::time::Duration::from_secs(1));
+    let problem = cli.accounts(CloudProvider::Azure).await.problem.unwrap();
+    assert!(
+        problem.message.contains("did not answer"),
+        "{}",
+        problem.message
+    );
+
+    let pid: i32 = std::fs::read_to_string(fake.log().join("sleeper.pid"))
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+    let pid = Pid::from_raw(pid).unwrap();
+    // Killed, it is reaped by init (or a subreaper) shortly after.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while test_kill_process(pid).is_ok() && std::time::Instant::now() < deadline {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    if test_kill_process(pid).is_ok() {
+        let _ = kill_process(pid, Signal::KILL);
+        panic!("the process the CLI started still runs after the time limit");
+    }
+}

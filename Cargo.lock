@@ -4517,6 +4517,7 @@ dependencies = [
  "hyper-util",
  "k8s-openapi",
  "kube",
+ "rustix",
  "rustls",
  "serde",
  "serde_json",
@@ -4527,6 +4528,7 @@ dependencies = [
  "tokio-rustls",
  "tower",
  "ts-rs",
+ "windows-sys 0.61.2",
  "zip",
 ]
 
