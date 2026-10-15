@@ -2258,9 +2258,42 @@ mod tests {
         panic!("{what}: not in 120 s");
     }
 
+    /// Deletes its namespace when dropped, so a test leaves nothing behind even when it fails. Dropping cannot await
+    /// (the test's runtime is going away), so it starts `kubectl delete --wait=false` against the test cluster and
+    /// does not wait for it; a failure to start it is ignored (the next run deletes a leftover at its start).
+    #[must_use = "the namespace is deleted when this guard is dropped"]
+    struct NamespaceGuard(String);
+
+    impl Drop for NamespaceGuard {
+        fn drop(&mut self) {
+            let Some(kubeconfig) = std::env::var_os("SEXTANT_TEST_KUBECONFIG") else {
+                return;
+            };
+            let _ = std::process::Command::new("kubectl")
+                .arg("--kubeconfig")
+                .arg(kubeconfig)
+                .args([
+                    "delete",
+                    "namespace",
+                    &self.0,
+                    "--wait=false",
+                    "--ignore-not-found",
+                ])
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+        }
+    }
+
     /// Connects and makes a fresh namespace `ns` with a ConfigMap `settings` (color: blue); with `workloads`, also a
     /// Deployment `web` (nginx, 1 replica) and a suspended CronJob `tick`.
-    async fn namespace(state: &AppState, id: &ClusterId, ns: &str, workloads: bool) {
+    async fn namespace(
+        state: &AppState,
+        id: &ClusterId,
+        ns: &str,
+        workloads: bool,
+    ) -> NamespaceGuard {
         state.clusters.connect(id).await.unwrap();
         let namespace = object(kind("", "v1", "Namespace"), None, ns);
         if get(state, id, &namespace).await.is_some() {
@@ -2312,14 +2345,11 @@ spec:
 "
             ));
         }
+        let guard = NamespaceGuard(ns.to_owned());
         resources::apply_yaml(&state.clusters, id, &yaml)
             .await
             .unwrap();
-    }
-
-    async fn remove_namespace(state: &AppState, id: &ClusterId, ns: &str) {
-        let namespace = object(kind("", "v1", "Namespace"), None, ns);
-        let _ = resources::delete(&state.clusters, id, &namespace).await;
+        guard
     }
 
     async fn first_node(state: &AppState, id: &ClusterId) -> String {
@@ -2386,7 +2416,7 @@ spec:
             return;
         };
         window.answer(Answer::Allow);
-        namespace(&state, &id, NS, false).await;
+        let _namespace = namespace(&state, &id, NS, false).await;
         let c = id.0.as_str();
         set_rules(
             &state,
@@ -2548,7 +2578,6 @@ spec:
                 .filter(|e| e.tool != "helm_install")
                 .all(|e| e.decision == AuditDecision::Denied)
         );
-        remove_namespace(&state, &id, NS).await;
         state.close_all();
     }
 
@@ -2602,7 +2631,7 @@ spec:
         let Some((state, id, window)) = cluster_state(dir.path()) else {
             return;
         };
-        namespace(&state, &id, NS, false).await;
+        let _namespace = namespace(&state, &id, NS, false).await;
         let c = id.0.as_str();
         use AccessAction::{Delete, Exec, Modify, PortForward, Read};
         set_rules(
@@ -2767,7 +2796,6 @@ spec:
                 .iter()
                 .all(|e| !e.target.contains('\n') && !e.target.contains("echo hi"))
         );
-        remove_namespace(&state, &id, NS).await;
         state.close_all();
     }
 
@@ -2779,7 +2807,7 @@ spec:
         let Some((state, id, window)) = cluster_state(dir.path()) else {
             return;
         };
-        namespace(&state, &id, NS, false).await;
+        let _namespace = namespace(&state, &id, NS, false).await;
         let pod_yaml = |labels: &str| {
             format!(
                 "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shell\n  namespace: {NS}\n  labels: {{{labels}}}\n\
@@ -2889,7 +2917,6 @@ spec:
             asked,
             "a call refused by name was asked about"
         );
-        remove_namespace(&state, &id, NS).await;
         state.close_all();
     }
 
@@ -2902,7 +2929,7 @@ spec:
         let Some((state, id, window)) = cluster_state(dir.path()) else {
             return;
         };
-        namespace(&state, &id, NS, false).await;
+        let _namespace = namespace(&state, &id, NS, false).await;
         let pod_yaml = |name: &str, labels: &str, host_network: bool| {
             format!(
                 "apiVersion: v1\nkind: Pod\nmetadata:\n  name: {name}\n  namespace: {NS}\n  labels: {{{labels}}}\n\
@@ -2985,7 +3012,6 @@ spec:
             assert_eq!(window.count(), asked + usize::from(asks), "{args}");
         }
         assert!(state.forwarder.list().is_empty());
-        remove_namespace(&state, &id, NS).await;
         state.close_all();
     }
 
@@ -3013,7 +3039,7 @@ spec:
         let Some((admin, id, _)) = cluster_state(dir.path()) else {
             return;
         };
-        namespace(&admin, &id, NS, true).await;
+        let _namespace = namespace(&admin, &id, NS, true).await;
         let pod = web_pod(&admin, &id, NS).await;
         // The cluster lets `exec-only` run commands in pods but not read them.
         let rbac = format!(
@@ -3050,7 +3076,6 @@ spec:
         assert!(refused.contains("is not a node shell"), "{refused}");
         assert_eq!(window.count(), 0);
         state.close_all();
-        remove_namespace(&admin, &id, NS).await;
         admin.close_all();
     }
 
@@ -3118,7 +3143,7 @@ spec:
         let Some((state, id, _window)) = cluster_state(dir.path()) else {
             return;
         };
-        namespace(&state, &id, NS, true).await;
+        let _namespace = namespace(&state, &id, NS, true).await;
         let c = id.0.as_str();
         set_rules(
             &state,
@@ -3170,7 +3195,7 @@ spec:
         let Some((state, id, window)) = cluster_state(dir.path()) else {
             return;
         };
-        namespace(&state, &id, NS, true).await;
+        let _namespace = namespace(&state, &id, NS, true).await;
         let c = id.0.as_str();
         use AccessAction::{Delete, Exec, Modify, PortForward, Read};
         set_rules(
@@ -3552,7 +3577,6 @@ spec:
             0,
             "a call without \"Ask before running\" was asked about"
         );
-        remove_namespace(&state, &id, NS).await;
         state.close_all();
     }
 }

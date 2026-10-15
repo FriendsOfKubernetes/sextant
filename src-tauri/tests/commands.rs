@@ -255,13 +255,12 @@ fn about_info_names_the_machine_without_paths_or_user_names() {
         "{info}"
     );
     let text = info.to_string();
-    for private in [
-        std::env::var("HOME").unwrap_or_default(),
-        std::env::var("USER").unwrap_or_default(),
-    ] {
+    // HOME/USER are usually unset on Windows, where the names are in USERPROFILE/USERNAME.
+    for var in ["HOME", "USER", "USERNAME", "USERPROFILE"] {
+        let private = std::env::var(var).unwrap_or_default();
         assert!(
             private.len() < 2 || !text.contains(&private),
-            "{info} names {private}"
+            "{info} names {var}={private}"
         );
     }
 }
