@@ -349,8 +349,13 @@ pub struct ArgoSessions {
     saved: Mutex<HashMap<String, Option<Credentials>>>,
 }
 
+/// Everything Argo CD of one cluster has for one connection ([`ClusterManager::connection`]): a reconnect may reach
+/// another cluster (the kubeconfig entry was repointed), so nothing of it — server, forward, session, typed login,
+/// keys, refusals — outlives the connection it was made on ([`ArgoSessions::attach`]).
 #[derive(Default)]
 struct ArgoConn {
+    /// The connection all of this belongs to.
+    connection: Option<u64>,
     server: Option<ArgoServer>,
     /// The installation namespace the user chose ([`chosen_namespace`]) that `server` was looked up with.
     chosen: Option<String>,
@@ -429,6 +434,7 @@ impl ArgoSessions {
     ) -> Result<ArgoStatus, CoreError> {
         let conn = self.conn(cluster);
         let mut conn = conn.lock().await;
+        self.attach(&mut conn, mgr, cluster).await?;
         self.choose(&mut conn, mgr, cluster, chosen).await?;
         let server = self.server(&mut conn, mgr, cluster).await?;
         let namespace = server.namespace;
@@ -464,10 +470,12 @@ impl ArgoSessions {
         {
             let conn = self.conn(cluster);
             let mut conn = conn.lock().await;
+            self.attach(&mut conn, mgr, cluster).await?;
             self.choose(&mut conn, mgr, cluster, chosen).await?;
             let client = self.client(&mut conn, mgr, cluster).await?;
             let namespace = self.server(&mut conn, mgr, cluster).await?.namespace;
             let keys = login_keys(&mut conn, mgr, cluster).await?;
+            same_connection(&conn, mgr, cluster)?;
             let session = match client.login(&credentials).await {
                 Ok(session) => session,
                 Err(err) => {
@@ -540,6 +548,7 @@ impl ArgoSessions {
         {
             let conn = self.conn(cluster);
             let mut conn = conn.lock().await;
+            self.attach(&mut conn, mgr, cluster).await?;
             self.choose(&mut conn, mgr, cluster, chosen).await?;
             let namespace = self.server(&mut conn, mgr, cluster).await?.namespace;
             conn.session = None;
@@ -566,6 +575,7 @@ impl ArgoSessions {
     ) -> Result<Vec<ManagedResource>, CoreError> {
         let conn = self.conn(cluster);
         let mut conn = conn.lock().await;
+        self.attach(&mut conn, mgr, cluster).await?;
         self.choose(&mut conn, mgr, cluster, chosen).await?;
         let namespace = app.namespace.as_deref().filter(|ns| !ns.is_empty());
         let had_session = conn.session.is_some();
@@ -620,37 +630,10 @@ impl ArgoSessions {
             return Ok((client, signed.session.clone()));
         }
         let namespace = self.server(conn, mgr, cluster).await?.namespace;
-        let mut candidates = Vec::new();
-        if let Some(typed) = &conn.typed {
-            candidates.push(Candidate {
-                key: TYPED_KEY.into(),
-                source: CredentialSource::Manual,
-                refused_as: RefusedLogin::Typed,
-                credentials: typed.clone(),
-            });
-        }
-        if !conn.signed_out {
-            let keys = login_keys(conn, mgr, cluster).await?;
-            if let Some(saved) = self.saved(&keys, &namespace).await {
-                candidates.push(Candidate {
-                    key: saved_key(&keys, &namespace),
-                    source: CredentialSource::Saved,
-                    refused_as: RefusedLogin::Saved,
-                    credentials: saved,
-                });
-            }
-            let standard =
-                argocd::standard_credentials_with_origin(mgr, cluster, &namespace).await?;
-            candidates.extend(standard.into_iter().map(|(origin, credentials)| Candidate {
-                key: format!("secret:{origin}"),
-                source: CredentialSource::Secret,
-                refused_as: match credentials {
-                    Credentials::Password { .. } => RefusedLogin::AdminSecret,
-                    Credentials::Token { .. } => RefusedLogin::TokenSecret,
-                },
-                credentials,
-            }));
-        }
+        let candidates = self.candidates(conn, mgr, cluster, &namespace).await?;
+        // Everything above — the forward, the keys, the Secrets read — came through the connection the candidates
+        // belong to; a reconnect in between may have reached another cluster.
+        same_connection(conn, mgr, cluster)?;
         let login = |credentials: Credentials| {
             let client = client.clone();
             async move { client.login(&credentials).await }
@@ -668,6 +651,73 @@ impl ArgoSessions {
         });
         conn.expired = false;
         Ok((client, session))
+    }
+
+    /// What [`ArgoSessions::signed_in`] tries, in order: the login typed in this connection, the saved login of the
+    /// cluster, the standard secrets (the last two not after signing out by hand).
+    async fn candidates(
+        &self,
+        conn: &mut ArgoConn,
+        mgr: &ClusterManager,
+        cluster: &ClusterId,
+        namespace: &str,
+    ) -> Result<Vec<Candidate>, CoreError> {
+        let mut candidates = Vec::new();
+        if let Some(typed) = &conn.typed {
+            candidates.push(Candidate {
+                key: TYPED_KEY.into(),
+                source: CredentialSource::Manual,
+                refused_as: RefusedLogin::Typed,
+                credentials: typed.clone(),
+            });
+        }
+        if conn.signed_out {
+            return Ok(candidates);
+        }
+        let keys = login_keys(conn, mgr, cluster).await?;
+        if let Some(saved) = self.saved(&keys, namespace).await {
+            candidates.push(Candidate {
+                key: saved_key(&keys, namespace),
+                source: CredentialSource::Saved,
+                refused_as: RefusedLogin::Saved,
+                credentials: saved,
+            });
+        }
+        let standard = argocd::standard_credentials_with_origin(mgr, cluster, namespace).await?;
+        candidates.extend(standard.into_iter().map(|(origin, credentials)| Candidate {
+            key: format!("secret:{origin}"),
+            source: CredentialSource::Secret,
+            refused_as: match credentials {
+                Credentials::Password { .. } => RefusedLogin::AdminSecret,
+                Credentials::Token { .. } => RefusedLogin::TokenSecret,
+            },
+            credentials,
+        }));
+        Ok(candidates)
+    }
+
+    /// Ties `conn` to the cluster's current connection: when it was made on another one (the cluster reconnected,
+    /// maybe to another cluster behind the same kubeconfig entry), all of it ends first — its forward closes, and the
+    /// server, session, typed login, keys, choice and refusals are gone — so nothing typed, saved or signed in for
+    /// one cluster goes to another's `argocd-server`.
+    async fn attach(
+        &self,
+        conn: &mut ArgoConn,
+        mgr: &ClusterManager,
+        cluster: &ClusterId,
+    ) -> Result<(), CoreError> {
+        let current = mgr.connection(cluster)?;
+        if conn.connection == Some(current) {
+            return Ok(());
+        }
+        if let Some((id, _)) = conn.forward.take() {
+            let _ = self.forwarder.stop(&id).await;
+        }
+        *conn = ArgoConn {
+            connection: Some(current),
+            ..ArgoConn::default()
+        };
+        Ok(())
     }
 
     /// The saved login, if the store has a readable one (a store that cannot be reached counts as none). The store
@@ -804,6 +854,11 @@ impl ArgoSessions {
                 ),
                 _ => err,
             })?;
+        // The forward keeps the Kubernetes client it started with: it must be this connection's.
+        if let Err(err) = same_connection(conn, mgr, cluster) {
+            let _ = self.forwarder.stop(&info.id).await;
+            return Err(err);
+        }
         let client = ArgoClient::for_server(&server, info.local_port);
         conn.forward = Some((info.id, client.clone()));
         Ok(client)
@@ -893,6 +948,22 @@ where
         } else {
             "sign in to Argo CD: there is no saved login and no standard secret with credentials"
         },
+    ))
+}
+
+/// `conn` still belongs to the cluster's current connection ([`ArgoSessions::attach`]); otherwise the cluster
+/// reconnected during the call, and nothing gathered in it may be sent anywhere.
+fn same_connection(
+    conn: &ArgoConn,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+) -> Result<(), CoreError> {
+    if conn.connection.is_some() && mgr.connection(cluster).ok() == conn.connection {
+        return Ok(());
+    }
+    Err(CoreError::new(
+        ErrorCode::Unreachable,
+        "the cluster reconnected during the Argo CD call; try again",
     ))
 }
 
@@ -1244,8 +1315,9 @@ mod tests {
     }
 
     /// A Kubernetes API in front of several clusters, as a proxy is (Teleport, `kubectl proxy`): `/api` for the
-    /// connection check, and the `kube-system` Namespace with the UID the bearer token maps to in `uids` — 403 for
-    /// any other token. Plain HTTP on 127.0.0.1; returns its URL.
+    /// connection check, the `kube-system` Namespace with the UID the bearer token maps to in `uids` — 403 for any
+    /// other token — and an `argocd-server` Service in `argocd`; everything else is 404. Plain HTTP on 127.0.0.1;
+    /// returns its URL.
     async fn proxy_api(uids: HashMap<&'static str, &'static str>) -> String {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -1283,6 +1355,15 @@ mod tests {
                             r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#
                                 .to_string(),
                         ),
+                        "/api/v1/namespaces/argocd/services" => (
+                            200,
+                            serde_json::json!({ "apiVersion": "v1", "kind": "ServiceList", "metadata": {},
+                                "items": [{
+                                    "metadata": { "name": "argocd-server", "namespace": "argocd" },
+                                    "spec": { "ports": [{ "name": "https", "port": 443 }] }
+                                }] })
+                            .to_string(),
+                        ),
                         "/api/v1/namespaces/kube-system" => match uids.get(token) {
                             Some(uid) => (
                                 200,
@@ -1314,13 +1395,100 @@ mod tests {
         url
     }
 
+    const UID_A: &str = "aaaaaaaa-0000-4000-8000-00000000000a";
+    const UID_B: &str = "bbbbbbbb-0000-4000-8000-00000000000b";
+
+    /// A kubeconfig whose only context `context` reaches `server` with `token`.
+    fn single_context(context: &str, server: &str, token: &str) -> String {
+        format!(
+            "apiVersion: v1\nkind: Config\nclusters:\n- name: c\n  cluster:\n    server: {server}\ncontexts:\n\
+             - name: {context}\n  context:\n    cluster: c\n    user: u\nusers:\n- name: u\n  user:\n    \
+             token: {token}\ncurrent-context: {context}\n"
+        )
+    }
+
+    fn secrets_of(candidates: &[Candidate]) -> Vec<String> {
+        candidates
+            .iter()
+            .map(|c| match &c.credentials {
+                Credentials::Password { password, .. } => password.expose().to_string(),
+                Credentials::Token { token } => token.expose().to_string(),
+            })
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn a_reconnect_to_another_cluster_drops_the_typed_and_saved_logins_of_the_old_one() {
+        let url = proxy_api(HashMap::from([("token-a", UID_A), ("token-b", UID_B)])).await;
+        let dirs = tempfile::tempdir().unwrap();
+        let kubeconfig = dirs.path().join("kubeconfig");
+        std::fs::write(&kubeconfig, single_context("x", &url, "token-a")).unwrap();
+        let state = AppState::new(&dirs.path().join("config"), &dirs.path().join("data"));
+        state.registry.write().unwrap().set_env(KubeconfigEnv {
+            kubeconfig: Some(kubeconfig.clone().into_os_string()),
+            home: Some(dirs.path().join("home")),
+        });
+        let (store, _saved) = mock_store();
+        state.argocd.set_store(store);
+        let id = state.registry.read().unwrap().clusters().unwrap()[0]
+            .id
+            .clone();
+        state.clusters.connect(&id).await.unwrap();
+
+        state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
+        let for_a = {
+            // Signed in on A as the window does it (typed, and remembered), without an Argo CD to accept it.
+            let conn = state.argocd.conn(&id);
+            let mut conn = conn.lock().await;
+            conn.typed = Some(password("typed-for-a"));
+            let keys = login_keys(&mut conn, &state.clusters, &id).await.unwrap();
+            state
+                .argocd
+                .remember(&keys, "argocd", &password("saved-for-a"))
+                .await
+                .unwrap();
+            state
+                .argocd
+                .candidates(&mut conn, &state.clusters, &id, "argocd")
+                .await
+                .unwrap()
+        };
+
+        // The entry now reaches cluster B (same context name, same file: the same cluster id).
+        std::fs::write(&kubeconfig, single_context("x", &url, "token-b")).unwrap();
+        state.clusters.connect(&id).await.unwrap();
+        let on_b = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
+        let conn = state.argocd.conn(&id);
+        let mut conn = conn.lock().await;
+        let for_b = state
+            .argocd
+            .candidates(&mut conn, &state.clusters, &id, "argocd")
+            .await
+            .unwrap();
+        let keys_b = conn.keys.clone().unwrap();
+        // A reconnect in the middle of a call: what the call gathered goes nowhere.
+        state.clusters.connect(&id).await.unwrap();
+        let midway = same_connection(&conn, &state.clusters, &id).unwrap_err();
+
+        assert_eq!(secrets_of(&for_a), ["typed-for-a", "saved-for-a"]);
+        assert!(for_b.is_empty(), "{:?}", secrets_of(&for_b));
+        assert!(!on_b.saved && !on_b.signed_in);
+        assert_eq!(keys_b.owner, LoginOwner::Cluster(UID_B.into()));
+        assert_eq!(midway.code, ErrorCode::Unreachable);
+        state.close_all();
+    }
+
     #[tokio::test]
     async fn two_kubeconfig_entries_behind_one_url_never_share_a_saved_login() {
-        let url = proxy_api(HashMap::from([
-            ("token-a", "aaaaaaaa-0000-4000-8000-00000000000a"),
-            ("token-b", "bbbbbbbb-0000-4000-8000-00000000000b"),
-        ]))
-        .await;
+        let url = proxy_api(HashMap::from([("token-a", UID_A), ("token-b", UID_B)])).await;
         let dirs = tempfile::tempdir().unwrap();
         let kubeconfig = dirs.path().join("kubeconfig");
         let mut text = format!(
@@ -1971,6 +2139,85 @@ mod tests {
             "the same server keeps its session"
         );
         assert_eq!(state.argocd.forwards(), 1);
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn a_reconnect_to_another_cluster_does_not_reuse_the_session_or_the_logins() {
+        let dirs = tempfile::tempdir().unwrap();
+        let (store, saved) = mock_store();
+        let Some(source) = std::env::var_os("SEXTANT_TEST_KUBECONFIG").filter(|v| !v.is_empty())
+        else {
+            eprintln!("skipped: SEXTANT_TEST_KUBECONFIG is not set (see scripts/test-cluster.sh)");
+            return;
+        };
+        let Some((probe, _)) = gitops_state(&dirs.path().join("probe"), Arc::clone(&store)).await
+        else {
+            return;
+        };
+        probe.close_all();
+        // Entry X: a copy of the kind kubeconfig, later pointed at another cluster under the same context name.
+        let kubeconfig = dirs.path().join("kubeconfig");
+        std::fs::copy(&source, &kubeconfig).unwrap();
+        let state = AppState::new(&dirs.path().join("config"), &dirs.path().join("data"));
+        state.argocd.set_store(store);
+        state.registry.write().unwrap().set_env(KubeconfigEnv {
+            kubeconfig: Some(kubeconfig.clone().into_os_string()),
+            home: Some(dirs.path().join("home")),
+        });
+        let entry = state.registry.read().unwrap().clusters().unwrap()[0].clone();
+        let id = entry.id.clone();
+        state.clusters.connect(&id).await.unwrap();
+        let password_a = initial_password(&state, &id).await;
+        let on_a = state
+            .argocd
+            .login(
+                &state.clusters,
+                &id,
+                None,
+                ArgoLogin {
+                    username: Some("admin".into()),
+                    password: Some(SecretString::new(password_a.clone())),
+                    token: None,
+                    remember: true,
+                },
+            )
+            .await
+            .unwrap();
+        assert!(on_a.signed_in && on_a.saved);
+        assert_eq!(state.argocd.forwards(), 1);
+
+        let url = proxy_api(HashMap::from([("token-b", UID_B)])).await;
+        std::fs::write(&kubeconfig, single_context(&entry.context, &url, "token-b")).unwrap();
+        state.clusters.connect(&id).await.unwrap();
+        let on_b = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
+        let conn = state.argocd.conn(&id);
+        let mut conn = conn.lock().await;
+        let for_b = state
+            .argocd
+            .candidates(&mut conn, &state.clusters, &id, "argocd")
+            .await
+            .unwrap();
+
+        assert!(!on_b.signed_in, "A's session is not reused on B");
+        assert_eq!(on_b.source, None);
+        assert!(!on_b.saved);
+        assert!(
+            !secrets_of(&for_b).contains(&password_a),
+            "neither A's typed nor A's saved login is tried on B"
+        );
+        assert!(for_b.is_empty());
+        assert_eq!(
+            state.argocd.forwards(),
+            0,
+            "the forward to A's server is closed"
+        );
+        assert_eq!(lock(&saved).len(), 1, "A's saved login stays A's");
+        drop(conn);
         state.close_all();
     }
 

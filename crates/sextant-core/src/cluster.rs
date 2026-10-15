@@ -9,7 +9,7 @@
 //! error, not later in a table. Credentials are only handed to kube-rs; they are never logged or returned.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
@@ -97,6 +97,8 @@ struct Inner {
     state_tx: broadcast::Sender<(ClusterId, ConnectionState)>,
     /// See [`ClusterManager::sweep_node_shells_on_connect`].
     sweep_node_shells: AtomicBool,
+    /// The last [`ClusterManager::connection`] number handed out.
+    connections: AtomicU64,
 }
 
 /// Everything known about one cluster. `generation` grows with every connect/disconnect, so a slow connect
@@ -106,6 +108,8 @@ struct Entry {
     state: ConnectionState,
     generation: u64,
     client: Option<kube::Client>,
+    /// The number of the connection `client` belongs to ([`ClusterManager::connection`]); 0 without a client.
+    connection: u64,
     kinds: Option<Vec<ResourceKind>>,
     /// The discovery that is running; every caller of `kinds` awaits this one.
     discovery: Option<Discovery>,
@@ -123,6 +127,7 @@ impl ClusterManager {
                 clusters: Mutex::new(HashMap::new()),
                 state_tx,
                 sweep_node_shells: AtomicBool::new(false),
+                connections: AtomicU64::new(0),
             }),
         }
     }
@@ -161,11 +166,13 @@ impl ClusterManager {
             Some(match &result {
                 Ok(client) => {
                     entry.client = Some(client.clone());
+                    entry.connection = self.inner.connections.fetch_add(1, Ordering::SeqCst) + 1;
                     entry.state = ConnectionState::Connected;
                     entry.state.clone()
                 }
                 Err(err) => {
                     entry.client = None;
+                    entry.connection = 0;
                     entry.state = ConnectionState::Error(err.clone());
                     entry.state.clone()
                 }
@@ -195,6 +202,7 @@ impl ClusterManager {
         self.update(id, |entry| {
             entry.generation += 1;
             entry.client = None;
+            entry.connection = 0;
             entry.kinds = None;
             entry.discovery = None;
             entry.state = ConnectionState::Disconnected;
@@ -218,6 +226,18 @@ impl ClusterManager {
         self.lock()
             .get(id)
             .and_then(|e| e.client.clone())
+            .ok_or_else(|| not_connected(id))
+    }
+
+    /// The number of the cluster's current connection: every (re)connect gets one no connection of any cluster had
+    /// before in this run. A reconnect re-reads the kubeconfig, so the same entry may now reach another cluster (its
+    /// context or server was changed): state tied to what a connection reached — a session, a login meant for that
+    /// cluster's servers — compares this number and is dropped when it differs. `notFound` when not connected.
+    pub fn connection(&self, id: &ClusterId) -> CoreResult<u64> {
+        self.lock()
+            .get(id)
+            .filter(|e| e.client.is_some())
+            .map(|e| e.connection)
             .ok_or_else(|| not_connected(id))
     }
 
@@ -972,6 +992,33 @@ mod tests {
             .filter(|k| k.kind_ref.group == "demo.sextant.dev")
             .map(|k| k.kind_ref.kind.clone())
             .collect()
+    }
+
+    #[tokio::test]
+    async fn every_reconnect_is_a_new_connection_and_a_disconnected_cluster_has_none() {
+        let served = Arc::new(Mutex::new(vec!["Widget"]));
+        let api = serving(Arc::clone(&served), Duration::ZERO).await;
+        let (_tmp, mgr, id) = crate::fake_api::connected_to(api.url()).await;
+        let other = serving(served, Duration::ZERO).await;
+        let (_tmp2, other_mgr, other_id) = crate::fake_api::connected_to(other.url()).await;
+
+        let first = mgr.connection(&id).unwrap();
+        let same = mgr.connection(&id).unwrap();
+        mgr.connect(&id).await.unwrap();
+        let second = mgr.connection(&id).unwrap();
+        mgr.disconnect(&id).await;
+        let gone = mgr.connection(&id).unwrap_err();
+        mgr.connect(&id).await.unwrap();
+        let third = mgr.connection(&id).unwrap();
+
+        assert_eq!(first, same, "the same connection keeps its number");
+        assert!(first < second && second < third, "{first} {second} {third}");
+        assert_eq!(gone.code, ErrorCode::NotFound);
+        assert_ne!(
+            other_mgr.connection(&other_id).unwrap(),
+            0,
+            "a connected cluster never has 0"
+        );
     }
 
     #[tokio::test]
