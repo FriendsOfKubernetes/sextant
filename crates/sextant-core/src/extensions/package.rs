@@ -7,7 +7,8 @@
 //! claims), `sextant-extension.json` at the top and valid, its `entry` present. An archive is unpacked into memory
 //! only; nothing touches the disk until [`install`].
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::ffi::OsString;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -180,17 +181,21 @@ fn check_path(path: &str) -> CoreResult<()> {
 /// development folder `root`, checked now, at the time of the request, and returns it open, so nothing can be swapped
 /// in between the check and the read:
 /// - a [plain relative path](is_package_path) Sextant serves: no part starting with `.`, no `node_modules` (any case);
-/// - every part is exactly the name on disk (read from its folder): another spelling of an existing name — other
-///   case on a case-insensitive file system, a Windows 8.3 short name such as `GIT~1` — is refused;
-/// - no symbolic link (or other reparse point) in any part below `root`; the last part is a regular file;
+/// - every part is exactly the name on disk (read from its folder, each folder listed once per request): another
+///   spelling of an existing name — other case on a case-insensitive file system, a Windows 8.3 short name such as
+///   `GIT~1` — is refused;
+/// - no symbolic link in any part below `root` (on Windows: no name-surrogate reparse point — symbolic link, junction,
+///   mount point; other reparse points such as OneDrive placeholders or deduplicated files are ordinary files); the
+///   last part is a regular file;
 /// - the file is opened without following a link in the last part (`O_NOFOLLOW` on Unix, the reparse point itself on
-///   Windows), then the path is checked again and must still lead to the file that was opened (same device and inode
-///   on Unix), so a folder swapped for a link around the open is refused too.
+///   Windows), then every part of the path is checked again (not a link, folders then a file) and the path must still
+///   lead to the file that was opened (same device and inode on Unix, same volume serial number and file index on
+///   Windows), so a folder swapped for a link around the open is refused too.
 ///
 /// `invalid` for an unsafe path, another spelling or a link; `notFound` when a part is missing (or a folder where a
 /// file is expected).
 pub fn resolve_package_file(root: &Path, request: &str) -> CoreResult<std::fs::File> {
-    resolve_package_file_with(root, request, &mut |_| {})
+    resolve_package_file_with(root, request, &mut Listings::default(), &mut |_| {})
 }
 
 /// The moments of [`resolve_package_file`] a test can act at.
@@ -200,9 +205,49 @@ enum OpenStage {
     AfterOpen,
 }
 
+/// Folder listings read while resolving paths: each folder is read from disk at most once, however many parts or
+/// files go through it. Only names (and their types as listed) are taken from here; whether a part is a link is
+/// checked again on disk after the open ([`current_metadata`]).
+#[derive(Default)]
+struct Listings {
+    /// Folder → its entries by exact name; the type is `None` when the folder listing could not tell it.
+    folders: HashMap<PathBuf, HashMap<OsString, Option<std::fs::FileType>>>,
+    /// How many folders were read from disk.
+    reads: usize,
+}
+
+impl Listings {
+    fn entries(
+        &mut self,
+        folder: &Path,
+        request: &str,
+    ) -> CoreResult<&HashMap<OsString, Option<std::fs::FileType>>> {
+        match self.folders.entry(folder.to_path_buf()) {
+            std::collections::hash_map::Entry::Occupied(entry) => Ok(entry.into_mut()),
+            std::collections::hash_map::Entry::Vacant(slot) => {
+                let read = std::fs::read_dir(folder).map_err(|err| {
+                    if err.kind() == std::io::ErrorKind::NotFound {
+                        not_a_file(request)
+                    } else {
+                        io_error("cannot read", folder, err)
+                    }
+                })?;
+                let mut entries = HashMap::new();
+                for entry in read {
+                    let entry = entry.map_err(|err| io_error("cannot read", folder, err))?;
+                    entries.insert(entry.file_name(), entry.file_type().ok());
+                }
+                self.reads += 1;
+                Ok(slot.insert(entries))
+            }
+        }
+    }
+}
+
 fn resolve_package_file_with(
     root: &Path,
     request: &str,
+    listings: &mut Listings,
     at: &mut dyn FnMut(OpenStage),
 ) -> CoreResult<std::fs::File> {
     if !is_servable_path(request) {
@@ -210,7 +255,7 @@ fn resolve_package_file_with(
             "`{request}` is not a plain relative path inside the extension"
         )));
     }
-    walk_package_path(root, request)?;
+    check_names(root, request, listings)?;
     at(OpenStage::BeforeOpen);
     let path = request
         .split('/')
@@ -226,14 +271,16 @@ fn resolve_package_file_with(
     let opened = file
         .metadata()
         .map_err(|err| io_error("cannot read", &path, err))?;
-    if is_reparse_point(&opened) {
+    if opened.file_type().is_symlink() {
         return Err(link_refused(request));
     }
     if !opened.is_file() {
         return Err(not_a_file(request));
     }
-    let now = walk_package_path(root, request)?;
-    if !same_file(&opened, &now) {
+    let now = current_metadata(root, request)?;
+    let same = same_file(&file, &opened, &path, &now)
+        .map_err(|err| io_error("cannot read", &path, err))?;
+    if !same {
         return Err(invalid(format!(
             "`{request}` changed while it was being opened; extensions cannot use links"
         )));
@@ -254,13 +301,13 @@ fn not_a_file(request: &str) -> CoreError {
     )
 }
 
-/// Checks every part of `request` below `root` (exact name on disk, not a link, folders then a regular file) and
-/// returns what the last part is now (not following a link).
-fn walk_package_path(root: &Path, request: &str) -> CoreResult<std::fs::Metadata> {
+/// Checks, from the folder listings, that every part of `request` below `root` is exactly a name on disk, not a link,
+/// folders then a regular file.
+fn check_names(root: &Path, request: &str, listings: &mut Listings) -> CoreResult<()> {
     let segments: Vec<&str> = request.split('/').collect();
     let mut path = root.to_path_buf();
     for (index, segment) in segments.iter().enumerate() {
-        let kind = exact_entry(&path, segment, request)?;
+        let kind = exact_entry(listings, &path, segment, request)?;
         path.push(segment);
         if kind.is_symlink() {
             return Err(link_refused(request));
@@ -270,44 +317,56 @@ fn walk_package_path(root: &Path, request: &str) -> CoreResult<std::fs::Metadata
             return Err(not_a_file(request));
         }
     }
-    let meta =
-        std::fs::symlink_metadata(&path).map_err(|err| io_error("cannot read", &path, err))?;
-    if meta.file_type().is_symlink() || is_reparse_point(&meta) {
-        return Err(link_refused(request));
+    Ok(())
+}
+
+/// What every part of `request` below `root` is on disk now (not following a link; no folder listing): refused if a
+/// part is a link, or not a folder then a regular file. Returns what the last part is.
+fn current_metadata(root: &Path, request: &str) -> CoreResult<std::fs::Metadata> {
+    let segments: Vec<&str> = request.split('/').collect();
+    let mut path = root.to_path_buf();
+    let mut meta = None;
+    for (index, segment) in segments.iter().enumerate() {
+        path.push(segment);
+        let part =
+            std::fs::symlink_metadata(&path).map_err(|err| io_error("cannot read", &path, err))?;
+        if part.file_type().is_symlink() {
+            return Err(link_refused(request));
+        }
+        let last = index + 1 == segments.len();
+        if (last && !part.is_file()) || (!last && !part.is_dir()) {
+            return Err(not_a_file(request));
+        }
+        meta = Some(part);
     }
-    if !meta.is_file() {
-        return Err(not_a_file(request));
-    }
-    Ok(meta)
+    meta.ok_or_else(|| not_a_file(request))
 }
 
 /// The type (not following a link) of the entry of `folder` named exactly `name`. No such entry: either another
 /// spelling of an existing one (case, 8.3 short name) — `invalid` — or nothing — `notFound`.
-fn exact_entry(folder: &Path, name: &str, request: &str) -> CoreResult<std::fs::FileType> {
-    let entries = std::fs::read_dir(folder).map_err(|err| {
-        if err.kind() == std::io::ErrorKind::NotFound {
-            not_a_file(request)
-        } else {
-            io_error("cannot read", folder, err)
-        }
-    })?;
-    for entry in entries {
-        let entry = entry.map_err(|err| io_error("cannot read", folder, err))?;
-        if entry.file_name() == name {
-            return entry
-                .file_type()
-                .map_err(|err| io_error("cannot read", &entry.path(), err));
-        }
-    }
-    if std::fs::symlink_metadata(folder.join(name)).is_ok() {
-        Err(invalid(format!(
+fn exact_entry(
+    listings: &mut Listings,
+    folder: &Path,
+    name: &str,
+    request: &str,
+) -> CoreResult<std::fs::FileType> {
+    let listed = listings
+        .entries(folder, request)?
+        .get(std::ffi::OsStr::new(name))
+        .copied();
+    let path = folder.join(name);
+    match listed {
+        Some(Some(kind)) => Ok(kind),
+        Some(None) => std::fs::symlink_metadata(&path)
+            .map(|meta| meta.file_type())
+            .map_err(|err| io_error("cannot read", &path, err)),
+        None if std::fs::symlink_metadata(&path).is_ok() => Err(invalid(format!(
             "`{request}` does not name `{name}` exactly as it is on disk (another case or a short name)"
-        )))
-    } else {
-        Err(CoreError::new(
+        ))),
+        None => Err(CoreError::new(
             ErrorCode::NotFound,
             format!("`{request}` is not in the extension"),
-        ))
+        )),
     }
 }
 
@@ -355,6 +414,11 @@ const O_NOFOLLOW: i32 = 0x100;
 const O_NOFOLLOW: i32 = 0;
 
 /// Opens for reading without following a link in the last part.
+///
+/// On Windows the reparse point itself is opened; one that is not a link (`FileType::is_symlink` there means a
+/// name-surrogate reparse point: symbolic link, junction, mount point) — a OneDrive placeholder, a deduplicated file —
+/// is opened again normally, so the file system filter behind it serves the contents. Whatever ends up open is
+/// checked against the path afterwards ([`same_file`]).
 fn open_no_follow(path: &Path) -> std::io::Result<std::fs::File> {
     let mut options = std::fs::OpenOptions::new();
     options.read(true);
@@ -365,42 +429,78 @@ fn open_no_follow(path: &Path) -> std::io::Result<std::fs::File> {
     }
     #[cfg(windows)]
     {
-        use std::os::windows::fs::OpenOptionsExt;
-        // FILE_FLAG_OPEN_REPARSE_POINT: open a link itself, not what it points to (then refused by attributes).
-        options.custom_flags(0x0020_0000);
+        use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+        use windows_sys::Win32::Storage::FileSystem::{
+            FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_OPEN_REPARSE_POINT,
+        };
+        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
+        let file = options.open(path)?;
+        let meta = file.metadata()?;
+        if meta.file_type().is_symlink()
+            || meta.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT == 0
+        {
+            return Ok(file);
+        }
+        drop(file);
+        options.custom_flags(0);
     }
     options.open(path)
 }
 
-/// A Windows reparse point (symbolic link, junction); never on other systems (links there are `is_symlink`).
-fn is_reparse_point(meta: &std::fs::Metadata) -> bool {
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::MetadataExt;
-        // FILE_ATTRIBUTE_REPARSE_POINT
-        meta.file_attributes() & 0x400 != 0
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = meta;
-        false
-    }
+/// Whether the open file (`file`, its metadata `opened`) and what `path` leads to now (`now`, not following a link)
+/// are the same file.
+#[cfg(unix)]
+fn same_file(
+    _file: &std::fs::File,
+    opened: &std::fs::Metadata,
+    _path: &Path,
+    now: &std::fs::Metadata,
+) -> std::io::Result<bool> {
+    use std::os::unix::fs::MetadataExt;
+    Ok(opened.dev() == now.dev() && opened.ino() == now.ino())
 }
 
-/// Whether the open file and what the path leads to now are the same file.
-fn same_file(opened: &std::fs::Metadata, now: &std::fs::Metadata) -> bool {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        opened.dev() == now.dev() && opened.ino() == now.ino()
+/// Whether the open file and what `path` leads to now (opened without following a link and without reading it) are
+/// the same file: the same volume serial number and file index.
+#[cfg(windows)]
+fn same_file(
+    file: &std::fs::File,
+    _opened: &std::fs::Metadata,
+    path: &Path,
+    _now: &std::fs::Metadata,
+) -> std::io::Result<bool> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Storage::FileSystem::{
+        BY_HANDLE_FILE_INFORMATION, FILE_FLAG_OPEN_REPARSE_POINT, GetFileInformationByHandle,
+    };
+    fn file_id(file: &std::fs::File) -> std::io::Result<(u32, u64)> {
+        let mut info = BY_HANDLE_FILE_INFORMATION::default();
+        // SAFETY: the handle is open for the lifetime of `file`; `info` is a valid out pointer.
+        if unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut info) } == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+        Ok((
+            info.dwVolumeSerialNumber,
+            (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow),
+        ))
     }
-    #[cfg(not(unix))]
-    {
-        // No stable file id on Windows: the same size and times, after no reparse point was found twice.
-        opened.len() == now.len()
-            && opened.modified().ok() == now.modified().ok()
-            && opened.created().ok() == now.created().ok()
-    }
+    let now = std::fs::OpenOptions::new()
+        .access_mode(0)
+        .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(path)?;
+    Ok(file_id(file)? == file_id(&now)?)
+}
+
+/// No file identity known on this system: never the same, so nothing is served.
+#[cfg(not(any(unix, windows)))]
+fn same_file(
+    _file: &std::fs::File,
+    _opened: &std::fs::Metadata,
+    _path: &Path,
+    _now: &std::fs::Metadata,
+) -> std::io::Result<bool> {
+    Ok(false)
 }
 
 /// Reads at most `limit` bytes of an open file.
@@ -630,6 +730,16 @@ pub fn version_dir(extensions_dir: &Path, id: &str, version: &str) -> Option<Pat
 /// it, which is then renamed into place, so the version folder is either the old copy or the whole new one. Another
 /// installed version of the same id is left alone ([`prune_versions`]).
 pub fn install(package: &Package, extensions_dir: &Path) -> CoreResult<InstalledFiles> {
+    install_with(package, extensions_dir, &mut Listings::default())
+}
+
+/// [`install`], with the folder listings of a folder package shared by all its files, so each folder of the package
+/// is read once for the whole install rather than once per file in it.
+fn install_with(
+    package: &Package,
+    extensions_dir: &Path,
+    listings: &mut Listings,
+) -> CoreResult<InstalledFiles> {
     let id = &package.manifest.id;
     let version = &package.manifest.version;
     let target = version_dir(extensions_dir, id, version)
@@ -657,7 +767,7 @@ pub fn install(package: &Package, extensions_dir: &Path) -> CoreResult<Installed
             Content::Archive(contents) => contents[index].clone(),
             Content::Folder(root) => {
                 // Checked again now, part by part: the folder may have changed since it was inspected.
-                let source = resolve_package_file(root, &file.path)?;
+                let source = resolve_package_file_with(root, &file.path, listings, &mut |_| {})?;
                 let contents = read_open(source, file.size.saturating_add(1), &file.path)?;
                 if contents.len() as u64 != file.size {
                     return Err(invalid(format!(
@@ -1404,25 +1514,91 @@ mod tests {
             assert_eq!(err.code, expected, "{other}: {err:?}");
         }
         // The check itself: an entry that exists under another spelling is refused, whatever the file system.
-        let err = exact_entry(dir.path(), "INDEX.HTML", "INDEX.HTML");
+        let listings = &mut Listings::default();
+        let err = exact_entry(listings, dir.path(), "INDEX.HTML", "INDEX.HTML");
         if case_insensitive {
             assert_eq!(err.unwrap_err().code, ErrorCode::Invalid);
         } else {
             assert_eq!(err.unwrap_err().code, ErrorCode::NotFound);
         }
         assert!(
-            exact_entry(dir.path(), "Index.html", "Index.html")
+            exact_entry(listings, dir.path(), "Index.html", "Index.html")
                 .unwrap()
                 .is_file()
         );
         // A spelling the system resolves but the folder does not list (here a trailing `/`; on Windows and macOS
         // also other case and short names) is refused on every file system.
         assert_eq!(
-            exact_entry(dir.path(), "js/", "js/").unwrap_err().code,
+            exact_entry(listings, dir.path(), "js/", "js/")
+                .unwrap_err()
+                .code,
             ErrorCode::Invalid
         );
-        // Windows 8.3 short names never match the long name read from the folder.
-        assert!(exact_entry(dir.path(), "INDEX~1.HTM", "INDEX~1.HTM").is_err());
+        // Windows 8.3 short names never match the long name read from the folder: wherever the short name opens the
+        // file, it is refused as another spelling; where there are no short names it is simply not there.
+        let short_name_resolves = std::fs::symlink_metadata(dir.path().join("INDEX~1.HTM")).is_ok();
+        let expected = if short_name_resolves {
+            ErrorCode::Invalid
+        } else {
+            ErrorCode::NotFound
+        };
+        let err = exact_entry(listings, dir.path(), "INDEX~1.HTM", "INDEX~1.HTM").unwrap_err();
+        assert_eq!(err.code, expected, "{err:?}");
+        let err = resolve_package_file(dir.path(), "INDEX~1.HTM").unwrap_err();
+        assert_eq!(err.code, expected, "{err:?}");
+        #[cfg(windows)]
+        if short_name_resolves {
+            assert!(err.message.contains("short name"), "{err:?}");
+        }
+    }
+
+    /// Resolving a path reads each folder on it once (a flat folder of the maximum size used to be listed twice per
+    /// part per request); an install reads each folder of the package once in all.
+    #[test]
+    fn each_folder_is_listed_once_per_resolution_and_once_per_install() {
+        let dir = tempfile::tempdir().unwrap();
+        let m = manifest("hello", "0.1.0", "index.html");
+        let mut files: Vec<(String, Vec<u8>)> = vec![
+            (MANIFEST_FILE.to_owned(), m.into_bytes()),
+            ("index.html".to_owned(), b"x".to_vec()),
+            ("js/app.js".to_owned(), b"1".to_vec()),
+        ];
+        for index in 0..MAX_FILES - 3 {
+            files.push((format!("f{index}.js"), b"1".to_vec()));
+        }
+        let borrowed: Vec<(&str, &[u8])> = files
+            .iter()
+            .map(|(path, contents)| (path.as_str(), contents.as_slice()))
+            .collect();
+        write_tree(dir.path(), &borrowed);
+
+        let listings = &mut Listings::default();
+        let file = resolve_package_file_with(dir.path(), "f17.js", listings, &mut |_| {}).unwrap();
+        assert_eq!(read_all(file), b"1");
+        assert_eq!(listings.reads, 1, "the root, once");
+
+        let listings = &mut Listings::default();
+        resolve_package_file_with(dir.path(), "js/app.js", listings, &mut |_| {}).unwrap();
+        assert_eq!(listings.reads, 2, "the root and `js`, once each");
+
+        // Refusals read no more than that either.
+        let listings = &mut Listings::default();
+        let err =
+            resolve_package_file_with(dir.path(), "missing.js", listings, &mut |_| {}).unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound);
+        assert_eq!(listings.reads, 1);
+
+        let package = inspect_folder(dir.path()).unwrap();
+        assert_eq!(package.files.len(), MAX_FILES);
+        let data = tempfile::tempdir().unwrap();
+        let listings = &mut Listings::default();
+        let installed = install_with(&package, data.path(), listings).unwrap();
+        assert_eq!(installed.files, MAX_FILES);
+        assert_eq!(
+            listings.reads, 2,
+            "the root and `js`, once for the whole install"
+        );
+        assert_eq!(std::fs::read(installed.dir.join("f1996.js")).unwrap(), b"1");
     }
 
     #[cfg(unix)]
@@ -1456,23 +1632,33 @@ mod tests {
 
         // A folder becomes a link just before the open.
         let (dir, outside) = setup();
-        let err = resolve_package_file_with(dir.path(), "js/app.js", &mut |stage| {
-            if stage == OpenStage::BeforeOpen {
-                swap_folder(dir.path(), outside.path());
-            }
-        })
+        let err = resolve_package_file_with(
+            dir.path(),
+            "js/app.js",
+            &mut Listings::default(),
+            &mut |stage| {
+                if stage == OpenStage::BeforeOpen {
+                    swap_folder(dir.path(), outside.path());
+                }
+            },
+        )
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
 
         // … and back again right after it: the file opened is not the one the path leads to.
         let (dir, outside) = setup();
-        let err = resolve_package_file_with(dir.path(), "js/app.js", &mut |stage| match stage {
-            OpenStage::BeforeOpen => swap_folder(dir.path(), outside.path()),
-            OpenStage::AfterOpen => {
-                std::fs::remove_file(dir.path().join("js")).unwrap();
-                std::fs::rename(dir.path().join("js-real"), dir.path().join("js")).unwrap();
-            }
-        })
+        let err = resolve_package_file_with(
+            dir.path(),
+            "js/app.js",
+            &mut Listings::default(),
+            &mut |stage| match stage {
+                OpenStage::BeforeOpen => swap_folder(dir.path(), outside.path()),
+                OpenStage::AfterOpen => {
+                    std::fs::remove_file(dir.path().join("js")).unwrap();
+                    std::fs::rename(dir.path().join("js-real"), dir.path().join("js")).unwrap();
+                }
+            },
+        )
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
         assert!(
@@ -1482,22 +1668,33 @@ mod tests {
 
         // The file itself becomes a link just before the open.
         let (dir, outside) = setup();
-        let err = resolve_package_file_with(dir.path(), "js/app.js", &mut |stage| {
-            if stage == OpenStage::BeforeOpen {
-                std::fs::remove_file(dir.path().join("js").join("app.js")).unwrap();
-                std::os::unix::fs::symlink(
-                    outside.path().join("app.js"),
-                    dir.path().join("js").join("app.js"),
-                )
-                .unwrap();
-            }
-        })
+        let err = resolve_package_file_with(
+            dir.path(),
+            "js/app.js",
+            &mut Listings::default(),
+            &mut |stage| {
+                if stage == OpenStage::BeforeOpen {
+                    std::fs::remove_file(dir.path().join("js").join("app.js")).unwrap();
+                    std::os::unix::fs::symlink(
+                        outside.path().join("app.js"),
+                        dir.path().join("js").join("app.js"),
+                    )
+                    .unwrap();
+                }
+            },
+        )
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
 
         // Nothing swapped: the file opened is read.
         let (dir, _outside) = setup();
-        let file = resolve_package_file_with(dir.path(), "js/app.js", &mut |_| {}).unwrap();
+        let file = resolve_package_file_with(
+            dir.path(),
+            "js/app.js",
+            &mut Listings::default(),
+            &mut |_| {},
+        )
+        .unwrap();
         assert_eq!(read_all(file), b"mine");
     }
 }
