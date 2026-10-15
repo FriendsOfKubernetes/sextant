@@ -31,8 +31,9 @@
   },
   "lines_one": "{{count}} line",
   "lines_other": "{{count}} lines",
-  "dropped_one": "{{count}} older line discarded (the newest {{limit}} are kept)",
-  "dropped_other": "{{count}} older lines discarded (the newest {{limit}} are kept)",
+  "dropped_one": "{{count}} older line discarded (the newest {{limit}} lines, up to {{size}} MiB of text, are kept)",
+  "dropped_other": "{{count}} older lines discarded (the newest {{limit}} lines, up to {{size}} MiB of text, are kept)",
+  "lineCut": " … [line cut at 64 KiB, continued on the next line]",
   "empty": "No log lines yet.",
   "view": "Log lines",
   "save": {

@@ -4,4 +4,9 @@ import type { CoreError } from "./CoreError";
 /**
  * Serialized with a `type` tag.
  */
-export type LogUpdate = { "type": "lines", lines: Array<string>, } | { "type": "ended" } | { "type": "error" } & CoreError;
+export type LogUpdate = { "type": "lines", lines: Array<string>, 
+/**
+ * Indices into `lines` of the lines cut at [`MAX_LINE_BYTES`]: the rest of such a line follows as the
+ * next line (in this batch or a later one). Absent when nothing was cut.
+ */
+cut?: Array<number>, } | { "type": "ended" } | { "type": "error" } & CoreError;

@@ -32,7 +32,14 @@ pub struct LogOptions {
 #[serde(tag = "type", rename_all = "camelCase")]
 #[ts(export)]
 pub enum LogUpdate {
-    Lines { lines: Vec<String> },
+    Lines {
+        lines: Vec<String>,
+        /// Indices into `lines` of the lines cut at [`MAX_LINE_BYTES`]: the rest of such a line follows as the
+        /// next line (in this batch or a later one). Absent when nothing was cut.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[ts(optional, type = "Array<number>")]
+        cut: Vec<u32>,
+    },
     Ended,
     Error(CoreError),
 }
@@ -41,6 +48,12 @@ pub enum LogUpdate {
 pub const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 /// A batch that grows to this many lines is sent without waiting for the interval.
 const MAX_BATCH_LINES: usize = 2_000;
+/// A batch that grows to this many bytes of text is sent without waiting for the interval (so one batch holds
+/// at most this plus one line).
+pub const MAX_BATCH_BYTES: usize = 1024 * 1024;
+/// The longest line [`stream_logs`] sends, in bytes: a longer one (a progress bar redrawn with `\r`, binary
+/// output) is sent in pieces of this size, each but the last marked in [`LogUpdate::Lines::cut`].
+pub const MAX_LINE_BYTES: usize = 64 * 1024;
 /// The most lines [`tail`] reads.
 pub const MAX_TAIL_LINES: u32 = 2_000;
 /// The most bytes [`tail`] returns (and, about twice this, holds while reading): the newest ones.
@@ -160,9 +173,13 @@ async fn read_newest<R: AsyncRead + Unpin>(mut reader: R, cap: usize) -> std::io
 
 struct Batcher<R> {
     reader: R,
-    /// Bytes of the line being read; survives a cancelled read.
+    /// Bytes of the line being read (at most [`MAX_LINE_BYTES`] plus the newline); survives a cancelled read.
     line: Vec<u8>,
     batch: Vec<String>,
+    /// Bytes of text in `batch`.
+    batch_bytes: usize,
+    /// Indices into `batch` of the lines cut at the cap.
+    cut: Vec<u32>,
     flush_at: Option<Instant>,
     interval: Duration,
     /// What follows the batch that is being flushed.
@@ -172,8 +189,10 @@ struct Batcher<R> {
 }
 
 /// Turns log text into batches: lines are collected for `interval` after the first one arrives (or until
-/// [`MAX_BATCH_LINES`]), then sent together. The end of the text becomes `Ended`, a read error `Error`; what was
-/// read before either is sent first. Lines that are not UTF-8 are decoded lossily.
+/// [`MAX_BATCH_LINES`] or [`MAX_BATCH_BYTES`]), then sent together. A line longer than [`MAX_LINE_BYTES`] is
+/// sent in pieces as it is read, so an endless line without a newline never holds more than the cap. The end of
+/// the text becomes `Ended`, a read error `Error`; what was read before either is sent first. Lines that are not
+/// UTF-8 are decoded lossily.
 pub(crate) fn batch_lines<R>(
     reader: R,
     interval: Duration,
@@ -185,6 +204,8 @@ where
         reader,
         line: Vec::new(),
         batch: Vec::new(),
+        batch_bytes: 0,
+        cut: Vec::new(),
         flush_at: None,
         interval,
         then: None,
@@ -196,7 +217,10 @@ where
             if st.finished {
                 return None;
             }
-            if st.batch.len() >= MAX_BATCH_LINES || (st.then.is_some() && !st.batch.is_empty()) {
+            if st.batch.len() >= MAX_BATCH_LINES
+                || st.batch_bytes >= MAX_BATCH_BYTES
+                || (st.then.is_some() && !st.batch.is_empty())
+            {
                 return Some((flush(&mut st), st));
             }
             if let Some(last) = st.then.take() {
@@ -207,26 +231,29 @@ where
                 st.then = Some(LogUpdate::Ended);
                 continue;
             }
-            let read = st.reader.read_until(b'\n', &mut st.line);
+            let read = read_line_capped(&mut st.reader, &mut st.line, MAX_LINE_BYTES);
             let outcome = match st.flush_at {
                 Some(at) => tokio::time::timeout_at(at, read).await.ok(),
                 None => Some(read.await),
             };
             match outcome {
                 None => return Some((flush(&mut st), st)),
-                Some(Ok(_)) => {
-                    // `read_until` returns without the delimiter only at the end of the text.
-                    let complete = st.line.last() == Some(&b'\n');
-                    if st.line.is_empty() {
-                        st.eof = true;
-                    } else {
-                        if !complete {
-                            st.eof = true;
-                        }
+                Some(Ok(LineEnd::Newline)) => {
+                    let text = std::mem::take(&mut st.line);
+                    push_line(&mut st, &text, false);
+                }
+                Some(Ok(LineEnd::Cap)) => {
+                    // Cut at a character boundary; the bytes of a split character start the next piece.
+                    let at = char_boundary_before(&st.line);
+                    let rest = st.line.split_off(at);
+                    let text = std::mem::replace(&mut st.line, rest);
+                    push_line(&mut st, &text, true);
+                }
+                Some(Ok(LineEnd::Eof)) => {
+                    st.eof = true;
+                    if !st.line.is_empty() {
                         let text = std::mem::take(&mut st.line);
-                        st.batch.push(decode_line(&text));
-                        st.flush_at
-                            .get_or_insert_with(|| Instant::now() + st.interval);
+                        push_line(&mut st, &text, false);
                     }
                 }
                 Some(Err(err)) => {
@@ -240,10 +267,93 @@ where
     })
 }
 
+fn push_line<R>(st: &mut Batcher<R>, raw: &[u8], cut: bool) {
+    let text = decode_line(raw);
+    if cut {
+        st.cut.push(st.batch.len() as u32);
+    }
+    st.batch_bytes += text.len();
+    st.batch.push(text);
+    st.flush_at
+        .get_or_insert_with(|| Instant::now() + st.interval);
+}
+
 fn flush<R>(st: &mut Batcher<R>) -> LogUpdate {
     st.flush_at = None;
+    st.batch_bytes = 0;
     LogUpdate::Lines {
         lines: std::mem::take(&mut st.batch),
+        cut: std::mem::take(&mut st.cut),
+    }
+}
+
+/// Why [`read_line_capped`] returned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LineEnd {
+    /// `line` ends with `\n`.
+    Newline,
+    /// `line` holds `cap` bytes and the next byte is not `\n`.
+    Cap,
+    /// The text is over; `line` holds what was left (maybe nothing).
+    Eof,
+}
+
+/// Appends to `line` up to and including the next `\n`, but never more than `cap` bytes of text: a line that
+/// reaches the cap ends there ([`LineEnd::Cap`]) unless a `\n` follows right away. Cancel-safe: the only
+/// await is `fill_buf`, which consumes nothing, so a cancelled call loses no bytes and the next call goes on
+/// with the same `line`.
+async fn read_line_capped<R: AsyncBufRead + Unpin>(
+    reader: &mut R,
+    line: &mut Vec<u8>,
+    cap: usize,
+) -> std::io::Result<LineEnd> {
+    loop {
+        let available = match reader.fill_buf().await {
+            Ok(bytes) => bytes,
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(err) => return Err(err),
+        };
+        if available.is_empty() {
+            return Ok(LineEnd::Eof);
+        }
+        let room = cap.saturating_sub(line.len());
+        // One byte past the room: a newline right at the cap still ends the line whole.
+        let window = &available[..available.len().min(room + 1)];
+        let (used, end) = match window.iter().position(|&b| b == b'\n') {
+            Some(newline) => (newline + 1, Some(LineEnd::Newline)),
+            None if window.len() > room => (room, Some(LineEnd::Cap)),
+            None => (window.len(), None),
+        };
+        line.extend_from_slice(&available[..used]);
+        reader.consume_unpin(used);
+        if let Some(end) = end {
+            return Ok(end);
+        }
+    }
+}
+
+/// Where to cut `text` so that no UTF-8 character is split: `text.len()`, or the start of a character that the
+/// end of `text` cuts short. Text that is not UTF-8 there is cut at its end.
+fn char_boundary_before(text: &[u8]) -> usize {
+    let end = text.len();
+    // The last byte that is not a continuation byte, looking back at most 3 bytes.
+    let Some(start) = (end.saturating_sub(4)..end)
+        .rev()
+        .find(|&i| text[i] & 0b1100_0000 != 0b1000_0000)
+    else {
+        return end;
+    };
+    let width = match text[start] {
+        b if b & 0b1000_0000 == 0 => 1,
+        b if b & 0b1110_0000 == 0b1100_0000 => 2,
+        b if b & 0b1111_0000 == 0b1110_0000 => 3,
+        b if b & 0b1111_1000 == 0b1111_0000 => 4,
+        _ => return end,
+    };
+    if start + width > end && start > 0 {
+        start
+    } else {
+        end
     }
 }
 
@@ -274,7 +384,7 @@ mod tests {
 
     fn lines(update: LogUpdate) -> Vec<String> {
         match update {
-            LogUpdate::Lines { lines } => lines,
+            LogUpdate::Lines { lines, .. } => lines,
             other => panic!("expected lines, got {other:?}"),
         }
     }
@@ -490,12 +600,158 @@ mod tests {
         drop(tx);
         let mut seen = Vec::new();
         while let Some(update) = updates.next().await {
-            if let LogUpdate::Lines { lines } = update {
+            if let LogUpdate::Lines { lines, .. } = update {
                 assert!(lines.len() <= MAX_BATCH_LINES);
                 seen.extend(lines);
             }
         }
         assert_eq!(seen.len(), total);
         assert_eq!(seen[total - 1], format!("l{}", total - 1));
+    }
+
+    fn lines_and_cut(update: LogUpdate) -> (Vec<String>, Vec<u32>) {
+        match update {
+            LogUpdate::Lines { lines, cut } => (lines, cut),
+            other => panic!("expected lines, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn an_endless_line_without_newline_is_sent_in_pieces_within_the_caps() {
+        const TOTAL: u64 = 50 * 1024 * 1024;
+        let reader = futures::io::BufReader::new(futures::io::repeat(b'x').take(TOTAL));
+        let mut updates = Box::pin(batch_lines(reader, Duration::from_secs(60)));
+        let (mut bytes, mut pieces, mut batches) = (0usize, 0usize, 0usize);
+        while let Some(update) = updates.next().await {
+            let LogUpdate::Lines { lines, cut } = update else {
+                assert_eq!(update, LogUpdate::Ended);
+                continue;
+            };
+            batches += 1;
+            let batch_bytes: usize = lines.iter().map(String::len).sum();
+            assert!(
+                batch_bytes <= MAX_BATCH_BYTES + MAX_LINE_BYTES,
+                "a batch of {batch_bytes} bytes"
+            );
+            for (i, line) in lines.iter().enumerate() {
+                assert!(
+                    line.len() <= MAX_LINE_BYTES,
+                    "a line of {} bytes",
+                    line.len()
+                );
+                let last_piece = bytes + line.len() == TOTAL as usize;
+                assert_eq!(cut.contains(&(i as u32)), !last_piece, "piece {pieces}");
+                bytes += line.len();
+                pieces += 1;
+            }
+        }
+        assert_eq!(bytes, TOTAL as usize, "every byte arrives");
+        assert_eq!(pieces, (TOTAL as usize).div_ceil(MAX_LINE_BYTES));
+        assert!(batches >= 50, "{batches} batches");
+    }
+
+    #[tokio::test]
+    async fn a_line_cut_at_the_cap_is_sent_without_waiting_for_its_newline() {
+        let (tx, reader) = reader();
+        let mut updates = Box::pin(batch_lines(reader, Duration::from_millis(50)));
+        let long = 100 * 1024;
+        tx.unbounded_send(Ok(vec![b'x'; long])).unwrap();
+        // The interval passes mid-line: the cut piece goes, the rest waits for its newline and stays below the cap.
+        let (lines, cut) = lines_and_cut(updates.next().await.unwrap());
+        assert_eq!(lines, ["x".repeat(MAX_LINE_BYTES)]);
+        assert_eq!(cut, [0]);
+        tx.unbounded_send(Ok(b"y\nnext\n".to_vec())).unwrap();
+        let (lines, cut) = lines_and_cut(updates.next().await.unwrap());
+        assert_eq!(
+            lines,
+            [
+                format!("{}y", "x".repeat(long - MAX_LINE_BYTES)),
+                "next".into()
+            ]
+        );
+        assert!(cut.is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_newline_right_at_the_cap_keeps_the_line_whole() {
+        let (tx, reader) = reader();
+        let mut updates = Box::pin(batch_lines(reader, Duration::from_millis(50)));
+        tx.unbounded_send(Ok(vec![b'x'; MAX_LINE_BYTES])).unwrap();
+        tx.unbounded_send(Ok(b"\nshort\n".to_vec())).unwrap();
+        drop(tx);
+        let (lines, cut) = lines_and_cut(updates.next().await.unwrap());
+        assert_eq!(lines, ["x".repeat(MAX_LINE_BYTES), "short".into()]);
+        assert!(cut.is_empty(), "{cut:?}");
+        assert_eq!(updates.next().await, Some(LogUpdate::Ended));
+    }
+
+    #[test]
+    fn a_cut_never_splits_a_character() {
+        assert_eq!(char_boundary_before(b"abc"), 3);
+        assert_eq!(char_boundary_before("a\u{e9}".as_bytes()), 3);
+        assert_eq!(char_boundary_before(&"a\u{e9}".as_bytes()[..2]), 1);
+        assert_eq!(char_boundary_before(&"a\u{20ac}".as_bytes()[..3]), 1);
+        assert_eq!(char_boundary_before(&"a\u{1f600}".as_bytes()[..4]), 1);
+        assert_eq!(char_boundary_before("a\u{1f600}".as_bytes()), 5);
+        // Not UTF-8: cut where the cap is.
+        assert_eq!(char_boundary_before(b"a\x80\x80\x80\x80"), 5);
+    }
+
+    #[tokio::test]
+    async fn a_followed_log_with_one_huge_line_arrives_in_pieces_of_whole_characters() {
+        use crate::fake_api::{FakeApi, Reply, Request, connected_to};
+        use crate::resources::KindRef;
+
+        // One odd byte first, so the 64 KiB cap falls inside a two-byte character.
+        let body = format!("x{}", "\u{e9}".repeat(1_500_000));
+        let expected = body.clone();
+        let api = FakeApi::start(move |req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(
+                200,
+                r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+            ),
+            "/api/v1/namespaces/ns/pods/web/log" => Reply::json(200, body.clone()),
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let pod = ObjectRef {
+            kind: KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Pod".into(),
+            },
+            namespace: Some("ns".into()),
+            name: "web".into(),
+        };
+        let opts = LogOptions {
+            container: "app".into(),
+            follow: true,
+            previous: false,
+            timestamps: false,
+            tail_lines: None,
+        };
+        let updates = stream_logs(&mgr, &id, &pod, opts).await.unwrap();
+        let mut updates = Box::pin(updates);
+        let mut text = String::new();
+        while let Some(update) = updates.next().await {
+            let LogUpdate::Lines { lines, cut } = update else {
+                assert_eq!(update, LogUpdate::Ended);
+                continue;
+            };
+            for (i, line) in lines.iter().enumerate() {
+                assert!(
+                    line.len() <= MAX_LINE_BYTES,
+                    "a line of {} bytes",
+                    line.len()
+                );
+                assert!(!line.contains('\u{fffd}'), "a character was split");
+                if cut.contains(&(i as u32)) {
+                    assert!(line.len() > MAX_LINE_BYTES - 4, "{}", line.len());
+                }
+                text.push_str(line);
+            }
+        }
+        assert_eq!(text, expected);
     }
 }

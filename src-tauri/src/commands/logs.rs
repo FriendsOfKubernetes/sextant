@@ -128,6 +128,7 @@ mod tests {
     fn lines(text: &[&str]) -> LogUpdate {
         LogUpdate::Lines {
             lines: text.iter().map(|l| l.to_string()).collect(),
+            cut: Vec::new(),
         }
     }
 

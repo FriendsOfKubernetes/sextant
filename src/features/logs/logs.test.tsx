@@ -203,12 +203,19 @@ describe("buffer limit", () => {
     emitLines(numbered(150_000));
     expect(screen.getByTestId("logs-count")).toHaveTextContent("100000 lines");
     expect(screen.getByTestId("logs-dropped")).toHaveTextContent(
-      `50000 older lines discarded (the newest ${LOG_BUFFER_LIMIT} are kept)`,
+      `50000 older lines discarded (the newest ${LOG_BUFFER_LIMIT} lines, up to 32 MiB of text, are kept)`,
     );
     // Following: the view sits at the end, so the newest line is rendered and the oldest are gone.
     expect(screen.getByText("line 149999")).toBeInTheDocument();
     expect(screen.queryByText("line 0")).not.toBeInTheDocument();
     expect(screen.queryByText("line 49999")).not.toBeInTheDocument();
+  });
+
+  it("marks a line the backend cut at its cap", async () => {
+    await opened();
+    act(() => backend.emit("logs:s1", { type: "lines", lines: ["head of a long line", "its rest"], cut: [0] }));
+    expect(screen.getByText("head of a long line … [line cut at 64 KiB, continued on the next line]")).toBeInTheDocument();
+    expect(screen.getByText("its rest")).toBeInTheDocument();
   });
 
   it("shows no marker while nothing was discarded", async () => {

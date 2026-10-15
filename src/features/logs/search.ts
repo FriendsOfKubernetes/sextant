@@ -10,13 +10,19 @@ export interface LogMatch {
 /** More matches than this are not tracked (the counter shows the cap). */
 export const MAX_MATCHES = 10_000;
 
+/** Lines that can be read by index: an array or the log buffer's `LogLines`. */
+export interface IndexedLines {
+  readonly length: number;
+  at(index: number): string | undefined;
+}
+
 /** Every occurrence of `query` in `lines`, in reading order, up to [`MAX_MATCHES`]. */
-export function findMatches(lines: readonly string[], query: string): LogMatch[] {
+export function findMatches(lines: IndexedLines, query: string): LogMatch[] {
   const needle = query.toLowerCase();
   const found: LogMatch[] = [];
   if (!needle) return found;
   for (let line = 0; line < lines.length && found.length < MAX_MATCHES; line++) {
-    const haystack = lines[line]!.toLowerCase();
+    const haystack = (lines.at(line) ?? "").toLowerCase();
     let from = 0;
     for (;;) {
       const start = haystack.indexOf(needle, from);

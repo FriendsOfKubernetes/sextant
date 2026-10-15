@@ -14,7 +14,8 @@ import {
   type LogUpdate,
   type ObjectRef,
 } from "../../api";
-import { appendLines, EMPTY_BUFFER, type LogBuffer } from "./buffer";
+import { i18n } from "../../i18n";
+import { appendLines, EMPTY_BUFFER, markCutLines, type LogBuffer } from "./buffer";
 
 export type LogStatus = "connecting" | "streaming" | "ended" | "error";
 
@@ -54,9 +55,12 @@ export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogO
       onListening: () => update((s) => (s.status === "connecting" ? { ...s, status: "streaming" } : s)),
       onEvent: (u) => {
         switch (u.type) {
-          case "lines":
-            update((s) => ({ ...s, buffer: appendLines(s.buffer, u.lines) }));
+          case "lines": {
+            // A line the backend cut at its cap goes on as the next line; the marker says so.
+            const lines = markCutLines(u.lines, u.cut, i18n.t("logs:lineCut"));
+            update((s) => ({ ...s, buffer: appendLines(s.buffer, lines) }));
             break;
+          }
           case "ended":
             update((s) => (s.status === "error" ? s : { ...s, status: "ended" }));
             break;

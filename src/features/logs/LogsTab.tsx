@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
 import { Button, Checkbox, ErrorState, Icon } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
-import { LOG_BUFFER_LIMIT } from "./buffer";
+import { LOG_BUFFER_LIMIT, LOG_BUFFER_TEXT_LIMIT } from "./buffer";
 import { findMatches, MAX_MATCHES, splitLine } from "./search";
 import { useLogStream } from "./useLogStream";
 
@@ -110,7 +110,7 @@ export function LogsTab({ tab, active }: DockTabProps) {
         filters: [{ name: t("logs:save.filter"), extensions: ["log", "txt"] }],
       });
       if (!path) return;
-      await api.files.save(path, lines.length > 0 ? `${lines.join("\n")}\n` : "");
+      await api.files.save(path, lines.length > 0 ? `${lines.toArray().join("\n")}\n` : "");
     } catch (err) {
       setSaveError(toApiError(err));
     }
@@ -212,7 +212,7 @@ export function LogsTab({ tab, active }: DockTabProps) {
       {saveError !== null && <ErrorState error={saveError} title={t("logs:save.failed")} />}
       {dropped > 0 && (
         <div className="logs__dropped" data-testid="logs-dropped">
-          {t("logs:dropped", { count: dropped, limit: LOG_BUFFER_LIMIT })}
+          {t("logs:dropped", { count: dropped, limit: LOG_BUFFER_LIMIT, size: LOG_BUFFER_TEXT_LIMIT / (1024 * 1024) })}
         </div>
       )}
 
@@ -226,7 +226,7 @@ export function LogsTab({ tab, active }: DockTabProps) {
         {lines.length === 0 && stream.status === "streaming" && <p className="logs__empty">{t("logs:empty")}</p>}
         <div className="logs__body" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((item) => {
-            const text = lines[item.index] ?? "";
+            const text = lines.at(item.index) ?? "";
             const style: CSSProperties = { transform: `translateY(${item.start}px)` };
             return (
               <div key={item.key} ref={wrap ? virtualizer.measureElement : undefined} data-index={item.index} className="logs__line" style={style}>
