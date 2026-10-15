@@ -53,7 +53,8 @@ pub enum McpState {
 #[ts(export)]
 pub struct McpStatus {
     pub state: McpState,
-    /// `http://127.0.0.1:<port>/mcp` while running.
+    /// `http://127.0.0.1:<port>/mcp` while serving: running, or `Error` after a port change that failed while the
+    /// old port still serves.
     pub url: Option<String>,
     pub error: Option<String>,
 }
@@ -140,12 +141,23 @@ impl SextantMcp {
             () = self.stopped.cancelled() => Err(ToolError::Refused(Refusal::Stopped)),
             result = run => result,
         };
+        let (passed, changes) = {
+            let record = lock(&record);
+            (record.passed, record.changes)
+        };
         let result = match result {
             // Allowed and under way when the server stopped: the decision stands, and the agent must not think
-            // nothing happened.
-            Err(ToolError::Refused(Refusal::Stopped)) if lock(&record).passed => Err(
-                ToolError::Failed(CoreError::new(ErrorCode::Other, STOPPED_AFTER_START)),
-            ),
+            // nothing happened — unless the call had only been let read.
+            Err(ToolError::Refused(Refusal::Stopped)) if passed => {
+                Err(ToolError::Failed(CoreError::new(
+                    ErrorCode::Other,
+                    if changes {
+                        STOPPED_AFTER_START
+                    } else {
+                        STOPPED_DURING_READ
+                    },
+                )))
+            }
             Err(ToolError::Refused(Refusal::Stopped)) => {
                 lock(&record).decision = Some(AuditDecision::Denied);
                 result
@@ -177,6 +189,9 @@ impl SextantMcp {
 
 const STOPPED_AFTER_START: &str = "Sextant's MCP server stopped (turned off, restarted or closed) after this \
 call was allowed and had started: it may have run in full or in part. Check the cluster before repeating it.";
+
+const STOPPED_DURING_READ: &str = "Sextant's MCP server stopped (turned off, restarted or closed) during a read; \
+nothing was changed. Repeat the call once the server runs again.";
 
 fn error_code_name(error: &ToolError) -> String {
     serde_json::to_value(error.code())
@@ -243,6 +258,9 @@ impl ServerHandler for SextantMcp {
 /// A running HTTP server.
 struct Running {
     port: u16,
+    /// The bound port, held here while the HTTP server accepts on a clone of it: ending the sessions (a new token)
+    /// restarts the HTTP server on another clone without letting go of the port.
+    listener: std::net::TcpListener,
     task: tokio::task::JoinHandle<()>,
 }
 
@@ -320,32 +338,65 @@ impl McpServer {
     }
 
     /// Starts, stops or restarts the server to match `settings.mcp`. Nothing happens when it already runs on the
-    /// right port.
+    /// right port. A new port is bound before the old one is let go: when it cannot be, the server keeps serving on
+    /// the old port and the status says why (`Error` with the old `url`).
     pub async fn apply_settings(&self, settings: &AppSettings) {
         let stops = self.stops.load(Ordering::SeqCst);
         let _changing = self.changing.lock().await;
         let wanted = settings.mcp.enabled.then_some(settings.mcp.port);
         let current = lock(&self.running).as_ref().map(|r| r.port);
-        if wanted.is_some() && wanted == current {
-            return;
-        }
-        self.shut_down().await;
-        match wanted {
-            None => self.set_status(McpStatus::off()),
-            Some(port) => self.start(port, stops).await,
+        match (wanted, current) {
+            (Some(port), Some(current)) if port == current => {
+                // Back to the port it serves on after a failed change.
+                if self.status().state == McpState::Error {
+                    self.set_status(running_status(port));
+                }
+            }
+            (None, _) => {
+                self.shut_down().await;
+                self.set_status(McpStatus::off());
+            }
+            (Some(port), None) => match self.bind(port).await {
+                Ok(listener) => self.launch(port, listener, stops, running_status(port)),
+                Err(error) => self.set_error(error),
+            },
+            (Some(port), Some(current)) => match self.bind(port).await {
+                Ok(listener) => {
+                    self.shut_down().await;
+                    self.launch(port, listener, stops, running_status(port));
+                }
+                Err(error) => {
+                    // Still serving on `current` unless a stop came meanwhile.
+                    let running = lock(&self.running);
+                    if running.is_some() && self.stops.load(Ordering::SeqCst) == stops {
+                        let url = url(current);
+                        self.set_status(McpStatus {
+                            state: McpState::Error,
+                            error: Some(format!(
+                                "{error}{} Still serving on {url}.",
+                                if error.ends_with(['.', '?']) { "" } else { "." }
+                            )),
+                            url: Some(url),
+                        });
+                    }
+                }
+            },
         }
     }
 
-    /// A new token: the old one stops working at once and every session ends (a running server restarts).
+    /// A new token: the old one stops working at once and every session ends. A running server starts its HTTP
+    /// side again on the same port, which stays bound all the while, so no other program can take it meanwhile.
     pub async fn regenerate_token(&self) -> io::Result<Token> {
         let stops = self.stops.load(Ordering::SeqCst);
         let _changing = self.changing.lock().await;
         let token = self.ctx.regenerate_token()?;
-        let port = lock(&self.running).as_ref().map(|r| r.port);
-        if let Some(port) = port {
-            self.shut_down().await;
-            self.start(port, stops).await;
-        }
+        let Some((port, listener, task)) = self.end_sessions() else {
+            return Ok(token);
+        };
+        wait_or_abort(task).await;
+        // The status stays what it was (the port did not change).
+        let status = self.status();
+        self.launch(port, listener, stops, status);
         Ok(token)
     }
 
@@ -364,74 +415,93 @@ impl McpServer {
         self.ctx.confirmations.close(ConfirmSource::Agent);
         if let Some(running) = running {
             running.task.abort();
+            drop(running.listener);
         }
         if self.status().state != McpState::Off {
             self.set_status(McpStatus::off());
         }
     }
 
-    /// Starts on `port` unless [`McpServer::stop`] ran since `stops` was read.
-    async fn start(&self, port: u16, stops: u64) {
+    /// Binds `port` for a server; the error is the status text.
+    async fn bind(&self, port: u16) -> Result<std::net::TcpListener, String> {
         if !PORT_RANGE.contains(&port) {
-            return self.set_error(format!(
+            return Err(format!(
                 "Port {port} is outside {}–{}",
                 PORT_RANGE.start(),
                 PORT_RANGE.end()
             ));
         }
         if let Err(e) = self.ctx.token() {
-            return self.set_error(format!("Cannot create the MCP token: {e}"));
+            return Err(format!("Cannot create the MCP token: {e}"));
         }
         let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
-        let listener = match bind(address).await {
-            Ok(listener) => listener,
-            Err(e) if e.kind() == io::ErrorKind::AddrInUse => {
-                return self.set_error(format!(
-                    "Port {port} is in use — another Sextant or program?"
-                ));
-            }
-            Err(e) => return self.set_error(format!("Cannot listen on {address}: {e}")),
-        };
+        match bind(address).await.and_then(|l| l.into_std()) {
+            Ok(listener) => Ok(listener),
+            Err(e) if e.kind() == io::ErrorKind::AddrInUse => Err(format!(
+                "Port {port} is in use — another Sextant or program?"
+            )),
+            Err(e) => Err(format!("Cannot listen on {address}: {e}")),
+        }
+    }
+
+    /// Serves on `listener` (bound to `port`) with new sessions and sets `status`, unless [`McpServer::stop`] ran
+    /// since `stops` was read (the listener is dropped then).
+    fn launch(&self, port: u16, listener: std::net::TcpListener, stops: u64, status: McpStatus) {
         let mut running = lock(&self.running);
         if self.stops.load(Ordering::SeqCst) != stops {
             // Stopped (window closed) while binding: the listener goes, nothing runs.
             return;
         }
+        let accepting = listener
+            .try_clone()
+            .and_then(|l| {
+                l.set_nonblocking(true)?;
+                Ok(l)
+            })
+            .and_then(tokio::net::TcpListener::from_std);
+        let accepting = match accepting {
+            Ok(accepting) => accepting,
+            Err(e) => {
+                drop(running);
+                return self.set_error(format!("Cannot listen on port {port}: {e}"));
+            }
+        };
         let serving = CancellationToken::new();
         *lock(&self.serving) = serving.clone();
         self.ctx.confirmations.open(ConfirmSource::Agent);
         let router = http::router(self.handler_with(serving.clone()), port, serving.clone());
         let shutdown = serving.cancelled_owned();
         let task = tokio::spawn(async move {
-            let _ = axum::serve(listener, router)
+            let _ = axum::serve(accepting, router)
                 .with_graceful_shutdown(shutdown)
                 .await;
         });
-        *running = Some(Running { port, task });
-        // Under the `running` lock, so a stop that follows sets `off` after this.
-        self.set_status(McpStatus {
-            state: McpState::Running,
-            url: Some(url(port)),
-            error: None,
+        *running = Some(Running {
+            port,
+            listener,
+            task,
         });
+        // Under the `running` lock, so a stop that follows sets `off` after this.
+        self.set_status(status);
     }
 
-    /// Stops the running server, giving open connections [`STOP_GRACE`] to finish; the port is free on return.
-    async fn shut_down(&self) {
+    /// Ends the sessions and the calls of the running server and refuses its confirmations; gives back its port,
+    /// the still bound listener and the HTTP task that is finishing.
+    fn end_sessions(&self) -> Option<(u16, std::net::TcpListener, tokio::task::JoinHandle<()>)> {
         let running = {
             let mut running = lock(&self.running);
             lock(&self.serving).cancel();
             running.take()
         };
         self.ctx.confirmations.close(ConfirmSource::Agent);
-        let Some(Running { task, .. }) = running else {
-            return;
-        };
-        let mut task = task;
-        if tokio::time::timeout(STOP_GRACE, &mut task).await.is_err() {
-            task.abort();
-            // Dropping the aborted task closes its listener: the port is free once this returns.
-            let _ = task.await;
+        running.map(|r| (r.port, r.listener, r.task))
+    }
+
+    /// Stops the running server, giving open connections [`STOP_GRACE`] to finish; the port is free on return.
+    async fn shut_down(&self) {
+        if let Some((_, listener, task)) = self.end_sessions() {
+            wait_or_abort(task).await;
+            drop(listener);
         }
     }
 
@@ -446,6 +516,22 @@ impl McpServer {
     fn set_status(&self, status: McpStatus) {
         *lock(&self.status) = status.clone();
         self.ctx.emit(McpEvent::Status(status));
+    }
+}
+
+/// Waits [`STOP_GRACE`] for a stopping HTTP task, then aborts it; its clone of the listener is closed on return.
+async fn wait_or_abort(mut task: tokio::task::JoinHandle<()>) {
+    if tokio::time::timeout(STOP_GRACE, &mut task).await.is_err() {
+        task.abort();
+        let _ = task.await;
+    }
+}
+
+fn running_status(port: u16) -> McpStatus {
+    McpStatus {
+        state: McpState::Running,
+        url: Some(url(port)),
+        error: None,
     }
 }
 

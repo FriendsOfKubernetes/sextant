@@ -120,6 +120,8 @@ pub struct CallRecord {
     pub decision: Option<AuditDecision>,
     /// A check let the call act: from then on a stop does not undo the decision, and the call may have run.
     pub passed: bool,
+    /// A passed check was for more than reading (Read, Logs): a stop from then on may leave a change half done.
+    pub changes: bool,
 }
 
 /// Checks one call. Made per call with the client's name; [`Guard::record`] gives what it learned.
@@ -241,8 +243,11 @@ impl Guard {
         }
         // The kind lookup may have waited: the server may have stopped meanwhile.
         self.running()?;
+        let changes = requirements
+            .iter()
+            .any(|(_, _, action)| !reads_only(*action));
         if !confirm {
-            self.lock().passed = true;
+            self.pass(changes);
             return Ok(());
         }
         let request = ConfirmRequest {
@@ -271,7 +276,7 @@ impl Guard {
         match outcome {
             ConfirmOutcome::Approved => {
                 self.decide(AuditDecision::Approved);
-                self.lock().passed = true;
+                self.pass(changes);
                 Ok(())
             }
             ConfirmOutcome::Declined => {
@@ -314,7 +319,8 @@ impl Guard {
     }
 
     /// Namespaces where `action` on `kind` is allowed, for a call over all namespaces (list, events, metrics): `All`,
-    /// or the namespaces of the covering rules. Nowhere is a refusal.
+    /// or the namespaces of the covering rules. Nowhere is a refusal. A call narrowed to some namespaces is
+    /// journaled with them (`Pod in namespaces a, b`), not as "in all namespaces".
     pub fn allowed_namespaces(
         &self,
         cluster: &ClusterTarget,
@@ -333,8 +339,18 @@ impl Guard {
                 cluster: cluster.name.clone(),
             });
         }
-        self.lock().passed = true;
+        if let NamespaceScope::Only { namespaces } = &scope {
+            self.lock().target = clip(&narrowed_target(&summary.target, kind, namespaces));
+        }
+        self.pass(!reads_only(action));
         Ok(scope)
+    }
+
+    /// A check let the call act; `changes` — for more than reading.
+    fn pass(&self, changes: bool) {
+        let mut record = self.lock();
+        record.passed = true;
+        record.changes |= changes;
     }
 
     fn find(&self, cluster: &str) -> Result<ClusterTarget, CoreError> {
@@ -420,6 +436,20 @@ impl Guard {
     pub fn tool(&self) -> &str {
         &self.tool
     }
+}
+
+/// Whether an action only reads: a call stopped after such a check changed nothing.
+fn reads_only(action: AccessAction) -> bool {
+    matches!(action, AccessAction::Read | AccessAction::Logs)
+}
+
+/// The target of a call over all namespaces once it is narrowed to `namespaces`: `Pod in all namespaces` becomes
+/// `Pod in namespaces a, b` (a target without that ending starts with the kind). Not clipped.
+pub fn narrowed_target(target: &str, kind: &KindPattern, namespaces: &[String]) -> String {
+    let what = target
+        .strip_suffix(" in all namespaces")
+        .unwrap_or(&kind.kind);
+    format!("{what} in namespaces {}", namespaces.join(", "))
 }
 
 /// What a refusal names: the call's target when it is about this kind, else the kind and where.
@@ -835,6 +865,116 @@ mod tests {
             .unwrap_err();
         assert!(matches!(refused, Refusal::Denied { .. }));
         assert_eq!(g.record().decision, Some(AuditDecision::Denied));
+    }
+
+    #[tokio::test]
+    async fn a_call_narrowed_to_some_namespaces_names_them_in_the_journal() {
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = context_in(dir.path());
+        let pods = KindPattern::new("", "Pod");
+        let list = summary("list_resources", "Pod in all namespaces");
+        set_access(
+            &ctx,
+            &cluster(),
+            custom(vec![rule(
+                &["team-b", "team-a"],
+                &[AccessAction::Read],
+                false,
+            )]),
+        );
+        let g = guard(&ctx);
+        g.allowed_namespaces(&cluster(), &pods, AccessAction::Read, &list)
+            .unwrap();
+        assert_eq!(g.record().target, "Pod in namespaces team-a, team-b");
+        // Other wordings of "all namespaces" keep their start.
+        let g = guard(&ctx);
+        let usage = summary("get_metrics", "Pod usage in all namespaces");
+        g.allowed_namespaces(&cluster(), &pods, AccessAction::Read, &usage)
+            .unwrap();
+        assert_eq!(g.record().target, "Pod usage in namespaces team-a, team-b");
+
+        // Very many namespaces are cut like any target.
+        let many: Vec<String> = (0..200).map(|i| format!("team-{i:03}")).collect();
+        let many: Vec<&str> = many.iter().map(String::as_str).collect();
+        set_access(
+            &ctx,
+            &cluster(),
+            custom(vec![rule(&many, &[AccessAction::Read], false)]),
+        );
+        let g = guard(&ctx);
+        g.allowed_namespaces(&cluster(), &pods, AccessAction::Read, &list)
+            .unwrap();
+        let target = g.record().target;
+        assert!(
+            target.starts_with("Pod in namespaces team-000, team-001"),
+            "{target}"
+        );
+        assert!(target.ends_with("[cut]"), "{target}");
+
+        // A grant over all namespaces, and a refusal, still say "all namespaces".
+        set_access(
+            &ctx,
+            &cluster(),
+            custom(vec![rule(&[], &[AccessAction::Read], false)]),
+        );
+        let g = guard(&ctx);
+        g.allowed_namespaces(&cluster(), &pods, AccessAction::Read, &list)
+            .unwrap();
+        assert_eq!(g.record().target, "Pod in all namespaces");
+        let g = guard(&ctx);
+        let refused = g
+            .allowed_namespaces(&cluster(), &pods, AccessAction::Exec, &list)
+            .unwrap_err();
+        assert!(
+            refused.to_string().contains("on Pod in all namespaces"),
+            "{refused}"
+        );
+        assert_eq!(g.record().target, "Pod in all namespaces");
+    }
+
+    #[tokio::test]
+    async fn a_stop_after_a_read_passed_records_no_change() {
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = context_in(dir.path());
+        set_access(
+            &ctx,
+            &cluster(),
+            custom(vec![rule(
+                &["team-a"],
+                &[AccessAction::Read, AccessAction::Logs, AccessAction::Delete],
+                false,
+            )]),
+        );
+        let pod = |action| need(Some("team-a"), "Pod", action);
+        let target = summary("tool", "Pod team-a/web");
+        let g = guard(&ctx);
+        g.check(
+            &cluster(),
+            &[pod(AccessAction::Read), pod(AccessAction::Logs)],
+            &target,
+        )
+        .await
+        .unwrap();
+        assert!(g.record().passed);
+        assert!(!g.record().changes);
+        let g = guard(&ctx);
+        g.allowed_namespaces(
+            &cluster(),
+            &KindPattern::new("", "Pod"),
+            AccessAction::Read,
+            &summary("list_resources", "Pod in all namespaces"),
+        )
+        .unwrap();
+        assert!(g.record().passed && !g.record().changes);
+        let g = guard(&ctx);
+        g.check(
+            &cluster(),
+            &[pod(AccessAction::Read), pod(AccessAction::Delete)],
+            &target,
+        )
+        .await
+        .unwrap();
+        assert!(g.record().passed && g.record().changes);
     }
 
     #[tokio::test]

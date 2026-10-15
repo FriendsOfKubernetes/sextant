@@ -54,6 +54,7 @@ use crate::access_guard::{
     refused_object, stronger,
 };
 use crate::commands::actions::CHANGE_TIMEOUT;
+use crate::mcp::guard::narrowed_target;
 use crate::mcp::tools_write::{check_json_patch, reads_secret_values};
 use crate::state::{AppState, check_stream_id};
 
@@ -867,7 +868,7 @@ impl<'a> ExtCall<'a> {
     }
 
     /// Namespaces where `action` on `kind` is granted, for a call over all namespaces: `All`, or the namespaces of
-    /// the covering rules. Nowhere is a refusal.
+    /// the covering rules. Nowhere is a refusal. A call narrowed to some namespaces is journaled with them.
     fn allowed_namespaces(
         &self,
         cluster: &ExtCluster,
@@ -893,6 +894,9 @@ impl<'a> ExtCall<'a> {
                 self.name(),
                 self.where_to_allow()
             )));
+        }
+        if let NamespaceScope::Only { namespaces } = &scope {
+            lock(&self.record).target = clip(&narrowed_target(&summary.target, kind, namespaces));
         }
         Ok(scope)
     }

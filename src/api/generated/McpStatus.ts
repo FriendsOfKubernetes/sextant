@@ -6,6 +6,7 @@ import type { McpState } from "./McpState";
  */
 export type McpStatus = { state: McpState, 
 /**
- * `http://127.0.0.1:<port>/mcp` while running.
+ * `http://127.0.0.1:<port>/mcp` while serving: running, or `Error` after a port change that failed while the
+ * old port still serves.
  */
 url: string | null, error: string | null, };

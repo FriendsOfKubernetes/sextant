@@ -1239,6 +1239,37 @@ fn probe(state: &AppState) -> Probe {
             }
         },
     );
+    // `read`: a Read check, then `done`, then reads until the server stops.
+    let (go_in, done_in) = (Arc::clone(&go), Arc::clone(&done));
+    tools.add(
+        "read",
+        "test",
+        ToolKind::Read,
+        move |call: ToolCall, args: Args| {
+            let (go, done) = (Arc::clone(&go_in), Arc::clone(&done_in));
+            async move {
+                go.notified().await;
+                let cluster = ClusterTarget {
+                    id: ClusterId::from("c1"),
+                    name: "c1".into(),
+                };
+                let summary = CallSummary {
+                    tool: "read".into(),
+                    target: format!("Pod team-a/{}", args.name),
+                    details: None,
+                };
+                let need = (
+                    Some("team-a".to_owned()),
+                    KindPattern::new("", "Pod"),
+                    AccessAction::Read,
+                );
+                call.guard.check(&cluster, &[need], &summary).await?;
+                done.store(true, Ordering::SeqCst);
+                std::future::pending::<()>().await;
+                Ok(ToolOutput::Text("read".into()))
+            }
+        },
+    );
     set_access(
         state,
         &ClusterId::from("c1"),
@@ -1461,4 +1492,133 @@ async fn a_stop_after_the_check_passed_keeps_the_decision_and_does_not_say_nothi
     // Read + write asks before a change; the window allowed it.
     assert_eq!(entry.decision, AuditDecision::Approved);
     assert_eq!(entry.result, "other");
+}
+
+#[tokio::test]
+async fn a_new_token_keeps_the_port_bound_while_the_sessions_end() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    let port = turn_on_free(&state).await;
+    let old = state.mcp.token().unwrap();
+    let session = initialize(port, old.as_str()).await;
+
+    // Another program tries to take the port all the time the token is regenerated.
+    let done = Arc::new(AtomicBool::new(false));
+    let thief = {
+        let done = Arc::clone(&done);
+        std::thread::spawn(move || {
+            while !done.load(Ordering::SeqCst) {
+                if let Ok(listener) = std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, port)) {
+                    return Some(listener);
+                }
+            }
+            None
+        })
+    };
+    for _ in 0..5 {
+        state.mcp.regenerate_token().await.unwrap();
+    }
+    done.store(true, Ordering::SeqCst);
+    let stolen = thief.join().unwrap();
+    assert!(stolen.is_none(), "the port was free for a moment");
+    assert_eq!(
+        state.mcp.status(),
+        McpStatus {
+            state: McpState::Running,
+            url: Some(format!("http://127.0.0.1:{port}/mcp")),
+            error: None,
+        }
+    );
+    let new = state.mcp.token().unwrap();
+    let list = json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" });
+    let gone = rpc(port, new.as_str(), Some(&session), list.clone()).await;
+    assert_eq!(gone.status, 404, "the old session is closed: {gone:?}");
+    let fresh = initialize(port, new.as_str()).await;
+    assert_eq!(
+        rpc(port, new.as_str(), Some(&fresh), list).await.status,
+        200
+    );
+    state.close_all();
+    assert!(port_is_closed(port).await);
+}
+
+#[tokio::test]
+async fn a_port_change_to_a_taken_port_keeps_serving_on_the_old_one() {
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    let port = turn_on_free(&state).await;
+    let token = state.mcp.token().unwrap();
+
+    let taken = std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+    let taken_port = taken.local_addr().unwrap().port();
+    turn_on(&state, taken_port).await;
+    assert_eq!(
+        state.mcp.status(),
+        McpStatus {
+            state: McpState::Error,
+            url: Some(format!("http://127.0.0.1:{port}/mcp")),
+            error: Some(format!(
+                "Port {taken_port} is in use — another Sextant or program? Still serving on \
+                 http://127.0.0.1:{port}/mcp."
+            )),
+        }
+    );
+    // The old port still serves.
+    initialize(port, token.as_str()).await;
+
+    // Back to the port it serves on: running again, nothing restarted.
+    let session = initialize(port, token.as_str()).await;
+    turn_on(&state, port).await;
+    assert_eq!(state.mcp.status().state, McpState::Running);
+    assert_eq!(state.mcp.status().error, None);
+    let list = json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" });
+    assert_eq!(
+        rpc(port, token.as_str(), Some(&session), list).await.status,
+        200
+    );
+
+    // A free new port: bound first, then the old one is released.
+    drop(taken);
+    let other = turn_on_free(&state).await;
+    assert!(port_is_closed(port).await);
+    initialize(other, token.as_str()).await;
+    state.close_all();
+}
+
+#[tokio::test]
+async fn a_stop_during_a_read_says_nothing_was_changed() {
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    let probe = probe(&state);
+    start_probe(&probe).await;
+    let handler = probe.server.handler();
+    let call = tokio::spawn(async move { handler.call("agent", "read", args("web")).await });
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    probe.go.notify_waiters();
+    for _ in 0..200 {
+        if probe.done.load(std::sync::atomic::Ordering::SeqCst) {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert!(
+        probe.done.load(std::sync::atomic::Ordering::SeqCst),
+        "the read did not start"
+    );
+    probe.server.stop();
+    let error = call.await.unwrap().unwrap_err();
+    let text = error.message();
+    assert!(!text.contains("may have"), "{text}");
+    assert!(text.contains("nothing was changed"), "{text}");
+    assert_ne!(error.code(), sextant_core::ErrorCode::Denied);
+
+    let entry = probe.server.context().audit.list(None)[0].clone();
+    assert_eq!(entry.tool, "read");
+    assert_eq!(entry.decision, AuditDecision::Allowed);
+    assert_eq!(entry.result, "other");
+    assert!(probe.confirms.lock().unwrap().is_empty());
 }

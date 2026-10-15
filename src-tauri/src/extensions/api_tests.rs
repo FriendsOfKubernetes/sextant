@@ -360,6 +360,43 @@ async fn every_object_is_decided_against_what_was_granted() {
 }
 
 #[tokio::test]
+async fn a_list_narrowed_to_granted_namespaces_names_them_in_the_journal() {
+    let env = Env::new();
+    env.install(
+        "widgets",
+        perms(all_clusters(), &["team-b", "team-a"], &["read"], false),
+    );
+    env.install("wide", perms(all_clusters(), &[], &["read"], false));
+    let pods = KindPattern::new("", "Pod");
+    let list = about("Pod in all namespaces");
+
+    let call = env.call("widgets", "resources.list");
+    let cluster = call.target("ctx-a").unwrap();
+    call.allowed_namespaces(&cluster, &pods, AccessAction::Read, &list)
+        .unwrap();
+    assert_eq!(call.record().target, "Pod in namespaces team-a, team-b");
+
+    // A grant over all namespaces, and a refusal, still say "all namespaces".
+    let call = env.call("wide", "resources.list");
+    let cluster = call.target("ctx-a").unwrap();
+    assert_eq!(
+        call.allowed_namespaces(&cluster, &pods, AccessAction::Read, &list),
+        Ok(NamespaceScope::All)
+    );
+    assert_eq!(call.record().target, "Pod in all namespaces");
+    let call = env.call("widgets", "resources.list");
+    let err = call
+        .allowed_namespaces(&cluster, &pods, AccessAction::Logs, &list)
+        .unwrap_err();
+    assert!(
+        err.message.contains("on Pod in all namespaces"),
+        "{}",
+        err.message
+    );
+    assert_eq!(call.record().target, "Pod in all namespaces");
+}
+
+#[tokio::test]
 async fn a_rule_that_asks_shows_the_extension_in_the_dialog() {
     let env = Env::new();
     env.install(
