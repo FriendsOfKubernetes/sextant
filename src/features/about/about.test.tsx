@@ -89,6 +89,9 @@ describe("what it shows", () => {
     expect(dialog).toHaveTextContent("AppImage");
     expect(dialog).toHaveTextContent("MIT OR Apache-2.0");
     expect(dialog).toHaveTextContent("Sextant contributors");
+    // The licence is said once, on its own line; the copyright line does not repeat it.
+    expect(dialog.textContent?.match(/MIT OR Apache-2\.0/g)).toHaveLength(1);
+    expect(within(dialog).getByText(/Sextant contributors/).textContent).not.toContain("Apache");
   });
 
   it.each([

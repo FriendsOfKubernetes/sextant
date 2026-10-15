@@ -16,7 +16,7 @@ use k8s_openapi::api::authorization::v1::{
 use k8s_openapi::api::core::v1::{Namespace, Pod};
 use k8s_openapi::api::rbac::v1::{ClusterRole, ClusterRoleBinding};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use kube::Api;
 use kube::api::{ApiResource, DynamicObject, ListParams, Patch, PatchParams, PostParams};
 use serde::{Deserialize, Serialize};
@@ -129,9 +129,12 @@ pub struct WorkloadState {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct InstalledState {
-    /// Every CustomResourceDefinition of the tool's standard set exists.
+    /// Every CustomResourceDefinition of the tool's standard set exists and, when the tool's namespace exists, so
+    /// do the controllers every install has (Flux: source, kustomize; Argo CD: server, repo server, application
+    /// controller).
     pub present: bool,
-    /// Not present, but its namespace or some of its CustomResourceDefinitions exist: an install updates them.
+    /// Not present, but its namespace or some of its CustomResourceDefinitions exist (an install that stopped or
+    /// failed part way, or one with controllers missing): an install updates them.
     pub partial: bool,
 }
 
@@ -197,6 +200,24 @@ const ARGOCD_CRDS: &[&str] = &[
     "appprojects.argoproj.io",
 ];
 
+/// The Flux controllers every install has, in `flux-system`: `flux bootstrap --components` and the Helm chart may
+/// leave out the helm and notification controllers. `source-controller` is the last Deployment of the default set
+/// the official file applies, so an install that stopped after its CRDs lacks it.
+const FLUX_WORKLOADS: &[(&str, &str)] = &[
+    ("Deployment", "source-controller"),
+    ("Deployment", "kustomize-controller"),
+];
+/// The Argo CD workloads every install has, in `argocd`: the Helm chart may turn off Dex, notifications and the
+/// ApplicationSet controller, and the HA install runs Redis as `argocd-redis-ha-*`. The application controller is the
+/// last workload the official file applies, so an install that stopped after its CRDs lacks it.
+const ARGOCD_WORKLOADS: &[(&str, &str)] = &[
+    ("Deployment", "argocd-repo-server"),
+    ("Deployment", "argocd-server"),
+    ("StatefulSet", "argocd-application-controller"),
+];
+/// The label the Argo CD Helm chart keeps the standard workload name in (its objects are `<release>-argocd-…`).
+const NAME_LABEL: &str = "app.kubernetes.io/name";
+
 /// The kinds the official files use, as (group, kind, plural); a manifest with any other kind is refused. All are
 /// built into every API server, so the apply needs no discovery.
 const ALLOWED_KINDS: &[(&str, &str, &str)] = &[
@@ -256,6 +277,14 @@ impl GitopsTool {
         match self {
             Self::Flux => FLUX_CRDS,
             Self::ArgoCd => ARGOCD_CRDS,
+        }
+    }
+
+    /// The Deployments and StatefulSets (kind, name) every install of the tool has, which [`installed`] looks for.
+    fn workloads(self) -> &'static [(&'static str, &'static str)] {
+        match self {
+            Self::Flux => FLUX_WORKLOADS,
+            Self::ArgoCd => ARGOCD_WORKLOADS,
         }
     }
 
@@ -802,9 +831,14 @@ fn pod_problem(pod: &Pod) -> Option<String> {
     }
 }
 
-/// Whether the tool is in the cluster: present when every CustomResourceDefinition of its standard set exists;
-/// partial when not, but its namespace or some of those definitions exist (an install then updates them). Read from
-/// the cluster, not from the cached discovery.
+/// Whether the tool is in the cluster, read from the cluster (not from the cached discovery).
+///
+/// Present when every CustomResourceDefinition of its standard set exists and, if its namespace (`flux-system`,
+/// `argocd`) exists, the controllers every install has are in it (Flux: source and kustomize; Argo CD: server, repo
+/// server, application controller) — by name, or by the `app.kubernetes.io/name` label the Argo CD Helm chart keeps. Partial when not present but its namespace or some of
+/// those definitions exist: an install that stopped or failed after the definitions, or one with controllers
+/// missing; an install then updates what exists. With the definitions but without the namespace the tool runs
+/// elsewhere, and with the listing of workloads forbidden nothing more can be told: both count as present.
 pub async fn installed(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -832,12 +866,6 @@ pub async fn installed(
         .iter()
         .filter(|name| existing.contains(**name))
         .count();
-    if found == tool.crds().len() {
-        return Ok(InstalledState {
-            present: true,
-            partial: false,
-        });
-    }
     let namespace = with_timeout(STEP_TIMEOUT, "reading the namespace", async {
         Api::<Namespace>::all(client.clone())
             .get_metadata_opt(tool.namespace())
@@ -845,10 +873,59 @@ pub async fn installed(
             .map_err(CoreError::from)
     })
     .await?;
+    let all_crds = found == tool.crds().len();
+    let present = all_crds && (namespace.is_none() || has_workloads(&client, tool).await?);
     Ok(InstalledState {
-        present: false,
-        partial: found > 0 || namespace.is_some(),
+        present,
+        partial: !present && (found > 0 || namespace.is_some()),
     })
+}
+
+/// Whether the workloads every install of the tool has are in its namespace; true when the user may not list them.
+async fn has_workloads(client: &kube::Client, tool: GitopsTool) -> CoreResult<bool> {
+    let namespace = tool.namespace();
+    let params = ListParams::default();
+    let deployments = with_timeout(STEP_TIMEOUT, "listing the Deployments", async {
+        Api::<Deployment>::namespaced(client.clone(), namespace)
+            .list_metadata(&params)
+            .await
+            .map_err(CoreError::from)
+    })
+    .await;
+    let stateful_sets = with_timeout(STEP_TIMEOUT, "listing the StatefulSets", async {
+        Api::<StatefulSet>::namespaced(client.clone(), namespace)
+            .list_metadata(&params)
+            .await
+            .map_err(CoreError::from)
+    })
+    .await;
+    let (deployments, stateful_sets) = match (deployments, stateful_sets) {
+        (Ok(d), Ok(s)) => (d, s),
+        (Err(e), _) | (_, Err(e)) if e.code == ErrorCode::Forbidden => return Ok(true),
+        (Err(e), _) | (_, Err(e)) => return Err(e),
+    };
+    let listed: Vec<(&str, &ObjectMeta)> = deployments
+        .items
+        .iter()
+        .map(|d| ("Deployment", &d.metadata))
+        .chain(
+            stateful_sets
+                .items
+                .iter()
+                .map(|s| ("StatefulSet", &s.metadata)),
+        )
+        .collect();
+    Ok(tool.workloads().iter().all(|(kind, name)| {
+        listed.iter().any(|(listed_kind, meta)| {
+            listed_kind == kind
+                && (meta.name.as_deref() == Some(*name)
+                    || meta
+                        .labels
+                        .as_ref()
+                        .and_then(|l| l.get(NAME_LABEL))
+                        .is_some_and(|l| l == name))
+        })
+    }))
 }
 
 /// Whether the user may create CustomResourceDefinitions and ClusterRoleBindings, as the API server answers a

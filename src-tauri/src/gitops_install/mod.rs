@@ -271,6 +271,26 @@ impl GitopsInstalls {
         Ok(())
     }
 
+    /// Registers the install `id` (as [`register`](Self::register)), then takes the plan of `token` (as
+    /// [`take`](Self::take)) for it. A refused registration (a malformed or taken id) leaves the plan for a retry; a
+    /// plan that is gone unregisters the install, without its `on_abort`.
+    pub fn begin(
+        &self,
+        id: &str,
+        cluster: &ClusterId,
+        token: &str,
+        stop: Arc<AtomicBool>,
+        task: AbortHandle,
+        on_abort: OnAbort,
+    ) -> CoreResult<Arc<InstallPlan>> {
+        self.register(id, cluster.clone(), stop, task, on_abort)?;
+        self.take(cluster, token).inspect_err(|_| {
+            if let Some(running) = lock(&self.running).remove(id) {
+                running.task.abort();
+            }
+        })
+    }
+
     /// Asks the install `id` to stop after the object being applied (or to stop waiting); `false` when there is no
     /// such install.
     pub fn stop(&self, id: &str) -> bool {

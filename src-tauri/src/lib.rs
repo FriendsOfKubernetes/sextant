@@ -10,7 +10,16 @@ pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
 pub mod state;
+// The tray exists on the desktop only (as the window code in `window.rs`); elsewhere there is no icon.
+#[cfg(desktop)]
 mod tray;
+#[cfg(not(desktop))]
+mod tray {
+    /// No tray off the desktop: closing the window quits, Settings offers no "keep in the tray".
+    pub fn available<R: tauri::Runtime>(_app: &tauri::AppHandle<R>) -> bool {
+        false
+    }
+}
 mod window;
 
 use tauri::{Emitter, Manager, Runtime};
@@ -264,10 +273,42 @@ fn with_updates<R: Runtime>(
     builder
 }
 
+/// The single-instance callback: a second launch of Sextant (its arguments and working directory are not used) brings
+/// the running window back with `reveal`, from the tray, the taskbar or behind other windows. Used by release
+/// builds only (see [`with_single_instance`]).
+#[cfg_attr(debug_assertions, allow(dead_code))]
+fn on_second_instance<R: Runtime>(
+    reveal: fn(&tauri::AppHandle<R>),
+) -> impl FnMut(&tauri::AppHandle<R>, Vec<String>, String) + Send + Sync + 'static {
+    move |app, _args, _cwd| reveal(app)
+}
+
+/// One Sextant per user (desktop release builds only). Registered before every other plugin, so a second process hands over to the
+/// running one and exits during `build`, before the app's `setup`: it never creates `AppState`, writes
+/// `settings.json`, starts the MCP server or sweeps node-shell pods. The running one reveals its window.
+///
+/// The instance is told apart by the bundle identifier (`dev.sextant.app`: a D-Bus name on Linux, a named mutex on
+/// Windows, a socket on macOS), which a development build (`npm run tauri dev`, `target/debug/sextant`, e2e) shares
+/// with an installed copy. Debug builds therefore do not register the plugin: they run beside an installed Sextant
+/// (sharing its settings directory, as before) instead of handing over to it and exiting. Without a session bus
+/// (Linux) the plugin cannot look and Sextant starts as before.
+#[cfg(all(desktop, not(debug_assertions)))]
+fn with_single_instance<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
+    builder.plugin(tauri_plugin_single_instance::init(on_second_instance(
+        window::reveal::<R>,
+    )))
+}
+
+#[cfg(any(not(desktop), debug_assertions))]
+fn with_single_instance<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
+    builder
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
-    let builder = extensions::protocol::register(with_commands(tauri::Builder::default()))
+    let builder = with_single_instance(tauri::Builder::default());
+    let builder = extensions::protocol::register(with_commands(builder))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init());
     with_updates(builder, context.config())
@@ -286,6 +327,7 @@ pub fn run() {
             start_extensions(app.handle());
             window::restore_main_window(app.handle());
             // After the window is shown, so "Show/Hide" starts with the right text; no icon is not an error.
+            #[cfg(desktop)]
             crate::tray::install(app.handle());
             Ok(())
         })
@@ -318,6 +360,19 @@ mod tests {
             rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap(),
             "\"request-2\""
         );
+    }
+
+    #[test]
+    fn a_second_launch_reveals_the_running_window() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static REVEALED: AtomicUsize = AtomicUsize::new(0);
+        fn reveal(_: &tauri::AppHandle<tauri::test::MockRuntime>) {
+            REVEALED.fetch_add(1, Ordering::SeqCst);
+        }
+        let app = tauri::test::mock_app();
+        let mut callback = super::on_second_instance(reveal);
+        callback(app.handle(), vec!["sextant".to_owned()], "/".to_owned());
+        assert_eq!(REVEALED.load(Ordering::SeqCst), 1);
     }
 
     fn config(plugins: serde_json::Value) -> tauri::Config {

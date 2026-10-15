@@ -696,6 +696,32 @@ async fn readiness_covers_argocd_statefulset_and_an_unschedulable_pod() {
 
 /// A cluster whose CRDs are `crds` and whose namespaces are `namespaces`.
 async fn cluster_with(crds: Vec<String>, namespaces: Vec<&'static str>) -> FakeApi {
+    cluster_with_workloads(crds, namespaces, Workloads::Listed(vec![])).await
+}
+
+/// The Deployments and StatefulSets a fake cluster has in every namespace it has.
+#[derive(Clone)]
+enum Workloads {
+    /// (kind, name, `app.kubernetes.io/name`)
+    Listed(Vec<(&'static str, String, Option<String>)>),
+    /// Listing them is forbidden.
+    Forbidden,
+}
+
+fn partial_list(items: Vec<Value>) -> Reply {
+    Reply::json(
+        200,
+        json!({"apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadataList", "metadata": {}, "items": items})
+            .to_string(),
+    )
+}
+
+/// A cluster whose CRDs are `crds`, whose namespaces are `namespaces`, with `workloads` in each of them.
+async fn cluster_with_workloads(
+    crds: Vec<String>,
+    namespaces: Vec<&'static str>,
+    workloads: Workloads,
+) -> FakeApi {
     FakeApi::start(move |req: &Request| {
         if let Some(reply) = discovery(req) {
             return reply;
@@ -705,11 +731,32 @@ async fn cluster_with(crds: Vec<String>, namespaces: Vec<&'static str>) -> FakeA
                 .iter()
                 .map(|name| json!({"apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadata", "metadata": {"name": name}}))
                 .collect();
-            return Reply::json(
-                200,
-                json!({"apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadataList", "metadata": {}, "items": items})
-                    .to_string(),
-            );
+            return partial_list(items);
+        }
+        if let Some(rest) = req.path.strip_prefix("/apis/apps/v1/namespaces/")
+            && let Some((ns, plural)) = rest.split_once('/')
+            && namespaces.contains(&ns)
+        {
+            let kind = match plural {
+                "deployments" => "Deployment",
+                "statefulsets" => "StatefulSet",
+                _ => return Reply::not_found(),
+            };
+            let listed = match &workloads {
+                Workloads::Forbidden => return Reply::json(403, FORBIDDEN),
+                Workloads::Listed(listed) => listed,
+            };
+            let items: Vec<Value> = listed
+                .iter()
+                .filter(|(k, _, _)| *k == kind)
+                .map(|(_, name, label)| {
+                    let labels = label
+                        .as_ref()
+                        .map_or(json!({}), |l| json!({"app.kubernetes.io/name": l}));
+                    json!({"apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadata", "metadata": {"name": name, "namespace": ns, "labels": labels}})
+                })
+                .collect();
+            return partial_list(items);
         }
         if let Some(ns) = req.path.strip_prefix("/api/v1/namespaces/")
             && namespaces.contains(&ns)
@@ -722,6 +769,24 @@ async fn cluster_with(crds: Vec<String>, namespaces: Vec<&'static str>) -> FakeA
         Reply::not_found()
     })
     .await
+}
+
+/// The Deployments and StatefulSets of the tool's plan (the standard set), as a cluster lists them.
+fn planned_workloads(tool: GitopsTool) -> Vec<(&'static str, String, Option<String>)> {
+    let (version, manifest) = match tool {
+        GitopsTool::Flux => ("v2.9.6", flux_manifest()),
+        GitopsTool::ArgoCd => ("v3.5.5", argocd_manifest()),
+    };
+    prepare(tool, version, &manifest)
+        .unwrap()
+        .objects
+        .into_iter()
+        .filter_map(|o| match o.kind.as_str() {
+            "Deployment" => Some(("Deployment", o.name, None)),
+            "StatefulSet" => Some(("StatefulSet", o.name, None)),
+            _ => None,
+        })
+        .collect()
 }
 
 fn flux_crds() -> Vec<String> {
@@ -761,7 +826,8 @@ async fn installed_tells_none_present_and_partial() {
     ];
     let cases: Vec<(GitopsTool, Vec<String>, Vec<&'static str>, InstalledState)> = vec![
         (GitopsTool::Flux, unrelated.clone(), vec!["default"], none),
-        (GitopsTool::Flux, flux_crds(), vec!["flux-system"], present),
+        // Installed elsewhere (another namespace): what runs there cannot be told, the definitions decide.
+        (GitopsTool::Flux, flux_crds(), vec![], present),
         (GitopsTool::Flux, vec![], vec!["flux-system"], partial),
         (
             GitopsTool::Flux,
@@ -782,6 +848,160 @@ async fn installed_tells_none_present_and_partial() {
     for (tool, crds, namespaces, expected) in cases {
         let what = format!("{tool:?} crds={crds:?} namespaces={namespaces:?}");
         let api = cluster_with(crds, namespaces).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        assert_eq!(
+            installed(&mgr, &id, tool).await.unwrap(),
+            expected,
+            "{what}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn an_install_that_stopped_after_its_definitions_is_partial_until_every_controller_exists() {
+    let present = InstalledState {
+        present: true,
+        partial: false,
+    };
+    let partial = InstalledState {
+        present: false,
+        partial: true,
+    };
+    let argo_crds: Vec<String> = ARGOCD_CRDS.iter().map(|s| (*s).to_owned()).collect();
+    let flux_all = planned_workloads(GitopsTool::Flux);
+    let argo_all = planned_workloads(GitopsTool::ArgoCd);
+    // An install applies the workloads in the file's order: one that stopped before the last has the first ones.
+    let flux_some = flux_all[..2].to_vec();
+    let argo_without_controller: Vec<_> = argo_all
+        .iter()
+        .filter(|(kind, _, _)| *kind != "StatefulSet")
+        .cloned()
+        .collect();
+    // Argo CD from its Helm chart: `<release>-argocd-server` and so on, with the standard `app.kubernetes.io/name`.
+    let argo_helm: Vec<_> = argo_all
+        .iter()
+        .map(|(kind, name, _)| (*kind, format!("prod-{name}"), Some(name.clone())))
+        .collect();
+    // The HA install runs Redis as argocd-redis-ha-*, not argocd-redis.
+    let argo_ha: Vec<_> = argo_all
+        .iter()
+        .filter(|(_, name, _)| name != "argocd-redis")
+        .cloned()
+        .chain([("StatefulSet", "argocd-redis-ha-server".to_owned(), None)])
+        .collect();
+    // Helm with dex, notifications and the ApplicationSet controller turned off: a working Argo CD.
+    let argo_helm_minimal: Vec<_> = argo_helm
+        .iter()
+        .filter(|(_, _, label)| {
+            ![
+                "argocd-dex-server",
+                "argocd-notifications-controller",
+                "argocd-applicationset-controller",
+            ]
+            .contains(&label.as_deref().unwrap_or_default())
+        })
+        .cloned()
+        .collect();
+    // `flux bootstrap --components source-controller,kustomize-controller`.
+    let flux_minimal: Vec<_> = flux_all
+        .iter()
+        .filter(|(_, name, _)| name == "source-controller" || name == "kustomize-controller")
+        .cloned()
+        .collect();
+    let mut flux_more = flux_all.clone();
+    flux_more.push(("Deployment", "image-reflector-controller".to_owned(), None));
+    let cases: Vec<(
+        GitopsTool,
+        Vec<String>,
+        &'static str,
+        Workloads,
+        InstalledState,
+    )> = vec![
+        (
+            GitopsTool::Flux,
+            flux_crds(),
+            "flux-system",
+            Workloads::Listed(vec![]),
+            partial,
+        ),
+        (
+            GitopsTool::Flux,
+            flux_crds(),
+            "flux-system",
+            Workloads::Listed(flux_some),
+            partial,
+        ),
+        (
+            GitopsTool::Flux,
+            flux_crds(),
+            "flux-system",
+            Workloads::Listed(flux_all),
+            present,
+        ),
+        (
+            GitopsTool::Flux,
+            flux_crds(),
+            "flux-system",
+            Workloads::Listed(flux_more),
+            present,
+        ),
+        (
+            GitopsTool::ArgoCd,
+            argo_crds.clone(),
+            "argocd",
+            Workloads::Listed(argo_without_controller),
+            partial,
+        ),
+        (
+            GitopsTool::ArgoCd,
+            argo_crds.clone(),
+            "argocd",
+            Workloads::Listed(argo_all),
+            present,
+        ),
+        (
+            GitopsTool::ArgoCd,
+            argo_crds.clone(),
+            "argocd",
+            Workloads::Listed(argo_helm),
+            present,
+        ),
+        (
+            GitopsTool::ArgoCd,
+            argo_crds.clone(),
+            "argocd",
+            Workloads::Listed(argo_ha),
+            present,
+        ),
+        (
+            GitopsTool::ArgoCd,
+            argo_crds.clone(),
+            "argocd",
+            Workloads::Listed(argo_helm_minimal),
+            present,
+        ),
+        (
+            GitopsTool::Flux,
+            flux_crds(),
+            "flux-system",
+            Workloads::Listed(flux_minimal),
+            present,
+        ),
+        // The user may not list workloads there: the definitions decide.
+        (
+            GitopsTool::ArgoCd,
+            argo_crds,
+            "argocd",
+            Workloads::Forbidden,
+            present,
+        ),
+    ];
+    for (tool, crds, namespace, workloads, expected) in cases {
+        let what = match &workloads {
+            Workloads::Listed(listed) => format!("{tool:?} {listed:?}"),
+            Workloads::Forbidden => format!("{tool:?} forbidden"),
+        };
+        let api = cluster_with_workloads(crds, vec![namespace], workloads).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         assert_eq!(
             installed(&mgr, &id, tool).await.unwrap(),

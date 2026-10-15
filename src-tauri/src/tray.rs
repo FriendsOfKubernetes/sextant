@@ -96,12 +96,14 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> bool {
 
 /// Whether the tray icon is there for the user: it was created and, on Linux, a StatusNotifier host shows it now.
 /// Asked again before every hide, since the host can go away later (a panel restart, an extension turned off). On
-/// Linux this is a D-Bus round trip of at most about a second each way; call it off the async runtime.
+/// Linux this is a D-Bus round trip of at most about a second each way: call it on the blocking pool, never on the
+/// event loop (a window event) or the async runtime.
 pub fn available<R: Runtime>(app: &AppHandle<R>) -> bool {
     icon_created(app) && status_notifier::host_present()
 }
 
-fn icon_created<R: Runtime>(app: &AppHandle<R>) -> bool {
+/// Whether the icon was created at start (no system call).
+pub fn icon_created<R: Runtime>(app: &AppHandle<R>) -> bool {
     app.try_state::<TrayState<R>>()
         .is_some_and(|state| state.show_hide.is_some())
 }

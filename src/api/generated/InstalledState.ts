@@ -5,10 +5,13 @@
  */
 export type InstalledState = { 
 /**
- * Every CustomResourceDefinition of the tool's standard set exists.
+ * Every CustomResourceDefinition of the tool's standard set exists and, when the tool's namespace exists, so
+ * do the controllers every install has (Flux: source, kustomize; Argo CD: server, repo server, application
+ * controller).
  */
 present: boolean, 
 /**
- * Not present, but its namespace or some of its CustomResourceDefinitions exist: an install updates them.
+ * Not present, but its namespace or some of its CustomResourceDefinitions exist (an install that stopped or
+ * failed part way, or one with controllers missing): an install updates them.
  */
 partial: boolean, };

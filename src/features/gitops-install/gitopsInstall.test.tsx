@@ -200,6 +200,55 @@ describe("where the install is offered", () => {
   });
 });
 
+describe("a tool that is partly installed", () => {
+  const partlyFlux = () => ({
+    flux: { present: false, partial: true },
+    argoCd: { present: true, partial: false },
+  });
+
+  it("is offered in the menu although discovery serves its kinds, and the preview warns", async () => {
+    setup({
+      gitops_install_status: partlyFlux,
+      gitops_install_prepare: () => fluxPreview({ existing: { present: false, partial: true } }),
+    });
+    kinds = [POD, KUSTOMIZATION, APPLICATION];
+    await connect();
+    const menu = await openMenu();
+    fireEvent.click(await within(menu).findByRole("menuitem", { name: "Install Flux…" }));
+    expect(within(menu).queryByRole("menuitem", { name: "Install Argo CD…" })).not.toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", { name: "Install Flux" });
+    await toPreview(dialog);
+    expect(within(dialog).getByText(/Flux is partly installed/)).toBeInTheDocument();
+  });
+
+  it("shows as partly installed in the GitOps section, with Install", async () => {
+    setup({ gitops_install_status: partlyFlux });
+    kinds = [POD, KUSTOMIZATION, APPLICATION];
+    await connect();
+    act(() => openClusterSettings("aaaa"));
+    const settings = await screen.findByRole("dialog", { name: /Cluster settings/ });
+    expect(await within(settings).findByText("Partly installed")).toBeInTheDocument();
+    expect(within(settings).getByText("Installed")).toBeInTheDocument();
+    expect(within(settings).getByRole("button", { name: "Install Flux…" })).toBeInTheDocument();
+    expect(within(settings).queryByRole("button", { name: "Install Argo CD…" })).not.toBeInTheDocument();
+  });
+
+  it("an installed tool is not offered once the cluster says so", async () => {
+    setup({
+      gitops_install_status: () => ({
+        flux: { present: true, partial: false },
+        argoCd: { present: false, partial: false },
+      }),
+    });
+    kinds = [POD, KUSTOMIZATION];
+    await connect();
+    const menu = await openMenu();
+    await waitFor(() => expect(calls("gitops_install_status").length).toBeGreaterThan(0));
+    expect(await within(menu).findByRole("menuitem", { name: "Install Argo CD…" })).toBeInTheDocument();
+    expect(within(menu).queryByRole("menuitem", { name: "Install Flux…" })).not.toBeInTheDocument();
+  });
+});
+
 describe("the install dialog", () => {
   it("goes from the version to the preview, installs with progress and waits until the controllers are ready", async () => {
     setup({
@@ -352,6 +401,36 @@ describe("the install dialog", () => {
     expect(within(dialog).getByText("Not applied (4)")).toBeInTheDocument();
   });
 
+  it("a Stop pressed before the backend answers the start is sent once it answers", async () => {
+    let answer: (id: string) => void = () => undefined;
+    setup({ gitops_install_start: () => new Promise<string>((resolve) => (answer = resolve)) });
+    const dialog = await openFluxDialog();
+    await toPreview(dialog);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Install" }));
+    await waitFor(() => expect(calls("gitops_install_start")).toHaveLength(1));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Stop" }));
+    expect(within(dialog).getByText("Stopping after the current object…")).toBeInTheDocument();
+    expect(calls("gitops_install_stop")).toHaveLength(0);
+    act(() => answer("install-1"));
+    await waitFor(() => expect(calls("gitops_install_stop")).toHaveLength(1));
+    const streamId = calls("gitops_install_start")[0]?.args.streamId;
+    expect(calls("gitops_install_stop")[0]?.args).toEqual({ streamId });
+  });
+
+  it("a Stop while waiting for the controllers says everything was applied", async () => {
+    setup();
+    const dialog = await openFluxDialog();
+    await toPreview(dialog);
+    await install(dialog);
+    for (const o of fluxPreview().summary.objects) emit({ type: "applied", kind: o.kind, name: o.name });
+    emit({ type: "waiting", workloads: [{ kind: "Deployment", name: "source-controller", ready: false, reason: null }] });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Stop" }));
+    emit({ type: "stopped", applied: 5 });
+    expect(await within(dialog).findByText(/stopped while waiting for the controllers/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/the rest were not sent/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/Not applied/)).not.toBeInTheDocument();
+  });
+
   it("keeps a running install and its dialog when the window crosses the narrow layout width", async () => {
     let width = 1280;
     const listeners = new Set<() => void>();
@@ -461,6 +540,26 @@ describe("the install dialog", () => {
     await within(dialog).findByText(SHA);
     await install(dialog);
     emit({ type: "done", workloads: [{ kind: "StatefulSet", name: "argocd-application-controller", ready: true, reason: null }] });
+    expect(await within(dialog).findByText(/argocd-initial-admin-secret/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Open Argo CD UI" })).toBeInTheDocument();
+  });
+  it("after an Argo CD install whose wait timed out it still says how to sign in", async () => {
+    setup({
+      gitops_install_prepare: () =>
+        fluxPreview({ token: "tok-argo", tool: "argoCd", version: "v3.5.5", namespace: "argocd", checksumVerified: false }),
+    });
+    await connect();
+    const menu = await openMenu();
+    fireEvent.click(await within(menu).findByRole("menuitem", { name: "Install Argo CD…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Install Argo CD" });
+    await within(dialog).findByRole("option", { name: "v3.5.5 (latest)" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Download and preview" }));
+    await within(dialog).findByText(SHA);
+    await install(dialog);
+    emit({
+      type: "timedOut",
+      workloads: [{ kind: "Deployment", name: "argocd-server", ready: false, reason: "pod argocd-server-1: ImagePullBackOff" }],
+    });
     expect(await within(dialog).findByText(/argocd-initial-admin-secret/)).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Open Argo CD UI" })).toBeInTheDocument();
   });

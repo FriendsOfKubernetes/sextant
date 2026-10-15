@@ -12,7 +12,9 @@ import { ABOUT_LINKS } from "./links";
 import { buildKey, versionInfoText } from "./versionInfo";
 import "./about.css";
 
-const { license, copyright } = tauriConfig.bundle;
+const { license } = tauriConfig.bundle;
+/** `bundle.copyright` names the licence too (for the installers); the licence has its own line here. */
+const copyright = tauriConfig.bundle.copyright.replace(`, ${license}`, "").trim();
 
 /** How long "Copied" stays next to the button. */
 const FEEDBACK_MS = 3000;

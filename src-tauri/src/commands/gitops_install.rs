@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
-use sextant_core::gitops_install::{self, GitopsTool};
+use sextant_core::gitops_install::{self, GitopsTool, InstallPlan};
 use sextant_core::{ClusterId, CoreError, CoreResult};
 use tauri::{AppHandle, Emitter, Runtime, State};
 
@@ -52,12 +52,12 @@ pub async fn gitops_install_start<R: Runtime>(
     // Not connected: the plan stays for a retry.
     state.clusters.client(&cluster_id)?;
     let generation = state.streams_generation();
-    let plan = state.gitops.take(&cluster_id, &token)?;
     let stop = Arc::new(AtomicBool::new(false));
-    let total = plan.objects.len() as u32;
-    // Objects applied so far, for the final event of an install that is aborted.
+    // Objects in the plan and applied so far, for the final event of an install that is aborted.
+    let total = Arc::new(AtomicU32::new(0));
     let applied = Arc::new(AtomicU32::new(0));
-    let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
+    // The task starts once the install is registered and its plan taken; it gets the plan then.
+    let (plan_tx, plan_rx) = tokio::sync::oneshot::channel::<Arc<InstallPlan>>();
     let mgr = state.clusters.clone();
     let handle = app.clone();
     let id = stream_id.clone();
@@ -65,9 +65,9 @@ pub async fn gitops_install_start<R: Runtime>(
     let counted = Arc::clone(&applied);
     let cluster = cluster_id.clone();
     let task = tauri::async_runtime::spawn(async move {
-        if registered_rx.await.is_err() {
+        let Ok(plan) = plan_rx.await else {
             return;
-        }
+        };
         let event = gitops_install_event(&id);
         install::run(&mgr, &cluster, &plan, &flag, Timing::default(), |e| {
             if matches!(e, InstallEvent::Applied { .. }) {
@@ -82,18 +82,26 @@ pub async fn gitops_install_start<R: Runtime>(
     });
     let event = gitops_install_event(&stream_id);
     let window = app.clone();
+    let planned = Arc::clone(&total);
     let on_abort: OnAbort = Box::new(move |why: &str| {
-        let last = install::aborted(why, applied.load(Ordering::SeqCst), total);
+        let last = install::aborted(
+            why,
+            applied.load(Ordering::SeqCst),
+            planned.load(Ordering::SeqCst),
+        );
         let _ = window.emit(&event, &last);
     });
-    state.gitops.register(
+    // Registered first, the plan taken after: a stream id in use does not spend the token.
+    let plan = state.gitops.begin(
         &stream_id,
-        cluster_id,
+        &cluster_id,
+        &token,
         stop,
         task.inner().abort_handle(),
         on_abort,
     )?;
-    let _ = registered_tx.send(());
+    total.store(plan.objects.len() as u32, Ordering::SeqCst);
+    let _ = plan_tx.send(plan);
     state.undo_if_reset(generation, || {
         state.gitops.abort(&stream_id);
     })
@@ -107,7 +115,8 @@ pub async fn gitops_install_stop(state: State<'_, AppState>, stream_id: String) 
     Ok(())
 }
 
-/// Whether Flux and Argo CD are in the cluster (their CRDs, read from the cluster).
+/// Whether Flux and Argo CD are in the cluster: installed, partly installed (some CRDs or the namespace, or not every
+/// controller of the standard set) or missing, read from the cluster (`gitops_install::installed`).
 #[tauri::command]
 pub async fn gitops_install_status(
     state: State<'_, AppState>,

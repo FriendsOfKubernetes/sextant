@@ -61,6 +61,8 @@ sha2.workspace = true
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2.13"
 tauri-plugin-process = "2.4"
+# One Sextant per user: a second launch brings the running window back and exits (`lib.rs` `with_single_instance`).
+tauri-plugin-single-instance = "2.5"
 
 # The tray icon is shown on Linux only by a StatusNotifier host: `tray::available` asks the session bus whether one
 # is there (the same libdbus as keyring).

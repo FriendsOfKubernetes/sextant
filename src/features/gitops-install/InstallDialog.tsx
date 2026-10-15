@@ -28,6 +28,13 @@ export interface InstallDialogProps {
   onClose: () => void;
 }
 
+/** The running install's stream: its id once the backend answered the start; a Stop pressed before that waits. */
+interface OwnStream {
+  close: () => void;
+  id: string | null;
+  stopWanted: boolean;
+}
+
 type Step =
   | { step: "choose" }
   | { step: "preparing"; since: number }
@@ -51,7 +58,7 @@ export function InstallDialog({ clusterId, tool, onClose }: InstallDialogProps) 
   const [error, setError] = useState<ApiError | null>(null);
   const [run, dispatch] = useReducer(reduceRun, initialRun);
   const [askStop, setAskStop] = useState(false);
-  const stream = useRef<{ close: () => void; id: string | null } | null>(null);
+  const stream = useRef<OwnStream | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -93,7 +100,7 @@ export function InstallDialog({ clusterId, tool, onClose }: InstallDialogProps) 
     setError(null);
     dispatch({ type: "start", total: preview.summary.objects.length });
     setStep({ step: "running", preview });
-    const own: { close: () => void; id: string | null } = { close: () => undefined, id: null };
+    const own: OwnStream = { close: () => undefined, id: null, stopWanted: false };
     stream.current = own;
     own.close = openStream<InstallEvent>({
       start: (id) => api.gitopsInstall.start(clusterId, preview.token, id),
@@ -101,6 +108,7 @@ export function InstallDialog({ clusterId, tool, onClose }: InstallDialogProps) 
       stop: api.gitopsInstall.stop,
       onListening: (id) => {
         own.id = id;
+        if (own.stopWanted) void api.gitopsInstall.stop(id).catch(() => undefined);
       },
       onEvent: (event) => {
         dispatch({ type: "event", event });
@@ -115,9 +123,12 @@ export function InstallDialog({ clusterId, tool, onClose }: InstallDialogProps) 
   };
 
   const stop = () => {
-    const id = stream.current?.id;
+    const own = stream.current;
     dispatch({ type: "stopping" });
-    if (id) void api.gitopsInstall.stop(id).catch(() => undefined);
+    if (!own) return;
+    // Before the start answered the backend has no install under this id yet: the stop is sent once it answers.
+    if (own.id) void api.gitopsInstall.stop(own.id).catch(() => undefined);
+    else own.stopWanted = true;
   };
 
   const running = step.step === "running" && run.outcome === null;
@@ -365,7 +376,9 @@ function Progress({
       )}
       {outcome === "stopped" && (
         <p className="gitops-install__warning" role="status">
-          {t("gitops:result.stopped", { count: run.stoppedAfter ?? run.applied.length })}
+          {(run.stoppedAfter ?? run.applied.length) >= total
+            ? t("gitops:result.stoppedWaiting", { count: total })
+            : t("gitops:result.stopped", { count: run.stoppedAfter ?? run.applied.length })}
         </p>
       )}
       {outcome === "error" && (
@@ -377,7 +390,7 @@ function Progress({
         </>
       )}
       {run.workloads && <Workloads workloads={run.workloads} />}
-      {outcome === "done" && preview.tool === "argoCd" && (
+      {(outcome === "done" || outcome === "timedOut") && preview.tool === "argoCd" && (
         <div className="gitops-install__argo">
           <p className="gitops-install__text">{t("gitops:argo.login")}</p>
           <Button

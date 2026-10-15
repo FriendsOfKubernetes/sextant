@@ -435,6 +435,67 @@ fn a_prepared_plan_is_taken_once_for_its_own_cluster_within_ten_minutes() {
     );
 }
 
+#[tokio::test]
+async fn a_start_under_a_stream_id_in_use_keeps_the_plan_for_a_retry() {
+    let installs = GitopsInstalls::default();
+    let cluster = ClusterId::from("c");
+    let running = tokio::spawn(std::future::pending::<()>());
+    installs
+        .register(
+            "i-1",
+            cluster.clone(),
+            Arc::default(),
+            running.abort_handle(),
+            Box::new(|_: &str| {}),
+        )
+        .unwrap();
+    let token = installs.keep(cluster.clone(), plan()).unwrap();
+
+    let second = tokio::spawn(std::future::pending::<()>());
+    let err = installs
+        .begin(
+            "i-1",
+            &cluster,
+            &token,
+            Arc::default(),
+            second.abort_handle(),
+            Box::new(|_: &str| {}),
+        )
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+    assert_eq!(installs.running(), 1);
+
+    let third = tokio::spawn(std::future::pending::<()>());
+    let plan = installs
+        .begin(
+            "i-2",
+            &cluster,
+            &token,
+            Arc::default(),
+            third.abort_handle(),
+            Box::new(|_: &str| {}),
+        )
+        .expect("the plan is still there");
+    assert_eq!(plan.version, "v2.9.6");
+    assert_eq!(installs.running(), 2);
+
+    // A spent token registers nothing.
+    let fourth = tokio::spawn(std::future::pending::<()>());
+    let err = installs
+        .begin(
+            "i-3",
+            &cluster,
+            &token,
+            Arc::default(),
+            fourth.abort_handle(),
+            Box::new(|_: &str| {}),
+        )
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::NotFound);
+    assert_eq!(installs.running(), 2);
+    installs.stop_all();
+}
+
 /// An `on_abort` that records why.
 fn recorder() -> (Arc<Mutex<Vec<String>>>, impl Fn() -> OnAbort) {
     let seen = Arc::new(Mutex::new(Vec::new()));

@@ -71,6 +71,12 @@ pub fn hides_on_close(close_to_tray: bool, tray_available: bool) -> bool {
     close_to_tray && tray_available
 }
 
+/// Whether a close request is held while the tray is asked (off the event loop) whether it shows the icon: only with
+/// the setting on and an icon created. Otherwise the window closes as usual, without asking anything.
+pub fn defers_close(close_to_tray: bool, icon_created: bool) -> bool {
+    close_to_tray && icon_created
+}
+
 static RESIZE_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
@@ -80,8 +86,10 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
     match event {
         WindowEvent::Resized(_) => {
             schedule_geometry_save(window);
+            #[cfg(desktop)]
             crate::tray::sync_label(window.app_handle());
         }
+        #[cfg(desktop)]
         WindowEvent::Focused(focused) => {
             crate::tray::sync_label(window.app_handle());
             // A minimize sends no event of its own; it takes the focus away, and the window manager may report the
@@ -95,16 +103,30 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
             }
         }
         // Hiding keeps every session, stream, port forward and the MCP server: `close_all` is not called.
+        #[cfg(desktop)]
         WindowEvent::CloseRequested { api, .. } => {
             let close_to_tray = window
                 .try_state::<AppState>()
                 .is_some_and(|state| state.settings.get().close_to_tray);
-            // The tray is asked again now (the StatusNotifier host can be gone since start), and only when it matters.
-            let tray_available = close_to_tray && crate::tray::available(window.app_handle());
-            if hides_on_close(close_to_tray, tray_available) {
+            if defers_close(
+                close_to_tray,
+                crate::tray::icon_created(window.app_handle()),
+            ) {
+                // Whether the icon is shown is asked again now (the StatusNotifier host can be gone since start). On
+                // Linux that is a D-Bus round trip, so it never runs on this thread, the event loop: the close is held
+                // and decided on the blocking pool. Without a host the window is destroyed, which ends the app as a
+                // close does (`Destroyed`, then the exit).
                 api.prevent_close();
-                let _ = window.hide();
-                crate::tray::show_label(window.app_handle(), crate::tray::WindowToggle::Show);
+                let window = window.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    let app = window.app_handle();
+                    if hides_on_close(close_to_tray, crate::tray::available(app)) {
+                        let _ = window.hide();
+                        crate::tray::show_label(app, crate::tray::WindowToggle::Show);
+                    } else {
+                        let _ = window.destroy();
+                    }
+                });
             }
         }
         WindowEvent::Destroyed => {
@@ -203,6 +225,20 @@ mod tests {
             !guard_path.exists(),
             "the temp kubeconfig outlived the exit"
         );
+    }
+
+    #[test]
+    fn a_close_waits_for_the_tray_check_only_with_the_setting_on_and_an_icon() {
+        assert!(defers_close(true, true));
+        assert!(
+            !defers_close(true, false),
+            "no icon: the window closes at once"
+        );
+        assert!(
+            !defers_close(false, true),
+            "the setting off: closes at once"
+        );
+        assert!(!defers_close(false, false));
     }
 
     #[test]

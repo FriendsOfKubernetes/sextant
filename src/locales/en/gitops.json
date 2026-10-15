@@ -13,6 +13,7 @@
     "notConnected": "Connect to the cluster to see whether Flux and Argo CD are installed.",
     "loading": "Reading what the cluster serves…",
     "installed": "Installed",
+    "partial": "Partly installed",
     "missing": "Not installed",
     "install": "Install {{tool}}…"
   },
@@ -42,7 +43,7 @@
     "noCrdAccess": "You may not create CustomResourceDefinitions in this cluster, so the install will probably fail.",
     "noBindingAccess": "You may not create ClusterRoleBindings in this cluster, so the install will probably fail.",
     "present": "{{tool}} is already installed. Its objects will be updated to this version.",
-    "partial": "{{tool}} is partly installed (its namespace or some of its CRDs exist). Existing objects will be updated.",
+    "partial": "{{tool}} is partly installed (its namespace or some of its CRDs exist, or some of its controllers are missing). Existing objects will be updated.",
     "overwritten": "These cluster-wide objects already exist and will be overwritten:",
     "leftOut": "Running in {{namespace}}: {{names}}. This install leaves image automation and the source watcher out, as `flux install` does, and removes their service accounts from the shared role bindings, so they lose their permissions."
   },
@@ -60,6 +61,7 @@
     "done": "{{tool}} {{version}} is installed and running. Its section is in the sidebar.",
     "timedOut": "Everything was applied, but not every controller was ready within 5 minutes. What was applied stays in the cluster.",
     "stopped": "The install was stopped. {{count}} objects were applied; the rest were not sent.",
+    "stoppedWaiting": "The install was stopped while waiting for the controllers. All {{count}} objects were applied and stay in the cluster.",
     "failed": "The install failed. Nothing after the failed object was sent; what was applied stays in the cluster.",
     "applied": "Applied ({{count}})",
     "notApplied": "Not applied ({{count}})"
