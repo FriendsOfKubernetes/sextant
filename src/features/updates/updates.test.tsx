@@ -70,6 +70,15 @@ describe("check at start", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("does not check in a Vite dev build, even when it reports a bundle kind", async () => {
+    setup({}, { app: { bundleKind: "app", devBuild: true } });
+    render(<SettingsButton />);
+    await waitFor(() => expect(calls("settings_get")).toHaveLength(1));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(calls(UPDATER_COMMANDS.check)).toHaveLength(0);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("stays quiet when the check fails at start", async () => {
     setup(
       {

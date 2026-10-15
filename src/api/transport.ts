@@ -2,6 +2,7 @@
 import { getBundleType, getVersion } from "@tauri-apps/api/app";
 import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen as tauriListen } from "@tauri-apps/api/event";
+import { resourceDir } from "@tauri-apps/api/path";
 import { open as tauriOpen, save as tauriSave } from "@tauri-apps/plugin-dialog";
 import { openUrl as tauriOpenUrl } from "@tauri-apps/plugin-opener";
 import { relaunch as tauriRelaunch } from "@tauri-apps/plugin-process";
@@ -9,7 +10,7 @@ import { check as tauriCheck } from "@tauri-apps/plugin-updater";
 // The same file the backend is built with: the updater plugin is registered only when it has a public key.
 import tauriConfig from "../../src-tauri/tauri.conf.json";
 import { toApiError } from "./errors";
-import { updaterConfiguredIn, type AppInfo, type AvailableUpdate, type BundleKind } from "./updater";
+import { installedBundleKind, updaterConfiguredIn, type AppInfo, type AvailableUpdate } from "./updater";
 
 export type Unsubscribe = () => void;
 
@@ -49,8 +50,6 @@ export interface Transport {
   relaunch(): Promise<void>;
 }
 
-const BUNDLE_KINDS: readonly string[] = ["appimage", "deb", "rpm", "app", "msi", "nsis"] satisfies BundleKind[];
-
 export const tauriTransport: Transport = {
   invoke: (cmd, args) => tauriInvoke(cmd, args),
   listen: async (event, handler) => tauriListen(event, (e) => handler(e.payload as never)),
@@ -63,8 +62,9 @@ export const tauriTransport: Transport = {
   updaterConfigured: () => updaterConfiguredIn(tauriConfig),
   appInfo: async () => {
     const [version, bundle] = await Promise.all([getVersion(), getBundleType().catch(() => null)]);
-    const kind = typeof bundle === "string" ? bundle : null;
-    return { version, bundleKind: kind && BUNDLE_KINDS.includes(kind) ? (kind as BundleKind) : null };
+    // Only macOS reports `app`; there the resource directory tells a real `.app` from a bare binary.
+    const resources = bundle === "app" ? await resourceDir().catch(() => null) : null;
+    return { version, bundleKind: installedBundleKind(bundle, resources), devBuild: import.meta.env.DEV };
   },
   checkUpdate: async () => {
     const update = await tauriCheck();
