@@ -10,8 +10,8 @@ import { contributionKey } from "./protocol";
 
 export interface HostUiOptions {
   extensionId: string;
-  /** The extension's name, shown with its notices. */
-  extensionName: string;
+  /** The extension's name as it is now (a dev extension can be renamed while its frame runs), shown with its notices. */
+  extensionName: () => string;
   /** `ui.close`: closes the frame's window or dock tab; nothing for frames that cannot be closed. */
   close?: () => void;
 }
@@ -42,7 +42,7 @@ export function hostUi(options: HostUiOptions): BridgeUi {
     notify(params) {
       const text = typeof params === "string" ? params : isRecord(params) ? params.text : undefined;
       if (typeof text !== "string" || text.trim() === "") throw new ApiError("invalid", "ui.notify needs {text}");
-      pushNotice(options.extensionName, text);
+      pushNotice(options.extensionName(), text);
     },
     close() {
       options.close?.();

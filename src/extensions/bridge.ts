@@ -114,11 +114,21 @@ export function createBridge(options: BridgeOptions): Bridge {
     if (kept === doc) kept = null;
   };
 
-  /** The document's state, started by its first message; `null` for one that ended or one too many. */
+  /**
+   * The document's state, started by its first message; `null` for one that ended. When the frame already has
+   * `MAX_DOCUMENTS_PER_FRAME` documents, the oldest one that is neither current nor kept ends for the new one, so a
+   * document that made up many ids cannot keep the next document from being heard until the next load.
+   */
   const docOf = (doc: string): Doc | null => {
     const known = docs.get(doc);
     if (known) return known;
-    if (ended.includes(doc) || docs.size >= MAX_DOCUMENTS_PER_FRAME) return null;
+    if (ended.includes(doc)) return null;
+    if (docs.size >= MAX_DOCUMENTS_PER_FRAME) {
+      // A map keeps the order documents started in: the first stray one is the oldest.
+      const stray = [...docs.keys()].find((id) => id !== current && id !== kept && id !== readySinceLoad);
+      if (stray === undefined) return null;
+      end(stray);
+    }
     const state: Doc = { streams: new Map() };
     docs.set(doc, state);
     return state;

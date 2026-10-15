@@ -1,4 +1,4 @@
-import type { JsonValue } from "@sextant/extension-sdk";
+import type { HostContext, JsonValue } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost } from "@sextant/extension-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import { podSummary, startPodsPage } from "./pods";
@@ -18,9 +18,9 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void;
 
-async function start(stored?: string) {
+async function start(stored?: string, context: Partial<HostContext> = {}) {
   host = await startTestHost({
-    context: { clusterId: "kind-sextant-test" },
+    context: { clusterId: "kind-sextant-test", namespaces: null, ...context },
     handlers: {
       "resources.list": () => ({
         items: [{ metadata: { name: "default" } }, { metadata: { name: "sextant-demo" } }],
@@ -53,23 +53,61 @@ describe("hello page", () => {
     });
     host.watches[0]!.emit({ type: "snapshot", items: [pod("web-2", "2"), pod("web-1", "1")] });
     await expect.poll(() => rows().map((r) => r[0])).toEqual(["web-1", "web-2"]);
-    expect(rows()[0]!.slice(1, 4)).toEqual(["1/2", "CrashLoopBackOff", "3"]);
+    expect(rows()[0]!.slice(1, 5)).toEqual(["sextant-demo", "1/2", "CrashLoopBackOff", "3"]);
     host.watches[0]!.emit({ type: "delta", upserted: [], deleted: ["1"] });
     await expect.poll(() => rows().map((r) => r[0])).toEqual(["web-2"]);
     expect(root.querySelector(".status")!.textContent).toBe("1 pod");
   });
 
-  it("starts in default and switches namespaces: the old watch stops, the choice is remembered", async () => {
-    await start();
-    expect(host.watches[0]!.params).toMatchObject({ namespaces: ["default"] });
+  it("shows the namespaces of Sextant's filter by default, and every namespace when it has none", async () => {
+    await start(undefined, { namespaces: ["team-a", "team-b"] });
+    expect(host.watches[0]!.params).toEqual({
+      clusterId: "kind-sextant-test",
+      kind: { group: "", kind: "Pod" },
+      namespaces: ["team-a", "team-b"],
+    });
     const select = root.querySelector("select")!;
-    await expect.poll(() => [...select.options].map((o) => o.value)).toEqual(["default", "sextant-demo"]);
-    select.value = "sextant-demo";
-    select.dispatchEvent(new Event("change"));
+    await expect.poll(() => [...select.options].map((o) => o.textContent)).toEqual([
+      "Sextant's filter (team-a, team-b)",
+      "default",
+      "sextant-demo",
+    ]);
+    expect(select.value).toBe("");
+    stop();
+    host.close();
+    root.remove();
+
+    await start();
+    expect(host.watches[0]!.params).toEqual({ clusterId: "kind-sextant-test", kind: { group: "", kind: "Pod" } });
+  });
+
+  it("follows a change of Sextant's filter unless a namespace is picked on the page", async () => {
+    await start(undefined, { namespaces: ["team-a"] });
+    host.setContext({ namespaces: ["team-b"] });
     await expect.poll(() => host.watches.length).toBe(2);
     expect(host.watches[0]!.stopped).toBe(true);
-    expect(host.watches[1]!.params).toMatchObject({ namespaces: ["sextant-demo"] });
+    expect(host.watches[1]!.params).toMatchObject({ namespaces: ["team-b"] });
+
+    const select = root.querySelector("select")!;
+    await expect.poll(() => select.options.length).toBe(3);
+    select.value = "sextant-demo";
+    select.dispatchEvent(new Event("change"));
+    await expect.poll(() => host.watches.length).toBe(3);
+    expect(host.watches[2]!.params).toMatchObject({ namespaces: ["sextant-demo"] });
     await expect.poll(() => host.storage.get("namespace")).toBe("sextant-demo");
+
+    // The picked namespace overrides the filter: a new filter only changes the picker's label.
+    host.setContext({ namespaces: null });
+    await expect.poll(() => select.options[0]!.textContent).toBe("Sextant's filter (all namespaces)");
+    expect(host.watches).toHaveLength(3);
+
+    // Back to Sextant's filter: the choice is forgotten.
+    select.value = "";
+    select.dispatchEvent(new Event("change"));
+    await expect.poll(() => host.watches.length).toBe(4);
+    expect(host.watches[2]!.stopped).toBe(true);
+    expect(host.watches[3]!.params).toEqual({ clusterId: "kind-sextant-test", kind: { group: "", kind: "Pod" } });
+    await expect.poll(() => host.storage.has("namespace")).toBe(false);
   });
 
   it("opens a pod's details in Sextant", async () => {

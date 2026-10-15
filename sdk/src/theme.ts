@@ -1,6 +1,6 @@
 // Sextant's look in a frame: the context's `tokens` (Sextant's CSS variables) set on `<html>`, its `theme` as
-// `data-theme`, its `language` as `lang`, and — unless asked not to — a few base styles that use the variables, so a
-// plain page already looks like Sextant. `connect()` applies the theme and follows its changes.
+// `data-theme` and as `color-scheme` (so native controls and scrollbars match), its `language` as `lang`, and — unless
+// asked not to — a few base styles that use the variables, so a plain page already looks like Sextant. `connect()` applies the theme and follows its changes.
 //
 // The body's background is the colour of the place the frame fills (the context's `view`, set as `data-view`): the
 // page area for a page, the panel for a details section, an action's dialog and the settings section, the dock for a
@@ -75,6 +75,8 @@ export function applyTheme(
   for (const name of before) if (!now.has(name)) root.style.removeProperty(name);
   applied.set(root, now);
   root.dataset.theme = context.theme;
+  // Native controls, scrollbars and the canvas follow the theme too (they stay light without it).
+  if (context.theme === "light" || context.theme === "dark") root.style.setProperty("color-scheme", context.theme);
   if (context.view) root.dataset.view = context.view;
   if (context.language) root.lang = context.language;
   if (options.baseStyles !== false) addBaseStyles(root.ownerDocument);

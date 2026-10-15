@@ -3,7 +3,7 @@
   "id": "sextant.example.hello-page",
   "name": "Hello pods",
   "version": "1.0.0",
-  "description": "Example: a page that lists the pods of a namespace, live, in Sextant's theme.",
+  "description": "Example: a page that lists pods live in the namespaces of Sextant's filter (or one picked on the page), in Sextant's theme.",
   "author": "Sextant",
   "sextantApi": 1,
   "entry": "index.html",

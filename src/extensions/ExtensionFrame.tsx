@@ -156,6 +156,10 @@ function FrameView({
   const [height, setHeight] = useState<number | null>(null);
   const { theme, tokens } = useFrameTheme();
   const selectionKey = JSON.stringify(selection);
+  // The cluster view's namespace filter, as a key: a new array with the same names is no change.
+  const namespacesKey = useAppStore((s) =>
+    JSON.stringify(clusterId ? (s.clusterViews[clusterId]?.namespaces ?? null) : null),
+  );
 
   const context: HostContext = useMemo(
     () => ({
@@ -164,24 +168,34 @@ function FrameView({
       view,
       contribution,
       clusterId,
+      namespaces: JSON.parse(namespacesKey) as string[] | null,
       theme,
       language: i18n.language,
       tokens,
       selection: JSON.parse(selectionKey) as ObjectRef[],
       resourceVersion,
     }),
-    [info.id, view, contribution, clusterId, theme, i18n.language, tokens, selectionKey, resourceVersion],
+    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion],
   );
-  const latest = useRef({ context, onClose, onFailed });
-  latest.current = { context, onClose, onFailed };
+  const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed });
+  latest.current = { context, name: info.name, autoHeight, onClose, onFailed };
 
+  // The bridge must live as long as the frame's documents: a new bridge would end their watches and never send them
+  // the context. So it is rebuilt only with the extension (another id is another entry URL: the frame reloads), and
+  // everything else — the name a dev extension can be renamed to, the props — is read when used.
   useEffect(() => {
     const current = createBridge({
       extensionId: info.id,
       frame: () => frame.current?.contentWindow ?? null,
       context: () => latest.current.context,
-      ui: hostUi({ extensionId: info.id, extensionName: info.name, close: () => latest.current.onClose?.() }),
-      onResize: autoHeight ? setHeight : undefined,
+      ui: hostUi({
+        extensionId: info.id,
+        extensionName: () => latest.current.name,
+        close: () => latest.current.onClose?.(),
+      }),
+      onResize: (next) => {
+        if (latest.current.autoHeight) setHeight(next);
+      },
       onFrameError: (message) => latest.current.onFailed(message),
     });
     bridge.current = current;
@@ -191,9 +205,9 @@ function FrameView({
       current.dispose();
       bridge.current = null;
     };
-  }, [info.id, info.name, autoHeight]);
+  }, [info.id]);
 
-  // A new context (theme, language, cluster, selection, a changed object) goes to the frame at once.
+  // A new context (theme, language, cluster, namespace filter, selection, a changed object) goes to the frame at once.
   useEffect(() => bridge.current?.pushContext(), [context]);
 
   return (

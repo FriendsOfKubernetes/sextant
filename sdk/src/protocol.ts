@@ -22,6 +22,11 @@ export interface HostContext {
   contribution: string;
   /** The cluster the frame is about (the API's default `clusterId`); `null` when none is open. */
   clusterId: ClusterId | null;
+  /**
+   * The namespaces selected in Sextant's namespace filter for that cluster; `null` for all namespaces (and when no
+   * cluster is open). It follows the filter: a new context comes when it changes.
+   */
+  namespaces: string[] | null;
   theme: "light" | "dark";
   /** UI language, e.g. `en`. */
   language: string;

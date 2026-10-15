@@ -25,3 +25,5 @@ The frame talks to the host with JSON messages `{sextant: 1, doc, id, method, pa
 - Everything crossing the boundary is serialised JSON; an extension cannot pass functions or share objects with the host, so it cannot customise the host's rendering by code (ADR-0049).
 - Extension frames stay mounted while hidden (a dock tab is not reloaded on a tab switch); the host limits watches per document and documents per frame.
 - That Tauri's IPC refuses `Origin: null` was read from the Tauri sources and checked on Linux (WebKitGTK) only; macOS and Windows are covered by CI at best. The sandbox attribute is the control that must never be loosened.
+
+Amended (v0.6.1): `doc` separates only well-behaved documents. Answers still on their way to a document that unloads can reach the next document in the same frame until the next `load` ends the old one, so `doc` is not a secret between the documents of one frame (no gain: the same extension with the same permissions). A frame that reaches its document limit ends its oldest document that is neither current nor kept, instead of ignoring the new one.

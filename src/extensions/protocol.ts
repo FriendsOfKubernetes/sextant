@@ -20,8 +20,9 @@
 //                                                                 the call that opened it, so the frame can listen
 //                                                                 before the answer comes
 //   host  → frame  {sextant: 1, doc, type: "context", context}   on `ready`, on every load of the frame and whenever
-//                                                                 any of it changes: theme, language, cluster, selection
-//                                                                 (sent to the document that said `ready` last)
+//                                                                 any of it changes: theme, language, cluster,
+//                                                                 namespaces, selection (sent to the document that
+//                                                                 said `ready` last)
 //   frame → host   {sextant: 1, doc, type: "resize", height}     content height in CSS pixels (details sections)
 //   frame → host   {sextant: 1, doc, type: "error", message}     an uncaught error: the host shows "Extension failed"
 //
@@ -32,7 +33,14 @@
 // drops the answers of every document except the one whose `ready` came last and after the previous load (the new
 // document — an unloaded one sends nothing more); when that one was in fact the previous document saying `ready` late,
 // the `ready` of the next document ends it. Messages of an ended document are ignored; everything ends when the frame
-// goes away.
+// goes away. A frame has at most `MAX_DOCUMENTS_PER_FRAME` documents going: a new one beyond that ends the oldest
+// document that is neither the current one nor the one the last load kept.
+//
+// `doc` separates only well-behaved documents. It is not a secret from the frame: answers and stream updates for a
+// document still on their way when it unloads can reach the next document in the same frame (until the next `load`
+// ends the old document), which could read that `doc` and use it until then. This gives no more than the frame
+// already has — the same extension, the same permissions on the backend — so `doc` keeps documents apart, it does not
+// guard them from each other.
 //
 // The SDK therefore: makes up `doc` once per document; sends `ready` before anything else, as early as it can (the
 // previous document's leftovers end with it); puts `doc` in every message; ignores messages for another `doc`.
@@ -162,6 +170,11 @@ export interface HostContext {
   contribution: string;
   /** The cluster the frame is about (pass it as `clusterId` to the API); `null` when none is open. */
   clusterId: ClusterId | null;
+  /**
+   * The namespaces selected in Sextant's namespace filter for that cluster; `null` for all namespaces (and when no
+   * cluster is open). It follows the filter: a new context comes when it changes.
+   */
+  namespaces: string[] | null;
   theme: "light" | "dark";
   /** UI language, e.g. `en`. */
   language: string;
@@ -204,7 +217,10 @@ export const LOCAL_METHODS: readonly string[] = [
 export const MAX_NOTICE_CHARS = 500;
 /** Watches one document may keep open at once. */
 export const MAX_STREAMS_PER_DOCUMENT = 32;
-/** Documents a frame may have going at once (a new one normally ends the old at the next load). */
+/**
+ * Documents a frame may have going at once (a new one normally ends the old at the next load; one beyond the limit
+ * ends the oldest that is neither current nor kept).
+ */
 export const MAX_DOCUMENTS_PER_FRAME = 8;
 /** Tallest a frame may ask to be (`resize`). */
 export const MAX_FRAME_HEIGHT = 5000;

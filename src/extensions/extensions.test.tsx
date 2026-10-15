@@ -182,6 +182,56 @@ describe("extension frames", () => {
     await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { theme: "dark" } }));
   });
 
+  it("send the cluster view's selected namespaces, and again when they change", async () => {
+    await renderShell();
+    act(() => useAppStore.getState().setView("c1", "ext:demo.widgets:board"));
+    const frame = frameOf(screen.getByRole("main"));
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "ready" }, source: frame.contentWindow }));
+    });
+    expect(posted.at(-1)).toMatchObject({ type: "context", context: { clusterId: "c1", namespaces: null } });
+    act(() => useAppStore.getState().setNamespaces("c1", ["team-a", "team-b"]));
+    expect(posted.at(-1)).toMatchObject({ doc: DOC, type: "context", context: { namespaces: ["team-a", "team-b"] } });
+    // Another cluster's filter is not this frame's.
+    const before = posted.length;
+    act(() => useAppStore.getState().setNamespaces("c2", ["other"]));
+    expect(posted).toHaveLength(before);
+    act(() => useAppStore.getState().setNamespaces("c1", null));
+    expect(posted.at(-1)).toMatchObject({ type: "context", context: { namespaces: null } });
+  });
+
+  it("keep the live document's context and watches when the extension is renamed", async () => {
+    backend.on("extension_call", () => null);
+    backend.on("extension_watch_stop", () => undefined);
+    await renderShell();
+    const { container } = render(<ExtensionSettingsFrame extensionId="demo.widgets" />);
+    const frame = frameOf(container);
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    const fromFrame = (data: Record<string, unknown>) =>
+      act(() => {
+        window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, ...data }, source: frame.contentWindow }));
+      });
+    fromFrame({ type: "ready" });
+    fromFrame({ id: 1, method: "resources.watch", params: { clusterId: "c1", kind: { kind: "Pod" } } });
+    await waitFor(() => expect(backend.calls.some((c) => c.cmd === "extension_call")).toBe(true));
+
+    await changeList([info({ name: "Gadgets" })]);
+    await waitFor(() => expect(frame).toHaveAccessibleName("Widget settings (Gadgets)"));
+    expect(frameOf(container)).toBe(frame);
+    act(() => useAppStore.getState().setNamespaces("c1", ["team-a"]));
+    expect(posted.at(-1)).toMatchObject({ doc: DOC, type: "context", context: { namespaces: ["team-a"] } });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(backend.calls.filter((c) => c.cmd === "extension_watch_stop")).toEqual([]);
+    // Its notices carry the new name.
+    fromFrame({ id: 2, method: "ui.notify", params: { text: "saved" } });
+    expect(posted.at(-1)).toEqual({ sextant: 1, doc: DOC, id: 2, result: null });
+    expect(screen.getByText("Gadgets: saved")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+  });
+
   it("close the watches of the previous document when the frame loads a new one", async () => {
     backend.on("extension_call", () => null);
     backend.on("extension_watch_stop", () => undefined);

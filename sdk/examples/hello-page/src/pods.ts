@@ -1,5 +1,7 @@
-// The "Hello pods" page: the pods of one namespace, kept live by a watch. The namespace is picked on the page and
-// remembered in the extension's storage; the page follows the cluster Sextant shows.
+// The "Hello pods" page: pods kept live by a watch. By default it shows the namespaces selected in Sextant's namespace
+// filter (`context.namespaces`, `null` for all) and follows them; a namespace picked on the page overrides the filter
+// and is remembered in the extension's storage until "Sextant's filter" is picked again. The page follows the cluster
+// Sextant shows.
 import { trackObjects, type KubeObject, type Sextant, type Watch } from "@sextant/extension-sdk";
 
 interface ContainerStatus {
@@ -13,6 +15,8 @@ type Pod = KubeObject<Record<string, unknown>, { phase?: string; containerStatus
 
 const POD = { group: "", kind: "Pod" };
 const STORAGE_KEY = "namespace";
+/** The picker's value for "follow Sextant's namespace filter". */
+const FOLLOW = "";
 
 /** Ready containers, the status to show (a waiting or terminated reason first) and restarts. */
 export function podSummary(pod: Pod): { ready: string; status: string; restarts: number } {
@@ -55,14 +59,20 @@ export function startPodsPage(sextant: Sextant, root: HTMLElement): () => void {
   error.className = "error";
   error.hidden = true;
   const table = document.createElement("table");
-  table.innerHTML = "<thead><tr><th>Name</th><th>Ready</th><th>Status</th><th>Restarts</th><th>Age</th></tr></thead>";
+  table.innerHTML =
+    "<thead><tr><th>Name</th><th>Namespace</th><th>Ready</th><th>Status</th><th>Restarts</th><th>Age</th></tr></thead>";
   const body = document.createElement("tbody");
   table.append(body);
   root.replaceChildren(header, error, table);
 
-  let namespace = "default";
+  // The namespace picked on the page; `null` follows Sextant's filter.
+  let picked: string | null = null;
+  let known: string[] = [];
   let watch: Watch | null = null;
   let stopped = false;
+
+  /** The namespaces to show: the picked one, else Sextant's filter (`null`: every namespace). */
+  const shown = (): string[] | null => (picked !== null ? [picked] : sextant.context.namespaces);
 
   const showError = (message: string | null) => {
     error.hidden = message === null;
@@ -80,7 +90,7 @@ export function startPodsPage(sextant: Sextant, root: HTMLElement): () => void {
         name.addEventListener("click", () => {
           void sextant.ui.openDetails({
             kind: { group: "", version: "v1", kind: "Pod" },
-            namespace: pod.metadata.namespace ?? namespace,
+            namespace: pod.metadata.namespace ?? null,
             name: pod.metadata.name,
           });
         });
@@ -88,7 +98,14 @@ export function startPodsPage(sextant: Sextant, root: HTMLElement): () => void {
         nameCell.append(name);
         const good = state === "Running" || state === "Succeeded" || state === "Completed";
         const row = document.createElement("tr");
-        row.append(nameCell, cell(ready), cell(state, good ? "good" : "bad"), cell(String(restarts)), cell(age(pod.metadata.creationTimestamp)));
+        row.append(
+          nameCell,
+          cell(pod.metadata.namespace ?? ""),
+          cell(ready),
+          cell(state, good ? "good" : "bad"),
+          cell(String(restarts)),
+          cell(age(pod.metadata.creationTimestamp)),
+        );
         return row;
       }),
     );
@@ -105,8 +122,9 @@ export function startPodsPage(sextant: Sextant, root: HTMLElement): () => void {
       showError("No cluster is open.");
       return;
     }
+    const namespaces = shown();
     watch = sextant.resources.watch(
-      { kind: POD, namespaces: [namespace] },
+      namespaces === null ? { kind: POD } : { kind: POD, namespaces },
       {
         onUpdate: trackObjects<Pod>(render, (update) => {
           if (update.type === "reconnecting") status.textContent = "Reconnecting…";
@@ -121,44 +139,69 @@ export function startPodsPage(sextant: Sextant, root: HTMLElement): () => void {
     );
   };
 
+  const option = (value: string, text: string) => {
+    const element = document.createElement("option");
+    element.value = value;
+    element.textContent = text;
+    return element;
+  };
+
+  /** The picker: "Sextant's filter" first, then the cluster's namespaces (and the picked one). */
+  const drawPicker = () => {
+    const filter = sextant.context.namespaces;
+    const names = new Set(known);
+    if (picked !== null) names.add(picked);
+    select.replaceChildren(
+      option(FOLLOW, `Sextant's filter (${filter === null ? "all namespaces" : filter.join(", ")})`),
+      ...[...names].sort().map((name) => option(name, name)),
+    );
+    select.value = picked ?? FOLLOW;
+  };
+
   const loadNamespaces = async () => {
-    const names = new Set([namespace]);
+    let names: string[] = [];
     try {
       const list = await sextant.resources.list({ kind: { group: "", kind: "Namespace" } });
-      for (const ns of list.items) names.add(ns.metadata.name);
+      names = list.items.map((ns) => ns.metadata.name);
     } catch {
-      // The page still works for the namespace it has.
+      // The page still works with Sextant's filter and the namespace it has.
     }
     if (stopped) return;
-    select.replaceChildren(
-      ...[...names].sort().map((name) => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        return option;
-      }),
-    );
-    select.value = namespace;
+    known = names;
+    drawPicker();
   };
 
   select.addEventListener("change", () => {
-    namespace = select.value;
-    void sextant.storage.set(STORAGE_KEY, namespace).catch(() => undefined);
+    picked = select.value === FOLLOW ? null : select.value;
+    const saved = picked === null ? sextant.storage.remove(STORAGE_KEY) : sextant.storage.set(STORAGE_KEY, picked);
+    void saved.catch(() => undefined);
     watchPods();
   });
 
   let cluster = sextant.context.clusterId;
+  let filter = JSON.stringify(sextant.context.namespaces);
   const offContext = sextant.onContextChange((context) => {
-    if (context.clusterId === cluster) return;
-    cluster = context.clusterId;
-    watchPods();
-    void loadNamespaces();
+    const nextFilter = JSON.stringify(context.namespaces);
+    const filterChanged = nextFilter !== filter;
+    filter = nextFilter;
+    if (context.clusterId !== cluster) {
+      cluster = context.clusterId;
+      watchPods();
+      void loadNamespaces();
+      return;
+    }
+    if (!filterChanged) return;
+    drawPicker();
+    // A picked namespace overrides the filter: only the picker's label changes.
+    if (picked === null) watchPods();
   });
 
+  drawPicker();
   void (async () => {
     const stored = await sextant.storage.get<string>(STORAGE_KEY).catch(() => null);
     if (stopped) return;
-    if (typeof stored === "string" && stored !== "") namespace = stored;
+    if (typeof stored === "string" && stored !== "") picked = stored;
+    drawPicker();
     watchPods();
     await loadNamespaces();
   })();

@@ -63,6 +63,7 @@ export const TEST_CONTEXT: HostContext = {
   view: "page",
   contribution: "main",
   clusterId: "test-cluster",
+  namespaces: null,
   theme: "light",
   language: "en",
   tokens: {},

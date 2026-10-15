@@ -17,7 +17,7 @@ describe("applyTheme", () => {
     expect(root.style.getPropertyValue("--color-text")).toBe("#dcddde");
     expect(root.style.getPropertyValue("--color-main")).toBe("#1e2124");
     expect(root.dataset.theme).toBe("dark");
-    expect(root.style.colorScheme).toBe("");
+    expect(root.style.getPropertyValue("color-scheme")).toBe("dark");
     expect(root.lang).toBe("en");
   });
 
@@ -27,6 +27,7 @@ describe("applyTheme", () => {
     expect(root.style.getPropertyValue("--color-text")).toBe("#1f2328");
     expect(root.style.getPropertyValue("--color-warning")).toBe("");
     expect(root.dataset.theme).toBe("light");
+    expect(root.style.getPropertyValue("color-scheme")).toBe("light");
     expect(root.lang).toBe("de");
   });
 
@@ -34,6 +35,12 @@ describe("applyTheme", () => {
     applyTheme({ theme: "dark", language: "en", tokens: {}, view: "details" });
     expect(root.dataset.view).toBe("details");
     expect(document.getElementById(BASE_STYLE_ID)!.textContent).toContain('[data-view="details"]');
+  });
+
+  it("gives native controls and scrollbars the theme's colour scheme, with or without the base styles", () => {
+    applyTheme({ theme: "dark", language: "en", tokens: {} }, { baseStyles: false });
+    expect(root.style.getPropertyValue("color-scheme")).toBe("dark");
+    expect(getComputedStyle(root).getPropertyValue("color-scheme")).toBe("dark");
   });
 
   it("ignores what is not a CSS variable", () => {

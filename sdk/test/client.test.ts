@@ -9,6 +9,7 @@ const CONTEXT: HostContext = {
   view: "page",
   contribution: "overview",
   clusterId: "c1",
+  namespaces: null,
   theme: "dark",
   language: "en",
   tokens: { "--color-text": "#dcddde" },

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, mockBackend, type MockBackend } from "../api";
 import { createBridge, type Bridge, type BridgeUi } from "./bridge";
-import type { HostContext, RequestId } from "./protocol";
+import { MAX_DOCUMENTS_PER_FRAME, type HostContext, type RequestId } from "./protocol";
 
 const CONTEXT: HostContext = {
   apiVersion: 1,
@@ -9,6 +9,7 @@ const CONTEXT: HostContext = {
   view: "page",
   contribution: "overview",
   clusterId: "c1",
+  namespaces: null,
   theme: "dark",
   language: "en",
   tokens: { "--color-bg": "#111" },
@@ -313,6 +314,26 @@ describe("documents in the frame", () => {
     const newStream = await openWatch(DOC_B, 1);
     expect(newStream).not.toBe(oldStream);
     expect(posted.filter((m) => (m as { stream?: unknown }).stream !== undefined)).toEqual([]);
+  });
+
+  it("ends the oldest document that is neither current nor kept when a frame reaches its document limit", async () => {
+    bridge.frameLoaded();
+    send({ sextant: 1, doc: DOC_A, type: "ready" });
+    // The current document makes up seven more ids and opens a watch under each: the frame is full.
+    const filler = Array.from({ length: MAX_DOCUMENTS_PER_FRAME - 1 }, (_, i) => `${i}`.repeat(32));
+    const fillerStreams: string[] = [];
+    for (const doc of filler) fillerStreams.push(await openWatch(doc, 1));
+    const currentStream = await openWatch(DOC_A, 1);
+
+    // The next document still gets its context, and the oldest stray document ends for it.
+    send({ sextant: 1, doc: DOC_B, type: "ready" });
+    expect(posted.at(-1)).toEqual({ sextant: 1, doc: DOC_B, type: "context", context: CONTEXT });
+    await vi.waitFor(() => expect(stopped()).toEqual([fillerStreams[0]]));
+    expect(stopped()).not.toContain(currentStream);
+    await openWatch(DOC_B, 1);
+    send({ sextant: 1, doc: filler[0], id: 2, method: "clusters.list" });
+    await settle();
+    expect(calls("extension_call").filter((c) => c.args.method === "clusters.list")).toHaveLength(0);
   });
 
   it("limits open watches per document", async () => {
