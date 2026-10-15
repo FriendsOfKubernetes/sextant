@@ -41,6 +41,7 @@ import type { PodUsage } from "./generated/PodUsage";
 import type { ResourceKind } from "./generated/ResourceKind";
 import type { Series } from "./generated/Series";
 import type { SettingsStatus } from "./generated/SettingsStatus";
+import type { TrayStatus } from "./generated/TrayStatus";
 import type { WatchSpec } from "./generated/WatchSpec";
 import { call } from "./transport";
 
@@ -211,6 +212,8 @@ export const settings = {
   update: (value: AppSettings) => call<AppSettings>("settings_update", { settings: value }),
   /** Whether the settings file was readable and is being saved. */
   status: () => call<SettingsStatus>("settings_status"),
+  /** Whether the tray icon exists; without it "Closing the window keeps Sextant in the tray" cannot be turned on. */
+  trayStatus: () => call<TrayStatus>("tray_status"),
 };
 
 export const files = {

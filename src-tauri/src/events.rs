@@ -20,6 +20,8 @@ pub const EXTENSIONS_CHANGED: &str = "extensions-changed";
 /// `extension-files-changed` — payload [`ExtensionFilesChangedPayload`]: files of an extension changed (development
 /// folder, reload, update); reload its frames.
 pub const EXTENSION_FILES_CHANGED: &str = "extension-files-changed";
+/// `open-about` — no payload (`null`): "About Sextant…" in the tray menu; the window opens the About dialog.
+pub const OPEN_ABOUT: &str = "open-about";
 
 /// `watch:<subscriptionId>` — payload `WatchUpdate`.
 pub fn watch_event(subscription_id: &str) -> String {
@@ -101,8 +103,8 @@ mod tests {
         assert_eq!(logs_event("logs-2"), "logs:logs-2");
         assert_eq!(term_event("term-3"), "term:term-3");
         assert_eq!(
-            [MCP_STATUS, MCP_CONFIRM, MCP_AUDIT],
-            ["mcp-status", "mcp-confirm", "mcp-audit"]
+            [MCP_STATUS, MCP_CONFIRM, MCP_AUDIT, OPEN_ABOUT],
+            ["mcp-status", "mcp-confirm", "mcp-audit", "open-about"]
         );
     }
 }

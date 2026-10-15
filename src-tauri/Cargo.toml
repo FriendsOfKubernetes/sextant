@@ -59,6 +59,11 @@ rustls = { version = "0.23.45", default-features = false, features = ["ring", "s
 tauri-plugin-updater = "2.13"
 tauri-plugin-process = "2.4"
 
+# The tray icon is shown on Linux only by a StatusNotifier host: `tray::available` asks the session bus whether one
+# is there (the same libdbus as keyring).
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus = "0.9"
+
 [dev-dependencies]
 tauri = { workspace = true, features = ["test"] }
 tempfile.workspace = true

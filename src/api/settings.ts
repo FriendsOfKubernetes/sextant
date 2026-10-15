@@ -25,6 +25,7 @@ export function defaultAppSettings(): AppSettings {
     helmPath: null,
     editorTheme: "auto",
     checkForUpdates: true,
+    closeToTray: false,
     mcp: { enabled: false, port: 47391 },
     nodeShellImage: "busybox:stable",
     extensions: [],

@@ -1,4 +1,4 @@
-// The Settings page: appearance (theme, language), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
+// The Settings page: appearance (theme, language), the main window (keep in the tray), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
 // sources, the node shell image, the MCP server, extensions, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,7 @@ import {
   type KubeconfigSource,
   type Theme,
 } from "../../api";
-import { Button, ConfirmDialog, ErrorState, Radio } from "../../components";
+import { Button, Checkbox, ConfirmDialog, ErrorState, Radio } from "../../components";
 import { availableLanguages } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
@@ -64,6 +64,7 @@ export function SettingsContent() {
     <div className="settings">
       {error && <SaveError error={error} />}
       <AppearanceSection settings={settings} save={save} />
+      <WindowSection settings={settings} save={save} />
       <EditorSection settings={settings} save={save} />
       <HelmSection settings={settings} save={save} />
       <KubeconfigSection />
@@ -139,6 +140,42 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
         </select>
         <p className="settings__hint">{t("settings:appearance.languageHint")}</p>
       </div>
+    </Section>
+  );
+}
+
+/** "Keep in the tray" on close; offered only when the backend created a tray icon (`tray_status`). */
+function WindowSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  // `null` while asking; a failed check counts as no tray, so the window is never hidden with no way back.
+  const [trayAvailable, setTrayAvailable] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    api.settings.trayStatus().then(
+      (status) => live && setTrayAvailable(status.available),
+      () => live && setTrayAvailable(false),
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return (
+    <Section title={t("settings:window.title")}>
+      <label className="settings__choice">
+        <Checkbox
+          checked={settings?.closeToTray ?? false}
+          disabled={!settings || trayAvailable !== true}
+          onChange={(e) => {
+            const closeToTray = e.target.checked;
+            void save((s) => ({ ...s, closeToTray }));
+          }}
+        />
+        {t("settings:window.closeToTray")}
+      </label>
+      <p className="settings__hint">
+        {trayAvailable === false ? t("settings:window.noTray") : t("settings:window.closeToTrayHint")}
+      </p>
     </Section>
   );
 }

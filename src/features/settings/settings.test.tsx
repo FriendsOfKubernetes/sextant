@@ -263,3 +263,48 @@ describe("Settings button in the cluster rail", () => {
     expect(screen.queryByRole("dialog", { name: "Settings" })).not.toBeInTheDocument();
   });
 });
+
+describe("Settings → Window", () => {
+  const KEEP = "Closing the window keeps Sextant in the tray";
+
+  it("is off by default and saves closeToTray when turned on", async () => {
+    setup();
+    renderPage();
+    const section = screen.getByRole("region", { name: "Window" });
+    const box = within(section).getByRole("checkbox", { name: KEEP });
+    await waitFor(() => expect(box).toBeEnabled());
+    expect(box).not.toBeChecked();
+    expect(within(section).getByText(/keeps running in the tray/)).toBeInTheDocument();
+
+    fireEvent.click(box);
+    await waitFor(() => expect(backend.settings.closeToTray).toBe(true));
+    expect(box).toBeChecked();
+  });
+
+  it("shows a saved choice", async () => {
+    setup({ settings: { closeToTray: true } });
+    renderPage();
+    const box = within(screen.getByRole("region", { name: "Window" })).getByRole("checkbox", { name: KEEP });
+    await waitFor(() => expect(box).toBeChecked());
+  });
+
+  it("without a tray icon cannot be turned on and says why", async () => {
+    setup();
+    backend.on("tray_status", () => ({ available: false }));
+    renderPage();
+    const section = screen.getByRole("region", { name: "Window" });
+    expect(await within(section).findByText(/No system tray was found/)).toBeInTheDocument();
+    expect(within(section).getByRole("checkbox", { name: KEEP })).toBeDisabled();
+  });
+
+  it("treats a failed tray check as no tray", async () => {
+    setup();
+    backend.on("tray_status", () => {
+      throw { code: "other", message: "boom" };
+    });
+    renderPage();
+    const section = screen.getByRole("region", { name: "Window" });
+    expect(await within(section).findByText(/No system tray was found/)).toBeInTheDocument();
+    expect(within(section).getByRole("checkbox", { name: KEEP })).toBeDisabled();
+  });
+});

@@ -1,5 +1,6 @@
 //! Main window geometry: restored on start, recorded (debounced) on resize; subscriptions, sessions and port forwards
-//! closed when the window is destroyed and when the application exits.
+//! closed when the window is destroyed and when the application exits. With "keep in the tray" on (and a tray icon),
+//! closing the window only hides it: everything keeps running, and [`reveal`] brings it back.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -14,6 +15,8 @@ pub const MAIN_WINDOW: &str = "main";
 pub const MIN_WIDTH: u32 = 360;
 pub const MIN_HEIGHT: u32 = 480;
 const SAVE_DELAY: Duration = Duration::from_millis(400);
+/// How long after losing the focus the tray's "Show/Hide" text is checked again (a minimize).
+const LABEL_RESYNC_DELAY: Duration = Duration::from_millis(500);
 
 /// Logical size to restore, if one was saved.
 pub fn restored_size(layout: &WindowLayout) -> Option<(u32, u32)> {
@@ -49,6 +52,25 @@ pub fn restore_main_window<R: Runtime>(app: &tauri::AppHandle<R>) {
     let _ = app;
 }
 
+/// Brings the main window back: shown, unminimized and focused. Every "show the window" path uses it (the tray menu,
+/// a confirmation request, "About" from the tray, a Dock click on macOS).
+pub fn reveal<R: Runtime>(app: &AppHandle<R>) {
+    #[cfg(desktop)]
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+        crate::tray::show_label(app, crate::tray::WindowToggle::Hide);
+    }
+    #[cfg(not(desktop))]
+    let _ = app;
+}
+
+/// Whether closing the main window hides it instead: only with the setting on and a tray icon to bring it back from.
+pub fn hides_on_close(close_to_tray: bool, tray_available: bool) -> bool {
+    close_to_tray && tray_available
+}
+
 static RESIZE_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
@@ -56,7 +78,35 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
         return;
     }
     match event {
-        WindowEvent::Resized(_) => schedule_geometry_save(window),
+        WindowEvent::Resized(_) => {
+            schedule_geometry_save(window);
+            crate::tray::sync_label(window.app_handle());
+        }
+        WindowEvent::Focused(focused) => {
+            crate::tray::sync_label(window.app_handle());
+            // A minimize sends no event of its own; it takes the focus away, and the window manager may report the
+            // minimized state only a moment later.
+            if !focused {
+                let app = window.app_handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(LABEL_RESYNC_DELAY).await;
+                    crate::tray::sync_label(&app);
+                });
+            }
+        }
+        // Hiding keeps every session, stream, port forward and the MCP server: `close_all` is not called.
+        WindowEvent::CloseRequested { api, .. } => {
+            let close_to_tray = window
+                .try_state::<AppState>()
+                .is_some_and(|state| state.settings.get().close_to_tray);
+            // The tray is asked again now (the StatusNotifier host can be gone since start), and only when it matters.
+            let tray_available = close_to_tray && crate::tray::available(window.app_handle());
+            if hides_on_close(close_to_tray, tray_available) {
+                api.prevent_close();
+                let _ = window.hide();
+                crate::tray::show_label(window.app_handle(), crate::tray::WindowToggle::Show);
+            }
+        }
         WindowEvent::Destroyed => {
             if let Some(state) = window.try_state::<AppState>() {
                 state.close_all();
@@ -69,11 +119,16 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
 /// Application-level events. Quitting (Cmd+Q on macOS, the last window closed, `AppHandle::exit`) does not always
 /// destroy the window first, so everything is closed here too: terminal sessions remove their temporary kubeconfig
 /// before the process ends.
+/// On macOS a click on the Dock icon (`Reopen`) brings a hidden window back.
 pub fn on_run_event<R: Runtime>(app: &AppHandle<R>, event: &RunEvent) {
     if let RunEvent::Exit | RunEvent::ExitRequested { .. } = event
         && let Some(state) = app.try_state::<AppState>()
     {
         state.close_all();
+    }
+    #[cfg(target_os = "macos")]
+    if let RunEvent::Reopen { .. } = event {
+        reveal(app);
     }
 }
 
@@ -148,6 +203,17 @@ mod tests {
             !guard_path.exists(),
             "the temp kubeconfig outlived the exit"
         );
+    }
+
+    #[test]
+    fn closing_hides_only_with_the_setting_on_and_a_tray_icon() {
+        assert!(hides_on_close(true, true));
+        assert!(
+            !hides_on_close(true, false),
+            "without a tray the window would be lost"
+        );
+        assert!(!hides_on_close(false, true));
+        assert!(!hides_on_close(false, false));
     }
 
     #[test]

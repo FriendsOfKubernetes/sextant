@@ -193,6 +193,9 @@ pub struct AppSettings {
     pub editor_theme: String,
     /// Look for a new Sextant release when the application starts (the "Check for updates" button works anyway).
     pub check_for_updates: bool,
+    /// Closing the main window only hides it while the tray icon exists; quitting is "Quit" in the tray menu.
+    /// Written by the frontend (Settings -> Window); off by default, so closing the window quits the app.
+    pub close_to_tray: bool,
     /// The built-in MCP server.
     pub mcp: McpSettings,
     /// Image of the temporary privileged pod behind a shell on a node (`node_shell`); empty means the default
@@ -217,6 +220,7 @@ impl Default for AppSettings {
             helm_path: None,
             editor_theme: "auto".to_owned(),
             check_for_updates: true,
+            close_to_tray: false,
             mcp: McpSettings::default(),
             node_shell_image: crate::node_shell::DEFAULT_IMAGE.to_owned(),
             extensions: Vec::new(),
@@ -929,6 +933,23 @@ mod tests {
         assert_eq!(s.clusters["c1"].icon, None);
         assert_eq!(s.clusters["c1"].display_name.as_deref(), Some("prod"));
         assert!(!AppSettings::default().window.rail_expanded);
+    }
+
+    #[test]
+    fn close_to_tray_is_off_unless_the_file_turns_it_on() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(&path, r#"{ "theme": "dark", "checkForUpdates": false }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert_eq!(store.status().backup_path, None);
+        assert!(
+            !store.get().close_to_tray,
+            "a file from an older version keeps the window closing the app"
+        );
+        assert!(!AppSettings::default().close_to_tray);
+
+        std::fs::write(&path, r#"{ "closeToTray": true }"#).unwrap();
+        assert!(SettingsStore::open(path).get().close_to_tray);
     }
 
     #[test]

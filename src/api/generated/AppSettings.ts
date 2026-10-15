@@ -29,6 +29,11 @@ editorTheme: string,
  */
 checkForUpdates: boolean, 
 /**
+ * Closing the main window only hides it while the tray icon exists; quitting is "Quit" in the tray menu.
+ * Written by the frontend (Settings -> Window); off by default, so closing the window quits the app.
+ */
+closeToTray: boolean, 
+/**
  * The built-in MCP server.
  */
 mcp: McpSettings, 

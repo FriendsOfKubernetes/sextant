@@ -8,6 +8,7 @@ pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
 pub mod state;
+mod tray;
 mod window;
 
 use tauri::{Emitter, Manager, Runtime};
@@ -82,6 +83,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         settings::settings_get,
         settings::settings_update,
         settings::settings_status,
+        commands::tray::tray_status,
         files::file_save,
         argocd::argocd_status,
         argocd::argocd_login,
@@ -149,6 +151,22 @@ fn spawn_event_forwarders<R: Runtime>(app: &tauri::AppHandle<R>) {
     });
 }
 
+/// Puts a confirmation request (an agent's or an extension's) in front of the user: the main window comes back from
+/// the tray or the taskbar, the OS is asked for attention, and the window gets `mcp-confirm`. `false` (the request is
+/// declined) only when there is no window at all.
+fn ask_in_window<R: Runtime, T: serde::Serialize + Clone>(
+    handle: &tauri::AppHandle<R>,
+    request: T,
+) -> bool {
+    let Some(window) = handle.get_webview_window(window::MAIN_WINDOW) else {
+        return false;
+    };
+    window::reveal(handle);
+    #[cfg(desktop)]
+    let _ = window.request_user_attention(Some(tauri::UserAttentionType::Critical));
+    window.emit(events::MCP_CONFIRM, request).is_ok()
+}
+
 /// Sends the MCP server's events to the window (a confirmation request also asks the OS for the user's attention)
 /// and starts the server when the settings have it on.
 fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
@@ -159,14 +177,7 @@ fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
         match event {
             McpEvent::Status(status) => handle.emit(events::MCP_STATUS, status).is_ok(),
             McpEvent::Audit(entry) => handle.emit(events::MCP_AUDIT, entry).is_ok(),
-            McpEvent::Confirm(request) => {
-                let Some(window) = handle.get_webview_window(window::MAIN_WINDOW) else {
-                    return false;
-                };
-                #[cfg(desktop)]
-                let _ = window.request_user_attention(Some(tauri::UserAttentionType::Critical));
-                window.emit(events::MCP_CONFIRM, request).is_ok()
-            }
+            McpEvent::Confirm(request) => ask_in_window(&handle, request),
         }
     }));
     let handle = app.clone();
@@ -200,14 +211,7 @@ fn start_extensions<R: Runtime>(app: &tauri::AppHandle<R>) {
             use extensions::api::ApiEvent;
             match event {
                 ApiEvent::Audit(entry) => handle.emit(extensions::api::EXT_AUDIT, entry).is_ok(),
-                ApiEvent::Confirm(request) => {
-                    let Some(window) = handle.get_webview_window(window::MAIN_WINDOW) else {
-                        return false;
-                    };
-                    #[cfg(desktop)]
-                    let _ = window.request_user_attention(Some(tauri::UserAttentionType::Critical));
-                    window.emit(events::MCP_CONFIRM, request).is_ok()
-                }
+                ApiEvent::Confirm(request) => ask_in_window(&handle, request),
             }
         }));
     extensions::dev::spawn_poller(host);
@@ -273,6 +277,8 @@ pub fn run() {
             start_mcp(app.handle());
             start_extensions(app.handle());
             window::restore_main_window(app.handle());
+            // After the window is shown, so "Show/Hide" starts with the right text; no icon is not an error.
+            crate::tray::install(app.handle());
             Ok(())
         })
         .on_window_event(window::on_window_event)
@@ -284,6 +290,27 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::updater_configured;
+
+    #[test]
+    fn a_confirmation_request_is_declined_only_without_the_main_window() {
+        use tauri::Listener;
+        let app = tauri::test::mock_app();
+        assert!(!super::ask_in_window(app.handle(), "request-1"));
+
+        let window =
+            tauri::WebviewWindowBuilder::new(&app, super::window::MAIN_WINDOW, Default::default())
+                .build()
+                .unwrap();
+        let (tx, rx) = std::sync::mpsc::channel();
+        window.listen(super::events::MCP_CONFIRM, move |event| {
+            let _ = tx.send(event.payload().to_owned());
+        });
+        assert!(super::ask_in_window(app.handle(), "request-2"));
+        assert_eq!(
+            rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap(),
+            "\"request-2\""
+        );
+    }
 
     fn config(plugins: serde_json::Value) -> tauri::Config {
         let mut config: tauri::Config =

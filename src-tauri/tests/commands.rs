@@ -80,6 +80,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("settings_get", None),
     ("settings_update", Some("settings")),
     ("settings_status", None),
+    ("tray_status", None),
     ("file_save", Some("path")),
     ("argocd_status", Some("clusterId")),
     ("argocd_login", Some("clusterId")),
@@ -220,6 +221,14 @@ fn helm_commands_never_run_the_real_helm() {
         let err = invoke(&h, cmd, json!({})).unwrap_err();
         assert_eq!(err["code"], "helmMissing", "{cmd}: {err}");
     }
+}
+
+#[test]
+fn without_a_tray_icon_the_window_is_told_the_tray_is_unavailable() {
+    let h = harness();
+    // The mock runtime never creates a tray icon, like a Linux desktop without AppIndicator.
+    let status = invoke(&h, "tray_status", json!({})).unwrap();
+    assert_eq!(status, json!({ "available": false }));
 }
 
 #[test]

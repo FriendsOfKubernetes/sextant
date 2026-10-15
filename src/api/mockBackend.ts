@@ -92,6 +92,8 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set("extensions_list", () => []);
   // Closing a window of consent drops its pending install; nothing to answer.
   table.set("extension_install_cancel", () => undefined);
+  // A desktop with a tray, unless a test says otherwise.
+  table.set("tray_status", () => ({ available: true }));
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);

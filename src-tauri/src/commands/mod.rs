@@ -16,3 +16,4 @@ pub mod resources;
 pub mod secrets;
 pub mod settings;
 pub mod terminal;
+pub mod tray;
