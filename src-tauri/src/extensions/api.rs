@@ -167,9 +167,16 @@ impl ExtensionStreams {
         }
     }
 
-    /// Forgets a stream that ended by itself.
-    fn remove(&self, id: &str) {
-        lock(&self.map).remove(id);
+    /// Forgets a stream that ended by itself: only if `id` is still that stream (its extension and its task), not one
+    /// registered under the same id after it was stopped.
+    fn remove_ended(&self, extension: &str, id: &str, task: tokio::task::Id) {
+        let mut map = lock(&self.map);
+        if map
+            .get(id)
+            .is_some_and(|s| s.extension == extension && s.task.id() == task)
+        {
+            map.remove(id);
+        }
     }
 
     /// Stops the streams for which `stop` says so.
@@ -249,10 +256,24 @@ impl ExtensionStreams {
     }
 }
 
+/// Wires the host's events as the app does (`start_extensions`): on every event the streams of `api` whose extension
+/// was disabled, removed, paused for consent or granted anything else stop, then `forward` gets the event.
+pub fn wire_host_events(
+    host: &ExtensionHost,
+    api: &ExtensionApi,
+    forward: impl Fn(HostEvent) + Send + Sync + 'static,
+) {
+    host.set_emitter(host_emitter(
+        Arc::clone(&api.streams),
+        host.downgrade(),
+        forward,
+    ));
+}
+
 /// The extension host's emitter: on every event of the host (`extensions-changed` above all) the streams of
 /// extensions that were disabled, removed or granted anything else stop, then `forward` gets the event. Holds the host
 /// weakly (the host keeps its emitter).
-pub fn host_emitter(
+fn host_emitter(
     streams: Arc<ExtensionStreams>,
     host: WeakExtensionHost,
     forward: impl Fn(HostEvent) + Send + Sync + 'static,
@@ -280,7 +301,7 @@ pub struct ExtensionApi {
     pub streams: Arc<ExtensionStreams>,
     emitter: RwLock<Option<ApiEmitter>>,
     /// One `storage` change at a time.
-    storage: Mutex<()>,
+    storage: Arc<Mutex<()>>,
 }
 
 impl ExtensionApi {
@@ -311,7 +332,7 @@ impl ExtensionApi {
             audit: AuditLog::open(AuditLog::extensions_path_in(data_dir)),
             streams: Arc::new(ExtensionStreams::default()),
             emitter: RwLock::new(None),
-            storage: Mutex::new(()),
+            storage: Arc::new(Mutex::new(())),
         }
     }
 
@@ -358,11 +379,20 @@ impl ExtensionApi {
         watch: Option<(String, UpdateSink)>,
     ) -> CoreResult<Value> {
         let params = if params.is_null() { json!({}) } else { params };
+        // Files are read and written off the async runtime: `storage` syncs to disk, and the manifest of a
+        // development folder is read by walking the folder (kept afterwards, so the checks below find it ready).
+        let (blocking_host, id) = (host.clone(), extension_id.to_owned());
         match method {
             "storage.get" | "storage.set" | "storage.remove" => {
-                return self.storage_call(host, extension_id, method, params);
+                let (storage, method) = (Arc::clone(&self.storage), method.to_owned());
+                return blocking(move || {
+                    storage_call(&blocking_host, &storage, &id, &method, params)
+                })
+                .await;
             }
-            _ => {}
+            _ => {
+                blocking(move || Ok(blocking_host.info(&id))).await?;
+            }
         }
         let at = now_ms();
         let started = Instant::now();
@@ -444,7 +474,7 @@ impl ExtensionApi {
         let (started_tx, started_rx) = tokio::sync::oneshot::channel::<CoreResult<()>>();
         let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
         let streams = Arc::clone(&self.streams);
-        let own_id = id.clone();
+        let (own_id, own_extension) = (id.clone(), extension.to_owned());
         let task = tokio::spawn(async move {
             if registered_rx.await.is_err() {
                 return;
@@ -463,7 +493,7 @@ impl ExtensionApi {
                     let _ = started_tx.send(Err(err));
                 }
             }
-            streams.remove(&own_id);
+            streams.remove_ended(&own_extension, &own_id, tokio::task::id());
         });
         self.streams.insert(
             id.clone(),
@@ -498,46 +528,56 @@ impl ExtensionApi {
         }
         Ok(())
     }
+}
 
-    // -----------------------------------------------------------------------------------------------------------
-    // storage
+// ---------------------------------------------------------------------------------------------------------------
+// storage
 
-    fn storage_call(
-        &self,
-        host: &ExtensionHost,
-        extension_id: &str,
-        method: &str,
-        params: Value,
-    ) -> CoreResult<Value> {
-        if host.active(extension_id).is_none() {
-            return Err(inactive(extension_id));
+/// Runs `task` on the blocking pool.
+async fn blocking<T: Send + 'static>(
+    task: impl FnOnce() -> CoreResult<T> + Send + 'static,
+) -> CoreResult<T> {
+    tokio::task::spawn_blocking(task)
+        .await
+        .map_err(|e| CoreError::other(e.to_string()))?
+}
+
+/// `storage.*` (blocking: reads, writes and syncs the file; `storage` is held for the whole change).
+fn storage_call(
+    host: &ExtensionHost,
+    storage: &Mutex<()>,
+    extension_id: &str,
+    method: &str,
+    params: Value,
+) -> CoreResult<Value> {
+    if host.active(extension_id).is_none() {
+        return Err(inactive(extension_id));
+    }
+    let path = host.storage_dir().join(format!("{extension_id}.json"));
+    let _one_at_a_time = lock(storage);
+    let mut data = read_storage(&path, extension_id)?;
+    match method {
+        "storage.get" => {
+            let args: KeyArgs = parse(method, params)?;
+            Ok(data
+                .get(storage_key(&args.key)?)
+                .cloned()
+                .unwrap_or(Value::Null))
         }
-        let path = host.storage_dir().join(format!("{extension_id}.json"));
-        let _one_at_a_time = lock(&self.storage);
-        let mut data = read_storage(&path, extension_id)?;
-        match method {
-            "storage.get" => {
-                let args: KeyArgs = parse(method, params)?;
-                Ok(data
-                    .get(storage_key(&args.key)?)
-                    .cloned()
-                    .unwrap_or(Value::Null))
-            }
-            "storage.set" => {
-                let args: SetArgs = parse(method, params)?;
-                data.insert(storage_key(&args.key)?.to_owned(), args.value);
+        "storage.set" => {
+            let args: SetArgs = parse(method, params)?;
+            data.insert(storage_key(&args.key)?.to_owned(), args.value);
+            write_storage(&path, &data)?;
+            forget_if_removed(host, extension_id, &path);
+            Ok(Value::Null)
+        }
+        _ => {
+            let args: KeyArgs = parse(method, params)?;
+            if data.remove(storage_key(&args.key)?).is_some() {
                 write_storage(&path, &data)?;
                 forget_if_removed(host, extension_id, &path);
-                Ok(Value::Null)
             }
-            _ => {
-                let args: KeyArgs = parse(method, params)?;
-                if data.remove(storage_key(&args.key)?).is_some() {
-                    write_storage(&path, &data)?;
-                    forget_if_removed(host, extension_id, &path);
-                }
-                Ok(Value::Null)
-            }
+            Ok(Value::Null)
         }
     }
 }

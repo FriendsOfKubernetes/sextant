@@ -749,13 +749,9 @@ fn reinstall(env: &Env, id: &str, version: &str, permissions: Value) {
     env.host.install(&pending.token).unwrap();
 }
 
-/// The host's events stop the streams, as `start_extensions` wires it in the app.
+/// The host's events stop the streams: the wiring `start_extensions` uses in the app.
 fn wire_host(env: &Env) {
-    env.host.set_emitter(host_emitter(
-        Arc::clone(&env.api.streams),
-        env.host.downgrade(),
-        |_| {},
-    ));
+    wire_host_events(&env.host, &env.api, |_| {});
 }
 
 async fn aborted(task: tokio::task::JoinHandle<()>) -> bool {
@@ -815,6 +811,132 @@ async fn streams_end_when_their_extension_is_disabled_removed_or_granted_anythin
     env.host.remove("gadgets").unwrap();
     assert!(aborted(gadgets_task).await);
     assert!(streams.is_empty());
+}
+
+#[tokio::test]
+async fn a_dev_folder_that_asks_for_more_stops_its_streams_until_consent() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+    env.install("gadgets", perms(all_clusters(), &[], &["read"], false));
+    wire_host(&env);
+    crate::extensions::dev::look(&env.host);
+    let (w, widgets_task) = stream_of(&env, "widgets", "c1");
+    let (g, gadgets_task) = stream_of(&env, "gadgets", "c1");
+    env.api.streams.insert("w-1".into(), w).unwrap();
+    env.api.streams.insert("g-1".into(), g).unwrap();
+
+    let folder = env.dir.path().join("ext").join("widgets");
+    test_support::write_folder(
+        &folder,
+        "widgets",
+        "1.0.0",
+        perms(all_clusters(), &[], &["read", "modify"], false),
+    );
+    crate::extensions::dev::look(&env.host);
+    assert_eq!(
+        env.host.info("widgets").unwrap().state,
+        crate::extensions::ExtensionState::NeedsConsent
+    );
+    assert!(
+        aborted(widgets_task).await,
+        "paused for consent: its stream ends"
+    );
+    assert_eq!(env.api.streams.len(), 1, "another extension's stream stays");
+    gadgets_task.abort();
+}
+
+#[tokio::test]
+async fn a_dev_folder_that_asks_for_less_is_granted_only_that_and_its_wider_streams_stop() {
+    let env = Env::new();
+    let wide = perms(all_clusters(), &[], &["read", "modify"], false);
+    env.install("widgets", wide.clone());
+    wire_host(&env);
+    crate::extensions::dev::look(&env.host);
+    let (w, task) = stream_of(&env, "widgets", "c1");
+    env.api.streams.insert("w-1".into(), w).unwrap();
+
+    let narrow = perms(all_clusters(), &["team-a"], &["read"], false);
+    let folder = env.dir.path().join("ext").join("widgets");
+    test_support::write_folder(&folder, "widgets", "1.0.0", narrow.clone());
+    crate::extensions::dev::look(&env.host);
+    let narrow: ExtensionPermissions = serde_json::from_value(narrow).unwrap();
+    let info = env.host.info("widgets").unwrap();
+    assert_eq!(info.state, crate::extensions::ExtensionState::Active);
+    assert_eq!(info.granted, narrow, "granted only what it asks for now");
+    assert!(
+        aborted(task).await,
+        "a stream opened under the wider grant ends"
+    );
+    assert!(env.api.streams.is_empty());
+
+    // Asking for the old, wider permissions again needs the user's consent again.
+    test_support::write_folder(&folder, "widgets", "1.0.0", wide);
+    crate::extensions::dev::look(&env.host);
+    let info = env.host.info("widgets").unwrap();
+    assert_eq!(info.state, crate::extensions::ExtensionState::NeedsConsent);
+    assert_eq!(info.granted, narrow);
+}
+
+/// Starts `widgets`' stream `id` whose sink blocks on its first update (its task busy, not at an await) until
+/// `release` gets a message; `entered` gets one when the sink is reached.
+async fn stream_held_in_its_sink(
+    env: &Env,
+    id: &str,
+) -> (
+    futures::channel::mpsc::UnboundedSender<WatchUpdate>,
+    std::sync::mpsc::Receiver<()>,
+    std::sync::mpsc::Sender<()>,
+) {
+    let (updates_tx, updates_rx) = futures::channel::mpsc::unbounded::<WatchUpdate>();
+    let (entered_tx, entered_rx) = std::sync::mpsc::channel();
+    let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+    let release_rx = Mutex::new(release_rx);
+    let sink: UpdateSink = Arc::new(move |_| {
+        let _ = entered_tx.send(());
+        let _ = lock(&release_rx).recv();
+        false
+    });
+    let granted = env.host.active("widgets").unwrap().granted;
+    env.api
+        .start_stream(
+            &env.host,
+            id.to_owned(),
+            "widgets",
+            granted,
+            ClusterId::from("c1"),
+            async move { Ok::<_, CoreError>(updates_rx) },
+            sink,
+        )
+        .await
+        .unwrap();
+    (updates_tx, entered_rx, release_tx)
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_stream_that_ends_by_itself_forgets_only_itself() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+    env.install("gadgets", perms(all_clusters(), &[], &["read"], false));
+    for (extension, id) in [("gadgets", "s-1"), ("widgets", "s-2")] {
+        let (updates, entered, release) = stream_held_in_its_sink(&env, id).await;
+        updates
+            .unbounded_send(WatchUpdate::Snapshot { items: Vec::new() })
+            .unwrap();
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        // Stopped while its task is busy (an abort lands at the next await), and the id taken by another stream.
+        assert!(env.api.streams.stop_of("widgets", id));
+        let (other, other_task) = stream_of(&env, extension, "c1");
+        env.api.streams.insert(id.into(), other).unwrap();
+        release.send(()).unwrap();
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        assert_eq!(
+            env.api.streams.len(),
+            1,
+            "the stream registered under {id} afterwards ({extension}) stays"
+        );
+        assert!(env.api.streams.stop_of(extension, id));
+        assert!(aborted(other_task).await);
+    }
 }
 
 #[tokio::test]
@@ -1361,11 +1483,7 @@ async fn every_method_against_the_test_cluster() {
     assert_eq!(none.code, ErrorCode::Denied);
 
     // Disabled through the host: both streams end on `extensions-changed`.
-    live.host.set_emitter(host_emitter(
-        Arc::clone(&live.state.ext_api.streams),
-        live.host.downgrade(),
-        |_| {},
-    ));
+    wire_host_events(&live.host, &live.state.ext_api, |_| {});
     assert_eq!(live.state.ext_api.streams.len(), 2);
     live.host.set_enabled("widgets", false).unwrap();
     assert!(live.state.ext_api.streams.is_empty());

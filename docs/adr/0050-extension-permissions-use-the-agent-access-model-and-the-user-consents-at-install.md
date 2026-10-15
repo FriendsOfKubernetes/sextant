@@ -23,3 +23,5 @@ At install the user sees the extension's name, author, version, source, contribu
 - There are no deny rules: a broad rule cannot be narrowed except by editing the grant and re-installing.
 - The consent screen has to stay readable for large rule sets; an extension that asks for everything is shown as it is, and the user decides.
 - The manifest parser is strict (an unknown field or value is an install error with the field path), which keeps the grant unambiguous but means a newer manifest does not install on an older Sextant.
+
+Amended (v0.6.1): a dev folder whose manifest now asks for less than was granted (within the grant, not equal) is granted only what it asks for, without a dialog; its watch streams opened under the wider grant stop, and asking for the wider permissions again needs consent again.

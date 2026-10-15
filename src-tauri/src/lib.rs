@@ -181,22 +181,17 @@ fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
 /// watch streams at once.
 fn start_extensions<R: Runtime>(app: &tauri::AppHandle<R>) {
     let host = app.state::<extensions::ExtensionHost>().inner().clone();
-    let streams = std::sync::Arc::clone(&app.state::<AppState>().ext_api.streams);
     let handle = app.clone();
-    host.set_emitter(extensions::api::host_emitter(
-        streams,
-        host.downgrade(),
-        move |event| {
-            use extensions::HostEvent;
-            let _ = match event {
-                HostEvent::ListChanged => handle.emit(events::EXTENSIONS_CHANGED, ()),
-                HostEvent::FilesChanged { id } => handle.emit(
-                    events::EXTENSION_FILES_CHANGED,
-                    events::ExtensionFilesChangedPayload { id },
-                ),
-            };
-        },
-    ));
+    extensions::api::wire_host_events(&host, &app.state::<AppState>().ext_api, move |event| {
+        use extensions::HostEvent;
+        let _ = match event {
+            HostEvent::ListChanged => handle.emit(events::EXTENSIONS_CHANGED, ()),
+            HostEvent::FilesChanged { id } => handle.emit(
+                events::EXTENSION_FILES_CHANGED,
+                events::ExtensionFilesChangedPayload { id },
+            ),
+        };
+    });
     let handle = app.clone();
     app.state::<AppState>()
         .ext_api

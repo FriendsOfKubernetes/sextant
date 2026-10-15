@@ -94,6 +94,18 @@ struct Loaded {
     within: bool,
 }
 
+/// Manifests read so far. A read runs outside the lock (a development folder is walked whole); `epoch` grows with every
+/// [`ExtensionHost::forget`], so a read that began before one is answered but not kept.
+#[derive(Default)]
+struct LoadedCache {
+    map: HashMap<String, Loaded>,
+    epoch: u64,
+}
+
+/// Called between reading a manifest and keeping it (tests: a slow folder).
+#[cfg(test)]
+type ReadHook = Arc<dyn Fn(&str) + Send + Sync>;
+
 struct Inner {
     settings: Arc<SettingsStore>,
     /// `<data>/extensions`: installed versions.
@@ -102,13 +114,15 @@ struct Inner {
     pending_dir: PathBuf,
     /// `<data>/extensions-data`: an extension's `storage` (`<id>.json`).
     data_dir: PathBuf,
-    loaded: Mutex<HashMap<String, Loaded>>,
+    loaded: Mutex<LoadedCache>,
     pending: Mutex<manage::PendingInstalls>,
     /// Serializes install, enable and remove.
     changes: Mutex<()>,
     dev: Mutex<dev::DevWatch>,
     emitter: Mutex<Option<Emitter>>,
     downloader: Downloader,
+    #[cfg(test)]
+    read_hook: Mutex<Option<ReadHook>>,
 }
 
 /// Managed state of the extension host. Cheap to clone.
@@ -152,12 +166,14 @@ impl ExtensionHost {
                 extensions_dir,
                 pending_dir,
                 data_dir: data_dir.join("extensions-data"),
-                loaded: Mutex::new(HashMap::new()),
+                loaded: Mutex::new(LoadedCache::default()),
                 pending: Mutex::new(manage::PendingInstalls::default()),
                 changes: Mutex::new(()),
                 dev: Mutex::new(dev::DevWatch::default()),
                 emitter: Mutex::new(None),
                 downloader,
+                #[cfg(test)]
+                read_hook: Mutex::new(None),
             }),
         }
     }
@@ -172,6 +188,12 @@ impl ExtensionHost {
     /// Where the window's events go (`extensions-changed`, `extension-files-changed`).
     pub fn set_emitter(&self, emitter: Emitter) {
         *lock(&self.inner.emitter) = Some(emitter);
+    }
+
+    /// Runs `hook` with the id between reading a manifest and keeping it (tests).
+    #[cfg(test)]
+    pub(crate) fn set_read_hook(&self, hook: ReadHook) {
+        *lock(&self.inner.read_hook) = Some(hook);
     }
 
     fn emit(&self, event: HostEvent) {
@@ -243,38 +265,64 @@ impl ExtensionHost {
 
     /// Forgets the manifest read for `id`: the next look reads it again.
     fn forget(&self, id: &str) {
-        lock(&self.inner.loaded).remove(id);
+        let mut loaded = lock(&self.inner.loaded);
+        loaded.epoch += 1;
+        loaded.map.remove(id);
+    }
+
+    /// The manifest of `entry` and whether it is within `entry.granted`: kept from an earlier read while the entry's
+    /// source and version stay the same, otherwise read again — outside the lock, so a slow folder holds up nobody
+    /// else — and kept unless the manifest was forgotten (or read by someone else) meanwhile.
+    fn manifest_of(&self, entry: &InstalledExtension) -> (Result<ExtensionManifest, String>, bool) {
+        let key = format!("{:?}|{}", entry.source, entry.version);
+        let answer = |current: &mut Loaded| {
+            if current.granted != entry.granted {
+                current.within = within(&current.manifest, &entry.granted);
+                current.granted = entry.granted.clone();
+            }
+            (current.manifest.clone(), current.within)
+        };
+        let epoch = {
+            let mut loaded = lock(&self.inner.loaded);
+            if let Some(current) = loaded.map.get_mut(&entry.id).filter(|l| l.key == key) {
+                return answer(current);
+            }
+            loaded.epoch
+        };
+        let manifest = self.read_manifest(entry);
+        #[cfg(test)]
+        {
+            let hook = lock(&self.inner.read_hook).clone();
+            if let Some(hook) = hook {
+                hook(&entry.id);
+            }
+        }
+        let mut read = Loaded {
+            key,
+            within: within(&manifest, &entry.granted),
+            manifest,
+            granted: entry.granted.clone(),
+        };
+        let mut loaded = lock(&self.inner.loaded);
+        if let Some(current) = loaded.map.get_mut(&entry.id).filter(|l| l.key == read.key) {
+            // Read by someone else meanwhile: theirs is as fresh as this one, or fresher.
+            return answer(current);
+        }
+        if loaded.epoch == epoch {
+            let answered = answer(&mut read);
+            loaded.map.insert(entry.id.clone(), read);
+            return answered;
+        }
+        answer(&mut read)
     }
 
     fn info_of(&self, entry: &InstalledExtension) -> ExtensionInfo {
-        let key = format!("{:?}|{}", entry.source, entry.version);
-        let mut loaded = lock(&self.inner.loaded);
-        let fresh = loaded.get(&entry.id).is_some_and(|l| l.key == key);
-        if !fresh {
-            let manifest = self.read_manifest(entry);
-            loaded.insert(
-                entry.id.clone(),
-                Loaded {
-                    key,
-                    within: within(&manifest, &entry.granted),
-                    manifest,
-                    granted: entry.granted.clone(),
-                },
-            );
-        }
-        let Some(current) = loaded.get_mut(&entry.id) else {
-            unreachable!("inserted above");
+        let (manifest, within) = self.manifest_of(entry);
+        let (manifest, error) = match manifest {
+            Ok(manifest) => (Some(manifest), None),
+            Err(error) => (None, Some(error)),
         };
-        if current.granted != entry.granted {
-            current.within = within(&current.manifest, &entry.granted);
-            current.granted = entry.granted.clone();
-        }
-        let (manifest, error) = match &current.manifest {
-            Ok(manifest) => (Some(manifest.clone()), None),
-            Err(error) => (None, Some(error.clone())),
-        };
-        let needs_consent = manifest.is_some() && !current.within;
-        drop(loaded);
+        let needs_consent = manifest.is_some() && !within;
         let state = if !entry.enabled {
             ExtensionState::Disabled
         } else if error.is_some() {
@@ -491,5 +539,74 @@ pub(crate) mod test_support {
         let sink = Arc::clone(&events);
         host.set_emitter(Arc::new(move |e| sink.lock().unwrap().push(e)));
         events
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    use super::test_support::*;
+    use super::*;
+
+    #[test]
+    fn a_slow_folder_read_holds_up_no_other_extension_and_a_stale_read_is_not_kept() {
+        let dir = tempfile::tempdir().unwrap();
+        let host = host_in(dir.path());
+        for id in ["slow", "fast"] {
+            let folder = dir.path().join(id);
+            write_folder(&folder, id, "1.0.0", read_all());
+            host.install(&host.inspect_folder(&folder).unwrap().token)
+                .unwrap();
+        }
+        let (entered_tx, entered) = mpsc::channel();
+        let (release, release_rx) = mpsc::channel::<()>();
+        let release_rx = Mutex::new(release_rx);
+        host.set_read_hook(Arc::new(move |id| {
+            if id == "slow" {
+                let _ = entered_tx.send(());
+                let _ = lock(&release_rx).recv();
+            }
+        }));
+
+        // `slow`'s folder is being read: `fast` is answered meanwhile.
+        let slow = {
+            let host = host.clone();
+            std::thread::spawn(move || host.reload("slow").map(|i| i.state))
+        };
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        let (done_tx, done) = mpsc::channel();
+        {
+            let host = host.clone();
+            std::thread::spawn(move || {
+                let _ = done_tx.send(host.reload("fast").map(|i| i.state));
+            });
+        }
+        let fast = done.recv_timeout(Duration::from_secs(2));
+        release.send(()).unwrap();
+        assert_eq!(
+            fast,
+            Ok(Ok(ExtensionState::Active)),
+            "another extension waited for a slow folder"
+        );
+        assert_eq!(slow.join().unwrap(), Ok(ExtensionState::Active));
+
+        // The folder changes while it is read (and the read is forgotten): the old reading is not kept.
+        let reading = {
+            let host = host.clone();
+            std::thread::spawn(move || host.reload("slow").map(|i| i.state))
+        };
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        write_folder(&dir.path().join("slow"), "slow", "1.0.0", modify_all());
+        host.forget("slow");
+        release.send(()).unwrap();
+        let _ = reading.join().unwrap();
+        *lock(&host.inner.read_hook) = None;
+        assert_eq!(
+            host.info("slow").unwrap().state,
+            ExtensionState::NeedsConsent,
+            "the reading from before the change was kept"
+        );
     }
 }

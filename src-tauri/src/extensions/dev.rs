@@ -2,14 +2,17 @@
 //! [`DEV_POLL_INTERVAL`] (sizes and modification times of its files; no file-watching crate). A change sends
 //! `extension-files-changed {id}` (its frames reload) and, when the manifest or the state changed,
 //! `extensions-changed` (contributions are registered again). A manifest that now asks for more than was granted
-//! pauses the extension ([`ExtensionState::NeedsConsent`](super::ExtensionState)) until the user agrees again.
+//! pauses the extension ([`ExtensionState::NeedsConsent`](super::ExtensionState)) until the user agrees again; one that
+//! asks for less is granted only that from then on (what was granted narrows, never widens, without the user).
 
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::Path;
 use std::time::{Duration, UNIX_EPOCH};
 
-use sextant_core::extensions::{ExtensionSource, MAX_FILES};
+use sextant_core::extensions::{
+    ExtensionPermissions, ExtensionSource, InstalledExtension, MAX_FILES,
+};
 
 use super::{ExtensionHost, HostEvent, lock};
 
@@ -135,10 +138,53 @@ pub fn poll(host: &ExtensionHost) -> Vec<HostEvent> {
             id: entry.id.clone(),
         });
     }
+    // Every folder, not only the changed ones: a manifest read again by `extension_reload` counts too.
+    for entry in &folders {
+        let info = host.info_of(entry);
+        if let Some(manifest) = info.manifest.filter(|_| !info.needs_consent) {
+            list_changed |= narrow_grant(host, entry, &manifest.permissions);
+        }
+    }
     if list_changed {
         events.push(HostEvent::ListChanged);
     }
     events
+}
+
+/// A manifest that asks for less than was granted (within it, not equal) becomes what is granted, so the extension
+/// never keeps more than it asks for; streams opened under the wider grant stop on the `extensions-changed` that
+/// follows. Only while the entry is still the one that was read (no install, consent or removal meanwhile). `true`
+/// when the grant was narrowed.
+fn narrow_grant(
+    host: &ExtensionHost,
+    entry: &InstalledExtension,
+    asked: &ExtensionPermissions,
+) -> bool {
+    if *asked == entry.granted || !asked.is_within(&entry.granted) {
+        return false;
+    }
+    let _changes = lock(&host.inner.changes);
+    let mut narrowed = false;
+    let saved = host.inner.settings.update(|settings| {
+        if let Some(slot) = settings.extensions.iter_mut().find(|e| {
+            e.id == entry.id
+                && e.source == entry.source
+                && e.version == entry.version
+                && e.granted == entry.granted
+        }) {
+            slot.granted = asked.clone();
+            narrowed = true;
+        }
+    });
+    saved.is_ok() && narrowed
+}
+
+/// One look at every development folder, its events sent (the poller runs it off the async runtime: the host's
+/// emitter reads manifests again to stop streams).
+pub fn look(host: &ExtensionHost) {
+    for event in poll(host) {
+        host.emit(event);
+    }
 }
 
 /// Looks at the development folders every [`DEV_POLL_INTERVAL`] for as long as the app runs.
@@ -149,12 +195,7 @@ pub fn spawn_poller(host: ExtensionHost) -> tauri::async_runtime::JoinHandle<()>
         loop {
             tick.tick().await;
             let looked = host.clone();
-            let Ok(events) = tokio::task::spawn_blocking(move || poll(&looked)).await else {
-                continue;
-            };
-            for event in events {
-                host.emit(event);
-            }
+            let _ = tokio::task::spawn_blocking(move || look(&looked)).await;
         }
     })
 }
@@ -222,6 +263,53 @@ mod tests {
             ]
         );
         assert_eq!(host.info("widgets").unwrap().state, ExtensionState::Failed);
+    }
+
+    #[test]
+    fn a_manifest_that_asks_for_less_is_granted_only_that_also_after_a_reload() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().join("src");
+        write_folder(&folder, "widgets", "1.0.0", modify_all());
+        let host = host_in(dir.path());
+        host.install(&host.inspect_folder(&folder).unwrap().token)
+            .unwrap();
+        let granted = |host: &ExtensionHost| host.info("widgets").unwrap().granted;
+        let as_perms =
+            |v: serde_json::Value| serde_json::from_value::<ExtensionPermissions>(v).unwrap();
+        assert_eq!(granted(&host), as_perms(modify_all()));
+
+        write_folder(&folder, "widgets", "1.0.1", read_all());
+        assert_eq!(
+            poll(&host),
+            vec![
+                HostEvent::FilesChanged {
+                    id: "widgets".into()
+                },
+                HostEvent::ListChanged
+            ]
+        );
+        assert_eq!(granted(&host), as_perms(read_all()));
+        assert_eq!(host.info("widgets").unwrap().state, ExtensionState::Active);
+        let saved = sextant_core::SettingsStore::open(dir.path().join("config/settings.json"));
+        assert_eq!(saved.get().extensions[0].granted, as_perms(read_all()));
+        assert!(poll(&host).is_empty(), "narrowed once");
+
+        // Read again by `extension_reload` (no change left for the poller to see): narrowed on the next look.
+        let team_a = serde_json::json!({ "clusters": { "type": "all" }, "rules": [
+            { "namespaces": { "type": "only", "namespaces": ["team-a"] }, "kinds": { "type": "all" },
+              "actions": ["read"], "confirm": false }
+        ] });
+        write_folder(&folder, "widgets", "1.0.2", team_a.clone());
+        host.reload("widgets").unwrap();
+        assert_eq!(poll(&host), vec![HostEvent::ListChanged]);
+        assert_eq!(granted(&host), as_perms(team_a));
+
+        // Wider again: paused, the grant stays as narrowed.
+        write_folder(&folder, "widgets", "1.0.3", read_all());
+        poll(&host);
+        let info = host.info("widgets").unwrap();
+        assert_eq!(info.state, ExtensionState::NeedsConsent);
+        assert_ne!(info.granted, as_perms(read_all()));
     }
 
     #[tokio::test]
