@@ -1010,6 +1010,22 @@ async fn refuse_live_node_shell(
 /// What an agent is told when its forward would reach a pod whose ports are the node's own.
 const NODE_ACCESS_REFUSAL: &str = "Sextant does not let agents forward ports of node shells or of pods that use the node's network";
 
+/// How many port forwards the agents of one MCP server may keep at once (each is a listener and a monitor task).
+const MAX_AGENT_FORWARDS: usize = 32;
+
+/// The refusal for an agent that already keeps `live` forwards; `None` while there is room for another.
+fn forward_cap_refusal(live: usize) -> Option<CoreError> {
+    (live >= MAX_AGENT_FORWARDS).then(|| {
+        CoreError::new(
+            ErrorCode::Invalid,
+            format!(
+                "{live} port forwards started by agents are still open (the limit is {MAX_AGENT_FORWARDS}); \
+                 stop some with port_forward_stop (port_forward_list shows them) and try again"
+            ),
+        )
+    })
+}
+
 async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResult {
     if args.remote_port == 0 {
         return Err(invalid("remotePort must be 1–65535").into());
@@ -1055,6 +1071,10 @@ async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResul
     // After the access check, the forwarder reads the pod (for a service, its pods; again whenever it moves to
     // another pod) and never goes to a node shell or a pod on the node's network: one read of the pod covers both.
     let ctx = call.ctx();
+    // `agent_forwards` forgets the forwards that ended, so only the ones still holding a listener count.
+    if let Some(refusal) = forward_cap_refusal(agent_forwards(ctx).len()) {
+        return Err(refusal.into());
+    }
     let info = with_timeout(
         CHANGE_TIMEOUT,
         "starting the port forward",
@@ -3075,6 +3095,71 @@ spec:
             .unwrap();
         assert!(result.is_err(), "{result:?}");
         assert_gone(&pid).await;
+        state.close_all();
+    }
+
+    #[test]
+    fn the_agent_forward_cap_leaves_room_for_exactly_the_limit() {
+        assert!(forward_cap_refusal(0).is_none());
+        assert!(forward_cap_refusal(MAX_AGENT_FORWARDS - 1).is_none());
+        let refusal = forward_cap_refusal(MAX_AGENT_FORWARDS).expect("the cap is reached");
+        assert!(
+            refusal.message.contains("port_forward_stop"),
+            "{}",
+            refusal.message
+        );
+        assert!(forward_cap_refusal(MAX_AGENT_FORWARDS + 1).is_some());
+    }
+
+    #[tokio::test]
+    async fn an_agent_cannot_keep_more_than_the_cap_of_port_forwards() {
+        const NS: &str = "sextant-mcp-forward-cap";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, _window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        namespace(&state, &id, NS, true).await;
+        let c = id.0.as_str();
+        set_rules(
+            &state,
+            &id,
+            vec![rule(
+                &[NS],
+                &[],
+                &[AccessAction::Read, AccessAction::PortForward],
+                false,
+            )],
+        );
+        let pod = web_pod(&state, &id, NS).await;
+        let args = json!({ "cluster": c, "namespace": NS, "target": "pod", "name": pod, "remotePort": 80 });
+        let mut ids = Vec::new();
+        for _ in 0..MAX_AGENT_FORWARDS {
+            let started = tool(&state, "port_forward_start", args.clone())
+                .await
+                .unwrap();
+            ids.push(started["id"].as_str().unwrap().to_owned());
+        }
+        let refused = tool(&state, "port_forward_start", args.clone())
+            .await
+            .unwrap_err();
+        assert!(refused.contains("port_forward_stop"), "{refused}");
+        assert_eq!(state.forwarder.list().len(), MAX_AGENT_FORWARDS);
+
+        // One the user closed in the application no longer counts: its room is free again.
+        state.forwarder.stop(&ids[0]).await.unwrap();
+        tool(&state, "port_forward_start", args.clone())
+            .await
+            .unwrap();
+        assert!(
+            tool(&state, "port_forward_start", args.clone())
+                .await
+                .is_err()
+        );
+        // One the agent stopped does too.
+        tool(&state, "port_forward_stop", json!({ "id": ids[1] }))
+            .await
+            .unwrap();
+        tool(&state, "port_forward_start", args).await.unwrap();
         state.close_all();
     }
 
