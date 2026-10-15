@@ -9,8 +9,8 @@ type Element = ReturnType<typeof $>;
 
 export const WIDTH = 1280;
 export const HEIGHT = 800;
-/** The MCP server's port in the demo profile: not the default, so a Sextant the developer runs does not clash. */
-export const MCP_PORT = 47391;
+/** The MCP server's port in the demo profile: not the default 47391, so a Sextant the developer runs does not clash. */
+export const MCP_PORT = 47491;
 const GLIDE_MS = 650;
 
 let recorder: ChildProcess | null = null;
