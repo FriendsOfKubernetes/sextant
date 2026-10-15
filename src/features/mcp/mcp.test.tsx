@@ -371,6 +371,20 @@ describe("Confirmation of what an agent asks to do", () => {
     ]);
   });
 
+  it("sends one answer for a double click", async () => {
+    setup();
+    renderConfirm();
+    await listening("mcp-confirm");
+    act(() => backend.emit("mcp-confirm", request()));
+    const allow = screen.getByRole("button", { name: "Allow" });
+    act(() => {
+      allow.click();
+      allow.click();
+    });
+    await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(1));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
   it("counts down from two minutes and drops a request nobody answered", async () => {
     setup();
     renderConfirm();

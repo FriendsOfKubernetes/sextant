@@ -40,7 +40,9 @@ export function ConfirmHost() {
   const { t } = useTranslation();
   const [queue, setQueue] = useState<Pending[]>([]);
   const [now, setNow] = useState(() => Date.now());
-  const answered = useRef(new Set<string>());
+  // The request just answered, so a second click before the dialog moves on sends nothing. Only the last id is kept:
+  // an answered request has already left the queue, and a set of every id ever answered would only grow (#123).
+  const answered = useRef<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -75,8 +77,8 @@ export function ConfirmHost() {
   const { request } = first;
 
   const answer = (approved: boolean) => {
-    if (answered.current.has(request.id)) return;
-    answered.current.add(request.id);
+    if (answered.current === request.id) return;
+    answered.current = request.id;
     setQueue((current) => current.filter((p) => p.request.id !== request.id));
     // `notFound` means it timed out or the server stopped meanwhile: nothing left to answer.
     api.mcp.confirmAnswer(request.id, approved).catch(() => undefined);

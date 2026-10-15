@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChartTarget, ClusterInfo, KubeObject, MetricsStatus, NodeUsage, PodUsage, PrometheusTarget, Series } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { ResourceTable } from "../../components/Table";
+import { DetailsPanel } from "../../layout/details/DetailsPanel";
 import { getDetailsSections } from "../../layout/details/registry";
 import "../../resources";
 import { useClustersStore } from "../clusters/clustersStore";
@@ -10,9 +11,10 @@ import { getClusterSettingsSections } from "../clusters/settingsRegistry";
 import deploymentJson from "../details/fixtures/deployment.json";
 import nodeJson from "../details/fixtures/node.json";
 import podJson from "../details/fixtures/pod.json";
+import "../details/index";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
-import { POLL_INTERVAL_MS, resetMetricsCache, usePodUsage } from "./hooks";
+import { IDLE_TTL_MS, MAX_IDLE_ENTRIES, metricsCacheStats, POLL_INTERVAL_MS, resetMetricsCache, usePodUsage } from "./hooks";
 import "./index";
 
 const pod = podJson as KubeObject;
@@ -187,6 +189,40 @@ describe("polling", () => {
       await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3);
     });
     expect(calls("metrics_pods")).toHaveLength(2);
+  });
+});
+
+describe("memory (#120)", () => {
+  it("opening and closing the details of 200 different pods leaves nothing behind", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    serve(status({ prometheus: PROMETHEUS }), { pods: [nginxUsage], charts: [] });
+    for (let i = 0; i < 200; i++) {
+      const ref = { kind: POD, namespace: "sextant-demo", name: `pod-${i}` };
+      const view = render(<DetailsPanel clusterId="c1" objectRef={ref} />);
+      const id = await watchOf(wb, "Pod", (s) => s.fieldSelector === `metadata.name=${ref.name}`);
+      const obj = copy(pod);
+      obj.metadata = { ...obj.metadata, name: ref.name, uid: `uid-${i}` };
+      emitSnapshot(wb, id, [obj]);
+      await waitFor(() => expect(calls("metrics_charts")).toHaveLength(i + 1));
+      view.unmount();
+    }
+    // A quick reopen reuses what was fetched; idle values are bounded meanwhile and gone after a while.
+    expect(metricsCacheStats().entries).toBeLessThanOrEqual(MAX_IDLE_ENTRIES);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(IDLE_TTL_MS * 3);
+    });
+    expect(metricsCacheStats()).toEqual({ entries: 0, podClusters: 0, nodeClusters: 0 });
+  }, 60_000);
+
+  it("a quick reopen reuses the value without asking again", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    serve(status(), { pods: [nginxUsage] });
+    const first = render(<Usage />);
+    await waitFor(() => expect(screen.getByTestId("usage").textContent).toBe("1"));
+    first.unmount();
+    render(<Usage />);
+    expect(screen.getByTestId("usage").textContent).toBe("1");
+    expect(calls("metrics_pods")).toHaveLength(1);
   });
 });
 
