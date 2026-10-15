@@ -26,7 +26,7 @@ pub const QUIT: &str = "quit";
 const TRAY_ID: &str = "sextant";
 
 /// The product name the Linux StatusNotifier item shows (not a translated text).
-#[cfg(any(target_os = "linux", test))]
+#[cfg(target_os = "linux")]
 const APP_NAME: &str = "Sextant";
 
 /// The native menu cannot use the window's i18next, so its texts are read from the same translation folder when the
