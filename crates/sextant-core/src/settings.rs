@@ -241,7 +241,8 @@ impl SettingsFileStatus {
 ///
 /// What the user saved is never lost silently:
 /// - a file that does not parse is first copied to `<name>.bak-<YYYYMMDD-HHMMSS>` (UTC; an existing copy is never
-///   replaced), then defaults are used and saved over it;
+///   replaced, and an earlier copy with the same bytes is reused, so a file that stays broken is copied once, not on
+///   every start), then defaults are used; the file itself is written over only by the next change ([`Self::update`]);
 /// - a file that cannot be read (no permission, a directory, an I/O error) or is read-only is never written:
 ///   changes stay in memory for this session;
 /// - if the copy cannot be made, the file is not written either.
@@ -397,11 +398,15 @@ fn io_code(err: &std::io::Error) -> ErrorCode {
 
 /// Copies `bytes` to `<name>.bak-<UTC time>` next to `path`, adding `-2`, `-3`, … when that name is taken. The name
 /// is claimed with `create_new`, so an existing copy is never replaced, also by another Sextant at the same moment.
+/// An existing `<name>.bak-*` with exactly `bytes` is returned instead of making another copy.
 fn write_backup(path: &Path, bytes: &[u8]) -> std::io::Result<PathBuf> {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| "settings.json".to_owned());
+    if let Some(same) = existing_backup(path, &name, bytes) {
+        return Ok(same);
+    }
     let stamp = utc_stamp(std::time::SystemTime::now());
     for attempt in 1..1000 {
         let candidate = if attempt == 1 {
@@ -427,6 +432,28 @@ fn write_backup(path: &Path, bytes: &[u8]) -> std::io::Result<PathBuf> {
         std::io::ErrorKind::AlreadyExists,
         "too many backups with the same time",
     ))
+}
+
+/// A regular file `<name>.bak-*` next to `path` whose content is exactly `bytes` (the earliest such name); a copy that
+/// cannot be read is not a match.
+fn existing_backup(path: &Path, name: &str, bytes: &[u8]) -> Option<PathBuf> {
+    let prefix = format!("{name}.bak-");
+    let dir = path.parent().filter(|p| !p.as_os_str().is_empty())?;
+    let mut candidates: Vec<PathBuf> = std::fs::read_dir(dir)
+        .ok()?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_name().to_string_lossy().starts_with(&prefix))
+        .filter(|entry| {
+            // `symlink_metadata`: a link named like a copy is not taken for one.
+            std::fs::symlink_metadata(entry.path())
+                .is_ok_and(|m| m.is_file() && m.len() == bytes.len() as u64)
+        })
+        .map(|entry| entry.path())
+        .collect();
+    candidates.sort();
+    candidates
+        .into_iter()
+        .find(|candidate| std::fs::read(candidate).is_ok_and(|content| content == bytes))
 }
 
 /// `YYYYMMDD-HHMMSS` in UTC (file-name safe on every OS).
@@ -646,6 +673,43 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&first).unwrap(), "first broken");
         assert_eq!(std::fs::read_to_string(&second).unwrap(), "second broken");
         assert_eq!(backups(dir.path()).len(), 2);
+    }
+
+    #[test]
+    fn a_file_that_stays_broken_is_copied_once_whatever_the_number_of_starts() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(&path, "still broken").unwrap();
+        // A copy of other bytes, and one that only shares the length, are not reused.
+        std::fs::write(
+            dir.path().join("settings.json.bak-20000101-000000"),
+            "older broken",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("settings.json.bak-20000101-000001"),
+            "STILL BROKEN",
+        )
+        .unwrap();
+
+        let first = SettingsStore::open(path.clone()).status();
+        let second = SettingsStore::open(path.clone()).status();
+        let third = SettingsStore::open(path.clone()).status();
+
+        let copy = first.backup_path.clone().expect("a backup is made");
+        assert_eq!(std::fs::read_to_string(&copy).unwrap(), "still broken");
+        assert_eq!(second.backup_path.as_ref(), Some(&copy));
+        assert_eq!(third.backup_path.as_ref(), Some(&copy));
+        assert_eq!(backups(dir.path()).len(), 3, "{:?}", backups(dir.path()));
+        for status in [&second, &third] {
+            assert!(status.writable);
+            assert_eq!(
+                status.error.as_ref().map(|e| e.code),
+                Some(ErrorCode::Invalid)
+            );
+        }
+        // Opening does not write the file over; the next change does.
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "still broken");
     }
 
     #[test]

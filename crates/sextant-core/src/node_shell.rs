@@ -59,6 +59,13 @@ const MAX_NODE_PART: usize = 63 - NAME_PREFIX.len() - 6;
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
 /// A deletion may take this long, repeats included ([`delete_pod`]).
 const DELETE_TIMEOUT: Duration = Duration::from_secs(10);
+/// One attempt of a deletion may take this long (never more than what is left of [`DELETE_TIMEOUT`]): an attempt that
+/// hangs leaves time for repeats.
+const DELETE_ATTEMPT_TIMEOUT: Duration = if cfg!(test) {
+    Duration::from_secs(1)
+} else {
+    Duration::from_secs(3)
+};
 /// The first pause before repeating a deletion or a lookup; it doubles each time.
 const FIRST_PAUSE: Duration = Duration::from_millis(250);
 /// The longest pause between two lookups of a pod whose creation was not answered.
@@ -484,12 +491,26 @@ pub async fn create_until(
 }
 
 /// Whether the pod may exist although its creation failed: the request may have reached the API server and only the
-/// answer was lost (a transport error, a 5xx such as 504, 408). A 4xx answer is a refusal: nothing was made.
+/// answer was lost (a transport error, a 5xx such as 504, 408). A 4xx answer is a refusal and a failed connection
+/// means the request was never sent: nothing was made.
 fn may_have_been_made(err: &kube::Error) -> bool {
     match err {
         kube::Error::Api(status) => status.code >= 500 || status.code == 408,
-        _ => true,
+        err => !not_sent(err),
     }
+}
+
+/// Whether the request never left: the connection to the API server could not be made (refused, unreachable, the
+/// connect or TLS handshake failed). Found by the HTTP client's own connect error anywhere in the error's sources.
+fn not_sent(err: &kube::Error) -> bool {
+    let mut source: Option<&(dyn std::error::Error + 'static)> = Some(err);
+    while let Some(err) = source {
+        if let Some(client) = err.downcast_ref::<hyper_util::client::legacy::Error>() {
+            return client.is_connect();
+        }
+        source = err.source();
+    }
+    false
 }
 
 /// Pods whose creation was not answered and which could not be found and deleted: the next [`sweep`] deletes them
@@ -716,9 +737,10 @@ async fn event_reason(client: &kube::Client, name: &str) -> Option<String> {
         .map(|(_, message)| message.clone())
 }
 
-/// Deletes the pod; one that is already gone is fine. A deletion answered with 429, a 5xx or a transport error is
-/// repeated (a repeat of one that was applied answers 404), pausing longer each time, within [`DELETE_TIMEOUT`] in all:
-/// the client itself never repeats a `DELETE` ([`crate::cluster::RetryPolicy`]).
+/// Deletes the pod; one that is already gone is fine. A deletion answered with 429, a 5xx or a transport error, or not
+/// answered within [`DELETE_ATTEMPT_TIMEOUT`], is repeated (a repeat of one that was applied answers 404), pausing
+/// longer each time, within [`DELETE_TIMEOUT`] in all: the client itself never repeats a `DELETE`
+/// ([`crate::cluster::RetryPolicy`]).
 async fn delete_pod(client: &kube::Client, name: &str) -> CoreResult<()> {
     let api: Api<Pod> = Api::namespaced(client.clone(), NAMESPACE);
     let params = DeleteParams {
@@ -729,17 +751,17 @@ async fn delete_pod(client: &kube::Client, name: &str) -> CoreResult<()> {
     let mut pause = FIRST_PAUSE;
     loop {
         let left = deadline.saturating_duration_since(tokio::time::Instant::now());
-        let err = match tokio::time::timeout(left, api.delete(name, &params)).await {
+        let attempt = left.min(DELETE_ATTEMPT_TIMEOUT);
+        let err = match tokio::time::timeout(attempt, api.delete(name, &params)).await {
             Ok(Ok(_)) => return Ok(()),
             Ok(Err(kube::Error::Api(status))) if status.code == 404 => return Ok(()),
             Ok(Err(err)) if worth_repeating(&err) => kube_error(err, None),
             Ok(Err(err)) => return Err(kube_error(err, None)),
-            Err(_) => {
-                return Err(CoreError::new(
-                    ErrorCode::Timeout,
-                    format!("no answer to deleting pod {NAMESPACE}/{name}"),
-                ));
-            }
+            // The request or its answer may be stuck on a dead connection; a repeat opens a new one.
+            Err(_) => CoreError::new(
+                ErrorCode::Timeout,
+                format!("no answer to deleting pod {NAMESPACE}/{name}"),
+            ),
         };
         if tokio::time::Instant::now() + pause >= deadline {
             return Err(err);
@@ -805,7 +827,7 @@ pub async fn sweep(client: kube::Client) -> CoreResult<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fake_api::{FakeApi, Reply, connected_to};
+    use crate::fake_api::{FakeApi, Reply, Request, connected_to};
 
     const API_VERSIONS: &str =
         r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
@@ -1101,6 +1123,130 @@ mod tests {
                 "{status}"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn a_deletion_that_hangs_or_loses_its_connection_is_repeated() {
+        for hangs in [true, false] {
+            let label = if hangs { "hang" } else { "transport error" };
+            let deletes = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let counted = Arc::clone(&deletes);
+            let old = (Timestamp::now() - std::time::Duration::from_secs(9 * 3600)).to_string();
+            let items = json!([shell_pod("forgotten", true, Some(owner_id()), "s", &old)]);
+            let api = FakeApi::start(move |req| match (req.method.as_str(), req.path.as_str()) {
+                ("GET", "/api") => Reply::json(200, API_VERSIONS),
+                ("GET", PODS) => Reply::json(200, listed(items.clone())),
+                ("DELETE", _) if counted.fetch_add(1, Ordering::SeqCst) == 0 => {
+                    if hangs {
+                        Reply::hang()
+                    } else {
+                        // Two different lengths: the answer cannot be read.
+                        Reply::json(200, "{}").with_header("Content-Length", "100000")
+                    }
+                }
+                ("DELETE", _) => Reply::json(200, "{}"),
+                _ => Reply::not_found(),
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let started = tokio::time::Instant::now();
+            assert_eq!(sweep(mgr.client(&id).unwrap()).await.unwrap(), 1, "{label}");
+            assert_eq!(
+                deletions(&api),
+                [format!("{PODS}/forgotten"), format!("{PODS}/forgotten")],
+                "{label}"
+            );
+            // A hung attempt is given up after its own limit, far from the whole budget.
+            assert!(
+                started.elapsed() < DELETE_ATTEMPT_TIMEOUT + Duration::from_secs(2),
+                "{label}: {:?}",
+                started.elapsed()
+            );
+            if hangs {
+                eventually("the hung connection to close", || api.abandoned() == 1).await;
+            }
+        }
+    }
+
+    /// A TCP relay to a fake API server that can be cut: it closes every connection and stops listening, so the next
+    /// connection is refused before any request is sent.
+    struct Relay {
+        url: String,
+        accept: tokio::task::AbortHandle,
+        conns: Arc<Mutex<Vec<tokio::task::AbortHandle>>>,
+    }
+
+    impl Relay {
+        async fn to(upstream: &str) -> Self {
+            let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+                .await
+                .unwrap();
+            let url = format!("http://{}", listener.local_addr().unwrap());
+            let upstream = upstream.trim_start_matches("http://").to_owned();
+            let conns: Arc<Mutex<Vec<tokio::task::AbortHandle>>> = Arc::default();
+            let held = Arc::clone(&conns);
+            let accept = tokio::spawn(async move {
+                while let Ok((mut conn, _)) = listener.accept().await {
+                    let upstream = upstream.clone();
+                    let relayed = tokio::spawn(async move {
+                        if let Ok(mut up) = tokio::net::TcpStream::connect(upstream).await {
+                            let _ = tokio::io::copy_bidirectional(&mut conn, &mut up).await;
+                        }
+                    });
+                    held.lock().unwrap().push(relayed.abort_handle());
+                }
+            })
+            .abort_handle();
+            Self { url, accept, conns }
+        }
+
+        async fn cut(&self) {
+            self.accept.abort();
+            for conn in self.conns.lock().unwrap().drain(..) {
+                conn.abort();
+            }
+            // The client notices its pooled connections are closed.
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    }
+
+    // On Windows a refused connection to 127.0.0.1 takes about 2 s (SYN retries), longer than the test's
+    // CREATE_TIMEOUT, so the creation ends as unanswered there.
+    #[cfg_attr(
+        windows,
+        ignore = "a refused connection takes longer than CREATE_TIMEOUT on Windows"
+    )]
+    #[tokio::test]
+    async fn a_creation_that_cannot_connect_is_not_looked_up_afterwards() {
+        let api = FakeApi::start(|req| match (req.method.as_str(), req.path.as_str()) {
+            ("GET", "/api") => Reply::json(200, API_VERSIONS),
+            _ => Reply::json(200, "{}"),
+        })
+        .await;
+        let relay = Relay::to(api.url()).await;
+        let (_tmp, mgr, id) = connected_to(&relay.url).await;
+        relay.cut().await;
+        let node = "unreachable-node";
+
+        create(&mgr, &id, node, "").await.expect_err("unreachable");
+
+        // Lookups of a pod that may exist would go on for LOST_POD_WINDOW and then keep its name for the sweep.
+        tokio::time::sleep(LOST_POD_WINDOW + Duration::from_secs(1)).await;
+        let prefix = pod_name(node);
+        let prefix = &prefix[..prefix.len() - 5];
+        assert!(
+            !unconfirmed().iter().any(|name| name.starts_with(prefix)),
+            "{:?}",
+            unconfirmed()
+        );
+        assert!(
+            api.requests()
+                .iter()
+                .all(|r| r.method == "GET" && r.path == "/api"),
+            "{:?}",
+            api.requests().iter().map(Request::line).collect::<Vec<_>>()
+        );
     }
 
     #[test]

@@ -18,6 +18,7 @@ An unreadable settings file is not silently destroyed. A file that could not be 
 
 - In "session only" mode nothing that was changed (added sources, colors, paths) survives closing the window. The banner says so, but the mode itself is unpleasant.
 - `.bak-*` copies accumulate, and nobody cleans them up.
+  Amended (v0.6.1): a file that stays broken is copied once — an existing `settings.json.bak-*` with the same bytes is reused instead of a new copy on every start; copies of different broken contents still accumulate. Opening does not write over the broken file; the next settings change does.
 - The banner lives in `SettingsButton`, so it is visible wherever that button is drawn; there is no general slot for window-level messages yet.
 - `KubeconfigSource.error` became a mandatory IPC field, and `KubeconfigRegistry::sources()` now re-reads the files on every call.
 - Clusters from a source with an error do not appear in the list until the file is fixed; the message itself shows the cause.
