@@ -5,9 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, errorKey, toApiError, type ApiError, type ArgoStatus, type ClusterId, type ManagedResource, type ObjectRef } from "../../../api";
 import { Button, Dialog, LoadingIndicator } from "../../../components";
-import { ambiguousInstallationText, isAmbiguousInstallation } from "../server";
+import { isAmbiguousInstallation } from "../server";
 import { DiffView } from "./DiffView";
 import { LoginForm } from "./LoginForm";
+import { NamespacePicker } from "./NamespacePicker";
 
 type Phase =
   | { type: "loading" }
@@ -79,7 +80,12 @@ export function ArgoDiffDialog({ clusterId, app, close }: ArgoDiffDialogProps) {
             }}
           />
         )}
-        {phase.type === "error" && <DiffError error={phase.error} onRetry={() => void load()} />}
+        {phase.type === "error" &&
+          (isAmbiguousInstallation(phase.error) ? (
+            <NamespacePicker clusterId={clusterId} error={phase.error} onChosen={() => void load()} />
+          ) : (
+            <DiffError error={phase.error} onRetry={() => void load()} />
+          ))}
         {phase.type === "diff" && (
           <>
             <SessionBar status={phase.status} saveError={saveError} onReload={() => void load()} onSignOut={signOut} />
@@ -134,7 +140,7 @@ function DiffError({ error, onRetry }: { error: ApiError; onRetry: () => void })
         : error.code === "notFound"
           ? "argocd:diff.errors.notFound"
           : errorKey(error.code);
-  const text = isAmbiguousInstallation(error) ? ambiguousInstallationText(error) : t(key);
+  const text = t(key);
   return (
     <div className="argo-diff__error" role="alert">
       <p>{text}</p>

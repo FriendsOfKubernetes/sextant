@@ -4,7 +4,7 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ClusterId, type KubeObject, type ObjectRef } from "../../api";
-import { Checkbox, type IconName } from "../../components";
+import { Checkbox, Dialog, type IconName } from "../../components";
 import { i18n } from "../../i18n";
 import { ConfirmAction } from "../actions";
 import { registerAction } from "../actions/registry";
@@ -19,7 +19,8 @@ import {
   terminatePatch,
   type RefreshKind,
 } from "./model";
-import { openArgoUi } from "./server";
+import { NamespacePicker } from "./diff/NamespacePicker";
+import { isAmbiguousInstallation, openArgoUi } from "./server";
 
 const t = (key: string, options?: Record<string, unknown>) => i18n.t(key, options);
 
@@ -142,13 +143,30 @@ registerAction("argoOpenUi", {
   labelKey: "argocd:actions.openUi",
   icon: "external",
   appliesTo: (_obj, kind) => kind.group === ARGO_GROUP,
-  run: async ({ clusterId, kind, refs }) => {
+  run: async ({ clusterId, kind, refs, openDialog }) => {
     const ref = refs[0];
     // An Application opens on its own page; other objects on the list of applications.
     const path =
       ref && isApplication(kind) && ref.namespace
         ? `/applications/${encodeURIComponent(ref.namespace)}/${encodeURIComponent(ref.name)}`
         : "/applications";
-    await openArgoUi(clusterId, path);
+    try {
+      await openArgoUi(clusterId, path);
+    } catch (err) {
+      if (!isAmbiguousInstallation(err)) throw err;
+      // Several look-alike installations: nothing is opened until the user chooses one of them.
+      openDialog((close) => (
+        <Dialog open title={t("argocd:installation.title")} onClose={close}>
+          <NamespacePicker
+            clusterId={clusterId}
+            error={err}
+            onChosen={async () => {
+              await openArgoUi(clusterId, path);
+              close();
+            }}
+          />
+        </Dialog>
+      ));
+    }
   },
 });

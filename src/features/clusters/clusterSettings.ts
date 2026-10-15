@@ -13,6 +13,7 @@ export function defaultClusterSettings(): ClusterSettings {
     usageSource: "auto",
     icon: null,
     agentAccess: { preset: "off", rules: [] },
+    argocdNamespace: null,
   };
 }
 

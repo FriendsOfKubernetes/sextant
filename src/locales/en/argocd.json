@@ -137,7 +137,11 @@
     }
   },
   "installation": {
-    "ambiguous": "Several namespaces of this cluster look like an Argo CD installation ({{namespaces}}), and nothing their users cannot create themselves tells which one is real, so Sextant connects to none of them. A cluster-wide Argo CD is recognized by the ClusterRoleBinding of argocd-application-controller or argocd-server; ask the cluster administrator to check it."
+    "ambiguous": "Several namespaces of this cluster look like an Argo CD installation ({{namespaces}}), and nothing their users cannot create themselves tells which one is real, so Sextant connects to none of them by itself. A cluster-wide Argo CD is recognized by the ClusterRoleBinding of argocd-application-controller or argocd-server; ask the cluster administrator to check it.",
+    "title": "Choose the Argo CD installation",
+    "choose": "If you know which namespace holds the real Argo CD, choose it: Sextant remembers the choice for this cluster and signs in only there. Anyone who can write in a namespace can make it look like Argo CD.",
+    "use": "Use this installation",
+    "using": "Saving…"
   },
   "login": {
     "title": "Sign in to Argo CD",

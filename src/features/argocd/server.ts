@@ -2,7 +2,8 @@
 // (`argocd_status`, the same server the sign-in uses), the `argocd-server` Service there (by its label), a local port
 // forwarded to it, and `https://localhost:<port>` (plain `http` when the server runs without TLS). A Service with the
 // same label in any other namespace is never used. When several namespaces look like Argo CD and the backend cannot
-// tell the real one, nothing is opened: the error says so and names them.
+// tell the real one, nothing is opened: the error names them, and the user may choose one of them
+// (`chooseArgocdNamespace`, saved as `clusters[id].argocdNamespace`; the backend takes it only among its candidates).
 import {
   api,
   ApiError,
@@ -16,6 +17,7 @@ import {
   type WatchUpdate,
 } from "../../api";
 import { i18n } from "../../i18n";
+import { updateClusterSettings } from "../clusters/clusterSettings";
 import { urlOf, type UrlScheme } from "../portforward";
 import { status } from "../../resources";
 
@@ -46,21 +48,43 @@ export function isAmbiguousInstallation(err: unknown): boolean {
   return error.code === "notFound" && error.message.startsWith(AMBIGUOUS_INSTALLATION);
 }
 
+/** The namespaces the backend listed in its ambiguous-installation error (`(aaa, gitops)`); empty for other errors. */
+export function ambiguousNamespaces(err: unknown): string[] {
+  if (!isAmbiguousInstallation(err)) return [];
+  const listed = /\(([^)]*)\)/.exec(toApiError(err).message)?.[1] ?? "";
+  return listed
+    .split(",")
+    .map((ns) => ns.trim())
+    .filter((ns) => ns !== "");
+}
+
 /** The plain-words text of an ambiguous installation, with the namespaces the backend listed ("aaa, gitops"). */
 export function ambiguousInstallationText(err: unknown): string {
-  const listed = /\(([^)]*)\)/.exec(toApiError(err).message)?.[1] ?? "?";
+  const listed = ambiguousNamespaces(err).join(", ") || "?";
   return i18n.t("argocd:installation.ambiguous", { namespaces: listed });
 }
 
 /**
- * The namespace Argo CD is installed in, as the backend found it (where it signs in); `argocd` when the backend
- * cannot find Argo CD. Several look-alike installations are not resolved here: that error is thrown, in plain words.
+ * Saves the user's choice among the namespaces of an ambiguous installation for the cluster. The backend reads it on
+ * its next call and takes it only when it is one of the candidates it finds itself.
+ */
+export async function chooseArgocdNamespace(clusterId: ClusterId, namespace: string): Promise<void> {
+  await updateClusterSettings(clusterId, { argocdNamespace: namespace });
+}
+
+/**
+ * The namespace Argo CD is installed in, as the backend found it (where it signs in, honouring the user's choice);
+ * `argocd` when the backend cannot find Argo CD. Several look-alike installations are not resolved here: the
+ * backend's error is thrown as is (`isAmbiguousInstallation`, `ambiguousNamespaces`).
  */
 export async function argocdNamespace(clusterId: ClusterId): Promise<string> {
   try {
     return (await api.argocd.status(clusterId)).namespace;
   } catch (err) {
-    if (isAmbiguousInstallation(err)) throw new ApiError("notFound", ambiguousInstallationText(err));
+    if (isAmbiguousInstallation(err)) {
+      const error = toApiError(err);
+      throw new ApiError(error.code, error.message);
+    }
     return DEFAULT_ARGOCD_NAMESPACE;
   }
 }
@@ -135,7 +159,7 @@ async function uiScheme(clusterId: ClusterId, namespace: string): Promise<UrlSch
 /**
  * Opens the Argo CD web UI in the system browser at `path` (e.g. `/applications/argocd/guestbook`), forwarding a
  * local port to `argocd-server` first unless such a forward is already running. Rejects, opening nothing, when the
- * backend cannot tell which of several namespaces is the installation.
+ * backend cannot tell which of several namespaces is the installation (the caller offers the choice).
  */
 export async function openArgoUi(clusterId: ClusterId, path = ""): Promise<void> {
   const namespace = await argocdNamespace(clusterId);

@@ -131,13 +131,31 @@ pub struct ArgoLogoutOptions {
     pub forget: bool,
 }
 
+/// The namespace of the Argo CD installation the user chose for the cluster (`clusters[id].argocdNamespace` in the
+/// settings, written by the frontend when several namespaces looked like one). Only a hint: the core takes it only
+/// when it is one of the candidates it found itself ([`argocd::find_server`]).
+fn chosen_namespace(state: &AppState, cluster: &ClusterId) -> Option<String> {
+    state
+        .settings
+        .get()
+        .clusters
+        .get(cluster.as_str())
+        .and_then(|c| c.argocd_namespace.clone())
+        .map(|ns| ns.trim().to_owned())
+        .filter(|ns| !ns.is_empty())
+}
+
 /// Whether Argo CD is signed in for the cluster, and how. Does not sign in.
 #[tauri::command]
 pub async fn argocd_status(
     state: State<'_, AppState>,
     cluster_id: ClusterId,
 ) -> Result<ArgoStatus, CoreError> {
-    state.argocd.status(&state.clusters, &cluster_id).await
+    let chosen = chosen_namespace(&state, &cluster_id);
+    state
+        .argocd
+        .status(&state.clusters, &cluster_id, chosen.as_deref())
+        .await
 }
 
 /// Signs in with what the user typed; `remember` saves it in the OS credential store.
@@ -147,7 +165,10 @@ pub async fn argocd_login(
     cluster_id: ClusterId,
     login: ArgoLogin,
 ) -> Result<ArgoStatus, CoreError> {
-    let call = state.argocd.login(&state.clusters, &cluster_id, login);
+    let chosen = chosen_namespace(&state, &cluster_id);
+    let call = state
+        .argocd
+        .login(&state.clusters, &cluster_id, chosen.as_deref(), login);
     with_timeout(ARGO_TIMEOUT, "signing in to Argo CD", call).await
 }
 
@@ -159,9 +180,15 @@ pub async fn argocd_logout(
     cluster_id: ClusterId,
     options: ArgoLogoutOptions,
 ) -> Result<ArgoStatus, CoreError> {
+    let chosen = chosen_namespace(&state, &cluster_id);
     state
         .argocd
-        .logout(&state.clusters, &cluster_id, options.forget)
+        .logout(
+            &state.clusters,
+            &cluster_id,
+            chosen.as_deref(),
+            options.forget,
+        )
         .await
 }
 
@@ -173,7 +200,10 @@ pub async fn argocd_diff(
     cluster_id: ClusterId,
     app: ObjectRef,
 ) -> Result<Vec<ManagedResource>, CoreError> {
-    let call = state.argocd.diff(&state.clusters, &cluster_id, &app);
+    let chosen = chosen_namespace(&state, &cluster_id);
+    let call = state
+        .argocd
+        .diff(&state.clusters, &cluster_id, chosen.as_deref(), &app);
     with_timeout(ARGO_TIMEOUT, "reading the Argo CD diff", call).await
 }
 
@@ -276,6 +306,8 @@ pub struct ArgoSessions {
 #[derive(Default)]
 struct ArgoConn {
     server: Option<ArgoServer>,
+    /// The installation namespace the user chose ([`chosen_namespace`]) that `server` was looked up with.
+    chosen: Option<String>,
     /// The Kubernetes API server URL of the cluster: what saved logins are keyed by.
     api_server: Option<String>,
     /// Id of the forward to `argocd-server` and the client on its local port.
@@ -341,14 +373,18 @@ impl ArgoSessions {
         Arc::clone(lock(&self.clusters).entry(cluster.clone()).or_default())
     }
 
+    /// `chosen` (here and in the other calls) is the installation namespace the user chose; see
+    /// [`ArgoSessions::choose`].
     pub async fn status(
         &self,
         mgr: &ClusterManager,
         cluster: &ClusterId,
+        chosen: Option<&str>,
     ) -> Result<ArgoStatus, CoreError> {
         let conn = self.conn(cluster);
         let mut conn = conn.lock().await;
-        let server = server(&mut conn, mgr, cluster).await?;
+        self.choose(&mut conn, mgr, cluster, chosen).await?;
+        let server = self.server(&mut conn, mgr, cluster).await?;
         let namespace = server.namespace;
         let options = argocd::login_options(mgr, cluster, &namespace).await?;
         let api_server = api_server(&mut conn, mgr, cluster)?;
@@ -374,6 +410,7 @@ impl ArgoSessions {
         &self,
         mgr: &ClusterManager,
         cluster: &ClusterId,
+        chosen: Option<&str>,
         login: ArgoLogin,
     ) -> Result<ArgoStatus, CoreError> {
         let credentials = credentials_of(login.clone())?;
@@ -381,8 +418,9 @@ impl ArgoSessions {
         {
             let conn = self.conn(cluster);
             let mut conn = conn.lock().await;
+            self.choose(&mut conn, mgr, cluster, chosen).await?;
             let client = self.client(&mut conn, mgr, cluster).await?;
-            let namespace = server(&mut conn, mgr, cluster).await?.namespace;
+            let namespace = self.server(&mut conn, mgr, cluster).await?.namespace;
             let api_server = api_server(&mut conn, mgr, cluster)?;
             let session = match client.login(&credentials).await {
                 Ok(session) => session,
@@ -410,7 +448,7 @@ impl ArgoSessions {
                 signed.source = login_source(login.remember, save_error.as_deref());
             }
         }
-        let mut status = self.status(mgr, cluster).await?;
+        let mut status = self.status(mgr, cluster, chosen).await?;
         status.save_error = save_error;
         Ok(status)
     }
@@ -451,12 +489,14 @@ impl ArgoSessions {
         &self,
         mgr: &ClusterManager,
         cluster: &ClusterId,
+        chosen: Option<&str>,
         forget: bool,
     ) -> Result<ArgoStatus, CoreError> {
         {
             let conn = self.conn(cluster);
             let mut conn = conn.lock().await;
-            let namespace = server(&mut conn, mgr, cluster).await?.namespace;
+            self.choose(&mut conn, mgr, cluster, chosen).await?;
+            let namespace = self.server(&mut conn, mgr, cluster).await?.namespace;
             conn.session = None;
             conn.typed = None;
             conn.signed_out = true;
@@ -469,17 +509,19 @@ impl ArgoSessions {
                 self.forget(cluster, &api_server, &namespace).await?;
             }
         }
-        self.status(mgr, cluster).await
+        self.status(mgr, cluster, chosen).await
     }
 
     pub async fn diff(
         &self,
         mgr: &ClusterManager,
         cluster: &ClusterId,
+        chosen: Option<&str>,
         app: &ObjectRef,
     ) -> Result<Vec<ManagedResource>, CoreError> {
         let conn = self.conn(cluster);
         let mut conn = conn.lock().await;
+        self.choose(&mut conn, mgr, cluster, chosen).await?;
         let namespace = app.namespace.as_deref().filter(|ns| !ns.is_empty());
         let had_session = conn.session.is_some();
         let (client, session) = self.signed_in(&mut conn, mgr, cluster).await?;
@@ -532,7 +574,7 @@ impl ArgoSessions {
         if let Some(signed) = &conn.session {
             return Ok((client, signed.session.clone()));
         }
-        let namespace = server(conn, mgr, cluster).await?.namespace;
+        let namespace = self.server(conn, mgr, cluster).await?.namespace;
         let mut candidates = Vec::new();
         if let Some(typed) = &conn.typed {
             candidates.push(Candidate {
@@ -626,6 +668,57 @@ impl ArgoSessions {
         Ok(())
     }
 
+    /// The server of the cluster, found once per connection (and choice, [`ArgoSessions::choose`]).
+    async fn server(
+        &self,
+        conn: &mut ArgoConn,
+        mgr: &ClusterManager,
+        cluster: &ClusterId,
+    ) -> Result<ArgoServer, CoreError> {
+        if let Some(server) = &conn.server {
+            return Ok(server.clone());
+        }
+        let server = argocd::find_server(mgr, cluster, conn.chosen.as_deref()).await?;
+        conn.server = Some(server.clone());
+        Ok(server)
+    }
+
+    /// Takes the installation namespace the user chose. When it changed since the server was found, the server is
+    /// looked up again (the core takes the choice only among the candidates it finds); when that gives another
+    /// server, everything of the old one ends — its forward, session, typed login and refusals — so nothing typed for
+    /// one installation goes to another.
+    async fn choose(
+        &self,
+        conn: &mut ArgoConn,
+        mgr: &ClusterManager,
+        cluster: &ClusterId,
+        chosen: Option<&str>,
+    ) -> Result<(), CoreError> {
+        if conn.chosen.as_deref() == chosen {
+            return Ok(());
+        }
+        conn.chosen = chosen.map(str::to_owned);
+        let Some(old) = conn.server.take() else {
+            return Ok(());
+        };
+        let found = argocd::find_server(mgr, cluster, chosen).await;
+        if found.as_ref().ok() == Some(&old) {
+            conn.server = Some(old);
+            return found.map(|_| ());
+        }
+        if let Some((id, _)) = conn.forward.take() {
+            let _ = self.forwarder.stop(&id).await;
+        }
+        conn.session = None;
+        conn.typed = None;
+        conn.signed_out = false;
+        conn.expired = false;
+        conn.refused.clear();
+        conn.last_refused.clear();
+        conn.server = Some(found?);
+        Ok(())
+    }
+
     /// The client on the forward to `argocd-server`, opening the forward when there is none (or it broke).
     async fn client(
         &self,
@@ -633,7 +726,7 @@ impl ArgoSessions {
         mgr: &ClusterManager,
         cluster: &ClusterId,
     ) -> Result<ArgoClient, CoreError> {
-        let server = server(conn, mgr, cluster).await?;
+        let server = self.server(conn, mgr, cluster).await?;
         if let Some((id, client)) = &conn.forward {
             let alive = self
                 .forwarder
@@ -773,20 +866,6 @@ where
             "sign in to Argo CD: there is no saved login and no standard secret with credentials"
         },
     ))
-}
-
-/// The server of the cluster, found once per connection.
-async fn server(
-    conn: &mut ArgoConn,
-    mgr: &ClusterManager,
-    cluster: &ClusterId,
-) -> Result<ArgoServer, CoreError> {
-    if let Some(server) = &conn.server {
-        return Ok(server.clone());
-    }
-    let server = argocd::find_server(mgr, cluster, None).await?;
-    conn.server = Some(server.clone());
-    Ok(server)
 }
 
 /// The Kubernetes API server URL of the cluster, read once per connection.
@@ -1376,13 +1455,21 @@ mod tests {
         };
         let password = initial_password(&state, &id).await;
 
-        let before = state.argocd.status(&state.clusters, &id).await.unwrap();
-        let diff = state
+        let before = state
             .argocd
-            .diff(&state.clusters, &id, &guestbook())
+            .status(&state.clusters, &id, None)
             .await
             .unwrap();
-        let after = state.argocd.status(&state.clusters, &id).await.unwrap();
+        let diff = state
+            .argocd
+            .diff(&state.clusters, &id, None, &guestbook())
+            .await
+            .unwrap();
+        let after = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
 
         assert!(!before.signed_in);
         assert!(!after.insecure, "the test installation runs with TLS");
@@ -1425,6 +1512,7 @@ mod tests {
             .login(
                 &state.clusters,
                 &id,
+                None,
                 ArgoLogin {
                     username: Some("admin".into()),
                     password: Some(SecretString::new(password.clone())),
@@ -1447,19 +1535,19 @@ mod tests {
         let (again, again_id) = gitops_state(next.path(), Arc::clone(&store)).await.unwrap();
         again
             .argocd
-            .diff(&again.clusters, &again_id, &guestbook())
+            .diff(&again.clusters, &again_id, None, &guestbook())
             .await
             .unwrap();
         let next_status = again
             .argocd
-            .status(&again.clusters, &again_id)
+            .status(&again.clusters, &again_id, None)
             .await
             .unwrap();
         assert_eq!(next_status.source, Some(CredentialSource::Saved));
 
         let out = state
             .argocd
-            .logout(&state.clusters, &id, true)
+            .logout(&state.clusters, &id, None, true)
             .await
             .unwrap();
         assert!(!out.signed_in);
@@ -1495,6 +1583,7 @@ mod tests {
             .login(
                 &state.clusters,
                 &id,
+                None,
                 login(Some("admin"), Some("not-the-password-42"), None),
             )
             .await
@@ -1504,6 +1593,7 @@ mod tests {
             .login(
                 &state.clusters,
                 &id,
+                None,
                 login(None, None, Some("not-a-token-42")),
             )
             .await
@@ -1541,7 +1631,7 @@ mod tests {
         by_token.remember = false;
         let status = state
             .argocd
-            .login(&state.clusters, &id, by_token)
+            .login(&state.clusters, &id, None, by_token)
             .await
             .unwrap();
         assert!(status.signed_in);
@@ -1559,21 +1649,25 @@ mod tests {
         };
         state
             .argocd
-            .diff(&state.clusters, &id, &guestbook())
+            .diff(&state.clusters, &id, None, &guestbook())
             .await
             .unwrap();
 
         state
             .argocd
-            .logout(&state.clusters, &id, false)
+            .logout(&state.clusters, &id, None, false)
             .await
             .unwrap();
         let err = state
             .argocd
-            .diff(&state.clusters, &id, &guestbook())
+            .diff(&state.clusters, &id, None, &guestbook())
             .await
             .unwrap_err();
-        let status = state.argocd.status(&state.clusters, &id).await.unwrap();
+        let status = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
 
         assert_eq!(err.code, ErrorCode::Unauthorized);
         assert!(!status.signed_in);
@@ -1597,13 +1691,17 @@ mod tests {
 
         state
             .argocd
-            .diff(&state.clusters, &id, &guestbook())
+            .diff(&state.clusters, &id, None, &guestbook())
             .await
             .unwrap();
-        let signed = state.argocd.status(&state.clusters, &id).await.unwrap();
+        let signed = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
         let out = state
             .argocd
-            .logout(&state.clusters, &id, false)
+            .logout(&state.clusters, &id, None, false)
             .await
             .unwrap();
 
@@ -1622,6 +1720,39 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_chosen_namespace_that_is_not_a_candidate_changes_nothing() {
+        let dirs = tempfile::tempdir().unwrap();
+        let (store, _saved) = mock_store();
+        let Some((state, id)) = gitops_state(dirs.path(), store).await else {
+            return;
+        };
+        state
+            .argocd
+            .diff(&state.clusters, &id, None, &guestbook())
+            .await
+            .unwrap();
+
+        let elsewhere = state
+            .argocd
+            .status(&state.clusters, &id, Some("kube-system"))
+            .await
+            .unwrap();
+        let same = state
+            .argocd
+            .status(&state.clusters, &id, Some("argocd"))
+            .await
+            .unwrap();
+
+        assert_eq!(elsewhere.namespace, "argocd");
+        assert!(
+            elsewhere.signed_in && same.signed_in,
+            "the same server keeps its session"
+        );
+        assert_eq!(state.argocd.forwards(), 1);
+        state.close_all();
+    }
+
+    #[tokio::test]
     async fn closing_the_cluster_ends_the_session_and_the_forward() {
         let dirs = tempfile::tempdir().unwrap();
         let (store, _saved) = mock_store();
@@ -1630,7 +1761,7 @@ mod tests {
         };
         state
             .argocd
-            .diff(&state.clusters, &id, &guestbook())
+            .diff(&state.clusters, &id, None, &guestbook())
             .await
             .unwrap();
         assert_eq!(state.argocd.forwards(), 1);
@@ -1638,7 +1769,11 @@ mod tests {
         state.close_cluster(&id);
 
         assert_eq!(state.argocd.forwards(), 0);
-        let status = state.argocd.status(&state.clusters, &id).await.unwrap();
+        let status = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
         assert!(!status.signed_in, "the session ends with the cluster");
         state.close_all();
     }

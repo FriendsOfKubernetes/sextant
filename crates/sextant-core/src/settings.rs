@@ -52,6 +52,12 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub agent_access_unrecognised: Option<serde_json::Value>,
+    /// The namespace of the Argo CD installation the user chose when several namespaces looked like one. Owned by
+    /// the frontend; the backend takes it only when it is one of the candidates it found itself (ADR-0032). Left out
+    /// of the file when there is none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub argocd_namespace: Option<String>,
 }
 
 /// `ClusterSettings` as stored, with `agentAccess` still unread.
@@ -67,6 +73,7 @@ struct StoredClusterSettings {
     icon: Option<ClusterIcon>,
     agent_access: Option<serde_json::Value>,
     agent_access_unrecognised: Option<serde_json::Value>,
+    argocd_namespace: Option<String>,
 }
 
 impl<'de> Deserialize<'de> for ClusterSettings {
@@ -94,6 +101,7 @@ impl<'de> Deserialize<'de> for ClusterSettings {
             icon: stored.icon,
             agent_access,
             agent_access_unrecognised,
+            argocd_namespace: stored.argocd_namespace,
         })
     }
 }
@@ -872,6 +880,35 @@ mod tests {
                 data_url: "data:image/png;base64,iVBORw0KGgo=".to_owned()
             })
         );
+    }
+
+    #[test]
+    fn the_chosen_argocd_namespace_round_trips_through_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let (path, store) = store_in(&dir);
+        store
+            .update(|s| {
+                s.clusters.insert(
+                    "c1".to_owned(),
+                    ClusterSettings {
+                        argocd_namespace: Some("gitops".to_owned()),
+                        ..Default::default()
+                    },
+                );
+                s.clusters
+                    .insert("c2".to_owned(), ClusterSettings::default());
+            })
+            .unwrap();
+
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["clusters"]["c1"]["argocdNamespace"], "gitops");
+
+        assert!(json["clusters"]["c2"].get("argocdNamespace").is_none());
+
+        let s = SettingsStore::open(path).get();
+        assert_eq!(s.clusters["c1"].argocd_namespace.as_deref(), Some("gitops"));
+        assert_eq!(s.clusters["c2"].argocd_namespace, None);
     }
 
     #[test]

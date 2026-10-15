@@ -34,4 +34,10 @@ agentAccess: ClusterAccess,
  * value back under `agentAccess` on every write, until the user resets the access or chooses a set. Owned by the
  * frontend, like `agent_access`.
  */
-agentAccessUnrecognised?: JsonValue, };
+agentAccessUnrecognised?: JsonValue, 
+/**
+ * The namespace of the Argo CD installation the user chose when several namespaces looked like one. Owned by
+ * the frontend; the backend takes it only when it is one of the candidates it found itself (ADR-0032). Left out
+ * of the file when there is none.
+ */
+argocdNamespace?: string | null, };
