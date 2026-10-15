@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { EditorView } from "codemirror";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ChartHit, HelmRelease, HelmReleaseDetail, HelmRepo, HelmStatus, KubeObject } from "../../api";
+import type { ChartHit, HelmRelease, HelmReleaseDetail, HelmRepo, HelmStatus, KubeObject, WatchSpec } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { getPage, getPages } from "../../layout/pages";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
@@ -67,7 +67,20 @@ function secret(name: string, revision: number): KubeObject {
 let wb: WatchBackend;
 let releases: HelmRelease[];
 
+/** The release Secrets the watch lists first, as the backend sends its first snapshot right after the start. */
+let firstSnapshot: KubeObject[] | null;
+
 function helmBackend(status = HELM_OK) {
+  wb.backend.on("watch_start", (args) => {
+    const id = args.streamId as string;
+    const spec = args.spec as WatchSpec;
+    wb.specs.set(id, spec);
+    if (firstSnapshot && spec.kind.kind === "Secret") {
+      const items = firstSnapshot;
+      act(() => wb.backend.emit(`watch:${id}`, { type: "snapshot", items }));
+    }
+    return id;
+  });
   wb.backend.on("helm_status", () => status);
   wb.backend.on("helm_releases", () => structuredClone(releases));
   wb.backend.on("helm_release_detail", () => structuredClone(webDetail));
@@ -83,6 +96,7 @@ beforeEach(async () => {
   resetHelmStatus();
   wb = watchBackend();
   releases = [web, db];
+  firstSnapshot = [secret("web", 2), secret("db", 1)];
   await selectNamespaces("c1", ["apps"]);
 });
 
@@ -167,6 +181,38 @@ describe("Releases", () => {
     emitSnapshot(wb, id, [secret("web", 2), secret("db", 1), secret("cache", 1)]);
     await waitFor(() => expect(rows(table)).toHaveLength(3));
     expect(within(table).getByText("redis")).toBeInTheDocument();
+  });
+
+  it("reads the releases once on open: after the watch's first snapshot, not before it as well", async () => {
+    firstSnapshot = null;
+    helmBackend();
+    renderPage("helm-releases");
+    const id = await watchOf(wb, "Secret");
+    // Until the watch has listed the Secrets, the list would only be read again as soon as it has.
+    expect(calls("helm_releases")).toHaveLength(0);
+    emitSnapshot(wb, id, [secret("web", 2), secret("db", 1)]);
+    const table = await screen.findByRole("table", { name: "Releases" });
+    await waitFor(() => expect(rows(table)).toHaveLength(2));
+    expect(calls("helm_releases")).toHaveLength(1);
+  });
+
+  it("reads the releases once when the watch's snapshot comes with its start", async () => {
+    helmBackend();
+    renderPage("helm-releases");
+    const table = await screen.findByRole("table", { name: "Releases" });
+    await waitFor(() => expect(rows(table)).toHaveLength(2));
+    expect(calls("helm_releases")).toHaveLength(1);
+  });
+
+  it("still reads the releases when the watch cannot list the Secrets", async () => {
+    firstSnapshot = null;
+    helmBackend();
+    renderPage("helm-releases");
+    const id = await watchOf(wb, "Secret");
+    act(() => wb.backend.emit(`watch:${id}`, { type: "error", code: "forbidden", message: "secrets is forbidden" }));
+    const table = await screen.findByRole("table", { name: "Releases" });
+    await waitFor(() => expect(rows(table)).toHaveLength(2));
+    expect(calls("helm_releases")).toHaveLength(1);
   });
 
   it("shows the release's values, manifest, notes and history; values and manifest only after Show", async () => {

@@ -397,6 +397,35 @@ async fn list_revision_metadata(
     Ok(list.items.into_iter().map(|item| item.metadata).collect())
 }
 
+/// A release Secret by name, `None` when it does not exist. When the GET is refused (RBAC may grant `list` on
+/// Secrets without `get`, and Helm itself only lists them), the same Secret is read through a list with a field
+/// selector on its name.
+async fn get_release_secret(api: &Api<Secret>, name: &str) -> CoreResult<Option<Secret>> {
+    let refused = match api.get_opt(name).await {
+        Ok(found) => return Ok(found),
+        Err(e) => CoreError::from(e),
+    };
+    if refused.code != ErrorCode::Forbidden {
+        return Err(refused);
+    }
+    let params = ListParams::default().fields(&format!("metadata.name={name}"));
+    match api.list(&params).await {
+        Ok(list) => Ok(list
+            .items
+            .into_iter()
+            .find(|s| s.metadata.name.as_deref() == Some(name))),
+        Err(e) => {
+            let err = CoreError::from(e);
+            // Not even listed by name: the GET's refusal says more.
+            Err(if err.code == ErrorCode::Forbidden {
+                refused
+            } else {
+                err
+            })
+        }
+    }
+}
+
 /// The release and revision a release Secret holds: its `name` and `version` labels, else its name
 /// `sh.helm.release.v1.<release>.v<revision>`.
 fn release_of(meta: &ObjectMeta) -> Option<(String, i32)> {
@@ -499,7 +528,7 @@ async fn read_latest(
         let release = match known {
             Some(release) => release,
             None => {
-                let Some(secret) = api.get_opt(&meta.secret).await? else {
+                let Some(secret) = get_release_secret(&api, &meta.secret).await? else {
                     continue;
                 };
                 let release = is_release_secret(&secret)
@@ -666,9 +695,17 @@ pub(crate) async fn stored_release(
         Some(rev) => {
             let client = mgr.client(cluster)?;
             let api: Api<Secret> = Api::namespaced(client, ns);
-            let secret = api
-                .get(&format!("sh.helm.release.v1.{name}.v{rev}"))
-                .await?;
+            let secret_name = format!("sh.helm.release.v1.{name}.v{rev}");
+            let secret = get_release_secret(&api, &secret_name)
+                .await?
+                .ok_or_else(|| {
+                    CoreError::new(
+                        ErrorCode::NotFound,
+                        format!(
+                            "revision {rev} of Helm release {name} not found in namespace {ns}"
+                        ),
+                    )
+                })?;
             decode_secret(&secret)
         }
         None => {
@@ -979,6 +1016,24 @@ mod tests {
 
         /// Like `serve`, with revisions the test may change meanwhile.
         async fn serve_changing(stored: Arc<Mutex<Vec<Revision>>>) -> FakeApi {
+            serve_with(stored, true).await
+        }
+
+        /// Like `serve`, for a user allowed to list Secrets but not to get them: every single-Secret GET is 403.
+        async fn serve_without_get(stored: Vec<Revision>) -> FakeApi {
+            serve_with(Arc::new(Mutex::new(stored)), false).await
+        }
+
+        /// The value of `fieldSelector=metadata.name=<name>` in a query, if any.
+        fn name_selector(query: &str) -> Option<String> {
+            query
+                .split('&')
+                .find_map(|p| p.strip_prefix("fieldSelector="))
+                .map(|v| v.replace("%3D", "=").replace("%3d", "="))
+                .and_then(|v| v.strip_prefix("metadata.name=").map(str::to_owned))
+        }
+
+        async fn serve_with(stored: Arc<Mutex<Vec<Revision>>>, get_allowed: bool) -> FakeApi {
             FakeApi::start(move |req: &Request| {
                 let stored = stored.lock().unwrap().clone();
                 let path = req.path.as_str();
@@ -994,8 +1049,18 @@ mod tests {
                     None if path == "/api/v1/secrets" => (None, None),
                     None => return Reply::not_found(),
                 };
-                let in_scope = |r: &&Revision| namespace.is_none_or(|ns| ns == r.namespace);
+                let by_name = name_selector(&req.query);
+                let in_scope = |r: &&Revision| {
+                    namespace.is_none_or(|ns| ns == r.namespace)
+                        && by_name.as_ref().is_none_or(|n| *n == r.secret_name())
+                };
                 if let Some(name) = name {
+                    if !get_allowed {
+                        return Reply::json(
+                            403,
+                            r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","code":403,"message":"secrets is forbidden: cannot get resource"}"#,
+                        );
+                    }
                     return match stored.iter().filter(in_scope).find(|r| r.secret_name() == name) {
                         Some(r) => Reply::json(200, r.secret().to_string()),
                         None => Reply::not_found(),
@@ -1200,6 +1265,33 @@ mod tests {
                     "sh.helm.release.v1.web.v3",
                 ]
             );
+        }
+
+        #[tokio::test]
+        async fn secrets_that_may_be_listed_but_not_got_are_read_through_a_list_by_name() {
+            let api = serve_without_get(stored(&["a"], &["web"], 2)).await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let list = list_releases(&mgr, &id, Some(vec!["a".into()]))
+                .await
+                .unwrap();
+            assert_eq!(summary(&list), [("a", "web", 2, "deployed", None)]);
+            assert!(
+                api.requests()
+                    .iter()
+                    .any(|r| r.path == "/api/v1/namespaces/a/secrets"
+                        && name_selector(&r.query).as_deref() == Some("sh.helm.release.v1.web.v2")),
+                "the latest revision is listed by name"
+            );
+
+            let old = release_detail(&mgr, &id, "a", "web", Some(1))
+                .await
+                .unwrap();
+            assert_eq!(old.release.revision, 1);
+            let missing = release_detail(&mgr, &id, "a", "web", Some(9))
+                .await
+                .unwrap_err();
+            assert_eq!(missing.code, ErrorCode::NotFound);
         }
 
         #[tokio::test]

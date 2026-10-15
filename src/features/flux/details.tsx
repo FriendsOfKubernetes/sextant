@@ -186,10 +186,8 @@ function LoadingLine() {
   );
 }
 
-function everywhere(kind: KindRef | null, labelSelector: string | null = null, metadataOnly = false): WatchSpec | null {
-  return kind
-    ? { kind, namespaces: null, labelSelector, fieldSelector: null, ...(metadataOnly ? { metadataOnly } : {}) }
-    : null;
+function everywhere(kind: KindRef | null): WatchSpec | null {
+  return kind ? { kind, namespaces: null, labelSelector: null, fieldSelector: null } : null;
 }
 
 const refKey = (r: ObjectRef) => `${r.kind.group}/${r.kind.kind}/${r.namespace ?? ""}/${r.name}`;
@@ -249,29 +247,54 @@ const LABELLED_KINDS: KindRef[] = [
 ];
 
 /**
- * Rows of the objects of `kind` with the HelmRelease's labels, except those in `known` (from the inventory);
- * `onLoaded(kind)` once its list has come (or failed).
+ * Where a HelmRelease's objects are: its target namespace (`spec.targetNamespace`, else its own), and its storage
+ * namespace when that differs. `null` (every namespace) only for an object without a namespace.
+ */
+export function helmReleaseNamespaces(obj: KubeObject): string[] | null {
+  const own = obj.metadata?.namespace;
+  if (!own) return null;
+  const target = str(get(obj, "spec", "targetNamespace")) ?? own;
+  const storage = str(get(obj, "spec", "storageNamespace")) ?? str(get(obj, "status", "storageNamespace")) ?? own;
+  return target === storage ? [target] : [target, storage];
+}
+
+/** How the list of one labelled kind ended: its error, and the namespaces it may not list. */
+interface KindLoaded {
+  error: ApiError | null;
+  forbiddenIn: readonly string[];
+}
+
+const sameLoaded = (a: KindLoaded | undefined, b: KindLoaded) =>
+  a !== undefined && a.error === b.error && a.forbiddenIn.join(",") === b.forbiddenIn.join(",");
+
+/**
+ * Rows of the objects of `kind` with the HelmRelease's labels in `namespaces`, except those in `known` (from the
+ * inventory); `onLoaded(kind)` once its list has come (or failed).
  */
 function LabelledRows({
   clusterId,
   kind,
   selector,
+  namespaces,
   known,
   onLoaded,
 }: {
   clusterId: ClusterId;
   kind: KindRef;
   selector: string;
+  namespaces: string[] | null;
   known: Set<string>;
-  onLoaded: (kind: string, error: ApiError | null) => void;
+  onLoaded: (kind: string, loaded: KindLoaded) => void;
 }) {
   // Only names are needed: metadata, nothing of a Secret.
-  const { items, status: watchStatus, error } = useWatch(clusterId, everywhere(kind, selector, true));
+  const spec: WatchSpec = { kind, namespaces, labelSelector: selector, fieldSelector: null, metadataOnly: true };
+  const { items, status: watchStatus, error, forbidden } = useWatch(clusterId, spec);
   const loaded = watchStatus !== "loading";
   const failure = watchStatus === "error" ? (error ?? null) : null;
+  const forbiddenKey = (forbidden ?? []).join(",");
   useEffect(() => {
-    if (loaded) onLoaded(kind.kind, failure);
-  }, [loaded, failure, kind.kind, onLoaded]);
+    if (loaded) onLoaded(kind.kind, { error: failure, forbiddenIn: forbiddenKey ? forbiddenKey.split(",") : [] });
+  }, [loaded, failure, forbiddenKey, kind.kind, onLoaded]);
   const refs = [...items.values()]
     .map((o) => objectRefOf(o, kind))
     .filter((r) => !known.has(refKey(r)))
@@ -311,14 +334,29 @@ function HelmReleaseResourcesView({
   const inventory = inventoryOf(obj);
   const known = new Set(inventory.map(refKey));
   const selector = helmReleaseSelector(obj);
-  // The kinds whose list has come, with the error of the list if it ended in one.
-  const [loaded, setLoaded] = useState<ReadonlyMap<string, ApiError | null>>(() => new Map());
+  const namespaces = helmReleaseNamespaces(obj);
+  // The kinds whose list has come, with how it ended.
+  const [loaded, setLoaded] = useState<ReadonlyMap<string, KindLoaded>>(() => new Map());
   const onLoaded = useCallback(
-    (kind: string, error: ApiError | null) =>
-      setLoaded((prev) => (prev.get(kind) === error && prev.has(kind) ? prev : new Map(prev).set(kind, error))),
+    (kind: string, result: KindLoaded) =>
+      setLoaded((prev) => (sameLoaded(prev.get(kind), result) ? prev : new Map(prev).set(kind, result))),
     [],
   );
-  const failure = [...loaded.values()].find((error) => error !== null);
+  // A kind the user may not list is only that kind missing: the other kinds stay. Any other failure (the cluster
+  // cannot be reached, …) is shown with Retry.
+  const results = LABELLED_KINDS.flatMap((kind) => {
+    const result = loaded.get(kind.kind);
+    return result ? [{ kind: kind.kind, ...result }] : [];
+  });
+  const notAllowed = results.filter((r) => r.error?.code === "forbidden").map((r) => r.kind);
+  const partly = results
+    .filter((r) => r.error === null && r.forbiddenIn.length > 0)
+    .map((r) => `${r.kind}: ${t("resources:table.forbiddenIn", { namespaces: r.forbiddenIn.join(", ") })}`);
+  const unavailable = [
+    ...(notAllowed.length > 0 ? [t("resources:table.forbidden", { kind: notAllowed.join(", ") })] : []),
+    ...partly,
+  ];
+  const failure = results.find((r) => r.error !== null && r.error.code !== "forbidden")?.error;
   return (
     <Block title={t("flux:related.resources")}>
       <RefTable>
@@ -331,11 +369,17 @@ function HelmReleaseResourcesView({
             clusterId={clusterId}
             kind={kind}
             selector={selector}
+            namespaces={namespaces}
             known={known}
             onLoaded={onLoaded}
           />
         ))}
       </RefTable>
+      {unavailable.map((line) => (
+        <p key={line} className="dt-muted">
+          {line}
+        </p>
+      ))}
       {failure ? (
         <ErrorState error={failure} onRetry={onRetry} />
       ) : (

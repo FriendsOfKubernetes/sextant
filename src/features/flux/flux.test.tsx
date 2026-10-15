@@ -428,17 +428,53 @@ describe("related objects when a list fails", () => {
     await openDetails(helmRelease);
     const related = within(section("flux"));
     const selector = "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux";
-    emitWatchError(await watchOf(wb, "Secret", (s) => s.labelSelector === selector), "forbidden", "secrets is forbidden");
+    emitWatchError(await watchOf(wb, "Secret", (s) => s.labelSelector === selector), "unreachable", "connection refused");
 
     const alert = related.getByRole("alert");
-    expect(alert).toHaveTextContent("secrets is forbidden");
+    expect(alert).toHaveTextContent("connection refused");
     expect(related.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     // The inventory of the release is still listed.
+    expect(related.getByRole("button", { name: "Open Deployment podinfo-helm" })).toBeInTheDocument();
+  });
+
+  it("a HelmRelease shows a kind it may not list as unavailable and keeps the other kinds, without an error", async () => {
+    const release = copy(helmRelease);
+    delete (release.status as Record<string, unknown>).inventory;
+    await openDetails(release);
+    const related = within(section("flux"));
+    const selector = "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux";
+    const labelled = (kind: string) => watchOf(wb, kind, (s) => s.labelSelector === selector);
+    emitWatchError(await labelled("Secret"), "forbidden", "secrets is forbidden");
+    emitWatchError(await labelled("ServiceAccount"), "forbidden", "serviceaccounts is forbidden");
+    emitSnapshot(wb, await labelled("Deployment"), [helmDeployment]);
+    for (const kind of ["StatefulSet", "DaemonSet", "Job", "CronJob", "Service", "ConfigMap", "PersistentVolumeClaim"]) {
+      emitSnapshot(wb, await labelled(kind), []);
+    }
+    const ingress = await labelled("Ingress");
+    // Forbidden in one of the namespaces only: the rest of that kind is still listed.
+    act(() => wb.backend.emit(`watch:${ingress}`, { type: "forbidden", namespaces: ["sextant-flux"] }));
+    emitSnapshot(wb, ingress, []);
+
+    expect(related.queryByRole("alert")).toBeNull();
+    expect(related.queryByRole("status")).toBeNull();
+    expect(related.getByText("You don't have permission to list Secret, ServiceAccount")).toBeInTheDocument();
+    expect(related.getByText("Ingress: No permission in: sextant-flux")).toBeInTheDocument();
     expect(related.getByRole("button", { name: "Open Deployment podinfo-helm" })).toBeInTheDocument();
   });
 });
 
 describe("details of a HelmRelease", () => {
+  it("watch the labelled kinds only in the release's target and storage namespaces, never in the whole cluster", async () => {
+    const release = copy(helmRelease);
+    (release.spec as Record<string, unknown>).targetNamespace = "podinfo";
+    await openDetails(release);
+    const selector = "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux";
+    await watchOf(wb, "Ingress", (s) => s.labelSelector === selector);
+    const labelled = [...wb.specs.values()].filter((s) => s.labelSelector === selector);
+    expect(labelled).toHaveLength(11);
+    for (const spec of labelled) expect(spec.namespaces).toEqual(["podinfo", "sextant-flux"]);
+  });
+
   it("show the chart, its source and the HelmChart as links", async () => {
     await openDetails(helmRelease);
     const fields = within(section("fields"));
@@ -454,7 +490,7 @@ describe("details of a HelmRelease", () => {
     await openDetails(release);
     const selector = "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux";
     const id = await watchOf(wb, "Deployment", (s) => s.labelSelector === selector);
-    expect(wb.specs.get(id)?.namespaces).toBeNull();
+    expect(wb.specs.get(id)?.namespaces).toEqual(["sextant-flux"]);
     emitSnapshot(wb, id, [helmDeployment]);
     const resources = within(section("flux"));
     fireEvent.click(resources.getByRole("button", { name: "Open Deployment podinfo-helm" }));

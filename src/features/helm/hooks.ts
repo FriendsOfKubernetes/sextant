@@ -94,6 +94,9 @@ export function useHelmReleases(clusterId: ClusterId, namespaces: string[] | nul
         .join(","),
     [watch.items],
   );
+  // The list is read once the watch has its first snapshot (or has failed): reading before it would read the same
+  // releases again as soon as the snapshot changes `secretsKey`, and both reads run to the end in the backend.
+  const watchSettled = watch.status !== "loading";
   const [state, setState] = useState<{ releases: HelmRelease[]; loading: boolean; error: ApiError | null }>({
     releases: [],
     loading: true,
@@ -103,7 +106,7 @@ export function useHelmReleases(clusterId: ClusterId, namespaces: string[] | nul
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
-    if (nsKey === null) return;
+    if (nsKey === null || !watchSettled) return;
     let alive = true;
     const ns = JSON.parse(nsKey) as string[] | null;
     api.helm
@@ -117,7 +120,7 @@ export function useHelmReleases(clusterId: ClusterId, namespaces: string[] | nul
     return () => {
       alive = false;
     };
-  }, [clusterId, nsKey, secretsKey, tick]);
+  }, [clusterId, nsKey, secretsKey, watchSettled, tick]);
 
   return { ...state, refresh };
 }
