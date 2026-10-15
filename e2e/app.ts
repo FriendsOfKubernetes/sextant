@@ -96,3 +96,30 @@ export async function textOf(el: Element): Promise<string> {
   if (!(await el.isExisting())) return "";
   return browser.execute((node: HTMLElement) => node.innerText, await el.getElement());
 }
+
+/** Connects to `context` from the cluster rail and waits for its sections. */
+export async function connectTo(context: string): Promise<void> {
+  const rail = $('nav[aria-label="Clusters"]');
+  await click(context, rail);
+  await $('nav[aria-label="Sections"]').waitForDisplayed({ timeout: 60_000 });
+  await browser.waitUntil(async () => (await byName(context, rail).getAttribute("data-state")) === "connected", {
+    timeout: 60_000,
+    timeoutMsg: `${context} did not connect`,
+  });
+}
+
+/** The table row with a cell of exactly each of `cells` (e.g. a name and a namespace). */
+export function rowWith(...cells: string[]): Element {
+  const has = cells.map((c) => `.//*[normalize-space(text())='${c}']`).join(" and ");
+  return $(`//main//*[(self::tr or @role='row') and not(@aria-rowindex='1') and not(.//th) and ${has}]`);
+}
+
+/** Runs an action from the "⋮" menu of the row `target` (when its name alone is not unique). */
+export async function actionOfRow(target: Element, action: string): Promise<void> {
+  const button = target.$('button[aria-label^="Actions for"]');
+  await button.waitForClickable();
+  await button.click();
+  const menu = $("[role='menu']");
+  await menu.waitForDisplayed();
+  await menu.$(`[role='menuitem']*=${action}`).click();
+}

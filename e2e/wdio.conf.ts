@@ -6,17 +6,17 @@
 // Needs `tauri-driver` (`cargo install tauri-driver --locked`) and, on Linux, WebKitWebDriver (package
 // `webkit2gtk-driver`). The app runs with its own temporary config/data/cache directories (XDG_*), so the
 // developer's settings are not touched, and with KUBECONFIG pointing at the test cluster only.
-// SEXTANT_E2E_SKIP_BUILD=1 reuses target/debug/sextant.
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+// SEXTANT_E2E_SKIP_BUILD=1 reuses target/debug/sextant if e2e built it last (see build.ts), otherwise rebuilds it.
+import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { browser } from "@wdio/globals";
+import { APP, ensureApp } from "./build";
 import { ROOT, setUpCluster, tearDownCluster, testKubeconfig, toolPath } from "./cluster";
 
-const APP = path.join(ROOT, "target", "debug", process.platform === "win32" ? "sextant.exe" : "sextant");
 const DRIVER_PORT = 4444;
 let driver: ChildProcess | null = null;
 
@@ -47,7 +47,8 @@ function waitForPort(port: number, timeoutMs: number): Promise<void> {
 
 export const config: WebdriverIO.Config = {
   runner: "local",
-  specs: ["./specs/**/*.e2e.ts"],
+  // The main scenarios first (they take the README screenshot on a fresh profile), then the rest.
+  specs: ["./specs/sextant.e2e.ts", "./specs/**/*.e2e.ts"],
   maxInstances: 1,
   hostname: "127.0.0.1",
   port: DRIVER_PORT,
@@ -72,15 +73,7 @@ export const config: WebdriverIO.Config = {
     process.env.SEXTANT_E2E_HOME = home;
     process.env.SEXTANT_TEST_KUBECONFIG = testKubeconfig();
 
-    if (!process.env.SEXTANT_E2E_SKIP_BUILD) {
-      const build = spawnSync("npm", ["run", "tauri", "--", "build", "--debug", "--no-bundle"], {
-        cwd: ROOT,
-        stdio: "inherit",
-        env: { ...process.env, PATH: toolPath() },
-        shell: process.platform === "win32",
-      });
-      if (build.status !== 0) throw new Error("building the app failed");
-    }
+    ensureApp();
     setUpCluster(path.join(home, "helm"));
   },
 

@@ -10,7 +10,7 @@ First of all: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Run every
 - Everything at once (CI does the same): `npm run check` — file-name case collisions, `check:version`, fmt, clippy `-D warnings`, `scripts/check-core-deps.mjs`, Rust tests, TS type check against Rust, tsc (+ `e2e/`), eslint, vitest, `npm run sdk:check`. Green: Rust 659 tests, vitest 716, SDK 224.
 - Run: `npm run tauri dev` (Vite on 1420, `strictPort`)
 - Installers: `npm run tauri build` — needs the updater signing key (see Pitfalls); without the key: `npm run tauri build -- --config '{"bundle":{"createUpdaterArtifacts":false}}'`. Binary without a bundle: `npm run tauri -- build --debug --no-bundle` → `target/debug/sextant`
-- Trap: `npm run check` rebuilds `target/debug/sextant` WITHOUT the embedded frontend. Before `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` or running the binary by hand, run `npm run build && npm run tauri -- build --debug --no-bundle` again.
+- Trap: `npm run check` rebuilds `target/debug/sextant` WITHOUT the embedded frontend. e2e copes by itself: its own build stamps the binary (`target/debug/sextant.e2e-stamp`, size + mtime, `e2e/build.ts`), and with `SEXTANT_E2E_SKIP_BUILD=1` a missing or mismatched stamp makes it rebuild (it logs why). Before running the binary by hand, run `npm run build && npm run tauri -- build --debug --no-bundle` again.
 - On a loaded machine vitest can fail on its 5-second timeouts: `npx vitest run --maxWorkers=4`.
 - Version in all manifests: `npm run check:version`; match with the release tag: `node scripts/check-version.mjs --tag vX.Y.Z`
 - One test: `cargo test -p sextant-core <name>` · `cargo test -p sextant <name>` · `npx vitest run <file>`
@@ -20,7 +20,7 @@ First of all: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Run every
 - Load fixture (150 CRDs and 500 pods in the `sextant-load` namespace; needed by the test `the_first_nodes_come_within_2_seconds_on_a_big_cluster`, which is skipped without it): `scripts/fixtures/load/load.sh apply`, after measuring `scripts/fixtures/load/load.sh delete`
 - Core integration tests against a cluster: `SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --tests -- --test-threads=1`
 - GitOps integration tests (`crates/sextant-core/tests/gitops*.rs`) need `SEXTANT_TEST_GITOPS=1` and a cluster brought up with `--gitops`: `SEXTANT_TEST_GITOPS=1 SEXTANT_TEST_KUBECONFIG=$(scripts/test-cluster.sh kubeconfig) cargo test -p sextant-core --test gitops --test gitops_flux --test gitops_argocd --test gitops_argocd_diff -- --test-threads=1`; without `SEXTANT_TEST_GITOPS=1` they are skipped (and count as passed)
-- E2E (WebdriverIO + tauri-driver; needs `tauri-driver` and `webkit2gtk-driver`, and a cluster with `--prometheus`): `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` → 13 passing (the container-shell test is flaky, issue #107); without the variable it builds the debug binary itself (see the trap above). Failure screenshots are in `target/e2e/`. A run overwrites `docs/screenshot.png`: afterwards `git checkout -- docs/screenshot.png`.
+- E2E (WebdriverIO + tauri-driver; needs `tauri-driver` and `webkit2gtk-driver`, and a cluster with `--prometheus`): `SEXTANT_E2E_SKIP_BUILD=1 npm run e2e` → 13 passing (the container-shell test is flaky, issue #107), plus 5 GitOps scenarios (`e2e/specs/gitops.e2e.ts`: Flux list/details/suspend+resume, Argo CD list/details) on a cluster brought up with `--gitops` — without the Flux/Argo CD kinds they are skipped (pending); without the variable it builds the debug binary itself (see the trap above). Failure screenshots are in `target/e2e/`. A run overwrites `docs/screenshot.png`: afterwards `git checkout -- docs/screenshot.png`.
 
 ## Where things are
 
@@ -96,7 +96,7 @@ First of all: `export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`. Run every
 - E2E: `e2e/wdio.conf.ts` hardcodes the tauri-driver port 4444, the native port is not set (default 4445); if the ports are taken or coincide, the driver fails at start — `tauri-driver --port 4447 --native-port 4448` worked (not in the config). A run overwrites `docs/screenshot.png`.
 - E2E: WebKitWebDriver loses repeats and spaces in `browser.keys` (for text there is `typeText` in `e2e/app.ts`) and prints `/` and `:` wrongly — do not enter such characters through `browser.keys`.
 - CI (`ci.yml`) runs on push and PR to the `main` branch and manually, on ubuntu, macOS and Windows, `core.autocrlf false`. macOS and Windows cannot be checked here — CI only. What broke there and does not show on Linux: file names that differ only by case (caught by `scripts/check-case-collisions.mjs`), GNU-only utilities in test scripts (`stat -c`), `/proc`, `Path::is_absolute` by the host's rules, the path `tauri://localhost` in IPC tests (on Windows it is `http://tauri.localhost`), hashes of paths with `/`.
-- Release: a `v*` tag or a manual run `gh workflow run release.yml -f tag=vX.Y.Z` (rebuilds an existing tag without rewriting it). `release.yml` checks the tag against the version, builds .deb/.AppImage, a universal .dmg and .msi, assembles `latest.json` and publishes the release only if it has all platforms; the installers are not signed with OS certificates.
+- Release: a `v*` tag or a manual run `gh workflow run release.yml -f tag=vX.Y.Z` (rebuilds an existing tag without rewriting it). `release.yml` checks the tag against the version, builds .deb/.AppImage, a universal .dmg and .msi, assembles `latest.json` and publishes the release only if it has all platforms; on a rebuild of an already published release the build jobs do not touch `latest.json` (`includeUpdaterJson` off), the publish job refreshes its signatures from the `.sig` assets and swaps it in as `latest.json.new` → delete → rename (a leftover `latest.json.new` of a stopped run is picked up by a re-run); the installers are not signed with OS certificates.
 
 ## Environment
 
@@ -107,7 +107,7 @@ Values are stored nowhere; `.env.example` is only a list of names, and `.env` is
 - `SEXTANT_TEST_DIR` — directory of the test cluster files (default `~/.cache/sextant-test`)
 - `SEXTANT_TEST_DOCKER_RESTART` — lets tests stop and start the kind container
 - `SEXTANT_TEST_GITOPS` — `1` enables the GitOps integration tests (Flux and Argo CD; cluster `scripts/test-cluster.sh up --gitops`); without it they are skipped
-- `SEXTANT_E2E_SKIP_BUILD` — e2e uses the ready `target/debug/sextant`
+- `SEXTANT_E2E_SKIP_BUILD` — e2e uses the ready `target/debug/sextant` if its `sextant.e2e-stamp` (written by e2e's own build) still matches; otherwise it rebuilds
 - `SEXTANT_BINDINGS_OUT`, `SEXTANT_BINDINGS_COMMITTED` — directories for `scripts/bindings.mjs` (where ts-rs writes / where the committed files are); default `target/ts-bindings` and `src/api/generated`
 - `KUBECONFIG` — the app reads it as a kubeconfig source; in e2e it points only at the test cluster
 - `SHELL` — the local terminal's shell (Unix), otherwise `/bin/sh`

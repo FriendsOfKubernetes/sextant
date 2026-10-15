@@ -1,6 +1,8 @@
 # Flux fixtures for `scripts/test-cluster.sh up --gitops` (needs the Flux controllers and CRDs).
 # Sources and the objects that use them live in `sextant-flux`; the podinfo example
 # (https://github.com/stefanprodan/podinfo) is deployed into the same namespace.
+# Every source is pinned (a release tag, an exact chart version), so an upstream push cannot change what the tests
+# see; to move to a newer podinfo, bump the tag and the chart version together.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -15,7 +17,7 @@ spec:
   interval: 10m
   url: https://github.com/stefanprodan/podinfo
   ref:
-    branch: master
+    tag: "6.15.0"
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -51,7 +53,7 @@ spec:
   chart:
     spec:
       chart: podinfo
-      version: "6.x"
+      version: "6.15.0"
       sourceRef:
         kind: HelmRepository
         name: podinfo

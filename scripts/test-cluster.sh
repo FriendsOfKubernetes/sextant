@@ -135,11 +135,31 @@ wait_ready() {
   die "metrics-server did not start serving metrics"
 }
 
+# kind runs every node's kubelet as the host user's processes, so the host's inotify limits are theirs: with
+# the common default of 128 instances, `kubectl logs -f` fails with "failed to create fsnotify watcher: too
+# many open files" (the log follow tests then skip). Only warns; raising the limit needs root, done by hand.
+INOTIFY_MIN_INSTANCES=512
+INOTIFY_MIN_WATCHES=524288
+check_inotify() {
+  local dir=/proc/sys/fs/inotify instances watches
+  [[ -r "$dir/max_user_instances" && -r "$dir/max_user_watches" ]] || return 0
+  instances="$(cat "$dir/max_user_instances")"
+  watches="$(cat "$dir/max_user_watches")"
+  local low=()
+  ((instances < INOTIFY_MIN_INSTANCES)) && low+=("fs.inotify.max_user_instances=$INOTIFY_MIN_INSTANCES")
+  ((watches < INOTIFY_MIN_WATCHES)) && low+=("fs.inotify.max_user_watches=$INOTIFY_MIN_WATCHES")
+  ((${#low[@]})) || return 0
+  log "warning: low inotify limits (max_user_instances=$instances, max_user_watches=$watches);"
+  log "  following logs (kubectl logs -f) on the kind node may fail with \"too many open files\"."
+  log "  raise them (until reboot): sudo sysctl -w ${low[*]}"
+}
+
 cmd_up() {
   need kind
   need kubectl
   need docker
   need curl
+  check_inotify
   if cluster_exists; then
     log "cluster $CLUSTER_NAME already exists"
   else
@@ -214,6 +234,10 @@ install_gitops() {
   if ! kc -n sextant-flux wait --for condition=ready --timeout=180s \
     gitrepository/podinfo kustomization/podinfo helmrelease/podinfo-helm >/dev/null 2>&1; then
     log "warning: Flux fixtures are not Ready yet (kubectl -n sextant-flux get gitrepository,kustomization,helmrelease)"
+  fi
+  if ! kc -n argocd wait --for=jsonpath='{.status.sync.status}'=Synced --timeout=180s \
+    application/guestbook >/dev/null 2>&1; then
+    log "warning: the Argo CD fixture is not Synced yet (kubectl -n argocd get application guestbook)"
   fi
 }
 

@@ -84,3 +84,13 @@ export function tearDownCluster(helmHome: string): void {
 export function webPod(): string {
   return kubectl("-n", NAMESPACE, "get", "pods", "-l", "app=e2e-web", "-o", "jsonpath={.items[0].metadata.name}").trim();
 }
+
+/** Whether the test cluster serves the CRD `name` (e.g. `kustomizations.kustomize.toolkit.fluxcd.io`). */
+export function hasCrd(name: string): boolean {
+  try {
+    kubectl("get", "crd", name, "-o", "name");
+    return true;
+  } catch {
+    return false;
+  }
+}

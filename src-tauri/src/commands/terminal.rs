@@ -224,17 +224,26 @@ fn is_placeholder_of(session: &TermSession, cancel: &node_shell::StartCancel) ->
 #[tauri::command]
 pub async fn terminal_start<R: Runtime>(
     app: AppHandle<R>,
-    state: State<'_, AppState>,
     cluster_id: Option<ClusterId>,
     cols: u16,
     rows: u16,
     stream_id: String,
 ) -> Result<(), CoreError> {
-    let shell = pty::user_shell();
-    match cluster_id {
-        Some(cluster) => start_local_terminal(&app, &state, stream_id, cluster, &shell, cols, rows),
-        None => start_plain_terminal(&app, &state, stream_id, &shell, cols, rows),
-    }
+    // Spawning blocks (forking the shell, and for zsh a probe of `/etc/zshenv` that may take up to 2 s), so it runs
+    // on a blocking thread rather than an async worker. The order of the start is unchanged: the generation is taken,
+    // the shell spawned and the session registered, then a reset that came meanwhile undoes it.
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let shell = pty::user_shell();
+        match cluster_id {
+            Some(cluster) => {
+                start_local_terminal(&app, &state, stream_id, cluster, &shell, cols, rows)
+            }
+            None => start_plain_terminal(&app, &state, stream_id, &shell, cols, rows),
+        }
+    })
+    .await
+    .map_err(|e| CoreError::other(e.to_string()))?
 }
 
 /// Starts `shell` without a cluster: this process's environment less `KUBECONFIG` and the Helm overrides
@@ -919,15 +928,17 @@ mod tests {
         assert!(state.sessions.channels("local-4").is_some());
         state.close_all();
         assert!(state.sessions.is_empty());
-        // The window closed: no copy of these credentials is left in the temp directory, right away.
+        // The window closed: no copy of these credentials is left in the temp directory, right away. Only this
+        // process's files count (their names carry its PID): another test run or app instance may hold its own.
+        let own = format!(
+            "{}{}-",
+            sextant_core::kubeconfig::TEMP_KUBECONFIG_PREFIX,
+            std::process::id()
+        );
         let leftovers = std::fs::read_dir(std::env::temp_dir())
             .unwrap()
             .filter_map(|e| e.ok())
-            .filter(|e| {
-                e.file_name()
-                    .to_string_lossy()
-                    .starts_with("sextant-kubeconfig-")
-            })
+            .filter(|e| e.file_name().to_string_lossy().starts_with(&own))
             .filter(|e| std::fs::read_to_string(e.path()).is_ok_and(|t| t.contains(FIXTURE_TOKEN)))
             .count();
         assert_eq!(leftovers, 0, "a temp kubeconfig outlived close_all");
@@ -1007,6 +1018,35 @@ mod tests {
         let mut text = String::new();
         read_text(&events, &mut text, |t| t.contains("N=42"));
         assert!(text.contains("KC=[] N=42"), "{text:?}");
+        state.close_all();
+        assert!(state.sessions.is_empty());
+    }
+
+    /// The command spawns the shell off the async workers (a zsh probe may block for seconds) and still registers the
+    /// session before it returns; a malformed id is refused the same way.
+    #[cfg(unix)]
+    #[test]
+    fn terminal_start_registers_the_session_spawned_on_a_blocking_thread() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        tauri::async_runtime::block_on(terminal_start(
+            app.handle().clone(),
+            None,
+            80,
+            24,
+            "plain-cmd".into(),
+        ))
+        .unwrap();
+        assert!(state.sessions.channels("plain-cmd").is_some());
+        let err = tauri::async_runtime::block_on(terminal_start(
+            app.handle().clone(),
+            None,
+            80,
+            24,
+            "bad id".into(),
+        ))
+        .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
         state.close_all();
         assert!(state.sessions.is_empty());
     }
