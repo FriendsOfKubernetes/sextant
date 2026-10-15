@@ -36,6 +36,7 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation) — installers, unsigned builds, updates
 - [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, cloud clusters (EKS, GKE, AKS), connecting, the window
 - [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells (containers and nodes), port forwarding, Helm, Flux, Argo CD
+- [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
 - [Extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Extensions) and [Writing extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Writing-extensions) — your own pages, panels, actions and columns in isolated frames, with permissions you agree to; the SDK in `sdk/`
 - [Settings](https://github.com/FriendsOfKubernetes/sextant/wiki/Settings) and [Troubleshooting](https://github.com/FriendsOfKubernetes/sextant/wiki/Troubleshooting)
