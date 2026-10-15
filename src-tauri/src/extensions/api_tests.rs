@@ -828,6 +828,94 @@ async fn streams_end_when_their_extension_is_disabled_removed_or_granted_anythin
 }
 
 #[tokio::test]
+async fn host_events_are_forwarded_at_once_and_streams_are_checked_off_the_emitting_thread() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+    let (stream, task) = stream_of(&env, "widgets", "c1");
+    env.api.streams.insert("w-1".into(), stream).unwrap();
+    // Its folder's manifest broke: only reading the folder again finds that it is no longer active.
+    std::fs::write(
+        env.dir
+            .path()
+            .join("ext")
+            .join("widgets")
+            .join(sextant_core::extensions::MANIFEST_FILE),
+        "{}",
+    )
+    .unwrap();
+    let reads = Arc::new(Mutex::new(Vec::new()));
+    let (reads_in, host) = (Arc::clone(&reads), env.host.downgrade());
+    env.host.set_read_hook(Arc::new(move |id| {
+        reads_in.lock().unwrap().push(std::thread::current().id());
+        if let Some(host) = host.upgrade() {
+            host.forget(id);
+        }
+    }));
+    env.host.forget("widgets");
+    let forwarded = Arc::new(Mutex::new(Vec::new()));
+    let forwarded_in = Arc::clone(&forwarded);
+    let emit = host_emitter(
+        Arc::clone(&env.api.streams),
+        env.host.downgrade(),
+        move |_event| {
+            forwarded_in
+                .lock()
+                .unwrap()
+                .push(std::thread::current().id())
+        },
+    );
+
+    // The host emits from threads of its own (a folder watcher, a command), outside any runtime.
+    let emitting = std::thread::spawn(move || {
+        emit(HostEvent::ListChanged);
+        std::thread::current().id()
+    })
+    .join()
+    .unwrap();
+
+    assert_eq!(*forwarded.lock().unwrap(), vec![emitting]);
+    assert!(
+        aborted(task).await,
+        "the stream of a broken extension stops"
+    );
+    assert!(env.api.streams.is_empty());
+    let reads = reads.lock().unwrap();
+    assert!(!reads.is_empty(), "the check read the folder");
+    assert!(
+        !reads.contains(&emitting),
+        "the folder was read on the thread that emits the host's events"
+    );
+}
+
+#[tokio::test]
+async fn a_disable_stops_the_streams_even_when_re_enabled_before_the_look() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+    wire_host(&env);
+    let (w, task) = stream_of(&env, "widgets", "c1");
+    env.api.streams.insert("w-1".into(), w).unwrap();
+    // Every look at the extension reads its folder again, and a look off this thread is slow.
+    let (host, here) = (env.host.downgrade(), std::thread::current().id());
+    env.host.set_read_hook(Arc::new(move |id| {
+        if std::thread::current().id() != here {
+            std::thread::sleep(Duration::from_millis(300));
+        }
+        if let Some(host) = host.upgrade() {
+            host.forget(id);
+        }
+    }));
+    env.host.forget("widgets");
+
+    env.set_enabled("widgets", false);
+    // Gone at once, before any look: re-enabled right away, it must not stay.
+    assert!(env.api.streams.is_empty());
+    env.set_enabled("widgets", true);
+
+    assert!(aborted(task).await, "the disabled extension's stream goes");
+    assert!(env.api.streams.is_empty());
+}
+
+#[tokio::test]
 async fn a_dev_folder_that_asks_for_more_stops_its_streams_until_consent() {
     let env = Env::new();
     env.install("widgets", perms(all_clusters(), &[], &["read"], false));

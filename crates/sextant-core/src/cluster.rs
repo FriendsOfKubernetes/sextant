@@ -21,7 +21,7 @@ use tokio::sync::broadcast;
 use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
-use crate::kubeconfig::{ClusterId, KubeconfigRegistry, kubeconfig_error};
+use crate::kubeconfig::{ClusterId, KubeconfigRegistry, ServerBinding, kubeconfig_error};
 use crate::resources::{KindRef, ResourceKind};
 
 /// How long a TCP/TLS connect may take.
@@ -110,6 +110,8 @@ struct Entry {
     client: Option<kube::Client>,
     /// The number of the connection `client` belongs to ([`ClusterManager::connection`]); 0 without a client.
     connection: u64,
+    /// The server and CA of the kubeconfig entry `client` was made with; `None` when they could not be read.
+    binding: Option<ServerBinding>,
     kinds: Option<Vec<ResourceKind>>,
     /// The discovery that is running; every caller of `kinds` awaits this one.
     discovery: Option<Discovery>,
@@ -164,21 +166,23 @@ impl ClusterManager {
             entry.kinds = None;
             entry.discovery = None;
             Some(match &result {
-                Ok(client) => {
+                Ok((client, binding)) => {
                     entry.client = Some(client.clone());
+                    entry.binding = binding.clone();
                     entry.connection = self.inner.connections.fetch_add(1, Ordering::SeqCst) + 1;
                     entry.state = ConnectionState::Connected;
                     entry.state.clone()
                 }
                 Err(err) => {
                     entry.client = None;
+                    entry.binding = None;
                     entry.connection = 0;
                     entry.state = ConnectionState::Error(err.clone());
                     entry.state.clone()
                 }
             })
         });
-        if let (Some(ConnectionState::Connected), Ok(client)) = (&applied, &result)
+        if let (Some(ConnectionState::Connected), Ok((client, _))) = (&applied, &result)
             && self.inner.sweep_node_shells.load(Ordering::SeqCst)
         {
             let client = client.clone();
@@ -241,6 +245,17 @@ impl ClusterManager {
             .ok_or_else(|| not_connected(id))
     }
 
+    /// The [`ServerBinding`] of the kubeconfig entry the cluster's current connection was made with — not what the
+    /// file says now, which may have been edited since — or `None` when it could not be read then. `notFound` when not
+    /// connected.
+    pub fn server_binding(&self, id: &ClusterId) -> CoreResult<Option<ServerBinding>> {
+        self.lock()
+            .get(id)
+            .filter(|e| e.client.is_some())
+            .map(|e| e.binding.clone())
+            .ok_or_else(|| not_connected(id))
+    }
+
     /// Discovery: every resource kind the cluster serves (in the preferred version of its group when that version
     /// serves it). Printer columns stay empty: they come from the kind's CRD. Cached until the cluster reconnects or
     /// [`ClusterManager::refresh_kinds`] drops it; callers that ask while it runs share one discovery, which stops
@@ -297,7 +312,10 @@ impl ClusterManager {
     }
 
     /// Builds a client for the cluster's context and checks it with an authenticated request.
-    async fn open_client(&self, id: &ClusterId) -> CoreResult<kube::Client> {
+    async fn open_client(
+        &self,
+        id: &ClusterId,
+    ) -> CoreResult<(kube::Client, Option<ServerBinding>)> {
         let kubeconfig = {
             let registry = self
                 .inner
@@ -306,6 +324,8 @@ impl ClusterManager {
                 .unwrap_or_else(|e| e.into_inner());
             registry.kubeconfig_for(id)?
         };
+        // Read from the very text the client is built from.
+        let binding = ServerBinding::of(&kubeconfig).ok();
         // Only the file name of the exec plugin goes into error messages.
         let plugin: Option<String> = kubeconfig
             .auth_infos
@@ -340,7 +360,7 @@ impl ClusterManager {
 
         // `/api` needs an authenticated user (unlike `/version`), so a rejected token fails here with 401.
         match tokio::time::timeout(CHECK_TIMEOUT, client.list_core_api_versions()).await {
-            Ok(Ok(_)) => Ok(client),
+            Ok(Ok(_)) => Ok((client, binding)),
             Ok(Err(err)) => Err(kube_error(err, plugin.as_deref())),
             Err(_) => Err(CoreError::new(
                 ErrorCode::Unreachable,

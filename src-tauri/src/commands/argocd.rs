@@ -9,7 +9,9 @@
 //! refused ([`ArgoStatus::refused`]). A candidate Argo CD refused is not tried by itself again until its source changes
 //! (a new `resourceVersion` of the Secret, a new login typed or saved), the user signs out, or the cluster is closed,
 //! so a stale password does not pile up failed attempts. A saved login is a JSON `{"username","password"}` or
-//! `{"token"}` in the OS credential store (service `sextant`, user `argocd:<namespace>@<kubeSystemUid>`, or
+//! `{"token"}` with a `binding` `{"server","caSha256"}` — the API server URL and certificate authority of the
+//! kubeconfig entry it was saved through, and it is offered only to a connection whose entry gives the same
+//! ([`SavedLogin`]) — in the OS credential store (service `sextant`, user `argocd:<namespace>@<kubeSystemUid>`, or
 //! `argocd:<clusterId>:<namespace>` when `kube-system` cannot be read; see [`keyring_user`]), never in
 //! `settings.json`; the store is read once per login and run (the answer is kept in
 //! memory and follows "Remember" and "Forget"). No password or token goes to the frontend, into an error message or
@@ -25,7 +27,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use sextant_core::argocd::{
     self, ArgoClient, ArgoServer, CredentialSource, Credentials, ManagedResource, SecretString,
-    Session,
+    ServerBinding, Session,
 };
 use sextant_core::error::with_timeout;
 use sextant_core::portforward::{ForwardStatus, ForwardTarget, PortForwarder};
@@ -72,6 +74,10 @@ pub struct LoginKeys {
     pub cluster: ClusterId,
     /// The kubeconfig cluster's server URL, only to delete what an unreleased build saved under it.
     pub api_server: Option<String>,
+    /// The API server of the kubeconfig entry the connection was made with ([`argocd::server_binding`]); `None` when
+    /// the entry was edited since connecting or its server or certificate authority cannot be read. A saved login is
+    /// offered only when it was saved with this binding, and saved only with one.
+    pub binding: Option<ServerBinding>,
 }
 
 impl LoginKeys {
@@ -345,8 +351,9 @@ pub struct ArgoSessions {
     clusters: Mutex<HashMap<ClusterId, Arc<tokio::sync::Mutex<ArgoConn>>>>,
     /// The saved login of each [`keyring_user`] as last read from or written to the credential store (`None`: none,
     /// or the store could not be read), so the store — and the OS prompt an unsigned build may raise for it — is
-    /// reached once per login and run, not on every status.
-    saved: Mutex<HashMap<String, Option<Credentials>>>,
+    /// reached once per login and run, not on every status. Whether it is offered depends on the binding of the
+    /// connection asking ([`SavedLogin::offered_to`]).
+    saved: Mutex<HashMap<String, Option<SavedLogin>>>,
 }
 
 /// Everything Argo CD of one cluster has for one connection ([`ClusterManager::connection`]): a reconnect may reach
@@ -514,10 +521,17 @@ impl ArgoSessions {
         namespace: &str,
         credentials: &Credentials,
     ) -> Result<Option<String>, CoreError> {
+        let Some(binding) = keys.binding.clone() else {
+            return Ok(Some(UNBOUND_SAVE.to_owned()));
+        };
+        let login = SavedLogin {
+            credentials: credentials.clone(),
+            binding: Some(binding),
+        };
         let store = self.store();
         let user = keys.user(namespace);
         let stale = keys.stale(namespace);
-        let value = serde_json::to_string(credentials)?;
+        let value = login.to_value()?;
         let saved_as = user.clone();
         let result = blocking(move || {
             store.save(&user, &value)?;
@@ -528,9 +542,39 @@ impl ArgoSessions {
         })
         .await;
         if result.is_ok() {
-            lock(&self.saved).insert(saved_as, Some(credentials.clone()));
+            lock(&self.saved).insert(saved_as, Some(login));
         }
         Ok(result.err().map(|err| err.message))
+    }
+
+    /// After Sextant signed in by itself with `source`: a saved login without a binding (saved by v0.6.1, offered
+    /// under a UID key) that Argo CD just accepted is bound to the connection's API server, best effort.
+    async fn signed_in_with(&self, keys: &LoginKeys, namespace: &str, source: CredentialSource) {
+        if source != CredentialSource::Saved {
+            return;
+        }
+        let Some(binding) = keys.binding.clone() else {
+            return;
+        };
+        let user = keys.user(namespace);
+        let Some(login) = lock(&self.saved).get(&user).cloned().flatten() else {
+            return;
+        };
+        if login.binding.is_some() {
+            return;
+        }
+        let bound = SavedLogin {
+            credentials: login.credentials,
+            binding: Some(binding),
+        };
+        let Ok(value) = bound.to_value() else {
+            return;
+        };
+        let store = self.store();
+        let key = user.clone();
+        if blocking(move || store.save(&key, &value)).await.is_ok() {
+            lock(&self.saved).insert(user, Some(bound));
+        }
     }
 
     /// Whether the credential store holds a readable login for the Argo CD of `namespace`, whoever signed in now.
@@ -650,6 +694,9 @@ impl ArgoSessions {
             source,
         });
         conn.expired = false;
+        if let Some(keys) = conn.keys.clone() {
+            self.signed_in_with(&keys, &namespace, source).await;
+        }
         Ok((client, session))
     }
 
@@ -720,28 +767,39 @@ impl ArgoSessions {
         Ok(())
     }
 
-    /// The saved login, if the store has a readable one (a store that cannot be reached counts as none). The store
-    /// is read once per [`keyring_user`] and run; the [`LoginKeys::stale`] entries are deleted then (best effort),
-    /// never read.
+    /// The saved login offered to this connection ([`SavedLogin::offered_to`]), if the store has a readable one (a
+    /// store that cannot be reached counts as none). The store is read once per [`keyring_user`] and run; the
+    /// [`LoginKeys::stale`] entries are deleted then (best effort), never read, and so is an unbound login under the
+    /// kubeconfig entry's key — the entry may have been pointed at another cluster since it was saved.
     async fn saved(&self, keys: &LoginKeys, namespace: &str) -> Option<Credentials> {
         let user = keys.user(namespace);
-        if let Some(known) = lock(&self.saved).get(&user) {
-            return known.clone();
-        }
-        let store = self.store();
-        let stale = keys.stale(namespace);
-        let key = user.clone();
-        let found = blocking(move || {
-            for old in &stale {
-                let _ = store.forget(old);
+        let known = lock(&self.saved).get(&user).cloned();
+        let login = match known {
+            Some(known) => known,
+            None => {
+                let store = self.store();
+                let stale = keys.stale(namespace);
+                let by_entry = matches!(keys.owner, LoginOwner::Entry(_));
+                let key = user.clone();
+                let found = blocking(move || {
+                    for old in &stale {
+                        let _ = store.forget(old);
+                    }
+                    let found = load(&*store, &key)?;
+                    if by_entry && found.as_ref().is_some_and(|l| l.binding.is_none()) {
+                        let _ = store.forget(&key);
+                        return Ok(None);
+                    }
+                    Ok(found)
+                })
+                .await
+                .ok()
+                .flatten();
+                lock(&self.saved).insert(user, found.clone());
+                found
             }
-            load(&*store, &key)
-        })
-        .await
-        .ok()
-        .flatten();
-        lock(&self.saved).insert(user, found.clone());
-        found
+        };
+        login.filter(|l| l.offered_to(keys)).map(|l| l.credentials)
     }
 
     /// Deletes the saved login (and the [`LoginKeys::stale`] entries).
@@ -899,10 +957,57 @@ fn refused_of(
 }
 
 /// The saved login of `user`. An entry that is not a login reads as none.
-fn load(store: &dyn CredentialStore, user: &str) -> Result<Option<Credentials>, CoreError> {
-    Ok(store
-        .load(user)?
-        .and_then(|text| serde_json::from_str(&text).ok()))
+fn load(store: &dyn CredentialStore, user: &str) -> Result<Option<SavedLogin>, CoreError> {
+    Ok(store.load(user)?.and_then(|text| SavedLogin::parse(&text)))
+}
+
+/// Why "Remember" saved nothing when the kubeconfig entry gives no [`ServerBinding`].
+const UNBOUND_SAVE: &str = "the login was not saved: this cluster's kubeconfig entry was changed since it was \
+connected (reconnect it), or its server or certificate authority cannot be read; a saved login is kept only \
+together with the server it is for";
+
+/// A login in the credential store and the API server it was saved for. The value is the login's JSON
+/// (`{"username","password"}` or `{"token"}`) with a `binding` `{"server","caSha256"}`; logins saved by v0.6.1 have
+/// none (older builds read a bound value as the plain login, ignoring the binding).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SavedLogin {
+    credentials: Credentials,
+    binding: Option<ServerBinding>,
+}
+
+impl SavedLogin {
+    fn parse(text: &str) -> Option<Self> {
+        #[derive(Deserialize)]
+        struct Binding {
+            #[serde(default)]
+            binding: Option<ServerBinding>,
+        }
+        let credentials: Credentials = serde_json::from_str(text).ok()?;
+        let Binding { binding } = serde_json::from_str(text).ok()?;
+        Some(Self {
+            credentials,
+            binding,
+        })
+    }
+
+    fn to_value(&self) -> Result<String, CoreError> {
+        let mut value = serde_json::to_value(&self.credentials)?;
+        if let (Some(binding), Some(object)) = (&self.binding, value.as_object_mut()) {
+            object.insert("binding".into(), serde_json::to_value(binding)?);
+        }
+        Ok(value.to_string())
+    }
+
+    /// Offered to a connection only when the kubeconfig entry gives the binding it was saved with (the same API
+    /// server URL and certificate authority, #109). One without a binding is offered under a UID key — the cluster
+    /// itself — and is bound by its next successful sign-in ([`ArgoSessions::signed_in_with`]); under the entry's
+    /// key it is never read ([`ArgoSessions::saved`] deletes it).
+    fn offered_to(&self, keys: &LoginKeys) -> bool {
+        match &self.binding {
+            Some(binding) => keys.binding.as_ref() == Some(binding),
+            None => matches!(keys.owner, LoginOwner::Cluster(_)),
+        }
+    }
 }
 
 /// Where a login typed into the window counts as coming from: the credential store only when "Remember" was asked
@@ -969,13 +1074,15 @@ fn same_connection(
 
 /// What saved logins of the cluster are keyed by, resolved once per connection: the UID of its `kube-system`
 /// Namespace, or the kubeconfig entry when that cannot be read. A cluster that cannot be reached is an error (and
-/// nothing is kept).
+/// nothing is kept). The binding is checked again on every call ([`argocd::server_binding`]): an entry edited since
+/// connecting gets nothing offered and nothing saved until it reconnects.
 async fn login_keys(
     conn: &mut ArgoConn,
     mgr: &ClusterManager,
     cluster: &ClusterId,
 ) -> Result<LoginKeys, CoreError> {
-    if let Some(keys) = &conn.keys {
+    if let Some(keys) = &mut conn.keys {
+        keys.binding = argocd::server_binding(mgr, cluster).ok().flatten();
         return Ok(keys.clone());
     }
     let owner = match argocd::cluster_uid(mgr, cluster).await? {
@@ -986,6 +1093,7 @@ async fn login_keys(
         owner,
         cluster: cluster.clone(),
         api_server: argocd::api_server_url(mgr, cluster).ok(),
+        binding: argocd::server_binding(mgr, cluster).ok().flatten(),
     };
     conn.keys = Some(keys.clone());
     Ok(keys)
@@ -1044,6 +1152,7 @@ mod tests {
     use std::path::Path;
 
     use keyring::credential::{Credential, CredentialApi, CredentialBuilderApi};
+    use serde_json::json;
     use sextant_core::KindRef;
     use sextant_core::kubeconfig::KubeconfigEnv;
 
@@ -1117,7 +1226,33 @@ mod tests {
             owner,
             cluster: ClusterId::from(cluster),
             api_server: Some(SERVER.into()),
+            binding: Some(binding_of(SERVER, Some(CA))),
         }
+    }
+
+    /// SHA-256 of the certificate authority of [`SERVER`]'s kubeconfig entry.
+    const CA: &str = "9e7d0b95ce1401718101be73ed16d45f90f75aa5beea977101f24860ce2c8a9b";
+
+    fn binding_of(server: &str, ca: Option<&str>) -> ServerBinding {
+        ServerBinding {
+            server: server.into(),
+            ca_sha256: ca.map(str::to_owned),
+        }
+    }
+
+    /// The same keys, with the kubeconfig entry now naming `binding`.
+    fn rebound(keys: &LoginKeys, binding: Option<ServerBinding>) -> LoginKeys {
+        LoginKeys {
+            binding,
+            ..keys.clone()
+        }
+    }
+
+    /// The saved value of `user`, as JSON.
+    fn value_of(saved: &Saved, user: &str) -> Option<serde_json::Value> {
+        lock(saved)
+            .get(&format!("{KEYRING_SERVICE}/{user}"))
+            .map(|v| serde_json::from_slice(v).unwrap())
     }
 
     /// The keys of a cluster whose kube-system UID is `uid`, reached through the kubeconfig entry `cluster`.
@@ -1284,7 +1419,8 @@ mod tests {
     async fn without_a_uid_the_login_of_the_kubeconfig_entry_keeps_working() {
         let (store, saved) = mock_store();
         let value = serde_json::to_string(&token_login()).unwrap();
-        store.save("argocd:c1:argocd", &value).unwrap();
+        let bound = json!({ "token": "tok", "binding": { "server": SERVER, "caSha256": CA } });
+        store.save("argocd:c1:argocd", &bound.to_string()).unwrap();
         store
             .save(&format!("argocd:argocd@{SERVER}"), &value)
             .unwrap();
@@ -1311,6 +1447,119 @@ mod tests {
                 )
                 .await,
             "another kubeconfig entry never finds it"
+        );
+    }
+
+    /// A login saved as Sextant 0.6.1 saved it: no binding.
+    fn unbound(credentials: &Credentials) -> String {
+        serde_json::to_string(credentials).unwrap()
+    }
+
+    #[tokio::test]
+    async fn a_saved_login_is_bound_to_its_server_and_offered_only_to_it() {
+        let (store, saved) = mock_store();
+        let keys = by_uid(UID, "c1");
+        let sessions = ArgoSessions::new(store.clone());
+
+        sessions
+            .remember(&keys, "argocd", &token_login())
+            .await
+            .unwrap();
+
+        assert_eq!(
+            value_of(&saved, &keys.user("argocd")),
+            Some(json!({ "token": "tok", "binding": { "server": SERVER, "caSha256": CA } }))
+        );
+        let next_run = || ArgoSessions::new(store.clone());
+        assert_eq!(next_run().saved(&keys, "argocd").await, Some(token_login()));
+        let other_server = rebound(&keys, Some(binding_of("https://10.9.9.9:6443", Some(CA))));
+        let other_ca = rebound(&keys, Some(binding_of(SERVER, Some(&"0".repeat(64)))));
+        let no_ca = rebound(&keys, Some(binding_of(SERVER, None)));
+        let unreadable = rebound(&keys, None);
+        for keys in [&other_server, &other_ca, &no_ca, &unreadable] {
+            assert_eq!(
+                next_run().saved(keys, "argocd").await,
+                None,
+                "{:?}",
+                keys.binding
+            );
+            assert!(!next_run().has_saved(keys, "argocd").await);
+        }
+        assert_eq!(
+            sessions.saved(&other_server, "argocd").await,
+            None,
+            "nor from what this run read"
+        );
+        assert!(
+            value_of(&saved, &keys.user("argocd")).is_some(),
+            "a login of another server is kept: the entry may be pointed back"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_repointed_kubeconfig_entry_does_not_get_the_login_saved_through_it() {
+        let (store, saved) = mock_store();
+        let entry = keys_of(LoginOwner::Entry(ClusterId::from("c1")), "c1");
+        ArgoSessions::new(store.clone())
+            .remember(&entry, "argocd", &token_login())
+            .await
+            .unwrap();
+        let repointed = rebound(&entry, Some(binding_of("https://10.9.9.9:6443", None)));
+
+        let sessions = ArgoSessions::new(store.clone());
+        assert_eq!(sessions.saved(&repointed, "argocd").await, None);
+        assert!(!sessions.has_saved(&repointed, "argocd").await);
+        assert_eq!(
+            ArgoSessions::new(store).saved(&entry, "argocd").await,
+            Some(token_login())
+        );
+        assert_eq!(stored(&saved), ["sextant/argocd:c1:argocd"]);
+    }
+
+    #[tokio::test]
+    async fn an_unbound_login_under_the_entry_key_is_deleted_unread() {
+        let (store, saved) = mock_store();
+        store
+            .save("argocd:c1:argocd", &unbound(&token_login()))
+            .unwrap();
+        let entry = keys_of(LoginOwner::Entry(ClusterId::from("c1")), "c1");
+        let sessions = ArgoSessions::new(store.clone());
+
+        assert_eq!(sessions.saved(&entry, "argocd").await, None);
+        assert!(!sessions.has_saved(&entry, "argocd").await);
+        assert!(stored(&saved).is_empty(), "{:?}", stored(&saved));
+    }
+
+    #[tokio::test]
+    async fn an_unbound_login_under_a_uid_is_offered_and_bound_by_its_next_successful_sign_in() {
+        let (store, saved) = mock_store();
+        let keys = by_uid(UID, "c1");
+        let user = keys.user("argocd");
+        store.save(&user, &unbound(&token_login())).unwrap();
+        let sessions = ArgoSessions::new(store.clone());
+
+        assert_eq!(sessions.saved(&keys, "argocd").await, Some(token_login()));
+        assert!(sessions.has_saved(&keys, "argocd").await);
+        // A sign-in that came from somewhere else binds nothing.
+        sessions
+            .signed_in_with(&keys, "argocd", CredentialSource::Secret)
+            .await;
+        assert_eq!(value_of(&saved, &user), Some(json!({ "token": "tok" })));
+
+        sessions
+            .signed_in_with(&keys, "argocd", CredentialSource::Saved)
+            .await;
+
+        assert_eq!(
+            value_of(&saved, &user),
+            Some(json!({ "token": "tok", "binding": { "server": SERVER, "caSha256": CA } }))
+        );
+        let elsewhere = rebound(&keys, Some(binding_of("https://10.9.9.9:6443", Some(CA))));
+        assert_eq!(sessions.saved(&elsewhere, "argocd").await, None);
+        assert_eq!(
+            ArgoSessions::new(store).saved(&elsewhere, "argocd").await,
+            None,
+            "bound for good"
         );
     }
 
@@ -1483,6 +1732,78 @@ mod tests {
         assert!(!on_b.saved && !on_b.signed_in);
         assert_eq!(keys_b.owner, LoginOwner::Cluster(UID_B.into()));
         assert_eq!(midway.code, ErrorCode::Unreachable);
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn an_entry_edited_since_connecting_gets_nothing_offered_and_nothing_saved() {
+        // kube-system is forbidden for this token: the fallback key, by the kubeconfig entry.
+        let url = proxy_api(HashMap::from([("token-a", UID_A)])).await;
+        let dirs = tempfile::tempdir().unwrap();
+        let kubeconfig = dirs.path().join("kubeconfig");
+        std::fs::write(&kubeconfig, single_context("x", &url, "token-z")).unwrap();
+        let state = AppState::new(&dirs.path().join("config"), &dirs.path().join("data"));
+        state.registry.write().unwrap().set_env(KubeconfigEnv {
+            kubeconfig: Some(kubeconfig.clone().into_os_string()),
+            home: Some(dirs.path().join("home")),
+        });
+        let (store, saved) = mock_store();
+        state.argocd.set_store(store);
+        let id = state.registry.read().unwrap().clusters().unwrap()[0]
+            .id
+            .clone();
+        state.clusters.connect(&id).await.unwrap();
+        let conn = state.argocd.conn(&id);
+        let mut conn = conn.lock().await;
+        let keys = login_keys(&mut conn, &state.clusters, &id).await.unwrap();
+        assert_eq!(keys.owner, LoginOwner::Entry(id.clone()));
+        assert_eq!(keys.binding, Some(binding_of(&url, None)));
+        let saved_before = state
+            .argocd
+            .remember(&keys, "argocd", &password("for-x"))
+            .await
+            .unwrap();
+        assert_eq!(saved_before, None);
+        let value = value_of(&saved, &keys.user("argocd"));
+
+        // The entry now names another server (with another cluster's CA), not reconnected: the connection still
+        // reaches the first cluster, but nothing is offered or saved until it reconnects.
+        let ca = base64::Engine::encode(
+            &base64::engine::general_purpose::STANDARD,
+            "-----BEGIN CERTIFICATE-----\nY2EtZGVy\n-----END CERTIFICATE-----\n",
+        );
+        let edits = [
+            single_context("x", "https://10.9.9.9:6443", "token-z"),
+            single_context("x", &url, "token-z").replace(
+                &format!("server: {url}"),
+                &format!("server: {url}\n    certificate-authority-data: {ca}"),
+            ),
+        ];
+        for edit in edits {
+            std::fs::write(&kubeconfig, edit).unwrap();
+            let keys = login_keys(&mut conn, &state.clusters, &id).await.unwrap();
+            let candidates = state
+                .argocd
+                .candidates(&mut conn, &state.clusters, &id, "argocd")
+                .await
+                .unwrap();
+            let refused = state
+                .argocd
+                .remember(&keys, "argocd", &password("for-y"))
+                .await
+                .unwrap();
+
+            assert_eq!(keys.binding, None);
+            assert!(
+                secrets_of(&candidates).is_empty(),
+                "{:?}",
+                secrets_of(&candidates)
+            );
+            assert!(!state.argocd.has_saved(&keys, "argocd").await);
+            assert_eq!(refused.as_deref(), Some(UNBOUND_SAVE));
+            assert_eq!(value_of(&saved, &keys.user("argocd")), value);
+        }
+        drop(conn);
         state.close_all();
     }
 
@@ -1877,6 +2198,87 @@ mod tests {
         );
         assert!(!settings_text(dirs.path()).contains(&password));
         assert!(lock(&saved).is_empty(), "nothing is saved without Remember");
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn an_unreadable_certificate_authority_after_connecting_offers_and_saves_nothing() {
+        let dirs = tempfile::tempdir().unwrap();
+        let Some(original) = std::env::var_os("SEXTANT_TEST_KUBECONFIG").filter(|v| !v.is_empty())
+        else {
+            eprintln!("skipped: SEXTANT_TEST_KUBECONFIG is not set (see scripts/test-cluster.sh)");
+            return;
+        };
+        // A copy of the test cluster's kubeconfig, edited after connecting.
+        let copy = dirs.path().join("kubeconfig");
+        std::fs::copy(&original, &copy).unwrap();
+        let (store, saved) = mock_store();
+        let Some((state, _)) = gitops_state(dirs.path(), Arc::clone(&store)).await else {
+            return;
+        };
+        state.registry.write().unwrap().set_env(KubeconfigEnv {
+            kubeconfig: Some(copy.clone().into_os_string()),
+            home: Some(dirs.path().join("home")),
+        });
+        let id = state.registry.read().unwrap().clusters().unwrap()[0]
+            .id
+            .clone();
+        state.clusters.connect(&id).await.unwrap();
+        let password = initial_password(&state, &id).await;
+        let login = || ArgoLogin {
+            username: Some("admin".into()),
+            password: Some(SecretString::new(password.clone())),
+            token: None,
+            remember: true,
+        };
+        let first = state
+            .argocd
+            .login(&state.clusters, &id, None, login())
+            .await
+            .unwrap();
+        assert!(first.saved);
+        assert_eq!(first.save_error, None);
+        let before = stored(&saved);
+        let value = lock(&saved).clone();
+
+        let text = std::fs::read_to_string(&copy).unwrap();
+        let missing = dirs.path().join("missing-ca.crt");
+        let edited: String = text
+            .lines()
+            .map(
+                |line| match line.split_once("certificate-authority-data:") {
+                    Some((indent, _)) => {
+                        format!("{indent}certificate-authority: {}", missing.display())
+                    }
+                    None => line.to_owned(),
+                },
+            )
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert_ne!(
+            edited, text,
+            "the test cluster's kubeconfig names its CA inline"
+        );
+        std::fs::write(&copy, edited).unwrap();
+
+        let status = state
+            .argocd
+            .status(&state.clusters, &id, None)
+            .await
+            .unwrap();
+        let again = state
+            .argocd
+            .login(&state.clusters, &id, None, login())
+            .await
+            .unwrap();
+
+        assert!(!status.saved, "nothing is offered");
+        assert!(again.signed_in, "signing in itself works");
+        assert!(!again.saved);
+        assert_eq!(again.save_error.as_deref(), Some(UNBOUND_SAVE));
+        assert_eq!(again.source, Some(CredentialSource::Manual));
+        assert_eq!(stored(&saved), before);
+        assert_eq!(*lock(&saved), value, "the saved login was not rewritten");
         state.close_all();
     }
 

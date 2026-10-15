@@ -596,7 +596,11 @@ async fn an_agent_initializes_lists_the_tools_and_calls_one_and_the_call_is_jour
         ),
         ("test-client", "list_clusters", "ok")
     );
-    assert_eq!(entry.decision, AuditDecision::Allowed);
+    assert_eq!(
+        entry.decision,
+        AuditDecision::NotChecked,
+        "it needs no check"
+    );
     assert_eq!(events.audits(), 1);
     state.close_all();
 }
@@ -1627,4 +1631,77 @@ async fn a_stop_during_a_read_says_nothing_was_changed() {
     assert_eq!(entry.decision, AuditDecision::Allowed);
     assert_eq!(entry.result, "other");
     assert!(probe.confirms.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn a_call_that_ends_before_the_access_check_is_journaled_as_not_checked() {
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    turn_on_free(&state).await;
+    let cluster = first_cluster(&state);
+    set_access(&state, &cluster, preset(AccessPreset::ReadOnly));
+
+    let unknown_cluster = json!({ "cluster": "no-such-cluster", "kind": "Pod", "namespace": "default", "name": "web" });
+    assert!(tool(&state, "get_resource", unknown_cluster).await.is_err());
+    let malformed = json!({ "cluster": cluster.0, "kind": 42 });
+    assert!(tool(&state, "get_resource", malformed).await.is_err());
+    assert!(tool(&state, "no_such_tool", json!({})).await.is_err());
+    // A call about no cluster needs no check: it runs, and says it was not checked.
+    assert!(tool(&state, "list_clusters", json!({})).await.is_ok());
+
+    let journal = state.mcp.context().audit.list(None);
+    let decisions: Vec<(&str, AuditDecision)> = journal
+        .iter()
+        .map(|e| (e.tool.as_str(), e.decision))
+        .collect();
+    assert_eq!(decisions.len(), 4, "{decisions:?}");
+    for (tool, decision) in [
+        ("get_resource", AuditDecision::NotChecked),
+        ("no_such_tool", AuditDecision::NotChecked),
+        ("list_clusters", AuditDecision::NotChecked),
+    ] {
+        assert!(
+            decisions
+                .iter()
+                .filter(|(t, _)| *t == tool)
+                .all(|(_, d)| *d == decision),
+            "{tool}: {decisions:?}"
+        );
+    }
+    state.close_all();
+}
+
+#[test]
+fn the_agents_journal_still_drops_its_oldest_entry_first_with_not_checked_calls() {
+    use super::audit::{AuditEntry, CAPACITY};
+    use super::confirm::ConfirmSource;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    let entry = |at: u64, decision| AuditEntry {
+        at,
+        source: ConfirmSource::Agent,
+        principal: "agent".to_owned(),
+        client: "agent".to_owned(),
+        cluster_id: None,
+        cluster_name: None,
+        tool: "delete_resource".to_owned(),
+        target: String::new(),
+        decision,
+        result: "ok".to_owned(),
+        duration_ms: 1,
+    };
+    let audit = &state.mcp.context().audit;
+    audit.record(entry(0, AuditDecision::Approved));
+    for at in 1..=CAPACITY as u64 {
+        audit.record(entry(at, AuditDecision::NotChecked));
+    }
+    let journal = audit.list(None);
+    assert_eq!(journal.len(), CAPACITY);
+    assert!(
+        journal.iter().all(|e| e.at != 0),
+        "the oldest entry was kept"
+    );
+    assert!(journal.iter().any(|e| e.at == 1));
+    state.close_all();
 }

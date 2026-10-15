@@ -175,7 +175,10 @@ impl SextantMcp {
             cluster_name: record.cluster.as_ref().map(|c| c.name.clone()),
             tool: tool.to_owned(),
             target: record.target.clone(),
-            decision: record.decision.unwrap_or(AuditDecision::Allowed),
+            // No decision: the call ended before any check (malformed arguments, an unknown tool or cluster, one that
+            // could not be reached) or needed none (`list_clusters`, the agent's own port forwards), and is journaled
+            // as such — never as allowed (#109).
+            decision: record.decision.unwrap_or(AuditDecision::NotChecked),
             result: match &result {
                 Ok(_) => "ok".to_owned(),
                 Err(e) => error_code_name(e),

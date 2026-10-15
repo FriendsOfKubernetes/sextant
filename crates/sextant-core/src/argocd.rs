@@ -278,6 +278,28 @@ fn is_uid(uid: &str) -> bool {
     !uid.is_empty() && uid.len() <= 64 && uid.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
 }
 
+pub use crate::kubeconfig::ServerBinding;
+
+/// The [`ServerBinding`] a saved Argo CD login of `cluster` is offered to and saved with (#109): the one of the
+/// kubeconfig entry its current connection was made with ([`ClusterManager::server_binding`]), and only while the
+/// entry still gives the same. `None` — nothing is offered or saved — when the entry was edited since connecting (the
+/// next connection may reach another cluster) or its server or CA cannot be read. `notFound` when not connected.
+pub fn server_binding(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+) -> CoreResult<Option<ServerBinding>> {
+    let Some(connected) = mgr.server_binding(cluster)? else {
+        return Ok(None);
+    };
+    let now = mgr
+        .registry()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .server_binding(cluster)
+        .ok();
+    Ok((now.as_ref() == Some(&connected)).then_some(connected))
+}
+
 /// The Kubernetes API server URL of `cluster`, from its kubeconfig cluster entry (without a trailing `/`). Never what
 /// a login is keyed by (one URL can front several clusters): used only to delete the logins an unreleased build saved
 /// under it.

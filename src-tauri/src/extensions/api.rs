@@ -22,7 +22,7 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::future::Future;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
@@ -132,6 +132,10 @@ pub struct ExtensionStreams {
     map: Mutex<HashMap<String, ExtensionStream>>,
     /// Grows with every [`ExtensionStreams::stop_all`]: a start that began before it does not stay.
     generation: AtomicU64,
+    /// A look of [`ExtensionStreams::stop_changed`] is queued and has not begun: a later change needs no other.
+    look_queued: AtomicBool,
+    /// One look at a time: a look queued behind a running one begins after it.
+    look_turn: Mutex<()>,
 }
 
 impl ExtensionStreams {
@@ -201,8 +205,38 @@ impl ExtensionStreams {
     }
 
     /// Streams whose extension is no longer active (disabled, removed, waiting for consent) or was granted anything
-    /// else since the stream was opened (reinstalled with other permissions).
-    pub fn stop_changed(&self, host: &ExtensionHost) {
+    /// else since the stream was opened (reinstalled with other permissions). What the installed list says — removed,
+    /// disabled, granted anything else — stops them at once, so a disable stops them even when the extension is
+    /// enabled again right after. Whether the rest are still active (a manifest that fails or asks for more) is looked
+    /// at on the blocking pool, and this returns at once: after a `forget` a look reads the manifest again — walking a
+    /// development folder whole — which must not hold up the thread that emits the host's events (#109). Looks run one
+    /// at a time, and changes while one waits share it. A stream opened while a look runs is caught by the check after
+    /// its start (`start_stream`).
+    pub fn stop_changed(self: &Arc<Self>, host: &ExtensionHost) {
+        let installed: HashMap<String, InstalledExtension> = host
+            .installed()
+            .into_iter()
+            .map(|e| (e.id.clone(), e))
+            .collect();
+        self.stop_where(|s| {
+            !installed
+                .get(&s.extension)
+                .is_some_and(|e| e.enabled && e.granted == s.granted)
+        });
+        if self.look_queued.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let (streams, host) = (Arc::clone(self), host.clone());
+        // Tauri's runtime: the host emits from threads outside any runtime as well (the folder watcher, commands).
+        tauri::async_runtime::spawn_blocking(move || {
+            let _turn = lock(&streams.look_turn);
+            // From here a change queues a look of its own, which begins after this one.
+            streams.look_queued.store(false, Ordering::SeqCst);
+            streams.stop_changed_now(&host);
+        });
+    }
+
+    fn stop_changed_now(&self, host: &ExtensionHost) {
         let opened: Vec<(String, String, ExtensionPermissions)> = lock(&self.map)
             .iter()
             .map(|(id, s)| (id.clone(), s.extension.clone(), s.granted.clone()))
@@ -256,8 +290,9 @@ impl ExtensionStreams {
     }
 }
 
-/// Wires the host's events as the app does (`start_extensions`): on every event the streams of `api` whose extension
-/// was disabled, removed, paused for consent or granted anything else stop, then `forward` gets the event.
+/// Wires the host's events as the app does (`start_extensions`): on every event `forward` gets the event at once, and
+/// the streams of `api` whose extension was disabled, removed, paused for consent or granted anything else stop as
+/// soon as the blocking pool has looked ([`ExtensionStreams::stop_changed`]).
 pub fn wire_host_events(
     host: &ExtensionHost,
     api: &ExtensionApi,
@@ -270,9 +305,9 @@ pub fn wire_host_events(
     ));
 }
 
-/// The extension host's emitter: on every event of the host (`extensions-changed` above all) the streams of
-/// extensions that were disabled, removed or granted anything else stop, then `forward` gets the event. Holds the host
-/// weakly (the host keeps its emitter).
+/// The extension host's emitter: on every event of the host (`extensions-changed` above all) the look for streams of
+/// extensions that were disabled, removed or granted anything else goes to the blocking pool, and `forward` gets the
+/// event at once, on the emitting thread. Holds the host weakly (the host keeps its emitter).
 fn host_emitter(
     streams: Arc<ExtensionStreams>,
     host: WeakExtensionHost,

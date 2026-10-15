@@ -423,6 +423,17 @@ impl KubeconfigRegistry {
         ))
     }
 
+    /// SHA-256 (lowercase hex) of the certificate authority the cluster entry of `id` trusts now
+    /// ([`certificate_authority_sha256_of`]).
+    pub fn certificate_authority_sha256(&self, id: &ClusterId) -> CoreResult<Option<String>> {
+        certificate_authority_sha256_of(&self.kubeconfig_for(id)?)
+    }
+
+    /// The [`ServerBinding`] the cluster entry of `id` gives now ([`ServerBinding::of`]).
+    pub fn server_binding(&self, id: &ClusterId) -> CoreResult<ServerBinding> {
+        ServerBinding::of(&self.kubeconfig_for(id)?)
+    }
+
     /// Writes [`Self::kubeconfig_for`] to a temporary file with mode 0600 (for the terminal and `helm`), named
     /// [`TEMP_KUBECONFIG_PREFIX`]`<pid>-*` (this process's ID) in the system temp directory.
     pub fn write_temp_kubeconfig(&self, id: &ClusterId) -> CoreResult<tempfile::TempPath> {
@@ -709,6 +720,107 @@ fn normalized_path(path: &Path) -> PathBuf {
     out
 }
 
+/// The API server a kubeconfig cluster entry names, as a saved Argo CD login is bound to it (#109): the entry's
+/// `server` (without a trailing `/`) and the SHA-256 of the certificate authority it trusts
+/// ([`certificate_authority_sha256_of`], `None` when it names none — then the URL alone is the binding). Taken from the
+/// kubeconfig a connection is made with ([`crate::ClusterManager::server_binding`]); serialized `{"server","caSha256"}`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerBinding {
+    pub server: String,
+    pub ca_sha256: Option<String>,
+}
+
+impl ServerBinding {
+    /// The binding of the (only, or first) cluster of `config` — a [`KubeconfigRegistry::kubeconfig_for`] result.
+    /// A CA that cannot be read or an entry without a server is an error.
+    pub fn of(config: &Kubeconfig) -> CoreResult<Self> {
+        let server = config
+            .clusters
+            .first()
+            .and_then(|c| c.cluster.as_ref())
+            .and_then(|c| c.server.as_deref())
+            .map(|s| s.trim().trim_end_matches('/'))
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::Kubeconfig,
+                    "the kubeconfig cluster has no server",
+                )
+            })?;
+        Ok(Self {
+            server: server.to_owned(),
+            ca_sha256: certificate_authority_sha256_of(config)?,
+        })
+    }
+}
+
+/// SHA-256 (lowercase hex) of the certificate authority the (only, or first) cluster of `config` trusts —
+/// `certificate-authority-data`, else the file `certificate-authority` names — taken over the DER bytes of its PEM
+/// certificates, so another spelling of the same certificates hashes the same (over the bytes as they are when they
+/// hold no PEM certificate). `None` when the entry names no CA (the system's roots, or `insecure-skip-tls-verify`); a
+/// CA that cannot be read is an error, never `None`.
+pub fn certificate_authority_sha256_of(config: &Kubeconfig) -> CoreResult<Option<String>> {
+    use base64::Engine as _;
+    let Some(cluster) = config.clusters.first().and_then(|c| c.cluster.as_ref()) else {
+        return Ok(None);
+    };
+    let unreadable = || {
+        CoreError::new(
+            ErrorCode::Kubeconfig,
+            "the certificate authority of the kubeconfig cluster cannot be read",
+        )
+    };
+    let bytes = match (
+        &cluster.certificate_authority_data,
+        &cluster.certificate_authority,
+    ) {
+        (Some(data), _) => base64::engine::general_purpose::STANDARD
+            .decode(data.trim())
+            .map_err(|_| unreadable())?,
+        (None, Some(file)) => std::fs::read(file).map_err(|_| unreadable())?,
+        (None, None) => return Ok(None),
+    };
+    let certificates = pem_certificates(&bytes);
+    let mut digest = Sha256::new();
+    if certificates.is_empty() {
+        digest.update(&bytes);
+    } else {
+        for der in &certificates {
+            digest.update(der);
+        }
+    }
+    Ok(Some(
+        digest
+            .finalize()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect(),
+    ))
+}
+
+/// The DER bytes of every `CERTIFICATE` block of PEM text, in order; a block that is not base64 is skipped.
+fn pem_certificates(bytes: &[u8]) -> Vec<Vec<u8>> {
+    use base64::Engine as _;
+    const BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+    const END: &str = "-----END CERTIFICATE-----";
+    let text = String::from_utf8_lossy(bytes);
+    let mut rest = text.as_ref();
+    let mut out = Vec::new();
+    while let Some(start) = rest.find(BEGIN) {
+        let body = &rest[start + BEGIN.len()..];
+        let Some(end) = body.find(END) else {
+            break;
+        };
+        let compact: String = body[..end].chars().filter(|c| !c.is_whitespace()).collect();
+        if let Ok(der) = base64::engine::general_purpose::STANDARD.decode(compact) {
+            out.push(der);
+        }
+        rest = &body[end + END.len()..];
+    }
+    out
+}
+
 /// First 16 hex digits of sha256.
 fn short_hash(bytes: &[u8]) -> String {
     Sha256::digest(bytes)
@@ -943,6 +1055,77 @@ current-context: {name}
 
     fn contexts(clusters: &[ClusterInfo]) -> Vec<&str> {
         clusters.iter().map(|c| c.context.as_str()).collect()
+    }
+
+    #[test]
+    fn the_certificate_authority_of_an_entry_is_hashed_over_its_certificates() {
+        use base64::Engine as _;
+        let fx = Fixture::new();
+        let b64 = |v: &[u8]| base64::engine::general_purpose::STANDARD.encode(v);
+        // Two PEM spellings of one certificate (DER bytes "ca-der"): other line breaks, a missing final newline.
+        let pem = format!(
+            "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",
+            b64(b"ca-der")
+        );
+        let respelled = format!(
+            "-----BEGIN CERTIFICATE-----\r\n{}\r\n-----END CERTIFICATE-----",
+            b64(b"ca-der")
+        );
+        fx.write("ca.crt", &respelled);
+        let ca_file = fx.path("ca.crt");
+        let kubeconfig = format!(
+            r#"apiVersion: v1
+kind: Config
+clusters:
+  - name: data
+    cluster: {{ server: "https://a.example:6443", certificate-authority-data: "{data}" }}
+  - name: file
+    cluster: {{ server: "https://a.example:6443", certificate-authority: "{file}" }}
+  - name: other
+    cluster: {{ server: "https://a.example:6443", certificate-authority-data: "{other}" }}
+  - name: none
+    cluster: {{ server: "https://a.example:6443" }}
+  - name: missing
+    cluster: {{ server: "https://a.example:6443", certificate-authority: "{missing}" }}
+users:
+  - name: me
+    user: {{}}
+contexts:
+  - {{ name: data, context: {{ cluster: data, user: me }} }}
+  - {{ name: file, context: {{ cluster: file, user: me }} }}
+  - {{ name: other, context: {{ cluster: other, user: me }} }}
+  - {{ name: none, context: {{ cluster: none, user: me }} }}
+  - {{ name: missing, context: {{ cluster: missing, user: me }} }}
+"#,
+            data = b64(pem.as_bytes()),
+            file = ca_file.display().to_string().replace('\\', "/"),
+            other = b64(format!(
+                "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",
+                b64(b"other")
+            )
+            .as_bytes()),
+            missing = fx
+                .path("nowhere.crt")
+                .display()
+                .to_string()
+                .replace('\\', "/"),
+        );
+        let path = fx.write("home/.kube/config", &kubeconfig);
+        let registry = fx.registry();
+        let ca = |context: &str| {
+            registry.certificate_authority_sha256(&ClusterId::for_context(&path, context))
+        };
+        // printf 'ca-der' | sha256sum
+        let data = ca("data").unwrap().unwrap();
+        assert_eq!(
+            data,
+            "9e7d0b95ce1401718101be73ed16d45f90f75aa5beea977101f24860ce2c8a9b"
+        );
+        assert_eq!(ca("file").unwrap().as_deref(), Some(data.as_str()));
+        assert_ne!(ca("other").unwrap().as_deref(), Some(data.as_str()));
+        assert_eq!(ca("none").unwrap(), None);
+        assert!(ca("missing").is_err(), "an unreadable CA is not \"no CA\"");
+        assert!(ca("gone").is_err());
     }
 
     #[test]
