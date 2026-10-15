@@ -655,7 +655,8 @@ fn spawn(
     })?;
     // The shell holds the slave side now; ours would keep the terminal open after it exits.
     drop(pair.slave);
-    let mut reader = pair.master.try_clone_reader().map_err(pty_error)?;
+    let (mut reader, stop) = output_reader(pair.master.as_ref())?;
+    let input_stop = stop.try_clone().map_err(pty_error)?;
     let mut writer = pair.master.take_writer().map_err(pty_error)?;
     let mut killer = child.clone_killer();
     let master: Arc<Mutex<Option<Box<dyn MasterPty + Send>>>> =
@@ -680,6 +681,8 @@ fn spawn(
                 }
             }
             let _ = killer.kill();
+            // Even if the shell outlives the hang-up, the output thread lets go of the terminal.
+            input_stop.signal();
         })
         .map_err(pty_error)?;
 
@@ -707,6 +710,9 @@ fn spawn(
                 .ok()
                 .map(|status| i32::try_from(status.exit_code()).unwrap_or(i32::MAX));
             let _ = exit_tx.send(code);
+            // A job the shell left behind (`cmd & disown`) may keep the terminal open: output is read only a little
+            // longer.
+            stop.signal();
             // ConPTY keeps the output pipe open after the shell exits until the pseudo-console is closed.
             if cfg!(windows) {
                 lock(&wait_master).take();
@@ -724,20 +730,24 @@ fn spawn(
                 return;
             }
             let mut buf = vec![0u8; READ_BUF];
-            loop {
-                match reader.read(&mut buf) {
-                    Ok(0) | Err(_) => break,
-                    Ok(n) => {
-                        if output_tx
-                            .blocking_send(TermEvent::Data(buf[..n].to_vec()))
-                            .is_err()
-                        {
-                            return;
-                        }
-                    }
+            while let Some(n) = reader.read(&mut buf) {
+                if output_tx
+                    .blocking_send(TermEvent::Data(buf[..n].to_vec()))
+                    .is_err()
+                {
+                    return;
                 }
             }
-            let code = exit_rx.recv().ok().flatten();
+            // Our side of the terminal closes now, not when the job that holds it ends.
+            drop(reader);
+            let code = loop {
+                match exit_rx.recv_timeout(EXIT_POLL) {
+                    Ok(code) => break code,
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) if !output_tx.is_closed() => {}
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => return,
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break None,
+                }
+            };
             let _ = output_tx.blocking_send(TermEvent::Exit { code });
         })
         .map_err(pty_error)?;
@@ -747,6 +757,192 @@ fn spawn(
         resize: resize_tx,
         output: output_rx,
     })
+}
+
+/// How often the output thread, done reading, checks whether the session is gone while it waits for the exit code.
+const EXIT_POLL: std::time::Duration = std::time::Duration::from_millis(100);
+
+/// The reader of the shell's output and the [`Stop`] that ends it.
+#[cfg(unix)]
+fn output_reader(master: &dyn MasterPty) -> Result<(OutputReader, Stop), CoreError> {
+    let fd = master
+        .as_raw_fd()
+        .ok_or_else(|| pty_error("no terminal descriptor"))?;
+    // SAFETY: `master` is alive for this call, so `fd` is open; the clone is our own descriptor.
+    let master = unsafe { std::os::fd::BorrowedFd::borrow_raw(fd) }
+        .try_clone_to_owned()
+        .map_err(pty_error)?;
+    let (stop_rx, stop_tx) = std::io::pipe().map_err(pty_error)?;
+    Ok((
+        OutputReader {
+            master: std::fs::File::from(master),
+            stop: stop_rx,
+            draining_until: None,
+            poll_unsupported: false,
+        },
+        Stop(stop_tx),
+    ))
+}
+
+/// The reader of the shell's output and the [`Stop`] that ends it.
+#[cfg(not(unix))]
+fn output_reader(master: &dyn MasterPty) -> Result<(OutputReader, Stop), CoreError> {
+    let reader = master.try_clone_reader().map_err(pty_error)?;
+    Ok((OutputReader(reader), Stop))
+}
+
+/// Tells the output thread the shell is gone (it exited, or the session was dropped). On Unix a job the shell left
+/// behind (`cmd & disown`) may hold the terminal's slave side open, so reads would block until that job ends; after
+/// [`Stop::signal`] the reader returns what is already there and then ends, and its descriptor is closed.
+#[cfg(unix)]
+struct Stop(std::io::PipeWriter);
+
+#[cfg(unix)]
+impl Stop {
+    fn try_clone(&self) -> std::io::Result<Self> {
+        self.0.try_clone().map(Self)
+    }
+
+    fn signal(&self) {
+        let _ = (&self.0).write(&[1]);
+    }
+}
+
+/// On Windows closing the pseudo-console (after the shell exits) ends reads, so there is nothing to signal.
+#[cfg(not(unix))]
+struct Stop;
+
+#[cfg(not(unix))]
+impl Stop {
+    fn try_clone(&self) -> std::io::Result<Self> {
+        Ok(Self)
+    }
+
+    fn signal(&self) {}
+}
+
+#[cfg(not(unix))]
+struct OutputReader(Box<dyn Read + Send>);
+
+#[cfg(not(unix))]
+impl OutputReader {
+    /// The next chunk of output into `buf`, or `None` once the terminal is closed.
+    fn read(&mut self, buf: &mut [u8]) -> Option<usize> {
+        match self.0.read(buf) {
+            Ok(0) | Err(_) => None,
+            Ok(n) => Some(n),
+        }
+    }
+}
+
+/// After [`Stop::signal`]: output is read while it keeps coming at least every [`DRAIN_IDLE`], for at most
+/// [`DRAIN_LIMIT`].
+#[cfg(unix)]
+const DRAIN_IDLE: std::time::Duration = std::time::Duration::from_millis(50);
+#[cfg(unix)]
+const DRAIN_LIMIT: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// Reads the master side with `poll()` on it and on the [`Stop`] pipe.
+#[cfg(unix)]
+struct OutputReader {
+    master: std::fs::File,
+    stop: std::io::PipeReader,
+    /// Set once stopped: the end of the last reads.
+    draining_until: Option<std::time::Instant>,
+    /// `poll()` refused the terminal (`POLLNVAL`): plain blocking reads, as before.
+    poll_unsupported: bool,
+}
+
+#[cfg(unix)]
+impl OutputReader {
+    /// The next chunk of output into `buf`, or `None` once the terminal is closed or the reader was stopped and has
+    /// read what was left.
+    fn read(&mut self, buf: &mut [u8]) -> Option<usize> {
+        use std::os::fd::AsRawFd;
+        loop {
+            if !self.poll_unsupported {
+                let timeout = match self.draining_until {
+                    None => -1,
+                    Some(until) => {
+                        let left = until.saturating_duration_since(std::time::Instant::now());
+                        if left.is_zero() {
+                            return None;
+                        }
+                        // At most 50 ms, so it fits.
+                        left.min(DRAIN_IDLE).as_millis() as std::ffi::c_int
+                    }
+                };
+                let mut fds = [
+                    poll::PollFd::new(self.master.as_raw_fd()),
+                    poll::PollFd::new(self.stop.as_raw_fd()),
+                ];
+                // Once stopped the pipe stays readable: only the terminal is watched.
+                let watched = if self.draining_until.is_some() { 1 } else { 2 };
+                match poll::poll(&mut fds[..watched], timeout) {
+                    Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                    Err(_) => return None,
+                    // Nothing more came while draining.
+                    Ok(0) => return None,
+                    Ok(_) => {}
+                }
+                if fds[0].revents & poll::POLLNVAL != 0 {
+                    self.poll_unsupported = true;
+                } else if fds[0].revents == 0 {
+                    // Only the stop pipe.
+                    self.draining_until = Some(std::time::Instant::now() + DRAIN_LIMIT);
+                    continue;
+                }
+            }
+            return match self.master.read(buf) {
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Ok(0) | Err(_) => None,
+                Ok(n) => Some(n),
+            };
+        }
+    }
+}
+
+/// `poll(2)` from the C library std already links; the values are the same on Linux and macOS.
+#[cfg(unix)]
+mod poll {
+    use std::ffi::{c_int, c_short};
+
+    pub const POLLIN: c_short = 0x1;
+    pub const POLLNVAL: c_short = 0x20;
+
+    #[cfg(target_os = "linux")]
+    type NFds = std::ffi::c_ulong;
+    #[cfg(not(target_os = "linux"))]
+    type NFds = std::ffi::c_uint;
+
+    #[repr(C)]
+    pub struct PollFd {
+        fd: c_int,
+        events: c_short,
+        pub revents: c_short,
+    }
+
+    impl PollFd {
+        pub fn new(fd: c_int) -> Self {
+            Self {
+                fd,
+                events: POLLIN,
+                revents: 0,
+            }
+        }
+    }
+
+    unsafe extern "C" {
+        #[link_name = "poll"]
+        fn c_poll(fds: *mut PollFd, nfds: NFds, timeout: c_int) -> c_int;
+    }
+
+    /// How many of `fds` are ready; `timeout` in milliseconds, negative for none.
+    pub fn poll(fds: &mut [PollFd], timeout: c_int) -> std::io::Result<usize> {
+        // SAFETY: `fds` is a valid array of `pollfd` (same layout) of the given length for the whole call.
+        let ready = unsafe { c_poll(fds.as_mut_ptr(), fds.len() as NFds, timeout) };
+        usize::try_from(ready).map_err(|_| std::io::Error::last_os_error())
+    }
 }
 
 fn pty_error(e: impl std::fmt::Display) -> CoreError {
@@ -906,6 +1102,53 @@ mod tests {
             assert!(Instant::now() < deadline, "shell {pid} is still running");
             std::thread::sleep(Duration::from_millis(20));
         }
+    }
+
+    /// A disowned job keeps the terminal's slave side open after the shell exits: the session still ends at once
+    /// (the job keeps running, it was disowned).
+    #[cfg(unix)]
+    #[test]
+    fn the_session_ends_with_the_shell_while_a_disowned_job_holds_the_terminal() {
+        let Some(bash) = installed("bash") else {
+            eprintln!("skipped: no bash");
+            return;
+        };
+        let bash = bash.to_string_lossy().into_owned();
+        let mut session =
+            spawn_shell(&shell(&bash, &["--norc", "--noprofile"]), &[], 80, 24).unwrap();
+        session
+            .input
+            .blocking_send(b"sleep 30 & disown; echo \"job=$! ok\"\n".to_vec())
+            .unwrap();
+        let job_in = |t: &str| {
+            t.match_indices("job=")
+                .map(|(i, _)| &t[i + 4..])
+                .filter_map(|rest| rest.split_once(" ok"))
+                .map(|(digits, _)| digits.to_owned())
+                .find(|d| !d.is_empty() && d.chars().all(|c| c.is_ascii_digit()))
+        };
+        let (text, _) = read_until(&mut session, |t| job_in(t).is_some());
+        // Ends the job however the test ends.
+        struct Job(String);
+        impl Drop for Job {
+            fn drop(&mut self) {
+                let _ = std::process::Command::new("kill")
+                    .args(["-9", &self.0])
+                    .status();
+            }
+        }
+        let job = Job(job_in(&text).unwrap());
+
+        session.input.blocking_send(b"exit 3\n".to_vec()).unwrap();
+        let sent = Instant::now();
+        let (text, exit) = read_until(&mut session, |_| false);
+        assert_eq!(exit, Some(Some(3)), "{text}");
+        assert!(
+            sent.elapsed() < Duration::from_secs(2),
+            "the session ended {:?} after the shell",
+            sent.elapsed()
+        );
+        assert!(!is_gone_or_zombie(&job.0), "the disowned job was killed");
     }
 
     /// No such process, or only an unreaped zombie. `ps` instead of `/proc`, which macOS does not have.
