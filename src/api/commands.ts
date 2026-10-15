@@ -25,10 +25,14 @@ import type { DrainPreview } from "./generated/DrainPreview";
 import type { ExtensionInfo } from "./generated/ExtensionInfo";
 import type { ForwardInfo } from "./generated/ForwardInfo";
 import type { ForwardTarget } from "./generated/ForwardTarget";
+import type { GitopsStatus } from "./generated/GitopsStatus";
+import type { GitopsTool } from "./generated/GitopsTool";
+import type { GitopsVersions } from "./generated/GitopsVersions";
 import type { HelmRelease } from "./generated/HelmRelease";
 import type { HelmReleaseDetail } from "./generated/HelmReleaseDetail";
 import type { HelmRepo } from "./generated/HelmRepo";
 import type { HelmStatus } from "./generated/HelmStatus";
+import type { InstallPreview } from "./generated/InstallPreview";
 import type { KubeconfigSource } from "./generated/KubeconfigSource";
 import type { LogOptions } from "./generated/LogOptions";
 import type { ManagedResource } from "./generated/ManagedResource";
@@ -243,6 +247,25 @@ export const argocd = {
    * saved login or the standard secrets; rejects with `unauthorized` when none works (show the sign-in window).
    */
   diff: (clusterId: ClusterId, app: ObjectRef) => call<ManagedResource[]>("argocd_diff", { clusterId, app }),
+};
+
+/**
+ * Installing Flux or Argo CD from their official manifests (only from the window: agents and extensions cannot).
+ * `prepare` downloads and checks the manifest and answers the preview with a token that `start` spends once, within
+ * ten minutes; the install runs as a stream `gitops-install:<streamId>` (`events.onGitopsInstall`, open it with
+ * `openStream`).
+ */
+export const gitopsInstall = {
+  /** Stable releases, newest first; only the bundled version (and `error`) when GitHub cannot be asked. */
+  versions: (tool: GitopsTool) => call<GitopsVersions>("gitops_install_versions", { tool }),
+  prepare: (clusterId: ClusterId, tool: GitopsTool, version: string) =>
+    call<InstallPreview>("gitops_install_prepare", { clusterId, tool, version }),
+  start: (clusterId: ClusterId, token: string, streamId: string) =>
+    call<void>("gitops_install_start", { clusterId, token, streamId }),
+  /** Stops after the object being applied (or the wait for readiness); an ended install is not an error. */
+  stop: (streamId: string) => call<void>("gitops_install_stop", { streamId }),
+  /** Whether Flux and Argo CD are in the cluster (their CRDs). */
+  status: (clusterId: ClusterId) => call<GitopsStatus>("gitops_install_status", { clusterId }),
 };
 
 /** AI agent access rules of a cluster (`ClusterSettings.agentAccess`). */

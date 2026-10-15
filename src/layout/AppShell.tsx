@@ -13,6 +13,7 @@ import { ExtensionsHost } from "../extensions/ExtensionsHost";
 import { AboutHost } from "../features/about/AboutHost";
 // The file, not the feature's index: the shell mounts the dialog, the feature registers the rest.
 import { ConsentNotice } from "../features/extensions/ConsentNotice";
+import { InstallHost } from "../features/gitops-install/InstallHost";
 import { ConfirmHost } from "../features/mcp/ConfirmHost";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
@@ -33,8 +34,10 @@ import "./layout.css";
  *
  * Window-wide, mounted once: the confirmation dialog for what an AI agent or an extension asks to do (`ConfirmHost`),
  * the notice that an extension is paused for new permissions with its review window (`ConsentNotice`), the extension
- * host, which keeps extension contributions registered (`ExtensionsHost`), and the About dialog (`AboutHost`, opened
- * by the tray menu and by Settings).
+ * host, which keeps extension contributions registered (`ExtensionsHost`), the About dialog (`AboutHost`, opened
+ * by the tray menu and by Settings) and the Flux / Argo CD install dialog (`InstallHost`, opened from the cluster
+ * menu and the cluster settings; outside the rail, so switching between the narrow and the wide layout never
+ * unmounts a running install).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -113,6 +116,7 @@ export function AppShell() {
         <Dock />
       </div>
       <AboutHost />
+      <InstallHost />
       <ConfirmHost />
       <ConsentNotice />
       <ExtensionsHost />

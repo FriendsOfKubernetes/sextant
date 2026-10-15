@@ -8,6 +8,7 @@ pub mod argocd;
 pub mod cloud;
 pub mod clusters;
 pub mod files;
+pub mod gitops_install;
 pub mod helm;
 pub mod logs;
 pub mod mcp;

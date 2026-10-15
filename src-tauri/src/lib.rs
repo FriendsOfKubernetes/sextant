@@ -2,8 +2,10 @@
 
 pub mod access_guard;
 pub mod commands;
+pub mod download;
 pub mod events;
 pub mod extensions;
+pub mod gitops_install;
 pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
@@ -85,6 +87,11 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         settings::settings_status,
         commands::tray::tray_status,
         commands::about::about_info,
+        commands::gitops_install::gitops_install_versions,
+        commands::gitops_install::gitops_install_prepare,
+        commands::gitops_install::gitops_install_start,
+        commands::gitops_install::gitops_install_stop,
+        commands::gitops_install::gitops_install_status,
         files::file_save,
         argocd::argocd_status,
         argocd::argocd_login,

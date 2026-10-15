@@ -17,6 +17,7 @@ use tokio::task::AbortHandle;
 
 use crate::commands::argocd::{ArgoSessions, KeyringStore};
 use crate::extensions::api::ExtensionApi;
+use crate::gitops_install::GitopsInstalls;
 use crate::mcp::{McpContext, McpServer};
 
 /// How long closing the window (or quitting) waits for the node shell pods to be deleted.
@@ -41,6 +42,9 @@ pub struct AppState {
     /// The extensions' API (`extension_call`): its watch streams, its journal `<data_dir>/extensions-audit.jsonl`;
     /// confirmations shared with `mcp`.
     pub ext_api: ExtensionApi,
+    /// Flux / Argo CD installs: plans prepared for the user's "Install" and the installs running
+    /// (`gitops_install_*`); stopped with their cluster, on a reload and on exit.
+    pub gitops: GitopsInstalls,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -81,14 +85,16 @@ impl AppState {
             argocd: ArgoSessions::new(Arc::new(KeyringStore::os())),
             mcp,
             ext_api,
+            gitops: GitopsInstalls::default(),
             streams_generation: AtomicU64::new(0),
         }
     }
 
-    /// Stops every subscription (extensions' streams too), session and port forward of a cluster (on disconnect), and
-    /// forgets its Argo CD session.
+    /// Stops every subscription (extensions' streams too), session, Flux / Argo CD install and port forward of a
+    /// cluster (on disconnect), and forgets its Argo CD session.
     pub fn close_cluster(&self, cluster: &ClusterId) {
         self.subscriptions.stop_cluster(cluster);
+        self.gitops.stop_cluster(cluster);
         self.ext_api.streams.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
         self.forwarder.stop_cluster(cluster);
@@ -108,13 +114,15 @@ impl AppState {
         sextant_core::node_shell::wait_for_deletions(NODE_SHELL_DELETE_WAIT);
     }
 
-    /// Stops every watch subscription (extensions' too), log stream and terminal session, but keeps connections and
-    /// port forwards (`streams_reset`: the window was reloaded and nobody listens to the old streams any more).
+    /// Stops every watch subscription (extensions' too), log stream, terminal session and Flux / Argo CD install, but
+    /// keeps connections and port forwards (`streams_reset`: the window was reloaded and nobody listens to the old
+    /// streams any more).
     pub fn reset_streams(&self) {
         // First: a start that registers from now on sees the reset and undoes itself.
         self.streams_generation.fetch_add(1, Ordering::SeqCst);
         self.subscriptions.stop_all();
         self.sessions.stop_all();
+        self.gitops.stop_all();
         // Extensions' streams; the confirmations the old page was showing are declined.
         self.ext_api.reset();
     }

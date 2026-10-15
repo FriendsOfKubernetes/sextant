@@ -1,7 +1,7 @@
 // Content of the cluster rail: one icon per kubeconfig context with its connection state (and, when the rail is
-// expanded, its name), a context menu (connect / reconnect / disconnect / settings / change icon), the "add" and
-// "refresh" buttons and, when a kubeconfig source cannot be read, a warning that lists those sources with their
-// errors.
+// expanded, its name), a context menu (connect / reconnect / disconnect / install Flux or Argo CD / settings / change
+// icon), the "add" and "refresh" buttons and, when a kubeconfig source cannot be read, a warning that lists those
+// sources with their errors.
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings, type AppSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
@@ -19,6 +19,7 @@ import {
   selectCluster,
   useClustersStore,
 } from "./clustersStore";
+import { InstallMenuItems } from "../gitops-install/InstallMenuItems";
 import { useClusters } from "./hooks";
 import "./clusters.css";
 
@@ -205,6 +206,7 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
           </button>
         </li>
       )}
+      <InstallMenuItems clusterId={id} run={run} />
       <li role="none">
         <button type="button" role="menuitem" onClick={run(() => openClusterSettings(id))}>
           {t("clusters:menu.settings")}

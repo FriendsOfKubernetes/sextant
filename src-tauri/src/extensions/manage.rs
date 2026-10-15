@@ -9,7 +9,6 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use reqwest::Url;
@@ -23,6 +22,7 @@ use tauri::State;
 use ts_rs::TS;
 
 use super::{ExtensionHost, ExtensionInfo, HostEvent, lock};
+use crate::download::{Connect, Fetch, is_asset_host, plain_https};
 
 /// How long a checked package waits for the user's consent.
 pub const PENDING_TTL: Duration = Duration::from_secs(10 * 60);
@@ -34,13 +34,6 @@ const MAX_ARCHIVE_BYTES: u64 = MAX_UNPACKED_BYTES + 8 * 1024 * 1024;
 pub const MAX_DOWNLOAD_BYTES: u64 = 20 * 1024 * 1024;
 /// A download that takes longer is cancelled.
 pub const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(60);
-/// Redirects followed at most.
-const MAX_REDIRECTS: usize = 5;
-/// Hosts a GitHub release download may redirect to (where GitHub keeps the files).
-const ASSET_HOSTS: [&str; 2] = [
-    "objects.githubusercontent.com",
-    "release-assets.githubusercontent.com",
-];
 
 /// A checked package waiting for the user's consent (`extension_inspect_*`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -482,10 +475,7 @@ impl ExtensionHost {
     }
 }
 
-/// Rewrites the URL a request is actually sent to (tests: a local fake server); policy checks see the original.
-type Connect = Arc<dyn Fn(&Url) -> Url + Send + Sync>;
-
-/// Downloads extension packages from GitHub Releases.
+/// Downloads extension packages from GitHub Releases (the rules of [`crate::download`]).
 #[derive(Clone)]
 pub struct Downloader {
     max_bytes: u64,
@@ -509,29 +499,9 @@ pub fn is_release_url(url: &Url) -> bool {
             .all(|s| !s.is_empty() && *s != ".." && *s != ".")
 }
 
-fn plain_https(url: &Url, host: &str) -> bool {
-    url.scheme() == "https"
-        && url.host_str() == Some(host)
-        && url.port().is_none()
-        && url.username().is_empty()
-        && url.password().is_none()
-}
-
 /// Where a release download may be redirected: another release URL, or GitHub's asset hosts.
 fn is_allowed_redirect(url: &Url) -> bool {
-    is_release_url(url) || ASSET_HOSTS.iter().any(|host| plain_https(url, host))
-}
-
-fn network(err: reqwest::Error) -> CoreError {
-    let err = err.without_url();
-    if err.is_timeout() {
-        CoreError::new(ErrorCode::Timeout, format!("The download timed out: {err}"))
-    } else {
-        CoreError::new(
-            ErrorCode::Unreachable,
-            format!("The download failed: {err}"),
-        )
-    }
+    is_release_url(url) || is_asset_host(url)
 }
 
 impl Downloader {
@@ -553,19 +523,6 @@ impl Downloader {
         }
     }
 
-    fn client(&self) -> CoreResult<reqwest::Client> {
-        // reqwest is built without a crypto provider; ring is the one the app uses (as the updater does).
-        let _ = rustls::crypto::ring::default_provider().install_default();
-        reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .connect_timeout(Duration::from_secs(15))
-            .user_agent(concat!("Sextant/", env!("CARGO_PKG_VERSION")))
-            .build()
-            .map_err(|e| {
-                CoreError::other(format!("cannot start the download: {}", e.without_url()))
-            })
-    }
-
     /// Downloads `url` (a GitHub release asset) into memory.
     pub async fn download(&self, url: &str) -> CoreResult<Vec<u8>> {
         let url = Url::parse(url.trim()).map_err(|e| invalid(format!("Not a link: {e}")))?;
@@ -574,73 +531,15 @@ impl Downloader {
                 "Only links to GitHub release files can be installed: https://github.com/<owner>/<repo>/releases/download/<tag>/<file>",
             ));
         }
-        match tokio::time::timeout(self.timeout, self.fetch(url)).await {
-            Ok(result) => result,
-            Err(_) => Err(CoreError::new(
-                ErrorCode::Timeout,
-                format!("The download took longer than {} s", self.timeout.as_secs()),
-            )),
+        Fetch {
+            max_bytes: self.max_bytes,
+            timeout: self.timeout,
+            connect: self.connect.as_ref(),
+            allowed_redirect: &is_allowed_redirect,
+            accept: None,
         }
-    }
-
-    fn too_large(&self) -> CoreError {
-        invalid(format!(
-            "The file is larger than {} MB",
-            self.max_bytes / 1024 / 1024
-        ))
-    }
-
-    async fn fetch(&self, mut url: Url) -> CoreResult<Vec<u8>> {
-        let client = self.client()?;
-        for _ in 0..=MAX_REDIRECTS {
-            let target = match &self.connect {
-                Some(connect) => connect(&url),
-                None => url.clone(),
-            };
-            let mut response = client.get(target).send().await.map_err(network)?;
-            let status = response.status();
-            if status.is_redirection() {
-                let location = response
-                    .headers()
-                    .get(reqwest::header::LOCATION)
-                    .and_then(|v| v.to_str().ok())
-                    .ok_or_else(|| CoreError::other("The download was redirected nowhere"))?;
-                let next = url.join(location).map_err(|e| {
-                    CoreError::other(format!("The download was redirected to a bad link: {e}"))
-                })?;
-                if !is_allowed_redirect(&next) {
-                    return Err(invalid(format!(
-                        "The download was redirected to {}, which is not GitHub",
-                        next.host_str().unwrap_or("another site")
-                    )));
-                }
-                url = next;
-                continue;
-            }
-            if !status.is_success() {
-                return Err(CoreError::new(
-                    sextant_core::error::code_for_http_status(status.as_u16()),
-                    format!("The download failed: HTTP {status}"),
-                ));
-            }
-            if response
-                .content_length()
-                .is_some_and(|len| len > self.max_bytes)
-            {
-                return Err(self.too_large());
-            }
-            let mut body = Vec::new();
-            while let Some(chunk) = response.chunk().await.map_err(network)? {
-                if body.len() as u64 + chunk.len() as u64 > self.max_bytes {
-                    return Err(self.too_large());
-                }
-                body.extend_from_slice(&chunk);
-            }
-            return Ok(body);
-        }
-        Err(CoreError::other(
-            "The download was redirected too many times",
-        ))
+        .get(url)
+        .await
     }
 }
 
@@ -742,6 +641,7 @@ mod tests {
     use super::*;
     use crate::extensions::ExtensionState;
     use crate::extensions::test_support::*;
+    use std::sync::Arc;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     fn write_package(dir: &Path, name: &str, zip: Vec<u8>) -> PathBuf {

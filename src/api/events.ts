@@ -4,6 +4,7 @@ import type { ClusterStatePayload } from "./generated/ClusterStatePayload";
 import type { ConfirmRequest } from "./generated/ConfirmRequest";
 import type { ExtensionFilesChangedPayload } from "./generated/ExtensionFilesChangedPayload";
 import type { ForwardInfo } from "./generated/ForwardInfo";
+import type { InstallEvent } from "./generated/InstallEvent";
 import type { LogUpdate } from "./generated/LogUpdate";
 import type { McpStatus } from "./generated/McpStatus";
 import type { TermPayload } from "./generated/TermPayload";
@@ -19,6 +20,9 @@ export const events = {
     subscribe(`logs:${streamId}`, handler),
   onTerm: (sessionId: string, handler: (payload: TermPayload) => void): Promise<Unsubscribe> =>
     subscribe(`term:${sessionId}`, handler),
+  /** Progress of a Flux / Argo CD install (`api.gitopsInstall.start(…, streamId)`). */
+  onGitopsInstall: (streamId: string, handler: (event: InstallEvent) => void): Promise<Unsubscribe> =>
+    subscribe(`gitops-install:${streamId}`, handler),
   onPortForwards: (handler: (list: ForwardInfo[]) => void): Promise<Unsubscribe> =>
     subscribe("portforwards", handler),
   /**

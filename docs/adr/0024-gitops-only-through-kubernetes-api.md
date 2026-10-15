@@ -21,3 +21,5 @@ Flux and Argo CD objects are read as ordinary Custom Resources, and actions are 
 - "Reconcile with source" for Kustomization and HelmRelease is a sequence of patches (the source first, then the object), not one atomic action.
 - Verified on kind with Flux v2.9.6 and Argo CD v3.5.5. Other versions were not verified in the materials. On the user's cluster (read only) actions were not run; there is no Argo CD there.
 - The patch format (the structure of `operation`, annotation names) is known to the frontend (`src/features/argocd`, `src/features/flux`), not to the core. A format change in Argo CD or Flux means editing the frontend.
+
+> Amended (v0.7.0): Sextant can now install Flux and Argo CD into a connected cluster that lacks them, from their official `install.yaml` through the Kubernetes API, on the user's click only (ADR-0058, #81). Reading and actions are unchanged: still no `flux`/`argocd` CLI.

@@ -850,3 +850,122 @@ async fn access_check_asks_self_subject_access_reviews() {
         ])
     );
 }
+
+// --- overlap ---
+
+fn metadata_list(names: &[&str]) -> String {
+    let items: Vec<Value> = names
+        .iter()
+        .map(|name| json!({"apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadata", "metadata": {"name": name}}))
+        .collect();
+    json!({"apiVersion": "meta.k8s.io/v1", "kind": "PartialObjectMetadataList", "metadata": {}, "items": items})
+        .to_string()
+}
+
+#[tokio::test]
+async fn overlap_names_existing_cluster_objects_and_flux_controllers_the_install_leaves_out() {
+    let plan = prepare(GitopsTool::Flux, "v2.9.6", &flux_manifest()).unwrap();
+    // The real names from the file, so the test does not rely on the code under test to pick them.
+    assert!(names_of(&plan, "ClusterRole").contains("crd-controller"));
+    let api = FakeApi::start(|req: &Request| {
+        if let Some(reply) = discovery(req) {
+            return reply;
+        }
+        match req.path.as_str() {
+            "/api/v1/namespaces" => Reply::json(200, metadata_list(&["default", "flux-system"])),
+            "/apis/apiextensions.k8s.io/v1/customresourcedefinitions" => Reply::json(
+                200,
+                metadata_list(&[
+                    "gitrepositories.source.toolkit.fluxcd.io",
+                    "imagepolicies.image.toolkit.fluxcd.io",
+                    "widgets.example.com",
+                ]),
+            ),
+            "/apis/rbac.authorization.k8s.io/v1/clusterroles" => Reply::json(
+                200,
+                metadata_list(&["crd-controller", "flux-edit", "admin"]),
+            ),
+            // Listing the bindings is not allowed: they are left out, not an error.
+            "/apis/rbac.authorization.k8s.io/v1/clusterrolebindings" => Reply::json(403, FORBIDDEN),
+            "/apis/apps/v1/namespaces/flux-system/deployments" => Reply::json(
+                200,
+                list(
+                    "Deployment",
+                    vec![
+                        deployment("source-controller", "source-controller", 1),
+                        deployment(
+                            "image-reflector-controller",
+                            "image-reflector-controller",
+                            1,
+                        ),
+                        deployment(
+                            "image-automation-controller",
+                            "image-automation-controller",
+                            1,
+                        ),
+                    ],
+                ),
+            ),
+            _ => Reply::not_found(),
+        }
+    })
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+    let found = overlap(&mgr, &id, &plan).await.unwrap();
+
+    let named: Vec<(&str, &str)> = found
+        .cluster_objects
+        .iter()
+        .map(|o| (o.kind.as_str(), o.name.as_str()))
+        .collect();
+    assert_eq!(
+        named,
+        [
+            ("Namespace", "flux-system"),
+            (
+                "CustomResourceDefinition",
+                "gitrepositories.source.toolkit.fluxcd.io"
+            ),
+            ("ClusterRole", "crd-controller"),
+            ("ClusterRole", "flux-edit"),
+        ]
+    );
+    assert!(found.cluster_objects.iter().all(|o| o.cluster_scoped));
+    assert_eq!(
+        found.left_out_controllers,
+        ["image-reflector-controller", "image-automation-controller"]
+    );
+}
+
+#[tokio::test]
+async fn overlap_on_an_empty_cluster_is_empty_and_argocd_has_no_left_out_controllers() {
+    let plan = prepare(GitopsTool::ArgoCd, "v3.5.5", &argocd_manifest()).unwrap();
+    let api = FakeApi::start(|req: &Request| {
+        if let Some(reply) = discovery(req) {
+            return reply;
+        }
+        match req.path.as_str() {
+            "/api/v1/namespaces"
+            | "/apis/apiextensions.k8s.io/v1/customresourcedefinitions"
+            | "/apis/rbac.authorization.k8s.io/v1/clusterroles"
+            | "/apis/rbac.authorization.k8s.io/v1/clusterrolebindings" => {
+                Reply::json(200, metadata_list(&["default"]))
+            }
+            _ => Reply::not_found(),
+        }
+    })
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+    let found = overlap(&mgr, &id, &plan).await.unwrap();
+
+    assert!(found.cluster_objects.is_empty(), "{found:?}");
+    assert!(found.left_out_controllers.is_empty());
+    assert!(
+        !api.requests()
+            .iter()
+            .any(|r| r.path.contains("deployments")),
+        "Argo CD leaves nothing out, so its Deployments are not read"
+    );
+}

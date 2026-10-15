@@ -22,3 +22,5 @@ Core: `resources::patch(mgr, cluster, &ObjectRef, &Value, PatchType) -> CoreResu
 - kube errors pass through `kube_error`; a server conflict is `Conflict`. The 30 s expiry does not cancel the patch on the server (ADR-0016): an action shown as an error may have been applied.
 - The earlier commands (`workload_restart`, `cronjob_suspend`) remain; moving them to the shared command was not planned in the materials. There are now two paths for changes of the same kind.
 - A merge patch replaces lists whole. This applies to `operation.sync.syncOptions` too, which Sync writes itself.
+
+> Amended (v0.7.0): installing Flux or Argo CD is not a `resource_patch` action: it has its own window commands `gitops_install_*` (a forced server-side apply of the official manifest, object by object, ADR-0058), which neither agents nor extensions can call.

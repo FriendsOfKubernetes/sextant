@@ -1,0 +1,76 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Install Flux…",
+    "argoCd": "Install Argo CD…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux and Argo CD are installed from their official manifests through the Kubernetes API.",
+    "notConnected": "Connect to the cluster to see whether Flux and Argo CD are installed.",
+    "loading": "Reading what the cluster serves…",
+    "installed": "Installed",
+    "missing": "Not installed",
+    "install": "Install {{tool}}…"
+  },
+  "dialog": {
+    "title": "Install {{tool}}",
+    "flux": "Flux is installed as `flux install` does by default: the source, kustomize, helm and notification controllers in flux-system, without image automation.",
+    "argoCd": "Argo CD is installed from its standard install.yaml into argocd: cluster-wide, with the web UI, not highly available."
+  },
+  "versions": {
+    "label": "Version",
+    "loading": "Asking GitHub for the releases…",
+    "latest": "{{version}} (latest)",
+    "error": "Could not get the list of releases from GitHub, so only the tested version {{version}} is offered.",
+    "next": "Download and preview"
+  },
+  "preparing": "Downloading and checking the manifest…",
+  "preview": {
+    "version": "Version",
+    "source": "Source",
+    "sha256": "SHA-256",
+    "verified": "matches the checksums file of the release",
+    "unverified": "the project publishes no checksum for this file",
+    "namespace": "Namespace",
+    "objects": "Objects ({{count}})",
+    "clusterScoped": "cluster-wide",
+    "warning": "Installing changes the whole cluster: it creates CustomResourceDefinitions, ClusterRoles and ClusterRoleBindings. It needs cluster-admin rights.",
+    "noCrdAccess": "You may not create CustomResourceDefinitions in this cluster, so the install will probably fail.",
+    "noBindingAccess": "You may not create ClusterRoleBindings in this cluster, so the install will probably fail.",
+    "present": "{{tool}} is already installed. Its objects will be updated to this version.",
+    "partial": "{{tool}} is partly installed (its namespace or some of its CRDs exist). Existing objects will be updated.",
+    "overwritten": "These cluster-wide objects already exist and will be overwritten:",
+    "leftOut": "Running in {{namespace}}: {{names}}. This install leaves image automation and the source watcher out, as `flux install` does, and removes their service accounts from the shared role bindings, so they lose their permissions."
+  },
+  "back": "Back",
+  "install": "Install",
+  "stop": "Stop",
+  "progress": {
+    "applying": "Applying objects: {{done}} of {{total}}",
+    "stopping": "Stopping after the current object…",
+    "waiting": "Everything is applied. Waiting for the controllers to be ready (up to 5 minutes)…",
+    "ready": "ready",
+    "notReady": "not ready"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} is installed and running. Its section is in the sidebar.",
+    "timedOut": "Everything was applied, but not every controller was ready within 5 minutes. What was applied stays in the cluster.",
+    "stopped": "The install was stopped. {{count}} objects were applied; the rest were not sent.",
+    "failed": "The install failed. Nothing after the failed object was sent; what was applied stays in the cluster.",
+    "applied": "Applied ({{count}})",
+    "notApplied": "Not applied ({{count}})"
+  },
+  "argo": {
+    "login": "Sextant signs in to Argo CD by itself with the argocd-initial-admin-secret. Change the admin password in Argo CD, then delete that secret.",
+    "openUi": "Open Argo CD UI"
+  },
+  "confirmStop": {
+    "title": "Stop the install?",
+    "text": "The install stops after the object being applied. What was applied stays in the cluster.",
+    "confirm": "Stop the install"
+  }
+}

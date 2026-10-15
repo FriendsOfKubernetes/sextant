@@ -4493,6 +4493,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sextant-core",
+ "sha2 0.11.0",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

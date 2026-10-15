@@ -1,0 +1,122 @@
+.gitops-install {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 640px;
+}
+
+.gitops-install p {
+  margin: 0;
+}
+
+.gitops-install__text,
+.gitops-install__warning,
+.gitops-install__success {
+  overflow-wrap: anywhere;
+}
+
+.gitops-install__warning {
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-warning);
+  background: var(--color-hover);
+}
+
+.gitops-install__success {
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-success);
+}
+
+.gitops-install__muted {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.gitops-install__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.gitops-install__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gitops-install__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.gitops-install__facts dt {
+  color: var(--color-text-muted);
+}
+
+.gitops-install__facts dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.gitops-install__names,
+.gitops-install__objects ul,
+.gitops-install__workloads {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.gitops-install__objects li,
+.gitops-install__workloads li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.gitops-install__workloads {
+  list-style: none;
+  padding-left: 0;
+}
+
+.gitops-install__argo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gitops-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gitops-section__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.gitops-section__tools {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gitops-section__tool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gitops-section__name {
+  min-width: 72px;
+  font-weight: 600;
+}

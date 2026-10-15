@@ -3,8 +3,8 @@
 //! Nothing here touches the network: the caller downloads the manifest (and checks it), [`prepare`] turns its text
 //! into an [`InstallPlan`] (Flux as `flux install` does by default, Argo CD into the namespace `argocd`), [`apply`]
 //! server-side applies the plan object by object and reports every step, and [`readiness`] tells whether the
-//! controllers came up and, when not, why (from their pods). [`installed`] and [`access_check`] answer the questions
-//! the preview asks before anything is sent.
+//! controllers came up and, when not, why (from their pods). [`installed`], [`access_check`] and [`overlap`] answer the
+//! questions the preview asks before anything is sent.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -14,6 +14,7 @@ use k8s_openapi::api::authorization::v1::{
     ResourceAttributes, SelfSubjectAccessReview, SelfSubjectAccessReviewSpec,
 };
 use k8s_openapi::api::core::v1::{Namespace, Pod};
+use k8s_openapi::api::rbac::v1::{ClusterRole, ClusterRoleBinding};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 use kube::Api;
@@ -141,6 +142,21 @@ pub struct InstalledState {
 pub struct AccessCheck {
     pub can_create_crds: bool,
     pub can_create_cluster_role_bindings: bool,
+}
+
+/// What an install would overwrite or change for other components, found before anything is sent (the preview
+/// warns about it).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Overlap {
+    /// Cluster-scoped objects of the plan that already exist (in the plan's order): the install overwrites them,
+    /// whoever made them. Kinds the user may not list are left out.
+    pub cluster_objects: Vec<PlannedObject>,
+    /// Flux: Deployments of the components `flux install` leaves out (image automation, source watcher) that are in
+    /// the namespace already. The install trims their ServiceAccounts from the shared bindings (such as
+    /// `crd-controller`), so those controllers lose their permissions.
+    pub left_out_controllers: Vec<String>,
 }
 
 /// Field manager of the apply, the same as every change Sextant makes.
@@ -869,6 +885,104 @@ async fn can_create(client: &kube::Client, group: &str, resource: &str) -> CoreR
     })
     .await?;
     Ok(answered.status.is_some_and(|s| s.allowed))
+}
+
+/// Which objects of the plan already exist (cluster-scoped ones) and, for Flux, which left-out controllers run in
+/// its namespace. Read from the cluster; a kind the user may not list is skipped.
+pub async fn overlap(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    plan: &InstallPlan,
+) -> CoreResult<Overlap> {
+    let client = mgr.client(cluster)?;
+    let mut existing: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
+    for kind in CLUSTER_SCOPED_KINDS {
+        if !plan.objects.iter().any(|o| o.kind == *kind) {
+            continue;
+        }
+        let names = match *kind {
+            "Namespace" => names_of::<Namespace>(&client).await,
+            "CustomResourceDefinition" => names_of::<CustomResourceDefinition>(&client).await,
+            "ClusterRole" => names_of::<ClusterRole>(&client).await,
+            _ => names_of::<ClusterRoleBinding>(&client).await,
+        };
+        match names {
+            Ok(names) => {
+                existing.insert(kind, names);
+            }
+            Err(err) if err.code == ErrorCode::Forbidden => {}
+            Err(err) => return Err(err),
+        }
+    }
+    let cluster_objects = plan
+        .objects
+        .iter()
+        .filter(|o| {
+            o.cluster_scoped
+                && existing
+                    .get(o.kind.as_str())
+                    .is_some_and(|names| names.contains(&o.name))
+        })
+        .cloned()
+        .collect();
+
+    let mut left_out_controllers = Vec::new();
+    if plan.tool == GitopsTool::Flux {
+        let listed = with_timeout(STEP_TIMEOUT, "listing the Deployments", async {
+            Api::<Deployment>::namespaced(client.clone(), &plan.namespace)
+                .list(&ListParams::default())
+                .await
+                .map_err(CoreError::from)
+        })
+        .await;
+        let deployments = match listed {
+            Ok(list) => list.items,
+            Err(err) if matches!(err.code, ErrorCode::Forbidden | ErrorCode::NotFound) => {
+                Vec::new()
+            }
+            Err(err) => return Err(err),
+        };
+        for d in deployments {
+            let name = d.metadata.name.clone().unwrap_or_default();
+            let component = d
+                .metadata
+                .labels
+                .as_ref()
+                .and_then(|l| l.get(COMPONENT_LABEL))
+                .map(String::as_str)
+                .unwrap_or(name.as_str());
+            if FLUX_EXTRA_COMPONENTS.contains(&component) {
+                left_out_controllers.push(name);
+            }
+        }
+    }
+    Ok(Overlap {
+        cluster_objects,
+        left_out_controllers,
+    })
+}
+
+/// The names of every object of a cluster-scoped kind (metadata only).
+async fn names_of<K>(client: &kube::Client) -> CoreResult<BTreeSet<String>>
+where
+    K: kube::Resource<Scope = k8s_openapi::ClusterResourceScope>
+        + Clone
+        + serde::de::DeserializeOwned
+        + std::fmt::Debug,
+    K::DynamicType: Default,
+{
+    let list = with_timeout(STEP_TIMEOUT, "listing what exists", async {
+        Api::<K>::all(client.clone())
+            .list_metadata(&ListParams::default())
+            .await
+            .map_err(CoreError::from)
+    })
+    .await?;
+    Ok(list
+        .items
+        .into_iter()
+        .filter_map(|o| o.metadata.name)
+        .collect())
 }
 
 #[cfg(test)]

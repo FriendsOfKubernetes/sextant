@@ -33,6 +33,11 @@ pub fn logs_event(stream_id: &str) -> String {
     format!("logs:{stream_id}")
 }
 
+/// `gitops-install:<streamId>` — payload `InstallEvent` (a Flux / Argo CD install, `gitops_install_start`).
+pub fn gitops_install_event(stream_id: &str) -> String {
+    format!("gitops-install:{stream_id}")
+}
+
 /// `term:<sessionId>` — payload [`TermPayload`].
 pub fn term_event(session_id: &str) -> String {
     format!("term:{session_id}")
@@ -102,6 +107,7 @@ mod tests {
         assert_eq!(watch_event("watch-1"), "watch:watch-1");
         assert_eq!(logs_event("logs-2"), "logs:logs-2");
         assert_eq!(term_event("term-3"), "term:term-3");
+        assert_eq!(gitops_install_event("i-4"), "gitops-install:i-4");
         assert_eq!(
             [MCP_STATUS, MCP_CONFIRM, MCP_AUDIT, OPEN_ABOUT],
             ["mcp-status", "mcp-confirm", "mcp-audit", "open-about"]

@@ -82,6 +82,11 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("settings_status", None),
     ("tray_status", None),
     ("about_info", None),
+    ("gitops_install_versions", Some("tool")),
+    ("gitops_install_prepare", Some("clusterId")),
+    ("gitops_install_start", Some("clusterId")),
+    ("gitops_install_stop", Some("streamId")),
+    ("gitops_install_status", Some("clusterId")),
     ("file_save", Some("path")),
     ("argocd_status", Some("clusterId")),
     ("argocd_login", Some("clusterId")),
@@ -258,6 +263,40 @@ fn about_info_names_the_machine_without_paths_or_user_names() {
             "{info} names {private}"
         );
     }
+}
+
+#[test]
+fn gitops_install_commands_on_a_cluster_that_is_not_connected_fail_before_downloading() {
+    let h = harness();
+    let not_connected = json!({ "clusterId": "nope", "tool": "argoCd", "version": "v3.5.5" });
+    let err = invoke(&h, "gitops_install_prepare", not_connected).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "gitops_install_start",
+        json!({ "clusterId": "nope", "token": "t", "streamId": "s-1" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "gitops_install_start",
+        json!({ "clusterId": "nope", "token": "t", "streamId": "bad id" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    let err = invoke(&h, "gitops_install_status", json!({ "clusterId": "nope" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // Stopping an install that does not run is not an error.
+    assert_eq!(
+        invoke(&h, "gitops_install_stop", json!({ "streamId": "s-1" })).unwrap(),
+        Value::Null
+    );
+    let err = invoke(&h, "gitops_install_versions", json!({ "tool": "helm" })).unwrap_err();
+    assert!(
+        err.as_str().unwrap_or_default().contains("unknown variant"),
+        "{err}"
+    );
 }
 
 #[test]
@@ -769,6 +808,22 @@ fn later_argument_names_match_the_frontend() {
         ("argocd_logout", json!({ "clusterId": "c" }), "options"),
         ("argocd_diff", json!({ "clusterId": "c" }), "app"),
         ("mcp_confirm_answer", json!({ "id": "x" }), "approved"),
+        (
+            "gitops_install_prepare",
+            json!({ "clusterId": "c" }),
+            "tool",
+        ),
+        (
+            "gitops_install_prepare",
+            json!({ "clusterId": "c", "tool": "flux" }),
+            "version",
+        ),
+        ("gitops_install_start", json!({ "clusterId": "c" }), "token"),
+        (
+            "gitops_install_start",
+            json!({ "clusterId": "c", "token": "t" }),
+            "streamId",
+        ),
     ];
     for (cmd, args, next) in cases {
         let err = invoke(&h, cmd, args).expect_err(cmd);
