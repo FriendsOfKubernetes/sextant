@@ -110,6 +110,7 @@ pub fn icon_created<R: Runtime>(app: &AppHandle<R>) -> bool {
 
 /// Linux shows a tray icon only through a StatusNotifier host: the watcher `org.kde.StatusNotifierWatcher` must have
 /// an owner on the session bus and say a host is registered. Without one the icon silently shows nowhere.
+#[cfg(any(target_os = "linux", test))]
 pub fn host_shows_icons(watcher_owned: bool, host_registered: bool) -> bool {
     watcher_owned && host_registered
 }
