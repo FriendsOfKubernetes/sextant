@@ -94,7 +94,7 @@ The part of the app that knows everything about clusters and nothing about the w
 _Avoid_: backend, service
 
 **GitOps section**:
-The "Flux" or "Argo CD" section in the tree on the left. It appears only if the tool is found by CRDs in discovery: for Flux, at least one `*.toolkit.fluxcd.io` group; for Argo CD, the Application from `argoproj.io`. Kinds that are not in the cluster are not in the section; the section also appears without reconnecting if the tool was installed while the connection was open.
+The "Flux" or "Argo CD" section in the tree on the left. It appears only if the tool is found by CRDs in discovery: for Flux, at least one `*.toolkit.fluxcd.io` group; for Argo CD, the Application from `argoproj.io`. Kinds that are not in the cluster are not in the section; the section also appears without reconnecting if the tool was installed while the connection was open, including by Sextant's own GitOps install. Without the tool the section stays hidden; the offer to install lives in the cluster's menu and settings.
 _Avoid_: plugin, integration, module
 
 **Flux source**:
@@ -122,8 +122,32 @@ Argo CD found in the cluster by the ClusterRoleBinding `argocd-application-contr
 _Avoid_: instance, Argo server
 
 **Argo CD login**:
-Sextant's session in the Argo CD HTTP API, needed for the diff. Credentials are looked up in order: saved login → `argocd-initial-admin-secret` (user `admin`) → a Secret labeled `app.kubernetes.io/part-of=argocd` with a `token` key → the login dialog (username/password or an API token). A candidate rejected by Argo CD is not tried again until its source changes, the user signs out or the cluster is closed. "Remember" saves the login in the OS keyring for the (cluster, Argo CD namespace) pair — the cluster is the UID of its `kube-system` Namespace, or the kubeconfig entry when that cannot be read, never the API server URL; the session token lives only in memory. SSO through the browser is not supported.
+Sextant's session in the Argo CD HTTP API, needed for the diff. Credentials are looked up in order: saved login → `argocd-initial-admin-secret` (user `admin`) → a Secret labeled `app.kubernetes.io/part-of=argocd` with a `token` key → the login dialog (username/password or an API token). A candidate rejected by Argo CD is not tried again until its source changes, the user signs out or the cluster is closed. "Remember" saves the login in the OS keyring for the (cluster, Argo CD namespace) pair — the cluster is the UID of its `kube-system` Namespace, or the kubeconfig entry when that cannot be read, never the API server URL; the session token lives only in memory. A saved login is also bound to the API server it was saved for (its URL and certificate authority) and is offered only to a connection with the same binding. SSO through the browser is not supported.
 _Avoid_: authorization, sign-in, connection to Argo CD
+
+**GitOps install**:
+Putting Flux or Argo CD into a connected cluster that lacks it, from the tool's official install file, through the Kubernetes API, with a version choice, a preview and a confirmation. Only the user's click in the window starts it; an agent or an extension cannot. Flux goes into `flux-system` as `flux install` does by default (no image automation), Argo CD into `argocd` as its standard cluster-wide install. Sextant offers no uninstall and no "upgrade" action. Not to be confused with an app "update" or with a Helm "release".
+_Avoid_: deploy, setup, add-on install
+
+**Install preview**:
+The screen before anything is sent: version, where the file comes from, its SHA-256 (checked against the project's checksums for Flux, only shown for Argo CD), the namespace, the objects by kind with the cluster-wide ones marked, a cluster-admin warning, whether the user's rights look sufficient and which objects already exist and will be overwritten. The Install button stays even when a warning is shown; the user decides.
+_Avoid_: dry run, summary
+
+**Partly installed**:
+The state of a GitOps tool whose CRDs are in the cluster but whose key controllers are not, for example after an install that stopped halfway. It is offered for installation again, which updates the objects it finds. A tool without its optional parts (Argo CD without Dex or notifications, Flux without the helm or notification controllers) counts as installed.
+_Avoid_: broken, half-installed (in the interface)
+
+**Tray icon**:
+Sextant's icon in the notification area (Windows), the menu bar (macOS) or a StatusNotifier host (Linux), with the menu Show/Hide, About Sextant and Quit. On a Linux desktop without a host there is no icon, and the app behaves as if the tray did not exist.
+_Avoid_: taskbar icon, system tray (in the interface)
+
+**Keep in tray**:
+The option "Closing the window keeps Sextant in the tray", off by default. With it, closing the window only hides it: connections, port forwards, terminals and the MCP server keep running, and a confirmation question from an agent or an extension brings the window back. Only Quit in the tray menu ends the app. Unavailable, with an explanation, when there is no tray icon.
+_Avoid_: minimize to tray, background mode
+
+**About Sextant**:
+The dialog in the main window with the version, how this copy was installed (AppImage, deb, rpm, dmg, msi, NSIS, "development build" or "not installed from a release package"), the licence, links, the update check and "Copy version info" for a bug report. It opens from the tray menu and from Settings.
+_Avoid_: about window, info page
 
 **Desired ↔ live diff**:
 Two columns with differences highlighted for an Application resource: what Argo CD is about to apply and what is in the cluster now (predicted versus normalized live, as in Argo CD). Available after logging in to Argo CD; Secret values are hidden, as everywhere.

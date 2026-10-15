@@ -27,3 +27,5 @@ ADR-0024 and ADR-0025 kept Sextant from installing anything: Flux and Argo CD we
 - The release list is GitHub's unauthenticated API (60 requests an hour per address); past the limit the bundled version is the only choice until the limit resets.
 - Argo CD's manifest is trusted as served by raw.githubusercontent.com for the tag; a moved tag would not be noticed.
 - New versions of the manifests may use kinds outside the core's allow-list and are then refused until Sextant is updated.
+
+> Amended (v0.7.0): the install entries are shown from the cluster's state, not from discovery. `gitops_install_status` reports a tool as installed only when its CRDs and its key controllers exist (Argo CD: server, repo server and application controller; Flux: source and kustomize controllers), so a half-installed tool (an install stopped after its CRDs) is offered again and shown as "Partly installed"; discovery is only the fallback while the status is loading. Installs without the optional parts (Argo CD without Dex, notifications or ApplicationSet; Flux without the helm or notification controllers) count as installed.
