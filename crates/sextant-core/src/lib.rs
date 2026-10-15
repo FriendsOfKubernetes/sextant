@@ -17,6 +17,7 @@ pub mod exec;
 pub mod extensions;
 #[cfg(test)]
 mod fake_api;
+pub mod gitops_install;
 pub mod helm;
 pub mod kubeconfig;
 pub mod logs;
