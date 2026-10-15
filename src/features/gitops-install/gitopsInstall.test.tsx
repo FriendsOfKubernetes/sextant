@@ -316,6 +316,8 @@ describe("the install dialog", () => {
     expect(await within(dialog).findByText(/only the tested version v2.9.6 is offered/)).toBeInTheDocument();
     expect(within(dialog).getByText("The download failed: HTTP 403 Forbidden")).toBeInTheDocument();
     expect(within(dialog).getAllByRole("option")).toHaveLength(1);
+    expect(within(dialog).getByRole("option", { name: "v2.9.6 (bundled)" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("option", { name: /latest/ })).not.toBeInTheDocument();
   });
 
   it("shows a refused download and stays on the version step", async () => {

@@ -68,6 +68,9 @@ tauri-plugin-single-instance = "2.5"
 # is there (the same libdbus as keyring).
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus = "0.9"
+# The StatusNotifier item takes its name from GLib's application name (libappindicator reads it), else the program
+# name is shown: `tray.rs` sets "Sextant". The version GTK already uses, so no new crate.
+glib = "0.18"
 
 [dev-dependencies]
 tauri = { workspace = true, features = ["test"] }

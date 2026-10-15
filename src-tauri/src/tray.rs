@@ -25,6 +25,10 @@ pub const QUIT: &str = "quit";
 
 const TRAY_ID: &str = "sextant";
 
+/// The product name the Linux StatusNotifier item shows (not a translated text).
+#[cfg(any(target_os = "linux", test))]
+const APP_NAME: &str = "Sextant";
+
 /// The native menu cannot use the window's i18next, so its texts are read from the same translation folder when the
 /// app is built.
 static TEXTS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
@@ -211,9 +215,21 @@ fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
         .icon_as_template(true);
     #[cfg(not(target_os = "macos"))]
     let builder = builder.icon(tauri::include_image!("icons/64x64.png"));
+    name_indicator();
     builder.build(app)?;
     Ok(show_hide)
 }
+
+/// Linux: the StatusNotifier item (libappindicator) is named by GLib's application name and falls back to the
+/// program name (`sextant`), so "Sextant" is set before the item is created. tray-icon's own `title` is a text
+/// label drawn beside the icon, not the item's name.
+#[cfg(target_os = "linux")]
+fn name_indicator() {
+    glib::set_application_name(APP_NAME);
+}
+
+#[cfg(not(target_os = "linux"))]
+fn name_indicator() {}
 
 fn on_menu<R: Runtime>(app: &AppHandle<R>, id: &str) {
     match id {
@@ -287,6 +303,14 @@ mod tests {
         }
         assert_eq!(WindowToggle::Show.label(), file["show"].as_str().unwrap());
         assert_eq!(WindowToggle::Hide.label(), file["hide"].as_str().unwrap());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn the_status_notifier_item_is_named_sextant_not_after_the_program() {
+        glib::set_prgname(Some("sextant"));
+        name_indicator();
+        assert_eq!(glib::application_name().as_deref(), Some("Sextant"));
     }
 
     #[test]

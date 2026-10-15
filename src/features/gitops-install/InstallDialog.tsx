@@ -232,7 +232,7 @@ function Choose({
           <select value={version} onChange={(e) => onVersion(e.target.value)}>
             {versions.versions.map((v) => (
               <option key={v} value={v}>
-                {v === versions.latest ? t("gitops:versions.latest", { version: v }) : v}
+                {v === versions.latest ? t(versions.error ? "gitops:versions.bundled" : "gitops:versions.latest", { version: v }) : v}
               </option>
             ))}
           </select>

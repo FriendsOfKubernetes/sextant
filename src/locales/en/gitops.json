@@ -26,6 +26,7 @@
     "label": "Version",
     "loading": "Asking GitHub for the releases…",
     "latest": "{{version}} (latest)",
+    "bundled": "{{version}} (bundled)",
     "error": "Could not get the list of releases from GitHub, so only the tested version {{version}} is offered.",
     "next": "Download and preview"
   },
