@@ -18,6 +18,7 @@ import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
 import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
+import { isRemovableSource, removeConfirmKey } from "../clusters/sources";
 import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
 // The panels themselves, not the features' index files: those register UI of their own (features/mcp: the agent
@@ -30,12 +31,6 @@ import "./settings.css";
 
 const THEMES: Theme[] = ["system", "light", "dark"];
 const DEFAULT_NODE_SHELL_IMAGE = defaultAppSettings().nodeShellImage;
-const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted", "cloud"]);
-/** What removing a source does, by its kind. */
-const REMOVE_CONFIRM: Partial<Record<KubeconfigSource["kind"], string>> = {
-  pasted: "clusters:sources.confirmPasted",
-  cloud: "clusters:sources.confirmCloud",
-};
 
 /** The sidebar page (`registerPage`). */
 export function SettingsPage(_props: PageProps) {
@@ -295,7 +290,7 @@ function KubeconfigSection() {
           <li key={source.id} className="settings__source">
             <span className="settings__source-path">{source.path}</span>
             <span className="settings__source-kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
-            {REMOVABLE.has(source.kind) && (
+            {isRemovableSource(source.kind) && (
               <Button
                 aria-label={t("clusters:sources.removeNamed", { path: source.path })}
                 onClick={() => setRemoving(source)}
@@ -320,7 +315,7 @@ function KubeconfigSection() {
         onCancel={() => setRemoving(null)}
         onConfirm={() => removing && void remove(removing)}
       >
-        <p>{t((removing && REMOVE_CONFIRM[removing.kind]) ?? "clusters:sources.confirmFile")}</p>
+        <p>{t(removeConfirmKey(removing?.kind))}</p>
         <p className="settings__source-path">{removing?.path}</p>
       </ConfirmDialog>
     </Section>

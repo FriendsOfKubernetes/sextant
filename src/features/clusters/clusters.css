@@ -410,19 +410,14 @@
   align-items: center;
 }
 
+/* The swatches are as high as the "Auto" choice next to them (a compact Button): --control-height-compact. */
 .clusters-colors__swatch {
-  width: 22px;
-  height: 22px;
+  flex: none;
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
+  padding: 0;
   border-radius: 50%;
   border: 2px solid transparent;
-  cursor: pointer;
-}
-
-.clusters-colors__none {
-  border: 1px solid var(--color-border);
-  background: transparent;
-  border-radius: 4px;
-  padding: 1px 8px;
   cursor: pointer;
 }
 

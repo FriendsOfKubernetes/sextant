@@ -6,6 +6,7 @@ import { api, toApiError, type ApiError, type CoreError, type KubeconfigSource }
 import { ConfirmDialog, Dialog, ErrorState, Tabs, type TabItem } from "../../components";
 import { CloudClusters } from "./CloudClusters";
 import { addKubeconfigFile, addPastedKubeconfig, removeKubeconfigSource, useClustersStore } from "./clustersStore";
+import { isRemovableSource, removeConfirmKey } from "./sources";
 
 /** Opens the system file dialog and adds the chosen kubeconfig. Resolves to an error to show, if any. */
 export async function pickKubeconfigFile(title: string): Promise<ApiError | null> {
@@ -108,15 +109,6 @@ export function PasteButton({ className = "btn" }: { className?: string }) {
   );
 }
 
-const REMOVABLE: ReadonlySet<KubeconfigSource["kind"]> = new Set(["addedFile", "pasted", "cloud"]);
-
-/** What removing a source does to its file: an added file stays on disk, Sextant's own copies are deleted. */
-function removeTextKey(kind: KubeconfigSource["kind"] | undefined): string {
-  if (kind === "pasted") return "clusters:sources.confirmPasted";
-  if (kind === "cloud") return "clusters:sources.confirmCloud";
-  return "clusters:sources.confirmFile";
-}
-
 type AddTab = "kubeconfig" | "cloud";
 
 export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -174,7 +166,7 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
             <li key={source.id} className="clusters-sources__item">
               <span className="clusters-sources__path">{source.path}</span>
               <span className="clusters-sources__kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
-              {REMOVABLE.has(source.kind) && (
+              {isRemovableSource(source.kind) && (
                 <button
                   type="button"
                   className="btn"
@@ -197,7 +189,7 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
         onCancel={() => setRemoving(null)}
         onConfirm={() => removing && void remove(removing)}
       >
-        <p>{t(removeTextKey(removing?.kind))}</p>
+        <p>{t(removeConfirmKey(removing?.kind))}</p>
         <p className="clusters-sources__path">{removing?.path}</p>
       </ConfirmDialog>
     </>

@@ -359,6 +359,25 @@ describe("cluster settings", () => {
     expect(backend.settings.clusters.aaaa).toMatchObject({ prometheus: { mode: "auto" }, usageSource: "auto" });
   });
 
+  it("the Auto color choice is a compact shared button with radio semantics and clears the color", async () => {
+    setup([alpha]);
+    render(<AppShell />);
+    fireEvent.contextMenu(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+    const dialog = screen.getByRole("dialog", { name: "Cluster settings — kind-alpha" });
+
+    const auto = within(dialog).getByRole("radio", { name: "Auto" });
+    // The same height as the swatches: the compact control size, no local height override (ADR-0034).
+    expect(auto).toHaveClass("btn", "btn--compact");
+    expect(auto).toHaveAttribute("aria-checked", "true");
+
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Color 2" }));
+    await waitFor(() => expect(within(dialog).getByRole("radio", { name: "Auto" })).toHaveAttribute("aria-checked", "false"));
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Auto" }));
+    await waitFor(() => expect(backend.settings.clusters.aaaa?.color).toBeNull());
+    expect(within(dialog).getByRole("radio", { name: "Auto" })).toHaveAttribute("aria-checked", "true");
+  });
+
   it("shows sections registered by other features", async () => {
     registerClusterSettingsSection({
       id: "test-metrics",

@@ -56,15 +56,15 @@ export function GeneralSection({ clusterId, cluster }: ClusterSettingsSectionPro
       <div className="clusters-field">
         <span id={`color-${clusterId}`}>{t("clusters:settings.color")}</span>
         <div className="clusters-colors" role="radiogroup" aria-labelledby={`color-${clusterId}`}>
-          <button
-            type="button"
+          <Button
+            size="compact"
             role="radio"
             aria-checked={current.color === null}
             className="clusters-colors__none"
             onClick={() => void save({ color: null })}
           >
             {t("clusters:settings.autoColor")}
-          </button>
+          </Button>
           {CLUSTER_COLORS.map((color, index) => (
             <button
               key={color}
