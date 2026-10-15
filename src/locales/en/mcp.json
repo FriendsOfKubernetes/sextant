@@ -74,7 +74,8 @@
       "denied": "Denied",
       "approved": "Approved by you",
       "declined": "Declined by you",
-      "timedOut": "No answer"
+      "timedOut": "No answer",
+      "notChecked": "Not checked"
     },
     "duration": "{{ms}} ms"
   },

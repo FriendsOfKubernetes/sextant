@@ -34,7 +34,7 @@ use sextant_core::access::{
     self, AccessAction, AccessPreset, ClusterAccess, Decision, KindPattern, NamespaceScope,
 };
 use sextant_core::error::with_timeout;
-use sextant_core::extensions::{ExtensionPermissions, decide_extension};
+use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
 use sextant_core::resources::{self, KindRef, PatchType, ResourceKind, WatchUpdate};
 use sextant_core::{
     ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode, ObjectRef,
@@ -380,7 +380,9 @@ impl ExtensionApi {
     ) -> CoreResult<Value> {
         let params = if params.is_null() { json!({}) } else { params };
         // Files are read and written off the async runtime: `storage` syncs to disk, and the manifest of a
-        // development folder is read by walking the folder (kept afterwards, so the checks below find it ready).
+        // development folder is read by walking the folder. It is kept afterwards, but a `forget` (the folder changed)
+        // can drop it at any moment, so every later look at the extension (`ExtCall::granted`, `start_stream`) goes
+        // through the blocking pool too.
         let (blocking_host, id) = (host.clone(), extension_id.to_owned());
         match method {
             "storage.get" | "storage.set" | "storage.remove" => {
@@ -390,15 +392,14 @@ impl ExtensionApi {
                 })
                 .await;
             }
-            _ => {
-                blocking(move || Ok(blocking_host.info(&id))).await?;
-            }
+            _ => {}
         }
+        let name = blocking(move || Ok(blocking_host.info(&id).map(|i| i.name))).await?;
         let at = now_ms();
         let started = Instant::now();
-        let call = ExtCall::new(self, host, extension_id, method);
+        let call = ExtCall::new(self, host, extension_id, method, name);
         let result = match method {
-            "clusters.list" => call.clusters_list(params),
+            "clusters.list" => call.clusters_list(params).await,
             "kinds" => call.kinds(params).await,
             "resources.list" => call.list(params).await,
             "resources.get" => call.get(params).await,
@@ -420,7 +421,9 @@ impl ExtensionApi {
             cluster_name: record.cluster.as_ref().map(|c| c.name.clone()),
             tool: clip(method),
             target: record.target.clone(),
-            decision: record.decision.unwrap_or(AuditDecision::Allowed),
+            // No decision: the call ended before any check (malformed, unknown method or cluster, unreachable), and
+            // is journaled as such — never as allowed, which would keep a malformed write or secret read (#98).
+            decision: record.decision.unwrap_or(AuditDecision::NotChecked),
             result: match &result {
                 Ok(_) => "ok".to_owned(),
                 Err(e) => code_name(e.code),
@@ -505,8 +508,10 @@ impl ExtensionApi {
             },
         )?;
         // Disabled, removed or granted anything else since the checks: a change from now on stops the stream
-        // (`stop_changed` on `extensions-changed`), one before this is caught here.
-        if host.active(extension).map(|e| e.granted) != Some(granted) {
+        // (`stop_changed` on `extensions-changed`), one before this is caught here. Read on the blocking pool
+        // ([`active_off_runtime`]); a failed read counts as a change.
+        let now = active_off_runtime(host, extension).await.ok().flatten();
+        if now.map(|e| e.granted) != Some(granted) {
             self.streams.stop_of(extension, &id);
             return Err(CoreError::new(
                 ErrorCode::Denied,
@@ -532,6 +537,17 @@ impl ExtensionApi {
 
 // ---------------------------------------------------------------------------------------------------------------
 // storage
+
+/// [`ExtensionHost::active`] on the blocking pool: after a `forget` (a development folder changed, an install, a
+/// removal) it reads the manifest again — walking a development folder whole — which must not hold up a runtime
+/// worker and with it every other extension's calls (#99).
+async fn active_off_runtime(
+    host: &ExtensionHost,
+    id: &str,
+) -> CoreResult<Option<InstalledExtension>> {
+    let (host, id) = (host.clone(), id.to_owned());
+    blocking(move || Ok(host.active(&id))).await
+}
 
 /// Runs `task` on the blocking pool.
 async fn blocking<T: Send + 'static>(
@@ -675,16 +691,25 @@ struct ExtCall<'a> {
     api: &'a ExtensionApi,
     host: &'a ExtensionHost,
     id: String,
+    /// The extension's name as the user knows it (the manifest's), read when the call came; else its id.
+    name: String,
     method: String,
     record: Mutex<CallRecord>,
 }
 
 impl<'a> ExtCall<'a> {
-    fn new(api: &'a ExtensionApi, host: &'a ExtensionHost, id: &str, method: &str) -> Self {
+    fn new(
+        api: &'a ExtensionApi,
+        host: &'a ExtensionHost,
+        id: &str,
+        method: &str,
+        name: Option<String>,
+    ) -> Self {
         Self {
             api,
             host,
             id: id.to_owned(),
+            name: name.unwrap_or_else(|| id.to_owned()),
             method: method.to_owned(),
             record: Mutex::new(CallRecord::default()),
         }
@@ -701,9 +726,7 @@ impl<'a> ExtCall<'a> {
 
     /// The extension's name as the user knows it (the manifest's), else its id.
     fn name(&self) -> String {
-        self.host
-            .info(&self.id)
-            .map_or_else(|| self.id.clone(), |i| i.name)
+        self.name.clone()
     }
 
     /// `Extension <name>`: who asks, in the dialog and the journal.
@@ -711,9 +734,9 @@ impl<'a> ExtCall<'a> {
         clip(&format!("Extension {}", self.name()))
     }
 
-    /// What was granted, read fresh: refused unless the extension is active now.
-    fn granted(&self) -> CoreResult<ExtensionPermissions> {
-        match self.host.active(&self.id) {
+    /// What was granted, read fresh (on the blocking pool): refused unless the extension is active now.
+    async fn granted(&self) -> CoreResult<ExtensionPermissions> {
+        match active_off_runtime(self.host, &self.id).await? {
             Some(entry) => Ok(entry.granted),
             None => {
                 self.decide(AuditDecision::Denied);
@@ -734,9 +757,11 @@ impl<'a> ExtCall<'a> {
         )
     }
 
-    /// The cluster the extension named (id, or context), if it was granted; nothing is connected.
-    fn target(&self, cluster: &str) -> CoreResult<ExtCluster> {
-        let granted = self.granted()?;
+    /// The cluster the extension named (id, or context), if it was granted; nothing is connected. A granted cluster is
+    /// not yet a decision: the call is allowed only by the check of what it does ([`ExtCall::check`],
+    /// [`ExtCall::allowed_namespaces`]).
+    async fn target(&self, cluster: &str) -> CoreResult<ExtCluster> {
+        let granted = self.granted().await?;
         let wanted = cluster.trim();
         let clusters = self.api.cluster_list();
         let found = clusters
@@ -769,13 +794,12 @@ impl<'a> ExtCall<'a> {
                 self.where_to_allow()
             )));
         }
-        self.decide(AuditDecision::Allowed);
         Ok(target)
     }
 
     /// [`ExtCall::target`], connected (like the Connect button) when it is not.
     async fn open(&self, cluster: &str) -> CoreResult<ExtCluster> {
-        let target = self.target(cluster)?;
+        let target = self.target(cluster).await?;
         let connected = matches!(
             self.api.clusters.state(&target.id),
             ConnectionState::Connected
@@ -803,7 +827,7 @@ impl<'a> ExtCall<'a> {
                     .await;
             seen.push((namespace, kind.clone(), *action));
         }
-        let confirm = self.decide_all(cluster, &seen, summary)?;
+        let confirm = self.decide_all(cluster, &seen, summary).await?;
         if !confirm {
             return Ok(());
         }
@@ -845,7 +869,7 @@ impl<'a> ExtCall<'a> {
         match outcome {
             ConfirmOutcome::Approved => {
                 // Disabled, removed or granted less while the dialog was open: the answer no longer counts.
-                self.decide_all(cluster, &seen, summary)?;
+                self.decide_all(cluster, &seen, summary).await?;
                 self.decide(AuditDecision::Approved);
                 Ok(())
             }
@@ -874,14 +898,15 @@ impl<'a> ExtCall<'a> {
         }
     }
 
-    /// Decides every requirement against what is granted now; `Ok(true)` when the user must be asked.
-    fn decide_all(
+    /// Decides every requirement against what is granted now; `Ok(true)` when the user must be asked. All allowed is
+    /// journaled as allowed (an answer of the user, or a refusal, outranks it).
+    async fn decide_all(
         &self,
         cluster: &ExtCluster,
         requirements: &[(Option<String>, KindPattern, AccessAction)],
         summary: &CallSummary,
     ) -> CoreResult<bool> {
-        let granted = self.granted()?;
+        let granted = self.granted().await?;
         let mut confirm = false;
         for (namespace, kind, action) in requirements {
             match decide_extension(
@@ -904,12 +929,13 @@ impl<'a> ExtCall<'a> {
                 }
             }
         }
+        self.decide(AuditDecision::Allowed);
         Ok(confirm)
     }
 
     /// Namespaces where `action` on `kind` is granted, for a call over all namespaces: `All`, or the namespaces of
     /// the covering rules. Nowhere is a refusal. A call narrowed to some namespaces is journaled with them.
-    fn allowed_namespaces(
+    async fn allowed_namespaces(
         &self,
         cluster: &ExtCluster,
         kind: &KindPattern,
@@ -917,7 +943,7 @@ impl<'a> ExtCall<'a> {
         summary: &CallSummary,
     ) -> CoreResult<NamespaceScope> {
         lock(&self.record).target = clip(&summary.target);
-        let granted = self.granted()?;
+        let granted = self.granted().await?;
         let scope = if granted.clusters.covers(&cluster.context) {
             access::allowed_namespaces(&rules_of(&granted), kind, action)
         } else {
@@ -938,15 +964,18 @@ impl<'a> ExtCall<'a> {
         if let NamespaceScope::Only { namespaces } = &scope {
             lock(&self.record).target = clip(&narrowed_target(&summary.target, kind, namespaces));
         }
+        self.decide(AuditDecision::Allowed);
         Ok(scope)
     }
 
     // -----------------------------------------------------------------------------------------------------------
     // Methods
 
-    fn clusters_list(&self, params: Value) -> CoreResult<Value> {
+    async fn clusters_list(&self, params: Value) -> CoreResult<Value> {
         let _: NoArgs = parse(&self.method, params)?;
-        let granted = self.granted()?;
+        let granted = self.granted().await?;
+        // Only the granted clusters are listed: that is the whole decision.
+        self.decide(AuditDecision::Allowed);
         let clusters: Vec<Value> = self
             .api
             .cluster_list()
@@ -969,7 +998,9 @@ impl<'a> ExtCall<'a> {
         let args: ClusterArgs = parse(&self.method, params)?;
         let cluster = self.open(&args.cluster_id).await?;
         let kinds = read("reading the kinds", self.api.clusters.kinds(&cluster.id)).await?;
-        let granted = self.granted()?;
+        let granted = self.granted().await?;
+        // Only the kinds the rules cover are given: that is the whole decision.
+        self.decide(AuditDecision::Allowed);
         let rules = rules_of(&granted);
         let visible: Vec<&ResourceKind> = kinds
             .iter()
@@ -1006,7 +1037,8 @@ impl<'a> ExtCall<'a> {
             }
             (None, true) => {
                 let summary = summary(format!("{name} in all namespaces"));
-                self.allowed_namespaces(&cluster, &pattern, AccessAction::Read, &summary)?
+                self.allowed_namespaces(&cluster, &pattern, AccessAction::Read, &summary)
+                    .await?
             }
         };
         let mgr = &self.api.clusters;
@@ -1080,7 +1112,7 @@ impl<'a> ExtCall<'a> {
         };
         check_stream_id(&stream_id)?;
         // The grant every check below is made under (or a later one, which the stream then fails to match).
-        let granted = self.granted()?;
+        let granted = self.granted().await?;
         let cluster = self.open(&args.cluster_id).await?;
         let kind = self.find_kind(&cluster, &args.kind).await?;
         let pattern = pattern_of(&kind.kind_ref);
@@ -1100,7 +1132,10 @@ impl<'a> ExtCall<'a> {
             None
         } else if asked.is_empty() {
             let summary = summary(format!("{name} in all namespaces"));
-            match self.allowed_namespaces(&cluster, &pattern, AccessAction::Read, &summary)? {
+            match self
+                .allowed_namespaces(&cluster, &pattern, AccessAction::Read, &summary)
+                .await?
+            {
                 NamespaceScope::All => None,
                 NamespaceScope::Only { namespaces } => Some(namespaces),
             }
@@ -1347,6 +1382,7 @@ impl<'a> ExtCall<'a> {
     }
 
     /// After the check, right before acting on a pod: the shared check that it is not a node shell (failing closed).
+    /// A refusal is journaled as denied, not as the allowed it was a moment before.
     async fn refuse_live_node_shell(
         &self,
         cluster: &ExtCluster,
@@ -1361,6 +1397,11 @@ impl<'a> ExtCall<'a> {
             NODE_SHELL_REFUSAL,
         )
         .await
+        .inspect_err(|err| {
+            if err.code == ErrorCode::Denied {
+                self.decide(AuditDecision::Denied);
+            }
+        })
     }
 }
 

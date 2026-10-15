@@ -5,7 +5,9 @@
 //!
 //! The agents' journal drops its oldest entry when full. The extensions' journal is shared by every extension, so it
 //! evicts fairly (`Eviction::PerExtension`): one extension flooding it with cheap calls pushes out only its own
-//! cheap entries, never another extension's entries nor its own writes and secret reads.
+//! cheap entries, never another extension's entries nor its own writes and secret reads that the rules allowed (or
+//! the user answered). A call that ended before any access decision is cheap whatever its method, so a flood of
+//! malformed `secret.value` calls cannot pass for secret reads.
 
 use std::collections::{HashMap, VecDeque};
 use std::io::{self, BufRead, Write};
@@ -55,6 +57,9 @@ pub enum AuditDecision {
     Declined,
     /// Nobody answered the confirmation dialog in time.
     TimedOut,
+    /// The call ended before any access decision was made — malformed parameters, an unknown method, cluster or
+    /// kind, a cluster that could not be reached — so nothing was run (extensions' journal).
+    NotChecked,
 }
 
 /// One call of an agent or an extension.
@@ -128,11 +133,13 @@ const KEPT_METHODS: &[&str] = &[
 ];
 
 /// A cheap entry of an extension, one it can repeat as often as it likes: a read (`clusters.list`, `kinds`,
-/// `resources.list/get/watch`, `logs.tail`), a call the rules denied, or an unknown method. A write, a delete, a
-/// secret value read ([`KEPT_METHODS`]) and any call the user answered (approved, declined, timed out) are not cheap.
+/// `resources.list/get/watch`, `logs.tail`), a call the rules denied, or a call that ended before any access decision
+/// (malformed parameters, an unknown method or cluster: [`AuditDecision::NotChecked`]) whatever its method. Only a
+/// write, a delete or a secret value read ([`KEPT_METHODS`]) that the rules allowed — and that therefore went on to
+/// the cluster — and any call the user answered (approved, declined, timed out) are not cheap.
 fn is_cheap(entry: &AuditEntry) -> bool {
     match entry.decision {
-        AuditDecision::Denied => true,
+        AuditDecision::Denied | AuditDecision::NotChecked => true,
         AuditDecision::Approved | AuditDecision::Declined | AuditDecision::TimedOut => false,
         AuditDecision::Allowed => !KEPT_METHODS.contains(&entry.tool.as_str()),
     }
@@ -355,6 +362,8 @@ mod tests {
         );
         let timed_out = serde_json::to_value(AuditDecision::TimedOut).unwrap();
         assert_eq!(timed_out, "timedOut");
+        let not_checked = serde_json::to_value(AuditDecision::NotChecked).unwrap();
+        assert_eq!(not_checked, "notChecked");
     }
 
     #[test]
@@ -474,12 +483,15 @@ mod tests {
             log.record(ext_entry(n, "a", method, decision));
             n += 1;
         }
-        // A floods: cheap reads, denied calls and unknown methods, far over the capacity.
+        // A floods: cheap reads, denied calls, unknown methods and malformed writes and secret reads (ended before any
+        // access decision), far over the capacity.
         for i in 0..(3 * CAPACITY as u64) {
-            let (method, decision) = match i % 3 {
+            let (method, decision) = match i % 5 {
                 0 => ("clusters.list", allowed),
                 1 => ("secret.value", AuditDecision::Denied),
-                _ => ("no.such.method", allowed),
+                2 => ("no.such.method", AuditDecision::NotChecked),
+                3 => ("secret.value", AuditDecision::NotChecked),
+                _ => ("resources.delete", AuditDecision::NotChecked),
             };
             log.record(ext_entry(n, "a", method, decision));
             n += 1;

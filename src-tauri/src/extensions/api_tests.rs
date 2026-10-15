@@ -40,7 +40,7 @@ apiVersion: v1
 kind: Config
 clusters:
 - name: nowhere
-  cluster: { server: "https://127.0.0.1:9" }
+  cluster: { server: "SERVER" }
 contexts:
 - name: ctx-a
   context: { cluster: nowhere, user: me }
@@ -60,10 +60,16 @@ struct Env {
 }
 
 impl Env {
+    /// Clusters `ctx-a` and `ctx-b` at an unreachable server.
     fn new() -> Self {
+        Self::at("https://127.0.0.1:9")
+    }
+
+    /// Clusters `ctx-a` and `ctx-b` at `server`.
+    fn at(server: &str) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let kubeconfig = dir.path().join("kubeconfig");
-        std::fs::write(&kubeconfig, KUBECONFIG).unwrap();
+        std::fs::write(&kubeconfig, KUBECONFIG.replace("SERVER", server)).unwrap();
         let settings = Arc::new(SettingsStore::open(dir.path().join("config/settings.json")));
         let mut registry = KubeconfigRegistry::new(Vec::new(), dir.path().join("data/kubeconfigs"));
         registry.set_env(KubeconfigEnv {
@@ -107,7 +113,8 @@ impl Env {
     }
 
     fn call(&self, id: &str, method: &str) -> ExtCall<'_> {
-        ExtCall::new(&self.api, &self.host, id, method)
+        let name = self.host.info(id).map(|i| i.name);
+        ExtCall::new(&self.api, &self.host, id, method, name)
     }
 
     /// Answers every confirmation with `approved` and remembers the requests.
@@ -251,7 +258,7 @@ async fn only_granted_clusters_are_listed_and_others_are_refused_without_asking(
     assert_eq!(contexts, vec!["ctx-a"]);
 
     let call = env.call("widgets", "resources.patch");
-    let err = call.target("ctx-b").unwrap_err();
+    let err = call.target("ctx-b").await.unwrap_err();
     assert_eq!(err.code, ErrorCode::Denied);
     assert_eq!(
         err.message,
@@ -261,10 +268,11 @@ async fn only_granted_clusters_are_listed_and_others_are_refused_without_asking(
     assert_eq!(call.record().decision, Some(AuditDecision::Denied));
     // By id as well as by context.
     let by_id = env.cluster_id("ctx-b");
-    assert!(env.call("widgets", "kinds").target(&by_id.0).is_err());
+    assert!(env.call("widgets", "kinds").target(&by_id.0).await.is_err());
     assert_eq!(
         env.call("widgets", "kinds")
             .target("ctx-a")
+            .await
             .unwrap()
             .context,
         "ctx-a"
@@ -280,7 +288,7 @@ async fn every_object_is_decided_against_what_was_granted() {
         perms(all_clusters(), &["team-a"], &["read", "delete"], false),
     );
     let call = env.call("widgets", "resources.delete");
-    let cluster = call.target("ctx-a").unwrap();
+    let cluster = call.target("ctx-a").await.unwrap();
 
     // A namespace rule never covers a kind without namespaces, whatever namespace was sent.
     let err = call
@@ -348,13 +356,16 @@ async fn every_object_is_decided_against_what_was_granted() {
     let pods = KindPattern::new("", "Pod");
     let list = about("Pod in all namespaces");
     assert_eq!(
-        fresh().allowed_namespaces(&cluster, &pods, AccessAction::Read, &list),
+        fresh()
+            .allowed_namespaces(&cluster, &pods, AccessAction::Read, &list)
+            .await,
         Ok(NamespaceScope::Only {
             namespaces: vec!["team-a".into()]
         })
     );
     let err = fresh()
         .allowed_namespaces(&cluster, &pods, AccessAction::Logs, &list)
+        .await
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::Denied);
 }
@@ -371,22 +382,25 @@ async fn a_list_narrowed_to_granted_namespaces_names_them_in_the_journal() {
     let list = about("Pod in all namespaces");
 
     let call = env.call("widgets", "resources.list");
-    let cluster = call.target("ctx-a").unwrap();
+    let cluster = call.target("ctx-a").await.unwrap();
     call.allowed_namespaces(&cluster, &pods, AccessAction::Read, &list)
+        .await
         .unwrap();
     assert_eq!(call.record().target, "Pod in namespaces team-a, team-b");
 
     // A grant over all namespaces, and a refusal, still say "all namespaces".
     let call = env.call("wide", "resources.list");
-    let cluster = call.target("ctx-a").unwrap();
+    let cluster = call.target("ctx-a").await.unwrap();
     assert_eq!(
-        call.allowed_namespaces(&cluster, &pods, AccessAction::Read, &list),
+        call.allowed_namespaces(&cluster, &pods, AccessAction::Read, &list)
+            .await,
         Ok(NamespaceScope::All)
     );
     assert_eq!(call.record().target, "Pod in all namespaces");
     let call = env.call("widgets", "resources.list");
     let err = call
         .allowed_namespaces(&cluster, &pods, AccessAction::Logs, &list)
+        .await
         .unwrap_err();
     assert!(
         err.message.contains("on Pod in all namespaces"),
@@ -412,7 +426,7 @@ async fn a_rule_that_asks_shows_the_extension_in_the_dialog() {
 
     let seen = env.answer_with(true);
     let call = env.call("widgets", "resources.patch");
-    let cluster = call.target("ctx-a").unwrap();
+    let cluster = call.target("ctx-a").await.unwrap();
     assert_eq!(call.check(&cluster, &modify, &patch).await, Ok(()));
     assert_eq!(call.record().decision, Some(AuditDecision::Approved));
     let shown = seen.lock().unwrap()[0].clone();
@@ -451,7 +465,7 @@ async fn without_a_window_a_call_that_asks_is_declined() {
     let env = Env::new();
     env.install("widgets", perms(all_clusters(), &[], &["delete"], true));
     let call = env.call("widgets", "resources.delete");
-    let cluster = call.target("ctx-a").unwrap();
+    let cluster = call.target("ctx-a").await.unwrap();
     let err = call
         .check(
             &cluster,
@@ -485,7 +499,7 @@ async fn a_fifth_waiting_request_of_an_extension_is_denied_without_a_dialog() {
     let calls: Vec<ExtCall<'_>> = (0..MAX_PENDING_PER_EXTENSION)
         .map(|_| env.call("widgets", "resources.delete"))
         .collect();
-    let cluster = calls[0].target("ctx-a").unwrap();
+    let cluster = calls[0].target("ctx-a").await.unwrap();
     let waiting =
         futures::future::join_all(calls.iter().map(|c| c.check(&cluster, &delete, &target)));
     let fifth = async {
@@ -536,7 +550,7 @@ async fn an_extension_disabled_while_its_dialog_is_open_does_not_run() {
         true
     }));
     let call = env.call("widgets", "resources.patch");
-    let cluster = call.target("ctx-a").unwrap();
+    let cluster = call.target("ctx-a").await.unwrap();
     let err = call
         .check(
             &cluster,
@@ -1061,6 +1075,182 @@ async fn the_journal_is_its_own_file_filtered_by_extension() {
     assert!(!data.join("mcp-audit.jsonl").exists());
     env.api.audit.clear().unwrap();
     assert!(env.api.audit_list(None).is_empty());
+}
+
+/// A Kubernetes API server for one Secret: `/api` (to connect) and `team-a/db` with `password: hunter2`; anything
+/// else is 404.
+async fn fake_cluster() -> String {
+    use axum::http::{StatusCode, Uri, header};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let app = axum::Router::new().fallback(|uri: Uri| async move {
+        let (status, body) = match uri.path() {
+            "/api" => (
+                StatusCode::OK,
+                r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+            ),
+            "/api/v1/namespaces/team-a/secrets/db" => (
+                StatusCode::OK,
+                r#"{"apiVersion":"v1","kind":"Secret","metadata":{"name":"db","namespace":"team-a"},
+                    "data":{"password":"aHVudGVyMg=="}}"#,
+            ),
+            _ => (
+                StatusCode::NOT_FOUND,
+                r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#,
+            ),
+        };
+        (status, [(header::CONTENT_TYPE, "application/json")], body)
+    });
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+    url
+}
+
+#[tokio::test]
+async fn malformed_calls_never_push_out_a_secret_read_nor_read_as_allowed() {
+    use crate::access_guard::audit::CAPACITY;
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "widgets",
+        perms(
+            all_clusters(),
+            &["team-a"],
+            &["read", "secretValues"],
+            false,
+        ),
+    );
+    env.install(
+        "gadgets",
+        perms(all_clusters(), &["team-a"], &["read"], false),
+    );
+    let read =
+        json!({ "clusterId": "ctx-a", "namespace": "team-a", "name": "db", "key": "password" });
+    let value = env
+        .api
+        .call(&env.host, "widgets", "secret.value", read.clone(), None)
+        .await
+        .unwrap();
+    assert_eq!(value, json!("hunter2"));
+    let real = env.api.audit_list(Some("widgets"))[0].clone();
+    assert_eq!(
+        (real.decision, real.result.as_str()),
+        (AuditDecision::Allowed, "ok")
+    );
+
+    // Calls that end before any access decision: no parameters, missing or empty fields, an unknown cluster, an
+    // unknown field.
+    let malformed = [
+        json!({}),
+        json!({ "clusterId": "ctx-a" }),
+        json!({ "clusterId": "ctx-a", "namespace": "", "name": "db", "key": "password" }),
+        json!({ "clusterId": "no-such-cluster", "namespace": "team-a", "name": "db", "key": "password" }),
+        json!({ "clusterId": "ctx-a", "namespace": "team-a", "name": "db", "key": "password", "extra": 1 }),
+    ];
+    for i in 0..(3 * CAPACITY) {
+        let params = malformed[i % malformed.len()].clone();
+        let err = env
+            .api
+            .call(&env.host, "widgets", "secret.value", params, None)
+            .await
+            .unwrap_err();
+        assert_ne!(err.code, ErrorCode::Denied, "{}", err.message);
+    }
+    let kept = env.api.audit_list(Some("widgets"));
+    assert_eq!(kept.len(), CAPACITY);
+    assert!(kept.contains(&real), "the real secret read stays");
+    assert!(
+        kept.iter()
+            .filter(|e| **e != real)
+            .all(|e| e.decision == AuditDecision::NotChecked),
+        "malformed calls are journaled as not checked"
+    );
+
+    // Without "Secret values": malformed calls are not checked, a well-formed one is denied; none reads as allowed.
+    let mut calls: Vec<(&str, Value)> = malformed
+        .iter()
+        .map(|p| ("secret.value", p.clone()))
+        .collect();
+    calls.push(("secret.value", read));
+    // A granted cluster is no decision: a delete of a kind the cluster does not serve ends before the check.
+    let mystery = json!({ "kind": { "kind": "Mystery" }, "namespace": "team-a", "name": "x" });
+    calls.push((
+        "resources.delete",
+        json!({ "clusterId": "ctx-a", "ref": mystery }),
+    ));
+    calls.push(("secret.steal", json!({})));
+    for (method, params) in &calls {
+        let result = env
+            .api
+            .call(&env.host, "gadgets", method, params.clone(), None)
+            .await;
+        assert!(result.is_err(), "{method} {params}");
+    }
+    let journal = env.api.audit_list(Some("gadgets"));
+    assert_eq!(journal.len(), calls.len());
+    let decisions: Vec<AuditDecision> = journal.iter().rev().map(|e| e.decision).collect();
+    let mut expected = vec![AuditDecision::NotChecked; malformed.len()];
+    expected.extend([
+        AuditDecision::Denied,
+        AuditDecision::NotChecked,
+        AuditDecision::NotChecked,
+    ]);
+    assert_eq!(decisions, expected);
+}
+
+#[tokio::test]
+async fn a_development_folder_read_again_during_a_call_is_read_off_the_runtime() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+    let granted = env.host.active("widgets").unwrap().granted;
+    // The runtime of this test runs on this thread only: a manifest read here held up every call.
+    let runtime_thread = std::thread::current().id();
+    let reads = Arc::new(Mutex::new(Vec::new()));
+    let (reads_in, host) = (Arc::clone(&reads), env.host.downgrade());
+    // The folder changes all the time: every read is forgotten at once, so every look at the extension reads it
+    // again (walking the folder), as after a `forget` between two checks of one call.
+    env.host.set_read_hook(Arc::new(move |id| {
+        reads_in.lock().unwrap().push(std::thread::current().id());
+        if let Some(host) = host.upgrade() {
+            host.forget(id);
+        }
+    }));
+    env.host.forget("widgets");
+
+    env.api
+        .call(&env.host, "widgets", "clusters.list", json!({}), None)
+        .await
+        .unwrap();
+    // Reads the grant to find the cluster, then fails to connect.
+    let list = json!({ "clusterId": "ctx-a", "kind": { "kind": "Pod" } });
+    let listed = env
+        .api
+        .call(&env.host, "widgets", "resources.list", list, None)
+        .await;
+    assert!(listed.is_err());
+    let open = async { Ok::<_, CoreError>(futures::stream::pending::<WatchUpdate>()) };
+    let sink: UpdateSink = Arc::new(|_| true);
+    env.api
+        .start_stream(
+            &env.host,
+            "w-1".to_owned(),
+            "widgets",
+            granted,
+            ClusterId::from("c1"),
+            open,
+            sink,
+        )
+        .await
+        .unwrap();
+    env.api.streams.stop_all();
+
+    let reads = reads.lock().unwrap();
+    // The first look of each call, the grant of each of the two calls, and the stream's look before it stays.
+    assert!(reads.len() >= 5, "{} reads", reads.len());
+    assert!(
+        !reads.contains(&runtime_thread),
+        "a manifest was read on the runtime's thread"
+    );
 }
 
 // ---------------------------------------------------------------------------------------------------------------

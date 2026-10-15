@@ -16,6 +16,7 @@ const TONES: Record<AuditDecision, BadgeTone> = {
   denied: "danger",
   declined: "warning",
   timedOut: "warning",
+  notChecked: "neutral",
 };
 
 const keyOf = (e: AuditEntry) =>

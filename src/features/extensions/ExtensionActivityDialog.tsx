@@ -13,6 +13,7 @@ const TONES: Record<AuditDecision, BadgeTone> = {
   denied: "danger",
   declined: "warning",
   timedOut: "warning",
+  notChecked: "neutral",
 };
 const COLUMNS = ["time", "extension", "cluster", "method", "target", "decision", "result", "duration"] as const;
 const keyOf = (e: AuditEntry) => [e.at, e.client, e.clusterId, e.tool, e.target, e.decision, e.result, e.durationMs].join("\u0000");

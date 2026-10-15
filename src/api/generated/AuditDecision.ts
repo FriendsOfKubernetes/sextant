@@ -3,4 +3,4 @@
 /**
  * How the permission check of a call ended.
  */
-export type AuditDecision = "allowed" | "denied" | "approved" | "declined" | "timedOut";
+export type AuditDecision = "allowed" | "denied" | "approved" | "declined" | "timedOut" | "notChecked";

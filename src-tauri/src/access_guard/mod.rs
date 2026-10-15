@@ -116,9 +116,10 @@ pub fn refused_object(target: &str, namespace: Option<&str>, kind: &KindPattern)
 /// The decision a journal keeps for a call: a refusal over an approval over a plain allow.
 pub fn stronger(old: Option<AuditDecision>, new: AuditDecision) -> AuditDecision {
     let rank = |d: AuditDecision| match d {
-        AuditDecision::Allowed => 0,
-        AuditDecision::Approved => 1,
-        AuditDecision::Denied | AuditDecision::Declined | AuditDecision::TimedOut => 2,
+        AuditDecision::NotChecked => 0,
+        AuditDecision::Allowed => 1,
+        AuditDecision::Approved => 2,
+        AuditDecision::Denied | AuditDecision::Declined | AuditDecision::TimedOut => 3,
     };
     match old {
         Some(old) if rank(old) > rank(new) => old,
