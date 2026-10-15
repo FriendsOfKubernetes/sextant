@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, UPDATER_COMMANDS, type MockBackend, type MockBackendOptions, type MockHandler } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { AppShell } from "../../layout/AppShell";
-import { SettingsContent } from "../settings";
+import { SettingsContent, selectSettingsTab } from "../settings";
 import { resetUpdatesState } from "../updates";
 import { AboutHost } from "./AboutHost";
 import { resetAbout } from "./store";
@@ -56,6 +56,7 @@ describe("opening", () => {
 
   it("opens from the button in Settings shown as a page", async () => {
     setup();
+    selectSettingsTab("about");
     render(
       <>
         <SettingsContent />
@@ -68,6 +69,7 @@ describe("opening", () => {
 
   it("opens from Settings shown as a dialog (no cluster), on top of it", async () => {
     setup();
+    selectSettingsTab("about");
     render(<AppShell />);
     fireEvent.click(await screen.findByRole("button", { name: "Settings" }));
     const settings = await screen.findByRole("dialog", { name: "Settings" });

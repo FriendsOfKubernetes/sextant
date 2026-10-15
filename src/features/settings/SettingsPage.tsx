@@ -1,4 +1,5 @@
-// The Settings page: appearance (theme, language), the main window (keep in the tray), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
+// The Settings page, in tabs: General (appearance, window, editor), Clusters (kubeconfig sources, helm, terminal),
+// AI agents (MCP server), Extensions, Updates & About. The sections: appearance (theme, language), the main window (keep in the tray), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
 // sources, the node shell image, the MCP server, extensions, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ import {
   type KubeconfigSource,
   type Theme,
 } from "../../api";
-import { Button, Checkbox, ConfirmDialog, ErrorState, Radio } from "../../components";
+import { Button, Checkbox, ConfirmDialog, ErrorState, Radio, Tabs } from "../../components";
 import { availableLanguages } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
@@ -28,6 +29,7 @@ import { openAbout } from "../about/store";
 import { McpPanel } from "../mcp/McpPanel";
 import { UpdatesPanel } from "../updates";
 import { languageName } from "./languages";
+import { SETTINGS_TABS, useSettingsUi } from "./store";
 import "./settings.css";
 
 const THEMES: Theme[] = ["system", "light", "dark"];
@@ -44,9 +46,18 @@ export function SettingsPage(_props: PageProps) {
   );
 }
 
-/** The sections, also shown in a dialog when no cluster is open. */
+/** The sections in tabs (the open one is remembered for the session, store.ts); also shown in a dialog when no cluster
+ * is open. */
 export function SettingsContent() {
+  const { t } = useTranslation();
   const { settings, update } = useSettings();
+  const tab = useSettingsUi((s) => s.tab);
+  const selectTab = useSettingsUi((s) => s.selectTab);
+  const prefix = useId();
+  // A link to a tab at the end of the list (a narrow window scrolls the list): bring the selected tab into view.
+  useEffect(() => {
+    document.getElementById(`${prefix}-tab-${tab}`)?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [prefix, tab]);
   const [error, setError] = useState<ApiError | null>(null);
 
   const save = (change: (current: AppSettings) => AppSettings): Promise<boolean> =>
@@ -61,19 +72,42 @@ export function SettingsContent() {
       },
     );
 
+  const tabs = SETTINGS_TABS.map((id) => ({ id, label: t(`settings:tabs.${id}`) }));
   return (
     <div className="settings">
       {error && <SaveError error={error} />}
-      <AppearanceSection settings={settings} save={save} />
-      <WindowSection settings={settings} save={save} />
-      <EditorSection settings={settings} save={save} />
-      <HelmSection settings={settings} save={save} />
-      <KubeconfigSection />
-      <TerminalSection settings={settings} save={save} />
-      <McpSection settings={settings} save={save} />
-      <ExtensionsSection />
-      <UpdatesSection save={save} />
-      <AboutSection />
+      <Tabs
+        label={t("settings:tabs.label")}
+        tabs={tabs}
+        selected={tab}
+        onSelect={selectTab}
+        idPrefix={prefix}
+        className="settings__tabs"
+      >
+        {tab === "general" && (
+          <>
+            <AppearanceSection settings={settings} save={save} />
+            <WindowSection settings={settings} save={save} />
+            <EditorSection settings={settings} save={save} />
+          </>
+        )}
+        {tab === "clusters" && (
+          <>
+            <KubeconfigSection />
+            <HelmSection settings={settings} save={save} />
+            <TerminalSection settings={settings} save={save} />
+          </>
+        )}
+        {tab === "agents" && <McpSection settings={settings} save={save} />}
+        {/* Extension-contributed settings sections are drawn inside the panel (`ExtensionSettingsFrame`). */}
+        {tab === "extensions" && <ExtensionsSection />}
+        {tab === "about" && (
+          <>
+            <UpdatesSection save={save} />
+            <AboutSection />
+          </>
+        )}
+      </Tabs>
     </div>
   );
 }

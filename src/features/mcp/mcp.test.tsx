@@ -13,7 +13,7 @@ import { getPage } from "../../layout/pages";
 import { getSlot } from "../../layout/slots";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
-import { SETTINGS_PAGE_ID } from "../settings";
+import { SETTINGS_PAGE_ID, selectSettingsTab } from "../settings";
 import { ConfirmHost } from "./ConfirmHost";
 import { resetMcpUi } from "./store";
 import "./index";
@@ -86,6 +86,7 @@ function setup(mcp = { enabled: true, port: 47391 }, handlers: Record<string, (a
 function renderSettings() {
   const page = getPage(SETTINGS_PAGE_ID);
   if (!page) throw new Error("the settings page is not registered");
+  selectSettingsTab("agents");
   return render(<page.Component clusterId="c1" />);
 }
 

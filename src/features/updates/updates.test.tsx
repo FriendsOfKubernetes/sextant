@@ -12,7 +12,7 @@ import {
   type UpdateInfo,
 } from "../../api";
 import { resetAppStore } from "../../app/store";
-import { SettingsButton, SettingsContent } from "../settings";
+import { SettingsButton, SettingsContent, selectSettingsTab } from "../settings";
 import { resetUpdatesState } from "./index";
 
 const NEWER: UpdateInfo = {
@@ -44,6 +44,7 @@ const updatesSection = () => screen.getByRole("region", { name: "Updates" });
 beforeEach(() => {
   resetAppStore();
   resetUpdatesState();
+  selectSettingsTab("about");
 });
 afterEach(() => backend.restore());
 

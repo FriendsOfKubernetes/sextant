@@ -3,6 +3,14 @@
     "title": "Settings",
     "open": "Settings"
   },
+  "tabs": {
+    "label": "Settings sections",
+    "general": "General",
+    "clusters": "Clusters",
+    "agents": "AI agents",
+    "extensions": "Extensions",
+    "about": "Updates & About"
+  },
   "appearance": {
     "title": "Appearance",
     "theme": "Theme",

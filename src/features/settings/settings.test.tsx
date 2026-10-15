@@ -6,7 +6,7 @@ import { AppShell } from "../../layout";
 import { getPage } from "../../layout/pages";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
-import { SETTINGS_PAGE_ID } from "./index";
+import { SETTINGS_PAGE_ID, openSettings, resetSettingsUi, selectSettingsTab, type SettingsTab } from "./index";
 
 const home: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default", error: null };
 const pasted: KubeconfigSource = { id: "src-pasted", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted", error: null };
@@ -35,9 +35,10 @@ function setup(options: Parameters<typeof mockBackend>[1] = {}) {
   );
 }
 
-function renderPage() {
+function renderPage(tab?: SettingsTab) {
   const page = getPage(SETTINGS_PAGE_ID);
   if (!page) throw new Error("the settings page is not registered");
+  if (tab) selectSettingsTab(tab);
   return render(<page.Component clusterId="c1" />);
 }
 
@@ -47,6 +48,7 @@ beforeEach(() => {
   resetAppStore();
   resetClustersStore();
   resetHelmStatus();
+  resetSettingsUi();
 });
 afterEach(() => backend.restore());
 
@@ -96,7 +98,7 @@ describe("Settings page", () => {
 
   it("shows the helm found in PATH and switches to a chosen binary and back", async () => {
     setup({ openFile: () => "/opt/helm/bin/helm" });
-    renderPage();
+    renderPage("clusters");
     const section = screen.getByRole("region", { name: "Helm" });
     await waitFor(() => expect(section).toHaveTextContent("Helm v4.3.0 at /usr/local/bin/helm"));
     expect(within(section).getByRole("radio", { name: "Find helm in PATH" })).toBeChecked();
@@ -122,14 +124,14 @@ describe("Settings page", () => {
   it("says when helm is not found", async () => {
     setup();
     helm = MISSING;
-    renderPage();
+    renderPage("clusters");
     const section = screen.getByRole("region", { name: "Helm" });
     await waitFor(() => expect(section).toHaveTextContent("Helm was not found"));
   });
 
   it("lists kubeconfig sources and removes an added one after confirmation", async () => {
     setup();
-    renderPage();
+    renderPage("clusters");
     const section = screen.getByRole("region", { name: "Kubeconfig" });
     const list = within(section).getByRole("list", { name: "Kubeconfig sources" });
     await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(2));
@@ -148,7 +150,7 @@ describe("Settings page", () => {
   it("removes a cloud source like any other, saying what goes with it", async () => {
     setup();
     sources = [home, cloud];
-    renderPage();
+    renderPage("clusters");
     const list = within(screen.getByRole("region", { name: "Kubeconfig" })).getByRole("list", {
       name: "Kubeconfig sources",
     });
@@ -162,7 +164,7 @@ describe("Settings page", () => {
 
   it("saves the node shell image, and an emptied field goes back to busybox", async () => {
     setup();
-    renderPage();
+    renderPage("clusters");
     const section = screen.getByRole("region", { name: "Terminal" });
     const field = within(section).getByRole("textbox", { name: "Node shell image" });
     await waitFor(() => expect(field).toHaveValue("busybox:stable"));
@@ -188,7 +190,7 @@ describe("kubeconfig source errors in Settings", () => {
       error: { code: "kubeconfig", message: "the kubeconfig is not valid YAML (line 3, column 1)" },
     };
     sources = [home, broken];
-    renderPage();
+    renderPage("clusters");
     const list = within(screen.getByRole("region", { name: "Kubeconfig" })).getByRole("list", { name: "Kubeconfig sources" });
     await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(2));
     const [homeItem, brokenItem] = within(list).getAllByRole("listitem");
@@ -306,5 +308,95 @@ describe("Settings → Window", () => {
     const section = screen.getByRole("region", { name: "Window" });
     expect(await within(section).findByText(/No system tray was found/)).toBeInTheDocument();
     expect(within(section).getByRole("checkbox", { name: KEEP })).toBeDisabled();
+  });
+});
+
+describe("Settings tabs", () => {
+  const regions = () => screen.getAllByRole("region").map((r) => r.querySelector("h2")?.textContent);
+
+  it("groups the sections into five tabs and shows only the selected tab's sections", async () => {
+    setup();
+    renderPage();
+    const list = screen.getByRole("tablist", { name: "Settings sections" });
+    expect(within(list).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "General",
+      "Clusters",
+      "AI agents",
+      "Extensions",
+      "Updates & About",
+    ]);
+    expect(screen.getByRole("tab", { name: "General" })).toHaveAttribute("aria-selected", "true");
+    expect(regions()).toEqual(["Appearance", "Window", "Editor"]);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Clusters" }));
+    expect(regions()).toEqual(["Kubeconfig", "Helm", "Terminal"]);
+    expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
+
+    // Keyboard as everywhere else: the arrow moves to the next tab and selects it.
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Clusters" }), { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: "AI agents" })).toHaveFocus();
+    expect(regions()).toEqual(["AI agents (MCP)"]);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Extensions" }));
+    expect(regions()).toEqual(["Extensions"]);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Updates & About" }));
+    expect(regions()).toEqual(["Updates", "About"]);
+    expect(screen.getByRole("tabpanel", { name: "Updates & About" })).toContainElement(
+      screen.getByRole("button", { name: "About Sextant" }),
+    );
+  });
+
+  it("remembers the last tab: the page opens at it again", async () => {
+    setup();
+    const { unmount } = renderPage();
+    fireEvent.click(screen.getByRole("tab", { name: "Clusters" }));
+    unmount();
+    renderPage();
+    expect(screen.getByRole("tab", { name: "Clusters" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("region", { name: "Helm" })).toBeInTheDocument();
+  });
+
+  it("remembers the last tab of the dialog (no cluster) after it is closed", async () => {
+    setup();
+    render(<AppShell />);
+    const rail = screen.getByRole("navigation", { name: "Clusters" });
+    fireEvent.click(within(rail).getByRole("button", { name: "Settings" }));
+    let dialog = await screen.findByRole("dialog", { name: "Settings" });
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Extensions" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog", { name: "Settings" })).not.toBeInTheDocument();
+
+    fireEvent.click(within(rail).getByRole("button", { name: "Settings" }));
+    dialog = await screen.findByRole("dialog", { name: "Settings" });
+    expect(within(dialog).getByRole("tab", { name: "Extensions" })).toHaveAttribute("aria-selected", "true");
+    expect(within(dialog).getByRole("region", { name: "Extensions" })).toBeInTheDocument();
+  });
+
+  it("a link to AI agents opens the page of the active cluster at that tab", async () => {
+    setup();
+    render(<AppShell />);
+    act(() => useAppStore.getState().setActiveCluster("c1"));
+    act(() => openSettings({ tab: "agents" }));
+    expect(useAppStore.getState().clusterViews.c1?.view).toBe(SETTINGS_PAGE_ID);
+    const main = screen.getByRole("main");
+    expect(await within(main).findByRole("region", { name: "AI agents (MCP)" })).toBeInTheDocument();
+    expect(within(main).getByRole("tab", { name: "AI agents" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("dialog", { name: "Settings" })).not.toBeInTheDocument();
+  });
+
+  it("a link to About opens the dialog at Updates & About when no cluster is open", async () => {
+    setup();
+    render(<AppShell />);
+    act(() => openSettings({ tab: "about" }));
+    const dialog = await screen.findByRole("dialog", { name: "Settings" });
+    expect(within(dialog).getByRole("tab", { name: "Updates & About" })).toHaveAttribute("aria-selected", "true");
+    expect(within(dialog).getByRole("button", { name: "About Sextant" })).toBeInTheDocument();
+    // Without a tab the link keeps the tab left last.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    act(() => openSettings());
+    expect(
+      within(await screen.findByRole("dialog", { name: "Settings" })).getByRole("tab", { name: "Updates & About" }),
+    ).toHaveAttribute("aria-selected", "true");
   });
 });

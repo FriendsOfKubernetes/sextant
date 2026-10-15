@@ -198,3 +198,8 @@
   flex-basis: 100%;
   margin-top: 0;
 }
+
+/* The tabs of Settings (#118): the list scrolls sideways when the window or the dialog is too narrow for it. */
+.settings__tabs .tabs__list {
+  scrollbar-width: thin;
+}

@@ -14,7 +14,7 @@ import { ExtensionsHost, resetExtensionsStore, resetNotices } from "../../extens
 import { AppShell } from "../../layout/AppShell";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
-import { SettingsContent } from "../settings";
+import { resetSettingsUi, SettingsContent } from "../settings";
 import { ConsentNotice } from "./ConsentNotice";
 import { ExtensionsPanel } from "./ExtensionsPanel";
 import { isReleaseUrl } from "./install";
@@ -169,6 +169,7 @@ const loadedConsent = (name: string) =>
 
 beforeEach(() => {
   resetAppStore();
+  resetSettingsUi();
   resetClustersStore();
   resetHelmStatus();
   resetNotices();
@@ -229,7 +230,9 @@ describe("the list", () => {
     list = [info()];
     setup();
     render(<SettingsContent />);
-    const section = await screen.findByRole("region", { name: "Extensions" });
+    // Under the Extensions tab of Settings, with the extension's own section inside.
+    fireEvent.click(screen.getByRole("tab", { name: "Extensions" }));
+    const section = await within(screen.getByRole("tabpanel", { name: "Extensions" })).findByRole("region", { name: "Extensions" });
     const widgets = await within(section).findByRole("listitem", { name: "Widgets" });
     expect(within(widgets).getByRole("region", { name: "Settings of Widgets" })).toBeInTheDocument();
     expect(widgets.querySelector("iframe")).not.toBeNull();
