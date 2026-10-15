@@ -34,6 +34,8 @@ export const events = {
   /** Files of an extension running from a folder changed (development mode): its frames reload. */
   onExtensionFilesChanged: (handler: (payload: ExtensionFilesChangedPayload) => void): Promise<Unsubscribe> =>
     subscribe("extension-files-changed", handler),
+  /** "About Sextant…" was chosen in the tray menu (the window is already back); open the About dialog. */
+  onOpenAbout: (handler: () => void): Promise<Unsubscribe> => subscribe("open-about", () => handler()),
   /** Updates of an extension's `resources.watch` stream (`api.extensions.call(…, streamId)`). */
   onExtWatch: (streamId: string, handler: (update: WatchUpdate) => void): Promise<Unsubscribe> =>
     subscribe(`ext-watch:${streamId}`, handler),

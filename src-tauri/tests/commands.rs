@@ -81,6 +81,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("settings_update", Some("settings")),
     ("settings_status", None),
     ("tray_status", None),
+    ("about_info", None),
     ("file_save", Some("path")),
     ("argocd_status", Some("clusterId")),
     ("argocd_login", Some("clusterId")),
@@ -229,6 +230,34 @@ fn without_a_tray_icon_the_window_is_told_the_tray_is_unavailable() {
     // The mock runtime never creates a tray icon, like a Linux desktop without AppIndicator.
     let status = invoke(&h, "tray_status", json!({})).unwrap();
     assert_eq!(status, json!({ "available": false }));
+}
+
+#[test]
+fn about_info_names_the_machine_without_paths_or_user_names() {
+    let h = harness();
+    let info = invoke(&h, "about_info", json!({})).unwrap();
+    assert_eq!(info["tauriVersion"], tauri::VERSION, "{info}");
+    assert_eq!(info["arch"], std::env::consts::ARCH, "{info}");
+    let os = info["os"].as_str().unwrap();
+    assert!(["Linux", "macOS", "Windows"].contains(&os), "{info}");
+    // Only the five fields of the contract, and nothing that names the user or a folder.
+    let mut keys: Vec<_> = info.as_object().unwrap().keys().cloned().collect();
+    keys.sort();
+    assert_eq!(
+        keys,
+        ["arch", "os", "osVersion", "tauriVersion", "webviewVersion"],
+        "{info}"
+    );
+    let text = info.to_string();
+    for private in [
+        std::env::var("HOME").unwrap_or_default(),
+        std::env::var("USER").unwrap_or_default(),
+    ] {
+        assert!(
+            private.len() < 2 || !text.contains(&private),
+            "{info} names {private}"
+        );
+    }
 }
 
 #[test]

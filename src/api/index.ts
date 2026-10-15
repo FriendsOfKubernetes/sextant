@@ -14,6 +14,7 @@ export const api = {
   metrics: commands.metrics,
   helm: commands.helm,
   settings: commands.settings,
+  about: commands.about,
   files: commands.files,
   argocd: commands.argocd,
   access: commands.access,

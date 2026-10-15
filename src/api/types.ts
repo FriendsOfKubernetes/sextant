@@ -1,4 +1,5 @@
 // Re-exports of the generated IPC types, so feature code can `import type { ObjectRef } from "src/api"`.
+export type { AboutInfo } from "./generated/AboutInfo";
 export type { AccessAction } from "./generated/AccessAction";
 export type { AccessPreset } from "./generated/AccessPreset";
 export type { AccessRule } from "./generated/AccessRule";

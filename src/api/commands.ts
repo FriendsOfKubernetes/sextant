@@ -1,5 +1,6 @@
 // One function per backend command (interfaces.md, "Commands"). Argument names are the camelCase names the
 // Rust commands expect. Every function rejects with `ApiError`.
+import type { AboutInfo } from "./generated/AboutInfo";
 import type { AccessPreset } from "./generated/AccessPreset";
 import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
@@ -214,6 +215,11 @@ export const settings = {
   status: () => call<SettingsStatus>("settings_status"),
   /** Whether the tray icon exists; without it "Closing the window keeps Sextant in the tray" cannot be turned on. */
   trayStatus: () => call<TrayStatus>("tray_status"),
+};
+
+/** What "About Sextant" shows about the machine (no paths, no user names). */
+export const about = {
+  info: () => call<AboutInfo>("about_info"),
 };
 
 export const files = {

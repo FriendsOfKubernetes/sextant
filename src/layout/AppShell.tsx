@@ -10,6 +10,7 @@ import {
 } from "../app/store";
 import { EmptyState, Icon } from "../components";
 import { ExtensionsHost } from "../extensions/ExtensionsHost";
+import { AboutHost } from "../features/about/AboutHost";
 // The file, not the feature's index: the shell mounts the dialog, the feature registers the rest.
 import { ConsentNotice } from "../features/extensions/ConsentNotice";
 import { ConfirmHost } from "../features/mcp/ConfirmHost";
@@ -31,8 +32,9 @@ import "./layout.css";
  * panel and the dock take the full width.
  *
  * Window-wide, mounted once: the confirmation dialog for what an AI agent or an extension asks to do (`ConfirmHost`),
- * the notice that an extension is paused for new permissions with its review window (`ConsentNotice`), and the
- * extension host, which keeps extension contributions registered (`ExtensionsHost`).
+ * the notice that an extension is paused for new permissions with its review window (`ConsentNotice`), the extension
+ * host, which keeps extension contributions registered (`ExtensionsHost`), and the About dialog (`AboutHost`, opened
+ * by the tray menu and by Settings).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -110,6 +112,7 @@ export function AppShell() {
         )}
         <Dock />
       </div>
+      <AboutHost />
       <ConfirmHost />
       <ConsentNotice />
       <ExtensionsHost />

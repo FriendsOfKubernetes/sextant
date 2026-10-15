@@ -24,6 +24,7 @@ import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
 // The panels themselves, not the features' index files: those register UI of their own (features/mcp: the agent
 // activity button in the rail footer), loaded with every feature (`src/app/features.ts`).
 import { ExtensionsPanel } from "../extensions/ExtensionsPanel";
+import { openAbout } from "../about/store";
 import { McpPanel } from "../mcp/McpPanel";
 import { UpdatesPanel } from "../updates";
 import { languageName } from "./languages";
@@ -72,6 +73,7 @@ export function SettingsContent() {
       <McpSection settings={settings} save={save} />
       <ExtensionsSection />
       <UpdatesSection save={save} />
+      <AboutSection />
     </div>
   );
 }
@@ -423,6 +425,17 @@ function UpdatesSection({ save }: { save: Save }) {
   return (
     <Section title={t("updates:title")}>
       <UpdatesPanel save={save} />
+    </Section>
+  );
+}
+
+function AboutSection() {
+  const { t } = useTranslation();
+  return (
+    <Section title={t("about:section")}>
+      <div>
+        <Button onClick={openAbout}>{t("about:open")}</Button>
+      </div>
     </Section>
   );
 }

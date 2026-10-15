@@ -94,6 +94,14 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set("extension_install_cancel", () => undefined);
   // A desktop with a tray, unless a test says otherwise.
   table.set("tray_status", () => ({ available: true }));
+  // A machine the About dialog can describe.
+  table.set("about_info", () => ({
+    os: "Linux",
+    arch: "x86_64",
+    osVersion: "Ubuntu 24.04.1 LTS",
+    webviewVersion: "2.44.1",
+    tauriVersion: "2.12.3",
+  }));
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);

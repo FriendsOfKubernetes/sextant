@@ -1,0 +1,57 @@
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 480px;
+}
+
+.about__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.about__logo {
+  flex: none;
+}
+
+.about__identity {
+  min-width: 0;
+}
+
+.about__identity p {
+  margin: 0;
+}
+
+.about__name {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.about__build {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.about__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.about__text--muted {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.about__links,
+.about__updates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.about__updates {
+  flex-direction: column;
+  align-items: stretch;
+}
