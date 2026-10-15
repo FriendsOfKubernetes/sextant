@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use futures::Stream;
-use futures::io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt};
+use futures::io::{AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncReadExt};
 use k8s_openapi::api::core::v1::Pod;
 use kube::Api;
 use kube::api::LogParams;
@@ -43,6 +43,8 @@ pub const BATCH_INTERVAL: Duration = Duration::from_millis(100);
 const MAX_BATCH_LINES: usize = 2_000;
 /// The most lines [`tail`] reads.
 pub const MAX_TAIL_LINES: u32 = 2_000;
+/// The most bytes [`tail`] returns (and, about twice this, holds while reading): the newest ones.
+pub const MAX_TAIL_BYTES: usize = 1024 * 1024;
 
 /// Streams the logs of one container of a pod as batches of lines (at most one batch per [`BATCH_INTERVAL`]).
 ///
@@ -75,6 +77,11 @@ pub async fn stream_logs(
 /// The last `lines` lines (at most [`MAX_TAIL_LINES`]) of the log of `container` of `pod` (when `None`, the
 /// container `kubectl` would pick: the `kubectl.kubernetes.io/default-container` annotation, else the first one), of its previous instance when `previous`. One string, lines separated by `\n`;
 /// bytes that are not UTF-8 are decoded lossily. No such pod, container or previous instance is the server's error.
+///
+/// At most [`MAX_TAIL_BYTES`] are kept, the newest ones: when the lines are longer, the oldest are dropped
+/// while reading, and the text starts at a line boundary (only a single newest line longer than the cap is
+/// cut inside, keeping its end). The request carries no `limitBytes`: the kubelet applies it from the start
+/// of the tail window and would drop the newest lines instead.
 pub async fn tail(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -96,15 +103,59 @@ pub async fn tail(
         tail_lines: Some(i64::from(lines.min(MAX_TAIL_LINES))),
         ..LogParams::default()
     };
-    let mut reader = api.log_stream(&pod.name, &params).await?;
-    let mut bytes = Vec::new();
-    reader.read_to_end(&mut bytes).await.map_err(|err| {
+    let reader = api.log_stream(&pod.name, &params).await?;
+    let bytes = read_newest(reader, MAX_TAIL_BYTES).await.map_err(|err| {
         CoreError::new(
             ErrorCode::Unreachable,
             format!("the log stream broke: {err}"),
         )
     })?;
     Ok(String::from_utf8_lossy(&bytes).into_owned())
+}
+
+/// Reads `reader` to its end keeping only the last `cap` bytes (memory stays within about twice the cap).
+/// When anything was dropped, the result starts after the first newline of what is kept, so no line is
+/// partial; a kept tail without such a newline (one line longer than `cap`) keeps its end, starting at a
+/// UTF-8 character boundary.
+async fn read_newest<R: AsyncRead + Unpin>(mut reader: R, cap: usize) -> std::io::Result<Vec<u8>> {
+    let mut kept = Vec::new();
+    let mut chunk = vec![0u8; 64 * 1024];
+    // The last byte dropped so far, if any.
+    let mut dropped: Option<u8> = None;
+    let mut drop_front = |kept: &mut Vec<u8>| {
+        let excess = kept.len() - cap;
+        dropped = Some(kept[excess - 1]);
+        kept.drain(..excess);
+    };
+    loop {
+        let n = reader.read(&mut chunk).await?;
+        if n == 0 {
+            break;
+        }
+        kept.extend_from_slice(&chunk[..n]);
+        // Trimming only past twice the cap keeps the copying amortized.
+        if kept.len() > cap.saturating_mul(2) {
+            drop_front(&mut kept);
+        }
+    }
+    if kept.len() > cap {
+        drop_front(&mut kept);
+    }
+    // Nothing to cut when nothing was dropped or the drop ended exactly at a line boundary.
+    if dropped.is_some_and(|last| last != b'\n') {
+        // A newline that ends the text does not start a line.
+        let body = kept.strip_suffix(b"\n").unwrap_or(&kept);
+        let start = match body.iter().position(|&b| b == b'\n') {
+            Some(newline) => newline + 1,
+            // No line starts inside: keep the end of the one long line, from a character boundary.
+            None => kept
+                .iter()
+                .position(|&b| b & 0b1100_0000 != 0b1000_0000)
+                .unwrap_or(kept.len()),
+        };
+        kept.drain(..start);
+    }
+    Ok(kept)
 }
 
 struct Batcher<R> {
@@ -340,6 +391,52 @@ mod tests {
         }
 
         #[tokio::test]
+        async fn tail_of_long_lines_keeps_only_the_newest_whole_lines_within_the_byte_cap() {
+            use super::super::MAX_TAIL_BYTES;
+            // 2000 lines of ~1.1 KB: about twice the cap.
+            let line = |i: usize| format!("line-{i:05}-{}\n", "x".repeat(1_100));
+            let log: String = (0..2_000).map(line).collect();
+            assert!(log.len() > MAX_TAIL_BYTES * 2);
+            let expected_last = line(1_999);
+            let api = FakeApi::start(move |req: &Request| match req.path.as_str() {
+                "/api" => Reply::json(
+                    200,
+                    r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+                ),
+                "/api/v1/namespaces/ns/pods/web/log" => Reply::json(200, log.clone()),
+                _ => Reply::not_found(),
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+
+            let text = super::super::tail(&mgr, &id, &pod(Some("ns")), Some("app"), 2_000, false)
+                .await
+                .unwrap();
+            assert!(text.len() <= MAX_TAIL_BYTES, "{} bytes", text.len());
+            assert!(text.len() > MAX_TAIL_BYTES - 1_200, "{} bytes", text.len());
+            assert!(text.ends_with(&expected_last), "the newest line is kept");
+            let lines: Vec<&str> = text.lines().collect();
+            let first: usize = lines[0]
+                .strip_prefix("line-")
+                .and_then(|rest| rest.split('-').next())
+                .expect("the text starts at a line boundary")
+                .parse()
+                .unwrap();
+            assert_eq!(
+                first + lines.len(),
+                2_000,
+                "consecutive lines up to the last"
+            );
+            let query = api
+                .requests()
+                .into_iter()
+                .find(|r| r.path.ends_with("/log"))
+                .expect("a log request")
+                .query;
+            assert!(!query.contains("limitBytes"), "{query}");
+        }
+
+        #[tokio::test]
         async fn tail_of_a_missing_pod_is_not_found_and_without_a_namespace_invalid() {
             let api = server().await;
             let (_tmp, mgr, id) = connected_to(api.url()).await;
@@ -355,6 +452,32 @@ mod tests {
                 .unwrap_err();
             assert_eq!(err.code, ErrorCode::Invalid);
         }
+    }
+
+    async fn newest(text: &[u8], cap: usize) -> Vec<u8> {
+        read_newest(futures::io::Cursor::new(text.to_vec()), cap)
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn read_newest_keeps_the_last_whole_lines_within_the_cap() {
+        // Short enough: untouched, even without a final newline.
+        assert_eq!(newest(b"a\nb", 10).await, b"a\nb");
+        // The cut falls inside "bbb": the partial line is dropped.
+        assert_eq!(newest(b"aaa\nbbb\nccc\n", 6).await, b"ccc\n");
+        // The cut falls exactly after a newline: the first kept line is whole and stays.
+        assert_eq!(newest(b"aaa\nbbb\nccc\n", 8).await, b"bbb\nccc\n");
+        // One line longer than the cap keeps its end, from a UTF-8 character boundary.
+        assert_eq!(newest("aaaaé-tail\n".as_bytes(), 7).await, b"-tail\n");
+        // More than twice the cap, read in several chunks.
+        let big: Vec<u8> = (0..100_000)
+            .flat_map(|i| format!("{i}\n").into_bytes())
+            .collect();
+        let kept = newest(&big, 1_000).await;
+        assert!(kept.len() <= 1_000);
+        assert!(kept.ends_with(b"\n99999\n"));
+        assert!(big.ends_with(&kept) && big[big.len() - kept.len() - 1] == b'\n');
     }
 
     #[tokio::test]

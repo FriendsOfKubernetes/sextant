@@ -173,6 +173,22 @@ async fn read_all(mut updates: Updates) -> Vec<String> {
 
 const BUSYBOX: &str = "busybox:stable";
 
+/// What the kubelet writes as the last line of a followed log, then ending the stream, when it cannot watch
+/// the log file: the host's `fs.inotify.max_user_instances` is exhausted (kind nodes share the host's limits).
+const INOTIFY_EXHAUSTED: &str = "failed to create fsnotify watcher";
+
+/// Whether the kubelet gave up following the log for lack of inotify instances; the reason to skip is printed.
+fn kubelet_cannot_follow(lines: &[String]) -> bool {
+    let exhausted = lines.iter().any(|l| l.contains(INOTIFY_EXHAUSTED));
+    if exhausted {
+        eprintln!(
+            "skipped: the kubelet cannot follow logs (\"{INOTIFY_EXHAUSTED}: too many open files\"); raise the \
+             host limit: sudo sysctl -w fs.inotify.max_user_instances=512"
+        );
+    }
+    exhausted
+}
+
 fn container(name: &str, script: &str) -> Value {
     json!({ "name": name, "image": BUSYBOX, "command": ["sh", "-c", script] })
 }
@@ -307,13 +323,20 @@ async fn follow_streams_live_in_batches_and_deleting_the_pod_ends_the_stream() {
     while seen.len() < 10 {
         let update = tokio::time::timeout(Duration::from_secs(30), updates.next())
             .await
-            .expect("no log update in 30s")
-            .expect("the stream ended early");
-        let LogUpdate::Lines { lines } = update else {
-            panic!("unexpected {update:?}");
+            .expect("no log update in 30s");
+        let Some(LogUpdate::Lines { lines }) = update else {
+            if kubelet_cannot_follow(&seen) {
+                ns.delete().await;
+                return;
+            }
+            panic!("unexpected {update:?} after {seen:?}");
         };
         arrivals.push(Instant::now());
         seen.extend(lines);
+        if kubelet_cannot_follow(&seen) {
+            ns.delete().await;
+            return;
+        }
     }
     // Lines are consecutive ticks, in order, and arrived over several batches at least ~100 ms apart.
     let first: usize = seen[0].strip_prefix("tick-").unwrap().parse().unwrap();
@@ -419,18 +442,26 @@ async fn nginx_in_the_demo_namespace_logs_a_request_live() {
     )
     .unwrap();
     let _ = client.request_text(request).await; // nginx answers 404; the request is logged either way
+    let mut seen = match &first {
+        Some(LogUpdate::Lines { lines }) => lines.clone(),
+        _ => Vec::new(),
+    };
     let found = tokio::time::timeout(Duration::from_secs(30), async {
         while let Some(update) = updates.next().await {
-            if let LogUpdate::Lines { lines } = update
-                && lines.iter().any(|l| l.contains("/sextant-logs-probe"))
-            {
-                return true;
+            if let LogUpdate::Lines { lines } = update {
+                if lines.iter().any(|l| l.contains("/sextant-logs-probe")) {
+                    return true;
+                }
+                seen.extend(lines);
             }
         }
         false
     })
     .await
     .expect("the request did not show up in 30s");
+    if !found && kubelet_cannot_follow(&seen) {
+        return;
+    }
     assert!(found, "the stream ended before the request was logged");
 }
 
