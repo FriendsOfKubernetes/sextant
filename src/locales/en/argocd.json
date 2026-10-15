@@ -63,6 +63,8 @@
     "namespace": "Namespace",
     "sync": "Sync",
     "health": "Health / status",
+    "computedHealth": "Computed by Sextant from the live object: Argo CD keeps this health only in its own API.",
+    "computedHealthMessage": "Computed by Sextant from the live object: {{message}}",
     "remote": "The app deploys to another cluster: its resources cannot be opened from here.",
     "loading": "Loading what the resources own…"
   },

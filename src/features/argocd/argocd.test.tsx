@@ -17,6 +17,8 @@ import jobJson from "./fixtures/job.json";
 import jobPodJson from "./fixtures/job-pod.json";
 import argocdServerJson from "./fixtures/argocd-server.json";
 import podJson from "./fixtures/pod.json";
+import deploymentJson from "./fixtures/deployment.json";
+import serviceJson from "./fixtures/service.json";
 import replicaSetJson from "./fixtures/replicaset.json";
 import applicationRunningJson from "./fixtures/application-running.json";
 import applicationSetJson from "./fixtures/applicationset.json";
@@ -32,6 +34,8 @@ const replicaSet = replicaSetJson as KubeObject;
 const pod = podJson as KubeObject;
 const job = jobJson as KubeObject;
 const jobPod = jobPodJson as KubeObject;
+const deployment = deploymentJson as KubeObject;
+const service = serviceJson as KubeObject;
 const argocdServer = argocdServerJson as KubeObject;
 const applicationSet = applicationSetJson as KubeObject;
 const appProject = appProjectJson as KubeObject;
@@ -256,6 +260,66 @@ describe("details of an Application", () => {
       `2 Pod ${jobPod.metadata!.name} sextant-exp-dest  Completed`,
     );
     expect(job.metadata?.name).toBe("migrate");
+  });
+
+  it("the resource tree computes the health Argo CD 3.x keeps out of the Application, from the live objects", async () => {
+    // Argo CD 3.x: `status.resourceHealthSource: appTree`, no `health` in `status.resources`.
+    expect((application.status as { resourceHealthSource?: string }).resourceHealthSource).toBe("appTree");
+    await openApplication(copy(application));
+    const deployWatch = await watchOf(wb, "Deployment");
+    const serviceWatch = await watchOf(wb, "Service");
+    expect(wb.specs.get(deployWatch)?.namespaces).toEqual(["sextant-argo"]);
+    expect(wb.specs.get(serviceWatch)?.namespaces).toEqual(["sextant-argo"]);
+    emitSnapshot(wb, await watchOf(wb, "ReplicaSet"), [copy(replicaSet)]);
+    emitSnapshot(wb, await watchOf(wb, "Pod"), [copy(pod)]);
+    // Until its list comes, a resource shows no health.
+    expect(treeRows()).toContain("1 Deployment guestbook-ui sextant-argo Synced ");
+
+    emitSnapshot(wb, deployWatch, [copy(deployment)]);
+    emitSnapshot(wb, serviceWatch, [copy(service)]);
+    expect(treeRows()).toEqual([
+      "1 Service guestbook-ui sextant-argo Synced Healthy",
+      "1 Deployment guestbook-ui sextant-argo Synced Healthy",
+      "2 ReplicaSet guestbook-ui-6d476cf4df sextant-argo  1/1",
+      "3 Pod guestbook-ui-6d476cf4df-sfw78 sextant-argo  Running",
+    ]);
+    const tree = within(section("argocdResources"));
+    expect(tree.getAllByText("Healthy")[0]!.closest("[title]")).toHaveAttribute(
+      "title",
+      expect.stringContaining("Computed by Sextant"),
+    );
+
+    const stuck = copy(deployment);
+    (stuck.status as { conditions: { reason: string }[] }).conditions[1]!.reason = "ProgressDeadlineExceeded";
+    emitSnapshot(wb, deployWatch, [stuck]);
+    expect(treeRows()).toContain("1 Deployment guestbook-ui sextant-argo Synced Degraded");
+    expect(tree.getByText("Degraded").closest("[title]")).toHaveAttribute(
+      "title",
+      expect.stringContaining("exceeded its progress deadline"),
+    );
+
+    emitSnapshot(wb, deployWatch, []);
+    expect(treeRows()).toContain("1 Deployment guestbook-ui sextant-argo Synced Missing");
+  });
+
+  it("the resource tree shows the health Argo CD 2.x writes into the Application as it is, without listing for it", async () => {
+    const app = copy(application);
+    const status = app.status as { resourceHealthSource?: string; resources: Record<string, unknown>[] };
+    delete status.resourceHealthSource;
+    status.resources[0]!.health = { status: "Healthy" };
+    status.resources[1]!.health = { status: "Degraded", message: "Deployment exceeded its progress deadline" };
+    await openApplication(app);
+    emitSnapshot(wb, await watchOf(wb, "ReplicaSet"), [copy(replicaSet)]);
+    emitSnapshot(wb, await watchOf(wb, "Pod"), [copy(pod)]);
+
+    expect(treeRows().slice(0, 2)).toEqual([
+      "1 Service guestbook-ui sextant-argo Synced Healthy",
+      "1 Deployment guestbook-ui sextant-argo Synced Degraded",
+    ]);
+    const kinds = [...wb.specs.values()].map((s) => s.kind.kind);
+    expect(kinds).not.toContain("Deployment");
+    expect(kinds).not.toContain("Service");
+    expect(within(section("argocdResources")).getByText("Degraded").closest("[title]")).toBeNull();
   });
 
   it("resources of another cluster are listed without links or descendants", async () => {

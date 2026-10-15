@@ -2,14 +2,17 @@
 // each, what they own (Deployment → ReplicaSet → Pod, Job → Pod, …), found by `ownerReferences` among live lists
 // of those kinds in the app's namespaces. Every row opens its object. Resources in another cluster (the app deploys
 // elsewhere) are listed without links or descendants: this cluster cannot show them.
+// Argo CD 3.x no longer writes the health of each resource into the Application (it keeps it in its app tree), so
+// for a resource without one Sextant lists its kind and computes the health the way Argo CD does (`./health`).
 import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useWatch, type KindRef, type KubeObject, type WatchSpec } from "../../api";
+import { useWatch, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
 import { ErrorState } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ObjectLink, status, StatusText } from "../../resources";
 import { apiVersionOf } from "../../resources/refs";
 import { Block } from "../details";
+import { HEALTH_KINDS, healthWatchKinds, resourceHealth, type Health } from "./health";
 import {
   applicationDestination,
   descendantKinds,
@@ -18,25 +21,53 @@ import {
   managedResources,
   resourceTree,
   syncTone,
+  type ManagedResource,
   type TreeNode,
 } from "./model";
 
 const { podStatus, readyOfDesired, trueConditions } = status;
 
-/** The kinds a tree may need, in a fixed order (one live list each). */
-const LISTED: KindRef[] = [
-  { group: "apps", version: "v1", kind: "ReplicaSet" },
-  { group: "batch", version: "v1", kind: "Job" },
-  { group: "", version: "v1", kind: "Pod" },
-];
+/** The kinds a tree may need, in a fixed order (one live list each): every descendant kind (ReplicaSet, Job, Pod)
+ * is also a kind whose health is computed. */
+const LISTED: KindRef[] = HEALTH_KINDS;
 
 const keyOf = (k: Pick<KindRef, "group" | "kind">) => `${k.group}/${k.kind}`;
 
-function specFor(kind: KindRef, needed: { kind: KindRef; namespaces: string[] }[]): WatchSpec | null {
-  const entry = needed.find((n) => keyOf(n.kind) === keyOf(kind));
-  if (!entry) return null;
-  return { kind, namespaces: entry.namespaces, labelSelector: null, fieldSelector: null };
+type Needs = { kind: KindRef; namespaces: string[] }[];
+
+/** One list of `kind` in every namespace either the descendants or the health of the managed resources need. */
+function specFor(kind: KindRef, ...needs: Needs[]): WatchSpec | null {
+  const namespaces = new Set<string>();
+  for (const entry of needs.flat()) {
+    if (keyOf(entry.kind) === keyOf(kind)) for (const ns of entry.namespaces) namespaces.add(ns);
+  }
+  if (namespaces.size === 0) return null;
+  return { kind, namespaces: [...namespaces].sort(), labelSelector: null, fieldSelector: null };
 }
+
+const listed = (list: WatchState) => list.status === "ready" || list.status === "reconnecting";
+
+/**
+ * Health of each managed resource the Application gives none for, by `managedKey`, from the live list of its kind:
+ * `Missing` when the listed namespace has no such object. Nothing while the list is loading or failed, or when its
+ * namespace cannot be listed.
+ */
+function computedHealth(resources: ManagedResource[], lists: Map<string, WatchState>): Map<string, Health> {
+  const result = new Map<string, Health>();
+  for (const r of resources) {
+    const list = lists.get(keyOf(r));
+    if (r.health || !r.namespace || !list || !listed(list) || list.forbidden?.includes(r.namespace)) continue;
+    let live: KubeObject | undefined;
+    for (const obj of list.items.values()) {
+      if (obj.metadata?.namespace === r.namespace && obj.metadata?.name === r.name) live = obj;
+    }
+    const health = resourceHealth(r, live);
+    if (health) result.set(managedKey(r), health);
+  }
+  return result;
+}
+
+const managedKey = (r: ManagedResource) => `${keyOf(r)}/${r.namespace ?? ""}/${r.name}`;
 
 /** What a descendant shows in the health column: a pod's status, a ReplicaSet's ready/desired, a Job's conditions. */
 function liveState(obj: KubeObject, kind: KindRef): string | undefined {
@@ -76,22 +107,36 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
   const resources = useMemo(() => (app ? managedResources(app) : []), [app]);
   const local = app ? isInCluster(applicationDestination(app)) : false;
   const needed = useMemo(() => (local ? descendantKinds(resources) : []), [local, resources]);
+  const healthNeeded = useMemo(() => (local ? healthWatchKinds(resources) : []), [local, resources]);
 
-  const specs = LISTED.map((kind) => specFor(kind, needed));
-  const replicaSets = useWatch(clusterId, specs[0] ?? null);
-  const jobs = useWatch(clusterId, specs[1] ?? null);
-  const pods = useWatch(clusterId, specs[2] ?? null);
-  const loading = [replicaSets, jobs, pods].some((list, i) => specs[i] && list.status === "loading");
-  const failed = [replicaSets, jobs, pods].find((list, i) => specs[i] && list.status === "error");
+  const specs = LISTED.map((kind) => specFor(kind, needed, healthNeeded));
+  // One hook per kind of `LISTED`, in its order.
+  const deployments = useWatch(clusterId, specs[0] ?? null);
+  const statefulSets = useWatch(clusterId, specs[1] ?? null);
+  const daemonSets = useWatch(clusterId, specs[2] ?? null);
+  const replicaSets = useWatch(clusterId, specs[3] ?? null);
+  const pods = useWatch(clusterId, specs[4] ?? null);
+  const jobs = useWatch(clusterId, specs[5] ?? null);
+  const claims = useWatch(clusterId, specs[6] ?? null);
+  const services = useWatch(clusterId, specs[7] ?? null);
+  const ingresses = useWatch(clusterId, specs[8] ?? null);
+  const all = [deployments, statefulSets, daemonSets, replicaSets, pods, jobs, claims, services, ingresses];
+  const lists = new Map(LISTED.map((kind, i) => [keyOf(kind), all[i]!] as const));
+  // Loading and errors are about the descendants; a health list that is still loading or failed leaves the
+  // health of its resources empty.
+  const ofDescendants = needed.map((n) => lists.get(keyOf(n.kind))).filter((l): l is WatchState => l !== undefined);
+  const loading = ofDescendants.some((list) => list.status === "loading");
+  const failed = ofDescendants.find((list) => list.status === "error");
 
   const tree = useMemo(() => {
     const objects = new Map<string, KubeObject[]>([
-      [keyOf(LISTED[0]!), [...replicaSets.items.values()]],
-      [keyOf(LISTED[1]!), [...jobs.items.values()]],
-      [keyOf(LISTED[2]!), [...pods.items.values()]],
+      [keyOf(LISTED[3]!), [...replicaSets.items.values()]],
+      [keyOf(LISTED[5]!), [...jobs.items.values()]],
+      [keyOf(LISTED[4]!), [...pods.items.values()]],
     ]);
     return resourceTree(resources, local ? objects : new Map());
   }, [resources, local, replicaSets.items, jobs.items, pods.items]);
+  const computed = local ? computedHealth(resources, lists) : new Map<string, Health>();
 
   if (!app || resources.length === 0) return null;
   const rows = flatten(tree);
@@ -115,7 +160,13 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
         </thead>
         <tbody>
           {rows.map(({ key, level, node }) => (
-            <TreeRow key={key} level={level} node={node} linked={local} />
+            <TreeRow
+              key={key}
+              level={level}
+              node={node}
+              linked={local}
+              computed={node.managed ? computed.get(managedKey(node.managed)) : undefined}
+            />
           ))}
         </tbody>
       </table>
@@ -132,7 +183,19 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
   );
 }
 
-function TreeRow({ level, node, linked }: { level: number; node: TreeNode; linked: boolean }) {
+function TreeRow({
+  level,
+  node,
+  linked,
+  computed,
+}: {
+  level: number;
+  node: TreeNode;
+  linked: boolean;
+  /** Health Sextant computed for a managed resource the Application gives none for. */
+  computed: Health | undefined;
+}) {
+  const { t } = useTranslation();
   const { ref, managed, obj } = node;
   const target = { apiVersion: apiVersionOf(ref.kind), kind: ref.kind.kind, name: ref.name };
   const name: ReactNode = linked ? (
@@ -145,6 +208,16 @@ function TreeRow({ level, node, linked }: { level: number; node: TreeNode; linke
   const live = obj ? liveState(obj, ref.kind) : undefined;
   let health: ReactNode = null;
   if (managed?.health) health = <StatusText value={managed.health} tone={healthTone(managed.health)} />;
+  else if (computed) {
+    const title = computed.message
+      ? t("argocd:tree.computedHealthMessage", { message: computed.message })
+      : t("argocd:tree.computedHealth");
+    health = (
+      <span title={title}>
+        <StatusText value={computed.status} tone={healthTone(computed.status)} />
+      </span>
+    );
+  }
   // A pod's status has its own colors; counts and conditions stay plain.
   else if (live) health = ref.kind.kind === "Pod" ? <StatusText value={live} /> : live;
   return (
