@@ -4,14 +4,24 @@
 //!
 //! The frontend chooses the session id and subscribes to `term:<id>` before `*_start`, so output is emitted as soon
 //! as the shell prints it (the first prompt, an immediate exit) and nothing is held back.
+//!
+//! Output is flow-controlled like a real terminal's (#122): the window acknowledges the bytes its terminal has
+//! written (`term_ack`), and a session with [`OUTPUT_WINDOW`] bytes unacknowledged stops taking output from its shell
+//! until acknowledgements come. Its bounded output channel then fills, so the PTY is not read and the shell blocks on
+//! its writes (a container shell's websocket is not read, so the API server holds it back). Output that comes quickly
+//! is gathered into one event per [`COALESCE`]; the first chunk after a quiet spell (an echoed keystroke) goes at once.
 
 use sextant_core::exec::{self, ExecSession, TermEvent};
 use sextant_core::node_shell;
+use std::collections::HashMap;
 use std::future::Future;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use sextant_core::{ClusterId, CoreError, CoreResult, ErrorCode, ObjectRef};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{Notify, mpsc, oneshot};
+use tokio::time::Instant;
 
 use crate::events::{TermPayload, term_event};
 use crate::pty::{self, ShellCommand};
@@ -351,6 +361,143 @@ pub async fn term_stop(state: State<'_, AppState>, session_id: String) -> Result
     Ok(())
 }
 
+/// The window's terminal has written `bytes` more bytes of the session's output. Acknowledging a session that ended
+/// (or never existed) is not an error: acknowledgements may still be on their way when it exits.
+#[tauri::command]
+pub async fn term_ack<R: Runtime>(
+    app: AppHandle<R>,
+    session_id: String,
+    bytes: u64,
+) -> Result<(), CoreError> {
+    flows(&app).ack(&session_id, usize::try_from(bytes).unwrap_or(usize::MAX));
+    Ok(())
+}
+
+/// Bytes of a session's output the window may hold unacknowledged (sent, not yet written by its terminal); above this
+/// the session stops reading its shell's output until acknowledgements bring it under.
+pub const OUTPUT_WINDOW: usize = 2 * 1024 * 1024;
+/// Output that comes quickly is gathered for at most this long into one event.
+pub const COALESCE: Duration = Duration::from_millis(16);
+/// Gathered output goes out at once when it reaches this size.
+const MAX_EVENT: usize = 256 * 1024;
+
+/// The flow control of one session's output: bytes emitted and not yet acknowledged by the window.
+#[derive(Debug, Default)]
+pub struct OutputCredit {
+    unacked: Mutex<usize>,
+    acked: Notify,
+}
+
+impl OutputCredit {
+    /// Bytes emitted and not yet acknowledged.
+    pub fn unacked(&self) -> usize {
+        *lock(&self.unacked)
+    }
+
+    /// Whether `pending` more bytes (gathered, not yet emitted) leave room to take more output from the shell.
+    pub fn has_room(&self, pending: usize) -> bool {
+        self.unacked().saturating_add(pending) < OUTPUT_WINDOW
+    }
+
+    /// `bytes` were emitted to the window.
+    pub fn sent(&self, bytes: usize) {
+        let mut unacked = lock(&self.unacked);
+        *unacked = unacked.saturating_add(bytes);
+    }
+
+    /// The window wrote `bytes`; wakes the session if it waits for room. More than was sent counts as everything.
+    pub fn ack(&self, bytes: usize) {
+        {
+            let mut unacked = lock(&self.unacked);
+            *unacked = unacked.saturating_sub(bytes);
+        }
+        // One waiter (the session's task); a wake-up with nobody waiting is kept for its next wait.
+        self.acked.notify_one();
+    }
+
+    /// Resolves after the next acknowledgement (or at once if one came since the last wait).
+    pub async fn acked(&self) {
+        self.acked.notified().await;
+    }
+}
+
+/// The [`OutputCredit`] of every running session, for `term_ack`. A session's entry lives as long as its output task
+/// (it is removed when the task ends or is aborted by `term_stop`, `close_cluster`, `streams_reset` or closing the
+/// window), so nothing here outlives a session.
+#[derive(Debug, Default)]
+pub struct TermFlows(Mutex<HashMap<String, Arc<OutputCredit>>>);
+
+impl TermFlows {
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, Arc<OutputCredit>>> {
+        lock(&self.0)
+    }
+
+    fn register(&self, id: &str, credit: &Arc<OutputCredit>) {
+        self.lock().insert(id.to_owned(), Arc::clone(credit));
+    }
+
+    /// Forgets `id` if it is still `credit` (a new session may have taken the id since).
+    fn unregister(&self, id: &str, credit: &Arc<OutputCredit>) {
+        let mut map = self.lock();
+        if map.get(id).is_some_and(|c| Arc::ptr_eq(c, credit)) {
+            map.remove(id);
+        }
+    }
+
+    /// Acknowledges `bytes` of the session `id`; `false` if it is not running.
+    pub fn ack(&self, id: &str, bytes: usize) -> bool {
+        let credit = self.lock().get(id).cloned();
+        credit.map(|c| c.ack(bytes)).is_some()
+    }
+
+    pub fn len(&self) -> usize {
+        self.lock().len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// The application's [`TermFlows`], managed on first use.
+pub fn flows<R: Runtime>(app: &AppHandle<R>) -> State<'_, TermFlows> {
+    if app.try_state::<TermFlows>().is_none() {
+        app.manage(TermFlows::default());
+    }
+    app.state::<TermFlows>()
+}
+
+/// A session's entry in [`TermFlows`], removed when its output task ends or is aborted.
+struct FlowEntry<R: Runtime> {
+    app: AppHandle<R>,
+    id: String,
+    credit: Arc<OutputCredit>,
+}
+
+impl<R: Runtime> FlowEntry<R> {
+    fn new(app: &AppHandle<R>, id: &str) -> Self {
+        let credit = Arc::new(OutputCredit::default());
+        flows(app).register(id, &credit);
+        Self {
+            app: app.clone(),
+            id: id.to_owned(),
+            credit,
+        }
+    }
+}
+
+impl<R: Runtime> Drop for FlowEntry<R> {
+    fn drop(&mut self) {
+        if let Some(flows) = self.app.try_state::<TermFlows>() {
+            flows.unregister(&self.id, &self.credit);
+        }
+    }
+}
+
 fn channels(state: &AppState, id: &str) -> Result<crate::state::TermChannels, CoreError> {
     state.sessions.channels(id).ok_or_else(|| not_running(id))
 }
@@ -404,13 +551,20 @@ where
         if registered_rx.await.is_err() {
             return;
         }
+        let flow = FlowEntry::new(&handle, &own_id);
+        let credit = &flow.credit;
         let ExecSession {
             input,
             resize,
             mut output,
         } = session;
         let emit = |payload: &TermPayload| handle.emit(&event, payload).is_ok();
+        // Output taken from the shell and not emitted yet, and when output was last emitted.
+        let mut pending: Vec<u8> = Vec::new();
+        let mut last_emit: Option<Instant> = None;
         loop {
+            let room = credit.has_room(pending.len());
+            let next_emit = last_emit.map_or_else(Instant::now, |t| t + COALESCE);
             tokio::select! {
                 keys = input_rx.recv() => {
                     let Some(keys) = keys else { break };
@@ -420,17 +574,44 @@ where
                     let Some(size) = size else { break };
                     let _ = resize.send(size).await;
                 }
-                event_out = output.recv() => {
+                // The window is behind: the shell's output stays in its channel until acknowledgements come.
+                () = credit.acked(), if !room => {}
+                () = tokio::time::sleep_until(next_emit), if !pending.is_empty() => {}
+                event_out = output.recv(), if room => {
                     let (payload, last) = match event_out {
-                        Some(ev) => payload_of(ev),
-                        None => (TermPayload::Exit { code: None }, true),
+                        Some(TermEvent::Data(bytes)) => {
+                            pending.extend_from_slice(&bytes);
+                            (None, false)
+                        }
+                        Some(ev) => {
+                            let (payload, last) = payload_of(ev);
+                            (Some(payload), last)
+                        }
+                        None => (Some(TermPayload::Exit { code: None }), true),
                     };
-                    if !emit(&payload) || last {
-                        break;
+                    if let Some(payload) = payload {
+                        // What the shell printed before it ended goes first.
+                        if !pending.is_empty() && !emit(&TermPayload::data(&pending)) {
+                            break;
+                        }
+                        pending.clear();
+                        if !emit(&payload) || last {
+                            break;
+                        }
                     }
                 }
             }
+            let due = last_emit.is_none_or(|t| t.elapsed() >= COALESCE);
+            if !pending.is_empty() && (due || pending.len() >= MAX_EVENT) {
+                credit.sent(pending.len());
+                if !emit(&TermPayload::data(&pending)) {
+                    break;
+                }
+                pending.clear();
+                last_emit = Some(Instant::now());
+            }
         }
+        drop(flow);
         if let Some(state) = handle.try_state::<AppState>() {
             state.sessions.remove(&own_id);
         }
@@ -456,6 +637,7 @@ fn payload_of(event: TermEvent) -> (TermPayload, bool) {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc as std_mpsc;
     use std::time::{Duration, Instant};
 
@@ -589,6 +771,200 @@ mod tests {
         // The guard goes with the session.
         wait_until("the session and its guard to be gone", || {
             state.sessions.is_empty() && !guard_path.exists()
+        });
+    }
+
+    #[test]
+    fn output_credit_has_room_below_the_window_only_and_an_ack_wakes_the_waiter() {
+        let credit = OutputCredit::default();
+        assert!(credit.has_room(0));
+        credit.sent(OUTPUT_WINDOW - 10);
+        assert!(credit.has_room(9));
+        assert!(!credit.has_room(10), "gathered output counts too");
+        credit.sent(10);
+        assert!(!credit.has_room(0));
+        credit.ack(OUTPUT_WINDOW - 1);
+        assert_eq!(credit.unacked(), 1);
+        assert!(credit.has_room(0));
+        credit.ack(usize::MAX);
+        assert_eq!(
+            credit.unacked(),
+            0,
+            "more than was sent counts as everything"
+        );
+        // An ack that came before the wait still wakes it.
+        tauri::async_runtime::block_on(async {
+            tokio::time::timeout(Duration::from_secs(5), credit.acked())
+                .await
+                .expect("the ack woke the waiter");
+        });
+    }
+
+    /// Bytes of the `data` payloads that arrived within `quiet` of each other (for 5 s at most: output that never stops
+    /// is a failure, not a hang), and how many payloads that was.
+    fn received_bytes(events: &std_mpsc::Receiver<Value>, quiet: Duration) -> (usize, usize) {
+        use base64::Engine as _;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let (mut bytes, mut payloads) = (0, 0);
+        while Instant::now() < deadline
+            && let Ok(event) = events.recv_timeout(quiet)
+        {
+            if event["type"] == "data" {
+                bytes += base64::engine::general_purpose::STANDARD
+                    .decode(event["data"].as_str().unwrap())
+                    .unwrap()
+                    .len();
+                payloads += 1;
+            }
+        }
+        (bytes, payloads)
+    }
+
+    /// Reads `events` until `at_least` bytes came in all, then while more keep coming; the total.
+    fn receive_until(events: &std_mpsc::Receiver<Value>, total: &mut usize, at_least: usize) {
+        let deadline = Instant::now() + Duration::from_secs(20);
+        while *total < at_least {
+            assert!(
+                Instant::now() < deadline,
+                "only {total} of {at_least} bytes came"
+            );
+            *total += received_bytes(events, Duration::from_millis(50)).0;
+        }
+        // Whatever the session still sends before it stops for want of acks.
+        *total += received_bytes(events, Duration::from_millis(300)).0;
+    }
+
+    #[test]
+    fn output_quickly_after_output_is_gathered_into_one_event() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let (session, shell) = fake_session();
+        for i in 0..16u8 {
+            shell
+                .output
+                .try_send(TermEvent::Data(vec![b'a' + i]))
+                .unwrap();
+        }
+        let events = listen(&app, "t-burst");
+        forward_term(app.handle(), &state, "t-burst".into(), None, session, None).unwrap();
+        let (bytes, payloads) = received_bytes(&events, Duration::from_millis(500));
+        assert_eq!(bytes, 16);
+        assert!(payloads < 16, "{payloads} events for 16 chunks");
+    }
+
+    #[test]
+    fn a_session_takes_no_output_above_the_window_until_acked_and_its_stop_releases_the_producer() {
+        const CHUNK: usize = 64 * 1024;
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let (session, shell) = fake_session();
+        // A shell that prints without a pause, as fast as its output is taken.
+        let produced = Arc::new(AtomicUsize::new(0));
+        let (done_tx, done_rx) = std_mpsc::channel();
+        let producer = {
+            let (output, produced) = (shell.output.clone(), Arc::clone(&produced));
+            std::thread::spawn(move || {
+                while output
+                    .blocking_send(TermEvent::Data(vec![b'y'; CHUNK]))
+                    .is_ok()
+                {
+                    produced.fetch_add(CHUNK, Ordering::SeqCst);
+                }
+                let _ = done_tx.send(());
+            })
+        };
+        let events = listen(&app, "t-flood");
+        forward_term(app.handle(), &state, "t-flood".into(), None, session, None).unwrap();
+
+        // Nothing is acknowledged: the session stops at the window, and so does the producer.
+        let mut total = 0;
+        receive_until(&events, &mut total, OUTPUT_WINDOW);
+        assert!(
+            total < OUTPUT_WINDOW + CHUNK,
+            "{total} bytes sent unacknowledged"
+        );
+        let stalled = produced.load(Ordering::SeqCst);
+        std::thread::sleep(Duration::from_millis(200));
+        assert_eq!(
+            produced.load(Ordering::SeqCst),
+            stalled,
+            "the producer kept going"
+        );
+        assert!(
+            stalled <= total + 17 * CHUNK,
+            "{stalled} produced, {total} sent"
+        );
+
+        // Acknowledging what was written lets the next window through, and no more.
+        tauri::async_runtime::block_on(term_ack(
+            app.handle().clone(),
+            "t-flood".into(),
+            total as u64,
+        ))
+        .unwrap();
+        let acked = total;
+        receive_until(&events, &mut total, acked + OUTPUT_WINDOW);
+        assert!(
+            total < acked + OUTPUT_WINDOW + CHUNK,
+            "{} bytes sent unacknowledged",
+            total - acked
+        );
+
+        // Closing the tab releases the stalled producer and forgets the session's credit.
+        state.sessions.stop("t-flood");
+        done_rx
+            .recv_timeout(Duration::from_secs(10))
+            .expect("the producer was released");
+        producer.join().unwrap();
+        wait_until("the credit to be forgotten", || {
+            flows(app.handle()).is_empty()
+        });
+        // An ack that comes after the session is gone is not an error.
+        tauri::async_runtime::block_on(term_ack(app.handle().clone(), "t-flood".into(), 1))
+            .unwrap();
+    }
+
+    /// A real shell running `yes`: without acknowledgements the PTY is read up to the window only, then `yes` blocks.
+    #[cfg(unix)]
+    #[test]
+    fn yes_in_a_local_terminal_stops_at_the_window_and_resumes_after_acks() {
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let sh = ShellCommand {
+            program: "/bin/sh".into(),
+            args: Vec::new(),
+        };
+        let events = listen(&app, "yes-1");
+        start_plain_terminal(app.handle(), &state, "yes-1".into(), &sh, 80, 24).unwrap();
+        let (input, _) = state.sessions.channels("yes-1").unwrap();
+        input.blocking_send(b"yes\n".to_vec()).unwrap();
+
+        let mut total = 0;
+        receive_until(&events, &mut total, OUTPUT_WINDOW);
+        // One PTY read (16 KiB) may come on top of the window.
+        assert!(
+            total < OUTPUT_WINDOW + 16 * 1024,
+            "{total} bytes sent unacknowledged"
+        );
+
+        tauri::async_runtime::block_on(term_ack(
+            app.handle().clone(),
+            "yes-1".into(),
+            total as u64,
+        ))
+        .unwrap();
+        let acked = total;
+        receive_until(&events, &mut total, acked + OUTPUT_WINDOW);
+        assert!(
+            total < acked + OUTPUT_WINDOW + 16 * 1024,
+            "{} bytes sent unacknowledged",
+            total - acked
+        );
+
+        state.sessions.stop("yes-1");
+        assert!(state.sessions.is_empty());
+        wait_until("the credit to be forgotten", || {
+            flows(app.handle()).is_empty()
         });
     }
 

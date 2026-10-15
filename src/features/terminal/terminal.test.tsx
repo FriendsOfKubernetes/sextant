@@ -9,7 +9,7 @@ import { getAction, getActionsFor, runAction } from "../actions/registry";
 import { useClustersStore } from "../clusters/clustersStore";
 import { CloudProblemView } from "../clusters/CloudClusters";
 import "./index";
-import { useTerminal } from "./useTerminal";
+import { ACK_BYTES, useTerminal } from "./useTerminal";
 
 // xterm.js asks for the device pixel ratio through matchMedia and measures glyphs on a canvas; jsdom has neither.
 beforeAll(() => {
@@ -473,6 +473,47 @@ describe("useTerminal", () => {
     fireEvent.keyDown(input, { key: "C", code: "KeyC", keyCode: 67, ctrlKey: true, shiftKey: true });
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("copy me"));
     expect(calls("term_input")).toEqual([]);
+    el.remove();
+  });
+
+  it("acknowledges the output once xterm has written it, in batches, under the session's id", async () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    let streamId = "";
+    const { result, unmount } = renderHook(() => {
+      const ref = useRef<HTMLElement | null>(el);
+      return useTerminal(ref, (_cols, _rows, id) => {
+        streamId = id;
+        return Promise.resolve(undefined);
+      });
+    });
+    await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
+    const term = result.current.terminal;
+    if (!term) throw new Error("no terminal");
+    const written = () => new Promise<void>((resolve) => term.write("", resolve));
+
+    // A little output is acknowledged a moment after it is written.
+    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64("hello") }));
+    await written();
+    await waitFor(() => expect(calls("term_ack")).toEqual([{ sessionId: streamId, bytes: 5 }]));
+
+    // A lot of it at once, as soon as it is written: every byte, counted once.
+    const big = "y\n".repeat(ACK_BYTES);
+    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64(big) }));
+    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64("!") }));
+    await written();
+    await waitFor(() => {
+      const acked = calls("term_ack").reduce((sum, c) => sum + (c.bytes as number), 0);
+      expect(acked).toBe(5 + big.length + 1);
+    });
+    expect(calls("term_ack")[1]).toEqual({ sessionId: streamId, bytes: big.length });
+
+    // Output written after the tab is closed is not acknowledged.
+    const before = calls("term_ack").length;
+    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64("late") }));
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(calls("term_ack")).toHaveLength(before);
     el.remove();
   });
 

@@ -430,9 +430,14 @@ async fn pump(
         None => {
             let mut buf = vec![0u8; READ_BUF];
             let mut resize_open = true;
+            // A slot in `output` is taken before the websocket is read: while the owner takes no output (the window
+            // is behind, #122), the websocket is not read, so the API server holds the shell back, and keystrokes
+            // (Ctrl+C) still go through meanwhile.
+            let mut slot = None;
             loop {
                 tokio::select! {
-                    // A resize queued before keystrokes is sent before them.
+                    // A resize queued before keystrokes is sent before them, and keystrokes go before output, so a
+                    // shell that prints without a pause cannot hold back the keys that would stop it.
                     biased;
                     size = resize.recv(), if resize_open => match size {
                         Some((cols, rows)) => {
@@ -441,14 +446,6 @@ async fn pump(
                             }
                         }
                         None => resize_open = false,
-                    },
-                    read = process.stdout.read(&mut buf) => match read {
-                        Ok(n) if n > 0 => {
-                            if output.send(TermEvent::Data(buf[..n].to_vec())).await.is_err() {
-                                break None;
-                            }
-                        }
-                        _ => break Some((&mut process.status).await),
                     },
                     keys = input.recv() => match keys {
                         Some(keys) => {
@@ -461,6 +458,18 @@ async fn pump(
                         }
                         // The session was closed by its owner.
                         None => break None,
+                    },
+                    reserved = output.reserve(), if slot.is_none() => match reserved {
+                        Ok(permit) => slot = Some(permit),
+                        Err(_) => break None,
+                    },
+                    read = process.stdout.read(&mut buf), if slot.is_some() => match read {
+                        Ok(n) if n > 0 => {
+                            if let Some(permit) = slot.take() {
+                                permit.send(TermEvent::Data(buf[..n].to_vec()));
+                            }
+                        }
+                        _ => break Some((&mut process.status).await),
                     },
                     _ = output.closed() => break None,
                 }

@@ -70,6 +70,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         terminal::term_input,
         terminal::term_resize,
         terminal::term_stop,
+        terminal::term_ack,
         portforward::portforward_start,
         portforward::portforward_list,
         portforward::portforward_stop,

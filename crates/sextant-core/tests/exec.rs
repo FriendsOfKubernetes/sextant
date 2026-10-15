@@ -338,6 +338,40 @@ async fn container_without_bash_gets_sh_and_exit_ends_the_session() {
     assert_eq!(screen.wait_exit().await, Some(0));
 }
 
+/// The owner stops taking output (the window is behind, #122): the session stops reading the websocket rather than
+/// buffering without end, and keystrokes still reach the shell, so Ctrl+C stops a command that prints without a pause.
+#[tokio::test]
+async fn a_flooding_command_whose_output_is_not_taken_still_gets_ctrl_c() {
+    let Some(cluster) = common::test_cluster() else {
+        return;
+    };
+    let (_tmp, mgr, id) = connected(&cluster.kubeconfig).await;
+    let pod = TestPod::run(
+        &cluster,
+        "sextant-exec-flood",
+        "box",
+        json!({ "name": "busybox", "image": BUSYBOX_IMAGE, "command": ["sleep", "3600"] }),
+    )
+    .await;
+
+    let session = exec_shell(&mgr, &id, &pod.pod_ref(), "busybox", 80, 24)
+        .await
+        .expect("the shell starts");
+    let mut screen = Screen::new(session);
+    screen.type_line("echo ready-$((1+1))").await;
+    screen
+        .wait_for("the shell", |t| t.contains("ready-2"))
+        .await;
+    screen.type_line("yes").await;
+    // Nobody reads: the output channel fills and the session stops reading the shell.
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    screen.session.input.send(b"\x03".to_vec()).await.unwrap();
+    screen.type_line("echo stopped-$((40+2))").await;
+    screen
+        .wait_for("yes to stop", |t| t.contains("stopped-42"))
+        .await;
+}
+
 #[tokio::test]
 async fn closing_input_ends_the_session() {
     let Some(cluster) = common::test_cluster() else {

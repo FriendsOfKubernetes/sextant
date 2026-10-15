@@ -162,6 +162,11 @@ export const terminal = {
   input: (sessionId: string, data: string) => call<void>("term_input", { sessionId, data }),
   resize: (sessionId: string, cols: number, rows: number) => call<void>("term_resize", { sessionId, cols, rows }),
   stop: (sessionId: string) => call<void>("term_stop", { sessionId }),
+  /**
+   * The terminal has written `bytes` more bytes of the session's output. A session with too much output
+   * unacknowledged stops reading its shell until acknowledgements come (flow control, #122).
+   */
+  ack: (sessionId: string, bytes: number) => call<void>("term_ack", { sessionId, bytes }),
 };
 
 export const portForward = {

@@ -4,6 +4,10 @@
 // starts (`exec_start` / `terminal_start` with that id), so the first prompt is never lost; once the start answered,
 // keystrokes go to `term_input` (those typed before it are kept and sent first) and size changes to `term_resize`. The session is stopped when the component
 // unmounts (the dock tab is closed) or reconnects.
+//
+// Output is flow-controlled (#122): once xterm has written a chunk (its write callback), its bytes are acknowledged
+// with `term_ack`, in batches; the backend stops reading a shell whose output the terminal is too far behind on, so a
+// command that prints without a pause (`yes`) cannot pile up output in the web view.
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
@@ -32,6 +36,10 @@ const DEFAULT_ROWS = 24;
 const INPUT_QUIET_MS = 300;
 /** …or this long after the session started, if the shell prints nothing. */
 const INPUT_FALLBACK_MS = 2000;
+/** Written output is acknowledged once this many bytes are written… */
+export const ACK_BYTES = 64 * 1024;
+/** …or this long after the first write not acknowledged yet. */
+export const ACK_DELAY_MS = 50;
 
 /**
  * Renders a terminal into `container` and runs a session from `factory` in it. `active` tells that the terminal is
@@ -94,6 +102,24 @@ export function useTerminal(
     if (!terminal) return;
     let cancelled = false;
     let sessionId: string | null = null;
+    // The id the session was started under (known before its first output) and its output written, not acknowledged.
+    let streamId: string | null = null;
+    let written = 0;
+    let ackTimer: ReturnType<typeof setTimeout> | undefined;
+    const sendAck = () => {
+      clearTimeout(ackTimer);
+      ackTimer = undefined;
+      if (cancelled || !streamId || written === 0) return;
+      const bytes = written;
+      written = 0;
+      api.terminal.ack(streamId, bytes).catch(() => undefined);
+    };
+    const wrote = (bytes: number) => {
+      if (cancelled) return;
+      written += bytes;
+      if (written >= ACK_BYTES) sendAck();
+      else ackTimer ??= setTimeout(sendAck, ACK_DELAY_MS);
+    };
     let lastSize = "";
     // Never Enter, nor any other control character: the command is shown, not run.
     let pendingInput = printable(initialInputRef.current ?? "") || null;
@@ -132,11 +158,13 @@ export function useTerminal(
 
     const onPayload = (payload: TermPayload) => {
       switch (payload.type) {
-        case "data":
-          terminal.write(decodeBase64(payload.data));
+        case "data": {
+          const bytes = decodeBase64(payload.data);
+          terminal.write(bytes, () => wrote(bytes.length));
           sawOutput = true;
           scheduleInput(INPUT_QUIET_MS);
           break;
+        }
         case "exit":
           setExitCode(payload.code);
           setStatus("ended");
@@ -160,7 +188,10 @@ export function useTerminal(
     const cols = terminal.cols || DEFAULT_COLS;
     const rows = terminal.rows || DEFAULT_ROWS;
     const close = openStream<TermPayload>({
-      start: (id) => factoryRef.current(cols, rows, id),
+      start: (id) => {
+        streamId = id;
+        return factoryRef.current(cols, rows, id);
+      },
       listen: events.onTerm,
       stop: api.terminal.stop,
       onEvent: onPayload,
@@ -185,6 +216,7 @@ export function useTerminal(
     return () => {
       cancelled = true;
       clearTimeout(inputTimer);
+      clearTimeout(ackTimer);
       input.dispose();
       resize.dispose();
       close();

@@ -56,6 +56,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("term_input", Some("sessionId")),
     ("term_resize", Some("sessionId")),
     ("term_stop", Some("sessionId")),
+    ("term_ack", Some("sessionId")),
     ("portforward_start", Some("clusterId")),
     ("portforward_list", None),
     ("portforward_stop", Some("id")),
@@ -780,6 +781,7 @@ fn later_argument_names_match_the_frontend() {
             json!({ "clusterId": "c", "node": "n", "cols": 80, "rows": 24 }),
             "streamId",
         ),
+        ("term_ack", json!({ "sessionId": "t" }), "bytes"),
         ("secret_value", json!({ "clusterId": "c" }), "namespace"),
         (
             "secret_value",
