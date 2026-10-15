@@ -37,6 +37,21 @@ export function sourceText(source: ExtensionSource, t: TFunction): string {
   }
 }
 
+/**
+ * How to review the permissions of a paused extension that was installed from a package: install it again from where
+ * it came from (only a folder can be read again in place). `null` for a folder.
+ */
+export function reinstallText(source: ExtensionSource, t: TFunction): string | null {
+  switch (source.type) {
+    case "folder":
+      return null;
+    case "file":
+      return t("extensions:reinstall.file", { name: source.name });
+    case "url":
+      return t("extensions:reinstall.url", { url: source.url });
+  }
+}
+
 /** The headline of an install error, by its code (manifest, unsupported API, conflict, download problems). */
 export function installErrorTitle(error: ApiError, t: TFunction): string {
   switch (error.code) {

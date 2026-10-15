@@ -284,7 +284,7 @@ describe("installing", () => {
     expect(await screen.findByText("Widgets: Installed version 1.0.0.")).toBeInTheDocument();
   }, 15_000);
 
-  it("Cancel installs nothing", async () => {
+  it("Cancel installs nothing and drops the checked package at once", async () => {
     setup();
     render(<ExtensionsPanel />);
     fireEvent.click(await screen.findByRole("button", { name: "Install from file…" }));
@@ -292,6 +292,69 @@ describe("installing", () => {
     fireEvent.click(within(consent).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(calls("extension_install")).toHaveLength(0);
+    expect(calls("extension_install_cancel").map((c) => c.args)).toEqual([{ token: "tok-1" }]);
+
+    // Closing the window any other way declines too.
+    pending = pendingOf({ token: "tok-2" });
+    fireEvent.click(screen.getByRole("button", { name: "Install from file…" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Close" }));
+    expect(calls("extension_install_cancel").map((c) => c.args)).toEqual([{ token: "tok-1" }, { token: "tok-2" }]);
+  });
+
+  it("a successful install does not cancel what it installed", async () => {
+    setup();
+    render(<ExtensionsPanel />);
+    fireEvent.click(await screen.findByRole("button", { name: "Install from file…" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Install" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(calls("extension_install_cancel")).toHaveLength(0);
+  });
+
+  it("a failed install can be tried again from the same window", async () => {
+    let attempts = 0;
+    setup({
+      extension_install: () => {
+        attempts += 1;
+        if (attempts === 1) throw { code: "other", message: "cannot create /data/extensions/acme.widgets: No space left on device" };
+        list = [info()];
+        backend.emit("extensions-changed", null);
+        return list[0];
+      },
+    });
+    render(
+      <>
+        <ExtensionsPanel />
+        <ExtensionsHost />
+      </>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Install from file…" }));
+    const consent = await screen.findByRole("dialog", { name: "Install Widgets?" });
+    fireEvent.click(within(consent).getByRole("button", { name: "Install" }));
+    const alert = await within(consent).findByRole("alert");
+    expect(alert).toHaveTextContent("No space left on device");
+    const again = within(consent).getByRole("button", { name: "Install" });
+    await waitFor(() => expect(again).toBeEnabled());
+    fireEvent.click(again);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(calls("extension_install").map((c) => c.args)).toEqual([{ token: "tok-1" }, { token: "tok-1" }]);
+    expect(calls("extension_install_cancel")).toHaveLength(0);
+    expect(await screen.findByText("Widgets: Installed version 1.0.0.")).toBeInTheDocument();
+  }, 15_000);
+
+  it("an install that is gone (expired, used, changed) cannot be pressed again", async () => {
+    setup({
+      extension_install: () => {
+        throw { code: "notFound", message: "The package changed after it was checked; choose it again to see what it asks for now" };
+      },
+    });
+    render(<ExtensionsPanel />);
+    fireEvent.click(await screen.findByRole("button", { name: "Install from file…" }));
+    const consent = await screen.findByRole("dialog", { name: "Install Widgets?" });
+    fireEvent.click(within(consent).getByRole("button", { name: "Install" }));
+    const alert = await within(consent).findByRole("alert");
+    expect(alert).toHaveTextContent("This install is no longer available");
+    expect(alert).toHaveTextContent("The package changed after it was checked");
+    expect(within(consent).getByRole("button", { name: "Install" })).toBeDisabled();
   });
 
   it("does nothing when the file dialog is dismissed", async () => {
@@ -374,7 +437,7 @@ describe("installing", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("explains a duplicate id from another source and cannot be installed again", async () => {
+  it("explains a duplicate id from another source; Install stays for after the other one is removed", async () => {
     setup({
       extension_install: () => {
         throw {
@@ -390,8 +453,8 @@ describe("installing", () => {
     const alert = await within(consent).findByRole("alert");
     expect(alert).toHaveTextContent("Another extension with this id is already installed");
     expect(alert).toHaveTextContent("remove it before installing this one");
-    // The request is used up: the only way on is to start again.
-    expect(within(consent).getByRole("button", { name: "Install" })).toBeDisabled();
+    // The checked package still waits: removing the other extension and pressing Install again works.
+    await waitFor(() => expect(within(consent).getByRole("button", { name: "Install" })).toBeEnabled());
   });
 });
 
@@ -600,6 +663,52 @@ describe("an extension paused for new permissions", () => {
     } finally {
       window.matchMedia = original;
     }
+  });
+
+  describe("installed from a package", () => {
+    const fromFile = () => info({ state: "needsConsent", needsConsent: true, manifest: withSecrets });
+    const fromUrl = () =>
+      info({ id: "acme.gadgets", name: "Gadgets", state: "needsConsent", needsConsent: true, source: { type: "url", url: RELEASE } });
+
+    it("the row says to install it again from its source instead of offering a review that cannot work", async () => {
+      list = [fromFile(), fromUrl()];
+      setup();
+      render(<ExtensionsPanel />);
+      const widgets = await screen.findByRole("listitem", { name: "Widgets" });
+      expect(within(widgets).getByText("Needs your approval")).toBeInTheDocument();
+      expect(within(widgets).queryByRole("button", { name: "Review permissions" })).toBeNull();
+      expect(within(widgets).getByRole("alert")).toHaveTextContent(
+        "To review its permissions, install it again from the file widgets.sextant-ext (Install from file…).",
+      );
+      const gadgets = screen.getByRole("listitem", { name: "Gadgets" });
+      expect(within(gadgets).queryByRole("button", { name: "Review permissions" })).toBeNull();
+      expect(within(gadgets).getByRole("alert")).toHaveTextContent(`To review its permissions, install it again from ${RELEASE}`);
+      expect(calls("extension_inspect_folder")).toHaveLength(0);
+    });
+
+    it("the notice names the source to install again from and offers no review", async () => {
+      list = [fromFile(), fromUrl()];
+      setup();
+      render(<ConsentNotice />);
+      const notice = await screen.findByRole("alert");
+      expect(notice).toHaveTextContent("Widgets, Gadgets ask for more permissions than you allowed and are paused.");
+      expect(notice).toHaveTextContent("Widgets: To review its permissions, install it again from the file widgets.sextant-ext");
+      expect(notice).toHaveTextContent(`Gadgets: To review its permissions, install it again from ${RELEASE}`);
+      expect(within(notice).queryByRole("button", { name: "Review permissions" })).toBeNull();
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("next to a folder one, the notice's review opens the folder one", async () => {
+      list = [fromFile(), paused()];
+      list[1] = { ...list[1]!, id: "dev.widgets", name: "Dev widgets" };
+      pending = pendingOf({ manifest: withSecrets, source: { type: "folder", path: folder }, replaces: "1.0.0" });
+      setup();
+      render(<ConsentNotice />);
+      const notice = await screen.findByRole("alert");
+      fireEvent.click(within(notice).getByRole("button", { name: "Review permissions" }));
+      await loadedConsent("Review the permissions of Widgets");
+      expect(calls("extension_inspect_folder")[0]?.args).toEqual({ path: folder });
+    });
   });
 
   it("no notice while every extension is within its permissions, and it can be dismissed", async () => {

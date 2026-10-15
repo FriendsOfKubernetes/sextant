@@ -7,7 +7,8 @@ import type { ExtensionSource } from "./ExtensionSource";
  */
 export type PendingInstall = { 
 /**
- * Pass to `extension_install` to install it; valid for 10 minutes, once.
+ * Pass to `extension_install` to install it; valid for 10 minutes, until an install with it succeeds or
+ * `extension_install_cancel` drops it.
  */
 token: string, manifest: ExtensionManifest, source: ExtensionSource, 
 /**

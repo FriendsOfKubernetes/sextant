@@ -13,7 +13,7 @@ export interface ConsentDialogProps {
   pending: PendingInstall;
   /** The window was opened from "Review permissions" (the extension is installed and paused). */
   review?: boolean;
-  /** Cancel, or done after a successful install. */
+  /** Cancel (the pending install is dropped first), or done after a successful install. */
   onClose: () => void;
 }
 
@@ -25,18 +25,28 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
   const update = pending.replaces !== null && !review;
   const secrets = readsSecretValues(manifest.permissions);
 
+  // `notFound` (and only it) says the pending install is gone: expired, used, or the package changed since its check.
+  // Any other failure leaves it waiting, so Install can be pressed again.
+  const gone = error?.code === "notFound";
+
   const install = async () => {
     setInstalling(true);
+    setError(null);
     try {
       const info = await api.extensions.install(pending.token);
       void refreshExtensions();
       pushNotice(info.name, t(update ? "extensions:install.updated" : "extensions:install.installed", { version: info.version }));
       onClose();
     } catch (err) {
-      // The request is used up by the attempt, so the dialog can only be left.
       setError(toApiError(err));
       setInstalling(false);
     }
+  };
+
+  // Declining drops the checked package at once (its copy can be tens of MB) instead of letting it wait out its time.
+  const cancel = () => {
+    api.extensions.installCancel(pending.token).catch(() => undefined);
+    onClose();
   };
 
   const title = review
@@ -47,11 +57,11 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
     <Dialog
       open
       title={title}
-      onClose={onClose}
+      onClose={cancel}
       footer={
         <>
-          <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
-          <Button variant="primary" disabled={installing || error !== null} onClick={() => void install()}>
+          <Button onClick={cancel}>{t("common:actions.cancel")}</Button>
+          <Button variant="primary" disabled={installing || gone} onClick={() => void install()}>
             {update ? t("extensions:consent.update") : t("extensions:consent.install")}
           </Button>
         </>

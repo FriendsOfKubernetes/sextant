@@ -1,6 +1,7 @@
 //! Installing and managing extensions: a package is checked first (`extension_inspect_*` → [`PendingInstall`]), shown
 //! to the user with what it asks for, and installed only on consent (`extension_install(token)`). A package waits for
-//! consent for [`PENDING_TTL`] in `<data>/extensions-pending/`; the user's own file is not read again.
+//! consent for [`PENDING_TTL`] in `<data>/extensions-pending/` (the user's own file is not read again), until an
+//! install with its token succeeds or the user cancels (`extension_install_cancel`); a failed install keeps it.
 //!
 //! Downloads come only from GitHub Releases (`https://github.com/<owner>/<repo>/releases/download/…`, redirects
 //! only to GitHub's asset hosts), at most [`MAX_DOWNLOAD_BYTES`], within [`DOWNLOAD_TIMEOUT`].
@@ -46,7 +47,8 @@ const ASSET_HOSTS: [&str; 2] = [
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct PendingInstall {
-    /// Pass to `extension_install` to install it; valid for 10 minutes, once.
+    /// Pass to `extension_install` to install it; valid for 10 minutes, until an install with it succeeds or
+    /// `extension_install_cancel` drops it.
     pub token: String,
     pub manifest: ExtensionManifest,
     pub source: ExtensionSource,
@@ -296,6 +298,11 @@ impl ExtensionHost {
 
     /// `extension_install`: the user agreed to what `token`'s package asks for. Installs (or updates) it, grants
     /// exactly the manifest's permissions and enables it (an update keeps the user's on/off switch).
+    ///
+    /// The token is spent only by a successful install. A failure after the package was read again as it was checked
+    /// (a full disk, an unwritable settings file, a conflict with another install) keeps it waiting, so the same
+    /// consent can be tried again. A package that cannot be read again or changed since its check is dropped: that
+    /// error, like an expired or used token, is `notFound`, and only it is (the window of consent relies on that).
     pub fn install(&self, token: &str) -> CoreResult<ExtensionInfo> {
         let _changes = lock(&self.inner.changes);
         let pending = lock(&self.inner.pending).take(token).ok_or_else(|| {
@@ -305,32 +312,63 @@ impl ExtensionHost {
             )
         })?;
         let package = match &pending.content {
-            Content::Archive(path) => {
-                let read = std::fs::File::open(path)
-                    .map_err(CoreError::from)
-                    .and_then(|f| read_limited(f, MAX_ARCHIVE_BYTES + 1));
-                let _ = std::fs::remove_file(path);
-                inspect_zip(&read?)?
-            }
-            Content::Folder(path) => inspect_folder(path)?,
+            Content::Archive(path) => std::fs::File::open(path)
+                .map_err(CoreError::from)
+                .and_then(|f| read_limited(f, MAX_ARCHIVE_BYTES + 1))
+                .and_then(|bytes| inspect_zip(&bytes)),
+            Content::Folder(path) => inspect_folder(path),
         };
-        if package.manifest != pending.manifest {
-            return Err(invalid(
-                "The package changed after it was checked; check it again before installing",
-            ));
-        }
+        let package = match package {
+            Ok(package) if package.manifest == pending.manifest => package,
+            Ok(_) => {
+                pending.discard();
+                return Err(CoreError::new(
+                    ErrorCode::NotFound,
+                    "The package changed after it was checked; choose it again to see what it asks for now",
+                ));
+            }
+            Err(err) => {
+                pending.discard();
+                return Err(CoreError::new(
+                    ErrorCode::NotFound,
+                    format!(
+                        "The package can no longer be read ({}); choose it again",
+                        err.message
+                    ),
+                ));
+            }
+        };
+        let entry = match self.install_checked(&package, &pending.source) {
+            Ok(entry) => entry,
+            Err(mut err) => {
+                lock(&self.inner.pending).insert(token.to_owned(), pending);
+                if err.code == ErrorCode::NotFound {
+                    // `notFound` means "this install is gone"; this one is still there.
+                    err.code = ErrorCode::Other;
+                }
+                return Err(err);
+            }
+        };
+        pending.discard();
+        self.info(&entry)
+            .ok_or_else(|| CoreError::other("the extension was installed but is not in the list"))
+    }
+
+    /// Installs a package read again for its install; returns its id. Undoes its files when the settings are not
+    /// saved, so nothing is half installed when it fails.
+    fn install_checked(&self, package: &Package, source: &ExtensionSource) -> CoreResult<String> {
         let manifest = package.manifest.clone();
         let existing = self.installed_one(&manifest.id);
-        check_replace(existing.as_ref(), &pending.source)?;
-        let packaged = !matches!(pending.source, ExtensionSource::Folder { .. });
+        check_replace(existing.as_ref(), source)?;
+        let packaged = !matches!(source, ExtensionSource::Folder { .. });
         if packaged {
-            sextant_core::extensions::install(&package, &self.inner.extensions_dir)?;
+            sextant_core::extensions::install(package, &self.inner.extensions_dir)?;
         }
         let entry = InstalledExtension {
             id: manifest.id.clone(),
             version: manifest.version.clone(),
             name: manifest.name.clone(),
-            source: pending.source.clone(),
+            source: source.clone(),
             enabled: existing.as_ref().is_none_or(|e| e.enabled),
             granted: manifest.permissions.clone(),
             installed_at: now_ms(),
@@ -366,8 +404,17 @@ impl ExtensionHost {
             });
         }
         self.emit(HostEvent::ListChanged);
-        self.info(&entry.id)
-            .ok_or_else(|| CoreError::other("the extension was installed but is not in the list"))
+        Ok(entry.id)
+    }
+
+    /// `extension_install_cancel`: the user closed the window of consent; the package waits no longer (its copy is
+    /// deleted now, not when it expires). An unknown, expired or used token is not an error. Waits for an install
+    /// in progress, so a failed install cannot put back what was cancelled during it.
+    pub fn cancel_install(&self, token: &str) {
+        let _changes = lock(&self.inner.changes);
+        if let Some(pending) = lock(&self.inner.pending).take(token) {
+            pending.discard();
+        }
     }
 
     fn not_installed(id: &str) -> CoreError {
@@ -651,6 +698,20 @@ pub async fn extension_install(
     blocking(move || host.install(&token)).await
 }
 
+/// The user declined: the checked package is dropped (its copy deleted) at once.
+#[tauri::command]
+pub async fn extension_install_cancel(
+    host: State<'_, ExtensionHost>,
+    token: String,
+) -> CoreResult<()> {
+    let host = host.inner().clone();
+    blocking(move || {
+        host.cancel_install(&token);
+        Ok(())
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn extension_set_enabled(
     host: State<'_, ExtensionHost>,
@@ -735,6 +796,89 @@ mod tests {
                 .is_none(),
             "the waiting copy is gone"
         );
+    }
+
+    fn pending_files(dir: &Path) -> usize {
+        std::fs::read_dir(dir.join("data/extensions-pending")).map_or(0, |d| d.count())
+    }
+
+    #[test]
+    fn a_failed_install_keeps_the_package_so_the_same_consent_can_be_retried() {
+        let dir = tempfile::tempdir().unwrap();
+        let host = host_in(dir.path());
+        let file = write_package(
+            dir.path(),
+            "w.sextant-ext",
+            package_zip("widgets", "1.0.0", read_all()),
+        );
+        let pending = host.inspect_file(&file).unwrap();
+        // Where installed extensions go cannot be written: the install fails after the package was read.
+        let extensions = dir.path().join("data/extensions");
+        let _ = std::fs::remove_dir_all(&extensions);
+        std::fs::write(&extensions, "not a folder").unwrap();
+        let err = host.install(&pending.token).unwrap_err();
+        assert_ne!(
+            err.code,
+            ErrorCode::NotFound,
+            "a failure that keeps the install is not `notFound`: {}",
+            err.message
+        );
+        assert!(host.list().is_empty());
+        assert_eq!(pending_files(dir.path()), 1, "the waiting copy stays");
+
+        std::fs::remove_file(&extensions).unwrap();
+        let info = host.install(&pending.token).unwrap();
+        assert_eq!(info.state, ExtensionState::Active);
+        assert_eq!(pending_files(dir.path()), 0, "used on success");
+        assert_eq!(
+            host.install(&pending.token).unwrap_err().code,
+            ErrorCode::NotFound,
+            "still used once on success"
+        );
+    }
+
+    #[test]
+    fn cancelling_drops_the_waiting_package_at_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let host = host_in(dir.path());
+        let file = write_package(
+            dir.path(),
+            "w.zip",
+            package_zip("widgets", "1.0.0", read_all()),
+        );
+        let pending = host.inspect_file(&file).unwrap();
+        let other = host.inspect_file(&file).unwrap();
+        assert_eq!(pending_files(dir.path()), 2);
+        host.cancel_install(&pending.token);
+        assert_eq!(pending_files(dir.path()), 1, "its archive is deleted");
+        assert_eq!(
+            host.install(&pending.token).unwrap_err().code,
+            ErrorCode::NotFound
+        );
+        // Cancelling an unknown or used token is not an error, and touches no other install.
+        host.cancel_install(&pending.token);
+        host.cancel_install("nope");
+        host.install(&other.token).unwrap();
+    }
+
+    #[test]
+    fn a_package_that_changed_after_the_check_is_dropped_and_says_so() {
+        let dir = tempfile::tempdir().unwrap();
+        let host = host_in(dir.path());
+        let folder = dir.path().join("src");
+        write_folder(&folder, "devext", "0.1.0", read_all());
+        let pending = host.inspect_folder(&folder).unwrap();
+        write_folder(&folder, "devext", "0.1.0", modify_all());
+        let err = host.install(&pending.token).unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound, "{}", err.message);
+        assert!(err.message.contains("changed"), "{}", err.message);
+        // Back as it was checked: the consent is gone all the same, the user looks at the package again.
+        write_folder(&folder, "devext", "0.1.0", read_all());
+        assert_eq!(
+            host.install(&pending.token).unwrap_err().code,
+            ErrorCode::NotFound
+        );
+        assert!(host.list().is_empty());
     }
 
     #[test]

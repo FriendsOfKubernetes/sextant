@@ -274,8 +274,14 @@ export const extensions = {
   inspectUrl: (url: string) => call<PendingInstall>("extension_inspect_url", { url }),
   /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
   inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
-  /** The user's consent to what `PendingInstall.manifest` asks for: installs it and grants its permissions. */
+  /**
+   * The user's consent to what `PendingInstall.manifest` asks for: installs it and grants its permissions. The token
+   * is spent only on success; an error with the code `notFound` (and only that) means it is gone (expired, used, or
+   * the package changed since its check) and the package has to be chosen again — any other error can be retried.
+   */
   install: (token: string) => call<ExtensionInfo>("extension_install", { token }),
+  /** The user declined: the checked package is dropped at once. An unknown or used token is not an error. */
+  installCancel: (token: string) => call<void>("extension_install_cancel", { token }),
   setEnabled: (id: string, enabled: boolean) => call<ExtensionInfo>("extension_set_enabled", { id, enabled }),
   /** Removes the extension, its files and its `storage` data. */
   remove: (id: string) => call<void>("extension_remove", { id }),

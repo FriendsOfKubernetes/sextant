@@ -98,6 +98,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("extension_inspect_url", Some("url")),
     ("extension_inspect_folder", Some("path")),
     ("extension_install", Some("token")),
+    ("extension_install_cancel", Some("token")),
     ("extension_set_enabled", Some("id")),
     ("extension_remove", Some("id")),
     ("extension_reload", Some("id")),
@@ -837,6 +838,11 @@ fn extension_commands_answer_with_the_installed_list_and_core_errors() {
     assert_eq!(invoke(&h, "extensions_list", json!({})).unwrap(), json!([]));
     let err = invoke(&h, "extension_install", json!({ "token": "nope" })).unwrap_err();
     assert_eq!(err["code"], "notFound", "{err}");
+    assert_eq!(
+        invoke(&h, "extension_install_cancel", json!({ "token": "nope" })).unwrap(),
+        json!(null),
+        "cancelling an unknown install is not an error"
+    );
     let err = invoke(
         &h,
         "extension_set_enabled",

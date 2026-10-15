@@ -124,6 +124,10 @@
     "actionFailed": "The change could not be made",
     "namedAction": "{{action}} {{name}}"
   },
+  "reinstall": {
+    "file": "To review its permissions, install it again from the file {{name}} (Install from file…).",
+    "url": "To review its permissions, install it again from {{url}} (Install from URL…)."
+  },
   "permissionsDialog": {
     "title": "Permissions of {{name}}",
     "granted": "You allowed",
@@ -139,6 +143,7 @@
     "text_one": "{{names}} asks for more permissions than you allowed and is paused.",
     "text_other": "{{names}} ask for more permissions than you allowed and are paused.",
     "review": "Review permissions",
+    "reinstall": "{{name}}: {{hint}}",
     "dismiss": "Dismiss"
   },
   "activity": {

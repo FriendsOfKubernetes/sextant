@@ -100,6 +100,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         extensions::manage::extension_inspect_url,
         extensions::manage::extension_inspect_folder,
         extensions::manage::extension_install,
+        extensions::manage::extension_install_cancel,
         extensions::manage::extension_set_enabled,
         extensions::manage::extension_remove,
         extensions::manage::extension_reload,

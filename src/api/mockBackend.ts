@@ -61,7 +61,8 @@ export const UPDATER_COMMANDS = {
 /**
  * Installs a mock backend. Commands without a handler reject like the backend stubs do
  * (`{ code: "other", message: "not implemented" }`); a handler that throws rejects with the thrown value.
- * `settings_get` / `settings_update` work out of the box on an in-memory copy, and `extensions_list` answers `[]`.
+ * `settings_get` / `settings_update` work out of the box on an in-memory copy, `extensions_list` answers `[]`, and
+ * `extension_install_cancel` resolves.
  *
  * Stream ids come from the frontend (`streamId` of `*_start`). A `*_start` handler may still answer with a name of
  * its own for the stream (`"watch-1"`); `emit` and `listenerCount` then accept that name in place of the id.
@@ -89,6 +90,8 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set(UPDATER_COMMANDS.relaunch, () => undefined);
   // The window asks for the installed extensions on start; none unless a test says otherwise.
   table.set("extensions_list", () => []);
+  // Closing a window of consent drops its pending install; nothing to answer.
+  table.set("extension_install_cancel", () => undefined);
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);

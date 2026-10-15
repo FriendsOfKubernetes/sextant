@@ -24,3 +24,5 @@ Packages are not signed and there is no catalog or store.
 - A dev folder is not a copy: changing files changes what runs, and widened permissions suspend the extension until a new consent.
 - Only GitHub Releases can host downloadable packages; other hosts need the file route.
 - Download and unzip add `reqwest` (rustls) to the app and `zip` with deflate to the core.
+
+Amended (v0.6.1): the token is spent only by a successful install. A failed install keeps the checked package, so the same consent window can retry it; a package that can no longer be read or changed since its check is dropped, and only that (like an expired or used token) answers `notFound`. Cancelling the consent window drops the package and deletes its copy at once (`extension_install_cancel`). "Review permissions" is offered only for a dev folder, which can be read again in place; a paused extension installed from a file or a link is reviewed by installing it again, and the list and the notice name its source.

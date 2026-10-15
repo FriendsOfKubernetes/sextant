@@ -6,7 +6,7 @@ import { Badge, Button, ConfirmDialog, Dialog, ErrorState, type BadgeTone } from
 import { ExtensionSettingsFrame, refreshExtensions } from "../../extensions";
 import { ExtensionActivityDialog } from "./ExtensionActivityDialog";
 import { ExtensionIcon } from "./ExtensionIcon";
-import { sourceText } from "./install";
+import { reinstallText, sourceText } from "./install";
 import { PermissionsView } from "./PermissionsView";
 import { ReviewDialog } from "./ReviewDialog";
 
@@ -41,6 +41,8 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
   const named = (action: string) => t("extensions:list.namedAction", { action, name: info.name });
   const hasSettings = info.state === "active" && info.manifest?.contributes.settings !== undefined;
   const requested = info.manifest?.permissions;
+  // Only a folder can be read again for review; a package is reviewed by installing it again from its source.
+  const reinstall = reinstallText(info.source, t);
 
   return (
     <li className="ext-row" data-state={info.state} aria-label={info.name}>
@@ -65,7 +67,8 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
       {info.needsConsent && (
         <div className="ext-row__alert" data-tone="warning" role="alert">
           <span>{t("extensions:list.pausedHint")}</span>
-          {info.source.type === "folder" && (
+          {reinstall !== null && <span>{reinstall}</span>}
+          {reinstall === null && (
             <Button variant="primary" size="compact" onClick={() => setDialog("review")}>
               {t("extensions:list.reviewPermissions")}
             </Button>
@@ -135,7 +138,7 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
       >
         <p>{t("extensions:remove.body")}</p>
       </ConfirmDialog>
-      {dialog === "review" && <ReviewDialog info={info} onClose={close} />}
+      {dialog === "review" && reinstall === null && <ReviewDialog info={info} onClose={close} />}
     </li>
   );
 }
