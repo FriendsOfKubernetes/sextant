@@ -1,0 +1,110 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "HTTPRoute",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "legacy-bridge",
+    "resourceVersion": "28523",
+    "uid": "122b6b81-078a-50a1-896f-97cebc42bf28",
+    "namespace": "web"
+  },
+  "spec": {
+    "hostnames": [
+      "legacy.example.com"
+    ],
+    "parentRefs": [
+      {
+        "group": "gateway.networking.k8s.io",
+        "kind": "Gateway",
+        "name": "public-gw",
+        "namespace": "infra",
+        "sectionName": "http"
+      }
+    ],
+    "rules": [
+      {
+        "backendRefs": [
+          {
+            "group": "",
+            "kind": "Service",
+            "name": "legacy",
+            "namespace": "legacy",
+            "port": 80,
+            "weight": 1
+          }
+        ],
+        "filters": [
+          {
+            "type": "URLRewrite",
+            "urlRewrite": {
+              "path": {
+                "replacePrefixMatch": "/",
+                "type": "ReplacePrefixMatch"
+              }
+            }
+          }
+        ],
+        "matches": [
+          {
+            "path": {
+              "type": "PathPrefix",
+              "value": "/legacy"
+            }
+          }
+        ]
+      },
+      {
+        "backendRefs": [
+          {
+            "group": "",
+            "kind": "Service",
+            "name": "api-v1",
+            "port": 8080,
+            "weight": 1
+          }
+        ],
+        "matches": [
+          {
+            "path": {
+              "type": "PathPrefix",
+              "value": "/"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "status": {
+    "parents": [
+      {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Route is accepted",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Backend ref to Service legacy/legacy not permitted by any ReferenceGrant.",
+            "observedGeneration": 1,
+            "reason": "RefNotPermitted",
+            "status": "False",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
+        "parentRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "infra",
+          "sectionName": "http"
+        }
+      }
+    ]
+  }
+}

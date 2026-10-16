@@ -1,0 +1,66 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1alpha2",
+  "kind": "TCPRoute",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "postgres",
+    "resourceVersion": "49436",
+    "uid": "6db3a171-0cd6-52b5-8be3-d43502b9052f",
+    "namespace": "db"
+  },
+  "spec": {
+    "parentRefs": [
+      {
+        "group": "gateway.networking.k8s.io",
+        "kind": "Gateway",
+        "name": "internal",
+        "namespace": "infra"
+      }
+    ],
+    "rules": [
+      {
+        "backendRefs": [
+          {
+            "group": "",
+            "kind": "Service",
+            "name": "postgres",
+            "port": 5432,
+            "weight": 1
+          }
+        ]
+      }
+    ]
+  },
+  "status": {
+    "parents": [
+      {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "No listeners included by this parent ref allowed this attachment.",
+            "observedGeneration": 1,
+            "reason": "NotAllowedByListeners",
+            "status": "False",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Resolved all the Object references for the Route",
+            "observedGeneration": 1,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
+        "parentRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "internal",
+          "namespace": "infra"
+        }
+      }
+    ]
+  }
+}

@@ -11,3 +11,11 @@
 .action-failure__label {
   font-weight: 600;
 }
+
+.main__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: var(--control-font-size);
+}

@@ -1,0 +1,26 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "GatewayClass",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "nginx",
+    "resourceVersion": "25143",
+    "uid": "32ea5642-c3a8-547f-9de9-c642f7f80350"
+  },
+  "spec": {
+    "controllerName": "gateway.nginx.org/nginx-gateway-controller"
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "1970-01-01T00:00:00Z",
+        "message": "Waiting for controller",
+        "observedGeneration": 1,
+        "reason": "Pending",
+        "status": "Unknown",
+        "type": "Accepted"
+      }
+    ]
+  }
+}

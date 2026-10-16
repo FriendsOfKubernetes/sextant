@@ -68,3 +68,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* A section's counter (registerSectionBadge) at the right end of its header. */
+.sidebar__badge {
+  flex: none;
+  margin-left: auto;
+  font-weight: 400;
+}

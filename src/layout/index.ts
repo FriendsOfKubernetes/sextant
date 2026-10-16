@@ -32,4 +32,5 @@ export {
   type PageDef,
   type PageProps,
 } from "./pages";
+export { getSectionBadge, registerSectionBadge, useSectionBadgesVersion, type SectionBadgeDef } from "./sectionBadges";
 export { getSlot, registerSlot, unregisterSlot, useSlotsVersion, type SlotName } from "./slots";

@@ -84,8 +84,8 @@ export interface ColumnDef {
 }
 
 /**
- * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `flux` and `argocd` belong to
- * tools installed in the cluster: see `DISCOVERED_SECTIONS`.
+ * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `flux` and
+ * `argocd` belong to APIs and tools installed in the cluster: see `DISCOVERED_SECTIONS`.
  */
 export const SIDEBAR_SECTIONS = [
   "cluster",
@@ -93,6 +93,7 @@ export const SIDEBAR_SECTIONS = [
   "workloads",
   "config",
   "network",
+  "gatewayApi",
   "storage",
   "namespaces",
   "events",
@@ -105,11 +106,11 @@ export const SIDEBAR_SECTIONS = [
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
 
 /**
- * Sections of tools a cluster may or may not have (Flux, Argo CD): their kinds are listed only once discovery says
- * the cluster serves them, never before it comes, so a section without served kinds — the tool is not installed —
- * is not drawn at all.
+ * Sections of APIs and tools a cluster may or may not have (Gateway API, Flux, Argo CD): their kinds are listed only
+ * once discovery says the cluster serves them, never before it comes, so a section without served kinds — the CRDs
+ * are not installed — is not drawn at all.
  */
-export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>(["flux", "argocd"]);
+export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>(["gatewayApi", "flux", "argocd"]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
 export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
@@ -118,6 +119,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   workloads: "workloads",
   config: "config",
   network: "network",
+  gatewayApi: "gatewayApi",
   storage: "storage",
   namespaces: "namespaces",
   events: "events",
@@ -154,6 +156,8 @@ export interface ResourceDef {
   namespaced?: boolean;
   /** Human-readable plural title when there is no i18n key (custom resources). */
   title?: string;
+  /** Whether an object is in trouble; with it the kind's table offers an "Only problems" filter. */
+  problem?: (obj: KubeObject) => boolean;
 }
 
 const defs = new Map<string, ResourceDef>();

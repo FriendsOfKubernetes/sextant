@@ -1,0 +1,37 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1beta1",
+  "kind": "ReferenceGrant",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "allow-web-routes",
+    "resourceVersion": "22742",
+    "uid": "10ca66aa-aa02-5aa6-becc-81c5ee7e047b",
+    "namespace": "shared"
+  },
+  "spec": {
+    "from": [
+      {
+        "group": "gateway.networking.k8s.io",
+        "kind": "HTTPRoute",
+        "namespace": "web"
+      },
+      {
+        "group": "gateway.networking.k8s.io",
+        "kind": "GRPCRoute",
+        "namespace": "web"
+      }
+    ],
+    "to": [
+      {
+        "group": "",
+        "kind": "Service"
+      },
+      {
+        "group": "",
+        "kind": "Secret",
+        "name": "shared-ca"
+      }
+    ]
+  }
+}

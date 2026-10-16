@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type AppSettings, type KubeObject, type MockBackend, type ResourceKind, type WatchSpec } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { resetNamespaceRestore } from "../../features/namespaces";
-import { getResourceDefs, resetClusterKinds } from "../../resources";
+import { getResourceDefs, nameColumn, registerResource, resetClusterKinds, unregisterResource } from "../../resources";
 import { registerPage, unregisterPage } from "../pages";
 import { Sidebar } from "../sidebar/Sidebar";
 import { MainView } from "./MainView";
@@ -298,5 +298,68 @@ describe("Sidebar and main view", () => {
     fireEvent.click(screen.getByRole("button", { name: "Namespaces: sextant-demo" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "All namespaces" }));
     await waitFor(() => expect(backend.settings.clusters.c1?.namespaces).toBeNull());
+  });
+});
+
+describe("Only problems", () => {
+  const GIZMO = kindRef("demo.sextant.dev", "v1", "Gizmo");
+  const gizmo = (name: string, broken: boolean): KubeObject => ({
+    metadata: { name, namespace: "default", uid: name },
+    spec: { broken },
+  });
+
+  it("a kind that says what a problem is offers the filter; it keeps only those rows", async () => {
+    registerResource({
+      kind: GIZMO,
+      sidebar: null,
+      columns: [nameColumn],
+      actions: [],
+      problem: (obj) => (obj.spec as { broken: boolean }).broken,
+    });
+    try {
+      useAppStore.getState().setView("c1", "kind:demo.sextant.dev/Gizmo");
+      render(<MainView clusterId="c1" />);
+      const { id } = await watchOf("Gizmo");
+      emit(id, [gizmo("good", false), gizmo("bad", true)]);
+      expect(await screen.findByText("good")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("checkbox", { name: "Only problems" }));
+      await waitFor(() => expect(screen.queryByText("good")).toBeNull());
+      expect(screen.getByText("bad")).toBeInTheDocument();
+      expect(screen.getByTestId("rt-count")).toHaveTextContent("1 of 2");
+      emit(id, [gizmo("good", false)]);
+      expect(await screen.findByText("Nothing matches the filter")).toBeInTheDocument();
+    } finally {
+      unregisterResource(GIZMO);
+    }
+  });
+
+  it("starts off again for another kind or cluster", async () => {
+    const OTHER = kindRef("demo.sextant.dev", "v1", "Doohickey");
+    for (const kind of [GIZMO, OTHER]) {
+      registerResource({ kind, sidebar: null, columns: [nameColumn], actions: [], problem: () => true });
+    }
+    try {
+      useAppStore.getState().setView("c1", "kind:demo.sextant.dev/Gizmo");
+      useAppStore.getState().setView("c2", "kind:demo.sextant.dev/Gizmo");
+      const { rerender } = render(<MainView clusterId="c1" />);
+      fireEvent.click(await screen.findByRole("checkbox", { name: "Only problems" }));
+      expect(screen.getByRole("checkbox", { name: "Only problems" })).toBeChecked();
+      act(() => useAppStore.getState().setView("c1", "kind:demo.sextant.dev/Doohickey"));
+      expect(await screen.findByRole("checkbox", { name: "Only problems" })).not.toBeChecked();
+      fireEvent.click(screen.getByRole("checkbox", { name: "Only problems" }));
+      rerender(<MainView clusterId="c2" />);
+      expect(await screen.findByRole("checkbox", { name: "Only problems" })).not.toBeChecked();
+    } finally {
+      unregisterResource(GIZMO);
+      unregisterResource(OTHER);
+    }
+  });
+
+  it("other kinds have no such filter", async () => {
+    useAppStore.getState().setView("c1", "kind:apps/Deployment");
+    render(<MainView clusterId="c1" />);
+    await watchOf("Deployment");
+    expect(await screen.findByRole("heading", { name: "Deployments" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Only problems" })).toBeNull();
   });
 });

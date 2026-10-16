@@ -1,7 +1,8 @@
 // Section tree of a cluster, in Lens order: Cluster, Nodes, Workloads, Config, Network, Storage, Namespaces, Events,
 // Helm, Access Control, Flux, Argo CD, Custom Resources. Entries come from the resource registry (tables) and from
 // `registerPage` (overview, events, Helm, port forwarding, …); a section without entries is not shown. Flux and Argo CD
-// list only kinds that discovery says the cluster serves (`DISCOVERED_SECTIONS`). Custom Resources lists
+// list only kinds that discovery says the cluster serves (`DISCOVERED_SECTIONS`), and their pages only while the section
+// has such a kind. A section header may carry a counter a feature registered (`registerSectionBadge`). Custom Resources lists
 // "Definitions" and the cluster's custom kinds grouped by API group, from discovery (names, groups, versions — the
 // CRDs themselves, with their schemas, are not downloaded for the sidebar). The sidebar watches the cluster's CRDs,
 // so a kind created or deleted while connected appears or goes without reconnecting.
@@ -9,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { Icon, type IconName } from "../../components";
+import { Badge, Icon, type IconName } from "../../components";
 import {
   customResourceKinds,
   findKind,
@@ -17,6 +18,7 @@ import {
   getResourceDefs,
   SIDEBAR_SECTIONS,
   useClusterKinds,
+  type SidebarSection,
   useRegistryVersion,
   viewIdOf,
 } from "../../resources";
@@ -24,6 +26,7 @@ import {
 import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../resources/registry";
 import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages, usePagesVersion } from "../pages";
+import { getSectionBadge, useSectionBadgesVersion, type SectionBadgeDef } from "../sectionBadges";
 import "./sidebar.css";
 
 /** Sections shown as one link (their only entry) instead of a collapsible group. */
@@ -54,6 +57,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   const setSearch = useAppStore((s) => s.setSearch);
   const registryVersion = useRegistryVersion();
   const pagesVersion = usePagesVersion();
+  useSectionBadgesVersion();
   const { kinds } = useClusterKinds(clusterId);
   useEffect(() => watchCrdChanges(clusterId), [clusterId]);
 
@@ -106,6 +110,8 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
         }
         const sectionOpen = isOpen(section.id);
         const sectionLabel = section.title ?? t(`resources:sections.${section.id}`, { defaultValue: section.id });
+        const badge = getSectionBadge(section.id);
+        const badgeId = badge ? `sidebar-badge-${clusterId}-${section.id}`.replace(/[^A-Za-z0-9_-]/g, "_") : undefined;
         return (
           <li key={section.id} className="sidebar__section">
             <button
@@ -113,11 +119,13 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
               className="sidebar__item sidebar__group"
               title={sectionLabel}
               aria-expanded={sectionOpen}
+              aria-describedby={badgeId}
               onClick={() => toggle(section.id)}
             >
               <Icon name={sectionOpen ? "chevronDown" : "chevronRight"} size={12} className="sidebar__chevron" />
               <Icon name={sectionIcon(section.id) ?? DEFAULT_ENTRY_ICON} className="sidebar__icon" />
               <span className="sidebar__label">{sectionLabel}</span>
+              {badge && badgeId && <SectionCount key={badge.id} id={badgeId} clusterId={clusterId} def={badge} />}
             </button>
             {sectionOpen && (
               <ul className="sidebar__list sidebar__list--nested">
@@ -153,6 +161,27 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   );
 }
 
+/**
+ * The counter of a section header; nothing while it is 0. The number is hidden from assistive technology so the
+ * header keeps its name; its label (the tooltip) describes the header instead (`aria-describedby` → `id`).
+ */
+function SectionCount({ id, clusterId, def }: { id: string; clusterId: ClusterId; def: SectionBadgeDef }) {
+  const { t } = useTranslation();
+  const count = def.useCount(clusterId);
+  if (count <= 0) return null;
+  const label = def.labelKey ? t(def.labelKey, { count }) : String(count);
+  return (
+    <>
+      <span className="sidebar__badge" title={label} aria-hidden="true">
+        <Badge tone={def.tone ?? "neutral"}>{count}</Badge>
+      </span>
+      <span id={id} hidden>
+        {label}
+      </span>
+    </>
+  );
+}
+
 function sectionIcon(id: string): IconName | undefined {
   return (SECTION_ICONS as Record<string, IconName | undefined>)[id];
 }
@@ -172,7 +201,10 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
   }
   // Header of a section of its own: the first `sectionTitle` its pages give.
   const titles = new Map<string, string>();
+  // A page of an installed tool's section shows only while the cluster serves one of the section's kinds.
+  const served = new Set(bySection.keys());
   for (const page of getPages()) {
+    if (DISCOVERED_SECTIONS.has(page.section as SidebarSection) && !served.has(page.section)) continue;
     add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey, label: page.label, icon: page.icon });
     if (page.sectionTitle && !titles.has(page.section)) titles.set(page.section, page.sectionTitle);
   }

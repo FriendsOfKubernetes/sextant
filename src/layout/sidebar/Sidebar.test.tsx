@@ -15,7 +15,8 @@ import {
 } from "../../resources";
 import { DEFAULT_ENTRY_ICON, SECTION_ICONS, SIDEBAR_SECTIONS } from "../../resources/registry";
 import { CRD_REFRESH_DELAY } from "../../resources/useKinds";
-import { getPages } from "../pages";
+import { getPages, registerPage, unregisterPage } from "../pages";
+import { registerSectionBadge } from "../sectionBadges";
 import { Sidebar } from "./Sidebar";
 
 const served = (group: string, version: string, kind: string): ResourceKind => ({
@@ -117,6 +118,46 @@ describe("Flux and Argo CD sections", () => {
     await waitFor(() => expect(sections()).toContain("Argo CD"));
     expect(sections().indexOf("Argo CD")).toBe(sections().indexOf("Flux") + 1);
     expect(backend.calls.filter((c) => c.cmd === "cluster_kinds_refresh")).toHaveLength(1);
+  });
+
+  it("show their pages only while the section has served kinds", async () => {
+    const Page = () => null;
+    registerPage({ id: "t-flux-page", section: "flux", order: 99, labelKey: "FluxPage", Component: Page });
+    registerPage({ id: "t-argo-page", section: "argocd", order: 99, labelKey: "ArgoPage", Component: Page });
+    try {
+      render(<Sidebar clusterId="c1" />);
+      await waitFor(() => expect(sections()).toContain("Flux"));
+      // Argo CD is not served: its page alone does not draw the section.
+      expect(sections()).not.toContain("Argo CD");
+      fireEvent.click(screen.getByRole("button", { name: /Flux/ }));
+      expect(screen.getByRole("button", { name: "FluxPage" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "ArgoPage" })).toBeNull();
+    } finally {
+      unregisterPage("t-flux-page");
+      unregisterPage("t-argo-page");
+    }
+  });
+});
+
+describe("section badges", () => {
+  it("a feature's counter shows on its section header while above zero", async () => {
+    let count = 3;
+    const remove = registerSectionBadge("flux", () => count, { tone: "danger", labelKey: "gateway:problems.count" });
+    try {
+      const { rerender } = render(<Sidebar clusterId="c1" />);
+      await waitFor(() => expect(screen.getByTitle("3 problems")).toHaveTextContent("3"));
+      expect(screen.getByTitle("3 problems").querySelector(".badge--danger")).not.toBeNull();
+      // The number does not change the header's name; its label describes the header.
+      const header = screen.getByRole("button", { name: "Flux" });
+      expect(header).toContainElement(screen.getByTitle("3 problems"));
+      expect(header).toHaveAccessibleDescription("3 problems");
+      count = 0;
+      rerender(<Sidebar clusterId="c1" />);
+      expect(screen.queryByTitle(/problems/)).toBeNull();
+      expect(sections()).toContain("Flux");
+    } finally {
+      remove();
+    }
   });
 });
 

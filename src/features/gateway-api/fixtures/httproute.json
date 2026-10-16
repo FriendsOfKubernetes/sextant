@@ -1,0 +1,182 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "HTTPRoute",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 2,
+    "name": "api",
+    "resourceVersion": "22852",
+    "uid": "be7d6e04-9a21-5223-a907-e8a6df9d7287",
+    "namespace": "web"
+  },
+  "spec": {
+    "hostnames": [
+      "api.example.com",
+      "api.example.org"
+    ],
+    "parentRefs": [
+      {
+        "group": "gateway.networking.k8s.io",
+        "kind": "Gateway",
+        "name": "public-gw",
+        "namespace": "infra",
+        "sectionName": "http"
+      },
+      {
+        "group": "gateway.networking.k8s.io",
+        "kind": "Gateway",
+        "name": "internal",
+        "namespace": "infra"
+      }
+    ],
+    "rules": [
+      {
+        "backendRefs": [
+          {
+            "group": "",
+            "kind": "Service",
+            "name": "api-v2",
+            "port": 8080,
+            "weight": 90
+          },
+          {
+            "group": "",
+            "kind": "Service",
+            "name": "api-v1",
+            "port": 8080,
+            "weight": 10
+          }
+        ],
+        "filters": [
+          {
+            "requestHeaderModifier": {
+              "set": [
+                {
+                  "name": "x-gateway",
+                  "value": "public"
+                }
+              ],
+              "remove": [
+                "x-debug"
+              ]
+            },
+            "type": "RequestHeaderModifier"
+          }
+        ],
+        "matches": [
+          {
+            "headers": [
+              {
+                "name": "x-env",
+                "type": "Exact",
+                "value": "prod"
+              }
+            ],
+            "path": {
+              "type": "PathPrefix",
+              "value": "/api"
+            }
+          }
+        ]
+      },
+      {
+        "backendRefs": [
+          {
+            "group": "",
+            "kind": "Service",
+            "name": "api-v1",
+            "port": 8080,
+            "weight": 1
+          }
+        ],
+        "matches": [
+          {
+            "method": "GET",
+            "path": {
+              "type": "Exact",
+              "value": "/healthz"
+            }
+          }
+        ]
+      },
+      {
+        "filters": [
+          {
+            "requestRedirect": {
+              "scheme": "https",
+              "statusCode": 301
+            },
+            "type": "RequestRedirect"
+          }
+        ],
+        "matches": [
+          {
+            "path": {
+              "type": "PathPrefix",
+              "value": "/old"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "status": {
+    "parents": [
+      {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Route is accepted",
+            "observedGeneration": 2,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Resolved all the Object references for the Route",
+            "observedGeneration": 2,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
+        "parentRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "infra",
+          "sectionName": "http"
+        }
+      },
+      {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "There were no hostname intersections between the HTTPRoute and this parent ref's Listener(s).",
+            "observedGeneration": 2,
+            "reason": "NoMatchingListenerHostname",
+            "status": "False",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Resolved all the Object references for the Route",
+            "observedGeneration": 2,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
+        "parentRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "internal",
+          "namespace": "infra"
+        }
+      }
+    ]
+  }
+}

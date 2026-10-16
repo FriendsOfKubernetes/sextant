@@ -1,0 +1,68 @@
+[
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:12:40Z",
+      "generation": 1,
+      "name": "api-v2",
+      "resourceVersion": "10690",
+      "uid": "06b6dcb6-e0fb-5da9-80db-071f351bd80e",
+      "namespace": "web"
+    },
+    "spec": {
+      "clusterIP": "10.96.12.92",
+      "clusterIPs": [
+        "10.96.12.92"
+      ],
+      "ports": [
+        {
+          "name": "http",
+          "port": 8080,
+          "protocol": "TCP",
+          "targetPort": 8080
+        }
+      ],
+      "selector": {
+        "app": "api-v2"
+      },
+      "type": "ClusterIP"
+    },
+    "status": {
+      "loadBalancer": {}
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:12:40Z",
+      "generation": 1,
+      "name": "api-v1",
+      "resourceVersion": "69585",
+      "uid": "1f7ce549-fdb6-5afc-94c8-144b0d552b35",
+      "namespace": "web"
+    },
+    "spec": {
+      "clusterIP": "10.96.12.187",
+      "clusterIPs": [
+        "10.96.12.187"
+      ],
+      "ports": [
+        {
+          "name": "http",
+          "port": 8080,
+          "protocol": "TCP",
+          "targetPort": 8080
+        }
+      ],
+      "selector": {
+        "app": "api-v1"
+      },
+      "type": "ClusterIP"
+    },
+    "status": {
+      "loadBalancer": {}
+    }
+  }
+]

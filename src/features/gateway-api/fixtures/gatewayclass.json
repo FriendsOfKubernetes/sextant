@@ -1,0 +1,53 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "GatewayClass",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "eg",
+    "resourceVersion": "66681",
+    "uid": "ae95bcc4-7f3c-52bb-8e6a-bfe7cb61ba6d",
+    "finalizers": [
+      "gateway-exists-finalizer.gateway.networking.k8s.io"
+    ]
+  },
+  "spec": {
+    "controllerName": "gateway.envoyproxy.io/gatewayclass-controller",
+    "description": "Envoy Gateway"
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-14T09:12:41Z",
+        "message": "Valid GatewayClass",
+        "observedGeneration": 1,
+        "reason": "Accepted",
+        "status": "True",
+        "type": "Accepted"
+      }
+    ],
+    "supportedFeatures": [
+      {
+        "name": "GRPCRoute"
+      },
+      {
+        "name": "Gateway"
+      },
+      {
+        "name": "HTTPRoute"
+      },
+      {
+        "name": "HTTPRouteHostRewrite"
+      },
+      {
+        "name": "HTTPRoutePathRewrite"
+      },
+      {
+        "name": "ReferenceGrant"
+      },
+      {
+        "name": "TLSRoute"
+      }
+    ]
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "Gateway",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "internal",
+    "resourceVersion": "46201",
+    "uid": "d9b03c7f-8e76-5383-ba1e-e046d243053f",
+    "namespace": "infra"
+  },
+  "spec": {
+    "gatewayClassName": "eg",
+    "listeners": [
+      {
+        "allowedRoutes": {
+          "namespaces": {
+            "from": "All"
+          }
+        },
+        "hostname": "*.internal.example.com",
+        "name": "http",
+        "port": 8080,
+        "protocol": "HTTP"
+      }
+    ]
+  },
+  "status": {
+    "addresses": [
+      {
+        "type": "IPAddress",
+        "value": "172.18.0.201"
+      }
+    ],
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-14T09:12:41Z",
+        "message": "The Gateway has been scheduled by Envoy Gateway",
+        "observedGeneration": 1,
+        "reason": "Accepted",
+        "status": "True",
+        "type": "Accepted"
+      },
+      {
+        "lastTransitionTime": "2026-10-14T09:12:41Z",
+        "message": "Address assigned to the Gateway, 1/1 envoy replicas available",
+        "observedGeneration": 1,
+        "reason": "Programmed",
+        "status": "True",
+        "type": "Programmed"
+      }
+    ],
+    "listeners": [
+      {
+        "attachedRoutes": 0,
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Sending translated listener configuration to the data plane",
+            "observedGeneration": 1,
+            "reason": "Programmed",
+            "status": "True",
+            "type": "Programmed"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has been successfully translated",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has correctly resolved all of its references",
+            "observedGeneration": 1,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "name": "http",
+        "supportedKinds": [
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "HTTPRoute"
+          },
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "GRPCRoute"
+          }
+        ]
+      }
+    ]
+  }
+}

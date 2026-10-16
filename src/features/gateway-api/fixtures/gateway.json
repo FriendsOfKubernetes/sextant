@@ -1,0 +1,223 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "Gateway",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 3,
+    "name": "public-gw",
+    "resourceVersion": "59117",
+    "uid": "d6a2fd9b-981e-59bf-bdef-72365524bc0d",
+    "namespace": "infra"
+  },
+  "spec": {
+    "gatewayClassName": "eg",
+    "listeners": [
+      {
+        "allowedRoutes": {
+          "namespaces": {
+            "from": "All"
+          }
+        },
+        "name": "http",
+        "port": 80,
+        "protocol": "HTTP"
+      },
+      {
+        "allowedRoutes": {
+          "namespaces": {
+            "from": "Selector",
+            "selector": {
+              "matchLabels": {
+                "gateway-access": "public"
+              }
+            }
+          }
+        },
+        "hostname": "*.example.com",
+        "name": "https",
+        "port": 443,
+        "protocol": "HTTPS",
+        "tls": {
+          "certificateRefs": [
+            {
+              "group": "",
+              "kind": "Secret",
+              "name": "example-com-tls"
+            }
+          ],
+          "mode": "Terminate"
+        }
+      },
+      {
+        "allowedRoutes": {
+          "namespaces": {
+            "from": "Same"
+          }
+        },
+        "hostname": "shop.example.org",
+        "name": "https-shop",
+        "port": 443,
+        "protocol": "HTTPS",
+        "tls": {
+          "certificateRefs": [
+            {
+              "group": "",
+              "kind": "Secret",
+              "name": "shop-tls",
+              "namespace": "shop"
+            }
+          ],
+          "mode": "Terminate"
+        }
+      }
+    ]
+  },
+  "status": {
+    "addresses": [
+      {
+        "type": "IPAddress",
+        "value": "172.18.0.200"
+      }
+    ],
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-14T09:12:41Z",
+        "message": "The Gateway has been scheduled by Envoy Gateway",
+        "observedGeneration": 3,
+        "reason": "Accepted",
+        "status": "True",
+        "type": "Accepted"
+      },
+      {
+        "lastTransitionTime": "2026-10-14T09:12:41Z",
+        "message": "Address assigned to the Gateway, 1/1 envoy replicas available",
+        "observedGeneration": 3,
+        "reason": "Programmed",
+        "status": "True",
+        "type": "Programmed"
+      }
+    ],
+    "listeners": [
+      {
+        "attachedRoutes": 2,
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Sending translated listener configuration to the data plane",
+            "observedGeneration": 1,
+            "reason": "Programmed",
+            "status": "True",
+            "type": "Programmed"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has been successfully translated",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has correctly resolved all of its references",
+            "observedGeneration": 1,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "name": "http",
+        "supportedKinds": [
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "HTTPRoute"
+          },
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "GRPCRoute"
+          }
+        ]
+      },
+      {
+        "attachedRoutes": 1,
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Sending translated listener configuration to the data plane",
+            "observedGeneration": 1,
+            "reason": "Programmed",
+            "status": "True",
+            "type": "Programmed"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has been successfully translated",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has correctly resolved all of its references",
+            "observedGeneration": 1,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "name": "https",
+        "supportedKinds": [
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "HTTPRoute"
+          },
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "GRPCRoute"
+          }
+        ]
+      },
+      {
+        "attachedRoutes": 0,
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener is invalid, see other Conditions for details.",
+            "observedGeneration": 3,
+            "reason": "Invalid",
+            "status": "False",
+            "type": "Programmed"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Listener has been successfully translated",
+            "observedGeneration": 3,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Certificate ref to secret shop/shop-tls not permitted by any ReferenceGrant.",
+            "observedGeneration": 3,
+            "reason": "RefNotPermitted",
+            "status": "False",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "name": "https-shop",
+        "supportedKinds": [
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "HTTPRoute"
+          },
+          {
+            "group": "gateway.networking.k8s.io",
+            "kind": "GRPCRoute"
+          }
+        ]
+      }
+    ]
+  }
+}

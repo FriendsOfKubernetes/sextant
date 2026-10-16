@@ -1,0 +1,54 @@
+{
+  "apiVersion": "gateway.networking.k8s.io/v1",
+  "kind": "BackendTLSPolicy",
+  "metadata": {
+    "creationTimestamp": "2026-10-14T09:12:40Z",
+    "generation": 1,
+    "name": "api-v2-tls",
+    "resourceVersion": "45016",
+    "uid": "f1ed2b9e-bcde-593a-8d4e-4ae54348ceae",
+    "namespace": "web"
+  },
+  "spec": {
+    "targetRefs": [
+      {
+        "group": "",
+        "kind": "Service",
+        "name": "api-v2"
+      }
+    ],
+    "validation": {
+      "caCertificateRefs": [
+        {
+          "group": "",
+          "kind": "ConfigMap",
+          "name": "api-ca"
+        }
+      ],
+      "hostname": "api-v2.web.svc"
+    }
+  },
+  "status": {
+    "ancestors": [
+      {
+        "ancestorRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "infra"
+        },
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T09:12:41Z",
+            "message": "Policy has been accepted.",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          }
+        ],
+        "controllerName": "gateway.envoyproxy.io/gatewayclass-controller"
+      }
+    ]
+  }
+}

@@ -1,0 +1,139 @@
+[
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.10"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v2-7d9c8b6f5-ax2q",
+          "namespace": "web",
+          "uid": "67d1135b-9d59-5acb-807a-bf37fb9c2b52"
+        }
+      },
+      {
+        "addresses": [
+          "10.244.0.11"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v2-7d9c8b6f5-bx2q",
+          "namespace": "web",
+          "uid": "f5705984-4b23-5d3d-b09c-e5e81f7be5f5"
+        }
+      },
+      {
+        "addresses": [
+          "10.244.0.12"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v2-7d9c8b6f5-cx2q",
+          "namespace": "web",
+          "uid": "7b216248-ff12-57dc-8065-37270d952e3e"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:12:40Z",
+      "generation": 1,
+      "name": "api-v2-x7k2p",
+      "resourceVersion": "27798",
+      "uid": "5c44829d-7d8a-5386-b700-cea2b667ceaa",
+      "namespace": "web",
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "api-v2"
+      }
+    },
+    "ports": [
+      {
+        "name": "http",
+        "port": 8080,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.10"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v1-7d9c8b6f5-ax2q",
+          "namespace": "web",
+          "uid": "34ff13a0-37c4-5c59-89e1-b46fa8abae90"
+        }
+      },
+      {
+        "addresses": [
+          "10.244.0.11"
+        ],
+        "conditions": {
+          "ready": false,
+          "serving": false,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v1-7d9c8b6f5-bx2q",
+          "namespace": "web",
+          "uid": "bef2e666-2a2c-5394-a325-0ce37d7777dc"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:12:40Z",
+      "generation": 1,
+      "name": "api-v1-x7k2p",
+      "resourceVersion": "30175",
+      "uid": "552fcbbf-d460-5825-a6b0-29c180bb6cd5",
+      "namespace": "web",
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "api-v1"
+      }
+    },
+    "ports": [
+      {
+        "name": "http",
+        "port": 8080,
+        "protocol": "TCP"
+      }
+    ]
+  }
+]

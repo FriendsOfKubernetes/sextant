@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KindRef, ResourceKind } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { EmptyState, ErrorState } from "../../components";
+import { Checkbox, EmptyState, ErrorState } from "../../components";
 import { LoadingTable, ResourceTable } from "../../components/Table";
 import { NamespaceFilter, useSelectedNamespaces } from "../../features/namespaces";
 import {
@@ -65,6 +65,8 @@ function KindView({ clusterId, group, kind }: { clusterId: ClusterId; group: str
   const version = registered?.kind.version ?? discovered?.kindRef.version ?? "";
   return (
     <KindTable
+      // A table of another kind or cluster starts with its own state ("Only problems" off).
+      key={`${clusterId}/${group}/${kind}`}
       clusterId={clusterId}
       kind={{ group, version, kind }}
       resourceKind={discovered}
@@ -100,6 +102,9 @@ function KindTable({
   const setSearch = useAppStore((s) => s.setSearch);
   const namespaced = resourceKind?.namespaced ?? def.namespaced ?? true;
   const title = def.sidebar ? t(def.sidebar.labelKey) : (def.title ?? kind.kind);
+  // Kinds that say what a problem is offer "Only problems".
+  const [onlyProblems, setOnlyProblems] = useState(false);
+  const rowFilter = onlyProblems ? def.problem : undefined;
 
   if (namespaces === undefined) return <LoadingTable title={title} since={openedAt} />;
   return (
@@ -110,8 +115,15 @@ function KindTable({
       loadingSince={openedAt}
       namespaces={namespaces}
       search={search}
+      rowFilter={rowFilter}
       toolbar={
         <>
+          {def.problem && (
+            <label className="main__filter">
+              <Checkbox checked={onlyProblems} onChange={(e) => setOnlyProblems(e.target.checked)} />
+              {t("resources:table.onlyProblems")}
+            </label>
+          )}
           {namespaced && <NamespaceFilter clusterId={clusterId} />}
           <input
             className="main__search"

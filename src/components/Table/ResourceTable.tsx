@@ -55,6 +55,8 @@ export interface ResourceTableProps {
   namespaces?: string[] | null;
   /** Search text. Default: the cluster's search text from the store. */
   search?: string;
+  /** Rows kept besides the search (e.g. "Only problems"); the count then says "shown of total". */
+  rowFilter?: (obj: KubeObject) => boolean;
   labelSelector?: string | null;
   fieldSelector?: string | null;
   /** Already translated title. Default: the kind's sidebar label (or the kind name for custom resources). */
@@ -157,10 +159,12 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const watchKey = JSON.stringify([clusterId, spec]);
   const loadingSince = useWatchStart(watchKey, props.loadingSince);
 
+  const { rowFilter } = props;
   const data = useMemo(
-    () => [...watch.items.values()].filter((obj) => matchesSearch(obj, search)),
-    [watch.items, search],
+    () => [...watch.items.values()].filter((obj) => matchesSearch(obj, search) && (!rowFilter || rowFilter(obj))),
+    [watch.items, search, rowFilter],
   );
+  const filtered = Boolean(search.trim()) || rowFilter !== undefined;
 
   const tableColumns = useMemo(
     () =>
@@ -228,7 +232,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     <header className="rt__header">
       <h2 className="rt__title">{title}</h2>
       <span className="rt__count" data-testid="rt-count">
-        {search.trim() && data.length !== total
+        {filtered && data.length !== total
           ? t("resources:table.countFiltered", { shown: data.length, total })
           : t("resources:table.count", { count: total })}
       </span>
@@ -274,6 +278,8 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         title={
           search.trim() && total > 0
             ? t("resources:table.noMatches", { search: search.trim() })
+            : rowFilter && total > 0
+              ? t("resources:table.noFilterMatches")
             : namespaced
               ? t("resources:table.empty", { kind: title })
               : t("resources:table.emptyClusterScoped", { kind: title })

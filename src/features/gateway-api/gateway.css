@@ -1,0 +1,144 @@
+/* Gateway API: summary cards, problem banners, rules and the ReferenceGrant copy row. */
+.gw-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gw-card {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-panel);
+  min-width: 0;
+}
+
+.gw-card__label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.gw-card__value {
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+
+.gw-problem {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-danger);
+  border-left-width: 4px;
+  border-radius: 4px;
+}
+
+.gw-problem--pending {
+  border-color: var(--color-warning);
+}
+
+.gw-problem__title {
+  font-weight: 600;
+  color: var(--color-danger);
+  overflow-wrap: anywhere;
+}
+
+.gw-problem--pending .gw-problem__title {
+  color: var(--color-warning);
+}
+
+.gw-problem__text {
+  margin: 4px 0 0;
+}
+
+.gw-problem__message {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gw-row--broken td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-danger);
+}
+
+.gw-rule {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.gw-rule--broken {
+  border-color: var(--color-danger);
+}
+
+.gw-rule__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.gw-rule__line {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.gw-rule__filters {
+  margin-top: 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.gw-rule__backends {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.gw-grant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.gw-grant__ok {
+  color: var(--color-success);
+}
+
+.gw-grant__error {
+  color: var(--color-danger);
+}
+
+.gw-sentence {
+  margin: 0 0 8px;
+}
+
+/* The Policies page. */
+.gw-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.gw-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gw-page__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.gw-page__body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 16px;
+}
