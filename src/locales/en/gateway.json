@@ -9,7 +9,8 @@
     "udpRoutes": "UDP Routes",
     "referenceGrants": "Reference Grants",
     "backendTlsPolicies": "Backend TLS Policies",
-    "policies": "Policies"
+    "policies": "Policies",
+    "requestCheck": "Request check"
   },
   "policies": {
     "loading": "Looking for policies…",
@@ -248,5 +249,148 @@
       "RefNotPermitted": "not permitted (RefNotPermitted)",
       "InvalidKind": "kind not supported"
     }
+  },
+  "check": {
+    "title": "Where does this request go?",
+    "tabs": {
+      "label": "Request check views",
+      "request": "Request",
+      "hostnames": "Hostnames"
+    },
+    "open": "Check a request…",
+    "notServed": "The cluster does not serve Gateways",
+    "loading": "Reading Gateways, routes and backends…",
+    "form": {
+      "method": "Method",
+      "grpc": "gRPC",
+      "url": "URL",
+      "urlPlaceholder": "https://shop.example.com/api?page=2",
+      "grpcPlaceholder": "http://grpc.example.com:9090/pkg.Service/Method",
+      "headers": "Headers",
+      "headersPlaceholder": "name: value, one per line",
+      "check": "Check",
+      "invalidUrl": "Enter a URL with http:// or https:// and a host, like https://shop.example.com/api",
+      "badHeaders_one": "Line {{lines}} is not \"name: value\"",
+      "badHeaders_other": "Lines {{lines}} are not \"name: value\""
+    },
+    "hint": "Enter a URL and press Check: the Gateway listener, route, rule, filters and backends that would serve it are found with the Gateway API matching rules.",
+    "result": "Result",
+    "steps": {
+      "gateway": "Gateway",
+      "route": "Route",
+      "filters": "Filters",
+      "backends": "Backends",
+      "answer": "Answer"
+    },
+    "outcome": {
+      "forwarded": "Forwarded to the backends",
+      "redirected": "Redirected: {{status}}",
+      "noListener": "No Gateway listener takes this request",
+      "noRoute": "404 Not Found",
+      "noBackend": "500 Internal Server Error",
+      "invalidUrl": "The URL cannot be read"
+    },
+    "listener": "listener {{name}} · {{port}}/{{protocol}}",
+    "why": {
+      "listenerHostname": "Port {{port}} and protocol {{protocol}} fit, and its hostname {{hostname}} matches {{host}}.",
+      "listenerAnyHost": "Port {{port}} and protocol {{protocol}} fit, and it accepts any hostname.",
+      "moreSpecific": "Its hostname is more specific than that of {{listeners}}.",
+      "routeHostname": "Its hostname {{hostname}} matches {{host}}.",
+      "routeAnyHost": "It names no hostname: it takes every host of the listener.",
+      "won_one": "Preferred over {{count}} other matching rule by: {{criteria}}.",
+      "won_other": "Preferred over {{count}} other matching rules by: {{criteria}}.",
+      "only": "The only rule that matches.",
+      "noRoute": "Listener {{listener}} takes the request, but no rule of a route attached to it matches: the Gateway answers 404.",
+      "noListener": "No listener of any Gateway fits the port, protocol and hostname: the connection is not served. \"Also considered\" says why each one was left out.",
+      "noBackend": "The rule has no backend that can take the request: the Gateway answers 500.",
+      "noBackends": "The rule has no backends.",
+      "redirect": "The Gateway answers {{status}} with Location {{location}}; no backend gets the request."
+    },
+    "rule": "Rule {{n}}",
+    "ruleNamed": "Rule {{n}} ({{name}})",
+    "matchN": "match {{n}}",
+    "noFilters": "none",
+    "rewrite": "The backend gets host {{host}}, path {{path}}",
+    "mirrors": "Copied to {{backends}}",
+    "podsReady": "{{ready}}/{{total}} pods ready",
+    "noEndpoints": "no endpoints",
+    "share": "{{percent}}% of requests",
+    "issues": {
+      "RefNotPermitted": "not permitted: no ReferenceGrant in {{namespace}} allows it (500)",
+      "InvalidKind": "kind not supported by the implementation (500)",
+      "BackendNotFound": "the Service does not exist (500)"
+    },
+    "notesTitle": "Notes",
+    "notes": {
+      "regexPathPrecedence": "A RegularExpression path took part: how it ranks against other paths is implementation-specific.",
+      "regexDialect": "Regular expressions were evaluated in the JavaScript dialect; your implementation may use RE2 or PCRE.",
+      "severalGateways": "More than one Gateway can take this request; which one gets it depends on DNS. The one where a route matches is shown.",
+      "listenerPending": "The listener has no status yet: the controller may not have programmed it.",
+      "partialBackends": "Some backends cannot take requests: their share of the requests gets a 500."
+    },
+    "considered": "Also considered ({{count}})",
+    "consideredNone": "No other candidates.",
+    "candidateRule": "rule {{n}}",
+    "candidateOn": "on {{gateway}}/{{listener}}",
+    "loss": {
+      "gatewayNotReady": "The Gateway is not ready",
+      "otherAddress": "The URL names the address of another Gateway",
+      "noListenerMatched": "None of its listeners fits the port, protocol and hostname",
+      "noRouteMatched": "A listener fits, but no route rule matches",
+      "otherGateway": "Could serve it too; another Gateway is shown (DNS decides)",
+      "otherPort": "Another port",
+      "otherProtocol": "Another protocol",
+      "otherHostname": "Its hostname does not match the host",
+      "listenerNotReady": "The listener is not ready",
+      "lessSpecificListener": "Fits, but a listener with a more specific hostname takes the request",
+      "otherRouteKind": "A GRPCRoute does not serve a plain HTTP request",
+      "notAttached": "Attached to another listener of the Gateway",
+      "notAccepted": "Not accepted on this listener",
+      "kindNotAllowed": "The listener does not allow this route kind",
+      "noHostnameIntersection": "None of its hostnames fits the hostname of the listener",
+      "otherHost": "The host is not among its hostnames",
+      "pathMismatch": "The path does not match",
+      "methodMismatch": "The method does not match",
+      "headerMismatch": "Header {{field}} does not match",
+      "queryMismatch": "Query parameter {{field}} does not match",
+      "grpcServiceMismatch": "The gRPC service does not match",
+      "grpcMethodMismatch": "The gRPC method does not match",
+      "invalidRegex": "Invalid regular expression {{field}}",
+      "lowerPrecedence": "Matches, but loses on {{criterion}}"
+    },
+    "criteria": {
+      "routeKind": "route kind (a GRPCRoute before an HTTPRoute for gRPC)",
+      "hostname": "the most specific exact hostname",
+      "hostnameLength": "the longest hostname",
+      "path": "path (Exact, then the longest PathPrefix)",
+      "method": "method match",
+      "headers": "most header matches",
+      "queryParams": "most query parameter matches",
+      "service": "the longest gRPC service",
+      "grpcMethod": "the longest gRPC method",
+      "age": "the oldest route",
+      "name": "route namespace/name in alphabetical order",
+      "ruleOrder": "rule order within the route"
+    }
+  },
+  "hostnames": {
+    "label": "Hostname map",
+    "namespace": "Route namespace",
+    "allNamespaces": "All namespaces",
+    "hostname": "Hostname",
+    "gateway": "Gateway / listener",
+    "route": "Route",
+    "backends": "Backends",
+    "conflicts": "Conflicts",
+    "anyHost": "any host",
+    "accepted": "Accepted",
+    "notAccepted": "Not accepted",
+    "check": "Check a request to {{host}}",
+    "conflictWins": "Same match as {{route}} ({{rule}}): this route gets the traffic",
+    "conflictLoses": "Same match as {{route}} ({{rule}}): {{route}} gets the traffic",
+    "conflictCount_one": "{{count}} row with conflicting routes",
+    "conflictCount_other": "{{count}} rows with conflicting routes",
+    "none": "No route serves a hostname through an HTTP or HTTPS listener.",
+    "loading": "Reading Gateways and routes…"
   }
 }

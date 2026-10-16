@@ -2,12 +2,14 @@
 // ReferenceGrants and BackendTLSPolicies with useful columns, and details that read the traffic path: listeners and
 // their status, a route's parents and rules, plain-language explanations of the common failures and the
 // ReferenceGrant a cross-namespace reference needs. Read-only; the section shows only the kinds the cluster serves.
+// "Request check" (RequestCheck.tsx) follows a request through listeners, routes and backends (`matching.ts`).
 // `model.ts` is the shared, pure model later views (reverse links, topology, the request check) build on.
 import { registerSectionBadge } from "../../layout/sectionBadges";
 import "./gateway.css";
 import { useGatewayProblemCount } from "./problems";
 import "./policies";
 import "./register";
+import "./RequestCheck";
 
 registerSectionBadge("gatewayApi", useGatewayProblemCount, { tone: "danger", labelKey: "gateway:problems.count" });
 

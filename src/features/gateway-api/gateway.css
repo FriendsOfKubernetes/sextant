@@ -201,3 +201,203 @@
 .gw-dot--problem {
   background: var(--color-danger);
 }
+
+/* The request check: the form, the result as steps, "Also considered" and the hostname map. */
+.gw-check__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.gw-check__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.gw-check__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gw-check__field--grow {
+  flex: 1 1 280px;
+}
+
+.gw-check__label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.gw-check__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-height);
+}
+
+.gw-check__form select,
+.gw-check__url,
+.gw-check__headers,
+.gw-hosts__toolbar select {
+  height: var(--control-height);
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: inherit;
+  font: inherit;
+}
+
+.gw-check__url,
+.gw-check__headers {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.gw-check__headers {
+  height: auto;
+  resize: vertical;
+}
+
+.gw-check__url[aria-invalid="true"],
+.gw-check__headers[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.gw-check__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+.gw-check__outcome {
+  margin: 8px 0;
+  font-weight: 600;
+}
+
+.gw-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gw-step {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-success);
+  border-radius: 4px;
+}
+
+.gw-step--warning {
+  border-left-color: var(--color-warning);
+}
+
+.gw-step--problem {
+  border-color: var(--color-danger);
+  border-left-color: var(--color-danger);
+}
+
+.gw-step__label {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.gw-step__main,
+.gw-step__match {
+  overflow-wrap: anywhere;
+}
+
+.gw-step__match {
+  margin-top: 2px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.gw-step__why {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.gw-step__list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.gw-step__backend {
+  display: list-item;
+}
+
+.gw-step__backend > * + * {
+  margin-left: 8px;
+}
+
+.gw-step__share {
+  color: var(--color-text-muted);
+}
+
+.gw-check__notes {
+  margin: 8px 0;
+}
+
+.gw-check__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 4px 0;
+  color: var(--color-warning);
+}
+
+.gw-considered {
+  margin-top: 12px;
+}
+
+.gw-considered__list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.gw-considered__list li {
+  margin: 2px 0;
+}
+
+.gw-considered__reason {
+  margin-left: 8px;
+  color: var(--color-text-muted);
+}
+
+.gw-hosts__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.gw-hosts__row {
+  cursor: pointer;
+}
+
+.gw-row--conflict td {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+
+.gw-hosts__conflicts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gw-hosts__conflict--wins {
+  font-weight: 600;
+}

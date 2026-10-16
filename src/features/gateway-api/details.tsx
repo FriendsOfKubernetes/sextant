@@ -63,6 +63,7 @@ import {
   type Phrase,
   type RouteRule,
 } from "./model";
+import { gatewayPrefill, openRequestCheck } from "./checkState";
 
 const { arr, get, str } = status;
 
@@ -171,6 +172,16 @@ export const MATCH_SEPARATOR = " · ";
 export const LIST_SEPARATOR = ", ";
 
 const FEEDBACK_MS = 4000;
+
+/** "Check a request…": opens the request check prefilled for the object. */
+function CheckRequestButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Button size="compact" icon="requestCheck" onClick={onClick}>
+      {t("gateway:check.open")}
+    </Button>
+  );
+}
 
 /** "Copy ReferenceGrant YAML": puts the grant on the clipboard; says where it goes. */
 export function CopyGrantButton({ grant, target }: { grant: KubeObject; target: string }) {
@@ -323,7 +334,10 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
 
   return (
     <>
-      <Block title={t("gateway:blocks.overview")}>
+      <Block
+        title={t("gateway:blocks.overview")}
+        actions={<CheckRequestButton onClick={() => openRequestCheck(clusterId, { form: gatewayPrefill(gateway) })} />}
+      >
         <div className="gw-cards">
           <Card label={t("gateway:cards.class")}>
             {className ? refLink({ group: GATEWAY_GROUP, kind: GATEWAY_CLASS.kind, name: className, namespace: null }) : none}
@@ -598,10 +612,20 @@ function RouteDetails({ clusterId, route, kind }: { clusterId: ClusterId; route:
   const { t } = useTranslation();
   const hostnames = routeHostnames(route);
   const hasHostnames = !isKind(kind, TCP_ROUTE, UDP_ROUTE);
+  const checkable = isKind(kind, HTTP_ROUTE, GRPC_ROUTE);
+  const check = () =>
+    openRequestCheck(clusterId, {
+      route: {
+        kind: kind.kind === GRPC_ROUTE.kind ? "GRPCRoute" : "HTTPRoute",
+        namespace: route.metadata?.namespace ?? null,
+        name: route.metadata?.name ?? "",
+      },
+      obj: route,
+    });
   return (
     <>
       {hasHostnames && (
-        <Block title={t("gateway:route.hostnames")}>
+        <Block title={t("gateway:route.hostnames")} actions={checkable ? <CheckRequestButton onClick={check} /> : undefined}>
           {chips(hostnames) ?? <p className="dt-muted">{t("gateway:route.anyHostname")}</p>}
         </Block>
       )}

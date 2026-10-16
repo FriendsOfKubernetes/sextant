@@ -32,6 +32,7 @@ import {
   Clock,
   Container,
   Copy,
+  Crosshair,
   Cylinder,
   Database,
   Diff,
@@ -237,6 +238,7 @@ const ICONS = {
   referenceGrant: Handshake,
   backendTlsPolicy: FileLock,
   gatewayPolicies: Scale,
+  requestCheck: Crosshair,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */
