@@ -21,6 +21,8 @@ export interface DetailsSectionDef {
   placement?: "section" | "tab";
   /** Title as shown (the tab's label); a `section` draws its own heading. */
   label?: string;
+  /** i18n key of the tab's label, translated when shown (in place of `label`). */
+  labelKey?: string;
 }
 
 const sections = new Map<string, DetailsSectionDef>();

@@ -142,3 +142,62 @@
   overflow: auto;
   padding: 12px 16px;
 }
+
+/* Reverse links: external addresses, one per line. */
+.gw-addresses {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gw-address {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* The topology tree of a Gateway (laid out like the Argo CD resource tree). */
+.gw-tree__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.gw-tree__cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gw-tree__kind {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.gw-tree__detail {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.gw-tree tr[data-level="1"] td {
+  font-weight: 600;
+}
+
+.gw-dot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.gw-dot--pending {
+  background: var(--color-warning);
+}
+
+.gw-dot--problem {
+  background: var(--color-danger);
+}

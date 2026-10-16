@@ -11,6 +11,8 @@ import {
   routeColumns,
 } from "./columns";
 import { GatewayApiSection } from "./details";
+import { ExposedBySection, isPolicyTarget, PoliciesAttachedSection, UsedByListenersSection } from "./reverse";
+import { TopologySection } from "./TopologyView";
 import {
   BACKEND_TLS_POLICY,
   GATEWAY,
@@ -63,4 +65,34 @@ registerDetailsSection({
   order: 20,
   appliesTo: (kind) => gatewayKind(kind) !== undefined,
   Component: GatewayApiSection,
+});
+
+// The Gateway's traffic tree, a tab of its own next to "Overview".
+registerDetailsSection({
+  id: "gatewayTopology",
+  order: 21,
+  placement: "tab",
+  labelKey: "gateway:topology.title",
+  appliesTo: (kind) => isKind(kind, GATEWAY),
+  Component: TopologySection,
+});
+
+// Reverse links, after the kind's fields (20) and before the conditions (30).
+registerDetailsSection({
+  id: "gatewayExposedBy",
+  order: 26,
+  appliesTo: (kind) => kind.group === "" && kind.kind === "Service",
+  Component: ExposedBySection,
+});
+registerDetailsSection({
+  id: "gatewaySecretUse",
+  order: 26,
+  appliesTo: (kind) => kind.group === "" && kind.kind === "Secret",
+  Component: UsedByListenersSection,
+});
+registerDetailsSection({
+  id: "gatewayPolicies",
+  order: 27,
+  appliesTo: isPolicyTarget,
+  Component: PoliciesAttachedSection,
 });

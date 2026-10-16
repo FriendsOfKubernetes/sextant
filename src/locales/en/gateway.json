@@ -199,5 +199,54 @@
     "mirror": "mirror → {{backend}}",
     "extension": "extension {{kind}} {{name}}",
     "filter": "{{type}}"
+  },
+  "exposedBy": {
+    "title": "Exposed by",
+    "address": "Address",
+    "route": "Route",
+    "gateway": "Gateway / listener",
+    "status": "Status",
+    "noAddress": "none",
+    "noLoadBalancer": "No address yet",
+    "state": {
+      "serving": "Serving",
+      "mirror": "Mirrored",
+      "redirect": "Redirect",
+      "notAttached": "Not attached",
+      "notPermitted": "Not permitted",
+      "pending": "Pending"
+    }
+  },
+  "secretUse": {
+    "title": "Used by listeners",
+    "gateway": "Gateway",
+    "listener": "Listener",
+    "status": "Status",
+    "notPermitted": "Not permitted: no ReferenceGrant lets the Gateway use it"
+  },
+  "attachedPolicies": {
+    "title": "Policies attached",
+    "kind": "Kind",
+    "name": "Name",
+    "section": "Section",
+    "status": "Status",
+    "whole": "whole object",
+    "noStatus": "Not reported"
+  },
+  "topology": {
+    "title": "Topology",
+    "node": "Node",
+    "status": "Status",
+    "listener": "Listener",
+    "mirror": "Mirror",
+    "noProblems": "Nothing is broken on this Gateway.",
+    "reasons": {
+      "NoBackends": "no backends",
+      "NoEndpoints": "no endpoints",
+      "PodsNotReady": "no pod ready",
+      "BackendNotFound": "backend not found",
+      "RefNotPermitted": "not permitted (RefNotPermitted)",
+      "InvalidKind": "kind not supported"
+    }
   }
 }

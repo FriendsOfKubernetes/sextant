@@ -8,13 +8,14 @@
 // Conditions and YAML are the panel's own sections.
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec } from "../../api";
+import { useWatch, type ClusterId, type KindRef, type KubeObject } from "../../api";
 import { Button } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findKind, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
 import type { Tone } from "../../resources/status";
 import { Block, chips, Fields, toYaml, type FieldRow } from "../details";
 import { HEALTH_TONE, parentText, statusMark } from "./columns";
+import { everywhere, servedKind, useBackendState, useGrants, useServedRoutes } from "./hooks";
 import {
   apiVersionFor,
   attachedRouteCount,
@@ -51,9 +52,7 @@ import {
   routeAttachedTo,
   routeHostnames,
   routeRules,
-  serviceReadiness,
   TCP_ROUTE,
-  TLS_ROUTE,
   unpermittedCertificates,
   UDP_ROUTE,
   type BackendRef,
@@ -75,7 +74,7 @@ const NAMESPACE_KIND = "Namespace";
 const groupText = (group: string) => group || "core";
 
 /** A table row of a broken hop gets a red mark. */
-const rowClass = (health: Health) => (health === "problem" ? "gw-row--broken" : undefined);
+export const rowClass = (health: Health) => (health === "problem" ? "gw-row--broken" : undefined);
 
 /** All pods ready green, some or none red; unknown uncolored. */
 function readyTone(state: { ready: number; total: number } | undefined): Tone | undefined {
@@ -87,7 +86,7 @@ function readyTone(state: { ready: number; total: number } | undefined): Tone | 
 const unresolved = (reason: string | undefined): Condition => ({ type: "ResolvedRefs", status: "False", reason });
 
 /** A link that opens `ref`'s details, labelled `label` (default: its name). */
-function refLink(ref: ObjRef, label?: string): ReactNode {
+export function refLink(ref: ObjRef, label?: string): ReactNode {
   if (!ref.name) return null;
   return (
     <ObjectLink
@@ -100,7 +99,7 @@ function refLink(ref: ObjRef, label?: string): ReactNode {
   );
 }
 
-const gatewayRef = (name: string, namespace: string | null): ObjRef => ({
+export const gatewayRef = (name: string, namespace: string | null): ObjRef => ({
   group: GATEWAY_GROUP,
   kind: "Gateway",
   name,
@@ -108,22 +107,22 @@ const gatewayRef = (name: string, namespace: string | null): ObjRef => ({
 });
 
 /** "ns/name" when the namespace differs from `from`, else the name. */
-const nameFrom = (ref: ObjRef, from: string | null) =>
+export const nameFrom = (ref: ObjRef, from: string | null) =>
   ref.namespace && ref.namespace !== from ? `${ref.namespace}/${ref.name}` : ref.name;
 
 /** "✓", "✗ NoMatchingListenerHostname", "? Pending" of one condition. */
-function conditionText(c: Condition | undefined): string {
+export function conditionText(c: Condition | undefined): string {
   if (!c) return statusMark(undefined);
   return c.status === "True" ? statusMark("True") : [statusMark(c.status), c.reason].filter(Boolean).join(" ");
 }
 
-function ConditionCell({ condition, bad = "False" }: { condition: Condition | undefined; bad?: string }) {
+export function ConditionCell({ condition, bad = "False" }: { condition: Condition | undefined; bad?: string }) {
   const tone = !condition || condition.status === "Unknown" ? "warning" : condition.status === bad ? "danger" : "success";
   return <StatusText value={conditionText(condition)} tone={tone} />;
 }
 
 /** "OK", or what is wrong: "ResolvedRefs: RefNotPermitted". */
-function healthText(health: Health, problem: Condition | undefined, t: (key: string) => string): string {
+export function healthText(health: Health, problem: Condition | undefined, t: (key: string) => string): string {
   if (health === "ok") return t("gateway:health.ok");
   if (!problem) return t(`gateway:health.${health}`);
   return problem.reason ? `${problem.type}: ${problem.reason}` : problem.type;
@@ -133,7 +132,7 @@ function healthText(health: Health, problem: Condition | undefined, t: (key: str
  * A problem in plain language: `title` (what failed), the explanation of the reason, the controller's message and
  * whatever `children` add (a ReferenceGrant to copy).
  */
-function ProblemBanner({
+export function ProblemBanner({
   title,
   condition,
   health = "problem",
@@ -157,36 +156,19 @@ function ProblemBanner({
 }
 
 /** The `apiVersion` of ReferenceGrant the cluster serves (v1beta1 until discovery says otherwise). */
-function useGrantApiVersion(clusterId: ClusterId): string {
+export function useGrantApiVersion(clusterId: ClusterId): string {
   const { kinds } = useClusterKinds(clusterId);
   const version = findKind(kinds, REFERENCE_GRANT)?.kindRef.version ?? REFERENCE_GRANT.version;
   return `${GATEWAY_GROUP}/${version}`;
 }
 
-/**
- * The ReferenceGrants of `namespaces` (watched only while there are some): `grantsIn(ns)` is the list of a namespace,
- * `[]` when the cluster serves no ReferenceGrant, `undefined` while unknown (loading, failed, no permission there).
- */
-function useGrants(clusterId: ClusterId, namespaces: string[]) {
-  const kinds = useClusterKinds(clusterId);
-  const served = servedKind(kinds, REFERENCE_GRANT);
-  const spec: WatchSpec | null =
-    served && namespaces.length > 0 ? { kind: served, namespaces, labelSelector: null, fieldSelector: null } : null;
-  const grants = useWatch(clusterId, spec);
-  return (namespace: string): readonly KubeObject[] | undefined => {
-    if (served === null) return [];
-    if (!served || grants.status !== "ready" || grants.forbidden?.includes(namespace)) return undefined;
-    return [...grants.items.values()].filter((g) => g.metadata?.namespace === namespace);
-  };
-}
-
 /** The phrases as text: each translated, joined with `separator`. */
-function phrasesText(phrases: readonly Phrase[], t: (key: string, params?: Phrase["params"]) => string, separator: string) {
+export function phrasesText(phrases: readonly Phrase[], t: (key: string, params?: Phrase["params"]) => string, separator: string) {
   return phrases.map((p) => t(p.key, p.params)).join(separator);
 }
 
-const MATCH_SEPARATOR = " · ";
-const LIST_SEPARATOR = ", ";
+export const MATCH_SEPARATOR = " · ";
+export const LIST_SEPARATOR = ", ";
 
 const FEEDBACK_MS = 4000;
 
@@ -223,20 +205,7 @@ export function CopyGrantButton({ grant, target }: { grant: KubeObject; target: 
   );
 }
 
-/**
- * The version to watch `kind` in: the one the cluster serves; `null` when it does not serve the kind; `undefined`
- * while discovery is coming (the registered version when discovery failed).
- */
-function servedKind(kinds: ReturnType<typeof useClusterKinds>, kind: KindRef): KindRef | null | undefined {
-  if (kinds.kinds) return findKind(kinds.kinds, kind)?.kindRef ?? null;
-  return kinds.error ? kind : undefined;
-}
-
-function everywhere(kind: KindRef | null | undefined): WatchSpec | null {
-  return kind ? { kind, namespaces: null, labelSelector: null, fieldSelector: null } : null;
-}
-
-function LoadingLine({ text }: { text: string }) {
+export function LoadingLine({ text }: { text: string }) {
   return (
     <p className="dt-muted" role="status">
       {text}
@@ -244,7 +213,7 @@ function LoadingLine({ text }: { text: string }) {
   );
 }
 
-function SimpleTable({ headers, rows }: { headers: string[]; rows: { key: string; cells: ReactNode[]; className?: string }[] }) {
+export function SimpleTable({ headers, rows }: { headers: string[]; rows: { key: string; cells: ReactNode[]; className?: string }[] }) {
   return (
     <table className="dt-table">
       <thead>
@@ -400,23 +369,13 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
   );
 }
 
-const ROUTE_KINDS_ORDER = [HTTP_ROUTE, GRPC_ROUTE, TLS_ROUTE, TCP_ROUTE, UDP_ROUTE];
-
 /** Routes of every served kind, in every namespace, that name `gateway` as a parent. */
 function AttachedRoutes({ clusterId, gateway }: { clusterId: ClusterId; gateway: KubeObject }) {
   const { t } = useTranslation();
-  const kinds = useClusterKinds(clusterId);
-  const served = ROUTE_KINDS_ORDER.map((kind) => servedKind(kinds, kind));
-  const http = useWatch(clusterId, everywhere(served[0]));
-  const grpc = useWatch(clusterId, everywhere(served[1]));
-  const tls = useWatch(clusterId, everywhere(served[2]));
-  const tcp = useWatch(clusterId, everywhere(served[3]));
-  const udp = useWatch(clusterId, everywhere(served[4]));
-  const watches = [http, grpc, tls, tcp, udp];
-  const loading = served.some((kind, i) => kind === undefined || (kind !== null && watches[i]?.status === "loading"));
+  const { routes, loading } = useServedRoutes(clusterId);
 
-  const rows = ROUTE_KINDS_ORDER.flatMap((kind, i) =>
-    [...(watches[i]?.items.values() ?? [])].flatMap((route) => {
+  const rows = routes.flatMap(({ kind, items }) =>
+    items.flatMap((route) => {
       const parent = routeAttachedTo(route, gateway);
       if (!parent) return [];
       const ns = route.metadata?.namespace ?? null;
@@ -492,29 +451,6 @@ function ParentsBlock({ route }: { route: KubeObject }) {
       ))}
     </Block>
   );
-}
-
-const SERVICE: KindRef = { group: "", version: "v1", kind: "Service" };
-const ENDPOINT_SLICE: KindRef = { group: "discovery.k8s.io", version: "v1", kind: "EndpointSlice" };
-
-/**
- * Services and EndpointSlices of the namespaces the route's Service backends are in: which backends exist and how
- * many of their pods are ready. A list that fails (no permission) leaves its namespace unknown.
- */
-function useBackendState(clusterId: ClusterId, namespaces: string[]) {
-  const spec = (kind: KindRef): WatchSpec | null =>
-    namespaces.length > 0 ? { kind, namespaces, labelSelector: null, fieldSelector: null } : null;
-  const services = useWatch(clusterId, spec(SERVICE));
-  const slices = useWatch(clusterId, spec(ENDPOINT_SLICE));
-  const servicesIn = (namespace: string): ReadonlySet<string> | undefined => {
-    if (services.status !== "ready" || services.forbidden?.includes(namespace)) return undefined;
-    return new Set(
-      [...services.items.values()].filter((s) => s.metadata?.namespace === namespace).map((s) => s.metadata?.name ?? ""),
-    );
-  };
-  const readiness = (b: BackendRef) =>
-    slices.status === "ready" && b.namespace ? serviceReadiness(slices.items.values(), { namespace: b.namespace, name: b.name }) : undefined;
-  return { servicesIn, readiness };
 }
 
 function RulesBlock({

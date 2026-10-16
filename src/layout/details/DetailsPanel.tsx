@@ -69,7 +69,7 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
           label={t("extensions:host.detailsTabs")}
           tabs={[
             { id: OVERVIEW, label: t("extensions:host.overview") },
-            ...tabs.map((s) => ({ id: s.id, label: s.label ?? s.id })),
+            ...tabs.map((s) => ({ id: s.id, label: s.labelKey ? t(s.labelKey) : (s.label ?? s.id) })),
           ]}
           selected={openTab ? tab : OVERVIEW}
           onSelect={setTab}
