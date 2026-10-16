@@ -8,6 +8,10 @@
 #                                               versions from their official manifests, and the fixtures of
 #                                               scripts/fixtures/gitops/ (namespaces sextant-flux, sextant-argo);
 #                                               flags combine: up --prometheus --gitops
+#   scripts/test-cluster.sh up --gateway        the same, plus the Gateway API CRDs (standard channel, fixed version, from
+#                                               the official release) and the fixtures of scripts/fixtures/gateway-api/
+#                                               (namespaces gw-infra, gw-shop, gw-payments). There is no Gateway controller:
+#                                               the status is patched in from status.yaml, as a controller would
 #   scripts/test-cluster.sh kubeconfig          print the path of the admin kubeconfig
 #   scripts/test-cluster.sh kubeconfig limited  print the path of a kubeconfig for the `limited`
 #                                               ServiceAccount (no access to Secrets)
@@ -32,6 +36,11 @@ DEMO_NS="sextant-demo"
 FLUX_VERSION="v2.9.6"
 ARGOCD_VERSION="v3.5.5"
 FLUX_URL="https://github.com/fluxcd/flux2/releases/download/$FLUX_VERSION/install.yaml"
+# Gateway API for `up --gateway`: fixed version, the official standard-channel install file (cached in $STATE_DIR).
+# From v1.6 the standard channel already serves TLSRoute/TCPRoute/UDPRoute (v1), so the experimental file is not
+# needed (it only adds the x-k8s.io XBackend* kinds, and its safe-upgrades policy forbids standard -> experimental).
+GATEWAY_API_VERSION="v1.6.3"
+GATEWAY_API_URL="https://github.com/kubernetes-sigs/gateway-api/releases/download/$GATEWAY_API_VERSION/standard-install.yaml"
 ARGOCD_URL="https://raw.githubusercontent.com/argoproj/argo-cd/$ARGOCD_VERSION/manifests/install.yaml"
 
 log() { printf '[test-cluster] %s\n' "$*" >&2; }
@@ -241,6 +250,61 @@ install_gitops() {
   fi
 }
 
+# Patches the status of every object of scripts/fixtures/gateway-api/status.yaml (one document per object)
+# through the status subresource. `__TS__` becomes the object's creationTimestamp, so a re-run changes nothing.
+patch_gateway_status() {
+  local dir doc ts
+  dir="$(mktemp -d)"
+  awk -v dir="$dir" 'BEGIN { n = 0 } /^---$/ { n++; next } { print > sprintf("%s/doc-%02d.yaml", dir, n) }' \
+    "$FIXTURES_DIR/gateway-api/status.yaml"
+  for doc in "$dir"/doc-*.yaml; do
+    ts="$(kc get -f "$doc" -o jsonpath='{.metadata.creationTimestamp}')"
+    sed -i "s/__TS__/$ts/g" "$doc"
+    kc patch -f "$doc" --subresource=status --type=merge --patch-file "$doc" >/dev/null
+  done
+  rm -rf "$dir"
+}
+
+install_gateway() {
+  local crds dir="$FIXTURES_DIR/gateway-api"
+  log "installing Gateway API $GATEWAY_API_VERSION CRDs (standard channel)"
+  crds="$(cached_manifest "$GATEWAY_API_URL" "gateway-api-$GATEWAY_API_VERSION-standard.yaml")"
+  # Server-side: the CRDs are too big for the last-applied annotation of a client-side apply.
+  kc apply --server-side --force-conflicts -f "$crds" >/dev/null
+  kc wait --for condition=established --timeout=120s \
+    crd/gatewayclasses.gateway.networking.k8s.io crd/gateways.gateway.networking.k8s.io \
+    crd/httproutes.gateway.networking.k8s.io crd/grpcroutes.gateway.networking.k8s.io \
+    crd/tlsroutes.gateway.networking.k8s.io crd/referencegrants.gateway.networking.k8s.io \
+    crd/backendtlspolicies.gateway.networking.k8s.io >/dev/null
+
+  log "applying Gateway API fixtures (namespaces gw-infra, gw-shop, gw-payments)"
+  kc apply -f "$dir/00-namespaces.yaml" >/dev/null
+  # The self-signed certificate of the working listener (public-gw/https); generated, never committed. The
+  # certificate of internal-gw/https (admin-tls) is deliberately missing.
+  if ! kc -n gw-infra get secret shop-tls >/dev/null 2>&1; then
+    need openssl
+    local tmp
+    tmp="$(mktemp -d)"
+    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=shop.example.com" \
+      -addext "subjectAltName=DNS:shop.example.com,DNS:www.shop.example.com" \
+      -keyout "$tmp/tls.key" -out "$tmp/tls.crt" 2>/dev/null
+    kc -n gw-infra create secret tls shop-tls --cert "$tmp/tls.crt" --key "$tmp/tls.key" >/dev/null
+    rm -rf "$tmp"
+    log "created secret gw-infra/shop-tls"
+  fi
+  local f
+  for f in 10-backends 20-gateways 30-routes 40-policies; do
+    kc apply -f "$dir/$f.yaml" >/dev/null
+  done
+  log "writing the status the way a Gateway controller would"
+  patch_gateway_status
+  # Only the pods' readiness depends on the image pull: waited for, not required.
+  if ! kc wait --for condition=available --timeout=180s -n gw-shop deployment --all >/dev/null 2>&1 ||
+    ! kc wait --for condition=available --timeout=180s -n gw-payments deployment --all >/dev/null 2>&1; then
+    log "warning: Gateway API backends are not Available yet (kubectl get deploy -n gw-shop; -n gw-payments)"
+  fi
+}
+
 cmd_kubeconfig() {
   local which="${1:-admin}"
   cluster_exists || die "cluster $CLUSTER_NAME is not running (run: scripts/test-cluster.sh up)"
@@ -263,14 +327,15 @@ cmd_down() {
   rm -f "$ADMIN_KUBECONFIG" "$LIMITED_KUBECONFIG"
 }
 
-# `up [--prometheus] [--gitops]`
+# `up [--prometheus] [--gitops] [--gateway]`
 cmd_up_with() {
-  local prometheus=0 gitops=0 flag
+  local prometheus=0 gitops=0 gateway=0 flag
   for flag in "$@"; do
     case "$flag" in
       --prometheus) prometheus=1 ;;
       --gitops) gitops=1 ;;
-      *) die "unknown flag '$flag' (expected: --prometheus, --gitops)" ;;
+      --gateway) gateway=1 ;;
+      *) die "unknown flag '$flag' (expected: --prometheus, --gitops, --gateway)" ;;
     esac
   done
   cmd_up
@@ -282,6 +347,10 @@ cmd_up_with() {
     install_gitops
     log "GitOps ready: Flux $FLUX_VERSION in flux-system, Argo CD $ARGOCD_VERSION in argocd"
   fi
+  if ((gateway)); then
+    install_gateway
+    log "Gateway API ready: $GATEWAY_API_VERSION CRDs, fixtures in gw-infra, gw-shop, gw-payments"
+  fi
 }
 
 case "${1:-}" in
@@ -292,7 +361,7 @@ case "${1:-}" in
   kubeconfig) cmd_kubeconfig "${2:-admin}" ;;
   down) cmd_down ;;
   *)
-    echo "usage: $0 up [--prometheus] [--gitops] | kubeconfig [limited] | down" >&2
+    echo "usage: $0 up [--prometheus] [--gitops] [--gateway] | kubeconfig [limited] | down" >&2
     exit 2
     ;;
 esac

@@ -1,0 +1,183 @@
+# Status of the Gateway API fixtures, written by scripts/test-cluster.sh with
+# `kubectl patch --subresource=status`, exactly as a controller would (there is none in the test cluster).
+# One document per object; __TS__ becomes the object's creationTimestamp. Keep the attachedRoutes counts and
+# the reasons in line with 20-gateways.yaml, 30-routes.yaml and 40-policies.yaml.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata: {name: sextant-demo}
+status:
+  conditions:
+    - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'GatewayClass has been accepted by the controller', lastTransitionTime: "__TS__"}
+    - {type: SupportedVersion, status: "True", observedGeneration: 1, reason: SupportedVersion, message: 'Gateway API CRD bundle version v1.6.3 is supported', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata: {name: public-gw, namespace: gw-infra}
+status:
+  addresses:
+    - {type: IPAddress, value: 172.18.255.200}
+  conditions:
+    - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'The Gateway has been scheduled by the controller', lastTransitionTime: "__TS__"}
+    - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'The Gateway has been programmed', lastTransitionTime: "__TS__"}
+  listeners:
+    - name: http
+      attachedRoutes: 1
+      supportedKinds:
+        - {group: gateway.networking.k8s.io, kind: HTTPRoute}
+        - {group: gateway.networking.k8s.io, kind: GRPCRoute}
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Listener is accepted', lastTransitionTime: "__TS__"}
+        - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'Listener is programmed', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Listener references are resolved', lastTransitionTime: "__TS__"}
+        - {type: Conflicted, status: "False", observedGeneration: 1, reason: NoConflicts, message: 'No conflicts', lastTransitionTime: "__TS__"}
+    - name: https
+      attachedRoutes: 2
+      supportedKinds:
+        - {group: gateway.networking.k8s.io, kind: HTTPRoute}
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Listener is accepted', lastTransitionTime: "__TS__"}
+        - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'Listener is programmed', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Listener references are resolved', lastTransitionTime: "__TS__"}
+        - {type: Conflicted, status: "False", observedGeneration: 1, reason: NoConflicts, message: 'No conflicts', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata: {name: internal-gw, namespace: gw-infra}
+status:
+  addresses:
+    - {type: IPAddress, value: 172.18.255.201}
+  conditions:
+    - {type: Accepted, status: "True", observedGeneration: 1, reason: ListenersNotValid, message: 'Gateway has invalid listeners: listener https has an invalid certificate reference', lastTransitionTime: "__TS__"}
+    - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'The Gateway has been programmed; listener https is not programmed', lastTransitionTime: "__TS__"}
+  listeners:
+    - name: http
+      attachedRoutes: 1
+      supportedKinds:
+        - {group: gateway.networking.k8s.io, kind: HTTPRoute}
+        - {group: gateway.networking.k8s.io, kind: GRPCRoute}
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Listener is accepted', lastTransitionTime: "__TS__"}
+        - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'Listener is programmed', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Listener references are resolved', lastTransitionTime: "__TS__"}
+        - {type: Conflicted, status: "False", observedGeneration: 1, reason: NoConflicts, message: 'No conflicts', lastTransitionTime: "__TS__"}
+    - name: grpc
+      attachedRoutes: 1
+      supportedKinds:
+        - {group: gateway.networking.k8s.io, kind: GRPCRoute}
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Listener is accepted', lastTransitionTime: "__TS__"}
+        - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'Listener is programmed', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Listener references are resolved', lastTransitionTime: "__TS__"}
+        - {type: Conflicted, status: "False", observedGeneration: 1, reason: NoConflicts, message: 'No conflicts', lastTransitionTime: "__TS__"}
+    - name: https
+      attachedRoutes: 0
+      supportedKinds:
+        - {group: gateway.networking.k8s.io, kind: HTTPRoute}
+        - {group: gateway.networking.k8s.io, kind: GRPCRoute}
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Listener is accepted', lastTransitionTime: "__TS__"}
+        - {type: Programmed, status: "False", observedGeneration: 1, reason: Invalid, message: 'Listener is not programmed: certificate reference gw-infra/admin-tls is not resolved', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "False", observedGeneration: 1, reason: InvalidCertificateRef, message: 'Secret gw-infra/admin-tls does not exist', lastTransitionTime: "__TS__"}
+        - {type: Conflicted, status: "False", observedGeneration: 1, reason: NoConflicts, message: 'No conflicts', lastTransitionTime: "__TS__"}
+    - name: db-passthrough
+      attachedRoutes: 1
+      supportedKinds:
+        - {group: gateway.networking.k8s.io, kind: TLSRoute}
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Listener is accepted', lastTransitionTime: "__TS__"}
+        - {type: Programmed, status: "True", observedGeneration: 1, reason: Programmed, message: 'Listener is programmed', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Listener references are resolved', lastTransitionTime: "__TS__"}
+        - {type: Conflicted, status: "False", observedGeneration: 1, reason: NoConflicts, message: 'No conflicts', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: {name: shop, namespace: gw-shop}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: https}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Route was valid', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the Route', lastTransitionTime: "__TS__"}
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: http}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "False", observedGeneration: 1, reason: NoMatchingListenerHostname, message: 'No listener hostname matches the route hostnames: listener http only serves internal.shop.example.com', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the Route', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: {name: http-redirect, namespace: gw-shop}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: http}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Route was valid', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the Route', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: {name: checkout, namespace: gw-shop}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: https}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Route was valid', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "False", observedGeneration: 1, reason: RefNotPermitted, message: 'Backend ref to Service gw-payments/refunds-api is not permitted by any ReferenceGrant', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: {name: legacy-admin, namespace: gw-shop}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: http}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Route was valid', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "False", observedGeneration: 1, reason: BackendNotFound, message: 'Service gw-shop/legacy-ui not found', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: {name: payments-status, namespace: gw-payments}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: https}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "False", observedGeneration: 1, reason: NotAllowedByListeners, message: "Route is not allowed by listener https: the namespace gw-payments does not match the listener's allowedRoutes selector", lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the Route', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata: {name: inventory, namespace: gw-shop}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: grpc}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Route was valid', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the Route', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TLSRoute
+metadata: {name: db, namespace: gw-shop}
+status:
+  parents:
+    - parentRef: {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: db-passthrough}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Route was valid', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the Route', lastTransitionTime: "__TS__"}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata: {name: payments-api-tls, namespace: gw-payments}
+status:
+  ancestors:
+    - ancestorRef: {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra}
+      controllerName: demo.sextant.dev/gateway-controller
+      conditions:
+        - {type: Accepted, status: "True", observedGeneration: 1, reason: Accepted, message: 'Policy has been accepted', lastTransitionTime: "__TS__"}
+        - {type: ResolvedRefs, status: "True", observedGeneration: 1, reason: ResolvedRefs, message: 'Resolved all the Object references for the policy', lastTransitionTime: "__TS__"}

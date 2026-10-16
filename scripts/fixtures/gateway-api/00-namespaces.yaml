@@ -1,0 +1,23 @@
+# Namespaces of the Gateway API fixtures. `shared-gateway-access` is what the listeners' allowedRoutes
+# namespace selectors match: gw-shop has it, gw-payments deliberately does not (NotAllowedByListeners).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gw-infra
+  labels:
+    sextant.dev/fixture: gateway-api
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gw-shop
+  labels:
+    sextant.dev/fixture: gateway-api
+    shared-gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gw-payments
+  labels:
+    sextant.dev/fixture: gateway-api

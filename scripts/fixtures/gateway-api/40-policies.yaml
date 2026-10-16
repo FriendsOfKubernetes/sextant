@@ -1,0 +1,40 @@
+# The grant that lets HTTPRoutes of gw-shop reach payments-api (and only that Service: refunds-api is not
+# covered, which is the RefNotPermitted case), and a BackendTLSPolicy for payments-api.
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: allow-shop-routes
+  namespace: gw-payments
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  from:
+    - {group: gateway.networking.k8s.io, kind: HTTPRoute, namespace: gw-shop}
+  to:
+    - {group: "", kind: Service, name: payments-api}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-ca
+  namespace: gw-payments
+  labels: {sextant.dev/fixture: gateway-api}
+data:
+  # Placeholder: nothing validates it in the test cluster.
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    c2V4dGFudC1nYXRld2F5LWZpeHR1cmUtcGxhY2Vob2xkZXI=
+    -----END CERTIFICATE-----
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: payments-api-tls
+  namespace: gw-payments
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  targetRefs:
+    - {group: "", kind: Service, name: payments-api}
+  validation:
+    hostname: payments-api.gw-payments.svc.cluster.local
+    caCertificateRefs:
+      - {group: "", kind: ConfigMap, name: payments-ca}

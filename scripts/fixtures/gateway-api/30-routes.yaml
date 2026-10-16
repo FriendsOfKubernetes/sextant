@@ -1,0 +1,138 @@
+# Routes. Expected outcome (see status.yaml): see the comment above each route.
+#
+# shop: accepted by public-gw/https; refused by internal-gw/http (NoMatchingListenerHostname). Weighted
+# backends with a header match and a request-header filter.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: shop
+  namespace: gw-shop
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: https}
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: http}
+  hostnames: [shop.example.com, www.shop.example.com]
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /api}
+          headers:
+            - {type: Exact, name: x-env, value: prod}
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - {name: x-gateway, value: public}
+      backendRefs:
+        - {name: api-v2, port: 8080, weight: 90}
+        - {name: api-v1, port: 8080, weight: 10}
+    - matches:
+        - path: {type: PathPrefix, value: /}
+      backendRefs:
+        - {name: web, port: 80}
+---
+# http-redirect: accepted by public-gw/http; a RequestRedirect filter and no backends.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-redirect
+  namespace: gw-shop
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: http}
+  hostnames: [shop.example.com]
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect: {scheme: https, statusCode: 301}
+---
+# checkout: accepted by public-gw/https. /checkout reaches gw-payments/payments-api through a ReferenceGrant;
+# /refunds reaches gw-payments/refunds-api, which no grant covers (ResolvedRefs=False, RefNotPermitted).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: checkout
+  namespace: gw-shop
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: https}
+  hostnames: [shop.example.com]
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /checkout}
+      backendRefs:
+        - {name: payments-api, namespace: gw-payments, port: 8080}
+    - matches:
+        - path: {type: PathPrefix, value: /refunds}
+          method: POST
+      backendRefs:
+        - {name: refunds-api, namespace: gw-payments, port: 8080}
+---
+# legacy-admin: accepted by internal-gw/http, but its backend Service does not exist (BackendNotFound).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: legacy-admin
+  namespace: gw-shop
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: http}
+  hostnames: [internal.shop.example.com]
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /admin}
+      backendRefs:
+        - {name: legacy-ui, port: 80}
+---
+# payments-status: refused by public-gw/https, whose allowedRoutes selector does not match gw-payments
+# (NotAllowedByListeners).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: payments-status
+  namespace: gw-payments
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: public-gw, namespace: gw-infra, sectionName: https}
+  hostnames: [shop.example.com]
+  rules:
+    - matches:
+        - path: {type: Exact, value: /payments/status}
+      backendRefs:
+        - {name: payments-api, port: 8080}
+---
+# inventory: a healthy GRPCRoute on internal-gw/grpc.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: inventory
+  namespace: gw-shop
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: grpc}
+  hostnames: [grpc.internal.example.com]
+  rules:
+    - matches:
+        - method: {type: Exact, service: inventory.v1.Inventory, method: GetStock}
+      backendRefs:
+        - {name: inventory-grpc, port: 9090}
+---
+# db: a healthy TLSRoute (passthrough) on internal-gw/db-passthrough.
+apiVersion: gateway.networking.k8s.io/v1
+kind: TLSRoute
+metadata:
+  name: db
+  namespace: gw-shop
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  parentRefs:
+    - {group: gateway.networking.k8s.io, kind: Gateway, name: internal-gw, namespace: gw-infra, sectionName: db-passthrough}
+  hostnames: [db.internal.example.com]
+  rules:
+    - backendRefs:
+        - {name: db, port: 5432}

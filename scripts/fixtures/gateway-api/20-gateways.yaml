@@ -1,0 +1,97 @@
+# GatewayClass and two Gateways. There is no Gateway controller in the test cluster: the status of these
+# objects is written by scripts/test-cluster.sh from status.yaml, the way a controller would.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: sextant-demo
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  controllerName: demo.sextant.dev/gateway-controller
+  description: Fixture class; no controller reconciles it.
+---
+# Healthy: both listeners programmed. The https listener only accepts routes from namespaces labelled
+# shared-gateway-access=true, so gw-payments is refused (NotAllowedByListeners).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: public-gw
+  namespace: gw-infra
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  gatewayClassName: sextant-demo
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces: {from: All}
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: shop.example.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - {group: "", kind: Secret, name: shop-tls}
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {shared-gateway-access: "true"}
+        kinds:
+          - {group: gateway.networking.k8s.io, kind: HTTPRoute}
+---
+# Partly broken: the https listener refers to a Secret that does not exist (InvalidCertificateRef), so 3 of
+# 4 listeners are programmed.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: internal-gw
+  namespace: gw-infra
+  labels: {sextant.dev/fixture: gateway-api}
+spec:
+  gatewayClassName: sextant-demo
+  listeners:
+    - name: http
+      port: 8080
+      protocol: HTTP
+      hostname: internal.shop.example.com
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {shared-gateway-access: "true"}
+    - name: grpc
+      port: 9090
+      protocol: HTTP
+      hostname: grpc.internal.example.com
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {shared-gateway-access: "true"}
+        kinds:
+          - {group: gateway.networking.k8s.io, kind: GRPCRoute}
+    - name: https
+      port: 8443
+      protocol: HTTPS
+      hostname: admin.internal.example.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - {group: "", kind: Secret, name: admin-tls}
+      allowedRoutes:
+        namespaces: {from: Same}
+    - name: db-passthrough
+      port: 6443
+      protocol: TLS
+      hostname: db.internal.example.com
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: {shared-gateway-access: "true"}
+        kinds:
+          - {group: gateway.networking.k8s.io, kind: TLSRoute}
