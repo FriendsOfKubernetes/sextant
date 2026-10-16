@@ -1,0 +1,82 @@
+[
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "GRPCRoute",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:19:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "inventory",
+      "namespace": "gw-shop",
+      "resourceVersion": "41007",
+      "uid": "2cfe49b9-03c4-5f1d-89a8-4166382a8397"
+    },
+    "spec": {
+      "parentRefs": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "internal-gw",
+          "namespace": "gw-infra",
+          "sectionName": "grpc"
+        }
+      ],
+      "hostnames": [
+        "grpc.internal.example.com"
+      ],
+      "rules": [
+        {
+          "matches": [
+            {
+              "method": {
+                "type": "Exact",
+                "service": "inventory.v1.Inventory",
+                "method": "GetStock"
+              }
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "inventory-grpc",
+              "port": 9090
+            }
+          ]
+        }
+      ]
+    },
+    "status": {
+      "parents": [
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "internal-gw",
+            "namespace": "gw-infra",
+            "sectionName": "grpc"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Route was valid",
+              "lastTransitionTime": "2026-10-14T09:19:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Resolved all the Object references for the Route",
+              "lastTransitionTime": "2026-10-14T09:19:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

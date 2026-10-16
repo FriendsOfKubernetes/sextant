@@ -1,0 +1,500 @@
+[
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "Gateway",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:12:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "public-gw",
+      "namespace": "gw-infra",
+      "resourceVersion": "41000",
+      "uid": "1a94baed-1e1f-5ac4-8e37-6cf3b95ede47"
+    },
+    "spec": {
+      "gatewayClassName": "sextant-demo",
+      "listeners": [
+        {
+          "name": "http",
+          "port": 80,
+          "protocol": "HTTP",
+          "allowedRoutes": {
+            "namespaces": {
+              "from": "All"
+            }
+          }
+        },
+        {
+          "name": "https",
+          "port": 443,
+          "protocol": "HTTPS",
+          "hostname": "shop.example.com",
+          "tls": {
+            "mode": "Terminate",
+            "certificateRefs": [
+              {
+                "group": "",
+                "kind": "Secret",
+                "name": "shop-tls"
+              }
+            ]
+          },
+          "allowedRoutes": {
+            "namespaces": {
+              "from": "Selector",
+              "selector": {
+                "matchLabels": {
+                  "shared-gateway-access": "true"
+                }
+              }
+            },
+            "kinds": [
+              {
+                "group": "gateway.networking.k8s.io",
+                "kind": "HTTPRoute"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "status": {
+      "addresses": [
+        {
+          "type": "IPAddress",
+          "value": "172.18.255.200"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "Accepted",
+          "status": "True",
+          "observedGeneration": 1,
+          "reason": "Accepted",
+          "message": "The Gateway has been scheduled by the controller",
+          "lastTransitionTime": "2026-10-14T09:12:40Z"
+        },
+        {
+          "type": "Programmed",
+          "status": "True",
+          "observedGeneration": 1,
+          "reason": "Programmed",
+          "message": "The Gateway has been programmed",
+          "lastTransitionTime": "2026-10-14T09:12:40Z"
+        }
+      ],
+      "listeners": [
+        {
+          "name": "http",
+          "attachedRoutes": 1,
+          "supportedKinds": [
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "HTTPRoute"
+            },
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "GRPCRoute"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Listener is accepted",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            },
+            {
+              "type": "Programmed",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Programmed",
+              "message": "Listener is programmed",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Listener references are resolved",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            },
+            {
+              "type": "Conflicted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoConflicts",
+              "message": "No conflicts",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            }
+          ]
+        },
+        {
+          "name": "https",
+          "attachedRoutes": 2,
+          "supportedKinds": [
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "HTTPRoute"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Listener is accepted",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            },
+            {
+              "type": "Programmed",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Programmed",
+              "message": "Listener is programmed",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Listener references are resolved",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            },
+            {
+              "type": "Conflicted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoConflicts",
+              "message": "No conflicts",
+              "lastTransitionTime": "2026-10-14T09:12:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "Gateway",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:13:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "internal-gw",
+      "namespace": "gw-infra",
+      "resourceVersion": "41001",
+      "uid": "9693552f-f0e8-5a52-8c96-4434bd06fae7"
+    },
+    "spec": {
+      "gatewayClassName": "sextant-demo",
+      "listeners": [
+        {
+          "name": "http",
+          "port": 8080,
+          "protocol": "HTTP",
+          "hostname": "internal.shop.example.com",
+          "allowedRoutes": {
+            "namespaces": {
+              "from": "Selector",
+              "selector": {
+                "matchLabels": {
+                  "shared-gateway-access": "true"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "grpc",
+          "port": 9090,
+          "protocol": "HTTP",
+          "hostname": "grpc.internal.example.com",
+          "allowedRoutes": {
+            "namespaces": {
+              "from": "Selector",
+              "selector": {
+                "matchLabels": {
+                  "shared-gateway-access": "true"
+                }
+              }
+            },
+            "kinds": [
+              {
+                "group": "gateway.networking.k8s.io",
+                "kind": "GRPCRoute"
+              }
+            ]
+          }
+        },
+        {
+          "name": "https",
+          "port": 8443,
+          "protocol": "HTTPS",
+          "hostname": "admin.internal.example.com",
+          "tls": {
+            "mode": "Terminate",
+            "certificateRefs": [
+              {
+                "group": "",
+                "kind": "Secret",
+                "name": "admin-tls"
+              }
+            ]
+          },
+          "allowedRoutes": {
+            "namespaces": {
+              "from": "Same"
+            }
+          }
+        },
+        {
+          "name": "db-passthrough",
+          "port": 6443,
+          "protocol": "TLS",
+          "hostname": "db.internal.example.com",
+          "tls": {
+            "mode": "Passthrough"
+          },
+          "allowedRoutes": {
+            "namespaces": {
+              "from": "Selector",
+              "selector": {
+                "matchLabels": {
+                  "shared-gateway-access": "true"
+                }
+              }
+            },
+            "kinds": [
+              {
+                "group": "gateway.networking.k8s.io",
+                "kind": "TLSRoute"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "status": {
+      "addresses": [
+        {
+          "type": "IPAddress",
+          "value": "172.18.255.201"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "Accepted",
+          "status": "True",
+          "observedGeneration": 1,
+          "reason": "ListenersNotValid",
+          "message": "Gateway has invalid listeners: listener https has an invalid certificate reference",
+          "lastTransitionTime": "2026-10-14T09:13:40Z"
+        },
+        {
+          "type": "Programmed",
+          "status": "True",
+          "observedGeneration": 1,
+          "reason": "Programmed",
+          "message": "The Gateway has been programmed; listener https is not programmed",
+          "lastTransitionTime": "2026-10-14T09:13:40Z"
+        }
+      ],
+      "listeners": [
+        {
+          "name": "http",
+          "attachedRoutes": 1,
+          "supportedKinds": [
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "HTTPRoute"
+            },
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "GRPCRoute"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Listener is accepted",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Programmed",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Programmed",
+              "message": "Listener is programmed",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Listener references are resolved",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Conflicted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoConflicts",
+              "message": "No conflicts",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            }
+          ]
+        },
+        {
+          "name": "grpc",
+          "attachedRoutes": 1,
+          "supportedKinds": [
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "GRPCRoute"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Listener is accepted",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Programmed",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Programmed",
+              "message": "Listener is programmed",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Listener references are resolved",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Conflicted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoConflicts",
+              "message": "No conflicts",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            }
+          ]
+        },
+        {
+          "name": "https",
+          "attachedRoutes": 0,
+          "supportedKinds": [
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "HTTPRoute"
+            },
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "GRPCRoute"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Listener is accepted",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Programmed",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "Invalid",
+              "message": "Listener is not programmed: certificate reference gw-infra/admin-tls is not resolved",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "InvalidCertificateRef",
+              "message": "Secret gw-infra/admin-tls does not exist",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Conflicted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoConflicts",
+              "message": "No conflicts",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            }
+          ]
+        },
+        {
+          "name": "db-passthrough",
+          "attachedRoutes": 1,
+          "supportedKinds": [
+            {
+              "group": "gateway.networking.k8s.io",
+              "kind": "TLSRoute"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Listener is accepted",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Programmed",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Programmed",
+              "message": "Listener is programmed",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Listener references are resolved",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            },
+            {
+              "type": "Conflicted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoConflicts",
+              "message": "No conflicts",
+              "lastTransitionTime": "2026-10-14T09:13:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

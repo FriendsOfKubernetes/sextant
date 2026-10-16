@@ -1,0 +1,33 @@
+[
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "ReferenceGrant",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:35:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "allow-shop-routes",
+      "namespace": "gw-payments",
+      "resourceVersion": "41023",
+      "uid": "16448e55-fbc5-5fa3-83ab-af5f1b940c8e"
+    },
+    "spec": {
+      "from": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "HTTPRoute",
+          "namespace": "gw-shop"
+        }
+      ],
+      "to": [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "payments-api"
+        }
+      ]
+    }
+  }
+]

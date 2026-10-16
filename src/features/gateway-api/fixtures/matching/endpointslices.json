@@ -1,0 +1,354 @@
+[
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.20"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "web-6f8d9c7b5-ax0q",
+          "namespace": "gw-shop",
+          "uid": "365e472b-d052-58a9-8e30-27a1bca69299"
+        }
+      },
+      {
+        "addresses": [
+          "10.244.0.21"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "web-6f8d9c7b5-by1q",
+          "namespace": "gw-shop",
+          "uid": "7afcb327-2928-5814-8d94-ecb4504686ff"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:28:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "web"
+      },
+      "name": "web-x7k2p",
+      "namespace": "gw-shop",
+      "resourceVersion": "41016",
+      "uid": "1b768ad7-a5e8-51cf-86fa-4edcd1254ff7"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.22"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v1-6f8d9c7b5-ax0q",
+          "namespace": "gw-shop",
+          "uid": "a83dd9d0-87de-5e83-8771-71fb2f6da432"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:29:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "api-v1"
+      },
+      "name": "api-v1-x7k2p",
+      "namespace": "gw-shop",
+      "resourceVersion": "41017",
+      "uid": "28a591dd-7fa6-5372-84e3-5e684f957acd"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.23"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v2-6f8d9c7b5-ax0q",
+          "namespace": "gw-shop",
+          "uid": "1b60ddc5-cc31-5d1c-8b7a-4c41f0cbfdb8"
+        }
+      },
+      {
+        "addresses": [
+          "10.244.0.24"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v2-6f8d9c7b5-by1q",
+          "namespace": "gw-shop",
+          "uid": "31252f6d-e86f-5868-809b-85528e0938ae"
+        }
+      },
+      {
+        "addresses": [
+          "10.244.0.25"
+        ],
+        "conditions": {
+          "ready": false,
+          "serving": false,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "api-v2-6f8d9c7b5-cz2q",
+          "namespace": "gw-shop",
+          "uid": "54a7ddea-ff03-5488-8364-6064c21aadbf"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:30:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "api-v2"
+      },
+      "name": "api-v2-x7k2p",
+      "namespace": "gw-shop",
+      "resourceVersion": "41018",
+      "uid": "6d918b44-0b11-5cfb-8660-31a6c49ea852"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.26"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "inventory-grpc-6f8d9c7b5-ax0q",
+          "namespace": "gw-shop",
+          "uid": "ccf091f2-1f3f-5557-85c3-b7ad7bdc61b1"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:31:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "inventory-grpc"
+      },
+      "name": "inventory-grpc-x7k2p",
+      "namespace": "gw-shop",
+      "resourceVersion": "41019",
+      "uid": "7661548f-ccea-5a31-8b3a-244fd82739a3"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.27"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "db-6f8d9c7b5-ax0q",
+          "namespace": "gw-shop",
+          "uid": "6cdf98f2-8a4e-5352-86c9-6693a701cd07"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:32:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "db"
+      },
+      "name": "db-x7k2p",
+      "namespace": "gw-shop",
+      "resourceVersion": "41020",
+      "uid": "f9d8917d-3524-5fa1-8c91-87c9d239595c"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.28"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "payments-api-6f8d9c7b5-ax0q",
+          "namespace": "gw-payments",
+          "uid": "f72bc7e5-c62b-5558-8908-2d393aaeeb9d"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:33:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "payments-api"
+      },
+      "name": "payments-api-x7k2p",
+      "namespace": "gw-payments",
+      "resourceVersion": "41021",
+      "uid": "0058f5b4-51b4-5849-8ac4-1b11e7270d11"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  },
+  {
+    "addressType": "IPv4",
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "endpoints": [
+      {
+        "addresses": [
+          "10.244.0.29"
+        ],
+        "conditions": {
+          "ready": true,
+          "serving": true,
+          "terminating": false
+        },
+        "nodeName": "sextant-test-control-plane",
+        "targetRef": {
+          "kind": "Pod",
+          "name": "refunds-api-6f8d9c7b5-ax0q",
+          "namespace": "gw-payments",
+          "uid": "70b490b9-a7ce-516b-8352-1044560207bd"
+        }
+      }
+    ],
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:34:40Z",
+      "generation": 1,
+      "labels": {
+        "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io",
+        "kubernetes.io/service-name": "refunds-api"
+      },
+      "name": "refunds-api-x7k2p",
+      "namespace": "gw-payments",
+      "resourceVersion": "41022",
+      "uid": "613985ca-4c92-554f-8de1-95a2d718de40"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 80,
+        "protocol": "TCP"
+      }
+    ]
+  }
+]

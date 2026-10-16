@@ -1,0 +1,489 @@
+[
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "HTTPRoute",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:14:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "shop",
+      "namespace": "gw-shop",
+      "resourceVersion": "41002",
+      "uid": "a1ad6f18-0347-5331-84d8-07590341dd4b"
+    },
+    "spec": {
+      "parentRefs": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "gw-infra",
+          "sectionName": "https"
+        },
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "internal-gw",
+          "namespace": "gw-infra",
+          "sectionName": "http"
+        }
+      ],
+      "hostnames": [
+        "shop.example.com",
+        "www.shop.example.com"
+      ],
+      "rules": [
+        {
+          "matches": [
+            {
+              "path": {
+                "type": "PathPrefix",
+                "value": "/api"
+              },
+              "headers": [
+                {
+                  "type": "Exact",
+                  "name": "x-env",
+                  "value": "prod"
+                }
+              ]
+            }
+          ],
+          "filters": [
+            {
+              "type": "RequestHeaderModifier",
+              "requestHeaderModifier": {
+                "add": [
+                  {
+                    "name": "x-gateway",
+                    "value": "public"
+                  }
+                ]
+              }
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "api-v2",
+              "port": 8080,
+              "weight": 90
+            },
+            {
+              "name": "api-v1",
+              "port": 8080,
+              "weight": 10
+            }
+          ]
+        },
+        {
+          "matches": [
+            {
+              "path": {
+                "type": "PathPrefix",
+                "value": "/"
+              }
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "web",
+              "port": 80
+            }
+          ]
+        }
+      ]
+    },
+    "status": {
+      "parents": [
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "public-gw",
+            "namespace": "gw-infra",
+            "sectionName": "https"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Route was valid",
+              "lastTransitionTime": "2026-10-14T09:14:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Resolved all the Object references for the Route",
+              "lastTransitionTime": "2026-10-14T09:14:40Z"
+            }
+          ]
+        },
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "internal-gw",
+            "namespace": "gw-infra",
+            "sectionName": "http"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NoMatchingListenerHostname",
+              "message": "No listener hostname matches the route hostnames: listener http only serves internal.shop.example.com",
+              "lastTransitionTime": "2026-10-14T09:14:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Resolved all the Object references for the Route",
+              "lastTransitionTime": "2026-10-14T09:14:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "HTTPRoute",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:15:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "http-redirect",
+      "namespace": "gw-shop",
+      "resourceVersion": "41003",
+      "uid": "fd532ac2-d92b-5ee7-80fb-3730a6ce213c"
+    },
+    "spec": {
+      "parentRefs": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "gw-infra",
+          "sectionName": "http"
+        }
+      ],
+      "hostnames": [
+        "shop.example.com"
+      ],
+      "rules": [
+        {
+          "filters": [
+            {
+              "type": "RequestRedirect",
+              "requestRedirect": {
+                "scheme": "https",
+                "statusCode": 301
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "status": {
+      "parents": [
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "public-gw",
+            "namespace": "gw-infra",
+            "sectionName": "http"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Route was valid",
+              "lastTransitionTime": "2026-10-14T09:15:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Resolved all the Object references for the Route",
+              "lastTransitionTime": "2026-10-14T09:15:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "HTTPRoute",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:16:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "checkout",
+      "namespace": "gw-shop",
+      "resourceVersion": "41004",
+      "uid": "d6f333a1-9afb-545b-84c5-7ae4f63fe1a0"
+    },
+    "spec": {
+      "parentRefs": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "gw-infra",
+          "sectionName": "https"
+        }
+      ],
+      "hostnames": [
+        "shop.example.com"
+      ],
+      "rules": [
+        {
+          "matches": [
+            {
+              "path": {
+                "type": "PathPrefix",
+                "value": "/checkout"
+              }
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "payments-api",
+              "namespace": "gw-payments",
+              "port": 8080
+            }
+          ]
+        },
+        {
+          "matches": [
+            {
+              "path": {
+                "type": "PathPrefix",
+                "value": "/refunds"
+              },
+              "method": "POST"
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "refunds-api",
+              "namespace": "gw-payments",
+              "port": 8080
+            }
+          ]
+        }
+      ]
+    },
+    "status": {
+      "parents": [
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "public-gw",
+            "namespace": "gw-infra",
+            "sectionName": "https"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Route was valid",
+              "lastTransitionTime": "2026-10-14T09:16:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "RefNotPermitted",
+              "message": "Backend ref to Service gw-payments/refunds-api is not permitted by any ReferenceGrant",
+              "lastTransitionTime": "2026-10-14T09:16:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "HTTPRoute",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:17:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "legacy-admin",
+      "namespace": "gw-shop",
+      "resourceVersion": "41005",
+      "uid": "8c8a8caa-7269-5e4b-8ca8-fc6aab4665d7"
+    },
+    "spec": {
+      "parentRefs": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "internal-gw",
+          "namespace": "gw-infra",
+          "sectionName": "http"
+        }
+      ],
+      "hostnames": [
+        "internal.shop.example.com"
+      ],
+      "rules": [
+        {
+          "matches": [
+            {
+              "path": {
+                "type": "PathPrefix",
+                "value": "/admin"
+              }
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "legacy-ui",
+              "port": 80
+            }
+          ]
+        }
+      ]
+    },
+    "status": {
+      "parents": [
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "internal-gw",
+            "namespace": "gw-infra",
+            "sectionName": "http"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "Accepted",
+              "message": "Route was valid",
+              "lastTransitionTime": "2026-10-14T09:17:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "BackendNotFound",
+              "message": "Service gw-shop/legacy-ui not found",
+              "lastTransitionTime": "2026-10-14T09:17:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "gateway.networking.k8s.io/v1",
+    "kind": "HTTPRoute",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:18:40Z",
+      "generation": 1,
+      "labels": {
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "payments-status",
+      "namespace": "gw-payments",
+      "resourceVersion": "41006",
+      "uid": "04e5d843-4726-5739-84f9-5ec2cdc77ce3"
+    },
+    "spec": {
+      "parentRefs": [
+        {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "public-gw",
+          "namespace": "gw-infra",
+          "sectionName": "https"
+        }
+      ],
+      "hostnames": [
+        "shop.example.com"
+      ],
+      "rules": [
+        {
+          "matches": [
+            {
+              "path": {
+                "type": "Exact",
+                "value": "/payments/status"
+              }
+            }
+          ],
+          "backendRefs": [
+            {
+              "name": "payments-api",
+              "port": 8080
+            }
+          ]
+        }
+      ]
+    },
+    "status": {
+      "parents": [
+        {
+          "parentRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "Gateway",
+            "name": "public-gw",
+            "namespace": "gw-infra",
+            "sectionName": "https"
+          },
+          "controllerName": "demo.sextant.dev/gateway-controller",
+          "conditions": [
+            {
+              "type": "Accepted",
+              "status": "False",
+              "observedGeneration": 1,
+              "reason": "NotAllowedByListeners",
+              "message": "Route is not allowed by listener https: the namespace gw-payments does not match the listener's allowedRoutes selector",
+              "lastTransitionTime": "2026-10-14T09:18:40Z"
+            },
+            {
+              "type": "ResolvedRefs",
+              "status": "True",
+              "observedGeneration": 1,
+              "reason": "ResolvedRefs",
+              "message": "Resolved all the Object references for the Route",
+              "lastTransitionTime": "2026-10-14T09:18:40Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,233 @@
+[
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:21:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "web",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "web",
+      "namespace": "gw-shop",
+      "resourceVersion": "41009",
+      "uid": "6baa7d88-5a96-577f-8ab6-05deabcbc5b0"
+    },
+    "spec": {
+      "selector": {
+        "app": "web"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 80,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.10",
+      "clusterIPs": [
+        "10.96.40.10"
+      ],
+      "type": "ClusterIP"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:22:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "api-v1",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "api-v1",
+      "namespace": "gw-shop",
+      "resourceVersion": "41010",
+      "uid": "c4e000b8-d03c-5164-8b33-7893523dfad0"
+    },
+    "spec": {
+      "selector": {
+        "app": "api-v1"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 8080,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.11",
+      "clusterIPs": [
+        "10.96.40.11"
+      ],
+      "type": "ClusterIP"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:23:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "api-v2",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "api-v2",
+      "namespace": "gw-shop",
+      "resourceVersion": "41011",
+      "uid": "69fb1dc5-95b3-59f3-80eb-aa7ebc51b4e8"
+    },
+    "spec": {
+      "selector": {
+        "app": "api-v2"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 8080,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.12",
+      "clusterIPs": [
+        "10.96.40.12"
+      ],
+      "type": "ClusterIP"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:24:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "inventory-grpc",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "inventory-grpc",
+      "namespace": "gw-shop",
+      "resourceVersion": "41012",
+      "uid": "e5a6bed4-c98e-5e51-8faf-2c95269f8818"
+    },
+    "spec": {
+      "selector": {
+        "app": "inventory-grpc"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 9090,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.13",
+      "clusterIPs": [
+        "10.96.40.13"
+      ],
+      "type": "ClusterIP"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:25:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "db",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "db",
+      "namespace": "gw-shop",
+      "resourceVersion": "41013",
+      "uid": "c632cbca-771d-5587-8b3d-fb88ce8b7a5b"
+    },
+    "spec": {
+      "selector": {
+        "app": "db"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 5432,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.14",
+      "clusterIPs": [
+        "10.96.40.14"
+      ],
+      "type": "ClusterIP"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:26:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "payments-api",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "payments-api",
+      "namespace": "gw-payments",
+      "resourceVersion": "41014",
+      "uid": "7b8c899b-08ad-5620-88f8-39eee628947b"
+    },
+    "spec": {
+      "selector": {
+        "app": "payments-api"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 8080,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.15",
+      "clusterIPs": [
+        "10.96.40.15"
+      ],
+      "type": "ClusterIP"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "creationTimestamp": "2026-10-14T09:27:40Z",
+      "generation": 1,
+      "labels": {
+        "app": "refunds-api",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "name": "refunds-api",
+      "namespace": "gw-payments",
+      "resourceVersion": "41015",
+      "uid": "dd560722-6ce5-54fb-84f1-cf981bbe1600"
+    },
+    "spec": {
+      "selector": {
+        "app": "refunds-api"
+      },
+      "ports": [
+        {
+          "name": "main",
+          "port": 8080,
+          "targetPort": 80
+        }
+      ],
+      "clusterIP": "10.96.40.16",
+      "clusterIPs": [
+        "10.96.40.16"
+      ],
+      "type": "ClusterIP"
+    }
+  }
+]
