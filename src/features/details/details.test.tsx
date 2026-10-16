@@ -292,6 +292,46 @@ describe("details of other kinds", () => {
     expect(within(conditions).getByText("MinimumReplicasAvailable")).toBeInTheDocument();
   });
 
+  it("keeps condition words whole: short columns on one line, the message wraps at word boundaries, a wide table scrolls", async () => {
+    const gateway = {
+      apiVersion: "gateway.networking.k8s.io/v1",
+      kind: "Gateway",
+      metadata: { name: "public-gw", namespace: "sextant-demo", uid: "g1", creationTimestamp: "2026-10-01T00:00:00Z" },
+      spec: { gatewayClassName: "eg", listeners: [] },
+      status: {
+        conditions: [
+          {
+            type: "Programmed",
+            status: "False",
+            reason: "ListenersNotValid",
+            message: "Listener https references secret sextant-demo/www.example.com-tls which does not exist.",
+            lastTransitionTime: "2026-10-01T00:00:00Z",
+          },
+        ],
+      },
+    };
+    await openDetails(gateway, {
+      kind: { group: "gateway.networking.k8s.io", version: "v1", kind: "Gateway" },
+      namespace: "sextant-demo",
+      name: "public-gw",
+    });
+    const conditions = section("conditions");
+    const table = within(conditions).getByRole("table");
+    expect(table.parentElement).toHaveClass("dt-table-wrap");
+    expect(table).toHaveClass("dt-table--words");
+    const headers = within(table).getAllByRole("columnheader");
+    expect(headers.map((h) => h.classList.contains("dt-col--nowrap"))).toEqual([true, true, true, false, true]);
+    const cells = within(table).getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("Programmed");
+    expect(cells[0]).toHaveClass("dt-col--nowrap");
+    expect(cells[2]).toHaveTextContent("ListenersNotValid");
+    expect(cells[2]).toHaveClass("dt-col--nowrap");
+    // The message keeps its text and gets break opportunities after "/" and "." only.
+    expect(cells[3]).toHaveTextContent("Listener https references secret sextant-demo/www.example.com-tls which does not exist.");
+    expect(cells[3]).not.toHaveClass("dt-col--nowrap");
+    expect(cells[3]!.querySelectorAll("wbr").length).toBeGreaterThan(0);
+  });
+
   it("shows type, cluster IP, ports and selector of a service, with a link to its endpoints", async () => {
     await openDetails(service, { kind: { group: "", version: "v1", kind: "Service" }, namespace: "sextant-demo", name: "nginx" });
     const fields = section("fields");

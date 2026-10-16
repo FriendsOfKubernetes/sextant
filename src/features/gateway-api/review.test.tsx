@@ -155,14 +155,29 @@ describe("texts", () => {
   const redirect = (requestRedirect: object) =>
     phrasesText(filterPhrases({ type: "RequestRedirect", requestRedirect }), t, ", ");
 
-  it("a redirect spells out its whole target", () => {
-    expect(redirect({ scheme: "https", statusCode: 301 })).toBe("Redirect to https://<same host><same path> (301)");
+  it("a redirect names what it changes with real values and what it keeps in words", () => {
+    expect(redirect({ scheme: "https", statusCode: 301 })).toBe("Redirect to https, same host and path (301)");
+    expect(
+      redirect({
+        scheme: "https",
+        hostname: "new.example.com",
+        port: 8443,
+        path: { type: "ReplaceFullPath", replaceFullPath: "/path" },
+      }),
+    ).toBe("Redirect to https://new.example.com:8443/path (302)");
+    expect(redirect({ scheme: "https", hostname: "new.example.com" })).toBe("Redirect to https://new.example.com, same path (302)");
     expect(redirect({ hostname: "new.example.com", port: 8443, path: { type: "ReplaceFullPath", replaceFullPath: "/x" } })).toBe(
-      "Redirect to <same scheme>://new.example.com:8443/x (302)",
+      "Redirect to new.example.com:8443/x, same scheme (302)",
     );
     expect(redirect({ path: { type: "ReplacePrefixMatch", replacePrefixMatch: "/v2" }, statusCode: 308 })).toBe(
-      "Redirect to <same scheme>://<same host>/v2<rest of the path> (308)",
+      "Redirect to matched path prefix replaced with /v2, same scheme and host (308)",
     );
+    expect(redirect({ port: 8443 })).toBe("Redirect to port 8443, same scheme, host and path (302)");
+    expect(redirect({ scheme: "https", path: { type: "ReplaceFullPath", replaceFullPath: "/x" } })).toBe(
+      "Redirect to https, path /x, same host (302)",
+    );
+    expect(redirect({})).toBe("Redirect to the same URL (302)");
+    for (const r of [{}, { scheme: "https" }, { port: 1 }]) expect(redirect(r)).not.toMatch(/[<>]/);
   });
 
   it("Exposed by: each way in with its conditions and the Service's share", () => {

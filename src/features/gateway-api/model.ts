@@ -443,7 +443,7 @@ export interface RouteRule {
   name?: string;
   /** Each match as phrases (shown joined with " · "). A rule without matches matches everything. */
   matches: Phrase[][];
-  /** The filters' phrases, in order: "set header x-env=prod", "Redirect to https://<same host><same path> (301)". */
+  /** The filters' phrases, in order: "set header x-env=prod", "Redirect to https, same host and path (301)". */
   filters: Phrase[];
   /** Backends RequestMirror filters copy requests to (no share of the traffic). */
   mirrors: BackendRef[];
@@ -491,7 +491,7 @@ export function sharesOf(weights: readonly number[]): number[] {
 export interface Phrase {
   key: string;
   params?: Record<string, string | number>;
-  /** Parameters that are phrases themselves, translated first: the "<same host>" of a redirect target. */
+  /** Parameters that are phrases themselves, translated first: the "same host and path" of a redirect target. */
   parts?: Record<string, Phrase>;
 }
 
@@ -569,9 +569,21 @@ function mirrorOf(filter: unknown, routeNamespace: string | null): BackendRef | 
   };
 }
 
+/** Phrases joined into one: "a, b, c" (each translated first). */
+function joined(items: readonly Phrase[]): Phrase {
+  const [first, ...rest] = items;
+  if (!first) return phrase("value", { value: "" });
+  if (rest.length === 0) return first;
+  return { key: "gateway:text.joined", parts: { first, rest: joined(rest) } };
+}
+
+const SAME_KEYS = ["sameOne", "sameTwo", "sameThree"] as const;
+
 /**
- * A RequestRedirect as one phrase, the whole target spelled out: "Redirect to https://<same host><same path> (301)".
- * What the filter leaves out is kept from the request (scheme, host, path); the port is shown only when set.
+ * A RequestRedirect as one phrase: what the filter changes with its real values, what it keeps in words —
+ * "Redirect to https, same host and path (301)", "Redirect to https://new.example.com:8443/path (302)". With a
+ * hostname the changed parts read as one URL; the port is shown only when set (otherwise it follows the scheme or
+ * the listener). The request check, where the request is known, shows the computed Location instead.
  */
 function redirectPhrase(r: unknown): Phrase {
   const scheme = str(get(r, "scheme"));
@@ -579,21 +591,28 @@ function redirectPhrase(r: unknown): Phrase {
   const port = num(get(r, "port"));
   const path = get(r, "path");
   const full = str(get(path, "replaceFullPath"));
-  const prefix = str(get(path, "replacePrefixMatch"));
-  return {
-    key: "gateway:text.redirect",
-    params: { port: port !== undefined ? `:${port}` : "", code: num(get(r, "statusCode")) ?? 302 },
-    parts: {
-      scheme: scheme ? phrase("value", { value: scheme }) : phrase("sameScheme"),
-      host: host ? phrase("value", { value: host }) : phrase("sameHost"),
-      path:
-        full !== undefined
-          ? phrase("value", { value: full })
-          : prefix !== undefined
-            ? phrase("pathPrefixReplaced", { value: prefix })
-            : phrase("samePath"),
-    },
-  };
+  const prefix = full === undefined ? str(get(path, "replacePrefixMatch")) : undefined;
+  const code = num(get(r, "statusCode")) ?? 302;
+  const changed: Phrase[] = [];
+  if (host) {
+    const url = `${scheme ? `${scheme}://` : ""}${host}${port !== undefined ? `:${port}` : ""}${full ?? ""}`;
+    changed.push(phrase("value", { value: url }));
+  } else {
+    if (scheme) changed.push(phrase("value", { value: scheme }));
+    if (port !== undefined) changed.push(phrase("redirectPort", { port }));
+    if (full !== undefined) changed.push(phrase("redirectPath", { value: full }));
+  }
+  if (prefix !== undefined) changed.push(phrase("redirectPrefix", { value: prefix }));
+  const kept = [
+    ...(scheme ? [] : [phrase("partScheme")]),
+    ...(host ? [] : [phrase("partHost")]),
+    ...(full !== undefined || prefix !== undefined ? [] : [phrase("partPath")]),
+  ];
+  if (changed.length === 0) return phrase("redirectSame", { code });
+  const parts = [...changed];
+  const sameKey = SAME_KEYS[kept.length - 1];
+  if (sameKey) parts.push({ key: `gateway:text.${sameKey}`, parts: Object.fromEntries(kept.map((p, i) => [`p${i}`, p])) });
+  return { key: "gateway:text.redirect", params: { code }, parts: { target: joined(parts) } };
 }
 
 /**

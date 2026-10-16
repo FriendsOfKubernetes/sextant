@@ -18,4 +18,4 @@ export { ActionBar } from "./ActionBar";
 export { objectWatchSpec, useDetailsLife, useLiveDetailsObject, type DetailsLife } from "./liveObject";
 export { toYaml, displayObject } from "./yaml";
 export { YamlViewer } from "./YamlSection";
-export { Block, chips, Fields, KINDS, link, mapChips, table, type FieldRow } from "./ui";
+export { Block, breakable, chips, Fields, KINDS, link, mapChips, table, type ColumnWrap, type FieldRow } from "./ui";

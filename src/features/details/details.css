@@ -80,6 +80,26 @@
   font-weight: 500;
 }
 
+/*
+ * A table that keeps words whole (`table(…, columns)` in ui.tsx): `anywhere` above counts in min-content and lets a
+ * column shrink to a letter ("Statu s"), so here words break only at spaces and `<wbr>`, short columns stay on one
+ * line, and a table too wide for the panel scrolls.
+ */
+.dt-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dt-table--words th,
+.dt-table--words td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.dt-col--nowrap {
+  white-space: nowrap;
+}
+
 .dt-pre {
   margin: 0;
   font-family: var(--font-mono, ui-monospace, monospace);

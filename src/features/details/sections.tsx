@@ -10,7 +10,7 @@ import { ActionBar } from "./ActionBar";
 import { kindView } from "./kinds";
 import { useDetailsLife } from "./liveObject";
 import { listedAnnotation, maskedAnnotation } from "./secrets";
-import { Block, chips, Fields, inline, KINDS, link, mapChips, muted, strings, table, type FieldRow } from "./ui";
+import { Block, breakable, chips, Fields, inline, KINDS, link, mapChips, muted, strings, table, type ColumnWrap, type FieldRow } from "./ui";
 
 const { arr, get, record, str } = status;
 
@@ -159,6 +159,9 @@ export function hasFields(kind: ObjectRef["kind"]): boolean {
   return Boolean(kindView(kind) ?? findResourceDef(kind)?.details);
 }
 
+// Type, status, reason and age stay on one line; the message wraps between words.
+const CONDITION_COLUMNS: readonly ColumnWrap[] = ["nowrap", "nowrap", "nowrap", undefined, "nowrap"];
+
 /** `status.conditions` of any kind that has them (workloads, nodes, pods, custom resources, …). */
 export function ConditionsSection({ obj }: DetailsSectionProps) {
   const { t } = useTranslation();
@@ -166,13 +169,14 @@ export function ConditionsSection({ obj }: DetailsSectionProps) {
   const rows = conditions.map((c) => {
     const value = str(get(c, "status")) ?? "";
     const since = str(get(c, "lastTransitionTime"));
+    const message = str(get(c, "message"));
     return [
       str(get(c, "type")),
       <span key="s" className={`dt-condition dt-condition--${value.toLowerCase()}`}>
         {value}
       </span>,
       str(get(c, "reason")),
-      str(get(c, "message")),
+      message ? breakable(message) : null,
       since ? <Age key="a" timestamp={since} /> : null,
     ];
   });
@@ -185,6 +189,7 @@ export function ConditionsSection({ obj }: DetailsSectionProps) {
       t("details:columns.lastTransition"),
     ],
     rows,
+    CONDITION_COLUMNS,
   );
   if (!content) return null;
   return <Block title={t("details:sections.conditions")}>{content}</Block>;

@@ -6,14 +6,14 @@
 //   ReferenceGrant — who may refer to what, as a sentence and two tables;
 //   BackendTLSPolicy — targets, validation and the status per Gateway.
 // Conditions and YAML are the panel's own sections.
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject } from "../../api";
 import { Button } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findKind, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
 import type { Tone } from "../../resources/status";
-import { Block, chips, Fields, toYaml, type FieldRow } from "../details";
+import { Block, breakable, chips, Fields, toYaml, type ColumnWrap, type FieldRow } from "../details";
 import { HEALTH_TONE, parentText, statusMark } from "./columns";
 import { gatewayRoutes } from "./exposure";
 import { everywhere, servedKind, useBackendState, useGrants, useServedRoutes, type ServedRoutes } from "./hooks";
@@ -242,26 +242,7 @@ export function LoadingLine({ text }: { text: string }) {
   );
 }
 
-/**
- * `text` with line-break opportunities after each `.` and `/` (not inside `://`), so a hostname or URL in a narrow
- * column wraps between its labels and path segments, never in the middle of a word.
- */
-export function breakable(text: string): ReactNode {
-  const parts = text.split(/(?<=[./])(?!\/)/);
-  if (parts.length < 2) return text;
-  return parts.map((part, i) => (
-    <Fragment key={i}>
-      {i > 0 && <wbr />}
-      {part}
-    </Fragment>
-  ));
-}
-
-/**
- * How a column of a `SimpleTable` wraps: `nowrap` keeps short values (names, ports, counts) on one line; others wrap
- * at spaces (and where `breakable` allows), never inside a word.
- */
-export type ColumnWrap = "nowrap" | undefined;
+export { breakable };
 
 const NOWRAP: ColumnWrap = "nowrap";
 // Name, port/protocol, hostname, TLS, allowed routes, attached count, status.

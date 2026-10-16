@@ -514,7 +514,8 @@ describe("details of an HTTPRoute", () => {
     expect(rule(1)).toHaveTextContent("Exact /healthz · GET → api-v1:8080");
     // A redirect answers by itself: no backends needed.
     expect(rule(2)).toHaveTextContent("PathPrefix /old");
-    expect(rule(2)).toHaveTextContent("Redirect to https://<same host><same path> (301)");
+    expect(rule(2)).toHaveTextContent("Redirect to https, same host and path (301)");
+    expect(rule(2)).not.toHaveTextContent("<");
     expect(rule(2)).not.toHaveTextContent("No backends");
     for (const n of [0, 1, 2]) expect(rule(n)).not.toHaveClass("gw-rule--broken");
   });

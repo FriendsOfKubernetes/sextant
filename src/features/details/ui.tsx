@@ -1,7 +1,7 @@
 // Building blocks of the details sections. Values are prepared outside JSX (the i18n lint rule forbids string
 // literals inside JSX): a view builds `FieldRow`s with the helpers below (`link`, `chips`, `table`, …), each of
 // which returns `null` when there is nothing to show, and renders them with <Fields rows={…} />.
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { ObjectLink, StatusText, status } from "../../resources";
@@ -138,15 +138,43 @@ export function muted(value: string | undefined): ReactNode {
   return value ? <span className="dt-muted">{value}</span> : null;
 }
 
-/** A small table; `headers` are already translated; `null` without rows. */
-export function table(headers: string[], rows: ReactNode[][]): ReactNode {
+/**
+ * `text` with line-break opportunities after each `.` and `/` (not inside `://`), so a hostname, a URL or a
+ * `namespace/name` in a narrow column wraps between its parts, never in the middle of a word.
+ */
+export function breakable(text: string): ReactNode {
+  const parts = text.split(/(?<=[./])(?!\/)/);
+  if (parts.length < 2) return text;
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {i > 0 && <wbr />}
+      {part}
+    </Fragment>
+  ));
+}
+
+/**
+ * How a column of a `table` with `columns` wraps: `nowrap` keeps short values (names, reasons, ages) on one line;
+ * others wrap at spaces (and where `breakable` allows), never inside a word.
+ */
+export type ColumnWrap = "nowrap" | undefined;
+
+/**
+ * A small table; `headers` are already translated; `null` without rows. With `columns` the table keeps words whole
+ * (`dt-table--words`): the marked columns stay on one line, the rest wrap at word boundaries, and a table too wide
+ * for the panel scrolls sideways instead of breaking words letter by letter.
+ */
+export function table(headers: string[], rows: ReactNode[][], columns?: readonly ColumnWrap[]): ReactNode {
   if (rows.length === 0) return null;
-  return (
-    <table className="dt-table">
+  const colClass = (i: number) => (columns?.[i] ? `dt-col--${columns[i]}` : undefined);
+  const body = (
+    <table className={columns ? "dt-table dt-table--words" : "dt-table"}>
       <thead>
         <tr>
-          {headers.map((h) => (
-            <th key={h}>{h}</th>
+          {headers.map((h, i) => (
+            <th key={h} className={colClass(i)}>
+              {h}
+            </th>
           ))}
         </tr>
       </thead>
@@ -154,13 +182,16 @@ export function table(headers: string[], rows: ReactNode[][]): ReactNode {
         {rows.map((cells, i) => (
           <tr key={i}>
             {cells.map((c, j) => (
-              <td key={j}>{c}</td>
+              <td key={j} className={colClass(j)}>
+                {c}
+              </td>
             ))}
           </tr>
         ))}
       </tbody>
     </table>
   );
+  return columns ? <div className="dt-table-wrap">{body}</div> : body;
 }
 
 /** Namespace of an object (`null` for cluster-scoped ones). */
