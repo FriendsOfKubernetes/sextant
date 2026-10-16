@@ -15,7 +15,9 @@ pub const MAIN_WINDOW: &str = "main";
 pub const MIN_WIDTH: u32 = 360;
 pub const MIN_HEIGHT: u32 = 480;
 const SAVE_DELAY: Duration = Duration::from_millis(400);
-/// How long after losing the focus the tray's "Show/Hide" text is checked again (a minimize).
+/// Windows and macOS: how long after losing the focus the tray's "Show/Hide" text is checked again (the minimized
+/// state can be reported a moment after the focus goes).
+#[cfg(not(target_os = "linux"))]
 const LABEL_RESYNC_DELAY: Duration = Duration::from_millis(500);
 
 /// Logical size to restore, if one was saved.
@@ -90,10 +92,11 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
             crate::tray::sync_label(window.app_handle());
         }
         #[cfg(desktop)]
+        // A minimize sends no event of its own (and GTK on Wayland never reports it), but it takes the focus away:
+        // on Linux the tray then offers "Show"; elsewhere the minimized state is read again a moment later.
         WindowEvent::Focused(focused) => {
-            crate::tray::sync_label(window.app_handle());
-            // A minimize sends no event of its own; it takes the focus away, and the window manager may report the
-            // minimized state only a moment later.
+            crate::tray::follow_focus(window.app_handle(), *focused);
+            #[cfg(not(target_os = "linux"))]
             if !focused {
                 let app = window.app_handle().clone();
                 tauri::async_runtime::spawn(async move {

@@ -4506,6 +4506,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "ts-rs",
+ "x11-dl",
 ]
 
 [[package]]

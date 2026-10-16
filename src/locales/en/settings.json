@@ -27,7 +27,7 @@
     "title": "Window",
     "closeToTray": "Closing the window keeps Sextant in the tray",
     "closeToTrayHint": "Sextant keeps running in the tray: connections, port forwards, terminals and the MCP server stay open. Its icon in the tray (the menu bar on macOS) shows the window again; “Quit Sextant” in the icon’s menu quits.",
-    "noTray": "No system tray was found, so closing the window quits Sextant. On Linux the tray needs a StatusNotifier/AppIndicator host and the libayatana-appindicator library (on GNOME, the AppIndicator extension)."
+    "noTray": "No system tray was found, so closing the window quits Sextant. On Linux the tray needs the libayatana-appindicator library and a StatusNotifier/AppIndicator host (on GNOME, the AppIndicator extension) or, in an X11 session, a system tray."
   },
   "editor": {
     "title": "Editor",

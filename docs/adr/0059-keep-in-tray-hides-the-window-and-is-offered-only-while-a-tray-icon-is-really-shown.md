@@ -1,5 +1,7 @@
 # ADR-0059: Keep-in-tray hides the window, and is offered only while a tray icon is really shown
 
+Amended (v0.8.0): on Linux the tray also counts as available without a StatusNotifier host when GTK draws through X11 and a tray owns `_NET_SYSTEM_TRAY_S<screen>` (libayatana's XEmbed fallback: i3bar, older XFCE); a Wayland session without a host stays unavailable. On Linux the menu says "Hide Sextant" only while the window is visible and focused, and any other click reveals it, since GTK on Wayland never reports a minimized window; Windows and macOS keep "visible and not minimized" (#115).
+
 ## Context
 
 Sextant holds connections, port forwards, terminals and the MCP server, but they live only as long as the window: closing it ends the app and an agent loses the server. v0.7.0 adds a tray icon with Show/Hide, About and Quit, and an option "Closing the window keeps Sextant in the tray". On Linux an icon needs a StatusNotifier host, which some desktops (GNOME without an extension) do not have, and then a hidden window would be lost for good. The exit path closes everything on every exit request (`close_all`, even if the exit is later prevented), and an agent's confirmation waits 120 s for an answer (ADR-0042).

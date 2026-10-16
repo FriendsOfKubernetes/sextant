@@ -2,8 +2,8 @@
 //! menu: "Show/Hide Sextant", "About Sextant…", "Quit Sextant".
 //!
 //! The icon is created once at start ([`install`]). When it cannot be created (Linux without the AppIndicator
-//! library, a platform error), or on Linux when no StatusNotifier host would show it (GNOME without the AppIndicator
-//! extension), the app runs as before: [`available`] is `false`, closing the window quits, and Settings says why
+//! library, a platform error), or on Linux when nothing would show it (no StatusNotifier host, as on GNOME without the
+//! AppIndicator extension, and no XEmbed tray of an X11 session), the app runs as before: [`available`] is `false`, closing the window quits, and Settings says why
 //! "keep in the tray" is off (`tray_status`). Menu texts come from `src/locales/en/tray.json`.
 
 use std::collections::HashMap;
@@ -48,8 +48,22 @@ pub enum WindowToggle {
 }
 
 impl WindowToggle {
-    /// For a window in this state: a hidden or minimized window is brought back, a window on screen is hidden.
-    pub fn for_window(visible: bool, minimized: bool) -> Self {
+    /// Linux: only a visible window that has the focus is hidden; any other (hidden, minimized, behind other windows)
+    /// is brought back. The focus stands in for "minimized", which GTK on Wayland never reports, while a minimize
+    /// always takes the focus away.
+    #[cfg(any(target_os = "linux", test))]
+    pub fn by_focus(visible: bool, focused: bool) -> Self {
+        if visible && focused {
+            Self::Hide
+        } else {
+            Self::Show
+        }
+    }
+
+    /// Windows and macOS: a hidden or minimized window is brought back, a window on screen is hidden. They report the
+    /// minimized state, and opening the tray menu takes the focus from the window, so the focus would say nothing.
+    #[cfg(any(not(target_os = "linux"), test))]
+    pub fn by_minimized(visible: bool, minimized: bool) -> Self {
         if visible && !minimized {
             Self::Hide
         } else {
@@ -98,12 +112,24 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> bool {
     available
 }
 
-/// Whether the tray icon is there for the user: it was created and, on Linux, a StatusNotifier host shows it now.
-/// Asked again before every hide, since the host can go away later (a panel restart, an extension turned off). On
-/// Linux this is a D-Bus round trip of at most about a second each way: call it on the blocking pool, never on the
-/// event loop (a window event) or the async runtime.
+/// Whether the tray icon is there for the user: it was created and, on Linux, something shows it now (a
+/// StatusNotifier host, or an XEmbed tray of an X11 session). Asked again before every hide, since the host can go
+/// away later (a panel restart, an extension turned off). On Linux this is a D-Bus round trip of at most about a
+/// second each way, and maybe a round trip to the X server: call it on the blocking pool, never on the event loop (a
+/// window event) or the async runtime.
 pub fn available<R: Runtime>(app: &AppHandle<R>) -> bool {
-    icon_created(app) && status_notifier::host_present()
+    icon_created(app) && shown_somewhere()
+}
+
+#[cfg(target_os = "linux")]
+fn shown_somewhere() -> bool {
+    linux_tray_shown(status_notifier::host_present(), xembed::tray_present())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn shown_somewhere() -> bool {
+    // Windows and macOS always have a notification area / menu bar.
+    true
 }
 
 /// Whether the icon was created at start (no system call).
@@ -112,11 +138,26 @@ pub fn icon_created<R: Runtime>(app: &AppHandle<R>) -> bool {
         .is_some_and(|state| state.show_hide.is_some())
 }
 
-/// Linux shows a tray icon only through a StatusNotifier host: the watcher `org.kde.StatusNotifierWatcher` must have
-/// an owner on the session bus and say a host is registered. Without one the icon silently shows nowhere.
+/// Whether a Linux desktop shows the icon. libayatana-appindicator exports it to a StatusNotifier host (the watcher
+/// `org.kde.StatusNotifierWatcher` has an owner on the session bus and says a host is registered); without one it
+/// falls back to an XEmbed icon, which an X11 session shows when a tray owns its `_NET_SYSTEM_TRAY_S<screen>`
+/// selection (i3bar, older XFCE). With neither the icon silently shows nowhere.
 #[cfg(any(target_os = "linux", test))]
-pub fn host_shows_icons(watcher_owned: bool, host_registered: bool) -> bool {
-    watcher_owned && host_registered
+pub fn linux_tray_shown(sni_host: bool, xembed_tray: bool) -> bool {
+    sni_host || xembed_tray
+}
+
+/// Whether GTK draws this app through X11, where the XEmbed fallback works: `GDK_BACKEND` asks for X11, or there is
+/// no Wayland display to prefer. A Wayland session without a StatusNotifier host shows no icon.
+#[cfg(any(target_os = "linux", test))]
+fn gtk_on_x11(wayland_display: Option<&str>, gdk_backend: Option<&str>) -> bool {
+    if let Some(backend) = gdk_backend.filter(|b| !b.is_empty()) {
+        return backend
+            .split(',')
+            .next()
+            .is_some_and(|first| first.trim() == "x11");
+    }
+    wayland_display.is_none_or(str::is_empty)
 }
 
 #[cfg(target_os = "linux")]
@@ -144,15 +185,44 @@ mod status_notifier {
                 .with_proxy(WATCHER, "/StatusNotifierWatcher", TIMEOUT)
                 .get::<bool>(WATCHER, "IsStatusNotifierHostRegistered")
                 .unwrap_or(false);
-        super::host_shows_icons(owned, registered)
+        owned && registered
     }
 }
 
-#[cfg(not(target_os = "linux"))]
-mod status_notifier {
-    /// Windows and macOS always have a notification area / menu bar.
-    pub fn host_present() -> bool {
-        true
+#[cfg(target_os = "linux")]
+mod xembed {
+    use std::ffi::CString;
+
+    use x11_dl::xlib::{self, Xlib};
+
+    /// Whether an XEmbed tray runs on this X11 screen: the selection `_NET_SYSTEM_TRAY_S<screen>` has an owner. Any
+    /// failure (a Wayland session, no libX11, no display) counts as "no tray". libX11 is loaded at run time, as tao
+    /// does, so nothing new is linked.
+    pub fn tray_present() -> bool {
+        let wayland = std::env::var("WAYLAND_DISPLAY").ok();
+        let backend = std::env::var("GDK_BACKEND").ok();
+        if !super::gtk_on_x11(wayland.as_deref(), backend.as_deref()) {
+            return false;
+        }
+        let Ok(x) = Xlib::open() else {
+            return false;
+        };
+        // SAFETY: a private connection used only on this thread and closed before returning (tao has already called
+        // `XInitThreads`); the atom name is a valid C string.
+        unsafe {
+            let display = (x.XOpenDisplay)(std::ptr::null());
+            if display.is_null() {
+                return false;
+            }
+            let screen = (x.XDefaultScreen)(display);
+            let owned = CString::new(format!("_NET_SYSTEM_TRAY_S{screen}")).is_ok_and(|name| {
+                // `only_if_exists`: no atom means no tray ever claimed it.
+                let atom = (x.XInternAtom)(display, name.as_ptr(), xlib::True);
+                atom != 0 && (x.XGetSelectionOwner)(display, atom) != 0
+            });
+            (x.XCloseDisplay)(display);
+            owned
+        }
     }
 }
 
@@ -168,7 +238,7 @@ pub fn show_label<R: Runtime>(app: &AppHandle<R>, toggle: WindowToggle) {
     }
 }
 
-/// Reads the window's state and sets the "Show/Hide" text from it (after a minimize, a focus change).
+/// Reads the window's state and sets the "Show/Hide" text from it (after a resize, a hide).
 pub fn sync_label<R: Runtime>(app: &AppHandle<R>) {
     if !icon_created(app) {
         return;
@@ -178,8 +248,36 @@ pub fn sync_label<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
+/// Sets the "Show/Hide" text after the window gained or lost the focus. On Linux the focus is taken from the event
+/// itself (the window's own flag can lag behind it): a minimize, which GTK on Wayland never reports, lands here as a
+/// lost focus. Elsewhere the window's state is read, as in [`sync_label`].
+pub fn follow_focus<R: Runtime>(app: &AppHandle<R>, focused: bool) {
+    if !icon_created(app) {
+        return;
+    }
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+        #[cfg(target_os = "linux")]
+        let toggle = WindowToggle::by_focus(window.is_visible().unwrap_or(true), focused);
+        #[cfg(not(target_os = "linux"))]
+        let toggle = {
+            let _ = focused;
+            current_toggle(&window)
+        };
+        show_label(app, toggle);
+    }
+}
+
+#[cfg(target_os = "linux")]
 fn current_toggle<R: Runtime>(window: &tauri::WebviewWindow<R>) -> WindowToggle {
-    WindowToggle::for_window(
+    WindowToggle::by_focus(
+        window.is_visible().unwrap_or(true),
+        window.is_focused().unwrap_or(false),
+    )
+}
+
+#[cfg(not(target_os = "linux"))]
+fn current_toggle<R: Runtime>(window: &tauri::WebviewWindow<R>) -> WindowToggle {
+    WindowToggle::by_minimized(
         window.is_visible().unwrap_or(true),
         window.is_minimized().unwrap_or(false),
     )
@@ -274,21 +372,61 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_window_on_screen_is_hidden_and_any_other_is_shown() {
-        assert_eq!(WindowToggle::for_window(true, false), WindowToggle::Hide);
-        assert_eq!(WindowToggle::for_window(false, false), WindowToggle::Show);
-        assert_eq!(WindowToggle::for_window(true, true), WindowToggle::Show);
-        assert_eq!(WindowToggle::for_window(false, true), WindowToggle::Show);
+    fn on_linux_only_a_visible_focused_window_is_hidden_and_any_other_is_shown() {
+        assert_eq!(WindowToggle::by_focus(true, true), WindowToggle::Hide);
+        assert_eq!(
+            WindowToggle::by_focus(true, false),
+            WindowToggle::Show,
+            "visible without the focus: minimized (GTK on Wayland says it is not) or behind other windows"
+        );
+        assert_eq!(WindowToggle::by_focus(false, false), WindowToggle::Show);
+        assert_eq!(WindowToggle::by_focus(false, true), WindowToggle::Show);
+    }
+
+    #[test]
+    fn on_windows_and_macos_a_window_on_screen_is_hidden_and_any_other_is_shown() {
+        assert_eq!(WindowToggle::by_minimized(true, false), WindowToggle::Hide);
+        assert_eq!(WindowToggle::by_minimized(false, false), WindowToggle::Show);
+        assert_eq!(WindowToggle::by_minimized(true, true), WindowToggle::Show);
+        assert_eq!(WindowToggle::by_minimized(false, true), WindowToggle::Show);
         assert_eq!(WindowToggle::Show.label(), "Show Sextant");
         assert_eq!(WindowToggle::Hide.label(), "Hide Sextant");
     }
 
     #[test]
-    fn on_linux_the_icon_shows_only_with_a_status_notifier_host() {
-        assert!(!host_shows_icons(false, false), "no watcher on the bus");
-        assert!(!host_shows_icons(false, true), "no watcher on the bus");
-        assert!(!host_shows_icons(true, false), "a watcher without a host");
-        assert!(host_shows_icons(true, true));
+    fn on_linux_the_icon_shows_with_a_status_notifier_host_or_an_xembed_tray() {
+        assert!(!linux_tray_shown(false, false), "nothing shows the icon");
+        assert!(
+            linux_tray_shown(false, true),
+            "an XEmbed-only tray (i3bar) shows the fallback icon"
+        );
+        assert!(linux_tray_shown(true, false));
+        assert!(linux_tray_shown(true, true));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn asking_the_x_server_for_a_tray_never_fails_the_caller() {
+        // Whatever this machine runs (no display in CI, Wayland, X11), the answer is a plain yes or no.
+        let _ = xembed::tray_present();
+    }
+
+    #[test]
+    fn the_xembed_fallback_is_looked_for_only_when_gtk_draws_through_x11() {
+        assert!(gtk_on_x11(None, None), "a plain X11 session");
+        assert!(gtk_on_x11(Some(""), None));
+        assert!(
+            !gtk_on_x11(Some("wayland-0"), None),
+            "a Wayland session without a StatusNotifier host stays unavailable"
+        );
+        assert!(
+            gtk_on_x11(Some("wayland-0"), Some("x11")),
+            "GTK forced to XWayland"
+        );
+        assert!(gtk_on_x11(Some("wayland-0"), Some("x11,wayland")));
+        assert!(!gtk_on_x11(None, Some("wayland")));
+        assert!(!gtk_on_x11(Some("wayland-0"), Some("wayland,x11")));
+        assert!(!gtk_on_x11(Some("wayland-0"), Some("")));
     }
 
     #[test]

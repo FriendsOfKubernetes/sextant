@@ -2,6 +2,6 @@
 
 export type TrayStatus = { 
 /**
- * The tray icon was created and (on Linux) a StatusNotifier host shows it; without it closing the window quits.
+ * The tray icon was created and (on Linux) a StatusNotifier host or an X11 system tray shows it; without it closing the window quits.
  */
 available: boolean, };
