@@ -50,6 +50,7 @@ import {
   GRPC_ROUTE,
   HTTP_ROUTE,
   type BackendRef,
+  type Condition,
   type ListenerStatus,
   type ParentStatus,
   type Phrase,
@@ -134,7 +135,7 @@ export type LossReason =
   // A route on the chosen listener
   | "otherRouteKind" // a GRPCRoute for a plain HTTP request
   | "notAttached" // it names the Gateway, but another listener
-  | "notAccepted" // the controller did not accept it there (`condition`; none while pending)
+  | "notAccepted" // the Gateway did not accept it there, or anywhere (`condition`; none while pending)
   | "namespaceNotAllowed" // `allowedRoutes.namespaces` of the listener does not admit the route's namespace
   | "kindNotAllowed" // the listener does not allow the route's kind
   | "noHostnameIntersection" // none of its hostnames intersects the listener's
@@ -624,6 +625,22 @@ function effectiveHostnames(route: KubeObject, listener: ListenerStatus): { orig
   });
 }
 
+/**
+ * The refusal of a route the Gateway accepted on none of the parents naming it (the first Accepted=False there);
+ * `undefined` when it is accepted somewhere on the Gateway or no controller said anything.
+ */
+function acceptedNowhere(route: KubeObject, gateway: KubeObject): Condition | undefined {
+  const named = parentStatuses(route).filter(
+    ({ ref }) =>
+      ref.group === GATEWAY_GROUP &&
+      ref.kind === "Gateway" &&
+      ref.name === gateway.metadata?.name &&
+      ref.namespace === (gateway.metadata?.namespace ?? null),
+  );
+  if (named.some((p) => p.accepted?.status === "True")) return undefined;
+  return named.find((p) => p.accepted?.status === "False")?.accepted;
+}
+
 /** Most specific first: exact before wildcard, longer before shorter. */
 const hostnameRank = (h: string) => (isWildcard(h) ? 0 : 10_000) + h.length;
 
@@ -665,7 +682,9 @@ function evaluateListener(
     }
     const parent: ParentStatus | undefined = routeAttachedTo(route.obj, gateway, listener);
     if (!parent) {
-      lose(route, "notAttached");
+      // Another listener named, but the Gateway refused the route there (and accepted it nowhere): that is the reason.
+      const refused = acceptedNowhere(route.obj, gateway);
+      lose(route, refused ? "notAccepted" : "notAttached", refused?.reason ? { condition: refused.reason } : {});
       continue;
     }
     if (parent.accepted?.status !== "True") {

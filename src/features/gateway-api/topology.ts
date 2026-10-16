@@ -1,11 +1,14 @@
-// The topology of one Gateway as a tree: Gateway → listeners → the routes on each listener → their rules → backends
-// (Services with pod readiness), each node with a health and, when broken, the reason. Routes that name the Gateway
-// but sit on none of its listeners (rejected, not processed yet) hang under the Gateway itself. Pure: the view lists
-// the routes, Services, EndpointSlices and ReferenceGrants and passes what it knows.
+// The topology of one Gateway as a tree: Gateway → listeners → the routes attached to each listener → their rules →
+// backends (Services with pod readiness), each node with a health and, when broken, the reason. The Gateway's health
+// is its own and its listeners' (a broken listener makes it a problem). Routes that name the Gateway but are not
+// accepted there (refused, or not processed yet) are gathered in one "Not attached" group under the Gateway, each with
+// the reason, whatever listener they name. Pure: the view lists the routes, Services, EndpointSlices and
+// ReferenceGrants and passes what it knows.
 import type { KindRef, KubeObject } from "../../api";
-import { routeListeners, unplacedParents } from "./exposure";
+import { gatewayRoutes } from "./exposure";
 import {
   backendIssue,
+  gatewayHealth,
   gatewayOwnHealth,
   GATEWAY_GROUP,
   GRPC_ROUTE,
@@ -31,12 +34,16 @@ interface NodeBase {
   reason?: string;
   /** The controller's message for `reason`, if it gave one. */
   message?: string;
+  /** Parameters of Sextant's own reason text (`gateway:topology.reasons.<reason>`). */
+  params?: Record<string, string | number>;
   children: TopologyNode[];
 }
 
 export type TopologyNode =
   | (NodeBase & { type: "gateway"; ref: ObjRef })
   | (NodeBase & { type: "listener"; listener: ListenerStatus })
+  /** The routes naming the Gateway that it did not accept. */
+  | (NodeBase & { type: "notAttached" })
   | (NodeBase & { type: "route"; ref: ObjRef; routeKind: KindRef; parent: ParentStatus; hostnames?: string[] })
   | (NodeBase & { type: "rule"; rule: RouteRule; routeNamespace: string | null; routeKind: KindRef })
   | (NodeBase & {
@@ -122,10 +129,13 @@ function routeNode(
   parent: ParentStatus,
   hostnames: string[] | undefined,
   context: TopologyContext,
+  withRules = true,
 ): TopologyNode {
   const ref: ObjRef = { group: GATEWAY_GROUP, kind: kind.kind, name: route.metadata?.name ?? "", namespace: route.metadata?.namespace ?? null };
   const parents = parentStatuses(route);
-  const children = routeRules(route, kind).map((rule) => ruleNode(`${key}/r${rule.index}`, rule, route, kind, parents, context));
+  const children = withRules
+    ? routeRules(route, kind).map((rule) => ruleNode(`${key}/r${rule.index}`, rule, route, kind, parents, context))
+    : [];
   return {
     type: "route",
     key,
@@ -143,28 +153,38 @@ function routeNode(
 const routeKey = (kind: KindRef, route: KubeObject) =>
   `${kind.kind}:${route.metadata?.namespace ?? ""}:${route.metadata?.name ?? ""}`;
 
-/** The tree of `gateway`: its listeners (every one, with or without routes), the routes on each, rules, backends. */
+/** Why the Gateway is not ok: its own condition, else how many of its listeners are broken (or still pending). */
+function gatewayVerdict(gateway: KubeObject, listeners: readonly ListenerStatus[]): Omit<NodeBase, "key" | "children"> {
+  const own = gatewayOwnHealth(gateway);
+  const { health, problem } = gatewayHealth(gateway);
+  if (health === "ok") return { health };
+  if (own.health === health) return { health, reason: own.problem?.reason, message: own.problem?.message };
+  const bad = listeners.filter((l) => l.health === health);
+  const message = bad.map((l) => `${l.name}: ${l.problem?.reason ?? l.problem?.type ?? ""}`).join("\n");
+  if (health === "problem")
+    return { health, reason: "ListenersBroken", params: { count: bad.length, total: listeners.length }, message };
+  return { health, reason: problem?.reason, message };
+}
+
+/**
+ * The tree of `gateway`: its listeners (every one, with or without routes) with the routes attached to each, their
+ * rules and backends; then the routes it did not accept, in a "Not attached" group (no rules: no traffic reaches
+ * them through this Gateway).
+ */
 export function gatewayTopology(gateway: KubeObject, context: TopologyContext): TopologyNode {
   const ns = gateway.metadata?.namespace ?? null;
   const name = gateway.metadata?.name ?? "";
   const root = `gw:${ns ?? ""}:${name}`;
+  const { attached, notAttached } = gatewayRoutes(gateway, context.routes);
   const onListener = new Map<string, TopologyNode[]>();
-  const unplaced: TopologyNode[] = [];
-  for (const { kind, items } of context.routes) {
-    const sorted = [...items].sort((a, b) => routeKey(kind, a).localeCompare(routeKey(kind, b)));
-    for (const route of sorted) {
-      for (const { listener, parent, hostnames } of routeListeners(route, kind, gateway)) {
-        const key = `${root}/l:${listener.name}/${routeKey(kind, route)}`;
-        const list = onListener.get(listener.name) ?? [];
-        list.push(routeNode(key, route, kind, parent, hostnames, context));
-        onListener.set(listener.name, list);
-      }
-      unplacedParents(route, kind, gateway).forEach((parent, i) => {
-        unplaced.push(routeNode(`${root}/u${i}:${routeKey(kind, route)}`, route, kind, parent, undefined, context));
-      });
-    }
+  for (const { kind, route, parent, listener, hostnames } of attached) {
+    const key = `${root}/l:${listener.name}/${routeKey(kind, route)}`;
+    const list = onListener.get(listener.name) ?? [];
+    list.push(routeNode(key, route, kind, parent, hostnames, context));
+    onListener.set(listener.name, list);
   }
-  const listeners: TopologyNode[] = listenerStatuses(gateway).map((listener) => ({
+  const all = listenerStatuses(gateway);
+  const listeners: TopologyNode[] = all.map((listener) => ({
     type: "listener",
     key: `${root}/l:${listener.name}`,
     listener,
@@ -173,15 +193,26 @@ export function gatewayTopology(gateway: KubeObject, context: TopologyContext): 
     message: listener.health === "ok" ? undefined : listener.problem?.message,
     children: onListener.get(listener.name) ?? [],
   }));
-  const own = gatewayOwnHealth(gateway);
+  const refused = notAttached.map(({ kind, route, parent }, i) =>
+    routeNode(`${root}/na${i}:${routeKey(kind, route)}`, route, kind, parent, undefined, context, false),
+  );
+  const group: TopologyNode[] =
+    refused.length > 0
+      ? [
+          {
+            type: "notAttached",
+            key: `${root}/notAttached`,
+            health: refused.some((r) => r.health === "problem") ? "problem" : "pending",
+            children: refused,
+          },
+        ]
+      : [];
   return {
     type: "gateway",
     key: root,
     ref: { group: GATEWAY_GROUP, kind: "Gateway", name, namespace: ns },
-    health: own.health,
-    reason: own.health === "ok" ? undefined : own.problem?.reason,
-    message: own.health === "ok" ? undefined : own.problem?.message,
-    children: [...listeners, ...unplaced],
+    ...gatewayVerdict(gateway, all),
+    children: [...listeners, ...group],
   };
 }
 

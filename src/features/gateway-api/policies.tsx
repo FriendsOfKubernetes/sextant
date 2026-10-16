@@ -33,18 +33,36 @@ export function isAttachedPolicy(obj: KubeObject): boolean {
 
 interface Loaded {
   done: boolean;
+  /** Attached policies of the kind, and how many of them the search keeps. */
   rows: number;
+  shown: number;
+}
+
+const targetText = (t: { kind: string; name: string; sectionName?: string }) =>
+  `${t.kind} ${t.name}${t.sectionName ? ` (${t.sectionName})` : ""}`;
+
+/** Whether the search (words, any order, case ignored) is in the policy's kind, name, namespace or targets. */
+export function policyMatches(policy: KubeObject, kind: string, search: string): boolean {
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+  const text = [kind, policy.metadata?.name, policy.metadata?.namespace, ...policyTargets(policy).map(targetText)]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return words.every((w) => text.includes(w));
 }
 
 function PolicyRows({
   clusterId,
   kind,
   namespaces,
+  search,
   onLoaded,
 }: {
   clusterId: ClusterId;
   kind: ResourceKind;
   namespaces: string[] | null;
+  search: string;
   onLoaded: (key: string, loaded: Loaded) => void;
 }) {
   const spec: WatchSpec = {
@@ -61,14 +79,18 @@ function PolicyRows({
         `${b.metadata?.namespace ?? ""}/${b.metadata?.name ?? ""}`,
       ),
     );
+  const shown = policies.filter((p) => policyMatches(p, kind.kindRef.kind, search));
   const key = kindKey(kind.kindRef);
   // A kind the user may not list, or that fails, just has no rows.
   const done = watch.status !== "loading";
-  useEffect(() => onLoaded(key, { done, rows: policies.length }), [key, done, policies.length, onLoaded]);
+  useEffect(
+    () => onLoaded(key, { done, rows: policies.length, shown: shown.length }),
+    [key, done, policies.length, shown.length, onLoaded],
+  );
   const apiVersion = kind.kindRef.group ? `${kind.kindRef.group}/${kind.kindRef.version}` : kind.kindRef.version;
   return (
     <>
-      {policies.map((policy) => {
+      {shown.map((policy) => {
         const ns = policy.metadata?.namespace ?? null;
         const name = policy.metadata?.name ?? "";
         const health = policyHealth(policy).health;
@@ -104,9 +126,6 @@ function PolicyRows({
   );
 }
 
-const targetText = (t: { kind: string; name: string; sectionName?: string }) =>
-  `${t.kind} ${t.name}${t.sectionName ? ` (${t.sectionName})` : ""}`;
-
 export function PoliciesPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
   const { kinds, error } = useClusterKinds(clusterId);
@@ -116,11 +135,15 @@ export function PoliciesPage({ clusterId }: PageProps) {
     (key: string, value: Loaded) =>
       setLoaded((prev) => {
         const old = prev.get(key);
-        return old && old.done === value.done && old.rows === value.rows ? prev : new Map(prev).set(key, value);
+        return old && old.done === value.done && old.rows === value.rows && old.shown === value.shown
+          ? prev
+          : new Map(prev).set(key, value);
       }),
     [],
   );
+  const [search, setSearch] = useState("");
   const title = t("gateway:sidebar.policies");
+  let count: string | undefined;
 
   let body;
   if (!kinds) {
@@ -132,9 +155,14 @@ export function PoliciesPage({ clusterId }: PageProps) {
     const states = candidates.map((k) => loaded.get(kindKey(k.kindRef)));
     const loading = states.some((s) => !s?.done);
     const rows = states.reduce((sum, s) => sum + (s?.rows ?? 0), 0);
+    const shown = states.reduce((sum, s) => sum + (s?.shown ?? 0), 0);
+    count =
+      search.trim() && shown !== rows
+        ? t("resources:table.countFiltered", { shown, total: rows })
+        : t("resources:table.count", { count: rows });
     body = (
       <>
-        <table className="dt-table gw-policies" aria-label={title}>
+        <table className="dt-table gw-ptable" aria-label={title}>
           <thead>
             <tr>
               <th>{t("gateway:policies.kind")}</th>
@@ -151,6 +179,7 @@ export function PoliciesPage({ clusterId }: PageProps) {
                 clusterId={clusterId}
                 kind={k}
                 namespaces={namespaces}
+                search={search}
                 onLoaded={onLoaded}
               />
             ))}
@@ -158,8 +187,10 @@ export function PoliciesPage({ clusterId }: PageProps) {
         </table>
         {loading ? (
           <LoadingIndicator text={t("gateway:policies.loading")} />
+        ) : rows === 0 ? (
+          <p className="gw-ptable__empty dt-muted">{t("gateway:policies.none")}</p>
         ) : (
-          rows === 0 && <p className="dt-muted">{t("gateway:policies.none")}</p>
+          shown === 0 && <p className="gw-ptable__empty dt-muted">{t("resources:table.noMatches", { search })}</p>
         )}
       </>
     );
@@ -167,11 +198,22 @@ export function PoliciesPage({ clusterId }: PageProps) {
 
   return (
     <div className="gw-page">
-      <header className="gw-page__header">
-        <h2 className="gw-page__title">{title}</h2>
-        <NamespaceFilter clusterId={clusterId} />
+      <header className="rt__header gw-page__header">
+        <h2 className="rt__title">{title}</h2>
+        {count && <span className="rt__count">{count}</span>}
+        <span className="gw-page__tools">
+          <NamespaceFilter clusterId={clusterId} />
+          <input
+            className="main__search"
+            type="search"
+            value={search}
+            placeholder={t("gateway:policies.searchPlaceholder")}
+            aria-label={t("resources:table.search")}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </span>
       </header>
-      <div className="gw-page__body">{body}</div>
+      <div className="gw-page__body gw-page__body--table">{body}</div>
     </div>
   );
 }

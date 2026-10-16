@@ -185,7 +185,11 @@ describe("Exposed by, on a Service", () => {
     const block = await within(section("gatewayExposedBy")).findByRole("table");
     expect(rowsOf(block)).toEqual([
       [
-        "http://api.example.com/apihttp://api.example.com/healthzhttp://api.example.org/apihttp://api.example.org/healthz",
+        // Each way in with the rest of its match and the Service's share of a split rule.
+        "http://api.example.com/api · header x-env=prod · 10%" +
+          "http://api.example.org/api · header x-env=prod · 10%" +
+          "http://api.example.com/healthz · GET" +
+          "http://api.example.org/healthz · GET",
         "HTTPRoute api",
         "infra/public-gw / http",
         "Serving",
@@ -318,7 +322,9 @@ function outline(node: ReturnType<typeof gatewayTopology> | null, level = 0): st
         ? `rule${node.rule.index + 1}`
         : node.type === "backend"
           ? `${node.mirror ? "mirror " : ""}${node.backend.name}`
-          : node.ref.name;
+          : node.type === "notAttached"
+            ? "Not attached"
+            : node.ref.name;
   const label = node.type === "rule" ? name : `${node.type} ${name}`;
   const line = `${"  ".repeat(level)}${label} ${node.health}${node.reason ? ` ${node.reason}` : ""}`;
   return [line, ...node.children.flatMap((c) => outline(c, level + 1))];
@@ -336,7 +342,8 @@ describe("the topology model", () => {
   it("Gateway → listeners (each one) → routes on them → rules → backends, with health and reasons", () => {
     const tree = gatewayTopology(gateway, { routes: ROUTES(), servicesIn, grantsIn: () => [], readiness });
     expect(outline(tree)).toEqual([
-      "gateway public-gw ok",
+      // The Gateway is as healthy as its listeners: https-shop is broken.
+      "gateway public-gw problem ListenersBroken",
       "  listener http ok",
       "    route api ok",
       // api-v1 has 1 of 2 pods ready.
@@ -361,20 +368,23 @@ describe("the topology model", () => {
     ]);
   });
 
-  it("routes naming the Gateway that sit on no listener hang under it, with the reason", () => {
+  it("routes the Gateway did not accept are gathered under Not attached, with the reason and no rules", () => {
     const tree = gatewayTopology(gatewayInternal, { routes: ROUTES(), servicesIn, grantsIn: () => [], readiness });
-    expect(outline(tree).filter((l) => !l.startsWith("    "))).toEqual([
+    expect(outline(tree).filter((l) => !l.startsWith("      "))).toEqual([
       "gateway internal ok",
       "  listener http ok",
-      "  route api problem NoMatchingListenerHostname",
-      "  route postgres problem NotAllowedByListeners",
+      "  notAttached Not attached problem",
+      "    route api problem NoMatchingListenerHostname",
+      "    route postgres problem NotAllowedByListeners",
     ]);
+    const group = tree.children.find((c) => c.type === "notAttached")!;
+    expect(group.children.every((r) => r.children.length === 0)).toBe(true);
   });
 
   it("Only problems keeps the paths to broken nodes", () => {
     const tree = gatewayTopology(gateway, { routes: ROUTES(), servicesIn, grantsIn: () => [], readiness });
     expect(outline(onlyProblems(tree))).toEqual([
-      "gateway public-gw ok",
+      "gateway public-gw problem ListenersBroken",
       "  listener http ok",
       "    route legacy-bridge problem RefNotPermitted",
       "      rule1 problem RefNotPermitted",

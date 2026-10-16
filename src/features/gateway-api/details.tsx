@@ -6,7 +6,7 @@
 //   ReferenceGrant — who may refer to what, as a sentence and two tables;
 //   BackendTLSPolicy — targets, validation and the status per Gateway.
 // Conditions and YAML are the panel's own sections.
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject } from "../../api";
 import { Button } from "../../components";
@@ -15,7 +15,8 @@ import { findKind, ObjectLink, status, StatusText, useClusterKinds } from "../..
 import type { Tone } from "../../resources/status";
 import { Block, chips, Fields, toYaml, type FieldRow } from "../details";
 import { HEALTH_TONE, parentText, statusMark } from "./columns";
-import { everywhere, servedKind, useBackendState, useGrants, useServedRoutes } from "./hooks";
+import { gatewayRoutes } from "./exposure";
+import { everywhere, servedKind, useBackendState, useGrants, useServedRoutes, type ServedRoutes } from "./hooks";
 import {
   apiVersionFor,
   attachedRouteCount,
@@ -49,7 +50,6 @@ import {
   policyTargets,
   REFERENCE_GRANT,
   referenceGrantFor,
-  routeAttachedTo,
   routeHostnames,
   routeRules,
   TCP_ROUTE,
@@ -60,6 +60,7 @@ import {
   type Health,
   type ListenerStatus,
   type ObjRef,
+  type ParentStatus,
   type Phrase,
   type RouteRule,
 } from "./model";
@@ -137,11 +138,14 @@ export function ProblemBanner({
   title,
   condition,
   health = "problem",
+  brief,
   children,
 }: {
   title: string;
   condition: Condition | undefined;
   health?: Health;
+  /** A one-line pointer in place of the explanation and the message, when they are shown elsewhere. */
+  brief?: string;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -149,8 +153,14 @@ export function ProblemBanner({
   return (
     <div className={`gw-problem gw-problem--${health}`} role="note">
       <div className="gw-problem__title">{title}</div>
-      {key && <p className="gw-problem__text">{t(key)}</p>}
-      {condition?.message && <p className="gw-problem__message">{condition.message}</p>}
+      {brief !== undefined ? (
+        <p className="gw-problem__text">{brief}</p>
+      ) : (
+        <>
+          {key && <p className="gw-problem__text">{t(key)}</p>}
+          {condition?.message && <p className="gw-problem__message">{condition.message}</p>}
+        </>
+      )}
       {children}
     </div>
   );
@@ -163,9 +173,17 @@ export function useGrantApiVersion(clusterId: ClusterId): string {
   return `${GATEWAY_GROUP}/${version}`;
 }
 
+type PhraseT = (key: string, params?: Phrase["params"]) => string;
+
+/** One phrase as text, its `parts` translated first. */
+export function phraseText(p: Phrase, t: PhraseT): string {
+  const parts = Object.entries(p.parts ?? {}).map(([name, part]) => [name, phraseText(part, t)] as const);
+  return t(p.key, parts.length > 0 ? { ...p.params, ...Object.fromEntries(parts) } : p.params);
+}
+
 /** The phrases as text: each translated, joined with `separator`. */
-export function phrasesText(phrases: readonly Phrase[], t: (key: string, params?: Phrase["params"]) => string, separator: string) {
-  return phrases.map((p) => t(p.key, p.params)).join(separator);
+export function phrasesText(phrases: readonly Phrase[], t: PhraseT, separator: string) {
+  return phrases.map((p) => phraseText(p, t)).join(separator);
 }
 
 export const MATCH_SEPARATOR = " · ";
@@ -224,26 +242,72 @@ export function LoadingLine({ text }: { text: string }) {
   );
 }
 
-export function SimpleTable({ headers, rows }: { headers: string[]; rows: { key: string; cells: ReactNode[]; className?: string }[] }) {
+/**
+ * `text` with line-break opportunities after each `.` and `/` (not inside `://`), so a hostname or URL in a narrow
+ * column wraps between its labels and path segments, never in the middle of a word.
+ */
+export function breakable(text: string): ReactNode {
+  const parts = text.split(/(?<=[./])(?!\/)/);
+  if (parts.length < 2) return text;
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {i > 0 && <wbr />}
+      {part}
+    </Fragment>
+  ));
+}
+
+/**
+ * How a column of a `SimpleTable` wraps: `nowrap` keeps short values (names, ports, counts) on one line; others wrap
+ * at spaces (and where `breakable` allows), never inside a word.
+ */
+export type ColumnWrap = "nowrap" | undefined;
+
+const NOWRAP: ColumnWrap = "nowrap";
+// Name, port/protocol, hostname, TLS, allowed routes, attached count, status.
+const LISTENER_COLUMNS = [NOWRAP, NOWRAP, undefined, undefined, undefined, NOWRAP, undefined];
+// Kind, name, namespace, listener, status or reason.
+const ROUTE_COLUMNS = [NOWRAP, undefined, NOWRAP, NOWRAP, undefined];
+// Parent, listener, Accepted, ResolvedRefs.
+const PARENT_COLUMNS = [undefined, NOWRAP, undefined, undefined];
+// Name, namespace, addresses, status.
+const CLASS_GATEWAY_COLUMNS = [NOWRAP, NOWRAP, undefined, undefined];
+
+export function SimpleTable({
+  headers,
+  rows,
+  columns = [],
+}: {
+  headers: string[];
+  rows: { key: string; cells: ReactNode[]; className?: string }[];
+  columns?: readonly ColumnWrap[];
+}) {
+  const colClass = (i: number) => (columns[i] ? `gw-col--${columns[i]}` : undefined);
   return (
-    <table className="dt-table">
-      <thead>
-        <tr>
-          {headers.map((h) => (
-            <th key={h}>{h}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.key} className={row.className}>
-            {row.cells.map((c, i) => (
-              <td key={i}>{c}</td>
+    <div className="gw-table-wrap">
+      <table className="dt-table gw-table">
+        <thead>
+          <tr>
+            {headers.map((h, i) => (
+              <th key={h} className={colClass(i)}>
+                {h}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.key} className={row.className}>
+              {row.cells.map((c, i) => (
+                <td key={i} className={colClass(i)}>
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -283,6 +347,7 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
     ...new Set(lst.flatMap((l) => l.certificateRefs.flatMap((r) => (r.namespace && r.namespace !== ns ? [r.namespace] : [])))),
   ].sort();
   const grantsIn = useGrants(clusterId, certNamespaces);
+  const served = useServedRoutes(clusterId);
 
   const banners = lst
     .filter((l) => l.health === "problem")
@@ -318,7 +383,7 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
     cells: [
       l.name,
       `${l.port ?? ""}/${l.protocol}`,
-      l.hostname ?? t("gateway:listener.anyHostname"),
+      l.hostname ? breakable(l.hostname) : t("gateway:listener.anyHostname"),
       l.certificateRefs.length > 0 ? (
         <span className="dt-links">
           {l.certificateRefs.map((r) => (r.group === "" && r.kind === "Secret" ? refLink(r, nameFrom(r, ns)) : `${r.kind} ${r.name}`))}
@@ -336,7 +401,9 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
     <>
       <Block
         title={t("gateway:blocks.overview")}
-        actions={<CheckRequestButton onClick={() => openRequestCheck(clusterId, { form: gatewayPrefill(gateway) })} />}
+        actions={
+          <CheckRequestButton onClick={() => openRequestCheck(clusterId, { form: gatewayPrefill(gateway, served.routes) })} />
+        }
       >
         <div className="gw-cards">
           <Card label={t("gateway:cards.class")}>
@@ -375,66 +442,84 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
             t("gateway:listener.attached"),
             t("gateway:listener.status"),
           ]}
+          columns={LISTENER_COLUMNS}
           rows={rows}
         />
       </Block>
-      <AttachedRoutes clusterId={clusterId} gateway={gateway} />
+      <AttachedRoutes gateway={gateway} served={served} />
     </>
   );
 }
 
-/** Routes of every served kind, in every namespace, that name `gateway` as a parent. */
-function AttachedRoutes({ clusterId, gateway }: { clusterId: ClusterId; gateway: KubeObject }) {
+/** The reason a parent did not accept a route, its explanation and the controller's message in the tooltip. */
+function RefusalCell({ parent }: { parent: ParentStatus }) {
   const { t } = useTranslation();
-  const { routes, loading } = useServedRoutes(clusterId);
+  const condition = parent.accepted;
+  const reason = parent.health === "pending" || !condition ? t("gateway:route.noStatus") : (condition.reason ?? condition.status);
+  const explained = explainReason(condition?.reason);
+  const title = [explained ? t(explained) : undefined, condition?.message].filter(Boolean).join("\n") || undefined;
+  return (
+    <span title={title}>
+      <StatusText value={reason} tone={HEALTH_TONE[parent.health]} />
+    </span>
+  );
+}
 
-  const rows = routes.flatMap(({ kind, items }) =>
-    items.flatMap((route) => {
-      const parent = routeAttachedTo(route, gateway);
-      if (!parent) return [];
-      const ns = route.metadata?.namespace ?? null;
-      const name = route.metadata?.name ?? "";
-      return [
-        {
-          key: `${kind.kind}/${ns ?? ""}/${name}`,
-          cells: [
-            kind.kind,
-            refLink({ group: GATEWAY_GROUP, kind: kind.kind, name, namespace: ns }),
-            ns,
-            parent.ref.sectionName ?? t("gateway:route.anyListener"),
-            <StatusText key="s" value={parentText(parent)} tone={HEALTH_TONE[parent.health]} />,
-          ],
-        },
-      ];
-    }),
-  ).sort((a, b) => a.key.localeCompare(b.key));
+/**
+ * The routes of every served kind, in every namespace, that name `gateway` as a parent: those it accepted, one row per
+ * listener they sit on (as many as the "Attached routes" card counts), and those it did not, with the reason.
+ */
+function AttachedRoutes({ gateway, served }: { gateway: KubeObject; served: ServedRoutes }) {
+  const { t } = useTranslation();
+  const { routes, loading } = served;
+  const { attached, notAttached } = gatewayRoutes(gateway, routes);
+  const routeCells = (kind: string, route: KubeObject) => {
+    const ns = route.metadata?.namespace ?? null;
+    const name = route.metadata?.name ?? "";
+    return [kind, refLink({ group: GATEWAY_GROUP, kind, name, namespace: ns }), ns];
+  };
+  const keyOf = (kind: string, route: KubeObject) => `${kind}/${route.metadata?.namespace ?? ""}/${route.metadata?.name ?? ""}`;
+  const attachedRows = attached.map(({ kind, route, parent, listener }) => ({
+    key: `${keyOf(kind.kind, route)}/${listener.name}`,
+    className: rowClass(parent.health),
+    cells: [
+      ...routeCells(kind.kind, route),
+      listener.name,
+      <StatusText key="s" value={parentText(parent)} tone={HEALTH_TONE[parent.health]} />,
+    ],
+  }));
+  const refusedRows = notAttached.map(({ kind, route, parent }, i) => ({
+    key: `${keyOf(kind.kind, route)}/${i}`,
+    className: rowClass(parent.health),
+    cells: [...routeCells(kind.kind, route), parent.ref.sectionName ?? t("gateway:route.anyListener"), <RefusalCell key="r" parent={parent} />],
+  }));
+  const headers = [t("gateway:attached.kind"), t("gateway:attached.name"), t("gateway:attached.namespace"), t("gateway:attached.listener")];
 
   return (
-    <Block title={t("gateway:blocks.attachedRoutes")}>
-      {rows.length > 0 && (
-        <SimpleTable
-          headers={[
-            t("gateway:attached.kind"),
-            t("gateway:attached.name"),
-            t("gateway:attached.namespace"),
-            t("gateway:attached.listener"),
-            t("gateway:attached.status"),
-          ]}
-          rows={rows}
-        />
+    <>
+      <Block title={t("gateway:blocks.attachedRoutesCount", { count: attachedRows.length })}>
+        {attachedRows.length > 0 && (
+          <SimpleTable headers={[...headers, t("gateway:attached.status")]} columns={ROUTE_COLUMNS} rows={attachedRows} />
+        )}
+        {loading ? (
+          <LoadingLine text={t("gateway:attached.loading")} />
+        ) : (
+          attachedRows.length === 0 && <p className="dt-muted">{t("gateway:attached.none")}</p>
+        )}
+      </Block>
+      {refusedRows.length > 0 && (
+        <Block title={t("gateway:blocks.notAttached", { count: refusedRows.length })}>
+          <SimpleTable headers={[...headers, t("gateway:attached.reason")]} columns={ROUTE_COLUMNS} rows={refusedRows} />
+        </Block>
       )}
-      {loading ? (
-        <LoadingLine text={t("gateway:attached.loading")} />
-      ) : (
-        rows.length === 0 && <p className="dt-muted">{t("gateway:attached.none")}</p>
-      )}
-    </Block>
+    </>
   );
 }
 
 // ---------- Routes ----------
 
-function ParentsBlock({ route }: { route: KubeObject }) {
+/** Backend problems the rules show with their own banner: a parent's ResolvedRefs for one of them only points there. */
+function ParentsBlock({ route, ruleReasons }: { route: KubeObject; ruleReasons: ReadonlySet<string> }) {
   const { t } = useTranslation();
   const ns = route.metadata?.namespace ?? null;
   const parents = parentStatuses(route);
@@ -458,26 +543,30 @@ function ParentsBlock({ route }: { route: KubeObject }) {
           t("gateway:route.accepted"),
           t("gateway:route.resolvedRefs"),
         ]}
+        columns={PARENT_COLUMNS}
         rows={rows}
       />
-      {problems.map((p, i) => (
-        <ProblemBanner key={i} condition={p.problem} title={parentText(p)} />
-      ))}
+      {problems.map((p, i) => {
+        const shownInRule = p.problem?.type === "ResolvedRefs" && ruleReasons.has(p.problem.reason ?? "");
+        return (
+          <ProblemBanner
+            key={i}
+            condition={p.problem}
+            title={parentText(p)}
+            brief={
+              shownInRule
+                ? t("gateway:route.seeRule", { condition: p.problem?.type, reason: p.problem?.reason })
+                : undefined
+            }
+          />
+        );
+      })}
     </Block>
   );
 }
 
-function RulesBlock({
-  clusterId,
-  route,
-  kind,
-}: {
-  clusterId: ClusterId;
-  route: KubeObject;
-  kind: KindRef;
-}) {
-  const { t } = useTranslation();
-  const grantVersion = useGrantApiVersion(clusterId);
+/** The rules of a route and what is wrong with each backend (Services, slices and grants of their namespaces). */
+function useRuleState(clusterId: ClusterId, route: KubeObject, kind: KindRef) {
   const ns = route.metadata?.namespace ?? null;
   const rules = routeRules(route, kind);
   const parents = parentStatuses(route);
@@ -488,20 +577,39 @@ function RulesBlock({
   const crossNamespaces = [...new Set(all.flatMap((b) => (b.namespace && b.namespace !== ns ? [b.namespace] : [])))].sort();
   const { servicesIn, readiness } = useBackendState(clusterId, namespaces);
   const grantsIn = useGrants(clusterId, crossNamespaces);
-  const matched = isKind(kind, HTTP_ROUTE, GRPC_ROUTE);
   const context = { routeNamespace: ns, routeKind: kind.kind, parents, servicesIn, grantsIn };
+  const issueOf = (b: BackendRef) => backendIssue(b, context);
+  const reasons = new Set(all.flatMap((b) => issueOf(b) ?? []));
+  return { rules, issueOf, readiness, reasons };
+}
+
+function RulesBlock({
+  clusterId,
+  route,
+  kind,
+  state,
+}: {
+  clusterId: ClusterId;
+  route: KubeObject;
+  kind: KindRef;
+  state: ReturnType<typeof useRuleState>;
+}) {
+  const { t } = useTranslation();
+  const grantVersion = useGrantApiVersion(clusterId);
+  const ns = route.metadata?.namespace ?? null;
+  const matched = isKind(kind, HTTP_ROUTE, GRPC_ROUTE);
 
   return (
     <Block title={t("gateway:blocks.rules")}>
-      {rules.map((rule) => (
+      {state.rules.map((rule) => (
         <RuleView
           key={rule.index}
           rule={rule}
           ns={ns}
           kind={kind}
           matched={matched}
-          issueOf={(b) => backendIssue(b, context)}
-          readiness={readiness}
+          issueOf={state.issueOf}
+          readiness={state.readiness}
           grantVersion={grantVersion}
         />
       ))}
@@ -611,6 +719,7 @@ function RuleView({
 function RouteDetails({ clusterId, route, kind }: { clusterId: ClusterId; route: KubeObject; kind: KindRef }) {
   const { t } = useTranslation();
   const hostnames = routeHostnames(route);
+  const state = useRuleState(clusterId, route, kind);
   const hasHostnames = !isKind(kind, TCP_ROUTE, UDP_ROUTE);
   const checkable = isKind(kind, HTTP_ROUTE, GRPC_ROUTE);
   const check = () =>
@@ -629,8 +738,8 @@ function RouteDetails({ clusterId, route, kind }: { clusterId: ClusterId; route:
           {chips(hostnames) ?? <p className="dt-muted">{t("gateway:route.anyHostname")}</p>}
         </Block>
       )}
-      <ParentsBlock route={route} />
-      <RulesBlock clusterId={clusterId} route={route} kind={kind} />
+      <ParentsBlock route={route} ruleReasons={state.reasons} />
+      <RulesBlock clusterId={clusterId} route={route} kind={kind} state={state} />
     </>
   );
 }
@@ -707,6 +816,7 @@ function ClassGateways({ clusterId, gatewayClass }: { clusterId: ClusterId; gate
             t("gateway:columns.addresses"),
             t("gateway:attached.status"),
           ]}
+          columns={CLASS_GATEWAY_COLUMNS}
           rows={rows}
         />
       )}

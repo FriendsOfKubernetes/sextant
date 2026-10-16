@@ -109,6 +109,28 @@
   overflow-wrap: anywhere;
 }
 
+/* A long annotation value: "Show" and "Copy" on the key's line, the value below once shown. */
+.dt-annotations__long {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  vertical-align: top;
+  max-width: 100%;
+}
+
+.dt-annotations__tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.dt-annotations__value--long {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .dt-notice {
   margin: 8px 0;
   padding: 8px 12px;

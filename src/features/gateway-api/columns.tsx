@@ -1,4 +1,5 @@
-// Columns of the Gateway API tables. Gateway: class, addresses, listeners programmed ("2/3"), attached routes. Routes:
+// Columns of the Gateway API tables. Gateway: class, addresses, listeners programmed ("2/3"), attached routes, status
+// ("Programmed" or the problem). Routes:
 // hostnames (the first + "+N"), parents with their status ("public-gw ✓", "internal ✗ NoMatchingListenerHostname"),
 // rule count. GatewayClass, ReferenceGrant and BackendTLSPolicy: what tells them apart.
 import type { KindRef, KubeObject } from "../../api";
@@ -8,7 +9,9 @@ import { i18n } from "../../i18n";
 import {
   attachedRouteCount,
   controllerName,
+  explainReason,
   gatewayAddresses,
+  gatewayHealth,
   gatewayClassHealth,
   gatewayClassName,
   grantFrom,
@@ -50,10 +53,23 @@ export function parentText(parent: ParentStatus): string {
   return [parent.ref.name, mark, reason].filter(Boolean).join(" ");
 }
 
+/** Each parent's full status, the plain-language explanation of its reason and the controller's message. */
+export function parentsTooltip(parents: readonly ParentStatus[]): string {
+  return parents
+    .map((p) => {
+      const explained = p.health === "ok" ? undefined : explainReason(p.problem?.reason);
+      return [parentText(p), explained ? i18n.t(explained) : undefined, p.health === "ok" ? undefined : p.problem?.message]
+        .filter(Boolean)
+        .join("\n");
+    })
+    .join("\n\n");
+}
+
 function ParentsCell({ route }: { route: KubeObject }) {
   const parents = parentStatuses(route);
+  // The cell is cut to the column: the tooltip has every parent in full.
   return (
-    <span className="rt-status-list">
+    <span className="rt-status-list" title={parentsTooltip(parents)}>
       {parents.map((p, i) => (
         <StatusText key={`${i}:${p.ref.name}`} value={parentText(p)} tone={HEALTH_TONE[p.health]} />
       ))}
@@ -86,6 +102,28 @@ export function routeColumns(kind: KindRef): ColumnDef[] {
   return [nameColumn, namespaceColumn, ...hostnames, parentsColumn, rulesColumn, ageColumn];
 }
 
+/** "Programmed", or what is wrong: "Listener https: InvalidCertificateRef", "Programmed: AddressNotAssigned". */
+export function gatewayStatusText(gateway: KubeObject): string {
+  const { health, problem, listener } = gatewayHealth(gateway);
+  if (health === "ok") return i18n.t("gateway:gatewayStatus.programmed");
+  const reason = problem?.reason ?? (health === "pending" ? i18n.t("gateway:health.pending") : problem?.type ?? "");
+  if (listener) return i18n.t("gateway:gatewayStatus.listener", { name: listener, reason });
+  return problem ? `${problem.type}: ${reason}` : reason;
+}
+
+function GatewayStatusCell({ gateway }: { gateway: KubeObject }) {
+  const { health, problem } = gatewayHealth(gateway);
+  const explained = health === "ok" ? undefined : explainReason(problem?.reason);
+  const title = [gatewayStatusText(gateway), explained ? i18n.t(explained) : undefined, problem?.message]
+    .filter(Boolean)
+    .join("\n");
+  return (
+    <span title={title}>
+      <StatusText value={gatewayStatusText(gateway)} tone={HEALTH_TONE[health]} />
+    </span>
+  );
+}
+
 /** "2/3", red when a listener is not programmed. */
 export function listenersText(gateway: KubeObject): string {
   const { programmed, total } = listenersProgrammed(gateway);
@@ -105,6 +143,10 @@ export const gatewayColumns: ColumnDef[] = [
     },
   }),
   gwColumn("attachedRoutes", attachedRouteCount, { width: "120px" }),
+  gwColumn("status", gatewayStatusText, {
+    width: "minmax(140px, 2fr)",
+    render: (o) => <GatewayStatusCell gateway={o} />,
+  }),
   ageColumn,
 ];
 

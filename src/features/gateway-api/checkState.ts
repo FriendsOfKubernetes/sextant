@@ -3,12 +3,12 @@
 // parsed into the engine's input, and the URL to try for a listener.
 //
 //   openRequestCheck(clusterId, prefill)   // fills the form, shows the page (and closes the details panel)
-//   gatewayPrefill(gateway)                // the URL of the Gateway's most useful HTTP(S) listener
+//   gatewayPrefill(gateway, routes)        // a URL a route attached to the Gateway serves (else its best listener)
 //   routePrefill(route, rows, gateways)    // the URL of a listener the route is accepted on (from `hostnameMap`)
 //   rowPrefill(row, gateways)              // the URL of a hostname-map row
 //   parseHeaderLines(text)                 // `name: value` lines → headers, or the lines that are not
 import { create } from "zustand";
-import type { ClusterId, KubeObject } from "../../api";
+import type { ClusterId, KindRef, KubeObject } from "../../api";
 import { useAppStore } from "../../app/store";
 import { status } from "../../resources";
 import type {
@@ -21,7 +21,8 @@ import type {
   RouteId,
   RouteKindName,
 } from "./matching";
-import { gatewayAddresses, listenerStatuses, type ListenerStatus } from "./model";
+import { gatewayRoutes } from "./exposure";
+import { gatewayAddresses, GATEWAY_GROUP, listenerStatuses, type ListenerStatus } from "./model";
 
 const { arr, get, str } = status;
 
@@ -170,12 +171,41 @@ function best<T>(items: readonly T[], rank: (item: T) => number): T | undefined 
   return items.reduce<T | undefined>((top, item) => (top === undefined || rank(item) > rank(top) ? item : top), undefined);
 }
 
-/** The form for a Gateway: its most useful HTTP or HTTPS listener (none: its address over HTTP). */
-export function gatewayPrefill(gateway: KubeObject): Partial<RequestForm> {
+/**
+ * The form for a Gateway: a request a route attached to it serves — the hostname it serves there and a path it
+ * matches, on the most useful route (healthy first, then an HTTPRoute, then by its listener); without one (`routes`
+ * not known yet, or none attached) its most useful HTTP or HTTPS listener (none: its address over HTTP).
+ */
+export function gatewayPrefill(
+  gateway: KubeObject,
+  routes: readonly { kind: Pick<KindRef, "group" | "kind">; items: readonly KubeObject[] }[] = [],
+): Partial<RequestForm> {
   const address = gatewayAddresses(gateway)[0] ?? FALLBACK_HOST;
+  const checked = gatewayRoutes(gateway, routes).attached.filter(
+    ({ kind, listener }) => kind.group === GATEWAY_GROUP && isChecked(kind.kind) && isHttp(listener.protocol),
+  );
+  const route = best(
+    checked,
+    ({ kind, parent, listener, hostnames }) =>
+      (parent.health === "ok" ? 10_000 : 0) +
+      (kind.kind === "HTTPRoute" ? 1000 : 0) +
+      listenerRank({ ...listener, hostname: hostnames[0] ?? listener.hostname }),
+  );
+  if (route) {
+    const kind = route.kind.kind as RouteKindName;
+    const grpc = kind === "GRPCRoute";
+    const hostname = route.hostnames[0] ?? route.listener.hostname;
+    return {
+      method: grpc ? "POST" : "GET",
+      grpc,
+      url: listenerUrl({ ...route.listener, hostname }, address, pathOf(kind, route.route)),
+    };
+  }
   const listener = best(listenerStatuses(gateway).filter((l) => isHttp(l.protocol)), listenerRank);
   return { method: "GET", grpc: false, url: listener ? listenerUrl(listener, address) : `http://${address}/` };
 }
+
+const isChecked = (kind: string): kind is RouteKindName => (CHECKED_ROUTE_KINDS as readonly string[]).includes(kind);
 
 /** `/pkg.Service/Method` of a GRPCRoute's first match naming both, else `/`. */
 function grpcPath(route: KubeObject | undefined): string {

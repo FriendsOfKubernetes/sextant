@@ -216,5 +216,15 @@
     "subjects": "Subjects"
   },
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "annotations": {
+    "show": "Show",
+    "hide": "Hide",
+    "showValue": "Show value of {{key}}",
+    "hideValue": "Hide value of {{key}}",
+    "copy": "Copy value of {{key}}",
+    "copied": "Copied",
+    "length_one": "{{count}} character",
+    "length_other": "{{count}} characters"
+  }
 }

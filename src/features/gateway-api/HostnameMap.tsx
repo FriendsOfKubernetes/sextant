@@ -6,7 +6,7 @@ import { useMemo, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { StatusText } from "../../resources";
 import type { CheckData } from "./checkData";
-import { gatewayRef, LoadingLine, refLink } from "./details";
+import { breakable, gatewayRef, LoadingLine, refLink } from "./details";
 import { hostnameMap, type HostnameConflict, type HostnameRow, type NamespacedName, type RouteId } from "./matching";
 import { backendText, GATEWAY_GROUP } from "./model";
 
@@ -71,7 +71,7 @@ export function HostnameMap({ data, onCheck }: { data: CheckData; onCheck: (row:
         {conflicted > 0 && <StatusText value={t("gateway:hostnames.conflictCount", { count: conflicted })} tone="warning" />}
       </div>
       {shown.length > 0 && (
-        <table className="dt-table gw-hosts__table" aria-label={t("gateway:hostnames.label")}>
+        <table className="dt-table gw-table gw-hosts__table" aria-label={t("gateway:hostnames.label")}>
           <thead>
             <tr>
               <th>{t("gateway:hostnames.hostname")}</th>
@@ -94,7 +94,7 @@ export function HostnameMap({ data, onCheck }: { data: CheckData; onCheck: (row:
                       title={t("gateway:hostnames.check", { host })}
                       onClick={() => onCheck(row)}
                     >
-                      {host}
+                      {breakable(host)}
                     </button>
                   </td>
                   <td>

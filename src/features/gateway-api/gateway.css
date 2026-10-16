@@ -57,6 +57,31 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * The section's tables in the details panel: a word (a name, a reason) never breaks in the middle — hostnames and URLs
+ * wrap at their dots and slashes (`breakable`), short columns stay on one line, and a table too wide for the panel
+ * scrolls instead. The first column keeps room for the red mark of a broken row.
+ */
+.gw-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.gw-table th,
+.gw-table td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.gw-table th:first-child,
+.gw-table td:first-child {
+  padding-left: 8px;
+}
+
+.gw-col--nowrap {
+  white-space: nowrap;
+}
+
 .gw-row--broken td:first-child {
   box-shadow: inset 3px 0 0 var(--color-danger);
 }
@@ -143,6 +168,53 @@
   padding: 12px 16px;
 }
 
+.gw-page__tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-left: auto;
+}
+
+/* The Policies table, styled like the resource tables: full width, one line per row, the header kept in view. */
+.gw-page__body--table {
+  padding: 0;
+}
+
+.gw-ptable {
+  font-size: inherit;
+}
+
+.gw-ptable th,
+.gw-ptable td {
+  height: 32px;
+  padding: 0 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.gw-ptable th:first-child,
+.gw-ptable td:first-child {
+  padding-left: 16px;
+}
+
+.gw-ptable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-main);
+  font-weight: 600;
+}
+
+.gw-ptable tbody tr:hover {
+  background: var(--color-hover);
+}
+
+.gw-ptable__empty {
+  padding: 12px 16px;
+}
+
 /* Reverse links: external addresses, one per line. */
 .gw-addresses {
   display: flex;
@@ -151,9 +223,17 @@
 }
 
 .gw-address {
-  font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 12px;
-  overflow-wrap: anywhere;
+}
+
+.gw-address__url {
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* A condition ("header x-env=prod") or a share stays in one piece. */
+.gw-address__extra {
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 /* The topology tree of a Gateway (laid out like the Argo CD resource tree). */
@@ -182,6 +262,18 @@
 }
 
 .gw-tree tr[data-level="1"] td {
+  font-weight: 600;
+}
+
+/* The tab body has no padding of its own (it is made for extension frames). */
+.gw-topology {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 16px 16px;
+}
+
+.gw-tree__group .gw-tree__label {
   font-weight: 600;
 }
 
@@ -386,6 +478,15 @@
 
 .gw-hosts__row {
   cursor: pointer;
+}
+
+/* The page is wide: a hostname stays on one line, left-aligned like the other cells. */
+.gw-hosts__table td:first-child {
+  white-space: nowrap;
+}
+
+.gw-hosts__host {
+  text-align: left;
 }
 
 .gw-row--conflict td {

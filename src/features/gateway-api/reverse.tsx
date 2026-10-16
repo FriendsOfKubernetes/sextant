@@ -14,7 +14,7 @@ import { kindKey, ObjectLink, StatusText, useClusterKinds } from "../../resource
 import type { Tone } from "../../resources/status";
 import { Block } from "../details";
 import { HEALTH_TONE, policyStatusText } from "./columns";
-import { healthText, nameFrom, refLink, rowClass, SimpleTable } from "./details";
+import { breakable, healthText, MATCH_SEPARATOR, nameFrom, phraseText, refLink, rowClass, SimpleTable } from "./details";
 import {
   ingressExposures,
   listenersUsingSecret,
@@ -23,6 +23,7 @@ import {
   serviceExposures,
   type Exposure,
   type ExposureState,
+  type ExposureTarget,
 } from "./exposure";
 import { everywhere, inNamespaces, INGRESS, servedKind, useGrants, useServedRoutes } from "./hooks";
 import { explainReason, GATEWAY, GATEWAY_GROUP, parentStatuses, policyHealth, ROUTE_KINDS, type Health, type ObjRef } from "./model";
@@ -51,16 +52,29 @@ function ExposureStatus({ exposure }: { exposure: Pick<Exposure, "state" | "reas
   );
 }
 
-function Addresses({ values }: { values: string[] }) {
+/**
+ * The ways in, one per line: the address, then what else the request needs there and the Service's share of the
+ * rule's traffic — `https://shop.example.com/api · header x-env=prod · 90%`.
+ */
+function Addresses({ targets }: { targets: readonly ExposureTarget[] }) {
   const { t } = useTranslation();
-  if (values.length === 0) return <span className="dt-muted">{t("gateway:exposedBy.noAddress")}</span>;
+  if (targets.length === 0) return <span className="dt-muted">{t("gateway:exposedBy.noAddress")}</span>;
   return (
     <span className="gw-addresses">
-      {values.map((v) => (
-        <span key={v} className="gw-address">
-          {v}
-        </span>
-      ))}
+      {targets.map((target, i) => {
+        const extra = [
+          ...target.conditions.map((c) => phraseText(c, t)),
+          ...(target.percent !== undefined ? [t("gateway:exposedBy.share", { percent: target.percent })] : []),
+        ];
+        return (
+          <span key={`${i}:${target.url}`} className="gw-address">
+            <span className="gw-address__url">{breakable(target.url)}</span>
+            {extra.map((part, j) => (
+              <span key={j} className="gw-address__extra">{`${MATCH_SEPARATOR}${part}`}</span>
+            ))}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -107,7 +121,7 @@ function ExposedBy({ clusterId, service }: { clusterId: ClusterId; service: Kube
       key: e.key,
       className: rowClass(e.health),
       cells: [
-        <Addresses key="a" values={e.addresses} />,
+        <Addresses key="a" targets={e.targets} />,
         <span key="r" className="dt-links">
           <span className="dt-muted">{e.routeKind}</span> {refLink(e.route, nameFrom(e.route, ns))}
         </span>,
@@ -118,7 +132,7 @@ function ExposedBy({ clusterId, service }: { clusterId: ClusterId; service: Kube
     ...viaIngress.map((e) => ({
       key: `ingress:${e.key}`,
       cells: [
-        <Addresses key="a" values={[e.address]} />,
+        <Addresses key="a" targets={[{ url: e.address, conditions: [] }]} />,
         <span key="r" className="dt-links">
           <span className="dt-muted">{e.ingress.kind}</span> {refLink(e.ingress)}
         </span>,

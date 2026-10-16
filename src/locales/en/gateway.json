@@ -20,7 +20,8 @@
     "name": "Name",
     "namespace": "Namespace",
     "targets": "Targets",
-    "status": "Status"
+    "status": "Status",
+    "searchPlaceholder": "Search by name, namespace, kind or target…"
   },
   "columns": {
     "controller": "Controller",
@@ -51,7 +52,8 @@
   "blocks": {
     "overview": "Overview",
     "listeners": "Listeners",
-    "attachedRoutes": "Attached routes",
+    "attachedRoutesCount": "Attached routes ({{count}})",
+    "notAttached": "Not attached ({{count}})",
     "parents": "Parents",
     "rules": "Rules",
     "gateways": "Gateways of this class",
@@ -85,6 +87,10 @@
   },
   "gatewayProblem": "Gateway: {{condition}} is {{status}} ({{reason}})",
   "classProblem": "{{condition}} is {{status}} ({{reason}})",
+  "gatewayStatus": {
+    "programmed": "Programmed",
+    "listener": "Listener {{name}}: {{reason}}"
+  },
   "route": {
     "hostnames": "Hostnames",
     "anyHostname": "Any hostname the listener accepts",
@@ -106,7 +112,8 @@
     "notFound": "not found",
     "notPermitted": "not permitted",
     "invalidKind": "kind not supported",
-    "brokenBackend": "{{backend}}: {{problem}}"
+    "brokenBackend": "{{backend}}: {{problem}}",
+    "seeRule": "{{condition}}: {{reason}} — see the rule below"
   },
   "attached": {
     "kind": "Kind",
@@ -114,6 +121,7 @@
     "namespace": "Namespace",
     "listener": "Listener",
     "status": "Status",
+    "reason": "Reason",
     "none": "No routes attach to this Gateway.",
     "loading": "Looking for routes…"
   },
@@ -191,9 +199,12 @@
     "responseSetHeader": "response: set header {{name}}={{value}}",
     "responseAddHeader": "response: add header {{name}}={{value}}",
     "responseRemoveHeader": "response: remove header {{name}}",
-    "redirect": "redirect → {{target}} {{code}}",
-    "redirectPath": "redirect path {{value}}",
-    "redirectPrefix": "redirect prefix {{value}}",
+    "redirect": "Redirect to {{scheme}}://{{host}}{{port}}{{path}} ({{code}})",
+    "value": "{{value}}",
+    "sameScheme": "<same scheme>",
+    "sameHost": "<same host>",
+    "samePath": "<same path>",
+    "pathPrefixReplaced": "{{value}}<rest of the path>",
     "rewriteHost": "rewrite host {{host}}",
     "rewritePath": "rewrite path {{value}}",
     "rewritePrefix": "rewrite prefix {{value}}",
@@ -209,6 +220,7 @@
     "status": "Status",
     "noAddress": "none",
     "noLoadBalancer": "No address yet",
+    "share": "{{percent}}%",
     "state": {
       "serving": "Serving",
       "mirror": "Mirrored",
@@ -241,13 +253,16 @@
     "listener": "Listener",
     "mirror": "Mirror",
     "noProblems": "Nothing is broken on this Gateway.",
+    "notAttached": "Not attached",
+    "notAttachedHint": "routes this Gateway did not accept",
     "reasons": {
       "NoBackends": "no backends",
       "NoEndpoints": "no endpoints",
       "PodsNotReady": "no pod ready",
       "BackendNotFound": "backend not found",
       "RefNotPermitted": "not permitted (RefNotPermitted)",
-      "InvalidKind": "kind not supported"
+      "InvalidKind": "kind not supported",
+      "ListenersBroken": "{{count}} of {{total}} listeners broken"
     }
   },
   "check": {
@@ -353,7 +368,7 @@
       "lessSpecificListener": "Fits, but a listener with a more specific hostname takes the request",
       "otherRouteKind": "A GRPCRoute does not serve a plain HTTP request",
       "notAttached": "Attached to another listener of the Gateway",
-      "notAccepted": "Not accepted on this listener",
+      "notAccepted": "Not accepted by the Gateway",
       "namespaceNotAllowed": "The listener does not allow routes from its namespace",
       "kindNotAllowed": "The listener does not allow this route kind",
       "noHostnameIntersection": "None of its hostnames fits the hostname of the listener",

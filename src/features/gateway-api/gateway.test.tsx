@@ -81,8 +81,8 @@ function cell(obj: KubeObject, id: string): HTMLElement {
 }
 
 describe("Gateway API tables", () => {
-  it("Gateway: class, addresses, listeners programmed, attached routes", () => {
-    expect(ids(gateway)).toEqual(["name", "namespace", "class", "addresses", "listeners", "attachedRoutes", "age"]);
+  it("Gateway: class, addresses, listeners programmed, attached routes, status", () => {
+    expect(ids(gateway)).toEqual(["name", "namespace", "class", "addresses", "listeners", "attachedRoutes", "status", "age"]);
     expect(columnOf(gateway, "class").value(gateway)).toBe("eg");
     expect(columnOf(gateway, "addresses").value(gateway)).toBe("172.18.0.200");
     // https-shop is not programmed: its certificate is not permitted.
@@ -90,6 +90,13 @@ describe("Gateway API tables", () => {
     expect(cell(gateway, "listeners").querySelector(".rt-status--danger")).not.toBeNull();
     expect(columnOf(gateway, "attachedRoutes").value(gateway)).toBe(3);
     expect(cell(gatewayInternal, "listeners").querySelector(".rt-status--success")).not.toBeNull();
+    // Status: Programmed, or the problem — the broken listener and its reason, explained in the tooltip.
+    expect(columnOf(gatewayInternal, "status").value(gatewayInternal)).toBe("Programmed");
+    expect(cell(gatewayInternal, "status").querySelector(".rt-status--success")).toHaveTextContent("Programmed");
+    expect(columnOf(gateway, "status").value(gateway)).toBe("Listener https-shop: RefNotPermitted");
+    const status = cell(gateway, "status");
+    expect(status.querySelector(".rt-status--danger")).toHaveTextContent("Listener https-shop: RefNotPermitted");
+    expect(status.querySelector("[title]")).toHaveAttribute("title", expect.stringContaining("no ReferenceGrant in that namespace"));
   });
 
   it("HTTPRoute: hostnames, parents with status, rules", () => {
@@ -470,10 +477,10 @@ describe("details of a Gateway", () => {
     emitSnapshot(wb, await listWatch("GRPCRoute"), [grpcRoute]);
     emitSnapshot(wb, await listWatch("TCPRoute"), [tcpRoute]);
     await waitFor(() => expect(within(section("gatewayApi")).queryByText("Looking for routes…")).toBeNull());
-    expect(tableRows("Attached routes")).toEqual([
-      ["GRPCRoute", "echo", "web", "https", "public-gw ✓"],
+    expect(tableRows("Attached routes (3)")).toEqual([
       ["HTTPRoute", "api", "web", "http", "public-gw ✓"],
       ["HTTPRoute", "legacy-bridge", "web", "http", "public-gw ✗ RefNotPermitted"],
+      ["GRPCRoute", "echo", "web", "https", "public-gw ✓"],
     ]);
   });
 });
@@ -507,7 +514,7 @@ describe("details of an HTTPRoute", () => {
     expect(rule(1)).toHaveTextContent("Exact /healthz · GET → api-v1:8080");
     // A redirect answers by itself: no backends needed.
     expect(rule(2)).toHaveTextContent("PathPrefix /old");
-    expect(rule(2)).toHaveTextContent("redirect → https:// 301");
+    expect(rule(2)).toHaveTextContent("Redirect to https://<same host><same path> (301)");
     expect(rule(2)).not.toHaveTextContent("No backends");
     for (const n of [0, 1, 2]) expect(rule(n)).not.toHaveClass("gw-rule--broken");
   });

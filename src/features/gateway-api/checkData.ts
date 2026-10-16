@@ -1,9 +1,10 @@
 // What the request check matches against, watched only while its page is open: Gateways, HTTPRoutes, GRPCRoutes and
 // ReferenceGrants of the versions the cluster serves (none for a kind it does not serve), Services and EndpointSlices,
-// all in every namespace. A list that is still coming, failed or left namespaces out is not given to the engine, so
+// all in every namespace, and the Namespaces' metadata only (their labels decide `allowedRoutes.namespaces.from:
+// Selector`). A list that is still coming, failed or left namespaces out is not given to the engine, so
 // it never reports a backend missing for lack of data.
 import { useMemo } from "react";
-import { useWatch, type ClusterId, type KubeObject, type WatchState } from "../../api";
+import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
 import { useClusterKinds } from "../../resources";
 import { ENDPOINT_SLICE, everywhere, SERVICE, servedKind } from "./hooks";
 import type { ClusterSnapshot } from "./matching";
@@ -16,6 +17,11 @@ export interface CheckData {
   /** Discovery came and the cluster serves no Gateway. */
   notServed: boolean;
 }
+
+const NAMESPACE: KindRef = { group: "", version: "v1", kind: "Namespace" };
+
+/** Namespaces with their labels: metadata only, no spec or status. */
+const NAMESPACE_LABELS: WatchSpec = { kind: NAMESPACE, namespaces: null, labelSelector: null, fieldSelector: null, metadataOnly: true };
 
 const list = (w: WatchState): KubeObject[] => [...w.items.values()];
 
@@ -36,6 +42,7 @@ export function useCheckData(clusterId: ClusterId): CheckData {
   const grants = useWatch(clusterId, everywhere(grantKind));
   const services = useWatch(clusterId, everywhere(known ? SERVICE : undefined));
   const slices = useWatch(clusterId, everywhere(known ? ENDPOINT_SLICE : undefined));
+  const namespaces = useWatch(clusterId, known ? NAMESPACE_LABELS : null);
 
   const snapshot = useMemo<ClusterSnapshot>(
     () => ({
@@ -45,8 +52,9 @@ export function useCheckData(clusterId: ClusterId): CheckData {
       services: complete(services),
       endpointSlices: complete(slices),
       referenceGrants: grantKind === null ? [] : complete(grants),
+      namespaces: complete(namespaces),
     }),
-    [gateways, httpRoutes, grpcRoutes, grants, services, slices, grantKind],
+    [gateways, httpRoutes, grpcRoutes, grants, services, slices, namespaces, grantKind],
   );
   const pending = (kind: unknown, w: WatchState) => kind === undefined || (kind !== null && w.status === "loading");
   const loading =
@@ -56,6 +64,7 @@ export function useCheckData(clusterId: ClusterId): CheckData {
     pending(grantKind, grants) ||
     !known ||
     services.status === "loading" ||
-    slices.status === "loading";
+    slices.status === "loading" ||
+    namespaces.status === "loading";
   return { snapshot, loading, notServed: gatewayKind === null };
 }

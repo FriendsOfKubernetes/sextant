@@ -1,9 +1,9 @@
 // The sections this feature adds to the details panel: summary (actions, "deleted" notice), metadata, the
 // kind-specific fields and conditions (YAML is in YamlSection.tsx). Each one is registered in index.ts.
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ObjectRef } from "../../api";
-import { Age } from "../../components";
+import { Age, Button } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findResourceDef, status } from "../../resources";
 import { ActionBar } from "./ActionBar";
@@ -39,6 +39,70 @@ function created(timestamp: string | undefined): ReactNode {
   );
 }
 
+/** Longer than this, an annotation value is folded (so is a JSON object or array longer than `LONG_JSON`). */
+export const LONG_ANNOTATION = 200;
+const LONG_JSON = 40;
+const COPIED_MS = 3000;
+
+/** Whether an annotation value is folded by default: long, or a JSON document (`last-applied-configuration`). */
+export function isLongAnnotation(value: string): boolean {
+  if (value.length > LONG_ANNOTATION) return true;
+  const text = value.trim();
+  if (text.length <= LONG_JSON || !/^[[{]/.test(text)) return false;
+  try {
+    return typeof JSON.parse(text) === "object";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * An annotation value. A long one (or JSON, like `kubectl.kubernetes.io/last-applied-configuration`) is folded behind
+ * "Show" so it does not push the rest of the panel down; it can be copied folded or not.
+ */
+function AnnotationValue({ name, value }: { name: string; value: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), COPIED_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  if (!isLongAnnotation(value)) return <span className="dt-annotations__value">{value}</span>;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <span className="dt-annotations__long">
+      <span className="dt-annotations__tools">
+        <Button
+          size="compact"
+          icon={open ? "chevronDown" : "chevronRight"}
+          aria-expanded={open}
+          aria-label={t(open ? "details:annotations.hideValue" : "details:annotations.showValue", { key: name })}
+          onClick={() => setOpen(!open)}
+        >
+          {t(open ? "details:annotations.hide" : "details:annotations.show")}
+        </Button>
+        <Button iconOnly size="compact" icon="copy" label={t("details:annotations.copy", { key: name })} onClick={() => void copy()} />
+        {open ? null : muted(t("details:annotations.length", { count: value.length }))}
+        {copied && (
+          <span role="status" className="dt-muted">
+            {t("details:annotations.copied")}
+          </span>
+        )}
+      </span>
+      {open && <span className="dt-annotations__value dt-annotations__value--long">{value}</span>}
+    </span>
+  );
+}
+
 export function MetadataSection({ obj, objectRef }: DetailsSectionProps) {
   const { t } = useTranslation();
   if (!obj) return null;
@@ -53,7 +117,7 @@ export function MetadataSection({ obj, objectRef }: DetailsSectionProps) {
         {maskedAnnotation(objectRef.kind.kind, key) ? (
           muted(hidden)
         ) : (
-          <span className="dt-annotations__value">{typeof value === "string" ? value : JSON.stringify(value)}</span>
+          <AnnotationValue name={key} value={typeof value === "string" ? value : JSON.stringify(value)} />
         )}
       </li>
     ));

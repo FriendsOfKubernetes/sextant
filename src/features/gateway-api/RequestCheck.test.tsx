@@ -12,6 +12,7 @@ import endpointSlicesJson from "./fixtures/matching/endpointslices.json";
 import gatewaysJson from "./fixtures/matching/gateways.json";
 import grpcRoutesJson from "./fixtures/matching/grpcroutes.json";
 import httpRoutesJson from "./fixtures/matching/httproutes.json";
+import namespacesJson from "./fixtures/matching/namespaces.json";
 import referenceGrantsJson from "./fixtures/matching/referencegrants.json";
 import servicesJson from "./fixtures/matching/services.json";
 import "./index";
@@ -39,6 +40,7 @@ const grpcRoutes = grpcRoutesJson as KubeObject[];
 const services = servicesJson as KubeObject[];
 const endpointSlices = endpointSlicesJson as KubeObject[];
 const referenceGrants = referenceGrantsJson as KubeObject[];
+const namespaces = namespacesJson as KubeObject[];
 
 const kindOf = (obj: KubeObject): KindRef => kindFromApiVersion(obj.apiVersion ?? "", obj.kind ?? "");
 
@@ -86,6 +88,7 @@ async function feed(routes: KubeObject[] = httpRoutes): Promise<void> {
   emitSnapshot(wb, await listWatch("ReferenceGrant"), referenceGrants);
   emitSnapshot(wb, await listWatch("Service"), services);
   emitSnapshot(wb, await listWatch("EndpointSlice"), endpointSlices);
+  emitSnapshot(wb, await listWatch("Namespace"), namespaces);
   await waitFor(() => expect(screen.queryByText(/Reading Gateways/)).toBeNull());
 }
 
@@ -173,7 +176,7 @@ describe("the request check page", () => {
       "HTTPRoute gw-shop/shop · rule 2 · match 1 on gw-infra/public-gw/httpsMatches, but loses on path (Exact, then RegularExpression, then the longest PathPrefix)",
     );
     expect(items).toContain(
-      "HTTPRoute gw-payments/payments-status on gw-infra/public-gw/httpsNot accepted on this listener: NotAllowedByListeners",
+      "HTTPRoute gw-payments/payments-status on gw-infra/public-gw/httpsNot accepted by the Gateway: NotAllowedByListeners",
     );
     expect(items).toContain("gw-infra/public-gw / Listener httpAnother port");
     expect(items).toContain("Gateway gw-infra/internal-gwNone of its listeners fits the port, protocol and hostname");

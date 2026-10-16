@@ -30,6 +30,7 @@ import {
   type ListenerStatus,
   type ObjRef,
   type ParentStatus,
+  type Phrase,
   type RouteRule,
 } from "./model";
 
@@ -96,18 +97,49 @@ export function routeListeners(route: KubeObject, kind: KindLike, gateway: KubeO
   return [...fitting, ...accepted.map(({ listener, parent }) => ({ listener, parent, hostnames: [...routeHosts] }))];
 }
 
-/** The route's parents naming `gateway` that sit on none of its listeners (rejected, or not processed yet). */
-export function unplacedParents(route: KubeObject, kind: KindLike, gateway: KubeObject): ParentStatus[] {
-  const placed = routeListeners(route, kind, gateway).map((r) => r.parent);
+/** A route on a Gateway, as the Gateway's views list it. */
+export interface GatewayRoute<K extends KindLike = KindLike> {
+  kind: K;
+  route: KubeObject;
+  parent: ParentStatus;
+}
+
+export interface GatewayRoutes<K extends KindLike = KindLike> {
+  /** Routes the Gateway accepted, one entry per listener they sit on (as the controllers count attached routes). */
+  attached: (GatewayRoute<K> & { listener: ListenerStatus; hostnames: string[] })[];
+  /** Parents naming the Gateway that it did not accept: refused (with the reason) or not reported yet. */
+  notAttached: GatewayRoute<K>[];
+}
+
+/**
+ * The routes of `gateway`, split the way its controller sees them: attached (Accepted there), on each listener they
+ * sit on; and not attached — every parent naming the Gateway that is not Accepted, whatever listener it names.
+ */
+export function gatewayRoutes<K extends KindLike>(
+  gateway: KubeObject,
+  routes: readonly { kind: K; items: readonly KubeObject[] }[],
+): GatewayRoutes<K> {
+  const result: GatewayRoutes<K> = { attached: [], notAttached: [] };
   const ns = gateway.metadata?.namespace ?? null;
-  return parentStatuses(route).filter(
-    (p) =>
-      p.ref.group === GATEWAY_GROUP &&
-      p.ref.kind === "Gateway" &&
-      p.ref.name === gateway.metadata?.name &&
-      p.ref.namespace === ns &&
-      !placed.some((q) => sameParentStatus(q, p)),
-  );
+  const routeKey = (kind: KindLike, r: KubeObject) => `${kind.kind}:${r.metadata?.namespace ?? ""}:${r.metadata?.name ?? ""}`;
+  for (const { kind, items } of routes) {
+    const sorted = [...items].sort((a, b) => routeKey(kind, a).localeCompare(routeKey(kind, b)));
+    for (const route of sorted) {
+      for (const on of routeListeners(route, kind, gateway)) {
+        if (on.parent.accepted?.status === "True") result.attached.push({ kind, route, ...on });
+      }
+      const refused = parentStatuses(route).filter(
+        (p) =>
+          p.ref.group === GATEWAY_GROUP &&
+          p.ref.kind === "Gateway" &&
+          p.ref.name === gateway.metadata?.name &&
+          p.ref.namespace === ns &&
+          p.accepted?.status !== "True",
+      );
+      for (const parent of refused) result.notAttached.push({ kind, route, parent });
+    }
+  }
+  return result;
 }
 
 const sameParentStatus = (a: ParentStatus, b: ParentStatus) =>
@@ -139,22 +171,31 @@ export function listenerAddresses(
   return hosts.flatMap((h) => withPaths.map((p) => `${scheme}://${h}${port}${p}`));
 }
 
-/** The path of each HTTP match of a rule (`PathPrefix /api` → `/api`; no path → `/`), from its phrases. */
-export function rulePaths(rule: RouteRule, http: boolean): string[] {
-  if (!http) return [];
-  if (rule.matches.length === 0) return ["/"];
-  return rule.matches.map((m) => String(m.find((p) => p.key === "gateway:text.path")?.params?.value ?? "/"));
-}
+const PATH_KEY = "gateway:text.path";
+
+const sameTarget = (a: ExposureTarget, b: ExposureTarget) =>
+  a.percent === b.percent && JSON.stringify(a.conditions) === JSON.stringify(b.conditions);
 
 // ---------- A Service reached through routes ----------
 
 /** How traffic for the Service fares on one route × parent × listener. */
 export type ExposureState = "serving" | "mirror" | "redirect" | "notAttached" | "notPermitted" | "pending";
 
+/** One way in: the external address and what else a request needs there (headers, method, query) and its share. */
+export interface ExposureTarget {
+  url: string;
+  /** Match conditions besides the path, as phrases: "header x-env=prod", "POST". */
+  conditions: Phrase[];
+  /** The Service's share of the rule's traffic when the rule splits it between several backends. */
+  percent?: number;
+}
+
 export interface Exposure {
   key: string;
   /** External addresses; empty when the route sits on no listener there. */
   addresses: string[];
+  /** The addresses with their conditions and share, one per address × match. */
+  targets: ExposureTarget[];
   routeKind: string;
   route: ObjRef;
   /** The parent (a Gateway, usually) and the listener the route sits on, if any. */
@@ -208,7 +249,17 @@ export function serviceExposures(service: KubeObject, context: ExposureContext):
     const name = route.metadata?.name ?? "";
     const routeRef: ObjRef = { group: GATEWAY_GROUP, kind: kind.kind, name, namespace: ns };
     const http = kind.kind === "HTTPRoute";
-    const paths = [...new Set(rules.flatMap((r) => rulePaths(r, http)))];
+    // Each match of each rule reaching the Service: its path, the other conditions and the Service's share.
+    const ways = rules.flatMap((rule) => {
+      const own = rule.backends.find((b) => isTheService(b, svc));
+      const percent = own && rule.backends.length > 1 ? own.percent : undefined;
+      const matches = rule.matches.length > 0 ? rule.matches : [[]];
+      return matches.map((m) => ({
+        path: http ? String(m.find((p) => p.key === PATH_KEY)?.params?.value ?? "/") : undefined,
+        conditions: http ? m.filter((p) => p.key !== PATH_KEY) : m,
+        percent,
+      }));
+    });
     const asBackend = rules.some((r) => r.backends.some((b) => isTheService(b, svc)));
     const redirectsOnly = rules.every((r) => r.filterTypes.includes("RequestRedirect"));
     const backend = [...rules.flatMap((r) => [...r.backends, ...r.mirrors])].find((b) => isTheService(b, svc))!;
@@ -235,14 +286,27 @@ export function serviceExposures(service: KubeObject, context: ExposureContext):
       const key = `${kind.kind}/${ns ?? ""}/${name}/${i}`;
       const gateway = parent.ref.kind === "Gateway" && parent.ref.group === GATEWAY_GROUP ? context.gatewayOf(parent.ref) : undefined;
       const placed = gateway ? routeListeners(route, kind, gateway).filter((r) => sameParentStatus(r.parent, parent)) : [];
-      if (placed.length === 0) return [{ ...base, key, addresses: [] }];
+      if (placed.length === 0) return [{ ...base, key, addresses: [], targets: [] }];
       const address = gatewayAddresses(gateway!)[0];
-      return placed.map(({ listener, hostnames }) => ({
-        ...base,
-        key: `${key}/${listener.name}`,
-        listener: listener.name,
-        addresses: listenerAddresses(listener, hostnames, paths, address),
-      }));
+      return placed.map(({ listener, hostnames }) => {
+        const targets = ways.flatMap((way) =>
+          listenerAddresses(listener, hostnames, way.path !== undefined ? [way.path] : [], address).map((url) => ({
+            url,
+            conditions: way.conditions,
+            percent: way.percent,
+          })),
+        );
+        const unique = targets.filter(
+          (x, i) => targets.findIndex((y) => y.url === x.url && sameTarget(x, y)) === i,
+        );
+        return {
+          ...base,
+          key: `${key}/${listener.name}`,
+          listener: listener.name,
+          addresses: [...new Set(unique.map((x) => x.url))],
+          targets: unique,
+        };
+      });
     });
   });
 }

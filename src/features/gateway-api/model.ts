@@ -293,14 +293,14 @@ export function gatewayOwnHealth(gateway: KubeObject): { health: Health; problem
 }
 
 /** The Gateway itself (Accepted, Programmed) and the worst of its listeners. */
-export function gatewayHealth(gateway: KubeObject): { health: Health; problem?: Condition } {
+export function gatewayHealth(gateway: KubeObject): { health: Health; problem?: Condition; listener?: string } {
   const own = gatewayOwnHealth(gateway);
   if (own.health === "problem") return own;
   const broken = listenerStatuses(gateway).find((l) => l.health === "problem");
-  if (broken) return { health: "problem", problem: broken.problem };
+  if (broken) return { health: "problem", problem: broken.problem, listener: broken.name };
   if (own.health === "pending") return own;
   const waiting = listenerStatuses(gateway).find((l) => l.health === "pending");
-  return waiting ? { health: "pending", problem: waiting.problem } : own;
+  return waiting ? { health: "pending", problem: waiting.problem, listener: waiting.name } : own;
 }
 
 // ---------- Routes and their parents ----------
@@ -443,7 +443,7 @@ export interface RouteRule {
   name?: string;
   /** Each match as phrases (shown joined with " · "). A rule without matches matches everything. */
   matches: Phrase[][];
-  /** The filters' phrases, in order: "set header x-env=prod", "redirect → https:// 301". */
+  /** The filters' phrases, in order: "set header x-env=prod", "Redirect to https://<same host><same path> (301)". */
   filters: Phrase[];
   /** Backends RequestMirror filters copy requests to (no share of the traffic). */
   mirrors: BackendRef[];
@@ -491,6 +491,8 @@ export function sharesOf(weights: readonly number[]): number[] {
 export interface Phrase {
   key: string;
   params?: Record<string, string | number>;
+  /** Parameters that are phrases themselves, translated first: the "<same host>" of a redirect target. */
+  parts?: Record<string, Phrase>;
 }
 
 const phrase = (key: string, params?: Phrase["params"]): Phrase => ({ key: `gateway:text.${key}`, params });
@@ -543,7 +545,7 @@ function headerChanges(modifier: unknown, prefix: "" | "response"): Phrase[] {
   ];
 }
 
-/** `replaceFullPath` / `replacePrefixMatch` of a redirect or rewrite (`kind` "redirect" | "rewrite"). */
+/** `replaceFullPath` / `replacePrefixMatch` of a rewrite (`kind` "rewrite"). */
 function pathModifier(path: unknown, kind: string): Phrase[] {
   const full = str(get(path, "replaceFullPath"));
   if (full !== undefined) return [phrase(`${kind}Path`, { value: full })];
@@ -568,6 +570,33 @@ function mirrorOf(filter: unknown, routeNamespace: string | null): BackendRef | 
 }
 
 /**
+ * A RequestRedirect as one phrase, the whole target spelled out: "Redirect to https://<same host><same path> (301)".
+ * What the filter leaves out is kept from the request (scheme, host, path); the port is shown only when set.
+ */
+function redirectPhrase(r: unknown): Phrase {
+  const scheme = str(get(r, "scheme"));
+  const host = str(get(r, "hostname"));
+  const port = num(get(r, "port"));
+  const path = get(r, "path");
+  const full = str(get(path, "replaceFullPath"));
+  const prefix = str(get(path, "replacePrefixMatch"));
+  return {
+    key: "gateway:text.redirect",
+    params: { port: port !== undefined ? `:${port}` : "", code: num(get(r, "statusCode")) ?? 302 },
+    parts: {
+      scheme: scheme ? phrase("value", { value: scheme }) : phrase("sameScheme"),
+      host: host ? phrase("value", { value: host }) : phrase("sameHost"),
+      path:
+        full !== undefined
+          ? phrase("value", { value: full })
+          : prefix !== undefined
+            ? phrase("pathPrefixReplaced", { value: prefix })
+            : phrase("samePath"),
+    },
+  };
+}
+
+/**
  * A filter as phrases: header changes (each one), redirect, rewrite, mirror, extension; an unknown type by its name.
  * `routeNamespace` shortens a mirror backend in the route's own namespace.
  */
@@ -578,16 +607,8 @@ export function filterPhrases(filter: unknown, routeNamespace: string | null = n
       return headerChanges(get(filter, "requestHeaderModifier"), "");
     case "ResponseHeaderModifier":
       return headerChanges(get(filter, "responseHeaderModifier"), "response");
-    case "RequestRedirect": {
-      const r = get(filter, "requestRedirect");
-      const scheme = str(get(r, "scheme"));
-      const port = num(get(r, "port"));
-      const target = `${scheme ? `${scheme}://` : ""}${str(get(r, "hostname")) ?? ""}${port !== undefined ? `:${port}` : ""}`;
-      return [
-        phrase("redirect", { target: target || "…", code: num(get(r, "statusCode")) ?? 302 }),
-        ...pathModifier(get(r, "path"), "redirect"),
-      ];
-    }
+    case "RequestRedirect":
+      return [redirectPhrase(get(filter, "requestRedirect"))];
     case "URLRewrite": {
       const r = get(filter, "urlRewrite");
       const host = str(get(r, "hostname"));
