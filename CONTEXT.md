@@ -249,3 +249,22 @@ _Avoid_: debug mode, symlink install
 The record of everything extensions did through the Sextant API: time, extension, cluster, method, target, decision and result. It holds summaries, never values or YAML. Agents have their own log.
 _Avoid_: audit, history
 
+**Listener**:
+One port and protocol (and optionally a hostname and a TLS certificate) that a Gateway accepts traffic on. A Gateway has one or more; routes attach to listeners, not to the Gateway as a whole.
+_Avoid_: port, endpoint, entry point
+
+**Parent (of a route)**:
+The Gateway, and optionally one of its listeners, that a route asks to be attached to. A route can have several parents and each has its own status.
+_Avoid_: owner, gateway ref
+
+**Attached / Not attached route**:
+A route is attached to a listener when the Gateway's controller accepted it there: the listener allows its namespace and kind and the hostnames overlap. A route that is not attached serves no traffic through that listener, whatever its rules say.
+_Avoid_: bound, linked, active
+
+**ReferenceGrant**:
+An object in the target's namespace that allows objects of another namespace to refer to it (a route to a Service, a Gateway to a Secret). Without one, a cross-namespace reference is refused.
+_Avoid_: permission, allow rule
+
+**Request check**:
+A page that answers "where would this request go?" by following a made-up request (method, URL, headers) through listeners, routes, rules and backends from the cluster's own objects and showing why other candidates lost. It sends nothing to the cluster's traffic.
+_Avoid_: simulator, test request, probe
