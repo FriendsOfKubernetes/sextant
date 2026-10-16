@@ -163,6 +163,13 @@ function Step({ id, label, tone = "ok", children }: { id: string; label: string;
 
 const Why = ({ children }: { children: ReactNode }) => <p className="gw-step__why dt-muted">{children}</p>;
 
+/** What the Gateway answers: the gRPC status of a gRPC call it answers itself, else the outcome (with its HTTP status). */
+function outcomeText(result: RequestExplanation, t: T): string {
+  return result.grpcStatus
+    ? t(`gateway:check.grpcStatus.${result.grpcStatus}`)
+    : t(`gateway:check.outcome.${result.outcome}`, { status: result.status ?? "" });
+}
+
 function ruleLabel(t: T, index: number, name?: string): string {
   return name ? t("gateway:check.ruleNamed", { n: index + 1, name }) : t("gateway:check.rule", { n: index + 1 });
 }
@@ -215,8 +222,12 @@ function RouteStep({ result }: { result: RequestExplanation }) {
   if (result.outcome === "noRoute") {
     return (
       <Step id="route" label={t("gateway:check.steps.route")} tone="problem">
-        <StatusText value={t("gateway:check.outcome.noRoute")} tone="danger" />
-        <Why>{t("gateway:check.why.noRoute", { listener: result.listener?.name ?? "" })}</Why>
+        <StatusText value={outcomeText(result, t)} tone="danger" />
+        <Why>
+          {t(result.grpcStatus ? "gateway:check.why.noRouteGrpc" : "gateway:check.why.noRoute", {
+            listener: result.listener?.name ?? "",
+          })}
+        </Why>
       </Step>
     );
   }
@@ -353,8 +364,8 @@ function AnswerStep({ result }: { result: RequestExplanation }) {
   if (result.outcome === "noBackend") {
     return (
       <Step id="answer" label={t("gateway:check.steps.answer")} tone="problem">
-        <StatusText value={t("gateway:check.outcome.noBackend")} tone="danger" />
-        <Why>{t("gateway:check.why.noBackend")}</Why>
+        <StatusText value={outcomeText(result, t)} tone="danger" />
+        <Why>{t(result.grpcStatus ? "gateway:check.why.noBackendGrpc" : "gateway:check.why.noBackend")}</Why>
       </Step>
     );
   }
@@ -455,7 +466,7 @@ const OUTCOME_TONE: Record<RequestExplanation["outcome"], "success" | "warning" 
 
 export function RequestResult({ clusterId, result }: { clusterId: ClusterId; result: RequestExplanation }) {
   const { t } = useTranslation();
-  const outcome = t(`gateway:check.outcome.${result.outcome}`, { status: result.status ?? "" });
+  const outcome = outcomeText(result, t);
   const routed = result.outcome === "forwarded" || result.outcome === "redirected" || result.outcome === "noBackend";
   return (
     <section className="gw-check__result" aria-label={t("gateway:check.result")}>

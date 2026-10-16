@@ -290,6 +290,10 @@
       "noBackend": "500 Internal Server Error",
       "invalidUrl": "The URL cannot be read"
     },
+    "grpcStatus": {
+      "UNIMPLEMENTED": "gRPC UNIMPLEMENTED",
+      "UNAVAILABLE": "gRPC UNAVAILABLE"
+    },
     "listener": "listener {{name}} · {{port}}/{{protocol}}",
     "why": {
       "listenerHostname": "Port {{port}} and protocol {{protocol}} fit, and its hostname {{hostname}} matches {{host}}.",
@@ -301,8 +305,10 @@
       "won_other": "Preferred over {{count}} other matching rules by: {{criteria}}.",
       "only": "The only rule that matches.",
       "noRoute": "Listener {{listener}} takes the request, but no rule of a route attached to it matches: the Gateway answers 404.",
+      "noRouteGrpc": "Listener {{listener}} takes the gRPC call, but no rule of a route attached to it matches: the Gateway answers UNIMPLEMENTED.",
       "noListener": "No listener of any Gateway fits the port, protocol and hostname: the connection is not served. \"Also considered\" says why each one was left out.",
       "noBackend": "The rule has no backend that can take the request: the Gateway answers 500.",
+      "noBackendGrpc": "The GRPCRoute rule has no backend that can take the call: the Gateway answers UNAVAILABLE.",
       "noBackends": "The rule has no backends.",
       "redirect": "The Gateway answers {{status}} with Location {{location}}; no backend gets the request."
     },
@@ -326,7 +332,9 @@
       "regexDialect": "Regular expressions were evaluated in the JavaScript dialect; your implementation may use RE2 or PCRE.",
       "severalGateways": "More than one Gateway can take this request; which one gets it depends on DNS. The one where a route matches is shown.",
       "listenerPending": "The listener has no status yet: the controller may not have programmed it.",
-      "partialBackends": "Some backends cannot take requests: their share of the requests gets a 500."
+      "partialBackends": "Some backends cannot take requests: their share of the requests gets a 500 (UNAVAILABLE for a GRPCRoute).",
+      "namespaceSelectorUnknown": "The listener admits routes by a namespace selector, and the namespace labels are not known here: whether this route may attach to it is not checked.",
+      "routeKindPrecedence": "A GRPCRoute and an HTTPRoute match equally specific hostnames; the GRPCRoute was preferred for the gRPC call. The spec does not merge the two kinds: your implementation may rank them otherwise."
     },
     "considered": "Also considered ({{count}})",
     "consideredNone": "No other candidates.",
@@ -346,6 +354,7 @@
       "otherRouteKind": "A GRPCRoute does not serve a plain HTTP request",
       "notAttached": "Attached to another listener of the Gateway",
       "notAccepted": "Not accepted on this listener",
+      "namespaceNotAllowed": "The listener does not allow routes from its namespace",
       "kindNotAllowed": "The listener does not allow this route kind",
       "noHostnameIntersection": "None of its hostnames fits the hostname of the listener",
       "otherHost": "The host is not among its hostnames",
@@ -359,10 +368,10 @@
       "lowerPrecedence": "Matches, but loses on {{criterion}}"
     },
     "criteria": {
-      "routeKind": "route kind (a GRPCRoute before an HTTPRoute for gRPC)",
+      "routeKind": "route kind (a GRPCRoute before an HTTPRoute for gRPC, after the hostname)",
       "hostname": "the most specific exact hostname",
       "hostnameLength": "the longest hostname",
-      "path": "path (Exact, then the longest PathPrefix)",
+      "path": "path (Exact, then RegularExpression, then the longest PathPrefix)",
       "method": "method match",
       "headers": "most header matches",
       "queryParams": "most query parameter matches",

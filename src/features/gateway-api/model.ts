@@ -404,7 +404,7 @@ export function routeAttachedTo(
   gateway: KubeObject,
   listener?: Pick<Listener, "name" | "port">,
 ): ParentStatus | undefined {
-  return parentStatuses(route).find(
+  const named = parentStatuses(route).filter(
     ({ ref }) =>
       ref.group === GATEWAY_GROUP &&
       ref.kind === "Gateway" &&
@@ -414,6 +414,12 @@ export function routeAttachedTo(
         ((ref.sectionName === undefined || ref.sectionName === listener.name) &&
           (ref.port === undefined || ref.port === listener.port))),
   );
+  if (!listener) return named[0];
+  // Several entries can reach one listener (`{gw, sectionName: a}` and `{gw}`): the one naming the listener speaks
+  // for it (`{gw}` Accepted only says the route attached to some listener), then an accepted one.
+  const specificity = ({ ref }: ParentStatus) => (ref.sectionName !== undefined ? 2 : 0) + (ref.port !== undefined ? 1 : 0);
+  const accepted = (p: ParentStatus) => (p.accepted?.status === "True" ? 1 : 0);
+  return [...named].sort((a, b) => specificity(b) - specificity(a) || accepted(b) - accepted(a))[0];
 }
 
 export function routeHostnames(route: KubeObject): string[] {

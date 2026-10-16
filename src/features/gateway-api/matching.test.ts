@@ -4,6 +4,7 @@ import endpointSlicesJson from "./fixtures/matching/endpointslices.json";
 import gatewaysJson from "./fixtures/matching/gateways.json";
 import grpcRoutesJson from "./fixtures/matching/grpcroutes.json";
 import httpRoutesJson from "./fixtures/matching/httproutes.json";
+import namespacesJson from "./fixtures/matching/namespaces.json";
 import referenceGrantsJson from "./fixtures/matching/referencegrants.json";
 import servicesJson from "./fixtures/matching/services.json";
 import {
@@ -32,6 +33,7 @@ const fixtures: ClusterSnapshot = {
   services: servicesJson as KubeObject[],
   endpointSlices: endpointSlicesJson as KubeObject[],
   referenceGrants: referenceGrantsJson as KubeObject[],
+  namespaces: namespacesJson as KubeObject[],
 };
 
 const route = (name: string, namespace = "gw-shop", kind: RouteKindName = "HTTPRoute"): RouteId => ({ kind, namespace, name });
@@ -143,12 +145,13 @@ describe("explainRequest on the test-cluster fixtures", () => {
     expect(get.route?.name).toBe("shop");
   });
 
-  it("a gRPC call to another method finds no rule: 404", () => {
+  it("a gRPC call to another method finds no rule: UNIMPLEMENTED, not a 404", () => {
     const r = explainRequest(
       { url: "http://grpc.internal.example.com:9090/inventory.v1.Inventory/Reserve", protocol: "grpc" },
       fixtures,
     );
-    expect(r).toMatchObject({ outcome: "noRoute", status: 404 });
+    expect(r).toMatchObject({ outcome: "noRoute", grpcStatus: "UNIMPLEMENTED" });
+    expect(r.status).toBeUndefined();
     has(r.candidates, { route: route("inventory", "gw-shop", "GRPCRoute"), reason: "grpcMethodMismatch" });
   });
 
@@ -186,6 +189,7 @@ interface ListenerSpec {
   port?: number;
   protocol?: string;
   hostname?: string;
+  allowedRoutes?: object;
 }
 
 function gateway(listeners: ListenerSpec[], name = "gw", addresses: string[] = []): KubeObject {
@@ -362,11 +366,48 @@ describe("HTTPRoute matching precedence", () => {
       ["path"],
     ],
     [
-      "a RegularExpression path ranks below a prefix",
-      [httpRoute("a", [rule([{ path: { type: "RegularExpression", value: "/api/.*" } }], "regex"), rule([prefix("/")], "root")])],
+      "a RegularExpression path ranks above any PathPrefix (Envoy Gateway's order)",
+      [httpRoute("a", [rule([prefix("/api/v1")], "prefix"), rule([{ path: { type: "RegularExpression", value: "/api/.*" } }], "regex")])],
       { url: "http://x.test/api/v1" },
-      "root",
+      "regex",
       ["path"],
+    ],
+    [
+      "… and below an Exact path",
+      [httpRoute("a", [rule([{ path: { type: "RegularExpression", value: "/api/.*" } }], "regex"), rule([exact("/api/v1")], "exact")])],
+      { url: "http://x.test/api/v1" },
+      "exact",
+      ["path"],
+    ],
+    [
+      "PathPrefix /foo/ and /foo are the same prefix: the older route wins",
+      [
+        httpRoute("slash", [rule([prefix("/foo/")], "slash")], { created: "2026-10-14T10:00:00Z" }),
+        httpRoute("bare", [rule([prefix("/foo")], "bare")], { created: "2026-10-14T09:00:00Z" }),
+      ],
+      { url: "http://x.test/foo/bar" },
+      "bare",
+      ["age"],
+    ],
+    [
+      "the URL's host is the host header of a header match",
+      [httpRoute("a", [rule([prefix("/")], "any"), rule([prefix("/", { headers: [{ name: "Host", value: "x.test" }] })], "host")])],
+      { url: "http://x.test/" },
+      "host",
+      ["headers"],
+    ],
+    [
+      "query parameters are compared raw: x+y is not \"x y\"",
+      [
+        httpRoute("a", [
+          rule([prefix("/")], "none"),
+          rule([prefix("/", { queryParams: [{ name: "q", value: "x y" }] })], "decoded"),
+          rule([prefix("/", { queryParams: [{ name: "q", value: "x+y" }] })], "raw"),
+        ]),
+      ],
+      { url: "http://x.test/?q=x+y" },
+      "raw",
+      ["queryParams"],
     ],
     [
       "an exact hostname beats a wildcard hostname, whatever the paths",
@@ -495,6 +536,29 @@ describe("listener selection", () => {
     const grpc = winner(routes, { url: "http://x.test/pkg.Svc/Get", headers: { "Content-Type": "application/grpc+proto" } });
     expect(grpc.to).toBe("grpc");
     expect(grpc.lostOn).toEqual(["routeKind"]);
+    expect(grpc.r.notes).toContain("routeKindPrecedence");
+    expect(plain.r.notes).not.toContain("routeKindPrecedence");
+  });
+
+  it("gRPC: the hostname decides before the route kind", () => {
+    const routes = [
+      httpRoute("web", [rule([prefix("/")], "http")], { hostnames: ["grpc.example.com"] }),
+      httpRoute("rpc", [{ matches: [{ method: { service: "pkg.Svc" } }], ...backend("grpc") }], {
+        kind: "GRPCRoute",
+        hostnames: ["*.example.com"],
+      }),
+    ];
+    const w = winner(routes, { url: "http://grpc.example.com/pkg.Svc/Get", protocol: "grpc" });
+    expect(w.to).toBe("http");
+    expect(w.lostOn).toEqual(["hostname"]);
+    expect(w.r.notes).not.toContain("routeKindPrecedence");
+  });
+
+  it("gRPC: a GRPCRoute rule without usable backends answers UNAVAILABLE, not 500", () => {
+    const routes = [httpRoute("rpc", [{ matches: [{ method: { service: "pkg.Svc" } }] }], { kind: "GRPCRoute" })];
+    const { r } = winner(routes, { url: "http://x.test/pkg.Svc/Get", protocol: "grpc" });
+    expect(r).toMatchObject({ outcome: "noBackend", grpcStatus: "UNAVAILABLE" });
+    expect(r.status).toBeUndefined();
   });
 
   it("gRPC: a matching service and method beat a matching service only", () => {
@@ -513,6 +577,86 @@ describe("listener selection", () => {
     expect(r.gateway?.name).toBe("b-gw");
     expect(r.notes).toContain("severalGateways");
     has(r.candidates, { level: "gateway", gateway: { namespace: "infra", name: "a-gw" }, reason: "noRouteMatched" });
+  });
+});
+
+describe("allowedRoutes and parentRefs", () => {
+  // infra/gw: admin.example.com admits routes of its own namespace only, public any.
+  const gws = [
+    gateway([
+      { name: "admin", hostname: "admin.example.com", allowedRoutes: { namespaces: { from: "Same" } } },
+      { name: "public", allowedRoutes: { namespaces: { from: "All" } } },
+    ]),
+  ];
+  const r1 = httpRoute("r1", [backend("svc")], { namespace: "app" });
+
+  it("Accepted on a parentRef without sectionName does not attach the route to a listener of another namespace", () => {
+    const admin = winner([r1], { url: "http://admin.example.com/" }, gws).r;
+    expect(admin).toMatchObject({ outcome: "noRoute", status: 404, listener: expect.objectContaining({ name: "admin" }) });
+    has(admin.candidates, { level: "route", listener: "admin", route: route("r1", "app"), reason: "namespaceNotAllowed" });
+    expect(winner([r1], { url: "http://www.example.com/" }, gws).to).toBe("svc");
+    // The same route in the Gateway's namespace is admitted by `Same`.
+    expect(winner([httpRoute("r1", [backend("svc")], { namespace: "infra" })], { url: "http://admin.example.com/" }, gws).to).toBe("svc");
+    // The hostname map lists it on the public listener only.
+    expect(hostnameMap(gws, { httpRoutes: [r1] }).map((row) => row.listener)).toEqual(["public"]);
+  });
+
+  it("Selector: decided by the namespaces' labels, or admitted with a note when they are unknown", () => {
+    const selector = [
+      gateway([{ name: "http", allowedRoutes: { namespaces: { from: "Selector", selector: { matchLabels: { shared: "true" } } } } }]),
+    ];
+    const ns = (name: string, labels: Record<string, string> = {}): KubeObject => ({ apiVersion: "v1", kind: "Namespace", metadata: { name, labels } });
+    const input = { url: "http://x.test/" };
+    const explain = (namespaces?: KubeObject[]) => explainRequest(input, { gateways: selector, httpRoutes: [r1], ...(namespaces ? { namespaces } : {}) });
+    expect(explain([ns("app", { shared: "true" })])).toMatchObject({ outcome: "forwarded", notes: [] });
+    const refused = explain([ns("app")]);
+    expect(refused.outcome).toBe("noRoute");
+    has(refused.candidates, { reason: "namespaceNotAllowed" });
+    const unknown = explain();
+    expect(unknown.outcome).toBe("forwarded");
+    expect(unknown.notes).toContain("namespaceSelectorUnknown");
+    expect(hostnameMap(selector, { httpRoutes: [r1], namespaces: [ns("app")] })).toEqual([]);
+  });
+
+  it("allowedRoutes.kinds compares the group too", () => {
+    const foreign = [gateway([{ name: "http", allowedRoutes: { namespaces: { from: "All" }, kinds: [{ group: "example.com", kind: "HTTPRoute" }] } }])];
+    const { r } = winner([r1], { url: "http://x.test/" }, foreign);
+    expect(r.outcome).toBe("noRoute");
+    has(r.candidates, { reason: "kindNotAllowed" });
+  });
+
+  it("parentRefs {gw, sectionName: a} and {gw}: the entry naming the listener speaks for it", () => {
+    const two = [gateway([{ name: "a", hostname: "a.test" }, { name: "b", hostname: "b.test" }])];
+    const ref = (sectionName?: string) => ({
+      group: "gateway.networking.k8s.io",
+      kind: "Gateway",
+      name: "gw",
+      namespace: "infra",
+      ...(sectionName ? { sectionName } : {}),
+    });
+    const parent = (sectionName: string | undefined, accepted: boolean) => ({
+      parentRef: ref(sectionName),
+      controllerName: "gateway.envoyproxy.io/gatewayclass-controller",
+      conditions: [accepted ? ok("Accepted") : { type: "Accepted", status: "False", reason: "NotAllowedByListeners", lastTransitionTime: TS }],
+    });
+    const withParents = (order: "specificFirst" | "broadFirst"): KubeObject => {
+      const parents = [parent("a", false), parent(undefined, true)];
+      const list = order === "specificFirst" ? parents : [...parents].reverse();
+      return {
+        apiVersion: "gateway.networking.k8s.io/v1",
+        kind: "HTTPRoute",
+        metadata: { name: "r", namespace: "web", creationTimestamp: TS },
+        spec: { parentRefs: list.map((p) => p.parentRef), rules: [backend("svc")] },
+        status: { parents: list },
+      };
+    };
+    for (const order of ["specificFirst", "broadFirst"] as const) {
+      const routes = [withParents(order)];
+      const onA = winner(routes, { url: "http://a.test/" }, two).r;
+      expect(onA.outcome).toBe("noRoute");
+      has(onA.candidates, { listener: "a", reason: "notAccepted", condition: "NotAllowedByListeners" });
+      expect(winner(routes, { url: "http://b.test/" }, two).to).toBe("svc");
+    }
   });
 });
 

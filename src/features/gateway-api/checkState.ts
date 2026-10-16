@@ -263,6 +263,7 @@ const LOSS_REASONS_SET: Record<LossReason, true> = {
   otherRouteKind: true,
   notAttached: true,
   notAccepted: true,
+  namespaceNotAllowed: true,
   kindNotAllowed: true,
   noHostnameIntersection: true,
   otherHost: true,
@@ -277,9 +278,9 @@ const LOSS_REASONS_SET: Record<LossReason, true> = {
 };
 
 const CRITERIA_SET: Record<PrecedenceCriterion, true> = {
-  routeKind: true,
   hostname: true,
   hostnameLength: true,
+  routeKind: true,
   path: true,
   method: true,
   headers: true,
@@ -297,6 +298,8 @@ const NOTES_SET: Record<Note, true> = {
   severalGateways: true,
   listenerPending: true,
   partialBackends: true,
+  namespaceSelectorUnknown: true,
+  routeKindPrecedence: true,
 };
 
 const OUTCOMES_SET: Record<Outcome, true> = {

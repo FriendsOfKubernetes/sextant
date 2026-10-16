@@ -1,0 +1,63 @@
+[
+  {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+      "name": "gw-infra",
+      "labels": {
+        "kubernetes.io/metadata.name": "gw-infra",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "creationTimestamp": "2026-10-14T09:00:00Z"
+    },
+    "spec": {
+      "finalizers": [
+        "kubernetes"
+      ]
+    },
+    "status": {
+      "phase": "Active"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+      "name": "gw-shop",
+      "labels": {
+        "kubernetes.io/metadata.name": "gw-shop",
+        "sextant.dev/fixture": "gateway-api",
+        "shared-gateway-access": "true"
+      },
+      "creationTimestamp": "2026-10-14T09:00:00Z"
+    },
+    "spec": {
+      "finalizers": [
+        "kubernetes"
+      ]
+    },
+    "status": {
+      "phase": "Active"
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+      "name": "gw-payments",
+      "labels": {
+        "kubernetes.io/metadata.name": "gw-payments",
+        "sextant.dev/fixture": "gateway-api"
+      },
+      "creationTimestamp": "2026-10-14T09:00:00Z"
+    },
+    "spec": {
+      "finalizers": [
+        "kubernetes"
+      ]
+    },
+    "status": {
+      "phase": "Active"
+    }
+  }
+]

@@ -16,6 +16,7 @@ import referenceGrantsJson from "./fixtures/matching/referencegrants.json";
 import servicesJson from "./fixtures/matching/services.json";
 import "./index";
 import { RequestCheckPage } from "./RequestCheck";
+import { GRPC_STATUSES } from "./matching";
 import {
   gatewayPrefill,
   LOSS_REASONS,
@@ -143,7 +144,7 @@ describe("the request check page", () => {
     expect(within(route).getByRole("button", { name: "Open HTTPRoute shop" })).toHaveTextContent("gw-shop/shop");
     expect(route).toHaveTextContent("Rule 1");
     expect(route).toHaveTextContent("PathPrefix /api · header x-env=prod");
-    expect(route).toHaveTextContent("Preferred over 1 other matching rule by: path (Exact, then the longest PathPrefix).");
+    expect(route).toHaveTextContent("Preferred over 1 other matching rule by: path (Exact, then RegularExpression, then the longest PathPrefix).");
 
     expect(step("filters")).toHaveTextContent("add header x-gateway=public");
 
@@ -169,7 +170,7 @@ describe("the request check page", () => {
     expect(button).toHaveAttribute("aria-expanded", "true");
     const items = [...list.querySelectorAll("li")].map((li) => li.textContent ?? "");
     expect(items).toContain(
-      "HTTPRoute gw-shop/shop · rule 2 · match 1 on gw-infra/public-gw/httpsMatches, but loses on path (Exact, then the longest PathPrefix)",
+      "HTTPRoute gw-shop/shop · rule 2 · match 1 on gw-infra/public-gw/httpsMatches, but loses on path (Exact, then RegularExpression, then the longest PathPrefix)",
     );
     expect(items).toContain(
       "HTTPRoute gw-payments/payments-status on gw-infra/public-gw/httpsNot accepted on this listener: NotAllowedByListeners",
@@ -253,6 +254,14 @@ describe("the request check page", () => {
     expect(screen.getByRole("combobox", { name: "Method" })).toBeDisabled();
     expect(step("route")).toHaveTextContent("GRPCRoute gw-shop/inventory");
     expect(step("route")).toHaveTextContent("method inventory.v1.Inventory/GetStock");
+  });
+
+  it("a gRPC call no rule takes gets UNIMPLEMENTED, not a 404", async () => {
+    await openPage();
+    check("http://grpc.internal.example.com:9090/inventory.v1.Inventory/Reserve", { grpc: true });
+    expect(within(result()).getByRole("status")).toHaveTextContent("gRPC UNIMPLEMENTED");
+    expect(step("route")).toHaveTextContent("Listener grpc takes the gRPC call, but no rule of a route attached to it matches: the Gateway answers UNIMPLEMENTED.");
+    expect(result()).not.toHaveTextContent("404");
   });
 
   it("remembers the last request of the cluster while the app runs", async () => {
@@ -378,11 +387,12 @@ describe("translations", () => {
       ...PRECEDENCE_CRITERIA.map((c) => `gateway:check.criteria.${c}`),
       ...NOTES.map((c) => `gateway:check.notes.${c}`),
       ...OUTCOMES.map((c) => `gateway:check.outcome.${c}`),
+      ...GRPC_STATUSES.map((c) => `gateway:check.grpcStatus.${c}`),
     ].filter((key) => !i18n.exists(key));
     expect(missing).toEqual([]);
-    expect(LOSS_REASONS).toHaveLength(24);
+    expect(LOSS_REASONS).toHaveLength(25);
     expect(PRECEDENCE_CRITERIA).toHaveLength(12);
-    expect(NOTES).toHaveLength(5);
+    expect(NOTES).toHaveLength(7);
     expect(OUTCOMES).toHaveLength(6);
   });
 });

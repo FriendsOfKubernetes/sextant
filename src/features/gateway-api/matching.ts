@@ -12,14 +12,22 @@
 //    exact, then wildcards with more labels after `*`, then no hostname. `*.example.com` matches any number of labels
 //    on its left, never `example.com`.
 //  - Route: attached to that listener (a parentRef naming the Gateway and the listener or none) and Accepted there,
-//    of a kind the listener allows; its hostnames intersected with the listener's, the request's host among them.
+//    from a namespace and of a kind the listener's `allowedRoutes` admit (Accepted on a parentRef without a
+//    sectionName only says the route attached to some listener); its hostnames intersected with the listener's, the
+//    request's host among them. A `Selector` needs the namespaces' labels: without them the route counts as admitted,
+//    with a note.
 //  - HTTPRoute precedence, across all rules of the applicable routes: hostname (characters of a matching non-wildcard
 //    hostname, then of a matching hostname — the route's own hostnames, as the spec recommends), Exact path, the
-//    longest PathPrefix, method, most headers, most query params, the oldest route, `{namespace}/{name}`, the first
-//    rule. RegularExpression paths are implementation-specific: ranked lowest here, with a note.
+//    longest PathPrefix (a trailing `/` ignored), method, most headers, most query params, the oldest route,
+//    `{namespace}/{name}`, the first rule. RegularExpression paths are implementation-specific: ranked between Exact
+//    and PathPrefix here (as Envoy Gateway does), with a note.
 //  - GRPCRoute precedence: hostname as above, characters of the service, of the method, header matches, then the same
-//    tie-breaks. A gRPC request (`content-type: application/grpc…`) prefers GRPCRoutes; HTTPRoutes are not merged with
-//    them but can still serve it. A plain HTTP request is not matched against GRPCRoutes.
+//    tie-breaks. HTTPRoutes and GRPCRoutes are not merged: for a gRPC request (`content-type: application/grpc…`) the
+//    hostname decides first, then a GRPCRoute is preferred (with a note). A plain HTTP request is not matched against
+//    GRPCRoutes. A gRPC request no rule takes gets `UNIMPLEMENTED`, a GRPCRoute rule without usable backends
+//    `UNAVAILABLE`.
+//  - The URL's host is the `host` header for header matches unless one was given. Query parameters are compared raw,
+//    as they appear in the URL (`+` and `%XX` are not decoded).
 //  - Regular expressions (paths, headers, query params, gRPC methods) are evaluated in the JavaScript dialect as full
 //    matches; implementations use RE2/PCRE, so the result carries a note.
 import type { KubeObject } from "../../api";
@@ -38,6 +46,7 @@ import {
   routeHostnames,
   routeRules,
   serviceReadiness,
+  GATEWAY_GROUP,
   GRPC_ROUTE,
   HTTP_ROUTE,
   type BackendRef,
@@ -73,6 +82,8 @@ export interface ClusterSnapshot {
   endpointSlices?: readonly KubeObject[];
   /** Every ReferenceGrant of the cluster (refines RefNotPermitted). */
   referenceGrants?: readonly KubeObject[];
+  /** Namespaces with their labels (enables `allowedRoutes.namespaces.from: Selector`). */
+  namespaces?: readonly KubeObject[];
 }
 
 export interface ParsedRequest {
@@ -87,8 +98,9 @@ export interface ParsedRequest {
   path: string;
   /** `?a=1&b=2`, or "". */
   search: string;
-  /** Lowercased names, in order. */
+  /** Lowercased names, in order; `host` (the URL's host) appended when no Host header was given. */
   headers: [name: string, value: string][];
+  /** Raw, as in the URL: neither `+` nor `%XX` decoded. */
   query: [name: string, value: string][];
   /** Service and method of a gRPC request whose path is `/pkg.Service/Method`. */
   grpc?: { service: string; method: string };
@@ -123,6 +135,7 @@ export type LossReason =
   | "otherRouteKind" // a GRPCRoute for a plain HTTP request
   | "notAttached" // it names the Gateway, but another listener
   | "notAccepted" // the controller did not accept it there (`condition`; none while pending)
+  | "namespaceNotAllowed" // `allowedRoutes.namespaces` of the listener does not admit the route's namespace
   | "kindNotAllowed" // the listener does not allow the route's kind
   | "noHostnameIntersection" // none of its hostnames intersects the listener's
   | "otherHost" // the request's host is not among its hostnames
@@ -138,9 +151,9 @@ export type LossReason =
 
 /** The criterion a matching candidate lost on, in the order they are applied. */
 export type PrecedenceCriterion =
-  | "routeKind"
   | "hostname"
   | "hostnameLength"
+  | "routeKind"
   | "path"
   | "method"
   | "headers"
@@ -171,16 +184,22 @@ export type Outcome =
   | "forwarded" // backends get the request
   | "redirected" // a RequestRedirect answers
   | "noListener" // no Gateway listener takes it (the connection is not served)
-  | "noRoute" // a listener takes it, no route matches: 404
-  | "noBackend" // the rule has no usable backends: 500
+  | "noRoute" // a listener takes it, no route matches: 404 (gRPC: UNIMPLEMENTED)
+  | "noBackend" // the rule has no usable backends: 500 (a GRPCRoute: UNAVAILABLE)
   | "invalidUrl";
+
+/** The gRPC status a Gateway answers a gRPC request with itself (`gateway:check.grpcStatus.<status>`). */
+export type GrpcStatus = "UNIMPLEMENTED" | "UNAVAILABLE";
+export const GRPC_STATUSES: readonly GrpcStatus[] = ["UNIMPLEMENTED", "UNAVAILABLE"];
 
 export type Note =
   | "regexPathPrecedence" // a RegularExpression path took part: its precedence is implementation-specific
   | "regexDialect" // a regular expression was evaluated in the JavaScript dialect
   | "severalGateways" // more than one Gateway can take the request; which one gets it depends on DNS
   | "listenerPending" // the chosen listener has no status yet
-  | "partialBackends"; // some backends are unusable: their share of the requests gets 500
+  | "partialBackends" // some backends are unusable: their share of the requests gets 500 (UNAVAILABLE)
+  | "namespaceSelectorUnknown" // the chosen route's namespace is admitted by a selector whose labels are unknown
+  | "routeKindPrecedence"; // equally specific hostnames: a GRPCRoute was preferred to an HTTPRoute
 
 export interface AppliedFilter {
   type: string;
@@ -211,8 +230,10 @@ export interface ChosenRule {
 
 export interface RequestExplanation {
   outcome: Outcome;
-  /** What the Gateway answers itself: 404 (no route), 500 (no backend), the redirect's code. */
+  /** What the Gateway answers itself: 404 (no route), 500 (no backend), the redirect's code; none for gRPC. */
   status?: number;
+  /** What the Gateway answers a gRPC request itself: no route, or no usable backend of a GRPCRoute. */
+  grpcStatus?: GrpcStatus;
   request?: ParsedRequest;
   gateway?: NamespacedName;
   listener?: ListenerStatus;
@@ -269,10 +290,26 @@ export function parseRequest(input: RequestInput): ParsedRequest | undefined {
     port: url.port ? Number(url.port) : scheme === "https" ? 443 : 80,
     path: url.pathname || "/",
     search: url.search,
-    headers,
-    query: [...url.searchParams.entries()],
+    // The client sends the URL's host (with a port other than the scheme's) as `Host`; header matches see it.
+    headers: hostHeader === undefined ? [...headers, ["host", url.host]] : headers,
+    query: rawQuery(url.search),
     grpc: grpcPath?.[1] && grpcPath[2] ? { service: grpcPath[1], method: grpcPath[2] } : undefined,
   };
+}
+
+/**
+ * `?a=1&b=x+y` → `[["a", "1"], ["b", "x+y"]]`, undecoded: implementations (Envoy) compare query parameters as they
+ * appear on the wire, so a match on `x y` does not take `x+y` or `x%20y`.
+ */
+function rawQuery(search: string): [string, string][] {
+  return search
+    .replace(/^\?/, "")
+    .split("&")
+    .filter((part) => part !== "")
+    .map((part) => {
+      const eq = part.indexOf("=");
+      return eq < 0 ? [part, ""] : [part.slice(0, eq), part.slice(eq + 1)];
+    });
 }
 
 // ---------- Hostnames ----------
@@ -411,7 +448,9 @@ function httpVerdict(match: unknown, req: ParsedRequest): Verdict {
   if (method && method !== req.method) return { ok: false, reason: "methodMismatch", regex };
   const failed = entriesFail(headers, req.headers, "headerMismatch") ?? entriesFail(query, req.query, "queryMismatch");
   if (failed) return { ok: false, ...failed, regex };
-  const pathScore = type === "Exact" ? 2_000_000 : type === "PathPrefix" ? 1_000_000 + value.length : 0;
+  // Exact, then RegularExpression (implementation-specific; Envoy Gateway's order), then the longest PathPrefix —
+  // `/foo/` and `/foo` are the same prefix, so they tie and the older route wins.
+  const pathScore = type === "Exact" ? 3_000_000 : type === "PathPrefix" ? 1_000_000 + trimSlash(value).length : 2_000_000;
   return {
     ok: true,
     regexPath,
@@ -503,10 +542,78 @@ const nn = (obj: KubeObject): NamespacedName => ({ namespace: obj.metadata?.name
 
 const fullName = (n: NamespacedName) => `${n.namespace ?? ""}/${n.name}`;
 
-/** Route kinds the listener lets attach: `allowedRoutes.kinds`, else what the controller reported, else any. */
-function kindAllowed(listener: ListenerStatus, kind: RouteKindName): boolean {
-  const allowed = listener.allowedKinds.length > 0 ? listener.allowedKinds : listener.supportedKinds;
-  return allowed.length === 0 || allowed.includes(kind);
+/** The listener's `allowedRoutes` as written in the Gateway's spec. */
+function allowedRoutesOf(gateway: KubeObject, listener: ListenerStatus): unknown {
+  const spec = arr(get(gateway, "spec", "listeners")).find((l) => str(get(l, "name")) === listener.name);
+  return get(spec, "allowedRoutes");
+}
+
+/**
+ * Route kinds the listener lets attach: `allowedRoutes.kinds` (group and kind), else what the controller reported,
+ * else any.
+ */
+function kindAllowed(gateway: KubeObject, listener: ListenerStatus, kind: RouteKindName): boolean {
+  const kinds = arr(get(allowedRoutesOf(gateway, listener), "kinds"));
+  if (kinds.length > 0)
+    return kinds.some((k) => (str(get(k, "group")) ?? GATEWAY_GROUP) === GATEWAY_GROUP && str(get(k, "kind")) === kind);
+  const supported = listener.supportedKinds;
+  return supported.length === 0 || supported.includes(kind);
+}
+
+/** Whether a label selector (`matchLabels`, `matchExpressions`) selects `labels`. */
+function selects(selector: unknown, labels: Readonly<Partial<Record<string, string>>>): boolean {
+  const matchLabels = get(selector, "matchLabels");
+  for (const [key, value] of Object.entries(matchLabels && typeof matchLabels === "object" ? matchLabels : {}))
+    if (labels[key] !== String(value)) return false;
+  return arr(get(selector, "matchExpressions")).every((e) => {
+    const key = str(get(e, "key")) ?? "";
+    const values = arr(get(e, "values")).map(String);
+    const has = Object.hasOwn(labels, key);
+    switch (str(get(e, "operator"))) {
+      case "In":
+        return has && values.includes(labels[key] ?? "");
+      case "NotIn":
+        return !has || !values.includes(labels[key] ?? "");
+      case "Exists":
+        return has;
+      case "DoesNotExist":
+        return !has;
+      default:
+        return false;
+    }
+  });
+}
+
+/**
+ * Whether the listener admits routes from `namespace` (`allowedRoutes.namespaces.from`, default `Same`): "maybe" for
+ * a `Selector` when the namespace's labels are not known.
+ */
+function namespaceAllowed(
+  gateway: KubeObject,
+  listener: ListenerStatus,
+  namespace: string | null,
+  namespaces: readonly KubeObject[] | undefined,
+): "yes" | "no" | "maybe" {
+  const from = get(allowedRoutesOf(gateway, listener), "namespaces");
+  switch (str(get(from, "from")) ?? "Same") {
+    case "All":
+      return "yes";
+    case "Same":
+      return namespace === (gateway.metadata?.namespace ?? null) ? "yes" : "no";
+    case "Selector": {
+      const selector = get(from, "selector");
+      if (selector === undefined || selector === null) return "no"; // a nil selector selects nothing
+      const ns = namespaces?.find((n) => n.metadata?.name === namespace);
+      if (!ns) return "maybe";
+      const raw = get(ns, "metadata", "labels");
+      const labels = Object.fromEntries(
+        Object.entries(raw && typeof raw === "object" ? raw : {}).map(([k, v]) => [k, String(v)]),
+      );
+      return selects(selector, labels) ? "yes" : "no";
+    }
+    default:
+      return "no"; // `None`
+  }
 }
 
 /** The route's hostnames that intersect the listener's (the intersections); all of the listener when it has none. */
@@ -522,6 +629,8 @@ const hostnameRank = (h: string) => (isWildcard(h) ? 0 : 10_000) + h.length;
 
 interface Hit {
   route: RouteEntry;
+  /** The listener admits the route's namespace by a selector whose labels are not known. */
+  namespaceUnknown: boolean;
   hostname: string | null;
   rule: number;
   match?: number;
@@ -541,6 +650,7 @@ function evaluateListener(
   listener: ListenerStatus,
   routes: readonly RouteEntry[],
   req: ParsedRequest,
+  namespaces: readonly KubeObject[] | undefined,
 ): ListenerEval {
   const gw = nn(gateway);
   const out: ListenerEval = { hits: [], candidates: [], regexPath: false, regex: false };
@@ -562,7 +672,13 @@ function evaluateListener(
       lose(route, "notAccepted", parent.accepted?.reason ? { condition: parent.accepted.reason } : {});
       continue;
     }
-    if (!kindAllowed(listener, route.kind)) {
+    // Accepted on a parentRef without a sectionName only says the route attached to some listener of the Gateway.
+    const admitted = namespaceAllowed(gateway, listener, route.id.namespace, namespaces);
+    if (admitted === "no") {
+      lose(route, "namespaceNotAllowed");
+      continue;
+    }
+    if (!kindAllowed(gateway, listener, route.kind)) {
       lose(route, "kindNotAllowed");
       continue;
     }
@@ -583,10 +699,11 @@ function evaluateListener(
       }
       hostname = matching[0] ?? null;
     }
+    // Both kinds' precedence starts with the hostname; only then a GRPCRoute before an HTTPRoute for gRPC.
     const hostKey: KeyPart[] = [
-      { criterion: "routeKind", value: req.protocol === "grpc" && route.kind === "GRPCRoute" ? 1 : 0 },
       { criterion: "hostname", value: hostname && !isWildcard(hostname) ? hostname.length : 0 },
       { criterion: "hostnameLength", value: hostname?.length ?? 0 },
+      { criterion: "routeKind", value: req.protocol === "grpc" && route.kind === "GRPCRoute" ? 1 : 0 },
     ];
     const tieKey: KeyPart[] = [
       { criterion: "age", value: -(createdAt(route.obj) ?? Number.MAX_SAFE_INTEGER) },
@@ -616,6 +733,7 @@ function evaluateListener(
         if (verdict.regexPath) out.regexPath = true;
         const hit: Hit = {
           route,
+          namespaceUnknown: admitted === "maybe",
           hostname,
           rule: ruleIndex,
           match: index,
@@ -650,6 +768,7 @@ function evaluateGateway(
   routes: readonly RouteEntry[],
   req: ParsedRequest,
   addressOwners: ReadonlyMap<string, KubeObject[]>,
+  namespaces: readonly KubeObject[] | undefined,
 ): GatewayEval {
   const gw = nn(gateway);
   const result: GatewayEval = { gateway, losers: [], candidates: [], regexPath: false, regex: false };
@@ -690,7 +809,7 @@ function evaluateGateway(
     result.candidates.push({ level: "listener", gateway: gw, listener: other.name, reason: "lessSpecificListener" });
   if (!listener) return result;
   result.listener = listener;
-  const evaluated = evaluateListener(gateway, listener, routes, req);
+  const evaluated = evaluateListener(gateway, listener, routes, req, namespaces);
   result.candidates.push(...evaluated.candidates);
   result.regexPath = evaluated.regexPath;
   result.regex = evaluated.regex;
@@ -768,7 +887,7 @@ function describeHit(
   notes: Note[],
 ): Pick<
   RequestExplanation,
-  "outcome" | "status" | "route" | "rule" | "filters" | "redirect" | "rewrite" | "mirrors" | "backends"
+  "outcome" | "status" | "grpcStatus" | "route" | "rule" | "filters" | "redirect" | "rewrite" | "mirrors" | "backends"
 > {
   const { route } = hit;
   const ns = route.id.namespace;
@@ -823,7 +942,9 @@ function describeHit(
     return { ...base, outcome: "redirected", status: redirect.statusCode, redirect };
   }
   const usable = backends.filter((b) => !b.issue && b.weight > 0);
-  if (usable.length === 0) return { ...base, outcome: "noBackend", status: 500 };
+  // A GRPCRoute's request without a usable backend gets UNAVAILABLE; an HTTPRoute's a 500.
+  if (usable.length === 0)
+    return grpc ? { ...base, outcome: "noBackend", grpcStatus: "UNAVAILABLE" } : { ...base, outcome: "noBackend", status: 500 };
   if (backends.some((b) => b.issue && b.weight > 0)) notes.push("partialBackends");
   return { ...base, outcome: "forwarded" };
 }
@@ -848,7 +969,7 @@ export function explainRequest(input: RequestInput, cluster: ClusterSnapshot): R
       addressOwners.set(key, [...(addressOwners.get(key) ?? []), gateway]);
     }
   const evals = cluster.gateways
-    .map((gateway) => evaluateGateway(gateway, routes, req, addressOwners))
+    .map((gateway) => evaluateGateway(gateway, routes, req, addressOwners, cluster.namespaces))
     .sort(compareGateways);
   const chosen = evals[0];
   const notes = new Set<Note>();
@@ -860,6 +981,7 @@ export function explainRequest(input: RequestInput, cluster: ClusterSnapshot): R
     const winner = e.winner;
     for (const hit of winner ? e.losers : []) {
       const lostOn = winner && compareKeys(winner.key, hit.key).criterion;
+      if (e === chosen && lostOn === "routeKind") notes.add("routeKindPrecedence");
       candidates.push({
         level: "match",
         gateway: nn(e.gateway),
@@ -883,7 +1005,12 @@ export function explainRequest(input: RequestInput, cluster: ClusterSnapshot): R
   }
   if (chosen.listener.health === "pending") notes.add("listenerPending");
   const common = { request: req, gateway: nn(chosen.gateway), listener: chosen.listener, candidates };
-  if (!chosen.winner) return { ...empty, ...common, outcome: "noRoute", status: 404, notes: [...notes] };
+  if (!chosen.winner) {
+    // gRPC: no matching rule is `UNIMPLEMENTED`, not a 404.
+    const answer = req.protocol === "grpc" ? { grpcStatus: "UNIMPLEMENTED" as const } : { status: 404 };
+    return { ...empty, ...common, outcome: "noRoute", ...answer, notes: [...notes] };
+  }
+  if (chosen.winner.namespaceUnknown) notes.add("namespaceSelectorUnknown");
   const extraNotes: Note[] = [];
   const described = describeHit(chosen.winner, chosen.listener, req, cluster, extraNotes);
   for (const n of extraNotes) notes.add(n);
@@ -963,12 +1090,18 @@ function routeWins(a: RouteEntry, b: RouteEntry): boolean {
 /**
  * Every hostname served through the Gateways' HTTP/HTTPS listeners: hostname → Gateway/listener → route →
  * backends. A route that names a listener but is not accepted there is listed with `accepted: false` and the
- * controller's reason. Accepted routes of the same kind on the same listener and hostname with an identical match
- * conflict; the older one (then the first by `{namespace}/{name}`) wins.
+ * controller's reason. A listener whose `allowedRoutes` do not admit the route's namespace or kind does not list it
+ * (unless the route names that listener and was refused there); a `Selector` without `namespaces` admits. Accepted
+ * routes of the same kind on the same listener and hostname with an identical match conflict; the older one (then the
+ * first by `{namespace}/{name}`) wins.
  */
 export function hostnameMap(
   gateways: readonly KubeObject[],
-  routes: { httpRoutes?: readonly KubeObject[]; grpcRoutes?: readonly KubeObject[] },
+  routes: {
+    httpRoutes?: readonly KubeObject[];
+    grpcRoutes?: readonly KubeObject[];
+    namespaces?: readonly KubeObject[];
+  },
 ): HostnameRow[] {
   const entries = routeEntries(routes.httpRoutes, routes.grpcRoutes);
   const rows: (HostnameRow & { entry: RouteEntry })[] = [];
@@ -977,8 +1110,11 @@ export function hostnameMap(
       if (listener.protocol !== "HTTP" && listener.protocol !== "HTTPS") continue;
       for (const entry of entries) {
         const parent = routeAttachedTo(entry.obj, gateway, listener);
-        if (!parent || !kindAllowed(listener, entry.kind)) continue;
+        if (!parent || !kindAllowed(gateway, listener, entry.kind)) continue;
         const accepted = parent.accepted?.status === "True";
+        // Accepted on a parentRef without a sectionName: attached only to the listeners that admit the namespace.
+        const admitted = namespaceAllowed(gateway, listener, entry.id.namespace, routes.namespaces);
+        if (admitted === "no" && (accepted || parent.ref.sectionName === undefined)) continue;
         const own = routeHostnames(entry.obj).map((h) => h.toLowerCase());
         let hostnames: (string | null)[];
         if (own.length === 0) hostnames = [listener.hostname?.toLowerCase() ?? null];
