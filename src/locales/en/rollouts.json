@@ -1,0 +1,49 @@
+{
+  "tab": "History",
+  "status": {
+    "title": "Rollout",
+    "state": {
+      "complete": "Complete",
+      "progressing": "Progressing",
+      "paused": "Paused",
+      "failed": "Stuck"
+    },
+    "replicas": "{{updated}} of {{desired}} updated · {{ready}} ready · {{available}} available",
+    "pendingObservation": "Waiting for the controller to see the latest change.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "The rollout is paused; resume it to continue or to roll back."
+  },
+  "history": {
+    "title": "Revisions",
+    "loading": "Loading revisions…",
+    "empty": "No revisions yet.",
+    "columns": {
+      "compare": "Compare",
+      "revision": "Revision",
+      "created": "Created",
+      "changeCause": "Change cause",
+      "images": "Images"
+    },
+    "current": "current",
+    "select": "Compare revision {{revision}}",
+    "pickTwo": "Select two revisions to compare their pod templates.",
+    "pickOneMore": "Select one more revision to compare.",
+    "revisionTitle": "Revision {{revision}}",
+    "rollBack": "Roll back to revision {{revision}}"
+  },
+  "rollback": {
+    "action": "Roll back…",
+    "title": "Roll back {{name}}",
+    "confirm": "Roll back to revision {{revision}}",
+    "revision": "Revision",
+    "revisionOption": "Revision {{revision}}",
+    "revisionOptionCause": "Revision {{revision}} — {{cause}}",
+    "intro": "The pod template of revision {{revision}} replaces the current one, and the pods are replaced as for any update.",
+    "current": "Current template",
+    "target": "Revision {{revision}}",
+    "same": "The current template already matches revision {{revision}}: there is nothing to change.",
+    "paused": "This Deployment is paused. Resume it before rolling it back.",
+    "none": "There is no earlier revision to roll back to.",
+    "loading": "Loading revisions…"
+  }
+}

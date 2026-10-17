@@ -564,6 +564,7 @@ async fn an_agent_initializes_lists_the_tools_and_calls_one_and_the_call_is_jour
             "port_forward_start",
             "port_forward_stop",
             "restart",
+            "rollout_undo",
             "scale",
             "suspend_cronjob",
             "trigger_cronjob",

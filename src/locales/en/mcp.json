@@ -101,6 +101,7 @@
     "delete_resource": "Delete a resource",
     "scale": "Scale a workload",
     "restart": "Restart a workload",
+    "rollout_undo": "Roll back a workload",
     "cordon_node": "Cordon or uncordon a node",
     "drain_node": "Drain a node",
     "trigger_cronjob": "Run a CronJob now",

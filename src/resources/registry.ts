@@ -38,6 +38,8 @@ export type BuiltInActionId =
   | "drain"
   | "trigger"
   | "suspend"
+  // Rollout history (src/features/rollouts)
+  | "rolloutUndo"
   // Flux (src/features/flux)
   | "reconcile"
   | "reconcileWithSource"

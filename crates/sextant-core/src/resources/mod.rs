@@ -1,11 +1,12 @@
 //! Resources of any kind (built-in and custom) handled as dynamic JSON objects.
 //!
 //! Types live here; `watch.rs` / `get.rs` (watch and read), `list.rs` (one-shot lists and events) and `mutate.rs`
-//! (changes) hold the functions.
+//! (changes) hold the functions; `rollouts.rs` the rollout history and `kubectl rollout undo`.
 
 mod get;
 mod list;
 mod mutate;
+pub mod rollouts;
 mod watch;
 
 use std::sync::Arc;

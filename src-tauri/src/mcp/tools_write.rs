@@ -1,4 +1,4 @@
-//! Tools that change a cluster: apply, patch, delete, scale, restart, node and CronJob actions, GitOps actions, Helm,
+//! Tools that change a cluster: apply, patch, delete, scale, restart, rollout undo, node and CronJob actions, GitOps actions, Helm,
 //! a command in a container and port forwards. Every one checks the cluster's access rules through the call's `Guard`
 //! right before it acts (`Guard::check` also waits for "Allow" in the window when a rule asks for it, and refuses once
 //! the server has stopped); what the agent named is checked for sense before that, so the user is not asked about a
@@ -9,7 +9,7 @@
 //! | tool | needs |
 //! |---|---|
 //! | `apply_yaml` | Modify on the kind of every document, in its namespace (all checked before anything is sent) |
-//! | `patch_resource`, `scale`, `restart`, `trigger_cronjob`, `suspend_cronjob`, `gitops_action`, `cordon_node` | Modify on the kind |
+//! | `patch_resource`, `scale`, `restart`, `rollout_undo`, `trigger_cronjob`, `suspend_cronjob`, `gitops_action`, `cordon_node` | Modify on the kind |
 //! | `delete_resource` | Delete on the kind |
 //! | `drain_node` | Modify on `Node` and Delete on `Pod` in all namespaces |
 //! | `exec_command` | Exec on `Pod` |
@@ -35,7 +35,7 @@ use sextant_core::error::with_timeout;
 use sextant_core::exec;
 use sextant_core::helm::cli::{self as helm_cli, HelmCli};
 use sextant_core::portforward::{ForwardTarget, PodFilter};
-use sextant_core::resources::{self, KindRef, ObjectRef, PatchType};
+use sextant_core::resources::{self, KindRef, ObjectRef, PatchType, rollouts};
 use sextant_core::{ClusterId, CoreError, CoreResult, DrainOptions, ErrorCode};
 
 use super::confirm::first_lines;
@@ -96,6 +96,15 @@ pub fn register_write_tools(tools: &mut ToolSet) {
             "Rollout restart of a Deployment, StatefulSet or DaemonSet (like `kubectl rollout restart`).",
             ToolKind::Change,
             restart,
+        )
+        .add(
+            "rollout_undo",
+            "Rolls a Deployment, StatefulSet or DaemonSet back to an earlier revision of its pod template, like \
+             `kubectl rollout undo --to-revision`: `toRevision` (from the ReplicaSets' `deployment.kubernetes.io/revision` \
+             or the ControllerRevisions' `revision`), or the revision before the current one when it is left out. A \
+             paused Deployment is refused; a revision that already matches the live template changes nothing.",
+            ToolKind::Destructive,
+            rollout_undo,
         )
         .add(
             "cordon_node",
@@ -240,6 +249,20 @@ pub struct ObjectArgs {
     /// Namespace of the object (not for cluster-wide kinds such as Node).
     pub namespace: Option<String>,
     pub name: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RolloutUndoArgs {
+    /// Cluster id from list_clusters.
+    pub cluster: String,
+    /// `Deployment`, `StatefulSet` or `DaemonSet`.
+    pub kind: String,
+    pub api_version: Option<String>,
+    pub namespace: String,
+    pub name: String,
+    /// The revision to go back to; left out (or 0): the one before the current revision.
+    pub to_revision: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -610,6 +633,53 @@ async fn restart(call: ToolCall, args: ObjectArgs) -> ToolResult {
         .await?;
     change("the restart", resources::restart(mgr, &cluster.id, &object)).await?;
     Ok(ToolOutput::Text(format!("restarted {}", describe(&object))))
+}
+
+async fn rollout_undo(call: ToolCall, args: RolloutUndoArgs) -> ToolResult {
+    let to_revision = args.to_revision.unwrap_or(0);
+    if to_revision < 0 {
+        return Err(invalid(format!("a revision cannot be negative ({to_revision})")).into());
+    }
+    let cluster = call.open(&args.cluster).await?;
+    let mgr = &call.ctx().clusters;
+    let kind = find_kind(mgr, &cluster.id, args.api_version.as_deref(), &args.kind).await?;
+    let has_history = kind.kind_ref.group == "apps"
+        && ["Deployment", "StatefulSet", "DaemonSet"].contains(&kind.kind_ref.kind.as_str());
+    if !has_history {
+        return Err(invalid(format!(
+            "only a Deployment, StatefulSet or DaemonSet can be rolled back, not {}",
+            kind.kind_ref.kind
+        ))
+        .into());
+    }
+    let object = object_ref(&kind, Some(&args.namespace), &args.name)?;
+    let target = if to_revision == 0 {
+        "to the previous revision".to_owned()
+    } else {
+        format!("to revision {to_revision}")
+    };
+    let summary = plain("rollout_undo", describe(&object), Some(target));
+    call.guard
+        .check(&cluster, &[modify(&object)], &summary)
+        .await?;
+    let done = change(
+        "the rollback",
+        rollouts::undo(mgr, &cluster.id, &object, to_revision),
+    )
+    .await?;
+    Ok(ToolOutput::Text(if done.skipped {
+        format!(
+            "skipped: {} already runs the template of revision {}",
+            describe(&object),
+            done.revision
+        )
+    } else {
+        format!(
+            "rolled {} back to revision {}",
+            describe(&object),
+            done.revision
+        )
+    }))
 }
 
 async fn cordon_node(call: ToolCall, args: CordonArgs) -> ToolResult {
@@ -1573,12 +1643,13 @@ mod tests {
     use super::*;
     use crate::state::AppState;
 
-    const WRITE_TOOLS: [&str; 18] = [
+    const WRITE_TOOLS: [&str; 19] = [
         "apply_yaml",
         "patch_resource",
         "delete_resource",
         "scale",
         "restart",
+        "rollout_undo",
         "cordon_node",
         "drain_node",
         "trigger_cronjob",
@@ -1760,6 +1831,7 @@ mod tests {
         assert_eq!(hints("delete_resource"), (Some(false), Some(true)));
         assert_eq!(hints("helm_uninstall"), (Some(false), Some(true)));
         assert_eq!(hints("restart"), (Some(false), Some(false)));
+        assert_eq!(hints("rollout_undo"), (Some(false), Some(true)));
         assert_eq!(hints("port_forward_list"), (Some(true), Some(false)));
     }
 
@@ -2014,6 +2086,10 @@ mod tests {
                 json!({ "cluster": c, "kind": "Deployment", "namespace": "a", "name": "b", "replicas": 1 }),
             ),
             ("restart", object),
+            (
+                "rollout_undo",
+                json!({ "cluster": c, "kind": "Deployment", "namespace": "a", "name": "b", "toRevision": 1 }),
+            ),
             ("cordon_node", json!({ "cluster": c, "name": "n" })),
             ("drain_node", json!({ "cluster": c, "name": "n" })),
             (
@@ -2069,7 +2145,7 @@ mod tests {
             sextant_core::ConnectionState::Disconnected
         ));
         let journal = state.mcp.context().audit.list(None);
-        assert_eq!(journal.len(), 17);
+        assert_eq!(journal.len(), 18);
         assert!(journal.iter().all(|e| e.decision == AuditDecision::Denied));
     }
 
@@ -3454,6 +3530,31 @@ spec:
         .await
         .unwrap_err();
         assert!(wrong.starts_with("only a Deployment"), "{wrong}");
+        // The restart made revision 2; going back drops its annotation again.
+        wait_until("the restart's ReplicaSet", || async {
+            rollouts::history(&state.clusters, &id, &web)
+                .await
+                .is_ok_and(|h| h.len() >= 2)
+        })
+        .await;
+        let undone = tool(
+            &state,
+            "rollout_undo",
+            json!({ "cluster": c, "kind": "Deployment", "namespace": NS, "name": "web" }),
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            undone,
+            json!(format!("rolled Deployment {NS}/web back to revision 1"))
+        );
+        let back = get(&state, &id, &web).await.unwrap();
+        assert!(
+            back["spec"]["template"]["metadata"]["annotations"]
+                .get("kubectl.kubernetes.io/restartedAt")
+                .is_none(),
+            "{back}"
+        );
 
         // CronJob.
         let tick = object(kind("batch", "v1", "CronJob"), Some(NS), "tick");
