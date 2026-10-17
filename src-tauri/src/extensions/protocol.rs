@@ -11,10 +11,15 @@
 //! only through [`resolve_package_file`]: exact names inside the extension's folder, no `..`, no dot-files, no links.
 //! A disabled, unknown or paused extension, or any file that cannot be served, is `404`. A file carries the CSP of
 //! its extension ([`extension_csp`]: sources only from its own folder, no network, a sandbox); a `404` or `405`
-//! carries [`ERROR_CSP`]. Every answer has `nosniff` and `no-store`.
+//! carries [`ERROR_CSP`]. Every answer has `nosniff` and `no-store`. Why a file was refused (a link, a hard link,
+//! another spelling, a file system that cannot be checked, too big) goes to stderr once per file, without its contents;
+//! a file that is simply not there is not logged.
 
+use std::collections::HashSet;
 use std::path::Path;
+use std::sync::{Mutex, OnceLock};
 
+use sextant_core::ErrorCode;
 use sextant_core::extensions::{MAX_UNPACKED_BYTES, resolve_package_file};
 use tauri::http::{Method, Request, Response, StatusCode, header};
 use tauri::{Manager, Runtime};
@@ -195,10 +200,54 @@ pub fn serve(host: &ExtensionHost, request: &Request<Vec<u8>>) -> Response<Vec<u
 }
 
 fn read_file(root: &Path, file: &str) -> Option<Vec<u8>> {
-    let open = resolve_package_file(root, file).ok()?;
-    super::manage::read_limited(open, MAX_UNPACKED_BYTES + 1)
-        .ok()
-        .filter(|body| body.len() as u64 <= MAX_UNPACKED_BYTES)
+    let open = match resolve_package_file(root, file) {
+        Ok(open) => open,
+        Err(err) => {
+            if err.code != ErrorCode::NotFound {
+                let _ = log_refusal(root, file, &err.message);
+            }
+            return None;
+        }
+    };
+    match super::manage::read_limited(open, MAX_UNPACKED_BYTES + 1) {
+        Ok(body) if body.len() as u64 <= MAX_UNPACKED_BYTES => Some(body),
+        Ok(_) => {
+            let _ = log_refusal(
+                root,
+                file,
+                &format!("larger than {MAX_UNPACKED_BYTES} bytes"),
+            );
+            None
+        }
+        Err(err) => {
+            let _ = log_refusal(root, file, &err.message);
+            None
+        }
+    }
+}
+
+/// At most this many refused files are remembered (and so logged); a frame retrying one file logs it once.
+const MAX_LOGGED_REFUSALS: usize = 256;
+
+/// Writes why `file` of `root` was not served to stderr, the first time only. `reason` names the file and the check,
+/// never its contents. Whether it was written.
+fn log_refusal(root: &Path, file: &str, reason: &str) -> bool {
+    static LOGGED: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    let key = format!("{}|{file}", root.display());
+    let first = {
+        let mut logged = LOGGED
+            .get_or_init(Default::default)
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        logged.len() < MAX_LOGGED_REFUSALS && logged.insert(key)
+    };
+    if first {
+        eprintln!(
+            "sextant: extension file `{file}` in {} is not served: {reason}",
+            root.display()
+        );
+    }
+    first
 }
 
 /// Registers the protocol on the builder; files are read off the main thread.
@@ -466,5 +515,16 @@ mod tests {
             csp,
             "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; frame-src sextant-ext: http://sextant-ext.localhost"
         );
+    }
+
+    #[test]
+    fn a_refused_file_is_logged_once() {
+        let root = Path::new("/nonexistent/sextant-log-once-test");
+        assert!(log_refusal(root, "app.js", "a link"));
+        assert!(
+            !log_refusal(root, "app.js", "a link"),
+            "the same file again"
+        );
+        assert!(log_refusal(root, "other.js", "a link"));
     }
 }

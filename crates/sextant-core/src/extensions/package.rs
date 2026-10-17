@@ -184,34 +184,92 @@ fn check_path(path: &str) -> CoreResult<()> {
 /// - every part is exactly the name on disk (read from its folder, each folder listed once per request): another
 ///   spelling of an existing name — other case on a case-insensitive file system, a Windows 8.3 short name such as
 ///   `GIT~1` — is refused;
-/// - no symbolic link in any part below `root` (on Windows: no name-surrogate reparse point — symbolic link, junction,
-///   mount point; other reparse points such as OneDrive placeholders or deduplicated files are ordinary files); the
-///   last part is a regular file;
-/// - the file is opened without following a link in the last part (`O_NOFOLLOW` on Unix, the reparse point itself on
-///   Windows), then every part of the path is checked again (not a link, folders then a file) and the path must still
-///   lead to the file that was opened (same device and inode on Unix, same volume serial number and file index on
-///   Windows), so a folder swapped for a link around the open is refused too.
+/// - the path is walked part by part from an open handle of `root`, never following a link: a symbolic link in any
+///   part below `root` is refused (on Windows: a name-surrogate reparse point — symbolic link, junction, mount point;
+///   other reparse points such as OneDrive placeholders or deduplicated files are ordinary files); folders then a
+///   regular file. The handle returned is the one the walk opened.
+///   - Unix: each part is opened with `openat` relative to the folder opened before it (`O_NOFOLLOW`, plus
+///     `O_DIRECTORY` for folders), and the folder listings are read from those handles, so a part swapped for a link
+///     at any moment is either refused or not used: the walk never leaves the folders it opened.
+///   - Windows: each part is opened by its full path (no handle-relative open without `NtCreateFile`), the reparse
+///     point itself, and must then be exactly where the walk expects it: the final path of the opened handle
+///     (`GetFinalPathNameByHandleW`, normalized: long names, the case on disk) is the final path of `root` plus the
+///     requested parts. A part swapped for a link around the open, a short-name alias (even one that only appeared
+///     after the listing was read) or another case is refused that way; what is served is a file that sat at the
+///     requested place inside `root` after it was opened. The listings are read by path.
+/// - the file has a single name: a regular file with more than one hard link is refused (another of its names may be
+///   outside the package, and a hard link cannot be told apart from the original). Packages from archives never
+///   contain hard links; a development folder with a hard-linked file gets this error for that file.
+/// - Windows only: a file whose file system gives it no identity (`FileIdInfo` unsupported or all zeros, as on some
+///   network file systems) is not served.
 ///
-/// `invalid` for an unsafe path, another spelling or a link; `notFound` when a part is missing (or a folder where a
-/// file is expected).
+/// `invalid` for an unsafe path, another spelling, a link or a hard link; `notFound` when a part is missing (or a
+/// folder where a file is expected).
 pub fn resolve_package_file(root: &Path, request: &str) -> CoreResult<std::fs::File> {
     resolve_package_file_with(root, request, &mut Listings::default(), &mut |_| {})
 }
 
-/// The moments of [`resolve_package_file`] a test can act at.
+/// What a folder entry is (not following a link).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum OpenStage {
-    BeforeOpen,
-    AfterOpen,
+enum EntryKind {
+    File,
+    Dir,
+    Link,
+    Other,
+}
+
+/// Why one part of the walk was not opened.
+#[derive(Debug)]
+enum StepError {
+    Link,
+    NotAFile,
+    Missing,
+    HardLink,
+    /// Not the entry the walk expects at this place (moved, swapped, another spelling; Windows).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    Changed,
+    /// The file system gives the file no identity or no normalized final path (Windows).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    NoIdentity,
+    /// A part on another file system than the root: a mount point inside the package (Unix).
+    #[cfg_attr(not(unix), allow(dead_code))]
+    OtherDevice,
+    Io(std::io::Error),
+}
+
+fn step_error(err: StepError, request: &str, path: &Path) -> CoreError {
+    match err {
+        StepError::Link => link_refused(request),
+        StepError::NotAFile => not_a_file(request),
+        StepError::Missing => not_in_extension(request),
+        StepError::HardLink => invalid(format!(
+            "`{request}` has more than one hard link (another name of it may be outside the extension); extensions \
+             cannot use links"
+        )),
+        StepError::Changed => invalid(format!(
+            "`{request}` changed while it was being opened; extensions cannot use links"
+        )),
+        StepError::NoIdentity => invalid(format!(
+            "`{request}` cannot be served: the file system of {} does not tell where a file is or which file it is \
+             (likely a network share or a FAT/exFAT drive); keep the extension in a folder on a local NTFS or ReFS \
+             drive",
+            path.display()
+        )),
+        StepError::OtherDevice => invalid(format!(
+            "`{request}` is on another file system than the extension folder (a mount point inside it); extensions \
+             cannot use mount points"
+        )),
+        StepError::Io(err) => io_error("cannot read", path, err),
+    }
 }
 
 /// Folder listings read while resolving paths: each folder is read from disk at most once, however many parts or
-/// files go through it. Only names (and their types as listed) are taken from here; whether a part is a link is
-/// checked again on disk after the open ([`current_metadata`]).
+/// files go through it. Only names (and their types as listed) are taken from here; what each part is gets checked
+/// again on the handle the walk opens.
 #[derive(Default)]
 struct Listings {
     /// Folder → its entries by exact name; the type is `None` when the folder listing could not tell it.
-    folders: HashMap<PathBuf, HashMap<OsString, Option<std::fs::FileType>>>,
+    folders: HashMap<PathBuf, HashMap<OsString, Option<EntryKind>>>,
     /// How many folders were read from disk.
     reads: usize,
 }
@@ -219,24 +277,20 @@ struct Listings {
 impl Listings {
     fn entries(
         &mut self,
+        dir: &walk::Dir,
         folder: &Path,
         request: &str,
-    ) -> CoreResult<&HashMap<OsString, Option<std::fs::FileType>>> {
+    ) -> CoreResult<&HashMap<OsString, Option<EntryKind>>> {
         match self.folders.entry(folder.to_path_buf()) {
             std::collections::hash_map::Entry::Occupied(entry) => Ok(entry.into_mut()),
             std::collections::hash_map::Entry::Vacant(slot) => {
-                let read = std::fs::read_dir(folder).map_err(|err| {
+                let entries = walk::list(dir, folder).map_err(|err| {
                     if err.kind() == std::io::ErrorKind::NotFound {
                         not_a_file(request)
                     } else {
                         io_error("cannot read", folder, err)
                     }
                 })?;
-                let mut entries = HashMap::new();
-                for entry in read {
-                    let entry = entry.map_err(|err| io_error("cannot read", folder, err))?;
-                    entries.insert(entry.file_name(), entry.file_type().ok());
-                }
                 self.reads += 1;
                 Ok(slot.insert(entries))
             }
@@ -244,48 +298,41 @@ impl Listings {
     }
 }
 
+/// [`resolve_package_file`]; `at(index)` runs just before part `index` of the path is opened (a test seam).
 fn resolve_package_file_with(
     root: &Path,
     request: &str,
     listings: &mut Listings,
-    at: &mut dyn FnMut(OpenStage),
+    at: &mut dyn FnMut(usize),
 ) -> CoreResult<std::fs::File> {
     if !is_servable_path(request) {
         return Err(invalid(format!(
             "`{request}` is not a plain relative path inside the extension"
         )));
     }
-    check_names(root, request, listings)?;
-    at(OpenStage::BeforeOpen);
-    let path = request
-        .split('/')
-        .fold(root.to_path_buf(), |path, segment| path.join(segment));
-    let file = open_no_follow(&path).map_err(|err| {
-        if std::fs::symlink_metadata(&path).is_ok_and(|m| m.file_type().is_symlink()) {
-            link_refused(request)
-        } else {
-            io_error("cannot read", &path, err)
+    let mut dir = walk::open_root(root).map_err(|err| step_error(err, request, root))?;
+    let segments: Vec<&str> = request.split('/').collect();
+    let mut folder = root.to_path_buf();
+    for (index, segment) in segments.iter().enumerate() {
+        let last = index + 1 == segments.len();
+        let kind = exact_entry(listings, &dir, &folder, segment, request)?;
+        if kind == EntryKind::Link {
+            return Err(link_refused(request));
         }
-    })?;
-    at(OpenStage::AfterOpen);
-    let opened = file
-        .metadata()
-        .map_err(|err| io_error("cannot read", &path, err))?;
-    if opened.file_type().is_symlink() {
-        return Err(link_refused(request));
+        if (last && kind != EntryKind::File) || (!last && kind != EntryKind::Dir) {
+            return Err(not_a_file(request));
+        }
+        at(index);
+        let path = folder.join(segment);
+        if last {
+            return walk::open_file(&dir, &path, segment)
+                .map_err(|err| step_error(err, request, &path));
+        }
+        dir =
+            walk::open_dir(&dir, &path, segment).map_err(|err| step_error(err, request, &path))?;
+        folder = path;
     }
-    if !opened.is_file() {
-        return Err(not_a_file(request));
-    }
-    let now = current_metadata(root, request)?;
-    let same = same_file(&file, &opened, &path, &now)
-        .map_err(|err| io_error("cannot read", &path, err))?;
-    if !same {
-        return Err(invalid(format!(
-            "`{request}` changed while it was being opened; extensions cannot use links"
-        )));
-    }
-    Ok(file)
+    Err(not_a_file(request))
 }
 
 fn link_refused(request: &str) -> CoreError {
@@ -301,206 +348,438 @@ fn not_a_file(request: &str) -> CoreError {
     )
 }
 
-/// Checks, from the folder listings, that every part of `request` below `root` is exactly a name on disk, not a link,
-/// folders then a regular file.
-fn check_names(root: &Path, request: &str, listings: &mut Listings) -> CoreResult<()> {
-    let segments: Vec<&str> = request.split('/').collect();
-    let mut path = root.to_path_buf();
-    for (index, segment) in segments.iter().enumerate() {
-        let kind = exact_entry(listings, &path, segment, request)?;
-        path.push(segment);
-        if kind.is_symlink() {
-            return Err(link_refused(request));
-        }
-        let last = index + 1 == segments.len();
-        if (last && !kind.is_file()) || (!last && !kind.is_dir()) {
-            return Err(not_a_file(request));
-        }
-    }
-    Ok(())
+fn not_in_extension(request: &str) -> CoreError {
+    CoreError::new(
+        ErrorCode::NotFound,
+        format!("`{request}` is not in the extension"),
+    )
 }
 
-/// What every part of `request` below `root` is on disk now (not following a link; no folder listing): refused if a
-/// part is a link, or not a folder then a regular file. Returns what the last part is.
-fn current_metadata(root: &Path, request: &str) -> CoreResult<std::fs::Metadata> {
-    let segments: Vec<&str> = request.split('/').collect();
-    let mut path = root.to_path_buf();
-    let mut meta = None;
-    for (index, segment) in segments.iter().enumerate() {
-        path.push(segment);
-        let part =
-            std::fs::symlink_metadata(&path).map_err(|err| io_error("cannot read", &path, err))?;
-        if part.file_type().is_symlink() {
-            return Err(link_refused(request));
-        }
-        let last = index + 1 == segments.len();
-        if (last && !part.is_file()) || (!last && !part.is_dir()) {
-            return Err(not_a_file(request));
-        }
-        meta = Some(part);
-    }
-    meta.ok_or_else(|| not_a_file(request))
-}
-
-/// The type (not following a link) of the entry of `folder` named exactly `name`. No such entry: either another
-/// spelling of an existing one (case, 8.3 short name) — `invalid` — or nothing — `notFound`.
+/// The type (not following a link) of the entry of the open folder `dir` (at `folder`) named exactly `name`. No such
+/// entry: either another spelling of an existing one (case, 8.3 short name) — `invalid` — or nothing — `notFound`.
 fn exact_entry(
     listings: &mut Listings,
+    dir: &walk::Dir,
     folder: &Path,
     name: &str,
     request: &str,
-) -> CoreResult<std::fs::FileType> {
+) -> CoreResult<EntryKind> {
     let listed = listings
-        .entries(folder, request)?
+        .entries(dir, folder, request)?
         .get(std::ffi::OsStr::new(name))
         .copied();
-    let path = folder.join(name);
     match listed {
         Some(Some(kind)) => Ok(kind),
-        Some(None) => std::fs::symlink_metadata(&path)
-            .map(|meta| meta.file_type())
-            .map_err(|err| io_error("cannot read", &path, err)),
-        None if std::fs::symlink_metadata(&path).is_ok() => Err(invalid(format!(
+        Some(None) => walk::kind_at(dir, folder, name)
+            .map_err(|err| io_error("cannot read", &folder.join(name), err)),
+        None if walk::kind_at(dir, folder, name).is_ok() => Err(invalid(format!(
             "`{request}` does not name `{name}` exactly as it is on disk (another case or a short name)"
         ))),
-        None => Err(CoreError::new(
-            ErrorCode::NotFound,
-            format!("`{request}` is not in the extension"),
-        )),
+        None => Err(not_in_extension(request)),
     }
 }
 
-/// `O_NOFOLLOW` where its value is known without the `libc` crate; elsewhere 0, and the check after opening
-/// ([`same_file`]) still refuses a link.
-#[cfg(all(
-    any(target_os = "linux", target_os = "android"),
-    any(target_arch = "x86", target_arch = "x86_64")
-))]
-const O_NOFOLLOW: i32 = 0x20000;
-#[cfg(all(
-    any(target_os = "linux", target_os = "android"),
-    any(target_arch = "arm", target_arch = "aarch64")
-))]
-const O_NOFOLLOW: i32 = 0x8000;
-#[cfg(any(
-    target_os = "macos",
-    target_os = "ios",
-    target_os = "freebsd",
-    target_os = "openbsd",
-    target_os = "netbsd",
-    target_os = "dragonfly"
-))]
-const O_NOFOLLOW: i32 = 0x100;
-#[cfg(all(
-    unix,
-    not(any(
-        all(
-            any(target_os = "linux", target_os = "android"),
-            any(
-                target_arch = "x86",
-                target_arch = "x86_64",
-                target_arch = "arm",
-                target_arch = "aarch64"
-            )
-        ),
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "netbsd",
-        target_os = "dragonfly"
-    ))
-))]
-const O_NOFOLLOW: i32 = 0;
-
-/// Opens for reading without following a link in the last part.
-///
-/// On Windows the reparse point itself is opened; one that is not a link (`FileType::is_symlink` there means a
-/// name-surrogate reparse point: symbolic link, junction, mount point) — a OneDrive placeholder, a deduplicated file —
-/// is opened again normally, so the file system filter behind it serves the contents. Whatever ends up open is
-/// checked against the path afterwards ([`same_file`]).
-fn open_no_follow(path: &Path) -> std::io::Result<std::fs::File> {
-    let mut options = std::fs::OpenOptions::new();
-    options.read(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(O_NOFOLLOW);
-    }
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
-        use windows_sys::Win32::Storage::FileSystem::{
-            FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_OPEN_REPARSE_POINT,
-        };
-        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
-        let file = options.open(path)?;
-        let meta = file.metadata()?;
-        if meta.file_type().is_symlink()
-            || meta.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT == 0
-        {
-            return Ok(file);
-        }
-        drop(file);
-        options.custom_flags(0);
-    }
-    options.open(path)
-}
-
-/// Whether the open file (`file`, its metadata `opened`) and what `path` leads to now (`now`, not following a link)
-/// are the same file.
+/// The walk on Unix: every part opened relative to the folder handle before it, never following a link, and never
+/// onto another file system than the root's.
 #[cfg(unix)]
-fn same_file(
-    _file: &std::fs::File,
-    opened: &std::fs::Metadata,
-    _path: &Path,
-    now: &std::fs::Metadata,
-) -> std::io::Result<bool> {
-    use std::os::unix::fs::MetadataExt;
-    Ok(opened.dev() == now.dev() && opened.ino() == now.ino())
+mod walk {
+    use super::{EntryKind, StepError};
+    use rustix::fs::{AtFlags, CWD, Dev, FileType, Mode, OFlags};
+    use rustix::io::Errno;
+    use std::collections::HashMap;
+    use std::ffi::{OsStr, OsString};
+    use std::os::fd::OwnedFd;
+    use std::os::unix::ffi::OsStrExt;
+    use std::path::Path;
+
+    /// An open folder of the walk and the device of the root it was reached from.
+    pub(super) struct Dir {
+        fd: OwnedFd,
+        pub(super) root_dev: Dev,
+    }
+
+    fn kind_of(kind: FileType) -> EntryKind {
+        match kind {
+            FileType::RegularFile => EntryKind::File,
+            FileType::Directory => EntryKind::Dir,
+            FileType::Symlink => EntryKind::Link,
+            _ => EntryKind::Other,
+        }
+    }
+
+    /// `root` itself may be reached through links (it is the trusted starting point).
+    pub(super) fn open_root(root: &Path) -> Result<Dir, StepError> {
+        let fd = rustix::fs::openat(
+            CWD,
+            root,
+            OFlags::RDONLY | OFlags::DIRECTORY | OFlags::CLOEXEC,
+            Mode::empty(),
+        )
+        .map_err(|errno| {
+            if errno == Errno::NOENT {
+                StepError::Missing
+            } else {
+                StepError::Io(errno.into())
+            }
+        })?;
+        let root_dev = rustix::fs::fstat(&fd)
+            .map_err(|errno| StepError::Io(errno.into()))?
+            .st_dev;
+        Ok(Dir { fd, root_dev })
+    }
+
+    /// The entries of the open folder (read from the handle, not the path).
+    pub(super) fn list(
+        dir: &Dir,
+        _folder: &Path,
+    ) -> std::io::Result<HashMap<OsString, Option<EntryKind>>> {
+        let mut entries = HashMap::new();
+        for entry in rustix::fs::Dir::read_from(&dir.fd)? {
+            let entry = entry?;
+            let name = OsStr::from_bytes(entry.file_name().to_bytes());
+            if name == "." || name == ".." {
+                continue;
+            }
+            let kind = match entry.file_type() {
+                FileType::Unknown => None,
+                kind => Some(kind_of(kind)),
+            };
+            entries.insert(name.to_os_string(), kind);
+        }
+        Ok(entries)
+    }
+
+    pub(super) fn kind_at(dir: &Dir, _folder: &Path, name: &str) -> std::io::Result<EntryKind> {
+        let stat = rustix::fs::statat(&dir.fd, name, AtFlags::SYMLINK_NOFOLLOW)?;
+        Ok(kind_of(FileType::from_raw_mode(stat.st_mode)))
+    }
+
+    /// Why `name` in `dir` could not be opened as `expected`.
+    fn refused(dir: &Dir, name: &str, errno: Errno, expected: EntryKind) -> StepError {
+        if errno == Errno::LOOP {
+            return StepError::Link;
+        }
+        match rustix::fs::statat(&dir.fd, name, AtFlags::SYMLINK_NOFOLLOW) {
+            Ok(stat) => match kind_of(FileType::from_raw_mode(stat.st_mode)) {
+                EntryKind::Link => StepError::Link,
+                kind if kind != expected => StepError::NotAFile,
+                _ => StepError::Io(errno.into()),
+            },
+            Err(err) if err == Errno::NOENT => StepError::Missing,
+            Err(_) => StepError::Io(errno.into()),
+        }
+    }
+
+    /// What was opened, checked: of the `expected` kind and on the root's file system (a mount point inside the
+    /// package — FUSE, a disk image — could hold anything).
+    fn checked(
+        fd: &OwnedFd,
+        dir: &Dir,
+        expected: EntryKind,
+    ) -> Result<rustix::fs::Stat, StepError> {
+        let stat = rustix::fs::fstat(fd).map_err(|errno| StepError::Io(errno.into()))?;
+        if kind_of(FileType::from_raw_mode(stat.st_mode)) != expected {
+            return Err(StepError::NotAFile);
+        }
+        if stat.st_dev != dir.root_dev {
+            return Err(StepError::OtherDevice);
+        }
+        Ok(stat)
+    }
+
+    pub(super) fn open_dir(dir: &Dir, _path: &Path, name: &str) -> Result<Dir, StepError> {
+        let fd = rustix::fs::openat(
+            &dir.fd,
+            name,
+            OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+            Mode::empty(),
+        )
+        .map_err(|errno| refused(dir, name, errno, EntryKind::Dir))?;
+        checked(&fd, dir, EntryKind::Dir)?;
+        Ok(Dir {
+            fd,
+            root_dev: dir.root_dev,
+        })
+    }
+
+    /// `O_NONBLOCK`: a FIFO swapped in for the file does not hang the open (it is refused right after); reading a
+    /// regular file is not affected by it.
+    pub(super) fn open_file(
+        dir: &Dir,
+        _path: &Path,
+        name: &str,
+    ) -> Result<std::fs::File, StepError> {
+        let fd = rustix::fs::openat(
+            &dir.fd,
+            name,
+            OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK | OFlags::NOCTTY,
+            Mode::empty(),
+        )
+        .map_err(|errno| refused(dir, name, errno, EntryKind::File))?;
+        if checked(&fd, dir, EntryKind::File)?.st_nlink > 1 {
+            return Err(StepError::HardLink);
+        }
+        Ok(std::fs::File::from(fd))
+    }
 }
 
-/// Whether the open file and what `path` leads to now (opened without following a link and without reading it) are
-/// the same file: the same volume serial number and file index.
+/// The walk on Windows: every part opened by path as the reparse point itself, then checked to be exactly where the
+/// walk expects it by the final path of its handle.
 #[cfg(windows)]
-fn same_file(
-    file: &std::fs::File,
-    _opened: &std::fs::Metadata,
-    path: &Path,
-    _now: &std::fs::Metadata,
-) -> std::io::Result<bool> {
+mod walk {
+    use super::{EntryKind, StepError};
+    use std::collections::HashMap;
+    use std::ffi::OsString;
+    use std::fs::File;
     use std::os::windows::fs::OpenOptionsExt;
     use std::os::windows::io::AsRawHandle;
+    use std::path::Path;
     use windows_sys::Win32::Storage::FileSystem::{
-        BY_HANDLE_FILE_INFORMATION, FILE_FLAG_OPEN_REPARSE_POINT, GetFileInformationByHandle,
+        FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_REPARSE_POINT, FILE_ATTRIBUTE_TAG_INFO,
+        FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_ID_INFO,
+        FILE_INFO_BY_HANDLE_CLASS, FILE_NAME_NORMALIZED, FILE_STANDARD_INFO, FileAttributeTagInfo,
+        FileIdInfo, FileStandardInfo, GetFileInformationByHandleEx, GetFinalPathNameByHandleW,
     };
-    fn file_id(file: &std::fs::File) -> std::io::Result<(u32, u64)> {
-        let mut info = BY_HANDLE_FILE_INFORMATION::default();
-        // SAFETY: the handle is open for the lifetime of `file`; `info` is a valid out pointer.
-        if unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut info) } == 0 {
-            return Err(std::io::Error::last_os_error());
-        }
-        Ok((
-            info.dwVolumeSerialNumber,
-            (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow),
-        ))
+
+    /// An open folder of the walk: its final path (UTF-16, as the system names it).
+    pub(super) struct Dir {
+        final_path: Vec<u16>,
     }
-    let now = std::fs::OpenOptions::new()
-        .access_mode(0)
-        .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
-        .open(path)?;
-    Ok(file_id(file)? == file_id(&now)?)
+
+    /// `IsReparseTagNameSurrogate`: symbolic links, junctions, mount points.
+    const NAME_SURROGATE: u32 = 0x2000_0000;
+    const ERROR_INVALID_PARAMETER: i32 = 87;
+    const ERROR_NOT_SUPPORTED: i32 = 50;
+
+    fn kind_of(kind: std::fs::FileType) -> EntryKind {
+        // `is_symlink` on Windows is a name-surrogate reparse point.
+        if kind.is_symlink() {
+            EntryKind::Link
+        } else if kind.is_dir() {
+            EntryKind::Dir
+        } else if kind.is_file() {
+            EntryKind::File
+        } else {
+            EntryKind::Other
+        }
+    }
+
+    pub(super) fn open_root(root: &Path) -> Result<Dir, StepError> {
+        let handle = std::fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(FILE_FLAG_BACKUP_SEMANTICS)
+            .open(root)
+            .map_err(io_step)?;
+        Ok(Dir {
+            final_path: final_path(&handle)?,
+        })
+    }
+
+    pub(super) fn list(
+        _dir: &Dir,
+        folder: &Path,
+    ) -> std::io::Result<HashMap<OsString, Option<EntryKind>>> {
+        let mut entries = HashMap::new();
+        for entry in std::fs::read_dir(folder)? {
+            let entry = entry?;
+            entries.insert(entry.file_name(), entry.file_type().ok().map(kind_of));
+        }
+        Ok(entries)
+    }
+
+    pub(super) fn kind_at(_dir: &Dir, folder: &Path, name: &str) -> std::io::Result<EntryKind> {
+        std::fs::symlink_metadata(folder.join(name)).map(|meta| kind_of(meta.file_type()))
+    }
+
+    /// Reads one `FILE_INFO_BY_HANDLE_CLASS` into `T`, which must be the structure of that class.
+    fn info<T: Default>(file: &File, class: FILE_INFO_BY_HANDLE_CLASS) -> std::io::Result<T> {
+        let mut info = T::default();
+        // SAFETY: the handle is open for the lifetime of `file`; `info` is a writable `T` of the size passed, and
+        // every caller pairs `class` with its own structure.
+        let ok = unsafe {
+            GetFileInformationByHandleEx(
+                file.as_raw_handle(),
+                class,
+                std::ptr::from_mut(&mut info).cast(),
+                std::mem::size_of::<T>() as u32,
+            )
+        };
+        if ok == 0 {
+            Err(std::io::Error::last_os_error())
+        } else {
+            Ok(info)
+        }
+    }
+
+    /// The identity of an open file: the 64-bit volume serial number and the 128-bit file id (`FileIdInfo`; unique
+    /// on ReFS too, unlike `nFileIndex`). A file system that has none, or reports all zeros, is refused.
+    pub(super) fn file_id(file: &File) -> Result<(u64, [u8; 16]), StepError> {
+        let id: FILE_ID_INFO = info(file, FileIdInfo).map_err(|err| match err.raw_os_error() {
+            Some(ERROR_INVALID_PARAMETER | ERROR_NOT_SUPPORTED) => StepError::NoIdentity,
+            _ => StepError::Io(err),
+        })?;
+        if id.FileId.Identifier == [0; 16] {
+            return Err(StepError::NoIdentity);
+        }
+        Ok((id.VolumeSerialNumber, id.FileId.Identifier))
+    }
+
+    /// The normalized final path of an open handle (long names, the case on disk, links resolved). A file system that
+    /// cannot tell it (some network shares) is refused like one without file identity.
+    fn final_path(file: &File) -> Result<Vec<u16>, StepError> {
+        let mut buffer = vec![0u16; 512];
+        loop {
+            // SAFETY: the handle is open for the lifetime of `file`; the buffer holds `buffer.len()` elements.
+            let len = unsafe {
+                GetFinalPathNameByHandleW(
+                    file.as_raw_handle(),
+                    buffer.as_mut_ptr(),
+                    buffer.len() as u32,
+                    // With `VOLUME_NAME_DOS`, which is 0 too (a drive letter or `\\?\UNC\…`).
+                    FILE_NAME_NORMALIZED,
+                )
+            } as usize;
+            if len == 0 {
+                return Err(StepError::NoIdentity);
+            }
+            if len < buffer.len() {
+                buffer.truncate(len);
+                return Ok(buffer);
+            }
+            // Too small: `len` is the size needed, with the terminating null.
+            buffer.resize(len, 0);
+        }
+    }
+
+    fn child_path(parent: &[u16], name: &str) -> Vec<u16> {
+        let separator = u16::from(b'\\');
+        let mut path = parent.to_vec();
+        if path.last() != Some(&separator) {
+            path.push(separator);
+        }
+        path.extend(name.encode_utf16());
+        path
+    }
+
+    fn io_step(err: std::io::Error) -> StepError {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            StepError::Missing
+        } else {
+            StepError::Io(err)
+        }
+    }
+
+    /// Opens `path` as the reparse point itself (if it is one) and refuses a link.
+    fn open_no_follow(path: &Path) -> Result<(File, FILE_ATTRIBUTE_TAG_INFO), StepError> {
+        let file = std::fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS)
+            .open(path)
+            .map_err(io_step)?;
+        let tag: FILE_ATTRIBUTE_TAG_INFO =
+            info(&file, FileAttributeTagInfo).map_err(StepError::Io)?;
+        if tag.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0
+            && tag.ReparseTag & NAME_SURROGATE != 0
+        {
+            return Err(StepError::Link);
+        }
+        Ok((file, tag))
+    }
+
+    /// The opened handle must be exactly at `expected`: no link on the way, no other spelling.
+    fn check_place(file: &File, expected: &[u16]) -> Result<(), StepError> {
+        if final_path(file)? == expected {
+            Ok(())
+        } else {
+            Err(StepError::Changed)
+        }
+    }
+
+    pub(super) fn open_dir(dir: &Dir, path: &Path, name: &str) -> Result<Dir, StepError> {
+        let (file, tag) = open_no_follow(path)?;
+        if tag.FileAttributes & FILE_ATTRIBUTE_DIRECTORY == 0 {
+            return Err(StepError::NotAFile);
+        }
+        let expected = child_path(&dir.final_path, name);
+        check_place(&file, &expected)?;
+        Ok(Dir {
+            final_path: expected,
+        })
+    }
+
+    /// A reparse point that is not a link (a OneDrive placeholder, a deduplicated file) is opened again normally, so
+    /// the file system filter behind it serves the contents; it must be the same file.
+    pub(super) fn open_file(dir: &Dir, path: &Path, name: &str) -> Result<File, StepError> {
+        let (mut file, tag) = open_no_follow(path)?;
+        if tag.FileAttributes & FILE_ATTRIBUTE_DIRECTORY != 0 {
+            return Err(StepError::NotAFile);
+        }
+        let id = file_id(&file)?;
+        if tag.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+            let reopened = std::fs::OpenOptions::new()
+                .read(true)
+                .open(path)
+                .map_err(io_step)?;
+            if file_id(&reopened)? != id {
+                return Err(StepError::Changed);
+            }
+            file = reopened;
+        }
+        let standard: FILE_STANDARD_INFO = info(&file, FileStandardInfo).map_err(StepError::Io)?;
+        if standard.Directory {
+            return Err(StepError::NotAFile);
+        }
+        if standard.NumberOfLinks > 1 {
+            return Err(StepError::HardLink);
+        }
+        check_place(&file, &child_path(&dir.final_path, name))?;
+        Ok(file)
+    }
 }
 
-/// No file identity known on this system: never the same, so nothing is served.
+/// No safe walk known on this system: nothing is served.
 #[cfg(not(any(unix, windows)))]
-fn same_file(
-    _file: &std::fs::File,
-    _opened: &std::fs::Metadata,
-    _path: &Path,
-    _now: &std::fs::Metadata,
-) -> std::io::Result<bool> {
-    Ok(false)
+mod walk {
+    use super::{EntryKind, StepError};
+    use std::collections::HashMap;
+    use std::ffi::OsString;
+    use std::path::Path;
+
+    pub(super) struct Dir;
+
+    fn unsupported() -> std::io::Error {
+        std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "extension files cannot be served safely on this system",
+        )
+    }
+
+    pub(super) fn open_root(_root: &Path) -> Result<Dir, StepError> {
+        Err(StepError::Io(unsupported()))
+    }
+
+    pub(super) fn list(
+        _dir: &Dir,
+        _folder: &Path,
+    ) -> std::io::Result<HashMap<OsString, Option<EntryKind>>> {
+        Err(unsupported())
+    }
+
+    pub(super) fn kind_at(_dir: &Dir, _folder: &Path, _name: &str) -> std::io::Result<EntryKind> {
+        Err(unsupported())
+    }
+
+    pub(super) fn open_dir(_dir: &Dir, _path: &Path, _name: &str) -> Result<Dir, StepError> {
+        Err(StepError::Io(unsupported()))
+    }
+
+    pub(super) fn open_file(
+        _dir: &Dir,
+        _path: &Path,
+        _name: &str,
+    ) -> Result<std::fs::File, StepError> {
+        Err(StepError::Io(unsupported()))
+    }
 }
 
 /// Reads at most `limit` bytes of an open file.
@@ -1515,21 +1794,21 @@ mod tests {
         }
         // The check itself: an entry that exists under another spelling is refused, whatever the file system.
         let listings = &mut Listings::default();
-        let err = exact_entry(listings, dir.path(), "INDEX.HTML", "INDEX.HTML");
+        let root = walk::open_root(dir.path()).unwrap();
+        let err = exact_entry(listings, &root, dir.path(), "INDEX.HTML", "INDEX.HTML");
         if case_insensitive {
             assert_eq!(err.unwrap_err().code, ErrorCode::Invalid);
         } else {
             assert_eq!(err.unwrap_err().code, ErrorCode::NotFound);
         }
         assert!(
-            exact_entry(listings, dir.path(), "Index.html", "Index.html")
-                .unwrap()
-                .is_file()
+            exact_entry(listings, &root, dir.path(), "Index.html", "Index.html").unwrap()
+                == EntryKind::File
         );
         // A spelling the system resolves but the folder does not list (here a trailing `/`; on Windows and macOS
         // also other case and short names) is refused on every file system.
         assert_eq!(
-            exact_entry(listings, dir.path(), "js/", "js/")
+            exact_entry(listings, &root, dir.path(), "js/", "js/")
                 .unwrap_err()
                 .code,
             ErrorCode::Invalid
@@ -1542,7 +1821,8 @@ mod tests {
         } else {
             ErrorCode::NotFound
         };
-        let err = exact_entry(listings, dir.path(), "INDEX~1.HTM", "INDEX~1.HTM").unwrap_err();
+        let err =
+            exact_entry(listings, &root, dir.path(), "INDEX~1.HTM", "INDEX~1.HTM").unwrap_err();
         assert_eq!(err.code, expected, "{err:?}");
         let err = resolve_package_file(dir.path(), "INDEX~1.HTM").unwrap_err();
         assert_eq!(err.code, expected, "{err:?}");
@@ -1605,19 +1885,24 @@ mod tests {
     #[test]
     fn opening_never_follows_a_link_in_the_last_part() {
         let dir = tempfile::tempdir().unwrap();
-        write_tree(dir.path(), &[("real.js", b"1")]);
+        write_tree(dir.path(), &[("real.js", b"1"), ("lib/x.js", b"2")]);
         std::os::unix::fs::symlink(dir.path().join("real.js"), dir.path().join("link.js")).unwrap();
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
-        assert_ne!(O_NOFOLLOW, 0, "known on the systems Sextant ships for");
-        if O_NOFOLLOW != 0 {
-            assert!(open_no_follow(&dir.path().join("link.js")).is_err());
-        }
-        assert!(open_no_follow(&dir.path().join("real.js")).is_ok());
+        std::os::unix::fs::symlink(dir.path().join("lib"), dir.path().join("lib2")).unwrap();
+        let root = walk::open_root(dir.path()).unwrap();
+        let open_file = |name: &str| walk::open_file(&root, &dir.path().join(name), name);
+        let open_dir = |name: &str| walk::open_dir(&root, &dir.path().join(name), name);
+        assert!(matches!(open_file("link.js"), Err(StepError::Link)));
+        assert!(matches!(open_dir("lib2"), Err(StepError::Link)));
+        assert!(matches!(open_file("lib"), Err(StepError::NotAFile)));
+        assert!(matches!(open_dir("real.js"), Err(StepError::NotAFile)));
+        assert!(matches!(open_file("nope.js"), Err(StepError::Missing)));
+        assert_eq!(read_all(open_file("real.js").unwrap()), b"1");
+        assert!(open_dir("lib").is_ok());
     }
 
     #[cfg(unix)]
     #[test]
-    fn a_link_swapped_in_around_the_open_is_refused() {
+    fn a_part_swapped_for_a_link_during_the_walk_is_refused_or_never_used() {
         let setup = || {
             let dir = tempfile::tempdir().unwrap();
             let outside = tempfile::tempdir().unwrap();
@@ -1629,72 +1914,249 @@ mod tests {
             std::fs::rename(dir.join("js"), dir.join("js-real")).unwrap();
             std::os::unix::fs::symlink(outside, dir.join("js")).unwrap();
         };
+        let resolve = |dir: &Path, at: &mut dyn FnMut(usize)| {
+            resolve_package_file_with(dir, "js/app.js", &mut Listings::default(), at)
+        };
 
-        // A folder becomes a link just before the open.
+        // `js` becomes a link after its name was checked, just before it is opened.
         let (dir, outside) = setup();
-        let err = resolve_package_file_with(
-            dir.path(),
-            "js/app.js",
-            &mut Listings::default(),
-            &mut |stage| {
-                if stage == OpenStage::BeforeOpen {
-                    swap_folder(dir.path(), outside.path());
-                }
-            },
-        )
+        let err = resolve(dir.path(), &mut |part| {
+            if part == 0 {
+                swap_folder(dir.path(), outside.path());
+            }
+        })
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+        assert!(err.message.contains("symbolic link"), "{err:?}");
 
-        // … and back again right after it: the file opened is not the one the path leads to.
+        // `js` becomes a link once it is open: the walk goes on in the folder it opened and never through the link.
         let (dir, outside) = setup();
-        let err = resolve_package_file_with(
-            dir.path(),
-            "js/app.js",
-            &mut Listings::default(),
-            &mut |stage| match stage {
-                OpenStage::BeforeOpen => swap_folder(dir.path(), outside.path()),
-                OpenStage::AfterOpen => {
-                    std::fs::remove_file(dir.path().join("js")).unwrap();
-                    std::fs::rename(dir.path().join("js-real"), dir.path().join("js")).unwrap();
-                }
-            },
-        )
+        let file = resolve(dir.path(), &mut |part| {
+            if part == 1 {
+                swap_folder(dir.path(), outside.path());
+            }
+        })
+        .unwrap();
+        assert_eq!(read_all(file), b"mine");
+
+        // The file itself becomes a link just before it is opened.
+        let (dir, outside) = setup();
+        let err = resolve(dir.path(), &mut |part| {
+            if part == 1 {
+                let file = dir.path().join("js").join("app.js");
+                std::fs::remove_file(&file).unwrap();
+                std::os::unix::fs::symlink(outside.path().join("app.js"), &file).unwrap();
+            }
+        })
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
-        assert!(
-            err.message.contains("changed while it was being opened"),
-            "{err:?}"
-        );
-
-        // The file itself becomes a link just before the open.
-        let (dir, outside) = setup();
-        let err = resolve_package_file_with(
-            dir.path(),
-            "js/app.js",
-            &mut Listings::default(),
-            &mut |stage| {
-                if stage == OpenStage::BeforeOpen {
-                    std::fs::remove_file(dir.path().join("js").join("app.js")).unwrap();
-                    std::os::unix::fs::symlink(
-                        outside.path().join("app.js"),
-                        dir.path().join("js").join("app.js"),
-                    )
-                    .unwrap();
-                }
-            },
-        )
-        .unwrap_err();
-        assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+        assert!(err.message.contains("symbolic link"), "{err:?}");
 
         // Nothing swapped: the file opened is read.
         let (dir, _outside) = setup();
-        let file = resolve_package_file_with(
+        assert_eq!(read_all(resolve(dir.path(), &mut |_| {}).unwrap()), b"mine");
+    }
+
+    /// A FIFO put in place of the file between the check and the open neither hangs the request nor is served.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn a_fifo_swapped_in_for_the_file_does_not_hang_and_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        write_tree(dir.path(), &[("app.js", b"1")]);
+        let err =
+            resolve_package_file_with(dir.path(), "app.js", &mut Listings::default(), &mut |_| {
+                std::fs::remove_file(dir.path().join("app.js")).unwrap();
+                let parent = std::fs::File::open(dir.path()).unwrap();
+                rustix::fs::mknodat(
+                    &parent,
+                    "app.js",
+                    rustix::fs::FileType::Fifo,
+                    rustix::fs::Mode::from_raw_mode(0o600),
+                    0,
+                )
+                .unwrap();
+            })
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound, "{err:?}");
+    }
+
+    /// Another name of a hard-linked file may be outside the package: such a file is neither served nor installed.
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn a_hard_linked_file_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir_in(dir.path().parent().unwrap()).unwrap();
+        let m = manifest("hello", "0.1.0", "index.html");
+        write_tree(
+            dir.path(),
+            &[(MANIFEST_FILE, m.as_bytes()), ("index.html", b"x")],
+        );
+        write_tree(outside.path(), &[("secret.txt", b"stolen")]);
+        if let Err(err) =
+            std::fs::hard_link(outside.path().join("secret.txt"), dir.path().join("app.js"))
+        {
+            eprintln!("skipped: hard links cannot be made here: {err}");
+            return;
+        }
+        let err = resolve_package_file(dir.path(), "app.js").unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid, "{err:?}");
+        assert!(err.message.contains("hard link"), "{err:?}");
+        assert_eq!(
+            read_all(resolve_package_file(dir.path(), "index.html").unwrap()),
+            b"x"
+        );
+
+        let package = inspect_folder(dir.path()).unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let err = install(&package, data.path()).unwrap_err();
+        assert!(err.message.contains("hard link"), "{err:?}");
+        assert!(!data.path().join("hello").join("0.1.0").exists());
+    }
+
+    /// `mklink /J`: junctions need no symbolic-link privilege.
+    #[cfg(windows)]
+    fn junction(link: &Path, target: &Path) -> bool {
+        std::process::Command::new("cmd")
+            .arg("/C")
+            .arg("mklink")
+            .arg("/J")
+            .arg(link)
+            .arg(target)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .is_ok_and(|status| status.success())
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn junctions_and_symbolic_links_are_refused_on_windows() {
+        let dir = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let m = manifest("hello", "0.1.0", "index.html");
+        write_tree(
+            dir.path(),
+            &[(MANIFEST_FILE, m.as_bytes()), ("index.html", b"x")],
+        );
+        write_tree(outside.path(), &[("app.js", b"stolen")]);
+        let refused = |request: &str| {
+            let err = resolve_package_file(dir.path(), request).unwrap_err();
+            assert_eq!(err.code, ErrorCode::Invalid, "{request}: {err:?}");
+            assert!(err.message.contains("symbolic link"), "{request}: {err:?}");
+            let message = invalid_message(inspect_folder(dir.path()));
+            assert!(message.contains("symbolic link"), "{request}: {message}");
+        };
+
+        let js = dir.path().join("js");
+        if junction(&js, outside.path()) {
+            refused("js/app.js");
+            std::fs::remove_dir(&js).unwrap();
+        } else {
+            eprintln!("skipped junction: `mklink /J` failed here");
+        }
+        let lib = dir.path().join("lib");
+        match std::os::windows::fs::symlink_dir(outside.path(), &lib) {
+            Ok(()) => {
+                refused("lib/app.js");
+                std::fs::remove_dir(&lib).unwrap();
+            }
+            Err(err) => eprintln!("skipped directory symlink: {err}"),
+        }
+        let app = dir.path().join("app.js");
+        match std::os::windows::fs::symlink_file(outside.path().join("app.js"), &app) {
+            Ok(()) => {
+                refused("app.js");
+                std::fs::remove_file(&app).unwrap();
+            }
+            Err(err) => eprintln!("skipped file symlink: {err}"),
+        }
+        assert!(inspect_folder(dir.path()).is_ok(), "nothing left behind");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn file_identity_tells_files_apart_on_windows() {
+        let dir = tempfile::tempdir().unwrap();
+        write_tree(dir.path(), &[("a.js", b"1"), ("b.js", b"1")]);
+        let open = |name: &str| std::fs::File::open(dir.path().join(name)).unwrap();
+        let a = walk::file_id(&open("a.js")).unwrap();
+        assert_ne!(a.1, [0; 16]);
+        assert_eq!(a, walk::file_id(&open("a.js")).unwrap(), "the same file");
+        assert_ne!(a, walk::file_id(&open("b.js")).unwrap(), "another file");
+    }
+
+    /// A part on another device than the root (a mount point inside the package) is refused; the root's device is
+    /// what every part is compared with, so a walk started from a root on "another device" refuses everything.
+    #[cfg(unix)]
+    #[test]
+    fn a_part_on_another_file_system_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        write_tree(dir.path(), &[("a.js", b"1"), ("js/b.js", b"2")]);
+        let mut root = walk::open_root(dir.path()).unwrap();
+        assert!(walk::open_dir(&root, &dir.path().join("js"), "js").is_ok());
+        assert!(walk::open_file(&root, &dir.path().join("a.js"), "a.js").is_ok());
+        root.root_dev = root.root_dev.wrapping_add(1);
+        assert!(matches!(
+            walk::open_dir(&root, &dir.path().join("js"), "js"),
+            Err(StepError::OtherDevice)
+        ));
+        assert!(matches!(
+            walk::open_file(&root, &dir.path().join("a.js"), "a.js"),
+            Err(StepError::OtherDevice)
+        ));
+        let err = step_error(StepError::OtherDevice, "js/b.js", dir.path());
+        assert_eq!(err.code, ErrorCode::Invalid);
+        assert!(err.message.contains("mount point"), "{err:?}");
+    }
+
+    #[test]
+    fn a_file_system_without_identity_is_named_with_the_fix() {
+        let err = step_error(StepError::NoIdentity, "app.js", Path::new("dev"));
+        assert_eq!(err.code, ErrorCode::Invalid);
+        for part in ["network share", "FAT/exFAT", "NTFS or ReFS"] {
+            assert!(err.message.contains(part), "{part}: {err:?}");
+        }
+    }
+
+    /// `js` is swapped for a junction (or a directory link) to a folder outside after it was checked and opened: the
+    /// file opened through it is not where the walk expects it (final path), so it is refused.
+    #[cfg(windows)]
+    #[test]
+    fn a_folder_swapped_for_a_junction_during_the_walk_is_refused_on_windows() {
+        let dir = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        write_tree(dir.path(), &[("js/app.js", b"mine")]);
+        write_tree(outside.path(), &[("app.js", b"stolen")]);
+        let js = dir.path().join("js");
+        let mut linked = None;
+        let result = resolve_package_file_with(
             dir.path(),
             "js/app.js",
             &mut Listings::default(),
-            &mut |_| {},
-        )
-        .unwrap();
-        assert_eq!(read_all(file), b"mine");
+            &mut |part| {
+                if part == 1 {
+                    std::fs::rename(&js, dir.path().join("js-real")).unwrap();
+                    linked = Some(if junction(&js, outside.path()) {
+                        Ok("junction")
+                    } else {
+                        std::os::windows::fs::symlink_dir(outside.path(), &js).map(|()| "symlink")
+                    });
+                }
+            },
+        );
+        match linked {
+            Some(Ok(kind)) => {
+                let err = result.expect_err(kind);
+                assert_eq!(err.code, ErrorCode::Invalid, "{kind}: {err:?}");
+                assert!(
+                    err.message.contains("changed while it was being opened"),
+                    "{kind}: {err:?}"
+                );
+            }
+            Some(Err(err)) => {
+                eprintln!("skipped: neither a junction nor a directory link can be made: {err}")
+            }
+            None => panic!("the walk never reached the file"),
+        }
     }
 }
