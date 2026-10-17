@@ -23,6 +23,8 @@ export interface TerminalViewProps {
    * When set, "Reconnect" first shows what this returns (a confirmation) and reconnects only on `proceed`.
    */
   confirmReconnect?: (proceed: () => void, cancel: () => void) => ReactNode;
+  /** Buttons above the terminal (e.g. copying files of the container). */
+  toolbar?: ReactNode;
 }
 
 /**
@@ -41,6 +43,7 @@ export function TerminalView({
   initialInput,
   connectingText,
   confirmReconnect,
+  toolbar,
 }: TerminalViewProps) {
   const { t } = useTranslation();
   const container = useRef<HTMLDivElement | null>(null);
@@ -50,6 +53,7 @@ export function TerminalView({
   const notice = useKubeconfigNotice(session, kubeconfigNotice);
   return (
     <div className="terminal">
+      {toolbar && <div className="terminal__toolbar">{toolbar}</div>}
       {notice && (
         <div className="terminal__notice" role="note">
           {t("terminal:local.kubeconfigNotice")}

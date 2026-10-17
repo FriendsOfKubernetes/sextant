@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, ObjectRef } from "../../../api";
 import { Tabs } from "../../../components";
 import { status } from "../../../resources";
+import { ContainerTools } from "../../terminal/ContainerTools";
 import type { Tone } from "../../../resources/status";
 import {
   Block,
@@ -80,10 +81,24 @@ export function PodDetails({
         initContainers={initContainers}
         initStatuses={initStatuses}
         namespace={ns}
+        tools={(name, init, containerStatus) =>
+          init ? null : (
+            <ContainerTools
+              clusterId={clusterId}
+              pod={objectRef}
+              obj={obj}
+              container={name}
+              status={containerStatus}
+            />
+          )
+        }
       />
     </>
   );
 }
+
+/** Buttons shown in a container's header (pod details): its name, whether it is an init container, its status. */
+type ContainerToolsRender = (name: string, init: boolean, status: unknown) => ReactNode;
 
 /** Each volume with its source type and the object it points to (ConfigMap, Secret, PVC), linked. */
 function Volumes({ volumes, namespace }: { volumes: unknown; namespace: string | null }) {
@@ -133,6 +148,7 @@ export function ContainerList({
   initContainers,
   initStatuses,
   namespace,
+  tools,
 }: {
   objectKey: string;
   title: string;
@@ -142,17 +158,33 @@ export function ContainerList({
   initContainers?: unknown;
   initStatuses?: unknown;
   namespace: string | null;
+  /** Buttons in each container's header (a pod's containers; not a template's). */
+  tools?: ContainerToolsRender;
 }) {
   const init = itemsOf(initContainers, initStatuses, true);
   const regular = itemsOf(containers, statuses, false);
   if (init.length + regular.length === 0) return null;
   if (init.length + regular.length > 1)
-    return <ContainerTabs key={objectKey} title={title} items={[...init, ...regular]} namespace={namespace} />;
+    return (
+      <ContainerTabs
+        key={objectKey}
+        title={title}
+        items={[...init, ...regular]}
+        namespace={namespace}
+        tools={tools}
+      />
+    );
   const render = (items: ContainerItem[], blockTitle: string) =>
     items.length > 0 && (
       <Block title={blockTitle}>
         {items.map((item) => (
-          <Container key={item.name} container={item.container} status={item.status} namespace={namespace} />
+          <Container
+            key={item.name}
+            container={item.container}
+            status={item.status}
+            namespace={namespace}
+            tools={tools?.(item.name, item.init, item.status)}
+          />
         ))}
       </Block>
     );
@@ -168,10 +200,12 @@ function ContainerTabs({
   title,
   items,
   namespace,
+  tools,
 }: {
   title: string;
   items: ContainerItem[];
   namespace: string | null;
+  tools?: ContainerToolsRender;
 }) {
   const { t } = useTranslation();
   const [chosen, setChosen] = useState<string | undefined>();
@@ -213,7 +247,12 @@ function ContainerTabs({
         onSelect={setChosen}
         className="dt-container-tabs"
       >
-        <Container container={selected.container} status={selected.status} namespace={namespace} />
+        <Container
+          container={selected.container}
+          status={selected.status}
+          namespace={namespace}
+          tools={tools?.(selected.name, selected.init, selected.status)}
+        />
       </Tabs>
     </Block>
   );
@@ -270,10 +309,12 @@ function Container({
   container,
   status: st,
   namespace,
+  tools,
 }: {
   container: unknown;
   status: unknown;
   namespace: string | null;
+  tools?: ReactNode;
 }) {
   const { t } = useTranslation();
   const name = str(get(container, "name")) ?? "";
@@ -335,6 +376,7 @@ function Container({
         {state}
         {muted(current?.reason)}
         {ready}
+        {tools}
       </div>
       <Fields rows={rows} />
       {env && <Block title={t("details:pod.env")}>{env}</Block>}

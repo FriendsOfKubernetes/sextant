@@ -201,6 +201,9 @@ pub struct AppSettings {
     /// Image of the temporary privileged pod behind a shell on a node (`node_shell`); empty means the default
     /// (`node_shell::DEFAULT_IMAGE`). The image needs `nsenter`; `sleep` runs on the node.
     pub node_shell_image: String,
+    /// Default image of a debug container (`debug`), chosen in the debug dialog; empty means the default
+    /// (`debug::DEFAULT_IMAGE`). Written by the frontend.
+    pub debug_image: String,
     /// Installed extensions and what the user granted them. Written only by the backend (install, consent, enable,
     /// remove); `settings_update` keeps the stored list whatever the frontend sends. An entry this version cannot
     /// read is left out rather than failing the file.
@@ -223,6 +226,7 @@ impl Default for AppSettings {
             close_to_tray: false,
             mcp: McpSettings::default(),
             node_shell_image: crate::node_shell::DEFAULT_IMAGE.to_owned(),
+            debug_image: crate::debug::DEFAULT_IMAGE.to_owned(),
             extensions: Vec::new(),
         }
     }
@@ -1069,6 +1073,25 @@ mod tests {
         assert_eq!(
             SettingsStore::open(path).get().node_shell_image,
             "registry.example/tools:1"
+        );
+    }
+
+    #[test]
+    fn the_debug_image_defaults_to_busybox_and_round_trips() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(&path, r#"{ "theme": "dark" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert_eq!(store.get().debug_image, "busybox:stable");
+        store
+            .update(|s| s.debug_image = "nicolaka/netshoot:latest".to_owned())
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["debugImage"], "nicolaka/netshoot:latest");
+        assert_eq!(
+            SettingsStore::open(path).get().debug_image,
+            "nicolaka/netshoot:latest"
         );
     }
 

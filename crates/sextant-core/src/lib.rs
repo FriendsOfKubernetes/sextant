@@ -12,11 +12,13 @@ pub mod argocd;
 #[cfg(feature = "desktop")]
 pub mod cloud;
 pub mod cluster;
+pub mod debug;
 pub mod error;
 pub mod exec;
 pub mod extensions;
 #[cfg(test)]
 mod fake_api;
+pub mod files;
 pub mod gitops_install;
 pub mod helm;
 pub mod kubeconfig;

@@ -20,6 +20,7 @@ import type { CloudSearch } from "./generated/CloudSearch";
 import type { ClusterId } from "./generated/ClusterId";
 import type { ClusterInfo } from "./generated/ClusterInfo";
 import type { ConnectionState } from "./generated/ConnectionState";
+import type { DebugSpec } from "./generated/DebugSpec";
 import type { DrainOptions } from "./generated/DrainOptions";
 import type { DrainPreview } from "./generated/DrainPreview";
 import type { ExtensionInfo } from "./generated/ExtensionInfo";
@@ -43,12 +44,15 @@ import type { ObjectRef } from "./generated/ObjectRef";
 import type { PatchType } from "./generated/PatchType";
 import type { PendingInstall } from "./generated/PendingInstall";
 import type { PodUsage } from "./generated/PodUsage";
+import type { RemoteEntry } from "./generated/RemoteEntry";
+import type { RemoteKind } from "./generated/RemoteKind";
 import type { ResourceKind } from "./generated/ResourceKind";
 import type { Series } from "./generated/Series";
 import type { SettingsStatus } from "./generated/SettingsStatus";
+import type { TransferEvent } from "./generated/TransferEvent";
 import type { TrayStatus } from "./generated/TrayStatus";
 import type { WatchSpec } from "./generated/WatchSpec";
-import { call } from "./transport";
+import { call, subscribe, type Unsubscribe } from "./transport";
 
 /** A Kubernetes object as JSON (`managedFields` already stripped by the backend). */
 export type KubeObject = {
@@ -159,6 +163,13 @@ export const terminal = {
    */
   nodeShell: (clusterId: ClusterId, node: string, cols: number, rows: number, streamId: string) =>
     call<void>("node_shell_start", { clusterId, node, cols, rows, streamId }),
+  /**
+   * Debug container for `pod` (`kubectl debug`), session `streamId`: an ephemeral container in the pod, or — with
+   * `spec.copy` — a copy of the pod (deleted when the session ends), with a terminal attached. Never offered to AI
+   * agents or extensions.
+   */
+  debug: (clusterId: ClusterId, pod: ObjectRef, spec: DebugSpec, cols: number, rows: number, streamId: string) =>
+    call<void>("debug_start", { clusterId, pod, spec, cols, rows, streamId }),
   input: (sessionId: string, data: string) => call<void>("term_input", { sessionId, data }),
   resize: (sessionId: string, cols: number, rows: number) => call<void>("term_resize", { sessionId, cols, rows }),
   stop: (sessionId: string) => call<void>("term_stop", { sessionId }),
@@ -233,6 +244,37 @@ export const about = {
 
 export const files = {
   save: (path: string, contents: string) => call<void>("file_save", { path, contents }),
+  /** What `path` in a container is (file, folder, link) and how big. `container` null: the default one. */
+  stat: (clusterId: ClusterId, pod: ObjectRef, container: string | null, path: string) =>
+    call<RemoteEntry>("files_stat", { clusterId, pod, container, path }),
+  /**
+   * Downloads `path` from the container to `destination` (from the save dialog) under `streamId`: a file's content, a
+   * folder as `.tar.gz`. `kind` is what `stat` saw; a path that changed since is refused. Events:
+   * `files.onTransfer(streamId, …)`.
+   */
+  downloadStart: (
+    clusterId: ClusterId,
+    pod: ObjectRef,
+    container: string | null,
+    path: string,
+    kind: RemoteKind,
+    destination: string,
+    streamId: string,
+  ) => call<void>("files_download_start", { clusterId, pod, container, path, kind, destination, streamId }),
+  /** Uploads the local file `source` into the container as `path` (its full path there) under `streamId`. */
+  uploadStart: (
+    clusterId: ClusterId,
+    pod: ObjectRef,
+    container: string | null,
+    source: string,
+    path: string,
+    streamId: string,
+  ) => call<void>("files_upload_start", { clusterId, pod, container, source, path, streamId }),
+  /** Cancels a transfer (a download leaves no partial file). */
+  transferStop: (streamId: string) => call<void>("files_transfer_stop", { streamId }),
+  /** Progress and the result of a transfer (`files:<streamId>`). */
+  onTransfer: (streamId: string, handler: (event: TransferEvent) => void): Promise<Unsubscribe> =>
+    subscribe(`files:${streamId}`, handler),
 };
 
 /**

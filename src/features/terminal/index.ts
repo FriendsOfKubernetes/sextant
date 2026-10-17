@@ -1,6 +1,8 @@
 // Terminals (task 07): the "Shell" action on pods (a shell in a container) and on nodes (a shell on the node through a
 // temporary privileged pod, after a confirmation), and the dock's "Terminal" button (a local shell whose `kubectl`
-// talks to the active cluster). They run in "exec" / "terminal" dock tabs with xterm.js.
+// talks to the active cluster). They run in "exec" / "terminal" dock tabs with xterm.js. Debug containers
+// (`kubectl debug`, #132) and copying files (`kubectl cp`, #133) start from a container in pod details
+// (`ContainerTools`) and from a container's shell tab; a debug container runs in an "exec" tab too.
 import { createElement } from "react";
 import { loadSettings, type ClusterId } from "../../api";
 import { registerDockAction, registerDockTab } from "../../layout/dock/registry";
@@ -79,13 +81,18 @@ export async function openLocalTerminal(clusterId: ClusterId): Promise<string> {
 }
 
 export { ContainerPicker, type ContainerPickerProps } from "./ContainerPicker";
+export { ContainerTools, type ContainerToolsProps } from "./ContainerTools";
+export { DebugDialog, splitCommand, type DebugDialogProps } from "./DebugDialog";
+export { FilesDialog, type FilesDialogProps } from "./FilesDialog";
 export {
   defaultContainer,
   openCommandTerminalTab,
+  openDebugTab,
   openExecTab,
   openLocalTerminalTab,
   openNodeShellTab,
   shellContainers,
+  type DebugTabPayload,
   type ExecTabPayload,
   type LocalTerminalTabPayload,
   type NodeShellTabPayload,

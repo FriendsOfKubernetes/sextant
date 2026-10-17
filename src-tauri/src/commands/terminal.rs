@@ -1,5 +1,5 @@
 //! Terminal sessions: shell in a container (`exec_start`), shell on a node through a temporary privileged pod
-//! (`node_shell_start`) and a local shell (`terminal_start`).
+//! (`node_shell_start`), a debug container (`debug_start`) and a local shell (`terminal_start`).
 //! Output arrives as `term:<sessionId>` events; input, resize and stop are shared by both kinds.
 //!
 //! The frontend chooses the session id and subscribes to `term:<id>` before `*_start`, so output is emitted as soon
@@ -12,7 +12,7 @@
 //! is gathered into one event per [`COALESCE`]; the first chunk after a quiet spell (an echoed keystroke) goes at once.
 
 use sextant_core::exec::{self, ExecSession, TermEvent};
-use sextant_core::node_shell;
+use sextant_core::{debug, node_shell};
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::{Arc, Mutex};
@@ -129,6 +129,89 @@ pub async fn start_node_shell<R: Runtime>(
             &cancel,
             session,
             Box::new(pod),
+        )
+    });
+    if let Err(err) = finished {
+        if let Some(placeholder) = state
+            .sessions
+            .take_if(&id, |s| is_placeholder_of(s, &cancel))
+        {
+            retire_placeholder(placeholder);
+        }
+        return Err(err);
+    }
+    state.undo_if_reset(generation, || {
+        state.sessions.stop(&id);
+    })
+}
+
+/// Debug container for `pod` under `stream_id` (`kubectl debug`): an ephemeral container in the pod, or a copy of the
+/// pod (`spec.copy`), with a terminal attached to it. The copy is deleted when the session ends (the tab closed, the
+/// shell exited, the cluster disconnected, the window closed) or the start fails. Never offered to AI agents or
+/// extensions.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn debug_start<R: Runtime>(
+    app: AppHandle<R>,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    pod: ObjectRef,
+    spec: debug::DebugSpec,
+    cols: u16,
+    rows: u16,
+    stream_id: String,
+) -> Result<(), CoreError> {
+    start_debug(&app, &state, stream_id, cluster_id, &pod, &spec, cols, rows).await
+}
+
+/// `debug_start`, registered like a node shell ([`start_node_shell`]): a placeholder in `state.sessions` from the very
+/// start, whose guard calls the start off (and so deletes a copy made meanwhile) when `term_stop`, `close_cluster`,
+/// `streams_reset` or closing the window drops it; once the terminal is attached, the session takes its place with the
+/// copy (if any) as its guard. A taken `id` is `invalid` before anything starts.
+#[allow(clippy::too_many_arguments)]
+pub async fn start_debug<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    id: String,
+    cluster: ClusterId,
+    pod: &ObjectRef,
+    spec: &debug::DebugSpec,
+    cols: u16,
+    rows: u16,
+) -> Result<(), CoreError> {
+    check_stream_id(&id)?;
+    let generation = state.streams_generation();
+    let cancel = node_shell::StartCancel::new();
+    insert_placeholder(state, &id, &cluster, &cancel)?;
+    if state.streams_generation() != generation {
+        cancel.cancel();
+    }
+    let started = async {
+        let target = debug::start(&state.clusters, &cluster, pod, spec, &cancel).await?;
+        let session = tokio::select! {
+            session = exec::attach_terminal(
+                &state.clusters,
+                &cluster,
+                &target.pod,
+                &target.container,
+                cols,
+                rows,
+            ) => session?,
+            () = cancel.cancelled() => return Err(debug::cancelled()),
+        };
+        Ok((target, session))
+    }
+    .await;
+    // On every error below the copy (if any) is dropped, which deletes it.
+    let finished = started.and_then(|(target, session)| {
+        finish_node_shell(
+            app,
+            state,
+            id.clone(),
+            cluster,
+            &cancel,
+            session,
+            Box::new(target.copy),
         )
     });
     if let Err(err) = finished {
@@ -1561,6 +1644,160 @@ mod tests {
         state.close_all();
         assert!(state.sessions.is_empty());
         wait_no_node_shell_pods(&state, &cluster, "after the window closed");
+    }
+
+    /// Debug copies of this run in `namespace` (label `sextant.dev/debug-session`).
+    #[cfg(unix)]
+    fn debug_copies(state: &AppState, cluster: &ClusterId, namespace: &str) -> Vec<String> {
+        let selector = format!(
+            "{}=true,{}={}",
+            debug::LABEL_DEBUG_COPY,
+            debug::LABEL_DEBUG_SESSION,
+            node_shell::session_id()
+        );
+        let pod = sextant_core::KindRef {
+            group: String::new(),
+            version: "v1".into(),
+            kind: "Pod".into(),
+        };
+        let page = tauri::async_runtime::block_on(sextant_core::resources::list(
+            &state.clusters,
+            cluster,
+            &pod,
+            Some(namespace),
+            Some(&selector),
+            None,
+            50,
+        ))
+        .unwrap();
+        page.items
+            .iter()
+            .filter(|p| p["metadata"]["deletionTimestamp"].is_null())
+            .filter_map(|p| p["metadata"]["name"].as_str().map(str::to_owned))
+            .collect()
+    }
+
+    /// A debug copy lives exactly as long as its session: closing the tab, the cluster or the window deletes it.
+    /// Needs the kind test cluster (`SEXTANT_TEST_KUBECONFIG`); works in the scratch namespace `sextant-debug-tauri`,
+    /// deleted at the end.
+    #[cfg(unix)]
+    #[test]
+    fn a_debug_copy_goes_with_its_session_its_cluster_and_the_window() {
+        // Closing the window waits for every node shell and debug copy of the process.
+        let _one_at_a_time = NODE_SHELL_TESTS.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(kubeconfig) =
+            std::env::var_os("SEXTANT_TEST_KUBECONFIG").filter(|v| !v.is_empty())
+        else {
+            eprintln!("skipped: SEXTANT_TEST_KUBECONFIG is not set (see scripts/test-cluster.sh)");
+            return;
+        };
+        const NS: &str = "sextant-debug-tauri";
+        let (app, dir) = app();
+        let state = app.state::<AppState>();
+        let cluster = {
+            let mut registry = state.registry.write().unwrap();
+            registry.set_env(sextant_core::kubeconfig::KubeconfigEnv {
+                kubeconfig: Some(kubeconfig),
+                home: Some(dir.path().join("home")),
+            });
+            registry.clusters().unwrap()[0].id.clone()
+        };
+        let connect = |state: &AppState| {
+            tauri::async_runtime::block_on(state.clusters.connect(&cluster)).unwrap();
+        };
+        connect(&state);
+        let manifests = format!(
+            "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {NS}\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  \
+             name: source\n  namespace: {NS}\nspec:\n  terminationGracePeriodSeconds: 0\n  containers:\n  - name: app\n    \
+             image: busybox:stable\n    imagePullPolicy: IfNotPresent\n    command: [\"sleep\", \"3600\"]\n"
+        );
+        tauri::async_runtime::block_on(sextant_core::resources::apply_yaml(
+            &state.clusters,
+            &cluster,
+            &manifests,
+        ))
+        .expect("the scratch namespace and pod");
+        let source = ObjectRef {
+            kind: sextant_core::KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Pod".into(),
+            },
+            namespace: Some(NS.into()),
+            name: "source".into(),
+        };
+        let spec = debug::DebugSpec {
+            image: "busybox:stable".into(),
+            target: Some("app".into()),
+            copy: Some(debug::DebugCopySpec::default()),
+        };
+        let wait_none = |state: &AppState, when: &str| {
+            let deadline = Instant::now() + Duration::from_secs(60);
+            loop {
+                let left = debug_copies(state, &cluster, NS);
+                if left.is_empty() {
+                    return;
+                }
+                assert!(Instant::now() < deadline, "{when}: copies left {left:?}");
+                std::thread::sleep(Duration::from_millis(500));
+            }
+        };
+        let start = |id: &str| {
+            let events = listen(&app, id);
+            tauri::async_runtime::block_on(start_debug(
+                app.handle(),
+                &state,
+                id.into(),
+                cluster.clone(),
+                &source,
+                &spec,
+                80,
+                24,
+            ))
+            .expect("the debug copy starts");
+            assert_eq!(debug_copies(&state, &cluster, NS).len(), 1);
+            events
+        };
+
+        // The terminal is the debug container's; closing the tab (term_stop) deletes the copy.
+        let events = start("debug-1");
+        let (input, _) = state.sessions.channels("debug-1").unwrap();
+        input.blocking_send(b"echo $((6*7))\r".to_vec()).unwrap();
+        let mut text = String::new();
+        read_text(&events, &mut text, |t| t.contains("42"));
+        state.sessions.stop("debug-1");
+        wait_none(&state, "after term_stop");
+
+        // Disconnecting the cluster deletes it, although the manager no longer has the cluster's client.
+        start("debug-2");
+        tauri::async_runtime::block_on(state.clusters.disconnect(&cluster));
+        state.close_cluster(&cluster);
+        assert!(state.sessions.is_empty());
+        connect(&state);
+        wait_none(&state, "after the cluster was closed");
+
+        // Closing the window waits for the deletion to be sent.
+        start("debug-3");
+        state.close_all();
+        assert!(state.sessions.is_empty());
+        connect(&state);
+        wait_none(&state, "after the window closed");
+
+        let namespace = ObjectRef {
+            kind: sextant_core::KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Namespace".into(),
+            },
+            namespace: None,
+            name: NS.into(),
+        };
+        tauri::async_runtime::block_on(sextant_core::resources::delete(
+            &state.clusters,
+            &cluster,
+            &namespace,
+        ))
+        .unwrap();
     }
 
     /// Removes this run's node shell pods at once (`gracePeriodSeconds=0`): a pod whose image never arrives is let go

@@ -1032,6 +1032,7 @@ async fn exec_command(call: ToolCall, args: ExecArgs) -> ToolResult {
         )
         .await?;
     refuse_live_node_shell(&call, &cluster.id, &pod, false).await?;
+    refuse_live_debug_copy(&call, &cluster.id, &pod).await?;
     let output = exec::run_command(
         &call.ctx().clusters,
         &cluster.id,
@@ -1075,6 +1076,39 @@ async fn refuse_live_node_shell(
         NODE_SHELL_REFUSAL,
     )
     .await
+}
+
+/// What an agent is told when its command would run in a pod Sextant copied for the user's debug session.
+const DEBUG_COPY_REFUSAL: &str = "Sextant does not let agents run commands in debug copies of pods";
+
+/// Right before `exec_command` runs: the pod as the cluster has it now is not a debug copy
+/// ([`sextant_core::debug::is_debug_copy_object`]); a pod that cannot be read refuses the call.
+async fn refuse_live_debug_copy(
+    call: &ToolCall,
+    cluster: &ClusterId,
+    pod: &ObjectRef,
+) -> CoreResult<()> {
+    let live = with_timeout(
+        crate::access_guard::NODE_SHELL_READ_TIMEOUT,
+        "reading the pod",
+        resources::get(&call.ctx().clusters, cluster, pod),
+    )
+    .await
+    .map_err(|e| {
+        CoreError::new(
+            e.code,
+            format!(
+                "Sextant could not read pod {}/{} to make sure it is not a debug copy, so nothing was done: {}",
+                pod.namespace.as_deref().unwrap_or_default(),
+                pod.name,
+                e.message
+            ),
+        )
+    })?;
+    if sextant_core::debug::is_debug_copy_object(&live) {
+        return Err(CoreError::new(ErrorCode::Denied, DEBUG_COPY_REFUSAL));
+    }
+    Ok(())
 }
 
 /// What an agent is told when its forward would reach a pod whose ports are the node's own.
@@ -2872,6 +2906,66 @@ spec:
                 .iter()
                 .all(|e| !e.target.contains('\n') && !e.target.contains("echo hi"))
         );
+        state.close_all();
+    }
+
+    #[tokio::test]
+    async fn an_agent_never_runs_commands_in_a_debug_copy_whatever_the_rules() {
+        const NS: &str = "sextant-mcp-debug-copy";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        let _namespace = namespace(&state, &id, NS, false).await;
+        let pod_yaml = |name: &str, labels: &str| {
+            format!(
+                "apiVersion: v1\nkind: Pod\nmetadata:\n  name: {name}\n  namespace: {NS}\n  labels: {{{labels}}}\n\
+                 spec:\n  terminationGracePeriodSeconds: 0\n  containers:\n  \
+                 - name: app\n    image: busybox:stable\n    imagePullPolicy: IfNotPresent\n    \
+                 command: [sleep, \"600\"]\n"
+            )
+        };
+        for yaml in [
+            pod_yaml(
+                "web-debug-x",
+                "app.kubernetes.io/managed-by: sextant, sextant.dev/debug-copy: \"true\"",
+            ),
+            pod_yaml("web", "app: web"),
+        ] {
+            resources::apply_yaml(&state.clusters, &id, &yaml)
+                .await
+                .unwrap();
+        }
+        set_rules(
+            &state,
+            &id,
+            vec![rule(
+                &[],
+                &[],
+                &[AccessAction::Read, AccessAction::Exec],
+                false,
+            )],
+        );
+        let c = id.0.as_str();
+        let refused = tool(
+            &state,
+            "exec_command",
+            json!({ "cluster": c, "namespace": NS, "pod": "web-debug-x", "command": ["id"] }),
+        )
+        .await
+        .unwrap_err();
+        assert!(refused.contains(DEBUG_COPY_REFUSAL), "{refused}");
+        // An ordinary pod with the same rules is not refused for that reason (it may not run yet).
+        let other = tool(
+            &state,
+            "exec_command",
+            json!({ "cluster": c, "namespace": NS, "pod": "web", "command": ["id"] }),
+        )
+        .await;
+        if let Err(err) = other {
+            assert!(!err.contains(DEBUG_COPY_REFUSAL), "{err}");
+        }
+        assert_eq!(window.count(), 0);
         state.close_all();
     }
 

@@ -69,3 +69,108 @@
   text-align: left;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+.terminal__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-dock-header);
+}
+
+/* Debug and files dialogs. */
+.terminal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: min(520px, 80vw);
+}
+
+.terminal-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.terminal-form__label {
+  font-weight: 600;
+}
+
+.terminal-form__field > label:not(.terminal-form__option) {
+  font-weight: 600;
+}
+
+.terminal-form__field input[type="text"] {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.terminal-form__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-form__row input[type="text"],
+.terminal-form__grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.terminal-form__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.terminal-form__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-form__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.terminal-form__hint {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.terminal-form__status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.terminal-form__status--ok {
+  color: var(--color-success);
+}
+
+.terminal-form__status--error {
+  color: var(--color-danger);
+}
+
+.terminal-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.terminal-progress__bar {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.1s linear;
+}
+
+.terminal-tools {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}

@@ -62,7 +62,7 @@ export const UPDATER_COMMANDS = {
  * Installs a mock backend. Commands without a handler reject like the backend stubs do
  * (`{ code: "other", message: "not implemented" }`); a handler that throws rejects with the thrown value.
  * `settings_get` / `settings_update` work out of the box on an in-memory copy, `extensions_list` answers `[]`, and
- * `extension_install_cancel` and `term_ack` resolve.
+ * `extension_install_cancel`, `term_ack` and `files_transfer_stop` resolve.
  *
  * Stream ids come from the frontend (`streamId` of `*_start`). A `*_start` handler may still answer with a name of
  * its own for the stream (`"watch-1"`); `emit` and `listenerCount` then accept that name in place of the id.
@@ -96,6 +96,8 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set("gitops_install_stop", () => undefined);
   // Terminals acknowledge the output they wrote; nothing to answer.
   table.set("term_ack", () => undefined);
+  // Closing a file transfer stops its stream; nothing to answer.
+  table.set("files_transfer_stop", () => undefined);
   // A desktop with a tray, unless a test says otherwise.
   table.set("tray_status", () => ({ available: true }));
   // A machine the About dialog can describe.

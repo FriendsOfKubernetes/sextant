@@ -28,6 +28,7 @@ export function defaultAppSettings(): AppSettings {
     closeToTray: false,
     mcp: { enabled: false, port: 47391 },
     nodeShellImage: "busybox:stable",
+    debugImage: "busybox:stable",
     extensions: [],
   };
 }

@@ -20,7 +20,7 @@ use crate::extensions::api::ExtensionApi;
 use crate::gitops_install::GitopsInstalls;
 use crate::mcp::{McpContext, McpServer};
 
-/// How long closing the window (or quitting) waits for the node shell pods to be deleted.
+/// How long closing the window (or quitting) waits for the node shell pods and debug copies to be deleted.
 pub const NODE_SHELL_DELETE_WAIT: Duration = Duration::from_secs(5);
 
 /// Everything the commands share. Registered with `app.manage(AppState::new(..))`.
@@ -29,10 +29,11 @@ pub struct AppState {
     pub clusters: ClusterManager,
     pub forwarder: Arc<PortForwarder>,
     pub settings: Arc<SettingsStore>,
-    /// Watch subscriptions and log streams (`watch_start`, `logs_start`).
+    /// Watch subscriptions, log streams and file transfers (`watch_start`, `logs_start`, `files_*_start`).
     pub subscriptions: Subscriptions,
     /// Terminal sessions: container exec, node shells (their guard is the node's pod; while one starts, a placeholder
-    /// whose guard calls the start off) and local shells.
+    /// whose guard calls the start off), debug containers (the same, with the pod's debug copy, if any, as the guard)
+    /// and local shells.
     pub sessions: Sessions,
     /// Argo CD sessions (tokens in memory only) and their port forwards to `argocd-server`.
     pub argocd: ArgoSessions,
@@ -103,15 +104,19 @@ impl AppState {
 
     /// Stops everything (window closed, application exiting): the MCP server first (no agent starts anything new,
     /// waiting confirmations are refused), then everything it or the window started. Terminal sessions drop their
-    /// temporary kubeconfig before this returns; node shells start deleting their pods, and this waits up to
-    /// [`NODE_SHELL_DELETE_WAIT`] for those deletions, so the process does not end before them.
+    /// temporary kubeconfig before this returns; node shells and debug copies start deleting their pods, and this waits
+    /// up to [`NODE_SHELL_DELETE_WAIT`] for those deletions, so the process does not end before them.
     pub fn close_all(&self) {
         self.mcp.stop();
         self.ext_api.close();
         self.reset_streams();
         self.forwarder.stop_all();
         self.argocd.close_all();
+        let started = std::time::Instant::now();
         sextant_core::node_shell::wait_for_deletions(NODE_SHELL_DELETE_WAIT);
+        sextant_core::debug::wait_for_deletions(
+            NODE_SHELL_DELETE_WAIT.saturating_sub(started.elapsed()),
+        );
     }
 
     /// Stops every watch subscription (extensions' too), log stream, terminal session and Flux / Argo CD install, but

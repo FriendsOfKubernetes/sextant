@@ -1,4 +1,5 @@
-//! Interactive shell in a container (tries `bash`, then `sh`), and one command run without a terminal.
+//! Interactive shell in a container (tries `bash`, then `sh`), a terminal attached to a container's own process
+//! ([`attach_terminal`], for debug containers), and one command run without a terminal.
 //!
 //! [`exec_shell`] opens a TTY exec session over the API server's websocket and hands back channels: keystrokes go
 //! into `input`, `(cols, rows)` into `resize`, and the output arrives on `output` as [`TermEvent`]s, ending with
@@ -61,6 +62,8 @@ pub const SHELLS: [&str; 2] = ["bash", "sh"];
 /// a missing binary is reported by the server within milliseconds).
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 const CHANNEL_SIZE: usize = 256;
+/// How long a detached debug shell may take to end once its stdin is closed.
+const DETACH_GRACE: Duration = Duration::from_secs(2);
 const READ_BUF: usize = 16 * 1024;
 
 /// Opens a shell in `container` of `pod` with a `cols`×`rows` terminal: `bash` if the container has it, else `sh`.
@@ -91,6 +94,36 @@ pub async fn exec_shell(
             last_failure.unwrap_or_default()
         ),
     ))
+}
+
+/// Attaches a `cols`×`rows` terminal to the first process of `container` in `pod` (`kubectl attach -it`), e.g. the
+/// shell of a debug container ([`crate::debug`]). The container must run with `stdin` and `tty`. Its process printed its
+/// prompt before anyone was attached, so a carriage return is typed once to make it print another.
+///
+/// Fails (no session) when the cluster is not connected, the pod or container does not exist or does not run, or attach
+/// is forbidden.
+pub async fn attach_terminal(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    pod: &ObjectRef,
+    container: &str,
+    cols: u16,
+    rows: u16,
+) -> CoreResult<ExecSession> {
+    let client = mgr.client(cluster)?;
+    let api: Api<Pod> = Api::namespaced(client, pod.required_namespace()?);
+    let params = AttachParams::interactive_tty()
+        .container(container)
+        .max_stdout_buf_size(READ_BUF);
+    let attached = api
+        .attach(&pod.name, &params)
+        .await
+        .map_err(|e| exec_error(e, pod, container, "attach to a container"))?;
+    let mut process = terminal_process(attached, cols, rows).await?;
+    process.attached_to_main = true;
+    let _ = process.stdin.write_all(b"\r").await;
+    let _ = process.stdin.flush().await;
+    Ok(spawn_session(process))
 }
 
 /// Runs `command` (program and arguments, no shell) in `container` of `pod` (when `None`, the container `kubectl`
@@ -261,6 +294,8 @@ struct Process {
     pending: Vec<u8>,
     /// The shell already finished while starting (e.g. it printed something and exited at once).
     finished: Option<Option<Status>>,
+    /// Attached to the container's own process ([`attach_terminal`]) rather than a shell exec'd into it.
+    attached_to_main: bool,
 }
 
 enum Started {
@@ -280,33 +315,11 @@ async fn start(
     let params = AttachParams::interactive_tty()
         .container(container)
         .max_stdout_buf_size(READ_BUF);
-    let mut attached = api
+    let attached = api
         .exec(&pod.name, [shell], &params)
         .await
         .map_err(|e| exec_error(e, pod, container, "open a shell"))?;
-    let (Some(stdin), Some(stdout), Some(status)) =
-        (attached.stdin(), attached.stdout(), attached.take_status())
-    else {
-        return Err(CoreError::other("exec session without a terminal"));
-    };
-    let mut resize = attached.terminal_size();
-    if let Some(tx) = resize.as_mut() {
-        let _ = tx
-            .send(TerminalSize {
-                width: cols,
-                height: rows,
-            })
-            .await;
-    }
-    let mut process = Process {
-        attached,
-        stdin: Box::new(stdin),
-        stdout: Box::new(stdout),
-        status: Box::pin(status),
-        resize,
-        pending: Vec::new(),
-        finished: None,
-    };
+    let mut process = terminal_process(attached, cols, rows).await?;
 
     // Wait for the first sign of life: output (the prompt) means the shell runs; a status before any output means
     // it could not start.
@@ -337,10 +350,47 @@ async fn start(
     }
 }
 
+/// The streams of a terminal session (exec or attach), sized `cols`×`rows`.
+async fn terminal_process(
+    mut attached: AttachedProcess,
+    cols: u16,
+    rows: u16,
+) -> CoreResult<Process> {
+    let (Some(stdin), Some(stdout), Some(status)) =
+        (attached.stdin(), attached.stdout(), attached.take_status())
+    else {
+        return Err(CoreError::other("exec session without a terminal"));
+    };
+    let mut resize = attached.terminal_size();
+    if let Some(tx) = resize.as_mut() {
+        let _ = tx
+            .send(TerminalSize {
+                width: cols,
+                height: rows,
+            })
+            .await;
+    }
+    Ok(Process {
+        attached,
+        stdin: Box::new(stdin),
+        stdout: Box::new(stdout),
+        status: Box::pin(status),
+        resize,
+        pending: Vec::new(),
+        finished: None,
+        attached_to_main: false,
+    })
+}
+
 /// The API server refuses the websocket upgrade with a bare HTTP status (its explanation is lost), so the message
 /// is rebuilt from what was asked for.
 /// `what` is the action, as in "not allowed to open a shell in pod …".
-fn exec_error(err: kube::Error, pod: &ObjectRef, container: &str, what: &str) -> CoreError {
+pub(crate) fn exec_error(
+    err: kube::Error,
+    pod: &ObjectRef,
+    container: &str,
+    what: &str,
+) -> CoreError {
     use kube::client::UpgradeConnectionError;
     let kube::Error::UpgradeConnection(UpgradeConnectionError::ProtocolSwitch(status)) = &err
     else {
@@ -363,7 +413,7 @@ fn exec_error(err: kube::Error, pod: &ObjectRef, container: &str, what: &str) ->
 }
 
 /// A failure status that says the command does not exist in the container.
-fn is_missing_binary(status: Option<&Status>) -> bool {
+pub(crate) fn is_missing_binary(status: Option<&Status>) -> bool {
     let Some(status) = status else {
         return false;
     };
@@ -377,7 +427,7 @@ fn is_missing_binary(status: Option<&Status>) -> bool {
     message.contains("not found") || message.contains("no such file")
 }
 
-fn status_message(status: Option<&Status>) -> String {
+pub(crate) fn status_message(status: Option<&Status>) -> String {
     status.and_then(|s| s.message.clone()).unwrap_or_default()
 }
 
@@ -477,6 +527,15 @@ async fn pump(
         }
     };
     let Some(status) = ended else {
+        if process.attached_to_main {
+            // A terminal attached to a container's own process (a debug container's shell) ends it with the session,
+            // as if the user pressed Ctrl+C and Ctrl+D: a runtime keeps a TTY's input open after the attach goes away,
+            // and a debug container can never be removed from its pod.
+            let _ = process.stdin.write_all(b"\x03\x04").await;
+            let _ = process.stdin.flush().await;
+            let _ = process.stdin.shutdown().await;
+            let _ = tokio::time::timeout(DETACH_GRACE, &mut process.status).await;
+        }
         // Closed by the owner: dropping the process aborts the websocket.
         process.attached.abort();
         return;

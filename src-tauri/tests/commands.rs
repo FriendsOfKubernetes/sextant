@@ -53,6 +53,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     // `clusterId` is optional (a terminal without a cluster), so the first required argument is `cols`.
     ("terminal_start", Some("cols")),
     ("node_shell_start", Some("clusterId")),
+    ("debug_start", Some("clusterId")),
     ("term_input", Some("sessionId")),
     ("term_resize", Some("sessionId")),
     ("term_stop", Some("sessionId")),
@@ -89,6 +90,10 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("gitops_install_stop", Some("streamId")),
     ("gitops_install_status", Some("clusterId")),
     ("file_save", Some("path")),
+    ("files_stat", Some("clusterId")),
+    ("files_download_start", Some("clusterId")),
+    ("files_upload_start", Some("clusterId")),
+    ("files_transfer_stop", Some("streamId")),
     ("argocd_status", Some("clusterId")),
     ("argocd_login", Some("clusterId")),
     ("argocd_logout", Some("clusterId")),
@@ -780,6 +785,52 @@ fn later_argument_names_match_the_frontend() {
             json!({ "clusterId": "c", "node": "n", "cols": 80, "rows": 24 }),
             "streamId",
         ),
+        ("debug_start", json!({ "clusterId": "c" }), "pod"),
+        (
+            "debug_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" } }),
+            "spec",
+        ),
+        (
+            "debug_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "spec": { "image": "busybox:stable", "target": "app", "copy": { "command": ["sleep", "1d"] } }, "cols": 80, "rows": 24 }),
+            "streamId",
+        ),
+        (
+            "files_stat",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" } }),
+            "path",
+        ),
+        (
+            "files_download_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": "app", "path": "/etc/hostname" }),
+            "kind",
+        ),
+        (
+            "files_download_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": "app", "path": "/etc/hostname", "kind": "file" }),
+            "destination",
+        ),
+        (
+            "files_download_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "path": "/etc/hostname", "kind": "file", "destination": "/tmp/hostname" }),
+            "streamId",
+        ),
+        (
+            "files_upload_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": null }),
+            "source",
+        ),
+        (
+            "files_upload_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "source": "/tmp/x" }),
+            "path",
+        ),
+        (
+            "files_upload_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "source": "/tmp/x", "path": "/tmp/x" }),
+            "streamId",
+        ),
         ("term_ack", json!({ "sessionId": "t" }), "bytes"),
         ("secret_value", json!({ "clusterId": "c" }), "namespace"),
         (
@@ -833,6 +884,33 @@ fn later_argument_names_match_the_frontend() {
             text.contains(&format!("missing required key {next}")),
             "{cmd}: expected `{next}`, got {err}"
         );
+    }
+}
+
+/// Debug containers and copying files are the user's own tools (like a node shell): no MCP tool and no extension
+/// method reaches them.
+#[test]
+fn debug_containers_and_file_copies_are_offered_to_neither_agents_nor_extensions() {
+    let tools = sextant_lib::mcp::server::all_tools().names();
+    let methods = sextant_lib::extensions::api::METHODS.map(str::to_owned);
+    assert!(!tools.is_empty() && !methods.is_empty());
+    let banned = [
+        "debug",
+        "ephemeral",
+        "attach",
+        "file",
+        "files",
+        "copy",
+        "cp",
+        "upload",
+        "download",
+        "tar",
+    ];
+    for name in tools.iter().chain(methods.iter()) {
+        let lower = name.to_lowercase();
+        for word in lower.split(['_', '.']) {
+            assert!(!banned.contains(&word), "{name} offers {word}");
+        }
     }
 }
 

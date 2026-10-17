@@ -43,6 +43,11 @@ mcp: McpSettings,
  */
 nodeShellImage: string, 
 /**
+ * Default image of a debug container (`debug`), chosen in the debug dialog; empty means the default
+ * (`debug::DEFAULT_IMAGE`). Written by the frontend.
+ */
+debugImage: string, 
+/**
  * Installed extensions and what the user granted them. Written only by the backend (install, consent, enable,
  * remove); `settings_update` keeps the stored list whatever the frontend sends. An entry this version cannot
  * read is left out rather than failing the file.
