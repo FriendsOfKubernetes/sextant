@@ -747,6 +747,39 @@ mod tests {
         }
     }
 
+    /// How long a flow-control test may take in all, its own bounded waits included.
+    const TEST_LIMIT: Duration = Duration::from_secs(120);
+
+    /// Runs `test` on a thread of its own and fails if it has not finished within `limit`: a regression that blocks
+    /// anywhere (a call into the session, a join, a drop — not only the waits the test bounds itself) fails the test
+    /// instead of hanging the whole run (#159). A panic in `test` is the test's failure, as if it ran here.
+    fn within(limit: Duration, test: impl FnOnce() + Send + 'static) {
+        let (done_tx, done_rx) = std_mpsc::channel();
+        let runner = std::thread::spawn(move || {
+            test();
+            let _ = done_tx.send(());
+        });
+        match done_rx.recv_timeout(limit) {
+            Ok(()) => {}
+            Err(std_mpsc::RecvTimeoutError::Disconnected) => {
+                std::panic::resume_unwind(runner.join().expect_err("the test panicked"))
+            }
+            Err(std_mpsc::RecvTimeoutError::Timeout) => {
+                panic!("the test did not finish in {} s", limit.as_secs())
+            }
+        }
+    }
+
+    /// Stops the session `id` when dropped, so a failed assertion still releases what the session holds (a producer
+    /// blocked on a full output channel) instead of leaving it blocked for the rest of the run.
+    struct StopOnDrop<'a>(&'a AppState, &'a str);
+
+    impl Drop for StopOnDrop<'_> {
+        fn drop(&mut self) {
+            self.0.sessions.stop(self.1);
+        }
+    }
+
     /// The far side of a session: what the core (or the PTY) would hold.
     struct FakeShell {
         input: mpsc::Receiver<Vec<u8>>,
@@ -919,6 +952,10 @@ mod tests {
 
     #[test]
     fn output_quickly_after_output_is_gathered_into_one_event() {
+        within(TEST_LIMIT, output_quickly_after_output_is_gathered);
+    }
+
+    fn output_quickly_after_output_is_gathered() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, shell) = fake_session();
@@ -937,6 +974,13 @@ mod tests {
 
     #[test]
     fn a_session_takes_no_output_above_the_window_until_acked_and_its_stop_releases_the_producer() {
+        within(
+            TEST_LIMIT,
+            a_flooding_session_stops_at_the_window_and_its_stop_releases_it,
+        );
+    }
+
+    fn a_flooding_session_stops_at_the_window_and_its_stop_releases_it() {
         const CHUNK: usize = 64 * 1024;
         let (app, _dir) = app();
         let state = app.state::<AppState>();
@@ -958,6 +1002,7 @@ mod tests {
         };
         let events = listen(&app, "t-flood");
         forward_term(app.handle(), &state, "t-flood".into(), None, session, None).unwrap();
+        let stop = StopOnDrop(&state, "t-flood");
 
         // Nothing is acknowledged: the session stops at the window, and so does the producer.
         let mut total = 0;
@@ -994,10 +1039,11 @@ mod tests {
         );
 
         // Closing the tab releases the stalled producer and forgets the session's credit.
-        state.sessions.stop("t-flood");
+        drop(stop);
         done_rx
             .recv_timeout(Duration::from_secs(10))
             .expect("the producer was released");
+        // It has signalled its end: joining it does not wait.
         producer.join().unwrap();
         wait_until("the credit to be forgotten", || {
             flows(app.handle()).is_empty()
@@ -1011,6 +1057,11 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn yes_in_a_local_terminal_stops_at_the_window_and_resumes_after_acks() {
+        within(TEST_LIMIT, yes_stops_at_the_window_and_resumes_after_acks);
+    }
+
+    #[cfg(unix)]
+    fn yes_stops_at_the_window_and_resumes_after_acks() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let sh = ShellCommand {
@@ -1019,6 +1070,7 @@ mod tests {
         };
         let events = listen(&app, "yes-1");
         start_plain_terminal(app.handle(), &state, "yes-1".into(), &sh, 80, 24).unwrap();
+        let stop = StopOnDrop(&state, "yes-1");
         let (input, _) = state.sessions.channels("yes-1").unwrap();
         input.blocking_send(b"yes\n".to_vec()).unwrap();
 
@@ -1044,7 +1096,7 @@ mod tests {
             total - acked
         );
 
-        state.sessions.stop("yes-1");
+        drop(stop);
         assert!(state.sessions.is_empty());
         wait_until("the credit to be forgotten", || {
             flows(app.handle()).is_empty()
