@@ -57,8 +57,21 @@ Found a bug? [Open an issue](https://github.com/FriendsOfKubernetes/sextant/issu
 
 ## Roadmap
 
-See the [milestones](https://github.com/FriendsOfKubernetes/sextant/milestones); the plan lives in
-[GitHub Issues](https://github.com/FriendsOfKubernetes/sextant/issues).
+What we plan for the next releases. Each release is a [milestone](https://github.com/FriendsOfKubernetes/sextant/milestones)
+with one issue per feature; plans can change, and ideas are welcome in
+[Discussions](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/ideas).
+
+| Release | Focus | What it brings |
+|---|---|---|
+| [0.9](https://github.com/FriendsOfKubernetes/sextant/milestone/12) | Everyday work *(in progress)* | Command palette (Ctrl+K), logs of several pods at once, debug containers, copying files to and from containers, rollout history with rollback, background notifications (can be turned off), cluster problems screen |
+| [0.10](https://github.com/FriendsOfKubernetes/sextant/milestone/13) | Understanding the cluster | Right-sizing of requests and limits, cert-manager and certificate expiry, resource map, RBAC "who can do what" |
+| [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
+| [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
+| [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace | Saved views and workspaces, kubeconfig management |
+| [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
+
+Further out: service mesh views (Istio, Linkerd), code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
+a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
 
 ## License
 
