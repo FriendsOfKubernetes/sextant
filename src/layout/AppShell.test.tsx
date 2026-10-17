@@ -335,4 +335,13 @@ describe("AppShell", () => {
       expect(screen.getByRole("navigation", { name: "Sections" })).toBeInTheDocument();
     });
   });
+
+  it("opens the command palette with Ctrl+K, with or without a cluster", () => {
+    render(<AppShell />);
+    fireEvent.keyDown(document.body, { key: "k", code: "KeyK", ctrlKey: true });
+    const palette = screen.getByRole("dialog", { name: "Command palette" });
+    expect(within(palette).getByRole("combobox", { name: "Search" })).toHaveFocus();
+    fireEvent.keyDown(within(palette).getByRole("combobox"), { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Command palette" })).not.toBeInTheDocument();
+  });
 });

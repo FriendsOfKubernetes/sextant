@@ -15,6 +15,7 @@ import { AboutHost } from "../features/about/AboutHost";
 import { ConsentNotice } from "../features/extensions/ConsentNotice";
 import { InstallHost } from "../features/gitops-install/InstallHost";
 import { ConfirmHost } from "../features/mcp/ConfirmHost";
+import { PaletteHost } from "../features/palette/PaletteHost";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
 import { Dock } from "./dock/Dock";
@@ -37,7 +38,7 @@ import "./layout.css";
  * host, which keeps extension contributions registered (`ExtensionsHost`), the About dialog (`AboutHost`, opened
  * by the tray menu and by Settings) and the Flux / Argo CD install dialog (`InstallHost`, opened from the cluster
  * menu and the cluster settings; outside the rail, so switching between the narrow and the wide layout never
- * unmounts a running install).
+ * unmounts a running install) and the command palette with its Ctrl+K / Cmd+K shortcut (`PaletteHost`).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -120,6 +121,7 @@ export function AppShell() {
       <ConfirmHost />
       <ConsentNotice />
       <ExtensionsHost />
+      <PaletteHost />
     </div>
   );
 }

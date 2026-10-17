@@ -1,0 +1,34 @@
+{
+  "title": "Command palette",
+  "search": "Search",
+  "placeholder": "Find objects, sections, clusters, settings…",
+  "filterActions": "Filter actions…",
+  "results": "Results",
+  "groups": {
+    "recent": "Recent",
+    "selected": "Open in details",
+    "goTo": "Go to",
+    "clusters": "Clusters",
+    "settings": "Settings",
+    "more": "More"
+  },
+  "cluster": {
+    "current": "Current cluster",
+    "switch": "Switch",
+    "connect": "Connect"
+  },
+  "settingsTab": "Settings: {{tab}}",
+  "openDetails": "Open details",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: actions",
+  "loadingActions": "Loading actions…",
+  "noActions": "No actions for this object",
+  "actionsFailed": "Could not read the object: {{message}}",
+  "noCluster": "Open a cluster to search its objects",
+  "empty": "Nothing found",
+  "searchAll": "Search all kinds ({{count}})",
+  "searching": "Searching… {{done}} of {{total}} kinds listed",
+  "limited": "Objects of the first {{count}} of {{total}} kinds are searched",
+  "hint": "↑↓ move · Enter open · Tab actions · Esc close",
+  "hintActions": "↑↓ move · Enter run · Shift+Tab back · Esc back"
+}
