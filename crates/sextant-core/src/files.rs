@@ -656,15 +656,23 @@ pub struct LocalFile {
 impl LocalFile {
     /// Opens `path`, which must be a regular file (a link is followed: the user chose it).
     pub async fn open(path: &Path) -> CoreResult<Self> {
-        let file = tokio::fs::File::open(path)
-            .await
-            .map_err(|e| read_error(path, &e))?;
-        let meta = file.metadata().await.map_err(|e| read_error(path, &e))?;
-        if !meta.is_file() {
-            return Err(CoreError::new(
+        let not_a_file = || {
+            CoreError::new(
                 ErrorCode::Invalid,
                 format!("{} is not a file", path.display()),
-            ));
+            )
+        };
+        let file = match tokio::fs::File::open(path).await {
+            Ok(file) => file,
+            // Windows refuses to open a folder as a file with "access denied": say what it is.
+            Err(_) if tokio::fs::metadata(path).await.is_ok_and(|m| m.is_dir()) => {
+                return Err(not_a_file());
+            }
+            Err(e) => return Err(read_error(path, &e)),
+        };
+        let meta = file.metadata().await.map_err(|e| read_error(path, &e))?;
+        if !meta.is_file() {
+            return Err(not_a_file());
         }
         #[cfg(unix)]
         let mode = {
