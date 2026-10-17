@@ -268,3 +268,55 @@ _Avoid_: permission, allow rule
 **Request check**:
 A page that answers "where would this request go?" by following a made-up request (method, URL, headers) through listeners, routes, rules and backends from the cluster's own objects and showing why other candidates lost. It sends nothing to the cluster's traffic.
 _Avoid_: simulator, test request, probe
+
+**Problem**:
+Something wrong with one object that Sextant's rules recognise: a crash-looping or pending pod, a NotReady node, a workload without its replicas or a stuck rollout, a failed Job, a pending claim, an expiring certificate, a failing Flux, Argo CD or Gateway API object, a Warning event. Some count only after a grace period, some stop counting after a while (a past restart). The same rules feed the "Problems" page, the counter on the Cluster section and the notifications.
+_Avoid_: alert, issue, error (bare), incident
+
+**Problems page**:
+The page "Problems" in the Cluster section, after "Overview": the problems of the open cluster grouped by category and namespace, each a link to its object, with "Only new since…" and the recent notifications below. The counter on the section header counts only problems that would notify.
+_Avoid_: dashboard, health page, alerts
+
+**Notification**:
+A desktop message from the operating system's notification service about a problem that began while Sextant runs, in a connected cluster. Problems already there when the cluster connected are not told; one state is told once; many at once become one summary. Clicking it opens the object. Nothing leaves the machine.
+_Avoid_: alert, toast, popup
+
+**Notification category**:
+One of the kinds of problems a notification can be about: Nodes, Pods, Workloads, Jobs, Volume claims, Certificates, Flux, Argo CD, Gateway API. Each can be turned off in Settings → General → Notifications. Warning events are a category of the Problems page but never notify.
+_Avoid_: notification type, severity
+
+**Mute**:
+Stopping notifications without turning them off: "Mute for 1 hour" for all clusters, or a cluster unticked under Notifications, which never notifies. What is muted still goes to the notification history on the Problems page. Turning notifications off is the global switch.
+_Avoid_: snooze, silence, do not disturb (that is the system's own)
+
+**Command palette**:
+The search box opened with Ctrl+K (Cmd+K on macOS; with Shift inside a text field, terminal or editor): go to a section, a page, a Settings tab or a cluster, find an object of the open cluster by name and open it or run one of its actions.
+_Avoid_: spotlight, quick open, global search (bare)
+
+**Merged logs**:
+One logs tab with the lines of several pods' containers, each line prefixed with its pod in a stable colour: all pods of a workload, a Service or a label selector (pods appearing later are picked up), or the pods selected in a table. At most 20 streams run at once; the others wait.
+_Avoid_: multi-logs, stern, aggregated logs
+
+**Revision (of a workload)**:
+One pod template a Deployment, StatefulSet or DaemonSet has run, numbered by Kubernetes and kept in a ReplicaSet or ControllerRevision. The History tab lists them and compares two. Not a Helm release revision.
+_Avoid_: version, history entry
+
+**Roll back (a workload)**:
+Putting an earlier revision's pod template back, exactly as `kubectl rollout undo` does; the pods are then replaced as for any update, and the result gets a new revision number. A paused Deployment is not rolled back. Helm has its own Roll back for releases.
+_Avoid_: revert, undo deployment
+
+**Debug container**:
+An extra container started next to a pod's own to look inside it, with an image that has a shell and tools (busybox, netshoot), optionally seeing the processes of one of the pod's containers. It is either an ephemeral container or runs in a debug copy.
+_Avoid_: sidecar, debug pod (when an ephemeral container is meant)
+
+**Ephemeral container**:
+A debug container added to the running pod itself. Kubernetes never removes one: after its shell ends it stays in the pod, stopped, until the pod is deleted, so each new one is another entry.
+_Avoid_: temporary container, sidecar
+
+**Debug copy**:
+A copy of a pod, named `<pod>-debug-<random>`, with a debug container and optionally a changed command (to keep a crashing container alive), made without the original's labels so no Service sends it traffic. Sextant deletes it when the tab, the cluster or the app closes; agents cannot run commands in it.
+_Avoid_: clone, debug pod, test pod
+
+**File copy**:
+Downloading a file or folder from a running container, or uploading one file into it, through `tar` in the container, as `kubectl cp` does. A file arrives as itself, a folder as a `.tar.gz`; the local file appears only when the download is complete. An upload asks first.
+_Avoid_: sync, mount, file browser
