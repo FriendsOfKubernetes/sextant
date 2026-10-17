@@ -105,6 +105,28 @@ pub fn gitops_cluster() -> Option<TestCluster> {
     Some(cluster)
 }
 
+/// Admin kubeconfig of a throwaway cluster without Flux and Argo CD, for the real install test.
+pub const INSTALL_KUBECONFIG_ENV: &str = "SEXTANT_TEST_INSTALL_KUBECONFIG";
+
+/// The kubeconfig of the throwaway install cluster, or `None` (with a note on stderr) when
+/// `SEXTANT_TEST_INSTALL_KUBECONFIG` is not set.
+pub fn install_cluster() -> Option<PathBuf> {
+    let Some(path) = std::env::var_os(INSTALL_KUBECONFIG_ENV).filter(|v| !v.is_empty()) else {
+        eprintln!(
+            "skipped: {INSTALL_KUBECONFIG_ENV} is not set (a throwaway kind cluster without Flux and Argo CD, see \
+             tests/gitops_install.rs)"
+        );
+        return None;
+    };
+    let kubeconfig = PathBuf::from(path);
+    assert!(
+        kubeconfig.is_file(),
+        "{INSTALL_KUBECONFIG_ENV}={} does not exist",
+        kubeconfig.display()
+    );
+    Some(kubeconfig)
+}
+
 /// A manager connected to the only context of `kubeconfig`.
 pub async fn connected(kubeconfig: &Path) -> (tempfile::TempDir, ClusterManager, ClusterId) {
     let tmp = tempfile::tempdir().unwrap();

@@ -11,23 +11,39 @@
 //! deletes only what it installed (the namespace `flux-system` and the plan's cluster-scoped objects), and only when
 //! the cluster had no Flux before. The other tests read the shared cluster's Flux and Argo CD (`SEXTANT_TEST_GITOPS=1`)
 //! or ask access reviews; they change nothing.
+//!
+//! The real install of both tools runs only with `SEXTANT_TEST_INSTALL_KUBECONFIG`, pointing at a throwaway kind
+//! cluster without Flux and Argo CD (it is skipped with a note when either is there). It installs Flux (the default
+//! set) and Argo CD from the pinned files beside the unit tests, first stopping each after its definitions (a partial
+//! install) and then applying it whole, waits up to 6 minutes for every workload (image pulls), and leaves both
+//! installed: delete the cluster afterwards.
+//!
+//! ```sh
+//! kind create cluster --name sextant-install-test --kubeconfig /tmp/sextant-install-kc
+//! SEXTANT_TEST_INSTALL_KUBECONFIG=/tmp/sextant-install-kc cargo test -p sextant-core --test gitops_install \
+//!   -- --nocapture real_install
+//! kind delete cluster --name sextant-install-test --kubeconfig /tmp/sextant-install-kc
+//! ```
 
 mod common;
 
 use std::io::Read;
 use std::panic::AssertUnwindSafe;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use futures::FutureExt;
+use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Namespace;
 use k8s_openapi::api::rbac::v1::{ClusterRole, ClusterRoleBinding};
 use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
 use kube::Api;
-use kube::api::{DeleteParams, DynamicObject, GroupVersionKind, Patch, PatchParams};
+use kube::api::{DeleteParams, DynamicObject, GroupVersionKind, ListParams, Patch, PatchParams};
 use sextant_core::gitops_install::{
-    AccessCheck, GitopsTool, InstallPlan, InstallStep, InstalledState, access_check, apply,
-    installed, prepare, readiness,
+    AccessCheck, GitopsTool, InstallPlan, InstallStep, InstalledState, WorkloadState, access_check,
+    apply, apply_until, installed, overlap, prepare, readiness,
 };
+use sextant_core::{ClusterId, ClusterManager};
 
 /// The official `install.yaml` of Flux v2.9.6, kept beside the module's unit tests.
 const FLUX_GZ: &[u8] = include_bytes!("../src/gitops_install/testdata/flux-v2.9.6-install.yaml.gz");
@@ -35,12 +51,20 @@ const FLUX_GZ: &[u8] = include_bytes!("../src/gitops_install/testdata/flux-v2.9.
 const ARGOCD_GZ: &[u8] =
     include_bytes!("../src/gitops_install/testdata/argocd-v3.5.5-install.yaml.gz");
 
-fn flux_manifest() -> String {
+fn gunzip(bytes: &[u8]) -> String {
     let mut text = String::new();
-    flate2::read::GzDecoder::new(FLUX_GZ)
+    flate2::read::GzDecoder::new(bytes)
         .read_to_string(&mut text)
         .unwrap();
     text
+}
+
+fn flux_manifest() -> String {
+    gunzip(FLUX_GZ)
+}
+
+fn argocd_manifest() -> String {
+    gunzip(ARGOCD_GZ)
 }
 
 const FLUX_CONTROLLERS: [&str; 4] = [
@@ -218,13 +242,7 @@ async fn the_api_server_accepts_every_planned_document() {
         return;
     };
     let client = cluster.client().await;
-    let argocd = {
-        let mut text = String::new();
-        flate2::read::GzDecoder::new(ARGOCD_GZ)
-            .read_to_string(&mut text)
-            .unwrap();
-        prepare(GitopsTool::ArgoCd, "v3.5.5", &text).unwrap()
-    };
+    let argocd = prepare(GitopsTool::ArgoCd, "v3.5.5", &argocd_manifest()).unwrap();
     let flux = prepare(GitopsTool::Flux, "v2.9.6", &flux_manifest()).unwrap();
     let params = PatchParams::apply("sextant").force().dry_run();
     for plan in [&flux, &argocd] {
@@ -255,5 +273,215 @@ async fn a_user_without_cluster_rights_is_told_before_the_install() {
             can_create_crds: false,
             can_create_cluster_role_bindings: false,
         }
+    );
+}
+
+const PRESENT: InstalledState = InstalledState {
+    present: true,
+    partial: false,
+};
+const PARTIAL: InstalledState = InstalledState {
+    present: false,
+    partial: true,
+};
+/// The Flux components `flux install` leaves out by default, and the API groups of their definitions.
+const FLUX_LEFT_OUT: [&str; 3] = [
+    "image-reflector-controller",
+    "image-automation-controller",
+    "source-watcher",
+];
+const FLUX_LEFT_OUT_GROUPS: [&str; 2] = ["image.toolkit.fluxcd.io", "source.extensions.fluxcd.io"];
+/// How long the workloads may take to become ready on a fresh cluster (the images are pulled).
+const READY_TIMEOUT: Duration = Duration::from_secs(360);
+
+/// Applies the plan's Namespace and definitions only, through the stop flag, as a cancelled install does.
+async fn apply_up_to_the_definitions(mgr: &ClusterManager, id: &ClusterId, plan: &InstallPlan) {
+    let early = plan
+        .objects
+        .iter()
+        .take_while(|o| o.kind == "Namespace" || o.kind == "CustomResourceDefinition")
+        .count();
+    assert!(early > 1, "{:?}: {:?}", plan.tool, plan.objects);
+    let stop = AtomicBool::new(false);
+    let mut sent = 0;
+    let report = apply_until(mgr, id, plan, &stop, |_| {
+        sent += 1;
+        if sent == early {
+            stop.store(true, Ordering::SeqCst);
+        }
+    })
+    .await
+    .unwrap();
+    assert!(report.stopped, "{:?}", plan.tool);
+    assert_eq!(report.applied, plan.objects[..early], "{:?}", plan.tool);
+}
+
+async fn wait_ready(
+    mgr: &ClusterManager,
+    id: &ClusterId,
+    tool: GitopsTool,
+    since: Instant,
+) -> Vec<WorkloadState> {
+    loop {
+        let states = readiness(mgr, id, tool, tool.namespace()).await.unwrap();
+        if !states.is_empty() && states.iter().all(|s| s.ready && s.reason.is_none()) {
+            eprintln!(
+                "{} ready {:.0?} after the apply",
+                tool.title(),
+                since.elapsed()
+            );
+            return states;
+        }
+        assert!(
+            since.elapsed() < READY_TIMEOUT,
+            "{} did not become ready in {READY_TIMEOUT:?}: {states:?}",
+            tool.title()
+        );
+        tokio::time::sleep(Duration::from_secs(3)).await;
+    }
+}
+
+#[tokio::test]
+async fn real_install_of_flux_and_argocd_into_a_throwaway_cluster() {
+    let Some(kubeconfig) = common::install_cluster() else {
+        return;
+    };
+    let (_tmp, mgr, id) = common::connected(&kubeconfig).await;
+    for tool in [GitopsTool::Flux, GitopsTool::ArgoCd] {
+        let before = installed(&mgr, &id, tool).await.unwrap();
+        if before != InstalledState::default() {
+            eprintln!(
+                "skipped: the cluster of {} already has {} ({before:?}); this test needs a throwaway cluster \
+                 without Flux and Argo CD",
+                common::INSTALL_KUBECONFIG_ENV,
+                tool.title()
+            );
+            return;
+        }
+    }
+    assert_eq!(
+        access_check(&mgr, &id).await.unwrap(),
+        AccessCheck {
+            can_create_crds: true,
+            can_create_cluster_role_bindings: true,
+        }
+    );
+    let flux = prepare(GitopsTool::Flux, "v2.9.6", &flux_manifest()).unwrap();
+    let argocd = prepare(GitopsTool::ArgoCd, "v3.5.5", &argocd_manifest()).unwrap();
+
+    // An install stopped after the definitions is partial; the next install completes it.
+    for plan in [&flux, &argocd] {
+        let started = Instant::now();
+        apply_up_to_the_definitions(&mgr, &id, plan).await;
+        assert_eq!(
+            installed(&mgr, &id, plan.tool).await.unwrap(),
+            PARTIAL,
+            "{:?}",
+            plan.tool
+        );
+        eprintln!(
+            "{} stopped after its definitions in {:.1?}",
+            plan.tool.title(),
+            started.elapsed()
+        );
+    }
+    let mut applied_at = Vec::new();
+    for plan in [&flux, &argocd] {
+        let started = Instant::now();
+        let report = apply(&mgr, &id, plan, |_| {}).await.unwrap();
+        assert!(!report.stopped);
+        assert_eq!(report.applied, plan.objects);
+        assert_eq!(
+            installed(&mgr, &id, plan.tool).await.unwrap(),
+            PRESENT,
+            "{:?}",
+            plan.tool
+        );
+        eprintln!(
+            "{} applied ({} objects) in {:.1?}",
+            plan.tool.title(),
+            plan.objects.len(),
+            started.elapsed()
+        );
+        applied_at.push(Instant::now());
+    }
+
+    // The sidebar kinds are served without reconnecting; the left-out Flux groups are not.
+    let kinds = mgr.kinds(&id).await.unwrap();
+    let has = |group: &str, kind: &str| {
+        kinds
+            .iter()
+            .any(|k| k.kind_ref.group == group && k.kind_ref.kind == kind)
+    };
+    assert!(has("kustomize.toolkit.fluxcd.io", "Kustomization"));
+    assert!(has("source.toolkit.fluxcd.io", "GitRepository"));
+    assert!(has("helm.toolkit.fluxcd.io", "HelmRelease"));
+    assert!(has("argoproj.io", "Application"));
+    assert!(has("argoproj.io", "AppProject"));
+    assert!(
+        !kinds
+            .iter()
+            .any(|k| FLUX_LEFT_OUT_GROUPS.contains(&k.kind_ref.group.as_str())),
+        "a left-out Flux group is served"
+    );
+
+    let flux_states = wait_ready(&mgr, &id, GitopsTool::Flux, applied_at[0]).await;
+    let mut names: Vec<&str> = flux_states.iter().map(|s| s.name.as_str()).collect();
+    names.sort_unstable();
+    assert_eq!(names, FLUX_CONTROLLERS, "{flux_states:?}");
+    let argocd_states = wait_ready(&mgr, &id, GitopsTool::ArgoCd, applied_at[1]).await;
+    for (kind, name) in [
+        ("StatefulSet", "argocd-application-controller"),
+        ("Deployment", "argocd-server"),
+        ("Deployment", "argocd-repo-server"),
+        ("Deployment", "argocd-redis"),
+    ] {
+        assert!(
+            argocd_states
+                .iter()
+                .any(|s| s.kind == kind && s.name == name),
+            "{kind} {name}: {argocd_states:?}"
+        );
+    }
+    for tool in [GitopsTool::Flux, GitopsTool::ArgoCd] {
+        assert_eq!(
+            installed(&mgr, &id, tool).await.unwrap(),
+            PRESENT,
+            "{tool:?}"
+        );
+    }
+
+    // Nothing of the left-out Flux components is in the cluster.
+    let client = common::client_from(&kubeconfig).await;
+    let deployments = Api::<Deployment>::namespaced(client.clone(), "flux-system")
+        .list_metadata(&ListParams::default())
+        .await
+        .unwrap();
+    let mut names: Vec<String> = deployments
+        .items
+        .into_iter()
+        .filter_map(|d| d.metadata.name)
+        .collect();
+    names.sort_unstable();
+    assert_eq!(names, FLUX_CONTROLLERS);
+    let crds = Api::<CustomResourceDefinition>::all(client)
+        .list_metadata(&ListParams::default())
+        .await
+        .unwrap();
+    for crd in crds.items {
+        let name = crd.metadata.name.unwrap_or_default();
+        assert!(
+            !FLUX_LEFT_OUT_GROUPS
+                .iter()
+                .any(|g| name.ends_with(&format!(".{g}"))),
+            "{name}"
+        );
+    }
+    let left = overlap(&mgr, &id, &flux).await.unwrap();
+    assert!(left.left_out_controllers.is_empty(), "{left:?}");
+    assert!(
+        FLUX_LEFT_OUT
+            .iter()
+            .all(|c| !flux_states.iter().any(|s| s.name == *c))
     );
 }
