@@ -1,4 +1,5 @@
-// The pods of a workload (Deployment, StatefulSet, DaemonSet, Job) are the pods its `spec.selector` matches.
+// The pods of a workload (Deployment, StatefulSet, DaemonSet, ReplicaSet, Job) or a Service are the pods its
+// `spec.selector` matches.
 
 interface SelectorRequirement {
   key: string;
@@ -23,4 +24,29 @@ export function labelSelectorOf(workload: unknown): string | null {
     else if (operator === "DoesNotExist") parts.push(`!${key}`);
   }
   return parts.length > 0 ? parts.join(",") : null;
+}
+
+/** Whether `kind` selects pods with a label selector: the workloads above, a ReplicaSet, or a Service. */
+export function selectsPods(kind: { group: string; kind: string }): boolean {
+  if (kind.group === "" && kind.kind === "Service") return true;
+  return (POD_OWNERS[kind.group]?.includes(kind.kind) ?? false);
+}
+
+/** `apps` Deployment, StatefulSet, DaemonSet, ReplicaSet and `batch` Job: the workloads whose pods logs can follow. */
+export const POD_OWNERS: Readonly<Record<string, readonly string[]>> = {
+  apps: ["Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"],
+  batch: ["Job"],
+};
+
+/**
+ * The label selector string for the pods of `obj` of `kind`: a Service's `spec.selector` is a plain map, every
+ * other kind has a `LabelSelector`. `null` when it selects nothing.
+ */
+export function podSelectorOf(obj: unknown, kind: { group: string; kind: string }): string | null {
+  if (kind.group === "" && kind.kind === "Service") {
+    const selector = (obj as { spec?: { selector?: Record<string, string> } } | null)?.spec?.selector;
+    const parts = Object.entries(selector ?? {}).map(([key, value]) => `${key}=${value}`);
+    return parts.length > 0 ? parts.join(",") : null;
+  }
+  return labelSelectorOf(obj);
 }

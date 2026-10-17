@@ -1,21 +1,29 @@
-// "Logs" on a Deployment, StatefulSet, DaemonSet or Job: choose which of its pods to read.
+// "Logs" on a workload (Deployment, StatefulSet, DaemonSet, ReplicaSet, Job) or a Service: all of its pods in one
+// merged tab, or one pod.
 import { useTranslation } from "react-i18next";
-import { useWatch, type ClusterId, type KubeObject } from "../../api";
-import { Dialog, EmptyState, ErrorState, LoadingIndicator } from "../../components";
+import { useWatch, type ClusterId, type KindRef, type KubeObject } from "../../api";
+import { Button, Dialog, EmptyState, ErrorState, LoadingIndicator } from "../../components";
+import { openSelectorLogsTab } from "./multi/open";
 import { openLogsTab, POD_KIND } from "./openLogsTab";
-import { labelSelectorOf } from "./selector";
+import { podSelectorOf } from "./selector";
 
 export interface PodPickerProps {
   clusterId: ClusterId;
+  kind: KindRef;
   workload: KubeObject;
   close: () => void;
 }
 
-export function PodPicker({ clusterId, workload, close }: PodPickerProps) {
+/** The title of a merged tab for the pods of `obj`: `deployment/web`. */
+export function selectorTabTitle(kind: KindRef, obj: KubeObject): string {
+  return `${kind.kind.toLowerCase()}/${obj.metadata?.name ?? ""}`;
+}
+
+export function PodPicker({ clusterId, kind, workload, close }: PodPickerProps) {
   const { t } = useTranslation();
   const name = workload.metadata?.name ?? "";
   const namespace = workload.metadata?.namespace;
-  const selector = labelSelectorOf(workload);
+  const selector = podSelectorOf(workload, kind);
   const watch = useWatch(
     selector && namespace ? clusterId : null,
     selector && namespace
@@ -50,8 +58,25 @@ export function PodPicker({ clusterId, workload, close }: PodPickerProps) {
       </ul>
     );
   }
+  const all =
+    selector && namespace ? (
+      <div className="logs-picker__all">
+        <Button
+          icon="logs"
+          variant="primary"
+          onClick={() => {
+            openSelectorLogsTab(clusterId, namespace, selector, selectorTabTitle(kind, workload));
+            close();
+          }}
+        >
+          {t("logs:picker.all")}
+        </Button>
+        <span className="logs-picker__hint">{t("logs:picker.allHint")}</span>
+      </div>
+    ) : null;
   return (
     <Dialog open title={t("logs:picker.title", { name })} onClose={close}>
+      {all}
       {body}
     </Dialog>
   );

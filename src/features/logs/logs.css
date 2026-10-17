@@ -141,3 +141,124 @@
 .logs-picker__phase {
   color: var(--color-text-muted);
 }
+
+.logs-picker__all {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.logs-picker__hint {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.logs-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+
+/* Merged logs of several pods (multi/). Pod colours: readable on the light and on the dark dock. */
+:root[data-theme="light"] {
+  --logs-src-0: #1f6fb2;
+  --logs-src-1: #b5462c;
+  --logs-src-2: #2f7d3a;
+  --logs-src-3: #8a4fbf;
+  --logs-src-4: #946000;
+  --logs-src-5: #0d7f7f;
+  --logs-src-6: #b8336a;
+  --logs-src-7: #5a6800;
+  --logs-src-8: #3f51b5;
+  --logs-src-9: #8d5524;
+}
+
+:root[data-theme="dark"] {
+  --logs-src-0: #6cb6ff;
+  --logs-src-1: #ff8a65;
+  --logs-src-2: #7ee787;
+  --logs-src-3: #d2a8ff;
+  --logs-src-4: #f2cc60;
+  --logs-src-5: #56d4dd;
+  --logs-src-6: #ff7eb6;
+  --logs-src-7: #c3d65a;
+  --logs-src-8: #9fa8ff;
+  --logs-src-9: #e0a370;
+}
+
+.logs__src--0 { color: var(--logs-src-0, var(--color-accent)); }
+.logs__src--1 { color: var(--logs-src-1, var(--color-accent)); }
+.logs__src--2 { color: var(--logs-src-2, var(--color-accent)); }
+.logs__src--3 { color: var(--logs-src-3, var(--color-accent)); }
+.logs__src--4 { color: var(--logs-src-4, var(--color-accent)); }
+.logs__src--5 { color: var(--logs-src-5, var(--color-accent)); }
+.logs__src--6 { color: var(--logs-src-6, var(--color-accent)); }
+.logs__src--7 { color: var(--logs-src-7, var(--color-accent)); }
+.logs__src--8 { color: var(--logs-src-8, var(--color-accent)); }
+.logs__src--9 { color: var(--logs-src-9, var(--color-accent)); }
+
+.logs__prefix {
+  font-weight: 600;
+}
+
+.logs__selector {
+  width: 220px;
+  padding: 2px 6px;
+}
+
+.logs__search[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.logs__sources {
+  max-height: 180px;
+  overflow: auto;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+
+.logs__sources ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.logs__sources-hint {
+  margin: 0 0 4px;
+  color: var(--color-text-muted);
+}
+
+.logs__source-status {
+  color: var(--color-text-muted);
+}
+
+.logs__muted {
+  color: var(--color-text-muted);
+}
+
+.logs__level {
+  font-weight: 600;
+}
+
+.logs__line--trace,
+.logs__line--debug {
+  color: var(--color-text-muted);
+}
+
+.logs__line--warn .logs__level {
+  color: var(--color-warning);
+}
+
+.logs__line--error .logs__level,
+.logs__line--fatal .logs__level,
+.logs__line--fatal {
+  color: var(--color-danger);
+}
+
+.logs__line--error {
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+}

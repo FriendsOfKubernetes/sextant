@@ -1,5 +1,5 @@
 // The dock tab with a pod's logs: toolbar (container, follow, timestamps, previous, wrap, search, save) and a
-// virtualized list of the buffered lines.
+// virtualized list of the buffered lines. A `MultiLogsPayload` gets the merged logs of several pods (multi/).
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,8 @@ import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from
 import { Button, Checkbox, ErrorState, Icon } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { LOG_BUFFER_LIMIT, LOG_BUFFER_TEXT_LIMIT } from "./buffer";
+import { MultiLogsTab } from "./multi/MultiLogsTab";
+import { isMultiLogsPayload } from "./multi/open";
 import { findMatches, MAX_MATCHES, splitLine } from "./search";
 import { useLogStream } from "./useLogStream";
 
@@ -30,7 +32,12 @@ const LINE_HEIGHT = 18;
 /** How close to the end (px) still counts as "at the end" for following. */
 const BOTTOM_SLACK = 24;
 
-export function LogsTab({ tab, active }: DockTabProps) {
+/** The "logs" dock tab: one pod's logs, or the merged logs of several pods (`MultiLogsPayload`). */
+export function LogsTab(props: DockTabProps) {
+  return isMultiLogsPayload(props.tab.payload) ? <MultiLogsTab {...props} /> : <PodLogsTab {...props} />;
+}
+
+function PodLogsTab({ tab, active }: DockTabProps) {
   const { t } = useTranslation();
   const { clusterId, pod, containers, container: preferred } = tab.payload as LogsPayload;
   const [container, setContainer] = useState(

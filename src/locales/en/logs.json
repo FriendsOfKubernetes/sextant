@@ -45,6 +45,51 @@
     "title": "Logs of {{name}}: choose a pod",
     "loading": "Loading pods…",
     "none": "No pods found.",
-    "noSelector": "This object does not select pods."
+    "noSelector": "This object does not select pods.",
+    "all": "All pods",
+    "allHint": "Follow every pod in one tab, including pods created later."
+  },
+  "details": {
+    "title": "Logs",
+    "allPods": "Logs of all pods",
+    "hint": "Follows the pods matching {{selector}} as they come and go."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} pod",
+    "podsTitle_other": "{{count}} pods",
+    "selector": "Selector",
+    "selectorHint": "A label selector; press Enter to apply.",
+    "sources": "Pods and containers ({{shown}} of {{total}})",
+    "sourcesLabel": "Pods and containers",
+    "capHint": "At most {{max}} log streams run at once; untick pods or containers to choose which ones are read.",
+    "capped_one": "{{count}} more container waits: at most {{max}} log streams run at once. Untick pods or containers to choose which ones are read.",
+    "capped_other": "{{count}} more containers wait: at most {{max}} log streams run at once. Untick pods or containers to choose which ones are read.",
+    "noPods": "No pods match.",
+    "json": "Parse JSON",
+    "level": "Level",
+    "allLevels": "All lines",
+    "levelAndAbove": "{{level}} and above",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Filter",
+    "regex": "Regex",
+    "badRegex": "The regular expression is not valid; no lines are filtered out.",
+    "sourceStatus": {
+      "waiting": "waiting for a free stream",
+      "connecting": "connecting",
+      "streaming": "live",
+      "ended": "ended",
+      "error": "failed",
+      "notStarted": "not started",
+      "gone": "pod gone",
+      "off": "off"
+    },
+    "streams": "Streams: {{count}}, pods: {{pods}}"
   }
 }
