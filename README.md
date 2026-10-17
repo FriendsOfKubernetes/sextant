@@ -69,8 +69,9 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace | Saved views and workspaces, kubeconfig management |
 | [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
+| [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
 
-Further out: service mesh views (Istio, Linkerd), code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
+Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
 a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
 
 ## License
