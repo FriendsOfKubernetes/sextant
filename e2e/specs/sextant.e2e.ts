@@ -55,8 +55,8 @@ describe("Sextant against sextant-test", () => {
   });
 
   it("shows the overview of the cluster", async () => {
-    // The section "Cluster" holds the overview (its entry is also called "Cluster") and the problems page.
-    await openSection("Cluster", "Cluster");
+    // The section "Cluster" holds the overview ("Overview") and the problems page.
+    await openSection("Overview", "Cluster");
     const main = $("main");
     await eventually(async () => (await textOf(main)).includes("Cluster overview"), "the overview page");
     await eventually(async () => /Nodes[\s\S]*1/.test(await textOf(main)), "the node count");

@@ -71,7 +71,7 @@
     "noSource": "No source — metrics are unavailable"
   },
   "overview": {
-    "sidebar": "Cluster",
+    "sidebar": "Overview",
     "title": "Cluster overview",
     "nodes": "Nodes",
     "nodesReady": "{{ready}} of {{count}} ready",

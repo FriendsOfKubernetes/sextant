@@ -25,7 +25,7 @@ export function sectionGroup(sidebar: Element, group: string): Element {
   );
 }
 
-/** An entry of the sidebar (not a section header, which may have the same label: the overview of "Cluster"). */
+/** An entry of the sidebar (not a section header, which may have the same label: a section shown as one link). */
 export function sectionEntry(sidebar: Element, entry: string): Element {
   return sidebar.$(`.//button[not(@aria-expanded) and normalize-space(.)="${entry}"]`);
 }

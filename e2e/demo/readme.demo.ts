@@ -27,7 +27,7 @@ describe("README demo", () => {
     const rail = $('nav[aria-label="Clusters"]');
     await demoClick(byName(CONTEXT, rail));
     await $('nav[aria-label="Sections"]').waitForDisplayed({ timeout: 60_000 });
-    await openSection("Cluster", "Cluster");
+    await openSection("Overview", "Cluster");
     const main = $("main");
     await eventually(async () => (await main.$$(".uplot").length) > 0, "the charts", 60_000);
     await browser.pause(2_200);
