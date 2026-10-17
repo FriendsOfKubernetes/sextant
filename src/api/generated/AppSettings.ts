@@ -3,6 +3,7 @@ import type { ClusterSettings } from "./ClusterSettings";
 import type { InstalledExtension } from "./InstalledExtension";
 import type { KubeconfigSource } from "./KubeconfigSource";
 import type { McpSettings } from "./McpSettings";
+import type { NotificationSettings } from "./NotificationSettings";
 import type { Theme } from "./Theme";
 import type { WindowLayout } from "./WindowLayout";
 
@@ -52,4 +53,8 @@ debugImage: string,
  * remove); `settings_update` keeps the stored list whatever the frontend sends. An entry this version cannot
  * read is left out rather than failing the file.
  */
-extensions: Array<InstalledExtension>, };
+extensions: Array<InstalledExtension>, 
+/**
+ * Desktop notifications about new problems in connected clusters. Written by the frontend.
+ */
+notifications: NotificationSettings, };

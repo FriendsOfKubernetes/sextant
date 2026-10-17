@@ -1,6 +1,7 @@
 // Test double for the backend: replaces `invoke`/`listen`/dialogs with a table of handlers.
 // Used by Vitest; never imported by application code.
 import type { AppSettings } from "./generated/AppSettings";
+import { NOTIFICATION_COMMANDS } from "./notifications";
 import { defaultAppSettings, resetSettingsCache } from "./settings";
 import { resetStreamsState } from "./stream";
 import { setTransport, type OpenFileOptions, type SaveFileOptions, type Transport } from "./transport";
@@ -88,6 +89,9 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   };
 
   table.set(UPDATER_COMMANDS.relaunch, () => undefined);
+  // Desktop notifications are shown and their buttons registered; nothing to answer.
+  table.set(NOTIFICATION_COMMANDS.notify, () => undefined);
+  table.set(NOTIFICATION_COMMANDS.registerActionTypes, () => undefined);
   // The window asks for the installed extensions on start; none unless a test says otherwise.
   table.set("extensions_list", () => []);
   // Closing a window of consent drops its pending install; nothing to answer.
@@ -158,6 +162,15 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
     },
     async relaunch() {
       await transport.invoke<void>(UPDATER_COMMANDS.relaunch, {});
+    },
+    async notify(notification) {
+      await transport.invoke<void>(NOTIFICATION_COMMANDS.notify, { options: notification });
+    },
+    async registerNotificationActions(types) {
+      await transport.invoke<void>(NOTIFICATION_COMMANDS.registerActionTypes, { types });
+    },
+    onNotificationAction(handler) {
+      return transport.listen(NOTIFICATION_COMMANDS.actionEvent, handler);
     },
   };
 

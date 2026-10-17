@@ -326,7 +326,7 @@ describe("Settings tabs", () => {
       "Updates & About",
     ]);
     expect(screen.getByRole("tab", { name: "General" })).toHaveAttribute("aria-selected", "true");
-    expect(regions()).toEqual(["Appearance", "Window", "Editor"]);
+    expect(regions()).toEqual(["Appearance", "Window", "Notifications", "Editor"]);
 
     fireEvent.click(screen.getByRole("tab", { name: "Clusters" }));
     expect(regions()).toEqual(["Kubeconfig", "Helm", "Terminal"]);

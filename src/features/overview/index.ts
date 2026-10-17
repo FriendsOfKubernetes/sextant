@@ -1,5 +1,6 @@
-// Cluster overview (task 08): the only page of the sidebar section "Cluster". The main view opens the first page of
-// that section when no other section is chosen, so this is what a freshly connected cluster shows.
+// Cluster overview (task 08): the first page of the sidebar section "Cluster" (the problems page comes after it). The
+// main view opens the first page of that section when no other section is chosen, so this is what a freshly connected
+// cluster shows.
 import { registerPage } from "../../layout/pages";
 import { OverviewPage } from "./OverviewPage";
 

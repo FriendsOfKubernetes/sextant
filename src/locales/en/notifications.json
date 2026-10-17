@@ -1,0 +1,35 @@
+{
+  "muteHour": "Mute for 1 hour",
+  "unmute": "Unmute",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{count}} new problem in {{cluster}}",
+    "title_other": "{{count}} new problems in {{cluster}}",
+    "titleClusters_one": "{{count}} new problem in {{clusters}} clusters",
+    "titleClusters_other": "{{count}} new problems in {{clusters}} clusters",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Notifications",
+    "enabled": "Show desktop notifications about new problems in connected clusters",
+    "enabledHint": "Only clusters that are already connected are watched, and only problems that begin while Sextant runs are told, also while the window is hidden in the tray. The system's notification service shows them; nothing leaves this machine.",
+    "mutedUntil": "Muted until {{time}}",
+    "categories": "Notify about",
+    "clusters": "Clusters",
+    "clustersHint": "A cluster turned off here never notifies.",
+    "noClusters": "No clusters yet."
+  },
+  "history": {
+    "title": "Recent notifications",
+    "clear": "Clear",
+    "empty": "No notifications yet.",
+    "off": "Notifications are off (Settings → General → Notifications).",
+    "delivery": {
+      "summary": "in a summary",
+      "muted": "muted"
+    }
+  },
+  "muteFailed": "Could not mute notifications: {{message}}"
+}

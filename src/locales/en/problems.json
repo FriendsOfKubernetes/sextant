@@ -1,0 +1,36 @@
+{
+  "sidebar": "Problems",
+  "title": "Cluster problems",
+  "badge_one": "{{count}} problem needs attention",
+  "badge_other": "{{count}} problems need attention",
+  "onlyNewSince": "Only new since {{time}}",
+  "markSeen": "Mark all as seen",
+  "total_one": "{{count}} problem",
+  "total_other": "{{count}} problems",
+  "sourceFailed": "Could not watch {{kind}}",
+  "truncated": "There are too many problems: only the most recent ones are listed.",
+  "loading": "Looking for problems…",
+  "none": "No problems found.",
+  "noneNew": "No new problems since the mark.",
+  "clusterWide": "Cluster-wide",
+  "categories": {
+    "nodes": "Nodes",
+    "pods": "Pods",
+    "workloads": "Workloads",
+    "jobs": "Jobs",
+    "volumes": "Volume claims",
+    "certificates": "Certificates",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Warning events"
+  },
+  "messages": {
+    "container": "Container {{container}}",
+    "restarts_one": "Container {{container}} restarted ({{count}} restart)",
+    "restarts_other": "Container {{container}} restarted ({{count}} restarts)",
+    "replicas": "{{ready}} of {{desired}} replicas ready",
+    "expires": "Expires at {{date}}",
+    "expired": "Expired at {{date}}"
+  }
+}

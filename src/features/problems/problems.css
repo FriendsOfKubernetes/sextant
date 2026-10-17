@@ -1,0 +1,144 @@
+.problems {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.problems__title {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.problems__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.problems__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.problems__total {
+  color: var(--color-text-muted);
+}
+
+.problems__group {
+  margin: 16px 0;
+}
+
+.problems__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.problems__ns {
+  margin: 4px 0 12px;
+}
+
+.problems__ns-name {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.problems__list,
+.problems__history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.problems__row,
+.problems__history-item {
+  display: grid;
+  grid-template-columns: minmax(160px, 2fr) auto minmax(0, 4fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+  min-width: 0;
+}
+
+.problems__history-item {
+  grid-template-columns: auto auto auto minmax(140px, 2fr) auto minmax(0, 3fr);
+}
+
+.problems__object {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.problems__message,
+.problems__history-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.problems__age,
+.problems__history-time,
+.problems__history-delivery {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.problems__history {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.problems__history-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.problems__history-head .problems__heading {
+  margin: 0;
+}
+
+.problems__hint,
+.problems__empty,
+.problems__muted {
+  color: var(--color-text-muted);
+}
+
+.problems__error {
+  margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .problems {
+    padding: 12px;
+  }
+
+  .problems__row,
+  .problems__history-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .problems__message,
+  .problems__history-message {
+    grid-column: 1 / -1;
+  }
+}
+
+.problems__failure {
+  color: var(--color-danger);
+}

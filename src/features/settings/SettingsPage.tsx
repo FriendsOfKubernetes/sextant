@@ -1,4 +1,4 @@
-// The Settings page, in tabs: General (appearance, window, editor), Clusters (kubeconfig sources, helm, terminal),
+// The Settings page, in tabs: General (appearance, window, notifications, editor), Clusters (kubeconfig sources, helm, terminal),
 // AI agents (MCP server), Extensions, Updates & About. The sections: appearance (theme, language), the main window (keep in the tray), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
 // sources, the node shell image, the MCP server, extensions, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
@@ -27,6 +27,7 @@ import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
 import { ExtensionsPanel } from "../extensions/ExtensionsPanel";
 import { openAbout } from "../about/store";
 import { McpPanel } from "../mcp/McpPanel";
+import { NotificationsPanel } from "../notifications/NotificationsPanel";
 import { UpdatesPanel } from "../updates";
 import { languageName } from "./languages";
 import { SETTINGS_TABS, useSettingsUi } from "./store";
@@ -88,6 +89,7 @@ export function SettingsContent() {
           <>
             <AppearanceSection settings={settings} save={save} />
             <WindowSection settings={settings} save={save} />
+            <NotificationsSection settings={settings} save={save} />
             <EditorSection settings={settings} save={save} />
           </>
         )}
@@ -212,6 +214,16 @@ function WindowSection({ settings, save }: { settings: AppSettings | null; save:
       <p className="settings__hint">
         {trayAvailable === false ? t("settings:window.noTray") : t("settings:window.closeToTrayHint")}
       </p>
+    </Section>
+  );
+}
+
+/** Desktop notifications about new problems in connected clusters (features/notifications). */
+function NotificationsSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  return (
+    <Section title={t("notifications:settings.title")}>
+      <NotificationsPanel settings={settings} save={save} />
     </Section>
   );
 }

@@ -310,13 +310,33 @@ fn with_single_instance<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builde
     builder
 }
 
+/// Whether an action on one of Sextant's desktop notifications brings the window back: a click on the notification
+/// itself (`tap`, the page then opens the object). Its "Mute for 1 hour" button does not.
+fn notification_action_reveals(action_id: &str) -> bool {
+    action_id == "tap"
+}
+
+/// A click on a notification about a cluster problem reveals the window, from the tray too (the page, which hears the
+/// same action through the plugin, opens the object). Registered before any notification is shown, so every one
+/// reports its clicks.
+fn reveal_on_notification_click<R: Runtime>(app: &tauri::AppHandle<R>) {
+    use tauri_plugin_notification::NotificationExt;
+    let handle = app.clone();
+    let _ = app.notification().on_action(move |performed| {
+        if notification_action_reveals(performed.action_id()) {
+            window::reveal(&handle);
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let context = tauri::generate_context!();
     let builder = with_single_instance(tauri::Builder::default());
     let builder = extensions::protocol::register(with_commands(builder))
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init());
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init());
     with_updates(builder, context.config())
         .setup(|app| {
             // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.
@@ -332,6 +352,7 @@ pub fn run() {
             start_mcp(app.handle());
             start_extensions(app.handle());
             window::restore_main_window(app.handle());
+            reveal_on_notification_click(app.handle());
             // After the window is shown, so "Show/Hide" starts with the right text; no icon is not an error.
             #[cfg(desktop)]
             crate::tray::install(app.handle());
@@ -346,6 +367,13 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::updater_configured;
+
+    #[test]
+    fn only_a_click_on_a_notification_reveals_the_window() {
+        assert!(super::notification_action_reveals("tap"));
+        assert!(!super::notification_action_reveals("mute-hour"));
+        assert!(!super::notification_action_reveals("dismiss"));
+    }
 
     #[test]
     fn a_confirmation_request_is_declined_only_without_the_main_window() {

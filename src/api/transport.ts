@@ -4,12 +4,17 @@ import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen as tauriListen } from "@tauri-apps/api/event";
 import { resourceDir } from "@tauri-apps/api/path";
 import { open as tauriOpen, save as tauriSave } from "@tauri-apps/plugin-dialog";
+import {
+  onAction as tauriOnNotificationAction,
+  registerActionTypes as tauriRegisterActionTypes,
+} from "@tauri-apps/plugin-notification";
 import { openUrl as tauriOpenUrl } from "@tauri-apps/plugin-opener";
 import { relaunch as tauriRelaunch } from "@tauri-apps/plugin-process";
 import { check as tauriCheck } from "@tauri-apps/plugin-updater";
 // The same file the backend is built with: the updater plugin is registered only when it has a public key.
 import tauriConfig from "../../src-tauri/tauri.conf.json";
 import { toApiError } from "./errors";
+import type { DesktopNotification, NotificationAction, NotificationActionType } from "./notifications";
 import { installedBundleKind, updaterConfiguredIn, type AppInfo, type AvailableUpdate } from "./updater";
 
 export type Unsubscribe = () => void;
@@ -48,6 +53,12 @@ export interface Transport {
   checkUpdate(): Promise<AvailableUpdate | null>;
   /** Restarts the application (Tauri process plugin). */
   relaunch(): Promise<void>;
+  /** Shows a desktop notification (Tauri notification plugin). */
+  notify(notification: DesktopNotification): Promise<void>;
+  /** Registers the buttons notifications may carry (`actionTypeId`). */
+  registerNotificationActions(types: NotificationActionType[]): Promise<void>;
+  /** Hears clicks on Sextant's notifications and on their buttons. */
+  onNotificationAction(handler: (action: NotificationAction) => void): Promise<Unsubscribe>;
 }
 
 export const tauriTransport: Transport = {
@@ -86,6 +97,23 @@ export const tauriTransport: Transport = {
     };
   },
   relaunch: () => tauriRelaunch(),
+  // The plugin's own command (what its `sendNotification` sends through `window.Notification`, which drops failures),
+  // so a failure is seen: it is logged with the title only, never the body.
+  notify: async (notification) => {
+    try {
+      await tauriInvoke("plugin:notification|notify", { options: notification });
+    } catch (err) {
+      console.warn(`Sextant: the notification "${Array.from(notification.title).slice(0, 80).join("")}" was not shown`, err);
+      throw err;
+    }
+  },
+  registerNotificationActions: (types) => tauriRegisterActionTypes(types),
+  onNotificationAction: async (handler) => {
+    const listener = await tauriOnNotificationAction((event) =>
+      handler({ actionId: event.actionId, extra: event.notification?.extra ?? null }),
+    );
+    return () => void listener.unregister();
+  },
 };
 
 let current: Transport = tauriTransport;

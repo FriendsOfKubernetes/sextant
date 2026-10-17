@@ -143,6 +143,35 @@ impl Default for McpSettings {
     }
 }
 
+/// Desktop notifications about new problems in connected clusters (Settings → General → Notifications). Owned by
+/// the frontend, which watches only the clusters that are already connected (it never connects one for
+/// notifications) and only the categories that are on.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct NotificationSettings {
+    /// The global switch; on by default.
+    pub enabled: bool,
+    /// Problem categories turned off (`pods`, `nodes`, …). Kept as text, so a category another version knows never
+    /// damages the file; an unknown one is ignored.
+    pub disabled_categories: Vec<String>,
+    /// Clusters (ids) that never notify.
+    pub muted_clusters: Vec<String>,
+    /// "Mute for 1 hour": nothing is shown until this RFC 3339 time.
+    pub muted_until: Option<String>,
+}
+
+impl Default for NotificationSettings {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            disabled_categories: Vec::new(),
+            muted_clusters: Vec::new(),
+            muted_until: None,
+        }
+    }
+}
+
 /// Window geometry and panel sizes, restored on start.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
@@ -210,6 +239,8 @@ pub struct AppSettings {
     #[serde(with = "crate::extensions::installed::lenient_list")]
     #[ts(as = "Vec<InstalledExtension>")]
     pub extensions: Vec<InstalledExtension>,
+    /// Desktop notifications about new problems in connected clusters. Written by the frontend.
+    pub notifications: NotificationSettings,
 }
 
 impl Default for AppSettings {
@@ -228,6 +259,7 @@ impl Default for AppSettings {
             node_shell_image: crate::node_shell::DEFAULT_IMAGE.to_owned(),
             debug_image: crate::debug::DEFAULT_IMAGE.to_owned(),
             extensions: Vec::new(),
+            notifications: NotificationSettings::default(),
         }
     }
 }
@@ -1093,6 +1125,48 @@ mod tests {
             SettingsStore::open(path).get().debug_image,
             "nicolaka/netshoot:latest"
         );
+    }
+
+    #[test]
+    fn notifications_are_on_by_default_and_their_settings_round_trip() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        // A file of an older version, without the field.
+        std::fs::write(&path, r#"{ "theme": "dark" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert_eq!(store.get().notifications, NotificationSettings::default());
+        assert!(store.get().notifications.enabled);
+        store
+            .update(|s| {
+                s.notifications = NotificationSettings {
+                    enabled: false,
+                    disabled_categories: vec!["pods".to_owned(), "a-future-category".to_owned()],
+                    muted_clusters: vec!["c1".to_owned()],
+                    muted_until: Some("2026-10-18T12:00:00.000Z".to_owned()),
+                }
+            })
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["notifications"]["enabled"], false);
+        assert_eq!(json["notifications"]["disabledCategories"][0], "pods");
+        assert_eq!(json["notifications"]["mutedClusters"][0], "c1");
+        assert_eq!(
+            json["notifications"]["mutedUntil"],
+            "2026-10-18T12:00:00.000Z"
+        );
+        let read = SettingsStore::open(path).get().notifications;
+        assert!(!read.enabled);
+        assert_eq!(read.disabled_categories, ["pods", "a-future-category"]);
+        assert_eq!(
+            read.muted_until.as_deref(),
+            Some("2026-10-18T12:00:00.000Z")
+        );
+        // A partly written object keeps the defaults of the missing fields.
+        let partial: NotificationSettings =
+            serde_json::from_str(r#"{ "mutedClusters": ["c2"] }"#).unwrap();
+        assert!(partial.enabled);
+        assert_eq!(partial.muted_clusters, ["c2"]);
     }
 
     #[test]

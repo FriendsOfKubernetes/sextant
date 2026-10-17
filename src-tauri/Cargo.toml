@@ -25,6 +25,9 @@ sextant-core.workspace = true
 tauri.workspace = true
 tauri-plugin-dialog.workspace = true
 tauri-plugin-opener = "2.7"
+# Desktop notifications about new cluster problems (`src/features/notifications/`); a click on one is reported back
+# (`on_action` in `lib.rs` reveals the window, the page opens the object).
+tauri-plugin-notification = "2.7"
 tokio.workspace = true
 futures.workspace = true
 serde.workspace = true

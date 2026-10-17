@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "notifications",
+  "description": "Desktop notifications about new cluster problems: show them, their \"Mute for 1 hour\" button and the clicks on them",
+  "windows": ["main"],
+  "permissions": ["notification:allow-notify", "notification:allow-register-action-types", "notification:allow-register-listener", "notification:allow-remove-listener", "notification:allow-is-permission-granted"]
+}

@@ -3,7 +3,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import process from "node:process";
 import { $, browser } from "@wdio/globals";
-import { typeText } from "../app";
+import { sectionEntry, sectionGroup, typeText } from "../app";
 
 type Element = ReturnType<typeof $>;
 
@@ -133,10 +133,10 @@ export async function openSection(entry: string, group?: string): Promise<void> 
   const sidebar = $('nav[aria-label="Sections"]');
   await sidebar.waitForDisplayed();
   if (group) {
-    const groupButton = sidebar.$(`button[aria-expanded]=${group}`);
+    const groupButton = sectionGroup(sidebar, group);
     if ((await groupButton.isExisting()) && (await groupButton.getAttribute("aria-expanded")) === "false") {
       await demoClick(groupButton);
     }
   }
-  await demoClick(sidebar.$(`button=${entry}`));
+  await demoClick(sectionEntry(sidebar, entry));
 }

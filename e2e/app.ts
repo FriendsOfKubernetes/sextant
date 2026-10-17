@@ -15,17 +15,32 @@ export async function click(name: string, scope?: Element): Promise<void> {
   await el.click();
 }
 
+/**
+ * The header of a collapsible sidebar section, found by its label alone: a header may also carry a counter (the
+ * problems of "Cluster", of "Gateway API"), which a match on the button's whole text would trip over.
+ */
+export function sectionGroup(sidebar: Element, group: string): Element {
+  return sidebar.$(
+    `.//button[@aria-expanded][.//span[contains(concat(" ", @class, " "), " sidebar__label ") and normalize-space(.)="${group}"]]`,
+  );
+}
+
+/** An entry of the sidebar (not a section header, which may have the same label: the overview of "Cluster"). */
+export function sectionEntry(sidebar: Element, entry: string): Element {
+  return sidebar.$(`.//button[not(@aria-expanded) and normalize-space(.)="${entry}"]`);
+}
+
 /** Opens a sidebar entry; `group` is the collapsible section it lives in. */
 export async function openSection(entry: string, group?: string): Promise<void> {
   const sidebar = $('nav[aria-label="Sections"]');
   await sidebar.waitForDisplayed();
   if (group) {
-    const groupButton = sidebar.$(`button[aria-expanded]=${group}`);
+    const groupButton = sectionGroup(sidebar, group);
     if ((await groupButton.isExisting()) && (await groupButton.getAttribute("aria-expanded")) === "false") {
       await groupButton.click();
     }
   }
-  const item = sidebar.$(`button=${entry}`);
+  const item = sectionEntry(sidebar, entry);
   await item.waitForClickable();
   await item.click();
 }

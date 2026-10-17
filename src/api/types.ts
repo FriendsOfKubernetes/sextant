@@ -48,6 +48,7 @@ export type { LogUpdate } from "./generated/LogUpdate";
 export type { ManagedResource } from "./generated/ManagedResource";
 export type { ConfirmRequest } from "./generated/ConfirmRequest";
 export type { McpSettings } from "./generated/McpSettings";
+export type { NotificationSettings } from "./generated/NotificationSettings";
 export type { McpState } from "./generated/McpState";
 export type { McpStatus } from "./generated/McpStatus";
 export type { MetricsStatus } from "./generated/MetricsStatus";

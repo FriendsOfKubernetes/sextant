@@ -1,5 +1,6 @@
 // Public surface of the backend bridge. Components import from "src/api" only.
 import * as commands from "./commands";
+import { notifications } from "./notifications";
 import { openExternalUrl, openFileDialog, saveFileDialog } from "./transport";
 import { updates } from "./updater";
 
@@ -27,12 +28,20 @@ export const api = {
   shell: { openUrl: openExternalUrl },
   /** In-app updates and the app's own version (Tauri updater and process plugins). */
   updates,
+  /** Desktop notifications (Tauri notification plugin). */
+  notifications,
 };
 
 export type { KubeObject } from "./commands";
 export { ApiError, ERROR_CODES, errorKey, toApiError } from "./errors";
 export { events } from "./events";
 export { mockBackend, UPDATER_COMMANDS, type MockBackend, type MockBackendOptions, type MockCall, type MockHandler } from "./mockBackend";
+export {
+  NOTIFICATION_COMMANDS,
+  type DesktopNotification,
+  type NotificationAction,
+  type NotificationActionType,
+} from "./notifications";
 export { defaultAppSettings, loadSettings, updateSettings, useSettings, type UseSettings } from "./settings";
 export type { FileFilter, OpenFileOptions, SaveFileOptions, Unsubscribe } from "./transport";
 export { newStreamId, openStream, resetStreams, type StreamSpec } from "./stream";
