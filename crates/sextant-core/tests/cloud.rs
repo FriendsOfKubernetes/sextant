@@ -508,3 +508,27 @@ async fn processes_a_hung_cli_started_are_stopped_with_it() {
         panic!("the process the CLI started still runs after the time limit");
     }
 }
+
+/// A CLI file that is still open for writing somewhere cannot be executed for a moment (`ETXTBSY`): a CLI being
+/// installed or upgraded, or here a fake CLI written while a parallel test forked (the child holds the write handle
+/// until its `exec`). The call waits that out instead of reporting the CLI as missing (#160).
+#[tokio::test]
+async fn a_cli_briefly_held_open_for_writing_is_still_found_with_its_version() {
+    let fake = Fake::new();
+    let writer = std::fs::OpenOptions::new()
+        .append(true)
+        .open(fake.bin().join("az"))
+        .unwrap();
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        drop(writer);
+    });
+    let status = fake.cli().status().await;
+    release.join().unwrap();
+    let az = status
+        .iter()
+        .find(|s| s.provider == CloudProvider::Azure)
+        .unwrap();
+    assert!(az.available, "{az:?}");
+    assert_eq!(az.version.as_deref(), Some("2.58.0"));
+}

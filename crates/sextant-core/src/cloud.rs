@@ -1579,7 +1579,8 @@ enum RunError {
 /// open) instead of being waited for.
 fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<CliOutput, RunError> {
     ProcessTree::prepare(&mut cmd);
-    let mut child = cmd.spawn().map_err(RunError::Io)?;
+    let deadline = Instant::now() + timeout;
+    let mut child = spawn_when_not_busy(&mut cmd, deadline).map_err(RunError::Io)?;
     let tree = ProcessTree::of(&child);
     let reader = |pipe: Option<Box<dyn Read + Send>>| {
         std::thread::spawn(move || {
@@ -1602,7 +1603,6 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<CliOutput, Ru
             .take()
             .map(|p| Box::new(p) as Box<dyn Read + Send>),
     );
-    let deadline = Instant::now() + timeout;
     let status = loop {
         let waited = match child.try_wait() {
             Ok(waited) => waited,
@@ -1631,6 +1631,32 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<CliOutput, Ru
         stdout: text(stdout),
         stderr: text(stderr),
     })
+}
+
+/// How long a CLI file that cannot be executed because it is open for writing (`ETXTBSY`) is waited for.
+const BUSY_WAIT: Duration = Duration::from_secs(5);
+
+/// `cmd.spawn()`, waiting out `ETXTBSY` (for [`BUSY_WAIT`] at most, and not past `deadline`): a CLI file still open
+/// for writing somewhere cannot be executed for a moment — the CLI is being installed or upgraded, or the file was
+/// just written while another thread forked, and the child holds the write handle until its `exec` (#160).
+fn spawn_when_not_busy(
+    cmd: &mut Command,
+    deadline: Instant,
+) -> std::io::Result<std::process::Child> {
+    let give_up = deadline.min(Instant::now() + BUSY_WAIT);
+    let mut pause = Duration::from_millis(5);
+    loop {
+        match cmd.spawn() {
+            Err(e)
+                if e.kind() == std::io::ErrorKind::ExecutableFileBusy
+                    && Instant::now() + pause < give_up =>
+            {
+                std::thread::sleep(pause);
+                pause = (pause * 2).min(Duration::from_millis(100));
+            }
+            spawned => return spawned,
+        }
+    }
 }
 
 /// A CLI and every process it starts, so that a timed-out call stops all of them.
