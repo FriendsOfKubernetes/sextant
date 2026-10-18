@@ -22,6 +22,10 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Problems and notifications** — everything wrong in a cluster on one page, and desktop notifications for new
   problems that you can turn off globally, per kind of problem, per cluster or for an hour.
 - **Command palette** (Ctrl+K) to jump to any object or page; **rollout history** with a diff and rollback.
+- **Understand the cluster** — right-sizing of requests and limits from real usage, cert-manager and the expiry of every
+  TLS certificate, a map of how objects relate (and what a delete would break), RBAC: who can do what.
+- **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
+  Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
 - **MCP server for AI agents** — connect Claude Code, Claude Desktop or Cursor to your clusters, with permissions you
   set per cluster, confirmations in the window and an activity log.
@@ -45,12 +49,13 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, cloud clusters (EKS, GKE, AKS), connecting, the window
 - [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells (containers and nodes), port forwarding, Helm, Flux, Argo CD
 - [Problems and notifications](https://github.com/FriendsOfKubernetes/sextant/wiki/Problems-and-notifications) — a cluster's problems on one page, desktop notifications and how to turn them off
+- [Right-sizing](https://github.com/FriendsOfKubernetes/sextant/wiki/Right-sizing), [cert-manager and certificates](https://github.com/FriendsOfKubernetes/sextant/wiki/cert-manager-and-certificates), [Resource map](https://github.com/FriendsOfKubernetes/sextant/wiki/Resource-map), [RBAC](https://github.com/FriendsOfKubernetes/sextant/wiki/RBAC)
 - [Gateway API](https://github.com/FriendsOfKubernetes/sextant/wiki/Gateway-API) — Gateways and routes with explained problems, topology, the request check and the hostname map
 - [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
 - [Extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Extensions) and [Writing extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Writing-extensions) — your own pages, panels, actions and columns in isolated frames, with permissions you agree to; the SDK in `sdk/`
 - [Settings](https://github.com/FriendsOfKubernetes/sextant/wiki/Settings) and [Troubleshooting](https://github.com/FriendsOfKubernetes/sextant/wiki/Troubleshooting)
-- [Building from source](https://github.com/FriendsOfKubernetes/sextant/wiki/Building-from-source) and [Development](https://github.com/FriendsOfKubernetes/sextant/wiki/Development)
+- [Building from source](https://github.com/FriendsOfKubernetes/sextant/wiki/Building-from-source), [Development](https://github.com/FriendsOfKubernetes/sextant/wiki/Development) and [Translating](https://github.com/FriendsOfKubernetes/sextant/wiki/Translating) — the translations are machine-made; corrections from native speakers are welcome
 
 ## Community
 
@@ -69,8 +74,8 @@ with one issue per feature; plans can change, and ideas are welcome in
 | Release | Focus | What it brings |
 |---|---|---|
 | [0.9](https://github.com/FriendsOfKubernetes/sextant/milestone/12) | Everyday work *(released)* | Command palette (Ctrl+K), logs of several pods at once, debug containers, copying files to and from containers, rollout history with rollback, background notifications (can be turned off), cluster problems screen |
-| [0.10](https://github.com/FriendsOfKubernetes/sextant/milestone/13) | Understanding the cluster *(next)* | Right-sizing of requests and limits, cert-manager and certificate expiry, resource map, RBAC "who can do what" |
-| [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
+| [0.10](https://github.com/FriendsOfKubernetes/sextant/milestone/13) | Understanding the cluster *(released)* | Right-sizing of requests and limits, cert-manager and certificate expiry, resource map, RBAC "who can do what", the interface in 13 languages |
+| [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes *(next)* | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
 | [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace | Saved views and workspaces, kubeconfig management |
 | [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
