@@ -236,7 +236,8 @@ describe("the list", () => {
     const widgets = await within(section).findByRole("listitem", { name: "Widgets" });
     expect(within(widgets).getByRole("region", { name: "Settings of Widgets" })).toBeInTheDocument();
     expect(widgets.querySelector("iframe")).not.toBeNull();
-  });
+    // The whole Settings content renders here; on a slow runner (windows-latest) that took 7.6 s.
+  }, 20_000);
 
   it("shows the settings frame only for an active extension that contributes settings", async () => {
     list = [info({ enabled: false, state: "disabled" })];
