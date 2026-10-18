@@ -82,9 +82,10 @@ describe("the Map page", () => {
     await list(data.SHOP);
     await screen.findByRole("button", { name: "Open Deployment web" });
     expect(screen.queryByRole("button", { name: "Open Node node-1" })).toBeNull();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Node (2)" }));
+    // Node counts come from their own watch: wait for them rather than for the namespace's objects.
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Node (2)" }));
     expect(await screen.findByRole("button", { name: "Open Node node-1" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Pod (4)" }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Pod (4)" }));
     await waitFor(() => expect(screen.queryByRole("button", { name: /^Open Pod / })).toBeNull());
   });
 
