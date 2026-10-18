@@ -16,16 +16,19 @@
   },
   "onlyFlagged": "Solo contenedores con hallazgos",
   "source": {
-    "history": "Uso de Prometheus durante {{window}}: CPU en el percentil 95 y su pico, memoria en su pico.",
+    "history": {
+      "day": "Uso de Prometheus durante el último día: CPU en el percentil 95, memoria en su pico.",
+      "week": "Uso de Prometheus durante los últimos 7 días: CPU en el percentil 95, memoria en su pico."
+    },
     "snapshot": "Solo hay valores actuales (una instantánea de {{source}}). Un único punto no basta para una recomendación: instale Prometheus para tener historial.",
     "snapshotAfterError": "No se pudo leer el historial de Prometheus, así que solo se muestran los valores actuales (una instantánea). Sin recomendaciones.",
     "none": "No hay métricas disponibles: solo se comprueban las solicitudes y los límites de las especificaciones de los Pods.",
     "loading": "Leyendo el uso…",
     "metricsServer": "metrics-server",
     "historyFailed": "No se pudo leer el historial de Prometheus",
-    "truncated_one": "Coinciden demasiados contenedores; solo el primero ({{count}}) tiene historial. Acote el filtro de namespaces.",
-    "truncated_many": "Coinciden demasiados contenedores; solo los primeros {{count}} de contenedores tienen historial. Acote el filtro de namespaces.",
-    "truncated_other": "Coinciden demasiados contenedores; solo los primeros {{count}} tienen historial. Acote el filtro de namespaces.",
+    "truncated_one": "Coinciden demasiados contenedores: el historial solo se lee para el primer contenedor ({{count}}). Acote el filtro de namespaces.",
+    "truncated_many": "Coinciden demasiados contenedores: el historial solo se lee para los primeros {{count}} contenedores. Acote el filtro de namespaces.",
+    "truncated_other": "Coinciden demasiados contenedores: el historial solo se lee para los primeros {{count}} contenedores. Acote el filtro de namespaces.",
     "coverageUnknown": "Prometheus no pudo indicar desde cuándo tiene muestras, así que se desconoce cuánto historial respalda las recomendaciones."
   },
   "loading": "Cargando Pods…",
@@ -61,7 +64,10 @@
   },
   "confidence": {
     "partialHistory": "Basado en {{duration}} de historial",
-    "insufficientHistory": "Historial insuficiente: {{duration}} de {{window}}; se necesita al menos {{minimum}}",
+    "insufficientHistory": {
+      "day": "Historial insuficiente: {{duration}} del último día; se necesita al menos {{minimum}}",
+      "week": "Historial insuficiente: {{duration}} de los últimos 7 días; se necesita al menos {{minimum}}"
+    },
     "snapshot": "Instantánea",
     "noData": "Sin datos de uso",
     "unknownHistory": "Historial de duración desconocida"
@@ -95,18 +101,23 @@
     "noMemoryRequest": "El programador no reserva memoria; el Pod está entre los primeros desalojados cuando falta memoria.",
     "noCpuLimit": "El contenedor puede usar cualquier CPU libre del nodo. A menudo es intencionado.",
     "noMemoryLimit": "El contenedor puede quitar memoria a sus vecinos del nodo.",
-    "cpuOverProvisioned": "La solicitud de CPU es al menos {{factor}} veces lo que necesita el uso.",
-    "memoryOverProvisioned": "La solicitud de memoria es al menos {{factor}} veces lo que necesita el uso.",
+    "cpuOverProvisioned_one": "La solicitud de CPU es al menos {{count}} vez lo que necesita el uso.",
+    "cpuOverProvisioned_many": "La solicitud de CPU es al menos {{count}} veces lo que necesita el uso.",
+    "cpuOverProvisioned_other": "La solicitud de CPU es al menos {{count}} veces lo que necesita el uso.",
+    "memoryOverProvisioned_one": "La solicitud de memoria es al menos {{count}} vez lo que necesita el uso.",
+    "memoryOverProvisioned_many": "La solicitud de memoria es al menos {{count}} veces lo que necesita el uso.",
+    "memoryOverProvisioned_other": "La solicitud de memoria es al menos {{count}} veces lo que necesita el uso.",
     "cpuUnderRequested": "El uso supera la solicitud la mayor parte del tiempo.",
     "memoryUnderRequested": "El pico de memoria supera la solicitud: el Pod puede desalojarse cuando falta memoria.",
     "memoryNearLimit": "La memoria alcanzó al menos el {{share}} del límite.",
-    "oomKilled": "El contenedor se terminó por quedarse sin memoria en los últimos {{period}}; el pico real supera el límite.",
+    "oomKilled_one": "El contenedor se terminó por quedarse sin memoria en el último {{count}} día; el pico real supera el límite.",
+    "oomKilled_many": "El contenedor se terminó por quedarse sin memoria en los últimos {{count}} días; el pico real supera el límite.",
+    "oomKilled_other": "El contenedor se terminó por quedarse sin memoria en los últimos {{count}} días; el pico real supera el límite.",
     "cpuThrottled": "Se limitó el {{percent}} de los periodos de CPU."
   },
   "copy": "Copiar YAML de recursos",
   "copied": "Copiado",
   "copyFailed": "No se pudo copiar",
-  "separator": " · ",
   "chooseNamespace": "Elija un namespace",
   "chooseNamespaceText": "El ajuste de recursos lee el historial de cada contenedor que muestra, así que trabaja con los namespaces elegidos en el filtro de namespaces. Elija uno o unos pocos.",
   "firstNamespaces_one": "Solo se muestra el primer namespace ({{count}}) del filtro.",

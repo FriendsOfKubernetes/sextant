@@ -130,15 +130,19 @@
     "finding": "正在搜索…",
     "noClusters": "未找到集群。",
     "found": "找到的集群",
-    "separator": " · ",
     "add_other": "添加 {{count}} 个集群",
     "added_other": "已添加 {{count}} 个集群，可在集群列表中找到。",
-    "scope": "（{{scope}}）",
     "problem": {
-      "cliMissing": "未安装 {{cli}}{{scope}}",
-      "notLoggedIn": "{{cli}} 未登录，或登录已过期{{scope}}",
-      "pluginMissing": "未安装 {{cli}} 的登录插件{{scope}}",
-      "failed": "{{cli}} 运行失败{{scope}}"
+      "cliMissing": "未安装 {{cli}}",
+      "notLoggedIn": "{{cli}} 未登录，或登录已过期",
+      "pluginMissing": "未安装 {{cli}} 的登录插件",
+      "failed": "{{cli}} 运行失败"
+    },
+    "problemIn": {
+      "cliMissing": "未安装 {{cli}}（{{scope}}）",
+      "notLoggedIn": "{{cli}} 未登录，或登录已过期（{{scope}}）",
+      "pluginMissing": "未安装 {{cli}} 的登录插件（{{scope}}）",
+      "failed": "{{cli}} 运行失败（{{scope}}）"
     },
     "problemHint": {
       "cliMissing": "请先安装，然后重试。",

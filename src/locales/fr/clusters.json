@@ -130,19 +130,23 @@
     "finding": "Recherche…",
     "noClusters": "Aucun cluster trouvé.",
     "found": "Clusters trouvés",
-    "separator": " · ",
     "add_one": "Ajouter {{count}} cluster",
     "add_many": "Ajouter {{count}} de clusters",
     "add_other": "Ajouter {{count}} clusters",
     "added_one": "{{count}} cluster ajouté. Il figure dans la liste des clusters.",
     "added_many": "{{count}} de clusters ajoutés. Ils figurent dans la liste des clusters.",
     "added_other": "{{count}} clusters ajoutés. Ils figurent dans la liste des clusters.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} n'est pas installé{{scope}}",
-      "notLoggedIn": "{{cli}} n'est pas connecté, ou la connexion a expiré{{scope}}",
-      "pluginMissing": "Le plug-in de connexion de {{cli}} n'est pas installé{{scope}}",
-      "failed": "{{cli}} a échoué{{scope}}"
+      "cliMissing": "{{cli}} n'est pas installé",
+      "notLoggedIn": "{{cli}} n'est pas connecté, ou la connexion a expiré",
+      "pluginMissing": "Le plug-in de connexion de {{cli}} n'est pas installé",
+      "failed": "{{cli}} a échoué"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} n'est pas installé ({{scope}})",
+      "notLoggedIn": "{{cli}} n'est pas connecté, ou la connexion a expiré ({{scope}})",
+      "pluginMissing": "Le plug-in de connexion de {{cli}} n'est pas installé ({{scope}})",
+      "failed": "{{cli}} a échoué ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Installez-le, puis réessayez.",

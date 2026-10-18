@@ -130,17 +130,21 @@
     "finding": "Suche läuft…",
     "noClusters": "Keine Cluster gefunden.",
     "found": "Gefundene Cluster",
-    "separator": " · ",
     "add_one": "{{count}} Cluster hinzufügen",
     "add_other": "{{count}} Cluster hinzufügen",
     "added_one": "{{count}} Cluster hinzugefügt. Er ist in der Clusterliste.",
     "added_other": "{{count}} Cluster hinzugefügt. Sie sind in der Clusterliste.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} ist nicht installiert{{scope}}",
-      "notLoggedIn": "{{cli}} ist nicht angemeldet, oder die Anmeldung ist abgelaufen{{scope}}",
-      "pluginMissing": "Das Anmelde-Plug-in für {{cli}} ist nicht installiert{{scope}}",
-      "failed": "{{cli}} ist fehlgeschlagen{{scope}}"
+      "cliMissing": "{{cli}} ist nicht installiert",
+      "notLoggedIn": "{{cli}} ist nicht angemeldet, oder die Anmeldung ist abgelaufen",
+      "pluginMissing": "Das Anmelde-Plug-in für {{cli}} ist nicht installiert",
+      "failed": "{{cli}} ist fehlgeschlagen"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} ist nicht installiert ({{scope}})",
+      "notLoggedIn": "{{cli}} ist nicht angemeldet, oder die Anmeldung ist abgelaufen ({{scope}})",
+      "pluginMissing": "Das Anmelde-Plug-in für {{cli}} ist nicht installiert ({{scope}})",
+      "failed": "{{cli}} ist fehlgeschlagen ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Installieren Sie es und versuchen Sie es dann erneut.",

@@ -9,10 +9,10 @@
     "title_few": "{{count}} новые проблемы в {{cluster}}",
     "title_many": "{{count}} новых проблем в {{cluster}}",
     "title_other": "{{count}} новой проблемы в {{cluster}}",
-    "titleClusters_one": "{{count}} новая проблема, кластеров: {{clusters}}",
-    "titleClusters_few": "{{count}} новые проблемы, кластеров: {{clusters}}",
-    "titleClusters_many": "{{count}} новых проблем, кластеров: {{clusters}}",
-    "titleClusters_other": "{{count}} новой проблемы, кластеров: {{clusters}}",
+    "titleClusters_one": "Новые проблемы в {{count}} кластере (всего {{problems}})",
+    "titleClusters_few": "Новые проблемы в {{count}} кластерах (всего {{problems}})",
+    "titleClusters_many": "Новые проблемы в {{count}} кластерах (всего {{problems}})",
+    "titleClusters_other": "Новые проблемы в {{count}} кластерах (всего {{problems}})",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

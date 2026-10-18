@@ -6,14 +6,14 @@
 // backends' namespaces, ReferenceGrants only where a backend is elsewhere.
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { listSeparator } from "../../i18n";
+import { dotSeparator, listSeparator } from "../../i18n";
 import type { ClusterId, KubeObject } from "../../api";
 import { Checkbox } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { StatusText } from "../../resources";
 import { Block } from "../details";
 import { HEALTH_TONE } from "./columns";
-import { LoadingLine, MATCH_SEPARATOR, nameFrom, phrasesText, refLink } from "./details";
+import { LoadingLine, nameFrom, phrasesText, refLink } from "./details";
 import { useBackendState, useGrants, useServedRoutes } from "./hooks";
 import { backendText, explainReason, isKind, GATEWAY, type Health } from "./model";
 import { flattenTopology, gatewayTopology, onlyProblems, type TopologyNode } from "./topology";
@@ -68,9 +68,9 @@ function NodeLabel({ node, gatewayNamespace }: { node: TopologyNode; gatewayName
         ? t("gateway:route.ruleNamed", { n: rule.index + 1, name: rule.name })
         : t("gateway:route.rule", { n: rule.index + 1 });
       const matched =
-        rule.matches.length > 0 ? rule.matches.map((m) => phrasesText(m, t, MATCH_SEPARATOR)).join(" | ") : undefined;
+        rule.matches.length > 0 ? rule.matches.map((m) => phrasesText(m, t, dotSeparator())).join(" | ") : undefined;
       const filters = rule.filters.length > 0 ? phrasesText(rule.filters, t, listSeparator()) : undefined;
-      detail = [matched, filters].filter(Boolean).join(" · ") || undefined;
+      detail = [matched, filters].filter(Boolean).join(dotSeparator()) || undefined;
       break;
     }
     case "backend": {

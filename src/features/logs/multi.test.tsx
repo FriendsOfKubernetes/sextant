@@ -176,7 +176,7 @@ describe("merged logs of several pods", () => {
     const pods = Array.from({ length: 25 }, (_, i) => podOf(`web-${String(i).padStart(2, "0")}`));
     snapshot(pods);
     await waitFor(() => expect(calls("logs_start")).toHaveLength(MAX_STREAMS));
-    expect(screen.getByTestId("logs-cap")).toHaveTextContent("5 more containers wait: at most 20 log streams run at once");
+    expect(screen.getByTestId("logs-cap")).toHaveTextContent("5 more containers wait: the limit of log streams running at once is 20");
     expect(started()).not.toContain("web-24/app");
 
     await listening("web-00/app");

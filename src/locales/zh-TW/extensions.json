@@ -80,13 +80,18 @@
     "clustersNote": "一個名稱涵蓋所有 kubeconfig 來源中具有該名稱的所有叢集 context。",
     "access": "存取權限",
     "none": "無權存取任何叢集的資料。",
-    "rule": "{{namespaces}}，針對 {{kinds}}：{{actions}}",
-    "allKinds": "所有類型",
-    "namespacesAll": "在所有 Namespace 中",
-    "namespacesOnly_other": "在 Namespace {{names}} 中",
+    "rule": {
+      "allKinds": "所有 Namespace 中的所有類型：{{actions}}",
+      "allKindsIn_other": "Namespace {{names}} 中的所有類型：{{actions}}",
+      "kinds": "所有 Namespace 中的 {{kinds}}：{{actions}}",
+      "kindsIn_other": "Namespace {{names}} 中的 {{kinds}}：{{actions}}"
+    },
     "asks": "執行前詢問",
     "noAsk": "不詢問即執行",
-    "secretValues": "{{namespaces}}可讀取 Secret 的值",
+    "secretValues": {
+      "all": "可讀取所有 Namespace 中 Secret 的值",
+      "in_other": "可讀取 Namespace {{names}} 中 Secret 的值"
+    },
     "clusterWide": "不屬於任何 Namespace 的物件（例如 Node）只能由適用於所有 Namespace 的規則涵蓋。",
     "actionNames": {
       "read": "讀取",
@@ -94,8 +99,7 @@
       "delete": "刪除",
       "logs": "讀取日誌",
       "exec": "執行命令",
-      "portForward": "轉送連接埠",
-      "secretValues": "讀取 Secret 值"
+      "portForward": "轉送連接埠"
     }
   },
   "state": {
@@ -120,7 +124,14 @@
     "pausedHint": "此擴充功能要求的權限超出您允許的範圍。在您檢閱其權限之前，它會維持暫停。",
     "failedHint": "此擴充功能無法執行：{{error}}",
     "actionFailed": "無法進行此變更",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "啟用 {{name}}",
+      "disable": "停用 {{name}}",
+      "permissions": "{{name}} 的權限",
+      "reload": "重新載入 {{name}}",
+      "activity": "{{name}} 的活動",
+      "remove": "移除 {{name}}"
+    }
   },
   "reinstall": {
     "file": "若要檢閱其權限，請從檔案 {{name}} 重新安裝（從檔案安裝…）。",

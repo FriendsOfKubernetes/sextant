@@ -130,19 +130,23 @@
     "finding": "Buscando…",
     "noClusters": "No se encontraron clústeres.",
     "found": "Clústeres encontrados",
-    "separator": " · ",
     "add_one": "Agregar {{count}} clúster",
     "add_many": "Agregar {{count}} de clústeres",
     "add_other": "Agregar {{count}} clústeres",
     "added_one": "Se agregó {{count}} clúster. Está en la lista de clústeres.",
     "added_many": "Se agregaron {{count}} de clústeres. Están en la lista de clústeres.",
     "added_other": "Se agregaron {{count}} clústeres. Están en la lista de clústeres.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} no está instalado{{scope}}",
-      "notLoggedIn": "{{cli}} no tiene la sesión iniciada o la sesión caducó{{scope}}",
-      "pluginMissing": "El plugin de inicio de sesión de {{cli}} no está instalado{{scope}}",
-      "failed": "{{cli}} falló{{scope}}"
+      "cliMissing": "{{cli}} no está instalado",
+      "notLoggedIn": "{{cli}} no tiene la sesión iniciada o la sesión caducó",
+      "pluginMissing": "El plugin de inicio de sesión de {{cli}} no está instalado",
+      "failed": "{{cli}} falló"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} no está instalado ({{scope}})",
+      "notLoggedIn": "{{cli}} no tiene la sesión iniciada o la sesión caducó ({{scope}})",
+      "pluginMissing": "El plugin de inicio de sesión de {{cli}} no está instalado ({{scope}})",
+      "failed": "{{cli}} falló ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Instálelo e inténtelo de nuevo.",

@@ -8,9 +8,9 @@
     "title_one": "{{count}} nouveau problème dans {{cluster}}",
     "title_many": "{{count}} de nouveaux problèmes dans {{cluster}}",
     "title_other": "{{count}} nouveaux problèmes dans {{cluster}}",
-    "titleClusters_one": "{{count}} nouveau problème dans {{clusters}} clusters",
-    "titleClusters_many": "{{count}} de nouveaux problèmes dans {{clusters}} clusters",
-    "titleClusters_other": "{{count}} nouveaux problèmes dans {{clusters}} clusters",
+    "titleClusters_one": "Nouveaux problèmes dans {{count}} cluster ({{problems}} au total)",
+    "titleClusters_many": "Nouveaux problèmes dans {{count}} clusters ({{problems}} au total)",
+    "titleClusters_other": "Nouveaux problèmes dans {{count}} clusters ({{problems}} au total)",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

@@ -82,24 +82,32 @@
     "clustersNote": "Un nom couvre tous les contexts de cluster portant ce nom, quelle que soit la source kubeconfig.",
     "access": "Accès",
     "none": "Aucun accès aux données des clusters.",
-    "rule": "{{actions}} {{kinds}} {{namespaces}}",
-    "allKinds": "tous les kinds",
-    "namespacesAll": "dans tous les namespaces",
-    "namespacesOnly_one": "dans le namespace {{names}}",
-    "namespacesOnly_many": "dans les namespaces {{names}}",
-    "namespacesOnly_other": "dans les namespaces {{names}}",
+    "rule": {
+      "allKinds": "Tous les kinds dans tous les namespaces : {{actions}}",
+      "allKindsIn_one": "Tous les kinds dans le namespace {{names}} : {{actions}}",
+      "allKindsIn_many": "Tous les kinds dans les namespaces {{names}} : {{actions}}",
+      "allKindsIn_other": "Tous les kinds dans les namespaces {{names}} : {{actions}}",
+      "kinds": "{{kinds}} dans tous les namespaces : {{actions}}",
+      "kindsIn_one": "{{kinds}} dans le namespace {{names}} : {{actions}}",
+      "kindsIn_many": "{{kinds}} dans les namespaces {{names}} : {{actions}}",
+      "kindsIn_other": "{{kinds}} dans les namespaces {{names}} : {{actions}}"
+    },
     "asks": "Demande avant l'exécution",
     "noAsk": "S'exécute sans demander",
-    "secretValues": "Peut lire les valeurs des Secrets {{namespaces}}",
+    "secretValues": {
+      "all": "Peut lire les valeurs des Secrets dans tous les namespaces",
+      "in_one": "Peut lire les valeurs des Secrets dans le namespace {{names}}",
+      "in_many": "Peut lire les valeurs des Secrets dans les namespaces {{names}}",
+      "in_other": "Peut lire les valeurs des Secrets dans les namespaces {{names}}"
+    },
     "clusterWide": "Les objets qui n'appartiennent à aucun namespace (comme les Nodes) ne sont couverts que par les règles portant sur tous les namespaces.",
     "actionNames": {
-      "read": "Lire",
-      "modify": "Modifier",
-      "delete": "Supprimer",
-      "logs": "Lire les journaux de",
-      "exec": "Exécuter des commandes dans",
-      "portForward": "Rediriger les ports de",
-      "secretValues": "Lire les valeurs des Secrets de"
+      "read": "lecture",
+      "modify": "modification",
+      "delete": "suppression",
+      "logs": "lecture des journaux",
+      "exec": "exécution de commandes",
+      "portForward": "redirection de ports"
     }
   },
   "state": {
@@ -124,7 +132,14 @@
     "pausedHint": "Cette extension demande plus que ce que vous aviez autorisé. Elle est en pause jusqu'à ce que vous vérifiiez ses autorisations.",
     "failedHint": "Cette extension ne peut pas s'exécuter : {{error}}",
     "actionFailed": "La modification n'a pas pu être effectuée",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "Activer {{name}}",
+      "disable": "Désactiver {{name}}",
+      "permissions": "Autorisations de {{name}}",
+      "reload": "Recharger {{name}}",
+      "activity": "Activité de {{name}}",
+      "remove": "Supprimer {{name}}"
+    }
   },
   "reinstall": {
     "file": "Pour vérifier ses autorisations, réinstallez-la depuis le fichier {{name}} (Installer depuis un fichier…).",

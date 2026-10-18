@@ -30,7 +30,7 @@
     "failed": "流失败"
   },
   "lines_other": "{{count}} 行",
-  "dropped_other": "已丢弃 {{count}} 行较早的日志（仅保留最新的 {{limit}} 行，文本最多 {{size}} MiB）",
+  "dropped_other": "已丢弃 {{count}} 行较早的日志（仅保留最新内容：行数上限 {{limit}}，文本上限 {{size}} MiB）",
   "lineCut": " …［该行在 64 KiB 处截断，下一行继续］",
   "empty": "暂无日志行。",
   "view": "日志行",
@@ -59,7 +59,7 @@
     "sources": "Pod 和容器（{{shown}}/{{total}}）",
     "sourcesLabel": "Pod 和容器",
     "capHint_other": "同时最多运行 {{count}} 个日志流；取消勾选 Pod 或容器即可选择要读取哪些。",
-    "capped_other": "还有 {{count}} 个容器在等待：同时最多运行 {{max}} 个日志流。取消勾选 Pod 或容器即可选择要读取哪些。",
+    "capped_other": "还有 {{count}} 个容器在等待：同时运行的日志流上限为 {{max}}。取消勾选 Pod 或容器即可选择要读取哪些。",
     "noPods": "没有匹配的 Pod。",
     "json": "解析 JSON",
     "level": "级别",

@@ -130,19 +130,23 @@
     "finding": "Ricerca…",
     "noClusters": "Nessun cluster trovato.",
     "found": "Cluster trovati",
-    "separator": " · ",
     "add_one": "Aggiungi {{count}} cluster",
     "add_many": "Aggiungi {{count}} di cluster",
     "add_other": "Aggiungi {{count}} cluster",
     "added_one": "{{count}} cluster aggiunto. Si trova nell'elenco dei cluster.",
     "added_many": "{{count}} di cluster aggiunti. Si trovano nell'elenco dei cluster.",
     "added_other": "{{count}} cluster aggiunti. Si trovano nell'elenco dei cluster.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} non è installato{{scope}}",
-      "notLoggedIn": "{{cli}} non ha effettuato l'accesso, oppure l'accesso è scaduto{{scope}}",
-      "pluginMissing": "Il plugin di accesso per {{cli}} non è installato{{scope}}",
-      "failed": "{{cli}} non è riuscito{{scope}}"
+      "cliMissing": "{{cli}} non è installato",
+      "notLoggedIn": "{{cli}} non ha effettuato l'accesso, oppure l'accesso è scaduto",
+      "pluginMissing": "Il plugin di accesso per {{cli}} non è installato",
+      "failed": "{{cli}} non è riuscito"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} non è installato ({{scope}})",
+      "notLoggedIn": "{{cli}} non ha effettuato l'accesso, oppure l'accesso è scaduto ({{scope}})",
+      "pluginMissing": "Il plugin di accesso per {{cli}} non è installato ({{scope}})",
+      "failed": "{{cli}} non è riuscito ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Installalo, poi riprova.",

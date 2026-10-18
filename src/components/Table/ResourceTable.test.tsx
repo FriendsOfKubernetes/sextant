@@ -337,14 +337,14 @@ describe("ResourceTable", () => {
     render(<ResourceTable clusterId="c1" kind={POD} />);
     await waitFor(() => expect(backend.listenerCount("watch:watch-1")).toBe(1));
     act(() => backend.emit("watch:watch-1", { type: "reconnecting" }));
-    expect(screen.queryByText(/No Pods found/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No objects found/)).not.toBeInTheDocument();
     expect(screen.getByText("Loading Pods…")).toBeInTheDocument();
     act(() => backend.emit("watch:watch-1", { type: "delta", upserted: [], deleted: ["uid-9"] }));
-    expect(screen.queryByText(/No Pods found/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No objects found/)).not.toBeInTheDocument();
     expect(screen.getByText("Loading Pods…")).toBeInTheDocument();
 
     act(() => backend.emit("watch:watch-1", { type: "snapshot", items: [] }));
-    expect(screen.getByText(/No Pods found/)).toBeInTheDocument();
+    expect(screen.getByText(/No objects found/)).toBeInTheDocument();
   });
 
   it("while loading counts the seconds and after 5 s says that the cluster is slow", () => {
@@ -410,7 +410,7 @@ describe("ResourceTable", () => {
     render(<ResourceTable clusterId="c1" kind={POD} />);
     await snapshot([]);
     expect(backend.calls.find((c) => c.cmd === "watch_start")?.args.spec).toMatchObject({ namespaces: ["empty-ns"] });
-    expect(screen.getByText("No Pods found in selected namespaces")).toBeInTheDocument();
+    expect(screen.getByText("No objects found in the selected namespaces")).toBeInTheDocument();
   });
 
   it("says when listing the kind is forbidden", async () => {
@@ -419,7 +419,7 @@ describe("ResourceTable", () => {
     act(() =>
       backend.emit("watch:watch-1", { type: "error", code: "forbidden", message: "secrets is forbidden: User …" }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("You don't have permission to list Secrets");
+    expect(screen.getByRole("alert")).toHaveTextContent("You don't have permission to list these objects: Secrets");
   });
 
   it("shows the rows of the allowed namespaces and names the namespaces without permission", async () => {

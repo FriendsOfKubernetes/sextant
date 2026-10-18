@@ -28,7 +28,7 @@
   "empty": "見つかりませんでした",
   "searchAll": "すべての種類を検索 ({{count}})",
   "searching": "検索中… {{total}} 種類中 {{done}} 種類を取得済み",
-  "limited": "{{total}} 種類のうち最初の {{count}} 種類のオブジェクトを検索します",
+  "limited_other": "最初の {{count}} 種類のオブジェクトのみを検索します (全 {{total}} 種類)",
   "hint": "↑↓ 移動 · Enter 開く · Tab 操作 · Esc 閉じる",
   "hintActions": "↑↓ 移動 · Enter 実行 · Shift+Tab 戻る · Esc 戻る"
 }

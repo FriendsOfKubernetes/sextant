@@ -281,8 +281,8 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
             : rowFilter && total > 0
               ? t("resources:table.noFilterMatches")
             : namespaced
-              ? t("resources:table.empty", { kind: title })
-              : t("resources:table.emptyClusterScoped", { kind: title })
+              ? t("resources:table.empty")
+              : t("resources:table.emptyClusterScoped")
         }
       />
     );

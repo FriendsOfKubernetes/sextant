@@ -28,7 +28,8 @@
   "empty": "Nothing found",
   "searchAll": "Search all kinds ({{count}})",
   "searching": "Searching… {{done}} of {{total}} kinds listed",
-  "limited": "Objects of the first {{count}} of {{total}} kinds are searched",
+  "limited_one": "Only objects of the first {{count}} kind are searched (of {{total}})",
+  "limited_other": "Only objects of the first {{count}} kinds are searched (of {{total}})",
   "hint": "↑↓ move · Enter open · Tab actions · Esc close",
   "hintActions": "↑↓ move · Enter run · Shift+Tab back · Esc back"
 }

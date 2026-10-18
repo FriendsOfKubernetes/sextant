@@ -48,6 +48,7 @@
     "details": "详细信息：{{message}}"
   },
   "list": {
-    "separator": "、"
+    "separator": "、",
+    "dot": " · "
   }
 }

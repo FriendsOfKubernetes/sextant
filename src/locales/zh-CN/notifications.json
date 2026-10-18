@@ -6,7 +6,7 @@
   },
   "summary": {
     "title_other": "{{cluster}} 中有 {{count}} 个新问题",
-    "titleClusters_other": "{{clusters}} 个集群中有 {{count}} 个新问题",
+    "titleClusters_other": "{{count}} 个集群中有新问题（共 {{problems}} 个）",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

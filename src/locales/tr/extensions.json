@@ -81,23 +81,29 @@
     "clustersNote": "Bir ad, her kubeconfig kaynağındaki o ada sahip her küme context'ini kapsar.",
     "access": "Erişim",
     "none": "Hiçbir kümenin verilerine erişimi yok.",
-    "rule": "{{actions}} — {{kinds}}, {{namespaces}}",
-    "allKinds": "tüm türler",
-    "namespacesAll": "tüm namespace'lerde",
-    "namespacesOnly_one": "{{names}} namespace'inde",
-    "namespacesOnly_other": "{{names}} namespace'lerinde",
+    "rule": {
+      "allKinds": "Tüm namespace'lerdeki tüm türler: {{actions}}",
+      "allKindsIn_one": "{{names}} namespace'indeki tüm türler: {{actions}}",
+      "allKindsIn_other": "{{names}} namespace'lerindeki tüm türler: {{actions}}",
+      "kinds": "Tüm namespace'lerdeki {{kinds}}: {{actions}}",
+      "kindsIn_one": "{{names}} namespace'indeki {{kinds}}: {{actions}}",
+      "kindsIn_other": "{{names}} namespace'lerindeki {{kinds}}: {{actions}}"
+    },
     "asks": "Çalıştırmadan önce sorar",
     "noAsk": "Sormadan çalıştırır",
-    "secretValues": "Secret değerlerini okuyabilir ({{namespaces}})",
+    "secretValues": {
+      "all": "Tüm namespace'lerde Secret değerlerini okuyabilir",
+      "in_one": "{{names}} namespace'inde Secret değerlerini okuyabilir",
+      "in_other": "{{names}} namespace'lerinde Secret değerlerini okuyabilir"
+    },
     "clusterWide": "Hiçbir namespace'e ait olmayan nesneler (Node gibi) yalnızca tüm namespace'ler için olan kurallarla kapsanır.",
     "actionNames": {
-      "read": "Okuma",
-      "modify": "Değiştirme",
-      "delete": "Silme",
-      "logs": "Günlükleri okuma",
-      "exec": "Komut çalıştırma",
-      "portForward": "Bağlantı noktası yönlendirme",
-      "secretValues": "Secret değerlerini okuma"
+      "read": "okuma",
+      "modify": "değiştirme",
+      "delete": "silme",
+      "logs": "günlükleri okuma",
+      "exec": "komut çalıştırma",
+      "portForward": "bağlantı noktası yönlendirme"
     }
   },
   "state": {
@@ -122,7 +128,14 @@
     "pausedHint": "Bu uzantı izin verdiğinizden fazlasını istiyor. İzinlerini gözden geçirene kadar duraklatıldı.",
     "failedHint": "Bu uzantı çalışamıyor: {{error}}",
     "actionFailed": "Değişiklik yapılamadı",
-    "namedAction": "{{action}}: {{name}}"
+    "named": {
+      "enable": "{{name}} uzantısını etkinleştir",
+      "disable": "{{name}} uzantısını devre dışı bırak",
+      "permissions": "{{name}} uzantısının izinleri",
+      "reload": "{{name}} uzantısını yeniden yükle",
+      "activity": "{{name}} uzantısının etkinliği",
+      "remove": "{{name}} uzantısını kaldır"
+    }
   },
   "reinstall": {
     "file": "İzinlerini gözden geçirmek için {{name}} dosyasından yeniden yükleyin (Dosyadan yükle…).",

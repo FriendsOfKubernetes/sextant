@@ -16,15 +16,18 @@
   },
   "onlyFlagged": "Only containers with findings",
   "source": {
-    "history": "Usage from Prometheus over {{window}}: CPU at the 95th percentile and its peak, memory at its peak.",
+    "history": {
+      "day": "Usage from Prometheus over the last day: CPU at the 95th percentile, memory at its peak.",
+      "week": "Usage from Prometheus over the last 7 days: CPU at the 95th percentile, memory at its peak."
+    },
     "snapshot": "Only current values are available (a snapshot from {{source}}). A single point is not enough for a recommendation: install Prometheus for history.",
     "snapshotAfterError": "Prometheus history could not be read, so only current values are shown (a snapshot). No recommendations.",
     "none": "No metrics are available: only requests and limits from the pod specs are checked.",
     "loading": "Reading usage…",
     "metricsServer": "metrics-server",
     "historyFailed": "Prometheus history could not be read",
-    "truncated_one": "Too many containers matched; only the first {{count}} has history. Narrow the namespace filter.",
-    "truncated_other": "Too many containers matched; only the first {{count}} have history. Narrow the namespace filter.",
+    "truncated_one": "Too many containers matched: history is read only for the first {{count}} container. Narrow the namespace filter.",
+    "truncated_other": "Too many containers matched: history is read only for the first {{count}} containers. Narrow the namespace filter.",
     "coverageUnknown": "Prometheus could not say since when it has samples, so how much history the recommendations rest on is unknown."
   },
   "loading": "Loading pods…",
@@ -58,7 +61,10 @@
   },
   "confidence": {
     "partialHistory": "Based on {{duration}} of history",
-    "insufficientHistory": "Not enough history: {{duration}} of {{window}}, at least {{minimum}} is needed",
+    "insufficientHistory": {
+      "day": "Not enough history: {{duration}} of the last day, at least {{minimum}} is needed",
+      "week": "Not enough history: {{duration}} of the last 7 days, at least {{minimum}} is needed"
+    },
     "snapshot": "Snapshot",
     "noData": "No usage data",
     "unknownHistory": "History of unknown length"
@@ -89,18 +95,20 @@
     "noMemoryRequest": "The scheduler reserves no memory; the pod is among the first evicted under memory pressure.",
     "noCpuLimit": "The container may use any idle CPU of the node. Often intended.",
     "noMemoryLimit": "The container may take memory from its neighbours on the node.",
-    "cpuOverProvisioned": "The CPU request is at least {{factor}} times what the usage needs.",
-    "memoryOverProvisioned": "The memory request is at least {{factor}} times what the usage needs.",
+    "cpuOverProvisioned_one": "The CPU request is at least {{count}} time what the usage needs.",
+    "cpuOverProvisioned_other": "The CPU request is at least {{count}} times what the usage needs.",
+    "memoryOverProvisioned_one": "The memory request is at least {{count}} time what the usage needs.",
+    "memoryOverProvisioned_other": "The memory request is at least {{count}} times what the usage needs.",
     "cpuUnderRequested": "Usage is above the request most of the time.",
     "memoryUnderRequested": "Peak memory is above the request: the pod can be evicted under memory pressure.",
     "memoryNearLimit": "Memory reached at least {{share}} of the limit.",
-    "oomKilled": "The container was killed for running out of memory in the last {{period}}; the real peak is above the limit.",
+    "oomKilled_one": "The container was killed for running out of memory in the last {{count}} day; the real peak is above the limit.",
+    "oomKilled_other": "The container was killed for running out of memory in the last {{count}} days; the real peak is above the limit.",
     "cpuThrottled": "{{percent}} of CPU periods were throttled."
   },
   "copy": "Copy resources YAML",
   "copied": "Copied",
   "copyFailed": "Could not copy",
-  "separator": " · ",
   "chooseNamespace": "Choose a namespace",
   "chooseNamespaceText": "Right-sizing reads the history of every container it shows, so it works on the namespaces chosen in the namespace filter. Pick one or a few.",
   "firstNamespaces_one": "Only the first {{count}} namespace of the filter is shown.",

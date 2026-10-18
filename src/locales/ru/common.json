@@ -48,6 +48,7 @@
     "details": "Подробности: {{message}}"
   },
   "list": {
-    "separator": ", "
+    "separator": ", ",
+    "dot": " · "
   }
 }

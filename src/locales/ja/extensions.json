@@ -80,13 +80,18 @@
     "clustersNote": "名前は、すべての kubeconfig ソースにある同じ名前のクラスターコンテキストすべてに適用されます。",
     "access": "アクセス",
     "none": "どのクラスターのデータにもアクセスできません。",
-    "rule": "{{namespaces}} の {{kinds}}: {{actions}}",
-    "allKinds": "すべての Kind",
-    "namespacesAll": "すべての namespace",
-    "namespacesOnly_other": "namespace {{names}}",
+    "rule": {
+      "allKinds": "すべての namespace のすべての Kind: {{actions}}",
+      "allKindsIn_other": "namespace {{names}} のすべての Kind: {{actions}}",
+      "kinds": "すべての namespace の {{kinds}}: {{actions}}",
+      "kindsIn_other": "namespace {{names}} の {{kinds}}: {{actions}}"
+    },
     "asks": "実行前に確認",
     "noAsk": "確認なしで実行",
-    "secretValues": "{{namespaces}} の Secret の値を読み取れます",
+    "secretValues": {
+      "all": "すべての namespace の Secret の値を読み取れます",
+      "in_other": "namespace {{names}} の Secret の値を読み取れます"
+    },
     "clusterWide": "namespace に属さないオブジェクト (Node など) は、すべての namespace を対象とするルールでのみ扱われます。",
     "actionNames": {
       "read": "読み取り",
@@ -94,8 +99,7 @@
       "delete": "削除",
       "logs": "ログの読み取り",
       "exec": "コマンドの実行",
-      "portForward": "ポートフォワード",
-      "secretValues": "Secret の値の読み取り"
+      "portForward": "ポートフォワード"
     }
   },
   "state": {
@@ -120,7 +124,14 @@
     "pausedHint": "この拡張機能は許可した範囲を超えるアクセス許可を求めています。アクセス許可を確認するまで一時停止されます。",
     "failedHint": "この拡張機能は実行できません: {{error}}",
     "actionFailed": "変更できませんでした",
-    "namedAction": "{{action}}: {{name}}"
+    "named": {
+      "enable": "{{name}} を有効にする",
+      "disable": "{{name}} を無効にする",
+      "permissions": "{{name}} のアクセス許可",
+      "reload": "{{name}} を再読み込み",
+      "activity": "{{name}} のアクティビティ",
+      "remove": "{{name}} を削除"
+    }
   },
   "reinstall": {
     "file": "アクセス許可を確認するには、ファイル {{name}} から再インストールしてください (「ファイルからインストール…」)。",

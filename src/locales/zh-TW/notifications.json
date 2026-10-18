@@ -6,7 +6,7 @@
   },
   "summary": {
     "title_other": "{{cluster}} 中有 {{count}} 個新問題",
-    "titleClusters_other": "{{clusters}} 個叢集中有 {{count}} 個新問題",
+    "titleClusters_other": "{{count}} 個叢集中有新問題（共 {{problems}} 個）",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

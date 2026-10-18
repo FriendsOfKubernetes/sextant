@@ -130,17 +130,21 @@
     "finding": "Searching…",
     "noClusters": "No clusters found.",
     "found": "Clusters found",
-    "separator": " · ",
     "add_one": "Add {{count}} cluster",
     "add_other": "Add {{count}} clusters",
     "added_one": "Added {{count}} cluster. It is in the cluster list.",
     "added_other": "Added {{count}} clusters. They are in the cluster list.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} is not installed{{scope}}",
-      "notLoggedIn": "{{cli}} is not signed in, or the sign-in expired{{scope}}",
-      "pluginMissing": "The sign-in plugin for {{cli}} is not installed{{scope}}",
-      "failed": "{{cli}} failed{{scope}}"
+      "cliMissing": "{{cli}} is not installed",
+      "notLoggedIn": "{{cli}} is not signed in, or the sign-in expired",
+      "pluginMissing": "The sign-in plugin for {{cli}} is not installed",
+      "failed": "{{cli}} failed"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} is not installed ({{scope}})",
+      "notLoggedIn": "{{cli}} is not signed in, or the sign-in expired ({{scope}})",
+      "pluginMissing": "The sign-in plugin for {{cli}} is not installed ({{scope}})",
+      "failed": "{{cli}} failed ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Install it, then try again.",

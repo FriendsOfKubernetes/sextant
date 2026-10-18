@@ -6,7 +6,7 @@
   },
   "summary": {
     "title_other": "{{cluster}}에 새 문제 {{count}}개",
-    "titleClusters_other": "클러스터 {{clusters}}개에 새 문제 {{count}}개",
+    "titleClusters_other": "클러스터 {{count}}개에 새 문제(총 {{problems}}개)",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

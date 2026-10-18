@@ -16,14 +16,17 @@
   },
   "onlyFlagged": "발견 사항이 있는 컨테이너만",
   "source": {
-    "history": "{{window}} 동안 Prometheus에서 수집한 사용량입니다. CPU는 95번째 백분위수와 최고값, 메모리는 최고값을 사용합니다.",
+    "history": {
+      "day": "지난 1일 동안 Prometheus에서 수집한 사용량입니다. CPU는 95번째 백분위수, 메모리는 최고값을 사용합니다.",
+      "week": "지난 7일 동안 Prometheus에서 수집한 사용량입니다. CPU는 95번째 백분위수, 메모리는 최고값을 사용합니다."
+    },
     "snapshot": "현재 값만 사용할 수 있습니다({{source}}의 스냅숏). 한 시점의 값만으로는 권장 값을 제시할 수 없습니다. 기록을 보려면 Prometheus를 설치하세요.",
     "snapshotAfterError": "Prometheus 기록을 읽을 수 없어 현재 값(스냅숏)만 표시합니다. 권장 값은 없습니다.",
     "none": "사용할 수 있는 메트릭이 없습니다. Pod 사양의 요청과 제한만 검사합니다.",
     "loading": "사용량을 읽는 중…",
     "metricsServer": "metrics-server",
     "historyFailed": "Prometheus 기록을 읽을 수 없습니다",
-    "truncated_other": "일치하는 컨테이너가 너무 많아 처음 {{count}}개만 기록이 있습니다. namespace 필터의 범위를 좁히세요.",
+    "truncated_other": "일치하는 컨테이너가 너무 많아 처음 {{count}}개 컨테이너의 기록만 읽습니다. namespace 필터의 범위를 좁히세요.",
     "coverageUnknown": "Prometheus가 언제부터 샘플을 보유했는지 알려 주지 않아, 권장 값의 근거가 되는 기록의 기간을 알 수 없습니다."
   },
   "loading": "Pod를 로드하는 중…",
@@ -55,7 +58,10 @@
   },
   "confidence": {
     "partialHistory": "{{duration}}의 기록 기준",
-    "insufficientHistory": "기록 부족: {{window}} 중 {{duration}}, 최소 {{minimum}} 필요",
+    "insufficientHistory": {
+      "day": "기록 부족: 지난 1일 중 {{duration}}, 최소 {{minimum}} 필요",
+      "week": "기록 부족: 지난 7일 중 {{duration}}, 최소 {{minimum}} 필요"
+    },
     "snapshot": "스냅숏",
     "noData": "사용량 데이터 없음",
     "unknownHistory": "기간을 알 수 없는 기록"
@@ -83,18 +89,17 @@
     "noMemoryRequest": "스케줄러가 메모리를 예약하지 않습니다. 메모리가 부족하면 이 Pod가 가장 먼저 축출됩니다.",
     "noCpuLimit": "컨테이너가 노드의 유휴 CPU를 모두 사용할 수 있습니다. 의도된 경우가 많습니다.",
     "noMemoryLimit": "컨테이너가 노드의 다른 컨테이너가 쓸 메모리를 가져갈 수 있습니다.",
-    "cpuOverProvisioned": "CPU 요청이 사용량에 필요한 양의 {{factor}}배 이상입니다.",
-    "memoryOverProvisioned": "메모리 요청이 사용량에 필요한 양의 {{factor}}배 이상입니다.",
+    "cpuOverProvisioned_other": "CPU 요청이 사용량에 필요한 양의 {{count}}배 이상입니다.",
+    "memoryOverProvisioned_other": "메모리 요청이 사용량에 필요한 양의 {{count}}배 이상입니다.",
     "cpuUnderRequested": "대부분의 시간 동안 사용량이 요청보다 높습니다.",
     "memoryUnderRequested": "최고 메모리 사용량이 요청보다 높습니다. 메모리가 부족하면 Pod가 축출될 수 있습니다.",
     "memoryNearLimit": "메모리 사용량이 제한의 {{share}} 이상에 도달했습니다.",
-    "oomKilled": "지난 {{period}} 동안 메모리 부족으로 컨테이너가 종료되었습니다. 실제 최고 사용량은 제한보다 높습니다.",
+    "oomKilled_other": "지난 {{count}}일 동안 메모리 부족으로 컨테이너가 종료되었습니다. 실제 최고 사용량은 제한보다 높습니다.",
     "cpuThrottled": "CPU 주기의 {{percent}}가 스로틀링되었습니다."
   },
   "copy": "리소스 YAML 복사",
   "copied": "복사됨",
   "copyFailed": "복사할 수 없습니다",
-  "separator": " · ",
   "chooseNamespace": "namespace 선택",
   "chooseNamespaceText": "적정 크기 조정은 표시하는 모든 컨테이너의 기록을 읽으므로 namespace 필터에서 선택한 namespace에서만 작동합니다. 하나 또는 몇 개를 선택하세요.",
   "firstNamespaces_other": "필터의 처음 {{count}}개 namespace만 표시합니다."

@@ -38,7 +38,9 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
       void refreshExtensions();
     }
   };
-  const named = (action: string) => t("extensions:list.namedAction", { action, name: info.name });
+  // Accessible names of the row's buttons: one whole text per action, with the extension's name where the language
+  // puts it.
+  const named = { name: info.name };
   const hasSettings = info.state === "active" && info.manifest?.contributes.settings !== undefined;
   const requested = info.manifest?.permissions;
   // Only a folder can be read again for review; a package is reviewed by installing it again from its source.
@@ -79,26 +81,26 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
         <Button
           size="compact"
           disabled={busy}
-          aria-label={named(info.enabled ? t("extensions:list.disable") : t("extensions:list.enable"))}
+          aria-label={info.enabled ? t("extensions:list.named.disable", named) : t("extensions:list.named.enable", named)}
           onClick={() => void run(() => api.extensions.setEnabled(info.id, !info.enabled))}
         >
           {info.enabled ? t("extensions:list.disable") : t("extensions:list.enable")}
         </Button>
-        <Button size="compact" aria-label={named(t("extensions:list.permissions"))} onClick={() => setDialog("permissions")}>
+        <Button size="compact" aria-label={t("extensions:list.named.permissions", named)} onClick={() => setDialog("permissions")}>
           {t("extensions:list.permissions")}
         </Button>
         <Button
           size="compact"
           disabled={busy}
-          aria-label={named(t("extensions:list.reload"))}
+          aria-label={t("extensions:list.named.reload", named)}
           onClick={() => void run(() => api.extensions.reload(info.id))}
         >
           {t("extensions:list.reload")}
         </Button>
-        <Button size="compact" aria-label={named(t("extensions:list.activity"))} onClick={() => setDialog("activity")}>
+        <Button size="compact" aria-label={t("extensions:list.named.activity", named)} onClick={() => setDialog("activity")}>
           {t("extensions:list.activity")}
         </Button>
-        <Button size="compact" variant="danger" aria-label={named(t("extensions:list.remove"))} onClick={() => setDialog("remove")}>
+        <Button size="compact" variant="danger" aria-label={t("extensions:list.named.remove", named)} onClick={() => setDialog("remove")}>
           {t("extensions:list.remove")}
         </Button>
       </div>

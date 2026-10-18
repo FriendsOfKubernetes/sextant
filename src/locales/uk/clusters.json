@@ -130,7 +130,6 @@
     "finding": "Пошук…",
     "noClusters": "Кластерів не знайдено.",
     "found": "Знайдені кластери",
-    "separator": " · ",
     "add_one": "Додати {{count}} кластер",
     "add_few": "Додати {{count}} кластери",
     "add_many": "Додати {{count}} кластерів",
@@ -139,12 +138,17 @@
     "added_few": "Додано {{count}} кластери. Вони є в списку кластерів.",
     "added_many": "Додано {{count}} кластерів. Вони є в списку кластерів.",
     "added_other": "Додано {{count}} кластера. Вони є в списку кластерів.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} не встановлено{{scope}}",
-      "notLoggedIn": "У {{cli}} не виконано вхід, або строк дії входу минув{{scope}}",
-      "pluginMissing": "Плагін входу для {{cli}} не встановлено{{scope}}",
-      "failed": "Помилка {{cli}}{{scope}}"
+      "cliMissing": "{{cli}} не встановлено",
+      "notLoggedIn": "У {{cli}} не виконано вхід, або строк дії входу минув",
+      "pluginMissing": "Плагін входу для {{cli}} не встановлено",
+      "failed": "Помилка {{cli}}"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} не встановлено ({{scope}})",
+      "notLoggedIn": "У {{cli}} не виконано вхід, або строк дії входу минув ({{scope}})",
+      "pluginMissing": "Плагін входу для {{cli}} не встановлено ({{scope}})",
+      "failed": "Помилка {{cli}} ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Установіть його та спробуйте ще раз.",

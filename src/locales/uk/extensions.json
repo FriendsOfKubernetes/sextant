@@ -83,16 +83,27 @@
     "clustersNote": "Ім'я охоплює всі context кластерів із цим ім'ям з усіх джерел kubeconfig.",
     "access": "Доступ",
     "none": "Немає доступу до даних жодного кластера.",
-    "rule": "{{kinds}} {{namespaces}}: {{actions}}",
-    "allKinds": "Усі типи ресурсів",
-    "namespacesAll": "в усіх namespace",
-    "namespacesOnly_one": "у namespace {{names}}",
-    "namespacesOnly_few": "у namespace {{names}}",
-    "namespacesOnly_many": "у namespace {{names}}",
-    "namespacesOnly_other": "у namespace {{names}}",
+    "rule": {
+      "allKinds": "Усі типи ресурсів в усіх namespace: {{actions}}",
+      "allKindsIn_one": "Усі типи ресурсів у namespace {{names}}: {{actions}}",
+      "allKindsIn_few": "Усі типи ресурсів у namespace {{names}}: {{actions}}",
+      "allKindsIn_many": "Усі типи ресурсів у namespace {{names}}: {{actions}}",
+      "allKindsIn_other": "Усі типи ресурсів у namespace {{names}}: {{actions}}",
+      "kinds": "{{kinds}} в усіх namespace: {{actions}}",
+      "kindsIn_one": "{{kinds}} у namespace {{names}}: {{actions}}",
+      "kindsIn_few": "{{kinds}} у namespace {{names}}: {{actions}}",
+      "kindsIn_many": "{{kinds}} у namespace {{names}}: {{actions}}",
+      "kindsIn_other": "{{kinds}} у namespace {{names}}: {{actions}}"
+    },
     "asks": "Запитує перед виконанням",
     "noAsk": "Виконує без запитань",
-    "secretValues": "Може читати значення Secret {{namespaces}}",
+    "secretValues": {
+      "all": "Може читати значення Secret в усіх namespace",
+      "in_one": "Може читати значення Secret у namespace {{names}}",
+      "in_few": "Може читати значення Secret у namespace {{names}}",
+      "in_many": "Може читати значення Secret у namespace {{names}}",
+      "in_other": "Може читати значення Secret у namespace {{names}}"
+    },
     "clusterWide": "Об'єкти поза namespace (наприклад, Nodes) охоплюють лише правила для всіх namespace.",
     "actionNames": {
       "read": "читання",
@@ -100,8 +111,7 @@
       "delete": "видалення",
       "logs": "читання логів",
       "exec": "виконання команд",
-      "portForward": "переадресація портів",
-      "secretValues": "читання значень Secret"
+      "portForward": "переадресація портів"
     }
   },
   "state": {
@@ -126,7 +136,14 @@
     "pausedHint": "Це розширення запитує більше, ніж ви дозволили. Його призупинено, доки ви не перевірите його права.",
     "failedHint": "Це розширення не може працювати: {{error}}",
     "actionFailed": "Не вдалося внести зміну",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "Увімкнути розширення {{name}}",
+      "disable": "Вимкнути розширення {{name}}",
+      "permissions": "Права розширення {{name}}",
+      "reload": "Перезавантажити розширення {{name}}",
+      "activity": "Дії розширення {{name}}",
+      "remove": "Вилучити розширення {{name}}"
+    }
   },
   "reinstall": {
     "file": "Щоб перевірити його права, установіть його знову з файлу {{name}} («Установити з файлу…»).",

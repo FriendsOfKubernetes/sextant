@@ -273,8 +273,8 @@ describe("installing", () => {
     expect(within(consent).getByText("Size")).toBeInTheDocument();
     expect(within(consent).getByText("Widget settings")).toBeInTheDocument();
     expect(within(consent).getByText("All clusters")).toBeInTheDocument();
-    expect(within(consent).getByText("Read Pod, Deployment (apps) in all namespaces")).toBeInTheDocument();
-    expect(within(consent).getByText("Modify ConfigMap in the namespace team-a")).toBeInTheDocument();
+    expect(within(consent).getByText("Pod, Deployment (apps) in all namespaces: read")).toBeInTheDocument();
+    expect(within(consent).getByText("ConfigMap in the namespace team-a: modify")).toBeInTheDocument();
     expect(within(consent).getByText("Asks before running")).toBeInTheDocument();
     // Nothing is said about Secrets when the extension cannot read their values.
     expect(within(consent).queryByRole("alert")).toBeNull();
@@ -527,10 +527,10 @@ describe("managing", () => {
     list = [info()];
     setup();
     render(<ExtensionsPanel />);
-    fireEvent.click(await screen.findByRole("button", { name: "Permissions Widgets" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Permissions of Widgets" }));
     const permissions = dialog();
     expect(within(permissions).getByText("Permissions of Widgets")).toBeInTheDocument();
-    expect(within(permissions).getByText("Read Pod, Deployment (apps) in all namespaces")).toBeInTheDocument();
+    expect(within(permissions).getByText("Pod, Deployment (apps) in all namespaces: read")).toBeInTheDocument();
     expect(within(permissions).queryByText("It asks for now")).toBeNull();
     fireEvent.click(within(permissions).getAllByRole("button", { name: "Close" })[1]!);
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -598,7 +598,7 @@ describe("an extension paused for new permissions", () => {
     list = [paused()];
     setup();
     render(<ExtensionsPanel />);
-    fireEvent.click(await screen.findByRole("button", { name: "Permissions Widgets" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Permissions of Widgets" }));
     const permissions = dialog();
     expect(within(permissions).getByText("You allowed")).toBeInTheDocument();
     expect(within(permissions).getByText("It asks for now")).toBeInTheDocument();
@@ -736,7 +736,7 @@ describe("activity", () => {
     audit = [entry(), entry({ client: "other.tool", principal: "Extension Other tool", target: "Node n1" })];
     setup();
     render(<ExtensionsPanel />);
-    fireEvent.click(await screen.findByRole("button", { name: "Activity Widgets" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Activity of Widgets" }));
     const log = await screen.findByRole("dialog", { name: "Extension activity" });
     expect(await within(log).findByText("Pod team-a/web-1")).toBeInTheDocument();
     expect(calls("extension_audit_list").at(-1)?.args).toEqual({ extensionId: "acme.widgets" });

@@ -231,7 +231,7 @@ describe("Sidebar and main view", () => {
     render(<Cluster />);
     const gateways = await watchOf("Gateway");
     emit(gateways.id, []);
-    await screen.findByText("No Gateway found in selected namespaces");
+    await screen.findByText("No objects found in the selected namespaces");
     await waitFor(() => expect(backend.calls.some((c) => c.cmd === "resource_get")).toBe(true));
     expect(screen.getByRole("heading", { name: "Gateway" })).toBeInTheDocument();
   });

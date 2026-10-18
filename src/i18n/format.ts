@@ -45,3 +45,13 @@ export function listSeparator(): string {
 export function formatList(items: readonly string[]): string {
   return items.join(listSeparator());
 }
+
+/** The language's separator of parts of one line (`common:list.dot`: " · "): "eu-west-1 · 1.31 · ACTIVE". */
+export function dotSeparator(): string {
+  return i18n.t("common:list.dot", { defaultValue: " · " });
+}
+
+/** Parts of one line (values, labels) joined with `common:list.dot`; for parts that are not one list of names. */
+export function formatParts(items: readonly string[]): string {
+  return items.join(dotSeparator());
+}

@@ -16,15 +16,18 @@
   },
   "onlyFlagged": "Nur Container mit Befunden",
   "source": {
-    "history": "Nutzung aus Prometheus (Zeitraum: {{window}}): CPU als 95. Perzentil und Spitzenwert, Speicher als Spitzenwert.",
+    "history": {
+      "day": "Nutzung aus Prometheus über den letzten Tag: CPU als 95. Perzentil, Speicher als Spitzenwert.",
+      "week": "Nutzung aus Prometheus über die letzten 7 Tage: CPU als 95. Perzentil, Speicher als Spitzenwert."
+    },
     "snapshot": "Nur aktuelle Werte sind verfügbar (eine Momentaufnahme von {{source}}). Ein einzelner Messpunkt reicht für eine Empfehlung nicht aus: Installieren Sie Prometheus für einen Verlauf.",
     "snapshotAfterError": "Der Prometheus-Verlauf konnte nicht gelesen werden, daher werden nur aktuelle Werte angezeigt (eine Momentaufnahme). Keine Empfehlungen.",
     "none": "Keine Metriken verfügbar: Geprüft werden nur Requests und Limits aus den Pod-Spezifikationen.",
     "loading": "Nutzung wird gelesen…",
     "metricsServer": "metrics-server",
     "historyFailed": "Der Prometheus-Verlauf konnte nicht gelesen werden",
-    "truncated_one": "Zu viele Container gefunden; nur der erste {{count}} hat einen Verlauf. Grenzen Sie den Namespace-Filter ein.",
-    "truncated_other": "Zu viele Container gefunden; nur die ersten {{count}} haben einen Verlauf. Grenzen Sie den Namespace-Filter ein.",
+    "truncated_one": "Zu viele Container gefunden: Der Verlauf wird nur für den ersten {{count}} Container gelesen. Grenzen Sie den Namespace-Filter ein.",
+    "truncated_other": "Zu viele Container gefunden: Der Verlauf wird nur für die ersten {{count}} Container gelesen. Grenzen Sie den Namespace-Filter ein.",
     "coverageUnknown": "Prometheus konnte nicht angeben, seit wann es Messwerte hat, daher ist unbekannt, auf wie viel Verlauf die Empfehlungen beruhen."
   },
   "loading": "Pods werden geladen…",
@@ -58,7 +61,10 @@
   },
   "confidence": {
     "partialHistory": "Grundlage: {{duration}} Verlauf",
-    "insufficientHistory": "Zu wenig Verlauf: {{duration}} (Zeitraum: {{window}}), mindestens {{minimum}} erforderlich",
+    "insufficientHistory": {
+      "day": "Zu wenig Verlauf: {{duration}} vom letzten Tag, mindestens {{minimum}} erforderlich",
+      "week": "Zu wenig Verlauf: {{duration}} von den letzten 7 Tagen, mindestens {{minimum}} erforderlich"
+    },
     "snapshot": "Momentaufnahme",
     "noData": "Keine Nutzungsdaten",
     "unknownHistory": "Verlauf unbekannter Länge"
@@ -89,18 +95,20 @@
     "noMemoryRequest": "Der Scheduler reserviert keinen Speicher; der Pod gehört bei Speicherdruck zu den ersten, die verdrängt werden.",
     "noCpuLimit": "Der Container darf jede ungenutzte CPU des Knotens verwenden. Oft so gewollt.",
     "noMemoryLimit": "Der Container kann seinen Nachbarn auf dem Knoten Speicher wegnehmen.",
-    "cpuOverProvisioned": "Der CPU-Request ist mindestens {{factor}}-mal so hoch wie der tatsächliche Bedarf.",
-    "memoryOverProvisioned": "Der Speicher-Request ist mindestens {{factor}}-mal so hoch wie der tatsächliche Bedarf.",
+    "cpuOverProvisioned_one": "Der CPU-Request ist mindestens {{count}}-mal so hoch wie der tatsächliche Bedarf.",
+    "cpuOverProvisioned_other": "Der CPU-Request ist mindestens {{count}}-mal so hoch wie der tatsächliche Bedarf.",
+    "memoryOverProvisioned_one": "Der Speicher-Request ist mindestens {{count}}-mal so hoch wie der tatsächliche Bedarf.",
+    "memoryOverProvisioned_other": "Der Speicher-Request ist mindestens {{count}}-mal so hoch wie der tatsächliche Bedarf.",
     "cpuUnderRequested": "Die Nutzung liegt die meiste Zeit über dem Request.",
     "memoryUnderRequested": "Der Spitzenwert des Speichers liegt über dem Request: Der Pod kann bei Speicherdruck verdrängt werden.",
     "memoryNearLimit": "Der Speicher hat mindestens {{share}} des Limits erreicht.",
-    "oomKilled": "Der Container wurde innerhalb der letzten {{period}} wegen Speichermangels beendet; der tatsächliche Spitzenwert liegt über dem Limit.",
+    "oomKilled_one": "Der Container wurde innerhalb des letzten {{count}} Tages wegen Speichermangels beendet; der tatsächliche Spitzenwert liegt über dem Limit.",
+    "oomKilled_other": "Der Container wurde innerhalb der letzten {{count}} Tage wegen Speichermangels beendet; der tatsächliche Spitzenwert liegt über dem Limit.",
     "cpuThrottled": "{{percent}} der CPU-Perioden wurden gedrosselt."
   },
   "copy": "Ressourcen-YAML kopieren",
   "copied": "Kopiert",
   "copyFailed": "Kopieren fehlgeschlagen",
-  "separator": " · ",
   "chooseNamespace": "Namespace auswählen",
   "chooseNamespaceText": "Right-Sizing liest den Verlauf jedes angezeigten Containers und arbeitet daher mit den im Namespace-Filter ausgewählten Namespaces. Wählen Sie einen oder wenige aus.",
   "firstNamespaces_one": "Nur der erste {{count}} Namespace des Filters wird angezeigt.",

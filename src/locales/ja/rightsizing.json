@@ -16,14 +16,17 @@
   },
   "onlyFlagged": "指摘のあるコンテナーのみ",
   "source": {
-    "history": "{{window}}の Prometheus の使用量: CPU は 95 パーセンタイルとピーク、メモリはピークを使用しています。",
+    "history": {
+      "day": "過去 1 日の Prometheus の使用量: CPU は 95 パーセンタイル、メモリはピークを使用しています。",
+      "week": "過去 7 日の Prometheus の使用量: CPU は 95 パーセンタイル、メモリはピークを使用しています。"
+    },
     "snapshot": "現在の値しか取得できません ({{source}} のスナップショット)。1 点だけでは推奨値を出せません。履歴を得るには Prometheus をインストールしてください。",
     "snapshotAfterError": "Prometheus の履歴を読み取れなかったため、現在の値 (スナップショット) のみを表示しています。推奨値はありません。",
     "none": "メトリクスを利用できません。Pod の spec の要求と上限のみを確認します。",
     "loading": "使用量を読み取り中…",
     "metricsServer": "metrics-server",
     "historyFailed": "Prometheus の履歴を読み取れませんでした",
-    "truncated_other": "一致するコンテナーが多すぎるため、履歴があるのは最初の {{count}} 個だけです。namespace フィルターで絞り込んでください。",
+    "truncated_other": "一致するコンテナーが多すぎるため、履歴を読み取るのは最初の {{count}} 個のコンテナーだけです。namespace フィルターで絞り込んでください。",
     "coverageUnknown": "Prometheus がいつからサンプルを持っているかを取得できなかったため、推奨値の根拠となる履歴の長さは不明です。"
   },
   "loading": "Pod を読み込み中…",
@@ -55,7 +58,10 @@
   },
   "confidence": {
     "partialHistory": "{{duration}}の履歴に基づく",
-    "insufficientHistory": "履歴が不足しています: {{window}}のうち {{duration}}のみ (最低 {{minimum}}必要)",
+    "insufficientHistory": {
+      "day": "履歴が不足しています: 過去 1 日のうち {{duration}}のみ (最低 {{minimum}}必要)",
+      "week": "履歴が不足しています: 過去 7 日のうち {{duration}}のみ (最低 {{minimum}}必要)"
+    },
     "snapshot": "スナップショット",
     "noData": "使用量データなし",
     "unknownHistory": "履歴の長さが不明"
@@ -83,18 +89,17 @@
     "noMemoryRequest": "スケジューラーはメモリを予約しません。メモリが逼迫すると、この Pod は最初に退避される対象になります。",
     "noCpuLimit": "コンテナーはノードの空いている CPU をいくらでも使用できます。意図的な場合もよくあります。",
     "noMemoryLimit": "コンテナーがノード上の他のコンテナーのメモリを奪う可能性があります。",
-    "cpuOverProvisioned": "CPU 要求が、使用量に必要な量の {{factor}} 倍以上あります。",
-    "memoryOverProvisioned": "メモリ要求が、使用量に必要な量の {{factor}} 倍以上あります。",
+    "cpuOverProvisioned_other": "CPU 要求が、使用量に必要な量の {{count}} 倍以上あります。",
+    "memoryOverProvisioned_other": "メモリ要求が、使用量に必要な量の {{count}} 倍以上あります。",
     "cpuUnderRequested": "ほとんどの時間、使用量が要求を上回っています。",
     "memoryUnderRequested": "メモリのピークが要求を上回っています。メモリが逼迫すると Pod が退避される可能性があります。",
     "memoryNearLimit": "メモリが上限の {{share}} 以上に達しました。",
-    "oomKilled": "過去 {{period}}にメモリ不足でコンテナーが強制終了されました。実際のピークは上限を上回っています。",
+    "oomKilled_other": "過去 {{count}} 日以内にメモリ不足でコンテナーが強制終了されました。実際のピークは上限を上回っています。",
     "cpuThrottled": "CPU 期間の {{percent}} でスロットリングが発生しました。"
   },
   "copy": "resources の YAML をコピー",
   "copied": "コピーしました",
   "copyFailed": "コピーできませんでした",
-  "separator": " · ",
   "chooseNamespace": "namespace を選択してください",
   "chooseNamespaceText": "適正サイズは表示するすべてのコンテナーの履歴を読み取るため、namespace フィルターで選択した namespace が対象になります。1 つまたはいくつか選択してください。",
   "firstNamespaces_other": "フィルターの最初の {{count}} 個の namespace のみを表示しています。"

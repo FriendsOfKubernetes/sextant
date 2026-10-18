@@ -130,7 +130,6 @@
     "finding": "Поиск…",
     "noClusters": "Кластеры не найдены.",
     "found": "Найденные кластеры",
-    "separator": " · ",
     "add_one": "Добавить {{count}} кластер",
     "add_few": "Добавить {{count}} кластера",
     "add_many": "Добавить {{count}} кластеров",
@@ -139,12 +138,17 @@
     "added_few": "Добавлено {{count}} кластера. Они есть в списке кластеров.",
     "added_many": "Добавлено {{count}} кластеров. Они есть в списке кластеров.",
     "added_other": "Добавлено {{count}} кластера. Они есть в списке кластеров.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} не установлен{{scope}}",
-      "notLoggedIn": "В {{cli}} не выполнен вход, или срок входа истек{{scope}}",
-      "pluginMissing": "Плагин входа для {{cli}} не установлен{{scope}}",
-      "failed": "Ошибка {{cli}}{{scope}}"
+      "cliMissing": "{{cli}} не установлен",
+      "notLoggedIn": "В {{cli}} не выполнен вход, или срок входа истек",
+      "pluginMissing": "Плагин входа для {{cli}} не установлен",
+      "failed": "Ошибка {{cli}}"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} не установлен ({{scope}})",
+      "notLoggedIn": "В {{cli}} не выполнен вход, или срок входа истек ({{scope}})",
+      "pluginMissing": "Плагин входа для {{cli}} не установлен ({{scope}})",
+      "failed": "Ошибка {{cli}} ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Установите его и повторите попытку.",

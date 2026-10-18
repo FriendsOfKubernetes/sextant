@@ -104,6 +104,7 @@
 }
 
 .mx-amount__note {
+  margin-inline-start: 0.3em;
   opacity: 0.8;
   font-size: 12px;
 }

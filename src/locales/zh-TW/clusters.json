@@ -130,15 +130,19 @@
     "finding": "正在搜尋…",
     "noClusters": "找不到叢集。",
     "found": "找到的叢集",
-    "separator": " · ",
     "add_other": "新增 {{count}} 個叢集",
     "added_other": "已新增 {{count}} 個叢集，可在叢集清單中找到。",
-    "scope": "（{{scope}}）",
     "problem": {
-      "cliMissing": "尚未安裝 {{cli}}{{scope}}",
-      "notLoggedIn": "{{cli}} 尚未登入，或登入已過期{{scope}}",
-      "pluginMissing": "尚未安裝 {{cli}} 的登入外掛程式{{scope}}",
-      "failed": "{{cli}} 執行失敗{{scope}}"
+      "cliMissing": "尚未安裝 {{cli}}",
+      "notLoggedIn": "{{cli}} 尚未登入，或登入已過期",
+      "pluginMissing": "尚未安裝 {{cli}} 的登入外掛程式",
+      "failed": "{{cli}} 執行失敗"
+    },
+    "problemIn": {
+      "cliMissing": "尚未安裝 {{cli}}（{{scope}}）",
+      "notLoggedIn": "{{cli}} 尚未登入，或登入已過期（{{scope}}）",
+      "pluginMissing": "尚未安裝 {{cli}} 的登入外掛程式（{{scope}}）",
+      "failed": "{{cli}} 執行失敗（{{scope}}）"
     },
     "problemHint": {
       "cliMissing": "請先安裝，然後再試一次。",

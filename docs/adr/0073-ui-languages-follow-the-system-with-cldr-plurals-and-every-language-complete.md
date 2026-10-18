@@ -28,3 +28,7 @@ Every UI string was already an i18next key (`src/locales/en/<namespace>.json`), 
 - **Every new UI string needs all languages in the same change**, or the locales test fails: a feature is not done until its strings exist in every directory of `src/locales/`.
 - Texts grow (German and Russian by a third): buttons and tabs must not depend on English lengths.
 - Native speakers can correct translations through issues and pull requests; the glossary keeps a word the same across namespaces.
+
+## Amendments
+
+- Amended (v0.10.0): only English is in the main bundle; every other language is a chunk of its own, read when it is chosen and, for the start language, before the first render, so there is still no flash of English. A text with two numbers agrees with one of them only (`count`); the other stands where no noun agrees with it ("limit: {{max}}", "of {{total}}"). A case that changes the wording (all namespaces or some, a redirect's target, a cloud problem with or without its account) is a key of its own rather than a fragment glued into a sentence.

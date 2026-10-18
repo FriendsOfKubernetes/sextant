@@ -28,7 +28,7 @@
   "empty": "未找到任何内容",
   "searchAll": "搜索所有类型 ({{count}})",
   "searching": "正在搜索… 已列出 {{done}}/{{total}} 种类型",
-  "limited": "仅搜索前 {{count}} 种类型（共 {{total}} 种）的对象",
+  "limited_other": "仅搜索前 {{count}} 种类型的对象（共 {{total}} 种）",
   "hint": "↑↓ 移动 · Enter 打开 · Tab 操作 · Esc 关闭",
   "hintActions": "↑↓ 移动 · Enter 执行 · Shift+Tab 返回 · Esc 返回"
 }

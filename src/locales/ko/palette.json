@@ -28,7 +28,7 @@
   "empty": "찾은 항목이 없습니다",
   "searchAll": "모든 종류 검색({{count}})",
   "searching": "검색 중… 종류 {{total}}개 중 {{done}}개 조회됨",
-  "limited": "종류 {{total}}개 중 처음 {{count}}개의 개체만 검색합니다",
+  "limited_other": "처음 {{count}}개 종류의 개체만 검색합니다(전체 {{total}}개)",
   "hint": "↑↓ 이동 · Enter 열기 · Tab 작업 · Esc 닫기",
   "hintActions": "↑↓ 이동 · Enter 실행 · Shift+Tab 뒤로 · Esc 뒤로"
 }

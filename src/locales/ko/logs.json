@@ -30,7 +30,7 @@
     "failed": "스트림 실패"
   },
   "lines_other": "{{count}}줄",
-  "dropped_other": "오래된 줄 {{count}}개를 버렸습니다(최신 {{limit}}줄, 최대 {{size}}MiB의 텍스트를 유지함)",
+  "dropped_other": "오래된 줄 {{count}}개를 버렸습니다(최신 내용만 유지함: 줄 제한 {{limit}}, 텍스트 제한 {{size}}MiB)",
   "lineCut": " … [64 KiB에서 줄이 잘림, 다음 줄에 계속]",
   "empty": "아직 로그 줄이 없습니다.",
   "view": "로그 줄",
@@ -59,7 +59,7 @@
     "sources": "Pod 및 컨테이너({{total}}개 중 {{shown}}개)",
     "sourcesLabel": "Pod 및 컨테이너",
     "capHint_other": "로그 스트림은 동시에 최대 {{count}}개까지 실행됩니다. 읽을 항목을 고르려면 Pod나 컨테이너의 선택을 해제하세요.",
-    "capped_other": "컨테이너 {{count}}개가 더 대기 중입니다. 로그 스트림은 동시에 최대 {{max}}개까지 실행됩니다. 읽을 항목을 고르려면 Pod나 컨테이너의 선택을 해제하세요.",
+    "capped_other": "컨테이너 {{count}}개가 더 대기 중입니다. 동시 로그 스트림 제한은 {{max}}개입니다. 읽을 항목을 고르려면 Pod나 컨테이너의 선택을 해제하세요.",
     "noPods": "일치하는 Pod가 없습니다.",
     "json": "JSON 구문 분석",
     "level": "수준",

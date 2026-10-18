@@ -16,16 +16,19 @@
   },
   "onlyFlagged": "Seulement les conteneurs avec des constats",
   "source": {
-    "history": "Utilisation issue de Prometheus (période : {{window}}) : CPU au 95e centile et son pic, mémoire à son pic.",
+    "history": {
+      "day": "Utilisation issue de Prometheus sur le dernier jour : CPU au 95e centile, mémoire à son pic.",
+      "week": "Utilisation issue de Prometheus sur les 7 derniers jours : CPU au 95e centile, mémoire à son pic."
+    },
     "snapshot": "Seules les valeurs actuelles sont disponibles (un instantané issu de {{source}}). Un seul point ne suffit pas pour une recommandation : installez Prometheus pour disposer d'un historique.",
     "snapshotAfterError": "L'historique Prometheus n'a pas pu être lu : seules les valeurs actuelles sont affichées (un instantané). Aucune recommandation.",
     "none": "Aucune métrique n'est disponible : seules les demandes et les limites des spécifications des pods sont vérifiées.",
     "loading": "Lecture de l'utilisation…",
     "metricsServer": "metrics-server",
     "historyFailed": "Impossible de lire l'historique Prometheus",
-    "truncated_one": "Trop de conteneurs correspondent ; seul le premier ({{count}}) dispose d'un historique. Restreignez le filtre des namespaces.",
-    "truncated_many": "Trop de conteneurs correspondent ; seuls les {{count}} premiers disposent d'un historique. Restreignez le filtre des namespaces.",
-    "truncated_other": "Trop de conteneurs correspondent ; seuls les {{count}} premiers disposent d'un historique. Restreignez le filtre des namespaces.",
+    "truncated_one": "Trop de conteneurs correspondent : l'historique n'est lu que pour le premier conteneur ({{count}}). Restreignez le filtre des namespaces.",
+    "truncated_many": "Trop de conteneurs correspondent : l'historique n'est lu que pour les {{count}} premiers conteneurs. Restreignez le filtre des namespaces.",
+    "truncated_other": "Trop de conteneurs correspondent : l'historique n'est lu que pour les {{count}} premiers conteneurs. Restreignez le filtre des namespaces.",
     "coverageUnknown": "Prometheus n'a pas pu indiquer depuis quand il dispose d'échantillons : la durée d'historique sur laquelle reposent les recommandations est donc inconnue."
   },
   "loading": "Chargement des pods…",
@@ -61,7 +64,10 @@
   },
   "confidence": {
     "partialHistory": "Basé sur {{duration}} d'historique",
-    "insufficientHistory": "Historique insuffisant : {{duration}} pour la période « {{window}} », il faut au moins {{minimum}}",
+    "insufficientHistory": {
+      "day": "Historique insuffisant : {{duration}} sur le dernier jour, il faut au moins {{minimum}}",
+      "week": "Historique insuffisant : {{duration}} sur les 7 derniers jours, il faut au moins {{minimum}}"
+    },
     "snapshot": "Instantané",
     "noData": "Aucune donnée d'utilisation",
     "unknownHistory": "Historique de durée inconnue"
@@ -95,18 +101,23 @@
     "noMemoryRequest": "Le scheduler ne réserve aucune mémoire ; le pod fait partie des premiers évincés en cas de pression mémoire.",
     "noCpuLimit": "Le conteneur peut utiliser tout le CPU inactif du nœud. C'est souvent voulu.",
     "noMemoryLimit": "Le conteneur peut prendre de la mémoire à ses voisins sur le nœud.",
-    "cpuOverProvisioned": "La demande de CPU représente au moins {{factor}} fois ce dont l'utilisation a besoin.",
-    "memoryOverProvisioned": "La demande de mémoire représente au moins {{factor}} fois ce dont l'utilisation a besoin.",
+    "cpuOverProvisioned_one": "La demande de CPU représente au moins {{count}} fois ce dont l'utilisation a besoin.",
+    "cpuOverProvisioned_many": "La demande de CPU représente au moins {{count}} fois ce dont l'utilisation a besoin.",
+    "cpuOverProvisioned_other": "La demande de CPU représente au moins {{count}} fois ce dont l'utilisation a besoin.",
+    "memoryOverProvisioned_one": "La demande de mémoire représente au moins {{count}} fois ce dont l'utilisation a besoin.",
+    "memoryOverProvisioned_many": "La demande de mémoire représente au moins {{count}} fois ce dont l'utilisation a besoin.",
+    "memoryOverProvisioned_other": "La demande de mémoire représente au moins {{count}} fois ce dont l'utilisation a besoin.",
     "cpuUnderRequested": "L'utilisation dépasse la demande la plupart du temps.",
     "memoryUnderRequested": "Le pic de mémoire dépasse la demande : le pod peut être évincé en cas de pression mémoire.",
     "memoryNearLimit": "La mémoire a atteint au moins {{share}} de la limite.",
-    "oomKilled": "Le conteneur a été tué faute de mémoire il y a moins de {{period}} ; le pic réel dépasse la limite.",
+    "oomKilled_one": "Le conteneur a été tué faute de mémoire il y a moins de {{count}} jour ; le pic réel dépasse la limite.",
+    "oomKilled_many": "Le conteneur a été tué faute de mémoire il y a moins de {{count}} jours ; le pic réel dépasse la limite.",
+    "oomKilled_other": "Le conteneur a été tué faute de mémoire il y a moins de {{count}} jours ; le pic réel dépasse la limite.",
     "cpuThrottled": "{{percent}} des périodes CPU ont été bridées."
   },
   "copy": "Copier le YAML des ressources",
   "copied": "Copié",
   "copyFailed": "Impossible de copier",
-  "separator": " · ",
   "chooseNamespace": "Choisissez un namespace",
   "chooseNamespaceText": "Le dimensionnement lit l'historique de chaque conteneur affiché : il porte donc sur les namespaces choisis dans le filtre des namespaces. Choisissez-en un ou quelques-uns.",
   "firstNamespaces_one": "Seul le premier namespace ({{count}}) du filtre est affiché.",

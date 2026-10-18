@@ -81,14 +81,21 @@
     "clustersNote": "Ein Name umfasst jeden Cluster-Context dieses Namens aus jeder kubeconfig-Quelle.",
     "access": "Zugriff",
     "none": "Kein Zugriff auf die Daten irgendeines Clusters.",
-    "rule": "{{actions}}: {{kinds}} {{namespaces}}",
-    "allKinds": "alle Arten",
-    "namespacesAll": "in allen Namespaces",
-    "namespacesOnly_one": "im Namespace {{names}}",
-    "namespacesOnly_other": "in den Namespaces {{names}}",
+    "rule": {
+      "allKinds": "Alle Arten in allen Namespaces: {{actions}}",
+      "allKindsIn_one": "Alle Arten im Namespace {{names}}: {{actions}}",
+      "allKindsIn_other": "Alle Arten in den Namespaces {{names}}: {{actions}}",
+      "kinds": "{{kinds}} in allen Namespaces: {{actions}}",
+      "kindsIn_one": "{{kinds}} im Namespace {{names}}: {{actions}}",
+      "kindsIn_other": "{{kinds}} in den Namespaces {{names}}: {{actions}}"
+    },
     "asks": "Fragt vor dem Ausführen",
     "noAsk": "Läuft ohne Nachfrage",
-    "secretValues": "Kann Secret-Werte {{namespaces}} lesen",
+    "secretValues": {
+      "all": "Kann Secret-Werte in allen Namespaces lesen",
+      "in_one": "Kann Secret-Werte im Namespace {{names}} lesen",
+      "in_other": "Kann Secret-Werte in den Namespaces {{names}} lesen"
+    },
     "clusterWide": "Objekte, die zu keinem Namespace gehören (etwa Nodes), werden nur von Regeln für alle Namespaces abgedeckt.",
     "actionNames": {
       "read": "Lesen",
@@ -96,8 +103,7 @@
       "delete": "Löschen",
       "logs": "Logs lesen",
       "exec": "Befehle ausführen",
-      "portForward": "Ports weiterleiten",
-      "secretValues": "Secret-Werte lesen"
+      "portForward": "Ports weiterleiten"
     }
   },
   "state": {
@@ -122,7 +128,14 @@
     "pausedHint": "Diese Erweiterung verlangt mehr, als Sie erlaubt haben. Sie ist angehalten, bis Sie ihre Berechtigungen prüfen.",
     "failedHint": "Diese Erweiterung kann nicht ausgeführt werden: {{error}}",
     "actionFailed": "Die Änderung konnte nicht vorgenommen werden",
-    "namedAction": "{{name}}: {{action}}"
+    "named": {
+      "enable": "{{name}} aktivieren",
+      "disable": "{{name}} deaktivieren",
+      "permissions": "Berechtigungen von {{name}}",
+      "reload": "{{name}} neu laden",
+      "activity": "Aktivität von {{name}}",
+      "remove": "{{name}} entfernen"
+    }
   },
   "reinstall": {
     "file": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut aus der Datei {{name}} („Aus Datei installieren…“).",

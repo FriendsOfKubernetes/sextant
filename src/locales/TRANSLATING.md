@@ -63,7 +63,8 @@ A key that is missing at run time still shows the English text (`fallbackLng`), 
 - The short ages in `common:age.*` (`{{count}}s` → `{{count}} с` / `{{count}}秒`), keeping them short: they sit in
   narrow table columns.
 - `common:list.separator`: what joins names in a list (`", "` in English; `"、"` in Chinese and Japanese;
-  `", "` in Korean and the European languages).
+  `", "` in Korean and the European languages). `common:list.dot` separates parts of one line
+  (`"eu-west-1 · 1.31 · ACTIVE"`, `" · "` in English).
 
 **Plural forms**
 
@@ -85,8 +86,15 @@ form. A key without `_one`/`_other` in English stays one key in every language, 
 **Sentences**
 
 - Each key is a whole sentence or a whole label; the code never glues keys together into one sentence, so word order
-  is yours. If a text cannot be translated well because of how it is split, open an issue instead of working around
-  it.
+  is yours. When the wording depends on a case (all namespaces or some of them, a cloud problem with or without its
+  account), each case is a key of its own. If a text cannot be translated well because of how it is split, open an
+  issue instead of working around it.
+- A plural key agrees with `{{count}}` only. Another number in the same text (`{{max}}`, `{{total}}`, `{{problems}}`)
+  stands where nothing has to agree with it — after a colon, in "of {{total}}", in parentheses ("{{problems}} in
+  total"); keep it there.
+- A placeholder that holds a list of labels (`{{actions}}`: "read, modify") is already joined with
+  `common:list.separator`; its items are written as in the middle of a sentence (lowercase where the language
+  allows), so put it where such a list reads well (after a colon).
 - Dates, times and numbers come already formatted for the language (`Intl`), so do not write formats into texts.
 
 **Tone and length**

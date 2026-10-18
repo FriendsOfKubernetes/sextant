@@ -19,6 +19,7 @@ import {
   type CloudSearch,
 } from "../../api";
 import { Button, Checkbox, ErrorState, Radio } from "../../components";
+import { dotSeparator } from "../../i18n";
 // Not "../terminal": that feature imports the clusters store, and its index registers actions.
 import { openCommandTerminalTab } from "../terminal/tabs";
 import { refreshClusters } from "./clustersStore";
@@ -75,11 +76,12 @@ function CommandLine({ command, onTerminalOpened }: { command: string; onTermina
 export function CloudProblemView({ problem, onTerminalOpened }: { problem: CloudProblem; onTerminalOpened?: () => void }) {
   const { t } = useTranslation();
   const cli = t(`clusters:cloud.cli.${problem.provider}`);
-  const scope = problem.scope ? t("clusters:cloud.scope", { scope: problem.scope }) : "";
   return (
     <div className="cloud-problem" role="note" data-kind={problem.kind}>
       <p className="cloud-problem__title">
-        {t(`clusters:cloud.problem.${problem.kind}`, { cli, scope })}
+        {problem.scope
+          ? t(`clusters:cloud.problemIn.${problem.kind}`, { cli, scope: problem.scope })
+          : t(`clusters:cloud.problem.${problem.kind}`, { cli })}
       </p>
       {problem.command && (
         <>
@@ -343,7 +345,7 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
               <ul className="cloud-clusters" aria-label={t("clusters:cloud.found")}>
                 {search.clusters.map((cluster) => {
                   const key = clusterKey(cluster);
-                  const details = [cluster.location, cluster.version, cluster.status].filter(Boolean).join(t("clusters:cloud.separator"));
+                  const details = [cluster.location, cluster.version, cluster.status].filter(Boolean).join(dotSeparator());
                   return (
                     <li key={key} className="cloud-clusters__item">
                       <label className="cloud-clusters__label">

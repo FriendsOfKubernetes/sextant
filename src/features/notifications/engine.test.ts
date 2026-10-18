@@ -153,7 +153,7 @@ describe("notifications", () => {
     engine.observe(source(problems([crashing("b"), crashing("c"), crashing("d")]), "c2|/v1/Pod|", "c2"));
     flush();
     expect(shown).toHaveLength(1);
-    expect(shown[0]!.title).toBe("4 new problems in 2 clusters");
+    expect(shown[0]!.title).toBe("New problems in 2 clusters (4 in total)");
     expect(shown[0]!.extra).toEqual({ clusterId: "c2", object: null });
   });
 

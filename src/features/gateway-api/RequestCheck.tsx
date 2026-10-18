@@ -7,13 +7,13 @@
 // while the app runs (`checkState.ts`).
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { listSeparator } from "../../i18n";
+import { dotSeparator, listSeparator } from "../../i18n";
 import type { ClusterId } from "../../api";
 import { Button, Checkbox, EmptyState, Icon, Tabs } from "../../components";
 import { registerPage, type PageProps } from "../../layout/pages";
 import { StatusText } from "../../resources";
 import { useCheckData, type CheckData } from "./checkData";
-import { CopyGrantButton, gatewayRef, LoadingLine, MATCH_SEPARATOR, phrasesText, refLink, useGrantApiVersion } from "./details";
+import { CopyGrantButton, gatewayRef, LoadingLine, phrasesText, refLink, useGrantApiVersion } from "./details";
 import { HostnameMap } from "./HostnameMap";
 import {
   explainRequest,
@@ -204,9 +204,9 @@ function GatewayStep({ result }: { result: RequestExplanation }) {
       <div className="gw-step__main">
         {gatewayLink(gateway)}
         <span className="dt-muted">
-          {MATCH_SEPARATOR}
+          {dotSeparator()}
           {t("gateway:check.listener", { name: listener.name, port: listener.port ?? "", protocol: listener.protocol })}
-          {listener.hostname ? `${MATCH_SEPARATOR}${listener.hostname}` : ""}
+          {listener.hostname ? `${dotSeparator()}${listener.hostname}` : ""}
         </span>
       </div>
       <Why>
@@ -240,11 +240,11 @@ function RouteStep({ result }: { result: RequestExplanation }) {
         <span className="dt-muted">{`${route.kind} `}</span>
         {routeLink(route)}
         <span className="dt-muted">
-          {MATCH_SEPARATOR}
+          {dotSeparator()}
           {ruleLabel(t, rule.index, rule.name)}
         </span>
       </div>
-      <div className="gw-step__match">{phrasesText(rule.phrases, t, MATCH_SEPARATOR)}</div>
+      <div className="gw-step__match">{phrasesText(rule.phrases, t, dotSeparator())}</div>
       <Why>
         {route.hostname
           ? t("gateway:check.why.routeHostname", { hostname: route.hostname, host: request.host })
@@ -408,7 +408,7 @@ function CandidateSubject({ c }: { c: Candidate }) {
     <>
       <span className="dt-muted">{`${c.route.kind} `}</span>
       {routeLink(c.route)}
-      {where.length > 0 && <span>{`${MATCH_SEPARATOR}${where.join(MATCH_SEPARATOR)}`}</span>}
+      {where.length > 0 && <span>{`${dotSeparator()}${where.join(dotSeparator())}`}</span>}
       <span className="dt-muted">
         {` ${t("gateway:check.candidateOn", { gateway: fullName(c.gateway), listener: c.listener ?? "" })}`}
       </span>

@@ -9,12 +9,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
+import { dotSeparator } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { kindKey, ObjectLink, StatusText, useClusterKinds } from "../../resources";
 import type { Tone } from "../../resources/status";
 import { Block } from "../details";
 import { HEALTH_TONE, policyStatusText } from "./columns";
-import { breakable, healthText, MATCH_SEPARATOR, nameFrom, phraseText, refLink, rowClass, SimpleTable } from "./details";
+import { breakable, healthText, nameFrom, phraseText, refLink, rowClass, SimpleTable } from "./details";
 import {
   ingressExposures,
   listenersUsingSecret,
@@ -70,7 +71,7 @@ function Addresses({ targets }: { targets: readonly ExposureTarget[] }) {
           <span key={`${i}:${target.url}`} className="gw-address">
             <span className="gw-address__url">{breakable(target.url)}</span>
             {extra.map((part, j) => (
-              <span key={j} className="gw-address__extra">{`${MATCH_SEPARATOR}${part}`}</span>
+              <span key={j} className="gw-address__extra">{`${dotSeparator()}${part}`}</span>
             ))}
           </span>
         );

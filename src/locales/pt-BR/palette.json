@@ -28,7 +28,9 @@
   "empty": "Nada encontrado",
   "searchAll": "Pesquisar todos os tipos ({{count}})",
   "searching": "Pesquisando… {{done}} de {{total}} tipos listados",
-  "limited": "São pesquisados os objetos dos primeiros {{count}} de {{total}} tipos",
+  "limited_one": "Só são pesquisados os objetos do primeiro tipo ({{count}} de {{total}})",
+  "limited_many": "Só são pesquisados os objetos dos primeiros {{count}} tipos (de {{total}})",
+  "limited_other": "Só são pesquisados os objetos dos primeiros {{count}} tipos (de {{total}})",
   "hint": "↑↓ mover · Enter abrir · Tab ações · Esc fechar",
   "hintActions": "↑↓ mover · Enter executar · Shift+Tab voltar · Esc voltar"
 }

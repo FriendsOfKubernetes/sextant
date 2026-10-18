@@ -13,15 +13,29 @@ export function readsSecretValues(permissions: ExtensionPermissions): boolean {
   return permissions.rules.some((rule) => rule.actions.includes("secretValues"));
 }
 
-function kindsText(rule: AccessRule, t: TFunction): string {
-  if (rule.kinds.type === "all") return t("extensions:permissions.allKinds");
-  return rule.kinds.kinds.map((k) => (k.group ? `${k.kind} (${k.group})` : k.kind)).join(", ");
+/**
+ * What one rule allows as one sentence: the actions (a list of labels), then the kinds and the namespaces. Each
+ * combination of "all" and "only" has its own text, so a translation puts the words in its own order and case.
+ */
+function ruleText(rule: AccessRule, actions: string, t: TFunction): string {
+  const all = rule.kinds.type === "all";
+  const kinds =
+    rule.kinds.type === "all" ? undefined : formatList(rule.kinds.kinds.map((k) => (k.group ? `${k.kind} (${k.group})` : k.kind)));
+  if (rule.namespaces.type === "all") {
+    return all
+      ? t("extensions:permissions.rule.allKinds", { actions })
+      : t("extensions:permissions.rule.kinds", { actions, kinds });
+  }
+  const names = rule.namespaces.namespaces;
+  const scope = { actions, kinds, count: names.length, names: formatList(names) };
+  return all ? t("extensions:permissions.rule.allKindsIn", scope) : t("extensions:permissions.rule.kindsIn", scope);
 }
 
-function namespacesText(rule: AccessRule, t: TFunction): string {
-  if (rule.namespaces.type === "all") return t("extensions:permissions.namespacesAll");
+/** "Can read the values of Secrets in …" for a rule that grants them. */
+function secretValuesText(rule: AccessRule, t: TFunction): string {
+  if (rule.namespaces.type === "all") return t("extensions:permissions.secretValues.all");
   const names = rule.namespaces.namespaces;
-  return t("extensions:permissions.namespacesOnly", { count: names.length, names: formatList(names) });
+  return t("extensions:permissions.secretValues.in", { count: names.length, names: formatList(names) });
 }
 
 export function PermissionsView({ permissions }: { permissions: ExtensionPermissions }) {
@@ -48,25 +62,20 @@ export function PermissionsView({ permissions }: { permissions: ExtensionPermiss
           {rules.map((rule, index) => {
             const secret = rule.actions.includes("secretValues");
             const changes = rule.actions.some((a) => CHANGING.has(a));
-            const actions = rule.actions
-              .filter((a) => a !== "secretValues")
-              .map((a) => t(`extensions:permissions.actionNames.${a}`))
-              .join(", ");
+            const actions = formatList(
+              rule.actions.filter((a) => a !== "secretValues").map((a) => t(`extensions:permissions.actionNames.${a}`)),
+            );
             return (
               <li key={index} className="ext-perms__rule" data-secret={secret || undefined}>
                 {actions && (
                   <span className="ext-perms__text">
-                    {t("extensions:permissions.rule", {
-                      actions,
-                      kinds: kindsText(rule, t),
-                      namespaces: namespacesText(rule, t),
-                    })}
+                    {ruleText(rule, actions, t)}
                   </span>
                 )}
                 {secret && (
                   <span className="ext-perms__secret">
                     <Icon name="warning" />
-                    {t("extensions:permissions.secretValues", { namespaces: namespacesText(rule, t) })}
+                    {secretValuesText(rule, t)}
                   </span>
                 )}
                 {changes && (
@@ -105,7 +114,7 @@ export function ContributionsView({ contributes }: { contributes: Contributions 
       {lines.map((line) => (
         <li key={line.kind}>
           <span className="ext-contributes__kind">{t(`extensions:contributes.${line.kind}`)}</span>
-          <span>{line.titles.join(", ")}</span>
+          <span>{formatList(line.titles)}</span>
         </li>
       ))}
     </ul>

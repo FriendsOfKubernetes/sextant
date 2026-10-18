@@ -141,7 +141,7 @@ describe("Right-sizing page", () => {
     expect(wb.specs.get(id)!.namespaces).toEqual(["shop", "tools"]);
     emitSnapshot(wb, id, PODS);
 
-    await screen.findByText(/Usage from Prometheus over Last 7 days/);
+    await screen.findByText(/Usage from Prometheus over the last 7 days/);
     await waitFor(() => expect(screen.getByRole("button", { name: /Deployment.*web/ })).toBeTruthy());
     expect(calls("metrics_usage_history")[0]!.args).toEqual({
       clusterId: "c1",
@@ -161,7 +161,7 @@ describe("Right-sizing page", () => {
 
     // The debug pod has an hour of history: no recommendation, and it says why.
     const debug = rowOf("debug");
-    expect(within(debug).getByText(/Not enough history: 1 hour of Last 7 days/)).toBeTruthy();
+    expect(within(debug).getByText(/Not enough history: 1 hour of the last 7 days/)).toBeTruthy();
     expect((within(debug).getByRole("button", { name: "Copy resources YAML" }) as HTMLButtonElement).disabled).toBe(true);
 
     // Namespaces by wasted CPU: shop (2 × 880m) before tools.

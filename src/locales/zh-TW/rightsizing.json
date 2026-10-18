@@ -16,14 +16,17 @@
   },
   "onlyFlagged": "僅顯示有發現的容器",
   "source": {
-    "history": "來自 Prometheus 的{{window}}使用量：CPU 取第 95 百分位數與峰值，記憶體取峰值。",
+    "history": {
+      "day": "來自 Prometheus 的過去一天使用量：CPU 取第 95 百分位數，記憶體取峰值。",
+      "week": "來自 Prometheus 的過去 7 天使用量：CPU 取第 95 百分位數，記憶體取峰值。"
+    },
     "snapshot": "只有目前的值可用（來自 {{source}} 的快照）。單一資料點不足以提供建議：請安裝 Prometheus 以取得歷史資料。",
     "snapshotAfterError": "無法讀取 Prometheus 歷史資料，因此只顯示目前的值（快照）。不提供建議。",
     "none": "沒有可用的指標：只檢查 Pod 規格中的要求與限制。",
     "loading": "正在讀取使用量…",
     "metricsServer": "metrics-server",
     "historyFailed": "無法讀取 Prometheus 歷史資料",
-    "truncated_other": "相符的容器過多；只有前 {{count}} 個有歷史資料。請縮小 Namespace 篩選範圍。",
+    "truncated_other": "相符的容器過多：只讀取前 {{count}} 個容器的歷史資料。請縮小 Namespace 篩選範圍。",
     "coverageUnknown": "Prometheus 無法說明其樣本從何時開始，因此建議所依據的歷史資料長度不明。"
   },
   "loading": "正在載入 Pod…",
@@ -55,7 +58,10 @@
   },
   "confidence": {
     "partialHistory": "依據 {{duration}}的歷史資料",
-    "insufficientHistory": "歷史資料不足：{{window}}中只有 {{duration}}，至少需要 {{minimum}}",
+    "insufficientHistory": {
+      "day": "歷史資料不足：過去一天中只有 {{duration}}，至少需要 {{minimum}}",
+      "week": "歷史資料不足：過去 7 天中只有 {{duration}}，至少需要 {{minimum}}"
+    },
     "snapshot": "快照",
     "noData": "沒有使用量資料",
     "unknownHistory": "歷史資料長度不明"
@@ -83,18 +89,17 @@
     "noMemoryRequest": "排程器不會保留記憶體；在記憶體壓力下，此 Pod 會是最先被驅逐的之一。",
     "noCpuLimit": "此容器可以使用節點上任何閒置的 CPU。這通常是刻意的設定。",
     "noMemoryLimit": "此容器可能會占用節點上相鄰容器的記憶體。",
-    "cpuOverProvisioned": "CPU 要求至少是實際使用所需的 {{factor}} 倍。",
-    "memoryOverProvisioned": "記憶體要求至少是實際使用所需的 {{factor}} 倍。",
+    "cpuOverProvisioned_other": "CPU 要求至少是實際使用所需的 {{count}} 倍。",
+    "memoryOverProvisioned_other": "記憶體要求至少是實際使用所需的 {{count}} 倍。",
     "cpuUnderRequested": "大部分時間裡，使用量都高於要求。",
     "memoryUnderRequested": "記憶體峰值高於要求：在記憶體壓力下此 Pod 可能會被驅逐。",
     "memoryNearLimit": "記憶體使用量至少達到限制的 {{share}}。",
-    "oomKilled": "此容器在過去 {{period}}內因記憶體不足而遭終止；實際峰值高於限制。",
+    "oomKilled_other": "此容器在過去 {{count}} 天內因記憶體不足而遭終止；實際峰值高於限制。",
     "cpuThrottled": "{{percent}} 的 CPU 週期遭到節流。"
   },
   "copy": "複製 resources YAML",
   "copied": "已複製",
   "copyFailed": "無法複製",
-  "separator": " · ",
   "chooseNamespace": "選擇 Namespace",
   "chooseNamespaceText": "資源最佳化會讀取其顯示之每個容器的歷史資料，因此只會作用於在 Namespace 篩選器中選擇的 Namespace。請選擇一個或幾個。",
   "firstNamespaces_other": "只顯示篩選器中的前 {{count}} 個 Namespace。"

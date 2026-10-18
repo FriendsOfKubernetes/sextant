@@ -441,9 +441,9 @@ export interface RouteRule {
   /** Position in `spec.rules` (0-based). */
   index: number;
   name?: string;
-  /** Each match as phrases (shown joined with " · "). A rule without matches matches everything. */
+  /** Each match as phrases (shown joined with `common:list.dot`). A rule without matches matches everything. */
   matches: Phrase[][];
-  /** The filters' phrases, in order: "set header x-env=prod", "Redirect to https, same host and path (301)". */
+  /** The filters' phrases, in order: "set header x-env=prod", "Redirect: scheme https (301)". */
   filters: Phrase[];
   /** Backends RequestMirror filters copy requests to (no share of the traffic). */
   mirrors: BackendRef[];
@@ -491,8 +491,10 @@ export function sharesOf(weights: readonly number[]): number[] {
 export interface Phrase {
   key: string;
   params?: Record<string, string | number>;
-  /** Parameters that are phrases themselves, translated first: the "same host and path" of a redirect target. */
+  /** Parameters that are phrases themselves, translated first: the target of a redirect. */
   parts?: Record<string, Phrase>;
+  /** Phrases shown as one list instead of `key` (the language's list separator): the changes of a redirect. */
+  list?: Phrase[];
 }
 
 const phrase = (key: string, params?: Phrase["params"]): Phrase => ({ key: `gateway:text.${key}`, params });
@@ -569,21 +571,12 @@ function mirrorOf(filter: unknown, routeNamespace: string | null): BackendRef | 
   };
 }
 
-/** Phrases joined into one: "a, b, c" (each translated first). */
-function joined(items: readonly Phrase[]): Phrase {
-  const [first, ...rest] = items;
-  if (!first) return phrase("value", { value: "" });
-  if (rest.length === 0) return first;
-  return { key: "gateway:text.joined", parts: { first, rest: joined(rest) } };
-}
-
-const SAME_KEYS = ["sameOne", "sameTwo", "sameThree"] as const;
-
 /**
- * A RequestRedirect as one phrase: what the filter changes with its real values, what it keeps in words —
- * "Redirect to https, same host and path (301)", "Redirect to https://new.example.com:8443/path (302)". With a
+ * A RequestRedirect as one label: "Redirect: {{target}} ({{code}})", the target being what the filter changes, with
+ * its real values — "Redirect: scheme https (301)", "Redirect: https://new.example.com:8443/path (302)". With a
  * hostname the changed parts read as one URL; the port is shown only when set (otherwise it follows the scheme or
- * the listener). The request check, where the request is known, shows the computed Location instead.
+ * the listener). What the filter does not set stays as in the request. The request check, where the request is
+ * known, shows the computed Location instead.
  */
 function redirectPhrase(r: unknown): Phrase {
   const scheme = str(get(r, "scheme"));
@@ -598,21 +591,13 @@ function redirectPhrase(r: unknown): Phrase {
     const url = `${scheme ? `${scheme}://` : ""}${host}${port !== undefined ? `:${port}` : ""}${full ?? ""}`;
     changed.push(phrase("value", { value: url }));
   } else {
-    if (scheme) changed.push(phrase("value", { value: scheme }));
+    if (scheme) changed.push(phrase("redirectScheme", { value: scheme }));
     if (port !== undefined) changed.push(phrase("redirectPort", { port }));
     if (full !== undefined) changed.push(phrase("redirectPath", { value: full }));
   }
   if (prefix !== undefined) changed.push(phrase("redirectPrefix", { value: prefix }));
-  const kept = [
-    ...(scheme ? [] : [phrase("partScheme")]),
-    ...(host ? [] : [phrase("partHost")]),
-    ...(full !== undefined || prefix !== undefined ? [] : [phrase("partPath")]),
-  ];
   if (changed.length === 0) return phrase("redirectSame", { code });
-  const parts = [...changed];
-  const sameKey = SAME_KEYS[kept.length - 1];
-  if (sameKey) parts.push({ key: `gateway:text.${sameKey}`, parts: Object.fromEntries(kept.map((p, i) => [`p${i}`, p])) });
-  return { key: "gateway:text.redirect", params: { code }, parts: { target: joined(parts) } };
+  return { key: "gateway:text.redirect", params: { code }, parts: { target: { key: "gateway:text.value", list: changed } } };
 }
 
 /**

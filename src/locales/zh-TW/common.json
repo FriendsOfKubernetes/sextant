@@ -48,6 +48,7 @@
     "details": "詳細資料：{{message}}"
   },
   "list": {
-    "separator": "、"
+    "separator": "、",
+    "dot": " · "
   }
 }

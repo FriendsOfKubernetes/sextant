@@ -81,23 +81,29 @@
     "clustersNote": "A name covers every cluster context with that name, from every kubeconfig source.",
     "access": "Access",
     "none": "No access to the data of any cluster.",
-    "rule": "{{actions}} {{kinds}} {{namespaces}}",
-    "allKinds": "all kinds",
-    "namespacesAll": "in all namespaces",
-    "namespacesOnly_one": "in the namespace {{names}}",
-    "namespacesOnly_other": "in the namespaces {{names}}",
+    "rule": {
+      "allKinds": "All kinds in all namespaces: {{actions}}",
+      "allKindsIn_one": "All kinds in the namespace {{names}}: {{actions}}",
+      "allKindsIn_other": "All kinds in the namespaces {{names}}: {{actions}}",
+      "kinds": "{{kinds}} in all namespaces: {{actions}}",
+      "kindsIn_one": "{{kinds}} in the namespace {{names}}: {{actions}}",
+      "kindsIn_other": "{{kinds}} in the namespaces {{names}}: {{actions}}"
+    },
     "asks": "Asks before running",
     "noAsk": "Runs without asking",
-    "secretValues": "Can read the values of Secrets {{namespaces}}",
+    "secretValues": {
+      "all": "Can read the values of Secrets in all namespaces",
+      "in_one": "Can read the values of Secrets in the namespace {{names}}",
+      "in_other": "Can read the values of Secrets in the namespaces {{names}}"
+    },
     "clusterWide": "Objects that belong to no namespace (such as Nodes) are covered only by rules for all namespaces.",
     "actionNames": {
-      "read": "Read",
-      "modify": "Modify",
-      "delete": "Delete",
-      "logs": "Read the logs of",
-      "exec": "Run commands in",
-      "portForward": "Forward ports of",
-      "secretValues": "Read the Secret values of"
+      "read": "read",
+      "modify": "modify",
+      "delete": "delete",
+      "logs": "read logs",
+      "exec": "run commands",
+      "portForward": "forward ports"
     }
   },
   "state": {
@@ -122,7 +128,14 @@
     "pausedHint": "This extension asks for more than you allowed. It is paused until you review its permissions.",
     "failedHint": "This extension cannot run: {{error}}",
     "actionFailed": "The change could not be made",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "Enable {{name}}",
+      "disable": "Disable {{name}}",
+      "permissions": "Permissions of {{name}}",
+      "reload": "Reload {{name}}",
+      "activity": "Activity of {{name}}",
+      "remove": "Remove {{name}}"
+    }
   },
   "reinstall": {
     "file": "To review its permissions, install it again from the file {{name}} (Install from file…).",

@@ -16,16 +16,19 @@
   },
   "onlyFlagged": "Solo container con rilievi",
   "source": {
-    "history": "Utilizzo da Prometheus (periodo: {{window}}): CPU al 95° percentile e relativo picco, memoria al picco.",
+    "history": {
+      "day": "Utilizzo da Prometheus nell'ultimo giorno: CPU al 95° percentile, memoria al picco.",
+      "week": "Utilizzo da Prometheus negli ultimi 7 giorni: CPU al 95° percentile, memoria al picco."
+    },
     "snapshot": "Sono disponibili solo i valori attuali (un'istantanea da {{source}}). Un solo punto non basta per una raccomandazione: installa Prometheus per avere una cronologia.",
     "snapshotAfterError": "Impossibile leggere la cronologia di Prometheus, quindi vengono mostrati solo i valori attuali (un'istantanea). Nessuna raccomandazione.",
     "none": "Nessuna metrica disponibile: vengono controllati solo richieste e limiti delle specifiche dei pod.",
     "loading": "Lettura dell'utilizzo…",
     "metricsServer": "metrics-server",
     "historyFailed": "Impossibile leggere la cronologia di Prometheus",
-    "truncated_one": "Troppi container corrispondenti; solo il primo ({{count}}) ha una cronologia. Restringi il filtro dei namespace.",
-    "truncated_many": "Troppi container corrispondenti; solo i primi {{count}} hanno una cronologia. Restringi il filtro dei namespace.",
-    "truncated_other": "Troppi container corrispondenti; solo i primi {{count}} hanno una cronologia. Restringi il filtro dei namespace.",
+    "truncated_one": "Troppi container corrispondenti: la cronologia viene letta solo per il primo container ({{count}}). Restringi il filtro dei namespace.",
+    "truncated_many": "Troppi container corrispondenti: la cronologia viene letta solo per i primi {{count}} container. Restringi il filtro dei namespace.",
+    "truncated_other": "Troppi container corrispondenti: la cronologia viene letta solo per i primi {{count}} container. Restringi il filtro dei namespace.",
     "coverageUnknown": "Prometheus non ha potuto indicare da quando dispone di campioni, quindi non si sa su quanta cronologia si basino le raccomandazioni."
   },
   "loading": "Caricamento dei pod…",
@@ -61,7 +64,10 @@
   },
   "confidence": {
     "partialHistory": "Basato su {{duration}} di cronologia",
-    "insufficientHistory": "Cronologia insufficiente: {{duration}} per il periodo “{{window}}”, ne servono almeno {{minimum}}",
+    "insufficientHistory": {
+      "day": "Cronologia insufficiente: {{duration}} dell'ultimo giorno, ne servono almeno {{minimum}}",
+      "week": "Cronologia insufficiente: {{duration}} degli ultimi 7 giorni, ne servono almeno {{minimum}}"
+    },
     "snapshot": "Istantanea",
     "noData": "Nessun dato di utilizzo",
     "unknownHistory": "Cronologia di durata sconosciuta"
@@ -95,18 +101,23 @@
     "noMemoryRequest": "Lo scheduler non riserva memoria; il pod è tra i primi a essere espulsi in caso di carenza di memoria.",
     "noCpuLimit": "Il container può usare tutta la CPU inattiva del nodo. Spesso è voluto.",
     "noMemoryLimit": "Il container può sottrarre memoria agli altri container del nodo.",
-    "cpuOverProvisioned": "La richiesta di CPU è almeno {{factor}} volte quanto serve all'utilizzo.",
-    "memoryOverProvisioned": "La richiesta di memoria è almeno {{factor}} volte quanto serve all'utilizzo.",
+    "cpuOverProvisioned_one": "La richiesta di CPU è almeno {{count}} volta quanto serve all'utilizzo.",
+    "cpuOverProvisioned_many": "La richiesta di CPU è almeno {{count}} volte quanto serve all'utilizzo.",
+    "cpuOverProvisioned_other": "La richiesta di CPU è almeno {{count}} volte quanto serve all'utilizzo.",
+    "memoryOverProvisioned_one": "La richiesta di memoria è almeno {{count}} volta quanto serve all'utilizzo.",
+    "memoryOverProvisioned_many": "La richiesta di memoria è almeno {{count}} volte quanto serve all'utilizzo.",
+    "memoryOverProvisioned_other": "La richiesta di memoria è almeno {{count}} volte quanto serve all'utilizzo.",
     "cpuUnderRequested": "L'utilizzo supera la richiesta per la maggior parte del tempo.",
     "memoryUnderRequested": "Il picco di memoria supera la richiesta: il pod può essere espulso in caso di carenza di memoria.",
     "memoryNearLimit": "La memoria ha raggiunto almeno {{share}} del limite.",
-    "oomKilled": "Il container è stato terminato per memoria esaurita meno di {{period}} fa; il picco reale è superiore al limite.",
+    "oomKilled_one": "Il container è stato terminato per memoria esaurita meno di {{count}} giorno fa; il picco reale è superiore al limite.",
+    "oomKilled_many": "Il container è stato terminato per memoria esaurita meno di {{count}} giorni fa; il picco reale è superiore al limite.",
+    "oomKilled_other": "Il container è stato terminato per memoria esaurita meno di {{count}} giorni fa; il picco reale è superiore al limite.",
     "cpuThrottled": "{{percent}} dei periodi di CPU sono stati limitati (throttling)."
   },
   "copy": "Copia YAML delle risorse",
   "copied": "Copiato",
   "copyFailed": "Impossibile copiare",
-  "separator": " · ",
   "chooseNamespace": "Scegli un namespace",
   "chooseNamespaceText": "Il dimensionamento legge la cronologia di ogni container mostrato, quindi opera sui namespace scelti nel filtro dei namespace. Scegline uno o alcuni.",
   "firstNamespaces_one": "Viene mostrato solo il primo namespace ({{count}}) del filtro.",

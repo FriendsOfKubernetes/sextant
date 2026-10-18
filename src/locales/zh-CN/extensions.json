@@ -80,13 +80,18 @@
     "clustersNote": "一个名称涵盖所有 kubeconfig 来源中具有该名称的所有集群 context。",
     "access": "访问权限",
     "none": "无权访问任何集群的数据。",
-    "rule": "{{namespaces}}，对 {{kinds}}：{{actions}}",
-    "allKinds": "所有类型",
-    "namespacesAll": "在所有 Namespace 中",
-    "namespacesOnly_other": "在 Namespace {{names}} 中",
+    "rule": {
+      "allKinds": "所有 Namespace 中的所有类型：{{actions}}",
+      "allKindsIn_other": "Namespace {{names}} 中的所有类型：{{actions}}",
+      "kinds": "所有 Namespace 中的 {{kinds}}：{{actions}}",
+      "kindsIn_other": "Namespace {{names}} 中的 {{kinds}}：{{actions}}"
+    },
     "asks": "运行前询问",
     "noAsk": "无需询问即运行",
-    "secretValues": "{{namespaces}}可读取 Secret 的值",
+    "secretValues": {
+      "all": "可读取所有 Namespace 中 Secret 的值",
+      "in_other": "可读取 Namespace {{names}} 中 Secret 的值"
+    },
     "clusterWide": "不属于任何 Namespace 的对象（例如 Node）只能由适用于所有 Namespace 的规则涵盖。",
     "actionNames": {
       "read": "读取",
@@ -94,8 +99,7 @@
       "delete": "删除",
       "logs": "读取日志",
       "exec": "运行命令",
-      "portForward": "转发端口",
-      "secretValues": "读取 Secret 值"
+      "portForward": "转发端口"
     }
   },
   "state": {
@@ -120,7 +124,14 @@
     "pausedHint": "此扩展请求的权限超出了你允许的范围。在你审查其权限之前，它将保持暂停状态。",
     "failedHint": "此扩展无法运行：{{error}}",
     "actionFailed": "无法进行此更改",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "启用 {{name}}",
+      "disable": "停用 {{name}}",
+      "permissions": "{{name}} 的权限",
+      "reload": "重新加载 {{name}}",
+      "activity": "{{name}} 的活动",
+      "remove": "移除 {{name}}"
+    }
   },
   "reinstall": {
     "file": "要审查其权限，请从文件 {{name}} 重新安装（从文件安装…）。",

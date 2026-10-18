@@ -10,7 +10,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject } from "../../api";
 import { Button } from "../../components";
-import { listSeparator } from "../../i18n";
+import { dotSeparator, formatList, listSeparator } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findKind, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
 import type { Tone } from "../../resources/status";
@@ -176,8 +176,9 @@ export function useGrantApiVersion(clusterId: ClusterId): string {
 
 type PhraseT = (key: string, params?: Phrase["params"]) => string;
 
-/** One phrase as text, its `parts` translated first. */
+/** One phrase as text, its `parts` translated first; a `list` phrase is its items joined as a list. */
 export function phraseText(p: Phrase, t: PhraseT): string {
+  if (p.list) return formatList(p.list.map((item) => phraseText(item, t)));
   const parts = Object.entries(p.parts ?? {}).map(([name, part]) => [name, phraseText(part, t)] as const);
   return t(p.key, parts.length > 0 ? { ...p.params, ...Object.fromEntries(parts) } : p.params);
 }
@@ -186,8 +187,6 @@ export function phraseText(p: Phrase, t: PhraseT): string {
 export function phrasesText(phrases: readonly Phrase[], t: PhraseT, separator: string) {
   return phrases.map((p) => phraseText(p, t)).join(separator);
 }
-
-export const MATCH_SEPARATOR = " · ";
 
 const FEEDBACK_MS = 4000;
 
@@ -625,7 +624,7 @@ function RuleView({
     : t("gateway:route.rule", { n: rule.index + 1 });
   const target = rule.backends.length > 0 ? ` → ${backendsText(rule, ns)}` : "";
   const matches =
-    rule.matches.length > 0 ? rule.matches.map((m) => phrasesText(m, t, MATCH_SEPARATOR)) : [t("gateway:route.matchAll")];
+    rule.matches.length > 0 ? rule.matches.map((m) => phrasesText(m, t, dotSeparator())) : [t("gateway:route.matchAll")];
   const lines = matched ? matches.map((m) => `${m}${target}`) : [backendsText(rule, ns)];
   const respondsItself = rule.filterTypes.includes("RequestRedirect");
   const problemText: Record<string, string> = {

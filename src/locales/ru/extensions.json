@@ -83,16 +83,27 @@
     "clustersNote": "Имя охватывает все context кластеров с этим именем из всех источников kubeconfig.",
     "access": "Доступ",
     "none": "Нет доступа к данным ни одного кластера.",
-    "rule": "{{kinds}} {{namespaces}}: {{actions}}",
-    "allKinds": "Все типы ресурсов",
-    "namespacesAll": "во всех namespace",
-    "namespacesOnly_one": "в namespace {{names}}",
-    "namespacesOnly_few": "в namespace {{names}}",
-    "namespacesOnly_many": "в namespace {{names}}",
-    "namespacesOnly_other": "в namespace {{names}}",
+    "rule": {
+      "allKinds": "Все типы ресурсов во всех namespace: {{actions}}",
+      "allKindsIn_one": "Все типы ресурсов в namespace {{names}}: {{actions}}",
+      "allKindsIn_few": "Все типы ресурсов в namespace {{names}}: {{actions}}",
+      "allKindsIn_many": "Все типы ресурсов в namespace {{names}}: {{actions}}",
+      "allKindsIn_other": "Все типы ресурсов в namespace {{names}}: {{actions}}",
+      "kinds": "{{kinds}} во всех namespace: {{actions}}",
+      "kindsIn_one": "{{kinds}} в namespace {{names}}: {{actions}}",
+      "kindsIn_few": "{{kinds}} в namespace {{names}}: {{actions}}",
+      "kindsIn_many": "{{kinds}} в namespace {{names}}: {{actions}}",
+      "kindsIn_other": "{{kinds}} в namespace {{names}}: {{actions}}"
+    },
     "asks": "Спрашивает перед выполнением",
     "noAsk": "Выполняет без вопросов",
-    "secretValues": "Может читать значения Secret {{namespaces}}",
+    "secretValues": {
+      "all": "Может читать значения Secret во всех namespace",
+      "in_one": "Может читать значения Secret в namespace {{names}}",
+      "in_few": "Может читать значения Secret в namespace {{names}}",
+      "in_many": "Может читать значения Secret в namespace {{names}}",
+      "in_other": "Может читать значения Secret в namespace {{names}}"
+    },
     "clusterWide": "Объекты вне namespace (например, Nodes) охватываются только правилами для всех namespace.",
     "actionNames": {
       "read": "чтение",
@@ -100,8 +111,7 @@
       "delete": "удаление",
       "logs": "чтение логов",
       "exec": "выполнение команд",
-      "portForward": "проброс портов",
-      "secretValues": "чтение значений Secret"
+      "portForward": "проброс портов"
     }
   },
   "state": {
@@ -126,7 +136,14 @@
     "pausedHint": "Это расширение запрашивает больше, чем вы разрешили. Оно приостановлено, пока вы не проверите его права.",
     "failedHint": "Это расширение не может работать: {{error}}",
     "actionFailed": "Не удалось внести изменение",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "Включить расширение {{name}}",
+      "disable": "Выключить расширение {{name}}",
+      "permissions": "Права расширения {{name}}",
+      "reload": "Перезагрузить расширение {{name}}",
+      "activity": "Действия расширения {{name}}",
+      "remove": "Удалить расширение {{name}}"
+    }
   },
   "reinstall": {
     "file": "Чтобы проверить его права, установите его заново из файла {{name}} («Установить из файла…»).",

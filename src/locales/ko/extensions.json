@@ -80,13 +80,18 @@
     "clustersNote": "이름은 모든 kubeconfig 소스에서 해당 이름을 가진 모든 클러스터 context에 적용됩니다.",
     "access": "액세스",
     "none": "어떤 클러스터의 데이터에도 액세스할 수 없습니다.",
-    "rule": "{{namespaces}} {{kinds}}: {{actions}}",
-    "allKinds": "모든 종류",
-    "namespacesAll": "모든 namespace의",
-    "namespacesOnly_other": "namespace {{names}}의",
+    "rule": {
+      "allKinds": "모든 namespace의 모든 종류: {{actions}}",
+      "allKindsIn_other": "namespace {{names}}의 모든 종류: {{actions}}",
+      "kinds": "모든 namespace의 {{kinds}}: {{actions}}",
+      "kindsIn_other": "namespace {{names}}의 {{kinds}}: {{actions}}"
+    },
     "asks": "실행 전에 확인",
     "noAsk": "확인 없이 실행",
-    "secretValues": "{{namespaces}} Secret 값을 읽을 수 있음",
+    "secretValues": {
+      "all": "모든 namespace의 Secret 값을 읽을 수 있음",
+      "in_other": "namespace {{names}}의 Secret 값을 읽을 수 있음"
+    },
     "clusterWide": "namespace에 속하지 않는 개체(예: Node)는 모든 namespace에 대한 규칙에만 해당됩니다.",
     "actionNames": {
       "read": "읽기",
@@ -94,8 +99,7 @@
       "delete": "삭제",
       "logs": "로그 읽기",
       "exec": "명령 실행",
-      "portForward": "포트 포워딩",
-      "secretValues": "Secret 값 읽기"
+      "portForward": "포트 포워딩"
     }
   },
   "state": {
@@ -120,7 +124,14 @@
     "pausedHint": "이 확장은 허용한 것보다 많은 권한을 요청합니다. 권한을 검토할 때까지 일시 중지됩니다.",
     "failedHint": "이 확장을 실행할 수 없습니다: {{error}}",
     "actionFailed": "변경할 수 없습니다",
-    "namedAction": "{{name}} {{action}}"
+    "named": {
+      "enable": "{{name}} 사용",
+      "disable": "{{name}} 사용 안 함",
+      "permissions": "{{name}} 권한",
+      "reload": "{{name}} 다시 로드",
+      "activity": "{{name}} 활동",
+      "remove": "{{name}} 제거"
+    }
   },
   "reinstall": {
     "file": "권한을 검토하려면 파일 {{name}}에서 다시 설치하세요(파일에서 설치…).",

@@ -130,17 +130,21 @@
     "finding": "Aranıyor…",
     "noClusters": "Küme bulunamadı.",
     "found": "Bulunan kümeler",
-    "separator": " · ",
     "add_one": "{{count}} küme ekle",
     "add_other": "{{count}} küme ekle",
     "added_one": "{{count}} küme eklendi. Küme listesinde yer alıyor.",
     "added_other": "{{count}} küme eklendi. Küme listesinde yer alıyorlar.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} yüklü değil{{scope}}",
-      "notLoggedIn": "{{cli}} oturumu açık değil veya oturumun süresi doldu{{scope}}",
-      "pluginMissing": "{{cli}} için oturum açma eklentisi yüklü değil{{scope}}",
-      "failed": "{{cli}} başarısız oldu{{scope}}"
+      "cliMissing": "{{cli}} yüklü değil",
+      "notLoggedIn": "{{cli}} oturumu açık değil veya oturumun süresi doldu",
+      "pluginMissing": "{{cli}} için oturum açma eklentisi yüklü değil",
+      "failed": "{{cli}} başarısız oldu"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} yüklü değil ({{scope}})",
+      "notLoggedIn": "{{cli}} oturumu açık değil veya oturumun süresi doldu ({{scope}})",
+      "pluginMissing": "{{cli}} için oturum açma eklentisi yüklü değil ({{scope}})",
+      "failed": "{{cli}} başarısız oldu ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Yükleyin, ardından tekrar deneyin.",

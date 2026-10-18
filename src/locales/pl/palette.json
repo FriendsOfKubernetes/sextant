@@ -28,7 +28,10 @@
   "empty": "Nic nie znaleziono",
   "searchAll": "Szukaj we wszystkich rodzajach ({{count}})",
   "searching": "Wyszukiwanie… wyświetlono {{done}} z {{total}} rodzajów",
-  "limited": "Przeszukiwane są obiekty pierwszych {{count}} z {{total}} rodzajów",
+  "limited_one": "Przeszukiwane są tylko obiekty pierwszego {{count}} rodzaju (z {{total}})",
+  "limited_few": "Przeszukiwane są tylko obiekty pierwszych {{count}} rodzajów (z {{total}})",
+  "limited_many": "Przeszukiwane są tylko obiekty pierwszych {{count}} rodzajów (z {{total}})",
+  "limited_other": "Przeszukiwane są tylko obiekty pierwszych {{count}} rodzaju (z {{total}})",
   "hint": "↑↓ wybór · Enter otwórz · Tab akcje · Esc zamknij",
   "hintActions": "↑↓ wybór · Enter uruchom · Shift+Tab wstecz · Esc wstecz"
 }

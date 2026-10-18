@@ -16,14 +16,17 @@
   },
   "onlyFlagged": "仅显示有发现的容器",
   "source": {
-    "history": "来自 Prometheus 的{{window}}使用量：CPU 取第 95 百分位数及峰值，内存取峰值。",
+    "history": {
+      "day": "来自 Prometheus 的过去一天使用量：CPU 取第 95 百分位数，内存取峰值。",
+      "week": "来自 Prometheus 的过去 7 天使用量：CPU 取第 95 百分位数，内存取峰值。"
+    },
     "snapshot": "仅有当前值可用（来自 {{source}} 的快照）。单个数据点不足以给出建议：请安装 Prometheus 以获取历史数据。",
     "snapshotAfterError": "无法读取 Prometheus 历史数据，因此仅显示当前值（快照）。不提供建议。",
     "none": "没有可用的指标：仅检查 Pod 规约中的请求和限制。",
     "loading": "正在读取使用量…",
     "metricsServer": "metrics-server",
     "historyFailed": "无法读取 Prometheus 历史数据",
-    "truncated_other": "匹配的容器过多；仅前 {{count}} 个有历史数据。请缩小 Namespace 筛选范围。",
+    "truncated_other": "匹配的容器过多：仅读取前 {{count}} 个容器的历史数据。请缩小 Namespace 筛选范围。",
     "coverageUnknown": "Prometheus 无法说明其样本从何时开始，因此建议所依据的历史时长未知。"
   },
   "loading": "正在加载 Pod…",
@@ -55,7 +58,10 @@
   },
   "confidence": {
     "partialHistory": "基于 {{duration}}的历史数据",
-    "insufficientHistory": "历史数据不足：{{window}}中仅有 {{duration}}，至少需要 {{minimum}}",
+    "insufficientHistory": {
+      "day": "历史数据不足：过去一天中仅有 {{duration}}，至少需要 {{minimum}}",
+      "week": "历史数据不足：过去 7 天中仅有 {{duration}}，至少需要 {{minimum}}"
+    },
     "snapshot": "快照",
     "noData": "无使用量数据",
     "unknownHistory": "历史时长未知"
@@ -83,18 +89,17 @@
     "noMemoryRequest": "调度器不会预留内存；在内存压力下，该 Pod 会是最先被驱逐的之一。",
     "noCpuLimit": "该容器可以使用节点上任何空闲的 CPU。这通常是有意为之。",
     "noMemoryLimit": "该容器可能会占用节点上相邻容器的内存。",
-    "cpuOverProvisioned": "CPU 请求至少是实际使用所需的 {{factor}} 倍。",
-    "memoryOverProvisioned": "内存请求至少是实际使用所需的 {{factor}} 倍。",
+    "cpuOverProvisioned_other": "CPU 请求至少是实际使用所需的 {{count}} 倍。",
+    "memoryOverProvisioned_other": "内存请求至少是实际使用所需的 {{count}} 倍。",
     "cpuUnderRequested": "大部分时间里，使用量都高于请求。",
     "memoryUnderRequested": "内存峰值高于请求：在内存压力下该 Pod 可能会被驱逐。",
     "memoryNearLimit": "内存使用至少达到了限制的 {{share}}。",
-    "oomKilled": "该容器在过去 {{period}}内因内存不足被终止；实际峰值高于限制。",
+    "oomKilled_other": "该容器在过去 {{count}} 天内因内存不足被终止；实际峰值高于限制。",
     "cpuThrottled": "{{percent}} 的 CPU 周期被限流。"
   },
   "copy": "复制 resources YAML",
   "copied": "已复制",
   "copyFailed": "无法复制",
-  "separator": " · ",
   "chooseNamespace": "选择 Namespace",
   "chooseNamespaceText": "资源调优会读取其显示的每个容器的历史数据，因此它只作用于在 Namespace 筛选器中选择的 Namespace。请选择一个或几个。",
   "firstNamespaces_other": "仅显示筛选器中的前 {{count}} 个 Namespace。"

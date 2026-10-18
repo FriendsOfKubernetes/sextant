@@ -130,7 +130,6 @@
     "finding": "Wyszukiwanie…",
     "noClusters": "Nie znaleziono klastrów.",
     "found": "Znalezione klastry",
-    "separator": " · ",
     "add_one": "Dodaj {{count}} klaster",
     "add_few": "Dodaj {{count}} klastry",
     "add_many": "Dodaj {{count}} klastrów",
@@ -139,12 +138,17 @@
     "added_few": "Dodano {{count}} klastry. Są na liście klastrów.",
     "added_many": "Dodano {{count}} klastrów. Są na liście klastrów.",
     "added_other": "Dodano {{count}} klastra. Są na liście klastrów.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} nie jest zainstalowany{{scope}}",
-      "notLoggedIn": "{{cli}} nie jest zalogowany lub logowanie wygasło{{scope}}",
-      "pluginMissing": "Wtyczka logowania dla {{cli}} nie jest zainstalowana{{scope}}",
-      "failed": "Błąd {{cli}}{{scope}}"
+      "cliMissing": "{{cli}} nie jest zainstalowany",
+      "notLoggedIn": "{{cli}} nie jest zalogowany lub logowanie wygasło",
+      "pluginMissing": "Wtyczka logowania dla {{cli}} nie jest zainstalowana",
+      "failed": "Błąd {{cli}}"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} nie jest zainstalowany ({{scope}})",
+      "notLoggedIn": "{{cli}} nie jest zalogowany lub logowanie wygasło ({{scope}})",
+      "pluginMissing": "Wtyczka logowania dla {{cli}} nie jest zainstalowana ({{scope}})",
+      "failed": "Błąd {{cli}} ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Zainstaluj go, a następnie spróbuj ponownie.",

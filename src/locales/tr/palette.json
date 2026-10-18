@@ -28,7 +28,8 @@
   "empty": "Hiçbir şey bulunamadı",
   "searchAll": "Tüm türlerde ara ({{count}})",
   "searching": "Aranıyor… {{total}} türden {{done}} tanesi listelendi",
-  "limited": "Yalnızca {{total}} türün ilk {{count}} tanesinin nesnelerinde aranıyor",
+  "limited_one": "Yalnızca ilk {{count}} türün nesnelerinde aranıyor (toplam {{total}})",
+  "limited_other": "Yalnızca ilk {{count}} türün nesnelerinde aranıyor (toplam {{total}})",
   "hint": "↑↓ gezin · Enter aç · Tab eylemler · Esc kapat",
   "hintActions": "↑↓ gezin · Enter çalıştır · Shift+Tab geri · Esc geri"
 }

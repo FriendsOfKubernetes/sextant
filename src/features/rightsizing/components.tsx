@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { HistoryWindow } from "../../api";
 import { useAppStore } from "../../app/store";
 import { Badge, Button, ErrorState, type BadgeTone } from "../../components";
+import { dotSeparator } from "../../i18n";
 import { formatBytes, formatCpu } from "../metrics/format";
 import { OOM_RECENT_MS, rowWaste, workloadObjectRef, type RightsizingRow } from "./group";
 import { MAX_HISTORY_CONTAINERS, type RightsizingSource } from "./hooks";
@@ -50,7 +51,7 @@ export function SourceNote({ source, window }: { source: RightsizingSource; wind
   let text: string;
   if (source.mode === undefined || source.loading) text = t("rightsizing:source.loading");
   else if (source.mode === "history" && source.data.kind === "history")
-    text = t("rightsizing:source.history", { window: t(`rightsizing:window.${window}`) });
+    text = t(`rightsizing:source.history.${window}`);
   else if (source.mode === "snapshot")
     text = source.error
       ? t("rightsizing:source.snapshotAfterError")
@@ -116,13 +117,17 @@ function FlagBadges({ row }: { row: RightsizingRow }) {
   const hints = {
     percent: percentText(i18n.language, row.usage?.kind === "history" ? (row.usage.throttledRatio ?? 0) : 0),
     share: percentText(i18n.language, NEAR_LIMIT_SHARE),
-    factor: new Intl.NumberFormat(i18n.language).format(OVER_PROVISIONED_FACTOR),
-    period: durationText(t, OOM_RECENT_MS / 1000),
+  };
+  // The number a hint's noun agrees with ("2 times", "7 days"): the plural forms of the hint follow it.
+  const counts: Partial<Record<Flag, number>> = {
+    cpuOverProvisioned: OVER_PROVISIONED_FACTOR,
+    memoryOverProvisioned: OVER_PROVISIONED_FACTOR,
+    oomKilled: Math.round(OOM_RECENT_MS / 86_400_000),
   };
   return (
     <span className="rs-flags">
       {row.assessment.flags.map((flag: Flag) => (
-        <span key={flag} title={t(`rightsizing:flagHints.${flag}`, hints)} data-flag={flag}>
+        <span key={flag} title={t(`rightsizing:flagHints.${flag}`, counts[flag] === undefined ? hints : { ...hints, count: counts[flag] })} data-flag={flag}>
           <Badge tone={TONES[FLAG_SEVERITY[flag]]}>{t(`rightsizing:flags.${flag}`)}</Badge>
         </span>
       ))}
@@ -140,9 +145,8 @@ function ConfidenceNote({ row, window }: { row: RightsizingRow; window: HistoryW
     text = t("rightsizing:confidence.partialHistory", { duration: durationText(t, usage.coverageSecs) });
   else if (confidence === "unknownHistory") text = t("rightsizing:confidence.unknownHistory");
   else if (confidence === "insufficientHistory" && usage?.kind === "history" && usage.coverageSecs !== undefined)
-    text = t("rightsizing:confidence.insufficientHistory", {
+    text = t(`rightsizing:confidence.insufficientHistory.${window}`, {
       duration: durationText(t, usage.coverageSecs),
-      window: t(`rightsizing:window.${window}`),
       minimum: durationText(t, MIN_HISTORY_SECS),
     });
   else if (confidence === "snapshot") text = t("rightsizing:confidence.snapshot");
@@ -167,7 +171,7 @@ function Amounts({
 }) {
   const { t } = useTranslation();
   const notSet = t("rightsizing:amounts.notSet");
-  const separator = t("rightsizing:separator");
+  const separator = dotSeparator();
   const spec = [
     t("rightsizing:amounts.request", { value: request === undefined ? notSet : format(request) }),
     t("rightsizing:amounts.limit", { value: limit === undefined ? notSet : format(limit) }),

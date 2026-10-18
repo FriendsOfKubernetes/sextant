@@ -13,9 +13,11 @@ import {
   i18n,
   LANGUAGE_HINT_KEY,
   languagesOf,
+  loadLanguage,
   matchLanguage,
   namespaces,
   resolveLanguage,
+  resources,
   setLanguage,
   startupLanguage,
   SYSTEM_LANGUAGE,
@@ -122,6 +124,31 @@ describe("language choice", () => {
       await i18n.changeLanguage("en");
       i18n.removeResourceBundle("de", "common");
     }
+  });
+});
+
+describe("loading a language", () => {
+  afterEach(() => {
+    setLanguage("en");
+    localStorage.removeItem(LANGUAGE_HINT_KEY);
+  });
+
+  it("knows every language without loading it, and reads one only when it is chosen", async () => {
+    expect(availableLanguages).toEqual(["de", "en", "es", "fr", "it", "ja", "ko", "pl", "pt-BR", "ru", "tr", "uk", "zh-CN", "zh-TW"]);
+    expect(resources.uk).toBeUndefined();
+    setLanguage("uk");
+    // English until the texts arrive, then Ukrainian.
+    await vi.waitFor(() => expect(i18n.language).toBe("uk"));
+    expect(i18n.t("common:actions.close")).toBe("Закрити");
+    expect(document.documentElement.lang).toBe("uk");
+  });
+
+  it("a later choice wins over a slower earlier one", async () => {
+    setLanguage("ko");
+    setLanguage("en");
+    await loadLanguage("ko");
+    await Promise.resolve();
+    expect(i18n.language).toBe("en");
   });
 });
 

@@ -28,7 +28,8 @@
   "empty": "Nichts gefunden",
   "searchAll": "Alle Arten durchsuchen ({{count}})",
   "searching": "Suche läuft… {{done}} von {{total}} Arten aufgelistet",
-  "limited": "Durchsucht werden die Objekte der ersten {{count}} von {{total}} Arten",
+  "limited_one": "Durchsucht werden nur die Objekte der ersten {{count}} Art (von {{total}})",
+  "limited_other": "Durchsucht werden nur die Objekte der ersten {{count}} Arten (von {{total}})",
   "hint": "↑↓ bewegen · Enter öffnen · Tab Aktionen · Esc schließen",
   "hintActions": "↑↓ bewegen · Enter ausführen · Shift+Tab zurück · Esc zurück"
 }

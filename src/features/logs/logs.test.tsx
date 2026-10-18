@@ -203,7 +203,7 @@ describe("buffer limit", () => {
     emitLines(numbered(150_000));
     expect(screen.getByTestId("logs-count")).toHaveTextContent("100000 lines");
     expect(screen.getByTestId("logs-dropped")).toHaveTextContent(
-      `50000 older lines discarded (the newest ${LOG_BUFFER_LIMIT} lines, up to 32 MiB of text, are kept)`,
+      `50000 older lines discarded (only the newest are kept: line limit ${LOG_BUFFER_LIMIT}, text limit 32 MiB)`,
     );
     // Following: the view sits at the end, so the newest line is rendered and the oldest are gone.
     expect(screen.getByText("line 149999")).toBeInTheDocument();

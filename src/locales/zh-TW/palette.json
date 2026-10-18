@@ -28,7 +28,7 @@
   "empty": "找不到任何結果",
   "searchAll": "搜尋所有類型 ({{count}})",
   "searching": "正在搜尋… 已列出 {{done}}/{{total}} 種類型",
-  "limited": "僅搜尋前 {{count}} 種類型（共 {{total}} 種）的物件",
+  "limited_other": "僅搜尋前 {{count}} 種類型的物件（共 {{total}} 種）",
   "hint": "↑↓ 移動 · Enter 開啟 · Tab 動作 · Esc 關閉",
   "hintActions": "↑↓ 移動 · Enter 執行 · Shift+Tab 返回 · Esc 返回"
 }

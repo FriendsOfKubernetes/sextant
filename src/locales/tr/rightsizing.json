@@ -16,15 +16,18 @@
   },
   "onlyFlagged": "Yalnızca bulgusu olan kapsayıcılar",
   "source": {
-    "history": "Prometheus'tan alınan kullanım ({{window}}): CPU için 95. yüzdelik ve tepe değeri, bellek için tepe değeri.",
+    "history": {
+      "day": "Prometheus'tan son bir günlük kullanım: CPU için 95. yüzdelik, bellek için tepe değeri.",
+      "week": "Prometheus'tan son 7 günlük kullanım: CPU için 95. yüzdelik, bellek için tepe değeri."
+    },
     "snapshot": "Yalnızca geçerli değerler kullanılabilir ({{source}} kaynağından anlık görüntü). Bir öneri için tek bir nokta yetmez: geçmiş için Prometheus yükleyin.",
     "snapshotAfterError": "Prometheus geçmişi okunamadı, bu yüzden yalnızca geçerli değerler (anlık görüntü) gösteriliyor. Öneri yok.",
     "none": "Kullanılabilir ölçüm yok: yalnızca Pod belirtimlerindeki istekler ve sınırlar denetleniyor.",
     "loading": "Kullanım okunuyor…",
     "metricsServer": "metrics-server",
     "historyFailed": "Prometheus geçmişi okunamadı",
-    "truncated_one": "Çok fazla kapsayıcı eşleşti; yalnızca ilk {{count}} kapsayıcının geçmişi var. Namespace süzgecini daraltın.",
-    "truncated_other": "Çok fazla kapsayıcı eşleşti; yalnızca ilk {{count}} kapsayıcının geçmişi var. Namespace süzgecini daraltın.",
+    "truncated_one": "Çok fazla kapsayıcı eşleşti: geçmiş yalnızca ilk {{count}} kapsayıcı için okunuyor. Namespace süzgecini daraltın.",
+    "truncated_other": "Çok fazla kapsayıcı eşleşti: geçmiş yalnızca ilk {{count}} kapsayıcı için okunuyor. Namespace süzgecini daraltın.",
     "coverageUnknown": "Prometheus örneklerinin ne zamandan beri tutulduğunu bildiremedi, bu yüzden önerilerin ne kadarlık bir geçmişe dayandığı bilinmiyor."
   },
   "loading": "Pod'lar yükleniyor…",
@@ -58,7 +61,10 @@
   },
   "confidence": {
     "partialHistory": "{{duration}} geçmişe dayanıyor",
-    "insufficientHistory": "Yeterli geçmiş yok: {{duration}} ({{window}}); en az {{minimum}} gerekli",
+    "insufficientHistory": {
+      "day": "Yeterli geçmiş yok: son bir günde {{duration}}; en az {{minimum}} gerekli",
+      "week": "Yeterli geçmiş yok: son 7 günde {{duration}}; en az {{minimum}} gerekli"
+    },
     "snapshot": "Anlık görüntü",
     "noData": "Kullanım verisi yok",
     "unknownHistory": "Uzunluğu bilinmeyen geçmiş"
@@ -89,18 +95,20 @@
     "noMemoryRequest": "Zamanlayıcı bellek ayırmaz; bellek baskısı altında Pod ilk tahliye edilenler arasındadır.",
     "noCpuLimit": "Kapsayıcı, düğümün boştaki tüm CPU'sunu kullanabilir. Çoğu zaman bilerek yapılır.",
     "noMemoryLimit": "Kapsayıcı, düğümdeki komşularının belleğini alabilir.",
-    "cpuOverProvisioned": "CPU isteği, kullanımın gerektirdiğinin en az {{factor}} katı.",
-    "memoryOverProvisioned": "Bellek isteği, kullanımın gerektirdiğinin en az {{factor}} katı.",
+    "cpuOverProvisioned_one": "CPU isteği, kullanımın gerektirdiğinin en az {{count}} katı.",
+    "cpuOverProvisioned_other": "CPU isteği, kullanımın gerektirdiğinin en az {{count}} katı.",
+    "memoryOverProvisioned_one": "Bellek isteği, kullanımın gerektirdiğinin en az {{count}} katı.",
+    "memoryOverProvisioned_other": "Bellek isteği, kullanımın gerektirdiğinin en az {{count}} katı.",
     "cpuUnderRequested": "Kullanım çoğu zaman isteğin üzerinde.",
     "memoryUnderRequested": "Tepe bellek kullanımı isteğin üzerinde: Pod bellek baskısı altında tahliye edilebilir.",
     "memoryNearLimit": "Bellek, sınırın en az {{share}} kadarına ulaştı.",
-    "oomKilled": "Kapsayıcı, son {{period}} içinde belleği tükendiği için sonlandırıldı; gerçek tepe değer sınırın üzerinde.",
+    "oomKilled_one": "Kapsayıcı, son {{count}} gün içinde belleği tükendiği için sonlandırıldı; gerçek tepe değer sınırın üzerinde.",
+    "oomKilled_other": "Kapsayıcı, son {{count}} gün içinde belleği tükendiği için sonlandırıldı; gerçek tepe değer sınırın üzerinde.",
     "cpuThrottled": "CPU dönemlerinin {{percent}} kadarı kısıtlandı."
   },
   "copy": "Kaynak YAML'ını kopyala",
   "copied": "Kopyalandı",
   "copyFailed": "Kopyalanamadı",
-  "separator": " · ",
   "chooseNamespace": "Bir namespace seçin",
   "chooseNamespaceText": "Doğru boyutlandırma, gösterdiği her kapsayıcının geçmişini okur; bu yüzden namespace süzgecinde seçilen namespace'lerde çalışır. Bir veya birkaç tane seçin.",
   "firstNamespaces_one": "Süzgeçteki namespace'lerden yalnızca ilk {{count}} tanesi gösteriliyor.",

@@ -457,7 +457,7 @@ describe("related objects when a list fails", () => {
 
     expect(related.queryByRole("alert")).toBeNull();
     expect(related.queryByRole("status")).toBeNull();
-    expect(related.getByText("You don't have permission to list Secret, ServiceAccount")).toBeInTheDocument();
+    expect(related.getByText("You don't have permission to list these objects: Secret, ServiceAccount")).toBeInTheDocument();
     expect(related.getByText("Ingress: No permission in: sextant-flux")).toBeInTheDocument();
     expect(related.getByRole("button", { name: "Open Deployment podinfo-helm" })).toBeInTheDocument();
   });

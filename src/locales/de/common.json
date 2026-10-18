@@ -48,6 +48,7 @@
     "details": "Details: {{message}}"
   },
   "list": {
-    "separator": ", "
+    "separator": ", ",
+    "dot": " · "
   }
 }

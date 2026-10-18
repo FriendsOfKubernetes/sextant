@@ -6,7 +6,7 @@
   },
   "summary": {
     "title_other": "{{cluster}} で {{count}} 件の新しい問題",
-    "titleClusters_other": "{{clusters}} 個のクラスターで {{count}} 件の新しい問題",
+    "titleClusters_other": "{{count}} 個のクラスターで新しい問題 (合計 {{problems}} 件)",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

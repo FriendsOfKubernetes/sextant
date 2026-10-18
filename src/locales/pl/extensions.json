@@ -83,25 +83,35 @@
     "clustersNote": "Nazwa obejmuje każdy kontekst klastra o tej nazwie ze wszystkich źródeł kubeconfig.",
     "access": "Dostęp",
     "none": "Brak dostępu do danych jakiegokolwiek klastra.",
-    "rule": "{{actions}}: {{kinds}} {{namespaces}}",
-    "allKinds": "wszystkie rodzaje",
-    "namespacesAll": "we wszystkich namespace’ach",
-    "namespacesOnly_one": "w namespace {{names}}",
-    "namespacesOnly_few": "w namespace’ach {{names}}",
-    "namespacesOnly_many": "w namespace’ach {{names}}",
-    "namespacesOnly_other": "w namespace’ach {{names}}",
+    "rule": {
+      "allKinds": "Wszystkie rodzaje we wszystkich namespace’ach: {{actions}}",
+      "allKindsIn_one": "Wszystkie rodzaje w namespace {{names}}: {{actions}}",
+      "allKindsIn_few": "Wszystkie rodzaje w namespace’ach {{names}}: {{actions}}",
+      "allKindsIn_many": "Wszystkie rodzaje w namespace’ach {{names}}: {{actions}}",
+      "allKindsIn_other": "Wszystkie rodzaje w namespace’ach {{names}}: {{actions}}",
+      "kinds": "{{kinds}} we wszystkich namespace’ach: {{actions}}",
+      "kindsIn_one": "{{kinds}} w namespace {{names}}: {{actions}}",
+      "kindsIn_few": "{{kinds}} w namespace’ach {{names}}: {{actions}}",
+      "kindsIn_many": "{{kinds}} w namespace’ach {{names}}: {{actions}}",
+      "kindsIn_other": "{{kinds}} w namespace’ach {{names}}: {{actions}}"
+    },
     "asks": "Pyta przed wykonaniem",
     "noAsk": "Wykonuje bez pytania",
-    "secretValues": "Może odczytywać wartości Secret {{namespaces}}",
+    "secretValues": {
+      "all": "Może odczytywać wartości Secret we wszystkich namespace’ach",
+      "in_one": "Może odczytywać wartości Secret w namespace {{names}}",
+      "in_few": "Może odczytywać wartości Secret w namespace’ach {{names}}",
+      "in_many": "Może odczytywać wartości Secret w namespace’ach {{names}}",
+      "in_other": "Może odczytywać wartości Secret w namespace’ach {{names}}"
+    },
     "clusterWide": "Obiekty nienależące do żadnego namespace (np. Nodes) są objęte tylko regułami dla wszystkich namespace’ów.",
     "actionNames": {
-      "read": "Odczyt",
-      "modify": "Modyfikacja",
-      "delete": "Usuwanie",
-      "logs": "Odczyt logów",
-      "exec": "Uruchamianie poleceń",
-      "portForward": "Przekierowanie portów",
-      "secretValues": "Odczyt wartości Secret"
+      "read": "odczyt",
+      "modify": "modyfikacja",
+      "delete": "usuwanie",
+      "logs": "odczyt logów",
+      "exec": "uruchamianie poleceń",
+      "portForward": "przekierowanie portów"
     }
   },
   "state": {
@@ -126,7 +136,14 @@
     "pausedHint": "To rozszerzenie prosi o więcej, niż zezwolono. Jest wstrzymane do czasu przejrzenia jego uprawnień.",
     "failedHint": "Nie można uruchomić tego rozszerzenia: {{error}}",
     "actionFailed": "Nie można wprowadzić zmiany",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "Włącz rozszerzenie {{name}}",
+      "disable": "Wyłącz rozszerzenie {{name}}",
+      "permissions": "Uprawnienia rozszerzenia {{name}}",
+      "reload": "Wczytaj ponownie rozszerzenie {{name}}",
+      "activity": "Aktywność rozszerzenia {{name}}",
+      "remove": "Usuń rozszerzenie {{name}}"
+    }
   },
   "reinstall": {
     "file": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z pliku {{name}} (Zainstaluj z pliku…).",

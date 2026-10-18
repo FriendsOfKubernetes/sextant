@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ApiError, type ClusterId, type KindRef, type KubeObject, type ObjectRef, type WatchSpec } from "../../api";
+import { formatList } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ErrorState } from "../../components";
 import { findKind, kindFromApiVersion, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
@@ -353,7 +354,7 @@ function HelmReleaseResourcesView({
     .filter((r) => r.error === null && r.forbiddenIn.length > 0)
     .map((r) => `${r.kind}: ${t("resources:table.forbiddenIn", { namespaces: r.forbiddenIn.join(", ") })}`);
   const unavailable = [
-    ...(notAllowed.length > 0 ? [t("resources:table.forbidden", { kind: notAllowed.join(", ") })] : []),
+    ...(notAllowed.length > 0 ? [t("resources:table.forbidden", { kind: formatList(notAllowed) })] : []),
     ...partly,
   ];
   const failure = results.find((r) => r.error !== null && r.error.code !== "forbidden")?.error;

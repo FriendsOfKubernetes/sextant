@@ -7,8 +7,8 @@
   "summary": {
     "title_one": "{{count}} neues Problem in {{cluster}}",
     "title_other": "{{count}} neue Probleme in {{cluster}}",
-    "titleClusters_one": "{{count}} neues Problem in {{clusters}} Clustern",
-    "titleClusters_other": "{{count}} neue Probleme in {{clusters}} Clustern",
+    "titleClusters_one": "Neue Probleme in {{count}} Cluster (insgesamt {{problems}})",
+    "titleClusters_other": "Neue Probleme in {{count}} Clustern (insgesamt {{problems}})",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

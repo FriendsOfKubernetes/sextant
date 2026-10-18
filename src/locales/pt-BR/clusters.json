@@ -130,19 +130,23 @@
     "finding": "Procurando…",
     "noClusters": "Nenhum cluster encontrado.",
     "found": "Clusters encontrados",
-    "separator": " · ",
     "add_one": "Adicionar {{count}} cluster",
     "add_many": "Adicionar {{count}} clusters",
     "add_other": "Adicionar {{count}} clusters",
     "added_one": "{{count}} cluster adicionado. Ele está na lista de clusters.",
     "added_many": "{{count}} clusters adicionados. Eles estão na lista de clusters.",
     "added_other": "{{count}} clusters adicionados. Eles estão na lista de clusters.",
-    "scope": " ({{scope}})",
     "problem": {
-      "cliMissing": "{{cli}} não está instalado{{scope}}",
-      "notLoggedIn": "{{cli}} não está com login feito, ou o login expirou{{scope}}",
-      "pluginMissing": "O plugin de login do {{cli}} não está instalado{{scope}}",
-      "failed": "{{cli}} falhou{{scope}}"
+      "cliMissing": "{{cli}} não está instalado",
+      "notLoggedIn": "{{cli}} não está com login feito, ou o login expirou",
+      "pluginMissing": "O plugin de login do {{cli}} não está instalado",
+      "failed": "{{cli}} falhou"
+    },
+    "problemIn": {
+      "cliMissing": "{{cli}} não está instalado ({{scope}})",
+      "notLoggedIn": "{{cli}} não está com login feito, ou o login expirou ({{scope}})",
+      "pluginMissing": "O plugin de login do {{cli}} não está instalado ({{scope}})",
+      "failed": "{{cli}} falhou ({{scope}})"
     },
     "problemHint": {
       "cliMissing": "Instale-o e tente novamente.",

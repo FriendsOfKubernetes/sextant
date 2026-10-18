@@ -82,24 +82,32 @@
     "clustersNote": "Um nome abrange todos os contextos de cluster com esse nome, de todas as fontes de kubeconfig.",
     "access": "Acesso",
     "none": "Sem acesso aos dados de nenhum cluster.",
-    "rule": "{{actions}} {{kinds}} {{namespaces}}",
-    "allKinds": "todos os tipos",
-    "namespacesAll": "em todos os namespaces",
-    "namespacesOnly_one": "no namespace {{names}}",
-    "namespacesOnly_many": "nos namespaces {{names}}",
-    "namespacesOnly_other": "nos namespaces {{names}}",
+    "rule": {
+      "allKinds": "Todos os tipos em todos os namespaces: {{actions}}",
+      "allKindsIn_one": "Todos os tipos no namespace {{names}}: {{actions}}",
+      "allKindsIn_many": "Todos os tipos nos namespaces {{names}}: {{actions}}",
+      "allKindsIn_other": "Todos os tipos nos namespaces {{names}}: {{actions}}",
+      "kinds": "{{kinds}} em todos os namespaces: {{actions}}",
+      "kindsIn_one": "{{kinds}} no namespace {{names}}: {{actions}}",
+      "kindsIn_many": "{{kinds}} nos namespaces {{names}}: {{actions}}",
+      "kindsIn_other": "{{kinds}} nos namespaces {{names}}: {{actions}}"
+    },
     "asks": "Pergunta antes de executar",
     "noAsk": "Executa sem perguntar",
-    "secretValues": "Pode ler os valores de Secrets {{namespaces}}",
+    "secretValues": {
+      "all": "Pode ler os valores de Secrets em todos os namespaces",
+      "in_one": "Pode ler os valores de Secrets no namespace {{names}}",
+      "in_many": "Pode ler os valores de Secrets nos namespaces {{names}}",
+      "in_other": "Pode ler os valores de Secrets nos namespaces {{names}}"
+    },
     "clusterWide": "Objetos que não pertencem a nenhum namespace (como Nodes) são abrangidos apenas por regras para todos os namespaces.",
     "actionNames": {
-      "read": "Ler",
-      "modify": "Modificar",
-      "delete": "Excluir",
-      "logs": "Ler os logs de",
-      "exec": "Executar comandos em",
-      "portForward": "Encaminhar portas de",
-      "secretValues": "Ler os valores de Secrets de"
+      "read": "leitura",
+      "modify": "modificação",
+      "delete": "exclusão",
+      "logs": "leitura de logs",
+      "exec": "execução de comandos",
+      "portForward": "encaminhamento de portas"
     }
   },
   "state": {
@@ -124,7 +132,14 @@
     "pausedHint": "Esta extensão pede mais do que você permitiu. Ela fica pausada até que você revise as permissões.",
     "failedHint": "Esta extensão não pode ser executada: {{error}}",
     "actionFailed": "Não foi possível fazer a alteração",
-    "namedAction": "{{action}} {{name}}"
+    "named": {
+      "enable": "Ativar {{name}}",
+      "disable": "Desativar {{name}}",
+      "permissions": "Permissões de {{name}}",
+      "reload": "Recarregar {{name}}",
+      "activity": "Atividade de {{name}}",
+      "remove": "Remover {{name}}"
+    }
   },
   "reinstall": {
     "file": "Para revisar as permissões, instale-a novamente a partir do arquivo {{name}} (Instalar de um arquivo…).",

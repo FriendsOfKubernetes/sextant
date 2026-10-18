@@ -224,7 +224,7 @@ export class NotificationEngine {
     const only = clusters.length === 1 ? clusters[0] : undefined;
     const title = only
       ? i18n.t("notifications:summary.title", { count: items.length, cluster: this.deps.clusterName(only) })
-      : i18n.t("notifications:summary.titleClusters", { count: items.length, clusters: clusters.length });
+      : i18n.t("notifications:summary.titleClusters", { count: clusters.length, problems: items.length });
     this.deps.show({
       id: this.nextId(),
       title: inert(clip(title, TITLE_LIMIT)),

@@ -6,7 +6,7 @@ import { errorKey, toApiError, type CoreError } from "../api";
 export interface ErrorStateProps {
   /** An `ApiError`, a `CoreError` or anything thrown. */
   error: unknown;
-  /** Replaces the generic text for the code, e.g. a table's "You don't have permission to list Secrets". */
+  /** Replaces the generic text for the code, e.g. a table's "You don't have permission to list these objects: Secrets". */
   title?: string;
   onRetry?: () => void;
   /** More buttons shown next to Retry, e.g. the editor's "Reload". */

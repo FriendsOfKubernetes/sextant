@@ -7,8 +7,8 @@
   "summary": {
     "title_one": "{{cluster}} içinde {{count}} yeni sorun",
     "title_other": "{{cluster}} içinde {{count}} yeni sorun",
-    "titleClusters_one": "{{clusters}} kümede {{count}} yeni sorun",
-    "titleClusters_other": "{{clusters}} kümede {{count}} yeni sorun",
+    "titleClusters_one": "{{count}} kümede yeni sorunlar (toplam {{problems}})",
+    "titleClusters_other": "{{count}} kümede yeni sorunlar (toplam {{problems}})",
     "reason": "{{reason}} ×{{count}}"
   },
   "settings": {

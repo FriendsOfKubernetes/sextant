@@ -30,7 +30,7 @@
     "failed": "串流失敗"
   },
   "lines_other": "{{count}} 行",
-  "dropped_other": "已捨棄 {{count}} 行較舊的日誌（只保留最新的 {{limit}} 行，文字最多 {{size}} MiB）",
+  "dropped_other": "已捨棄 {{count}} 行較舊的日誌（只保留最新內容：行數上限 {{limit}}，文字上限 {{size}} MiB）",
   "lineCut": " …［此行在 64 KiB 處截斷，於下一行繼續］",
   "empty": "尚無日誌行。",
   "view": "日誌行",
@@ -59,7 +59,7 @@
     "sources": "Pod 與容器（{{shown}}/{{total}}）",
     "sourcesLabel": "Pod 與容器",
     "capHint_other": "同時最多執行 {{count}} 個日誌串流；取消勾選 Pod 或容器即可選擇要讀取哪些。",
-    "capped_other": "還有 {{count}} 個容器在等候：同時最多執行 {{max}} 個日誌串流。取消勾選 Pod 或容器即可選擇要讀取哪些。",
+    "capped_other": "還有 {{count}} 個容器在等候：同時執行的日誌串流上限為 {{max}}。取消勾選 Pod 或容器即可選擇要讀取哪些。",
     "noPods": "沒有相符的 Pod。",
     "json": "剖析 JSON",
     "level": "層級",

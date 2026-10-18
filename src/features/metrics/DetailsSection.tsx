@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChartTarget, ClusterId, KindRef, KubeObject, MetricsStatus, ObjectRef, PodUsage } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
+import { formatList, formatParts } from "../../i18n";
 import { nodeAllocatable } from "./columns";
 import {
   ChartGrid,
@@ -145,9 +146,7 @@ function PodRows({ obj, usage }: { obj: KubeObject | null; usage: PodUsage | und
                 (amounts) => t("metrics:requests.containerMemory", { amounts }),
                 t,
               ),
-          ]
-            .filter(Boolean)
-            .join(" · ");
+          ].filter((part): part is string => Boolean(part));
           return (
             <ContainerRow
               key={name}
@@ -159,7 +158,7 @@ function PodRows({ obj, usage }: { obj: KubeObject | null; usage: PodUsage | und
                   memory: formatBytes(u.memoryBytes),
                 })
               }
-              spec={specText}
+              spec={formatParts(specText)}
             />
           );
         })}
@@ -178,8 +177,8 @@ function containerAmounts(
   const parts = [
     own.request !== undefined && t("metrics:requests.request", { value: format(own.request) }),
     own.limit !== undefined ? t("metrics:requests.limit", { value: format(own.limit) }) : t("metrics:requests.noLimit"),
-  ].filter(Boolean);
-  return wrap(parts.join(", "));
+  ].filter((part): part is string => Boolean(part));
+  return wrap(formatList(parts));
 }
 
 /** One resource of a pod: its usage, the usage against the limit (else the request) as a bar, and request/limit. */
@@ -204,12 +203,10 @@ function PodAmount({
   const share =
     used !== undefined && against && against.value > 0 ? Math.round((used / against.value) * 100) : undefined;
   const notes: ReactNode[] = [];
-  // "(set on 1 of 2 containers)": said right after the value that is only the sum of some of the containers.
-  const partial = (key: "requestSetOn" | "limitSetOn", count: number) => (
-    <>
-      {" "}
-      <span className="mx-amount__note">{t(`metrics:requests.${key}`, { count, total: amounts.containers })}</span>
-    </>
+  // "(set on 1 of 2 containers)": said right after the value that is only the sum of some of the containers. The
+  // noun agrees with the number of all containers (`count`); the gap before the note is the stylesheet's.
+  const partial = (key: "requestSetOn" | "limitSetOn", set: number) => (
+    <span className="mx-amount__note">{t(`metrics:requests.${key}`, { set, count: amounts.containers })}</span>
   );
   const requestPartial = !everywhere(amounts.requestSetOn) ? partial("requestSetOn", amounts.requestSetOn) : null;
   const limitPartial = amounts.limit !== undefined ? partial("limitSetOn", amounts.limitSetOn) : null;

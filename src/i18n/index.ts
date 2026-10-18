@@ -1,13 +1,25 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { buildResources, languagesOf, namespacesOf } from "./resources";
+import { buildResources, namespacesOf, type Resources } from "./resources";
 
-const modules = import.meta.glob("../locales/*/*.json", { eager: true });
+// English is the source and the fallback: it is in the main bundle. Every other language is loaded when it is chosen
+// (one chunk per language, `vite.config.ts`), so the texts of thirteen languages do not weigh on the start.
+const englishModules = import.meta.glob("../locales/en/*.json", { eager: true });
+const otherModules = import.meta.glob<{ default: unknown }>(["../locales/*/*.json", "!../locales/en/*.json"]);
 
-export const resources = buildResources(modules);
-/** Languages found in `src/locales/` (directory names), e.g. `["en", "ru", "zh-CN"]`. */
-export const availableLanguages = languagesOf(resources);
+const LOCALE_FILE = /\/locales\/([^/]+)\/[^/]+\.json$/;
+
+/** The texts loaded so far: English from the start, another language once `loadLanguage` has read it. */
+export const resources: Resources = buildResources(englishModules);
+/** Languages found in `src/locales/` (directory names), e.g. `["en", "ru", "zh-CN"]`, known without loading them. */
+export const availableLanguages = [
+  ...new Set([...Object.keys(resources), ...Object.keys(otherModules).map((path) => LOCALE_FILE.exec(path)?.[1] ?? "")]),
+]
+  .filter(Boolean)
+  .sort();
 export const namespaces = namespacesOf(resources);
+/** Languages whose texts are in i18next (English from the start). */
+const loaded = new Set(Object.keys(resources));
 export const FALLBACK_LANGUAGE = "en";
 /**
  * `AppSettings.language` of "follow the operating system": the default of a new install. A stored code (`"en"`,
@@ -71,23 +83,69 @@ function markDocument(language: string): void {
   if (typeof document !== "undefined") document.documentElement.lang = language;
 }
 
+/** Languages being read or read already: one load per language and page. */
+const loading = new Map<string, Promise<void>>();
+
 /**
- * Initializes i18next synchronously. A missing key (or an empty translation) falls back to English, a namespace file
- * a language lacks reads from English too, and a key missing everywhere renders as the key itself.
+ * Reads the texts of `language` (a directory of `src/locales/`) and adds them to i18next; English and a language read
+ * before resolve at once. A file that cannot be read leaves that language in English (`fallbackLng`).
+ */
+export function loadLanguage(language: string): Promise<void> {
+  if (loaded.has(language)) return Promise.resolve();
+  let pending = loading.get(language);
+  if (!pending) {
+    const paths = Object.entries(otherModules).filter(([path]) => LOCALE_FILE.exec(path)?.[1] === language);
+    pending = Promise.all(paths.map(async ([path, load]) => [path, await load()] as const))
+      .then((files) => {
+        const read = buildResources(Object.fromEntries(files))[language] ?? {};
+        resources[language] = read;
+        loaded.add(language);
+        if (i18n.isInitialized) for (const [ns, data] of Object.entries(read)) i18n.addResourceBundle(language, ns, data, true, true);
+      })
+      .catch(() => {
+        // Stays in English; a later choice tries again.
+        loading.delete(language);
+      });
+    loading.set(language, pending);
+  }
+  return pending;
+}
+
+/** The language asked for last: a slower load of an earlier choice does not override it. */
+let requested: string | undefined;
+
+/** Switches i18next to `language` once its texts are loaded (at once when they already are). */
+function applyLanguage(language: string): void {
+  requested = language;
+  // Texts that arrive for the language i18next already has still switch to it: the tray menu relabels on the event.
+  const apply = (arrived: boolean) => {
+    if (requested !== language) return;
+    if (arrived || i18n.language !== language) void i18n.changeLanguage(language);
+    markDocument(language);
+  };
+  if (loaded.has(language)) apply(false);
+  else void loadLanguage(language).then(() => apply(true));
+}
+
+/**
+ * Initializes i18next synchronously with the texts loaded so far (English, and the start language when `startI18n`
+ * read it first). A missing key (or an empty translation) falls back to English, a namespace file a language lacks
+ * reads from English too, and a key missing everywhere renders as the key itself.
  */
 export function initI18n(setting: string = FALLBACK_LANGUAGE): typeof i18n {
   const language = resolveLanguage(setting);
   if (i18n.isInitialized) {
-    if (i18n.language !== language) void i18n.changeLanguage(language);
-    markDocument(language);
+    applyLanguage(language);
     return i18n;
   }
+  requested = language;
   void i18n.use(initReactI18next).init({
     resources,
     lng: language,
     fallbackLng: FALLBACK_LANGUAGE,
     ns: namespaces,
     defaultNS: "common",
+    partialBundledLanguages: true,
     interpolation: { escapeValue: false },
     returnNull: false,
     returnEmptyString: false,
@@ -95,7 +153,18 @@ export function initI18n(setting: string = FALLBACK_LANGUAGE): typeof i18n {
     react: { useSuspense: false },
   });
   markDocument(language);
+  // A language that was not read first (a test, a failed load) switches as soon as its texts arrive.
+  if (!loaded.has(language)) applyLanguage(language);
   return i18n;
+}
+
+/**
+ * Reads the start language, then initializes i18next with it: the first render is already in that language (no
+ * flash of English). A language that cannot be read starts in English.
+ */
+export async function startI18n(setting: string): Promise<typeof i18n> {
+  await loadLanguage(resolveLanguage(setting));
+  return initI18n(setting);
 }
 
 /** Browser storage key of the language last applied: only a hint for the next start, never the setting itself. */
@@ -116,11 +185,13 @@ export function startupLanguage(system: readonly string[] = systemLanguages()): 
   return resolveLanguage(SYSTEM_LANGUAGE, system);
 }
 
-/** Switches the UI language to what `setting` resolves to (see [`resolveLanguage`]); returns that language. */
+/**
+ * Switches the UI language to what `setting` resolves to (see [`resolveLanguage`]) once its texts are loaded; returns
+ * that language.
+ */
 export function setLanguage(setting: string): string {
   const language = resolveLanguage(setting);
-  if (i18n.language !== language) void i18n.changeLanguage(language);
-  markDocument(language);
+  applyLanguage(language);
   try {
     globalThis.localStorage?.setItem(LANGUAGE_HINT_KEY, language);
   } catch {
@@ -130,5 +201,14 @@ export function setLanguage(setting: string): string {
 }
 
 export { buildResources, languagesOf, namespacesOf } from "./resources";
-export { currentLanguage, formatDateTime, formatList, formatNumber, formatTime, listSeparator } from "./format";
+export {
+  currentLanguage,
+  dotSeparator,
+  formatDateTime,
+  formatList,
+  formatNumber,
+  formatParts,
+  formatTime,
+  listSeparator,
+} from "./format";
 export { i18n };
