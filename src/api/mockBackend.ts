@@ -104,6 +104,8 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set("files_transfer_stop", () => undefined);
   // A desktop with a tray, unless a test says otherwise.
   table.set("tray_status", () => ({ available: true }));
+  // The window sends the tray menu's texts when the UI language changes; nothing to answer.
+  table.set("tray_set_texts", () => undefined);
   // A machine the About dialog can describe.
   table.set("about_info", () => ({
     os: "Linux",

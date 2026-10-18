@@ -2,11 +2,12 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockBackend, type HelmStatus, type KubeconfigSource, type MockBackend } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
+import { availableLanguages } from "../../i18n";
 import { AppShell } from "../../layout";
 import { getPage } from "../../layout/pages";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
-import { SETTINGS_PAGE_ID, openSettings, resetSettingsUi, selectSettingsTab, type SettingsTab } from "./index";
+import { SETTINGS_PAGE_ID, languageName, openSettings, resetSettingsUi, selectSettingsTab, type SettingsTab } from "./index";
 
 const home: KubeconfigSource = { id: "src-home", path: "/home/me/.kube/config", kind: "default", error: null };
 const pasted: KubeconfigSource = { id: "src-pasted", path: "/data/kubeconfigs/pasted-1.yaml", kind: "pasted", error: null };
@@ -90,10 +91,13 @@ describe("Settings page", () => {
     setup();
     renderPage();
     const language = screen.getByRole("combobox", { name: "Language" });
+    // A new install follows the system (jsdom says en-US); then every directory, by its own name.
     expect(within(language).getAllByRole("option").map((o) => [o.getAttribute("value"), o.textContent])).toEqual([
-      ["en", "English"],
+      ["system", "System (English)"],
+      ...availableLanguages.map((code) => [code, languageName(code)]),
     ]);
-    await waitFor(() => expect(language).toHaveValue("en"));
+    expect(within(language).getByRole("option", { name: "English" })).toHaveValue("en");
+    await waitFor(() => expect(language).toHaveValue("system"));
   });
 
   it("shows the helm found in PATH and switches to a chosen binary and back", async () => {

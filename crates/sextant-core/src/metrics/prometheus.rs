@@ -16,8 +16,11 @@ use kube::api::{GetParams, ListParams};
 use serde_json::Value;
 
 use super::{ChartTarget, NodeUsage, PodUsage, PrometheusTarget, Series, Usage};
+
+mod rightsizing;
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::ClusterId;
+pub(crate) use rightsizing::usage_history;
 
 /// Namespaces searched by auto-detection, in order.
 pub const CANDIDATE_NAMESPACES: [&str; 5] = [

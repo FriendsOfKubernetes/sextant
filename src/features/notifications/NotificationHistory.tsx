@@ -10,6 +10,7 @@ import { useNow } from "../problems/hooks";
 import { messageText, type HistoryEntry } from "./engine";
 import { notifier, openTarget } from "./notifier";
 import { muteForHour, mutedNow, prefsOf, unmute } from "./prefs";
+import { formatTime } from "../../i18n";
 
 const subscribe = (fn: () => void) => notifier.subscribe(fn);
 const snapshot = () => notifier.history();
@@ -45,7 +46,7 @@ export function NotificationHistory() {
         {muted && prefs?.mutedUntil ? (
           <>
             <span className="problems__muted" role="status">
-              {t("notifications:settings.mutedUntil", { time: new Date(prefs.mutedUntil).toLocaleTimeString() })}
+              {t("notifications:settings.mutedUntil", { time: formatTime(prefs.mutedUntil) })}
             </span>
             <Button size="compact" onClick={() => void save(unmute())}>
               {t("notifications:unmute")}

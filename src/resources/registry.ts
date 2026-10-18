@@ -101,6 +101,7 @@ export const SIDEBAR_SECTIONS = [
   "events",
   "helm",
   "accessControl",
+  "certManager",
   "flux",
   "argocd",
   "customResources",
@@ -112,7 +113,12 @@ export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
  * once discovery says the cluster serves them, never before it comes, so a section without served kinds — the CRDs
  * are not installed — is not drawn at all.
  */
-export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>(["gatewayApi", "flux", "argocd"]);
+export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
+  "gatewayApi",
+  "flux",
+  "argocd",
+  "certManager",
+]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
 export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
@@ -127,6 +133,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   events: "events",
   helm: "helm",
   accessControl: "accessControl",
+  certManager: "certManager",
   flux: "flux",
   argocd: "argocd",
   customResources: "customResources",

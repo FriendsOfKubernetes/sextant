@@ -5,9 +5,15 @@
 //! `auto` tries the known services in [`CANDIDATE_NAMESPACES`] through the API server's service proxy (no direct
 //! network access to the cluster is needed), `manual` uses the configured service or URL, `off` disables it.
 
+mod history;
 mod prometheus;
 mod quantity;
 mod server;
+
+pub use history::{
+    ContainerHistory, HISTORY_WORKLOAD_KINDS, HistoryScope, HistoryWindow, MAX_HISTORY_CONTAINERS,
+    MAX_HISTORY_NAMESPACES, UsageHistory, usage_history,
+};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;

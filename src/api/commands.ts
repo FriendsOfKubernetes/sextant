@@ -1,7 +1,12 @@
 // One function per backend command (interfaces.md, "Commands"). Argument names are the camelCase names the
 // Rust commands expect. Every function rejects with `ApiError`.
 import type { AboutInfo } from "./generated/AboutInfo";
+import type { AccessAnswer } from "./generated/AccessAnswer";
 import type { AccessPreset } from "./generated/AccessPreset";
+import type { AccessQuery } from "./generated/AccessQuery";
+import type { RulesReview } from "./generated/RulesReview";
+import type { SecretCertificates } from "./generated/SecretCertificates";
+import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
 import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
 import type { ArgoLogin } from "./generated/ArgoLogin";
@@ -48,9 +53,13 @@ import type { RemoteEntry } from "./generated/RemoteEntry";
 import type { RemoteKind } from "./generated/RemoteKind";
 import type { ResourceKind } from "./generated/ResourceKind";
 import type { Series } from "./generated/Series";
+import type { HistoryScope } from "./generated/HistoryScope";
+import type { HistoryWindow } from "./generated/HistoryWindow";
+import type { UsageHistory } from "./generated/UsageHistory";
 import type { SettingsStatus } from "./generated/SettingsStatus";
 import type { TransferEvent } from "./generated/TransferEvent";
 import type { TrayStatus } from "./generated/TrayStatus";
+import type { TrayTexts } from "./generated/TrayTexts";
 import type { WatchSpec } from "./generated/WatchSpec";
 import { call, subscribe, type Unsubscribe } from "./transport";
 
@@ -194,6 +203,8 @@ export const metrics = {
   status: (clusterId: ClusterId) => call<MetricsStatus>("metrics_status", { clusterId }),
   charts: (clusterId: ClusterId, chart: ChartTarget, rangeSecs: number) =>
     call<Series[]>("metrics_charts", { clusterId, chart, rangeSecs }),
+  usageHistory: (clusterId: ClusterId, scope: HistoryScope, window: HistoryWindow) =>
+    call<UsageHistory>("metrics_usage_history", { clusterId, scope, window }),
 };
 
 export const helm = {
@@ -235,6 +246,8 @@ export const settings = {
   status: () => call<SettingsStatus>("settings_status"),
   /** Whether the tray icon exists; without it "Closing the window keeps Sextant in the tray" cannot be turned on. */
   trayStatus: () => call<TrayStatus>("tray_status"),
+  /** The tray menu's texts in the UI language (the keys of `tray.json`); the menu is relabelled at once. */
+  traySetTexts: (texts: TrayTexts) => call<void>("tray_set_texts", { texts }),
 };
 
 /** What "About Sextant" shows about the machine (no paths, no user names). */
@@ -313,6 +326,30 @@ export const gitopsInstall = {
   stop: (streamId: string) => call<void>("gitops_install_stop", { streamId }),
   /** Whether Flux and Argo CD are in the cluster (their CRDs). */
   status: (clusterId: ClusterId) => call<GitopsStatus>("gitops_install_status", { clusterId }),
+};
+
+/**
+ * "Can I …" for the current user, answered by the API server (all its authorizers, not only RBAC): nothing in the
+ * cluster changes. Window only: agents and extensions have no such call.
+ */
+export const rbac = {
+  /** One SelfSubjectAccessReview per question (at most 64), answers in order. */
+  canI: (clusterId: ClusterId, queries: AccessQuery[]) => call<AccessAnswer[]>("rbac_can_i", { clusterId, queries }),
+  /** What the current user may do in `namespace` (SelfSubjectRulesReview; `incomplete` when an authorizer cannot list). */
+  rulesReview: (clusterId: ClusterId, namespace: string) => call<RulesReview>("rbac_rules_review", { clusterId, namespace }),
+};
+
+/**
+ * Certificates of TLS Secrets, parsed by the backend from `tls.crt` / `ca.crt`: only their fields come back, never a
+ * Secret value. Read with the user's credentials. Window only: agents and extensions have no such call.
+ */
+export const tls = {
+  /** One Secret's chain and CA (`notFound` without `tls.crt`, `invalid` when it does not parse, `forbidden`). */
+  certificateInfo: (clusterId: ClusterId, namespace: string, name: string) =>
+    call<SecretCertificates>("tls_certificate_info", { clusterId, namespace, name }),
+  /** `kubernetes.io/tls` Secrets of `namespaces` (`null`: all) with when each expires; capped (`truncated`). */
+  expiryScan: (clusterId: ClusterId, namespaces: string[] | null) =>
+    call<TlsExpiryScan>("tls_expiry_scan", { clusterId, namespaces }),
 };
 
 /** AI agent access rules of a cluster (`ClusterSettings.agentAccess`). */

@@ -1,0 +1,28 @@
+[
+  {
+    "apiVersion": "acme.cert-manager.io/v1",
+    "kind": "Challenge",
+    "metadata": {
+      "name": "shop-2-2391-111",
+      "namespace": "shop",
+      "uid": "ch-1",
+      "creationTimestamp": "2026-10-01T00:00:02Z",
+      "ownerReferences": [{ "apiVersion": "acme.cert-manager.io/v1", "kind": "Order", "name": "shop-2-2391", "uid": "order-2", "controller": true }]
+    },
+    "spec": { "dnsName": "www.shop.example.com", "type": "HTTP-01", "wildcard": false, "issuerRef": { "name": "letsencrypt", "kind": "ClusterIssuer", "group": "cert-manager.io" } },
+    "status": { "state": "pending", "presented": true, "processing": true, "reason": "Waiting for HTTP-01 challenge propagation: wrong status code '404', expected '200'" }
+  },
+  {
+    "apiVersion": "acme.cert-manager.io/v1",
+    "kind": "Challenge",
+    "metadata": {
+      "name": "shop-2-2391-222",
+      "namespace": "shop",
+      "uid": "ch-2",
+      "creationTimestamp": "2026-10-01T00:00:02Z",
+      "ownerReferences": [{ "apiVersion": "acme.cert-manager.io/v1", "kind": "Order", "name": "shop-2-2391", "uid": "order-2", "controller": true }]
+    },
+    "spec": { "dnsName": "shop.example.com", "type": "HTTP-01", "issuerRef": { "name": "letsencrypt", "kind": "ClusterIssuer", "group": "cert-manager.io" } },
+    "status": { "state": "valid", "presented": false, "processing": false }
+  }
+]

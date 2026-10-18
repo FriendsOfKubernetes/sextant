@@ -144,6 +144,7 @@
 
 .palette__footer {
   display: flex;
+  flex-wrap: wrap; /* longer labels of other languages go to a second row */
   gap: 12px;
   justify-content: space-between;
   padding: 6px 12px;

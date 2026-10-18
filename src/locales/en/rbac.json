@@ -1,0 +1,186 @@
+{
+  "sidebar": {
+    "page": "Permissions"
+  },
+  "objectLabel": "{{kind}} {{name}}",
+  "page": {
+    "title": "Permissions",
+    "tabsLabel": "Permission views",
+    "tabs": {
+      "subject": "Subject",
+      "whoCan": "Who can",
+      "canI": "Can I"
+    },
+    "filtered_one": "Roles and RoleBindings are read only in the {{count}} namespace of the filter: {{namespaces}}.",
+    "filtered_other": "Roles and RoleBindings are read only in the {{count}} namespaces of the filter: {{namespaces}}."
+  },
+  "notes": {
+    "computed": "Computed from Roles, ClusterRoles and their bindings. Other authorizers of the cluster (Node, webhooks, ABAC) are not included, and members of the group system:masters may do everything whatever RBAC says. For your own permissions, the “Can I” tab asks the API server, whose answer is authoritative.",
+    "groups": "Users and groups are not Kubernetes objects: a user's groups come from how they sign in. Name the groups you know of to include the bindings to them."
+  },
+  "lists": {
+    "loading": "Reading roles and bindings…",
+    "nothing": "Roles and bindings cannot be read on this cluster",
+    "forbidden": {
+      "roles": "You may not list Roles: bindings to Roles show no rules.",
+      "clusterRoles": "You may not list ClusterRoles: bindings to ClusterRoles show no rules.",
+      "roleBindings": "You may not list RoleBindings: permissions granted in namespaces are missing.",
+      "clusterRoleBindings": "You may not list ClusterRoleBindings: cluster-wide permissions are missing."
+    },
+    "failed": {
+      "roles": "Roles could not be read: bindings to Roles show no rules.",
+      "clusterRoles": "ClusterRoles could not be read: bindings to ClusterRoles show no rules.",
+      "roleBindings": "RoleBindings could not be read: permissions granted in namespaces are missing.",
+      "clusterRoleBindings": "ClusterRoleBindings could not be read: cluster-wide permissions are missing."
+    },
+    "partial_one": "You may not read the Roles or RoleBindings of {{count}} namespace ({{namespaces}}): permissions granted there are missing.",
+    "partial_other": "You may not read the Roles or RoleBindings of {{count}} namespaces ({{namespaces}}): permissions granted there are missing."
+  },
+  "subject": {
+    "search": "Search users, groups and service accounts",
+    "listLabel": "Subjects named in bindings",
+    "known_one": "{{count}} subject is named in bindings.",
+    "known_other": "{{count}} subjects are named in bindings.",
+    "none": "No subject matches.",
+    "more_one": "{{count}} more subject matches; narrow the search.",
+    "more_other": "{{count}} more subjects match; narrow the search.",
+    "choose": "Choose a subject to see what it may do.",
+    "other": "Another subject",
+    "kind": "Kind",
+    "name": "Name",
+    "namespace": "Namespace",
+    "groups": "Groups (comma-separated)",
+    "show": "Show permissions",
+    "label": "{{kind}} {{name}}",
+    "change": "Choose another",
+    "memberOf": "member of {{groups}}",
+    "implicit": "Also counts as a member of {{groups}}.",
+    "kinds": {
+      "User": "User",
+      "Group": "Group",
+      "ServiceAccount": "Service account"
+    }
+  },
+  "scope": {
+    "label": "Namespace",
+    "all": "All namespaces",
+    "cluster": "Everywhere",
+    "only": "Only in {{namespace}}"
+  },
+  "matrix": {
+    "label": "Permissions of {{subject}} by verb and resource",
+    "filter": "Filter resources",
+    "resource": "Resource",
+    "group": "API group",
+    "core": "core",
+    "allGroups": "all groups",
+    "allResources": "all resources",
+    "allUrls": "all URLs",
+    "anyVerb": "any verb",
+    "urls": "Non-resource URLs",
+    "empty": "No permissions found.",
+    "truncated_one": "Only the first {{count}} resource is shown.",
+    "truncated_other": "Only the first {{count}} resources are shown.",
+    "cellAllowed": "{{verb}} {{resource}}: allowed",
+    "cellPartial": "{{verb}} {{resource}}: only some named objects",
+    "cellTitle_one": "Allowed by {{count}} rule ({{bindings}}). Click for the rule.",
+    "cellTitle_other": "Allowed by {{count}} rules ({{bindings}}). Click for the rules.",
+    "cellTitleReview_one": "Allowed by {{count}} rule. Click for it.",
+    "cellTitleReview_other": "Allowed by {{count}} rules. Click for them.",
+    "detail": "{{verb}} {{resource}}"
+  },
+  "rules": {
+    "none": "This role has no rules.",
+    "verbs": "Verbs",
+    "resources": "Resources",
+    "groups": "API groups",
+    "names": "Only objects",
+    "notes": "What it means",
+    "via": "aggregated from {{source}}"
+  },
+  "grants": {
+    "binding": "Binding",
+    "role": "Role",
+    "scope": "Where",
+    "matchedBy": "Granted to",
+    "rule": "Rule",
+    "notes": "Notes",
+    "ruleText": "{{verbs}} on {{resources}}"
+  },
+  "explain": {
+    "allVerbs": "Every verb, including escalate, bind and impersonate.",
+    "allGroups": "Resources of every API group, custom resources included.",
+    "allResources": "Every resource and every subresource, such as pods/exec and pods/log.",
+    "anySubresource": "The subresource {{subresource}} of any resource.",
+    "subresource": "Only the subresource {{subresource}}; access to {{resource}} itself is a separate rule.",
+    "onlyNames": "Only the objects named {{list}}: never create or deletecollection, and list or watch only with a field selector naming one of them.",
+    "allUrls": "Every non-resource URL.",
+    "urlPrefix": "Every URL starting with {{prefix}}.",
+    "escalating": "Can give more than it holds: {{list}}.",
+    "pending": "Aggregated from {{source}}; the API server has not added it to this role yet."
+  },
+  "warnings": {
+    "missingRole": "{{binding}} refers to {{role}}, which does not exist: it grants nothing until the role is created."
+  },
+  "whoCan": {
+    "formLabel": "Who can",
+    "verb": "Verb",
+    "resource": "Resource",
+    "resourcePlaceholder": "pods, secrets, deployments.apps",
+    "subresource": "Subresource",
+    "subresourcePlaceholder": "exec, log, scale",
+    "name": "Object name",
+    "namespace": "Namespace",
+    "anyNamespace": "any namespace",
+    "urlMode": "Non-resource URL",
+    "url": "URL",
+    "urlPlaceholder": "/healthz",
+    "find": "Find",
+    "unknownResource": "The cluster serves no resource called {{resource}}; the answer uses it as typed, in the core group.",
+    "clusterScoped": "This resource is cluster-scoped: only ClusterRoleBindings can grant it, whatever the namespace.",
+    "none": "No subject is granted this by RBAC.",
+    "results_one": "{{count}} grant allows it.",
+    "results_other": "{{count}} grants allow it.",
+    "masters": "Members of {{group}} may also do it: they bypass RBAC.",
+    "tableLabel": "Subjects allowed",
+    "subject": "Subject",
+    "showSubject": "Show this subject's permissions",
+    "truncated_one": "Only the first {{count}} grant is shown.",
+    "truncated_other": "Only the first {{count}} grants are shown."
+  },
+  "canI": {
+    "authoritative": "Answered by the API server with every authorizer of the cluster: this is what your requests will get. Asking changes nothing in the cluster.",
+    "askTitle": "Can I…",
+    "ask": "Ask",
+    "asking": "Asking the API server…",
+    "clear": "Clear",
+    "allowed": "Yes, allowed",
+    "denied": "No, denied",
+    "notAllowed": "No, not allowed",
+    "reason": "Reason: {{reason}}",
+    "evaluationError": "The answer may be incomplete: {{error}}",
+    "reviewTitle": "My permissions in a namespace",
+    "review": "List my permissions",
+    "reviewing": "Asking the API server…",
+    "forbidden": "You may not ask the API server about your own permissions on this cluster.",
+    "incomplete": "The list may be incomplete: an authorizer of this cluster cannot list its rules.",
+    "incompleteBecause": "The list may be incomplete: {{error}}",
+    "matrixLabel": "My permissions in {{namespace}} by verb and resource"
+  },
+  "details": {
+    "rulesExplained": "Rules explained",
+    "aggregatedFrom": "Aggregated from:",
+    "aggregatedFromNone": "Aggregated, but no ClusterRole matches its selectors.",
+    "boundTo": "Bound to",
+    "noBindings": "No binding refers to this role.",
+    "subjects": "Subjects",
+    "showPermissions": "Show this subject's permissions",
+    "grants": "Grants {{role}}",
+    "grantsEverywhere": "In every namespace and on cluster-scoped resources.",
+    "grantsIn": "Only in the namespace {{namespace}}.",
+    "urlsIgnored": "Rules on non-resource URLs are left out: a RoleBinding cannot grant them.",
+    "subjectsPermissions": "Permissions of its subjects",
+    "canDo": "What it can do",
+    "openPage": "Open in Permissions"
+  }
+}

@@ -21,7 +21,8 @@
     },
     "systemHint": "System follows the light or dark mode of your operating system.",
     "language": "Language",
-    "languageHint": "Translations live in src/locales/<language>/. A new folder there is a new language."
+    "languageSystem": "System ({{language}})",
+    "languageHint": "System follows the language of your operating system, or English when Sextant has no translation for it."
   },
   "window": {
     "title": "Window",

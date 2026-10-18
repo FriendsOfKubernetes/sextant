@@ -9,7 +9,7 @@
 // - "Mute for 1 hour" and the settings are read when a notification is due: what is muted goes only to the history.
 // Every notification due (shown, summarised or muted) is kept in a history of the last `HISTORY_LIMIT`.
 import type { ClusterId, DesktopNotification, ObjectRef } from "../../api";
-import { i18n } from "../../i18n";
+import { formatList, i18n } from "../../i18n";
 import { isActive, type Problem, type ProblemCategory } from "../problems/model";
 import type { SourceState } from "../problems/store";
 import { suppressedBy, type NotificationPrefs } from "./prefs";
@@ -220,8 +220,7 @@ export class NotificationEngine {
     for (const c of items) reasons.set(c.problem.reason, (reasons.get(c.problem.reason) ?? 0) + 1);
     const tally = [...reasons.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([reason, count]) => i18n.t("notifications:summary.reason", { reason, count }))
-      .join(", ");
+      .map(([reason, count]) => i18n.t("notifications:summary.reason", { reason, count }));
     const only = clusters.length === 1 ? clusters[0] : undefined;
     const title = only
       ? i18n.t("notifications:summary.title", { count: items.length, cluster: this.deps.clusterName(only) })
@@ -229,7 +228,7 @@ export class NotificationEngine {
     this.deps.show({
       id: this.nextId(),
       title: inert(clip(title, TITLE_LIMIT)),
-      body: inert(clip(tally)),
+      body: inert(clip(formatList(tally))),
       actionTypeId: ACTION_TYPE,
       extra: { clusterId: clusters[0], object: null },
     });

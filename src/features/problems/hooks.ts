@@ -1,12 +1,20 @@
 // React side of the problem sources: watch the categories a component shows while it is mounted, read their problems,
 // and a clock that moves so grace periods and past restarts change what counts without a new update.
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { ClusterId } from "../../api";
+import { useSettings, type ClusterId } from "../../api";
 import { useClusterKinds } from "../../resources";
 import { useClustersStore } from "../clusters/clustersStore";
 import { isActive, NOTIFY_CATEGORIES, type Problem, type ProblemCategory } from "./model";
 import { needsDiscovery, sourceKey, sourcesFor } from "./sources";
-import { acquireSource, epochOf, getSource, sourcesVersion, subscribeSources, type SourceState } from "./store";
+import {
+  acquireSource,
+  applyCertExpiryDays,
+  epochOf,
+  getSource,
+  sourcesVersion,
+  subscribeSources,
+  type SourceState,
+} from "./store";
 
 /** How often time-based problems (grace periods, past restarts, certificate expiry) are looked at again. */
 export const TICK_MS = 30_000;
@@ -38,6 +46,12 @@ export function useProblemSources(clusterId: ClusterId | null, categories: reado
     const state = clusterId ? s.states[clusterId]?.state : undefined;
     return state !== undefined && state !== "connected";
   });
+
+  // The expiry warning setting decides when a certificate counts as expiring; a change moves held problems at once.
+  const certExpiryDays = useSettings().settings?.notifications.certExpiryDays;
+  useEffect(() => {
+    if (certExpiryDays !== undefined) applyCertExpiryDays(certExpiryDays);
+  }, [certExpiryDays]);
 
   useEffect(() => {
     if (!clusterId || offline) return;

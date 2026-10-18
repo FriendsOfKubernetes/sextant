@@ -1,6 +1,7 @@
-//! The tray icon, as far as the window needs to know: whether it exists (Settings offers "keep in the tray" only then).
+//! The tray icon, as far as the window needs to know: whether it exists (Settings offers "keep in the tray" only then),
+//! and the texts of its menu in the window's UI language.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sextant_core::CoreError;
 use tauri::{AppHandle, Runtime};
 use ts_rs::TS;
@@ -20,4 +21,24 @@ pub async fn tray_status<R: Runtime>(app: AppHandle<R>) -> Result<TrayStatus, Co
         .await
         .unwrap_or(false);
     Ok(TrayStatus { available })
+}
+
+/// The tray menu's texts, the keys of `src/locales/<language>/tray.json`. The window sends them in its UI language.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TrayTexts {
+    pub show: String,
+    pub hide: String,
+    pub about: String,
+    pub quit: String,
+    pub tooltip: String,
+}
+
+/// Relabels the tray menu (and the icon's tooltip) in the window's UI language; an empty text stays English. Without
+/// an icon only the texts are kept.
+#[tauri::command]
+pub fn tray_set_texts<R: Runtime>(app: AppHandle<R>, texts: TrayTexts) -> Result<(), CoreError> {
+    crate::tray::set_texts(&app, &texts);
+    Ok(())
 }

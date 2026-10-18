@@ -21,7 +21,7 @@ describe("language list", () => {
     if (!page) throw new Error("the settings page is not registered");
     render(<page.Component clusterId="c1" />);
     const language = screen.getByRole("combobox", { name: "Language" });
-    expect(within(language).getAllByRole("option").map((o) => o.getAttribute("value"))).toEqual(["en", "xx"]);
+    expect(within(language).getAllByRole("option").map((o) => o.getAttribute("value"))).toEqual(["system", "en", "xx"]);
     fireEvent.change(language, { target: { value: "xx" } });
     await waitFor(() => expect(backend.settings.language).toBe("xx"));
   });

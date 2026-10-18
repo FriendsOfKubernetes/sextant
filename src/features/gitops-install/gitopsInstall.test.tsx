@@ -399,7 +399,7 @@ describe("the install dialog", () => {
     expect(calls("gitops_install_stop")[0]?.args).toEqual({ streamId });
     expect(within(dialog).getByText("Stopping after the current object…")).toBeInTheDocument();
     emit({ type: "stopped", applied: 1 });
-    expect(await within(dialog).findByText(/The install was stopped. 1 objects were applied/)).toBeInTheDocument();
+    expect(await within(dialog).findByText(/The install was stopped. 1 object was applied/)).toBeInTheDocument();
     expect(within(dialog).getByText("Not applied (4)")).toBeInTheDocument();
   });
 

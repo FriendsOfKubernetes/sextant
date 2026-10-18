@@ -22,7 +22,15 @@ import {
   type WatchUpdate,
 } from "../../api";
 import { useClustersStore } from "../clusters/clustersStore";
-import { resolve, uidOfObject, type Problem, type ProblemCategory } from "./model";
+import {
+  currentCertExpiryWarningMs,
+  DEFAULT_CERT_EXPIRY_DAYS,
+  resolve,
+  setCertExpiryDays,
+  uidOfObject,
+  type Problem,
+  type ProblemCategory,
+} from "./model";
 import { sourceKey, type SourceDef } from "./sources";
 
 /** At most this many objects with problems are kept per source; beyond it the oldest go (`truncated`). */
@@ -106,6 +114,31 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   for (const list of entry.byUid.values()) problems.push(...list);
   entry.state = { ...entry.state, ...patch, problems };
   changed();
+}
+
+/**
+ * Applies the expiry warning setting (`notifications.certExpiryDays`): new detections use it, and every held
+ * "Expiring" problem moves to count from the new time at once — no new watch update, no reconnect.
+ */
+export function applyCertExpiryDays(days: unknown): void {
+  if (!setCertExpiryDays(days)) return;
+  const warnMs = currentCertExpiryWarningMs();
+  for (const entry of entries.values()) {
+    let moved = false;
+    for (const [uid, list] of entry.byUid) {
+      if (!list.some((p) => p.expiresAt !== undefined)) continue;
+      entry.byUid.set(
+        uid,
+        list.map((p) => {
+          if (p.expiresAt === undefined) return p;
+          const activeFrom = p.expiresAt - warnMs;
+          return { ...p, activeFrom, activeAt: activeFrom };
+        }),
+      );
+      moved = true;
+    }
+    if (moved) publish(entry);
+  }
 }
 
 /** Puts the problems of one object; whether anything changed, and whether an object was dropped for the cap. */
@@ -263,6 +296,7 @@ export function resetProblemSources(): void {
   epochs.clear();
   connected.clear();
   clock = () => Date.now();
+  setCertExpiryDays(DEFAULT_CERT_EXPIRY_DAYS);
   changed();
 }
 

@@ -2,7 +2,8 @@
 //! from the settings store, so a change in the cluster settings applies to the next call.
 
 use sextant_core::metrics::{
-    self, ChartTarget, MetricsStatus, NodeUsage, PodUsage, PrometheusMode, Series,
+    self, ChartTarget, HistoryScope, HistoryWindow, MetricsStatus, NodeUsage, PodUsage,
+    PrometheusMode, Series, UsageHistory,
 };
 use sextant_core::{ClusterId, ClusterSettings, CoreError, ErrorCode};
 use tauri::State;
@@ -74,4 +75,50 @@ pub async fn metrics_charts(
             )
         })?;
     metrics::query_charts(&state.clusters, &cluster_id, &target, chart, range_secs).await
+}
+
+/// Usage history for right-sizing (#137) from the Prometheus of the cluster settings; `notFound` when there is none.
+/// Read-only; the PromQL is fixed in the core and the scope's names are validated there.
+#[tauri::command]
+pub async fn metrics_usage_history(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    scope: HistoryScope,
+    window: HistoryWindow,
+) -> Result<UsageHistory, CoreError> {
+    let settings = cluster_settings(&state, &cluster_id);
+    let target = metrics::prometheus_target(&state.clusters, &cluster_id, &settings.prometheus)
+        .await?
+        .ok_or_else(|| {
+            CoreError::new(
+                ErrorCode::NotFound,
+                match settings.prometheus {
+                    PrometheusMode::Off => "Prometheus is turned off in the cluster settings",
+                    _ => "Prometheus was not found",
+                },
+            )
+        })?;
+    metrics::usage_history(&state.clusters, &cluster_id, &target, scope, window).await
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn neither_agents_nor_extensions_get_the_usage_history() {
+        let tools = crate::mcp::server::all_tools().names();
+        assert!(tools.len() > 10, "{tools:?}");
+        assert!(
+            !tools
+                .iter()
+                .any(|t| t.contains("history") || t.contains("rightsizing")),
+            "{tools:?}"
+        );
+        let methods = crate::extensions::api::METHODS;
+        assert!(
+            !methods
+                .iter()
+                .any(|m| m.contains("history") || m.contains("rightsizing")),
+            "{methods:?}"
+        );
+    }
 }

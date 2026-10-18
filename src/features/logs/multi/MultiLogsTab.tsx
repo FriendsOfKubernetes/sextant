@@ -360,7 +360,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
 
       {showSources && (
         <div className="logs__sources" role="group" aria-label={t("logs:multi.sourcesLabel")}>
-          <p className="logs__sources-hint">{t("logs:multi.capHint", { max: MAX_STREAMS })}</p>
+          <p className="logs__sources-hint">{t("logs:multi.capHint", { count: MAX_STREAMS })}</p>
           {listed.length === 0 && <p className="logs__sources-hint">{t("logs:multi.noPods")}</p>}
           <ul>
             {listed.map((source) => {

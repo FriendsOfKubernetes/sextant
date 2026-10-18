@@ -6,6 +6,7 @@ import { registerSlot } from "../../layout/slots";
 import { SETTINGS_PAGE_ID, SETTINGS_SECTION } from "./constants";
 import { SettingsButton } from "./SettingsButton";
 import { SettingsPage } from "./SettingsPage";
+import { followLanguageInTray } from "./trayTexts";
 
 registerPage({
   id: SETTINGS_PAGE_ID,
@@ -16,6 +17,7 @@ registerPage({
   Component: SettingsPage,
 });
 registerSlot("railFooter", SettingsButton);
+followLanguageInTray();
 
 export { SETTINGS_PAGE_ID, SETTINGS_SECTION } from "./constants";
 export { languageName } from "./languages";

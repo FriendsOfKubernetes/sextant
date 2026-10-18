@@ -8,7 +8,7 @@
 // developer's settings are not touched, and with KUBECONFIG pointing at the test cluster only.
 // SEXTANT_E2E_SKIP_BUILD=1 reuses target/debug/sextant if e2e built it last (see build.ts), otherwise rebuilds it.
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -70,6 +70,11 @@ export const config: WebdriverIO.Config = {
   onPrepare() {
     const home = mkdtempSync(path.join(tmpdir(), "sextant-e2e-"));
     for (const dir of ["config", "data", "cache", "helm"]) mkdirSync(path.join(home, dir));
+    // Selectors are English texts: the interface is pinned to English whatever the machine's language (a new profile
+    // would follow the system). `settingsVersion` 1 marks "en" as a choice, not the old default (settings.rs `migrate`).
+    const config = path.join(home, "config", "dev.sextant.app");
+    mkdirSync(config, { recursive: true });
+    writeFileSync(path.join(config, "settings.json"), `${JSON.stringify({ language: "en", settingsVersion: 1 }, null, 2)}\n`);
     process.env.SEXTANT_E2E_HOME = home;
     process.env.SEXTANT_TEST_KUBECONFIG = testKubeconfig();
 

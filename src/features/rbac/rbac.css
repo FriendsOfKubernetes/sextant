@@ -1,0 +1,279 @@
+/* RBAC: the Permissions page, the matrix, rule notes and the details sections. */
+.rbac-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.rbac-page__title {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.rbac-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  min-width: 0;
+}
+
+.rbac-heading {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rbac-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--color-border);
+  background: var(--color-panel);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.rbac-note--warn {
+  border-left-color: var(--color-warning);
+  color: var(--color-text);
+}
+
+.rbac-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.rbac-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rbac-field--grow {
+  flex: 1 1 220px;
+}
+
+.rbac-field__label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.rbac-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-height);
+  cursor: pointer;
+}
+
+.rbac-input,
+.rbac-field select {
+  height: var(--control-height);
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: inherit;
+  min-width: 0;
+}
+
+.rbac-input--short {
+  width: 140px;
+}
+
+.rbac-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 640px;
+}
+
+.rbac-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.rbac-picker__item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.rbac-picker__item:hover,
+.rbac-picker__item:focus-visible {
+  background: var(--color-hover);
+}
+
+.rbac-subject {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.rbac-subject__name {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rbac-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rbac-matrix__filter {
+  max-width: 320px;
+}
+
+.rbac-matrix__scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.rbac-matrix__table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.rbac-matrix__table th,
+.rbac-matrix__table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rbac-matrix__verb {
+  text-align: center;
+  font-weight: 500;
+}
+
+.rbac-matrix__resource {
+  font-weight: 500;
+}
+
+.rbac-matrix__group {
+  color: var(--color-text-muted);
+}
+
+.rbac-matrix__section {
+  padding-top: 10px;
+  font-weight: 600;
+}
+
+.rbac-matrix__cell {
+  text-align: center;
+}
+
+.rbac-matrix__mark {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--color-success);
+  border-radius: 50%;
+  background: var(--color-success);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.rbac-matrix__mark--partial {
+  background: linear-gradient(90deg, var(--color-success) 50%, transparent 50%);
+}
+
+.rbac-matrix__mark--selected {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.rbac-matrix__detail {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-panel);
+  min-width: 0;
+}
+
+.rbac-matrix__detail-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.rbac-notes {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.rbac-notes__warn {
+  color: var(--color-warning);
+}
+
+.rbac-rules__pending {
+  opacity: 0.75;
+}
+
+.rbac-warnings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rbac-warnings--lists {
+  padding: 8px 12px;
+  border-left: 3px solid var(--color-warning);
+  background: var(--color-panel);
+}
+
+.rbac-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.rbac-answer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+.rbac-answer--yes {
+  color: var(--color-success);
+}
+
+.rbac-answer--no {
+  color: var(--color-danger);
+}
+
+.rbac-inline {
+  margin-left: 8px;
+}
+
+.rbac-list {
+  margin: 0;
+  padding-left: 16px;
+}

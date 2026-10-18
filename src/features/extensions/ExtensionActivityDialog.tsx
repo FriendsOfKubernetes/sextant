@@ -6,6 +6,7 @@ import { api, events, toApiError, type ApiError, type AuditDecision, type AuditE
 import { Badge, Button, ConfirmDialog, Dialog, ErrorState, LoadingIndicator, type BadgeTone } from "../../components";
 import { useExtensions } from "../../extensions";
 import { withEntry } from "../mcp/ActivityDialog";
+import { formatDateTime } from "../../i18n";
 
 const TONES: Record<AuditDecision, BadgeTone> = {
   allowed: "success",
@@ -136,7 +137,7 @@ export function ExtensionActivityDialog({ open, extensionId = "", onClose }: Ext
                   {entries.map((entry) => (
                     <tr key={keyOf(entry)}>
                       <td className="mcp-activity__time">
-                        <time dateTime={new Date(entry.at).toISOString()}>{new Date(entry.at).toLocaleString()}</time>
+                        <time dateTime={new Date(entry.at).toISOString()}>{formatDateTime(entry.at)}</time>
                       </td>
                       <td>{entry.principal}</td>
                       <td>{entry.clusterName ?? t("extensions:activity.none")}</td>

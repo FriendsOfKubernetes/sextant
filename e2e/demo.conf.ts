@@ -26,7 +26,14 @@ export const config: WebdriverIO.Config = {
     // Tauri's app_config_dir on Linux: $XDG_CONFIG_HOME/<identifier>.
     const dir = path.join(home, "config", "dev.sextant.app");
     mkdirSync(dir, { recursive: true });
-    const settings = { theme: "dark", checkForUpdates: false, mcp: { enabled: demo === "mcp", port: MCP_PORT } };
+    // English, whatever the machine's language: the scenarios find texts, and the README shows English.
+    const settings = {
+      theme: "dark",
+      language: "en",
+      settingsVersion: 1,
+      checkForUpdates: false,
+      mcp: { enabled: demo === "mcp", port: MCP_PORT },
+    };
     writeFileSync(path.join(dir, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);
   },
 };

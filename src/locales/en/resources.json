@@ -11,6 +11,7 @@
     "events": "Events",
     "helm": "Helm",
     "accessControl": "Access Control",
+    "certManager": "cert-manager",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "Custom Resources"

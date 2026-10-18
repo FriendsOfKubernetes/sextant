@@ -4,17 +4,18 @@
 //! The icon is created once at start ([`install`]). When it cannot be created (Linux without the AppIndicator
 //! library, a platform error), or on Linux when nothing would show it (no StatusNotifier host, as on GNOME without the
 //! AppIndicator extension, and no XEmbed tray of an X11 session), the app runs as before: [`available`] is `false`, closing the window quits, and Settings says why
-//! "keep in the tray" is off (`tray_status`). Menu texts come from `src/locales/en/tray.json`.
+//! "keep in the tray" is off (`tray_status`). Menu texts start as `src/locales/en/tray.json`; the window sends them
+//! in its UI language (`tray_set_texts`) whenever that language is set, and the menu is relabelled at once.
 
-use std::collections::HashMap;
 use std::panic::AssertUnwindSafe;
-use std::sync::LazyLock;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{LazyLock, RwLock};
 
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
+use crate::commands::tray::TrayTexts;
 use crate::events;
 use crate::window::{self, MAIN_WINDOW};
 
@@ -29,15 +30,118 @@ const TRAY_ID: &str = "sextant";
 #[cfg(target_os = "linux")]
 const APP_NAME: &str = "Sextant";
 
-/// The native menu cannot use the window's i18next, so its texts are read from the same translation folder when the
-/// app is built.
-static TEXTS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
-    serde_json::from_str(include_str!("../../src/locales/en/tray.json")).unwrap_or_default()
+/// The longest menu text kept from the window (in characters); a longer one is cut.
+const MAX_TEXT_CHARS: usize = 80;
+
+/// The English texts, read from the translation folder when the app is built: the menu has them until the window
+/// sends its language, and keeps them for any text the window sends empty.
+static ENGLISH: LazyLock<TrayTexts> = LazyLock::new(|| {
+    serde_json::from_str(include_str!("../../src/locales/en/tray.json")).unwrap_or_else(|_| {
+        TrayTexts {
+            show: "show".into(),
+            hide: "hide".into(),
+            about: "about".into(),
+            quit: "quit".into(),
+            tooltip: "Sextant".into(),
+        }
+    })
 });
 
-/// The text under `key` in `tray.json`; the key itself if the file lacks it (a test keeps every key there).
-fn text_of(key: &'static str) -> &'static str {
-    TEXTS.get(key).map_or(key, String::as_str)
+/// The menu texts now: English, then whatever the window last sent (`set_texts`).
+static TEXTS: LazyLock<RwLock<TrayTexts>> = LazyLock::new(|| RwLock::new(ENGLISH.clone()));
+
+fn texts() -> TrayTexts {
+    TEXTS
+        .read()
+        .map_or_else(|e| e.into_inner().clone(), |t| t.clone())
+}
+
+/// Unicode format characters (category Cf): bidirectional overrides and isolates (which could make a label read
+/// backwards), zero-width characters, the BOM, tags. None belongs in a menu label of Sextant's languages.
+fn is_format(c: char) -> bool {
+    matches!(c,
+        '\u{00AD}'
+        | '\u{0600}'..='\u{0605}'
+        | '\u{061C}'
+        | '\u{06DD}'
+        | '\u{070F}'
+        | '\u{0890}'..='\u{0891}'
+        | '\u{08E2}'
+        | '\u{180E}'
+        | '\u{200B}'..='\u{200F}'
+        | '\u{202A}'..='\u{202E}'
+        | '\u{2060}'..='\u{2064}'
+        | '\u{2066}'..='\u{206F}'
+        | '\u{FEFF}'
+        | '\u{FFF9}'..='\u{FFFB}'
+        | '\u{110BD}'
+        | '\u{110CD}'
+        | '\u{13430}'..='\u{1343F}'
+        | '\u{1BCA0}'..='\u{1BCA3}'
+        | '\u{1D173}'..='\u{1D17A}'
+        | '\u{E0001}'
+        | '\u{E0020}'..='\u{E007F}')
+}
+
+/// A label as the menu library reads it: `&` marks a mnemonic on every platform (muda turns it into GTK's `_` and
+/// escapes a literal `_` itself), so a literal `&` is written `&&`.
+fn menu_text(label: &str) -> String {
+    label.replace('&', "&&")
+}
+
+/// One text from the window: control and format characters dropped, trimmed, cut to [`MAX_TEXT_CHARS`]; the English
+/// one when nothing is left.
+fn clean(text: &str, english: &str) -> String {
+    let text: String = text
+        .chars()
+        .filter(|c| !c.is_control() && !is_format(*c))
+        .collect::<String>()
+        .trim()
+        .chars()
+        .take(MAX_TEXT_CHARS)
+        .collect();
+    if text.is_empty() {
+        english.to_owned()
+    } else {
+        text
+    }
+}
+
+/// The texts as the menu will show them (see [`clean`]).
+fn cleaned(texts: &TrayTexts) -> TrayTexts {
+    let english = &*ENGLISH;
+    TrayTexts {
+        show: clean(&texts.show, &english.show),
+        hide: clean(&texts.hide, &english.hide),
+        about: clean(&texts.about, &english.about),
+        quit: clean(&texts.quit, &english.quit),
+        tooltip: clean(&texts.tooltip, &english.tooltip),
+    }
+}
+
+/// Takes the window's texts (its UI language) and relabels the menu and the tooltip, if the icon exists.
+pub fn set_texts<R: Runtime>(app: &AppHandle<R>, texts: &TrayTexts) {
+    let next = cleaned(texts);
+    match TEXTS.write() {
+        Ok(mut guard) => *guard = next.clone(),
+        Err(e) => *e.into_inner() = next.clone(),
+    }
+    let Some(state) = app.try_state::<TrayState<R>>() else {
+        return;
+    };
+    if let Some(item) = &state.show_hide {
+        let says_show = state.says_show.load(Ordering::SeqCst);
+        let _ = item.set_text(menu_text(if says_show { &next.show } else { &next.hide }));
+    }
+    if let Some(item) = &state.about {
+        let _ = item.set_text(menu_text(&next.about));
+    }
+    if let Some(item) = &state.quit {
+        let _ = item.set_text(menu_text(&next.quit));
+    }
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        let _ = tray.set_tooltip(Some(&next.tooltip));
+    }
 }
 
 /// What "Show/Hide" does now, and so what it says.
@@ -71,17 +175,20 @@ impl WindowToggle {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
+        let texts = texts();
         match self {
-            Self::Show => text_of("show"),
-            Self::Hide => text_of("hide"),
+            Self::Show => texts.show,
+            Self::Hide => texts.hide,
         }
     }
 }
 
-/// Managed state: whether the icon exists, and its "Show/Hide" item (its text follows the window).
+/// Managed state: whether the icon exists, and its items ("Show/Hide" follows the window; all follow the language).
 struct TrayState<R: Runtime> {
     show_hide: Option<MenuItem<R>>,
+    about: Option<MenuItem<R>>,
+    quit: Option<MenuItem<R>>,
     /// The text the item has now: `true` = "Show". Resizing calls [`sync_label`] on every frame; the menu is only
     /// touched when the text changes.
     says_show: AtomicBool,
@@ -90,8 +197,8 @@ struct TrayState<R: Runtime> {
 /// Creates the tray icon. Never fails the start: on an error (or a panic of the platform library, which Linux
 /// raises when no AppIndicator library is installed) it logs once and returns `false`.
 pub fn install<R: Runtime>(app: &AppHandle<R>) -> bool {
-    let show_hide = match std::panic::catch_unwind(AssertUnwindSafe(|| build(app))) {
-        Ok(Ok(item)) => Some(item),
+    let items = match std::panic::catch_unwind(AssertUnwindSafe(|| build(app))) {
+        Ok(Ok(items)) => Some(items),
         Ok(Err(e)) => {
             eprintln!("Sextant: no tray icon: {e}");
             None
@@ -101,12 +208,18 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> bool {
             None
         }
     };
-    let available = show_hide.is_some();
+    let available = items.is_some();
     let says_show = app
         .get_webview_window(MAIN_WINDOW)
         .is_some_and(|w| current_toggle(&w) == WindowToggle::Show);
+    let (show_hide, about, quit) = match items {
+        Some((show_hide, about, quit)) => (Some(show_hide), Some(about), Some(quit)),
+        None => (None, None, None),
+    };
     app.manage(TrayState {
         show_hide,
+        about,
+        quit,
         says_show: AtomicBool::new(says_show),
     });
     available
@@ -233,7 +346,7 @@ pub fn show_label<R: Runtime>(app: &AppHandle<R>, toggle: WindowToggle) {
     {
         let says_show = toggle == WindowToggle::Show;
         if state.says_show.swap(says_show, Ordering::SeqCst) != says_show {
-            let _ = item.set_text(toggle.label());
+            let _ = item.set_text(menu_text(&toggle.label()));
         }
     }
 }
@@ -283,13 +396,23 @@ fn current_toggle<R: Runtime>(window: &tauri::WebviewWindow<R>) -> WindowToggle 
     )
 }
 
-fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
+type MenuItems<R> = (MenuItem<R>, MenuItem<R>, MenuItem<R>);
+
+/// The icon and its menu; returns the items "Show/Hide", "About" and "Quit".
+fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItems<R>> {
     let toggle = app
         .get_webview_window(MAIN_WINDOW)
         .map_or(WindowToggle::Hide, |w| current_toggle(&w));
-    let show_hide = MenuItem::with_id(app, SHOW_HIDE, toggle.label(), true, None::<&str>)?;
-    let about = MenuItem::with_id(app, ABOUT, text_of("about"), true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, QUIT, text_of("quit"), true, None::<&str>)?;
+    let texts = texts();
+    let show_hide = MenuItem::with_id(
+        app,
+        SHOW_HIDE,
+        menu_text(&toggle.label()),
+        true,
+        None::<&str>,
+    )?;
+    let about = MenuItem::with_id(app, ABOUT, menu_text(&texts.about), true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, QUIT, menu_text(&texts.quit), true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
         &[
@@ -302,7 +425,7 @@ fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
     )?;
     let builder = TrayIconBuilder::with_id(TRAY_ID)
         .menu(&menu)
-        .tooltip(text_of("tooltip"))
+        .tooltip(&texts.tooltip)
         // Windows: a left click brings the window back, the menu is on the right button.
         .show_menu_on_left_click(!cfg!(windows))
         .on_menu_event(|app, event| on_menu(app, event.id().as_ref()))
@@ -315,7 +438,7 @@ fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
     let builder = builder.icon(tauri::include_image!("icons/64x64.png"));
     name_indicator();
     builder.build(app)?;
-    Ok(show_hide)
+    Ok((show_hide, about, quit))
 }
 
 /// Linux: the StatusNotifier item (libappindicator) is named by GLib's application name and falls back to the
@@ -389,8 +512,6 @@ mod tests {
         assert_eq!(WindowToggle::by_minimized(false, false), WindowToggle::Show);
         assert_eq!(WindowToggle::by_minimized(true, true), WindowToggle::Show);
         assert_eq!(WindowToggle::by_minimized(false, true), WindowToggle::Show);
-        assert_eq!(WindowToggle::Show.label(), "Show Sextant");
-        assert_eq!(WindowToggle::Hide.label(), "Hide Sextant");
     }
 
     #[test]
@@ -429,18 +550,91 @@ mod tests {
         assert!(!gtk_on_x11(Some("wayland-0"), Some("")));
     }
 
+    const KEYS: [&str; 5] = ["show", "hide", "about", "quit", "tooltip"];
+
     #[test]
     fn every_menu_text_comes_from_the_translation_file() {
         let file: serde_json::Value =
             serde_json::from_str(include_str!("../../src/locales/en/tray.json")).unwrap();
-        for key in ["show", "hide", "about", "quit", "tooltip"] {
+        let english = serde_json::to_value(&*ENGLISH).unwrap();
+        for key in KEYS {
             let text = file[key]
                 .as_str()
                 .unwrap_or_else(|| panic!("tray.json has no `{key}`"));
-            assert_eq!(text_of(key), text);
+            assert_eq!(english[key], text);
         }
-        assert_eq!(WindowToggle::Show.label(), file["show"].as_str().unwrap());
-        assert_eq!(WindowToggle::Hide.label(), file["hide"].as_str().unwrap());
+        assert_eq!(english["show"], "Show Sextant");
+    }
+
+    #[test]
+    fn every_language_has_every_menu_text() {
+        // The window sends these keys of `tray` in its language: each locale directory must have them all.
+        let locales = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/locales");
+        let mut seen = 0;
+        for dir in std::fs::read_dir(&locales).unwrap() {
+            let dir = dir.unwrap().path();
+            if !dir.is_dir() {
+                continue;
+            }
+            let path = dir.join("tray.json");
+            let text = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            let file: TrayTexts =
+                serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            let file = serde_json::to_value(file).unwrap();
+            for key in KEYS {
+                assert!(
+                    file[key].as_str().is_some_and(|t| !t.trim().is_empty()),
+                    "{}: `{key}` is empty",
+                    path.display()
+                );
+            }
+            seen += 1;
+        }
+        assert!(seen >= 1, "no locale directories in {}", locales.display());
+    }
+
+    #[test]
+    fn labels_lose_format_characters_and_keep_a_literal_ampersand() {
+        // A right-to-left override would show "Quit" reversed; zero-width characters and the BOM hide in a label.
+        assert_eq!(clean("\u{202E}tiuQ\u{202C}", "x"), "tiuQ");
+        assert_eq!(
+            clean("\u{FEFF}Sextant\u{200B} an\u{00AD}zeigen\u{2066}", "x"),
+            "Sextant anzeigen"
+        );
+        assert_eq!(clean("\u{200E}\u{200F}", "English"), "English");
+        // Ordinary letters of the translations stay (CJK, Cyrillic, Polish, Turkish).
+        assert_eq!(clean("退出 Sextant", "x"), "退出 Sextant");
+        assert_eq!(
+            clean("Zakończ Sextant – Çıkış", "x"),
+            "Zakończ Sextant – Çıkış"
+        );
+        // `&` is the mnemonic marker of the menu library: a literal one is doubled; `_` is left to it.
+        assert_eq!(menu_text("Info & Hilfe"), "Info && Hilfe");
+        assert_eq!(menu_text("about_sextant"), "about_sextant");
+    }
+
+    // The only test that changes the texts (they are process-wide): no other test reads a label.
+    #[test]
+    fn texts_from_the_window_relabel_the_menu_and_an_empty_one_stays_english() {
+        let app = tauri::test::mock_app();
+        set_texts(
+            app.handle(),
+            &TrayTexts {
+                show: " Sextant anzeigen\n".into(),
+                hide: "Sextant ausblenden".into(),
+                about: "".into(),
+                quit: "x".repeat(200),
+                tooltip: "Sextant".into(),
+            },
+        );
+        assert_eq!(WindowToggle::Show.label(), "Sextant anzeigen");
+        assert_eq!(WindowToggle::Hide.label(), "Sextant ausblenden");
+        let now = texts();
+        assert_eq!(now.about, ENGLISH.about);
+        assert_eq!(now.quit.chars().count(), MAX_TEXT_CHARS);
+        set_texts(app.handle(), &ENGLISH);
+        assert_eq!(WindowToggle::Show.label(), "Show Sextant");
     }
 
     #[cfg(target_os = "linux")]
@@ -457,6 +651,8 @@ mod tests {
         assert!(!available(app.handle()));
         app.manage(TrayState::<tauri::test::MockRuntime> {
             show_hide: None,
+            about: None,
+            quit: None,
             says_show: AtomicBool::new(false),
         });
         assert!(!available(app.handle()));

@@ -59,6 +59,54 @@
   box-sizing: border-box;
 }
 
+/* The UI font: the system's, then fonts with Chinese, Japanese and Korean glyphs (`system-ui` may lack them on
+   Linux). `<html lang>` follows the UI language (src/i18n), so each CJK language prefers its own glyph forms. */
+:root {
+  --font-latin:
+    system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue";
+  --font-ui:
+    var(--font-latin), "PingFang SC", "Hiragino Sans", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Source Han Sans SC", "Malgun Gothic",
+    "Apple SD Gothic Neo", sans-serif;
+}
+
+:root:lang(zh-CN) {
+  --font-ui:
+    var(--font-latin), "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC",
+    "Source Han Sans SC", "WenQuanYi Micro Hei", sans-serif;
+}
+
+:root:lang(zh-TW) {
+  --font-ui:
+    var(--font-latin), "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC",
+    "Source Han Sans TC", sans-serif;
+}
+
+:root:lang(ja) {
+  --font-ui:
+    var(--font-latin), "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI", Meiryo, "Noto Sans CJK JP", "Source Han Sans JP", sans-serif;
+}
+
+:root:lang(ko) {
+  --font-ui:
+    var(--font-latin), "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans CJK KR", "Source Han Sans KR", sans-serif;
+}
+
+/* Chinese and Japanese break between characters, with the strict rules for punctuation; Korean breaks between words
+   (spaces), like the Latin languages, and a word longer than its box still breaks. */
+:root:lang(zh-CN) body,
+:root:lang(zh-TW) body,
+:root:lang(ja) body {
+  line-break: strict;
+}
+
+:root:lang(ko) body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 html,
 body,
 #root {
@@ -69,14 +117,7 @@ body,
 body {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Ubuntu,
-    "Helvetica Neue",
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 1.4;
   overflow: hidden;
@@ -304,6 +345,7 @@ button {
 
 .dialog__footer {
   display: flex;
+  flex-wrap: wrap; /* longer labels of other languages go to a second row */
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px;

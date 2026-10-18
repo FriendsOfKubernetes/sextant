@@ -150,6 +150,7 @@
 
 .argo-login__actions {
   display: flex;
+  flex-wrap: wrap; /* longer labels of other languages go to a second row */
   justify-content: flex-end;
 }
 

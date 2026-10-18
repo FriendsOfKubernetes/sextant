@@ -12,6 +12,7 @@ import { useExtensions } from "../../extensions";
 import { reinstallText } from "./install";
 import { ReviewDialog } from "./ReviewDialog";
 import "./extensions.css";
+import { formatList } from "../../i18n";
 
 export function ConsentNotice() {
   const { t } = useTranslation();
@@ -32,7 +33,7 @@ export function ConsentNotice() {
       {paused.length > 0 && (
         <div className="ext-consent-notice" role="alert">
           <span className="ext-consent-notice__text">
-            {t("extensions:notice.text", { count: paused.length, names: paused.map((e) => e.name).join(", ") })}
+            {t("extensions:notice.text", { count: paused.length, names: formatList(paused.map((e) => e.name)) })}
             {reinstall.map((line) => (
               <span key={line.id} className="ext-consent-notice__line">
                 {line.text}

@@ -8,6 +8,8 @@ import { useClusters } from "../clusters/hooks";
 import { useNow } from "../problems/hooks";
 import { NOTIFY_CATEGORIES } from "../problems/model";
 import { muteForHour, mutedNow, prefsOf, setCategory, setClusterMuted, setEnabled, unmute } from "./prefs";
+import { CertExpiryField } from "./CertExpiryField";
+import { formatTime } from "../../i18n";
 
 type Save = (change: (current: AppSettings) => AppSettings) => Promise<boolean>;
 
@@ -31,7 +33,7 @@ export function NotificationsPanel({ settings, save }: { settings: AppSettings |
         {muted && prefs?.mutedUntil ? (
           <>
             <span role="status">
-              {t("notifications:settings.mutedUntil", { time: new Date(prefs.mutedUntil).toLocaleTimeString() })}
+              {t("notifications:settings.mutedUntil", { time: formatTime(prefs.mutedUntil) })}
             </span>
             <Button size="compact" onClick={() => void save(unmute())}>
               {t("notifications:unmute")}
@@ -58,6 +60,12 @@ export function NotificationsPanel({ settings, save }: { settings: AppSettings |
             </label>
           ))}
         </div>
+      </fieldset>
+
+      <fieldset className="notif-settings__group">
+        <legend className="settings__label">{t("notifications:settings.certificates")}</legend>
+        <CertExpiryField className="notif-settings__cert-expiry" />
+        <p className="settings__hint">{t("notifications:settings.certExpiryHint")}</p>
       </fieldset>
 
       <fieldset className="notif-settings__group" disabled={!on}>

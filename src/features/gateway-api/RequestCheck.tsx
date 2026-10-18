@@ -7,12 +7,13 @@
 // while the app runs (`checkState.ts`).
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { listSeparator } from "../../i18n";
 import type { ClusterId } from "../../api";
 import { Button, Checkbox, EmptyState, Icon, Tabs } from "../../components";
 import { registerPage, type PageProps } from "../../layout/pages";
 import { StatusText } from "../../resources";
 import { useCheckData, type CheckData } from "./checkData";
-import { CopyGrantButton, gatewayRef, LIST_SEPARATOR, LoadingLine, MATCH_SEPARATOR, phrasesText, refLink, useGrantApiVersion } from "./details";
+import { CopyGrantButton, gatewayRef, LoadingLine, MATCH_SEPARATOR, phrasesText, refLink, useGrantApiVersion } from "./details";
 import { HostnameMap } from "./HostnameMap";
 import {
   explainRequest,
@@ -141,7 +142,7 @@ function RequestFormView({
       </label>
       {badLines.length > 0 && (
         <p className="gw-check__error" role="alert">
-          {t("gateway:check.form.badHeaders", { count: badLines.length, lines: badLines.join(LIST_SEPARATOR) })}
+          {t("gateway:check.form.badHeaders", { count: badLines.length, lines: badLines.join(listSeparator()) })}
         </p>
       )}
     </form>
@@ -210,7 +211,7 @@ function GatewayStep({ result }: { result: RequestExplanation }) {
       </div>
       <Why>
         {listener.hostname ? t("gateway:check.why.listenerHostname", params) : t("gateway:check.why.listenerAnyHost", params)}
-        {lessSpecific.length > 0 && ` ${t("gateway:check.why.moreSpecific", { listeners: lessSpecific.join(LIST_SEPARATOR) })}`}
+        {lessSpecific.length > 0 && ` ${t("gateway:check.why.moreSpecific", { listeners: lessSpecific.join(listSeparator()) })}`}
       </Why>
     </Step>
   );
@@ -251,7 +252,7 @@ function RouteStep({ result }: { result: RequestExplanation }) {
         {won.count > 0
           ? t("gateway:check.why.won", {
               count: won.count,
-              criteria: won.criteria.map((c) => t(`gateway:check.criteria.${c}`)).join(LIST_SEPARATOR),
+              criteria: won.criteria.map((c) => t(`gateway:check.criteria.${c}`)).join(listSeparator()),
             })
           : t("gateway:check.why.only")}
       </Why>
@@ -267,7 +268,7 @@ function FiltersStep({ result }: { result: RequestExplanation }) {
       {result.filters.length > 0 ? (
         <ul className="gw-step__list">
           {result.filters.map((f, i) => (
-            <li key={i}>{phrasesText(f.phrases, t, LIST_SEPARATOR)}</li>
+            <li key={i}>{phrasesText(f.phrases, t, listSeparator())}</li>
           ))}
         </ul>
       ) : (
@@ -282,7 +283,7 @@ function FiltersStep({ result }: { result: RequestExplanation }) {
         </Why>
       )}
       {result.mirrors.length > 0 && (
-        <Why>{t("gateway:check.mirrors", { backends: result.mirrors.map((b) => backendText(b, ns)).join(LIST_SEPARATOR) })}</Why>
+        <Why>{t("gateway:check.mirrors", { backends: result.mirrors.map((b) => backendText(b, ns)).join(listSeparator()) })}</Why>
       )}
     </Step>
   );

@@ -1,0 +1,26 @@
+{
+  "apiVersion": "cert-manager.io/v1",
+  "kind": "Certificate",
+  "metadata": { "name": "shop", "namespace": "shop", "uid": "cert-1", "creationTimestamp": "2026-01-01T00:00:00Z" },
+  "spec": {
+    "secretName": "shop-tls",
+    "commonName": "shop.example.com",
+    "dnsNames": ["shop.example.com", "www.shop.example.com"],
+    "issuerRef": { "name": "letsencrypt", "kind": "ClusterIssuer", "group": "cert-manager.io" },
+    "privateKey": { "algorithm": "ECDSA", "size": 256, "rotationPolicy": "Always" },
+    "duration": "2160h0m0s",
+    "renewBefore": "720h0m0s"
+  },
+  "status": {
+    "conditions": [
+      { "type": "Ready", "status": "True", "reason": "Ready", "message": "Certificate is up to date and has not expired", "lastTransitionTime": "2026-07-01T00:00:00Z" },
+      { "type": "Issuing", "status": "False", "reason": "Failed", "message": "The certificate request has failed to complete and will be retried: Failed to wait for order resource \"shop-1-2391\" to become ready: order is in \"invalid\" state", "lastTransitionTime": "2026-10-01T00:00:00Z" }
+    ],
+    "notBefore": "2026-07-20T00:00:00Z",
+    "notAfter": "2026-10-18T00:00:00Z",
+    "renewalTime": "2026-09-18T00:00:00Z",
+    "revision": 1,
+    "lastFailureTime": "2026-10-01T00:00:00Z",
+    "failedIssuanceAttempts": 3
+  }
+}

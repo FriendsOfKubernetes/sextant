@@ -19,6 +19,13 @@ mod tray {
     pub fn available<R: tauri::Runtime>(_app: &tauri::AppHandle<R>) -> bool {
         false
     }
+
+    /// No menu to relabel.
+    pub fn set_texts<R: tauri::Runtime>(
+        _app: &tauri::AppHandle<R>,
+        _texts: &crate::commands::tray::TrayTexts,
+    ) {
+    }
 }
 mod window;
 
@@ -54,6 +61,8 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         resources::resource_delete,
         secrets::secret_value,
         secrets::resource_get_full,
+        commands::tls::tls_certificate_info,
+        commands::tls::tls_expiry_scan,
         actions::workload_scale,
         actions::workload_restart,
         actions::node_cordon,
@@ -79,6 +88,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         metrics::metrics_nodes,
         metrics::metrics_status,
         metrics::metrics_charts,
+        metrics::metrics_usage_history,
         helm::helm_status,
         helm::helm_releases,
         helm::helm_release_detail,
@@ -97,6 +107,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         settings::settings_update,
         settings::settings_status,
         commands::tray::tray_status,
+        commands::tray::tray_set_texts,
         commands::about::about_info,
         commands::gitops_install::gitops_install_versions,
         commands::gitops_install::gitops_install_prepare,
@@ -113,6 +124,8 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         argocd::argocd_logout,
         argocd::argocd_diff,
         access::access_preset_rules,
+        commands::rbac::rbac_can_i,
+        commands::rbac::rbac_rules_review,
         commands::mcp::mcp_status,
         commands::mcp::mcp_token,
         commands::mcp::mcp_regenerate_token,

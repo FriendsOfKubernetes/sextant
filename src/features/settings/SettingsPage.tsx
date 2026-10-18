@@ -14,7 +14,7 @@ import {
   type Theme,
 } from "../../api";
 import { Button, Checkbox, ConfirmDialog, ErrorState, Radio, Tabs } from "../../components";
-import { availableLanguages } from "../../i18n";
+import { availableLanguages, resolveLanguage, SYSTEM_LANGUAGE } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
 import { removeKubeconfigSource } from "../clusters/clustersStore";
@@ -133,8 +133,10 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
   const { t } = useTranslation();
   const languageId = useId();
   const theme = settings?.theme ?? "system";
-  const language = settings?.language ?? "en";
-  const languages = availableLanguages.includes(language) ? availableLanguages : [...availableLanguages, language];
+  // "system" (a new install) follows the OS; a stored code is an explicit choice. Empty reads as "system".
+  const language = settings?.language || SYSTEM_LANGUAGE;
+  const known = language === SYSTEM_LANGUAGE || availableLanguages.includes(language);
+  const languages = known ? availableLanguages : [...availableLanguages, language];
 
   return (
     <Section title={t("settings:appearance.title")}>
@@ -170,6 +172,9 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
             void save((s) => ({ ...s, language: next }));
           }}
         >
+          <option value={SYSTEM_LANGUAGE}>
+            {t("settings:appearance.languageSystem", { language: languageName(resolveLanguage(SYSTEM_LANGUAGE)) })}
+          </option>
           {languages.map((code) => (
             <option key={code} value={code}>
               {languageName(code)}

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { AccessRule, Contributions, ExtensionPermissions } from "../../api";
 import { Badge, Icon } from "../../components";
+import { formatList } from "../../i18n";
 
 /** The rule asks before running only for the actions that change something. */
 const CHANGING = new Set(["modify", "delete"]);
@@ -20,7 +21,7 @@ function kindsText(rule: AccessRule, t: TFunction): string {
 function namespacesText(rule: AccessRule, t: TFunction): string {
   if (rule.namespaces.type === "all") return t("extensions:permissions.namespacesAll");
   const names = rule.namespaces.namespaces;
-  return t("extensions:permissions.namespacesOnly", { count: names.length, names: names.join(", ") });
+  return t("extensions:permissions.namespacesOnly", { count: names.length, names: formatList(names) });
 }
 
 export function PermissionsView({ permissions }: { permissions: ExtensionPermissions }) {
@@ -34,7 +35,7 @@ export function PermissionsView({ permissions }: { permissions: ExtensionPermiss
       ) : (
         <>
           <p className="ext-perms__line">
-            {t("extensions:permissions.clustersOnly", { count: clusters.names.length, names: clusters.names.join(", ") })}
+            {t("extensions:permissions.clustersOnly", { count: clusters.names.length, names: formatList(clusters.names) })}
           </p>
           <p className="settings__hint">{t("extensions:permissions.clustersNote")}</p>
         </>

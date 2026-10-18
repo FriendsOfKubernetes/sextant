@@ -391,6 +391,30 @@ const CASES: Case[] = [
     obj: { metadata: meta("tls"), status: { conditions: [cond("Ready", "False", { reason: "Failed" })] } },
     reasons: ["Failed"],
   },
+  {
+    name: "a first issuance that keeps failing (still DoesNotExist, Issuing=False/Failed)",
+    kind: CERTIFICATE,
+    obj: {
+      metadata: meta("tls"),
+      status: {
+        conditions: [
+          cond("Ready", "False", { reason: "DoesNotExist" }),
+          cond("Issuing", "False", { reason: "Failed", message: "order is in \"invalid\" state" }),
+        ],
+      },
+    },
+    reasons: ["IssuanceFailed"],
+    notify: [true],
+  },
+  {
+    name: "a valid certificate whose renewal failed",
+    kind: CERTIFICATE,
+    obj: {
+      metadata: meta("tls"),
+      status: { conditions: [cond("Ready", "True", { reason: "Ready" }), cond("Issuing", "False", { reason: "Failed" })] },
+    },
+    reasons: ["IssuanceFailed"],
+  },
 ];
 
 describe("detection rules", () => {

@@ -22,4 +22,10 @@ mutedClusters: Array<string>,
 /**
  * "Mute for 1 hour": nothing is shown until this RFC 3339 time.
  */
-mutedUntil: string | null, };
+mutedUntil: string | null, 
+/**
+ * How many days before it expires a certificate (a TLS Secret's, a cert-manager Certificate's) is shown as
+ * expiring in its details and in the TLS certificates list; 14 by default. Written by the frontend, which
+ * clamps it to 1..=365.
+ */
+certExpiryDays: number, };

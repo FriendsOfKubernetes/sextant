@@ -1,0 +1,18 @@
+{
+  "apiVersion": "cert-manager.io/v1",
+  "kind": "ClusterIssuer",
+  "metadata": { "name": "letsencrypt", "uid": "ci-1", "creationTimestamp": "2026-01-01T00:00:00Z" },
+  "spec": {
+    "acme": {
+      "server": "https://acme-v02.api.letsencrypt.org/directory",
+      "email": "ops@example.com",
+      "privateKeySecretRef": { "name": "letsencrypt-account" },
+      "solvers": [{ "http01": { "ingress": { "ingressClassName": "nginx" } } }, { "dns01": { "cloudflare": {} } }]
+    }
+  },
+  "status": {
+    "conditions": [
+      { "type": "Ready", "status": "False", "reason": "ErrRegisterACMEAccount", "message": "Failed to register ACME account: 400 urn:ietf:params:acme:error:invalidContact", "lastTransitionTime": "2026-01-01T00:00:00Z" }
+    ]
+  }
+}

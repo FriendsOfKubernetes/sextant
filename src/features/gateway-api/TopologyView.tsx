@@ -6,13 +6,14 @@
 // backends' namespaces, ReferenceGrants only where a backend is elsewhere.
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { listSeparator } from "../../i18n";
 import type { ClusterId, KubeObject } from "../../api";
 import { Checkbox } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { StatusText } from "../../resources";
 import { Block } from "../details";
 import { HEALTH_TONE } from "./columns";
-import { LIST_SEPARATOR, LoadingLine, MATCH_SEPARATOR, nameFrom, phrasesText, refLink } from "./details";
+import { LoadingLine, MATCH_SEPARATOR, nameFrom, phrasesText, refLink } from "./details";
 import { useBackendState, useGrants, useServedRoutes } from "./hooks";
 import { backendText, explainReason, isKind, GATEWAY, type Health } from "./model";
 import { flattenTopology, gatewayTopology, onlyProblems, type TopologyNode } from "./topology";
@@ -58,7 +59,7 @@ function NodeLabel({ node, gatewayNamespace }: { node: TopologyNode; gatewayName
     case "route":
       kind = node.routeKind.kind;
       name = refLink(node.ref, nameFrom(node.ref, gatewayNamespace));
-      detail = node.hostnames && node.hostnames.length > 0 ? node.hostnames.join(LIST_SEPARATOR) : undefined;
+      detail = node.hostnames && node.hostnames.length > 0 ? node.hostnames.join(listSeparator()) : undefined;
       break;
     case "rule": {
       const { rule } = node;
@@ -68,7 +69,7 @@ function NodeLabel({ node, gatewayNamespace }: { node: TopologyNode; gatewayName
         : t("gateway:route.rule", { n: rule.index + 1 });
       const matched =
         rule.matches.length > 0 ? rule.matches.map((m) => phrasesText(m, t, MATCH_SEPARATOR)).join(" | ") : undefined;
-      const filters = rule.filters.length > 0 ? phrasesText(rule.filters, t, LIST_SEPARATOR) : undefined;
+      const filters = rule.filters.length > 0 ? phrasesText(rule.filters, t, listSeparator()) : undefined;
       detail = [matched, filters].filter(Boolean).join(" · ") || undefined;
       break;
     }

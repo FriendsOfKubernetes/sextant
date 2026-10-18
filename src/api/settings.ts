@@ -9,7 +9,8 @@ import { call } from "./transport";
 export function defaultAppSettings(): AppSettings {
   return {
     theme: "system",
-    language: "en",
+    language: "system",
+    settingsVersion: 1,
     kubeconfigSources: [],
     clusters: {},
     window: {
@@ -30,7 +31,7 @@ export function defaultAppSettings(): AppSettings {
     nodeShellImage: "busybox:stable",
     debugImage: "busybox:stable",
     extensions: [],
-    notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null },
+    notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null, certExpiryDays: 14 },
   };
 }
 

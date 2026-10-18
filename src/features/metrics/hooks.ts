@@ -200,12 +200,12 @@ export function latestNodeUsage(clusterId: ClusterId | null, name: string): Node
   return clusterId ? lastNodes.get(clusterId)?.get(name) : undefined;
 }
 
-/** Current usage of the pods in the selected namespaces, by `namespace/name`. */
-export function usePodUsage(clusterId: ClusterId): Polled<Map<string, PodUsage>> {
+/** Current usage of the pods in the selected namespaces, by `namespace/name` (`enabled` false: nothing is fetched). */
+export function usePodUsage(clusterId: ClusterId, enabled = true): Polled<Map<string, PodUsage>> {
   const settings = useMetricsSettings(clusterId);
   const namespaces = useSelectedNamespaces(clusterId);
   const key =
-    settings && namespaces !== undefined
+    enabled && settings && namespaces !== undefined
       ? `pods|${clusterId}|${settingsKey(settings)}|${JSON.stringify(namespaces)}`
       : null;
   return usePolled(key, async () => {

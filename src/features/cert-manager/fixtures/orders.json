@@ -1,0 +1,15 @@
+[
+  {
+    "apiVersion": "acme.cert-manager.io/v1",
+    "kind": "Order",
+    "metadata": {
+      "name": "shop-2-2391",
+      "namespace": "shop",
+      "uid": "order-2",
+      "creationTimestamp": "2026-10-01T00:00:01Z",
+      "ownerReferences": [{ "apiVersion": "cert-manager.io/v1", "kind": "CertificateRequest", "name": "shop-2", "uid": "cr-2", "controller": true }]
+    },
+    "spec": { "commonName": "shop.example.com", "dnsNames": ["shop.example.com", "www.shop.example.com"], "issuerRef": { "name": "letsencrypt", "kind": "ClusterIssuer", "group": "cert-manager.io" } },
+    "status": { "state": "invalid", "reason": "Failed to finalize order", "url": "https://acme.example.test/order/2391", "failureTime": "2026-10-01T00:05:00Z" }
+  }
+]

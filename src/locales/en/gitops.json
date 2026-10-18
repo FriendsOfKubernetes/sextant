@@ -61,8 +61,10 @@
   "result": {
     "done": "{{tool}} {{version}} is installed and running. Its section is in the sidebar.",
     "timedOut": "Everything was applied, but not every controller was ready within 5 minutes. What was applied stays in the cluster.",
-    "stopped": "The install was stopped. {{count}} objects were applied; the rest were not sent.",
-    "stoppedWaiting": "The install was stopped while waiting for the controllers. All {{count}} objects were applied and stay in the cluster.",
+    "stopped_one": "The install was stopped. {{count}} object was applied; the rest were not sent.",
+    "stopped_other": "The install was stopped. {{count}} objects were applied; the rest were not sent.",
+    "stoppedWaiting_one": "The install was stopped while waiting for the controllers. The {{count}} object was applied and stays in the cluster.",
+    "stoppedWaiting_other": "The install was stopped while waiting for the controllers. All {{count}} objects were applied and stay in the cluster.",
     "failed": "The install failed. Nothing after the failed object was sent; what was applied stays in the cluster.",
     "applied": "Applied ({{count}})",
     "notApplied": "Not applied ({{count}})"

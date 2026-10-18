@@ -15,6 +15,7 @@ import { useClusterProblems } from "./hooks";
 import { PROBLEM_CATEGORIES, startedAt, type Problem } from "./model";
 import "./problems.css";
 import { useProblemsUi } from "./ui";
+import { formatTime } from "../../i18n";
 
 export function ProblemsPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ export function ProblemsPage({ clusterId }: PageProps) {
             disabled={mark === null}
             onChange={(e) => setOnlyNew(clusterId, e.target.checked)}
           />
-          {t("problems:onlyNewSince", { time: mark === null ? "" : new Date(mark).toLocaleTimeString() })}
+          {t("problems:onlyNewSince", { time: mark === null ? "" : formatTime(mark) })}
         </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}

@@ -1,0 +1,331 @@
+/* Resource map (#139): health dots, the "Related" tab and the namespace map. */
+
+.rmap-dot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.rmap-dot--ok {
+  background: var(--color-success);
+}
+
+.rmap-dot--pending {
+  background: var(--color-warning);
+}
+
+.rmap-dot--problem {
+  background: var(--color-danger);
+}
+
+.rmap-dot--missing {
+  background: transparent;
+  border: 2px solid var(--color-danger);
+}
+
+.rmap-dot--neutral {
+  background: var(--color-border);
+  border: 1px solid var(--color-text-muted);
+}
+
+.rmap-dot--unknown {
+  background: transparent;
+  border: 1px dashed var(--color-text-muted);
+}
+
+/* ---------- The "Related" tab ---------- */
+
+.rmap-impact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rmap-impact__line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.rmap-impact__line svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-warning);
+}
+
+.rmap-related__scope {
+  margin: 0 0 8px;
+}
+
+.rmap-related__failed {
+  margin: 0 0 8px;
+  color: var(--color-warning);
+}
+
+.rmap-tree .rmap-tree {
+  margin-left: 22px;
+  padding-left: 8px;
+  border-left: 1px solid var(--color-border);
+}
+
+.rmap-group {
+  margin: 6px 0 10px;
+}
+
+.rmap-group__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.rmap-group__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rmap-group__more {
+  margin: 2px 0 0 22px;
+}
+
+.rmap-row__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  min-width: 0;
+}
+
+.rmap-row__toggle {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rmap-row__kind {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.rmap-row__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rmap-row__note {
+  margin: 2px 0 6px 28px;
+}
+
+/* ---------- The map page ---------- */
+
+.rmap-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.rmap-page__title {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.rmap-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.rmap-page__note {
+  margin: 8px 0;
+  color: var(--color-text-muted);
+}
+
+.rmap-map__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 24px;
+  margin-bottom: 12px;
+}
+
+.rmap-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.rmap-kinds__legend {
+  float: left;
+  margin-right: 8px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.rmap-kinds__item,
+.rmap-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.rmap-kinds__item {
+  cursor: pointer;
+}
+
+.rmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--color-text-muted);
+}
+
+.rmap-scroll {
+  overflow: auto;
+  max-width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 16px;
+  background: var(--color-panel);
+}
+
+.rmap-canvas {
+  position: relative;
+}
+
+.rmap-edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rmap-edge {
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 1.2;
+  opacity: 0.45;
+}
+
+.rmap-edge--owner {
+  stroke-dasharray: 4 3;
+}
+
+.rmap-edge--active {
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.rmap-edge--dimmed {
+  opacity: 0.12;
+}
+
+.rmap-node {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-text-muted);
+  border-radius: 6px;
+  background: var(--color-main);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rmap-node:hover,
+.rmap-node:focus-visible {
+  background: var(--color-hover);
+}
+
+.rmap-node:disabled {
+  cursor: default;
+}
+
+.rmap-node--ok {
+  border-left-color: var(--color-success);
+}
+
+.rmap-node--pending {
+  border-left-color: var(--color-warning);
+}
+
+.rmap-node--problem,
+.rmap-node--missing {
+  border-left-color: var(--color-danger);
+}
+
+.rmap-node--missing,
+.rmap-node--unknown {
+  border-style: dashed;
+}
+
+.rmap-node--group {
+  box-shadow: 3px 3px 0 -1px var(--color-main), 3px 3px 0 0 var(--color-border);
+}
+
+.rmap-node--selected {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.rmap-node--dimmed {
+  opacity: 0.45;
+}
+
+.rmap-node__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--color-text-muted);
+}
+
+.rmap-node__kind {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rmap-node__problems {
+  margin-left: auto;
+  color: var(--color-danger);
+  white-space: nowrap;
+}
+
+.rmap-node__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}

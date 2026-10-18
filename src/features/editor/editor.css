@@ -10,6 +10,7 @@
 
 .editor-tab__toolbar {
   display: flex;
+  flex-wrap: wrap; /* longer labels of other languages go to a second row */
   align-items: center;
   gap: 8px;
   flex: none;

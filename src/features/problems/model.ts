@@ -46,8 +46,38 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
-/** A certificate is "expiring" this long before its `notAfter`. */
-export const CERT_EXPIRY_WARNING_MS = 14 * 24 * 3600_000;
+/** Days before its `notAfter` a certificate is "expiring" by default (`notifications.certExpiryDays`). */
+export const DEFAULT_CERT_EXPIRY_DAYS = 14;
+export const MIN_CERT_EXPIRY_DAYS = 1;
+export const MAX_CERT_EXPIRY_DAYS = 365;
+const DAY_MS = 24 * 3600_000;
+/** A certificate is "expiring" this long before its `notAfter` by default. */
+export const CERT_EXPIRY_WARNING_MS = DEFAULT_CERT_EXPIRY_DAYS * DAY_MS;
+
+/** The setting within its bounds; anything unreadable is the default. */
+export function clampExpiryDays(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (value === null || value === undefined || value === "" || !Number.isFinite(n)) return DEFAULT_CERT_EXPIRY_DAYS;
+  return Math.min(MAX_CERT_EXPIRY_DAYS, Math.max(MIN_CERT_EXPIRY_DAYS, Math.round(n)));
+}
+
+let certExpiryWarningMs = CERT_EXPIRY_WARNING_MS;
+
+/** How long before its `notAfter` a certificate counts as expiring now (the setting the store applied last). */
+export function currentCertExpiryWarningMs(): number {
+  return certExpiryWarningMs;
+}
+
+/**
+ * Sets the expiry warning (`notifications.certExpiryDays`, clamped); whether it changed. Only new detections use it:
+ * the store moves the problems it already holds (`applyCertExpiryDays` in store.ts).
+ */
+export function setCertExpiryDays(days: unknown): boolean {
+  const ms = clampExpiryDays(days) * DAY_MS;
+  if (ms === certExpiryWarningMs) return false;
+  certExpiryWarningMs = ms;
+  return true;
+}
 /** Grace before a slow state counts: a pod pending or not ready, unavailable replicas, a pending volume claim. */
 export const SHORT_GRACE_MS = 2 * 60_000;
 export const LONG_GRACE_MS = 5 * 60_000;
@@ -74,6 +104,11 @@ export interface Detected {
   activeFrom?: number;
   /** Stops counting at this time (ms): a past restart. */
   until?: number;
+  /**
+   * A certificate's `notAfter` (ms) for an "Expiring" problem: it counts from the expiry warning setting before it, so
+   * a change of the setting moves `activeFrom` without the object.
+   */
+  expiresAt?: number;
   /** Worth a desktop notification when it starts. */
   notify: boolean;
   /** The object the problem is about when it is not the watched one (a Warning event's involved object). */
@@ -421,6 +456,12 @@ function eventProblems(event: KubeObject): Detected[] {
 /** Ready=False reasons of a certificate being issued (a new or renewed one), not of a failure. */
 const CERT_IN_PROGRESS = new Set(["DoesNotExist", "Issuing", "InProgress", "Pending", "MissingData"]);
 
+/** cert-manager gave up the current issuance attempt (it retries later with a growing delay). */
+export function issuanceFailed(cert: KubeObject): boolean {
+  const issuing = condition(cert, "Issuing");
+  return str(get(issuing, "status")) === "False" && str(get(issuing, "reason")) === "Failed";
+}
+
 function certificateProblems(cert: KubeObject): Detected[] {
   const found: Detected[] = [];
   const ready = condition(cert, "Ready");
@@ -434,6 +475,18 @@ function certificateProblems(cert: KubeObject): Detected[] {
       graceMs: SHORT_GRACE_MS,
       notify: true,
     });
+  } else if (issuanceFailed(cert)) {
+    // A first issuance that keeps failing stays Ready=False/DoesNotExist, a failing renewal Ready=True: the Issuing
+    // condition (False, reason Failed) is what says so.
+    const issuing = condition(cert, "Issuing");
+    found.push({
+      reason: "IssuanceFailed",
+      group: "notReady",
+      message: str(get(issuing, "message")),
+      since: transition(issuing),
+      graceMs: SHORT_GRACE_MS,
+      notify: true,
+    });
   }
   const notAfterText = str(get(cert, "status", "notAfter"));
   const notAfter = time(notAfterText);
@@ -443,7 +496,8 @@ function certificateProblems(cert: KubeObject): Detected[] {
       reason: "Expiring",
       messageKey: "messages.expires",
       messageParams: params,
-      activeFrom: notAfter - CERT_EXPIRY_WARNING_MS,
+      activeFrom: notAfter - certExpiryWarningMs,
+      expiresAt: notAfter,
       until: notAfter,
       notify: true,
     });

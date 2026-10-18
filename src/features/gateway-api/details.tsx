@@ -10,6 +10,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject } from "../../api";
 import { Button } from "../../components";
+import { listSeparator } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findKind, ObjectLink, status, StatusText, useClusterKinds } from "../../resources";
 import type { Tone } from "../../resources/status";
@@ -187,7 +188,6 @@ export function phrasesText(phrases: readonly Phrase[], t: PhraseT, separator: s
 }
 
 export const MATCH_SEPARATOR = " · ";
-export const LIST_SEPARATOR = ", ";
 
 const FEEDBACK_MS = 4000;
 
@@ -644,7 +644,7 @@ function RuleView({
       ))}
       {rule.filters.length > 0 && (
         <div className="gw-rule__filters">
-          <span className="dt-muted">{t("gateway:route.filters")}</span> {phrasesText(rule.filters, t, LIST_SEPARATOR)}
+          <span className="dt-muted">{t("gateway:route.filters")}</span> {phrasesText(rule.filters, t, listSeparator())}
         </div>
       )}
       {rule.backends.length > 0 ? (

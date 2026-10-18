@@ -269,7 +269,8 @@
       "BackendNotFound": "backend not found",
       "RefNotPermitted": "not permitted (RefNotPermitted)",
       "InvalidKind": "kind not supported",
-      "ListenersBroken": "{{count}} of {{total}} listeners broken"
+      "ListenersBroken_one": "{{count}} of {{total}} listeners broken",
+      "ListenersBroken_other": "{{count}} of {{total}} listeners broken"
     }
   },
   "check": {

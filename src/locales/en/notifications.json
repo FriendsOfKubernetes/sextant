@@ -19,7 +19,10 @@
     "categories": "Notify about",
     "clusters": "Clusters",
     "clustersHint": "A cluster turned off here never notifies.",
-    "noClusters": "No clusters yet."
+    "noClusters": "No clusters yet.",
+    "certificates": "Certificates",
+    "certExpiryDays": "Warn this many days before a certificate expires",
+    "certExpiryHint": "Used by the problems screen and the notifications for cert-manager Certificates, and by the certificate details and the TLS certificates page."
   },
   "history": {
     "title": "Recent notifications",

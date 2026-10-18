@@ -1,12 +1,14 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, render, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { KubeObject } from "../../api";
+import { defaultAppSettings, type AppSettings, type KubeObject } from "../../api";
+import { resetSettingsCache, updateSettings } from "../../api/settings";
+import { resetClusterKinds } from "../../resources";
 import { resetClustersStore, useClustersStore } from "../clusters/clustersStore";
 import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
-import { useProblemSources } from "./hooks";
-import type { ProblemCategory } from "./model";
+import { useClusterProblems, useProblemSources } from "./hooks";
+import { CERTIFICATE, isActive, resolve, setCertExpiryDays, type ProblemCategory } from "./model";
 import { CATEGORY_SOURCES, sourceKey } from "./sources";
-import { acquireSource, getSource, LINGER_MS, MAX_PROBLEM_OBJECTS, resetProblemSources } from "./store";
+import { acquireSource, applyCertExpiryDays, getSource, LINGER_MS, MAX_PROBLEM_OBJECTS, resetProblemSources } from "./store";
 
 const PODS = CATEGORY_SOURCES.pods[0]!;
 
@@ -109,5 +111,66 @@ describe("problem sources", () => {
     const state = getSource(sourceKey("c1", PODS))!;
     expect(state.status).toBe("loading");
     expect(state.problems).toEqual([]);
+  });
+});
+
+describe("the certificate expiry warning setting", () => {
+  const CERTS = CATEGORY_SOURCES.certificates[0]!;
+  const DAY = 24 * 3600_000;
+  const cert = (daysLeft: number): KubeObject => ({
+    apiVersion: "cert-manager.io/v1",
+    kind: "Certificate",
+    metadata: { name: "shop", namespace: "shop", uid: "cert-1" },
+    status: {
+      conditions: [{ type: "Ready", status: "True", reason: "Ready" }],
+      notAfter: new Date(Date.now() + daysLeft * DAY + 3600_000).toISOString(),
+    },
+  });
+  const expiring = (key: string) =>
+    getSource(key)?.problems.filter((p) => p.reason === "Expiring" && isActive(p, Date.now())) ?? [];
+
+  afterEach(() => {
+    resetSettingsCache();
+    resetClusterKinds();
+  });
+
+  it("30 days flags a certificate with 20 days left; 14 does not", () => {
+    setCertExpiryDays(30);
+    expect(resolve(CERTIFICATE, cert(20), Date.now()).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()))).toHaveLength(1);
+    setCertExpiryDays(14);
+    expect(resolve(CERTIFICATE, cert(20), Date.now()).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()))).toHaveLength(0);
+    expect(resolve(CERTIFICATE, cert(10), Date.now()).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()))).toHaveLength(1);
+  });
+
+  it("a change moves the held problems at once, without a new update or a reconnect", async () => {
+    const release = acquireSource("c1", CERTS);
+    emitSnapshot(wb, await watchOf(wb, "Certificate"), [cert(20)]);
+    const key = sourceKey("c1", CERTS);
+    await waitFor(() => expect(getSource(key)?.status).toBe("ready"));
+    expect(expiring(key)).toHaveLength(0);
+    applyCertExpiryDays(30);
+    expect(expiring(key)).toHaveLength(1);
+    applyCertExpiryDays(7);
+    expect(expiring(key)).toHaveLength(0);
+    expect(starts()).toBe(1);
+    release();
+  });
+
+  it("follows notifications.certExpiryDays from the settings", async () => {
+    let stored: AppSettings = { ...defaultAppSettings(), notifications: { ...defaultAppSettings().notifications, certExpiryDays: 30 } };
+    wb.backend.on("settings_get", () => structuredClone(stored));
+    wb.backend.on("settings_update", (args) => {
+      stored = structuredClone(args.settings as AppSettings);
+      return structuredClone(stored);
+    });
+    wb.backend.on("cluster_kinds", () => [
+      { kindRef: CERTIFICATE, plural: "certificates", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
+    ]);
+    const { result } = renderHook(() => useClusterProblems("c1", ["certificates"]));
+    emitSnapshot(wb, await watchOf(wb, "Certificate"), [cert(20)]);
+    await waitFor(() => expect(result.current.active.map((p) => p.reason)).toEqual(["Expiring"]));
+    await act(() => updateSettings((s) => ({ ...s, notifications: { ...s.notifications, certExpiryDays: 10 } })));
+    await waitFor(() => expect(result.current.active).toEqual([]));
+    expect(starts()).toBe(1);
   });
 });

@@ -9,9 +9,17 @@ import type { WindowLayout } from "./WindowLayout";
 
 export type AppSettings = { theme: Theme, 
 /**
- * Language code, a directory name under `src/locales/`.
+ * UI language: a directory name under `src/locales/` (`en`, `de`, `zh-CN`…), the user's explicit choice; or
+ * `system` (the default of a new install; empty reads the same), which follows the OS language when Sextant has
+ * it and is English otherwise. Written by the frontend. The `en` of a file of an older version (version 0) was
+ * only the default and becomes `system` ([`migrate`]).
  */
 language: string, 
+/**
+ * The settings format: 0 for a file written before the field existed, [`SETTINGS_VERSION`] after [`migrate`].
+ * Owned by the backend: a write never lowers it.
+ */
+settingsVersion: number, 
 /**
  * Kubeconfig files the user added or pasted (not `KUBECONFIG` / `~/.kube/config`).
  */

@@ -65,6 +65,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("metrics_nodes", Some("clusterId")),
     ("metrics_status", Some("clusterId")),
     ("metrics_charts", Some("clusterId")),
+    ("metrics_usage_history", Some("clusterId")),
     ("helm_status", None),
     ("helm_releases", Some("clusterId")),
     ("helm_release_detail", Some("clusterId")),
@@ -83,6 +84,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("settings_update", Some("settings")),
     ("settings_status", None),
     ("tray_status", None),
+    ("tray_set_texts", Some("texts")),
     ("about_info", None),
     ("gitops_install_versions", Some("tool")),
     ("gitops_install_prepare", Some("clusterId")),
@@ -99,6 +101,10 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("argocd_logout", Some("clusterId")),
     ("argocd_diff", Some("clusterId")),
     ("access_preset_rules", Some("preset")),
+    ("rbac_can_i", Some("clusterId")),
+    ("rbac_rules_review", Some("clusterId")),
+    ("tls_certificate_info", Some("clusterId")),
+    ("tls_expiry_scan", Some("clusterId")),
     ("mcp_status", None),
     ("mcp_token", None),
     ("mcp_regenerate_token", None),
@@ -302,6 +308,48 @@ fn gitops_install_commands_on_a_cluster_that_is_not_connected_fail_before_downlo
         err.as_str().unwrap_or_default().contains("unknown variant"),
         "{err}"
     );
+}
+
+#[test]
+fn rbac_reviews_need_a_connected_cluster_and_check_their_input_first() {
+    let h = harness();
+    let err = invoke(
+        &h,
+        "rbac_can_i",
+        json!({ "clusterId": "nope", "queries": [{ "verb": "get", "resource": "pods" }] }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // A malformed question is refused before the cluster is looked up.
+    let err = invoke(
+        &h,
+        "rbac_can_i",
+        json!({ "clusterId": "nope", "queries": [{ "verb": "get" }] }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    let err = invoke(
+        &h,
+        "rbac_rules_review",
+        json!({ "clusterId": "nope", "namespace": "default" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+}
+
+#[test]
+fn certificate_commands_need_a_connected_cluster() {
+    let h = harness();
+    let err = invoke(
+        &h,
+        "tls_certificate_info",
+        json!({ "clusterId": "nope", "namespace": "shop", "name": "shop-tls" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // `namespaces` may be left out: all namespaces.
+    let err = invoke(&h, "tls_expiry_scan", json!({ "clusterId": "nope" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
 }
 
 #[test]
@@ -749,6 +797,16 @@ fn later_argument_names_match_the_frontend() {
             "rangeSecs",
         ),
         (
+            "metrics_usage_history",
+            json!({ "clusterId": "c" }),
+            "scope",
+        ),
+        (
+            "metrics_usage_history",
+            json!({ "clusterId": "c", "scope": { "type": "pod", "namespace": "n", "name": "p" } }),
+            "window",
+        ),
+        (
             "helm_upgrade",
             json!({ "clusterId": "c", "namespace": "n", "release": "r" }),
             "chartRef",
@@ -839,6 +897,16 @@ fn later_argument_names_match_the_frontend() {
             "key",
         ),
         ("resource_get_full", json!({ "clusterId": "c" }), "ref"),
+        (
+            "tls_certificate_info",
+            json!({ "clusterId": "c" }),
+            "namespace",
+        ),
+        (
+            "tls_certificate_info",
+            json!({ "clusterId": "c", "namespace": "n" }),
+            "name",
+        ),
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
         ("resource_patch", json!({ "clusterId": "c" }), "ref"),
         (

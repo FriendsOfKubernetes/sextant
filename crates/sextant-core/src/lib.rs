@@ -26,8 +26,10 @@ pub mod logs;
 pub mod metrics;
 pub mod node_shell;
 pub mod portforward;
+pub mod rbac;
 pub mod resources;
 pub mod settings;
+pub mod tls;
 
 pub use cluster::{ClusterManager, ConnectionState};
 pub use error::{CoreError, CoreResult, ErrorCode};

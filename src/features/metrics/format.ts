@@ -1,4 +1,6 @@
-// Numbers of the metrics feature: Kubernetes quantities in, short texts out ("250m", "34.0MiB", "12%").
+// Numbers of the metrics feature: Kubernetes quantities in, short texts out ("250m", "34.0MiB", "12%"). Fractions use
+// the UI language's decimal sign ("1,50GiB" in German); units stay the Kubernetes ones.
+import { formatNumber } from "../../i18n";
 
 const SUFFIXES: [string, number][] = [
   ["Ki", 2 ** 10],
@@ -42,9 +44,9 @@ export function formatCpu(millicores: number): string {
 export function formatCores(millicores: number): string {
   const cores = millicores / 1000;
   if (cores === 0) return "0";
-  if (cores < 0.1) return cores.toFixed(3);
-  if (cores < 10) return cores.toFixed(2);
-  return cores.toFixed(0);
+  if (cores < 0.1) return formatNumber(cores, 3);
+  if (cores < 10) return formatNumber(cores, 2);
+  return formatNumber(cores, 0);
 }
 
 const BYTE_UNITS = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
@@ -59,7 +61,7 @@ export function formatBytes(bytes: number): string {
   }
   if (unit === 0) return `${Math.round(value)}${BYTE_UNITS[0]}`;
   const digits = Math.abs(value) < 10 ? 2 : Math.abs(value) < 100 ? 1 : 0;
-  return `${value.toFixed(digits)}${BYTE_UNITS[unit]}`;
+  return `${formatNumber(value, digits)}${BYTE_UNITS[unit]}`;
 }
 
 export function formatCount(value: number): string {

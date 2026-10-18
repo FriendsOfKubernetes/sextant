@@ -1,0 +1,108 @@
+{
+  "sidebar": "Right-sizing",
+  "title": "Right-sizing",
+  "sectionTitle": "Right-sizing",
+  "intro": "Requests and limits against real usage, with a recommendation per container. Nothing is changed in the cluster: copy the snippet into your manifests.",
+  "window": {
+    "label": "History",
+    "day": "Last day",
+    "week": "Last 7 days"
+  },
+  "sort": {
+    "label": "Sort by",
+    "cpuWaste": "Wasted CPU",
+    "memoryWaste": "Wasted memory",
+    "name": "Name"
+  },
+  "onlyFlagged": "Only containers with findings",
+  "source": {
+    "history": "Usage from Prometheus over {{window}}: CPU at the 95th percentile and its peak, memory at its peak.",
+    "snapshot": "Only current values are available (a snapshot from {{source}}). A single point is not enough for a recommendation: install Prometheus for history.",
+    "snapshotAfterError": "Prometheus history could not be read, so only current values are shown (a snapshot). No recommendations.",
+    "none": "No metrics are available: only requests and limits from the pod specs are checked.",
+    "loading": "Reading usage…",
+    "metricsServer": "metrics-server",
+    "historyFailed": "Prometheus history could not be read",
+    "truncated_one": "Too many containers matched; only the first {{count}} has history. Narrow the namespace filter.",
+    "truncated_other": "Too many containers matched; only the first {{count}} have history. Narrow the namespace filter.",
+    "coverageUnknown": "Prometheus could not say since when it has samples, so how much history the recommendations rest on is unknown."
+  },
+  "loading": "Loading pods…",
+  "podsFailed": "Pods could not be listed",
+  "empty": "No running pods here.",
+  "emptyFiltered": "No findings in these namespaces.",
+  "tooMany_one": "Only the first {{count}} row is shown. Narrow the namespace filter.",
+  "tooMany_other": "Only the first {{count}} rows are shown. Narrow the namespace filter.",
+  "totals": "Wasted: {{cpu}} CPU, {{memory}} memory · Requested: {{requestedCpu}} CPU, {{requestedMemory}} memory",
+  "atRisk_one": "{{count}} at risk",
+  "atRisk_other": "{{count}} at risk",
+  "columns": {
+    "workload": "Workload",
+    "container": "Container",
+    "replicas": "Pods",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "findings": "Findings",
+    "actions": "Actions"
+  },
+  "workload": "{{kind}} {{name}}",
+  "amounts": {
+    "request": "request {{value}}",
+    "limit": "limit {{value}}",
+    "notSet": "not set",
+    "p95": "p95 {{value}}",
+    "peak": "peak {{value}}",
+    "now": "now {{value}}",
+    "recommended": "→ {{value}}",
+    "recommendedLimit": "→ limit {{value}}"
+  },
+  "confidence": {
+    "partialHistory": "Based on {{duration}} of history",
+    "insufficientHistory": "Not enough history: {{duration}} of {{window}}, at least {{minimum}} is needed",
+    "snapshot": "Snapshot",
+    "noData": "No usage data",
+    "unknownHistory": "History of unknown length"
+  },
+  "duration": {
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days"
+  },
+  "flags": {
+    "noCpuRequest": "No CPU request",
+    "noMemoryRequest": "No memory request",
+    "noCpuLimit": "No CPU limit",
+    "noMemoryLimit": "No memory limit",
+    "cpuOverProvisioned": "CPU over-provisioned",
+    "memoryOverProvisioned": "Memory over-provisioned",
+    "cpuUnderRequested": "CPU request below p95",
+    "memoryUnderRequested": "Memory request below peak",
+    "memoryNearLimit": "Memory near limit",
+    "oomKilled": "OOMKilled recently",
+    "cpuThrottled": "CPU throttled"
+  },
+  "flagHints": {
+    "noCpuRequest": "The scheduler reserves no CPU for this container.",
+    "noMemoryRequest": "The scheduler reserves no memory; the pod is among the first evicted under memory pressure.",
+    "noCpuLimit": "The container may use any idle CPU of the node. Often intended.",
+    "noMemoryLimit": "The container may take memory from its neighbours on the node.",
+    "cpuOverProvisioned": "The CPU request is at least {{factor}} times what the usage needs.",
+    "memoryOverProvisioned": "The memory request is at least {{factor}} times what the usage needs.",
+    "cpuUnderRequested": "Usage is above the request most of the time.",
+    "memoryUnderRequested": "Peak memory is above the request: the pod can be evicted under memory pressure.",
+    "memoryNearLimit": "Memory reached at least {{share}} of the limit.",
+    "oomKilled": "The container was killed for running out of memory in the last {{period}}; the real peak is above the limit.",
+    "cpuThrottled": "{{percent}} of CPU periods were throttled."
+  },
+  "copy": "Copy resources YAML",
+  "copied": "Copied",
+  "copyFailed": "Could not copy",
+  "separator": " · ",
+  "chooseNamespace": "Choose a namespace",
+  "chooseNamespaceText": "Right-sizing reads the history of every container it shows, so it works on the namespaces chosen in the namespace filter. Pick one or a few.",
+  "firstNamespaces_one": "Only the first {{count}} namespace of the filter is shown.",
+  "firstNamespaces_other": "Only the first {{count}} namespaces of the filter are shown."
+}

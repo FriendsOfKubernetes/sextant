@@ -72,6 +72,7 @@
 
 .terminal__toolbar {
   display: flex;
+  flex-wrap: wrap; /* longer labels of other languages go to a second row */
   justify-content: flex-end;
   gap: 6px;
   padding: 2px 8px;

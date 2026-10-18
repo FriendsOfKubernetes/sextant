@@ -198,4 +198,17 @@ describe("the Notifications settings", () => {
     // Warning events are on the screen only: no toggle.
     expect(screen.queryByRole("checkbox", { name: "Warning events" })).toBeNull();
   });
+
+  it("set how many days ahead a certificate counts as expiring, within 1..365", async () => {
+    start();
+    render(<Panel />);
+    const field = await screen.findByRole("spinbutton", { name: "Warn this many days before a certificate expires" });
+    await waitFor(() => expect(field).toHaveValue(14));
+    fireEvent.change(field, { target: { value: "30" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    await waitFor(() => expect(stored.notifications.certExpiryDays).toBe(30));
+    fireEvent.change(field, { target: { value: "5000" } });
+    fireEvent.blur(field);
+    await waitFor(() => expect(stored.notifications.certExpiryDays).toBe(365));
+  });
 });

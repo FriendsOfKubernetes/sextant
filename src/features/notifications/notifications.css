@@ -12,3 +12,13 @@
   padding: 0;
   min-width: 0;
 }
+
+.notif-settings__cert-expiry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notif-settings__cert-expiry input {
+  width: 72px;
+}

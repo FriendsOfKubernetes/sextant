@@ -12,6 +12,8 @@ import secretJson from "./fixtures/secret.json";
 import serviceJson from "./fixtures/service.json";
 import widgetJson from "./fixtures/widget.json";
 import "./index";
+// Every details panel of the app has the "Related" tab (resource map, #139): test against the real tab strip.
+import "../resource-map";
 import { copy, emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "./testing";
 
 const pod = podJson as KubeObject;
@@ -136,7 +138,10 @@ describe("containers of a pod in tabs", () => {
     return obj;
   }
 
-  const tabNames = () => screen.getAllByRole("tab").map((tab) => tab.textContent);
+  // The details panel has tabs of its own ("Overview", "Related"): container queries stay inside the containers' tabs.
+  const containerList = () => screen.getByRole("tablist", { name: "Containers" });
+  const containers = () => within(containerList().parentElement!);
+  const tabNames = () => within(containerList()).getAllByRole("tab").map((tab) => tab.textContent);
   const shownContainers = () =>
     [...document.querySelectorAll<HTMLElement>("[data-container]")].map((el) => el.getAttribute("data-container"));
 
@@ -147,17 +152,17 @@ describe("containers of a pod in tabs", () => {
     expect(screen.getByRole("tab", { name: /^setup/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /^proxy/ })).toHaveAttribute("title", "waiting: CrashLoopBackOff");
     expect(shownContainers()).toEqual(["setup"]);
-    expect(within(screen.getByRole("tabpanel")).getByText("busybox:1.36")).toBeInTheDocument();
+    expect(within(containers().getByRole("tabpanel")).getByText("busybox:1.36")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /^proxy/ }));
     expect(shownContainers()).toEqual(["proxy"]);
-    expect(within(screen.getByRole("tabpanel")).getByText("envoy:v1.30")).toBeInTheDocument();
+    expect(within(containers().getByRole("tabpanel")).getByText("envoy:v1.30")).toBeInTheDocument();
     expect(screen.queryByText("busybox:1.36")).toBeNull();
   });
 
   it("is operated from the keyboard: arrows, Home and End move the selection", async () => {
     await openDetails(crowded(), POD_REF);
-    const selected = () => screen.getByRole("tab", { selected: true }).textContent;
+    const selected = () => containers().getByRole("tab", { selected: true }).textContent;
     screen.getByRole("tab", { name: /^setup/ }).focus();
     fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
     expect(selected()).toMatch(/^web/);
@@ -178,7 +183,7 @@ describe("containers of a pod in tabs", () => {
     (updated.status as { containerStatuses: { restartCount: number }[] }).containerStatuses[0]!.restartCount = 3;
     emitDelta(wb, id, [updated]);
     expect(tabNames()[1]).toBe("web running 3 restarts");
-    expect(screen.getByRole("tab", { selected: true }).textContent).toMatch(/^web/);
+    expect(containers().getByRole("tab", { selected: true }).textContent).toMatch(/^web/);
     expect(shownContainers()).toEqual(["web"]);
   });
 
@@ -190,7 +195,7 @@ describe("containers of a pod in tabs", () => {
     (updated.status as { containerStatuses: unknown[] }).containerStatuses.pop();
     emitDelta(wb, id, [updated]);
     expect(tabNames()).toHaveLength(2);
-    expect(screen.getByRole("tab", { selected: true }).textContent).toMatch(/^setup/);
+    expect(containers().getByRole("tab", { selected: true }).textContent).toMatch(/^setup/);
     expect(shownContainers()).toEqual(["setup"]);
   });
 
@@ -204,13 +209,18 @@ describe("containers of a pod in tabs", () => {
     emitSnapshot(wb, await watchOf(wb, "Pod", (s) => s.fieldSelector === `metadata.name=${OTHER_REF.name}`), [
       crowded(OTHER_REF.name),
     ]);
-    await waitFor(() => expect(screen.getByRole("tab", { selected: true }).textContent).toMatch(/^setup/));
+    await waitFor(() => expect(containers().getByRole("tab", { selected: true }).textContent).toMatch(/^setup/));
     expect(shownContainers()).toEqual(["setup"]);
   });
 
   it("shows a pod with a single container as before, without tabs", async () => {
     await openDetails(pod, POD_REF);
-    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Containers" })).toBeNull();
+    // Only the panel's own tabs.
+    expect(within(screen.getByRole("tablist", { name: "Details views" })).getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "Overview",
+      "Related",
+    ]);
     expect(shownContainers()).toEqual(["nginx"]);
     expect(screen.getByRole("heading", { name: "Containers" })).toBeInTheDocument();
   });
@@ -232,7 +242,7 @@ describe("containers of a pod in tabs", () => {
     expect(tabNames()).toEqual(["migrate init", "nginx", "metrics"]);
     expect(shownContainers()).toEqual(["migrate"]);
     fireEvent.click(screen.getByRole("tab", { name: "metrics" }));
-    expect(within(screen.getByRole("tabpanel")).getByText("exporter:2")).toBeInTheDocument();
+    expect(within(containers().getByRole("tabpanel")).getByText("exporter:2")).toBeInTheDocument();
   });
 });
 

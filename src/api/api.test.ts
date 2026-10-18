@@ -88,6 +88,11 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
     () => api.metrics.charts("c1", { type: "cluster" }, 3600),
     { clusterId: "c1", chart: { type: "cluster" }, rangeSecs: 3600 },
   ],
+  [
+    "metrics_usage_history",
+    () => api.metrics.usageHistory("c1", { type: "pod", namespace: "ns", name: "p" }, "week"),
+    { clusterId: "c1", scope: { type: "pod", namespace: "ns", name: "p" }, window: "week" },
+  ],
   ["helm_status", () => api.helm.status(), undefined],
   ["helm_releases", () => api.helm.releases("c1", null), { clusterId: "c1", namespaces: null }],
   [
@@ -130,6 +135,12 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["settings_status", () => api.settings.status(), undefined],
   ["file_save", () => api.files.save("/tmp/x.log", "text"), { path: "/tmp/x.log", contents: "text" }],
   ["access_preset_rules", () => api.access.presetRules("readOnly"), { preset: "readOnly" }],
+  [
+    "tls_certificate_info",
+    () => api.tls.certificateInfo("c1", "ns", "web-tls"),
+    { clusterId: "c1", namespace: "ns", name: "web-tls" },
+  ],
+  ["tls_expiry_scan", () => api.tls.expiryScan("c1", ["ns"]), { clusterId: "c1", namespaces: ["ns"] }],
   ["extensions_list", () => api.extensions.list(), undefined],
   ["extension_inspect_file", () => api.extensions.inspectFile("/tmp/x.sextant-ext"), { path: "/tmp/x.sextant-ext" }],
   [
@@ -169,7 +180,7 @@ describe("src/api commands", () => {
   it("covers every command of the contract", () => {
     const covered = new Set(cases.map(([cmd]) => cmd));
     covered.add("settings_update"); // checked below with a real settings object
-    expect(covered.size).toBe(77);
+    expect(covered.size).toBe(80);
   });
 
   it("settings_update sends the whole settings object", async () => {

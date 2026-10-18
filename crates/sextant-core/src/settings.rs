@@ -159,7 +159,14 @@ pub struct NotificationSettings {
     pub muted_clusters: Vec<String>,
     /// "Mute for 1 hour": nothing is shown until this RFC 3339 time.
     pub muted_until: Option<String>,
+    /// How many days before it expires a certificate (a TLS Secret's, a cert-manager Certificate's) is shown as
+    /// expiring in its details and in the TLS certificates list; 14 by default. Written by the frontend, which
+    /// clamps it to 1..=365.
+    pub cert_expiry_days: u32,
 }
+
+/// `NotificationSettings::cert_expiry_days` of a new install.
+pub const DEFAULT_CERT_EXPIRY_DAYS: u32 = 14;
 
 impl Default for NotificationSettings {
     fn default() -> Self {
@@ -168,6 +175,7 @@ impl Default for NotificationSettings {
             disabled_categories: Vec::new(),
             muted_clusters: Vec::new(),
             muted_until: None,
+            cert_expiry_days: DEFAULT_CERT_EXPIRY_DAYS,
         }
     }
 }
@@ -204,13 +212,27 @@ impl Default for WindowLayout {
     }
 }
 
+/// `AppSettings.language` of "follow the operating system".
+pub const SYSTEM_LANGUAGE: &str = "system";
+
+/// `AppSettings.settings_version` this version writes. 1: `language` "en" is a choice (before, it was the only
+/// language and the default, so it said nothing; see [`migrate`]).
+pub const SETTINGS_VERSION: u32 = 1;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
 pub struct AppSettings {
     pub theme: Theme,
-    /// Language code, a directory name under `src/locales/`.
+    /// UI language: a directory name under `src/locales/` (`en`, `de`, `zh-CN`…), the user's explicit choice; or
+    /// `system` (the default of a new install; empty reads the same), which follows the OS language when Sextant has
+    /// it and is English otherwise. Written by the frontend. The `en` of a file of an older version (version 0) was
+    /// only the default and becomes `system` ([`migrate`]).
     pub language: String,
+    /// The settings format: 0 for a file written before the field existed, [`SETTINGS_VERSION`] after [`migrate`].
+    /// Owned by the backend: a write never lowers it.
+    #[serde(default)]
+    pub settings_version: u32,
     /// Kubeconfig files the user added or pasted (not `KUBECONFIG` / `~/.kube/config`).
     pub kubeconfig_sources: Vec<KubeconfigSource>,
     pub clusters: HashMap<String, ClusterSettings>,
@@ -247,7 +269,8 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             theme: Theme::System,
-            language: "en".to_owned(),
+            language: SYSTEM_LANGUAGE.to_owned(),
+            settings_version: SETTINGS_VERSION,
             kubeconfig_sources: Vec::new(),
             clusters: HashMap::new(),
             window: WindowLayout::default(),
@@ -304,7 +327,8 @@ pub struct SettingsStore {
 
 impl SettingsStore {
     pub fn open(path: PathBuf) -> Self {
-        let (current, status) = load(&path);
+        let (mut current, status) = load(&path);
+        migrate(&mut current);
         Self {
             path,
             current: Mutex::new(current),
@@ -334,11 +358,25 @@ impl SettingsStore {
         let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         let mut next = current.clone();
         f(&mut next);
+        // A frontend copy from before the migration must not undo it.
+        next.settings_version = next.settings_version.max(current.settings_version);
         if self.status.writable {
             write_atomic(&self.path, &next)?;
         }
         *current = next;
         Ok(())
+    }
+}
+
+/// Brings settings read from an older file up to [`SETTINGS_VERSION`]. Version 0 → 1: every earlier version stored
+/// `language: "en"` by default while English was the only language, so it was never a choice; it becomes `system`
+/// (the OS language when Sextant has it). An `en` stored from version 1 on is the user's and stays.
+pub fn migrate(settings: &mut AppSettings) {
+    if settings.settings_version < 1 {
+        if settings.language == "en" {
+            settings.language = SYSTEM_LANGUAGE.to_owned();
+        }
+        settings.settings_version = 1;
     }
 }
 
@@ -581,7 +619,7 @@ mod tests {
         let (_, store) = store_in(&dir);
         let s = store.get();
         assert_eq!(s.theme, Theme::System);
-        assert_eq!(s.language, "en");
+        assert_eq!(s.language, SYSTEM_LANGUAGE);
         assert!(s.kubeconfig_sources.is_empty());
         assert_eq!(s.window.sidebar_width, 220);
         assert!(!s.window.dock_open);
@@ -832,9 +870,44 @@ mod tests {
         assert_eq!(s.theme, Theme::Dark);
         assert!(s.window.dock_open);
         assert_eq!(s.window.dock_height, 300);
-        assert_eq!(s.language, "en");
+        assert_eq!(s.language, SYSTEM_LANGUAGE);
         assert_eq!(s.editor_theme, "auto");
         assert!(s.check_for_updates);
+    }
+
+    #[test]
+    fn an_old_default_english_follows_the_system_and_a_chosen_language_stays() {
+        let dir = tempfile::tempdir().unwrap();
+        // A file of an older version: its "en" was the only language and the default, never a choice.
+        let path = dir.path().join("settings.json");
+        std::fs::write(&path, r#"{ "language": "en", "theme": "dark" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert_eq!(store.get().language, SYSTEM_LANGUAGE);
+        assert_eq!(store.get().settings_version, SETTINGS_VERSION);
+        assert_eq!(store.get().theme, Theme::Dark);
+        // English chosen after the migration stays English, also when a stale copy (version 0) is saved.
+        store
+            .update(|s| {
+                s.language = "en".to_owned();
+                s.settings_version = 0;
+            })
+            .unwrap();
+        let reopened = SettingsStore::open(path.clone()).get();
+        assert_eq!(reopened.language, "en");
+        assert_eq!(reopened.settings_version, SETTINGS_VERSION);
+        // An old file with another language keeps it.
+        std::fs::write(&path, r#"{ "language": "de" }"#).unwrap();
+        assert_eq!(SettingsStore::open(path).get().language, "de");
+        // A new install, then an explicit choice that survives a reopen.
+        let fresh = tempfile::tempdir().unwrap();
+        let (path, store) = store_in(&fresh);
+        assert_eq!(store.get().language, SYSTEM_LANGUAGE);
+        store.update(|s| s.language = "zh-CN".to_owned()).unwrap();
+        assert_eq!(SettingsStore::open(path.clone()).get().language, "zh-CN");
+        store
+            .update(|s| s.language = SYSTEM_LANGUAGE.to_owned())
+            .unwrap();
+        assert_eq!(SettingsStore::open(path).get().language, SYSTEM_LANGUAGE);
     }
 
     #[test]
@@ -1143,6 +1216,7 @@ mod tests {
                     disabled_categories: vec!["pods".to_owned(), "a-future-category".to_owned()],
                     muted_clusters: vec!["c1".to_owned()],
                     muted_until: Some("2026-10-18T12:00:00.000Z".to_owned()),
+                    cert_expiry_days: 30,
                 }
             })
             .unwrap();
@@ -1167,6 +1241,9 @@ mod tests {
             serde_json::from_str(r#"{ "mutedClusters": ["c2"] }"#).unwrap();
         assert!(partial.enabled);
         assert_eq!(partial.muted_clusters, ["c2"]);
+        assert_eq!(partial.cert_expiry_days, DEFAULT_CERT_EXPIRY_DAYS);
+        assert_eq!(read.cert_expiry_days, 30);
+        assert_eq!(json["notifications"]["certExpiryDays"], 30);
     }
 
     #[test]

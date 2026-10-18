@@ -1,0 +1,142 @@
+/* Right-sizing: the page, the details section and their rows table. */
+.rs-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.rs-page__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.rs-section {
+  margin: 12px 0;
+}
+
+.rs-section__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.rs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.rs-toolbar:empty {
+  display: none;
+}
+
+.rs-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.rs-select {
+  max-width: 100%;
+}
+
+.rs-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+}
+
+.rs-note--warning {
+  color: var(--color-warning);
+}
+
+.rs-error,
+.rs-loading {
+  margin: 8px 0;
+}
+
+.rs-ns {
+  margin: 16px 0;
+}
+
+.rs-ns__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.rs-ns__totals {
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rs-table-wrap {
+  overflow-x: auto;
+}
+
+.rs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.rs-table th,
+.rs-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rs-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.rs-table tbody tr:hover {
+  background: var(--color-hover);
+}
+
+.rs-amounts {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rs-amounts__used {
+  color: var(--color-text-muted);
+}
+
+.rs-amounts__recommended {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.rs-confidence {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--color-warning);
+}
+
+.rs-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rs-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.rs-copy__state {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}

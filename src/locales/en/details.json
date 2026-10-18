@@ -193,7 +193,8 @@
   "configMap": {
     "data": "Data",
     "binaryData": "Binary data",
-    "bytes": "{{count}} bytes"
+    "bytes_one": "{{count}} byte",
+    "bytes_other": "{{count}} bytes"
   },
   "secret": {
     "data": "Data",

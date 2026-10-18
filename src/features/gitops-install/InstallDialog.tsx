@@ -21,6 +21,7 @@ import { Badge, Button, ConfirmDialog, Dialog, ErrorState, LoadingIndicator } fr
 import { refreshClusterKinds } from "../../resources";
 import { initialRun, reduceRun, type RunState } from "./run";
 import "./gitopsInstall.css";
+import { formatList } from "../../i18n";
 
 export interface InstallDialogProps {
   clusterId: ClusterId;
@@ -261,7 +262,7 @@ function Preview({ preview, toolName }: { preview: InstallPreview; toolName: str
     warnings.push(
       t("gitops:preview.leftOut", {
         namespace: preview.namespace,
-        names: overlap.leftOutControllers.join(", "),
+        names: formatList(overlap.leftOutControllers),
         interpolation: { escapeValue: false },
       }),
     );

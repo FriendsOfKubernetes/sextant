@@ -137,11 +137,14 @@ export function DeleteDialog({
     else setFailures(failed);
   };
 
+  // One object is named by its kind alone; a count takes the plural forms (Russian "one" also covers 21, 31…).
+  const title =
+    count === 1 ? t("actions:delete.titleSingle", { kind: kind.kind }) : t("actions:delete.title", { count, kind: kind.kind });
   if (failures) {
     return (
       <Dialog
         open
-        title={t("actions:delete.title", { count, kind: kind.kind })}
+        title={title}
         onClose={close}
         footer={
           <Button variant="primary" onClick={close}>
@@ -169,7 +172,7 @@ export function DeleteDialog({
   return (
     <Dialog
       open
-      title={t("actions:delete.title", { count, kind: kind.kind })}
+      title={title}
       onClose={closeUnlessBusy}
       footer={
         <>
@@ -182,7 +185,11 @@ export function DeleteDialog({
         </>
       }
     >
-      <p>{t("actions:delete.text", { count, kind: kind.kind })}</p>
+      <p>
+        {count === 1
+          ? t("actions:delete.textSingle", { kind: kind.kind })
+          : t("actions:delete.text", { count, kind: kind.kind })}
+      </p>
       <ul className="action-dialog__names">
         {refs.map((ref) => (
           <li key={displayName(ref)}>{displayName(ref)}</li>

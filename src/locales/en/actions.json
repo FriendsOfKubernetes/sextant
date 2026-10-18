@@ -4,9 +4,11 @@
   },
   "delete": {
     "label": "Delete",
-    "title_one": "Delete {{kind}}?",
+    "titleSingle": "Delete {{kind}}?",
+    "title_one": "Delete {{count}} {{kind}} object?",
     "title_other": "Delete {{count}} {{kind}} objects?",
-    "text_one": "This {{kind}} will be deleted from the cluster:",
+    "textSingle": "This {{kind}} will be deleted from the cluster:",
+    "text_one": "This {{count}} object will be deleted from the cluster:",
     "text_other": "These {{count}} objects will be deleted from the cluster:",
     "confirm": "Delete",
     "failed": "Not deleted: {{name}}",

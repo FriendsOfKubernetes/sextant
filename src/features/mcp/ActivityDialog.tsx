@@ -7,6 +7,7 @@ import { Badge, Button, ConfirmDialog, Dialog, ErrorState, LoadingIndicator, typ
 import { displayNameOf } from "../clusters/clusterSettings";
 import { useClusters } from "../clusters/hooks";
 import "./mcp.css";
+import { formatDateTime } from "../../i18n";
 
 /** The backend keeps this many entries. */
 const MAX_ENTRIES = 2000;
@@ -137,7 +138,7 @@ export function ActivityDialog({ open, onClose }: { open: boolean; onClose: () =
                   {entries.map((entry) => (
                     <tr key={keyOf(entry)}>
                       <td className="mcp-activity__time">
-                        <time dateTime={new Date(entry.at).toISOString()}>{new Date(entry.at).toLocaleString()}</time>
+                        <time dateTime={new Date(entry.at).toISOString()}>{formatDateTime(entry.at)}</time>
                       </td>
                       <td>{entry.client}</td>
                       <td>{entry.clusterName ?? t("mcp:activity.none")}</td>

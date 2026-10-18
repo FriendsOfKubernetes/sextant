@@ -1,0 +1,55 @@
+[
+  {
+    "apiVersion": "cert-manager.io/v1",
+    "kind": "CertificateRequest",
+    "metadata": {
+      "name": "shop-1",
+      "namespace": "shop",
+      "uid": "cr-1",
+      "creationTimestamp": "2026-07-20T00:00:00Z",
+      "annotations": { "cert-manager.io/certificate-name": "shop", "cert-manager.io/certificate-revision": "1" },
+      "ownerReferences": [{ "apiVersion": "cert-manager.io/v1", "kind": "Certificate", "name": "shop", "uid": "cert-1", "controller": true }]
+    },
+    "spec": { "issuerRef": { "name": "letsencrypt", "kind": "ClusterIssuer", "group": "cert-manager.io" } },
+    "status": {
+      "conditions": [
+        { "type": "Approved", "status": "True", "reason": "cert-manager.io", "lastTransitionTime": "2026-07-20T00:00:00Z" },
+        { "type": "Ready", "status": "True", "reason": "Issued", "lastTransitionTime": "2026-07-20T00:01:00Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "cert-manager.io/v1",
+    "kind": "CertificateRequest",
+    "metadata": {
+      "name": "shop-2",
+      "namespace": "shop",
+      "uid": "cr-2",
+      "creationTimestamp": "2026-10-01T00:00:00Z",
+      "annotations": { "cert-manager.io/certificate-name": "shop", "cert-manager.io/certificate-revision": "2" },
+      "ownerReferences": [{ "apiVersion": "cert-manager.io/v1", "kind": "Certificate", "name": "shop", "uid": "cert-1", "controller": true }]
+    },
+    "spec": { "issuerRef": { "name": "letsencrypt", "kind": "ClusterIssuer", "group": "cert-manager.io" } },
+    "status": {
+      "conditions": [
+        { "type": "Approved", "status": "True", "reason": "cert-manager.io", "lastTransitionTime": "2026-10-01T00:00:00Z" },
+        { "type": "Ready", "status": "False", "reason": "Failed", "message": "Failed to wait for order resource to become ready", "lastTransitionTime": "2026-10-01T00:05:00Z" }
+      ],
+      "failureTime": "2026-10-01T00:05:00Z"
+    }
+  },
+  {
+    "apiVersion": "cert-manager.io/v1",
+    "kind": "CertificateRequest",
+    "metadata": {
+      "name": "other-1",
+      "namespace": "shop",
+      "uid": "cr-other",
+      "creationTimestamp": "2026-10-01T00:00:00Z",
+      "annotations": { "cert-manager.io/certificate-name": "other", "cert-manager.io/certificate-revision": "1" },
+      "ownerReferences": [{ "apiVersion": "cert-manager.io/v1", "kind": "Certificate", "name": "other", "uid": "cert-2", "controller": true }]
+    },
+    "spec": { "issuerRef": { "name": "selfsigned", "kind": "Issuer" } },
+    "status": { "conditions": [{ "type": "Denied", "status": "True", "reason": "policy", "lastTransitionTime": "2026-10-01T00:00:00Z" }] }
+  }
+]
