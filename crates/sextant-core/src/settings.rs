@@ -58,6 +58,12 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional = nullable)]
     pub argocd_namespace: Option<String>,
+    /// "Preview changes before applying" (#141): the editor's save, Apply YAML and a Helm upgrade or install show the
+    /// server's dry run first. `None` follows the cluster's name (on for a production-looking name, see the frontend's
+    /// `previewByDefault`). Owned by the frontend; left out of the file when there is none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub preview_changes: Option<bool>,
 }
 
 /// `ClusterSettings` as stored, with `agentAccess` still unread.
@@ -74,6 +80,7 @@ struct StoredClusterSettings {
     agent_access: Option<serde_json::Value>,
     agent_access_unrecognised: Option<serde_json::Value>,
     argocd_namespace: Option<String>,
+    preview_changes: Option<bool>,
 }
 
 impl<'de> Deserialize<'de> for ClusterSettings {
@@ -102,6 +109,7 @@ impl<'de> Deserialize<'de> for ClusterSettings {
             agent_access,
             agent_access_unrecognised,
             argocd_namespace: stored.argocd_namespace,
+            preview_changes: stored.preview_changes,
         })
     }
 }
@@ -163,10 +171,26 @@ pub struct NotificationSettings {
     /// expiring in its details and in the TLS certificates list; 14 by default. Written by the frontend, which
     /// clamps it to 1..=365.
     pub cert_expiry_days: u32,
+    /// Opt-in problem categories turned on (`security`, #143): unlike the others they are off until the user turns
+    /// them on, so a new category of this kind never starts notifying after an update. One setting for the problems
+    /// screen, the sidebar counter and the notifications. Kept as text like `disabled_categories`; an unknown one is
+    /// ignored.
+    pub enabled_categories: Vec<String>,
 }
 
 /// `NotificationSettings::cert_expiry_days` of a new install.
 pub const DEFAULT_CERT_EXPIRY_DAYS: u32 = 14;
+
+/// The overview of several clusters ("All clusters", #144). Written by the frontend; opening the overview never
+/// connects a cluster by itself.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct FleetSettings {
+    /// The clusters (ids) the overview shows, in the order they were chosen. An id no kubeconfig has any more is
+    /// ignored by the frontend.
+    pub selected: Vec<String>,
+}
 
 impl Default for NotificationSettings {
     fn default() -> Self {
@@ -176,6 +200,7 @@ impl Default for NotificationSettings {
             muted_clusters: Vec::new(),
             muted_until: None,
             cert_expiry_days: DEFAULT_CERT_EXPIRY_DAYS,
+            enabled_categories: Vec::new(),
         }
     }
 }
@@ -263,6 +288,8 @@ pub struct AppSettings {
     pub extensions: Vec<InstalledExtension>,
     /// Desktop notifications about new problems in connected clusters. Written by the frontend.
     pub notifications: NotificationSettings,
+    /// The overview of several clusters: which clusters it shows. Written by the frontend.
+    pub fleet: FleetSettings,
 }
 
 impl Default for AppSettings {
@@ -283,6 +310,7 @@ impl Default for AppSettings {
             debug_image: crate::debug::DEFAULT_IMAGE.to_owned(),
             extensions: Vec::new(),
             notifications: NotificationSettings::default(),
+            fleet: FleetSettings::default(),
         }
     }
 }
@@ -1025,6 +1053,32 @@ mod tests {
     }
 
     #[test]
+    fn the_preview_choice_round_trips_and_is_left_out_while_automatic() {
+        let dir = tempfile::tempdir().unwrap();
+        let (path, store) = store_in(&dir);
+        store
+            .update(|s| {
+                s.clusters.insert(
+                    "c1".to_owned(),
+                    ClusterSettings {
+                        preview_changes: Some(false),
+                        ..Default::default()
+                    },
+                );
+                s.clusters
+                    .insert("c2".to_owned(), ClusterSettings::default());
+            })
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["clusters"]["c1"]["previewChanges"], false);
+        assert!(json["clusters"]["c2"].get("previewChanges").is_none());
+        let s = SettingsStore::open(path).get();
+        assert_eq!(s.clusters["c1"].preview_changes, Some(false));
+        assert_eq!(s.clusters["c2"].preview_changes, None);
+    }
+
+    #[test]
     fn a_file_without_cluster_icons_or_rail_view_reads_with_defaults() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("settings.json");
@@ -1217,6 +1271,7 @@ mod tests {
                     muted_clusters: vec!["c1".to_owned()],
                     muted_until: Some("2026-10-18T12:00:00.000Z".to_owned()),
                     cert_expiry_days: 30,
+                    enabled_categories: vec!["security".to_owned()],
                 }
             })
             .unwrap();
@@ -1244,6 +1299,28 @@ mod tests {
         assert_eq!(partial.cert_expiry_days, DEFAULT_CERT_EXPIRY_DAYS);
         assert_eq!(read.cert_expiry_days, 30);
         assert_eq!(json["notifications"]["certExpiryDays"], 30);
+        assert_eq!(json["notifications"]["enabledCategories"][0], "security");
+        assert_eq!(read.enabled_categories, ["security"]);
+        assert!(partial.enabled_categories.is_empty());
+    }
+
+    #[test]
+    fn the_fleet_selection_is_empty_by_default_and_round_trips() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        // A file of an older version, without the field.
+        std::fs::write(&path, r#"{ "theme": "dark" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert!(store.get().fleet.selected.is_empty());
+        store
+            .update(|s| s.fleet.selected = vec!["c2".to_owned(), "c1".to_owned()])
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(json["fleet"]["selected"][0], "c2");
+        assert_eq!(SettingsStore::open(path).get().fleet.selected, ["c2", "c1"]);
+        let partial: FleetSettings = serde_json::from_str("{}").unwrap();
+        assert!(partial.selected.is_empty());
     }
 
     #[test]

@@ -59,3 +59,15 @@
 .yaml-editor .cm-scroller {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+/* Holds the editor; hidden (but kept) while a dry-run preview is shown. */
+.editor-tab__editor {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.editor-tab__editor[hidden] {
+  display: none;
+}

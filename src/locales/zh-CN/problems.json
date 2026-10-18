@@ -4,6 +4,7 @@
   "badge_other": "{{count}} 个问题需要关注",
   "onlyNewSince": "仅显示 {{time}} 以来的新问题",
   "markSeen": "全部标记为已查看",
+  "showSecurity": "安全发现",
   "total_other": "{{count}} 个问题",
   "sourceFailed": "无法监视 {{kind}}",
   "truncated": "问题过多：仅列出最近的问题。",
@@ -21,6 +22,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "安全",
     "events": "警告事件"
   },
   "messages": {
@@ -28,6 +30,7 @@
     "restarts_other": "容器 {{container}} 已重启（{{count}} 次）",
     "replicas": "{{ready}}/{{desired}} 个副本就绪",
     "expires": "将于 {{date}} 过期",
-    "expired": "已于 {{date}} 过期"
+    "expired": "已于 {{date}} 过期",
+    "securityBaseline_other": "{{count}} 项 Pod Security Baseline 违规：{{fields}}"
   }
 }

@@ -1,0 +1,136 @@
+{
+  "sidebar": "Yükseltme hazırlığı",
+  "title": "Yükseltme hazırlığı",
+  "intro": "Bu kümenin hâlâ kullandığı kullanımdan kaldırılmış ve kaldırılmış API sürümleri ile Kubernetes'i yükseltmeden önce giderilmesi gereken sürüm farkları.",
+  "clientsNote": "Bu sayfa, kullanımdan kaldırılmış API'leri çağıran istemcileri değil, saklanan nesneleri ve manifestleri görür. Bunları bulmak için yükseltmeden önce API sunucusunun apiserver_requested_deprecated_apis metriğini denetleyin.",
+  "currentVersion": "Küme sürümü: {{version}}",
+  "currentUnknown": "Küme sürümü bilinmiyor",
+  "target": "Hedef sürüm",
+  "rescan": "Yeniden tara",
+  "copyMarkdown": "Markdown olarak kopyala",
+  "copyCsv": "CSV olarak kopyala",
+  "copied": "Kopyalandı",
+  "copyFailed": "Kopyalanamadı",
+  "scannedAt": "Tarama zamanı: {{time}}",
+  "scanFailed": "Küme taranamadı",
+  "scanning": "Küme taranıyor…",
+  "clusterScoped": "(küme genelinde)",
+  "tableSource": "Kullanımdan kaldırılan API tablosu {{version}} sürümüne kadar Kubernetes'i kapsar; kaynak, Kubernetes kullanımdan kaldırılan API kılavuzu: {{url}}",
+  "noReplacement": "Yerine geçen yok",
+  "counts": {
+    "removed_one": "{{count}} kaldırılmış",
+    "removed_other": "{{count}} kaldırılmış",
+    "deprecated_one": "{{count}} kullanımdan kaldırılmış",
+    "deprecated_other": "{{count}} kullanımdan kaldırılmış",
+    "served_one": "Sunulan {{count}} eski API sürümü",
+    "served_other": "Sunulan {{count}} eski API sürümü",
+    "skew_one": "{{count}} sürüm farkı sorunu",
+    "skew_other": "{{count}} sürüm farkı sorunu"
+  },
+  "status": {
+    "removed": "Kaldırıldı",
+    "deprecated": "Kullanımdan kaldırıldı"
+  },
+  "columns": {
+    "status": "Durum",
+    "kind": "Tür",
+    "namespace": "Namespace",
+    "name": "Ad",
+    "apiVersion": "API sürümü",
+    "when": "Ne zaman",
+    "deprecatedIn": "Kullanımdan kalktığı sürüm",
+    "removedIn": "Kaldırıldığı sürüm",
+    "replacement": "Yerine",
+    "source": "Kaynak"
+  },
+  "origin": {
+    "lastApplied": "Son kubectl apply",
+    "managedFields": "{{manager}} alan yöneticisi tarafından yazıldı",
+    "helm": "Helm yayını {{namespace}}/{{release}} (revizyon {{revision}})",
+    "argoCd": "Argo CD uygulaması {{namespace}}/{{application}}",
+    "flux": "Flux Kustomization {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "Yerine geçen yok: Pod Security Admission veya bir admission webhook kullanın"
+  },
+  "filters": {
+    "live": "Kümedeki nesneler",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "Eski yazma izlerini göster"
+  },
+  "usages": {
+    "title": "Kullanılan API sürümleri",
+    "none": "Bu kümede hiçbir şey hedef sürümde kullanımdan kaldırılmış veya kaldırılmış bir API sürümü kullanmıyor.",
+    "noneShown": "Filtrelere uyan bir şey yok.",
+    "alreadyRemoved": "Bu küme de artık bu sürümü sunmuyor.",
+    "removedIn": "{{version}} sürümünde kaldırıldı",
+    "deprecatedIn": "{{version}} sürümünde kullanımdan kalktı, {{removed}} sürümünde kaldırılıyor",
+    "hidden_one": "{{count}} bulgu filtrelerle gizlendi.",
+    "hidden_other": "{{count}} bulgu filtrelerle gizlendi."
+  },
+  "served": {
+    "title": "Kümenin sunduğu kullanımdan kaldırılmış API sürümleri",
+    "hint": "İstemciler bu sürümleri şimdilik kullanabilir; yükseltmeden sonra istekleri başarısız olabilir.",
+    "none": "Küme, hedef sürümde kullanımdan kaldırılmış veya kaldırılmış hiçbir API sürümünü sunmuyor.",
+    "removed": "{{version}} sürümünde kaldırıldı. Yerine: {{replacement}}",
+    "deprecated": "{{version}} sürümünden beri kullanımdan kaldırılmış. Yerine: {{replacement}}"
+  },
+  "skew": {
+    "title": "Sürüm farkı",
+    "none": "Sürüm farkı sorunu bulunamadı.",
+    "stepwise": "Kontrol düzlemi her seferinde bir alt sürüm yükseltilir: {{from}} sürümünden {{to}} sürümüne şu sürümlerin her birinden geçerek: {{steps}}",
+    "kubeletNewer_one": "{{count}} düğümde kubelet kontrol düzleminden ({{version}}) yeni: {{nodes}}",
+    "kubeletNewer_other": "{{count}} düğümde kubelet kontrol düzleminden ({{version}}) yeni: {{nodes}}",
+    "kubeletTooOld_one": "{{count}} düğümde kubelet kontrol düzleminin izin verdiğinden eski (en eskisi {{version}}): {{nodes}}",
+    "kubeletTooOld_other": "{{count}} düğümde kubelet kontrol düzleminin izin verdiğinden eski (en eskisi {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_one": "Kontrol düzlemi {{target}} sürümüne geçmeden önce {{count}} düğüm yükseltilmeli (kubelet {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_other": "Kontrol düzlemi {{target}} sürümüne geçmeden önce {{count}} düğüm yükseltilmeli (en eski kubelet {{version}}): {{nodes}}",
+    "kubeProxyNewer_one": "{{count}} düğümde kube-proxy kontrol düzleminden ({{version}}) yeni: {{nodes}}",
+    "kubeProxyNewer_other": "{{count}} düğümde kube-proxy kontrol düzleminden ({{version}}) yeni: {{nodes}}",
+    "kubeProxyTooOld_one": "{{count}} düğümde kube-proxy kontrol düzleminin izin verdiğinden eski (en eskisi {{version}}): {{nodes}}",
+    "kubeProxyTooOld_other": "{{count}} düğümde kube-proxy kontrol düzleminin izin verdiğinden eski (en eskisi {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_one": "Kontrol düzlemi {{target}} sürümüne geçmeden önce {{count}} düğümde kube-proxy yükseltilmeli (kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_other": "Kontrol düzlemi {{target}} sürümüne geçmeden önce {{count}} düğümde kube-proxy yükseltilmeli (en eski kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyKubeletSkew_one": "{{count}} düğümde kube-proxy, kubelet'ten izin verilenden fazla farklı: {{nodes}}",
+    "kubeProxyKubeletSkew_other": "{{count}} düğümde kube-proxy, kubelet'ten izin verilenden fazla farklı: {{nodes}}",
+    "apiserverSkew": "kube-apiserver örnekleri arasında birden fazla alt sürüm fark var: {{versions}}",
+    "componentSkew": "{{component}} ({{pod}}) {{version}} sürümünde çalışıyor; kube-apiserver {{apiserver}} buna izin vermez: en fazla bir alt sürüm eski olabilir, asla daha yeni olamaz.",
+    "kubelets": "kubelet sürümleri: {{versions}}",
+    "kubeletVersion_one": "{{count}} düğümde {{version}}",
+    "kubeletVersion_other": "{{count}} düğümde {{version}}",
+    "components": "Kontrol düzlemi bileşenleri: {{components}}",
+    "noComponents": "Kontrol düzlemi bileşenleri görünmüyor (yönetilen kontrol düzlemi): yalnızca kubelet kuralları denetlendi."
+  },
+  "sources": {
+    "failed": {
+      "version": "Küme sürümü okunamadı",
+      "served": "Kümenin hangi API sürümlerini sunduğu okunamadı",
+      "live": "Kümedeki nesneler okunamadı",
+      "helm": "Helm yayınları okunamadı",
+      "argoCd": "Argo CD uygulamaları okunamadı",
+      "flux": "Flux Kustomization nesneleri okunamadı",
+      "nodes": "Düğümler okunamadı",
+      "controlPlane": "Kontrol düzlemi Pod'ları okunamadı"
+    },
+    "truncated": {
+      "version": "Küme sürümü yalnızca kısmen okundu.",
+      "served": "Yalnızca bazı API sürümleri denetlendi.",
+      "live": "Bazı türlerde taranandan daha fazla nesne var; yalnızca ilkleri denetlendi.",
+      "helm": "Taranandan daha fazla Helm yayını var; yalnızca ilkleri denetlendi.",
+      "argoCd": "Taranandan daha fazla Argo CD uygulaması var; yalnızca ilkleri denetlendi.",
+      "flux": "Taranandan daha fazla Flux Kustomization var; yalnızca ilkleri denetlendi.",
+      "nodes": "Taranandan daha fazla düğüm var; yalnızca ilkleri denetlendi.",
+      "controlPlane": "Yalnızca bazı kontrol düzlemi Pod'ları denetlendi."
+    },
+    "skippedKinds": "Bazı API sürümleri veya türler okunamadı: {{names}}",
+    "skippedReleases": "Bazı Helm yayınları okunamadı: {{names}}",
+    "skippedHelmNamespaces": "Bazı namespace'lerde Helm yayınları listelenemedi: {{names}}",
+    "usagesTruncated": "Gösterilebilecekten fazla kullanım bulundu; yalnızca ilkleri listelendi."
+  },
+  "report": {
+    "title": "Yükseltme hazırlığı: {{from}} → {{to}}",
+    "titleUnknown": "{{to}} için yükseltme hazırlığı"
+  }
+}

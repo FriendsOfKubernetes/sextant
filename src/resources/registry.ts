@@ -102,6 +102,7 @@ export const SIDEBAR_SECTIONS = [
   "helm",
   "accessControl",
   "certManager",
+  "trivy",
   "flux",
   "argocd",
   "customResources",
@@ -118,6 +119,7 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "flux",
   "argocd",
   "certManager",
+  "trivy",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -134,6 +136,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   helm: "helm",
   accessControl: "accessControl",
   certManager: "certManager",
+  trivy: "trivy",
   flux: "flux",
   argocd: "argocd",
   customResources: "customResources",

@@ -31,7 +31,8 @@ export function defaultAppSettings(): AppSettings {
     nodeShellImage: "busybox:stable",
     debugImage: "busybox:stable",
     extensions: [],
-    notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null, certExpiryDays: 14 },
+    notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null, certExpiryDays: 14, enabledCategories: [] },
+    fleet: { selected: [] },
   };
 }
 

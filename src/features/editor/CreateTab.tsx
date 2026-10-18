@@ -1,11 +1,15 @@
 // Dock tab "create": YAML with one or more documents (`---`), applied with server-side apply. Shows the objects
 // that were created or changed, or the error naming the failing document; the text is kept either way.
+// "Preview changes" (#141) applies the text as a server-side dry run first: per document the live object against what
+// the server would store (Secrets without values), or why it would refuse it; "Apply" from the preview applies exactly
+// the previewed text, and is unavailable while a document would be refused (see `refusalsOf`). On a cluster that asks for a preview, "Apply" opens the preview first.
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError, toApiError, type ClusterId, type ObjectRef } from "../../api";
+import { api, ApiError, toApiError, type ClusterId, type DryRunResult, type ObjectRef } from "../../api";
 import { Button, ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { hasHiddenValues } from "../details/secrets";
+import { ChangePreview, refusalsOf, useAlwaysPreview } from "../safe-apply";
 import { YamlEditor } from "./YamlEditor";
 
 export interface CreateTabPayload {
@@ -24,18 +28,41 @@ export function CreateTab({ tab }: DockTabProps) {
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState<ObjectRef[] | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
+  const [checking, setChecking] = useState(false);
+  /** A dry run of `text`, shown instead of the editor until it is applied or left. */
+  const [preview, setPreview] = useState<{ text: string; result: DryRunResult } | null>(null);
+  const alwaysPreview = useAlwaysPreview(clusterId);
 
-  const apply = async () => {
+  /** Text copied from a Secret shown without its values would replace every value with an empty string. */
+  const refuseHidden = (yaml: string): boolean => {
+    if (!hasHiddenValues(yaml)) return false;
+    setError(new ApiError("invalid", t("details:secret.reloadBeforeSave")));
+    return true;
+  };
+
+  const runPreview = async () => {
     setApplied(null);
-    // Text copied from a Secret shown without its values would replace every value with an empty string.
-    if (hasHiddenValues(text)) {
-      setError(new ApiError("invalid", t("details:secret.reloadBeforeSave")));
-      return;
+    if (refuseHidden(text)) return;
+    const asked = text;
+    setChecking(true);
+    setError(null);
+    try {
+      setPreview({ text: asked, result: await api.resources.dryRun(clusterId, asked, "apply") });
+    } catch (err) {
+      setError(toApiError(err));
+    } finally {
+      setChecking(false);
     }
+  };
+
+  const apply = async (yaml: string) => {
+    setApplied(null);
+    if (refuseHidden(yaml)) return;
     setApplying(true);
     setError(null);
     try {
-      setApplied(await api.resources.apply(clusterId, text));
+      setApplied(await api.resources.apply(clusterId, yaml));
+      setPreview(null);
     } catch (err) {
       setError(toApiError(err));
     } finally {
@@ -43,21 +70,56 @@ export function CreateTab({ tab }: DockTabProps) {
     }
   };
 
+  /** A refused document stops the real apply part-way: nothing is applied until the text is fixed. */
+  const blocked = preview !== null && refusalsOf(preview.result).blocking.length > 0;
+
   const onChange = useCallback((value: string) => setText(value), []);
   const empty = text.trim() === "";
 
   return (
     <div className="editor-tab">
       <div className="editor-tab__toolbar">
-        <Button
-          variant="primary"
-          disabled={applying || empty}
-          title={empty ? t("actions:create.empty") : undefined}
-          onClick={() => void apply()}
-        >
-          {applying ? t("actions:create.applying") : t("actions:create.apply")}
-        </Button>
-        <span className="editor-tab__hint">{t("actions:create.placeholder")}</span>
+        {preview ? (
+          <>
+            <Button
+              variant="primary"
+              disabled={applying || blocked}
+              title={blocked ? t("safeapply:actions.blocked") : undefined}
+              onClick={() => void apply(preview.text)}
+            >
+              {applying ? t("actions:create.applying") : t("actions:create.apply")}
+            </Button>
+            <Button disabled={applying} onClick={() => setPreview(null)}>
+              {t("safeapply:actions.back")}
+            </Button>
+            <span className="editor-tab__status" aria-live="polite">
+              {t("safeapply:actions.ready")}
+            </span>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="primary"
+              disabled={applying || checking || empty}
+              title={empty ? t("actions:create.empty") : undefined}
+              onClick={() => void (alwaysPreview ? runPreview() : apply(text))}
+            >
+              {applying
+                ? t("actions:create.applying")
+                : checking
+                  ? t("safeapply:actions.checking")
+                  : alwaysPreview
+                    ? t("safeapply:actions.previewAndApply")
+                    : t("actions:create.apply")}
+            </Button>
+            {!alwaysPreview && (
+              <Button disabled={applying || checking || empty} onClick={() => void runPreview()}>
+                {checking ? t("safeapply:actions.checking") : t("safeapply:actions.preview")}
+              </Button>
+            )}
+            <span className="editor-tab__hint">{t("actions:create.placeholder")}</span>
+          </>
+        )}
       </div>
       {error && <ErrorState error={error} title={t("actions:create.failed")} />}
       {applied && (
@@ -70,7 +132,11 @@ export function CreateTab({ tab }: DockTabProps) {
           </ul>
         </div>
       )}
-      <YamlEditor value={text} onChange={onChange} label={t("actions:create.editorLabel")} />
+      {preview && <ChangePreview result={preview.result} />}
+      {/* Kept while the preview is shown, so the undo history survives "Back to editing". */}
+      <div className="editor-tab__editor" hidden={preview !== null}>
+        <YamlEditor value={text} onChange={onChange} label={t("actions:create.editorLabel")} />
+      </div>
     </div>
   );
 }

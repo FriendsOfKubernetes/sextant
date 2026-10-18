@@ -9,6 +9,10 @@
 //! | tool | needs |
 //! |---|---|
 //! | `apply_yaml` | Modify on the kind of every document, in its namespace (all checked before anything is sent) |
+//!
+//! `apply_yaml` and `patch_resource` take `dryRun: true` (#141): the same requirements and node shell refusals, checked
+//! by `Guard::check_dry_run` — the rules decide, but nobody is asked, since nothing changes — and the call is sent
+//! with `dryRun=All`; the agent gets what would change ([`super::dry_run::summary`], no Secret values).
 //! | `patch_resource`, `scale`, `restart`, `rollout_undo`, `trigger_cronjob`, `suspend_cronjob`, `gitops_action`, `cordon_node` | Modify on the kind |
 //! | `delete_resource` | Delete on the kind |
 //! | `drain_node` | Modify on `Node` and Delete on `Pod` in all namespaces |
@@ -68,14 +72,17 @@ pub fn register_write_tools(tools: &mut ToolSet) {
             "apply_yaml",
             "Server-side apply of one or more YAML documents (separated by ---), like `kubectl apply --server-side`. \
              Every document is checked against the user's rules before anything is sent; a document without a \
-             namespace goes to the context's default namespace.",
+             namespace goes to the context's default namespace. With `dryRun: true` nothing is changed: the API \
+             server checks the apply (dryRun=All) and the result lists, per object, what would be created or \
+             changed, field by field, or why it would be refused.",
             ToolKind::Destructive,
             apply_yaml,
         )
         .add(
             "patch_resource",
             "Merge patch (a JSON object, the default) or JSON patch (a list of operations) of one object; returns the \
-             object as saved (a Secret without its values).",
+             object as saved (a Secret without its values). With `dryRun: true` nothing is changed: the result \
+             lists the fields the patch would change (dryRun=All on the API server).",
             ToolKind::Destructive,
             patch_resource,
         )
@@ -198,14 +205,21 @@ pub fn register_write_tools(tools: &mut ToolSet) {
 
 // ---------------------------------------------------------------------------------------------------------------
 // Arguments
+//
+// Every argument struct refuses unknown fields: a field a tool does not take (a misspelt `dryRun`, or `dryRun` on a
+// tool without a dry run, such as `delete_resource`) must never be ignored on a call that changes the cluster.
 
+/// Unknown fields are refused: a misspelt `dryRun` must never turn a dry run into the change itself.
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ApplyArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
     /// One or more YAML documents separated by `---`; a `kind: List` is applied item by item.
     pub yaml: String,
+    /// Only check the apply on the API server (dryRun=All) and return what would change; nothing is changed.
+    #[serde(default, alias = "dry_run", alias = "dryrun")]
+    pub dry_run: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, JsonSchema)]
@@ -218,8 +232,9 @@ pub enum PatchKind {
     Json,
 }
 
+/// Unknown fields are refused, as for [`ApplyArgs`].
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PatchArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -235,10 +250,13 @@ pub struct PatchArgs {
     /// `merge` (default) or `json`.
     #[serde(default)]
     pub patch_type: PatchKind,
+    /// Only check the patch on the API server (dryRun=All) and return what would change; nothing is changed.
+    #[serde(default, alias = "dry_run", alias = "dryrun")]
+    pub dry_run: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ObjectArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -252,7 +270,7 @@ pub struct ObjectArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RolloutUndoArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -266,7 +284,7 @@ pub struct RolloutUndoArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ScaleArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -280,7 +298,7 @@ pub struct ScaleArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CordonArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -291,7 +309,7 @@ pub struct CordonArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DrainArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -306,7 +324,7 @@ pub struct DrainArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CronJobArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -316,7 +334,7 @@ pub struct CronJobArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SuspendCronJobArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -358,7 +376,7 @@ impl GitopsAction {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GitopsArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -378,7 +396,7 @@ pub struct GitopsArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HelmInstallArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -394,7 +412,7 @@ pub struct HelmInstallArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HelmUpgradeArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -409,7 +427,7 @@ pub struct HelmUpgradeArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HelmRollbackArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -421,7 +439,7 @@ pub struct HelmRollbackArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HelmReleaseArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -431,7 +449,7 @@ pub struct HelmReleaseArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ExecArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -453,7 +471,7 @@ pub enum ForwardKind {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ForwardStartArgs {
     /// Cluster id from list_clusters.
     pub cluster: String,
@@ -469,14 +487,14 @@ pub struct ForwardStartArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ForwardListArgs {
     /// Only the forwards of this cluster.
     pub cluster: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ForwardStopArgs {
     /// The forward's id (`pf-…`).
     pub id: String,
@@ -500,18 +518,48 @@ async fn apply_yaml(call: ToolCall, args: ApplyArgs) -> ToolResult {
         refuse_named_node_shell(target.object(), Some(target.document().value()))?;
     }
     let objects: Vec<ObjectRef> = targets.iter().map(|t| t.object().clone()).collect();
-    let requirements: Vec<Requirement> = objects.iter().map(modify).collect();
+    let mut requirements: Vec<Requirement> = objects.iter().map(modify).collect();
+    if args.dry_run {
+        // What a dry run of a Secret says depends on its live values: only with "Secret values" (ADR-0043).
+        requirements.extend(
+            objects
+                .iter()
+                .filter(|o| is_core_secret(&o.kind))
+                .map(secret_values),
+        );
+    }
     let summary = CallSummary {
         tool: "apply_yaml".into(),
         target: targets_text(&objects),
         details: Some(apply_details(&objects, &args.yaml)),
     };
-    call.guard.check(&cluster, &requirements, &summary).await?;
+    if args.dry_run {
+        call.guard
+            .check_dry_run(&cluster, &requirements, &summary)
+            .await?;
+    } else {
+        call.guard.check(&cluster, &requirements, &summary).await?;
+    }
     for object in &objects {
         refuse_live_node_shell(&call, &cluster.id, object, true).await?;
     }
+    if args.dry_run {
+        // Each request is limited by the core (`STEP_TIMEOUT`); every write carries dryRun=All.
+        let named: Vec<Vec<String>> = targets
+            .iter()
+            .map(|t| super::dry_run::document_keys(t.document().value()))
+            .collect();
+        let result = resources::dry_run_planned(mgr, &cluster.id, targets).await?;
+        return Ok(ToolOutput::Json(super::dry_run::summary(
+            &result.objects,
+            &named,
+        )));
+    }
+    // A Secret written by an agent without "Secret values" is written blind: forced, refused unsent on an immutable
+    // Secret, refusals without the server's text — so the answer cannot tell a right guess of a value (#169).
+    let secrets = secret_writes(&call, &cluster, &objects).await;
     // Each request is limited by the core (`STEP_TIMEOUT`), not the whole apply.
-    let applied = resources::apply_planned(mgr, &cluster.id, targets).await?;
+    let applied = resources::apply_planned_with(mgr, &cluster.id, targets, secrets).await?;
     let applied: Vec<String> = applied.iter().map(describe).collect();
     Ok(ToolOutput::Json(json!({ "applied": applied })))
 }
@@ -553,11 +601,38 @@ async fn patch_resource(call: ToolCall, args: PatchArgs) -> ToolResult {
             AccessAction::SecretValues,
         ));
     }
+    if args.dry_run {
+        // What a dry run of a Secret says depends on its live values: only with "Secret values" (ADR-0043), whatever
+        // the patch.
+        if is_core_secret(&object.kind)
+            && !requirements
+                .iter()
+                .any(|r| r.2 == AccessAction::SecretValues)
+        {
+            requirements.push(secret_values(&object));
+        }
+        call.guard
+            .check_dry_run(&cluster, &requirements, &summary)
+            .await?;
+        refuse_live_node_shell(&call, &cluster.id, &object, false).await?;
+        let result = change(
+            "the dry run of the patch",
+            resources::dry_run_patch(mgr, &cluster.id, &object, &args.patch, patch_type),
+        )
+        .await?;
+        let named = super::dry_run::patch_keys(&args.patch, patch_type);
+        return Ok(ToolOutput::Json(super::dry_run::summary(
+            &[result],
+            &[named],
+        )));
+    }
     call.guard.check(&cluster, &requirements, &summary).await?;
     refuse_live_node_shell(&call, &cluster.id, &object, false).await?;
+    // See `apply_yaml`: a Secret is patched blind for an agent without "Secret values" (#169).
+    let secrets = secret_writes(&call, &cluster, std::slice::from_ref(&object)).await;
     let saved = change(
         "patching the object",
-        resources::patch(mgr, &cluster.id, &object, &args.patch, patch_type),
+        resources::patch_with(mgr, &cluster.id, &object, &args.patch, patch_type, secrets),
     )
     .await?;
     Ok(ToolOutput::Json(compact(saved)))
@@ -1449,6 +1524,38 @@ fn plain(tool: &str, target: String, details: Option<String>) -> CallSummary {
         target,
         details,
     }
+}
+
+/// `Blind` when any of `objects` is a core Secret whose values the rules do not let the agent read (without asking).
+async fn secret_writes(
+    call: &ToolCall,
+    cluster: &super::guard::ClusterTarget,
+    objects: &[ObjectRef],
+) -> resources::SecretWrites {
+    for object in objects.iter().filter(|o| is_core_secret(&o.kind)) {
+        let readable = call
+            .guard
+            .allows(
+                cluster,
+                object.namespace.as_deref(),
+                &pattern_of(&object.kind),
+                AccessAction::SecretValues,
+            )
+            .await;
+        if !readable {
+            return resources::SecretWrites::Blind;
+        }
+    }
+    resources::SecretWrites::AsIs
+}
+
+/// "Secret values" on the object's kind in its namespace.
+fn secret_values(object: &ObjectRef) -> Requirement {
+    need(
+        object.namespace.as_deref(),
+        &pattern_of(&object.kind),
+        AccessAction::SecretValues,
+    )
 }
 
 fn modify(object: &ObjectRef) -> Requirement {
@@ -2732,6 +2839,349 @@ spec:
             assert!(shown.contains(&object), "{object} is not shown:\n{shown}");
         }
         state.close_all();
+    }
+
+    #[tokio::test]
+    async fn dry_runs_follow_the_rules_without_asking_and_change_nothing() {
+        const NS: &str = "sextant-mcp-write-dry-run";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        let _namespace = namespace(&state, &id, NS, false).await;
+        let c = id.0.as_str();
+        // Changes in NS are asked about; nothing else is allowed.
+        set_rules(
+            &state,
+            &id,
+            vec![rule(&[NS], &[], &[AccessAction::Modify], true)],
+        );
+        window.answer(Answer::Deny);
+        let yaml = format!(
+            "apiVersion: v1\nkind: ConfigMap\nmetadata: {{name: settings, namespace: {NS}}}\ndata: {{color: green}}\n---\n\
+             apiVersion: v1\nkind: ConfigMap\nmetadata: {{name: fresh, namespace: {NS}}}\ndata: {{a: b}}\n"
+        );
+        let result = tool(
+            &state,
+            "apply_yaml",
+            json!({ "cluster": c, "yaml": yaml, "dryRun": true }),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result["dryRun"], true, "{result}");
+        assert_eq!(result["objects"][0]["change"], "update", "{result}");
+        assert!(
+            result["objects"][0]["fields"]
+                .as_array()
+                .unwrap()
+                .contains(&json!(r#"data.color: "blue" → "green""#)),
+            "{result}"
+        );
+        assert_eq!(result["objects"][1]["change"], "create", "{result}");
+        let result = tool(
+            &state,
+            "patch_resource",
+            json!({ "cluster": c, "kind": "ConfigMap", "namespace": NS, "name": "settings",
+                    "patch": { "data": { "color": "red" } }, "dryRun": true }),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result["objects"][0]["change"], "update", "{result}");
+        // Nobody was asked, and nothing changed.
+        assert_eq!(window.count(), 0);
+        let settings = get(&state, &id, &config_map(NS, "settings")).await.unwrap();
+        assert_eq!(settings["data"]["color"], "blue");
+        assert!(get(&state, &id, &config_map(NS, "fresh")).await.is_none());
+        let journal = state.mcp.context().audit.list(Some(&id));
+        let tools: Vec<&str> = journal.iter().map(|e| e.tool.as_str()).collect();
+        assert!(tools.contains(&"apply_yaml (dry run)"), "{tools:?}");
+        assert!(tools.contains(&"patch_resource (dry run)"), "{tools:?}");
+
+        // Outside the rules a dry run is refused like the change.
+        let refused = tool(
+            &state,
+            "apply_yaml",
+            json!({ "cluster": c, "dryRun": true,
+                    "yaml": "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: x, namespace: default}\n" }),
+        )
+        .await
+        .unwrap_err();
+        assert!(refused.starts_with("Sextant denied modify"), "{refused}");
+        state.close_all();
+    }
+
+    /// A dry run of a Secret needs "Secret values" (its answer depends on the live values), and even then never says
+    /// whether a value would change; the real calls keep their rules (ADR-0043).
+    #[tokio::test]
+    async fn a_secrets_dry_run_needs_secret_values_and_is_no_oracle() {
+        const NS: &str = "sextant-mcp-write-dry-secret";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, _window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        let _namespace = namespace(&state, &id, NS, false).await;
+        let c = id.0.as_str();
+        // "password" is "right" (cmlnaHQ=).
+        let secret = format!(
+            "apiVersion: v1\nkind: Secret\nmetadata: {{name: creds, namespace: {NS}}}\ndata: {{password: cmlnaHQ=}}\n"
+        );
+        resources::apply_yaml(&state.clusters, &id, &secret)
+            .await
+            .unwrap();
+        use AccessAction::{Modify, SecretValues};
+        set_rules(&state, &id, vec![rule(&[NS], &[], &[Modify], false)]);
+        let guess = |value: &str| {
+            json!({ "cluster": c, "kind": "Secret", "namespace": NS, "name": "creds",
+                    "patch": { "data": { "password": value } }, "dryRun": true })
+        };
+        let applied = |value: &str| {
+            json!({ "cluster": c, "dryRun": true, "yaml": format!(
+                "apiVersion: v1\nkind: List\nitems:\n- apiVersion: v1\n  kind: Secret\n  metadata: {{name: creds, namespace: {NS}}}\n  data: {{password: {value}}}\n"
+            ) })
+        };
+        let refused = tool(&state, "patch_resource", guess("cmlnaHQ="))
+            .await
+            .unwrap_err();
+        assert!(
+            refused.starts_with("Sextant denied secret values"),
+            "{refused}"
+        );
+        let refused = tool(&state, "apply_yaml", applied("cmlnaHQ="))
+            .await
+            .unwrap_err();
+        assert!(
+            refused.starts_with("Sextant denied secret values"),
+            "{refused}"
+        );
+
+        // The real patch needs no more than before.
+        let real = tool(
+            &state,
+            "patch_resource",
+            json!({ "cluster": c, "kind": "Secret", "namespace": NS, "name": "creds",
+                    "patch": { "metadata": { "labels": { "checked": "yes" } } } }),
+        )
+        .await
+        .unwrap();
+        assert_eq!(real["metadata"]["labels"]["checked"], "yes");
+
+        // With "Secret values", a right and a wrong guess read the same.
+        set_rules(
+            &state,
+            &id,
+            vec![rule(&[NS], &[], &[Modify, SecretValues], false)],
+        );
+        let right = tool(&state, "patch_resource", guess("cmlnaHQ="))
+            .await
+            .unwrap();
+        let wrong = tool(&state, "patch_resource", guess("d3Jvbmc="))
+            .await
+            .unwrap();
+        assert_eq!(right, wrong);
+        assert_eq!(right["objects"][0]["change"], "write", "{right}");
+        assert_eq!(right["objects"][0]["writtenKeys"], json!(["password"]));
+        let right = tool(&state, "apply_yaml", applied("cmlnaHQ="))
+            .await
+            .unwrap();
+        let wrong = tool(&state, "apply_yaml", applied("d3Jvbmc="))
+            .await
+            .unwrap();
+        assert_eq!(right, wrong);
+        assert!(!right.to_string().contains("cmlnaHQ="), "{right}");
+        state.close_all();
+    }
+
+    /// Server-side applies `yaml` with kubectl under `manager` (another tool owning the fields).
+    fn kubectl_apply(yaml: &str, manager: &str) {
+        use std::io::Write;
+        let kubeconfig = std::env::var_os("SEXTANT_TEST_KUBECONFIG").unwrap();
+        let mut child = std::process::Command::new("kubectl")
+            .arg("--kubeconfig")
+            .arg(kubeconfig)
+            .args([
+                "apply",
+                "--server-side",
+                "--field-manager",
+                manager,
+                "-f",
+                "-",
+            ])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(yaml.as_bytes())
+            .unwrap();
+        assert!(child.wait().unwrap().success());
+    }
+
+    /// The real writes of an agent without "Secret values" give the same answer for a right and a wrong guess of a
+    /// value: a field owned by another manager is taken over (force), an immutable Secret's values are refused unsent
+    /// with one text (#169).
+    #[tokio::test]
+    async fn an_agents_real_secret_writes_answer_the_same_for_any_guess() {
+        const NS: &str = "sextant-mcp-write-blind-secret";
+        let dir = tempfile::tempdir().unwrap();
+        let Some((state, id, _window)) = cluster_state(dir.path()) else {
+            return;
+        };
+        let _namespace = namespace(&state, &id, NS, false).await;
+        let c = id.0.as_str();
+        // "cmlnaHQ=" is the value, "d3Jvbmc=" a wrong guess.
+        kubectl_apply(
+            &format!(
+                "apiVersion: v1\nkind: Secret\nmetadata: {{name: owned, namespace: {NS}}}\ndata: {{password: cmlnaHQ=}}\n---\n\
+                 apiVersion: v1\nkind: Secret\nmetadata: {{name: frozen, namespace: {NS}}}\nimmutable: true\ndata: {{password: cmlnaHQ=}}\n"
+            ),
+            "other-tool",
+        );
+        use AccessAction::{Modify, Read};
+        set_rules(&state, &id, vec![rule(&[NS], &[], &[Read, Modify], false)]);
+        let apply = |name: &str, value: &str| {
+            json!({ "cluster": c, "yaml": format!(
+                "apiVersion: v1\nkind: Secret\nmetadata: {{name: {name}, namespace: {NS}}}\ndata: {{password: {value}}}\n"
+            ) })
+        };
+        let patch = |value: &str| {
+            json!({ "cluster": c, "kind": "Secret", "namespace": NS, "name": "frozen",
+                    "patch": { "data": { "password": value } } })
+        };
+        let json_patch = |value: &str| {
+            json!({ "cluster": c, "kind": "Secret", "namespace": NS, "name": "frozen", "patchType": "json",
+                    "patch": [{ "op": "replace", "path": "/data/password", "value": value }] })
+        };
+        // Owned by another manager: a guess is written either way, never a conflict.
+        let right = tool(&state, "apply_yaml", apply("owned", "cmlnaHQ=")).await;
+        let wrong = tool(&state, "apply_yaml", apply("owned", "d3Jvbmc=")).await;
+        assert!(right.is_ok(), "{right:?}");
+        assert_eq!(right, wrong);
+        // Immutable: one refusal for both.
+        for (name, right, wrong) in [
+            (
+                "apply_yaml",
+                apply("frozen", "cmlnaHQ="),
+                apply("frozen", "d3Jvbmc="),
+            ),
+            ("patch_resource", patch("cmlnaHQ="), patch("d3Jvbmc=")),
+            (
+                "patch_resource",
+                json_patch("cmlnaHQ="),
+                json_patch("d3Jvbmc="),
+            ),
+        ] {
+            let right = tool(&state, name, right).await.unwrap_err();
+            let wrong = tool(&state, name, wrong).await.unwrap_err();
+            assert_eq!(right, wrong);
+            assert!(right.contains(resources::IMMUTABLE_SECRET), "{right}");
+        }
+        state.close_all();
+    }
+
+    #[test]
+    fn write_tools_refuse_unknown_fields_and_take_dry_run_spellings() {
+        for spelling in ["dryRun", "dry_run", "dryrun"] {
+            let args: ApplyArgs =
+                serde_json::from_value(json!({ "cluster": "c", "yaml": "x", spelling: true }))
+                    .unwrap();
+            assert!(args.dry_run, "{spelling}");
+            let args: PatchArgs = serde_json::from_value(
+                json!({ "cluster": "c", "kind": "Pod", "name": "p", "patch": {}, spelling: true }),
+            )
+            .unwrap();
+            assert!(args.dry_run, "{spelling}");
+        }
+        for unknown in ["dryRUN", "dry-run", "dryRunn"] {
+            assert!(
+                serde_json::from_value::<ApplyArgs>(
+                    json!({ "cluster": "c", "yaml": "x", unknown: true })
+                )
+                .is_err(),
+                "{unknown}"
+            );
+            assert!(
+                serde_json::from_value::<PatchArgs>(
+                    json!({ "cluster": "c", "kind": "Pod", "name": "p", "patch": {}, unknown: true })
+                )
+                .is_err(),
+                "{unknown}"
+            );
+        }
+        let plain: ApplyArgs =
+            serde_json::from_value(json!({ "cluster": "c", "yaml": "x" })).unwrap();
+        assert!(!plain.dry_run);
+    }
+
+    /// Every tool that changes the cluster takes its documented arguments and refuses any other — `delete_resource`
+    /// with `dryRun` must not delete.
+    #[test]
+    fn every_write_tool_refuses_an_argument_it_does_not_take() {
+        fn check<T: serde::de::DeserializeOwned>(tool: &str, args: Value) {
+            serde_json::from_value::<T>(args.clone()).unwrap_or_else(|e| panic!("{tool}: {e}"));
+            let mut extra = args;
+            extra["dryRun"] = json!(true);
+            assert!(
+                serde_json::from_value::<T>(extra).is_err(),
+                "{tool} took dryRun"
+            );
+        }
+        let object = json!({ "cluster": "c", "kind": "Deployment", "apiVersion": "apps/v1", "namespace": "n", "name": "web" });
+        check::<ObjectArgs>("delete_resource/restart", object.clone());
+        let mut scale = object.clone();
+        scale["replicas"] = json!(2);
+        check::<ScaleArgs>("scale", scale);
+        let mut undo = object.clone();
+        undo["toRevision"] = json!(3);
+        check::<RolloutUndoArgs>("rollout_undo", undo);
+        check::<CordonArgs>(
+            "cordon_node",
+            json!({ "cluster": "c", "name": "n1", "unschedulable": false }),
+        );
+        check::<DrainArgs>(
+            "drain_node",
+            json!({ "cluster": "c", "name": "n1", "force": true, "deleteEmptyDirData": true }),
+        );
+        check::<CronJobArgs>(
+            "trigger_cronjob",
+            json!({ "cluster": "c", "namespace": "n", "name": "job" }),
+        );
+        check::<SuspendCronJobArgs>(
+            "suspend_cronjob",
+            json!({ "cluster": "c", "namespace": "n", "name": "job", "suspend": true }),
+        );
+        check::<GitopsArgs>(
+            "gitops_action",
+            json!({ "cluster": "c", "kind": "Application", "namespace": "argocd", "name": "app", "action": "sync", "revision": "main", "prune": true }),
+        );
+        check::<HelmInstallArgs>(
+            "helm_install",
+            json!({ "cluster": "c", "namespace": "n", "release": "r", "chart": "repo/app", "version": "1.0.0", "values": "a: 1" }),
+        );
+        check::<HelmUpgradeArgs>(
+            "helm_upgrade",
+            json!({ "cluster": "c", "namespace": "n", "release": "r", "values": "a: 1", "chart": "repo/app" }),
+        );
+        check::<HelmRollbackArgs>(
+            "helm_rollback",
+            json!({ "cluster": "c", "namespace": "n", "release": "r", "revision": 1 }),
+        );
+        check::<HelmReleaseArgs>(
+            "helm_uninstall",
+            json!({ "cluster": "c", "namespace": "n", "release": "r" }),
+        );
+        check::<ExecArgs>(
+            "exec_command",
+            json!({ "cluster": "c", "namespace": "n", "pod": "p", "container": "app", "command": ["ls"], "timeoutSeconds": 5 }),
+        );
+        check::<ForwardStartArgs>(
+            "port_forward_start",
+            json!({ "cluster": "c", "namespace": "n", "target": "service", "name": "web", "remotePort": 80, "localPort": 8080 }),
+        );
+        check::<ForwardListArgs>("port_forward_list", json!({ "cluster": "c" }));
+        check::<ForwardStopArgs>("port_forward_stop", json!({ "id": "pf-1" }));
     }
 
     #[tokio::test]

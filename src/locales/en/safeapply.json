@@ -1,0 +1,56 @@
+{
+  "section": {
+    "title": "Change preview",
+    "label": "Preview changes before applying",
+    "hint": "Saving in the editor, applying in “Create resource”, and Helm upgrades and installs first show what the API server would store (a server-side dry run). The change is sent only when you confirm it.",
+    "defaultOn": "The name of this cluster contains “prod” or “production”, so the preview is on by default.",
+    "defaultOff": "The preview is on by default only for clusters whose name contains “prod” or “production”.",
+    "useDefault": "Use the default"
+  },
+  "actions": {
+    "preview": "Preview changes",
+    "checking": "Checking…",
+    "previewAndSave": "Preview and save…",
+    "previewAndApply": "Preview and apply…",
+    "back": "Back to editing",
+    "ready": "Nothing has been changed yet.",
+    "required": "This cluster asks for a preview before applying.",
+    "blocked": "Fix the refused documents before applying."
+  },
+  "diff": {
+    "title": "Change preview",
+    "objects": "Objects",
+    "live": "Live",
+    "after": "After the change",
+    "state": {
+      "create": "New",
+      "update": "Changed",
+      "unchanged": "Unchanged",
+      "failed": "Refused"
+    },
+    "created": "{{object}} does not exist yet: it would be created.",
+    "unchanged": "The API server would store {{object}} as it is.",
+    "refusedObject": "The API server would refuse {{object}}",
+    "secretHidden": "Secret values are not shown.",
+    "secretAdded": "Values added: {{keys}}",
+    "secretChanged": "Values changed: {{keys}}",
+    "secretRemoved": "Values removed: {{keys}}",
+    "refused_one": "The API server would refuse {{count}} object. Fix the text before applying: an apply stops at the first refused document, after applying the ones before it.",
+    "refused_other": "The API server would refuse {{count}} objects. Fix the text before applying: an apply stops at the first refused document, after applying the ones before it.",
+    "waitsForNamespace": "{{object}} could not be checked yet: its namespace {{namespace}} is created by an earlier document. Applying creates the namespace first."
+  },
+  "helm": {
+    "failed": "Could not render the changes",
+    "current": "Release {{release}} now",
+    "proposed": "Release {{release}} after the change",
+    "noRelease": "There is no release with this name yet: every object is new.",
+    "same": "The rendered manifest is the same as the release's.",
+    "secretAdded": "{{object}}: values added: {{keys}}",
+    "secretChanged": "{{object}}: values changed: {{keys}}",
+    "secretRemoved": "{{object}}: values removed: {{keys}}",
+    "unreadable_one": "{{count}} document could not be read and is not shown.",
+    "unreadable_other": "{{count}} documents could not be read and are not shown.",
+    "clientSide": "This Helm cannot render against the cluster (it is older than 3.13): lookups found nothing, so Secrets and other values a chart reuses may show as changed.",
+    "noHooks": "Helm hooks are not part of the comparison."
+  }
+}

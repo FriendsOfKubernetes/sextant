@@ -1,0 +1,123 @@
+{
+  "sidebar": "업그레이드 준비",
+  "title": "업그레이드 준비",
+  "intro": "이 클러스터가 아직 사용하는 지원 중단 및 제거된 API 버전과 Kubernetes를 업그레이드하기 전에 해결해야 할 버전 차이입니다.",
+  "clientsNote": "이 페이지는 저장된 객체와 매니페스트를 보며, 지원 중단 API를 호출하는 클라이언트는 보지 않습니다. 그런 클라이언트를 찾으려면 업그레이드 전에 API 서버의 apiserver_requested_deprecated_apis 메트릭을 확인하세요.",
+  "currentVersion": "클러스터 버전: {{version}}",
+  "currentUnknown": "클러스터 버전을 알 수 없음",
+  "target": "대상 버전",
+  "rescan": "다시 검사",
+  "copyMarkdown": "Markdown으로 복사",
+  "copyCsv": "CSV로 복사",
+  "copied": "복사됨",
+  "copyFailed": "복사할 수 없음",
+  "scannedAt": "검사 시각: {{time}}",
+  "scanFailed": "클러스터를 검사할 수 없습니다",
+  "scanning": "클러스터를 검사하는 중…",
+  "clusterScoped": "(클러스터 범위)",
+  "tableSource": "지원 중단 API 표는 Kubernetes {{version}}까지를 다루며, Kubernetes 지원 중단 API 마이그레이션 가이드를 따릅니다: {{url}}",
+  "noReplacement": "대체 없음",
+  "counts": {
+    "removed_other": "제거됨 {{count}}개",
+    "deprecated_other": "지원 중단 {{count}}개",
+    "served_other": "제공 중인 지원 중단 API 버전 {{count}}개",
+    "skew_other": "버전 차이 문제 {{count}}개"
+  },
+  "status": {
+    "removed": "제거됨",
+    "deprecated": "지원 중단"
+  },
+  "columns": {
+    "status": "상태",
+    "kind": "종류",
+    "namespace": "Namespace",
+    "name": "이름",
+    "apiVersion": "API 버전",
+    "when": "시기",
+    "deprecatedIn": "지원 중단 버전",
+    "removedIn": "제거 버전",
+    "replacement": "대체",
+    "source": "출처"
+  },
+  "origin": {
+    "lastApplied": "마지막 kubectl apply",
+    "managedFields": "필드 관리자 {{manager}}가 작성",
+    "helm": "Helm 릴리스 {{namespace}}/{{release}}(리비전 {{revision}})",
+    "argoCd": "Argo CD 애플리케이션 {{namespace}}/{{application}}",
+    "flux": "Flux Kustomization {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "대체 항목이 없습니다. Pod Security Admission 또는 어드미션 웹훅을 사용하세요"
+  },
+  "filters": {
+    "live": "클러스터의 객체",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "이전 쓰기의 흔적 표시"
+  },
+  "usages": {
+    "title": "사용 중인 API 버전",
+    "none": "이 클러스터에는 대상 버전에서 지원 중단되었거나 제거된 API 버전을 사용하는 항목이 없습니다.",
+    "noneShown": "필터와 일치하는 항목이 없습니다.",
+    "alreadyRemoved": "현재 클러스터도 이 버전을 더 이상 제공하지 않습니다.",
+    "removedIn": "{{version}}에서 제거",
+    "deprecatedIn": "{{version}}에서 지원 중단, {{removed}}에서 제거",
+    "hidden_other": "필터로 숨겨진 결과 {{count}}개"
+  },
+  "served": {
+    "title": "클러스터가 제공하는 지원 중단 API 버전",
+    "hint": "클라이언트는 지금은 이 버전을 사용할 수 있지만, 업그레이드 후에는 요청이 실패할 수 있습니다.",
+    "none": "클러스터는 대상 버전에서 지원 중단되었거나 제거된 API 버전을 제공하지 않습니다.",
+    "removed": "{{version}}에서 제거. 대체: {{replacement}}",
+    "deprecated": "{{version}}부터 지원 중단. 대체: {{replacement}}"
+  },
+  "skew": {
+    "title": "버전 차이",
+    "none": "버전 차이 문제가 없습니다.",
+    "stepwise": "컨트롤 플레인은 한 번에 마이너 버전 하나씩 업그레이드합니다. {{from}}에서 {{to}}까지 다음 각 버전을 거쳐야 합니다: {{steps}}",
+    "kubeletNewer_other": "노드 {{count}}개의 kubelet이 컨트롤 플레인({{version}})보다 최신입니다: {{nodes}}",
+    "kubeletTooOld_other": "노드 {{count}}개의 kubelet이 컨트롤 플레인이 허용하는 것보다 오래되었습니다(가장 오래된 버전 {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_other": "컨트롤 플레인을 {{target}}(으)로 올리기 전에 노드 {{count}}개를 업그레이드해야 합니다(가장 오래된 kubelet {{version}}): {{nodes}}",
+    "kubeProxyNewer_other": "노드 {{count}}개의 kube-proxy가 컨트롤 플레인({{version}})보다 최신입니다: {{nodes}}",
+    "kubeProxyTooOld_other": "노드 {{count}}개의 kube-proxy가 컨트롤 플레인이 허용하는 것보다 오래되었습니다(가장 오래된 버전 {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_other": "컨트롤 플레인을 {{target}}(으)로 올리기 전에 노드 {{count}}개의 kube-proxy를 업그레이드해야 합니다(가장 오래된 kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyKubeletSkew_other": "노드 {{count}}개에서 kube-proxy와 kubelet의 버전 차이가 허용 범위를 넘습니다: {{nodes}}",
+    "apiserverSkew": "kube-apiserver 인스턴스 간 차이가 마이너 버전 하나를 넘습니다: {{versions}}",
+    "componentSkew": "{{component}}({{pod}})이(가) {{version}}에서 실행 중이며, kube-apiserver {{apiserver}}에서는 허용되지 않습니다. 최대 마이너 버전 하나까지 오래될 수 있고, 더 최신일 수는 없습니다.",
+    "kubelets": "kubelet 버전: {{versions}}",
+    "kubeletVersion_other": "{{version}}(노드 {{count}}개)",
+    "components": "컨트롤 플레인 구성 요소: {{components}}",
+    "noComponents": "컨트롤 플레인 구성 요소가 보이지 않습니다(관리형 컨트롤 플레인). kubelet 규칙만 확인했습니다."
+  },
+  "sources": {
+    "failed": {
+      "version": "클러스터 버전을 읽을 수 없습니다",
+      "served": "클러스터가 제공하는 API 버전을 읽을 수 없습니다",
+      "live": "클러스터의 객체를 읽을 수 없습니다",
+      "helm": "Helm 릴리스를 읽을 수 없습니다",
+      "argoCd": "Argo CD 애플리케이션을 읽을 수 없습니다",
+      "flux": "Flux Kustomization을 읽을 수 없습니다",
+      "nodes": "노드를 읽을 수 없습니다",
+      "controlPlane": "컨트롤 플레인 Pod를 읽을 수 없습니다"
+    },
+    "truncated": {
+      "version": "클러스터 버전을 일부만 읽었습니다.",
+      "served": "일부 API 버전만 확인했습니다.",
+      "live": "일부 종류는 검사 한도보다 객체가 많아 처음 일부만 확인했습니다.",
+      "helm": "Helm 릴리스가 검사 한도보다 많아 처음 일부만 확인했습니다.",
+      "argoCd": "Argo CD 애플리케이션이 검사 한도보다 많아 처음 일부만 확인했습니다.",
+      "flux": "Flux Kustomization이 검사 한도보다 많아 처음 일부만 확인했습니다.",
+      "nodes": "노드가 검사 한도보다 많아 처음 일부만 확인했습니다.",
+      "controlPlane": "컨트롤 플레인 Pod는 일부만 확인했습니다."
+    },
+    "skippedKinds": "일부 API 버전 또는 종류를 읽을 수 없습니다: {{names}}",
+    "skippedReleases": "일부 Helm 릴리스를 읽을 수 없습니다: {{names}}",
+    "skippedHelmNamespaces": "일부 namespace에서 Helm 릴리스를 나열할 수 없습니다: {{names}}",
+    "usagesTruncated": "표시할 수 있는 것보다 많은 사용 항목을 찾았습니다. 처음 일부만 나열합니다."
+  },
+  "report": {
+    "title": "업그레이드 준비: {{from}} → {{to}}",
+    "titleUnknown": "{{to}} 업그레이드 준비"
+  }
+}

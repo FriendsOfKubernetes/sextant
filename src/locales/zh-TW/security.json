@@ -1,0 +1,176 @@
+{
+  "sidebar": "安全性",
+  "title": "安全態勢",
+  "intro": "在工作負載的 Pod 範本以及不屬於任何工作負載的 Pod 上檢查 Pod Security Standards（Baseline 與 Restricted，依據 Kubernetes v1.37），並提供不屬於該標準的強化建議。不會變更叢集中的任何內容：建議的修正會以 YAML 複製，它是一個 strategic merge patch，容器與磁碟區依名稱比對。",
+  "loading": "正在檢查工作負載…",
+  "chooseNamespace": "選擇 namespace",
+  "chooseNamespaceText": "此頁面會檢查在 namespace 篩選器中選擇的 namespace。請選擇一個或多個 namespace 開始。",
+  "firstNamespaces_other": "僅檢查前 {{count}} 個所選 namespace。",
+  "watchFailed": "無法監看 {{kind}}",
+  "truncated_other": "工作負載過多：僅列出前 {{count}} 個。",
+  "empty": "此 namespace 中沒有工作負載。",
+  "emptyFiltered": "此 namespace 中沒有符合篩選條件的工作負載。",
+  "filter": {
+    "level": "顯示",
+    "levels": {
+      "all": "所有工作負載",
+      "baseline": "Baseline 違規",
+      "restricted": "Restricted 違規",
+      "hint": "強化建議"
+    },
+    "severity": "映像檔弱點",
+    "severities": {
+      "any": "任何或無",
+      "CRITICAL": "重大",
+      "HIGH": "高以上",
+      "MEDIUM": "中以上",
+      "LOW": "低以上"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "建議"
+  },
+  "counts": {
+    "baseline_other": "{{count}} 項 Baseline 違規",
+    "restricted_other": "{{count}} 項 Restricted 違規",
+    "hint_other": "{{count}} 項建議"
+  },
+  "posture": {
+    "restricted": "符合 Restricted",
+    "baseline": "符合 Baseline",
+    "privileged": "違反 Baseline"
+  },
+  "postureText": {
+    "restricted": "符合 Restricted 標準。",
+    "baseline": "符合 Baseline 標準，但不符合 Restricted。",
+    "privileged": "不符合 Baseline 標準。"
+  },
+  "compare": {
+    "noLabels": "沒有 Pod Security label：此處套用叢集的預設等級。",
+    "unknownLabels": "Pod Security label 未知：無法讀取 Namespace。",
+    "strictest": {
+      "restricted": "此處所有工作負載都符合 Restricted。",
+      "baseline": "此處所有工作負載都符合 Baseline；部分不符合 Restricted。",
+      "privileged": "此處部分工作負載不符合 Baseline。"
+    },
+    "unknownLevel": "{{label}}：Pod Security Admission 不認得此等級。",
+    "enforce_other": "{{label}}：{{count}} 個工作負載會被拒絕。",
+    "audit_other": "{{label}}：{{count}} 個工作負載會被記入稽核記錄。",
+    "warn_other": "{{label}}：{{count}} 個工作負載會收到警告。",
+    "enforceNone": "{{label}}：所有工作負載皆被允許。",
+    "auditNone": "{{label}}：沒有工作負載會被記入稽核記錄。",
+    "warnNone": "{{label}}：沒有工作負載會收到警告。"
+  },
+  "row": {
+    "expand": "顯示 {{name}} 的發現",
+    "collapse": "隱藏 {{name}} 的發現"
+  },
+  "details": {
+    "title": "安全性",
+    "ownedPod": "此 Pod 依其執行時的狀態檢查；需要修正的範本位於其擁有者 {{kind}} {{name}} 中。",
+    "hints_other": "{{count}} 項強化建議",
+    "hintsNote": "建議是良好做法，不屬於 Pod Security Standards：它們不是違規。",
+    "noFindings": "沒有發現：符合 Restricted 標準，且沒有適用的強化建議。"
+  },
+  "finding": {
+    "container": "容器 {{name}}",
+    "value": "值：{{value}}",
+    "unset": "未設定",
+    "admitted": "在准入時加入：出現在 Pod {{pod}} 中，而不在範本中。請在加入它的地方修正（webhook 或原則）。",
+    "fix": "建議的修正",
+    "copy": "複製修正",
+    "copied": "已複製",
+    "copyFailed": "無法複製"
+  },
+  "checks": {
+    "hostProcess": "HostProcess 容器",
+    "hostNamespaces": "主機命名空間",
+    "privileged": "特權容器",
+    "capabilities": "Baseline 集合之外的 capability",
+    "hostPathVolumes": "hostPath 磁碟區",
+    "hostPorts": "主機連接埠",
+    "hostProbes": "探針或生命週期掛鉤中的 host",
+    "appArmor": "不允許的 AppArmor 設定檔",
+    "seLinux": "不允許的 SELinux 選項",
+    "procMount": "未遮罩的 /proc",
+    "seccomp": "seccomp 設定檔為 Unconfined",
+    "sysctls": "不安全的 sysctl",
+    "volumeTypes": "不允許的磁碟區類型",
+    "privilegeEscalation": "未停用權限提升",
+    "runAsNonRoot": "未要求以非 root 執行",
+    "runAsUser": "以 root 執行（UID 0）",
+    "seccompRequired": "未設定 seccomp 設定檔",
+    "capabilitiesRestricted": "移除 ALL 後 capabilities 未限制為 NET_BIND_SERVICE",
+    "readOnlyRootFilesystem": "根檔案系統可寫入",
+    "resources": "缺少 requests 或 limits",
+    "latestTag": "映像檔未固定版本",
+    "serviceAccountToken": "已掛載 service account 權杖"
+  },
+  "severity": {
+    "CRITICAL": "重大",
+    "HIGH": "高",
+    "MEDIUM": "中",
+    "LOW": "低",
+    "UNKNOWN": "未知"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "Vulnerability Reports",
+      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
+      "configAuditReports": "Config Audit Reports",
+      "clusterConfigAuditReports": "Cluster Config Audit Reports",
+      "exposedSecretReports": "Exposed Secret Reports",
+      "rbacAssessmentReports": "RBAC Assessment Reports",
+      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
+      "infraAssessmentReports": "Infra Assessment Reports",
+      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
+      "clusterComplianceReports": "Cluster Compliance Reports",
+      "sbomReports": "SBOM Reports",
+      "clusterSbomReports": "Cluster SBOM Reports"
+    },
+    "columns": {
+      "resource": "資源",
+      "container": "容器",
+      "image": "映像檔",
+      "critical": "重大",
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "title": "標題",
+      "pass": "通過",
+      "fail": "失敗",
+      "components": "元件"
+    },
+    "table": {
+      "severity": "嚴重性",
+      "id": "ID",
+      "package": "套件",
+      "installed": "已安裝",
+      "fixed": "修正版本",
+      "rule": "規則",
+      "title": "標題",
+      "target": "目標",
+      "control": "控制項",
+      "failed": "失敗"
+    },
+    "section": "映像檔掃描（Trivy）",
+    "reportTitle": "報告",
+    "scanned": "掃描的物件：",
+    "none": "Trivy Operator 尚無此物件的報告。",
+    "watchFailed": "無法讀取 Trivy 報告。",
+    "openReport": "開啟報告",
+    "configAudit": "設定稽核",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_other": "{{count}} 個弱點有修正版本。",
+    "topShown": "已列出：{{total}} 個中最嚴重的 {{shown}} 個。",
+    "noFix": "無修正",
+    "noVulnerabilities": "未發現弱點。",
+    "noFailed": "所有檢查皆已通過。",
+    "noSecrets": "未發現外洩的機密。",
+    "passFail": "通過：{{pass}}，失敗：{{fail}}",
+    "components": "元件：{{count}}",
+    "auditCount_other": "{{count}} 項重大或高稽核發現"
+  }
+}

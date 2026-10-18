@@ -43,6 +43,7 @@ export interface HistoryEntry {
   message?: string;
   messageKey?: string;
   messageParams?: Record<string, string | number>;
+  messageLists?: Record<string, string[]>;
   delivery: Delivery;
 }
 
@@ -61,9 +62,12 @@ interface Candidate {
 }
 
 /** The text of a problem's message: the cluster's own, or the one Sextant writes. */
-export function messageText(p: Pick<Problem, "message" | "messageKey" | "messageParams">): string {
+export function messageText(p: Pick<Problem, "message" | "messageKey" | "messageParams" | "messageLists">): string {
   if (p.message) return p.message;
-  return p.messageKey ? i18n.t(`problems:${p.messageKey}`, p.messageParams) : "";
+  if (!p.messageKey) return "";
+  // Lists are joined now, in the current language (not when the problem was found).
+  const lists = Object.fromEntries(Object.entries(p.messageLists ?? {}).map(([key, items]) => [key, formatList(items)]));
+  return i18n.t(`problems:${p.messageKey}`, { ...p.messageParams, ...lists });
 }
 
 /** At most `limit` characters (code points: a surrogate pair is never split), with an ellipsis when cut. */
@@ -251,6 +255,7 @@ export class NotificationEngine {
         message: problem.message ? clip(problem.message) : undefined,
         messageKey: problem.messageKey,
         messageParams: problem.messageParams,
+        messageLists: problem.messageLists,
         delivery,
       },
       ...this.entries,

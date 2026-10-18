@@ -2,6 +2,9 @@
 // volume claims, certificates, Flux, Argo CD and Gateway API objects and Warning events — grouped by category and
 // namespace with the reason and the age, each a link to its details. Follows the namespace filter; "Only new since…"
 // hides what began before the mark. The last desktop notifications are listed below.
+// Security findings (Baseline Pod Security Standard violations, #143) are an opt-in category: listed while
+// "Security findings" is on — the saved setting `notifications.enabledCategories`, which the sidebar counter and the
+// notifications follow too.
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
@@ -11,7 +14,9 @@ import { NamespaceFilter, useSelectedNamespaces } from "../namespaces";
 import { NotificationHistory } from "../notifications/NotificationHistory";
 import { messageText } from "../notifications/engine";
 import { filterProblems, groupProblems } from "./group";
-import { useClusterProblems } from "./hooks";
+import { useCategoriesOn, useClusterProblems } from "./hooks";
+import { updateSettings } from "../../api";
+import { setCategory } from "../notifications/prefs";
 import { PROBLEM_CATEGORIES, startedAt, type Problem } from "./model";
 import "./problems.css";
 import { useProblemsUi } from "./ui";
@@ -20,7 +25,9 @@ import { formatTime } from "../../i18n";
 export function ProblemsPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
   const namespaces = useSelectedNamespaces(clusterId);
-  const { sources, active, loading } = useClusterProblems(clusterId, PROBLEM_CATEGORIES);
+  const categories = useCategoriesOn(PROBLEM_CATEGORIES);
+  const showSecurity = categories.includes("security");
+  const { sources, active, loading } = useClusterProblems(clusterId, categories);
   const mark = useProblemsUi((s) => s.marks[clusterId]) ?? null;
   const onlyNew = useProblemsUi((s) => s.onlyNew[clusterId] ?? false);
   const { setOnlyNew, markSeen } = useProblemsUi.getState();
@@ -47,6 +54,13 @@ export function ProblemsPage({ clusterId }: PageProps) {
             onChange={(e) => setOnlyNew(clusterId, e.target.checked)}
           />
           {t("problems:onlyNewSince", { time: mark === null ? "" : formatTime(mark) })}
+        </label>
+        <label className="problems__choice">
+          <Checkbox
+            checked={showSecurity}
+            onChange={(e) => void updateSettings(setCategory("security", e.target.checked)).catch(() => undefined)}
+          />
+          {t("problems:showSecurity")}
         </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}

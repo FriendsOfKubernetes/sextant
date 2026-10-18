@@ -1,0 +1,80 @@
+{
+  "rail": "所有叢集",
+  "title": "所有叢集",
+  "intro": "所選叢集的健康狀況、工作負載和 Warning 事件。只有在您要求時才會連線叢集。",
+  "noClusters": "在 kubeconfig 檔案中找不到叢集。",
+  "picker": {
+    "label": "要顯示的叢集",
+    "none": "請選擇要顯示的叢集。",
+    "limit_other": "一次最多可顯示 {{count}} 個叢集。請先取消一個，再新增其他叢集。",
+    "connectAll": "連線所有選取的叢集",
+    "connectHint": "連線可能會透過 exec 外掛程式或雲端 CLI 啟動登入。"
+  },
+  "card": {
+    "open": "開啟 {{cluster}}",
+    "connect": "連線",
+    "reconnect": "重新連線",
+    "connecting": "正在連線…",
+    "connectingFor": "正在連線… {{seconds}} 秒",
+    "waiting": "正在等待連線…",
+    "disconnected": "未連線。",
+    "version": "版本",
+    "versionHint": "節點的 kubelet 版本",
+    "versionRange": "{{lowest}} 至 {{highest}}",
+    "nodes": "節點",
+    "nodesFailed": "無法列出節點",
+    "noMetrics": "沒有指標",
+    "usage": "{{percent}}（{{used}}）",
+    "problems": "問題",
+    "noProblems": "沒有問題",
+    "warnings_other": "{{count}} 個 Warning 事件",
+    "someNotWatched_other": "有 {{count}} 種物件無法監看。",
+    "tools": "已安裝的工具",
+    "toolOk": "沒有問題"
+  },
+  "notConnected_other": "有 {{count}} 個選取的叢集未連線，未列出其物件。",
+  "noneConnected": "選取的叢集皆未連線。",
+  "tabs": {
+    "label": "所有叢集中的物件",
+    "pods": "Pods",
+    "workloads": "工作負載",
+    "events": "Warning 事件",
+    "find": "依名稱尋找"
+  },
+  "filters": {
+    "cluster": "叢集",
+    "allClusters": "所有選取的叢集",
+    "namespace": "Namespace",
+    "allNamespaces": "所有 namespace"
+  },
+  "columns": {
+    "cluster": "叢集",
+    "namespace": "Namespace",
+    "name": "名稱",
+    "kind": "Kind",
+    "status": "狀態",
+    "ready": "就緒",
+    "restarts": "重新啟動次數",
+    "node": "節點",
+    "age": "存在時間",
+    "object": "物件",
+    "reason": "原因",
+    "message": "訊息"
+  },
+  "openIn": "在 {{cluster}} 中開啟 {{kind}} {{name}}",
+  "objectName": "{{kind}} {{name}}",
+  "loadingIn": "正在載入 {{cluster}} 的物件…",
+  "listFailed": "無法列出 {{cluster}} 中的 {{kind}}",
+  "truncated": "{{cluster}} 的物件多於概觀保留的數量，部分物件未包含。",
+  "more_other": "{{cluster}} 中還有 {{count}} 個物件未列出。請縮小篩選範圍以查看。",
+  "empty": "沒有可顯示的內容。",
+  "noWarnings": "沒有 Warning 事件。",
+  "find": {
+    "label": "名稱",
+    "placeholder": "web，或種類加名稱：cm web",
+    "hint": "依名稱搜尋：{{kinds}}。以種類開頭可搜尋其他種類，例如「cm web」。",
+    "searching": "正在搜尋…",
+    "none": "找不到任何內容。",
+    "noKinds": "無法讀取此叢集提供的種類。"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "sidebar": "升级就绪检查",
+  "title": "升级就绪检查",
+  "intro": "此集群仍在使用的已弃用和已移除的 API 版本，以及升级 Kubernetes 之前需要解决的版本偏差。",
+  "clientsNote": "此页面看到的是已存储的对象和清单，而不是调用已弃用 API 的客户端。要找出这些客户端，请在升级前检查 API 服务器的 apiserver_requested_deprecated_apis 指标。",
+  "currentVersion": "集群版本：{{version}}",
+  "currentUnknown": "集群版本未知",
+  "target": "目标版本",
+  "rescan": "重新扫描",
+  "copyMarkdown": "复制为 Markdown",
+  "copyCsv": "复制为 CSV",
+  "copied": "已复制",
+  "copyFailed": "无法复制到剪贴板",
+  "scannedAt": "扫描时间：{{time}}",
+  "scanFailed": "无法扫描集群",
+  "scanning": "正在扫描集群…",
+  "clusterScoped": "（集群级）",
+  "tableSource": "弃用表涵盖 Kubernetes {{version}} 及以前的版本，来源为 Kubernetes 弃用 API 迁移指南：{{url}}",
+  "noReplacement": "无替代",
+  "counts": {
+    "removed_other": "已移除 {{count}} 个",
+    "deprecated_other": "已弃用 {{count}} 个",
+    "served_other": "集群提供 {{count}} 个已弃用的 API 版本",
+    "skew_other": "{{count}} 个版本偏差问题"
+  },
+  "status": {
+    "removed": "已移除",
+    "deprecated": "已弃用"
+  },
+  "columns": {
+    "status": "状态",
+    "kind": "Kind",
+    "namespace": "Namespace",
+    "name": "名称",
+    "apiVersion": "API 版本",
+    "when": "时间",
+    "deprecatedIn": "弃用于",
+    "removedIn": "移除于",
+    "replacement": "替代版本",
+    "source": "来源"
+  },
+  "origin": {
+    "lastApplied": "最近一次 kubectl apply",
+    "managedFields": "由字段管理器 {{manager}} 写入",
+    "helm": "Helm 发布 {{namespace}}/{{release}}（修订版本 {{revision}}）",
+    "argoCd": "Argo CD 应用 {{namespace}}/{{application}}",
+    "flux": "Flux Kustomization {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "没有替代：请使用 Pod Security Admission 或准入 webhook"
+  },
+  "filters": {
+    "live": "集群中的对象",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "显示旧写入留下的痕迹"
+  },
+  "usages": {
+    "title": "正在使用的 API 版本",
+    "none": "此集群中没有任何对象使用在目标版本中已弃用或已移除的 API 版本。",
+    "noneShown": "没有符合筛选条件的结果。",
+    "alreadyRemoved": "当前集群也已不再提供此版本。",
+    "removedIn": "在 {{version}} 中移除",
+    "deprecatedIn": "在 {{version}} 中弃用，在 {{removed}} 中移除",
+    "hidden_other": "筛选条件隐藏了 {{count}} 个结果。"
+  },
+  "served": {
+    "title": "集群提供的已弃用 API 版本",
+    "hint": "客户端目前仍可使用这些版本；升级后，它们的请求可能会失败。",
+    "none": "集群未提供在目标版本中已弃用或已移除的 API 版本。",
+    "removed": "在 {{version}} 中移除。替代版本：{{replacement}}",
+    "deprecated": "自 {{version}} 起弃用。替代版本：{{replacement}}"
+  },
+  "skew": {
+    "title": "版本偏差",
+    "none": "未发现版本偏差问题。",
+    "stepwise": "控制平面每次只能升级一个次要版本：从 {{from}} 到 {{to}} 需要依次经过以下版本：{{steps}}",
+    "kubeletNewer_other": "{{count}} 个节点的 kubelet 比控制平面（{{version}}）新：{{nodes}}",
+    "kubeletTooOld_other": "{{count}} 个节点的 kubelet 比控制平面允许的更旧（最旧为 {{version}}）：{{nodes}}",
+    "kubeletTooOldForTarget_other": "在控制平面升级到 {{target}} 之前，必须先升级 {{count}} 个节点（最旧的 kubelet 为 {{version}}）：{{nodes}}",
+    "kubeProxyNewer_other": "{{count}} 个节点的 kube-proxy 比控制平面（{{version}}）新：{{nodes}}",
+    "kubeProxyTooOld_other": "{{count}} 个节点的 kube-proxy 比控制平面允许的更旧（最旧为 {{version}}）：{{nodes}}",
+    "kubeProxyTooOldForTarget_other": "在控制平面升级到 {{target}} 之前，必须先升级 {{count}} 个节点的 kube-proxy（最旧的 kube-proxy 为 {{version}}）：{{nodes}}",
+    "kubeProxyKubeletSkew_other": "{{count}} 个节点的 kube-proxy 与 kubelet 的版本差超出允许范围：{{nodes}}",
+    "apiserverSkew": "kube-apiserver 实例之间相差超过一个次要版本：{{versions}}",
+    "componentSkew": "{{component}}（{{pod}}）运行的是 {{version}}，kube-apiserver {{apiserver}} 不允许：最多只能旧一个次要版本，且不能更新。",
+    "kubelets": "kubelet 版本：{{versions}}",
+    "kubeletVersion_other": "{{version}}（{{count}} 个节点）",
+    "components": "控制平面组件：{{components}}",
+    "noComponents": "看不到控制平面组件（托管的控制平面）：仅检查了 kubelet 规则。"
+  },
+  "sources": {
+    "failed": {
+      "version": "无法读取集群版本",
+      "served": "无法读取集群提供的 API 版本",
+      "live": "无法读取集群中的对象",
+      "helm": "无法读取 Helm 发布",
+      "argoCd": "无法读取 Argo CD 应用",
+      "flux": "无法读取 Flux Kustomization",
+      "nodes": "无法读取节点",
+      "controlPlane": "无法读取控制平面的 Pod"
+    },
+    "truncated": {
+      "version": "只读取了部分集群版本信息。",
+      "served": "只检查了部分 API 版本。",
+      "live": "某些类型的对象数量超过扫描上限；只检查了前面的部分。",
+      "helm": "Helm 发布数量超过扫描上限；只检查了前面的部分。",
+      "argoCd": "Argo CD 应用数量超过扫描上限；只检查了前面的部分。",
+      "flux": "Flux Kustomization 数量超过扫描上限；只检查了前面的部分。",
+      "nodes": "节点数量超过扫描上限；只检查了前面的部分。",
+      "controlPlane": "只检查了部分控制平面 Pod。"
+    },
+    "skippedKinds": "无法读取部分 API 版本或类型：{{names}}",
+    "skippedReleases": "无法读取部分 Helm 发布：{{names}}",
+    "skippedHelmNamespaces": "无法列出部分 namespace 中的 Helm 发布：{{names}}",
+    "usagesTruncated": "发现的使用记录超过可显示的数量；只列出前面的部分。"
+  },
+  "report": {
+    "title": "升级就绪检查：{{from}} → {{to}}",
+    "titleUnknown": "升级到 {{to}} 的就绪检查"
+  }
+}

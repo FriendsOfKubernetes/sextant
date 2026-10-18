@@ -1,0 +1,123 @@
+{
+  "sidebar": "アップグレード準備",
+  "title": "アップグレード準備",
+  "intro": "このクラスターがまだ使用している非推奨および削除済みの API バージョンと、Kubernetes をアップグレードする前に解消すべきバージョンスキューです。",
+  "clientsNote": "このページが見るのは保存されたオブジェクトとマニフェストで、非推奨 API を呼び出すクライアントではありません。それらを見つけるには、アップグレード前に API サーバーの apiserver_requested_deprecated_apis メトリクスを確認してください。",
+  "currentVersion": "クラスターのバージョン: {{version}}",
+  "currentUnknown": "クラスターのバージョンは不明",
+  "target": "対象バージョン",
+  "rescan": "再スキャン",
+  "copyMarkdown": "Markdown としてコピー",
+  "copyCsv": "CSV としてコピー",
+  "copied": "コピーしました",
+  "copyFailed": "コピーできませんでした",
+  "scannedAt": "スキャン日時: {{time}}",
+  "scanFailed": "クラスターをスキャンできませんでした",
+  "scanning": "クラスターをスキャンしています…",
+  "clusterScoped": "(クラスタースコープ)",
+  "tableSource": "非推奨 API の表は Kubernetes {{version}} までを対象とし、Kubernetes の非推奨 API 移行ガイドに基づいています: {{url}}",
+  "noReplacement": "代替なし",
+  "counts": {
+    "removed_other": "削除済み {{count}} 件",
+    "deprecated_other": "非推奨 {{count}} 件",
+    "served_other": "提供中の非推奨 API バージョン {{count}} 件",
+    "skew_other": "バージョンスキューの問題 {{count}} 件"
+  },
+  "status": {
+    "removed": "削除済み",
+    "deprecated": "非推奨"
+  },
+  "columns": {
+    "status": "状態",
+    "kind": "Kind",
+    "namespace": "Namespace",
+    "name": "名前",
+    "apiVersion": "API バージョン",
+    "when": "時期",
+    "deprecatedIn": "非推奨化",
+    "removedIn": "削除",
+    "replacement": "代替",
+    "source": "ソース"
+  },
+  "origin": {
+    "lastApplied": "最後の kubectl apply",
+    "managedFields": "フィールドマネージャー {{manager}} による書き込み",
+    "helm": "Helm リリース {{namespace}}/{{release}} (リビジョン {{revision}})",
+    "argoCd": "Argo CD アプリケーション {{namespace}}/{{application}}",
+    "flux": "Flux Kustomization {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "代替はありません。Pod Security Admission またはアドミッション Webhook を使用してください"
+  },
+  "filters": {
+    "live": "クラスター内のオブジェクト",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "過去の書き込みの痕跡を表示"
+  },
+  "usages": {
+    "title": "使用中の API バージョン",
+    "none": "このクラスターには、対象バージョンで非推奨または削除済みの API バージョンを使用しているものはありません。",
+    "noneShown": "フィルターに一致するものはありません。",
+    "alreadyRemoved": "現在のクラスターでもすでに提供されていません。",
+    "removedIn": "{{version}} で削除",
+    "deprecatedIn": "{{version}} で非推奨、{{removed}} で削除",
+    "hidden_other": "{{count}} 件の結果がフィルターで非表示になっています。"
+  },
+  "served": {
+    "title": "クラスターが提供している非推奨の API バージョン",
+    "hint": "クライアントは現在これらのバージョンを使用できますが、アップグレード後はリクエストが失敗する可能性があります。",
+    "none": "クラスターは、対象バージョンで非推奨または削除済みの API バージョンを提供していません。",
+    "removed": "{{version}} で削除。代替: {{replacement}}",
+    "deprecated": "{{version}} から非推奨。代替: {{replacement}}"
+  },
+  "skew": {
+    "title": "バージョンスキュー",
+    "none": "バージョンスキューの問題は見つかりませんでした。",
+    "stepwise": "コントロールプレーンは一度に 1 マイナーバージョンずつアップグレードします。{{from}} から {{to}} へは次の各バージョンを経由します: {{steps}}",
+    "kubeletNewer_other": "{{count}} 個のノードで kubelet がコントロールプレーン ({{version}}) より新しくなっています: {{nodes}}",
+    "kubeletTooOld_other": "{{count}} 個のノードで kubelet がコントロールプレーンの許容範囲より古くなっています (最も古いもの: {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_other": "コントロールプレーンを {{target}} にする前に {{count}} 個のノードをアップグレードする必要があります (最も古い kubelet: {{version}}): {{nodes}}",
+    "kubeProxyNewer_other": "{{count}} 個のノードで kube-proxy がコントロールプレーン ({{version}}) より新しくなっています: {{nodes}}",
+    "kubeProxyTooOld_other": "{{count}} 個のノードで kube-proxy がコントロールプレーンの許容範囲より古くなっています (最も古いもの: {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_other": "コントロールプレーンを {{target}} にする前に {{count}} 個のノードの kube-proxy をアップグレードする必要があります (最も古い kube-proxy: {{version}}): {{nodes}}",
+    "kubeProxyKubeletSkew_other": "{{count}} 個のノードで kube-proxy と kubelet のバージョン差が許容範囲を超えています: {{nodes}}",
+    "apiserverSkew": "kube-apiserver のインスタンス間で 2 つ以上のマイナーバージョンの差があります: {{versions}}",
+    "componentSkew": "{{component}} ({{pod}}) は {{version}} で動作していますが、kube-apiserver {{apiserver}} では許容されません。古さは 1 マイナーバージョンまでで、新しくすることはできません。",
+    "kubelets": "kubelet バージョン: {{versions}}",
+    "kubeletVersion_other": "{{version}} ({{count}} 個のノード)",
+    "components": "コントロールプレーンのコンポーネント: {{components}}",
+    "noComponents": "コントロールプレーンのコンポーネントが見えません (マネージドコントロールプレーン)。kubelet のルールのみを確認しました。"
+  },
+  "sources": {
+    "failed": {
+      "version": "クラスターのバージョンを読み取れませんでした",
+      "served": "クラスターが提供する API バージョンを読み取れませんでした",
+      "live": "クラスター内のオブジェクトを読み取れませんでした",
+      "helm": "Helm リリースを読み取れませんでした",
+      "argoCd": "Argo CD アプリケーションを読み取れませんでした",
+      "flux": "Flux Kustomization を読み取れませんでした",
+      "nodes": "ノードを読み取れませんでした",
+      "controlPlane": "コントロールプレーンの Pod を読み取れませんでした"
+    },
+    "truncated": {
+      "version": "クラスターのバージョンは一部しか読み取れませんでした。",
+      "served": "一部の API バージョンのみを確認しました。",
+      "live": "一部の種類はスキャン上限より多くのオブジェクトがあり、先頭のものだけを確認しました。",
+      "helm": "Helm リリースがスキャン上限より多いため、先頭のものだけを確認しました。",
+      "argoCd": "Argo CD アプリケーションがスキャン上限より多いため、先頭のものだけを確認しました。",
+      "flux": "Flux Kustomization がスキャン上限より多いため、先頭のものだけを確認しました。",
+      "nodes": "ノードがスキャン上限より多いため、先頭のものだけを確認しました。",
+      "controlPlane": "コントロールプレーンの Pod は一部のみを確認しました。"
+    },
+    "skippedKinds": "一部の API バージョンまたは種類を読み取れませんでした: {{names}}",
+    "skippedReleases": "一部の Helm リリースを読み取れませんでした: {{names}}",
+    "skippedHelmNamespaces": "一部の namespace で Helm リリースを一覧表示できませんでした: {{names}}",
+    "usagesTruncated": "表示できる数より多くの使用箇所が見つかりました。先頭のものだけを一覧表示しています。"
+  },
+  "report": {
+    "title": "アップグレード準備: {{from}} → {{to}}",
+    "titleUnknown": "{{to}} へのアップグレード準備"
+  }
+}

@@ -6,11 +6,13 @@
 //! - `http` — `127.0.0.1:<port>/mcp` with the Host/Origin/token/body checks before MCP;
 //! - `guard` — the permission check of every call, confirmation in the window, the journal record;
 //! - `confirm`, `audit` — waiting confirmations (`mcp-confirm`), the journal (`mcp-audit`);
-//! - `tools`, `tools_read` — the tool registry and the reading tools.
+//! - `tools`, `tools_read` — the tool registry and the reading tools;
+//! - `dry_run` — what `apply_yaml` / `patch_resource` with `dryRun: true` return.
 
 pub mod audit;
 pub mod confirm;
 pub mod context;
+pub mod dry_run;
 pub mod guard;
 pub mod http;
 pub mod paths;

@@ -14,6 +14,7 @@ export function defaultClusterSettings(): ClusterSettings {
     icon: null,
     agentAccess: { preset: "off", rules: [] },
     argocdNamespace: null,
+    previewChanges: null,
   };
 }
 

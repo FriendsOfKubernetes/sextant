@@ -1,0 +1,394 @@
+/* Overview of several clusters ("All clusters"). */
+.fleet {
+  height: 100%;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.fleet__header {
+  margin-bottom: 12px;
+}
+
+.fleet__title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.fleet-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+}
+
+.fleet-note--warning {
+  color: var(--color-warning);
+}
+
+/* ---------- the cluster picker ---------- */
+
+.fleet-picker {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.fleet-picker__legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.fleet-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.fleet-picker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.fleet-picker__name {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-picker__state {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.fleet-picker__item[data-state="connected"] .fleet-picker__state {
+  color: var(--color-success);
+}
+
+.fleet-picker__item[data-state="error"] .fleet-picker__state {
+  color: var(--color-danger);
+}
+
+.fleet-picker__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.fleet-picker__actions .fleet-note {
+  margin: 0;
+}
+
+/* ---------- health cards ---------- */
+
+.fleet__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fleet-card {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-panel);
+  min-width: 0;
+}
+
+.fleet-card[data-state="error"] {
+  border-color: var(--color-danger);
+}
+
+.fleet-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fleet-card__name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-card__state,
+.fleet-card__muted {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+}
+
+.fleet-card__error {
+  color: var(--color-danger);
+}
+
+.fleet-card__error p {
+  margin: 0 0 6px;
+}
+
+.fleet-card__details {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.fleet-card__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 0 0 8px;
+}
+
+.fleet-card__facts dt {
+  color: var(--color-text-muted);
+}
+
+.fleet-card__facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fleet-card__subhead {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fleet-card__counts,
+.fleet-card__tools {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.fleet-card__counts li,
+.fleet-card__tools li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fleet-card__count,
+.fleet-card__bad {
+  color: var(--color-danger);
+  font-variant-numeric: tabular-nums;
+}
+
+.fleet-card__ok,
+.fleet-card__good {
+  margin: 0 0 6px;
+  color: var(--color-success);
+}
+
+.fleet-card__tools {
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.fleet-card__loading {
+  margin: 0 0 6px;
+}
+
+/* ---------- tabs, filters and tables ---------- */
+
+.fleet__tabs {
+  margin-top: 8px;
+}
+
+.fleet-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 8px 0;
+}
+
+.fleet-filters__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fleet-select {
+  max-width: 260px;
+}
+
+.fleet-table-wrap {
+  overflow-x: auto;
+}
+
+.fleet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.fleet-table th,
+.fleet-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fleet-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.fleet-table tbody tr:hover {
+  background: var(--color-hover);
+}
+
+.fleet-table__cluster {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.fleet-table__num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fleet-table__message {
+  min-width: 200px;
+  overflow-wrap: anywhere;
+}
+
+.fleet-table__more td {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.fleet-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.fleet-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- find by name ---------- */
+
+.fleet-find__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.fleet-find__input {
+  flex: 1;
+  max-width: 420px;
+  min-width: 0;
+}
+
+.fleet-find__cluster {
+  margin: 12px 0;
+}
+
+.fleet-find__heading {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fleet-find__results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fleet-find__results li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 3px 0;
+}
+
+.fleet-find__kind,
+.fleet-find__ns {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+/* ---------- the rail button ---------- */
+
+.fleet-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.fleet-rail:hover,
+.fleet-rail--active {
+  background: var(--color-hover);
+}
+
+.fleet-rail--active::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-text);
+}
+
+.fleet-rail:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.fleet-rail--expanded {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 18px;
+  border-color: transparent;
+}
+
+.fleet-rail--expanded.fleet-rail--active::before {
+  left: -9px;
+}
+
+.fleet-rail__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

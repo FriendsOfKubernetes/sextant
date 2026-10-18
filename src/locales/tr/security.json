@@ -1,0 +1,187 @@
+{
+  "sidebar": "Güvenlik",
+  "title": "Güvenlik durumu",
+  "intro": "İş yüklerinin Pod şablonları ve hiçbir iş yüküne ait olmayan Pod'lar üzerinde denetlenen Pod Security Standards (Kubernetes v1.37'ye göre Baseline ve Restricted) ile standardın parçası olmayan sağlamlaştırma ipuçları. Kümede hiçbir şey değiştirilmez: önerilen düzeltme YAML olarak, kapsayıcıların ve birimlerin adla eşleştirildiği bir strategic merge patch olarak kopyalanır.",
+  "loading": "İş yükleri denetleniyor…",
+  "chooseNamespace": "Namespace seçin",
+  "chooseNamespaceText": "Bu sayfa namespace filtresinde seçilen namespace'leri denetler. Başlamak için bir veya daha fazla namespace seçin.",
+  "firstNamespaces_one": "Yalnızca seçilen ilk {{count}} namespace denetlenir.",
+  "firstNamespaces_other": "Yalnızca seçilen ilk {{count}} namespace denetlenir.",
+  "watchFailed": "{{kind}} izlenemedi",
+  "truncated_one": "Çok fazla iş yükü var: yalnızca ilk {{count}} iş yükü listelenir.",
+  "truncated_other": "Çok fazla iş yükü var: yalnızca ilk {{count}} iş yükü listelenir.",
+  "empty": "Bu namespace'te iş yükü yok.",
+  "emptyFiltered": "Bu namespace'te filtrelere uyan iş yükü yok.",
+  "filter": {
+    "level": "Göster",
+    "levels": {
+      "all": "Tüm iş yükleri",
+      "baseline": "Baseline ihlalleri",
+      "restricted": "Restricted ihlalleri",
+      "hint": "Sağlamlaştırma ipuçları"
+    },
+    "severity": "İmaj güvenlik açıkları",
+    "severities": {
+      "any": "Herhangi biri veya hiçbiri",
+      "CRITICAL": "Kritik",
+      "HIGH": "Yüksek ve üzeri",
+      "MEDIUM": "Orta ve üzeri",
+      "LOW": "Düşük ve üzeri"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "İpucu"
+  },
+  "counts": {
+    "baseline_one": "{{count}} Baseline ihlali",
+    "baseline_other": "{{count}} Baseline ihlali",
+    "restricted_one": "{{count}} Restricted ihlali",
+    "restricted_other": "{{count}} Restricted ihlali",
+    "hint_one": "{{count}} ipucu",
+    "hint_other": "{{count}} ipucu"
+  },
+  "posture": {
+    "restricted": "Restricted'ı karşılıyor",
+    "baseline": "Baseline'ı karşılıyor",
+    "privileged": "Baseline'ı ihlal ediyor"
+  },
+  "postureText": {
+    "restricted": "Restricted standardını karşılıyor.",
+    "baseline": "Baseline standardını karşılıyor, ancak Restricted'ı karşılamıyor.",
+    "privileged": "Baseline standardını karşılamıyor."
+  },
+  "compare": {
+    "noLabels": "Pod Security label'ı yok: burada kümenin varsayılan düzeyi geçerlidir.",
+    "unknownLabels": "Pod Security label'ları bilinmiyor: Namespace okunamadı.",
+    "strictest": {
+      "restricted": "Buradaki tüm iş yükleri Restricted'ı karşılıyor.",
+      "baseline": "Buradaki tüm iş yükleri Baseline'ı karşılıyor; bazıları Restricted'ı karşılamıyor.",
+      "privileged": "Buradaki bazı iş yükleri Baseline'ı karşılamıyor."
+    },
+    "unknownLevel": "{{label}}: Pod Security Admission bu düzeyi tanımıyor.",
+    "enforce_one": "{{label}}: {{count}} iş yükü reddedilir.",
+    "enforce_other": "{{label}}: {{count}} iş yükü reddedilir.",
+    "audit_one": "{{label}}: {{count}} iş yükü denetim günlüğüne kaydedilir.",
+    "audit_other": "{{label}}: {{count}} iş yükü denetim günlüğüne kaydedilir.",
+    "warn_one": "{{label}}: {{count}} iş yükü uyarı alır.",
+    "warn_other": "{{label}}: {{count}} iş yükü uyarı alır.",
+    "enforceNone": "{{label}}: tüm iş yüklerine izin verilir.",
+    "auditNone": "{{label}}: hiçbir iş yükü denetim günlüğüne kaydedilmez.",
+    "warnNone": "{{label}}: hiçbir iş yükü uyarı almaz."
+  },
+  "row": {
+    "expand": "{{name}} bulgularını göster",
+    "collapse": "{{name}} bulgularını gizle"
+  },
+  "details": {
+    "title": "Güvenlik",
+    "ownedPod": "Bu Pod çalıştığı haliyle denetlenir; düzeltilecek şablon sahibi olan {{kind}} {{name}} içindedir.",
+    "hints_one": "{{count}} sağlamlaştırma ipucu",
+    "hints_other": "{{count}} sağlamlaştırma ipucu",
+    "hintsNote": "İpuçları iyi uygulamalardır, Pod Security Standards'ın parçası değildir: ihlal sayılmazlar.",
+    "noFindings": "Bulgu yok: Restricted standardını karşılıyor ve hiçbir sağlamlaştırma ipucu geçerli değil."
+  },
+  "finding": {
+    "container": "Kapsayıcı {{name}}",
+    "value": "Değer: {{value}}",
+    "unset": "Ayarlanmamış",
+    "admitted": "Kabul sırasında eklendi: Pod {{pod}} içinde var, şablonda yok. Eklendiği yerde düzeltin (bir webhook veya ilke).",
+    "fix": "Önerilen düzeltme",
+    "copy": "Düzeltmeyi kopyala",
+    "copied": "Kopyalandı",
+    "copyFailed": "Kopyalanamadı"
+  },
+  "checks": {
+    "hostProcess": "HostProcess kapsayıcısı",
+    "hostNamespaces": "Ana makine ad alanı",
+    "privileged": "Ayrıcalıklı kapsayıcı",
+    "capabilities": "Baseline kümesi dışında capability",
+    "hostPathVolumes": "hostPath birimi",
+    "hostPorts": "Ana makine bağlantı noktası",
+    "hostProbes": "Bir yoklamada veya yaşam döngüsü kancasında host",
+    "appArmor": "İzin verilmeyen AppArmor profili",
+    "seLinux": "İzin verilmeyen SELinux seçeneği",
+    "procMount": "Maskelenmemiş /proc",
+    "seccomp": "Unconfined seccomp profili",
+    "sysctls": "Güvenli olmayan sysctl",
+    "volumeTypes": "İzin verilmeyen birim türü",
+    "privilegeEscalation": "Ayrıcalık yükseltme kapatılmamış",
+    "runAsNonRoot": "root olmadan çalışma zorunlu değil",
+    "runAsUser": "root olarak çalışıyor (UID 0)",
+    "seccompRequired": "seccomp profili ayarlanmamış",
+    "capabilitiesRestricted": "Capabilities, ALL bırakıldıktan sonra NET_BIND_SERVICE ile sınırlı değil",
+    "readOnlyRootFilesystem": "Yazılabilir kök dosya sistemi",
+    "resources": "Eksik requests veya limits",
+    "latestTag": "Sabitlenmiş sürümü olmayan imaj",
+    "serviceAccountToken": "Service account belirteci bağlanmış"
+  },
+  "severity": {
+    "CRITICAL": "Kritik",
+    "HIGH": "Yüksek",
+    "MEDIUM": "Orta",
+    "LOW": "Düşük",
+    "UNKNOWN": "Bilinmiyor"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "Vulnerability Reports",
+      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
+      "configAuditReports": "Config Audit Reports",
+      "clusterConfigAuditReports": "Cluster Config Audit Reports",
+      "exposedSecretReports": "Exposed Secret Reports",
+      "rbacAssessmentReports": "RBAC Assessment Reports",
+      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
+      "infraAssessmentReports": "Infra Assessment Reports",
+      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
+      "clusterComplianceReports": "Cluster Compliance Reports",
+      "sbomReports": "SBOM Reports",
+      "clusterSbomReports": "Cluster SBOM Reports"
+    },
+    "columns": {
+      "resource": "Kaynak",
+      "container": "Kapsayıcı",
+      "image": "İmaj",
+      "critical": "Kritik",
+      "high": "Yüksek",
+      "medium": "Orta",
+      "low": "Düşük",
+      "title": "Başlık",
+      "pass": "Geçen",
+      "fail": "Başarısız",
+      "components": "Bileşenler"
+    },
+    "table": {
+      "severity": "Önem",
+      "id": "ID",
+      "package": "Paket",
+      "installed": "Yüklü",
+      "fixed": "Düzeltildiği sürüm",
+      "rule": "Kural",
+      "title": "Başlık",
+      "target": "Hedef",
+      "control": "Kontrol",
+      "failed": "Başarısız"
+    },
+    "section": "İmaj taramaları (Trivy)",
+    "reportTitle": "Rapor",
+    "scanned": "Taranan nesne:",
+    "none": "Trivy Operator'ın bu nesne için henüz raporu yok.",
+    "watchFailed": "Trivy raporları okunamadı.",
+    "openReport": "Raporu aç",
+    "configAudit": "Yapılandırma denetimi",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_one": "{{count}} güvenlik açığının düzeltilmiş sürümü var.",
+    "fixable_other": "{{count}} güvenlik açığının düzeltilmiş sürümü var.",
+    "topShown": "Listelenen: {{total}} içinden en ciddi {{shown}}.",
+    "noFix": "Düzeltme yok",
+    "noVulnerabilities": "Güvenlik açığı bulunamadı.",
+    "noFailed": "Tüm denetimler geçti.",
+    "noSecrets": "Açığa çıkmış gizli bilgi bulunamadı.",
+    "passFail": "Geçen: {{pass}}, başarısız: {{fail}}",
+    "components": "Bileşenler: {{count}}",
+    "auditCount_one": "{{count}} kritik veya yüksek denetim bulgusu",
+    "auditCount_other": "{{count}} kritik veya yüksek denetim bulgusu"
+  }
+}

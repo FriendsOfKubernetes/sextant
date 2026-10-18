@@ -28,4 +28,11 @@ mutedUntil: string | null,
  * expiring in its details and in the TLS certificates list; 14 by default. Written by the frontend, which
  * clamps it to 1..=365.
  */
-certExpiryDays: number, };
+certExpiryDays: number, 
+/**
+ * Opt-in problem categories turned on (`security`, #143): unlike the others they are off until the user turns
+ * them on, so a new category of this kind never starts notifying after an update. One setting for the problems
+ * screen, the sidebar counter and the notifications. Kept as text like `disabled_categories`; an unknown one is
+ * ignored.
+ */
+enabledCategories: Array<string>, };

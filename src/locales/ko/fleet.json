@@ -1,0 +1,80 @@
+{
+  "rail": "모든 클러스터",
+  "title": "모든 클러스터",
+  "intro": "선택한 클러스터의 상태, 워크로드, Warning 이벤트입니다. 클러스터는 요청할 때만 연결됩니다.",
+  "noClusters": "kubeconfig 파일에서 클러스터를 찾지 못했습니다.",
+  "picker": {
+    "label": "표시할 클러스터",
+    "none": "표시할 클러스터를 선택하세요.",
+    "limit_other": "한 번에 최대 {{count}}개의 클러스터를 표시할 수 있습니다. 다른 클러스터를 추가하려면 하나를 해제하세요.",
+    "connectAll": "선택한 클러스터 모두 연결",
+    "connectHint": "연결하면 exec 플러그인이나 클라우드 CLI를 통한 로그인이 시작될 수 있습니다."
+  },
+  "card": {
+    "open": "{{cluster}} 열기",
+    "connect": "연결",
+    "reconnect": "다시 연결",
+    "connecting": "연결 중…",
+    "connectingFor": "연결 중… {{seconds}}초",
+    "waiting": "연결 대기 중…",
+    "disconnected": "연결되지 않았습니다.",
+    "version": "버전",
+    "versionHint": "노드의 kubelet 버전",
+    "versionRange": "{{lowest}} ~ {{highest}}",
+    "nodes": "노드",
+    "nodesFailed": "노드 목록을 가져올 수 없음",
+    "noMetrics": "메트릭 없음",
+    "usage": "{{percent}} ({{used}})",
+    "problems": "문제",
+    "noProblems": "문제 없음",
+    "warnings_other": "Warning 이벤트 {{count}}개",
+    "someNotWatched_other": "{{count}}개 종류의 개체를 감시할 수 없습니다.",
+    "tools": "설치된 도구",
+    "toolOk": "문제 없음"
+  },
+  "notConnected_other": "선택한 클러스터 {{count}}개가 연결되지 않아 해당 개체가 표시되지 않습니다.",
+  "noneConnected": "선택한 클러스터 중 연결된 클러스터가 없습니다.",
+  "tabs": {
+    "label": "모든 클러스터의 개체",
+    "pods": "Pods",
+    "workloads": "워크로드",
+    "events": "Warning 이벤트",
+    "find": "이름으로 찾기"
+  },
+  "filters": {
+    "cluster": "클러스터",
+    "allClusters": "선택한 모든 클러스터",
+    "namespace": "Namespace",
+    "allNamespaces": "모든 namespace"
+  },
+  "columns": {
+    "cluster": "클러스터",
+    "namespace": "Namespace",
+    "name": "이름",
+    "kind": "종류",
+    "status": "상태",
+    "ready": "준비",
+    "restarts": "다시 시작",
+    "node": "노드",
+    "age": "경과 시간",
+    "object": "개체",
+    "reason": "이유",
+    "message": "메시지"
+  },
+  "openIn": "{{cluster}}에서 {{kind}} {{name}} 열기",
+  "objectName": "{{kind}} {{name}}",
+  "loadingIn": "{{cluster}}의 개체를 불러오는 중…",
+  "listFailed": "{{cluster}}에서 {{kind}} 목록을 가져올 수 없음",
+  "truncated": "{{cluster}}에 개요가 보관하는 것보다 많은 개체가 있어 일부가 제외되었습니다.",
+  "more_other": "{{cluster}}의 개체 {{count}}개가 더 있지만 표시되지 않습니다. 보려면 필터를 좁히세요.",
+  "empty": "표시할 내용이 없습니다.",
+  "noWarnings": "Warning 이벤트가 없습니다.",
+  "find": {
+    "label": "이름",
+    "placeholder": "web 또는 종류와 이름: cm web",
+    "hint": "이름으로 검색하는 대상: {{kinds}}. 다른 종류를 검색하려면 “cm web”처럼 종류로 시작하세요.",
+    "searching": "검색 중…",
+    "none": "찾은 항목이 없습니다.",
+    "noKinds": "이 클러스터가 제공하는 종류를 읽을 수 없습니다."
+  }
+}

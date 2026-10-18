@@ -1,0 +1,198 @@
+{
+  "sidebar": "Sécurité",
+  "title": "Posture de sécurité",
+  "intro": "Les Pod Security Standards (Baseline et Restricted, selon Kubernetes v1.37) vérifiés sur les modèles de pod des charges de travail et sur les pods qu'aucune charge de travail ne possède, avec des conseils de durcissement qui ne font pas partie du standard. Rien n'est modifié dans le cluster : un correctif suggéré est copié en YAML, un strategic merge patch où les conteneurs et les volumes sont associés par nom.",
+  "loading": "Vérification des charges de travail…",
+  "chooseNamespace": "Choisissez des namespaces",
+  "chooseNamespaceText": "Cette page vérifie les namespaces choisis dans le filtre des namespaces. Choisissez un ou plusieurs namespaces pour commencer.",
+  "firstNamespaces_one": "Seul le premier namespace choisi ({{count}}) est vérifié.",
+  "firstNamespaces_many": "Seuls les {{count}} premiers namespaces choisis sont vérifiés.",
+  "firstNamespaces_other": "Seuls les {{count}} premiers namespaces choisis sont vérifiés.",
+  "watchFailed": "Impossible de surveiller {{kind}}",
+  "truncated_one": "Trop de charges de travail : seule la première ({{count}}) est listée.",
+  "truncated_many": "Trop de charges de travail : seules les {{count}} premières sont listées.",
+  "truncated_other": "Trop de charges de travail : seules les {{count}} premières sont listées.",
+  "empty": "Aucune charge de travail dans ce namespace.",
+  "emptyFiltered": "Aucune charge de travail de ce namespace ne correspond aux filtres.",
+  "filter": {
+    "level": "Afficher",
+    "levels": {
+      "all": "Toutes les charges de travail",
+      "baseline": "Violations de Baseline",
+      "restricted": "Violations de Restricted",
+      "hint": "Conseils de durcissement"
+    },
+    "severity": "Vulnérabilités des images",
+    "severities": {
+      "any": "Toutes ou aucune",
+      "CRITICAL": "Critiques",
+      "HIGH": "Élevées et plus",
+      "MEDIUM": "Moyennes et plus",
+      "LOW": "Faibles et plus"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "Conseil"
+  },
+  "counts": {
+    "baseline_one": "{{count}} violation de Baseline",
+    "baseline_many": "{{count}} de violations de Baseline",
+    "baseline_other": "{{count}} violations de Baseline",
+    "restricted_one": "{{count}} violation de Restricted",
+    "restricted_many": "{{count}} de violations de Restricted",
+    "restricted_other": "{{count}} violations de Restricted",
+    "hint_one": "{{count}} conseil",
+    "hint_many": "{{count}} de conseils",
+    "hint_other": "{{count}} conseils"
+  },
+  "posture": {
+    "restricted": "Conforme à Restricted",
+    "baseline": "Conforme à Baseline",
+    "privileged": "Viole Baseline"
+  },
+  "postureText": {
+    "restricted": "Conforme au standard Restricted.",
+    "baseline": "Conforme au standard Baseline, mais pas à Restricted.",
+    "privileged": "Non conforme au standard Baseline."
+  },
+  "compare": {
+    "noLabels": "Aucun label Pod Security : le niveau par défaut du cluster s'applique ici.",
+    "unknownLabels": "Labels Pod Security inconnus : le Namespace n'a pas pu être lu.",
+    "strictest": {
+      "restricted": "Toutes les charges de travail d'ici sont conformes à Restricted.",
+      "baseline": "Toutes les charges de travail d'ici sont conformes à Baseline ; certaines ne le sont pas à Restricted.",
+      "privileged": "Certaines charges de travail d'ici ne sont pas conformes à Baseline."
+    },
+    "unknownLevel": "{{label}} : Pod Security Admission ne connaît pas ce niveau.",
+    "enforce_one": "{{label}} : {{count}} charge de travail serait rejetée.",
+    "enforce_many": "{{label}} : {{count}} de charges de travail seraient rejetées.",
+    "enforce_other": "{{label}} : {{count}} charges de travail seraient rejetées.",
+    "audit_one": "{{label}} : {{count}} charge de travail serait consignée dans le journal d'audit.",
+    "audit_many": "{{label}} : {{count}} de charges de travail seraient consignées dans le journal d'audit.",
+    "audit_other": "{{label}} : {{count}} charges de travail seraient consignées dans le journal d'audit.",
+    "warn_one": "{{label}} : {{count}} charge de travail recevrait un avertissement.",
+    "warn_many": "{{label}} : {{count}} de charges de travail recevraient un avertissement.",
+    "warn_other": "{{label}} : {{count}} charges de travail recevraient un avertissement.",
+    "enforceNone": "{{label}} : toutes les charges de travail sont admises.",
+    "auditNone": "{{label}} : aucune charge de travail ne serait consignée dans le journal d'audit.",
+    "warnNone": "{{label}} : aucune charge de travail ne recevrait d'avertissement."
+  },
+  "row": {
+    "expand": "Afficher les constats de {{name}}",
+    "collapse": "Masquer les constats de {{name}}"
+  },
+  "details": {
+    "title": "Sécurité",
+    "ownedPod": "Ce pod est vérifié tel qu'il s'exécute ; le modèle à corriger se trouve dans son propriétaire {{kind}} {{name}}.",
+    "hints_one": "{{count}} conseil de durcissement",
+    "hints_many": "{{count}} de conseils de durcissement",
+    "hints_other": "{{count}} conseils de durcissement",
+    "hintsNote": "Les conseils sont de bonnes pratiques et ne font pas partie des Pod Security Standards : ce ne sont pas des violations.",
+    "noFindings": "Aucun constat : conforme au standard Restricted, et aucun conseil de durcissement ne s'applique."
+  },
+  "finding": {
+    "container": "Conteneur {{name}}",
+    "value": "Valeur : {{value}}",
+    "unset": "Non défini",
+    "admitted": "Ajouté à l'admission : présent dans le pod {{pod}}, pas dans le modèle. Corrigez-le là où il est ajouté (un webhook ou une politique).",
+    "fix": "Correctif suggéré",
+    "copy": "Copier le correctif",
+    "copied": "Copié",
+    "copyFailed": "Impossible de copier"
+  },
+  "checks": {
+    "hostProcess": "Conteneur HostProcess",
+    "hostNamespaces": "Espace de noms de l'hôte",
+    "privileged": "Conteneur privilégié",
+    "capabilities": "Capability hors de l'ensemble Baseline",
+    "hostPathVolumes": "Volume hostPath",
+    "hostPorts": "Port de l'hôte",
+    "hostProbes": "Host dans une sonde ou un hook de cycle de vie",
+    "appArmor": "Profil AppArmor non autorisé",
+    "seLinux": "Option SELinux non autorisée",
+    "procMount": "/proc non masqué",
+    "seccomp": "Profil seccomp Unconfined",
+    "sysctls": "sysctl non sûr",
+    "volumeTypes": "Type de volume non autorisé",
+    "privilegeEscalation": "Élévation de privilèges non désactivée",
+    "runAsNonRoot": "Exécution en non-root non exigée",
+    "runAsUser": "S'exécute en root (UID 0)",
+    "seccompRequired": "Aucun profil seccomp défini",
+    "capabilitiesRestricted": "Capabilities non limitées à NET_BIND_SERVICE après la suppression de ALL",
+    "readOnlyRootFilesystem": "Système de fichiers racine modifiable",
+    "resources": "Demandes ou limites manquantes",
+    "latestTag": "Image sans version fixée",
+    "serviceAccountToken": "Jeton du service account monté"
+  },
+  "severity": {
+    "CRITICAL": "Critique",
+    "HIGH": "Élevée",
+    "MEDIUM": "Moyenne",
+    "LOW": "Faible",
+    "UNKNOWN": "Inconnue"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "Vulnerability Reports",
+      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
+      "configAuditReports": "Config Audit Reports",
+      "clusterConfigAuditReports": "Cluster Config Audit Reports",
+      "exposedSecretReports": "Exposed Secret Reports",
+      "rbacAssessmentReports": "RBAC Assessment Reports",
+      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
+      "infraAssessmentReports": "Infra Assessment Reports",
+      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
+      "clusterComplianceReports": "Cluster Compliance Reports",
+      "sbomReports": "SBOM Reports",
+      "clusterSbomReports": "Cluster SBOM Reports"
+    },
+    "columns": {
+      "resource": "Ressource",
+      "container": "Conteneur",
+      "image": "Image",
+      "critical": "Critiques",
+      "high": "Élevées",
+      "medium": "Moyennes",
+      "low": "Faibles",
+      "title": "Titre",
+      "pass": "Réussis",
+      "fail": "Échoués",
+      "components": "Composants"
+    },
+    "table": {
+      "severity": "Gravité",
+      "id": "ID",
+      "package": "Paquet",
+      "installed": "Installée",
+      "fixed": "Corrigée en",
+      "rule": "Règle",
+      "title": "Titre",
+      "target": "Cible",
+      "control": "Contrôle",
+      "failed": "Échoués"
+    },
+    "section": "Analyses d'images (Trivy)",
+    "reportTitle": "Rapport",
+    "scanned": "Objet analysé :",
+    "none": "Trivy Operator n'a pas encore de rapport pour cet objet.",
+    "watchFailed": "Impossible de lire les rapports Trivy.",
+    "openReport": "Ouvrir le rapport",
+    "configAudit": "Audit de configuration",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_one": "{{count}} vulnérabilité a une version corrigée.",
+    "fixable_many": "{{count}} de vulnérabilités ont une version corrigée.",
+    "fixable_other": "{{count}} vulnérabilités ont une version corrigée.",
+    "topShown": "Listées : les {{shown}} plus graves sur {{total}}.",
+    "noFix": "Aucun correctif",
+    "noVulnerabilities": "Aucune vulnérabilité trouvée.",
+    "noFailed": "Toutes les vérifications ont réussi.",
+    "noSecrets": "Aucun secret exposé trouvé.",
+    "passFail": "Réussis : {{pass}}, échoués : {{fail}}",
+    "components": "Composants : {{count}}",
+    "auditCount_one": "{{count}} constat d'audit critique ou élevé",
+    "auditCount_many": "{{count}} de constats d'audit critiques ou élevés",
+    "auditCount_other": "{{count}} constats d'audit critiques ou élevés"
+  }
+}

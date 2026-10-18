@@ -372,3 +372,63 @@ _Avoid_: test permissions, dry run
 **UI language**:
 The language of the window, the tray menu and desktop notifications: "System" (the default, the operating system's language when Sextant has it, otherwise English) or one chosen in Settings → General → Appearance → Language. Kubernetes kinds and API terms stay in English in every language.
 _Avoid_: locale (dates and numbers follow the UI language, not a separate locale setting)
+
+**Change preview**:
+What the API server would store if a change were sent, next to the live object: shown before the editor's Save, an apply in "Create resource", and a Helm upgrade or install. It comes from a server-side dry run (`dryRun=All`), so defaulting, admission webhooks and validation are included; nothing is changed. Secrets are shown without values; which of their keys would change is named.
+_Avoid_: diff (alone), plan, simulation
+
+**Preview changes before applying**:
+The per-cluster setting (cluster settings → "Change preview") that makes the change preview a step of every save, apply and Helm upgrade or install on that cluster. When the user has not chosen, it is on for clusters whose name, context or kubeconfig cluster name contains "prod" or "production" as a word.
+_Avoid_: safe mode, production mode
+
+**Dry run (agent)**:
+An `apply_yaml` or `patch_resource` call with `dryRun: true`: checked against the agent's access rules like the change itself but never confirmed in the window, sent with `dryRun=All`, journaled as "(dry run)". Touching a Secret needs "Secret values", and the answer never says whether a Secret value differs.
+_Avoid_: test run, simulation
+
+**Upgrade readiness**:
+The page of the Cluster section that lists, for a chosen target Kubernetes version, the deprecated or removed API versions still in use (with where each use comes from: the object itself, a Helm release, Argo CD, Flux), the deprecated versions the cluster still serves, and version skew problems. Read-only.
+_Avoid_: upgrade check, preflight
+
+**Deprecation table**:
+The list of deprecated and removed Kubernetes API versions built into Sextant (`src/features/upgrade/deprecations.json`), copied from the Kubernetes deprecation guide and reviewed for every Kubernetes release. The page says up to which version it covers.
+_Avoid_: deprecation feed, database
+
+**Trace of an old write**:
+An API version a live object names only in its last-applied annotation or its field managers while the cluster no longer serves it: the object was once written in that version, which breaks nothing now. Hidden unless "Show traces of old writes" is on.
+_Avoid_: stale usage, false positive
+
+**Version skew**:
+How far apart the versions of the control-plane components and of the nodes' kubelet and kube-proxy are, judged by the Kubernetes version skew policy now and for the target version.
+_Avoid_: version drift, mismatch
+
+**Security posture**:
+How workloads measure against the Pod Security Standards: the "Security" page of the Cluster section and the "Security" tab of a workload's or Pod's details, with findings per field, a suggested fix to copy, and what each namespace's Pod Security labels would do. Read-only.
+_Avoid_: security score, compliance
+
+**Pod Security Standards (Baseline, Restricted)**:
+The Kubernetes policies Sextant checks workloads against, as Pod Security Admission reads them: Baseline forbids known privilege escalations, Restricted adds hardening. A workload "meets Restricted", "meets Baseline" or "violates Baseline".
+_Avoid_: PSP (PodSecurityPolicy was removed), security policy
+
+**Hardening hint**:
+Good practice that is not part of the Pod Security Standards (a read-only root filesystem, requests and limits, a pinned image, no mounted service account token): shown with the findings, never counted as a violation.
+_Avoid_: warning, violation
+
+**Added at admission**:
+A violation a running Pod has but its owner's pod template does not, because an admission webhook or policy changed the Pod when it was created (an injected sidecar or init container). Reported on the owner, without a fix.
+_Avoid_: drift, injected violation
+
+**Trivy reports**:
+The vulnerability, configuration audit, exposed secret, RBAC and other reports Trivy Operator stores in the cluster, shown in the Trivy section and in a workload's "Image scans (Trivy)" details. Sextant only reads them; it neither installs Trivy nor starts a scan.
+_Avoid_: scan results (Sextant does not scan), CVE list
+
+**Opt-in category**:
+A problem category that is off until the user turns it on (now only "Security": Baseline violations), in one setting shared by the problems screen ("Security findings") and Settings → Notifications. While off, nothing is watched for it.
+_Avoid_: hidden category, beta category
+
+**All clusters**:
+The overview of several clusters, opened from the top of the cluster rail: a health card per selected cluster, Pods, workloads and Warning events across them, and "Find by name". It connects a cluster only when the user clicks "Connect" or "Connect all selected".
+_Avoid_: fleet (the code's name, not the interface's), dashboard, multi-cluster view
+
+**Selected clusters (All clusters)**:
+The clusters the overview shows, at most 10, kept in the settings. Selecting a cluster does not connect it.
+_Avoid_: favourite clusters, pinned clusters

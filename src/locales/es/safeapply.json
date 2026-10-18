@@ -1,0 +1,58 @@
+{
+  "section": {
+    "title": "Vista previa de cambios",
+    "label": "Mostrar los cambios antes de aplicarlos",
+    "hint": "Guardar en el editor, aplicar en “Crear recurso” y las actualizaciones e instalaciones de Helm muestran primero lo que guardaría el servidor de API (una prueba en seco en el servidor). El cambio solo se envía cuando se confirma.",
+    "defaultOn": "El nombre de este clúster contiene “prod” o “production”, así que la vista previa está activada de forma predeterminada.",
+    "defaultOff": "De forma predeterminada, la vista previa solo está activada en los clústeres cuyo nombre contiene “prod” o “production”.",
+    "useDefault": "Usar el valor predeterminado"
+  },
+  "actions": {
+    "preview": "Ver cambios",
+    "checking": "Comprobando…",
+    "previewAndSave": "Revisar y guardar…",
+    "previewAndApply": "Revisar y aplicar…",
+    "back": "Volver a editar",
+    "ready": "Todavía no se ha cambiado nada.",
+    "required": "Este clúster pide una vista previa antes de aplicar.",
+    "blocked": "Corrija los documentos rechazados antes de aplicar."
+  },
+  "diff": {
+    "title": "Vista previa de cambios",
+    "objects": "Objetos",
+    "live": "Actual",
+    "after": "Después del cambio",
+    "state": {
+      "create": "Nuevo",
+      "update": "Cambiado",
+      "unchanged": "Sin cambios",
+      "failed": "Rechazado"
+    },
+    "created": "{{object}} aún no existe: se crearía.",
+    "unchanged": "El servidor de API guardaría {{object}} tal como está.",
+    "refusedObject": "El servidor de API rechazaría {{object}}",
+    "secretHidden": "Los valores de los Secret no se muestran.",
+    "secretAdded": "Valores añadidos: {{keys}}",
+    "secretChanged": "Valores cambiados: {{keys}}",
+    "secretRemoved": "Valores eliminados: {{keys}}",
+    "refused_one": "El servidor de API rechazaría {{count}} objeto. Corrija el texto antes de aplicar: la aplicación se detiene en el primer documento rechazado, después de aplicar los anteriores.",
+    "refused_many": "El servidor de API rechazaría {{count}} de objetos. Corrija el texto antes de aplicar: la aplicación se detiene en el primer documento rechazado, después de aplicar los anteriores.",
+    "refused_other": "El servidor de API rechazaría {{count}} objetos. Corrija el texto antes de aplicar: la aplicación se detiene en el primer documento rechazado, después de aplicar los anteriores.",
+    "waitsForNamespace": "Todavía no se pudo comprobar {{object}}: su namespace {{namespace}} lo crea un documento anterior. Al aplicar, primero se crea el namespace."
+  },
+  "helm": {
+    "failed": "No se pudieron generar los cambios",
+    "current": "Release {{release}} ahora",
+    "proposed": "Release {{release}} después del cambio",
+    "noRelease": "Todavía no hay ninguna release con este nombre: todos los objetos son nuevos.",
+    "same": "El manifiesto generado es igual al de la release.",
+    "secretAdded": "{{object}}: valores añadidos: {{keys}}",
+    "secretChanged": "{{object}}: valores cambiados: {{keys}}",
+    "secretRemoved": "{{object}}: valores eliminados: {{keys}}",
+    "unreadable_one": "No se pudo leer {{count}} documento y no se muestra.",
+    "unreadable_many": "No se pudieron leer {{count}} de documentos y no se muestran.",
+    "unreadable_other": "No se pudieron leer {{count}} documentos y no se muestran.",
+    "clientSide": "Esta versión de Helm no puede generar consultando el clúster (es anterior a la 3.13): lookup no encontró nada, así que los Secret y otros valores que reutiliza un chart pueden aparecer como cambiados.",
+    "noHooks": "Los hooks de Helm no forman parte de la comparación."
+  }
+}

@@ -380,7 +380,9 @@ fn to_json_full(obj: DynamicObject, resource: &ApiResource) -> CoreResult<Value>
     Ok(value)
 }
 
-fn hide_secret_values(value: &mut Value) {
+/// Hides the values of a core/v1 Secret as JSON (what `to_json` does to one): every `data`/`stringData` value becomes
+/// `""`, `last-applied-configuration` is removed and `VALUES_HIDDEN_ANNOTATION` is set.
+pub(crate) fn hide_secret_values(value: &mut Value) {
     let Some(map) = value.as_object_mut() else {
         return;
     };

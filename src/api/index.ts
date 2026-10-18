@@ -21,6 +21,7 @@ export const api = {
   gitopsInstall: commands.gitopsInstall,
   access: commands.access,
   rbac: commands.rbac,
+  upgrade: commands.upgrade,
   tls: commands.tls,
   mcp: commands.mcp,
   extensions: commands.extensions,

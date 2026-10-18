@@ -1,0 +1,54 @@
+{
+  "section": {
+    "title": "更改预览",
+    "label": "应用前预览更改",
+    "hint": "在编辑器中保存、在“创建资源”中应用，以及 Helm 升级和安装，都会先显示 API 服务器将会存储的内容（服务器端试运行）。只有在您确认后才会发送更改。",
+    "defaultOn": "此集群的名称包含“prod”或“production”，因此默认开启预览。",
+    "defaultOff": "默认仅对名称包含“prod”或“production”的集群开启预览。",
+    "useDefault": "使用默认设置"
+  },
+  "actions": {
+    "preview": "预览更改",
+    "checking": "正在检查…",
+    "previewAndSave": "预览并保存…",
+    "previewAndApply": "预览并应用…",
+    "back": "返回编辑",
+    "ready": "尚未更改任何内容。",
+    "required": "此集群要求在应用前先预览。",
+    "blocked": "请在应用前修正被拒绝的文档。"
+  },
+  "diff": {
+    "title": "更改预览",
+    "objects": "对象",
+    "live": "当前",
+    "after": "更改后",
+    "state": {
+      "create": "新建",
+      "update": "已更改",
+      "unchanged": "未更改",
+      "failed": "被拒绝"
+    },
+    "created": "{{object}} 尚不存在：将会创建它。",
+    "unchanged": "API 服务器将按原样存储 {{object}}。",
+    "refusedObject": "API 服务器将拒绝 {{object}}",
+    "secretHidden": "不显示 Secret 的值。",
+    "secretAdded": "新增的值：{{keys}}",
+    "secretChanged": "更改的值：{{keys}}",
+    "secretRemoved": "删除的值：{{keys}}",
+    "refused_other": "API 服务器将拒绝 {{count}} 个对象。请在应用前修正文本：应用会在应用完之前的文档后，于第一个被拒绝的文档处停止。",
+    "waitsForNamespace": "尚无法检查 {{object}}：其 namespace {{namespace}} 由之前的文档创建。应用时会先创建该 namespace。"
+  },
+  "helm": {
+    "failed": "无法渲染更改",
+    "current": "发布 {{release}} 当前",
+    "proposed": "发布 {{release}} 更改后",
+    "noRelease": "尚无此名称的发布：所有对象都是新的。",
+    "same": "渲染出的清单与该发布的清单相同。",
+    "secretAdded": "{{object}}：新增的值：{{keys}}",
+    "secretChanged": "{{object}}：更改的值：{{keys}}",
+    "secretRemoved": "{{object}}：删除的值：{{keys}}",
+    "unreadable_other": "有 {{count}} 个文档无法读取，未予显示。",
+    "clientSide": "此 Helm 版本无法结合集群进行渲染（早于 3.13）：lookup 未找到任何内容，因此 chart 重复使用的 Secret 和其他值可能显示为已更改。",
+    "noHooks": "Helm 钩子不在比较范围内。"
+  }
+}

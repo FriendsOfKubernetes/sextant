@@ -1,0 +1,60 @@
+{
+  "section": {
+    "title": "Podgląd zmian",
+    "label": "Pokazuj zmiany przed zastosowaniem",
+    "hint": "Zapisywanie w edytorze, stosowanie w „Tworzenie zasobu” oraz uaktualnienia i instalacje Helm najpierw pokazują, co zapisałby serwer API (próbne uruchomienie po stronie serwera). Zmiana jest wysyłana dopiero po jej potwierdzeniu.",
+    "defaultOn": "Nazwa tego klastra zawiera „prod” lub „production”, więc podgląd jest domyślnie włączony.",
+    "defaultOff": "Domyślnie podgląd jest włączony tylko dla klastrów, których nazwa zawiera „prod” lub „production”.",
+    "useDefault": "Użyj ustawienia domyślnego"
+  },
+  "actions": {
+    "preview": "Pokaż zmiany",
+    "checking": "Sprawdzanie…",
+    "previewAndSave": "Sprawdź i zapisz…",
+    "previewAndApply": "Sprawdź i zastosuj…",
+    "back": "Wróć do edycji",
+    "ready": "Na razie nic nie zostało zmienione.",
+    "required": "Ten klaster wymaga podglądu przed zastosowaniem.",
+    "blocked": "Popraw odrzucone dokumenty przed zastosowaniem."
+  },
+  "diff": {
+    "title": "Podgląd zmian",
+    "objects": "Obiekty",
+    "live": "Obecnie",
+    "after": "Po zmianie",
+    "state": {
+      "create": "Nowy",
+      "update": "Zmieniony",
+      "unchanged": "Bez zmian",
+      "failed": "Odrzucony"
+    },
+    "created": "{{object}} jeszcze nie istnieje: zostałby utworzony.",
+    "unchanged": "Serwer API zapisałby {{object}} bez zmian.",
+    "refusedObject": "Serwer API odrzuciłby {{object}}",
+    "secretHidden": "Wartości Secretów nie są pokazywane.",
+    "secretAdded": "Dodane wartości: {{keys}}",
+    "secretChanged": "Zmienione wartości: {{keys}}",
+    "secretRemoved": "Usunięte wartości: {{keys}}",
+    "refused_one": "Serwer API odrzuciłby {{count}} obiekt. Popraw tekst przed zastosowaniem: stosowanie zatrzymuje się na pierwszym odrzuconym dokumencie, po zastosowaniu poprzednich.",
+    "refused_few": "Serwer API odrzuciłby {{count}} obiekty. Popraw tekst przed zastosowaniem: stosowanie zatrzymuje się na pierwszym odrzuconym dokumencie, po zastosowaniu poprzednich.",
+    "refused_many": "Serwer API odrzuciłby {{count}} obiektów. Popraw tekst przed zastosowaniem: stosowanie zatrzymuje się na pierwszym odrzuconym dokumencie, po zastosowaniu poprzednich.",
+    "refused_other": "Serwer API odrzuciłby {{count}} obiektu. Popraw tekst przed zastosowaniem: stosowanie zatrzymuje się na pierwszym odrzuconym dokumencie, po zastosowaniu poprzednich.",
+    "waitsForNamespace": "Nie udało się jeszcze sprawdzić {{object}}: jego namespace {{namespace}} tworzy jeden z wcześniejszych dokumentów. Przy stosowaniu namespace zostanie utworzony najpierw."
+  },
+  "helm": {
+    "failed": "Nie udało się wygenerować zmian",
+    "current": "Wydanie {{release}} obecnie",
+    "proposed": "Wydanie {{release}} po zmianie",
+    "noRelease": "Nie ma jeszcze wydania o tej nazwie: wszystkie obiekty są nowe.",
+    "same": "Wygenerowany manifest jest taki sam jak manifest wydania.",
+    "secretAdded": "{{object}}: dodane wartości: {{keys}}",
+    "secretChanged": "{{object}}: zmienione wartości: {{keys}}",
+    "secretRemoved": "{{object}}: usunięte wartości: {{keys}}",
+    "unreadable_one": "Nie udało się odczytać {{count}} dokumentu, więc nie jest pokazany.",
+    "unreadable_few": "Nie udało się odczytać {{count}} dokumentów, więc nie są pokazane.",
+    "unreadable_many": "Nie udało się odczytać {{count}} dokumentów, więc nie są pokazane.",
+    "unreadable_other": "Nie udało się odczytać {{count}} dokumentu, więc nie jest pokazany.",
+    "clientSide": "Ta wersja Helm nie potrafi generować z odwołaniem do klastra (jest starsza niż 3.13): lookup nic nie znalazł, więc Secrety i inne wartości, których chart używa ponownie, mogą wyglądać na zmienione.",
+    "noHooks": "Hooki Helm nie są częścią porównania."
+  }
+}

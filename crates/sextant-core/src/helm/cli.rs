@@ -368,6 +368,14 @@ fn values_file(values_yaml: &str) -> CoreResult<Option<tempfile::NamedTempFile>>
     Ok(Some(file))
 }
 
+/// What a dry-run `install`/`upgrade` printed: the release's manifest, and whether Helm rendered it against the
+/// cluster (`--dry-run=server`; `false` for a Helm before 3.13, whose `--dry-run` renders without the cluster).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Rendered {
+    pub manifest: String,
+    pub server_side: bool,
+}
+
 impl HelmCli {
     /// Always runs this binary instead of looking `helm` up in `PATH`.
     pub fn with_binary(mut self, path: impl Into<PathBuf>) -> Self {
@@ -676,6 +684,95 @@ impl HelmCli {
             .collect())
     }
 
+    /// The manifest `helm upgrade` would apply, without applying it: `--dry-run=server` (Helm renders against the
+    /// cluster — `lookup` works — and installs nothing) with `--output json`; the same flags as
+    /// [`HelmCli::upgrade_with_version`]. A Helm older than 3.13, which knows only `--dry-run`, is asked again with it.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn render_upgrade(
+        &self,
+        kc: &Path,
+        ctx: &str,
+        ns: &str,
+        release: &str,
+        chart_ref: &str,
+        version: Option<&str>,
+        values_yaml: &str,
+    ) -> CoreResult<Rendered> {
+        let args = |dry_run: &str| {
+            Args::new(&["upgrade"])
+                .kube(kc, ctx, ns)
+                .switch("--reset-values")
+                .switch(dry_run)
+                .flag("--output", "json")
+        };
+        self.render(args, release, chart_ref, version, values_yaml)
+            .await
+    }
+
+    /// The manifest `helm install` would apply, without installing (see [`HelmCli::render_upgrade`]).
+    #[allow(clippy::too_many_arguments)]
+    pub async fn render_install(
+        &self,
+        kc: &Path,
+        ctx: &str,
+        ns: &str,
+        release: &str,
+        chart: &str,
+        version: Option<&str>,
+        values_yaml: &str,
+    ) -> CoreResult<Rendered> {
+        let args = |dry_run: &str| {
+            Args::new(&["install"])
+                .kube(kc, ctx, ns)
+                .switch(dry_run)
+                .flag("--output", "json")
+        };
+        self.render(args, release, chart, version, values_yaml)
+            .await
+    }
+
+    /// Runs a dry-run `install`/`upgrade` built by `args` and returns the `manifest` of the release it prints.
+    async fn render(
+        &self,
+        args: impl Fn(&str) -> Args,
+        release: &str,
+        chart: &str,
+        version: Option<&str>,
+        values_yaml: &str,
+    ) -> CoreResult<Rendered> {
+        let attempt = |dry_run: &'static str| {
+            let values = values_file(values_yaml);
+            let mut call = args(dry_run);
+            if let Some(v) = version.filter(|v| !v.is_empty()) {
+                call = call.flag("--version", v);
+            }
+            async move {
+                let values = values?;
+                if let Some(file) = &values {
+                    call = call.flag("--values", file.path());
+                }
+                self.run(call.arg(release).arg(chart), values).await
+            }
+        };
+        let (printed, server_side) = match attempt("--dry-run=server").await {
+            Err(e) if e.message.contains("invalid argument \"server\"") => {
+                (attempt("--dry-run").await?, false)
+            }
+            other => (other?, true),
+        };
+        let release: Value = serde_json::from_str(printed.trim())
+            .map_err(|e| CoreError::other(format!("helm printed no release to compare: {e}")))?;
+        let manifest = release
+            .get("manifest")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        Ok(Rendered {
+            manifest,
+            server_side,
+        })
+    }
+
     /// The chart's default `values.yaml`.
     pub async fn show_values(&self, chart: &str, version: Option<&str>) -> CoreResult<String> {
         let mut args = Args::new(&["show", "values"]);
@@ -735,6 +832,97 @@ pub async fn upgrade_release(
         )
         .await
     }
+}
+
+/// What [`upgrade_release`] would change: the release's current manifest (read from its stored revision, which is
+/// what `helm get manifest` prints) against the one Helm renders for the same chart and the new values. Secrets are
+/// shown without their values ([`diff::manifest_diff`]).
+#[allow(clippy::too_many_arguments)]
+pub async fn preview_upgrade(
+    cli: &HelmCli,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    ns: &str,
+    release: &str,
+    chart_ref: &str,
+    values_yaml: &str,
+) -> CoreResult<super::diff::HelmManifestDiff> {
+    let current = super::stored_release(mgr, cluster, ns, release, None).await?;
+    let target = kube_target(mgr, cluster)?;
+    let chart_ref = chart_ref.trim();
+    let proposed = if chart_ref.is_empty() {
+        let dir = tempfile::tempdir()?;
+        let chart_dir = write_stored_chart(&current.chart, dir.path())?;
+        cli.render_upgrade(
+            &target.kubeconfig,
+            &target.context,
+            ns,
+            release,
+            chart_dir.to_string_lossy().as_ref(),
+            None,
+            values_yaml,
+        )
+        .await?
+    } else {
+        let version = current.summary().chart_version;
+        cli.render_upgrade(
+            &target.kubeconfig,
+            &target.context,
+            ns,
+            release,
+            chart_ref,
+            Some(&version),
+            values_yaml,
+        )
+        .await?
+    };
+    Ok(
+        super::diff::manifest_diff(&current.manifest, &proposed.manifest)
+            .rendered(proposed.server_side),
+    )
+}
+
+/// What [`install_chart`] would apply, against the manifest of a release of that name already in `ns` (empty when
+/// there is none).
+#[allow(clippy::too_many_arguments)]
+pub async fn preview_install(
+    cli: &HelmCli,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    ns: &str,
+    release: &str,
+    chart: &str,
+    version: Option<&str>,
+    values_yaml: &str,
+) -> CoreResult<super::diff::HelmManifestDiff> {
+    let values = if values_yaml.trim().is_empty() {
+        String::new()
+    } else {
+        changed_values(&cli.show_values(chart, version).await?, values_yaml)?
+    };
+    let current = if super::release_history(mgr, cluster, ns, release)
+        .await?
+        .is_empty()
+    {
+        String::new()
+    } else {
+        super::stored_release(mgr, cluster, ns, release, None)
+            .await?
+            .manifest
+    };
+    let target = kube_target(mgr, cluster)?;
+    let proposed = cli
+        .render_install(
+            &target.kubeconfig,
+            &target.context,
+            ns,
+            release,
+            chart,
+            version,
+            &values,
+        )
+        .await?;
+    Ok(super::diff::manifest_diff(&current, &proposed.manifest).rendered(proposed.server_side))
 }
 
 /// `helm install` of `chart` keeping as the release's user values only what `values_yaml` changes relative to the
@@ -1585,6 +1773,92 @@ mod tests {
             ErrorCode::Invalid
         );
         assert!(!dir.path().parent().unwrap().join("evil.yaml").exists());
+    }
+
+    /// A fake `helm` in `dir` that writes its arguments (one per line) and its `KUBECONFIG`/`HELM_KUBETOKEN` to
+    /// `dir/args`, then runs `body`.
+    #[cfg(unix)]
+    fn recording_helm(dir: &Path, body: &str) -> (HelmCli, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let record = dir.join("args");
+        let fake = dir.join("helm");
+        std::fs::write(
+            &fake,
+            format!(
+                "#!/bin/sh\nfor a in \"$@\"; do echo \"$a\"; done >> '{r}'\necho \"env:${{KUBECONFIG:-}}${{HELM_KUBETOKEN:-}}\" >> '{r}'\n{body}\n",
+                r = record.display()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        (HelmCli::default().with_binary(fake), record)
+    }
+
+    /// A preview renders with a server-side dry run and JSON output, through the given kubeconfig, never with a
+    /// `KUBECONFIG` or `HELM_KUBE*` of the app; the release's manifest is what comes back.
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_preview_renders_with_a_server_dry_run_and_reads_the_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        let (cli, record) = recording_helm(
+            dir.path(),
+            r#"printf '%s' '{"name":"web","manifest":"---\nkind: ConfigMap\n"}'"#,
+        );
+        // Whatever `KUBECONFIG` the test runs with never reaches helm (the scrubbing itself is tested with a set
+        // environment in `tests/helm.rs`).
+        let kc = dir.path().join("kc");
+        let manifest = cli
+            .render_upgrade(
+                &kc,
+                "ctx",
+                "ns",
+                "web",
+                "repo/app",
+                Some("1.2.3"),
+                "replicas: 3\n",
+            )
+            .await;
+        let rendered = manifest.unwrap();
+        assert_eq!(rendered.manifest, "---\nkind: ConfigMap\n");
+        assert!(rendered.server_side);
+        let args = std::fs::read_to_string(&record).unwrap();
+        let lines: Vec<&str> = args.lines().collect();
+        assert_eq!(&lines[..2], ["upgrade", "--namespace"]);
+        for expected in [
+            "--dry-run=server",
+            "--reset-values",
+            "--kube-context",
+            "1.2.3",
+        ] {
+            assert!(lines.contains(&expected), "{args}");
+        }
+        let at = |flag: &str| lines.iter().position(|l| *l == flag).unwrap();
+        assert_eq!(lines[at("--output") + 1], "json");
+        assert_eq!(lines[at("--kubeconfig") + 1], kc.display().to_string());
+        assert_eq!(&lines[at("--")..at("--") + 3], ["--", "web", "repo/app"]);
+        assert!(lines.contains(&"env:"), "{args}");
+    }
+
+    /// A Helm without `--dry-run=server` (before 3.13) is asked again with `--dry-run`.
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn an_older_helm_renders_with_a_plain_dry_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let (cli, record) = recording_helm(
+            dir.path(),
+            r#"case "$*" in *--dry-run=server*) echo 'Error: invalid argument "server" for "--dry-run" flag' >&2; exit 1;; esac
+printf '%s' '{"manifest":"kind: Secret\n"}'"#,
+        );
+        let manifest = cli
+            .render_install(Path::new("/kc"), "ctx", "ns", "web", "repo/app", None, "")
+            .await
+            .unwrap();
+        assert_eq!(manifest.manifest, "kind: Secret\n");
+        assert!(!manifest.server_side);
+        let args = std::fs::read_to_string(&record).unwrap();
+        assert!(args.lines().any(|l| l == "--dry-run"), "{args}");
+        assert!(!args.contains("--values"), "{args}");
+        assert!(!args.contains("--create-namespace"), "{args}");
     }
 
     #[test]

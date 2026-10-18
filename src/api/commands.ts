@@ -7,12 +7,17 @@ import type { AccessQuery } from "./generated/AccessQuery";
 import type { RulesReview } from "./generated/RulesReview";
 import type { SecretCertificates } from "./generated/SecretCertificates";
 import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
+import type { ScanApi } from "./generated/ScanApi";
+import type { UpgradeScan } from "./generated/UpgradeScan";
 import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
 import type { ArgoLogin } from "./generated/ArgoLogin";
 import type { ArgoStatus } from "./generated/ArgoStatus";
 import type { AuditEntry } from "./generated/AuditEntry";
 import type { ChartHit } from "./generated/ChartHit";
+import type { DryRunMode } from "./generated/DryRunMode";
+import type { DryRunResult } from "./generated/DryRunResult";
+import type { HelmManifestDiff } from "./generated/HelmManifestDiff";
 import type { ChartTarget } from "./generated/ChartTarget";
 import type { CloudAccounts } from "./generated/CloudAccounts";
 import type { CloudCliStatus } from "./generated/CloudCliStatus";
@@ -126,6 +131,12 @@ export const resources = {
     call<string>("secret_value", { clusterId, namespace, name, key }),
   replace: (clusterId: ClusterId, yaml: string) => call<KubeObject>("resource_replace", { clusterId, yaml }),
   apply: (clusterId: ClusterId, yaml: string) => call<ObjectRef[]>("resource_apply", { clusterId, yaml }),
+  /**
+   * What `replace` (`mode` "replace") or `apply` ("apply") of `yaml` would do, sent with `dryRun=All`: the live object
+   * and what the server would store, Secrets without their values. Changes nothing.
+   */
+  dryRun: (clusterId: ClusterId, yaml: string, mode: DryRunMode) =>
+    call<DryRunResult>("resource_dry_run", { clusterId, yaml, mode }),
   delete: (clusterId: ClusterId, ref: ObjectRef) => call<void>("resource_delete", { clusterId, ref }),
   /**
    * Merge patch (an object) or JSON patch (a list of operations) of one object, signed by `sextant`; resolves to the
@@ -229,6 +240,40 @@ export const helm = {
     version: string | null,
     valuesYaml: string,
   ) => call<void>("helm_install", { clusterId, namespace, release, chart, version, valuesYaml }),
+  /**
+   * What `upgrade` with the same arguments would change (Helm's `--dry-run=server`); Secrets without their values.
+   * Runs under `previewId` (a stream-like id) until it ends, `previewStop`, the cluster closes or 120 s pass.
+   */
+  upgradePreview: (
+    clusterId: ClusterId,
+    namespace: string,
+    release: string,
+    chartRef: string,
+    valuesYaml: string,
+    previewId: string,
+  ) =>
+    call<HelmManifestDiff>("helm_upgrade_preview", { clusterId, namespace, release, chartRef, valuesYaml, previewId }),
+  /** What `install` with the same arguments would apply, against a release of that name already there. */
+  installPreview: (
+    clusterId: ClusterId,
+    namespace: string,
+    release: string,
+    chart: string,
+    version: string | null,
+    valuesYaml: string,
+    previewId: string,
+  ) =>
+    call<HelmManifestDiff>("helm_install_preview", {
+      clusterId,
+      namespace,
+      release,
+      chart,
+      version,
+      valuesYaml,
+      previewId,
+    }),
+  /** Stops a running preview (its `helm` is killed); an unknown id is fine. */
+  previewStop: (previewId: string) => call<void>("helm_preview_stop", { previewId }),
   repos: () => call<HelmRepo[]>("helm_repos"),
   repoAdd: (name: string, url: string, username?: string, password?: string) =>
     call<void>("helm_repo_add", { name, url, username, password }),
@@ -326,6 +371,16 @@ export const gitopsInstall = {
   stop: (streamId: string) => call<void>("gitops_install_stop", { streamId }),
   /** Whether Flux and Argo CD are in the cluster (their CRDs). */
   status: (clusterId: ClusterId) => call<GitopsStatus>("gitops_install_status", { clusterId }),
+};
+
+/**
+ * Upgrade readiness (#142): the API versions of `apis` the cluster serves and where they are still used (live objects'
+ * last applied configuration and field managers, Helm release manifests, Argo CD and Flux inventories), the server
+ * version, kubelet and control-plane versions. Read-only and bounded; a source that cannot be read is in `sources`.
+ * Window only: agents and extensions have no such call.
+ */
+export const upgrade = {
+  scan: (clusterId: ClusterId, apis: ScanApi[]) => call<UpgradeScan>("upgrade_scan", { clusterId, apis }),
 };
 
 /**

@@ -1,0 +1,149 @@
+{
+  "sidebar": "Preparación para actualizar",
+  "title": "Preparación para actualizar",
+  "intro": "Versiones de API obsoletas y eliminadas que este clúster aún usa, y diferencias de versión que hay que resolver antes de actualizar Kubernetes.",
+  "clientsNote": "Esta página ve los objetos y manifiestos almacenados, no los clientes que llaman a API obsoletas. Para encontrarlos, antes de actualizar revise la métrica apiserver_requested_deprecated_apis del servidor de API.",
+  "currentVersion": "Versión del clúster: {{version}}",
+  "currentUnknown": "Versión del clúster desconocida",
+  "target": "Versión de destino",
+  "rescan": "Analizar de nuevo",
+  "copyMarkdown": "Copiar como Markdown",
+  "copyCsv": "Copiar como CSV",
+  "copied": "Copiado",
+  "copyFailed": "No se pudo copiar",
+  "scannedAt": "Analizado a las {{time}}",
+  "scanFailed": "No se pudo analizar el clúster",
+  "scanning": "Analizando el clúster…",
+  "clusterScoped": "(de todo el clúster)",
+  "tableSource": "La tabla de API obsoletas cubre Kubernetes hasta {{version}}, según la guía de Kubernetes sobre API obsoletas: {{url}}",
+  "noReplacement": "Sin reemplazo",
+  "counts": {
+    "removed_one": "{{count}} eliminada",
+    "removed_many": "{{count}} eliminadas",
+    "removed_other": "{{count}} eliminadas",
+    "deprecated_one": "{{count}} obsoleta",
+    "deprecated_many": "{{count}} obsoletas",
+    "deprecated_other": "{{count}} obsoletas",
+    "served_one": "{{count}} versión de API obsoleta servida",
+    "served_many": "{{count}} de versiones de API obsoletas servidas",
+    "served_other": "{{count}} versiones de API obsoletas servidas",
+    "skew_one": "{{count}} problema de diferencia de versiones",
+    "skew_many": "{{count}} de problemas de diferencia de versiones",
+    "skew_other": "{{count}} problemas de diferencia de versiones"
+  },
+  "status": {
+    "removed": "Eliminada",
+    "deprecated": "Obsoleta"
+  },
+  "columns": {
+    "status": "Estado",
+    "kind": "Kind",
+    "namespace": "Namespace",
+    "name": "Nombre",
+    "apiVersion": "Versión de API",
+    "when": "Cuándo",
+    "deprecatedIn": "Obsoleta desde",
+    "removedIn": "Eliminada en",
+    "replacement": "Usar en su lugar",
+    "source": "Origen"
+  },
+  "origin": {
+    "lastApplied": "Último kubectl apply",
+    "managedFields": "Escrito por el gestor de campos {{manager}}",
+    "helm": "Release de Helm {{namespace}}/{{release}} (revisión {{revision}})",
+    "argoCd": "Aplicación de Argo CD {{namespace}}/{{application}}",
+    "flux": "Kustomization de Flux {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "Nada la reemplaza: use Pod Security Admission o un webhook de admisión"
+  },
+  "filters": {
+    "live": "Objetos del clúster",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "Mostrar rastros de escrituras antiguas"
+  },
+  "usages": {
+    "title": "Versiones de API en uso",
+    "none": "Nada en este clúster usa una versión de API obsoleta o eliminada en la versión de destino.",
+    "noneShown": "Nada coincide con los filtros.",
+    "alreadyRemoved": "Este clúster tampoco la sirve ya.",
+    "removedIn": "Eliminada en {{version}}",
+    "deprecatedIn": "Obsoleta desde {{version}}, se elimina en {{removed}}",
+    "hidden_one": "Los filtros ocultan {{count}} hallazgo.",
+    "hidden_many": "Los filtros ocultan {{count}} de hallazgos.",
+    "hidden_other": "Los filtros ocultan {{count}} hallazgos."
+  },
+  "served": {
+    "title": "Versiones de API obsoletas que sirve el clúster",
+    "hint": "Los clientes aún pueden usar estas versiones; tras la actualización, sus solicitudes pueden fallar.",
+    "none": "El clúster no sirve ninguna versión de API obsoleta o eliminada en la versión de destino.",
+    "removed": "Eliminada en {{version}}. Usar en su lugar: {{replacement}}",
+    "deprecated": "Obsoleta desde {{version}}. Usar en su lugar: {{replacement}}"
+  },
+  "skew": {
+    "title": "Diferencia de versiones",
+    "none": "No se encontraron problemas de diferencia de versiones.",
+    "stepwise": "El plano de control se actualiza de una versión menor en una: de {{from}} a {{to}} pasando por cada una de estas versiones: {{steps}}",
+    "kubeletNewer_one": "{{count}} nodo tiene un kubelet más reciente que el plano de control ({{version}}): {{nodes}}",
+    "kubeletNewer_many": "{{count}} de nodos tienen un kubelet más reciente que el plano de control ({{version}}): {{nodes}}",
+    "kubeletNewer_other": "{{count}} nodos tienen un kubelet más reciente que el plano de control ({{version}}): {{nodes}}",
+    "kubeletTooOld_one": "{{count}} nodo tiene un kubelet más antiguo de lo que admite el plano de control (el más antiguo: {{version}}): {{nodes}}",
+    "kubeletTooOld_many": "{{count}} de nodos tienen un kubelet más antiguo de lo que admite el plano de control (el más antiguo: {{version}}): {{nodes}}",
+    "kubeletTooOld_other": "{{count}} nodos tienen un kubelet más antiguo de lo que admite el plano de control (el más antiguo: {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_one": "{{count}} nodo debe actualizarse antes de que el plano de control llegue a {{target}} (kubelet {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_many": "{{count}} de nodos deben actualizarse antes de que el plano de control llegue a {{target}} (kubelet más antiguo: {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_other": "{{count}} nodos deben actualizarse antes de que el plano de control llegue a {{target}} (kubelet más antiguo: {{version}}): {{nodes}}",
+    "kubeProxyNewer_one": "{{count}} nodo tiene un kube-proxy más reciente que el plano de control ({{version}}): {{nodes}}",
+    "kubeProxyNewer_many": "{{count}} de nodos tienen un kube-proxy más reciente que el plano de control ({{version}}): {{nodes}}",
+    "kubeProxyNewer_other": "{{count}} nodos tienen un kube-proxy más reciente que el plano de control ({{version}}): {{nodes}}",
+    "kubeProxyTooOld_one": "{{count}} nodo tiene un kube-proxy más antiguo de lo que admite el plano de control (el más antiguo: {{version}}): {{nodes}}",
+    "kubeProxyTooOld_many": "{{count}} de nodos tienen un kube-proxy más antiguo de lo que admite el plano de control (el más antiguo: {{version}}): {{nodes}}",
+    "kubeProxyTooOld_other": "{{count}} nodos tienen un kube-proxy más antiguo de lo que admite el plano de control (el más antiguo: {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_one": "{{count}} nodo necesita un kube-proxy más reciente antes de que el plano de control llegue a {{target}} (kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_many": "{{count}} de nodos necesitan un kube-proxy más reciente antes de que el plano de control llegue a {{target}} (kube-proxy más antiguo: {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_other": "{{count}} nodos necesitan un kube-proxy más reciente antes de que el plano de control llegue a {{target}} (kube-proxy más antiguo: {{version}}): {{nodes}}",
+    "kubeProxyKubeletSkew_one": "{{count}} nodo tiene un kube-proxy más alejado de su kubelet de lo permitido: {{nodes}}",
+    "kubeProxyKubeletSkew_many": "{{count}} de nodos tienen un kube-proxy más alejado de su kubelet de lo permitido: {{nodes}}",
+    "kubeProxyKubeletSkew_other": "{{count}} nodos tienen un kube-proxy más alejado de su kubelet de lo permitido: {{nodes}}",
+    "apiserverSkew": "Las instancias de kube-apiserver difieren en más de una versión menor: {{versions}}",
+    "componentSkew": "{{component}} ({{pod}}) ejecuta {{version}}, que kube-apiserver {{apiserver}} no admite: como mucho una versión menor más antigua y nunca más reciente.",
+    "kubelets": "Versiones de kubelet: {{versions}}",
+    "kubeletVersion_one": "{{version}} en {{count}} nodo",
+    "kubeletVersion_many": "{{version}} en {{count}} de nodos",
+    "kubeletVersion_other": "{{version}} en {{count}} nodos",
+    "components": "Componentes del plano de control: {{components}}",
+    "noComponents": "Los componentes del plano de control no son visibles (plano de control administrado): solo se comprobaron las reglas del kubelet."
+  },
+  "sources": {
+    "failed": {
+      "version": "No se pudo leer la versión del clúster",
+      "served": "No se pudo saber qué versiones de API sirve el clúster",
+      "live": "No se pudieron leer los objetos del clúster",
+      "helm": "No se pudieron leer los releases de Helm",
+      "argoCd": "No se pudieron leer las aplicaciones de Argo CD",
+      "flux": "No se pudieron leer las Kustomizations de Flux",
+      "nodes": "No se pudieron leer los nodos",
+      "controlPlane": "No se pudieron leer los Pods del plano de control"
+    },
+    "truncated": {
+      "version": "La versión del clúster se leyó solo en parte.",
+      "served": "Solo se comprobaron algunas versiones de API.",
+      "live": "Algunos tipos tienen más objetos de los que se analizan; solo se comprobaron los primeros.",
+      "helm": "Hay más releases de Helm de los que se analizan; solo se comprobaron los primeros.",
+      "argoCd": "Hay más aplicaciones de Argo CD de las que se analizan; solo se comprobaron las primeras.",
+      "flux": "Hay más Kustomizations de Flux de las que se analizan; solo se comprobaron las primeras.",
+      "nodes": "Hay más nodos de los que se analizan; solo se comprobaron los primeros.",
+      "controlPlane": "Solo se comprobaron algunos Pods del plano de control."
+    },
+    "skippedKinds": "No se pudieron leer algunas versiones de API o tipos: {{names}}",
+    "skippedReleases": "No se pudieron leer algunos releases de Helm: {{names}}",
+    "skippedHelmNamespaces": "No se pudieron listar los releases de Helm en algunos namespaces: {{names}}",
+    "usagesTruncated": "Se encontraron más usos de los que se pueden mostrar; solo se listan los primeros."
+  },
+  "report": {
+    "title": "Preparación para actualizar: {{from}} → {{to}}",
+    "titleUnknown": "Preparación para actualizar a {{to}}"
+  }
+}

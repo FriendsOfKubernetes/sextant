@@ -2,13 +2,15 @@
 //   "clusterRail" — content of the cluster rail (features/clusters);
 //   "welcome"     — the main area when no cluster is active (features/clusters: "No clusters found", etc.);
 //   "railFooter"  — the bottom of the cluster rail (features/settings: the Settings button; features/mcp: the agent
-//                   activity button).
+//                   activity button);
+//   "home"        — the main area when no cluster is active and a window-wide page is open (`useAppStore().homeView`;
+//                   features/fleet: the overview of several clusters).
 // Several features may fill one slot: their components are drawn one after another, by `order`. Registering the same
 // component again only changes its order.
 import { createElement, Fragment, type ComponentType } from "react";
 import { createRegistryVersion } from "./registryVersion";
 
-export type SlotName = "clusterRail" | "welcome" | "railFooter";
+export type SlotName = "clusterRail" | "welcome" | "railFooter" | "home";
 
 interface SlotEntry {
   Component: ComponentType;

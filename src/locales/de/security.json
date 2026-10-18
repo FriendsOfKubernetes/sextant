@@ -1,0 +1,187 @@
+{
+  "sidebar": "Sicherheit",
+  "title": "Sicherheitslage",
+  "intro": "Die Pod Security Standards (Baseline und Restricted, Stand Kubernetes v1.37), geprüft an den Pod-Vorlagen der Workloads und an Pods, die keinem Workload gehören, dazu Härtungshinweise, die nicht zum Standard gehören. Im Cluster wird nichts geändert: Ein vorgeschlagener Fix wird als YAML kopiert, als Strategic Merge Patch, in dem Container und Volumes nach Namen zugeordnet werden.",
+  "loading": "Workloads werden geprüft…",
+  "chooseNamespace": "Namespaces auswählen",
+  "chooseNamespaceText": "Diese Seite prüft die im Namespace-Filter ausgewählten Namespaces. Wählen Sie einen oder mehrere Namespaces aus, um zu beginnen.",
+  "firstNamespaces_one": "Nur der erste {{count}} ausgewählte Namespace wird geprüft.",
+  "firstNamespaces_other": "Nur die ersten {{count}} ausgewählten Namespaces werden geprüft.",
+  "watchFailed": "{{kind}} konnte nicht beobachtet werden",
+  "truncated_one": "Zu viele Workloads: Nur der erste {{count}} wird aufgelistet.",
+  "truncated_other": "Zu viele Workloads: Nur die ersten {{count}} werden aufgelistet.",
+  "empty": "Keine Workloads in diesem Namespace.",
+  "emptyFiltered": "Keine Workloads in diesem Namespace entsprechen den Filtern.",
+  "filter": {
+    "level": "Anzeigen",
+    "levels": {
+      "all": "Alle Workloads",
+      "baseline": "Baseline-Verstöße",
+      "restricted": "Restricted-Verstöße",
+      "hint": "Härtungshinweise"
+    },
+    "severity": "Image-Schwachstellen",
+    "severities": {
+      "any": "Beliebig oder keine",
+      "CRITICAL": "Kritisch",
+      "HIGH": "Hoch und höher",
+      "MEDIUM": "Mittel und höher",
+      "LOW": "Niedrig und höher"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "Hinweis"
+  },
+  "counts": {
+    "baseline_one": "{{count}} Baseline-Verstoß",
+    "baseline_other": "{{count}} Baseline-Verstöße",
+    "restricted_one": "{{count}} Restricted-Verstoß",
+    "restricted_other": "{{count}} Restricted-Verstöße",
+    "hint_one": "{{count}} Hinweis",
+    "hint_other": "{{count}} Hinweise"
+  },
+  "posture": {
+    "restricted": "Erfüllt Restricted",
+    "baseline": "Erfüllt Baseline",
+    "privileged": "Verletzt Baseline"
+  },
+  "postureText": {
+    "restricted": "Erfüllt den Restricted-Standard.",
+    "baseline": "Erfüllt den Baseline-Standard, aber nicht Restricted.",
+    "privileged": "Erfüllt den Baseline-Standard nicht."
+  },
+  "compare": {
+    "noLabels": "Keine Pod-Security-Labels: Hier gilt die Standardstufe des Clusters.",
+    "unknownLabels": "Pod-Security-Labels unbekannt: Der Namespace konnte nicht gelesen werden.",
+    "strictest": {
+      "restricted": "Alle Workloads hier erfüllen Restricted.",
+      "baseline": "Alle Workloads hier erfüllen Baseline; einige erfüllen Restricted nicht.",
+      "privileged": "Einige Workloads hier erfüllen Baseline nicht."
+    },
+    "unknownLevel": "{{label}}: Pod Security Admission kennt diese Stufe nicht.",
+    "enforce_one": "{{label}}: {{count}} Workload würde abgelehnt.",
+    "enforce_other": "{{label}}: {{count}} Workloads würden abgelehnt.",
+    "audit_one": "{{label}}: {{count}} Workload würde im Audit-Log erfasst.",
+    "audit_other": "{{label}}: {{count}} Workloads würden im Audit-Log erfasst.",
+    "warn_one": "{{label}}: {{count}} Workload würde eine Warnung erhalten.",
+    "warn_other": "{{label}}: {{count}} Workloads würden eine Warnung erhalten.",
+    "enforceNone": "{{label}}: Alle Workloads sind zulässig.",
+    "auditNone": "{{label}}: Kein Workload würde im Audit-Log erfasst.",
+    "warnNone": "{{label}}: Kein Workload würde eine Warnung erhalten."
+  },
+  "row": {
+    "expand": "Befunde von {{name}} anzeigen",
+    "collapse": "Befunde von {{name}} ausblenden"
+  },
+  "details": {
+    "title": "Sicherheit",
+    "ownedPod": "Dieser Pod wird so geprüft, wie er läuft; die zu korrigierende Vorlage liegt bei seinem Besitzer {{kind}} {{name}}.",
+    "hints_one": "{{count}} Härtungshinweis",
+    "hints_other": "{{count}} Härtungshinweise",
+    "hintsNote": "Hinweise sind bewährte Praxis, kein Teil der Pod Security Standards: Sie sind keine Verstöße.",
+    "noFindings": "Keine Befunde: Erfüllt den Restricted-Standard, und kein Härtungshinweis trifft zu."
+  },
+  "finding": {
+    "container": "Container {{name}}",
+    "value": "Wert: {{value}}",
+    "unset": "Nicht gesetzt",
+    "admitted": "Bei der Zulassung hinzugefügt: in Pod {{pod}} vorhanden, nicht in der Vorlage. Korrigieren Sie es dort, wo es hinzugefügt wird (ein Webhook oder eine Richtlinie).",
+    "fix": "Vorgeschlagener Fix",
+    "copy": "Fix kopieren",
+    "copied": "Kopiert",
+    "copyFailed": "Kopieren fehlgeschlagen"
+  },
+  "checks": {
+    "hostProcess": "HostProcess-Container",
+    "hostNamespaces": "Host-Namespace",
+    "privileged": "Privilegierter Container",
+    "capabilities": "Capability außerhalb der Baseline-Menge",
+    "hostPathVolumes": "hostPath-Volume",
+    "hostPorts": "Host-Port",
+    "hostProbes": "Host in einer Probe oder einem Lifecycle-Hook",
+    "appArmor": "Unzulässiges AppArmor-Profil",
+    "seLinux": "Unzulässige SELinux-Option",
+    "procMount": "Unmaskiertes /proc",
+    "seccomp": "Seccomp-Profil Unconfined",
+    "sysctls": "Unsicheres sysctl",
+    "volumeTypes": "Unzulässiger Volume-Typ",
+    "privilegeEscalation": "Rechteausweitung nicht deaktiviert",
+    "runAsNonRoot": "Ausführung als Nicht-root nicht verlangt",
+    "runAsUser": "Läuft als root (UID 0)",
+    "seccompRequired": "Kein Seccomp-Profil gesetzt",
+    "capabilitiesRestricted": "Capabilities nach Entfernen von ALL nicht auf NET_BIND_SERVICE beschränkt",
+    "readOnlyRootFilesystem": "Beschreibbares Root-Dateisystem",
+    "resources": "Requests oder Limits fehlen",
+    "latestTag": "Image ohne festgelegte Version",
+    "serviceAccountToken": "Service-Account-Token eingebunden"
+  },
+  "severity": {
+    "CRITICAL": "Kritisch",
+    "HIGH": "Hoch",
+    "MEDIUM": "Mittel",
+    "LOW": "Niedrig",
+    "UNKNOWN": "Unbekannt"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "Vulnerability Reports",
+      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
+      "configAuditReports": "Config Audit Reports",
+      "clusterConfigAuditReports": "Cluster Config Audit Reports",
+      "exposedSecretReports": "Exposed Secret Reports",
+      "rbacAssessmentReports": "RBAC Assessment Reports",
+      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
+      "infraAssessmentReports": "Infra Assessment Reports",
+      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
+      "clusterComplianceReports": "Cluster Compliance Reports",
+      "sbomReports": "SBOM Reports",
+      "clusterSbomReports": "Cluster SBOM Reports"
+    },
+    "columns": {
+      "resource": "Ressource",
+      "container": "Container",
+      "image": "Image",
+      "critical": "Kritisch",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig",
+      "title": "Titel",
+      "pass": "Bestanden",
+      "fail": "Fehlgeschlagen",
+      "components": "Komponenten"
+    },
+    "table": {
+      "severity": "Schweregrad",
+      "id": "ID",
+      "package": "Paket",
+      "installed": "Installiert",
+      "fixed": "Behoben in",
+      "rule": "Regel",
+      "title": "Titel",
+      "target": "Ziel",
+      "control": "Kontrolle",
+      "failed": "Fehlgeschlagen"
+    },
+    "section": "Image-Scans (Trivy)",
+    "reportTitle": "Bericht",
+    "scanned": "Geprüftes Objekt:",
+    "none": "Trivy Operator hat noch keine Berichte zu diesem Objekt.",
+    "watchFailed": "Die Trivy-Berichte konnten nicht gelesen werden.",
+    "openReport": "Bericht öffnen",
+    "configAudit": "Konfigurationsprüfung",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_one": "Für {{count}} Schwachstelle gibt es eine behobene Version.",
+    "fixable_other": "Für {{count}} Schwachstellen gibt es eine behobene Version.",
+    "topShown": "Aufgelistet: die {{shown}} schwersten von {{total}}.",
+    "noFix": "Kein Fix",
+    "noVulnerabilities": "Keine Schwachstellen gefunden.",
+    "noFailed": "Alle Prüfungen bestanden.",
+    "noSecrets": "Keine offengelegten Secrets gefunden.",
+    "passFail": "Bestanden: {{pass}}, fehlgeschlagen: {{fail}}",
+    "components": "Komponenten: {{count}}",
+    "auditCount_one": "{{count}} kritischer oder hoher Audit-Befund",
+    "auditCount_other": "{{count}} kritische oder hohe Audit-Befunde"
+  }
+}

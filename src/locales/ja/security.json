@@ -1,0 +1,176 @@
+{
+  "sidebar": "セキュリティ",
+  "title": "セキュリティ態勢",
+  "intro": "ワークロードの Pod テンプレートと、どのワークロードにも所有されていない Pod について、Pod Security Standards (Kubernetes v1.37 時点の Baseline と Restricted) を確認し、標準には含まれない強化のヒントも示します。クラスターには何も変更を加えません。修正案は YAML としてコピーされます。これは strategic merge patch で、コンテナーとボリュームは名前で照合されます。",
+  "loading": "ワークロードを確認中…",
+  "chooseNamespace": "namespace を選択",
+  "chooseNamespaceText": "このページは namespace フィルターで選択した namespace を確認します。開始するには 1 つ以上の namespace を選択してください。",
+  "firstNamespaces_other": "選択した namespace のうち最初の {{count}} 個のみを確認します。",
+  "watchFailed": "{{kind}} を監視できませんでした",
+  "truncated_other": "ワークロードが多すぎるため、最初の {{count}} 個のみを表示します。",
+  "empty": "この namespace にワークロードはありません。",
+  "emptyFiltered": "この namespace にフィルターに一致するワークロードはありません。",
+  "filter": {
+    "level": "表示",
+    "levels": {
+      "all": "すべてのワークロード",
+      "baseline": "Baseline 違反",
+      "restricted": "Restricted 違反",
+      "hint": "強化のヒント"
+    },
+    "severity": "イメージの脆弱性",
+    "severities": {
+      "any": "すべて (なしを含む)",
+      "CRITICAL": "緊急",
+      "HIGH": "高以上",
+      "MEDIUM": "中以上",
+      "LOW": "低以上"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "ヒント"
+  },
+  "counts": {
+    "baseline_other": "Baseline 違反 {{count}} 件",
+    "restricted_other": "Restricted 違反 {{count}} 件",
+    "hint_other": "ヒント {{count}} 件"
+  },
+  "posture": {
+    "restricted": "Restricted に準拠",
+    "baseline": "Baseline に準拠",
+    "privileged": "Baseline に違反"
+  },
+  "postureText": {
+    "restricted": "Restricted 標準に準拠しています。",
+    "baseline": "Baseline 標準に準拠していますが、Restricted には準拠していません。",
+    "privileged": "Baseline 標準に準拠していません。"
+  },
+  "compare": {
+    "noLabels": "Pod Security の label はありません。ここではクラスターの既定のレベルが適用されます。",
+    "unknownLabels": "Pod Security の label は不明です。Namespace を読み取れませんでした。",
+    "strictest": {
+      "restricted": "ここのすべてのワークロードが Restricted に準拠しています。",
+      "baseline": "ここのすべてのワークロードが Baseline に準拠していますが、一部は Restricted に準拠していません。",
+      "privileged": "ここの一部のワークロードは Baseline に準拠していません。"
+    },
+    "unknownLevel": "{{label}}: Pod Security Admission はこのレベルを認識しません。",
+    "enforce_other": "{{label}}: {{count}} 個のワークロードが拒否されます。",
+    "audit_other": "{{label}}: {{count}} 個のワークロードが監査ログに記録されます。",
+    "warn_other": "{{label}}: {{count}} 個のワークロードに警告が出ます。",
+    "enforceNone": "{{label}}: すべてのワークロードが許可されます。",
+    "auditNone": "{{label}}: 監査ログに記録されるワークロードはありません。",
+    "warnNone": "{{label}}: 警告が出るワークロードはありません。"
+  },
+  "row": {
+    "expand": "{{name}} の指摘を表示",
+    "collapse": "{{name}} の指摘を非表示"
+  },
+  "details": {
+    "title": "セキュリティ",
+    "ownedPod": "この Pod は実行中の状態で確認されます。修正すべきテンプレートは所有者の {{kind}} {{name}} にあります。",
+    "hints_other": "強化のヒント {{count}} 件",
+    "hintsNote": "ヒントは推奨される慣行であり、Pod Security Standards の一部ではありません。違反ではありません。",
+    "noFindings": "指摘はありません。Restricted 標準に準拠しており、該当する強化のヒントもありません。"
+  },
+  "finding": {
+    "container": "コンテナー {{name}}",
+    "value": "値: {{value}}",
+    "unset": "未設定",
+    "admitted": "アドミッション時に追加: Pod {{pod}} にはありますが、テンプレートにはありません。追加している場所 (webhook またはポリシー) で修正してください。",
+    "fix": "修正案",
+    "copy": "修正案をコピー",
+    "copied": "コピーしました",
+    "copyFailed": "コピーできませんでした"
+  },
+  "checks": {
+    "hostProcess": "HostProcess コンテナー",
+    "hostNamespaces": "ホストの名前空間",
+    "privileged": "特権コンテナー",
+    "capabilities": "Baseline のセット外の capability",
+    "hostPathVolumes": "hostPath ボリューム",
+    "hostPorts": "ホストポート",
+    "hostProbes": "プローブまたはライフサイクルフックの host",
+    "appArmor": "許可されない AppArmor プロファイル",
+    "seLinux": "許可されない SELinux オプション",
+    "procMount": "マスクされていない /proc",
+    "seccomp": "seccomp プロファイルが Unconfined",
+    "sysctls": "安全でない sysctl",
+    "volumeTypes": "許可されないボリュームの種類",
+    "privilegeEscalation": "特権昇格が無効化されていない",
+    "runAsNonRoot": "非 root での実行が必須になっていない",
+    "runAsUser": "root (UID 0) で実行",
+    "seccompRequired": "seccomp プロファイルが未設定",
+    "capabilitiesRestricted": "ALL を削除した後の capabilities が NET_BIND_SERVICE に限定されていない",
+    "readOnlyRootFilesystem": "書き込み可能なルートファイルシステム",
+    "resources": "requests または limits がない",
+    "latestTag": "バージョンが固定されていないイメージ",
+    "serviceAccountToken": "service account のトークンがマウントされている"
+  },
+  "severity": {
+    "CRITICAL": "緊急",
+    "HIGH": "高",
+    "MEDIUM": "中",
+    "LOW": "低",
+    "UNKNOWN": "不明"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "VulnerabilityReport",
+      "clusterVulnerabilityReports": "ClusterVulnerabilityReport",
+      "configAuditReports": "ConfigAuditReport",
+      "clusterConfigAuditReports": "ClusterConfigAuditReport",
+      "exposedSecretReports": "ExposedSecretReport",
+      "rbacAssessmentReports": "RbacAssessmentReport",
+      "clusterRbacAssessmentReports": "ClusterRbacAssessmentReport",
+      "infraAssessmentReports": "InfraAssessmentReport",
+      "clusterInfraAssessmentReports": "ClusterInfraAssessmentReport",
+      "clusterComplianceReports": "ClusterComplianceReport",
+      "sbomReports": "SbomReport",
+      "clusterSbomReports": "ClusterSbomReport"
+    },
+    "columns": {
+      "resource": "リソース",
+      "container": "コンテナー",
+      "image": "イメージ",
+      "critical": "緊急",
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "title": "タイトル",
+      "pass": "合格",
+      "fail": "不合格",
+      "components": "コンポーネント"
+    },
+    "table": {
+      "severity": "重大度",
+      "id": "ID",
+      "package": "パッケージ",
+      "installed": "インストール済み",
+      "fixed": "修正バージョン",
+      "rule": "ルール",
+      "title": "タイトル",
+      "target": "対象",
+      "control": "コントロール",
+      "failed": "不合格"
+    },
+    "section": "イメージのスキャン (Trivy)",
+    "reportTitle": "レポート",
+    "scanned": "スキャン対象:",
+    "none": "Trivy Operator にはまだこのオブジェクトのレポートがありません。",
+    "watchFailed": "Trivy のレポートを読み取れませんでした。",
+    "openReport": "レポートを開く",
+    "configAudit": "構成の監査",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_other": "{{count}} 件の脆弱性に修正バージョンがあります。",
+    "topShown": "表示: {{total}} 件中、重大な {{shown}} 件。",
+    "noFix": "修正なし",
+    "noVulnerabilities": "脆弱性は見つかりませんでした。",
+    "noFailed": "すべてのチェックに合格しました。",
+    "noSecrets": "露出したシークレットは見つかりませんでした。",
+    "passFail": "合格: {{pass}}、不合格: {{fail}}",
+    "components": "コンポーネント: {{count}}",
+    "auditCount_other": "緊急または高の監査の指摘 {{count}} 件"
+  }
+}

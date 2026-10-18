@@ -44,6 +44,11 @@ export interface AppState {
   sidebarWidth: number;
   /** The cluster rail shows names next to the icons. */
   railExpanded: boolean;
+  /**
+   * A window-wide page shown in the main area while no cluster is active (`"fleet"`: the overview of several
+   * clusters, drawn by the "home" slot); `null` = the welcome area. An active cluster always takes the main area.
+   */
+  homeView: string | null;
 
   setActiveCluster(clusterId: ClusterId | null): void;
   setView(clusterId: ClusterId, view: string | null): void;
@@ -62,6 +67,8 @@ export interface AppState {
   setDockHeight(height: number): void;
   setSidebarWidth(width: number): void;
   setRailExpanded(expanded: boolean): void;
+  /** Shows a window-wide page (`null`: the welcome area); a view other than `null` also leaves the active cluster. */
+  setHomeView(view: string | null): void;
 
   /** Applies the saved window layout (on start). */
   hydrateLayout(layout: WindowLayout): void;
@@ -78,6 +85,7 @@ export const initialAppState = {
   dock: { open: false, height: 300, tabs: [], activeTabId: null },
   sidebarWidth: 220,
   railExpanded: false,
+  homeView: null,
 } satisfies Partial<AppState>;
 
 export const useAppStore = create<AppState>()((set, get) => {
@@ -130,6 +138,8 @@ export const useAppStore = create<AppState>()((set, get) => {
       set((s) => ({ dock: { ...s.dock, height: clamp(height, DOCK_MIN_HEIGHT, DOCK_MAX_HEIGHT) } })),
     setSidebarWidth: (width) => set({ sidebarWidth: clamp(width, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH) }),
     setRailExpanded: (expanded) => set({ railExpanded: expanded }),
+    setHomeView: (view) =>
+      set(view === null ? { homeView: null } : { homeView: view, activeClusterId: null, details: null }),
 
     hydrateLayout: (layout) =>
       set((s) => ({

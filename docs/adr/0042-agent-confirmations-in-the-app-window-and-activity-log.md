@@ -25,3 +25,5 @@ Every call is recorded in the agent activity log: time, client, cluster, tool, t
 - Overflowing the ring overwrites the oldest records; the log is not an archive.
 - The log records that a call happened but not what it returned, so it cannot answer "what exactly did the agent see".
 - A new code `denied` joined the shared error codes so that the log and the interface can name a refusal.
+
+Amended (v0.11.0): `apply_yaml` and `patch_resource` with `dryRun: true` (#141) are checked against the same rules as the change (`Guard::check_dry_run`) but never ask in the window, since the API server only checks them (`dryRun=All`) and nothing changes; the activity log records them as `<tool> (dry run)`.

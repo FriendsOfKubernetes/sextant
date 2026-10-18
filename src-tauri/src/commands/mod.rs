@@ -21,3 +21,4 @@ pub mod settings;
 pub mod terminal;
 pub mod tls;
 pub mod tray;
+pub mod upgrade;

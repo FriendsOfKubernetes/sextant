@@ -1,0 +1,176 @@
+{
+  "sidebar": "보안",
+  "title": "보안 상태",
+  "intro": "워크로드의 Pod 템플릿과 어떤 워크로드에도 속하지 않은 Pod에서 Pod Security Standards(Kubernetes v1.37 기준 Baseline 및 Restricted)를 검사하고, 표준에 포함되지 않는 강화 힌트도 보여 줍니다. 클러스터에서는 아무것도 변경하지 않습니다. 제안된 수정은 컨테이너와 볼륨을 이름으로 맞추는 strategic merge patch YAML로 복사됩니다.",
+  "loading": "워크로드 검사 중…",
+  "chooseNamespace": "namespace 선택",
+  "chooseNamespaceText": "이 페이지는 namespace 필터에서 선택한 namespace를 검사합니다. 시작하려면 namespace를 하나 이상 선택하세요.",
+  "firstNamespaces_other": "선택한 namespace 중 처음 {{count}}개만 검사합니다.",
+  "watchFailed": "{{kind}}을(를) 감시할 수 없습니다",
+  "truncated_other": "워크로드가 너무 많아 처음 {{count}}개만 표시합니다.",
+  "empty": "이 namespace에 워크로드가 없습니다.",
+  "emptyFiltered": "이 namespace에 필터와 일치하는 워크로드가 없습니다.",
+  "filter": {
+    "level": "표시",
+    "levels": {
+      "all": "모든 워크로드",
+      "baseline": "Baseline 위반",
+      "restricted": "Restricted 위반",
+      "hint": "강화 힌트"
+    },
+    "severity": "이미지 취약점",
+    "severities": {
+      "any": "모두 또는 없음",
+      "CRITICAL": "심각",
+      "HIGH": "높음 이상",
+      "MEDIUM": "보통 이상",
+      "LOW": "낮음 이상"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "힌트"
+  },
+  "counts": {
+    "baseline_other": "Baseline 위반 {{count}}건",
+    "restricted_other": "Restricted 위반 {{count}}건",
+    "hint_other": "힌트 {{count}}건"
+  },
+  "posture": {
+    "restricted": "Restricted 충족",
+    "baseline": "Baseline 충족",
+    "privileged": "Baseline 위반"
+  },
+  "postureText": {
+    "restricted": "Restricted 표준을 충족합니다.",
+    "baseline": "Baseline 표준은 충족하지만 Restricted는 충족하지 않습니다.",
+    "privileged": "Baseline 표준을 충족하지 않습니다."
+  },
+  "compare": {
+    "noLabels": "Pod Security label이 없습니다. 여기에는 클러스터의 기본 수준이 적용됩니다.",
+    "unknownLabels": "Pod Security label을 알 수 없습니다. Namespace를 읽을 수 없습니다.",
+    "strictest": {
+      "restricted": "여기의 모든 워크로드가 Restricted를 충족합니다.",
+      "baseline": "여기의 모든 워크로드가 Baseline을 충족하며, 일부는 Restricted를 충족하지 않습니다.",
+      "privileged": "여기의 일부 워크로드가 Baseline을 충족하지 않습니다."
+    },
+    "unknownLevel": "{{label}}: Pod Security Admission이 알지 못하는 수준입니다.",
+    "enforce_other": "{{label}}: 워크로드 {{count}}개가 거부됩니다.",
+    "audit_other": "{{label}}: 워크로드 {{count}}개가 감사 로그에 기록됩니다.",
+    "warn_other": "{{label}}: 워크로드 {{count}}개가 경고를 받습니다.",
+    "enforceNone": "{{label}}: 모든 워크로드가 허용됩니다.",
+    "auditNone": "{{label}}: 감사 로그에 기록되는 워크로드가 없습니다.",
+    "warnNone": "{{label}}: 경고를 받는 워크로드가 없습니다."
+  },
+  "row": {
+    "expand": "{{name}}의 발견 사항 표시",
+    "collapse": "{{name}}의 발견 사항 숨기기"
+  },
+  "details": {
+    "title": "보안",
+    "ownedPod": "이 Pod는 실행 중인 상태 그대로 검사됩니다. 수정할 템플릿은 소유자 {{kind}} {{name}}에 있습니다.",
+    "hints_other": "강화 힌트 {{count}}건",
+    "hintsNote": "힌트는 권장 사례이며 Pod Security Standards의 일부가 아닙니다. 위반이 아닙니다.",
+    "noFindings": "발견 사항이 없습니다. Restricted 표준을 충족하며 해당하는 강화 힌트도 없습니다."
+  },
+  "finding": {
+    "container": "컨테이너 {{name}}",
+    "value": "값: {{value}}",
+    "unset": "설정되지 않음",
+    "admitted": "어드미션 시 추가됨: Pod {{pod}}에는 있지만 템플릿에는 없습니다. 추가하는 곳(webhook 또는 정책)에서 수정하세요.",
+    "fix": "제안된 수정",
+    "copy": "수정 복사",
+    "copied": "복사됨",
+    "copyFailed": "복사할 수 없음"
+  },
+  "checks": {
+    "hostProcess": "HostProcess 컨테이너",
+    "hostNamespaces": "호스트 네임스페이스",
+    "privileged": "특권 컨테이너",
+    "capabilities": "Baseline 집합 밖의 capability",
+    "hostPathVolumes": "hostPath 볼륨",
+    "hostPorts": "호스트 포트",
+    "hostProbes": "프로브 또는 수명 주기 훅의 host",
+    "appArmor": "허용되지 않는 AppArmor 프로필",
+    "seLinux": "허용되지 않는 SELinux 옵션",
+    "procMount": "마스킹되지 않은 /proc",
+    "seccomp": "seccomp 프로필 Unconfined",
+    "sysctls": "안전하지 않은 sysctl",
+    "volumeTypes": "허용되지 않는 볼륨 유형",
+    "privilegeEscalation": "권한 상승이 비활성화되지 않음",
+    "runAsNonRoot": "root가 아닌 사용자로 실행하도록 요구하지 않음",
+    "runAsUser": "root(UID 0)로 실행",
+    "seccompRequired": "seccomp 프로필이 설정되지 않음",
+    "capabilitiesRestricted": "ALL을 제거한 후 capabilities가 NET_BIND_SERVICE로 제한되지 않음",
+    "readOnlyRootFilesystem": "쓰기 가능한 루트 파일 시스템",
+    "resources": "requests 또는 limits 누락",
+    "latestTag": "버전이 고정되지 않은 이미지",
+    "serviceAccountToken": "service account 토큰이 마운트됨"
+  },
+  "severity": {
+    "CRITICAL": "심각",
+    "HIGH": "높음",
+    "MEDIUM": "보통",
+    "LOW": "낮음",
+    "UNKNOWN": "알 수 없음"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "Vulnerability Reports",
+      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
+      "configAuditReports": "Config Audit Reports",
+      "clusterConfigAuditReports": "Cluster Config Audit Reports",
+      "exposedSecretReports": "Exposed Secret Reports",
+      "rbacAssessmentReports": "RBAC Assessment Reports",
+      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
+      "infraAssessmentReports": "Infra Assessment Reports",
+      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
+      "clusterComplianceReports": "Cluster Compliance Reports",
+      "sbomReports": "SBOM Reports",
+      "clusterSbomReports": "Cluster SBOM Reports"
+    },
+    "columns": {
+      "resource": "리소스",
+      "container": "컨테이너",
+      "image": "이미지",
+      "critical": "심각",
+      "high": "높음",
+      "medium": "보통",
+      "low": "낮음",
+      "title": "제목",
+      "pass": "통과",
+      "fail": "실패",
+      "components": "구성 요소"
+    },
+    "table": {
+      "severity": "심각도",
+      "id": "ID",
+      "package": "패키지",
+      "installed": "설치됨",
+      "fixed": "수정 버전",
+      "rule": "규칙",
+      "title": "제목",
+      "target": "대상",
+      "control": "컨트롤",
+      "failed": "실패"
+    },
+    "section": "이미지 스캔(Trivy)",
+    "reportTitle": "보고서",
+    "scanned": "스캔한 개체:",
+    "none": "Trivy Operator에 아직 이 개체의 보고서가 없습니다.",
+    "watchFailed": "Trivy 보고서를 읽을 수 없습니다.",
+    "openReport": "보고서 열기",
+    "configAudit": "구성 감사",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_other": "취약점 {{count}}개에 수정 버전이 있습니다.",
+    "topShown": "표시: {{total}}개 중 가장 심각한 {{shown}}개.",
+    "noFix": "수정 없음",
+    "noVulnerabilities": "취약점이 없습니다.",
+    "noFailed": "모든 검사를 통과했습니다.",
+    "noSecrets": "노출된 시크릿이 없습니다.",
+    "passFail": "통과: {{pass}}, 실패: {{fail}}",
+    "components": "구성 요소: {{count}}",
+    "auditCount_other": "심각 또는 높음 감사 발견 사항 {{count}}건"
+  }
+}

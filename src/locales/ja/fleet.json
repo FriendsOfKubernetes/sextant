@@ -1,0 +1,80 @@
+{
+  "rail": "すべてのクラスター",
+  "title": "すべてのクラスター",
+  "intro": "選択したクラスターの状態、ワークロード、Warning イベント。クラスターへの接続は指示したときだけ行われます。",
+  "noClusters": "kubeconfig ファイルにクラスターが見つかりません。",
+  "picker": {
+    "label": "表示するクラスター",
+    "none": "表示するクラスターを選択してください。",
+    "limit_other": "一度に表示できるクラスターは最大 {{count}} 個です。別のクラスターを追加するには、いずれかの選択を外してください。",
+    "connectAll": "選択したすべてに接続",
+    "connectHint": "接続すると、exec プラグインやクラウド CLI によるサインインが始まることがあります。"
+  },
+  "card": {
+    "open": "{{cluster}} を開く",
+    "connect": "接続",
+    "reconnect": "再接続",
+    "connecting": "接続中…",
+    "connectingFor": "接続中… {{seconds}} 秒",
+    "waiting": "接続待ち…",
+    "disconnected": "未接続です。",
+    "version": "バージョン",
+    "versionHint": "ノードの kubelet バージョン",
+    "versionRange": "{{lowest}} ～ {{highest}}",
+    "nodes": "ノード",
+    "nodesFailed": "ノードを一覧表示できませんでした",
+    "noMetrics": "メトリクスなし",
+    "usage": "{{percent}}（{{used}}）",
+    "problems": "問題",
+    "noProblems": "問題なし",
+    "warnings_other": "Warning イベント {{count}} 件",
+    "someNotWatched_other": "{{count}} 種類のオブジェクトを監視できませんでした。",
+    "tools": "インストール済みのツール",
+    "toolOk": "問題なし"
+  },
+  "notConnected_other": "選択したクラスターのうち {{count}} 個が未接続のため、そのオブジェクトは表示されません。",
+  "noneConnected": "選択したクラスターはどれも接続されていません。",
+  "tabs": {
+    "label": "すべてのクラスターのオブジェクト",
+    "pods": "Pods",
+    "workloads": "ワークロード",
+    "events": "Warning イベント",
+    "find": "名前で検索"
+  },
+  "filters": {
+    "cluster": "クラスター",
+    "allClusters": "選択したすべてのクラスター",
+    "namespace": "Namespace",
+    "allNamespaces": "すべての namespace"
+  },
+  "columns": {
+    "cluster": "クラスター",
+    "namespace": "Namespace",
+    "name": "名前",
+    "kind": "Kind",
+    "status": "状態",
+    "ready": "準備完了",
+    "restarts": "再起動",
+    "node": "ノード",
+    "age": "経過時間",
+    "object": "オブジェクト",
+    "reason": "理由",
+    "message": "メッセージ"
+  },
+  "openIn": "{{cluster}} の {{kind}} {{name}} を開く",
+  "objectName": "{{kind}} {{name}}",
+  "loadingIn": "{{cluster}} のオブジェクトを読み込み中…",
+  "listFailed": "{{cluster}} の {{kind}} を一覧表示できませんでした",
+  "truncated": "{{cluster}} には概要が保持できる数を超えるオブジェクトがあり、一部は含まれていません。",
+  "more_other": "{{cluster}} のオブジェクトがあと {{count}} 個表示されていません。表示するにはフィルターを絞り込んでください。",
+  "empty": "表示するものはありません。",
+  "noWarnings": "Warning イベントはありません。",
+  "find": {
+    "label": "名前",
+    "placeholder": "web、または種類と名前：cm web",
+    "hint": "名前で検索する対象：{{kinds}}。別の種類を検索するには、「cm web」のように種類から入力します。",
+    "searching": "検索中…",
+    "none": "見つかりませんでした。",
+    "noKinds": "このクラスターが提供する種類を読み取れませんでした。"
+  }
+}

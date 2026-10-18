@@ -5,6 +5,7 @@
   "badge_other": "{{count}} Probleme erfordern Aufmerksamkeit",
   "onlyNewSince": "Nur neue seit {{time}}",
   "markSeen": "Alle als gesehen markieren",
+  "showSecurity": "Sicherheitsbefunde",
   "total_one": "{{count}} Problem",
   "total_other": "{{count}} Probleme",
   "sourceFailed": "{{kind}} kann nicht überwacht werden",
@@ -23,6 +24,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Sicherheit",
     "events": "Warnereignisse"
   },
   "messages": {
@@ -31,6 +33,8 @@
     "restarts_other": "Container {{container}} neu gestartet ({{count}} Neustarts)",
     "replicas": "{{ready}} von {{desired}} Replikaten bereit",
     "expires": "Läuft ab am {{date}}",
-    "expired": "Abgelaufen am {{date}}"
+    "expired": "Abgelaufen am {{date}}",
+    "securityBaseline_one": "{{count}} Verstoß gegen Pod Security Baseline: {{fields}}",
+    "securityBaseline_other": "{{count}} Verstöße gegen Pod Security Baseline: {{fields}}"
   }
 }

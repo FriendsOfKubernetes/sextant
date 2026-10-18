@@ -7,6 +7,7 @@
   "badge_other": "{{count}} проблемы требуют внимания",
   "onlyNewSince": "Только новые с {{time}}",
   "markSeen": "Отметить все как просмотренные",
+  "showSecurity": "Замечания по безопасности",
   "total_one": "{{count}} проблема",
   "total_few": "{{count}} проблемы",
   "total_many": "{{count}} проблем",
@@ -27,6 +28,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Безопасность",
     "events": "События Warning"
   },
   "messages": {
@@ -37,6 +39,10 @@
     "restarts_other": "Контейнер {{container}} перезапускался ({{count}} перезапуска)",
     "replicas": "Готово реплик: {{ready}} из {{desired}}",
     "expires": "Истекает {{date}}",
-    "expired": "Истек {{date}}"
+    "expired": "Истек {{date}}",
+    "securityBaseline_one": "{{count}} нарушение Pod Security уровня Baseline: {{fields}}",
+    "securityBaseline_few": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}",
+    "securityBaseline_many": "{{count}} нарушений Pod Security уровня Baseline: {{fields}}",
+    "securityBaseline_other": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}"
   }
 }

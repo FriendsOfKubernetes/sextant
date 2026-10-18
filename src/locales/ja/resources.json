@@ -12,6 +12,7 @@
     "helm": "Helm",
     "accessControl": "アクセス制御",
     "certManager": "cert-manager",
+    "trivy": "Trivy",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "カスタムリソース"

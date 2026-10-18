@@ -50,6 +50,19 @@ pub async fn replace_yaml(
     cluster: &ClusterId,
     yaml: &str,
 ) -> CoreResult<Value> {
+    let doc = edited_document(yaml)?;
+    let client = mgr.client(cluster)?;
+    let kind = resolve_document_kind(mgr, cluster, &doc.kind).await?;
+    let api = kind.api(client.clone(), Some(doc.namespace_or(&client)));
+    let obj: DynamicObject = serde_json::from_value(doc.value)?;
+    let params = post_params();
+    let saved = api.replace(&doc.name, &params, &obj).await?;
+    to_json(saved, &kind.resource)
+}
+
+/// The one object of the editor's text, as [`replace_yaml`] (and its dry run) reads it: an object with its kind and
+/// name, without the hidden-values marker, and with `metadata.resourceVersion`.
+pub(super) fn edited_document(yaml: &str) -> CoreResult<Document> {
     let value: Value = serde_yaml::from_str(yaml)?;
     let doc = Document::from_value(value)?;
     if doc
@@ -64,13 +77,7 @@ pub async fn replace_yaml(
              object was loaded",
         ));
     }
-    let client = mgr.client(cluster)?;
-    let kind = resolve_document_kind(mgr, cluster, &doc.kind).await?;
-    let api = kind.api(client.clone(), Some(doc.namespace_or(&client)));
-    let obj: DynamicObject = serde_json::from_value(doc.value)?;
-    let params = post_params();
-    let saved = api.replace(&doc.name, &params, &obj).await?;
-    to_json(saved, &kind.resource)
+    Ok(doc)
 }
 
 /// Multi-document server-side apply with field manager `sextant`: [`parse_documents`], [`plan_apply`] and
@@ -95,7 +102,7 @@ async fn apply_yaml_within(
     step: Duration,
 ) -> CoreResult<Vec<ObjectRef>> {
     let targets = plan_within(mgr, cluster, parse_documents(yaml)?, step).await?;
-    apply_within(mgr, cluster, targets, step).await
+    apply_within(mgr, cluster, targets, step, SecretWrites::AsIs).await
 }
 
 /// One document of an apply with its kind looked up in the cluster: [`plan_apply`] makes it, [`apply_planned`]
@@ -103,9 +110,9 @@ async fn apply_yaml_within(
 /// checks what is sent.
 #[derive(Debug, Clone)]
 pub struct ApplyTarget {
-    doc: Document,
-    kind: ResolvedKind,
-    object: ObjectRef,
+    pub(super) doc: Document,
+    pub(super) kind: ResolvedKind,
+    pub(super) object: ObjectRef,
 }
 
 impl ApplyTarget {
@@ -172,7 +179,98 @@ pub async fn apply_planned(
     cluster: &ClusterId,
     targets: Vec<ApplyTarget>,
 ) -> CoreResult<Vec<ObjectRef>> {
-    apply_within(mgr, cluster, targets, STEP_TIMEOUT).await
+    apply_within(mgr, cluster, targets, STEP_TIMEOUT, SecretWrites::AsIs).await
+}
+
+/// [`apply_planned`] with core Secrets written as `secrets` says.
+pub async fn apply_planned_with(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    targets: Vec<ApplyTarget>,
+    secrets: SecretWrites,
+) -> CoreResult<Vec<ObjectRef>> {
+    apply_within(mgr, cluster, targets, STEP_TIMEOUT, secrets).await
+}
+
+/// How a change writes a core/v1 Secret.
+///
+/// `Blind` is for a caller that must learn nothing about the Secret's values from the answer — an AI agent without
+/// "Secret values" (#169, ADR-0043). Without it, a write is an oracle: a server-side apply of a guessed value
+/// succeeds unchanged when the guess is right and fails with a conflict naming the field when another manager owns
+/// it and the guess is wrong; on an immutable Secret a right guess is "no change" and a wrong one 422. So a blind
+/// write of a Secret
+/// - server-side applies with `force` (the value is taken over whatever it was: a write, never a comparison — as a
+///   JSON patch `replace`, which such an agent may already send);
+/// - reads the live Secret first, in the core, and refuses any change that names `data`/`stringData` of an
+///   immutable Secret with one fixed text ([`IMMUTABLE_SECRET`]), whatever the values;
+/// - answers a refusal of the API server with the error code and a fixed text, never the server's message.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum SecretWrites {
+    #[default]
+    AsIs,
+    Blind,
+}
+
+/// The one text of a blind change refused because the Secret is immutable.
+pub const IMMUTABLE_SECRET: &str =
+    "the Secret is immutable: a change of its data or stringData is not sent";
+
+/// Whether `kind` is core/v1 Secret.
+fn is_core_secret(kind: &ResolvedKind) -> bool {
+    kind.resource.group.is_empty() && kind.resource.kind == "Secret"
+}
+
+/// Before a blind write of a Secret that names its values: refuses it when the live Secret is immutable. The read and
+/// its errors say nothing about the values.
+async fn refuse_immutable(
+    api: &Api<DynamicObject>,
+    name: &str,
+    names_values: bool,
+) -> CoreResult<()> {
+    if !names_values {
+        return Ok(());
+    }
+    let live = api
+        .get_opt(name)
+        .await
+        .map_err(|e| blind_error(CoreError::from(e)))?;
+    if live.is_some_and(|s| s.data.get("immutable").and_then(Value::as_bool) == Some(true)) {
+        return Err(CoreError::new(ErrorCode::Invalid, IMMUTABLE_SECRET));
+    }
+    Ok(())
+}
+
+/// A refusal of a blind Secret write: its code and a fixed text, never the API server's message (a conflict or a
+/// validation error may differ by the value). Sextant's own timeouts and connection errors stay as they are.
+fn blind_error(err: CoreError) -> CoreError {
+    match err.code {
+        ErrorCode::Timeout
+        | ErrorCode::Unreachable
+        | ErrorCode::AuthPlugin
+        | ErrorCode::Kubeconfig => err,
+        code => CoreError::new(
+            code,
+            "the API server refused the change to the Secret; its reason is not shown without Secret values",
+        ),
+    }
+}
+
+/// Whether a document or a merge patch names a Secret's values.
+fn names_secret_values(value: &Value) -> bool {
+    value.get("data").is_some() || value.get("stringData").is_some()
+}
+
+/// Whether a JSON patch names a Secret's values (a `path` or `from` at or under `/data` or `/stringData`).
+fn json_patch_names_secret_values(patch: &Value) -> bool {
+    patch.as_array().into_iter().flatten().any(|op| {
+        ["path", "from"].iter().any(|key| {
+            op.get(*key).and_then(Value::as_str).is_some_and(|path| {
+                ["/data", "/stringData"]
+                    .iter()
+                    .any(|field| path == *field || path.starts_with(&format!("{field}/")))
+            })
+        })
+    })
 }
 
 async fn apply_within(
@@ -180,6 +278,7 @@ async fn apply_within(
     cluster: &ClusterId,
     targets: Vec<ApplyTarget>,
     step: Duration,
+    secrets: SecretWrites,
 ) -> CoreResult<Vec<ObjectRef>> {
     let client = mgr.client(cluster)?;
     let params = PatchParams::apply(FIELD_MANAGER);
@@ -192,12 +291,18 @@ async fn apply_within(
         object,
     }) = targets.next()
     {
-        if let Some(meta) = doc.value.get_mut("metadata").and_then(Value::as_object_mut) {
-            // Server-side apply rejects a body that sets managedFields (YAML copied from an editor may have them).
-            meta.remove("managedFields");
-        }
+        without_managed_fields(&mut doc.value);
         let api = kind.api(client.clone(), object.namespace.as_deref());
+        let blind = secrets == SecretWrites::Blind && is_core_secret(&kind);
         let sent = with_timeout(step, "applying it", async {
+            if blind {
+                refuse_immutable(&api, &object.name, names_secret_values(&doc.value)).await?;
+                let forced = PatchParams::apply(FIELD_MANAGER).force();
+                return api
+                    .patch(&object.name, &forced, &Patch::Apply(&doc.value))
+                    .await
+                    .map_err(|e| blind_error(CoreError::from(e)));
+            }
             api.patch(&object.name, &params, &Patch::Apply(&doc.value))
                 .await
                 .map_err(CoreError::from)
@@ -224,6 +329,13 @@ async fn apply_within(
     Ok(applied)
 }
 
+/// Server-side apply rejects a body that sets managedFields (YAML copied from an editor may have them).
+pub(super) fn without_managed_fields(value: &mut Value) {
+    if let Some(meta) = value.get_mut("metadata").and_then(Value::as_object_mut) {
+        meta.remove("managedFields");
+    }
+}
+
 /// Patches one object of any kind (an annotation, `spec.suspend`, an operation of a GitOps object), signed by
 /// [`FIELD_MANAGER`]; returns the object as saved, through `to_json` (a Secret without its values).
 ///
@@ -236,6 +348,39 @@ pub async fn patch(
     patch: &Value,
     patch_type: PatchType,
 ) -> CoreResult<Value> {
+    patch_with(mgr, cluster, r, patch, patch_type, SecretWrites::AsIs).await
+}
+
+/// [`patch`] with a core Secret written as `secrets` says (see [`SecretWrites::Blind`]).
+pub async fn patch_with(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    r: &ObjectRef,
+    patch: &Value,
+    patch_type: PatchType,
+    secrets: SecretWrites,
+) -> CoreResult<Value> {
+    let body = patch_body(patch, patch_type)?;
+    let (api, kind) = object_api(mgr, cluster, r).await?;
+    if secrets == SecretWrites::Blind && is_core_secret(&kind) {
+        let names_values = match patch_type {
+            PatchType::Merge => names_secret_values(patch),
+            PatchType::Json => json_patch_names_secret_values(patch),
+        };
+        refuse_immutable(&api, &r.name, names_values).await?;
+        let saved = api
+            .patch(&r.name, &patch_params(), &body)
+            .await
+            .map_err(|e| blind_error(CoreError::from(e)))?;
+        return to_json(saved, &kind.resource);
+    }
+    let saved = api.patch(&r.name, &patch_params(), &body).await?;
+    to_json(saved, &kind.resource)
+}
+
+/// The body of [`patch`] (and of its dry run): a merge patch must be an object and a JSON patch a list of operations;
+/// a patch that names `VALUES_HIDDEN_ANNOTATION` is `invalid`.
+pub(super) fn patch_body(patch: &Value, patch_type: PatchType) -> CoreResult<Patch<&Value>> {
     let hidden_path = VALUES_HIDDEN_ANNOTATION.replace('/', "~1");
     let text = patch.to_string();
     if text.contains(VALUES_HIDDEN_ANNOTATION) || text.contains(&hidden_path) {
@@ -244,7 +389,7 @@ pub async fn patch(
             format!("a patch cannot set the annotation {VALUES_HIDDEN_ANNOTATION}"),
         ));
     }
-    let body = match patch_type {
+    Ok(match patch_type {
         PatchType::Merge if patch.is_object() => Patch::Merge(patch),
         PatchType::Merge => {
             return Err(CoreError::new(
@@ -258,10 +403,7 @@ pub async fn patch(
                 format!("a JSON patch must be a list of operations: {err}"),
             )
         })?),
-    };
-    let (api, kind) = object_api(mgr, cluster, r).await?;
-    let saved = api.patch(&r.name, &patch_params(), &body).await?;
-    to_json(saved, &kind.resource)
+    })
 }
 
 /// Deletes one object; dependents (a Deployment's ReplicaSets and pods) are removed in the background.
@@ -494,7 +636,7 @@ pub async fn suspend_cronjob(
 // ---------- helpers ----------
 
 /// Parameters of a merge patch, signed by [`FIELD_MANAGER`].
-fn patch_params() -> PatchParams {
+pub(super) fn patch_params() -> PatchParams {
     PatchParams {
         field_manager: Some(FIELD_MANAGER.to_owned()),
         ..PatchParams::default()
@@ -502,7 +644,7 @@ fn patch_params() -> PatchParams {
 }
 
 /// Parameters of a create or replace, signed by [`FIELD_MANAGER`].
-fn post_params() -> PostParams {
+pub(super) fn post_params() -> PostParams {
     PostParams {
         field_manager: Some(FIELD_MANAGER.to_owned()),
         ..PostParams::default()
@@ -547,7 +689,7 @@ pub struct Document {
 impl Document {
     /// An object with `apiVersion`, `kind` and `metadata.name`; one that carries [`VALUES_HIDDEN_ANNOTATION`] (a
     /// Secret loaded without its values) is `invalid`.
-    fn from_value(value: Value) -> CoreResult<Self> {
+    pub(super) fn from_value(value: Value) -> CoreResult<Self> {
         let Some(map) = value.as_object() else {
             return Err(CoreError::new(
                 ErrorCode::Invalid,
@@ -618,7 +760,7 @@ impl Document {
     }
 
     /// The object's namespace, or the context's default namespace when the YAML has none.
-    fn namespace_or<'a>(&'a self, client: &'a kube::Client) -> &'a str {
+    pub(super) fn namespace_or<'a>(&'a self, client: &'a kube::Client) -> &'a str {
         self.namespace
             .as_deref()
             .unwrap_or_else(|| client.default_namespace())
@@ -678,7 +820,7 @@ fn prefixed(label: &str, err: CoreError) -> CoreError {
 }
 
 /// "document 2 (Deployment web): <reason>".
-fn in_document(doc: &Document, err: CoreError) -> CoreError {
+pub(super) fn in_document(doc: &Document, err: CoreError) -> CoreError {
     prefixed(
         &format!("{} ({} {})", doc.label, doc.kind.kind, doc.name),
         err,
@@ -694,7 +836,7 @@ fn describe_ref(r: &ObjectRef) -> String {
 }
 
 /// The API of the object `r` points to; a namespaced kind without a namespace is `invalid`.
-async fn object_api(
+pub(super) async fn object_api(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     r: &ObjectRef,
@@ -1388,6 +1530,232 @@ items:
         assert!(
             !requests.iter().any(|r| r.starts_with("PATCH ")),
             "{requests:?}"
+        );
+    }
+
+    /// Secrets for the blind writes of an agent without "Secret values" (#169): `owned` (its `data.password` owned by
+    /// another manager: an apply without force is a conflict naming the field), `frozen` (immutable: every write of
+    /// it is 422 "field is immutable"), `noisy` (every patch is refused with a text that names a value).
+    mod secrets {
+        use crate::fake_api::{FakeApi, Reply, Request};
+
+        const API_VERSIONS: &str =
+            r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+        const CORE_RESOURCES: &str = r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[
+            {"name":"secrets","singularName":"secret","namespaced":true,"kind":"Secret","verbs":["get","patch"]}]}"#;
+        const API_GROUPS: &str = r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[]}"#;
+
+        fn secret(name: &str, immutable: bool) -> String {
+            format!(
+                r#"{{"apiVersion":"v1","kind":"Secret","metadata":{{"name":"{name}","namespace":"ns"}},"immutable":{immutable},"data":{{"password":"cmlnaHQ="}}}}"#
+            )
+        }
+
+        fn status(code: u16, reason: &str, message: &str) -> String {
+            format!(
+                r#"{{"kind":"Status","apiVersion":"v1","status":"Failure","message":"{message}","reason":"{reason}","code":{code}}}"#
+            )
+        }
+
+        fn answer(req: &Request) -> Reply {
+            let path = req.path.as_str();
+            match (req.method.as_str(), path) {
+                ("GET", "/api") => Reply::json(200, API_VERSIONS),
+                ("GET", "/api/v1") => Reply::json(200, CORE_RESOURCES),
+                ("GET", "/apis") => Reply::json(200, API_GROUPS),
+                ("GET", "/api/v1/namespaces/ns/secrets/frozen") => {
+                    Reply::json(200, secret("frozen", true))
+                }
+                ("GET", p) if p.starts_with("/api/v1/namespaces/ns/secrets/") => {
+                    Reply::json(200, secret(p.rsplit('/').next().unwrap_or_default(), false))
+                }
+                ("PATCH", "/api/v1/namespaces/ns/secrets/owned")
+                    if !req.query.contains("force=true") =>
+                {
+                    Reply::json(
+                        409,
+                        status(
+                            409,
+                            "Conflict",
+                            "Apply failed with 1 conflict: conflict with \\\"helm\\\": .data.password",
+                        ),
+                    )
+                }
+                ("PATCH", "/api/v1/namespaces/ns/secrets/frozen") => Reply::json(
+                    422,
+                    status(
+                        422,
+                        "Invalid",
+                        "Secret \\\"frozen\\\" is invalid: data: Forbidden: field is immutable when `immutable` is set",
+                    ),
+                ),
+                ("PATCH", "/api/v1/namespaces/ns/secrets/noisy") => Reply::json(
+                    422,
+                    status(
+                        422,
+                        "Invalid",
+                        "data[password]: Invalid value: \\\"guess-dependent\\\"",
+                    ),
+                ),
+                ("PATCH", p) if p.starts_with("/api/v1/namespaces/ns/secrets/") => {
+                    Reply::json(200, secret(p.rsplit('/').next().unwrap_or_default(), false))
+                }
+                _ => Reply::not_found(),
+            }
+        }
+
+        pub async fn server() -> FakeApi {
+            FakeApi::start(answer).await
+        }
+    }
+
+    fn secret_ref(name: &str) -> ObjectRef {
+        ObjectRef {
+            kind: KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Secret".into(),
+            },
+            namespace: Some("ns".into()),
+            name: name.into(),
+        }
+    }
+
+    fn secret_yaml(name: &str, value: &str) -> String {
+        format!(
+            "apiVersion: v1\nkind: Secret\nmetadata: {{name: {name}, namespace: ns}}\ndata: {{password: {value}}}\n"
+        )
+    }
+
+    async fn apply_secret(
+        api: &crate::fake_api::FakeApi,
+        yaml: &str,
+        secrets: SecretWrites,
+    ) -> CoreResult<Vec<ObjectRef>> {
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let targets = plan_apply(&mgr, &id, parse_documents(yaml).unwrap())
+            .await
+            .unwrap();
+        apply_planned_with(&mgr, &id, targets, secrets).await
+    }
+
+    #[tokio::test]
+    async fn a_blind_apply_of_a_secret_forces_so_a_guess_is_never_a_conflict() {
+        let api = secrets::server().await;
+        // As before for the window: the conflict and its text.
+        let err = apply_secret(&api, &secret_yaml("owned", "d3Jvbmc="), SecretWrites::AsIs)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Conflict);
+        assert!(err.message.contains(".data.password"), "{err}");
+        // Blind: right and wrong guesses alike are written, with force.
+        for guess in ["cmlnaHQ=", "d3Jvbmc="] {
+            apply_secret(&api, &secret_yaml("owned", guess), SecretWrites::Blind)
+                .await
+                .unwrap();
+        }
+        let forced: Vec<String> = api
+            .requests()
+            .iter()
+            .filter(|r| r.method == "PATCH")
+            .map(|r| r.query.clone())
+            .collect();
+        assert!(!forced[0].contains("force=true"), "{forced:?}");
+        assert!(
+            forced[1..].iter().all(|q| q.contains("force=true")),
+            "{forced:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_blind_write_of_an_immutable_secrets_values_is_refused_with_one_text_and_not_sent() {
+        let api = secrets::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let mut texts = Vec::new();
+        for guess in ["cmlnaHQ=", "d3Jvbmc="] {
+            let err = apply_secret(&api, &secret_yaml("frozen", guess), SecretWrites::Blind)
+                .await
+                .unwrap_err();
+            texts.push(err.to_string());
+            let patch = json!({ "data": { "password": guess } });
+            let err = patch_with(
+                &mgr,
+                &id,
+                &secret_ref("frozen"),
+                &patch,
+                PatchType::Merge,
+                SecretWrites::Blind,
+            )
+            .await
+            .unwrap_err();
+            texts.push(err.to_string());
+            let json_patch = json!([{ "op": "replace", "path": "/data/password", "value": guess }]);
+            let err = patch_with(
+                &mgr,
+                &id,
+                &secret_ref("frozen"),
+                &json_patch,
+                PatchType::Json,
+                SecretWrites::Blind,
+            )
+            .await
+            .unwrap_err();
+            texts.push(err.to_string());
+        }
+        assert!(
+            texts.iter().all(|t| t.contains(IMMUTABLE_SECRET)),
+            "{texts:?}"
+        );
+        assert_eq!(texts[0], texts[3]);
+        assert_eq!(texts[1], texts[4]);
+        assert_eq!(texts[2], texts[5]);
+        assert!(
+            !api.requests().iter().any(|r| r.method == "PATCH"),
+            "a change of an immutable Secret's values was sent"
+        );
+        // A change that does not name the values is sent (and refused by the server, without its text).
+        let labels = json!({ "metadata": { "labels": { "a": "b" } } });
+        let err = patch_with(
+            &mgr,
+            &id,
+            &secret_ref("frozen"),
+            &labels,
+            PatchType::Merge,
+            SecretWrites::Blind,
+        )
+        .await
+        .unwrap_err();
+        assert!(!err.message.contains("immutable"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn a_blind_secret_writes_refusal_never_echoes_the_server() {
+        let api = secrets::server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let body = json!({ "data": { "password": "Zw==" } });
+        let shown = patch(&mgr, &id, &secret_ref("noisy"), &body, PatchType::Merge)
+            .await
+            .unwrap_err();
+        assert!(shown.message.contains("guess-dependent"), "{shown}");
+        let blind = patch_with(
+            &mgr,
+            &id,
+            &secret_ref("noisy"),
+            &body,
+            PatchType::Merge,
+            SecretWrites::Blind,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(blind.code, ErrorCode::Invalid);
+        assert!(!blind.message.contains("guess-dependent"), "{blind}");
+        let applied = apply_secret(&api, &secret_yaml("noisy", "Zw=="), SecretWrites::Blind)
+            .await
+            .unwrap_err();
+        assert!(!applied.message.contains("guess-dependent"), "{applied}");
+        assert!(
+            applied.message.starts_with("document 1 (Secret noisy)"),
+            "{applied}"
         );
     }
 

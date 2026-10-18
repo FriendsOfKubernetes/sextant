@@ -8,7 +8,9 @@ import { BUCKET, GIT_REPOSITORY, HELM_RELEASE, HELM_REPOSITORY, KUSTOMIZATION, O
 import { COUNTED_KINDS } from "../gateway-api/problems";
 import {
   CERTIFICATE,
+  CRONJOB,
   DAEMONSET,
+  REPLICASET,
   DEPLOYMENT,
   EVENT,
   JOB,
@@ -49,6 +51,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   flux: FLUX_WATCHED.map((kind) => tool("flux", kind)),
   argocd: [tool("argocd", APPLICATION)],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
+  // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
+  // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
+  security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),
   // Only Warning events are listed.
   events: [builtIn("events", EVENT, "type=Warning")],
 };
@@ -60,14 +65,22 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
  */
 export function sourcesFor(categories: readonly ProblemCategory[], kinds: ResourceKind[] | null | undefined): SourceDef[] {
   const out: SourceDef[] = [];
+  // A kind two categories of the list share is watched once.
+  const seen = new Set<string>();
+  const add = (def: SourceDef) => {
+    const key = sourceKey("", def);
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(def);
+  };
   for (const category of categories) {
     for (const def of CATEGORY_SOURCES[category]) {
       if (!def.discovered) {
-        out.push(def);
+        add(def);
         continue;
       }
       const served = kinds ? findKind(kinds, def.kind)?.kindRef : undefined;
-      if (served) out.push({ ...def, kind: served });
+      if (served) add({ ...def, kind: served });
     }
   }
   return out;
@@ -79,7 +92,9 @@ export function needsDiscovery(categories: readonly ProblemCategory[]): boolean 
 }
 
 /** The store's key of a source in a cluster. */
-export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fieldSelector">): string {
+export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fieldSelector"> & { category?: ProblemCategory }): string {
   const { group, version, kind } = def.kind;
-  return `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
+  const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
+  // A security source judges the same kinds as pods and workloads by other rules: a source of its own.
+  return def.category === "security" ? `${key}|security` : key;
 }

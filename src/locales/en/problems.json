@@ -5,6 +5,7 @@
   "badge_other": "{{count}} problems need attention",
   "onlyNewSince": "Only new since {{time}}",
   "markSeen": "Mark all as seen",
+  "showSecurity": "Security findings",
   "total_one": "{{count}} problem",
   "total_other": "{{count}} problems",
   "sourceFailed": "Could not watch {{kind}}",
@@ -23,6 +24,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Security",
     "events": "Warning events"
   },
   "messages": {
@@ -31,6 +33,8 @@
     "restarts_other": "Container {{container}} restarted ({{count}} restarts)",
     "replicas": "{{ready}} of {{desired}} replicas ready",
     "expires": "Expires at {{date}}",
-    "expired": "Expired at {{date}}"
+    "expired": "Expired at {{date}}",
+    "securityBaseline_one": "{{count}} Baseline Pod Security violation: {{fields}}",
+    "securityBaseline_other": "{{count}} Baseline Pod Security violations: {{fields}}"
   }
 }

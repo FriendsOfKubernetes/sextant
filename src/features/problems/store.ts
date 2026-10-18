@@ -9,6 +9,13 @@
 //
 // A cluster that disconnects or connects again loses its sources at once (the backend closes a cluster's watches on
 // disconnect without a word, so one kept would never update again) and its `epochOf` moves on: users acquire anew.
+//
+// A watch that ends with an error (other than forbidden / not found) is opened again after a growing delay
+// (`RETRY_BASE_MS` doubling up to `RETRY_MAX_MS`) while someone holds it.
+//
+// Rows: another view that needs a few fields of every object of a watched kind (the overview of several clusters)
+// taps the same watch instead of opening a second one (`acquireRows`): each update is also reduced to the tap's rows,
+// at most `RowTap.max`. A tap added to a watch that has already listed its kind re-lists it once.
 import {
   api,
   events,
@@ -37,6 +44,32 @@ import { sourceKey, type SourceDef } from "./sources";
 export const MAX_PROBLEM_OBJECTS = 2000;
 /** A released source keeps watching this long, so a remount (a layout switch, a page change) reuses it. */
 export const LINGER_MS = 5000;
+/** The first retry of a watch that failed, then doubled each time up to `RETRY_MAX_MS`. */
+export const RETRY_BASE_MS = 2000;
+export const RETRY_MAX_MS = 60_000;
+
+/** A reduced copy of every object of a source, kept for another view. */
+export interface RowTap<R = unknown> {
+  /** Unique among the taps of a source. */
+  id: string;
+  toRow(obj: KubeObject): R;
+  /** Rows kept at most; beyond it new objects are left out (`truncated`). */
+  max: number;
+}
+
+export interface RowsState<R = unknown> {
+  status: WatchStatus;
+  error?: ApiError;
+  /** Rows by object uid; a new map after each change. */
+  rows: ReadonlyMap<string, R>;
+  truncated: boolean;
+}
+
+interface Tap {
+  tap: RowTap;
+  refs: number;
+  state: RowsState;
+}
 
 export interface SourceState {
   key: string;
@@ -57,6 +90,13 @@ interface Entry {
   refs: number;
   linger?: ReturnType<typeof setTimeout>;
   stop: () => void;
+  /** (Re)opens the watch. */
+  open: () => void;
+  /** The kind was listed at least once (a new tap then needs a fresh list). */
+  listed: boolean;
+  taps: Map<string, Tap>;
+  retry?: ReturnType<typeof setTimeout>;
+  attempts: number;
 }
 
 const entries = new Map<string, Entry>();
@@ -74,6 +114,7 @@ function dropCluster(clusterId: ClusterId): void {
   for (const [key, entry] of [...entries]) {
     if (entry.state.clusterId !== clusterId) continue;
     if (entry.linger) clearTimeout(entry.linger);
+    if (entry.retry) clearTimeout(entry.retry);
     entries.delete(key);
     entry.stop();
   }
@@ -145,7 +186,7 @@ export function applyCertExpiryDays(days: unknown): void {
 function put(entry: Entry, obj: KubeObject, now: number): { changed: boolean; dropped: boolean } {
   const uid = uidOfObject(obj);
   const before = entry.byUid.get(uid);
-  const found = resolve(entry.state.def.kind, obj, now, before);
+  const found = resolve(entry.state.def.kind, obj, now, before, entry.state.def.category);
   if (found.length === 0) return { changed: entry.byUid.delete(uid), dropped: false };
   entry.byUid.set(uid, found);
   if (!before && entry.byUid.size > MAX_PROBLEM_OBJECTS) {
@@ -168,7 +209,7 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
       for (const obj of [...(update.items as KubeObject[])].sort(byCreation)) {
         const uid = uidOfObject(obj);
         // The problems before keep their first-seen times across a reconnect.
-        const found = resolve(entry.state.def.kind, obj, now, previous.get(uid));
+        const found = resolve(entry.state.def.kind, obj, now, previous.get(uid), entry.state.def.category);
         if (found.length === 0) continue;
         entry.byUid.set(uid, found);
         if (entry.byUid.size > MAX_PROBLEM_OBJECTS) {
@@ -209,6 +250,68 @@ function byCreation(a: KubeObject, b: KubeObject): number {
   return created(a) - created(b);
 }
 
+/** One watch update applied to a tap's rows; `null` when nothing changed. */
+function applyToTap(tap: Tap, update: WatchUpdate): RowsState | null {
+  const state = tap.state;
+  switch (update.type) {
+    case "snapshot": {
+      const rows = new Map<string, unknown>();
+      let truncated = false;
+      for (const obj of update.items as KubeObject[]) {
+        if (rows.size >= tap.tap.max) {
+          truncated = true;
+          break;
+        }
+        rows.set(uidOfObject(obj), tap.tap.toRow(obj));
+      }
+      return { status: "ready", rows, truncated };
+    }
+    case "delta": {
+      if (update.upserted.length === 0 && !update.deleted.some((uid) => state.rows.has(uid))) return null;
+      const rows = new Map(state.rows);
+      let truncated = state.truncated;
+      for (const obj of update.upserted as KubeObject[]) {
+        const uid = uidOfObject(obj);
+        if (!rows.has(uid) && rows.size >= tap.tap.max) {
+          truncated = true;
+          continue;
+        }
+        rows.set(uid, tap.tap.toRow(obj));
+      }
+      for (const uid of update.deleted) rows.delete(uid);
+      return { ...state, rows, truncated };
+    }
+    case "reconnecting":
+      return { ...state, status: state.status === "loading" ? "loading" : "reconnecting" };
+    case "error":
+      return { ...state, status: "error", error: toApiError(update) };
+    case "forbidden":
+      return null;
+  }
+}
+
+/** Errors a new attempt will not cure. */
+const FINAL_ERRORS = new Set(["forbidden", "notFound"]);
+
+/** Opens the watch again after a growing delay, while someone holds it. */
+function scheduleRetry(key: string, entry: Entry, error: ApiError): void {
+  if (FINAL_ERRORS.has(error.code) || entry.retry) return;
+  const delay = Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** entry.attempts);
+  entry.attempts++;
+  entry.retry = setTimeout(() => {
+    entry.retry = undefined;
+    if (entries.get(key) !== entry || entry.refs === 0) return;
+    entry.stop();
+    entry.open();
+  }, delay);
+}
+
+function failed(key: string, entry: Entry, error: ApiError): void {
+  for (const tap of entry.taps.values()) tap.state = { ...tap.state, status: "error", error };
+  publish(entry, { status: "error", error });
+  scheduleRetry(key, entry, error);
+}
+
 /** Starts (or shares) the watch of `def` in the cluster; the returned function releases it. */
 export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void {
   followConnections();
@@ -220,23 +323,48 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
       byUid: new Map(),
       refs: 0,
       stop: () => undefined,
+      open: () => undefined,
+      listed: false,
+      taps: new Map(),
+      attempts: 0,
     };
     entries.set(key, created);
     const spec: WatchSpec = { kind: def.kind, namespaces: null, labelSelector: null, fieldSelector: def.fieldSelector };
-    created.stop = openStream<WatchUpdate>({
-      start: (id) => api.resources.watchStart(clusterId, spec, id),
-      listen: events.onWatch,
-      stop: api.resources.watchStop,
-      onEvent: (update) => {
-        if (entries.get(key) !== created) return;
-        const patch = applyUpdate(created, update, clock());
-        if (patch) publish(created, patch);
-      },
-      onStartError: (err) => {
-        if (entries.get(key) !== created) return;
-        publish(created, { status: "error", error: toApiError(err) });
-      },
-    });
+    created.open = () => {
+      created.stop = openStream<WatchUpdate>({
+        start: (id) => api.resources.watchStart(clusterId, spec, id),
+        listen: events.onWatch,
+        stop: api.resources.watchStop,
+        onEvent: (update) => {
+          if (entries.get(key) !== created) return;
+          if (update.type === "error") {
+            for (const tap of created.taps.values()) tap.state = applyToTap(tap, update) ?? tap.state;
+            failed(key, created, toApiError(update));
+            return;
+          }
+          if (update.type === "snapshot") {
+            created.listed = true;
+            created.attempts = 0;
+          }
+          let tapped = false;
+          for (const tap of created.taps.values()) {
+            const next = applyToTap(tap, update);
+            if (next) {
+              tap.state = next;
+              tapped = true;
+            }
+          }
+          const patch = applyUpdate(created, update, clock());
+          if (patch) publish(created, patch);
+          else if (tapped) changed();
+        },
+        onStartError: (err) => {
+          if (entries.get(key) !== created) return;
+          failed(key, created, toApiError(err));
+        },
+      });
+    };
+    created.open();
     entry = created;
     changed();
   }
@@ -259,8 +387,54 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
 function close(key: string, entry: Entry): void {
   if (entries.get(key) !== entry || entry.refs > 0) return;
   entries.delete(key);
+  if (entry.retry) clearTimeout(entry.retry);
   entry.stop();
   changed();
+}
+
+/**
+ * Holds the source of `def` (as `acquireSource`) and keeps `tap`'s rows of its objects while held. A source that has
+ * listed its kind already is listed again once, so the new tap gets every object.
+ */
+export function acquireRows(clusterId: ClusterId, def: SourceDef, tap: RowTap): () => void {
+  const release = acquireSource(clusterId, def);
+  const key = sourceKey(clusterId, def);
+  const entry = entries.get(key)!;
+  let held = entry.taps.get(tap.id);
+  if (!held) {
+    held = { tap, refs: 0, state: { status: "loading", rows: new Map(), truncated: false } };
+    entry.taps.set(tap.id, held);
+    if (entry.listed && !entry.retry) {
+      entry.stop();
+      entry.open();
+    }
+    changed();
+  }
+  held.refs++;
+  const mine = held;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    mine.refs--;
+    if (mine.refs === 0 && entry.taps.get(tap.id) === mine) {
+      entry.taps.delete(tap.id);
+      changed();
+    }
+    release();
+  };
+}
+
+/** The rows a tap keeps of a source, while it is held. */
+export function getRows(key: string, tapId: string): RowsState | undefined {
+  return entries.get(key)?.taps.get(tapId)?.state;
+}
+
+/** How many watches are open, and how many taps they carry (tests). */
+export function problemSourceStats(): { watches: number; taps: number } {
+  let taps = 0;
+  for (const entry of entries.values()) taps += entry.taps.size;
+  return { watches: entries.size, taps };
 }
 
 export function getSource(key: string): SourceState | undefined {
@@ -288,6 +462,7 @@ export function sourcesVersion(): number {
 export function resetProblemSources(): void {
   for (const entry of entries.values()) {
     if (entry.linger) clearTimeout(entry.linger);
+    if (entry.retry) clearTimeout(entry.retry);
     entry.stop();
   }
   entries.clear();

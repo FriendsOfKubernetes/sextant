@@ -156,15 +156,29 @@ export async function disconnectCluster(id: ClusterId): Promise<void> {
   }
 }
 
+/** Bumped by every choice of where the window goes; an activation that waited and is no longer the latest gives up. */
+let choiceSeq = 0;
+
+/**
+ * A later choice of the user (the overview of several clusters, say) wins over a cluster still being activated:
+ * that activation, waiting for the settings, then does nothing.
+ */
+export function supersedeActivation(): void {
+  choiceSeq++;
+}
+
 /** Makes a connected cluster the active one, reopening its last section when it was not opened yet. */
 async function activate(id: ClusterId): Promise<void> {
+  const seq = ++choiceSeq;
   useClustersStore.setState({ pendingId: null });
   const app = useAppStore.getState();
   if (!app.clusterViews[id]?.view) {
     const settings = await loadSettings().catch(() => null);
+    if (seq !== choiceSeq) return;
     const lastView = settings?.clusters[id]?.lastView;
     if (lastView && !useAppStore.getState().clusterViews[id]?.view) app.setView(id, lastView);
   }
+  if (seq !== choiceSeq) return;
   useAppStore.getState().setActiveCluster(id);
 }
 

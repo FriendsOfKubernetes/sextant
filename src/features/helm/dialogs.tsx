@@ -1,10 +1,13 @@
 // Dialogs of the Helm pages. Nothing reaches `helm` before the user presses the confirm button; uninstall and
 // rollback also need the release name typed in. A failure keeps the dialog open with Helm's own text (stderr).
+// Upgrade and install offer "Preview changes" (#141): the release's manifest against the one Helm renders with
+// `--dry-run=server`; on a cluster that asks for a preview, confirming needs a preview of the current input.
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ClusterId, type HelmRelease, type HelmRepo } from "../../api";
 import { ConfirmAction } from "../actions";
 import { YamlEditor } from "../editor";
+import { HelmPreview, useAlwaysPreview, useHelmPreview } from "../safe-apply";
 
 /** Release names Helm accepts. */
 export const RELEASE_NAME = /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/;
@@ -131,6 +134,10 @@ export function UpgradeDialog({
   const [text, setText] = useState(values);
   const [chartRef, setChartRef] = useState("");
   const refTouched = useRef(false);
+  const required = useAlwaysPreview(clusterId);
+  const preview = useHelmPreview(JSON.stringify([text, chartRef.trim()]), (previewId) =>
+    api.helm.upgradePreview(clusterId, release.namespace, release.name, chartRef.trim(), text, previewId),
+  );
 
   // Suggest the repository reference once; what the user typed wins.
   useEffect(() => {
@@ -149,6 +156,7 @@ export function UpgradeDialog({
       confirmLabel={t("helm:upgrade.confirm")}
       close={close}
       errorTitle={() => t("helm:upgrade.failed")}
+      canConfirm={!required || preview.diff !== null}
       onConfirm={async () => {
         await api.helm.upgrade(clusterId, release.namespace, release.name, chartRef.trim(), text);
         onDone();
@@ -173,6 +181,7 @@ export function UpgradeDialog({
           {t("helm:upgrade.chartRefHint", { chart: release.chart, version: release.chartVersion })}
         </span>
       </div>
+      <HelmPreview release={release.name} preview={preview} required={required} />
     </ConfirmAction>
   );
 }
@@ -220,13 +229,17 @@ export function InstallDialog({
   const [values, setValues] = useState(defaultValues);
   const nameOk = isValidReleaseName(release);
   const nsOk = namespace.trim() !== "";
+  const required = useAlwaysPreview(clusterId);
+  const preview = useHelmPreview(JSON.stringify([release, namespace.trim(), values]), (previewId) =>
+    api.helm.installPreview(clusterId, namespace.trim(), release, chart, version || null, values, previewId),
+  );
 
   return (
     <ConfirmAction
       title={t("helm:install.title", { chart, version })}
       confirmLabel={t("helm:install.confirm")}
       close={close}
-      canConfirm={nameOk && nsOk}
+      canConfirm={nameOk && nsOk && (!required || preview.diff !== null)}
       errorTitle={() => t("helm:install.failed")}
       onConfirm={async () => {
         const ns = namespace.trim();
@@ -247,6 +260,7 @@ export function InstallDialog({
         <YamlEditor value={values} onChange={setValues} label={t("helm:install.valuesLabel", { chart })} />
       </div>
       <span className="action-dialog__hint">{t("helm:install.valuesHint")}</span>
+      <HelmPreview release={release} preview={preview} required={required} canRun={nameOk && nsOk} />
     </ConfirmAction>
   );
 }

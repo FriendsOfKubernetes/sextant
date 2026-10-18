@@ -4,22 +4,33 @@
 // A failed save — broken YAML, a validation error, a missing permission, a conflict — is shown above the editor and
 // the text stays as typed. A conflict is never overwritten: "Reload" loads the cluster's version, and drops unsaved
 // edits only after the user confirms.
+// "Preview changes" (#141) sends the same PUT as a server-side dry run and shows the live object against what the
+// server would store (Secrets without values); a refusal (validation, an admission webhook, a conflict) shows up there
+// before anything is saved, and "Save" from the preview saves exactly the previewed text. On a cluster that asks for
+// a preview ("Preview changes before applying"), "Save" opens the preview first.
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError, toApiError, type ClusterId, type ObjectRef } from "../../api";
+import { api, ApiError, toApiError, type ClusterId, type DryRunResult, type ObjectRef } from "../../api";
 import { Button, ConfirmDialog, ErrorState } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { openActionDialog } from "../actions/registry";
 import { YamlEditor } from "./YamlEditor";
 import { hasHiddenValues } from "../details/secrets";
 import { toYaml } from "../details/yaml";
+import { ChangePreview, useAlwaysPreview } from "../safe-apply";
 
 export interface EditTabPayload {
   clusterId: ClusterId;
   ref: ObjectRef;
 }
 
-type Phase = "loading" | "ready" | "saving";
+type Phase = "loading" | "ready" | "saving" | "checking";
+
+/** A dry run of `text`, shown instead of the editor until it is saved or left. */
+interface Preview {
+  text: string;
+  result: DryRunResult;
+}
 
 function isSecret(ref: ObjectRef): boolean {
   return ref.kind.group === "" && ref.kind.kind === "Secret";
@@ -43,6 +54,8 @@ export function EditTab({ tab }: DockTabProps) {
   const [saved, setSaved] = useState(false);
   /** The editor appears once the object has been loaded, so nothing typed before that can be lost. */
   const [loaded, setLoaded] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const alwaysPreview = useAlwaysPreview(clusterId);
 
   const load = useCallback(async () => {
     setPhase("loading");
@@ -53,6 +66,7 @@ export function EditTab({ tab }: DockTabProps) {
       setLoadError(null);
       setSaveError(null);
       setSaved(false);
+      setPreview(null);
       setLoaded(true);
     } catch (err) {
       setLoadError(toApiError(err));
@@ -65,20 +79,41 @@ export function EditTab({ tab }: DockTabProps) {
     void load();
   }, [load]);
 
-  const save = async () => {
+  /** Text copied from a Secret shown without its values would replace every value with an empty string. */
+  const refuseHidden = (yaml: string): boolean => {
+    if (!hasHiddenValues(yaml)) return false;
+    setSaveError(new ApiError("invalid", t("details:secret.reloadBeforeSave")));
+    return true;
+  };
+
+  const runPreview = async () => {
     setSaved(false);
-    if (hasHiddenValues(text)) {
-      setSaveError(new ApiError("invalid", t("details:secret.reloadBeforeSave")));
-      return;
+    if (refuseHidden(text)) return;
+    const asked = text;
+    setPhase("checking");
+    try {
+      const result = await api.resources.dryRun(clusterId, asked, "replace");
+      setPreview({ text: asked, result });
+      setSaveError(null);
+    } catch (err) {
+      setSaveError(toApiError(err));
+    } finally {
+      setPhase("ready");
     }
+  };
+
+  const save = async (yaml: string) => {
+    setSaved(false);
+    if (refuseHidden(yaml)) return;
     setPhase("saving");
     try {
-      const stored = await api.resources.replace(clusterId, text);
+      const stored = await api.resources.replace(clusterId, yaml);
       // The reply of a Secret comes without its values; the editor needs them for the next save.
-      const yaml = toYaml(isSecret(ref) ? await loadObject(clusterId, ref) : stored);
-      setBase(yaml);
-      setText(yaml);
+      const reloaded = toYaml(isSecret(ref) ? await loadObject(clusterId, ref) : stored);
+      setBase(reloaded);
+      setText(reloaded);
       setSaveError(null);
+      setPreview(null);
       setSaved(true);
     } catch (err) {
       setSaveError(toApiError(err));
@@ -118,20 +153,45 @@ export function EditTab({ tab }: DockTabProps) {
   return (
     <div className="editor-tab">
       <div className="editor-tab__toolbar">
-        <Button
-          variant="primary"
-          disabled={phase !== "ready" || loadError !== null}
-          onClick={() => void save()}
-        >
-          {phase === "saving" ? t("actions:editor.saving") : t("actions:editor.save")}
-        </Button>
-        <Button disabled={phase !== "ready"} onClick={reload}>
-          {t("actions:editor.reload")}
-        </Button>
+        {preview ? (
+          <>
+            <Button variant="primary" disabled={phase !== "ready"} onClick={() => void save(preview.text)}>
+              {phase === "saving" ? t("actions:editor.saving") : t("actions:editor.save")}
+            </Button>
+            <Button disabled={phase !== "ready"} onClick={() => setPreview(null)}>
+              {t("safeapply:actions.back")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="primary"
+              disabled={phase !== "ready" || loadError !== null}
+              onClick={() => void (alwaysPreview ? runPreview() : save(text))}
+            >
+              {phase === "saving"
+                ? t("actions:editor.saving")
+                : phase === "checking"
+                  ? t("safeapply:actions.checking")
+                  : alwaysPreview
+                    ? t("safeapply:actions.previewAndSave")
+                    : t("actions:editor.save")}
+            </Button>
+            {!alwaysPreview && (
+              <Button disabled={phase !== "ready" || loadError !== null} onClick={() => void runPreview()}>
+                {phase === "checking" ? t("safeapply:actions.checking") : t("safeapply:actions.preview")}
+              </Button>
+            )}
+            <Button disabled={phase !== "ready"} onClick={reload}>
+              {t("actions:editor.reload")}
+            </Button>
+          </>
+        )}
         <span className="editor-tab__status" aria-live="polite">
           {phase === "loading" && t("actions:editor.loading")}
-          {phase !== "loading" && dirty && t("actions:editor.unsaved")}
-          {phase !== "loading" && !dirty && saved && t("actions:editor.saved")}
+          {phase !== "loading" && preview && t("safeapply:actions.ready")}
+          {phase !== "loading" && !preview && dirty && t("actions:editor.unsaved")}
+          {phase !== "loading" && !preview && !dirty && saved && t("actions:editor.saved")}
         </span>
       </div>
       {loadError && <ErrorState error={loadError} onRetry={() => void load()} />}
@@ -149,8 +209,12 @@ export function EditTab({ tab }: DockTabProps) {
         ) : (
           <ErrorState error={saveError} />
         ))}
+      {preview && <ChangePreview result={preview.result} />}
       {loaded && !loadError && (
-        <YamlEditor value={text} onChange={onChange} label={t("actions:editor.editorLabel", names)} />
+        // Kept while the preview is shown, so the undo history survives "Back to editing".
+        <div className="editor-tab__editor" hidden={preview !== null}>
+          <YamlEditor value={text} onChange={onChange} label={t("actions:editor.editorLabel", names)} />
+        </div>
       )}
     </div>
   );

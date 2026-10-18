@@ -1,0 +1,187 @@
+{
+  "sidebar": "Security",
+  "title": "Security posture",
+  "intro": "The Pod Security Standards (Baseline and Restricted, as of Kubernetes v1.37) checked on the pod templates of workloads and on Pods that no workload owns, with hardening hints that are not part of the standard. Nothing is changed in the cluster: a suggested fix is copied as YAML, a strategic merge patch in which containers and volumes are matched by name.",
+  "loading": "Checking workloads…",
+  "chooseNamespace": "Choose namespaces",
+  "chooseNamespaceText": "This page checks the namespaces chosen in the namespace filter. Choose one or more namespaces to start.",
+  "firstNamespaces_one": "Only the first {{count}} chosen namespace is checked.",
+  "firstNamespaces_other": "Only the first {{count}} chosen namespaces are checked.",
+  "watchFailed": "Could not watch {{kind}}",
+  "truncated_one": "There are too many workloads: only the first {{count}} is listed.",
+  "truncated_other": "There are too many workloads: only the first {{count}} are listed.",
+  "empty": "No workloads in this namespace.",
+  "emptyFiltered": "No workloads match the filters in this namespace.",
+  "filter": {
+    "level": "Show",
+    "levels": {
+      "all": "All workloads",
+      "baseline": "Baseline violations",
+      "restricted": "Restricted violations",
+      "hint": "Hardening hints"
+    },
+    "severity": "Image vulnerabilities",
+    "severities": {
+      "any": "Any or none",
+      "CRITICAL": "Critical",
+      "HIGH": "High and above",
+      "MEDIUM": "Medium and above",
+      "LOW": "Low and above"
+    }
+  },
+  "levels": {
+    "baseline": "Baseline",
+    "restricted": "Restricted",
+    "hint": "Hint"
+  },
+  "counts": {
+    "baseline_one": "{{count}} Baseline violation",
+    "baseline_other": "{{count}} Baseline violations",
+    "restricted_one": "{{count}} Restricted violation",
+    "restricted_other": "{{count}} Restricted violations",
+    "hint_one": "{{count}} hint",
+    "hint_other": "{{count}} hints"
+  },
+  "posture": {
+    "restricted": "Meets Restricted",
+    "baseline": "Meets Baseline",
+    "privileged": "Violates Baseline"
+  },
+  "postureText": {
+    "restricted": "Meets the Restricted standard.",
+    "baseline": "Meets the Baseline standard, but not Restricted.",
+    "privileged": "Does not meet the Baseline standard."
+  },
+  "compare": {
+    "noLabels": "No Pod Security labels: the cluster's default level applies here.",
+    "unknownLabels": "Pod Security labels unknown: the Namespace could not be read.",
+    "strictest": {
+      "restricted": "Every workload here meets Restricted.",
+      "baseline": "Every workload here meets Baseline; some do not meet Restricted.",
+      "privileged": "Some workloads here do not meet Baseline."
+    },
+    "unknownLevel": "{{label}}: Pod Security Admission does not know this level.",
+    "enforce_one": "{{label}}: {{count}} workload would be rejected.",
+    "enforce_other": "{{label}}: {{count}} workloads would be rejected.",
+    "audit_one": "{{label}}: {{count}} workload would be recorded in the audit log.",
+    "audit_other": "{{label}}: {{count}} workloads would be recorded in the audit log.",
+    "warn_one": "{{label}}: {{count}} workload would get a warning.",
+    "warn_other": "{{label}}: {{count}} workloads would get a warning.",
+    "enforceNone": "{{label}}: every workload is allowed.",
+    "auditNone": "{{label}}: no workload would be recorded in the audit log.",
+    "warnNone": "{{label}}: no workload would get a warning."
+  },
+  "row": {
+    "expand": "Show the findings of {{name}}",
+    "collapse": "Hide the findings of {{name}}"
+  },
+  "details": {
+    "title": "Security",
+    "ownedPod": "This Pod is checked as it runs; the template to fix is in its owner {{kind}} {{name}}.",
+    "hints_one": "{{count}} hardening hint",
+    "hints_other": "{{count}} hardening hints",
+    "hintsNote": "Hints are good practice, not part of the Pod Security Standards: they are not violations.",
+    "noFindings": "No findings: this meets the Restricted standard, and no hardening hint applies."
+  },
+  "finding": {
+    "container": "Container {{name}}",
+    "value": "Value: {{value}}",
+    "unset": "Not set",
+    "admitted": "Added at admission: seen in Pod {{pod}}, not in the template. Fix it where it is added (a webhook or a policy).",
+    "fix": "Suggested fix",
+    "copy": "Copy the fix",
+    "copied": "Copied",
+    "copyFailed": "Could not copy"
+  },
+  "checks": {
+    "hostProcess": "HostProcess container",
+    "hostNamespaces": "Host namespace",
+    "privileged": "Privileged container",
+    "capabilities": "Capability outside the Baseline set",
+    "hostPathVolumes": "hostPath volume",
+    "hostPorts": "Host port",
+    "hostProbes": "Host in a probe or lifecycle hook",
+    "appArmor": "AppArmor profile not allowed",
+    "seLinux": "SELinux option not allowed",
+    "procMount": "Unmasked /proc mount",
+    "seccomp": "Seccomp profile Unconfined",
+    "sysctls": "Unsafe sysctl",
+    "volumeTypes": "Volume type not allowed",
+    "privilegeEscalation": "Privilege escalation not disabled",
+    "runAsNonRoot": "Not required to run as non-root",
+    "runAsUser": "Runs as root (UID 0)",
+    "seccompRequired": "No seccomp profile set",
+    "capabilitiesRestricted": "Capabilities not limited to NET_BIND_SERVICE after dropping ALL",
+    "readOnlyRootFilesystem": "Writable root filesystem",
+    "resources": "Missing requests or limits",
+    "latestTag": "Image without a pinned version",
+    "serviceAccountToken": "Service account token mounted"
+  },
+  "severity": {
+    "CRITICAL": "Critical",
+    "HIGH": "High",
+    "MEDIUM": "Medium",
+    "LOW": "Low",
+    "UNKNOWN": "Unknown"
+  },
+  "trivy": {
+    "sidebar": {
+      "vulnerabilityReports": "Vulnerability Reports",
+      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
+      "configAuditReports": "Config Audit Reports",
+      "clusterConfigAuditReports": "Cluster Config Audit Reports",
+      "exposedSecretReports": "Exposed Secret Reports",
+      "rbacAssessmentReports": "RBAC Assessment Reports",
+      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
+      "infraAssessmentReports": "Infra Assessment Reports",
+      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
+      "clusterComplianceReports": "Cluster Compliance Reports",
+      "sbomReports": "SBOM Reports",
+      "clusterSbomReports": "Cluster SBOM Reports"
+    },
+    "columns": {
+      "resource": "Resource",
+      "container": "Container",
+      "image": "Image",
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "title": "Title",
+      "pass": "Passed",
+      "fail": "Failed",
+      "components": "Components"
+    },
+    "table": {
+      "severity": "Severity",
+      "id": "ID",
+      "package": "Package",
+      "installed": "Installed",
+      "fixed": "Fixed in",
+      "rule": "Rule",
+      "title": "Title",
+      "target": "Target",
+      "control": "Control",
+      "failed": "Failed"
+    },
+    "section": "Image scans (Trivy)",
+    "reportTitle": "Report",
+    "scanned": "Scanned object:",
+    "none": "Trivy Operator has no reports for this object yet.",
+    "watchFailed": "Could not read the Trivy reports.",
+    "openReport": "Open the report",
+    "configAudit": "Configuration audit",
+    "severityCount": "{{severity}}: {{count}}",
+    "fixable_one": "{{count}} vulnerability has a fixed version.",
+    "fixable_other": "{{count}} vulnerabilities have a fixed version.",
+    "topShown": "Listed: the {{shown}} most severe of {{total}}.",
+    "noFix": "No fix",
+    "noVulnerabilities": "No vulnerabilities found.",
+    "noFailed": "All checks passed.",
+    "noSecrets": "No exposed secrets found.",
+    "passFail": "Passed: {{pass}}, failed: {{fail}}",
+    "components": "Components: {{count}}",
+    "auditCount_one": "{{count}} critical or high audit finding",
+    "auditCount_other": "{{count}} critical or high audit findings"
+  }
+}

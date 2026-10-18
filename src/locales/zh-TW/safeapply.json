@@ -1,0 +1,54 @@
+{
+  "section": {
+    "title": "變更預覽",
+    "label": "套用前預覽變更",
+    "hint": "在編輯器中儲存、在「建立資源」中套用，以及 Helm 升級和安裝，都會先顯示 API 伺服器將會儲存的內容（伺服器端試執行）。只有在您確認後才會送出變更。",
+    "defaultOn": "此叢集的名稱包含「prod」或「production」，因此預設開啟預覽。",
+    "defaultOff": "預設僅對名稱包含「prod」或「production」的叢集開啟預覽。",
+    "useDefault": "使用預設值"
+  },
+  "actions": {
+    "preview": "預覽變更",
+    "checking": "正在檢查…",
+    "previewAndSave": "預覽並儲存…",
+    "previewAndApply": "預覽並套用…",
+    "back": "返回編輯",
+    "ready": "尚未變更任何內容。",
+    "required": "此叢集要求在套用前先預覽。",
+    "blocked": "請在套用前修正遭拒絕的文件。"
+  },
+  "diff": {
+    "title": "變更預覽",
+    "objects": "物件",
+    "live": "目前",
+    "after": "變更後",
+    "state": {
+      "create": "新增",
+      "update": "已變更",
+      "unchanged": "未變更",
+      "failed": "遭拒絕"
+    },
+    "created": "{{object}} 尚不存在：將會建立它。",
+    "unchanged": "API 伺服器將依原樣儲存 {{object}}。",
+    "refusedObject": "API 伺服器將拒絕 {{object}}",
+    "secretHidden": "不顯示 Secret 的值。",
+    "secretAdded": "新增的值：{{keys}}",
+    "secretChanged": "變更的值：{{keys}}",
+    "secretRemoved": "移除的值：{{keys}}",
+    "refused_other": "API 伺服器將拒絕 {{count}} 個物件。請在套用前修正文字：套用會在套用完之前的文件後，於第一個遭拒絕的文件處停止。",
+    "waitsForNamespace": "尚無法檢查 {{object}}：其 namespace {{namespace}} 由先前的文件建立。套用時會先建立該 namespace。"
+  },
+  "helm": {
+    "failed": "無法轉譯變更",
+    "current": "發行版本 {{release}} 目前",
+    "proposed": "發行版本 {{release}} 變更後",
+    "noRelease": "尚無此名稱的發行版本：所有物件都是新的。",
+    "same": "轉譯出的資訊清單與該發行版本的相同。",
+    "secretAdded": "{{object}}：新增的值：{{keys}}",
+    "secretChanged": "{{object}}：變更的值：{{keys}}",
+    "secretRemoved": "{{object}}：移除的值：{{keys}}",
+    "unreadable_other": "有 {{count}} 個文件無法讀取，未予顯示。",
+    "clientSide": "此 Helm 版本無法結合叢集進行轉譯（早於 3.13）：lookup 找不到任何內容，因此 chart 重複使用的 Secret 和其他值可能顯示為已變更。",
+    "noHooks": "Helm 掛鉤不在比較範圍內。"
+  }
+}

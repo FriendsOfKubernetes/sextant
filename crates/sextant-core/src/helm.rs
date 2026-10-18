@@ -26,6 +26,7 @@ use crate::kubeconfig::ClusterId;
 
 #[cfg(feature = "desktop")]
 pub mod cli;
+pub mod diff;
 
 /// The Secret type Helm gives release revisions.
 pub const RELEASE_SECRET_TYPE: &str = "helm.sh/release.v1";
@@ -301,6 +302,10 @@ pub(crate) fn write_quoted(s: &str, out: &mut String) {
     out.push('"');
 }
 
+/// The most a release Secret's data may unpack to: a Secret holds at most about 1 MiB, which gzip can turn into
+/// gigabytes; real releases are far below this.
+pub const MAX_RELEASE_BYTES: usize = 32 << 20;
+
 /// Decodes `data.release` of a release Secret (the bytes Kubernetes returns after its own base64): base64 text
 /// of gzipped JSON. Plain (not gzipped) JSON is accepted too.
 pub fn decode_release(data: &[u8]) -> CoreResult<StoredRelease> {
@@ -314,9 +319,17 @@ pub fn decode_release(data: &[u8]) -> CoreResult<StoredRelease> {
         .map_err(|e| invalid(format!("the release is not base64: {e}")))?;
     let json = if bytes.starts_with(&[0x1f, 0x8b]) {
         let mut out = Vec::new();
+        // One byte more than allowed tells a release at the limit from a larger one (a gzip bomb).
         flate2::read::GzDecoder::new(bytes.as_slice())
+            .take(MAX_RELEASE_BYTES as u64 + 1)
             .read_to_end(&mut out)
             .map_err(|e| invalid(format!("the release is not valid gzip: {e}")))?;
+        if out.len() > MAX_RELEASE_BYTES {
+            return Err(invalid(format!(
+                "the release unpacks to more than {} MiB",
+                MAX_RELEASE_BYTES >> 20
+            )));
+        }
         out
     } else {
         bytes
@@ -360,7 +373,7 @@ fn is_release_secret(secret: &Secret) -> bool {
     secret.type_.as_deref() == Some(RELEASE_SECRET_TYPE)
 }
 
-fn label<'a>(meta: &'a ObjectMeta, key: &str) -> Option<&'a str> {
+pub(crate) fn label<'a>(meta: &'a ObjectMeta, key: &str) -> Option<&'a str> {
     meta.labels
         .as_ref()
         .and_then(|l| l.get(key))
@@ -382,7 +395,7 @@ async fn list_secrets(
 
 /// The metadata of every release Secret in `namespace` (`None` = all namespaces), without the release data: one
 /// request.
-async fn list_revision_metadata(
+pub(crate) async fn list_revision_metadata(
     client: &kube::Client,
     namespace: Option<&str>,
 ) -> CoreResult<Vec<ObjectMeta>> {
@@ -428,7 +441,7 @@ async fn get_release_secret(api: &Api<Secret>, name: &str) -> CoreResult<Option<
 
 /// The release and revision a release Secret holds: its `name` and `version` labels, else its name
 /// `sh.helm.release.v1.<release>.v<revision>`.
-fn release_of(meta: &ObjectMeta) -> Option<(String, i32)> {
+pub(crate) fn release_of(meta: &ObjectMeta) -> Option<(String, i32)> {
     let from_name = meta
         .name
         .as_deref()
@@ -823,6 +836,28 @@ mod tests {
         base64::engine::general_purpose::STANDARD
             .encode(bytes)
             .into_bytes()
+    }
+
+    #[test]
+    fn a_release_that_unpacks_past_the_limit_is_refused_without_unpacking_it_all() {
+        // A few dozen KiB of gzip that would unpack to MAX_RELEASE_BYTES + 1 MiB of spaces.
+        let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
+        let chunk = vec![b' '; 1 << 20];
+        for _ in 0..=(MAX_RELEASE_BYTES >> 20) {
+            enc.write_all(&chunk).unwrap();
+        }
+        let bomb = enc.finish().unwrap();
+        assert!(bomb.len() < 1 << 20, "{}", bomb.len());
+        let data = base64::engine::general_purpose::STANDARD
+            .encode(bomb)
+            .into_bytes();
+        let err = decode_release(&data).unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
+        assert!(
+            err.message.contains("unpacks to more than 32 MiB"),
+            "{}",
+            err.message
+        );
     }
 
     #[test]

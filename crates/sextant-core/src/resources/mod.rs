@@ -3,6 +3,7 @@
 //! Types live here; `watch.rs` / `get.rs` (watch and read), `list.rs` (one-shot lists and events) and `mutate.rs`
 //! (changes) hold the functions; `rollouts.rs` the rollout history and `kubectl rollout undo`.
 
+mod dry_run;
 mod get;
 mod list;
 mod mutate;
@@ -16,6 +17,12 @@ use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
+pub use dry_run::{
+    DryRunChange, DryRunMode, DryRunObject, DryRunResult, FieldChange, SecretKeyChanges,
+    dry_run_patch, dry_run_planned, dry_run_yaml, field_changes,
+};
+pub(crate) use dry_run::{secret_key_changes, secret_values};
+pub(crate) use get::hide_secret_values;
 pub use get::{get, get_full, secret_value};
 pub use list::{ListPage, events, list, resolve};
 pub use mutate::{
@@ -23,6 +30,7 @@ pub use mutate::{
     drain_preview, parse_documents, patch, plan_apply, replace_yaml, restart, scale,
     suspend_cronjob, trigger_cronjob,
 };
+pub use mutate::{IMMUTABLE_SECRET, SecretWrites, apply_planned_with, patch_with};
 pub use watch::watch;
 
 /// Group/version/kind. `group` is `""` for the core API group.

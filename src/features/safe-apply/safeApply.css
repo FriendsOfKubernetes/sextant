@@ -1,0 +1,108 @@
+/* The dry-run preview of a save, an apply or a Helm change (#141). */
+.safe-apply-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* In a dock tab the preview takes the editor's place and scrolls by itself. */
+.editor-tab > .safe-apply-preview {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.safe-apply-preview__warning {
+  margin: 0;
+  color: var(--color-warning, #b7791f);
+  font-size: 13px;
+}
+
+.safe-apply-preview__body {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.safe-apply-preview__list {
+  flex: none;
+  width: 240px;
+  max-width: 35%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.safe-apply-preview__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.safe-apply-preview__item[aria-current="true"] {
+  border-color: var(--color-border);
+  background: var(--color-hover, rgba(127, 127, 127, 0.12));
+}
+
+.safe-apply-preview__name {
+  overflow-wrap: anywhere;
+}
+
+.safe-apply-preview__object {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.safe-apply-preview__notes p {
+  margin: 0 0 2px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.safe-apply-helm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.safe-apply-helm__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.safe-apply-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.safe-apply-section__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.safe-apply-section__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

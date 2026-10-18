@@ -1,0 +1,56 @@
+{
+  "section": {
+    "title": "Değişiklik önizlemesi",
+    "label": "Uygulamadan önce değişiklikleri göster",
+    "hint": "Düzenleyicide kaydetme, “Kaynak oluştur” içinde uygulama ve Helm yükseltmeleri ile yüklemeleri önce API sunucusunun neyi saklayacağını gösterir (sunucu tarafında deneme çalıştırması). Değişiklik yalnızca onayladığınızda gönderilir.",
+    "defaultOn": "Bu kümenin adı “prod” veya “production” içerdiğinden önizleme varsayılan olarak açıktır.",
+    "defaultOff": "Önizleme varsayılan olarak yalnızca adı “prod” veya “production” içeren kümelerde açıktır.",
+    "useDefault": "Varsayılanı kullan"
+  },
+  "actions": {
+    "preview": "Değişiklikleri göster",
+    "checking": "Denetleniyor…",
+    "previewAndSave": "Önizle ve kaydet…",
+    "previewAndApply": "Önizle ve uygula…",
+    "back": "Düzenlemeye dön",
+    "ready": "Henüz hiçbir şey değiştirilmedi.",
+    "required": "Bu küme uygulamadan önce önizleme istiyor.",
+    "blocked": "Uygulamadan önce reddedilen belgeleri düzeltin."
+  },
+  "diff": {
+    "title": "Değişiklik önizlemesi",
+    "objects": "Nesneler",
+    "live": "Şu an",
+    "after": "Değişiklikten sonra",
+    "state": {
+      "create": "Yeni",
+      "update": "Değişti",
+      "unchanged": "Değişmedi",
+      "failed": "Reddedildi"
+    },
+    "created": "{{object}} henüz yok: oluşturulacak.",
+    "unchanged": "API sunucusu {{object}} nesnesini olduğu gibi saklayacak.",
+    "refusedObject": "API sunucusu {{object}} nesnesini reddedecek",
+    "secretHidden": "Secret değerleri gösterilmez.",
+    "secretAdded": "Eklenen değerler: {{keys}}",
+    "secretChanged": "Değişen değerler: {{keys}}",
+    "secretRemoved": "Kaldırılan değerler: {{keys}}",
+    "refused_one": "API sunucusu {{count}} nesneyi reddedecek. Uygulamadan önce metni düzeltin: uygulama, öncekileri uyguladıktan sonra reddedilen ilk belgede durur.",
+    "refused_other": "API sunucusu {{count}} nesneyi reddedecek. Uygulamadan önce metni düzeltin: uygulama, öncekileri uyguladıktan sonra reddedilen ilk belgede durur.",
+    "waitsForNamespace": "{{object}} henüz denetlenemedi: {{namespace}} namespace'i önceki bir belge tarafından oluşturuluyor. Uygulama, önce namespace'i oluşturur."
+  },
+  "helm": {
+    "failed": "Değişiklikler oluşturulamadı",
+    "current": "{{release}} yayını şu an",
+    "proposed": "{{release}} yayını değişiklikten sonra",
+    "noRelease": "Bu adla henüz bir yayın yok: tüm nesneler yeni.",
+    "same": "Oluşturulan manifest, yayınınkiyle aynı.",
+    "secretAdded": "{{object}}: eklenen değerler: {{keys}}",
+    "secretChanged": "{{object}}: değişen değerler: {{keys}}",
+    "secretRemoved": "{{object}}: kaldırılan değerler: {{keys}}",
+    "unreadable_one": "{{count}} belge okunamadı ve gösterilmiyor.",
+    "unreadable_other": "{{count}} belge okunamadı ve gösterilmiyor.",
+    "clientSide": "Bu Helm sürümü kümeye başvurarak oluşturamaz (3.13'ten eski): lookup hiçbir şey bulamadı, bu yüzden bir chart'ın yeniden kullandığı Secret'lar ve diğer değerler değişmiş görünebilir.",
+    "noHooks": "Helm hook'ları karşılaştırmaya dahil değildir."
+  }
+}

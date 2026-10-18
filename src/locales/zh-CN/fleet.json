@@ -1,0 +1,80 @@
+{
+  "rail": "所有集群",
+  "title": "所有集群",
+  "intro": "所选集群的健康状况、工作负载和 Warning 事件。只有在您要求时才会连接集群。",
+  "noClusters": "在 kubeconfig 文件中未找到集群。",
+  "picker": {
+    "label": "要显示的集群",
+    "none": "请选择要显示的集群。",
+    "limit_other": "一次最多可显示 {{count}} 个集群。请先取消一个，再添加其他集群。",
+    "connectAll": "连接所有选中的集群",
+    "connectHint": "连接可能会通过 exec 插件或云 CLI 启动登录。"
+  },
+  "card": {
+    "open": "打开 {{cluster}}",
+    "connect": "连接",
+    "reconnect": "重新连接",
+    "connecting": "正在连接…",
+    "connectingFor": "正在连接… {{seconds}} 秒",
+    "waiting": "正在等待连接…",
+    "disconnected": "未连接。",
+    "version": "版本",
+    "versionHint": "节点的 kubelet 版本",
+    "versionRange": "{{lowest}} 至 {{highest}}",
+    "nodes": "节点",
+    "nodesFailed": "无法列出节点",
+    "noMetrics": "无指标",
+    "usage": "{{percent}}（{{used}}）",
+    "problems": "问题",
+    "noProblems": "没有问题",
+    "warnings_other": "{{count}} 个 Warning 事件",
+    "someNotWatched_other": "有 {{count}} 种对象无法监视。",
+    "tools": "已安装的工具",
+    "toolOk": "没有问题"
+  },
+  "notConnected_other": "有 {{count}} 个选中的集群未连接，未列出其对象。",
+  "noneConnected": "选中的集群均未连接。",
+  "tabs": {
+    "label": "所有集群中的对象",
+    "pods": "Pods",
+    "workloads": "工作负载",
+    "events": "Warning 事件",
+    "find": "按名称查找"
+  },
+  "filters": {
+    "cluster": "集群",
+    "allClusters": "所有选中的集群",
+    "namespace": "Namespace",
+    "allNamespaces": "所有 namespace"
+  },
+  "columns": {
+    "cluster": "集群",
+    "namespace": "Namespace",
+    "name": "名称",
+    "kind": "Kind",
+    "status": "状态",
+    "ready": "就绪",
+    "restarts": "重启次数",
+    "node": "节点",
+    "age": "存在时长",
+    "object": "对象",
+    "reason": "原因",
+    "message": "消息"
+  },
+  "openIn": "在 {{cluster}} 中打开 {{kind}} {{name}}",
+  "objectName": "{{kind}} {{name}}",
+  "loadingIn": "正在加载 {{cluster}} 的对象…",
+  "listFailed": "无法列出 {{cluster}} 中的 {{kind}}",
+  "truncated": "{{cluster}} 的对象多于概览保留的数量，部分对象未包含。",
+  "more_other": "{{cluster}} 中还有 {{count}} 个对象未列出。请缩小筛选范围以查看。",
+  "empty": "没有可显示的内容。",
+  "noWarnings": "没有 Warning 事件。",
+  "find": {
+    "label": "名称",
+    "placeholder": "web，或种类加名称：cm web",
+    "hint": "按名称搜索：{{kinds}}。以种类开头可搜索其他种类，例如“cm web”。",
+    "searching": "正在搜索…",
+    "none": "未找到任何内容。",
+    "noKinds": "无法读取此集群提供的种类。"
+  }
+}

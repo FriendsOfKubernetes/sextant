@@ -122,6 +122,8 @@ pub struct CallRecord {
     pub passed: bool,
     /// A passed check was for more than reading (Read, Logs): a stop from then on may leave a change half done.
     pub changes: bool,
+    /// The call was a dry run ([`Guard::check_dry_run`]): journaled as `<tool> (dry run)`.
+    pub dry_run: bool,
 }
 
 /// Checks one call. Made per call with the client's name; [`Guard::record`] gives what it learned.
@@ -225,24 +227,7 @@ impl Guard {
     ) -> Result<(), Refusal> {
         let target = clip(&summary.target);
         self.lock().target = target.clone();
-        let access = self.access(cluster)?;
-        let mut confirm = false;
-        for (namespace, kind, action) in requirements {
-            let namespace = self.effective_namespace(cluster, namespace, kind).await;
-            match access::decide(&access, namespace.as_deref(), kind, *action) {
-                Decision::Allowed { confirm: ask } => confirm |= ask,
-                Decision::Denied => {
-                    self.decide(AuditDecision::Denied);
-                    return Err(Refusal::Denied {
-                        action: *action,
-                        object: object(summary, namespace.as_deref(), kind),
-                        cluster: cluster.name.clone(),
-                    });
-                }
-            }
-        }
-        // The kind lookup may have waited: the server may have stopped meanwhile.
-        self.running()?;
+        let confirm = self.decide_all(cluster, requirements, summary).await?;
         let changes = requirements
             .iter()
             .any(|(_, _, action)| !reads_only(*action));
@@ -296,6 +281,54 @@ impl Guard {
                 })
             }
         }
+    }
+
+    /// The check of a dry run (`dryRun: true` of `apply_yaml` and `patch_resource`, #141): the same requirements as
+    /// the real call and the same rules, but never a question in the window — nothing is changed, so a rule that asks
+    /// before the change still lets its dry run through. The journal names the call as a dry run.
+    pub async fn check_dry_run(
+        &self,
+        cluster: &ClusterTarget,
+        requirements: &[Requirement],
+        summary: &CallSummary,
+    ) -> Result<(), Refusal> {
+        {
+            let mut record = self.lock();
+            record.target = clip(&summary.target);
+            record.dry_run = true;
+        }
+        self.decide_all(cluster, requirements, summary).await?;
+        // Only reads the cluster: a stop from now on leaves nothing half done.
+        self.pass(false);
+        Ok(())
+    }
+
+    /// Checks every requirement against fresh rules; whether any covering rule asks the user. A refusal is journaled.
+    async fn decide_all(
+        &self,
+        cluster: &ClusterTarget,
+        requirements: &[Requirement],
+        summary: &CallSummary,
+    ) -> Result<bool, Refusal> {
+        let access = self.access(cluster)?;
+        let mut confirm = false;
+        for (namespace, kind, action) in requirements {
+            let namespace = self.effective_namespace(cluster, namespace, kind).await;
+            match access::decide(&access, namespace.as_deref(), kind, *action) {
+                Decision::Allowed { confirm: ask } => confirm |= ask,
+                Decision::Denied => {
+                    self.decide(AuditDecision::Denied);
+                    return Err(Refusal::Denied {
+                        action: *action,
+                        object: object(summary, namespace.as_deref(), kind),
+                        cluster: cluster.name.clone(),
+                    });
+                }
+            }
+        }
+        // The kind lookup may have waited: the server may have stopped meanwhile.
+        self.running()?;
+        Ok(confirm)
     }
 
     /// Whether the rules allow `action` without asking anything — for optional extras of a call (the values of a
@@ -633,6 +666,68 @@ mod tests {
                 .check(&cluster(), &[unknown], &target)
                 .await
                 .is_err()
+        );
+    }
+
+    /// A dry run is decided by the same rules as the change, but never waits for the window: a rule that asks before
+    /// the change lets its dry run through at once, and the journal names it as a dry run.
+    #[tokio::test]
+    async fn a_dry_run_follows_the_rules_without_asking_and_is_journaled_as_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = context_in(dir.path());
+        let modify = [need(Some("team-a"), "Pod", AccessAction::Modify)];
+        let target = summary("apply_yaml", "Pod team-a/web");
+
+        // Access off and no covering rule refuse a dry run like the change.
+        let g = guard(&ctx);
+        assert!(g.check_dry_run(&cluster(), &modify, &target).await.is_err());
+        assert_eq!(g.record().decision, Some(AuditDecision::Denied));
+        set_access(
+            &ctx,
+            &cluster(),
+            custom(vec![rule(&["team-b"], &[AccessAction::Modify], false)]),
+        );
+        let g = guard(&ctx);
+        let refused = g
+            .check_dry_run(&cluster(), &modify, &target)
+            .await
+            .unwrap_err();
+        assert!(matches!(refused, Refusal::Denied { .. }), "{refused}");
+        assert!(g.record().dry_run);
+
+        // A rule that asks first: the dry run passes without a question.
+        set_access(
+            &ctx,
+            &cluster(),
+            custom(vec![rule(&["team-a"], &[AccessAction::Modify], true)]),
+        );
+        let g = guard(&ctx);
+        let checked = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            g.check_dry_run(&cluster(), &modify, &target),
+        )
+        .await
+        .expect("a dry run waited for the window");
+        assert_eq!(checked, Ok(()));
+        assert_eq!(ctx.confirmations.pending(), 0);
+        let record = g.record();
+        assert_eq!(record.decision, Some(AuditDecision::Allowed));
+        assert!(record.dry_run && record.passed && !record.changes);
+        assert_eq!(record.target, "Pod team-a/web");
+
+        // A stopped server refuses it.
+        let stopped = CancellationToken::new();
+        stopped.cancel();
+        let g = Guard::new(
+            Arc::clone(&ctx),
+            FakeKinds::standard(),
+            stopped,
+            "claude-code",
+            "apply_yaml",
+        );
+        assert_eq!(
+            g.check_dry_run(&cluster(), &modify, &target).await,
+            Err(Refusal::Stopped)
         );
     }
 

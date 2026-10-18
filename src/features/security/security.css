@@ -1,0 +1,256 @@
+/* Security posture: the page, the details section, findings with their fix, and Trivy report tables. */
+.sec-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.sec-page__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.sec-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.sec-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sec-select {
+  max-width: 100%;
+}
+
+.sec-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.sec-note--warning {
+  color: var(--color-warning);
+}
+
+.sec-muted {
+  color: var(--color-text-muted);
+}
+
+.sec-error,
+.sec-loading {
+  margin: 8px 0;
+}
+
+.sec-ns {
+  margin: 16px 0;
+}
+
+.sec-ns__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.sec-ns__name {
+  margin-right: 4px;
+}
+
+.sec-modes {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.sec-modes li {
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+}
+
+.sec-modes__bad {
+  color: var(--color-danger);
+}
+
+.sec-modes__warn {
+  color: var(--color-warning);
+}
+
+.sec-rows,
+.sec-findings,
+.sec-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sec-row {
+  border-top: 1px solid var(--color-border);
+  padding: 4px 0;
+}
+
+.sec-row__head,
+.sec-finding__head,
+.sec-report__head,
+.sec-report__counts,
+.sec-section__posture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.sec-row__object {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sec-row > .sec-findings {
+  margin: 4px 0 8px 36px;
+}
+
+.sec-finding,
+.sec-check {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--color-border);
+}
+
+.sec-finding[data-level="baseline"] {
+  border-left-color: var(--color-danger);
+}
+
+.sec-finding[data-level="restricted"] {
+  border-left-color: var(--color-warning);
+}
+
+.sec-finding__title {
+  font-weight: 600;
+}
+
+.sec-finding__container,
+.sec-finding__value {
+  color: var(--color-text-muted);
+}
+
+.sec-finding__field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 2px;
+}
+
+.sec-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.sec-fix {
+  margin-top: 4px;
+}
+
+.sec-fix > summary,
+.sec-hints > summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.sec-fix__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sec-fix__yaml {
+  margin: 4px 0;
+  padding: 6px 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--color-hover);
+  border-radius: 4px;
+}
+
+.sec-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sec-copy__state {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.sec-section {
+  margin: 12px 0;
+}
+
+.sec-section__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.sec-hints {
+  margin: 8px 0;
+}
+
+.sec-trivy {
+  margin-top: 12px;
+}
+
+.sec-trivy__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.sec-report {
+  margin: 8px 0 12px;
+}
+
+.sec-report__name {
+  font-weight: 600;
+}
+
+.sec-counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sec-remediation {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.sec-table-wrap {
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+.sec-table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.sec-table th,
+.sec-table td {
+  padding: 3px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.sec-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}

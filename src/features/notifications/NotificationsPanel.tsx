@@ -7,7 +7,7 @@ import { displayNameOf } from "../clusters/clusterSettings";
 import { useClusters } from "../clusters/hooks";
 import { useNow } from "../problems/hooks";
 import { NOTIFY_CATEGORIES } from "../problems/model";
-import { muteForHour, mutedNow, prefsOf, setCategory, setClusterMuted, setEnabled, unmute } from "./prefs";
+import { categoryOn, muteForHour, mutedNow, prefsOf, setCategory, setClusterMuted, setEnabled, unmute } from "./prefs";
 import { CertExpiryField } from "./CertExpiryField";
 import { formatTime } from "../../i18n";
 
@@ -52,7 +52,7 @@ export function NotificationsPanel({ settings, save }: { settings: AppSettings |
           {NOTIFY_CATEGORIES.map((category) => (
             <label key={category} className="settings__choice">
               <Checkbox
-                checked={!prefs?.disabledCategories.has(category)}
+                checked={prefs ? categoryOn(prefs, category) : false}
                 disabled={!on}
                 onChange={(e) => void save(setCategory(category, e.target.checked))}
               />

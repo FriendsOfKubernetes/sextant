@@ -51,6 +51,8 @@ export function AppShell() {
   const { setSidebarWidth, setDockHeight } = useAppStore.getState();
   useSlotsVersion();
   const Welcome = getSlot("welcome");
+  const homeView = useAppStore((s) => s.homeView);
+  const Home = getSlot("home");
 
   const sidebar = activeClusterId && (
     <nav
@@ -93,6 +95,8 @@ export function AppShell() {
           <main className="main" aria-label={t("common:layout.main")}>
             {activeClusterId ? (
               <MainView clusterId={activeClusterId} />
+            ) : homeView && Home ? (
+              <Home />
             ) : Welcome ? (
               <Welcome />
             ) : (
@@ -138,6 +142,8 @@ function NarrowMenu({ clusterId, children }: { clusterId: string | null; childre
   const { view } = useClusterView(clusterId);
 
   useEffect(() => setOpen(false), [clusterId, view]);
+  const homeView = useAppStore((s) => s.homeView);
+  useEffect(() => setOpen(false), [homeView]);
 
   useEffect(() => {
     if (!open) return;

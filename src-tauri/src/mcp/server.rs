@@ -173,7 +173,11 @@ impl SextantMcp {
             client,
             cluster_id: record.cluster.as_ref().map(|c| c.id.clone()),
             cluster_name: record.cluster.as_ref().map(|c| c.name.clone()),
-            tool: tool.to_owned(),
+            tool: if record.dry_run {
+                format!("{tool} {DRY_RUN_SUFFIX}")
+            } else {
+                tool.to_owned()
+            },
             target: record.target.clone(),
             // No decision: the call ended before any check (malformed arguments, an unknown tool or cluster, one that
             // could not be reached) or needed none (`list_clusters`, the agent's own port forwards), and is journaled
@@ -190,6 +194,9 @@ impl SextantMcp {
         result
     }
 }
+
+/// Follows the tool's name in the journal for a call made with `dryRun: true` (`apply_yaml (dry run)`).
+pub const DRY_RUN_SUFFIX: &str = "(dry run)";
 
 const STOPPED_AFTER_START: &str = "Sextant's MCP server stopped (turned off, restarted or closed) after this \
 call was allowed and had started: it may have run in full or in part. Check the cluster before repeating it.";

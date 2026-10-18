@@ -1,0 +1,54 @@
+{
+  "section": {
+    "title": "変更のプレビュー",
+    "label": "適用前に変更をプレビュー",
+    "hint": "エディターでの保存、「リソースを作成」での適用、Helm のアップグレードとインストールでは、まず API サーバーが保存する内容 (サーバー側のドライラン) が表示されます。変更は確認したときにだけ送信されます。",
+    "defaultOn": "このクラスターの名前には「prod」または「production」が含まれるため、プレビューは既定でオンです。",
+    "defaultOff": "プレビューは既定では、名前に「prod」または「production」を含むクラスターでのみオンです。",
+    "useDefault": "既定値を使用"
+  },
+  "actions": {
+    "preview": "変更をプレビュー",
+    "checking": "確認中…",
+    "previewAndSave": "プレビューして保存…",
+    "previewAndApply": "プレビューして適用…",
+    "back": "編集に戻る",
+    "ready": "まだ何も変更されていません。",
+    "required": "このクラスターでは適用前にプレビューが必要です。",
+    "blocked": "適用する前に、拒否されたドキュメントを修正してください。"
+  },
+  "diff": {
+    "title": "変更のプレビュー",
+    "objects": "オブジェクト",
+    "live": "現在",
+    "after": "変更後",
+    "state": {
+      "create": "新規",
+      "update": "変更あり",
+      "unchanged": "変更なし",
+      "failed": "拒否"
+    },
+    "created": "{{object}} はまだ存在しないため、作成されます。",
+    "unchanged": "API サーバーは {{object}} をそのまま保存します。",
+    "refusedObject": "API サーバーは {{object}} を拒否します",
+    "secretHidden": "Secret の値は表示されません。",
+    "secretAdded": "追加される値: {{keys}}",
+    "secretChanged": "変更される値: {{keys}}",
+    "secretRemoved": "削除される値: {{keys}}",
+    "refused_other": "API サーバーは {{count}} 個のオブジェクトを拒否します。適用する前にテキストを修正してください。適用は、それより前のドキュメントを適用したうえで、最初に拒否されたドキュメントで止まります。",
+    "waitsForNamespace": "{{object}} はまだ確認できません。その namespace {{namespace}} は前のドキュメントで作成されます。適用時には namespace が先に作成されます。"
+  },
+  "helm": {
+    "failed": "変更をレンダリングできませんでした",
+    "current": "リリース {{release}} (現在)",
+    "proposed": "リリース {{release}} (変更後)",
+    "noRelease": "この名前のリリースはまだありません。すべてのオブジェクトが新規です。",
+    "same": "レンダリングされたマニフェストはリリースのものと同じです。",
+    "secretAdded": "{{object}}: 追加される値: {{keys}}",
+    "secretChanged": "{{object}}: 変更される値: {{keys}}",
+    "secretRemoved": "{{object}}: 削除される値: {{keys}}",
+    "unreadable_other": "{{count}} 個のドキュメントを読み取れなかったため、表示していません。",
+    "clientSide": "この Helm はクラスターを参照してレンダリングできません (3.13 より古いバージョン)。lookup は何も見つけられないため、チャートが再利用する Secret などの値が変更されたように見える場合があります。",
+    "noHooks": "Helm のフックは比較の対象外です。"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "section": {
+    "title": "Änderungsvorschau",
+    "label": "Änderungen vor dem Anwenden anzeigen",
+    "hint": "Speichern im Editor, Anwenden in „Ressource erstellen“ sowie Helm-Upgrades und -Installationen zeigen zuerst, was der API-Server speichern würde (ein serverseitiger Probelauf). Die Änderung wird erst gesendet, wenn Sie sie bestätigen.",
+    "defaultOn": "Der Name dieses Clusters enthält „prod“ oder „production“, daher ist die Vorschau standardmäßig aktiv.",
+    "defaultOff": "Standardmäßig ist die Vorschau nur für Cluster aktiv, deren Name „prod“ oder „production“ enthält.",
+    "useDefault": "Standard verwenden"
+  },
+  "actions": {
+    "preview": "Änderungen anzeigen",
+    "checking": "Wird geprüft…",
+    "previewAndSave": "Prüfen und speichern…",
+    "previewAndApply": "Prüfen und anwenden…",
+    "back": "Zurück zum Bearbeiten",
+    "ready": "Noch wurde nichts geändert.",
+    "required": "Dieser Cluster verlangt vor dem Anwenden eine Vorschau.",
+    "blocked": "Korrigieren Sie die abgelehnten Dokumente vor dem Anwenden."
+  },
+  "diff": {
+    "title": "Änderungsvorschau",
+    "objects": "Objekte",
+    "live": "Aktuell",
+    "after": "Nach der Änderung",
+    "state": {
+      "create": "Neu",
+      "update": "Geändert",
+      "unchanged": "Unverändert",
+      "failed": "Abgelehnt"
+    },
+    "created": "{{object}} existiert noch nicht und würde erstellt.",
+    "unchanged": "Der API-Server würde {{object}} unverändert speichern.",
+    "refusedObject": "Der API-Server würde {{object}} ablehnen",
+    "secretHidden": "Secret-Werte werden nicht angezeigt.",
+    "secretAdded": "Hinzugefügte Werte: {{keys}}",
+    "secretChanged": "Geänderte Werte: {{keys}}",
+    "secretRemoved": "Entfernte Werte: {{keys}}",
+    "refused_one": "Der API-Server würde {{count}} Objekt ablehnen. Korrigieren Sie den Text vor dem Anwenden: Das Anwenden stoppt beim ersten abgelehnten Dokument, nachdem die vorherigen angewendet wurden.",
+    "refused_other": "Der API-Server würde {{count}} Objekte ablehnen. Korrigieren Sie den Text vor dem Anwenden: Das Anwenden stoppt beim ersten abgelehnten Dokument, nachdem die vorherigen angewendet wurden.",
+    "waitsForNamespace": "{{object}} konnte noch nicht geprüft werden: Sein Namespace {{namespace}} wird von einem früheren Dokument erstellt. Beim Anwenden wird der Namespace zuerst erstellt."
+  },
+  "helm": {
+    "failed": "Die Änderungen konnten nicht gerendert werden",
+    "current": "Release {{release}} jetzt",
+    "proposed": "Release {{release}} nach der Änderung",
+    "noRelease": "Es gibt noch kein Release mit diesem Namen: Alle Objekte sind neu.",
+    "same": "Das gerenderte Manifest entspricht dem des Releases.",
+    "secretAdded": "{{object}}: hinzugefügte Werte: {{keys}}",
+    "secretChanged": "{{object}}: geänderte Werte: {{keys}}",
+    "secretRemoved": "{{object}}: entfernte Werte: {{keys}}",
+    "unreadable_one": "{{count}} Dokument konnte nicht gelesen werden und wird nicht angezeigt.",
+    "unreadable_other": "{{count}} Dokumente konnten nicht gelesen werden und werden nicht angezeigt.",
+    "clientSide": "Dieses Helm kann nicht gegen den Cluster rendern (es ist älter als 3.13): lookup fand nichts, daher können Secrets und andere Werte, die ein Chart wiederverwendet, als geändert erscheinen.",
+    "noHooks": "Helm-Hooks sind nicht Teil des Vergleichs."
+  }
+}

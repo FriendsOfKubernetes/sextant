@@ -8,7 +8,7 @@ use std::future::Future;
 
 use futures::{Stream, StreamExt};
 use sextant_core::error::with_timeout;
-use sextant_core::resources::{self, WatchUpdate};
+use sextant_core::resources::{self, DryRunMode, DryRunResult, WatchUpdate};
 use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef, WatchSpec};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
@@ -187,6 +187,23 @@ pub async fn resource_apply(
     // Not limited as a whole: each document is one request, limited in the core (`resources::STEP_TIMEOUT`), and a
     // `timeout` error names what was already applied and what was not sent.
     resources::apply_yaml(&state.clusters, &cluster_id, &yaml).await
+}
+
+/// What `resource_replace` (`mode` `replace`, limited to [`CHANGE_TIMEOUT`]) or `resource_apply` (`apply`, each
+/// document limited in the core) would do, sent with `dryRun=All`: the live object and what the API server would
+/// store, Secrets without their values. Changes nothing, so it asks nothing (#141).
+#[tauri::command]
+pub async fn resource_dry_run(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    yaml: String,
+    mode: DryRunMode,
+) -> Result<DryRunResult, CoreError> {
+    let run = resources::dry_run_yaml(&state.clusters, &cluster_id, &yaml, mode);
+    match mode {
+        DryRunMode::Replace => with_timeout(CHANGE_TIMEOUT, "the dry run", run).await,
+        DryRunMode::Apply => run.await,
+    }
 }
 
 #[tauri::command]

@@ -23,6 +23,7 @@ import {
   policyHealth,
   routeHealth,
 } from "../gateway-api/model";
+import { evaluateObject, fieldName, judgedOnItsOwn } from "../security/pss";
 
 const { arr, get, num, str } = status;
 
@@ -37,12 +38,21 @@ export const PROBLEM_CATEGORIES = [
   "flux",
   "argocd",
   "gateway",
+  "security",
   "events",
 ] as const;
 export type ProblemCategory = (typeof PROBLEM_CATEGORIES)[number];
 
 /** The categories that notify: Warning events are shown on the screen only. */
 export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.filter((c) => c !== "events");
+
+/**
+ * Categories that are off until the user turns them on (`notifications.enabledCategories`, one setting for the
+ * problems screen, the sidebar counter and the notifications): security findings (#143) are lasting states of a
+ * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
+ * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
+ */
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security"];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
@@ -96,6 +106,11 @@ export interface Detected {
   /** A message Sextant writes: an i18n key under `problems:` and its values. */
   messageKey?: string;
   messageParams?: Record<string, string | number>;
+  /**
+   * Values of `messageKey` that are lists (field names): kept raw and joined when the text is shown
+   * (`messageText`), so the list separator follows the UI language at that time.
+   */
+  messageLists?: Record<string, string[]>;
   /** When the state began (RFC 3339), if the object says. */
   since?: string;
   /** The problem counts only this long after it began (or was first seen). */
@@ -151,6 +166,8 @@ export const DEPLOYMENT = k("apps", "v1", "Deployment");
 export const STATEFULSET = k("apps", "v1", "StatefulSet");
 export const DAEMONSET = k("apps", "v1", "DaemonSet");
 export const JOB = k("batch", "v1", "Job");
+export const CRONJOB = k("batch", "v1", "CronJob");
+export const REPLICASET = k("apps", "v1", "ReplicaSet");
 /** cert-manager's Certificate. */
 export const CERTIFICATE = k("cert-manager.io", "v1", "Certificate");
 
@@ -565,6 +582,39 @@ function gatewayProblems(obj: KubeObject, kind: KindRef): Detected[] {
   ];
 }
 
+// ---------- Security (Pod Security Standards) ----------
+
+/**
+ * Kinds judged for security findings: workloads by their pod template; Pods, ReplicaSets and Jobs unless a judged
+ * controller holds their template (`judgedOnItsOwn`: a Pod of an Argo Rollout's ReplicaSet is judged through that
+ * ReplicaSet, a static Pod itself).
+ */
+const SECURITY_KINDS = [DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB, POD];
+
+/**
+ * A workload or a bare pod that violates the Baseline Pod Security Standard (src/features/security/pss.ts): privileged
+ * containers, host namespaces, hostPath volumes and the like. Restricted findings and hardening hints are shown on the
+ * Security page, not here: most workloads have some, and the problems screen is for what needs attention.
+ */
+export function securityProblems(kind: KindRef, obj: KubeObject): Detected[] {
+  if (!SECURITY_KINDS.some((s) => same(kind, s))) return [];
+  if (!judgedOnItsOwn(kind.kind, status.controllerOf(obj)?.kind)) return [];
+  if (same(kind, POD) && obj.metadata?.deletionTimestamp) return [];
+  const baseline = evaluateObject(kind.kind, obj).filter((f) => f.level === "baseline");
+  if (baseline.length === 0) return [];
+  const fields = [...new Set(baseline.map(fieldName))];
+  return [
+    {
+      reason: "PodSecurityBaseline",
+      group: "security",
+      messageKey: "messages.securityBaseline",
+      messageParams: { count: baseline.length },
+      messageLists: { fields },
+      notify: true,
+    },
+  ];
+}
+
 /** The problems of one object of `kind` (the kind it was watched as). */
 export function detect(kind: KindRef, obj: KubeObject): Detected[] {
   switch (categoryOf(kind)) {
@@ -590,6 +640,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return argoProblems(obj);
     case "gateway":
       return gatewayProblems(obj, kind);
+    case "security":
+      return securityProblems(kind, obj);
     case undefined:
       return [];
   }
@@ -604,13 +656,20 @@ export function uidOfObject(obj: KubeObject): string {
  * The problems of `obj` with their keys and times. `before` — the object's problems from the previous update — keeps
  * when each was first seen, so a grace period runs from the first sighting, not from the last update.
  */
-export function resolve(kind: KindRef, obj: KubeObject, now: number, before: readonly Problem[] = []): Problem[] {
-  const category = categoryOf(kind);
+export function resolve(
+  kind: KindRef,
+  obj: KubeObject,
+  now: number,
+  before: readonly Problem[] = [],
+  /** The category of the source (`security` sources watch the same kinds as others); defaults to the kind's own. */
+  category: ProblemCategory | undefined = categoryOf(kind),
+): Problem[] {
   if (!category) return [];
   const uid = uidOfObject(obj);
   const self: ObjectRef = { kind, namespace: obj.metadata?.namespace ?? null, name: obj.metadata?.name ?? "" };
   const identity = ownerIdentity(kind, obj) ?? uid;
-  return detect(kind, obj).map(({ object, ...d }) => {
+  const found = category === "security" ? securityProblems(kind, obj) : detect(kind, obj);
+  return found.map(({ object, ...d }) => {
     const key = `${uid}|${d.reason}`;
     const previous = before.find((p) => p.key === key);
     const firstSeen = previous && previous.stamp === d.stamp ? previous.firstSeen : now;

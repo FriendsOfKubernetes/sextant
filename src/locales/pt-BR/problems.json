@@ -6,6 +6,7 @@
   "badge_other": "{{count}} problemas requerem atenção",
   "onlyNewSince": "Somente novos desde {{time}}",
   "markSeen": "Marcar todos como vistos",
+  "showSecurity": "Constatações de segurança",
   "total_one": "{{count}} problema",
   "total_many": "{{count}} problemas",
   "total_other": "{{count}} problemas",
@@ -25,6 +26,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Segurança",
     "events": "Eventos de aviso"
   },
   "messages": {
@@ -34,6 +36,9 @@
     "restarts_other": "O contêiner {{container}} foi reiniciado ({{count}} reinícios)",
     "replicas": "{{ready}} de {{desired}} réplicas prontas",
     "expires": "Expira em {{date}}",
-    "expired": "Expirou em {{date}}"
+    "expired": "Expirou em {{date}}",
+    "securityBaseline_one": "{{count}} violação do Pod Security Baseline: {{fields}}",
+    "securityBaseline_many": "{{count}} de violações do Pod Security Baseline: {{fields}}",
+    "securityBaseline_other": "{{count}} violações do Pod Security Baseline: {{fields}}"
   }
 }

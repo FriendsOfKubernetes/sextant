@@ -7,6 +7,7 @@
   "badge_other": "{{count}} проблеми потребують уваги",
   "onlyNewSince": "Лише нові з {{time}}",
   "markSeen": "Позначити всі як переглянуті",
+  "showSecurity": "Зауваження щодо безпеки",
   "total_one": "{{count}} проблема",
   "total_few": "{{count}} проблеми",
   "total_many": "{{count}} проблем",
@@ -27,6 +28,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Безпека",
     "events": "Події Warning"
   },
   "messages": {
@@ -37,6 +39,10 @@
     "restarts_other": "Контейнер {{container}} перезапускався ({{count}} перезапуску)",
     "replicas": "Готово реплік: {{ready}} з {{desired}}",
     "expires": "Спливає {{date}}",
-    "expired": "Сплив {{date}}"
+    "expired": "Сплив {{date}}",
+    "securityBaseline_one": "{{count}} порушення Pod Security рівня Baseline: {{fields}}",
+    "securityBaseline_few": "{{count}} порушення Pod Security рівня Baseline: {{fields}}",
+    "securityBaseline_many": "{{count}} порушень Pod Security рівня Baseline: {{fields}}",
+    "securityBaseline_other": "{{count}} порушення Pod Security рівня Baseline: {{fields}}"
   }
 }

@@ -7,6 +7,7 @@
   "badge_other": "{{count}} problemu wymaga uwagi",
   "onlyNewSince": "Tylko nowe od {{time}}",
   "markSeen": "Oznacz wszystkie jako przejrzane",
+  "showSecurity": "Ustalenia dotyczące bezpieczeństwa",
   "total_one": "{{count}} problem",
   "total_few": "{{count}} problemy",
   "total_many": "{{count}} problemów",
@@ -27,6 +28,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Bezpieczeństwo",
     "events": "Zdarzenia ostrzegawcze"
   },
   "messages": {
@@ -37,6 +39,10 @@
     "restarts_other": "Kontener {{container}} był restartowany ({{count}} restartu)",
     "replicas": "Gotowe repliki: {{ready}} z {{desired}}",
     "expires": "Wygasa {{date}}",
-    "expired": "Wygasł {{date}}"
+    "expired": "Wygasł {{date}}",
+    "securityBaseline_one": "{{count}} naruszenie Pod Security Baseline: {{fields}}",
+    "securityBaseline_few": "{{count}} naruszenia Pod Security Baseline: {{fields}}",
+    "securityBaseline_many": "{{count}} naruszeń Pod Security Baseline: {{fields}}",
+    "securityBaseline_other": "{{count}} naruszenia Pod Security Baseline: {{fields}}"
   }
 }

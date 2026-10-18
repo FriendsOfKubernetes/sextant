@@ -36,6 +36,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("resource_get", Some("clusterId")),
     ("resource_replace", Some("clusterId")),
     ("resource_apply", Some("clusterId")),
+    ("resource_dry_run", Some("clusterId")),
     ("resource_delete", Some("clusterId")),
     ("secret_value", Some("clusterId")),
     ("resource_get_full", Some("clusterId")),
@@ -74,6 +75,9 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("helm_rollback", Some("clusterId")),
     ("helm_uninstall", Some("clusterId")),
     ("helm_install", Some("clusterId")),
+    ("helm_upgrade_preview", Some("clusterId")),
+    ("helm_install_preview", Some("clusterId")),
+    ("helm_preview_stop", Some("previewId")),
     ("helm_repos", None),
     ("helm_repo_add", Some("name")),
     ("helm_repo_remove", Some("name")),
@@ -103,6 +107,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("access_preset_rules", Some("preset")),
     ("rbac_can_i", Some("clusterId")),
     ("rbac_rules_review", Some("clusterId")),
+    ("upgrade_scan", Some("clusterId")),
     ("tls_certificate_info", Some("clusterId")),
     ("tls_expiry_scan", Some("clusterId")),
     ("mcp_status", None),
@@ -335,6 +340,29 @@ fn rbac_reviews_need_a_connected_cluster_and_check_their_input_first() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "notFound", "{err}");
+}
+
+#[test]
+fn the_upgrade_scan_needs_a_connected_cluster_and_checks_its_input_first() {
+    let h = harness();
+    let apis = json!([{ "api": { "group": "batch", "version": "v1beta1", "kind": "CronJob" },
+                         "replacement": { "group": "batch", "version": "v1", "kind": "CronJob" } }]);
+    let err = invoke(
+        &h,
+        "upgrade_scan",
+        json!({ "clusterId": "nope", "apis": apis }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // A malformed API version is refused before the cluster is looked up.
+    let bad = json!([{ "api": { "group": "batch", "version": "", "kind": "CronJob" } }]);
+    let err = invoke(
+        &h,
+        "upgrade_scan",
+        json!({ "clusterId": "nope", "apis": bad }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
 }
 
 #[test]
@@ -810,6 +838,21 @@ fn later_argument_names_match_the_frontend() {
             "helm_upgrade",
             json!({ "clusterId": "c", "namespace": "n", "release": "r" }),
             "chartRef",
+        ),
+        (
+            "resource_dry_run",
+            json!({ "clusterId": "c", "yaml": "kind: ConfigMap" }),
+            "mode",
+        ),
+        (
+            "helm_upgrade_preview",
+            json!({ "clusterId": "c", "namespace": "n", "release": "r" }),
+            "chartRef",
+        ),
+        (
+            "helm_upgrade_preview",
+            json!({ "clusterId": "c", "namespace": "n", "release": "r", "chartRef": "", "valuesYaml": "" }),
+            "previewId",
         ),
         ("file_save", json!({ "path": "/tmp/x" }), "contents"),
         (

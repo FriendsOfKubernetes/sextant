@@ -30,6 +30,7 @@ pub mod rbac;
 pub mod resources;
 pub mod settings;
 pub mod tls;
+pub mod upgrade;
 
 pub use cluster::{ClusterManager, ConnectionState};
 pub use error::{CoreError, CoreResult, ErrorCode};

@@ -1,0 +1,136 @@
+{
+  "sidebar": "Upgrade readiness",
+  "title": "Upgrade readiness",
+  "intro": "Deprecated and removed API versions that this cluster still uses, and version skew to resolve before upgrading Kubernetes.",
+  "clientsNote": "This page sees stored objects and manifests, not clients that call deprecated APIs. To find those, check the API server's apiserver_requested_deprecated_apis metric before upgrading.",
+  "currentVersion": "Cluster version: {{version}}",
+  "currentUnknown": "Cluster version unknown",
+  "target": "Target version",
+  "rescan": "Scan again",
+  "copyMarkdown": "Copy as Markdown",
+  "copyCsv": "Copy as CSV",
+  "copied": "Copied",
+  "copyFailed": "Could not copy",
+  "scannedAt": "Scanned at {{time}}",
+  "scanFailed": "Could not scan the cluster",
+  "scanning": "Scanning the cluster…",
+  "clusterScoped": "(cluster-scoped)",
+  "tableSource": "The table of deprecations covers Kubernetes up to {{version}}, from the Kubernetes deprecation guide: {{url}}",
+  "noReplacement": "No replacement",
+  "counts": {
+    "removed_one": "{{count}} removed",
+    "removed_other": "{{count}} removed",
+    "deprecated_one": "{{count}} deprecated",
+    "deprecated_other": "{{count}} deprecated",
+    "served_one": "{{count}} deprecated API version served",
+    "served_other": "{{count}} deprecated API versions served",
+    "skew_one": "{{count}} version skew problem",
+    "skew_other": "{{count}} version skew problems"
+  },
+  "status": {
+    "removed": "Removed",
+    "deprecated": "Deprecated"
+  },
+  "columns": {
+    "status": "Status",
+    "kind": "Kind",
+    "namespace": "Namespace",
+    "name": "Name",
+    "apiVersion": "API version",
+    "when": "When",
+    "deprecatedIn": "Deprecated in",
+    "removedIn": "Removed in",
+    "replacement": "Use instead",
+    "source": "Source"
+  },
+  "origin": {
+    "lastApplied": "Last applied by kubectl",
+    "managedFields": "Written by field manager {{manager}}",
+    "helm": "Helm release {{namespace}}/{{release}} (revision {{revision}})",
+    "argoCd": "Argo CD application {{namespace}}/{{application}}",
+    "flux": "Flux Kustomization {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "Nothing replaces it: use Pod Security Admission or an admission webhook"
+  },
+  "filters": {
+    "live": "Live objects",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "Show traces of old writes"
+  },
+  "usages": {
+    "title": "API versions in use",
+    "none": "Nothing in this cluster uses an API version that is deprecated or removed in the target version.",
+    "noneShown": "Nothing matches the filters.",
+    "alreadyRemoved": "This cluster no longer serves it either.",
+    "removedIn": "Removed in {{version}}",
+    "deprecatedIn": "Deprecated in {{version}}, removed in {{removed}}",
+    "hidden_one": "{{count}} finding is hidden by the filters.",
+    "hidden_other": "{{count}} findings are hidden by the filters."
+  },
+  "served": {
+    "title": "Deprecated API versions the cluster serves",
+    "hint": "Clients can still use these versions now; after the upgrade they may fail.",
+    "none": "The cluster serves no API version that is deprecated or removed in the target version.",
+    "removed": "Removed in {{version}}. Use instead: {{replacement}}",
+    "deprecated": "Deprecated since {{version}}. Use instead: {{replacement}}"
+  },
+  "skew": {
+    "title": "Version skew",
+    "none": "No version skew problems found.",
+    "stepwise": "The control plane is upgraded one minor version at a time: from {{from}} to {{to}} through each of these versions: {{steps}}",
+    "kubeletNewer_one": "{{count}} node runs a kubelet newer than the control plane ({{version}}): {{nodes}}",
+    "kubeletNewer_other": "{{count}} nodes run a kubelet newer than the control plane ({{version}}): {{nodes}}",
+    "kubeletTooOld_one": "{{count}} node runs a kubelet older than the control plane allows (oldest {{version}}): {{nodes}}",
+    "kubeletTooOld_other": "{{count}} nodes run a kubelet older than the control plane allows (oldest {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_one": "{{count}} node must be upgraded before the control plane reaches {{target}} (its kubelet is {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_other": "{{count}} nodes must be upgraded before the control plane reaches {{target}} (oldest kubelet {{version}}): {{nodes}}",
+    "kubeProxyNewer_one": "{{count}} node runs a kube-proxy newer than the control plane ({{version}}): {{nodes}}",
+    "kubeProxyNewer_other": "{{count}} nodes run a kube-proxy newer than the control plane ({{version}}): {{nodes}}",
+    "kubeProxyTooOld_one": "{{count}} node runs a kube-proxy older than the control plane allows (oldest {{version}}): {{nodes}}",
+    "kubeProxyTooOld_other": "{{count}} nodes run a kube-proxy older than the control plane allows (oldest {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_one": "{{count}} node needs a newer kube-proxy before the control plane reaches {{target}} (its kube-proxy is {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_other": "{{count}} nodes need a newer kube-proxy before the control plane reaches {{target}} (oldest kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyKubeletSkew_one": "{{count}} node runs a kube-proxy more minor versions away from its kubelet than allowed: {{nodes}}",
+    "kubeProxyKubeletSkew_other": "{{count}} nodes run a kube-proxy more minor versions away from their kubelet than allowed: {{nodes}}",
+    "apiserverSkew": "kube-apiserver instances are more than one minor version apart: {{versions}}",
+    "componentSkew": "{{component}} ({{pod}}) runs {{version}}, which kube-apiserver {{apiserver}} does not allow: it must be at most one minor version older and never newer.",
+    "kubelets": "Kubelet versions: {{versions}}",
+    "kubeletVersion_one": "{{version}} on {{count}} node",
+    "kubeletVersion_other": "{{version}} on {{count}} nodes",
+    "components": "Control-plane components: {{components}}",
+    "noComponents": "Control-plane components are not visible (a managed control plane): only the kubelet rules were checked."
+  },
+  "sources": {
+    "failed": {
+      "version": "Could not read the cluster version",
+      "served": "Could not read which API versions the cluster serves",
+      "live": "Could not read the live objects",
+      "helm": "Could not read the Helm releases",
+      "argoCd": "Could not read the Argo CD applications",
+      "flux": "Could not read the Flux Kustomizations",
+      "nodes": "Could not read the nodes",
+      "controlPlane": "Could not read the control-plane pods"
+    },
+    "truncated": {
+      "version": "Only part of the cluster version was read.",
+      "served": "Only some API versions were checked.",
+      "live": "Some kinds have more objects than are scanned; only the first ones were checked.",
+      "helm": "There are more Helm releases than are scanned; only the first ones were checked.",
+      "argoCd": "There are more Argo CD applications than are scanned; only the first ones were checked.",
+      "flux": "There are more Flux Kustomizations than are scanned; only the first ones were checked.",
+      "nodes": "There are more nodes than are scanned; only the first ones were checked.",
+      "controlPlane": "Only some control-plane pods were checked."
+    },
+    "skippedKinds": "Some API versions or kinds could not be read: {{names}}",
+    "skippedReleases": "Some Helm releases could not be read: {{names}}",
+    "skippedHelmNamespaces": "Helm releases could not be listed in some namespaces: {{names}}",
+    "usagesTruncated": "More uses were found than can be shown; only the first ones are listed."
+  },
+  "report": {
+    "title": "Upgrade readiness: {{from}} → {{to}}",
+    "titleUnknown": "Upgrade readiness for {{to}}"
+  }
+}

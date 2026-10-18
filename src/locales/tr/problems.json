@@ -5,6 +5,7 @@
   "badge_other": "{{count}} sorun ilgi bekliyor",
   "onlyNewSince": "Yalnızca {{time}} sonrası yeni olanlar",
   "markSeen": "Tümünü görüldü olarak işaretle",
+  "showSecurity": "Güvenlik bulguları",
   "total_one": "{{count}} sorun",
   "total_other": "{{count}} sorun",
   "sourceFailed": "{{kind}} izlenemedi",
@@ -23,6 +24,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "Güvenlik",
     "events": "Uyarı olayları"
   },
   "messages": {
@@ -31,6 +33,8 @@
     "restarts_other": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",
     "replicas": "{{desired}} replikadan {{ready}} tanesi hazır",
     "expires": "Sona erme: {{date}}",
-    "expired": "Sona erdi: {{date}}"
+    "expired": "Sona erdi: {{date}}",
+    "securityBaseline_one": "{{count}} Pod Security Baseline ihlali: {{fields}}",
+    "securityBaseline_other": "{{count}} Pod Security Baseline ihlali: {{fields}}"
   }
 }

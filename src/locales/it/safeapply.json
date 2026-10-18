@@ -1,0 +1,58 @@
+{
+  "section": {
+    "title": "Anteprima delle modifiche",
+    "label": "Mostra le modifiche prima di applicarle",
+    "hint": "Il salvataggio nell'editor, l'applicazione in “Crea risorsa” e gli aggiornamenti e le installazioni Helm mostrano prima ciò che il server API memorizzerebbe (una prova sul server). La modifica viene inviata solo dopo la conferma.",
+    "defaultOn": "Il nome di questo cluster contiene “prod” o “production”, quindi l'anteprima è attiva per impostazione predefinita.",
+    "defaultOff": "Per impostazione predefinita, l'anteprima è attiva solo per i cluster il cui nome contiene “prod” o “production”.",
+    "useDefault": "Usa il valore predefinito"
+  },
+  "actions": {
+    "preview": "Mostra modifiche",
+    "checking": "Verifica…",
+    "previewAndSave": "Verifica e salva…",
+    "previewAndApply": "Verifica e applica…",
+    "back": "Torna alla modifica",
+    "ready": "Non è ancora stato modificato nulla.",
+    "required": "Questo cluster richiede un'anteprima prima di applicare.",
+    "blocked": "Correggi i documenti rifiutati prima di applicare."
+  },
+  "diff": {
+    "title": "Anteprima delle modifiche",
+    "objects": "Oggetti",
+    "live": "Attuale",
+    "after": "Dopo la modifica",
+    "state": {
+      "create": "Nuovo",
+      "update": "Modificato",
+      "unchanged": "Invariato",
+      "failed": "Rifiutato"
+    },
+    "created": "{{object}} non esiste ancora: verrebbe creato.",
+    "unchanged": "Il server API memorizzerebbe {{object}} così com'è.",
+    "refusedObject": "Il server API rifiuterebbe {{object}}",
+    "secretHidden": "I valori dei Secret non vengono mostrati.",
+    "secretAdded": "Valori aggiunti: {{keys}}",
+    "secretChanged": "Valori modificati: {{keys}}",
+    "secretRemoved": "Valori rimossi: {{keys}}",
+    "refused_one": "Il server API rifiuterebbe {{count}} oggetto. Correggi il testo prima di applicare: l'applicazione si ferma al primo documento rifiutato, dopo aver applicato i precedenti.",
+    "refused_many": "Il server API rifiuterebbe {{count}} di oggetti. Correggi il testo prima di applicare: l'applicazione si ferma al primo documento rifiutato, dopo aver applicato i precedenti.",
+    "refused_other": "Il server API rifiuterebbe {{count}} oggetti. Correggi il testo prima di applicare: l'applicazione si ferma al primo documento rifiutato, dopo aver applicato i precedenti.",
+    "waitsForNamespace": "Non è stato ancora possibile verificare {{object}}: il suo namespace {{namespace}} viene creato da un documento precedente. Applicando, il namespace viene creato per primo."
+  },
+  "helm": {
+    "failed": "Impossibile generare le modifiche",
+    "current": "Release {{release}} ora",
+    "proposed": "Release {{release}} dopo la modifica",
+    "noRelease": "Non esiste ancora una release con questo nome: tutti gli oggetti sono nuovi.",
+    "same": "Il manifest generato è uguale a quello della release.",
+    "secretAdded": "{{object}}: valori aggiunti: {{keys}}",
+    "secretChanged": "{{object}}: valori modificati: {{keys}}",
+    "secretRemoved": "{{object}}: valori rimossi: {{keys}}",
+    "unreadable_one": "Non è stato possibile leggere {{count}} documento, che non viene mostrato.",
+    "unreadable_many": "Non è stato possibile leggere {{count}} di documenti, che non vengono mostrati.",
+    "unreadable_other": "Non è stato possibile leggere {{count}} documenti, che non vengono mostrati.",
+    "clientSide": "Questa versione di Helm non può generare interrogando il cluster (è precedente alla 3.13): lookup non ha trovato nulla, quindi i Secret e gli altri valori che un chart riutilizza possono risultare modificati.",
+    "noHooks": "Gli hook di Helm non fanno parte del confronto."
+  }
+}

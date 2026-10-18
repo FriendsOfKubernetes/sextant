@@ -1,0 +1,136 @@
+{
+  "sidebar": "Upgrade-Bereitschaft",
+  "title": "Upgrade-Bereitschaft",
+  "intro": "Veraltete und entfernte API-Versionen, die dieser Cluster noch verwendet, und Versionsabweichungen, die vor einem Kubernetes-Upgrade zu beheben sind.",
+  "clientsNote": "Diese Seite sieht gespeicherte Objekte und Manifeste, nicht Clients, die veraltete APIs aufrufen. Um diese zu finden, prüfen Sie vor dem Upgrade die Metrik apiserver_requested_deprecated_apis des API-Servers.",
+  "currentVersion": "Cluster-Version: {{version}}",
+  "currentUnknown": "Cluster-Version unbekannt",
+  "target": "Zielversion",
+  "rescan": "Erneut prüfen",
+  "copyMarkdown": "Als Markdown kopieren",
+  "copyCsv": "Als CSV kopieren",
+  "copied": "Kopiert",
+  "copyFailed": "Kopieren fehlgeschlagen",
+  "scannedAt": "Geprüft um {{time}}",
+  "scanFailed": "Der Cluster konnte nicht geprüft werden",
+  "scanning": "Cluster wird geprüft…",
+  "clusterScoped": "(clusterweit)",
+  "tableSource": "Die Tabelle veralteter APIs deckt Kubernetes bis {{version}} ab, laut dem Kubernetes-Leitfaden zu veralteten APIs: {{url}}",
+  "noReplacement": "Kein Ersatz",
+  "counts": {
+    "removed_one": "{{count}} entfernt",
+    "removed_other": "{{count}} entfernt",
+    "deprecated_one": "{{count}} veraltet",
+    "deprecated_other": "{{count}} veraltet",
+    "served_one": "{{count}} veraltete API-Version bereitgestellt",
+    "served_other": "{{count}} veraltete API-Versionen bereitgestellt",
+    "skew_one": "{{count}} Problem mit Versionsabweichung",
+    "skew_other": "{{count}} Probleme mit Versionsabweichung"
+  },
+  "status": {
+    "removed": "Entfernt",
+    "deprecated": "Veraltet"
+  },
+  "columns": {
+    "status": "Status",
+    "kind": "Art",
+    "namespace": "Namespace",
+    "name": "Name",
+    "apiVersion": "API-Version",
+    "when": "Wann",
+    "deprecatedIn": "Veraltet seit",
+    "removedIn": "Entfernt in",
+    "replacement": "Stattdessen",
+    "source": "Quelle"
+  },
+  "origin": {
+    "lastApplied": "Zuletzt mit kubectl angewendet",
+    "managedFields": "Geschrieben vom Feldmanager {{manager}}",
+    "helm": "Helm-Release {{namespace}}/{{release}} (Revision {{revision}})",
+    "argoCd": "Argo-CD-Anwendung {{namespace}}/{{application}}",
+    "flux": "Flux-Kustomization {{namespace}}/{{kustomization}}"
+  },
+  "notes": {
+    "podSecurityAdmission": "Es gibt keinen Ersatz: Verwenden Sie Pod Security Admission oder einen Admission-Webhook"
+  },
+  "filters": {
+    "live": "Live-Objekte",
+    "helm": "Helm",
+    "argoCd": "Argo CD",
+    "flux": "Flux",
+    "history": "Spuren alter Schreibvorgänge anzeigen"
+  },
+  "usages": {
+    "title": "Verwendete API-Versionen",
+    "none": "Nichts in diesem Cluster verwendet eine API-Version, die in der Zielversion veraltet oder entfernt ist.",
+    "noneShown": "Nichts entspricht den Filtern.",
+    "alreadyRemoved": "Auch dieser Cluster stellt sie nicht mehr bereit.",
+    "removedIn": "Entfernt in {{version}}",
+    "deprecatedIn": "Veraltet seit {{version}}, entfernt in {{removed}}",
+    "hidden_one": "{{count}} Fund ist durch die Filter ausgeblendet.",
+    "hidden_other": "{{count}} Funde sind durch die Filter ausgeblendet."
+  },
+  "served": {
+    "title": "Veraltete API-Versionen, die der Cluster bereitstellt",
+    "hint": "Clients können diese Versionen jetzt noch verwenden; nach dem Upgrade können ihre Anfragen fehlschlagen.",
+    "none": "Der Cluster stellt keine API-Version bereit, die in der Zielversion veraltet oder entfernt ist.",
+    "removed": "Entfernt in {{version}}. Stattdessen: {{replacement}}",
+    "deprecated": "Veraltet seit {{version}}. Stattdessen: {{replacement}}"
+  },
+  "skew": {
+    "title": "Versionsabweichung",
+    "none": "Keine Probleme mit Versionsabweichungen gefunden.",
+    "stepwise": "Die Control Plane wird jeweils um eine Minor-Version aktualisiert: von {{from}} auf {{to}} über jede dieser Versionen: {{steps}}",
+    "kubeletNewer_one": "{{count}} Knoten hat ein kubelet, das neuer als die Control Plane ({{version}}) ist: {{nodes}}",
+    "kubeletNewer_other": "{{count}} Knoten haben ein kubelet, das neuer als die Control Plane ({{version}}) ist: {{nodes}}",
+    "kubeletTooOld_one": "{{count}} Knoten hat ein kubelet, das älter ist, als die Control Plane erlaubt (ältestes {{version}}): {{nodes}}",
+    "kubeletTooOld_other": "{{count}} Knoten haben ein kubelet, das älter ist, als die Control Plane erlaubt (ältestes {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_one": "{{count}} Knoten muss aktualisiert werden, bevor die Control Plane {{target}} erreicht (kubelet {{version}}): {{nodes}}",
+    "kubeletTooOldForTarget_other": "{{count}} Knoten müssen aktualisiert werden, bevor die Control Plane {{target}} erreicht (ältestes kubelet {{version}}): {{nodes}}",
+    "kubeProxyNewer_one": "{{count}} Knoten hat ein kube-proxy, das neuer als die Control Plane ({{version}}) ist: {{nodes}}",
+    "kubeProxyNewer_other": "{{count}} Knoten haben ein kube-proxy, das neuer als die Control Plane ({{version}}) ist: {{nodes}}",
+    "kubeProxyTooOld_one": "{{count}} Knoten hat ein kube-proxy, das älter ist, als die Control Plane erlaubt (ältestes {{version}}): {{nodes}}",
+    "kubeProxyTooOld_other": "{{count}} Knoten haben ein kube-proxy, das älter ist, als die Control Plane erlaubt (ältestes {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_one": "{{count}} Knoten braucht ein neueres kube-proxy, bevor die Control Plane {{target}} erreicht (kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyTooOldForTarget_other": "{{count}} Knoten brauchen ein neueres kube-proxy, bevor die Control Plane {{target}} erreicht (ältestes kube-proxy {{version}}): {{nodes}}",
+    "kubeProxyKubeletSkew_one": "{{count}} Knoten hat ein kube-proxy, das weiter vom kubelet abweicht als erlaubt: {{nodes}}",
+    "kubeProxyKubeletSkew_other": "{{count}} Knoten haben ein kube-proxy, das weiter vom kubelet abweicht als erlaubt: {{nodes}}",
+    "apiserverSkew": "Instanzen von kube-apiserver liegen mehr als eine Minor-Version auseinander: {{versions}}",
+    "componentSkew": "{{component}} ({{pod}}) läuft mit {{version}}, was kube-apiserver {{apiserver}} nicht erlaubt: höchstens eine Minor-Version älter und nie neuer.",
+    "kubelets": "kubelet-Versionen: {{versions}}",
+    "kubeletVersion_one": "{{version}} auf {{count}} Knoten",
+    "kubeletVersion_other": "{{version}} auf {{count}} Knoten",
+    "components": "Control-Plane-Komponenten: {{components}}",
+    "noComponents": "Control-Plane-Komponenten sind nicht sichtbar (verwaltete Control Plane): Nur die kubelet-Regeln wurden geprüft."
+  },
+  "sources": {
+    "failed": {
+      "version": "Die Cluster-Version konnte nicht gelesen werden",
+      "served": "Es konnte nicht gelesen werden, welche API-Versionen der Cluster bereitstellt",
+      "live": "Die Live-Objekte konnten nicht gelesen werden",
+      "helm": "Die Helm-Releases konnten nicht gelesen werden",
+      "argoCd": "Die Argo-CD-Anwendungen konnten nicht gelesen werden",
+      "flux": "Die Flux-Kustomizations konnten nicht gelesen werden",
+      "nodes": "Die Knoten konnten nicht gelesen werden",
+      "controlPlane": "Die Control-Plane-Pods konnten nicht gelesen werden"
+    },
+    "truncated": {
+      "version": "Die Cluster-Version wurde nur teilweise gelesen.",
+      "served": "Nur einige API-Versionen wurden geprüft.",
+      "live": "Einige Arten haben mehr Objekte, als geprüft werden; nur die ersten wurden geprüft.",
+      "helm": "Es gibt mehr Helm-Releases, als geprüft werden; nur die ersten wurden geprüft.",
+      "argoCd": "Es gibt mehr Argo-CD-Anwendungen, als geprüft werden; nur die ersten wurden geprüft.",
+      "flux": "Es gibt mehr Flux-Kustomizations, als geprüft werden; nur die ersten wurden geprüft.",
+      "nodes": "Es gibt mehr Knoten, als geprüft werden; nur die ersten wurden geprüft.",
+      "controlPlane": "Nur einige Control-Plane-Pods wurden geprüft."
+    },
+    "skippedKinds": "Einige API-Versionen oder Arten konnten nicht gelesen werden: {{names}}",
+    "skippedReleases": "Einige Helm-Releases konnten nicht gelesen werden: {{names}}",
+    "skippedHelmNamespaces": "In einigen Namespaces konnten die Helm-Releases nicht aufgelistet werden: {{names}}",
+    "usagesTruncated": "Es wurden mehr Verwendungen gefunden, als angezeigt werden können; nur die ersten werden aufgeführt."
+  },
+  "report": {
+    "title": "Upgrade-Bereitschaft: {{from}} → {{to}}",
+    "titleUnknown": "Upgrade-Bereitschaft für {{to}}"
+  }
+}

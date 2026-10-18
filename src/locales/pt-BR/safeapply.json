@@ -1,0 +1,58 @@
+{
+  "section": {
+    "title": "Prévia das alterações",
+    "label": "Mostrar as alterações antes de aplicar",
+    "hint": "Salvar no editor, aplicar em “Criar recurso” e as atualizações e instalações do Helm mostram primeiro o que o servidor de API armazenaria (uma simulação no servidor). A alteração só é enviada quando você a confirma.",
+    "defaultOn": "O nome deste cluster contém “prod” ou “production”, então a prévia fica ativada por padrão.",
+    "defaultOff": "Por padrão, a prévia só fica ativada em clusters cujo nome contém “prod” ou “production”.",
+    "useDefault": "Usar o padrão"
+  },
+  "actions": {
+    "preview": "Ver alterações",
+    "checking": "Verificando…",
+    "previewAndSave": "Revisar e salvar…",
+    "previewAndApply": "Revisar e aplicar…",
+    "back": "Voltar à edição",
+    "ready": "Nada foi alterado ainda.",
+    "required": "Este cluster pede uma prévia antes de aplicar.",
+    "blocked": "Corrija os documentos recusados antes de aplicar."
+  },
+  "diff": {
+    "title": "Prévia das alterações",
+    "objects": "Objetos",
+    "live": "Atual",
+    "after": "Depois da alteração",
+    "state": {
+      "create": "Novo",
+      "update": "Alterado",
+      "unchanged": "Sem alteração",
+      "failed": "Recusado"
+    },
+    "created": "{{object}} ainda não existe: seria criado.",
+    "unchanged": "O servidor de API armazenaria {{object}} como está.",
+    "refusedObject": "O servidor de API recusaria {{object}}",
+    "secretHidden": "Os valores de Secrets não são mostrados.",
+    "secretAdded": "Valores adicionados: {{keys}}",
+    "secretChanged": "Valores alterados: {{keys}}",
+    "secretRemoved": "Valores removidos: {{keys}}",
+    "refused_one": "O servidor de API recusaria {{count}} objeto. Corrija o texto antes de aplicar: a aplicação para no primeiro documento recusado, depois de aplicar os anteriores.",
+    "refused_many": "O servidor de API recusaria {{count}} de objetos. Corrija o texto antes de aplicar: a aplicação para no primeiro documento recusado, depois de aplicar os anteriores.",
+    "refused_other": "O servidor de API recusaria {{count}} objetos. Corrija o texto antes de aplicar: a aplicação para no primeiro documento recusado, depois de aplicar os anteriores.",
+    "waitsForNamespace": "Ainda não foi possível verificar {{object}}: o namespace {{namespace}} é criado por um documento anterior. Ao aplicar, o namespace é criado primeiro."
+  },
+  "helm": {
+    "failed": "Não foi possível gerar as alterações",
+    "current": "Release {{release}} agora",
+    "proposed": "Release {{release}} depois da alteração",
+    "noRelease": "Ainda não existe uma release com este nome: todos os objetos são novos.",
+    "same": "O manifesto gerado é igual ao da release.",
+    "secretAdded": "{{object}}: valores adicionados: {{keys}}",
+    "secretChanged": "{{object}}: valores alterados: {{keys}}",
+    "secretRemoved": "{{object}}: valores removidos: {{keys}}",
+    "unreadable_one": "{{count}} documento não pôde ser lido e não é mostrado.",
+    "unreadable_many": "{{count}} de documentos não puderam ser lidos e não são mostrados.",
+    "unreadable_other": "{{count}} documentos não puderam ser lidos e não são mostrados.",
+    "clientSide": "Esta versão do Helm não consegue gerar consultando o cluster (é anterior à 3.13): o lookup não encontrou nada, então Secrets e outros valores que um chart reutiliza podem aparecer como alterados.",
+    "noHooks": "Os hooks do Helm não fazem parte da comparação."
+  }
+}

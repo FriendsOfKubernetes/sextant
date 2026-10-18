@@ -12,6 +12,7 @@
     "helm": "Helm",
     "accessControl": "Kontrola dostępu",
     "certManager": "cert-manager",
+    "trivy": "Trivy",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "Zasoby niestandardowe"

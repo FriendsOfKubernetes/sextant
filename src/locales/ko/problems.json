@@ -4,6 +4,7 @@
   "badge_other": "확인이 필요한 문제 {{count}}개",
   "onlyNewSince": "{{time}} 이후 새 문제만",
   "markSeen": "모두 확인함으로 표시",
+  "showSecurity": "보안 발견 사항",
   "total_other": "문제 {{count}}개",
   "sourceFailed": "{{kind}}을(를) 감시할 수 없습니다",
   "truncated": "문제가 너무 많아 가장 최근 항목만 표시합니다.",
@@ -21,6 +22,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "security": "보안",
     "events": "Warning 이벤트"
   },
   "messages": {
@@ -28,6 +30,7 @@
     "restarts_other": "컨테이너 {{container}}이(가) 다시 시작됨(다시 시작 {{count}}회)",
     "replicas": "복제본 {{desired}}개 중 {{ready}}개 준비됨",
     "expires": "{{date}}에 만료",
-    "expired": "{{date}}에 만료됨"
+    "expired": "{{date}}에 만료됨",
+    "securityBaseline_other": "Pod Security Baseline 위반 {{count}}건: {{fields}}"
   }
 }

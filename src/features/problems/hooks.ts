@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSettings, type ClusterId } from "../../api";
 import { useClusterKinds } from "../../resources";
 import { useClustersStore } from "../clusters/clustersStore";
-import { isActive, NOTIFY_CATEGORIES, type Problem, type ProblemCategory } from "./model";
+import { isActive, NOTIFY_CATEGORIES, OPT_IN_CATEGORIES, type Problem, type ProblemCategory } from "./model";
 import { needsDiscovery, sourceKey, sourcesFor } from "./sources";
 import {
   acquireSource,
@@ -109,5 +109,24 @@ export function useClusterProblems(clusterId: ClusterId | null, categories: read
  * the page lists too. The same rule as the notifications, so the badge and the notifications agree.
  */
 export function useProblemCount(clusterId: ClusterId): number {
-  return useClusterProblems(clusterId, NOTIFY_CATEGORIES).active.filter((p) => p.notify).length;
+  return useClusterProblems(clusterId, useCategoriesOn(NOTIFY_CATEGORIES)).active.filter((p) => p.notify).length;
+}
+
+const EMPTY: readonly string[] = [];
+
+/**
+ * `categories` without the opt-in ones that are off (`notifications.enabledCategories`): the one setting the problems
+ * screen, the sidebar counter and the notifications follow. The same list (by value) until the setting changes.
+ */
+export function useCategoriesOn(categories: readonly ProblemCategory[]): readonly ProblemCategory[] {
+  const optedIn = useSettings().settings?.notifications.enabledCategories ?? EMPTY;
+  const key = `${categories.join(",")}#${OPT_IN_CATEGORIES.filter((c) => optedIn.includes(c)).join(",")}`;
+  return useMemo(
+    () => {
+      const on = key.split("#")[1]!.split(",");
+      return categories.filter((c) => !OPT_IN_CATEGORIES.includes(c) || on.includes(c));
+    },
+    // `key` stands for both lists by value.
+    [key],
+  );
 }
