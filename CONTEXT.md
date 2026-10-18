@@ -320,3 +320,55 @@ _Avoid_: clone, debug pod, test pod
 **File copy**:
 Downloading a file or folder from a running container, or uploading one file into it, through `tar` in the container, as `kubectl cp` does. A file arrives as itself, a folder as a `.tar.gz`; the local file appears only when the download is complete. An upload asks first.
 _Avoid_: sync, mount, file browser
+
+**Right-sizing**:
+Comparing each container's requests and limits with what it really used over the last day or 7 days (from Prometheus), with a recommendation and findings per container of a workload. The page is in the Workloads section; Deployments, StatefulSets, DaemonSets and pods have the same rows in their details. Nothing is changed in the cluster: the recommendation is a `resources:` snippet to copy.
+_Avoid_: autoscaling, VPA, optimization
+
+**Recommendation (right-sizing)**:
+Requests and limits computed from a container's usage history by fixed rules: CPU from the 95th percentile, memory from the peak, each with headroom. Given only with at least 6 hours of history, marked when it rests on less than the window or on history of unknown length; a current value from metrics-server never gives one.
+_Avoid_: suggestion, target, optimal size
+
+**Waste**:
+How much a container's request is above its recommendation, in CPU and memory; the right-sizing page sorts by it and totals it per namespace.
+_Avoid_: idle, unused (usage below the request is not all waste: the recommendation keeps headroom)
+
+**TLS certificate (of a Secret)**:
+What the certificate in a Secret's `tls.crt` (and `ca.crt`) says — names, issuer, validity, key, chain, fingerprint — read by the backend, which returns only these fields and never the Secret's values. Shown in the "Certificate" section of the Secret's details and on the "TLS certificates" page of the Config section, only when opened.
+_Avoid_: TLS Secret (the object), cert-manager Certificate (a different kind)
+
+**Expiry warning**:
+How many days before its expiry a certificate counts as expiring (`notifications.certExpiryDays`, 14 by default), set in Settings → General → Notifications or on the TLS certificates page. The same number decides for cert-manager Certificates on the problems screen and in notifications and for TLS Secrets where they are shown.
+_Avoid_: renewal time (that is cert-manager's own `renewBefore`)
+
+**Issuance chain**:
+The cert-manager objects of one certificate's issuance, newest first: Certificate → CertificateRequest → Order → Challenge, linked by owner references, shown in the details of each with the step that failed.
+_Avoid_: certificate chain (that is the certificates in `tls.crt`)
+
+**Resource map**:
+The page "Map" of the Cluster section: the objects of one to three namespaces drawn in columns from the way in (Ingresses, Gateways, routes) to pods, configuration and claims, coloured by the problems screen's rules, with big groups collapsed.
+_Avoid_: topology (the Gateway API section's per-Gateway view), graph
+
+**Related objects**:
+The "Related" tab of every object's details: the objects it names and the objects that name or select it, one hop both ways and expandable hop by hop, found among the objects Sextant watches for that view.
+_Avoid_: dependencies, links (the links inside details are references)
+
+**Deletion impact**:
+The "If it is deleted" lines of the Related tab: what deleting the object would delete with it (by owner references), what would recreate it, and what would fail (pods that mount or read it, routes that send traffic to it, pods it schedules or protects), counted from the watched objects.
+_Avoid_: blast radius, dry run (nothing is sent to the cluster)
+
+**Permissions (RBAC)**:
+The page of the Access Control section that answers who can do what: a subject's effective permissions as a verbs × resources matrix, "Who can" a verb on a resource, and "Can I" for the current user. The first two are computed from Roles, ClusterRoles and their bindings; "Can I" is the API server's own answer.
+_Avoid_: roles page, access matrix (the matrix is one part)
+
+**Subject (RBAC)**:
+Who a binding grants a role to: a User, a Group or a ServiceAccount. Users and groups are not Kubernetes objects: the page knows those named in bindings, and a user's groups are typed in.
+_Avoid_: principal, identity, account
+
+**Can I**:
+Asking the API server whether the current user may do something (SelfSubjectAccessReview) or what they may do in a namespace (SelfSubjectRulesReview). The answer takes every authorizer of the cluster into account and is authoritative; asking changes nothing.
+_Avoid_: test permissions, dry run
+
+**UI language**:
+The language of the window, the tray menu and desktop notifications: "System" (the default, the operating system's language when Sextant has it, otherwise English) or one chosen in Settings → General → Appearance → Language. Kubernetes kinds and API terms stay in English in every language.
+_Avoid_: locale (dates and numbers follow the UI language, not a separate locale setting)
