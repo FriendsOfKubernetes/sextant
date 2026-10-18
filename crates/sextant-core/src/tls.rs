@@ -34,7 +34,15 @@ use x509_parser::public_key::PublicKey;
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::kubeconfig::ClusterId;
+#[cfg(not(test))]
 use crate::resources::STEP_TIMEOUT;
+
+/// The time limit of one request: `STEP_TIMEOUT`, shorter in tests so a stalled server is tested on the real clock
+/// (a paused clock can jump past the connect timeout while a new connection is being made).
+#[cfg(not(test))]
+const REQUEST_TIMEOUT: std::time::Duration = STEP_TIMEOUT;
+#[cfg(test)]
+const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
 
 /// The certificate chain of a TLS Secret.
 pub const TLS_CERT_KEY: &str = "tls.crt";
@@ -417,7 +425,7 @@ pub async fn secret_certificates(
         ));
     }
     let client = mgr.client(cluster)?;
-    let secret = with_timeout(STEP_TIMEOUT, "reading the Secret", async {
+    let secret = with_timeout(REQUEST_TIMEOUT, "reading the Secret", async {
         Api::<Secret>::namespaced(client, namespace)
             .get(name)
             .await
@@ -498,7 +506,7 @@ async fn scan_list(api: Api<Secret>, scan: &mut TlsExpiryScan) -> CoreResult<()>
         if let Some(t) = &token {
             params = params.continue_token(t);
         }
-        let list = with_timeout(STEP_TIMEOUT, "listing TLS Secrets", async {
+        let list = with_timeout(REQUEST_TIMEOUT, "listing TLS Secrets", async {
             api.list(&params).await.map_err(CoreError::from)
         })
         .await?;

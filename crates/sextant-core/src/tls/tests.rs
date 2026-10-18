@@ -350,13 +350,12 @@ async fn a_stalled_api_server_ends_the_read_with_a_timeout() {
     let api = FakeApi::start(|req: &Request| match req.path.as_str() {
         "/api" => Reply::json(200, API_VERSIONS),
         _ => Reply::json(200, secret_json("shop", "shop-tls", &[("tls.crt", CHAIN)]))
-            .after(STEP_TIMEOUT * 4),
+            .after(REQUEST_TIMEOUT * 4),
     })
     .await;
-    // Connect on the real clock: with the clock paused from the start, the runtime may jump past the connect
-    // timeout while the TCP handshake is still in flight (seen on macOS).
+    // On the real clock with the short test limit: a paused clock can jump past the connect timeout while a new
+    // connection is being made (seen on macOS, #165).
     let (_tmp, mgr, id) = connected_to(api.url()).await;
-    tokio::time::pause();
     let err = secret_certificates(&mgr, &id, "shop", "shop-tls")
         .await
         .unwrap_err();
