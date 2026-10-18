@@ -4600,6 +4600,7 @@ dependencies = [
  "getrandom 0.3.4",
  "glib",
  "keyring",
+ "libc",
  "portable-pty",
  "reqwest",
  "rmcp",

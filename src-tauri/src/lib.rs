@@ -6,6 +6,7 @@ pub mod download;
 pub mod events;
 pub mod extensions;
 pub mod gitops_install;
+pub mod malloc;
 pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;

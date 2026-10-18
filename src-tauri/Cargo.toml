@@ -77,6 +77,8 @@ glib = "0.18"
 # Without a StatusNotifier host libayatana falls back to an XEmbed icon: `tray.rs` asks the X server whether a tray
 # owns `_NET_SYSTEM_TRAY_S<screen>`. libX11 is loaded at run time; the version tao already uses, so no new crate.
 x11-dl = "2.21"
+# Caps glibc's malloc arenas at start (`malloc.rs`); the version the lockfile already has, so no new crate.
+libc = "0.2"
 
 [dev-dependencies]
 tauri = { workspace = true, features = ["test"] }
