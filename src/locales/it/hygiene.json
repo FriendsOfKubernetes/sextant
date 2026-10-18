@@ -1,0 +1,130 @@
+{
+  "sidebar": "Pulizia",
+  "title": "Pulizia",
+  "intro": "Oggetti che sembrano inutilizzati o rimasti indietro, ciascuno con il motivo. Un oggetto è candidato solo quando ogni elenco che potrebbe farvi riferimento è stato letto per intero; nel dubbio non viene proposto. Non viene eliminato nulla finché non selezioni gli oggetti e confermi.",
+  "loading": "Lettura dei namespace…",
+  "chooseNamespace": "Scegli i namespace",
+  "chooseNamespaceText": "Questa pagina verifica i namespace scelti nel filtro dei namespace. Scegli uno o più namespace per iniziare.",
+  "firstNamespaces_one": "Viene verificato solo il primo namespace scelto ({{count}}).",
+  "firstNamespaces_many": "Vengono verificati solo i primi {{count}} namespace scelti.",
+  "firstNamespaces_other": "Vengono verificati solo i primi {{count}} namespace scelti.",
+  "excludedInView": "Non verificati, esclusi nelle impostazioni: {{names}}",
+  "configsOff": "ConfigMap e Secret non vengono verificati. Puoi attivarli nelle impostazioni.",
+  "configsWarning": "Sextant non vede ogni riferimento a un ConfigMap o a un Secret: operatori e risorse personalizzate che non conosce, driver CSI, argomenti dei controller e applicazioni che li leggono tramite l'API. Verifica ciascuno prima di eliminarlo.",
+  "blocked": "ConfigMap, Secret, PersistentVolumeClaim e Service di {{namespace}} non vengono valutati: contiene oggetti di tipi che Sextant non legge ({{kinds}}).",
+  "unavailableGroups": "Alcuni gruppi di API non rispondono ({{groups}}): i loro oggetti non sono visibili, quindi non viene proposto alcun ConfigMap, Secret, PersistentVolumeClaim, Service o namespace.",
+  "clusterFailed": "Impossibile verificare gli oggetti a livello di cluster e i gruppi di API: non viene proposto alcun ConfigMap, Secret, PersistentVolumeClaim, Service o namespace.",
+  "clusterUnread": "Impossibile leggere tutti gli oggetti di questi tipi a livello di cluster, quindi non viene proposto alcun ConfigMap o Secret: {{kinds}}",
+  "sampleFailed": "Impossibile verificare tutto ciò che contiene {{namespace}}: i suoi ConfigMap, Secret, PersistentVolumeClaim e il namespace stesso non vengono proposti.",
+  "checkAgain": "Verifica di nuovo",
+  "nothingChecked": "Tutti i namespace scelti sono esclusi nelle impostazioni.",
+  "watchFailed": "Impossibile osservare {{kind}}",
+  "forbidden": "Nessuna autorizzazione a elencare {{kind}} in: {{names}}",
+  "unchecked": "Alcuni oggetti non sono stati valutati perché questi elenchi non sono ancora stati letti per intero: {{kinds}}",
+  "none": "Niente da pulire nei namespace verificati.",
+  "truncated_one": "Troppi candidati: viene elencato solo il primo ({{count}}).",
+  "truncated_many": "Troppi candidati: vengono elencati solo i primi {{count}}.",
+  "truncated_other": "Troppi candidati: vengono elencati solo i primi {{count}}.",
+  "rule": {
+    "configMap": "ConfigMap che nulla usa",
+    "secret": "Secret che nulla usa",
+    "claim": "PersistentVolumeClaim che nessun Pod monta",
+    "volume": "PersistentVolume rilasciati o non reclamati",
+    "service": "Service senza endpoint",
+    "replicaSet": "ReplicaSet vecchi oltre la cronologia delle revisioni",
+    "pod": "Pod terminati",
+    "job": "Job terminati",
+    "namespace": "Namespace vuoti"
+  },
+  "reason": {
+    "configMapUnused": "Nessun Pod, modello di Pod o altro oggetto osservato vi fa riferimento.",
+    "secretUnused": "Nessun Pod, modello di Pod, ServiceAccount, Ingress, Gateway o oggetto di cert-manager o Flux vi fa riferimento.",
+    "claimUnmounted": "Nessun Pod lo monta, e nessun modello di Pod, StatefulSet, VolumeSnapshot o altro PersistentVolumeClaim vi fa riferimento.",
+    "volumeReleased": "Released: il suo PersistentVolumeClaim {{claim}} è stato eliminato.",
+    "volumeAvailable": "Available e non associato ad alcun PersistentVolumeClaim.",
+    "serviceNoEndpoints": "Non ha endpoint, e il suo selector non corrisponde ad alcun Pod né modello di Pod.",
+    "serviceNoSelector": "Non ha selector, né endpoint, né un oggetto Endpoints.",
+    "replicaSetHistory": "Revisione {{revision}} del Deployment {{deployment}}, oltre il suo revisionHistoryLimit: {{limit}}.",
+    "podSucceeded": "Succeeded, e nessun Job ne è proprietario.",
+    "podFailed": "Failed, e nessun Job ne è proprietario.",
+    "jobComplete": "Completato; nessun CronJob ne è proprietario e ttlSecondsAfterFinished non è impostato.",
+    "jobFailed": "Non riuscito; nessun CronJob ne è proprietario e ttlSecondsAfterFinished non è impostato.",
+    "namespaceEmpty": "Non contiene oggetti dei tipi verificati oltre a quelli che Kubernetes crea in ogni namespace. Gli oggetti di altri tipi non vengono verificati."
+  },
+  "since": {
+    "created": "creato {{age}} fa",
+    "finished": "terminato {{age}} fa",
+    "phaseChanged": "in questa fase da {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "Il suo volume {{volume}} ha la reclaim policy Delete: i dati verranno eliminati.",
+    "reclaimRetain": "Il suo volume {{volume}} ha la reclaim policy Retain: i dati restano nello storage.",
+    "reclaimOther": "Il suo volume {{volume}} ha la reclaim policy {{policy}}."
+  },
+  "column": {
+    "object": "Oggetto",
+    "reason": "Perché sembra inutilizzato",
+    "age": "Età",
+    "impact": "Se eliminato",
+    "manager": "Gestito da"
+  },
+  "open": "Apri {{kind}} {{name}}",
+  "select": "Seleziona {{kind}} {{name}}",
+  "selectGroup": "Seleziona tutti: {{group}}",
+  "deleteSelected": "Elimina selezionati ({{count}})…",
+  "managed": {
+    "title": "Gestiti da uno strumento, non proposti per l'eliminazione",
+    "text": "Anche questi sembrano inutilizzati, ma uno strumento li gestisce: li ricreerebbe o ne perderebbe traccia. Rimuovili tramite lo strumento.",
+    "helm": "Release di Helm {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Applicazione Argo CD {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Mantenuti di proposito, non proposti per l'eliminazione",
+    "retain": "Reclaim policy Retain: i dati sono mantenuti di proposito."
+  },
+  "settings": {
+    "button": "Impostazioni…",
+    "title": "Impostazioni della pulizia",
+    "checkConfigMaps": "Proponi i ConfigMap che nulla sembra usare",
+    "checkSecrets": "Proponi i Secret che nulla sembra usare",
+    "excluded": "Namespace mai verificati",
+    "excludedHint": "Uno per riga. kube-system, kube-public e kube-node-lease non vengono mai verificati.",
+    "days": "Proponi solo oggetti più vecchi di (giorni)",
+    "ages": {
+      "configs": "ConfigMap e Secret: giorni dalla creazione",
+      "services": "Service: giorni dalla creazione",
+      "pods": "Pod terminati: giorni dalla fine",
+      "jobs": "Job terminati: giorni dalla fine",
+      "claims": "PersistentVolumeClaim: giorni dalla creazione",
+      "volumes": "PersistentVolume: giorni nella fase attuale",
+      "namespaces": "Namespace vuoti: giorni dalla creazione"
+    },
+    "save": "Salva",
+    "saveFailed": "Impossibile salvare le impostazioni"
+  },
+  "dialog": {
+    "title_one": "Elimina {{count}} oggetto",
+    "title_many": "Elimina {{count}} oggetti",
+    "title_other": "Elimina {{count}} oggetti",
+    "text": "Ogni oggetto viene verificato di nuovo subito prima dell'eliminazione: un oggetto modificato o di nuovo in uso viene mantenuto. L'eliminazione non può essere annullata.",
+    "namespaceWarning": "Eliminare un namespace elimina tutto ciò che contiene, compresi oggetti di tipi che questa pagina non verifica.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Digita {{count}} per confermare",
+    "confirm": "Elimina",
+    "progress": "Eliminazione: {{done}} di {{total}}",
+    "stop": "Interrompi",
+    "resultTitle": "Risultato della pulizia",
+    "summary": "Eliminati: {{deleted}}. Mantenuti: {{kept}}. Non riusciti: {{failed}}.",
+    "outcome": {
+      "deleted": "Eliminato",
+      "gone": "Già rimosso",
+      "notCandidate": "Mantenuto: non sembra più inutilizzato",
+      "changed": "Mantenuto: modificato dopo la verifica",
+      "failed": "Non riuscito",
+      "stopped": "Non tentato: interrotto"
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "sidebar": "Aufräumen",
+  "title": "Aufräumen",
+  "intro": "Objekte, die ungenutzt oder übrig geblieben wirken, jeweils mit dem Grund. Ein Objekt ist nur dann ein Kandidat, wenn jede Liste, die darauf verweisen könnte, vollständig gelesen wurde; im Zweifel wird es nicht angeboten. Gelöscht wird erst, wenn Sie Objekte auswählen und bestätigen.",
+  "loading": "Namespaces werden gelesen…",
+  "chooseNamespace": "Namespaces auswählen",
+  "chooseNamespaceText": "Diese Seite prüft die im Namespace-Filter ausgewählten Namespaces. Wählen Sie einen oder mehrere Namespaces aus, um zu beginnen.",
+  "firstNamespaces_one": "Nur der erste {{count}} ausgewählte Namespace wird geprüft.",
+  "firstNamespaces_other": "Nur die ersten {{count}} ausgewählten Namespaces werden geprüft.",
+  "excludedInView": "Nicht geprüft, in den Einstellungen ausgeschlossen: {{names}}",
+  "configsOff": "ConfigMaps und Secrets werden nicht geprüft. Sie lassen sich in den Einstellungen einschalten.",
+  "configsWarning": "Sextant sieht nicht jeden Verweis auf eine ConfigMap oder ein Secret: Operatoren und Custom Resources, die es nicht kennt, CSI-Treiber, Controller-Argumente und Anwendungen, die sie über die API lesen. Prüfen Sie jedes Objekt vor dem Löschen.",
+  "blocked": "ConfigMaps, Secrets, PersistentVolumeClaims und Services in {{namespace}} werden nicht beurteilt: Dort gibt es Objekte von Arten, die Sextant nicht liest ({{kinds}}).",
+  "unavailableGroups": "Einige API-Gruppen antworten nicht ({{groups}}): Ihre Objekte sind nicht sichtbar, daher werden keine ConfigMaps, Secrets, PersistentVolumeClaims, Services oder Namespaces angeboten.",
+  "clusterFailed": "Die clusterweiten Objekte und API-Gruppen konnten nicht geprüft werden: Es werden keine ConfigMaps, Secrets, PersistentVolumeClaims, Services oder Namespaces angeboten.",
+  "clusterUnread": "Nicht alle Objekte dieser clusterweiten Arten konnten gelesen werden, daher werden keine ConfigMaps oder Secrets angeboten: {{kinds}}",
+  "sampleFailed": "Der Inhalt von {{namespace}} konnte nicht vollständig geprüft werden: Seine ConfigMaps, Secrets, PersistentVolumeClaims und der Namespace selbst werden nicht angeboten.",
+  "checkAgain": "Erneut prüfen",
+  "nothingChecked": "Alle ausgewählten Namespaces sind in den Einstellungen ausgeschlossen.",
+  "watchFailed": "{{kind}} konnte nicht beobachtet werden",
+  "forbidden": "Keine Berechtigung, {{kind}} aufzulisten in: {{names}}",
+  "unchecked": "Einige Objekte wurden nicht beurteilt, weil diese Listen noch nicht vollständig gelesen sind: {{kinds}}",
+  "none": "In den geprüften Namespaces gibt es nichts aufzuräumen.",
+  "truncated_one": "Zu viele Kandidaten: Nur der erste {{count}} wird aufgelistet.",
+  "truncated_other": "Zu viele Kandidaten: Nur die ersten {{count}} werden aufgelistet.",
+  "rule": {
+    "configMap": "ConfigMaps, die nichts verwendet",
+    "secret": "Secrets, die nichts verwendet",
+    "claim": "PersistentVolumeClaims, die kein Pod einbindet",
+    "volume": "Freigegebene oder nicht beanspruchte PersistentVolumes",
+    "service": "Services ohne Endpunkte",
+    "replicaSet": "Alte ReplicaSets jenseits des Revisionsverlaufs",
+    "pod": "Beendete Pods",
+    "job": "Beendete Jobs",
+    "namespace": "Leere Namespaces"
+  },
+  "reason": {
+    "configMapUnused": "Kein Pod, keine Pod-Vorlage und kein anderes beobachtetes Objekt verweist darauf.",
+    "secretUnused": "Kein Pod, keine Pod-Vorlage, kein ServiceAccount, Ingress, Gateway, cert-manager- oder Flux-Objekt verweist darauf.",
+    "claimUnmounted": "Kein Pod bindet ihn ein, und keine Pod-Vorlage, kein StatefulSet, kein VolumeSnapshot und kein anderer PersistentVolumeClaim verweist darauf.",
+    "volumeReleased": "Released: Sein PersistentVolumeClaim {{claim}} wurde gelöscht.",
+    "volumeAvailable": "Available und an keinen PersistentVolumeClaim gebunden.",
+    "serviceNoEndpoints": "Hat keine Endpunkte, und sein Selector passt zu keinem Pod und keiner Pod-Vorlage.",
+    "serviceNoSelector": "Hat keinen Selector, keine Endpunkte und kein Endpoints-Objekt.",
+    "replicaSetHistory": "Revision {{revision}} von Deployment {{deployment}}, jenseits seines revisionHistoryLimit: {{limit}}.",
+    "podSucceeded": "Succeeded, und kein Job besitzt ihn.",
+    "podFailed": "Failed, und kein Job besitzt ihn.",
+    "jobComplete": "Abgeschlossen; kein CronJob besitzt ihn, und ttlSecondsAfterFinished ist nicht gesetzt.",
+    "jobFailed": "Fehlgeschlagen; kein CronJob besitzt ihn, und ttlSecondsAfterFinished ist nicht gesetzt.",
+    "namespaceEmpty": "Enthält keine Objekte der geprüften Arten außer denen, die Kubernetes in jedem Namespace anlegt. Objekte anderer Arten werden nicht geprüft."
+  },
+  "since": {
+    "created": "vor {{age}} erstellt",
+    "finished": "vor {{age}} beendet",
+    "phaseChanged": "seit {{age}} in dieser Phase"
+  },
+  "note": {
+    "reclaimDelete": "Sein Volume {{volume}} hat die Reclaim-Policy Delete: Die Daten werden gelöscht.",
+    "reclaimRetain": "Sein Volume {{volume}} hat die Reclaim-Policy Retain: Die Daten bleiben im Speicher.",
+    "reclaimOther": "Sein Volume {{volume}} hat die Reclaim-Policy {{policy}}."
+  },
+  "column": {
+    "object": "Objekt",
+    "reason": "Warum es ungenutzt wirkt",
+    "age": "Alter",
+    "impact": "Beim Löschen",
+    "manager": "Verwaltet von"
+  },
+  "open": "{{kind}} {{name}} öffnen",
+  "select": "{{kind}} {{name}} auswählen",
+  "selectGroup": "Alle auswählen: {{group}}",
+  "deleteSelected": "Auswahl löschen ({{count}})…",
+  "managed": {
+    "title": "Von einem Werkzeug verwaltet, nicht zum Löschen angeboten",
+    "text": "Auch diese wirken ungenutzt, aber ein Werkzeug verwaltet sie: Es würde sie neu anlegen oder den Überblick verlieren. Entfernen Sie sie über das Werkzeug.",
+    "helm": "Helm-Release {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo-CD-Anwendung {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Absichtlich behalten, nicht zum Löschen angeboten",
+    "retain": "Reclaim-Policy Retain: Die Daten werden absichtlich behalten."
+  },
+  "settings": {
+    "button": "Einstellungen…",
+    "title": "Einstellungen zum Aufräumen",
+    "checkConfigMaps": "Scheinbar ungenutzte ConfigMaps anbieten",
+    "checkSecrets": "Scheinbar ungenutzte Secrets anbieten",
+    "excluded": "Nie geprüfte Namespaces",
+    "excludedHint": "Einer pro Zeile. kube-system, kube-public und kube-node-lease werden nie geprüft.",
+    "days": "Nur Objekte anbieten, die älter sind als (Tage)",
+    "ages": {
+      "configs": "ConfigMaps und Secrets: Tage seit der Erstellung",
+      "services": "Services: Tage seit der Erstellung",
+      "pods": "Beendete Pods: Tage seit dem Ende",
+      "jobs": "Beendete Jobs: Tage seit dem Ende",
+      "claims": "PersistentVolumeClaims: Tage seit der Erstellung",
+      "volumes": "PersistentVolumes: Tage in ihrer Phase",
+      "namespaces": "Leere Namespaces: Tage seit der Erstellung"
+    },
+    "save": "Speichern",
+    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden"
+  },
+  "dialog": {
+    "title_one": "{{count}} Objekt löschen",
+    "title_other": "{{count}} Objekte löschen",
+    "text": "Jedes Objekt wird unmittelbar vor dem Löschen erneut geprüft: Ein geändertes oder wieder verwendetes Objekt bleibt erhalten. Das Löschen lässt sich nicht rückgängig machen.",
+    "namespaceWarning": "Das Löschen eines Namespace löscht alles darin, auch Objekte von Arten, die diese Seite nicht prüft.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Geben Sie zur Bestätigung {{count}} ein",
+    "confirm": "Löschen",
+    "progress": "Löschen: {{done}} von {{total}}",
+    "stop": "Anhalten",
+    "resultTitle": "Ergebnis des Aufräumens",
+    "summary": "Gelöscht: {{deleted}}. Behalten: {{kept}}. Fehlgeschlagen: {{failed}}.",
+    "outcome": {
+      "deleted": "Gelöscht",
+      "gone": "Bereits entfernt",
+      "notCandidate": "Behalten: wirkt nicht mehr ungenutzt",
+      "changed": "Behalten: seit der Prüfung geändert",
+      "failed": "Fehlgeschlagen",
+      "stopped": "Nicht versucht: angehalten"
+    }
+  }
+}

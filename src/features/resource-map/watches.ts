@@ -15,6 +15,7 @@ import {
   type WatchState,
   type WatchUpdate,
 } from "../../api";
+import { reportWatchUpdate } from "../../api/watchObservers";
 import { useClustersStore } from "../clusters/clustersStore";
 
 export const LINGER_MS = 5000;
@@ -98,6 +99,7 @@ export function acquireWatch(clusterId: ClusterId, spec: WatchSpec): () => void 
       stop: api.resources.watchStop,
       onEvent: (update) => {
         if (entries.get(key) !== created) return;
+        reportWatchUpdate(clusterId, spec, update);
         const next = applyWatchUpdate(created.state, update);
         if (next === created.state) return;
         created.state = next;

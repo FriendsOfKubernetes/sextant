@@ -24,6 +24,7 @@
     "boundTo": { "out": "바인딩 대상", "in": "바인딩 주체" },
     "storageClass": { "out": "스토리지 클래스", "in": "이 클래스를 사용하는 개체" },
     "class": { "out": "클래스", "in": "이 클래스의 개체" },
+    "parameters": { "out": "매개변수", "in": "매개변수로 사용하는 개체" },
     "node": { "out": "실행 노드", "in": "실행 중인 Pod" }
   },
   "impact": {

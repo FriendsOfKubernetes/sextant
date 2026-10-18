@@ -1,0 +1,79 @@
+{
+  "sidebar": "Timeline",
+  "title": "Change timeline",
+  "lead": "What changed in the cluster, when and by whom. Sextant records changes of the objects it watches while it is connected; earlier changes come from what the cluster keeps and are marked as partial.",
+  "tab": "Changes",
+  "tabLead": "Changes Sextant recorded while it watched this object, and what the cluster keeps from before (partial).",
+  "tabEmpty": "No changes of this object are known yet.",
+  "objectHistoryFailed": "The cluster's history of this object could not be read: {{message}}",
+  "filters": {
+    "kind": "Kind",
+    "anyKind": "All kinds",
+    "manager": "Changed by",
+    "anyManager": "Anyone",
+    "onlyBeforeProblems": "Only changes before problems",
+    "partial": "History before Sextant",
+    "persist": "Keep between restarts",
+    "persistHint": "Recorded changes are saved on this computer, one file per cluster. Secret values are never recorded."
+  },
+  "refresh": "Refresh",
+  "clear": "Clear recorded",
+  "saveFailed": "The timeline could not be saved: {{message}}",
+  "partialNeedsNamespaces": "Choose namespaces in the filter to see the history from before Sextant was running.",
+  "partialFirstNamespaces_one": "The history before Sextant covers the first {{count}} namespace of the filter.",
+  "partialFirstNamespaces_other": "The history before Sextant covers the first {{count}} namespaces of the filter.",
+  "relatedLimited_one": "Problems on dependent objects are matched in the first {{count}} namespace of the filter.",
+  "relatedLimited_other": "Problems on dependent objects are matched in the first {{count}} namespaces of the filter.",
+  "allNamespacesNote": "With all namespaces, a problem is matched to a change of the same object or of the workload it is named after.",
+  "partialLoading": "Reading what the cluster keeps…",
+  "partialSkipped": "Some lists could not be read: {{kinds}}",
+  "partialTruncated": "The history before Sextant is long: only the newest entries are shown.",
+  "empty": "No changes are known yet. They appear here as objects change while Sextant watches them.",
+  "emptyFiltered": "No changes match the filters.",
+  "showMore_one": "Show {{count}} more",
+  "showMore_other": "Show {{count}} more",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "Created",
+    "updated": "Changed",
+    "deleted": "Deleted"
+  },
+  "late": "Seen later",
+  "lateTitle": "Nothing watched this object for a while: the change was made before this time.",
+  "partialBadge": "Partial",
+  "partialTitle": "From what the cluster keeps: not every change made before Sextant was running is known.",
+  "source": {
+    "fieldManager": "Last change by this field manager",
+    "revision": "Revision {{revision}}",
+    "revisionCause": "Revision {{revision}}: {{cause}}",
+    "helm": "Helm release {{name}}, revision {{revision}}",
+    "helmStatus": "Helm release {{name}}, revision {{revision}} ({{status}})"
+  },
+  "who": {
+    "by": "By {{who}}",
+    "likely": "Probably by {{who}}",
+    "pending": "Looking up who made it…",
+    "unknown": "Who made it is not known",
+    "sextant": "Sextant (you or an AI agent)"
+  },
+  "change": {
+    "added": "{{path}} added: {{value}}",
+    "addedHidden": "{{path}} added",
+    "removed": "{{path}} removed",
+    "changed": "{{path}}: {{before}} → {{after}}",
+    "changedLong": "{{path}} changed (long value)",
+    "changedHidden": "{{path}} changed",
+    "summaryOnly": "Changed; the earlier version was too large to keep, so the changed fields are not known.",
+    "more_one": "…and {{count}} more change",
+    "more_other": "…and {{count}} more changes",
+    "showAll": "Show all changes ({{count}})",
+    "showLess": "Show fewer"
+  },
+  "correlation": {
+    "label": "Soon after this change",
+    "sameTime": "{{reason}} on {{kind}} {{name}} at about the same time",
+    "after_one": "{{reason}} on {{kind}} {{name}} {{count}} min after this change",
+    "after_other": "{{reason}} on {{kind}} {{name}} {{count}} min after this change"
+  }
+}

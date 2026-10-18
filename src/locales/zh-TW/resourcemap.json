@@ -24,6 +24,7 @@
     "boundTo": { "out": "繫結至", "in": "被繫結者" },
     "storageClass": { "out": "StorageClass", "in": "使用此類別" },
     "class": { "out": "類別", "in": "此類別的物件" },
+    "parameters": { "out": "參數", "in": "作為參數用於" },
     "node": { "out": "執行於", "in": "執行的 Pod" }
   },
   "impact": {

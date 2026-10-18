@@ -1,0 +1,74 @@
+{
+  "sidebar": "時間軸",
+  "title": "變更時間軸",
+  "lead": "叢集中有什麼變更、何時以及由誰變更。Sextant 在連線期間記錄其監看物件的變更；更早的變更來自叢集保留的資訊，並標示為不完整。",
+  "tab": "變更",
+  "tabLead": "Sextant 監看此物件期間記錄的變更，以及叢集保留的更早資訊（不完整）。",
+  "tabEmpty": "尚無此物件的已知變更。",
+  "objectHistoryFailed": "無法讀取此物件在叢集中的歷程記錄：{{message}}",
+  "filters": {
+    "kind": "類型",
+    "anyKind": "所有類型",
+    "manager": "變更者",
+    "anyManager": "任何人",
+    "onlyBeforeProblems": "僅顯示問題發生前的變更",
+    "partial": "Sextant 之前的歷程",
+    "persist": "在重新啟動之間保留",
+    "persistHint": "記錄的變更會儲存在這部電腦上，每個叢集一個檔案。絕不記錄 Secret 的值。"
+  },
+  "refresh": "重新整理",
+  "clear": "清除記錄",
+  "saveFailed": "無法儲存時間軸：{{message}}",
+  "partialNeedsNamespaces": "在篩選器中選擇 namespace，以查看 Sextant 執行之前的歷程。",
+  "partialFirstNamespaces_other": "Sextant 之前的歷程涵蓋篩選器中的前 {{count}} 個 namespace。",
+  "relatedLimited_other": "在篩選器的前 {{count}} 個 namespace 中比對相依物件的問題。",
+  "allNamespacesNote": "選擇所有 namespace 時，問題只會與同一物件或以其命名的工作負載的變更比對。",
+  "partialLoading": "正在讀取叢集保留的資訊…",
+  "partialSkipped": "部分清單無法讀取：{{kinds}}",
+  "partialTruncated": "Sextant 之前的歷程很長：僅顯示最新的項目。",
+  "empty": "尚無已知變更。Sextant 監看物件期間，物件發生變更時會顯示在這裡。",
+  "emptyFiltered": "沒有符合篩選條件的變更。",
+  "showMore_other": "再顯示 {{count}} 個",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "已建立",
+    "updated": "已變更",
+    "deleted": "已刪除"
+  },
+  "late": "較晚發現",
+  "lateTitle": "有一段時間沒有監看此物件：變更發生在此時間之前。",
+  "partialBadge": "不完整",
+  "partialTitle": "來自叢集保留的資訊：Sextant 執行之前的變更並非全部已知。",
+  "source": {
+    "fieldManager": "此 field manager 的最近一次變更",
+    "revision": "修訂版本 {{revision}}",
+    "revisionCause": "修訂版本 {{revision}}：{{cause}}",
+    "helm": "Helm 發行 {{name}}，修訂版本 {{revision}}",
+    "helmStatus": "Helm 發行 {{name}}，修訂版本 {{revision}}（{{status}}）"
+  },
+  "who": {
+    "by": "變更者：{{who}}",
+    "likely": "可能的變更者：{{who}}",
+    "pending": "正在查找變更者…",
+    "unknown": "變更者不明",
+    "sextant": "Sextant（您或 AI 代理程式）"
+  },
+  "change": {
+    "added": "已新增 {{path}}：{{value}}",
+    "addedHidden": "已新增 {{path}}",
+    "removed": "已移除 {{path}}",
+    "changed": "{{path}}：{{before}} → {{after}}",
+    "changedLong": "{{path}} 已變更（值過長）",
+    "changedHidden": "{{path}} 已變更",
+    "summaryOnly": "已變更；先前的版本過大而未保留，因此不知道變更了哪些欄位。",
+    "more_other": "…以及另外 {{count}} 處變更",
+    "showAll": "顯示所有變更（{{count}}）",
+    "showLess": "顯示較少"
+  },
+  "correlation": {
+    "label": "此變更後不久",
+    "sameTime": "大約同一時間，{{kind}} {{name}} 出現 {{reason}}",
+    "after_other": "此變更 {{count}} 分鐘後，{{kind}} {{name}} 出現 {{reason}}"
+  }
+}

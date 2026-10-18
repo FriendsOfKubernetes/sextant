@@ -1,0 +1,79 @@
+{
+  "sidebar": "Zaman çizelgesi",
+  "title": "Değişiklik zaman çizelgesi",
+  "lead": "Kümede neyin, ne zaman ve kim tarafından değiştirildiği. Sextant bağlıyken izlediği nesnelerin değişikliklerini kaydeder; daha önceki değişiklikler kümenin sakladıklarından gelir ve kısmi olarak işaretlenir.",
+  "tab": "Değişiklikler",
+  "tabLead": "Sextant'ın bu nesneyi izlerken kaydettiği değişiklikler ve kümenin daha önceki döneme ait sakladıkları (kısmi).",
+  "tabEmpty": "Bu nesnenin henüz bilinen bir değişikliği yok.",
+  "objectHistoryFailed": "Bu nesnenin kümedeki geçmişi okunamadı: {{message}}",
+  "filters": {
+    "kind": "Tür",
+    "anyKind": "Tüm türler",
+    "manager": "Değiştiren",
+    "anyManager": "Herhangi biri",
+    "onlyBeforeProblems": "Yalnızca sorunlardan önceki değişiklikler",
+    "partial": "Sextant öncesi geçmiş",
+    "persist": "Yeniden başlatmalar arasında sakla",
+    "persistHint": "Kaydedilen değişiklikler bu bilgisayarda, küme başına bir dosya olarak saklanır. Secret değerleri asla kaydedilmez."
+  },
+  "refresh": "Yenile",
+  "clear": "Kaydedilenleri temizle",
+  "saveFailed": "Zaman çizelgesi kaydedilemedi: {{message}}",
+  "partialNeedsNamespaces": "Sextant çalışmadan önceki geçmişi görmek için filtrede namespace seçin.",
+  "partialFirstNamespaces_one": "Sextant öncesi geçmiş, filtredeki ilk {{count}} namespace'i kapsar.",
+  "partialFirstNamespaces_other": "Sextant öncesi geçmiş, filtredeki ilk {{count}} namespace'i kapsar.",
+  "relatedLimited_one": "Bağımlı nesnelerin sorunları filtredeki ilk {{count}} namespace'te eşleştirilir.",
+  "relatedLimited_other": "Bağımlı nesnelerin sorunları filtredeki ilk {{count}} namespace'te eşleştirilir.",
+  "allNamespacesNote": "Tüm namespace'ler seçiliyken bir sorun, aynı nesnenin veya adını aldığı iş yükünün değişikliğiyle eşleştirilir.",
+  "partialLoading": "Kümenin sakladıkları okunuyor…",
+  "partialSkipped": "Bazı listeler okunamadı: {{kinds}}",
+  "partialTruncated": "Sextant öncesi geçmiş uzun: yalnızca en yeni kayıtlar gösteriliyor.",
+  "empty": "Henüz bilinen değişiklik yok. Sextant nesneleri izlerken nesneler değiştikçe burada görünürler.",
+  "emptyFiltered": "Filtrelere uyan değişiklik yok.",
+  "showMore_one": "{{count}} tane daha göster",
+  "showMore_other": "{{count}} tane daha göster",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "Oluşturuldu",
+    "updated": "Değiştirildi",
+    "deleted": "Silindi"
+  },
+  "late": "Sonradan görüldü",
+  "lateTitle": "Bu nesne bir süre izlenmedi: değişiklik bu zamandan önce yapıldı.",
+  "partialBadge": "Kısmi",
+  "partialTitle": "Kümenin sakladıklarından: Sextant çalışmadan önce yapılan her değişiklik bilinmiyor.",
+  "source": {
+    "fieldManager": "Bu field manager tarafından yapılan son değişiklik",
+    "revision": "Revizyon {{revision}}",
+    "revisionCause": "Revizyon {{revision}}: {{cause}}",
+    "helm": "Helm sürümü {{name}}, revizyon {{revision}}",
+    "helmStatus": "Helm sürümü {{name}}, revizyon {{revision}} ({{status}})"
+  },
+  "who": {
+    "by": "Değiştiren: {{who}}",
+    "likely": "Muhtemelen değiştiren: {{who}}",
+    "pending": "Değişikliği kimin yaptığı araştırılıyor…",
+    "unknown": "Değişikliği kimin yaptığı bilinmiyor",
+    "sextant": "Sextant (siz veya bir yapay zekâ aracısı)"
+  },
+  "change": {
+    "added": "{{path}} eklendi: {{value}}",
+    "addedHidden": "{{path}} eklendi",
+    "removed": "{{path}} kaldırıldı",
+    "changed": "{{path}}: {{before}} → {{after}}",
+    "changedLong": "{{path}} değişti (uzun değer)",
+    "changedHidden": "{{path}} değişti",
+    "summaryOnly": "Değişti; önceki sürüm saklanamayacak kadar büyüktü, bu yüzden değişen alanlar bilinmiyor.",
+    "more_one": "…ve {{count}} değişiklik daha",
+    "more_other": "…ve {{count}} değişiklik daha",
+    "showAll": "Tüm değişiklikleri göster ({{count}})",
+    "showLess": "Daha az göster"
+  },
+  "correlation": {
+    "label": "Bu değişiklikten kısa süre sonra",
+    "sameTime": "{{kind}} {{name}} üzerinde yaklaşık aynı anda {{reason}}",
+    "after_one": "Bu değişiklikten {{count}} dk sonra {{kind}} {{name}} üzerinde {{reason}}",
+    "after_other": "Bu değişiklikten {{count}} dk sonra {{kind}} {{name}} üzerinde {{reason}}"
+  }
+}

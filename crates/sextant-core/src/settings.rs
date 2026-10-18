@@ -192,6 +192,89 @@ pub struct FleetSettings {
     pub selected: Vec<String>,
 }
 
+/// The change timeline (#145). Written by the frontend.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct TimelineSettings {
+    /// Keep each cluster's recorded timeline in a file between runs (`timeline::save`); off by default, so what was
+    /// recorded lives in memory only and goes when Sextant quits.
+    pub persist: bool,
+}
+
+/// The "Cleanup" page (#147). Written by the frontend, which keeps the always-skipped system namespaces
+/// (`kube-system`, `kube-public`, `kube-node-lease`) out of this list and applies its own bounds to the ages.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct CleanupSettings {
+    /// Namespaces whose objects are never offered for deletion, besides the system ones.
+    pub excluded_namespaces: Vec<String>,
+    /// How many days an object must have been unused (or finished) before it is a candidate, per kind of rule.
+    pub min_age_days: CleanupAges,
+    /// Offer ConfigMaps nothing seems to use. Off by default: Sextant cannot see every reference (operators,
+    /// CSI drivers, controller arguments, applications reading through the API).
+    pub check_config_maps: bool,
+    /// Offer Secrets nothing seems to use. Off by default, for the same reason.
+    pub check_secrets: bool,
+}
+
+/// Days per rule of the "Cleanup" page.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct CleanupAges {
+    /// ConfigMaps and Secrets that nothing refers to.
+    pub configs: u32,
+    /// Services without endpoints.
+    pub services: u32,
+    /// Finished Pods.
+    pub pods: u32,
+    /// Finished Jobs.
+    pub jobs: u32,
+    /// PersistentVolumeClaims no Pod mounts.
+    pub claims: u32,
+    /// Released or Available PersistentVolumes.
+    pub volumes: u32,
+    /// Empty namespaces.
+    pub namespaces: u32,
+}
+
+impl Default for CleanupAges {
+    fn default() -> Self {
+        Self {
+            configs: 7,
+            services: 7,
+            pods: 7,
+            jobs: 7,
+            claims: 30,
+            volumes: 30,
+            namespaces: 30,
+        }
+    }
+}
+
+impl Default for CleanupSettings {
+    fn default() -> Self {
+        Self {
+            excluded_namespaces: [
+                "cert-manager",
+                "flux-system",
+                "argocd",
+                "ingress-nginx",
+                "istio-system",
+                "monitoring",
+                "local-path-storage",
+            ]
+            .map(str::to_owned)
+            .to_vec(),
+            min_age_days: CleanupAges::default(),
+            check_config_maps: false,
+            check_secrets: false,
+        }
+    }
+}
+
 impl Default for NotificationSettings {
     fn default() -> Self {
         Self {
@@ -290,6 +373,10 @@ pub struct AppSettings {
     pub notifications: NotificationSettings,
     /// The overview of several clusters: which clusters it shows. Written by the frontend.
     pub fleet: FleetSettings,
+    /// The change timeline (#145): whether recorded changes are kept between runs. Written by the frontend.
+    pub timeline: TimelineSettings,
+    /// The "Cleanup" page (#147): namespaces it never checks and how old a candidate must be. Written by the frontend.
+    pub cleanup: CleanupSettings,
 }
 
 impl Default for AppSettings {
@@ -311,6 +398,8 @@ impl Default for AppSettings {
             extensions: Vec::new(),
             notifications: NotificationSettings::default(),
             fleet: FleetSettings::default(),
+            timeline: TimelineSettings::default(),
+            cleanup: CleanupSettings::default(),
         }
     }
 }
@@ -1321,6 +1410,50 @@ mod tests {
         assert_eq!(SettingsStore::open(path).get().fleet.selected, ["c2", "c1"]);
         let partial: FleetSettings = serde_json::from_str("{}").unwrap();
         assert!(partial.selected.is_empty());
+    }
+
+    #[test]
+    fn the_cleanup_settings_have_defaults_and_keep_a_partial_value() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        // A file of an older version, without the field.
+        std::fs::write(&path, r#"{ "theme": "dark" }"#).unwrap();
+        let store = SettingsStore::open(path.clone());
+        let cleanup = store.get().cleanup;
+        assert_eq!(cleanup, CleanupSettings::default());
+        assert!(
+            cleanup
+                .excluded_namespaces
+                .contains(&"flux-system".to_owned())
+        );
+        assert!(
+            !cleanup
+                .excluded_namespaces
+                .contains(&"kube-system".to_owned())
+        );
+        assert_eq!(
+            (cleanup.min_age_days.pods, cleanup.min_age_days.volumes),
+            (7, 30)
+        );
+        assert!(!cleanup.check_config_maps && !cleanup.check_secrets);
+        store
+            .update(|s| {
+                s.cleanup.excluded_namespaces = vec!["team-x".to_owned()];
+                s.cleanup.min_age_days.jobs = 3;
+            })
+            .unwrap();
+        let read = SettingsStore::open(path).get().cleanup;
+        assert_eq!(read.excluded_namespaces, ["team-x"]);
+        assert_eq!(read.min_age_days.jobs, 3);
+        // A value with some ages only keeps the defaults of the others.
+        let partial: CleanupSettings =
+            serde_json::from_str(r#"{"minAgeDays":{"pods":1}}"#).unwrap();
+        assert_eq!(partial.min_age_days.pods, 1);
+        assert_eq!(partial.min_age_days.claims, 30);
+        assert_eq!(
+            partial.excluded_namespaces,
+            CleanupSettings::default().excluded_namespaces
+        );
     }
 
     #[test]

@@ -1,0 +1,27 @@
+# ADR-0082: Connectivity is reasoned from policy objects and answers "unknown" rather than "allowed"
+
+## Context
+
+"Can pod A reach pod B?" (#148) is answered in practice by reading every NetworkPolicy that selects either pod and keeping their semantics in one's head: isolation per direction, `policyTypes` defaulting, rules ORed, peers and ports ANDed, `podSelector` + `namespaceSelector` in one peer versus two peers, named ports, `ipBlock` with `except`. Clusters running Cilium or Calico add their own policy kinds with other semantics (deny rules, an empty rule that matches nothing, ordered evaluation, tiers), and other projects add more (AdminNetworkPolicy, Antrea, OVN-Kubernetes, GKE FQDN policies). Sextant could also probe: exec into the source and try to connect. A wrong "allowed" is the dangerous answer: a user who trusts it ships a service that is blocked, or believes a database is isolated when it is not.
+
+## Decision
+
+- **Objects, not traffic.** The answer comes from the policy objects in the cluster through a pure engine (`src/features/netpol/engine.ts`); nothing is sent between pods, no pod is exec'd into, no CNI agent is asked. The page says so, and that NetworkPolicy has an effect only when the CNI enforces it.
+- **One model, three-valued.** Every flavour is normalised to one model (`model.ts`: `Policy` → `Rule` → `Peer`/`PortSpec`) whose matches are yes / no / maybe. Kubernetes NetworkPolicy follows `networking.k8s.io/v1` exactly (`kubernetes.ts`). The source's egress and the destination's ingress are evaluated separately and both must allow; a Service destination is checked per selected pod at its target port; the DNS egress to `kube-system` pods labelled `k8s-app=kube-dns` is checked beside the answer. hostNetwork pods are not subject to policy.
+- **"Unknown", never "allowed", for what the objects cannot decide.** An `ipBlock` that holds a pod IP (implementation-defined), a list that could not be read, a failed discovery, a feature the engine does not model, and any object of a served policy kind it does not evaluate (`UNEVALUATED_KINDS`: AdminNetworkPolicy, BaselineAdminNetworkPolicy, ClusterNetworkPolicy, Antrea NetworkPolicy and ClusterNetworkPolicy, OVN EgressFirewall and AdminPolicyBasedExternalRoute, GKE FQDNNetworkPolicy — for its namespace, or everywhere when cluster-wide) make the verdict "unknown", with the reason named. A "maybe" never rounds up to "yes".
+- **CNI policies as their L3/L4 subset.** Cilium (`cilium.ts`: CiliumNetworkPolicy and CiliumClusterwideNetworkPolicy; endpoint selectors with source prefixes, deny rules winning, `ingress: [{}]` matching nothing, `enableDefaultDeny`, CIDR and the entities `all`/`world`/`cluster`) and Calico (`calico.ts` + `calicoSelector.ts`: projectcalico.org/v3 through its API server, else the `crd.projectcalico.org` CRDs; ordered first match with Kubernetes policies at order 1000, the default tier only, Calico's selector language). L7 rules, `toFQDNs`, `toServices`, tiers other than default, Pass, service-account and service matches, network sets and the other listed fields are not modelled and make the answer "unknown" where they could matter.
+- **Bounded watches.** `hooks.ts` watches, through the resource map's shared watches, only the namespaces a question names (pods and policies), Services where asked, Namespaces (their labels), the cluster-wide policy kinds the cluster serves and the DNS pods by label; nothing before discovery.
+- **Read-only and frontend only.** Views: the page "Connectivity" (Network section) with the check and a per-namespace policy map, the details section "In plain words" of every policy kind it evaluates, and "Network policies" (isolation per direction) on pods. No Rust command; agents and extensions get nothing new.
+
+## Why
+
+- Probing live traffic was rejected: it needs exec into a pod (a side effect, and impossible in images without a shell or a client), tests one moment and one path, and cannot tell a policy denial from a crashed server; reasoning from objects explains which policy decides.
+- Treating unknown kinds as absent was rejected: an AdminNetworkPolicy or an Antrea policy can deny what NetworkPolicies allow, so "allowed" would be wrong exactly where the cluster is stricter.
+- Modelling every CNI feature was rejected: L7 and FQDN rules depend on runtime state Sextant does not see. The subset is chosen so that every modelled rule is decided exactly and every unmodelled one is visible as "unknown".
+
+## Consequences
+
+- On clusters with policy kinds Sextant does not evaluate, many answers are "unknown" with the kind named; this is intended.
+- The answer is as good as the CNI's enforcement: a CNI that does not enforce NetworkPolicy allows everything regardless.
+- A new policy kind or a new field of a modelled one must either be modelled with tests or added to the "unknown" path; it must never be silently ignored.
+- Tests: `engine.test.ts` (Kubernetes semantics, table-driven), `cni.test.ts` (Cilium and Calico), `netpol.test.tsx` (page and details).

@@ -13,6 +13,8 @@
     "accessControl": "访问控制",
     "certManager": "cert-manager",
     "trivy": "Trivy",
+    "keda": "KEDA",
+    "karpenter": "Karpenter",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "自定义资源"

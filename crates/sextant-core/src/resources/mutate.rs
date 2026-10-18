@@ -12,8 +12,9 @@ use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference}
 use kube::Api;
 use kube::api::{
     DeleteParams, DynamicObject, EvictParams, ListParams, Patch, PatchParams, PostParams,
+    Preconditions,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use super::get::{
@@ -25,6 +26,7 @@ use crate::cluster::{CONNECT_TIMEOUT, ClusterManager};
 use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::kubeconfig::ClusterId;
 use crate::node_shell;
+use ts_rs::TS;
 
 /// Field manager of every change Sextant makes (server-side apply and updates).
 pub const FIELD_MANAGER: &str = "sextant";
@@ -408,8 +410,55 @@ pub(super) fn patch_body(patch: &Value, patch_type: PatchType) -> CoreResult<Pat
 
 /// Deletes one object; dependents (a Deployment's ReplicaSets and pods) are removed in the background.
 pub async fn delete(mgr: &ClusterManager, cluster: &ClusterId, r: &ObjectRef) -> CoreResult<()> {
+    delete_with(mgr, cluster, r, None).await
+}
+
+/// What the object to delete must still be: the API server refuses the deletion with `conflict` (HTTP 409) when its
+/// uid or resourceVersion differ, so an object replaced or changed since the caller looked at it is kept (#147).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DeletePreconditions {
+    #[serde(default)]
+    pub uid: Option<String>,
+    #[serde(default)]
+    pub resource_version: Option<String>,
+}
+
+/// The kube-rs form of `pre`; an empty value is `invalid` (it would make the API server compare with nothing).
+fn delete_params(pre: Option<&DeletePreconditions>) -> CoreResult<DeleteParams> {
+    let mut params = DeleteParams::background();
+    let Some(pre) = pre else { return Ok(params) };
+    let value = |field: &str, v: &Option<String>| -> CoreResult<Option<String>> {
+        match v.as_deref() {
+            Some("") => Err(CoreError::new(
+                ErrorCode::Invalid,
+                format!("the deletion precondition {field} is empty"),
+            )),
+            other => Ok(other.map(str::to_owned)),
+        }
+    };
+    let uid = value("uid", &pre.uid)?;
+    let resource_version = value("resourceVersion", &pre.resource_version)?;
+    if uid.is_some() || resource_version.is_some() {
+        params.preconditions = Some(Preconditions {
+            uid,
+            resource_version,
+        });
+    }
+    Ok(params)
+}
+
+/// [`delete`] that the API server carries out only while the object still has `pre`'s uid and resourceVersion.
+pub async fn delete_with(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    r: &ObjectRef,
+    pre: Option<&DeletePreconditions>,
+) -> CoreResult<()> {
+    let params = delete_params(pre)?;
     let (api, _) = object_api(mgr, cluster, r).await?;
-    api.delete(&r.name, &DeleteParams::background()).await?;
+    api.delete(&r.name, &params).await?;
     Ok(())
 }
 
@@ -1263,6 +1312,111 @@ items:
 
     /// Short enough for a test, long enough for a local answer.
     const TEST_STEP: Duration = Duration::from_millis(500);
+
+    /// A ConfigMap `ns/a` whose uid is `uid-a` at resourceVersion `7`: a DELETE whose preconditions name anything
+    /// else gets the API server's 409, like a real one.
+    async fn precondition_server() -> crate::fake_api::FakeApi {
+        use crate::fake_api::{FakeApi, Reply, Request};
+        FakeApi::start(|req: &Request| match (req.method.as_str(), req.path.as_str()) {
+            ("GET", "/api") => Reply::json(200, fake::API_VERSIONS),
+            ("GET", "/api/v1") => Reply::json(200, fake::CORE_RESOURCES),
+            ("GET", "/apis") => Reply::json(200, fake::API_GROUPS),
+            ("DELETE", "/api/v1/namespaces/ns/configmaps/a") => {
+                let body: Value = serde_json::from_slice(&req.body).unwrap_or(Value::Null);
+                let pre = &body["preconditions"];
+                let uid_ok = pre["uid"].is_null() || pre["uid"] == "uid-a";
+                let rv_ok = pre["resourceVersion"].is_null() || pre["resourceVersion"] == "7";
+                if uid_ok && rv_ok {
+                    Reply::json(200, r#"{"kind":"Status","apiVersion":"v1","status":"Success"}"#)
+                } else {
+                    Reply::json(
+                        409,
+                        r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Conflict","code":409,"message":"Precondition failed: UID in precondition: uid-old, UID in object meta: uid-a"}"#,
+                    )
+                }
+            }
+            _ => Reply::not_found(),
+        })
+        .await
+    }
+
+    fn config_map_a() -> ObjectRef {
+        ObjectRef {
+            kind: KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "ConfigMap".into(),
+            },
+            namespace: Some("ns".into()),
+            name: "a".into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_deletion_with_preconditions_sends_them_and_the_server_keeps_a_replaced_object() {
+        let api = precondition_server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let stale = DeletePreconditions {
+            uid: Some("uid-old".into()),
+            resource_version: Some("7".into()),
+        };
+        let err = delete_with(&mgr, &id, &config_map_a(), Some(&stale))
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Conflict, "{err}");
+
+        let current = DeletePreconditions {
+            uid: Some("uid-a".into()),
+            resource_version: Some("7".into()),
+        };
+        delete_with(&mgr, &id, &config_map_a(), Some(&current))
+            .await
+            .unwrap();
+        let deletes: Vec<Value> = api
+            .requests()
+            .iter()
+            .filter(|r| r.method == "DELETE")
+            .map(|r| serde_json::from_slice(&r.body).unwrap())
+            .collect();
+        assert_eq!(deletes.len(), 2);
+        assert_eq!(
+            deletes[1]["preconditions"],
+            json!({ "uid": "uid-a", "resourceVersion": "7" })
+        );
+        assert_eq!(deletes[1]["propagationPolicy"], "Background");
+    }
+
+    #[tokio::test]
+    async fn a_plain_deletion_has_no_preconditions_and_an_empty_one_is_refused_unsent() {
+        let api = precondition_server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        delete(&mgr, &id, &config_map_a()).await.unwrap();
+        let body: Value = serde_json::from_slice(
+            &api.requests()
+                .iter()
+                .find(|r| r.method == "DELETE")
+                .unwrap()
+                .body,
+        )
+        .unwrap();
+        assert!(body.get("preconditions").is_none(), "{body}");
+
+        let empty = DeletePreconditions {
+            uid: Some(String::new()),
+            resource_version: None,
+        };
+        let err = delete_with(&mgr, &id, &config_map_a(), Some(&empty))
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid, "{err}");
+        assert_eq!(
+            api.requests()
+                .iter()
+                .filter(|r| r.method == "DELETE")
+                .count(),
+            1
+        );
+    }
 
     #[tokio::test]
     async fn a_drain_cut_by_the_timeout_names_the_evicted_pods_and_the_pods_not_sent() {

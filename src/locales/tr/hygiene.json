@@ -1,0 +1,127 @@
+{
+  "sidebar": "Temizlik",
+  "title": "Temizlik",
+  "intro": "Kullanılmıyor ya da artakalmış görünen nesneler, her biri nedeniyle birlikte. Bir nesne, ona başvurabilecek her liste tamamen okunduğunda aday olur; şüphe varsa önerilmez. Siz nesneleri seçip onaylamadan hiçbir şey silinmez.",
+  "loading": "Namespace'ler okunuyor…",
+  "chooseNamespace": "Namespace seçin",
+  "chooseNamespaceText": "Bu sayfa namespace filtresinde seçilen namespace'leri denetler. Başlamak için bir veya daha fazla namespace seçin.",
+  "firstNamespaces_one": "Yalnızca seçilen ilk {{count}} namespace denetlenir.",
+  "firstNamespaces_other": "Yalnızca seçilen ilk {{count}} namespace denetlenir.",
+  "excludedInView": "Denetlenmez, ayarlarda hariç tutuldu: {{names}}",
+  "configsOff": "ConfigMap ve Secret'lar denetlenmez. Ayarlardan açılabilirler.",
+  "configsWarning": "Sextant bir ConfigMap veya Secret'a yapılan her başvuruyu göremez: tanımadığı operatörler ve özel kaynaklar, CSI sürücüleri, denetleyici argümanları ve bunları API üzerinden okuyan uygulamalar. Silmeden önce her birini denetleyin.",
+  "blocked": "{{namespace}} içindeki ConfigMap, Secret, PersistentVolumeClaim ve Service'ler değerlendirilmez: orada Sextant'ın okumadığı türlerde nesneler var ({{kinds}}).",
+  "unavailableGroups": "Bazı API grupları yanıt vermiyor ({{groups}}): nesneleri görülemediği için hiçbir ConfigMap, Secret, PersistentVolumeClaim, Service veya namespace önerilmez.",
+  "clusterFailed": "Küme genelindeki nesneler ve API grupları denetlenemedi: hiçbir ConfigMap, Secret, PersistentVolumeClaim, Service veya namespace önerilmez.",
+  "clusterUnread": "Küme genelindeki şu türlerin tüm nesneleri okunamadığı için hiçbir ConfigMap veya Secret önerilmez: {{kinds}}",
+  "sampleFailed": "{{namespace}} içindeki her şey denetlenemedi: ConfigMap, Secret, PersistentVolumeClaim'leri ve namespace'in kendisi önerilmez.",
+  "checkAgain": "Yeniden denetle",
+  "nothingChecked": "Seçilen tüm namespace'ler ayarlarda hariç tutuldu.",
+  "watchFailed": "{{kind}} izlenemedi",
+  "forbidden": "Şuralarda {{kind}} listeleme izni yok: {{names}}",
+  "unchecked": "Bazı nesneler değerlendirilmedi, çünkü şu listeler henüz tamamen okunmadı: {{kinds}}",
+  "none": "Denetlenen namespace'lerde temizlenecek bir şey yok.",
+  "truncated_one": "Çok fazla aday var: yalnızca ilk {{count}} aday listelenir.",
+  "truncated_other": "Çok fazla aday var: yalnızca ilk {{count}} aday listelenir.",
+  "rule": {
+    "configMap": "Hiçbir şeyin kullanmadığı ConfigMap'ler",
+    "secret": "Hiçbir şeyin kullanmadığı Secret'lar",
+    "claim": "Hiçbir Pod'un bağlamadığı PersistentVolumeClaim'ler",
+    "volume": "Serbest bırakılmış veya sahipsiz PersistentVolume'lar",
+    "service": "Uç noktası olmayan Service'ler",
+    "replicaSet": "Revizyon geçmişinin ötesindeki eski ReplicaSet'ler",
+    "pod": "Bitmiş Pod'lar",
+    "job": "Bitmiş Job'lar",
+    "namespace": "Boş namespace'ler"
+  },
+  "reason": {
+    "configMapUnused": "Hiçbir Pod, Pod şablonu veya izlenen başka bir nesne ona başvurmuyor.",
+    "secretUnused": "Hiçbir Pod, Pod şablonu, ServiceAccount, Ingress, Gateway, cert-manager veya Flux nesnesi ona başvurmuyor.",
+    "claimUnmounted": "Hiçbir Pod onu bağlamıyor; hiçbir Pod şablonu, StatefulSet, VolumeSnapshot veya başka bir PersistentVolumeClaim de ona başvurmuyor.",
+    "volumeReleased": "Released: PersistentVolumeClaim'i {{claim}} silindi.",
+    "volumeAvailable": "Available ve hiçbir PersistentVolumeClaim'e bağlı değil.",
+    "serviceNoEndpoints": "Uç noktası yok ve selector'ı hiçbir Pod veya Pod şablonuyla eşleşmiyor.",
+    "serviceNoSelector": "Selector'ı, uç noktası ve Endpoints nesnesi yok.",
+    "replicaSetHistory": "Deployment {{deployment}} için {{revision}}. revizyon, revisionHistoryLimit değerinin ötesinde: {{limit}}.",
+    "podSucceeded": "Succeeded ve hiçbir Job'a ait değil.",
+    "podFailed": "Failed ve hiçbir Job'a ait değil.",
+    "jobComplete": "Tamamlandı; hiçbir CronJob'a ait değil ve ttlSecondsAfterFinished ayarlanmamış.",
+    "jobFailed": "Başarısız oldu; hiçbir CronJob'a ait değil ve ttlSecondsAfterFinished ayarlanmamış.",
+    "namespaceEmpty": "Kubernetes'in her namespace'te oluşturduklarının dışında denetlenen türlerden nesne içermiyor. Diğer türlerdeki nesneler denetlenmez."
+  },
+  "since": {
+    "created": "{{age}} önce oluşturuldu",
+    "finished": "{{age}} önce bitti",
+    "phaseChanged": "{{age}} süredir bu aşamada"
+  },
+  "note": {
+    "reclaimDelete": "Birimi {{volume}} Delete geri kazanma ilkesine sahip: veriler silinecek.",
+    "reclaimRetain": "Birimi {{volume}} Retain geri kazanma ilkesine sahip: veriler depolamada kalır.",
+    "reclaimOther": "Birimi {{volume}} {{policy}} geri kazanma ilkesine sahip."
+  },
+  "column": {
+    "object": "Nesne",
+    "reason": "Neden kullanılmıyor görünüyor",
+    "age": "Yaş",
+    "impact": "Silinirse",
+    "manager": "Yöneten"
+  },
+  "open": "{{kind}} {{name}} aç",
+  "select": "{{kind}} {{name}} seç",
+  "selectGroup": "Tümünü seç: {{group}}",
+  "deleteSelected": "Seçilenleri sil ({{count}})…",
+  "managed": {
+    "title": "Bir araç tarafından yönetiliyor, silinmek üzere önerilmez",
+    "text": "Bunlar da kullanılmıyor görünüyor, ancak bir araç onları yönetiyor: onları yeniden oluşturur veya izini kaybeder. Bunları araç üzerinden kaldırın.",
+    "helm": "Helm sürümü {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo CD uygulaması {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Bilerek korunuyor, silinmek üzere önerilmez",
+    "retain": "Retain ilkesi: veriler bilerek korunuyor."
+  },
+  "settings": {
+    "button": "Ayarlar…",
+    "title": "Temizlik ayarları",
+    "checkConfigMaps": "Hiçbir şeyin kullanmıyor göründüğü ConfigMap'leri öner",
+    "checkSecrets": "Hiçbir şeyin kullanmıyor göründüğü Secret'ları öner",
+    "excluded": "Hiç denetlenmeyen namespace'ler",
+    "excludedHint": "Her satıra bir tane. kube-system, kube-public ve kube-node-lease hiçbir zaman denetlenmez.",
+    "days": "Yalnızca şundan eski nesneleri öner (gün)",
+    "ages": {
+      "configs": "ConfigMap ve Secret'lar: oluşturulduğundan beri geçen gün",
+      "services": "Service'ler: oluşturulduğundan beri geçen gün",
+      "pods": "Bitmiş Pod'lar: bittiğinden beri geçen gün",
+      "jobs": "Bitmiş Job'lar: bittiğinden beri geçen gün",
+      "claims": "PersistentVolumeClaim'ler: oluşturulduğundan beri geçen gün",
+      "volumes": "PersistentVolume'lar: aşamalarında geçen gün",
+      "namespaces": "Boş namespace'ler: oluşturulduğundan beri geçen gün"
+    },
+    "save": "Kaydet",
+    "saveFailed": "Ayarlar kaydedilemedi"
+  },
+  "dialog": {
+    "title_one": "{{count}} nesneyi sil",
+    "title_other": "{{count}} nesneyi sil",
+    "text": "Her nesne silinmeden hemen önce yeniden denetlenir: değişmiş veya yeniden kullanılan bir nesne korunur. Silme işlemi geri alınamaz.",
+    "namespaceWarning": "Bir namespace'i silmek, bu sayfanın denetlemediği türlerdeki nesneler de dahil olmak üzere içindeki her şeyi siler.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Onaylamak için {{count}} yazın",
+    "confirm": "Sil",
+    "progress": "Siliniyor: {{done}} / {{total}}",
+    "stop": "Durdur",
+    "resultTitle": "Temizlik sonucu",
+    "summary": "Silinen: {{deleted}}. Korunan: {{kept}}. Başarısız: {{failed}}.",
+    "outcome": {
+      "deleted": "Silindi",
+      "gone": "Zaten yok",
+      "notCandidate": "Korundu: artık kullanılmıyor görünmüyor",
+      "changed": "Korundu: denetlendikten sonra değişti",
+      "failed": "Başarısız",
+      "stopped": "Denenmedi: durduruldu"
+    }
+  }
+}

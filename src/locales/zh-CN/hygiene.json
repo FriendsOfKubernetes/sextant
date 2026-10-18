@@ -1,0 +1,124 @@
+{
+  "sidebar": "清理",
+  "title": "清理",
+  "intro": "看起来未被使用或遗留下来的对象，每个都附有原因。只有当可能引用某个对象的每个列表都已完整读取时，它才会成为候选；如有疑问则不会列出。在您选择对象并确认之前，不会删除任何内容。",
+  "loading": "正在读取 namespace…",
+  "chooseNamespace": "选择 namespace",
+  "chooseNamespaceText": "此页面检查在 namespace 筛选器中选择的 namespace。请选择一个或多个 namespace 开始。",
+  "firstNamespaces_other": "仅检查前 {{count}} 个所选 namespace。",
+  "excludedInView": "未检查，已在设置中排除：{{names}}",
+  "configsOff": "未检查 ConfigMap 和 Secret。可以在设置中开启。",
+  "configsWarning": "Sextant 无法看到对 ConfigMap 或 Secret 的所有引用：它不了解的 operator 和自定义资源、CSI 驱动、控制器参数，以及通过 API 读取它们的应用。删除前请逐一检查。",
+  "blocked": "未判断 {{namespace}} 中的 ConfigMap、Secret、PersistentVolumeClaim 和 Service：其中有 Sextant 不读取的类型的对象（{{kinds}}）。",
+  "unavailableGroups": "部分 API 组没有响应（{{groups}}）：无法看到它们的对象，因此不会提供任何 ConfigMap、Secret、PersistentVolumeClaim、Service 或 namespace。",
+  "clusterFailed": "无法检查集群范围的对象和 API 组：不会提供任何 ConfigMap、Secret、PersistentVolumeClaim、Service 或 namespace。",
+  "clusterUnread": "无法读取以下集群范围类型的全部对象，因此不会提供任何 ConfigMap 或 Secret：{{kinds}}",
+  "sampleFailed": "无法检查 {{namespace}} 中的全部内容：不会提供其中的 ConfigMap、Secret、PersistentVolumeClaim 以及该 namespace 本身。",
+  "checkAgain": "重新检查",
+  "nothingChecked": "所选的 namespace 均已在设置中排除。",
+  "watchFailed": "无法监视 {{kind}}",
+  "forbidden": "无权在以下位置列出 {{kind}}：{{names}}",
+  "unchecked": "部分对象未经判断，因为以下列表尚未完整读取：{{kinds}}",
+  "none": "所检查的 namespace 中没有需要清理的内容。",
+  "truncated_other": "候选过多：仅列出前 {{count}} 个。",
+  "rule": {
+    "configMap": "无人使用的 ConfigMap",
+    "secret": "无人使用的 Secret",
+    "claim": "没有 Pod 挂载的 PersistentVolumeClaim",
+    "volume": "已释放或未被申领的 PersistentVolume",
+    "service": "没有端点的 Service",
+    "replicaSet": "超出修订历史的旧 ReplicaSet",
+    "pod": "已结束的 Pod",
+    "job": "已结束的 Job",
+    "namespace": "空的 namespace"
+  },
+  "reason": {
+    "configMapUnused": "没有任何 Pod、Pod 模板或其他受监视的对象引用它。",
+    "secretUnused": "没有任何 Pod、Pod 模板、ServiceAccount、Ingress、Gateway、cert-manager 或 Flux 对象引用它。",
+    "claimUnmounted": "没有 Pod 挂载它，也没有任何 Pod 模板、StatefulSet、VolumeSnapshot 或其他 PersistentVolumeClaim 引用它。",
+    "volumeReleased": "Released：其 PersistentVolumeClaim {{claim}} 已被删除。",
+    "volumeAvailable": "Available，且未绑定到任何 PersistentVolumeClaim。",
+    "serviceNoEndpoints": "没有端点，且其 selector 不匹配任何 Pod 或 Pod 模板。",
+    "serviceNoSelector": "没有 selector、端点，也没有 Endpoints 对象。",
+    "replicaSetHistory": "Deployment {{deployment}} 的修订 {{revision}}，超出其 revisionHistoryLimit：{{limit}}。",
+    "podSucceeded": "Succeeded，且不属于任何 Job。",
+    "podFailed": "Failed，且不属于任何 Job。",
+    "jobComplete": "已完成；不属于任何 CronJob，且未设置 ttlSecondsAfterFinished。",
+    "jobFailed": "已失败；不属于任何 CronJob，且未设置 ttlSecondsAfterFinished。",
+    "namespaceEmpty": "除 Kubernetes 在每个 namespace 中创建的对象外，不包含所检查类型的任何对象。其他类型的对象不会被检查。"
+  },
+  "since": {
+    "created": "{{age}}前创建",
+    "finished": "{{age}}前结束",
+    "phaseChanged": "处于此阶段已 {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "其卷 {{volume}} 的回收策略为 Delete：数据将被删除。",
+    "reclaimRetain": "其卷 {{volume}} 的回收策略为 Retain：数据会保留在存储中。",
+    "reclaimOther": "其卷 {{volume}} 的回收策略为 {{policy}}。"
+  },
+  "column": {
+    "object": "对象",
+    "reason": "看起来未使用的原因",
+    "age": "存在时间",
+    "impact": "删除后",
+    "manager": "管理者"
+  },
+  "open": "打开 {{kind}} {{name}}",
+  "select": "选择 {{kind}} {{name}}",
+  "selectGroup": "全选：{{group}}",
+  "deleteSelected": "删除所选 ({{count}})…",
+  "managed": {
+    "title": "由工具管理，不提供删除",
+    "text": "这些对象看起来也未被使用，但由某个工具管理：该工具会重新创建它们，或失去对它们的跟踪。请通过该工具移除它们。",
+    "helm": "Helm 发布 {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo CD 应用 {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "有意保留，不提供删除",
+    "retain": "回收策略 Retain：数据被有意保留。"
+  },
+  "settings": {
+    "button": "设置…",
+    "title": "清理设置",
+    "checkConfigMaps": "提供似乎无人使用的 ConfigMap",
+    "checkSecrets": "提供似乎无人使用的 Secret",
+    "excluded": "从不检查的 namespace",
+    "excludedHint": "每行一个。kube-system、kube-public 和 kube-node-lease 从不检查。",
+    "days": "仅提供早于以下天数的对象",
+    "ages": {
+      "configs": "ConfigMap 和 Secret：创建后的天数",
+      "services": "Service：创建后的天数",
+      "pods": "已结束的 Pod：结束后的天数",
+      "jobs": "已结束的 Job：结束后的天数",
+      "claims": "PersistentVolumeClaim：创建后的天数",
+      "volumes": "PersistentVolume：处于当前阶段的天数",
+      "namespaces": "空的 namespace：创建后的天数"
+    },
+    "save": "保存",
+    "saveFailed": "无法保存设置"
+  },
+  "dialog": {
+    "title_other": "删除 {{count}} 个对象",
+    "text": "每个对象在删除前都会再次检查：已更改或重新被使用的对象会被保留。删除无法撤销。",
+    "namespaceWarning": "删除 namespace 会删除其中的所有内容，包括此页面不检查的类型的对象。",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "输入 {{count}} 以确认",
+    "confirm": "删除",
+    "progress": "正在删除：{{done}} / {{total}}",
+    "stop": "停止",
+    "resultTitle": "清理结果",
+    "summary": "已删除：{{deleted}}。已保留：{{kept}}。失败：{{failed}}。",
+    "outcome": {
+      "deleted": "已删除",
+      "gone": "已不存在",
+      "notCandidate": "已保留：看起来不再是未使用的",
+      "changed": "已保留：检查后发生了更改",
+      "failed": "失败",
+      "stopped": "未尝试：已停止"
+    }
+  }
+}

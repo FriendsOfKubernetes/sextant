@@ -1,0 +1,331 @@
+{
+  "sidebar": "接続性",
+  "title": "ネットワーク接続性",
+  "banner": "Sextant は実際のトラフィックではなく、クラスター内のポリシーオブジェクトから判断します。NetworkPolicy は、クラスターのネットワークプラグイン（CNI）が適用している場合にのみ効果があります。Cilium と Calico のポリシーは、L3/L4 ルールに対応する範囲で評価されます。",
+  "loading": "Pod とポリシーを読み込んでいます…",
+  "tabs": {
+    "label": "接続性ビュー",
+    "check": "チェック",
+    "map": "ポリシーマップ"
+  },
+  "form": {
+    "source": "送信元",
+    "destination": "宛先",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace と label",
+      "external": "クラスター外の IP アドレス",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Label",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "IP アドレス",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Service のポート",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "ポート",
+    "portPlaceholder": "80 または http",
+    "protocol": "プロトコル",
+    "choose": "選択…",
+    "loadingNames": "読み込み中…",
+    "check": "チェック"
+  },
+  "errors": {
+    "chooseNamespace": "namespace を選択してください。",
+    "choosePod": "Pod を選択してください。",
+    "podGone": "Pod {{name}} は namespace {{namespace}} にもう存在しません。",
+    "labels": "label は key=value の形式で、カンマで区切って入力してください。",
+    "ip": "IPv4 または IPv6 アドレスを入力してください。",
+    "port": "1 から 65535 のポート番号、またはコンテナーのポート名を入力してください。",
+    "portName": "宛先の Pod に {{name}} という名前の {{protocol}} ポートはありません。",
+    "chooseService": "Service を選択してください。",
+    "serviceGone": "Service {{name}} は namespace {{namespace}} にもう存在しません。",
+    "chooseServicePort": "Service のポートを選択してください。"
+  },
+  "endpoint": {
+    "labels": "{{namespace}} の {{labels}} を持つ Pod",
+    "anyPod": "{{namespace}} の label のない Pod"
+  },
+  "verdict": {
+    "allowed": "許可",
+    "denied": "拒否",
+    "unknown": "不明"
+  },
+  "tri": {
+    "yes": "はい",
+    "no": "いいえ",
+    "maybe": "判断不可"
+  },
+  "result": {
+    "label": "結果",
+    "allowed": "許可: ポリシーはこのトラフィックを許可しています。",
+    "denied": "拒否: ポリシーはこのトラフィックを許可していません。",
+    "unknown": "不明: Sextant はオブジェクトからこのトラフィックが許可されるかどうかを判断できません。",
+    "service": {
+      "allowed": "Service の背後のすべての Pod への通信が許可されています。",
+      "denied": "Service の背後のすべての Pod への通信が拒否されています。",
+      "unknown": "Service の背後の一部の Pod について結果は不明です。"
+    },
+    "partial_other": "Service の背後の {{count}} 個の Pod のうち {{allowed}} 個への通信が許可されています。",
+    "nothing": "チェックする対象がありません。",
+    "egressFrom": "{{source}} からの送信トラフィック",
+    "ingressTo": "{{destination}} への受信トラフィック"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "送信トラフィックについて送信元を選択するポリシーがないため、送信元の送信トラフィックはすべて許可されます。",
+      "ingress": "受信トラフィックについて宛先を選択するポリシーがないため、宛先への受信トラフィックはすべて許可されます。"
+    },
+    "hostNetwork": {
+      "egress": "送信元はホストネットワークを使用しています。NetworkPolicy は適用されません。",
+      "ingress": "宛先はホストネットワークを使用しています。NetworkPolicy は適用されません。"
+    },
+    "external": {
+      "egress": "送信元はクラスター外にあります。クラスターの送信ポリシーは適用されません。",
+      "ingress": "宛先はクラスター外にあります。送信元の送信トラフィックだけで決まります。"
+    },
+    "nodeTraffic": "送信元は宛先のノード上でホストネットワークを使用しています。Pod 自身のノードからのトラフィックは常に許可されます。",
+    "allowedByRule": "許可したルール:",
+    "deniedByRule": "拒否したルール:",
+    "noRuleMatches": "この Pod を選択するポリシーがあり、そのどのルールもこのトラフィックを許可していません。",
+    "unknown": "Sextant が判断できない理由:"
+  },
+  "match": {
+    "peer": "ピア {{n}}: {{peer}}",
+    "anyPeer": "任意のピア",
+    "port": "ポート {{n}}: {{port}}",
+    "anyPort": "任意のポート"
+  },
+  "checks": {
+    "title": {
+      "egress_other": "送信トラフィックについて送信元を選択するポリシー: {{count}} 件",
+      "ingress_other": "受信トラフィックについて宛先を選択するポリシー: {{count}} 件"
+    },
+    "policy": "ポリシー",
+    "rule": "ルール",
+    "matches": "一致",
+    "why": "理由",
+    "noRules": "ルールなし",
+    "noRulesWhy": {
+      "egress": "このポリシーは送信トラフィックについて Pod を分離し、何も許可していません。",
+      "ingress": "このポリシーは受信トラフィックについて Pod を分離し、何も許可していません。"
+    }
+  },
+  "rule": {
+    "ingress": "Ingress ルール {{n}}",
+    "egress": "Egress ルール {{n}}",
+    "ingressDeny": "Ingress 拒否ルール {{n}}",
+    "egressDeny": "Egress 拒否ルール {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "このトラフィックを許可します。",
+    "denies": "このトラフィックを拒否します。",
+    "empty": "Cilium では、空のルールは何にも一致しません。",
+    "local": "このルールはこの Pod に適用されません: {{reason}}",
+    "peerN": "ピア {{n}}: {{reason}}",
+    "portN": "ポート {{n}}: {{reason}}"
+  },
+  "peerReason": {
+    "match": "一致します。",
+    "namespace": "Pod は namespace {{actual}} にあります。このピアは namespace {{expected}} の Pod だけを選択します。",
+    "namespaceSelector": "namespace {{namespace}} の label は {{labels}} で、{{selector}} に一致しません。",
+    "namespaceNoMatch": "namespace {{namespace}}（label: {{labels}}）は namespace セレクターに一致しません。",
+    "namespaceLabelsUnknown": "namespace {{namespace}} の label は不明です。Namespaces を一覧表示できません。",
+    "podSelector": "Pod の label {{labels}} は {{selector}} に一致しません。",
+    "podNoMatch": "Pod の label {{labels}} はセレクターに一致しません。",
+    "podNoLabels": "Pod に label がないため、{{selector}} に一致しません。",
+    "notPod": "Pod と namespace のセレクターは、クラスター外のアドレスを選択しません。",
+    "ipBlock": "アドレスは {{cidr}} の範囲外です。",
+    "ipBlockExcept": "アドレスは、ブロック {{cidr}} が除外する {{except}} に含まれます。",
+    "ipBlockPod": "Pod の IP は {{cidr}} に含まれます。ipBlock が Pod の IP に適用されるかどうかはネットワークプラグインによって異なります。",
+    "ipUnknown": "Pod の IP は不明です。",
+    "cidrNotPods": "Cilium の CIDR ルールは Pod を選択しません。",
+    "entity": "Cilium のエンティティ {{entity}} はこの側を含みません。",
+    "networkSet": "Calico の network set がこのアドレスを含んでいる可能性があります。"
+  },
+  "portReason": {
+    "match": "一致します。",
+    "protocol": "このルールは {{protocol}} 用です。",
+    "otherProtocol": "このルールは別のプロトコル用です。",
+    "port": "このルールはポート {{port}} 用です。",
+    "namedUnresolved": "宛先の Pod には、このプロトコルで {{name}} という名前のポートがありません。",
+    "namedOther": "宛先の Pod ではポート {{name}} は {{port}} です。",
+    "namedExternal": "名前付きポートは、クラスター外のアドレスに対しては解決されません。"
+  },
+  "reason": {
+    "unmodelled": "Sextant がモデル化していない機能を使用しています: {{feature}}。"
+  },
+  "unknown": {
+    "unreadable": "namespace {{namespace}} の {{kind}} オブジェクトを読み取れませんでした。",
+    "unreadableClusterwide": "{{kind}} オブジェクトを読み取れませんでした。",
+    "unevaluated": "{{kind}} {{name}} が適用される可能性がありますが、Sextant は {{kind}} オブジェクトを評価しません。",
+    "maybeSelected": "{{policy}} が Pod を選択しているかどうか、Sextant は判断できません。",
+    "maybeIsolated": "{{policy}} が Pod を分離しているかどうか、Sextant は判断できません。",
+    "maybeRule": "{{policy}}、{{rule}}: {{reason}}",
+    "unmodelledRule": "未評価: {{flavor}} {{policy}} の {{rule}} は、Sextant がモデル化していない機能を使用しています: {{features}}。",
+    "unmodelledPolicy": "未評価: {{flavor}} {{policy}} は、Sextant がモデル化していない機能を使用しています: {{features}}。",
+    "hostNetworkSource": "送信元は別のノードでホストネットワークを使用しています。そのトラフィックはノードのアドレスから届き、Pod セレクターはこれに一致しません。ネットワークプラグインによっては ipBlock が一致する場合があります。",
+    "mixed": "Cilium と Calico の両方のポリシーがこの Pod を選択しており、Sextant はそれらを組み合わせません。"
+  },
+  "note": {
+    "self": "送信元と宛先は同じ Pod です。localhost 経由のトラフィックはブロックされません。Pod 自身の IP へのトラフィックはここでポリシーどおりに評価しますが、ネットワークプラグインによって動作が異なります。",
+    "ipBlockPods": "ipBlock はクラスター外のアドレス向けです。Pod の IP に一致するかどうかはネットワークプラグインによって異なるため、そのような一致は不明として扱います。",
+    "externalSource": "外部からのトラフィックは通常、NodePort、ロードバランサー、または ingress コントローラーを経由して届きます。externalTrafficPolicy が Local でない場合、これらが送信元アドレスを置き換えることがあります。",
+    "calicoOrder": "Calico はポリシーを順に評価し（order、次に名前の順）、Kubernetes の NetworkPolicy は order 1000 として扱われます。最初に一致した Allow または Deny ルールで決まります。",
+    "service": "Service へのトラフィックは、Service が選択する各 Pod についてターゲットポートでチェックされます。",
+    "serviceNodePort": "この {{type}} タイプの Service には、ノードポート経由で外部からもアクセスできます。externalTrafficPolicy が Local でない場合、そのトラフィックはノードのアドレスから届くことがあります。"
+  },
+  "dns": {
+    "denied": "送信元は送信トラフィックについて分離されており、そのポリシーは DNS（kube-system の kube-dns への UDP ポート 53）を許可していません。接続が許可されていても名前を解決できません。",
+    "unknown": "送信元は送信トラフィックについて分離されており、そのポリシーが DNS（kube-system の kube-dns への UDP ポート 53）を許可しているかどうか、Sextant は判断できません。",
+    "tcpDenied": "送信元のポリシーは UDP での DNS を許可していますが、TCP ポート 53 は許可していません。TCP にフォールバックする大きな DNS 応答は失敗します。"
+  },
+  "service": {
+    "backends": "Service の背後の Pod",
+    "pod": "Pod",
+    "port": "Pod のポート",
+    "result": "結果",
+    "noTargetPort": "該当ポートなし",
+    "details": "Pod {{pod}} の詳細",
+    "more_other": "ほかに {{count}} 個の Pod は表示されていません。",
+    "externalName": "ExternalName の Service は DNS のエイリアスです。そのトラフィックを受け取る Pod はありません。",
+    "noSelector": "この Service にはセレクターがありません。endpoints は手動で管理されているため、どの Pod がトラフィックを受け取るか Sextant は判断できません。",
+    "noPods": "この Service は実行中の Pod を選択していません。",
+    "noPort": "Service の背後にターゲットポートを持つ Pod はありません。"
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "namespace {{namespace}} の {{selector}} に一致する Pod",
+    "allPods": "namespace {{namespace}} のすべての Pod",
+    "ciliumHere": "namespace {{namespace}} の {{selector}} に一致する endpoints",
+    "ciliumEverywhere": "すべての namespace の {{selector}} に一致する endpoints",
+    "calicoHere": "namespace {{namespace}} の Calico セレクター {{selector}} に一致する Pod",
+    "calicoEverywhere": "すべての namespace の Calico セレクター {{selector}} に一致する Pod"
+  },
+  "peer": {
+    "podsHere": "namespace {{namespace}} の {{selector}} に一致する Pod",
+    "allPodsHere": "namespace {{namespace}} のすべての Pod",
+    "podsInNamespaces": "{{namespaces}} に一致する namespace の {{selector}} に一致する Pod",
+    "allPodsInNamespaces": "{{namespaces}} に一致する namespace のすべての Pod",
+    "podsEverywhere": "すべての namespace の {{selector}} に一致する Pod",
+    "everyPod": "すべての namespace のすべての Pod",
+    "ipBlock": "{{cidr}} のアドレス",
+    "ipBlockExcept": "{{except}} を除く {{cidr}} のアドレス",
+    "ciliumEndpointsHere": "namespace {{namespace}} の {{selector}} に一致する endpoints",
+    "ciliumEndpoints": "{{selector}} に一致する endpoints",
+    "entity": "Cilium のエンティティ {{entity}}",
+    "unmodelled": "{{feature}}（Sextant はモデル化していません）",
+    "calico": "Calico の一致条件 {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "{{name}} という名前の {{protocol}} ポート",
+    "anyOf": "すべての {{protocol}} ポート",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "ルール",
+    "peers": {
+      "ingress": "送信元",
+      "egress": "宛先"
+    },
+    "ports": "ポート",
+    "anyPeer": {
+      "ingress": "任意の送信元",
+      "egress": "任意の宛先"
+    },
+    "anyPort": "任意のポート",
+    "empty": "なし（空の Cilium ルール）",
+    "local": "{{match}} に一致する選択された Pod のみ",
+    "denyAll": {
+      "ingress": "ingress ルールがありません。選択された Pod への受信トラフィックはすべて拒否されます。",
+      "egress": "egress ルールがありません。選択された Pod からの送信トラフィックはすべて拒否されます。"
+    },
+    "notRestricted": {
+      "ingress": "受信トラフィックを制限しません。",
+      "egress": "送信トラフィックを制限しません。"
+    }
+  },
+  "fields": {
+    "selects": "選択対象",
+    "selectedNow": "現在選択中",
+    "noPods": "Pod なし",
+    "morePods_other": "ほか {{count}} 個",
+    "types": "ポリシーの種類",
+    "typesDefaulted": "{{types}}（policyTypes 未設定: 既定値）",
+    "typesNone": "なし",
+    "order": "順序",
+    "noOrder": "なし（最後に評価）",
+    "notModelled": "Sextant がモデル化していない機能"
+  },
+  "details": {
+    "plainWords": "わかりやすい説明",
+    "openMap": "namespace のポリシーマップ",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "このポリシーは Pod を選択しません（ホストポリシー、または NetworkPolicy のコピーです）。",
+    "noDns": "このポリシーは DNS（kube-system の kube-dns への UDP ポート 53）を許可していません。ほかのポリシーが許可しない限り、選択された Pod は名前を解決できません。",
+    "ignored": {
+      "ingress": "ingress ルールは無視されます。policyTypes に Ingress が含まれていません。",
+      "egress": "egress ルールは無視されます。policyTypes に Egress が含まれていません。"
+    },
+    "flavorNote": {
+      "cilium": "Cilium のポリシー: Sextant は L3/L4 ルールを評価します。L7 ルール、FQDN などの機能は不明として扱います。",
+      "ciliumClusterwide": "Cilium のポリシー: Sextant は L3/L4 ルールを評価します。L7 ルール、FQDN などの機能は不明として扱います。",
+      "calico": "Calico のポリシー: Sextant は default 層の Allow、Deny、Log ルールを順に評価します。その他の機能は不明として扱います。",
+      "calicoGlobal": "Calico のポリシー: Sextant は default 層の Allow、Deny、Log ルールを順に評価します。その他の機能は不明として扱います。"
+    }
+  },
+  "pod": {
+    "title": "ネットワークポリシー",
+    "isolatedBy": "分離しているポリシー:",
+    "maybeBy": "分離している可能性のあるポリシー:",
+    "notIsolated": {
+      "ingress": "分離されていません: すべての受信トラフィックを許可",
+      "egress": "分離されていません: すべての送信トラフィックを許可"
+    },
+    "hostNetwork": "ホストネットワーク: NetworkPolicy は適用されません",
+    "unknown": "不明: 一部のポリシーを読み取れませんでした",
+    "check": "接続性をチェック…"
+  },
+  "map": {
+    "choose": "namespace を選択すると、どの Pod が分離されているか、そのポリシーが何を許可しているかを表示します。",
+    "summary_other": "Pod {{count}} 個: 受信で分離: {{ingress}}、送信で分離: {{egress}}。",
+    "pods": "Pod とその分離状態",
+    "pod": "Pod",
+    "isolatedBy": "分離: {{policies}}",
+    "maybeBy": "分離の可能性: {{policies}}",
+    "notIsolated": {
+      "ingress": "分離なし: 受信はすべて許可",
+      "egress": "分離なし: 送信はすべて許可"
+    },
+    "hostNetwork": "ホストネットワーク: ポリシー対象外",
+    "unknown": "不明",
+    "noDns": "DNS が許可されていません",
+    "dnsUnknown": "DNS が許可されていない可能性があります",
+    "more_other": "ほかに {{count}} 個の Pod は表示されていません。",
+    "podsUnreadable": "namespace {{namespace}} の Pod を一覧表示できません。",
+    "policies": "ポリシー",
+    "noPolicies": "この namespace の Pod を選択するポリシーはありません。各 Pod はすべての受信トラフィックを受け入れ、すべての送信トラフィックを送信します。",
+    "selects_other": "{{what}} — 現在 {{count}} 個の Pod を選択"
+  }
+}

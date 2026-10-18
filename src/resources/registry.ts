@@ -103,6 +103,8 @@ export const SIDEBAR_SECTIONS = [
   "accessControl",
   "certManager",
   "trivy",
+  "keda",
+  "karpenter",
   "flux",
   "argocd",
   "customResources",
@@ -120,6 +122,8 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "argocd",
   "certManager",
   "trivy",
+  "keda",
+  "karpenter",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -137,6 +141,8 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   accessControl: "accessControl",
   certManager: "certManager",
   trivy: "trivy",
+  keda: "keda",
+  karpenter: "karpenter",
   flux: "flux",
   argocd: "argocd",
   customResources: "customResources",

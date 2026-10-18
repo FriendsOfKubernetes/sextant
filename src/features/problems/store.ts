@@ -27,6 +27,7 @@ import {
   type WatchStatus,
   type WatchUpdate,
 } from "../../api";
+import { reportWatchUpdate } from "../../api/watchObservers";
 import { useClustersStore } from "../clusters/clustersStore";
 import {
   currentCertExpiryWarningMs,
@@ -335,6 +336,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
         stop: api.resources.watchStop,
         onEvent: (update) => {
           if (entries.get(key) !== created) return;
+          reportWatchUpdate(clusterId, spec, update);
           if (update.type === "error") {
             for (const tap of created.taps.values()) tap.state = applyToTap(tap, update) ?? tap.state;
             failed(key, created, toApiError(update));

@@ -24,6 +24,7 @@
     "boundTo": { "out": "バインド先", "in": "バインド元" },
     "storageClass": { "out": "StorageClass", "in": "このクラスを使用" },
     "class": { "out": "クラス", "in": "このクラスのオブジェクト" },
+    "parameters": { "out": "パラメーター", "in": "パラメーターの参照元" },
     "node": { "out": "実行ノード", "in": "実行中の Pod" }
   },
   "impact": {

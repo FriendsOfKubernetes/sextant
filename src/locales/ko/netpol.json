@@ -1,0 +1,331 @@
+{
+  "sidebar": "연결성",
+  "title": "네트워크 연결성",
+  "banner": "Sextant는 실제 트래픽이 아니라 클러스터의 정책 객체를 바탕으로 판단합니다. NetworkPolicy는 클러스터의 네트워크 플러그인(CNI)이 이를 적용할 때만 효과가 있습니다. Cilium과 Calico 정책은 L3/L4 규칙에 대응하는 범위까지 평가합니다.",
+  "loading": "Pod와 정책을 읽는 중…",
+  "tabs": {
+    "label": "연결성 보기",
+    "check": "검사",
+    "map": "정책 맵"
+  },
+  "form": {
+    "source": "출발지",
+    "destination": "목적지",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace와 label",
+      "external": "클러스터 외부 IP 주소",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Label",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "IP 주소",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Service 포트",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "포트",
+    "portPlaceholder": "80 또는 http",
+    "protocol": "프로토콜",
+    "choose": "선택…",
+    "loadingNames": "불러오는 중…",
+    "check": "검사"
+  },
+  "errors": {
+    "chooseNamespace": "namespace를 선택하세요.",
+    "choosePod": "Pod를 선택하세요.",
+    "podGone": "Pod {{name}}이(가) 더 이상 namespace {{namespace}}에 없습니다.",
+    "labels": "label은 key=value 형식으로, 쉼표로 구분해 입력하세요.",
+    "ip": "IPv4 또는 IPv6 주소를 입력하세요.",
+    "port": "1부터 65535까지의 포트 번호 또는 컨테이너 포트 이름을 입력하세요.",
+    "portName": "목적지 Pod에 {{name}}(이)라는 {{protocol}} 포트가 없습니다.",
+    "chooseService": "Service를 선택하세요.",
+    "serviceGone": "Service {{name}}이(가) 더 이상 namespace {{namespace}}에 없습니다.",
+    "chooseServicePort": "Service의 포트를 선택하세요."
+  },
+  "endpoint": {
+    "labels": "{{namespace}}에서 {{labels}}을(를) 가진 Pod",
+    "anyPod": "{{namespace}}에서 label이 없는 Pod"
+  },
+  "verdict": {
+    "allowed": "허용",
+    "denied": "거부",
+    "unknown": "알 수 없음"
+  },
+  "tri": {
+    "yes": "예",
+    "no": "아니요",
+    "maybe": "판단할 수 없음"
+  },
+  "result": {
+    "label": "결과",
+    "allowed": "허용: 정책이 이 트래픽을 허용합니다.",
+    "denied": "거부: 정책이 이 트래픽을 허용하지 않습니다.",
+    "unknown": "알 수 없음: Sextant는 객체만으로 이 트래픽이 허용되는지 판단할 수 없습니다.",
+    "service": {
+      "allowed": "Service 뒤의 모든 Pod로 허용됩니다.",
+      "denied": "Service 뒤의 모든 Pod로 거부됩니다.",
+      "unknown": "Service 뒤의 일부 Pod에 대해서는 알 수 없습니다."
+    },
+    "partial_other": "Service 뒤의 Pod {{count}}개 중 {{allowed}}개로 허용됩니다.",
+    "nothing": "검사할 대상이 없습니다.",
+    "egressFrom": "{{source}}에서 나가는 트래픽",
+    "ingressTo": "{{destination}}(으)로 들어오는 트래픽"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "나가는 트래픽에 대해 출발지를 선택하는 정책이 없으므로 출발지의 모든 나가는 트래픽이 허용됩니다.",
+      "ingress": "들어오는 트래픽에 대해 목적지를 선택하는 정책이 없으므로 목적지로 들어오는 모든 트래픽이 허용됩니다."
+    },
+    "hostNetwork": {
+      "egress": "출발지가 호스트 네트워크를 사용합니다. NetworkPolicy가 적용되지 않습니다.",
+      "ingress": "목적지가 호스트 네트워크를 사용합니다. NetworkPolicy가 적용되지 않습니다."
+    },
+    "external": {
+      "egress": "출발지가 클러스터 외부에 있습니다. 클러스터의 나가는 트래픽 정책이 적용되지 않습니다.",
+      "ingress": "목적지가 클러스터 외부에 있습니다. 출발지의 나가는 트래픽만으로 결정됩니다."
+    },
+    "nodeTraffic": "출발지가 목적지의 노드에서 호스트 네트워크를 사용합니다. Pod 자신의 노드에서 오는 트래픽은 항상 허용됩니다.",
+    "allowedByRule": "허용한 규칙:",
+    "deniedByRule": "거부한 규칙:",
+    "noRuleMatches": "이 Pod를 선택하는 정책이 있으며, 그 어떤 규칙도 이 트래픽을 허용하지 않습니다.",
+    "unknown": "Sextant가 판단할 수 없는 이유:"
+  },
+  "match": {
+    "peer": "피어 {{n}}: {{peer}}",
+    "anyPeer": "모든 피어",
+    "port": "포트 {{n}}: {{port}}",
+    "anyPort": "모든 포트"
+  },
+  "checks": {
+    "title": {
+      "egress_other": "나가는 트래픽에 대해 출발지를 선택하는 정책: {{count}}개",
+      "ingress_other": "들어오는 트래픽에 대해 목적지를 선택하는 정책: {{count}}개"
+    },
+    "policy": "정책",
+    "rule": "규칙",
+    "matches": "일치",
+    "why": "이유",
+    "noRules": "규칙 없음",
+    "noRulesWhy": {
+      "egress": "이 정책은 나가는 트래픽에 대해 Pod를 격리하고 아무것도 허용하지 않습니다.",
+      "ingress": "이 정책은 들어오는 트래픽에 대해 Pod를 격리하고 아무것도 허용하지 않습니다."
+    }
+  },
+  "rule": {
+    "ingress": "Ingress 규칙 {{n}}",
+    "egress": "Egress 규칙 {{n}}",
+    "ingressDeny": "Ingress 거부 규칙 {{n}}",
+    "egressDeny": "Egress 거부 규칙 {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "이 트래픽을 허용합니다.",
+    "denies": "이 트래픽을 거부합니다.",
+    "empty": "Cilium에서 빈 규칙은 아무것과도 일치하지 않습니다.",
+    "local": "이 규칙은 이 Pod에 적용되지 않습니다: {{reason}}",
+    "peerN": "피어 {{n}}: {{reason}}",
+    "portN": "포트 {{n}}: {{reason}}"
+  },
+  "peerReason": {
+    "match": "일치합니다.",
+    "namespace": "Pod가 namespace {{actual}}에 있습니다. 이 피어는 namespace {{expected}}의 Pod만 선택합니다.",
+    "namespaceSelector": "namespace {{namespace}}의 label은 {{labels}}이며, {{selector}}과(와) 일치하지 않습니다.",
+    "namespaceNoMatch": "namespace {{namespace}}(label: {{labels}})이(가) namespace 선택기와 일치하지 않습니다.",
+    "namespaceLabelsUnknown": "namespace {{namespace}}의 label을 알 수 없습니다. Namespaces를 나열할 수 없습니다.",
+    "podSelector": "Pod의 label {{labels}}이(가) {{selector}}과(와) 일치하지 않습니다.",
+    "podNoMatch": "Pod의 label {{labels}}이(가) 선택기와 일치하지 않습니다.",
+    "podNoLabels": "Pod에 label이 없으므로 {{selector}}과(와) 일치하지 않습니다.",
+    "notPod": "Pod 및 namespace 선택기는 클러스터 외부 주소를 선택하지 않습니다.",
+    "ipBlock": "주소가 {{cidr}} 범위 밖에 있습니다.",
+    "ipBlockExcept": "주소가 블록 {{cidr}}에서 제외된 {{except}}에 속합니다.",
+    "ipBlockPod": "Pod의 IP가 {{cidr}}에 속합니다. ipBlock이 Pod IP에 적용되는지는 네트워크 플러그인에 따라 다릅니다.",
+    "ipUnknown": "Pod의 IP를 알 수 없습니다.",
+    "cidrNotPods": "Cilium CIDR 규칙은 Pod를 선택하지 않습니다.",
+    "entity": "Cilium 엔터티 {{entity}}은(는) 이쪽을 포함하지 않습니다.",
+    "networkSet": "Calico network set에 이 주소가 포함되어 있을 수 있습니다."
+  },
+  "portReason": {
+    "match": "일치합니다.",
+    "protocol": "이 규칙은 {{protocol}}용입니다.",
+    "otherProtocol": "이 규칙은 다른 프로토콜용입니다.",
+    "port": "이 규칙은 포트 {{port}}용입니다.",
+    "namedUnresolved": "목적지 Pod에 이 프로토콜로 {{name}}(이)라는 포트가 없습니다.",
+    "namedOther": "목적지 Pod에서 포트 {{name}}은(는) {{port}}입니다.",
+    "namedExternal": "이름 있는 포트는 클러스터 외부 주소에 대해서는 확인되지 않습니다."
+  },
+  "reason": {
+    "unmodelled": "Sextant가 모델링하지 않는 기능을 사용합니다: {{feature}}."
+  },
+  "unknown": {
+    "unreadable": "namespace {{namespace}}의 {{kind}} 객체를 읽을 수 없습니다.",
+    "unreadableClusterwide": "{{kind}} 객체를 읽을 수 없습니다.",
+    "unevaluated": "{{kind}} {{name}}이(가) 적용될 수 있으며, Sextant는 {{kind}} 객체를 평가하지 않습니다.",
+    "maybeSelected": "Sextant는 {{policy}}이(가) Pod를 선택하는지 판단할 수 없습니다.",
+    "maybeIsolated": "Sextant는 {{policy}}이(가) Pod를 격리하는지 판단할 수 없습니다.",
+    "maybeRule": "{{policy}}, {{rule}}: {{reason}}",
+    "unmodelledRule": "평가하지 않음: {{flavor}} {{policy}}의 {{rule}}은(는) Sextant가 모델링하지 않는 기능을 사용합니다: {{features}}.",
+    "unmodelledPolicy": "평가하지 않음: {{flavor}} {{policy}}은(는) Sextant가 모델링하지 않는 기능을 사용합니다: {{features}}.",
+    "hostNetworkSource": "출발지가 다른 노드에서 호스트 네트워크를 사용합니다. 그 트래픽은 노드 주소에서 오며 Pod 선택기는 이와 일치하지 않습니다. 네트워크 플러그인에 따라 ipBlock이 일치할 수 있습니다.",
+    "mixed": "Cilium 정책과 Calico 정책이 모두 이 Pod를 선택하며, Sextant는 이 둘을 결합하지 않습니다."
+  },
+  "note": {
+    "self": "출발지와 목적지가 같은 Pod입니다. localhost를 통한 트래픽은 차단되지 않습니다. Pod 자신의 IP로 가는 트래픽은 여기서 정책대로 평가하지만, 네트워크 플러그인마다 동작이 다릅니다.",
+    "ipBlockPods": "ipBlock은 클러스터 외부 주소를 위한 것입니다. Pod IP와 일치하는지는 네트워크 플러그인에 따라 다르므로 이런 일치는 알 수 없음으로 처리합니다.",
+    "externalSource": "외부 트래픽은 보통 NodePort, 로드 밸런서 또는 ingress 컨트롤러를 거쳐 들어오며, externalTrafficPolicy가 Local이 아니면 이들이 출발지 주소를 바꿀 수 있습니다.",
+    "calicoOrder": "Calico는 정책을 순서대로(order, 그다음 이름 순) 평가하며, Kubernetes NetworkPolicy는 order 1000으로 취급합니다. 처음 일치하는 Allow 또는 Deny 규칙이 결과를 결정합니다.",
+    "service": "Service로 가는 트래픽은 Service가 선택하는 각 Pod에 대해 대상 포트에서 검사합니다.",
+    "serviceNodePort": "이 {{type}} 유형의 Service는 노드 포트를 통해 외부에서도 접근할 수 있습니다. externalTrafficPolicy가 Local이 아니면 이런 트래픽은 노드 주소에서 올 수 있습니다."
+  },
+  "dns": {
+    "denied": "출발지가 나가는 트래픽에 대해 격리되어 있고, 그 정책이 DNS(kube-system의 kube-dns로 가는 UDP 포트 53)를 허용하지 않습니다. 연결이 허용되더라도 이름을 확인할 수 없습니다.",
+    "unknown": "출발지가 나가는 트래픽에 대해 격리되어 있으며, Sextant는 그 정책이 DNS(kube-system의 kube-dns로 가는 UDP 포트 53)를 허용하는지 판단할 수 없습니다.",
+    "tcpDenied": "출발지의 정책이 UDP를 통한 DNS는 허용하지만 TCP 포트 53은 허용하지 않습니다. TCP로 전환되는 큰 DNS 응답은 실패합니다."
+  },
+  "service": {
+    "backends": "Service 뒤의 Pod",
+    "pod": "Pod",
+    "port": "Pod 포트",
+    "result": "결과",
+    "noTargetPort": "해당 포트 없음",
+    "details": "Pod {{pod}}의 세부 정보",
+    "more_other": "Pod {{count}}개가 더 있지만 표시되지 않습니다.",
+    "externalName": "ExternalName Service는 DNS 별칭입니다. 이 Service의 트래픽을 받는 Pod는 없습니다.",
+    "noSelector": "이 Service에는 선택기가 없습니다. endpoints가 수동으로 관리되므로 Sextant는 어떤 Pod가 트래픽을 받는지 판단할 수 없습니다.",
+    "noPods": "이 Service는 실행 중인 Pod를 선택하지 않습니다.",
+    "noPort": "Service 뒤에 대상 포트가 있는 Pod가 없습니다."
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "namespace {{namespace}}에서 {{selector}}과(와) 일치하는 Pod",
+    "allPods": "namespace {{namespace}}의 모든 Pod",
+    "ciliumHere": "namespace {{namespace}}에서 {{selector}}과(와) 일치하는 endpoints",
+    "ciliumEverywhere": "모든 namespace에서 {{selector}}과(와) 일치하는 endpoints",
+    "calicoHere": "namespace {{namespace}}에서 Calico 선택기 {{selector}}과(와) 일치하는 Pod",
+    "calicoEverywhere": "모든 namespace에서 Calico 선택기 {{selector}}과(와) 일치하는 Pod"
+  },
+  "peer": {
+    "podsHere": "namespace {{namespace}}에서 {{selector}}과(와) 일치하는 Pod",
+    "allPodsHere": "namespace {{namespace}}의 모든 Pod",
+    "podsInNamespaces": "{{namespaces}}과(와) 일치하는 namespace에서 {{selector}}과(와) 일치하는 Pod",
+    "allPodsInNamespaces": "{{namespaces}}과(와) 일치하는 namespace의 모든 Pod",
+    "podsEverywhere": "모든 namespace에서 {{selector}}과(와) 일치하는 Pod",
+    "everyPod": "모든 namespace의 모든 Pod",
+    "ipBlock": "{{cidr}}의 주소",
+    "ipBlockExcept": "{{except}}을(를) 제외한 {{cidr}}의 주소",
+    "ciliumEndpointsHere": "namespace {{namespace}}에서 {{selector}}과(와) 일치하는 endpoints",
+    "ciliumEndpoints": "{{selector}}과(와) 일치하는 endpoints",
+    "entity": "Cilium 엔터티 {{entity}}",
+    "unmodelled": "{{feature}}(Sextant가 모델링하지 않음)",
+    "calico": "Calico 일치 조건 {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "이름이 {{name}}인 {{protocol}} 포트",
+    "anyOf": "모든 {{protocol}} 포트",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "규칙",
+    "peers": {
+      "ingress": "출발지",
+      "egress": "목적지"
+    },
+    "ports": "포트",
+    "anyPeer": {
+      "ingress": "모든 출발지",
+      "egress": "모든 목적지"
+    },
+    "anyPort": "모든 포트",
+    "empty": "없음(빈 Cilium 규칙)",
+    "local": "{{match}}과(와) 일치하는 선택된 Pod에만 적용",
+    "denyAll": {
+      "ingress": "ingress 규칙이 없습니다. 선택된 Pod로 들어오는 모든 트래픽이 거부됩니다.",
+      "egress": "egress 규칙이 없습니다. 선택된 Pod에서 나가는 모든 트래픽이 거부됩니다."
+    },
+    "notRestricted": {
+      "ingress": "들어오는 트래픽을 제한하지 않습니다.",
+      "egress": "나가는 트래픽을 제한하지 않습니다."
+    }
+  },
+  "fields": {
+    "selects": "선택 대상",
+    "selectedNow": "현재 선택됨",
+    "noPods": "Pod 없음",
+    "morePods_other": "외 {{count}}개",
+    "types": "정책 유형",
+    "typesDefaulted": "{{types}}(policyTypes 미설정: 기본값)",
+    "typesNone": "없음",
+    "order": "순서",
+    "noOrder": "없음(마지막에 평가)",
+    "notModelled": "Sextant가 모델링하지 않음"
+  },
+  "details": {
+    "plainWords": "쉬운 설명",
+    "openMap": "namespace 정책 맵",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "이 정책은 Pod를 선택하지 않습니다(호스트 정책이거나 NetworkPolicy의 사본입니다).",
+    "noDns": "이 정책은 DNS(kube-system의 kube-dns로 가는 UDP 포트 53)를 허용하지 않습니다. 다른 정책이 허용하지 않는 한 이 정책이 선택한 Pod는 이름을 확인할 수 없습니다.",
+    "ignored": {
+      "ingress": "ingress 규칙은 무시됩니다. policyTypes에 Ingress가 없습니다.",
+      "egress": "egress 규칙은 무시됩니다. policyTypes에 Egress가 없습니다."
+    },
+    "flavorNote": {
+      "cilium": "Cilium 정책: Sextant는 L3/L4 규칙을 평가합니다. L7 규칙, FQDN 등의 기능은 알 수 없음으로 처리합니다.",
+      "ciliumClusterwide": "Cilium 정책: Sextant는 L3/L4 규칙을 평가합니다. L7 규칙, FQDN 등의 기능은 알 수 없음으로 처리합니다.",
+      "calico": "Calico 정책: Sextant는 default 계층의 Allow, Deny, Log 규칙을 순서대로 평가합니다. 다른 기능은 알 수 없음으로 처리합니다.",
+      "calicoGlobal": "Calico 정책: Sextant는 default 계층의 Allow, Deny, Log 규칙을 순서대로 평가합니다. 다른 기능은 알 수 없음으로 처리합니다."
+    }
+  },
+  "pod": {
+    "title": "네트워크 정책",
+    "isolatedBy": "격리한 정책:",
+    "maybeBy": "격리했을 수 있는 정책:",
+    "notIsolated": {
+      "ingress": "격리되지 않음: 들어오는 모든 트래픽 허용",
+      "egress": "격리되지 않음: 나가는 모든 트래픽 허용"
+    },
+    "hostNetwork": "호스트 네트워크: NetworkPolicy 적용 안 됨",
+    "unknown": "알 수 없음: 일부 정책을 읽을 수 없음",
+    "check": "연결성 검사…"
+  },
+  "map": {
+    "choose": "namespace를 선택하면 어떤 Pod가 격리되어 있고 그 정책이 무엇을 허용하는지 보여 줍니다.",
+    "summary_other": "Pod {{count}}개: 들어오는 트래픽 격리: {{ingress}}, 나가는 트래픽 격리: {{egress}}.",
+    "pods": "Pod와 격리 상태",
+    "pod": "Pod",
+    "isolatedBy": "격리: {{policies}}",
+    "maybeBy": "격리 가능성: {{policies}}",
+    "notIsolated": {
+      "ingress": "격리 안 됨: 들어오는 트래픽 모두 허용",
+      "egress": "격리 안 됨: 나가는 트래픽 모두 허용"
+    },
+    "hostNetwork": "호스트 네트워크: 정책 적용 안 됨",
+    "unknown": "알 수 없음",
+    "noDns": "DNS가 허용되지 않음",
+    "dnsUnknown": "DNS가 허용되지 않을 수 있음",
+    "more_other": "Pod {{count}}개가 더 있지만 표시되지 않습니다.",
+    "podsUnreadable": "namespace {{namespace}}의 Pod를 나열할 수 없습니다.",
+    "policies": "정책",
+    "noPolicies": "이 namespace의 Pod를 선택하는 정책이 없습니다. 모든 Pod가 들어오는 트래픽을 모두 받고 나가는 트래픽을 모두 보냅니다.",
+    "selects_other": "{{what}} — 현재 Pod {{count}}개 선택됨"
+  }
+}

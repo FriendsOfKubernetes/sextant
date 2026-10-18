@@ -33,6 +33,13 @@ export function defaultAppSettings(): AppSettings {
     extensions: [],
     notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null, certExpiryDays: 14, enabledCategories: [] },
     fleet: { selected: [] },
+    timeline: { persist: false },
+    cleanup: {
+      excludedNamespaces: ["cert-manager", "flux-system", "argocd", "ingress-nginx", "istio-system", "monitoring", "local-path-storage"],
+      minAgeDays: { configs: 7, services: 7, pods: 7, jobs: 7, claims: 30, volumes: 30, namespaces: 30 },
+      checkConfigMaps: false,
+      checkSecrets: false,
+    },
   };
 }
 

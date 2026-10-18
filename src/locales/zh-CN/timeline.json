@@ -1,0 +1,74 @@
+{
+  "sidebar": "时间线",
+  "title": "变更时间线",
+  "lead": "集群中什么发生了变化、何时以及由谁更改。Sextant 在连接期间记录其监视的对象的变更；更早的变更来自集群保存的信息，并标记为不完整。",
+  "tab": "变更",
+  "tabLead": "Sextant 监视此对象期间记录的变更，以及集群保存的更早信息（不完整）。",
+  "tabEmpty": "尚无此对象的已知变更。",
+  "objectHistoryFailed": "无法读取此对象在集群中的历史记录：{{message}}",
+  "filters": {
+    "kind": "类型",
+    "anyKind": "所有类型",
+    "manager": "更改者",
+    "anyManager": "任何人",
+    "onlyBeforeProblems": "仅显示问题出现前的变更",
+    "partial": "Sextant 之前的历史",
+    "persist": "在重启之间保留",
+    "persistHint": "记录的变更保存在这台计算机上，每个集群一个文件。从不记录 Secret 的值。"
+  },
+  "refresh": "刷新",
+  "clear": "清除记录",
+  "saveFailed": "无法保存时间线：{{message}}",
+  "partialNeedsNamespaces": "在筛选器中选择 namespace，以查看 Sextant 运行之前的历史。",
+  "partialFirstNamespaces_other": "Sextant 之前的历史涵盖筛选器中的前 {{count}} 个 namespace。",
+  "relatedLimited_other": "在筛选器的前 {{count}} 个 namespace 中匹配依赖对象的问题。",
+  "allNamespacesNote": "选择所有 namespace 时，问题只与同一对象或以其命名的工作负载的变更相匹配。",
+  "partialLoading": "正在读取集群保存的信息…",
+  "partialSkipped": "部分列表无法读取：{{kinds}}",
+  "partialTruncated": "Sextant 之前的历史很长：仅显示最新的条目。",
+  "empty": "尚无已知变更。Sextant 监视对象期间，对象发生变化时会显示在这里。",
+  "emptyFiltered": "没有符合筛选条件的变更。",
+  "showMore_other": "再显示 {{count}} 个",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "已创建",
+    "updated": "已更改",
+    "deleted": "已删除"
+  },
+  "late": "较晚发现",
+  "lateTitle": "有一段时间没有监视此对象：变更发生在此时间之前。",
+  "partialBadge": "不完整",
+  "partialTitle": "来自集群保存的信息：Sextant 运行之前的变更并非全部已知。",
+  "source": {
+    "fieldManager": "此 field manager 的最近一次变更",
+    "revision": "修订版本 {{revision}}",
+    "revisionCause": "修订版本 {{revision}}：{{cause}}",
+    "helm": "Helm 发布 {{name}}，修订版本 {{revision}}",
+    "helmStatus": "Helm 发布 {{name}}，修订版本 {{revision}}（{{status}}）"
+  },
+  "who": {
+    "by": "更改者：{{who}}",
+    "likely": "可能的更改者：{{who}}",
+    "pending": "正在查找更改者…",
+    "unknown": "更改者未知",
+    "sextant": "Sextant（您或 AI 代理）"
+  },
+  "change": {
+    "added": "已添加 {{path}}：{{value}}",
+    "addedHidden": "已添加 {{path}}",
+    "removed": "已移除 {{path}}",
+    "changed": "{{path}}：{{before}} → {{after}}",
+    "changedLong": "{{path}} 已更改（值过长）",
+    "changedHidden": "{{path}} 已更改",
+    "summaryOnly": "已更改；之前的版本过大而未保存，因此不知道更改了哪些字段。",
+    "more_other": "…以及另外 {{count}} 处变更",
+    "showAll": "显示所有变更（{{count}}）",
+    "showLess": "显示较少"
+  },
+  "correlation": {
+    "label": "此变更后不久",
+    "sameTime": "大约同一时间，{{kind}} {{name}} 出现 {{reason}}",
+    "after_other": "此变更 {{count}} 分钟后，{{kind}} {{name}} 出现 {{reason}}"
+  }
+}

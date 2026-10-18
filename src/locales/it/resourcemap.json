@@ -24,6 +24,7 @@
     "boundTo": { "out": "Associato a", "in": "Associato da" },
     "storageClass": { "out": "Storage class", "in": "Usa questa classe" },
     "class": { "out": "Classe", "in": "Oggetti di questa classe" },
+    "parameters": { "out": "Parametri", "in": "Parametri di" },
     "node": { "out": "In esecuzione su", "in": "Esegue i pod" }
   },
   "impact": {

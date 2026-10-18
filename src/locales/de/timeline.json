@@ -1,0 +1,79 @@
+{
+  "sidebar": "Zeitachse",
+  "title": "Änderungsverlauf",
+  "lead": "Was sich im Cluster geändert hat, wann und durch wen. Sextant zeichnet Änderungen der Objekte auf, die es beobachtet, solange es verbunden ist; frühere Änderungen stammen aus dem, was der Cluster aufbewahrt, und sind als unvollständig markiert.",
+  "tab": "Änderungen",
+  "tabLead": "Änderungen, die Sextant aufgezeichnet hat, während es dieses Objekt beobachtete, und was der Cluster aus der Zeit davor aufbewahrt (unvollständig).",
+  "tabEmpty": "Zu diesem Objekt sind noch keine Änderungen bekannt.",
+  "objectHistoryFailed": "Der Verlauf dieses Objekts im Cluster konnte nicht gelesen werden: {{message}}",
+  "filters": {
+    "kind": "Art",
+    "anyKind": "Alle Arten",
+    "manager": "Geändert von",
+    "anyManager": "Beliebig",
+    "onlyBeforeProblems": "Nur Änderungen vor Problemen",
+    "partial": "Verlauf vor Sextant",
+    "persist": "Zwischen Neustarts behalten",
+    "persistHint": "Aufgezeichnete Änderungen werden auf diesem Computer gespeichert, eine Datei pro Cluster. Secret-Werte werden nie aufgezeichnet."
+  },
+  "refresh": "Aktualisieren",
+  "clear": "Aufzeichnung leeren",
+  "saveFailed": "Der Änderungsverlauf konnte nicht gespeichert werden: {{message}}",
+  "partialNeedsNamespaces": "Wählen Sie im Filter Namespaces aus, um den Verlauf vor dem Start von Sextant zu sehen.",
+  "partialFirstNamespaces_one": "Der Verlauf vor Sextant umfasst den ersten {{count}} Namespace des Filters.",
+  "partialFirstNamespaces_other": "Der Verlauf vor Sextant umfasst die ersten {{count}} Namespaces des Filters.",
+  "relatedLimited_one": "Probleme abhängiger Objekte werden im ersten {{count}} Namespace des Filters zugeordnet.",
+  "relatedLimited_other": "Probleme abhängiger Objekte werden in den ersten {{count}} Namespaces des Filters zugeordnet.",
+  "allNamespacesNote": "Bei allen Namespaces wird ein Problem einer Änderung desselben Objekts oder des Workloads zugeordnet, nach dem es benannt ist.",
+  "partialLoading": "Lesen, was der Cluster aufbewahrt…",
+  "partialSkipped": "Einige Listen konnten nicht gelesen werden: {{kinds}}",
+  "partialTruncated": "Der Verlauf vor Sextant ist lang: Nur die neuesten Einträge werden angezeigt.",
+  "empty": "Noch keine Änderungen bekannt. Sie erscheinen hier, wenn sich Objekte ändern, während Sextant sie beobachtet.",
+  "emptyFiltered": "Keine Änderungen entsprechen den Filtern.",
+  "showMore_one": "{{count}} weitere anzeigen",
+  "showMore_other": "{{count}} weitere anzeigen",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "Erstellt",
+    "updated": "Geändert",
+    "deleted": "Gelöscht"
+  },
+  "late": "Später bemerkt",
+  "lateTitle": "Dieses Objekt wurde eine Zeit lang nicht beobachtet: Die Änderung erfolgte vor diesem Zeitpunkt.",
+  "partialBadge": "Unvollständig",
+  "partialTitle": "Aus dem, was der Cluster aufbewahrt: Nicht jede Änderung vor dem Start von Sextant ist bekannt.",
+  "source": {
+    "fieldManager": "Letzte Änderung durch diesen Field Manager",
+    "revision": "Revision {{revision}}",
+    "revisionCause": "Revision {{revision}}: {{cause}}",
+    "helm": "Helm-Release {{name}}, Revision {{revision}}",
+    "helmStatus": "Helm-Release {{name}}, Revision {{revision}} ({{status}})"
+  },
+  "who": {
+    "by": "Von {{who}}",
+    "likely": "Vermutlich von {{who}}",
+    "pending": "Urheber wird ermittelt…",
+    "unknown": "Urheber unbekannt",
+    "sextant": "Sextant (Sie oder ein KI-Agent)"
+  },
+  "change": {
+    "added": "{{path}} hinzugefügt: {{value}}",
+    "addedHidden": "{{path}} hinzugefügt",
+    "removed": "{{path}} entfernt",
+    "changed": "{{path}}: {{before}} → {{after}}",
+    "changedLong": "{{path}} geändert (langer Wert)",
+    "changedHidden": "{{path}} geändert",
+    "summaryOnly": "Geändert; die vorherige Version war zu groß zum Aufbewahren, daher sind die geänderten Felder nicht bekannt.",
+    "more_one": "…und {{count}} weitere Änderung",
+    "more_other": "…und {{count}} weitere Änderungen",
+    "showAll": "Alle Änderungen anzeigen ({{count}})",
+    "showLess": "Weniger anzeigen"
+  },
+  "correlation": {
+    "label": "Kurz nach dieser Änderung",
+    "sameTime": "{{reason}} bei {{kind}} {{name}} etwa zur gleichen Zeit",
+    "after_one": "{{reason}} bei {{kind}} {{name}} {{count}} Min. nach dieser Änderung",
+    "after_other": "{{reason}} bei {{kind}} {{name}} {{count}} Min. nach dieser Änderung"
+  }
+}

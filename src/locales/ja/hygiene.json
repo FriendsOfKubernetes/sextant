@@ -1,0 +1,124 @@
+{
+  "sidebar": "クリーンアップ",
+  "title": "クリーンアップ",
+  "intro": "使われていない、または残されたように見えるオブジェクトを、それぞれの理由とともに示します。参照しうるすべてのリストを完全に読み取れた場合にだけ候補になり、確信が持てない場合は表示しません。オブジェクトを選んで確認するまで、何も削除されません。",
+  "loading": "namespace を読み取り中…",
+  "chooseNamespace": "namespace を選択",
+  "chooseNamespaceText": "このページは namespace フィルターで選択した namespace を確認します。開始するには 1 つ以上の namespace を選択してください。",
+  "firstNamespaces_other": "選択した namespace のうち最初の {{count}} 個のみを確認します。",
+  "excludedInView": "設定で除外されているため確認しません: {{names}}",
+  "configsOff": "ConfigMap と Secret は確認しません。設定で有効にできます。",
+  "configsWarning": "Sextant は ConfigMap や Secret へのすべての参照を把握できません。Sextant が知らないオペレーターやカスタムリソース、CSI ドライバー、コントローラーの引数、API 経由で読み取るアプリケーションなどです。削除する前に 1 つずつ確認してください。",
+  "blocked": "{{namespace}} の ConfigMap、Secret、PersistentVolumeClaim、Service は判定しません。Sextant が読み取らない種類のオブジェクトがあります ({{kinds}})。",
+  "unavailableGroups": "一部の API グループが応答しません ({{groups}})。そのオブジェクトが見えないため、ConfigMap、Secret、PersistentVolumeClaim、Service、namespace は削除対象にしません。",
+  "clusterFailed": "クラスター全体のオブジェクトと API グループを確認できませんでした。ConfigMap、Secret、PersistentVolumeClaim、Service、namespace は削除対象にしません。",
+  "clusterUnread": "次のクラスター全体の種類のオブジェクトをすべて読み取れなかったため、ConfigMap と Secret は削除対象にしません: {{kinds}}",
+  "sampleFailed": "{{namespace}} の内容をすべて確認できませんでした。その ConfigMap、Secret、PersistentVolumeClaim と namespace 自体は削除対象にしません。",
+  "checkAgain": "再確認",
+  "nothingChecked": "選択したすべての namespace が設定で除外されています。",
+  "watchFailed": "{{kind}} を監視できませんでした",
+  "forbidden": "次の場所で {{kind}} を一覧表示する権限がありません: {{names}}",
+  "unchecked": "次のリストをまだ完全に読み取れていないため、一部のオブジェクトは判定していません: {{kinds}}",
+  "none": "確認した namespace にクリーンアップ対象はありません。",
+  "truncated_other": "候補が多すぎるため、最初の {{count}} 個のみを表示します。",
+  "rule": {
+    "configMap": "どこからも使われていない ConfigMap",
+    "secret": "どこからも使われていない Secret",
+    "claim": "どの Pod もマウントしていない PersistentVolumeClaim",
+    "volume": "解放済みまたは未要求の PersistentVolume",
+    "service": "エンドポイントのない Service",
+    "replicaSet": "リビジョン履歴を超えた古い ReplicaSet",
+    "pod": "終了した Pod",
+    "job": "終了した Job",
+    "namespace": "空の namespace"
+  },
+  "reason": {
+    "configMapUnused": "Pod、Pod テンプレート、その他の監視対象オブジェクトのどれからも参照されていません。",
+    "secretUnused": "Pod、Pod テンプレート、ServiceAccount、Ingress、Gateway、cert-manager や Flux のオブジェクトのどれからも参照されていません。",
+    "claimUnmounted": "どの Pod もマウントしておらず、Pod テンプレート、StatefulSet、VolumeSnapshot、ほかの PersistentVolumeClaim のどれからも参照されていません。",
+    "volumeReleased": "Released: PersistentVolumeClaim {{claim}} は削除されています。",
+    "volumeAvailable": "Available で、どの PersistentVolumeClaim にもバインドされていません。",
+    "serviceNoEndpoints": "エンドポイントがなく、selector に一致する Pod も Pod テンプレートもありません。",
+    "serviceNoSelector": "selector もエンドポイントも Endpoints オブジェクトもありません。",
+    "replicaSetHistory": "Deployment {{deployment}} のリビジョン {{revision}} で、revisionHistoryLimit を超えています: {{limit}}。",
+    "podSucceeded": "Succeeded で、どの Job にも所有されていません。",
+    "podFailed": "Failed で、どの Job にも所有されていません。",
+    "jobComplete": "完了しています。どの CronJob にも所有されておらず、ttlSecondsAfterFinished も設定されていません。",
+    "jobFailed": "失敗しています。どの CronJob にも所有されておらず、ttlSecondsAfterFinished も設定されていません。",
+    "namespaceEmpty": "Kubernetes がすべての namespace に作成するもの以外に、確認対象の種類のオブジェクトがありません。ほかの種類のオブジェクトは確認しません。"
+  },
+  "since": {
+    "created": "{{age}}前に作成",
+    "finished": "{{age}}前に終了",
+    "phaseChanged": "このフェーズで {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "ボリューム {{volume}} の回収ポリシーは Delete です。データは削除されます。",
+    "reclaimRetain": "ボリューム {{volume}} の回収ポリシーは Retain です。データはストレージに残ります。",
+    "reclaimOther": "ボリューム {{volume}} の回収ポリシーは {{policy}} です。"
+  },
+  "column": {
+    "object": "オブジェクト",
+    "reason": "未使用と判断した理由",
+    "age": "経過時間",
+    "impact": "削除した場合",
+    "manager": "管理元"
+  },
+  "open": "{{kind}} {{name}} を開く",
+  "select": "{{kind}} {{name}} を選択",
+  "selectGroup": "すべて選択: {{group}}",
+  "deleteSelected": "選択項目を削除 ({{count}})…",
+  "managed": {
+    "title": "ツールが管理しているため削除対象にしません",
+    "text": "これらも未使用に見えますが、ツールが管理しています。削除してもツールが再作成するか、追跡できなくなります。ツールから削除してください。",
+    "helm": "Helm リリース {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo CD アプリケーション {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "意図的に保持されているため削除対象にしません",
+    "retain": "回収ポリシー Retain: データは意図的に保持されています。"
+  },
+  "settings": {
+    "button": "設定…",
+    "title": "クリーンアップの設定",
+    "checkConfigMaps": "使われていないように見える ConfigMap を表示する",
+    "checkSecrets": "使われていないように見える Secret を表示する",
+    "excluded": "確認しない namespace",
+    "excludedHint": "1 行に 1 つ。kube-system、kube-public、kube-node-lease は常に確認しません。",
+    "days": "この日数より古いオブジェクトのみ表示",
+    "ages": {
+      "configs": "ConfigMap と Secret: 作成からの日数",
+      "services": "Service: 作成からの日数",
+      "pods": "終了した Pod: 終了からの日数",
+      "jobs": "終了した Job: 終了からの日数",
+      "claims": "PersistentVolumeClaim: 作成からの日数",
+      "volumes": "PersistentVolume: 現在のフェーズでの日数",
+      "namespaces": "空の namespace: 作成からの日数"
+    },
+    "save": "保存",
+    "saveFailed": "設定を保存できませんでした"
+  },
+  "dialog": {
+    "title_other": "{{count}} 個のオブジェクトを削除",
+    "text": "各オブジェクトは削除の直前にもう一度確認されます。変更されたものや再び使われているものは残します。削除は元に戻せません。",
+    "namespaceWarning": "namespace を削除すると、このページが確認しない種類のオブジェクトも含め、その中のすべてが削除されます。",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "確認のため {{count}} と入力してください",
+    "confirm": "削除",
+    "progress": "削除中: {{done}} / {{total}}",
+    "stop": "停止",
+    "resultTitle": "クリーンアップの結果",
+    "summary": "削除: {{deleted}}。保持: {{kept}}。失敗: {{failed}}。",
+    "outcome": {
+      "deleted": "削除済み",
+      "gone": "すでに存在しません",
+      "notCandidate": "保持: 未使用には見えなくなりました",
+      "changed": "保持: 確認後に変更されました",
+      "failed": "失敗",
+      "stopped": "未実行: 停止しました"
+    }
+  }
+}

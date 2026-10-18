@@ -9,6 +9,9 @@ import type { SecretCertificates } from "./generated/SecretCertificates";
 import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
 import type { ScanApi } from "./generated/ScanApi";
 import type { UpgradeScan } from "./generated/UpgradeScan";
+import type { KindRef } from "./generated/KindRef";
+import type { ObjectManagers } from "./generated/ObjectManagers";
+import type { PartialHistory } from "./generated/PartialHistory";
 import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
 import type { ArgoLogin } from "./generated/ArgoLogin";
@@ -16,6 +19,10 @@ import type { ArgoStatus } from "./generated/ArgoStatus";
 import type { AuditEntry } from "./generated/AuditEntry";
 import type { ChartHit } from "./generated/ChartHit";
 import type { DryRunMode } from "./generated/DryRunMode";
+import type { DeletePreconditions } from "./generated/DeletePreconditions";
+import type { KindSample } from "./generated/KindSample";
+import type { ClusterCheck } from "./generated/ClusterCheck";
+import type { NamedObject } from "./generated/NamedObject";
 import type { DryRunResult } from "./generated/DryRunResult";
 import type { HelmManifestDiff } from "./generated/HelmManifestDiff";
 import type { ChartTarget } from "./generated/ChartTarget";
@@ -144,7 +151,12 @@ export const resources = {
    */
   dryRun: (clusterId: ClusterId, yaml: string, mode: DryRunMode) =>
     call<DryRunResult>("resource_dry_run", { clusterId, yaml, mode }),
-  delete: (clusterId: ClusterId, ref: ObjectRef) => call<void>("resource_delete", { clusterId, ref }),
+  /**
+   * Deletes one object. With `preconditions` the API server deletes it only while its uid and resourceVersion are
+   * still those (otherwise a `conflict` error): the cleanup page names the object it checked.
+   */
+  delete: (clusterId: ClusterId, ref: ObjectRef, preconditions?: DeletePreconditions) =>
+    call<void>("resource_delete", preconditions ? { clusterId, ref, preconditions } : { clusterId, ref }),
   /**
    * Merge patch (an object) or JSON patch (a list of operations) of one object, signed by `sextant`; resolves to the
    * object as saved (a Secret without its values).
@@ -417,6 +429,39 @@ export const gitopsInstall = {
  */
 export const upgrade = {
   scan: (clusterId: ClusterId, apis: ScanApi[]) => call<UpgradeScan>("upgrade_scan", { clusterId, apis }),
+};
+
+/**
+ * Cleanup (#147): what `namespace` holds of each of `kinds` (at most 300), at most `limit` (1–5) names per kind from
+ * metadata-only lists; a kind that cannot be read carries its error. Read-only; window only.
+ */
+export const cleanup = {
+  sample: (clusterId: ClusterId, namespace: string, kinds: KindRef[], limit: number) =>
+    call<KindSample[]>("cleanup_sample", { clusterId, namespace, kinds, limit }),
+  /**
+   * API group versions that do not answer, and which of `targets` (ConfigMaps and Secrets, at most 20000) an object of
+   * the cluster-scoped `kinds` (at most 300, 500 objects each) names; only targets come back.
+   */
+  clusterCheck: (clusterId: ClusterId, kinds: KindRef[], targets: NamedObject[]) =>
+    call<ClusterCheck>("cleanup_cluster_check", { clusterId, kinds, targets }),
+};
+
+/**
+ * Change timeline (#145): what watches cannot carry. `managers` reads the field managers of up to 50 objects (metadata
+ * only); `history` the partial history of up to 10 namespaces (managers' last changes, rollout revisions, Helm release
+ * revisions); `objectHistory` the same for one object. `save`/`load` keep a recorded timeline between runs (only while
+ * `settings.timeline.persist`; `save(id, null)` removes it). Read-only; window only.
+ */
+export const timeline = {
+  managers: (clusterId: ClusterId, refs: ObjectRef[]) => call<ObjectManagers[]>("timeline_managers", { clusterId, refs }),
+  history: (clusterId: ClusterId, namespaces: string[], kinds: KindRef[], helm: boolean) =>
+    call<PartialHistory>("timeline_history", { clusterId, namespaces, kinds, helm }),
+  objectHistory: (clusterId: ClusterId, object: ObjectRef) =>
+    call<PartialHistory>("timeline_object_history", { clusterId, object }),
+  save: (clusterId: ClusterId, text: string | null) => call<void>("timeline_save", { clusterId, text }),
+  load: (clusterId: ClusterId) => call<string | null>("timeline_load", { clusterId }),
+  /** Removes the saved timelines of every cluster (persistence turned off). */
+  removeAll: () => call<void>("timeline_remove_all"),
 };
 
 /**

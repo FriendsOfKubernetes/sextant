@@ -1,0 +1,339 @@
+{
+  "sidebar": "Konnektivität",
+  "title": "Netzwerk-Konnektivität",
+  "banner": "Sextant urteilt anhand der Policy-Objekte im Cluster, nicht anhand des tatsächlichen Datenverkehrs. NetworkPolicy wirkt nur, wenn das Netzwerk-Plugin (CNI) des Clusters sie durchsetzt. Cilium- und Calico-Policies werden ausgewertet, soweit sie sich auf L3/L4-Regeln abbilden lassen.",
+  "loading": "Pods und Policies werden gelesen…",
+  "tabs": {
+    "label": "Konnektivitätsansichten",
+    "check": "Prüfung",
+    "map": "Policy-Übersicht"
+  },
+  "form": {
+    "source": "Quelle",
+    "destination": "Ziel",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace und Labels",
+      "external": "IP-Adresse außerhalb des Clusters",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Labels",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "IP-Adresse",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Service-Port",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "Port",
+    "portPlaceholder": "80 oder http",
+    "protocol": "Protokoll",
+    "choose": "Auswählen…",
+    "loadingNames": "Wird geladen…",
+    "check": "Prüfen"
+  },
+  "errors": {
+    "chooseNamespace": "Wählen Sie einen Namespace.",
+    "choosePod": "Wählen Sie einen Pod.",
+    "podGone": "Pod {{name}} ist nicht mehr im Namespace {{namespace}}.",
+    "labels": "Geben Sie Labels als key=value an, durch Kommas getrennt.",
+    "ip": "Geben Sie eine IPv4- oder IPv6-Adresse ein.",
+    "port": "Geben Sie eine Portnummer von 1 bis 65535 oder den Namen eines Container-Ports ein.",
+    "portName": "Der Ziel-Pod hat keinen {{protocol}}-Port mit dem Namen {{name}}.",
+    "chooseService": "Wählen Sie einen Service.",
+    "serviceGone": "Service {{name}} ist nicht mehr im Namespace {{namespace}}.",
+    "chooseServicePort": "Wählen Sie einen Port des Service."
+  },
+  "endpoint": {
+    "labels": "ein Pod mit {{labels}} in {{namespace}}",
+    "anyPod": "ein Pod ohne Labels in {{namespace}}"
+  },
+  "verdict": {
+    "allowed": "Erlaubt",
+    "denied": "Verweigert",
+    "unknown": "Unbekannt"
+  },
+  "tri": {
+    "yes": "Ja",
+    "no": "Nein",
+    "maybe": "Nicht feststellbar"
+  },
+  "result": {
+    "label": "Ergebnis",
+    "allowed": "Erlaubt: Die Policies erlauben diesen Datenverkehr.",
+    "denied": "Verweigert: Die Policies erlauben diesen Datenverkehr nicht.",
+    "unknown": "Unbekannt: Sextant kann anhand der Objekte nicht feststellen, ob dieser Datenverkehr erlaubt ist.",
+    "service": {
+      "allowed": "Zu jedem Pod hinter dem Service erlaubt.",
+      "denied": "Zu jedem Pod hinter dem Service verweigert.",
+      "unknown": "Für einige Pods hinter dem Service unbekannt."
+    },
+    "partial_one": "Zu {{allowed}} von {{count}} Pod hinter dem Service erlaubt.",
+    "partial_other": "Zu {{allowed}} von {{count}} Pods hinter dem Service erlaubt.",
+    "nothing": "Nichts zu prüfen.",
+    "egressFrom": "Ausgehend von {{source}}",
+    "ingressTo": "Eingehend zu {{destination}}"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "Keine Policy wählt die Quelle für ausgehenden Datenverkehr aus, daher ist ihr gesamter ausgehender Datenverkehr erlaubt.",
+      "ingress": "Keine Policy wählt das Ziel für eingehenden Datenverkehr aus, daher ist jeder eingehende Datenverkehr zu ihm erlaubt."
+    },
+    "hostNetwork": {
+      "egress": "Die Quelle verwendet das Host-Netzwerk: NetworkPolicy gilt für sie nicht.",
+      "ingress": "Das Ziel verwendet das Host-Netzwerk: NetworkPolicy gilt für es nicht."
+    },
+    "external": {
+      "egress": "Die Quelle liegt außerhalb des Clusters: Keine Egress-Policy des Clusters gilt für sie.",
+      "ingress": "Das Ziel liegt außerhalb des Clusters: Nur der ausgehende Datenverkehr der Quelle entscheidet."
+    },
+    "nodeTraffic": "Die Quelle verwendet das Host-Netzwerk auf dem Knoten des Ziels. Datenverkehr vom eigenen Knoten eines Pods ist immer erlaubt.",
+    "allowedByRule": "Erlaubt durch:",
+    "deniedByRule": "Verweigert durch:",
+    "noRuleMatches": "Policies wählen diesen Pod aus, und keine ihrer Regeln erlaubt diesen Datenverkehr.",
+    "unknown": "Sextant kann es nicht feststellen, weil:"
+  },
+  "match": {
+    "peer": "Peer {{n}}: {{peer}}",
+    "anyPeer": "beliebiger Peer",
+    "port": "Port {{n}}: {{port}}",
+    "anyPort": "beliebiger Port"
+  },
+  "checks": {
+    "title": {
+      "egress_one": "{{count}} Policy wählt die Quelle für ausgehenden Datenverkehr aus",
+      "egress_other": "{{count}} Policies wählen die Quelle für ausgehenden Datenverkehr aus",
+      "ingress_one": "{{count}} Policy wählt das Ziel für eingehenden Datenverkehr aus",
+      "ingress_other": "{{count}} Policies wählen das Ziel für eingehenden Datenverkehr aus"
+    },
+    "policy": "Policy",
+    "rule": "Regel",
+    "matches": "Trifft zu",
+    "why": "Warum",
+    "noRules": "Keine Regeln",
+    "noRulesWhy": {
+      "egress": "Die Policy isoliert den Pod für ausgehenden Datenverkehr und erlaubt nichts.",
+      "ingress": "Die Policy isoliert den Pod für eingehenden Datenverkehr und erlaubt nichts."
+    }
+  },
+  "rule": {
+    "ingress": "Ingress-Regel {{n}}",
+    "egress": "Egress-Regel {{n}}",
+    "ingressDeny": "Ingress-Deny-Regel {{n}}",
+    "egressDeny": "Egress-Deny-Regel {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "Erlaubt diesen Datenverkehr.",
+    "denies": "Verweigert diesen Datenverkehr.",
+    "empty": "Eine leere Regel trifft in Cilium auf nichts zu.",
+    "local": "Die Regel gilt nicht für diesen Pod: {{reason}}",
+    "peerN": "Peer {{n}}: {{reason}}",
+    "portN": "Port {{n}}: {{reason}}"
+  },
+  "peerReason": {
+    "match": "Trifft zu.",
+    "namespace": "Der Pod liegt im Namespace {{actual}}; dieser Peer wählt nur Pods des Namespace {{expected}} aus.",
+    "namespaceSelector": "Namespace {{namespace}} hat die Labels {{labels}}, die nicht zu {{selector}} passen.",
+    "namespaceNoMatch": "Namespace {{namespace}} (Labels {{labels}}) passt nicht zum Namespace-Selektor.",
+    "namespaceLabelsUnknown": "Die Labels des Namespace {{namespace}} sind unbekannt: Namespaces können nicht aufgelistet werden.",
+    "podSelector": "Die Labels des Pods {{labels}} passen nicht zu {{selector}}.",
+    "podNoMatch": "Die Labels des Pods {{labels}} passen nicht zum Selektor.",
+    "podNoLabels": "Der Pod hat keine Labels und passt daher nicht zu {{selector}}.",
+    "notPod": "Pod- und Namespace-Selektoren wählen nie eine Adresse außerhalb des Clusters aus.",
+    "ipBlock": "Die Adresse liegt außerhalb von {{cidr}}.",
+    "ipBlockExcept": "Die Adresse liegt in {{except}}, den der Block {{cidr}} ausschließt.",
+    "ipBlockPod": "Die IP des Pods liegt in {{cidr}}. Ob ein ipBlock für Pod-IPs gilt, hängt vom Netzwerk-Plugin ab.",
+    "ipUnknown": "Die IP des Pods ist unbekannt.",
+    "cidrNotPods": "CIDR-Regeln von Cilium wählen keine Pods aus.",
+    "entity": "Die Cilium-Entität {{entity}} umfasst diese Seite nicht.",
+    "networkSet": "Ein Calico-Network-Set kann diese Adresse enthalten."
+  },
+  "portReason": {
+    "match": "Trifft zu.",
+    "protocol": "Die Regel gilt für {{protocol}}.",
+    "otherProtocol": "Die Regel gilt für ein anderes Protokoll.",
+    "port": "Die Regel gilt für Port {{port}}.",
+    "namedUnresolved": "Der Ziel-Pod hat keinen Port mit dem Namen {{name}} für dieses Protokoll.",
+    "namedOther": "Port {{name}} ist auf dem Ziel-Pod {{port}}.",
+    "namedExternal": "Ein benannter Port wird für eine Adresse außerhalb des Clusters nie aufgelöst."
+  },
+  "reason": {
+    "unmodelled": "Verwendet Funktionen, die Sextant nicht modelliert: {{feature}}."
+  },
+  "unknown": {
+    "unreadable": "Die {{kind}}-Objekte des Namespace {{namespace}} konnten nicht gelesen werden.",
+    "unreadableClusterwide": "Die {{kind}}-Objekte konnten nicht gelesen werden.",
+    "unevaluated": "{{kind}} {{name}} kann gelten, und Sextant wertet {{kind}}-Objekte nicht aus.",
+    "maybeSelected": "Sextant kann nicht feststellen, ob {{policy}} den Pod auswählt.",
+    "maybeIsolated": "Sextant kann nicht feststellen, ob {{policy}} den Pod isoliert.",
+    "maybeRule": "{{policy}}, {{rule}}: {{reason}}",
+    "unmodelledRule": "Nicht ausgewertet: {{flavor}} {{policy}}, {{rule}} verwendet Funktionen, die Sextant nicht modelliert: {{features}}.",
+    "unmodelledPolicy": "Nicht ausgewertet: {{flavor}} {{policy}} verwendet Funktionen, die Sextant nicht modelliert: {{features}}.",
+    "hostNetworkSource": "Die Quelle verwendet das Host-Netzwerk auf einem anderen Knoten. Ihr Datenverkehr kommt von der Adresse des Knotens, zu der Pod-Selektoren nicht passen; ein ipBlock kann je nach Netzwerk-Plugin passen.",
+    "mixed": "Sowohl Cilium- als auch Calico-Policies wählen den Pod aus, und Sextant kombiniert sie nicht."
+  },
+  "note": {
+    "self": "Quelle und Ziel sind derselbe Pod. Datenverkehr über localhost wird nie blockiert; Datenverkehr an die eigene IP des Pods wird hier nach den Policies ausgewertet, doch Netzwerk-Plugins verhalten sich unterschiedlich.",
+    "ipBlockPods": "ipBlock ist für Adressen außerhalb des Clusters gedacht. Ob er auf Pod-IPs zutrifft, hängt vom Netzwerk-Plugin ab, daher gelten solche Treffer als unbekannt.",
+    "externalSource": "Datenverkehr von außen kommt meist über einen NodePort, einen Load Balancer oder einen Ingress-Controller, die die Quelladresse ersetzen können, sofern externalTrafficPolicy nicht Local ist.",
+    "calicoOrder": "Calico wertet Policies der Reihe nach aus (nach order, dann nach Name), und Kubernetes-NetworkPolicies zählen als order 1000. Die erste zutreffende Allow- oder Deny-Regel entscheidet.",
+    "service": "Datenverkehr zu einem Service wird für jeden von ihm ausgewählten Pod am Zielport geprüft.",
+    "serviceNodePort": "Dieser Service vom Typ {{type}} ist auch von außen über Knoten-Ports erreichbar. Solcher Datenverkehr kann von der Adresse eines Knotens kommen, sofern externalTrafficPolicy nicht Local ist."
+  },
+  "dns": {
+    "denied": "Die Quelle ist für ausgehenden Datenverkehr isoliert, und ihre Policies erlauben kein DNS (UDP-Port 53 zu kube-dns in kube-system). Sie kann keine Namen auflösen, selbst wenn eine Verbindung erlaubt ist.",
+    "unknown": "Die Quelle ist für ausgehenden Datenverkehr isoliert, und Sextant kann nicht feststellen, ob ihre Policies DNS erlauben (UDP-Port 53 zu kube-dns in kube-system).",
+    "tcpDenied": "Die Policies der Quelle erlauben DNS über UDP, aber nicht über TCP-Port 53. Große DNS-Antworten, die auf TCP ausweichen, schlagen fehl."
+  },
+  "service": {
+    "backends": "Pods hinter dem Service",
+    "pod": "Pod",
+    "port": "Pod-Port",
+    "result": "Ergebnis",
+    "noTargetPort": "Kein solcher Port",
+    "details": "Details für Pod {{pod}}",
+    "more_one": "{{count}} weiterer Pod wird nicht angezeigt.",
+    "more_other": "{{count}} weitere Pods werden nicht angezeigt.",
+    "externalName": "Ein ExternalName-Service ist ein DNS-Alias: Kein Pod empfängt seinen Datenverkehr.",
+    "noSelector": "Der Service hat keinen Selektor: Seine Endpoints werden von Hand gepflegt, daher kann Sextant nicht feststellen, welche Pods den Datenverkehr empfangen.",
+    "noPods": "Der Service wählt keine laufenden Pods aus.",
+    "noPort": "Kein Pod hinter dem Service hat den Zielport."
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "Pods, die zu {{selector}} passen, im Namespace {{namespace}}",
+    "allPods": "Jeder Pod im Namespace {{namespace}}",
+    "ciliumHere": "Endpoints, die zu {{selector}} passen, im Namespace {{namespace}}",
+    "ciliumEverywhere": "Endpoints, die zu {{selector}} passen, in jedem Namespace",
+    "calicoHere": "Pods, die zum Calico-Selektor {{selector}} passen, im Namespace {{namespace}}",
+    "calicoEverywhere": "Pods, die zum Calico-Selektor {{selector}} passen, in jedem Namespace"
+  },
+  "peer": {
+    "podsHere": "Pods, die zu {{selector}} passen, im Namespace {{namespace}}",
+    "allPodsHere": "Jeder Pod im Namespace {{namespace}}",
+    "podsInNamespaces": "Pods, die zu {{selector}} passen, in Namespaces, die zu {{namespaces}} passen",
+    "allPodsInNamespaces": "Jeder Pod in Namespaces, die zu {{namespaces}} passen",
+    "podsEverywhere": "Pods, die zu {{selector}} passen, in jedem Namespace",
+    "everyPod": "Jeder Pod in jedem Namespace",
+    "ipBlock": "Adressen in {{cidr}}",
+    "ipBlockExcept": "Adressen in {{cidr}} außer {{except}}",
+    "ciliumEndpointsHere": "Endpoints, die zu {{selector}} passen, im Namespace {{namespace}}",
+    "ciliumEndpoints": "Endpoints, die zu {{selector}} passen",
+    "entity": "Die Cilium-Entität {{entity}}",
+    "unmodelled": "{{feature}} (von Sextant nicht modelliert)",
+    "calico": "Calico-Bedingung {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "{{protocol}}-Port mit dem Namen {{name}}",
+    "anyOf": "Jeder {{protocol}}-Port",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "Regel",
+    "peers": {
+      "ingress": "Von",
+      "egress": "Nach"
+    },
+    "ports": "Ports",
+    "anyPeer": {
+      "ingress": "Beliebige Quelle",
+      "egress": "Beliebiges Ziel"
+    },
+    "anyPort": "Beliebiger Port",
+    "empty": "Nichts (eine leere Cilium-Regel)",
+    "local": "Nur für ausgewählte Pods, die zu {{match}} passen",
+    "denyAll": {
+      "ingress": "Keine Ingress-Regeln: Jeder eingehende Datenverkehr zu den ausgewählten Pods wird verweigert.",
+      "egress": "Keine Egress-Regeln: Jeder ausgehende Datenverkehr der ausgewählten Pods wird verweigert."
+    },
+    "notRestricted": {
+      "ingress": "Schränkt eingehenden Datenverkehr nicht ein.",
+      "egress": "Schränkt ausgehenden Datenverkehr nicht ein."
+    }
+  },
+  "fields": {
+    "selects": "Wählt aus",
+    "selectedNow": "Derzeit ausgewählt",
+    "noPods": "Keine Pods",
+    "morePods_one": "und {{count}} weiterer",
+    "morePods_other": "und {{count}} weitere",
+    "types": "Policy-Typen",
+    "typesDefaulted": "{{types}} (policyTypes nicht gesetzt: Standardwert)",
+    "typesNone": "Keine",
+    "order": "Reihenfolge",
+    "noOrder": "Keine (wird zuletzt ausgewertet)",
+    "notModelled": "Von Sextant nicht modelliert"
+  },
+  "details": {
+    "plainWords": "In einfachen Worten",
+    "openMap": "Policy-Übersicht des Namespace",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "Diese Policy wählt keine Pods aus (eine Host-Policy oder eine Kopie einer NetworkPolicy).",
+    "noDns": "Diese Policy erlaubt kein DNS (UDP-Port 53 zu kube-dns in kube-system): Die von ihr ausgewählten Pods können keine Namen auflösen, sofern keine andere Policy es erlaubt.",
+    "ignored": {
+      "ingress": "Die Ingress-Regeln werden ignoriert: policyTypes enthält Ingress nicht.",
+      "egress": "Die Egress-Regeln werden ignoriert: policyTypes enthält Egress nicht."
+    },
+    "flavorNote": {
+      "cilium": "Cilium-Policy: Sextant wertet ihre L3/L4-Regeln aus; L7-Regeln, FQDNs und ähnliche Funktionen gelten als unbekannt.",
+      "ciliumClusterwide": "Cilium-Policy: Sextant wertet ihre L3/L4-Regeln aus; L7-Regeln, FQDNs und ähnliche Funktionen gelten als unbekannt.",
+      "calico": "Calico-Policy: Sextant wertet die Allow-, Deny- und Log-Regeln der Stufe default der Reihe nach aus; andere Funktionen gelten als unbekannt.",
+      "calicoGlobal": "Calico-Policy: Sextant wertet die Allow-, Deny- und Log-Regeln der Stufe default der Reihe nach aus; andere Funktionen gelten als unbekannt."
+    }
+  },
+  "pod": {
+    "title": "Netzwerk-Policies",
+    "isolatedBy": "Isoliert durch:",
+    "maybeBy": "Möglicherweise isoliert durch:",
+    "notIsolated": {
+      "ingress": "Nicht isoliert: Jeder eingehende Datenverkehr ist erlaubt",
+      "egress": "Nicht isoliert: Jeder ausgehende Datenverkehr ist erlaubt"
+    },
+    "hostNetwork": "Host-Netzwerk: NetworkPolicy gilt nicht",
+    "unknown": "Unbekannt: Nicht jede Policy konnte gelesen werden",
+    "check": "Konnektivität prüfen…"
+  },
+  "map": {
+    "choose": "Wählen Sie einen Namespace, um zu sehen, welche seiner Pods isoliert sind und was ihre Policies erlauben.",
+    "summary_one": "{{count}} Pod: isoliert für eingehenden Datenverkehr: {{ingress}}; für ausgehenden: {{egress}}.",
+    "summary_other": "{{count}} Pods: isoliert für eingehenden Datenverkehr: {{ingress}}; für ausgehenden: {{egress}}.",
+    "pods": "Pods und ihre Isolierung",
+    "pod": "Pod",
+    "isolatedBy": "Isoliert durch: {{policies}}",
+    "maybeBy": "Möglicherweise isoliert durch: {{policies}}",
+    "notIsolated": {
+      "ingress": "Nicht isoliert: alles Eingehende erlaubt",
+      "egress": "Nicht isoliert: alles Ausgehende erlaubt"
+    },
+    "hostNetwork": "Host-Netzwerk: keine Policy gilt",
+    "unknown": "Unbekannt",
+    "noDns": "DNS ist nicht erlaubt",
+    "dnsUnknown": "DNS ist möglicherweise nicht erlaubt",
+    "more_one": "{{count}} weiterer Pod wird nicht angezeigt.",
+    "more_other": "{{count}} weitere Pods werden nicht angezeigt.",
+    "podsUnreadable": "Die Pods des Namespace {{namespace}} können nicht aufgelistet werden.",
+    "policies": "Policies",
+    "noPolicies": "Keine Policy wählt Pods in diesem Namespace aus: Jeder Pod nimmt allen eingehenden Datenverkehr an und sendet allen ausgehenden.",
+    "selects_one": "{{what}} — derzeit {{count}} Pod ausgewählt",
+    "selects_other": "{{what}} — derzeit {{count}} Pods ausgewählt"
+  }
+}

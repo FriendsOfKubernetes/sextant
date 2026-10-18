@@ -15,6 +15,7 @@ import type { KubeObject } from "./commands";
 import { resources } from "./commands";
 import { toApiError, type ApiError } from "./errors";
 import { openStream } from "./stream";
+import { reportWatchUpdate } from "./watchObservers";
 import type { ClusterId, WatchSpec, WatchUpdate } from "./types";
 
 export type WatchStatus = "loading" | "ready" | "reconnecting" | "error";
@@ -89,7 +90,10 @@ export function useWatch(clusterId: ClusterId | null, spec: WatchSpec | null): W
     return openStream<WatchUpdate>({
       start: (id, channel) => resources.watchStart(cluster, watchSpec, id, channel),
       stop: resources.watchStop,
-      onEvent: (u) => update((s) => applyWatchUpdate(s, u)),
+      onEvent: (u) => {
+        reportWatchUpdate(cluster, watchSpec, u);
+        update((s) => applyWatchUpdate(s, u));
+      },
       onStartError: (err) => update(() => ({ items: new Map(), status: "error", error: toApiError(err) })),
     });
   }, [key]);

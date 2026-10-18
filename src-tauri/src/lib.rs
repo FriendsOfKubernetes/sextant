@@ -132,6 +132,14 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::rbac::rbac_can_i,
         commands::rbac::rbac_rules_review,
         commands::upgrade::upgrade_scan,
+        commands::cleanup::cleanup_sample,
+        commands::cleanup::cleanup_cluster_check,
+        commands::timeline::timeline_managers,
+        commands::timeline::timeline_history,
+        commands::timeline::timeline_object_history,
+        commands::timeline::timeline_save,
+        commands::timeline::timeline_load,
+        commands::timeline::timeline_remove_all,
         commands::mcp::mcp_status,
         commands::mcp::mcp_token,
         commands::mcp::mcp_regenerate_token,
@@ -367,6 +375,7 @@ pub fn run() {
                 extensions::ExtensionHost::new(&data_dir, std::sync::Arc::clone(&state.settings));
             app.manage(state);
             app.manage(extensions);
+            app.manage(commands::timeline::TimelineDir(data_dir.join("timeline")));
             spawn_event_forwarders(app.handle());
             start_mcp(app.handle());
             start_extensions(app.handle());

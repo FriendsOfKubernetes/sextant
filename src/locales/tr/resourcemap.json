@@ -24,6 +24,7 @@
     "boundTo": { "out": "Bağlandığı", "in": "Bağlanan" },
     "storageClass": { "out": "Depolama sınıfı", "in": "Bu sınıfı kullananlar" },
     "class": { "out": "Sınıf", "in": "Bu sınıfın nesneleri" },
+    "parameters": { "out": "Parametreler", "in": "Parametresi olduğu" },
     "node": { "out": "Çalıştığı düğüm", "in": "Çalışan Pod'lar" }
   },
   "impact": {

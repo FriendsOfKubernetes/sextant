@@ -1,0 +1,74 @@
+{
+  "sidebar": "타임라인",
+  "title": "변경 타임라인",
+  "lead": "클러스터에서 무엇이, 언제, 누구에 의해 변경되었는지 보여 줍니다. Sextant는 연결되어 있는 동안 감시하는 개체의 변경을 기록합니다. 그 이전의 변경은 클러스터가 보관하는 정보에서 가져오며 부분 정보로 표시됩니다.",
+  "tab": "변경",
+  "tabLead": "Sextant가 이 개체를 감시하는 동안 기록한 변경과 클러스터가 보관하는 이전 정보(부분)입니다.",
+  "tabEmpty": "이 개체의 알려진 변경이 아직 없습니다.",
+  "objectHistoryFailed": "클러스터에서 이 개체의 기록을 읽을 수 없습니다: {{message}}",
+  "filters": {
+    "kind": "종류",
+    "anyKind": "모든 종류",
+    "manager": "변경한 주체",
+    "anyManager": "모두",
+    "onlyBeforeProblems": "문제 발생 전 변경만",
+    "partial": "Sextant 이전 기록",
+    "persist": "다시 시작해도 유지",
+    "persistHint": "기록된 변경은 클러스터당 파일 하나로 이 컴퓨터에 저장됩니다. Secret 값은 절대 기록되지 않습니다."
+  },
+  "refresh": "새로 고침",
+  "clear": "기록 지우기",
+  "saveFailed": "타임라인을 저장할 수 없습니다: {{message}}",
+  "partialNeedsNamespaces": "Sextant 실행 전 기록을 보려면 필터에서 namespace를 선택하세요.",
+  "partialFirstNamespaces_other": "Sextant 이전 기록은 필터의 처음 {{count}}개 namespace를 다룹니다.",
+  "relatedLimited_other": "종속 개체의 문제는 필터의 처음 {{count}}개 namespace에서 연결됩니다.",
+  "allNamespacesNote": "모든 namespace를 선택하면 문제는 같은 개체 또는 이름의 바탕이 된 워크로드의 변경과만 연결됩니다.",
+  "partialLoading": "클러스터가 보관하는 정보를 읽는 중…",
+  "partialSkipped": "일부 목록을 읽을 수 없습니다: {{kinds}}",
+  "partialTruncated": "Sextant 이전 기록이 길어 최신 항목만 표시합니다.",
+  "empty": "아직 알려진 변경이 없습니다. Sextant가 감시하는 동안 개체가 변경되면 여기에 표시됩니다.",
+  "emptyFiltered": "필터와 일치하는 변경이 없습니다.",
+  "showMore_other": "{{count}}개 더 표시",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "생성됨",
+    "updated": "변경됨",
+    "deleted": "삭제됨"
+  },
+  "late": "나중에 확인됨",
+  "lateTitle": "한동안 이 개체를 감시하지 않았습니다. 변경은 이 시각 이전에 이루어졌습니다.",
+  "partialBadge": "부분",
+  "partialTitle": "클러스터가 보관하는 정보에서 가져옴: Sextant 실행 전의 모든 변경을 알 수는 없습니다.",
+  "source": {
+    "fieldManager": "이 field manager의 마지막 변경",
+    "revision": "리비전 {{revision}}",
+    "revisionCause": "리비전 {{revision}}: {{cause}}",
+    "helm": "Helm 릴리스 {{name}}, 리비전 {{revision}}",
+    "helmStatus": "Helm 릴리스 {{name}}, 리비전 {{revision}}({{status}})"
+  },
+  "who": {
+    "by": "변경한 주체: {{who}}",
+    "likely": "변경한 주체(추정): {{who}}",
+    "pending": "변경한 주체를 확인하는 중…",
+    "unknown": "변경한 주체를 알 수 없음",
+    "sextant": "Sextant(사용자 또는 AI 에이전트)"
+  },
+  "change": {
+    "added": "{{path}} 추가됨: {{value}}",
+    "addedHidden": "{{path}} 추가됨",
+    "removed": "{{path}} 제거됨",
+    "changed": "{{path}}: {{before}} → {{after}}",
+    "changedLong": "{{path}} 변경됨(긴 값)",
+    "changedHidden": "{{path}} 변경됨",
+    "summaryOnly": "변경되었습니다. 이전 버전이 너무 커서 보관하지 않았으므로 변경된 필드를 알 수 없습니다.",
+    "more_other": "…외 변경 {{count}}개",
+    "showAll": "모든 변경 표시({{count}})",
+    "showLess": "간단히 표시"
+  },
+  "correlation": {
+    "label": "이 변경 직후",
+    "sameTime": "거의 같은 시각에 {{kind}} {{name}}에서 {{reason}}",
+    "after_other": "이 변경 {{count}}분 후 {{kind}} {{name}}에서 {{reason}}"
+  }
+}

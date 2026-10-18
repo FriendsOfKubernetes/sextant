@@ -1,0 +1,130 @@
+{
+  "sidebar": "Limpeza",
+  "title": "Limpeza",
+  "intro": "Objetos que parecem sem uso ou que sobraram, cada um com o motivo. Um objeto só é candidato quando cada lista que poderia referenciá-lo foi lida por completo; na dúvida, ele não é oferecido. Nada é excluído até você selecionar objetos e confirmar.",
+  "loading": "Lendo os namespaces…",
+  "chooseNamespace": "Escolha namespaces",
+  "chooseNamespaceText": "Esta página verifica os namespaces escolhidos no filtro de namespaces. Escolha um ou mais namespaces para começar.",
+  "firstNamespaces_one": "Apenas o primeiro namespace escolhido ({{count}}) é verificado.",
+  "firstNamespaces_many": "Apenas os primeiros {{count}} namespaces escolhidos são verificados.",
+  "firstNamespaces_other": "Apenas os primeiros {{count}} namespaces escolhidos são verificados.",
+  "excludedInView": "Não verificados, excluídos nas configurações: {{names}}",
+  "configsOff": "ConfigMaps e Secrets não são verificados. É possível ativá-los nas configurações.",
+  "configsWarning": "O Sextant não vê todas as referências a um ConfigMap ou Secret: operadores e recursos personalizados que ele não conhece, drivers CSI, argumentos de controladores e aplicações que os leem pela API. Verifique cada um antes de excluí-lo.",
+  "blocked": "ConfigMaps, Secrets, PersistentVolumeClaims e Services de {{namespace}} não são avaliados: ele contém objetos de tipos que o Sextant não lê ({{kinds}}).",
+  "unavailableGroups": "Alguns grupos de API não respondem ({{groups}}): seus objetos não são visíveis, então nenhum ConfigMap, Secret, PersistentVolumeClaim, Service ou namespace é oferecido.",
+  "clusterFailed": "Não foi possível verificar os objetos de todo o cluster e os grupos de API: nenhum ConfigMap, Secret, PersistentVolumeClaim, Service ou namespace é oferecido.",
+  "clusterUnread": "Não foi possível ler todos os objetos destes tipos de todo o cluster, então nenhum ConfigMap ou Secret é oferecido: {{kinds}}",
+  "sampleFailed": "Não foi possível verificar tudo o que {{namespace}} contém: seus ConfigMaps, Secrets, PersistentVolumeClaims e o próprio namespace não são oferecidos.",
+  "checkAgain": "Verificar de novo",
+  "nothingChecked": "Todos os namespaces escolhidos estão excluídos nas configurações.",
+  "watchFailed": "Não foi possível observar {{kind}}",
+  "forbidden": "Sem permissão para listar {{kind}} em: {{names}}",
+  "unchecked": "Alguns objetos não foram avaliados porque estas listas ainda não foram lidas por completo: {{kinds}}",
+  "none": "Nada a limpar nos namespaces verificados.",
+  "truncated_one": "Há candidatos demais: apenas o primeiro ({{count}}) é listado.",
+  "truncated_many": "Há candidatos demais: apenas os primeiros {{count}} são listados.",
+  "truncated_other": "Há candidatos demais: apenas os primeiros {{count}} são listados.",
+  "rule": {
+    "configMap": "ConfigMaps que nada usa",
+    "secret": "Secrets que nada usa",
+    "claim": "PersistentVolumeClaims que nenhum Pod monta",
+    "volume": "PersistentVolumes liberados ou não reivindicados",
+    "service": "Services sem endpoints",
+    "replicaSet": "ReplicaSets antigos além do histórico de revisões",
+    "pod": "Pods finalizados",
+    "job": "Jobs finalizados",
+    "namespace": "Namespaces vazios"
+  },
+  "reason": {
+    "configMapUnused": "Nenhum Pod, modelo de Pod ou outro objeto observado faz referência a ele.",
+    "secretUnused": "Nenhum Pod, modelo de Pod, ServiceAccount, Ingress, Gateway ou objeto do cert-manager ou do Flux faz referência a ele.",
+    "claimUnmounted": "Nenhum Pod o monta, e nenhum modelo de Pod, StatefulSet, VolumeSnapshot ou outro PersistentVolumeClaim faz referência a ele.",
+    "volumeReleased": "Released: seu PersistentVolumeClaim {{claim}} foi excluído.",
+    "volumeAvailable": "Available e não vinculado a nenhum PersistentVolumeClaim.",
+    "serviceNoEndpoints": "Não tem endpoints, e seu selector não corresponde a nenhum Pod nem modelo de Pod.",
+    "serviceNoSelector": "Não tem selector, nem endpoints, nem objeto Endpoints.",
+    "replicaSetHistory": "Revisão {{revision}} do Deployment {{deployment}}, além do seu revisionHistoryLimit: {{limit}}.",
+    "podSucceeded": "Succeeded, e nenhum Job é dono dele.",
+    "podFailed": "Failed, e nenhum Job é dono dele.",
+    "jobComplete": "Concluído; nenhum CronJob é dono dele e ttlSecondsAfterFinished não está definido.",
+    "jobFailed": "Com falha; nenhum CronJob é dono dele e ttlSecondsAfterFinished não está definido.",
+    "namespaceEmpty": "Não contém objetos dos tipos verificados além do que o Kubernetes cria em todo namespace. Objetos de outros tipos não são verificados."
+  },
+  "since": {
+    "created": "criado há {{age}}",
+    "finished": "finalizado há {{age}}",
+    "phaseChanged": "nesta fase há {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "Seu volume {{volume}} tem a política de recuperação Delete: os dados serão excluídos.",
+    "reclaimRetain": "Seu volume {{volume}} tem a política de recuperação Retain: os dados ficam no armazenamento.",
+    "reclaimOther": "Seu volume {{volume}} tem a política de recuperação {{policy}}."
+  },
+  "column": {
+    "object": "Objeto",
+    "reason": "Por que parece sem uso",
+    "age": "Idade",
+    "impact": "Se excluído",
+    "manager": "Gerenciado por"
+  },
+  "open": "Abrir {{kind}} {{name}}",
+  "select": "Selecionar {{kind}} {{name}}",
+  "selectGroup": "Selecionar todos: {{group}}",
+  "deleteSelected": "Excluir selecionados ({{count}})…",
+  "managed": {
+    "title": "Gerenciados por uma ferramenta, não oferecidos para exclusão",
+    "text": "Estes também parecem sem uso, mas uma ferramenta os gerencia: ela os criaria de novo ou perderia o controle deles. Remova-os pela ferramenta.",
+    "helm": "Release do Helm {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Aplicação do Argo CD {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Mantidos de propósito, não oferecidos para exclusão",
+    "retain": "Política Retain: os dados são mantidos de propósito."
+  },
+  "settings": {
+    "button": "Configurações…",
+    "title": "Configurações da limpeza",
+    "checkConfigMaps": "Oferecer ConfigMaps que nada parece usar",
+    "checkSecrets": "Oferecer Secrets que nada parece usar",
+    "excluded": "Namespaces nunca verificados",
+    "excludedHint": "Um por linha. kube-system, kube-public e kube-node-lease nunca são verificados.",
+    "days": "Oferecer apenas objetos mais antigos que (dias)",
+    "ages": {
+      "configs": "ConfigMaps e Secrets: dias desde a criação",
+      "services": "Services: dias desde a criação",
+      "pods": "Pods finalizados: dias desde o término",
+      "jobs": "Jobs finalizados: dias desde o término",
+      "claims": "PersistentVolumeClaims: dias desde a criação",
+      "volumes": "PersistentVolumes: dias na fase atual",
+      "namespaces": "Namespaces vazios: dias desde a criação"
+    },
+    "save": "Salvar",
+    "saveFailed": "Não foi possível salvar as configurações"
+  },
+  "dialog": {
+    "title_one": "Excluir {{count}} objeto",
+    "title_many": "Excluir {{count}} objetos",
+    "title_other": "Excluir {{count}} objetos",
+    "text": "Cada objeto é verificado de novo logo antes da exclusão: um objeto alterado ou em uso de novo é mantido. A exclusão não pode ser desfeita.",
+    "namespaceWarning": "Excluir um namespace exclui tudo o que há nele, inclusive objetos de tipos que esta página não verifica.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Digite {{count}} para confirmar",
+    "confirm": "Excluir",
+    "progress": "Excluindo: {{done}} de {{total}}",
+    "stop": "Parar",
+    "resultTitle": "Resultado da limpeza",
+    "summary": "Excluídos: {{deleted}}. Mantidos: {{kept}}. Com falha: {{failed}}.",
+    "outcome": {
+      "deleted": "Excluído",
+      "gone": "Já não existe",
+      "notCandidate": "Mantido: não parece mais sem uso",
+      "changed": "Mantido: alterado desde a verificação",
+      "failed": "Falhou",
+      "stopped": "Não tentado: parado"
+    }
+  }
+}

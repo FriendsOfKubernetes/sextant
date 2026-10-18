@@ -22,6 +22,8 @@ export const api = {
   access: commands.access,
   rbac: commands.rbac,
   upgrade: commands.upgrade,
+  cleanup: commands.cleanup,
+  timeline: commands.timeline,
   tls: commands.tls,
   mcp: commands.mcp,
   extensions: commands.extensions,
@@ -38,6 +40,7 @@ export const api = {
 export type { KubeObject } from "./commands";
 export { ApiError, ERROR_CODES, errorKey, toApiError } from "./errors";
 export { events } from "./events";
+export { observeWatchUpdates, type WatchObserver } from "./watchObservers";
 export { mockBackend, UPDATER_COMMANDS, type MockBackend, type MockBackendOptions, type MockCall, type MockHandler } from "./mockBackend";
 export {
   NOTIFICATION_COMMANDS,

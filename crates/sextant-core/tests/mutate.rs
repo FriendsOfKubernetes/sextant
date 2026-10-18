@@ -451,6 +451,60 @@ async fn delete_removes_the_object() {
 }
 
 #[tokio::test]
+async fn a_deletion_with_preconditions_keeps_a_changed_or_replaced_object() {
+    in_scratch("delete-pre", |s| async move {
+        let r = config_map_ref(&s.ns, "checked");
+        let created = create_config_map(&s.client, &s.ns, "checked", json!({"a": "1"})).await;
+        let uid = created.metadata.uid.clone();
+        let seen = created.metadata.resource_version.clone();
+        // Changed after it was looked at: the API server refuses, the object stays.
+        let cms: Api<ConfigMap> = Api::namespaced(s.client.clone(), &s.ns);
+        cms.patch(
+            "checked",
+            &PatchParams::default(),
+            &Patch::Merge(json!({"data": {"a": "2"}})),
+        )
+        .await
+        .unwrap();
+        let stale = resources::DeletePreconditions {
+            uid: uid.clone(),
+            resource_version: seen,
+        };
+        let err = resources::delete_with(&s.mgr, &s.id, &r, Some(&stale))
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Conflict, "{err}");
+        assert!(cms.get_opt("checked").await.unwrap().is_some());
+
+        // Another object of the same name (a new uid): refused too.
+        let other = resources::DeletePreconditions {
+            uid: Some("00000000-0000-0000-0000-000000000000".into()),
+            resource_version: None,
+        };
+        let err = resources::delete_with(&s.mgr, &s.id, &r, Some(&other))
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Conflict, "{err}");
+
+        // The current uid and resourceVersion: deleted.
+        let now = cms.get("checked").await.unwrap();
+        let current = resources::DeletePreconditions {
+            uid,
+            resource_version: now.metadata.resource_version,
+        };
+        resources::delete_with(&s.mgr, &s.id, &r, Some(&current))
+            .await
+            .unwrap();
+        wait_until("the ConfigMap to be deleted", 30, || {
+            let cms = cms.clone();
+            async move { cms.get_opt("checked").await.unwrap().is_none() }
+        })
+        .await;
+    })
+    .await;
+}
+
+#[tokio::test]
 async fn changes_without_permission_are_forbidden_and_change_nothing() {
     in_scratch("forbidden", |s| async move {
         create_config_map(&s.client, &s.ns, "protected", json!({ "k": "v" })).await;

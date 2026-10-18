@@ -1,0 +1,124 @@
+{
+  "sidebar": "정리",
+  "title": "정리",
+  "intro": "사용되지 않거나 남겨진 것으로 보이는 개체를 각각의 이유와 함께 보여 줍니다. 개체를 참조할 수 있는 모든 목록을 완전히 읽은 경우에만 후보가 되며, 확실하지 않으면 제외합니다. 개체를 선택하고 확인하기 전에는 아무것도 삭제되지 않습니다.",
+  "loading": "namespace 읽는 중…",
+  "chooseNamespace": "namespace 선택",
+  "chooseNamespaceText": "이 페이지는 namespace 필터에서 선택한 namespace를 검사합니다. 시작하려면 namespace를 하나 이상 선택하세요.",
+  "firstNamespaces_other": "선택한 namespace 중 처음 {{count}}개만 검사합니다.",
+  "excludedInView": "설정에서 제외되어 검사하지 않음: {{names}}",
+  "configsOff": "ConfigMap과 Secret은 검사하지 않습니다. 설정에서 켤 수 있습니다.",
+  "configsWarning": "Sextant는 ConfigMap이나 Secret에 대한 모든 참조를 볼 수 없습니다. Sextant가 모르는 오퍼레이터와 사용자 지정 리소스, CSI 드라이버, 컨트롤러 인수, API로 읽는 애플리케이션 등이 있습니다. 삭제하기 전에 하나씩 확인하세요.",
+  "blocked": "{{namespace}}의 ConfigMap, Secret, PersistentVolumeClaim, Service는 판단하지 않습니다. Sextant가 읽지 않는 종류의 개체가 있습니다({{kinds}}).",
+  "unavailableGroups": "일부 API 그룹이 응답하지 않습니다({{groups}}). 해당 개체를 볼 수 없으므로 ConfigMap, Secret, PersistentVolumeClaim, Service, namespace를 제안하지 않습니다.",
+  "clusterFailed": "클러스터 전체 개체와 API 그룹을 확인할 수 없습니다. ConfigMap, Secret, PersistentVolumeClaim, Service, namespace를 제안하지 않습니다.",
+  "clusterUnread": "다음 클러스터 전체 종류의 개체를 모두 읽지 못해 ConfigMap과 Secret을 제안하지 않습니다: {{kinds}}",
+  "sampleFailed": "{{namespace}}의 내용을 모두 확인할 수 없었습니다. 해당 ConfigMap, Secret, PersistentVolumeClaim과 namespace 자체는 제안하지 않습니다.",
+  "checkAgain": "다시 검사",
+  "nothingChecked": "선택한 모든 namespace가 설정에서 제외되어 있습니다.",
+  "watchFailed": "{{kind}}을(를) 감시할 수 없습니다",
+  "forbidden": "다음 위치에서 {{kind}}을(를) 나열할 권한이 없습니다: {{names}}",
+  "unchecked": "다음 목록을 아직 완전히 읽지 못해 일부 개체를 판단하지 않았습니다: {{kinds}}",
+  "none": "검사한 namespace에 정리할 항목이 없습니다.",
+  "truncated_other": "후보가 너무 많아 처음 {{count}}개만 표시합니다.",
+  "rule": {
+    "configMap": "아무것도 사용하지 않는 ConfigMap",
+    "secret": "아무것도 사용하지 않는 Secret",
+    "claim": "어떤 Pod도 마운트하지 않는 PersistentVolumeClaim",
+    "volume": "해제되었거나 요청되지 않은 PersistentVolume",
+    "service": "엔드포인트가 없는 Service",
+    "replicaSet": "리비전 기록을 넘어선 오래된 ReplicaSet",
+    "pod": "종료된 Pod",
+    "job": "종료된 Job",
+    "namespace": "빈 namespace"
+  },
+  "reason": {
+    "configMapUnused": "어떤 Pod, Pod 템플릿 또는 감시 중인 다른 개체도 참조하지 않습니다.",
+    "secretUnused": "어떤 Pod, Pod 템플릿, ServiceAccount, Ingress, Gateway, cert-manager 또는 Flux 개체도 참조하지 않습니다.",
+    "claimUnmounted": "어떤 Pod도 마운트하지 않으며, 어떤 Pod 템플릿, StatefulSet, VolumeSnapshot 또는 다른 PersistentVolumeClaim도 참조하지 않습니다.",
+    "volumeReleased": "Released: PersistentVolumeClaim {{claim}}이(가) 삭제되었습니다.",
+    "volumeAvailable": "Available 상태이며 어떤 PersistentVolumeClaim에도 바인딩되지 않았습니다.",
+    "serviceNoEndpoints": "엔드포인트가 없고 selector와 일치하는 Pod나 Pod 템플릿이 없습니다.",
+    "serviceNoSelector": "selector, 엔드포인트, Endpoints 개체가 모두 없습니다.",
+    "replicaSetHistory": "Deployment {{deployment}}의 리비전 {{revision}}으로, revisionHistoryLimit을 넘어섰습니다: {{limit}}.",
+    "podSucceeded": "Succeeded 상태이며 어떤 Job도 소유하지 않습니다.",
+    "podFailed": "Failed 상태이며 어떤 Job도 소유하지 않습니다.",
+    "jobComplete": "완료되었습니다. 어떤 CronJob도 소유하지 않으며 ttlSecondsAfterFinished가 설정되지 않았습니다.",
+    "jobFailed": "실패했습니다. 어떤 CronJob도 소유하지 않으며 ttlSecondsAfterFinished가 설정되지 않았습니다.",
+    "namespaceEmpty": "Kubernetes가 모든 namespace에 만드는 것 외에는 검사 대상 종류의 개체가 없습니다. 다른 종류의 개체는 검사하지 않습니다."
+  },
+  "since": {
+    "created": "{{age}} 전에 생성됨",
+    "finished": "{{age}} 전에 종료됨",
+    "phaseChanged": "이 단계에서 {{age}} 경과"
+  },
+  "note": {
+    "reclaimDelete": "볼륨 {{volume}}의 회수 정책이 Delete입니다. 데이터가 삭제됩니다.",
+    "reclaimRetain": "볼륨 {{volume}}의 회수 정책이 Retain입니다. 데이터가 스토리지에 남습니다.",
+    "reclaimOther": "볼륨 {{volume}}의 회수 정책이 {{policy}}입니다."
+  },
+  "column": {
+    "object": "개체",
+    "reason": "사용되지 않는 것으로 보는 이유",
+    "age": "경과 시간",
+    "impact": "삭제하면",
+    "manager": "관리 주체"
+  },
+  "open": "{{kind}} {{name}} 열기",
+  "select": "{{kind}} {{name}} 선택",
+  "selectGroup": "모두 선택: {{group}}",
+  "deleteSelected": "선택 항목 삭제 ({{count}})…",
+  "managed": {
+    "title": "도구가 관리하므로 삭제 대상으로 제안하지 않음",
+    "text": "이 개체들도 사용되지 않는 것으로 보이지만 도구가 관리합니다. 삭제하면 도구가 다시 만들거나 추적을 잃게 됩니다. 도구를 통해 제거하세요.",
+    "helm": "Helm 릴리스 {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo CD 애플리케이션 {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "의도적으로 유지되어 삭제 대상으로 제안하지 않음",
+    "retain": "회수 정책 Retain: 데이터를 의도적으로 유지합니다."
+  },
+  "settings": {
+    "button": "설정…",
+    "title": "정리 설정",
+    "checkConfigMaps": "사용되지 않는 것으로 보이는 ConfigMap 제안",
+    "checkSecrets": "사용되지 않는 것으로 보이는 Secret 제안",
+    "excluded": "검사하지 않는 namespace",
+    "excludedHint": "한 줄에 하나씩 입력합니다. kube-system, kube-public, kube-node-lease는 항상 검사하지 않습니다.",
+    "days": "다음 일수보다 오래된 개체만 제안",
+    "ages": {
+      "configs": "ConfigMap 및 Secret: 생성 후 일수",
+      "services": "Service: 생성 후 일수",
+      "pods": "종료된 Pod: 종료 후 일수",
+      "jobs": "종료된 Job: 종료 후 일수",
+      "claims": "PersistentVolumeClaim: 생성 후 일수",
+      "volumes": "PersistentVolume: 현재 단계의 일수",
+      "namespaces": "빈 namespace: 생성 후 일수"
+    },
+    "save": "저장",
+    "saveFailed": "설정을 저장할 수 없습니다"
+  },
+  "dialog": {
+    "title_other": "개체 {{count}}개 삭제",
+    "text": "각 개체는 삭제 직전에 다시 검사합니다. 변경되었거나 다시 사용 중인 개체는 유지합니다. 삭제는 되돌릴 수 없습니다.",
+    "namespaceWarning": "namespace를 삭제하면 이 페이지가 검사하지 않는 종류의 개체를 포함해 그 안의 모든 것이 삭제됩니다.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "확인하려면 {{count}}을(를) 입력하세요",
+    "confirm": "삭제",
+    "progress": "삭제 중: {{done}} / {{total}}",
+    "stop": "중지",
+    "resultTitle": "정리 결과",
+    "summary": "삭제됨: {{deleted}}. 유지됨: {{kept}}. 실패: {{failed}}.",
+    "outcome": {
+      "deleted": "삭제됨",
+      "gone": "이미 없음",
+      "notCandidate": "유지됨: 더 이상 사용되지 않는 것으로 보이지 않음",
+      "changed": "유지됨: 검사 후 변경됨",
+      "failed": "실패",
+      "stopped": "시도하지 않음: 중지됨"
+    }
+  }
+}

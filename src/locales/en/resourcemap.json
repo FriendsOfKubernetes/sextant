@@ -24,6 +24,7 @@
     "boundTo": { "out": "Bound to", "in": "Bound by" },
     "storageClass": { "out": "Storage class", "in": "Uses this class" },
     "class": { "out": "Class", "in": "Objects of this class" },
+    "parameters": { "out": "Parameters", "in": "Parameters of" },
     "node": { "out": "Runs on", "in": "Runs pods" }
   },
   "impact": {

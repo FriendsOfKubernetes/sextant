@@ -1,0 +1,124 @@
+{
+  "sidebar": "清理",
+  "title": "清理",
+  "intro": "看起來未被使用或遺留下來的物件，每個都附有原因。只有當可能參照某個物件的每份清單都已完整讀取時，它才會成為候選；如有疑慮則不會列出。在您選取物件並確認之前，不會刪除任何內容。",
+  "loading": "正在讀取 namespace…",
+  "chooseNamespace": "選擇 namespace",
+  "chooseNamespaceText": "此頁面會檢查在 namespace 篩選器中選擇的 namespace。請選擇一個或多個 namespace 開始。",
+  "firstNamespaces_other": "僅檢查前 {{count}} 個所選 namespace。",
+  "excludedInView": "未檢查，已在設定中排除：{{names}}",
+  "configsOff": "未檢查 ConfigMap 和 Secret。可以在設定中開啟。",
+  "configsWarning": "Sextant 無法看到對 ConfigMap 或 Secret 的所有參照：它不認識的 operator 與自訂資源、CSI 驅動程式、控制器引數，以及透過 API 讀取它們的應用程式。刪除前請逐一檢查。",
+  "blocked": "未判斷 {{namespace}} 中的 ConfigMap、Secret、PersistentVolumeClaim 和 Service：其中有 Sextant 不讀取之類型的物件（{{kinds}}）。",
+  "unavailableGroups": "部分 API 群組沒有回應（{{groups}}）：無法看到它們的物件，因此不會提供任何 ConfigMap、Secret、PersistentVolumeClaim、Service 或 namespace。",
+  "clusterFailed": "無法檢查叢集範圍的物件和 API 群組：不會提供任何 ConfigMap、Secret、PersistentVolumeClaim、Service 或 namespace。",
+  "clusterUnread": "無法讀取以下叢集範圍類型的全部物件，因此不會提供任何 ConfigMap 或 Secret：{{kinds}}",
+  "sampleFailed": "無法檢查 {{namespace}} 中的全部內容：不會提供其中的 ConfigMap、Secret、PersistentVolumeClaim 以及該 namespace 本身。",
+  "checkAgain": "重新檢查",
+  "nothingChecked": "所選的 namespace 皆已在設定中排除。",
+  "watchFailed": "無法監看 {{kind}}",
+  "forbidden": "無權在以下位置列出 {{kind}}：{{names}}",
+  "unchecked": "部分物件未經判斷，因為以下清單尚未完整讀取：{{kinds}}",
+  "none": "所檢查的 namespace 中沒有需要清理的內容。",
+  "truncated_other": "候選過多：僅列出前 {{count}} 個。",
+  "rule": {
+    "configMap": "無人使用的 ConfigMap",
+    "secret": "無人使用的 Secret",
+    "claim": "沒有 Pod 掛載的 PersistentVolumeClaim",
+    "volume": "已釋放或未被宣告的 PersistentVolume",
+    "service": "沒有端點的 Service",
+    "replicaSet": "超出修訂歷史的舊 ReplicaSet",
+    "pod": "已結束的 Pod",
+    "job": "已結束的 Job",
+    "namespace": "空的 namespace"
+  },
+  "reason": {
+    "configMapUnused": "沒有任何 Pod、Pod 範本或其他受監看的物件參照它。",
+    "secretUnused": "沒有任何 Pod、Pod 範本、ServiceAccount、Ingress、Gateway、cert-manager 或 Flux 物件參照它。",
+    "claimUnmounted": "沒有 Pod 掛載它，也沒有任何 Pod 範本、StatefulSet、VolumeSnapshot 或其他 PersistentVolumeClaim 參照它。",
+    "volumeReleased": "Released：其 PersistentVolumeClaim {{claim}} 已被刪除。",
+    "volumeAvailable": "Available，且未繫結到任何 PersistentVolumeClaim。",
+    "serviceNoEndpoints": "沒有端點，且其 selector 不符合任何 Pod 或 Pod 範本。",
+    "serviceNoSelector": "沒有 selector、端點，也沒有 Endpoints 物件。",
+    "replicaSetHistory": "Deployment {{deployment}} 的修訂 {{revision}}，超出其 revisionHistoryLimit：{{limit}}。",
+    "podSucceeded": "Succeeded，且不屬於任何 Job。",
+    "podFailed": "Failed，且不屬於任何 Job。",
+    "jobComplete": "已完成；不屬於任何 CronJob，且未設定 ttlSecondsAfterFinished。",
+    "jobFailed": "已失敗；不屬於任何 CronJob，且未設定 ttlSecondsAfterFinished。",
+    "namespaceEmpty": "除了 Kubernetes 在每個 namespace 中建立的物件外，不包含所檢查類型的任何物件。其他類型的物件不會被檢查。"
+  },
+  "since": {
+    "created": "{{age}}前建立",
+    "finished": "{{age}}前結束",
+    "phaseChanged": "處於此階段已 {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "其磁碟區 {{volume}} 的回收原則為 Delete：資料將被刪除。",
+    "reclaimRetain": "其磁碟區 {{volume}} 的回收原則為 Retain：資料會保留在儲存體中。",
+    "reclaimOther": "其磁碟區 {{volume}} 的回收原則為 {{policy}}。"
+  },
+  "column": {
+    "object": "物件",
+    "reason": "看起來未使用的原因",
+    "age": "存在時間",
+    "impact": "刪除後",
+    "manager": "管理者"
+  },
+  "open": "開啟 {{kind}} {{name}}",
+  "select": "選取 {{kind}} {{name}}",
+  "selectGroup": "全選：{{group}}",
+  "deleteSelected": "刪除所選項目 ({{count}})…",
+  "managed": {
+    "title": "由工具管理，不提供刪除",
+    "text": "這些物件看起來也未被使用，但由某個工具管理：該工具會重新建立它們，或失去對它們的追蹤。請透過該工具移除它們。",
+    "helm": "Helm 發行版本 {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo CD 應用程式 {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "刻意保留，不提供刪除",
+    "retain": "回收原則 Retain：資料被刻意保留。"
+  },
+  "settings": {
+    "button": "設定…",
+    "title": "清理設定",
+    "checkConfigMaps": "提供似乎無人使用的 ConfigMap",
+    "checkSecrets": "提供似乎無人使用的 Secret",
+    "excluded": "從不檢查的 namespace",
+    "excludedHint": "每行一個。kube-system、kube-public 和 kube-node-lease 從不檢查。",
+    "days": "僅提供早於以下天數的物件",
+    "ages": {
+      "configs": "ConfigMap 和 Secret：建立後的天數",
+      "services": "Service：建立後的天數",
+      "pods": "已結束的 Pod：結束後的天數",
+      "jobs": "已結束的 Job：結束後的天數",
+      "claims": "PersistentVolumeClaim：建立後的天數",
+      "volumes": "PersistentVolume：處於目前階段的天數",
+      "namespaces": "空的 namespace：建立後的天數"
+    },
+    "save": "儲存",
+    "saveFailed": "無法儲存設定"
+  },
+  "dialog": {
+    "title_other": "刪除 {{count}} 個物件",
+    "text": "每個物件在刪除前都會再次檢查：已變更或重新被使用的物件會被保留。刪除無法復原。",
+    "namespaceWarning": "刪除 namespace 會刪除其中的所有內容，包括此頁面不檢查之類型的物件。",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "輸入 {{count}} 以確認",
+    "confirm": "刪除",
+    "progress": "正在刪除：{{done}} / {{total}}",
+    "stop": "停止",
+    "resultTitle": "清理結果",
+    "summary": "已刪除：{{deleted}}。已保留：{{kept}}。失敗：{{failed}}。",
+    "outcome": {
+      "deleted": "已刪除",
+      "gone": "已不存在",
+      "notCandidate": "已保留：看起來不再是未使用的",
+      "changed": "已保留：檢查後發生了變更",
+      "failed": "失敗",
+      "stopped": "未嘗試：已停止"
+    }
+  }
+}

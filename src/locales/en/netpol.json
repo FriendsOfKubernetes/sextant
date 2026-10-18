@@ -1,0 +1,339 @@
+{
+  "sidebar": "Connectivity",
+  "title": "Network connectivity",
+  "banner": "Sextant reasons from the policy objects in the cluster, not from live traffic. NetworkPolicy has an effect only when the cluster's network plugin (CNI) enforces it. Cilium and Calico policies are evaluated as far as they map to L3/L4 rules.",
+  "loading": "Reading pods and policies…",
+  "tabs": {
+    "label": "Connectivity views",
+    "check": "Check",
+    "map": "Policy map"
+  },
+  "form": {
+    "source": "Source",
+    "destination": "Destination",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace and labels",
+      "external": "IP address outside the cluster",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Labels",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "IP address",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Service port",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "Port",
+    "portPlaceholder": "80 or http",
+    "protocol": "Protocol",
+    "choose": "Choose…",
+    "loadingNames": "Loading…",
+    "check": "Check"
+  },
+  "errors": {
+    "chooseNamespace": "Choose a namespace.",
+    "choosePod": "Choose a pod.",
+    "podGone": "Pod {{name}} is no longer in namespace {{namespace}}.",
+    "labels": "Write labels as key=value, separated by commas.",
+    "ip": "Enter an IPv4 or IPv6 address.",
+    "port": "Enter a port number from 1 to 65535, or the name of a container port.",
+    "portName": "The destination pod has no {{protocol}} port named {{name}}.",
+    "chooseService": "Choose a Service.",
+    "serviceGone": "Service {{name}} is no longer in namespace {{namespace}}.",
+    "chooseServicePort": "Choose a port of the Service."
+  },
+  "endpoint": {
+    "labels": "a pod with {{labels}} in {{namespace}}",
+    "anyPod": "a pod without labels in {{namespace}}"
+  },
+  "verdict": {
+    "allowed": "Allowed",
+    "denied": "Denied",
+    "unknown": "Unknown"
+  },
+  "tri": {
+    "yes": "Yes",
+    "no": "No",
+    "maybe": "Cannot tell"
+  },
+  "result": {
+    "label": "Result",
+    "allowed": "Allowed: the policies allow this traffic.",
+    "denied": "Denied: the policies do not allow this traffic.",
+    "unknown": "Unknown: Sextant cannot tell from the objects whether this traffic is allowed.",
+    "service": {
+      "allowed": "Allowed to every pod behind the Service.",
+      "denied": "Denied to every pod behind the Service.",
+      "unknown": "Unknown for some pods behind the Service."
+    },
+    "partial_one": "Allowed to {{allowed}} of {{count}} pod behind the Service.",
+    "partial_other": "Allowed to {{allowed}} of {{count}} pods behind the Service.",
+    "nothing": "Nothing to check.",
+    "egressFrom": "Egress from {{source}}",
+    "ingressTo": "Ingress to {{destination}}"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "No policy selects the source for egress, so all its egress is allowed.",
+      "ingress": "No policy selects the destination for ingress, so all ingress to it is allowed."
+    },
+    "hostNetwork": {
+      "egress": "The source uses the host network: NetworkPolicy does not apply to it.",
+      "ingress": "The destination uses the host network: NetworkPolicy does not apply to it."
+    },
+    "external": {
+      "egress": "The source is outside the cluster: no egress policy of the cluster applies to it.",
+      "ingress": "The destination is outside the cluster: only the source's egress decides."
+    },
+    "nodeTraffic": "The source uses the host network on the destination's node. Traffic from a pod's own node is always allowed.",
+    "allowedByRule": "Allowed by:",
+    "deniedByRule": "Denied by:",
+    "noRuleMatches": "Policies select this pod, and none of their rules allow this traffic.",
+    "unknown": "Sextant cannot tell, because:"
+  },
+  "match": {
+    "peer": "peer {{n}}: {{peer}}",
+    "anyPeer": "any peer",
+    "port": "port {{n}}: {{port}}",
+    "anyPort": "any port"
+  },
+  "checks": {
+    "title": {
+      "egress_one": "{{count}} policy selects the source for egress",
+      "egress_other": "{{count}} policies select the source for egress",
+      "ingress_one": "{{count}} policy selects the destination for ingress",
+      "ingress_other": "{{count}} policies select the destination for ingress"
+    },
+    "policy": "Policy",
+    "rule": "Rule",
+    "matches": "Matches",
+    "why": "Why",
+    "noRules": "No rules",
+    "noRulesWhy": {
+      "egress": "The policy isolates the pod for egress and allows nothing.",
+      "ingress": "The policy isolates the pod for ingress and allows nothing."
+    }
+  },
+  "rule": {
+    "ingress": "Ingress rule {{n}}",
+    "egress": "Egress rule {{n}}",
+    "ingressDeny": "Ingress deny rule {{n}}",
+    "egressDeny": "Egress deny rule {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "Allows this traffic.",
+    "denies": "Denies this traffic.",
+    "empty": "An empty rule matches nothing in Cilium.",
+    "local": "The rule does not apply to this pod: {{reason}}",
+    "peerN": "Peer {{n}}: {{reason}}",
+    "portN": "Port {{n}}: {{reason}}"
+  },
+  "peerReason": {
+    "match": "Matches.",
+    "namespace": "The pod is in namespace {{actual}}; this peer selects pods of namespace {{expected}} only.",
+    "namespaceSelector": "Namespace {{namespace}} has the labels {{labels}}, which do not match {{selector}}.",
+    "namespaceNoMatch": "Namespace {{namespace}} (labels {{labels}}) does not match the namespace selector.",
+    "namespaceLabelsUnknown": "The labels of namespace {{namespace}} are not known: Namespaces cannot be listed.",
+    "podSelector": "The pod's labels {{labels}} do not match {{selector}}.",
+    "podNoMatch": "The pod's labels {{labels}} do not match the selector.",
+    "podNoLabels": "The pod has no labels, so it does not match {{selector}}.",
+    "notPod": "Pod and namespace selectors never select an address outside the cluster.",
+    "ipBlock": "The address is outside {{cidr}}.",
+    "ipBlockExcept": "The address is in {{except}}, which the block {{cidr}} excludes.",
+    "ipBlockPod": "The pod's IP is inside {{cidr}}. Whether an ipBlock applies to pod IPs depends on the network plugin.",
+    "ipUnknown": "The pod's IP is not known.",
+    "cidrNotPods": "Cilium CIDR rules do not select pods.",
+    "entity": "The Cilium entity {{entity}} does not cover this side.",
+    "networkSet": "A Calico network set may hold this address."
+  },
+  "portReason": {
+    "match": "Matches.",
+    "protocol": "The rule is for {{protocol}}.",
+    "otherProtocol": "The rule is for another protocol.",
+    "port": "The rule is for port {{port}}.",
+    "namedUnresolved": "The destination pod has no port named {{name}} with this protocol.",
+    "namedOther": "Port {{name}} is {{port}} on the destination pod.",
+    "namedExternal": "A named port is never resolved for an address outside the cluster."
+  },
+  "reason": {
+    "unmodelled": "Uses features Sextant does not model: {{feature}}."
+  },
+  "unknown": {
+    "unreadable": "Could not read the {{kind}} objects of namespace {{namespace}}.",
+    "unreadableClusterwide": "Could not read the {{kind}} objects.",
+    "unevaluated": "{{kind}} {{name}} may apply, and Sextant does not evaluate {{kind}} objects.",
+    "maybeSelected": "Sextant cannot tell whether {{policy}} selects the pod.",
+    "maybeIsolated": "Sextant cannot tell whether {{policy}} isolates the pod.",
+    "maybeRule": "{{policy}}, {{rule}}: {{reason}}",
+    "unmodelledRule": "Not evaluated: {{flavor}} {{policy}}, {{rule}} uses features Sextant does not model: {{features}}.",
+    "unmodelledPolicy": "Not evaluated: {{flavor}} {{policy}} uses features Sextant does not model: {{features}}.",
+    "hostNetworkSource": "The source uses the host network on another node. Its traffic comes from the node's address, which pod selectors do not match; an ipBlock may match it, depending on the network plugin.",
+    "mixed": "Both Cilium and Calico policies select the pod, and Sextant does not combine them."
+  },
+  "note": {
+    "self": "Source and destination are the same pod. Traffic over localhost is never blocked; traffic to the pod's own IP is evaluated here as policy says, but network plugins differ.",
+    "ipBlockPods": "ipBlock is meant for addresses outside the cluster. Whether it matches pod IPs depends on the network plugin, so such matches count as unknown.",
+    "externalSource": "Traffic from outside usually arrives through a NodePort, a load balancer or an ingress controller, which may replace the source address unless externalTrafficPolicy is Local.",
+    "calicoOrder": "Calico evaluates policies in order (by order, then by name), and Kubernetes NetworkPolicies count as order 1000. The first matching Allow or Deny rule decides.",
+    "service": "Traffic to a Service is checked against each pod it selects, at the target port.",
+    "serviceNodePort": "This {{type}} Service is also reachable from outside through node ports. Such traffic may arrive from a node's address unless externalTrafficPolicy is Local."
+  },
+  "dns": {
+    "denied": "The source is isolated for egress, and its policies do not allow DNS (UDP port 53 to kube-dns in kube-system). It cannot resolve names, even where a connection is allowed.",
+    "unknown": "The source is isolated for egress, and Sextant cannot tell whether its policies allow DNS (UDP port 53 to kube-dns in kube-system).",
+    "tcpDenied": "The source's policies allow DNS over UDP but not over TCP port 53. Large DNS answers that fall back to TCP will fail."
+  },
+  "service": {
+    "backends": "Pods behind the Service",
+    "pod": "Pod",
+    "port": "Pod port",
+    "result": "Result",
+    "noTargetPort": "No such port",
+    "details": "Details for pod {{pod}}",
+    "more_one": "{{count}} more pod is not shown.",
+    "more_other": "{{count}} more pods are not shown.",
+    "externalName": "An ExternalName Service is a DNS alias: no pods receive its traffic.",
+    "noSelector": "The Service has no selector: its endpoints are managed by hand, so Sextant cannot tell which pods receive the traffic.",
+    "noPods": "The Service selects no running pods.",
+    "noPort": "No pod behind the Service has the target port."
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "Pods matching {{selector}} in namespace {{namespace}}",
+    "allPods": "Every pod in namespace {{namespace}}",
+    "ciliumHere": "Endpoints matching {{selector}} in namespace {{namespace}}",
+    "ciliumEverywhere": "Endpoints matching {{selector}} in every namespace",
+    "calicoHere": "Pods matching the Calico selector {{selector}} in namespace {{namespace}}",
+    "calicoEverywhere": "Pods matching the Calico selector {{selector}} in every namespace"
+  },
+  "peer": {
+    "podsHere": "Pods matching {{selector}} in namespace {{namespace}}",
+    "allPodsHere": "Every pod in namespace {{namespace}}",
+    "podsInNamespaces": "Pods matching {{selector}} in namespaces matching {{namespaces}}",
+    "allPodsInNamespaces": "Every pod in namespaces matching {{namespaces}}",
+    "podsEverywhere": "Pods matching {{selector}} in every namespace",
+    "everyPod": "Every pod in every namespace",
+    "ipBlock": "Addresses in {{cidr}}",
+    "ipBlockExcept": "Addresses in {{cidr}} except {{except}}",
+    "ciliumEndpointsHere": "Endpoints matching {{selector}} in namespace {{namespace}}",
+    "ciliumEndpoints": "Endpoints matching {{selector}}",
+    "entity": "The Cilium entity {{entity}}",
+    "unmodelled": "{{feature}} (not modelled by Sextant)",
+    "calico": "Calico match {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "{{protocol}} port named {{name}}",
+    "anyOf": "Every {{protocol}} port",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "Rule",
+    "peers": {
+      "ingress": "From",
+      "egress": "To"
+    },
+    "ports": "Ports",
+    "anyPeer": {
+      "ingress": "Any source",
+      "egress": "Any destination"
+    },
+    "anyPort": "Any port",
+    "empty": "Nothing (an empty Cilium rule)",
+    "local": "Only for selected pods matching {{match}}",
+    "denyAll": {
+      "ingress": "No ingress rules: all ingress to the selected pods is denied.",
+      "egress": "No egress rules: all egress from the selected pods is denied."
+    },
+    "notRestricted": {
+      "ingress": "Does not restrict ingress.",
+      "egress": "Does not restrict egress."
+    }
+  },
+  "fields": {
+    "selects": "Selects",
+    "selectedNow": "Selected now",
+    "noPods": "No pods",
+    "morePods_one": "and {{count}} more",
+    "morePods_other": "and {{count}} more",
+    "types": "Policy types",
+    "typesDefaulted": "{{types}} (policyTypes not set: defaulted)",
+    "typesNone": "None",
+    "order": "Order",
+    "noOrder": "None (evaluated last)",
+    "notModelled": "Not modelled by Sextant"
+  },
+  "details": {
+    "plainWords": "In plain words",
+    "openMap": "Namespace policy map",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "This policy selects no pods (a host policy or one that mirrors a NetworkPolicy).",
+    "noDns": "This policy does not allow DNS (UDP port 53 to kube-dns in kube-system): the pods it selects cannot resolve names unless another policy allows it.",
+    "ignored": {
+      "ingress": "The ingress rules are ignored: policyTypes does not include Ingress.",
+      "egress": "The egress rules are ignored: policyTypes does not include Egress."
+    },
+    "flavorNote": {
+      "cilium": "Cilium policy: Sextant evaluates its L3/L4 rules; L7 rules, FQDNs and similar features count as unknown.",
+      "ciliumClusterwide": "Cilium policy: Sextant evaluates its L3/L4 rules; L7 rules, FQDNs and similar features count as unknown.",
+      "calico": "Calico policy: Sextant evaluates the default tier's Allow, Deny and Log rules in order; other features count as unknown.",
+      "calicoGlobal": "Calico policy: Sextant evaluates the default tier's Allow, Deny and Log rules in order; other features count as unknown."
+    }
+  },
+  "pod": {
+    "title": "Network policies",
+    "isolatedBy": "Isolated by:",
+    "maybeBy": "May be isolated by:",
+    "notIsolated": {
+      "ingress": "Not isolated: all ingress is allowed",
+      "egress": "Not isolated: all egress is allowed"
+    },
+    "hostNetwork": "Host network: NetworkPolicy does not apply",
+    "unknown": "Unknown: not every policy could be read",
+    "check": "Check connectivity…"
+  },
+  "map": {
+    "choose": "Choose a namespace to see which of its pods are isolated and what their policies allow.",
+    "summary_one": "{{count}} pod: isolated for ingress: {{ingress}}; for egress: {{egress}}.",
+    "summary_other": "{{count}} pods: isolated for ingress: {{ingress}}; for egress: {{egress}}.",
+    "pods": "Pods and their isolation",
+    "pod": "Pod",
+    "isolatedBy": "Isolated by: {{policies}}",
+    "maybeBy": "May be isolated by: {{policies}}",
+    "notIsolated": {
+      "ingress": "Not isolated: all ingress allowed",
+      "egress": "Not isolated: all egress allowed"
+    },
+    "hostNetwork": "Host network: not subject to policy",
+    "unknown": "Unknown",
+    "noDns": "DNS is not allowed",
+    "dnsUnknown": "DNS may not be allowed",
+    "more_one": "{{count}} more pod is not shown.",
+    "more_other": "{{count}} more pods are not shown.",
+    "podsUnreadable": "The pods of namespace {{namespace}} cannot be listed.",
+    "policies": "Policies",
+    "noPolicies": "No policy selects pods in this namespace: every pod accepts all ingress and sends all egress.",
+    "selects_one": "{{what}} — {{count}} pod selected now",
+    "selects_other": "{{what}} — {{count}} pods selected now"
+  }
+}

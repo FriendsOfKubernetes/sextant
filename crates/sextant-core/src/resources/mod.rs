@@ -3,11 +3,13 @@
 //! Types live here; `watch.rs` / `get.rs` (watch and read), `list.rs` (one-shot lists and events) and `mutate.rs`
 //! (changes) hold the functions; `rollouts.rs` the rollout history and `kubectl rollout undo`.
 
+mod cluster_check;
 mod dry_run;
 mod get;
 mod list;
 mod mutate;
 pub mod rollouts;
+mod sample;
 mod watch;
 
 use std::sync::Arc;
@@ -17,12 +19,14 @@ use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
+pub use cluster_check::{ClusterCheck, NamedObject, UnreadKind, cluster_check};
 pub use dry_run::{
     DryRunChange, DryRunMode, DryRunObject, DryRunResult, FieldChange, SecretKeyChanges,
     dry_run_patch, dry_run_planned, dry_run_yaml, field_changes,
 };
 pub(crate) use dry_run::{secret_key_changes, secret_values};
 pub(crate) use get::hide_secret_values;
+pub(crate) use get::resolve_kind;
 pub use get::{get, get_full, secret_value};
 pub use list::{ListPage, events, list, resolve};
 pub use mutate::{
@@ -30,7 +34,9 @@ pub use mutate::{
     drain_preview, parse_documents, patch, plan_apply, replace_yaml, restart, scale,
     suspend_cronjob, trigger_cronjob,
 };
+pub use mutate::{DeletePreconditions, delete_with};
 pub use mutate::{IMMUTABLE_SECRET, SecretWrites, apply_planned_with, patch_with};
+pub use sample::{KindSample, MAX_SAMPLE, MAX_SAMPLED_KINDS, SampledObject, sample_namespace};
 pub use watch::watch;
 
 /// Group/version/kind. `group` is `""` for the core API group.

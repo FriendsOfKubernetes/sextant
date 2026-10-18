@@ -69,6 +69,7 @@ export const RELATIONS = [
   "boundTo",
   "storageClass",
   "class",
+  "parameters",
   "node",
 ] as const;
 export type Relation = (typeof RELATIONS)[number];
@@ -143,6 +144,9 @@ function toGroupKind(group: string, kind: string, namespace: string | null, name
 
 const CONTAINER_LISTS = ["initContainers", "containers", "ephemeralContainers"] as const;
 
+/** Volume types with a `secretRef` to a Secret of the pod's namespace. */
+const SECRET_REF_VOLUMES = ["cephfs", "rbd", "iscsi", "flexVolume", "scaleIO", "storageos", "cinder"] as const;
+
 /** What a pod spec names: volumes, environment sources, image pull secrets, the service account, the node. */
 export function podSpecReferences(spec: unknown, namespace: string | null, template: boolean): Reference[] {
   const refs: Reference[] = [];
@@ -156,6 +160,10 @@ export function podSpecReferences(spec: unknown, namespace: string | null, templ
     const secret = get(volume, "secret");
     if (secret) add(SECRET, str(get(secret, "secretName")), "volume", optional(secret));
     add(PVC, str(get(volume, "persistentVolumeClaim", "claimName")), "volume");
+    // Volume plugins that read their credentials from a Secret of the pod's namespace.
+    for (const plugin of SECRET_REF_VOLUMES) add(SECRET, str(get(volume, plugin, "secretRef", "name")), "volume");
+    add(SECRET, str(get(volume, "csi", "nodePublishSecretRef", "name")), "volume");
+    add(SECRET, str(get(volume, "azureFile", "secretName")), "volume");
     for (const source of arr(get(volume, "projected", "sources"))) {
       const pcm = get(source, "configMap");
       if (pcm) add(CONFIG_MAP, str(get(pcm, "name")), "volume", optional(pcm));
@@ -242,6 +250,13 @@ function gatewayReferences(obj: KubeObject): Reference[] {
     for (const cert of listener.certificateRefs) {
       refs.push({ to: toGroupKind(cert.group, cert.kind, cert.namespace, cert.name), relation: "tls" });
     }
+  }
+  // Implementation-specific settings of the Gateway's infrastructure (a ConfigMap, a custom resource).
+  const params = get(obj, "spec", "infrastructure", "parametersRef");
+  const paramsKind = str(get(params, "kind"));
+  const paramsName = str(get(params, "name"));
+  if (paramsKind && paramsName) {
+    refs.push({ to: toGroupKind(str(get(params, "group")) ?? "", paramsKind, obj.metadata?.namespace ?? null, paramsName), relation: "parameters" });
   }
   return refs;
 }

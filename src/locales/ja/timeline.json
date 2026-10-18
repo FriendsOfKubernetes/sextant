@@ -1,0 +1,74 @@
+{
+  "sidebar": "タイムライン",
+  "title": "変更タイムライン",
+  "lead": "クラスターで何が、いつ、誰によって変更されたか。Sextant は接続中に監視しているオブジェクトの変更を記録します。それ以前の変更はクラスターが保持している情報から取得され、部分的として表示されます。",
+  "tab": "変更",
+  "tabLead": "Sextant がこのオブジェクトを監視している間に記録した変更と、クラスターが保持しているそれ以前の情報（部分的）です。",
+  "tabEmpty": "このオブジェクトの変更はまだ記録されていません。",
+  "objectHistoryFailed": "クラスター内のこのオブジェクトの履歴を読み取れませんでした: {{message}}",
+  "filters": {
+    "kind": "Kind",
+    "anyKind": "すべての Kind",
+    "manager": "変更者",
+    "anyManager": "すべて",
+    "onlyBeforeProblems": "問題の前の変更のみ",
+    "partial": "Sextant 以前の履歴",
+    "persist": "再起動後も保持",
+    "persistHint": "記録された変更は、クラスターごとに 1 つのファイルとしてこのコンピューターに保存されます。Secret の値は記録されません。"
+  },
+  "refresh": "更新",
+  "clear": "記録を消去",
+  "saveFailed": "タイムラインを保存できませんでした: {{message}}",
+  "partialNeedsNamespaces": "Sextant の実行前の履歴を表示するには、フィルターで namespace を選択してください。",
+  "partialFirstNamespaces_other": "Sextant 以前の履歴は、フィルターの最初の {{count}} 個の namespace が対象です。",
+  "relatedLimited_other": "依存オブジェクトの問題は、フィルターの最初の {{count}} 個の namespace で照合されます。",
+  "allNamespacesNote": "すべての namespace を選択している場合、問題は同じオブジェクト、またはその名前の由来となったワークロードの変更とのみ照合されます。",
+  "partialLoading": "クラスターが保持している情報を読み取っています…",
+  "partialSkipped": "一部の一覧を読み取れませんでした: {{kinds}}",
+  "partialTruncated": "Sextant 以前の履歴が長いため、最新のエントリのみ表示しています。",
+  "empty": "まだ変更はありません。Sextant が監視している間にオブジェクトが変更されると、ここに表示されます。",
+  "emptyFiltered": "フィルターに一致する変更はありません。",
+  "showMore_other": "さらに {{count}} 件を表示",
+  "object": "{{kind}} {{name}}",
+  "objectInNamespace": "{{kind}} {{namespace}}/{{name}}",
+  "action": {
+    "created": "作成",
+    "updated": "変更",
+    "deleted": "削除"
+  },
+  "late": "後で検出",
+  "lateTitle": "このオブジェクトはしばらく監視されていませんでした。変更はこの時刻より前に行われています。",
+  "partialBadge": "部分的",
+  "partialTitle": "クラスターが保持している情報より: Sextant の実行前に行われた変更がすべてわかるわけではありません。",
+  "source": {
+    "fieldManager": "この field manager による最後の変更",
+    "revision": "リビジョン {{revision}}",
+    "revisionCause": "リビジョン {{revision}}: {{cause}}",
+    "helm": "Helm リリース {{name}}、リビジョン {{revision}}",
+    "helmStatus": "Helm リリース {{name}}、リビジョン {{revision}}（{{status}}）"
+  },
+  "who": {
+    "by": "変更者: {{who}}",
+    "likely": "変更者（推定）: {{who}}",
+    "pending": "変更者を確認しています…",
+    "unknown": "変更者は不明です",
+    "sextant": "Sextant（ユーザーまたは AI エージェント）"
+  },
+  "change": {
+    "added": "{{path}} を追加: {{value}}",
+    "addedHidden": "{{path}} を追加",
+    "removed": "{{path}} を削除",
+    "changed": "{{path}}: {{before}} → {{after}}",
+    "changedLong": "{{path}} を変更（長い値）",
+    "changedHidden": "{{path}} を変更",
+    "summaryOnly": "変更されました。以前のバージョンが大きすぎて保持できなかったため、変更されたフィールドはわかりません。",
+    "more_other": "…ほか {{count}} 件の変更",
+    "showAll": "すべての変更を表示（{{count}}）",
+    "showLess": "表示を減らす"
+  },
+  "correlation": {
+    "label": "この変更の直後",
+    "sameTime": "ほぼ同時に {{kind}} {{name}} で {{reason}}",
+    "after_other": "この変更の {{count}} 分後に {{kind}} {{name}} で {{reason}}"
+  }
+}

@@ -13,6 +13,8 @@
     "accessControl": "Управление доступом",
     "certManager": "cert-manager",
     "trivy": "Trivy",
+    "keda": "KEDA",
+    "karpenter": "Karpenter",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "Пользовательские ресурсы"

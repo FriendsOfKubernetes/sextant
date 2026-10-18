@@ -1,0 +1,347 @@
+{
+  "sidebar": "Conectividade",
+  "title": "Conectividade de rede",
+  "banner": "O Sextant raciocina a partir dos objetos de política do cluster, não do tráfego real. A NetworkPolicy só tem efeito se o plugin de rede (CNI) do cluster a aplicar. As políticas do Cilium e do Calico são avaliadas na medida em que se traduzem em regras L3/L4.",
+  "loading": "Lendo Pods e políticas…",
+  "tabs": {
+    "label": "Visões de conectividade",
+    "check": "Verificação",
+    "map": "Mapa de políticas"
+  },
+  "form": {
+    "source": "Origem",
+    "destination": "Destino",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace e labels",
+      "external": "Endereço IP fora do cluster",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Labels",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "Endereço IP",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Porta do Service",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "Porta",
+    "portPlaceholder": "80 ou http",
+    "protocol": "Protocolo",
+    "choose": "Escolher…",
+    "loadingNames": "Carregando…",
+    "check": "Verificar"
+  },
+  "errors": {
+    "chooseNamespace": "Escolha um namespace.",
+    "choosePod": "Escolha um Pod.",
+    "podGone": "O Pod {{name}} não está mais no namespace {{namespace}}.",
+    "labels": "Escreva os labels como key=value, separados por vírgulas.",
+    "ip": "Informe um endereço IPv4 ou IPv6.",
+    "port": "Informe um número de porta de 1 a 65535 ou o nome de uma porta de contêiner.",
+    "portName": "O Pod de destino não tem uma porta {{protocol}} chamada {{name}}.",
+    "chooseService": "Escolha um Service.",
+    "serviceGone": "O Service {{name}} não está mais no namespace {{namespace}}.",
+    "chooseServicePort": "Escolha uma porta do Service."
+  },
+  "endpoint": {
+    "labels": "um Pod com {{labels}} em {{namespace}}",
+    "anyPod": "um Pod sem labels em {{namespace}}"
+  },
+  "verdict": {
+    "allowed": "Permitido",
+    "denied": "Negado",
+    "unknown": "Desconhecido"
+  },
+  "tri": {
+    "yes": "Sim",
+    "no": "Não",
+    "maybe": "Não é possível dizer"
+  },
+  "result": {
+    "label": "Resultado",
+    "allowed": "Permitido: as políticas permitem este tráfego.",
+    "denied": "Negado: as políticas não permitem este tráfego.",
+    "unknown": "Desconhecido: o Sextant não consegue determinar pelos objetos se este tráfego é permitido.",
+    "service": {
+      "allowed": "Permitido para todos os Pods por trás do Service.",
+      "denied": "Negado para todos os Pods por trás do Service.",
+      "unknown": "Desconhecido para alguns Pods por trás do Service."
+    },
+    "partial_one": "Permitido para {{allowed}} de {{count}} Pod por trás do Service.",
+    "partial_many": "Permitido para {{allowed}} de {{count}} Pods por trás do Service.",
+    "partial_other": "Permitido para {{allowed}} de {{count}} Pods por trás do Service.",
+    "nothing": "Nada a verificar.",
+    "egressFrom": "Tráfego de saída de {{source}}",
+    "ingressTo": "Tráfego de entrada para {{destination}}"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "Nenhuma política seleciona a origem para o tráfego de saída, então todo o tráfego de saída dela é permitido.",
+      "ingress": "Nenhuma política seleciona o destino para o tráfego de entrada, então todo o tráfego de entrada para ele é permitido."
+    },
+    "hostNetwork": {
+      "egress": "A origem usa a rede do host: a NetworkPolicy não se aplica a ela.",
+      "ingress": "O destino usa a rede do host: a NetworkPolicy não se aplica a ele."
+    },
+    "external": {
+      "egress": "A origem está fora do cluster: nenhuma política de saída do cluster se aplica a ela.",
+      "ingress": "O destino está fora do cluster: só o tráfego de saída da origem decide."
+    },
+    "nodeTraffic": "A origem usa a rede do host no nó do destino. O tráfego vindo do próprio nó de um Pod é sempre permitido.",
+    "allowedByRule": "Permitido por:",
+    "deniedByRule": "Negado por:",
+    "noRuleMatches": "Políticas selecionam este Pod, e nenhuma das regras delas permite este tráfego.",
+    "unknown": "O Sextant não consegue dizer porque:"
+  },
+  "match": {
+    "peer": "par {{n}}: {{peer}}",
+    "anyPeer": "qualquer par",
+    "port": "porta {{n}}: {{port}}",
+    "anyPort": "qualquer porta"
+  },
+  "checks": {
+    "title": {
+      "egress_one": "{{count}} política seleciona a origem para o tráfego de saída",
+      "egress_many": "{{count}} políticas selecionam a origem para o tráfego de saída",
+      "egress_other": "{{count}} políticas selecionam a origem para o tráfego de saída",
+      "ingress_one": "{{count}} política seleciona o destino para o tráfego de entrada",
+      "ingress_many": "{{count}} políticas selecionam o destino para o tráfego de entrada",
+      "ingress_other": "{{count}} políticas selecionam o destino para o tráfego de entrada"
+    },
+    "policy": "Política",
+    "rule": "Regra",
+    "matches": "Corresponde",
+    "why": "Por quê",
+    "noRules": "Sem regras",
+    "noRulesWhy": {
+      "egress": "A política isola o Pod para o tráfego de saída e não permite nada.",
+      "ingress": "A política isola o Pod para o tráfego de entrada e não permite nada."
+    }
+  },
+  "rule": {
+    "ingress": "Regra ingress {{n}}",
+    "egress": "Regra egress {{n}}",
+    "ingressDeny": "Regra de negação ingress {{n}}",
+    "egressDeny": "Regra de negação egress {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "Permite este tráfego.",
+    "denies": "Nega este tráfego.",
+    "empty": "No Cilium, uma regra vazia não corresponde a nada.",
+    "local": "A regra não se aplica a este Pod: {{reason}}",
+    "peerN": "Par {{n}}: {{reason}}",
+    "portN": "Porta {{n}}: {{reason}}"
+  },
+  "peerReason": {
+    "match": "Corresponde.",
+    "namespace": "O Pod está no namespace {{actual}}; este par só seleciona Pods do namespace {{expected}}.",
+    "namespaceSelector": "O namespace {{namespace}} tem os labels {{labels}}, que não correspondem a {{selector}}.",
+    "namespaceNoMatch": "O namespace {{namespace}} (labels {{labels}}) não corresponde ao seletor de namespace.",
+    "namespaceLabelsUnknown": "Os labels do namespace {{namespace}} são desconhecidos: não é possível listar os Namespaces.",
+    "podSelector": "Os labels do Pod {{labels}} não correspondem a {{selector}}.",
+    "podNoMatch": "Os labels do Pod {{labels}} não correspondem ao seletor.",
+    "podNoLabels": "O Pod não tem labels, então não corresponde a {{selector}}.",
+    "notPod": "Seletores de Pod e de namespace nunca selecionam um endereço fora do cluster.",
+    "ipBlock": "O endereço está fora de {{cidr}}.",
+    "ipBlockExcept": "O endereço está em {{except}}, que o bloco {{cidr}} exclui.",
+    "ipBlockPod": "O IP do Pod está dentro de {{cidr}}. Se um ipBlock se aplica a IPs de Pods depende do plugin de rede.",
+    "ipUnknown": "O IP do Pod é desconhecido.",
+    "cidrNotPods": "As regras CIDR do Cilium não selecionam Pods.",
+    "entity": "A entidade do Cilium {{entity}} não abrange este lado.",
+    "networkSet": "Um network set do Calico pode conter este endereço."
+  },
+  "portReason": {
+    "match": "Corresponde.",
+    "protocol": "A regra é para {{protocol}}.",
+    "otherProtocol": "A regra é para outro protocolo.",
+    "port": "A regra é para a porta {{port}}.",
+    "namedUnresolved": "O Pod de destino não tem uma porta chamada {{name}} com este protocolo.",
+    "namedOther": "A porta {{name}} é a {{port}} no Pod de destino.",
+    "namedExternal": "Uma porta nomeada nunca é resolvida para um endereço fora do cluster."
+  },
+  "reason": {
+    "unmodelled": "Usa recursos que o Sextant não modela: {{feature}}."
+  },
+  "unknown": {
+    "unreadable": "Não foi possível ler os objetos {{kind}} do namespace {{namespace}}.",
+    "unreadableClusterwide": "Não foi possível ler os objetos {{kind}}.",
+    "unevaluated": "{{kind}} {{name}} pode se aplicar, e o Sextant não avalia objetos {{kind}}.",
+    "maybeSelected": "O Sextant não consegue dizer se {{policy}} seleciona o Pod.",
+    "maybeIsolated": "O Sextant não consegue dizer se {{policy}} isola o Pod.",
+    "maybeRule": "{{policy}}, {{rule}}: {{reason}}",
+    "unmodelledRule": "Não avaliado: {{flavor}} {{policy}}, {{rule}} usa recursos que o Sextant não modela: {{features}}.",
+    "unmodelledPolicy": "Não avaliado: {{flavor}} {{policy}} usa recursos que o Sextant não modela: {{features}}.",
+    "hostNetworkSource": "A origem usa a rede do host em outro nó. O tráfego dela vem do endereço do nó, ao qual os seletores de Pod não correspondem; um ipBlock pode corresponder, dependendo do plugin de rede.",
+    "mixed": "Políticas do Cilium e do Calico selecionam o Pod, e o Sextant não as combina."
+  },
+  "note": {
+    "self": "Origem e destino são o mesmo Pod. O tráfego via localhost nunca é bloqueado; o tráfego para o próprio IP do Pod é avaliado aqui conforme as políticas, mas os plugins de rede diferem.",
+    "ipBlockPods": "O ipBlock é destinado a endereços fora do cluster. Se ele corresponde a IPs de Pods depende do plugin de rede, então essas correspondências contam como desconhecidas.",
+    "externalSource": "O tráfego de fora normalmente chega por um NodePort, um balanceador de carga ou um controlador ingress, que podem substituir o endereço de origem, a menos que externalTrafficPolicy seja Local.",
+    "calicoOrder": "O Calico avalia as políticas em ordem (por order e depois por nome), e as NetworkPolicies do Kubernetes contam como order 1000. A primeira regra Allow ou Deny que corresponder decide.",
+    "service": "O tráfego para um Service é verificado para cada Pod que ele seleciona, na porta de destino.",
+    "serviceNodePort": "Este Service do tipo {{type}} também pode ser acessado de fora por portas de nó. Esse tráfego pode chegar do endereço de um nó, a menos que externalTrafficPolicy seja Local."
+  },
+  "dns": {
+    "denied": "A origem está isolada para o tráfego de saída, e as políticas dela não permitem DNS (porta UDP 53 para kube-dns em kube-system). Ela não consegue resolver nomes, mesmo que uma conexão seja permitida.",
+    "unknown": "A origem está isolada para o tráfego de saída, e o Sextant não consegue dizer se as políticas dela permitem DNS (porta UDP 53 para kube-dns em kube-system).",
+    "tcpDenied": "As políticas da origem permitem DNS por UDP, mas não pela porta TCP 53. Respostas DNS grandes que passam para TCP vão falhar."
+  },
+  "service": {
+    "backends": "Pods por trás do Service",
+    "pod": "Pod",
+    "port": "Porta do Pod",
+    "result": "Resultado",
+    "noTargetPort": "Porta inexistente",
+    "details": "Detalhes do Pod {{pod}}",
+    "more_one": "Mais {{count}} Pod não é exibido.",
+    "more_many": "Mais {{count}} Pods não são exibidos.",
+    "more_other": "Mais {{count}} Pods não são exibidos.",
+    "externalName": "Um Service ExternalName é um alias de DNS: nenhum Pod recebe o tráfego dele.",
+    "noSelector": "O Service não tem seletor: os endpoints dele são mantidos manualmente, então o Sextant não consegue dizer quais Pods recebem o tráfego.",
+    "noPods": "O Service não seleciona nenhum Pod em execução.",
+    "noPort": "Nenhum Pod por trás do Service tem a porta de destino."
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "Pods que correspondem a {{selector}} no namespace {{namespace}}",
+    "allPods": "Todos os Pods do namespace {{namespace}}",
+    "ciliumHere": "Endpoints que correspondem a {{selector}} no namespace {{namespace}}",
+    "ciliumEverywhere": "Endpoints que correspondem a {{selector}} em todos os namespaces",
+    "calicoHere": "Pods que correspondem ao seletor do Calico {{selector}} no namespace {{namespace}}",
+    "calicoEverywhere": "Pods que correspondem ao seletor do Calico {{selector}} em todos os namespaces"
+  },
+  "peer": {
+    "podsHere": "Pods que correspondem a {{selector}} no namespace {{namespace}}",
+    "allPodsHere": "Todos os Pods do namespace {{namespace}}",
+    "podsInNamespaces": "Pods que correspondem a {{selector}} em namespaces que correspondem a {{namespaces}}",
+    "allPodsInNamespaces": "Todos os Pods de namespaces que correspondem a {{namespaces}}",
+    "podsEverywhere": "Pods que correspondem a {{selector}} em todos os namespaces",
+    "everyPod": "Todos os Pods de todos os namespaces",
+    "ipBlock": "Endereços em {{cidr}}",
+    "ipBlockExcept": "Endereços em {{cidr}} exceto {{except}}",
+    "ciliumEndpointsHere": "Endpoints que correspondem a {{selector}} no namespace {{namespace}}",
+    "ciliumEndpoints": "Endpoints que correspondem a {{selector}}",
+    "entity": "A entidade do Cilium {{entity}}",
+    "unmodelled": "{{feature}} (não modelado pelo Sextant)",
+    "calico": "Correspondência do Calico {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "Porta {{protocol}} chamada {{name}}",
+    "anyOf": "Qualquer porta {{protocol}}",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "Regra",
+    "peers": {
+      "ingress": "De",
+      "egress": "Para"
+    },
+    "ports": "Portas",
+    "anyPeer": {
+      "ingress": "Qualquer origem",
+      "egress": "Qualquer destino"
+    },
+    "anyPort": "Qualquer porta",
+    "empty": "Nada (uma regra vazia do Cilium)",
+    "local": "Só para os Pods selecionados que correspondem a {{match}}",
+    "denyAll": {
+      "ingress": "Sem regras ingress: todo o tráfego de entrada para os Pods selecionados é negado.",
+      "egress": "Sem regras egress: todo o tráfego de saída dos Pods selecionados é negado."
+    },
+    "notRestricted": {
+      "ingress": "Não restringe o tráfego de entrada.",
+      "egress": "Não restringe o tráfego de saída."
+    }
+  },
+  "fields": {
+    "selects": "Seleciona",
+    "selectedNow": "Selecionados agora",
+    "noPods": "Nenhum Pod",
+    "morePods_one": "e mais {{count}}",
+    "morePods_many": "e mais {{count}}",
+    "morePods_other": "e mais {{count}}",
+    "types": "Tipos de política",
+    "typesDefaulted": "{{types}} (policyTypes não definido: valor padrão)",
+    "typesNone": "Nenhum",
+    "order": "Ordem",
+    "noOrder": "Nenhuma (avaliada por último)",
+    "notModelled": "Não modelado pelo Sextant"
+  },
+  "details": {
+    "plainWords": "Em palavras simples",
+    "openMap": "Mapa de políticas do namespace",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "Esta política não seleciona Pods (uma política de host ou uma cópia de uma NetworkPolicy).",
+    "noDns": "Esta política não permite DNS (porta UDP 53 para kube-dns em kube-system): os Pods que ela seleciona não conseguem resolver nomes, a menos que outra política permita.",
+    "ignored": {
+      "ingress": "As regras ingress são ignoradas: policyTypes não inclui Ingress.",
+      "egress": "As regras egress são ignoradas: policyTypes não inclui Egress."
+    },
+    "flavorNote": {
+      "cilium": "Política do Cilium: o Sextant avalia as regras L3/L4 dela; regras L7, FQDNs e recursos parecidos contam como desconhecidos.",
+      "ciliumClusterwide": "Política do Cilium: o Sextant avalia as regras L3/L4 dela; regras L7, FQDNs e recursos parecidos contam como desconhecidos.",
+      "calico": "Política do Calico: o Sextant avalia em ordem as regras Allow, Deny e Log do nível default; outros recursos contam como desconhecidos.",
+      "calicoGlobal": "Política do Calico: o Sextant avalia em ordem as regras Allow, Deny e Log do nível default; outros recursos contam como desconhecidos."
+    }
+  },
+  "pod": {
+    "title": "Políticas de rede",
+    "isolatedBy": "Isolado por:",
+    "maybeBy": "Talvez isolado por:",
+    "notIsolated": {
+      "ingress": "Não isolado: todo o tráfego de entrada é permitido",
+      "egress": "Não isolado: todo o tráfego de saída é permitido"
+    },
+    "hostNetwork": "Rede do host: a NetworkPolicy não se aplica",
+    "unknown": "Desconhecido: nem todas as políticas puderam ser lidas",
+    "check": "Verificar conectividade…"
+  },
+  "map": {
+    "choose": "Escolha um namespace para ver quais Pods dele estão isolados e o que as políticas deles permitem.",
+    "summary_one": "{{count}} Pod: isolados para entrada: {{ingress}}; para saída: {{egress}}.",
+    "summary_many": "{{count}} Pods: isolados para entrada: {{ingress}}; para saída: {{egress}}.",
+    "summary_other": "{{count}} Pods: isolados para entrada: {{ingress}}; para saída: {{egress}}.",
+    "pods": "Pods e seu isolamento",
+    "pod": "Pod",
+    "isolatedBy": "Isolado por: {{policies}}",
+    "maybeBy": "Talvez isolado por: {{policies}}",
+    "notIsolated": {
+      "ingress": "Não isolado: toda entrada permitida",
+      "egress": "Não isolado: toda saída permitida"
+    },
+    "hostNetwork": "Rede do host: sem políticas",
+    "unknown": "Desconhecido",
+    "noDns": "DNS não é permitido",
+    "dnsUnknown": "DNS talvez não seja permitido",
+    "more_one": "Mais {{count}} Pod não é exibido.",
+    "more_many": "Mais {{count}} Pods não são exibidos.",
+    "more_other": "Mais {{count}} Pods não são exibidos.",
+    "podsUnreadable": "Não é possível listar os Pods do namespace {{namespace}}.",
+    "policies": "Políticas",
+    "noPolicies": "Nenhuma política seleciona Pods neste namespace: cada Pod aceita todo o tráfego de entrada e envia todo o de saída.",
+    "selects_one": "{{what}} — {{count}} Pod selecionado agora",
+    "selects_many": "{{what}} — {{count}} Pods selecionados agora",
+    "selects_other": "{{what}} — {{count}} Pods selecionados agora"
+  }
+}

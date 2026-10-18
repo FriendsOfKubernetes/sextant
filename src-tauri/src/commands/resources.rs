@@ -216,16 +216,19 @@ pub async fn resource_dry_run(
     }
 }
 
+/// Deletes one object. With `preconditions` the API server deletes it only while its uid and resourceVersion are
+/// still those (otherwise `conflict`): the cleanup page's bulk deletion names the object it checked (#147).
 #[tauri::command]
 pub async fn resource_delete(
     state: State<'_, AppState>,
     cluster_id: ClusterId,
     _ref: ObjectRef,
+    preconditions: Option<resources::DeletePreconditions>,
 ) -> Result<(), CoreError> {
     with_timeout(
         CHANGE_TIMEOUT,
         "the deletion",
-        resources::delete(&state.clusters, &cluster_id, &_ref),
+        resources::delete_with(&state.clusters, &cluster_id, &_ref, preconditions.as_ref()),
     )
     .await
 }

@@ -1,0 +1,127 @@
+{
+  "sidebar": "Cleanup",
+  "title": "Cleanup",
+  "intro": "Objects that look unused or left over, each with the reason. Something is a candidate only when every list that could refer to it was read in full; when in doubt it is left out. Nothing is deleted until you select objects and confirm.",
+  "loading": "Reading the namespaces…",
+  "chooseNamespace": "Choose namespaces",
+  "chooseNamespaceText": "This page checks the namespaces chosen in the namespace filter. Choose one or more namespaces to start.",
+  "firstNamespaces_one": "Only the first {{count}} chosen namespace is checked.",
+  "firstNamespaces_other": "Only the first {{count}} chosen namespaces are checked.",
+  "excludedInView": "Not checked, excluded in the settings: {{names}}",
+  "configsOff": "ConfigMaps and Secrets are not checked. They can be turned on in the settings.",
+  "configsWarning": "Sextant cannot see every reference to a ConfigMap or Secret: operators and custom resources it does not know, CSI drivers, controller arguments and applications that read them through the API. Check each one before deleting it.",
+  "blocked": "ConfigMaps, Secrets, PersistentVolumeClaims and Services of {{namespace}} are not judged: it holds objects of kinds Sextant does not read ({{kinds}}).",
+  "unavailableGroups": "Some API groups do not answer ({{groups}}): their objects cannot be seen, so no ConfigMap, Secret, PersistentVolumeClaim, Service or namespace is offered.",
+  "clusterFailed": "Could not check the cluster-wide objects and API groups: no ConfigMap, Secret, PersistentVolumeClaim, Service or namespace is offered.",
+  "clusterUnread": "Could not read every object of these cluster-wide kinds, so no ConfigMap or Secret is offered: {{kinds}}",
+  "sampleFailed": "Could not check everything {{namespace}} holds: its ConfigMaps, Secrets, PersistentVolumeClaims and the namespace itself are not offered.",
+  "checkAgain": "Check again",
+  "nothingChecked": "Every chosen namespace is excluded in the settings.",
+  "watchFailed": "Could not watch {{kind}}",
+  "forbidden": "No permission to list {{kind}} in: {{names}}",
+  "unchecked": "Some objects were not judged because these lists are not read in full yet: {{kinds}}",
+  "none": "Nothing to clean up in the checked namespaces.",
+  "truncated_one": "There are too many candidates: only the first {{count}} is listed.",
+  "truncated_other": "There are too many candidates: only the first {{count}} are listed.",
+  "rule": {
+    "configMap": "ConfigMaps nothing uses",
+    "secret": "Secrets nothing uses",
+    "claim": "PersistentVolumeClaims no Pod mounts",
+    "volume": "Released or unclaimed PersistentVolumes",
+    "service": "Services without endpoints",
+    "replicaSet": "Old ReplicaSets beyond the revision history",
+    "pod": "Finished Pods",
+    "job": "Finished Jobs",
+    "namespace": "Empty namespaces"
+  },
+  "reason": {
+    "configMapUnused": "No Pod, pod template or other watched object refers to it.",
+    "secretUnused": "No Pod, pod template, ServiceAccount, Ingress, Gateway, cert-manager or Flux object refers to it.",
+    "claimUnmounted": "No Pod mounts it, and no pod template, StatefulSet, VolumeSnapshot or other claim refers to it.",
+    "volumeReleased": "Released: its claim {{claim}} was deleted.",
+    "volumeAvailable": "Available and not bound to any claim.",
+    "serviceNoEndpoints": "Has no endpoints, and its selector matches no Pod and no pod template.",
+    "serviceNoSelector": "Has no selector, no endpoints and no Endpoints object.",
+    "replicaSetHistory": "Revision {{revision}} of Deployment {{deployment}}, beyond its revisionHistoryLimit: {{limit}}.",
+    "podSucceeded": "Succeeded, and no Job owns it.",
+    "podFailed": "Failed, and no Job owns it.",
+    "jobComplete": "Completed; no CronJob owns it and ttlSecondsAfterFinished is not set.",
+    "jobFailed": "Failed; no CronJob owns it and ttlSecondsAfterFinished is not set.",
+    "namespaceEmpty": "Holds no objects of the checked kinds besides what Kubernetes creates in every namespace. Objects of other kinds are not checked."
+  },
+  "since": {
+    "created": "created {{age}} ago",
+    "finished": "finished {{age}} ago",
+    "phaseChanged": "in this phase for {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "Its volume {{volume}} has reclaim policy Delete: the data will be deleted.",
+    "reclaimRetain": "Its volume {{volume}} has reclaim policy Retain: the data stays on the storage.",
+    "reclaimOther": "Its volume {{volume}} has reclaim policy {{policy}}."
+  },
+  "column": {
+    "object": "Object",
+    "reason": "Why it looks unused",
+    "age": "Age",
+    "impact": "If deleted",
+    "manager": "Managed by"
+  },
+  "open": "Open {{kind}} {{name}}",
+  "select": "Select {{kind}} {{name}}",
+  "selectGroup": "Select all: {{group}}",
+  "deleteSelected": "Delete selected ({{count}})…",
+  "managed": {
+    "title": "Managed by a tool, not offered for deletion",
+    "text": "These look unused too, but a tool manages them: it would create them again or lose track of them. Remove them through the tool.",
+    "helm": "Helm release {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Argo CD application {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Kept on purpose, not offered for deletion",
+    "retain": "Reclaim policy Retain: the data is kept on purpose."
+  },
+  "settings": {
+    "button": "Settings…",
+    "title": "Cleanup settings",
+    "checkConfigMaps": "Offer ConfigMaps nothing seems to use",
+    "checkSecrets": "Offer Secrets nothing seems to use",
+    "excluded": "Namespaces never checked",
+    "excludedHint": "One per line. kube-system, kube-public and kube-node-lease are never checked.",
+    "days": "Offer only objects older than this, in days",
+    "ages": {
+      "configs": "ConfigMaps and Secrets: days since created",
+      "services": "Services: days since created",
+      "pods": "Finished Pods: days since they finished",
+      "jobs": "Finished Jobs: days since they finished",
+      "claims": "PersistentVolumeClaims: days since created",
+      "volumes": "PersistentVolumes: days in their phase",
+      "namespaces": "Empty namespaces: days since created"
+    },
+    "save": "Save",
+    "saveFailed": "Could not save the settings"
+  },
+  "dialog": {
+    "title_one": "Delete {{count}} object",
+    "title_other": "Delete {{count}} objects",
+    "text": "Each object is checked again right before it is deleted: one that changed or is in use again is kept. A deletion cannot be undone.",
+    "namespaceWarning": "Deleting a namespace deletes everything in it, including objects of kinds this page does not check.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Type {{count}} to confirm",
+    "confirm": "Delete",
+    "progress": "Deleting: {{done}} of {{total}}",
+    "stop": "Stop",
+    "resultTitle": "Cleanup result",
+    "summary": "Deleted: {{deleted}}. Kept: {{kept}}. Failed: {{failed}}.",
+    "outcome": {
+      "deleted": "Deleted",
+      "gone": "Already gone",
+      "notCandidate": "Kept: no longer looks unused",
+      "changed": "Kept: changed since it was checked",
+      "failed": "Failed",
+      "stopped": "Not tried: stopped"
+    }
+  }
+}

@@ -24,6 +24,7 @@
     "boundTo": { "out": "Vinculado a", "in": "Vinculado por" },
     "storageClass": { "out": "Clase de almacenamiento", "in": "Usan esta clase" },
     "class": { "out": "Clase", "in": "Objetos de esta clase" },
+    "parameters": { "out": "Parámetros", "in": "Parámetros de" },
     "node": { "out": "Se ejecuta en", "in": "Ejecuta Pods" }
   },
   "impact": {

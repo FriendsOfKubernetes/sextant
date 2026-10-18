@@ -24,6 +24,7 @@
     "boundTo": { "out": "Powiązany z", "in": "Powiązany przez" },
     "storageClass": { "out": "Klasa pamięci", "in": "Używa tej klasy" },
     "class": { "out": "Klasa", "in": "Obiekty tej klasy" },
+    "parameters": { "out": "Parametry", "in": "Parametry dla" },
     "node": { "out": "Działa na", "in": "Uruchamia Pody" }
   },
   "impact": {

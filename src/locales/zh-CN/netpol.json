@@ -1,0 +1,331 @@
+{
+  "sidebar": "连通性",
+  "title": "网络连通性",
+  "banner": "Sextant 依据集群中的策略对象推断，而不是依据实时流量。只有集群的网络插件（CNI）执行 NetworkPolicy 时，它才会生效。Cilium 和 Calico 策略在能对应到 L3/L4 规则的范围内进行评估。",
+  "loading": "正在读取 Pod 和策略…",
+  "tabs": {
+    "label": "连通性视图",
+    "check": "检查",
+    "map": "策略图"
+  },
+  "form": {
+    "source": "源",
+    "destination": "目标",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace 和 label",
+      "external": "集群外的 IP 地址",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Label",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "IP 地址",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Service 端口",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "端口",
+    "portPlaceholder": "80 或 http",
+    "protocol": "协议",
+    "choose": "选择…",
+    "loadingNames": "正在加载…",
+    "check": "检查"
+  },
+  "errors": {
+    "chooseNamespace": "请选择一个 namespace。",
+    "choosePod": "请选择一个 Pod。",
+    "podGone": "Pod {{name}} 已不在 namespace {{namespace}} 中。",
+    "labels": "请以 key=value 的形式填写 label，用逗号分隔。",
+    "ip": "请输入 IPv4 或 IPv6 地址。",
+    "port": "请输入 1 到 65535 之间的端口号，或容器端口的名称。",
+    "portName": "目标 Pod 没有名为 {{name}} 的 {{protocol}} 端口。",
+    "chooseService": "请选择一个 Service。",
+    "serviceGone": "Service {{name}} 已不在 namespace {{namespace}} 中。",
+    "chooseServicePort": "请选择 Service 的一个端口。"
+  },
+  "endpoint": {
+    "labels": "{{namespace}} 中带有 {{labels}} 的 Pod",
+    "anyPod": "{{namespace}} 中没有 label 的 Pod"
+  },
+  "verdict": {
+    "allowed": "允许",
+    "denied": "拒绝",
+    "unknown": "未知"
+  },
+  "tri": {
+    "yes": "是",
+    "no": "否",
+    "maybe": "无法判断"
+  },
+  "result": {
+    "label": "结果",
+    "allowed": "允许：策略允许此流量。",
+    "denied": "拒绝：策略不允许此流量。",
+    "unknown": "未知：Sextant 无法根据对象判断此流量是否被允许。",
+    "service": {
+      "allowed": "允许访问该 Service 后面的所有 Pod。",
+      "denied": "拒绝访问该 Service 后面的所有 Pod。",
+      "unknown": "对该 Service 后面的部分 Pod 结果未知。"
+    },
+    "partial_other": "允许访问该 Service 后面 {{count}} 个 Pod 中的 {{allowed}} 个。",
+    "nothing": "没有可检查的内容。",
+    "egressFrom": "来自 {{source}} 的出站流量",
+    "ingressTo": "发往 {{destination}} 的入站流量"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "没有策略为出站流量选择该源，因此它的所有出站流量都被允许。",
+      "ingress": "没有策略为入站流量选择该目标，因此发往它的所有入站流量都被允许。"
+    },
+    "hostNetwork": {
+      "egress": "源使用主机网络：NetworkPolicy 不适用于它。",
+      "ingress": "目标使用主机网络：NetworkPolicy 不适用于它。"
+    },
+    "external": {
+      "egress": "源位于集群外：集群的出站策略都不适用于它。",
+      "ingress": "目标位于集群外：只由源的出站流量决定。"
+    },
+    "nodeTraffic": "源在目标所在的节点上使用主机网络。来自 Pod 自身节点的流量始终被允许。",
+    "allowedByRule": "允许依据：",
+    "deniedByRule": "拒绝依据：",
+    "noRuleMatches": "有策略选择了此 Pod，但它们的规则都不允许此流量。",
+    "unknown": "Sextant 无法判断，原因如下："
+  },
+  "match": {
+    "peer": "对端 {{n}}：{{peer}}",
+    "anyPeer": "任意对端",
+    "port": "端口 {{n}}：{{port}}",
+    "anyPort": "任意端口"
+  },
+  "checks": {
+    "title": {
+      "egress_other": "{{count}} 条策略为出站流量选择了源",
+      "ingress_other": "{{count}} 条策略为入站流量选择了目标"
+    },
+    "policy": "策略",
+    "rule": "规则",
+    "matches": "匹配",
+    "why": "原因",
+    "noRules": "没有规则",
+    "noRulesWhy": {
+      "egress": "该策略为出站流量隔离了 Pod，且不允许任何流量。",
+      "ingress": "该策略为入站流量隔离了 Pod，且不允许任何流量。"
+    }
+  },
+  "rule": {
+    "ingress": "Ingress 规则 {{n}}",
+    "egress": "Egress 规则 {{n}}",
+    "ingressDeny": "Ingress 拒绝规则 {{n}}",
+    "egressDeny": "Egress 拒绝规则 {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "允许此流量。",
+    "denies": "拒绝此流量。",
+    "empty": "在 Cilium 中，空规则不匹配任何内容。",
+    "local": "该规则不适用于此 Pod：{{reason}}",
+    "peerN": "对端 {{n}}：{{reason}}",
+    "portN": "端口 {{n}}：{{reason}}"
+  },
+  "peerReason": {
+    "match": "匹配。",
+    "namespace": "该 Pod 位于 namespace {{actual}}；此对端只选择 namespace {{expected}} 中的 Pod。",
+    "namespaceSelector": "namespace {{namespace}} 的 label 为 {{labels}}，与 {{selector}} 不匹配。",
+    "namespaceNoMatch": "namespace {{namespace}}（label 为 {{labels}}）与 namespace 选择器不匹配。",
+    "namespaceLabelsUnknown": "namespace {{namespace}} 的 label 未知：无法列出 Namespaces。",
+    "podSelector": "该 Pod 的 label {{labels}} 与 {{selector}} 不匹配。",
+    "podNoMatch": "该 Pod 的 label {{labels}} 与选择器不匹配。",
+    "podNoLabels": "该 Pod 没有 label，因此与 {{selector}} 不匹配。",
+    "notPod": "Pod 和 namespace 选择器从不选择集群外的地址。",
+    "ipBlock": "该地址不在 {{cidr}} 内。",
+    "ipBlockExcept": "该地址位于 {{except}} 内，而块 {{cidr}} 排除了它。",
+    "ipBlockPod": "该 Pod 的 IP 位于 {{cidr}} 内。ipBlock 是否适用于 Pod IP 取决于网络插件。",
+    "ipUnknown": "该 Pod 的 IP 未知。",
+    "cidrNotPods": "Cilium 的 CIDR 规则不会选择 Pod。",
+    "entity": "Cilium 实体 {{entity}} 不涵盖这一侧。",
+    "networkSet": "Calico 的 network set 可能包含此地址。"
+  },
+  "portReason": {
+    "match": "匹配。",
+    "protocol": "该规则针对 {{protocol}}。",
+    "otherProtocol": "该规则针对其他协议。",
+    "port": "该规则针对端口 {{port}}。",
+    "namedUnresolved": "目标 Pod 没有此协议下名为 {{name}} 的端口。",
+    "namedOther": "端口 {{name}} 在目标 Pod 上是 {{port}}。",
+    "namedExternal": "对于集群外的地址，命名端口永远不会被解析。"
+  },
+  "reason": {
+    "unmodelled": "使用了 Sextant 不建模的功能：{{feature}}。"
+  },
+  "unknown": {
+    "unreadable": "无法读取 namespace {{namespace}} 中的 {{kind}} 对象。",
+    "unreadableClusterwide": "无法读取 {{kind}} 对象。",
+    "unevaluated": "{{kind}} {{name}} 可能生效，而 Sextant 不评估 {{kind}} 对象。",
+    "maybeSelected": "Sextant 无法判断 {{policy}} 是否选择了该 Pod。",
+    "maybeIsolated": "Sextant 无法判断 {{policy}} 是否隔离了该 Pod。",
+    "maybeRule": "{{policy}}，{{rule}}：{{reason}}",
+    "unmodelledRule": "未评估：{{flavor}} {{policy}} 的 {{rule}} 使用了 Sextant 不建模的功能：{{features}}。",
+    "unmodelledPolicy": "未评估：{{flavor}} {{policy}} 使用了 Sextant 不建模的功能：{{features}}。",
+    "hostNetworkSource": "源在另一个节点上使用主机网络。它的流量来自节点地址，Pod 选择器不会匹配该地址；ipBlock 是否匹配取决于网络插件。",
+    "mixed": "Cilium 和 Calico 策略都选择了该 Pod，而 Sextant 不会合并它们。"
+  },
+  "note": {
+    "self": "源和目标是同一个 Pod。经由 localhost 的流量永远不会被阻止；发往 Pod 自身 IP 的流量在这里按策略评估，但不同网络插件的行为可能不同。",
+    "ipBlockPods": "ipBlock 用于集群外的地址。它是否匹配 Pod IP 取决于网络插件，因此此类匹配视为未知。",
+    "externalSource": "来自外部的流量通常经由 NodePort、负载均衡器或 ingress 控制器到达，除非 externalTrafficPolicy 为 Local，否则它们可能会替换源地址。",
+    "calicoOrder": "Calico 按顺序评估策略（先按 order，再按名称），Kubernetes NetworkPolicy 视为 order 1000。第一条匹配的 Allow 或 Deny 规则决定结果。",
+    "service": "发往 Service 的流量会针对它选择的每个 Pod，在目标端口上进行检查。",
+    "serviceNodePort": "这个 {{type}} 类型的 Service 也可以通过节点端口从外部访问。除非 externalTrafficPolicy 为 Local，否则此类流量可能来自某个节点的地址。"
+  },
+  "dns": {
+    "denied": "源已为出站流量隔离，而它的策略不允许 DNS（发往 kube-system 中 kube-dns 的 UDP 端口 53）。即使连接被允许，它也无法解析名称。",
+    "unknown": "源已为出站流量隔离，Sextant 无法判断它的策略是否允许 DNS（发往 kube-system 中 kube-dns 的 UDP 端口 53）。",
+    "tcpDenied": "源的策略允许通过 UDP 进行 DNS，但不允许 TCP 端口 53。回退到 TCP 的大型 DNS 响应将会失败。"
+  },
+  "service": {
+    "backends": "Service 后面的 Pod",
+    "pod": "Pod",
+    "port": "Pod 端口",
+    "result": "结果",
+    "noTargetPort": "无此端口",
+    "details": "Pod {{pod}} 的详细信息",
+    "more_other": "还有 {{count}} 个 Pod 未显示。",
+    "externalName": "ExternalName 类型的 Service 是 DNS 别名：没有 Pod 接收它的流量。",
+    "noSelector": "该 Service 没有选择器：它的 endpoints 由人工维护，因此 Sextant 无法判断哪些 Pod 接收流量。",
+    "noPods": "该 Service 没有选择任何运行中的 Pod。",
+    "noPort": "该 Service 后面没有 Pod 具有目标端口。"
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "namespace {{namespace}} 中匹配 {{selector}} 的 Pod",
+    "allPods": "namespace {{namespace}} 中的所有 Pod",
+    "ciliumHere": "namespace {{namespace}} 中匹配 {{selector}} 的 endpoints",
+    "ciliumEverywhere": "所有 namespace 中匹配 {{selector}} 的 endpoints",
+    "calicoHere": "namespace {{namespace}} 中匹配 Calico 选择器 {{selector}} 的 Pod",
+    "calicoEverywhere": "所有 namespace 中匹配 Calico 选择器 {{selector}} 的 Pod"
+  },
+  "peer": {
+    "podsHere": "namespace {{namespace}} 中匹配 {{selector}} 的 Pod",
+    "allPodsHere": "namespace {{namespace}} 中的所有 Pod",
+    "podsInNamespaces": "匹配 {{namespaces}} 的 namespace 中匹配 {{selector}} 的 Pod",
+    "allPodsInNamespaces": "匹配 {{namespaces}} 的 namespace 中的所有 Pod",
+    "podsEverywhere": "所有 namespace 中匹配 {{selector}} 的 Pod",
+    "everyPod": "所有 namespace 中的所有 Pod",
+    "ipBlock": "{{cidr}} 中的地址",
+    "ipBlockExcept": "{{cidr}} 中除 {{except}} 外的地址",
+    "ciliumEndpointsHere": "namespace {{namespace}} 中匹配 {{selector}} 的 endpoints",
+    "ciliumEndpoints": "匹配 {{selector}} 的 endpoints",
+    "entity": "Cilium 实体 {{entity}}",
+    "unmodelled": "{{feature}}（Sextant 不建模）",
+    "calico": "Calico 匹配条件 {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "名为 {{name}} 的 {{protocol}} 端口",
+    "anyOf": "所有 {{protocol}} 端口",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "规则",
+    "peers": {
+      "ingress": "来源",
+      "egress": "去向"
+    },
+    "ports": "端口",
+    "anyPeer": {
+      "ingress": "任意源",
+      "egress": "任意目标"
+    },
+    "anyPort": "任意端口",
+    "empty": "无（空的 Cilium 规则）",
+    "local": "仅适用于匹配 {{match}} 的所选 Pod",
+    "denyAll": {
+      "ingress": "没有 ingress 规则：发往所选 Pod 的所有入站流量都被拒绝。",
+      "egress": "没有 egress 规则：所选 Pod 的所有出站流量都被拒绝。"
+    },
+    "notRestricted": {
+      "ingress": "不限制入站流量。",
+      "egress": "不限制出站流量。"
+    }
+  },
+  "fields": {
+    "selects": "选择",
+    "selectedNow": "当前已选",
+    "noPods": "没有 Pod",
+    "morePods_other": "以及另外 {{count}} 个",
+    "types": "策略类型",
+    "typesDefaulted": "{{types}}（未设置 policyTypes：默认值）",
+    "typesNone": "无",
+    "order": "顺序",
+    "noOrder": "无（最后评估）",
+    "notModelled": "Sextant 不建模"
+  },
+  "details": {
+    "plainWords": "通俗解释",
+    "openMap": "namespace 策略图",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "此策略不选择任何 Pod（主机策略或 NetworkPolicy 的副本）。",
+    "noDns": "此策略不允许 DNS（发往 kube-system 中 kube-dns 的 UDP 端口 53）：除非其他策略允许，它选择的 Pod 将无法解析名称。",
+    "ignored": {
+      "ingress": "ingress 规则被忽略：policyTypes 不包含 Ingress。",
+      "egress": "egress 规则被忽略：policyTypes 不包含 Egress。"
+    },
+    "flavorNote": {
+      "cilium": "Cilium 策略：Sextant 评估它的 L3/L4 规则；L7 规则、FQDN 等功能视为未知。",
+      "ciliumClusterwide": "Cilium 策略：Sextant 评估它的 L3/L4 规则；L7 规则、FQDN 等功能视为未知。",
+      "calico": "Calico 策略：Sextant 按顺序评估 default 层的 Allow、Deny 和 Log 规则；其他功能视为未知。",
+      "calicoGlobal": "Calico 策略：Sextant 按顺序评估 default 层的 Allow、Deny 和 Log 规则；其他功能视为未知。"
+    }
+  },
+  "pod": {
+    "title": "网络策略",
+    "isolatedBy": "隔离策略：",
+    "maybeBy": "可能的隔离策略：",
+    "notIsolated": {
+      "ingress": "未隔离：允许所有入站流量",
+      "egress": "未隔离：允许所有出站流量"
+    },
+    "hostNetwork": "主机网络：NetworkPolicy 不适用",
+    "unknown": "未知：并非所有策略都能读取",
+    "check": "检查连通性…"
+  },
+  "map": {
+    "choose": "选择一个 namespace，查看其中哪些 Pod 被隔离，以及它们的策略允许什么。",
+    "summary_other": "{{count}} 个 Pod：入站隔离：{{ingress}}；出站隔离：{{egress}}。",
+    "pods": "Pod 及其隔离情况",
+    "pod": "Pod",
+    "isolatedBy": "隔离策略：{{policies}}",
+    "maybeBy": "可能的隔离策略：{{policies}}",
+    "notIsolated": {
+      "ingress": "未隔离：允许所有入站",
+      "egress": "未隔离：允许所有出站"
+    },
+    "hostNetwork": "主机网络：不受策略约束",
+    "unknown": "未知",
+    "noDns": "不允许 DNS",
+    "dnsUnknown": "可能不允许 DNS",
+    "more_other": "还有 {{count}} 个 Pod 未显示。",
+    "podsUnreadable": "无法列出 namespace {{namespace}} 中的 Pod。",
+    "policies": "策略",
+    "noPolicies": "此 namespace 中没有策略选择任何 Pod：每个 Pod 都接受所有入站流量并发送所有出站流量。",
+    "selects_other": "{{what}} — 当前选择了 {{count}} 个 Pod"
+  }
+}

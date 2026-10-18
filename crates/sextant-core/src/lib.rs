@@ -29,6 +29,7 @@ pub mod portforward;
 pub mod rbac;
 pub mod resources;
 pub mod settings;
+pub mod timeline;
 pub mod tls;
 pub mod upgrade;
 

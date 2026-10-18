@@ -1,0 +1,133 @@
+{
+  "sidebar": "Очищення",
+  "title": "Очищення",
+  "intro": "Об'єкти, які виглядають невикористовуваними або залишеними, — для кожного вказано причину. Об'єкт стає кандидатом, лише якщо всі списки, які можуть на нього посилатися, прочитано повністю; у разі сумніву його не пропонують. Нічого не видаляється, доки ви не виберете об'єкти й не підтвердите видалення.",
+  "loading": "Читання namespace…",
+  "chooseNamespace": "Виберіть namespace",
+  "chooseNamespaceText": "Ця сторінка перевіряє namespace, вибрані у фільтрі namespace. Щоб почати, виберіть один або кілька namespace.",
+  "firstNamespaces_one": "Перевіряється лише перший {{count}} вибраний namespace.",
+  "firstNamespaces_few": "Перевіряються лише перші {{count}} вибрані namespace.",
+  "firstNamespaces_many": "Перевіряються лише перші {{count}} вибраних namespace.",
+  "firstNamespaces_other": "Перевіряються лише перші {{count}} вибраних namespace.",
+  "excludedInView": "Не перевіряються, виключені в налаштуваннях: {{names}}",
+  "configsOff": "ConfigMap і Secret не перевіряються. Їх перевірку можна ввімкнути в налаштуваннях.",
+  "configsWarning": "Sextant бачить не всі посилання на ConfigMap і Secret: оператори й користувацькі ресурси, яких він не знає, драйвери CSI, аргументи контролерів і застосунки, що читають їх через API. Перевірте кожен об'єкт перед видаленням.",
+  "blocked": "ConfigMap, Secret, PersistentVolumeClaim і Service у {{namespace}} не оцінюються: там є об'єкти видів, які Sextant не читає ({{kinds}}).",
+  "unavailableGroups": "Деякі групи API не відповідають ({{groups}}): їхні об'єкти не видно, тому ConfigMap, Secret, PersistentVolumeClaim, Service і namespace не пропонуються.",
+  "clusterFailed": "Не вдалося перевірити об'єкти рівня кластера та групи API: ConfigMap, Secret, PersistentVolumeClaim, Service і namespace не пропонуються.",
+  "clusterUnread": "Не вдалося прочитати всі об'єкти цих видів рівня кластера, тому ConfigMap і Secret не пропонуються: {{kinds}}",
+  "sampleFailed": "Не вдалося перевірити весь вміст {{namespace}}: його ConfigMap, Secret, PersistentVolumeClaim і сам namespace не пропонуються.",
+  "checkAgain": "Перевірити знову",
+  "nothingChecked": "Усі вибрані namespace виключені в налаштуваннях.",
+  "watchFailed": "Не вдалося отримати {{kind}}",
+  "forbidden": "Немає прав на отримання {{kind}} у: {{names}}",
+  "unchecked": "Деякі об'єкти не оцінено, бо ці списки ще не прочитано повністю: {{kinds}}",
+  "none": "У перевірених namespace нічого очищати.",
+  "truncated_one": "Кандидатів забагато: показано лише першого {{count}}.",
+  "truncated_few": "Кандидатів забагато: показано лише перших {{count}}.",
+  "truncated_many": "Кандидатів забагато: показано лише перших {{count}}.",
+  "truncated_other": "Кандидатів забагато: показано лише перших {{count}}.",
+  "rule": {
+    "configMap": "ConfigMap, які ніщо не використовує",
+    "secret": "Secret, які ніщо не використовує",
+    "claim": "PersistentVolumeClaim, які не монтує жоден Pod",
+    "volume": "Звільнені або незайняті PersistentVolume",
+    "service": "Service без кінцевих точок",
+    "replicaSet": "Старі ReplicaSet понад історію ревізій",
+    "pod": "Завершені Pod",
+    "job": "Завершені Job",
+    "namespace": "Порожні namespace"
+  },
+  "reason": {
+    "configMapUnused": "На нього не посилається жоден Pod, шаблон Pod чи інший відстежуваний об'єкт.",
+    "secretUnused": "На нього не посилається жоден Pod, шаблон Pod, ServiceAccount, Ingress, Gateway, об'єкт cert-manager чи Flux.",
+    "claimUnmounted": "Жоден Pod його не монтує, і на нього не посилаються ні шаблони Pod, ні StatefulSet, ні VolumeSnapshot, ні інші PersistentVolumeClaim.",
+    "volumeReleased": "Released: його PersistentVolumeClaim {{claim}} видалено.",
+    "volumeAvailable": "Available і не прив'язаний до жодного PersistentVolumeClaim.",
+    "serviceNoEndpoints": "Немає кінцевих точок, і його selector не збігається з жодним Pod чи шаблоном Pod.",
+    "serviceNoSelector": "Немає ні selector, ні кінцевих точок, ні об'єкта Endpoints.",
+    "replicaSetHistory": "Ревізія {{revision}} Deployment {{deployment}} понад його revisionHistoryLimit: {{limit}}.",
+    "podSucceeded": "Succeeded, і жоден Job ним не володіє.",
+    "podFailed": "Failed, і жоден Job ним не володіє.",
+    "jobComplete": "Завершено; жоден CronJob ним не володіє, ttlSecondsAfterFinished не задано.",
+    "jobFailed": "Завершився з помилкою; жоден CronJob ним не володіє, ttlSecondsAfterFinished не задано.",
+    "namespaceEmpty": "Не містить об'єктів перевірюваних видів, окрім тих, що Kubernetes створює в кожному namespace. Об'єкти інших видів не перевіряються."
+  },
+  "since": {
+    "created": "створено {{age}} тому",
+    "finished": "завершено {{age}} тому",
+    "phaseChanged": "у цій фазі {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "Його том {{volume}} має політику Delete: дані буде видалено.",
+    "reclaimRetain": "Його том {{volume}} має політику Retain: дані залишаться у сховищі.",
+    "reclaimOther": "Його том {{volume}} має політику {{policy}}."
+  },
+  "column": {
+    "object": "Об'єкт",
+    "reason": "Чому виглядає невикористовуваним",
+    "age": "Вік",
+    "impact": "Якщо видалити",
+    "manager": "Керується"
+  },
+  "open": "Відкрити {{kind}} {{name}}",
+  "select": "Вибрати {{kind}} {{name}}",
+  "selectGroup": "Вибрати всі: {{group}}",
+  "deleteSelected": "Видалити вибрані ({{count}})…",
+  "managed": {
+    "title": "Керуються інструментом, видалення не пропонується",
+    "text": "Вони теж виглядають невикористовуваними, але ними керує інструмент: він створить їх знову або втратить їх з поля зору. Видаляйте їх через цей інструмент.",
+    "helm": "Реліз Helm {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Застосунок Argo CD {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Зберігаються навмисно, видалення не пропонується",
+    "retain": "Політика Retain: дані зберігаються навмисно."
+  },
+  "settings": {
+    "button": "Налаштування…",
+    "title": "Налаштування очищення",
+    "checkConfigMaps": "Пропонувати ConfigMap, які, схоже, ніщо не використовує",
+    "checkSecrets": "Пропонувати Secret, які, схоже, ніщо не використовує",
+    "excluded": "Namespace, які ніколи не перевіряються",
+    "excludedHint": "По одному на рядок. kube-system, kube-public і kube-node-lease не перевіряються ніколи.",
+    "days": "Пропонувати лише об'єкти, старші за цей строк, у днях",
+    "ages": {
+      "configs": "ConfigMap і Secret: днів від створення",
+      "services": "Service: днів від створення",
+      "pods": "Завершені Pod: днів від завершення",
+      "jobs": "Завершені Job: днів від завершення",
+      "claims": "PersistentVolumeClaim: днів від створення",
+      "volumes": "PersistentVolume: днів у поточній фазі",
+      "namespaces": "Порожні namespace: днів від створення"
+    },
+    "save": "Зберегти",
+    "saveFailed": "Не вдалося зберегти налаштування"
+  },
+  "dialog": {
+    "title_one": "Видалити {{count}} об'єкт",
+    "title_few": "Видалити {{count}} об'єкти",
+    "title_many": "Видалити {{count}} об'єктів",
+    "title_other": "Видалити {{count}} об'єкта",
+    "text": "Кожен об'єкт перевіряється ще раз безпосередньо перед видаленням: об'єкт, що змінився або знову використовується, зберігається. Видалення не можна скасувати.",
+    "namespaceWarning": "Видалення namespace видаляє все, що в ньому є, зокрема об'єкти видів, які ця сторінка не перевіряє.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Введіть {{count}} для підтвердження",
+    "confirm": "Видалити",
+    "progress": "Видалення: {{done}} з {{total}}",
+    "stop": "Зупинити",
+    "resultTitle": "Результат очищення",
+    "summary": "Видалено: {{deleted}}. Збережено: {{kept}}. З помилкою: {{failed}}.",
+    "outcome": {
+      "deleted": "Видалено",
+      "gone": "Уже видалено",
+      "notCandidate": "Збережено: більше не виглядає невикористовуваним",
+      "changed": "Збережено: змінився після перевірки",
+      "failed": "Помилка",
+      "stopped": "Не виконувалося: зупинено"
+    }
+  }
+}

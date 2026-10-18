@@ -1,0 +1,181 @@
+/* The "Cleanup" page: candidates grouped by rule, managed objects, the confirmation and the settings. */
+.cln-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.cln-page__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.cln-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.cln-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.cln-note--warning {
+  color: var(--color-warning);
+}
+
+.cln-muted {
+  color: var(--color-text-muted);
+}
+
+.cln-error,
+.cln-loading {
+  margin: 8px 0;
+}
+
+.cln-group {
+  margin: 16px 0;
+}
+
+.cln-group__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.cln-managed__title {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+
+.cln-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.cln-table th,
+.cln-table td {
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cln-table th {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.cln-table__check {
+  width: 28px;
+}
+
+.cln-object {
+  display: inline-flex;
+  gap: 6px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.cln-reason {
+  min-width: 200px;
+}
+
+.cln-age {
+  white-space: nowrap;
+}
+
+.cln-impact__list {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.cln-confirm-list {
+  max-height: 40vh;
+  overflow: auto;
+  margin: 8px 0;
+}
+
+.cln-confirm-list__kind {
+  margin: 8px 0 2px;
+  font-size: 13px;
+}
+
+.cln-type-count {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.cln-type-count__input {
+  max-width: 120px;
+}
+
+.cln-outcomes {
+  max-height: 50vh;
+  overflow: auto;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cln-outcome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 2px 0;
+  overflow-wrap: anywhere;
+}
+
+.cln-outcome--failed {
+  color: var(--color-danger);
+}
+
+.cln-outcome--changed,
+.cln-outcome--notCandidate,
+.cln-outcome--stopped {
+  color: var(--color-warning);
+}
+
+.cln-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.cln-field__text {
+  font-family: var(--font-mono, monospace);
+}
+
+.cln-ages {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.cln-ages__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cln-ages__input {
+  width: 90px;
+}
+
+.cln-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

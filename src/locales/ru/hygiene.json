@@ -1,0 +1,133 @@
+{
+  "sidebar": "Очистка",
+  "title": "Очистка",
+  "intro": "Объекты, которые выглядят неиспользуемыми или оставшимися, — у каждого указана причина. Объект становится кандидатом, только если все списки, которые могут на него ссылаться, прочитаны полностью; при сомнении он не предлагается. Ничего не удаляется, пока вы не выберете объекты и не подтвердите удаление.",
+  "loading": "Чтение namespace…",
+  "chooseNamespace": "Выберите namespace",
+  "chooseNamespaceText": "Эта страница проверяет namespace, выбранные в фильтре namespace. Чтобы начать, выберите один или несколько namespace.",
+  "firstNamespaces_one": "Проверяется только первый {{count}} выбранный namespace.",
+  "firstNamespaces_few": "Проверяются только первые {{count}} выбранных namespace.",
+  "firstNamespaces_many": "Проверяются только первые {{count}} выбранных namespace.",
+  "firstNamespaces_other": "Проверяются только первые {{count}} выбранных namespace.",
+  "excludedInView": "Не проверяются, исключены в настройках: {{names}}",
+  "configsOff": "ConfigMap и Secret не проверяются. Их проверку можно включить в настройках.",
+  "configsWarning": "Sextant видит не все ссылки на ConfigMap и Secret: операторы и пользовательские ресурсы, которых он не знает, драйверы CSI, аргументы контроллеров и приложения, читающие их через API. Проверьте каждый объект перед удалением.",
+  "blocked": "ConfigMap, Secret, PersistentVolumeClaim и Service в {{namespace}} не оцениваются: там есть объекты видов, которые Sextant не читает ({{kinds}}).",
+  "unavailableGroups": "Некоторые группы API не отвечают ({{groups}}): их объекты не видны, поэтому ConfigMap, Secret, PersistentVolumeClaim, Service и namespace не предлагаются.",
+  "clusterFailed": "Не удалось проверить объекты уровня кластера и группы API: ConfigMap, Secret, PersistentVolumeClaim, Service и namespace не предлагаются.",
+  "clusterUnread": "Не удалось прочитать все объекты этих видов уровня кластера, поэтому ConfigMap и Secret не предлагаются: {{kinds}}",
+  "sampleFailed": "Не удалось проверить всё содержимое {{namespace}}: его ConfigMap, Secret, PersistentVolumeClaim и сам namespace не предлагаются.",
+  "checkAgain": "Проверить снова",
+  "nothingChecked": "Все выбранные namespace исключены в настройках.",
+  "watchFailed": "Не удалось получить {{kind}}",
+  "forbidden": "Нет прав на получение {{kind}} в: {{names}}",
+  "unchecked": "Некоторые объекты не оценены, потому что эти списки ещё не прочитаны полностью: {{kinds}}",
+  "none": "В проверенных namespace нечего очищать.",
+  "truncated_one": "Кандидатов слишком много: показан только первый {{count}}.",
+  "truncated_few": "Кандидатов слишком много: показаны только первые {{count}}.",
+  "truncated_many": "Кандидатов слишком много: показаны только первые {{count}}.",
+  "truncated_other": "Кандидатов слишком много: показаны только первые {{count}}.",
+  "rule": {
+    "configMap": "ConfigMap, которые ничем не используются",
+    "secret": "Secret, которые ничем не используются",
+    "claim": "PersistentVolumeClaim, которые не монтирует ни один Pod",
+    "volume": "Освобождённые или незанятые PersistentVolume",
+    "service": "Service без конечных точек",
+    "replicaSet": "Старые ReplicaSet сверх истории ревизий",
+    "pod": "Завершённые Pod",
+    "job": "Завершённые Job",
+    "namespace": "Пустые namespace"
+  },
+  "reason": {
+    "configMapUnused": "На него не ссылается ни один Pod, шаблон Pod или другой отслеживаемый объект.",
+    "secretUnused": "На него не ссылается ни один Pod, шаблон Pod, ServiceAccount, Ingress, Gateway, объект cert-manager или Flux.",
+    "claimUnmounted": "Ни один Pod его не монтирует, и на него не ссылаются ни шаблоны Pod, ни StatefulSet, ни VolumeSnapshot, ни другие PersistentVolumeClaim.",
+    "volumeReleased": "Released: его PersistentVolumeClaim {{claim}} удалён.",
+    "volumeAvailable": "Available и не привязан ни к одному PersistentVolumeClaim.",
+    "serviceNoEndpoints": "Нет конечных точек, и его selector не совпадает ни с одним Pod или шаблоном Pod.",
+    "serviceNoSelector": "Нет ни selector, ни конечных точек, ни объекта Endpoints.",
+    "replicaSetHistory": "Ревизия {{revision}} Deployment {{deployment}} сверх его revisionHistoryLimit: {{limit}}.",
+    "podSucceeded": "Succeeded, и ни один Job им не владеет.",
+    "podFailed": "Failed, и ни один Job им не владеет.",
+    "jobComplete": "Завершён; ни один CronJob им не владеет, ttlSecondsAfterFinished не задан.",
+    "jobFailed": "Завершился с ошибкой; ни один CronJob им не владеет, ttlSecondsAfterFinished не задан.",
+    "namespaceEmpty": "Не содержит объектов проверяемых видов, кроме тех, что Kubernetes создаёт в каждом namespace. Объекты других видов не проверяются."
+  },
+  "since": {
+    "created": "создан {{age}} назад",
+    "finished": "завершён {{age}} назад",
+    "phaseChanged": "в этой фазе {{age}}"
+  },
+  "note": {
+    "reclaimDelete": "Его том {{volume}} с политикой Delete: данные будут удалены.",
+    "reclaimRetain": "Его том {{volume}} с политикой Retain: данные останутся в хранилище.",
+    "reclaimOther": "Его том {{volume}} с политикой {{policy}}."
+  },
+  "column": {
+    "object": "Объект",
+    "reason": "Почему выглядит неиспользуемым",
+    "age": "Возраст",
+    "impact": "Если удалить",
+    "manager": "Управляется"
+  },
+  "open": "Открыть {{kind}} {{name}}",
+  "select": "Выбрать {{kind}} {{name}}",
+  "selectGroup": "Выбрать все: {{group}}",
+  "deleteSelected": "Удалить выбранные ({{count}})…",
+  "managed": {
+    "title": "Управляются инструментом, удаление не предлагается",
+    "text": "Они тоже выглядят неиспользуемыми, но ими управляет инструмент: он создаст их снова или потеряет их из виду. Удаляйте их через этот инструмент.",
+    "helm": "Релиз Helm {{name}}",
+    "helmUnnamed": "Helm",
+    "flux": "Flux {{name}}",
+    "argocd": "Приложение Argo CD {{name}}",
+    "other": "{{name}}"
+  },
+  "kept": {
+    "title": "Сохраняются намеренно, удаление не предлагается",
+    "retain": "Политика Retain: данные сохраняются намеренно."
+  },
+  "settings": {
+    "button": "Настройки…",
+    "title": "Настройки очистки",
+    "checkConfigMaps": "Предлагать ConfigMap, которые, похоже, ничем не используются",
+    "checkSecrets": "Предлагать Secret, которые, похоже, ничем не используются",
+    "excluded": "Namespace, которые никогда не проверяются",
+    "excludedHint": "По одному на строку. kube-system, kube-public и kube-node-lease не проверяются никогда.",
+    "days": "Предлагать только объекты старше этого срока, в днях",
+    "ages": {
+      "configs": "ConfigMap и Secret: дней с создания",
+      "services": "Service: дней с создания",
+      "pods": "Завершённые Pod: дней с завершения",
+      "jobs": "Завершённые Job: дней с завершения",
+      "claims": "PersistentVolumeClaim: дней с создания",
+      "volumes": "PersistentVolume: дней в текущей фазе",
+      "namespaces": "Пустые namespace: дней с создания"
+    },
+    "save": "Сохранить",
+    "saveFailed": "Не удалось сохранить настройки"
+  },
+  "dialog": {
+    "title_one": "Удалить {{count}} объект",
+    "title_few": "Удалить {{count}} объекта",
+    "title_many": "Удалить {{count}} объектов",
+    "title_other": "Удалить {{count}} объекта",
+    "text": "Каждый объект проверяется ещё раз прямо перед удалением: изменившийся или снова используемый объект сохраняется. Удаление нельзя отменить.",
+    "namespaceWarning": "Удаление namespace удаляет всё, что в нём есть, включая объекты видов, которые эта страница не проверяет.",
+    "group": "{{kind}} ({{count}})",
+    "typeCount": "Введите {{count}} для подтверждения",
+    "confirm": "Удалить",
+    "progress": "Удаление: {{done}} из {{total}}",
+    "stop": "Остановить",
+    "resultTitle": "Результат очистки",
+    "summary": "Удалено: {{deleted}}. Сохранено: {{kept}}. С ошибкой: {{failed}}.",
+    "outcome": {
+      "deleted": "Удалён",
+      "gone": "Уже удалён",
+      "notCandidate": "Сохранён: больше не выглядит неиспользуемым",
+      "changed": "Сохранён: изменился после проверки",
+      "failed": "Ошибка",
+      "stopped": "Не выполнялось: остановлено"
+    }
+  }
+}

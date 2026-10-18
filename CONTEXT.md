@@ -432,3 +432,75 @@ _Avoid_: fleet (the code's name, not the interface's), dashboard, multi-cluster 
 **Selected clusters (All clusters)**:
 The clusters the overview shows, at most 10, kept in the settings. Selecting a cluster does not connect it.
 _Avoid_: favourite clusters, pinned clusters
+
+**Change timeline**:
+What changed in a cluster, when and by whom: the page "Timeline" of the Cluster section and the "Changes" tab of an object's details. Sextant records changes of the objects its open views already watch while it is connected; it never opens a watch only to record. Read-only.
+_Avoid_: audit log (Sextant does not read the API server's audit log), history, event log
+
+**Recorded change**:
+One entry of the change timeline: an object created, changed (with the fields that changed, values clipped) or deleted, as Sextant saw it. A Secret's change names its keys, never values.
+_Avoid_: event (an Event is a Kubernetes object), diff (alone)
+
+**Seen later**:
+A recorded change of an object nothing watched for a while: Sextant noticed it when the object was listed again, so it was made at some time before.
+_Avoid_: late event, delayed change
+
+**History before Sextant (partial)**:
+What the cluster itself keeps from before Sextant was running: the last change of each field manager of each object, rollout revisions and Helm release revisions. Marked "Partial": earlier changes by the same manager, and anything else, are not known.
+_Avoid_: full history, audit
+
+**Changed by (field manager)**:
+Who made a recorded change, named by the field managers whose time moved; "Probably by" when none moved and the most recent writer is named instead. A field manager is a program name (`kubectl-client-side-apply`, `helm`, `sextant`), not a person.
+_Avoid_: author, user
+
+**Keep between restarts (timeline)**:
+The setting (`timeline.persist`, off by default) that saves each cluster's recorded changes in a file on this computer and loads them at the next start. Turning it off removes the files.
+_Avoid_: timeline sync, export
+
+**Autoscaling insights**:
+Why something did or did not scale, in details sections: an HPA's scaling decision, the workload an HPA or ScaledObject scales, a Pending Pod's "Why the Pod is not scheduled", and what KEDA, Karpenter and Cluster Autoscaler decided. Read-only.
+_Avoid_: autoscaling advisor, recommendations (that is right-sizing)
+
+**Scaling decision (estimate)**:
+The replicas an HPA's metrics ask for, computed with the HPA controller's formulas (ratio to target, tolerance, the largest proposal, min/max, the behavior's step limits). An estimate: the controller also counts only ready pods and stabilizes over a history Sextant does not see.
+_Avoid_: prediction, simulation
+
+**Tolerance (HPA)**:
+How far a metric may be from its target before an HPA changes the replica count: 10 % by default, or the behavior's own tolerance where the cluster supports it.
+_Avoid_: threshold, deadband
+
+**Why the Pod is not scheduled**:
+A Pending Pod's details section: the scheduler's FailedScheduling message as reasons with node counts, a check of the pod against the nodes filter by filter (what it does not check is listed), and what Karpenter or Cluster Autoscaler did about it.
+_Avoid_: scheduling simulation
+
+**Cleanup**:
+The page of the Cluster section with objects that look unused or left over, each with the reason and what deleting it would touch, and a bulk deletion that checks each object again right before deleting it.
+_Avoid_: hygiene (the code's name, not the interface's), garbage collection, prune
+
+**Cleanup candidate**:
+An object the Cleanup page offers for deletion: every list that could name it was read in full, nothing names it, it is old enough for its rule, and no tool manages it. When in doubt, an object is not a candidate.
+_Avoid_: orphan, garbage, unused (alone)
+
+**Not offered (managed, kept on purpose)**:
+Objects that look unused but are shown without a checkbox: those Helm, Flux, Argo CD or another `app.kubernetes.io/managed-by` tool manages ("remove them through the tool"), and Released volumes with reclaim policy Retain.
+_Avoid_: ignored, whitelisted
+
+**Namespace sample**:
+A metadata-only look at every kind a namespace holds (at most 5 names per served kind), taken when the Cleanup page opens or on "Check again". A namespace whose sample shows an object of a custom kind the page does not read is "blocked": its ConfigMaps, Secrets and claims are not judged, since that object may name them.
+_Avoid_: scan, inventory
+
+**Connectivity check**:
+"Can this source reach this destination on this port?" answered from the policy objects in the cluster (NetworkPolicy, and Cilium and Calico policies as far as they map to L3/L4 rules) on the page "Connectivity" of the Network section: Allowed, Denied or Unknown, with the policies that decide for each side. Not a test of live traffic.
+_Avoid_: ping, probe, reachability test
+
+**Unknown (connectivity)**:
+The answer when the objects cannot decide: an unreadable list, an `ipBlock` holding a pod IP, a feature Sextant does not model (L7, FQDN, tiers), or a policy kind it does not evaluate. Never rounded up to "Allowed".
+_Avoid_: maybe allowed, partial
+
+**Isolated (for ingress / egress)**:
+A pod some policy of that direction selects: only what such a policy allows may reach it (or leave it). A pod no policy selects is not isolated and allows everything in that direction.
+_Avoid_: protected, locked down
+
+**Unevaluated policy kind**:
+A policy kind the cluster serves that the connectivity check does not evaluate (AdminNetworkPolicy, BaselineAdminNetworkPolicy, ClusterNetworkPolicy, Antrea, OVN-Kubernetes, GKE FQDN policies). Its objects make answers in their namespace, or everywhere when cluster-wide, "Unknown".
+_Avoid_: unsupported CNI, ignored policy

@@ -24,6 +24,7 @@
     "boundTo": { "out": "绑定到", "in": "被绑定者" },
     "storageClass": { "out": "StorageClass", "in": "使用此类" },
     "class": { "out": "类", "in": "此类的对象" },
+    "parameters": { "out": "参数", "in": "作为参数用于" },
     "node": { "out": "运行于", "in": "运行的 Pod" }
   },
   "impact": {

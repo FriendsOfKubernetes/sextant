@@ -25,10 +25,12 @@ import {
   Bot,
   Box,
   Boxes,
+  BrushCleaning,
   BrickWall,
   Bug,
   CircleArrowUp,
   Cable,
+  ChartNoAxesGantt,
   ChartPie,
   ChevronDown,
   ChevronRight,
@@ -37,6 +39,7 @@ import {
   Clock,
   Container,
   Copy,
+  Cpu,
   Crosshair,
   Cylinder,
   Database,
@@ -64,6 +67,7 @@ import {
   Globe,
   GlobeLock,
   Grid2x2,
+  Hammer,
   Handshake,
   HardDrive,
   History,
@@ -131,6 +135,7 @@ import {
   Waypoints,
   Webhook,
   X,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -220,6 +225,7 @@ const ICONS = {
   ingress: Globe,
   ingressClass: Signpost,
   networkPolicy: BrickWall,
+  connectivity: ArrowLeftRight,
   portForwarding: ArrowLeftRight,
   persistentVolumeClaim: HardDrive,
   persistentVolume: Disc,
@@ -281,6 +287,19 @@ const ICONS = {
   trivySbom: PackageSearch,
   // Upgrade readiness (src/features/upgrade): the page of the Cluster section.
   upgradeReadiness: CircleArrowUp,
+  // Change timeline (src/features/timeline): the page of the Cluster section.
+  changeTimeline: ChartNoAxesGantt,
+  // Cleanup (src/features/hygiene): the page of the Cluster section.
+  cleanup: BrushCleaning,
+  // Autoscaling insights (src/features/autoscaling): the KEDA and Karpenter sections and their kinds.
+  keda: Zap,
+  karpenter: Hammer,
+  scaledObject: TrendingUp,
+  scaledJob: Play,
+  triggerAuthentication: KeySquare,
+  nodePool: ServerCog,
+  nodeClaim: Server,
+  nodeClass: Cpu,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */

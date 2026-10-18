@@ -13,6 +13,8 @@
     "accessControl": "액세스 제어",
     "certManager": "cert-manager",
     "trivy": "Trivy",
+    "keda": "KEDA",
+    "karpenter": "Karpenter",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "사용자 지정 리소스"

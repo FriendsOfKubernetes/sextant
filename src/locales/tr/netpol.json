@@ -1,0 +1,339 @@
+{
+  "sidebar": "Bağlantı",
+  "title": "Ağ bağlantısı",
+  "banner": "Sextant gerçek trafiğe değil, kümedeki ilke nesnelerine bakarak sonuç çıkarır. NetworkPolicy yalnızca kümenin ağ eklentisi (CNI) onu uyguladığında etkilidir. Cilium ve Calico ilkeleri, L3/L4 kurallarına karşılık geldikleri ölçüde değerlendirilir.",
+  "loading": "Pod'lar ve ilkeler okunuyor…",
+  "tabs": {
+    "label": "Bağlantı görünümleri",
+    "check": "Denetim",
+    "map": "İlke haritası"
+  },
+  "form": {
+    "source": "Kaynak",
+    "destination": "Hedef",
+    "type": {
+      "pod": "Pod",
+      "labels": "Namespace ve label'lar",
+      "external": "Küme dışındaki IP adresi",
+      "service": "Service"
+    },
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "labels": "Label'lar",
+    "labelsPlaceholder": "app=web, tier=api",
+    "ip": "IP adresi",
+    "ipPlaceholder": "203.0.113.10",
+    "service": "Service",
+    "servicePort": "Service bağlantı noktası",
+    "servicePortOption": "{{port}}/{{protocol}} → {{target}}",
+    "servicePortNamed": "{{name}}: {{port}}/{{protocol}} → {{target}}",
+    "port": "Bağlantı noktası",
+    "portPlaceholder": "80 veya http",
+    "protocol": "Protokol",
+    "choose": "Seçin…",
+    "loadingNames": "Yükleniyor…",
+    "check": "Denetle"
+  },
+  "errors": {
+    "chooseNamespace": "Bir namespace seçin.",
+    "choosePod": "Bir Pod seçin.",
+    "podGone": "{{name}} Pod'u artık {{namespace}} namespace'inde değil.",
+    "labels": "Label'ları virgülle ayrılmış key=value biçiminde yazın.",
+    "ip": "Bir IPv4 veya IPv6 adresi girin.",
+    "port": "1 ile 65535 arasında bir bağlantı noktası numarası ya da bir kapsayıcı bağlantı noktasının adını girin.",
+    "portName": "Hedef Pod'da {{name}} adlı bir {{protocol}} bağlantı noktası yok.",
+    "chooseService": "Bir Service seçin.",
+    "serviceGone": "{{name}} Service'i artık {{namespace}} namespace'inde değil.",
+    "chooseServicePort": "Service'in bir bağlantı noktasını seçin."
+  },
+  "endpoint": {
+    "labels": "{{namespace}} içinde {{labels}} label'lı bir Pod",
+    "anyPod": "{{namespace}} içinde label'sız bir Pod"
+  },
+  "verdict": {
+    "allowed": "İzin verildi",
+    "denied": "Reddedildi",
+    "unknown": "Bilinmiyor"
+  },
+  "tri": {
+    "yes": "Evet",
+    "no": "Hayır",
+    "maybe": "Belirlenemiyor"
+  },
+  "result": {
+    "label": "Sonuç",
+    "allowed": "İzin verildi: ilkeler bu trafiğe izin veriyor.",
+    "denied": "Reddedildi: ilkeler bu trafiğe izin vermiyor.",
+    "unknown": "Bilinmiyor: Sextant bu trafiğe izin verilip verilmediğini nesnelerden belirleyemiyor.",
+    "service": {
+      "allowed": "Service'in arkasındaki tüm Pod'lara izin verildi.",
+      "denied": "Service'in arkasındaki tüm Pod'lara reddedildi.",
+      "unknown": "Service'in arkasındaki bazı Pod'lar için bilinmiyor."
+    },
+    "partial_one": "Service'in arkasındaki {{count}} Pod'dan {{allowed}} tanesine izin verildi.",
+    "partial_other": "Service'in arkasındaki {{count}} Pod'dan {{allowed}} tanesine izin verildi.",
+    "nothing": "Denetlenecek bir şey yok.",
+    "egressFrom": "{{source}} kaynağından giden trafik",
+    "ingressTo": "{{destination}} hedefine gelen trafik"
+  },
+  "why": {
+    "notIsolated": {
+      "egress": "Hiçbir ilke kaynağı giden trafik için seçmiyor, bu nedenle tüm giden trafiğine izin veriliyor.",
+      "ingress": "Hiçbir ilke hedefi gelen trafik için seçmiyor, bu nedenle ona gelen tüm trafiğe izin veriliyor."
+    },
+    "hostNetwork": {
+      "egress": "Kaynak ana bilgisayar ağını kullanıyor: NetworkPolicy ona uygulanmaz.",
+      "ingress": "Hedef ana bilgisayar ağını kullanıyor: NetworkPolicy ona uygulanmaz."
+    },
+    "external": {
+      "egress": "Kaynak küme dışında: kümenin hiçbir giden trafik ilkesi ona uygulanmaz.",
+      "ingress": "Hedef küme dışında: yalnızca kaynağın giden trafiği belirleyicidir."
+    },
+    "nodeTraffic": "Kaynak, hedefin düğümünde ana bilgisayar ağını kullanıyor. Bir Pod'un kendi düğümünden gelen trafiğe her zaman izin verilir.",
+    "allowedByRule": "İzin veren:",
+    "deniedByRule": "Reddeden:",
+    "noRuleMatches": "Bu Pod'u ilkeler seçiyor ve bunların hiçbir kuralı bu trafiğe izin vermiyor.",
+    "unknown": "Sextant belirleyemiyor, çünkü:"
+  },
+  "match": {
+    "peer": "eş {{n}}: {{peer}}",
+    "anyPeer": "herhangi bir eş",
+    "port": "bağlantı noktası {{n}}: {{port}}",
+    "anyPort": "herhangi bir bağlantı noktası"
+  },
+  "checks": {
+    "title": {
+      "egress_one": "{{count}} ilke kaynağı giden trafik için seçiyor",
+      "egress_other": "{{count}} ilke kaynağı giden trafik için seçiyor",
+      "ingress_one": "{{count}} ilke hedefi gelen trafik için seçiyor",
+      "ingress_other": "{{count}} ilke hedefi gelen trafik için seçiyor"
+    },
+    "policy": "İlke",
+    "rule": "Kural",
+    "matches": "Eşleşiyor",
+    "why": "Neden",
+    "noRules": "Kural yok",
+    "noRulesWhy": {
+      "egress": "İlke Pod'u giden trafik için yalıtıyor ve hiçbir şeye izin vermiyor.",
+      "ingress": "İlke Pod'u gelen trafik için yalıtıyor ve hiçbir şeye izin vermiyor."
+    }
+  },
+  "rule": {
+    "ingress": "Ingress kuralı {{n}}",
+    "egress": "Egress kuralı {{n}}",
+    "ingressDeny": "Ingress reddetme kuralı {{n}}",
+    "egressDeny": "Egress reddetme kuralı {{n}}"
+  },
+  "action": {
+    "deny": "Deny",
+    "log": "Log",
+    "pass": "Pass"
+  },
+  "ruleWhy": {
+    "allows": "Bu trafiğe izin veriyor.",
+    "denies": "Bu trafiği reddediyor.",
+    "empty": "Cilium'da boş bir kural hiçbir şeyle eşleşmez.",
+    "local": "Kural bu Pod'a uygulanmıyor: {{reason}}",
+    "peerN": "Eş {{n}}: {{reason}}",
+    "portN": "Bağlantı noktası {{n}}: {{reason}}"
+  },
+  "peerReason": {
+    "match": "Eşleşiyor.",
+    "namespace": "Pod {{actual}} namespace'inde; bu eş yalnızca {{expected}} namespace'indeki Pod'ları seçer.",
+    "namespaceSelector": "{{namespace}} namespace'inin label'ları {{labels}}; bunlar {{selector}} ile eşleşmiyor.",
+    "namespaceNoMatch": "{{namespace}} namespace'i (label'lar {{labels}}) namespace seçicisiyle eşleşmiyor.",
+    "namespaceLabelsUnknown": "{{namespace}} namespace'inin label'ları bilinmiyor: Namespaces listelenemiyor.",
+    "podSelector": "Pod'un label'ları {{labels}}, {{selector}} ile eşleşmiyor.",
+    "podNoMatch": "Pod'un label'ları {{labels}}, seçiciyle eşleşmiyor.",
+    "podNoLabels": "Pod'un label'ı yok, bu nedenle {{selector}} ile eşleşmiyor.",
+    "notPod": "Pod ve namespace seçicileri küme dışındaki bir adresi asla seçmez.",
+    "ipBlock": "Adres {{cidr}} dışında.",
+    "ipBlockExcept": "Adres, {{cidr}} bloğunun hariç tuttuğu {{except}} içinde.",
+    "ipBlockPod": "Pod'un IP'si {{cidr}} içinde. Bir ipBlock'un Pod IP'lerine uygulanıp uygulanmadığı ağ eklentisine bağlıdır.",
+    "ipUnknown": "Pod'un IP'si bilinmiyor.",
+    "cidrNotPods": "Cilium CIDR kuralları Pod seçmez.",
+    "entity": "Cilium varlığı {{entity}} bu tarafı kapsamıyor.",
+    "networkSet": "Bir Calico network set'i bu adresi içerebilir."
+  },
+  "portReason": {
+    "match": "Eşleşiyor.",
+    "protocol": "Kural {{protocol}} için.",
+    "otherProtocol": "Kural başka bir protokol için.",
+    "port": "Kural {{port}} bağlantı noktası için.",
+    "namedUnresolved": "Hedef Pod'da bu protokol için {{name}} adlı bir bağlantı noktası yok.",
+    "namedOther": "{{name}} bağlantı noktası hedef Pod'da {{port}}.",
+    "namedExternal": "Adlandırılmış bir bağlantı noktası, küme dışındaki bir adres için asla çözümlenmez."
+  },
+  "reason": {
+    "unmodelled": "Sextant'ın modellemediği özellikler kullanıyor: {{feature}}."
+  },
+  "unknown": {
+    "unreadable": "{{namespace}} namespace'indeki {{kind}} nesneleri okunamadı.",
+    "unreadableClusterwide": "{{kind}} nesneleri okunamadı.",
+    "unevaluated": "{{kind}} {{name}} uygulanıyor olabilir ve Sextant {{kind}} nesnelerini değerlendirmez.",
+    "maybeSelected": "Sextant, {{policy}} ilkesinin Pod'u seçip seçmediğini belirleyemiyor.",
+    "maybeIsolated": "Sextant, {{policy}} ilkesinin Pod'u yalıtıp yalıtmadığını belirleyemiyor.",
+    "maybeRule": "{{policy}}, {{rule}}: {{reason}}",
+    "unmodelledRule": "Değerlendirilmedi: {{flavor}} {{policy}}, {{rule}} Sextant'ın modellemediği özellikler kullanıyor: {{features}}.",
+    "unmodelledPolicy": "Değerlendirilmedi: {{flavor}} {{policy}} Sextant'ın modellemediği özellikler kullanıyor: {{features}}.",
+    "hostNetworkSource": "Kaynak başka bir düğümde ana bilgisayar ağını kullanıyor. Trafiği düğümün adresinden gelir ve Pod seçicileri bununla eşleşmez; ağ eklentisine bağlı olarak bir ipBlock eşleşebilir.",
+    "mixed": "Pod'u hem Cilium hem de Calico ilkeleri seçiyor ve Sextant bunları birleştirmez."
+  },
+  "note": {
+    "self": "Kaynak ve hedef aynı Pod. localhost üzerinden giden trafik asla engellenmez; Pod'un kendi IP'sine giden trafik burada ilkelere göre değerlendirilir, ancak ağ eklentileri farklı davranır.",
+    "ipBlockPods": "ipBlock küme dışındaki adresler içindir. Pod IP'leriyle eşleşip eşleşmediği ağ eklentisine bağlıdır, bu nedenle bu tür eşleşmeler bilinmiyor sayılır.",
+    "externalSource": "Dışarıdan gelen trafik genellikle bir NodePort, yük dengeleyici veya ingress denetleyicisi üzerinden gelir; externalTrafficPolicy Local değilse bunlar kaynak adresini değiştirebilir.",
+    "calicoOrder": "Calico ilkeleri sırayla değerlendirir (önce order, sonra ada göre) ve Kubernetes NetworkPolicy'leri order 1000 sayılır. İlk eşleşen Allow veya Deny kuralı belirleyicidir.",
+    "service": "Bir Service'e giden trafik, seçtiği her Pod için hedef bağlantı noktasında denetlenir.",
+    "serviceNodePort": "Bu {{type}} türündeki Service'e düğüm bağlantı noktaları üzerinden dışarıdan da erişilebilir. externalTrafficPolicy Local değilse bu trafik bir düğümün adresinden gelebilir."
+  },
+  "dns": {
+    "denied": "Kaynak giden trafik için yalıtılmış ve ilkeleri DNS'e (kube-system içindeki kube-dns'e UDP 53 bağlantı noktası) izin vermiyor. Bir bağlantıya izin verilse bile adları çözümleyemez.",
+    "unknown": "Kaynak giden trafik için yalıtılmış ve Sextant, ilkelerinin DNS'e (kube-system içindeki kube-dns'e UDP 53 bağlantı noktası) izin verip vermediğini belirleyemiyor.",
+    "tcpDenied": "Kaynağın ilkeleri UDP üzerinden DNS'e izin veriyor, ancak TCP 53 bağlantı noktasına izin vermiyor. TCP'ye geçen büyük DNS yanıtları başarısız olur."
+  },
+  "service": {
+    "backends": "Service'in arkasındaki Pod'lar",
+    "pod": "Pod",
+    "port": "Pod bağlantı noktası",
+    "result": "Sonuç",
+    "noTargetPort": "Böyle bir bağlantı noktası yok",
+    "details": "{{pod}} Pod'unun ayrıntıları",
+    "more_one": "{{count}} Pod daha gösterilmiyor.",
+    "more_other": "{{count}} Pod daha gösterilmiyor.",
+    "externalName": "ExternalName türündeki bir Service bir DNS takma adıdır: trafiğini hiçbir Pod almaz.",
+    "noSelector": "Service'in seçicisi yok: endpoints'i elle yönetiliyor, bu nedenle Sextant trafiği hangi Pod'ların aldığını belirleyemiyor.",
+    "noPods": "Service çalışan hiçbir Pod seçmiyor.",
+    "noPort": "Service'in arkasındaki hiçbir Pod'da hedef bağlantı noktası yok."
+  },
+  "direction": {
+    "ingress": "Ingress",
+    "egress": "Egress"
+  },
+  "flavor": {
+    "kubernetes": "NetworkPolicy",
+    "cilium": "CiliumNetworkPolicy",
+    "ciliumClusterwide": "CiliumClusterwideNetworkPolicy",
+    "calico": "Calico NetworkPolicy",
+    "calicoGlobal": "Calico GlobalNetworkPolicy"
+  },
+  "selects": {
+    "pods": "{{namespace}} namespace'inde {{selector}} ile eşleşen Pod'lar",
+    "allPods": "{{namespace}} namespace'indeki tüm Pod'lar",
+    "ciliumHere": "{{namespace}} namespace'inde {{selector}} ile eşleşen endpoints",
+    "ciliumEverywhere": "Tüm namespace'lerde {{selector}} ile eşleşen endpoints",
+    "calicoHere": "{{namespace}} namespace'inde {{selector}} Calico seçicisiyle eşleşen Pod'lar",
+    "calicoEverywhere": "Tüm namespace'lerde {{selector}} Calico seçicisiyle eşleşen Pod'lar"
+  },
+  "peer": {
+    "podsHere": "{{namespace}} namespace'inde {{selector}} ile eşleşen Pod'lar",
+    "allPodsHere": "{{namespace}} namespace'indeki tüm Pod'lar",
+    "podsInNamespaces": "{{namespaces}} ile eşleşen namespace'lerde {{selector}} ile eşleşen Pod'lar",
+    "allPodsInNamespaces": "{{namespaces}} ile eşleşen namespace'lerdeki tüm Pod'lar",
+    "podsEverywhere": "Tüm namespace'lerde {{selector}} ile eşleşen Pod'lar",
+    "everyPod": "Tüm namespace'lerdeki tüm Pod'lar",
+    "ipBlock": "{{cidr}} içindeki adresler",
+    "ipBlockExcept": "{{except}} dışında {{cidr}} içindeki adresler",
+    "ciliumEndpointsHere": "{{namespace}} namespace'inde {{selector}} ile eşleşen endpoints",
+    "ciliumEndpoints": "{{selector}} ile eşleşen endpoints",
+    "entity": "Cilium varlığı {{entity}}",
+    "unmodelled": "{{feature}} (Sextant tarafından modellenmez)",
+    "calico": "Calico eşleşmesi {{match}}"
+  },
+  "port": {
+    "single": "{{protocol}} {{port}}",
+    "range": "{{protocol}} {{from}}–{{to}}",
+    "named": "{{name}} adlı {{protocol}} bağlantı noktası",
+    "anyOf": "Tüm {{protocol}} bağlantı noktaları",
+    "icmp": "ICMP {{type}}"
+  },
+  "rules": {
+    "rule": "Kural",
+    "peers": {
+      "ingress": "Kaynak",
+      "egress": "Hedef"
+    },
+    "ports": "Bağlantı noktaları",
+    "anyPeer": {
+      "ingress": "Herhangi bir kaynak",
+      "egress": "Herhangi bir hedef"
+    },
+    "anyPort": "Herhangi bir bağlantı noktası",
+    "empty": "Hiçbir şey (boş bir Cilium kuralı)",
+    "local": "Yalnızca {{match}} ile eşleşen seçili Pod'lar için",
+    "denyAll": {
+      "ingress": "Ingress kuralı yok: seçili Pod'lara gelen tüm trafik reddedilir.",
+      "egress": "Egress kuralı yok: seçili Pod'lardan giden tüm trafik reddedilir."
+    },
+    "notRestricted": {
+      "ingress": "Gelen trafiği kısıtlamaz.",
+      "egress": "Giden trafiği kısıtlamaz."
+    }
+  },
+  "fields": {
+    "selects": "Seçtikleri",
+    "selectedNow": "Şu anda seçili",
+    "noPods": "Pod yok",
+    "morePods_one": "ve {{count}} tane daha",
+    "morePods_other": "ve {{count}} tane daha",
+    "types": "İlke türleri",
+    "typesDefaulted": "{{types}} (policyTypes ayarlanmamış: varsayılan değer)",
+    "typesNone": "Yok",
+    "order": "Sıra",
+    "noOrder": "Yok (en son değerlendirilir)",
+    "notModelled": "Sextant tarafından modellenmez"
+  },
+  "details": {
+    "plainWords": "Sade bir dille",
+    "openMap": "Namespace ilke haritası",
+    "spec": "Spec {{n}}",
+    "selectsNoPods": "Bu ilke hiçbir Pod seçmiyor (bir ana bilgisayar ilkesi veya bir NetworkPolicy kopyası).",
+    "noDns": "Bu ilke DNS'e (kube-system içindeki kube-dns'e UDP 53 bağlantı noktası) izin vermiyor: başka bir ilke izin vermedikçe seçtiği Pod'lar adları çözümleyemez.",
+    "ignored": {
+      "ingress": "Ingress kuralları yok sayılıyor: policyTypes, Ingress içermiyor.",
+      "egress": "Egress kuralları yok sayılıyor: policyTypes, Egress içermiyor."
+    },
+    "flavorNote": {
+      "cilium": "Cilium ilkesi: Sextant L3/L4 kurallarını değerlendirir; L7 kuralları, FQDN'ler ve benzeri özellikler bilinmiyor sayılır.",
+      "ciliumClusterwide": "Cilium ilkesi: Sextant L3/L4 kurallarını değerlendirir; L7 kuralları, FQDN'ler ve benzeri özellikler bilinmiyor sayılır.",
+      "calico": "Calico ilkesi: Sextant default katmanının Allow, Deny ve Log kurallarını sırayla değerlendirir; diğer özellikler bilinmiyor sayılır.",
+      "calicoGlobal": "Calico ilkesi: Sextant default katmanının Allow, Deny ve Log kurallarını sırayla değerlendirir; diğer özellikler bilinmiyor sayılır."
+    }
+  },
+  "pod": {
+    "title": "Ağ ilkeleri",
+    "isolatedBy": "Yalıtan ilkeler:",
+    "maybeBy": "Yalıtıyor olabilecek ilkeler:",
+    "notIsolated": {
+      "ingress": "Yalıtılmamış: gelen tüm trafiğe izin veriliyor",
+      "egress": "Yalıtılmamış: giden tüm trafiğe izin veriliyor"
+    },
+    "hostNetwork": "Ana bilgisayar ağı: NetworkPolicy uygulanmaz",
+    "unknown": "Bilinmiyor: ilkelerin tümü okunamadı",
+    "check": "Bağlantıyı denetle…"
+  },
+  "map": {
+    "choose": "Hangi Pod'larının yalıtıldığını ve ilkelerinin neye izin verdiğini görmek için bir namespace seçin.",
+    "summary_one": "{{count}} Pod: gelen trafik için yalıtılmış: {{ingress}}; giden için: {{egress}}.",
+    "summary_other": "{{count}} Pod: gelen trafik için yalıtılmış: {{ingress}}; giden için: {{egress}}.",
+    "pods": "Pod'lar ve yalıtımları",
+    "pod": "Pod",
+    "isolatedBy": "Yalıtan: {{policies}}",
+    "maybeBy": "Yalıtıyor olabilir: {{policies}}",
+    "notIsolated": {
+      "ingress": "Yalıtılmamış: tüm gelenlere izin var",
+      "egress": "Yalıtılmamış: tüm gidenlere izin var"
+    },
+    "hostNetwork": "Ana bilgisayar ağı: ilke uygulanmaz",
+    "unknown": "Bilinmiyor",
+    "noDns": "DNS'e izin verilmiyor",
+    "dnsUnknown": "DNS'e izin verilmiyor olabilir",
+    "more_one": "{{count}} Pod daha gösterilmiyor.",
+    "more_other": "{{count}} Pod daha gösterilmiyor.",
+    "podsUnreadable": "{{namespace}} namespace'indeki Pod'lar listelenemiyor.",
+    "policies": "İlkeler",
+    "noPolicies": "Bu namespace'te hiçbir ilke Pod seçmiyor: her Pod gelen tüm trafiği kabul eder ve giden tüm trafiği gönderir.",
+    "selects_one": "{{what}} — şu anda {{count}} Pod seçili",
+    "selects_other": "{{what}} — şu anda {{count}} Pod seçili"
+  }
+}

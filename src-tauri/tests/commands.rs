@@ -108,6 +108,14 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("rbac_can_i", Some("clusterId")),
     ("rbac_rules_review", Some("clusterId")),
     ("upgrade_scan", Some("clusterId")),
+    ("cleanup_sample", Some("clusterId")),
+    ("cleanup_cluster_check", Some("clusterId")),
+    ("timeline_managers", Some("clusterId")),
+    ("timeline_history", Some("clusterId")),
+    ("timeline_object_history", Some("clusterId")),
+    ("timeline_save", Some("clusterId")),
+    ("timeline_load", Some("clusterId")),
+    ("timeline_remove_all", None),
     ("tls_certificate_info", Some("clusterId")),
     ("tls_expiry_scan", Some("clusterId")),
     ("mcp_status", None),
@@ -167,6 +175,9 @@ fn harness_in(dirs: tempfile::TempDir) -> Harness {
         std::sync::Arc::clone(&state.settings),
     ));
     app.manage(state);
+    app.manage(sextant_lib::commands::timeline::TimelineDir(
+        dirs.path().join("data").join("timeline"),
+    ));
     // Helm commands use this `helm`: a path that does not exist, so no test runs the developer's helm (network,
     // ~/.config/helm, ~/.cache/helm) — they answer `helmMissing` instead.
     app.manage(
@@ -343,6 +354,33 @@ fn rbac_reviews_need_a_connected_cluster_and_check_their_input_first() {
 }
 
 #[test]
+fn the_cleanup_sample_checks_its_input_first_and_needs_a_connected_cluster() {
+    let h = harness();
+    let config_maps = json!([{ "group": "", "version": "v1", "kind": "ConfigMap" }]);
+    let err = invoke(
+        &h,
+        "cleanup_sample",
+        json!({ "clusterId": "nope", "namespace": "Not A Namespace", "kinds": config_maps, "limit": 1 }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    let err = invoke(
+        &h,
+        "cleanup_sample",
+        json!({ "clusterId": "nope", "namespace": "team", "kinds": config_maps, "limit": 1 }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "cleanup_cluster_check",
+        json!({ "clusterId": "nope", "kinds": [], "targets": [{ "kind": "Pod", "namespace": "a", "name": "b" }] }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
 fn the_upgrade_scan_needs_a_connected_cluster_and_checks_its_input_first() {
     let h = harness();
     let apis = json!([{ "api": { "group": "batch", "version": "v1beta1", "kind": "CronJob" },
@@ -363,6 +401,90 @@ fn the_upgrade_scan_needs_a_connected_cluster_and_checks_its_input_first() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn timeline_reads_need_a_connected_cluster_and_check_their_input_first() {
+    let h = harness();
+    let web = json!({ "kind": { "group": "apps", "version": "v1", "kind": "Deployment" },
+                      "namespace": "shop", "name": "web" });
+    let err = invoke(
+        &h,
+        "timeline_managers",
+        json!({ "clusterId": "nope", "refs": [web.clone()] }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "timeline_object_history",
+        json!({ "clusterId": "nope", "object": web }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let deployments = json!([{ "group": "apps", "version": "v1", "kind": "Deployment" }]);
+    let err = invoke(
+        &h,
+        "timeline_history",
+        json!({ "clusterId": "nope", "namespaces": ["shop"], "kinds": deployments, "helm": true }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // A malformed namespace is refused before the cluster is looked up.
+    let err = invoke(
+        &h,
+        "timeline_history",
+        json!({ "clusterId": "nope", "namespaces": ["Not A Namespace"], "kinds": deployments, "helm": false }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn a_saved_timeline_is_read_back_and_removed() {
+    let h = harness();
+    let none = invoke(&h, "timeline_load", json!({ "clusterId": "c1" })).unwrap();
+    assert_eq!(none, Value::Null);
+    let text = json!({ "version": 1, "cluster": "c1", "entries": [] }).to_string();
+    invoke(
+        &h,
+        "timeline_save",
+        json!({ "clusterId": "c1", "text": text }),
+    )
+    .unwrap();
+    let read = invoke(&h, "timeline_load", json!({ "clusterId": "c1" })).unwrap();
+    let read: Value = serde_json::from_str(read.as_str().unwrap()).unwrap();
+    assert_eq!(read["cluster"], "c1");
+    let err = invoke(
+        &h,
+        "timeline_save",
+        json!({ "clusterId": "c1", "text": "{\"version\":1,\"cluster\":\"other\",\"entries\":[]}" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    invoke(
+        &h,
+        "timeline_save",
+        json!({ "clusterId": "c1", "text": null }),
+    )
+    .unwrap();
+    let none = invoke(&h, "timeline_load", json!({ "clusterId": "c1" })).unwrap();
+    assert_eq!(none, Value::Null);
+    // Turning persistence off removes every cluster's file.
+    for id in ["c1", "c2"] {
+        let text = json!({ "version": 1, "cluster": id, "entries": [] }).to_string();
+        invoke(
+            &h,
+            "timeline_save",
+            json!({ "clusterId": id, "text": text }),
+        )
+        .unwrap();
+    }
+    invoke(&h, "timeline_remove_all", json!({})).unwrap();
+    for id in ["c1", "c2"] {
+        let none = invoke(&h, "timeline_load", json!({ "clusterId": id })).unwrap();
+        assert_eq!(none, Value::Null);
+    }
 }
 
 #[test]
