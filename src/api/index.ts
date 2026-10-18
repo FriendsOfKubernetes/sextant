@@ -46,7 +46,7 @@ export {
   type NotificationActionType,
 } from "./notifications";
 export { defaultAppSettings, loadSettings, updateSettings, useSettings, type UseSettings } from "./settings";
-export type { FileFilter, OpenFileOptions, SaveFileOptions, Unsubscribe } from "./transport";
+export type { FileFilter, OpenFileOptions, SaveFileOptions, StreamChannel, Unsubscribe } from "./transport";
 export { newStreamId, openStream, resetStreams, type StreamSpec } from "./stream";
 export { applyWatchUpdate, uidOf, useWatch, type WatchState, type WatchStatus } from "./useWatch";
 export type * from "./types";

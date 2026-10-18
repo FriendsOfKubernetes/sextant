@@ -43,9 +43,11 @@ import type { HelmRelease } from "./generated/HelmRelease";
 import type { HelmReleaseDetail } from "./generated/HelmReleaseDetail";
 import type { HelmRepo } from "./generated/HelmRepo";
 import type { HelmStatus } from "./generated/HelmStatus";
+import type { InstallEvent } from "./generated/InstallEvent";
 import type { InstallPreview } from "./generated/InstallPreview";
 import type { KubeconfigSource } from "./generated/KubeconfigSource";
 import type { LogOptions } from "./generated/LogOptions";
+import type { LogUpdate } from "./generated/LogUpdate";
 import type { ManagedResource } from "./generated/ManagedResource";
 import type { McpStatus } from "./generated/McpStatus";
 import type { MetricsStatus } from "./generated/MetricsStatus";
@@ -62,11 +64,13 @@ import type { HistoryScope } from "./generated/HistoryScope";
 import type { HistoryWindow } from "./generated/HistoryWindow";
 import type { UsageHistory } from "./generated/UsageHistory";
 import type { SettingsStatus } from "./generated/SettingsStatus";
+import type { TermPayload } from "./generated/TermPayload";
 import type { TransferEvent } from "./generated/TransferEvent";
 import type { TrayStatus } from "./generated/TrayStatus";
 import type { TrayTexts } from "./generated/TrayTexts";
 import type { WatchSpec } from "./generated/WatchSpec";
-import { call, subscribe, type Unsubscribe } from "./transport";
+import type { WatchUpdate } from "./generated/WatchUpdate";
+import { call, type StreamChannel } from "./transport";
 
 /** A Kubernetes object as JSON (`managedFields` already stripped by the backend). */
 export type KubeObject = {
@@ -112,16 +116,19 @@ export const cloud = {
   loginHint: (clusterId: ClusterId) => call<CloudProblem | null>("cloud_login_hint", { clusterId }),
 };
 
-/** Every stream (watch, logs, terminal) gets its id from the frontend, which listens before it starts the stream. */
+/**
+ * Every stream (watch, logs, terminal) gets its id from the frontend, which also creates the channel its payloads come
+ * through (`onEvent`) before it starts the stream (`openStream`).
+ */
 export const streams = {
   /** Stops every watch, log stream and terminal session (not connections or port forwards); on page load. */
   reset: () => call<void>("streams_reset"),
 };
 
 export const resources = {
-  /** Starts a watch under `streamId`; updates arrive through `events.onWatch(streamId, …)`. */
-  watchStart: (clusterId: ClusterId, spec: WatchSpec, streamId: string) =>
-    call<void>("watch_start", { clusterId, spec, streamId }),
+  /** Starts a watch under `streamId`; updates arrive through `onEvent`. */
+  watchStart: (clusterId: ClusterId, spec: WatchSpec, streamId: string, onEvent: StreamChannel<WatchUpdate>) =>
+    call<void>("watch_start", { clusterId, spec, streamId, onEvent }),
   watchStop: (subscriptionId: string) => call<void>("watch_stop", { subscriptionId }),
   get: (clusterId: ClusterId, ref: ObjectRef) => call<KubeObject>("resource_get", { clusterId, ref }),
   /** The whole object, Secret values included (only for editing a Secret). */
@@ -161,35 +168,65 @@ export const actions = {
 };
 
 export const logs = {
-  /** Starts a log stream under `streamId`; batches arrive through `events.onLogs(streamId, …)`. */
-  start: (clusterId: ClusterId, pod: ObjectRef, opts: LogOptions, streamId: string) =>
-    call<void>("logs_start", { clusterId, pod, opts, streamId }),
+  /** Starts a log stream under `streamId`; batches arrive through `onEvent`. */
+  start: (
+    clusterId: ClusterId,
+    pod: ObjectRef,
+    opts: LogOptions,
+    streamId: string,
+    onEvent: StreamChannel<LogUpdate>,
+  ) => call<void>("logs_start", { clusterId, pod, opts, streamId, onEvent }),
   stop: (streamId: string) => call<void>("logs_stop", { streamId }),
 };
 
 export const terminal = {
-  /** Shell in a container, session `streamId` (output: `events.onTerm(streamId, …)`). */
-  exec: (clusterId: ClusterId, pod: ObjectRef, container: string, cols: number, rows: number, streamId: string) =>
-    call<void>("exec_start", { clusterId, pod, container, cols, rows, streamId }),
+  /** Shell in a container, session `streamId` (output through `onEvent`, as for every session below). */
+  exec: (
+    clusterId: ClusterId,
+    pod: ObjectRef,
+    container: string,
+    cols: number,
+    rows: number,
+    streamId: string,
+    onEvent: StreamChannel<TermPayload>,
+  ) => call<void>("exec_start", { clusterId, pod, container, cols, rows, streamId, onEvent }),
   /**
    * Local shell, session `streamId`: with `KUBECONFIG` set to the cluster, or — `clusterId` null — without any
    * `KUBECONFIG` from Sextant (e.g. to sign in to a cloud CLI).
    */
-  local: (clusterId: ClusterId | null, cols: number, rows: number, streamId: string) =>
-    call<void>("terminal_start", { clusterId, cols, rows, streamId }),
+  local: (
+    clusterId: ClusterId | null,
+    cols: number,
+    rows: number,
+    streamId: string,
+    onEvent: StreamChannel<TermPayload>,
+  ) => call<void>("terminal_start", { clusterId, cols, rows, streamId, onEvent }),
   /**
    * Shell on `node` through a temporary privileged pod in `kube-system` (deleted when the session ends), session
    * `streamId`. Never offered to AI agents.
    */
-  nodeShell: (clusterId: ClusterId, node: string, cols: number, rows: number, streamId: string) =>
-    call<void>("node_shell_start", { clusterId, node, cols, rows, streamId }),
+  nodeShell: (
+    clusterId: ClusterId,
+    node: string,
+    cols: number,
+    rows: number,
+    streamId: string,
+    onEvent: StreamChannel<TermPayload>,
+  ) => call<void>("node_shell_start", { clusterId, node, cols, rows, streamId, onEvent }),
   /**
    * Debug container for `pod` (`kubectl debug`), session `streamId`: an ephemeral container in the pod, or — with
    * `spec.copy` — a copy of the pod (deleted when the session ends), with a terminal attached. Never offered to AI
    * agents or extensions.
    */
-  debug: (clusterId: ClusterId, pod: ObjectRef, spec: DebugSpec, cols: number, rows: number, streamId: string) =>
-    call<void>("debug_start", { clusterId, pod, spec, cols, rows, streamId }),
+  debug: (
+    clusterId: ClusterId,
+    pod: ObjectRef,
+    spec: DebugSpec,
+    cols: number,
+    rows: number,
+    streamId: string,
+    onEvent: StreamChannel<TermPayload>,
+  ) => call<void>("debug_start", { clusterId, pod, spec, cols, rows, streamId, onEvent }),
   input: (sessionId: string, data: string) => call<void>("term_input", { sessionId, data }),
   resize: (sessionId: string, cols: number, rows: number) => call<void>("term_resize", { sessionId, cols, rows }),
   stop: (sessionId: string) => call<void>("term_stop", { sessionId }),
@@ -307,8 +344,8 @@ export const files = {
     call<RemoteEntry>("files_stat", { clusterId, pod, container, path }),
   /**
    * Downloads `path` from the container to `destination` (from the save dialog) under `streamId`: a file's content, a
-   * folder as `.tar.gz`. `kind` is what `stat` saw; a path that changed since is refused. Events:
-   * `files.onTransfer(streamId, …)`.
+   * folder as `.tar.gz`. `kind` is what `stat` saw; a path that changed since is refused. Progress and the result
+   * arrive through `onEvent`.
    */
   downloadStart: (
     clusterId: ClusterId,
@@ -318,7 +355,8 @@ export const files = {
     kind: RemoteKind,
     destination: string,
     streamId: string,
-  ) => call<void>("files_download_start", { clusterId, pod, container, path, kind, destination, streamId }),
+    onEvent: StreamChannel<TransferEvent>,
+  ) => call<void>("files_download_start", { clusterId, pod, container, path, kind, destination, streamId, onEvent }),
   /** Uploads the local file `source` into the container as `path` (its full path there) under `streamId`. */
   uploadStart: (
     clusterId: ClusterId,
@@ -327,12 +365,10 @@ export const files = {
     source: string,
     path: string,
     streamId: string,
-  ) => call<void>("files_upload_start", { clusterId, pod, container, source, path, streamId }),
+    onEvent: StreamChannel<TransferEvent>,
+  ) => call<void>("files_upload_start", { clusterId, pod, container, source, path, streamId, onEvent }),
   /** Cancels a transfer (a download leaves no partial file). */
   transferStop: (streamId: string) => call<void>("files_transfer_stop", { streamId }),
-  /** Progress and the result of a transfer (`files:<streamId>`). */
-  onTransfer: (streamId: string, handler: (event: TransferEvent) => void): Promise<Unsubscribe> =>
-    subscribe(`files:${streamId}`, handler),
 };
 
 /**
@@ -357,7 +393,7 @@ export const argocd = {
 /**
  * Installing Flux or Argo CD from their official manifests (only from the window: agents and extensions cannot).
  * `prepare` downloads and checks the manifest and answers the preview with a token that `start` spends once, within
- * ten minutes; the install runs as a stream `gitops-install:<streamId>` (`events.onGitopsInstall`, open it with
+ * ten minutes; the install runs as a stream whose events (`InstallEvent`) come through `onEvent` (open it with
  * `openStream`).
  */
 export const gitopsInstall = {
@@ -365,8 +401,8 @@ export const gitopsInstall = {
   versions: (tool: GitopsTool) => call<GitopsVersions>("gitops_install_versions", { tool }),
   prepare: (clusterId: ClusterId, tool: GitopsTool, version: string) =>
     call<InstallPreview>("gitops_install_prepare", { clusterId, tool, version }),
-  start: (clusterId: ClusterId, token: string, streamId: string) =>
-    call<void>("gitops_install_start", { clusterId, token, streamId }),
+  start: (clusterId: ClusterId, token: string, streamId: string, onEvent: StreamChannel<InstallEvent>) =>
+    call<void>("gitops_install_start", { clusterId, token, streamId, onEvent }),
   /** Stops after the object being applied (or the wait for readiness); an ended install is not an error. */
   stop: (streamId: string) => call<void>("gitops_install_stop", { streamId }),
   /** Whether Flux and Argo CD are in the cluster (their CRDs). */
@@ -460,10 +496,16 @@ export const extensions = {
   reload: (id: string) => call<ExtensionInfo>("extension_reload", { id }),
   /**
    * One API method for an extension's frame (src/extensions/protocol.ts), checked in the backend against what the
-   * user granted. `streamId` is needed by `resources.watch`: its updates come as `events.onExtWatch(streamId, …)`.
+   * user granted. `streamId` and `onEvent` are needed by `resources.watch` (its updates come through `onEvent`) and
+   * left out by the other methods.
    */
-  call: (extensionId: string, method: string, params?: unknown, streamId?: string) =>
-    call<unknown>("extension_call", { extensionId, method, params, streamId }),
+  call: (
+    extensionId: string,
+    method: string,
+    params?: unknown,
+    streamId?: string,
+    onEvent?: StreamChannel<WatchUpdate>,
+  ) => call<unknown>("extension_call", { extensionId, method, params, streamId, onEvent }),
   /** Stops a `resources.watch` stream of the extension; an ended one is not an error. */
   watchStop: (extensionId: string, streamId: string) => call<void>("extension_watch_stop", { extensionId, streamId }),
   /** Calls of extensions, newest first; one extension's only when `extensionId` is given. */

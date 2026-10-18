@@ -69,7 +69,8 @@ pub struct GitopsStatus {
     pub argo_cd: InstalledState,
 }
 
-/// One event of an install stream `gitops-install:<id>`. The last one is `done`, `timedOut`, `stopped` or `error`.
+/// One event of an install stream (sent through the channel of `gitops_install_start`). The last one is `done`,
+/// `timedOut`, `stopped` or `error`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "type", rename_all = "camelCase")]
 #[ts(export)]

@@ -8,7 +8,6 @@ import {
   api,
   ApiError,
   toApiError,
-  events,
   openStream,
   type ClusterId,
   type ForwardInfo,
@@ -116,8 +115,7 @@ function serverIn(clusterId: ClusterId, namespace: string): Promise<KubeObject |
     };
     const timer = setTimeout(() => finish(null), LOOKUP_TIMEOUT_MS);
     close = openStream<WatchUpdate>({
-      start: (id) => api.resources.watchStart(clusterId, serverWatch(namespace), id),
-      listen: events.onWatch,
+      start: (id, channel) => api.resources.watchStart(clusterId, serverWatch(namespace), id, channel),
       stop: api.resources.watchStop,
       onEvent: (update) => {
         if (update.type === "snapshot") {

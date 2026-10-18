@@ -1,7 +1,7 @@
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { useRef } from "react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockBackend, type KindRef, type KubeObject, type MockBackend } from "../../api";
+import { api, mockBackend, type KindRef, type KubeObject, type MockBackend } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { Dock } from "../../layout/dock/Dock";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
@@ -43,7 +43,7 @@ const b64 = (text: string) => btoa(text);
 
 let backend: MockBackend;
 let sessions: number;
-/** Number of `term:<id>` listeners when each `*_start` and each `term_resize` arrived. */
+/** Number of `term:<id>` listeners (the session's channel in the mock) when each `*_start` and `term_resize` came. */
 let listenersAtStart: number[];
 let listenersAtResize: number[];
 
@@ -121,7 +121,7 @@ describe("Shell action", () => {
     });
     expect(start?.cols).toBeGreaterThan(0);
     expect(start?.rows).toBeGreaterThan(0);
-    // The backend sends output as soon as the shell prints it: the frontend listens before the start.
+    // The backend sends output as soon as the shell prints it: the frontend's channel exists before the start.
     expect(listenersAtStart).toEqual([1]);
     expect(listenersAtResize).toEqual([1]);
     expect(calls("term_resize")[0]).toMatchObject({ sessionId: start?.streamId });
@@ -482,9 +482,9 @@ describe("useTerminal", () => {
     let streamId = "";
     const { result, unmount } = renderHook(() => {
       const ref = useRef<HTMLElement | null>(el);
-      return useTerminal(ref, (_cols, _rows, id) => {
+      return useTerminal(ref, (cols, rows, id, onEvent) => {
         streamId = id;
-        return Promise.resolve(undefined);
+        return api.terminal.local(null, cols, rows, id, onEvent);
       });
     });
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
@@ -521,15 +521,16 @@ describe("useTerminal", () => {
     const el = document.createElement("div");
     document.body.appendChild(el);
     let answer: () => void = () => undefined;
+    // The shell prints its prompt before the start answers (#107).
+    backend.on("terminal_start", (args) => {
+      backend.emit(`term:${args.streamId as string}`, { type: "data", data: b64("$ ") });
+      return new Promise((resolve) => {
+        answer = () => resolve(undefined);
+      });
+    });
     const { result } = renderHook(() => {
       const ref = useRef<HTMLElement | null>(el);
-      // The shell prints its prompt before the start answers (#107).
-      return useTerminal(ref, (_cols, _rows, streamId) => {
-        backend.emit(`term:${streamId}`, { type: "data", data: b64("$ ") });
-        return new Promise((resolve) => {
-          answer = () => resolve(undefined);
-        });
-      });
+      return useTerminal(ref, (cols, rows, id, onEvent) => api.terminal.local(null, cols, rows, id, onEvent));
     });
     await waitFor(() => expect(screenText()).toContain("$"));
     const term = result.current.terminal;

@@ -1,9 +1,9 @@
 // Connects an xterm.js terminal to a backend terminal session (container shell or local shell).
 //
-// Protocol (interfaces.md §1): `openStream` chooses the session id and subscribes to `term:<id>` before the session
-// starts (`exec_start` / `terminal_start` with that id), so the first prompt is never lost; once the start answered,
-// keystrokes go to `term_input` (those typed before it are kept and sent first) and size changes to `term_resize`. The session is stopped when the component
-// unmounts (the dock tab is closed) or reconnects.
+// Protocol (interfaces.md §1): `openStream` chooses the session id and creates the channel of its output before the
+// session starts (`exec_start` / `terminal_start` with that id and channel), so the first prompt is never lost; once
+// the start answered, keystrokes go to `term_input` (those typed before it are kept and sent first) and size changes to
+// `term_resize`. The session is stopped when the component unmounts (the dock tab is closed) or reconnects.
 //
 // Output is flow-controlled (#122): once xterm has written a chunk (its write callback), its bytes are acknowledged
 // with `term_ack`, in batches; the backend stops reading a shell whose output the terminal is too far behind on, so a
@@ -12,10 +12,15 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { api, events, openStream, toApiError, type ApiError, type TermPayload } from "../../api";
+import { api, openStream, toApiError, type ApiError, type StreamChannel, type TermPayload } from "../../api";
 
-/** Starts a session of `cols`×`rows` under `streamId` (its output is already listened to). */
-export type TerminalSessionFactory = (cols: number, rows: number, streamId: string) => Promise<unknown>;
+/** Starts a session of `cols`×`rows` under `streamId`, its output sent through `onEvent` (created before the start). */
+export type TerminalSessionFactory = (
+  cols: number,
+  rows: number,
+  streamId: string,
+  onEvent: StreamChannel<TermPayload>,
+) => Promise<unknown>;
 
 export type TerminalStatus = "connecting" | "running" | "ended" | "error";
 
@@ -188,11 +193,10 @@ export function useTerminal(
     const cols = terminal.cols || DEFAULT_COLS;
     const rows = terminal.rows || DEFAULT_ROWS;
     const close = openStream<TermPayload>({
-      start: (id) => {
+      start: (id, channel) => {
         streamId = id;
-        return factoryRef.current(cols, rows, id);
+        return factoryRef.current(cols, rows, id, channel);
       },
-      listen: events.onTerm,
       stop: api.terminal.stop,
       onEvent: onPayload,
       onListening: (id) => {

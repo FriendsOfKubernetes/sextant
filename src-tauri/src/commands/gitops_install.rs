@@ -1,15 +1,15 @@
 //! Installing Flux or Argo CD from the window (`crate::gitops_install`): the versions, the prepared preview with its
-//! token, the install as a stream `gitops-install:<streamId>`, its stop, and whether each tool is installed. Plain
-//! window commands: no MCP tool and no extension method reaches them.
+//! token, the install as a stream (its events through the channel `onEvent`), its stop, and whether each tool is
+//! installed. Plain window commands: no MCP tool and no extension method reaches them.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 use sextant_core::gitops_install::{self, GitopsTool, InstallPlan};
 use sextant_core::{ClusterId, CoreError, CoreResult};
-use tauri::{AppHandle, Emitter, Runtime, State};
+use tauri::ipc::Channel;
+use tauri::{AppHandle, Runtime, State};
 
-use crate::events::gitops_install_event;
 use crate::gitops_install::download::GitopsVersions;
 use crate::gitops_install::{
     self as install, GitopsStatus, InstallEvent, InstallPreview, OnAbort, Timing,
@@ -37,9 +37,9 @@ pub async fn gitops_install_prepare(
     install::prepare(&state.gitops, &state.clusters, &cluster_id, tool, &version).await
 }
 
-/// Starts the prepared install of `token` (once) under `stream_id`, which the window chose and already listens to
-/// (`gitops-install:<streamId>`, `InstallEvent`). The install is registered before it begins; `gitops_install_stop`,
-/// disconnecting the cluster, `streams_reset` and quitting stop it.
+/// Starts the prepared install of `token` (once) under `stream_id`, which the window chose; its events (`InstallEvent`)
+/// go through `on_event`, the channel the window created before the start. The install is registered before it begins;
+/// `gitops_install_stop`, disconnecting the cluster, `streams_reset` and quitting stop it.
 #[tauri::command]
 pub async fn gitops_install_start<R: Runtime>(
     app: AppHandle<R>,
@@ -47,6 +47,7 @@ pub async fn gitops_install_start<R: Runtime>(
     cluster_id: ClusterId,
     token: String,
     stream_id: String,
+    on_event: Channel<InstallEvent>,
 ) -> Result<(), CoreError> {
     check_stream_id(&stream_id)?;
     // Not connected: the plan stays for a retry.
@@ -64,24 +65,22 @@ pub async fn gitops_install_start<R: Runtime>(
     let flag = Arc::clone(&stop);
     let counted = Arc::clone(&applied);
     let cluster = cluster_id.clone();
+    let channel = on_event.clone();
     let task = tauri::async_runtime::spawn(async move {
         let Ok(plan) = plan_rx.await else {
             return;
         };
-        let event = gitops_install_event(&id);
         install::run(&mgr, &cluster, &plan, &flag, Timing::default(), |e| {
             if matches!(e, InstallEvent::Applied { .. }) {
                 counted.fetch_add(1, Ordering::SeqCst);
             }
-            let _ = handle.emit(&event, &e);
+            let _ = channel.send(e);
         })
         .await;
         if let Some(state) = tauri::Manager::try_state::<AppState>(&handle) {
             state.gitops.finished(&id);
         }
     });
-    let event = gitops_install_event(&stream_id);
-    let window = app.clone();
     let planned = Arc::clone(&total);
     let on_abort: OnAbort = Box::new(move |why: &str| {
         let last = install::aborted(
@@ -89,7 +88,7 @@ pub async fn gitops_install_start<R: Runtime>(
             applied.load(Ordering::SeqCst),
             planned.load(Ordering::SeqCst),
         );
-        let _ = window.emit(&event, &last);
+        let _ = on_event.send(last);
     });
     // Registered first, the plan taken after: a stream id in use does not spend the token.
     let plan = state.gitops.begin(

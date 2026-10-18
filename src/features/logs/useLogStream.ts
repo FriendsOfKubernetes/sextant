@@ -1,11 +1,10 @@
 // One log stream of a dock tab: starts it, collects the batches into the bounded buffer, stops it on cleanup.
 //
-// `openStream` chooses the stream id and listens to `logs:<id>` before `api.logs.start(…, id)`, so the first
-// batch the backend sends is never lost.
+// `openStream` chooses the stream id and creates the channel of its batches before `api.logs.start(…, id, channel)`,
+// so the first batch the backend sends is never lost.
 import { useCallback, useEffect, useState } from "react";
 import {
   api,
-  events,
   openStream,
   toApiError,
   type ApiError,
@@ -48,8 +47,7 @@ export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogO
       setState((prev) => ({ key, value: fn(prev.key === key ? prev.value : INITIAL) }));
 
     return openStream<LogUpdate>({
-      start: (id) => api.logs.start(cluster, podRef, logOptions, id),
-      listen: events.onLogs,
+      start: (id, channel) => api.logs.start(cluster, podRef, logOptions, id, channel),
       stop: api.logs.stop,
       // Events may arrive before the subscription is confirmed: only a stream still "connecting" becomes "streaming".
       onListening: () => update((s) => (s.status === "connecting" ? { ...s, status: "streaming" } : s)),

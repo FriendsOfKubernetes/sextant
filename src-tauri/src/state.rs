@@ -120,7 +120,7 @@ impl AppState {
     }
 
     /// Stops every watch subscription (extensions' too), log stream, terminal session and Flux / Argo CD install, but
-    /// keeps connections and port forwards (`streams_reset`: the window was reloaded and nobody listens to the old
+    /// keeps connections and port forwards (`streams_reset`: the window was reloaded and nobody receives the old
     /// streams any more).
     pub fn reset_streams(&self) {
         // First: a start that registers from now on sees the reset and undoes itself.
@@ -151,8 +151,8 @@ impl AppState {
     }
 }
 
-/// Checks a stream id chosen by the frontend (`crypto.randomUUID()`). It becomes part of an event name
-/// (`watch:<id>`), so only ASCII letters, digits, `-` and `_` are allowed.
+/// Checks a stream id chosen by the frontend (`crypto.randomUUID()`). It names the stream in stop commands and the
+/// window's logs, so only ASCII letters, digits, `-` and `_` are allowed.
 pub fn check_stream_id(id: &str) -> Result<(), CoreError> {
     let valid = !id.is_empty()
         && id.len() <= 128

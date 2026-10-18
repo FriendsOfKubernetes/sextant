@@ -1,11 +1,11 @@
 //! Saving files chosen in a `tauri-plugin-dialog` save dialog (e.g. logs), and copying files to and from containers
 //! (`kubectl cp`, see `sextant_core::files`).
 //!
-//! A transfer (`files_download_start`, `files_upload_start`) runs under a stream id the frontend chose and already
-//! listens to (`files:<streamId>`, [`TransferEvent`]): progress at most every [`PROGRESS_INTERVAL`], then `done` or
-//! `error`. It is a subscription of its cluster in `AppState`, so `files_transfer_stop` (cancel), disconnecting the
-//! cluster, `streams_reset` and closing the window stop it; a stopped download leaves no partial file. Never offered to
-//! AI agents or extensions.
+//! A transfer (`files_download_start`, `files_upload_start`) runs under a stream id the frontend chose and reports
+//! through the channel it created before the start (`onEvent`, [`TransferEvent`]): progress at most every
+//! [`PROGRESS_INTERVAL`], then `done` or `error`. It is a subscription of its cluster in `AppState`, so
+//! `files_transfer_stop` (cancel), disconnecting the cluster, `streams_reset` and closing the window stop it; a stopped
+//! download leaves no partial file. Never offered to AI agents or extensions.
 
 use std::future::Future;
 use std::io::ErrorKind;
@@ -15,7 +15,8 @@ use std::time::Duration;
 use serde::Serialize;
 use sextant_core::files::{self, RemoteEntry, RemoteKind, TransferProgress};
 use sextant_core::{ClusterId, CoreError, CoreResult, ErrorCode, ObjectRef};
-use tauri::{AppHandle, Emitter, Manager, Runtime, State};
+use tauri::ipc::Channel;
+use tauri::{AppHandle, Manager, Runtime, State};
 use tokio::time::Instant;
 use ts_rs::TS;
 
@@ -25,11 +26,6 @@ use crate::state::{AppState, Subscription, check_stream_id};
 pub const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 /// How long `files_stat` may take.
 const STAT_TIMEOUT: Duration = Duration::from_secs(30);
-
-/// `files:<streamId>` — payload [`TransferEvent`].
-pub fn transfer_event(stream_id: &str) -> String {
-    format!("files:{stream_id}")
-}
 
 /// What a transfer reports. Serialized with a `type` tag.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
@@ -89,11 +85,12 @@ pub async fn files_download_start<R: Runtime>(
     kind: RemoteKind,
     destination: PathBuf,
     stream_id: String,
+    on_event: Channel<TransferEvent>,
 ) -> Result<(), CoreError> {
     absolute(&destination)?;
     let mgr = state.clusters.clone();
     let cluster = cluster_id.clone();
-    let mut reporter = Reporter::new(&app, &stream_id);
+    let mut reporter = Reporter::new(on_event);
     let work = async move {
         let result = files::download(
             &mgr,
@@ -125,11 +122,12 @@ pub async fn files_upload_start<R: Runtime>(
     source: PathBuf,
     path: String,
     stream_id: String,
+    on_event: Channel<TransferEvent>,
 ) -> Result<(), CoreError> {
     absolute(&source)?;
     let mgr = state.clusters.clone();
     let cluster = cluster_id.clone();
-    let mut reporter = Reporter::new(&app, &stream_id);
+    let mut reporter = Reporter::new(on_event);
     let work = async move {
         let result = files::upload(
             &mgr,
@@ -167,31 +165,29 @@ fn absolute(path: &Path) -> Result<(), CoreError> {
     }
 }
 
-/// Emits a transfer's events as `files:<id>`: progress at most every [`PROGRESS_INTERVAL`] (the first and the last
-/// always), then the result.
-pub struct Reporter<R: Runtime> {
-    app: AppHandle<R>,
-    event: String,
+/// Sends a transfer's events through its channel: progress at most every [`PROGRESS_INTERVAL`] (the first and the
+/// last always), then the result.
+pub struct Reporter {
+    channel: Channel<TransferEvent>,
     last: Option<Instant>,
     latest: Option<TransferProgress>,
     finished: bool,
 }
 
-impl<R: Runtime> Drop for Reporter<R> {
+impl Drop for Reporter {
     /// A transfer stopped before it finished (cancelled, its cluster disconnected) says so.
     fn drop(&mut self) {
         if !self.finished {
             let error = CoreError::other("the transfer was stopped");
-            let _ = self.app.emit(&self.event, TransferEvent::Error { error });
+            let _ = self.channel.send(TransferEvent::Error { error });
         }
     }
 }
 
-impl<R: Runtime> Reporter<R> {
-    pub fn new(app: &AppHandle<R>, id: &str) -> Self {
+impl Reporter {
+    pub fn new(channel: Channel<TransferEvent>) -> Self {
         Self {
-            app: app.clone(),
-            event: transfer_event(id),
+            channel,
             last: None,
             latest: None,
             finished: false,
@@ -208,8 +204,8 @@ impl<R: Runtime> Reporter<R> {
     fn emit_progress(&mut self) {
         if let Some(TransferProgress { transferred, total }) = self.latest.take() {
             let _ = self
-                .app
-                .emit(&self.event, TransferEvent::Progress { transferred, total });
+                .channel
+                .send(TransferEvent::Progress { transferred, total });
             self.last = Some(Instant::now());
         }
     }
@@ -223,7 +219,7 @@ impl<R: Runtime> Reporter<R> {
             }
             Err(error) => TransferEvent::Error { error },
         };
-        let _ = self.app.emit(&self.event, event);
+        let _ = self.channel.send(event);
     }
 }
 
@@ -284,8 +280,8 @@ async fn write_file(path: &Path, contents: &str) -> Result<(), CoreError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::events::test_channel;
     use std::sync::mpsc as std_mpsc;
-    use tauri::Listener;
 
     fn app() -> (tauri::App<tauri::test::MockRuntime>, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
@@ -297,14 +293,6 @@ mod tests {
         (app, dir)
     }
 
-    fn listen<R: Runtime>(app: &tauri::App<R>, id: &str) -> std_mpsc::Receiver<serde_json::Value> {
-        let (tx, rx) = std_mpsc::channel();
-        app.listen_any(transfer_event(id), move |event| {
-            let _ = tx.send(serde_json::from_str(event.payload()).unwrap());
-        });
-        rx
-    }
-
     fn next(rx: &std_mpsc::Receiver<serde_json::Value>) -> serde_json::Value {
         rx.recv_timeout(std::time::Duration::from_secs(10))
             .expect("a transfer event")
@@ -314,8 +302,8 @@ mod tests {
     fn a_transfer_reports_progress_and_its_result_and_forgets_itself() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
-        let events = listen(&app, "t-1");
-        let mut reporter = Reporter::new(app.handle(), "t-1");
+        let (channel, events) = test_channel();
+        let mut reporter = Reporter::new(channel);
         let work = async move {
             for transferred in [0, 10, 20] {
                 reporter.progress(TransferProgress {
@@ -356,8 +344,8 @@ mod tests {
     fn a_cancelled_transfer_stops_and_says_so_and_a_taken_id_is_invalid() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
-        let events = listen(&app, "t-2");
-        let reporter = Reporter::new(app.handle(), "t-2");
+        let (channel, events) = test_channel();
+        let reporter = Reporter::new(channel);
         let work = async move {
             let _reporter = reporter;
             std::future::pending::<()>().await;

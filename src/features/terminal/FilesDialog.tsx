@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, errorKey, openStream, toApiError, type ClusterId, type ObjectRef } from "../../api";
+import { api, errorKey, openStream, toApiError, type ClusterId, type ObjectRef, type StreamChannel } from "../../api";
 import type { TransferEvent } from "../../api/generated/TransferEvent";
 import { Button, ConfirmDialog, Dialog } from "../../components";
 import { formatBytes } from "../metrics/format";
@@ -53,11 +53,14 @@ export function FilesDialog({ clusterId, pod, container, close }: FilesDialogPro
     setPhase({ kind: "failed", message: parts.filter(Boolean).join(" — ") });
   };
 
-  const run = (direction: Direction, where: string, start: (id: string) => Promise<unknown>) => {
+  const run = (
+    direction: Direction,
+    where: string,
+    start: (id: string, onEvent: StreamChannel<TransferEvent>) => Promise<unknown>,
+  ) => {
     setPhase({ kind: "running", direction, transferred: 0, total: null });
     const stop = openStream<TransferEvent>({
       start,
-      listen: api.files.onTransfer,
       stop: api.files.transferStop,
       onEvent: (event) => {
         if (event.type === "progress") {
@@ -113,8 +116,8 @@ export function FilesDialog({ clusterId, pod, container, close }: FilesDialogPro
       return;
     }
     const kind = entry.kind;
-    run("download", destination, (id) =>
-      api.files.downloadStart(clusterId, pod, container, path, kind, destination, id),
+    run("download", destination, (id, onEvent) =>
+      api.files.downloadStart(clusterId, pod, container, path, kind, destination, id, onEvent),
     );
   };
 
@@ -207,7 +210,7 @@ export function FilesDialog({ clusterId, pod, container, close }: FilesDialogPro
           onCancel={() => setPhase({ kind: "idle" })}
           onConfirm={() => {
             const { source: from, target: to } = phase;
-            run("upload", to, (id) => api.files.uploadStart(clusterId, pod, container, from, to, id));
+            run("upload", to, (id, onEvent) => api.files.uploadStart(clusterId, pod, container, from, to, id, onEvent));
           }}
         >
           <p>{t("terminal:files.confirm", { file: baseName(phase.source), path: phase.target, container, pod: pod.name })}</p>

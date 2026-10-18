@@ -7,7 +7,6 @@
 // `FLUSH_INTERVAL` ms, so twenty chatty streams cost one render per interval, not one per batch.
 import {
   api,
-  events,
   openStream,
   toApiError,
   type ApiError,
@@ -170,9 +169,10 @@ export class MultiLogSession {
     const pod = { kind: POD, namespace: target.namespace, name: target.pod };
     const { follow, previous, timestamps } = this.options;
     run.close = openStream<LogUpdate>({
-      start: (id) =>
-        api.logs.start(this.clusterId, pod, { container: target.container, follow, previous, timestamps, tailLines: MULTI_TAIL_LINES }, id),
-      listen: events.onLogs,
+      start: (id, channel) => {
+        const opts = { container: target.container, follow, previous, timestamps, tailLines: MULTI_TAIL_LINES };
+        return api.logs.start(this.clusterId, pod, opts, id, channel);
+      },
       stop: api.logs.stop,
       onListening: () => {
         if (current() && run.status === "connecting") {

@@ -10,14 +10,14 @@ use futures::{Stream, StreamExt};
 use sextant_core::error::with_timeout;
 use sextant_core::resources::{self, DryRunMode, DryRunResult, WatchUpdate};
 use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef, WatchSpec};
-use tauri::{AppHandle, Emitter, Manager, Runtime, State};
+use tauri::ipc::Channel;
+use tauri::{AppHandle, Manager, Runtime, State};
 
 use crate::commands::actions::CHANGE_TIMEOUT;
-use crate::events::watch_event;
 use crate::state::{AppState, Subscription, check_stream_id};
 
-/// Starts a watch under `stream_id`, which the frontend chose and already listens to: updates arrive as
-/// `watch:<streamId>` events (`WatchUpdate`), the first snapshot as soon as it is listed. A taken id is `invalid`.
+/// Starts a watch under `stream_id`, which the frontend chose: updates (`WatchUpdate`) go through `on_event`, the
+/// channel the frontend created before the start, the first snapshot as soon as it is listed. A taken id is `invalid`.
 /// The subscription belongs to the cluster and is registered before the core starts: `watch_stop`, disconnecting
 /// the cluster (`AppState::close_cluster`), `streams_reset` and closing the window stop it — also while the core
 /// is still finding the kind or listing, which drops that work and fails the start.
@@ -28,15 +28,16 @@ pub async fn watch_start<R: Runtime>(
     cluster_id: ClusterId,
     spec: WatchSpec,
     stream_id: String,
+    on_event: Channel<WatchUpdate>,
 ) -> Result<(), CoreError> {
     let (mgr, cluster) = (state.clusters.clone(), cluster_id.clone());
     let open = async move { resources::watch(&mgr, &cluster, spec).await };
-    start_watch(&app, &state, stream_id, cluster_id, open).await
+    start_watch(&app, &state, stream_id, cluster_id, open, on_event).await
 }
 
-/// `watch_start` once the cluster and spec are known: registers the subscription, runs `open` (the core starting
-/// the watch) inside it and forwards the updates; answers once `open` is done. A subscription stopped before that
-/// (`watch_stop`, `streams_reset`, the cluster closed) drops `open` and the start fails; so does a start that
+/// `watch_start` once the cluster and spec are known: registers the subscription, runs `open` (the core starting the
+/// watch) inside it and forwards the updates to `channel`; answers once `open` is done. A subscription stopped before
+/// that (`watch_stop`, `streams_reset`, the cluster closed) drops `open` and the start fails; so does a start that
 /// outlived a `streams_reset`.
 pub async fn start_watch<R, S>(
     app: &AppHandle<R>,
@@ -44,6 +45,7 @@ pub async fn start_watch<R, S>(
     id: String,
     cluster: ClusterId,
     open: impl Future<Output = CoreResult<S>> + Send + 'static,
+    channel: Channel<WatchUpdate>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -64,7 +66,7 @@ where
             }
         }
     };
-    spawn_watch(app, state, id.clone(), cluster, updates)?;
+    spawn_watch(app, state, id.clone(), cluster, updates, channel)?;
     started_rx
         .await
         .unwrap_or_else(|_| Err(CoreError::other("the watch was stopped before it started")))?;
@@ -75,7 +77,7 @@ where
 
 /// Stops every watch subscription, log stream and terminal session; connections and port forwards stay. The
 /// window calls it once when the page loads, before its first stream: streams of a page that was reloaded have
-/// nobody listening to them any more.
+/// nobody receiving them any more.
 #[tauri::command]
 pub async fn streams_reset(state: State<'_, AppState>) -> Result<(), CoreError> {
     state.reset_streams();
@@ -93,38 +95,46 @@ pub async fn watch_stop(
     Ok(())
 }
 
-/// Emits every update of `updates` as `watch:<id>` until the stream ends or the subscription is stopped.
-/// The subscription is registered in `state.subscriptions` under `id` and `cluster` before the first update is sent,
-/// and forgets itself when the stream ends. A taken or malformed `id` is `invalid` (nothing is emitted).
+/// Sends every update of `updates` through `channel` until the stream ends, a send fails or the subscription is
+/// stopped. The subscription is registered in `state.subscriptions` under `id` and `cluster` before the first update
+/// is sent, and forgets itself when the stream ends. A taken or malformed `id` is `invalid` (nothing is sent).
 pub fn forward_watch<R, S>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
     updates: S,
+    channel: Channel<WatchUpdate>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
     S: Stream<Item = WatchUpdate> + Send + 'static,
 {
-    spawn_watch(app, state, id, cluster, async move { Some(updates) })
+    spawn_watch(
+        app,
+        state,
+        id,
+        cluster,
+        async move { Some(updates) },
+        channel,
+    )
 }
 
-/// Registers the subscription `id` and runs it: waits for `updates` (`None`: the watch did not start), then emits
-/// each update as `watch:<id>`. Stopping the subscription at any point drops whatever it is waiting for.
+/// Registers the subscription `id` and runs it: waits for `updates` (`None`: the watch did not start), then sends
+/// each update through `channel`. Stopping the subscription at any point drops whatever it is waiting for.
 fn spawn_watch<R, F, S>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
     updates: F,
+    channel: Channel<WatchUpdate>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
     F: Future<Output = Option<S>> + Send + 'static,
     S: Stream<Item = WatchUpdate> + Send + 'static,
 {
-    let event = watch_event(&id);
     let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
     let handle = app.clone();
     let own_id = id.clone();
@@ -135,7 +145,7 @@ where
         if let Some(updates) = updates.await {
             let mut updates = std::pin::pin!(updates);
             while let Some(update) = updates.next().await {
-                if handle.emit(&event, &update).is_err() {
+                if channel.send(update).is_err() {
                     break;
                 }
             }
@@ -225,9 +235,9 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use futures::channel::mpsc;
-    use tauri::Listener;
 
     use super::*;
+    use crate::events::test_channel;
 
     fn app() -> (tauri::App<tauri::test::MockRuntime>, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
@@ -247,24 +257,12 @@ mod tests {
         }
     }
 
-    /// Every payload of `watch:<id>`, as JSON.
-    fn listen<R: Runtime>(
-        app: &tauri::App<R>,
-        id: &str,
-    ) -> std::sync::mpsc::Receiver<serde_json::Value> {
-        let (tx, rx) = std::sync::mpsc::channel();
-        app.listen_any(watch_event(id), move |event| {
-            let _ = tx.send(serde_json::from_str(event.payload()).unwrap());
-        });
-        rx
-    }
-
     #[test]
-    fn an_update_sent_right_after_the_start_reaches_a_listener_subscribed_before_it() {
+    fn an_update_sent_right_after_the_start_reaches_the_channel_created_before_it() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
-        // The window listens first, then starts the watch under the id it chose.
-        let seen = listen(&app, "w-early");
+        // The window creates the channel first, then starts the watch under the id it chose.
+        let (channel, seen) = test_channel();
         let updates = futures::stream::iter([WatchUpdate::Snapshot { items: vec![] }])
             .chain(futures::stream::pending());
         forward_watch(
@@ -273,6 +271,7 @@ mod tests {
             "w-early".into(),
             ClusterId::from("c"),
             updates,
+            channel,
         )
         .unwrap();
         let first = seen
@@ -289,7 +288,15 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (tx, rx) = mpsc::unbounded::<WatchUpdate>();
-        forward_watch(app.handle(), &state, "w-1".into(), ClusterId::from("c"), rx).unwrap();
+        forward_watch(
+            app.handle(),
+            &state,
+            "w-1".into(),
+            ClusterId::from("c"),
+            rx,
+            test_channel().0,
+        )
+        .unwrap();
 
         let (again_tx, again_rx) = mpsc::unbounded::<WatchUpdate>();
         let err = forward_watch(
@@ -298,6 +305,7 @@ mod tests {
             "w-1".into(),
             ClusterId::from("c"),
             again_rx,
+            test_channel().0,
         )
         .expect_err("the id is taken");
         assert_eq!(err.code, sextant_core::ErrorCode::Invalid, "{err}");
@@ -308,8 +316,15 @@ mod tests {
 
         for bad in ["", "a:b", "a b", "../x"] {
             let (_, rx) = mpsc::unbounded::<WatchUpdate>();
-            let err = forward_watch(app.handle(), &state, bad.into(), ClusterId::from("c"), rx)
-                .expect_err(bad);
+            let err = forward_watch(
+                app.handle(),
+                &state,
+                bad.into(),
+                ClusterId::from("c"),
+                rx,
+                test_channel().0,
+            )
+            .expect_err(bad);
             assert_eq!(err.code, sextant_core::ErrorCode::Invalid, "{bad:?}: {err}");
         }
     }
@@ -323,9 +338,25 @@ mod tests {
         let (tx, rx) = mpsc::unbounded::<WatchUpdate>();
         let (other_tx, other_rx) = mpsc::unbounded::<WatchUpdate>();
 
-        let seen = listen(&app, "w-1");
-        forward_watch(app.handle(), &state, "w-1".into(), cluster.clone(), rx).unwrap();
-        forward_watch(app.handle(), &state, "w-2".into(), other.clone(), other_rx).unwrap();
+        let (channel, seen) = test_channel();
+        forward_watch(
+            app.handle(),
+            &state,
+            "w-1".into(),
+            cluster.clone(),
+            rx,
+            channel,
+        )
+        .unwrap();
+        forward_watch(
+            app.handle(),
+            &state,
+            "w-2".into(),
+            other.clone(),
+            other_rx,
+            test_channel().0,
+        )
+        .unwrap();
         assert_eq!(state.subscriptions.len(), 2);
 
         tx.unbounded_send(WatchUpdate::Snapshot { items: vec![] })
@@ -348,7 +379,15 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (tx, rx) = mpsc::unbounded::<WatchUpdate>();
-        forward_watch(app.handle(), &state, "w-1".into(), ClusterId::from("c"), rx).unwrap();
+        forward_watch(
+            app.handle(),
+            &state,
+            "w-1".into(),
+            ClusterId::from("c"),
+            rx,
+            test_channel().0,
+        )
+        .unwrap();
         assert_eq!(state.subscriptions.len(), 1);
         drop(tx);
         wait_until("the subscription to be removed", || {
@@ -361,7 +400,15 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (tx, rx) = mpsc::unbounded::<WatchUpdate>();
-        forward_watch(app.handle(), &state, "w-1".into(), ClusterId::from("c"), rx).unwrap();
+        forward_watch(
+            app.handle(),
+            &state,
+            "w-1".into(),
+            ClusterId::from("c"),
+            rx,
+            test_channel().0,
+        )
+        .unwrap();
         tauri::async_runtime::block_on(watch_stop(app.state::<AppState>(), "w-1".into())).unwrap();
         assert!(state.subscriptions.is_empty());
         wait_until("the watch to stop", || tx.is_closed());
@@ -379,6 +426,7 @@ mod tests {
             "w-1".into(),
             ClusterId::from("a"),
             watch_rx,
+            test_channel().0,
         )
         .unwrap();
         let (logs_tx, logs_rx) = mpsc::unbounded::<sextant_core::logs::LogUpdate>();
@@ -388,6 +436,7 @@ mod tests {
             "l-1".into(),
             ClusterId::from("b"),
             logs_rx,
+            test_channel().0,
         )
         .unwrap();
         let guard = tempfile::NamedTempFile::new().unwrap().into_temp_path();
@@ -450,8 +499,15 @@ mod tests {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state = handle.state::<AppState>();
-                let result =
-                    start_watch(&handle, &state, "w-1".into(), ClusterId::from("c"), open).await;
+                let result = start_watch(
+                    &handle,
+                    &state,
+                    "w-1".into(),
+                    ClusterId::from("c"),
+                    open,
+                    test_channel().0,
+                )
+                .await;
                 let _ = done_tx.send(result);
             });
             began_rx.recv_timeout(Duration::from_secs(5)).unwrap();
@@ -517,10 +573,17 @@ mod tests {
             let state = handle.state::<AppState>();
             let cluster = ClusterId::from("c");
             let results = futures::join!(
-                start_watch(&handle, &state, "w-1".into(), cluster.clone(), async move {
-                    watch_open.await;
-                    Ok(watch_rx)
-                }),
+                start_watch(
+                    &handle,
+                    &state,
+                    "w-1".into(),
+                    cluster.clone(),
+                    async move {
+                        watch_open.await;
+                        Ok(watch_rx)
+                    },
+                    test_channel().0,
+                ),
                 crate::commands::logs::start_logs(
                     &handle,
                     &state,
@@ -529,7 +592,8 @@ mod tests {
                     async move {
                         logs_open.await;
                         Ok(logs_rx)
-                    }
+                    },
+                    test_channel().0,
                 ),
                 crate::commands::terminal::start_exec(
                     &handle,
@@ -539,7 +603,8 @@ mod tests {
                     async move {
                         exec_open.await;
                         Ok(session)
-                    }
+                    },
+                    test_channel().0,
                 ),
             );
             let _ = done_tx.send(vec![results.0, results.1, results.2]);

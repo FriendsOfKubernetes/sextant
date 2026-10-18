@@ -1,6 +1,6 @@
 //! The API extensions reach clusters through: the window's extension host forwards a frame's request as
-//! `extension_call(extensionId, method, params, streamId?)`, and every call is checked here, in Rust, against what the
-//! user granted at install — never against the manifest, never trusting the window.
+//! `extension_call(extensionId, method, params, streamId?, onEvent?)`, and every call is checked here, in Rust, against
+//! what the user granted at install — never against the manifest, never trusting the window.
 //!
 //! A call runs only when the extension is installed, enabled and within what was granted ([`ExtensionHost::active`],
 //! read fresh on every call), the cluster is one it was granted (by kubeconfig context name), and
@@ -13,9 +13,10 @@
 //! needs "Secret values" too; node shell pods are never changed or deleted, whatever the rules, and a pod that cannot
 //! be read to make sure is refused.
 //!
-//! `resources.watch` streams updates as `ext-watch:<streamId>` events (the payload of `watch:<id>`); the stream lives
-//! in [`ExtensionStreams`] (in `AppState`) from before the watch starts, and ends with `extension_watch_stop`, the
-//! extension being disabled, removed or granted other permissions, its cluster closed, the page reloaded or the window closed.
+//! `resources.watch` streams updates (`WatchUpdate`, as `watch_start` does) through the channel `onEvent` the window
+//! created before the call, under the `streamId` it chose; the stream lives in [`ExtensionStreams`] (in `AppState`)
+//! from before the watch starts, and ends with `extension_watch_stop`, the extension being disabled, removed or granted
+//! other permissions, its cluster closed, the page reloaded or the window closed.
 //!
 //! `storage.*` keeps one JSON object per extension in `<data>/extensions-data/<id>.json`, at most [`MAX_STORAGE_BYTES`].
 
@@ -40,7 +41,8 @@ use sextant_core::{
     ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode, ObjectRef,
     SettingsStore, WatchSpec, logs,
 };
-use tauri::{AppHandle, Emitter, Runtime, State};
+use tauri::ipc::JavaScriptChannelId;
+use tauri::{Runtime, State, Webview};
 use tokio::task::AbortHandle;
 
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
@@ -58,8 +60,6 @@ use crate::mcp::guard::narrowed_target;
 use crate::mcp::tools_write::{check_json_patch, reads_secret_values};
 use crate::state::{AppState, check_stream_id};
 
-/// Prefix of the events of a `resources.watch` stream: `ext-watch:<streamId>`, payload a `WatchUpdate`.
-pub const EXT_WATCH_PREFIX: &str = "ext-watch:";
 /// Event of a new entry in the extensions' journal, payload an `AuditEntry`.
 pub const EXT_AUDIT: &str = "ext-audit";
 /// Reads of the cluster (lists, objects, logs, kinds) are limited to this.
@@ -94,11 +94,6 @@ pub const METHODS: [&str; 13] = [
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
 
-/// `ext-watch:<id>`.
-pub fn ext_watch_event(stream_id: &str) -> String {
-    format!("{EXT_WATCH_PREFIX}{stream_id}")
-}
-
 /// Something the API tells the window.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ApiEvent {
@@ -112,7 +107,7 @@ pub enum ApiEvent {
 pub type ApiEmitter = Arc<dyn Fn(ApiEvent) -> bool + Send + Sync>;
 
 /// Sends one watch update to the window; `false` when nobody receives it any more.
-pub type UpdateSink = Arc<dyn Fn(&WatchUpdate) -> bool + Send + Sync>;
+pub type UpdateSink = Arc<dyn Fn(WatchUpdate) -> bool + Send + Sync>;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Streams
@@ -522,7 +517,7 @@ impl ExtensionApi {
                     let _ = started_tx.send(Ok(()));
                     let mut updates = std::pin::pin!(updates);
                     while let Some(update) = updates.next().await {
-                        if !sink(&update) {
+                        if !sink(update) {
                             break;
                         }
                     }
@@ -1143,7 +1138,9 @@ impl<'a> ExtCall<'a> {
     async fn watch(&self, params: Value, sink: Option<(String, UpdateSink)>) -> CoreResult<Value> {
         let args: WatchArgs = parse(&self.method, params)?;
         let Some((stream_id, sink)) = sink else {
-            return Err(invalid("resources.watch needs a stream id"));
+            return Err(invalid(
+                "resources.watch needs a stream id and a channel (onEvent)",
+            ));
         };
         check_stream_id(&stream_id)?;
         // The grant every check below is made under (or a later one, which the stream then fails to match).
@@ -1687,22 +1684,24 @@ struct SetArgs {
 // ---------------------------------------------------------------------------------------------------------------
 // Commands
 
-/// Runs one API method for an extension (see the module docs). `streamId` is required by `resources.watch`, whose
-/// updates arrive as `ext-watch:<streamId>`.
+/// Runs one API method for an extension (see the module docs). `streamId` and `onEvent` (a channel, which other
+/// methods do not take) are required by `resources.watch`: its updates go through the channel, and the stream is
+/// stopped by its id.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn extension_call<R: Runtime>(
-    app: AppHandle<R>,
+    webview: Webview<R>,
     state: State<'_, AppState>,
     host: State<'_, ExtensionHost>,
     extension_id: String,
     method: String,
     params: Option<Value>,
     stream_id: Option<String>,
+    on_event: Option<JavaScriptChannelId>,
 ) -> CoreResult<Value> {
-    let sink = stream_id.map(|id| {
-        let event = ext_watch_event(&id);
-        let handle = app.clone();
-        let sink: UpdateSink = Arc::new(move |update| handle.emit(&event, update).is_ok());
+    let sink = stream_id.zip(on_event).map(|(id, channel)| {
+        let channel = channel.channel_on::<R, WatchUpdate>(webview);
+        let sink: UpdateSink = Arc::new(move |update| channel.send(update).is_ok());
         (id, sink)
     });
     state

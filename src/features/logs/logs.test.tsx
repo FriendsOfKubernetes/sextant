@@ -87,6 +87,7 @@ describe("log stream", () => {
         pod: payload.pod,
         opts: { container: "app", follow: true, previous: false, timestamps: false, tailLines: 1000 },
         streamId: expect.any(String),
+        onEvent: expect.anything(),
       },
     ]);
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Live"));

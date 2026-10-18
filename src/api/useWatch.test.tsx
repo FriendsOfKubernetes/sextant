@@ -42,6 +42,7 @@ describe("useWatch", () => {
       clusterId: "c1",
       spec: spec(["default"]),
       streamId: expect.any(String),
+      onEvent: expect.anything(),
     });
 
     act(() => b.emit("watch:watch-1", { type: "snapshot", items: [pod("a"), pod("b")] }));

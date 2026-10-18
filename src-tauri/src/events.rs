@@ -1,4 +1,4 @@
-//! Events the backend emits to the window, and their payloads.
+//! Events the backend emits to the window, and the payloads of events and stream channels.
 
 use serde::{Deserialize, Serialize};
 use sextant_core::{ClusterId, ConnectionState, CoreError};
@@ -23,25 +23,10 @@ pub const EXTENSION_FILES_CHANGED: &str = "extension-files-changed";
 /// `open-about` — no payload (`null`): "About Sextant…" in the tray menu; the window opens the About dialog.
 pub const OPEN_ABOUT: &str = "open-about";
 
-/// `watch:<subscriptionId>` — payload `WatchUpdate`.
-pub fn watch_event(subscription_id: &str) -> String {
-    format!("watch:{subscription_id}")
-}
-
-/// `logs:<streamId>` — payload `LogUpdate`.
-pub fn logs_event(stream_id: &str) -> String {
-    format!("logs:{stream_id}")
-}
-
-/// `gitops-install:<streamId>` — payload `InstallEvent` (a Flux / Argo CD install, `gitops_install_start`).
-pub fn gitops_install_event(stream_id: &str) -> String {
-    format!("gitops-install:{stream_id}")
-}
-
-/// `term:<sessionId>` — payload [`TermPayload`].
-pub fn term_event(session_id: &str) -> String {
-    format!("term:{session_id}")
-}
+// Streams the window opens (watch, logs, terminal sessions, extension watches, GitOps installs, file transfers) are
+// not events: each `*_start` command takes a `tauri::ipc::Channel` (`onEvent`) the window created before the start,
+// and its payloads (`WatchUpdate`, `LogUpdate`, [`TermPayload`], `InstallEvent`, `TransferEvent`) go through it
+// (ADR-0078).
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -77,6 +62,23 @@ impl TermPayload {
     }
 }
 
+/// A stream channel for module tests: what the backend sends through it arrives on the receiver as JSON.
+#[cfg(test)]
+pub(crate) fn test_channel<T>() -> (
+    tauri::ipc::Channel<T>,
+    std::sync::mpsc::Receiver<serde_json::Value>,
+) {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let channel = tauri::ipc::Channel::new(move |body| {
+        if let tauri::ipc::InvokeResponseBody::Json(json) = body {
+            // The test may have stopped listening; the stream does not care.
+            let _ = tx.send(serde_json::from_str(&json).unwrap());
+        }
+        Ok(())
+    });
+    (channel, rx)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,10 +106,6 @@ mod tests {
 
     #[test]
     fn event_names() {
-        assert_eq!(watch_event("watch-1"), "watch:watch-1");
-        assert_eq!(logs_event("logs-2"), "logs:logs-2");
-        assert_eq!(term_event("term-3"), "term:term-3");
-        assert_eq!(gitops_install_event("i-4"), "gitops-install:i-4");
         assert_eq!(
             [MCP_STATUS, MCP_CONFIRM, MCP_AUDIT, OPEN_ABOUT],
             ["mcp-status", "mcp-confirm", "mcp-audit", "open-about"]

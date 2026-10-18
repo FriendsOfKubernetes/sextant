@@ -1669,7 +1669,7 @@ async fn every_method_against_the_test_cluster() {
 
     // resources.watch: a stream in AppState that ends when the extension is disabled.
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<WatchUpdate>();
-    let sink: UpdateSink = Arc::new(move |update| tx.send(update.clone()).is_ok());
+    let sink: UpdateSink = Arc::new(move |update| tx.send(update).is_ok());
     live.state
         .ext_api
         .call(
@@ -1702,7 +1702,7 @@ async fn every_method_against_the_test_cluster() {
             "widgets",
             "resources.watch",
             json!({ "clusterId": id, "kind": { "kind": "Secret" }, "namespaces": ["kube-system"] }),
-            Some(("ext-stream-2".into(), Arc::new(|_: &WatchUpdate| true))),
+            Some(("ext-stream-2".into(), Arc::new(|_: WatchUpdate| true))),
         )
         .await
         .unwrap_err();
@@ -1710,7 +1710,7 @@ async fn every_method_against_the_test_cluster() {
 
     // Without namespaces: only the namespaces the grant covers; with none granted for reading: denied.
     let (tx_all, mut rx_all) = tokio::sync::mpsc::unbounded_channel::<WatchUpdate>();
-    let sink: UpdateSink = Arc::new(move |update| tx_all.send(update.clone()).is_ok());
+    let sink: UpdateSink = Arc::new(move |update| tx_all.send(update).is_ok());
     live.state
         .ext_api
         .call(
@@ -1754,7 +1754,7 @@ async fn every_method_against_the_test_cluster() {
             "gadgets",
             "resources.watch",
             json!({ "clusterId": id, "kind": { "kind": "ConfigMap" } }),
-            Some(("ext-stream-4".into(), Arc::new(|_: &WatchUpdate| true))),
+            Some(("ext-stream-4".into(), Arc::new(|_: WatchUpdate| true))),
         )
         .await
         .unwrap_err();

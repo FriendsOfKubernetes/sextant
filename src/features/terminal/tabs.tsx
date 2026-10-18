@@ -11,6 +11,7 @@ import { DEFAULT_DEBUG_IMAGE, DebugDialog } from "./DebugDialog";
 import { FilesDialog } from "./FilesDialog";
 import { NodeShellConfirm } from "./NodeShellConfirm";
 import { TerminalView } from "./TerminalView";
+import type { TerminalSessionFactory } from "./useTerminal";
 
 /** Payload of an "exec" dock tab: a shell in `container` of `pod`. */
 export interface ExecTabPayload {
@@ -60,8 +61,8 @@ function ContainerShellView({ payload, active }: { payload: ExecTabPayload; acti
   const { t } = useTranslation();
   const { clusterId, pod, container } = payload;
   const [open, setOpen] = useState<"debug" | "files" | null>(null);
-  const factory = useCallback(
-    (cols: number, rows: number, streamId: string) => api.terminal.exec(clusterId, pod, container, cols, rows, streamId),
+  const factory = useCallback<TerminalSessionFactory>(
+    (cols, rows, streamId, onEvent) => api.terminal.exec(clusterId, pod, container, cols, rows, streamId, onEvent),
     [clusterId, pod, container],
   );
   const close = () => setOpen(null);
@@ -114,8 +115,8 @@ function DebugLauncher({
 function DebugView({ payload, active }: { payload: DebugTabPayload; active: boolean }) {
   const { t } = useTranslation();
   const { clusterId, pod, debug } = payload;
-  const factory = useCallback(
-    (cols: number, rows: number, streamId: string) => api.terminal.debug(clusterId, pod, debug, cols, rows, streamId),
+  const factory = useCallback<TerminalSessionFactory>(
+    (cols, rows, streamId, onEvent) => api.terminal.debug(clusterId, pod, debug, cols, rows, streamId, onEvent),
     [clusterId, pod, debug],
   );
   const image = debug.image || DEFAULT_DEBUG_IMAGE;
@@ -152,8 +153,8 @@ function DebugView({ payload, active }: { payload: DebugTabPayload; active: bool
 function NodeShellView({ payload, active }: { payload: NodeShellTabPayload; active: boolean }) {
   const { t } = useTranslation();
   const { clusterId, node } = payload;
-  const factory = useCallback(
-    (cols: number, rows: number, streamId: string) => api.terminal.nodeShell(clusterId, node, cols, rows, streamId),
+  const factory = useCallback<TerminalSessionFactory>(
+    (cols, rows, streamId, onEvent) => api.terminal.nodeShell(clusterId, node, cols, rows, streamId, onEvent),
     [clusterId, node],
   );
   return (
@@ -171,8 +172,8 @@ function NodeShellView({ payload, active }: { payload: NodeShellTabPayload; acti
 export function LocalTerminalTab({ tab, active }: DockTabProps) {
   const { t } = useTranslation();
   const { clusterId, input } = tab.payload as LocalTerminalTabPayload;
-  const factory = useCallback(
-    (cols: number, rows: number, streamId: string) => api.terminal.local(clusterId, cols, rows, streamId),
+  const factory = useCallback<TerminalSessionFactory>(
+    (cols, rows, streamId, onEvent) => api.terminal.local(clusterId, cols, rows, streamId, onEvent),
     [clusterId],
   );
   return (

@@ -290,14 +290,14 @@ fn gitops_install_commands_on_a_cluster_that_is_not_connected_fail_before_downlo
     let err = invoke(
         &h,
         "gitops_install_start",
-        json!({ "clusterId": "nope", "token": "t", "streamId": "s-1" }),
+        json!({ "clusterId": "nope", "token": "t", "streamId": "s-1", "onEvent": "__CHANNEL__:1" }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "notFound", "{err}");
     let err = invoke(
         &h,
         "gitops_install_start",
-        json!({ "clusterId": "nope", "token": "t", "streamId": "bad id" }),
+        json!({ "clusterId": "nope", "token": "t", "streamId": "bad id", "onEvent": "__CHANNEL__:2" }),
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
@@ -986,6 +986,51 @@ fn later_argument_names_match_the_frontend() {
             "gitops_install_start",
             json!({ "clusterId": "c", "token": "t" }),
             "streamId",
+        ), // Streams send their payloads through the channel the window created (ADR-0078).
+        (
+            "watch_start",
+            json!({ "clusterId": "c", "spec": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespaces": null, "labelSelector": null, "fieldSelector": null }, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "logs_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "opts": { "container": "app", "follow": true, "tailLines": null, "timestamps": false, "previous": false }, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "exec_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": "app", "cols": 80, "rows": 24, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "terminal_start",
+            json!({ "clusterId": null, "cols": 80, "rows": 24, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "node_shell_start",
+            json!({ "clusterId": "c", "node": "n", "cols": 80, "rows": 24, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "debug_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "spec": { "image": "busybox:stable", "target": "app", "copy": null }, "cols": 80, "rows": 24, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "files_download_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": null, "path": "/etc/hostname", "kind": "file", "destination": "/tmp/hostname", "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "files_upload_start",
+            json!({ "clusterId": "c", "pod": { "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "n", "name": "p" }, "container": null, "source": "/tmp/x", "path": "/tmp/x", "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "gitops_install_start",
+            json!({ "clusterId": "c", "token": "t", "streamId": "s" }),
+            "onEvent",
         ),
     ];
     for (cmd, args, next) in cases {
@@ -1181,4 +1226,31 @@ fn extension_api_commands_refuse_an_extension_that_is_not_installed_and_journal_
         json!({ "extensionId": "ghost", "streamId": "nothing" }),
     )
     .unwrap();
+    // `resources.watch` takes the channel of its updates as `onEvent` (other methods leave it out).
+    let err = invoke(
+        &h,
+        "extension_call",
+        json!({ "extensionId": "ghost", "method": "resources.watch", "params": {}, "streamId": "s-1", "onEvent": "nope" }),
+    )
+    .unwrap_err();
+    let text = err.as_str().unwrap_or_default();
+    assert!(
+        text.contains("onEvent") && text.contains("invalid channel value"),
+        "{err}"
+    );
+    let err = invoke(
+        &h,
+        "extension_call",
+        json!({ "extensionId": "ghost", "method": "resources.watch", "params": { "clusterId": "c", "kind": { "kind": "Pod" } }, "streamId": "s-1", "onEvent": "__CHANNEL__:3" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "denied", "{err}");
+    // Without the channel there is nowhere to send updates: the watch is not started.
+    let err = invoke(
+        &h,
+        "extension_call",
+        json!({ "extensionId": "ghost", "method": "resources.watch", "params": { "clusterId": "c", "kind": { "kind": "Pod" } }, "streamId": "s-1" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
 }

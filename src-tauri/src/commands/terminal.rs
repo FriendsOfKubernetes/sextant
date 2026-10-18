@@ -1,15 +1,16 @@
 //! Terminal sessions: shell in a container (`exec_start`), shell on a node through a temporary privileged pod
 //! (`node_shell_start`), a debug container (`debug_start`) and a local shell (`terminal_start`).
-//! Output arrives as `term:<sessionId>` events; input, resize and stop are shared by both kinds.
+//! Output goes through the session's channel (`onEvent`, [`TermPayload`]); input, resize and stop are shared by all
+//! kinds.
 //!
-//! The frontend chooses the session id and subscribes to `term:<id>` before `*_start`, so output is emitted as soon
-//! as the shell prints it (the first prompt, an immediate exit) and nothing is held back.
+//! The frontend chooses the session id and creates the channel before `*_start`, so output is sent as soon as the
+//! shell prints it (the first prompt, an immediate exit) and nothing is held back.
 //!
-//! Output is flow-controlled like a real terminal's (#122): the window acknowledges the bytes its terminal has
-//! written (`term_ack`), and a session with [`OUTPUT_WINDOW`] bytes unacknowledged stops taking output from its shell
-//! until acknowledgements come. Its bounded output channel then fills, so the PTY is not read and the shell blocks on
-//! its writes (a container shell's websocket is not read, so the API server holds it back). Output that comes quickly
-//! is gathered into one event per [`COALESCE`]; the first chunk after a quiet spell (an echoed keystroke) goes at once.
+//! Output is flow-controlled like a real terminal's (#122): the window acknowledges the bytes its terminal has written
+//! (`term_ack`), and a session with [`OUTPUT_WINDOW`] bytes unacknowledged stops taking output from its shell until
+//! acknowledgements come. Its bounded output channel then fills, so the PTY is not read and the shell blocks on its
+//! writes (a container shell's websocket is not read, so the API server holds it back). Output that comes quickly is
+//! gathered into one message per [`COALESCE`]; the first chunk after a quiet spell (an echoed keystroke) goes at once.
 
 use sextant_core::exec::{self, ExecSession, TermEvent};
 use sextant_core::{debug, node_shell};
@@ -19,15 +20,16 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use sextant_core::{ClusterId, CoreError, CoreResult, ErrorCode, ObjectRef};
-use tauri::{AppHandle, Emitter, Manager, Runtime, State};
+use tauri::ipc::Channel;
+use tauri::{AppHandle, Manager, Runtime, State};
 use tokio::sync::{Notify, mpsc, oneshot};
 use tokio::time::Instant;
 
-use crate::events::{TermPayload, term_event};
+use crate::events::TermPayload;
 use crate::pty::{self, ShellCommand};
 use crate::state::{AppState, SessionGuard, TermSession, check_stream_id};
 
-/// Shell in a container, under `stream_id` (chosen by the frontend, which already listens to `term:<streamId>`).
+/// Shell in a container, under `stream_id` (chosen by the frontend), its output sent through `on_event`.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn exec_start<R: Runtime>(
@@ -39,9 +41,10 @@ pub async fn exec_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
+    on_event: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     let open = exec::exec_shell(&state.clusters, &cluster_id, &pod, &container, cols, rows);
-    start_exec(&app, &state, stream_id, cluster_id.clone(), open).await
+    start_exec(&app, &state, stream_id, cluster_id.clone(), open, on_event).await
 }
 
 /// `exec_start` once the container is known: waits for `open` (the core opening the exec connection), then
@@ -52,11 +55,20 @@ pub async fn start_exec<R: Runtime>(
     id: String,
     cluster: ClusterId,
     open: impl Future<Output = CoreResult<ExecSession>>,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
     let session = open.await?;
-    forward_term(app, state, id.clone(), Some(cluster), session, None)?;
+    forward_term(
+        app,
+        state,
+        id.clone(),
+        Some(cluster),
+        session,
+        None,
+        channel,
+    )?;
     state.undo_if_reset(generation, || {
         state.sessions.stop(&id);
     })
@@ -66,6 +78,7 @@ pub async fn start_exec<R: Runtime>(
 /// `settings.node_shell_image`), then a shell in it, which is the node's. The pod is deleted when the session ends
 /// (the tab closed, the shell exited, the cluster disconnected, the window closed) or the start fails.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn node_shell_start<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, AppState>,
@@ -74,8 +87,12 @@ pub async fn node_shell_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
+    on_event: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
-    start_node_shell(&app, &state, stream_id, cluster_id, &node, cols, rows).await
+    start_node_shell(
+        &app, &state, stream_id, cluster_id, &node, cols, rows, on_event,
+    )
+    .await
 }
 
 /// `node_shell_start`. The node shell is in `state.sessions` from the very start, before the pod is requested: until
@@ -84,6 +101,7 @@ pub async fn node_shell_start<R: Runtime>(
 /// ([`node_shell::create_until`]; closing the window waits for that). Once the shell runs, the placeholder is replaced
 /// by the session in one step ([`finish_node_shell`]), whose guard is the pod itself, so the pod is deleted together
 /// with the session. A taken `id` is `invalid` before anything starts.
+#[allow(clippy::too_many_arguments)]
 pub async fn start_node_shell<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -92,6 +110,7 @@ pub async fn start_node_shell<R: Runtime>(
     node: &str,
     cols: u16,
     rows: u16,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -129,6 +148,7 @@ pub async fn start_node_shell<R: Runtime>(
             &cancel,
             session,
             Box::new(pod),
+            channel,
         )
     });
     if let Err(err) = finished {
@@ -160,8 +180,12 @@ pub async fn debug_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
+    on_event: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
-    start_debug(&app, &state, stream_id, cluster_id, &pod, &spec, cols, rows).await
+    start_debug(
+        &app, &state, stream_id, cluster_id, &pod, &spec, cols, rows, on_event,
+    )
+    .await
 }
 
 /// `debug_start`, registered like a node shell ([`start_node_shell`]): a placeholder in `state.sessions` from the very
@@ -178,6 +202,7 @@ pub async fn start_debug<R: Runtime>(
     spec: &debug::DebugSpec,
     cols: u16,
     rows: u16,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -212,6 +237,7 @@ pub async fn start_debug<R: Runtime>(
             &cancel,
             session,
             Box::new(target.copy),
+            channel,
         )
     });
     if let Err(err) = finished {
@@ -257,6 +283,7 @@ fn insert_placeholder(
 /// `term_stop`, `close_cluster` or a reset at any moment finds one of the two and the pod never outlives them. When the
 /// start was called off or the placeholder is gone, the session is dropped with `pod` (which deletes it) and the
 /// start fails with [`node_shell::StartCancel::error`].
+#[allow(clippy::too_many_arguments)]
 fn finish_node_shell<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -265,11 +292,12 @@ fn finish_node_shell<R: Runtime>(
     cancel: &node_shell::StartCancel,
     session: ExecSession,
     pod: SessionGuard,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     if cancel.is_cancelled() {
         return Err(node_shell::StartCancel::error());
     }
-    let (running, registered) = term_session(app, &id, Some(cluster), session, Some(pod));
+    let (running, registered) = term_session(app, &id, Some(cluster), session, Some(pod), channel);
     let placeholder = state
         .sessions
         .replace_if(&id, |s| is_placeholder_of(s, cancel), running)
@@ -321,6 +349,7 @@ pub async fn terminal_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
+    on_event: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     // Spawning blocks (forking the shell, and for zsh a probe of `/etc/zshenv` that may take up to 2 s), so it runs
     // on a blocking thread rather than an async worker. The order of the start is unchanged: the generation is taken,
@@ -329,10 +358,10 @@ pub async fn terminal_start<R: Runtime>(
         let state = app.state::<AppState>();
         let shell = pty::user_shell();
         match cluster_id {
-            Some(cluster) => {
-                start_local_terminal(&app, &state, stream_id, cluster, &shell, cols, rows)
-            }
-            None => start_plain_terminal(&app, &state, stream_id, &shell, cols, rows),
+            Some(cluster) => start_local_terminal(
+                &app, &state, stream_id, cluster, &shell, cols, rows, on_event,
+            ),
+            None => start_plain_terminal(&app, &state, stream_id, &shell, cols, rows, on_event),
         }
     })
     .await
@@ -348,11 +377,12 @@ pub fn start_plain_terminal<R: Runtime>(
     shell: &ShellCommand,
     cols: u16,
     rows: u16,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
     let session = pty::spawn_shell(shell, &[], cols, rows)?;
-    forward_term(app, state, id.clone(), None, session, None)?;
+    forward_term(app, state, id.clone(), None, session, None, channel)?;
     state.undo_if_reset(generation, || {
         state.sessions.stop(&id);
     })
@@ -362,6 +392,7 @@ pub fn start_plain_terminal<R: Runtime>(
 /// ([`pty::spawn_local_shell`]). The file, and the shell's temporary startup files, live as long as the session: they
 /// are removed when the shell exits, and before `term_stop`, disconnecting the cluster, `streams_reset`, closing the
 /// window or quitting the application return.
+#[allow(clippy::too_many_arguments)]
 pub fn start_local_terminal<R: Runtime>(
     app: &AppHandle<R>,
     state: &AppState,
@@ -370,10 +401,16 @@ pub fn start_local_terminal<R: Runtime>(
     shell: &ShellCommand,
     cols: u16,
     rows: u16,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
-    start_local_session(app, state, id, cluster, |kubeconfig| {
-        pty::spawn_local_shell(shell, kubeconfig, cols, rows)
-    })
+    start_local_session(
+        app,
+        state,
+        id,
+        cluster,
+        |kubeconfig| pty::spawn_local_shell(shell, kubeconfig, cols, rows),
+        channel,
+    )
 }
 
 /// [`start_local_terminal`] with the shell started by `spawn`, which gets the temporary kubeconfig's path.
@@ -383,6 +420,7 @@ pub fn start_local_session<R: Runtime, S: Into<pty::LocalShell>>(
     id: String,
     cluster: ClusterId,
     spawn: impl FnOnce(&std::ffi::OsStr) -> CoreResult<S>,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     // Commands run in parallel: a reset may come while the shell is being spawned.
@@ -403,6 +441,7 @@ pub fn start_local_session<R: Runtime, S: Into<pty::LocalShell>>(
         Some(cluster),
         session,
         Some(Box::new((kubeconfig, startup_files))),
+        channel,
     )?;
     state.undo_if_reset(generation, || {
         state.sessions.stop(&id);
@@ -459,12 +498,12 @@ pub async fn term_ack<R: Runtime>(
 /// Bytes of a session's output the window may hold unacknowledged (sent, not yet written by its terminal); above this
 /// the session stops reading its shell's output until acknowledgements bring it under.
 pub const OUTPUT_WINDOW: usize = 2 * 1024 * 1024;
-/// Output that comes quickly is gathered for at most this long into one event.
+/// Output that comes quickly is gathered for at most this long into one message.
 pub const COALESCE: Duration = Duration::from_millis(16);
 /// Gathered output goes out at once when it reaches this size.
 const MAX_EVENT: usize = 256 * 1024;
 
-/// The flow control of one session's output: bytes emitted and not yet acknowledged by the window.
+/// The flow control of one session's output: bytes sent and not yet acknowledged by the window.
 #[derive(Debug, Default)]
 pub struct OutputCredit {
     unacked: Mutex<usize>,
@@ -472,17 +511,17 @@ pub struct OutputCredit {
 }
 
 impl OutputCredit {
-    /// Bytes emitted and not yet acknowledged.
+    /// Bytes sent and not yet acknowledged.
     pub fn unacked(&self) -> usize {
         *lock(&self.unacked)
     }
 
-    /// Whether `pending` more bytes (gathered, not yet emitted) leave room to take more output from the shell.
+    /// Whether `pending` more bytes (gathered, not yet sent) leave room to take more output from the shell.
     pub fn has_room(&self, pending: usize) -> bool {
         self.unacked().saturating_add(pending) < OUTPUT_WINDOW
     }
 
-    /// `bytes` were emitted to the window.
+    /// `bytes` were sent to the window.
     pub fn sent(&self, bytes: usize) {
         let mut unacked = lock(&self.unacked);
         *unacked = unacked.saturating_add(bytes);
@@ -593,7 +632,7 @@ fn not_running(id: &str) -> CoreError {
 }
 
 /// Registers `session` in `state.sessions` under `id` (and `cluster`, so disconnecting the cluster stops it) and
-/// emits its output as `term:<id>`. `guard` lives exactly as long as the session (e.g. its temporary kubeconfig) and
+/// sends its output through `channel`. `guard` lives exactly as long as the session (e.g. its temporary kubeconfig) and
 /// is dropped synchronously when the session is stopped. A taken or malformed `id` is `invalid`.
 pub fn forward_term<R>(
     app: &AppHandle<R>,
@@ -602,17 +641,18 @@ pub fn forward_term<R>(
     cluster: Option<ClusterId>,
     session: ExecSession,
     guard: Option<SessionGuard>,
+    channel: Channel<TermPayload>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
 {
-    let (running, registered) = term_session(app, &id, cluster, session, guard);
+    let (running, registered) = term_session(app, &id, cluster, session, guard, channel);
     state.sessions.insert(id, running)?;
     let _ = registered.send(());
     Ok(())
 }
 
-/// The entry of `session` for `state.sessions` and the task that emits its output as `term:<id>`, which starts once
+/// The entry of `session` for `state.sessions` and the task that sends its output through `channel`, which starts once
 /// the returned sender is used (after the entry is registered); dropping the sender or ending the entry ends the task.
 fn term_session<R>(
     app: &AppHandle<R>,
@@ -620,11 +660,11 @@ fn term_session<R>(
     cluster: Option<ClusterId>,
     session: ExecSession,
     guard: Option<SessionGuard>,
+    channel: Channel<TermPayload>,
 ) -> (TermSession, oneshot::Sender<()>)
 where
     R: Runtime,
 {
-    let event = term_event(id);
     let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(256);
     let (resize_tx, mut resize_rx) = mpsc::channel::<(u16, u16)>(16);
     let (registered_tx, registered_rx) = oneshot::channel::<()>();
@@ -641,8 +681,8 @@ where
             resize,
             mut output,
         } = session;
-        let emit = |payload: &TermPayload| handle.emit(&event, payload).is_ok();
-        // Output taken from the shell and not emitted yet, and when output was last emitted.
+        let emit = |payload: TermPayload| channel.send(payload).is_ok();
+        // Output taken from the shell and not sent yet, and when output was last sent.
         let mut pending: Vec<u8> = Vec::new();
         let mut last_emit: Option<Instant> = None;
         loop {
@@ -674,11 +714,11 @@ where
                     };
                     if let Some(payload) = payload {
                         // What the shell printed before it ended goes first.
-                        if !pending.is_empty() && !emit(&TermPayload::data(&pending)) {
+                        if !pending.is_empty() && !emit(TermPayload::data(&pending)) {
                             break;
                         }
                         pending.clear();
-                        if !emit(&payload) || last {
+                        if !emit(payload) || last {
                             break;
                         }
                     }
@@ -687,7 +727,7 @@ where
             let due = last_emit.is_none_or(|t| t.elapsed() >= COALESCE);
             if !pending.is_empty() && (due || pending.len() >= MAX_EVENT) {
                 credit.sent(pending.len());
-                if !emit(&TermPayload::data(&pending)) {
+                if !emit(TermPayload::data(&pending)) {
                     break;
                 }
                 pending.clear();
@@ -725,9 +765,9 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use serde_json::{Value, json};
-    use tauri::Listener;
 
     use super::*;
+    use crate::events::test_channel;
 
     fn app() -> (tauri::App<tauri::test::MockRuntime>, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
@@ -805,15 +845,6 @@ mod tests {
         )
     }
 
-    /// Every payload of `term:<id>`, as JSON.
-    fn listen<R: Runtime>(app: &tauri::App<R>, id: &str) -> std_mpsc::Receiver<Value> {
-        let (tx, rx) = std_mpsc::channel();
-        app.listen_any(term_event(id), move |event| {
-            let _ = tx.send(serde_json::from_str(event.payload()).unwrap());
-        });
-        rx
-    }
-
     fn next(rx: &std_mpsc::Receiver<Value>) -> Value {
         rx.recv_timeout(Duration::from_secs(10))
             .expect("a term event")
@@ -826,7 +857,7 @@ mod tests {
     }
 
     #[test]
-    fn output_right_after_the_start_reaches_a_listener_subscribed_before_it_without_input() {
+    fn output_right_after_the_start_reaches_the_channel_created_before_it_without_input() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, mut shell) = fake_session();
@@ -835,8 +866,8 @@ mod tests {
             .output
             .try_send(TermEvent::Data(b"prompt$ ".to_vec()))
             .unwrap();
-        // The window listens first, then starts the session under the id it chose; it types nothing.
-        let events = listen(&app, "t-early");
+        // The window creates the channel first, then starts the session under the id it chose; it types nothing.
+        let (channel, events) = test_channel();
         forward_term(
             app.handle(),
             &state,
@@ -844,6 +875,7 @@ mod tests {
             Some(ClusterId::from("c")),
             session,
             None,
+            channel,
         )
         .unwrap();
         assert_eq!(
@@ -865,7 +897,7 @@ mod tests {
     }
 
     #[test]
-    fn an_immediate_exit_reaches_the_listener_and_ends_the_session() {
+    fn an_immediate_exit_reaches_the_channel_and_ends_the_session() {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, shell) = fake_session();
@@ -879,8 +911,17 @@ mod tests {
             .try_send(TermEvent::Exit { code: Some(2) })
             .unwrap();
         drop(shell);
-        let events = listen(&app, "t-1");
-        forward_term(app.handle(), &state, "t-1".into(), None, session, guard).unwrap();
+        let (channel, events) = test_channel();
+        forward_term(
+            app.handle(),
+            &state,
+            "t-1".into(),
+            None,
+            session,
+            guard,
+            channel,
+        )
+        .unwrap();
 
         assert_eq!(next(&events), json!({ "type": "data", "data": "Ynll" }));
         assert_eq!(next(&events), json!({ "type": "exit", "code": 2 }));
@@ -965,8 +1006,17 @@ mod tests {
                 .try_send(TermEvent::Data(vec![b'a' + i]))
                 .unwrap();
         }
-        let events = listen(&app, "t-burst");
-        forward_term(app.handle(), &state, "t-burst".into(), None, session, None).unwrap();
+        let (channel, events) = test_channel();
+        forward_term(
+            app.handle(),
+            &state,
+            "t-burst".into(),
+            None,
+            session,
+            None,
+            channel,
+        )
+        .unwrap();
         let (bytes, payloads) = received_bytes(&events, Duration::from_millis(500));
         assert_eq!(bytes, 16);
         assert!(payloads < 16, "{payloads} events for 16 chunks");
@@ -1000,8 +1050,17 @@ mod tests {
                 let _ = done_tx.send(());
             })
         };
-        let events = listen(&app, "t-flood");
-        forward_term(app.handle(), &state, "t-flood".into(), None, session, None).unwrap();
+        let (channel, events) = test_channel();
+        forward_term(
+            app.handle(),
+            &state,
+            "t-flood".into(),
+            None,
+            session,
+            None,
+            channel,
+        )
+        .unwrap();
         let stop = StopOnDrop(&state, "t-flood");
 
         // Nothing is acknowledged: the session stops at the window, and so does the producer.
@@ -1068,8 +1127,8 @@ mod tests {
             program: "/bin/sh".into(),
             args: Vec::new(),
         };
-        let events = listen(&app, "yes-1");
-        start_plain_terminal(app.handle(), &state, "yes-1".into(), &sh, 80, 24).unwrap();
+        let (channel, events) = test_channel();
+        start_plain_terminal(app.handle(), &state, "yes-1".into(), &sh, 80, 24, channel).unwrap();
         let stop = StopOnDrop(&state, "yes-1");
         let (input, _) = state.sessions.channels("yes-1").unwrap();
         input.blocking_send(b"yes\n".to_vec()).unwrap();
@@ -1108,11 +1167,28 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, first) = fake_session();
-        forward_term(app.handle(), &state, "t-1".into(), None, session, None).unwrap();
+        forward_term(
+            app.handle(),
+            &state,
+            "t-1".into(),
+            None,
+            session,
+            None,
+            test_channel().0,
+        )
+        .unwrap();
         let (session, second) = fake_session();
         let (guard, guard_path) = temp_guard();
-        let err = forward_term(app.handle(), &state, "t-1".into(), None, session, guard)
-            .expect_err("the id is taken");
+        let err = forward_term(
+            app.handle(),
+            &state,
+            "t-1".into(),
+            None,
+            session,
+            guard,
+            test_channel().0,
+        )
+        .expect_err("the id is taken");
         assert_eq!(err.code, ErrorCode::Invalid, "{err}");
         assert!(
             !guard_path.exists(),
@@ -1143,6 +1219,7 @@ mod tests {
             &cancel,
             session,
             guard.unwrap(),
+            test_channel().0,
         )
         .unwrap();
 
@@ -1182,6 +1259,7 @@ mod tests {
             &cancel,
             session,
             guard.unwrap(),
+            test_channel().0,
         )
         .expect_err("nobody wants it");
 
@@ -1196,7 +1274,16 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (session, first) = fake_session();
-        forward_term(app.handle(), &state, "t-1".into(), None, session, None).unwrap();
+        forward_term(
+            app.handle(),
+            &state,
+            "t-1".into(),
+            None,
+            session,
+            None,
+            test_channel().0,
+        )
+        .unwrap();
         let cancel = node_shell::StartCancel::new();
 
         let err = insert_placeholder(&state, "t-1", &ClusterId::from("c-1"), &cancel)
@@ -1222,6 +1309,7 @@ mod tests {
                 Some(ClusterId::from(cluster)),
                 session,
                 guard,
+                test_channel().0,
             )
             .unwrap();
             (shell, path)
@@ -1359,7 +1447,7 @@ mod tests {
             program: "/bin/sh".into(),
             args: Vec::new(),
         };
-        let events = listen(&app, "local-1");
+        let (channel, events) = test_channel();
         start_local_terminal(
             app.handle(),
             &state,
@@ -1368,6 +1456,7 @@ mod tests {
             &sh,
             80,
             24,
+            channel,
         )
         .unwrap();
         let (input, _) = state.sessions.channels("local-1").unwrap();
@@ -1398,7 +1487,7 @@ mod tests {
         assert!(!temp.exists(), "the temp kubeconfig outlived term_stop");
 
         // So does the shell exiting by itself.
-        let events = listen(&app, "local-2");
+        let (channel, events) = test_channel();
         start_local_terminal(
             app.handle(),
             &state,
@@ -1407,6 +1496,7 @@ mod tests {
             &sh,
             80,
             24,
+            channel,
         )
         .unwrap();
         let (input, _) = state.sessions.channels("local-2").unwrap();
@@ -1430,12 +1520,23 @@ mod tests {
             &sh,
             80,
             24,
+            test_channel().0,
         )
         .unwrap();
         assert!(state.sessions.channels("local-3").is_some());
         state.close_cluster(&cluster);
         assert!(state.sessions.is_empty());
-        start_local_terminal(app.handle(), &state, "local-4".into(), cluster, &sh, 80, 24).unwrap();
+        start_local_terminal(
+            app.handle(),
+            &state,
+            "local-4".into(),
+            cluster,
+            &sh,
+            80,
+            24,
+            test_channel().0,
+        )
+        .unwrap();
         assert!(state.sessions.channels("local-4").is_some());
         state.close_all();
         assert!(state.sessions.is_empty());
@@ -1480,11 +1581,18 @@ mod tests {
         // A reloaded page resets the streams while the old page's shell is being spawned.
         let mut temp = None;
         let (session, shell) = fake_session();
-        let result = start_local_session(app.handle(), &state, "local-1".into(), cluster, |path| {
-            temp = Some(std::path::PathBuf::from(path));
-            state.reset_streams();
-            Ok(session)
-        });
+        let result = start_local_session(
+            app.handle(),
+            &state,
+            "local-1".into(),
+            cluster,
+            |path| {
+                temp = Some(std::path::PathBuf::from(path));
+                state.reset_streams();
+                Ok(session)
+            },
+            test_channel().0,
+        );
 
         assert!(result.is_err(), "a start that outlived the reset succeeded");
         assert!(state.sessions.is_empty(), "the session outlived the reset");
@@ -1505,6 +1613,7 @@ mod tests {
             &pty::user_shell(),
             80,
             24,
+            test_channel().0,
         )
         .expect_err("no such cluster");
         assert_ne!(err.code, ErrorCode::Other, "{err}");
@@ -1520,8 +1629,8 @@ mod tests {
             program: "/bin/sh".into(),
             args: Vec::new(),
         };
-        let events = listen(&app, "plain-1");
-        start_plain_terminal(app.handle(), &state, "plain-1".into(), &sh, 80, 24).unwrap();
+        let (channel, events) = test_channel();
+        start_plain_terminal(app.handle(), &state, "plain-1".into(), &sh, 80, 24, channel).unwrap();
         let (input, _) = state.sessions.channels("plain-1").unwrap();
         input
             .blocking_send(b"echo \"KC=[$KUBECONFIG]\" \"N=$((40+2))\"\n".to_vec())
@@ -1546,6 +1655,7 @@ mod tests {
             80,
             24,
             "plain-cmd".into(),
+            test_channel().0,
         ))
         .unwrap();
         assert!(state.sessions.channels("plain-cmd").is_some());
@@ -1555,6 +1665,7 @@ mod tests {
             80,
             24,
             "bad id".into(),
+            test_channel().0,
         ))
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
@@ -1657,7 +1768,7 @@ mod tests {
                 .to_owned()
         };
         let start = |id: &str| {
-            let events = listen(&app, id);
+            let (channel, events) = test_channel();
             tauri::async_runtime::block_on(start_node_shell(
                 app.handle(),
                 &state,
@@ -1666,6 +1777,7 @@ mod tests {
                 &node,
                 80,
                 24,
+                channel,
             ))
             .expect("the node shell starts");
             assert_eq!(node_shell_pods(&state, &cluster).len(), 1);
@@ -1795,7 +1907,7 @@ mod tests {
             }
         };
         let start = |id: &str| {
-            let events = listen(&app, id);
+            let (channel, events) = test_channel();
             tauri::async_runtime::block_on(start_debug(
                 app.handle(),
                 &state,
@@ -1805,6 +1917,7 @@ mod tests {
                 &spec,
                 80,
                 24,
+                channel,
             ))
             .expect("the debug copy starts");
             assert_eq!(debug_copies(&state, &cluster, NS).len(), 1);
@@ -1955,7 +2068,7 @@ mod tests {
             );
             let task = tauri::async_runtime::spawn(async move {
                 let state = handle.state::<AppState>();
-                start_node_shell(&handle, &state, id, target, &node, 80, 24).await
+                start_node_shell(&handle, &state, id, target, &node, 80, 24, test_channel().0).await
             });
             let deadline = Instant::now() + Duration::from_secs(30);
             while node_shell_pods(&state, &cluster).is_empty() {

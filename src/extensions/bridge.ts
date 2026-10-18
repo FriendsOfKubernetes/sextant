@@ -4,7 +4,7 @@
 // `resources.watch` updates through `openStream`. Calls, ids and watches are kept per document, and every answer goes
 // to the document that asked. A load of the frame ends the documents that are gone; `dispose` (the frame goes away)
 // ends all of them.
-import { api, events, openStream, toApiError, type ErrorCode } from "../api";
+import { api, openStream, toApiError, type ErrorCode } from "../api";
 import {
   LOCAL_METHODS,
   MAX_DOCUMENTS_PER_FRAME,
@@ -175,8 +175,8 @@ export function createBridge(options: BridgeOptions): Bridge {
       return;
     }
     const close = openStream<unknown>({
-      start: (streamId) => api.extensions.call(extensionId, "resources.watch", request.params, streamId),
-      listen: (streamId, handler) => events.onExtWatch(streamId, handler),
+      start: (streamId, channel) =>
+        api.extensions.call(extensionId, "resources.watch", request.params, streamId, channel),
       stop: (streamId) => api.extensions.watchStop(extensionId, streamId),
       onEvent: (event) => post({ sextant: PROTOCOL_VERSION, doc: from, stream: request.id, event }),
       onListening: () => reply(from, request.id, { stream: request.id }),

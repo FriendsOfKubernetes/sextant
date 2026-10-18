@@ -4,7 +4,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import {
   api,
-  events,
   openStream,
   toApiError,
   type ApiError,
@@ -133,8 +132,7 @@ export function watchCrdChanges(clusterId: ClusterId): () => void {
   if (!watch) {
     const created: CrdWatch = { users: 0, stop: () => undefined, timer: null };
     created.stop = openStream<WatchUpdate>({
-      start: (id) => api.resources.watchStart(clusterId, CRD_WATCH, id),
-      listen: events.onWatch,
+      start: (id, channel) => api.resources.watchStart(clusterId, CRD_WATCH, id, channel),
       stop: api.resources.watchStop,
       onEvent: (update) => {
         if (crdsChanged(clusterId, update)) scheduleRefresh(clusterId, created);

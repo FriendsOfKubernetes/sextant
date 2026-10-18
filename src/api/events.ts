@@ -1,28 +1,17 @@
-// Backend events (interfaces.md, "Events"). Each `on*` resolves to an unsubscribe function.
+// Backend events (interfaces.md, "Events"). Each `on*` resolves to an unsubscribe function. Streams the window opens
+// (watch, logs, terminal sessions, extension watches, GitOps installs, file transfers) are not events: their payloads
+// come through the channel of their `*_start` command (`openStream`, ADR-0078).
 import type { AuditEntry } from "./generated/AuditEntry";
 import type { ClusterStatePayload } from "./generated/ClusterStatePayload";
 import type { ConfirmRequest } from "./generated/ConfirmRequest";
 import type { ExtensionFilesChangedPayload } from "./generated/ExtensionFilesChangedPayload";
 import type { ForwardInfo } from "./generated/ForwardInfo";
-import type { InstallEvent } from "./generated/InstallEvent";
-import type { LogUpdate } from "./generated/LogUpdate";
 import type { McpStatus } from "./generated/McpStatus";
-import type { TermPayload } from "./generated/TermPayload";
-import type { WatchUpdate } from "./generated/WatchUpdate";
 import { subscribe, type Unsubscribe } from "./transport";
 
 export const events = {
   onClusterState: (handler: (payload: ClusterStatePayload) => void): Promise<Unsubscribe> =>
     subscribe("cluster-state", handler),
-  onWatch: (subscriptionId: string, handler: (update: WatchUpdate) => void): Promise<Unsubscribe> =>
-    subscribe(`watch:${subscriptionId}`, handler),
-  onLogs: (streamId: string, handler: (update: LogUpdate) => void): Promise<Unsubscribe> =>
-    subscribe(`logs:${streamId}`, handler),
-  onTerm: (sessionId: string, handler: (payload: TermPayload) => void): Promise<Unsubscribe> =>
-    subscribe(`term:${sessionId}`, handler),
-  /** Progress of a Flux / Argo CD install (`api.gitopsInstall.start(…, streamId)`). */
-  onGitopsInstall: (streamId: string, handler: (event: InstallEvent) => void): Promise<Unsubscribe> =>
-    subscribe(`gitops-install:${streamId}`, handler),
   onPortForwards: (handler: (list: ForwardInfo[]) => void): Promise<Unsubscribe> =>
     subscribe("portforwards", handler),
   /**
@@ -40,9 +29,6 @@ export const events = {
     subscribe("extension-files-changed", handler),
   /** "About Sextant…" was chosen in the tray menu (the window is already back); open the About dialog. */
   onOpenAbout: (handler: () => void): Promise<Unsubscribe> => subscribe("open-about", () => handler()),
-  /** Updates of an extension's `resources.watch` stream (`api.extensions.call(…, streamId)`). */
-  onExtWatch: (streamId: string, handler: (update: WatchUpdate) => void): Promise<Unsubscribe> =>
-    subscribe(`ext-watch:${streamId}`, handler),
   /** A new call of an extension was written to the extensions' journal. */
   onExtAudit: (handler: (entry: AuditEntry) => void): Promise<Unsubscribe> => subscribe("ext-audit", handler),
 };

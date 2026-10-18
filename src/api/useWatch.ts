@@ -14,7 +14,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { KubeObject } from "./commands";
 import { resources } from "./commands";
 import { toApiError, type ApiError } from "./errors";
-import { events } from "./events";
 import { openStream } from "./stream";
 import type { ClusterId, WatchSpec, WatchUpdate } from "./types";
 
@@ -88,8 +87,7 @@ export function useWatch(clusterId: ClusterId | null, spec: WatchSpec | null): W
       });
 
     return openStream<WatchUpdate>({
-      start: (id) => resources.watchStart(cluster, watchSpec, id),
-      listen: events.onWatch,
+      start: (id, channel) => resources.watchStart(cluster, watchSpec, id, channel),
       stop: resources.watchStop,
       onEvent: (u) => update((s) => applyWatchUpdate(s, u)),
       onStartError: (err) => update(() => ({ items: new Map(), status: "error", error: toApiError(err) })),

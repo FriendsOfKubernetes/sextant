@@ -1,30 +1,33 @@
-// The one place that owns the order of a backend stream's life (watch, logs, terminal sessions):
+// The one place that owns the order of a backend stream's life (watch, logs, terminal sessions, extension watches,
+// GitOps installs, file transfers):
 //
-//   id = crypto.randomUUID() → listen (`<event>:<id>`) → start (`*_start(…, id)`) → onListening → … → unlisten → stop
+//   id = crypto.randomUUID() → channel → start (`*_start(…, id, onEvent: channel)`) → onListening → … → close → stop
 //
-// The window chooses the id and listens before the backend starts the stream, so the backend sends output as soon as
-// it has some and nothing is lost (interfaces.md §1). Closing at any point leaves nothing behind: a stream whose start
-// is still in flight is stopped once it answers, a listener attached after the close is removed, and no callback
-// runs after the close. Streams wait for `resetStreams` (once per page load) before they listen.
+// The window chooses the id and creates the channel the backend sends the stream's payloads through (a Tauri
+// `Channel`, not an event: ADR-0078) before it starts the stream, so the backend sends output as soon as it has some
+// and nothing is lost (interfaces.md §1). Closing at any point leaves nothing behind: a stream whose start is still in
+// flight is stopped once it answers, the channel stops delivering at once, and no callback runs after the close.
+// Streams wait for `resetStreams` (once per page load) before they start.
 import { streams } from "./commands";
-import type { Unsubscribe } from "./transport";
+import { streamChannel, type StreamChannel } from "./transport";
 
 export interface StreamSpec<T> {
-  /** Starts the stream under `id` (chosen here; its events are already listened to). Rejects if it cannot start. */
-  start: (id: string) => Promise<unknown>;
-  /** Subscribes to the stream's events (e.g. `events.onLogs`). */
-  listen: (id: string, handler: (payload: T) => void) => Promise<Unsubscribe>;
+  /**
+   * Starts the stream under `id` (chosen here), its payloads sent through `channel` (the command's `onEvent`).
+   * Rejects if it cannot start.
+   */
+  start: (id: string, channel: StreamChannel<T>) => Promise<unknown>;
   /** Stops the stream (e.g. `api.logs.stop`); its failure is ignored. */
   stop: (id: string) => Promise<unknown>;
-  /** One event of the stream; may come before `onListening`. */
+  /** One payload of the stream; may come before `onListening`. */
   onEvent: (payload: T) => void;
-  /** The stream was started and its events are being received. */
+  /** The stream was started and its payloads are being received. */
   onListening?: (id: string) => void;
   /** The start failed (the stream does not exist). */
   onStartError?: (err: unknown) => void;
 }
 
-/** A fresh stream id: a UUID, which is safe in event names. */
+/** A fresh stream id: a UUID, which is safe in stream ids (`[A-Za-z0-9_-]`). */
 export function newStreamId(): string {
   const crypto = globalThis.crypto;
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -65,7 +68,7 @@ export function resetStreamsState(): void {
 export function openStream<T>(spec: StreamSpec<T>): () => void {
   const id = newStreamId();
   let closed = false;
-  let unlisten: Unsubscribe | null = null;
+  let channel: StreamChannel<T> | null = null;
   // Resolves to whether the backend runs the stream (set once the start was sent).
   let running: Promise<boolean> | null = null;
 
@@ -77,27 +80,22 @@ export function openStream<T>(spec: StreamSpec<T>): () => void {
   void (async () => {
     await streamsReady;
     if (closed) return;
-    let off: Unsubscribe;
+    let own: StreamChannel<T>;
     try {
-      off = await spec.listen(id, (payload) => {
+      own = streamChannel<T>((payload) => {
         if (!closed) spec.onEvent(payload);
       });
     } catch (err) {
       fail(err);
       return;
     }
-    // Closed while subscribing: nothing was started.
-    if (closed) {
-      off();
-      return;
-    }
-    unlisten = off;
-    running = spec.start(id).then(
+    channel = own;
+    running = spec.start(id, own).then(
       () => true,
       (err: unknown) => {
-        // A close already unlistened.
-        unlisten?.();
-        unlisten = null;
+        // Unless a close already closed it.
+        channel?.close();
+        channel = null;
         fail(err);
         return false;
       },
@@ -108,8 +106,8 @@ export function openStream<T>(spec: StreamSpec<T>): () => void {
   return () => {
     if (closed) return;
     closed = true;
-    unlisten?.();
-    unlisten = null;
+    channel?.close();
+    channel = null;
     // A start still in flight is stopped once it answers.
     void running?.then((started) => {
       if (started) stop();

@@ -1,6 +1,6 @@
 // The only place that talks to Tauri. Everything else in the frontend goes through src/api.
 import { getBundleType, getVersion } from "@tauri-apps/api/app";
-import { invoke as tauriInvoke } from "@tauri-apps/api/core";
+import { Channel as TauriChannel, invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen as tauriListen } from "@tauri-apps/api/event";
 import { resourceDir } from "@tauri-apps/api/path";
 import { open as tauriOpen, save as tauriSave } from "@tauri-apps/plugin-dialog";
@@ -18,6 +18,33 @@ import type { DesktopNotification, NotificationAction, NotificationActionType } 
 import { installedBundleKind, updaterConfiguredIn, type AppInfo, type AvailableUpdate } from "./updater";
 
 export type Unsubscribe = () => void;
+
+/**
+ * Where the backend sends one stream's payloads: passed as the `onEvent` argument of a `*_start` command (a Tauri
+ * `Channel`), otherwise opaque. The backend drops its end when the stream stops.
+ */
+export interface StreamChannel<T = unknown> {
+  /** Stops delivering payloads to the handler (idempotent). */
+  close(): void;
+  /** Never set: only ties the channel to the type of its payloads, so a channel of logs cannot start a watch. */
+  readonly payloadType?: (payload: T) => void;
+}
+
+/** A Tauri `Channel` whose handler can be cut off from the window's side. */
+class TauriStreamChannel<T> extends TauriChannel<T> implements StreamChannel<T> {
+  private open = true;
+
+  constructor(handler: (payload: T) => void) {
+    super();
+    this.onmessage = (payload) => {
+      if (this.open) handler(payload);
+    };
+  }
+
+  close(): void {
+    this.open = false;
+  }
+}
 
 export interface FileFilter {
   name: string;
@@ -42,6 +69,8 @@ export interface SaveFileOptions {
 export interface Transport {
   invoke<T>(cmd: string, args: Record<string, unknown>): Promise<T>;
   listen<T>(event: string, handler: (payload: T) => void): Promise<Unsubscribe>;
+  /** A channel for the payloads of one backend stream (`onEvent` of its `*_start` command). */
+  channel<T>(handler: (payload: T) => void): StreamChannel<T>;
   openFile(options: OpenFileOptions): Promise<string | null>;
   saveFile(options: SaveFileOptions): Promise<string | null>;
   /** Opens a URL in the system's default browser (never inside the app window). */
@@ -64,6 +93,7 @@ export interface Transport {
 export const tauriTransport: Transport = {
   invoke: (cmd, args) => tauriInvoke(cmd, args),
   listen: async (event, handler) => tauriListen(event, (e) => handler(e.payload as never)),
+  channel: (handler) => new TauriStreamChannel(handler),
   openFile: async (options) => {
     const picked = await tauriOpen({ ...options, multiple: false, directory: options.directory ?? false });
     return typeof picked === "string" ? picked : null;
@@ -139,6 +169,11 @@ export async function call<T>(cmd: string, args: Record<string, unknown> = {}): 
 /** Subscribes to a backend event; resolves to the unsubscribe function. */
 export function subscribe<T>(event: string, handler: (payload: T) => void): Promise<Unsubscribe> {
   return current.listen<T>(event, handler);
+}
+
+/** A channel for one backend stream's payloads (see `openStream`). */
+export function streamChannel<T>(handler: (payload: T) => void): StreamChannel<T> {
+  return current.channel<T>(handler);
 }
 
 export function openFileDialog(options: OpenFileOptions = {}): Promise<string | null> {

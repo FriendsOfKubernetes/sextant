@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ObjectRef } from "./generated/ObjectRef";
-import { api, ApiError, events, mockBackend, type MockBackend } from "./index";
+import type { WatchUpdate } from "./generated/WatchUpdate";
+import { api, ApiError, events, mockBackend, type MockBackend, type StreamChannel } from "./index";
+import { streamChannel } from "./transport";
 
 // Command names and argument names from the IPC contract (interfaces.md, "Commands").
 const ref: ObjectRef = { kind: { group: "apps", version: "v1", kind: "Deployment" }, namespace: "ns", name: "web" };
@@ -8,6 +10,8 @@ const pod: ObjectRef = { kind: { group: "", version: "v1", kind: "Pod" }, namesp
 const spec = { kind: pod.kind, namespaces: null, labelSelector: null, fieldSelector: null };
 const opts = { container: "c", follow: true, previous: false, timestamps: false, tailLines: 1000 };
 const target = { type: "pod" as const, namespace: "ns", name: "web-1" };
+/** The channel a stream's payloads come through (`onEvent`); passed through as it is. */
+const onEvent: StreamChannel = { close: () => undefined };
 
 const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | undefined]> = [
   ["clusters_list", () => api.clusters.list(), undefined],
@@ -29,7 +33,11 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ],
   ["cloud_import", () => api.cloud.importClusters([]), { clusters: [] }],
   ["cloud_login_hint", () => api.cloud.loginHint("c1"), { clusterId: "c1" }],
-  ["watch_start", () => api.resources.watchStart("c1", spec, "s1"), { clusterId: "c1", spec, streamId: "s1" }],
+  [
+    "watch_start",
+    () => api.resources.watchStart("c1", spec, "s1", onEvent),
+    { clusterId: "c1", spec, streamId: "s1", onEvent },
+  ],
   ["watch_stop", () => api.resources.watchStop("w1"), { subscriptionId: "w1" }],
   ["streams_reset", () => api.streams.reset(), undefined],
   ["resource_get", () => api.resources.get("c1", ref), { clusterId: "c1", ref }],
@@ -58,17 +66,21 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ],
   ["cronjob_trigger", () => api.actions.triggerCronJob("c1", ref), { clusterId: "c1", ref }],
   ["cronjob_suspend", () => api.actions.suspendCronJob("c1", ref, true), { clusterId: "c1", ref, suspend: true }],
-  ["logs_start", () => api.logs.start("c1", pod, opts, "s1"), { clusterId: "c1", pod, opts, streamId: "s1" }],
+  [
+    "logs_start",
+    () => api.logs.start("c1", pod, opts, "s1", onEvent),
+    { clusterId: "c1", pod, opts, streamId: "s1", onEvent },
+  ],
   ["logs_stop", () => api.logs.stop("l1"), { streamId: "l1" }],
   [
     "exec_start",
-    () => api.terminal.exec("c1", pod, "c", 80, 24, "s1"),
-    { clusterId: "c1", pod, container: "c", cols: 80, rows: 24, streamId: "s1" },
+    () => api.terminal.exec("c1", pod, "c", 80, 24, "s1", onEvent),
+    { clusterId: "c1", pod, container: "c", cols: 80, rows: 24, streamId: "s1", onEvent },
   ],
   [
     "terminal_start",
-    () => api.terminal.local("c1", 80, 24, "s1"),
-    { clusterId: "c1", cols: 80, rows: 24, streamId: "s1" },
+    () => api.terminal.local("c1", 80, 24, "s1", onEvent),
+    { clusterId: "c1", cols: 80, rows: 24, streamId: "s1", onEvent },
   ],
   ["term_input", () => api.terminal.input("t1", "ls\r"), { sessionId: "t1", data: "ls\r" }],
   ["term_resize", () => api.terminal.resize("t1", 100, 30), { sessionId: "t1", cols: 100, rows: 30 }],
@@ -155,8 +167,8 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   ["extension_reload", () => api.extensions.reload("demo.ext"), { id: "demo.ext" }],
   [
     "extension_call",
-    () => api.extensions.call("demo.ext", "resources.watch", { clusterId: "c1" }, "s-1"),
-    { extensionId: "demo.ext", method: "resources.watch", params: { clusterId: "c1" }, streamId: "s-1" },
+    () => api.extensions.call("demo.ext", "resources.watch", { clusterId: "c1" }, "s-1", onEvent),
+    { extensionId: "demo.ext", method: "resources.watch", params: { clusterId: "c1" }, streamId: "s-1", onEvent },
   ],
   [
     "extension_watch_stop",
@@ -229,27 +241,48 @@ describe("src/api commands", () => {
   });
 });
 
-describe("src/api events", () => {
-  it("delivers payloads of named events and unsubscribes", async () => {
-    backend = mockBackend();
+describe("src/api stream channels", () => {
+  it("a start command carries the stream's channel; the mock feeds it `<prefix>:<streamId>` until closed", async () => {
+    backend = mockBackend({ watch_start: () => undefined });
     const seen: unknown[] = [];
-    const unlisten = await events.onWatch("w1", (u) => seen.push(u));
+    const channel = streamChannel<WatchUpdate>((u) => seen.push(u));
+    await api.resources.watchStart("c1", spec, "w1", channel);
     backend.emit("watch:w1", { type: "reconnecting" });
     backend.emit("watch:other", { type: "reconnecting" });
     expect(seen).toEqual([{ type: "reconnecting" }]);
-    unlisten();
+    channel.close();
     backend.emit("watch:w1", { type: "reconnecting" });
     expect(seen).toHaveLength(1);
     expect(backend.listenerCount("watch:w1")).toBe(0);
   });
 
+  it("the mock names every kind of stream as its event used to be named", async () => {
+    const answer = () => undefined;
+    backend = mockBackend({
+      logs_start: answer,
+      exec_start: answer,
+      extension_call: answer,
+      gitops_install_start: answer,
+      files_upload_start: answer,
+    });
+    const channel = () => streamChannel<unknown>(() => {});
+    await api.logs.start("c1", pod, opts, "l1", channel());
+    await api.terminal.exec("c1", pod, "c", 80, 24, "t1", channel());
+    await api.extensions.call("demo.ext", "resources.watch", { clusterId: "c1" }, "s1", channel());
+    await api.gitopsInstall.start("c1", "tok", "g1", channel());
+    await api.files.uploadStart("c1", pod, null, "/tmp/x", "/tmp/x", "f1", channel());
+    for (const name of ["logs:l1", "term:t1", "ext-watch:s1", "gitops-install:g1", "files:f1"]) {
+      expect(backend.listenerCount(name)).toBe(1);
+    }
+  });
+});
+
+describe("src/api events", () => {
   it("uses the contract event names", async () => {
     backend = mockBackend();
     await events.onClusterState(() => {});
-    await events.onLogs("l1", () => {});
-    await events.onTerm("t1", () => {});
     await events.onPortForwards(() => {});
-    for (const name of ["cluster-state", "logs:l1", "term:t1", "portforwards"]) {
+    for (const name of ["cluster-state", "portforwards"]) {
       expect(backend.listenerCount(name)).toBe(1);
     }
   });
@@ -260,9 +293,8 @@ describe("src/api events", () => {
     const files: unknown[] = [];
     await events.onExtensionsChanged(changed);
     await events.onExtensionFilesChanged((p) => files.push(p));
-    await events.onExtWatch("s1", () => {});
     await events.onExtAudit(() => {});
-    for (const name of ["extensions-changed", "extension-files-changed", "ext-watch:s1", "ext-audit"]) {
+    for (const name of ["extensions-changed", "extension-files-changed", "ext-audit"]) {
       expect(backend.listenerCount(name)).toBe(1);
     }
     backend.emit("extensions-changed", null);

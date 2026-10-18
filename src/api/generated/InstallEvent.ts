@@ -2,6 +2,7 @@
 import type { WorkloadState } from "./WorkloadState";
 
 /**
- * One event of an install stream `gitops-install:<id>`. The last one is `done`, `timedOut`, `stopped` or `error`.
+ * One event of an install stream (sent through the channel of `gitops_install_start`). The last one is `done`,
+ * `timedOut`, `stopped` or `error`.
  */
 export type InstallEvent = { "type": "applied", kind: string, name: string, } | { "type": "failed", kind: string, name: string, error: string, } | { "type": "waiting", workloads: Array<WorkloadState>, } | { "type": "done", workloads: Array<WorkloadState>, } | { "type": "timedOut", workloads: Array<WorkloadState>, } | { "type": "stopped", applied: number, } | { "type": "error", message: string, };

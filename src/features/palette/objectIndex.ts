@@ -17,7 +17,6 @@ import { useEffect, useMemo, useSyncExternalStore } from "react";
 import {
   api,
   applyWatchUpdate,
-  events,
   openStream,
   toApiError,
   type ClusterId,
@@ -246,13 +245,12 @@ function start(entry: Entry): void {
     changed();
   };
   entry.stop = openStream<WatchUpdate>({
-    start: (id) =>
+    start: (id, channel) =>
       api.resources.watchStart(
         entry.clusterId,
         { kind: entry.search.kind, namespaces: null, labelSelector: null, fieldSelector: null, metadataOnly: true },
-        id,
+        id, channel,
       ),
-    listen: events.onWatch,
     stop: api.resources.watchStop,
     onEvent: (u) => {
       update((s) => applyWatchUpdate(s, u));

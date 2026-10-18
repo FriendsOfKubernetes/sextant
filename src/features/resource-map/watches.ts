@@ -8,7 +8,6 @@ import { useEffect, useMemo, useSyncExternalStore } from "react";
 import {
   api,
   applyWatchUpdate,
-  events,
   openStream,
   toApiError,
   type ClusterId,
@@ -95,8 +94,7 @@ export function acquireWatch(clusterId: ClusterId, spec: WatchSpec): () => void 
     const created: Entry = { clusterId, state: LOADING, refs: 0, stop: () => undefined };
     entries.set(key, created);
     created.stop = openStream<WatchUpdate>({
-      start: (id) => api.resources.watchStart(clusterId, spec, id),
-      listen: events.onWatch,
+      start: (id, channel) => api.resources.watchStart(clusterId, spec, id, channel),
       stop: api.resources.watchStop,
       onEvent: (update) => {
         if (entries.get(key) !== created) return;

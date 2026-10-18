@@ -6,7 +6,6 @@ import { useCallback, useSyncExternalStore } from "react";
 import {
   api,
   applyWatchUpdate,
-  events,
   openStream,
   toApiError,
   type ClusterId,
@@ -42,8 +41,7 @@ function acquire(key: string): Entry {
   };
   entries.set(key, entry);
   entry.stop = openStream<WatchUpdate>({
-    start: (id) => api.resources.watchStart(cluster, spec, id),
-    listen: events.onWatch,
+    start: (id, channel) => api.resources.watchStart(cluster, spec, id, channel),
     stop: api.resources.watchStop,
     onEvent: (u) => update((s) => applyWatchUpdate(s, u)),
     onStartError: (err) => update(() => ({ items: new Map(), status: "error", error: toApiError(err) })),

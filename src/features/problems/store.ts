@@ -18,7 +18,6 @@
 // at most `RowTap.max`. A tap added to a watch that has already listed its kind re-lists it once.
 import {
   api,
-  events,
   openStream,
   toApiError,
   type ApiError,
@@ -332,8 +331,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     const spec: WatchSpec = { kind: def.kind, namespaces: null, labelSelector: null, fieldSelector: def.fieldSelector };
     created.open = () => {
       created.stop = openStream<WatchUpdate>({
-        start: (id) => api.resources.watchStart(clusterId, spec, id),
-        listen: events.onWatch,
+        start: (id, channel) => api.resources.watchStart(clusterId, spec, id, channel),
         stop: api.resources.watchStop,
         onEvent: (update) => {
           if (entries.get(key) !== created) return;

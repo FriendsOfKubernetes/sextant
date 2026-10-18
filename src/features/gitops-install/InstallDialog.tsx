@@ -6,7 +6,6 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
-  events,
   openStream,
   toApiError,
   type ApiError,
@@ -104,8 +103,7 @@ export function InstallDialog({ clusterId, tool, onClose }: InstallDialogProps) 
     const own: OwnStream = { close: () => undefined, id: null, stopWanted: false };
     stream.current = own;
     own.close = openStream<InstallEvent>({
-      start: (id) => api.gitopsInstall.start(clusterId, preview.token, id),
-      listen: events.onGitopsInstall,
+      start: (id, channel) => api.gitopsInstall.start(clusterId, preview.token, id, channel),
       stop: api.gitopsInstall.stop,
       onListening: (id) => {
         own.id = id;

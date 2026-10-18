@@ -1,10 +1,17 @@
-// Test double for the backend: replaces `invoke`/`listen`/dialogs with a table of handlers.
+// Test double for the backend: replaces `invoke`/`listen`/stream channels/dialogs with a table of handlers.
 // Used by Vitest; never imported by application code.
 import type { AppSettings } from "./generated/AppSettings";
 import { NOTIFICATION_COMMANDS } from "./notifications";
 import { defaultAppSettings, resetSettingsCache } from "./settings";
 import { resetStreamsState } from "./stream";
-import { setTransport, type OpenFileOptions, type SaveFileOptions, type Transport } from "./transport";
+import {
+  setTransport,
+  type OpenFileOptions,
+  type SaveFileOptions,
+  type StreamChannel,
+  type Transport,
+  type Unsubscribe,
+} from "./transport";
 import type { AppInfo, UpdateInfo } from "./updater";
 
 export type MockHandler = (args: Record<string, unknown>) => unknown;
@@ -37,17 +44,50 @@ export interface MockBackend {
   /** Adds or replaces a command handler. */
   on(cmd: string, handler: MockHandler): void;
   /**
-   * Delivers a backend event to the current listeners. A stream can be named by the string its `*_start` handler
+   * Delivers a backend event to the current listeners. The payloads of a stream, which the real backend sends through
+   * the channel of its `*_start` command (`onEvent`), are emitted here under an event name as before:
+   * `<prefix>:<streamId>` (see {@link STREAM_PREFIXES}). A stream can be named by the string its `*_start` handler
    * returned (`watch:watch-1`) as well as by the id the frontend chose (`watch:<uuid>`).
    */
   emit(event: string, payload: unknown): void;
-  /** Listeners of an event; stream events can be named by the handler's name for the stream, as in `emit`. */
+  /** Listeners of an event (a stream's open channel counts as one); streams can be named as in `emit`. */
   listenerCount(event: string): number;
   /** Restores the real Tauri transport. */
   restore(): void;
 }
 
 const NOT_IMPLEMENTED = { code: "other", message: "not implemented" } as const;
+
+/**
+ * The event name `emit` and `listenerCount` know a stream by, `<prefix>:<streamId>`, for each command whose `onEvent`
+ * channel carries a stream's payloads.
+ */
+export const STREAM_PREFIXES: Readonly<Record<string, string>> = {
+  watch_start: "watch",
+  logs_start: "logs",
+  exec_start: "term",
+  terminal_start: "term",
+  node_shell_start: "term",
+  debug_start: "term",
+  gitops_install_start: "gitops-install",
+  files_download_start: "files",
+  files_upload_start: "files",
+  extension_call: "ext-watch",
+};
+
+/** The mock's stream channel: the handler, and what `close` removes it from once it is registered. */
+class MockChannel implements StreamChannel {
+  closed = false;
+  unregister: (() => void) | null = null;
+
+  constructor(readonly handler: (payload: unknown) => void) {}
+
+  close(): void {
+    this.closed = true;
+    this.unregister?.();
+    this.unregister = null;
+  }
+}
 
 /** Mock command names of the Tauri plugins behind `api.updates` (the commands the plugins invoke). */
 export const UPDATER_COMMANDS = {
@@ -65,8 +105,10 @@ export const UPDATER_COMMANDS = {
  * `settings_get` / `settings_update` work out of the box on an in-memory copy, `extensions_list` answers `[]`, and
  * `extension_install_cancel`, `term_ack` and `files_transfer_stop` resolve.
  *
- * Stream ids come from the frontend (`streamId` of `*_start`). A `*_start` handler may still answer with a name of
- * its own for the stream (`"watch-1"`); `emit` and `listenerCount` then accept that name in place of the id.
+ * Stream ids come from the frontend (`streamId` of `*_start`), and so does the channel of the stream's payloads
+ * (`onEvent`): it is registered as a listener of `<prefix>:<streamId>` before the handler runs, so a handler may emit
+ * at once, and closing it removes the listener. A `*_start` handler may still answer with a name of its own for the
+ * stream (`"watch-1"`); `emit` and `listenerCount` then accept that name in place of the id.
  */
 export function mockBackend(handlers: Record<string, MockHandler> = {}, options: MockBackendOptions = {}): MockBackend {
   const table = new Map<string, MockHandler>();
@@ -121,9 +163,23 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   });
   for (const [cmd, handler] of Object.entries(handlers)) table.set(cmd, handler);
 
+  const listen = (event: string, fn: (payload: unknown) => void): Unsubscribe => {
+    const set = listeners.get(event) ?? new Set();
+    set.add(fn);
+    listeners.set(event, set);
+    return () => {
+      set.delete(fn);
+    };
+  };
+
   const transport: Transport = {
     async invoke<T>(cmd: string, args: Record<string, unknown>): Promise<T> {
       calls.push({ cmd, args });
+      const prefix = STREAM_PREFIXES[cmd];
+      const channel = args.onEvent;
+      if (prefix && channel instanceof MockChannel && !channel.closed && typeof args.streamId === "string") {
+        channel.unregister = listen(`${prefix}:${args.streamId}`, channel.handler);
+      }
       const handler = table.get(cmd);
       if (!handler) throw { ...NOT_IMPLEMENTED };
       const result = await handler(args);
@@ -133,13 +189,10 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
       return result as T;
     },
     async listen<T>(event: string, handler: (payload: T) => void) {
-      const set = listeners.get(event) ?? new Set();
-      const fn = handler as (payload: unknown) => void;
-      set.add(fn);
-      listeners.set(event, set);
-      return () => {
-        set.delete(fn);
-      };
+      return listen(event, handler as (payload: unknown) => void);
+    },
+    channel<T>(handler: (payload: T) => void): StreamChannel<T> {
+      return new MockChannel(handler as (payload: unknown) => void);
     },
     async openFile(opts) {
       return options.openFile?.(opts) ?? null;

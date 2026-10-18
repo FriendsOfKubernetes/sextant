@@ -3,8 +3,9 @@
 //! shell allows it ([`ShellKind`]) — and without the app's own `KUBECONFIG`, Helm overrides and AppImage variables
 //! ([`shell_environment`]).
 //!
-//! [`spawn_local_shell`] gives the same handles as a container shell ([`ExecSession`]), so both kinds of terminal
-//! share the `term:<id>` events and `term_*` commands. Dropping the session's `input` hangs up the shell.
+//! [`spawn_local_shell`] gives the same handles as a container shell ([`ExecSession`]), so both kinds of terminal share
+//! the output channel ([`crate::events::TermPayload`]) and the `term_*` commands. Dropping the session's `input` hangs
+//! up the shell.
 
 use std::ffi::{OsStr, OsString};
 use std::io::{Read, Write};
