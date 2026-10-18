@@ -16,8 +16,12 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Cloud clusters** — find your Amazon EKS, Google GKE and Azure AKS clusters through the `aws`, `gcloud` and `az`
   you already use, and add them in a few clicks.
 - **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions.
-- **Logs, shells and port forwarding** — container logs with search, a shell in any container, a shell on a node
-  (a temporary privileged pod, removed when you close it), a local terminal already pointed at the cluster.
+- **Logs, shells and port forwarding** — container logs with search, logs of several pods at once, a shell in any
+  container, debug containers, copying files to and from containers, a shell on a node (a temporary privileged pod,
+  removed when you close it), a local terminal already pointed at the cluster.
+- **Problems and notifications** — everything wrong in a cluster on one page, and desktop notifications for new
+  problems that you can turn off globally, per kind of problem, per cluster or for an hour.
+- **Command palette** (Ctrl+K) to jump to any object or page; **rollout history** with a diff and rollback.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
 - **MCP server for AI agents** — connect Claude Code, Claude Desktop or Cursor to your clusters, with permissions you
   set per cluster, confirmations in the window and an activity log.
@@ -40,6 +44,7 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation) — installers, unsigned builds, updates
 - [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, cloud clusters (EKS, GKE, AKS), connecting, the window
 - [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells (containers and nodes), port forwarding, Helm, Flux, Argo CD
+- [Problems and notifications](https://github.com/FriendsOfKubernetes/sextant/wiki/Problems-and-notifications) — a cluster's problems on one page, desktop notifications and how to turn them off
 - [Gateway API](https://github.com/FriendsOfKubernetes/sextant/wiki/Gateway-API) — Gateways and routes with explained problems, topology, the request check and the hostname map
 - [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
@@ -63,8 +68,8 @@ with one issue per feature; plans can change, and ideas are welcome in
 
 | Release | Focus | What it brings |
 |---|---|---|
-| [0.9](https://github.com/FriendsOfKubernetes/sextant/milestone/12) | Everyday work *(in progress)* | Command palette (Ctrl+K), logs of several pods at once, debug containers, copying files to and from containers, rollout history with rollback, background notifications (can be turned off), cluster problems screen |
-| [0.10](https://github.com/FriendsOfKubernetes/sextant/milestone/13) | Understanding the cluster | Right-sizing of requests and limits, cert-manager and certificate expiry, resource map, RBAC "who can do what" |
+| [0.9](https://github.com/FriendsOfKubernetes/sextant/milestone/12) | Everyday work *(released)* | Command palette (Ctrl+K), logs of several pods at once, debug containers, copying files to and from containers, rollout history with rollback, background notifications (can be turned off), cluster problems screen |
+| [0.10](https://github.com/FriendsOfKubernetes/sextant/milestone/13) | Understanding the cluster *(next)* | Right-sizing of requests and limits, cert-manager and certificate expiry, resource map, RBAC "who can do what" |
 | [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
 | [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace | Saved views and workspaces, kubeconfig management |
