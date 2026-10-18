@@ -1,9 +1,10 @@
 // Namespace filter in the table header: "All namespaces" or a multi-selection, with a filter box.
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
 import { Button, Checkbox, Icon, usePopup } from "../../components";
+import { formatList } from "../../i18n/format";
 import { selectNamespaces } from "./namespaces";
 import "./namespaces.css";
 
@@ -21,7 +22,18 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
   const [filter, setFilter] = useState("");
   const popupId = useId();
   const ref = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  // The popup opens under the button's right edge (the filter usually sits at the right of a header); where that
+  // would cross the left edge of the main area (a filter at the left of a page), it opens under the left edge.
+  const [alignLeft, setAlignLeft] = useState(false);
   const { items } = useWatch(clusterId, NAMESPACES);
+
+  useLayoutEffect(() => {
+    if (!open || !ref.current || !popupRef.current) return;
+    const button = ref.current.getBoundingClientRect();
+    const area = (ref.current.closest("main") ?? document.body).getBoundingClientRect();
+    setAlignLeft(button.right - popupRef.current.offsetWidth < area.left);
+  }, [open]);
 
   const all = useMemo(() => {
     const names = new Set<string>();
@@ -49,7 +61,7 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
     selected === null
       ? t("resources:namespaces.all")
       : selected.length <= 2
-        ? selected.join(", ")
+        ? formatList(selected)
         : t("resources:namespaces.count", { count: selected.length });
 
   return (
@@ -66,7 +78,13 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
         <Icon name="chevronDown" />
       </Button>
       {open && (
-        <div id={popupId} className="ns-filter__popup" role="dialog" aria-label={t("resources:namespaces.title")}>
+        <div
+          id={popupId}
+          ref={popupRef}
+          className={alignLeft ? "ns-filter__popup ns-filter__popup--left" : "ns-filter__popup"}
+          role="dialog"
+          aria-label={t("resources:namespaces.title")}
+        >
           <input
             className="ns-filter__search"
             type="search"

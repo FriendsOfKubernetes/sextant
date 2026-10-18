@@ -29,6 +29,11 @@
   gap: 4px;
 }
 
+.ns-filter__popup--left {
+  right: auto;
+  left: 0;
+}
+
 .ns-filter__search {
   width: 100%;
   padding: 4px 6px;
