@@ -1,0 +1,15 @@
+{
+  "unreachable": "Nie można połączyć się z klastrem.",
+  "unauthorized": "Klaster nie zaakceptował poświadczeń (401).",
+  "forbidden": "Brak uprawnień do wykonania tej operacji (403).",
+  "notFound": "Nie znaleziono.",
+  "conflict": "Obiekt został zmieniony przez kogoś innego. Wczytaj go ponownie i spróbuj jeszcze raz.",
+  "invalid": "Żądanie jest nieprawidłowe.",
+  "authPlugin": "Brak wtyczki uwierzytelniania z pliku kubeconfig lub wtyczka zakończyła się błędem.",
+  "helmMissing": "Helm nie jest zainstalowany.",
+  "portInUse": "Port lokalny jest już zajęty.",
+  "kubeconfig": "Nie można odczytać pliku kubeconfig lub jest on nieprawidłowy.",
+  "timeout": "Operacja trwała zbyt długo.",
+  "denied": "Ustawienia dostępu agentów AI dla tego klastra na to nie pozwalają.",
+  "other": "Coś poszło nie tak."
+}

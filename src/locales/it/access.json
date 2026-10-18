@@ -1,0 +1,79 @@
+{
+  "title": "Accesso degli agenti IA",
+  "intro": "Cosa possono fare in questo cluster gli agenti IA connessi tramite il server MCP. Non è consentito nulla finché non viene scelto un insieme.",
+  "preset": {
+    "legend": "Insieme di accesso",
+    "off": "Disattivato",
+    "readOnly": "Sola lettura",
+    "readWrite": "Lettura + scrittura (senza eliminazione)",
+    "full": "Completo",
+    "custom": "Personalizzato"
+  },
+  "description": {
+    "off": "L'agente non ha accesso a questo cluster. Lo vede nel suo elenco, ma ogni chiamata viene rifiutata.",
+    "readOnly": "L'agente può leggere tutte le risorse in tutti i namespace e recuperare i log dei pod. I valori dei Secret sono nascosti. Non può modificare nulla.",
+    "readWrite": "L'agente può leggere tutto e recuperare i log, e può anche modificare risorse, eseguire comandi nei container e aprire inoltri di porta. Ogni volta chiede prima conferma. Non può eliminare. I valori dei Secret sono nascosti.",
+    "full": "L'agente può fare tutto in tutti i namespace, eliminazione compresa. Modifiche, eliminazioni, comandi e inoltri di porta chiedono ogni volta conferma. I valori dei Secret sono nascosti.",
+    "custom": "Decidi tu: ogni regola copre namespace, kind e azioni. Un'azione è consentita quando almeno una regola la copre."
+  },
+  "customizeHint": "Scegli Personalizzato per partire dalle regole di questo insieme e modificarle.",
+  "unrecognised": {
+    "notice": "Queste regole sono state scritte da una versione più recente di Sextant o modificate a mano; vengono conservate ma non applicate. L'agente non ha accesso finché non si torna a Disattivato o si sceglie un insieme, che le sostituisce.",
+    "reset": "Torna a Disattivato"
+  },
+  "saveFailed": "Impossibile salvare le regole di accesso.",
+  "rules": {
+    "title": "Regole",
+    "none": "Non ci sono regole, quindi l'agente non ha accesso a questo cluster.",
+    "rule": "Regola {{number}}",
+    "add": "Aggiungi regola",
+    "remove": "Rimuovi regola {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespace",
+    "all": "Tutti i namespace",
+    "only": "Namespace selezionati",
+    "filter": "Filtra namespace",
+    "add": "Aggiungi un namespace per nome",
+    "addPlaceholder": "nome del namespace",
+    "addButton": "Aggiungi namespace",
+    "invalid": "Nome di namespace non valido.",
+    "empty": "Nessun namespace selezionato, quindi questa regola non copre nulla.",
+    "clusterOnly": "Le risorse che non appartengono a nessun namespace (nodi, namespace, CRD, cluster role) sono coperte solo da una regola con tutti i namespace."
+  },
+  "kinds": {
+    "legend": "Kind",
+    "all": "Tutti i kind",
+    "only": "Kind selezionati",
+    "filter": "Filtra kind",
+    "add": "Aggiungi un kind per nome",
+    "addPlaceholder": "Kind o gruppo/Kind",
+    "addButton": "Aggiungi kind",
+    "invalid": "Usa Kind o gruppo/Kind, ad esempio Pod o apps/Deployment.",
+    "empty": "Nessun kind selezionato, quindi questa regola non copre nulla.",
+    "helm": "Release Helm",
+    "coreGroup": "core",
+    "more": "Vengono mostrati i primi {{count}}. Digita nel filtro per restringere l'elenco."
+  },
+  "picker": {
+    "noMatch": "Nessun risultato.",
+    "notConnected": "Connettiti a questo cluster per scegliere dal suo elenco. È comunque possibile digitare un nome qui sotto.",
+    "loading": "Caricamento dell'elenco…",
+    "failed": "L'elenco del cluster non è disponibile. È comunque possibile digitare un nome qui sotto."
+  },
+  "actions": {
+    "legend": "Azioni",
+    "read": "Lettura",
+    "modify": "Modifica",
+    "delete": "Eliminazione",
+    "logs": "Log",
+    "exec": "Exec / shell",
+    "portForward": "Inoltro di porta",
+    "secretValues": "Valori dei Secret"
+  },
+  "confirm": {
+    "label": "Chiedi prima di eseguire",
+    "hint": "In questa regola, Modifica, Eliminazione, Exec e Inoltro di porta attendono una risposta in Sextant (120 s, poi vengono rifiutate)."
+  },
+  "secretWarning": "Valori dei Secret consente all'agente di leggere in chiaro i dati dei Secret e i valori delle release Helm. Consentilo solo per i namespace di cui l'agente ha davvero bisogno."
+}

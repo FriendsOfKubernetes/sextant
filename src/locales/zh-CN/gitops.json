@@ -1,0 +1,79 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "安装 Flux…",
+    "argoCd": "安装 Argo CD…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux 和 Argo CD 通过 Kubernetes API 从其官方清单安装。",
+    "notConnected": "连接到集群后即可查看是否已安装 Flux 和 Argo CD。",
+    "loading": "正在读取集群提供的内容…",
+    "installed": "已安装",
+    "partial": "部分安装",
+    "missing": "未安装",
+    "install": "安装 {{tool}}…"
+  },
+  "dialog": {
+    "title": "安装 {{tool}}",
+    "flux": "Flux 的安装方式与 `flux install` 的默认行为相同：在 flux-system 中安装 source、kustomize、helm 和 notification 控制器，不包括镜像自动化。",
+    "argoCd": "Argo CD 从其标准 install.yaml 安装到 argocd 中：集群范围、带 Web 界面、非高可用。"
+  },
+  "versions": {
+    "label": "版本",
+    "loading": "正在从 GitHub 获取发布列表…",
+    "latest": "{{version}}（最新）",
+    "bundled": "{{version}}（内置）",
+    "error": "无法从 GitHub 获取发布列表，因此仅提供已测试的版本 {{version}}。",
+    "next": "下载并预览"
+  },
+  "preparing": "正在下载并检查清单…",
+  "preview": {
+    "version": "版本",
+    "source": "来源",
+    "sha256": "SHA-256",
+    "verified": "与该发布的校验和文件一致",
+    "unverified": "该项目未发布此文件的校验和",
+    "namespace": "Namespace",
+    "objects": "对象（{{count}}）",
+    "clusterScoped": "集群范围",
+    "warning": "安装会更改整个集群：它会创建 CustomResourceDefinition、ClusterRole 和 ClusterRoleBinding。需要 cluster-admin 权限。",
+    "noCrdAccess": "你无权在此集群中创建 CustomResourceDefinition，因此安装很可能会失败。",
+    "noBindingAccess": "你无权在此集群中创建 ClusterRoleBinding，因此安装很可能会失败。",
+    "present": "{{tool}} 已安装。其对象将更新到此版本。",
+    "partial": "{{tool}} 已部分安装（其 Namespace 或部分 CRD 已存在，或部分控制器缺失）。现有对象将被更新。",
+    "overwritten": "以下集群范围的对象已存在，将被覆盖：",
+    "leftOut": "正在 {{namespace}} 中运行：{{names}}。与 `flux install` 一样，此安装不包括镜像自动化和 source watcher，并会将它们的 ServiceAccount 从共享的角色绑定中移除，因此它们将失去权限。"
+  },
+  "back": "返回",
+  "install": "安装",
+  "stop": "停止",
+  "progress": {
+    "applying": "正在应用对象：{{done}}/{{total}}",
+    "stopping": "将在当前对象完成后停止…",
+    "waiting": "已全部应用。正在等待控制器就绪（最多 5 分钟）…",
+    "ready": "就绪",
+    "notReady": "未就绪"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} 已安装并正在运行。其分区位于侧栏中。",
+    "timedOut": "已全部应用，但并非所有控制器都在 5 分钟内就绪。已应用的内容会保留在集群中。",
+    "stopped_other": "安装已停止。已应用 {{count}} 个对象；其余对象未发送。",
+    "stoppedWaiting_other": "安装在等待控制器时被停止。全部 {{count}} 个对象均已应用，并保留在集群中。",
+    "failed": "安装失败。失败对象之后的内容均未发送；已应用的内容会保留在集群中。",
+    "applied": "已应用（{{count}}）",
+    "notApplied": "未应用（{{count}}）"
+  },
+  "argo": {
+    "login": "Sextant 会使用 argocd-initial-admin-secret 自行登录 Argo CD。请在 Argo CD 中更改管理员密码，然后删除该 Secret。",
+    "openUi": "打开 Argo CD 界面"
+  },
+  "confirmStop": {
+    "title": "停止安装？",
+    "text": "安装将在正在应用的对象完成后停止。已应用的内容会保留在集群中。",
+    "confirm": "停止安装"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "action": {
+    "label": "Günlükler"
+  },
+  "toolbar": {
+    "label": "Günlük seçenekleri",
+    "container": "Kapsayıcı",
+    "initContainer": "{{name}} (init)",
+    "follow": "İzle",
+    "timestamps": "Zaman damgaları",
+    "previous": "Önceki kapsayıcı",
+    "wrap": "Satırları kaydır",
+    "save": "Kaydet",
+    "reconnect": "Yeniden bağlan"
+  },
+  "search": {
+    "label": "Günlüklerde ara",
+    "placeholder": "Ara",
+    "previous": "Önceki eşleşme",
+    "next": "Sonraki eşleşme",
+    "count": "{{current}} / {{total}}",
+    "countCapped": "{{current}} / {{total}}+",
+    "none": "Eşleşme yok"
+  },
+  "status": {
+    "connecting": "Bağlanıyor…",
+    "live": "Canlı",
+    "notFollowing": "İzlenmiyor",
+    "ended": "Akış sona erdi",
+    "failed": "Akış başarısız oldu"
+  },
+  "lines_one": "{{count}} satır",
+  "lines_other": "{{count}} satır",
+  "dropped_one": "{{count}} eski satır atıldı (en yeni {{limit}} satır, en fazla {{size}} MiB metin saklanır)",
+  "dropped_other": "{{count}} eski satır atıldı (en yeni {{limit}} satır, en fazla {{size}} MiB metin saklanır)",
+  "lineCut": " … [satır 64 KiB'ta kesildi, sonraki satırda devam ediyor]",
+  "empty": "Henüz günlük satırı yok.",
+  "view": "Günlük satırları",
+  "save": {
+    "title": "Günlükleri kaydet",
+    "filter": "Günlük dosyaları",
+    "failed": "Günlükler kaydedilemedi."
+  },
+  "picker": {
+    "title": "{{name}} günlükleri: bir Pod seçin",
+    "loading": "Pod'lar yükleniyor…",
+    "none": "Pod bulunamadı.",
+    "noSelector": "Bu nesne Pod seçmiyor.",
+    "all": "Tüm Pod'lar",
+    "allHint": "Daha sonra oluşturulanlar dahil her Pod'u tek bir sekmede izleyin."
+  },
+  "details": {
+    "title": "Günlükler",
+    "allPods": "Tüm Pod'ların günlükleri",
+    "hint": "{{selector}} ile eşleşen Pod'ları, gelip gittikçe izler."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} Pod",
+    "podsTitle_other": "{{count}} Pod",
+    "selector": "Selector",
+    "selectorHint": "Bir label selector; uygulamak için Enter'a basın.",
+    "sources": "Pod'lar ve kapsayıcılar ({{total}} öğeden {{shown}})",
+    "sourcesLabel": "Pod'lar ve kapsayıcılar",
+    "capHint_one": "Aynı anda en fazla {{count}} günlük akışı çalışır; hangilerinin okunacağını seçmek için Pod'ların veya kapsayıcıların işaretini kaldırın.",
+    "capHint_other": "Aynı anda en fazla {{count}} günlük akışı çalışır; hangilerinin okunacağını seçmek için Pod'ların veya kapsayıcıların işaretini kaldırın.",
+    "capped_one": "{{count}} kapsayıcı daha bekliyor: aynı anda en fazla {{max}} günlük akışı çalışır. Hangilerinin okunacağını seçmek için Pod'ların veya kapsayıcıların işaretini kaldırın.",
+    "capped_other": "{{count}} kapsayıcı daha bekliyor: aynı anda en fazla {{max}} günlük akışı çalışır. Hangilerinin okunacağını seçmek için Pod'ların veya kapsayıcıların işaretini kaldırın.",
+    "noPods": "Eşleşen Pod yok.",
+    "json": "JSON ayrıştır",
+    "level": "Düzey",
+    "allLevels": "Tüm satırlar",
+    "levelAndAbove": "{{level}} ve üstü",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Süzgeç",
+    "regex": "Regex",
+    "badRegex": "Normal ifade geçerli değil; hiçbir satır süzülmüyor.",
+    "sourceStatus": {
+      "waiting": "boş bir akış bekleniyor",
+      "connecting": "bağlanıyor",
+      "streaming": "canlı",
+      "ended": "sona erdi",
+      "error": "başarısız",
+      "notStarted": "başlatılmadı",
+      "gone": "Pod yok oldu",
+      "off": "kapalı"
+    },
+    "streams": "Akışlar: {{count}}, Pod'lar: {{pods}}"
+  }
+}

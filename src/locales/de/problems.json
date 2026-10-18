@@ -1,0 +1,36 @@
+{
+  "sidebar": "Probleme",
+  "title": "Clusterprobleme",
+  "badge_one": "{{count}} Problem erfordert Aufmerksamkeit",
+  "badge_other": "{{count}} Probleme erfordern Aufmerksamkeit",
+  "onlyNewSince": "Nur neue seit {{time}}",
+  "markSeen": "Alle als gesehen markieren",
+  "total_one": "{{count}} Problem",
+  "total_other": "{{count}} Probleme",
+  "sourceFailed": "{{kind}} kann nicht überwacht werden",
+  "truncated": "Es gibt zu viele Probleme: Nur die neuesten werden aufgelistet.",
+  "loading": "Probleme werden gesucht…",
+  "none": "Keine Probleme gefunden.",
+  "noneNew": "Seit der Markierung keine neuen Probleme.",
+  "clusterWide": "Clusterweit",
+  "categories": {
+    "nodes": "Knoten",
+    "pods": "Pods",
+    "workloads": "Workloads",
+    "jobs": "Jobs",
+    "volumes": "Volume Claims",
+    "certificates": "Zertifikate",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Warnereignisse"
+  },
+  "messages": {
+    "container": "Container {{container}}",
+    "restarts_one": "Container {{container}} neu gestartet ({{count}} Neustart)",
+    "restarts_other": "Container {{container}} neu gestartet ({{count}} Neustarts)",
+    "replicas": "{{ready}} von {{desired}} Replikaten bereit",
+    "expires": "Läuft ab am {{date}}",
+    "expired": "Abgelaufen am {{date}}"
+  }
+}

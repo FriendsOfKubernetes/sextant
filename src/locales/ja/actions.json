@@ -1,0 +1,100 @@
+{
+  "edit": {
+    "label": "編集"
+  },
+  "delete": {
+    "label": "削除",
+    "titleSingle": "{{kind}} を削除しますか?",
+    "title_other": "{{kind}} オブジェクト {{count}} 個を削除しますか?",
+    "textSingle": "この {{kind}} をクラスターから削除します:",
+    "text_other": "次の {{count}} 個のオブジェクトをクラスターから削除します:",
+    "confirm": "削除",
+    "failed": "削除されませんでした: {{name}}",
+    "partial": "{{total}} 個中 {{done}} 個を削除しました。次のものは失敗しました:"
+  },
+  "scale": {
+    "label": "スケール",
+    "title": "{{kind}} {{name}} をスケール",
+    "replicas": "レプリカ数",
+    "current": "現在: {{count}}",
+    "confirm": "スケール",
+    "invalid": "0 以上の整数を入力してください。"
+  },
+  "restart": {
+    "label": "再起動",
+    "title": "{{kind}} {{name}} を再起動しますか?",
+    "text": "{{name}} のすべての Pod が 1 つずつ置き換えられます (rollout restart)。",
+    "confirm": "再起動"
+  },
+  "cordon": {
+    "label": "Cordon / Uncordon",
+    "cordonTitle": "ノード {{name}} を cordon しますか?",
+    "cordonText": "{{name}} に新しい Pod はスケジュールされなくなります。既に実行中の Pod はそのまま実行されます。",
+    "cordonConfirm": "Cordon",
+    "uncordonTitle": "ノード {{name}} を uncordon しますか?",
+    "uncordonText": "{{name}} に再び新しい Pod をスケジュールできるようになります。",
+    "uncordonConfirm": "Uncordon"
+  },
+  "drain": {
+    "label": "ドレイン",
+    "title": "ノード {{name}} をドレインしますか?",
+    "text": "{{name}} を cordon し、その Pod を退避 (evict) します。DaemonSet の Pod と静的 (ミラー) Pod は残ります。",
+    "loading": "ノード上の Pod を確認中…",
+    "previewFailed": "ノードの Pod を一覧表示できません",
+    "noPods": "このノードに退避する Pod はありません。",
+    "evict_other": "退避 ({{count}} 個の Pod)",
+    "unmanaged_other": "コントローラーなし ({{count}} 個の Pod): 退避後に再作成されません",
+    "force": "コントローラーのない Pod も退避する (force)。オフの場合、それらはノードに残ります。",
+    "emptyDir_other": "emptyDir のデータあり ({{count}} 個の Pod): データは Pod と共に削除されます",
+    "deleteEmptyDirData": "emptyDir のデータを持つ Pod も退避する (delete emptyDir data)。オフの場合、それらはノードに残ります。",
+    "daemonSet_other": "残る: DaemonSet の Pod ({{count}} 個)",
+    "confirm": "ドレイン",
+    "failed": "ノードは cordon されましたが、一部の Pod を退避できませんでした"
+  },
+  "trigger": {
+    "label": "今すぐ実行",
+    "title": "CronJob {{name}} を今すぐ実行しますか?",
+    "text": "CronJob のテンプレートからすぐに Job が作成されます。",
+    "confirm": "実行",
+    "done": "Job {{name}} を作成しました。"
+  },
+  "suspend": {
+    "label": "一時停止 / 再開",
+    "suspendTitle": "CronJob {{name}} を一時停止しますか?",
+    "suspendText": "再開するまで、{{name}} は新しい Job を開始しません。実行中の Job には影響しません。",
+    "suspendConfirm": "一時停止",
+    "resumeTitle": "CronJob {{name}} を再開しますか?",
+    "resumeText": "{{name}} は再びスケジュールどおりに Job を開始します。",
+    "resumeConfirm": "再開"
+  },
+  "dialog": {
+    "working": "処理中…",
+    "close": "閉じる"
+  },
+  "editor": {
+    "tabTitle": "{{kind}} {{name}} を編集",
+    "editorLabel": "{{kind}} {{name}} の YAML",
+    "save": "保存",
+    "saving": "保存中…",
+    "saved": "保存しました。",
+    "unsaved": "未保存の変更",
+    "reload": "再読み込み",
+    "loading": "読み込み中…",
+    "conflict": "{{kind}} {{name}} は、開いた後にクラスター上で変更されました。変更は保存されていません。再読み込みして現在のバージョンを取得してください。",
+    "reloadTitle": "変更を破棄しますか?",
+    "reloadText": "再読み込みすると、テキストがクラスターの現在のバージョンに置き換えられます。保存していない変更は失われます。",
+    "reloadConfirm": "破棄して再読み込み",
+    "saveFailed": "保存されませんでした"
+  },
+  "create": {
+    "open": "リソースを作成",
+    "tabTitle": "リソースを作成",
+    "editorLabel": "作成するリソースの YAML",
+    "placeholder": "YAML を貼り付けるか入力してください。複数のオブジェクトは --- で区切ります",
+    "apply": "適用",
+    "applying": "適用中…",
+    "applied_other": "{{count}} 個のオブジェクトを適用しました:",
+    "failed": "適用されませんでした",
+    "empty": "オブジェクトを 1 つ以上入力してください。"
+  }
+}

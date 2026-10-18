@@ -1,0 +1,101 @@
+{
+  "sidebar": "資源最佳化",
+  "title": "資源最佳化",
+  "sectionTitle": "資源最佳化",
+  "intro": "將要求與限制和實際使用量對照，並為每個容器提供建議。不會變更叢集中的任何內容：請將程式碼片段複製到您的資訊清單中。",
+  "window": {
+    "label": "歷史資料",
+    "day": "過去一天",
+    "week": "過去 7 天"
+  },
+  "sort": {
+    "label": "排序方式",
+    "cpuWaste": "浪費的 CPU",
+    "memoryWaste": "浪費的記憶體",
+    "name": "名稱"
+  },
+  "onlyFlagged": "僅顯示有發現的容器",
+  "source": {
+    "history": "來自 Prometheus 的{{window}}使用量：CPU 取第 95 百分位數與峰值，記憶體取峰值。",
+    "snapshot": "只有目前的值可用（來自 {{source}} 的快照）。單一資料點不足以提供建議：請安裝 Prometheus 以取得歷史資料。",
+    "snapshotAfterError": "無法讀取 Prometheus 歷史資料，因此只顯示目前的值（快照）。不提供建議。",
+    "none": "沒有可用的指標：只檢查 Pod 規格中的要求與限制。",
+    "loading": "正在讀取使用量…",
+    "metricsServer": "metrics-server",
+    "historyFailed": "無法讀取 Prometheus 歷史資料",
+    "truncated_other": "相符的容器過多；只有前 {{count}} 個有歷史資料。請縮小 Namespace 篩選範圍。",
+    "coverageUnknown": "Prometheus 無法說明其樣本從何時開始，因此建議所依據的歷史資料長度不明。"
+  },
+  "loading": "正在載入 Pod…",
+  "podsFailed": "無法列出 Pod",
+  "empty": "這裡沒有執行中的 Pod。",
+  "emptyFiltered": "這些 Namespace 中沒有任何發現。",
+  "tooMany_other": "只顯示前 {{count}} 列。請縮小 Namespace 篩選範圍。",
+  "totals": "浪費：{{cpu}} CPU、{{memory}} 記憶體 · 要求：{{requestedCpu}} CPU、{{requestedMemory}} 記憶體",
+  "atRisk_other": "{{count}} 個有風險",
+  "columns": {
+    "workload": "工作負載",
+    "container": "容器",
+    "replicas": "Pod",
+    "cpu": "CPU",
+    "memory": "記憶體",
+    "findings": "發現",
+    "actions": "動作"
+  },
+  "workload": "{{kind}} {{name}}",
+  "amounts": {
+    "request": "要求 {{value}}",
+    "limit": "限制 {{value}}",
+    "notSet": "未設定",
+    "p95": "p95 {{value}}",
+    "peak": "峰值 {{value}}",
+    "now": "目前 {{value}}",
+    "recommended": "→ {{value}}",
+    "recommendedLimit": "→ 限制 {{value}}"
+  },
+  "confidence": {
+    "partialHistory": "依據 {{duration}}的歷史資料",
+    "insufficientHistory": "歷史資料不足：{{window}}中只有 {{duration}}，至少需要 {{minimum}}",
+    "snapshot": "快照",
+    "noData": "沒有使用量資料",
+    "unknownHistory": "歷史資料長度不明"
+  },
+  "duration": {
+    "minutes_other": "{{count}} 分鐘",
+    "hours_other": "{{count}} 小時",
+    "days_other": "{{count}} 天"
+  },
+  "flags": {
+    "noCpuRequest": "沒有 CPU 要求",
+    "noMemoryRequest": "沒有記憶體要求",
+    "noCpuLimit": "沒有 CPU 限制",
+    "noMemoryLimit": "沒有記憶體限制",
+    "cpuOverProvisioned": "CPU 過度配置",
+    "memoryOverProvisioned": "記憶體過度配置",
+    "cpuUnderRequested": "CPU 要求低於 p95",
+    "memoryUnderRequested": "記憶體要求低於峰值",
+    "memoryNearLimit": "記憶體接近限制",
+    "oomKilled": "最近發生 OOMKilled",
+    "cpuThrottled": "CPU 遭到節流"
+  },
+  "flagHints": {
+    "noCpuRequest": "排程器不會為此容器保留 CPU。",
+    "noMemoryRequest": "排程器不會保留記憶體；在記憶體壓力下，此 Pod 會是最先被驅逐的之一。",
+    "noCpuLimit": "此容器可以使用節點上任何閒置的 CPU。這通常是刻意的設定。",
+    "noMemoryLimit": "此容器可能會占用節點上相鄰容器的記憶體。",
+    "cpuOverProvisioned": "CPU 要求至少是實際使用所需的 {{factor}} 倍。",
+    "memoryOverProvisioned": "記憶體要求至少是實際使用所需的 {{factor}} 倍。",
+    "cpuUnderRequested": "大部分時間裡，使用量都高於要求。",
+    "memoryUnderRequested": "記憶體峰值高於要求：在記憶體壓力下此 Pod 可能會被驅逐。",
+    "memoryNearLimit": "記憶體使用量至少達到限制的 {{share}}。",
+    "oomKilled": "此容器在過去 {{period}}內因記憶體不足而遭終止；實際峰值高於限制。",
+    "cpuThrottled": "{{percent}} 的 CPU 週期遭到節流。"
+  },
+  "copy": "複製 resources YAML",
+  "copied": "已複製",
+  "copyFailed": "無法複製",
+  "separator": " · ",
+  "chooseNamespace": "選擇 Namespace",
+  "chooseNamespaceText": "資源最佳化會讀取其顯示之每個容器的歷史資料，因此只會作用於在 Namespace 篩選器中選擇的 Namespace。請選擇一個或幾個。",
+  "firstNamespaces_other": "只顯示篩選器中的前 {{count}} 個 Namespace。"
+}

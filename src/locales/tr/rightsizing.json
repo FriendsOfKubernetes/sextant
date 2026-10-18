@@ -1,0 +1,108 @@
+{
+  "sidebar": "Doğru boyutlandırma",
+  "title": "Doğru boyutlandırma",
+  "sectionTitle": "Doğru boyutlandırma",
+  "intro": "İstekler ve sınırlar gerçek kullanımla karşılaştırılır; her kapsayıcı için bir öneri sunulur. Kümede hiçbir şey değiştirilmez: kod parçasını manifestlerinize kopyalayın.",
+  "window": {
+    "label": "Geçmiş",
+    "day": "Son gün",
+    "week": "Son 7 gün"
+  },
+  "sort": {
+    "label": "Sıralama ölçütü",
+    "cpuWaste": "Boşa harcanan CPU",
+    "memoryWaste": "Boşa harcanan bellek",
+    "name": "Ad"
+  },
+  "onlyFlagged": "Yalnızca bulgusu olan kapsayıcılar",
+  "source": {
+    "history": "Prometheus'tan alınan kullanım ({{window}}): CPU için 95. yüzdelik ve tepe değeri, bellek için tepe değeri.",
+    "snapshot": "Yalnızca geçerli değerler kullanılabilir ({{source}} kaynağından anlık görüntü). Bir öneri için tek bir nokta yetmez: geçmiş için Prometheus yükleyin.",
+    "snapshotAfterError": "Prometheus geçmişi okunamadı, bu yüzden yalnızca geçerli değerler (anlık görüntü) gösteriliyor. Öneri yok.",
+    "none": "Kullanılabilir ölçüm yok: yalnızca Pod belirtimlerindeki istekler ve sınırlar denetleniyor.",
+    "loading": "Kullanım okunuyor…",
+    "metricsServer": "metrics-server",
+    "historyFailed": "Prometheus geçmişi okunamadı",
+    "truncated_one": "Çok fazla kapsayıcı eşleşti; yalnızca ilk {{count}} kapsayıcının geçmişi var. Namespace süzgecini daraltın.",
+    "truncated_other": "Çok fazla kapsayıcı eşleşti; yalnızca ilk {{count}} kapsayıcının geçmişi var. Namespace süzgecini daraltın.",
+    "coverageUnknown": "Prometheus örneklerinin ne zamandan beri tutulduğunu bildiremedi, bu yüzden önerilerin ne kadarlık bir geçmişe dayandığı bilinmiyor."
+  },
+  "loading": "Pod'lar yükleniyor…",
+  "podsFailed": "Pod'lar listelenemedi",
+  "empty": "Burada çalışan Pod yok.",
+  "emptyFiltered": "Bu namespace'lerde bulgu yok.",
+  "tooMany_one": "Yalnızca ilk {{count}} satır gösteriliyor. Namespace süzgecini daraltın.",
+  "tooMany_other": "Yalnızca ilk {{count}} satır gösteriliyor. Namespace süzgecini daraltın.",
+  "totals": "Boşa harcanan: {{cpu}} CPU, {{memory}} bellek · İstenen: {{requestedCpu}} CPU, {{requestedMemory}} bellek",
+  "atRisk_one": "{{count}} risk altında",
+  "atRisk_other": "{{count}} risk altında",
+  "columns": {
+    "workload": "İş yükü",
+    "container": "Kapsayıcı",
+    "replicas": "Pod'lar",
+    "cpu": "CPU",
+    "memory": "Bellek",
+    "findings": "Bulgular",
+    "actions": "Eylemler"
+  },
+  "workload": "{{kind}} {{name}}",
+  "amounts": {
+    "request": "istek {{value}}",
+    "limit": "sınır {{value}}",
+    "notSet": "ayarlanmadı",
+    "p95": "p95 {{value}}",
+    "peak": "tepe {{value}}",
+    "now": "şimdi {{value}}",
+    "recommended": "→ {{value}}",
+    "recommendedLimit": "→ sınır {{value}}"
+  },
+  "confidence": {
+    "partialHistory": "{{duration}} geçmişe dayanıyor",
+    "insufficientHistory": "Yeterli geçmiş yok: {{duration}} ({{window}}); en az {{minimum}} gerekli",
+    "snapshot": "Anlık görüntü",
+    "noData": "Kullanım verisi yok",
+    "unknownHistory": "Uzunluğu bilinmeyen geçmiş"
+  },
+  "duration": {
+    "minutes_one": "{{count}} dakika",
+    "minutes_other": "{{count}} dakika",
+    "hours_one": "{{count}} saat",
+    "hours_other": "{{count}} saat",
+    "days_one": "{{count}} gün",
+    "days_other": "{{count}} gün"
+  },
+  "flags": {
+    "noCpuRequest": "CPU isteği yok",
+    "noMemoryRequest": "Bellek isteği yok",
+    "noCpuLimit": "CPU sınırı yok",
+    "noMemoryLimit": "Bellek sınırı yok",
+    "cpuOverProvisioned": "CPU fazla ayrılmış",
+    "memoryOverProvisioned": "Bellek fazla ayrılmış",
+    "cpuUnderRequested": "CPU isteği p95'in altında",
+    "memoryUnderRequested": "Bellek isteği tepe değerin altında",
+    "memoryNearLimit": "Bellek sınıra yakın",
+    "oomKilled": "Yakın zamanda OOMKilled",
+    "cpuThrottled": "CPU kısıtlandı"
+  },
+  "flagHints": {
+    "noCpuRequest": "Zamanlayıcı bu kapsayıcı için CPU ayırmaz.",
+    "noMemoryRequest": "Zamanlayıcı bellek ayırmaz; bellek baskısı altında Pod ilk tahliye edilenler arasındadır.",
+    "noCpuLimit": "Kapsayıcı, düğümün boştaki tüm CPU'sunu kullanabilir. Çoğu zaman bilerek yapılır.",
+    "noMemoryLimit": "Kapsayıcı, düğümdeki komşularının belleğini alabilir.",
+    "cpuOverProvisioned": "CPU isteği, kullanımın gerektirdiğinin en az {{factor}} katı.",
+    "memoryOverProvisioned": "Bellek isteği, kullanımın gerektirdiğinin en az {{factor}} katı.",
+    "cpuUnderRequested": "Kullanım çoğu zaman isteğin üzerinde.",
+    "memoryUnderRequested": "Tepe bellek kullanımı isteğin üzerinde: Pod bellek baskısı altında tahliye edilebilir.",
+    "memoryNearLimit": "Bellek, sınırın en az {{share}} kadarına ulaştı.",
+    "oomKilled": "Kapsayıcı, son {{period}} içinde belleği tükendiği için sonlandırıldı; gerçek tepe değer sınırın üzerinde.",
+    "cpuThrottled": "CPU dönemlerinin {{percent}} kadarı kısıtlandı."
+  },
+  "copy": "Kaynak YAML'ını kopyala",
+  "copied": "Kopyalandı",
+  "copyFailed": "Kopyalanamadı",
+  "separator": " · ",
+  "chooseNamespace": "Bir namespace seçin",
+  "chooseNamespaceText": "Doğru boyutlandırma, gösterdiği her kapsayıcının geçmişini okur; bu yüzden namespace süzgecinde seçilen namespace'lerde çalışır. Bir veya birkaç tane seçin.",
+  "firstNamespaces_one": "Süzgeçteki namespace'lerden yalnızca ilk {{count}} tanesi gösteriliyor.",
+  "firstNamespaces_other": "Süzgeçteki namespace'lerden yalnızca ilk {{count}} tanesi gösteriliyor."
+}

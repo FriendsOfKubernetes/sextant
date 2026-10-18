@@ -1,0 +1,112 @@
+{
+  "title": "Métriques",
+  "loading": "Chargement des métriques…",
+  "unavailable": "Les métriques ne sont pas disponibles",
+  "openSettings": "Ouvrir les paramètres du cluster",
+  "na": "n/d",
+  "percent": "{{value}} %",
+  "percentOf": "{{value}} % · {{text}}",
+  "usedOf": "{{used}} sur {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "demande {{value}}",
+    "limit": "limite {{value}}",
+    "noLimit": "pas de limite",
+    "requestSetOn": "(définie sur {{count}} conteneurs sur {{total}})",
+    "limitSetOn": "(définie sur {{count}} conteneurs sur {{total}})",
+    "shareOfLimit": "{{value}} % de la limite",
+    "shareOfRequest": "{{value}} % de la demande",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "Mémoire {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "Mémoire"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "Mémoire",
+    "pods": "Pods",
+    "disk": "Disque",
+    "loading": "Chargement des graphiques…",
+    "noData": "Pas encore de données pour la dernière heure.",
+    "needPrometheus": "Les graphiques de la dernière heure nécessitent Prometheus."
+  },
+  "settings": {
+    "title": "Métriques",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "Rechercher automatiquement",
+      "manual": "Adresse manuelle",
+      "off": "Désactivé"
+    },
+    "serviceKind": "Service dans le cluster",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "Préfixe de chemin",
+    "url": "URL de Prometheus",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "Format attendu : namespace/service:port, p. ex. monitoring/prometheus-operated:9090.",
+    "invalidUrl": "Une URL http:// ou https:// est attendue.",
+    "save": "Utiliser cette adresse",
+    "usageSource": "Source du CPU et de la mémoire actuels",
+    "source": {
+      "auto": "Automatique (metrics-server, sinon Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "Désactivé"
+    },
+    "detected": "Détecté",
+    "checking": "Vérification des sources de métriques…",
+    "metricsServer": "metrics-server",
+    "available": "Disponible",
+    "notAvailable": "Non disponible",
+    "foundAuto": "Trouvé automatiquement : {{target}}",
+    "foundManual": "Répond à {{target}}",
+    "notFound": "Introuvable",
+    "manualNoAnswer": "L'adresse ne répond pas",
+    "prometheusOff": "Désactivé",
+    "currentFrom": "Valeurs actuelles depuis",
+    "noSource": "Aucune source : les métriques ne sont pas disponibles"
+  },
+  "overview": {
+    "sidebar": "Vue d'ensemble",
+    "title": "Vue d'ensemble du cluster",
+    "nodes": "Nœuds",
+    "nodesReady": "{{ready}} prêts sur {{count}}",
+    "pods": "Pods",
+    "workloads": "Charges de travail",
+    "usage": "Utilisation",
+    "cpu": "CPU",
+    "memory": "Mémoire",
+    "usageOf": "{{used}} sur {{total}} allouables",
+    "charts": "Dernière heure",
+    "warnings": "Avertissements",
+    "noWarnings": "Aucun avertissement.",
+    "loadingPage": "Chargement de la vue d'ensemble du cluster…",
+    "loadingWarnings": "Chargement des avertissements…",
+    "phase": {
+      "Running": "En exécution",
+      "Pending": "En attente",
+      "Succeeded": "Réussis",
+      "Failed": "En échec",
+      "Unknown": "Inconnus"
+    },
+    "state": {
+      "ready": "Prêts",
+      "pending": "Non prêts",
+      "running": "En exécution",
+      "succeeded": "Réussis",
+      "failed": "En échec"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "sidebar": "Encaminhamento de portas",
+  "title": "Encaminhamento de portas",
+  "loading": "Carregando encaminhamentos de porta…",
+  "empty": "Nenhum encaminhamento de porta ativo.",
+  "emptyText": "Inicie um nos detalhes de um Pod ou Service.",
+  "columns": {
+    "target": "Destino",
+    "ports": "Portas",
+    "status": "Status"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Ativo",
+    "error": "Erro"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Abrir no navegador",
+    "stop": "Parar"
+  },
+  "action": {
+    "label": "Encaminhar porta…"
+  },
+  "section": {
+    "title": "Encaminhamento de portas",
+    "forward": "Encaminhar",
+    "forwardPort": "Encaminhar a porta {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Encaminhar {{target}}",
+    "remotePort": "Porta a encaminhar",
+    "localPort": "Porta local",
+    "localPortChoice": "Escolha da porta local",
+    "auto": "Porta livre aleatória",
+    "custom": "Porta específica",
+    "invalidPort": "Digite uma porta de 1 a 65535.",
+    "start": "Iniciar encaminhamento",
+    "starting": "Iniciando…",
+    "started": "Encaminhando localhost:{{local}} para a porta {{remote}}.",
+    "inUse": "A porta local {{port}} já está em uso.",
+    "useFree": "Usar uma porta livre",
+    "close": "Fechar"
+  }
+}

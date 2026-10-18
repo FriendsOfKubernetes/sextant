@@ -1,0 +1,36 @@
+{
+  "muteHour": "1 時間ミュート",
+  "unmute": "ミュート解除",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_other": "{{cluster}} で {{count}} 件の新しい問題",
+    "titleClusters_other": "{{clusters}} 個のクラスターで {{count}} 件の新しい問題",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "通知",
+    "enabled": "接続中のクラスターで新しい問題が発生したらデスクトップ通知を表示する",
+    "enabledHint": "監視するのは既に接続しているクラスターだけで、通知するのは Sextant の実行中に発生した問題だけです (ウィンドウがトレイに隠れているときも含みます)。通知はシステムの通知サービスが表示し、このマシンの外には何も送信されません。",
+    "mutedUntil": "{{time}} までミュート中",
+    "categories": "通知する内容",
+    "clusters": "クラスター",
+    "clustersHint": "ここでオフにしたクラスターは通知しません。",
+    "noClusters": "クラスターはまだありません。",
+    "certificates": "証明書",
+    "certExpiryDays": "証明書の有効期限の何日前に警告するか",
+    "certExpiryHint": "問題画面と cert-manager の Certificate の通知、証明書の詳細、TLS 証明書ページで使用されます。"
+  },
+  "history": {
+    "title": "最近の通知",
+    "clear": "クリア",
+    "empty": "通知はまだありません。",
+    "off": "通知はオフです (設定 → 一般 → 通知)。",
+    "delivery": {
+      "summary": "まとめて通知",
+      "muted": "ミュート中"
+    }
+  },
+  "muteFailed": "通知をミュートできませんでした: {{message}}"
+}

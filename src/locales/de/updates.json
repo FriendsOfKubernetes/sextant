@@ -1,0 +1,32 @@
+{
+  "title": "Updates",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (Version unbekannt)",
+  "auto": "Beim Start von Sextant nach Updates suchen",
+  "check": "Nach Updates suchen",
+  "checking": "Es wird nach Updates gesucht…",
+  "upToDate": "Sie haben die neueste Version.",
+  "available": "Sextant {{version}} ist verfügbar (installiert: {{current}}).",
+  "notesLabel": "Versionshinweise",
+  "install": "Installieren und neu starten",
+  "installing": "Wird heruntergeladen und installiert…",
+  "installingProgress": "Wird heruntergeladen und installiert… {{percent}} %",
+  "restarting": "Wird neu gestartet…",
+  "later": "Später",
+  "dialogTitle": "Update verfügbar",
+  "openReleasePage": "Release-Seite öffnen",
+  "notConfigured": "Updates sind in diesem Build deaktiviert: Er hat keinen Signaturschlüssel für Updates (plugins.updater.pubkey in src-tauri/tauri.conf.json). Laden Sie neue Versionen von der Release-Seite herunter.",
+  "manual": {
+    "deb": "Sextant wurde aus einem .deb-Paket installiert und ersetzt sich daher nicht selbst. Laden Sie das neue .deb-Paket von der Release-Seite herunter und installieren Sie es mit Ihrer Paketverwaltung, zum Beispiel: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant wurde aus einem .rpm-Paket installiert und ersetzt sich daher nicht selbst. Laden Sie das neue Paket von der Release-Seite herunter und installieren Sie es mit Ihrer Paketverwaltung.",
+    "other": "Diese Sextant-Kopie wurde nicht aus einem Release-Paket (AppImage, .dmg oder .msi) installiert und kann sich daher nicht selbst aktualisieren. Laden Sie die neue Version von der Release-Seite herunter."
+  },
+  "error": {
+    "network": "GitHub konnte für die Update-Suche nicht erreicht werden. Prüfen Sie Ihre Internetverbindung oder Ihren Proxy und versuchen Sie es noch einmal.",
+    "noRelease": "Das neueste Release auf GitHub enthält noch kein Update für dieses System. Versuchen Sie es später noch einmal.",
+    "signature": "Das heruntergeladene Update ist nicht mit dem Release-Schlüssel von Sextant signiert und wurde daher nicht installiert.",
+    "otherCheck": "Die Suche nach Updates ist fehlgeschlagen.",
+    "otherInstall": "Das Update konnte nicht installiert werden.",
+    "networkInstall": "Das Update konnte nicht heruntergeladen werden. Prüfen Sie Ihre Internetverbindung oder Ihren Proxy und versuchen Sie es noch einmal."
+  }
+}

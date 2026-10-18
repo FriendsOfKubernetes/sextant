@@ -1,0 +1,38 @@
+{
+  "muteHour": "1 saat sessize al",
+  "unmute": "Sesi aç",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{cluster}} içinde {{count}} yeni sorun",
+    "title_other": "{{cluster}} içinde {{count}} yeni sorun",
+    "titleClusters_one": "{{clusters}} kümede {{count}} yeni sorun",
+    "titleClusters_other": "{{clusters}} kümede {{count}} yeni sorun",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Bildirimler",
+    "enabled": "Bağlı kümelerdeki yeni sorunlar hakkında masaüstü bildirimleri göster",
+    "enabledHint": "Yalnızca zaten bağlı olan kümeler izlenir ve yalnızca Sextant çalışırken başlayan sorunlar bildirilir; pencere sistem tepsisinde gizliyken de. Bildirimleri sistemin bildirim hizmeti gösterir; bu makineden dışarı hiçbir şey gönderilmez.",
+    "mutedUntil": "Şu saate kadar sessizde: {{time}}",
+    "categories": "Şunlar hakkında bildir",
+    "clusters": "Kümeler",
+    "clustersHint": "Burada kapatılan bir küme hiçbir zaman bildirim göndermez.",
+    "noClusters": "Henüz küme yok.",
+    "certificates": "Sertifikalar",
+    "certExpiryDays": "Bir sertifikanın süresi dolmadan kaç gün önce uyarılsın",
+    "certExpiryHint": "Sorunlar ekranı ve cert-manager Certificate'leri için bildirimler ile sertifika ayrıntıları ve TLS sertifikaları sayfası tarafından kullanılır."
+  },
+  "history": {
+    "title": "Son bildirimler",
+    "clear": "Temizle",
+    "empty": "Henüz bildirim yok.",
+    "off": "Bildirimler kapalı (Ayarlar → Genel → Bildirimler).",
+    "delivery": {
+      "summary": "özet içinde",
+      "muted": "sessizde"
+    }
+  },
+  "muteFailed": "Bildirimler sessize alınamadı: {{message}}"
+}

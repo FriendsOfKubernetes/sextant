@@ -1,0 +1,49 @@
+{
+  "sidebar": "端口转发",
+  "title": "端口转发",
+  "loading": "正在加载端口转发…",
+  "empty": "没有活动的端口转发。",
+  "emptyText": "可从 Pod 或 Service 的详细信息中启动。",
+  "columns": {
+    "target": "目标",
+    "ports": "端口",
+    "status": "状态"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "活动",
+    "error": "错误"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "在浏览器中打开",
+    "stop": "停止"
+  },
+  "action": {
+    "label": "端口转发…"
+  },
+  "section": {
+    "title": "端口转发",
+    "forward": "转发",
+    "forwardPort": "转发端口 {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "转发 {{target}}",
+    "remotePort": "要转发的端口",
+    "localPort": "本地端口",
+    "localPortChoice": "本地端口选择",
+    "auto": "随机空闲端口",
+    "custom": "指定端口",
+    "invalidPort": "请输入 1 到 65535 之间的端口。",
+    "start": "开始转发",
+    "starting": "正在启动…",
+    "started": "正在将 localhost:{{local}} 转发到端口 {{remote}}。",
+    "inUse": "本地端口 {{port}} 已被占用。",
+    "useFree": "使用空闲端口",
+    "close": "关闭"
+  }
+}

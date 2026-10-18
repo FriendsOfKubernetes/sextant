@@ -1,0 +1,159 @@
+{
+  "rail": {
+    "list": "Lista klastrów",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Dodaj klaster",
+    "refresh": "Odśwież kubeconfig",
+    "slow": "{{tooltip}} od {{seconds}} s. Klaster odpowiada powoli",
+    "expand": "Rozwiń listę klastrów",
+    "collapse": "Zwiń listę klastrów"
+  },
+  "state": {
+    "disconnected": "rozłączony",
+    "connecting": "łączenie",
+    "connected": "połączony",
+    "error": "błąd połączenia"
+  },
+  "menu": {
+    "open": "Otwórz",
+    "connect": "Połącz",
+    "reconnect": "Połącz ponownie",
+    "disconnect": "Rozłącz",
+    "settings": "Ustawienia",
+    "changeIcon": "Zmień ikonę…"
+  },
+  "add": {
+    "title": "Dodaj klaster",
+    "file": "Dodaj plik kubeconfig",
+    "paste": "Wklej kubeconfig",
+    "fileDialogTitle": "Wybierz plik kubeconfig",
+    "tabs": "Sposób dodania",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Z chmury"
+  },
+  "paste": {
+    "title": "Wklej kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Wklej zawartość pliku kubeconfig. Sextant przechowuje prywatną kopię w swoim folderze danych.",
+    "submit": "Dodaj"
+  },
+  "sources": {
+    "title": "Źródła kubeconfig",
+    "kind": {
+      "default": "domyślne",
+      "env": "KUBECONFIG",
+      "addedFile": "dodany plik",
+      "pasted": "wklejone",
+      "cloud": "chmura"
+    },
+    "remove": "Usuń",
+    "removeNamed": "Usuń {{path}}",
+    "confirmTitle": "Usunąć źródło kubeconfig?",
+    "confirmFile": "Jego klastry znikną z listy. Sam plik pozostanie na dysku.",
+    "confirmPasted": "Jego klastry znikną z listy, a wklejona kopia zostanie usunięta.",
+    "problems": "Nie można odczytać niektórych plików kubeconfig",
+    "problemsTitle": "Problemy z kubeconfig",
+    "problemsHint": "Klastry z pozostałych plików nadal działają. Popraw plik, a następnie kliknij „Odśwież”.",
+    "confirmCloud": "Jego klastry znikną z listy, a kubeconfig programu Sextant dla tych klastrów w chmurze zostanie usunięty. Narzędzie CLI chmury i plik ~/.kube/config pozostaną nietknięte."
+  },
+  "welcome": {
+    "loading": "Odczytywanie kubeconfig…",
+    "noClusters": "Nie znaleziono klastrów",
+    "checked": "Sextant szukał pliku kubeconfig tutaj:",
+    "checkedPaths": "Sprawdzone ścieżki",
+    "title": "Witamy w programie Sextant",
+    "pick": "Wybierz klaster po lewej, aby się połączyć."
+  },
+  "connection": {
+    "connecting": "Łączenie z {{name}}…",
+    "failed": "Nie można połączyć się z {{name}}",
+    "reconnect": "Połącz ponownie",
+    "certificate": "Certyfikat serwera nie został zaakceptowany.",
+    "seconds": "{{seconds}} s",
+    "slow": "Klaster odpowiada powoli"
+  },
+  "settings": {
+    "title": "Ustawienia klastra — {{name}}",
+    "displayName": "Nazwa wyświetlana",
+    "color": "Etykieta koloru",
+    "autoColor": "Automatyczny",
+    "colorOption": "Kolor {{index}}",
+    "icon": "Ikona",
+    "iconPreview": "Podgląd ikony",
+    "iconText": "Tekst ikony",
+    "iconTextPlaceholder": "Inicjały",
+    "iconChoose": "Wybierz obraz…",
+    "iconReset": "Resetuj ikonę",
+    "iconHint": "Jedna lub dwie litery albo emoji na etykiecie koloru lub obraz PNG, JPEG, SVG albo WebP o rozmiarze do 5 MB. Puste pole — inicjały nazwy.",
+    "iconErrors": {
+      "type": "Plik nie jest obsługiwanym obrazem",
+      "size": "Obraz jest większy niż 5 MB",
+      "read": "Nie można odczytać pliku"
+    }
+  },
+  "info": {
+    "context": "Kontekst",
+    "cluster": "Klaster",
+    "server": "Serwer",
+    "user": "Użytkownik",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant używa narzędzi aws, gcloud i az, które są już zainstalowane i zalogowane na tym komputerze. Zapisuje własny kubeconfig, nigdy nie zmienia pliku ~/.kube/config i nie loguje się w imieniu użytkownika.",
+    "detecting": "Wyszukiwanie aws, gcloud i az…",
+    "providers": "Chmura",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(wersja nieznana)",
+    "notInstalled": "{{cli}} nie jest zainstalowany",
+    "installGuide": "Instrukcja instalacji",
+    "pluginMissing": "{{plugin}} nie jest zainstalowany. Klastry można dodać, ale do połączenia jest on potrzebny. Zainstaluj go poleceniem:",
+    "loadingAccounts": "Odczytywanie kont…",
+    "account": {
+      "aws": "Profil",
+      "gcp": "Projekt",
+      "azure": "Subskrypcja"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Poświadczenia ze środowiska",
+    "regions": "Regiony",
+    "find": "Znajdź klastry",
+    "finding": "Wyszukiwanie…",
+    "noClusters": "Nie znaleziono klastrów.",
+    "found": "Znalezione klastry",
+    "separator": " · ",
+    "add_one": "Dodaj {{count}} klaster",
+    "add_few": "Dodaj {{count}} klastry",
+    "add_many": "Dodaj {{count}} klastrów",
+    "add_other": "Dodaj {{count}} klastra",
+    "added_one": "Dodano {{count}} klaster. Jest na liście klastrów.",
+    "added_few": "Dodano {{count}} klastry. Są na liście klastrów.",
+    "added_many": "Dodano {{count}} klastrów. Są na liście klastrów.",
+    "added_other": "Dodano {{count}} klastra. Są na liście klastrów.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} nie jest zainstalowany{{scope}}",
+      "notLoggedIn": "{{cli}} nie jest zalogowany lub logowanie wygasło{{scope}}",
+      "pluginMissing": "Wtyczka logowania dla {{cli}} nie jest zainstalowana{{scope}}",
+      "failed": "Błąd {{cli}}{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Zainstaluj go, a następnie spróbuj ponownie.",
+      "notLoggedIn": "Sextant nie loguje się w imieniu użytkownika. Uruchom to polecenie w terminalu, a następnie spróbuj ponownie:",
+      "pluginMissing": "Uruchom to polecenie w terminalu, a następnie spróbuj ponownie:",
+      "failed": "Uruchom to polecenie w terminalu, a następnie spróbuj ponownie:"
+    },
+    "copyCommand": "Kopiuj polecenie",
+    "copied": "Skopiowano",
+    "copyFailed": "Schowek jest niedostępny; zaznacz polecenie i skopiuj je."
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "title": "AI 代理程式存取權限",
+  "intro": "透過 MCP 伺服器連線的 AI 代理程式可以在此叢集中執行哪些操作。在您選擇一組權限之前，任何操作都不被允許。",
+  "preset": {
+    "legend": "權限組合",
+    "off": "關閉",
+    "readOnly": "唯讀",
+    "readWrite": "讀取 + 寫入（不可刪除）",
+    "full": "完整",
+    "custom": "自訂"
+  },
+  "description": {
+    "off": "代理程式無法存取此叢集。它能在清單中看到此叢集，但每次呼叫都會被拒絕。",
+    "readOnly": "代理程式可以讀取所有 Namespace 中的全部資源，並取得 Pod 日誌。Secret 值會隱藏。它無法進行任何變更。",
+    "readWrite": "代理程式可以讀取所有內容並取得日誌，也可以變更資源、在容器中執行命令及開啟連接埠轉送。每次操作前都會先詢問您。它無法刪除。Secret 值會隱藏。",
+    "full": "代理程式可以在所有 Namespace 中執行任何操作，包括刪除。每次變更、刪除、命令與連接埠轉送前都會先詢問您。Secret 值會隱藏。",
+    "custom": "由您決定：每條規則涵蓋若干 Namespace、類型與動作。只要至少有一條規則涵蓋某個動作，該動作就會被允許。"
+  },
+  "customizeHint": "選擇「自訂」即可以這組權限的規則為基礎進行編輯。",
+  "unrecognised": {
+    "notice": "這些規則是由較新版本的 Sextant 寫入，或經過手動編輯；它們會被保留但不會生效。在您重設為「關閉」或選擇一組權限（將取代這些規則）之前，代理程式沒有任何存取權限。",
+    "reset": "重設為「關閉」"
+  },
+  "saveFailed": "無法儲存存取規則。",
+  "rules": {
+    "title": "規則",
+    "none": "沒有任何規則，因此代理程式無法存取此叢集。",
+    "rule": "規則 {{number}}",
+    "add": "新增規則",
+    "remove": "移除規則 {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespace",
+    "all": "所有 Namespace",
+    "only": "選取的 Namespace",
+    "filter": "篩選 Namespace",
+    "add": "依名稱新增 Namespace",
+    "addPlaceholder": "Namespace 名稱",
+    "addButton": "新增 Namespace",
+    "invalid": "不是有效的 Namespace 名稱。",
+    "empty": "未選取任何 Namespace，因此此規則不涵蓋任何內容。",
+    "clusterOnly": "不屬於任何 Namespace 的資源（節點、Namespace、CRD、ClusterRole）只能由涵蓋所有 Namespace 的規則涵蓋。"
+  },
+  "kinds": {
+    "legend": "類型",
+    "all": "所有類型",
+    "only": "選取的類型",
+    "filter": "篩選類型",
+    "add": "依名稱新增類型",
+    "addPlaceholder": "Kind 或 group/Kind",
+    "addButton": "新增類型",
+    "invalid": "請使用 Kind 或 group/Kind 格式，例如 Pod 或 apps/Deployment。",
+    "empty": "未選取任何類型，因此此規則不涵蓋任何內容。",
+    "helm": "Helm 發行版本",
+    "coreGroup": "core",
+    "more": "僅顯示前 {{count}} 項。在篩選欄位中輸入文字以縮小清單範圍。"
+  },
+  "picker": {
+    "noMatch": "沒有相符的項目。",
+    "notConnected": "連線到此叢集後即可從其清單中選擇。您仍可在下方輸入名稱。",
+    "loading": "正在載入清單…",
+    "failed": "無法取得此叢集的清單。您仍可在下方輸入名稱。"
+  },
+  "actions": {
+    "legend": "動作",
+    "read": "讀取",
+    "modify": "修改",
+    "delete": "刪除",
+    "logs": "日誌",
+    "exec": "Exec / Shell",
+    "portForward": "連接埠轉送",
+    "secretValues": "Secret 值"
+  },
+  "confirm": {
+    "label": "執行前詢問",
+    "hint": "此規則中的修改、刪除、Exec 與連接埠轉送會在 Sextant 中等待您的回覆（120 秒後視為拒絕）。"
+  },
+  "secretWarning": "「Secret 值」允許代理程式以明文讀取 Secret 資料及 Helm 發行版本的值。請只對代理程式確實需要的 Namespace 開放。"
+}

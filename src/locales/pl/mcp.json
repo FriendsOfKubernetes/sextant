@@ -1,0 +1,127 @@
+{
+  "title": "Agenci AI (MCP)",
+  "hint": "Pozwala agentom AI, takim jak Claude Code, Claude Desktop i Cursor, przeglądać klastry za pośrednictwem programu Sextant. Serwer nasłuchuje tylko na tym komputerze i wymaga tokenu. To, co agent może robić w każdym klastrze, ustawia się w ustawieniach tego klastra (Dostęp agentów AI); dopóki nie zostanie to dozwolone, agent nie może nic zrobić.",
+  "enable": "Włącz serwer MCP",
+  "port": {
+    "label": "Port",
+    "apply": "Zastosuj",
+    "invalid": "Wpisz liczbę całkowitą od 1024 do 65535.",
+    "hint": "Zmiana portu uruchamia serwer ponownie i kończy sesje agentów."
+  },
+  "status": {
+    "off": "Wyłączony",
+    "starting": "Uruchamianie…",
+    "running": "Działa pod adresem {{url}}",
+    "error": "Nie można uruchomić serwera MCP."
+  },
+  "token": {
+    "label": "Token",
+    "hint": "Agenci wysyłają ten token z każdym żądaniem. Należy zachować go w tajemnicy: każdy, kto go ma, może prosić serwer o to, na co zezwolono.",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "Pokaż",
+    "hide": "Ukryj",
+    "copy": "Kopiuj",
+    "regenerate": "Wygeneruj ponownie",
+    "copied": "Skopiowano token.",
+    "regenerated": "Utworzono nowy token. Zaktualizuj konfigurację każdego agenta, który używał starego.",
+    "confirmTitle": "Wygenerować token ponownie?",
+    "confirmBody": "Bieżący token natychmiast przestanie działać, a sesje agentów zostaną zamknięte. Każdemu agentowi trzeba będzie przekazać nowy token.",
+    "failed": "Nie można odczytać tokenu: {{message}}"
+  },
+  "snippets": {
+    "title": "Połącz agenta",
+    "tabs": "Agent",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "Uruchom to polecenie w terminalu. Zawiera token, więc zachowaj je w tajemnicy.",
+    "cursorHint": "Dodaj to do ~/.cursor/mcp.json (lub .cursor/mcp.json w projekcie). Zawiera token.",
+    "claudeDesktopHint": "Dodaj to do sekcji mcpServers pliku claude_desktop_config.json. Claude Desktop uruchamia Sextant jako program pomocniczy, który sam odczytuje port i token, więc plik nie zawiera tokenu. Sextant musi działać z włączonym serwerem.",
+    "tokenHidden": "Token jest tutaj ukryty; przycisk „Kopiuj” umieszcza prawdziwy token w schowku.",
+    "copy": "Kopiuj",
+    "copyFor": "Kopiuj konfigurację {{name}}",
+    "copied": "Skopiowano.",
+    "copyFailed": "Nie można skopiować: {{message}}"
+  },
+  "activity": {
+    "open": "Aktywność agentów",
+    "openActive": "Aktywność agentów (agent właśnie pracuje)",
+    "openLog": "Otwórz dziennik aktywności",
+    "title": "Aktywność agentów",
+    "hint": "O co prosili agenci AI. Wartości Secret, YAML i wyniki poleceń nie są zapisywane.",
+    "cluster": "Klaster",
+    "allClusters": "Wszystkie klastry",
+    "loading": "Wczytywanie dziennika…",
+    "empty": "Brak wywołań.",
+    "failed": "Nie można odczytać dziennika",
+    "clear": "Wyczyść",
+    "clearTitle": "Wyczyścić dziennik aktywności?",
+    "clearBody": "Wszystkie zapisane wywołania agentów zostaną usunięte z tego komputera.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Czas",
+      "client": "Klient",
+      "cluster": "Klaster",
+      "tool": "Narzędzie",
+      "target": "Cel",
+      "decision": "Decyzja",
+      "result": "Wynik",
+      "duration": "Trwało"
+    },
+    "decisions": {
+      "allowed": "Dozwolone",
+      "denied": "Odrzucone",
+      "approved": "Zatwierdzone przez użytkownika",
+      "declined": "Odrzucone przez użytkownika",
+      "timedOut": "Brak odpowiedzi",
+      "notChecked": "Niesprawdzone"
+    },
+    "duration": "{{ms}} ms"
+  },
+  "confirm": {
+    "title": "Agent AI prosi o zgodę na działanie",
+    "extensionTitle": "Rozszerzenie prosi o zgodę na działanie",
+    "intro": "{{client}} chce wykonać następujące działanie w klastrze {{cluster}}.",
+    "client": "Agent",
+    "extension": "Rozszerzenie",
+    "cluster": "Klaster",
+    "action": "Akcja",
+    "target": "Cel",
+    "details": "Szczegóły",
+    "allow": "Zezwól",
+    "deny": "Odmów",
+    "countdown": "Automatyczna odmowa za {{time}}",
+    "waiting_one": "Czeka jeszcze {{count}} żądanie.",
+    "waiting_few": "Czekają jeszcze {{count}} żądania.",
+    "waiting_many": "Czeka jeszcze {{count}} żądań.",
+    "waiting_other": "Czeka jeszcze {{count}} żądania."
+  },
+  "tools": {
+    "apply_yaml": "Zastosowanie YAML",
+    "patch_resource": "Zmiana zasobu (patch)",
+    "delete_resource": "Usunięcie zasobu",
+    "scale": "Skalowanie obciążenia",
+    "restart": "Ponowne uruchomienie obciążenia",
+    "rollout_undo": "Wycofanie obciążenia",
+    "cordon_node": "Wyłączenie lub włączenie planowania na węźle",
+    "drain_node": "Opróżnienie węzła",
+    "trigger_cronjob": "Natychmiastowe uruchomienie CronJob",
+    "suspend_cronjob": "Wstrzymanie lub wznowienie CronJob",
+    "gitops_action": "Akcja GitOps",
+    "helm_install": "Instalacja wydania Helm",
+    "helm_upgrade": "Uaktualnienie wydania Helm",
+    "helm_rollback": "Wycofanie wydania Helm",
+    "helm_uninstall": "Odinstalowanie wydania Helm",
+    "exec_command": "Uruchomienie polecenia w kontenerze",
+    "port_forward_start": "Otwarcie przekierowania portu",
+    "port_forward_stop": "Zamknięcie przekierowania portu"
+  },
+  "methods": {
+    "resources": {
+      "apply": "Zastosowanie YAML",
+      "patch": "Zmiana zasobu (patch)",
+      "delete": "Usunięcie zasobu"
+    }
+  }
+}

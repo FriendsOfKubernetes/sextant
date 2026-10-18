@@ -1,0 +1,100 @@
+{
+  "edit": {
+    "label": "편집"
+  },
+  "delete": {
+    "label": "삭제",
+    "titleSingle": "{{kind}}을(를) 삭제하시겠습니까?",
+    "title_other": "{{kind}} 개체 {{count}}개를 삭제하시겠습니까?",
+    "textSingle": "이 {{kind}}이(가) 클러스터에서 삭제됩니다:",
+    "text_other": "다음 개체 {{count}}개가 클러스터에서 삭제됩니다:",
+    "confirm": "삭제",
+    "failed": "삭제되지 않음: {{name}}",
+    "partial": "{{total}}개 중 {{done}}개가 삭제되었습니다. 나머지는 실패했습니다:"
+  },
+  "scale": {
+    "label": "스케일 조정",
+    "title": "{{kind}} {{name}} 스케일 조정",
+    "replicas": "복제본",
+    "current": "현재: {{count}}",
+    "confirm": "스케일 조정",
+    "invalid": "0 이상의 정수를 입력하세요."
+  },
+  "restart": {
+    "label": "다시 시작",
+    "title": "{{kind}} {{name}}을(를) 다시 시작하시겠습니까?",
+    "text": "{{name}}의 모든 Pod가 하나씩 교체됩니다(rollout restart).",
+    "confirm": "다시 시작"
+  },
+  "cordon": {
+    "label": "Cordon / Uncordon",
+    "cordonTitle": "노드 {{name}}을(를) cordon하시겠습니까?",
+    "cordonText": "{{name}}에 새 Pod가 예약되지 않습니다. 이미 실행 중인 Pod는 계속 실행됩니다.",
+    "cordonConfirm": "Cordon",
+    "uncordonTitle": "노드 {{name}}을(를) uncordon하시겠습니까?",
+    "uncordonText": "{{name}}에 다시 새 Pod를 예약할 수 있습니다.",
+    "uncordonConfirm": "Uncordon"
+  },
+  "drain": {
+    "label": "Drain",
+    "title": "노드 {{name}}을(를) drain하시겠습니까?",
+    "text": "{{name}}이(가) cordon되고 해당 Pod가 축출됩니다. DaemonSet의 Pod와 정적(미러) Pod는 남습니다.",
+    "loading": "노드의 Pod를 확인하는 중…",
+    "previewFailed": "노드의 Pod 목록을 가져올 수 없습니다",
+    "noPods": "이 노드에는 축출할 Pod가 없습니다.",
+    "evict_other": "축출됨(Pod {{count}}개)",
+    "unmanaged_other": "컨트롤러 없음(Pod {{count}}개): 축출 후 다시 생성되지 않습니다",
+    "force": "컨트롤러가 없는 Pod도 축출(force). 선택하지 않으면 노드에 남습니다.",
+    "emptyDir_other": "emptyDir 데이터 있음(Pod {{count}}개): 데이터가 Pod와 함께 삭제됩니다",
+    "deleteEmptyDirData": "emptyDir 데이터가 있는 Pod도 축출(delete emptyDir data). 선택하지 않으면 노드에 남습니다.",
+    "daemonSet_other": "남음: DaemonSet Pod(Pod {{count}}개)",
+    "confirm": "Drain",
+    "failed": "노드는 cordon되었지만 일부 Pod를 축출할 수 없습니다"
+  },
+  "trigger": {
+    "label": "지금 실행",
+    "title": "CronJob {{name}}을(를) 지금 실행하시겠습니까?",
+    "text": "CronJob의 템플릿으로 Job이 즉시 생성됩니다.",
+    "confirm": "실행",
+    "done": "Job {{name}}이(가) 생성되었습니다."
+  },
+  "suspend": {
+    "label": "일시 중단 / 재개",
+    "suspendTitle": "CronJob {{name}}을(를) 일시 중단하시겠습니까?",
+    "suspendText": "{{name}}은(는) 재개될 때까지 새 Job을 시작하지 않습니다. 실행 중인 Job은 영향을 받지 않습니다.",
+    "suspendConfirm": "일시 중단",
+    "resumeTitle": "CronJob {{name}}을(를) 재개하시겠습니까?",
+    "resumeText": "{{name}}이(가) 다시 일정에 따라 Job을 시작합니다.",
+    "resumeConfirm": "재개"
+  },
+  "dialog": {
+    "working": "처리 중…",
+    "close": "닫기"
+  },
+  "editor": {
+    "tabTitle": "{{kind}} {{name}} 편집",
+    "editorLabel": "{{kind}} {{name}}의 YAML",
+    "save": "저장",
+    "saving": "저장하는 중…",
+    "saved": "저장되었습니다.",
+    "unsaved": "저장되지 않은 변경 사항",
+    "reload": "다시 로드",
+    "loading": "로드 중…",
+    "conflict": "{{kind}} {{name}}을(를) 연 후 클러스터에서 변경되었습니다. 변경 사항은 저장되지 않았습니다. 현재 버전을 가져오려면 다시 로드하세요.",
+    "reloadTitle": "변경 사항을 버리시겠습니까?",
+    "reloadText": "다시 로드하면 텍스트가 클러스터의 현재 버전으로 바뀝니다. 저장되지 않은 변경 사항은 손실됩니다.",
+    "reloadConfirm": "버리고 다시 로드",
+    "saveFailed": "저장되지 않음"
+  },
+  "create": {
+    "open": "리소스 만들기",
+    "tabTitle": "리소스 만들기",
+    "editorLabel": "만들 리소스의 YAML",
+    "placeholder": "YAML을 붙여 넣거나 입력하세요. 여러 개체는 ---로 구분합니다",
+    "apply": "적용",
+    "applying": "적용하는 중…",
+    "applied_other": "개체 {{count}}개를 적용했습니다:",
+    "failed": "적용되지 않음",
+    "empty": "개체를 하나 이상 입력하세요."
+  }
+}

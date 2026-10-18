@@ -1,0 +1,177 @@
+{
+  "sidebar": {
+    "page": "權限"
+  },
+  "objectLabel": "{{kind}} {{name}}",
+  "page": {
+    "title": "權限",
+    "tabsLabel": "權限檢視",
+    "tabs": {
+      "subject": "主體",
+      "whoCan": "誰可以",
+      "canI": "我可否"
+    },
+    "filtered_other": "只在篩選器中的 {{count}} 個 Namespace 中讀取 Role 與 RoleBinding：{{namespaces}}。"
+  },
+  "notes": {
+    "computed": "依據 Role、ClusterRole 及其繫結計算而得。不包含叢集的其他授權器（Node、webhook、ABAC），而且無論 RBAC 如何規定，system:masters 群組的成員都能執行任何操作。至於您自己的權限，「我可否」分頁會詢問 API 伺服器，其回覆具有權威性。",
+    "groups": "使用者與群組並非 Kubernetes 物件：使用者所屬的群組取決於其登入方式。請填入您知道的群組，以納入與這些群組的繫結。"
+  },
+  "lists": {
+    "loading": "正在讀取角色與繫結…",
+    "nothing": "無法在此叢集上讀取角色與繫結",
+    "forbidden": {
+      "roles": "您無權列出 Role：與 Role 的繫結不會顯示任何規則。",
+      "clusterRoles": "您無權列出 ClusterRole：與 ClusterRole 的繫結不會顯示任何規則。",
+      "roleBindings": "您無權列出 RoleBinding：缺少在 Namespace 中授予的權限。",
+      "clusterRoleBindings": "您無權列出 ClusterRoleBinding：缺少叢集範圍的權限。"
+    },
+    "failed": {
+      "roles": "無法讀取 Role：與 Role 的繫結不會顯示任何規則。",
+      "clusterRoles": "無法讀取 ClusterRole：與 ClusterRole 的繫結不會顯示任何規則。",
+      "roleBindings": "無法讀取 RoleBinding：缺少在 Namespace 中授予的權限。",
+      "clusterRoleBindings": "無法讀取 ClusterRoleBinding：缺少叢集範圍的權限。"
+    },
+    "partial_other": "您無權讀取 {{count}} 個 Namespace（{{namespaces}}）中的 Role 或 RoleBinding：缺少在該處授予的權限。"
+  },
+  "subject": {
+    "search": "搜尋使用者、群組與 ServiceAccount",
+    "listLabel": "繫結中指定的主體",
+    "known_other": "繫結中指定了 {{count}} 個主體。",
+    "none": "沒有相符的主體。",
+    "more_other": "還有 {{count}} 個主體相符；請縮小搜尋範圍。",
+    "choose": "選擇一個主體以查看其可執行的操作。",
+    "other": "其他主體",
+    "kind": "Kind",
+    "name": "名稱",
+    "namespace": "Namespace",
+    "groups": "群組（以逗號分隔）",
+    "show": "顯示權限",
+    "label": "{{kind}} {{name}}",
+    "change": "選擇其他",
+    "memberOf": "{{groups}} 的成員",
+    "implicit": "同時也視為 {{groups}} 的成員。",
+    "kinds": {
+      "User": "使用者",
+      "Group": "群組",
+      "ServiceAccount": "ServiceAccount"
+    }
+  },
+  "scope": {
+    "label": "Namespace",
+    "all": "所有 Namespace",
+    "cluster": "所有位置",
+    "only": "僅在 {{namespace}} 中"
+  },
+  "matrix": {
+    "label": "{{subject}} 依動詞與資源區分的權限",
+    "filter": "篩選資源",
+    "resource": "資源",
+    "group": "API 群組",
+    "core": "core",
+    "allGroups": "所有群組",
+    "allResources": "所有資源",
+    "allUrls": "所有 URL",
+    "anyVerb": "任何動詞",
+    "urls": "非資源 URL",
+    "empty": "找不到任何權限。",
+    "truncated_other": "只顯示前 {{count}} 個資源。",
+    "cellAllowed": "{{verb}} {{resource}}：允許",
+    "cellPartial": "{{verb}} {{resource}}：僅限部分指定名稱的物件",
+    "cellTitle_other": "由 {{count}} 條規則允許（{{bindings}}）。按一下以查看規則。",
+    "cellTitleReview_other": "由 {{count}} 條規則允許。按一下以查看。",
+    "detail": "{{verb}} {{resource}}"
+  },
+  "rules": {
+    "none": "此角色沒有規則。",
+    "verbs": "動詞",
+    "resources": "資源",
+    "groups": "API 群組",
+    "names": "僅限物件",
+    "notes": "意義",
+    "via": "彙總自 {{source}}"
+  },
+  "grants": {
+    "binding": "繫結",
+    "role": "角色",
+    "scope": "範圍",
+    "matchedBy": "授予對象",
+    "rule": "規則",
+    "notes": "附註",
+    "ruleText": "對 {{resources}} 執行 {{verbs}}"
+  },
+  "explain": {
+    "allVerbs": "所有動詞，包括 escalate、bind 與 impersonate。",
+    "allGroups": "所有 API 群組的資源，包含自訂資源。",
+    "allResources": "所有資源及所有子資源，例如 pods/exec 與 pods/log。",
+    "anySubresource": "任何資源的子資源 {{subresource}}。",
+    "subresource": "僅限子資源 {{subresource}}；存取 {{resource}} 本身需要另一條規則。",
+    "onlyNames": "僅限名為 {{list}} 的物件：永遠不能 create 或 deletecollection，且只有在使用指定其中某個物件的欄位選擇器時才能 list 或 watch。",
+    "allUrls": "所有非資源 URL。",
+    "urlPrefix": "所有以 {{prefix}} 開頭的 URL。",
+    "escalating": "可授予超出自身所擁有的權限：{{list}}。",
+    "pending": "彙總自 {{source}}；API 伺服器尚未將其加入此角色。"
+  },
+  "warnings": {
+    "missingRole": "{{binding}} 參照了不存在的 {{role}}：在建立該角色之前，它不會授予任何權限。"
+  },
+  "whoCan": {
+    "formLabel": "誰可以",
+    "verb": "動詞",
+    "resource": "資源",
+    "resourcePlaceholder": "pods, secrets, deployments.apps",
+    "subresource": "子資源",
+    "subresourcePlaceholder": "exec, log, scale",
+    "name": "物件名稱",
+    "namespace": "Namespace",
+    "anyNamespace": "任何 Namespace",
+    "urlMode": "非資源 URL",
+    "url": "URL",
+    "urlPlaceholder": "/healthz",
+    "find": "尋找",
+    "unknownResource": "叢集未提供名為 {{resource}} 的資源；將依輸入內容在 core 群組中查詢。",
+    "clusterScoped": "此資源屬於叢集範圍：無論 Namespace 為何，只有 ClusterRoleBinding 能授予。",
+    "none": "RBAC 未將此權限授予任何主體。",
+    "results_other": "有 {{count}} 項授權允許此操作。",
+    "masters": "{{group}} 的成員也能執行此操作：他們會略過 RBAC。",
+    "tableLabel": "獲准的主體",
+    "subject": "主體",
+    "showSubject": "顯示此主體的權限",
+    "truncated_other": "只顯示前 {{count}} 項授權。"
+  },
+  "canI": {
+    "authoritative": "由 API 伺服器結合叢集的所有授權器回覆：這就是您的要求會得到的結果。查詢不會變更叢集中的任何內容。",
+    "askTitle": "我可否…",
+    "ask": "查詢",
+    "asking": "正在詢問 API 伺服器…",
+    "clear": "清除",
+    "allowed": "是，允許",
+    "denied": "否，已拒絕",
+    "notAllowed": "否，不允許",
+    "reason": "原因：{{reason}}",
+    "evaluationError": "回覆可能不完整：{{error}}",
+    "reviewTitle": "我在某個 Namespace 中的權限",
+    "review": "列出我的權限",
+    "reviewing": "正在詢問 API 伺服器…",
+    "forbidden": "您無權向此叢集的 API 伺服器查詢自己的權限。",
+    "incomplete": "清單可能不完整：此叢集的某個授權器無法列出其規則。",
+    "incompleteBecause": "清單可能不完整：{{error}}",
+    "matrixLabel": "我在 {{namespace}} 中依動詞與資源區分的權限"
+  },
+  "details": {
+    "rulesExplained": "規則說明",
+    "aggregatedFrom": "彙總自：",
+    "aggregatedFromNone": "已彙總，但沒有與其選擇器相符的 ClusterRole。",
+    "boundTo": "繫結至",
+    "noBindings": "沒有任何繫結參照此角色。",
+    "subjects": "主體",
+    "showPermissions": "顯示此主體的權限",
+    "grants": "授予 {{role}}",
+    "grantsEverywhere": "在所有 Namespace 中，以及針對叢集範圍的資源。",
+    "grantsIn": "僅在 Namespace {{namespace}} 中。",
+    "urlsIgnored": "已略過非資源 URL 的規則：RoleBinding 無法授予這些權限。",
+    "subjectsPermissions": "其主體的權限",
+    "canDo": "可執行的操作",
+    "openPage": "在「權限」中開啟"
+  }
+}

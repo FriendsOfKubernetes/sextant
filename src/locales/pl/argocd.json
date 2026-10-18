@@ -1,0 +1,182 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "Projekt",
+    "sync": "Synchronizacja",
+    "health": "Kondycja",
+    "revision": "Rewizja",
+    "destination": "Cel",
+    "applications": "Aplikacje",
+    "destinations": "Cele",
+    "sources": "Źródła"
+  },
+  "status": {
+    "syncing": "Synchronizowanie"
+  },
+  "fields": {
+    "project": "Projekt",
+    "sync": "Stan synchronizacji",
+    "syncedRevision": "Zsynchronizowana rewizja",
+    "health": "Kondycja",
+    "operation": "Ostatnia operacja",
+    "operationStarted": "Rozpoczęcie operacji",
+    "operationFinished": "Zakończenie operacji",
+    "sources": "Źródło",
+    "destination": "Cel",
+    "syncPolicy": "Zasady synchronizacji",
+    "syncOptions": "Opcje synchronizacji",
+    "reconciledAt": "Ostatnie porównanie",
+    "generators": "Generatory",
+    "applications": "Aplikacje",
+    "description": "Opis",
+    "sourceRepos": "Repozytoria źródłowe",
+    "destinations": "Cele",
+    "clusterResourceWhitelist": "Dozwolone zasoby klastra",
+    "clusterResourceBlacklist": "Zabronione zasoby klastra",
+    "namespaceResourceWhitelist": "Dozwolone zasoby w namespace’ach",
+    "namespaceResourceBlacklist": "Zabronione zasoby w namespace’ach",
+    "roles": "Role"
+  },
+  "sources": {
+    "repo": "Repozytorium",
+    "path": "Ścieżka / chart",
+    "targetRevision": "Rewizja docelowa"
+  },
+  "destinations": {
+    "cluster": "Klaster",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "Ręczna",
+    "automated": "Automatyczna",
+    "prune": "prune",
+    "selfHeal": "self-heal"
+  },
+  "tree": {
+    "title": "Zasoby",
+    "kind": "Kind",
+    "name": "Nazwa",
+    "namespace": "Namespace",
+    "sync": "Synchronizacja",
+    "health": "Kondycja / stan",
+    "computedHealth": "Obliczone przez Sextant na podstawie bieżącego obiektu: Argo CD przechowuje tę kondycję tylko we własnym API.",
+    "computedHealthMessage": "Obliczone przez Sextant na podstawie bieżącego obiektu: {{message}}",
+    "remote": "Aplikacja jest wdrażana do innego klastra: jej zasobów nie można stąd otworzyć.",
+    "loading": "Wczytywanie obiektów należących do zasobów…"
+  },
+  "history": {
+    "title": "Historia synchronizacji",
+    "id": "ID",
+    "revision": "Rewizja",
+    "deployedAt": "Wdrożono",
+    "initiatedBy": "Uruchomione przez",
+    "source": "Źródło",
+    "automated": "Automatycznie"
+  },
+  "actions": {
+    "sync": "Synchronizuj…",
+    "refresh": "Odśwież",
+    "hardRefresh": "Twarde odświeżenie",
+    "terminate": "Przerwij…",
+    "openUi": "Otwórz interfejs Argo CD"
+  },
+  "sync": {
+    "title": "Synchronizacja {{name}}",
+    "confirm": "Synchronizuj",
+    "revision": "Rewizja",
+    "revisionHint": "Gałąź, tag lub commit; domyślnie rewizja docelowa aplikacji.",
+    "multiSource": "Każde źródło jest synchronizowane do własnej rewizji docelowej.",
+    "prune": "Prune",
+    "dryRun": "Próbny przebieg",
+    "started": "Rozpoczęto synchronizację {{name}}. Jej postęp jest widoczny w szczegółach.",
+    "dryRunStarted": "Rozpoczęto próbny przebieg {{name}}. Jego wynik jest widoczny w szczegółach."
+  },
+  "terminate": {
+    "title": "Przerwać operację {{name}}?",
+    "text": "Argo CD zatrzyma trwającą synchronizację {{name}}. To, co zostało już zastosowane, pozostanie bez zmian.",
+    "confirm": "Przerwij"
+  },
+  "diff": {
+    "action": "Różnice",
+    "title": "Różnice: {{name}}",
+    "loading": "Odczytywanie różnic z Argo CD…",
+    "summary_one": "Różni się {{changed}} z {{total}} zasobów",
+    "summary_few": "Różni się {{changed}} z {{total}} zasobów",
+    "summary_many": "Różni się {{changed}} z {{total}} zasobów",
+    "summary_other": "Różni się {{changed}} z {{total}} zasobów",
+    "resources": "Zasoby aplikacji",
+    "empty": "Argo CD nie zarządza żadnymi zasobami tej aplikacji.",
+    "desired": "Docelowy (Git)",
+    "live": "Bieżący (klaster)",
+    "desiredLabel": "Stan docelowy {{resource}}",
+    "liveLabel": "Stan bieżący {{resource}}",
+    "secretHidden": "Wartości Secret są ukryte po obu stronach.",
+    "state": {
+      "changed": "Różni się",
+      "inSync": "Zsynchronizowany",
+      "missingLive": "Jeszcze nie ma go w klastrze",
+      "missingTarget": "Brak w Git (do usunięcia)"
+    },
+    "signedIn": "Zalogowano do Argo CD",
+    "signedInAs": "Zalogowano do Argo CD jako {{user}}",
+    "source": {
+      "secret": "przy użyciu standardowego Secret Argo CD",
+      "saved": "przy użyciu zapisanych danych logowania",
+      "manual": "do zamknięcia programu Sextant"
+    },
+    "reload": "Wczytaj ponownie",
+    "retry": "Spróbuj ponownie",
+    "signOut": "Wyloguj",
+    "forget": "Zapomnij zapisane dane logowania",
+    "notSaved": "Zalogowano, ale nie można zapisać danych logowania: {{reason}}",
+    "errors": {
+      "forbidden": "Argo CD nie pokazuje tej aplikacji zalogowanemu kontu.",
+      "notFound": "Nie znaleziono Argo CD w tym klastrze: brak Service argocd-server."
+    }
+  },
+  "installation": {
+    "ambiguous": "Kilka namespace’ów tego klastra wygląda na instalację Argo CD ({{namespaces}}), a nic, czego ich użytkownicy nie mogliby sami utworzyć, nie wskazuje, która jest prawdziwa, dlatego Sextant samodzielnie nie łączy się z żadną z nich. Argo CD działające w całym klastrze rozpoznaje się po ClusterRoleBinding argocd-application-controller lub argocd-server; poproś administratora klastra o sprawdzenie tego.",
+    "title": "Wybierz instalację Argo CD",
+    "choose": "Jeśli wiadomo, w którym namespace znajduje się prawdziwe Argo CD, wybierz go: Sextant zapamięta wybór dla tego klastra i będzie logować się tylko tam. Każdy, kto może zapisywać w namespace, może sprawić, że będzie wyglądał jak Argo CD.",
+    "use": "Użyj tej instalacji",
+    "using": "Zapisywanie…"
+  },
+  "login": {
+    "title": "Logowanie do Argo CD",
+    "intro": "Sextant nie mógł samodzielnie zalogować się do Argo CD w {{namespace}}. Zaloguj się jako użytkownik lokalny lub przy użyciu tokenu API.",
+    "expired": "Sesja Argo CD wygasła, a ponowne logowanie przy użyciu zapisanych danych nie powiodło się.",
+    "noLocalUsers": "To Argo CD nie ma użytkowników lokalnych, którzy mogą logować się hasłem: użyj tokenu API.",
+    "sso": "Logowanie przez SSO nie jest obsługiwane w programie Sextant.",
+    "refused": {
+      "typed": "Argo CD odrzuciło wcześniej wpisane dane logowania.",
+      "saved": "Argo CD odrzuciło zapisane dane logowania: hasło lub token mogły się zmienić. Zaloguj się bieżącymi danymi (z opcją „Zapamiętaj”, aby zastąpić zapisane).",
+      "adminSecret": "Argo CD odrzuciło hasło administratora z argocd-initial-admin-secret: mogło zostać zmienione w Argo CD. Wpisz bieżące hasło.",
+      "tokenSecret": "Argo CD odrzuciło token API z Secret z label app.kubernetes.io/part-of=argocd: mógł wygasnąć lub zostać unieważniony."
+    },
+    "insecure": "To Argo CD uruchamia swój serwer bez TLS (server.insecure w argocd-cmd-params-cm), więc Sextant komunikuje się z nim przez zwykłe HTTP: wewnątrz klastra hasło lub token są przesyłane bez szyfrowania.",
+    "mode": {
+      "label": "Sposób logowania",
+      "password": "Użytkownik i hasło",
+      "token": "Token API"
+    },
+    "username": "Użytkownik",
+    "password": "Hasło",
+    "token": "Token API",
+    "remember": "Zapamiętaj na tym komputerze (systemowy pęk kluczy)",
+    "hint": "Zanim poprosi o dane, Sextant próbuje zapisanych danych logowania, hasła administratora z argocd-initial-admin-secret i tokenów API w Secrets z label app.kubernetes.io/part-of=argocd. argocd-secret zawiera tylko skrót bcrypt hasła administratora, więc nie można go użyć do logowania.",
+    "submit": "Zaloguj",
+    "signingIn": "Logowanie…",
+    "errors": {
+      "invalid": "Argo CD odrzuciło nazwę użytkownika lub hasło.",
+      "invalidToken": "Argo CD odrzuciło token API: jest nieprawidłowy, wygasł lub został unieważniony.",
+      "ssoOnly": "To Argo CD umożliwia logowanie tylko przez SSO, którego Sextant nie obsługuje: użyj tokenu API.",
+      "unreachable": "Argo CD jest nieosiągalne: jego serwer nie ma gotowego Poda lub nie odpowiada.",
+      "incomplete": "Wpisz nazwę użytkownika i hasło albo token API.",
+      "other": "Logowanie do Argo CD nie powiodło się."
+    }
+  }
+}

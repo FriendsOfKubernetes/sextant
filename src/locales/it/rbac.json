@@ -1,0 +1,195 @@
+{
+  "sidebar": {
+    "page": "Autorizzazioni"
+  },
+  "objectLabel": "{{kind}} {{name}}",
+  "page": {
+    "title": "Autorizzazioni",
+    "tabsLabel": "Viste delle autorizzazioni",
+    "tabs": {
+      "subject": "Soggetto",
+      "whoCan": "Chi può",
+      "canI": "Posso"
+    },
+    "filtered_one": "Role e RoleBinding vengono letti solo nel namespace ({{count}}) del filtro: {{namespaces}}.",
+    "filtered_many": "Role e RoleBinding vengono letti solo nei {{count}} di namespace del filtro: {{namespaces}}.",
+    "filtered_other": "Role e RoleBinding vengono letti solo nei {{count}} namespace del filtro: {{namespaces}}."
+  },
+  "notes": {
+    "computed": "Calcolato da Role, ClusterRole e relativi binding. Gli altri meccanismi di autorizzazione del cluster (Node, webhook, ABAC) non sono inclusi e i membri del gruppo system:masters possono fare tutto, indipendentemente da RBAC. Per le proprie autorizzazioni, la scheda “Posso” interroga il server API, la cui risposta è definitiva.",
+    "groups": "Utenti e gruppi non sono oggetti Kubernetes: i gruppi di un utente dipendono da come accede. Indica i gruppi che conosci per includere i binding a essi."
+  },
+  "lists": {
+    "loading": "Lettura di ruoli e binding…",
+    "nothing": "Non è possibile leggere ruoli e binding in questo cluster",
+    "forbidden": {
+      "roles": "Manca l'autorizzazione per elencare i Role: i binding ai Role non mostrano regole.",
+      "clusterRoles": "Manca l'autorizzazione per elencare i ClusterRole: i binding ai ClusterRole non mostrano regole.",
+      "roleBindings": "Manca l'autorizzazione per elencare i RoleBinding: mancano le autorizzazioni concesse nei namespace.",
+      "clusterRoleBindings": "Manca l'autorizzazione per elencare i ClusterRoleBinding: mancano le autorizzazioni a livello di cluster."
+    },
+    "failed": {
+      "roles": "Impossibile leggere i Role: i binding ai Role non mostrano regole.",
+      "clusterRoles": "Impossibile leggere i ClusterRole: i binding ai ClusterRole non mostrano regole.",
+      "roleBindings": "Impossibile leggere i RoleBinding: mancano le autorizzazioni concesse nei namespace.",
+      "clusterRoleBindings": "Impossibile leggere i ClusterRoleBinding: mancano le autorizzazioni a livello di cluster."
+    },
+    "partial_one": "Manca l'autorizzazione per leggere i Role o i RoleBinding di {{count}} namespace ({{namespaces}}): mancano le autorizzazioni concesse lì.",
+    "partial_many": "Manca l'autorizzazione per leggere i Role o i RoleBinding di {{count}} di namespace ({{namespaces}}): mancano le autorizzazioni concesse lì.",
+    "partial_other": "Manca l'autorizzazione per leggere i Role o i RoleBinding di {{count}} namespace ({{namespaces}}): mancano le autorizzazioni concesse lì."
+  },
+  "subject": {
+    "search": "Cerca utenti, gruppi e service account",
+    "listLabel": "Soggetti citati nei binding",
+    "known_one": "{{count}} soggetto è citato nei binding.",
+    "known_many": "{{count}} di soggetti sono citati nei binding.",
+    "known_other": "{{count}} soggetti sono citati nei binding.",
+    "none": "Nessun soggetto corrispondente.",
+    "more_one": "Corrisponde ancora {{count}} soggetto; restringi la ricerca.",
+    "more_many": "Corrispondono altri {{count}} di soggetti; restringi la ricerca.",
+    "more_other": "Corrispondono altri {{count}} soggetti; restringi la ricerca.",
+    "choose": "Scegli un soggetto per vedere cosa può fare.",
+    "other": "Altro soggetto",
+    "kind": "Kind",
+    "name": "Nome",
+    "namespace": "Namespace",
+    "groups": "Gruppi (separati da virgole)",
+    "show": "Mostra autorizzazioni",
+    "label": "{{kind}} {{name}}",
+    "change": "Scegline un altro",
+    "memberOf": "membro di {{groups}}",
+    "implicit": "Conta anche come membro di {{groups}}.",
+    "kinds": {
+      "User": "Utente",
+      "Group": "Gruppo",
+      "ServiceAccount": "Service account"
+    }
+  },
+  "scope": {
+    "label": "Namespace",
+    "all": "Tutti i namespace",
+    "cluster": "Ovunque",
+    "only": "Solo in {{namespace}}"
+  },
+  "matrix": {
+    "label": "Autorizzazioni di {{subject}} per verbo e risorsa",
+    "filter": "Filtra risorse",
+    "resource": "Risorsa",
+    "group": "Gruppo API",
+    "core": "core",
+    "allGroups": "tutti i gruppi",
+    "allResources": "tutte le risorse",
+    "allUrls": "tutti gli URL",
+    "anyVerb": "qualsiasi verbo",
+    "urls": "URL non di risorse",
+    "empty": "Nessuna autorizzazione trovata.",
+    "truncated_one": "Viene mostrata solo la prima risorsa ({{count}}).",
+    "truncated_many": "Vengono mostrate solo le prime {{count}} risorse.",
+    "truncated_other": "Vengono mostrate solo le prime {{count}} risorse.",
+    "cellAllowed": "{{verb}} {{resource}}: consentito",
+    "cellPartial": "{{verb}} {{resource}}: solo alcuni oggetti specifici",
+    "cellTitle_one": "Consentito da {{count}} regola ({{bindings}}). Fai clic per vedere la regola.",
+    "cellTitle_many": "Consentito da {{count}} di regole ({{bindings}}). Fai clic per vedere le regole.",
+    "cellTitle_other": "Consentito da {{count}} regole ({{bindings}}). Fai clic per vedere le regole.",
+    "cellTitleReview_one": "Consentito da {{count}} regola. Fai clic per vederla.",
+    "cellTitleReview_many": "Consentito da {{count}} di regole. Fai clic per vederle.",
+    "cellTitleReview_other": "Consentito da {{count}} regole. Fai clic per vederle.",
+    "detail": "{{verb}} {{resource}}"
+  },
+  "rules": {
+    "none": "Questo ruolo non ha regole.",
+    "verbs": "Verbi",
+    "resources": "Risorse",
+    "groups": "Gruppi API",
+    "names": "Solo gli oggetti",
+    "notes": "Significato",
+    "via": "aggregato da {{source}}"
+  },
+  "grants": {
+    "binding": "Binding",
+    "role": "Ruolo",
+    "scope": "Dove",
+    "matchedBy": "Concesso a",
+    "rule": "Regola",
+    "notes": "Note",
+    "ruleText": "{{verbs}} su {{resources}}"
+  },
+  "explain": {
+    "allVerbs": "Tutti i verbi, inclusi escalate, bind e impersonate.",
+    "allGroups": "Le risorse di tutti i gruppi API, risorse personalizzate comprese.",
+    "allResources": "Tutte le risorse e tutte le sottorisorse, come pods/exec e pods/log.",
+    "anySubresource": "La sottorisorsa {{subresource}} di qualsiasi risorsa.",
+    "subresource": "Solo la sottorisorsa {{subresource}}; l'accesso a {{resource}} stessa è una regola separata.",
+    "onlyNames": "Solo gli oggetti denominati {{list}}: mai create né deletecollection, e list o watch solo con un field selector che ne indichi uno.",
+    "allUrls": "Tutti gli URL non di risorse.",
+    "urlPrefix": "Tutti gli URL che iniziano con {{prefix}}.",
+    "escalating": "Può concedere più di quanto possiede: {{list}}.",
+    "pending": "Aggregato da {{source}}; il server API non lo ha ancora aggiunto a questo ruolo."
+  },
+  "warnings": {
+    "missingRole": "{{binding}} fa riferimento a {{role}}, che non esiste: non concede nulla finché il ruolo non viene creato."
+  },
+  "whoCan": {
+    "formLabel": "Chi può",
+    "verb": "Verbo",
+    "resource": "Risorsa",
+    "resourcePlaceholder": "pods, secrets, deployments.apps",
+    "subresource": "Sottorisorsa",
+    "subresourcePlaceholder": "exec, log, scale",
+    "name": "Nome dell'oggetto",
+    "namespace": "Namespace",
+    "anyNamespace": "qualsiasi namespace",
+    "urlMode": "URL non di risorsa",
+    "url": "URL",
+    "urlPlaceholder": "/healthz",
+    "find": "Trova",
+    "unknownResource": "Il cluster non fornisce alcuna risorsa chiamata {{resource}}; la risposta la usa così come è stata digitata, nel gruppo core.",
+    "clusterScoped": "Questa risorsa è a livello di cluster: solo i ClusterRoleBinding possono concederla, indipendentemente dal namespace.",
+    "none": "RBAC non lo concede a nessun soggetto.",
+    "results_one": "{{count}} concessione lo consente.",
+    "results_many": "{{count}} di concessioni lo consentono.",
+    "results_other": "{{count}} concessioni lo consentono.",
+    "masters": "Anche i membri di {{group}} possono farlo: aggirano RBAC.",
+    "tableLabel": "Soggetti autorizzati",
+    "subject": "Soggetto",
+    "showSubject": "Mostra le autorizzazioni di questo soggetto",
+    "truncated_one": "Viene mostrata solo la prima concessione ({{count}}).",
+    "truncated_many": "Vengono mostrate solo le prime {{count}} concessioni.",
+    "truncated_other": "Vengono mostrate solo le prime {{count}} concessioni."
+  },
+  "canI": {
+    "authoritative": "Risposta del server API con tutti i meccanismi di autorizzazione del cluster: è ciò che otterranno le tue richieste. La domanda non modifica nulla nel cluster.",
+    "askTitle": "Posso…",
+    "ask": "Chiedi",
+    "asking": "Interrogazione del server API…",
+    "clear": "Cancella",
+    "allowed": "Sì, consentito",
+    "denied": "No, negato",
+    "notAllowed": "No, non consentito",
+    "reason": "Motivo: {{reason}}",
+    "evaluationError": "La risposta potrebbe essere incompleta: {{error}}",
+    "reviewTitle": "Le mie autorizzazioni in un namespace",
+    "review": "Elenca le mie autorizzazioni",
+    "reviewing": "Interrogazione del server API…",
+    "forbidden": "Manca l'autorizzazione per interrogare il server API sulle proprie autorizzazioni in questo cluster.",
+    "incomplete": "L'elenco potrebbe essere incompleto: un meccanismo di autorizzazione di questo cluster non può elencare le proprie regole.",
+    "incompleteBecause": "L'elenco potrebbe essere incompleto: {{error}}",
+    "matrixLabel": "Le mie autorizzazioni in {{namespace}} per verbo e risorsa"
+  },
+  "details": {
+    "rulesExplained": "Regole spiegate",
+    "aggregatedFrom": "Aggregato da:",
+    "aggregatedFromNone": "Aggregato, ma nessun ClusterRole corrisponde ai suoi selector.",
+    "boundTo": "Associato a",
+    "noBindings": "Nessun binding fa riferimento a questo ruolo.",
+    "subjects": "Soggetti",
+    "showPermissions": "Mostra le autorizzazioni di questo soggetto",
+    "grants": "Concede {{role}}",
+    "grantsEverywhere": "In tutti i namespace e sulle risorse a livello di cluster.",
+    "grantsIn": "Solo nel namespace {{namespace}}.",
+    "urlsIgnored": "Le regole sugli URL non di risorse vengono escluse: un RoleBinding non può concederle.",
+    "subjectsPermissions": "Autorizzazioni dei suoi soggetti",
+    "canDo": "Cosa può fare",
+    "openPage": "Apri in Autorizzazioni"
+  }
+}

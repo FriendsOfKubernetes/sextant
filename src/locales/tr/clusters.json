@@ -1,0 +1,155 @@
+{
+  "rail": {
+    "list": "Küme listesi",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Küme ekle",
+    "refresh": "Kubeconfig'i yenile",
+    "slow": "{{tooltip}}, {{seconds}} sn. Küme yavaş yanıt veriyor",
+    "expand": "Küme listesini genişlet",
+    "collapse": "Küme listesini daralt"
+  },
+  "state": {
+    "disconnected": "bağlı değil",
+    "connecting": "bağlanıyor",
+    "connected": "bağlı",
+    "error": "bağlantı başarısız"
+  },
+  "menu": {
+    "open": "Aç",
+    "connect": "Bağlan",
+    "reconnect": "Yeniden bağlan",
+    "disconnect": "Bağlantıyı kes",
+    "settings": "Ayarlar",
+    "changeIcon": "Simgeyi değiştir…"
+  },
+  "add": {
+    "title": "Küme ekle",
+    "file": "Kubeconfig dosyası ekle",
+    "paste": "Kubeconfig yapıştır",
+    "fileDialogTitle": "Bir kubeconfig dosyası seçin",
+    "tabs": "Ekleme yöntemi",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Buluttan"
+  },
+  "paste": {
+    "title": "Kubeconfig yapıştır",
+    "label": "Kubeconfig",
+    "hint": "Bir kubeconfig dosyasının içeriğini yapıştırın. Sextant, veri klasöründe özel bir kopyasını saklar.",
+    "submit": "Ekle"
+  },
+  "sources": {
+    "title": "Kubeconfig kaynakları",
+    "kind": {
+      "default": "varsayılan",
+      "env": "KUBECONFIG",
+      "addedFile": "eklenen dosya",
+      "pasted": "yapıştırılan",
+      "cloud": "bulut"
+    },
+    "remove": "Kaldır",
+    "removeNamed": "Kaldır: {{path}}",
+    "confirmTitle": "Kubeconfig kaynağı kaldırılsın mı?",
+    "confirmFile": "Kümeleri listeden kaybolur. Dosyanın kendisi diskte kalır.",
+    "confirmPasted": "Kümeleri listeden kaybolur ve yapıştırılan kopya silinir.",
+    "problems": "Bazı kubeconfig dosyaları okunamıyor",
+    "problemsTitle": "Kubeconfig sorunları",
+    "problemsHint": "Diğer dosyalardaki kümeler çalışmaya devam eder. Dosyayı düzeltin, ardından Yenile'ye basın.",
+    "confirmCloud": "Kümeleri listeden kaybolur ve Sextant'ın bu bulut kümeleri için tuttuğu kubeconfig silinir. Bulut CLI'nıza ve ~/.kube/config dosyasına dokunulmaz."
+  },
+  "welcome": {
+    "loading": "Kubeconfig okunuyor…",
+    "noClusters": "Küme bulunamadı",
+    "checked": "Sextant burada bir kubeconfig aradı:",
+    "checkedPaths": "Denetlenen yollar",
+    "title": "Sextant'a hoş geldiniz",
+    "pick": "Bağlanmak için soldan bir küme seçin."
+  },
+  "connection": {
+    "connecting": "{{name}} kümesine bağlanılıyor…",
+    "failed": "{{name}} kümesine bağlanılamıyor",
+    "reconnect": "Yeniden bağlan",
+    "certificate": "Sunucu sertifikası kabul edilmedi.",
+    "seconds": "{{seconds}} sn",
+    "slow": "Küme yavaş yanıt veriyor"
+  },
+  "settings": {
+    "title": "Küme ayarları — {{name}}",
+    "displayName": "Görünen ad",
+    "color": "Renk etiketi",
+    "autoColor": "Otomatik",
+    "colorOption": "Renk {{index}}",
+    "icon": "Simge",
+    "iconPreview": "Simge önizlemesi",
+    "iconText": "Simge metni",
+    "iconTextPlaceholder": "Baş harfler",
+    "iconChoose": "Resim seç…",
+    "iconReset": "Simgeyi sıfırla",
+    "iconHint": "Renk etiketinde bir veya iki harf ya da bir emoji veya 5 MB'a kadar PNG, JPEG, SVG ya da WebP resim. Boş bırakılırsa adın baş harfleri.",
+    "iconErrors": {
+      "type": "Dosya desteklenen bir resim değil",
+      "size": "Resim 5 MB'tan büyük",
+      "read": "Dosya okunamıyor"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "Küme",
+    "server": "Sunucu",
+    "user": "Kullanıcı",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant, bu bilgisayarda zaten yüklü ve oturum açılmış aws, gcloud ve az araçlarını kullanır. Kendi kubeconfig dosyasını yazar; ~/.kube/config dosyasını hiçbir zaman değiştirmez ve sizin yerinize oturum açmaz.",
+    "detecting": "aws, gcloud ve az aranıyor…",
+    "providers": "Bulut",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(sürüm bilinmiyor)",
+    "notInstalled": "{{cli}} yüklü değil",
+    "installGuide": "Kurulum kılavuzu",
+    "pluginMissing": "{{plugin}} yüklü değil. Kümeler eklenebilir, ancak bağlanmak için gereklidir. Şununla yükleyin:",
+    "loadingAccounts": "Hesaplar okunuyor…",
+    "account": {
+      "aws": "Profil",
+      "gcp": "Proje",
+      "azure": "Abonelik"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Ortamdaki kimlik bilgileri",
+    "regions": "Bölgeler",
+    "find": "Kümeleri bul",
+    "finding": "Aranıyor…",
+    "noClusters": "Küme bulunamadı.",
+    "found": "Bulunan kümeler",
+    "separator": " · ",
+    "add_one": "{{count}} küme ekle",
+    "add_other": "{{count}} küme ekle",
+    "added_one": "{{count}} küme eklendi. Küme listesinde yer alıyor.",
+    "added_other": "{{count}} küme eklendi. Küme listesinde yer alıyorlar.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} yüklü değil{{scope}}",
+      "notLoggedIn": "{{cli}} oturumu açık değil veya oturumun süresi doldu{{scope}}",
+      "pluginMissing": "{{cli}} için oturum açma eklentisi yüklü değil{{scope}}",
+      "failed": "{{cli}} başarısız oldu{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Yükleyin, ardından tekrar deneyin.",
+      "notLoggedIn": "Sextant sizin yerinize oturum açmaz. Bu komutu bir terminalde çalıştırın, ardından tekrar deneyin:",
+      "pluginMissing": "Bu komutu bir terminalde çalıştırın, ardından tekrar deneyin:",
+      "failed": "Bu komutu bir terminalde çalıştırın, ardından tekrar deneyin:"
+    },
+    "copyCommand": "Komutu kopyala",
+    "copied": "Kopyalandı",
+    "copyFailed": "Pano kullanılamıyor; komutu seçip kopyalayın."
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Bereit",
+    "status": "Status",
+    "revision": "Revision",
+    "suspended": "Angehalten",
+    "source": "Quelle"
+  },
+  "suspended": {
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "fields": {
+    "ready": "Bereit",
+    "message": "Status",
+    "revision": "Revision",
+    "lastAttemptedRevision": "Zuletzt versuchte Revision",
+    "suspended": "Angehalten",
+    "interval": "Intervall",
+    "timeout": "Zeitlimit",
+    "source": "Quelle",
+    "chart": "Chart",
+    "helmChart": "Helm-Chart",
+    "url": "URL",
+    "ref": "Referenz",
+    "endpoint": "Endpunkt",
+    "bucketName": "Bucket",
+    "path": "Pfad",
+    "targetNamespace": "Ziel-Namespace",
+    "releaseName": "Release-Name",
+    "prune": "Bereinigen",
+    "dependsOn": "Hängt ab von",
+    "image": "Image",
+    "imageRepository": "Image-Repository",
+    "provider": "Provider",
+    "eventSeverity": "Ereignis-Schweregrad",
+    "eventSources": "Ereignisquellen",
+    "type": "Typ",
+    "channel": "Kanal",
+    "webhookPath": "Webhook-Pfad",
+    "lastHandledReconcileAt": "Letzte Abgleichsanforderung"
+  },
+  "related": {
+    "inventory": "Angewendete Ressourcen",
+    "resources": "Ressourcen",
+    "usedBy": "Verwendet von",
+    "kind": "Art",
+    "name": "Name",
+    "namespace": "Namespace",
+    "loading": "Wird geladen…",
+    "notUsed": "Keine Kustomization und kein HelmRelease verwendet diese Quelle."
+  },
+  "actions": {
+    "reconcile": "Jetzt abgleichen",
+    "reconcileWithSource": "Mit Quelle abgleichen",
+    "suspend": "Anhalten",
+    "resume": "Fortsetzen"
+  },
+  "suspend": {
+    "title": "{{kind}} {{name}} anhalten?",
+    "confirm": "Anhalten",
+    "text": "Flux gleicht {{kind}} {{name}} nicht mehr ab, bis der Abgleich fortgesetzt wird: Änderungen in Git oder im Cluster werden in der Zwischenzeit weder angewendet noch korrigiert."
+  }
+}

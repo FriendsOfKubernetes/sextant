@@ -1,0 +1,42 @@
+{
+  "sidebar": "Problemy",
+  "title": "Problemy klastra",
+  "badge_one": "{{count}} problem wymaga uwagi",
+  "badge_few": "{{count}} problemy wymagają uwagi",
+  "badge_many": "{{count}} problemów wymaga uwagi",
+  "badge_other": "{{count}} problemu wymaga uwagi",
+  "onlyNewSince": "Tylko nowe od {{time}}",
+  "markSeen": "Oznacz wszystkie jako przejrzane",
+  "total_one": "{{count}} problem",
+  "total_few": "{{count}} problemy",
+  "total_many": "{{count}} problemów",
+  "total_other": "{{count}} problemu",
+  "sourceFailed": "Nie można obserwować {{kind}}",
+  "truncated": "Problemów jest zbyt wiele: wyświetlane są tylko najnowsze.",
+  "loading": "Wyszukiwanie problemów…",
+  "none": "Nie znaleziono problemów.",
+  "noneNew": "Brak nowych problemów od oznaczenia.",
+  "clusterWide": "Cały klaster",
+  "categories": {
+    "nodes": "Węzły",
+    "pods": "Pody",
+    "workloads": "Obciążenia",
+    "jobs": "Zadania",
+    "volumes": "Żądania woluminów",
+    "certificates": "Certyfikaty",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Zdarzenia ostrzegawcze"
+  },
+  "messages": {
+    "container": "Kontener {{container}}",
+    "restarts_one": "Kontener {{container}} był restartowany ({{count}} restart)",
+    "restarts_few": "Kontener {{container}} był restartowany ({{count}} restarty)",
+    "restarts_many": "Kontener {{container}} był restartowany ({{count}} restartów)",
+    "restarts_other": "Kontener {{container}} był restartowany ({{count}} restartu)",
+    "replicas": "Gotowe repliki: {{ready}} z {{desired}}",
+    "expires": "Wygasa {{date}}",
+    "expired": "Wygasł {{date}}"
+  }
+}

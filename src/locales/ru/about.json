@@ -1,0 +1,32 @@
+{
+  "title": "О программе Sextant",
+  "name": "Sextant",
+  "section": "О программе",
+  "open": "О программе Sextant",
+  "version": "Версия {{version}}",
+  "versionUnknown": "Версия неизвестна",
+  "tagline": "Настольный клиент Kubernetes для разработчиков и SRE.",
+  "license": "Лицензия: {{license}}",
+  "links": "Ссылки",
+  "link": {
+    "repository": "Репозиторий",
+    "wiki": "Вики",
+    "releases": "Выпуски",
+    "discussions": "Обсуждения",
+    "issue": "Сообщить о проблеме"
+  },
+  "build": {
+    "appimage": "AppImage",
+    "deb": "пакет .deb",
+    "rpm": "пакет .rpm",
+    "app": "приложение macOS (.dmg)",
+    "msi": "установщик Windows (.msi)",
+    "nsis": "установщик Windows (NSIS)",
+    "dev": "сборка для разработки",
+    "none": "установлено не из пакета выпуска"
+  },
+  "unknown": "неизвестно",
+  "copy": "Скопировать сведения о версии",
+  "copied": "Скопировано",
+  "copyFailed": "Не удалось скопировать в буфер обмена"
+}

@@ -1,0 +1,15 @@
+{
+  "unreachable": "Il cluster non è raggiungibile.",
+  "unauthorized": "Il cluster non ha accettato le credenziali (401).",
+  "forbidden": "Autorizzazione insufficiente per eseguire questa operazione (403).",
+  "notFound": "Non trovato.",
+  "conflict": "L'oggetto è stato modificato da qualcun altro. Ricaricalo e riprova.",
+  "invalid": "La richiesta non è valida.",
+  "authPlugin": "Il plugin di autenticazione del kubeconfig manca o non è riuscito.",
+  "helmMissing": "Helm non è installato.",
+  "portInUse": "La porta locale è già in uso.",
+  "kubeconfig": "Il kubeconfig non può essere letto o non è valido.",
+  "timeout": "L'operazione ha richiesto troppo tempo.",
+  "denied": "Le impostazioni di accesso degli agenti IA del cluster non lo consentono.",
+  "other": "Si è verificato un errore."
+}

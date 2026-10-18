@@ -1,0 +1,112 @@
+{
+  "title": "指標",
+  "loading": "正在載入指標…",
+  "unavailable": "無法使用指標",
+  "openSettings": "開啟叢集設定",
+  "na": "不適用",
+  "percent": "{{value}}%",
+  "percentOf": "{{value}}% · {{text}}",
+  "usedOf": "{{used}}/{{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "要求 {{value}}",
+    "limit": "限制 {{value}}",
+    "noLimit": "無限制",
+    "requestSetOn": "（{{total}} 個容器中有 {{count}} 個設定此值）",
+    "limitSetOn": "（{{total}} 個容器中有 {{count}} 個設定此值）",
+    "shareOfLimit": "占限制的 {{value}}%",
+    "shareOfRequest": "占要求的 {{value}}%",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "記憶體 {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "記憶體"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "記憶體",
+    "pods": "Pod",
+    "disk": "磁碟",
+    "loading": "正在載入圖表…",
+    "noData": "尚無過去一小時的資料。",
+    "needPrometheus": "過去一小時的圖表需要 Prometheus。"
+  },
+  "settings": {
+    "title": "指標",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "自動尋找",
+      "manual": "手動指定位址",
+      "off": "關閉"
+    },
+    "serviceKind": "叢集中的 Service",
+    "urlKind": "URL",
+    "service": "Service（namespace/service:port）",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "路徑前置詞",
+    "url": "Prometheus URL",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "格式應為 namespace/service:port，例如 monitoring/prometheus-operated:9090。",
+    "invalidUrl": "應為 http:// 或 https:// URL。",
+    "save": "使用此位址",
+    "usageSource": "目前 CPU 與記憶體的資料來源",
+    "source": {
+      "auto": "自動（優先使用 metrics-server，否則使用 Prometheus）",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "關閉"
+    },
+    "detected": "已找到",
+    "checking": "正在檢查指標來源…",
+    "metricsServer": "metrics-server",
+    "available": "可用",
+    "notAvailable": "無法使用",
+    "foundAuto": "自動找到：{{target}}",
+    "foundManual": "{{target}} 有回應",
+    "notFound": "找不到",
+    "manualNoAnswer": "此位址沒有回應",
+    "prometheusOff": "已關閉",
+    "currentFrom": "目前值的來源",
+    "noSource": "沒有來源 — 無法使用指標"
+  },
+  "overview": {
+    "sidebar": "概觀",
+    "title": "叢集概觀",
+    "nodes": "節點",
+    "nodesReady": "{{ready}}/{{count}} 已就緒",
+    "pods": "Pod",
+    "workloads": "工作負載",
+    "usage": "使用量",
+    "cpu": "CPU",
+    "memory": "記憶體",
+    "usageOf": "{{used}}/{{total}} 可配置",
+    "charts": "過去一小時",
+    "warnings": "警告",
+    "noWarnings": "沒有警告。",
+    "loadingPage": "正在載入叢集概觀…",
+    "loadingWarnings": "正在載入警告…",
+    "phase": {
+      "Running": "執行中",
+      "Pending": "擱置中",
+      "Succeeded": "已成功",
+      "Failed": "已失敗",
+      "Unknown": "不明"
+    },
+    "state": {
+      "ready": "就緒",
+      "pending": "未就緒",
+      "running": "執行中",
+      "succeeded": "已成功",
+      "failed": "已失敗"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

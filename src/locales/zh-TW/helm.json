@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "Chart",
+    "releases": "發行版本"
+  },
+  "missing": {
+    "title": "尚未安裝 Helm",
+    "text": "可以檢視發行版本，但變更發行版本與安裝 Chart 需要 helm 命令。請安裝 Helm（回到此視窗時會自動偵測），或在「設定 → Helm」中選擇執行檔。安裝指南：",
+    "short": "需要 Helm — 請參閱頁面頂端的提示"
+  },
+  "releases": {
+    "title": "發行版本",
+    "search": "搜尋發行版本",
+    "searchPlaceholder": "搜尋…",
+    "loading": "正在載入發行版本…",
+    "empty": "沒有 Helm 發行版本",
+    "emptyText": "在選取的 Namespace 中以 Helm 安裝的發行版本會顯示在這裡。",
+    "noMatch": "沒有符合搜尋條件的發行版本",
+    "open": "開啟發行版本 {{name}}",
+    "unreadable": "無法讀取",
+    "unreadableRevision": "無法讀取的修訂版本 {{revision}}"
+  },
+  "columns": {
+    "name": "名稱",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "版本",
+    "appVersion": "應用程式版本",
+    "status": "狀態",
+    "updated": "更新時間",
+    "revision": "修訂版本",
+    "description": "描述"
+  },
+  "details": {
+    "title": "發行版本 {{name}}",
+    "close": "關閉發行版本詳細資料",
+    "loading": "正在載入…",
+    "chart": "Chart {{chart}} {{version}} · 應用程式 {{appVersion}} · 修訂版本 {{revision}}",
+    "tabs": {
+      "values": "Values",
+      "manifest": "資訊清單",
+      "notes": "說明",
+      "history": "歷程記錄"
+    },
+    "tabsLabel": "發行版本詳細資料",
+    "valuesLabel": "{{name}} 的使用者 values",
+    "manifestLabel": "{{name}} 的資訊清單",
+    "show": {
+      "values": "顯示 values",
+      "manifest": "顯示資訊清單"
+    },
+    "hide": {
+      "values": "隱藏 values",
+      "manifest": "隱藏資訊清單"
+    },
+    "hidden": {
+      "values": "Values 已隱藏。按一下眼睛按鈕即可顯示。",
+      "manifest": "資訊清單已隱藏。按一下眼睛按鈕即可顯示。"
+    },
+    "noValues": "沒有使用者 values：此發行版本使用 Chart 的預設值。",
+    "noNotes": "此 Chart 沒有說明。",
+    "current": "目前",
+    "unreadable": "無法讀取",
+    "unreadableText": "無法讀取此修訂版本所儲存的資料。",
+    "unreadableLatest": "無法讀取修訂版本 {{revision}}；目前顯示最新的可讀取修訂版本 {{shown}}。",
+    "nothingReadable": "此發行版本的所有修訂版本皆無法讀取（最新：{{revision}}）。"
+  },
+  "actions": {
+    "editValues": "編輯 values",
+    "rollback": "回復",
+    "rollbackTo": "回復到修訂版本 {{revision}}",
+    "uninstall": "解除安裝"
+  },
+  "upgrade": {
+    "title": "編輯 {{name}} 的 values",
+    "valuesLabel": "{{name}} 的 values",
+    "chartRef": "Chart 參照",
+    "chartRefHint": "將使用 Chart {{chart}} {{version}} 升級。留白則重複使用發行版本中儲存的 Chart；含有子 Chart 的 Chart 需要其儲存庫參照，例如 repo/{{chart}}。",
+    "confirm": "升級",
+    "done": "發行版本 {{name}} 已升級，並建立了新的修訂版本。",
+    "failed": "Helm 無法升級此發行版本"
+  },
+  "rollback": {
+    "title": "要回復 {{name}} 嗎？",
+    "text": "{{name}} 將取得一個新的修訂版本，使用修訂版本 {{revision}} 的 Chart 與 values。叢集中的資源會隨之變更。",
+    "confirm": "回復",
+    "failed": "Helm 無法回復此發行版本"
+  },
+  "uninstall": {
+    "title": "要解除安裝 {{name}} 嗎？",
+    "text": "Namespace {{namespace}} 中的發行版本 {{name}} 及其建立的所有資源都將從叢集中刪除。此操作無法復原。",
+    "confirm": "解除安裝",
+    "failed": "Helm 無法解除安裝此發行版本"
+  },
+  "confirmName": {
+    "label": "輸入發行版本名稱（{{name}}）以確認",
+    "mismatch": "名稱不符。"
+  },
+  "charts": {
+    "title": "Chart",
+    "repositories": "儲存庫",
+    "noRepos": "尚無 Chart 儲存庫。新增一個儲存庫即可搜尋其中的 Chart。",
+    "repoName": "名稱",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "使用者名稱（選用）",
+    "repoPassword": "密碼（選用）",
+    "loginInUrl": "請在「使用者名稱」與「密碼」欄位中輸入使用者名稱和密碼，而不是寫在 URL 中。",
+    "add": "新增儲存庫",
+    "adding": "正在新增…",
+    "remove": "移除",
+    "removeLabel": "移除儲存庫 {{name}}",
+    "removeTitle": "要移除儲存庫 {{name}} 嗎？",
+    "removeText": "Helm 將不再記錄儲存庫 {{name}}（{{url}}）。從該儲存庫安裝的發行版本不受影響。",
+    "update": "更新儲存庫",
+    "updating": "正在更新…",
+    "updated": "儲存庫已更新。",
+    "search": "搜尋 Chart",
+    "searchPlaceholder": "Chart 名稱或關鍵字",
+    "searchButton": "搜尋",
+    "searching": "正在搜尋…",
+    "noResults": "沒有符合搜尋條件的 Chart。",
+    "description": "描述",
+    "select": "顯示 Chart {{name}}",
+    "defaultValues": "預設 values",
+    "defaultValuesLabel": "{{name}} {{version}} 的預設 values",
+    "loadingValues": "正在載入預設 values…",
+    "install": "安裝",
+    "loading": "正在載入…"
+  },
+  "install": {
+    "title": "安裝 {{chart}} {{version}}",
+    "release": "發行版本名稱",
+    "namespace": "Namespace",
+    "valuesLabel": "{{chart}} 的 values",
+    "invalidName": "只能使用小寫字母、數字、- 和 .（最多 53 個字元），且開頭與結尾必須是字母或數字。",
+    "confirm": "安裝",
+    "done": "發行版本 {{release}} 已安裝到 Namespace {{namespace}}，可在「發行版本」下找到。",
+    "failed": "Helm 無法安裝此 Chart",
+    "valuesHint": "只有您相對於 Chart 預設值變更過的 values 才會隨發行版本一併儲存。"
+  },
+  "status": {
+    "loading": "正在檢查 Helm…"
+  }
+}

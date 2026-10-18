@@ -1,0 +1,83 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Instalar o Flux…",
+    "argoCd": "Instalar o Argo CD…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "O Flux e o Argo CD são instalados a partir dos manifestos oficiais por meio da API do Kubernetes.",
+    "notConnected": "Conecte-se ao cluster para ver se o Flux e o Argo CD estão instalados.",
+    "loading": "Lendo o que o cluster oferece…",
+    "installed": "Instalado",
+    "partial": "Parcialmente instalado",
+    "missing": "Não instalado",
+    "install": "Instalar o {{tool}}…"
+  },
+  "dialog": {
+    "title": "Instalar o {{tool}}",
+    "flux": "O Flux é instalado como o `flux install` faz por padrão: os controladores source, kustomize, helm e notification em flux-system, sem automação de imagens.",
+    "argoCd": "O Argo CD é instalado a partir do install.yaml padrão em argocd: para todo o cluster, com a interface web, sem alta disponibilidade."
+  },
+  "versions": {
+    "label": "Versão",
+    "loading": "Consultando as versões no GitHub…",
+    "latest": "{{version}} (mais recente)",
+    "bundled": "{{version}} (incluída)",
+    "error": "Não foi possível obter a lista de versões do GitHub, por isso apenas a versão testada {{version}} é oferecida.",
+    "next": "Baixar e pré-visualizar"
+  },
+  "preparing": "Baixando e verificando o manifesto…",
+  "preview": {
+    "version": "Versão",
+    "source": "Origem",
+    "sha256": "SHA-256",
+    "verified": "corresponde ao arquivo de checksums da versão",
+    "unverified": "o projeto não publica checksum para este arquivo",
+    "namespace": "Namespace",
+    "objects": "Objetos ({{count}})",
+    "clusterScoped": "todo o cluster",
+    "warning": "A instalação altera o cluster inteiro: ela cria CustomResourceDefinitions, ClusterRoles e ClusterRoleBindings. São necessários direitos de cluster-admin.",
+    "noCrdAccess": "Você não tem permissão para criar CustomResourceDefinitions neste cluster, então a instalação provavelmente falhará.",
+    "noBindingAccess": "Você não tem permissão para criar ClusterRoleBindings neste cluster, então a instalação provavelmente falhará.",
+    "present": "O {{tool}} já está instalado. Os objetos dele serão atualizados para esta versão.",
+    "partial": "O {{tool}} está parcialmente instalado (o namespace ou alguns dos CRDs dele existem, ou faltam alguns dos controladores). Os objetos existentes serão atualizados.",
+    "overwritten": "Estes objetos de todo o cluster já existem e serão sobrescritos:",
+    "leftOut": "Em execução em {{namespace}}: {{names}}. Esta instalação deixa de fora a automação de imagens e o source watcher, como o `flux install` faz, e remove as service accounts deles dos role bindings compartilhados, então eles perdem as permissões."
+  },
+  "back": "Voltar",
+  "install": "Instalar",
+  "stop": "Parar",
+  "progress": {
+    "applying": "Aplicando objetos: {{done}} de {{total}}",
+    "stopping": "Parando após o objeto atual…",
+    "waiting": "Tudo foi aplicado. Aguardando os controladores ficarem prontos (até 5 minutos)…",
+    "ready": "pronto",
+    "notReady": "não pronto"
+  },
+  "result": {
+    "done": "O {{tool}} {{version}} está instalado e em execução. A seção dele está na barra lateral.",
+    "timedOut": "Tudo foi aplicado, mas nem todos os controladores ficaram prontos em 5 minutos. O que foi aplicado permanece no cluster.",
+    "stopped_one": "A instalação foi interrompida. {{count}} objeto foi aplicado; os demais não foram enviados.",
+    "stopped_many": "A instalação foi interrompida. {{count}} objetos foram aplicados; os demais não foram enviados.",
+    "stopped_other": "A instalação foi interrompida. {{count}} objetos foram aplicados; os demais não foram enviados.",
+    "stoppedWaiting_one": "A instalação foi interrompida enquanto aguardava os controladores. O {{count}} objeto foi aplicado e permanece no cluster.",
+    "stoppedWaiting_many": "A instalação foi interrompida enquanto aguardava os controladores. Todos os {{count}} objetos foram aplicados e permanecem no cluster.",
+    "stoppedWaiting_other": "A instalação foi interrompida enquanto aguardava os controladores. Todos os {{count}} objetos foram aplicados e permanecem no cluster.",
+    "failed": "A instalação falhou. Nada após o objeto com falha foi enviado; o que foi aplicado permanece no cluster.",
+    "applied": "Aplicados ({{count}})",
+    "notApplied": "Não aplicados ({{count}})"
+  },
+  "argo": {
+    "login": "O Sextant entra no Argo CD automaticamente com o argocd-initial-admin-secret. Altere a senha de admin no Argo CD e depois exclua esse Secret.",
+    "openUi": "Abrir a interface do Argo CD"
+  },
+  "confirmStop": {
+    "title": "Parar a instalação?",
+    "text": "A instalação para após o objeto que está sendo aplicado. O que foi aplicado permanece no cluster.",
+    "confirm": "Parar a instalação"
+  }
+}

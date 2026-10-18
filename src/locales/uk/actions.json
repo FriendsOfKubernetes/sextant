@@ -1,0 +1,121 @@
+{
+  "edit": {
+    "label": "Редагувати"
+  },
+  "delete": {
+    "label": "Видалити",
+    "titleSingle": "Видалити {{kind}}?",
+    "title_one": "Видалити {{count}} об'єкт {{kind}}?",
+    "title_few": "Видалити {{count}} об'єкти {{kind}}?",
+    "title_many": "Видалити {{count}} об'єктів {{kind}}?",
+    "title_other": "Видалити {{count}} об'єкта {{kind}}?",
+    "textSingle": "Цей {{kind}} буде видалено з кластера:",
+    "text_one": "З кластера буде видалено {{count}} об'єкт:",
+    "text_few": "З кластера буде видалено {{count}} об'єкти:",
+    "text_many": "З кластера буде видалено {{count}} об'єктів:",
+    "text_other": "З кластера буде видалено {{count}} об'єкта:",
+    "confirm": "Видалити",
+    "failed": "Не видалено: {{name}}",
+    "partial": "Видалено {{done}} з {{total}}. Решту видалити не вдалося:"
+  },
+  "scale": {
+    "label": "Масштабувати",
+    "title": "Масштабування {{kind}} {{name}}",
+    "replicas": "Репліки",
+    "current": "Зараз: {{count}}",
+    "confirm": "Масштабувати",
+    "invalid": "Введіть ціле число, не менше 0."
+  },
+  "restart": {
+    "label": "Перезапустити",
+    "title": "Перезапустити {{kind}} {{name}}?",
+    "text": "Усі Pod об'єкта {{name}} буде почергово замінено (rollout restart).",
+    "confirm": "Перезапустити"
+  },
+  "cordon": {
+    "label": "Заборонити / дозволити розміщення",
+    "cordonTitle": "Заборонити розміщення на вузлі {{name}}?",
+    "cordonText": "Нові Pod не розміщуватимуться на {{name}}. Pod, які вже там працюють, продовжать роботу.",
+    "cordonConfirm": "Заборонити розміщення",
+    "uncordonTitle": "Дозволити розміщення на вузлі {{name}}?",
+    "uncordonText": "На {{name}} знову можна буде розміщувати нові Pod.",
+    "uncordonConfirm": "Дозволити розміщення"
+  },
+  "drain": {
+    "label": "Звільнити (drain)",
+    "title": "Звільнити вузол {{name}}?",
+    "text": "На {{name}} буде заборонено розміщення, а його Pod буде витіснено. Pod з DaemonSet і статичні (mirror) Pod залишаться.",
+    "loading": "Перегляд Pod на вузлі…",
+    "previewFailed": "Не вдається отримати список Pod на вузлі",
+    "noPods": "На цьому вузлі немає Pod для витіснення.",
+    "evict_one": "Буде витіснено ({{count}} Pod)",
+    "evict_few": "Буде витіснено ({{count}} Pod)",
+    "evict_many": "Буде витіснено ({{count}} Pod)",
+    "evict_other": "Буде витіснено ({{count}} Pod)",
+    "unmanaged_one": "Без контролера ({{count}} Pod): після витіснення ніхто не створить його знову",
+    "unmanaged_few": "Без контролера ({{count}} Pod): після витіснення ніхто не створить їх знову",
+    "unmanaged_many": "Без контролера ({{count}} Pod): після витіснення ніхто не створить їх знову",
+    "unmanaged_other": "Без контролера ({{count}} Pod): після витіснення ніхто не створить їх знову",
+    "force": "Витіснити також Pod без контролера (force). Якщо прапорець знято, вони залишаться на вузлі.",
+    "emptyDir_one": "З даними emptyDir ({{count}} Pod): дані видаляються разом із Pod",
+    "emptyDir_few": "З даними emptyDir ({{count}} Pod): дані видаляються разом із Pod",
+    "emptyDir_many": "З даними emptyDir ({{count}} Pod): дані видаляються разом із Pod",
+    "emptyDir_other": "З даними emptyDir ({{count}} Pod): дані видаляються разом із Pod",
+    "deleteEmptyDirData": "Витіснити також Pod з даними emptyDir (delete emptyDir data). Якщо прапорець знято, вони залишаться на вузлі.",
+    "daemonSet_one": "Залишаться: Pod з DaemonSet ({{count}} Pod)",
+    "daemonSet_few": "Залишаться: Pod з DaemonSet ({{count}} Pod)",
+    "daemonSet_many": "Залишаться: Pod з DaemonSet ({{count}} Pod)",
+    "daemonSet_other": "Залишаться: Pod з DaemonSet ({{count}} Pod)",
+    "confirm": "Звільнити",
+    "failed": "Розміщення на вузлі заборонено, але деякі Pod витіснити не вдалося"
+  },
+  "trigger": {
+    "label": "Запустити зараз",
+    "title": "Запустити CronJob {{name}} зараз?",
+    "text": "З шаблону CronJob одразу буде створено Job.",
+    "confirm": "Запустити",
+    "done": "Створено Job {{name}}."
+  },
+  "suspend": {
+    "label": "Призупинити / відновити",
+    "suspendTitle": "Призупинити CronJob {{name}}?",
+    "suspendText": "{{name}} не запускатиме нові Job, доки його не відновлять. Job, що вже працюють, це не зачепить.",
+    "suspendConfirm": "Призупинити",
+    "resumeTitle": "Відновити CronJob {{name}}?",
+    "resumeText": "{{name}} знову запускатиме Job за розкладом.",
+    "resumeConfirm": "Відновити"
+  },
+  "dialog": {
+    "working": "Виконання…",
+    "close": "Закрити"
+  },
+  "editor": {
+    "tabTitle": "Редагування: {{kind}} {{name}}",
+    "editorLabel": "YAML {{kind}} {{name}}",
+    "save": "Зберегти",
+    "saving": "Збереження…",
+    "saved": "Збережено.",
+    "unsaved": "Є незбережені зміни",
+    "reload": "Перезавантажити",
+    "loading": "Завантаження…",
+    "conflict": "{{kind}} {{name}} змінився в кластері після того, як ви його відкрили. Ваші зміни не збережено. Перезавантажте, щоб отримати поточну версію.",
+    "reloadTitle": "Скасувати ваші зміни?",
+    "reloadText": "Під час перезавантаження текст буде замінено поточною версією з кластера. Незбережені зміни буде втрачено.",
+    "reloadConfirm": "Скасувати й перезавантажити",
+    "saveFailed": "Не збережено"
+  },
+  "create": {
+    "open": "Створити ресурс",
+    "tabTitle": "Створення ресурсу",
+    "editorLabel": "YAML ресурсів для створення",
+    "placeholder": "Вставте або введіть YAML. Кілька об'єктів розділяйте рядком ---",
+    "apply": "Застосувати",
+    "applying": "Застосування…",
+    "applied_one": "Застосовано {{count}} об'єкт:",
+    "applied_few": "Застосовано {{count}} об'єкти:",
+    "applied_many": "Застосовано {{count}} об'єктів:",
+    "applied_other": "Застосовано {{count}} об'єкта:",
+    "failed": "Не застосовано",
+    "empty": "Введіть принаймні один об'єкт."
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "rail": {
+    "list": "集群列表",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "添加集群",
+    "refresh": "刷新 kubeconfig",
+    "slow": "{{tooltip}}，已持续 {{seconds}} 秒。集群响应缓慢",
+    "expand": "展开集群列表",
+    "collapse": "折叠集群列表"
+  },
+  "state": {
+    "disconnected": "未连接",
+    "connecting": "正在连接",
+    "connected": "已连接",
+    "error": "连接失败"
+  },
+  "menu": {
+    "open": "打开",
+    "connect": "连接",
+    "reconnect": "重新连接",
+    "disconnect": "断开连接",
+    "settings": "设置",
+    "changeIcon": "更改图标…"
+  },
+  "add": {
+    "title": "添加集群",
+    "file": "添加 kubeconfig 文件",
+    "paste": "粘贴 kubeconfig",
+    "fileDialogTitle": "选择 kubeconfig 文件",
+    "tabs": "添加方式",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "从云端"
+  },
+  "paste": {
+    "title": "粘贴 kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "粘贴 kubeconfig 文件的内容。Sextant 会在其数据文件夹中保存一份私有副本。",
+    "submit": "添加"
+  },
+  "sources": {
+    "title": "Kubeconfig 来源",
+    "kind": {
+      "default": "默认",
+      "env": "KUBECONFIG",
+      "addedFile": "添加的文件",
+      "pasted": "粘贴的",
+      "cloud": "云"
+    },
+    "remove": "移除",
+    "removeNamed": "移除 {{path}}",
+    "confirmTitle": "移除 kubeconfig 来源？",
+    "confirmFile": "其中的集群将从列表中消失。文件本身仍保留在磁盘上。",
+    "confirmPasted": "其中的集群将从列表中消失，粘贴的副本也将被删除。",
+    "problems": "部分 kubeconfig 文件无法读取",
+    "problemsTitle": "Kubeconfig 问题",
+    "problemsHint": "来自其他文件的集群仍可正常使用。请修复该文件，然后点击“刷新”。",
+    "confirmCloud": "其中的集群将从列表中消失，Sextant 为这些云集群生成的 kubeconfig 也将被删除。你的云 CLI 和 ~/.kube/config 不受影响。"
+  },
+  "welcome": {
+    "loading": "正在读取 kubeconfig…",
+    "noClusters": "未找到集群",
+    "checked": "Sextant 在以下位置查找过 kubeconfig：",
+    "checkedPaths": "已检查的路径",
+    "title": "欢迎使用 Sextant",
+    "pick": "在左侧选择一个集群进行连接。"
+  },
+  "connection": {
+    "connecting": "正在连接到 {{name}}…",
+    "failed": "无法连接到 {{name}}",
+    "reconnect": "重新连接",
+    "certificate": "服务器证书未被接受。",
+    "seconds": "{{seconds}} 秒",
+    "slow": "集群响应缓慢"
+  },
+  "settings": {
+    "title": "集群设置 — {{name}}",
+    "displayName": "显示名称",
+    "color": "颜色标签",
+    "autoColor": "自动",
+    "colorOption": "颜色 {{index}}",
+    "icon": "图标",
+    "iconPreview": "图标预览",
+    "iconText": "图标文字",
+    "iconTextPlaceholder": "首字母",
+    "iconChoose": "选择图片…",
+    "iconReset": "重置图标",
+    "iconHint": "在颜色标签上显示一到两个字母或一个表情符号，或者使用不超过 5 MB 的 PNG、JPEG、SVG 或 WebP 图片。留空则使用名称的首字母。",
+    "iconErrors": {
+      "type": "该文件不是受支持的图片",
+      "size": "图片大于 5 MB",
+      "read": "无法读取该文件"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "集群",
+    "server": "服务器",
+    "user": "用户",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant 使用此计算机上已安装并已登录的 aws、gcloud 和 az。它会写入自己的 kubeconfig，绝不会更改 ~/.kube/config，也不会替你登录。",
+    "detecting": "正在查找 aws、gcloud 和 az…",
+    "providers": "云",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "（版本未知）",
+    "notInstalled": "未安装 {{cli}}",
+    "installGuide": "安装指南",
+    "pluginMissing": "未安装 {{plugin}}。可以添加集群，但连接时需要它。请使用以下命令安装：",
+    "loadingAccounts": "正在读取账户…",
+    "account": {
+      "aws": "配置文件",
+      "gcp": "项目",
+      "azure": "订阅"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "来自环境变量的凭据",
+    "regions": "区域",
+    "find": "查找集群",
+    "finding": "正在搜索…",
+    "noClusters": "未找到集群。",
+    "found": "找到的集群",
+    "separator": " · ",
+    "add_other": "添加 {{count}} 个集群",
+    "added_other": "已添加 {{count}} 个集群，可在集群列表中找到。",
+    "scope": "（{{scope}}）",
+    "problem": {
+      "cliMissing": "未安装 {{cli}}{{scope}}",
+      "notLoggedIn": "{{cli}} 未登录，或登录已过期{{scope}}",
+      "pluginMissing": "未安装 {{cli}} 的登录插件{{scope}}",
+      "failed": "{{cli}} 运行失败{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "请先安装，然后重试。",
+      "notLoggedIn": "Sextant 不会替你登录。请在终端中运行以下命令，然后重试：",
+      "pluginMissing": "请在终端中运行以下命令，然后重试：",
+      "failed": "请在终端中运行以下命令，然后重试："
+    },
+    "copyCommand": "复制命令",
+    "copied": "已复制",
+    "copyFailed": "剪贴板不可用；请选中该命令并手动复制。"
+  }
+}

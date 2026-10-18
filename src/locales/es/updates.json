@@ -1,0 +1,32 @@
+{
+  "title": "Actualizaciones",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (versión desconocida)",
+  "auto": "Buscar actualizaciones al iniciar Sextant",
+  "check": "Buscar actualizaciones",
+  "checking": "Buscando actualizaciones…",
+  "upToDate": "Ya tiene la última versión.",
+  "available": "Sextant {{version}} está disponible (la versión instalada es {{current}}).",
+  "notesLabel": "Notas de la versión",
+  "install": "Instalar y reiniciar",
+  "installing": "Descargando e instalando…",
+  "installingProgress": "Descargando e instalando… {{percent}} %",
+  "restarting": "Reiniciando…",
+  "later": "Más tarde",
+  "dialogTitle": "Actualización disponible",
+  "openReleasePage": "Abrir la página de la versión",
+  "notConfigured": "Las actualizaciones están desactivadas en esta compilación: no tiene clave de firma de actualizaciones (plugins.updater.pubkey en src-tauri/tauri.conf.json). Descargue las nuevas versiones desde la página de versiones.",
+  "manual": {
+    "deb": "Sextant se instaló desde un paquete .deb, por lo que no se reemplaza a sí mismo. Descargue el nuevo .deb desde la página de la versión e instálelo con el gestor de paquetes, por ejemplo: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant se instaló desde un paquete .rpm, por lo que no se reemplaza a sí mismo. Descargue el nuevo paquete desde la página de la versión e instálelo con el gestor de paquetes.",
+    "other": "Esta copia de Sextant no se instaló desde un paquete de versión (AppImage, .dmg o .msi), por lo que no puede actualizarse sola. Descargue la nueva versión desde la página de versiones."
+  },
+  "error": {
+    "network": "No se pudo acceder a GitHub para buscar actualizaciones. Compruebe la conexión a Internet o el proxy e inténtelo de nuevo.",
+    "noRelease": "La última versión publicada en GitHub aún no tiene actualización para este sistema. Inténtelo más tarde.",
+    "signature": "La actualización descargada no está firmada con la clave de versiones de Sextant, así que no se instaló.",
+    "otherCheck": "No se pudieron buscar actualizaciones.",
+    "otherInstall": "No se pudo instalar la actualización.",
+    "networkInstall": "No se pudo descargar la actualización. Compruebe la conexión a Internet o el proxy e inténtelo de nuevo."
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "title": "擴充功能",
+  "hint": "擴充功能可以在 Sextant 中新增頁面、面板、動作與欄位。每個擴充功能都在隔離的框架中執行，只能透過您在安裝時授予的權限存取您的叢集。",
+  "host": {
+    "failed": "擴充功能發生錯誤：{{message}}",
+    "failedUnknown": "擴充功能因錯誤而停止",
+    "reload": "重新載入",
+    "frameTitle": "{{title}}（{{extension}}）",
+    "overview": "概觀",
+    "detailsTabs": "詳細資料檢視",
+    "notice": "{{extension}}：{{text}}",
+    "dismiss": "關閉"
+  },
+  "install": {
+    "file": "從檔案安裝…",
+    "url": "從 URL 安裝…",
+    "folder": "載入未封裝的資料夾…",
+    "fileTitle": "選擇擴充功能套件",
+    "fileFilter": "Sextant 擴充功能",
+    "folderTitle": "選擇擴充功能所在的資料夾",
+    "checking": "正在檢查套件…",
+    "installed": "已安裝版本 {{version}}。",
+    "updated": "已更新至版本 {{version}}。"
+  },
+  "source": {
+    "folder": "資料夾 {{path}}",
+    "file": "檔案 {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "從 URL 安裝",
+    "label": "GitHub 發行版本中檔案的連結",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "只接受 https://github.com/<owner>/<repo>/releases/download/<tag>/<file> 形式的連結。檔案大小上限為 20 MB。在您同意權限之前，不會安裝任何內容。",
+    "invalid": "這不是 GitHub 發行版本中檔案的連結。",
+    "check": "下載並檢查"
+  },
+  "errors": {
+    "invalid": "無法安裝此套件",
+    "conflict": "已安裝另一個具有相同 ID 的擴充功能",
+    "notFound": "此安裝已無法使用",
+    "timeout": "下載花費的時間過長",
+    "unreachable": "無法下載此檔案",
+    "other": "無法安裝此擴充功能"
+  },
+  "consent": {
+    "titleInstall": "要安裝 {{name}} 嗎？",
+    "titleUpdate": "要更新 {{name}} 嗎？",
+    "titleReview": "檢閱 {{name}} 的權限",
+    "install": "安裝",
+    "update": "更新",
+    "author": "作者",
+    "version": "版本",
+    "source": "來源",
+    "devHint": "它直接從此資料夾執行，Sextant 開啟期間對其檔案的變更會自動套用。它會被標示為「開發中」。",
+    "replaces": "將取代已安裝的版本 {{version}}。",
+    "newPermissions": "新的權限",
+    "newPermissionsHint": "此版本要求的權限超出您先前允許的範圍。請閱讀下方的權限。",
+    "samePermissions": "權限相同",
+    "samePermissionsHint": "此版本未要求任何新權限。",
+    "reviewHint": "此擴充功能的檔案目前要求的權限超出您允許的範圍。在您同意之前，它會維持暫停。",
+    "adds": "它會新增的內容",
+    "permissions": "它可以執行的操作",
+    "noContributions": "不會在介面中新增任何內容。",
+    "secretWarning": "讀取 Secret 的值",
+    "secretWarningHint": "此擴充功能要求讀取 Secret 的值：密碼、權杖與金鑰。請只在您信任其作者時允許。"
+  },
+  "contributes": {
+    "pages": "側邊欄中的頁面",
+    "detailsSections": "詳細資料面板中的區段",
+    "actions": "資源上的動作",
+    "columns": "表格欄位",
+    "dockActions": "底部面板按鈕",
+    "settings": "「設定」中的區段"
+  },
+  "permissions": {
+    "clusters": "叢集",
+    "clustersAll": "所有叢集",
+    "clustersOnly_other": "僅限名為 {{names}} 的叢集",
+    "clustersNote": "一個名稱涵蓋所有 kubeconfig 來源中具有該名稱的所有叢集 context。",
+    "access": "存取權限",
+    "none": "無權存取任何叢集的資料。",
+    "rule": "{{namespaces}}，針對 {{kinds}}：{{actions}}",
+    "allKinds": "所有類型",
+    "namespacesAll": "在所有 Namespace 中",
+    "namespacesOnly_other": "在 Namespace {{names}} 中",
+    "asks": "執行前詢問",
+    "noAsk": "不詢問即執行",
+    "secretValues": "{{namespaces}}可讀取 Secret 的值",
+    "clusterWide": "不屬於任何 Namespace 的物件（例如 Node）只能由適用於所有 Namespace 的規則涵蓋。",
+    "actionNames": {
+      "read": "讀取",
+      "modify": "修改",
+      "delete": "刪除",
+      "logs": "讀取日誌",
+      "exec": "執行命令",
+      "portForward": "轉送連接埠",
+      "secretValues": "讀取 Secret 值"
+    }
+  },
+  "state": {
+    "active": "已啟用",
+    "disabled": "已停用",
+    "needsConsent": "需要您的核准",
+    "failed": "發生錯誤"
+  },
+  "list": {
+    "loading": "正在載入擴充功能…",
+    "empty": "尚未安裝任何擴充功能。",
+    "failed": "無法讀取擴充功能清單",
+    "development": "開發中",
+    "version": "版本 {{version}}",
+    "enable": "啟用",
+    "disable": "停用",
+    "permissions": "權限",
+    "reload": "重新載入",
+    "activity": "活動",
+    "remove": "移除",
+    "reviewPermissions": "檢閱權限",
+    "pausedHint": "此擴充功能要求的權限超出您允許的範圍。在您檢閱其權限之前，它會維持暫停。",
+    "failedHint": "此擴充功能無法執行：{{error}}",
+    "actionFailed": "無法進行此變更",
+    "namedAction": "{{action}} {{name}}"
+  },
+  "reinstall": {
+    "file": "若要檢閱其權限，請從檔案 {{name}} 重新安裝（從檔案安裝…）。",
+    "url": "若要檢閱其權限，請從 {{url}} 重新安裝（從 URL 安裝…）。"
+  },
+  "permissionsDialog": {
+    "title": "{{name}} 的權限",
+    "granted": "您已允許",
+    "requested": "目前要求",
+    "close": "關閉"
+  },
+  "remove": {
+    "title": "要移除 {{name}} 嗎？",
+    "body": "此擴充功能、其檔案及其儲存的資料都將從這部電腦中刪除。您的叢集不會有任何變更。"
+  },
+  "settingsFrame": "{{name}} 的設定",
+  "notice": {
+    "text_other": "{{names}} 要求的權限超出您允許的範圍，已遭暫停。",
+    "review": "檢閱權限",
+    "reinstall": "{{name}}：{{hint}}",
+    "dismiss": "關閉"
+  },
+  "activity": {
+    "title": "擴充功能活動",
+    "hint": "擴充功能提出過的要求。Secret 的值、YAML 與命令輸出不會被記錄。",
+    "extension": "擴充功能",
+    "allExtensions": "所有擴充功能",
+    "loading": "正在載入記錄…",
+    "empty": "尚無呼叫。",
+    "failed": "無法讀取記錄",
+    "clear": "清除",
+    "clearTitle": "要清除活動記錄嗎？",
+    "clearBody": "這部電腦上記錄的所有擴充功能呼叫都將被刪除。",
+    "ok": "成功",
+    "none": "-",
+    "columns": {
+      "time": "時間",
+      "extension": "擴充功能",
+      "cluster": "叢集",
+      "method": "方法",
+      "target": "目標",
+      "decision": "決定",
+      "result": "結果",
+      "duration": "耗時"
+    },
+    "decisions": {
+      "allowed": "已允許",
+      "denied": "已拒絕",
+      "approved": "已由您核准",
+      "declined": "已由您拒絕",
+      "timedOut": "無回應",
+      "notChecked": "未檢查"
+    },
+    "duration": "{{ms}} 毫秒"
+  }
+}

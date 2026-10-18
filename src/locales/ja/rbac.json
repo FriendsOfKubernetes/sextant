@@ -1,0 +1,177 @@
+{
+  "sidebar": {
+    "page": "権限"
+  },
+  "objectLabel": "{{kind}} {{name}}",
+  "page": {
+    "title": "権限",
+    "tabsLabel": "権限の表示",
+    "tabs": {
+      "subject": "サブジェクト",
+      "whoCan": "実行できるユーザー",
+      "canI": "自分の権限"
+    },
+    "filtered_other": "Role と RoleBinding は、フィルターの {{count}} 個の namespace ({{namespaces}}) でのみ読み取ります。"
+  },
+  "notes": {
+    "computed": "Role、ClusterRole、およびそれらのバインディングから算出しています。クラスターの他のオーソライザー (Node、Webhook、ABAC) は含まれず、system:masters グループのメンバーは RBAC に関係なくすべての操作を行えます。自分の権限については、「自分の権限」タブで API サーバーに問い合わせることができ、その回答が正式なものです。",
+    "groups": "ユーザーとグループは Kubernetes のオブジェクトではなく、ユーザーが属するグループはサインイン方法によって決まります。把握しているグループ名を指定すると、そのグループへのバインディングも含められます。"
+  },
+  "lists": {
+    "loading": "ロールとバインディングを読み取り中…",
+    "nothing": "このクラスターではロールとバインディングを読み取れません",
+    "forbidden": {
+      "roles": "Role を一覧表示する権限がありません。Role へのバインディングにはルールが表示されません。",
+      "clusterRoles": "ClusterRole を一覧表示する権限がありません。ClusterRole へのバインディングにはルールが表示されません。",
+      "roleBindings": "RoleBinding を一覧表示する権限がありません。namespace で付与された権限は含まれません。",
+      "clusterRoleBindings": "ClusterRoleBinding を一覧表示する権限がありません。クラスター全体の権限は含まれません。"
+    },
+    "failed": {
+      "roles": "Role を読み取れませんでした。Role へのバインディングにはルールが表示されません。",
+      "clusterRoles": "ClusterRole を読み取れませんでした。ClusterRole へのバインディングにはルールが表示されません。",
+      "roleBindings": "RoleBinding を読み取れませんでした。namespace で付与された権限は含まれません。",
+      "clusterRoleBindings": "ClusterRoleBinding を読み取れませんでした。クラスター全体の権限は含まれません。"
+    },
+    "partial_other": "{{count}} 個の namespace ({{namespaces}}) の Role または RoleBinding を読み取る権限がありません。そこで付与された権限は含まれません。"
+  },
+  "subject": {
+    "search": "ユーザー、グループ、ServiceAccount を検索",
+    "listLabel": "バインディングで指定されたサブジェクト",
+    "known_other": "バインディングで {{count}} 個のサブジェクトが指定されています。",
+    "none": "一致するサブジェクトはありません。",
+    "more_other": "他に {{count}} 個のサブジェクトが一致します。検索を絞り込んでください。",
+    "choose": "サブジェクトを選択すると、実行できる操作が表示されます。",
+    "other": "別のサブジェクト",
+    "kind": "Kind",
+    "name": "名前",
+    "namespace": "Namespace",
+    "groups": "グループ (カンマ区切り)",
+    "show": "権限を表示",
+    "label": "{{kind}} {{name}}",
+    "change": "別のものを選択",
+    "memberOf": "{{groups}} のメンバー",
+    "implicit": "{{groups}} のメンバーとしても扱われます。",
+    "kinds": {
+      "User": "ユーザー",
+      "Group": "グループ",
+      "ServiceAccount": "ServiceAccount"
+    }
+  },
+  "scope": {
+    "label": "Namespace",
+    "all": "すべての namespace",
+    "cluster": "すべての場所",
+    "only": "{{namespace}} のみ"
+  },
+  "matrix": {
+    "label": "verb とリソース別の {{subject}} の権限",
+    "filter": "リソースを絞り込み",
+    "resource": "リソース",
+    "group": "API グループ",
+    "core": "core",
+    "allGroups": "すべてのグループ",
+    "allResources": "すべてのリソース",
+    "allUrls": "すべての URL",
+    "anyVerb": "任意の verb",
+    "urls": "非リソース URL",
+    "empty": "権限は見つかりませんでした。",
+    "truncated_other": "最初の {{count}} 個のリソースのみを表示しています。",
+    "cellAllowed": "{{resource}} の {{verb}}: 許可",
+    "cellPartial": "{{resource}} の {{verb}}: 名前指定の一部のオブジェクトのみ",
+    "cellTitle_other": "{{count}} 個のルール ({{bindings}}) で許可されています。クリックするとルールを表示します。",
+    "cellTitleReview_other": "{{count}} 個のルールで許可されています。クリックすると表示します。",
+    "detail": "{{resource}} の {{verb}}"
+  },
+  "rules": {
+    "none": "このロールにはルールがありません。",
+    "verbs": "Verb",
+    "resources": "リソース",
+    "groups": "API グループ",
+    "names": "対象オブジェクトのみ",
+    "notes": "意味",
+    "via": "{{source}} から集約"
+  },
+  "grants": {
+    "binding": "バインディング",
+    "role": "ロール",
+    "scope": "範囲",
+    "matchedBy": "付与先",
+    "rule": "ルール",
+    "notes": "注記",
+    "ruleText": "{{resources}} に対する {{verbs}}"
+  },
+  "explain": {
+    "allVerbs": "escalate、bind、impersonate を含むすべての verb。",
+    "allGroups": "カスタムリソースを含む、すべての API グループのリソース。",
+    "allResources": "pods/exec や pods/log などを含む、すべてのリソースとサブリソース。",
+    "anySubresource": "任意のリソースのサブリソース {{subresource}}。",
+    "subresource": "サブリソース {{subresource}} のみ。{{resource}} 自体へのアクセスは別のルールです。",
+    "onlyNames": "{{list}} という名前のオブジェクトのみ。create と deletecollection は不可で、list と watch はそのいずれかを指定する field selector を付けた場合のみ可能です。",
+    "allUrls": "すべての非リソース URL。",
+    "urlPrefix": "{{prefix}} で始まるすべての URL。",
+    "escalating": "保有する以上の権限を付与できます: {{list}}。",
+    "pending": "{{source}} から集約されますが、API サーバーはまだこのロールに追加していません。"
+  },
+  "warnings": {
+    "missingRole": "{{binding}} は存在しない {{role}} を参照しています。ロールが作成されるまで何も付与されません。"
+  },
+  "whoCan": {
+    "formLabel": "実行できるユーザー",
+    "verb": "Verb",
+    "resource": "リソース",
+    "resourcePlaceholder": "pods, secrets, deployments.apps",
+    "subresource": "サブリソース",
+    "subresourcePlaceholder": "exec, log, scale",
+    "name": "オブジェクト名",
+    "namespace": "Namespace",
+    "anyNamespace": "任意の namespace",
+    "urlMode": "非リソース URL",
+    "url": "URL",
+    "urlPlaceholder": "/healthz",
+    "find": "検索",
+    "unknownResource": "このクラスターは {{resource}} というリソースを提供していません。入力どおり core グループのリソースとして扱っています。",
+    "clusterScoped": "このリソースはクラスタースコープです。namespace に関係なく、ClusterRoleBinding でのみ付与できます。",
+    "none": "RBAC でこの権限を付与されたサブジェクトはありません。",
+    "results_other": "{{count}} 個の付与によって許可されています。",
+    "masters": "{{group}} のメンバーも実行できます (RBAC をバイパスします)。",
+    "tableLabel": "許可されたサブジェクト",
+    "subject": "サブジェクト",
+    "showSubject": "このサブジェクトの権限を表示",
+    "truncated_other": "最初の {{count}} 個の付与のみを表示しています。"
+  },
+  "canI": {
+    "authoritative": "クラスターのすべてのオーソライザーを使って API サーバーが回答します。実際の要求もこのとおりに扱われます。問い合わせによってクラスターが変更されることはありません。",
+    "askTitle": "実行できるか確認…",
+    "ask": "確認",
+    "asking": "API サーバーに問い合わせ中…",
+    "clear": "クリア",
+    "allowed": "はい、許可されています",
+    "denied": "いいえ、拒否されています",
+    "notAllowed": "いいえ、許可されていません",
+    "reason": "理由: {{reason}}",
+    "evaluationError": "回答が不完全な可能性があります: {{error}}",
+    "reviewTitle": "namespace での自分の権限",
+    "review": "自分の権限を一覧表示",
+    "reviewing": "API サーバーに問い合わせ中…",
+    "forbidden": "このクラスターでは、自分の権限について API サーバーに問い合わせることが許可されていません。",
+    "incomplete": "一覧が不完全な可能性があります。このクラスターのオーソライザーのいずれかがルールを一覧表示できません。",
+    "incompleteBecause": "一覧が不完全な可能性があります: {{error}}",
+    "matrixLabel": "verb とリソース別の {{namespace}} での自分の権限"
+  },
+  "details": {
+    "rulesExplained": "ルールの説明",
+    "aggregatedFrom": "集約元:",
+    "aggregatedFromNone": "集約ロールですが、selector に一致する ClusterRole はありません。",
+    "boundTo": "バインド先",
+    "noBindings": "このロールを参照するバインディングはありません。",
+    "subjects": "サブジェクト",
+    "showPermissions": "このサブジェクトの権限を表示",
+    "grants": "{{role}} を付与",
+    "grantsEverywhere": "すべての namespace とクラスタースコープのリソースで有効です。",
+    "grantsIn": "namespace {{namespace}} でのみ有効です。",
+    "urlsIgnored": "非リソース URL に関するルールは除外されます。RoleBinding では付与できません。",
+    "subjectsPermissions": "サブジェクトの権限",
+    "canDo": "実行できる操作",
+    "openPage": "「権限」で開く"
+  }
+}

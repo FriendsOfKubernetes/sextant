@@ -1,0 +1,91 @@
+{
+  "action": {
+    "label": "日志"
+  },
+  "toolbar": {
+    "label": "日志选项",
+    "container": "容器",
+    "initContainer": "{{name}}（init）",
+    "follow": "跟踪",
+    "timestamps": "时间戳",
+    "previous": "上一个容器",
+    "wrap": "自动换行",
+    "save": "保存",
+    "reconnect": "重新连接"
+  },
+  "search": {
+    "label": "搜索日志",
+    "placeholder": "搜索",
+    "previous": "上一个匹配项",
+    "next": "下一个匹配项",
+    "count": "{{current}}/{{total}}",
+    "countCapped": "{{current}}/{{total}}+",
+    "none": "无匹配项"
+  },
+  "status": {
+    "connecting": "正在连接…",
+    "live": "实时",
+    "notFollowing": "未跟踪",
+    "ended": "流已结束",
+    "failed": "流失败"
+  },
+  "lines_other": "{{count}} 行",
+  "dropped_other": "已丢弃 {{count}} 行较早的日志（仅保留最新的 {{limit}} 行，文本最多 {{size}} MiB）",
+  "lineCut": " …［该行在 64 KiB 处截断，下一行继续］",
+  "empty": "暂无日志行。",
+  "view": "日志行",
+  "save": {
+    "title": "保存日志",
+    "filter": "日志文件",
+    "failed": "无法保存日志。"
+  },
+  "picker": {
+    "title": "{{name}} 的日志：选择 Pod",
+    "loading": "正在加载 Pod…",
+    "none": "未找到 Pod。",
+    "noSelector": "此对象不选择任何 Pod。",
+    "all": "所有 Pod",
+    "allHint": "在一个标签页中跟踪所有 Pod，包括之后创建的 Pod。"
+  },
+  "details": {
+    "title": "日志",
+    "allPods": "所有 Pod 的日志",
+    "hint": "跟踪与 {{selector}} 匹配的 Pod，随其创建和消失自动更新。"
+  },
+  "multi": {
+    "podsTitle_other": "{{count}} 个 Pod",
+    "selector": "Selector",
+    "selectorHint": "Label selector；按 Enter 应用。",
+    "sources": "Pod 和容器（{{shown}}/{{total}}）",
+    "sourcesLabel": "Pod 和容器",
+    "capHint_other": "同时最多运行 {{count}} 个日志流；取消勾选 Pod 或容器即可选择要读取哪些。",
+    "capped_other": "还有 {{count}} 个容器在等待：同时最多运行 {{max}} 个日志流。取消勾选 Pod 或容器即可选择要读取哪些。",
+    "noPods": "没有匹配的 Pod。",
+    "json": "解析 JSON",
+    "level": "级别",
+    "allLevels": "所有行",
+    "levelAndAbove": "{{level}} 及以上",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "筛选",
+    "regex": "正则",
+    "badRegex": "正则表达式无效；不会过滤任何行。",
+    "sourceStatus": {
+      "waiting": "正在等待空闲的流",
+      "connecting": "正在连接",
+      "streaming": "实时",
+      "ended": "已结束",
+      "error": "失败",
+      "notStarted": "未开始",
+      "gone": "Pod 已消失",
+      "off": "已关闭"
+    },
+    "streams": "流：{{count}}，Pod：{{pods}}"
+  }
+}

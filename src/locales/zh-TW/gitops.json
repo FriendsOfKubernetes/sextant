@@ -1,0 +1,79 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "安裝 Flux…",
+    "argoCd": "安裝 Argo CD…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux 與 Argo CD 會透過 Kubernetes API 從其官方資訊清單安裝。",
+    "notConnected": "連線到叢集後即可查看是否已安裝 Flux 與 Argo CD。",
+    "loading": "正在讀取叢集提供的內容…",
+    "installed": "已安裝",
+    "partial": "部分安裝",
+    "missing": "未安裝",
+    "install": "安裝 {{tool}}…"
+  },
+  "dialog": {
+    "title": "安裝 {{tool}}",
+    "flux": "Flux 的安裝方式與 `flux install` 的預設行為相同：在 flux-system 中安裝 source、kustomize、helm 與 notification 控制器，不含映像檔自動化。",
+    "argoCd": "Argo CD 會從其標準 install.yaml 安裝到 argocd 中：叢集範圍、含 Web 介面、非高可用性。"
+  },
+  "versions": {
+    "label": "版本",
+    "loading": "正在向 GitHub 查詢發行版本…",
+    "latest": "{{version}}（最新）",
+    "bundled": "{{version}}（內建）",
+    "error": "無法從 GitHub 取得發行版本清單，因此只提供已測試的版本 {{version}}。",
+    "next": "下載並預覽"
+  },
+  "preparing": "正在下載並檢查資訊清單…",
+  "preview": {
+    "version": "版本",
+    "source": "來源",
+    "sha256": "SHA-256",
+    "verified": "與該發行版本的總和檢查碼檔案相符",
+    "unverified": "此專案未發布此檔案的總和檢查碼",
+    "namespace": "Namespace",
+    "objects": "物件（{{count}}）",
+    "clusterScoped": "叢集範圍",
+    "warning": "安裝會變更整個叢集：它會建立 CustomResourceDefinition、ClusterRole 與 ClusterRoleBinding。需要 cluster-admin 權限。",
+    "noCrdAccess": "您無權在此叢集中建立 CustomResourceDefinition，因此安裝很可能會失敗。",
+    "noBindingAccess": "您無權在此叢集中建立 ClusterRoleBinding，因此安裝很可能會失敗。",
+    "present": "{{tool}} 已安裝。其物件將更新為此版本。",
+    "partial": "{{tool}} 已部分安裝（其 Namespace 或部分 CRD 已存在，或缺少部分控制器）。現有物件將會更新。",
+    "overwritten": "下列叢集範圍的物件已存在，將被覆寫：",
+    "leftOut": "正在 {{namespace}} 中執行：{{names}}。與 `flux install` 相同，此安裝不含映像檔自動化與 source watcher，並會將它們的 ServiceAccount 從共用的角色繫結中移除，因此它們將失去權限。"
+  },
+  "back": "上一步",
+  "install": "安裝",
+  "stop": "停止",
+  "progress": {
+    "applying": "正在套用物件：{{done}}/{{total}}",
+    "stopping": "將在目前的物件完成後停止…",
+    "waiting": "已全部套用。正在等候控制器就緒（最多 5 分鐘）…",
+    "ready": "就緒",
+    "notReady": "未就緒"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} 已安裝並正在執行。其區段位於側邊欄中。",
+    "timedOut": "已全部套用，但並非所有控制器都在 5 分鐘內就緒。已套用的內容會保留在叢集中。",
+    "stopped_other": "安裝已停止。已套用 {{count}} 個物件；其餘物件未傳送。",
+    "stoppedWaiting_other": "安裝在等候控制器時遭到停止。全部 {{count}} 個物件皆已套用，並保留在叢集中。",
+    "failed": "安裝失敗。失敗物件之後的內容皆未傳送；已套用的內容會保留在叢集中。",
+    "applied": "已套用（{{count}}）",
+    "notApplied": "未套用（{{count}}）"
+  },
+  "argo": {
+    "login": "Sextant 會使用 argocd-initial-admin-secret 自行登入 Argo CD。請在 Argo CD 中變更管理員密碼，然後刪除該 Secret。",
+    "openUi": "開啟 Argo CD 介面"
+  },
+  "confirmStop": {
+    "title": "要停止安裝嗎？",
+    "text": "安裝會在正在套用的物件完成後停止。已套用的內容會保留在叢集中。",
+    "confirm": "停止安裝"
+  }
+}

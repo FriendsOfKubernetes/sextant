@@ -1,0 +1,101 @@
+{
+  "action": {
+    "label": "Logs"
+  },
+  "toolbar": {
+    "label": "Opções de log",
+    "container": "Contêiner",
+    "initContainer": "{{name}} (init)",
+    "follow": "Acompanhar",
+    "timestamps": "Carimbos de data/hora",
+    "previous": "Contêiner anterior",
+    "wrap": "Quebrar linhas",
+    "save": "Salvar",
+    "reconnect": "Reconectar"
+  },
+  "search": {
+    "label": "Pesquisar nos logs",
+    "placeholder": "Pesquisar",
+    "previous": "Correspondência anterior",
+    "next": "Próxima correspondência",
+    "count": "{{current}} de {{total}}",
+    "countCapped": "{{current}} de {{total}}+",
+    "none": "Nenhuma correspondência"
+  },
+  "status": {
+    "connecting": "Conectando…",
+    "live": "Ao vivo",
+    "notFollowing": "Sem acompanhar",
+    "ended": "Stream encerrado",
+    "failed": "Falha no stream"
+  },
+  "lines_one": "{{count}} linha",
+  "lines_many": "{{count}} linhas",
+  "lines_other": "{{count}} linhas",
+  "dropped_one": "{{count}} linha mais antiga descartada (as {{limit}} linhas mais recentes, até {{size}} MiB de texto, são mantidas)",
+  "dropped_many": "{{count}} linhas mais antigas descartadas (as {{limit}} linhas mais recentes, até {{size}} MiB de texto, são mantidas)",
+  "dropped_other": "{{count}} linhas mais antigas descartadas (as {{limit}} linhas mais recentes, até {{size}} MiB de texto, são mantidas)",
+  "lineCut": " … [linha cortada em 64 KiB, continua na próxima linha]",
+  "empty": "Ainda não há linhas de log.",
+  "view": "Linhas de log",
+  "save": {
+    "title": "Salvar logs",
+    "filter": "Arquivos de log",
+    "failed": "Não foi possível salvar os logs."
+  },
+  "picker": {
+    "title": "Logs de {{name}}: escolha um Pod",
+    "loading": "Carregando Pods…",
+    "none": "Nenhum Pod encontrado.",
+    "noSelector": "Este objeto não seleciona Pods.",
+    "all": "Todos os Pods",
+    "allHint": "Acompanhar todos os Pods em uma aba, incluindo Pods criados depois."
+  },
+  "details": {
+    "title": "Logs",
+    "allPods": "Logs de todos os Pods",
+    "hint": "Acompanha os Pods que correspondem a {{selector}} conforme eles surgem e desaparecem."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} Pod",
+    "podsTitle_many": "{{count}} Pods",
+    "podsTitle_other": "{{count}} Pods",
+    "selector": "Selector",
+    "selectorHint": "Um label selector; pressione Enter para aplicar.",
+    "sources": "Pods e contêineres ({{shown}} de {{total}})",
+    "sourcesLabel": "Pods e contêineres",
+    "capHint_one": "No máximo {{count}} stream de log é executado por vez; desmarque Pods ou contêineres para escolher quais são lidos.",
+    "capHint_many": "No máximo {{count}} streams de log são executados por vez; desmarque Pods ou contêineres para escolher quais são lidos.",
+    "capHint_other": "No máximo {{count}} streams de log são executados por vez; desmarque Pods ou contêineres para escolher quais são lidos.",
+    "capped_one": "Mais {{count}} contêiner aguarda: no máximo {{max}} streams de log são executados por vez. Desmarque Pods ou contêineres para escolher quais são lidos.",
+    "capped_many": "Mais {{count}} contêineres aguardam: no máximo {{max}} streams de log são executados por vez. Desmarque Pods ou contêineres para escolher quais são lidos.",
+    "capped_other": "Mais {{count}} contêineres aguardam: no máximo {{max}} streams de log são executados por vez. Desmarque Pods ou contêineres para escolher quais são lidos.",
+    "noPods": "Nenhum Pod corresponde.",
+    "json": "Analisar JSON",
+    "level": "Nível",
+    "allLevels": "Todas as linhas",
+    "levelAndAbove": "{{level}} e acima",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Filtrar",
+    "regex": "Regex",
+    "badRegex": "A expressão regular não é válida; nenhuma linha é filtrada.",
+    "sourceStatus": {
+      "waiting": "aguardando um stream livre",
+      "connecting": "conectando",
+      "streaming": "ao vivo",
+      "ended": "encerrado",
+      "error": "com falha",
+      "notStarted": "não iniciado",
+      "gone": "Pod removido",
+      "off": "desativado"
+    },
+    "streams": "Streams: {{count}}, Pods: {{pods}}"
+  }
+}

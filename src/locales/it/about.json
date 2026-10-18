@@ -1,0 +1,32 @@
+{
+  "title": "Informazioni su Sextant",
+  "name": "Sextant",
+  "section": "Informazioni",
+  "open": "Informazioni su Sextant",
+  "version": "Versione {{version}}",
+  "versionUnknown": "Versione sconosciuta",
+  "tagline": "Un client desktop per Kubernetes pensato per sviluppatori e SRE.",
+  "license": "Licenza: {{license}}",
+  "links": "Link",
+  "link": {
+    "repository": "Repository",
+    "wiki": "Wiki",
+    "releases": "Release",
+    "discussions": "Discussioni",
+    "issue": "Segnala un problema"
+  },
+  "build": {
+    "appimage": "AppImage",
+    "deb": "pacchetto .deb",
+    "rpm": "pacchetto .rpm",
+    "app": "app macOS (.dmg)",
+    "msi": "programma di installazione Windows (.msi)",
+    "nsis": "programma di installazione Windows (NSIS)",
+    "dev": "build di sviluppo",
+    "none": "non installato da un pacchetto di release"
+  },
+  "unknown": "sconosciuto",
+  "copy": "Copia informazioni sulla versione",
+  "copied": "Copiato",
+  "copyFailed": "Impossibile copiare negli appunti"
+}

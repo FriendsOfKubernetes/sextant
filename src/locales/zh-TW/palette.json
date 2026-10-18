@@ -1,0 +1,34 @@
+{
+  "title": "命令選擇區",
+  "search": "搜尋",
+  "placeholder": "尋找物件、區段、叢集、設定…",
+  "filterActions": "篩選動作…",
+  "results": "結果",
+  "groups": {
+    "recent": "最近使用",
+    "selected": "在詳細資料中開啟",
+    "goTo": "前往",
+    "clusters": "叢集",
+    "settings": "設定",
+    "more": "更多"
+  },
+  "cluster": {
+    "current": "目前的叢集",
+    "switch": "切換",
+    "connect": "連線"
+  },
+  "settingsTab": "設定：{{tab}}",
+  "openDetails": "開啟詳細資料",
+  "actionsFor": "{{kind}}：{{name}}",
+  "tabForActions": "Tab：動作",
+  "loadingActions": "正在載入動作…",
+  "noActions": "此物件沒有可用的動作",
+  "actionsFailed": "無法讀取此物件：{{message}}",
+  "noCluster": "開啟叢集以搜尋其中的物件",
+  "empty": "找不到任何結果",
+  "searchAll": "搜尋所有類型 ({{count}})",
+  "searching": "正在搜尋… 已列出 {{done}}/{{total}} 種類型",
+  "limited": "僅搜尋前 {{count}} 種類型（共 {{total}} 種）的物件",
+  "hint": "↑↓ 移動 · Enter 開啟 · Tab 動作 · Esc 關閉",
+  "hintActions": "↑↓ 移動 · Enter 執行 · Shift+Tab 返回 · Esc 返回"
+}

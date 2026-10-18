@@ -1,0 +1,112 @@
+{
+  "title": "Ölçümler",
+  "loading": "Ölçümler yükleniyor…",
+  "unavailable": "Ölçümler kullanılamıyor",
+  "openSettings": "Küme ayarlarını aç",
+  "na": "yok",
+  "percent": "%{{value}}",
+  "percentOf": "%{{value}} · {{text}}",
+  "usedOf": "{{used}} / {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "istek {{value}}",
+    "limit": "sınır {{value}}",
+    "noLimit": "sınır yok",
+    "requestSetOn": "({{total}} kapsayıcının {{count}} tanesinde ayarlı)",
+    "limitSetOn": "({{total}} kapsayıcının {{count}} tanesinde ayarlı)",
+    "shareOfLimit": "sınırın %{{value}} kadarı",
+    "shareOfRequest": "isteğin %{{value}} kadarı",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "Bellek {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "Bellek"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "Bellek",
+    "pods": "Pod'lar",
+    "disk": "Disk",
+    "loading": "Grafikler yükleniyor…",
+    "noData": "Son bir saat için henüz veri yok.",
+    "needPrometheus": "Son bir saatin grafikleri için Prometheus gerekir."
+  },
+  "settings": {
+    "title": "Ölçümler",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "Otomatik bul",
+      "manual": "Elle adres",
+      "off": "Kapalı"
+    },
+    "serviceKind": "Kümedeki Service",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "Yol öneki",
+    "url": "Prometheus URL'si",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "namespace/service:port bekleniyor, örneğin monitoring/prometheus-operated:9090.",
+    "invalidUrl": "http:// veya https:// ile başlayan bir URL bekleniyor.",
+    "save": "Bu adresi kullan",
+    "usageSource": "Geçerli CPU ve bellek kaynağı",
+    "source": {
+      "auto": "Otomatik (metrics-server, yoksa Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "Kapalı"
+    },
+    "detected": "Bulunan",
+    "checking": "Ölçüm kaynakları denetleniyor…",
+    "metricsServer": "metrics-server",
+    "available": "Kullanılabilir",
+    "notAvailable": "Kullanılamıyor",
+    "foundAuto": "Otomatik bulundu: {{target}}",
+    "foundManual": "Yanıt veriyor: {{target}}",
+    "notFound": "Bulunamadı",
+    "manualNoAnswer": "Adres yanıt vermiyor",
+    "prometheusOff": "Kapalı",
+    "currentFrom": "Geçerli değerlerin kaynağı",
+    "noSource": "Kaynak yok — ölçümler kullanılamıyor"
+  },
+  "overview": {
+    "sidebar": "Genel bakış",
+    "title": "Küme genel bakışı",
+    "nodes": "Düğümler",
+    "nodesReady": "{{count}} düğümden {{ready}} tanesi hazır",
+    "pods": "Pod'lar",
+    "workloads": "İş yükleri",
+    "usage": "Kullanım",
+    "cpu": "CPU",
+    "memory": "Bellek",
+    "usageOf": "{{used}} / {{total}} ayrılabilir",
+    "charts": "Son bir saat",
+    "warnings": "Uyarılar",
+    "noWarnings": "Uyarı yok.",
+    "loadingPage": "Küme genel bakışı yükleniyor…",
+    "loadingWarnings": "Uyarılar yükleniyor…",
+    "phase": {
+      "Running": "Çalışıyor",
+      "Pending": "Beklemede",
+      "Succeeded": "Başarılı",
+      "Failed": "Başarısız",
+      "Unknown": "Bilinmiyor"
+    },
+    "state": {
+      "ready": "Hazır",
+      "pending": "Hazır değil",
+      "running": "Çalışıyor",
+      "succeeded": "Başarılı",
+      "failed": "Başarısız"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

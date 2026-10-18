@@ -1,0 +1,32 @@
+{
+  "title": "Aktualizacje",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (wersja nieznana)",
+  "auto": "Sprawdzaj dostępność aktualizacji przy uruchamianiu programu Sextant",
+  "check": "Sprawdź aktualizacje",
+  "checking": "Sprawdzanie aktualizacji…",
+  "upToDate": "Używana jest najnowsza wersja.",
+  "available": "Dostępna jest wersja Sextant {{version}} (zainstalowana: {{current}}).",
+  "notesLabel": "Informacje o wydaniu",
+  "install": "Zainstaluj i uruchom ponownie",
+  "installing": "Pobieranie i instalowanie…",
+  "installingProgress": "Pobieranie i instalowanie… {{percent}}%",
+  "restarting": "Ponowne uruchamianie…",
+  "later": "Później",
+  "dialogTitle": "Dostępna aktualizacja",
+  "openReleasePage": "Otwórz stronę wydania",
+  "notConfigured": "Aktualizacje są wyłączone w tej kompilacji: brak klucza podpisującego aktualizacje (plugins.updater.pubkey w src-tauri/tauri.conf.json). Nowe wersje można pobrać ze strony wydania.",
+  "manual": {
+    "deb": "Sextant zainstalowano z pakietu .deb, więc nie aktualizuje się samodzielnie. Pobierz nowy pakiet .deb ze strony wydania i zainstaluj go menedżerem pakietów, na przykład: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant zainstalowano z pakietu .rpm, więc nie aktualizuje się samodzielnie. Pobierz nowy pakiet ze strony wydania i zainstaluj go menedżerem pakietów.",
+    "other": "Ta kopia programu Sextant nie została zainstalowana z pakietu wydania (AppImage, .dmg lub .msi), więc nie może aktualizować się samodzielnie. Pobierz nową wersję ze strony wydania."
+  },
+  "error": {
+    "network": "Nie można połączyć się z GitHub w celu sprawdzenia aktualizacji. Sprawdź połączenie z internetem lub serwer proxy i spróbuj ponownie.",
+    "noRelease": "Najnowsze wydanie na GitHub nie zawiera jeszcze aktualizacji dla tego systemu. Spróbuj ponownie później.",
+    "signature": "Pobrana aktualizacja nie jest podpisana kluczem wydań programu Sextant, dlatego nie została zainstalowana.",
+    "otherCheck": "Nie można sprawdzić dostępności aktualizacji.",
+    "otherInstall": "Nie można zainstalować aktualizacji.",
+    "networkInstall": "Nie można pobrać aktualizacji. Sprawdź połączenie z internetem lub serwer proxy i spróbuj ponownie."
+  }
+}

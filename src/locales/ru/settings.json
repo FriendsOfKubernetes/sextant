@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Настройки",
+    "open": "Настройки"
+  },
+  "tabs": {
+    "label": "Разделы настроек",
+    "general": "Общие",
+    "clusters": "Кластеры",
+    "agents": "ИИ-агенты",
+    "extensions": "Расширения",
+    "about": "Обновления и о программе"
+  },
+  "appearance": {
+    "title": "Внешний вид",
+    "theme": "Тема",
+    "themes": {
+      "system": "Системная",
+      "light": "Светлая",
+      "dark": "Темная"
+    },
+    "systemHint": "Системная тема следует светлому или темному режиму операционной системы.",
+    "language": "Язык",
+    "languageSystem": "Системный ({{language}})",
+    "languageHint": "Системный язык следует языку операционной системы или будет английским, если у Sextant нет перевода на этот язык."
+  },
+  "window": {
+    "title": "Окно",
+    "closeToTray": "При закрытии окна Sextant остается в трее",
+    "closeToTrayHint": "Sextant продолжает работать в трее: подключения, пробросы портов, терминалы и MCP-сервер остаются открытыми. Значок в трее (в строке меню на macOS) снова показывает окно; пункт «Выйти из Sextant» в меню значка завершает работу.",
+    "noTray": "Системный трей не найден, поэтому закрытие окна завершает работу Sextant. В Linux для трея нужны библиотека libayatana-appindicator и хост StatusNotifier/AppIndicator (в GNOME — расширение AppIndicator) или, в сеансе X11, системный трей."
+  },
+  "editor": {
+    "title": "Редактор",
+    "scheme": "Цветовая схема",
+    "hint": "Цвета YAML в редакторе ресурсов, панели подробностей и Helm. «Авто» использует One Dark в темной теме и GitHub Light в светлой.",
+    "schemes": {
+      "auto": "Авто",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "Установка и изменение релизов Helm выполняются командой helm. Просмотр релизов работает и без нее.",
+    "auto": "Искать helm в PATH",
+    "manual": "Использовать этот исполняемый файл",
+    "path": "Путь к helm",
+    "browse": "Обзор…",
+    "browseTitle": "Выберите исполняемый файл helm",
+    "apply": "Применить",
+    "checking": "Поиск helm…",
+    "found": "Helm {{version}} в {{path}}",
+    "foundNoVersion": "Helm в {{path}}",
+    "notFound": "Helm не найден",
+    "notRunnable": "{{path}} не является рабочим исполняемым файлом helm"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "Кластеры берутся из KUBECONFIG (или ~/.kube/config) и из файлов, которые вы добавите здесь."
+  },
+  "menu": {
+    "open": "Открыть меню",
+    "close": "Закрыть меню",
+    "title": "Меню"
+  },
+  "saveFailed": "Не удалось сохранить настройки",
+  "file": {
+    "label": "Файл настроек",
+    "backup": "Файл настроек был поврежден, поэтому Sextant запущен с настройками по умолчанию. Старый файл скопирован в {{path}}.",
+    "unwritable": "Изменения не сохраняются: файл настроек нельзя прочитать или записать. Исправьте права доступа к нему и перезапустите Sextant.",
+    "dismiss": "Скрыть"
+  },
+  "terminal": {
+    "title": "Терминал",
+    "nodeShellImage": "Образ для оболочки узла",
+    "nodeShellImageHint": "Образ временного привилегированного Pod, который стоит за «Оболочкой» на узле. В нем должен быть nsenter (есть в busybox); сама оболочка — оболочка узла. ИИ-агенты никогда не получают оболочку узла."
+  }
+}

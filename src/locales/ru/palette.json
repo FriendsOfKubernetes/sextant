@@ -1,0 +1,34 @@
+{
+  "title": "Палитра команд",
+  "search": "Поиск",
+  "placeholder": "Найти объекты, разделы, кластеры, настройки…",
+  "filterActions": "Фильтр действий…",
+  "results": "Результаты",
+  "groups": {
+    "recent": "Недавние",
+    "selected": "Открыто в подробностях",
+    "goTo": "Перейти",
+    "clusters": "Кластеры",
+    "settings": "Настройки",
+    "more": "Еще"
+  },
+  "cluster": {
+    "current": "Текущий кластер",
+    "switch": "Переключиться",
+    "connect": "Подключить"
+  },
+  "settingsTab": "Настройки: {{tab}}",
+  "openDetails": "Открыть подробности",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: действия",
+  "loadingActions": "Загрузка действий…",
+  "noActions": "Для этого объекта нет действий",
+  "actionsFailed": "Не удалось прочитать объект: {{message}}",
+  "noCluster": "Откройте кластер, чтобы искать его объекты",
+  "empty": "Ничего не найдено",
+  "searchAll": "Искать во всех типах ({{count}})",
+  "searching": "Поиск… просмотрено типов: {{done}} из {{total}}",
+  "limited": "Поиск идет по объектам первых {{count}} из {{total}} типов",
+  "hint": "↑↓ выбор · Enter открыть · Tab действия · Esc закрыть",
+  "hintActions": "↑↓ выбор · Enter выполнить · Shift+Tab назад · Esc назад"
+}

@@ -1,0 +1,49 @@
+{
+  "sidebar": "Reenvío de puertos",
+  "title": "Reenvío de puertos",
+  "loading": "Cargando reenvíos de puertos…",
+  "empty": "No hay reenvíos de puertos activos.",
+  "emptyText": "Inicie uno desde los detalles de un Pod o un Service.",
+  "columns": {
+    "target": "Destino",
+    "ports": "Puertos",
+    "status": "Estado"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Activo",
+    "error": "Error"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Abrir en el navegador",
+    "stop": "Detener"
+  },
+  "action": {
+    "label": "Reenviar puerto…"
+  },
+  "section": {
+    "title": "Reenvío de puertos",
+    "forward": "Reenviar",
+    "forwardPort": "Reenviar el puerto {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Reenviar {{target}}",
+    "remotePort": "Puerto que reenviar",
+    "localPort": "Puerto local",
+    "localPortChoice": "Elección del puerto local",
+    "auto": "Puerto libre aleatorio",
+    "custom": "Puerto concreto",
+    "invalidPort": "Escriba un puerto del 1 al 65535.",
+    "start": "Iniciar reenvío",
+    "starting": "Iniciando…",
+    "started": "Reenviando localhost:{{local}} al puerto {{remote}}.",
+    "inUse": "El puerto local {{port}} ya está en uso.",
+    "useFree": "Usar un puerto libre",
+    "close": "Cerrar"
+  }
+}

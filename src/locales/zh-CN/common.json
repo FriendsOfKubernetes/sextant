@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Sextant 徽标"
+  },
+  "layout": {
+    "clusters": "集群",
+    "sidebar": "分区",
+    "main": "主区域",
+    "details": "详细信息",
+    "dock": "底部面板",
+    "resizeSidebar": "调整侧栏大小",
+    "resizeDock": "调整底部面板大小"
+  },
+  "actions": {
+    "close": "关闭",
+    "cancel": "取消",
+    "confirm": "确认",
+    "retry": "重试",
+    "openDock": "打开底部面板",
+    "closeDock": "关闭底部面板",
+    "closeTab": "关闭标签页 {{title}}",
+    "closeDetails": "关闭详细信息"
+  },
+  "welcome": {
+    "title": "欢迎使用 Sextant",
+    "text": "在左侧选择一个集群即可开始。"
+  },
+  "main": {
+    "selectSection": "请在侧栏中选择一个分区。",
+    "noSections": "此集群暂无可显示的内容。"
+  },
+  "dock": {
+    "empty": "打开日志、Shell 或终端后，将显示在这里。"
+  },
+  "details": {
+    "loading": "正在加载…",
+    "inNamespace": "Namespace：{{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}}秒",
+    "minutes": "{{count}}分",
+    "hours": "{{count}}小时",
+    "days": "{{count}}天",
+    "years": "{{count}}年"
+  },
+  "error": {
+    "details": "详细信息：{{message}}"
+  },
+  "list": {
+    "separator": "、"
+  }
+}

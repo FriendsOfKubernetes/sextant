@@ -1,0 +1,49 @@
+{
+  "sidebar": "Проброс портов",
+  "title": "Проброс портов",
+  "loading": "Загрузка пробросов портов…",
+  "empty": "Нет активных пробросов портов.",
+  "emptyText": "Запустите проброс из подробностей Pod или Service.",
+  "columns": {
+    "target": "Цель",
+    "ports": "Порты",
+    "status": "Состояние"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Активен",
+    "error": "Ошибка"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Открыть в браузере",
+    "stop": "Остановить"
+  },
+  "action": {
+    "label": "Проброс порта…"
+  },
+  "section": {
+    "title": "Проброс портов",
+    "forward": "Пробросить",
+    "forwardPort": "Пробросить порт {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Проброс: {{target}}",
+    "remotePort": "Порт для проброса",
+    "localPort": "Локальный порт",
+    "localPortChoice": "Выбор локального порта",
+    "auto": "Случайный свободный порт",
+    "custom": "Определенный порт",
+    "invalidPort": "Введите порт от 1 до 65535.",
+    "start": "Запустить проброс",
+    "starting": "Запуск…",
+    "started": "localhost:{{local}} пробрасывается на порт {{remote}}.",
+    "inUse": "Локальный порт {{port}} уже занят.",
+    "useFree": "Использовать свободный порт",
+    "close": "Закрыть"
+  }
+}

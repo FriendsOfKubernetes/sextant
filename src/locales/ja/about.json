@@ -1,0 +1,32 @@
+{
+  "title": "Sextant について",
+  "name": "Sextant",
+  "section": "バージョン情報",
+  "open": "Sextant について",
+  "version": "バージョン {{version}}",
+  "versionUnknown": "バージョン不明",
+  "tagline": "開発者と SRE のための Kubernetes デスクトップクライアント。",
+  "license": "ライセンス: {{license}}",
+  "links": "リンク",
+  "link": {
+    "repository": "リポジトリ",
+    "wiki": "Wiki",
+    "releases": "リリース",
+    "discussions": "ディスカッション",
+    "issue": "問題を報告"
+  },
+  "build": {
+    "appimage": "AppImage",
+    "deb": ".deb パッケージ",
+    "rpm": ".rpm パッケージ",
+    "app": "macOS アプリ (.dmg)",
+    "msi": "Windows インストーラー (.msi)",
+    "nsis": "Windows インストーラー (NSIS)",
+    "dev": "開発ビルド",
+    "none": "リリースパッケージからのインストールではありません"
+  },
+  "unknown": "不明",
+  "copy": "バージョン情報をコピー",
+  "copied": "コピーしました",
+  "copyFailed": "クリップボードにコピーできませんでした"
+}

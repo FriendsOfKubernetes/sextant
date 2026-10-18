@@ -1,0 +1,36 @@
+{
+  "sidebar": "Sorunlar",
+  "title": "Küme sorunları",
+  "badge_one": "{{count}} sorun ilgi bekliyor",
+  "badge_other": "{{count}} sorun ilgi bekliyor",
+  "onlyNewSince": "Yalnızca {{time}} sonrası yeni olanlar",
+  "markSeen": "Tümünü görüldü olarak işaretle",
+  "total_one": "{{count}} sorun",
+  "total_other": "{{count}} sorun",
+  "sourceFailed": "{{kind}} izlenemedi",
+  "truncated": "Çok fazla sorun var: yalnızca en yenileri listeleniyor.",
+  "loading": "Sorunlar aranıyor…",
+  "none": "Sorun bulunamadı.",
+  "noneNew": "İşaretten bu yana yeni sorun yok.",
+  "clusterWide": "Küme genelinde",
+  "categories": {
+    "nodes": "Düğümler",
+    "pods": "Pod'lar",
+    "workloads": "İş yükleri",
+    "jobs": "Job'lar",
+    "volumes": "Birim talepleri",
+    "certificates": "Sertifikalar",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Uyarı olayları"
+  },
+  "messages": {
+    "container": "Kapsayıcı {{container}}",
+    "restarts_one": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",
+    "restarts_other": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",
+    "replicas": "{{desired}} replikadan {{ready}} tanesi hazır",
+    "expires": "Sona erme: {{date}}",
+    "expired": "Sona erdi: {{date}}"
+  }
+}

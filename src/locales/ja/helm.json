@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "チャート",
+    "releases": "リリース"
+  },
+  "missing": {
+    "title": "Helm がインストールされていません",
+    "text": "リリースは表示できますが、リリースの変更やチャートのインストールには helm コマンドが必要です。Helm をインストールするか (このウィンドウに戻ると検出されます)、設定 → Helm でバイナリを選択してください。インストールガイド:",
+    "short": "Helm が必要です — ページ上部のヒントを参照してください"
+  },
+  "releases": {
+    "title": "リリース",
+    "search": "リリースを検索",
+    "searchPlaceholder": "検索…",
+    "loading": "リリースを読み込み中…",
+    "empty": "Helm リリースはありません",
+    "emptyText": "選択した namespace に Helm でインストールされたリリースがここに表示されます。",
+    "noMatch": "検索に一致するリリースはありません",
+    "open": "リリース {{name}} を開く",
+    "unreadable": "読み取り不可",
+    "unreadableRevision": "読み取れないリビジョン {{revision}}"
+  },
+  "columns": {
+    "name": "名前",
+    "namespace": "Namespace",
+    "chart": "チャート",
+    "version": "バージョン",
+    "appVersion": "アプリのバージョン",
+    "status": "状態",
+    "updated": "更新日時",
+    "revision": "リビジョン",
+    "description": "説明"
+  },
+  "details": {
+    "title": "リリース {{name}}",
+    "close": "リリースの詳細を閉じる",
+    "loading": "読み込み中…",
+    "chart": "チャート {{chart}} {{version}} · アプリ {{appVersion}} · リビジョン {{revision}}",
+    "tabs": {
+      "values": "値",
+      "manifest": "マニフェスト",
+      "notes": "ノート",
+      "history": "履歴"
+    },
+    "tabsLabel": "リリースの詳細",
+    "valuesLabel": "{{name}} のユーザー指定の値",
+    "manifestLabel": "{{name}} のマニフェスト",
+    "show": {
+      "values": "値を表示",
+      "manifest": "マニフェストを表示"
+    },
+    "hide": {
+      "values": "値を隠す",
+      "manifest": "マニフェストを隠す"
+    },
+    "hidden": {
+      "values": "値は隠されています。目のボタンで表示できます。",
+      "manifest": "マニフェストは隠されています。目のボタンで表示できます。"
+    },
+    "noValues": "ユーザー指定の値はありません。リリースはチャートの既定値を使用しています。",
+    "noNotes": "このチャートにはノートがありません。",
+    "current": "現在",
+    "unreadable": "読み取り不可",
+    "unreadableText": "このリビジョンの保存データを読み取れません。",
+    "unreadableLatest": "リビジョン {{revision}} を読み取れないため、読み取り可能な最新のリビジョン {{shown}} を表示しています。",
+    "nothingReadable": "このリリースのリビジョンはどれも読み取れません (最新: {{revision}})。"
+  },
+  "actions": {
+    "editValues": "値を編集",
+    "rollback": "ロールバック",
+    "rollbackTo": "リビジョン {{revision}} にロールバック",
+    "uninstall": "アンインストール"
+  },
+  "upgrade": {
+    "title": "{{name}} の値を編集",
+    "valuesLabel": "{{name}} の値",
+    "chartRef": "チャートの参照",
+    "chartRefHint": "チャート {{chart}} {{version}} でアップグレードします。空欄の場合はリリースに保存されたチャートを再利用します。サブチャートを含むチャートにはリポジトリの参照が必要です (例: repo/{{chart}})。",
+    "confirm": "アップグレード",
+    "done": "リリース {{name}} をアップグレードしました。新しいリビジョンが作成されました。",
+    "failed": "Helm はリリースをアップグレードできませんでした"
+  },
+  "rollback": {
+    "title": "{{name}} をロールバックしますか?",
+    "text": "{{name}} に、リビジョン {{revision}} のチャートと値を使った新しいリビジョンが作成されます。クラスター内のリソースもそれに応じて変更されます。",
+    "confirm": "ロールバック",
+    "failed": "Helm はリリースをロールバックできませんでした"
+  },
+  "uninstall": {
+    "title": "{{name}} をアンインストールしますか?",
+    "text": "namespace {{namespace}} のリリース {{name}} と、それが作成したすべてのリソースがクラスターから削除されます。この操作は元に戻せません。",
+    "confirm": "アンインストール",
+    "failed": "Helm はリリースをアンインストールできませんでした"
+  },
+  "confirmName": {
+    "label": "確認のためリリース名 ({{name}}) を入力してください",
+    "mismatch": "名前が一致しません。"
+  },
+  "charts": {
+    "title": "チャート",
+    "repositories": "リポジトリ",
+    "noRepos": "チャートリポジトリはまだありません。追加するとそのチャートを検索できます。",
+    "repoName": "名前",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "ユーザー名 (省略可)",
+    "repoPassword": "パスワード (省略可)",
+    "loginInUrl": "ユーザー名とパスワードは URL ではなく、「ユーザー名」と「パスワード」欄に入力してください。",
+    "add": "リポジトリを追加",
+    "adding": "追加中…",
+    "remove": "削除",
+    "removeLabel": "リポジトリ {{name}} を削除",
+    "removeTitle": "リポジトリ {{name}} を削除しますか?",
+    "removeText": "Helm はリポジトリ {{name}} ({{url}}) の登録を解除します。そこからインストールしたリリースには影響しません。",
+    "update": "リポジトリを更新",
+    "updating": "更新中…",
+    "updated": "リポジトリを更新しました。",
+    "search": "チャートを検索",
+    "searchPlaceholder": "チャート名またはキーワード",
+    "searchButton": "検索",
+    "searching": "検索中…",
+    "noResults": "検索に一致するチャートはありません。",
+    "description": "説明",
+    "select": "チャート {{name}} を表示",
+    "defaultValues": "既定値",
+    "defaultValuesLabel": "{{name}} {{version}} の既定値",
+    "loadingValues": "既定値を読み込み中…",
+    "install": "インストール",
+    "loading": "読み込み中…"
+  },
+  "install": {
+    "title": "{{chart}} {{version}} をインストール",
+    "release": "リリース名",
+    "namespace": "Namespace",
+    "valuesLabel": "{{chart}} の値",
+    "invalidName": "英小文字、数字、-、. を使用し (最大 53 文字)、先頭と末尾は英字または数字にしてください。",
+    "confirm": "インストール",
+    "done": "リリース {{release}} を namespace {{namespace}} にインストールしました。「リリース」に表示されます。",
+    "failed": "Helm はチャートをインストールできませんでした",
+    "valuesHint": "リリースには、チャートの既定値から変更した値だけが保存されます。"
+  },
+  "status": {
+    "loading": "Helm を確認中…"
+  }
+}

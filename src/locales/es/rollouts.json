@@ -1,0 +1,49 @@
+{
+  "tab": "Historial",
+  "status": {
+    "title": "Despliegue",
+    "state": {
+      "complete": "Completado",
+      "progressing": "En curso",
+      "paused": "En pausa",
+      "failed": "Atascado"
+    },
+    "replicas": "{{updated}} de {{desired}} actualizadas · {{ready}} listas · {{available}} disponibles",
+    "pendingObservation": "Esperando a que el controlador vea el último cambio.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "El despliegue está en pausa; reanúdelo para continuar o para revertirlo."
+  },
+  "history": {
+    "title": "Revisiones",
+    "loading": "Cargando revisiones…",
+    "empty": "Todavía no hay revisiones.",
+    "columns": {
+      "compare": "Comparar",
+      "revision": "Revisión",
+      "created": "Creada",
+      "changeCause": "Causa del cambio",
+      "images": "Imágenes"
+    },
+    "current": "actual",
+    "select": "Comparar la revisión {{revision}}",
+    "pickTwo": "Seleccione dos revisiones para comparar sus plantillas de Pod.",
+    "pickOneMore": "Seleccione una revisión más para comparar.",
+    "revisionTitle": "Revisión {{revision}}",
+    "rollBack": "Revertir a la revisión {{revision}}"
+  },
+  "rollback": {
+    "action": "Revertir…",
+    "title": "Revertir {{name}}",
+    "confirm": "Revertir a la revisión {{revision}}",
+    "revision": "Revisión",
+    "revisionOption": "Revisión {{revision}}",
+    "revisionOptionCause": "Revisión {{revision}} — {{cause}}",
+    "intro": "La plantilla de Pod de la revisión {{revision}} sustituye a la actual, y los Pods se reemplazan como en cualquier actualización.",
+    "current": "Plantilla actual",
+    "target": "Revisión {{revision}}",
+    "same": "La plantilla actual ya coincide con la revisión {{revision}}: no hay nada que cambiar.",
+    "paused": "Este Deployment está en pausa. Reanúdelo antes de revertirlo.",
+    "none": "No hay ninguna revisión anterior a la que revertir.",
+    "loading": "Cargando revisiones…"
+  }
+}

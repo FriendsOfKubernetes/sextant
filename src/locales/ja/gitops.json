@@ -1,0 +1,79 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Flux をインストール…",
+    "argoCd": "Argo CD をインストール…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux と Argo CD は、公式マニフェストから Kubernetes API 経由でインストールされます。",
+    "notConnected": "Flux と Argo CD がインストールされているかを確認するには、クラスターに接続してください。",
+    "loading": "クラスターが提供する API を読み取り中…",
+    "installed": "インストール済み",
+    "partial": "一部インストール済み",
+    "missing": "未インストール",
+    "install": "{{tool}} をインストール…"
+  },
+  "dialog": {
+    "title": "{{tool}} をインストール",
+    "flux": "Flux は `flux install` の既定と同じ構成でインストールされます。flux-system に source、kustomize、helm、notification の各コントローラーを配置し、イメージ自動更新は含みません。",
+    "argoCd": "Argo CD は標準の install.yaml から argocd にインストールされます。クラスター全体を対象とし、Web UI を含み、高可用性構成ではありません。"
+  },
+  "versions": {
+    "label": "バージョン",
+    "loading": "GitHub にリリースを問い合わせ中…",
+    "latest": "{{version}} (最新)",
+    "bundled": "{{version}} (同梱)",
+    "error": "GitHub からリリースの一覧を取得できなかったため、テスト済みのバージョン {{version}} のみを提示しています。",
+    "next": "ダウンロードしてプレビュー"
+  },
+  "preparing": "マニフェストをダウンロードして確認中…",
+  "preview": {
+    "version": "バージョン",
+    "source": "ソース",
+    "sha256": "SHA-256",
+    "verified": "リリースのチェックサムファイルと一致",
+    "unverified": "このファイルのチェックサムはプロジェクトから公開されていません",
+    "namespace": "Namespace",
+    "objects": "オブジェクト ({{count}})",
+    "clusterScoped": "クラスター全体",
+    "warning": "インストールはクラスター全体を変更します。CustomResourceDefinition、ClusterRole、ClusterRoleBinding が作成されます。cluster-admin 権限が必要です。",
+    "noCrdAccess": "このクラスターでは CustomResourceDefinition を作成する権限がないため、インストールは失敗する可能性が高いです。",
+    "noBindingAccess": "このクラスターでは ClusterRoleBinding を作成する権限がないため、インストールは失敗する可能性が高いです。",
+    "present": "{{tool}} は既にインストールされています。オブジェクトはこのバージョンに更新されます。",
+    "partial": "{{tool}} は一部だけインストールされています (namespace や一部の CRD が存在するか、一部のコントローラーが見つかりません)。既存のオブジェクトは更新されます。",
+    "overwritten": "次のクラスター全体のオブジェクトは既に存在するため、上書きされます:",
+    "leftOut": "{{namespace}} で実行中: {{names}}。このインストールでは `flux install` と同様にイメージ自動更新と source watcher を含めず、共有のロールバインディングからそれらのサービスアカウントを削除するため、それらは権限を失います。"
+  },
+  "back": "戻る",
+  "install": "インストール",
+  "stop": "停止",
+  "progress": {
+    "applying": "オブジェクトを適用中: {{total}} 個中 {{done}} 個",
+    "stopping": "現在のオブジェクトの後で停止します…",
+    "waiting": "すべて適用しました。コントローラーの準備が完了するのを待っています (最大 5 分)…",
+    "ready": "準備完了",
+    "notReady": "未準備"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} がインストールされ、実行中です。サイドバーにセクションが表示されます。",
+    "timedOut": "すべて適用しましたが、5 分以内に準備が完了しなかったコントローラーがあります。適用したものはクラスターに残ります。",
+    "stopped_other": "インストールを停止しました。{{count}} 個のオブジェクトを適用し、残りは送信していません。",
+    "stoppedWaiting_other": "コントローラーの待機中にインストールを停止しました。適用済みの {{count}} 個のオブジェクトはクラスターに残ります。",
+    "failed": "インストールに失敗しました。失敗したオブジェクト以降は送信していません。適用したものはクラスターに残ります。",
+    "applied": "適用済み ({{count}})",
+    "notApplied": "未適用 ({{count}})"
+  },
+  "argo": {
+    "login": "Sextant は argocd-initial-admin-secret を使って Argo CD に自動でサインインします。Argo CD で admin のパスワードを変更してから、その Secret を削除してください。",
+    "openUi": "Argo CD UI を開く"
+  },
+  "confirmStop": {
+    "title": "インストールを停止しますか?",
+    "text": "適用中のオブジェクトの後でインストールが停止します。適用したものはクラスターに残ります。",
+    "confirm": "インストールを停止"
+  }
+}

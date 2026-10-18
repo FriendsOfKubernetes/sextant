@@ -1,0 +1,182 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "Проект",
+    "sync": "Синхронизация",
+    "health": "Исправность",
+    "revision": "Ревизия",
+    "destination": "Назначение",
+    "applications": "Приложения",
+    "destinations": "Назначения",
+    "sources": "Источники"
+  },
+  "status": {
+    "syncing": "Синхронизация"
+  },
+  "fields": {
+    "project": "Проект",
+    "sync": "Статус синхронизации",
+    "syncedRevision": "Синхронизированная ревизия",
+    "health": "Исправность",
+    "operation": "Последняя операция",
+    "operationStarted": "Операция начата",
+    "operationFinished": "Операция завершена",
+    "sources": "Источник",
+    "destination": "Назначение",
+    "syncPolicy": "Политика синхронизации",
+    "syncOptions": "Параметры синхронизации",
+    "reconciledAt": "Последнее сравнение",
+    "generators": "Генераторы",
+    "applications": "Приложения",
+    "description": "Описание",
+    "sourceRepos": "Репозитории-источники",
+    "destinations": "Назначения",
+    "clusterResourceWhitelist": "Разрешенные ресурсы кластера",
+    "clusterResourceBlacklist": "Запрещенные ресурсы кластера",
+    "namespaceResourceWhitelist": "Разрешенные ресурсы namespace",
+    "namespaceResourceBlacklist": "Запрещенные ресурсы namespace",
+    "roles": "Роли"
+  },
+  "sources": {
+    "repo": "Репозиторий",
+    "path": "Путь / чарт",
+    "targetRevision": "Целевая ревизия"
+  },
+  "destinations": {
+    "cluster": "Кластер",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "Вручную",
+    "automated": "Автоматически",
+    "prune": "prune",
+    "selfHeal": "self-heal"
+  },
+  "tree": {
+    "title": "Ресурсы",
+    "kind": "Kind",
+    "name": "Имя",
+    "namespace": "Namespace",
+    "sync": "Синхронизация",
+    "health": "Исправность / состояние",
+    "computedHealth": "Вычислено Sextant по текущему объекту: Argo CD хранит эту исправность только в собственном API.",
+    "computedHealthMessage": "Вычислено Sextant по текущему объекту: {{message}}",
+    "remote": "Приложение развертывается в другой кластер: его ресурсы нельзя открыть отсюда.",
+    "loading": "Загрузка объектов, которыми владеют ресурсы…"
+  },
+  "history": {
+    "title": "История синхронизаций",
+    "id": "ID",
+    "revision": "Ревизия",
+    "deployedAt": "Развернуто",
+    "initiatedBy": "Кем запущено",
+    "source": "Источник",
+    "automated": "Автоматически"
+  },
+  "actions": {
+    "sync": "Синхронизировать…",
+    "refresh": "Обновить",
+    "hardRefresh": "Полное обновление",
+    "terminate": "Прервать…",
+    "openUi": "Открыть интерфейс Argo CD"
+  },
+  "sync": {
+    "title": "Синхронизация {{name}}",
+    "confirm": "Синхронизировать",
+    "revision": "Ревизия",
+    "revisionHint": "Ветка, тег или коммит; по умолчанию — целевая ревизия приложения.",
+    "multiSource": "Каждый источник синхронизируется со своей целевой ревизией.",
+    "prune": "Prune",
+    "dryRun": "Пробный запуск",
+    "started": "Синхронизация {{name}} начата. Ход выполнения виден в подробностях.",
+    "dryRunStarted": "Пробный запуск {{name}} начат. Результат виден в подробностях."
+  },
+  "terminate": {
+    "title": "Прервать операцию {{name}}?",
+    "text": "Argo CD остановит текущую синхронизацию {{name}}. То, что уже применено, останется как есть.",
+    "confirm": "Прервать"
+  },
+  "diff": {
+    "action": "Различия",
+    "title": "Различия: {{name}}",
+    "loading": "Чтение различий из Argo CD…",
+    "summary_one": "Отличается {{changed}} ресурс из {{total}}",
+    "summary_few": "Отличаются {{changed}} ресурса из {{total}}",
+    "summary_many": "Отличаются {{changed}} ресурсов из {{total}}",
+    "summary_other": "Отличаются {{changed}} ресурса из {{total}}",
+    "resources": "Ресурсы приложения",
+    "empty": "Argo CD не управляет ресурсами этого приложения.",
+    "desired": "Желаемое (Git)",
+    "live": "Текущее (кластер)",
+    "desiredLabel": "Желаемое состояние {{resource}}",
+    "liveLabel": "Текущее состояние {{resource}}",
+    "secretHidden": "Значения Secret скрыты с обеих сторон.",
+    "state": {
+      "changed": "Отличается",
+      "inSync": "Синхронизирован",
+      "missingLive": "Пока нет в кластере",
+      "missingTarget": "Нет в Git (будет удален при prune)"
+    },
+    "signedIn": "Выполнен вход в Argo CD",
+    "signedInAs": "Выполнен вход в Argo CD как {{user}}",
+    "source": {
+      "secret": "через стандартный Secret Argo CD",
+      "saved": "с сохраненными учетными данными",
+      "manual": "до закрытия Sextant"
+    },
+    "reload": "Перезагрузить",
+    "retry": "Повторить",
+    "signOut": "Выйти",
+    "forget": "Забыть сохраненный вход",
+    "notSaved": "Вход выполнен, но учетные данные не удалось сохранить: {{reason}}",
+    "errors": {
+      "forbidden": "Argo CD не показывает это приложение учетной записи, под которой выполнен вход.",
+      "notFound": "Argo CD не найден в этом кластере: нет Service argocd-server."
+    }
+  },
+  "installation": {
+    "ambiguous": "Несколько namespace этого кластера похожи на установку Argo CD ({{namespaces}}), и ничто из того, что их пользователи не могут создать сами, не указывает, какая из них настоящая, поэтому Sextant сам не подключается ни к одной. Argo CD уровня кластера распознается по ClusterRoleBinding для argocd-application-controller или argocd-server; попросите администратора кластера проверить его.",
+    "title": "Выбор установки Argo CD",
+    "choose": "Если вы знаете, в каком namespace находится настоящий Argo CD, выберите его: Sextant запомнит выбор для этого кластера и будет входить только туда. Любой, кто может записывать в namespace, может сделать его похожим на Argo CD.",
+    "use": "Использовать эту установку",
+    "using": "Сохранение…"
+  },
+  "login": {
+    "title": "Вход в Argo CD",
+    "intro": "Sextant не смог сам войти в Argo CD в {{namespace}}. Войдите как локальный пользователь или с помощью API-токена.",
+    "expired": "Сеанс Argo CD истек, а повторный вход с сохраненными учетными данными не удался.",
+    "noLocalUsers": "В этом Argo CD нет локальных пользователей, которые могут входить по паролю: используйте API-токен.",
+    "sso": "Вход через SSO в Sextant не поддерживается.",
+    "refused": {
+      "typed": "Argo CD отклонил введенные ранее учетные данные.",
+      "saved": "Argo CD отклонил сохраненные учетные данные: возможно, пароль или токен изменился. Войдите с текущими (с флажком «Запомнить», чтобы заменить сохраненные).",
+      "adminSecret": "Argo CD отклонил пароль admin из argocd-initial-admin-secret: возможно, его изменили в Argo CD. Введите текущий пароль.",
+      "tokenSecret": "Argo CD отклонил API-токен из Secret с label app.kubernetes.io/part-of=argocd: возможно, срок его действия истек или он отозван."
+    },
+    "insecure": "Сервер этого Argo CD работает без TLS (server.insecure в argocd-cmd-params-cm), поэтому Sextant обращается к нему по обычному HTTP: внутри кластера пароль или токен передаются без шифрования.",
+    "mode": {
+      "label": "Способ входа",
+      "password": "Пользователь и пароль",
+      "token": "API-токен"
+    },
+    "username": "Пользователь",
+    "password": "Пароль",
+    "token": "API-токен",
+    "remember": "Запомнить на этом компьютере (системная связка ключей)",
+    "hint": "Прежде чем спросить вас, Sextant пробует сохраненные учетные данные, пароль admin из argocd-initial-admin-secret и API-токены в Secret с label app.kubernetes.io/part-of=argocd. В argocd-secret хранится только bcrypt-хеш пароля admin, поэтому с ним войти нельзя.",
+    "submit": "Войти",
+    "signingIn": "Вход…",
+    "errors": {
+      "invalid": "Argo CD отклонил имя пользователя или пароль.",
+      "invalidToken": "Argo CD отклонил API-токен: он неверный, просрочен или отозван.",
+      "ssoOnly": "Этот Argo CD поддерживает вход только через SSO, который Sextant не поддерживает: используйте API-токен.",
+      "unreachable": "Argo CD недоступен: у его сервера нет готового Pod или он не отвечает.",
+      "incomplete": "Введите имя пользователя и пароль или API-токен.",
+      "other": "Не удалось войти в Argo CD."
+    }
+  }
+}

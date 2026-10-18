@@ -1,0 +1,125 @@
+{
+  "title": "KI-Agenten (MCP)",
+  "hint": "Ermöglicht KI-Agenten wie Claude Code, Claude Desktop und Cursor, Ihre Cluster über Sextant anzusehen. Der Server lauscht nur auf diesem Computer und erfordert ein Token. Was ein Agent in einem Cluster tun darf, wird in den Einstellungen des jeweiligen Clusters festgelegt (Zugriff für KI-Agenten); ohne Ihre Erlaubnis kann er nichts tun.",
+  "enable": "MCP-Server aktivieren",
+  "port": {
+    "label": "Port",
+    "apply": "Anwenden",
+    "invalid": "Geben Sie eine ganze Zahl von 1024 bis 65535 ein.",
+    "hint": "Eine Änderung des Ports startet den Server neu und beendet die Sitzungen der Agenten."
+  },
+  "status": {
+    "off": "Aus",
+    "starting": "Wird gestartet…",
+    "running": "Läuft unter {{url}}",
+    "error": "Der MCP-Server konnte nicht gestartet werden."
+  },
+  "token": {
+    "label": "Token",
+    "hint": "Agenten senden dieses Token mit jeder Anfrage. Halten Sie es geheim: Wer es hat, kann den Server nach allem fragen, was Sie erlaubt haben.",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "Anzeigen",
+    "hide": "Ausblenden",
+    "copy": "Kopieren",
+    "regenerate": "Neu erzeugen",
+    "copied": "Token kopiert.",
+    "regenerated": "Ein neues Token wurde erzeugt. Aktualisieren Sie die Konfiguration aller Agenten, die das alte verwendet haben.",
+    "confirmTitle": "Token neu erzeugen?",
+    "confirmBody": "Das aktuelle Token wird sofort ungültig und die Sitzungen der Agenten werden geschlossen. Sie müssen jedem Agenten das neue Token geben.",
+    "failed": "Das Token konnte nicht gelesen werden: {{message}}"
+  },
+  "snippets": {
+    "title": "Agenten verbinden",
+    "tabs": "Agent",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "Führen Sie diesen Befehl in einem Terminal aus. Er enthält das Token, halten Sie ihn also geheim.",
+    "cursorHint": "Fügen Sie dies zu ~/.cursor/mcp.json (oder .cursor/mcp.json in einem Projekt) hinzu. Es enthält das Token.",
+    "claudeDesktopHint": "Fügen Sie dies dem Abschnitt mcpServers von claude_desktop_config.json hinzu. Claude Desktop startet Sextant als Hilfsprogramm, das Port und Token selbst liest, daher enthält die Datei kein Token. Sextant muss mit aktiviertem Server laufen.",
+    "tokenHidden": "Das Token ist hier verborgen; „Kopieren“ legt das echte in die Zwischenablage.",
+    "copy": "Kopieren",
+    "copyFor": "Konfiguration für {{name}} kopieren",
+    "copied": "Kopiert.",
+    "copyFailed": "Kopieren fehlgeschlagen: {{message}}"
+  },
+  "activity": {
+    "open": "Agentenaktivität",
+    "openActive": "Agentenaktivität (ein Agent arbeitet gerade)",
+    "openLog": "Aktivitätsprotokoll öffnen",
+    "title": "Agentenaktivität",
+    "hint": "Was KI-Agenten angefordert haben. Secret-Werte, YAML und Befehlsausgaben werden nicht aufgezeichnet.",
+    "cluster": "Cluster",
+    "allClusters": "Alle Cluster",
+    "loading": "Protokoll wird geladen…",
+    "empty": "Noch keine Aufrufe.",
+    "failed": "Das Protokoll konnte nicht gelesen werden",
+    "clear": "Leeren",
+    "clearTitle": "Aktivitätsprotokoll leeren?",
+    "clearBody": "Alle aufgezeichneten Aufrufe von Agenten werden von diesem Computer gelöscht.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Zeit",
+      "client": "Client",
+      "cluster": "Cluster",
+      "tool": "Tool",
+      "target": "Ziel",
+      "decision": "Entscheidung",
+      "result": "Ergebnis",
+      "duration": "Dauer"
+    },
+    "decisions": {
+      "allowed": "Erlaubt",
+      "denied": "Abgelehnt",
+      "approved": "Von Ihnen genehmigt",
+      "declined": "Von Ihnen abgelehnt",
+      "timedOut": "Keine Antwort",
+      "notChecked": "Nicht geprüft"
+    },
+    "duration": "{{ms}} ms"
+  },
+  "confirm": {
+    "title": "Ein KI-Agent möchte eine Aktion ausführen",
+    "extensionTitle": "Eine Erweiterung möchte eine Aktion ausführen",
+    "intro": "{{client}} möchte in {{cluster}} Folgendes tun.",
+    "client": "Agent",
+    "extension": "Erweiterung",
+    "cluster": "Cluster",
+    "action": "Aktion",
+    "target": "Ziel",
+    "details": "Details",
+    "allow": "Erlauben",
+    "deny": "Ablehnen",
+    "countdown": "Automatische Ablehnung in {{time}}",
+    "waiting_one": "{{count}} weitere Anfrage wartet.",
+    "waiting_other": "{{count}} weitere Anfragen warten."
+  },
+  "tools": {
+    "apply_yaml": "YAML anwenden",
+    "patch_resource": "Ressource patchen",
+    "delete_resource": "Ressource löschen",
+    "scale": "Workload skalieren",
+    "restart": "Workload neu starten",
+    "rollout_undo": "Workload zurücksetzen",
+    "cordon_node": "Knoten absperren oder freigeben",
+    "drain_node": "Knoten leeren (drain)",
+    "trigger_cronjob": "CronJob jetzt ausführen",
+    "suspend_cronjob": "CronJob anhalten oder fortsetzen",
+    "gitops_action": "GitOps-Aktion",
+    "helm_install": "Helm-Release installieren",
+    "helm_upgrade": "Helm-Release aktualisieren",
+    "helm_rollback": "Helm-Release zurücksetzen",
+    "helm_uninstall": "Helm-Release deinstallieren",
+    "exec_command": "Befehl in einem Container ausführen",
+    "port_forward_start": "Portweiterleitung öffnen",
+    "port_forward_stop": "Portweiterleitung schließen"
+  },
+  "methods": {
+    "resources": {
+      "apply": "YAML anwenden",
+      "patch": "Ressource patchen",
+      "delete": "Ressource löschen"
+    }
+  }
+}

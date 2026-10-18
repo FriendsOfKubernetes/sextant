@@ -1,0 +1,179 @@
+{
+  "title": "拡張機能",
+  "hint": "拡張機能は Sextant にページ、パネル、操作、列を追加します。それぞれが分離されたフレームで実行され、インストール時に与えたアクセス許可の範囲でのみクラスターにアクセスできます。",
+  "host": {
+    "failed": "拡張機能でエラーが発生しました: {{message}}",
+    "failedUnknown": "拡張機能はエラーで停止しました",
+    "reload": "再読み込み",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "概要",
+    "detailsTabs": "詳細ビュー",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "閉じる"
+  },
+  "install": {
+    "file": "ファイルからインストール…",
+    "url": "URL からインストール…",
+    "folder": "展開済みフォルダーを読み込む…",
+    "fileTitle": "拡張機能パッケージを選択",
+    "fileFilter": "Sextant 拡張機能",
+    "folderTitle": "拡張機能のフォルダーを選択",
+    "checking": "パッケージを確認中…",
+    "installed": "バージョン {{version}} をインストールしました。",
+    "updated": "バージョン {{version}} に更新しました。"
+  },
+  "source": {
+    "folder": "フォルダー {{path}}",
+    "file": "ファイル {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "URL からインストール",
+    "label": "GitHub リリースのファイルへのリンク",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "https://github.com/<owner>/<repo>/releases/download/<tag>/<file> 形式のリンクのみ受け付けます。ファイルサイズは最大 20 MB です。アクセス許可に同意するまで、何もインストールされません。",
+    "invalid": "GitHub リリースのファイルへのリンクではありません。",
+    "check": "ダウンロードして確認"
+  },
+  "errors": {
+    "invalid": "このパッケージはインストールできません",
+    "conflict": "この ID の拡張機能は既にインストールされています",
+    "notFound": "このインストールは利用できなくなりました",
+    "timeout": "ダウンロードに時間がかかりすぎました",
+    "unreachable": "ファイルをダウンロードできませんでした",
+    "other": "拡張機能をインストールできませんでした"
+  },
+  "consent": {
+    "titleInstall": "{{name}} をインストールしますか?",
+    "titleUpdate": "{{name}} を更新しますか?",
+    "titleReview": "{{name}} のアクセス許可を確認",
+    "install": "インストール",
+    "update": "更新",
+    "author": "作成者",
+    "version": "バージョン",
+    "source": "ソース",
+    "devHint": "このフォルダーから直接実行され、Sextant が開いている間はファイルの変更が反映されます。「開発」と表示されます。",
+    "replaces": "インストール済みのバージョン {{version}} を置き換えます。",
+    "newPermissions": "新しいアクセス許可",
+    "newPermissionsHint": "このバージョンは以前に許可した範囲を超えるアクセス許可を求めています。以下のアクセス許可を確認してください。",
+    "samePermissions": "同じアクセス許可",
+    "samePermissionsHint": "このバージョンは新しいアクセス許可を求めていません。",
+    "reviewHint": "この拡張機能のファイルが、許可した範囲を超えるアクセス許可を求めています。同意するまで一時停止されます。",
+    "adds": "追加されるもの",
+    "permissions": "許可される操作",
+    "noContributions": "インターフェイスには何も追加されません。",
+    "secretWarning": "Secret の値を読み取ります",
+    "secretWarningHint": "この拡張機能は Secret の値 (パスワード、トークン、鍵) の読み取りを求めています。作成者を信頼できる場合にのみ許可してください。"
+  },
+  "contributes": {
+    "pages": "サイドバーのページ",
+    "detailsSections": "詳細パネルのセクション",
+    "actions": "リソースに対する操作",
+    "columns": "テーブルの列",
+    "dockActions": "ドックのボタン",
+    "settings": "設定のセクション"
+  },
+  "permissions": {
+    "clusters": "クラスター",
+    "clustersAll": "すべてのクラスター",
+    "clustersOnly_other": "{{names}} という名前のクラスターのみ",
+    "clustersNote": "名前は、すべての kubeconfig ソースにある同じ名前のクラスターコンテキストすべてに適用されます。",
+    "access": "アクセス",
+    "none": "どのクラスターのデータにもアクセスできません。",
+    "rule": "{{namespaces}} の {{kinds}}: {{actions}}",
+    "allKinds": "すべての Kind",
+    "namespacesAll": "すべての namespace",
+    "namespacesOnly_other": "namespace {{names}}",
+    "asks": "実行前に確認",
+    "noAsk": "確認なしで実行",
+    "secretValues": "{{namespaces}} の Secret の値を読み取れます",
+    "clusterWide": "namespace に属さないオブジェクト (Node など) は、すべての namespace を対象とするルールでのみ扱われます。",
+    "actionNames": {
+      "read": "読み取り",
+      "modify": "変更",
+      "delete": "削除",
+      "logs": "ログの読み取り",
+      "exec": "コマンドの実行",
+      "portForward": "ポートフォワード",
+      "secretValues": "Secret の値の読み取り"
+    }
+  },
+  "state": {
+    "active": "有効",
+    "disabled": "無効",
+    "needsConsent": "承認が必要",
+    "failed": "失敗"
+  },
+  "list": {
+    "loading": "拡張機能を読み込み中…",
+    "empty": "インストールされている拡張機能はありません。",
+    "failed": "拡張機能の一覧を読み取れませんでした",
+    "development": "開発",
+    "version": "バージョン {{version}}",
+    "enable": "有効にする",
+    "disable": "無効にする",
+    "permissions": "アクセス許可",
+    "reload": "再読み込み",
+    "activity": "アクティビティ",
+    "remove": "削除",
+    "reviewPermissions": "アクセス許可を確認",
+    "pausedHint": "この拡張機能は許可した範囲を超えるアクセス許可を求めています。アクセス許可を確認するまで一時停止されます。",
+    "failedHint": "この拡張機能は実行できません: {{error}}",
+    "actionFailed": "変更できませんでした",
+    "namedAction": "{{action}}: {{name}}"
+  },
+  "reinstall": {
+    "file": "アクセス許可を確認するには、ファイル {{name}} から再インストールしてください (「ファイルからインストール…」)。",
+    "url": "アクセス許可を確認するには、{{url}} から再インストールしてください (「URL からインストール…」)。"
+  },
+  "permissionsDialog": {
+    "title": "{{name}} のアクセス許可",
+    "granted": "許可済み",
+    "requested": "現在の要求",
+    "close": "閉じる"
+  },
+  "remove": {
+    "title": "{{name}} を削除しますか?",
+    "body": "拡張機能、そのファイル、保存したデータがこのコンピューターから削除されます。クラスターは変更されません。"
+  },
+  "settingsFrame": "{{name}} の設定",
+  "notice": {
+    "text_other": "{{names}} は許可した範囲を超えるアクセス許可を求めているため、一時停止されています。",
+    "review": "アクセス許可を確認",
+    "reinstall": "{{name}}: {{hint}}",
+    "dismiss": "閉じる"
+  },
+  "activity": {
+    "title": "拡張機能のアクティビティ",
+    "hint": "拡張機能が要求した内容です。Secret の値、YAML、コマンドの出力は記録されません。",
+    "extension": "拡張機能",
+    "allExtensions": "すべての拡張機能",
+    "loading": "ログを読み込み中…",
+    "empty": "呼び出しはまだありません。",
+    "failed": "ログを読み取れませんでした",
+    "clear": "クリア",
+    "clearTitle": "アクティビティログをクリアしますか?",
+    "clearBody": "記録された拡張機能の呼び出しがすべて、このコンピューターから削除されます。",
+    "ok": "OK",
+    "none": "-",
+    "columns": {
+      "time": "時刻",
+      "extension": "拡張機能",
+      "cluster": "クラスター",
+      "method": "メソッド",
+      "target": "対象",
+      "decision": "判定",
+      "result": "結果",
+      "duration": "所要時間"
+    },
+    "decisions": {
+      "allowed": "許可",
+      "denied": "拒否",
+      "approved": "ユーザーが承認",
+      "declined": "ユーザーが拒否",
+      "timedOut": "応答なし",
+      "notChecked": "未確認"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

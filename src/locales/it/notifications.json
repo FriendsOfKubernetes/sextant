@@ -1,0 +1,40 @@
+{
+  "muteHour": "Silenzia per 1 ora",
+  "unmute": "Riattiva",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{count}} nuovo problema in {{cluster}}",
+    "title_many": "{{count}} di nuovi problemi in {{cluster}}",
+    "title_other": "{{count}} nuovi problemi in {{cluster}}",
+    "titleClusters_one": "{{count}} nuovo problema in {{clusters}} cluster",
+    "titleClusters_many": "{{count}} di nuovi problemi in {{clusters}} cluster",
+    "titleClusters_other": "{{count}} nuovi problemi in {{clusters}} cluster",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Notifiche",
+    "enabled": "Mostra notifiche desktop sui nuovi problemi nei cluster connessi",
+    "enabledHint": "Vengono controllati solo i cluster già connessi e segnalati solo i problemi che si presentano mentre Sextant è in esecuzione, anche quando la finestra è nascosta nell'area di notifica. Le notifiche vengono mostrate dal servizio di notifica del sistema; nessun dato lascia questo computer.",
+    "mutedUntil": "Silenziate fino alle {{time}}",
+    "categories": "Notifica per",
+    "clusters": "Cluster",
+    "clustersHint": "Un cluster disattivato qui non invia mai notifiche.",
+    "noClusters": "Ancora nessun cluster.",
+    "certificates": "Certificati",
+    "certExpiryDays": "Avvisa questo numero di giorni prima della scadenza di un certificato",
+    "certExpiryHint": "Usato dalla schermata dei problemi e dalle notifiche per i Certificate di cert-manager, oltre che dai dettagli dei certificati e dalla pagina dei certificati TLS."
+  },
+  "history": {
+    "title": "Notifiche recenti",
+    "clear": "Cancella",
+    "empty": "Ancora nessuna notifica.",
+    "off": "Le notifiche sono disattivate (Impostazioni → Generale → Notifiche).",
+    "delivery": {
+      "summary": "in un riepilogo",
+      "muted": "silenziata"
+    }
+  },
+  "muteFailed": "Impossibile silenziare le notifiche: {{message}}"
+}

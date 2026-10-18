@@ -1,0 +1,49 @@
+{
+  "tab": "Histórico",
+  "status": {
+    "title": "Rollout",
+    "state": {
+      "complete": "Concluído",
+      "progressing": "Em andamento",
+      "paused": "Pausado",
+      "failed": "Travado"
+    },
+    "replicas": "{{updated}} de {{desired}} atualizadas · {{ready}} prontas · {{available}} disponíveis",
+    "pendingObservation": "Aguardando o controlador detectar a alteração mais recente.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "O rollout está pausado; retome-o para continuar ou para reverter."
+  },
+  "history": {
+    "title": "Revisões",
+    "loading": "Carregando revisões…",
+    "empty": "Ainda não há revisões.",
+    "columns": {
+      "compare": "Comparar",
+      "revision": "Revisão",
+      "created": "Criada",
+      "changeCause": "Causa da alteração",
+      "images": "Imagens"
+    },
+    "current": "atual",
+    "select": "Comparar a revisão {{revision}}",
+    "pickTwo": "Selecione duas revisões para comparar os modelos de Pod delas.",
+    "pickOneMore": "Selecione mais uma revisão para comparar.",
+    "revisionTitle": "Revisão {{revision}}",
+    "rollBack": "Reverter para a revisão {{revision}}"
+  },
+  "rollback": {
+    "action": "Reverter…",
+    "title": "Reverter {{name}}",
+    "confirm": "Reverter para a revisão {{revision}}",
+    "revision": "Revisão",
+    "revisionOption": "Revisão {{revision}}",
+    "revisionOptionCause": "Revisão {{revision}} — {{cause}}",
+    "intro": "O modelo de Pod da revisão {{revision}} substitui o atual, e os Pods são substituídos como em qualquer atualização.",
+    "current": "Modelo atual",
+    "target": "Revisão {{revision}}",
+    "same": "O modelo atual já corresponde à revisão {{revision}}: não há nada a alterar.",
+    "paused": "Este Deployment está pausado. Retome-o antes de revertê-lo.",
+    "none": "Não há revisão anterior para a qual reverter.",
+    "loading": "Carregando revisões…"
+  }
+}

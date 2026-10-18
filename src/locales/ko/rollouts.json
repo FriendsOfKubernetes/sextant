@@ -1,0 +1,49 @@
+{
+  "tab": "기록",
+  "status": {
+    "title": "롤아웃",
+    "state": {
+      "complete": "완료",
+      "progressing": "진행 중",
+      "paused": "일시 중지됨",
+      "failed": "멈춤"
+    },
+    "replicas": "{{desired}}개 중 {{updated}}개 업데이트됨 · {{ready}}개 준비됨 · {{available}}개 사용 가능",
+    "pendingObservation": "컨트롤러가 최신 변경 사항을 확인하기를 기다리는 중입니다.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "롤아웃이 일시 중지되었습니다. 계속하거나 롤백하려면 다시 시작하세요."
+  },
+  "history": {
+    "title": "리비전",
+    "loading": "리비전을 로드하는 중…",
+    "empty": "아직 리비전이 없습니다.",
+    "columns": {
+      "compare": "비교",
+      "revision": "리비전",
+      "created": "생성됨",
+      "changeCause": "변경 원인",
+      "images": "이미지"
+    },
+    "current": "현재",
+    "select": "리비전 {{revision}} 비교",
+    "pickTwo": "Pod 템플릿을 비교하려면 리비전 두 개를 선택하세요.",
+    "pickOneMore": "비교할 리비전을 하나 더 선택하세요.",
+    "revisionTitle": "리비전 {{revision}}",
+    "rollBack": "리비전 {{revision}}(으)로 롤백"
+  },
+  "rollback": {
+    "action": "롤백…",
+    "title": "{{name}} 롤백",
+    "confirm": "리비전 {{revision}}(으)로 롤백",
+    "revision": "리비전",
+    "revisionOption": "리비전 {{revision}}",
+    "revisionOptionCause": "리비전 {{revision}} — {{cause}}",
+    "intro": "리비전 {{revision}}의 Pod 템플릿이 현재 템플릿을 대체하며, 일반 업데이트와 마찬가지로 Pod가 교체됩니다.",
+    "current": "현재 템플릿",
+    "target": "리비전 {{revision}}",
+    "same": "현재 템플릿이 이미 리비전 {{revision}}과(와) 같으므로 변경할 내용이 없습니다.",
+    "paused": "이 Deployment는 일시 중지되었습니다. 롤백하기 전에 다시 시작하세요.",
+    "none": "롤백할 이전 리비전이 없습니다.",
+    "loading": "리비전을 로드하는 중…"
+  }
+}

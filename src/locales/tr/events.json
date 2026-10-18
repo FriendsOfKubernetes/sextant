@@ -1,0 +1,20 @@
+{
+  "sidebar": "Olaylar",
+  "title": "Olaylar",
+  "loading": "Olaylar yükleniyor…",
+  "none": "Olay yok.",
+  "search": "Olaylarda ara",
+  "searchPlaceholder": "Ara…",
+  "count": "×{{count}}",
+  "from": "kaynak: {{source}}",
+  "columns": {
+    "type": "Tür",
+    "reason": "Neden",
+    "message": "İleti",
+    "namespace": "Namespace",
+    "involvedObject": "İlgili nesne",
+    "source": "Kaynak",
+    "count": "Sayı",
+    "lastSeen": "Son görülme"
+  }
+}

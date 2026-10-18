@@ -1,0 +1,32 @@
+{
+  "title": "Atualizações",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (versão desconhecida)",
+  "auto": "Verificar atualizações ao iniciar o Sextant",
+  "check": "Verificar atualizações",
+  "checking": "Verificando atualizações…",
+  "upToDate": "Você tem a versão mais recente.",
+  "available": "O Sextant {{version}} está disponível (você tem a {{current}}).",
+  "notesLabel": "Notas da versão",
+  "install": "Instalar e reiniciar",
+  "installing": "Baixando e instalando…",
+  "installingProgress": "Baixando e instalando… {{percent}}%",
+  "restarting": "Reiniciando…",
+  "later": "Mais tarde",
+  "dialogTitle": "Atualização disponível",
+  "openReleasePage": "Abrir a página da versão",
+  "notConfigured": "As atualizações estão desativadas nesta build: ela não tem chave de assinatura de atualizações (plugins.updater.pubkey em src-tauri/tauri.conf.json). Baixe as novas versões na página de versões.",
+  "manual": {
+    "deb": "O Sextant foi instalado a partir de um pacote .deb, por isso não se substitui sozinho. Baixe o novo .deb na página da versão e instale-o com o gerenciador de pacotes, por exemplo: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "O Sextant foi instalado a partir de um pacote .rpm, por isso não se substitui sozinho. Baixe o novo pacote na página da versão e instale-o com o gerenciador de pacotes.",
+    "other": "Esta cópia do Sextant não foi instalada a partir de um pacote de versão (AppImage, .dmg ou .msi), por isso não pode se atualizar sozinha. Baixe a nova versão na página de versões."
+  },
+  "error": {
+    "network": "Não foi possível acessar o GitHub para verificar atualizações. Verifique sua conexão com a internet ou o proxy e tente novamente.",
+    "noRelease": "A versão mais recente no GitHub ainda não tem atualização para este sistema. Tente novamente mais tarde.",
+    "signature": "A atualização baixada não está assinada com a chave de versões do Sextant, por isso não foi instalada.",
+    "otherCheck": "Não foi possível verificar atualizações.",
+    "otherInstall": "Não foi possível instalar a atualização.",
+    "networkInstall": "Não foi possível baixar a atualização. Verifique sua conexão com a internet ou o proxy e tente novamente."
+  }
+}

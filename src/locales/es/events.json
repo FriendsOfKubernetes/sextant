@@ -1,0 +1,20 @@
+{
+  "sidebar": "Eventos",
+  "title": "Eventos",
+  "loading": "Cargando eventos…",
+  "none": "No hay eventos.",
+  "search": "Buscar eventos",
+  "searchPlaceholder": "Buscar…",
+  "count": "×{{count}}",
+  "from": "de {{source}}",
+  "columns": {
+    "type": "Tipo",
+    "reason": "Motivo",
+    "message": "Mensaje",
+    "namespace": "Namespace",
+    "involvedObject": "Objeto implicado",
+    "source": "Origen",
+    "count": "Recuento",
+    "lastSeen": "Última vez"
+  }
+}

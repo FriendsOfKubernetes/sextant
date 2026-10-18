@@ -1,0 +1,32 @@
+{
+  "title": "アップデート",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (バージョン不明)",
+  "auto": "Sextant の起動時にアップデートを確認する",
+  "check": "アップデートを確認",
+  "checking": "アップデートを確認中…",
+  "upToDate": "最新バージョンを使用しています。",
+  "available": "Sextant {{version}} が利用可能です (現在のバージョンは {{current}})。",
+  "notesLabel": "リリースノート",
+  "install": "インストールして再起動",
+  "installing": "ダウンロードしてインストール中…",
+  "installingProgress": "ダウンロードしてインストール中… {{percent}}%",
+  "restarting": "再起動中…",
+  "later": "後で",
+  "dialogTitle": "アップデートがあります",
+  "openReleasePage": "リリースページを開く",
+  "notConfigured": "このビルドではアップデートが無効です。アップデートの署名鍵 (src-tauri/tauri.conf.json の plugins.updater.pubkey) がありません。新しいバージョンはリリースページからダウンロードしてください。",
+  "manual": {
+    "deb": "Sextant は .deb パッケージからインストールされているため、自身を置き換えることはできません。リリースページから新しい .deb をダウンロードし、パッケージマネージャーでインストールしてください。例: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant は .rpm パッケージからインストールされているため、自身を置き換えることはできません。リリースページから新しいパッケージをダウンロードし、パッケージマネージャーでインストールしてください。",
+    "other": "この Sextant はリリースパッケージ (AppImage、.dmg、.msi) からインストールされていないため、自動でアップデートできません。新しいバージョンはリリースページからダウンロードしてください。"
+  },
+  "error": {
+    "network": "アップデートを確認するために GitHub に接続できませんでした。インターネット接続またはプロキシを確認して、もう一度お試しください。",
+    "noRelease": "GitHub の最新リリースには、このシステム用のアップデートがまだありません。後でもう一度お試しください。",
+    "signature": "ダウンロードしたアップデートは Sextant のリリース鍵で署名されていないため、インストールされませんでした。",
+    "otherCheck": "アップデートを確認できませんでした。",
+    "otherInstall": "アップデートをインストールできませんでした。",
+    "networkInstall": "アップデートをダウンロードできませんでした。インターネット接続またはプロキシを確認して、もう一度お試しください。"
+  }
+}

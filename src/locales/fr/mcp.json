@@ -1,0 +1,126 @@
+{
+  "title": "Agents IA (MCP)",
+  "hint": "Permet aux agents IA comme Claude Code, Claude Desktop et Cursor de consulter vos clusters via Sextant. Le serveur n'écoute que sur cet ordinateur et exige un jeton. Ce qu'un agent peut faire dans chaque cluster se règle dans les paramètres de ce cluster (Accès des agents IA) ; il ne peut rien faire tant que vous ne l'avez pas autorisé.",
+  "enable": "Activer le serveur MCP",
+  "port": {
+    "label": "Port",
+    "apply": "Appliquer",
+    "invalid": "Saisissez un nombre entier entre 1024 et 65535.",
+    "hint": "Changer le port redémarre le serveur et met fin aux sessions des agents."
+  },
+  "status": {
+    "off": "Désactivé",
+    "starting": "Démarrage…",
+    "running": "En cours d'exécution sur {{url}}",
+    "error": "Le serveur MCP n'a pas pu démarrer."
+  },
+  "token": {
+    "label": "Jeton",
+    "hint": "Les agents envoient ce jeton avec chaque requête. Gardez-le secret : quiconque le possède peut demander au serveur tout ce que vous avez autorisé.",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "copy": "Copier",
+    "regenerate": "Régénérer",
+    "copied": "Jeton copié.",
+    "regenerated": "Un nouveau jeton a été créé. Mettez à jour la configuration de chaque agent qui utilisait l'ancien.",
+    "confirmTitle": "Régénérer le jeton ?",
+    "confirmBody": "Le jeton actuel cesse immédiatement de fonctionner et les sessions des agents sont fermées. Vous devrez fournir le nouveau jeton à chaque agent.",
+    "failed": "Impossible de lire le jeton : {{message}}"
+  },
+  "snippets": {
+    "title": "Connecter un agent",
+    "tabs": "Agent",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "Exécutez cette commande dans un terminal. Elle contient le jeton : gardez-la secrète.",
+    "cursorHint": "Ajoutez ceci à ~/.cursor/mcp.json (ou à .cursor/mcp.json dans un projet). Cela contient le jeton.",
+    "claudeDesktopHint": "Ajoutez ceci à la section mcpServers de claude_desktop_config.json. Claude Desktop lance Sextant comme assistant, qui lit lui-même le port et le jeton : le fichier ne contient donc aucun jeton. Sextant doit être en cours d'exécution avec le serveur activé.",
+    "tokenHidden": "Le jeton est masqué ici ; Copier place le vrai jeton dans le presse-papiers.",
+    "copy": "Copier",
+    "copyFor": "Copier la configuration pour {{name}}",
+    "copied": "Copié.",
+    "copyFailed": "Impossible de copier : {{message}}"
+  },
+  "activity": {
+    "open": "Activité des agents",
+    "openActive": "Activité des agents (un agent est en train de travailler)",
+    "openLog": "Ouvrir le journal d'activité",
+    "title": "Activité des agents",
+    "hint": "Ce que les agents IA ont demandé. Les valeurs des secrets, le YAML et la sortie des commandes ne sont pas enregistrés.",
+    "cluster": "Cluster",
+    "allClusters": "Tous les clusters",
+    "loading": "Chargement du journal…",
+    "empty": "Aucun appel pour l'instant.",
+    "failed": "Impossible de lire le journal",
+    "clear": "Effacer",
+    "clearTitle": "Effacer le journal d'activité ?",
+    "clearBody": "Tous les appels d'agents enregistrés sont supprimés de cet ordinateur.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Heure",
+      "client": "Client",
+      "cluster": "Cluster",
+      "tool": "Outil",
+      "target": "Cible",
+      "decision": "Décision",
+      "result": "Résultat",
+      "duration": "Durée"
+    },
+    "decisions": {
+      "allowed": "Autorisé",
+      "denied": "Refusé",
+      "approved": "Approuvé par vous",
+      "declined": "Refusé par vous",
+      "timedOut": "Pas de réponse",
+      "notChecked": "Non vérifié"
+    },
+    "duration": "{{ms}} ms"
+  },
+  "confirm": {
+    "title": "Un agent IA demande à agir",
+    "extensionTitle": "Une extension demande à agir",
+    "intro": "{{client}} souhaite effectuer l'opération suivante dans {{cluster}}.",
+    "client": "Agent",
+    "extension": "Extension",
+    "cluster": "Cluster",
+    "action": "Action",
+    "target": "Cible",
+    "details": "Détails",
+    "allow": "Autoriser",
+    "deny": "Refuser",
+    "countdown": "Refus automatique dans {{time}}",
+    "waiting_one": "{{count}} autre demande en attente.",
+    "waiting_many": "{{count}} d'autres demandes en attente.",
+    "waiting_other": "{{count}} autres demandes en attente."
+  },
+  "tools": {
+    "apply_yaml": "Appliquer du YAML",
+    "patch_resource": "Patcher une ressource",
+    "delete_resource": "Supprimer une ressource",
+    "scale": "Mettre à l'échelle une charge de travail",
+    "restart": "Redémarrer une charge de travail",
+    "rollout_undo": "Revenir en arrière pour une charge de travail",
+    "cordon_node": "Isoler ou réintégrer un nœud",
+    "drain_node": "Drainer un nœud",
+    "trigger_cronjob": "Exécuter un CronJob maintenant",
+    "suspend_cronjob": "Suspendre ou reprendre un CronJob",
+    "gitops_action": "Action GitOps",
+    "helm_install": "Installer une release Helm",
+    "helm_upgrade": "Mettre à niveau une release Helm",
+    "helm_rollback": "Revenir en arrière pour une release Helm",
+    "helm_uninstall": "Désinstaller une release Helm",
+    "exec_command": "Exécuter une commande dans un conteneur",
+    "port_forward_start": "Ouvrir une redirection de port",
+    "port_forward_stop": "Fermer une redirection de port"
+  },
+  "methods": {
+    "resources": {
+      "apply": "Appliquer du YAML",
+      "patch": "Patcher une ressource",
+      "delete": "Supprimer une ressource"
+    }
+  }
+}

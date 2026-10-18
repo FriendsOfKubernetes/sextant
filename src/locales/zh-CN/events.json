@@ -1,0 +1,20 @@
+{
+  "sidebar": "事件",
+  "title": "事件",
+  "loading": "正在加载事件…",
+  "none": "没有事件。",
+  "search": "搜索事件",
+  "searchPlaceholder": "搜索…",
+  "count": "×{{count}}",
+  "from": "来自 {{source}}",
+  "columns": {
+    "type": "类型",
+    "reason": "原因",
+    "message": "消息",
+    "namespace": "Namespace",
+    "involvedObject": "相关对象",
+    "source": "来源",
+    "count": "次数",
+    "lastSeen": "最后出现"
+  }
+}

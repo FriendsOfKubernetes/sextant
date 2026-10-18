@@ -1,0 +1,32 @@
+{
+  "title": "Aggiornamenti",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (versione sconosciuta)",
+  "auto": "Cerca aggiornamenti all'avvio di Sextant",
+  "check": "Cerca aggiornamenti",
+  "checking": "Ricerca aggiornamenti…",
+  "upToDate": "È installata la versione più recente.",
+  "available": "È disponibile Sextant {{version}} (versione installata: {{current}}).",
+  "notesLabel": "Note di rilascio",
+  "install": "Installa e riavvia",
+  "installing": "Download e installazione…",
+  "installingProgress": "Download e installazione… {{percent}}%",
+  "restarting": "Riavvio…",
+  "later": "Più tardi",
+  "dialogTitle": "Aggiornamento disponibile",
+  "openReleasePage": "Apri la pagina della release",
+  "notConfigured": "Gli aggiornamenti sono disattivati in questa build: manca la chiave di firma degli aggiornamenti (plugins.updater.pubkey in src-tauri/tauri.conf.json). Scarica le nuove versioni dalla pagina delle release.",
+  "manual": {
+    "deb": "Sextant è stato installato da un pacchetto .deb, quindi non può sostituirsi da solo. Scarica il nuovo .deb dalla pagina della release e installalo con il gestore di pacchetti, ad esempio: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant è stato installato da un pacchetto .rpm, quindi non può sostituirsi da solo. Scarica il nuovo pacchetto dalla pagina della release e installalo con il gestore di pacchetti.",
+    "other": "Questa copia di Sextant non è stata installata da un pacchetto di release (AppImage, .dmg o .msi), quindi non può aggiornarsi da sola. Scarica la nuova versione dalla pagina delle release."
+  },
+  "error": {
+    "network": "Impossibile raggiungere GitHub per cercare aggiornamenti. Controlla la connessione a Internet o il proxy e riprova.",
+    "noRelease": "L'ultima release su GitHub non contiene ancora un aggiornamento per questo sistema. Riprova più tardi.",
+    "signature": "L'aggiornamento scaricato non è firmato con la chiave di release di Sextant, quindi non è stato installato.",
+    "otherCheck": "Impossibile cercare aggiornamenti.",
+    "otherInstall": "Impossibile installare l'aggiornamento.",
+    "networkInstall": "Impossibile scaricare l'aggiornamento. Controlla la connessione a Internet o il proxy e riprova."
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "專案",
+    "sync": "同步",
+    "health": "健康狀態",
+    "revision": "修訂版本",
+    "destination": "目的地",
+    "applications": "應用程式",
+    "destinations": "目的地",
+    "sources": "來源"
+  },
+  "status": {
+    "syncing": "正在同步"
+  },
+  "fields": {
+    "project": "專案",
+    "sync": "同步狀態",
+    "syncedRevision": "已同步的修訂版本",
+    "health": "健康狀態",
+    "operation": "上次操作",
+    "operationStarted": "操作開始時間",
+    "operationFinished": "操作完成時間",
+    "sources": "來源",
+    "destination": "目的地",
+    "syncPolicy": "同步原則",
+    "syncOptions": "同步選項",
+    "reconciledAt": "上次比較時間",
+    "generators": "產生器",
+    "applications": "應用程式",
+    "description": "描述",
+    "sourceRepos": "來源儲存庫",
+    "destinations": "目的地",
+    "clusterResourceWhitelist": "允許的叢集層級資源",
+    "clusterResourceBlacklist": "禁止的叢集層級資源",
+    "namespaceResourceWhitelist": "允許的 Namespace 層級資源",
+    "namespaceResourceBlacklist": "禁止的 Namespace 層級資源",
+    "roles": "角色"
+  },
+  "sources": {
+    "repo": "儲存庫",
+    "path": "路徑 / Chart",
+    "targetRevision": "目標修訂版本"
+  },
+  "destinations": {
+    "cluster": "叢集",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "手動",
+    "automated": "自動",
+    "prune": "清除",
+    "selfHeal": "自我修復"
+  },
+  "tree": {
+    "title": "資源",
+    "kind": "Kind",
+    "name": "名稱",
+    "namespace": "Namespace",
+    "sync": "同步",
+    "health": "健康狀態 / 狀態",
+    "computedHealth": "由 Sextant 依據即時物件計算而得：Argo CD 只在其自身的 API 中保存此健康狀態。",
+    "computedHealthMessage": "由 Sextant 依據即時物件計算而得：{{message}}",
+    "remote": "此應用程式部署到另一個叢集：無法從這裡開啟其資源。",
+    "loading": "正在載入這些資源所擁有的物件…"
+  },
+  "history": {
+    "title": "同步歷程記錄",
+    "id": "ID",
+    "revision": "修訂版本",
+    "deployedAt": "部署時間",
+    "initiatedBy": "啟動者",
+    "source": "來源",
+    "automated": "自動"
+  },
+  "actions": {
+    "sync": "同步…",
+    "refresh": "重新整理",
+    "hardRefresh": "強制重新整理",
+    "terminate": "終止…",
+    "openUi": "開啟 Argo CD 介面"
+  },
+  "sync": {
+    "title": "同步 {{name}}",
+    "confirm": "同步",
+    "revision": "修訂版本",
+    "revisionHint": "分支、標籤或 commit；預設為應用程式的目標修訂版本。",
+    "multiSource": "每個來源都會同步到各自的目標修訂版本。",
+    "prune": "清除",
+    "dryRun": "試執行",
+    "started": "已開始同步 {{name}}。進度會顯示在詳細資料中。",
+    "dryRunStarted": "已開始試執行 {{name}}。結果會顯示在詳細資料中。"
+  },
+  "terminate": {
+    "title": "要終止 {{name}} 的操作嗎？",
+    "text": "Argo CD 會停止 {{name}} 正在進行的同步。已套用的內容會維持原狀。",
+    "confirm": "終止"
+  },
+  "diff": {
+    "action": "差異",
+    "title": "差異：{{name}}",
+    "loading": "正在從 Argo CD 讀取差異…",
+    "summary_other": "{{total}} 個資源中有 {{changed}} 個有差異",
+    "resources": "應用程式的資源",
+    "empty": "Argo CD 並未為此應用程式管理任何資源。",
+    "desired": "預期狀態（Git）",
+    "live": "即時狀態（叢集）",
+    "desiredLabel": "{{resource}} 的預期狀態",
+    "liveLabel": "{{resource}} 的即時狀態",
+    "secretHidden": "兩側的 Secret 值皆已隱藏。",
+    "state": {
+      "changed": "有差異",
+      "inSync": "已同步",
+      "missingLive": "尚未在叢集中",
+      "missingTarget": "不在 Git 中（將被清除）"
+    },
+    "signedIn": "已登入 Argo CD",
+    "signedInAs": "已以 {{user}} 身分登入 Argo CD",
+    "source": {
+      "secret": "使用標準的 Argo CD Secret",
+      "saved": "使用已儲存的登入資訊",
+      "manual": "直到 Sextant 關閉為止"
+    },
+    "reload": "重新載入",
+    "retry": "再試一次",
+    "signOut": "登出",
+    "forget": "忘記已儲存的登入資訊",
+    "notSaved": "已登入，但無法儲存登入資訊：{{reason}}",
+    "errors": {
+      "forbidden": "Argo CD 未向目前登入的帳戶顯示此應用程式。",
+      "notFound": "在此叢集中找不到 Argo CD：沒有 argocd-server Service。"
+    }
+  },
+  "installation": {
+    "ambiguous": "此叢集中有多個 Namespace 看起來像是 Argo CD 安裝（{{namespaces}}），而且沒有任何其使用者無法自行建立的內容可以判斷哪一個才是真的，因此 Sextant 不會自行連線到其中任何一個。叢集範圍的 Argo CD 可透過 argocd-application-controller 或 argocd-server 的 ClusterRoleBinding 辨識；請洽詢叢集管理員確認。",
+    "title": "選擇 Argo CD 安裝",
+    "choose": "如果您知道哪個 Namespace 中才是真正的 Argo CD，請選擇它：Sextant 會為此叢集記住這項選擇，且只會在那裡登入。任何能在某個 Namespace 中寫入的人，都能讓該 Namespace 看起來像 Argo CD。",
+    "use": "使用此安裝",
+    "using": "正在儲存…"
+  },
+  "login": {
+    "title": "登入 Argo CD",
+    "intro": "Sextant 無法自行登入 {{namespace}} 中的 Argo CD。請使用本機使用者或 API 權杖登入。",
+    "expired": "Argo CD 工作階段已過期，且使用已儲存的登入資訊重新登入未成功。",
+    "noLocalUsers": "此 Argo CD 沒有可使用密碼登入的本機使用者：請使用 API 權杖。",
+    "sso": "Sextant 不支援透過 SSO 登入。",
+    "refused": {
+      "typed": "Argo CD 拒絕了先前輸入的登入資訊。",
+      "saved": "Argo CD 拒絕了已儲存的登入資訊：其密碼或權杖可能已變更。請使用目前的密碼或權杖登入（勾選「記住」以取代已儲存的登入資訊）。",
+      "adminSecret": "Argo CD 拒絕了來自 argocd-initial-admin-secret 的管理員密碼：此密碼可能已在 Argo CD 中變更。請輸入目前的密碼。",
+      "tokenSecret": "Argo CD 拒絕了來自具有 app.kubernetes.io/part-of=argocd label 之 Secret 中的 API 權杖：此權杖可能已過期或已撤銷。"
+    },
+    "insecure": "此 Argo CD 的伺服器未啟用 TLS（argocd-cmd-params-cm 中的 server.insecure），因此 Sextant 會以純文字 HTTP 與其通訊：在叢集內部，密碼或權杖會以未加密的形式傳輸。",
+    "mode": {
+      "label": "登入方式",
+      "password": "使用者名稱與密碼",
+      "token": "API 權杖"
+    },
+    "username": "使用者",
+    "password": "密碼",
+    "token": "API 權杖",
+    "remember": "在這部電腦上記住（系統金鑰圈）",
+    "hint": "在詢問您之前，Sextant 會依序嘗試已儲存的登入資訊、argocd-initial-admin-secret 中的管理員密碼，以及具有 app.kubernetes.io/part-of=argocd label 之 Secret 中的 API 權杖。argocd-secret 只保存管理員密碼的 bcrypt 雜湊值，因此無法用來登入。",
+    "submit": "登入",
+    "signingIn": "正在登入…",
+    "errors": {
+      "invalid": "Argo CD 拒絕了此使用者名稱或密碼。",
+      "invalidToken": "Argo CD 拒絕了此 API 權杖：權杖錯誤、已過期或已撤銷。",
+      "ssoOnly": "此 Argo CD 只能透過 SSO 登入，而 Sextant 不支援 SSO：請使用 API 權杖。",
+      "unreachable": "無法連線到 Argo CD：其伺服器沒有就緒的 Pod 或沒有回應。",
+      "incomplete": "請輸入使用者名稱與密碼，或輸入 API 權杖。",
+      "other": "無法登入 Argo CD。"
+    }
+  }
+}

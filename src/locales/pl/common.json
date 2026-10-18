@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Logo Sextant"
+  },
+  "layout": {
+    "clusters": "Klastry",
+    "sidebar": "Sekcje",
+    "main": "Główny widok",
+    "details": "Szczegóły",
+    "dock": "Panel dolny",
+    "resizeSidebar": "Zmień rozmiar paska bocznego",
+    "resizeDock": "Zmień rozmiar panelu dolnego"
+  },
+  "actions": {
+    "close": "Zamknij",
+    "cancel": "Anuluj",
+    "confirm": "Potwierdź",
+    "retry": "Ponów",
+    "openDock": "Otwórz panel dolny",
+    "closeDock": "Zamknij panel dolny",
+    "closeTab": "Zamknij kartę {{title}}",
+    "closeDetails": "Zamknij szczegóły"
+  },
+  "welcome": {
+    "title": "Witamy w programie Sextant",
+    "text": "Wybierz klaster po lewej, aby rozpocząć."
+  },
+  "main": {
+    "selectSection": "Wybierz sekcję na pasku bocznym.",
+    "noSections": "Na razie nie ma nic do pokazania dla tego klastra."
+  },
+  "dock": {
+    "empty": "Otwórz logi, powłokę lub terminal, aby zobaczyć je tutaj."
+  },
+  "details": {
+    "loading": "Wczytywanie…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}} s",
+    "minutes": "{{count}} min",
+    "hours": "{{count}} godz.",
+    "days": "{{count}} d",
+    "years": "{{count}} r."
+  },
+  "error": {
+    "details": "Szczegóły: {{message}}"
+  },
+  "list": {
+    "separator": ", "
+  }
+}

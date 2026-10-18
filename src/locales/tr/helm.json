@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "Chart'lar",
+    "releases": "Yayınlar"
+  },
+  "missing": {
+    "title": "Helm yüklü değil",
+    "text": "Yayınlar görüntülenebilir, ancak onları değiştirmek ve chart yüklemek için helm komutu gerekir. Helm'i yükleyin (bu pencereye döndüğünüzde algılanır) veya Ayarlar → Helm bölümünde bir ikili dosya seçin. Kurulum kılavuzu:",
+    "short": "Helm gerekli — sayfanın üstündeki ipucuna bakın"
+  },
+  "releases": {
+    "title": "Yayınlar",
+    "search": "Yayınlarda ara",
+    "searchPlaceholder": "Ara…",
+    "loading": "Yayınlar yükleniyor…",
+    "empty": "Helm yayını yok",
+    "emptyText": "Seçili namespace'lerde Helm ile yüklenen yayınlar burada görünür.",
+    "noMatch": "Aramayla eşleşen yayın yok",
+    "open": "{{name}} yayınını aç",
+    "unreadable": "okunamıyor",
+    "unreadableRevision": "Okunamayan revizyon {{revision}}"
+  },
+  "columns": {
+    "name": "Ad",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "Sürüm",
+    "appVersion": "Uygulama sürümü",
+    "status": "Durum",
+    "updated": "Güncellenme",
+    "revision": "Revizyon",
+    "description": "Açıklama"
+  },
+  "details": {
+    "title": "{{name}} yayını",
+    "close": "Yayın ayrıntılarını kapat",
+    "loading": "Yükleniyor…",
+    "chart": "Chart {{chart}} {{version}} · uygulama {{appVersion}} · revizyon {{revision}}",
+    "tabs": {
+      "values": "Değerler",
+      "manifest": "Manifest",
+      "notes": "Notlar",
+      "history": "Geçmiş"
+    },
+    "tabsLabel": "Yayın ayrıntıları",
+    "valuesLabel": "{{name}} kullanıcı değerleri",
+    "manifestLabel": "{{name}} manifesti",
+    "show": {
+      "values": "Değerleri göster",
+      "manifest": "Manifesti göster"
+    },
+    "hide": {
+      "values": "Değerleri gizle",
+      "manifest": "Manifesti gizle"
+    },
+    "hidden": {
+      "values": "Değerler gizli. Göstermek için göz düğmesini kullanın.",
+      "manifest": "Manifest gizli. Göstermek için göz düğmesini kullanın."
+    },
+    "noValues": "Kullanıcı değeri yok: yayın, chart'ın varsayılanlarını kullanıyor.",
+    "noNotes": "Chart'ın notu yok.",
+    "current": "geçerli",
+    "unreadable": "Okunamıyor",
+    "unreadableText": "Bu revizyonun saklanan verileri okunamıyor.",
+    "unreadableLatest": "Revizyon {{revision}} okunamıyor; okunabilen en son revizyon olan {{shown}} gösteriliyor.",
+    "nothingReadable": "Bu yayının hiçbir revizyonu okunamıyor (en son: {{revision}})."
+  },
+  "actions": {
+    "editValues": "Değerleri düzenle",
+    "rollback": "Geri al",
+    "rollbackTo": "Revizyon {{revision}} durumuna geri al",
+    "uninstall": "Kaldır"
+  },
+  "upgrade": {
+    "title": "{{name}} değerlerini düzenle",
+    "valuesLabel": "{{name}} değerleri",
+    "chartRef": "Chart başvurusu",
+    "chartRefHint": "{{chart}} {{version}} chart'ı ile yükseltir. Yayında saklanan chart'ı yeniden kullanmak için boş bırakın; alt chart'ları olan bir chart için depo başvurusu gerekir, ör. repo/{{chart}}.",
+    "confirm": "Yükselt",
+    "done": "{{name}} yayını yükseltildi. Yeni bir revizyon oluşturuldu.",
+    "failed": "Helm yayını yükseltemedi"
+  },
+  "rollback": {
+    "title": "{{name}} geri alınsın mı?",
+    "text": "{{name}}, revizyon {{revision}} chart'ı ve değerleriyle yeni bir revizyon alacak. Kümedeki kaynaklar buna göre değişir.",
+    "confirm": "Geri al",
+    "failed": "Helm yayını geri alamadı"
+  },
+  "uninstall": {
+    "title": "{{name}} kaldırılsın mı?",
+    "text": "{{namespace}} namespace'indeki {{name}} yayını ve oluşturduğu tüm kaynaklar kümeden silinecek. Bu işlem geri alınamaz.",
+    "confirm": "Kaldır",
+    "failed": "Helm yayını kaldıramadı"
+  },
+  "confirmName": {
+    "label": "Onaylamak için yayın adını ({{name}}) yazın",
+    "mismatch": "Ad eşleşmiyor."
+  },
+  "charts": {
+    "title": "Chart'lar",
+    "repositories": "Depolar",
+    "noRepos": "Henüz chart deposu yok. Chart'larında aramak için bir depo ekleyin.",
+    "repoName": "Ad",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "Kullanıcı adı (isteğe bağlı)",
+    "repoPassword": "Parola (isteğe bağlı)",
+    "loginInUrl": "Kullanıcı adını ve parolayı URL'ye değil, Kullanıcı adı ve Parola alanlarına girin.",
+    "add": "Depo ekle",
+    "adding": "Ekleniyor…",
+    "remove": "Kaldır",
+    "removeLabel": "{{name}} deposunu kaldır",
+    "removeTitle": "{{name}} deposu kaldırılsın mı?",
+    "removeText": "Helm, {{name}} deposunu ({{url}}) unutur. Bu depodan yüklenen yayınlar etkilenmez.",
+    "update": "Depoları güncelle",
+    "updating": "Güncelleniyor…",
+    "updated": "Depolar güncellendi.",
+    "search": "Chart'larda ara",
+    "searchPlaceholder": "Chart adı veya anahtar sözcük",
+    "searchButton": "Ara",
+    "searching": "Aranıyor…",
+    "noResults": "Aramayla eşleşen chart yok.",
+    "description": "Açıklama",
+    "select": "{{name}} chart'ını göster",
+    "defaultValues": "Varsayılan değerler",
+    "defaultValuesLabel": "{{name}} {{version}} varsayılan değerleri",
+    "loadingValues": "Varsayılan değerler yükleniyor…",
+    "install": "Yükle",
+    "loading": "Yükleniyor…"
+  },
+  "install": {
+    "title": "Yükle: {{chart}} {{version}}",
+    "release": "Yayın adı",
+    "namespace": "Namespace",
+    "valuesLabel": "{{chart}} için değerler",
+    "invalidName": "Küçük harf, rakam, - ve . kullanın (en fazla 53 karakter); bir harf veya rakamla başlayıp bitmelidir.",
+    "confirm": "Yükle",
+    "done": "{{release}} yayını {{namespace}} namespace'ine yüklendi. Yayınlar altında listeleniyor.",
+    "failed": "Helm chart'ı yükleyemedi",
+    "valuesHint": "Yayınla birlikte yalnızca chart'ın varsayılanlarından değiştirdiğiniz değerler kaydedilir."
+  },
+  "status": {
+    "loading": "Helm aranıyor…"
+  }
+}

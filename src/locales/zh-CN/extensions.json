@@ -1,0 +1,179 @@
+{
+  "title": "扩展",
+  "hint": "扩展可以向 Sextant 添加页面、面板、操作和列。每个扩展都在隔离的框架中运行，只能通过你在安装时授予的权限访问你的集群。",
+  "host": {
+    "failed": "扩展出错：{{message}}",
+    "failedUnknown": "扩展因错误而停止",
+    "reload": "重新加载",
+    "frameTitle": "{{title}}（{{extension}}）",
+    "overview": "概览",
+    "detailsTabs": "详细信息视图",
+    "notice": "{{extension}}：{{text}}",
+    "dismiss": "关闭"
+  },
+  "install": {
+    "file": "从文件安装…",
+    "url": "从 URL 安装…",
+    "folder": "加载解压的文件夹…",
+    "fileTitle": "选择扩展包",
+    "fileFilter": "Sextant 扩展",
+    "folderTitle": "选择扩展所在的文件夹",
+    "checking": "正在检查扩展包…",
+    "installed": "已安装版本 {{version}}。",
+    "updated": "已更新到版本 {{version}}。"
+  },
+  "source": {
+    "folder": "文件夹 {{path}}",
+    "file": "文件 {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "从 URL 安装",
+    "label": "GitHub 发布中文件的链接",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "仅接受 https://github.com/<owner>/<repo>/releases/download/<tag>/<file> 形式的链接。文件最大 20 MB。在你同意权限之前不会安装任何内容。",
+    "invalid": "这不是 GitHub 发布中文件的链接。",
+    "check": "下载并检查"
+  },
+  "errors": {
+    "invalid": "无法安装此扩展包",
+    "conflict": "已安装另一个具有相同 ID 的扩展",
+    "notFound": "此安装已不再可用",
+    "timeout": "下载耗时过长",
+    "unreachable": "无法下载该文件",
+    "other": "无法安装该扩展"
+  },
+  "consent": {
+    "titleInstall": "安装 {{name}}？",
+    "titleUpdate": "更新 {{name}}？",
+    "titleReview": "审查 {{name}} 的权限",
+    "install": "安装",
+    "update": "更新",
+    "author": "作者",
+    "version": "版本",
+    "source": "来源",
+    "devHint": "它直接从此文件夹运行，Sextant 打开期间对其文件的更改会被自动加载。它会被标记为“开发”。",
+    "replaces": "将替换已安装的版本 {{version}}。",
+    "newPermissions": "新权限",
+    "newPermissionsHint": "此版本请求的权限超出了你之前允许的范围。请阅读下面的权限。",
+    "samePermissions": "权限相同",
+    "samePermissionsHint": "此版本未请求任何新权限。",
+    "reviewHint": "此扩展的文件现在请求的权限超出了你允许的范围。在你同意之前，它将保持暂停状态。",
+    "adds": "它会添加的内容",
+    "permissions": "它可以执行的操作",
+    "noContributions": "不会向界面添加任何内容。",
+    "secretWarning": "读取 Secret 的值",
+    "secretWarningHint": "此扩展请求读取 Secret 的值：密码、令牌和密钥。只有在你信任其作者时才允许。"
+  },
+  "contributes": {
+    "pages": "侧栏中的页面",
+    "detailsSections": "详细信息面板中的分区",
+    "actions": "资源上的操作",
+    "columns": "表格列",
+    "dockActions": "底部面板按钮",
+    "settings": "“设置”中的分区"
+  },
+  "permissions": {
+    "clusters": "集群",
+    "clustersAll": "所有集群",
+    "clustersOnly_other": "仅限名为 {{names}} 的集群",
+    "clustersNote": "一个名称涵盖所有 kubeconfig 来源中具有该名称的所有集群 context。",
+    "access": "访问权限",
+    "none": "无权访问任何集群的数据。",
+    "rule": "{{namespaces}}，对 {{kinds}}：{{actions}}",
+    "allKinds": "所有类型",
+    "namespacesAll": "在所有 Namespace 中",
+    "namespacesOnly_other": "在 Namespace {{names}} 中",
+    "asks": "运行前询问",
+    "noAsk": "无需询问即运行",
+    "secretValues": "{{namespaces}}可读取 Secret 的值",
+    "clusterWide": "不属于任何 Namespace 的对象（例如 Node）只能由适用于所有 Namespace 的规则涵盖。",
+    "actionNames": {
+      "read": "读取",
+      "modify": "修改",
+      "delete": "删除",
+      "logs": "读取日志",
+      "exec": "运行命令",
+      "portForward": "转发端口",
+      "secretValues": "读取 Secret 值"
+    }
+  },
+  "state": {
+    "active": "已启用",
+    "disabled": "已停用",
+    "needsConsent": "需要你的批准",
+    "failed": "出错"
+  },
+  "list": {
+    "loading": "正在加载扩展…",
+    "empty": "未安装任何扩展。",
+    "failed": "无法读取扩展列表",
+    "development": "开发",
+    "version": "版本 {{version}}",
+    "enable": "启用",
+    "disable": "停用",
+    "permissions": "权限",
+    "reload": "重新加载",
+    "activity": "活动",
+    "remove": "移除",
+    "reviewPermissions": "审查权限",
+    "pausedHint": "此扩展请求的权限超出了你允许的范围。在你审查其权限之前，它将保持暂停状态。",
+    "failedHint": "此扩展无法运行：{{error}}",
+    "actionFailed": "无法进行此更改",
+    "namedAction": "{{action}} {{name}}"
+  },
+  "reinstall": {
+    "file": "要审查其权限，请从文件 {{name}} 重新安装（从文件安装…）。",
+    "url": "要审查其权限，请从 {{url}} 重新安装（从 URL 安装…）。"
+  },
+  "permissionsDialog": {
+    "title": "{{name}} 的权限",
+    "granted": "你已允许",
+    "requested": "当前请求",
+    "close": "关闭"
+  },
+  "remove": {
+    "title": "移除 {{name}}？",
+    "body": "该扩展、其文件及其存储的数据都将从此计算机中删除。你的集群不会被更改。"
+  },
+  "settingsFrame": "{{name}} 的设置",
+  "notice": {
+    "text_other": "{{names}} 请求的权限超出了你允许的范围，已被暂停。",
+    "review": "审查权限",
+    "reinstall": "{{name}}：{{hint}}",
+    "dismiss": "关闭"
+  },
+  "activity": {
+    "title": "扩展活动",
+    "hint": "扩展请求过的操作。Secret 的值、YAML 和命令输出不会被记录。",
+    "extension": "扩展",
+    "allExtensions": "所有扩展",
+    "loading": "正在加载日志…",
+    "empty": "尚无调用。",
+    "failed": "无法读取日志",
+    "clear": "清除",
+    "clearTitle": "清除活动日志？",
+    "clearBody": "此计算机上记录的所有扩展调用都将被删除。",
+    "ok": "成功",
+    "none": "-",
+    "columns": {
+      "time": "时间",
+      "extension": "扩展",
+      "cluster": "集群",
+      "method": "方法",
+      "target": "目标",
+      "decision": "决定",
+      "result": "结果",
+      "duration": "耗时"
+    },
+    "decisions": {
+      "allowed": "已允许",
+      "denied": "已拒绝",
+      "approved": "已由你批准",
+      "declined": "已由你拒绝",
+      "timedOut": "无应答",
+      "notChecked": "未检查"
+    },
+    "duration": "{{ms}} 毫秒"
+  }
+}

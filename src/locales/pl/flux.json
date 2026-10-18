@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Gotowe",
+    "status": "Stan",
+    "revision": "Rewizja",
+    "suspended": "Wstrzymane",
+    "source": "Źródło"
+  },
+  "suspended": {
+    "yes": "Tak",
+    "no": "Nie"
+  },
+  "fields": {
+    "ready": "Gotowe",
+    "message": "Stan",
+    "revision": "Rewizja",
+    "lastAttemptedRevision": "Ostatnio próbowana rewizja",
+    "suspended": "Wstrzymane",
+    "interval": "Interwał",
+    "timeout": "Limit czasu",
+    "source": "Źródło",
+    "chart": "Chart",
+    "helmChart": "Chart Helm",
+    "url": "URL",
+    "ref": "Odwołanie",
+    "endpoint": "Punkt końcowy",
+    "bucketName": "Bucket",
+    "path": "Ścieżka",
+    "targetNamespace": "Docelowy namespace",
+    "releaseName": "Nazwa wydania",
+    "prune": "Przycinanie (prune)",
+    "dependsOn": "Zależy od",
+    "image": "Obraz",
+    "imageRepository": "Repozytorium obrazów",
+    "provider": "Dostawca",
+    "eventSeverity": "Ważność zdarzeń",
+    "eventSources": "Źródła zdarzeń",
+    "type": "Typ",
+    "channel": "Kanał",
+    "webhookPath": "Ścieżka webhooka",
+    "lastHandledReconcileAt": "Ostatnie żądanie uzgodnienia"
+  },
+  "related": {
+    "inventory": "Zastosowane zasoby",
+    "resources": "Zasoby",
+    "usedBy": "Używane przez",
+    "kind": "Kind",
+    "name": "Nazwa",
+    "namespace": "Namespace",
+    "loading": "Wczytywanie…",
+    "notUsed": "Żaden Kustomization ani HelmRelease nie używa tego źródła."
+  },
+  "actions": {
+    "reconcile": "Uzgodnij teraz",
+    "reconcileWithSource": "Uzgodnij ze źródłem",
+    "suspend": "Wstrzymaj",
+    "resume": "Wznów"
+  },
+  "suspend": {
+    "title": "Wstrzymać {{kind}} {{name}}?",
+    "confirm": "Wstrzymaj",
+    "text": "Flux przestanie uzgadniać {{kind}} {{name}} do czasu wznowienia: w tym czasie zmiany w Git lub w klastrze nie będą stosowane ani korygowane."
+  }
+}

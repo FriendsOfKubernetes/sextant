@@ -1,0 +1,49 @@
+{
+  "sidebar": "ポートフォワード",
+  "title": "ポートフォワード",
+  "loading": "ポートフォワードを読み込み中…",
+  "empty": "有効なポートフォワードはありません。",
+  "emptyText": "Pod または Service の詳細から開始できます。",
+  "columns": {
+    "target": "対象",
+    "ports": "ポート",
+    "status": "状態"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "有効",
+    "error": "エラー"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "ブラウザーで開く",
+    "stop": "停止"
+  },
+  "action": {
+    "label": "ポートフォワード…"
+  },
+  "section": {
+    "title": "ポートフォワード",
+    "forward": "転送",
+    "forwardPort": "ポート {{port}} を転送",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "{{target}} を転送",
+    "remotePort": "転送するポート",
+    "localPort": "ローカルポート",
+    "localPortChoice": "ローカルポートの選択",
+    "auto": "空いているポートを自動選択",
+    "custom": "ポートを指定",
+    "invalidPort": "1 から 65535 までのポートを入力してください。",
+    "start": "転送を開始",
+    "starting": "開始中…",
+    "started": "localhost:{{local}} をポート {{remote}} に転送しています。",
+    "inUse": "ローカルポート {{port}} は既に使用されています。",
+    "useFree": "空いているポートを使用",
+    "close": "閉じる"
+  }
+}

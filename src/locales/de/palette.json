@@ -1,0 +1,34 @@
+{
+  "title": "Befehlspalette",
+  "search": "Suchen",
+  "placeholder": "Objekte, Bereiche, Cluster, Einstellungen suchen…",
+  "filterActions": "Aktionen filtern…",
+  "results": "Ergebnisse",
+  "groups": {
+    "recent": "Zuletzt verwendet",
+    "selected": "In Details geöffnet",
+    "goTo": "Gehe zu",
+    "clusters": "Cluster",
+    "settings": "Einstellungen",
+    "more": "Weitere"
+  },
+  "cluster": {
+    "current": "Aktueller Cluster",
+    "switch": "Wechseln",
+    "connect": "Verbinden"
+  },
+  "settingsTab": "Einstellungen: {{tab}}",
+  "openDetails": "Details öffnen",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: Aktionen",
+  "loadingActions": "Aktionen werden geladen…",
+  "noActions": "Keine Aktionen für dieses Objekt",
+  "actionsFailed": "Das Objekt konnte nicht gelesen werden: {{message}}",
+  "noCluster": "Öffnen Sie einen Cluster, um seine Objekte zu durchsuchen",
+  "empty": "Nichts gefunden",
+  "searchAll": "Alle Arten durchsuchen ({{count}})",
+  "searching": "Suche läuft… {{done}} von {{total}} Arten aufgelistet",
+  "limited": "Durchsucht werden die Objekte der ersten {{count}} von {{total}} Arten",
+  "hint": "↑↓ bewegen · Enter öffnen · Tab Aktionen · Esc schließen",
+  "hintActions": "↑↓ bewegen · Enter ausführen · Shift+Tab zurück · Esc zurück"
+}

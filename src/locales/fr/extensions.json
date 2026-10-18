@@ -1,0 +1,185 @@
+{
+  "title": "Extensions",
+  "hint": "Les extensions ajoutent des pages, des panneaux, des actions et des colonnes à Sextant. Chacune s'exécute dans un cadre isolé et ne peut accéder à vos clusters qu'au moyen des autorisations que vous lui accordez lors de son installation.",
+  "host": {
+    "failed": "Échec de l'extension : {{message}}",
+    "failedUnknown": "l'extension s'est arrêtée sur une erreur",
+    "reload": "Recharger",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Vue d'ensemble",
+    "detailsTabs": "Vues de détails",
+    "notice": "{{extension}} : {{text}}",
+    "dismiss": "Ignorer"
+  },
+  "install": {
+    "file": "Installer depuis un fichier…",
+    "url": "Installer depuis une URL…",
+    "folder": "Charger un dossier non empaqueté…",
+    "fileTitle": "Choisir un paquet d'extension",
+    "fileFilter": "Extension Sextant",
+    "folderTitle": "Choisir le dossier d'une extension",
+    "checking": "Vérification du paquet…",
+    "installed": "Version {{version}} installée.",
+    "updated": "Mise à jour vers la version {{version}} effectuée."
+  },
+  "source": {
+    "folder": "Dossier {{path}}",
+    "file": "Fichier {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "Installer depuis une URL",
+    "label": "Lien vers un fichier d'une version publiée sur GitHub",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "Seuls les liens de la forme https://github.com/<owner>/<repo>/releases/download/<tag>/<file> sont acceptés. Le fichier peut peser jusqu'à 20 Mo. Rien n'est installé tant que vous n'avez pas accepté les autorisations.",
+    "invalid": "Ce n'est pas un lien vers un fichier d'une version publiée sur GitHub.",
+    "check": "Télécharger et vérifier"
+  },
+  "errors": {
+    "invalid": "Ce paquet ne peut pas être installé",
+    "conflict": "Une autre extension avec cet identifiant est déjà installée",
+    "notFound": "Cette installation n'est plus disponible",
+    "timeout": "Le téléchargement a pris trop de temps",
+    "unreachable": "Impossible de télécharger le fichier",
+    "other": "Impossible d'installer l'extension"
+  },
+  "consent": {
+    "titleInstall": "Installer {{name}} ?",
+    "titleUpdate": "Mettre à jour {{name}} ?",
+    "titleReview": "Vérifier les autorisations de {{name}}",
+    "install": "Installer",
+    "update": "Mettre à jour",
+    "author": "Auteur",
+    "version": "Version",
+    "source": "Source",
+    "devHint": "Elle s'exécute directement depuis ce dossier, et les modifications de ses fichiers sont prises en compte tant que Sextant est ouvert. Elle est marquée Développement.",
+    "replaces": "Remplace la version installée {{version}}.",
+    "newPermissions": "Nouvelles autorisations",
+    "newPermissionsHint": "Cette version demande plus que ce que vous aviez autorisé. Lisez les autorisations ci-dessous.",
+    "samePermissions": "Mêmes autorisations",
+    "samePermissionsHint": "Cette version ne demande rien de nouveau.",
+    "reviewHint": "Les fichiers de cette extension demandent désormais plus que ce que vous aviez autorisé. Elle reste en pause jusqu'à votre accord.",
+    "adds": "Ce qu'elle ajoute",
+    "permissions": "Ce qu'elle peut faire",
+    "noContributions": "Rien n'est ajouté à l'interface.",
+    "secretWarning": "Lit les valeurs des Secrets",
+    "secretWarningHint": "Cette extension demande à lire les valeurs des Secrets : mots de passe, jetons et clés. Ne l'autorisez que si vous faites confiance à son auteur."
+  },
+  "contributes": {
+    "pages": "Pages dans la barre latérale",
+    "detailsSections": "Sections dans le panneau de détails",
+    "actions": "Actions sur les ressources",
+    "columns": "Colonnes de tableau",
+    "dockActions": "Boutons du panneau inférieur",
+    "settings": "Section dans les Paramètres"
+  },
+  "permissions": {
+    "clusters": "Clusters",
+    "clustersAll": "Tous les clusters",
+    "clustersOnly_one": "Uniquement le cluster nommé {{names}}",
+    "clustersOnly_many": "Uniquement les clusters nommés {{names}}",
+    "clustersOnly_other": "Uniquement les clusters nommés {{names}}",
+    "clustersNote": "Un nom couvre tous les contexts de cluster portant ce nom, quelle que soit la source kubeconfig.",
+    "access": "Accès",
+    "none": "Aucun accès aux données des clusters.",
+    "rule": "{{actions}} {{kinds}} {{namespaces}}",
+    "allKinds": "tous les kinds",
+    "namespacesAll": "dans tous les namespaces",
+    "namespacesOnly_one": "dans le namespace {{names}}",
+    "namespacesOnly_many": "dans les namespaces {{names}}",
+    "namespacesOnly_other": "dans les namespaces {{names}}",
+    "asks": "Demande avant l'exécution",
+    "noAsk": "S'exécute sans demander",
+    "secretValues": "Peut lire les valeurs des Secrets {{namespaces}}",
+    "clusterWide": "Les objets qui n'appartiennent à aucun namespace (comme les Nodes) ne sont couverts que par les règles portant sur tous les namespaces.",
+    "actionNames": {
+      "read": "Lire",
+      "modify": "Modifier",
+      "delete": "Supprimer",
+      "logs": "Lire les journaux de",
+      "exec": "Exécuter des commandes dans",
+      "portForward": "Rediriger les ports de",
+      "secretValues": "Lire les valeurs des Secrets de"
+    }
+  },
+  "state": {
+    "active": "Active",
+    "disabled": "Désactivée",
+    "needsConsent": "Votre accord est requis",
+    "failed": "En échec"
+  },
+  "list": {
+    "loading": "Chargement des extensions…",
+    "empty": "Aucune extension n'est installée.",
+    "failed": "Impossible de lire la liste des extensions",
+    "development": "Développement",
+    "version": "Version {{version}}",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "permissions": "Autorisations",
+    "reload": "Recharger",
+    "activity": "Activité",
+    "remove": "Supprimer",
+    "reviewPermissions": "Vérifier les autorisations",
+    "pausedHint": "Cette extension demande plus que ce que vous aviez autorisé. Elle est en pause jusqu'à ce que vous vérifiiez ses autorisations.",
+    "failedHint": "Cette extension ne peut pas s'exécuter : {{error}}",
+    "actionFailed": "La modification n'a pas pu être effectuée",
+    "namedAction": "{{action}} {{name}}"
+  },
+  "reinstall": {
+    "file": "Pour vérifier ses autorisations, réinstallez-la depuis le fichier {{name}} (Installer depuis un fichier…).",
+    "url": "Pour vérifier ses autorisations, réinstallez-la depuis {{url}} (Installer depuis une URL…)."
+  },
+  "permissionsDialog": {
+    "title": "Autorisations de {{name}}",
+    "granted": "Ce que vous avez autorisé",
+    "requested": "Ce qu'elle demande maintenant",
+    "close": "Fermer"
+  },
+  "remove": {
+    "title": "Supprimer {{name}} ?",
+    "body": "L'extension, ses fichiers et les données qu'elle a enregistrées sont supprimés de cet ordinateur. Vos clusters ne sont pas modifiés."
+  },
+  "settingsFrame": "Paramètres de {{name}}",
+  "notice": {
+    "text_one": "{{names}} demande plus d'autorisations que vous n'en avez accordé et est en pause.",
+    "text_many": "{{names}} demandent plus d'autorisations que vous n'en avez accordé et sont en pause.",
+    "text_other": "{{names}} demandent plus d'autorisations que vous n'en avez accordé et sont en pause.",
+    "review": "Vérifier les autorisations",
+    "reinstall": "{{name}} : {{hint}}",
+    "dismiss": "Ignorer"
+  },
+  "activity": {
+    "title": "Activité des extensions",
+    "hint": "Ce que les extensions ont demandé. Les valeurs des secrets, le YAML et la sortie des commandes ne sont pas enregistrés.",
+    "extension": "Extension",
+    "allExtensions": "Toutes les extensions",
+    "loading": "Chargement du journal…",
+    "empty": "Aucun appel pour l'instant.",
+    "failed": "Impossible de lire le journal",
+    "clear": "Effacer",
+    "clearTitle": "Effacer le journal d'activité ?",
+    "clearBody": "Tous les appels d'extensions enregistrés sont supprimés de cet ordinateur.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Heure",
+      "extension": "Extension",
+      "cluster": "Cluster",
+      "method": "Méthode",
+      "target": "Cible",
+      "decision": "Décision",
+      "result": "Résultat",
+      "duration": "Durée"
+    },
+    "decisions": {
+      "allowed": "Autorisé",
+      "denied": "Refusé",
+      "approved": "Approuvé par vous",
+      "declined": "Refusé par vous",
+      "timedOut": "Pas de réponse",
+      "notChecked": "Non vérifié"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

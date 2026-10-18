@@ -1,0 +1,179 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "项目",
+    "sync": "同步",
+    "health": "健康状况",
+    "revision": "修订版本",
+    "destination": "目标",
+    "applications": "应用",
+    "destinations": "目标",
+    "sources": "来源"
+  },
+  "status": {
+    "syncing": "正在同步"
+  },
+  "fields": {
+    "project": "项目",
+    "sync": "同步状态",
+    "syncedRevision": "已同步的修订版本",
+    "health": "健康状况",
+    "operation": "上次操作",
+    "operationStarted": "操作开始时间",
+    "operationFinished": "操作完成时间",
+    "sources": "来源",
+    "destination": "目标",
+    "syncPolicy": "同步策略",
+    "syncOptions": "同步选项",
+    "reconciledAt": "上次比较时间",
+    "generators": "生成器",
+    "applications": "应用",
+    "description": "描述",
+    "sourceRepos": "来源仓库",
+    "destinations": "目标",
+    "clusterResourceWhitelist": "允许的集群级资源",
+    "clusterResourceBlacklist": "禁止的集群级资源",
+    "namespaceResourceWhitelist": "允许的 Namespace 级资源",
+    "namespaceResourceBlacklist": "禁止的 Namespace 级资源",
+    "roles": "角色"
+  },
+  "sources": {
+    "repo": "仓库",
+    "path": "路径 / Chart",
+    "targetRevision": "目标修订版本"
+  },
+  "destinations": {
+    "cluster": "集群",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "手动",
+    "automated": "自动",
+    "prune": "清理",
+    "selfHeal": "自愈"
+  },
+  "tree": {
+    "title": "资源",
+    "kind": "Kind",
+    "name": "名称",
+    "namespace": "Namespace",
+    "sync": "同步",
+    "health": "健康状况 / 状态",
+    "computedHealth": "由 Sextant 根据实时对象计算得出：Argo CD 仅在其自身的 API 中保存此健康状况。",
+    "computedHealthMessage": "由 Sextant 根据实时对象计算得出：{{message}}",
+    "remote": "该应用部署到另一个集群：无法从这里打开其资源。",
+    "loading": "正在加载这些资源所拥有的对象…"
+  },
+  "history": {
+    "title": "同步历史记录",
+    "id": "ID",
+    "revision": "修订版本",
+    "deployedAt": "部署时间",
+    "initiatedBy": "发起者",
+    "source": "来源",
+    "automated": "自动"
+  },
+  "actions": {
+    "sync": "同步…",
+    "refresh": "刷新",
+    "hardRefresh": "硬刷新",
+    "terminate": "终止…",
+    "openUi": "打开 Argo CD 界面"
+  },
+  "sync": {
+    "title": "同步 {{name}}",
+    "confirm": "同步",
+    "revision": "修订版本",
+    "revisionHint": "分支、标签或提交；默认为应用的目标修订版本。",
+    "multiSource": "每个来源都会同步到各自的目标修订版本。",
+    "prune": "清理",
+    "dryRun": "试运行",
+    "started": "已开始同步 {{name}}。进度显示在详细信息中。",
+    "dryRunStarted": "已开始试运行 {{name}}。结果显示在详细信息中。"
+  },
+  "terminate": {
+    "title": "终止 {{name}} 的操作？",
+    "text": "Argo CD 将停止 {{name}} 正在进行的同步。已应用的内容保持不变。",
+    "confirm": "终止"
+  },
+  "diff": {
+    "action": "差异",
+    "title": "差异：{{name}}",
+    "loading": "正在从 Argo CD 读取差异…",
+    "summary_other": "{{total}} 个资源中有 {{changed}} 个存在差异",
+    "resources": "应用的资源",
+    "empty": "Argo CD 没有为此应用管理任何资源。",
+    "desired": "期望状态（Git）",
+    "live": "实时状态（集群）",
+    "desiredLabel": "{{resource}} 的期望状态",
+    "liveLabel": "{{resource}} 的实时状态",
+    "secretHidden": "两侧的 Secret 值均已隐藏。",
+    "state": {
+      "changed": "有差异",
+      "inSync": "已同步",
+      "missingLive": "尚未在集群中",
+      "missingTarget": "不在 Git 中（将被清理）"
+    },
+    "signedIn": "已登录 Argo CD",
+    "signedInAs": "已以 {{user}} 身份登录 Argo CD",
+    "source": {
+      "secret": "使用标准 Argo CD Secret",
+      "saved": "使用已保存的登录信息",
+      "manual": "直到 Sextant 关闭"
+    },
+    "reload": "重新加载",
+    "retry": "重试",
+    "signOut": "退出登录",
+    "forget": "忘记已保存的登录信息",
+    "notSaved": "已登录，但无法保存登录信息：{{reason}}",
+    "errors": {
+      "forbidden": "Argo CD 未向当前登录的账户显示此应用。",
+      "notFound": "在此集群中未找到 Argo CD：没有 argocd-server Service。"
+    }
+  },
+  "installation": {
+    "ambiguous": "此集群中有多个 Namespace 看起来像是 Argo CD 安装（{{namespaces}}），并且没有任何其用户无法自行创建的内容可以表明哪一个是真的，因此 Sextant 不会自行连接其中任何一个。集群范围的 Argo CD 可通过 argocd-application-controller 或 argocd-server 的 ClusterRoleBinding 识别；请让集群管理员检查。",
+    "title": "选择 Argo CD 安装",
+    "choose": "如果你知道哪个 Namespace 中是真正的 Argo CD，请选择它：Sextant 会为此集群记住该选择，并且只在那里登录。任何可以在某个 Namespace 中写入的人，都可以让该 Namespace 看起来像 Argo CD。",
+    "use": "使用此安装",
+    "using": "正在保存…"
+  },
+  "login": {
+    "title": "登录 Argo CD",
+    "intro": "Sextant 无法自行登录 {{namespace}} 中的 Argo CD。请使用本地用户或 API 令牌登录。",
+    "expired": "Argo CD 会话已过期，使用已保存的登录信息重新登录未成功。",
+    "noLocalUsers": "此 Argo CD 没有可以使用密码登录的本地用户：请使用 API 令牌。",
+    "sso": "Sextant 不支持通过 SSO 登录。",
+    "refused": {
+      "typed": "Argo CD 拒绝了之前输入的登录信息。",
+      "saved": "Argo CD 拒绝了已保存的登录信息：其密码或令牌可能已更改。请使用当前的密码或令牌登录（勾选“记住”以替换已保存的登录信息）。",
+      "adminSecret": "Argo CD 拒绝了来自 argocd-initial-admin-secret 的管理员密码：该密码可能已在 Argo CD 中更改。请输入当前密码。",
+      "tokenSecret": "Argo CD 拒绝了来自带有 app.kubernetes.io/part-of=argocd label 的 Secret 中的 API 令牌：该令牌可能已过期或被撤销。"
+    },
+    "insecure": "此 Argo CD 的服务器未启用 TLS（argocd-cmd-params-cm 中的 server.insecure），因此 Sextant 使用明文 HTTP 与其通信：在集群内部，密码或令牌以未加密的形式传输。",
+    "mode": {
+      "label": "登录方式",
+      "password": "用户名和密码",
+      "token": "API 令牌"
+    },
+    "username": "用户",
+    "password": "密码",
+    "token": "API 令牌",
+    "remember": "在此计算机上记住（系统钥匙串）",
+    "hint": "在询问你之前，Sextant 会依次尝试已保存的登录信息、argocd-initial-admin-secret 中的管理员密码，以及带有 app.kubernetes.io/part-of=argocd label 的 Secret 中的 API 令牌。argocd-secret 只保存管理员密码的 bcrypt 哈希值，因此不能用于登录。",
+    "submit": "登录",
+    "signingIn": "正在登录…",
+    "errors": {
+      "invalid": "Argo CD 拒绝了该用户名或密码。",
+      "invalidToken": "Argo CD 拒绝了该 API 令牌：令牌错误、已过期或已被撤销。",
+      "ssoOnly": "此 Argo CD 只能通过 SSO 登录，而 Sextant 不支持 SSO：请使用 API 令牌。",
+      "unreachable": "无法访问 Argo CD：其服务器没有就绪的 Pod 或没有响应。",
+      "incomplete": "请输入用户名和密码，或输入 API 令牌。",
+      "other": "登录 Argo CD 失败。"
+    }
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "rail": {
+    "list": "Список кластеров",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Добавить кластер",
+    "refresh": "Обновить kubeconfig",
+    "slow": "{{tooltip}} уже {{seconds}} с. Кластер медленно отвечает",
+    "expand": "Развернуть список кластеров",
+    "collapse": "Свернуть список кластеров"
+  },
+  "state": {
+    "disconnected": "отключен",
+    "connecting": "подключение",
+    "connected": "подключен",
+    "error": "ошибка подключения"
+  },
+  "menu": {
+    "open": "Открыть",
+    "connect": "Подключить",
+    "reconnect": "Переподключить",
+    "disconnect": "Отключить",
+    "settings": "Настройки",
+    "changeIcon": "Изменить значок…"
+  },
+  "add": {
+    "title": "Добавление кластера",
+    "file": "Добавить файл kubeconfig",
+    "paste": "Вставить kubeconfig",
+    "fileDialogTitle": "Выберите файл kubeconfig",
+    "tabs": "Способ добавления",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Из облака"
+  },
+  "paste": {
+    "title": "Вставка kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Вставьте содержимое файла kubeconfig. Sextant хранит личную копию в своей папке данных.",
+    "submit": "Добавить"
+  },
+  "sources": {
+    "title": "Источники kubeconfig",
+    "kind": {
+      "default": "по умолчанию",
+      "env": "KUBECONFIG",
+      "addedFile": "добавленный файл",
+      "pasted": "вставлен",
+      "cloud": "облако"
+    },
+    "remove": "Удалить",
+    "removeNamed": "Удалить {{path}}",
+    "confirmTitle": "Удалить источник kubeconfig?",
+    "confirmFile": "Его кластеры исчезнут из списка. Сам файл останется на диске.",
+    "confirmPasted": "Его кластеры исчезнут из списка, а вставленная копия будет удалена.",
+    "problems": "Некоторые файлы kubeconfig не удается прочитать",
+    "problemsTitle": "Проблемы с kubeconfig",
+    "problemsHint": "Кластеры из остальных файлов продолжают работать. Исправьте файл и нажмите «Обновить».",
+    "confirmCloud": "Его кластеры исчезнут из списка, а kubeconfig Sextant для этих облачных кластеров будет удален. Ваш облачный CLI и ~/.kube/config не затрагиваются."
+  },
+  "welcome": {
+    "loading": "Чтение kubeconfig…",
+    "noClusters": "Кластеры не найдены",
+    "checked": "Sextant искал kubeconfig здесь:",
+    "checkedPaths": "Проверенные пути",
+    "title": "Добро пожаловать в Sextant",
+    "pick": "Выберите кластер слева, чтобы подключиться."
+  },
+  "connection": {
+    "connecting": "Подключение к {{name}}…",
+    "failed": "Не удается подключиться к {{name}}",
+    "reconnect": "Переподключить",
+    "certificate": "Сертификат сервера не принят.",
+    "seconds": "{{seconds}} с",
+    "slow": "Кластер медленно отвечает"
+  },
+  "settings": {
+    "title": "Настройки кластера — {{name}}",
+    "displayName": "Отображаемое имя",
+    "color": "Цветная метка",
+    "autoColor": "Авто",
+    "colorOption": "Цвет {{index}}",
+    "icon": "Значок",
+    "iconPreview": "Предпросмотр значка",
+    "iconText": "Текст значка",
+    "iconTextPlaceholder": "Инициалы",
+    "iconChoose": "Выбрать изображение…",
+    "iconReset": "Сбросить значок",
+    "iconHint": "Одна-две буквы или эмодзи на цветной метке либо изображение PNG, JPEG, SVG или WebP размером до 5 МБ. Если пусто — инициалы имени.",
+    "iconErrors": {
+      "type": "Файл не является поддерживаемым изображением",
+      "size": "Изображение больше 5 МБ",
+      "read": "Не удается прочитать файл"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "Кластер",
+    "server": "Сервер",
+    "user": "Пользователь",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant использует aws, gcloud и az, уже установленные на этом компьютере и с выполненным входом. Он записывает собственный kubeconfig, никогда не изменяет ~/.kube/config и не выполняет вход за вас.",
+    "detecting": "Поиск aws, gcloud и az…",
+    "providers": "Облако",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(версия неизвестна)",
+    "notInstalled": "{{cli}} не установлен",
+    "installGuide": "Руководство по установке",
+    "pluginMissing": "{{plugin}} не установлен. Кластеры можно добавить, но для подключения он нужен. Установите его командой:",
+    "loadingAccounts": "Чтение учетных записей…",
+    "account": {
+      "aws": "Профиль",
+      "gcp": "Проект",
+      "azure": "Подписка"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Учетные данные из окружения",
+    "regions": "Регионы",
+    "find": "Найти кластеры",
+    "finding": "Поиск…",
+    "noClusters": "Кластеры не найдены.",
+    "found": "Найденные кластеры",
+    "separator": " · ",
+    "add_one": "Добавить {{count}} кластер",
+    "add_few": "Добавить {{count}} кластера",
+    "add_many": "Добавить {{count}} кластеров",
+    "add_other": "Добавить {{count}} кластера",
+    "added_one": "Добавлен {{count}} кластер. Он есть в списке кластеров.",
+    "added_few": "Добавлено {{count}} кластера. Они есть в списке кластеров.",
+    "added_many": "Добавлено {{count}} кластеров. Они есть в списке кластеров.",
+    "added_other": "Добавлено {{count}} кластера. Они есть в списке кластеров.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} не установлен{{scope}}",
+      "notLoggedIn": "В {{cli}} не выполнен вход, или срок входа истек{{scope}}",
+      "pluginMissing": "Плагин входа для {{cli}} не установлен{{scope}}",
+      "failed": "Ошибка {{cli}}{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Установите его и повторите попытку.",
+      "notLoggedIn": "Sextant не выполняет вход за вас. Выполните эту команду в терминале и повторите попытку:",
+      "pluginMissing": "Выполните эту команду в терминале и повторите попытку:",
+      "failed": "Выполните эту команду в терминале и повторите попытку:"
+    },
+    "copyCommand": "Скопировать команду",
+    "copied": "Скопировано",
+    "copyFailed": "Буфер обмена недоступен; выделите команду и скопируйте ее."
+  }
+}

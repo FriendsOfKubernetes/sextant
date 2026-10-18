@@ -1,0 +1,40 @@
+{
+  "muteHour": "Désactiver pendant 1 heure",
+  "unmute": "Réactiver",
+  "single": {
+    "title": "{{cluster}} : {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{count}} nouveau problème dans {{cluster}}",
+    "title_many": "{{count}} de nouveaux problèmes dans {{cluster}}",
+    "title_other": "{{count}} nouveaux problèmes dans {{cluster}}",
+    "titleClusters_one": "{{count}} nouveau problème dans {{clusters}} clusters",
+    "titleClusters_many": "{{count}} de nouveaux problèmes dans {{clusters}} clusters",
+    "titleClusters_other": "{{count}} nouveaux problèmes dans {{clusters}} clusters",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Notifications",
+    "enabled": "Afficher des notifications de bureau sur les nouveaux problèmes des clusters connectés",
+    "enabledHint": "Seuls les clusters déjà connectés sont surveillés, et seuls les problèmes apparus pendant que Sextant est en cours d'exécution sont signalés, y compris lorsque la fenêtre est masquée dans la zone de notification. Le service de notifications du système les affiche ; rien ne quitte cette machine.",
+    "mutedUntil": "Désactivées jusqu'à {{time}}",
+    "categories": "Notifier pour",
+    "clusters": "Clusters",
+    "clustersHint": "Un cluster désactivé ici n'envoie jamais de notification.",
+    "noClusters": "Aucun cluster pour l'instant.",
+    "certificates": "Certificats",
+    "certExpiryDays": "Avertir ce nombre de jours avant l'expiration d'un certificat",
+    "certExpiryHint": "Utilisé par l'écran des problèmes et les notifications pour les Certificates de cert-manager, ainsi que par les détails des certificats et la page des certificats TLS."
+  },
+  "history": {
+    "title": "Notifications récentes",
+    "clear": "Effacer",
+    "empty": "Aucune notification pour l'instant.",
+    "off": "Les notifications sont désactivées (Paramètres → Général → Notifications).",
+    "delivery": {
+      "summary": "dans un récapitulatif",
+      "muted": "désactivée"
+    }
+  },
+  "muteFailed": "Impossible de désactiver les notifications : {{message}}"
+}

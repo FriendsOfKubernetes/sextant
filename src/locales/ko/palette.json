@@ -1,0 +1,34 @@
+{
+  "title": "명령 팔레트",
+  "search": "검색",
+  "placeholder": "개체, 섹션, 클러스터, 설정 찾기…",
+  "filterActions": "작업 필터…",
+  "results": "결과",
+  "groups": {
+    "recent": "최근 항목",
+    "selected": "세부 정보에 열려 있음",
+    "goTo": "이동",
+    "clusters": "클러스터",
+    "settings": "설정",
+    "more": "더 보기"
+  },
+  "cluster": {
+    "current": "현재 클러스터",
+    "switch": "전환",
+    "connect": "연결"
+  },
+  "settingsTab": "설정: {{tab}}",
+  "openDetails": "세부 정보 열기",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: 작업",
+  "loadingActions": "작업을 로드하는 중…",
+  "noActions": "이 개체에 사용할 수 있는 작업이 없습니다",
+  "actionsFailed": "개체를 읽을 수 없습니다: {{message}}",
+  "noCluster": "개체를 검색하려면 클러스터를 여세요",
+  "empty": "찾은 항목이 없습니다",
+  "searchAll": "모든 종류 검색({{count}})",
+  "searching": "검색 중… 종류 {{total}}개 중 {{done}}개 조회됨",
+  "limited": "종류 {{total}}개 중 처음 {{count}}개의 개체만 검색합니다",
+  "hint": "↑↓ 이동 · Enter 열기 · Tab 작업 · Esc 닫기",
+  "hintActions": "↑↓ 이동 · Enter 실행 · Shift+Tab 뒤로 · Esc 뒤로"
+}

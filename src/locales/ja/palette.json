@@ -1,0 +1,34 @@
+{
+  "title": "コマンドパレット",
+  "search": "検索",
+  "placeholder": "オブジェクト、セクション、クラスター、設定を検索…",
+  "filterActions": "操作を絞り込み…",
+  "results": "結果",
+  "groups": {
+    "recent": "最近使用した項目",
+    "selected": "詳細に表示中",
+    "goTo": "移動",
+    "clusters": "クラスター",
+    "settings": "設定",
+    "more": "その他"
+  },
+  "cluster": {
+    "current": "現在のクラスター",
+    "switch": "切り替え",
+    "connect": "接続"
+  },
+  "settingsTab": "設定: {{tab}}",
+  "openDetails": "詳細を開く",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: 操作",
+  "loadingActions": "操作を読み込み中…",
+  "noActions": "このオブジェクトに使える操作はありません",
+  "actionsFailed": "オブジェクトを読み取れませんでした: {{message}}",
+  "noCluster": "オブジェクトを検索するにはクラスターを開いてください",
+  "empty": "見つかりませんでした",
+  "searchAll": "すべての種類を検索 ({{count}})",
+  "searching": "検索中… {{total}} 種類中 {{done}} 種類を取得済み",
+  "limited": "{{total}} 種類のうち最初の {{count}} 種類のオブジェクトを検索します",
+  "hint": "↑↓ 移動 · Enter 開く · Tab 操作 · Esc 閉じる",
+  "hintActions": "↑↓ 移動 · Enter 実行 · Shift+Tab 戻る · Esc 戻る"
+}

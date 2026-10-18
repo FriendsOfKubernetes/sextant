@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Ayarlar",
+    "open": "Ayarlar"
+  },
+  "tabs": {
+    "label": "Ayar bölümleri",
+    "general": "Genel",
+    "clusters": "Kümeler",
+    "agents": "Yapay zekâ ajanları",
+    "extensions": "Uzantılar",
+    "about": "Güncellemeler ve Hakkında"
+  },
+  "appearance": {
+    "title": "Görünüm",
+    "theme": "Tema",
+    "themes": {
+      "system": "Sistem",
+      "light": "Açık",
+      "dark": "Koyu"
+    },
+    "systemHint": "Sistem seçeneği, işletim sisteminizin açık veya koyu modunu izler.",
+    "language": "Dil",
+    "languageSystem": "Sistem ({{language}})",
+    "languageHint": "Sistem seçeneği, işletim sisteminizin dilini izler; Sextant'ın o dil için çevirisi yoksa İngilizce kullanılır."
+  },
+  "window": {
+    "title": "Pencere",
+    "closeToTray": "Pencere kapatıldığında Sextant sistem tepsisinde kalsın",
+    "closeToTrayHint": "Sextant sistem tepsisinde çalışmaya devam eder: bağlantılar, bağlantı noktası yönlendirmeleri, terminaller ve MCP sunucusu açık kalır. Tepsideki simgesi (macOS'ta menü çubuğundaki) pencereyi yeniden gösterir; simgenin menüsündeki “Sextant'tan çık” uygulamadan çıkar.",
+    "noTray": "Sistem tepsisi bulunamadı, bu yüzden pencereyi kapatmak Sextant'tan çıkar. Linux'ta tepsi için libayatana-appindicator kitaplığı ve bir StatusNotifier/AppIndicator ana bilgisayarı (GNOME'da AppIndicator uzantısı) ya da bir X11 oturumunda bir sistem tepsisi gerekir."
+  },
+  "editor": {
+    "title": "Düzenleyici",
+    "scheme": "Renk şeması",
+    "hint": "Kaynak düzenleyicisinde, ayrıntılar panelinde ve Helm'de YAML renkleri. Otomatik, koyu temada One Dark'ı, açık temada GitHub Light'ı kullanır.",
+    "schemes": {
+      "auto": "Otomatik",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "Helm yayınlarını yüklemek ve değiştirmek helm komutunu çalıştırır. Yayınları görüntülemek onsuz da çalışır.",
+    "auto": "helm'i PATH içinde bul",
+    "manual": "Bu ikili dosyayı kullan",
+    "path": "helm yolu",
+    "browse": "Gözat…",
+    "browseTitle": "helm ikili dosyasını seçin",
+    "apply": "Uygula",
+    "checking": "helm aranıyor…",
+    "found": "Helm {{version}}, konum: {{path}}",
+    "foundNoVersion": "Helm, konum: {{path}}",
+    "notFound": "Helm bulunamadı",
+    "notRunnable": "{{path}} çalışan bir helm ikili dosyası değil"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "Kümeler KUBECONFIG'den (veya ~/.kube/config'den) ve burada eklediğiniz dosyalardan gelir."
+  },
+  "menu": {
+    "open": "Menüyü aç",
+    "close": "Menüyü kapat",
+    "title": "Menü"
+  },
+  "saveFailed": "Ayarlar kaydedilemedi",
+  "file": {
+    "label": "Ayarlar dosyası",
+    "backup": "Ayarlar dosyası bozuktu, bu yüzden Sextant varsayılan ayarlarla başladı. Eski dosya şuraya kopyalandı: {{path}}.",
+    "unwritable": "Değişiklikler kaydedilmiyor: ayarlar dosyası okunamıyor veya yazılamıyor. İzinlerini düzeltip Sextant'ı yeniden başlatın.",
+    "dismiss": "Kapat"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "nodeShellImage": "Düğüm kabuğu imajı",
+    "nodeShellImageHint": "Bir düğümdeki “Kabuk” eyleminin arkasındaki geçici ayrıcalıklı Pod'un imajı. nsenter gerektirir (busybox'ta vardır); kabuğun kendisi düğümünkidir. Yapay zekâ ajanlarına hiçbir zaman düğüm kabuğu verilmez."
+  }
+}

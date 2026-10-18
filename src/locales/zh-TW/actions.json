@@ -1,0 +1,100 @@
+{
+  "edit": {
+    "label": "編輯"
+  },
+  "delete": {
+    "label": "刪除",
+    "titleSingle": "要刪除 {{kind}} 嗎？",
+    "title_other": "要刪除 {{count}} 個 {{kind}} 物件嗎？",
+    "textSingle": "將從叢集中刪除此 {{kind}}：",
+    "text_other": "將從叢集中刪除以下 {{count}} 個物件：",
+    "confirm": "刪除",
+    "failed": "未刪除：{{name}}",
+    "partial": "已刪除 {{done}}/{{total}} 個。其餘項目刪除失敗："
+  },
+  "scale": {
+    "label": "調整規模",
+    "title": "調整 {{kind}} {{name}} 的規模",
+    "replicas": "複本數",
+    "current": "目前：{{count}}",
+    "confirm": "調整規模",
+    "invalid": "請輸入大於或等於 0 的整數。"
+  },
+  "restart": {
+    "label": "重新啟動",
+    "title": "要重新啟動 {{kind}} {{name}} 嗎？",
+    "text": "{{name}} 的所有 Pod 將逐一被取代（rollout restart）。",
+    "confirm": "重新啟動"
+  },
+  "cordon": {
+    "label": "封鎖 / 解除封鎖",
+    "cordonTitle": "要封鎖節點 {{name}} 嗎？",
+    "cordonText": "不會再有新的 Pod 排程到 {{name}} 上。已在其上執行的 Pod 會繼續執行。",
+    "cordonConfirm": "封鎖",
+    "uncordonTitle": "要解除封鎖節點 {{name}} 嗎？",
+    "uncordonText": "新的 Pod 將可再次排程到 {{name}} 上。",
+    "uncordonConfirm": "解除封鎖"
+  },
+  "drain": {
+    "label": "排空",
+    "title": "要排空節點 {{name}} 嗎？",
+    "text": "{{name}} 將被封鎖，其上的 Pod 將被驅逐。DaemonSet 的 Pod 與靜態（鏡像）Pod 會保留。",
+    "loading": "正在檢查節點上的 Pod…",
+    "previewFailed": "無法列出此節點上的 Pod",
+    "noPods": "此節點上沒有需要驅逐的 Pod。",
+    "evict_other": "將被驅逐（{{count}} 個 Pod）",
+    "unmanaged_other": "沒有控制器（{{count}} 個 Pod）：驅逐後不會有任何元件重新建立它們",
+    "force": "一併驅逐沒有控制器的 Pod（force）。未勾選時，它們會留在節點上。",
+    "emptyDir_other": "含有 emptyDir 資料（{{count}} 個 Pod）：資料會隨 Pod 一併刪除",
+    "deleteEmptyDirData": "一併驅逐含有 emptyDir 資料的 Pod（delete emptyDir data）。未勾選時，它們會留在節點上。",
+    "daemonSet_other": "保留：DaemonSet 的 Pod（{{count}} 個 Pod）",
+    "confirm": "排空",
+    "failed": "節點已封鎖，但部分 Pod 無法驅逐"
+  },
+  "trigger": {
+    "label": "立即觸發",
+    "title": "要立即執行 CronJob {{name}} 嗎？",
+    "text": "將立即依據此 CronJob 的範本建立一個 Job。",
+    "confirm": "觸發",
+    "done": "已建立 Job {{name}}。"
+  },
+  "suspend": {
+    "label": "暫停 / 繼續",
+    "suspendTitle": "要暫停 CronJob {{name}} 嗎？",
+    "suspendText": "在繼續之前，{{name}} 不會啟動新的 Job。執行中的 Job 不受影響。",
+    "suspendConfirm": "暫停",
+    "resumeTitle": "要繼續 CronJob {{name}} 嗎？",
+    "resumeText": "{{name}} 將再次依排程啟動 Job。",
+    "resumeConfirm": "繼續"
+  },
+  "dialog": {
+    "working": "處理中…",
+    "close": "關閉"
+  },
+  "editor": {
+    "tabTitle": "編輯 {{kind}} {{name}}",
+    "editorLabel": "{{kind}} {{name}} 的 YAML",
+    "save": "儲存",
+    "saving": "正在儲存…",
+    "saved": "已儲存。",
+    "unsaved": "有未儲存的變更",
+    "reload": "重新載入",
+    "loading": "正在載入…",
+    "conflict": "您開啟 {{kind}} {{name}} 之後，它已在叢集中被變更。您的變更並未儲存。請重新載入以取得目前的版本。",
+    "reloadTitle": "要捨棄您的變更嗎？",
+    "reloadText": "重新載入會以叢集中目前的版本取代文字內容。您未儲存的變更將會遺失。",
+    "reloadConfirm": "捨棄並重新載入",
+    "saveFailed": "未儲存"
+  },
+  "create": {
+    "open": "建立資源",
+    "tabTitle": "建立資源",
+    "editorLabel": "要建立之資源的 YAML",
+    "placeholder": "貼上或輸入 YAML。多個物件之間以 --- 分隔",
+    "apply": "套用",
+    "applying": "正在套用…",
+    "applied_other": "已套用 {{count}} 個物件：",
+    "failed": "未套用",
+    "empty": "請至少輸入一個物件。"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "tab": "Verlauf",
+  "status": {
+    "title": "Rollout",
+    "state": {
+      "complete": "Abgeschlossen",
+      "progressing": "Läuft",
+      "paused": "Pausiert",
+      "failed": "Hängt fest"
+    },
+    "replicas": "{{updated}} von {{desired}} aktualisiert · {{ready}} bereit · {{available}} verfügbar",
+    "pendingObservation": "Warten, bis der Controller die letzte Änderung sieht.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "Der Rollout ist pausiert. Setzen Sie ihn fort, um weiterzumachen oder zurückzusetzen."
+  },
+  "history": {
+    "title": "Revisionen",
+    "loading": "Revisionen werden geladen…",
+    "empty": "Noch keine Revisionen.",
+    "columns": {
+      "compare": "Vergleichen",
+      "revision": "Revision",
+      "created": "Erstellt",
+      "changeCause": "Änderungsgrund",
+      "images": "Images"
+    },
+    "current": "aktuell",
+    "select": "Revision {{revision}} vergleichen",
+    "pickTwo": "Wählen Sie zwei Revisionen aus, um ihre Pod-Templates zu vergleichen.",
+    "pickOneMore": "Wählen Sie eine weitere Revision zum Vergleichen aus.",
+    "revisionTitle": "Revision {{revision}}",
+    "rollBack": "Auf Revision {{revision}} zurücksetzen"
+  },
+  "rollback": {
+    "action": "Zurücksetzen…",
+    "title": "{{name}} zurücksetzen",
+    "confirm": "Auf Revision {{revision}} zurücksetzen",
+    "revision": "Revision",
+    "revisionOption": "Revision {{revision}}",
+    "revisionOptionCause": "Revision {{revision}} – {{cause}}",
+    "intro": "Das Pod-Template von Revision {{revision}} ersetzt das aktuelle, und die Pods werden wie bei jedem Update ersetzt.",
+    "current": "Aktuelles Template",
+    "target": "Revision {{revision}}",
+    "same": "Das aktuelle Template entspricht bereits Revision {{revision}}: Es gibt nichts zu ändern.",
+    "paused": "Dieses Deployment ist pausiert. Setzen Sie es fort, bevor Sie es zurücksetzen.",
+    "none": "Es gibt keine frühere Revision, auf die zurückgesetzt werden kann.",
+    "loading": "Revisionen werden geladen…"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "action": {
+    "label": "Logi"
+  },
+  "toolbar": {
+    "label": "Opcje logów",
+    "container": "Kontener",
+    "initContainer": "{{name}} (init)",
+    "follow": "Śledź",
+    "timestamps": "Znaczniki czasu",
+    "previous": "Poprzedni kontener",
+    "wrap": "Zawijaj wiersze",
+    "save": "Zapisz",
+    "reconnect": "Połącz ponownie"
+  },
+  "search": {
+    "label": "Szukaj w logach",
+    "placeholder": "Szukaj",
+    "previous": "Poprzednie dopasowanie",
+    "next": "Następne dopasowanie",
+    "count": "{{current}} z {{total}}",
+    "countCapped": "{{current}} z {{total}}+",
+    "none": "Brak dopasowań"
+  },
+  "status": {
+    "connecting": "Łączenie…",
+    "live": "Na żywo",
+    "notFollowing": "Bez śledzenia",
+    "ended": "Strumień zakończony",
+    "failed": "Błąd strumienia"
+  },
+  "lines_one": "{{count}} wiersz",
+  "lines_few": "{{count}} wiersze",
+  "lines_many": "{{count}} wierszy",
+  "lines_other": "{{count}} wiersza",
+  "dropped_one": "Odrzucono {{count}} starszy wiersz (zachowywane jest najnowsze {{limit}} wierszy, maksymalnie {{size}} MiB tekstu)",
+  "dropped_few": "Odrzucono {{count}} starsze wiersze (zachowywane jest najnowsze {{limit}} wierszy, maksymalnie {{size}} MiB tekstu)",
+  "dropped_many": "Odrzucono {{count}} starszych wierszy (zachowywane jest najnowsze {{limit}} wierszy, maksymalnie {{size}} MiB tekstu)",
+  "dropped_other": "Odrzucono {{count}} starszego wiersza (zachowywane jest najnowsze {{limit}} wierszy, maksymalnie {{size}} MiB tekstu)",
+  "lineCut": " … [wiersz obcięty przy 64 KiB, ciąg dalszy w następnym wierszu]",
+  "empty": "Brak wierszy logów.",
+  "view": "Wiersze logów",
+  "save": {
+    "title": "Zapisz logi",
+    "filter": "Pliki logów",
+    "failed": "Nie można zapisać logów."
+  },
+  "picker": {
+    "title": "Logi {{name}}: wybierz Pod",
+    "loading": "Wczytywanie Podów…",
+    "none": "Nie znaleziono Podów.",
+    "noSelector": "Ten obiekt nie wybiera Podów.",
+    "all": "Wszystkie Pody",
+    "allHint": "Śledź wszystkie Pody na jednej karcie, łącznie z Podami utworzonymi później."
+  },
+  "details": {
+    "title": "Logi",
+    "allPods": "Logi wszystkich Podów",
+    "hint": "Śledzi Pody pasujące do {{selector}}, w miarę jak się pojawiają i znikają."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} Pod",
+    "podsTitle_few": "{{count}} Pody",
+    "podsTitle_many": "{{count}} Podów",
+    "podsTitle_other": "{{count}} Poda",
+    "selector": "Selektor",
+    "selectorHint": "Selektor label; naciśnij Enter, aby zastosować.",
+    "sources": "Pody i kontenery ({{shown}} z {{total}})",
+    "sourcesLabel": "Pody i kontenery",
+    "capHint_one": "Jednocześnie działa najwyżej {{count}} strumień logów; odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capHint_few": "Jednocześnie działają najwyżej {{count}} strumienie logów; odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capHint_many": "Jednocześnie działa najwyżej {{count}} strumieni logów; odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capHint_other": "Jednocześnie działa najwyżej {{count}} strumienia logów; odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capped_one": "Czeka jeszcze {{count}} kontener: jednocześnie może działać najwyżej {{max}} strumieni logów. Odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capped_few": "Czekają jeszcze {{count}} kontenery: jednocześnie może działać najwyżej {{max}} strumieni logów. Odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capped_many": "Czeka jeszcze {{count}} kontenerów: jednocześnie może działać najwyżej {{max}} strumieni logów. Odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "capped_other": "Czeka jeszcze {{count}} kontenera: jednocześnie może działać najwyżej {{max}} strumieni logów. Odznacz Pody lub kontenery, aby wybrać, które są odczytywane.",
+    "noPods": "Brak pasujących Podów.",
+    "json": "Analizuj JSON",
+    "level": "Poziom",
+    "allLevels": "Wszystkie wiersze",
+    "levelAndAbove": "{{level}} i wyższe",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Filtr",
+    "regex": "Wyrażenie regularne",
+    "badRegex": "Wyrażenie regularne jest nieprawidłowe; żadne wiersze nie są odfiltrowywane.",
+    "sourceStatus": {
+      "waiting": "oczekiwanie na wolny strumień",
+      "connecting": "łączenie",
+      "streaming": "na żywo",
+      "ended": "zakończony",
+      "error": "błąd",
+      "notStarted": "nieuruchomiony",
+      "gone": "Pod usunięty",
+      "off": "wyłączony"
+    },
+    "streams": "Strumienie: {{count}}, Pody: {{pods}}"
+  }
+}

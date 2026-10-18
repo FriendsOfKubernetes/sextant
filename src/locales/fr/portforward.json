@@ -1,0 +1,49 @@
+{
+  "sidebar": "Redirection de ports",
+  "title": "Redirection de ports",
+  "loading": "Chargement des redirections de port…",
+  "empty": "Aucune redirection de port active.",
+  "emptyText": "Démarrez-en une depuis les détails d'un pod ou d'un service.",
+  "columns": {
+    "target": "Cible",
+    "ports": "Ports",
+    "status": "État"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Active",
+    "error": "Erreur"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Ouvrir dans le navigateur",
+    "stop": "Arrêter"
+  },
+  "action": {
+    "label": "Rediriger un port…"
+  },
+  "section": {
+    "title": "Redirection de ports",
+    "forward": "Rediriger",
+    "forwardPort": "Rediriger le port {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Rediriger {{target}}",
+    "remotePort": "Port à rediriger",
+    "localPort": "Port local",
+    "localPortChoice": "Choix du port local",
+    "auto": "Port libre aléatoire",
+    "custom": "Port spécifique",
+    "invalidPort": "Saisissez un port entre 1 et 65535.",
+    "start": "Démarrer la redirection",
+    "starting": "Démarrage…",
+    "started": "Redirection de localhost:{{local}} vers le port {{remote}}.",
+    "inUse": "Le port local {{port}} est déjà utilisé.",
+    "useFree": "Utiliser un port libre",
+    "close": "Fermer"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "title": "AI エージェントのアクセス",
+  "intro": "MCP サーバー経由で接続した AI エージェントがこのクラスターで行えることを設定します。セットを選択するまで、何も許可されません。",
+  "preset": {
+    "legend": "アクセスのセット",
+    "off": "オフ",
+    "readOnly": "読み取り専用",
+    "readWrite": "読み取り + 書き込み (削除なし)",
+    "full": "フル",
+    "custom": "カスタム"
+  },
+  "description": {
+    "off": "エージェントはこのクラスターにアクセスできません。一覧にクラスターは表示されますが、すべての呼び出しは拒否されます。",
+    "readOnly": "エージェントはすべての namespace のすべてのリソースを読み取り、Pod のログを取得できます。Secret の値は隠されます。何も変更できません。",
+    "readWrite": "エージェントはすべてを読み取ってログを取得できるほか、リソースの変更、コンテナーでのコマンド実行、ポートフォワードの開始も行えます。毎回事前に確認を求めます。削除はできません。Secret の値は隠されます。",
+    "full": "エージェントは削除を含め、すべての namespace ですべての操作を行えます。変更、削除、コマンド、ポートフォワードは毎回事前に確認を求めます。Secret の値は隠されます。",
+    "custom": "各ルールで namespace、Kind、操作を指定します。少なくとも 1 つのルールが対象としている操作が許可されます。"
+  },
+  "customizeHint": "このセットのルールを元に編集するには「カスタム」を選択してください。",
+  "unrecognised": {
+    "notice": "これらのルールは新しいバージョンの Sextant で作成されたか、手動で編集されたものです。保持されますが適用されません。「オフ」にリセットするかセットを選択して置き換えるまで、エージェントはアクセスできません。",
+    "reset": "オフにリセット"
+  },
+  "saveFailed": "アクセスルールを保存できませんでした。",
+  "rules": {
+    "title": "ルール",
+    "none": "ルールがないため、エージェントはこのクラスターにアクセスできません。",
+    "rule": "ルール {{number}}",
+    "add": "ルールを追加",
+    "remove": "ルール {{number}} を削除"
+  },
+  "namespaces": {
+    "legend": "Namespace",
+    "all": "すべての namespace",
+    "only": "選択した namespace",
+    "filter": "namespace を絞り込み",
+    "add": "名前で namespace を追加",
+    "addPlaceholder": "namespace 名",
+    "addButton": "namespace を追加",
+    "invalid": "有効な namespace 名ではありません。",
+    "empty": "namespace が選択されていないため、このルールは何も対象としません。",
+    "clusterOnly": "namespace に属さないリソース (ノード、namespace、CRD、クラスターロール) は、すべての namespace を対象とするルールでのみ扱われます。"
+  },
+  "kinds": {
+    "legend": "Kind",
+    "all": "すべての Kind",
+    "only": "選択した Kind",
+    "filter": "Kind を絞り込み",
+    "add": "名前で Kind を追加",
+    "addPlaceholder": "Kind または group/Kind",
+    "addButton": "Kind を追加",
+    "invalid": "Kind または group/Kind の形式で入力してください (例: Pod、apps/Deployment)。",
+    "empty": "Kind が選択されていないため、このルールは何も対象としません。",
+    "helm": "Helm リリース",
+    "coreGroup": "core",
+    "more": "最初の {{count}} 件を表示しています。一覧を絞り込むにはフィルターに入力してください。"
+  },
+  "picker": {
+    "noMatch": "一致するものはありません。",
+    "notConnected": "一覧から選択するには、このクラスターに接続してください。下に名前を入力することもできます。",
+    "loading": "一覧を読み込み中…",
+    "failed": "クラスターの一覧を取得できません。下に名前を入力することもできます。"
+  },
+  "actions": {
+    "legend": "操作",
+    "read": "読み取り",
+    "modify": "変更",
+    "delete": "削除",
+    "logs": "ログ",
+    "exec": "実行 / シェル",
+    "portForward": "ポートフォワード",
+    "secretValues": "Secret の値"
+  },
+  "confirm": {
+    "label": "実行前に確認する",
+    "hint": "このルールの「変更」「削除」「実行 / シェル」「ポートフォワード」は、Sextant での応答を待ちます (120 秒で拒否されます)。"
+  },
+  "secretWarning": "「Secret の値」を許可すると、エージェントは Secret のデータと Helm リリースの値を平文で読み取れます。エージェントが本当に必要とする namespace に限って許可してください。"
+}

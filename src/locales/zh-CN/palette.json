@@ -1,0 +1,34 @@
+{
+  "title": "命令面板",
+  "search": "搜索",
+  "placeholder": "查找对象、分区、集群、设置…",
+  "filterActions": "筛选操作…",
+  "results": "结果",
+  "groups": {
+    "recent": "最近使用",
+    "selected": "在详细信息中打开",
+    "goTo": "转到",
+    "clusters": "集群",
+    "settings": "设置",
+    "more": "更多"
+  },
+  "cluster": {
+    "current": "当前集群",
+    "switch": "切换",
+    "connect": "连接"
+  },
+  "settingsTab": "设置：{{tab}}",
+  "openDetails": "打开详细信息",
+  "actionsFor": "{{kind}}：{{name}}",
+  "tabForActions": "Tab：操作",
+  "loadingActions": "正在加载操作…",
+  "noActions": "此对象没有可用操作",
+  "actionsFailed": "无法读取该对象：{{message}}",
+  "noCluster": "打开一个集群以搜索其中的对象",
+  "empty": "未找到任何内容",
+  "searchAll": "搜索所有类型 ({{count}})",
+  "searching": "正在搜索… 已列出 {{done}}/{{total}} 种类型",
+  "limited": "仅搜索前 {{count}} 种类型（共 {{total}} 种）的对象",
+  "hint": "↑↓ 移动 · Enter 打开 · Tab 操作 · Esc 关闭",
+  "hintActions": "↑↓ 移动 · Enter 执行 · Shift+Tab 返回 · Esc 返回"
+}

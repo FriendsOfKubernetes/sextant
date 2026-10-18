@@ -1,0 +1,112 @@
+{
+  "title": "Метрики",
+  "loading": "Завантаження метрик…",
+  "unavailable": "Метрики недоступні",
+  "openSettings": "Відкрити налаштування кластера",
+  "na": "н/д",
+  "percent": "{{value}}%",
+  "percentOf": "{{value}}% · {{text}}",
+  "usedOf": "{{used}} з {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "запит {{value}}",
+    "limit": "ліміт {{value}}",
+    "noLimit": "без ліміту",
+    "requestSetOn": "(задано в контейнерах: {{count}} з {{total}})",
+    "limitSetOn": "(задано в контейнерах: {{count}} з {{total}})",
+    "shareOfLimit": "{{value}}% ліміту",
+    "shareOfRequest": "{{value}}% запиту",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "Пам'ять {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "Пам'ять"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "Пам'ять",
+    "pods": "Pods",
+    "disk": "Диск",
+    "loading": "Завантаження графіків…",
+    "noData": "Даних за останню годину поки немає.",
+    "needPrometheus": "Для графіків за останню годину потрібен Prometheus."
+  },
+  "settings": {
+    "title": "Метрики",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "Шукати автоматично",
+      "manual": "Вказати адресу",
+      "off": "Вимкнено"
+    },
+    "serviceKind": "Service у кластері",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "Префікс шляху",
+    "url": "URL Prometheus",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "Очікується namespace/service:port, наприклад monitoring/prometheus-operated:9090.",
+    "invalidUrl": "Очікується URL, що починається з http:// або https://.",
+    "save": "Використовувати цю адресу",
+    "usageSource": "Джерело поточних CPU і пам'яті",
+    "source": {
+      "auto": "Автоматично (metrics-server, інакше Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "Вимкнено"
+    },
+    "detected": "Знайдено",
+    "checking": "Перевірка джерел метрик…",
+    "metricsServer": "metrics-server",
+    "available": "Доступний",
+    "notAvailable": "Недоступний",
+    "foundAuto": "Знайдено автоматично: {{target}}",
+    "foundManual": "Відповідає за адресою {{target}}",
+    "notFound": "Не знайдено",
+    "manualNoAnswer": "Адреса не відповідає",
+    "prometheusOff": "Вимкнено",
+    "currentFrom": "Джерело поточних значень",
+    "noSource": "Немає джерела — метрики недоступні"
+  },
+  "overview": {
+    "sidebar": "Огляд",
+    "title": "Огляд кластера",
+    "nodes": "Nodes",
+    "nodesReady": "Готово: {{ready}} з {{count}}",
+    "pods": "Pods",
+    "workloads": "Робочі навантаження",
+    "usage": "Використання",
+    "cpu": "CPU",
+    "memory": "Пам'ять",
+    "usageOf": "{{used}} з {{total}} доступних",
+    "charts": "Остання година",
+    "warnings": "Попередження",
+    "noWarnings": "Попереджень немає.",
+    "loadingPage": "Завантаження огляду кластера…",
+    "loadingWarnings": "Завантаження попереджень…",
+    "phase": {
+      "Running": "Виконується",
+      "Pending": "Очікує",
+      "Succeeded": "Успішно",
+      "Failed": "Збій",
+      "Unknown": "Невідомо"
+    },
+    "state": {
+      "ready": "Готово",
+      "pending": "Не готово",
+      "running": "Виконується",
+      "succeeded": "Успішно",
+      "failed": "Збій"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

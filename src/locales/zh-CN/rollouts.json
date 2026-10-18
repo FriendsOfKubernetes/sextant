@@ -1,0 +1,49 @@
+{
+  "tab": "历史记录",
+  "status": {
+    "title": "滚动更新",
+    "state": {
+      "complete": "已完成",
+      "progressing": "进行中",
+      "paused": "已暂停",
+      "failed": "已卡住"
+    },
+    "replicas": "已更新 {{updated}}/{{desired}} · 就绪 {{ready}} · 可用 {{available}}",
+    "pendingObservation": "正在等待控制器观察到最新的更改。",
+    "stuck": "{{reason}}：{{message}}",
+    "pausedHint": "滚动更新已暂停；请恢复它以继续或回滚。"
+  },
+  "history": {
+    "title": "修订版本",
+    "loading": "正在加载修订版本…",
+    "empty": "尚无修订版本。",
+    "columns": {
+      "compare": "比较",
+      "revision": "修订版本",
+      "created": "创建时间",
+      "changeCause": "变更原因",
+      "images": "镜像"
+    },
+    "current": "当前",
+    "select": "比较修订版本 {{revision}}",
+    "pickTwo": "选择两个修订版本以比较其 Pod 模板。",
+    "pickOneMore": "再选择一个修订版本进行比较。",
+    "revisionTitle": "修订版本 {{revision}}",
+    "rollBack": "回滚到修订版本 {{revision}}"
+  },
+  "rollback": {
+    "action": "回滚…",
+    "title": "回滚 {{name}}",
+    "confirm": "回滚到修订版本 {{revision}}",
+    "revision": "修订版本",
+    "revisionOption": "修订版本 {{revision}}",
+    "revisionOptionCause": "修订版本 {{revision}} — {{cause}}",
+    "intro": "修订版本 {{revision}} 的 Pod 模板将替换当前模板，Pod 会像任何更新一样被替换。",
+    "current": "当前模板",
+    "target": "修订版本 {{revision}}",
+    "same": "当前模板已与修订版本 {{revision}} 一致：无需更改。",
+    "paused": "此 Deployment 已暂停。请先恢复它，再进行回滚。",
+    "none": "没有可回滚到的早期修订版本。",
+    "loading": "正在加载修订版本…"
+  }
+}

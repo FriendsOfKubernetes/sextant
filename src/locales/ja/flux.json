@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "GitRepository",
+    "ociRepositories": "OCIRepository",
+    "helmRepositories": "HelmRepository",
+    "helmCharts": "HelmChart",
+    "buckets": "Bucket",
+    "kustomizations": "Kustomization",
+    "helmReleases": "HelmRelease",
+    "imageRepositories": "ImageRepository",
+    "imagePolicies": "ImagePolicy",
+    "imageUpdateAutomations": "ImageUpdateAutomation",
+    "alerts": "Alert",
+    "providers": "Provider",
+    "receivers": "Receiver"
+  },
+  "columns": {
+    "ready": "準備完了",
+    "status": "状態",
+    "revision": "リビジョン",
+    "suspended": "一時停止",
+    "source": "ソース"
+  },
+  "suspended": {
+    "yes": "はい",
+    "no": "いいえ"
+  },
+  "fields": {
+    "ready": "準備完了",
+    "message": "状態",
+    "revision": "リビジョン",
+    "lastAttemptedRevision": "最後に試行したリビジョン",
+    "suspended": "一時停止",
+    "interval": "間隔",
+    "timeout": "タイムアウト",
+    "source": "ソース",
+    "chart": "チャート",
+    "helmChart": "Helm チャート",
+    "url": "URL",
+    "ref": "参照",
+    "endpoint": "エンドポイント",
+    "bucketName": "バケット",
+    "path": "パス",
+    "targetNamespace": "対象 namespace",
+    "releaseName": "リリース名",
+    "prune": "削除 (prune)",
+    "dependsOn": "依存先",
+    "image": "イメージ",
+    "imageRepository": "イメージリポジトリ",
+    "provider": "プロバイダー",
+    "eventSeverity": "イベントの重大度",
+    "eventSources": "イベントソース",
+    "type": "タイプ",
+    "channel": "チャネル",
+    "webhookPath": "Webhook パス",
+    "lastHandledReconcileAt": "最後の調整要求"
+  },
+  "related": {
+    "inventory": "適用済みリソース",
+    "resources": "リソース",
+    "usedBy": "使用元",
+    "kind": "Kind",
+    "name": "名前",
+    "namespace": "Namespace",
+    "loading": "読み込み中…",
+    "notUsed": "このソースを使用している Kustomization や HelmRelease はありません。"
+  },
+  "actions": {
+    "reconcile": "今すぐ調整",
+    "reconcileWithSource": "ソースと共に調整",
+    "suspend": "一時停止",
+    "resume": "再開"
+  },
+  "suspend": {
+    "title": "{{kind}} {{name}} を一時停止しますか?",
+    "confirm": "一時停止",
+    "text": "再開されるまで、Flux は {{kind}} {{name}} の調整を停止します。その間、Git やクラスターでの変更は適用も修正もされません。"
+  }
+}

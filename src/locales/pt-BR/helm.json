@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "Charts",
+    "releases": "Releases"
+  },
+  "missing": {
+    "title": "O Helm não está instalado",
+    "text": "As releases podem ser visualizadas, mas alterá-las e instalar charts exige o comando helm. Instale o Helm (ele é detectado quando você volta a esta janela) ou escolha um binário em Configurações → Helm. Guia de instalação:",
+    "short": "Requer o Helm — veja a dica no topo da página"
+  },
+  "releases": {
+    "title": "Releases",
+    "search": "Pesquisar releases",
+    "searchPlaceholder": "Pesquisar…",
+    "loading": "Carregando releases…",
+    "empty": "Nenhuma release do Helm",
+    "emptyText": "As releases instaladas com o Helm nos namespaces selecionados aparecem aqui.",
+    "noMatch": "Nenhuma release corresponde à pesquisa",
+    "open": "Abrir a release {{name}}",
+    "unreadable": "ilegível",
+    "unreadableRevision": "Revisão {{revision}} ilegível"
+  },
+  "columns": {
+    "name": "Nome",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "Versão",
+    "appVersion": "Versão do app",
+    "status": "Status",
+    "updated": "Atualizada",
+    "revision": "Revisão",
+    "description": "Descrição"
+  },
+  "details": {
+    "title": "Release {{name}}",
+    "close": "Fechar detalhes da release",
+    "loading": "Carregando…",
+    "chart": "Chart {{chart}} {{version}} · app {{appVersion}} · revisão {{revision}}",
+    "tabs": {
+      "values": "Valores",
+      "manifest": "Manifesto",
+      "notes": "Notas",
+      "history": "Histórico"
+    },
+    "tabsLabel": "Detalhes da release",
+    "valuesLabel": "Valores do usuário de {{name}}",
+    "manifestLabel": "Manifesto de {{name}}",
+    "show": {
+      "values": "Mostrar valores",
+      "manifest": "Mostrar manifesto"
+    },
+    "hide": {
+      "values": "Ocultar valores",
+      "manifest": "Ocultar manifesto"
+    },
+    "hidden": {
+      "values": "Os valores estão ocultos. Use o botão de olho para mostrá-los.",
+      "manifest": "O manifesto está oculto. Use o botão de olho para mostrá-lo."
+    },
+    "noValues": "Sem valores do usuário: a release usa os padrões do chart.",
+    "noNotes": "O chart não tem notas.",
+    "current": "atual",
+    "unreadable": "Ilegível",
+    "unreadableText": "Não é possível ler os dados armazenados desta revisão.",
+    "unreadableLatest": "Não é possível ler a revisão {{revision}}; mostrando a revisão {{shown}}, a mais recente legível.",
+    "nothingReadable": "Nenhuma revisão desta release pode ser lida (mais recente: {{revision}})."
+  },
+  "actions": {
+    "editValues": "Editar valores",
+    "rollback": "Reverter",
+    "rollbackTo": "Reverter para a revisão {{revision}}",
+    "uninstall": "Desinstalar"
+  },
+  "upgrade": {
+    "title": "Editar valores de {{name}}",
+    "valuesLabel": "Valores de {{name}}",
+    "chartRef": "Referência do chart",
+    "chartRefHint": "Atualiza com o chart {{chart}} {{version}}. Deixe vazio para reutilizar o chart armazenado na release; um chart com subcharts precisa da referência do repositório, por exemplo, repo/{{chart}}.",
+    "confirm": "Atualizar",
+    "done": "Release {{name}} atualizada. Uma nova revisão foi criada.",
+    "failed": "O Helm não conseguiu atualizar a release"
+  },
+  "rollback": {
+    "title": "Reverter {{name}}?",
+    "text": "{{name}} receberá uma nova revisão com o chart e os valores da revisão {{revision}}. Os recursos no cluster mudam de acordo.",
+    "confirm": "Reverter",
+    "failed": "O Helm não conseguiu reverter a release"
+  },
+  "uninstall": {
+    "title": "Desinstalar {{name}}?",
+    "text": "A release {{name}} no namespace {{namespace}} e todos os recursos criados por ela serão excluídos do cluster. Isso não pode ser desfeito.",
+    "confirm": "Desinstalar",
+    "failed": "O Helm não conseguiu desinstalar a release"
+  },
+  "confirmName": {
+    "label": "Digite o nome da release ({{name}}) para confirmar",
+    "mismatch": "O nome não corresponde."
+  },
+  "charts": {
+    "title": "Charts",
+    "repositories": "Repositórios",
+    "noRepos": "Ainda não há repositórios de charts. Adicione um para pesquisar os charts dele.",
+    "repoName": "Nome",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "Nome de usuário (opcional)",
+    "repoPassword": "Senha (opcional)",
+    "loginInUrl": "Digite o nome de usuário e a senha nos campos Nome de usuário e Senha, não na URL.",
+    "add": "Adicionar repositório",
+    "adding": "Adicionando…",
+    "remove": "Remover",
+    "removeLabel": "Remover o repositório {{name}}",
+    "removeTitle": "Remover o repositório {{name}}?",
+    "removeText": "O Helm esquece o repositório {{name}} ({{url}}). As releases instaladas a partir dele não são afetadas.",
+    "update": "Atualizar repositórios",
+    "updating": "Atualizando…",
+    "updated": "Repositórios atualizados.",
+    "search": "Pesquisar charts",
+    "searchPlaceholder": "Nome do chart ou palavra-chave",
+    "searchButton": "Pesquisar",
+    "searching": "Pesquisando…",
+    "noResults": "Nenhum chart corresponde à pesquisa.",
+    "description": "Descrição",
+    "select": "Mostrar o chart {{name}}",
+    "defaultValues": "Valores padrão",
+    "defaultValuesLabel": "Valores padrão de {{name}} {{version}}",
+    "loadingValues": "Carregando valores padrão…",
+    "install": "Instalar",
+    "loading": "Carregando…"
+  },
+  "install": {
+    "title": "Instalar {{chart}} {{version}}",
+    "release": "Nome da release",
+    "namespace": "Namespace",
+    "valuesLabel": "Valores para {{chart}}",
+    "invalidName": "Use letras minúsculas, dígitos, - e . (no máximo 53 caracteres), começando e terminando com uma letra ou um dígito.",
+    "confirm": "Instalar",
+    "done": "Release {{release}} instalada no namespace {{namespace}}. Ela aparece em Releases.",
+    "failed": "O Helm não conseguiu instalar o chart",
+    "valuesHint": "Apenas os valores que você alterar em relação aos padrões do chart são salvos com a release."
+  },
+  "status": {
+    "loading": "Verificando o Helm…"
+  }
+}

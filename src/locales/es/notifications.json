@@ -1,0 +1,40 @@
+{
+  "muteHour": "Silenciar durante 1 hora",
+  "unmute": "Reactivar",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{count}} problema nuevo en {{cluster}}",
+    "title_many": "{{count}} de problemas nuevos en {{cluster}}",
+    "title_other": "{{count}} problemas nuevos en {{cluster}}",
+    "titleClusters_one": "{{count}} problema nuevo en {{clusters}} clústeres",
+    "titleClusters_many": "{{count}} de problemas nuevos en {{clusters}} clústeres",
+    "titleClusters_other": "{{count}} problemas nuevos en {{clusters}} clústeres",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Notificaciones",
+    "enabled": "Mostrar notificaciones de escritorio sobre problemas nuevos en los clústeres conectados",
+    "enabledHint": "Solo se observan los clústeres ya conectados, y solo se avisa de los problemas que empiezan mientras Sextant está en ejecución, también con la ventana oculta en la bandeja. Las muestra el servicio de notificaciones del sistema; nada sale de este equipo.",
+    "mutedUntil": "Silenciadas hasta {{time}}",
+    "categories": "Notificar sobre",
+    "clusters": "Clústeres",
+    "clustersHint": "Un clúster desactivado aquí nunca notifica.",
+    "noClusters": "Todavía no hay clústeres.",
+    "certificates": "Certificados",
+    "certExpiryDays": "Avisar con esta cantidad de días de antelación antes de que caduque un certificado",
+    "certExpiryHint": "Lo usan la pantalla de problemas y las notificaciones de los Certificates de cert-manager, así como los detalles del certificado y la página de certificados TLS."
+  },
+  "history": {
+    "title": "Notificaciones recientes",
+    "clear": "Borrar",
+    "empty": "Todavía no hay notificaciones.",
+    "off": "Las notificaciones están desactivadas (Configuración → General → Notificaciones).",
+    "delivery": {
+      "summary": "en un resumen",
+      "muted": "silenciada"
+    }
+  },
+  "muteFailed": "No se pudieron silenciar las notificaciones: {{message}}"
+}

@@ -1,0 +1,39 @@
+{
+  "sidebar": "Problemas",
+  "title": "Problemas del clúster",
+  "badge_one": "{{count}} problema requiere atención",
+  "badge_many": "{{count}} de problemas requieren atención",
+  "badge_other": "{{count}} problemas requieren atención",
+  "onlyNewSince": "Solo nuevos desde {{time}}",
+  "markSeen": "Marcar todo como visto",
+  "total_one": "{{count}} problema",
+  "total_many": "{{count}} de problemas",
+  "total_other": "{{count}} problemas",
+  "sourceFailed": "No se pudo observar {{kind}}",
+  "truncated": "Hay demasiados problemas: solo se muestran los más recientes.",
+  "loading": "Buscando problemas…",
+  "none": "No se encontraron problemas.",
+  "noneNew": "No hay problemas nuevos desde la marca.",
+  "clusterWide": "Todo el clúster",
+  "categories": {
+    "nodes": "Nodos",
+    "pods": "Pods",
+    "workloads": "Cargas de trabajo",
+    "jobs": "Jobs",
+    "volumes": "Solicitudes de volumen",
+    "certificates": "Certificados",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Eventos de advertencia"
+  },
+  "messages": {
+    "container": "Contenedor {{container}}",
+    "restarts_one": "El contenedor {{container}} se reinició ({{count}} reinicio)",
+    "restarts_many": "El contenedor {{container}} se reinició ({{count}} de reinicios)",
+    "restarts_other": "El contenedor {{container}} se reinició ({{count}} reinicios)",
+    "replicas": "{{ready}} de {{desired}} réplicas listas",
+    "expires": "Caduca el {{date}}",
+    "expired": "Caducó el {{date}}"
+  }
+}

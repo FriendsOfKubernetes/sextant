@@ -1,0 +1,49 @@
+{
+  "sidebar": "連接埠轉送",
+  "title": "連接埠轉送",
+  "loading": "正在載入連接埠轉送…",
+  "empty": "沒有使用中的連接埠轉送。",
+  "emptyText": "可從 Pod 或 Service 的詳細資料中啟動。",
+  "columns": {
+    "target": "目標",
+    "ports": "連接埠",
+    "status": "狀態"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "使用中",
+    "error": "錯誤"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "在瀏覽器中開啟",
+    "stop": "停止"
+  },
+  "action": {
+    "label": "連接埠轉送…"
+  },
+  "section": {
+    "title": "連接埠轉送",
+    "forward": "轉送",
+    "forwardPort": "轉送連接埠 {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "轉送 {{target}}",
+    "remotePort": "要轉送的連接埠",
+    "localPort": "本機連接埠",
+    "localPortChoice": "本機連接埠選擇",
+    "auto": "隨機可用連接埠",
+    "custom": "指定連接埠",
+    "invalidPort": "請輸入 1 到 65535 之間的連接埠。",
+    "start": "開始轉送",
+    "starting": "正在啟動…",
+    "started": "正在將 localhost:{{local}} 轉送到連接埠 {{remote}}。",
+    "inUse": "本機連接埠 {{port}} 已被占用。",
+    "useFree": "使用可用的連接埠",
+    "close": "關閉"
+  }
+}

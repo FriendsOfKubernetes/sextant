@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Hazır",
+    "status": "Durum",
+    "revision": "Revizyon",
+    "suspended": "Askıda",
+    "source": "Kaynak"
+  },
+  "suspended": {
+    "yes": "Evet",
+    "no": "Hayır"
+  },
+  "fields": {
+    "ready": "Hazır",
+    "message": "Durum",
+    "revision": "Revizyon",
+    "lastAttemptedRevision": "Son denenen revizyon",
+    "suspended": "Askıda",
+    "interval": "Aralık",
+    "timeout": "Zaman aşımı",
+    "source": "Kaynak",
+    "chart": "Chart",
+    "helmChart": "Helm chart",
+    "url": "URL",
+    "ref": "Başvuru",
+    "endpoint": "Uç nokta",
+    "bucketName": "Bucket",
+    "path": "Yol",
+    "targetNamespace": "Hedef namespace",
+    "releaseName": "Yayın adı",
+    "prune": "Budama",
+    "dependsOn": "Bağımlılıklar",
+    "image": "İmaj",
+    "imageRepository": "İmaj deposu",
+    "provider": "Sağlayıcı",
+    "eventSeverity": "Olay önem düzeyi",
+    "eventSources": "Olay kaynakları",
+    "type": "Tür",
+    "channel": "Kanal",
+    "webhookPath": "Webhook yolu",
+    "lastHandledReconcileAt": "Son uzlaştırma isteği"
+  },
+  "related": {
+    "inventory": "Uygulanan kaynaklar",
+    "resources": "Kaynaklar",
+    "usedBy": "Kullananlar",
+    "kind": "Tür",
+    "name": "Ad",
+    "namespace": "Namespace",
+    "loading": "Yükleniyor…",
+    "notUsed": "Bu kaynağı hiçbir Kustomization veya HelmRelease kullanmıyor."
+  },
+  "actions": {
+    "reconcile": "Şimdi uzlaştır",
+    "reconcileWithSource": "Kaynakla birlikte uzlaştır",
+    "suspend": "Askıya al",
+    "resume": "Sürdür"
+  },
+  "suspend": {
+    "title": "{{kind}} {{name}} askıya alınsın mı?",
+    "confirm": "Askıya al",
+    "text": "Flux, {{kind}} {{name}} sürdürülene kadar uzlaştırmayı durdurur: bu sırada Git'teki veya kümedeki değişiklikler uygulanmaz ya da düzeltilmez."
+  }
+}

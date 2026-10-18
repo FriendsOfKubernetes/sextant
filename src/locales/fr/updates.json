@@ -1,0 +1,32 @@
+{
+  "title": "Mises à jour",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (version inconnue)",
+  "auto": "Rechercher les mises à jour au démarrage de Sextant",
+  "check": "Rechercher les mises à jour",
+  "checking": "Recherche de mises à jour…",
+  "upToDate": "Vous disposez de la dernière version.",
+  "available": "Sextant {{version}} est disponible (vous avez la version {{current}}).",
+  "notesLabel": "Notes de version",
+  "install": "Installer et redémarrer",
+  "installing": "Téléchargement et installation…",
+  "installingProgress": "Téléchargement et installation… {{percent}} %",
+  "restarting": "Redémarrage…",
+  "later": "Plus tard",
+  "dialogTitle": "Mise à jour disponible",
+  "openReleasePage": "Ouvrir la page de la version",
+  "notConfigured": "Les mises à jour sont désactivées dans cette version : elle n'a pas de clé de signature des mises à jour (plugins.updater.pubkey dans src-tauri/tauri.conf.json). Téléchargez les nouvelles versions depuis la page des versions.",
+  "manual": {
+    "deb": "Sextant a été installé depuis un paquet .deb et ne peut donc pas se remplacer lui-même. Téléchargez le nouveau .deb depuis la page de la version et installez-le avec votre gestionnaire de paquets, par exemple : sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant a été installé depuis un paquet .rpm et ne peut donc pas se remplacer lui-même. Téléchargez le nouveau paquet depuis la page de la version et installez-le avec votre gestionnaire de paquets.",
+    "other": "Cette copie de Sextant n'a pas été installée depuis un paquet de version (AppImage, .dmg ou .msi) et ne peut donc pas se mettre à jour elle-même. Téléchargez la nouvelle version depuis la page des versions."
+  },
+  "error": {
+    "network": "Impossible de joindre GitHub pour rechercher les mises à jour. Vérifiez votre connexion Internet ou votre proxy, puis réessayez.",
+    "noRelease": "La dernière version publiée sur GitHub ne contient pas encore de mise à jour pour ce système. Réessayez plus tard.",
+    "signature": "La mise à jour téléchargée n'est pas signée avec la clé de publication de Sextant : elle n'a donc pas été installée.",
+    "otherCheck": "Impossible de rechercher les mises à jour.",
+    "otherInstall": "Impossible d'installer la mise à jour.",
+    "networkInstall": "Impossible de télécharger la mise à jour. Vérifiez votre connexion Internet ou votre proxy, puis réessayez."
+  }
+}

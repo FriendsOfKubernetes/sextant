@@ -1,0 +1,15 @@
+{
+  "unreachable": "No se puede acceder al clúster.",
+  "unauthorized": "El clúster no aceptó las credenciales (401).",
+  "forbidden": "No tiene permiso para hacer esto (403).",
+  "notFound": "No se encontró.",
+  "conflict": "Otra persona modificó el objeto. Vuelva a cargarlo e inténtelo de nuevo.",
+  "invalid": "La solicitud no es válida.",
+  "authPlugin": "El plugin de autenticación del kubeconfig falta o ha fallado.",
+  "helmMissing": "Helm no está instalado.",
+  "portInUse": "El puerto local ya está en uso.",
+  "kubeconfig": "El kubeconfig no se puede leer o no es válido.",
+  "timeout": "La operación tardó demasiado.",
+  "denied": "La configuración de acceso de agentes de IA del clúster no lo permite.",
+  "other": "Algo salió mal."
+}

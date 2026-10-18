@@ -1,0 +1,182 @@
+{
+  "title": "Erweiterungen",
+  "hint": "Erweiterungen fügen Sextant Seiten, Bereiche, Aktionen und Spalten hinzu. Jede läuft in einem isolierten Frame und kann Ihre Cluster nur mit den Berechtigungen erreichen, die Sie ihr bei der Installation erteilen.",
+  "host": {
+    "failed": "Erweiterung fehlgeschlagen: {{message}}",
+    "failedUnknown": "die Erweiterung wurde mit einem Fehler beendet",
+    "reload": "Neu laden",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Übersicht",
+    "detailsTabs": "Detailansichten",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "Ausblenden"
+  },
+  "install": {
+    "file": "Aus Datei installieren…",
+    "url": "Von URL installieren…",
+    "folder": "Entpackten Ordner laden…",
+    "fileTitle": "Erweiterungspaket auswählen",
+    "fileFilter": "Sextant-Erweiterung",
+    "folderTitle": "Ordner einer Erweiterung auswählen",
+    "checking": "Paket wird geprüft…",
+    "installed": "Version {{version}} installiert.",
+    "updated": "Auf Version {{version}} aktualisiert."
+  },
+  "source": {
+    "folder": "Ordner {{path}}",
+    "file": "Datei {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "Von URL installieren",
+    "label": "Link zu einer Datei in einem GitHub-Release",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "Akzeptiert werden nur Links der Form https://github.com/<owner>/<repo>/releases/download/<tag>/<file>. Die Datei darf bis zu 20 MB groß sein. Installiert wird erst, wenn Sie den Berechtigungen zustimmen.",
+    "invalid": "Dies ist kein Link zu einer Datei in einem GitHub-Release.",
+    "check": "Herunterladen und prüfen"
+  },
+  "errors": {
+    "invalid": "Dieses Paket kann nicht installiert werden",
+    "conflict": "Eine andere Erweiterung mit dieser ID ist bereits installiert",
+    "notFound": "Diese Installation ist nicht mehr verfügbar",
+    "timeout": "Der Download hat zu lange gedauert",
+    "unreachable": "Die Datei konnte nicht heruntergeladen werden",
+    "other": "Die Erweiterung konnte nicht installiert werden"
+  },
+  "consent": {
+    "titleInstall": "{{name}} installieren?",
+    "titleUpdate": "{{name}} aktualisieren?",
+    "titleReview": "Berechtigungen von {{name}} prüfen",
+    "install": "Installieren",
+    "update": "Aktualisieren",
+    "author": "Autor",
+    "version": "Version",
+    "source": "Quelle",
+    "devHint": "Sie läuft direkt aus diesem Ordner, und Änderungen an ihren Dateien werden übernommen, während Sextant geöffnet ist. Sie ist als „Entwicklung“ gekennzeichnet.",
+    "replaces": "Ersetzt die installierte Version {{version}}.",
+    "newPermissions": "Neue Berechtigungen",
+    "newPermissionsHint": "Diese Version verlangt mehr, als Sie bisher erlaubt haben. Lesen Sie die Berechtigungen unten.",
+    "samePermissions": "Gleiche Berechtigungen",
+    "samePermissionsHint": "Diese Version verlangt nichts Neues.",
+    "reviewHint": "Die Dateien dieser Erweiterung verlangen jetzt mehr, als Sie erlaubt haben. Sie bleibt angehalten, bis Sie zustimmen.",
+    "adds": "Was sie hinzufügt",
+    "permissions": "Was sie darf",
+    "noContributions": "Der Oberfläche wird nichts hinzugefügt.",
+    "secretWarning": "Liest die Werte von Secrets",
+    "secretWarningHint": "Diese Erweiterung möchte Secret-Werte lesen: Passwörter, Tokens und Schlüssel. Erlauben Sie das nur, wenn Sie ihrem Autor vertrauen."
+  },
+  "contributes": {
+    "pages": "Seiten in der Seitenleiste",
+    "detailsSections": "Abschnitte im Detailbereich",
+    "actions": "Aktionen für Ressourcen",
+    "columns": "Tabellenspalten",
+    "dockActions": "Dock-Schaltflächen",
+    "settings": "Abschnitt in den Einstellungen"
+  },
+  "permissions": {
+    "clusters": "Cluster",
+    "clustersAll": "Alle Cluster",
+    "clustersOnly_one": "Nur der Cluster namens {{names}}",
+    "clustersOnly_other": "Nur die Cluster namens {{names}}",
+    "clustersNote": "Ein Name umfasst jeden Cluster-Context dieses Namens aus jeder kubeconfig-Quelle.",
+    "access": "Zugriff",
+    "none": "Kein Zugriff auf die Daten irgendeines Clusters.",
+    "rule": "{{actions}}: {{kinds}} {{namespaces}}",
+    "allKinds": "alle Arten",
+    "namespacesAll": "in allen Namespaces",
+    "namespacesOnly_one": "im Namespace {{names}}",
+    "namespacesOnly_other": "in den Namespaces {{names}}",
+    "asks": "Fragt vor dem Ausführen",
+    "noAsk": "Läuft ohne Nachfrage",
+    "secretValues": "Kann Secret-Werte {{namespaces}} lesen",
+    "clusterWide": "Objekte, die zu keinem Namespace gehören (etwa Nodes), werden nur von Regeln für alle Namespaces abgedeckt.",
+    "actionNames": {
+      "read": "Lesen",
+      "modify": "Ändern",
+      "delete": "Löschen",
+      "logs": "Logs lesen",
+      "exec": "Befehle ausführen",
+      "portForward": "Ports weiterleiten",
+      "secretValues": "Secret-Werte lesen"
+    }
+  },
+  "state": {
+    "active": "Aktiv",
+    "disabled": "Deaktiviert",
+    "needsConsent": "Wartet auf Ihre Zustimmung",
+    "failed": "Fehlgeschlagen"
+  },
+  "list": {
+    "loading": "Erweiterungen werden geladen…",
+    "empty": "Es sind keine Erweiterungen installiert.",
+    "failed": "Die Liste der Erweiterungen konnte nicht gelesen werden",
+    "development": "Entwicklung",
+    "version": "Version {{version}}",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "permissions": "Berechtigungen",
+    "reload": "Neu laden",
+    "activity": "Aktivität",
+    "remove": "Entfernen",
+    "reviewPermissions": "Berechtigungen prüfen",
+    "pausedHint": "Diese Erweiterung verlangt mehr, als Sie erlaubt haben. Sie ist angehalten, bis Sie ihre Berechtigungen prüfen.",
+    "failedHint": "Diese Erweiterung kann nicht ausgeführt werden: {{error}}",
+    "actionFailed": "Die Änderung konnte nicht vorgenommen werden",
+    "namedAction": "{{name}}: {{action}}"
+  },
+  "reinstall": {
+    "file": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut aus der Datei {{name}} („Aus Datei installieren…“).",
+    "url": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut von {{url}} („Von URL installieren…“)."
+  },
+  "permissionsDialog": {
+    "title": "Berechtigungen von {{name}}",
+    "granted": "Von Ihnen erlaubt",
+    "requested": "Jetzt verlangt",
+    "close": "Schließen"
+  },
+  "remove": {
+    "title": "{{name}} entfernen?",
+    "body": "Die Erweiterung, ihre Dateien und die von ihr gespeicherten Daten werden von diesem Computer gelöscht. Ihre Cluster bleiben unverändert."
+  },
+  "settingsFrame": "Einstellungen von {{name}}",
+  "notice": {
+    "text_one": "{{names}} verlangt mehr Berechtigungen, als Sie erlaubt haben, und ist angehalten.",
+    "text_other": "{{names}} verlangen mehr Berechtigungen, als Sie erlaubt haben, und sind angehalten.",
+    "review": "Berechtigungen prüfen",
+    "reinstall": "{{name}}: {{hint}}",
+    "dismiss": "Ausblenden"
+  },
+  "activity": {
+    "title": "Erweiterungsaktivität",
+    "hint": "Was Erweiterungen angefordert haben. Secret-Werte, YAML und Befehlsausgaben werden nicht aufgezeichnet.",
+    "extension": "Erweiterung",
+    "allExtensions": "Alle Erweiterungen",
+    "loading": "Protokoll wird geladen…",
+    "empty": "Noch keine Aufrufe.",
+    "failed": "Das Protokoll konnte nicht gelesen werden",
+    "clear": "Leeren",
+    "clearTitle": "Aktivitätsprotokoll leeren?",
+    "clearBody": "Alle aufgezeichneten Aufrufe von Erweiterungen werden von diesem Computer gelöscht.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Zeit",
+      "extension": "Erweiterung",
+      "cluster": "Cluster",
+      "method": "Methode",
+      "target": "Ziel",
+      "decision": "Entscheidung",
+      "result": "Ergebnis",
+      "duration": "Dauer"
+    },
+    "decisions": {
+      "allowed": "Erlaubt",
+      "denied": "Abgelehnt",
+      "approved": "Von Ihnen genehmigt",
+      "declined": "Von Ihnen abgelehnt",
+      "timedOut": "Keine Antwort",
+      "notChecked": "Nicht geprüft"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

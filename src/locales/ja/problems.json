@@ -1,0 +1,33 @@
+{
+  "sidebar": "問題",
+  "title": "クラスターの問題",
+  "badge_other": "対応が必要な問題が {{count}} 件あります",
+  "onlyNewSince": "{{time}} 以降の新しい問題のみ",
+  "markSeen": "すべて確認済みにする",
+  "total_other": "{{count}} 件の問題",
+  "sourceFailed": "{{kind}} を監視できませんでした",
+  "truncated": "問題が多すぎるため、最新のものだけを表示しています。",
+  "loading": "問題を検索中…",
+  "none": "問題は見つかりませんでした。",
+  "noneNew": "マーク以降の新しい問題はありません。",
+  "clusterWide": "クラスター全体",
+  "categories": {
+    "nodes": "ノード",
+    "pods": "Pod",
+    "workloads": "ワークロード",
+    "jobs": "Job",
+    "volumes": "ボリューム要求",
+    "certificates": "証明書",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "警告イベント"
+  },
+  "messages": {
+    "container": "コンテナー {{container}}",
+    "restarts_other": "コンテナー {{container}} が再起動しました (再起動 {{count}} 回)",
+    "replicas": "{{desired}} 個中 {{ready}} 個のレプリカが準備完了",
+    "expires": "有効期限: {{date}}",
+    "expired": "{{date}} に期限切れ"
+  }
+}

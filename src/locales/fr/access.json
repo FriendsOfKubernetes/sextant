@@ -1,0 +1,79 @@
+{
+  "title": "Accès des agents IA",
+  "intro": "Ce que les agents IA connectés via le serveur MCP peuvent faire dans ce cluster. Rien n'est autorisé tant que vous n'avez pas choisi un ensemble.",
+  "preset": {
+    "legend": "Ensemble d'accès",
+    "off": "Désactivé",
+    "readOnly": "Lecture seule",
+    "readWrite": "Lecture + écriture (sans suppression)",
+    "full": "Complet",
+    "custom": "Personnalisé"
+  },
+  "description": {
+    "off": "L'agent n'a aucun accès à ce cluster. Il le voit dans sa liste, mais chaque appel est refusé.",
+    "readOnly": "L'agent peut lire toutes les ressources de tous les namespaces et récupérer les journaux des pods. Les valeurs des Secrets sont masquées. Il ne peut rien modifier.",
+    "readWrite": "L'agent peut tout lire et récupérer les journaux, mais aussi modifier des ressources, exécuter des commandes dans les conteneurs et ouvrir des redirections de port. Il vous demande votre accord à chaque fois. Il ne peut pas supprimer. Les valeurs des Secrets sont masquées.",
+    "full": "L'agent peut tout faire dans tous les namespaces, y compris supprimer. Les modifications, suppressions, commandes et redirections de port vous demandent votre accord à chaque fois. Les valeurs des Secrets sont masquées.",
+    "custom": "C'est vous qui décidez : chaque règle couvre des namespaces, des kinds et des actions. Une action est autorisée dès qu'au moins une règle la couvre."
+  },
+  "customizeHint": "Choisissez Personnalisé pour partir des règles de cet ensemble et les modifier.",
+  "unrecognised": {
+    "notice": "Ces règles ont été écrites par une version plus récente de Sextant ou modifiées à la main ; elles sont conservées mais pas appliquées. L'agent n'a aucun accès tant que vous ne revenez pas à Désactivé ou ne choisissez pas un ensemble, qui les remplace.",
+    "reset": "Revenir à Désactivé"
+  },
+  "saveFailed": "Impossible d'enregistrer les règles d'accès.",
+  "rules": {
+    "title": "Règles",
+    "none": "Il n'y a aucune règle : l'agent n'a donc aucun accès à ce cluster.",
+    "rule": "Règle {{number}}",
+    "add": "Ajouter une règle",
+    "remove": "Supprimer la règle {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespaces",
+    "all": "Tous les namespaces",
+    "only": "Namespaces sélectionnés",
+    "filter": "Filtrer les namespaces",
+    "add": "Ajouter un namespace par son nom",
+    "addPlaceholder": "nom du namespace",
+    "addButton": "Ajouter le namespace",
+    "invalid": "Ce n'est pas un nom de namespace valide.",
+    "empty": "Aucun namespace n'est sélectionné : cette règle ne couvre donc rien.",
+    "clusterOnly": "Les ressources qui n'appartiennent à aucun namespace (nœuds, namespaces, CRD, cluster roles) ne sont couvertes que par une règle portant sur tous les namespaces."
+  },
+  "kinds": {
+    "legend": "Kinds",
+    "all": "Tous les kinds",
+    "only": "Kinds sélectionnés",
+    "filter": "Filtrer les kinds",
+    "add": "Ajouter un kind par son nom",
+    "addPlaceholder": "Kind ou groupe/Kind",
+    "addButton": "Ajouter le kind",
+    "invalid": "Utilisez Kind ou groupe/Kind, par exemple Pod ou apps/Deployment.",
+    "empty": "Aucun kind n'est sélectionné : cette règle ne couvre donc rien.",
+    "helm": "Releases Helm",
+    "coreGroup": "core",
+    "more": "Seuls les {{count}} premiers sont affichés. Saisissez du texte dans le filtre pour affiner la liste."
+  },
+  "picker": {
+    "noMatch": "Aucun résultat.",
+    "notConnected": "Connectez-vous à ce cluster pour choisir dans sa liste. Vous pouvez toujours saisir un nom ci-dessous.",
+    "loading": "Chargement de la liste…",
+    "failed": "La liste du cluster n'est pas disponible. Vous pouvez toujours saisir un nom ci-dessous."
+  },
+  "actions": {
+    "legend": "Actions",
+    "read": "Lecture",
+    "modify": "Modification",
+    "delete": "Suppression",
+    "logs": "Journaux",
+    "exec": "Exec / shell",
+    "portForward": "Redirection de port",
+    "secretValues": "Valeurs des Secrets"
+  },
+  "confirm": {
+    "label": "Demander avant l'exécution",
+    "hint": "Modification, Suppression, Exec et Redirection de port attendent votre réponse dans Sextant pour cette règle (120 s, après quoi elles sont refusées)."
+  },
+  "secretWarning": "Valeurs des Secrets permet à l'agent de lire en clair les données des Secrets et les valeurs des releases Helm. Ne l'autorisez que pour les namespaces dont l'agent a réellement besoin."
+}

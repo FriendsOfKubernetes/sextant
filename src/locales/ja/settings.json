@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "設定",
+    "open": "設定"
+  },
+  "tabs": {
+    "label": "設定のセクション",
+    "general": "一般",
+    "clusters": "クラスター",
+    "agents": "AI エージェント",
+    "extensions": "拡張機能",
+    "about": "アップデートと情報"
+  },
+  "appearance": {
+    "title": "外観",
+    "theme": "テーマ",
+    "themes": {
+      "system": "システム",
+      "light": "ライト",
+      "dark": "ダーク"
+    },
+    "systemHint": "「システム」はオペレーティングシステムのライトモードまたはダークモードに従います。",
+    "language": "言語",
+    "languageSystem": "システム ({{language}})",
+    "languageHint": "「システム」はオペレーティングシステムの言語に従います。Sextant にその言語の翻訳がない場合は英語になります。"
+  },
+  "window": {
+    "title": "ウィンドウ",
+    "closeToTray": "ウィンドウを閉じても Sextant をトレイに残す",
+    "closeToTrayHint": "Sextant はトレイで実行を続け、接続、ポートフォワード、ターミナル、MCP サーバーは開いたままになります。トレイ (macOS ではメニューバー) のアイコンからウィンドウを再表示でき、アイコンのメニューの「Sextant を終了」で終了します。",
+    "noTray": "システムトレイが見つからないため、ウィンドウを閉じると Sextant は終了します。Linux でトレイを使うには、libayatana-appindicator ライブラリと StatusNotifier/AppIndicator ホスト (GNOME では AppIndicator 拡張機能)、または X11 セッションではシステムトレイが必要です。"
+  },
+  "editor": {
+    "title": "エディター",
+    "scheme": "配色",
+    "hint": "リソースエディター、詳細パネル、Helm での YAML の配色です。「自動」はダークテーマでは One Dark、ライトテーマでは GitHub Light を使用します。",
+    "schemes": {
+      "auto": "自動",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "Helm リリースのインストールや変更には helm コマンドを実行します。リリースの表示には不要です。",
+    "auto": "PATH から helm を探す",
+    "manual": "このバイナリを使用",
+    "path": "helm のパス",
+    "browse": "参照…",
+    "browseTitle": "helm バイナリを選択",
+    "apply": "適用",
+    "checking": "helm を確認中…",
+    "found": "Helm {{version}} ({{path}})",
+    "foundNoVersion": "Helm ({{path}})",
+    "notFound": "Helm が見つかりませんでした",
+    "notRunnable": "{{path}} は動作する helm バイナリではありません"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "クラスターは KUBECONFIG (または ~/.kube/config) と、ここで追加したファイルから読み込まれます。"
+  },
+  "menu": {
+    "open": "メニューを開く",
+    "close": "メニューを閉じる",
+    "title": "メニュー"
+  },
+  "saveFailed": "設定を保存できませんでした",
+  "file": {
+    "label": "設定ファイル",
+    "backup": "設定ファイルが破損していたため、Sextant は既定の設定で起動しました。古いファイルは {{path}} にコピーされています。",
+    "unwritable": "変更は保存されません。設定ファイルを読み書きできません。アクセス許可を修正して Sextant を再起動してください。",
+    "dismiss": "閉じる"
+  },
+  "terminal": {
+    "title": "ターミナル",
+    "nodeShellImage": "ノードシェルのイメージ",
+    "nodeShellImageHint": "ノードの「シェル」で使用する一時的な特権 Pod のイメージです。nsenter が必要です (busybox に含まれています)。シェル自体はノードのものです。AI エージェントにノードシェルが与えられることはありません。"
+  }
+}

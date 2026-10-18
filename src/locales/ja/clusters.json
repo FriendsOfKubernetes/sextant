@@ -1,0 +1,153 @@
+{
+  "rail": {
+    "list": "クラスター一覧",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "クラスターを追加",
+    "refresh": "kubeconfig を再読み込み",
+    "slow": "{{tooltip}} ({{seconds}} 秒経過)。クラスターの応答が遅くなっています",
+    "expand": "クラスター一覧を展開",
+    "collapse": "クラスター一覧を折りたたむ"
+  },
+  "state": {
+    "disconnected": "未接続",
+    "connecting": "接続中",
+    "connected": "接続済み",
+    "error": "接続に失敗"
+  },
+  "menu": {
+    "open": "開く",
+    "connect": "接続",
+    "reconnect": "再接続",
+    "disconnect": "切断",
+    "settings": "設定",
+    "changeIcon": "アイコンを変更…"
+  },
+  "add": {
+    "title": "クラスターを追加",
+    "file": "kubeconfig ファイルを追加",
+    "paste": "kubeconfig を貼り付け",
+    "fileDialogTitle": "kubeconfig ファイルを選択",
+    "tabs": "追加方法",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "クラウドから"
+  },
+  "paste": {
+    "title": "kubeconfig を貼り付け",
+    "label": "Kubeconfig",
+    "hint": "kubeconfig ファイルの内容を貼り付けてください。Sextant はデータフォルダーに専用のコピーを保存します。",
+    "submit": "追加"
+  },
+  "sources": {
+    "title": "kubeconfig のソース",
+    "kind": {
+      "default": "既定",
+      "env": "KUBECONFIG",
+      "addedFile": "追加したファイル",
+      "pasted": "貼り付け",
+      "cloud": "クラウド"
+    },
+    "remove": "削除",
+    "removeNamed": "{{path}} を削除",
+    "confirmTitle": "kubeconfig のソースを削除しますか?",
+    "confirmFile": "このソースのクラスターは一覧から消えます。ファイル自体はディスクに残ります。",
+    "confirmPasted": "このソースのクラスターは一覧から消え、貼り付けたコピーは削除されます。",
+    "problems": "一部の kubeconfig ファイルを読み取れません",
+    "problemsTitle": "kubeconfig の問題",
+    "problemsHint": "他のファイルのクラスターは引き続き使用できます。ファイルを修正してから「再読み込み」を押してください。",
+    "confirmCloud": "このソースのクラスターは一覧から消え、これらのクラウドクラスター用に Sextant が作成した kubeconfig は削除されます。クラウド CLI と ~/.kube/config には手を加えません。"
+  },
+  "welcome": {
+    "loading": "kubeconfig を読み取り中…",
+    "noClusters": "クラスターが見つかりません",
+    "checked": "Sextant は次の場所で kubeconfig を探しました:",
+    "checkedPaths": "確認したパス",
+    "title": "Sextant へようこそ",
+    "pick": "左側でクラスターを選択して接続してください。"
+  },
+  "connection": {
+    "connecting": "{{name}} に接続中…",
+    "failed": "{{name}} に接続できません",
+    "reconnect": "再接続",
+    "certificate": "サーバー証明書が受け入れられませんでした。",
+    "seconds": "{{seconds}} 秒",
+    "slow": "クラスターの応答が遅くなっています"
+  },
+  "settings": {
+    "title": "クラスターの設定 — {{name}}",
+    "displayName": "表示名",
+    "color": "カラーラベル",
+    "autoColor": "自動",
+    "colorOption": "色 {{index}}",
+    "icon": "アイコン",
+    "iconPreview": "アイコンのプレビュー",
+    "iconText": "アイコンの文字",
+    "iconTextPlaceholder": "イニシャル",
+    "iconChoose": "画像を選択…",
+    "iconReset": "アイコンをリセット",
+    "iconHint": "カラーラベル上に表示する 1～2 文字か絵文字、または 5 MB までの PNG、JPEG、SVG、WebP 画像。空欄の場合は名前のイニシャルになります。",
+    "iconErrors": {
+      "type": "このファイルはサポートされている画像ではありません",
+      "size": "画像が 5 MB を超えています",
+      "read": "ファイルを読み取れません"
+    }
+  },
+  "info": {
+    "context": "コンテキスト",
+    "cluster": "クラスター",
+    "server": "サーバー",
+    "user": "ユーザー",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant は、このコンピューターにインストール済みでサインイン済みの aws、gcloud、az を使用します。独自の kubeconfig を書き込み、~/.kube/config を変更したり、代わりにサインインしたりすることはありません。",
+    "detecting": "aws、gcloud、az を検索中…",
+    "providers": "クラウド",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(バージョン不明)",
+    "notInstalled": "{{cli}} がインストールされていません",
+    "installGuide": "インストールガイド",
+    "pluginMissing": "{{plugin}} がインストールされていません。クラスターは追加できますが、接続には必要です。次のコマンドでインストールしてください:",
+    "loadingAccounts": "アカウントを読み取り中…",
+    "account": {
+      "aws": "プロファイル",
+      "gcp": "プロジェクト",
+      "azure": "サブスクリプション"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "環境変数の資格情報",
+    "regions": "リージョン",
+    "find": "クラスターを検索",
+    "finding": "検索中…",
+    "noClusters": "クラスターが見つかりませんでした。",
+    "found": "見つかったクラスター",
+    "separator": " · ",
+    "add_other": "{{count}} 個のクラスターを追加",
+    "added_other": "{{count}} 個のクラスターを追加しました。クラスター一覧に表示されています。",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} がインストールされていません{{scope}}",
+      "notLoggedIn": "{{cli}} にサインインしていないか、サインインの有効期限が切れています{{scope}}",
+      "pluginMissing": "{{cli}} のサインインプラグインがインストールされていません{{scope}}",
+      "failed": "{{cli}} が失敗しました{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "インストールしてから、もう一度お試しください。",
+      "notLoggedIn": "Sextant が代わりにサインインすることはありません。ターミナルで次のコマンドを実行してから、もう一度お試しください:",
+      "pluginMissing": "ターミナルで次のコマンドを実行してから、もう一度お試しください:",
+      "failed": "ターミナルで次のコマンドを実行してから、もう一度お試しください:"
+    },
+    "copyCommand": "コマンドをコピー",
+    "copied": "コピーしました",
+    "copyFailed": "クリップボードを使用できません。コマンドを選択してコピーしてください。"
+  }
+}

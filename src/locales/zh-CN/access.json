@@ -1,0 +1,79 @@
+{
+  "title": "AI 智能体访问权限",
+  "intro": "通过 MCP 服务器连接的 AI 智能体可以在此集群中执行哪些操作。在你选择一个权限集之前，任何操作都不被允许。",
+  "preset": {
+    "legend": "权限集",
+    "off": "关闭",
+    "readOnly": "只读",
+    "readWrite": "读取 + 写入（不可删除）",
+    "full": "完全",
+    "custom": "自定义"
+  },
+  "description": {
+    "off": "智能体无权访问此集群。它能在列表中看到此集群，但每次调用都会被拒绝。",
+    "readOnly": "智能体可以读取所有 Namespace 中的全部资源并获取 Pod 日志。Secret 值处于隐藏状态。它无法进行任何更改。",
+    "readWrite": "智能体可以读取所有内容并获取日志，还可以更改资源、在容器中运行命令以及打开端口转发。每次操作前都会先询问你。它无法删除。Secret 值处于隐藏状态。",
+    "full": "智能体可以在所有 Namespace 中执行任何操作，包括删除。每次更改、删除、命令和端口转发前都会先询问你。Secret 值处于隐藏状态。",
+    "custom": "由你决定：每条规则涵盖若干 Namespace、类型和操作。只要至少有一条规则涵盖某项操作，该操作即被允许。"
+  },
+  "customizeHint": "选择“自定义”即可以此权限集的规则为基础进行编辑。",
+  "unrecognised": {
+    "notice": "这些规则由更新版本的 Sextant 写入或经过手动编辑；它们会被保留但不会生效。在你重置为“关闭”或选择一个权限集（将替换这些规则）之前，智能体没有任何访问权限。",
+    "reset": "重置为“关闭”"
+  },
+  "saveFailed": "无法保存访问规则。",
+  "rules": {
+    "title": "规则",
+    "none": "没有任何规则，因此智能体无权访问此集群。",
+    "rule": "规则 {{number}}",
+    "add": "添加规则",
+    "remove": "删除规则 {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespace",
+    "all": "所有 Namespace",
+    "only": "选定的 Namespace",
+    "filter": "筛选 Namespace",
+    "add": "按名称添加 Namespace",
+    "addPlaceholder": "Namespace 名称",
+    "addButton": "添加 Namespace",
+    "invalid": "不是有效的 Namespace 名称。",
+    "empty": "未选择任何 Namespace，因此此规则不涵盖任何内容。",
+    "clusterOnly": "不属于任何 Namespace 的资源（节点、Namespace、CRD、ClusterRole）只能由涵盖所有 Namespace 的规则涵盖。"
+  },
+  "kinds": {
+    "legend": "类型",
+    "all": "所有类型",
+    "only": "选定的类型",
+    "filter": "筛选类型",
+    "add": "按名称添加类型",
+    "addPlaceholder": "Kind 或 group/Kind",
+    "addButton": "添加类型",
+    "invalid": "请使用 Kind 或 group/Kind 格式，例如 Pod 或 apps/Deployment。",
+    "empty": "未选择任何类型，因此此规则不涵盖任何内容。",
+    "helm": "Helm 发布",
+    "coreGroup": "core",
+    "more": "仅显示前 {{count}} 项。在筛选框中输入内容以缩小列表范围。"
+  },
+  "picker": {
+    "noMatch": "没有匹配项。",
+    "notConnected": "连接到此集群后即可从其列表中选择。你仍可以在下方输入名称。",
+    "loading": "正在加载列表…",
+    "failed": "无法获取该集群的列表。你仍可以在下方输入名称。"
+  },
+  "actions": {
+    "legend": "操作",
+    "read": "读取",
+    "modify": "修改",
+    "delete": "删除",
+    "logs": "日志",
+    "exec": "Exec / Shell",
+    "portForward": "端口转发",
+    "secretValues": "Secret 值"
+  },
+  "confirm": {
+    "label": "运行前询问",
+    "hint": "此规则中的修改、删除、Exec 和端口转发将在 Sextant 中等待你的答复（120 秒后自动拒绝）。"
+  },
+  "secretWarning": "“Secret 值”允许智能体以明文读取 Secret 数据和 Helm 发布的值。请仅对智能体确实需要的 Namespace 启用。"
+}

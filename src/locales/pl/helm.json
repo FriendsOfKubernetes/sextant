@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "Charty",
+    "releases": "Wydania"
+  },
+  "missing": {
+    "title": "Helm nie jest zainstalowany",
+    "text": "Wydania można przeglądać, ale ich zmienianie i instalowanie chartów wymaga polecenia helm. Zainstaluj Helm (zostanie wykryty po powrocie do tego okna) lub wskaż plik wykonywalny w Ustawienia → Helm. Instrukcja instalacji:",
+    "short": "Wymaga Helm — zobacz wskazówkę u góry strony"
+  },
+  "releases": {
+    "title": "Wydania",
+    "search": "Szukaj wydań",
+    "searchPlaceholder": "Szukaj…",
+    "loading": "Wczytywanie wydań…",
+    "empty": "Brak wydań Helm",
+    "emptyText": "Tutaj pojawiają się wydania zainstalowane za pomocą Helm w wybranych namespace’ach.",
+    "noMatch": "Żadne wydanie nie pasuje do wyszukiwania",
+    "open": "Otwórz wydanie {{name}}",
+    "unreadable": "nieczytelne",
+    "unreadableRevision": "Nieczytelna rewizja {{revision}}"
+  },
+  "columns": {
+    "name": "Nazwa",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "Wersja",
+    "appVersion": "Wersja aplikacji",
+    "status": "Stan",
+    "updated": "Zaktualizowano",
+    "revision": "Rewizja",
+    "description": "Opis"
+  },
+  "details": {
+    "title": "Wydanie {{name}}",
+    "close": "Zamknij szczegóły wydania",
+    "loading": "Wczytywanie…",
+    "chart": "Chart {{chart}} {{version}} · aplikacja {{appVersion}} · rewizja {{revision}}",
+    "tabs": {
+      "values": "Wartości",
+      "manifest": "Manifest",
+      "notes": "Uwagi",
+      "history": "Historia"
+    },
+    "tabsLabel": "Szczegóły wydania",
+    "valuesLabel": "Wartości użytkownika dla {{name}}",
+    "manifestLabel": "Manifest {{name}}",
+    "show": {
+      "values": "Pokaż wartości",
+      "manifest": "Pokaż manifest"
+    },
+    "hide": {
+      "values": "Ukryj wartości",
+      "manifest": "Ukryj manifest"
+    },
+    "hidden": {
+      "values": "Wartości są ukryte. Użyj przycisku z okiem, aby je pokazać.",
+      "manifest": "Manifest jest ukryty. Użyj przycisku z okiem, aby go pokazać."
+    },
+    "noValues": "Brak wartości użytkownika: wydanie używa wartości domyślnych chartu.",
+    "noNotes": "Chart nie zawiera uwag.",
+    "current": "bieżąca",
+    "unreadable": "Nieczytelna",
+    "unreadableText": "Nie można odczytać zapisanych danych tej rewizji.",
+    "unreadableLatest": "Nie można odczytać rewizji {{revision}}; wyświetlana jest rewizja {{shown}}, najnowsza czytelna.",
+    "nothingReadable": "Nie można odczytać żadnej rewizji tego wydania (najnowsza: {{revision}})."
+  },
+  "actions": {
+    "editValues": "Edytuj wartości",
+    "rollback": "Wycofaj",
+    "rollbackTo": "Przywróć rewizję {{revision}}",
+    "uninstall": "Odinstaluj"
+  },
+  "upgrade": {
+    "title": "Edycja wartości {{name}}",
+    "valuesLabel": "Wartości {{name}}",
+    "chartRef": "Odwołanie do chartu",
+    "chartRefHint": "Uaktualnia przy użyciu chartu {{chart}} {{version}}. Pozostaw puste, aby ponownie użyć chartu zapisanego w wydaniu; chart z subchartami wymaga odwołania do repozytorium, np. repo/{{chart}}.",
+    "confirm": "Uaktualnij",
+    "done": "Wydanie {{name}} zostało uaktualnione. Utworzono nową rewizję.",
+    "failed": "Helm nie mógł uaktualnić wydania"
+  },
+  "rollback": {
+    "title": "Wycofać {{name}}?",
+    "text": "{{name}} otrzyma nową rewizję z chartem i wartościami rewizji {{revision}}. Zasoby w klastrze zostaną odpowiednio zmienione.",
+    "confirm": "Wycofaj",
+    "failed": "Helm nie mógł wycofać wydania"
+  },
+  "uninstall": {
+    "title": "Odinstalować {{name}}?",
+    "text": "Wydanie {{name}} w namespace {{namespace}} i wszystkie utworzone przez nie zasoby zostaną usunięte z klastra. Tej operacji nie można cofnąć.",
+    "confirm": "Odinstaluj",
+    "failed": "Helm nie mógł odinstalować wydania"
+  },
+  "confirmName": {
+    "label": "Wpisz nazwę wydania ({{name}}), aby potwierdzić",
+    "mismatch": "Nazwa się nie zgadza."
+  },
+  "charts": {
+    "title": "Charty",
+    "repositories": "Repozytoria",
+    "noRepos": "Brak repozytoriów chartów. Dodaj repozytorium, aby przeszukiwać jego charty.",
+    "repoName": "Nazwa",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "Nazwa użytkownika (opcjonalnie)",
+    "repoPassword": "Hasło (opcjonalnie)",
+    "loginInUrl": "Wpisz nazwę użytkownika i hasło w polach „Nazwa użytkownika” i „Hasło”, a nie w adresie URL.",
+    "add": "Dodaj repozytorium",
+    "adding": "Dodawanie…",
+    "remove": "Usuń",
+    "removeLabel": "Usuń repozytorium {{name}}",
+    "removeTitle": "Usunąć repozytorium {{name}}?",
+    "removeText": "Helm zapomni repozytorium {{name}} ({{url}}). Nie wpłynie to na zainstalowane z niego wydania.",
+    "update": "Aktualizuj repozytoria",
+    "updating": "Aktualizowanie…",
+    "updated": "Zaktualizowano repozytoria.",
+    "search": "Szukaj chartów",
+    "searchPlaceholder": "Nazwa chartu lub słowo kluczowe",
+    "searchButton": "Szukaj",
+    "searching": "Wyszukiwanie…",
+    "noResults": "Żaden chart nie pasuje do wyszukiwania.",
+    "description": "Opis",
+    "select": "Pokaż chart {{name}}",
+    "defaultValues": "Wartości domyślne",
+    "defaultValuesLabel": "Wartości domyślne {{name}} {{version}}",
+    "loadingValues": "Wczytywanie wartości domyślnych…",
+    "install": "Zainstaluj",
+    "loading": "Wczytywanie…"
+  },
+  "install": {
+    "title": "Instalacja {{chart}} {{version}}",
+    "release": "Nazwa wydania",
+    "namespace": "Namespace",
+    "valuesLabel": "Wartości dla {{chart}}",
+    "invalidName": "Użyj małych liter, cyfr, - i . (maksymalnie 53 znaki); nazwa musi zaczynać się i kończyć literą lub cyfrą.",
+    "confirm": "Zainstaluj",
+    "done": "Wydanie {{release}} zostało zainstalowane w namespace {{namespace}}. Jest widoczne w sekcji „Wydania”.",
+    "failed": "Helm nie mógł zainstalować chartu",
+    "valuesHint": "Z wydaniem zapisywane są tylko wartości zmienione względem wartości domyślnych chartu."
+  },
+  "status": {
+    "loading": "Wyszukiwanie Helm…"
+  }
+}

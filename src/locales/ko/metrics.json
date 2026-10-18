@@ -1,0 +1,112 @@
+{
+  "title": "메트릭",
+  "loading": "메트릭을 로드하는 중…",
+  "unavailable": "메트릭을 사용할 수 없습니다",
+  "openSettings": "클러스터 설정 열기",
+  "na": "해당 없음",
+  "percent": "{{value}}%",
+  "percentOf": "{{value}}% · {{text}}",
+  "usedOf": "{{used}} / {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "요청 {{value}}",
+    "limit": "제한 {{value}}",
+    "noLimit": "제한 없음",
+    "requestSetOn": "(컨테이너 {{total}}개 중 {{count}}개에 설정됨)",
+    "limitSetOn": "(컨테이너 {{total}}개 중 {{count}}개에 설정됨)",
+    "shareOfLimit": "제한의 {{value}}%",
+    "shareOfRequest": "요청의 {{value}}%",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "메모리 {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "메모리"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "메모리",
+    "pods": "Pod",
+    "disk": "디스크",
+    "loading": "차트를 로드하는 중…",
+    "noData": "아직 지난 1시간 동안의 데이터가 없습니다.",
+    "needPrometheus": "지난 1시간의 차트를 보려면 Prometheus가 필요합니다."
+  },
+  "settings": {
+    "title": "메트릭",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "자동으로 찾기",
+      "manual": "수동 주소",
+      "off": "끔"
+    },
+    "serviceKind": "클러스터의 Service",
+    "urlKind": "URL",
+    "service": "Service(namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "경로 접두사",
+    "url": "Prometheus URL",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "namespace/service:port 형식이어야 합니다(예: monitoring/prometheus-operated:9090).",
+    "invalidUrl": "http:// 또는 https:// URL이어야 합니다.",
+    "save": "이 주소 사용",
+    "usageSource": "현재 CPU 및 메모리 출처",
+    "source": {
+      "auto": "자동(metrics-server, 없으면 Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "끔"
+    },
+    "detected": "발견됨",
+    "checking": "메트릭 소스를 확인하는 중…",
+    "metricsServer": "metrics-server",
+    "available": "사용 가능",
+    "notAvailable": "사용할 수 없음",
+    "foundAuto": "자동으로 찾음: {{target}}",
+    "foundManual": "{{target}}에서 응답함",
+    "notFound": "찾을 수 없음",
+    "manualNoAnswer": "주소가 응답하지 않습니다",
+    "prometheusOff": "끔",
+    "currentFrom": "현재 값 출처",
+    "noSource": "소스 없음 — 메트릭을 사용할 수 없습니다"
+  },
+  "overview": {
+    "sidebar": "개요",
+    "title": "클러스터 개요",
+    "nodes": "노드",
+    "nodesReady": "{{count}}개 중 {{ready}}개 준비됨",
+    "pods": "Pod",
+    "workloads": "워크로드",
+    "usage": "사용량",
+    "cpu": "CPU",
+    "memory": "메모리",
+    "usageOf": "할당 가능한 {{total}} 중 {{used}}",
+    "charts": "지난 1시간",
+    "warnings": "경고",
+    "noWarnings": "경고가 없습니다.",
+    "loadingPage": "클러스터 개요를 로드하는 중…",
+    "loadingWarnings": "경고를 로드하는 중…",
+    "phase": {
+      "Running": "실행 중",
+      "Pending": "보류 중",
+      "Succeeded": "성공",
+      "Failed": "실패",
+      "Unknown": "알 수 없음"
+    },
+    "state": {
+      "ready": "준비됨",
+      "pending": "준비 안 됨",
+      "running": "실행 중",
+      "succeeded": "성공",
+      "failed": "실패"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

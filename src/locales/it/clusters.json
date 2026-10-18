@@ -1,0 +1,157 @@
+{
+  "rail": {
+    "list": "Elenco dei cluster",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Aggiungi cluster",
+    "refresh": "Aggiorna kubeconfig",
+    "slow": "{{tooltip}} da {{seconds}} s. Il cluster risponde lentamente",
+    "expand": "Espandi elenco dei cluster",
+    "collapse": "Comprimi elenco dei cluster"
+  },
+  "state": {
+    "disconnected": "disconnesso",
+    "connecting": "connessione in corso",
+    "connected": "connesso",
+    "error": "connessione non riuscita"
+  },
+  "menu": {
+    "open": "Apri",
+    "connect": "Connetti",
+    "reconnect": "Riconnetti",
+    "disconnect": "Disconnetti",
+    "settings": "Impostazioni",
+    "changeIcon": "Cambia icona…"
+  },
+  "add": {
+    "title": "Aggiungi cluster",
+    "file": "Aggiungi file kubeconfig",
+    "paste": "Incolla kubeconfig",
+    "fileDialogTitle": "Scegli un file kubeconfig",
+    "tabs": "Modalità di aggiunta",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Dal cloud"
+  },
+  "paste": {
+    "title": "Incolla kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Incolla il contenuto di un file kubeconfig. Sextant ne conserva una copia privata nella propria cartella dei dati.",
+    "submit": "Aggiungi"
+  },
+  "sources": {
+    "title": "Origini kubeconfig",
+    "kind": {
+      "default": "predefinita",
+      "env": "KUBECONFIG",
+      "addedFile": "file aggiunto",
+      "pasted": "incollato",
+      "cloud": "cloud"
+    },
+    "remove": "Rimuovi",
+    "removeNamed": "Rimuovi {{path}}",
+    "confirmTitle": "Rimuovere l'origine kubeconfig?",
+    "confirmFile": "I suoi cluster spariscono dall'elenco. Il file resta sul disco.",
+    "confirmPasted": "I suoi cluster spariscono dall'elenco e la copia incollata viene eliminata.",
+    "problems": "Alcuni file kubeconfig non possono essere letti",
+    "problemsTitle": "Problemi del kubeconfig",
+    "problemsHint": "I cluster degli altri file continuano a funzionare. Correggi il file, poi premi Aggiorna.",
+    "confirmCloud": "I suoi cluster spariscono dall'elenco e il kubeconfig di Sextant per questi cluster cloud viene eliminato. La CLI del cloud e ~/.kube/config non vengono modificati."
+  },
+  "welcome": {
+    "loading": "Lettura del kubeconfig…",
+    "noClusters": "Nessun cluster trovato",
+    "checked": "Sextant ha cercato un kubeconfig qui:",
+    "checkedPaths": "Percorsi controllati",
+    "title": "Benvenuto in Sextant",
+    "pick": "Seleziona un cluster a sinistra per connetterti."
+  },
+  "connection": {
+    "connecting": "Connessione a {{name}}…",
+    "failed": "Impossibile connettersi a {{name}}",
+    "reconnect": "Riconnetti",
+    "certificate": "Il certificato del server non è stato accettato.",
+    "seconds": "{{seconds}} s",
+    "slow": "Il cluster risponde lentamente"
+  },
+  "settings": {
+    "title": "Impostazioni del cluster — {{name}}",
+    "displayName": "Nome visualizzato",
+    "color": "Etichetta colore",
+    "autoColor": "Auto",
+    "colorOption": "Colore {{index}}",
+    "icon": "Icona",
+    "iconPreview": "Anteprima dell'icona",
+    "iconText": "Testo dell'icona",
+    "iconTextPlaceholder": "Iniziali",
+    "iconChoose": "Scegli immagine…",
+    "iconReset": "Reimposta icona",
+    "iconHint": "Una o due lettere o un'emoji sull'etichetta colore, oppure un'immagine PNG, JPEG, SVG o WebP fino a 5 MB. Se vuoto, le iniziali del nome.",
+    "iconErrors": {
+      "type": "Il file non è un'immagine supportata",
+      "size": "L'immagine supera i 5 MB",
+      "read": "Impossibile leggere il file"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "Cluster",
+    "server": "Server",
+    "user": "Utente",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant usa aws, gcloud e az già installati e con accesso effettuato su questo computer. Scrive un proprio kubeconfig, non modifica mai ~/.kube/config e non effettua mai l'accesso al posto tuo.",
+    "detecting": "Ricerca di aws, gcloud e az…",
+    "providers": "Cloud",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(versione sconosciuta)",
+    "notInstalled": "{{cli}} non è installato",
+    "installGuide": "Guida all'installazione",
+    "pluginMissing": "{{plugin}} non è installato. I cluster possono essere aggiunti, ma per connettersi è necessario. Installalo con:",
+    "loadingAccounts": "Lettura degli account…",
+    "account": {
+      "aws": "Profilo",
+      "gcp": "Progetto",
+      "azure": "Sottoscrizione"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Credenziali dall'ambiente",
+    "regions": "Regioni",
+    "find": "Trova cluster",
+    "finding": "Ricerca…",
+    "noClusters": "Nessun cluster trovato.",
+    "found": "Cluster trovati",
+    "separator": " · ",
+    "add_one": "Aggiungi {{count}} cluster",
+    "add_many": "Aggiungi {{count}} di cluster",
+    "add_other": "Aggiungi {{count}} cluster",
+    "added_one": "{{count}} cluster aggiunto. Si trova nell'elenco dei cluster.",
+    "added_many": "{{count}} di cluster aggiunti. Si trovano nell'elenco dei cluster.",
+    "added_other": "{{count}} cluster aggiunti. Si trovano nell'elenco dei cluster.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} non è installato{{scope}}",
+      "notLoggedIn": "{{cli}} non ha effettuato l'accesso, oppure l'accesso è scaduto{{scope}}",
+      "pluginMissing": "Il plugin di accesso per {{cli}} non è installato{{scope}}",
+      "failed": "{{cli}} non è riuscito{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Installalo, poi riprova.",
+      "notLoggedIn": "Sextant non effettua l'accesso al posto tuo. Esegui questo comando in un terminale, poi riprova:",
+      "pluginMissing": "Esegui questo comando in un terminale, poi riprova:",
+      "failed": "Esegui questo comando in un terminale, poi riprova:"
+    },
+    "copyCommand": "Copia comando",
+    "copied": "Copiato",
+    "copyFailed": "Gli appunti non sono disponibili; seleziona il comando e copialo."
+  }
+}

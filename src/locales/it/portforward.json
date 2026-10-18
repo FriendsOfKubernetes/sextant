@@ -1,0 +1,49 @@
+{
+  "sidebar": "Inoltro porte",
+  "title": "Inoltro porte",
+  "loading": "Caricamento degli inoltri di porta…",
+  "empty": "Nessun inoltro di porta attivo.",
+  "emptyText": "Avviane uno dai dettagli di un pod o di un service.",
+  "columns": {
+    "target": "Destinazione",
+    "ports": "Porte",
+    "status": "Stato"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Attivo",
+    "error": "Errore"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Apri nel browser",
+    "stop": "Arresta"
+  },
+  "action": {
+    "label": "Inoltra porta…"
+  },
+  "section": {
+    "title": "Inoltro porte",
+    "forward": "Inoltra",
+    "forwardPort": "Inoltra porta {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Inoltra {{target}}",
+    "remotePort": "Porta da inoltrare",
+    "localPort": "Porta locale",
+    "localPortChoice": "Scelta della porta locale",
+    "auto": "Porta libera casuale",
+    "custom": "Porta specifica",
+    "invalidPort": "Inserisci una porta da 1 a 65535.",
+    "start": "Avvia inoltro",
+    "starting": "Avvio…",
+    "started": "Inoltro da localhost:{{local}} alla porta {{remote}}.",
+    "inUse": "La porta locale {{port}} è già in uso.",
+    "useFree": "Usa una porta libera",
+    "close": "Chiudi"
+  }
+}

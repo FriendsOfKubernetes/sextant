@@ -1,0 +1,32 @@
+{
+  "title": "更新",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant（版本不明）",
+  "auto": "Sextant 啟動時檢查更新",
+  "check": "檢查更新",
+  "checking": "正在檢查更新…",
+  "upToDate": "您使用的是最新版本。",
+  "available": "Sextant {{version}} 已推出（目前版本為 {{current}}）。",
+  "notesLabel": "版本資訊",
+  "install": "安裝並重新啟動",
+  "installing": "正在下載並安裝…",
+  "installingProgress": "正在下載並安裝… {{percent}}%",
+  "restarting": "正在重新啟動…",
+  "later": "稍後",
+  "dialogTitle": "有可用的更新",
+  "openReleasePage": "開啟發行頁面",
+  "notConfigured": "此組建已關閉更新：它沒有更新簽署金鑰（src-tauri/tauri.conf.json 中的 plugins.updater.pubkey）。請從發行頁面下載新版本。",
+  "manual": {
+    "deb": "Sextant 是透過 .deb 套件安裝的，因此不會自行取代。請從發行頁面下載新的 .deb 套件，並使用套件管理員安裝，例如：sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant 是透過 .rpm 套件安裝的，因此不會自行取代。請從發行頁面下載新的套件，並使用套件管理員安裝。",
+    "other": "此 Sextant 複本並非透過發行套件（AppImage、.dmg 或 .msi）安裝，因此無法自行更新。請從發行頁面下載新版本。"
+  },
+  "error": {
+    "network": "無法連線到 GitHub 檢查更新。請檢查網際網路連線或 Proxy，然後再試一次。",
+    "noRelease": "GitHub 上的最新發行版本尚未提供適用於此系統的更新。請稍後再試。",
+    "signature": "下載的更新未以 Sextant 發行金鑰簽署，因此未安裝。",
+    "otherCheck": "無法檢查更新。",
+    "otherInstall": "無法安裝更新。",
+    "networkInstall": "無法下載更新。請檢查網際網路連線或 Proxy，然後再試一次。"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "unreachable": "Kümeye ulaşılamıyor.",
+  "unauthorized": "Küme kimlik bilgilerini kabul etmedi (401).",
+  "forbidden": "Bunu yapma izniniz yok (403).",
+  "notFound": "Bulunamadı.",
+  "conflict": "Nesne başka biri tarafından değiştirildi. Yeniden yükleyip tekrar deneyin.",
+  "invalid": "İstek geçerli değil.",
+  "authPlugin": "Kubeconfig'deki kimlik doğrulama eklentisi eksik veya başarısız oldu.",
+  "helmMissing": "Helm yüklü değil.",
+  "portInUse": "Yerel bağlantı noktası zaten kullanımda.",
+  "kubeconfig": "Kubeconfig okunamıyor veya geçerli değil.",
+  "timeout": "İşlem çok uzun sürdü.",
+  "denied": "Kümenin yapay zekâ ajanı erişim ayarları buna izin vermiyor.",
+  "other": "Bir sorun oluştu."
+}

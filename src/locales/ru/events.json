@@ -1,0 +1,20 @@
+{
+  "sidebar": "События",
+  "title": "События",
+  "loading": "Загрузка событий…",
+  "none": "Событий нет.",
+  "search": "Поиск событий",
+  "searchPlaceholder": "Поиск…",
+  "count": "×{{count}}",
+  "from": "от {{source}}",
+  "columns": {
+    "type": "Тип",
+    "reason": "Причина",
+    "message": "Сообщение",
+    "namespace": "Namespace",
+    "involvedObject": "Объект",
+    "source": "Источник",
+    "count": "Количество",
+    "lastSeen": "Последнее"
+  }
+}

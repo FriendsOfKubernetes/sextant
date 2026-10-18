@@ -1,0 +1,100 @@
+{
+  "edit": {
+    "label": "编辑"
+  },
+  "delete": {
+    "label": "删除",
+    "titleSingle": "删除 {{kind}}？",
+    "title_other": "删除 {{count}} 个 {{kind}} 对象？",
+    "textSingle": "将从集群中删除此 {{kind}}：",
+    "text_other": "将从集群中删除以下 {{count}} 个对象：",
+    "confirm": "删除",
+    "failed": "未删除：{{name}}",
+    "partial": "已删除 {{done}}/{{total}} 个。其余删除失败："
+  },
+  "scale": {
+    "label": "伸缩",
+    "title": "伸缩 {{kind}} {{name}}",
+    "replicas": "副本数",
+    "current": "当前：{{count}}",
+    "confirm": "伸缩",
+    "invalid": "请输入大于或等于 0 的整数。"
+  },
+  "restart": {
+    "label": "重启",
+    "title": "重启 {{kind}} {{name}}？",
+    "text": "{{name}} 的所有 Pod 将被逐个替换（rollout restart）。",
+    "confirm": "重启"
+  },
+  "cordon": {
+    "label": "封锁 / 解除封锁",
+    "cordonTitle": "封锁节点 {{name}}？",
+    "cordonText": "不会再有新的 Pod 调度到 {{name}} 上。已在其上运行的 Pod 将继续运行。",
+    "cordonConfirm": "封锁",
+    "uncordonTitle": "解除封锁节点 {{name}}？",
+    "uncordonText": "新的 Pod 将可以再次调度到 {{name}} 上。",
+    "uncordonConfirm": "解除封锁"
+  },
+  "drain": {
+    "label": "腾空",
+    "title": "腾空节点 {{name}}？",
+    "text": "{{name}} 将被封锁，其上的 Pod 将被驱逐。DaemonSet 的 Pod 和静态（镜像）Pod 会保留。",
+    "loading": "正在查看节点上的 Pod…",
+    "previewFailed": "无法列出该节点上的 Pod",
+    "noPods": "此节点上没有需要驱逐的 Pod。",
+    "evict_other": "将被驱逐（{{count}} 个 Pod）",
+    "unmanaged_other": "没有控制器（{{count}} 个 Pod）：驱逐后不会有任何组件重新创建它们",
+    "force": "同时驱逐没有控制器的 Pod（force）。不勾选时，它们会保留在节点上。",
+    "emptyDir_other": "带有 emptyDir 数据（{{count}} 个 Pod）：数据会随 Pod 一起删除",
+    "deleteEmptyDirData": "同时驱逐带有 emptyDir 数据的 Pod（delete emptyDir data）。不勾选时，它们会保留在节点上。",
+    "daemonSet_other": "保留：DaemonSet 的 Pod（{{count}} 个 Pod）",
+    "confirm": "腾空",
+    "failed": "节点已封锁，但部分 Pod 无法驱逐"
+  },
+  "trigger": {
+    "label": "立即触发",
+    "title": "立即运行 CronJob {{name}}？",
+    "text": "将立即根据该 CronJob 的模板创建一个 Job。",
+    "confirm": "触发",
+    "done": "已创建 Job {{name}}。"
+  },
+  "suspend": {
+    "label": "暂停 / 恢复",
+    "suspendTitle": "暂停 CronJob {{name}}？",
+    "suspendText": "在恢复之前，{{name}} 不会启动新的 Job。正在运行的 Job 不受影响。",
+    "suspendConfirm": "暂停",
+    "resumeTitle": "恢复 CronJob {{name}}？",
+    "resumeText": "{{name}} 将重新按计划启动 Job。",
+    "resumeConfirm": "恢复"
+  },
+  "dialog": {
+    "working": "正在处理…",
+    "close": "关闭"
+  },
+  "editor": {
+    "tabTitle": "编辑 {{kind}} {{name}}",
+    "editorLabel": "{{kind}} {{name}} 的 YAML",
+    "save": "保存",
+    "saving": "正在保存…",
+    "saved": "已保存。",
+    "unsaved": "有未保存的更改",
+    "reload": "重新加载",
+    "loading": "正在加载…",
+    "conflict": "你打开 {{kind}} {{name}} 后，它已在集群中被更改。你的更改未保存。请重新加载以获取当前版本。",
+    "reloadTitle": "放弃你的更改？",
+    "reloadText": "重新加载会将文本替换为集群中的当前版本。你未保存的更改将会丢失。",
+    "reloadConfirm": "放弃并重新加载",
+    "saveFailed": "未保存"
+  },
+  "create": {
+    "open": "创建资源",
+    "tabTitle": "创建资源",
+    "editorLabel": "要创建的资源的 YAML",
+    "placeholder": "粘贴或输入 YAML。多个对象之间用 --- 分隔",
+    "apply": "应用",
+    "applying": "正在应用…",
+    "applied_other": "已应用 {{count}} 个对象：",
+    "failed": "未应用",
+    "empty": "请至少输入一个对象。"
+  }
+}

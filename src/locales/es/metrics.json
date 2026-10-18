@@ -1,0 +1,112 @@
+{
+  "title": "Métricas",
+  "loading": "Cargando métricas…",
+  "unavailable": "Las métricas no están disponibles",
+  "openSettings": "Abrir la configuración del clúster",
+  "na": "n/d",
+  "percent": "{{value}} %",
+  "percentOf": "{{value}} % · {{text}}",
+  "usedOf": "{{used}} de {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "solicitud {{value}}",
+    "limit": "límite {{value}}",
+    "noLimit": "sin límite",
+    "requestSetOn": "(definida en {{count}} de {{total}} contenedores)",
+    "limitSetOn": "(definido en {{count}} de {{total}} contenedores)",
+    "shareOfLimit": "{{value}} % del límite",
+    "shareOfRequest": "{{value}} % de la solicitud",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "Memoria {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "Memoria"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "Memoria",
+    "pods": "Pods",
+    "disk": "Disco",
+    "loading": "Cargando gráficos…",
+    "noData": "Todavía no hay datos de la última hora.",
+    "needPrometheus": "Los gráficos de la última hora necesitan Prometheus."
+  },
+  "settings": {
+    "title": "Métricas",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "Buscar automáticamente",
+      "manual": "Dirección manual",
+      "off": "Desactivado"
+    },
+    "serviceKind": "Service en el clúster",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:puerto)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "Prefijo de ruta",
+    "url": "URL de Prometheus",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "Se esperaba namespace/service:puerto, por ejemplo monitoring/prometheus-operated:9090.",
+    "invalidUrl": "Se esperaba una URL http:// o https://.",
+    "save": "Usar esta dirección",
+    "usageSource": "CPU y memoria actuales desde",
+    "source": {
+      "auto": "Automático (metrics-server o, si no, Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "Desactivado"
+    },
+    "detected": "Encontrado",
+    "checking": "Comprobando los orígenes de métricas…",
+    "metricsServer": "metrics-server",
+    "available": "Disponible",
+    "notAvailable": "No disponible",
+    "foundAuto": "Encontrado automáticamente: {{target}}",
+    "foundManual": "Responde en {{target}}",
+    "notFound": "No encontrado",
+    "manualNoAnswer": "La dirección no responde",
+    "prometheusOff": "Desactivado",
+    "currentFrom": "Valores actuales desde",
+    "noSource": "Sin origen: las métricas no están disponibles"
+  },
+  "overview": {
+    "sidebar": "Resumen",
+    "title": "Resumen del clúster",
+    "nodes": "Nodos",
+    "nodesReady": "{{ready}} de {{count}} listos",
+    "pods": "Pods",
+    "workloads": "Cargas de trabajo",
+    "usage": "Uso",
+    "cpu": "CPU",
+    "memory": "Memoria",
+    "usageOf": "{{used}} de {{total}} asignables",
+    "charts": "Última hora",
+    "warnings": "Advertencias",
+    "noWarnings": "No hay advertencias.",
+    "loadingPage": "Cargando el resumen del clúster…",
+    "loadingWarnings": "Cargando advertencias…",
+    "phase": {
+      "Running": "En ejecución",
+      "Pending": "Pendiente",
+      "Succeeded": "Completado",
+      "Failed": "Fallido",
+      "Unknown": "Desconocido"
+    },
+    "state": {
+      "ready": "Listo",
+      "pending": "No listo",
+      "running": "En ejecución",
+      "succeeded": "Completado",
+      "failed": "Fallido"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

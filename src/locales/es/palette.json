@@ -1,0 +1,34 @@
+{
+  "title": "Paleta de comandos",
+  "search": "Buscar",
+  "placeholder": "Buscar objetos, secciones, clústeres, configuración…",
+  "filterActions": "Filtrar acciones…",
+  "results": "Resultados",
+  "groups": {
+    "recent": "Recientes",
+    "selected": "Abierto en detalles",
+    "goTo": "Ir a",
+    "clusters": "Clústeres",
+    "settings": "Configuración",
+    "more": "Más"
+  },
+  "cluster": {
+    "current": "Clúster actual",
+    "switch": "Cambiar",
+    "connect": "Conectar"
+  },
+  "settingsTab": "Configuración: {{tab}}",
+  "openDetails": "Abrir detalles",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: acciones",
+  "loadingActions": "Cargando acciones…",
+  "noActions": "No hay acciones para este objeto",
+  "actionsFailed": "No se pudo leer el objeto: {{message}}",
+  "noCluster": "Abra un clúster para buscar sus objetos",
+  "empty": "No se encontró nada",
+  "searchAll": "Buscar en todos los tipos ({{count}})",
+  "searching": "Buscando… {{done}} de {{total}} tipos listados",
+  "limited": "Se buscan objetos de los primeros {{count}} de {{total}} tipos",
+  "hint": "↑↓ mover · Enter abrir · Tab acciones · Esc cerrar",
+  "hintActions": "↑↓ mover · Enter ejecutar · Shift+Tab volver · Esc volver"
+}

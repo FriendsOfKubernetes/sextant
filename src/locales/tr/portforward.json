@@ -1,0 +1,49 @@
+{
+  "sidebar": "Bağlantı noktası yönlendirme",
+  "title": "Bağlantı noktası yönlendirme",
+  "loading": "Bağlantı noktası yönlendirmeleri yükleniyor…",
+  "empty": "Etkin bağlantı noktası yönlendirmesi yok.",
+  "emptyText": "Bir Pod'un veya Service'in ayrıntılarından başlatabilirsiniz.",
+  "columns": {
+    "target": "Hedef",
+    "ports": "Bağlantı noktaları",
+    "status": "Durum"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Etkin",
+    "error": "Hata"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Tarayıcıda aç",
+    "stop": "Durdur"
+  },
+  "action": {
+    "label": "Bağlantı noktası yönlendir…"
+  },
+  "section": {
+    "title": "Bağlantı noktası yönlendirme",
+    "forward": "Yönlendir",
+    "forwardPort": "{{port}} bağlantı noktasını yönlendir",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Yönlendir: {{target}}",
+    "remotePort": "Yönlendirilecek bağlantı noktası",
+    "localPort": "Yerel bağlantı noktası",
+    "localPortChoice": "Yerel bağlantı noktası seçimi",
+    "auto": "Rastgele boş bağlantı noktası",
+    "custom": "Belirli bir bağlantı noktası",
+    "invalidPort": "1 ile 65535 arasında bir bağlantı noktası girin.",
+    "start": "Yönlendirmeyi başlat",
+    "starting": "Başlatılıyor…",
+    "started": "localhost:{{local}}, {{remote}} bağlantı noktasına yönlendiriliyor.",
+    "inUse": "Yerel bağlantı noktası {{port}} zaten kullanımda.",
+    "useFree": "Boş bir bağlantı noktası kullan",
+    "close": "Kapat"
+  }
+}

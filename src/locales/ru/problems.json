@@ -1,0 +1,42 @@
+{
+  "sidebar": "Проблемы",
+  "title": "Проблемы кластера",
+  "badge_one": "{{count}} проблема требует внимания",
+  "badge_few": "{{count}} проблемы требуют внимания",
+  "badge_many": "{{count}} проблем требуют внимания",
+  "badge_other": "{{count}} проблемы требуют внимания",
+  "onlyNewSince": "Только новые с {{time}}",
+  "markSeen": "Отметить все как просмотренные",
+  "total_one": "{{count}} проблема",
+  "total_few": "{{count}} проблемы",
+  "total_many": "{{count}} проблем",
+  "total_other": "{{count}} проблемы",
+  "sourceFailed": "Не удалось отслеживать {{kind}}",
+  "truncated": "Проблем слишком много: показаны только самые последние.",
+  "loading": "Поиск проблем…",
+  "none": "Проблем не найдено.",
+  "noneNew": "Новых проблем с момента отметки нет.",
+  "clusterWide": "Весь кластер",
+  "categories": {
+    "nodes": "Nodes",
+    "pods": "Pods",
+    "workloads": "Рабочие нагрузки",
+    "jobs": "Jobs",
+    "volumes": "Запросы томов",
+    "certificates": "Сертификаты",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "События Warning"
+  },
+  "messages": {
+    "container": "Контейнер {{container}}",
+    "restarts_one": "Контейнер {{container}} перезапускался ({{count}} перезапуск)",
+    "restarts_few": "Контейнер {{container}} перезапускался ({{count}} перезапуска)",
+    "restarts_many": "Контейнер {{container}} перезапускался ({{count}} перезапусков)",
+    "restarts_other": "Контейнер {{container}} перезапускался ({{count}} перезапуска)",
+    "replicas": "Готово реплик: {{ready}} из {{desired}}",
+    "expires": "Истекает {{date}}",
+    "expired": "Истек {{date}}"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "title": "Komut paleti",
+  "search": "Ara",
+  "placeholder": "Nesne, bölüm, küme, ayar bulun…",
+  "filterActions": "Eylemleri süz…",
+  "results": "Sonuçlar",
+  "groups": {
+    "recent": "Son kullanılanlar",
+    "selected": "Ayrıntılarda açık",
+    "goTo": "Git",
+    "clusters": "Kümeler",
+    "settings": "Ayarlar",
+    "more": "Diğer"
+  },
+  "cluster": {
+    "current": "Geçerli küme",
+    "switch": "Geç",
+    "connect": "Bağlan"
+  },
+  "settingsTab": "Ayarlar: {{tab}}",
+  "openDetails": "Ayrıntıları aç",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: eylemler",
+  "loadingActions": "Eylemler yükleniyor…",
+  "noActions": "Bu nesne için eylem yok",
+  "actionsFailed": "Nesne okunamadı: {{message}}",
+  "noCluster": "Nesnelerinde aramak için bir küme açın",
+  "empty": "Hiçbir şey bulunamadı",
+  "searchAll": "Tüm türlerde ara ({{count}})",
+  "searching": "Aranıyor… {{total}} türden {{done}} tanesi listelendi",
+  "limited": "Yalnızca {{total}} türün ilk {{count}} tanesinin nesnelerinde aranıyor",
+  "hint": "↑↓ gezin · Enter aç · Tab eylemler · Esc kapat",
+  "hintActions": "↑↓ gezin · Enter çalıştır · Shift+Tab geri · Esc geri"
+}

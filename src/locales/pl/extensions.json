@@ -1,0 +1,188 @@
+{
+  "title": "Rozszerzenia",
+  "hint": "Rozszerzenia dodają do programu Sextant strony, panele, akcje i kolumny. Każde z nich działa w odizolowanej ramce i ma dostęp do klastrów tylko w zakresie uprawnień przyznanych podczas instalacji.",
+  "host": {
+    "failed": "Błąd rozszerzenia: {{message}}",
+    "failedUnknown": "rozszerzenie zatrzymało się z błędem",
+    "reload": "Wczytaj ponownie",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Przegląd",
+    "detailsTabs": "Widoki szczegółów",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "Odrzuć"
+  },
+  "install": {
+    "file": "Zainstaluj z pliku…",
+    "url": "Zainstaluj z adresu URL…",
+    "folder": "Wczytaj rozpakowany folder…",
+    "fileTitle": "Wybierz pakiet rozszerzenia",
+    "fileFilter": "Rozszerzenie Sextant",
+    "folderTitle": "Wybierz folder rozszerzenia",
+    "checking": "Sprawdzanie pakietu…",
+    "installed": "Zainstalowano wersję {{version}}.",
+    "updated": "Zaktualizowano do wersji {{version}}."
+  },
+  "source": {
+    "folder": "Folder {{path}}",
+    "file": "Plik {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "Instalacja z adresu URL",
+    "label": "Łącze do pliku w wydaniu na GitHub",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "Akceptowane są tylko łącza w postaci https://github.com/<owner>/<repo>/releases/download/<tag>/<file>. Plik może mieć do 20 MB. Nic nie zostanie zainstalowane bez zgody na uprawnienia.",
+    "invalid": "To nie jest łącze do pliku w wydaniu na GitHub.",
+    "check": "Pobierz i sprawdź"
+  },
+  "errors": {
+    "invalid": "Nie można zainstalować tego pakietu",
+    "conflict": "Zainstalowano już inne rozszerzenie o tym identyfikatorze",
+    "notFound": "Ta instalacja nie jest już dostępna",
+    "timeout": "Pobieranie trwało zbyt długo",
+    "unreachable": "Nie można pobrać pliku",
+    "other": "Nie można zainstalować rozszerzenia"
+  },
+  "consent": {
+    "titleInstall": "Zainstalować {{name}}?",
+    "titleUpdate": "Zaktualizować {{name}}?",
+    "titleReview": "Przegląd uprawnień {{name}}",
+    "install": "Zainstaluj",
+    "update": "Aktualizuj",
+    "author": "Autor",
+    "version": "Wersja",
+    "source": "Źródło",
+    "devHint": "Działa bezpośrednio z tego folderu, a zmiany w jego plikach są wczytywane, gdy Sextant jest otwarty. Jest oznaczone jako „Deweloperskie”.",
+    "replaces": "Zastępuje zainstalowaną wersję {{version}}.",
+    "newPermissions": "Nowe uprawnienia",
+    "newPermissionsHint": "Ta wersja prosi o więcej, niż wcześniej zezwolono. Przeczytaj uprawnienia poniżej.",
+    "samePermissions": "Te same uprawnienia",
+    "samePermissionsHint": "Ta wersja nie prosi o nic nowego.",
+    "reviewHint": "Pliki tego rozszerzenia proszą teraz o więcej, niż zezwolono. Pozostaje ono wstrzymane do czasu wyrażenia zgody.",
+    "adds": "Co dodaje",
+    "permissions": "Co może robić",
+    "noContributions": "Nic nie jest dodawane do interfejsu.",
+    "secretWarning": "Odczytuje wartości Secret",
+    "secretWarningHint": "To rozszerzenie prosi o odczyt wartości Secret: haseł, tokenów i kluczy. Zezwól na to tylko wtedy, gdy autor jest zaufany."
+  },
+  "contributes": {
+    "pages": "Strony na pasku bocznym",
+    "detailsSections": "Sekcje w panelu szczegółów",
+    "actions": "Akcje na zasobach",
+    "columns": "Kolumny tabel",
+    "dockActions": "Przyciski panelu dolnego",
+    "settings": "Sekcja w Ustawieniach"
+  },
+  "permissions": {
+    "clusters": "Klastry",
+    "clustersAll": "Wszystkie klastry",
+    "clustersOnly_one": "Tylko klaster o nazwie {{names}}",
+    "clustersOnly_few": "Tylko klastry o nazwach {{names}}",
+    "clustersOnly_many": "Tylko klastry o nazwach {{names}}",
+    "clustersOnly_other": "Tylko klastry o nazwach {{names}}",
+    "clustersNote": "Nazwa obejmuje każdy kontekst klastra o tej nazwie ze wszystkich źródeł kubeconfig.",
+    "access": "Dostęp",
+    "none": "Brak dostępu do danych jakiegokolwiek klastra.",
+    "rule": "{{actions}}: {{kinds}} {{namespaces}}",
+    "allKinds": "wszystkie rodzaje",
+    "namespacesAll": "we wszystkich namespace’ach",
+    "namespacesOnly_one": "w namespace {{names}}",
+    "namespacesOnly_few": "w namespace’ach {{names}}",
+    "namespacesOnly_many": "w namespace’ach {{names}}",
+    "namespacesOnly_other": "w namespace’ach {{names}}",
+    "asks": "Pyta przed wykonaniem",
+    "noAsk": "Wykonuje bez pytania",
+    "secretValues": "Może odczytywać wartości Secret {{namespaces}}",
+    "clusterWide": "Obiekty nienależące do żadnego namespace (np. Nodes) są objęte tylko regułami dla wszystkich namespace’ów.",
+    "actionNames": {
+      "read": "Odczyt",
+      "modify": "Modyfikacja",
+      "delete": "Usuwanie",
+      "logs": "Odczyt logów",
+      "exec": "Uruchamianie poleceń",
+      "portForward": "Przekierowanie portów",
+      "secretValues": "Odczyt wartości Secret"
+    }
+  },
+  "state": {
+    "active": "Aktywne",
+    "disabled": "Wyłączone",
+    "needsConsent": "Wymaga zgody",
+    "failed": "Błąd"
+  },
+  "list": {
+    "loading": "Wczytywanie rozszerzeń…",
+    "empty": "Brak zainstalowanych rozszerzeń.",
+    "failed": "Nie można odczytać listy rozszerzeń",
+    "development": "Deweloperskie",
+    "version": "Wersja {{version}}",
+    "enable": "Włącz",
+    "disable": "Wyłącz",
+    "permissions": "Uprawnienia",
+    "reload": "Wczytaj ponownie",
+    "activity": "Aktywność",
+    "remove": "Usuń",
+    "reviewPermissions": "Przejrzyj uprawnienia",
+    "pausedHint": "To rozszerzenie prosi o więcej, niż zezwolono. Jest wstrzymane do czasu przejrzenia jego uprawnień.",
+    "failedHint": "Nie można uruchomić tego rozszerzenia: {{error}}",
+    "actionFailed": "Nie można wprowadzić zmiany",
+    "namedAction": "{{action}} {{name}}"
+  },
+  "reinstall": {
+    "file": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z pliku {{name}} (Zainstaluj z pliku…).",
+    "url": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z {{url}} (Zainstaluj z adresu URL…)."
+  },
+  "permissionsDialog": {
+    "title": "Uprawnienia {{name}}",
+    "granted": "Zezwolono",
+    "requested": "Obecnie prosi o",
+    "close": "Zamknij"
+  },
+  "remove": {
+    "title": "Usunąć {{name}}?",
+    "body": "Rozszerzenie, jego pliki i zapisane przez nie dane zostaną usunięte z tego komputera. Klastry nie zostaną zmienione."
+  },
+  "settingsFrame": "Ustawienia {{name}}",
+  "notice": {
+    "text_one": "Rozszerzenie {{names}} prosi o więcej uprawnień, niż zezwolono, i zostało wstrzymane.",
+    "text_few": "Rozszerzenia {{names}} proszą o więcej uprawnień, niż zezwolono, i zostały wstrzymane.",
+    "text_many": "Rozszerzenia {{names}} proszą o więcej uprawnień, niż zezwolono, i zostały wstrzymane.",
+    "text_other": "Rozszerzenia {{names}} proszą o więcej uprawnień, niż zezwolono, i zostały wstrzymane.",
+    "review": "Przejrzyj uprawnienia",
+    "reinstall": "{{name}}: {{hint}}",
+    "dismiss": "Odrzuć"
+  },
+  "activity": {
+    "title": "Aktywność rozszerzeń",
+    "hint": "O co prosiły rozszerzenia. Wartości Secret, YAML i wyniki poleceń nie są zapisywane.",
+    "extension": "Rozszerzenie",
+    "allExtensions": "Wszystkie rozszerzenia",
+    "loading": "Wczytywanie dziennika…",
+    "empty": "Brak wywołań.",
+    "failed": "Nie można odczytać dziennika",
+    "clear": "Wyczyść",
+    "clearTitle": "Wyczyścić dziennik aktywności?",
+    "clearBody": "Wszystkie zapisane wywołania rozszerzeń zostaną usunięte z tego komputera.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Czas",
+      "extension": "Rozszerzenie",
+      "cluster": "Klaster",
+      "method": "Metoda",
+      "target": "Cel",
+      "decision": "Decyzja",
+      "result": "Wynik",
+      "duration": "Trwało"
+    },
+    "decisions": {
+      "allowed": "Dozwolone",
+      "denied": "Odrzucone",
+      "approved": "Zatwierdzone przez użytkownika",
+      "declined": "Odrzucone przez użytkownika",
+      "timedOut": "Brak odpowiedzi",
+      "notChecked": "Niesprawdzone"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

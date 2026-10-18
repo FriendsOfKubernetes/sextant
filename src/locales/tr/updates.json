@@ -1,0 +1,32 @@
+{
+  "title": "Güncellemeler",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant (sürüm bilinmiyor)",
+  "auto": "Sextant başlarken güncellemeleri denetle",
+  "check": "Güncellemeleri denetle",
+  "checking": "Güncellemeler denetleniyor…",
+  "upToDate": "En son sürümü kullanıyorsunuz.",
+  "available": "Sextant {{version}} kullanılabilir (sizdeki: {{current}}).",
+  "notesLabel": "Sürüm notları",
+  "install": "Yükle ve yeniden başlat",
+  "installing": "İndiriliyor ve yükleniyor…",
+  "installingProgress": "İndiriliyor ve yükleniyor… %{{percent}}",
+  "restarting": "Yeniden başlatılıyor…",
+  "later": "Daha sonra",
+  "dialogTitle": "Güncelleme var",
+  "openReleasePage": "Sürüm sayfasını aç",
+  "notConfigured": "Bu derlemede güncellemeler kapalı: güncelleme imzalama anahtarı yok (src-tauri/tauri.conf.json içinde plugins.updater.pubkey). Yeni sürümleri sürüm sayfasından indirin.",
+  "manual": {
+    "deb": "Sextant bir .deb paketinden yüklendiği için kendini güncelleyemez. Yeni .deb paketini sürüm sayfasından indirin ve paket yöneticinizle yükleyin, örneğin: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant bir .rpm paketinden yüklendiği için kendini güncelleyemez. Yeni paketi sürüm sayfasından indirin ve paket yöneticinizle yükleyin.",
+    "other": "Sextant'ın bu kopyası bir sürüm paketinden (AppImage, .dmg veya .msi) yüklenmediği için kendini güncelleyemez. Yeni sürümü sürüm sayfasından indirin."
+  },
+  "error": {
+    "network": "Güncellemeleri denetlemek için GitHub'a ulaşılamadı. İnternet bağlantınızı veya proxy ayarınızı denetleyip tekrar deneyin.",
+    "noRelease": "GitHub'daki en son sürümde henüz bu sistem için bir güncelleme yok. Daha sonra tekrar deneyin.",
+    "signature": "İndirilen güncelleme Sextant sürüm anahtarıyla imzalanmadığı için yüklenmedi.",
+    "otherCheck": "Güncellemeler denetlenemedi.",
+    "otherInstall": "Güncelleme yüklenemedi.",
+    "networkInstall": "Güncelleme indirilemedi. İnternet bağlantınızı veya proxy ayarınızı denetleyip tekrar deneyin."
+  }
+}

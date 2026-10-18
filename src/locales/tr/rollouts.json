@@ -1,0 +1,49 @@
+{
+  "tab": "Geçmiş",
+  "status": {
+    "title": "Dağıtım",
+    "state": {
+      "complete": "Tamamlandı",
+      "progressing": "İlerliyor",
+      "paused": "Duraklatıldı",
+      "failed": "Takıldı"
+    },
+    "replicas": "{{desired}} replikadan {{updated}} güncellendi · {{ready}} hazır · {{available}} kullanılabilir",
+    "pendingObservation": "Denetleyicinin son değişikliği görmesi bekleniyor.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "Dağıtım duraklatıldı; devam etmek veya geri almak için sürdürün."
+  },
+  "history": {
+    "title": "Revizyonlar",
+    "loading": "Revizyonlar yükleniyor…",
+    "empty": "Henüz revizyon yok.",
+    "columns": {
+      "compare": "Karşılaştır",
+      "revision": "Revizyon",
+      "created": "Oluşturulma",
+      "changeCause": "Değişiklik nedeni",
+      "images": "İmajlar"
+    },
+    "current": "geçerli",
+    "select": "Karşılaştırılacak revizyon: {{revision}}",
+    "pickTwo": "Pod şablonlarını karşılaştırmak için iki revizyon seçin.",
+    "pickOneMore": "Karşılaştırmak için bir revizyon daha seçin.",
+    "revisionTitle": "Revizyon {{revision}}",
+    "rollBack": "Revizyon {{revision}} durumuna geri al"
+  },
+  "rollback": {
+    "action": "Geri al…",
+    "title": "Geri al: {{name}}",
+    "confirm": "Revizyon {{revision}} durumuna geri al",
+    "revision": "Revizyon",
+    "revisionOption": "Revizyon {{revision}}",
+    "revisionOptionCause": "Revizyon {{revision}} — {{cause}}",
+    "intro": "{{revision}} numaralı revizyonun Pod şablonu geçerli şablonun yerini alır ve Pod'lar her güncellemede olduğu gibi değiştirilir.",
+    "current": "Geçerli şablon",
+    "target": "Revizyon {{revision}}",
+    "same": "Geçerli şablon zaten revizyon {{revision}} ile aynı: değiştirilecek bir şey yok.",
+    "paused": "Bu Deployment duraklatılmış. Geri almadan önce sürdürün.",
+    "none": "Geri alınabilecek daha eski bir revizyon yok.",
+    "loading": "Revizyonlar yükleniyor…"
+  }
+}

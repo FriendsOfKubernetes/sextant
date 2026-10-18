@@ -1,0 +1,180 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "Proje",
+    "sync": "Eşitleme",
+    "health": "Sağlık",
+    "revision": "Revizyon",
+    "destination": "Hedef",
+    "applications": "Uygulamalar",
+    "destinations": "Hedefler",
+    "sources": "Kaynaklar"
+  },
+  "status": {
+    "syncing": "Eşitleniyor"
+  },
+  "fields": {
+    "project": "Proje",
+    "sync": "Eşitleme durumu",
+    "syncedRevision": "Eşitlenen revizyon",
+    "health": "Sağlık",
+    "operation": "Son işlem",
+    "operationStarted": "İşlem başlangıcı",
+    "operationFinished": "İşlem bitişi",
+    "sources": "Kaynak",
+    "destination": "Hedef",
+    "syncPolicy": "Eşitleme ilkesi",
+    "syncOptions": "Eşitleme seçenekleri",
+    "reconciledAt": "Son karşılaştırma",
+    "generators": "Oluşturucular",
+    "applications": "Uygulamalar",
+    "description": "Açıklama",
+    "sourceRepos": "Kaynak depolar",
+    "destinations": "Hedefler",
+    "clusterResourceWhitelist": "İzin verilen küme kaynakları",
+    "clusterResourceBlacklist": "Reddedilen küme kaynakları",
+    "namespaceResourceWhitelist": "İzin verilen namespace kaynakları",
+    "namespaceResourceBlacklist": "Reddedilen namespace kaynakları",
+    "roles": "Roller"
+  },
+  "sources": {
+    "repo": "Depo",
+    "path": "Yol / chart",
+    "targetRevision": "Hedef revizyon"
+  },
+  "destinations": {
+    "cluster": "Küme",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "Elle",
+    "automated": "Otomatik",
+    "prune": "budama",
+    "selfHeal": "kendi kendini onarma"
+  },
+  "tree": {
+    "title": "Kaynaklar",
+    "kind": "Tür",
+    "name": "Ad",
+    "namespace": "Namespace",
+    "sync": "Eşitleme",
+    "health": "Sağlık / durum",
+    "computedHealth": "Sextant tarafından canlı nesneden hesaplandı: Argo CD bu sağlık durumunu yalnızca kendi API'sinde tutar.",
+    "computedHealthMessage": "Sextant tarafından canlı nesneden hesaplandı: {{message}}",
+    "remote": "Uygulama başka bir kümeye dağıtım yapıyor: kaynakları buradan açılamaz.",
+    "loading": "Kaynakların sahip oldukları yükleniyor…"
+  },
+  "history": {
+    "title": "Eşitleme geçmişi",
+    "id": "Kimlik",
+    "revision": "Revizyon",
+    "deployedAt": "Dağıtım",
+    "initiatedBy": "Başlatan",
+    "source": "Kaynak",
+    "automated": "Otomatik"
+  },
+  "actions": {
+    "sync": "Eşitle…",
+    "refresh": "Yenile",
+    "hardRefresh": "Tam yenile",
+    "terminate": "Sonlandır…",
+    "openUi": "Argo CD arayüzünü aç"
+  },
+  "sync": {
+    "title": "Eşitle: {{name}}",
+    "confirm": "Eşitle",
+    "revision": "Revizyon",
+    "revisionHint": "Dal, etiket veya commit; varsayılan olarak uygulamanın hedef revizyonu.",
+    "multiSource": "Her kaynak kendi hedef revizyonuna eşitlenir.",
+    "prune": "Budama",
+    "dryRun": "Deneme çalıştırması",
+    "started": "{{name}} eşitlemesi başladı. İlerlemesi ayrıntılarda görünür.",
+    "dryRunStarted": "{{name}} deneme çalıştırması başladı. Sonucu ayrıntılarda görünür."
+  },
+  "terminate": {
+    "title": "{{name}} işlemi sonlandırılsın mı?",
+    "text": "Argo CD, {{name}} için çalışan eşitlemeyi durdurur. Zaten uygulanmış olanlar olduğu gibi kalır.",
+    "confirm": "Sonlandır"
+  },
+  "diff": {
+    "action": "Fark",
+    "title": "Fark: {{name}}",
+    "loading": "Fark Argo CD'den okunuyor…",
+    "summary_one": "{{total}} kaynaktan {{changed}} tanesi farklı",
+    "summary_other": "{{total}} kaynaktan {{changed}} tanesi farklı",
+    "resources": "Uygulamanın kaynakları",
+    "empty": "Argo CD bu uygulama için hiçbir kaynağı yönetmiyor.",
+    "desired": "İstenen (Git)",
+    "live": "Canlı (küme)",
+    "desiredLabel": "{{resource}} istenen durumu",
+    "liveLabel": "{{resource}} canlı durumu",
+    "secretHidden": "Secret değerleri her iki tarafta da gizlenir.",
+    "state": {
+      "changed": "Farklı",
+      "inSync": "Eşit",
+      "missingLive": "Henüz kümede yok",
+      "missingTarget": "Git'te yok (budanacak)"
+    },
+    "signedIn": "Argo CD'de oturum açıldı",
+    "signedInAs": "Argo CD'de {{user}} olarak oturum açıldı",
+    "source": {
+      "secret": "standart Argo CD Secret'ı ile",
+      "saved": "kaydedilmiş oturum bilgileriyle",
+      "manual": "Sextant kapatılana kadar"
+    },
+    "reload": "Yeniden yükle",
+    "retry": "Tekrar dene",
+    "signOut": "Oturumu kapat",
+    "forget": "Kaydedilmiş oturum bilgilerini unut",
+    "notSaved": "Oturum açıldı, ancak oturum bilgileri kaydedilemedi: {{reason}}",
+    "errors": {
+      "forbidden": "Argo CD bu uygulamayı oturum açmış hesaba göstermiyor.",
+      "notFound": "Bu kümede Argo CD bulunamadı: argocd-server Service'i yok."
+    }
+  },
+  "installation": {
+    "ambiguous": "Bu kümenin birkaç namespace'i bir Argo CD kurulumu gibi görünüyor ({{namespaces}}) ve kullanıcılarının kendilerinin oluşturamayacağı hiçbir şey hangisinin gerçek olduğunu göstermiyor; bu yüzden Sextant kendiliğinden hiçbirine bağlanmaz. Küme genelindeki bir Argo CD, argocd-application-controller veya argocd-server ClusterRoleBinding'inden tanınır; küme yöneticisinden bunu denetlemesini isteyin.",
+    "title": "Argo CD kurulumunu seçin",
+    "choose": "Gerçek Argo CD'nin hangi namespace'te olduğunu biliyorsanız onu seçin: Sextant bu seçimi bu küme için hatırlar ve yalnızca orada oturum açar. Bir namespace'e yazabilen herkes onu Argo CD gibi gösterebilir.",
+    "use": "Bu kurulumu kullan",
+    "using": "Kaydediliyor…"
+  },
+  "login": {
+    "title": "Argo CD'de oturum açın",
+    "intro": "Sextant, {{namespace}} içindeki Argo CD'de kendiliğinden oturum açamadı. Yerel bir kullanıcıyla veya bir API belirteciyle oturum açın.",
+    "expired": "Argo CD oturumunun süresi doldu ve kaydedilmiş oturum bilgileriyle yeniden oturum açılamadı.",
+    "noLocalUsers": "Bu Argo CD'de parolayla oturum açabilecek yerel kullanıcı yok: bir API belirteci kullanın.",
+    "sso": "SSO ile oturum açma Sextant'ta desteklenmiyor.",
+    "refused": {
+      "typed": "Argo CD daha önce yazılan oturum bilgilerini reddetti.",
+      "saved": "Argo CD kaydedilmiş oturum bilgilerini reddetti: parolası veya belirteci değişmiş olabilir. Geçerli olanla oturum açın (kaydedilmiş bilgileri değiştirmek için Hatırla seçili olarak).",
+      "adminSecret": "Argo CD, argocd-initial-admin-secret içindeki admin parolasını reddetti: Argo CD'de değiştirilmiş olabilir. Geçerli parolayı girin.",
+      "tokenSecret": "Argo CD, app.kubernetes.io/part-of=argocd label'lı bir Secret'taki API belirtecini reddetti: süresi dolmuş veya iptal edilmiş olabilir."
+    },
+    "insecure": "Bu Argo CD sunucusunu TLS olmadan çalıştırıyor (argocd-cmd-params-cm içinde server.insecure), bu yüzden Sextant onunla düz HTTP üzerinden konuşur: küme içinde parola veya belirteç şifrelenmeden iletilir.",
+    "mode": {
+      "label": "Oturum açma yöntemi",
+      "password": "Kullanıcı ve parola",
+      "token": "API belirteci"
+    },
+    "username": "Kullanıcı",
+    "password": "Parola",
+    "token": "API belirteci",
+    "remember": "Bu bilgisayarda hatırla (sistem anahtar zinciri)",
+    "hint": "Sextant sormadan önce kaydedilmiş oturum bilgilerini, argocd-initial-admin-secret içindeki admin parolasını ve app.kubernetes.io/part-of=argocd label'lı Secret'lardaki API belirteçlerini dener. argocd-secret yalnızca admin parolasının bcrypt özetini tutar, bu yüzden oturum açmak için kullanılamaz.",
+    "submit": "Oturum aç",
+    "signingIn": "Oturum açılıyor…",
+    "errors": {
+      "invalid": "Argo CD kullanıcı adını veya parolayı reddetti.",
+      "invalidToken": "Argo CD API belirtecini reddetti: yanlış, süresi dolmuş veya iptal edilmiş.",
+      "ssoOnly": "Bu Argo CD yalnızca Sextant'ın desteklemediği SSO ile oturum açmaya izin veriyor: bir API belirteci kullanın.",
+      "unreachable": "Argo CD'ye ulaşılamıyor: sunucusunun hazır Pod'u yok veya yanıt vermiyor.",
+      "incomplete": "Bir kullanıcı adı ve parola ya da bir API belirteci girin.",
+      "other": "Argo CD'de oturum açılamadı."
+    }
+  }
+}

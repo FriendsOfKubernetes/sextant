@@ -1,0 +1,108 @@
+{
+  "sidebar": "Right-Sizing",
+  "title": "Right-Sizing",
+  "sectionTitle": "Right-Sizing",
+  "intro": "Requests und Limits im Vergleich zur tatsächlichen Nutzung, mit einer Empfehlung pro Container. Im Cluster wird nichts geändert: Kopieren Sie das Snippet in Ihre Manifeste.",
+  "window": {
+    "label": "Zeitraum",
+    "day": "Letzter Tag",
+    "week": "Letzte 7 Tage"
+  },
+  "sort": {
+    "label": "Sortieren nach",
+    "cpuWaste": "Verschwendete CPU",
+    "memoryWaste": "Verschwendeter Speicher",
+    "name": "Name"
+  },
+  "onlyFlagged": "Nur Container mit Befunden",
+  "source": {
+    "history": "Nutzung aus Prometheus (Zeitraum: {{window}}): CPU als 95. Perzentil und Spitzenwert, Speicher als Spitzenwert.",
+    "snapshot": "Nur aktuelle Werte sind verfügbar (eine Momentaufnahme von {{source}}). Ein einzelner Messpunkt reicht für eine Empfehlung nicht aus: Installieren Sie Prometheus für einen Verlauf.",
+    "snapshotAfterError": "Der Prometheus-Verlauf konnte nicht gelesen werden, daher werden nur aktuelle Werte angezeigt (eine Momentaufnahme). Keine Empfehlungen.",
+    "none": "Keine Metriken verfügbar: Geprüft werden nur Requests und Limits aus den Pod-Spezifikationen.",
+    "loading": "Nutzung wird gelesen…",
+    "metricsServer": "metrics-server",
+    "historyFailed": "Der Prometheus-Verlauf konnte nicht gelesen werden",
+    "truncated_one": "Zu viele Container gefunden; nur der erste {{count}} hat einen Verlauf. Grenzen Sie den Namespace-Filter ein.",
+    "truncated_other": "Zu viele Container gefunden; nur die ersten {{count}} haben einen Verlauf. Grenzen Sie den Namespace-Filter ein.",
+    "coverageUnknown": "Prometheus konnte nicht angeben, seit wann es Messwerte hat, daher ist unbekannt, auf wie viel Verlauf die Empfehlungen beruhen."
+  },
+  "loading": "Pods werden geladen…",
+  "podsFailed": "Pods konnten nicht aufgelistet werden",
+  "empty": "Hier laufen keine Pods.",
+  "emptyFiltered": "Keine Befunde in diesen Namespaces.",
+  "tooMany_one": "Nur die erste {{count}} Zeile wird angezeigt. Grenzen Sie den Namespace-Filter ein.",
+  "tooMany_other": "Nur die ersten {{count}} Zeilen werden angezeigt. Grenzen Sie den Namespace-Filter ein.",
+  "totals": "Verschwendet: {{cpu}} CPU, {{memory}} Speicher · Angefordert: {{requestedCpu}} CPU, {{requestedMemory}} Speicher",
+  "atRisk_one": "{{count}} gefährdet",
+  "atRisk_other": "{{count}} gefährdet",
+  "columns": {
+    "workload": "Workload",
+    "container": "Container",
+    "replicas": "Pods",
+    "cpu": "CPU",
+    "memory": "Speicher",
+    "findings": "Befunde",
+    "actions": "Aktionen"
+  },
+  "workload": "{{kind}} {{name}}",
+  "amounts": {
+    "request": "Request {{value}}",
+    "limit": "Limit {{value}}",
+    "notSet": "nicht gesetzt",
+    "p95": "p95 {{value}}",
+    "peak": "Spitze {{value}}",
+    "now": "jetzt {{value}}",
+    "recommended": "→ {{value}}",
+    "recommendedLimit": "→ Limit {{value}}"
+  },
+  "confidence": {
+    "partialHistory": "Grundlage: {{duration}} Verlauf",
+    "insufficientHistory": "Zu wenig Verlauf: {{duration}} (Zeitraum: {{window}}), mindestens {{minimum}} erforderlich",
+    "snapshot": "Momentaufnahme",
+    "noData": "Keine Nutzungsdaten",
+    "unknownHistory": "Verlauf unbekannter Länge"
+  },
+  "duration": {
+    "minutes_one": "{{count}} Minute",
+    "minutes_other": "{{count}} Minuten",
+    "hours_one": "{{count}} Stunde",
+    "hours_other": "{{count}} Stunden",
+    "days_one": "{{count}} Tag",
+    "days_other": "{{count}} Tage"
+  },
+  "flags": {
+    "noCpuRequest": "Kein CPU-Request",
+    "noMemoryRequest": "Kein Speicher-Request",
+    "noCpuLimit": "Kein CPU-Limit",
+    "noMemoryLimit": "Kein Speicherlimit",
+    "cpuOverProvisioned": "CPU überdimensioniert",
+    "memoryOverProvisioned": "Speicher überdimensioniert",
+    "cpuUnderRequested": "CPU-Request unter p95",
+    "memoryUnderRequested": "Speicher-Request unter Spitze",
+    "memoryNearLimit": "Speicher nahe am Limit",
+    "oomKilled": "Kürzlich OOMKilled",
+    "cpuThrottled": "CPU gedrosselt"
+  },
+  "flagHints": {
+    "noCpuRequest": "Der Scheduler reserviert für diesen Container keine CPU.",
+    "noMemoryRequest": "Der Scheduler reserviert keinen Speicher; der Pod gehört bei Speicherdruck zu den ersten, die verdrängt werden.",
+    "noCpuLimit": "Der Container darf jede ungenutzte CPU des Knotens verwenden. Oft so gewollt.",
+    "noMemoryLimit": "Der Container kann seinen Nachbarn auf dem Knoten Speicher wegnehmen.",
+    "cpuOverProvisioned": "Der CPU-Request ist mindestens {{factor}}-mal so hoch wie der tatsächliche Bedarf.",
+    "memoryOverProvisioned": "Der Speicher-Request ist mindestens {{factor}}-mal so hoch wie der tatsächliche Bedarf.",
+    "cpuUnderRequested": "Die Nutzung liegt die meiste Zeit über dem Request.",
+    "memoryUnderRequested": "Der Spitzenwert des Speichers liegt über dem Request: Der Pod kann bei Speicherdruck verdrängt werden.",
+    "memoryNearLimit": "Der Speicher hat mindestens {{share}} des Limits erreicht.",
+    "oomKilled": "Der Container wurde innerhalb der letzten {{period}} wegen Speichermangels beendet; der tatsächliche Spitzenwert liegt über dem Limit.",
+    "cpuThrottled": "{{percent}} der CPU-Perioden wurden gedrosselt."
+  },
+  "copy": "Ressourcen-YAML kopieren",
+  "copied": "Kopiert",
+  "copyFailed": "Kopieren fehlgeschlagen",
+  "separator": " · ",
+  "chooseNamespace": "Namespace auswählen",
+  "chooseNamespaceText": "Right-Sizing liest den Verlauf jedes angezeigten Containers und arbeitet daher mit den im Namespace-Filter ausgewählten Namespaces. Wählen Sie einen oder wenige aus.",
+  "firstNamespaces_one": "Nur der erste {{count}} Namespace des Filters wird angezeigt.",
+  "firstNamespaces_other": "Nur die ersten {{count}} Namespaces des Filters werden angezeigt."
+}

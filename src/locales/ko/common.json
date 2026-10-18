@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Sextant 로고"
+  },
+  "layout": {
+    "clusters": "클러스터",
+    "sidebar": "섹션",
+    "main": "기본",
+    "details": "세부 정보",
+    "dock": "도크",
+    "resizeSidebar": "사이드바 크기 조정",
+    "resizeDock": "도크 크기 조정"
+  },
+  "actions": {
+    "close": "닫기",
+    "cancel": "취소",
+    "confirm": "확인",
+    "retry": "다시 시도",
+    "openDock": "도크 열기",
+    "closeDock": "도크 닫기",
+    "closeTab": "{{title}} 탭 닫기",
+    "closeDetails": "세부 정보 닫기"
+  },
+  "welcome": {
+    "title": "Sextant에 오신 것을 환영합니다",
+    "text": "시작하려면 왼쪽에서 클러스터를 선택하세요."
+  },
+  "main": {
+    "selectSection": "사이드바에서 섹션을 선택하세요.",
+    "noSections": "이 클러스터에는 아직 표시할 내용이 없습니다."
+  },
+  "dock": {
+    "empty": "로그, 셸 또는 터미널을 열면 여기에 표시됩니다."
+  },
+  "details": {
+    "loading": "로드 중…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}}초",
+    "minutes": "{{count}}분",
+    "hours": "{{count}}시간",
+    "days": "{{count}}일",
+    "years": "{{count}}년"
+  },
+  "error": {
+    "details": "세부 정보: {{message}}"
+  },
+  "list": {
+    "separator": ", "
+  }
+}

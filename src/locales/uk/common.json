@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Логотип Sextant"
+  },
+  "layout": {
+    "clusters": "Кластери",
+    "sidebar": "Розділи",
+    "main": "Основна область",
+    "details": "Подробиці",
+    "dock": "Нижня панель",
+    "resizeSidebar": "Змінити ширину бічної панелі",
+    "resizeDock": "Змінити висоту нижньої панелі"
+  },
+  "actions": {
+    "close": "Закрити",
+    "cancel": "Скасувати",
+    "confirm": "Підтвердити",
+    "retry": "Повторити",
+    "openDock": "Відкрити нижню панель",
+    "closeDock": "Закрити нижню панель",
+    "closeTab": "Закрити вкладку {{title}}",
+    "closeDetails": "Закрити подробиці"
+  },
+  "welcome": {
+    "title": "Ласкаво просимо до Sextant",
+    "text": "Щоб почати, виберіть кластер ліворуч."
+  },
+  "main": {
+    "selectSection": "Виберіть розділ на бічній панелі.",
+    "noSections": "Для цього кластера поки що нічого показати."
+  },
+  "dock": {
+    "empty": "Відкрийте логи, оболонку або термінал — вони з'являться тут."
+  },
+  "details": {
+    "loading": "Завантаження…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}} с",
+    "minutes": "{{count}} хв",
+    "hours": "{{count}} год",
+    "days": "{{count}} д",
+    "years": "{{count}} р"
+  },
+  "error": {
+    "details": "Подробиці: {{message}}"
+  },
+  "list": {
+    "separator": ", "
+  }
+}

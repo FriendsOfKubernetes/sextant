@@ -1,0 +1,15 @@
+{
+  "unreachable": "Der Cluster ist nicht erreichbar.",
+  "unauthorized": "Der Cluster hat die Anmeldedaten nicht akzeptiert (401).",
+  "forbidden": "Sie haben keine Berechtigung dafür (403).",
+  "notFound": "Nicht gefunden.",
+  "conflict": "Das Objekt wurde von jemand anderem geändert. Laden Sie es neu und versuchen Sie es noch einmal.",
+  "invalid": "Die Anfrage ist ungültig.",
+  "authPlugin": "Das Authentifizierungs-Plug-in aus der kubeconfig fehlt oder ist fehlgeschlagen.",
+  "helmMissing": "Helm ist nicht installiert.",
+  "portInUse": "Der lokale Port ist bereits belegt.",
+  "kubeconfig": "Die kubeconfig kann nicht gelesen werden oder ist ungültig.",
+  "timeout": "Der Vorgang hat zu lange gedauert.",
+  "denied": "Die Einstellungen für den Zugriff von KI-Agenten auf diesen Cluster erlauben das nicht.",
+  "other": "Etwas ist schiefgelaufen."
+}

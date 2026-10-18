@@ -1,0 +1,179 @@
+{
+  "title": "확장",
+  "hint": "확장은 Sextant에 페이지, 패널, 작업, 열을 추가합니다. 각 확장은 격리된 프레임에서 실행되며, 설치할 때 부여한 권한을 통해서만 클러스터에 접근할 수 있습니다.",
+  "host": {
+    "failed": "확장 실패: {{message}}",
+    "failedUnknown": "확장이 오류로 중지되었습니다",
+    "reload": "다시 로드",
+    "frameTitle": "{{title}}({{extension}})",
+    "overview": "개요",
+    "detailsTabs": "세부 정보 보기",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "닫기"
+  },
+  "install": {
+    "file": "파일에서 설치…",
+    "url": "URL에서 설치…",
+    "folder": "압축 해제된 폴더 로드…",
+    "fileTitle": "확장 패키지 선택",
+    "fileFilter": "Sextant 확장",
+    "folderTitle": "확장 폴더 선택",
+    "checking": "패키지를 확인하는 중…",
+    "installed": "버전 {{version}}을(를) 설치했습니다.",
+    "updated": "버전 {{version}}(으)로 업데이트했습니다."
+  },
+  "source": {
+    "folder": "폴더 {{path}}",
+    "file": "파일 {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "URL에서 설치",
+    "label": "GitHub 릴리스의 파일 링크",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "https://github.com/<owner>/<repo>/releases/download/<tag>/<file> 형식의 링크만 허용됩니다. 파일 크기는 최대 20MB입니다. 권한에 동의하기 전에는 아무것도 설치되지 않습니다.",
+    "invalid": "GitHub 릴리스의 파일 링크가 아닙니다.",
+    "check": "다운로드 및 확인"
+  },
+  "errors": {
+    "invalid": "이 패키지는 설치할 수 없습니다",
+    "conflict": "이 ID를 가진 다른 확장이 이미 설치되어 있습니다",
+    "notFound": "이 설치는 더 이상 사용할 수 없습니다",
+    "timeout": "다운로드 시간이 너무 오래 걸렸습니다",
+    "unreachable": "파일을 다운로드할 수 없습니다",
+    "other": "확장을 설치할 수 없습니다"
+  },
+  "consent": {
+    "titleInstall": "{{name}}을(를) 설치하시겠습니까?",
+    "titleUpdate": "{{name}}을(를) 업데이트하시겠습니까?",
+    "titleReview": "{{name}}의 권한 검토",
+    "install": "설치",
+    "update": "업데이트",
+    "author": "작성자",
+    "version": "버전",
+    "source": "소스",
+    "devHint": "이 폴더에서 바로 실행되며, Sextant가 열려 있는 동안 파일 변경 사항이 반영됩니다. 개발용으로 표시됩니다.",
+    "replaces": "설치된 버전 {{version}}을(를) 대체합니다.",
+    "newPermissions": "새 권한",
+    "newPermissionsHint": "이 버전은 이전에 허용한 것보다 많은 권한을 요청합니다. 아래 권한을 읽어 보세요.",
+    "samePermissions": "동일한 권한",
+    "samePermissionsHint": "이 버전은 새로운 권한을 요청하지 않습니다.",
+    "reviewHint": "이 확장의 파일이 이제 허용한 것보다 많은 권한을 요청합니다. 동의할 때까지 일시 중지됩니다.",
+    "adds": "추가되는 항목",
+    "permissions": "허용되는 작업",
+    "noContributions": "인터페이스에 아무것도 추가되지 않습니다.",
+    "secretWarning": "Secret 값 읽기",
+    "secretWarningHint": "이 확장은 Secret 값(암호, 토큰, 키)을 읽으려고 합니다. 작성자를 신뢰하는 경우에만 허용하세요."
+  },
+  "contributes": {
+    "pages": "사이드바의 페이지",
+    "detailsSections": "세부 정보 패널의 섹션",
+    "actions": "리소스에 대한 작업",
+    "columns": "테이블 열",
+    "dockActions": "도크 단추",
+    "settings": "설정의 섹션"
+  },
+  "permissions": {
+    "clusters": "클러스터",
+    "clustersAll": "모든 클러스터",
+    "clustersOnly_other": "이름이 {{names}}인 클러스터만",
+    "clustersNote": "이름은 모든 kubeconfig 소스에서 해당 이름을 가진 모든 클러스터 context에 적용됩니다.",
+    "access": "액세스",
+    "none": "어떤 클러스터의 데이터에도 액세스할 수 없습니다.",
+    "rule": "{{namespaces}} {{kinds}}: {{actions}}",
+    "allKinds": "모든 종류",
+    "namespacesAll": "모든 namespace의",
+    "namespacesOnly_other": "namespace {{names}}의",
+    "asks": "실행 전에 확인",
+    "noAsk": "확인 없이 실행",
+    "secretValues": "{{namespaces}} Secret 값을 읽을 수 있음",
+    "clusterWide": "namespace에 속하지 않는 개체(예: Node)는 모든 namespace에 대한 규칙에만 해당됩니다.",
+    "actionNames": {
+      "read": "읽기",
+      "modify": "수정",
+      "delete": "삭제",
+      "logs": "로그 읽기",
+      "exec": "명령 실행",
+      "portForward": "포트 포워딩",
+      "secretValues": "Secret 값 읽기"
+    }
+  },
+  "state": {
+    "active": "활성",
+    "disabled": "사용 안 함",
+    "needsConsent": "승인 필요",
+    "failed": "실패"
+  },
+  "list": {
+    "loading": "확장을 로드하는 중…",
+    "empty": "설치된 확장이 없습니다.",
+    "failed": "확장 목록을 읽을 수 없습니다",
+    "development": "개발",
+    "version": "버전 {{version}}",
+    "enable": "사용",
+    "disable": "사용 안 함",
+    "permissions": "권한",
+    "reload": "다시 로드",
+    "activity": "활동",
+    "remove": "제거",
+    "reviewPermissions": "권한 검토",
+    "pausedHint": "이 확장은 허용한 것보다 많은 권한을 요청합니다. 권한을 검토할 때까지 일시 중지됩니다.",
+    "failedHint": "이 확장을 실행할 수 없습니다: {{error}}",
+    "actionFailed": "변경할 수 없습니다",
+    "namedAction": "{{name}} {{action}}"
+  },
+  "reinstall": {
+    "file": "권한을 검토하려면 파일 {{name}}에서 다시 설치하세요(파일에서 설치…).",
+    "url": "권한을 검토하려면 {{url}}에서 다시 설치하세요(URL에서 설치…)."
+  },
+  "permissionsDialog": {
+    "title": "{{name}}의 권한",
+    "granted": "허용한 권한",
+    "requested": "현재 요청하는 권한",
+    "close": "닫기"
+  },
+  "remove": {
+    "title": "{{name}}을(를) 제거하시겠습니까?",
+    "body": "확장, 확장의 파일 및 저장된 데이터가 이 컴퓨터에서 삭제됩니다. 클러스터는 변경되지 않습니다."
+  },
+  "settingsFrame": "{{name}} 설정",
+  "notice": {
+    "text_other": "{{names}}이(가) 허용한 것보다 많은 권한을 요청하여 일시 중지되었습니다.",
+    "review": "권한 검토",
+    "reinstall": "{{name}}: {{hint}}",
+    "dismiss": "닫기"
+  },
+  "activity": {
+    "title": "확장 활동",
+    "hint": "확장이 요청한 내용입니다. Secret 값, YAML 및 명령 출력은 기록되지 않습니다.",
+    "extension": "확장",
+    "allExtensions": "모든 확장",
+    "loading": "로그를 로드하는 중…",
+    "empty": "아직 호출이 없습니다.",
+    "failed": "로그를 읽을 수 없습니다",
+    "clear": "지우기",
+    "clearTitle": "활동 로그를 지우시겠습니까?",
+    "clearBody": "기록된 확장의 모든 호출이 이 컴퓨터에서 삭제됩니다.",
+    "ok": "정상",
+    "none": "-",
+    "columns": {
+      "time": "시간",
+      "extension": "확장",
+      "cluster": "클러스터",
+      "method": "메서드",
+      "target": "대상",
+      "decision": "결정",
+      "result": "결과",
+      "duration": "소요 시간"
+    },
+    "decisions": {
+      "allowed": "허용됨",
+      "denied": "거부됨",
+      "approved": "사용자가 승인함",
+      "declined": "사용자가 거절함",
+      "timedOut": "응답 없음",
+      "notChecked": "확인 안 됨"
+    },
+    "duration": "{{ms}}ms"
+  }
+}

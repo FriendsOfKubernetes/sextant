@@ -1,0 +1,179 @@
+{
+  "sidebar": {
+    "applications": "Application",
+    "applicationSets": "ApplicationSet",
+    "appProjects": "AppProject"
+  },
+  "columns": {
+    "project": "プロジェクト",
+    "sync": "同期",
+    "health": "ヘルス",
+    "revision": "リビジョン",
+    "destination": "デプロイ先",
+    "applications": "Application",
+    "destinations": "デプロイ先",
+    "sources": "ソース"
+  },
+  "status": {
+    "syncing": "同期中"
+  },
+  "fields": {
+    "project": "プロジェクト",
+    "sync": "同期状態",
+    "syncedRevision": "同期済みリビジョン",
+    "health": "ヘルス",
+    "operation": "最後の操作",
+    "operationStarted": "操作の開始",
+    "operationFinished": "操作の終了",
+    "sources": "ソース",
+    "destination": "デプロイ先",
+    "syncPolicy": "同期ポリシー",
+    "syncOptions": "同期オプション",
+    "reconciledAt": "最終比較",
+    "generators": "ジェネレーター",
+    "applications": "Application",
+    "description": "説明",
+    "sourceRepos": "ソースリポジトリ",
+    "destinations": "デプロイ先",
+    "clusterResourceWhitelist": "許可されたクラスターリソース",
+    "clusterResourceBlacklist": "拒否されたクラスターリソース",
+    "namespaceResourceWhitelist": "許可された namespace リソース",
+    "namespaceResourceBlacklist": "拒否された namespace リソース",
+    "roles": "ロール"
+  },
+  "sources": {
+    "repo": "リポジトリ",
+    "path": "パス / チャート",
+    "targetRevision": "ターゲットリビジョン"
+  },
+  "destinations": {
+    "cluster": "クラスター",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "手動",
+    "automated": "自動",
+    "prune": "prune",
+    "selfHeal": "self-heal"
+  },
+  "tree": {
+    "title": "リソース",
+    "kind": "Kind",
+    "name": "名前",
+    "namespace": "Namespace",
+    "sync": "同期",
+    "health": "ヘルス / 状態",
+    "computedHealth": "Sextant がライブオブジェクトから算出しました。Argo CD はこのヘルスを自身の API でのみ保持しています。",
+    "computedHealthMessage": "Sextant がライブオブジェクトから算出しました: {{message}}",
+    "remote": "このアプリは別のクラスターにデプロイされるため、ここからリソースを開くことはできません。",
+    "loading": "リソースが所有するものを読み込み中…"
+  },
+  "history": {
+    "title": "同期履歴",
+    "id": "ID",
+    "revision": "リビジョン",
+    "deployedAt": "デプロイ日時",
+    "initiatedBy": "開始者",
+    "source": "ソース",
+    "automated": "自動"
+  },
+  "actions": {
+    "sync": "同期…",
+    "refresh": "更新",
+    "hardRefresh": "ハードリフレッシュ",
+    "terminate": "終了…",
+    "openUi": "Argo CD UI を開く"
+  },
+  "sync": {
+    "title": "{{name}} を同期",
+    "confirm": "同期",
+    "revision": "リビジョン",
+    "revisionHint": "ブランチ、タグ、またはコミット。既定ではアプリのターゲットリビジョンです。",
+    "multiSource": "各ソースはそれぞれのターゲットリビジョンに同期されます。",
+    "prune": "Prune",
+    "dryRun": "ドライラン",
+    "started": "{{name}} の同期を開始しました。進行状況は詳細に表示されます。",
+    "dryRunStarted": "{{name}} のドライランを開始しました。結果は詳細に表示されます。"
+  },
+  "terminate": {
+    "title": "{{name}} の操作を終了しますか?",
+    "text": "Argo CD は {{name}} の実行中の同期を停止します。既に適用されたものはそのまま残ります。",
+    "confirm": "終了"
+  },
+  "diff": {
+    "action": "差分",
+    "title": "差分: {{name}}",
+    "loading": "Argo CD から差分を読み取り中…",
+    "summary_other": "{{total}} 個中 {{changed}} 個のリソースに差分があります",
+    "resources": "アプリケーションのリソース",
+    "empty": "Argo CD はこのアプリケーションのリソースを管理していません。",
+    "desired": "望ましい状態 (Git)",
+    "live": "ライブ (クラスター)",
+    "desiredLabel": "{{resource}} の望ましい状態",
+    "liveLabel": "{{resource}} のライブ状態",
+    "secretHidden": "Secret の値は両側で隠されています。",
+    "state": {
+      "changed": "差分あり",
+      "inSync": "同期済み",
+      "missingLive": "クラスターにまだ存在しない",
+      "missingTarget": "Git に存在しない (prune 対象)"
+    },
+    "signedIn": "Argo CD にサインイン済み",
+    "signedInAs": "{{user}} として Argo CD にサインイン済み",
+    "source": {
+      "secret": "標準の Argo CD Secret を使用",
+      "saved": "保存したログイン情報を使用",
+      "manual": "Sextant を閉じるまで有効"
+    },
+    "reload": "再読み込み",
+    "retry": "再試行",
+    "signOut": "サインアウト",
+    "forget": "保存したログイン情報を削除",
+    "notSaved": "サインインしましたが、ログイン情報を保存できませんでした: {{reason}}",
+    "errors": {
+      "forbidden": "Argo CD は、サインインしたアカウントにこのアプリケーションを表示しません。",
+      "notFound": "このクラスターに Argo CD が見つかりませんでした。argocd-server Service がありません。"
+    }
+  },
+  "installation": {
+    "ambiguous": "このクラスターでは複数の namespace ({{namespaces}}) が Argo CD のインストールのように見えますが、ユーザーが自分で作成できないもので本物を判別する手がかりがないため、Sextant はどれにも自動では接続しません。クラスター全体の Argo CD は、argocd-application-controller または argocd-server の ClusterRoleBinding で識別されます。クラスターの管理者に確認を依頼してください。",
+    "title": "Argo CD のインストールを選択",
+    "choose": "本物の Argo CD がある namespace がわかっている場合は選択してください。Sextant はこのクラスターについての選択を記憶し、そこでのみサインインします。namespace に書き込める人なら誰でも、それを Argo CD のように見せかけることができます。",
+    "use": "このインストールを使用",
+    "using": "保存中…"
+  },
+  "login": {
+    "title": "Argo CD にサインイン",
+    "intro": "Sextant は {{namespace}} の Argo CD に自動でサインインできませんでした。ローカルユーザーまたは API トークンでサインインしてください。",
+    "expired": "Argo CD のセッションの有効期限が切れ、保存したログイン情報での再サインインにも失敗しました。",
+    "noLocalUsers": "この Argo CD にはパスワードでサインインできるローカルユーザーがいません。API トークンを使用してください。",
+    "sso": "Sextant は SSO によるサインインに対応していません。",
+    "refused": {
+      "typed": "先ほど入力したログイン情報は Argo CD に拒否されました。",
+      "saved": "保存したログイン情報は Argo CD に拒否されました。パスワードまたはトークンが変更された可能性があります。現在のものでサインインしてください (「記憶する」をオンにすると保存したログイン情報が置き換えられます)。",
+      "adminSecret": "argocd-initial-admin-secret の admin パスワードは Argo CD に拒否されました。Argo CD で変更された可能性があります。現在のパスワードを入力してください。",
+      "tokenSecret": "app.kubernetes.io/part-of=argocd という label の付いた Secret の API トークンは Argo CD に拒否されました。期限切れか、取り消された可能性があります。"
+    },
+    "insecure": "この Argo CD は TLS なしでサーバーを実行しているため (argocd-cmd-params-cm の server.insecure)、Sextant は平文の HTTP で通信します。クラスター内では、パスワードやトークンが暗号化されずに送信されます。",
+    "mode": {
+      "label": "サインイン方法",
+      "password": "ユーザーとパスワード",
+      "token": "API トークン"
+    },
+    "username": "ユーザー",
+    "password": "パスワード",
+    "token": "API トークン",
+    "remember": "このコンピューターに記憶する (システムのキーチェーン)",
+    "hint": "Sextant は入力を求める前に、保存したログイン情報、argocd-initial-admin-secret の admin パスワード、app.kubernetes.io/part-of=argocd という label の付いた Secret の API トークンを試します。argocd-secret には admin パスワードの bcrypt ハッシュしかないため、サインインには使用できません。",
+    "submit": "サインイン",
+    "signingIn": "サインイン中…",
+    "errors": {
+      "invalid": "ユーザー名またはパスワードが Argo CD に拒否されました。",
+      "invalidToken": "API トークンが Argo CD に拒否されました。誤っているか、期限切れか、取り消されています。",
+      "ssoOnly": "この Argo CD は SSO でのみサインインできますが、Sextant は SSO に対応していません。API トークンを使用してください。",
+      "unreachable": "Argo CD に接続できません。サーバーに準備完了の Pod がないか、応答がありません。",
+      "incomplete": "ユーザー名とパスワード、または API トークンを入力してください。",
+      "other": "Argo CD にサインインできませんでした。"
+    }
+  }
+}

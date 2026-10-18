@@ -1,0 +1,32 @@
+{
+  "title": "关于 Sextant",
+  "name": "Sextant",
+  "section": "关于",
+  "open": "关于 Sextant",
+  "version": "版本 {{version}}",
+  "versionUnknown": "版本未知",
+  "tagline": "面向开发人员和 SRE 的 Kubernetes 桌面客户端。",
+  "license": "许可证：{{license}}",
+  "links": "链接",
+  "link": {
+    "repository": "代码仓库",
+    "wiki": "Wiki",
+    "releases": "发布版本",
+    "discussions": "讨论",
+    "issue": "报告问题"
+  },
+  "build": {
+    "appimage": "AppImage",
+    "deb": ".deb 软件包",
+    "rpm": ".rpm 软件包",
+    "app": "macOS 应用 (.dmg)",
+    "msi": "Windows 安装程序 (.msi)",
+    "nsis": "Windows 安装程序 (NSIS)",
+    "dev": "开发版本",
+    "none": "并非通过发布包安装"
+  },
+  "unknown": "未知",
+  "copy": "复制版本信息",
+  "copied": "已复制",
+  "copyFailed": "无法复制到剪贴板"
+}

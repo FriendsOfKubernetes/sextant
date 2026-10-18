@@ -1,0 +1,49 @@
+{
+  "sidebar": "Portweiterleitung",
+  "title": "Portweiterleitung",
+  "loading": "Portweiterleitungen werden geladen…",
+  "empty": "Keine aktiven Portweiterleitungen.",
+  "emptyText": "Starten Sie eine in den Details eines Pods oder Services.",
+  "columns": {
+    "target": "Ziel",
+    "ports": "Ports",
+    "status": "Status"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Aktiv",
+    "error": "Fehler"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Im Browser öffnen",
+    "stop": "Beenden"
+  },
+  "action": {
+    "label": "Port weiterleiten…"
+  },
+  "section": {
+    "title": "Portweiterleitung",
+    "forward": "Weiterleiten",
+    "forwardPort": "Port {{port}} weiterleiten",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "{{target}} weiterleiten",
+    "remotePort": "Weiterzuleitender Port",
+    "localPort": "Lokaler Port",
+    "localPortChoice": "Auswahl des lokalen Ports",
+    "auto": "Zufälliger freier Port",
+    "custom": "Bestimmter Port",
+    "invalidPort": "Geben Sie einen Port von 1 bis 65535 ein.",
+    "start": "Weiterleitung starten",
+    "starting": "Wird gestartet…",
+    "started": "localhost:{{local}} wird an Port {{remote}} weitergeleitet.",
+    "inUse": "Der lokale Port {{port}} ist bereits belegt.",
+    "useFree": "Freien Port verwenden",
+    "close": "Schließen"
+  }
+}

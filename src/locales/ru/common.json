@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Логотип Sextant"
+  },
+  "layout": {
+    "clusters": "Кластеры",
+    "sidebar": "Разделы",
+    "main": "Основная область",
+    "details": "Подробности",
+    "dock": "Нижняя панель",
+    "resizeSidebar": "Изменить ширину боковой панели",
+    "resizeDock": "Изменить высоту нижней панели"
+  },
+  "actions": {
+    "close": "Закрыть",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "retry": "Повторить",
+    "openDock": "Открыть нижнюю панель",
+    "closeDock": "Закрыть нижнюю панель",
+    "closeTab": "Закрыть вкладку {{title}}",
+    "closeDetails": "Закрыть подробности"
+  },
+  "welcome": {
+    "title": "Добро пожаловать в Sextant",
+    "text": "Чтобы начать, выберите кластер слева."
+  },
+  "main": {
+    "selectSection": "Выберите раздел на боковой панели.",
+    "noSections": "Для этого кластера пока нечего показать."
+  },
+  "dock": {
+    "empty": "Откройте логи, оболочку или терминал — они появятся здесь."
+  },
+  "details": {
+    "loading": "Загрузка…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}} с",
+    "minutes": "{{count}} мин",
+    "hours": "{{count}} ч",
+    "days": "{{count}} д",
+    "years": "{{count}} г"
+  },
+  "error": {
+    "details": "Подробности: {{message}}"
+  },
+  "list": {
+    "separator": ", "
+  }
+}

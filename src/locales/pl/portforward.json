@@ -1,0 +1,49 @@
+{
+  "sidebar": "Przekierowanie portów",
+  "title": "Przekierowanie portów",
+  "loading": "Wczytywanie przekierowań portów…",
+  "empty": "Brak aktywnych przekierowań portów.",
+  "emptyText": "Uruchom przekierowanie ze szczegółów Poda lub Service.",
+  "columns": {
+    "target": "Cel",
+    "ports": "Porty",
+    "status": "Stan"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Aktywne",
+    "error": "Błąd"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Otwórz w przeglądarce",
+    "stop": "Zatrzymaj"
+  },
+  "action": {
+    "label": "Przekieruj port…"
+  },
+  "section": {
+    "title": "Przekierowanie portów",
+    "forward": "Przekieruj",
+    "forwardPort": "Przekieruj port {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Przekierowanie: {{target}}",
+    "remotePort": "Port do przekierowania",
+    "localPort": "Port lokalny",
+    "localPortChoice": "Wybór portu lokalnego",
+    "auto": "Losowy wolny port",
+    "custom": "Określony port",
+    "invalidPort": "Wpisz port od 1 do 65535.",
+    "start": "Rozpocznij przekierowanie",
+    "starting": "Uruchamianie…",
+    "started": "Przekierowano localhost:{{local}} na port {{remote}}.",
+    "inUse": "Port lokalny {{port}} jest już zajęty.",
+    "useFree": "Użyj wolnego portu",
+    "close": "Zamknij"
+  }
+}

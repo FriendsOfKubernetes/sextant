@@ -1,0 +1,107 @@
+{
+  "edit": {
+    "label": "Düzenle"
+  },
+  "delete": {
+    "label": "Sil",
+    "titleSingle": "{{kind}} silinsin mi?",
+    "title_one": "{{count}} {{kind}} nesnesi silinsin mi?",
+    "title_other": "{{count}} {{kind}} nesnesi silinsin mi?",
+    "textSingle": "Bu {{kind}} kümeden silinecek:",
+    "text_one": "Bu {{count}} nesne kümeden silinecek:",
+    "text_other": "Bu {{count}} nesne kümeden silinecek:",
+    "confirm": "Sil",
+    "failed": "Silinmedi: {{name}}",
+    "partial": "{{total}} nesneden {{done}} tanesi silindi. Diğerleri başarısız oldu:"
+  },
+  "scale": {
+    "label": "Ölçeklendir",
+    "title": "Ölçeklendir: {{kind}} {{name}}",
+    "replicas": "Replikalar",
+    "current": "Şu anda: {{count}}",
+    "confirm": "Ölçeklendir",
+    "invalid": "0 veya daha büyük bir tam sayı girin."
+  },
+  "restart": {
+    "label": "Yeniden başlat",
+    "title": "{{kind}} {{name}} yeniden başlatılsın mı?",
+    "text": "{{name}} kaynağının tüm Pod'ları tek tek değiştirilecek (rollout restart).",
+    "confirm": "Yeniden başlat"
+  },
+  "cordon": {
+    "label": "Cordon / Uncordon",
+    "cordonTitle": "{{name}} düğümü cordon edilsin mi?",
+    "cordonText": "{{name}} üzerinde yeni Pod zamanlanmayacak. Orada zaten çalışan Pod'lar çalışmaya devam eder.",
+    "cordonConfirm": "Cordon et",
+    "uncordonTitle": "{{name}} düğümü uncordon edilsin mi?",
+    "uncordonText": "{{name}} üzerinde yeniden yeni Pod'lar zamanlanabilir.",
+    "uncordonConfirm": "Uncordon et"
+  },
+  "drain": {
+    "label": "Drain",
+    "title": "{{name}} düğümü drain edilsin mi?",
+    "text": "{{name}} cordon edilecek ve Pod'ları tahliye edilecek. DaemonSet Pod'ları ve statik (mirror) Pod'lar kalır.",
+    "loading": "Düğümdeki Pod'lara bakılıyor…",
+    "previewFailed": "Düğümün Pod'ları listelenemiyor",
+    "noPods": "Bu düğümde tahliye edilecek Pod yok.",
+    "evict_one": "Tahliye edilecek ({{count}} Pod)",
+    "evict_other": "Tahliye edilecek ({{count}} Pod)",
+    "unmanaged_one": "Denetleyicisi olmayan ({{count}} Pod): tahliyeden sonra onu hiçbir şey yeniden oluşturmaz",
+    "unmanaged_other": "Denetleyicisi olmayan ({{count}} Pod): tahliyeden sonra onları hiçbir şey yeniden oluşturmaz",
+    "force": "Denetleyicisi olmayan Pod'ları da tahliye et (force). İşaretlenmezse düğümde kalırlar.",
+    "emptyDir_one": "emptyDir verisi olan ({{count}} Pod): veriler Pod ile birlikte silinir",
+    "emptyDir_other": "emptyDir verisi olan ({{count}} Pod): veriler Pod'larla birlikte silinir",
+    "deleteEmptyDirData": "emptyDir verisi olan Pod'ları da tahliye et (delete emptyDir data). İşaretlenmezse düğümde kalırlar.",
+    "daemonSet_one": "Kalacak: DaemonSet Pod'ları ({{count}} Pod)",
+    "daemonSet_other": "Kalacak: DaemonSet Pod'ları ({{count}} Pod)",
+    "confirm": "Drain et",
+    "failed": "Düğüm cordon edildi, ancak bazı Pod'lar tahliye edilemedi"
+  },
+  "trigger": {
+    "label": "Şimdi tetikle",
+    "title": "CronJob {{name}} şimdi çalıştırılsın mı?",
+    "text": "CronJob'un şablonundan hemen bir Job oluşturulur.",
+    "confirm": "Tetikle",
+    "done": "Job {{name}} oluşturuldu."
+  },
+  "suspend": {
+    "label": "Askıya al / Sürdür",
+    "suspendTitle": "CronJob {{name}} askıya alınsın mı?",
+    "suspendText": "{{name}}, sürdürülene kadar yeni Job başlatmaz. Çalışan Job'lar etkilenmez.",
+    "suspendConfirm": "Askıya al",
+    "resumeTitle": "CronJob {{name}} sürdürülsün mü?",
+    "resumeText": "{{name}} yeniden zamanlamasına göre Job başlatacak.",
+    "resumeConfirm": "Sürdür"
+  },
+  "dialog": {
+    "working": "Çalışıyor…",
+    "close": "Kapat"
+  },
+  "editor": {
+    "tabTitle": "Düzenle: {{kind}} {{name}}",
+    "editorLabel": "{{kind}} {{name}} YAML'ı",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor…",
+    "saved": "Kaydedildi.",
+    "unsaved": "Kaydedilmemiş değişiklikler",
+    "reload": "Yeniden yükle",
+    "loading": "Yükleniyor…",
+    "conflict": "{{kind}} {{name}}, siz açtıktan sonra kümede değiştirildi. Değişiklikleriniz kaydedilmedi. Geçerli sürümü almak için yeniden yükleyin.",
+    "reloadTitle": "Değişiklikleriniz atılsın mı?",
+    "reloadText": "Yeniden yükleme, metni kümedeki geçerli sürümle değiştirir. Kaydedilmemiş değişiklikleriniz kaybolur.",
+    "reloadConfirm": "At ve yeniden yükle",
+    "saveFailed": "Kaydedilmedi"
+  },
+  "create": {
+    "open": "Kaynak oluştur",
+    "tabTitle": "Kaynak oluştur",
+    "editorLabel": "Oluşturulacak kaynakların YAML'ı",
+    "placeholder": "YAML yapıştırın veya yazın. Birden çok nesneyi --- ile ayırın",
+    "apply": "Uygula",
+    "applying": "Uygulanıyor…",
+    "applied_one": "{{count}} nesne uygulandı:",
+    "applied_other": "{{count}} nesne uygulandı:",
+    "failed": "Uygulanmadı",
+    "empty": "En az bir nesne girin."
+  }
+}

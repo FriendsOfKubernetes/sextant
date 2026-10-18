@@ -1,0 +1,96 @@
+{
+  "action": {
+    "label": "Logs"
+  },
+  "toolbar": {
+    "label": "Log-Optionen",
+    "container": "Container",
+    "initContainer": "{{name}} (init)",
+    "follow": "Mitverfolgen",
+    "timestamps": "Zeitstempel",
+    "previous": "Vorheriger Container",
+    "wrap": "Zeilen umbrechen",
+    "save": "Speichern",
+    "reconnect": "Neu verbinden"
+  },
+  "search": {
+    "label": "Logs durchsuchen",
+    "placeholder": "Suchen",
+    "previous": "Vorheriger Treffer",
+    "next": "Nächster Treffer",
+    "count": "{{current}} von {{total}}",
+    "countCapped": "{{current}} von {{total}}+",
+    "none": "Keine Treffer"
+  },
+  "status": {
+    "connecting": "Verbindung wird hergestellt…",
+    "live": "Live",
+    "notFollowing": "Nicht mitverfolgt",
+    "ended": "Stream beendet",
+    "failed": "Stream fehlgeschlagen"
+  },
+  "lines_one": "{{count}} Zeile",
+  "lines_other": "{{count}} Zeilen",
+  "dropped_one": "{{count}} ältere Zeile verworfen (die neuesten {{limit}} Zeilen mit bis zu {{size}} MiB Text werden behalten)",
+  "dropped_other": "{{count}} ältere Zeilen verworfen (die neuesten {{limit}} Zeilen mit bis zu {{size}} MiB Text werden behalten)",
+  "lineCut": " … [Zeile bei 64 KiB abgeschnitten, Fortsetzung in der nächsten Zeile]",
+  "empty": "Noch keine Log-Zeilen.",
+  "view": "Log-Zeilen",
+  "save": {
+    "title": "Logs speichern",
+    "filter": "Log-Dateien",
+    "failed": "Die Logs konnten nicht gespeichert werden."
+  },
+  "picker": {
+    "title": "Logs von {{name}}: Pod auswählen",
+    "loading": "Pods werden geladen…",
+    "none": "Keine Pods gefunden.",
+    "noSelector": "Dieses Objekt wählt keine Pods aus.",
+    "all": "Alle Pods",
+    "allHint": "Alle Pods in einem Tab mitverfolgen, auch später erstellte."
+  },
+  "details": {
+    "title": "Logs",
+    "allPods": "Logs aller Pods",
+    "hint": "Verfolgt die Pods, die {{selector}} entsprechen, während sie entstehen und verschwinden."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} Pod",
+    "podsTitle_other": "{{count}} Pods",
+    "selector": "Selector",
+    "selectorHint": "Ein Label-Selector; drücken Sie Enter, um ihn anzuwenden.",
+    "sources": "Pods und Container ({{shown}} von {{total}})",
+    "sourcesLabel": "Pods und Container",
+    "capHint_one": "Höchstens {{count}} Log-Stream läuft gleichzeitig; entfernen Sie Häkchen bei Pods oder Containern, um auszuwählen, welche gelesen werden.",
+    "capHint_other": "Höchstens {{count}} Log-Streams laufen gleichzeitig; entfernen Sie Häkchen bei Pods oder Containern, um auszuwählen, welche gelesen werden.",
+    "capped_one": "{{count}} weiterer Container wartet: Höchstens {{max}} Log-Streams laufen gleichzeitig. Entfernen Sie Häkchen bei Pods oder Containern, um auszuwählen, welche gelesen werden.",
+    "capped_other": "{{count}} weitere Container warten: Höchstens {{max}} Log-Streams laufen gleichzeitig. Entfernen Sie Häkchen bei Pods oder Containern, um auszuwählen, welche gelesen werden.",
+    "noPods": "Keine passenden Pods.",
+    "json": "JSON parsen",
+    "level": "Level",
+    "allLevels": "Alle Zeilen",
+    "levelAndAbove": "{{level}} und höher",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Filter",
+    "regex": "Regex",
+    "badRegex": "Der reguläre Ausdruck ist ungültig; es werden keine Zeilen herausgefiltert.",
+    "sourceStatus": {
+      "waiting": "wartet auf freien Stream",
+      "connecting": "verbindet",
+      "streaming": "live",
+      "ended": "beendet",
+      "error": "fehlgeschlagen",
+      "notStarted": "nicht gestartet",
+      "gone": "Pod entfernt",
+      "off": "aus"
+    },
+    "streams": "Streams: {{count}}, Pods: {{pods}}"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "action": {
+    "label": "Journaux"
+  },
+  "toolbar": {
+    "label": "Options des journaux",
+    "container": "Conteneur",
+    "initContainer": "{{name}} (init)",
+    "follow": "Suivre",
+    "timestamps": "Horodatages",
+    "previous": "Conteneur précédent",
+    "wrap": "Retour à la ligne",
+    "save": "Enregistrer",
+    "reconnect": "Se reconnecter"
+  },
+  "search": {
+    "label": "Rechercher dans les journaux",
+    "placeholder": "Rechercher",
+    "previous": "Occurrence précédente",
+    "next": "Occurrence suivante",
+    "count": "{{current}} sur {{total}}",
+    "countCapped": "{{current}} sur {{total}}+",
+    "none": "Aucune occurrence"
+  },
+  "status": {
+    "connecting": "Connexion…",
+    "live": "En direct",
+    "notFollowing": "Suivi arrêté",
+    "ended": "Flux terminé",
+    "failed": "Échec du flux"
+  },
+  "lines_one": "{{count}} ligne",
+  "lines_many": "{{count}} de lignes",
+  "lines_other": "{{count}} lignes",
+  "dropped_one": "{{count}} ligne plus ancienne supprimée (les {{limit}} lignes les plus récentes, jusqu'à {{size}} MiB de texte, sont conservées)",
+  "dropped_many": "{{count}} de lignes plus anciennes supprimées (les {{limit}} lignes les plus récentes, jusqu'à {{size}} MiB de texte, sont conservées)",
+  "dropped_other": "{{count}} lignes plus anciennes supprimées (les {{limit}} lignes les plus récentes, jusqu'à {{size}} MiB de texte, sont conservées)",
+  "lineCut": " … [ligne coupée à 64 KiB, suite à la ligne suivante]",
+  "empty": "Aucune ligne de journal pour l'instant.",
+  "view": "Lignes de journal",
+  "save": {
+    "title": "Enregistrer les journaux",
+    "filter": "Fichiers journaux",
+    "failed": "Impossible d'enregistrer les journaux."
+  },
+  "picker": {
+    "title": "Journaux de {{name}} : choisissez un pod",
+    "loading": "Chargement des pods…",
+    "none": "Aucun pod trouvé.",
+    "noSelector": "Cet objet ne sélectionne aucun pod.",
+    "all": "Tous les pods",
+    "allHint": "Suivre tous les pods dans un seul onglet, y compris ceux créés plus tard."
+  },
+  "details": {
+    "title": "Journaux",
+    "allPods": "Journaux de tous les pods",
+    "hint": "Suit les pods correspondant à {{selector}} à mesure qu'ils apparaissent et disparaissent."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} pod",
+    "podsTitle_many": "{{count}} de pods",
+    "podsTitle_other": "{{count}} pods",
+    "selector": "Selector",
+    "selectorHint": "Un label selector ; appuyez sur Enter pour l'appliquer.",
+    "sources": "Pods et conteneurs ({{shown}} sur {{total}})",
+    "sourcesLabel": "Pods et conteneurs",
+    "capHint_one": "{{count}} flux de journaux au maximum s'exécute à la fois ; décochez des pods ou des conteneurs pour choisir lesquels sont lus.",
+    "capHint_many": "{{count}} de flux de journaux au maximum s'exécutent à la fois ; décochez des pods ou des conteneurs pour choisir lesquels sont lus.",
+    "capHint_other": "{{count}} flux de journaux au maximum s'exécutent à la fois ; décochez des pods ou des conteneurs pour choisir lesquels sont lus.",
+    "capped_one": "{{count}} conteneur supplémentaire en attente : {{max}} flux de journaux au maximum s'exécutent à la fois. Décochez des pods ou des conteneurs pour choisir lesquels sont lus.",
+    "capped_many": "{{count}} de conteneurs supplémentaires en attente : {{max}} flux de journaux au maximum s'exécutent à la fois. Décochez des pods ou des conteneurs pour choisir lesquels sont lus.",
+    "capped_other": "{{count}} conteneurs supplémentaires en attente : {{max}} flux de journaux au maximum s'exécutent à la fois. Décochez des pods ou des conteneurs pour choisir lesquels sont lus.",
+    "noPods": "Aucun pod ne correspond.",
+    "json": "Analyser le JSON",
+    "level": "Niveau",
+    "allLevels": "Toutes les lignes",
+    "levelAndAbove": "{{level}} et au-dessus",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Filtre",
+    "regex": "Regex",
+    "badRegex": "L'expression régulière n'est pas valide ; aucune ligne n'est filtrée.",
+    "sourceStatus": {
+      "waiting": "en attente d'un flux libre",
+      "connecting": "connexion",
+      "streaming": "en direct",
+      "ended": "terminé",
+      "error": "en échec",
+      "notStarted": "non démarré",
+      "gone": "pod disparu",
+      "off": "désactivé"
+    },
+    "streams": "Flux : {{count}}, pods : {{pods}}"
+  }
+}

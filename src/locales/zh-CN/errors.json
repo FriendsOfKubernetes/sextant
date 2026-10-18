@@ -1,0 +1,15 @@
+{
+  "unreachable": "无法访问该集群。",
+  "unauthorized": "集群不接受所提供的凭据 (401)。",
+  "forbidden": "你没有执行此操作的权限 (403)。",
+  "notFound": "未找到。",
+  "conflict": "该对象已被他人修改。请重新加载后重试。",
+  "invalid": "请求无效。",
+  "authPlugin": "kubeconfig 中的身份验证插件缺失或运行失败。",
+  "helmMissing": "未安装 Helm。",
+  "portInUse": "本地端口已被占用。",
+  "kubeconfig": "无法读取 kubeconfig，或其内容无效。",
+  "timeout": "操作耗时过长。",
+  "denied": "该集群的 AI 智能体访问设置不允许此操作。",
+  "other": "出现错误。"
+}

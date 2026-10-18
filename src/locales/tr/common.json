@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Sextant logosu"
+  },
+  "layout": {
+    "clusters": "Kümeler",
+    "sidebar": "Bölümler",
+    "main": "Ana bölüm",
+    "details": "Ayrıntılar",
+    "dock": "Alt panel",
+    "resizeSidebar": "Kenar çubuğunu yeniden boyutlandır",
+    "resizeDock": "Alt paneli yeniden boyutlandır"
+  },
+  "actions": {
+    "close": "Kapat",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "retry": "Yeniden dene",
+    "openDock": "Alt paneli aç",
+    "closeDock": "Alt paneli kapat",
+    "closeTab": "{{title}} sekmesini kapat",
+    "closeDetails": "Ayrıntıları kapat"
+  },
+  "welcome": {
+    "title": "Sextant'a hoş geldiniz",
+    "text": "Başlamak için soldan bir küme seçin."
+  },
+  "main": {
+    "selectSection": "Kenar çubuğundan bir bölüm seçin.",
+    "noSections": "Bu küme için henüz gösterilecek bir şey yok."
+  },
+  "dock": {
+    "empty": "Burada görmek için günlükleri, bir kabuk veya bir terminal açın."
+  },
+  "details": {
+    "loading": "Yükleniyor…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}} sn",
+    "minutes": "{{count}} dk",
+    "hours": "{{count}} sa",
+    "days": "{{count}} g",
+    "years": "{{count}} y"
+  },
+  "error": {
+    "details": "Ayrıntılar: {{message}}"
+  },
+  "list": {
+    "separator": ", "
+  }
+}

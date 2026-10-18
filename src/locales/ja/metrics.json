@@ -1,0 +1,112 @@
+{
+  "title": "メトリクス",
+  "loading": "メトリクスを読み込み中…",
+  "unavailable": "メトリクスを利用できません",
+  "openSettings": "クラスターの設定を開く",
+  "na": "N/A",
+  "percent": "{{value}}%",
+  "percentOf": "{{value}}% · {{text}}",
+  "usedOf": "{{used}} / {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "要求 {{value}}",
+    "limit": "上限 {{value}}",
+    "noLimit": "上限なし",
+    "requestSetOn": "({{total}} 個中 {{count}} 個のコンテナーで設定)",
+    "limitSetOn": "({{total}} 個中 {{count}} 個のコンテナーで設定)",
+    "shareOfLimit": "上限の {{value}}%",
+    "shareOfRequest": "要求の {{value}}%",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "メモリ {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "メモリ"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "メモリ",
+    "pods": "Pod",
+    "disk": "ディスク",
+    "loading": "グラフを読み込み中…",
+    "noData": "過去 1 時間のデータはまだありません。",
+    "needPrometheus": "過去 1 時間のグラフには Prometheus が必要です。"
+  },
+  "settings": {
+    "title": "メトリクス",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "自動検出",
+      "manual": "アドレスを指定",
+      "off": "オフ"
+    },
+    "serviceKind": "クラスター内の Service",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "パスのプレフィックス",
+    "url": "Prometheus の URL",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "namespace/service:port の形式で入力してください (例: monitoring/prometheus-operated:9090)。",
+    "invalidUrl": "http:// または https:// で始まる URL を入力してください。",
+    "save": "このアドレスを使用",
+    "usageSource": "現在の CPU とメモリの取得元",
+    "source": {
+      "auto": "自動 (metrics-server、なければ Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "オフ"
+    },
+    "detected": "検出結果",
+    "checking": "メトリクスのソースを確認中…",
+    "metricsServer": "metrics-server",
+    "available": "利用可能",
+    "notAvailable": "利用不可",
+    "foundAuto": "自動検出: {{target}}",
+    "foundManual": "{{target}} で応答あり",
+    "notFound": "見つかりません",
+    "manualNoAnswer": "このアドレスは応答しません",
+    "prometheusOff": "オフ",
+    "currentFrom": "現在の値の取得元",
+    "noSource": "ソースなし — メトリクスを利用できません"
+  },
+  "overview": {
+    "sidebar": "概要",
+    "title": "クラスターの概要",
+    "nodes": "ノード",
+    "nodesReady": "{{count}} 台中 {{ready}} 台が準備完了",
+    "pods": "Pod",
+    "workloads": "ワークロード",
+    "usage": "使用量",
+    "cpu": "CPU",
+    "memory": "メモリ",
+    "usageOf": "割り当て可能な {{total}} のうち {{used}}",
+    "charts": "過去 1 時間",
+    "warnings": "警告",
+    "noWarnings": "警告はありません。",
+    "loadingPage": "クラスターの概要を読み込み中…",
+    "loadingWarnings": "警告を読み込み中…",
+    "phase": {
+      "Running": "実行中",
+      "Pending": "保留中",
+      "Succeeded": "成功",
+      "Failed": "失敗",
+      "Unknown": "不明"
+    },
+    "state": {
+      "ready": "準備完了",
+      "pending": "未準備",
+      "running": "実行中",
+      "succeeded": "成功",
+      "failed": "失敗"
+    },
+    "kinds": {
+      "pods": "Pod",
+      "deployments": "Deployment",
+      "statefulsets": "StatefulSet",
+      "daemonsets": "DaemonSet",
+      "jobs": "Job"
+    },
+    "count": "{{count}}"
+  }
+}

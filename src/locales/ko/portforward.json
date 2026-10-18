@@ -1,0 +1,49 @@
+{
+  "sidebar": "포트 포워딩",
+  "title": "포트 포워딩",
+  "loading": "포트 포워딩을 로드하는 중…",
+  "empty": "활성 포트 포워딩이 없습니다.",
+  "emptyText": "Pod 또는 Service의 세부 정보에서 시작하세요.",
+  "columns": {
+    "target": "대상",
+    "ports": "포트",
+    "status": "상태"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "활성",
+    "error": "오류"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "브라우저에서 열기",
+    "stop": "중지"
+  },
+  "action": {
+    "label": "포트 포워딩…"
+  },
+  "section": {
+    "title": "포트 포워딩",
+    "forward": "포워딩",
+    "forwardPort": "포트 {{port}} 포워딩",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "{{target}} 포워딩",
+    "remotePort": "포워딩할 포트",
+    "localPort": "로컬 포트",
+    "localPortChoice": "로컬 포트 선택",
+    "auto": "임의의 사용 가능한 포트",
+    "custom": "특정 포트",
+    "invalidPort": "1에서 65535 사이의 포트를 입력하세요.",
+    "start": "포워딩 시작",
+    "starting": "시작하는 중…",
+    "started": "localhost:{{local}}을(를) 포트 {{remote}}(으)로 포워딩하고 있습니다.",
+    "inUse": "로컬 포트 {{port}}이(가) 이미 사용 중입니다.",
+    "useFree": "사용 가능한 포트 사용",
+    "close": "닫기"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Logotipo de Sextant"
+  },
+  "layout": {
+    "clusters": "Clústeres",
+    "sidebar": "Secciones",
+    "main": "Principal",
+    "details": "Detalles",
+    "dock": "Panel inferior",
+    "resizeSidebar": "Cambiar el tamaño de la barra lateral",
+    "resizeDock": "Cambiar el tamaño del panel inferior"
+  },
+  "actions": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "retry": "Reintentar",
+    "openDock": "Abrir panel inferior",
+    "closeDock": "Cerrar panel inferior",
+    "closeTab": "Cerrar pestaña {{title}}",
+    "closeDetails": "Cerrar detalles"
+  },
+  "welcome": {
+    "title": "Le damos la bienvenida a Sextant",
+    "text": "Seleccione un clúster a la izquierda para empezar."
+  },
+  "main": {
+    "selectSection": "Seleccione una sección en la barra lateral.",
+    "noSections": "Todavía no hay nada que mostrar para este clúster."
+  },
+  "dock": {
+    "empty": "Abra registros, un shell o un terminal para verlos aquí."
+  },
+  "details": {
+    "loading": "Cargando…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}} s",
+    "minutes": "{{count}} min",
+    "hours": "{{count}} h",
+    "days": "{{count}} d",
+    "years": "{{count}} a"
+  },
+  "error": {
+    "details": "Detalles: {{message}}"
+  },
+  "list": {
+    "separator": ", "
+  }
+}

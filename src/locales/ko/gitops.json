@@ -1,0 +1,79 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Flux 설치…",
+    "argoCd": "Argo CD 설치…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux와 Argo CD는 공식 매니페스트를 사용하여 Kubernetes API를 통해 설치됩니다.",
+    "notConnected": "Flux와 Argo CD의 설치 여부를 확인하려면 클러스터에 연결하세요.",
+    "loading": "클러스터가 제공하는 항목을 읽는 중…",
+    "installed": "설치됨",
+    "partial": "일부 설치됨",
+    "missing": "설치되지 않음",
+    "install": "{{tool}} 설치…"
+  },
+  "dialog": {
+    "title": "{{tool}} 설치",
+    "flux": "Flux는 `flux install`의 기본 동작과 같이 설치됩니다. source, kustomize, helm, notification 컨트롤러가 flux-system에 설치되며 이미지 자동화는 포함되지 않습니다.",
+    "argoCd": "Argo CD는 표준 install.yaml을 사용하여 argocd에 설치됩니다. 클러스터 전체 범위이며 웹 UI가 포함되고 고가용성 구성은 아닙니다."
+  },
+  "versions": {
+    "label": "버전",
+    "loading": "GitHub에서 릴리스를 조회하는 중…",
+    "latest": "{{version}}(최신)",
+    "bundled": "{{version}}(번들)",
+    "error": "GitHub에서 릴리스 목록을 가져올 수 없어 테스트된 버전 {{version}}만 제공합니다.",
+    "next": "다운로드 및 미리 보기"
+  },
+  "preparing": "매니페스트를 다운로드하고 확인하는 중…",
+  "preview": {
+    "version": "버전",
+    "source": "소스",
+    "sha256": "SHA-256",
+    "verified": "릴리스의 체크섬 파일과 일치함",
+    "unverified": "프로젝트에서 이 파일의 체크섬을 게시하지 않음",
+    "namespace": "Namespace",
+    "objects": "개체({{count}})",
+    "clusterScoped": "클러스터 전체",
+    "warning": "설치하면 클러스터 전체가 변경됩니다. CustomResourceDefinition, ClusterRole, ClusterRoleBinding이 생성됩니다. cluster-admin 권한이 필요합니다.",
+    "noCrdAccess": "이 클러스터에서 CustomResourceDefinition을 만들 권한이 없으므로 설치가 실패할 가능성이 높습니다.",
+    "noBindingAccess": "이 클러스터에서 ClusterRoleBinding을 만들 권한이 없으므로 설치가 실패할 가능성이 높습니다.",
+    "present": "{{tool}}이(가) 이미 설치되어 있습니다. 해당 개체가 이 버전으로 업데이트됩니다.",
+    "partial": "{{tool}}이(가) 일부만 설치되어 있습니다(namespace나 일부 CRD가 있거나, 일부 컨트롤러가 없음). 기존 개체가 업데이트됩니다.",
+    "overwritten": "다음 클러스터 전체 개체가 이미 있으며 덮어쓰게 됩니다:",
+    "leftOut": "{{namespace}}에서 실행 중: {{names}}. 이 설치는 `flux install`과 마찬가지로 이미지 자동화와 source watcher를 제외하며, 공유 역할 바인딩에서 해당 서비스 계정을 제거하므로 이들은 권한을 잃게 됩니다."
+  },
+  "back": "뒤로",
+  "install": "설치",
+  "stop": "중지",
+  "progress": {
+    "applying": "개체 적용 중: {{total}}개 중 {{done}}개",
+    "stopping": "현재 개체 이후에 중지하는 중…",
+    "waiting": "모두 적용되었습니다. 컨트롤러가 준비되기를 기다리는 중(최대 5분)…",
+    "ready": "준비됨",
+    "notReady": "준비 안 됨"
+  },
+  "result": {
+    "done": "{{tool}} {{version}}이(가) 설치되어 실행 중입니다. 사이드바에 해당 섹션이 있습니다.",
+    "timedOut": "모두 적용되었지만 5분 안에 준비되지 않은 컨트롤러가 있습니다. 적용된 항목은 클러스터에 남습니다.",
+    "stopped_other": "설치가 중지되었습니다. 개체 {{count}}개가 적용되었고 나머지는 전송되지 않았습니다.",
+    "stoppedWaiting_other": "컨트롤러를 기다리는 동안 설치가 중지되었습니다. 개체 {{count}}개가 모두 적용되었으며 클러스터에 남습니다.",
+    "failed": "설치에 실패했습니다. 실패한 개체 이후의 항목은 전송되지 않았으며, 적용된 항목은 클러스터에 남습니다.",
+    "applied": "적용됨({{count}})",
+    "notApplied": "적용되지 않음({{count}})"
+  },
+  "argo": {
+    "login": "Sextant는 argocd-initial-admin-secret을 사용하여 Argo CD에 자동으로 로그인합니다. Argo CD에서 관리자 암호를 변경한 후 이 Secret을 삭제하세요.",
+    "openUi": "Argo CD UI 열기"
+  },
+  "confirmStop": {
+    "title": "설치를 중지하시겠습니까?",
+    "text": "적용 중인 개체가 처리된 후 설치가 중지됩니다. 적용된 항목은 클러스터에 남습니다.",
+    "confirm": "설치 중지"
+  }
+}

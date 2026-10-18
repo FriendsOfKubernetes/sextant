@@ -1,0 +1,91 @@
+{
+  "action": {
+    "label": "ログ"
+  },
+  "toolbar": {
+    "label": "ログのオプション",
+    "container": "コンテナー",
+    "initContainer": "{{name}} (init)",
+    "follow": "追跡",
+    "timestamps": "タイムスタンプ",
+    "previous": "以前のコンテナー",
+    "wrap": "行を折り返す",
+    "save": "保存",
+    "reconnect": "再接続"
+  },
+  "search": {
+    "label": "ログを検索",
+    "placeholder": "検索",
+    "previous": "前の一致",
+    "next": "次の一致",
+    "count": "{{current}} / {{total}}",
+    "countCapped": "{{current}} / {{total}}+",
+    "none": "一致なし"
+  },
+  "status": {
+    "connecting": "接続中…",
+    "live": "ライブ",
+    "notFollowing": "追跡停止中",
+    "ended": "ストリーム終了",
+    "failed": "ストリーム失敗"
+  },
+  "lines_other": "{{count}} 行",
+  "dropped_other": "古い行を {{count}} 行破棄しました (最新の {{limit}} 行、テキスト最大 {{size}} MiB までを保持します)",
+  "lineCut": " … [64 KiB で行を分割、次の行に続きます]",
+  "empty": "ログ行はまだありません。",
+  "view": "ログ行",
+  "save": {
+    "title": "ログを保存",
+    "filter": "ログファイル",
+    "failed": "ログを保存できませんでした。"
+  },
+  "picker": {
+    "title": "{{name}} のログ: Pod を選択",
+    "loading": "Pod を読み込み中…",
+    "none": "Pod が見つかりませんでした。",
+    "noSelector": "このオブジェクトは Pod を選択しません。",
+    "all": "すべての Pod",
+    "allHint": "後から作成される Pod も含め、すべての Pod を 1 つのタブで追跡します。"
+  },
+  "details": {
+    "title": "ログ",
+    "allPods": "すべての Pod のログ",
+    "hint": "{{selector}} に一致する Pod を、作成や削除に合わせて追跡します。"
+  },
+  "multi": {
+    "podsTitle_other": "{{count}} 個の Pod",
+    "selector": "Selector",
+    "selectorHint": "label selector です。Enter で適用します。",
+    "sources": "Pod とコンテナー ({{total}} 個中 {{shown}} 個)",
+    "sourcesLabel": "Pod とコンテナー",
+    "capHint_other": "同時に実行できるログストリームは最大 {{count}} 個です。読み取る Pod やコンテナーを選ぶには、不要なもののチェックを外してください。",
+    "capped_other": "さらに {{count}} 個のコンテナーが待機中です。同時に実行できるログストリームは最大 {{max}} 個です。読み取る Pod やコンテナーを選ぶには、不要なもののチェックを外してください。",
+    "noPods": "一致する Pod はありません。",
+    "json": "JSON を解析",
+    "level": "レベル",
+    "allLevels": "すべての行",
+    "levelAndAbove": "{{level}} 以上",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "フィルター",
+    "regex": "正規表現",
+    "badRegex": "正規表現が無効です。行は除外されません。",
+    "sourceStatus": {
+      "waiting": "空きストリームを待機中",
+      "connecting": "接続中",
+      "streaming": "ライブ",
+      "ended": "終了",
+      "error": "失敗",
+      "notStarted": "未開始",
+      "gone": "Pod が消滅",
+      "off": "オフ"
+    },
+    "streams": "ストリーム: {{count}}、Pod: {{pods}}"
+  }
+}

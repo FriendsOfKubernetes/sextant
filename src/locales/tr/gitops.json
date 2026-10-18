@@ -1,0 +1,81 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Flux'ı yükle…",
+    "argoCd": "Argo CD'yi yükle…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux ve Argo CD, resmî manifestlerinden Kubernetes API üzerinden yüklenir.",
+    "notConnected": "Flux ve Argo CD'nin yüklü olup olmadığını görmek için kümeye bağlanın.",
+    "loading": "Kümenin sundukları okunuyor…",
+    "installed": "Yüklü",
+    "partial": "Kısmen yüklü",
+    "missing": "Yüklü değil",
+    "install": "{{tool}} kurulumu…"
+  },
+  "dialog": {
+    "title": "{{tool}} kurulumu",
+    "flux": "Flux, `flux install` komutunun varsayılan olarak yaptığı gibi yüklenir: flux-system içinde source, kustomize, helm ve notification denetleyicileri, imaj otomasyonu olmadan.",
+    "argoCd": "Argo CD, standart install.yaml dosyasından argocd içine yüklenir: küme genelinde, web arayüzüyle, yüksek kullanılabilirlik olmadan."
+  },
+  "versions": {
+    "label": "Sürüm",
+    "loading": "Sürümler GitHub'dan isteniyor…",
+    "latest": "{{version}} (en son)",
+    "bundled": "{{version}} (paketle gelen)",
+    "error": "Sürüm listesi GitHub'dan alınamadı, bu yüzden yalnızca test edilmiş {{version}} sürümü sunuluyor.",
+    "next": "İndir ve önizle"
+  },
+  "preparing": "Manifest indiriliyor ve denetleniyor…",
+  "preview": {
+    "version": "Sürüm",
+    "source": "Kaynak",
+    "sha256": "SHA-256",
+    "verified": "sürümün sağlama toplamları dosyasıyla eşleşiyor",
+    "unverified": "proje bu dosya için sağlama toplamı yayımlamıyor",
+    "namespace": "Namespace",
+    "objects": "Nesneler ({{count}})",
+    "clusterScoped": "küme genelinde",
+    "warning": "Yükleme tüm kümeyi değiştirir: CustomResourceDefinition, ClusterRole ve ClusterRoleBinding nesneleri oluşturur. cluster-admin yetkisi gerekir.",
+    "noCrdAccess": "Bu kümede CustomResourceDefinition oluşturma izniniz yok, bu yüzden yükleme büyük olasılıkla başarısız olacak.",
+    "noBindingAccess": "Bu kümede ClusterRoleBinding oluşturma izniniz yok, bu yüzden yükleme büyük olasılıkla başarısız olacak.",
+    "present": "{{tool}} zaten yüklü. Nesneleri bu sürüme güncellenecek.",
+    "partial": "{{tool}} kısmen yüklü (namespace'i veya CRD'lerinin bir kısmı mevcut ya da denetleyicilerinin bir kısmı eksik). Mevcut nesneler güncellenecek.",
+    "overwritten": "Bu küme genelindeki nesneler zaten mevcut ve üzerine yazılacak:",
+    "leftOut": "{{namespace}} içinde çalışanlar: {{names}}. Bu yükleme, `flux install` gibi imaj otomasyonunu ve source watcher'ı dışarıda bırakır ve hizmet hesaplarını paylaşılan rol bağlamalarından kaldırır; bu yüzden izinlerini kaybederler."
+  },
+  "back": "Geri",
+  "install": "Yükle",
+  "stop": "Durdur",
+  "progress": {
+    "applying": "Nesneler uygulanıyor: {{total}} nesneden {{done}} tanesi",
+    "stopping": "Geçerli nesneden sonra durduruluyor…",
+    "waiting": "Her şey uygulandı. Denetleyicilerin hazır olması bekleniyor (en fazla 5 dakika)…",
+    "ready": "hazır",
+    "notReady": "hazır değil"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} yüklendi ve çalışıyor. Bölümü kenar çubuğunda.",
+    "timedOut": "Her şey uygulandı, ancak denetleyicilerin hepsi 5 dakika içinde hazır olmadı. Uygulananlar kümede kalır.",
+    "stopped_one": "Yükleme durduruldu. {{count}} nesne uygulandı; geri kalanlar gönderilmedi.",
+    "stopped_other": "Yükleme durduruldu. {{count}} nesne uygulandı; geri kalanlar gönderilmedi.",
+    "stoppedWaiting_one": "Yükleme, denetleyiciler beklenirken durduruldu. {{count}} nesne uygulandı ve kümede kalıyor.",
+    "stoppedWaiting_other": "Yükleme, denetleyiciler beklenirken durduruldu. {{count}} nesnenin tümü uygulandı ve kümede kalıyor.",
+    "failed": "Yükleme başarısız oldu. Başarısız nesneden sonraki hiçbir şey gönderilmedi; uygulananlar kümede kalır.",
+    "applied": "Uygulandı ({{count}})",
+    "notApplied": "Uygulanmadı ({{count}})"
+  },
+  "argo": {
+    "login": "Sextant, Argo CD'de argocd-initial-admin-secret ile kendiliğinden oturum açar. Argo CD'de admin parolasını değiştirin, ardından bu Secret'ı silin.",
+    "openUi": "Argo CD arayüzünü aç"
+  },
+  "confirmStop": {
+    "title": "Yükleme durdurulsun mu?",
+    "text": "Yükleme, uygulanmakta olan nesneden sonra durur. Uygulananlar kümede kalır.",
+    "confirm": "Yüklemeyi durdur"
+  }
+}

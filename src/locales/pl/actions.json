@@ -1,0 +1,121 @@
+{
+  "edit": {
+    "label": "Edytuj"
+  },
+  "delete": {
+    "label": "Usuń",
+    "titleSingle": "Usunąć {{kind}}?",
+    "title_one": "Usunąć {{count}} obiekt {{kind}}?",
+    "title_few": "Usunąć {{count}} obiekty {{kind}}?",
+    "title_many": "Usunąć {{count}} obiektów {{kind}}?",
+    "title_other": "Usunąć {{count}} obiektu {{kind}}?",
+    "textSingle": "Ten obiekt {{kind}} zostanie usunięty z klastra:",
+    "text_one": "Z klastra zostanie usunięty {{count}} obiekt:",
+    "text_few": "Z klastra zostaną usunięte {{count}} obiekty:",
+    "text_many": "Z klastra zostanie usuniętych {{count}} obiektów:",
+    "text_other": "Z klastra zostanie usunięte {{count}} obiektu:",
+    "confirm": "Usuń",
+    "failed": "Nie usunięto: {{name}}",
+    "partial": "Usunięto {{done}} z {{total}}. Pozostałych nie udało się usunąć:"
+  },
+  "scale": {
+    "label": "Skaluj",
+    "title": "Skalowanie {{kind}} {{name}}",
+    "replicas": "Repliki",
+    "current": "Obecnie: {{count}}",
+    "confirm": "Skaluj",
+    "invalid": "Wpisz liczbę całkowitą, 0 lub większą."
+  },
+  "restart": {
+    "label": "Uruchom ponownie",
+    "title": "Uruchomić ponownie {{kind}} {{name}}?",
+    "text": "Wszystkie Pody {{name}} zostaną po kolei zastąpione nowymi (rollout restart).",
+    "confirm": "Uruchom ponownie"
+  },
+  "cordon": {
+    "label": "Wyłącz / włącz planowanie",
+    "cordonTitle": "Wyłączyć planowanie na węźle {{name}}?",
+    "cordonText": "Na węźle {{name}} nie będą planowane nowe Pody. Pody, które już na nim działają, nadal będą działać.",
+    "cordonConfirm": "Wyłącz planowanie",
+    "uncordonTitle": "Włączyć planowanie na węźle {{name}}?",
+    "uncordonText": "Na węźle {{name}} znów będzie można planować nowe Pody.",
+    "uncordonConfirm": "Włącz planowanie"
+  },
+  "drain": {
+    "label": "Opróżnij",
+    "title": "Opróżnić węzeł {{name}}?",
+    "text": "Na węźle {{name}} zostanie wyłączone planowanie, a jego Pody zostaną eksmitowane. Pody DaemonSet i statyczne (mirror) Pody pozostaną.",
+    "loading": "Sprawdzanie Podów na węźle…",
+    "previewFailed": "Nie można wyświetlić listy Podów węzła",
+    "noPods": "Na tym węźle nie ma Podów do eksmisji.",
+    "evict_one": "Do eksmisji ({{count}} Pod)",
+    "evict_few": "Do eksmisji ({{count}} Pody)",
+    "evict_many": "Do eksmisji ({{count}} Podów)",
+    "evict_other": "Do eksmisji ({{count}} Poda)",
+    "unmanaged_one": "Bez kontrolera ({{count}} Pod): po eksmisji nic go nie odtworzy",
+    "unmanaged_few": "Bez kontrolera ({{count}} Pody): po eksmisji nic ich nie odtworzy",
+    "unmanaged_many": "Bez kontrolera ({{count}} Podów): po eksmisji nic ich nie odtworzy",
+    "unmanaged_other": "Bez kontrolera ({{count}} Poda): po eksmisji nic ich nie odtworzy",
+    "force": "Eksmituj także Pody bez kontrolera (force). Gdy pole nie jest zaznaczone, pozostają na węźle.",
+    "emptyDir_one": "Z danymi emptyDir ({{count}} Pod): dane zostaną usunięte razem z Podem",
+    "emptyDir_few": "Z danymi emptyDir ({{count}} Pody): dane zostaną usunięte razem z Podami",
+    "emptyDir_many": "Z danymi emptyDir ({{count}} Podów): dane zostaną usunięte razem z Podami",
+    "emptyDir_other": "Z danymi emptyDir ({{count}} Poda): dane zostaną usunięte razem z Podami",
+    "deleteEmptyDirData": "Eksmituj także Pody z danymi emptyDir (delete emptyDir data). Gdy pole nie jest zaznaczone, pozostają na węźle.",
+    "daemonSet_one": "Pozostają: Pody DaemonSet ({{count}} Pod)",
+    "daemonSet_few": "Pozostają: Pody DaemonSet ({{count}} Pody)",
+    "daemonSet_many": "Pozostają: Pody DaemonSet ({{count}} Podów)",
+    "daemonSet_other": "Pozostają: Pody DaemonSet ({{count}} Poda)",
+    "confirm": "Opróżnij",
+    "failed": "Planowanie na węźle zostało wyłączone, ale niektórych Podów nie udało się eksmitować"
+  },
+  "trigger": {
+    "label": "Uruchom teraz",
+    "title": "Uruchomić teraz CronJob {{name}}?",
+    "text": "Z szablonu CronJob zostanie od razu utworzony Job.",
+    "confirm": "Uruchom",
+    "done": "Utworzono Job {{name}}."
+  },
+  "suspend": {
+    "label": "Wstrzymaj / wznów",
+    "suspendTitle": "Wstrzymać CronJob {{name}}?",
+    "suspendText": "{{name}} nie będzie uruchamiać nowych Jobów, dopóki nie zostanie wznowiony. Działające Joby nie zostaną naruszone.",
+    "suspendConfirm": "Wstrzymaj",
+    "resumeTitle": "Wznowić CronJob {{name}}?",
+    "resumeText": "{{name}} znów będzie uruchamiać Joby zgodnie z harmonogramem.",
+    "resumeConfirm": "Wznów"
+  },
+  "dialog": {
+    "working": "Trwa wykonywanie…",
+    "close": "Zamknij"
+  },
+  "editor": {
+    "tabTitle": "Edycja {{kind}} {{name}}",
+    "editorLabel": "YAML obiektu {{kind}} {{name}}",
+    "save": "Zapisz",
+    "saving": "Zapisywanie…",
+    "saved": "Zapisano.",
+    "unsaved": "Niezapisane zmiany",
+    "reload": "Wczytaj ponownie",
+    "loading": "Wczytywanie…",
+    "conflict": "Obiekt {{kind}} {{name}} został zmieniony w klastrze po jego otwarciu. Zmiany nie zostały zapisane. Wczytaj ponownie, aby pobrać bieżącą wersję.",
+    "reloadTitle": "Odrzucić zmiany?",
+    "reloadText": "Ponowne wczytanie zastąpi tekst bieżącą wersją z klastra. Niezapisane zmiany zostaną utracone.",
+    "reloadConfirm": "Odrzuć i wczytaj ponownie",
+    "saveFailed": "Nie zapisano"
+  },
+  "create": {
+    "open": "Utwórz zasób",
+    "tabTitle": "Tworzenie zasobu",
+    "editorLabel": "YAML zasobów do utworzenia",
+    "placeholder": "Wklej lub wpisz YAML. Kilka obiektów oddziel znakami ---",
+    "apply": "Zastosuj",
+    "applying": "Stosowanie…",
+    "applied_one": "Zastosowano {{count}} obiekt:",
+    "applied_few": "Zastosowano {{count}} obiekty:",
+    "applied_many": "Zastosowano {{count}} obiektów:",
+    "applied_other": "Zastosowano {{count}} obiektu:",
+    "failed": "Nie zastosowano",
+    "empty": "Wpisz co najmniej jeden obiekt."
+  }
+}

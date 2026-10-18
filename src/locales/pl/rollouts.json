@@ -1,0 +1,49 @@
+{
+  "tab": "Historia",
+  "status": {
+    "title": "Wdrożenie",
+    "state": {
+      "complete": "Zakończone",
+      "progressing": "W toku",
+      "paused": "Wstrzymane",
+      "failed": "Zablokowane"
+    },
+    "replicas": "Zaktualizowane: {{updated}} z {{desired}} · gotowe: {{ready}} · dostępne: {{available}}",
+    "pendingObservation": "Oczekiwanie, aż kontroler zauważy najnowszą zmianę.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "Wdrożenie jest wstrzymane; wznów je, aby kontynuować lub wycofać zmiany."
+  },
+  "history": {
+    "title": "Rewizje",
+    "loading": "Wczytywanie rewizji…",
+    "empty": "Brak rewizji.",
+    "columns": {
+      "compare": "Porównaj",
+      "revision": "Rewizja",
+      "created": "Utworzono",
+      "changeCause": "Przyczyna zmiany",
+      "images": "Obrazy"
+    },
+    "current": "bieżąca",
+    "select": "Porównaj rewizję {{revision}}",
+    "pickTwo": "Wybierz dwie rewizje, aby porównać ich szablony Podów.",
+    "pickOneMore": "Wybierz jeszcze jedną rewizję do porównania.",
+    "revisionTitle": "Rewizja {{revision}}",
+    "rollBack": "Przywróć rewizję {{revision}}"
+  },
+  "rollback": {
+    "action": "Wycofaj…",
+    "title": "Wycofanie {{name}}",
+    "confirm": "Przywróć rewizję {{revision}}",
+    "revision": "Rewizja",
+    "revisionOption": "Rewizja {{revision}}",
+    "revisionOptionCause": "Rewizja {{revision}} — {{cause}}",
+    "intro": "Szablon Poda z rewizji {{revision}} zastąpi bieżący, a Pody zostaną wymienione jak przy każdej aktualizacji.",
+    "current": "Bieżący szablon",
+    "target": "Rewizja {{revision}}",
+    "same": "Bieżący szablon jest już zgodny z rewizją {{revision}}: nie ma nic do zmiany.",
+    "paused": "Ten Deployment jest wstrzymany. Wznów go przed wycofaniem.",
+    "none": "Nie ma wcześniejszej rewizji, do której można by wrócić.",
+    "loading": "Wczytywanie rewizji…"
+  }
+}

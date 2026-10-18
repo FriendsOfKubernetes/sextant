@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "設定",
+    "open": "設定"
+  },
+  "tabs": {
+    "label": "設定區段",
+    "general": "一般",
+    "clusters": "叢集",
+    "agents": "AI 代理程式",
+    "extensions": "擴充功能",
+    "about": "更新與關於"
+  },
+  "appearance": {
+    "title": "外觀",
+    "theme": "佈景主題",
+    "themes": {
+      "system": "跟隨系統",
+      "light": "淺色",
+      "dark": "深色"
+    },
+    "systemHint": "「跟隨系統」會採用作業系統的淺色或深色模式。",
+    "language": "語言",
+    "languageSystem": "跟隨系統（{{language}}）",
+    "languageHint": "「跟隨系統」會採用作業系統的語言；若 Sextant 沒有該語言的翻譯，則使用英文。"
+  },
+  "window": {
+    "title": "視窗",
+    "closeToTray": "關閉視窗時將 Sextant 保留在系統匣中",
+    "closeToTrayHint": "Sextant 會在系統匣中繼續執行：連線、連接埠轉送、終端機和 MCP 伺服器都會保持開啟。按一下系統匣（macOS 為選單列）中的圖示即可再次顯示視窗；在圖示選單中選擇「結束 Sextant」即可結束。",
+    "noTray": "找不到系統匣，因此關閉視窗會結束 Sextant。在 Linux 上，系統匣需要 libayatana-appindicator 程式庫及 StatusNotifier/AppIndicator 主機（在 GNOME 上為 AppIndicator 擴充功能），或在 X11 工作階段中需要系統匣。"
+  },
+  "editor": {
+    "title": "編輯器",
+    "scheme": "色彩配置",
+    "hint": "資源編輯器、詳細資料面板和 Helm 中 YAML 的色彩。「自動」在深色佈景主題下使用 One Dark，在淺色佈景主題下使用 GitHub Light。",
+    "schemes": {
+      "auto": "自動",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "安裝和變更 Helm 發行版本需要執行 helm 命令。檢視發行版本則不需要 helm。",
+    "auto": "在 PATH 中尋找 helm",
+    "manual": "使用此執行檔",
+    "path": "helm 路徑",
+    "browse": "瀏覽…",
+    "browseTitle": "選擇 helm 執行檔",
+    "apply": "套用",
+    "checking": "正在檢查 helm…",
+    "found": "Helm {{version}}，位於 {{path}}",
+    "foundNoVersion": "Helm，位於 {{path}}",
+    "notFound": "找不到 Helm",
+    "notRunnable": "{{path}} 不是可正常運作的 helm 執行檔"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "叢集來自 KUBECONFIG（或 ~/.kube/config），以及您在此處新增的檔案。"
+  },
+  "menu": {
+    "open": "開啟選單",
+    "close": "關閉選單",
+    "title": "選單"
+  },
+  "saveFailed": "無法儲存設定",
+  "file": {
+    "label": "設定檔",
+    "backup": "設定檔已損毀，因此 Sextant 以預設設定啟動。舊檔案已複製到 {{path}}。",
+    "unwritable": "變更未儲存：無法讀取或寫入設定檔。請修正其權限，然後重新啟動 Sextant。",
+    "dismiss": "關閉"
+  },
+  "terminal": {
+    "title": "終端機",
+    "nodeShellImage": "節點 Shell 映像檔",
+    "nodeShellImageHint": "節點上「Shell」所使用之暫時特權 Pod 的映像檔。此映像檔需要包含 nsenter（busybox 就有）；Shell 本身則來自節點。AI 代理程式永遠無法取得節點 Shell。"
+  }
+}

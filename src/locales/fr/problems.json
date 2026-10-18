@@ -1,0 +1,39 @@
+{
+  "sidebar": "Problèmes",
+  "title": "Problèmes du cluster",
+  "badge_one": "{{count}} problème requiert votre attention",
+  "badge_many": "{{count}} de problèmes requièrent votre attention",
+  "badge_other": "{{count}} problèmes requièrent votre attention",
+  "onlyNewSince": "Seulement les nouveaux depuis {{time}}",
+  "markSeen": "Tout marquer comme vu",
+  "total_one": "{{count}} problème",
+  "total_many": "{{count}} de problèmes",
+  "total_other": "{{count}} problèmes",
+  "sourceFailed": "Impossible de surveiller {{kind}}",
+  "truncated": "Il y a trop de problèmes : seuls les plus récents sont listés.",
+  "loading": "Recherche de problèmes…",
+  "none": "Aucun problème détecté.",
+  "noneNew": "Aucun nouveau problème depuis le marquage.",
+  "clusterWide": "Tout le cluster",
+  "categories": {
+    "nodes": "Nœuds",
+    "pods": "Pods",
+    "workloads": "Charges de travail",
+    "jobs": "Jobs",
+    "volumes": "Demandes de volume",
+    "certificates": "Certificats",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Événements d'avertissement"
+  },
+  "messages": {
+    "container": "Conteneur {{container}}",
+    "restarts_one": "Le conteneur {{container}} a redémarré ({{count}} redémarrage)",
+    "restarts_many": "Le conteneur {{container}} a redémarré ({{count}} de redémarrages)",
+    "restarts_other": "Le conteneur {{container}} a redémarré ({{count}} redémarrages)",
+    "replicas": "{{ready}} réplicas prêts sur {{desired}}",
+    "expires": "Expire le {{date}}",
+    "expired": "Expiré le {{date}}"
+  }
+}

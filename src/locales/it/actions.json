@@ -1,0 +1,114 @@
+{
+  "edit": {
+    "label": "Modifica"
+  },
+  "delete": {
+    "label": "Elimina",
+    "titleSingle": "Eliminare {{kind}}?",
+    "title_one": "Eliminare {{count}} oggetto {{kind}}?",
+    "title_many": "Eliminare {{count}} di oggetti {{kind}}?",
+    "title_other": "Eliminare {{count}} oggetti {{kind}}?",
+    "textSingle": "Questo oggetto {{kind}} verrà eliminato dal cluster:",
+    "text_one": "{{count}} oggetto verrà eliminato dal cluster:",
+    "text_many": "{{count}} di oggetti verranno eliminati dal cluster:",
+    "text_other": "Questi {{count}} oggetti verranno eliminati dal cluster:",
+    "confirm": "Elimina",
+    "failed": "Non eliminato: {{name}}",
+    "partial": "{{done}} eliminati su {{total}}. Gli altri non sono riusciti:"
+  },
+  "scale": {
+    "label": "Scala",
+    "title": "Scala {{kind}} {{name}}",
+    "replicas": "Repliche",
+    "current": "Attualmente: {{count}}",
+    "confirm": "Scala",
+    "invalid": "Inserisci un numero intero maggiore o uguale a 0."
+  },
+  "restart": {
+    "label": "Riavvia",
+    "title": "Riavviare {{kind}} {{name}}?",
+    "text": "Tutti i pod di {{name}} verranno sostituiti uno alla volta (rollout restart).",
+    "confirm": "Riavvia"
+  },
+  "cordon": {
+    "label": "Isola / Ripristina",
+    "cordonTitle": "Isolare il nodo {{name}} (cordon)?",
+    "cordonText": "Nessun nuovo pod verrà pianificato su {{name}}. I pod già in esecuzione continuano a funzionare.",
+    "cordonConfirm": "Isola",
+    "uncordonTitle": "Ripristinare il nodo {{name}} (uncordon)?",
+    "uncordonText": "Sarà di nuovo possibile pianificare nuovi pod su {{name}}.",
+    "uncordonConfirm": "Ripristina"
+  },
+  "drain": {
+    "label": "Svuota",
+    "title": "Svuotare il nodo {{name}}?",
+    "text": "{{name}} verrà isolato e i suoi pod verranno espulsi. I pod dei DaemonSet e i pod statici (mirror) restano.",
+    "loading": "Analisi dei pod sul nodo…",
+    "previewFailed": "Impossibile elencare i pod del nodo",
+    "noPods": "Non ci sono pod da espellere su questo nodo.",
+    "evict_one": "Da espellere ({{count}} pod)",
+    "evict_many": "Da espellere ({{count}} di pod)",
+    "evict_other": "Da espellere ({{count}} pod)",
+    "unmanaged_one": "Senza controller ({{count}} pod): nulla lo ricrea dopo l'espulsione",
+    "unmanaged_many": "Senza controller ({{count}} di pod): nulla li ricrea dopo l'espulsione",
+    "unmanaged_other": "Senza controller ({{count}} pod): nulla li ricrea dopo l'espulsione",
+    "force": "Espelli anche i pod senza controller (force). Se non selezionato, restano sul nodo.",
+    "emptyDir_one": "Con dati emptyDir ({{count}} pod): i dati vengono eliminati insieme al pod",
+    "emptyDir_many": "Con dati emptyDir ({{count}} di pod): i dati vengono eliminati insieme ai pod",
+    "emptyDir_other": "Con dati emptyDir ({{count}} pod): i dati vengono eliminati insieme ai pod",
+    "deleteEmptyDirData": "Espelli anche i pod con dati emptyDir (delete emptyDir data). Se non selezionato, restano sul nodo.",
+    "daemonSet_one": "Restano: pod di DaemonSet ({{count}} pod)",
+    "daemonSet_many": "Restano: pod di DaemonSet ({{count}} di pod)",
+    "daemonSet_other": "Restano: pod di DaemonSet ({{count}} pod)",
+    "confirm": "Svuota",
+    "failed": "Il nodo è isolato, ma non è stato possibile espellere alcuni pod"
+  },
+  "trigger": {
+    "label": "Esegui ora",
+    "title": "Eseguire ora il CronJob {{name}}?",
+    "text": "Viene creato subito un Job dal modello del CronJob.",
+    "confirm": "Esegui",
+    "done": "Job {{name}} creato."
+  },
+  "suspend": {
+    "label": "Sospendi / Riprendi",
+    "suspendTitle": "Sospendere il CronJob {{name}}?",
+    "suspendText": "{{name}} non avvierà nuovi Job finché non verrà ripreso. I Job in esecuzione non sono interessati.",
+    "suspendConfirm": "Sospendi",
+    "resumeTitle": "Riprendere il CronJob {{name}}?",
+    "resumeText": "{{name}} avvierà di nuovo i Job secondo la sua pianificazione.",
+    "resumeConfirm": "Riprendi"
+  },
+  "dialog": {
+    "working": "Operazione in corso…",
+    "close": "Chiudi"
+  },
+  "editor": {
+    "tabTitle": "Modifica {{kind}} {{name}}",
+    "editorLabel": "YAML di {{kind}} {{name}}",
+    "save": "Salva",
+    "saving": "Salvataggio…",
+    "saved": "Salvato.",
+    "unsaved": "Modifiche non salvate",
+    "reload": "Ricarica",
+    "loading": "Caricamento…",
+    "conflict": "{{kind}} {{name}} è stato modificato nel cluster dopo l'apertura. Le modifiche non sono state salvate. Ricarica per ottenere la versione attuale.",
+    "reloadTitle": "Annullare le modifiche?",
+    "reloadText": "Il ricaricamento sostituisce il testo con la versione attuale presente nel cluster. Le modifiche non salvate andranno perse.",
+    "reloadConfirm": "Annulla modifiche e ricarica",
+    "saveFailed": "Non salvato"
+  },
+  "create": {
+    "open": "Crea risorsa",
+    "tabTitle": "Crea risorsa",
+    "editorLabel": "YAML delle risorse da creare",
+    "placeholder": "Incolla o digita YAML. Separa più oggetti con ---",
+    "apply": "Applica",
+    "applying": "Applicazione…",
+    "applied_one": "{{count}} oggetto applicato:",
+    "applied_many": "{{count}} di oggetti applicati:",
+    "applied_other": "{{count}} oggetti applicati:",
+    "failed": "Non applicato",
+    "empty": "Inserisci almeno un oggetto."
+  }
+}

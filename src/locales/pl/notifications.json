@@ -1,0 +1,42 @@
+{
+  "muteHour": "Wycisz na 1 godzinę",
+  "unmute": "Wyłącz wyciszenie",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{count}} nowy problem w klastrze {{cluster}}",
+    "title_few": "{{count}} nowe problemy w klastrze {{cluster}}",
+    "title_many": "{{count}} nowych problemów w klastrze {{cluster}}",
+    "title_other": "{{count}} nowego problemu w klastrze {{cluster}}",
+    "titleClusters_one": "{{count}} nowy problem w {{clusters}} klastrach",
+    "titleClusters_few": "{{count}} nowe problemy w {{clusters}} klastrach",
+    "titleClusters_many": "{{count}} nowych problemów w {{clusters}} klastrach",
+    "titleClusters_other": "{{count}} nowego problemu w {{clusters}} klastrach",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Powiadomienia",
+    "enabled": "Pokazuj powiadomienia na pulpicie o nowych problemach w połączonych klastrach",
+    "enabledHint": "Obserwowane są tylko klastry, które są już połączone, a zgłaszane są tylko problemy, które pojawią się podczas działania programu Sextant, także gdy okno jest ukryte w zasobniku. Powiadomienia wyświetla systemowa usługa powiadomień; żadne dane nie opuszczają tego komputera.",
+    "mutedUntil": "Wyciszono do {{time}}",
+    "categories": "Powiadamiaj o",
+    "clusters": "Klastry",
+    "clustersHint": "Klaster wyłączony tutaj nigdy nie wysyła powiadomień.",
+    "noClusters": "Brak klastrów.",
+    "certificates": "Certyfikaty",
+    "certExpiryDays": "Liczba dni przed wygaśnięciem certyfikatu, od której wyświetlane jest ostrzeżenie",
+    "certExpiryHint": "Używane przez ekran problemów i powiadomienia dla Certificate z cert-manager, a także przez szczegóły certyfikatu i stronę certyfikatów TLS."
+  },
+  "history": {
+    "title": "Ostatnie powiadomienia",
+    "clear": "Wyczyść",
+    "empty": "Brak powiadomień.",
+    "off": "Powiadomienia są wyłączone (Ustawienia → Ogólne → Powiadomienia).",
+    "delivery": {
+      "summary": "w podsumowaniu",
+      "muted": "wyciszone"
+    }
+  },
+  "muteFailed": "Nie można wyciszyć powiadomień: {{message}}"
+}

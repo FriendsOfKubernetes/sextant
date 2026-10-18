@@ -1,0 +1,38 @@
+{
+  "muteHour": "1 Stunde stummschalten",
+  "unmute": "Stummschaltung aufheben",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_one": "{{count}} neues Problem in {{cluster}}",
+    "title_other": "{{count}} neue Probleme in {{cluster}}",
+    "titleClusters_one": "{{count}} neues Problem in {{clusters}} Clustern",
+    "titleClusters_other": "{{count}} neue Probleme in {{clusters}} Clustern",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "Benachrichtigungen",
+    "enabled": "Desktop-Benachrichtigungen über neue Probleme in verbundenen Clustern anzeigen",
+    "enabledHint": "Überwacht werden nur bereits verbundene Cluster, und gemeldet werden nur Probleme, die entstehen, während Sextant läuft – auch wenn das Fenster im Infobereich ausgeblendet ist. Der Benachrichtigungsdienst des Systems zeigt sie an; nichts verlässt diesen Rechner.",
+    "mutedUntil": "Stummgeschaltet bis {{time}}",
+    "categories": "Benachrichtigen bei",
+    "clusters": "Cluster",
+    "clustersHint": "Ein hier deaktivierter Cluster sendet nie Benachrichtigungen.",
+    "noClusters": "Noch keine Cluster.",
+    "certificates": "Zertifikate",
+    "certExpiryDays": "So viele Tage vor Ablauf eines Zertifikats warnen",
+    "certExpiryHint": "Gilt für die Problemansicht und die Benachrichtigungen zu cert-manager-Certificates sowie für die Zertifikatdetails und die Seite „TLS-Zertifikate“."
+  },
+  "history": {
+    "title": "Letzte Benachrichtigungen",
+    "clear": "Leeren",
+    "empty": "Noch keine Benachrichtigungen.",
+    "off": "Benachrichtigungen sind ausgeschaltet (Einstellungen → Allgemein → Benachrichtigungen).",
+    "delivery": {
+      "summary": "in einer Zusammenfassung",
+      "muted": "stummgeschaltet"
+    }
+  },
+  "muteFailed": "Benachrichtigungen konnten nicht stummgeschaltet werden: {{message}}"
+}

@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Listo",
+    "status": "Estado",
+    "revision": "Revisión",
+    "suspended": "Suspendido",
+    "source": "Origen"
+  },
+  "suspended": {
+    "yes": "Sí",
+    "no": "No"
+  },
+  "fields": {
+    "ready": "Listo",
+    "message": "Estado",
+    "revision": "Revisión",
+    "lastAttemptedRevision": "Última revisión intentada",
+    "suspended": "Suspendido",
+    "interval": "Intervalo",
+    "timeout": "Tiempo de espera",
+    "source": "Origen",
+    "chart": "Chart",
+    "helmChart": "Chart de Helm",
+    "url": "URL",
+    "ref": "Referencia",
+    "endpoint": "Endpoint",
+    "bucketName": "Bucket",
+    "path": "Ruta",
+    "targetNamespace": "Namespace de destino",
+    "releaseName": "Nombre de la release",
+    "prune": "Podar",
+    "dependsOn": "Depende de",
+    "image": "Imagen",
+    "imageRepository": "Repositorio de imágenes",
+    "provider": "Proveedor",
+    "eventSeverity": "Gravedad de eventos",
+    "eventSources": "Orígenes de eventos",
+    "type": "Tipo",
+    "channel": "Canal",
+    "webhookPath": "Ruta del webhook",
+    "lastHandledReconcileAt": "Última solicitud de reconciliación"
+  },
+  "related": {
+    "inventory": "Recursos aplicados",
+    "resources": "Recursos",
+    "usedBy": "Usado por",
+    "kind": "Tipo",
+    "name": "Nombre",
+    "namespace": "Namespace",
+    "loading": "Cargando…",
+    "notUsed": "Ninguna Kustomization ni HelmRelease usa este origen."
+  },
+  "actions": {
+    "reconcile": "Reconciliar ahora",
+    "reconcileWithSource": "Reconciliar con el origen",
+    "suspend": "Suspender",
+    "resume": "Reanudar"
+  },
+  "suspend": {
+    "title": "¿Suspender {{kind}} {{name}}?",
+    "confirm": "Suspender",
+    "text": "Flux deja de reconciliar {{kind}} {{name}} hasta que se reanude: mientras tanto, los cambios en Git o en el clúster no se aplican ni se corrigen."
+  }
+}

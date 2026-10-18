@@ -1,0 +1,107 @@
+{
+  "edit": {
+    "label": "Bearbeiten"
+  },
+  "delete": {
+    "label": "Löschen",
+    "titleSingle": "{{kind}} löschen?",
+    "title_one": "{{count}} {{kind}}-Objekt löschen?",
+    "title_other": "{{count}} {{kind}}-Objekte löschen?",
+    "textSingle": "Dieses {{kind}}-Objekt wird aus dem Cluster gelöscht:",
+    "text_one": "Dieses {{count}} Objekt wird aus dem Cluster gelöscht:",
+    "text_other": "Diese {{count}} Objekte werden aus dem Cluster gelöscht:",
+    "confirm": "Löschen",
+    "failed": "Nicht gelöscht: {{name}}",
+    "partial": "{{done}} von {{total}} gelöscht. Bei den übrigen ist es fehlgeschlagen:"
+  },
+  "scale": {
+    "label": "Skalieren",
+    "title": "{{kind}} {{name}} skalieren",
+    "replicas": "Replikate",
+    "current": "Aktuell: {{count}}",
+    "confirm": "Skalieren",
+    "invalid": "Geben Sie eine ganze Zahl ab 0 ein."
+  },
+  "restart": {
+    "label": "Neu starten",
+    "title": "{{kind}} {{name}} neu starten?",
+    "text": "Alle Pods von {{name}} werden nacheinander ersetzt (rollout restart).",
+    "confirm": "Neu starten"
+  },
+  "cordon": {
+    "label": "Cordon / Uncordon",
+    "cordonTitle": "Knoten {{name}} absperren (cordon)?",
+    "cordonText": "Auf {{name}} werden keine neuen Pods mehr eingeplant. Pods, die dort bereits laufen, laufen weiter.",
+    "cordonConfirm": "Absperren",
+    "uncordonTitle": "Sperre von Knoten {{name}} aufheben (uncordon)?",
+    "uncordonText": "Auf {{name}} können wieder neue Pods eingeplant werden.",
+    "uncordonConfirm": "Sperre aufheben"
+  },
+  "drain": {
+    "label": "Drain",
+    "title": "Knoten {{name}} leeren (drain)?",
+    "text": "{{name}} wird abgesperrt und seine Pods werden verdrängt. Pods von DaemonSets und statische (Mirror-)Pods bleiben.",
+    "loading": "Pods auf dem Knoten werden geprüft…",
+    "previewFailed": "Die Pods des Knotens können nicht aufgelistet werden",
+    "noPods": "Auf diesem Knoten gibt es keine Pods zum Verdrängen.",
+    "evict_one": "Verdrängt ({{count}} Pod)",
+    "evict_other": "Verdrängt ({{count}} Pods)",
+    "unmanaged_one": "Ohne Controller ({{count}} Pod): Nach dem Verdrängen erstellt ihn nichts neu",
+    "unmanaged_other": "Ohne Controller ({{count}} Pods): Nach dem Verdrängen erstellt sie nichts neu",
+    "force": "Auch Pods ohne Controller verdrängen (force). Ohne Häkchen bleiben sie auf dem Knoten.",
+    "emptyDir_one": "Mit emptyDir-Daten ({{count}} Pod): Die Daten werden mit dem Pod gelöscht",
+    "emptyDir_other": "Mit emptyDir-Daten ({{count}} Pods): Die Daten werden mit den Pods gelöscht",
+    "deleteEmptyDirData": "Auch Pods mit emptyDir-Daten verdrängen (delete emptyDir data). Ohne Häkchen bleiben sie auf dem Knoten.",
+    "daemonSet_one": "Bleiben: DaemonSet-Pods ({{count}} Pod)",
+    "daemonSet_other": "Bleiben: DaemonSet-Pods ({{count}} Pods)",
+    "confirm": "Leeren",
+    "failed": "Der Knoten ist abgesperrt, aber einige Pods konnten nicht verdrängt werden"
+  },
+  "trigger": {
+    "label": "Jetzt auslösen",
+    "title": "CronJob {{name}} jetzt ausführen?",
+    "text": "Aus der Vorlage des CronJobs wird sofort ein Job erstellt.",
+    "confirm": "Auslösen",
+    "done": "Job {{name}} erstellt."
+  },
+  "suspend": {
+    "label": "Anhalten / Fortsetzen",
+    "suspendTitle": "CronJob {{name}} anhalten?",
+    "suspendText": "{{name}} startet keine neuen Jobs, bis er fortgesetzt wird. Laufende Jobs sind nicht betroffen.",
+    "suspendConfirm": "Anhalten",
+    "resumeTitle": "CronJob {{name}} fortsetzen?",
+    "resumeText": "{{name}} startet wieder Jobs nach seinem Zeitplan.",
+    "resumeConfirm": "Fortsetzen"
+  },
+  "dialog": {
+    "working": "Wird ausgeführt…",
+    "close": "Schließen"
+  },
+  "editor": {
+    "tabTitle": "{{kind}} {{name}} bearbeiten",
+    "editorLabel": "YAML von {{kind}} {{name}}",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "saved": "Gespeichert.",
+    "unsaved": "Ungespeicherte Änderungen",
+    "reload": "Neu laden",
+    "loading": "Wird geladen…",
+    "conflict": "{{kind}} {{name}} wurde im Cluster geändert, nachdem Sie es geöffnet haben. Ihre Änderungen wurden nicht gespeichert. Laden Sie neu, um die aktuelle Version zu erhalten.",
+    "reloadTitle": "Ihre Änderungen verwerfen?",
+    "reloadText": "Beim Neuladen wird der Text durch die aktuelle Version aus dem Cluster ersetzt. Ihre ungespeicherten Änderungen gehen verloren.",
+    "reloadConfirm": "Verwerfen und neu laden",
+    "saveFailed": "Nicht gespeichert"
+  },
+  "create": {
+    "open": "Ressource erstellen",
+    "tabTitle": "Ressource erstellen",
+    "editorLabel": "YAML der zu erstellenden Ressourcen",
+    "placeholder": "YAML einfügen oder eingeben. Mehrere Objekte mit --- trennen",
+    "apply": "Anwenden",
+    "applying": "Wird angewendet…",
+    "applied_one": "{{count}} Objekt angewendet:",
+    "applied_other": "{{count}} Objekte angewendet:",
+    "failed": "Nicht angewendet",
+    "empty": "Geben Sie mindestens ein Objekt ein."
+  }
+}

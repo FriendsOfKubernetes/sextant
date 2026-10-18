@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "就绪",
+    "status": "状态",
+    "revision": "修订版本",
+    "suspended": "已暂停",
+    "source": "来源"
+  },
+  "suspended": {
+    "yes": "是",
+    "no": "否"
+  },
+  "fields": {
+    "ready": "就绪",
+    "message": "状态",
+    "revision": "修订版本",
+    "lastAttemptedRevision": "上次尝试的修订版本",
+    "suspended": "已暂停",
+    "interval": "间隔",
+    "timeout": "超时",
+    "source": "来源",
+    "chart": "Chart",
+    "helmChart": "Helm Chart",
+    "url": "URL",
+    "ref": "引用",
+    "endpoint": "端点",
+    "bucketName": "存储桶",
+    "path": "路径",
+    "targetNamespace": "目标 Namespace",
+    "releaseName": "发布名称",
+    "prune": "清理",
+    "dependsOn": "依赖于",
+    "image": "镜像",
+    "imageRepository": "镜像仓库",
+    "provider": "提供者",
+    "eventSeverity": "事件严重性",
+    "eventSources": "事件来源",
+    "type": "类型",
+    "channel": "频道",
+    "webhookPath": "Webhook 路径",
+    "lastHandledReconcileAt": "上次协调请求"
+  },
+  "related": {
+    "inventory": "已应用的资源",
+    "resources": "资源",
+    "usedBy": "使用者",
+    "kind": "Kind",
+    "name": "名称",
+    "namespace": "Namespace",
+    "loading": "正在加载…",
+    "notUsed": "没有 Kustomization 或 HelmRelease 使用此来源。"
+  },
+  "actions": {
+    "reconcile": "立即协调",
+    "reconcileWithSource": "连同来源一起协调",
+    "suspend": "暂停",
+    "resume": "恢复"
+  },
+  "suspend": {
+    "title": "暂停 {{kind}} {{name}}？",
+    "confirm": "暂停",
+    "text": "在恢复之前，Flux 将停止协调 {{kind}} {{name}}：在此期间，Git 或集群中的更改不会被应用或纠正。"
+  }
+}

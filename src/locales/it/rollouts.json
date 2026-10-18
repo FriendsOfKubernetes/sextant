@@ -1,0 +1,49 @@
+{
+  "tab": "Cronologia",
+  "status": {
+    "title": "Rollout",
+    "state": {
+      "complete": "Completato",
+      "progressing": "In corso",
+      "paused": "In pausa",
+      "failed": "Bloccato"
+    },
+    "replicas": "{{updated}} di {{desired}} aggiornate · {{ready}} pronte · {{available}} disponibili",
+    "pendingObservation": "In attesa che il controller rilevi l'ultima modifica.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "Il rollout è in pausa; riprendilo per continuare o per eseguire il rollback."
+  },
+  "history": {
+    "title": "Revisioni",
+    "loading": "Caricamento delle revisioni…",
+    "empty": "Ancora nessuna revisione.",
+    "columns": {
+      "compare": "Confronta",
+      "revision": "Revisione",
+      "created": "Creata",
+      "changeCause": "Causa della modifica",
+      "images": "Immagini"
+    },
+    "current": "attuale",
+    "select": "Confronta revisione {{revision}}",
+    "pickTwo": "Seleziona due revisioni per confrontarne i modelli di pod.",
+    "pickOneMore": "Seleziona un'altra revisione da confrontare.",
+    "revisionTitle": "Revisione {{revision}}",
+    "rollBack": "Ripristina la revisione {{revision}}"
+  },
+  "rollback": {
+    "action": "Rollback…",
+    "title": "Rollback di {{name}}",
+    "confirm": "Ripristina la revisione {{revision}}",
+    "revision": "Revisione",
+    "revisionOption": "Revisione {{revision}}",
+    "revisionOptionCause": "Revisione {{revision}} — {{cause}}",
+    "intro": "Il modello di pod della revisione {{revision}} sostituisce quello attuale e i pod vengono sostituiti come per qualsiasi aggiornamento.",
+    "current": "Modello attuale",
+    "target": "Revisione {{revision}}",
+    "same": "Il modello attuale corrisponde già alla revisione {{revision}}: non c'è nulla da modificare.",
+    "paused": "Questo Deployment è in pausa. Riprendilo prima di eseguire il rollback.",
+    "none": "Non esiste una revisione precedente a cui tornare.",
+    "loading": "Caricamento delle revisioni…"
+  }
+}

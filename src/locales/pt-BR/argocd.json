@@ -1,0 +1,181 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "Projeto",
+    "sync": "Sincronização",
+    "health": "Integridade",
+    "revision": "Revisão",
+    "destination": "Destino",
+    "applications": "Aplicações",
+    "destinations": "Destinos",
+    "sources": "Fontes"
+  },
+  "status": {
+    "syncing": "Sincronizando"
+  },
+  "fields": {
+    "project": "Projeto",
+    "sync": "Status de sincronização",
+    "syncedRevision": "Revisão sincronizada",
+    "health": "Integridade",
+    "operation": "Última operação",
+    "operationStarted": "Início da operação",
+    "operationFinished": "Fim da operação",
+    "sources": "Fonte",
+    "destination": "Destino",
+    "syncPolicy": "Política de sincronização",
+    "syncOptions": "Opções de sincronização",
+    "reconciledAt": "Última comparação",
+    "generators": "Geradores",
+    "applications": "Aplicações",
+    "description": "Descrição",
+    "sourceRepos": "Repositórios de origem",
+    "destinations": "Destinos",
+    "clusterResourceWhitelist": "Recursos de cluster permitidos",
+    "clusterResourceBlacklist": "Recursos de cluster negados",
+    "namespaceResourceWhitelist": "Recursos de namespace permitidos",
+    "namespaceResourceBlacklist": "Recursos de namespace negados",
+    "roles": "Funções"
+  },
+  "sources": {
+    "repo": "Repositório",
+    "path": "Caminho / chart",
+    "targetRevision": "Revisão de destino"
+  },
+  "destinations": {
+    "cluster": "Cluster",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "Manual",
+    "automated": "Automática",
+    "prune": "prune",
+    "selfHeal": "self-heal"
+  },
+  "tree": {
+    "title": "Recursos",
+    "kind": "Kind",
+    "name": "Nome",
+    "namespace": "Namespace",
+    "sync": "Sincronização",
+    "health": "Integridade / status",
+    "computedHealth": "Calculada pelo Sextant a partir do objeto ativo: o Argo CD mantém essa integridade apenas na própria API.",
+    "computedHealthMessage": "Calculada pelo Sextant a partir do objeto ativo: {{message}}",
+    "remote": "A aplicação é implantada em outro cluster: os recursos dela não podem ser abertos aqui.",
+    "loading": "Carregando o que pertence aos recursos…"
+  },
+  "history": {
+    "title": "Histórico de sincronização",
+    "id": "ID",
+    "revision": "Revisão",
+    "deployedAt": "Implantado",
+    "initiatedBy": "Iniciado por",
+    "source": "Fonte",
+    "automated": "Automática"
+  },
+  "actions": {
+    "sync": "Sincronizar…",
+    "refresh": "Atualizar",
+    "hardRefresh": "Atualização completa",
+    "terminate": "Encerrar…",
+    "openUi": "Abrir a interface do Argo CD"
+  },
+  "sync": {
+    "title": "Sincronizar {{name}}",
+    "confirm": "Sincronizar",
+    "revision": "Revisão",
+    "revisionHint": "Branch, tag ou commit; por padrão, a revisão de destino da aplicação.",
+    "multiSource": "Cada fonte é sincronizada com a própria revisão de destino.",
+    "prune": "Prune",
+    "dryRun": "Simulação (dry run)",
+    "started": "A sincronização de {{name}} foi iniciada. O andamento aparece nos detalhes.",
+    "dryRunStarted": "A simulação de {{name}} foi iniciada. O resultado aparece nos detalhes."
+  },
+  "terminate": {
+    "title": "Encerrar a operação de {{name}}?",
+    "text": "O Argo CD interrompe a sincronização em andamento de {{name}}. O que já foi aplicado permanece como está.",
+    "confirm": "Encerrar"
+  },
+  "diff": {
+    "action": "Diff",
+    "title": "Diff: {{name}}",
+    "loading": "Lendo o diff do Argo CD…",
+    "summary_one": "{{changed}} de {{total}} recurso difere",
+    "summary_many": "{{changed}} de {{total}} recursos diferem",
+    "summary_other": "{{changed}} de {{total}} recursos diferem",
+    "resources": "Recursos da aplicação",
+    "empty": "O Argo CD não gerencia nenhum recurso desta aplicação.",
+    "desired": "Desejado (Git)",
+    "live": "Ativo (cluster)",
+    "desiredLabel": "Estado desejado de {{resource}}",
+    "liveLabel": "Estado ativo de {{resource}}",
+    "secretHidden": "Os valores de Secrets ficam ocultos dos dois lados.",
+    "state": {
+      "changed": "Difere",
+      "inSync": "Sincronizado",
+      "missingLive": "Ainda não está no cluster",
+      "missingTarget": "Não está no Git (será removido)"
+    },
+    "signedIn": "Conectado ao Argo CD",
+    "signedInAs": "Conectado ao Argo CD como {{user}}",
+    "source": {
+      "secret": "pelo Secret padrão do Argo CD",
+      "saved": "com o login salvo",
+      "manual": "até o Sextant ser fechado"
+    },
+    "reload": "Recarregar",
+    "retry": "Tentar novamente",
+    "signOut": "Sair",
+    "forget": "Esquecer login salvo",
+    "notSaved": "Conectado, mas não foi possível salvar o login: {{reason}}",
+    "errors": {
+      "forbidden": "O Argo CD não mostra esta aplicação para a conta conectada.",
+      "notFound": "O Argo CD não foi encontrado neste cluster: não há o Service argocd-server."
+    }
+  },
+  "installation": {
+    "ambiguous": "Vários namespaces deste cluster parecem uma instalação do Argo CD ({{namespaces}}), e nada que os usuários deles não possam criar por conta própria indica qual é a verdadeira; por isso, o Sextant não se conecta a nenhum deles automaticamente. Um Argo CD para todo o cluster é reconhecido pelo ClusterRoleBinding de argocd-application-controller ou argocd-server; peça ao administrador do cluster que verifique isso.",
+    "title": "Escolha a instalação do Argo CD",
+    "choose": "Se você sabe qual namespace contém o Argo CD verdadeiro, escolha-o: o Sextant lembra a escolha para este cluster e entra somente nele. Qualquer pessoa que possa gravar em um namespace pode fazê-lo parecer um Argo CD.",
+    "use": "Usar esta instalação",
+    "using": "Salvando…"
+  },
+  "login": {
+    "title": "Entrar no Argo CD",
+    "intro": "O Sextant não conseguiu entrar no Argo CD em {{namespace}} automaticamente. Entre com um usuário local ou um token de API.",
+    "expired": "A sessão do Argo CD expirou e não foi possível entrar novamente com o login salvo.",
+    "noLocalUsers": "Este Argo CD não tem usuários locais que possam entrar com senha: use um token de API.",
+    "sso": "O login por SSO não é compatível com o Sextant.",
+    "refused": {
+      "typed": "O Argo CD recusou o login digitado anteriormente.",
+      "saved": "O Argo CD recusou o login salvo: a senha ou o token podem ter mudado. Entre com os dados atuais (com Lembrar marcado para substituir o login salvo).",
+      "adminSecret": "O Argo CD recusou a senha de admin do argocd-initial-admin-secret: ela pode ter sido alterada no Argo CD. Digite a senha atual.",
+      "tokenSecret": "O Argo CD recusou o token de API de um Secret com o label app.kubernetes.io/part-of=argocd: ele pode estar expirado ou revogado."
+    },
+    "insecure": "Este Argo CD executa o servidor sem TLS (server.insecure em argocd-cmd-params-cm), por isso o Sextant se comunica com ele por HTTP simples: dentro do cluster, a senha ou o token trafegam sem criptografia.",
+    "mode": {
+      "label": "Como entrar",
+      "password": "Usuário e senha",
+      "token": "Token de API"
+    },
+    "username": "Usuário",
+    "password": "Senha",
+    "token": "Token de API",
+    "remember": "Lembrar neste computador (chaveiro do sistema)",
+    "hint": "Antes de perguntar, o Sextant tenta o login salvo, a senha de admin do argocd-initial-admin-secret e os tokens de API em Secrets com o label app.kubernetes.io/part-of=argocd. O argocd-secret contém apenas um hash bcrypt da senha de admin, por isso não pode ser usado para entrar.",
+    "submit": "Entrar",
+    "signingIn": "Entrando…",
+    "errors": {
+      "invalid": "O Argo CD recusou o nome de usuário ou a senha.",
+      "invalidToken": "O Argo CD recusou o token de API: ele está incorreto, expirado ou revogado.",
+      "ssoOnly": "Este Argo CD só permite login por SSO, que o Sextant não suporta: use um token de API.",
+      "unreachable": "O Argo CD não está acessível: o servidor não tem nenhum Pod pronto ou não responde.",
+      "incomplete": "Digite um nome de usuário e uma senha, ou um token de API.",
+      "other": "Não foi possível entrar no Argo CD."
+    }
+  }
+}

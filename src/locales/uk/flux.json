@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Готовий",
+    "status": "Стан",
+    "revision": "Ревізія",
+    "suspended": "Призупинено",
+    "source": "Джерело"
+  },
+  "suspended": {
+    "yes": "Так",
+    "no": "Ні"
+  },
+  "fields": {
+    "ready": "Готовий",
+    "message": "Стан",
+    "revision": "Ревізія",
+    "lastAttemptedRevision": "Остання спроба ревізії",
+    "suspended": "Призупинено",
+    "interval": "Інтервал",
+    "timeout": "Тайм-аут",
+    "source": "Джерело",
+    "chart": "Чарт",
+    "helmChart": "Чарт Helm",
+    "url": "URL",
+    "ref": "Посилання (ref)",
+    "endpoint": "Кінцева точка",
+    "bucketName": "Бакет",
+    "path": "Шлях",
+    "targetNamespace": "Цільовий namespace",
+    "releaseName": "Ім'я релізу",
+    "prune": "Prune",
+    "dependsOn": "Залежить від",
+    "image": "Образ",
+    "imageRepository": "Репозиторій образів",
+    "provider": "Провайдер",
+    "eventSeverity": "Важливість подій",
+    "eventSources": "Джерела подій",
+    "type": "Тип",
+    "channel": "Канал",
+    "webhookPath": "Шлях webhook",
+    "lastHandledReconcileAt": "Останній запит синхронізації"
+  },
+  "related": {
+    "inventory": "Застосовані ресурси",
+    "resources": "Ресурси",
+    "usedBy": "Використовується в",
+    "kind": "Kind",
+    "name": "Ім'я",
+    "namespace": "Namespace",
+    "loading": "Завантаження…",
+    "notUsed": "Жоден Kustomization або HelmRelease не використовує це джерело."
+  },
+  "actions": {
+    "reconcile": "Синхронізувати зараз",
+    "reconcileWithSource": "Синхронізувати з джерелом",
+    "suspend": "Призупинити",
+    "resume": "Відновити"
+  },
+  "suspend": {
+    "title": "Призупинити {{kind}} {{name}}?",
+    "confirm": "Призупинити",
+    "text": "Flux припинить синхронізацію {{kind}} {{name}}, доки його не відновлять: зміни в Git або в кластері за цей час не застосовуватимуться й не виправлятимуться."
+  }
+}

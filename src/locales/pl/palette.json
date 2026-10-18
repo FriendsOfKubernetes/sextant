@@ -1,0 +1,34 @@
+{
+  "title": "Paleta poleceń",
+  "search": "Szukaj",
+  "placeholder": "Znajdź obiekty, sekcje, klastry, ustawienia…",
+  "filterActions": "Filtruj akcje…",
+  "results": "Wyniki",
+  "groups": {
+    "recent": "Ostatnie",
+    "selected": "Otwarte w szczegółach",
+    "goTo": "Przejdź do",
+    "clusters": "Klastry",
+    "settings": "Ustawienia",
+    "more": "Więcej"
+  },
+  "cluster": {
+    "current": "Bieżący klaster",
+    "switch": "Przełącz",
+    "connect": "Połącz"
+  },
+  "settingsTab": "Ustawienia: {{tab}}",
+  "openDetails": "Otwórz szczegóły",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: akcje",
+  "loadingActions": "Wczytywanie akcji…",
+  "noActions": "Brak akcji dla tego obiektu",
+  "actionsFailed": "Nie można odczytać obiektu: {{message}}",
+  "noCluster": "Otwórz klaster, aby przeszukać jego obiekty",
+  "empty": "Nic nie znaleziono",
+  "searchAll": "Szukaj we wszystkich rodzajach ({{count}})",
+  "searching": "Wyszukiwanie… wyświetlono {{done}} z {{total}} rodzajów",
+  "limited": "Przeszukiwane są obiekty pierwszych {{count}} z {{total}} rodzajów",
+  "hint": "↑↓ wybór · Enter otwórz · Tab akcje · Esc zamknij",
+  "hintActions": "↑↓ wybór · Enter uruchom · Shift+Tab wstecz · Esc wstecz"
+}

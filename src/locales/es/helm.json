@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "Charts",
+    "releases": "Releases"
+  },
+  "missing": {
+    "title": "Helm no está instalado",
+    "text": "Las releases se pueden ver, pero para cambiarlas e instalar charts se necesita el comando helm. Instale Helm (se detecta al volver a esta ventana) o elija un binario en Configuración → Helm. Guía de instalación:",
+    "short": "Necesita Helm: vea la indicación en la parte superior de la página"
+  },
+  "releases": {
+    "title": "Releases",
+    "search": "Buscar releases",
+    "searchPlaceholder": "Buscar…",
+    "loading": "Cargando releases…",
+    "empty": "No hay releases de Helm",
+    "emptyText": "Aquí aparecen las releases instaladas con Helm en los namespaces seleccionados.",
+    "noMatch": "Ninguna release coincide con la búsqueda",
+    "open": "Abrir la release {{name}}",
+    "unreadable": "ilegible",
+    "unreadableRevision": "Revisión {{revision}} ilegible"
+  },
+  "columns": {
+    "name": "Nombre",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "Versión",
+    "appVersion": "Versión de la app",
+    "status": "Estado",
+    "updated": "Actualizada",
+    "revision": "Revisión",
+    "description": "Descripción"
+  },
+  "details": {
+    "title": "Release {{name}}",
+    "close": "Cerrar los detalles de la release",
+    "loading": "Cargando…",
+    "chart": "Chart {{chart}} {{version}} · app {{appVersion}} · revisión {{revision}}",
+    "tabs": {
+      "values": "Valores",
+      "manifest": "Manifiesto",
+      "notes": "Notas",
+      "history": "Historial"
+    },
+    "tabsLabel": "Detalles de la release",
+    "valuesLabel": "Valores de usuario de {{name}}",
+    "manifestLabel": "Manifiesto de {{name}}",
+    "show": {
+      "values": "Mostrar valores",
+      "manifest": "Mostrar manifiesto"
+    },
+    "hide": {
+      "values": "Ocultar valores",
+      "manifest": "Ocultar manifiesto"
+    },
+    "hidden": {
+      "values": "Los valores están ocultos. Use el botón del ojo para mostrarlos.",
+      "manifest": "El manifiesto está oculto. Use el botón del ojo para mostrarlo."
+    },
+    "noValues": "No hay valores de usuario: la release usa los valores predeterminados del chart.",
+    "noNotes": "El chart no tiene notas.",
+    "current": "actual",
+    "unreadable": "Ilegible",
+    "unreadableText": "Los datos almacenados de esta revisión no se pueden leer.",
+    "unreadableLatest": "La revisión {{revision}} no se puede leer; se muestra la revisión {{shown}}, la más reciente legible.",
+    "nothingReadable": "No se puede leer ninguna revisión de esta release (la más reciente: {{revision}})."
+  },
+  "actions": {
+    "editValues": "Editar valores",
+    "rollback": "Revertir",
+    "rollbackTo": "Revertir a la revisión {{revision}}",
+    "uninstall": "Desinstalar"
+  },
+  "upgrade": {
+    "title": "Editar los valores de {{name}}",
+    "valuesLabel": "Valores de {{name}}",
+    "chartRef": "Referencia del chart",
+    "chartRefHint": "Actualiza con el chart {{chart}} {{version}}. Déjelo vacío para reutilizar el chart almacenado en la release; un chart con subcharts necesita la referencia de su repositorio, por ejemplo repo/{{chart}}.",
+    "confirm": "Actualizar",
+    "done": "Se actualizó la release {{name}}. Se creó una revisión nueva.",
+    "failed": "Helm no pudo actualizar la release"
+  },
+  "rollback": {
+    "title": "¿Revertir {{name}}?",
+    "text": "{{name}} tendrá una revisión nueva con el chart y los valores de la revisión {{revision}}. Los recursos del clúster cambian en consecuencia.",
+    "confirm": "Revertir",
+    "failed": "Helm no pudo revertir la release"
+  },
+  "uninstall": {
+    "title": "¿Desinstalar {{name}}?",
+    "text": "La release {{name}} del namespace {{namespace}} y todos los recursos que creó se eliminarán del clúster. Esta acción no se puede deshacer.",
+    "confirm": "Desinstalar",
+    "failed": "Helm no pudo desinstalar la release"
+  },
+  "confirmName": {
+    "label": "Escriba el nombre de la release ({{name}}) para confirmar",
+    "mismatch": "El nombre no coincide."
+  },
+  "charts": {
+    "title": "Charts",
+    "repositories": "Repositorios",
+    "noRepos": "Todavía no hay repositorios de charts. Agregue uno para buscar sus charts.",
+    "repoName": "Nombre",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "Nombre de usuario (opcional)",
+    "repoPassword": "Contraseña (opcional)",
+    "loginInUrl": "Escriba el nombre de usuario y la contraseña en los campos Nombre de usuario y Contraseña, no en la URL.",
+    "add": "Agregar repositorio",
+    "adding": "Agregando…",
+    "remove": "Quitar",
+    "removeLabel": "Quitar el repositorio {{name}}",
+    "removeTitle": "¿Quitar el repositorio {{name}}?",
+    "removeText": "Helm olvida el repositorio {{name}} ({{url}}). Las releases instaladas desde él no se ven afectadas.",
+    "update": "Actualizar repositorios",
+    "updating": "Actualizando…",
+    "updated": "Repositorios actualizados.",
+    "search": "Buscar charts",
+    "searchPlaceholder": "Nombre del chart o palabra clave",
+    "searchButton": "Buscar",
+    "searching": "Buscando…",
+    "noResults": "Ningún chart coincide con la búsqueda.",
+    "description": "Descripción",
+    "select": "Mostrar el chart {{name}}",
+    "defaultValues": "Valores predeterminados",
+    "defaultValuesLabel": "Valores predeterminados de {{name}} {{version}}",
+    "loadingValues": "Cargando los valores predeterminados…",
+    "install": "Instalar",
+    "loading": "Cargando…"
+  },
+  "install": {
+    "title": "Instalar {{chart}} {{version}}",
+    "release": "Nombre de la release",
+    "namespace": "Namespace",
+    "valuesLabel": "Valores para {{chart}}",
+    "invalidName": "Use letras minúsculas, dígitos, - y . (como máximo 53 caracteres), empezando y terminando por una letra o un dígito.",
+    "confirm": "Instalar",
+    "done": "Se instaló la release {{release}} en el namespace {{namespace}}. Aparece en Releases.",
+    "failed": "Helm no pudo instalar el chart",
+    "valuesHint": "Con la release solo se guardan los valores que se cambien respecto a los predeterminados del chart."
+  },
+  "status": {
+    "loading": "Buscando Helm…"
+  }
+}

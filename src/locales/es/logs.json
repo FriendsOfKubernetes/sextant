@@ -1,0 +1,101 @@
+{
+  "action": {
+    "label": "Registros"
+  },
+  "toolbar": {
+    "label": "Opciones de registro",
+    "container": "Contenedor",
+    "initContainer": "{{name}} (init)",
+    "follow": "Seguir",
+    "timestamps": "Marcas de tiempo",
+    "previous": "Contenedor anterior",
+    "wrap": "Ajustar líneas",
+    "save": "Guardar",
+    "reconnect": "Reconectar"
+  },
+  "search": {
+    "label": "Buscar en los registros",
+    "placeholder": "Buscar",
+    "previous": "Coincidencia anterior",
+    "next": "Coincidencia siguiente",
+    "count": "{{current}} de {{total}}",
+    "countCapped": "{{current}} de más de {{total}}",
+    "none": "Sin coincidencias"
+  },
+  "status": {
+    "connecting": "Conectando…",
+    "live": "En directo",
+    "notFollowing": "Sin seguir",
+    "ended": "Flujo terminado",
+    "failed": "Error en el flujo"
+  },
+  "lines_one": "{{count}} línea",
+  "lines_many": "{{count}} de líneas",
+  "lines_other": "{{count}} líneas",
+  "dropped_one": "Se descartó {{count}} línea antigua (se conservan las {{limit}} líneas más recientes, hasta {{size}} MiB de texto)",
+  "dropped_many": "Se descartaron {{count}} de líneas antiguas (se conservan las {{limit}} líneas más recientes, hasta {{size}} MiB de texto)",
+  "dropped_other": "Se descartaron {{count}} líneas antiguas (se conservan las {{limit}} líneas más recientes, hasta {{size}} MiB de texto)",
+  "lineCut": " … [línea cortada a 64 KiB, continúa en la línea siguiente]",
+  "empty": "Todavía no hay líneas de registro.",
+  "view": "Líneas de registro",
+  "save": {
+    "title": "Guardar registros",
+    "filter": "Archivos de registro",
+    "failed": "No se pudieron guardar los registros."
+  },
+  "picker": {
+    "title": "Registros de {{name}}: elija un Pod",
+    "loading": "Cargando Pods…",
+    "none": "No se encontraron Pods.",
+    "noSelector": "Este objeto no selecciona Pods.",
+    "all": "Todos los Pods",
+    "allHint": "Seguir todos los Pods en una pestaña, incluidos los que se creen después."
+  },
+  "details": {
+    "title": "Registros",
+    "allPods": "Registros de todos los Pods",
+    "hint": "Sigue los Pods que coinciden con {{selector}} a medida que aparecen y desaparecen."
+  },
+  "multi": {
+    "podsTitle_one": "{{count}} Pod",
+    "podsTitle_many": "{{count}} de Pods",
+    "podsTitle_other": "{{count}} Pods",
+    "selector": "Selector",
+    "selectorHint": "Un label selector; pulse Enter para aplicarlo.",
+    "sources": "Pods y contenedores ({{shown}} de {{total}})",
+    "sourcesLabel": "Pods y contenedores",
+    "capHint_one": "Como máximo se ejecuta {{count}} flujo de registros a la vez; desmarque Pods o contenedores para elegir cuáles se leen.",
+    "capHint_many": "Como máximo se ejecutan {{count}} de flujos de registros a la vez; desmarque Pods o contenedores para elegir cuáles se leen.",
+    "capHint_other": "Como máximo se ejecutan {{count}} flujos de registros a la vez; desmarque Pods o contenedores para elegir cuáles se leen.",
+    "capped_one": "{{count}} contenedor más está en espera: como máximo se ejecutan {{max}} flujos de registros a la vez. Desmarque Pods o contenedores para elegir cuáles se leen.",
+    "capped_many": "{{count}} de contenedores más están en espera: como máximo se ejecutan {{max}} flujos de registros a la vez. Desmarque Pods o contenedores para elegir cuáles se leen.",
+    "capped_other": "{{count}} contenedores más están en espera: como máximo se ejecutan {{max}} flujos de registros a la vez. Desmarque Pods o contenedores para elegir cuáles se leen.",
+    "noPods": "Ningún Pod coincide.",
+    "json": "Analizar JSON",
+    "level": "Nivel",
+    "allLevels": "Todas las líneas",
+    "levelAndAbove": "{{level}} y superiores",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "Filtro",
+    "regex": "Regex",
+    "badRegex": "La expresión regular no es válida; no se filtra ninguna línea.",
+    "sourceStatus": {
+      "waiting": "esperando un flujo libre",
+      "connecting": "conectando",
+      "streaming": "en directo",
+      "ended": "terminado",
+      "error": "con error",
+      "notStarted": "sin iniciar",
+      "gone": "Pod desaparecido",
+      "off": "desactivado"
+    },
+    "streams": "Flujos: {{count}}, Pods: {{pods}}"
+  }
+}

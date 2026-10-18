@@ -1,0 +1,36 @@
+{
+  "muteHour": "靜音 1 小時",
+  "unmute": "取消靜音",
+  "single": {
+    "title": "{{cluster}}：{{reason}}"
+  },
+  "summary": {
+    "title_other": "{{cluster}} 中有 {{count}} 個新問題",
+    "titleClusters_other": "{{clusters}} 個叢集中有 {{count}} 個新問題",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "通知",
+    "enabled": "針對已連線叢集中的新問題顯示桌面通知",
+    "enabledHint": "只會監看已連線的叢集，且只會通知 Sextant 執行期間出現的問題（視窗隱藏到系統匣時也會通知）。通知由系統的通知服務顯示；任何資料都不會離開這部電腦。",
+    "mutedUntil": "靜音至 {{time}}",
+    "categories": "通知項目",
+    "clusters": "叢集",
+    "clustersHint": "在此關閉的叢集永遠不會發出通知。",
+    "noClusters": "尚無叢集。",
+    "certificates": "憑證",
+    "certExpiryDays": "在憑證到期前幾天發出警告",
+    "certExpiryHint": "用於問題頁面與 cert-manager Certificate 的通知，以及憑證詳細資料與 TLS 憑證頁面。"
+  },
+  "history": {
+    "title": "最近的通知",
+    "clear": "清除",
+    "empty": "尚無通知。",
+    "off": "通知已關閉（設定 → 一般 → 通知）。",
+    "delivery": {
+      "summary": "彙整通知",
+      "muted": "已靜音"
+    }
+  },
+  "muteFailed": "無法將通知靜音：{{message}}"
+}

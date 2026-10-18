@@ -1,0 +1,49 @@
+{
+  "tab": "履歴",
+  "status": {
+    "title": "ロールアウト",
+    "state": {
+      "complete": "完了",
+      "progressing": "進行中",
+      "paused": "一時停止中",
+      "failed": "停滞"
+    },
+    "replicas": "{{desired}} 個中 {{updated}} 個が更新済み · {{ready}} 個が準備完了 · {{available}} 個が利用可能",
+    "pendingObservation": "コントローラーが最新の変更を検出するのを待っています。",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "ロールアウトは一時停止中です。続行またはロールバックするには再開してください。"
+  },
+  "history": {
+    "title": "リビジョン",
+    "loading": "リビジョンを読み込み中…",
+    "empty": "リビジョンはまだありません。",
+    "columns": {
+      "compare": "比較",
+      "revision": "リビジョン",
+      "created": "作成日時",
+      "changeCause": "変更理由",
+      "images": "イメージ"
+    },
+    "current": "現在",
+    "select": "リビジョン {{revision}} を比較",
+    "pickTwo": "Pod テンプレートを比較するリビジョンを 2 つ選択してください。",
+    "pickOneMore": "比較するリビジョンをもう 1 つ選択してください。",
+    "revisionTitle": "リビジョン {{revision}}",
+    "rollBack": "リビジョン {{revision}} にロールバック"
+  },
+  "rollback": {
+    "action": "ロールバック…",
+    "title": "{{name}} をロールバック",
+    "confirm": "リビジョン {{revision}} にロールバック",
+    "revision": "リビジョン",
+    "revisionOption": "リビジョン {{revision}}",
+    "revisionOptionCause": "リビジョン {{revision}} — {{cause}}",
+    "intro": "現在の Pod テンプレートがリビジョン {{revision}} のものに置き換えられ、通常の更新と同様に Pod が置き換えられます。",
+    "current": "現在のテンプレート",
+    "target": "リビジョン {{revision}}",
+    "same": "現在のテンプレートは既にリビジョン {{revision}} と同じです。変更するものはありません。",
+    "paused": "この Deployment は一時停止中です。ロールバックする前に再開してください。",
+    "none": "ロールバック先となる以前のリビジョンがありません。",
+    "loading": "リビジョンを読み込み中…"
+  }
+}

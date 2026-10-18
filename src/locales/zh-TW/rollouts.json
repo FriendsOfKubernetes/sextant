@@ -1,0 +1,49 @@
+{
+  "tab": "歷程記錄",
+  "status": {
+    "title": "滾動更新",
+    "state": {
+      "complete": "已完成",
+      "progressing": "進行中",
+      "paused": "已暫停",
+      "failed": "停滯"
+    },
+    "replicas": "已更新 {{updated}}/{{desired}} · 就緒 {{ready}} · 可用 {{available}}",
+    "pendingObservation": "正在等候控制器偵測到最新的變更。",
+    "stuck": "{{reason}}：{{message}}",
+    "pausedHint": "滾動更新已暫停；請先繼續，才能接續進行或回復。"
+  },
+  "history": {
+    "title": "修訂版本",
+    "loading": "正在載入修訂版本…",
+    "empty": "尚無修訂版本。",
+    "columns": {
+      "compare": "比較",
+      "revision": "修訂版本",
+      "created": "建立時間",
+      "changeCause": "變更原因",
+      "images": "映像檔"
+    },
+    "current": "目前",
+    "select": "比較修訂版本 {{revision}}",
+    "pickTwo": "選取兩個修訂版本以比較其 Pod 範本。",
+    "pickOneMore": "再選取一個修訂版本進行比較。",
+    "revisionTitle": "修訂版本 {{revision}}",
+    "rollBack": "回復到修訂版本 {{revision}}"
+  },
+  "rollback": {
+    "action": "回復…",
+    "title": "回復 {{name}}",
+    "confirm": "回復到修訂版本 {{revision}}",
+    "revision": "修訂版本",
+    "revisionOption": "修訂版本 {{revision}}",
+    "revisionOptionCause": "修訂版本 {{revision}} — {{cause}}",
+    "intro": "修訂版本 {{revision}} 的 Pod 範本將取代目前的範本，Pod 會如同一般更新般被取代。",
+    "current": "目前的範本",
+    "target": "修訂版本 {{revision}}",
+    "same": "目前的範本已與修訂版本 {{revision}} 相同：沒有需要變更的內容。",
+    "paused": "此 Deployment 已暫停。請先繼續，再進行回復。",
+    "none": "沒有可回復到的較早修訂版本。",
+    "loading": "正在載入修訂版本…"
+  }
+}

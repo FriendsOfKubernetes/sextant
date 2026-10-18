@@ -1,0 +1,125 @@
+{
+  "title": "Yapay zekâ ajanları (MCP)",
+  "hint": "Claude Code, Claude Desktop ve Cursor gibi yapay zekâ ajanlarının kümelerinize Sextant üzerinden bakmasını sağlar. Sunucu yalnızca bu bilgisayarda dinler ve bir belirteç gerektirir. Bir ajanın her kümede neler yapabileceği o kümenin ayarlarında (Yapay zekâ ajanı erişimi) belirlenir; siz izin verene kadar hiçbir şey yapamaz.",
+  "enable": "MCP sunucusunu etkinleştir",
+  "port": {
+    "label": "Bağlantı noktası",
+    "apply": "Uygula",
+    "invalid": "1024 ile 65535 arasında bir tam sayı girin.",
+    "hint": "Bağlantı noktasını değiştirmek sunucuyu yeniden başlatır ve ajanların oturumlarını sonlandırır."
+  },
+  "status": {
+    "off": "Kapalı",
+    "starting": "Başlatılıyor…",
+    "running": "Çalışıyor: {{url}}",
+    "error": "MCP sunucusu başlatılamadı."
+  },
+  "token": {
+    "label": "Belirteç",
+    "hint": "Ajanlar bu belirteci her istekle gönderir. Gizli tutun: belirtece sahip olan herkes sunucudan izin verdiğiniz şeyleri isteyebilir.",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "Göster",
+    "hide": "Gizle",
+    "copy": "Kopyala",
+    "regenerate": "Yeniden oluştur",
+    "copied": "Belirteç kopyalandı.",
+    "regenerated": "Yeni bir belirteç oluşturuldu. Eskisini kullanan her ajanın yapılandırmasını güncelleyin.",
+    "confirmTitle": "Belirteç yeniden oluşturulsun mu?",
+    "confirmBody": "Geçerli belirteç hemen çalışmayı bırakır ve ajanların oturumları kapatılır. Her ajana yeni belirteci vermeniz gerekecek.",
+    "failed": "Belirteç okunamadı: {{message}}"
+  },
+  "snippets": {
+    "title": "Bir ajan bağlayın",
+    "tabs": "Ajan",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "Bu komutu bir terminalde çalıştırın. Belirteci içerdiği için gizli tutun.",
+    "cursorHint": "Bunu ~/.cursor/mcp.json dosyasına (veya bir projedeki .cursor/mcp.json dosyasına) ekleyin. Belirteci içerir.",
+    "claudeDesktopHint": "Bunu claude_desktop_config.json dosyasının mcpServers bölümüne ekleyin. Claude Desktop, Sextant'ı bağlantı noktasını ve belirteci kendisi okuyan bir yardımcı olarak başlatır; bu yüzden dosyada belirteç bulunmaz. Sextant, sunucu açıkken çalışıyor olmalıdır.",
+    "tokenHidden": "Belirteç burada gizlenir; Kopyala gerçek belirteci panoya koyar.",
+    "copy": "Kopyala",
+    "copyFor": "{{name}} yapılandırmasını kopyala",
+    "copied": "Kopyalandı.",
+    "copyFailed": "Kopyalanamadı: {{message}}"
+  },
+  "activity": {
+    "open": "Ajan etkinliği",
+    "openActive": "Ajan etkinliği (şu anda bir ajan çalışıyor)",
+    "openLog": "Etkinlik günlüğünü aç",
+    "title": "Ajan etkinliği",
+    "hint": "Yapay zekâ ajanlarının istedikleri. Secret değerleri, YAML ve komut çıktısı kaydedilmez.",
+    "cluster": "Küme",
+    "allClusters": "Tüm kümeler",
+    "loading": "Günlük yükleniyor…",
+    "empty": "Henüz çağrı yok.",
+    "failed": "Günlük okunamadı",
+    "clear": "Temizle",
+    "clearTitle": "Etkinlik günlüğü temizlensin mi?",
+    "clearBody": "Ajanların kaydedilen tüm çağrıları bu bilgisayardan silinir.",
+    "ok": "tamam",
+    "none": "-",
+    "columns": {
+      "time": "Zaman",
+      "client": "İstemci",
+      "cluster": "Küme",
+      "tool": "Araç",
+      "target": "Hedef",
+      "decision": "Karar",
+      "result": "Sonuç",
+      "duration": "Süre"
+    },
+    "decisions": {
+      "allowed": "İzin verildi",
+      "denied": "Reddedildi",
+      "approved": "Sizin tarafınızdan onaylandı",
+      "declined": "Sizin tarafınızdan reddedildi",
+      "timedOut": "Yanıt yok",
+      "notChecked": "Denetlenmedi"
+    },
+    "duration": "{{ms}} ms"
+  },
+  "confirm": {
+    "title": "Bir yapay zekâ ajanı işlem yapmak istiyor",
+    "extensionTitle": "Bir uzantı işlem yapmak istiyor",
+    "intro": "{{client}}, {{cluster}} içinde şunu yapmak istiyor.",
+    "client": "Ajan",
+    "extension": "Uzantı",
+    "cluster": "Küme",
+    "action": "Eylem",
+    "target": "Hedef",
+    "details": "Ayrıntılar",
+    "allow": "İzin ver",
+    "deny": "Reddet",
+    "countdown": "{{time}} içinde otomatik olarak reddedilecek",
+    "waiting_one": "{{count}} istek daha bekliyor.",
+    "waiting_other": "{{count}} istek daha bekliyor."
+  },
+  "tools": {
+    "apply_yaml": "YAML uygula",
+    "patch_resource": "Bir kaynağa yama uygula",
+    "delete_resource": "Bir kaynağı sil",
+    "scale": "Bir iş yükünü ölçeklendir",
+    "restart": "Bir iş yükünü yeniden başlat",
+    "rollout_undo": "Bir iş yükünü geri al",
+    "cordon_node": "Bir düğümü cordon / uncordon et",
+    "drain_node": "Bir düğümü drain et",
+    "trigger_cronjob": "Bir CronJob'u şimdi çalıştır",
+    "suspend_cronjob": "Bir CronJob'u askıya al veya sürdür",
+    "gitops_action": "GitOps eylemi",
+    "helm_install": "Bir Helm yayını yükle",
+    "helm_upgrade": "Bir Helm yayınını yükselt",
+    "helm_rollback": "Bir Helm yayınını geri al",
+    "helm_uninstall": "Bir Helm yayınını kaldır",
+    "exec_command": "Bir kapsayıcıda komut çalıştır",
+    "port_forward_start": "Bir bağlantı noktası yönlendirmesi aç",
+    "port_forward_stop": "Bir bağlantı noktası yönlendirmesini kapat"
+  },
+  "methods": {
+    "resources": {
+      "apply": "YAML uygula",
+      "patch": "Bir kaynağa yama uygula",
+      "delete": "Bir kaynağı sil"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Einstellungen",
+    "open": "Einstellungen"
+  },
+  "tabs": {
+    "label": "Einstellungsbereiche",
+    "general": "Allgemein",
+    "clusters": "Cluster",
+    "agents": "KI-Agenten",
+    "extensions": "Erweiterungen",
+    "about": "Updates und Info"
+  },
+  "appearance": {
+    "title": "Darstellung",
+    "theme": "Design",
+    "themes": {
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "systemHint": "„System“ folgt dem hellen oder dunklen Modus Ihres Betriebssystems.",
+    "language": "Sprache",
+    "languageSystem": "System ({{language}})",
+    "languageHint": "„System“ folgt der Sprache Ihres Betriebssystems oder verwendet Englisch, wenn Sextant keine Übersetzung dafür hat."
+  },
+  "window": {
+    "title": "Fenster",
+    "closeToTray": "Beim Schließen des Fensters bleibt Sextant im Infobereich",
+    "closeToTrayHint": "Sextant läuft im Infobereich weiter: Verbindungen, Portweiterleitungen, Terminals und der MCP-Server bleiben offen. Das Symbol im Infobereich (unter macOS in der Menüleiste) zeigt das Fenster wieder an; „Sextant beenden“ im Menü des Symbols beendet die App.",
+    "noTray": "Es wurde kein Infobereich gefunden, daher beendet das Schließen des Fensters Sextant. Unter Linux benötigt der Infobereich die Bibliothek libayatana-appindicator und einen StatusNotifier-/AppIndicator-Host (unter GNOME die Erweiterung AppIndicator) oder, in einer X11-Sitzung, einen System-Tray."
+  },
+  "editor": {
+    "title": "Editor",
+    "scheme": "Farbschema",
+    "hint": "Farben von YAML im Ressourceneditor, im Detailbereich und bei Helm. „Automatisch“ verwendet One Dark im dunklen und GitHub Light im hellen Design.",
+    "schemes": {
+      "auto": "Automatisch",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "Das Installieren und Ändern von Helm-Releases führt den Befehl helm aus. Releases ansehen geht auch ohne ihn.",
+    "auto": "helm im PATH suchen",
+    "manual": "Diese Binärdatei verwenden",
+    "path": "Pfad zu helm",
+    "browse": "Durchsuchen…",
+    "browseTitle": "helm-Binärdatei auswählen",
+    "apply": "Anwenden",
+    "checking": "helm wird gesucht…",
+    "found": "Helm {{version}} unter {{path}}",
+    "foundNoVersion": "Helm unter {{path}}",
+    "notFound": "Helm wurde nicht gefunden",
+    "notRunnable": "{{path}} ist keine funktionierende helm-Binärdatei"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "Cluster stammen aus KUBECONFIG (oder ~/.kube/config) und aus den Dateien, die Sie hier hinzufügen."
+  },
+  "menu": {
+    "open": "Menü öffnen",
+    "close": "Menü schließen",
+    "title": "Menü"
+  },
+  "saveFailed": "Einstellungen konnten nicht gespeichert werden",
+  "file": {
+    "label": "Einstellungsdatei",
+    "backup": "Die Einstellungsdatei war beschädigt, daher wurde Sextant mit den Standardeinstellungen gestartet. Die alte Datei wurde nach {{path}} kopiert.",
+    "unwritable": "Änderungen werden nicht gespeichert: Die Einstellungsdatei kann nicht gelesen oder geschrieben werden. Korrigieren Sie ihre Berechtigungen und starten Sie Sextant neu.",
+    "dismiss": "Ausblenden"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "nodeShellImage": "Image für die Knoten-Shell",
+    "nodeShellImageHint": "Image des temporären privilegierten Pods hinter „Shell“ auf einem Knoten. Es benötigt nsenter (busybox enthält es); die Shell selbst ist die des Knotens. KI-Agenten erhalten nie eine Knoten-Shell."
+  }
+}

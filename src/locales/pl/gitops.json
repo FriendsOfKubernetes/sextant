@@ -1,0 +1,85 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Zainstaluj Flux…",
+    "argoCd": "Zainstaluj Argo CD…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux i Argo CD są instalowane z ich oficjalnych manifestów przez Kubernetes API.",
+    "notConnected": "Połącz się z klastrem, aby sprawdzić, czy Flux i Argo CD są zainstalowane.",
+    "loading": "Odczytywanie zasobów udostępnianych przez klaster…",
+    "installed": "Zainstalowano",
+    "partial": "Zainstalowano częściowo",
+    "missing": "Nie zainstalowano",
+    "install": "Zainstaluj {{tool}}…"
+  },
+  "dialog": {
+    "title": "Instalacja {{tool}}",
+    "flux": "Flux jest instalowany tak, jak domyślnie robi to `flux install`: kontrolery source, kustomize, helm i notification w flux-system, bez automatyzacji obrazów.",
+    "argoCd": "Argo CD jest instalowane ze standardowego pliku install.yaml do argocd: w zakresie całego klastra, z interfejsem webowym, bez wysokiej dostępności."
+  },
+  "versions": {
+    "label": "Wersja",
+    "loading": "Pobieranie listy wydań z GitHub…",
+    "latest": "{{version}} (najnowsza)",
+    "bundled": "{{version}} (wbudowana)",
+    "error": "Nie można pobrać listy wydań z GitHub, więc dostępna jest tylko przetestowana wersja {{version}}.",
+    "next": "Pobierz i wyświetl podgląd"
+  },
+  "preparing": "Pobieranie i sprawdzanie manifestu…",
+  "preview": {
+    "version": "Wersja",
+    "source": "Źródło",
+    "sha256": "SHA-256",
+    "verified": "zgodny z plikiem sum kontrolnych wydania",
+    "unverified": "projekt nie publikuje sumy kontrolnej tego pliku",
+    "namespace": "Namespace",
+    "objects": "Obiekty ({{count}})",
+    "clusterScoped": "cały klaster",
+    "warning": "Instalacja zmienia cały klaster: tworzy CustomResourceDefinitions, ClusterRoles i ClusterRoleBindings. Wymaga uprawnień cluster-admin.",
+    "noCrdAccess": "Brak uprawnień do tworzenia CustomResourceDefinitions w tym klastrze, więc instalacja prawdopodobnie się nie powiedzie.",
+    "noBindingAccess": "Brak uprawnień do tworzenia ClusterRoleBindings w tym klastrze, więc instalacja prawdopodobnie się nie powiedzie.",
+    "present": "{{tool}} jest już zainstalowany. Jego obiekty zostaną zaktualizowane do tej wersji.",
+    "partial": "{{tool}} jest zainstalowany częściowo (istnieje jego namespace lub niektóre CRD albo brakuje niektórych kontrolerów). Istniejące obiekty zostaną zaktualizowane.",
+    "overwritten": "Te obiekty w zakresie klastra już istnieją i zostaną nadpisane:",
+    "leftOut": "Działające w {{namespace}}: {{names}}. Ta instalacja, podobnie jak `flux install`, pomija automatyzację obrazów i source watcher oraz usuwa ich konta usług ze wspólnych powiązań ról, przez co tracą one uprawnienia."
+  },
+  "back": "Wstecz",
+  "install": "Zainstaluj",
+  "stop": "Zatrzymaj",
+  "progress": {
+    "applying": "Stosowanie obiektów: {{done}} z {{total}}",
+    "stopping": "Zatrzymywanie po bieżącym obiekcie…",
+    "waiting": "Wszystko zostało zastosowane. Oczekiwanie na gotowość kontrolerów (do 5 minut)…",
+    "ready": "gotowy",
+    "notReady": "niegotowy"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} jest zainstalowany i działa. Jego sekcja jest na pasku bocznym.",
+    "timedOut": "Wszystko zostało zastosowane, ale nie wszystkie kontrolery były gotowe w ciągu 5 minut. Zastosowane obiekty pozostają w klastrze.",
+    "stopped_one": "Instalacja została zatrzymana. Zastosowano {{count}} obiekt; pozostałe nie zostały wysłane.",
+    "stopped_few": "Instalacja została zatrzymana. Zastosowano {{count}} obiekty; pozostałe nie zostały wysłane.",
+    "stopped_many": "Instalacja została zatrzymana. Zastosowano {{count}} obiektów; pozostałe nie zostały wysłane.",
+    "stopped_other": "Instalacja została zatrzymana. Zastosowano {{count}} obiektu; pozostałe nie zostały wysłane.",
+    "stoppedWaiting_one": "Instalacja została zatrzymana podczas oczekiwania na kontrolery. Zastosowano {{count}} obiekt i pozostaje on w klastrze.",
+    "stoppedWaiting_few": "Instalacja została zatrzymana podczas oczekiwania na kontrolery. Zastosowano wszystkie {{count}} obiekty i pozostają one w klastrze.",
+    "stoppedWaiting_many": "Instalacja została zatrzymana podczas oczekiwania na kontrolery. Zastosowano wszystkie {{count}} obiektów i pozostają one w klastrze.",
+    "stoppedWaiting_other": "Instalacja została zatrzymana podczas oczekiwania na kontrolery. Zastosowano wszystkie {{count}} obiektu i pozostają one w klastrze.",
+    "failed": "Instalacja nie powiodła się. Nic po obiekcie, który spowodował błąd, nie zostało wysłane; zastosowane obiekty pozostają w klastrze.",
+    "applied": "Zastosowane ({{count}})",
+    "notApplied": "Niezastosowane ({{count}})"
+  },
+  "argo": {
+    "login": "Sextant loguje się do Argo CD samodzielnie przy użyciu argocd-initial-admin-secret. Zmień hasło administratora w Argo CD, a następnie usuń ten Secret.",
+    "openUi": "Otwórz interfejs Argo CD"
+  },
+  "confirmStop": {
+    "title": "Zatrzymać instalację?",
+    "text": "Instalacja zatrzyma się po aktualnie stosowanym obiekcie. Zastosowane obiekty pozostaną w klastrze.",
+    "confirm": "Zatrzymaj instalację"
+  }
+}

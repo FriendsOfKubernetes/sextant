@@ -1,0 +1,124 @@
+{
+  "title": "AI 代理程式（MCP）",
+  "hint": "讓 Claude Code、Claude Desktop 和 Cursor 等 AI 代理程式透過 Sextant 檢視您的叢集。伺服器只在這部電腦上接聽，且需要權杖。代理程式在每個叢集中可以執行的操作，是在該叢集的設定（AI 代理程式存取權限）中設定；在您允許之前，它什麼也不能做。",
+  "enable": "啟用 MCP 伺服器",
+  "port": {
+    "label": "連接埠",
+    "apply": "套用",
+    "invalid": "請輸入 1024 到 65535 之間的整數。",
+    "hint": "變更連接埠會重新啟動伺服器，並結束代理程式的工作階段。"
+  },
+  "status": {
+    "off": "已關閉",
+    "starting": "正在啟動…",
+    "running": "正在 {{url}} 上執行",
+    "error": "MCP 伺服器無法啟動。"
+  },
+  "token": {
+    "label": "權杖",
+    "hint": "代理程式每次要求時都會傳送此權杖。請妥善保管：任何持有它的人都能向伺服器要求您所允許的操作。",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "顯示",
+    "hide": "隱藏",
+    "copy": "複製",
+    "regenerate": "重新產生",
+    "copied": "已複製權杖。",
+    "regenerated": "已建立新的權杖。請更新所有使用舊權杖之代理程式的設定。",
+    "confirmTitle": "要重新產生權杖嗎？",
+    "confirmBody": "目前的權杖會立即失效，代理程式的工作階段也會關閉。您需要將新的權杖提供給每個代理程式。",
+    "failed": "無法讀取權杖：{{message}}"
+  },
+  "snippets": {
+    "title": "連線代理程式",
+    "tabs": "代理程式",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "在終端機中執行此命令。命令中包含權杖，請妥善保管。",
+    "cursorHint": "將此內容新增到 ~/.cursor/mcp.json（或專案中的 .cursor/mcp.json）。其中包含權杖。",
+    "claudeDesktopHint": "將此內容新增到 claude_desktop_config.json 的 mcpServers 區段。Claude Desktop 會以協助程式的形式啟動 Sextant，由它自行讀取連接埠與權杖，因此該檔案中不含權杖。Sextant 必須正在執行且已開啟伺服器。",
+    "tokenHidden": "此處隱藏了權杖；按「複製」會將真正的權杖放到剪貼簿。",
+    "copy": "複製",
+    "copyFor": "複製 {{name}} 設定",
+    "copied": "已複製。",
+    "copyFailed": "無法複製：{{message}}"
+  },
+  "activity": {
+    "open": "代理程式活動",
+    "openActive": "代理程式活動（有代理程式正在工作）",
+    "openLog": "開啟活動記錄",
+    "title": "代理程式活動",
+    "hint": "AI 代理程式提出過的要求。Secret 的值、YAML 與命令輸出不會被記錄。",
+    "cluster": "叢集",
+    "allClusters": "所有叢集",
+    "loading": "正在載入記錄…",
+    "empty": "尚無呼叫。",
+    "failed": "無法讀取記錄",
+    "clear": "清除",
+    "clearTitle": "要清除活動記錄嗎？",
+    "clearBody": "這部電腦上記錄的所有代理程式呼叫都將被刪除。",
+    "ok": "成功",
+    "none": "-",
+    "columns": {
+      "time": "時間",
+      "client": "用戶端",
+      "cluster": "叢集",
+      "tool": "工具",
+      "target": "目標",
+      "decision": "決定",
+      "result": "結果",
+      "duration": "耗時"
+    },
+    "decisions": {
+      "allowed": "已允許",
+      "denied": "已拒絕",
+      "approved": "已由您核准",
+      "declined": "已由您拒絕",
+      "timedOut": "無回應",
+      "notChecked": "未檢查"
+    },
+    "duration": "{{ms}} 毫秒"
+  },
+  "confirm": {
+    "title": "AI 代理程式要求執行操作",
+    "extensionTitle": "擴充功能要求執行操作",
+    "intro": "{{client}} 想在 {{cluster}} 中執行下列操作。",
+    "client": "代理程式",
+    "extension": "擴充功能",
+    "cluster": "叢集",
+    "action": "動作",
+    "target": "目標",
+    "details": "詳細資料",
+    "allow": "允許",
+    "deny": "拒絕",
+    "countdown": "將在 {{time}} 後自動拒絕",
+    "waiting_other": "還有 {{count}} 個要求正在等候。"
+  },
+  "tools": {
+    "apply_yaml": "套用 YAML",
+    "patch_resource": "修補資源",
+    "delete_resource": "刪除資源",
+    "scale": "調整工作負載規模",
+    "restart": "重新啟動工作負載",
+    "rollout_undo": "回復工作負載",
+    "cordon_node": "封鎖或解除封鎖節點",
+    "drain_node": "排空節點",
+    "trigger_cronjob": "立即執行 CronJob",
+    "suspend_cronjob": "暫停或繼續 CronJob",
+    "gitops_action": "GitOps 動作",
+    "helm_install": "安裝 Helm 發行版本",
+    "helm_upgrade": "升級 Helm 發行版本",
+    "helm_rollback": "回復 Helm 發行版本",
+    "helm_uninstall": "解除安裝 Helm 發行版本",
+    "exec_command": "在容器中執行命令",
+    "port_forward_start": "開啟連接埠轉送",
+    "port_forward_stop": "關閉連接埠轉送"
+  },
+  "methods": {
+    "resources": {
+      "apply": "套用 YAML",
+      "patch": "修補資源",
+      "delete": "刪除資源"
+    }
+  }
+}

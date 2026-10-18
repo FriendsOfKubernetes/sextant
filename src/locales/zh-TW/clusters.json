@@ -1,0 +1,153 @@
+{
+  "rail": {
+    "list": "叢集清單",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "新增叢集",
+    "refresh": "重新整理 kubeconfig",
+    "slow": "{{tooltip}}，已持續 {{seconds}} 秒。叢集回應緩慢",
+    "expand": "展開叢集清單",
+    "collapse": "收合叢集清單"
+  },
+  "state": {
+    "disconnected": "未連線",
+    "connecting": "正在連線",
+    "connected": "已連線",
+    "error": "連線失敗"
+  },
+  "menu": {
+    "open": "開啟",
+    "connect": "連線",
+    "reconnect": "重新連線",
+    "disconnect": "中斷連線",
+    "settings": "設定",
+    "changeIcon": "變更圖示…"
+  },
+  "add": {
+    "title": "新增叢集",
+    "file": "新增 kubeconfig 檔案",
+    "paste": "貼上 kubeconfig",
+    "fileDialogTitle": "選擇 kubeconfig 檔案",
+    "tabs": "新增方式",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "從雲端"
+  },
+  "paste": {
+    "title": "貼上 kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "貼上 kubeconfig 檔案的內容。Sextant 會在其資料資料夾中保留一份私人副本。",
+    "submit": "新增"
+  },
+  "sources": {
+    "title": "Kubeconfig 來源",
+    "kind": {
+      "default": "預設",
+      "env": "KUBECONFIG",
+      "addedFile": "新增的檔案",
+      "pasted": "貼上的",
+      "cloud": "雲端"
+    },
+    "remove": "移除",
+    "removeNamed": "移除 {{path}}",
+    "confirmTitle": "要移除 kubeconfig 來源嗎？",
+    "confirmFile": "其中的叢集會從清單中消失。檔案本身仍會保留在磁碟上。",
+    "confirmPasted": "其中的叢集會從清單中消失，貼上的副本也會被刪除。",
+    "problems": "部分 kubeconfig 檔案無法讀取",
+    "problemsTitle": "Kubeconfig 問題",
+    "problemsHint": "來自其他檔案的叢集仍可正常使用。請修正該檔案，然後按「重新整理」。",
+    "confirmCloud": "其中的叢集會從清單中消失，Sextant 為這些雲端叢集產生的 kubeconfig 也會被刪除。您的雲端 CLI 與 ~/.kube/config 不受影響。"
+  },
+  "welcome": {
+    "loading": "正在讀取 kubeconfig…",
+    "noClusters": "找不到叢集",
+    "checked": "Sextant 曾在下列位置尋找 kubeconfig：",
+    "checkedPaths": "已檢查的路徑",
+    "title": "歡迎使用 Sextant",
+    "pick": "從左側選取一個叢集進行連線。"
+  },
+  "connection": {
+    "connecting": "正在連線到 {{name}}…",
+    "failed": "無法連線到 {{name}}",
+    "reconnect": "重新連線",
+    "certificate": "伺服器憑證未被接受。",
+    "seconds": "{{seconds}} 秒",
+    "slow": "叢集回應緩慢"
+  },
+  "settings": {
+    "title": "叢集設定 — {{name}}",
+    "displayName": "顯示名稱",
+    "color": "色彩標籤",
+    "autoColor": "自動",
+    "colorOption": "色彩 {{index}}",
+    "icon": "圖示",
+    "iconPreview": "圖示預覽",
+    "iconText": "圖示文字",
+    "iconTextPlaceholder": "縮寫",
+    "iconChoose": "選擇圖片…",
+    "iconReset": "重設圖示",
+    "iconHint": "在色彩標籤上顯示一到兩個字母或一個表情符號，或使用不超過 5 MB 的 PNG、JPEG、SVG 或 WebP 圖片。留白則使用名稱的縮寫。",
+    "iconErrors": {
+      "type": "此檔案不是支援的圖片格式",
+      "size": "圖片大於 5 MB",
+      "read": "無法讀取此檔案"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "叢集",
+    "server": "伺服器",
+    "user": "使用者",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant 會使用這部電腦上已安裝並已登入的 aws、gcloud 和 az。它會寫入自己的 kubeconfig，絕不會變更 ~/.kube/config，也不會替您登入。",
+    "detecting": "正在尋找 aws、gcloud 和 az…",
+    "providers": "雲端",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "（版本不明）",
+    "notInstalled": "尚未安裝 {{cli}}",
+    "installGuide": "安裝指南",
+    "pluginMissing": "尚未安裝 {{plugin}}。仍可新增叢集，但連線時需要它。請使用下列命令安裝：",
+    "loadingAccounts": "正在讀取帳戶…",
+    "account": {
+      "aws": "設定檔",
+      "gcp": "專案",
+      "azure": "訂用帳戶"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "來自環境變數的認證資訊",
+    "regions": "區域",
+    "find": "尋找叢集",
+    "finding": "正在搜尋…",
+    "noClusters": "找不到叢集。",
+    "found": "找到的叢集",
+    "separator": " · ",
+    "add_other": "新增 {{count}} 個叢集",
+    "added_other": "已新增 {{count}} 個叢集，可在叢集清單中找到。",
+    "scope": "（{{scope}}）",
+    "problem": {
+      "cliMissing": "尚未安裝 {{cli}}{{scope}}",
+      "notLoggedIn": "{{cli}} 尚未登入，或登入已過期{{scope}}",
+      "pluginMissing": "尚未安裝 {{cli}} 的登入外掛程式{{scope}}",
+      "failed": "{{cli}} 執行失敗{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "請先安裝，然後再試一次。",
+      "notLoggedIn": "Sextant 不會替您登入。請在終端機中執行下列命令，然後再試一次：",
+      "pluginMissing": "請在終端機中執行下列命令，然後再試一次：",
+      "failed": "請在終端機中執行下列命令，然後再試一次："
+    },
+    "copyCommand": "複製命令",
+    "copied": "已複製",
+    "copyFailed": "無法使用剪貼簿；請選取該命令並手動複製。"
+  }
+}

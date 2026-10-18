@@ -1,0 +1,49 @@
+{
+  "sidebar": "Переадресація портів",
+  "title": "Переадресація портів",
+  "loading": "Завантаження переадресацій портів…",
+  "empty": "Немає активних переадресацій портів.",
+  "emptyText": "Запустіть переадресацію з подробиць Pod або Service.",
+  "columns": {
+    "target": "Ціль",
+    "ports": "Порти",
+    "status": "Стан"
+  },
+  "target": {
+    "pod": "Pod {{name}}",
+    "service": "Service {{name}}"
+  },
+  "status": {
+    "active": "Активна",
+    "error": "Помилка"
+  },
+  "ports": "localhost:{{local}} → {{remote}}",
+  "actions": {
+    "open": "Відкрити в браузері",
+    "stop": "Зупинити"
+  },
+  "action": {
+    "label": "Переадресувати порт…"
+  },
+  "section": {
+    "title": "Переадресація портів",
+    "forward": "Переадресувати",
+    "forwardPort": "Переадресувати порт {{port}}",
+    "active": "localhost:{{local}} → {{remote}}"
+  },
+  "dialog": {
+    "title": "Переадресація: {{target}}",
+    "remotePort": "Порт для переадресації",
+    "localPort": "Локальний порт",
+    "localPortChoice": "Вибір локального порту",
+    "auto": "Випадковий вільний порт",
+    "custom": "Певний порт",
+    "invalidPort": "Введіть порт від 1 до 65535.",
+    "start": "Почати переадресацію",
+    "starting": "Запуск…",
+    "started": "localhost:{{local}} переадресовується на порт {{remote}}.",
+    "inUse": "Локальний порт {{port}} уже зайнятий.",
+    "useFree": "Використати вільний порт",
+    "close": "Закрити"
+  }
+}

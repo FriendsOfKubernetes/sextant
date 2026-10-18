@@ -1,0 +1,20 @@
+{
+  "sidebar": "Zdarzenia",
+  "title": "Zdarzenia",
+  "loading": "Wczytywanie zdarzeń…",
+  "none": "Brak zdarzeń.",
+  "search": "Szukaj zdarzeń",
+  "searchPlaceholder": "Szukaj…",
+  "count": "×{{count}}",
+  "from": "od {{source}}",
+  "columns": {
+    "type": "Typ",
+    "reason": "Przyczyna",
+    "message": "Komunikat",
+    "namespace": "Namespace",
+    "involvedObject": "Obiekt",
+    "source": "Źródło",
+    "count": "Liczba",
+    "lastSeen": "Ostatnio"
+  }
+}

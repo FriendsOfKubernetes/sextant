@@ -1,0 +1,15 @@
+{
+  "unreachable": "無法連線到此叢集。",
+  "unauthorized": "叢集不接受所提供的認證資訊 (401)。",
+  "forbidden": "您沒有執行此操作的權限 (403)。",
+  "notFound": "找不到。",
+  "conflict": "此物件已被其他人變更。請重新載入後再試一次。",
+  "invalid": "要求無效。",
+  "authPlugin": "kubeconfig 中的驗證外掛程式遺失或執行失敗。",
+  "helmMissing": "尚未安裝 Helm。",
+  "portInUse": "本機連接埠已被占用。",
+  "kubeconfig": "無法讀取 kubeconfig，或其內容無效。",
+  "timeout": "操作花費的時間過長。",
+  "denied": "此叢集的 AI 代理程式存取設定不允許此操作。",
+  "other": "發生錯誤。"
+}

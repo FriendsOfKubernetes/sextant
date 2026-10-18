@@ -1,0 +1,79 @@
+{
+  "title": "AI 에이전트 액세스",
+  "intro": "MCP 서버를 통해 연결된 AI 에이전트가 이 클러스터에서 할 수 있는 작업입니다. 권한 집합을 선택하기 전에는 아무것도 허용되지 않습니다.",
+  "preset": {
+    "legend": "권한 집합",
+    "off": "끔",
+    "readOnly": "읽기 전용",
+    "readWrite": "읽기 + 쓰기(삭제 제외)",
+    "full": "전체",
+    "custom": "사용자 지정"
+  },
+  "description": {
+    "off": "에이전트는 이 클러스터에 액세스할 수 없습니다. 목록에서 클러스터를 볼 수는 있지만 모든 호출이 거부됩니다.",
+    "readOnly": "에이전트는 모든 namespace의 모든 리소스를 읽고 Pod 로그를 가져올 수 있습니다. Secret 값은 숨겨집니다. 아무것도 변경할 수 없습니다.",
+    "readWrite": "에이전트는 모든 항목을 읽고 로그를 가져올 수 있으며, 리소스를 변경하고 컨테이너에서 명령을 실행하고 포트 포워딩을 열 수도 있습니다. 매번 먼저 확인을 요청합니다. 삭제는 할 수 없습니다. Secret 값은 숨겨집니다.",
+    "full": "에이전트는 삭제를 포함하여 모든 namespace에서 모든 작업을 할 수 있습니다. 변경, 삭제, 명령 실행, 포트 포워딩은 매번 먼저 확인을 요청합니다. Secret 값은 숨겨집니다.",
+    "custom": "직접 정합니다. 각 규칙은 namespace, 종류, 작업을 지정합니다. 작업은 이를 포함하는 규칙이 하나 이상 있으면 허용됩니다."
+  },
+  "customizeHint": "이 권한 집합의 규칙에서 시작하여 편집하려면 사용자 지정을 선택하세요.",
+  "unrecognised": {
+    "notice": "이 규칙은 최신 버전의 Sextant에서 작성되었거나 직접 편집되었습니다. 규칙은 보존되지만 적용되지 않습니다. 끔으로 재설정하거나 권한 집합을 선택하여 규칙을 대체할 때까지 에이전트는 액세스할 수 없습니다.",
+    "reset": "끔으로 재설정"
+  },
+  "saveFailed": "액세스 규칙을 저장할 수 없습니다.",
+  "rules": {
+    "title": "규칙",
+    "none": "규칙이 없으므로 에이전트는 이 클러스터에 액세스할 수 없습니다.",
+    "rule": "규칙 {{number}}",
+    "add": "규칙 추가",
+    "remove": "규칙 {{number}} 제거"
+  },
+  "namespaces": {
+    "legend": "Namespace",
+    "all": "모든 namespace",
+    "only": "선택한 namespace",
+    "filter": "namespace 필터",
+    "add": "이름으로 namespace 추가",
+    "addPlaceholder": "namespace 이름",
+    "addButton": "namespace 추가",
+    "invalid": "올바른 namespace 이름이 아닙니다.",
+    "empty": "선택한 namespace가 없으므로 이 규칙은 아무것도 포함하지 않습니다.",
+    "clusterOnly": "namespace에 속하지 않는 리소스(노드, namespace, CRD, 클러스터 역할)는 모든 namespace를 포함하는 규칙에만 해당됩니다."
+  },
+  "kinds": {
+    "legend": "종류",
+    "all": "모든 종류",
+    "only": "선택한 종류",
+    "filter": "종류 필터",
+    "add": "이름으로 종류 추가",
+    "addPlaceholder": "Kind 또는 group/Kind",
+    "addButton": "종류 추가",
+    "invalid": "Kind 또는 group/Kind 형식을 사용하세요(예: Pod 또는 apps/Deployment).",
+    "empty": "선택한 종류가 없으므로 이 규칙은 아무것도 포함하지 않습니다.",
+    "helm": "Helm 릴리스",
+    "coreGroup": "core",
+    "more": "처음 {{count}}개를 표시합니다. 목록을 좁히려면 필터에 입력하세요."
+  },
+  "picker": {
+    "noMatch": "일치하는 항목이 없습니다.",
+    "notConnected": "목록에서 선택하려면 이 클러스터에 연결하세요. 아래에 이름을 직접 입력할 수도 있습니다.",
+    "loading": "목록을 로드하는 중…",
+    "failed": "클러스터의 목록을 사용할 수 없습니다. 아래에 이름을 직접 입력할 수 있습니다."
+  },
+  "actions": {
+    "legend": "작업",
+    "read": "읽기",
+    "modify": "수정",
+    "delete": "삭제",
+    "logs": "로그",
+    "exec": "Exec / 셸",
+    "portForward": "포트 포워딩",
+    "secretValues": "Secret 값"
+  },
+  "confirm": {
+    "label": "실행 전에 확인",
+    "hint": "이 규칙의 수정, 삭제, Exec, 포트 포워딩은 Sextant에서 응답을 기다립니다(120초가 지나면 거부됨)."
+  },
+  "secretWarning": "Secret 값 권한을 주면 에이전트가 Secret 데이터와 Helm 릴리스의 값을 평문으로 읽을 수 있습니다. 에이전트에게 꼭 필요한 namespace에만 허용하세요."
+}

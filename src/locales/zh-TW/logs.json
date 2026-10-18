@@ -1,0 +1,91 @@
+{
+  "action": {
+    "label": "日誌"
+  },
+  "toolbar": {
+    "label": "日誌選項",
+    "container": "容器",
+    "initContainer": "{{name}}（init）",
+    "follow": "追蹤",
+    "timestamps": "時間戳記",
+    "previous": "前一個容器",
+    "wrap": "自動換行",
+    "save": "儲存",
+    "reconnect": "重新連線"
+  },
+  "search": {
+    "label": "搜尋日誌",
+    "placeholder": "搜尋",
+    "previous": "上一個相符項目",
+    "next": "下一個相符項目",
+    "count": "{{current}}/{{total}}",
+    "countCapped": "{{current}}/{{total}}+",
+    "none": "沒有相符項目"
+  },
+  "status": {
+    "connecting": "正在連線…",
+    "live": "即時",
+    "notFollowing": "未追蹤",
+    "ended": "串流已結束",
+    "failed": "串流失敗"
+  },
+  "lines_other": "{{count}} 行",
+  "dropped_other": "已捨棄 {{count}} 行較舊的日誌（只保留最新的 {{limit}} 行，文字最多 {{size}} MiB）",
+  "lineCut": " …［此行在 64 KiB 處截斷，於下一行繼續］",
+  "empty": "尚無日誌行。",
+  "view": "日誌行",
+  "save": {
+    "title": "儲存日誌",
+    "filter": "日誌檔案",
+    "failed": "無法儲存日誌。"
+  },
+  "picker": {
+    "title": "{{name}} 的日誌：選擇 Pod",
+    "loading": "正在載入 Pod…",
+    "none": "找不到 Pod。",
+    "noSelector": "此物件未選取任何 Pod。",
+    "all": "所有 Pod",
+    "allHint": "在一個分頁中追蹤所有 Pod，包括之後建立的 Pod。"
+  },
+  "details": {
+    "title": "日誌",
+    "allPods": "所有 Pod 的日誌",
+    "hint": "追蹤符合 {{selector}} 的 Pod，並隨其建立與消失自動更新。"
+  },
+  "multi": {
+    "podsTitle_other": "{{count}} 個 Pod",
+    "selector": "Selector",
+    "selectorHint": "Label selector；按 Enter 套用。",
+    "sources": "Pod 與容器（{{shown}}/{{total}}）",
+    "sourcesLabel": "Pod 與容器",
+    "capHint_other": "同時最多執行 {{count}} 個日誌串流；取消勾選 Pod 或容器即可選擇要讀取哪些。",
+    "capped_other": "還有 {{count}} 個容器在等候：同時最多執行 {{max}} 個日誌串流。取消勾選 Pod 或容器即可選擇要讀取哪些。",
+    "noPods": "沒有相符的 Pod。",
+    "json": "剖析 JSON",
+    "level": "層級",
+    "allLevels": "所有行",
+    "levelAndAbove": "{{level}} 及以上",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "篩選",
+    "regex": "規則運算式",
+    "badRegex": "規則運算式無效；不會篩除任何行。",
+    "sourceStatus": {
+      "waiting": "正在等候可用的串流",
+      "connecting": "正在連線",
+      "streaming": "即時",
+      "ended": "已結束",
+      "error": "失敗",
+      "notStarted": "未開始",
+      "gone": "Pod 已消失",
+      "off": "已關閉"
+    },
+    "streams": "串流：{{count}}，Pod：{{pods}}"
+  }
+}

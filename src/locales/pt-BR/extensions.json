@@ -1,0 +1,185 @@
+{
+  "title": "Extensões",
+  "hint": "Extensões adicionam páginas, painéis, ações e colunas ao Sextant. Cada uma é executada em um quadro isolado e só pode acessar seus clusters por meio das permissões concedidas na instalação.",
+  "host": {
+    "failed": "A extensão falhou: {{message}}",
+    "failedUnknown": "a extensão parou com um erro",
+    "reload": "Recarregar",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Visão geral",
+    "detailsTabs": "Visualizações de detalhes",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "Dispensar"
+  },
+  "install": {
+    "file": "Instalar de um arquivo…",
+    "url": "Instalar de uma URL…",
+    "folder": "Carregar pasta descompactada…",
+    "fileTitle": "Escolha um pacote de extensão",
+    "fileFilter": "Extensão do Sextant",
+    "folderTitle": "Escolha a pasta de uma extensão",
+    "checking": "Verificando o pacote…",
+    "installed": "Versão {{version}} instalada.",
+    "updated": "Atualizada para a versão {{version}}."
+  },
+  "source": {
+    "folder": "Pasta {{path}}",
+    "file": "Arquivo {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "Instalar de uma URL",
+    "label": "Link para um arquivo em uma release do GitHub",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "Só são aceitos links no formato https://github.com/<owner>/<repo>/releases/download/<tag>/<file>. O arquivo pode ter até 20 MB. Nada é instalado até que você concorde com as permissões.",
+    "invalid": "Este não é um link para um arquivo em uma release do GitHub.",
+    "check": "Baixar e verificar"
+  },
+  "errors": {
+    "invalid": "Este pacote não pode ser instalado",
+    "conflict": "Outra extensão com este id já está instalada",
+    "notFound": "Esta instalação não está mais disponível",
+    "timeout": "O download demorou demais",
+    "unreachable": "Não foi possível baixar o arquivo",
+    "other": "Não foi possível instalar a extensão"
+  },
+  "consent": {
+    "titleInstall": "Instalar {{name}}?",
+    "titleUpdate": "Atualizar {{name}}?",
+    "titleReview": "Revise as permissões de {{name}}",
+    "install": "Instalar",
+    "update": "Atualizar",
+    "author": "Autor",
+    "version": "Versão",
+    "source": "Origem",
+    "devHint": "Ela é executada diretamente desta pasta, e as alterações nos arquivos são aplicadas enquanto o Sextant estiver aberto. Ela é marcada como Desenvolvimento.",
+    "replaces": "Substitui a versão instalada {{version}}.",
+    "newPermissions": "Novas permissões",
+    "newPermissionsHint": "Esta versão pede mais do que você permitiu antes. Leia as permissões abaixo.",
+    "samePermissions": "Mesmas permissões",
+    "samePermissionsHint": "Esta versão não pede nada novo.",
+    "reviewHint": "Os arquivos desta extensão agora pedem mais do que você permitiu. Ela fica pausada até que você concorde.",
+    "adds": "O que ela adiciona",
+    "permissions": "O que ela pode fazer",
+    "noContributions": "Nada é adicionado à interface.",
+    "secretWarning": "Lê os valores de Secrets",
+    "secretWarningHint": "Esta extensão pede para ler valores de Secrets: senhas, tokens e chaves. Permita apenas se você confia no autor dela."
+  },
+  "contributes": {
+    "pages": "Páginas na barra lateral",
+    "detailsSections": "Seções no painel de detalhes",
+    "actions": "Ações em recursos",
+    "columns": "Colunas de tabela",
+    "dockActions": "Botões do painel inferior",
+    "settings": "Seção em Configurações"
+  },
+  "permissions": {
+    "clusters": "Clusters",
+    "clustersAll": "Todos os clusters",
+    "clustersOnly_one": "Apenas o cluster chamado {{names}}",
+    "clustersOnly_many": "Apenas os clusters chamados {{names}}",
+    "clustersOnly_other": "Apenas os clusters chamados {{names}}",
+    "clustersNote": "Um nome abrange todos os contextos de cluster com esse nome, de todas as fontes de kubeconfig.",
+    "access": "Acesso",
+    "none": "Sem acesso aos dados de nenhum cluster.",
+    "rule": "{{actions}} {{kinds}} {{namespaces}}",
+    "allKinds": "todos os tipos",
+    "namespacesAll": "em todos os namespaces",
+    "namespacesOnly_one": "no namespace {{names}}",
+    "namespacesOnly_many": "nos namespaces {{names}}",
+    "namespacesOnly_other": "nos namespaces {{names}}",
+    "asks": "Pergunta antes de executar",
+    "noAsk": "Executa sem perguntar",
+    "secretValues": "Pode ler os valores de Secrets {{namespaces}}",
+    "clusterWide": "Objetos que não pertencem a nenhum namespace (como Nodes) são abrangidos apenas por regras para todos os namespaces.",
+    "actionNames": {
+      "read": "Ler",
+      "modify": "Modificar",
+      "delete": "Excluir",
+      "logs": "Ler os logs de",
+      "exec": "Executar comandos em",
+      "portForward": "Encaminhar portas de",
+      "secretValues": "Ler os valores de Secrets de"
+    }
+  },
+  "state": {
+    "active": "Ativa",
+    "disabled": "Desativada",
+    "needsConsent": "Requer sua aprovação",
+    "failed": "Com falha"
+  },
+  "list": {
+    "loading": "Carregando extensões…",
+    "empty": "Nenhuma extensão instalada.",
+    "failed": "Não foi possível ler a lista de extensões",
+    "development": "Desenvolvimento",
+    "version": "Versão {{version}}",
+    "enable": "Ativar",
+    "disable": "Desativar",
+    "permissions": "Permissões",
+    "reload": "Recarregar",
+    "activity": "Atividade",
+    "remove": "Remover",
+    "reviewPermissions": "Revisar permissões",
+    "pausedHint": "Esta extensão pede mais do que você permitiu. Ela fica pausada até que você revise as permissões.",
+    "failedHint": "Esta extensão não pode ser executada: {{error}}",
+    "actionFailed": "Não foi possível fazer a alteração",
+    "namedAction": "{{action}} {{name}}"
+  },
+  "reinstall": {
+    "file": "Para revisar as permissões, instale-a novamente a partir do arquivo {{name}} (Instalar de um arquivo…).",
+    "url": "Para revisar as permissões, instale-a novamente a partir de {{url}} (Instalar de uma URL…)."
+  },
+  "permissionsDialog": {
+    "title": "Permissões de {{name}}",
+    "granted": "Você permitiu",
+    "requested": "Ela pede agora",
+    "close": "Fechar"
+  },
+  "remove": {
+    "title": "Remover {{name}}?",
+    "body": "A extensão, os arquivos dela e os dados que ela armazenou são excluídos deste computador. Seus clusters não são alterados."
+  },
+  "settingsFrame": "Configurações de {{name}}",
+  "notice": {
+    "text_one": "{{names}} pede mais permissões do que você permitiu e está pausada.",
+    "text_many": "{{names}} pedem mais permissões do que você permitiu e estão pausadas.",
+    "text_other": "{{names}} pedem mais permissões do que você permitiu e estão pausadas.",
+    "review": "Revisar permissões",
+    "reinstall": "{{name}}: {{hint}}",
+    "dismiss": "Dispensar"
+  },
+  "activity": {
+    "title": "Atividade das extensões",
+    "hint": "O que as extensões pediram. Valores de Secrets, YAML e saída de comandos não são registrados.",
+    "extension": "Extensão",
+    "allExtensions": "Todas as extensões",
+    "loading": "Carregando o registro…",
+    "empty": "Nenhuma chamada ainda.",
+    "failed": "Não foi possível ler o registro",
+    "clear": "Limpar",
+    "clearTitle": "Limpar o registro de atividade?",
+    "clearBody": "Todas as chamadas registradas das extensões são excluídas deste computador.",
+    "ok": "ok",
+    "none": "-",
+    "columns": {
+      "time": "Hora",
+      "extension": "Extensão",
+      "cluster": "Cluster",
+      "method": "Método",
+      "target": "Destino",
+      "decision": "Decisão",
+      "result": "Resultado",
+      "duration": "Duração"
+    },
+    "decisions": {
+      "allowed": "Permitido",
+      "denied": "Negado",
+      "approved": "Aprovado por você",
+      "declined": "Recusado por você",
+      "timedOut": "Sem resposta",
+      "notChecked": "Não verificado"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

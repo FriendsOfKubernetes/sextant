@@ -1,0 +1,157 @@
+{
+  "rail": {
+    "list": "Liste des clusters",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Ajouter un cluster",
+    "refresh": "Actualiser le kubeconfig",
+    "slow": "{{tooltip}} depuis {{seconds}} s. Le cluster met du temps à répondre",
+    "expand": "Développer la liste des clusters",
+    "collapse": "Réduire la liste des clusters"
+  },
+  "state": {
+    "disconnected": "déconnecté",
+    "connecting": "connexion en cours",
+    "connected": "connecté",
+    "error": "échec de la connexion"
+  },
+  "menu": {
+    "open": "Ouvrir",
+    "connect": "Se connecter",
+    "reconnect": "Se reconnecter",
+    "disconnect": "Se déconnecter",
+    "settings": "Paramètres",
+    "changeIcon": "Changer l'icône…"
+  },
+  "add": {
+    "title": "Ajouter un cluster",
+    "file": "Ajouter un fichier kubeconfig",
+    "paste": "Coller un kubeconfig",
+    "fileDialogTitle": "Choisir un fichier kubeconfig",
+    "tabs": "Méthode d'ajout",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Depuis le cloud"
+  },
+  "paste": {
+    "title": "Coller un kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Collez le contenu d'un fichier kubeconfig. Sextant en conserve une copie privée dans son dossier de données.",
+    "submit": "Ajouter"
+  },
+  "sources": {
+    "title": "Sources kubeconfig",
+    "kind": {
+      "default": "par défaut",
+      "env": "KUBECONFIG",
+      "addedFile": "fichier ajouté",
+      "pasted": "collé",
+      "cloud": "cloud"
+    },
+    "remove": "Retirer",
+    "removeNamed": "Retirer {{path}}",
+    "confirmTitle": "Retirer la source kubeconfig ?",
+    "confirmFile": "Ses clusters disparaissent de la liste. Le fichier lui-même reste sur le disque.",
+    "confirmPasted": "Ses clusters disparaissent de la liste et la copie collée est supprimée.",
+    "problems": "Certains fichiers kubeconfig sont illisibles",
+    "problemsTitle": "Problèmes de kubeconfig",
+    "problemsHint": "Les clusters des autres fichiers continuent de fonctionner. Corrigez le fichier, puis cliquez sur Actualiser.",
+    "confirmCloud": "Ses clusters disparaissent de la liste et le kubeconfig de Sextant pour ces clusters cloud est supprimé. Votre CLI cloud et ~/.kube/config ne sont pas modifiés."
+  },
+  "welcome": {
+    "loading": "Lecture du kubeconfig…",
+    "noClusters": "Aucun cluster trouvé",
+    "checked": "Sextant a cherché un kubeconfig ici :",
+    "checkedPaths": "Chemins vérifiés",
+    "title": "Bienvenue dans Sextant",
+    "pick": "Sélectionnez un cluster à gauche pour vous connecter."
+  },
+  "connection": {
+    "connecting": "Connexion à {{name}}…",
+    "failed": "Impossible de se connecter à {{name}}",
+    "reconnect": "Se reconnecter",
+    "certificate": "Le certificat du serveur n'a pas été accepté.",
+    "seconds": "{{seconds}} s",
+    "slow": "Le cluster met du temps à répondre"
+  },
+  "settings": {
+    "title": "Paramètres du cluster — {{name}}",
+    "displayName": "Nom affiché",
+    "color": "Étiquette de couleur",
+    "autoColor": "Auto",
+    "colorOption": "Couleur {{index}}",
+    "icon": "Icône",
+    "iconPreview": "Aperçu de l'icône",
+    "iconText": "Texte de l'icône",
+    "iconTextPlaceholder": "Initiales",
+    "iconChoose": "Choisir une image…",
+    "iconReset": "Réinitialiser l'icône",
+    "iconHint": "Une ou deux lettres ou un emoji sur l'étiquette de couleur, ou une image PNG, JPEG, SVG ou WebP de 5 Mo maximum. Vide : les initiales du nom.",
+    "iconErrors": {
+      "type": "Le fichier n'est pas une image prise en charge",
+      "size": "L'image dépasse 5 Mo",
+      "read": "Impossible de lire le fichier"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "Cluster",
+    "server": "Serveur",
+    "user": "Utilisateur",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant utilise aws, gcloud et az déjà installés et connectés sur cet ordinateur. Il écrit son propre kubeconfig, ne modifie jamais ~/.kube/config et ne se connecte jamais à votre place.",
+    "detecting": "Recherche de aws, gcloud et az…",
+    "providers": "Cloud",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(version inconnue)",
+    "notInstalled": "{{cli}} n'est pas installé",
+    "installGuide": "Guide d'installation",
+    "pluginMissing": "{{plugin}} n'est pas installé. Les clusters peuvent être ajoutés, mais la connexion en a besoin. Installez-le avec :",
+    "loadingAccounts": "Lecture des comptes…",
+    "account": {
+      "aws": "Profil",
+      "gcp": "Projet",
+      "azure": "Abonnement"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Identifiants de l'environnement",
+    "regions": "Régions",
+    "find": "Rechercher les clusters",
+    "finding": "Recherche…",
+    "noClusters": "Aucun cluster trouvé.",
+    "found": "Clusters trouvés",
+    "separator": " · ",
+    "add_one": "Ajouter {{count}} cluster",
+    "add_many": "Ajouter {{count}} de clusters",
+    "add_other": "Ajouter {{count}} clusters",
+    "added_one": "{{count}} cluster ajouté. Il figure dans la liste des clusters.",
+    "added_many": "{{count}} de clusters ajoutés. Ils figurent dans la liste des clusters.",
+    "added_other": "{{count}} clusters ajoutés. Ils figurent dans la liste des clusters.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} n'est pas installé{{scope}}",
+      "notLoggedIn": "{{cli}} n'est pas connecté, ou la connexion a expiré{{scope}}",
+      "pluginMissing": "Le plug-in de connexion de {{cli}} n'est pas installé{{scope}}",
+      "failed": "{{cli}} a échoué{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Installez-le, puis réessayez.",
+      "notLoggedIn": "Sextant ne se connecte pas à votre place. Exécutez cette commande dans un terminal, puis réessayez :",
+      "pluginMissing": "Exécutez cette commande dans un terminal, puis réessayez :",
+      "failed": "Exécutez cette commande dans un terminal, puis réessayez :"
+    },
+    "copyCommand": "Copier la commande",
+    "copied": "Copié",
+    "copyFailed": "Le presse-papiers n'est pas disponible ; sélectionnez la commande et copiez-la."
+  }
+}

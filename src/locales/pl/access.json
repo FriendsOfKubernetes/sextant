@@ -1,0 +1,79 @@
+{
+  "title": "Dostęp agentów AI",
+  "intro": "Co mogą robić w tym klastrze agenci AI połączeni przez serwer MCP. Do czasu wybrania zestawu nic nie jest dozwolone.",
+  "preset": {
+    "legend": "Zestaw uprawnień",
+    "off": "Wyłączony",
+    "readOnly": "Tylko odczyt",
+    "readWrite": "Odczyt i zapis (bez usuwania)",
+    "full": "Pełny",
+    "custom": "Niestandardowy"
+  },
+  "description": {
+    "off": "Agent nie ma dostępu do tego klastra. Widzi klaster na swojej liście, ale każde wywołanie jest odrzucane.",
+    "readOnly": "Agent może odczytywać wszystkie zasoby we wszystkich namespace’ach i pobierać logi Podów. Wartości Secret są ukryte. Nie może niczego zmieniać.",
+    "readWrite": "Agent może wszystko odczytywać i pobierać logi, a także zmieniać zasoby, uruchamiać polecenia w kontenerach i otwierać przekierowania portów. Za każdym razem najpierw pyta o zgodę. Nie może usuwać. Wartości Secret są ukryte.",
+    "full": "Agent może robić wszystko we wszystkich namespace’ach, łącznie z usuwaniem. Przed każdą zmianą, usunięciem, poleceniem i przekierowaniem portu najpierw pyta o zgodę. Wartości Secret są ukryte.",
+    "custom": "Decyzja należy do użytkownika: każda reguła obejmuje namespace’y, rodzaje i akcje. Akcja jest dozwolona, gdy obejmuje ją co najmniej jedna reguła."
+  },
+  "customizeHint": "Wybierz zestaw „Niestandardowy”, aby zacząć od reguł tego zestawu i je edytować.",
+  "unrecognised": {
+    "notice": "Te reguły zostały zapisane przez nowszą wersję programu Sextant lub zmienione ręcznie; są zachowane, ale nie są stosowane. Agent nie ma dostępu, dopóki nie zostanie przywrócony stan „Wyłączony” lub wybrany zestaw, który je zastąpi.",
+    "reset": "Przywróć „Wyłączony”"
+  },
+  "saveFailed": "Nie można zapisać reguł dostępu.",
+  "rules": {
+    "title": "Reguły",
+    "none": "Brak reguł, więc agent nie ma dostępu do tego klastra.",
+    "rule": "Reguła {{number}}",
+    "add": "Dodaj regułę",
+    "remove": "Usuń regułę {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespace’y",
+    "all": "Wszystkie namespace’y",
+    "only": "Wybrane namespace’y",
+    "filter": "Filtruj namespace’y",
+    "add": "Dodaj namespace według nazwy",
+    "addPlaceholder": "nazwa namespace",
+    "addButton": "Dodaj namespace",
+    "invalid": "Nieprawidłowa nazwa namespace.",
+    "empty": "Nie wybrano żadnego namespace, więc ta reguła niczego nie obejmuje.",
+    "clusterOnly": "Zasoby nienależące do żadnego namespace (węzły, namespace’y, CRD, role klastra) obejmuje tylko reguła ze wszystkimi namespace’ami."
+  },
+  "kinds": {
+    "legend": "Rodzaje",
+    "all": "Wszystkie rodzaje",
+    "only": "Wybrane rodzaje",
+    "filter": "Filtruj rodzaje",
+    "add": "Dodaj rodzaj według nazwy",
+    "addPlaceholder": "Kind lub grupa/Kind",
+    "addButton": "Dodaj rodzaj",
+    "invalid": "Użyj formatu Kind lub grupa/Kind, na przykład Pod lub apps/Deployment.",
+    "empty": "Nie wybrano żadnego rodzaju, więc ta reguła niczego nie obejmuje.",
+    "helm": "Wydania Helm",
+    "coreGroup": "core",
+    "more": "Wyświetlane są pierwsze pozycje ({{count}}). Wpisz tekst w filtrze, aby zawęzić listę."
+  },
+  "picker": {
+    "noMatch": "Brak dopasowań.",
+    "notConnected": "Połącz się z tym klastrem, aby wybrać z jego listy. Nazwę można też wpisać poniżej.",
+    "loading": "Wczytywanie listy…",
+    "failed": "Lista klastra jest niedostępna. Nazwę można też wpisać poniżej."
+  },
+  "actions": {
+    "legend": "Akcje",
+    "read": "Odczyt",
+    "modify": "Modyfikacja",
+    "delete": "Usuwanie",
+    "logs": "Logi",
+    "exec": "Exec / powłoka",
+    "portForward": "Przekierowanie portów",
+    "secretValues": "Wartości Secret"
+  },
+  "confirm": {
+    "label": "Pytaj przed wykonaniem",
+    "hint": "Modyfikacja, usuwanie, exec i przekierowanie portów w tej regule czekają na odpowiedź w programie Sextant (120 s, potem są odrzucane)."
+  },
+  "secretWarning": "Uprawnienie „Wartości Secret” pozwala agentowi odczytywać dane Secret i wartości wydań Helm w postaci jawnej. Zezwalaj na to tylko w namespace’ach, których agent naprawdę potrzebuje."
+}

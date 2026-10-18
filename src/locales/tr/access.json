@@ -1,0 +1,79 @@
+{
+  "title": "Yapay zekâ ajanı erişimi",
+  "intro": "MCP sunucusu üzerinden bağlanan yapay zekâ ajanlarının bu kümede neler yapabileceği. Siz bir set seçene kadar hiçbir şeye izin verilmez.",
+  "preset": {
+    "legend": "Erişim seti",
+    "off": "Kapalı",
+    "readOnly": "Salt okunur",
+    "readWrite": "Okuma + yazma (silme yok)",
+    "full": "Tam",
+    "custom": "Özel"
+  },
+  "description": {
+    "off": "Ajanın bu kümeye erişimi yok. Kümeyi listesinde görür, ancak her çağrı reddedilir.",
+    "readOnly": "Ajan tüm namespace'lerdeki tüm kaynakları okuyabilir ve Pod günlüklerini alabilir. Secret değerleri gizlenir. Hiçbir şeyi değiştiremez.",
+    "readWrite": "Ajan her şeyi okuyabilir ve günlükleri alabilir; ayrıca kaynakları değiştirebilir, kapsayıcılarda komut çalıştırabilir ve bağlantı noktası yönlendirmeleri açabilir. Her seferinde önce size sorar. Silme yapamaz. Secret değerleri gizlenir.",
+    "full": "Ajan, silme dahil tüm namespace'lerde her şeyi yapabilir. Değişiklikler, silmeler, komutlar ve bağlantı noktası yönlendirmeleri için her seferinde önce size sorar. Secret değerleri gizlenir.",
+    "custom": "Siz karar verirsiniz: her kural namespace'leri, türleri ve eylemleri kapsar. En az bir kural bir eylemi kapsıyorsa o eyleme izin verilir."
+  },
+  "customizeHint": "Bu setin kurallarından başlayıp onları düzenlemek için Özel'i seçin.",
+  "unrecognised": {
+    "notice": "Bu kurallar daha yeni bir Sextant tarafından yazılmış veya elle düzenlenmiş; saklanırlar ancak uygulanmazlar. Kapalı'ya sıfırlayana veya onların yerini alacak bir set seçene kadar ajanın erişimi olmaz.",
+    "reset": "Kapalı'ya sıfırla"
+  },
+  "saveFailed": "Erişim kuralları kaydedilemedi.",
+  "rules": {
+    "title": "Kurallar",
+    "none": "Hiç kural yok, bu yüzden ajanın bu kümeye erişimi yok.",
+    "rule": "Kural {{number}}",
+    "add": "Kural ekle",
+    "remove": "{{number}}. kuralı kaldır"
+  },
+  "namespaces": {
+    "legend": "Namespace'ler",
+    "all": "Tüm namespace'ler",
+    "only": "Seçili namespace'ler",
+    "filter": "Namespace'leri süz",
+    "add": "Ada göre namespace ekle",
+    "addPlaceholder": "namespace adı",
+    "addButton": "Namespace ekle",
+    "invalid": "Geçerli bir namespace adı değil.",
+    "empty": "Hiç namespace seçilmedi, bu yüzden bu kural hiçbir şeyi kapsamıyor.",
+    "clusterOnly": "Hiçbir namespace'e ait olmayan kaynaklar (düğümler, namespace'ler, CRD'ler, küme rolleri) yalnızca tüm namespace'leri kapsayan bir kuralla kapsanır."
+  },
+  "kinds": {
+    "legend": "Türler",
+    "all": "Tüm türler",
+    "only": "Seçili türler",
+    "filter": "Türleri süz",
+    "add": "Ada göre tür ekle",
+    "addPlaceholder": "Kind veya group/Kind",
+    "addButton": "Tür ekle",
+    "invalid": "Kind veya group/Kind biçimini kullanın, örneğin Pod veya apps/Deployment.",
+    "empty": "Hiç tür seçilmedi, bu yüzden bu kural hiçbir şeyi kapsamıyor.",
+    "helm": "Helm yayınları",
+    "coreGroup": "core",
+    "more": "İlk {{count}} tanesi gösteriliyor. Listeyi daraltmak için süzgece yazın."
+  },
+  "picker": {
+    "noMatch": "Eşleşen bir şey yok.",
+    "notConnected": "Listesinden seçmek için bu kümeye bağlanın. Yine de aşağıya bir ad yazabilirsiniz.",
+    "loading": "Liste yükleniyor…",
+    "failed": "Kümenin listesi kullanılamıyor. Yine de aşağıya bir ad yazabilirsiniz."
+  },
+  "actions": {
+    "legend": "Eylemler",
+    "read": "Okuma",
+    "modify": "Değiştirme",
+    "delete": "Silme",
+    "logs": "Günlükler",
+    "exec": "Exec / kabuk",
+    "portForward": "Bağlantı noktası yönlendirme",
+    "secretValues": "Secret değerleri"
+  },
+  "confirm": {
+    "label": "Çalıştırmadan önce sor",
+    "hint": "Bu kuraldaki Değiştirme, Silme, Exec ve Bağlantı noktası yönlendirme eylemleri Sextant'ta yanıtınızı bekler (120 sn, sonra reddedilir)."
+  },
+  "secretWarning": "Secret değerleri, ajanın Secret verilerini ve Helm yayınlarının değerlerini açık metin olarak okumasına izin verir. Yalnızca ajanın gerçekten ihtiyaç duyduğu namespace'ler için izin verin."
+}

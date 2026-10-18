@@ -1,0 +1,39 @@
+{
+  "sidebar": "Problemas",
+  "title": "Problemas do cluster",
+  "badge_one": "{{count}} problema requer atenção",
+  "badge_many": "{{count}} problemas requerem atenção",
+  "badge_other": "{{count}} problemas requerem atenção",
+  "onlyNewSince": "Somente novos desde {{time}}",
+  "markSeen": "Marcar todos como vistos",
+  "total_one": "{{count}} problema",
+  "total_many": "{{count}} problemas",
+  "total_other": "{{count}} problemas",
+  "sourceFailed": "Não foi possível monitorar {{kind}}",
+  "truncated": "Há problemas demais: apenas os mais recentes são listados.",
+  "loading": "Procurando problemas…",
+  "none": "Nenhum problema encontrado.",
+  "noneNew": "Nenhum problema novo desde a marcação.",
+  "clusterWide": "Todo o cluster",
+  "categories": {
+    "nodes": "Nós",
+    "pods": "Pods",
+    "workloads": "Cargas de trabalho",
+    "jobs": "Jobs",
+    "volumes": "Volume claims",
+    "certificates": "Certificados",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "Eventos de aviso"
+  },
+  "messages": {
+    "container": "Contêiner {{container}}",
+    "restarts_one": "O contêiner {{container}} foi reiniciado ({{count}} reinício)",
+    "restarts_many": "O contêiner {{container}} foi reiniciado ({{count}} reinícios)",
+    "restarts_other": "O contêiner {{container}} foi reiniciado ({{count}} reinícios)",
+    "replicas": "{{ready}} de {{desired}} réplicas prontas",
+    "expires": "Expira em {{date}}",
+    "expired": "Expirou em {{date}}"
+  }
+}

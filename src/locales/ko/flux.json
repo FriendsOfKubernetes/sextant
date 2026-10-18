@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "준비",
+    "status": "상태",
+    "revision": "리비전",
+    "suspended": "일시 중단됨",
+    "source": "소스"
+  },
+  "suspended": {
+    "yes": "예",
+    "no": "아니요"
+  },
+  "fields": {
+    "ready": "준비",
+    "message": "상태",
+    "revision": "리비전",
+    "lastAttemptedRevision": "마지막 시도 리비전",
+    "suspended": "일시 중단됨",
+    "interval": "간격",
+    "timeout": "시간 제한",
+    "source": "소스",
+    "chart": "차트",
+    "helmChart": "Helm 차트",
+    "url": "URL",
+    "ref": "참조",
+    "endpoint": "엔드포인트",
+    "bucketName": "버킷",
+    "path": "경로",
+    "targetNamespace": "대상 namespace",
+    "releaseName": "릴리스 이름",
+    "prune": "Prune",
+    "dependsOn": "종속 대상",
+    "image": "이미지",
+    "imageRepository": "이미지 저장소",
+    "provider": "공급자",
+    "eventSeverity": "이벤트 심각도",
+    "eventSources": "이벤트 소스",
+    "type": "유형",
+    "channel": "채널",
+    "webhookPath": "Webhook 경로",
+    "lastHandledReconcileAt": "마지막 조정 요청"
+  },
+  "related": {
+    "inventory": "적용된 리소스",
+    "resources": "리소스",
+    "usedBy": "사용하는 항목",
+    "kind": "종류",
+    "name": "이름",
+    "namespace": "Namespace",
+    "loading": "로드 중…",
+    "notUsed": "이 소스를 사용하는 Kustomization 또는 HelmRelease가 없습니다."
+  },
+  "actions": {
+    "reconcile": "지금 조정",
+    "reconcileWithSource": "소스와 함께 조정",
+    "suspend": "일시 중단",
+    "resume": "재개"
+  },
+  "suspend": {
+    "title": "{{kind}} {{name}}을(를) 일시 중단하시겠습니까?",
+    "confirm": "일시 중단",
+    "text": "Flux는 {{kind}} {{name}}이(가) 재개될 때까지 조정을 중지합니다. 그동안 Git이나 클러스터의 변경 사항이 적용되거나 수정되지 않습니다."
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "title": "Uzantılar",
+  "hint": "Uzantılar Sextant'a sayfalar, paneller, eylemler ve sütunlar ekler. Her biri yalıtılmış bir çerçevede çalışır ve kümelerinize yalnızca yüklerken verdiğiniz izinlerle erişebilir.",
+  "host": {
+    "failed": "Uzantı başarısız oldu: {{message}}",
+    "failedUnknown": "uzantı bir hatayla durdu",
+    "reload": "Yeniden yükle",
+    "frameTitle": "{{title}} ({{extension}})",
+    "overview": "Genel bakış",
+    "detailsTabs": "Ayrıntı görünümleri",
+    "notice": "{{extension}}: {{text}}",
+    "dismiss": "Kapat"
+  },
+  "install": {
+    "file": "Dosyadan yükle…",
+    "url": "URL'den yükle…",
+    "folder": "Paketlenmemiş klasörü yükle…",
+    "fileTitle": "Bir uzantı paketi seçin",
+    "fileFilter": "Sextant uzantısı",
+    "folderTitle": "Bir uzantının klasörünü seçin",
+    "checking": "Paket denetleniyor…",
+    "installed": "{{version}} sürümü yüklendi.",
+    "updated": "{{version}} sürümüne güncellendi."
+  },
+  "source": {
+    "folder": "Klasör {{path}}",
+    "file": "Dosya {{name}}",
+    "url": "{{url}}"
+  },
+  "url": {
+    "title": "URL'den yükle",
+    "label": "Bir GitHub sürümündeki dosyanın bağlantısı",
+    "placeholder": "https://github.com/owner/repo/releases/download/v1.0.0/extension.sextant-ext",
+    "hint": "Yalnızca https://github.com/<owner>/<repo>/releases/download/<tag>/<file> biçimindeki bağlantılar kabul edilir. Dosya en fazla 20 MB olabilir. İzinleri kabul edene kadar hiçbir şey yüklenmez.",
+    "invalid": "Bu, bir GitHub sürümündeki dosyanın bağlantısı değil.",
+    "check": "İndir ve denetle"
+  },
+  "errors": {
+    "invalid": "Bu paket yüklenemez",
+    "conflict": "Bu kimliğe sahip başka bir uzantı zaten yüklü",
+    "notFound": "Bu yükleme artık kullanılamıyor",
+    "timeout": "İndirme çok uzun sürdü",
+    "unreachable": "Dosya indirilemedi",
+    "other": "Uzantı yüklenemedi"
+  },
+  "consent": {
+    "titleInstall": "{{name}} yüklensin mi?",
+    "titleUpdate": "{{name}} güncellensin mi?",
+    "titleReview": "{{name}} izinlerini gözden geçirin",
+    "install": "Yükle",
+    "update": "Güncelle",
+    "author": "Yazar",
+    "version": "Sürüm",
+    "source": "Kaynak",
+    "devHint": "Doğrudan bu klasörden çalışır ve Sextant açıkken dosyalarındaki değişiklikler algılanır. Geliştirme olarak işaretlenir.",
+    "replaces": "Yüklü {{version}} sürümünün yerini alır.",
+    "newPermissions": "Yeni izinler",
+    "newPermissionsHint": "Bu sürüm, daha önce izin verdiğinizden fazlasını istiyor. Aşağıdaki izinleri okuyun.",
+    "samePermissions": "Aynı izinler",
+    "samePermissionsHint": "Bu sürüm yeni bir şey istemiyor.",
+    "reviewHint": "Bu uzantının dosyaları artık izin verdiğinizden fazlasını istiyor. Kabul edene kadar duraklatılmış kalır.",
+    "adds": "Ekledikleri",
+    "permissions": "Yapabilecekleri",
+    "noContributions": "Arayüze hiçbir şey eklenmez.",
+    "secretWarning": "Secret değerlerini okur",
+    "secretWarningHint": "Bu uzantı Secret değerlerini okumak istiyor: parolalar, belirteçler ve anahtarlar. Yalnızca yazarına güveniyorsanız izin verin."
+  },
+  "contributes": {
+    "pages": "Kenar çubuğundaki sayfalar",
+    "detailsSections": "Ayrıntılar panelindeki bölümler",
+    "actions": "Kaynaklar üzerindeki eylemler",
+    "columns": "Tablo sütunları",
+    "dockActions": "Alt panel düğmeleri",
+    "settings": "Ayarlar'daki bölüm"
+  },
+  "permissions": {
+    "clusters": "Kümeler",
+    "clustersAll": "Tüm kümeler",
+    "clustersOnly_one": "Yalnızca {{names}} adlı küme",
+    "clustersOnly_other": "Yalnızca {{names}} adlı kümeler",
+    "clustersNote": "Bir ad, her kubeconfig kaynağındaki o ada sahip her küme context'ini kapsar.",
+    "access": "Erişim",
+    "none": "Hiçbir kümenin verilerine erişimi yok.",
+    "rule": "{{actions}} — {{kinds}}, {{namespaces}}",
+    "allKinds": "tüm türler",
+    "namespacesAll": "tüm namespace'lerde",
+    "namespacesOnly_one": "{{names}} namespace'inde",
+    "namespacesOnly_other": "{{names}} namespace'lerinde",
+    "asks": "Çalıştırmadan önce sorar",
+    "noAsk": "Sormadan çalıştırır",
+    "secretValues": "Secret değerlerini okuyabilir ({{namespaces}})",
+    "clusterWide": "Hiçbir namespace'e ait olmayan nesneler (Node gibi) yalnızca tüm namespace'ler için olan kurallarla kapsanır.",
+    "actionNames": {
+      "read": "Okuma",
+      "modify": "Değiştirme",
+      "delete": "Silme",
+      "logs": "Günlükleri okuma",
+      "exec": "Komut çalıştırma",
+      "portForward": "Bağlantı noktası yönlendirme",
+      "secretValues": "Secret değerlerini okuma"
+    }
+  },
+  "state": {
+    "active": "Etkin",
+    "disabled": "Devre dışı",
+    "needsConsent": "Onayınız gerekiyor",
+    "failed": "Başarısız"
+  },
+  "list": {
+    "loading": "Uzantılar yükleniyor…",
+    "empty": "Yüklü uzantı yok.",
+    "failed": "Uzantı listesi okunamadı",
+    "development": "Geliştirme",
+    "version": "Sürüm {{version}}",
+    "enable": "Etkinleştir",
+    "disable": "Devre dışı bırak",
+    "permissions": "İzinler",
+    "reload": "Yeniden yükle",
+    "activity": "Etkinlik",
+    "remove": "Kaldır",
+    "reviewPermissions": "İzinleri gözden geçir",
+    "pausedHint": "Bu uzantı izin verdiğinizden fazlasını istiyor. İzinlerini gözden geçirene kadar duraklatıldı.",
+    "failedHint": "Bu uzantı çalışamıyor: {{error}}",
+    "actionFailed": "Değişiklik yapılamadı",
+    "namedAction": "{{action}}: {{name}}"
+  },
+  "reinstall": {
+    "file": "İzinlerini gözden geçirmek için {{name}} dosyasından yeniden yükleyin (Dosyadan yükle…).",
+    "url": "İzinlerini gözden geçirmek için şu adresten yeniden yükleyin: {{url}} (URL'den yükle…)."
+  },
+  "permissionsDialog": {
+    "title": "{{name}} izinleri",
+    "granted": "İzin verdikleriniz",
+    "requested": "Şu anda istedikleri",
+    "close": "Kapat"
+  },
+  "remove": {
+    "title": "{{name}} kaldırılsın mı?",
+    "body": "Uzantı, dosyaları ve sakladığı veriler bu bilgisayardan silinir. Kümeleriniz değiştirilmez."
+  },
+  "settingsFrame": "{{name}} ayarları",
+  "notice": {
+    "text_one": "{{names}} izin verdiğinizden fazla izin istiyor ve duraklatıldı.",
+    "text_other": "{{names}} izin verdiğinizden fazla izin istiyor ve duraklatıldı.",
+    "review": "İzinleri gözden geçir",
+    "reinstall": "{{name}}: {{hint}}",
+    "dismiss": "Kapat"
+  },
+  "activity": {
+    "title": "Uzantı etkinliği",
+    "hint": "Uzantıların istedikleri. Secret değerleri, YAML ve komut çıktısı kaydedilmez.",
+    "extension": "Uzantı",
+    "allExtensions": "Tüm uzantılar",
+    "loading": "Günlük yükleniyor…",
+    "empty": "Henüz çağrı yok.",
+    "failed": "Günlük okunamadı",
+    "clear": "Temizle",
+    "clearTitle": "Etkinlik günlüğü temizlensin mi?",
+    "clearBody": "Uzantıların kaydedilen tüm çağrıları bu bilgisayardan silinir.",
+    "ok": "tamam",
+    "none": "-",
+    "columns": {
+      "time": "Zaman",
+      "extension": "Uzantı",
+      "cluster": "Küme",
+      "method": "Yöntem",
+      "target": "Hedef",
+      "decision": "Karar",
+      "result": "Sonuç",
+      "duration": "Süre"
+    },
+    "decisions": {
+      "allowed": "İzin verildi",
+      "denied": "Reddedildi",
+      "approved": "Sizin tarafınızdan onaylandı",
+      "declined": "Sizin tarafınızdan reddedildi",
+      "timedOut": "Yanıt yok",
+      "notChecked": "Denetlenmedi"
+    },
+    "duration": "{{ms}} ms"
+  }
+}

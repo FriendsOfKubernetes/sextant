@@ -1,0 +1,155 @@
+{
+  "rail": {
+    "list": "Clusterliste",
+    "tooltip": "{{name}} – {{state}}",
+    "add": "Cluster hinzufügen",
+    "refresh": "kubeconfig neu laden",
+    "slow": "{{tooltip}} seit {{seconds}} s. Der Cluster antwortet langsam",
+    "expand": "Clusterliste ausklappen",
+    "collapse": "Clusterliste einklappen"
+  },
+  "state": {
+    "disconnected": "getrennt",
+    "connecting": "wird verbunden",
+    "connected": "verbunden",
+    "error": "Verbindung fehlgeschlagen"
+  },
+  "menu": {
+    "open": "Öffnen",
+    "connect": "Verbinden",
+    "reconnect": "Neu verbinden",
+    "disconnect": "Trennen",
+    "settings": "Einstellungen",
+    "changeIcon": "Symbol ändern…"
+  },
+  "add": {
+    "title": "Cluster hinzufügen",
+    "file": "kubeconfig-Datei hinzufügen",
+    "paste": "kubeconfig einfügen",
+    "fileDialogTitle": "kubeconfig-Datei auswählen",
+    "tabs": "Art des Hinzufügens",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Aus der Cloud"
+  },
+  "paste": {
+    "title": "kubeconfig einfügen",
+    "label": "Kubeconfig",
+    "hint": "Fügen Sie den Inhalt einer kubeconfig-Datei ein. Sextant speichert eine private Kopie in seinem Datenordner.",
+    "submit": "Hinzufügen"
+  },
+  "sources": {
+    "title": "kubeconfig-Quellen",
+    "kind": {
+      "default": "Standard",
+      "env": "KUBECONFIG",
+      "addedFile": "hinzugefügte Datei",
+      "pasted": "eingefügt",
+      "cloud": "Cloud"
+    },
+    "remove": "Entfernen",
+    "removeNamed": "{{path}} entfernen",
+    "confirmTitle": "kubeconfig-Quelle entfernen?",
+    "confirmFile": "Ihre Cluster verschwinden aus der Liste. Die Datei selbst bleibt auf dem Datenträger.",
+    "confirmPasted": "Ihre Cluster verschwinden aus der Liste, und die eingefügte Kopie wird gelöscht.",
+    "problems": "Einige kubeconfig-Dateien können nicht gelesen werden",
+    "problemsTitle": "kubeconfig-Probleme",
+    "problemsHint": "Cluster aus den anderen Dateien funktionieren weiter. Korrigieren Sie die Datei und klicken Sie dann auf „Neu laden“.",
+    "confirmCloud": "Ihre Cluster verschwinden aus der Liste, und die kubeconfig von Sextant für diese Cloud-Cluster wird gelöscht. Ihre Cloud-CLI und ~/.kube/config bleiben unverändert."
+  },
+  "welcome": {
+    "loading": "kubeconfig wird gelesen…",
+    "noClusters": "Keine Cluster gefunden",
+    "checked": "Sextant hat hier nach einer kubeconfig gesucht:",
+    "checkedPaths": "Geprüfte Pfade",
+    "title": "Willkommen bei Sextant",
+    "pick": "Wählen Sie links einen Cluster aus, um eine Verbindung herzustellen."
+  },
+  "connection": {
+    "connecting": "Verbindung mit {{name}} wird hergestellt…",
+    "failed": "Verbindung mit {{name}} nicht möglich",
+    "reconnect": "Neu verbinden",
+    "certificate": "Das Serverzertifikat wurde nicht akzeptiert.",
+    "seconds": "{{seconds}} s",
+    "slow": "Der Cluster antwortet langsam"
+  },
+  "settings": {
+    "title": "Clustereinstellungen – {{name}}",
+    "displayName": "Anzeigename",
+    "color": "Farbmarkierung",
+    "autoColor": "Automatisch",
+    "colorOption": "Farbe {{index}}",
+    "icon": "Symbol",
+    "iconPreview": "Symbolvorschau",
+    "iconText": "Symboltext",
+    "iconTextPlaceholder": "Initialen",
+    "iconChoose": "Bild auswählen…",
+    "iconReset": "Symbol zurücksetzen",
+    "iconHint": "Ein oder zwei Buchstaben oder ein Emoji auf der Farbmarkierung oder ein PNG-, JPEG-, SVG- oder WebP-Bild bis 5 MB. Leer – die Initialen des Namens.",
+    "iconErrors": {
+      "type": "Die Datei ist kein unterstütztes Bild",
+      "size": "Das Bild ist größer als 5 MB",
+      "read": "Die Datei kann nicht gelesen werden"
+    }
+  },
+  "info": {
+    "context": "Context",
+    "cluster": "Cluster",
+    "server": "Server",
+    "user": "Benutzer",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant verwendet die auf diesem Computer bereits installierten und angemeldeten aws, gcloud und az. Es schreibt eine eigene kubeconfig, ändert nie ~/.kube/config und meldet Sie nie selbst an.",
+    "detecting": "aws, gcloud und az werden gesucht…",
+    "providers": "Cloud",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(Version unbekannt)",
+    "notInstalled": "{{cli}} ist nicht installiert",
+    "installGuide": "Installationsanleitung",
+    "pluginMissing": "{{plugin}} ist nicht installiert. Die Cluster können hinzugefügt werden, aber für die Verbindung wird es benötigt. Installieren Sie es mit:",
+    "loadingAccounts": "Konten werden gelesen…",
+    "account": {
+      "aws": "Profil",
+      "gcp": "Projekt",
+      "azure": "Abonnement"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Anmeldedaten aus der Umgebung",
+    "regions": "Regionen",
+    "find": "Cluster suchen",
+    "finding": "Suche läuft…",
+    "noClusters": "Keine Cluster gefunden.",
+    "found": "Gefundene Cluster",
+    "separator": " · ",
+    "add_one": "{{count}} Cluster hinzufügen",
+    "add_other": "{{count}} Cluster hinzufügen",
+    "added_one": "{{count}} Cluster hinzugefügt. Er ist in der Clusterliste.",
+    "added_other": "{{count}} Cluster hinzugefügt. Sie sind in der Clusterliste.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} ist nicht installiert{{scope}}",
+      "notLoggedIn": "{{cli}} ist nicht angemeldet, oder die Anmeldung ist abgelaufen{{scope}}",
+      "pluginMissing": "Das Anmelde-Plug-in für {{cli}} ist nicht installiert{{scope}}",
+      "failed": "{{cli}} ist fehlgeschlagen{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Installieren Sie es und versuchen Sie es dann erneut.",
+      "notLoggedIn": "Sextant meldet Sie nicht selbst an. Führen Sie diesen Befehl in einem Terminal aus und versuchen Sie es dann erneut:",
+      "pluginMissing": "Führen Sie diesen Befehl in einem Terminal aus und versuchen Sie es dann erneut:",
+      "failed": "Führen Sie diesen Befehl in einem Terminal aus und versuchen Sie es dann erneut:"
+    },
+    "copyCommand": "Befehl kopieren",
+    "copied": "Kopiert",
+    "copyFailed": "Die Zwischenablage ist nicht verfügbar; markieren und kopieren Sie den Befehl."
+  }
+}

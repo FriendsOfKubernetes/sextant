@@ -1,0 +1,34 @@
+{
+  "title": "Палітра команд",
+  "search": "Пошук",
+  "placeholder": "Знайти об'єкти, розділи, кластери, налаштування…",
+  "filterActions": "Фільтр дій…",
+  "results": "Результати",
+  "groups": {
+    "recent": "Нещодавні",
+    "selected": "Відкрито в подробицях",
+    "goTo": "Перейти",
+    "clusters": "Кластери",
+    "settings": "Налаштування",
+    "more": "Ще"
+  },
+  "cluster": {
+    "current": "Поточний кластер",
+    "switch": "Перемкнутися",
+    "connect": "Підключити"
+  },
+  "settingsTab": "Налаштування: {{tab}}",
+  "openDetails": "Відкрити подробиці",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: дії",
+  "loadingActions": "Завантаження дій…",
+  "noActions": "Для цього об'єкта немає дій",
+  "actionsFailed": "Не вдалося прочитати об'єкт: {{message}}",
+  "noCluster": "Відкрийте кластер, щоб шукати його об'єкти",
+  "empty": "Нічого не знайдено",
+  "searchAll": "Шукати в усіх типах ({{count}})",
+  "searching": "Пошук… переглянуто типів: {{done}} з {{total}}",
+  "limited": "Пошук іде за об'єктами перших {{count}} з {{total}} типів",
+  "hint": "↑↓ вибір · Enter відкрити · Tab дії · Esc закрити",
+  "hintActions": "↑↓ вибір · Enter виконати · Shift+Tab назад · Esc назад"
+}

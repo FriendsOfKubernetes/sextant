@@ -1,0 +1,124 @@
+{
+  "title": "AI エージェント (MCP)",
+  "hint": "Claude Code、Claude Desktop、Cursor などの AI エージェントが、Sextant を通じてクラスターを参照できるようにします。サーバーはこのコンピューター上でのみ待ち受け、トークンが必要です。各クラスターでエージェントに許可する操作は、そのクラスターの設定 (AI エージェントのアクセス) で指定します。許可するまでエージェントは何もできません。",
+  "enable": "MCP サーバーを有効にする",
+  "port": {
+    "label": "ポート",
+    "apply": "適用",
+    "invalid": "1024 から 65535 までの整数を入力してください。",
+    "hint": "ポートを変更するとサーバーが再起動し、エージェントのセッションは終了します。"
+  },
+  "status": {
+    "off": "オフ",
+    "starting": "起動中…",
+    "running": "{{url}} で実行中",
+    "error": "MCP サーバーを起動できませんでした。"
+  },
+  "token": {
+    "label": "トークン",
+    "hint": "エージェントはすべての要求にこのトークンを付けて送信します。他人に知られないようにしてください。トークンを持つ人は誰でも、許可した範囲の操作をサーバーに要求できます。",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "表示",
+    "hide": "隠す",
+    "copy": "コピー",
+    "regenerate": "再生成",
+    "copied": "トークンをコピーしました。",
+    "regenerated": "新しいトークンを作成しました。古いトークンを使っていたすべてのエージェントの構成を更新してください。",
+    "confirmTitle": "トークンを再生成しますか?",
+    "confirmBody": "現在のトークンはすぐに使えなくなり、エージェントのセッションは閉じられます。すべてのエージェントに新しいトークンを設定する必要があります。",
+    "failed": "トークンを読み取れませんでした: {{message}}"
+  },
+  "snippets": {
+    "title": "エージェントを接続",
+    "tabs": "エージェント",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "このコマンドをターミナルで実行してください。トークンが含まれているため、他人に知られないようにしてください。",
+    "cursorHint": "これを ~/.cursor/mcp.json (またはプロジェクトの .cursor/mcp.json) に追加してください。トークンが含まれています。",
+    "claudeDesktopHint": "これを claude_desktop_config.json の mcpServers セクションに追加してください。Claude Desktop は Sextant をヘルパーとして起動し、ヘルパーがポートとトークンを自分で読み取るため、ファイルにトークンは含まれません。Sextant がサーバーをオンにした状態で実行されている必要があります。",
+    "tokenHidden": "ここではトークンは隠されています。「コピー」を押すと実際のトークンがクリップボードにコピーされます。",
+    "copy": "コピー",
+    "copyFor": "{{name}} の構成をコピー",
+    "copied": "コピーしました。",
+    "copyFailed": "コピーできませんでした: {{message}}"
+  },
+  "activity": {
+    "open": "エージェントのアクティビティ",
+    "openActive": "エージェントのアクティビティ (エージェントが作業中)",
+    "openLog": "アクティビティログを開く",
+    "title": "エージェントのアクティビティ",
+    "hint": "AI エージェントが要求した内容です。Secret の値、YAML、コマンドの出力は記録されません。",
+    "cluster": "クラスター",
+    "allClusters": "すべてのクラスター",
+    "loading": "ログを読み込み中…",
+    "empty": "呼び出しはまだありません。",
+    "failed": "ログを読み取れませんでした",
+    "clear": "クリア",
+    "clearTitle": "アクティビティログをクリアしますか?",
+    "clearBody": "記録されたエージェントの呼び出しがすべて、このコンピューターから削除されます。",
+    "ok": "OK",
+    "none": "-",
+    "columns": {
+      "time": "時刻",
+      "client": "クライアント",
+      "cluster": "クラスター",
+      "tool": "ツール",
+      "target": "対象",
+      "decision": "判定",
+      "result": "結果",
+      "duration": "所要時間"
+    },
+    "decisions": {
+      "allowed": "許可",
+      "denied": "拒否",
+      "approved": "ユーザーが承認",
+      "declined": "ユーザーが拒否",
+      "timedOut": "応答なし",
+      "notChecked": "未確認"
+    },
+    "duration": "{{ms}} ms"
+  },
+  "confirm": {
+    "title": "AI エージェントが操作の許可を求めています",
+    "extensionTitle": "拡張機能が操作の許可を求めています",
+    "intro": "{{client}} が {{cluster}} で次の操作を行おうとしています。",
+    "client": "エージェント",
+    "extension": "拡張機能",
+    "cluster": "クラスター",
+    "action": "操作",
+    "target": "対象",
+    "details": "詳細",
+    "allow": "許可",
+    "deny": "拒否",
+    "countdown": "{{time}} 後に自動的に拒否されます",
+    "waiting_other": "さらに {{count}} 件の要求が待機中です。"
+  },
+  "tools": {
+    "apply_yaml": "YAML を適用",
+    "patch_resource": "リソースにパッチを適用",
+    "delete_resource": "リソースを削除",
+    "scale": "ワークロードをスケール",
+    "restart": "ワークロードを再起動",
+    "rollout_undo": "ワークロードをロールバック",
+    "cordon_node": "ノードを cordon / uncordon",
+    "drain_node": "ノードをドレイン",
+    "trigger_cronjob": "CronJob を今すぐ実行",
+    "suspend_cronjob": "CronJob を一時停止 / 再開",
+    "gitops_action": "GitOps の操作",
+    "helm_install": "Helm リリースをインストール",
+    "helm_upgrade": "Helm リリースをアップグレード",
+    "helm_rollback": "Helm リリースをロールバック",
+    "helm_uninstall": "Helm リリースをアンインストール",
+    "exec_command": "コンテナーでコマンドを実行",
+    "port_forward_start": "ポートフォワードを開始",
+    "port_forward_stop": "ポートフォワードを終了"
+  },
+  "methods": {
+    "resources": {
+      "apply": "YAML を適用",
+      "patch": "リソースにパッチを適用",
+      "delete": "リソースを削除"
+    }
+  }
+}

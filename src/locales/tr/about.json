@@ -1,0 +1,32 @@
+{
+  "title": "Sextant hakkında",
+  "name": "Sextant",
+  "section": "Hakkında",
+  "open": "Sextant hakkında",
+  "version": "Sürüm {{version}}",
+  "versionUnknown": "Sürüm bilinmiyor",
+  "tagline": "Geliştiriciler ve SRE'ler için bir Kubernetes masaüstü istemcisi.",
+  "license": "Lisans: {{license}}",
+  "links": "Bağlantılar",
+  "link": {
+    "repository": "Depo",
+    "wiki": "Wiki",
+    "releases": "Sürümler",
+    "discussions": "Tartışmalar",
+    "issue": "Sorun bildir"
+  },
+  "build": {
+    "appimage": "AppImage",
+    "deb": ".deb paketi",
+    "rpm": ".rpm paketi",
+    "app": "macOS uygulaması (.dmg)",
+    "msi": "Windows yükleyicisi (.msi)",
+    "nsis": "Windows yükleyicisi (NSIS)",
+    "dev": "geliştirme derlemesi",
+    "none": "bir sürüm paketinden yüklenmedi"
+  },
+  "unknown": "bilinmiyor",
+  "copy": "Sürüm bilgilerini kopyala",
+  "copied": "Kopyalandı",
+  "copyFailed": "Panoya kopyalanamadı"
+}

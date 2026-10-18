@@ -1,0 +1,79 @@
+{
+  "title": "Zugriff für KI-Agenten",
+  "intro": "Was über den MCP-Server verbundene KI-Agenten in diesem Cluster tun dürfen. Nichts ist erlaubt, bis Sie eine Stufe wählen.",
+  "preset": {
+    "legend": "Zugriffsstufe",
+    "off": "Aus",
+    "readOnly": "Nur lesen",
+    "readWrite": "Lesen + Schreiben (ohne Löschen)",
+    "full": "Vollzugriff",
+    "custom": "Benutzerdefiniert"
+  },
+  "description": {
+    "off": "Der Agent hat keinen Zugriff auf diesen Cluster. Er sieht den Cluster in seiner Liste, aber jeder Aufruf wird abgelehnt.",
+    "readOnly": "Der Agent kann alle Ressourcen in allen Namespaces lesen und Pod-Logs abrufen. Secret-Werte sind verborgen. Er kann nichts ändern.",
+    "readWrite": "Der Agent kann alles lesen und Logs abrufen und außerdem Ressourcen ändern, Befehle in Containern ausführen und Portweiterleitungen öffnen. Er fragt Sie jedes Mal vorher. Löschen kann er nicht. Secret-Werte sind verborgen.",
+    "full": "Der Agent kann in allen Namespaces alles tun, einschließlich Löschen. Bei Änderungen, Löschvorgängen, Befehlen und Portweiterleitungen fragt er Sie jedes Mal vorher. Secret-Werte sind verborgen.",
+    "custom": "Sie entscheiden: Jede Regel umfasst Namespaces, Arten und Aktionen. Eine Aktion ist erlaubt, wenn mindestens eine Regel sie abdeckt."
+  },
+  "customizeHint": "Wählen Sie „Benutzerdefiniert“, um mit den Regeln dieser Stufe zu beginnen und sie zu bearbeiten.",
+  "unrecognised": {
+    "notice": "Diese Regeln wurden von einer neueren Sextant-Version geschrieben oder von Hand bearbeitet; sie bleiben erhalten, werden aber nicht angewendet. Der Agent hat keinen Zugriff, bis Sie auf „Aus“ zurücksetzen oder eine Stufe wählen, die sie ersetzt.",
+    "reset": "Auf „Aus“ zurücksetzen"
+  },
+  "saveFailed": "Die Zugriffsregeln konnten nicht gespeichert werden.",
+  "rules": {
+    "title": "Regeln",
+    "none": "Es gibt keine Regeln, daher hat der Agent keinen Zugriff auf diesen Cluster.",
+    "rule": "Regel {{number}}",
+    "add": "Regel hinzufügen",
+    "remove": "Regel {{number}} entfernen"
+  },
+  "namespaces": {
+    "legend": "Namespaces",
+    "all": "Alle Namespaces",
+    "only": "Ausgewählte Namespaces",
+    "filter": "Namespaces filtern",
+    "add": "Namespace nach Namen hinzufügen",
+    "addPlaceholder": "Namespace-Name",
+    "addButton": "Namespace hinzufügen",
+    "invalid": "Kein gültiger Namespace-Name.",
+    "empty": "Kein Namespace ausgewählt, daher deckt diese Regel nichts ab.",
+    "clusterOnly": "Ressourcen, die zu keinem Namespace gehören (Knoten, Namespaces, CRDs, Clusterrollen), werden nur von einer Regel mit allen Namespaces abgedeckt."
+  },
+  "kinds": {
+    "legend": "Arten",
+    "all": "Alle Arten",
+    "only": "Ausgewählte Arten",
+    "filter": "Arten filtern",
+    "add": "Art nach Namen hinzufügen",
+    "addPlaceholder": "Kind oder group/Kind",
+    "addButton": "Art hinzufügen",
+    "invalid": "Verwenden Sie Kind oder group/Kind, zum Beispiel Pod oder apps/Deployment.",
+    "empty": "Keine Art ausgewählt, daher deckt diese Regel nichts ab.",
+    "helm": "Helm-Releases",
+    "coreGroup": "core",
+    "more": "Die ersten {{count}} werden angezeigt. Geben Sie etwas in den Filter ein, um die Liste einzugrenzen."
+  },
+  "picker": {
+    "noMatch": "Keine Treffer.",
+    "notConnected": "Verbinden Sie sich mit diesem Cluster, um aus seiner Liste zu wählen. Sie können unten trotzdem einen Namen eingeben.",
+    "loading": "Liste wird geladen…",
+    "failed": "Die Liste des Clusters ist nicht verfügbar. Sie können unten trotzdem einen Namen eingeben."
+  },
+  "actions": {
+    "legend": "Aktionen",
+    "read": "Lesen",
+    "modify": "Ändern",
+    "delete": "Löschen",
+    "logs": "Logs",
+    "exec": "Exec / Shell",
+    "portForward": "Portweiterleitung",
+    "secretValues": "Secret-Werte"
+  },
+  "confirm": {
+    "label": "Vor dem Ausführen fragen",
+    "hint": "Ändern, Löschen, Exec und Portweiterleitung warten in dieser Regel auf Ihre Antwort in Sextant (120 s, danach werden sie abgelehnt)."
+  },
+  "secretWarning": "„Secret-Werte“ erlaubt dem Agenten, Secret-Daten und die Werte von Helm-Releases im Klartext zu lesen. Erlauben Sie das nur für Namespaces, die der Agent wirklich braucht."
+}

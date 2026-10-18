@@ -1,0 +1,32 @@
+{
+  "title": "업데이트",
+  "version": "Sextant {{version}}",
+  "versionUnknown": "Sextant(버전 알 수 없음)",
+  "auto": "Sextant를 시작할 때 업데이트 확인",
+  "check": "업데이트 확인",
+  "checking": "업데이트를 확인하는 중…",
+  "upToDate": "최신 버전을 사용하고 있습니다.",
+  "available": "Sextant {{version}}을(를) 사용할 수 있습니다(현재 {{current}}).",
+  "notesLabel": "릴리스 정보",
+  "install": "설치 후 다시 시작",
+  "installing": "다운로드 및 설치 중…",
+  "installingProgress": "다운로드 및 설치 중… {{percent}}%",
+  "restarting": "다시 시작하는 중…",
+  "later": "나중에",
+  "dialogTitle": "업데이트 사용 가능",
+  "openReleasePage": "릴리스 페이지 열기",
+  "notConfigured": "이 빌드에서는 업데이트가 꺼져 있습니다. 업데이트 서명 키(src-tauri/tauri.conf.json의 plugins.updater.pubkey)가 없습니다. 새 버전은 릴리스 페이지에서 다운로드하세요.",
+  "manual": {
+    "deb": "Sextant가 .deb 패키지로 설치되어 스스로 업데이트되지 않습니다. 릴리스 페이지에서 새 .deb를 다운로드한 후 패키지 관리자로 설치하세요. 예: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "rpm": "Sextant가 .rpm 패키지로 설치되어 스스로 업데이트되지 않습니다. 릴리스 페이지에서 새 패키지를 다운로드한 후 패키지 관리자로 설치하세요.",
+    "other": "이 Sextant는 릴리스 패키지(AppImage, .dmg 또는 .msi)로 설치되지 않아 스스로 업데이트할 수 없습니다. 릴리스 페이지에서 새 버전을 다운로드하세요."
+  },
+  "error": {
+    "network": "업데이트를 확인하기 위해 GitHub에 연결할 수 없습니다. 인터넷 연결이나 프록시를 확인한 후 다시 시도하세요.",
+    "noRelease": "GitHub의 최신 릴리스에 아직 이 시스템용 업데이트가 없습니다. 나중에 다시 시도하세요.",
+    "signature": "다운로드한 업데이트가 Sextant 릴리스 키로 서명되지 않아 설치하지 않았습니다.",
+    "otherCheck": "업데이트를 확인할 수 없습니다.",
+    "otherInstall": "업데이트를 설치할 수 없습니다.",
+    "networkInstall": "업데이트를 다운로드할 수 없습니다. 인터넷 연결이나 프록시를 확인한 후 다시 시도하세요."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "sidebar": "이벤트",
+  "title": "이벤트",
+  "loading": "이벤트를 로드하는 중…",
+  "none": "이벤트가 없습니다.",
+  "search": "이벤트 검색",
+  "searchPlaceholder": "검색…",
+  "count": "×{{count}}",
+  "from": "출처: {{source}}",
+  "columns": {
+    "type": "유형",
+    "reason": "이유",
+    "message": "메시지",
+    "namespace": "Namespace",
+    "involvedObject": "관련 개체",
+    "source": "출처",
+    "count": "횟수",
+    "lastSeen": "마지막 발생"
+  }
+}

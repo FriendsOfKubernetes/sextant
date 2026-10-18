@@ -1,0 +1,121 @@
+{
+  "edit": {
+    "label": "Изменить"
+  },
+  "delete": {
+    "label": "Удалить",
+    "titleSingle": "Удалить {{kind}}?",
+    "title_one": "Удалить {{count}} объект {{kind}}?",
+    "title_few": "Удалить {{count}} объекта {{kind}}?",
+    "title_many": "Удалить {{count}} объектов {{kind}}?",
+    "title_other": "Удалить {{count}} объекта {{kind}}?",
+    "textSingle": "Этот {{kind}} будет удален из кластера:",
+    "text_one": "Из кластера будет удален {{count}} объект:",
+    "text_few": "Из кластера будут удалены {{count}} объекта:",
+    "text_many": "Из кластера будут удалены {{count}} объектов:",
+    "text_other": "Из кластера будут удалены {{count}} объекта:",
+    "confirm": "Удалить",
+    "failed": "Не удалено: {{name}}",
+    "partial": "Удалено {{done}} из {{total}}. Остальные удалить не удалось:"
+  },
+  "scale": {
+    "label": "Масштабировать",
+    "title": "Масштабирование {{kind}} {{name}}",
+    "replicas": "Реплики",
+    "current": "Сейчас: {{count}}",
+    "confirm": "Масштабировать",
+    "invalid": "Введите целое число, не меньше 0."
+  },
+  "restart": {
+    "label": "Перезапустить",
+    "title": "Перезапустить {{kind}} {{name}}?",
+    "text": "Все Pod объекта {{name}} будут по очереди заменены (rollout restart).",
+    "confirm": "Перезапустить"
+  },
+  "cordon": {
+    "label": "Запретить / разрешить размещение",
+    "cordonTitle": "Запретить размещение на узле {{name}}?",
+    "cordonText": "Новые Pod не будут размещаться на {{name}}. Уже запущенные там Pod продолжат работу.",
+    "cordonConfirm": "Запретить размещение",
+    "uncordonTitle": "Разрешить размещение на узле {{name}}?",
+    "uncordonText": "На {{name}} снова можно будет размещать новые Pod.",
+    "uncordonConfirm": "Разрешить размещение"
+  },
+  "drain": {
+    "label": "Освободить (drain)",
+    "title": "Освободить узел {{name}}?",
+    "text": "На {{name}} будет запрещено размещение, а его Pod будут вытеснены. Pod из DaemonSet и статические (mirror) Pod останутся.",
+    "loading": "Просмотр Pod на узле…",
+    "previewFailed": "Не удается получить список Pod на узле",
+    "noPods": "На этом узле нет Pod для вытеснения.",
+    "evict_one": "Будут вытеснены ({{count}} Pod)",
+    "evict_few": "Будут вытеснены ({{count}} Pod)",
+    "evict_many": "Будут вытеснены ({{count}} Pod)",
+    "evict_other": "Будут вытеснены ({{count}} Pod)",
+    "unmanaged_one": "Без контроллера ({{count}} Pod): после вытеснения его никто не создаст заново",
+    "unmanaged_few": "Без контроллера ({{count}} Pod): после вытеснения их никто не создаст заново",
+    "unmanaged_many": "Без контроллера ({{count}} Pod): после вытеснения их никто не создаст заново",
+    "unmanaged_other": "Без контроллера ({{count}} Pod): после вытеснения их никто не создаст заново",
+    "force": "Вытеснить также Pod без контроллера (force). Если флажок снят, они останутся на узле.",
+    "emptyDir_one": "С данными emptyDir ({{count}} Pod): данные удаляются вместе с Pod",
+    "emptyDir_few": "С данными emptyDir ({{count}} Pod): данные удаляются вместе с Pod",
+    "emptyDir_many": "С данными emptyDir ({{count}} Pod): данные удаляются вместе с Pod",
+    "emptyDir_other": "С данными emptyDir ({{count}} Pod): данные удаляются вместе с Pod",
+    "deleteEmptyDirData": "Вытеснить также Pod с данными emptyDir (delete emptyDir data). Если флажок снят, они останутся на узле.",
+    "daemonSet_one": "Останутся: Pod из DaemonSet ({{count}} Pod)",
+    "daemonSet_few": "Останутся: Pod из DaemonSet ({{count}} Pod)",
+    "daemonSet_many": "Останутся: Pod из DaemonSet ({{count}} Pod)",
+    "daemonSet_other": "Останутся: Pod из DaemonSet ({{count}} Pod)",
+    "confirm": "Освободить",
+    "failed": "Размещение на узле запрещено, но некоторые Pod вытеснить не удалось"
+  },
+  "trigger": {
+    "label": "Запустить сейчас",
+    "title": "Запустить CronJob {{name}} сейчас?",
+    "text": "Из шаблона CronJob сразу будет создан Job.",
+    "confirm": "Запустить",
+    "done": "Создан Job {{name}}."
+  },
+  "suspend": {
+    "label": "Приостановить / возобновить",
+    "suspendTitle": "Приостановить CronJob {{name}}?",
+    "suspendText": "{{name}} не будет запускать новые Job, пока его не возобновят. Уже запущенные Job это не затронет.",
+    "suspendConfirm": "Приостановить",
+    "resumeTitle": "Возобновить CronJob {{name}}?",
+    "resumeText": "{{name}} снова будет запускать Job по расписанию.",
+    "resumeConfirm": "Возобновить"
+  },
+  "dialog": {
+    "working": "Выполнение…",
+    "close": "Закрыть"
+  },
+  "editor": {
+    "tabTitle": "Правка: {{kind}} {{name}}",
+    "editorLabel": "YAML {{kind}} {{name}}",
+    "save": "Сохранить",
+    "saving": "Сохранение…",
+    "saved": "Сохранено.",
+    "unsaved": "Есть несохраненные изменения",
+    "reload": "Перезагрузить",
+    "loading": "Загрузка…",
+    "conflict": "{{kind}} {{name}} изменился в кластере после того, как вы его открыли. Ваши изменения не сохранены. Перезагрузите, чтобы получить текущую версию.",
+    "reloadTitle": "Отменить ваши изменения?",
+    "reloadText": "При перезагрузке текст заменится текущей версией из кластера. Несохраненные изменения будут потеряны.",
+    "reloadConfirm": "Отменить и перезагрузить",
+    "saveFailed": "Не сохранено"
+  },
+  "create": {
+    "open": "Создать ресурс",
+    "tabTitle": "Создание ресурса",
+    "editorLabel": "YAML создаваемых ресурсов",
+    "placeholder": "Вставьте или введите YAML. Несколько объектов разделяйте строкой ---",
+    "apply": "Применить",
+    "applying": "Применение…",
+    "applied_one": "Применен {{count}} объект:",
+    "applied_few": "Применено {{count}} объекта:",
+    "applied_many": "Применено {{count}} объектов:",
+    "applied_other": "Применено {{count}} объекта:",
+    "failed": "Не применено",
+    "empty": "Введите хотя бы один объект."
+  }
+}

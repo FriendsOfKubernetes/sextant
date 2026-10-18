@@ -1,0 +1,114 @@
+{
+  "edit": {
+    "label": "Editar"
+  },
+  "delete": {
+    "label": "Eliminar",
+    "titleSingle": "¿Eliminar {{kind}}?",
+    "title_one": "¿Eliminar {{count}} objeto {{kind}}?",
+    "title_many": "¿Eliminar {{count}} de objetos {{kind}}?",
+    "title_other": "¿Eliminar {{count}} objetos {{kind}}?",
+    "textSingle": "Este {{kind}} se eliminará del clúster:",
+    "text_one": "Se eliminará {{count}} objeto del clúster:",
+    "text_many": "Se eliminarán {{count}} de objetos del clúster:",
+    "text_other": "Se eliminarán {{count}} objetos del clúster:",
+    "confirm": "Eliminar",
+    "failed": "No eliminado: {{name}}",
+    "partial": "Se eliminaron {{done}} de {{total}}. Los demás fallaron:"
+  },
+  "scale": {
+    "label": "Escalar",
+    "title": "Escalar {{kind}} {{name}}",
+    "replicas": "Réplicas",
+    "current": "Actualmente: {{count}}",
+    "confirm": "Escalar",
+    "invalid": "Escriba un número entero, 0 o mayor."
+  },
+  "restart": {
+    "label": "Reiniciar",
+    "title": "¿Reiniciar {{kind}} {{name}}?",
+    "text": "Todos los Pods de {{name}} se reemplazarán uno a uno (rollout restart).",
+    "confirm": "Reiniciar"
+  },
+  "cordon": {
+    "label": "Acordonar / Desacordonar",
+    "cordonTitle": "¿Acordonar el nodo {{name}}?",
+    "cordonText": "No se programarán Pods nuevos en {{name}}. Los Pods que ya se ejecutan allí siguen ejecutándose.",
+    "cordonConfirm": "Acordonar",
+    "uncordonTitle": "¿Desacordonar el nodo {{name}}?",
+    "uncordonText": "Se podrán volver a programar Pods nuevos en {{name}}.",
+    "uncordonConfirm": "Desacordonar"
+  },
+  "drain": {
+    "label": "Vaciar",
+    "title": "¿Vaciar el nodo {{name}}?",
+    "text": "{{name}} se acordonará y sus Pods se desalojarán. Los Pods de DaemonSets y los Pods estáticos (mirror) se quedan.",
+    "loading": "Revisando los Pods del nodo…",
+    "previewFailed": "No se pueden listar los Pods del nodo",
+    "noPods": "No hay Pods que desalojar en este nodo.",
+    "evict_one": "Se desalojan ({{count}} Pod)",
+    "evict_many": "Se desalojan ({{count}} de Pods)",
+    "evict_other": "Se desalojan ({{count}} Pods)",
+    "unmanaged_one": "Sin controlador ({{count}} Pod): nada lo vuelve a crear después del desalojo",
+    "unmanaged_many": "Sin controlador ({{count}} de Pods): nada los vuelve a crear después del desalojo",
+    "unmanaged_other": "Sin controlador ({{count}} Pods): nada los vuelve a crear después del desalojo",
+    "force": "Desalojar también los Pods sin controlador (force). Si no se marca, se quedan en el nodo.",
+    "emptyDir_one": "Con datos de emptyDir ({{count}} Pod): los datos se eliminan con el Pod",
+    "emptyDir_many": "Con datos de emptyDir ({{count}} de Pods): los datos se eliminan con los Pods",
+    "emptyDir_other": "Con datos de emptyDir ({{count}} Pods): los datos se eliminan con los Pods",
+    "deleteEmptyDirData": "Desalojar también los Pods con datos de emptyDir (delete emptyDir data). Si no se marca, se quedan en el nodo.",
+    "daemonSet_one": "Se quedan: Pods de DaemonSet ({{count}} Pod)",
+    "daemonSet_many": "Se quedan: Pods de DaemonSet ({{count}} de Pods)",
+    "daemonSet_other": "Se quedan: Pods de DaemonSet ({{count}} Pods)",
+    "confirm": "Vaciar",
+    "failed": "El nodo está acordonado, pero algunos Pods no se pudieron desalojar"
+  },
+  "trigger": {
+    "label": "Ejecutar ahora",
+    "title": "¿Ejecutar el CronJob {{name}} ahora?",
+    "text": "Se crea de inmediato un Job a partir de la plantilla del CronJob.",
+    "confirm": "Ejecutar",
+    "done": "Se creó el Job {{name}}."
+  },
+  "suspend": {
+    "label": "Suspender / Reanudar",
+    "suspendTitle": "¿Suspender el CronJob {{name}}?",
+    "suspendText": "{{name}} no iniciará Jobs nuevos hasta que se reanude. Los Jobs en ejecución no se ven afectados.",
+    "suspendConfirm": "Suspender",
+    "resumeTitle": "¿Reanudar el CronJob {{name}}?",
+    "resumeText": "{{name}} volverá a iniciar Jobs según su programación.",
+    "resumeConfirm": "Reanudar"
+  },
+  "dialog": {
+    "working": "Procesando…",
+    "close": "Cerrar"
+  },
+  "editor": {
+    "tabTitle": "Editar {{kind}} {{name}}",
+    "editorLabel": "YAML de {{kind}} {{name}}",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Guardado.",
+    "unsaved": "Cambios sin guardar",
+    "reload": "Volver a cargar",
+    "loading": "Cargando…",
+    "conflict": "{{kind}} {{name}} cambió en el clúster después de abrirlo. Sus cambios no se guardaron. Vuelva a cargarlo para obtener la versión actual.",
+    "reloadTitle": "¿Descartar los cambios?",
+    "reloadText": "Al volver a cargar, el texto se sustituye por la versión actual del clúster. Los cambios sin guardar se perderán.",
+    "reloadConfirm": "Descartar y volver a cargar",
+    "saveFailed": "No guardado"
+  },
+  "create": {
+    "open": "Crear recurso",
+    "tabTitle": "Crear recurso",
+    "editorLabel": "YAML de los recursos que crear",
+    "placeholder": "Pegue o escriba YAML. Separe varios objetos con ---",
+    "apply": "Aplicar",
+    "applying": "Aplicando…",
+    "applied_one": "Se aplicó {{count}} objeto:",
+    "applied_many": "Se aplicaron {{count}} de objetos:",
+    "applied_other": "Se aplicaron {{count}} objetos:",
+    "failed": "No aplicado",
+    "empty": "Escriba al menos un objeto."
+  }
+}

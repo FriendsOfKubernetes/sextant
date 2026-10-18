@@ -1,0 +1,34 @@
+{
+  "title": "Riquadro comandi",
+  "search": "Cerca",
+  "placeholder": "Trova oggetti, sezioni, cluster, impostazioni…",
+  "filterActions": "Filtra azioni…",
+  "results": "Risultati",
+  "groups": {
+    "recent": "Recenti",
+    "selected": "Aperto nei dettagli",
+    "goTo": "Vai a",
+    "clusters": "Cluster",
+    "settings": "Impostazioni",
+    "more": "Altro"
+  },
+  "cluster": {
+    "current": "Cluster attuale",
+    "switch": "Passa",
+    "connect": "Connetti"
+  },
+  "settingsTab": "Impostazioni: {{tab}}",
+  "openDetails": "Apri dettagli",
+  "actionsFor": "{{kind}}: {{name}}",
+  "tabForActions": "Tab: azioni",
+  "loadingActions": "Caricamento azioni…",
+  "noActions": "Nessuna azione per questo oggetto",
+  "actionsFailed": "Impossibile leggere l'oggetto: {{message}}",
+  "noCluster": "Apri un cluster per cercarne gli oggetti",
+  "empty": "Nessun risultato",
+  "searchAll": "Cerca in tutti i tipi ({{count}})",
+  "searching": "Ricerca… {{done}} tipi elencati su {{total}}",
+  "limited": "Vengono cercati gli oggetti dei primi {{count}} tipi su {{total}}",
+  "hint": "↑↓ sposta · Enter apri · Tab azioni · Esc chiudi",
+  "hintActions": "↑↓ sposta · Enter esegui · Shift+Tab indietro · Esc indietro"
+}

@@ -1,0 +1,49 @@
+{
+  "tab": "Historique",
+  "status": {
+    "title": "Déploiement",
+    "state": {
+      "complete": "Terminé",
+      "progressing": "En cours",
+      "paused": "En pause",
+      "failed": "Bloqué"
+    },
+    "replicas": "{{updated}} sur {{desired}} mis à jour · {{ready}} prêts · {{available}} disponibles",
+    "pendingObservation": "En attente de la prise en compte de la dernière modification par le contrôleur.",
+    "stuck": "{{reason}} : {{message}}",
+    "pausedHint": "Le déploiement est en pause ; reprenez-le pour continuer ou pour revenir en arrière."
+  },
+  "history": {
+    "title": "Révisions",
+    "loading": "Chargement des révisions…",
+    "empty": "Aucune révision pour l'instant.",
+    "columns": {
+      "compare": "Comparer",
+      "revision": "Révision",
+      "created": "Créée",
+      "changeCause": "Cause du changement",
+      "images": "Images"
+    },
+    "current": "actuelle",
+    "select": "Comparer la révision {{revision}}",
+    "pickTwo": "Sélectionnez deux révisions pour comparer leurs modèles de pod.",
+    "pickOneMore": "Sélectionnez une révision de plus à comparer.",
+    "revisionTitle": "Révision {{revision}}",
+    "rollBack": "Revenir à la révision {{revision}}"
+  },
+  "rollback": {
+    "action": "Revenir en arrière…",
+    "title": "Revenir en arrière pour {{name}}",
+    "confirm": "Revenir à la révision {{revision}}",
+    "revision": "Révision",
+    "revisionOption": "Révision {{revision}}",
+    "revisionOptionCause": "Révision {{revision}} — {{cause}}",
+    "intro": "Le modèle de pod de la révision {{revision}} remplace le modèle actuel, et les pods sont remplacés comme pour toute mise à jour.",
+    "current": "Modèle actuel",
+    "target": "Révision {{revision}}",
+    "same": "Le modèle actuel correspond déjà à la révision {{revision}} : il n'y a rien à changer.",
+    "paused": "Ce Deployment est en pause. Reprenez-le avant de revenir en arrière.",
+    "none": "Il n'y a aucune révision antérieure à laquelle revenir.",
+    "loading": "Chargement des révisions…"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "sidebar": "问题",
+  "title": "集群问题",
+  "badge_other": "{{count}} 个问题需要关注",
+  "onlyNewSince": "仅显示 {{time}} 以来的新问题",
+  "markSeen": "全部标记为已查看",
+  "total_other": "{{count}} 个问题",
+  "sourceFailed": "无法监视 {{kind}}",
+  "truncated": "问题过多：仅列出最近的问题。",
+  "loading": "正在查找问题…",
+  "none": "未发现问题。",
+  "noneNew": "自标记以来没有新问题。",
+  "clusterWide": "集群范围",
+  "categories": {
+    "nodes": "节点",
+    "pods": "Pod",
+    "workloads": "工作负载",
+    "jobs": "Job",
+    "volumes": "卷声明",
+    "certificates": "证书",
+    "flux": "Flux",
+    "argocd": "Argo CD",
+    "gateway": "Gateway API",
+    "events": "警告事件"
+  },
+  "messages": {
+    "container": "容器 {{container}}",
+    "restarts_other": "容器 {{container}} 已重启（{{count}} 次）",
+    "replicas": "{{ready}}/{{desired}} 个副本就绪",
+    "expires": "将于 {{date}} 过期",
+    "expired": "已于 {{date}} 过期"
+  }
+}

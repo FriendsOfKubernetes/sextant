@@ -1,0 +1,157 @@
+{
+  "rail": {
+    "list": "Lista de clusters",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Adicionar cluster",
+    "refresh": "Atualizar kubeconfig",
+    "slow": "{{tooltip}} há {{seconds}} s. O cluster está demorando para responder",
+    "expand": "Expandir lista de clusters",
+    "collapse": "Recolher lista de clusters"
+  },
+  "state": {
+    "disconnected": "desconectado",
+    "connecting": "conectando",
+    "connected": "conectado",
+    "error": "falha na conexão"
+  },
+  "menu": {
+    "open": "Abrir",
+    "connect": "Conectar",
+    "reconnect": "Reconectar",
+    "disconnect": "Desconectar",
+    "settings": "Configurações",
+    "changeIcon": "Alterar ícone…"
+  },
+  "add": {
+    "title": "Adicionar cluster",
+    "file": "Adicionar arquivo kubeconfig",
+    "paste": "Colar kubeconfig",
+    "fileDialogTitle": "Escolha um arquivo kubeconfig",
+    "tabs": "Como adicionar",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Da nuvem"
+  },
+  "paste": {
+    "title": "Colar kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Cole o conteúdo de um arquivo kubeconfig. O Sextant guarda uma cópia privada na pasta de dados dele.",
+    "submit": "Adicionar"
+  },
+  "sources": {
+    "title": "Fontes de kubeconfig",
+    "kind": {
+      "default": "padrão",
+      "env": "KUBECONFIG",
+      "addedFile": "arquivo adicionado",
+      "pasted": "colado",
+      "cloud": "nuvem"
+    },
+    "remove": "Remover",
+    "removeNamed": "Remover {{path}}",
+    "confirmTitle": "Remover a fonte de kubeconfig?",
+    "confirmFile": "Os clusters dela somem da lista. O arquivo em si permanece no disco.",
+    "confirmPasted": "Os clusters dela somem da lista e a cópia colada é excluída.",
+    "problems": "Alguns arquivos kubeconfig não podem ser lidos",
+    "problemsTitle": "Problemas no kubeconfig",
+    "problemsHint": "Os clusters dos outros arquivos continuam funcionando. Corrija o arquivo e clique em Atualizar.",
+    "confirmCloud": "Os clusters dela somem da lista e o kubeconfig do Sextant para esses clusters na nuvem é excluído. A CLI da nuvem e o ~/.kube/config não são alterados."
+  },
+  "welcome": {
+    "loading": "Lendo o kubeconfig…",
+    "noClusters": "Nenhum cluster encontrado",
+    "checked": "O Sextant procurou um kubeconfig aqui:",
+    "checkedPaths": "Caminhos verificados",
+    "title": "Bem-vindo ao Sextant",
+    "pick": "Selecione um cluster à esquerda para conectar."
+  },
+  "connection": {
+    "connecting": "Conectando a {{name}}…",
+    "failed": "Não foi possível conectar a {{name}}",
+    "reconnect": "Reconectar",
+    "certificate": "O certificado do servidor não foi aceito.",
+    "seconds": "{{seconds}} s",
+    "slow": "O cluster está demorando para responder"
+  },
+  "settings": {
+    "title": "Configurações do cluster — {{name}}",
+    "displayName": "Nome de exibição",
+    "color": "Etiqueta de cor",
+    "autoColor": "Automática",
+    "colorOption": "Cor {{index}}",
+    "icon": "Ícone",
+    "iconPreview": "Pré-visualização do ícone",
+    "iconText": "Texto do ícone",
+    "iconTextPlaceholder": "Iniciais",
+    "iconChoose": "Escolher imagem…",
+    "iconReset": "Redefinir ícone",
+    "iconHint": "Uma ou duas letras ou um emoji sobre a etiqueta de cor, ou uma imagem PNG, JPEG, SVG ou WebP de até 5 MB. Vazio: as iniciais do nome.",
+    "iconErrors": {
+      "type": "O arquivo não é uma imagem compatível",
+      "size": "A imagem tem mais de 5 MB",
+      "read": "Não é possível ler o arquivo"
+    }
+  },
+  "info": {
+    "context": "Contexto",
+    "cluster": "Cluster",
+    "server": "Servidor",
+    "user": "Usuário",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "O Sextant usa o aws, o gcloud e o az já instalados e com login feito neste computador. Ele grava o próprio kubeconfig e nunca altera o ~/.kube/config nem faz login por você.",
+    "detecting": "Procurando aws, gcloud e az…",
+    "providers": "Nuvem",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(versão desconhecida)",
+    "notInstalled": "{{cli}} não está instalado",
+    "installGuide": "Guia de instalação",
+    "pluginMissing": "{{plugin}} não está instalado. Os clusters podem ser adicionados, mas a conexão precisa dele. Instale-o com:",
+    "loadingAccounts": "Lendo as contas…",
+    "account": {
+      "aws": "Perfil",
+      "gcp": "Projeto",
+      "azure": "Assinatura"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Credenciais do ambiente",
+    "regions": "Regiões",
+    "find": "Procurar clusters",
+    "finding": "Procurando…",
+    "noClusters": "Nenhum cluster encontrado.",
+    "found": "Clusters encontrados",
+    "separator": " · ",
+    "add_one": "Adicionar {{count}} cluster",
+    "add_many": "Adicionar {{count}} clusters",
+    "add_other": "Adicionar {{count}} clusters",
+    "added_one": "{{count}} cluster adicionado. Ele está na lista de clusters.",
+    "added_many": "{{count}} clusters adicionados. Eles estão na lista de clusters.",
+    "added_other": "{{count}} clusters adicionados. Eles estão na lista de clusters.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} não está instalado{{scope}}",
+      "notLoggedIn": "{{cli}} não está com login feito, ou o login expirou{{scope}}",
+      "pluginMissing": "O plugin de login do {{cli}} não está instalado{{scope}}",
+      "failed": "{{cli}} falhou{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Instale-o e tente novamente.",
+      "notLoggedIn": "O Sextant não faz login por você. Execute este comando em um terminal e tente novamente:",
+      "pluginMissing": "Execute este comando em um terminal e tente novamente:",
+      "failed": "Execute este comando em um terminal e tente novamente:"
+    },
+    "copyCommand": "Copiar comando",
+    "copied": "Copiado",
+    "copyFailed": "A área de transferência não está disponível; selecione o comando e copie-o."
+  }
+}

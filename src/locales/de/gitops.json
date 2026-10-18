@@ -1,0 +1,81 @@
+{
+  "tool": {
+    "flux": "Flux",
+    "argoCd": "Argo CD"
+  },
+  "menu": {
+    "flux": "Flux installieren…",
+    "argoCd": "Argo CD installieren…"
+  },
+  "section": {
+    "title": "GitOps",
+    "hint": "Flux und Argo CD werden aus ihren offiziellen Manifesten über die Kubernetes-API installiert.",
+    "notConnected": "Verbinden Sie sich mit dem Cluster, um zu sehen, ob Flux und Argo CD installiert sind.",
+    "loading": "Es wird gelesen, was der Cluster bereitstellt…",
+    "installed": "Installiert",
+    "partial": "Teilweise installiert",
+    "missing": "Nicht installiert",
+    "install": "{{tool}} installieren…"
+  },
+  "dialog": {
+    "title": "{{tool}} installieren",
+    "flux": "Flux wird so installiert, wie `flux install` es standardmäßig tut: die Source-, Kustomize-, Helm- und Notification-Controller in flux-system, ohne Image-Automatisierung.",
+    "argoCd": "Argo CD wird aus seiner Standard-install.yaml in argocd installiert: clusterweit, mit der Weboberfläche, nicht hochverfügbar."
+  },
+  "versions": {
+    "label": "Version",
+    "loading": "Releases werden bei GitHub abgefragt…",
+    "latest": "{{version}} (neueste)",
+    "bundled": "{{version}} (mitgeliefert)",
+    "error": "Die Liste der Releases konnte nicht von GitHub abgerufen werden, daher wird nur die getestete Version {{version}} angeboten.",
+    "next": "Herunterladen und Vorschau"
+  },
+  "preparing": "Manifest wird heruntergeladen und geprüft…",
+  "preview": {
+    "version": "Version",
+    "source": "Quelle",
+    "sha256": "SHA-256",
+    "verified": "stimmt mit der Prüfsummendatei des Release überein",
+    "unverified": "das Projekt veröffentlicht für diese Datei keine Prüfsumme",
+    "namespace": "Namespace",
+    "objects": "Objekte ({{count}})",
+    "clusterScoped": "clusterweit",
+    "warning": "Die Installation verändert den gesamten Cluster: Sie erstellt CustomResourceDefinitions, ClusterRoles und ClusterRoleBindings. Dafür sind cluster-admin-Rechte nötig.",
+    "noCrdAccess": "Sie dürfen in diesem Cluster keine CustomResourceDefinitions erstellen, daher wird die Installation wahrscheinlich fehlschlagen.",
+    "noBindingAccess": "Sie dürfen in diesem Cluster keine ClusterRoleBindings erstellen, daher wird die Installation wahrscheinlich fehlschlagen.",
+    "present": "{{tool}} ist bereits installiert. Seine Objekte werden auf diese Version aktualisiert.",
+    "partial": "{{tool}} ist teilweise installiert (sein Namespace oder einige seiner CRDs sind vorhanden, oder einige seiner Controller fehlen). Vorhandene Objekte werden aktualisiert.",
+    "overwritten": "Diese clusterweiten Objekte sind bereits vorhanden und werden überschrieben:",
+    "leftOut": "Läuft in {{namespace}}: {{names}}. Diese Installation lässt wie `flux install` die Image-Automatisierung und den Source-Watcher weg und entfernt ihre Service-Accounts aus den gemeinsamen Rollenbindungen, sodass sie ihre Berechtigungen verlieren."
+  },
+  "back": "Zurück",
+  "install": "Installieren",
+  "stop": "Stoppen",
+  "progress": {
+    "applying": "Objekte werden angewendet: {{done}} von {{total}}",
+    "stopping": "Wird nach dem aktuellen Objekt gestoppt…",
+    "waiting": "Alles ist angewendet. Es wird gewartet, bis die Controller bereit sind (bis zu 5 Minuten)…",
+    "ready": "bereit",
+    "notReady": "nicht bereit"
+  },
+  "result": {
+    "done": "{{tool}} {{version}} ist installiert und läuft. Sein Bereich ist in der Seitenleiste.",
+    "timedOut": "Alles wurde angewendet, aber nicht alle Controller waren innerhalb von 5 Minuten bereit. Was angewendet wurde, bleibt im Cluster.",
+    "stopped_one": "Die Installation wurde gestoppt. {{count}} Objekt wurde angewendet; der Rest wurde nicht gesendet.",
+    "stopped_other": "Die Installation wurde gestoppt. {{count}} Objekte wurden angewendet; der Rest wurde nicht gesendet.",
+    "stoppedWaiting_one": "Die Installation wurde beim Warten auf die Controller gestoppt. Das {{count}} Objekt wurde angewendet und bleibt im Cluster.",
+    "stoppedWaiting_other": "Die Installation wurde beim Warten auf die Controller gestoppt. Alle {{count}} Objekte wurden angewendet und bleiben im Cluster.",
+    "failed": "Die Installation ist fehlgeschlagen. Nach dem fehlgeschlagenen Objekt wurde nichts mehr gesendet; was angewendet wurde, bleibt im Cluster.",
+    "applied": "Angewendet ({{count}})",
+    "notApplied": "Nicht angewendet ({{count}})"
+  },
+  "argo": {
+    "login": "Sextant meldet sich mit dem argocd-initial-admin-secret selbst bei Argo CD an. Ändern Sie das Admin-Passwort in Argo CD und löschen Sie danach dieses Secret.",
+    "openUi": "Argo CD-UI öffnen"
+  },
+  "confirmStop": {
+    "title": "Installation stoppen?",
+    "text": "Die Installation stoppt nach dem Objekt, das gerade angewendet wird. Was angewendet wurde, bleibt im Cluster.",
+    "confirm": "Installation stoppen"
+  }
+}

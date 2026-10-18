@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Paramètres",
+    "open": "Paramètres"
+  },
+  "tabs": {
+    "label": "Sections des paramètres",
+    "general": "Général",
+    "clusters": "Clusters",
+    "agents": "Agents IA",
+    "extensions": "Extensions",
+    "about": "Mises à jour et à propos"
+  },
+  "appearance": {
+    "title": "Apparence",
+    "theme": "Thème",
+    "themes": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "systemHint": "Système suit le mode clair ou sombre de votre système d'exploitation.",
+    "language": "Langue",
+    "languageSystem": "Système ({{language}})",
+    "languageHint": "Système suit la langue de votre système d'exploitation, ou l'anglais si Sextant n'est pas traduit dans cette langue."
+  },
+  "window": {
+    "title": "Fenêtre",
+    "closeToTray": "Fermer la fenêtre laisse Sextant dans la zone de notification",
+    "closeToTrayHint": "Sextant continue de s'exécuter dans la zone de notification : les connexions, les redirections de port, les terminaux et le serveur MCP restent ouverts. Son icône dans la zone de notification (la barre des menus sous macOS) affiche de nouveau la fenêtre ; « Quitter Sextant » dans le menu de l'icône ferme l'application.",
+    "noTray": "Aucune zone de notification n'a été trouvée : fermer la fenêtre quitte donc Sextant. Sous Linux, la zone de notification nécessite la bibliothèque libayatana-appindicator et un hôte StatusNotifier/AppIndicator (sous GNOME, l'extension AppIndicator) ou, dans une session X11, une zone de notification système."
+  },
+  "editor": {
+    "title": "Éditeur",
+    "scheme": "Jeu de couleurs",
+    "hint": "Couleurs du YAML dans l'éditeur de ressources, le panneau de détails et Helm. Auto utilise One Dark avec le thème sombre et GitHub Light avec le thème clair.",
+    "schemes": {
+      "auto": "Auto",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "L'installation et la modification des releases Helm exécutent la commande helm. La consultation des releases fonctionne sans elle.",
+    "auto": "Rechercher helm dans le PATH",
+    "manual": "Utiliser ce binaire",
+    "path": "Chemin de helm",
+    "browse": "Parcourir…",
+    "browseTitle": "Choisir le binaire helm",
+    "apply": "Appliquer",
+    "checking": "Recherche de helm…",
+    "found": "Helm {{version}} dans {{path}}",
+    "foundNoVersion": "Helm dans {{path}}",
+    "notFound": "Helm est introuvable",
+    "notRunnable": "{{path}} n'est pas un binaire helm fonctionnel"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "Les clusters proviennent de KUBECONFIG (ou de ~/.kube/config) et des fichiers que vous ajoutez ici."
+  },
+  "menu": {
+    "open": "Ouvrir le menu",
+    "close": "Fermer le menu",
+    "title": "Menu"
+  },
+  "saveFailed": "Impossible d'enregistrer les paramètres",
+  "file": {
+    "label": "Fichier de paramètres",
+    "backup": "Le fichier de paramètres était endommagé : Sextant a donc démarré avec les paramètres par défaut. L'ancien fichier a été copié dans {{path}}.",
+    "unwritable": "Les modifications ne sont pas enregistrées : le fichier de paramètres ne peut être ni lu ni écrit. Corrigez ses permissions et redémarrez Sextant.",
+    "dismiss": "Ignorer"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "nodeShellImage": "Image du shell de nœud",
+    "nodeShellImageHint": "Image du pod privilégié temporaire utilisé par « Shell » sur un nœud. Elle doit contenir nsenter (c'est le cas de busybox) ; le shell lui-même est celui du nœud. Les agents IA n'obtiennent jamais de shell de nœud."
+  }
+}

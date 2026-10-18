@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "Pronto",
+    "status": "Status",
+    "revision": "Revisão",
+    "suspended": "Suspenso",
+    "source": "Fonte"
+  },
+  "suspended": {
+    "yes": "Sim",
+    "no": "Não"
+  },
+  "fields": {
+    "ready": "Pronto",
+    "message": "Status",
+    "revision": "Revisão",
+    "lastAttemptedRevision": "Última revisão tentada",
+    "suspended": "Suspenso",
+    "interval": "Intervalo",
+    "timeout": "Tempo limite",
+    "source": "Fonte",
+    "chart": "Chart",
+    "helmChart": "Chart do Helm",
+    "url": "URL",
+    "ref": "Referência",
+    "endpoint": "Endpoint",
+    "bucketName": "Bucket",
+    "path": "Caminho",
+    "targetNamespace": "Namespace de destino",
+    "releaseName": "Nome da release",
+    "prune": "Prune",
+    "dependsOn": "Depende de",
+    "image": "Imagem",
+    "imageRepository": "Repositório de imagens",
+    "provider": "Provedor",
+    "eventSeverity": "Gravidade dos eventos",
+    "eventSources": "Origens dos eventos",
+    "type": "Tipo",
+    "channel": "Canal",
+    "webhookPath": "Caminho do webhook",
+    "lastHandledReconcileAt": "Última solicitação de reconciliação"
+  },
+  "related": {
+    "inventory": "Recursos aplicados",
+    "resources": "Recursos",
+    "usedBy": "Usado por",
+    "kind": "Kind",
+    "name": "Nome",
+    "namespace": "Namespace",
+    "loading": "Carregando…",
+    "notUsed": "Nenhuma Kustomization ou HelmRelease usa esta fonte."
+  },
+  "actions": {
+    "reconcile": "Reconciliar agora",
+    "reconcileWithSource": "Reconciliar com a fonte",
+    "suspend": "Suspender",
+    "resume": "Retomar"
+  },
+  "suspend": {
+    "title": "Suspender {{kind}} {{name}}?",
+    "confirm": "Suspender",
+    "text": "O Flux deixa de reconciliar {{kind}} {{name}} até que seja retomado: enquanto isso, alterações no Git ou no cluster não são aplicadas nem corrigidas."
+  }
+}

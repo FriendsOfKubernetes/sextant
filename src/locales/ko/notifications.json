@@ -1,0 +1,36 @@
+{
+  "muteHour": "1시간 동안 알림 끄기",
+  "unmute": "알림 다시 켜기",
+  "single": {
+    "title": "{{cluster}}: {{reason}}"
+  },
+  "summary": {
+    "title_other": "{{cluster}}에 새 문제 {{count}}개",
+    "titleClusters_other": "클러스터 {{clusters}}개에 새 문제 {{count}}개",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "알림",
+    "enabled": "연결된 클러스터의 새 문제에 대해 데스크톱 알림 표시",
+    "enabledHint": "이미 연결된 클러스터만 감시하며, Sextant가 실행되는 동안 발생한 문제만 알립니다. 창이 트레이에 숨겨져 있을 때도 알립니다. 알림은 시스템 알림 서비스가 표시하며, 이 컴퓨터 밖으로 전송되는 것은 없습니다.",
+    "mutedUntil": "{{time}}까지 알림 꺼짐",
+    "categories": "알림 대상",
+    "clusters": "클러스터",
+    "clustersHint": "여기에서 끈 클러스터는 알림을 보내지 않습니다.",
+    "noClusters": "아직 클러스터가 없습니다.",
+    "certificates": "인증서",
+    "certExpiryDays": "인증서 만료 전 경고 기간(일)",
+    "certExpiryHint": "문제 화면과 cert-manager Certificate 알림, 인증서 세부 정보 및 TLS 인증서 페이지에서 사용됩니다."
+  },
+  "history": {
+    "title": "최근 알림",
+    "clear": "지우기",
+    "empty": "아직 알림이 없습니다.",
+    "off": "알림이 꺼져 있습니다(설정 → 일반 → 알림).",
+    "delivery": {
+      "summary": "요약으로 표시",
+      "muted": "알림 꺼짐"
+    }
+  },
+  "muteFailed": "알림을 끌 수 없습니다: {{message}}"
+}

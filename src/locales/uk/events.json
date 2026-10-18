@@ -1,0 +1,20 @@
+{
+  "sidebar": "Події",
+  "title": "Події",
+  "loading": "Завантаження подій…",
+  "none": "Подій немає.",
+  "search": "Пошук подій",
+  "searchPlaceholder": "Пошук…",
+  "count": "×{{count}}",
+  "from": "від {{source}}",
+  "columns": {
+    "type": "Тип",
+    "reason": "Причина",
+    "message": "Повідомлення",
+    "namespace": "Namespace",
+    "involvedObject": "Об'єкт",
+    "source": "Джерело",
+    "count": "Кількість",
+    "lastSeen": "Остання"
+  }
+}

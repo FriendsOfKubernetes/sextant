@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Sextant 標誌"
+  },
+  "layout": {
+    "clusters": "叢集",
+    "sidebar": "區段",
+    "main": "主要區域",
+    "details": "詳細資料",
+    "dock": "底部面板",
+    "resizeSidebar": "調整側邊欄大小",
+    "resizeDock": "調整底部面板大小"
+  },
+  "actions": {
+    "close": "關閉",
+    "cancel": "取消",
+    "confirm": "確認",
+    "retry": "重試",
+    "openDock": "開啟底部面板",
+    "closeDock": "關閉底部面板",
+    "closeTab": "關閉分頁 {{title}}",
+    "closeDetails": "關閉詳細資料"
+  },
+  "welcome": {
+    "title": "歡迎使用 Sextant",
+    "text": "從左側選取一個叢集即可開始。"
+  },
+  "main": {
+    "selectSection": "請在側邊欄中選取一個區段。",
+    "noSections": "這個叢集目前沒有可顯示的內容。"
+  },
+  "dock": {
+    "empty": "開啟日誌、Shell 或終端機後，會顯示在這裡。"
+  },
+  "details": {
+    "loading": "正在載入…",
+    "inNamespace": "Namespace：{{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}}秒",
+    "minutes": "{{count}}分",
+    "hours": "{{count}}小時",
+    "days": "{{count}}天",
+    "years": "{{count}}年"
+  },
+  "error": {
+    "details": "詳細資料：{{message}}"
+  },
+  "list": {
+    "separator": "、"
+  }
+}

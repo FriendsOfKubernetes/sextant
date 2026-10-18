@@ -1,0 +1,157 @@
+{
+  "rail": {
+    "list": "Lista de clústeres",
+    "tooltip": "{{name}} — {{state}}",
+    "add": "Agregar clúster",
+    "refresh": "Actualizar kubeconfig",
+    "slow": "{{tooltip}} durante {{seconds}} s. El clúster tarda en responder",
+    "expand": "Expandir la lista de clústeres",
+    "collapse": "Contraer la lista de clústeres"
+  },
+  "state": {
+    "disconnected": "desconectado",
+    "connecting": "conectando",
+    "connected": "conectado",
+    "error": "error de conexión"
+  },
+  "menu": {
+    "open": "Abrir",
+    "connect": "Conectar",
+    "reconnect": "Reconectar",
+    "disconnect": "Desconectar",
+    "settings": "Configuración",
+    "changeIcon": "Cambiar icono…"
+  },
+  "add": {
+    "title": "Agregar clúster",
+    "file": "Agregar archivo kubeconfig",
+    "paste": "Pegar kubeconfig",
+    "fileDialogTitle": "Elegir un archivo kubeconfig",
+    "tabs": "Cómo agregarlo",
+    "kubeconfigTab": "Kubeconfig",
+    "cloudTab": "Desde la nube"
+  },
+  "paste": {
+    "title": "Pegar kubeconfig",
+    "label": "Kubeconfig",
+    "hint": "Pegue el contenido de un archivo kubeconfig. Sextant guarda una copia privada en su carpeta de datos.",
+    "submit": "Agregar"
+  },
+  "sources": {
+    "title": "Orígenes de kubeconfig",
+    "kind": {
+      "default": "predeterminado",
+      "env": "KUBECONFIG",
+      "addedFile": "archivo agregado",
+      "pasted": "pegado",
+      "cloud": "nube"
+    },
+    "remove": "Quitar",
+    "removeNamed": "Quitar {{path}}",
+    "confirmTitle": "¿Quitar el origen de kubeconfig?",
+    "confirmFile": "Sus clústeres desaparecen de la lista. El archivo en sí permanece en el disco.",
+    "confirmPasted": "Sus clústeres desaparecen de la lista y se elimina la copia pegada.",
+    "problems": "Algunos archivos kubeconfig no se pueden leer",
+    "problemsTitle": "Problemas de kubeconfig",
+    "problemsHint": "Los clústeres de los demás archivos siguen funcionando. Corrija el archivo y pulse Actualizar.",
+    "confirmCloud": "Sus clústeres desaparecen de la lista y se elimina el kubeconfig de Sextant para estos clústeres en la nube. La CLI de la nube y ~/.kube/config no se modifican."
+  },
+  "welcome": {
+    "loading": "Leyendo kubeconfig…",
+    "noClusters": "No se encontraron clústeres",
+    "checked": "Sextant buscó un kubeconfig aquí:",
+    "checkedPaths": "Rutas comprobadas",
+    "title": "Le damos la bienvenida a Sextant",
+    "pick": "Seleccione un clúster a la izquierda para conectarse."
+  },
+  "connection": {
+    "connecting": "Conectando con {{name}}…",
+    "failed": "No se puede conectar con {{name}}",
+    "reconnect": "Reconectar",
+    "certificate": "No se aceptó el certificado del servidor.",
+    "seconds": "{{seconds}} s",
+    "slow": "El clúster tarda en responder"
+  },
+  "settings": {
+    "title": "Configuración del clúster — {{name}}",
+    "displayName": "Nombre para mostrar",
+    "color": "Etiqueta de color",
+    "autoColor": "Automático",
+    "colorOption": "Color {{index}}",
+    "icon": "Icono",
+    "iconPreview": "Vista previa del icono",
+    "iconText": "Texto del icono",
+    "iconTextPlaceholder": "Iniciales",
+    "iconChoose": "Elegir imagen…",
+    "iconReset": "Restablecer icono",
+    "iconHint": "Una o dos letras o un emoji sobre la etiqueta de color, o una imagen PNG, JPEG, SVG o WebP de hasta 5 MB. Vacío: las iniciales del nombre.",
+    "iconErrors": {
+      "type": "El archivo no es una imagen compatible",
+      "size": "La imagen supera los 5 MB",
+      "read": "El archivo no se puede leer"
+    }
+  },
+  "info": {
+    "context": "Contexto",
+    "cluster": "Clúster",
+    "server": "Servidor",
+    "user": "Usuario",
+    "source": "Kubeconfig"
+  },
+  "cloud": {
+    "hint": "Sextant usa aws, gcloud y az ya instalados y con la sesión iniciada en este equipo. Escribe su propio kubeconfig y nunca cambia ~/.kube/config ni inicia sesión en su lugar.",
+    "detecting": "Buscando aws, gcloud y az…",
+    "providers": "Nube",
+    "provider": {
+      "aws": "Amazon EKS",
+      "gcp": "Google GKE",
+      "azure": "Azure AKS"
+    },
+    "cli": {
+      "aws": "aws",
+      "gcp": "gcloud",
+      "azure": "az"
+    },
+    "version": "{{cli}} {{version}}",
+    "unknownVersion": "(versión desconocida)",
+    "notInstalled": "{{cli}} no está instalado",
+    "installGuide": "Guía de instalación",
+    "pluginMissing": "{{plugin}} no está instalado. Los clústeres se pueden agregar, pero para conectarse se necesita. Instálelo con:",
+    "loadingAccounts": "Leyendo las cuentas…",
+    "account": {
+      "aws": "Perfil",
+      "gcp": "Proyecto",
+      "azure": "Suscripción"
+    },
+    "accountOption": "{{name}} ({{id}})",
+    "environmentCredentials": "Credenciales del entorno",
+    "regions": "Regiones",
+    "find": "Buscar clústeres",
+    "finding": "Buscando…",
+    "noClusters": "No se encontraron clústeres.",
+    "found": "Clústeres encontrados",
+    "separator": " · ",
+    "add_one": "Agregar {{count}} clúster",
+    "add_many": "Agregar {{count}} de clústeres",
+    "add_other": "Agregar {{count}} clústeres",
+    "added_one": "Se agregó {{count}} clúster. Está en la lista de clústeres.",
+    "added_many": "Se agregaron {{count}} de clústeres. Están en la lista de clústeres.",
+    "added_other": "Se agregaron {{count}} clústeres. Están en la lista de clústeres.",
+    "scope": " ({{scope}})",
+    "problem": {
+      "cliMissing": "{{cli}} no está instalado{{scope}}",
+      "notLoggedIn": "{{cli}} no tiene la sesión iniciada o la sesión caducó{{scope}}",
+      "pluginMissing": "El plugin de inicio de sesión de {{cli}} no está instalado{{scope}}",
+      "failed": "{{cli}} falló{{scope}}"
+    },
+    "problemHint": {
+      "cliMissing": "Instálelo e inténtelo de nuevo.",
+      "notLoggedIn": "Sextant no inicia sesión en su lugar. Ejecute este comando en un terminal e inténtelo de nuevo:",
+      "pluginMissing": "Ejecute este comando en un terminal e inténtelo de nuevo:",
+      "failed": "Ejecute este comando en un terminal e inténtelo de nuevo:"
+    },
+    "copyCommand": "Copiar comando",
+    "copied": "Copiado",
+    "copyFailed": "El portapapeles no está disponible; seleccione el comando y cópielo."
+  }
+}

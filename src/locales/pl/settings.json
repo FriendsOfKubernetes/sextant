@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Ustawienia",
+    "open": "Ustawienia"
+  },
+  "tabs": {
+    "label": "Sekcje ustawień",
+    "general": "Ogólne",
+    "clusters": "Klastry",
+    "agents": "Agenci AI",
+    "extensions": "Rozszerzenia",
+    "about": "Aktualizacje i informacje"
+  },
+  "appearance": {
+    "title": "Wygląd",
+    "theme": "Motyw",
+    "themes": {
+      "system": "Systemowy",
+      "light": "Jasny",
+      "dark": "Ciemny"
+    },
+    "systemHint": "Motyw systemowy odpowiada jasnemu lub ciemnemu trybowi systemu operacyjnego.",
+    "language": "Język",
+    "languageSystem": "Systemowy ({{language}})",
+    "languageHint": "Język systemowy odpowiada językowi systemu operacyjnego; jeśli Sextant nie ma dla niego tłumaczenia, używany jest angielski."
+  },
+  "window": {
+    "title": "Okno",
+    "closeToTray": "Zamknięcie okna pozostawia Sextant w zasobniku",
+    "closeToTrayHint": "Sextant nadal działa w zasobniku: połączenia, przekierowania portów, terminale i serwer MCP pozostają otwarte. Ikona w zasobniku (na pasku menu w macOS) ponownie pokazuje okno; polecenie „Zakończ Sextant” w menu ikony zamyka program.",
+    "noTray": "Nie znaleziono zasobnika systemowego, więc zamknięcie okna kończy działanie programu Sextant. W systemie Linux zasobnik wymaga biblioteki libayatana-appindicator i hosta StatusNotifier/AppIndicator (w GNOME — rozszerzenia AppIndicator) lub, w sesji X11, zasobnika systemowego."
+  },
+  "editor": {
+    "title": "Edytor",
+    "scheme": "Schemat kolorów",
+    "hint": "Kolory YAML w edytorze zasobów, panelu szczegółów i w Helm. Tryb automatyczny używa schematu One Dark w ciemnym motywie i GitHub Light w jasnym.",
+    "schemes": {
+      "auto": "Automatyczny",
+      "oneDark": "One Dark",
+      "githubDark": "GitHub Dark",
+      "githubLight": "GitHub Light",
+      "dracula": "Dracula",
+      "nord": "Nord",
+      "solarizedDark": "Solarized Dark",
+      "solarizedLight": "Solarized Light"
+    }
+  },
+  "helm": {
+    "title": "Helm",
+    "hint": "Instalowanie i zmienianie wydań Helm uruchamia polecenie helm. Przeglądanie wydań działa bez niego.",
+    "auto": "Znajdź helm w PATH",
+    "manual": "Użyj tego pliku wykonywalnego",
+    "path": "Ścieżka do helm",
+    "browse": "Przeglądaj…",
+    "browseTitle": "Wybierz plik wykonywalny helm",
+    "apply": "Zastosuj",
+    "checking": "Wyszukiwanie helm…",
+    "found": "Helm {{version}} w {{path}}",
+    "foundNoVersion": "Helm w {{path}}",
+    "notFound": "Nie znaleziono programu helm",
+    "notRunnable": "{{path}} nie jest działającym plikiem wykonywalnym helm"
+  },
+  "kubeconfig": {
+    "title": "Kubeconfig",
+    "hint": "Klastry pochodzą z KUBECONFIG (lub ~/.kube/config) oraz z plików dodanych tutaj."
+  },
+  "menu": {
+    "open": "Otwórz menu",
+    "close": "Zamknij menu",
+    "title": "Menu"
+  },
+  "saveFailed": "Nie można zapisać ustawień",
+  "file": {
+    "label": "Plik ustawień",
+    "backup": "Plik ustawień był uszkodzony, więc Sextant uruchomił się z ustawieniami domyślnymi. Stary plik skopiowano do {{path}}.",
+    "unwritable": "Zmiany nie są zapisywane: nie można odczytać ani zapisać pliku ustawień. Popraw jego uprawnienia i uruchom ponownie Sextant.",
+    "dismiss": "Odrzuć"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "nodeShellImage": "Obraz powłoki węzła",
+    "nodeShellImageHint": "Obraz tymczasowego uprzywilejowanego Poda używanego przez polecenie „Powłoka” na węźle. Wymaga programu nsenter (zawiera go busybox); sama powłoka należy do węzła. Agenci AI nigdy nie otrzymują powłoki węzła."
+  }
+}

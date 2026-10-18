@@ -1,0 +1,36 @@
+{
+  "muteHour": "静音 1 小时",
+  "unmute": "取消静音",
+  "single": {
+    "title": "{{cluster}}：{{reason}}"
+  },
+  "summary": {
+    "title_other": "{{cluster}} 中有 {{count}} 个新问题",
+    "titleClusters_other": "{{clusters}} 个集群中有 {{count}} 个新问题",
+    "reason": "{{reason}} ×{{count}}"
+  },
+  "settings": {
+    "title": "通知",
+    "enabled": "显示有关已连接集群中新问题的桌面通知",
+    "enabledHint": "仅监视已连接的集群，并且只通知 Sextant 运行期间出现的问题（窗口隐藏到托盘时也会通知）。通知由系统的通知服务显示；任何数据都不会离开本机。",
+    "mutedUntil": "静音至 {{time}}",
+    "categories": "通知内容",
+    "clusters": "集群",
+    "clustersHint": "在此处关闭的集群永远不会发送通知。",
+    "noClusters": "尚无集群。",
+    "certificates": "证书",
+    "certExpiryDays": "证书过期前提前几天发出警告",
+    "certExpiryHint": "用于问题页面和 cert-manager Certificate 的通知，以及证书详细信息和 TLS 证书页面。"
+  },
+  "history": {
+    "title": "最近的通知",
+    "clear": "清除",
+    "empty": "尚无通知。",
+    "off": "通知已关闭（设置 → 常规 → 通知）。",
+    "delivery": {
+      "summary": "汇总通知",
+      "muted": "已静音"
+    }
+  },
+  "muteFailed": "无法将通知静音：{{message}}"
+}

@@ -1,0 +1,49 @@
+{
+  "tab": "История",
+  "status": {
+    "title": "Развертывание",
+    "state": {
+      "complete": "Завершено",
+      "progressing": "Выполняется",
+      "paused": "Приостановлено",
+      "failed": "Застряло"
+    },
+    "replicas": "Обновлено {{updated}} из {{desired}} · готово {{ready}} · доступно {{available}}",
+    "pendingObservation": "Ожидание, пока контроллер увидит последнее изменение.",
+    "stuck": "{{reason}}: {{message}}",
+    "pausedHint": "Развертывание приостановлено; возобновите его, чтобы продолжить или откатить."
+  },
+  "history": {
+    "title": "Ревизии",
+    "loading": "Загрузка ревизий…",
+    "empty": "Ревизий пока нет.",
+    "columns": {
+      "compare": "Сравнить",
+      "revision": "Ревизия",
+      "created": "Создана",
+      "changeCause": "Причина изменения",
+      "images": "Образы"
+    },
+    "current": "текущая",
+    "select": "Сравнить ревизию {{revision}}",
+    "pickTwo": "Выберите две ревизии, чтобы сравнить их шаблоны Pod.",
+    "pickOneMore": "Выберите еще одну ревизию для сравнения.",
+    "revisionTitle": "Ревизия {{revision}}",
+    "rollBack": "Откатить к ревизии {{revision}}"
+  },
+  "rollback": {
+    "action": "Откатить…",
+    "title": "Откат {{name}}",
+    "confirm": "Откатить к ревизии {{revision}}",
+    "revision": "Ревизия",
+    "revisionOption": "Ревизия {{revision}}",
+    "revisionOptionCause": "Ревизия {{revision}} — {{cause}}",
+    "intro": "Шаблон Pod ревизии {{revision}} заменит текущий, и Pod будут заменены так же, как при любом обновлении.",
+    "current": "Текущий шаблон",
+    "target": "Ревизия {{revision}}",
+    "same": "Текущий шаблон уже совпадает с ревизией {{revision}}: менять нечего.",
+    "paused": "Этот Deployment приостановлен. Возобновите его перед откатом.",
+    "none": "Нет более ранней ревизии для отката.",
+    "loading": "Загрузка ревизий…"
+  }
+}

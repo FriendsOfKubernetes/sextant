@@ -1,0 +1,146 @@
+{
+  "sidebar": {
+    "charts": "Chart",
+    "releases": "发布"
+  },
+  "missing": {
+    "title": "未安装 Helm",
+    "text": "可以查看发布，但更改发布和安装 Chart 需要 helm 命令。请安装 Helm（回到此窗口时会自动识别），或在“设置 → Helm”中选择可执行文件。安装指南：",
+    "short": "需要 Helm — 请参阅页面顶部的提示"
+  },
+  "releases": {
+    "title": "发布",
+    "search": "搜索发布",
+    "searchPlaceholder": "搜索…",
+    "loading": "正在加载发布…",
+    "empty": "没有 Helm 发布",
+    "emptyText": "在选定 Namespace 中使用 Helm 安装的发布会显示在这里。",
+    "noMatch": "没有与搜索匹配的发布",
+    "open": "打开发布 {{name}}",
+    "unreadable": "无法读取",
+    "unreadableRevision": "无法读取的修订版本 {{revision}}"
+  },
+  "columns": {
+    "name": "名称",
+    "namespace": "Namespace",
+    "chart": "Chart",
+    "version": "版本",
+    "appVersion": "应用版本",
+    "status": "状态",
+    "updated": "更新时间",
+    "revision": "修订版本",
+    "description": "描述"
+  },
+  "details": {
+    "title": "发布 {{name}}",
+    "close": "关闭发布详细信息",
+    "loading": "正在加载…",
+    "chart": "Chart {{chart}} {{version}} · 应用 {{appVersion}} · 修订版本 {{revision}}",
+    "tabs": {
+      "values": "Values",
+      "manifest": "清单",
+      "notes": "说明",
+      "history": "历史记录"
+    },
+    "tabsLabel": "发布详细信息",
+    "valuesLabel": "{{name}} 的用户 values",
+    "manifestLabel": "{{name}} 的清单",
+    "show": {
+      "values": "显示 values",
+      "manifest": "显示清单"
+    },
+    "hide": {
+      "values": "隐藏 values",
+      "manifest": "隐藏清单"
+    },
+    "hidden": {
+      "values": "Values 已隐藏。点击眼睛按钮即可显示。",
+      "manifest": "清单已隐藏。点击眼睛按钮即可显示。"
+    },
+    "noValues": "没有用户 values：该发布使用 Chart 的默认值。",
+    "noNotes": "该 Chart 没有说明。",
+    "current": "当前",
+    "unreadable": "无法读取",
+    "unreadableText": "无法读取此修订版本存储的数据。",
+    "unreadableLatest": "无法读取修订版本 {{revision}}；正在显示最新的可读修订版本 {{shown}}。",
+    "nothingReadable": "此发布的所有修订版本均无法读取（最新：{{revision}}）。"
+  },
+  "actions": {
+    "editValues": "编辑 values",
+    "rollback": "回滚",
+    "rollbackTo": "回滚到修订版本 {{revision}}",
+    "uninstall": "卸载"
+  },
+  "upgrade": {
+    "title": "编辑 {{name}} 的 values",
+    "valuesLabel": "{{name}} 的 values",
+    "chartRef": "Chart 引用",
+    "chartRefHint": "将使用 Chart {{chart}} {{version}} 升级。留空则重用发布中存储的 Chart；包含子 Chart 的 Chart 需要其仓库引用，例如 repo/{{chart}}。",
+    "confirm": "升级",
+    "done": "发布 {{name}} 已升级，并创建了新的修订版本。",
+    "failed": "Helm 无法升级该发布"
+  },
+  "rollback": {
+    "title": "回滚 {{name}}？",
+    "text": "{{name}} 将获得一个新的修订版本，使用修订版本 {{revision}} 的 Chart 和 values。集群中的资源会相应地更改。",
+    "confirm": "回滚",
+    "failed": "Helm 无法回滚该发布"
+  },
+  "uninstall": {
+    "title": "卸载 {{name}}？",
+    "text": "Namespace {{namespace}} 中的发布 {{name}} 及其创建的所有资源都将从集群中删除。此操作无法撤消。",
+    "confirm": "卸载",
+    "failed": "Helm 无法卸载该发布"
+  },
+  "confirmName": {
+    "label": "输入发布名称（{{name}}）以确认",
+    "mismatch": "名称不匹配。"
+  },
+  "charts": {
+    "title": "Chart",
+    "repositories": "仓库",
+    "noRepos": "尚无 Chart 仓库。添加一个仓库即可搜索其中的 Chart。",
+    "repoName": "名称",
+    "repoUrl": "URL",
+    "repoNamePlaceholder": "bitnami",
+    "repoUrlPlaceholder": "https://charts.bitnami.com/bitnami",
+    "repoUsername": "用户名（可选）",
+    "repoPassword": "密码（可选）",
+    "loginInUrl": "请在“用户名”和“密码”字段中输入用户名和密码，不要写在 URL 中。",
+    "add": "添加仓库",
+    "adding": "正在添加…",
+    "remove": "移除",
+    "removeLabel": "移除仓库 {{name}}",
+    "removeTitle": "移除仓库 {{name}}？",
+    "removeText": "Helm 将不再记录仓库 {{name}}（{{url}}）。从该仓库安装的发布不受影响。",
+    "update": "更新仓库",
+    "updating": "正在更新…",
+    "updated": "仓库已更新。",
+    "search": "搜索 Chart",
+    "searchPlaceholder": "Chart 名称或关键字",
+    "searchButton": "搜索",
+    "searching": "正在搜索…",
+    "noResults": "没有与搜索匹配的 Chart。",
+    "description": "描述",
+    "select": "显示 Chart {{name}}",
+    "defaultValues": "默认 values",
+    "defaultValuesLabel": "{{name}} {{version}} 的默认 values",
+    "loadingValues": "正在加载默认 values…",
+    "install": "安装",
+    "loading": "正在加载…"
+  },
+  "install": {
+    "title": "安装 {{chart}} {{version}}",
+    "release": "发布名称",
+    "namespace": "Namespace",
+    "valuesLabel": "{{chart}} 的 values",
+    "invalidName": "只能使用小写字母、数字、- 和 .（最多 53 个字符），且必须以字母或数字开头和结尾。",
+    "confirm": "安装",
+    "done": "发布 {{release}} 已安装到 Namespace {{namespace}}，可在“发布”下找到。",
+    "failed": "Helm 无法安装该 Chart",
+    "valuesHint": "只有你相对于 Chart 默认值更改过的 values 才会随发布一起保存。"
+  },
+  "status": {
+    "loading": "正在检查 Helm…"
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "sidebar": {
+    "page": "İzinler"
+  },
+  "objectLabel": "{{kind}} {{name}}",
+  "page": {
+    "title": "İzinler",
+    "tabsLabel": "İzin görünümleri",
+    "tabs": {
+      "subject": "Özne",
+      "whoCan": "Kim yapabilir",
+      "canI": "Ben yapabilir miyim"
+    },
+    "filtered_one": "Role ve RoleBinding'ler yalnızca süzgeçteki {{count}} namespace'te okunur: {{namespaces}}.",
+    "filtered_other": "Role ve RoleBinding'ler yalnızca süzgeçteki {{count}} namespace'te okunur: {{namespaces}}."
+  },
+  "notes": {
+    "computed": "Role, ClusterRole ve bunların bağlamalarından hesaplanır. Kümenin diğer yetkilendiricileri (Node, webhook'lar, ABAC) dahil edilmez ve system:masters grubunun üyeleri RBAC ne derse desin her şeyi yapabilir. Kendi izinleriniz için “Ben yapabilir miyim” sekmesi API sunucusuna sorar; onun yanıtı kesindir.",
+    "groups": "Kullanıcılar ve gruplar Kubernetes nesnesi değildir: bir kullanıcının grupları nasıl oturum açtığından gelir. Bağlamalarını dahil etmek için bildiğiniz grupları adlandırın."
+  },
+  "lists": {
+    "loading": "Roller ve bağlamalar okunuyor…",
+    "nothing": "Bu kümede roller ve bağlamalar okunamıyor",
+    "forbidden": {
+      "roles": "Role nesnelerini listeleme izniniz yok: Role nesnelerine yapılan bağlamalar kural göstermez.",
+      "clusterRoles": "ClusterRole nesnelerini listeleme izniniz yok: ClusterRole nesnelerine yapılan bağlamalar kural göstermez.",
+      "roleBindings": "RoleBinding'leri listeleme izniniz yok: namespace'lerde verilen izinler eksik.",
+      "clusterRoleBindings": "ClusterRoleBinding'leri listeleme izniniz yok: küme genelindeki izinler eksik."
+    },
+    "failed": {
+      "roles": "Role nesneleri okunamadı: Role nesnelerine yapılan bağlamalar kural göstermez.",
+      "clusterRoles": "ClusterRole nesneleri okunamadı: ClusterRole nesnelerine yapılan bağlamalar kural göstermez.",
+      "roleBindings": "RoleBinding'ler okunamadı: namespace'lerde verilen izinler eksik.",
+      "clusterRoleBindings": "ClusterRoleBinding'ler okunamadı: küme genelindeki izinler eksik."
+    },
+    "partial_one": "{{count}} namespace'in ({{namespaces}}) Role veya RoleBinding'lerini okuma izniniz yok: orada verilen izinler eksik.",
+    "partial_other": "{{count}} namespace'in ({{namespaces}}) Role veya RoleBinding'lerini okuma izniniz yok: orada verilen izinler eksik."
+  },
+  "subject": {
+    "search": "Kullanıcı, grup ve hizmet hesaplarında ara",
+    "listLabel": "Bağlamalarda adı geçen özneler",
+    "known_one": "Bağlamalarda {{count}} özne adı geçiyor.",
+    "known_other": "Bağlamalarda {{count}} özne adı geçiyor.",
+    "none": "Eşleşen özne yok.",
+    "more_one": "{{count}} özne daha eşleşiyor; aramayı daraltın.",
+    "more_other": "{{count}} özne daha eşleşiyor; aramayı daraltın.",
+    "choose": "Neler yapabileceğini görmek için bir özne seçin.",
+    "other": "Başka bir özne",
+    "kind": "Tür",
+    "name": "Ad",
+    "namespace": "Namespace",
+    "groups": "Gruplar (virgülle ayrılmış)",
+    "show": "İzinleri göster",
+    "label": "{{kind}} {{name}}",
+    "change": "Başkasını seç",
+    "memberOf": "üyesi olduğu gruplar: {{groups}}",
+    "implicit": "Ayrıca şu grupların üyesi sayılır: {{groups}}.",
+    "kinds": {
+      "User": "Kullanıcı",
+      "Group": "Grup",
+      "ServiceAccount": "Hizmet hesabı"
+    }
+  },
+  "scope": {
+    "label": "Namespace",
+    "all": "Tüm namespace'ler",
+    "cluster": "Her yerde",
+    "only": "Yalnızca {{namespace}} içinde"
+  },
+  "matrix": {
+    "label": "{{subject}} izinleri, fiile ve kaynağa göre",
+    "filter": "Kaynakları süz",
+    "resource": "Kaynak",
+    "group": "API grubu",
+    "core": "core",
+    "allGroups": "tüm gruplar",
+    "allResources": "tüm kaynaklar",
+    "allUrls": "tüm URL'ler",
+    "anyVerb": "herhangi bir fiil",
+    "urls": "Kaynak dışı URL'ler",
+    "empty": "İzin bulunamadı.",
+    "truncated_one": "Yalnızca ilk {{count}} kaynak gösteriliyor.",
+    "truncated_other": "Yalnızca ilk {{count}} kaynak gösteriliyor.",
+    "cellAllowed": "{{verb}} {{resource}}: izin verildi",
+    "cellPartial": "{{verb}} {{resource}}: yalnızca adı belirtilen bazı nesneler",
+    "cellTitle_one": "{{count}} kural tarafından izin verildi ({{bindings}}). Kural için tıklayın.",
+    "cellTitle_other": "{{count}} kural tarafından izin verildi ({{bindings}}). Kurallar için tıklayın.",
+    "cellTitleReview_one": "{{count}} kural tarafından izin verildi. Görmek için tıklayın.",
+    "cellTitleReview_other": "{{count}} kural tarafından izin verildi. Görmek için tıklayın.",
+    "detail": "{{verb}} {{resource}}"
+  },
+  "rules": {
+    "none": "Bu rolün kuralı yok.",
+    "verbs": "Fiiller",
+    "resources": "Kaynaklar",
+    "groups": "API grupları",
+    "names": "Yalnızca nesneler",
+    "notes": "Anlamı",
+    "via": "birleştirildiği kaynak: {{source}}"
+  },
+  "grants": {
+    "binding": "Bağlama",
+    "role": "Rol",
+    "scope": "Nerede",
+    "matchedBy": "Verildiği özne",
+    "rule": "Kural",
+    "notes": "Notlar",
+    "ruleText": "{{resources}} üzerinde {{verbs}}"
+  },
+  "explain": {
+    "allVerbs": "escalate, bind ve impersonate dahil her fiil.",
+    "allGroups": "Özel kaynaklar dahil her API grubunun kaynakları.",
+    "allResources": "pods/exec ve pods/log gibi her kaynak ve her alt kaynak.",
+    "anySubresource": "Herhangi bir kaynağın {{subresource}} alt kaynağı.",
+    "subresource": "Yalnızca {{subresource}} alt kaynağı; {{resource}} kaynağının kendisine erişim ayrı bir kuraldır.",
+    "onlyNames": "Yalnızca şu adlara sahip nesneler: {{list}}. Hiçbir zaman create veya deletecollection olmaz; list veya watch yalnızca bunlardan birini adlandıran bir field selector ile yapılır.",
+    "allUrls": "Kaynak dışı her URL.",
+    "urlPrefix": "{{prefix}} ile başlayan her URL.",
+    "escalating": "Sahip olduğundan fazlasını verebilir: {{list}}.",
+    "pending": "{{source}} kaynağından birleştirildi; API sunucusu bunu henüz bu role eklemedi."
+  },
+  "warnings": {
+    "missingRole": "{{binding}}, mevcut olmayan {{role}} rolüne başvuruyor: rol oluşturulana kadar hiçbir şey vermez."
+  },
+  "whoCan": {
+    "formLabel": "Kim yapabilir",
+    "verb": "Fiil",
+    "resource": "Kaynak",
+    "resourcePlaceholder": "pods, secrets, deployments.apps",
+    "subresource": "Alt kaynak",
+    "subresourcePlaceholder": "exec, log, scale",
+    "name": "Nesne adı",
+    "namespace": "Namespace",
+    "anyNamespace": "herhangi bir namespace",
+    "urlMode": "Kaynak dışı URL",
+    "url": "URL",
+    "urlPlaceholder": "/healthz",
+    "find": "Bul",
+    "unknownResource": "Küme {{resource}} adlı bir kaynak sunmuyor; yanıt bunu yazıldığı gibi, core grubunda kullanır.",
+    "clusterScoped": "Bu kaynak küme kapsamlıdır: namespace ne olursa olsun yalnızca ClusterRoleBinding'ler bu izni verebilir.",
+    "none": "RBAC bu izni hiçbir özneye vermiyor.",
+    "results_one": "{{count}} yetki buna izin veriyor.",
+    "results_other": "{{count}} yetki buna izin veriyor.",
+    "masters": "{{group}} üyeleri de bunu yapabilir: RBAC'yi atlarlar.",
+    "tableLabel": "İzin verilen özneler",
+    "subject": "Özne",
+    "showSubject": "Bu öznenin izinlerini göster",
+    "truncated_one": "Yalnızca ilk {{count}} yetki gösteriliyor.",
+    "truncated_other": "Yalnızca ilk {{count}} yetki gösteriliyor."
+  },
+  "canI": {
+    "authoritative": "Kümenin tüm yetkilendiricileriyle API sunucusu tarafından yanıtlanır: isteklerinizin alacağı yanıt budur. Sormak kümede hiçbir şeyi değiştirmez.",
+    "askTitle": "Ben yapabilir miyim…",
+    "ask": "Sor",
+    "asking": "API sunucusuna soruluyor…",
+    "clear": "Temizle",
+    "allowed": "Evet, izin verildi",
+    "denied": "Hayır, reddedildi",
+    "notAllowed": "Hayır, izin verilmedi",
+    "reason": "Neden: {{reason}}",
+    "evaluationError": "Yanıt eksik olabilir: {{error}}",
+    "reviewTitle": "Bir namespace'teki izinlerim",
+    "review": "İzinlerimi listele",
+    "reviewing": "API sunucusuna soruluyor…",
+    "forbidden": "Bu kümede kendi izinleriniz hakkında API sunucusuna soru sorma izniniz yok.",
+    "incomplete": "Liste eksik olabilir: bu kümenin bir yetkilendiricisi kurallarını listeleyemiyor.",
+    "incompleteBecause": "Liste eksik olabilir: {{error}}",
+    "matrixLabel": "{{namespace}} içindeki izinlerim, fiile ve kaynağa göre"
+  },
+  "details": {
+    "rulesExplained": "Kuralların açıklaması",
+    "aggregatedFrom": "Birleştirildiği kaynaklar:",
+    "aggregatedFromNone": "Birleştirilmiş, ancak selector'larıyla eşleşen ClusterRole yok.",
+    "boundTo": "Bağlı olduğu özneler",
+    "noBindings": "Bu role başvuran bağlama yok.",
+    "subjects": "Özneler",
+    "showPermissions": "Bu öznenin izinlerini göster",
+    "grants": "Verdiği rol: {{role}}",
+    "grantsEverywhere": "Her namespace'te ve küme kapsamlı kaynaklarda.",
+    "grantsIn": "Yalnızca {{namespace}} namespace'inde.",
+    "urlsIgnored": "Kaynak dışı URL'lerdeki kurallar dışarıda bırakılır: bir RoleBinding bunları veremez.",
+    "subjectsPermissions": "Öznelerinin izinleri",
+    "canDo": "Neler yapabilir",
+    "openPage": "İzinler'de aç"
+  }
+}

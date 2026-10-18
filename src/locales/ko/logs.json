@@ -1,0 +1,91 @@
+{
+  "action": {
+    "label": "로그"
+  },
+  "toolbar": {
+    "label": "로그 옵션",
+    "container": "컨테이너",
+    "initContainer": "{{name}}(init)",
+    "follow": "따라가기",
+    "timestamps": "타임스탬프",
+    "previous": "이전 컨테이너",
+    "wrap": "줄 바꿈",
+    "save": "저장",
+    "reconnect": "다시 연결"
+  },
+  "search": {
+    "label": "로그 검색",
+    "placeholder": "검색",
+    "previous": "이전 일치 항목",
+    "next": "다음 일치 항목",
+    "count": "{{current}}/{{total}}",
+    "countCapped": "{{current}}/{{total}}+",
+    "none": "일치 항목 없음"
+  },
+  "status": {
+    "connecting": "연결하는 중…",
+    "live": "실시간",
+    "notFollowing": "따라가지 않음",
+    "ended": "스트림 종료됨",
+    "failed": "스트림 실패"
+  },
+  "lines_other": "{{count}}줄",
+  "dropped_other": "오래된 줄 {{count}}개를 버렸습니다(최신 {{limit}}줄, 최대 {{size}}MiB의 텍스트를 유지함)",
+  "lineCut": " … [64 KiB에서 줄이 잘림, 다음 줄에 계속]",
+  "empty": "아직 로그 줄이 없습니다.",
+  "view": "로그 줄",
+  "save": {
+    "title": "로그 저장",
+    "filter": "로그 파일",
+    "failed": "로그를 저장할 수 없습니다."
+  },
+  "picker": {
+    "title": "{{name}}의 로그: Pod 선택",
+    "loading": "Pod를 로드하는 중…",
+    "none": "Pod를 찾을 수 없습니다.",
+    "noSelector": "이 개체는 Pod를 선택하지 않습니다.",
+    "all": "모든 Pod",
+    "allHint": "나중에 생성되는 Pod를 포함하여 모든 Pod를 하나의 탭에서 따라갑니다."
+  },
+  "details": {
+    "title": "로그",
+    "allPods": "모든 Pod의 로그",
+    "hint": "{{selector}}와(과) 일치하는 Pod가 생기고 사라지는 대로 따라갑니다."
+  },
+  "multi": {
+    "podsTitle_other": "Pod {{count}}개",
+    "selector": "Selector",
+    "selectorHint": "label selector입니다. 적용하려면 Enter를 누르세요.",
+    "sources": "Pod 및 컨테이너({{total}}개 중 {{shown}}개)",
+    "sourcesLabel": "Pod 및 컨테이너",
+    "capHint_other": "로그 스트림은 동시에 최대 {{count}}개까지 실행됩니다. 읽을 항목을 고르려면 Pod나 컨테이너의 선택을 해제하세요.",
+    "capped_other": "컨테이너 {{count}}개가 더 대기 중입니다. 로그 스트림은 동시에 최대 {{max}}개까지 실행됩니다. 읽을 항목을 고르려면 Pod나 컨테이너의 선택을 해제하세요.",
+    "noPods": "일치하는 Pod가 없습니다.",
+    "json": "JSON 구문 분석",
+    "level": "수준",
+    "allLevels": "모든 줄",
+    "levelAndAbove": "{{level}} 이상",
+    "levels": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warn": "WARN",
+      "error": "ERROR",
+      "fatal": "FATAL"
+    },
+    "filter": "필터",
+    "regex": "정규식",
+    "badRegex": "정규식이 올바르지 않아 줄을 필터링하지 않습니다.",
+    "sourceStatus": {
+      "waiting": "사용 가능한 스트림 대기 중",
+      "connecting": "연결 중",
+      "streaming": "실시간",
+      "ended": "종료됨",
+      "error": "실패",
+      "notStarted": "시작되지 않음",
+      "gone": "Pod 없어짐",
+      "off": "꺼짐"
+    },
+    "streams": "스트림: {{count}}, Pod: {{pods}}"
+  }
+}

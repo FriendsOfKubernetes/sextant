@@ -1,0 +1,112 @@
+{
+  "title": "Метрики",
+  "loading": "Загрузка метрик…",
+  "unavailable": "Метрики недоступны",
+  "openSettings": "Открыть настройки кластера",
+  "na": "н/д",
+  "percent": "{{value}}%",
+  "percentOf": "{{value}}% · {{text}}",
+  "usedOf": "{{used}} из {{total}}",
+  "containerUsage": "{{cpu}} · {{memory}}",
+  "requests": {
+    "request": "запрос {{value}}",
+    "limit": "лимит {{value}}",
+    "noLimit": "без лимита",
+    "requestSetOn": "(задан в контейнерах: {{count}} из {{total}})",
+    "limitSetOn": "(задан в контейнерах: {{count}} из {{total}})",
+    "shareOfLimit": "{{value}}% лимита",
+    "shareOfRequest": "{{value}}% запроса",
+    "containerCpu": "CPU {{amounts}}",
+    "containerMemory": "Память {{amounts}}"
+  },
+  "columns": {
+    "cpu": "CPU",
+    "memory": "Память"
+  },
+  "charts": {
+    "cpu": "CPU",
+    "memory": "Память",
+    "pods": "Pods",
+    "disk": "Диск",
+    "loading": "Загрузка графиков…",
+    "noData": "Данных за последний час пока нет.",
+    "needPrometheus": "Для графиков за последний час нужен Prometheus."
+  },
+  "settings": {
+    "title": "Метрики",
+    "prometheus": "Prometheus",
+    "mode": {
+      "auto": "Искать автоматически",
+      "manual": "Указать адрес",
+      "off": "Выключено"
+    },
+    "serviceKind": "Service в кластере",
+    "urlKind": "URL",
+    "service": "Service (namespace/service:port)",
+    "servicePlaceholder": "monitoring/prometheus-operated:9090",
+    "pathPrefix": "Префикс пути",
+    "url": "URL Prometheus",
+    "urlPlaceholder": "http://prometheus.example.com:9090",
+    "invalidService": "Ожидается namespace/service:port, например monitoring/prometheus-operated:9090.",
+    "invalidUrl": "Ожидается URL, начинающийся с http:// или https://.",
+    "save": "Использовать этот адрес",
+    "usageSource": "Источник текущих CPU и памяти",
+    "source": {
+      "auto": "Автоматически (metrics-server, иначе Prometheus)",
+      "metricsServer": "metrics-server",
+      "prometheus": "Prometheus",
+      "off": "Выключено"
+    },
+    "detected": "Найдено",
+    "checking": "Проверка источников метрик…",
+    "metricsServer": "metrics-server",
+    "available": "Доступен",
+    "notAvailable": "Недоступен",
+    "foundAuto": "Найден автоматически: {{target}}",
+    "foundManual": "Отвечает по адресу {{target}}",
+    "notFound": "Не найден",
+    "manualNoAnswer": "Адрес не отвечает",
+    "prometheusOff": "Выключен",
+    "currentFrom": "Источник текущих значений",
+    "noSource": "Нет источника — метрики недоступны"
+  },
+  "overview": {
+    "sidebar": "Обзор",
+    "title": "Обзор кластера",
+    "nodes": "Nodes",
+    "nodesReady": "Готово: {{ready}} из {{count}}",
+    "pods": "Pods",
+    "workloads": "Рабочие нагрузки",
+    "usage": "Использование",
+    "cpu": "CPU",
+    "memory": "Память",
+    "usageOf": "{{used}} из {{total}} доступных",
+    "charts": "Последний час",
+    "warnings": "Предупреждения",
+    "noWarnings": "Предупреждений нет.",
+    "loadingPage": "Загрузка обзора кластера…",
+    "loadingWarnings": "Загрузка предупреждений…",
+    "phase": {
+      "Running": "Выполняется",
+      "Pending": "Ожидает",
+      "Succeeded": "Успешно",
+      "Failed": "Сбой",
+      "Unknown": "Неизвестно"
+    },
+    "state": {
+      "ready": "Готово",
+      "pending": "Не готово",
+      "running": "Выполняется",
+      "succeeded": "Успешно",
+      "failed": "Сбой"
+    },
+    "kinds": {
+      "pods": "Pods",
+      "deployments": "Deployments",
+      "statefulsets": "StatefulSets",
+      "daemonsets": "DaemonSets",
+      "jobs": "Jobs"
+    },
+    "count": "{{count}}"
+  }
+}

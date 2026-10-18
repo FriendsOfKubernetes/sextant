@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "Sextant",
+    "logo": "Sextant のロゴ"
+  },
+  "layout": {
+    "clusters": "クラスター",
+    "sidebar": "セクション",
+    "main": "メイン",
+    "details": "詳細",
+    "dock": "ドック",
+    "resizeSidebar": "サイドバーのサイズを変更",
+    "resizeDock": "ドックのサイズを変更"
+  },
+  "actions": {
+    "close": "閉じる",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "retry": "再試行",
+    "openDock": "ドックを開く",
+    "closeDock": "ドックを閉じる",
+    "closeTab": "タブ {{title}} を閉じる",
+    "closeDetails": "詳細を閉じる"
+  },
+  "welcome": {
+    "title": "Sextant へようこそ",
+    "text": "左側でクラスターを選択して始めましょう。"
+  },
+  "main": {
+    "selectSection": "サイドバーでセクションを選択してください。",
+    "noSections": "このクラスターにはまだ表示できるものがありません。"
+  },
+  "dock": {
+    "empty": "ログ、シェル、ターミナルを開くとここに表示されます。"
+  },
+  "details": {
+    "loading": "読み込み中…",
+    "inNamespace": "Namespace: {{namespace}}"
+  },
+  "age": {
+    "seconds": "{{count}}秒",
+    "minutes": "{{count}}分",
+    "hours": "{{count}}時間",
+    "days": "{{count}}日",
+    "years": "{{count}}年"
+  },
+  "error": {
+    "details": "詳細: {{message}}"
+  },
+  "list": {
+    "separator": "、"
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "sidebar": {
+    "applications": "Applications",
+    "applicationSets": "ApplicationSets",
+    "appProjects": "AppProjects"
+  },
+  "columns": {
+    "project": "프로젝트",
+    "sync": "동기화",
+    "health": "건강 상태",
+    "revision": "리비전",
+    "destination": "대상",
+    "applications": "애플리케이션",
+    "destinations": "대상",
+    "sources": "소스"
+  },
+  "status": {
+    "syncing": "동기화 중"
+  },
+  "fields": {
+    "project": "프로젝트",
+    "sync": "동기화 상태",
+    "syncedRevision": "동기화된 리비전",
+    "health": "건강 상태",
+    "operation": "마지막 작업",
+    "operationStarted": "작업 시작",
+    "operationFinished": "작업 완료",
+    "sources": "소스",
+    "destination": "대상",
+    "syncPolicy": "동기화 정책",
+    "syncOptions": "동기화 옵션",
+    "reconciledAt": "마지막 비교",
+    "generators": "생성기",
+    "applications": "애플리케이션",
+    "description": "설명",
+    "sourceRepos": "소스 저장소",
+    "destinations": "대상",
+    "clusterResourceWhitelist": "허용된 클러스터 리소스",
+    "clusterResourceBlacklist": "거부된 클러스터 리소스",
+    "namespaceResourceWhitelist": "허용된 namespace 리소스",
+    "namespaceResourceBlacklist": "거부된 namespace 리소스",
+    "roles": "역할"
+  },
+  "sources": {
+    "repo": "저장소",
+    "path": "경로 / 차트",
+    "targetRevision": "대상 리비전"
+  },
+  "destinations": {
+    "cluster": "클러스터",
+    "namespace": "Namespace"
+  },
+  "policy": {
+    "manual": "수동",
+    "automated": "자동",
+    "prune": "prune",
+    "selfHeal": "self-heal"
+  },
+  "tree": {
+    "title": "리소스",
+    "kind": "종류",
+    "name": "이름",
+    "namespace": "Namespace",
+    "sync": "동기화",
+    "health": "건강 상태 / 상태",
+    "computedHealth": "Sextant가 실제 개체에서 계산한 건강 상태입니다. Argo CD는 이 건강 상태를 자체 API에만 보관합니다.",
+    "computedHealthMessage": "Sextant가 실제 개체에서 계산함: {{message}}",
+    "remote": "이 앱은 다른 클러스터에 배포되므로 여기에서 리소스를 열 수 없습니다.",
+    "loading": "리소스가 소유한 항목을 로드하는 중…"
+  },
+  "history": {
+    "title": "동기화 기록",
+    "id": "ID",
+    "revision": "리비전",
+    "deployedAt": "배포됨",
+    "initiatedBy": "시작한 사람",
+    "source": "소스",
+    "automated": "자동"
+  },
+  "actions": {
+    "sync": "동기화…",
+    "refresh": "새로 고침",
+    "hardRefresh": "강제 새로 고침",
+    "terminate": "종료…",
+    "openUi": "Argo CD UI 열기"
+  },
+  "sync": {
+    "title": "{{name}} 동기화",
+    "confirm": "동기화",
+    "revision": "리비전",
+    "revisionHint": "브랜치, 태그 또는 커밋입니다. 기본값은 앱의 대상 리비전입니다.",
+    "multiSource": "각 소스는 자체 대상 리비전으로 동기화됩니다.",
+    "prune": "Prune",
+    "dryRun": "시험 실행",
+    "started": "{{name}}의 동기화가 시작되었습니다. 진행 상황은 세부 정보에 표시됩니다.",
+    "dryRunStarted": "{{name}}의 시험 실행이 시작되었습니다. 결과는 세부 정보에 표시됩니다."
+  },
+  "terminate": {
+    "title": "{{name}}의 작업을 종료하시겠습니까?",
+    "text": "Argo CD가 실행 중인 {{name}}의 동기화를 중지합니다. 이미 적용된 항목은 그대로 유지됩니다.",
+    "confirm": "종료"
+  },
+  "diff": {
+    "action": "차이",
+    "title": "차이: {{name}}",
+    "loading": "Argo CD에서 차이를 읽는 중…",
+    "summary_other": "리소스 {{total}}개 중 {{changed}}개가 다름",
+    "resources": "애플리케이션의 리소스",
+    "empty": "Argo CD가 이 애플리케이션에 대해 관리하는 리소스가 없습니다.",
+    "desired": "원하는 상태(Git)",
+    "live": "실제 상태(클러스터)",
+    "desiredLabel": "{{resource}}의 원하는 상태",
+    "liveLabel": "{{resource}}의 실제 상태",
+    "secretHidden": "Secret 값은 양쪽 모두 숨겨집니다.",
+    "state": {
+      "changed": "다름",
+      "inSync": "동기화됨",
+      "missingLive": "아직 클러스터에 없음",
+      "missingTarget": "Git에 없음(prune 예정)"
+    },
+    "signedIn": "Argo CD에 로그인됨",
+    "signedInAs": "{{user}}(으)로 Argo CD에 로그인됨",
+    "source": {
+      "secret": "표준 Argo CD Secret 사용",
+      "saved": "저장된 로그인 사용",
+      "manual": "Sextant를 닫을 때까지"
+    },
+    "reload": "다시 로드",
+    "retry": "다시 시도",
+    "signOut": "로그아웃",
+    "forget": "저장된 로그인 삭제",
+    "notSaved": "로그인했지만 로그인 정보를 저장할 수 없습니다: {{reason}}",
+    "errors": {
+      "forbidden": "Argo CD가 로그인한 계정에 이 애플리케이션을 표시하지 않습니다.",
+      "notFound": "이 클러스터에서 Argo CD를 찾을 수 없습니다. argocd-server Service가 없습니다."
+    }
+  },
+  "installation": {
+    "ambiguous": "이 클러스터의 여러 namespace({{namespaces}})가 Argo CD 설치처럼 보이며, 해당 사용자가 직접 만들 수 없는 항목 중 어느 것이 실제 설치인지 알려 주는 것이 없으므로 Sextant는 어디에도 자동으로 연결하지 않습니다. 클러스터 전체 Argo CD는 argocd-application-controller 또는 argocd-server의 ClusterRoleBinding으로 식별됩니다. 클러스터 관리자에게 확인을 요청하세요.",
+    "title": "Argo CD 설치 선택",
+    "choose": "실제 Argo CD가 있는 namespace를 알고 있다면 선택하세요. Sextant는 이 클러스터에 대한 선택을 기억하고 그곳에만 로그인합니다. namespace에 쓰기 권한이 있는 사람은 누구나 그 namespace를 Argo CD처럼 보이게 만들 수 있습니다.",
+    "use": "이 설치 사용",
+    "using": "저장하는 중…"
+  },
+  "login": {
+    "title": "Argo CD에 로그인",
+    "intro": "Sextant가 {{namespace}}의 Argo CD에 자동으로 로그인할 수 없습니다. 로컬 사용자 또는 API 토큰으로 로그인하세요.",
+    "expired": "Argo CD 세션이 만료되었으며 저장된 로그인으로 다시 로그인하지 못했습니다.",
+    "noLocalUsers": "이 Argo CD에는 암호로 로그인할 수 있는 로컬 사용자가 없습니다. API 토큰을 사용하세요.",
+    "sso": "Sextant에서는 SSO를 통한 로그인을 지원하지 않습니다.",
+    "refused": {
+      "typed": "Argo CD가 앞서 입력한 로그인 정보를 거부했습니다.",
+      "saved": "Argo CD가 저장된 로그인 정보를 거부했습니다. 암호나 토큰이 변경되었을 수 있습니다. 현재 정보로 로그인하세요(저장된 로그인을 대체하려면 기억을 선택).",
+      "adminSecret": "Argo CD가 argocd-initial-admin-secret의 관리자 암호를 거부했습니다. Argo CD에서 암호가 변경되었을 수 있습니다. 현재 암호를 입력하세요.",
+      "tokenSecret": "Argo CD가 app.kubernetes.io/part-of=argocd label이 있는 Secret의 API 토큰을 거부했습니다. 토큰이 만료되었거나 취소되었을 수 있습니다."
+    },
+    "insecure": "이 Argo CD는 TLS 없이 서버를 실행하므로(argocd-cmd-params-cm의 server.insecure) Sextant는 일반 HTTP로 통신합니다. 클러스터 내부에서 암호나 토큰이 암호화되지 않은 상태로 전송됩니다.",
+    "mode": {
+      "label": "로그인 방법",
+      "password": "사용자 및 암호",
+      "token": "API 토큰"
+    },
+    "username": "사용자",
+    "password": "암호",
+    "token": "API 토큰",
+    "remember": "이 컴퓨터에 기억(시스템 키체인)",
+    "hint": "Sextant는 로그인을 요청하기 전에 저장된 로그인, argocd-initial-admin-secret의 관리자 암호, app.kubernetes.io/part-of=argocd label이 있는 Secret의 API 토큰을 시도합니다. argocd-secret에는 관리자 암호의 bcrypt 해시만 있으므로 로그인에 사용할 수 없습니다.",
+    "submit": "로그인",
+    "signingIn": "로그인하는 중…",
+    "errors": {
+      "invalid": "Argo CD가 사용자 이름 또는 암호를 거부했습니다.",
+      "invalidToken": "Argo CD가 API 토큰을 거부했습니다. 토큰이 잘못되었거나 만료되었거나 취소되었습니다.",
+      "ssoOnly": "이 Argo CD는 Sextant에서 지원하지 않는 SSO로만 로그인할 수 있습니다. API 토큰을 사용하세요.",
+      "unreachable": "Argo CD에 연결할 수 없습니다. 서버에 준비된 Pod가 없거나 응답하지 않습니다.",
+      "incomplete": "사용자 이름과 암호 또는 API 토큰을 입력하세요.",
+      "other": "Argo CD에 로그인하지 못했습니다."
+    }
+  }
+}

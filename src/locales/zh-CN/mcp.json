@@ -1,0 +1,124 @@
+{
+  "title": "AI 智能体（MCP）",
+  "hint": "允许 Claude Code、Claude Desktop 和 Cursor 等 AI 智能体通过 Sextant 查看你的集群。服务器仅在本机上监听，并且需要令牌。智能体在每个集群中可以执行的操作在该集群的设置（AI 智能体访问权限）中配置；在你允许之前，它什么也做不了。",
+  "enable": "启用 MCP 服务器",
+  "port": {
+    "label": "端口",
+    "apply": "应用",
+    "invalid": "请输入 1024 到 65535 之间的整数。",
+    "hint": "更改端口会重启服务器，并结束智能体的会话。"
+  },
+  "status": {
+    "off": "已关闭",
+    "starting": "正在启动…",
+    "running": "正在 {{url}} 上运行",
+    "error": "MCP 服务器无法启动。"
+  },
+  "token": {
+    "label": "令牌",
+    "hint": "智能体在每次请求时都会发送此令牌。请妥善保管：任何拥有它的人都可以向服务器请求你所允许的操作。",
+    "masked": "••••••••••••••••••••••••••••••••",
+    "show": "显示",
+    "hide": "隐藏",
+    "copy": "复制",
+    "regenerate": "重新生成",
+    "copied": "令牌已复制。",
+    "regenerated": "已创建新令牌。请更新所有使用旧令牌的智能体的配置。",
+    "confirmTitle": "重新生成令牌？",
+    "confirmBody": "当前令牌将立即失效，智能体的会话也会被关闭。你需要将新令牌提供给每个智能体。",
+    "failed": "无法读取令牌：{{message}}"
+  },
+  "snippets": {
+    "title": "连接智能体",
+    "tabs": "智能体",
+    "claudeCode": "Claude Code",
+    "claudeDesktop": "Claude Desktop",
+    "cursor": "Cursor",
+    "claudeCodeHint": "在终端中运行此命令。命令中包含令牌，请妥善保管。",
+    "cursorHint": "将此内容添加到 ~/.cursor/mcp.json（或项目中的 .cursor/mcp.json）。其中包含令牌。",
+    "claudeDesktopHint": "将此内容添加到 claude_desktop_config.json 的 mcpServers 部分。Claude Desktop 会将 Sextant 作为辅助程序启动，由它自行读取端口和令牌，因此该文件中不包含令牌。Sextant 必须处于运行状态且服务器已开启。",
+    "tokenHidden": "此处隐藏了令牌；点击“复制”会将真实令牌放入剪贴板。",
+    "copy": "复制",
+    "copyFor": "复制 {{name}} 配置",
+    "copied": "已复制。",
+    "copyFailed": "无法复制：{{message}}"
+  },
+  "activity": {
+    "open": "智能体活动",
+    "openActive": "智能体活动（有智能体正在工作）",
+    "openLog": "打开活动日志",
+    "title": "智能体活动",
+    "hint": "AI 智能体请求过的操作。Secret 的值、YAML 和命令输出不会被记录。",
+    "cluster": "集群",
+    "allClusters": "所有集群",
+    "loading": "正在加载日志…",
+    "empty": "尚无调用。",
+    "failed": "无法读取日志",
+    "clear": "清除",
+    "clearTitle": "清除活动日志？",
+    "clearBody": "此计算机上记录的所有智能体调用都将被删除。",
+    "ok": "成功",
+    "none": "-",
+    "columns": {
+      "time": "时间",
+      "client": "客户端",
+      "cluster": "集群",
+      "tool": "工具",
+      "target": "目标",
+      "decision": "决定",
+      "result": "结果",
+      "duration": "耗时"
+    },
+    "decisions": {
+      "allowed": "已允许",
+      "denied": "已拒绝",
+      "approved": "已由你批准",
+      "declined": "已由你拒绝",
+      "timedOut": "无应答",
+      "notChecked": "未检查"
+    },
+    "duration": "{{ms}} 毫秒"
+  },
+  "confirm": {
+    "title": "AI 智能体请求执行操作",
+    "extensionTitle": "扩展请求执行操作",
+    "intro": "{{client}} 想在 {{cluster}} 中执行以下操作。",
+    "client": "智能体",
+    "extension": "扩展",
+    "cluster": "集群",
+    "action": "操作",
+    "target": "目标",
+    "details": "详细信息",
+    "allow": "允许",
+    "deny": "拒绝",
+    "countdown": "将在 {{time}} 后自动拒绝",
+    "waiting_other": "还有 {{count}} 个请求正在等待。"
+  },
+  "tools": {
+    "apply_yaml": "应用 YAML",
+    "patch_resource": "修补资源",
+    "delete_resource": "删除资源",
+    "scale": "伸缩工作负载",
+    "restart": "重启工作负载",
+    "rollout_undo": "回滚工作负载",
+    "cordon_node": "封锁或解除封锁节点",
+    "drain_node": "腾空节点",
+    "trigger_cronjob": "立即运行 CronJob",
+    "suspend_cronjob": "暂停或恢复 CronJob",
+    "gitops_action": "GitOps 操作",
+    "helm_install": "安装 Helm 发布",
+    "helm_upgrade": "升级 Helm 发布",
+    "helm_rollback": "回滚 Helm 发布",
+    "helm_uninstall": "卸载 Helm 发布",
+    "exec_command": "在容器中运行命令",
+    "port_forward_start": "打开端口转发",
+    "port_forward_stop": "关闭端口转发"
+  },
+  "methods": {
+    "resources": {
+      "apply": "应用 YAML",
+      "patch": "修补资源",
+      "delete": "删除资源"
+    }
+  }
+}

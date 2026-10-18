@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "gitRepositories": "Git Repositories",
+    "ociRepositories": "OCI Repositories",
+    "helmRepositories": "Helm Repositories",
+    "helmCharts": "Helm Charts",
+    "buckets": "Buckets",
+    "kustomizations": "Kustomizations",
+    "helmReleases": "Helm Releases",
+    "imageRepositories": "Image Repositories",
+    "imagePolicies": "Image Policies",
+    "imageUpdateAutomations": "Image Update Automations",
+    "alerts": "Alerts",
+    "providers": "Providers",
+    "receivers": "Receivers"
+  },
+  "columns": {
+    "ready": "就緒",
+    "status": "狀態",
+    "revision": "修訂版本",
+    "suspended": "已暫停",
+    "source": "來源"
+  },
+  "suspended": {
+    "yes": "是",
+    "no": "否"
+  },
+  "fields": {
+    "ready": "就緒",
+    "message": "狀態",
+    "revision": "修訂版本",
+    "lastAttemptedRevision": "上次嘗試的修訂版本",
+    "suspended": "已暫停",
+    "interval": "間隔",
+    "timeout": "逾時",
+    "source": "來源",
+    "chart": "Chart",
+    "helmChart": "Helm Chart",
+    "url": "URL",
+    "ref": "參照",
+    "endpoint": "端點",
+    "bucketName": "儲存貯體",
+    "path": "路徑",
+    "targetNamespace": "目標 Namespace",
+    "releaseName": "發行版本名稱",
+    "prune": "清除",
+    "dependsOn": "相依於",
+    "image": "映像檔",
+    "imageRepository": "映像檔儲存庫",
+    "provider": "提供者",
+    "eventSeverity": "事件嚴重性",
+    "eventSources": "事件來源",
+    "type": "類型",
+    "channel": "頻道",
+    "webhookPath": "Webhook 路徑",
+    "lastHandledReconcileAt": "上次調和要求"
+  },
+  "related": {
+    "inventory": "已套用的資源",
+    "resources": "資源",
+    "usedBy": "使用者",
+    "kind": "Kind",
+    "name": "名稱",
+    "namespace": "Namespace",
+    "loading": "正在載入…",
+    "notUsed": "沒有任何 Kustomization 或 HelmRelease 使用此來源。"
+  },
+  "actions": {
+    "reconcile": "立即調和",
+    "reconcileWithSource": "連同來源一起調和",
+    "suspend": "暫停",
+    "resume": "繼續"
+  },
+  "suspend": {
+    "title": "要暫停 {{kind}} {{name}} 嗎？",
+    "confirm": "暫停",
+    "text": "在繼續之前，Flux 會停止調和 {{kind}} {{name}}：在此期間，Git 或叢集中的變更不會被套用或修正。"
+  }
+}

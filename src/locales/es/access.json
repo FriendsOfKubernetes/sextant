@@ -1,0 +1,79 @@
+{
+  "title": "Acceso de agentes de IA",
+  "intro": "Lo que pueden hacer en este clúster los agentes de IA conectados a través del servidor MCP. No se permite nada hasta que se elija un conjunto.",
+  "preset": {
+    "legend": "Conjunto de acceso",
+    "off": "Desactivado",
+    "readOnly": "Solo lectura",
+    "readWrite": "Lectura + escritura (sin eliminar)",
+    "full": "Completo",
+    "custom": "Personalizado"
+  },
+  "description": {
+    "off": "El agente no tiene acceso a este clúster. Ve el clúster en su lista, pero se rechazan todas las llamadas.",
+    "readOnly": "El agente puede leer todos los recursos de todos los namespaces y obtener los registros de los Pods. Los valores de los Secrets están ocultos. No puede cambiar nada.",
+    "readWrite": "El agente puede leerlo todo y obtener registros, y además cambiar recursos, ejecutar comandos en contenedores y abrir reenvíos de puertos. Pide confirmación cada vez. No puede eliminar. Los valores de los Secrets están ocultos.",
+    "full": "El agente puede hacerlo todo en todos los namespaces, incluido eliminar. Los cambios, las eliminaciones, los comandos y los reenvíos de puertos piden confirmación cada vez. Los valores de los Secrets están ocultos.",
+    "custom": "Usted decide: cada regla abarca namespaces, tipos y acciones. Una acción se permite cuando al menos una regla la abarca."
+  },
+  "customizeHint": "Elija Personalizado para partir de las reglas de este conjunto y editarlas.",
+  "unrecognised": {
+    "notice": "Estas reglas las escribió una versión más reciente de Sextant o se editaron a mano; se conservan, pero no se aplican. El agente no tiene acceso hasta que se restablezca a Desactivado o se elija un conjunto, que las sustituye.",
+    "reset": "Restablecer a Desactivado"
+  },
+  "saveFailed": "No se pudieron guardar las reglas de acceso.",
+  "rules": {
+    "title": "Reglas",
+    "none": "No hay reglas, así que el agente no tiene acceso a este clúster.",
+    "rule": "Regla {{number}}",
+    "add": "Agregar regla",
+    "remove": "Quitar la regla {{number}}"
+  },
+  "namespaces": {
+    "legend": "Namespaces",
+    "all": "Todos los namespaces",
+    "only": "Namespaces seleccionados",
+    "filter": "Filtrar namespaces",
+    "add": "Agregar un namespace por nombre",
+    "addPlaceholder": "nombre del namespace",
+    "addButton": "Agregar namespace",
+    "invalid": "No es un nombre de namespace válido.",
+    "empty": "No hay ningún namespace seleccionado, así que esta regla no abarca nada.",
+    "clusterOnly": "Los recursos que no pertenecen a ningún namespace (nodos, namespaces, CRD, roles de clúster) solo los abarca una regla con todos los namespaces."
+  },
+  "kinds": {
+    "legend": "Tipos",
+    "all": "Todos los tipos",
+    "only": "Tipos seleccionados",
+    "filter": "Filtrar tipos",
+    "add": "Agregar un tipo por nombre",
+    "addPlaceholder": "Kind o grupo/Kind",
+    "addButton": "Agregar tipo",
+    "invalid": "Use Kind o grupo/Kind, por ejemplo Pod o apps/Deployment.",
+    "empty": "No hay ningún tipo seleccionado, así que esta regla no abarca nada.",
+    "helm": "Releases de Helm",
+    "coreGroup": "core",
+    "more": "Se muestran los primeros {{count}}. Escriba en el filtro para acotar la lista."
+  },
+  "picker": {
+    "noMatch": "No hay coincidencias.",
+    "notConnected": "Conéctese a este clúster para elegir de su lista. También puede escribir un nombre abajo.",
+    "loading": "Cargando la lista…",
+    "failed": "La lista del clúster no está disponible. También puede escribir un nombre abajo."
+  },
+  "actions": {
+    "legend": "Acciones",
+    "read": "Leer",
+    "modify": "Modificar",
+    "delete": "Eliminar",
+    "logs": "Registros",
+    "exec": "Exec / shell",
+    "portForward": "Reenvío de puertos",
+    "secretValues": "Valores de Secrets"
+  },
+  "confirm": {
+    "label": "Preguntar antes de ejecutar",
+    "hint": "Modificar, Eliminar, Exec y Reenvío de puertos en esta regla esperan su respuesta en Sextant (120 s; después se rechazan)."
+  },
+  "secretWarning": "Valores de Secrets permite al agente leer en texto claro los datos de los Secrets y los valores de las releases de Helm. Permítalo solo para los namespaces que el agente realmente necesite."
+}
