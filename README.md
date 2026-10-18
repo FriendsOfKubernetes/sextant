@@ -24,6 +24,9 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Command palette** (Ctrl+K) to jump to any object or page; **rollout history** with a diff and rollback.
 - **Understand the cluster** — right-sizing of requests and limits from real usage, cert-manager and the expiry of every
   TLS certificate, a map of how objects relate (and what a delete would break), RBAC: who can do what.
+- **Safer changes** — a dry run and a diff before applying YAML or upgrading a Helm release, upgrade readiness
+  (deprecated and removed APIs, version skew), security posture (Pod Security Standards, Trivy reports), and an
+  overview of several clusters.
 - **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
   Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
@@ -50,6 +53,7 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells (containers and nodes), port forwarding, Helm, Flux, Argo CD
 - [Problems and notifications](https://github.com/FriendsOfKubernetes/sextant/wiki/Problems-and-notifications) — a cluster's problems on one page, desktop notifications and how to turn them off
 - [Right-sizing](https://github.com/FriendsOfKubernetes/sextant/wiki/Right-sizing), [cert-manager and certificates](https://github.com/FriendsOfKubernetes/sextant/wiki/cert-manager-and-certificates), [Resource map](https://github.com/FriendsOfKubernetes/sextant/wiki/Resource-map), [RBAC](https://github.com/FriendsOfKubernetes/sextant/wiki/RBAC)
+- [Safe apply](https://github.com/FriendsOfKubernetes/sextant/wiki/Safe-apply), [Upgrade readiness](https://github.com/FriendsOfKubernetes/sextant/wiki/Upgrade-readiness), [Security posture](https://github.com/FriendsOfKubernetes/sextant/wiki/Security-posture), [All clusters](https://github.com/FriendsOfKubernetes/sextant/wiki/All-clusters)
 - [Gateway API](https://github.com/FriendsOfKubernetes/sextant/wiki/Gateway-API) — Gateways and routes with explained problems, topology, the request check and the hostname map
 - [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
@@ -75,8 +79,8 @@ with one issue per feature; plans can change, and ideas are welcome in
 |---|---|---|
 | [0.9](https://github.com/FriendsOfKubernetes/sextant/milestone/12) | Everyday work *(released)* | Command palette (Ctrl+K), logs of several pods at once, debug containers, copying files to and from containers, rollout history with rollback, background notifications (can be turned off), cluster problems screen |
 | [0.10](https://github.com/FriendsOfKubernetes/sextant/milestone/13) | Understanding the cluster *(released)* | Right-sizing of requests and limits, cert-manager and certificate expiry, resource map, RBAC "who can do what", the interface in 13 languages |
-| [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes *(next)* | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
-| [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
+| [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes *(released)* | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
+| [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting *(next)* | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace | Saved views and workspaces, kubeconfig management |
 | [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
 | [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
