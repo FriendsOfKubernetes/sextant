@@ -92,9 +92,10 @@ describe("the Related tab", () => {
     await openRelated(cmRef, configMap);
     await listShop();
     const mounted = await screen.findByRole("region", { name: "Mounted by" });
-    fireEvent.click(within(mounted).getByRole("button", { name: "Show the relations of Pod web-7d9f8c6b5-a1" }));
+    // The pods come with their own list: wait for them rather than for the region alone.
+    fireEvent.click(await within(mounted).findByRole("button", { name: "Show the relations of Pod web-7d9f8c6b5-a1" }));
     const owner = await screen.findByRole("region", { name: "Owned by" });
-    expect(within(owner).getByRole("button", { name: "Open ReplicaSet web-7d9f8c6b5" })).toBeInTheDocument();
+    expect(await within(owner).findByRole("button", { name: "Open ReplicaSet web-7d9f8c6b5" })).toBeInTheDocument();
     // The ConfigMap it came from is not listed again under the pod.
     const nested = owner.parentElement!;
     expect(within(nested).queryByRole("button", { name: "Open ConfigMap web-config" })).toBeNull();
