@@ -2,7 +2,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { ageParts } from "../../components";
-import { column, ObjectLink, standardColumns, StatusList, StatusText, statusColumn } from "../columns";
+import { column, ObjectLink, standardColumns, StatusText, statusColumn, statusListColumn } from "../columns";
 import { registerResource, type ColumnDef } from "../registry";
 import {
   arr,
@@ -84,10 +84,7 @@ const pods: ColumnDef[] = standardColumns(
 // Lens shows Status last, after Age.
 pods.push(statusColumn("status", podStatus, "130px"));
 
-const conditionsColumn = column("conditions", (o) => trueConditions(o).join(" "), {
-  width: "minmax(140px, 1.5fr)",
-  render: (o) => <StatusList values={trueConditions(o)} />,
-});
+const conditionsColumn = statusListColumn("conditions", trueConditions);
 
 registerResource({
   kind: { group: "", version: "v1", kind: "Pod" },
@@ -169,10 +166,7 @@ registerResource({
         { width: "100px" },
       ),
     ),
-    column("conditions", (o) => jobConditions(o).join(" "), {
-      width: "minmax(120px, 1fr)",
-      render: (o) => <StatusList values={jobConditions(o)} />,
-    }),
+    statusListColumn("conditions", jobConditions, { width: "minmax(120px, 1fr)" }),
   ],
   actions: ["logs", "edit", "delete"],
 });

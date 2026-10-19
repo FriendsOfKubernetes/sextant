@@ -4,7 +4,7 @@
 // rule count. GatewayClass, ReferenceGrant and BackendTLSPolicy: what tells them apart.
 import type { KindRef, KubeObject } from "../../api";
 import { ageColumn, column, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
-import type { Tone } from "../../resources/status";
+import { sortStatusesBy, type Tone } from "../../resources/status";
 import { i18n } from "../../i18n";
 import {
   attachedRouteCount,
@@ -65,8 +65,16 @@ export function parentsTooltip(parents: readonly ParentStatus[]): string {
     .join("\n\n");
 }
 
+/**
+ * A route's parents in one fixed order for the table (problems first, then pending, then accepted; by text within
+ * each), not the order of `spec.parentRefs` or of the controllers' `status.parents`.
+ */
+export function sortedParents(route: KubeObject): ParentStatus[] {
+  return sortStatusesBy(parentStatuses(route), (p) => HEALTH_TONE[p.health], parentText);
+}
+
 function ParentsCell({ route }: { route: KubeObject }) {
-  const parents = parentStatuses(route);
+  const parents = sortedParents(route);
   // The cell is cut to the column: the tooltip has every parent in full.
   return (
     <span className="rt-status-list" title={parentsTooltip(parents)}>
@@ -84,7 +92,7 @@ export function hostnamesText(route: KubeObject): string {
   return rest.length > 0 ? `${first} +${rest.length}` : first;
 }
 
-const parentsColumn = gwColumn("parents", (o) => parentStatuses(o).map(parentText).join(", "), {
+const parentsColumn = gwColumn("parents", (o) => sortedParents(o).map(parentText).join(", "), {
   width: "minmax(200px, 3fr)",
   render: (o) => <ParentsCell route={o} />,
 });
@@ -179,13 +187,18 @@ export const referenceGrantColumns: ColumnDef[] = [
   ageColumn,
 ];
 
-/** "public-gw ✓", "edge ✗ Conflicted" per ancestor of a policy. */
+/**
+ * "public-gw ✓", "edge ✗ Conflicted" per ancestor of a policy, in one fixed order (problems first, then pending, then
+ * accepted; by text within each) whatever order the controllers reported them in.
+ */
 export function policyStatusText(policy: KubeObject): string {
-  return policyAncestors(policy)
-    .map((a) => {
-      const mark = a.health === "ok" ? statusMark("True") : statusMark(a.health === "problem" ? "False" : undefined);
-      return [a.ref.name, mark, a.health === "ok" ? undefined : a.problem?.reason].filter(Boolean).join(" ");
-    })
+  const entries = policyAncestors(policy).map((a) => {
+    const mark = a.health === "ok" ? statusMark("True") : statusMark(a.health === "problem" ? "False" : undefined);
+    const text = [a.ref.name, mark, a.health === "ok" ? undefined : a.problem?.reason].filter(Boolean).join(" ");
+    return { text, tone: HEALTH_TONE[a.health] };
+  });
+  return sortStatusesBy(entries, (e) => e.tone, (e) => e.text)
+    .map((e) => e.text)
     .join(", ");
 }
 

@@ -25,7 +25,7 @@ import {
   type TreeNode,
 } from "./model";
 
-const { podStatus, readyOfDesired, trueConditions } = status;
+const { podStatus, readyOfDesired, sortStatuses, trueConditions } = status;
 
 /** The kinds a tree may need, in a fixed order (one live list each): every descendant kind (ReplicaSet, Job, Pod)
  * is also a kind whose health is computed. */
@@ -73,7 +73,7 @@ const managedKey = (r: ManagedResource) => `${keyOf(r)}/${r.namespace ?? ""}/${r
 function liveState(obj: KubeObject, kind: KindRef): string | undefined {
   if (kind.kind === "Pod") return podStatus(obj);
   if (kind.kind === "ReplicaSet") return readyOfDesired(obj);
-  if (kind.kind === "Job") return trueConditions(obj).join(", ") || undefined;
+  if (kind.kind === "Job") return sortStatuses(trueConditions(obj)).join(", ") || undefined;
   return undefined;
 }
 

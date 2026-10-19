@@ -1,5 +1,5 @@
 // Config: ConfigMaps, Secrets, ResourceQuotas, LimitRanges, HPA, PodDisruptionBudgets, PriorityClasses.
-import { column, labelsColumn, standardColumns, StatusList } from "../columns";
+import { column, labelsColumn, standardColumns, statusListColumn } from "../columns";
 import { registerResource } from "../registry";
 import { arr, get, keyCount, num, str, trueConditions } from "../status";
 
@@ -70,10 +70,7 @@ registerResource({
       column("maxPods", (o) => num(get(o, "spec", "maxReplicas")), { width: "80px" }),
       column("replicas", (o) => num(get(o, "status", "currentReplicas")), { width: "80px" }),
     ),
-    column("status", (o) => trueConditions(o).join(" "), {
-      width: "minmax(140px, 1.5fr)",
-      render: (o) => <StatusList values={trueConditions(o)} />,
-    }),
+    statusListColumn("status", trueConditions),
   ],
   actions: ["edit", "delete"],
 });

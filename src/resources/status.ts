@@ -158,6 +158,36 @@ export function statusTone(status: string): Tone {
   return "warning";
 }
 
+/**
+ * Order of tones in a cell that shows several statuses: problems first, then warnings, then neutral, healthy and
+ * finished ones.
+ */
+const TONE_RANK: Record<Tone, number> = { danger: 0, warning: 1, neutral: 2, success: 3, muted: 4 };
+
+const statusCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+/**
+ * `items` in one fixed order whatever order the API reported them in: by tone (`TONE_RANK`: problems first), then by
+ * text (natural, case-insensitive). Two objects with the same set of statuses show them the same way. Not for lists
+ * whose order means something (containers in spec order, a condition timeline).
+ */
+export function sortStatusesBy<T>(items: readonly T[], tone: (item: T) => Tone, text: (item: T) => string): T[] {
+  return items
+    .map((item) => ({ item, rank: TONE_RANK[tone(item)], text: text(item) }))
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        statusCollator.compare(a.text, b.text) ||
+        (a.text < b.text ? -1 : a.text > b.text ? 1 : 0),
+    )
+    .map((entry) => entry.item);
+}
+
+/** Status words in the fixed order of {@link sortStatusesBy}; `tone` colors them (default {@link statusTone}). */
+export function sortStatuses(values: readonly string[], tone: (value: string) => Tone = statusTone): string[] {
+  return sortStatusesBy(values, tone, (v) => v);
+}
+
 export interface OwnerRef {
   apiVersion: string;
   kind: string;
@@ -204,7 +234,16 @@ export function nodeRoles(node: KubeObject): string[] {
   return roles;
 }
 
-/** Node conditions as Lens shows them: "Ready" or "NotReady", plus problem conditions that are true. */
+/** Color of a node condition word of {@link nodeConditions}. */
+export function nodeConditionTone(condition: string): Tone {
+  if (condition === "Ready") return "success";
+  return condition === "SchedulingDisabled" ? "warning" : "danger";
+}
+
+/**
+ * Node conditions as Lens shows them: "Ready" or "NotReady", plus problem conditions that are true (in API order;
+ * the table cell orders them with {@link sortStatuses} and {@link nodeConditionTone}).
+ */
 export function nodeConditions(node: KubeObject): string[] {
   const conditions = arr(get(node, "status", "conditions"));
   const ready = conditions.find((c) => get(c, "type") === "Ready");

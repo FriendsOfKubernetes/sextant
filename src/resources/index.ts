@@ -18,6 +18,7 @@ export {
   ObjectLink,
   standardColumns,
   StatusList,
+  statusListColumn,
   StatusText,
 } from "./columns";
 export { CRD_KIND, crdVersion } from "./kinds/custom";

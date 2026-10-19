@@ -103,12 +103,24 @@ describe("Gateway API tables", () => {
     expect(ids(httpRoute)).toEqual(["name", "namespace", "hostnames", "parents", "rules", "age"]);
     expect(columnOf(httpRoute, "hostnames").value(httpRoute)).toBe("api.example.com +1");
     expect(columnOf(httpRoute, "parents").value(httpRoute)).toBe(
-      "public-gw ✓, internal ✗ NoMatchingListenerHostname",
+      "internal ✗ NoMatchingListenerHostname, public-gw ✓",
     );
     const parents = cell(httpRoute, "parents");
     expect(within(parents).getByText("public-gw ✓")).toHaveClass("rt-status--success");
     expect(within(parents).getByText("internal ✗ NoMatchingListenerHostname")).toHaveClass("rt-status--danger");
     expect(columnOf(httpRoute, "rules").value(httpRoute)).toBe(3);
+    // The same parents listed in the other order (spec and status) read the same: problems first, then by name.
+    const reversed = structuredClone(httpRoute) as KubeObject & {
+      spec: { parentRefs: unknown[] };
+      status: { parents: unknown[] };
+    };
+    reversed.spec.parentRefs.reverse();
+    reversed.status.parents.reverse();
+    expect(columnOf(httpRoute, "parents").value(reversed)).toBe("internal ✗ NoMatchingListenerHostname, public-gw ✓");
+    expect([...cell(reversed, "parents").querySelectorAll(".rt-status")].map((e) => e.textContent)).toEqual([
+      "internal ✗ NoMatchingListenerHostname",
+      "public-gw ✓",
+    ]);
   });
 
   it("GRPC, TCP routes; TCP has no hostnames", () => {
@@ -712,7 +724,7 @@ describe("the Policies page", () => {
     const rows = [...table.querySelectorAll("tbody tr")].map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent));
     expect(rows).toEqual([
       ["BackendTLSPolicy", "api-v2-tls", "web", "Service api-v2", "public-gw ✓"],
-      ["BackendTrafficPolicy", "api-retries", "web", "HTTPRoute api", "public-gw ✓, internal ✗ Conflicted"],
+      ["BackendTrafficPolicy", "api-retries", "web", "HTTPRoute api", "internal ✗ Conflicted, public-gw ✓"],
     ]);
     fireEvent.click(within(table).getByRole("button", { name: "Open HTTPRoute api" }));
     expect(useAppStore.getState().details).toEqual(refTo(httpRoute));

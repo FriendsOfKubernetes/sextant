@@ -6,7 +6,7 @@ import { useAppStore } from "../app/store";
 import { Age } from "../components";
 import { kindFromApiVersion } from "./refs";
 import type { ColumnDef } from "./registry";
-import { createdAt, labelPairs, statusTone, type OwnerRef, type Tone } from "./status";
+import { createdAt, labelPairs, sortStatuses, statusTone, type OwnerRef, type Tone } from "./status";
 
 /** A column with an i18n header `resources:columns.<id>`. */
 export function column(
@@ -68,15 +68,33 @@ export function StatusText({ value, tone }: { value: string | undefined; tone?: 
   return <span className={`rt-status rt-status--${tone ?? statusTone(value)}`}>{value}</span>;
 }
 
-/** Several status words, e.g. conditions. */
-export function StatusList({ values, tone }: { values: string[]; tone?: (v: string) => Tone }) {
+/**
+ * Several status words, e.g. conditions, in one fixed order (`sortStatuses`: problems first, then by name), so rows
+ * with the same set read the same whatever order the API reported it in.
+ */
+export function StatusList({ values, tone = statusTone }: { values: string[]; tone?: (v: string) => Tone }) {
   return (
     <span className="rt-status-list">
-      {values.map((v) => (
-        <StatusText key={v} value={v} tone={tone?.(v)} />
+      {sortStatuses(values, tone).map((v) => (
+        <StatusText key={v} value={v} tone={tone(v)} />
       ))}
     </span>
   );
+}
+
+/**
+ * A column of several status words (`StatusList`); its text (sorting, copying, the palette's status) has them in the
+ * same order as the cell.
+ */
+export function statusListColumn(
+  id: string,
+  values: (o: KubeObject) => string[],
+  { width = "minmax(140px, 1.5fr)", tone = statusTone }: { width?: string; tone?: (v: string) => Tone } = {},
+): ColumnDef {
+  return column(id, (o) => sortStatuses(values(o), tone).join(" "), {
+    width,
+    render: (o) => <StatusList values={values(o)} tone={tone} />,
+  });
 }
 
 export function statusColumn(id: string, value: (o: KubeObject) => string | undefined, width = "110px"): ColumnDef {
