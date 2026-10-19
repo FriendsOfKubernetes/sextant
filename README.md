@@ -32,6 +32,8 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Your workspace** — saved views of tables, pinned objects, workspaces of clusters, export and import to share
   them with your team (never credentials), and kubeconfig management: rename, duplicate, delete and merge contexts
   with a preview and a backup, and credential expiry.
+- **Power tools** — a YAML editor that knows the cluster's schema (completion, validation, Explain), storage
+  insights (volume usage, snapshots, Velero), a cost view from OpenCost or Kubecost, and terminal panes with snippets.
 - **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
   Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
@@ -61,6 +63,7 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Safe apply](https://github.com/FriendsOfKubernetes/sextant/wiki/Safe-apply), [Upgrade readiness](https://github.com/FriendsOfKubernetes/sextant/wiki/Upgrade-readiness), [Security posture](https://github.com/FriendsOfKubernetes/sextant/wiki/Security-posture), [All clusters](https://github.com/FriendsOfKubernetes/sextant/wiki/All-clusters)
 - [Change timeline](https://github.com/FriendsOfKubernetes/sextant/wiki/Change-timeline), [Autoscaling](https://github.com/FriendsOfKubernetes/sextant/wiki/Autoscaling), [Cleanup](https://github.com/FriendsOfKubernetes/sextant/wiki/Cleanup), [Connectivity](https://github.com/FriendsOfKubernetes/sextant/wiki/Connectivity)
 - [Views and workspaces](https://github.com/FriendsOfKubernetes/sextant/wiki/Views-and-workspaces), [Kubeconfig management](https://github.com/FriendsOfKubernetes/sextant/wiki/Kubeconfig-management)
+- [YAML editor](https://github.com/FriendsOfKubernetes/sextant/wiki/YAML-editor), [Storage](https://github.com/FriendsOfKubernetes/sextant/wiki/Storage), [Cost](https://github.com/FriendsOfKubernetes/sextant/wiki/Cost), [Terminal](https://github.com/FriendsOfKubernetes/sextant/wiki/Terminal)
 - [Gateway API](https://github.com/FriendsOfKubernetes/sextant/wiki/Gateway-API) — Gateways and routes with explained problems, topology, the request check and the hostname map
 - [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
@@ -89,8 +92,8 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.11](https://github.com/FriendsOfKubernetes/sextant/milestone/14) | Safer changes *(released)* | Dry-run and diff before applying, cluster upgrade readiness (deprecated APIs), security posture (Pod Security Standards, Trivy reports), overview of several clusters |
 | [0.12](https://github.com/FriendsOfKubernetes/sextant/milestone/15) | Troubleshooting *(released)* | Change timeline, autoscaling insights (HPA, KEDA, Karpenter), cluster hygiene, network connectivity check |
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace *(released)* | Saved views and workspaces, kubeconfig management |
-| [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools *(next)* | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
-| [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
+| [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools *(released)* | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
+| [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach *(next)* | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
 a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
