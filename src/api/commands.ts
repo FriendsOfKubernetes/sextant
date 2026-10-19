@@ -7,8 +7,12 @@ import type { AccessQuery } from "./generated/AccessQuery";
 import type { RulesReview } from "./generated/RulesReview";
 import type { SecretCertificates } from "./generated/SecretCertificates";
 import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
+import type { VolumeUsageReport } from "./generated/VolumeUsageReport";
+import type { CostQuery } from "./generated/CostQuery";
+import type { CostReport } from "./generated/CostReport";
 import type { ScanApi } from "./generated/ScanApi";
 import type { UpgradeScan } from "./generated/UpgradeScan";
+import type { KindSchema } from "./generated/KindSchema";
 import type { KindRef } from "./generated/KindRef";
 import type { ObjectManagers } from "./generated/ObjectManagers";
 import type { PartialHistory } from "./generated/PartialHistory";
@@ -274,6 +278,17 @@ export const metrics = {
     call<UsageHistory>("metrics_usage_history", { clusterId, scope, window }),
 };
 
+/** Storage insights (#152): the fill levels, and creating the one object a storage action confirmed. */
+export const storage = {
+  /** The fill level of every mounted PersistentVolumeClaim (kubelet stats summaries, else Prometheus). */
+  volumeUsage: (clusterId: ClusterId) => call<VolumeUsageReport>("storage_volume_usage", { clusterId }),
+  /**
+   * Creates the one object of `yaml` (a POST): a `conflict` error when an object of that name exists, which is never
+   * touched. Sent once, after the window's confirmation.
+   */
+  create: (clusterId: ClusterId, yaml: string) => call<ObjectRef>("resource_create", { clusterId, yaml }),
+};
+
 export const helm = {
   status: () => call<HelmStatus>("helm_status"),
   releases: (clusterId: ClusterId, namespaces: string[] | null = null) =>
@@ -464,6 +479,15 @@ export const cleanup = {
  * revisions); `objectHistory` the same for one object. `save`/`load` keep a recorded timeline between runs (only while
  * `settings.timeline.persist`; `save(id, null)` removes it). Read-only; window only.
  */
+/**
+ * The cluster's OpenAPI v3 schema for the YAML editor (#151): one kind, compact (its root and the definitions it
+ * reaches); `null` when the cluster publishes none for it. Cached per cluster in the backend. Read-only; window only.
+ */
+export const openapi = {
+  kindSchema: (clusterId: ClusterId, group: string, version: string, kind: string) =>
+    call<KindSchema | null>("openapi_kind_schema", { clusterId, group, version, kind }),
+};
+
 export const timeline = {
   managers: (clusterId: ClusterId, refs: ObjectRef[]) => call<ObjectManagers[]>("timeline_managers", { clusterId, refs }),
   history: (clusterId: ClusterId, namespaces: string[], kinds: KindRef[], helm: boolean) =>
@@ -518,6 +542,15 @@ export const tls = {
   /** `kubernetes.io/tls` Secrets of `namespaces` (`null`: all) with when each expires; capped (`truncated`). */
   expiryScan: (clusterId: ClusterId, namespaces: string[] | null) =>
     call<TlsExpiryScan>("tls_expiry_scan", { clusterId, namespaces }),
+};
+
+/**
+ * Costs from the cluster's OpenCost or Kubecost, read through the API server's service proxy with the user's
+ * credentials (`source: null` when neither is installed). Window only: agents and extensions have no such call.
+ */
+export const cost = {
+  /** One allocation query; `invalid` for a malformed label key or namespace filter. */
+  allocation: (clusterId: ClusterId, query: CostQuery) => call<CostReport>("cost_allocation", { clusterId, query }),
 };
 
 /** AI agent access rules of a cluster (`ClusterSettings.agentAccess`). */

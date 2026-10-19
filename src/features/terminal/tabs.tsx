@@ -1,17 +1,12 @@
 // Dock tabs of the terminal feature and the functions that open them.
-import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { api, type ClusterId, type KubeObject, type ObjectRef } from "../../api";
+import { useState } from "react";
+import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import type { DebugSpec } from "../../api/generated/DebugSpec";
 import { useAppStore } from "../../app/store";
-import { Button, ConfirmDialog } from "../../components";
 import { i18n } from "../../i18n";
 import type { DockTabProps } from "../../layout/dock/registry";
-import { DEFAULT_DEBUG_IMAGE, DebugDialog } from "./DebugDialog";
-import { FilesDialog } from "./FilesDialog";
-import { NodeShellConfirm } from "./NodeShellConfirm";
-import { TerminalView } from "./TerminalView";
-import type { TerminalSessionFactory } from "./useTerminal";
+import { PaneLayout } from "./PaneLayout";
+import type { PaneSpec } from "./paneViews";
 
 /** Payload of an "exec" dock tab: a shell in `container` of `pod`. */
 export interface ExecTabPayload {
@@ -51,140 +46,28 @@ function isDebug(payload: unknown): payload is DebugTabPayload {
   return typeof debug === "object" && debug !== null;
 }
 
+/** The first pane of an "exec" dock tab, from the tab's payload. */
+export function execPaneSpec(payload: unknown): PaneSpec {
+  if (isNodeShell(payload)) return { kind: "node", clusterId: payload.clusterId, node: payload.node };
+  if (isDebug(payload)) return { kind: "debug", clusterId: payload.clusterId, pod: payload.pod, debug: payload.debug };
+  const { clusterId, pod, container } = payload as ExecTabPayload;
+  return { kind: "exec", clusterId, pod, container };
+}
+
+/** The first pane of a "terminal" dock tab, from the tab's payload. */
+export function localPaneSpec(payload: unknown): PaneSpec {
+  const { clusterId, input } = payload as LocalTerminalTabPayload;
+  return { kind: "local", clusterId, input };
+}
+
 export function ExecTab({ tab, active }: DockTabProps) {
-  if (isNodeShell(tab.payload)) return <NodeShellView payload={tab.payload} active={active} />;
-  if (isDebug(tab.payload)) return <DebugView payload={tab.payload} active={active} />;
-  return <ContainerShellView payload={tab.payload as ExecTabPayload} active={active} />;
-}
-
-function ContainerShellView({ payload, active }: { payload: ExecTabPayload; active: boolean }) {
-  const { t } = useTranslation();
-  const { clusterId, pod, container } = payload;
-  const [open, setOpen] = useState<"debug" | "files" | null>(null);
-  const factory = useCallback<TerminalSessionFactory>(
-    (cols, rows, streamId, onEvent) => api.terminal.exec(clusterId, pod, container, cols, rows, streamId, onEvent),
-    [clusterId, pod, container],
-  );
-  const close = () => setOpen(null);
-  const toolbar = (
-    <>
-      <Button size="compact" icon="download" onClick={() => setOpen("files")}>
-        {t("terminal:files.action")}
-      </Button>
-      <Button size="compact" icon="shell" onClick={() => setOpen("debug")}>
-        {t("terminal:debug.action")}
-      </Button>
-    </>
-  );
-  return (
-    <>
-      <TerminalView factory={factory} active={active} label={t("terminal:terminal")} toolbar={toolbar} />
-      {open === "files" && <FilesDialog clusterId={clusterId} pod={pod} container={container} close={close} />}
-      {open === "debug" && <DebugLauncher clusterId={clusterId} pod={pod} target={container} close={close} />}
-    </>
-  );
-}
-
-/** The debug dialog for a pod known only by its reference: its containers are read first. */
-function DebugLauncher({
-  clusterId,
-  pod,
-  target,
-  close,
-}: {
-  clusterId: ClusterId;
-  pod: ObjectRef;
-  target: string;
-  close: () => void;
-}) {
-  const [containers, setContainers] = useState<string[] | null>(null);
-  useEffect(() => {
-    let live = true;
-    api.resources.get(clusterId, pod).then(
-      (obj) => live && setContainers(shellContainers(obj)),
-      () => live && setContainers([target]),
-    );
-    return () => {
-      live = false;
-    };
-  }, [clusterId, pod, target]);
-  if (containers === null) return null;
-  return <DebugDialog clusterId={clusterId} pod={pod} containers={containers} target={target} close={close} />;
-}
-
-function DebugView({ payload, active }: { payload: DebugTabPayload; active: boolean }) {
-  const { t } = useTranslation();
-  const { clusterId, pod, debug } = payload;
-  const factory = useCallback<TerminalSessionFactory>(
-    (cols, rows, streamId, onEvent) => api.terminal.debug(clusterId, pod, debug, cols, rows, streamId, onEvent),
-    [clusterId, pod, debug],
-  );
-  const image = debug.image || DEFAULT_DEBUG_IMAGE;
-  return (
-    <TerminalView
-      factory={factory}
-      active={active}
-      label={t("terminal:debug.label", { pod: pod.name })}
-      connectingText={
-        debug.copy
-          ? t("terminal:debug.startingCopy", { pod: pod.name, image })
-          : t("terminal:debug.starting", { pod: pod.name, image })
-      }
-      // Every new session adds another ephemeral container or makes a new copy: asked about first.
-      confirmReconnect={(proceed, cancel) => (
-        <ConfirmDialog
-          open
-          title={t("terminal:debug.reconnectTitle")}
-          confirmLabel={t("terminal:debug.reconnect")}
-          onConfirm={proceed}
-          onCancel={cancel}
-        >
-          <p>
-            {debug.copy
-              ? t("terminal:debug.reconnectCopy", { pod: pod.name, image })
-              : t("terminal:debug.reconnectEphemeral", { pod: pod.name, image })}
-          </p>
-        </ConfirmDialog>
-      )}
-    />
-  );
-}
-
-function NodeShellView({ payload, active }: { payload: NodeShellTabPayload; active: boolean }) {
-  const { t } = useTranslation();
-  const { clusterId, node } = payload;
-  const factory = useCallback<TerminalSessionFactory>(
-    (cols, rows, streamId, onEvent) => api.terminal.nodeShell(clusterId, node, cols, rows, streamId, onEvent),
-    [clusterId, node],
-  );
-  return (
-    <TerminalView
-      factory={factory}
-      active={active}
-      label={t("terminal:node.label", { node })}
-      connectingText={t("terminal:node.starting", { node })}
-      // Every new session is a new privileged pod: asked about like the first one.
-      confirmReconnect={(proceed, cancel) => <NodeShellConfirm node={node} onConfirm={proceed} onCancel={cancel} />}
-    />
-  );
+  const [first] = useState(() => execPaneSpec(tab.payload));
+  return <PaneLayout tab={tab} active={active} first={first} />;
 }
 
 export function LocalTerminalTab({ tab, active }: DockTabProps) {
-  const { t } = useTranslation();
-  const { clusterId, input } = tab.payload as LocalTerminalTabPayload;
-  const factory = useCallback<TerminalSessionFactory>(
-    (cols, rows, streamId, onEvent) => api.terminal.local(clusterId, cols, rows, streamId, onEvent),
-    [clusterId],
-  );
-  return (
-    <TerminalView
-      factory={factory}
-      active={active}
-      label={t("terminal:terminal")}
-      kubeconfigNotice={clusterId !== null}
-      initialInput={input}
-    />
-  );
+  const [first] = useState(() => localPaneSpec(tab.payload));
+  return <PaneLayout tab={tab} active={active} first={first} />;
 }
 
 /** Containers a shell can be opened in (regular containers; init containers are gone once the pod runs). */

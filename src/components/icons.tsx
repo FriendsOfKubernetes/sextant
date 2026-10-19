@@ -37,6 +37,7 @@ import {
   ChevronUp,
   ClipboardCheck,
   Clock,
+  Coins,
   Container,
   Copy,
   Cpu,
@@ -147,6 +148,16 @@ import {
   Pin as ViewsPin,
   PinOff as ViewsPinOff,
   Upload as ViewsUpload,
+} from "lucide-react";
+// Storage insights: VolumeSnapshots and Velero (#152).
+import {
+  Aperture as StorageAperture,
+  ArchiveRestore as StorageArchiveRestore,
+  CalendarClock as StorageCalendarClock,
+  Camera as StorageCamera,
+  DatabaseBackup as StorageDatabaseBackup,
+  HardDriveUpload as StorageHardDriveUpload,
+  MapPinned as StorageMapPinned,
 } from "lucide-react";
 
 const ICONS = {
@@ -301,6 +312,8 @@ const ICONS = {
   changeTimeline: ChartNoAxesGantt,
   // Cleanup (src/features/hygiene): the page of the Cluster section.
   cleanup: BrushCleaning,
+  // Cost (src/features/cost): the page of the Cluster section.
+  cost: Coins,
   // Autoscaling insights (src/features/autoscaling): the KEDA and Karpenter sections and their kinds.
   keda: Zap,
   karpenter: Hammer,
@@ -318,6 +331,17 @@ const ICONS = {
   pin: ViewsPin,
   unpin: ViewsPinOff,
   upload: ViewsUpload,
+  // Storage insights (src/features/storage): the VolumeSnapshots and Velero sections, their kinds and actions.
+  volumeSnapshots: StorageCamera,
+  volumeSnapshot: StorageCamera,
+  volumeSnapshotClass: StorageAperture,
+  volumeSnapshotContent: StorageHardDriveUpload,
+  restoreSnapshot: StorageArchiveRestore,
+  velero: StorageDatabaseBackup,
+  veleroBackup: StorageDatabaseBackup,
+  veleroSchedule: StorageCalendarClock,
+  veleroRestore: StorageArchiveRestore,
+  veleroLocation: StorageMapPinned,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */

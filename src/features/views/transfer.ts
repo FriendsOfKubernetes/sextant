@@ -1,4 +1,4 @@
-// Export and import of views, pins, workspaces and shareable cluster settings (#149).
+// Export and import of views, pins, workspaces, terminal snippets (#154) and shareable cluster settings (#149).
 //
 // The file names clusters by reference only — the kubeconfig source's kind and path and the context name — never a
 // file's contents, credentials, tokens, the MCP token, extensions or their grants. Cluster settings are limited to
@@ -9,8 +9,10 @@
 import type { AppSettings, ClusterId, ClusterInfo, ClusterSettings, KubeconfigSource } from "../../api";
 import type { ClusterAccess } from "../../api/generated/ClusterAccess";
 import type { ClusterIcon } from "../../api/generated/ClusterIcon";
+import type { Snippet } from "../../api/generated/Snippet";
 import type { SourceKind } from "../../api/generated/SourceKind";
 import { clusterSettingsOf } from "../clusters/clusterSettings";
+import { hasHiddenChars } from "../terminal/text";
 import {
   MAX_PINS,
   MAX_VIEWS,
@@ -23,7 +25,15 @@ import {
 } from "./model";
 
 export const EXPORT_FORMAT = "sextant-workspace";
-export const EXPORT_VERSION = 1;
+/**
+ * The version written. Version 2 (#154) added the required `snippets` section (terminal snippets); a version 1 file
+ * (without it) still imports, with no snippets. Each version is read strictly: a field it does not have is an error.
+ */
+export const EXPORT_VERSION = 2;
+/** Versions an import reads. */
+export const IMPORT_VERSIONS: readonly number[] = [1, 2];
+/** Most snippets an import reads (`MAX_SNIPPETS` of the settings). */
+export const MAX_IMPORT_SNIPPETS = 500;
 
 /** The cluster settings an export may carry. */
 export interface SharedClusterSettings {
@@ -51,10 +61,14 @@ export interface ExportFile {
   views: SavedView[];
   pins: Pin[];
   workspaces: Workspace[];
+  /** Terminal snippets (version 2; empty when a version 1 file is read). */
+  snippets: Snippet[];
 }
 
 export interface ExportOptions {
   includeAgentAccess: boolean;
+  /** Write the terminal snippets (as written; the default). Without it the `snippets` section is empty. */
+  includeSnippets?: boolean;
 }
 
 function sharedSettings(settings: ClusterSettings, includeAgentAccess: boolean): SharedClusterSettings {
@@ -94,6 +108,7 @@ export function buildExport(
     views: settings.views.map((v) => ({ ...v })),
     pins: settings.pins.map((p) => ({ ...p })),
     workspaces: settings.workspaces.map((w) => ({ ...w })),
+    snippets: options.includeSnippets === false ? [] : settings.snippets.map((s) => ({ ...s })),
   };
 }
 
@@ -235,6 +250,17 @@ function readWorkspace(r: Reader, value: Json, path: string): Workspace | null {
   };
 }
 
+function readSnippet(r: Reader, value: Json, path: string): Snippet | null {
+  const o = r.object(value, path, ["id", "name", "command"]);
+  if (!o) return null;
+  const name = r.string(o.name, `${path}.name`, { empty: false, max: 120 }).trim();
+  const command = r.string(o.command, `${path}.command`, { empty: false, max: 4096 }).trim();
+  // A snippet is typed into shells: nothing in it may be invisible or read differently from what runs.
+  if (hasHiddenChars(name)) r.problems.push(`${path}.name: contains control, invisible or text-direction characters`);
+  if (hasHiddenChars(command)) r.problems.push(`${path}.command: contains control, invisible or text-direction characters`);
+  return { id: r.id(o.id, `${path}.id`), name, command };
+}
+
 function readIcon(r: Reader, value: Json, path: string): ClusterIcon | null {
   if (value === null) return null;
   const type = (value as { type?: unknown } | null)?.type;
@@ -301,10 +327,16 @@ export function parseImport(text: string): ExportFile {
     throw new ImportError(["the file is not JSON"]);
   }
   const r = new Reader();
-  const o = r.object(json, "$", ["format", "version", "clusters", "views", "pins", "workspaces"]);
+  // The version decides the fields: checked before the object, so a newer file says its version, not its new fields.
+  const version = (json as { version?: unknown } | null)?.version;
+  if (typeof version === "number" && json !== null && typeof json === "object" && !IMPORT_VERSIONS.includes(version))
+    throw new ImportError([`$.version: ${String(version)} is not supported`]);
+  const sections = ["format", "version", "clusters", "views", "pins", "workspaces"];
+  const o = r.object(json, "$", version === 1 ? sections : [...sections, "snippets"]);
   if (!o) throw new ImportError(r.problems);
   if (o.format !== EXPORT_FORMAT) throw new ImportError([`$.format: not "${EXPORT_FORMAT}"`]);
-  if (o.version !== EXPORT_VERSION) throw new ImportError([`$.version: ${String(o.version)} is not supported`]);
+  if (typeof o.version !== "number" || !IMPORT_VERSIONS.includes(o.version))
+    throw new ImportError([`$.version: ${String(o.version)} is not supported`]);
   const file: ExportFile = {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
@@ -314,6 +346,10 @@ export function parseImport(text: string): ExportFile {
     workspaces: r
       .array(o.workspaces, "$.workspaces", MAX_WORKSPACES)
       .flatMap((w, i) => readWorkspace(r, w, `$.workspaces[${i}]`) ?? []),
+    snippets:
+      o.version === 1
+        ? []
+        : r.array(o.snippets, "$.snippets", MAX_IMPORT_SNIPPETS).flatMap((s, i) => readSnippet(r, s, `$.snippets[${i}]`) ?? []),
   };
   if (r.problems.length > 0) throw new ImportError(r.problems.slice(0, 50));
   return file;
@@ -329,6 +365,8 @@ export interface PlannedEntry<T> {
   entry: T;
   /** The name shown in the preview. */
   label: string;
+  /** The local entry a `changed` one would replace (snippets: the preview shows both commands). */
+  previous?: T;
 }
 
 export type SharedField = keyof SharedClusterSettings;
@@ -362,6 +400,7 @@ export interface ImportPlan {
   views: PlannedEntry<SavedView>[];
   pins: PlannedEntry<Pin>[];
   workspaces: PlannedEntry<Workspace>[];
+  snippets: PlannedEntry<Snippet>[];
   /** Whether the file carries agent access rules that would change a cluster matched exactly (applied only when the
    *  user ticks it). */
   hasAgentAccess: boolean;
@@ -481,11 +520,20 @@ export function planImport(
     return { status, entry, label: workspace.name };
   });
 
+  const snippets: PlannedEntry<Snippet>[] = file.snippets.map((snippet) => {
+    const local = settings.snippets.find((s) => s.id === snippet.id);
+    const status: EntryStatus = !local ? "added" : same(local, snippet) ? "kept" : "changed";
+    return status === "changed"
+      ? { status, entry: { ...snippet }, label: snippet.name, previous: local }
+      : { status, entry: { ...snippet }, label: snippet.name };
+  });
+
   return {
     clusters: plannedClusters,
     views,
     pins,
     workspaces,
+    snippets,
     hasAgentAccess: plannedClusters.some((c) => c.added.includes("agentAccess") || c.changed.includes("agentAccess")),
   };
 }
@@ -539,12 +587,17 @@ export function applyImport(settings: AppSettings, plan: ImportPlan, options: Ap
     else if (p.status === "changed" && options.overwrite)
       workspaces = workspaces.map((w) => (w.id === p.entry.id ? p.entry : w));
   }
-  return { ...settings, clusters: clustersNext, views, pins, workspaces };
+  let snippets = [...settings.snippets];
+  for (const p of plan.snippets) {
+    if (p.status === "added" && snippets.length < MAX_IMPORT_SNIPPETS) snippets.push(p.entry);
+    else if (p.status === "changed" && options.overwrite) snippets = snippets.map((s) => (s.id === p.entry.id ? p.entry : s));
+  }
+  return { ...settings, clusters: clustersNext, views, pins, workspaces, snippets };
 }
 
 /** How many entries of the plan would change something with these options. */
 export function countChanges(plan: ImportPlan, options: ApplyOptions): number {
-  const entries = [...plan.views, ...plan.pins, ...plan.workspaces];
+  const entries = [...plan.views, ...plan.pins, ...plan.workspaces, ...plan.snippets];
   const fromEntries = entries.filter((e) => e.status === "added" || (e.status === "changed" && options.overwrite)).length;
   const fromClusters = plan.clusters.filter((c) =>
     [...c.added, ...(options.overwrite ? c.changed : [])].some(

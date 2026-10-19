@@ -9,6 +9,7 @@ import type { McpSettings } from "./McpSettings";
 import type { NotificationSettings } from "./NotificationSettings";
 import type { Pin } from "./Pin";
 import type { SavedView } from "./SavedView";
+import type { Snippet } from "./Snippet";
 import type { Theme } from "./Theme";
 import type { TimelineSettings } from "./TimelineSettings";
 import type { WindowLayout } from "./WindowLayout";
@@ -106,4 +107,9 @@ workspaces: Array<Workspace>,
 /**
  * The workspace the cluster rail is filtered by; `None` = every cluster. Written by the frontend.
  */
-activeWorkspace: string | null, };
+activeWorkspace: string | null, 
+/**
+ * Terminal snippets (#154): saved commands with placeholders, in the user's order. Written by the frontend; an
+ * entry that does not read is left out ([`snippets`]).
+ */
+snippets: Array<Snippet>, };

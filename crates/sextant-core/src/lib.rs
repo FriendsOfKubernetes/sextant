@@ -12,6 +12,7 @@ pub mod argocd;
 #[cfg(feature = "desktop")]
 pub mod cloud;
 pub mod cluster;
+pub mod cost;
 pub mod debug;
 pub mod error;
 pub mod exec;
@@ -25,6 +26,7 @@ pub mod kubeconfig;
 pub mod logs;
 pub mod metrics;
 pub mod node_shell;
+pub mod openapi;
 pub mod portforward;
 pub mod rbac;
 pub mod resources;

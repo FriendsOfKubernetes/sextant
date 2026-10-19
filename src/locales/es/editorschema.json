@@ -1,0 +1,20 @@
+{
+  "required": "obligatorio",
+  "default": "Predeterminado: {{value}}",
+  "allowed": "Valores permitidos: {{values}}",
+  "anyField": "Aquí se acepta cualquier campo.",
+  "explain": "Explicar",
+  "explainTitle": "Documentación del campo",
+  "up": "Subir",
+  "close": "Cerrar",
+  "fields": "Campos",
+  "noField": "El esquema no dice nada de este campo.",
+  "noSchema": "El clúster no publica ningún esquema para {{kind}}.",
+  "problem": {
+    "unknownField": "Campo desconocido: {{field}}",
+    "wrongType": "Se esperaba {{expected}}, se encontró {{found}}.",
+    "missingRequired": "Falta un campo obligatorio: {{field}}",
+    "notInEnum": "Valor no permitido: {{value}}. Valores permitidos: {{allowed}}",
+    "syntax": "Error de YAML: {{message}}"
+  }
+}

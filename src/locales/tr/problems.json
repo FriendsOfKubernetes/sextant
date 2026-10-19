@@ -26,6 +26,7 @@
     "gateway": "Gateway API",
     "security": "Güvenlik",
     "credentials": "Kimlik bilgileri",
+    "disk": "Disk neredeyse dolu",
     "events": "Uyarı olayları"
   },
   "messages": {
@@ -36,6 +37,9 @@
     "expires": "Sona erme: {{date}}",
     "expired": "Sona erdi: {{date}}",
     "securityBaseline_one": "{{count}} Pod Security Baseline ihlali: {{fields}}",
-    "securityBaseline_other": "{{count}} Pod Security Baseline ihlali: {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} Pod Security Baseline ihlali: {{fields}}",
+    "diskUsage": "Alanın {{percent}} kadarı kullanılıyor ({{used}} / {{capacity}})",
+    "inodeUsage": "Inode'ların {{percent}} kadarı kullanılıyor ({{used}} / {{total}})"
+  },
+  "showDisk": "Disk neredeyse dolu"
 }

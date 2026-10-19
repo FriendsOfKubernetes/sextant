@@ -1,0 +1,91 @@
+{
+  "sidebar": "Costi",
+  "title": "Costi",
+  "intro": "Quanto costa il cluster, secondo il calcolo di OpenCost o Kubecost. Sola lettura: nel cluster non viene cambiato nulla.",
+  "loading": "Lettura dei costi…",
+  "failed": "Impossibile leggere i costi",
+  "source": {
+    "opencost": "Da OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "Da Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost o Kubecost non trovato",
+    "text": "I costi vengono mostrati quando nel cluster è in esecuzione OpenCost (https://www.opencost.io) o Kubecost. Sextant cerca il suo Service nei namespace opencost e kubecost e tramite il label app.kubernetes.io/name. Sextant non lo installa."
+  },
+  "window": {
+    "label": "Periodo",
+    "day": "Ultime 24 ore",
+    "week": "Ultimi 7 giorni",
+    "month": "Ultimi 30 giorni"
+  },
+  "aggregate": {
+    "title": "Raggruppa per",
+    "namespace": "Namespace",
+    "workload": "Carico di lavoro",
+    "pod": "Pod",
+    "node": "Nodo",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Chiave del label",
+    "show": "Mostra",
+    "invalid": "Non è una chiave di label.",
+    "choose": "Inserisci una chiave di label, come app.kubernetes.io/name, e scegli “Mostra”."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Memoria",
+    "storage": "Archiviazione",
+    "network": "Rete",
+    "gpu": "GPU",
+    "other": "Altro"
+  },
+  "column": {
+    "name": "Nome",
+    "namespace": "Namespace",
+    "total": "Totale",
+    "efficiency": "Efficienza"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "Apri {{name}}",
+  "totals": {
+    "label": "Totali",
+    "total": "Totale",
+    "allocated": "Allocato",
+    "idle": "Inattivo"
+  },
+  "split": "Ripartizione del costo allocato",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Inattivo (capacità non usata)",
+  "idleHint": "L'inattivo è il costo della capacità dei nodi che nessun carico di lavoro ha usato. Appartiene all'intero cluster, anche quando i namespace sono filtrati.",
+  "unallocated": {
+    "namespace": "Senza namespace",
+    "workload": "Senza controller",
+    "pod": "Senza Pod",
+    "node": "Senza nodo",
+    "label": "Senza questo label"
+  },
+  "unmounted": "Volumi che nessun Pod monta",
+  "currency": "Importi in {{currency}}.",
+  "currencyUnknown": "Gli importi sono nella valuta configurata in OpenCost o Kubecost; l'API non la indica.",
+  "efficiencyHint": "L'efficienza è l'utilizzo diviso per le richieste.",
+  "filtered": "Sono mostrati solo i namespace selezionati.",
+  "truncated_one": "È mostrato solo il gruppo più costoso ({{count}}) su {{total}}.",
+  "truncated_many": "Sono mostrati solo i {{count}} gruppi più costosi su {{total}}.",
+  "truncated_other": "Sono mostrati solo i {{count}} gruppi più costosi su {{total}}.",
+  "empty": "Nessun costo in questo periodo.",
+  "details": {
+    "title": "Costi",
+    "periodCost": "Costo degli ultimi 7 giorni",
+    "monthly": "Stima mensile",
+    "monthlyHint": "Una stima: il costo degli ultimi 7 giorni (o del tempo in cui il carico di lavoro vi è stato in esecuzione) riportato a 30 giorni.",
+    "prices": "Prezzi unitari dai costi di questo carico di lavoro: {{cpu}} per ora di core CPU, {{memory}} per GiB-ora di memoria.",
+    "noData": "OpenCost o Kubecost non ha costi per questo carico di lavoro negli ultimi 7 giorni.",
+    "savings": "Risparmio stimato con la raccomandazione di dimensionamento",
+    "savingsValue": "{{amount}} al mese",
+    "savingsHint": "Una stima: le richieste oltre la raccomandazione, su tutte le repliche, per i prezzi unitari di questo carico di lavoro, su 30 giorni.",
+    "noSavings": "La raccomandazione di dimensionamento non abbassa le richieste, quindi non fa risparmiare nulla.",
+    "noPrices": "I costi non riportano un prezzo unitario per una risorsa che la raccomandazione abbassa, quindi il risparmio non può essere stimato.",
+    "openRightsizing": "Apri dimensionamento"
+  }
+}

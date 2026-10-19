@@ -24,6 +24,7 @@
     "gateway": "Gateway API",
     "security": "セキュリティ",
     "credentials": "認証情報",
+    "disk": "ディスク残りわずか",
     "events": "警告イベント"
   },
   "messages": {
@@ -32,6 +33,9 @@
     "replicas": "{{desired}} 個中 {{ready}} 個のレプリカが準備完了",
     "expires": "有効期限: {{date}}",
     "expired": "{{date}} に期限切れ",
-    "securityBaseline_other": "Pod Security Baseline 違反 {{count}} 件: {{fields}}"
-  }
+    "securityBaseline_other": "Pod Security Baseline 違反 {{count}} 件: {{fields}}",
+    "diskUsage": "容量の {{percent}} を使用中 ({{used}} / {{capacity}})",
+    "inodeUsage": "inode の {{percent}} を使用中 ({{used}} / {{total}})"
+  },
+  "showDisk": "ディスク残りわずか"
 }

@@ -1,10 +1,15 @@
 // CodeMirror 6 with YAML highlighting. Controlled: `value` replaces the text when it differs from what is shown
-// (load, reload, save result); every edit reports the whole text through `onChange`.
+// (load, reload, save result); every edit reports the whole text through `onChange`. With `schemaCluster` the text is
+// Kubernetes objects of that cluster: its OpenAPI schema completes, checks and documents fields (#151); without it
+// (Helm values) the editor knows nothing about the text.
 import { yaml } from "@codemirror/lang-yaml";
 import { Annotation } from "@codemirror/state";
 import { basicSetup, EditorView } from "codemirror";
 import { useEffect, useLayoutEffect, useRef } from "react";
+import type { ClusterId } from "../../api";
 import { useEditorTheme } from "./editorTheme";
+import { schemaExtension } from "./schema/extension";
+import { schemaSourceFor } from "./schema/source";
 
 /** Marks a change made by this component from `value`, so it is not reported back as an edit. */
 const fromProp = Annotation.define<boolean>();
@@ -14,9 +19,11 @@ export interface YamlEditorProps {
   onChange: (text: string) => void;
   /** Accessible name of the text area (already translated). */
   label: string;
+  /** The cluster whose schema checks the text; read once, when the editor is made. */
+  schemaCluster?: ClusterId;
 }
 
-export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
+export function YamlEditor({ value, onChange, label, schemaCluster }: YamlEditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -38,6 +45,7 @@ export function YamlEditor({ value, onChange, label }: YamlEditorProps) {
         yaml(),
         initial(),
         EditorView.lineWrapping,
+        schemaCluster ? schemaExtension(schemaSourceFor(schemaCluster)) : [],
         EditorView.contentAttributes.of({ "aria-label": label }),
         EditorView.updateListener.of((update) => {
           const edited = update.docChanged && !update.transactions.some((tr) => tr.annotation(fromProp));

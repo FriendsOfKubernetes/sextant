@@ -24,6 +24,7 @@
     "gateway": "Gateway API",
     "security": "安全",
     "credentials": "凭据",
+    "disk": "磁盘即将用满",
     "events": "警告事件"
   },
   "messages": {
@@ -32,6 +33,9 @@
     "replicas": "{{ready}}/{{desired}} 个副本就绪",
     "expires": "将于 {{date}} 过期",
     "expired": "已于 {{date}} 过期",
-    "securityBaseline_other": "{{count}} 项 Pod Security Baseline 违规：{{fields}}"
-  }
+    "securityBaseline_other": "{{count}} 项 Pod Security Baseline 违规：{{fields}}",
+    "diskUsage": "空间已用 {{percent}}（{{used}}/{{capacity}}）",
+    "inodeUsage": "Inode 已用 {{percent}}（{{used}}/{{total}}）"
+  },
+  "showDisk": "磁盘即将用满"
 }

@@ -1,37 +1,23 @@
 // "Right-sizing" section of the details panel (#137) for Deployments, StatefulSets, DaemonSets and pods: the same
-// rows as the page for this one workload. A workload's pods are watched in its namespace only (by its selector's
-// labels when it has them) and only while the panel shows it; a pod uses the object the panel already has.
+// rows as the page for this one workload. A workload's pods are watched in its namespace only (by its
+// selector when it has one) and only while the panel shows it, through a watch shared with the cost section; a pod
+// uses the object the panel already has.
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { HistoryScope, HistoryWindow, KindRef, KubeObject, WatchSpec } from "../../api";
-import { useWatch } from "../../api";
+import type { HistoryScope, HistoryWindow, KindRef } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { RowsTable, SourceNote } from "./components";
-import { buildRows, workloadOf } from "./group";
+import { buildRows } from "./group";
 import { useRightsizingSource } from "./hooks";
+import { useWorkloadPods } from "./workloadPods";
 import "./rightsizing.css";
 
 const WORKLOADS = new Set(["Deployment", "StatefulSet", "DaemonSet"]);
-const POD = { group: "", version: "v1", kind: "Pod" };
 const WINDOWS: HistoryWindow[] = ["day", "week"];
 
 export function rightsizingApplies(kind: KindRef): boolean {
   if (kind.group === "") return kind.kind === "Pod";
   return kind.group === "apps" && WORKLOADS.has(kind.kind);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** `k=v,…` of the workload's `spec.selector.matchLabels`; `null` when it has none (the whole namespace is watched). */
-export function selectorOf(obj: KubeObject | null): string | null {
-  const spec = isRecord(obj?.spec) ? obj.spec : undefined;
-  const selector = isRecord(spec?.selector) ? spec.selector : undefined;
-  const labels = isRecord(selector?.matchLabels) ? selector.matchLabels : undefined;
-  if (!labels) return null;
-  const pairs = Object.entries(labels).filter((e): e is [string, string] => typeof e[1] === "string");
-  return pairs.length > 0 ? pairs.map(([k, v]) => `${k}=${v}`).join(",") : null;
 }
 
 export function RightsizingDetailsSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
@@ -41,11 +27,8 @@ export function RightsizingDetailsSection({ clusterId, objectRef, obj }: Details
   const namespace = objectRef.namespace ?? "";
   const isPod = kind === "Pod";
 
-  const spec: WatchSpec | null =
-    !isPod && namespace && obj
-      ? { kind: POD, namespaces: [namespace], labelSelector: selectorOf(obj), fieldSelector: null }
-      : null;
-  const watched = useWatch(clusterId, spec);
+  // Shared with the cost section, which shows the same workload's pods.
+  const watched = useWorkloadPods(clusterId, objectRef, obj, !isPod);
   const scope: HistoryScope | null = !namespace
     ? null
     : isPod
@@ -53,13 +36,7 @@ export function RightsizingDetailsSection({ clusterId, objectRef, obj }: Details
       : { type: "workload", namespace, kind, name: objectRef.name };
   const source = useRightsizingSource(clusterId, scope, window);
 
-  const pods = useMemo(() => {
-    if (isPod) return obj ? [obj] : [];
-    return [...watched.items.values()].filter((p) => {
-      const w = workloadOf(p);
-      return w.kind === kind && w.name === objectRef.name;
-    });
-  }, [isPod, obj, watched, kind, objectRef.name]);
+  const pods = useMemo(() => (isPod ? (obj ? [obj] : []) : watched.pods), [isPod, obj, watched.pods]);
   const rows = useMemo(() => buildRows(pods, source.data, Date.now()), [pods, source.data]);
 
   if (!namespace) return null;

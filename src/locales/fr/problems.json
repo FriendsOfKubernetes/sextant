@@ -28,6 +28,7 @@
     "gateway": "Gateway API",
     "security": "Sécurité",
     "credentials": "Identifiants",
+    "disk": "Disque presque plein",
     "events": "Événements d'avertissement"
   },
   "messages": {
@@ -40,6 +41,9 @@
     "expired": "Expiré le {{date}}",
     "securityBaseline_one": "{{count}} violation de Pod Security Baseline : {{fields}}",
     "securityBaseline_many": "{{count}} de violations de Pod Security Baseline : {{fields}}",
-    "securityBaseline_other": "{{count}} violations de Pod Security Baseline : {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} violations de Pod Security Baseline : {{fields}}",
+    "diskUsage": "{{percent}} de l'espace utilisé ({{used}} sur {{capacity}})",
+    "inodeUsage": "{{percent}} des inodes utilisés ({{used}} sur {{total}})"
+  },
+  "showDisk": "Disque presque plein"
 }

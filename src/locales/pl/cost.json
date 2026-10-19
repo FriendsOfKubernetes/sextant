@@ -1,0 +1,92 @@
+{
+  "sidebar": "Koszty",
+  "title": "Koszty",
+  "intro": "Ile kosztuje klaster według obliczeń OpenCost lub Kubecost. Tylko odczyt: w klastrze nic nie jest zmieniane.",
+  "loading": "Odczytywanie kosztów…",
+  "failed": "Nie udało się odczytać kosztów",
+  "source": {
+    "opencost": "Dane z OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "Dane z Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "Nie znaleziono OpenCost ani Kubecost",
+    "text": "Koszty są pokazywane, gdy w klastrze działa OpenCost (https://www.opencost.io) lub Kubecost. Sextant szuka jego Service w namespace opencost i kubecost oraz po label app.kubernetes.io/name. Sextant go nie instaluje."
+  },
+  "window": {
+    "label": "Okres",
+    "day": "Ostatnie 24 godziny",
+    "week": "Ostatnie 7 dni",
+    "month": "Ostatnie 30 dni"
+  },
+  "aggregate": {
+    "title": "Grupuj według",
+    "namespace": "Namespace",
+    "workload": "Obciążenie",
+    "pod": "Pod",
+    "node": "Węzeł",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Klucz label",
+    "show": "Pokaż",
+    "invalid": "To nie jest klucz label.",
+    "choose": "Wpisz klucz label, np. app.kubernetes.io/name, i wybierz „Pokaż”."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Pamięć",
+    "storage": "Pamięć masowa",
+    "network": "Sieć",
+    "gpu": "GPU",
+    "other": "Inne"
+  },
+  "column": {
+    "name": "Nazwa",
+    "namespace": "Namespace",
+    "total": "Razem",
+    "efficiency": "Wydajność"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "Otwórz {{name}}",
+  "totals": {
+    "label": "Sumy",
+    "total": "Łącznie",
+    "allocated": "Przydzielone",
+    "idle": "Bezczynne"
+  },
+  "split": "Podział przydzielonego kosztu",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Bezczynne (niewykorzystana pojemność)",
+  "idleHint": "Bezczynne to koszt pojemności węzłów, której nie użyło żadne obciążenie. Należy do całego klastra, także gdy namespace są filtrowane.",
+  "unallocated": {
+    "namespace": "Bez namespace",
+    "workload": "Bez kontrolera",
+    "pod": "Bez Poda",
+    "node": "Bez węzła",
+    "label": "Bez tego label"
+  },
+  "unmounted": "Woluminy, których nie montuje żaden Pod",
+  "currency": "Kwoty w {{currency}}.",
+  "currencyUnknown": "Kwoty są w walucie ustawionej w OpenCost lub Kubecost; API jej nie podaje.",
+  "efficiencyHint": "Wydajność to użycie podzielone przez żądania.",
+  "filtered": "Pokazano tylko wybrane namespace.",
+  "truncated_one": "Pokazano tylko {{count}} najdroższą grupę z {{total}}.",
+  "truncated_few": "Pokazano tylko {{count}} najdroższe grupy z {{total}}.",
+  "truncated_many": "Pokazano tylko {{count}} najdroższych grup z {{total}}.",
+  "truncated_other": "Pokazano tylko {{count}} najdroższej grupy z {{total}}.",
+  "empty": "Brak kosztów w tym okresie.",
+  "details": {
+    "title": "Koszty",
+    "periodCost": "Koszt z ostatnich 7 dni",
+    "monthly": "Szacunek miesięczny",
+    "monthlyHint": "To szacunek: koszt z ostatnich 7 dni (lub z czasu, gdy obciążenie w nich działało) przeliczony na 30 dni.",
+    "prices": "Ceny jednostkowe z kosztów tego obciążenia: {{cpu}} za rdzeniogodzinę CPU, {{memory}} za GiB-godzinę pamięci.",
+    "noData": "OpenCost lub Kubecost nie ma kosztów tego obciążenia z ostatnich 7 dni.",
+    "savings": "Szacowane oszczędności z rekomendacją dopasowania zasobów",
+    "savingsValue": "{{amount}} miesięcznie",
+    "savingsHint": "To szacunek: żądania powyżej rekomendacji, ze wszystkich replik, razy ceny jednostkowe tego obciążenia, przez 30 dni.",
+    "noSavings": "Rekomendacja dopasowania zasobów nie obniża żądań, więc nic nie oszczędza.",
+    "noPrices": "Koszty nie zawierają ceny jednostkowej zasobu, który obniża rekomendacja, więc nie można oszacować oszczędności.",
+    "openRightsizing": "Otwórz dopasowanie zasobów"
+  }
+}

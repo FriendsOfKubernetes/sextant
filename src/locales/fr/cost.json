@@ -1,0 +1,91 @@
+{
+  "sidebar": "Coûts",
+  "title": "Coûts",
+  "intro": "Ce que coûte le cluster, tel que OpenCost ou Kubecost le calcule. Lecture seule : rien n'est modifié dans le cluster.",
+  "loading": "Lecture des coûts…",
+  "failed": "Impossible de lire les coûts",
+  "source": {
+    "opencost": "Selon OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "Selon Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost ou Kubecost introuvable",
+    "text": "Les coûts s'affichent quand OpenCost (https://www.opencost.io) ou Kubecost tourne dans le cluster. Sextant cherche son Service dans les namespaces opencost et kubecost et par le label app.kubernetes.io/name. Sextant ne l'installe pas."
+  },
+  "window": {
+    "label": "Période",
+    "day": "Dernières 24 heures",
+    "week": "7 derniers jours",
+    "month": "30 derniers jours"
+  },
+  "aggregate": {
+    "title": "Grouper par",
+    "namespace": "Namespace",
+    "workload": "Charge de travail",
+    "pod": "Pod",
+    "node": "Nœud",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Clé de label",
+    "show": "Afficher",
+    "invalid": "Ce n'est pas une clé de label.",
+    "choose": "Saisissez une clé de label, par exemple app.kubernetes.io/name, puis choisissez « Afficher »."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Mémoire",
+    "storage": "Stockage",
+    "network": "Réseau",
+    "gpu": "GPU",
+    "other": "Autre"
+  },
+  "column": {
+    "name": "Nom",
+    "namespace": "Namespace",
+    "total": "Total",
+    "efficiency": "Efficacité"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "Ouvrir {{name}}",
+  "totals": {
+    "label": "Totaux",
+    "total": "Total",
+    "allocated": "Alloué",
+    "idle": "Inutilisé"
+  },
+  "split": "Répartition du coût alloué",
+  "splitPart": "{{part}} : {{share}}",
+  "idleRow": "Inutilisé (capacité libre)",
+  "idleHint": "L'inutilisé est le coût de la capacité des nœuds qu'aucune charge de travail n'a utilisée. Il appartient à tout le cluster, même quand des namespaces sont filtrés.",
+  "unallocated": {
+    "namespace": "Sans namespace",
+    "workload": "Sans contrôleur",
+    "pod": "Sans Pod",
+    "node": "Sans nœud",
+    "label": "Sans ce label"
+  },
+  "unmounted": "Volumes qu'aucun Pod ne monte",
+  "currency": "Montants en {{currency}}.",
+  "currencyUnknown": "Les montants sont dans la devise configurée dans OpenCost ou Kubecost ; l'API ne la nomme pas.",
+  "efficiencyHint": "L'efficacité est l'utilisation divisée par les requêtes.",
+  "filtered": "Seuls les namespaces sélectionnés sont affichés.",
+  "truncated_one": "Seul le groupe le plus cher ({{count}}) est affiché, sur {{total}}.",
+  "truncated_many": "Seuls les {{count}} groupes les plus chers sont affichés, sur {{total}}.",
+  "truncated_other": "Seuls les {{count}} groupes les plus chers sont affichés, sur {{total}}.",
+  "empty": "Aucun coût sur cette période.",
+  "details": {
+    "title": "Coûts",
+    "periodCost": "Coût des 7 derniers jours",
+    "monthly": "Estimation mensuelle",
+    "monthlyHint": "Une estimation : le coût des 7 derniers jours (ou du temps pendant lequel la charge de travail y a tourné) ramené à 30 jours.",
+    "prices": "Prix unitaires tirés des coûts de cette charge de travail : {{cpu}} par heure de cœur CPU, {{memory}} par Gio-heure de mémoire.",
+    "noData": "OpenCost ou Kubecost n'a aucun coût pour cette charge de travail sur les 7 derniers jours.",
+    "savings": "Économies estimées avec la recommandation de dimensionnement",
+    "savingsValue": "{{amount}} par mois",
+    "savingsHint": "Une estimation : les requêtes au-dessus de la recommandation, sur toutes les répliques, multipliées par les prix unitaires de cette charge de travail, sur 30 jours.",
+    "noSavings": "La recommandation de dimensionnement ne baisse pas les requêtes : elle n'économise rien.",
+    "noPrices": "Les coûts ne donnent pas de prix unitaire pour une ressource que la recommandation baisse : les économies ne peuvent pas être estimées.",
+    "openRightsizing": "Ouvrir le dimensionnement"
+  }
+}

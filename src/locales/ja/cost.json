@@ -1,0 +1,89 @@
+{
+  "sidebar": "コスト",
+  "title": "コスト",
+  "intro": "OpenCost または Kubecost が算出したクラスターのコストです。読み取り専用: クラスター内では何も変更されません。",
+  "loading": "コストを読み込み中…",
+  "failed": "コストを読み込めませんでした",
+  "source": {
+    "opencost": "OpenCost から取得 (Service {{namespace}}/{{service}})。",
+    "kubecost": "Kubecost から取得 (Service {{namespace}}/{{service}})。"
+  },
+  "notFound": {
+    "title": "OpenCost または Kubecost が見つかりません",
+    "text": "クラスターで OpenCost (https://www.opencost.io) または Kubecost が動作していると、コストが表示されます。Sextant は namespace opencost と kubecost、および label app.kubernetes.io/name でその Service を探します。Sextant はインストールしません。"
+  },
+  "window": {
+    "label": "期間",
+    "day": "過去 24 時間",
+    "week": "過去 7 日間",
+    "month": "過去 30 日間"
+  },
+  "aggregate": {
+    "title": "グループ化",
+    "namespace": "Namespace",
+    "workload": "ワークロード",
+    "pod": "Pod",
+    "node": "ノード",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Label キー",
+    "show": "表示",
+    "invalid": "label キーではありません。",
+    "choose": "app.kubernetes.io/name などの label キーを入力し、「表示」を選択してください。"
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "メモリ",
+    "storage": "ストレージ",
+    "network": "ネットワーク",
+    "gpu": "GPU",
+    "other": "その他"
+  },
+  "column": {
+    "name": "名前",
+    "namespace": "Namespace",
+    "total": "合計",
+    "efficiency": "効率"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "{{name}} を開く",
+  "totals": {
+    "label": "合計",
+    "total": "総額",
+    "allocated": "割り当て済み",
+    "idle": "アイドル"
+  },
+  "split": "割り当て済みコストの内訳",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "アイドル (未使用の容量)",
+  "idleHint": "アイドルは、どのワークロードも使用しなかったノード容量のコストです。namespace を絞り込んだ場合も、クラスター全体に属します。",
+  "unallocated": {
+    "namespace": "namespace なし",
+    "workload": "コントローラーなし",
+    "pod": "Pod なし",
+    "node": "ノードなし",
+    "label": "この label なし"
+  },
+  "unmounted": "どの Pod にもマウントされていないボリューム",
+  "currency": "金額の単位: {{currency}}。",
+  "currencyUnknown": "金額は OpenCost または Kubecost で設定された通貨です。API は通貨を示しません。",
+  "efficiencyHint": "効率は使用量をリクエストで割った値です。",
+  "filtered": "選択した namespace のみを表示しています。",
+  "truncated_other": "{{total}} 件のグループのうち、最も高い {{count}} 件のみを表示しています。",
+  "empty": "この期間のコストはありません。",
+  "details": {
+    "title": "コスト",
+    "periodCost": "過去 7 日間のコスト",
+    "monthly": "月額見積もり",
+    "monthlyHint": "見積もりです: 過去 7 日間 (またはその間にワークロードが動作した時間) のコストを 30 日分に換算しています。",
+    "prices": "このワークロードのコストから求めた単価: CPU コア時間あたり {{cpu}}、メモリ GiB 時間あたり {{memory}}。",
+    "noData": "OpenCost または Kubecost には、このワークロードの過去 7 日間のコストがありません。",
+    "savings": "適正サイズの推奨による節約見込み",
+    "savingsValue": "月あたり {{amount}}",
+    "savingsHint": "見積もりです: 推奨を上回るリクエストを全レプリカ分合計し、このワークロードの単価を掛けて 30 日分で計算しています。",
+    "noSavings": "適正サイズの推奨はリクエストを下げないため、節約にはなりません。",
+    "noPrices": "推奨で下がるリソースの単価がコストに含まれていないため、節約額を見積もれません。",
+    "openRightsizing": "適正サイズを開く"
+  }
+}

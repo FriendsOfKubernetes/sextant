@@ -30,6 +30,7 @@
     "gateway": "Gateway API",
     "security": "Безпека",
     "credentials": "Облікові дані",
+    "disk": "Диск майже заповнений",
     "events": "Події Warning"
   },
   "messages": {
@@ -44,6 +45,9 @@
     "securityBaseline_one": "{{count}} порушення Pod Security рівня Baseline: {{fields}}",
     "securityBaseline_few": "{{count}} порушення Pod Security рівня Baseline: {{fields}}",
     "securityBaseline_many": "{{count}} порушень Pod Security рівня Baseline: {{fields}}",
-    "securityBaseline_other": "{{count}} порушення Pod Security рівня Baseline: {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} порушення Pod Security рівня Baseline: {{fields}}",
+    "diskUsage": "Зайнято {{percent}} місця ({{used}} з {{capacity}})",
+    "inodeUsage": "Зайнято {{percent}} inodes ({{used}} з {{total}})"
+  },
+  "showDisk": "Диск майже заповнений"
 }

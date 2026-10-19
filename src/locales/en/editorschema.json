@@ -1,0 +1,20 @@
+{
+  "required": "required",
+  "default": "Default: {{value}}",
+  "allowed": "Allowed values: {{values}}",
+  "anyField": "Any field is accepted here.",
+  "explain": "Explain",
+  "explainTitle": "Field documentation",
+  "up": "Up",
+  "close": "Close",
+  "fields": "Fields",
+  "noField": "The schema says nothing about this field.",
+  "noSchema": "The cluster publishes no schema for {{kind}}.",
+  "problem": {
+    "unknownField": "Unknown field: {{field}}",
+    "wrongType": "Expected {{expected}}, found {{found}}.",
+    "missingRequired": "Missing required field: {{field}}",
+    "notInEnum": "Value not allowed: {{value}}. Allowed values: {{allowed}}",
+    "syntax": "YAML error: {{message}}"
+  }
+}

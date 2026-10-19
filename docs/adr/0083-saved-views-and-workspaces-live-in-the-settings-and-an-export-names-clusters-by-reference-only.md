@@ -26,3 +26,5 @@ Users of many clusters return to the same tables every day ("failing pods in sho
 - A renamed context keeps its views, pins and workspace places (the settings move with it, ADR-0084); a deleted one loses them.
 - MCP agents and extensions get nothing new.
 - Tests: `views.test.ts`, `table.test.tsx` (frontend), `settings/views.rs` unit tests (tolerant reading), `commands/views.rs` (`read_import` limits).
+
+Amended (v0.14.0, #154): the export is now version 2 and carries the terminal snippets (`AppSettings.snippets`) in a required `snippets` section, previewed and applied like views (added / changed / kept; a changed one replaces the local one only when overwriting is allowed). A version 1 file is still imported, without snippets; each version is read strictly (`snippets` in a version 1 file is an unknown field). "Include terminal snippets" (on by default, with a warning that they are exported as written) can leave them out; the preview shows each added or changed command with whitespace and hidden characters visible, and a snippet with control, invisible or text-direction characters is refused.

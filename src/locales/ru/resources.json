@@ -15,6 +15,8 @@
     "trivy": "Trivy",
     "keda": "KEDA",
     "karpenter": "Karpenter",
+    "volumeSnapshots": "Снимки томов",
+    "velero": "Velero",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "Пользовательские ресурсы"

@@ -218,3 +218,22 @@
 .views-preview__row--missing .views-preview__status {
   color: var(--color-warning, inherit);
 }
+
+/* Commands of imported terminal snippets (#154): as they would be typed; a changed one is highlighted. */
+.views-preview__commands {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.views-preview__commands code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.views-preview__changed {
+  background: var(--color-selected);
+  outline: 1px solid var(--color-warning);
+}

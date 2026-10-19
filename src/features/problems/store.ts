@@ -364,6 +364,8 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
         },
       });
     };
+    // A provider's source (`registerProblemProvider`): its problems come from outside, nothing is watched.
+    if (def.external) created.open = () => (created.stop = openProvided(key, clusterId, created));
     created.open();
     entry = created;
     changed();
@@ -381,6 +383,53 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     held.refs--;
     if (held.refs > 0) return;
     held.linger = setTimeout(() => close(key, held), LINGER_MS);
+  };
+}
+
+/** What a provider hands in: the state of its source and all its problems (replacing the ones before). */
+export interface ProvidedProblems {
+  status: WatchStatus;
+  error?: ApiError;
+  problems: readonly Problem[];
+  truncated?: boolean;
+}
+
+/**
+ * Starts providing the problems of a category in a cluster (while its source is held) through `set`; returns the
+ * function that stops it.
+ */
+export type ProblemProvider = (clusterId: ClusterId, set: (update: ProvidedProblems) => void) => () => void;
+
+const providers = new Map<ProblemCategory, ProblemProvider>();
+
+/**
+ * Registers where the problems of a category whose source is `external` (`SourceDef.external`) come from: a feature
+ * that measures something no watch carries (the fill level of volume claims, features/storage). Returns a function
+ * that removes it.
+ */
+export function registerProblemProvider(category: ProblemCategory, provider: ProblemProvider): () => void {
+  providers.set(category, provider);
+  return () => {
+    if (providers.get(category) === provider) providers.delete(category);
+  };
+}
+
+function openProvided(key: string, clusterId: ClusterId, entry: Entry): () => void {
+  const provider = providers.get(entry.state.def.category);
+  if (!provider) {
+    publish(entry, { status: "ready" });
+    return () => undefined;
+  }
+  let live = true;
+  const stop = provider(clusterId, ({ problems, status, error, truncated }) => {
+    if (!live || entries.get(key) !== entry) return;
+    entry.byUid = new Map();
+    for (const problem of problems) entry.byUid.set(problem.uid, [...(entry.byUid.get(problem.uid) ?? []), problem]);
+    publish(entry, { status, error, truncated: truncated ?? false });
+  });
+  return () => {
+    live = false;
+    stop();
   };
 }
 

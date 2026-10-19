@@ -1,0 +1,20 @@
+{
+  "required": "必須",
+  "default": "既定値: {{value}}",
+  "allowed": "使用できる値: {{values}}",
+  "anyField": "ここではどのフィールドも使用できます。",
+  "explain": "説明",
+  "explainTitle": "フィールドのドキュメント",
+  "up": "上へ",
+  "close": "閉じる",
+  "fields": "フィールド",
+  "noField": "このフィールドについてスキーマに記載はありません。",
+  "noSchema": "クラスターは {{kind}} のスキーマを公開していません。",
+  "problem": {
+    "unknownField": "不明なフィールド: {{field}}",
+    "wrongType": "{{expected}} が必要ですが、{{found}} が指定されています。",
+    "missingRequired": "必須フィールドがありません: {{field}}",
+    "notInEnum": "使用できない値: {{value}}。使用できる値: {{allowed}}",
+    "syntax": "YAML エラー: {{message}}"
+  }
+}

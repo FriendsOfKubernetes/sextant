@@ -15,6 +15,8 @@
     "trivy": "Trivy",
     "keda": "KEDA",
     "karpenter": "Karpenter",
+    "volumeSnapshots": "磁碟區快照",
+    "velero": "Velero",
     "flux": "Flux",
     "argocd": "Argo CD",
     "customResources": "自訂資源"

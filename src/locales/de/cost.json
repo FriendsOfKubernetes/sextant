@@ -1,0 +1,90 @@
+{
+  "sidebar": "Kosten",
+  "title": "Kosten",
+  "intro": "Was der Cluster kostet, wie OpenCost oder Kubecost es berechnet. Nur lesend: Im Cluster wird nichts geändert.",
+  "loading": "Kosten werden gelesen…",
+  "failed": "Die Kosten konnten nicht gelesen werden",
+  "source": {
+    "opencost": "Von OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "Von Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost oder Kubecost wurde nicht gefunden",
+    "text": "Kosten werden angezeigt, wenn OpenCost (https://www.opencost.io) oder Kubecost im Cluster läuft. Sextant sucht dessen Service in den Namespaces opencost und kubecost sowie über das Label app.kubernetes.io/name. Sextant installiert es nicht."
+  },
+  "window": {
+    "label": "Zeitraum",
+    "day": "Letzte 24 Stunden",
+    "week": "Letzte 7 Tage",
+    "month": "Letzte 30 Tage"
+  },
+  "aggregate": {
+    "title": "Gruppieren nach",
+    "namespace": "Namespace",
+    "workload": "Workload",
+    "pod": "Pod",
+    "node": "Knoten",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Label-Schlüssel",
+    "show": "Anzeigen",
+    "invalid": "Das ist kein Label-Schlüssel.",
+    "choose": "Geben Sie einen Label-Schlüssel ein, etwa app.kubernetes.io/name, und wählen Sie „Anzeigen“."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Arbeitsspeicher",
+    "storage": "Speicherplatz",
+    "network": "Netzwerk",
+    "gpu": "GPU",
+    "other": "Sonstiges"
+  },
+  "column": {
+    "name": "Name",
+    "namespace": "Namespace",
+    "total": "Gesamt",
+    "efficiency": "Effizienz"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "{{name}} öffnen",
+  "totals": {
+    "label": "Summen",
+    "total": "Gesamt",
+    "allocated": "Zugeordnet",
+    "idle": "Leerlauf"
+  },
+  "split": "Aufteilung der zugeordneten Kosten",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Leerlauf (ungenutzte Kapazität)",
+  "idleHint": "Leerlauf sind die Kosten der Knotenkapazität, die kein Workload genutzt hat. Sie gehören zum ganzen Cluster, auch wenn Namespaces gefiltert sind.",
+  "unallocated": {
+    "namespace": "Ohne Namespace",
+    "workload": "Ohne Controller",
+    "pod": "Ohne Pod",
+    "node": "Ohne Knoten",
+    "label": "Ohne dieses Label"
+  },
+  "unmounted": "Volumes, die kein Pod einbindet",
+  "currency": "Beträge in {{currency}}.",
+  "currencyUnknown": "Die Beträge sind in der Währung, die in OpenCost oder Kubecost eingestellt ist; die API nennt sie nicht.",
+  "efficiencyHint": "Effizienz ist die Nutzung geteilt durch die Requests.",
+  "filtered": "Nur die ausgewählten Namespaces werden angezeigt.",
+  "truncated_one": "Nur die {{count}} teuerste Gruppe wird angezeigt, von {{total}}.",
+  "truncated_other": "Nur die {{count}} teuersten Gruppen werden angezeigt, von {{total}}.",
+  "empty": "Keine Kosten in diesem Zeitraum.",
+  "details": {
+    "title": "Kosten",
+    "periodCost": "Kosten der letzten 7 Tage",
+    "monthly": "Monatliche Schätzung",
+    "monthlyHint": "Eine Schätzung: die Kosten der letzten 7 Tage (oder der Zeit, in der der Workload darin lief), auf 30 Tage hochgerechnet.",
+    "prices": "Einheitspreise aus den Kosten dieses Workloads: {{cpu}} pro CPU-Kernstunde, {{memory}} pro GiB-Stunde Arbeitsspeicher.",
+    "noData": "OpenCost oder Kubecost hat für diesen Workload keine Kosten der letzten 7 Tage.",
+    "savings": "Geschätzte Einsparung mit der Right-Sizing-Empfehlung",
+    "savingsValue": "{{amount}} pro Monat",
+    "savingsHint": "Eine Schätzung: Requests über der Empfehlung, über alle Replikate, mal die Einheitspreise dieses Workloads, über 30 Tage.",
+    "noSavings": "Die Right-Sizing-Empfehlung senkt die Requests nicht, also spart sie nichts.",
+    "noPrices": "Die Kosten enthalten keinen Einheitspreis für eine Ressource, die die Empfehlung senkt, daher lässt sich die Einsparung nicht schätzen.",
+    "openRightsizing": "Right-Sizing öffnen"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "sidebar": "Стоимость",
+  "title": "Стоимость",
+  "intro": "Сколько стоит кластер по расчётам OpenCost или Kubecost. Только чтение: в кластере ничего не меняется.",
+  "loading": "Чтение стоимости…",
+  "failed": "Не удалось прочитать стоимость",
+  "source": {
+    "opencost": "Данные OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "Данные Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost и Kubecost не найдены",
+    "text": "Стоимость показывается, когда в кластере работает OpenCost (https://www.opencost.io) или Kubecost. Sextant ищет его Service в namespace opencost и kubecost и по label app.kubernetes.io/name. Sextant его не устанавливает."
+  },
+  "window": {
+    "label": "Период",
+    "day": "Последние 24 часа",
+    "week": "Последние 7 дней",
+    "month": "Последние 30 дней"
+  },
+  "aggregate": {
+    "title": "Группировка",
+    "namespace": "Namespace",
+    "workload": "Рабочая нагрузка",
+    "pod": "Pod",
+    "node": "Узел",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Ключ label",
+    "show": "Показать",
+    "invalid": "Это не ключ label.",
+    "choose": "Введите ключ label, например app.kubernetes.io/name, и нажмите «Показать»."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Память",
+    "storage": "Хранилище",
+    "network": "Сеть",
+    "gpu": "GPU",
+    "other": "Прочее"
+  },
+  "column": {
+    "name": "Имя",
+    "namespace": "Namespace",
+    "total": "Итого",
+    "efficiency": "Эффективность"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "Открыть {{name}}",
+  "totals": {
+    "label": "Итоги",
+    "total": "Всего",
+    "allocated": "Распределено",
+    "idle": "Простой"
+  },
+  "split": "Распределённая стоимость по ресурсам",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Простой (неиспользуемая ёмкость)",
+  "idleHint": "Простой — стоимость ёмкости узлов, которую не использовала ни одна рабочая нагрузка. Она относится ко всему кластеру, в том числе при фильтре по namespace.",
+  "unallocated": {
+    "namespace": "Без namespace",
+    "workload": "Без контроллера",
+    "pod": "Без Pod",
+    "node": "Без узла",
+    "label": "Без этого label"
+  },
+  "unmounted": "Тома, которые не смонтированы ни в один Pod",
+  "currency": "Суммы в {{currency}}.",
+  "currencyUnknown": "Суммы указаны в валюте, настроенной в OpenCost или Kubecost; API её не называет.",
+  "efficiencyHint": "Эффективность — использование, делённое на запросы.",
+  "filtered": "Показаны только выбранные namespace.",
+  "truncated_one": "Показана только {{count}} самая дорогая группа из {{total}}.",
+  "truncated_few": "Показаны только {{count}} самые дорогие группы из {{total}}.",
+  "truncated_many": "Показаны только {{count}} самых дорогих групп из {{total}}.",
+  "truncated_other": "Показаны только {{count}} самой дорогой группы из {{total}}.",
+  "empty": "За этот период стоимости нет.",
+  "details": {
+    "title": "Стоимость",
+    "periodCost": "Стоимость за последние 7 дней",
+    "monthly": "Оценка за месяц",
+    "monthlyHint": "Это оценка: стоимость за последние 7 дней (или за время работы нагрузки в них), пересчитанная на 30 дней.",
+    "prices": "Цены за единицу по стоимости этой нагрузки: {{cpu}} за ядро CPU в час, {{memory}} за ГиБ памяти в час.",
+    "noData": "У OpenCost или Kubecost нет стоимости этой нагрузки за последние 7 дней.",
+    "savings": "Оценка экономии по рекомендации подбора ресурсов",
+    "savingsValue": "{{amount}} в месяц",
+    "savingsHint": "Это оценка: запросы сверх рекомендации по всем репликам, умноженные на цены за единицу этой нагрузки, за 30 дней.",
+    "noSavings": "Рекомендация подбора ресурсов не снижает запросы, поэтому экономии нет.",
+    "noPrices": "В данных о стоимости нет цены за единицу для ресурса, который снижает рекомендация, поэтому экономию оценить нельзя.",
+    "openRightsizing": "Открыть подбор ресурсов"
+  }
+}

@@ -1,6 +1,6 @@
 // "Views and workspaces": rename, reorder and delete saved views; create, edit, use and delete workspaces; export
 // and import them (with the clusters by reference and their shareable settings).
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, updateSettings, useSettings, type ApiError, type AppSettings, type ClusterInfo } from "../../api";
 import { Button, Checkbox, ConfirmDialog, Dialog, ErrorState, Icon, Tabs } from "../../components";
@@ -35,6 +35,8 @@ import {
   type PlannedEntry,
   type SharedField,
 } from "./transfer";
+import type { Snippet } from "../../api/generated/Snippet";
+import { visibleText } from "../terminal/text";
 import { closeManager, save, useViewsUi, type ManagerTab } from "./ui";
 import "./views.css";
 
@@ -289,6 +291,7 @@ function TransferTab({ settings }: { settings: AppSettings }) {
   const { t } = useTranslation();
   const { clusters, sources } = useClusters();
   const [includeAccess, setIncludeAccess] = useState(false);
+  const [includeSnippets, setIncludeSnippets] = useState(true);
   const [exported, setExported] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [problems, setProblems] = useState<string[] | null>(null);
@@ -305,7 +308,10 @@ function TransferTab({ settings }: { settings: AppSettings }) {
         filters: [{ name: t("views:transfer.filter"), extensions: ["json"] }],
       });
       if (!path) return;
-      const file = buildExport(settings, clusters, sources, { includeAgentAccess: includeAccess });
+      const file = buildExport(settings, clusters, sources, {
+        includeAgentAccess: includeAccess,
+        includeSnippets,
+      });
       await api.files.save(path, exportText(file));
       setExported(path);
     } catch (err) {
@@ -338,6 +344,11 @@ function TransferTab({ settings }: { settings: AppSettings }) {
           <Checkbox checked={includeAccess} onChange={(e) => setIncludeAccess(e.target.checked)} />
           {t("views:transfer.includeAgentAccess")}
         </label>
+        <label className="views-form__choice">
+          <Checkbox checked={includeSnippets} onChange={(e) => setIncludeSnippets(e.target.checked)} />
+          {t("terminal:snippets.exportInclude")}
+        </label>
+        {includeSnippets && <p className="views-manager__empty">{t("terminal:snippets.exportWarning")}</p>}
         <Button icon="download" onClick={() => void doExport()}>
           {t("views:transfer.export")}
         </Button>
@@ -393,6 +404,30 @@ function clusterStatus(c: PlannedCluster): "missing" | "changed" | "added" | "ke
   return c.added.length > 0 ? "added" : "kept";
 }
 
+/**
+ * The command of an added or changed snippet as it would be typed, whitespace and hidden characters shown; a changed
+ * one also shows the local command it replaces, the new one highlighted.
+ */
+function SnippetCommands({ planned }: { planned: PlannedEntry<Snippet> }) {
+  const { t } = useTranslation();
+  if (planned.status !== "added" && planned.status !== "changed") return null;
+  return (
+    <div className="views-preview__commands">
+      {planned.previous && (
+        <span>
+          <small>{t("terminal:snippets.previewLocal")}</small> <code>{visibleText(planned.previous.command)}</code>
+        </span>
+      )}
+      <span>
+        {planned.previous && <small>{t("terminal:snippets.previewFile")}</small>}{" "}
+        <code className={planned.status === "changed" ? "views-preview__changed" : undefined}>
+          {visibleText(planned.entry.command)}
+        </code>
+      </span>
+    </div>
+  );
+}
+
 /** What an import would do, per section; applies only on "Import". */
 export function ImportPreview({
   plan,
@@ -409,16 +444,17 @@ export function ImportPreview({
   const options = { overwrite, agentAccess };
   const count = countChanges(plan, options);
   const fields = (list: SharedField[]) => formatList(list.map((f) => t(`views:transfer.fields.${f}`)));
-  const section = <T,>(id: "views" | "pins" | "workspaces", entries: PlannedEntry<T>[]) =>
+  const section = <T,>(title: string, entries: PlannedEntry<T>[], detail?: (entry: PlannedEntry<T>) => ReactNode) =>
     entries.length > 0 && (
-      <section aria-label={t(`views:transfer.sections.${id}`)}>
-        <h4>{t(`views:transfer.sections.${id}`)}</h4>
+      <section aria-label={title}>
+        <h4>{title}</h4>
         <ul className="views-preview__list">
           {entries.map((e, i) => (
             <li key={i} className={`views-preview__row views-preview__row--${e.status}`}>
               <span className="views-preview__status">{t(`views:transfer.status.${e.status}`)}</span>
               <span>{e.label}</span>
               {e.status === "skipped" && <small>{t("views:transfer.skippedHint")}</small>}
+              {detail?.(e)}
             </li>
           ))}
         </ul>
@@ -450,9 +486,10 @@ export function ImportPreview({
           </ul>
         </section>
       )}
-      {section(SECTION_VIEWS, plan.views)}
-      {section(SECTION_PINS, plan.pins)}
-      {section(SECTION_WORKSPACES, plan.workspaces)}
+      {section(t(`views:transfer.sections.${SECTION_VIEWS}`), plan.views)}
+      {section(t(`views:transfer.sections.${SECTION_PINS}`), plan.pins)}
+      {section(t(`views:transfer.sections.${SECTION_WORKSPACES}`), plan.workspaces)}
+      {section(t("terminal:snippets.managerTitle"), plan.snippets, (e) => <SnippetCommands planned={e} />)}
       <label className="views-form__choice">
         <Checkbox checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} />
         {t("views:transfer.overwrite")}

@@ -9,10 +9,15 @@ mod history;
 mod prometheus;
 mod quantity;
 mod server;
+mod volumes;
 
 pub use history::{
     ContainerHistory, HISTORY_WORKLOAD_KINDS, HistoryScope, HistoryWindow, MAX_HISTORY_CONTAINERS,
     MAX_HISTORY_NAMESPACES, UsageHistory, usage_history,
+};
+pub use volumes::{
+    MAX_NODES, MAX_SUMMARY_BYTES, MAX_VOLUMES, VolumeUsage, VolumeUsageReport, VolumeUsageSource,
+    volume_usage,
 };
 
 use serde::{Deserialize, Serialize};

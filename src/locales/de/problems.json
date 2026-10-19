@@ -26,6 +26,7 @@
     "gateway": "Gateway API",
     "security": "Sicherheit",
     "credentials": "Zugangsdaten",
+    "disk": "Datenträger fast voll",
     "events": "Warnereignisse"
   },
   "messages": {
@@ -36,6 +37,9 @@
     "expires": "Läuft ab am {{date}}",
     "expired": "Abgelaufen am {{date}}",
     "securityBaseline_one": "{{count}} Verstoß gegen Pod Security Baseline: {{fields}}",
-    "securityBaseline_other": "{{count}} Verstöße gegen Pod Security Baseline: {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} Verstöße gegen Pod Security Baseline: {{fields}}",
+    "diskUsage": "{{percent}} des Speicherplatzes belegt ({{used}} von {{capacity}})",
+    "inodeUsage": "{{percent}} der Inodes belegt ({{used}} von {{total}})"
+  },
+  "showDisk": "Datenträger fast voll"
 }

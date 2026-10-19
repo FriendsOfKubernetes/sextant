@@ -1,0 +1,90 @@
+{
+  "sidebar": "Maliyet",
+  "title": "Maliyet",
+  "intro": "OpenCost veya Kubecost'un hesapladığı şekilde kümenin maliyeti. Salt okunur: kümede hiçbir şey değiştirilmez.",
+  "loading": "Maliyetler okunuyor…",
+  "failed": "Maliyetler okunamadı",
+  "source": {
+    "opencost": "OpenCost'tan, Service {{namespace}}/{{service}}.",
+    "kubecost": "Kubecost'tan, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost veya Kubecost bulunamadı",
+    "text": "Maliyetler, kümede OpenCost (https://www.opencost.io) veya Kubecost çalıştığında gösterilir. Sextant, Service'ini opencost ve kubecost namespace'lerinde ve app.kubernetes.io/name label'ı ile arar. Sextant onu kurmaz."
+  },
+  "window": {
+    "label": "Dönem",
+    "day": "Son 24 saat",
+    "week": "Son 7 gün",
+    "month": "Son 30 gün"
+  },
+  "aggregate": {
+    "title": "Gruplama",
+    "namespace": "Namespace",
+    "workload": "İş yükü",
+    "pod": "Pod",
+    "node": "Düğüm",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Label anahtarı",
+    "show": "Göster",
+    "invalid": "Bu bir label anahtarı değil.",
+    "choose": "app.kubernetes.io/name gibi bir label anahtarı girin ve “Göster”i seçin."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Bellek",
+    "storage": "Depolama",
+    "network": "Ağ",
+    "gpu": "GPU",
+    "other": "Diğer"
+  },
+  "column": {
+    "name": "Ad",
+    "namespace": "Namespace",
+    "total": "Toplam",
+    "efficiency": "Verimlilik"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "{{name}} öğesini aç",
+  "totals": {
+    "label": "Toplamlar",
+    "total": "Toplam",
+    "allocated": "Ayrılan",
+    "idle": "Boşta"
+  },
+  "split": "Ayrılan maliyetin dağılımı",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Boşta (kullanılmayan kapasite)",
+  "idleHint": "Boşta, hiçbir iş yükünün kullanmadığı düğüm kapasitesinin maliyetidir. Namespace'ler filtrelendiğinde de tüm kümeye aittir.",
+  "unallocated": {
+    "namespace": "Namespace olmadan",
+    "workload": "Denetleyici olmadan",
+    "pod": "Pod olmadan",
+    "node": "Düğüm olmadan",
+    "label": "Bu label olmadan"
+  },
+  "unmounted": "Hiçbir Pod'un bağlamadığı birimler",
+  "currency": "Tutarlar {{currency}} cinsinden.",
+  "currencyUnknown": "Tutarlar OpenCost veya Kubecost'ta ayarlanan para birimindedir; API bunu belirtmez.",
+  "efficiencyHint": "Verimlilik, kullanımın isteklere bölümüdür.",
+  "filtered": "Yalnızca seçili namespace'ler gösteriliyor.",
+  "truncated_one": "{{total}} grup içinden yalnızca en pahalı {{count}} grup gösteriliyor.",
+  "truncated_other": "{{total}} grup içinden yalnızca en pahalı {{count}} grup gösteriliyor.",
+  "empty": "Bu dönemde maliyet yok.",
+  "details": {
+    "title": "Maliyet",
+    "periodCost": "Son 7 günün maliyeti",
+    "monthly": "Aylık tahmin",
+    "monthlyHint": "Bir tahmindir: son 7 günün (veya iş yükünün bu günlerde çalıştığı sürenin) maliyeti 30 güne ölçeklenir.",
+    "prices": "Bu iş yükünün maliyetlerinden birim fiyatlar: CPU çekirdek-saati başına {{cpu}}, bellek GiB-saati başına {{memory}}.",
+    "noData": "OpenCost veya Kubecost'ta bu iş yükü için son 7 güne ait maliyet yok.",
+    "savings": "Doğru boyutlandırma önerisiyle tahmini tasarruf",
+    "savingsValue": "Aylık {{amount}}",
+    "savingsHint": "Bir tahmindir: önerinin üzerindeki istekler, tüm replikalar için, bu iş yükünün birim fiyatlarıyla çarpılarak 30 gün için hesaplanır.",
+    "noSavings": "Doğru boyutlandırma önerisi istekleri düşürmüyor, bu yüzden tasarruf sağlamıyor.",
+    "noPrices": "Maliyetlerde, önerinin düşürdüğü bir kaynak için birim fiyat yok; bu yüzden tasarruf tahmin edilemiyor.",
+    "openRightsizing": "Doğru boyutlandırmayı aç"
+  }
+}

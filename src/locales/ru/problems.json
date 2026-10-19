@@ -30,6 +30,7 @@
     "gateway": "Gateway API",
     "security": "Безопасность",
     "credentials": "Учётные данные",
+    "disk": "Диск почти заполнен",
     "events": "События Warning"
   },
   "messages": {
@@ -44,6 +45,9 @@
     "securityBaseline_one": "{{count}} нарушение Pod Security уровня Baseline: {{fields}}",
     "securityBaseline_few": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}",
     "securityBaseline_many": "{{count}} нарушений Pod Security уровня Baseline: {{fields}}",
-    "securityBaseline_other": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}",
+    "diskUsage": "Занято {{percent}} места ({{used}} из {{capacity}})",
+    "inodeUsage": "Занято {{percent}} inodes ({{used}} из {{total}})"
+  },
+  "showDisk": "Диск почти заполнен"
 }

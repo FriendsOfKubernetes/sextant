@@ -1,0 +1,112 @@
+/* Storage insights (#152): the usage bars coloured by the thresholds, the forms and confirmations of the actions. */
+.st-usage--warn .mx-bar__fill {
+  background: var(--color-warning);
+}
+
+.st-usage--critical .mx-bar__fill {
+  background: var(--color-danger);
+}
+
+.st-level {
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.st-level--warn {
+  color: var(--color-warning);
+}
+
+.st-level--critical {
+  color: var(--color-danger);
+}
+
+.st-muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.st-explain {
+  margin: 4px 0 8px;
+}
+
+.st-explain--danger {
+  color: var(--color-danger);
+}
+
+.st-explain--warning {
+  color: var(--color-warning);
+}
+
+.st-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.st-table th,
+.st-table td {
+  padding: 4px 8px 4px 0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.st-table th {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.st-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: min(420px, 80vw);
+}
+
+.st-input {
+  width: 100%;
+  max-width: 360px;
+}
+
+.st-mapping {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.st-note {
+  margin: 8px 0;
+  color: var(--color-warning);
+}
+
+.st-yaml {
+  max-height: 240px;
+  overflow: auto;
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: pre;
+}
+
+.st-thresholds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.st-threshold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.st-threshold input {
+  width: 72px;
+}

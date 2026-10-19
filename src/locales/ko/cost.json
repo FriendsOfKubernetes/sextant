@@ -1,0 +1,89 @@
+{
+  "sidebar": "비용",
+  "title": "비용",
+  "intro": "OpenCost 또는 Kubecost가 계산한 클러스터 비용입니다. 읽기 전용: 클러스터에서 아무것도 변경되지 않습니다.",
+  "loading": "비용을 읽는 중…",
+  "failed": "비용을 읽을 수 없습니다",
+  "source": {
+    "opencost": "OpenCost 기준, Service {{namespace}}/{{service}}.",
+    "kubecost": "Kubecost 기준, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost 또는 Kubecost를 찾을 수 없습니다",
+    "text": "클러스터에서 OpenCost(https://www.opencost.io) 또는 Kubecost가 실행 중이면 비용이 표시됩니다. Sextant는 namespace opencost와 kubecost에서, 그리고 label app.kubernetes.io/name으로 해당 Service를 찾습니다. Sextant는 이를 설치하지 않습니다."
+  },
+  "window": {
+    "label": "기간",
+    "day": "최근 24시간",
+    "week": "최근 7일",
+    "month": "최근 30일"
+  },
+  "aggregate": {
+    "title": "그룹 기준",
+    "namespace": "Namespace",
+    "workload": "워크로드",
+    "pod": "Pod",
+    "node": "노드",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Label 키",
+    "show": "표시",
+    "invalid": "label 키가 아닙니다.",
+    "choose": "app.kubernetes.io/name 같은 label 키를 입력하고 “표시”를 선택하세요."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "메모리",
+    "storage": "스토리지",
+    "network": "네트워크",
+    "gpu": "GPU",
+    "other": "기타"
+  },
+  "column": {
+    "name": "이름",
+    "namespace": "Namespace",
+    "total": "합계",
+    "efficiency": "효율"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "{{name}} 열기",
+  "totals": {
+    "label": "합계",
+    "total": "총액",
+    "allocated": "할당됨",
+    "idle": "유휴"
+  },
+  "split": "할당된 비용의 구성",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "유휴(사용되지 않은 용량)",
+  "idleHint": "유휴는 어떤 워크로드도 사용하지 않은 노드 용량의 비용입니다. namespace를 필터링해도 클러스터 전체에 속합니다.",
+  "unallocated": {
+    "namespace": "namespace 없음",
+    "workload": "컨트롤러 없음",
+    "pod": "Pod 없음",
+    "node": "노드 없음",
+    "label": "이 label 없음"
+  },
+  "unmounted": "어떤 Pod도 마운트하지 않은 볼륨",
+  "currency": "금액 단위: {{currency}}.",
+  "currencyUnknown": "금액은 OpenCost 또는 Kubecost에 설정된 통화입니다. API는 통화를 알려 주지 않습니다.",
+  "efficiencyHint": "효율은 사용량을 요청으로 나눈 값입니다.",
+  "filtered": "선택한 namespace만 표시합니다.",
+  "truncated_other": "{{total}}개 그룹 중 가장 비싼 {{count}}개만 표시합니다.",
+  "empty": "이 기간에는 비용이 없습니다.",
+  "details": {
+    "title": "비용",
+    "periodCost": "최근 7일 비용",
+    "monthly": "월별 추정",
+    "monthlyHint": "추정치입니다. 최근 7일(또는 그 기간 중 워크로드가 실행된 시간)의 비용을 30일로 환산했습니다.",
+    "prices": "이 워크로드 비용에서 구한 단가: CPU 코어 시간당 {{cpu}}, 메모리 GiB 시간당 {{memory}}.",
+    "noData": "OpenCost 또는 Kubecost에 이 워크로드의 최근 7일 비용이 없습니다.",
+    "savings": "적정 크기 조정 권장 사항에 따른 예상 절감액",
+    "savingsValue": "월 {{amount}}",
+    "savingsHint": "추정치입니다. 모든 복제본에서 권장 사항을 초과하는 요청에 이 워크로드의 단가를 곱해 30일 기준으로 계산했습니다.",
+    "noSavings": "적정 크기 조정 권장 사항이 요청을 낮추지 않으므로 절감되는 비용이 없습니다.",
+    "noPrices": "권장 사항이 낮추는 리소스의 단가가 비용 데이터에 없어 절감액을 추정할 수 없습니다.",
+    "openRightsizing": "적정 크기 조정 열기"
+  }
+}

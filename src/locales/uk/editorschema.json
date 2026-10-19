@@ -1,0 +1,20 @@
+{
+  "required": "обов’язкове",
+  "default": "Типово: {{value}}",
+  "allowed": "Допустимі значення: {{values}}",
+  "anyField": "Тут допускається будь-яке поле.",
+  "explain": "Пояснити",
+  "explainTitle": "Документація поля",
+  "up": "Вгору",
+  "close": "Закрити",
+  "fields": "Поля",
+  "noField": "Схема нічого не повідомляє про це поле.",
+  "noSchema": "Кластер не публікує схему для {{kind}}.",
+  "problem": {
+    "unknownField": "Невідоме поле: {{field}}",
+    "wrongType": "Очікується {{expected}}, вказано {{found}}.",
+    "missingRequired": "Не вказано обов’язкове поле: {{field}}",
+    "notInEnum": "Недопустиме значення: {{value}}. Допустимі значення: {{allowed}}",
+    "syntax": "Помилка YAML: {{message}}"
+  }
+}

@@ -30,6 +30,7 @@
     "gateway": "Gateway API",
     "security": "Bezpieczeństwo",
     "credentials": "Poświadczenia",
+    "disk": "Dysk prawie pełny",
     "events": "Zdarzenia ostrzegawcze"
   },
   "messages": {
@@ -44,6 +45,9 @@
     "securityBaseline_one": "{{count}} naruszenie Pod Security Baseline: {{fields}}",
     "securityBaseline_few": "{{count}} naruszenia Pod Security Baseline: {{fields}}",
     "securityBaseline_many": "{{count}} naruszeń Pod Security Baseline: {{fields}}",
-    "securityBaseline_other": "{{count}} naruszenia Pod Security Baseline: {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} naruszenia Pod Security Baseline: {{fields}}",
+    "diskUsage": "Zajęte {{percent}} miejsca ({{used}} z {{capacity}})",
+    "inodeUsage": "Zajęte {{percent}} inodes ({{used}} z {{total}})"
+  },
+  "showDisk": "Dysk prawie pełny"
 }

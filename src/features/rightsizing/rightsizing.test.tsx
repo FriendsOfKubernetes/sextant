@@ -8,6 +8,7 @@ import { useClustersStore } from "../clusters/clustersStore";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetMetricsCache } from "../metrics/hooks";
 import { resetNamespaceRestore } from "../namespaces";
+import { resetSharedWatches } from "../resource-map/watches";
 import { RightsizingDetailsSection } from "./DetailsSection";
 import "./index";
 import { RIGHTSIZING_PAGE_ID, RightsizingPage } from "./RightsizingPage";
@@ -108,6 +109,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  resetSharedWatches();
   wb.backend.restore();
   resetMetricsCache();
   vi.restoreAllMocks();

@@ -209,6 +209,14 @@ export function useClusterKinds(clusterId: ClusterId | null): ClusterKinds {
   return value;
 }
 
+/**
+ * The kinds the cluster serves as known now, read outside React and without loading them (`null` until discovery
+ * came): for a check that must not wait, such as whether an action applies.
+ */
+export function knownClusterKinds(clusterId: ClusterId | null): ResourceKind[] | null {
+  return clusterId ? (cache.get(clusterId)?.kinds ?? null) : null;
+}
+
 /** The discovered kind for `group`/`kind` (preferred version), if the cluster serves it. */
 export function findKind(kinds: ResourceKind[] | null, ref: Pick<KindRef, "group" | "kind">): ResourceKind | undefined {
   return kinds?.find((k) => k.kindRef.group === ref.group && k.kindRef.kind === ref.kind);

@@ -35,4 +35,13 @@ certExpiryDays: number,
  * screen, the sidebar counter and the notifications. Kept as text like `disabled_categories`; an unknown one is
  * ignored.
  */
-enabledCategories: Array<string>, };
+enabledCategories: Array<string>, 
+/**
+ * The opt-in category "disk almost full" (#152): a claim counts as almost full from this percent of its bytes
+ * or inodes used; 85 by default. Written by the frontend, which clamps it to 50..=99.
+ */
+volumeWarnPercent: number, 
+/**
+ * …and as critically full from this one; 95 by default, never below the warning.
+ */
+volumeCriticalPercent: number, };

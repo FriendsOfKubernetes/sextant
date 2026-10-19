@@ -16,6 +16,8 @@ use crate::metrics::{PrometheusMode, UsageSource};
 
 pub mod views;
 pub use views::{Pin, PinTarget, SavedView, ViewSort, Workspace};
+pub mod snippets;
+pub use snippets::Snippet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -179,10 +181,19 @@ pub struct NotificationSettings {
     /// screen, the sidebar counter and the notifications. Kept as text like `disabled_categories`; an unknown one is
     /// ignored.
     pub enabled_categories: Vec<String>,
+    /// The opt-in category "disk almost full" (#152): a claim counts as almost full from this percent of its bytes
+    /// or inodes used; 85 by default. Written by the frontend, which clamps it to 50..=99.
+    pub volume_warn_percent: u32,
+    /// …and as critically full from this one; 95 by default, never below the warning.
+    pub volume_critical_percent: u32,
 }
 
 /// `NotificationSettings::cert_expiry_days` of a new install.
 pub const DEFAULT_CERT_EXPIRY_DAYS: u32 = 14;
+/// `NotificationSettings::volume_warn_percent` of a new install.
+pub const DEFAULT_VOLUME_WARN_PERCENT: u32 = 85;
+/// `NotificationSettings::volume_critical_percent` of a new install.
+pub const DEFAULT_VOLUME_CRITICAL_PERCENT: u32 = 95;
 
 /// The overview of several clusters ("All clusters", #144). Written by the frontend; opening the overview never
 /// connects a cluster by itself.
@@ -287,6 +298,8 @@ impl Default for NotificationSettings {
             muted_until: None,
             cert_expiry_days: DEFAULT_CERT_EXPIRY_DAYS,
             enabled_categories: Vec::new(),
+            volume_warn_percent: DEFAULT_VOLUME_WARN_PERCENT,
+            volume_critical_percent: DEFAULT_VOLUME_CRITICAL_PERCENT,
         }
     }
 }
@@ -400,6 +413,11 @@ pub struct AppSettings {
     #[serde(with = "views::active_workspace_field")]
     #[ts(as = "Option<String>")]
     pub active_workspace: Option<String>,
+    /// Terminal snippets (#154): saved commands with placeholders, in the user's order. Written by the frontend; an
+    /// entry that does not read is left out ([`snippets`]).
+    #[serde(with = "snippets::snippets_field")]
+    #[ts(as = "Vec<Snippet>")]
+    pub snippets: Vec<Snippet>,
 }
 
 impl Default for AppSettings {
@@ -428,6 +446,7 @@ impl Default for AppSettings {
             pins: Vec::new(),
             workspaces: Vec::new(),
             active_workspace: None,
+            snippets: Vec::new(),
         }
     }
 }
@@ -1389,6 +1408,8 @@ mod tests {
                     muted_until: Some("2026-10-18T12:00:00.000Z".to_owned()),
                     cert_expiry_days: 30,
                     enabled_categories: vec!["security".to_owned()],
+                    volume_warn_percent: 80,
+                    volume_critical_percent: 90,
                 }
             })
             .unwrap();
@@ -1419,6 +1440,15 @@ mod tests {
         assert_eq!(json["notifications"]["enabledCategories"][0], "security");
         assert_eq!(read.enabled_categories, ["security"]);
         assert!(partial.enabled_categories.is_empty());
+        assert_eq!(json["notifications"]["volumeWarnPercent"], 80);
+        assert_eq!(
+            (read.volume_warn_percent, read.volume_critical_percent),
+            (80, 90)
+        );
+        assert_eq!(
+            (partial.volume_warn_percent, partial.volume_critical_percent),
+            (DEFAULT_VOLUME_WARN_PERCENT, DEFAULT_VOLUME_CRITICAL_PERCENT)
+        );
     }
 
     #[test]

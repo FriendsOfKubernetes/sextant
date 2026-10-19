@@ -31,7 +31,7 @@ export function defaultAppSettings(): AppSettings {
     nodeShellImage: "busybox:stable",
     debugImage: "busybox:stable",
     extensions: [],
-    notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null, certExpiryDays: 14, enabledCategories: [] },
+    notifications: { enabled: true, disabledCategories: [], mutedClusters: [], mutedUntil: null, certExpiryDays: 14, enabledCategories: [], volumeWarnPercent: 85, volumeCriticalPercent: 95 },
     fleet: { selected: [] },
     timeline: { persist: false },
     cleanup: {
@@ -45,6 +45,7 @@ export function defaultAppSettings(): AppSettings {
     pins: [],
     workspaces: [],
     activeWorkspace: null,
+    snippets: [],
   };
 }
 

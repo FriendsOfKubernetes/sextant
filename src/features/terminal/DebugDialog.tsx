@@ -18,6 +18,8 @@ export interface DebugDialogProps {
   /** The container chosen at first; none (`undefined`): the first one. */
   target?: string;
   close: () => void;
+  /** Starts the debug container somewhere else than a new dock tab (a new split pane); the default opens a tab. */
+  onStart?: (debug: DebugSpec) => void;
 }
 
 /**
@@ -54,7 +56,7 @@ export function splitCommand(text: string): string[] {
  * whether to debug the pod itself (an ephemeral container) or a copy of it (optionally with the container's command
  * replaced, for a pod that crashes). Opens the debug tab; nothing is created before "Start".
  */
-export function DebugDialog({ clusterId, pod, containers, target, close }: DebugDialogProps) {
+export function DebugDialog({ clusterId, pod, containers, target, close, onStart }: DebugDialogProps) {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const saved = settings?.debugImage.trim() || DEFAULT_DEBUG_IMAGE;
@@ -78,7 +80,8 @@ export function DebugDialog({ clusterId, pod, containers, target, close }: Debug
       copy: mode === "copy" ? { command: words } : null,
     };
     if (remember && trimmed !== saved) void updateSettings((s) => ({ ...s, debugImage: trimmed })).catch(() => undefined);
-    openDebugTab(clusterId, pod, spec);
+    if (onStart) onStart(spec);
+    else openDebugTab(clusterId, pod, spec);
     close();
   };
 

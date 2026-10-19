@@ -213,7 +213,12 @@ export function EditTab({ tab }: DockTabProps) {
       {loaded && !loadError && (
         // Kept while the preview is shown, so the undo history survives "Back to editing".
         <div className="editor-tab__editor" hidden={preview !== null}>
-          <YamlEditor value={text} onChange={onChange} label={t("actions:editor.editorLabel", names)} />
+          <YamlEditor
+            value={text}
+            onChange={onChange}
+            label={t("actions:editor.editorLabel", names)}
+            schemaCluster={clusterId}
+          />
         </div>
       )}
     </div>

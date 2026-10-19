@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { errorKey } from "../../api";
 import { Button } from "../../components";
-import { useTerminal, type TerminalSessionFactory, type UseTerminal } from "./useTerminal";
+import { useTerminal, type TerminalSessionFactory, type UseTerminal, type UseTerminalOptions } from "./useTerminal";
 
 export interface TerminalViewProps {
   factory: TerminalSessionFactory;
@@ -25,6 +25,17 @@ export interface TerminalViewProps {
   confirmReconnect?: (proceed: () => void, cancel: () => void) => ReactNode;
   /** Buttons above the terminal (e.g. copying files of the container). */
   toolbar?: ReactNode;
+  /** Shown above the terminal (e.g. the broadcast banner of a split pane). */
+  banner?: ReactNode;
+  /** Keystroke and key hooks of a split pane (broadcast input, moving between panes). */
+  inputOptions?: UseTerminalOptions;
+  /** Receives how to type into the session (snippets, broadcast) and to focus the terminal, once it exists. */
+  onReady?: (handle: TerminalHandle) => void;
+}
+
+export interface TerminalHandle {
+  send: (data: string) => void;
+  focus: () => void;
 }
 
 /**
@@ -44,16 +55,22 @@ export function TerminalView({
   connectingText,
   confirmReconnect,
   toolbar,
+  banner,
+  inputOptions,
+  onReady,
 }: TerminalViewProps) {
   const { t } = useTranslation();
   const container = useRef<HTMLDivElement | null>(null);
-  const session = useTerminal(container, factory, active, initialInput);
+  const session = useTerminal(container, factory, active, initialInput, inputOptions);
+  const { send, terminal } = session;
+  useEffect(() => onReady?.({ send, focus: () => terminal?.focus() }), [onReady, send, terminal]);
   const [asking, setAsking] = useState(false);
   const reconnect = confirmReconnect ? () => setAsking(true) : session.reconnect;
   const notice = useKubeconfigNotice(session, kubeconfigNotice);
   return (
     <div className="terminal">
       {toolbar && <div className="terminal__toolbar">{toolbar}</div>}
+      {banner}
       {notice && (
         <div className="terminal__notice" role="note">
           {t("terminal:local.kubeconfigNotice")}

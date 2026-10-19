@@ -13,6 +13,7 @@ import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { api, openStream, toApiError, type ApiError, type StreamChannel, type TermPayload } from "../../api";
+import { isControl, isInvisible } from "./text";
 
 /** Starts a session of `cols`×`rows` under `streamId`, its output sent through `onEvent` (created before the start). */
 export type TerminalSessionFactory = (
@@ -33,6 +34,21 @@ export interface UseTerminal {
   reconnect: () => void;
   /** The xterm instance (null before mount). */
   terminal: Terminal | null;
+  /**
+   * Types `data` into the running session as if it was typed (a snippet, broadcast input). Before the start answered
+   * it waits like early keystrokes; once the session ended it is dropped.
+   */
+  send: (data: string) => void;
+}
+
+export interface UseTerminalOptions {
+  /**
+   * Sees every keystroke typed into this terminal first; `true` takes it (it is not sent to this session), e.g.
+   * broadcast input, which sends it to every target pane itself.
+   */
+  interceptInput?: (data: string) => boolean;
+  /** Sees key events in the terminal first; `false` takes the key (xterm ignores it), e.g. moving between panes. */
+  onKey?: (e: KeyboardEvent) => boolean;
 }
 
 const DEFAULT_COLS = 80;
@@ -56,6 +72,7 @@ export function useTerminal(
   factory: TerminalSessionFactory,
   active = true,
   initialInput?: string,
+  options: UseTerminalOptions = {},
 ): UseTerminal {
   const [terminal, setTerminal] = useState<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -68,6 +85,10 @@ export function useTerminal(
   factoryRef.current = factory;
   const initialInputRef = useRef(initialInput);
   initialInputRef.current = initialInput;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  /** Sends to the current session (set while one runs). */
+  const sendRef = useRef<(data: string) => void>(() => undefined);
 
   // The xterm instance lives as long as the component.
   useEffect(() => {
@@ -83,7 +104,11 @@ export function useTerminal(
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
-    term.attachCustomKeyEventHandler((e) => clipboardKeys(term, e));
+    term.attachCustomKeyEventHandler((e) => {
+      const onKey = optionsRef.current.onKey;
+      if (onKey && !onKey(e)) return false;
+      return clipboardKeys(term, e);
+    });
     term.open(el);
     fitRef.current = fit;
     setTerminal(term);
@@ -130,6 +155,8 @@ export function useTerminal(
     let pendingInput = printable(initialInputRef.current ?? "") || null;
     let inputTimer: ReturnType<typeof setTimeout> | undefined;
     let sawOutput = false;
+    // The session exited or failed: nothing more is sent to it.
+    let ended = false;
     const typeInitialInput = () => {
       const id = sessionId;
       if (!pendingInput || !id || cancelled) return;
@@ -148,6 +175,7 @@ export function useTerminal(
 
     const fail = (err: unknown) => {
       if (cancelled) return;
+      ended = true;
       setError(toApiError(err));
       setStatus("error");
     };
@@ -171,10 +199,12 @@ export function useTerminal(
           break;
         }
         case "exit":
+          ended = true;
           setExitCode(payload.code);
           setStatus("ended");
           break;
         case "error":
+          ended = true;
           setError(toApiError(payload.error));
           setStatus("error");
           break;
@@ -183,9 +213,15 @@ export function useTerminal(
 
     // Keys typed before the start answered (the prompt may already be on screen) wait here and go first (#107).
     let typedEarly = "";
-    const input = terminal.onData((data) => {
+    const sendToSession = (data: string) => {
+      if (cancelled || ended || !data) return;
       if (sessionId) api.terminal.input(sessionId, data).catch(() => undefined);
       else typedEarly += data;
+    };
+    sendRef.current = sendToSession;
+    const input = terminal.onData((data) => {
+      if (optionsRef.current.interceptInput?.(data)) return;
+      sendToSession(data);
     });
     const resize = terminal.onResize(() => sendSize());
 
@@ -225,6 +261,7 @@ export function useTerminal(
       resize.dispose();
       close();
       sessionRef.current = null;
+      if (sendRef.current === sendToSession) sendRef.current = () => undefined;
     };
   }, [terminal, attempt]);
 
@@ -248,19 +285,25 @@ export function useTerminal(
     setAttempt((n) => n + 1);
   }, [terminal]);
 
-  return { status, exitCode, error, reconnect, terminal };
+  const send = useCallback((data: string) => sendRef.current(data), []);
+
+  return { status, exitCode, error, reconnect, terminal, send };
 }
 
 /**
- * `text` on one line without control characters (C0 including ESC, DEL, C1): each run of them becomes a space, so a
- * command typed into a shell can neither run itself (Enter, Ctrl+J) nor send key sequences.
+ * `text` on one line without control characters (C0 including ESC, DEL, C1) or invisible and text-direction
+ * characters ([`isInvisible`]): each run of control characters becomes a space and invisible ones are dropped, so a
+ * command typed into a shell can neither run itself (Enter, Ctrl+J) nor send key sequences, nor look different from
+ * what it is.
  */
 export function printable(text: string): string {
   let out = "";
   let gap = false;
   for (const ch of text) {
     const code = ch.codePointAt(0) ?? 0;
-    if (code <= 0x1f || (code >= 0x7f && code <= 0x9f)) {
+    // Invisible characters go without a trace; a run of control characters becomes one space.
+    if (isInvisible(code)) continue;
+    if (isControl(code)) {
       gap = true;
       continue;
     }

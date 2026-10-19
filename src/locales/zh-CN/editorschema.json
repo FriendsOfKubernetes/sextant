@@ -1,0 +1,20 @@
+{
+  "required": "必填",
+  "default": "默认值：{{value}}",
+  "allowed": "允许的值：{{values}}",
+  "anyField": "此处接受任何字段。",
+  "explain": "解释",
+  "explainTitle": "字段文档",
+  "up": "上一级",
+  "close": "关闭",
+  "fields": "字段",
+  "noField": "架构中没有关于此字段的说明。",
+  "noSchema": "集群未发布 {{kind}} 的架构。",
+  "problem": {
+    "unknownField": "未知字段：{{field}}",
+    "wrongType": "应为 {{expected}}，实际为 {{found}}。",
+    "missingRequired": "缺少必填字段：{{field}}",
+    "notInEnum": "不允许的值：{{value}}。允许的值：{{allowed}}",
+    "syntax": "YAML 错误：{{message}}"
+  }
+}

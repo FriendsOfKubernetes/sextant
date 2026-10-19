@@ -1,0 +1,20 @@
+{
+  "required": "обязательное",
+  "default": "По умолчанию: {{value}}",
+  "allowed": "Допустимые значения: {{values}}",
+  "anyField": "Здесь допускается любое поле.",
+  "explain": "Пояснить",
+  "explainTitle": "Документация поля",
+  "up": "Вверх",
+  "close": "Закрыть",
+  "fields": "Поля",
+  "noField": "Схема ничего не сообщает об этом поле.",
+  "noSchema": "Кластер не публикует схему для {{kind}}.",
+  "problem": {
+    "unknownField": "Неизвестное поле: {{field}}",
+    "wrongType": "Ожидается {{expected}}, указано {{found}}.",
+    "missingRequired": "Не указано обязательное поле: {{field}}",
+    "notInEnum": "Недопустимое значение: {{value}}. Допустимые значения: {{allowed}}",
+    "syntax": "Ошибка YAML: {{message}}"
+  }
+}

@@ -99,6 +99,8 @@ struct Inner {
     sweep_node_shells: AtomicBool,
     /// The last [`ClusterManager::connection`] number handed out.
     connections: AtomicU64,
+    /// The OpenAPI v3 schemas fetched for the YAML editor; see [`crate::openapi`].
+    openapi: crate::openapi::SchemaCache,
 }
 
 /// Everything known about one cluster. `generation` grows with every connect/disconnect, so a slow connect
@@ -130,8 +132,15 @@ impl ClusterManager {
                 state_tx,
                 sweep_node_shells: AtomicBool::new(false),
                 connections: AtomicU64::new(0),
+                openapi: crate::openapi::SchemaCache::default(),
             }),
         }
+    }
+
+    /// The OpenAPI v3 schemas fetched for the YAML editor, per cluster (dropped on reconnect and
+    /// [`ClusterManager::refresh_kinds`]).
+    pub fn openapi(&self) -> &crate::openapi::SchemaCache {
+        &self.inner.openapi
     }
 
     /// The kubeconfig registry this manager reads contexts from.
@@ -203,6 +212,7 @@ impl ClusterManager {
 
     /// Drops the client and the discovery cache; the state becomes `disconnected`.
     pub async fn disconnect(&self, id: &ClusterId) {
+        self.inner.openapi.forget(id);
         self.update(id, |entry| {
             entry.generation += 1;
             entry.client = None;
@@ -303,6 +313,8 @@ impl ClusterManager {
     /// again (a CRD was created or deleted). A discovery that is running keeps answering the callers that wait for
     /// it, but its result is not cached: it may predate the change.
     pub fn refresh_kinds(&self, id: &ClusterId) {
+        // The OpenAPI schemas change with the CRDs.
+        self.inner.openapi.forget(id);
         let mut clusters = self.lock();
         if let Some(entry) = clusters.get_mut(id) {
             entry.kinds = None;

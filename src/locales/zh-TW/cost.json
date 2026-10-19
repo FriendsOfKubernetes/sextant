@@ -1,0 +1,89 @@
+{
+  "sidebar": "成本",
+  "title": "成本",
+  "intro": "由 OpenCost 或 Kubecost 計算的叢集成本。唯讀：不會變更叢集中的任何內容。",
+  "loading": "正在讀取成本…",
+  "failed": "無法讀取成本",
+  "source": {
+    "opencost": "來自 OpenCost，Service {{namespace}}/{{service}}。",
+    "kubecost": "來自 Kubecost，Service {{namespace}}/{{service}}。"
+  },
+  "notFound": {
+    "title": "找不到 OpenCost 或 Kubecost",
+    "text": "叢集中執行 OpenCost (https://www.opencost.io) 或 Kubecost 時會顯示成本。Sextant 會在 namespace opencost 和 kubecost 中以及透過 label app.kubernetes.io/name 尋找其 Service。Sextant 不會安裝它。"
+  },
+  "window": {
+    "label": "期間",
+    "day": "最近 24 小時",
+    "week": "最近 7 天",
+    "month": "最近 30 天"
+  },
+  "aggregate": {
+    "title": "分組方式",
+    "namespace": "Namespace",
+    "workload": "工作負載",
+    "pod": "Pod",
+    "node": "節點",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Label 鍵",
+    "show": "顯示",
+    "invalid": "這不是 label 鍵。",
+    "choose": "輸入 label 鍵（例如 app.kubernetes.io/name），然後選擇「顯示」。"
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "記憶體",
+    "storage": "儲存空間",
+    "network": "網路",
+    "gpu": "GPU",
+    "other": "其他"
+  },
+  "column": {
+    "name": "名稱",
+    "namespace": "Namespace",
+    "total": "合計",
+    "efficiency": "效率"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "開啟 {{name}}",
+  "totals": {
+    "label": "總計",
+    "total": "總計",
+    "allocated": "已分配",
+    "idle": "閒置"
+  },
+  "split": "已分配成本的組成",
+  "splitPart": "{{part}}：{{share}}",
+  "idleRow": "閒置（未使用的容量）",
+  "idleHint": "閒置是沒有任何工作負載使用的節點容量成本。它屬於整個叢集，篩選 namespace 時也是如此。",
+  "unallocated": {
+    "namespace": "沒有 namespace",
+    "workload": "沒有控制器",
+    "pod": "沒有 Pod",
+    "node": "沒有節點",
+    "label": "沒有此 label"
+  },
+  "unmounted": "沒有任何 Pod 掛載的磁碟區",
+  "currency": "金額單位為 {{currency}}。",
+  "currencyUnknown": "金額使用 OpenCost 或 Kubecost 中設定的貨幣；API 未指明是哪種貨幣。",
+  "efficiencyHint": "效率是用量除以請求量。",
+  "filtered": "僅顯示選取的 namespace。",
+  "truncated_other": "僅顯示 {{total}} 個分組中最貴的 {{count}} 個。",
+  "empty": "此期間沒有成本。",
+  "details": {
+    "title": "成本",
+    "periodCost": "最近 7 天的成本",
+    "monthly": "每月估計",
+    "monthlyHint": "這是估計值：將最近 7 天（或工作負載在其中執行的時間）的成本換算為 30 天。",
+    "prices": "依此工作負載成本得出的單價：每 CPU 核心小時 {{cpu}}，每 GiB 記憶體小時 {{memory}}。",
+    "noData": "OpenCost 或 Kubecost 沒有此工作負載最近 7 天的成本。",
+    "savings": "依資源最佳化建議估計的節省",
+    "savingsValue": "每月 {{amount}}",
+    "savingsHint": "這是估計值：所有複本中超出建議的請求量，乘以此工作負載的單價，以 30 天計算。",
+    "noSavings": "資源最佳化建議沒有降低請求量，因此不會節省成本。",
+    "noPrices": "成本資料中沒有建議所降低資源的單價，因此無法估計節省。",
+    "openRightsizing": "開啟資源最佳化"
+  }
+}

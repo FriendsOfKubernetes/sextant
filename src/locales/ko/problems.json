@@ -24,6 +24,7 @@
     "gateway": "Gateway API",
     "security": "보안",
     "credentials": "자격 증명",
+    "disk": "디스크 거의 가득 참",
     "events": "Warning 이벤트"
   },
   "messages": {
@@ -32,6 +33,9 @@
     "replicas": "복제본 {{desired}}개 중 {{ready}}개 준비됨",
     "expires": "{{date}}에 만료",
     "expired": "{{date}}에 만료됨",
-    "securityBaseline_other": "Pod Security Baseline 위반 {{count}}건: {{fields}}"
-  }
+    "securityBaseline_other": "Pod Security Baseline 위반 {{count}}건: {{fields}}",
+    "diskUsage": "공간 {{percent}} 사용 ({{used}} / {{capacity}})",
+    "inodeUsage": "inode {{percent}} 사용 ({{used}} / {{total}})"
+  },
+  "showDisk": "디스크 거의 가득 참"
 }

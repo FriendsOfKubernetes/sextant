@@ -173,7 +173,7 @@ describe("export", () => {
   it("names clusters by reference and never carries secrets, unread access, extensions or other settings", () => {
     const text = exportText(buildExport(sensitiveSettings(), CLUSTERS, SOURCES, { includeAgentAccess: false }));
     const file = JSON.parse(text);
-    expect(Object.keys(file).sort()).toEqual(["clusters", "format", "pins", "version", "views", "workspaces"]);
+    expect(Object.keys(file).sort()).toEqual(["clusters", "format", "pins", "snippets", "version", "views", "workspaces"]);
     expect(file.clusters[0]).toEqual({
       id: "c1",
       context: "prod",
@@ -218,7 +218,7 @@ describe("import", () => {
   it("rejects another format, another version, bad types and non-JSON", () => {
     expect(() => parseImport("not json")).toThrow(ImportError);
     expect(() => parseImport(JSON.stringify({ ...JSON.parse(exported()), format: "x" }))).toThrow(ImportError);
-    expect(() => parseImport(JSON.stringify({ ...JSON.parse(exported()), version: 2 }))).toThrow(ImportError);
+    expect(() => parseImport(JSON.stringify({ ...JSON.parse(exported()), version: 3 }))).toThrow(ImportError);
     const bad = JSON.parse(exported());
     bad.views[0].onlyProblems = "yes";
     bad.views[0].id = "../x";

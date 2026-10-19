@@ -1,0 +1,20 @@
+{
+  "required": "wymagane",
+  "default": "Domyślnie: {{value}}",
+  "allowed": "Dozwolone wartości: {{values}}",
+  "anyField": "Tutaj dozwolone jest dowolne pole.",
+  "explain": "Wyjaśnij",
+  "explainTitle": "Dokumentacja pola",
+  "up": "W górę",
+  "close": "Zamknij",
+  "fields": "Pola",
+  "noField": "Schemat nic nie mówi o tym polu.",
+  "noSchema": "Klaster nie publikuje schematu dla {{kind}}.",
+  "problem": {
+    "unknownField": "Nieznane pole: {{field}}",
+    "wrongType": "Oczekiwano {{expected}}, znaleziono {{found}}.",
+    "missingRequired": "Brak wymaganego pola: {{field}}",
+    "notInEnum": "Niedozwolona wartość: {{value}}. Dozwolone wartości: {{allowed}}",
+    "syntax": "Błąd YAML: {{message}}"
+  }
+}

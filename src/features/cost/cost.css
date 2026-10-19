@@ -1,0 +1,184 @@
+/* Cost: the page, its report and the workload details section. */
+.cost-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.cost-page__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.cost-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 8px 0 12px;
+}
+
+.cost-choice {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cost-choice select {
+  max-width: 100%;
+}
+
+.cost-input {
+  width: 16em;
+  max-width: 100%;
+}
+
+.cost-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+}
+
+.cost-note--warning {
+  color: var(--color-warning);
+}
+
+.cost-loading {
+  margin: 8px 0;
+}
+
+.cost-totals {
+  margin: 12px 0;
+}
+
+.cost-totals__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0 0 8px;
+}
+
+.cost-total dt {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.cost-total dd {
+  margin: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-total--main dd {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cost-split {
+  display: flex;
+  height: 8px;
+  max-width: 640px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--color-border);
+}
+
+.cost-split__part {
+  height: 100%;
+}
+
+.cost-split__part--cpu {
+  background: var(--color-accent);
+}
+
+.cost-split__part--memory {
+  background: var(--color-success);
+}
+
+.cost-split__part--storage {
+  background: var(--color-warning);
+}
+
+.cost-split__part--network {
+  background: color-mix(in srgb, var(--color-accent) 50%, var(--color-success));
+}
+
+.cost-split__part--gpu {
+  background: var(--color-danger);
+}
+
+.cost-split__part--other {
+  background: var(--color-text-muted);
+}
+
+.cost-table-wrap {
+  overflow-x: auto;
+}
+
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cost-table th,
+.cost-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.cost-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.cost-table tbody tr:hover {
+  background: var(--color-hover);
+}
+
+.cost-table .cost-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cost-strong {
+  font-weight: 600;
+}
+
+.cost-special,
+.cost-idle td {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.cost-section {
+  margin: 12px 0;
+}
+
+.cost-section__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.cost-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0 0 4px;
+}
+
+.cost-facts dt {
+  color: var(--color-text-muted);
+}
+
+.cost-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-savings {
+  margin-top: 8px;
+}

@@ -1,0 +1,20 @@
+{
+  "required": "erforderlich",
+  "default": "Standard: {{value}}",
+  "allowed": "Zulässige Werte: {{values}}",
+  "anyField": "Hier ist jedes Feld zulässig.",
+  "explain": "Erklären",
+  "explainTitle": "Felddokumentation",
+  "up": "Nach oben",
+  "close": "Schließen",
+  "fields": "Felder",
+  "noField": "Das Schema sagt nichts über dieses Feld.",
+  "noSchema": "Der Cluster veröffentlicht kein Schema für {{kind}}.",
+  "problem": {
+    "unknownField": "Unbekanntes Feld: {{field}}",
+    "wrongType": "{{expected}} erwartet, {{found}} gefunden.",
+    "missingRequired": "Erforderliches Feld fehlt: {{field}}",
+    "notInEnum": "Wert nicht zulässig: {{value}}. Zulässige Werte: {{allowed}}",
+    "syntax": "YAML-Fehler: {{message}}"
+  }
+}

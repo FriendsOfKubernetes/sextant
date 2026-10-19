@@ -26,6 +26,7 @@
     "gateway": "Gateway API",
     "security": "Security",
     "credentials": "Credentials",
+    "disk": "Disk almost full",
     "events": "Warning events"
   },
   "messages": {
@@ -36,6 +37,9 @@
     "expires": "Expires at {{date}}",
     "expired": "Expired at {{date}}",
     "securityBaseline_one": "{{count}} Baseline Pod Security violation: {{fields}}",
-    "securityBaseline_other": "{{count}} Baseline Pod Security violations: {{fields}}"
-  }
+    "securityBaseline_other": "{{count}} Baseline Pod Security violations: {{fields}}",
+    "diskUsage": "{{percent}} of the space used ({{used}} of {{capacity}})",
+    "inodeUsage": "{{percent}} of the inodes used ({{used}} of {{total}})"
+  },
+  "showDisk": "Disk almost full"
 }

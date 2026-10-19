@@ -1,0 +1,20 @@
+{
+  "required": "obligatoire",
+  "default": "Par défaut : {{value}}",
+  "allowed": "Valeurs autorisées : {{values}}",
+  "anyField": "Tout champ est accepté ici.",
+  "explain": "Expliquer",
+  "explainTitle": "Documentation du champ",
+  "up": "Remonter",
+  "close": "Fermer",
+  "fields": "Champs",
+  "noField": "Le schéma ne dit rien de ce champ.",
+  "noSchema": "Le cluster ne publie aucun schéma pour {{kind}}.",
+  "problem": {
+    "unknownField": "Champ inconnu : {{field}}",
+    "wrongType": "{{expected}} attendu, {{found}} trouvé.",
+    "missingRequired": "Champ obligatoire manquant : {{field}}",
+    "notInEnum": "Valeur non autorisée : {{value}}. Valeurs autorisées : {{allowed}}",
+    "syntax": "Erreur YAML : {{message}}"
+  }
+}

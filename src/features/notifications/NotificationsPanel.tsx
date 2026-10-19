@@ -9,6 +9,7 @@ import { useNow } from "../problems/hooks";
 import { NOTIFY_CATEGORIES } from "../problems/model";
 import { categoryOn, muteForHour, mutedNow, prefsOf, setCategory, setClusterMuted, setEnabled, unmute } from "./prefs";
 import { CertExpiryField } from "./CertExpiryField";
+import { ThresholdFields } from "../storage/ThresholdFields";
 import { formatTime } from "../../i18n";
 
 type Save = (change: (current: AppSettings) => AppSettings) => Promise<boolean>;
@@ -66,6 +67,11 @@ export function NotificationsPanel({ settings, save }: { settings: AppSettings |
         <legend className="settings__label">{t("notifications:settings.certificates")}</legend>
         <CertExpiryField className="notif-settings__cert-expiry" />
         <p className="settings__hint">{t("notifications:settings.certExpiryHint")}</p>
+      </fieldset>
+
+      <fieldset className="notif-settings__group">
+        <legend className="settings__label">{t("storage:thresholds.title")}</legend>
+        <ThresholdFields />
       </fieldset>
 
       <fieldset className="notif-settings__group" disabled={!on}>

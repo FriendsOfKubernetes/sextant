@@ -1,0 +1,92 @@
+{
+  "sidebar": "Вартість",
+  "title": "Вартість",
+  "intro": "Скільки коштує кластер за розрахунками OpenCost або Kubecost. Лише читання: у кластері нічого не змінюється.",
+  "loading": "Читання вартості…",
+  "failed": "Не вдалося прочитати вартість",
+  "source": {
+    "opencost": "Дані OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "Дані Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost і Kubecost не знайдено",
+    "text": "Вартість показується, коли в кластері працює OpenCost (https://www.opencost.io) або Kubecost. Sextant шукає його Service у namespace opencost і kubecost та за label app.kubernetes.io/name. Sextant його не встановлює."
+  },
+  "window": {
+    "label": "Період",
+    "day": "Останні 24 години",
+    "week": "Останні 7 днів",
+    "month": "Останні 30 днів"
+  },
+  "aggregate": {
+    "title": "Групування",
+    "namespace": "Namespace",
+    "workload": "Робоче навантаження",
+    "pod": "Pod",
+    "node": "Вузол",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Ключ label",
+    "show": "Показати",
+    "invalid": "Це не ключ label.",
+    "choose": "Введіть ключ label, наприклад app.kubernetes.io/name, і натисніть «Показати»."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Пам'ять",
+    "storage": "Сховище",
+    "network": "Мережа",
+    "gpu": "GPU",
+    "other": "Інше"
+  },
+  "column": {
+    "name": "Ім'я",
+    "namespace": "Namespace",
+    "total": "Разом",
+    "efficiency": "Ефективність"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "Відкрити {{name}}",
+  "totals": {
+    "label": "Підсумки",
+    "total": "Усього",
+    "allocated": "Розподілено",
+    "idle": "Простій"
+  },
+  "split": "Розподілена вартість за ресурсами",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Простій (невикористана ємність)",
+  "idleHint": "Простій — вартість ємності вузлів, яку не використало жодне робоче навантаження. Вона належить усьому кластеру, зокрема з фільтром за namespace.",
+  "unallocated": {
+    "namespace": "Без namespace",
+    "workload": "Без контролера",
+    "pod": "Без Pod",
+    "node": "Без вузла",
+    "label": "Без цього label"
+  },
+  "unmounted": "Томи, які не змонтовано в жоден Pod",
+  "currency": "Суми в {{currency}}.",
+  "currencyUnknown": "Суми вказано у валюті, налаштованій в OpenCost або Kubecost; API її не називає.",
+  "efficiencyHint": "Ефективність — використання, поділене на запити.",
+  "filtered": "Показано лише вибрані namespace.",
+  "truncated_one": "Показано лише {{count}} найдорожчу групу з {{total}}.",
+  "truncated_few": "Показано лише {{count}} найдорожчі групи з {{total}}.",
+  "truncated_many": "Показано лише {{count}} найдорожчих груп з {{total}}.",
+  "truncated_other": "Показано лише {{count}} найдорожчої групи з {{total}}.",
+  "empty": "За цей період вартості немає.",
+  "details": {
+    "title": "Вартість",
+    "periodCost": "Вартість за останні 7 днів",
+    "monthly": "Оцінка за місяць",
+    "monthlyHint": "Це оцінка: вартість за останні 7 днів (або за час роботи навантаження в них), перерахована на 30 днів.",
+    "prices": "Ціни за одиницю з вартості цього навантаження: {{cpu}} за ядро CPU на годину, {{memory}} за ГіБ пам'яті на годину.",
+    "noData": "OpenCost або Kubecost не має вартості цього навантаження за останні 7 днів.",
+    "savings": "Оцінка економії за рекомендацією підбору ресурсів",
+    "savingsValue": "{{amount}} на місяць",
+    "savingsHint": "Це оцінка: запити понад рекомендацію за всіма репліками, помножені на ціни за одиницю цього навантаження, за 30 днів.",
+    "noSavings": "Рекомендація підбору ресурсів не знижує запити, тому економії немає.",
+    "noPrices": "У даних про вартість немає ціни за одиницю для ресурсу, який знижує рекомендація, тому економію оцінити не можна.",
+    "openRightsizing": "Відкрити підбір ресурсів"
+  }
+}

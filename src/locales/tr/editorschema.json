@@ -1,0 +1,20 @@
+{
+  "required": "zorunlu",
+  "default": "Varsayılan: {{value}}",
+  "allowed": "İzin verilen değerler: {{values}}",
+  "anyField": "Burada her alan kabul edilir.",
+  "explain": "Açıkla",
+  "explainTitle": "Alan belgeleri",
+  "up": "Yukarı",
+  "close": "Kapat",
+  "fields": "Alanlar",
+  "noField": "Şema bu alan hakkında bir şey söylemiyor.",
+  "noSchema": "Küme {{kind}} için şema yayımlamıyor.",
+  "problem": {
+    "unknownField": "Bilinmeyen alan: {{field}}",
+    "wrongType": "{{expected}} bekleniyordu, {{found}} bulundu.",
+    "missingRequired": "Zorunlu alan eksik: {{field}}",
+    "notInEnum": "İzin verilmeyen değer: {{value}}. İzin verilen değerler: {{allowed}}",
+    "syntax": "YAML hatası: {{message}}"
+  }
+}

@@ -71,3 +71,93 @@
 .editor-tab__editor[hidden] {
   display: none;
 }
+
+/* The cluster's schema (#151): hover documentation and the Explain panel. They sit inside the editor, so their
+   colours follow the editor's colour scheme (inherited), not the app's. */
+.yaml-editor .schema-doc {
+  max-width: 480px;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.yaml-editor .schema-doc__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.yaml-editor .schema-doc__path {
+  font-weight: 600;
+}
+
+.yaml-editor .schema-doc__type,
+.yaml-editor .schema-doc__meta,
+.yaml-editor .schema-explain__summary {
+  opacity: 0.75;
+}
+
+.yaml-editor .schema-doc__type {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.yaml-editor .schema-doc__required {
+  color: var(--color-warning);
+  font-size: 11px;
+}
+
+.yaml-editor .schema-doc__description {
+  margin: 4px 0;
+  white-space: pre-wrap;
+}
+
+.yaml-editor .schema-explain {
+  max-height: 40vh;
+  overflow: auto;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.yaml-editor .schema-explain__bar {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.yaml-editor .schema-explain__button,
+.yaml-editor .schema-explain__name {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 6px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.yaml-editor .schema-explain__name {
+  border: none;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-decoration: underline;
+}
+
+.yaml-editor .schema-explain__fields-title {
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.yaml-editor .schema-explain__fields {
+  margin: 2px 0 0;
+  padding-left: 16px;
+}
+
+.yaml-editor .schema-explain__field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}

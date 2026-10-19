@@ -18,9 +18,11 @@ use serde_json::Value;
 use super::{ChartTarget, NodeUsage, PodUsage, PrometheusTarget, Series, Usage};
 
 mod rightsizing;
+mod volumes;
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::ClusterId;
 pub(crate) use rightsizing::usage_history;
+pub(crate) use volumes::volume_stats;
 
 /// Namespaces searched by auto-detection, in order.
 pub const CANDIDATE_NAMESPACES: [&str; 5] = [

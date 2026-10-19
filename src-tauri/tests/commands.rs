@@ -73,6 +73,8 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("metrics_status", Some("clusterId")),
     ("metrics_charts", Some("clusterId")),
     ("metrics_usage_history", Some("clusterId")),
+    ("storage_volume_usage", Some("clusterId")),
+    ("resource_create", Some("clusterId")),
     ("helm_status", None),
     ("helm_releases", Some("clusterId")),
     ("helm_release_detail", Some("clusterId")),
@@ -117,6 +119,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("upgrade_scan", Some("clusterId")),
     ("cleanup_sample", Some("clusterId")),
     ("cleanup_cluster_check", Some("clusterId")),
+    ("openapi_kind_schema", Some("clusterId")),
     ("timeline_managers", Some("clusterId")),
     ("timeline_history", Some("clusterId")),
     ("timeline_object_history", Some("clusterId")),
@@ -125,6 +128,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("timeline_remove_all", None),
     ("tls_certificate_info", Some("clusterId")),
     ("tls_expiry_scan", Some("clusterId")),
+    ("cost_allocation", Some("clusterId")),
     ("mcp_status", None),
     ("mcp_token", None),
     ("mcp_regenerate_token", None),
@@ -408,6 +412,23 @@ fn the_upgrade_scan_needs_a_connected_cluster_and_checks_its_input_first() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn the_editor_schema_checks_its_names_and_needs_a_connected_cluster() {
+    let h = harness();
+    let ask = |group: &str, version: &str, kind: &str| {
+        invoke(
+            &h,
+            "openapi_kind_schema",
+            json!({ "clusterId": "nope", "group": group, "version": version, "kind": kind }),
+        )
+        .unwrap_err()
+    };
+    assert_eq!(ask("apps", "v1", "Deployment")["code"], "notFound");
+    // A malformed name is refused before the cluster is looked up.
+    assert_eq!(ask("apps/../x", "v1", "Deployment")["code"], "invalid");
+    assert_eq!(ask("", "v1", "")["code"], "invalid");
 }
 
 #[test]
@@ -1416,4 +1437,27 @@ fn the_window_cannot_name_a_file_for_the_views_import_to_read() {
     let err = invoke(&h, "views_import_read", json!({ "path": "/etc/passwd" })).unwrap_err();
     assert!(!err.to_string().contains("root:"), "{err}");
     assert!(err.to_string().contains("not found"), "{err}");
+}
+
+#[test]
+fn the_cost_allocation_checks_its_query_first_and_needs_a_connected_cluster() {
+    let h = harness();
+    let query =
+        json!({ "window": "week", "aggregate": { "type": "namespace" }, "namespaces": null });
+    let err = invoke(
+        &h,
+        "cost_allocation",
+        json!({ "clusterId": "nope", "query": query }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // A label key that could smuggle parameters is refused before the cluster is looked up.
+    let bad = json!({ "window": "day", "aggregate": { "type": "label", "key": "a&b" }, "namespaces": null });
+    let err = invoke(
+        &h,
+        "cost_allocation",
+        json!({ "clusterId": "nope", "query": bad }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
 }

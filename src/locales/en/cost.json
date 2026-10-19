@@ -1,0 +1,90 @@
+{
+  "sidebar": "Cost",
+  "title": "Cost",
+  "intro": "What the cluster costs, as OpenCost or Kubecost computes it. Read-only: nothing is changed in the cluster.",
+  "loading": "Reading costs…",
+  "failed": "Costs could not be read",
+  "source": {
+    "opencost": "From OpenCost, Service {{namespace}}/{{service}}.",
+    "kubecost": "From Kubecost, Service {{namespace}}/{{service}}."
+  },
+  "notFound": {
+    "title": "OpenCost or Kubecost was not found",
+    "text": "Costs are shown when OpenCost (https://www.opencost.io) or Kubecost runs in the cluster. Sextant looks for its Service in the opencost and kubecost namespaces and by the label app.kubernetes.io/name. Sextant does not install it."
+  },
+  "window": {
+    "label": "Period",
+    "day": "Last 24 hours",
+    "week": "Last 7 days",
+    "month": "Last 30 days"
+  },
+  "aggregate": {
+    "title": "Group by",
+    "namespace": "Namespace",
+    "workload": "Workload",
+    "pod": "Pod",
+    "node": "Node",
+    "label": "Label"
+  },
+  "labelKey": {
+    "label": "Label key",
+    "show": "Show",
+    "invalid": "This is not a label key.",
+    "choose": "Enter a label key, such as app.kubernetes.io/name, and choose Show."
+  },
+  "parts": {
+    "cpu": "CPU",
+    "memory": "Memory",
+    "storage": "Storage",
+    "network": "Network",
+    "gpu": "GPU",
+    "other": "Other"
+  },
+  "column": {
+    "name": "Name",
+    "namespace": "Namespace",
+    "total": "Total",
+    "efficiency": "Efficiency"
+  },
+  "workload": "{{kind}} {{name}}",
+  "openObject": "Open {{name}}",
+  "totals": {
+    "label": "Totals",
+    "total": "Total",
+    "allocated": "Allocated",
+    "idle": "Idle"
+  },
+  "split": "Split of the allocated cost",
+  "splitPart": "{{part}}: {{share}}",
+  "idleRow": "Idle (unused capacity)",
+  "idleHint": "Idle is the cost of node capacity no workload used. It belongs to the whole cluster, also when namespaces are filtered.",
+  "unallocated": {
+    "namespace": "Without a namespace",
+    "workload": "Without a controller",
+    "pod": "Without a Pod",
+    "node": "Without a node",
+    "label": "Without this label"
+  },
+  "unmounted": "Volumes no Pod mounts",
+  "currency": "Amounts in {{currency}}.",
+  "currencyUnknown": "Amounts are in the currency OpenCost or Kubecost is configured with; the API does not name it.",
+  "efficiencyHint": "Efficiency is usage divided by requests.",
+  "filtered": "Only the selected namespaces are shown.",
+  "truncated_one": "Only the {{count}} most expensive group is shown, of {{total}}.",
+  "truncated_other": "Only the {{count}} most expensive groups are shown, of {{total}}.",
+  "empty": "No costs in this period.",
+  "details": {
+    "title": "Cost",
+    "periodCost": "Cost over the last 7 days",
+    "monthly": "Monthly estimate",
+    "monthlyHint": "An estimate: the cost of the last 7 days (or of the time the workload ran in them) scaled to 30 days.",
+    "prices": "Unit prices from this workload's costs: {{cpu}} per CPU core-hour, {{memory}} per GiB-hour of memory.",
+    "noData": "OpenCost or Kubecost has no costs for this workload in the last 7 days.",
+    "savings": "Estimated savings with the right-sizing recommendation",
+    "savingsValue": "{{amount}} per month",
+    "savingsHint": "An estimate: requests above the recommendation, over all replicas, times this workload's unit prices, over 30 days.",
+    "noSavings": "The right-sizing recommendation does not lower the requests, so it saves nothing.",
+    "noPrices": "The costs carry no unit price for a resource the recommendation lowers, so savings cannot be estimated.",
+    "openRightsizing": "Open right-sizing"
+  }
+}

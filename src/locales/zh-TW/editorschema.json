@@ -1,0 +1,20 @@
+{
+  "required": "必填",
+  "default": "預設值：{{value}}",
+  "allowed": "允許的值：{{values}}",
+  "anyField": "此處接受任何欄位。",
+  "explain": "說明",
+  "explainTitle": "欄位文件",
+  "up": "上一層",
+  "close": "關閉",
+  "fields": "欄位",
+  "noField": "結構描述中沒有關於此欄位的說明。",
+  "noSchema": "叢集未發布 {{kind}} 的結構描述。",
+  "problem": {
+    "unknownField": "未知的欄位：{{field}}",
+    "wrongType": "應為 {{expected}}，實際為 {{found}}。",
+    "missingRequired": "缺少必填欄位：{{field}}",
+    "notInEnum": "不允許的值：{{value}}。允許的值：{{allowed}}",
+    "syntax": "YAML 錯誤：{{message}}"
+  }
+}

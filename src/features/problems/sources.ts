@@ -28,6 +28,11 @@ export interface SourceDef {
   fieldSelector: string | null;
   /** The kind of an installed tool: watched only once discovery says the cluster serves it. */
   discovered: boolean;
+  /**
+   * Nothing is watched: the category's provider (`registerProblemProvider` in store.ts) hands in the problems — the
+   * fill levels of volume claims ("disk almost full", #152), polled by features/storage while the source is held.
+   */
+  external?: boolean;
 }
 
 const builtIn = (category: ProblemCategory, kind: KindRef, fieldSelector: string | null = null): SourceDef => ({
@@ -57,6 +62,8 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // Expiring kubeconfig credentials (#150, opt-in) come from the kubeconfig, not from a watch: nothing is watched for
   // them (features/clusters/kubeconfig/CredentialsNotifier).
   credentials: [],
+  // Claims almost full (#152, opt-in): from the kubelets' stats or Prometheus, polled while held (features/storage).
+  disk: [{ category: "disk", kind: PVC, fieldSelector: null, discovered: false, external: true }],
   // Only Warning events are listed.
   events: [builtIn("events", EVENT, "type=Warning")],
 };
@@ -98,6 +105,7 @@ export function needsDiscovery(categories: readonly ProblemCategory[]): boolean 
 export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fieldSelector"> & { category?: ProblemCategory }): string {
   const { group, version, kind } = def.kind;
   const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
-  // A security source judges the same kinds as pods and workloads by other rules: a source of its own.
-  return def.category === "security" ? `${key}|security` : key;
+  // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
+  // provider's source of full claims, which watches nothing.
+  return def.category === "security" || def.category === "disk" ? `${key}|${def.category}` : key;
 }

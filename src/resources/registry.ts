@@ -52,6 +52,11 @@ export type BuiltInActionId =
   | "argoTerminate"
   | "argoDiff"
   | "argoOpenUi"
+  // Storage insights (src/features/storage)
+  | "snapshotCreate"
+  | "snapshotRestore"
+  | "veleroBackup"
+  | "veleroRestore"
   // Favourites (src/features/views), offered for every kind through `extendActionsForAll`
   | "pin"
   | "unpin";
@@ -108,6 +113,8 @@ export const SIDEBAR_SECTIONS = [
   "trivy",
   "keda",
   "karpenter",
+  "volumeSnapshots",
+  "velero",
   "flux",
   "argocd",
   "customResources",
@@ -127,6 +134,8 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "trivy",
   "keda",
   "karpenter",
+  "volumeSnapshots",
+  "velero",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -146,6 +155,8 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   trivy: "trivy",
   keda: "keda",
   karpenter: "karpenter",
+  volumeSnapshots: "volumeSnapshots",
+  velero: "velero",
   flux: "flux",
   argocd: "argocd",
   customResources: "customResources",

@@ -548,3 +548,63 @@ _Avoid_: session timeout, login expiry
 **Kubeconfig check**:
 The offline check of a kubeconfig being added, per context: YAML, references, server URL, certificates, named files, the exec program in `PATH`, expired credentials. The server is contacted only on "Check connection".
 _Avoid_: lint, connection test
+
+**Schema (editor)**:
+The cluster's own description of a kind's fields (from its OpenAPI v3), used by the YAML editor for completion, problems, hover and Explain. Sextant reads it from the cluster, keeps a compact form, and sends the editor only the one kind it edits. Without it the editor is the plain editor.
+_Avoid_: OpenAPI spec, swagger, validation rules
+
+**Explain**:
+The editor's panel with the documentation of the field at the cursor and its child fields, like `kubectl explain`; opened with F1 or the "Explain" button of the hover.
+_Avoid_: help, docs panel
+
+**Problem (editor)**:
+An editor marking where the text disagrees with the schema: an unknown field, a wrong type, a missing required field, a value not allowed, a YAML error. Advice only; the cluster's answer decides.
+_Avoid_: error, lint, validation failure
+
+**Volume usage**:
+How full a PersistentVolumeClaim is: used = capacity − available (blocks reserved by the file system count as used), and likewise for inodes. Read from the kubelets through the API server, or from Prometheus when that is not allowed.
+_Avoid_: disk usage, PV usage, fill rate
+
+**Disk almost full**:
+The opt-in problems category for claims at or over the warning (85 %) or critical (95 %) level of bytes or inodes; the levels are set in Settings → Notifications.
+_Avoid_: low disk, storage alert
+
+**Volume snapshot**:
+A VolumeSnapshot object: a point-in-time copy of a claim made by the CSI driver. "Restore to a new PVC" always creates a new claim; an existing claim is never overwritten.
+_Avoid_: backup, PV snapshot
+
+**Velero backup / restore**:
+Velero's Backup and Restore objects. Sextant creates one only from its form after a confirmation and only as a new object; it never runs the `velero` program.
+_Avoid_: snapshot, dump
+
+**Create-only**:
+A change that only makes a new object and fails with "already exists" if one of that name is there, so nothing existing is modified (unlike Apply). Used by the storage actions.
+_Avoid_: apply, upsert
+
+**Cost (OpenCost / Kubecost)**:
+What a namespace, workload, Pod, node or label value cost over the last 24 hours, 7 or 30 days, as the cluster's OpenCost or Kubecost computes it, split by CPU, memory, storage, network, GPU and other. Sextant only reads it; it never installs either.
+_Avoid_: billing, spend, invoice
+
+**Idle cost**:
+The cost of node capacity no workload used. It belongs to the whole cluster, also when namespaces are filtered.
+_Avoid_: waste, unallocated
+
+**Monthly estimate / estimated savings**:
+A workload's cost over the time it ran in the last 7 days scaled to 30 days; and what lowering its requests to the right-sizing recommendation would save at its own unit prices. Both are estimates.
+_Avoid_: forecast, budget
+
+**Pane**:
+One of the split parts of a terminal tab, with its own shell session (local, container, node or debug). At most 8 per tab.
+_Avoid_: split, window, sub-tab
+
+**Snippet**:
+A saved command with a name, typed into the focused pane by "Insert" (without Enter) or "Run" (with Enter). Saved in the settings and exported with views unless left out.
+_Avoid_: macro, alias, script
+
+**Placeholder (snippet)**:
+`{{namespace}}`, `{{pod}}`, `{{container}}`, `{{cluster}}` or `{{context}}` in a snippet, filled from the focused pane and quoted for its shell. A snippet whose placeholder the pane cannot fill or quote safely is not available there.
+_Avoid_: variable, parameter
+
+**Broadcast input**:
+Typing into several chosen panes at once. Off by default, needs at least two panes, asks for a confirmation on the first keystroke and drops what was typed before it; ends when any of its panes closes.
+_Avoid_: sync panes, multi-exec
