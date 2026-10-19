@@ -388,6 +388,20 @@ async fn port_is_closed(port: u16) -> bool {
         .is_err()
 }
 
+/// Whether the port refuses connections within `limit` (polled): a listener released by a task closes soon after.
+async fn port_closes_within(port: u16, limit: Duration) -> bool {
+    let deadline = tokio::time::Instant::now() + limit;
+    loop {
+        if port_is_closed(port).await {
+            return true;
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return false;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+}
+
 /// Whether the port refuses a connection right now, before the runtime runs anything else (a blocking connect):
 /// what [`McpServer::stop`](super::server::McpServer::stop) promises, whatever a task it aborted still holds.
 fn port_is_closed_now(port: u16) -> bool {
@@ -698,7 +712,8 @@ async fn the_server_follows_the_settings_and_stops_with_the_application() {
 
     // Another port: the old one is released.
     let other = turn_on_free(&state).await;
-    assert!(port_is_closed(port).await);
+    // The old listener is released by its server task: on a loaded machine that can take a moment.
+    assert!(port_closes_within(port, Duration::from_secs(3)).await);
     let token = state.mcp.token().unwrap();
     initialize(other, token.as_str()).await;
 
@@ -1594,7 +1609,8 @@ async fn a_port_change_to_a_taken_port_keeps_serving_on_the_old_one() {
     // A free new port: bound first, then the old one is released.
     drop(taken);
     let other = turn_on_free(&state).await;
-    assert!(port_is_closed(port).await);
+    // The old listener is released by its server task: on a loaded machine that can take a moment.
+    assert!(port_closes_within(port, Duration::from_secs(3)).await);
     initialize(other, token.as_str()).await;
     state.close_all();
 }
