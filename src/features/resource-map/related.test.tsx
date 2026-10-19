@@ -5,6 +5,7 @@ import { resetAppStore, useAppStore } from "../../app/store";
 import { i18n } from "../../i18n";
 import { DetailsPanel } from "../../layout/details/DetailsPanel";
 import { resetClusterKinds } from "../../resources";
+import { cssRule, DETAILS_TAB_ROOT } from "../../test/css";
 import "../details";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import "./index";
@@ -137,9 +138,33 @@ describe("the Related tab", () => {
 });
 
 describe("impact sentences", () => {
+  it("name the owner that recreates it in one whole sentence", () => {
+    const owner = { kind: "ReplicaSet", name: "core-v2-service-5bbc98ff79" };
+    expect(impactText({ id: "recreated", count: 1, keys: [], owner }, i18n.t)).toBe(
+      "ReplicaSet core-v2-service-5bbc98ff79 will create it again.",
+    );
+  });
+
   it("join kinds with the language's list separator", () => {
     const text = impactText({ id: "cascade", count: 3, keys: [], kinds: ["Pod", "ReplicaSet", "Secret"] }, i18n.t);
     expect(text).toBe("Deleting it also deletes 3 objects it owns (Pod, ReplicaSet, Secret).");
   });
 });
 
+
+describe("the Related tab in a narrow panel", () => {
+  it("pads itself and wraps long names in its sentences instead of running past the panel's edge", async () => {
+    await openRelated(cmRef, configMap);
+    await listShop();
+    const impact = await screen.findByRole("list", { name: "If it is deleted" });
+    const text = (await within(impact).findAllByText(/pods mount it/))[0]!;
+    // The sentence is a flex item next to the icon: without min-width 0 an unbreakable name keeps it wider than the panel.
+    expect(text).toHaveClass("rmap-impact__text");
+    expect(cssRule("src/features/resource-map/resource-map.css", ".rmap-impact__text")).toMatchObject({ "min-width": "0" });
+    // A details tab gets the panel body without padding (it is for extension frames), so the tab's root pads itself.
+    const root = text.closest(".rmap-related");
+    expect(root?.parentElement).toHaveClass("details__body--tab");
+    expect(cssRule("src/layout/layout.css", ".details__body--tab")).toMatchObject({ padding: "0" });
+    expect(cssRule("src/features/resource-map/resource-map.css", ".rmap-related")).toEqual(DETAILS_TAB_ROOT);
+  });
+});

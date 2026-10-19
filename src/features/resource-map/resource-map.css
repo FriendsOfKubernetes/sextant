@@ -38,6 +38,14 @@
 
 /* ---------- The "Related" tab ---------- */
 
+/* A details tab gets the panel body without its padding (that is for extension frames, which fill it), so the tab
+   pads itself like "Overview"; long object names inside sentences wrap instead of running past the panel's edge. */
+.rmap-related {
+  min-width: 0;
+  padding: 8px 16px 16px;
+  overflow-wrap: break-word;
+}
+
 .rmap-impact {
   list-style: none;
   margin: 0;
@@ -52,6 +60,10 @@
   align-items: flex-start;
   gap: 6px;
   line-height: 1.4;
+}
+
+.rmap-impact__text {
+  min-width: 0;
 }
 
 .rmap-impact__line svg {

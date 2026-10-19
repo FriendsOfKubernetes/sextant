@@ -107,7 +107,7 @@ function Related({ clusterId, objectRef, obj }: DetailsSectionProps) {
             {impact.map((line) => (
               <li key={line.id} className="rmap-impact__line" data-impact={line.id}>
                 <Icon name="warning" />
-                <span>{impactText(line, t)}</span>
+                <span className="rmap-impact__text">{impactText(line, t)}</span>
               </li>
             ))}
           </ul>

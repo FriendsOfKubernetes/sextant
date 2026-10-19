@@ -5,6 +5,14 @@
   min-width: 0;
 }
 
+/* The Changes tab of an object's details: a details tab gets the panel body without its padding (that is for extension
+   frames, which fill it), so the tab pads itself like "Overview"; long names wrap instead of running past its edge. */
+.tl-tab {
+  min-width: 0;
+  padding: 8px 16px 16px;
+  overflow-wrap: break-word;
+}
+
 .tl-page__title {
   margin: 0 0 4px;
   font-size: 20px;

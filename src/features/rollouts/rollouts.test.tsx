@@ -6,6 +6,7 @@ import { DetailsPanel } from "../../layout/details/DetailsPanel";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import { getDetailsSections } from "../../layout/details/registry";
 import { resetClusterKinds } from "../../resources";
+import { cssRule, DETAILS_TAB_ROOT } from "../../test/css";
 import "../details";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { controllerRevision, deployment, replicaSet, statefulSet, template } from "./fixtures";
@@ -70,6 +71,14 @@ describe("the History tab", () => {
       getDetailsSections({ group, version: "v1", kind }).some((s) => s.id === "rolloutHistory" && s.placement === "tab");
     expect([has("Deployment"), has("StatefulSet"), has("DaemonSet")]).toEqual([true, true, true]);
     expect([has("ReplicaSet"), has("Pod", "")]).toEqual([false, false]);
+  });
+
+  it("pads itself and wraps long names, since a details tab gets the panel body without padding", async () => {
+    await openHistory(DEPLOYMENT, deployment(), REPLICA_SETS);
+    const root = (await screen.findByRole("heading", { name: "Revisions" })).closest(".rollouts");
+    expect(root?.parentElement).toHaveClass("details__body--tab");
+    expect(cssRule("src/layout/layout.css", ".details__body--tab")).toMatchObject({ padding: "0" });
+    expect(cssRule("src/features/rollouts/rollouts.css", ".rollouts")).toMatchObject(DETAILS_TAB_ROOT);
   });
 
   it("lists the revisions newest first with time, change-cause and images, the current one marked", async () => {

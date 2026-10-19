@@ -5,6 +5,7 @@ import { resetAppStore, useAppStore } from "../../app/store";
 import { getDetailsSections } from "../../layout/details/registry";
 import { getPages } from "../../layout/pages";
 import { resetClusterKinds } from "../../resources";
+import { cssRule, DETAILS_TAB_ROOT } from "../../test/css";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore, selectNamespaces } from "../namespaces";
@@ -225,5 +226,13 @@ describe("the Changes tab", () => {
       clusterId: "c1",
       object: { kind: DEPLOYMENT, namespace: "shop", name: "web" },
     });
+  });
+
+  it("pads itself and wraps long names, since a details tab gets the panel body without padding", async () => {
+    wb.backend.on("timeline_object_history", () => ({ entries: [], truncated: false, reports: [] }));
+    render(<ChangesSection clusterId="c1" objectRef={{ kind: DEPLOYMENT, namespace: "shop", name: "web" }} obj={null} />);
+    const lead = await screen.findByText(/^Changes Sextant recorded/);
+    expect(lead.closest(".tl-tab")).not.toBeNull();
+    expect(cssRule("src/features/timeline/timeline.css", ".tl-tab")).toEqual(DETAILS_TAB_ROOT);
   });
 });
