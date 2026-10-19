@@ -1,10 +1,17 @@
 /* Control sizes, the same in both themes: every button is --control-height high (compact: in table rows and dense
-   lists), icons are --icon-size. */
+   lists), icons are --icon-size. Text sizes, control heights and table rows are in rem, so they all follow the
+   interface text size (Settings -> Appearance sets the font size of <html> in percent; ADR-0092): at 100% the root is
+   the web view's default 16px, and 0.8125rem is the body's 13px. Code that needs a row height in pixels measures the
+   token (`cssLengthPx`, src/app/accessibility.ts) instead of repeating it. */
 :root {
-  --control-height: 32px;
-  --control-height-compact: 28px;
-  --control-font-size: 13px;
+  --control-height: 2rem;
+  --control-height-compact: 1.75rem;
+  --control-font-size: 0.8125rem;
   --icon-size: 16px;
+  /* A resource table row and its header: a control's height and the row's bottom border. */
+  --table-row-height: calc(2rem + 1px);
+  /* A line of logs. */
+  --log-line-height: 1.125rem;
 }
 
 /* Theme tokens. `data-theme` on <html> is set by useApplyTheme (system → follows the OS). Text, statuses, focus rings
@@ -26,6 +33,9 @@
   --color-hover: rgba(31, 35, 40, 0.06);
   --color-selected: rgba(61, 144, 206, 0.16);
   --color-accent: #3275a8;
+  /* Accent text where it may sit on a hovered or selected background (the active sidebar item, links in table rows):
+     4.5:1 on those too, which --color-accent is not. */
+  --color-accent-strong: #2a6593;
   --color-accent-text: #ffffff;
   --color-focus: #3275a8;
   --color-danger: #ce3933;
@@ -57,6 +67,7 @@
   --color-hover: rgba(255, 255, 255, 0.06);
   --color-selected: rgba(61, 144, 206, 0.2);
   --color-accent: #579fd5;
+  --color-accent-strong: #70b2e0;
   --color-accent-text: #15181b;
   --color-focus: #579fd5;
   --color-danger: #e67772;
@@ -142,7 +153,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.4;
   overflow: hidden;
 }
@@ -160,6 +171,21 @@ body.resizing-y {
 button {
   font: inherit;
   color: inherit;
+}
+
+/* Text fields, selects and text areas: the edge identifies the control, so it is drawn with --color-control-border
+   (3:1 against every surface, WCAG 1.4.11; contrast.test.ts) wherever a field's own rule sets no border — the
+   browser's default edge is lighter. The font follows the interface font and text size (a browser's default field
+   font is fixed in px). `:where` keeps this weaker than any class rule, so a field drawn differently still can be. */
+:where(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"],
+      [type="button"], [type="submit"], [type="reset"], [type="image"]),
+    select,
+    textarea
+  ) {
+  border: 1px solid var(--color-control-border);
+  border-radius: 4px;
+  font: inherit;
 }
 
 /* Buttons (src/components/Button.tsx). One fixed height; the text never wraps and the button never shrinks in a flex
@@ -233,7 +259,7 @@ button {
   border: none;
   border-radius: 4px;
   background: transparent;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
@@ -248,7 +274,7 @@ button {
 .icon-btn--small {
   width: var(--control-height-compact);
   height: var(--control-height-compact);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .btn:disabled,
@@ -284,7 +310,7 @@ button {
 
 .empty-state__title,
 .error-state__title {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: var(--color-text);
 }
 
@@ -294,7 +320,7 @@ button {
 
 .error-state__message {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-word;
 }
 
@@ -302,8 +328,8 @@ button {
   display: inline-block;
   padding: 0 6px;
   border-radius: 3px;
-  font-size: 11px;
-  line-height: 18px;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
   background: var(--color-hover);
 }
 
@@ -359,7 +385,7 @@ button {
 
 .dialog__header h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .dialog__body {
@@ -397,16 +423,27 @@ button {
   outline-offset: 1px;
 }
 
-/* Reduced motion: the OS setting turns off transitions, animations and smooth scrolling; loading keeps its text, so
-   nothing depends on a spinner. */
+/* Reduced motion: transitions, animations and smooth scrolling are turned off by the OS setting unless Settings ->
+   Appearance says Off (`data-motion="full"` on <html>), and always when it says On (`data-motion="reduce"`); see
+   src/app/accessibility.ts. Loading keeps its text, so nothing depends on a spinner. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
     animation-iteration-count: 1 !important;
     animation-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  animation-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

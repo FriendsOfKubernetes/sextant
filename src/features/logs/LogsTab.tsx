@@ -3,6 +3,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { useCssLength } from "../../app/accessibility";
 import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
 import { Button, Checkbox, ErrorState, Icon } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
@@ -32,6 +33,7 @@ export interface LogsPayload {
 
 /** Lines requested from the pod before following. */
 const INITIAL_TAIL_LINES = 1000;
+/** A line's height at the default text size; the list measures `--log-line-height` (logs.css, in rem). */
 const LINE_HEIGHT = 18;
 
 /** The "logs" dock tab: one pod's logs, or the merged logs of several pods (`MultiLogsPayload`). */
@@ -86,15 +88,21 @@ function PodLogsTab({ tab, active }: DockTabProps) {
 
   // ---- the list ----
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Lines are `--log-line-height` high, measured again when the interface text size changes.
+  const lineHeight = useCssLength("--log-line-height", LINE_HEIGHT);
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => LINE_HEIGHT,
+    estimateSize: () => lineHeight,
     // Keys follow the line, not its place: when the oldest lines are discarded, a measured (wrapped) height stays
     // with its line.
     getItemKey: (index) => dropped + index,
     overscan: 20,
   });
+  // Lines placed (or measured, wrapped) at the old size are placed again.
+  useEffect(() => {
+    virtualizer.measure();
+  }, [virtualizer, lineHeight]);
   const count = lines.length;
   const { atBottom, onScroll } = useFollowScroll(virtualizer, scrollRef, {
     follow: follow && !currentMatch,

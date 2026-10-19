@@ -11,7 +11,7 @@
 
 .fleet__title {
   margin: 0 0 4px;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
 }
 
@@ -66,7 +66,7 @@
 
 .fleet-picker__state {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .fleet-picker__item[data-state="connected"] .fleet-picker__state {
@@ -121,7 +121,7 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,7 +144,7 @@
 
 .fleet-card__details {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -167,7 +167,7 @@
 
 .fleet-card__subhead {
   margin: 0 0 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -236,7 +236,7 @@
 .fleet-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .fleet-table th,
@@ -281,7 +281,7 @@
   padding: 0;
   border: none;
   background: none;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -313,7 +313,7 @@
 
 .fleet-find__heading {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -334,7 +334,7 @@
 .fleet-find__kind,
 .fleet-find__ns {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* ---------- the rail button ---------- */

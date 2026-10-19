@@ -5,7 +5,7 @@
   max-height: 240px;
   overflow: auto;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .action-dialog__field {
@@ -20,7 +20,7 @@
 
 .action-dialog__hint {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .action-dialog__result {
@@ -34,7 +34,7 @@
 
 .drain-group__title {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -42,7 +42,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .drain-group__option .checkbox {

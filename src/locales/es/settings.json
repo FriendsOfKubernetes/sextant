@@ -101,5 +101,19 @@
     "failed": "No se pudieron leer las fuentes instaladas.",
     "notInstalled": "{{family}} no está instalada en este equipo; se usa la fuente integrada.",
     "current": "Elegida: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Reducir movimiento",
+    "reduceMotionChoices": {
+      "system": "Sistema",
+      "on": "Activado",
+      "off": "Desactivado"
+    },
+    "reduceMotionHint": "«Sistema» sigue el ajuste de movimiento reducido del sistema operativo. El movimiento reducido desactiva transiciones, animaciones, el desplazamiento suave y el parpadeo del cursor del terminal.",
+    "textSize": "Tamaño del texto de la interfaz",
+    "percent": "{{value}} %",
+    "textSizeHint": "El texto, las filas de las tablas y los controles crecen con él; el terminal, los registros y el editor YAML también.",
+    "terminalScreenReader": "Compatibilidad con lectores de pantalla en el terminal",
+    "terminalScreenReaderHint": "Permite que un lector de pantalla lea la salida del terminal. Ralentiza el terminal, así que déjelo desactivado si no usa un lector de pantalla."
   }
 }

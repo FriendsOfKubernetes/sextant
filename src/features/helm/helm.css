@@ -18,7 +18,7 @@
 
 .helm-page__header h2 {
   margin: 0 auto 0 0;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .helm-page__body {
@@ -56,7 +56,7 @@
 .helm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .helm-table th,
@@ -92,7 +92,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   font: inherit;
   cursor: pointer;
   text-align: left;
@@ -127,7 +127,7 @@
 
 .helm-details__header h3 {
   margin: 0 0 2px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .helm-details__actions {
@@ -167,7 +167,7 @@
 .helm-notes {
   margin: 0;
   white-space: pre-wrap;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .helm-charts {
@@ -187,7 +187,7 @@
 .helm-section h3,
 .helm-section h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .helm-section__header {

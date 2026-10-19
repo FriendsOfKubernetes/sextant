@@ -4,6 +4,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useCssLength } from "../../../app/accessibility";
 import { api, toApiError, useWatch, type ClusterId, type WatchSpec } from "../../../api";
 import { Button, Checkbox, ErrorState } from "../../../components";
 import type { DockTabProps } from "../../../layout/dock/registry";
@@ -30,6 +31,7 @@ import { useLogView, type LogView } from "../viewSettings";
 import type { MultiLogsPayload } from "./open";
 import { MultiLogSession, type LogEntry, type LogSource, type MultiLogOptions, type RunState } from "./session";
 
+/** A line's height at the default text size; the list measures `--log-line-height` (logs.css, in rem). */
 const LINE_HEIGHT = 18;
 
 /** The watch of the pods a merged tab reads: by selector in its namespace, or the namespaces of a fixed set. */
@@ -206,13 +208,19 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
 
   // ---- the list ----
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Lines are `--log-line-height` high, measured again when the interface text size changes.
+  const lineHeight = useCssLength("--log-line-height", LINE_HEIGHT);
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => LINE_HEIGHT,
+    estimateSize: () => lineHeight,
     getItemKey: (index) => lines.keyAt(index),
     overscan: 20,
   });
+  // Lines placed (or measured, wrapped) at the old size are placed again.
+  useEffect(() => {
+    virtualizer.measure();
+  }, [virtualizer, lineHeight]);
   const count = lines.length;
   const { atBottom, onScroll } = useFollowScroll(virtualizer, scrollRef, {
     follow,

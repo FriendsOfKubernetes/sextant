@@ -101,5 +101,19 @@
     "failed": "无法读取已安装字体。",
     "notInstalled": "此电脑未安装 {{family}}，将使用内置字体。",
     "current": "已选择：{{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "减少动态效果",
+    "reduceMotionChoices": {
+      "system": "跟随系统",
+      "on": "开",
+      "off": "关"
+    },
+    "reduceMotionHint": "“跟随系统”遵循操作系统的减少动态效果设置。减少动态效果会关闭过渡、动画、平滑滚动和终端光标闪烁。",
+    "textSize": "界面文字大小",
+    "percent": "{{value}}%",
+    "textSizeHint": "文字、表格行和控件随之变大；终端、日志和 YAML 编辑器也随之变化。",
+    "terminalScreenReader": "终端中的屏幕阅读器支持",
+    "terminalScreenReaderHint": "让屏幕阅读器可以朗读终端输出。这会降低终端速度，如不使用屏幕阅读器请保持关闭。"
   }
 }

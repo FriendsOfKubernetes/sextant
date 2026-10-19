@@ -33,7 +33,7 @@
 
 .logs__match-count {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -42,7 +42,7 @@
   align-items: center;
   gap: 12px;
   padding: 2px 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -57,7 +57,7 @@
 
 .logs__dropped {
   padding: 2px 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-warning);
   border-bottom: 1px dashed var(--color-border);
 }
@@ -68,7 +68,7 @@
   min-height: 0;
   overflow: auto;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .logs__empty {
@@ -88,8 +88,8 @@
   left: 0;
   min-width: 100%;
   padding: 0 8px;
-  min-height: 18px;
-  line-height: 18px;
+  min-height: var(--log-line-height);
+  line-height: var(--log-line-height);
   white-space: pre;
 }
 
@@ -151,7 +151,7 @@
 
 .logs-picker__hint {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .logs-details {
@@ -218,7 +218,7 @@
   overflow: auto;
   padding: 4px 8px;
   border-bottom: 1px solid var(--color-border);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .logs__sources ul {

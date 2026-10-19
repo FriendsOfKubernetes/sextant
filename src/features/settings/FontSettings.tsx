@@ -4,7 +4,7 @@
 // fonts). The window applies the choice itself (`useApplyFonts` in App).
 import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type AppSettings, type FontChoice, type SystemFont } from "../../api";
+import { api, defaultAppSettings, toApiError, type AppSettings, type FontChoice, type SystemFont } from "../../api";
 import { parseFontChoice, sanitizeFamily, type FontRole } from "../../app/fonts";
 import { Checkbox, Radio } from "../../components";
 
@@ -56,7 +56,7 @@ function FontField({ role, settings, save }: { role: FontRole; settings: AppSett
   const choose = (choice: FontChoice) => {
     setPicking(false);
     void save((s) => {
-      const appearance = s.appearance ?? { uiFont: { kind: "builtin" }, monoFont: { kind: "builtin" } };
+      const appearance = s.appearance ?? defaultAppSettings().appearance;
       return { ...s, appearance: role === "ui" ? { ...appearance, uiFont: choice } : { ...appearance, monoFont: choice } };
     });
   };

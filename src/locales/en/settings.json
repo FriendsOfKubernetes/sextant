@@ -101,5 +101,19 @@
     "failed": "The installed fonts could not be read.",
     "notInstalled": "{{family}} is not installed on this computer; the built-in font is used.",
     "current": "Chosen: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Reduce motion",
+    "reduceMotionChoices": {
+      "system": "System",
+      "on": "On",
+      "off": "Off"
+    },
+    "reduceMotionHint": "System follows the reduced-motion setting of your operating system. Reduced motion turns off transitions, animations, smooth scrolling and the blinking terminal cursor.",
+    "textSize": "Interface text size",
+    "percent": "{{value}}%",
+    "textSizeHint": "Text, table rows and controls grow with it; the terminal, logs and the YAML editor follow.",
+    "terminalScreenReader": "Screen reader support in the terminal",
+    "terminalScreenReaderHint": "Lets a screen reader read terminal output. It slows the terminal down, so leave it off unless you use a screen reader."
   }
 }

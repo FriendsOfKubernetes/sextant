@@ -7,7 +7,7 @@
 
 .ov__title {
   margin: 0 0 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
 }
 
@@ -31,12 +31,12 @@
 
 .ov__heading {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
 .ov__big {
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }

@@ -6,7 +6,7 @@
 
 .sec-page__title {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .sec-toolbar {
@@ -57,7 +57,7 @@
   align-items: baseline;
   gap: 4px 8px;
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .sec-ns__name {
@@ -149,7 +149,7 @@
 
 .sec-code {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -175,7 +175,7 @@
   max-width: 100%;
   overflow-x: auto;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   background: var(--color-hover);
   border-radius: 4px;
 }
@@ -187,7 +187,7 @@
 }
 
 .sec-copy__state {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -197,7 +197,7 @@
 
 .sec-section__title {
   margin: 0 0 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .sec-hints {
@@ -210,7 +210,7 @@
 
 .sec-trivy__title {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .sec-report {
@@ -239,7 +239,7 @@
 
 .sec-table {
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .sec-table th,

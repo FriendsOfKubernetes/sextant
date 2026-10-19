@@ -15,7 +15,7 @@
 
 .dt-block__title {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -50,7 +50,7 @@
   background: var(--color-hover);
   border-radius: 3px;
   padding: 0 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -63,7 +63,7 @@
 .dt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .dt-table th,
@@ -103,7 +103,7 @@
 .dt-pre {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -147,7 +147,7 @@
 
 .dt-annotations__value--long {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: pre-wrap;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .dt-yaml .cm-editor {
-  font-size: 12px;
+  font-size: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   max-height: 60vh;
@@ -225,7 +225,7 @@
   border: 1px solid var(--color-border);
   border-radius: 3px;
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.3;
 }
 

@@ -54,7 +54,7 @@
 
 .cm-chain__kind {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .cm-chain__extra {
@@ -78,7 +78,7 @@
 
 .cm-fingerprint {
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .cm-page {
@@ -88,7 +88,7 @@
 
 .cm-page__title {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .cm-page__toolbar {
@@ -112,7 +112,7 @@
 .cm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .cm-table th,

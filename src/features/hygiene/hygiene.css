@@ -6,7 +6,7 @@
 
 .cln-page__title {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .cln-toolbar {
@@ -45,12 +45,12 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .cln-managed__title {
   margin: 12px 0 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .cln-table {
@@ -104,7 +104,7 @@
 
 .cln-confirm-list__kind {
   margin: 8px 0 2px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .cln-type-count {

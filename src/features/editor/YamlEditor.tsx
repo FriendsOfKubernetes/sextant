@@ -6,6 +6,7 @@ import { yaml } from "@codemirror/lang-yaml";
 import { Annotation } from "@codemirror/state";
 import { basicSetup, EditorView } from "codemirror";
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { onAccessibilityChange } from "../../app/accessibility";
 import type { ClusterId } from "../../api";
 import { useEditorTheme } from "./editorTheme";
 import { schemaExtension } from "./schema/extension";
@@ -32,6 +33,9 @@ export function YamlEditor({ value, onChange, label, schemaCluster }: YamlEditor
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  // The interface text size changed (editor.css sizes are in rem): measure the lines again.
+  useEffect(() => onAccessibilityChange(() => view.current?.requestMeasure()), []);
 
   // Layout effects: the shown text is in step with `value` in the same commit, so whatever the parent renders next to
   // the editor ("Saved.") never appears before the text it refers to.

@@ -19,13 +19,13 @@
 .editor-tab__status,
 .editor-tab__hint {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .editor-tab__result {
   flex: none;
   color: var(--color-success);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .editor-tab__result ul {
@@ -49,7 +49,7 @@
 /* Colours (text, gutter, selection, syntax) come from the colour scheme in editorTheme.ts. */
 .yaml-editor .cm-editor {
   height: 100%;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .yaml-editor .cm-editor.cm-focused {
@@ -78,7 +78,7 @@
 .yaml-editor .schema-doc {
   max-width: 480px;
   padding: 6px 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.4;
 }
 
@@ -105,7 +105,7 @@
 
 .yaml-editor .schema-doc__required {
   color: var(--color-warning);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .yaml-editor .schema-doc__description {
@@ -117,7 +117,7 @@
   max-height: 40vh;
   overflow: auto;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.4;
 }
 

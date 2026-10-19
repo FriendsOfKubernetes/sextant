@@ -25,7 +25,7 @@ pub use columns::{ColumnWidths, TableColumnWidths};
 pub mod logs;
 pub use logs::LogViewSettings;
 pub mod appearance;
-pub use appearance::{AppearanceSettings, FontChoice, FontKind};
+pub use appearance::{AppearanceSettings, FontChoice, FontKind, ReduceMotion};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

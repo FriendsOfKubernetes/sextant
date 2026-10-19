@@ -27,7 +27,7 @@
 .updates__status,
 .updates__hint {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .updates__hint {
@@ -56,7 +56,7 @@
   border-radius: 4px;
   background: var(--color-bg);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

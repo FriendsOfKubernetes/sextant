@@ -6,7 +6,7 @@
 
 .rs-page__title {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .rs-section {
@@ -15,7 +15,7 @@
 
 .rs-section__title {
   margin: 0 0 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .rs-toolbar {
@@ -65,11 +65,11 @@
   align-items: baseline;
   gap: 4px 12px;
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .rs-ns__totals {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: normal;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
@@ -82,7 +82,7 @@
 .rs-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .rs-table th,
@@ -113,13 +113,13 @@
 }
 
 .rs-amounts__recommended {
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   font-weight: 600;
 }
 
 .rs-confidence {
   margin-top: 2px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--color-warning);
 }
 
@@ -137,6 +137,6 @@
 }
 
 .rs-copy__state {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
 }

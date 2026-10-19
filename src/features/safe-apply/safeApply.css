@@ -16,7 +16,7 @@
 .safe-apply-preview__warning {
   margin: 0;
   color: var(--color-warning, #b7791f);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .safe-apply-preview__body {
@@ -70,7 +70,7 @@
 .safe-apply-preview__notes p {
   margin: 0 0 2px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -104,5 +104,5 @@
 .safe-apply-section__hint {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }

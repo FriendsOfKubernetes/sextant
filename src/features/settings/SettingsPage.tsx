@@ -1,5 +1,5 @@
 // The Settings page, in tabs: General (appearance, window, notifications, editor), Clusters (kubeconfig sources, helm, terminal),
-// AI agents (MCP server), Extensions, Updates & About. The sections: appearance (theme, language, fonts), the main window (keep in the tray), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
+// AI agents (MCP server), Extensions, Updates & About. The sections: appearance (theme, language, fonts, reduced motion, text size, terminal screen reader), the main window (keep in the tray), the YAML editor colour scheme, the `helm` binary (found in PATH or chosen), the kubeconfig
 // sources, the node shell image, the MCP server, extensions, and the app version with its updates (features/updates). Everything is saved right away through `updateSettings`; the window applies theme and language itself.
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +30,7 @@ import { openAbout } from "../about/store";
 import { McpPanel } from "../mcp/McpPanel";
 import { NotificationsPanel } from "../notifications/NotificationsPanel";
 import { UpdatesPanel } from "../updates";
+import { AccessibilitySettings } from "./AccessibilitySettings";
 import { FontSettings } from "./FontSettings";
 import { languageName } from "./languages";
 import { SETTINGS_TABS, useSettingsUi } from "./store";
@@ -186,6 +187,7 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
         <p className="settings__hint">{t("settings:appearance.languageHint")}</p>
       </div>
       <FontSettings settings={settings} save={save} />
+      <AccessibilitySettings settings={settings} save={save} />
     </Section>
   );
 }

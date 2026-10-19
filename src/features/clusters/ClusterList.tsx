@@ -168,9 +168,14 @@ function ClusterIcon({
         <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
         <ExpiryBadge clusterId={cluster.id} />
         {seconds >= 1 && (
-          <span className="cluster-icon__elapsed" data-slow={slow ? "true" : undefined}>
-            {t("clusters:connection.seconds", { seconds })}
-          </span>
+          // Drawn from `data-text` by CSS, like the initials: the button's name is the cluster name (WCAG 2.5.3); the
+          // seconds are in its tooltip and on the connection screen.
+          <span
+            className="cluster-icon__elapsed"
+            data-slow={slow ? "true" : undefined}
+            data-text={t("clusters:connection.seconds", { seconds })}
+            aria-hidden="true"
+          />
         )}
       </span>
       {expanded && (

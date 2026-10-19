@@ -122,6 +122,12 @@
   user-select: none;
 }
 
+/* The initials and the connection seconds are generated content (ClusterAvatar, ClusterList): see there. */
+.cluster-avatar__text::before,
+.cluster-icon__elapsed::before {
+  content: attr(data-text);
+}
+
 .cluster-avatar--image {
   background: var(--color-hover);
 }
@@ -172,8 +178,8 @@
   transform: translateX(-50%);
   padding: 0 3px;
   border-radius: 3px;
-  font-size: 9px;
-  line-height: 12px;
+  font-size: 0.5625rem;
+  line-height: 0.75rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--color-text);
@@ -243,7 +249,7 @@
 
 .clusters-welcome__title {
   margin: 0;
-  font-size: 20px;
+  font-size: 1.25rem;
   color: var(--color-text);
 }
 
@@ -256,7 +262,7 @@
   padding: 0;
   list-style: none;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-all;
 }
 
@@ -287,7 +293,7 @@
 
 .clusters-error__details {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-word;
   color: var(--color-text-muted);
 }
@@ -296,10 +302,10 @@
   width: 100%;
   min-width: min(560px, calc(100vw - 80px));
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   background: var(--color-main);
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   border-radius: 4px;
   padding: 8px;
   box-sizing: border-box;
@@ -307,7 +313,7 @@
 
 .clusters-subtitle {
   margin: 16px 0 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .clusters-sources {
@@ -329,13 +335,13 @@
   flex: 1;
   min-width: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-all;
 }
 
 .clusters-sources__kind {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .cluster-settings__section + .cluster-settings__section {
@@ -381,7 +387,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -397,13 +403,13 @@
 
 .clusters-icon__hint {
   margin: 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
 .clusters-icon__error {
   margin: 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-danger);
 }
 
@@ -436,7 +442,7 @@
   grid-template-columns: max-content 1fr;
   gap: 4px 12px;
   margin: 0;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .clusters-facts dt {
@@ -488,13 +494,13 @@
   flex: 1 1 200px;
   min-width: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-all;
 }
 
 .cluster-problems__kind {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .cluster-problems__item .error-state.clusters-error {
@@ -594,7 +600,7 @@
 
 .cloud-clusters__details {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .cloud-problem {
@@ -621,7 +627,7 @@
 
 .cloud-command__text {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   background: var(--color-main);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -632,7 +638,7 @@
 
 .cloud-command__feedback {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* Kubeconfig management (#150). */
@@ -676,7 +682,7 @@
 .kc-preview__origin,
 .kc-check__server {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -725,7 +731,7 @@
 }
 
 .kc-source__own {
-  font-size: 12px;
+  font-size: 0.75rem;
   opacity: 0.8;
 }
 
@@ -752,7 +758,7 @@
 
 .kc-check__name {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .kc-check__warning {

@@ -11,7 +11,7 @@
 
 .aa-note {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .aa-description {
@@ -57,7 +57,7 @@
 
 .aa-subtitle {
   margin: 8px 0 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .aa-rules {
@@ -87,7 +87,7 @@
 
 .aa-rule__header h5 {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .aa-actions {
@@ -146,7 +146,7 @@
 
 .aa-picker__hint {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -177,5 +177,5 @@
 
 .aa-invalid {
   color: var(--color-danger);
-  font-size: 12px;
+  font-size: 0.75rem;
 }

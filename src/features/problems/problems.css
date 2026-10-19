@@ -5,7 +5,7 @@
 
 .problems__title {
   margin: 0 0 12px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .problems__toolbar {
@@ -36,7 +36,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .problems__ns {
@@ -45,7 +45,7 @@
 
 .problems__ns-name {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-text-muted);
 }
@@ -96,7 +96,7 @@
 .problems__history-time,
 .problems__history-delivery {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 

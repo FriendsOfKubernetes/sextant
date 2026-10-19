@@ -101,5 +101,19 @@
     "failed": "無法讀取已安裝字型。",
     "notInstalled": "這台電腦未安裝 {{family}}，將使用內建字型。",
     "current": "已選擇：{{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "減少動態效果",
+    "reduceMotionChoices": {
+      "system": "跟隨系統",
+      "on": "開",
+      "off": "關"
+    },
+    "reduceMotionHint": "「跟隨系統」會依照作業系統的減少動態效果設定。減少動態效果會關閉轉場、動畫、平滑捲動和終端機游標閃爍。",
+    "textSize": "介面文字大小",
+    "percent": "{{value}}%",
+    "textSizeHint": "文字、表格列和控制項會隨之變大；終端機、記錄和 YAML 編輯器也會跟著變化。",
+    "terminalScreenReader": "終端機的螢幕閱讀器支援",
+    "terminalScreenReaderHint": "讓螢幕閱讀器可以朗讀終端機輸出。這會讓終端機變慢，若不使用螢幕閱讀器請保持關閉。"
   }
 }

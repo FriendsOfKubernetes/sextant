@@ -6,7 +6,7 @@
 
 .rbac-page__title {
   margin: 0 0 12px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .rbac-tab {
@@ -19,7 +19,7 @@
 
 .rbac-heading {
   margin: 8px 0 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -29,7 +29,7 @@
   border-left: 3px solid var(--color-border);
   background: var(--color-panel);
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .rbac-note--warn {
@@ -57,7 +57,7 @@
 
 .rbac-field__label {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .rbac-toggle {
@@ -150,7 +150,7 @@
 
 .rbac-matrix__table {
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .rbac-matrix__table th,
@@ -213,14 +213,14 @@
 
 .rbac-matrix__detail-title {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .rbac-notes {
   margin: 2px 0 0;
   padding-left: 16px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .rbac-notes__warn {

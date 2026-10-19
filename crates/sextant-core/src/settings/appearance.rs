@@ -1,8 +1,11 @@
-//! Appearance (ADR-0093): the interface font and the monospace font (terminal, YAML, logs, code). Written by the
-//! frontend, which turns a choice into the `--font-latin` / `--font-mono` CSS variables.
+//! Appearance (ADR-0093): the interface font and the monospace font (terminal, YAML, logs, code), and the accessibility
+//! choices of ADR-0092 (reduced motion, the interface text size, screen reader support in the terminal). Written by the
+//! frontend, which turns a font choice into the `--font-latin` / `--font-mono` CSS variables and the rest into
+//! attributes and the font size of `<html>`.
 //!
 //! Read leniently like the other frontend-written settings: an unknown kind, a custom choice without a usable family
-//! name, or a value of the wrong type reads as the built-in font instead of failing the file. A family name is kept
+//! name, or a value of the wrong type reads as the built-in font (the default of the other fields) instead of failing
+//! the file. A family name is kept
 //! only after [`sanitize_family`]: it goes into a CSS value, so quotes, backslashes, semicolons, braces, angle brackets
 //! and control characters are dropped and its length is capped. A family that is not installed on this computer (a
 //! settings file from another one) is kept: the CSS stack falls back to the built-in font after it.
@@ -38,7 +41,26 @@ pub struct FontChoice {
     pub family: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+/// Whether transitions, animations, smooth scrolling and the blinking terminal cursor are turned off.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ReduceMotion {
+    /// Follow the operating system (`prefers-reduced-motion`).
+    #[default]
+    System,
+    /// Always reduce motion.
+    On,
+    /// Never reduce motion, whatever the operating system says.
+    Off,
+}
+
+/// The interface text sizes offered, in percent of the default; anything else reads as [`DEFAULT_TEXT_SIZE`].
+pub const TEXT_SIZES: [u16; 5] = [90, 100, 110, 125, 150];
+/// The default interface text size, in percent.
+pub const DEFAULT_TEXT_SIZE: u16 = 100;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
 pub struct AppearanceSettings {
@@ -46,6 +68,24 @@ pub struct AppearanceSettings {
     pub ui_font: FontChoice,
     /// The monospace font: terminal, YAML editor, logs and code.
     pub mono_font: FontChoice,
+    /// Reduced motion: the system's preference by default.
+    pub reduce_motion: ReduceMotion,
+    /// The interface text size in percent of the default, one of [`TEXT_SIZES`].
+    pub text_size: u16,
+    /// xterm's screen reader mode in terminals (off by default: it costs rendering speed).
+    pub terminal_screen_reader: bool,
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        Self {
+            ui_font: FontChoice::default(),
+            mono_font: FontChoice::default(),
+            reduce_motion: ReduceMotion::default(),
+            text_size: DEFAULT_TEXT_SIZE,
+            terminal_screen_reader: false,
+        }
+    }
 }
 
 /// `name` fit for a quoted CSS font-family value, or `None` when nothing usable is left: quotes, backslashes,
@@ -87,6 +127,22 @@ fn read_choice(value: Option<&serde_json::Value>) -> FontChoice {
     }
 }
 
+fn read_reduce_motion(value: Option<&serde_json::Value>) -> ReduceMotion {
+    match value.and_then(serde_json::Value::as_str) {
+        Some("on") => ReduceMotion::On,
+        Some("off") => ReduceMotion::Off,
+        _ => ReduceMotion::System,
+    }
+}
+
+fn read_text_size(value: Option<&serde_json::Value>) -> u16 {
+    value
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|n| u16::try_from(n).ok())
+        .filter(|n| TEXT_SIZES.contains(n))
+        .unwrap_or(DEFAULT_TEXT_SIZE)
+}
+
 /// `#[serde(with)]` module of `AppSettings::appearance`: written as it is, read choice by choice.
 pub(crate) mod appearance_field {
     use super::*;
@@ -105,6 +161,12 @@ pub(crate) mod appearance_field {
         Ok(AppearanceSettings {
             ui_font: read_choice(value.get("uiFont")),
             mono_font: read_choice(value.get("monoFont")),
+            reduce_motion: read_reduce_motion(value.get("reduceMotion")),
+            text_size: read_text_size(value.get("textSize")),
+            terminal_screen_reader: value
+                .get("terminalScreenReader")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
         })
     }
 }
@@ -122,7 +184,13 @@ mod tests {
         assert_eq!(settings.appearance.ui_font.kind, FontKind::Builtin);
         assert_eq!(
             serde_json::to_value(&settings.appearance).unwrap(),
-            json!({ "uiFont": { "kind": "builtin" }, "monoFont": { "kind": "builtin" } })
+            json!({
+                "uiFont": { "kind": "builtin" },
+                "monoFont": { "kind": "builtin" },
+                "reduceMotion": "system",
+                "textSize": 100,
+                "terminalScreenReader": false
+            })
         );
     }
 
@@ -130,7 +198,10 @@ mod tests {
     fn choices_round_trip() {
         let appearance = json!({
             "uiFont": { "kind": "system" },
-            "monoFont": { "kind": "custom", "family": "JetBrains Mono" }
+            "monoFont": { "kind": "custom", "family": "JetBrains Mono" },
+            "reduceMotion": "on",
+            "textSize": 125,
+            "terminalScreenReader": true
         });
         let settings: AppSettings =
             serde_json::from_value(json!({ "appearance": appearance })).unwrap();
@@ -142,8 +213,52 @@ mod tests {
                 family: Some("JetBrains Mono".into())
             }
         );
+        assert_eq!(settings.appearance.reduce_motion, ReduceMotion::On);
+        assert_eq!(settings.appearance.text_size, 125);
+        assert!(settings.appearance.terminal_screen_reader);
         let written = serde_json::to_value(&settings).unwrap();
         assert_eq!(written["appearance"], appearance);
+    }
+
+    #[test]
+    fn accessibility_choices_read_leniently() {
+        // A settings file of v0.15 (fonts only) gets the defaults.
+        let old: AppSettings = serde_json::from_value(json!({
+            "appearance": { "uiFont": { "kind": "system" }, "monoFont": { "kind": "builtin" } }
+        }))
+        .unwrap();
+        assert_eq!(old.appearance.ui_font.kind, FontKind::System);
+        assert_eq!(old.appearance.reduce_motion, ReduceMotion::System);
+        assert_eq!(old.appearance.text_size, DEFAULT_TEXT_SIZE);
+        assert!(!old.appearance.terminal_screen_reader);
+
+        for (motion, size, reader) in [
+            (json!("sometimes"), json!(130), json!("yes")),
+            (json!(true), json!("125"), json!(1)),
+            (json!(null), json!(-100), json!(null)),
+            (json!({}), json!(100_000_000), json!([])),
+            (json!("off"), json!(150.5), json!(false)),
+        ] {
+            let s: AppSettings = serde_json::from_value(json!({
+                "theme": "dark",
+                "appearance": { "reduceMotion": motion, "textSize": size, "terminalScreenReader": reader }
+            }))
+            .unwrap();
+            assert_eq!(s.theme, crate::Theme::Dark);
+            let expected = if motion == json!("off") {
+                ReduceMotion::Off
+            } else {
+                ReduceMotion::System
+            };
+            assert_eq!(s.appearance.reduce_motion, expected, "{motion}");
+            assert_eq!(s.appearance.text_size, DEFAULT_TEXT_SIZE, "{size}");
+            assert!(!s.appearance.terminal_screen_reader, "{reader}");
+        }
+        for size in TEXT_SIZES {
+            let s: AppSettings =
+                serde_json::from_value(json!({ "appearance": { "textSize": size } })).unwrap();
+            assert_eq!(s.appearance.text_size, size);
+        }
     }
 
     #[test]

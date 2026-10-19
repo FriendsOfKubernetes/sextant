@@ -28,7 +28,7 @@
 
 .loading-indicator__slow {
   color: var(--color-warning);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 @keyframes loading-indicator-spin {
@@ -38,7 +38,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-indicator__spinner {
+  :root:not([data-motion="full"]) .loading-indicator__spinner {
     animation: none;
   }
+}
+
+:root[data-motion="reduce"] .loading-indicator__spinner {
+  animation: none;
 }

@@ -101,5 +101,19 @@
     "failed": "Impossibile leggere i caratteri installati.",
     "notInstalled": "{{family}} non è installato su questo computer; si usa il carattere integrato.",
     "current": "Scelto: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Riduci movimento",
+    "reduceMotionChoices": {
+      "system": "Sistema",
+      "on": "Attivo",
+      "off": "Disattivo"
+    },
+    "reduceMotionHint": "«Sistema» segue l’impostazione di riduzione del movimento del sistema operativo. Il movimento ridotto disattiva transizioni, animazioni, scorrimento fluido e il cursore lampeggiante del terminale.",
+    "textSize": "Dimensione del testo dell’interfaccia",
+    "percent": "{{value}}%",
+    "textSizeHint": "Testo, righe delle tabelle e controlli crescono con essa; terminale, log ed editor YAML seguono.",
+    "terminalScreenReader": "Supporto per lettori di schermo nel terminale",
+    "terminalScreenReaderHint": "Consente a un lettore di schermo di leggere l’output del terminale. Rallenta il terminale, quindi lascialo disattivato se non usi un lettore di schermo."
   }
 }

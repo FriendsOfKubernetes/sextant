@@ -101,5 +101,19 @@
     "failed": "Nie udało się odczytać zainstalowanych czcionek.",
     "notInstalled": "Czcionka {{family}} nie jest zainstalowana na tym komputerze; używana jest czcionka wbudowana.",
     "current": "Wybrana: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Ogranicz ruch",
+    "reduceMotionChoices": {
+      "system": "Systemowe",
+      "on": "Wł.",
+      "off": "Wył."
+    },
+    "reduceMotionHint": "„Systemowe” stosuje ustawienie ograniczenia ruchu systemu operacyjnego. Ograniczony ruch wyłącza przejścia, animacje, płynne przewijanie i miganie kursora terminala.",
+    "textSize": "Rozmiar tekstu interfejsu",
+    "percent": "{{value}}%",
+    "textSizeHint": "Tekst, wiersze tabel i kontrolki rosną razem z nim; terminal, logi i edytor YAML również.",
+    "terminalScreenReader": "Obsługa czytników ekranu w terminalu",
+    "terminalScreenReaderHint": "Pozwala czytnikowi ekranu odczytywać wyjście terminala. Spowalnia to terminal, więc zostaw wyłączone, jeśli nie używasz czytnika ekranu."
   }
 }

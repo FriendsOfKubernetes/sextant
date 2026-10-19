@@ -101,5 +101,19 @@
     "failed": "Yüklü yazı tipleri okunamadı.",
     "notInstalled": "{{family}} bu bilgisayarda yüklü değil; yerleşik yazı tipi kullanılıyor.",
     "current": "Seçilen: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Hareketi azalt",
+    "reduceMotionChoices": {
+      "system": "Sistem",
+      "on": "Açık",
+      "off": "Kapalı"
+    },
+    "reduceMotionHint": "“Sistem”, işletim sisteminin hareketi azaltma ayarını izler. Azaltılmış hareket geçişleri, animasyonları, yumuşak kaydırmayı ve terminal imlecinin yanıp sönmesini kapatır.",
+    "textSize": "Arayüz metin boyutu",
+    "percent": "%{{value}}",
+    "textSizeHint": "Metin, tablo satırları ve denetimler onunla büyür; terminal, günlükler ve YAML düzenleyici de izler.",
+    "terminalScreenReader": "Terminalde ekran okuyucu desteği",
+    "terminalScreenReaderHint": "Bir ekran okuyucunun terminal çıktısını okumasını sağlar. Terminali yavaşlatır; ekran okuyucu kullanmıyorsanız kapalı bırakın."
   }
 }

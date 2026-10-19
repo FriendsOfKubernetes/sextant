@@ -5,7 +5,7 @@
 
 .upgrade__title {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .upgrade__intro,
@@ -70,7 +70,7 @@
 
 .upgrade__heading {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .upgrade__table-wrap {
@@ -102,7 +102,7 @@
 
 .upgrade__hint {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .upgrade__origins,

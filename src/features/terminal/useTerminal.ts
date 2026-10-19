@@ -21,6 +21,7 @@ import {
   SYSTEM_MONO_STACK,
   whenFontLoaded,
 } from "../../app/fonts";
+import { currentAccessibility, onAccessibilityChange, reducedMotion, scaledPx } from "../../app/accessibility";
 import { i18n } from "../../i18n";
 import { isControl, isInvisible } from "./text";
 
@@ -61,6 +62,7 @@ export interface UseTerminalOptions {
 }
 
 const DEFAULT_COLS = 80;
+/** The terminal's font size at the default interface text size; it follows that setting (`scaledPx`). */
 const FONT_SIZE = 13;
 /** How long a new terminal waits for its monospace font before it starts on the system's. */
 export const FONT_WAIT_MS = 1500;
@@ -112,9 +114,9 @@ export function useTerminal(
     let disposed = false;
     let cleanup: (() => void) | undefined;
     const target = currentMonoStack();
-    if (fontLoaded(target, FONT_SIZE)) cleanup = createTerminal(el, target);
+    if (fontLoaded(target, scaledPx(FONT_SIZE))) cleanup = createTerminal(el, target);
     else
-      void loadFont(target, FONT_SIZE, FONT_WAIT_MS).then((ok) => {
+      void loadFont(target, scaledPx(FONT_SIZE), FONT_WAIT_MS).then((ok) => {
         if (!disposed) cleanup = createTerminal(el, ok ? target : SYSTEM_MONO_STACK);
       });
     return () => {
@@ -126,9 +128,12 @@ export function useTerminal(
   /** Creates the xterm in `el` on `fontFamily`; returns its cleanup. */
   function createTerminal(el: HTMLElement, fontFamily: string): () => void {
     const term = new Terminal({
-      cursorBlink: true,
+      // A blinking cursor is motion: off while motion is reduced (Settings -> Appearance or the OS).
+      cursorBlink: !reducedMotion(),
       fontFamily,
-      fontSize: FONT_SIZE,
+      fontSize: scaledPx(FONT_SIZE),
+      // Off by default: it keeps an accessible copy of the screen up to date, which slows the terminal down.
+      screenReaderMode: currentAccessibility().terminalScreenReader,
       scrollback: 10_000,
       allowProposedApi: false,
       theme: themeFromCss(el),
@@ -162,7 +167,7 @@ export function useTerminal(
     let wanted = currentMonoStack();
     const follow = (stack: string) => {
       wanted = stack;
-      void whenFontLoaded(stack, FONT_SIZE).then(() => {
+      void whenFontLoaded(stack, scaledPx(FONT_SIZE)).then(() => {
         if (disposed || wanted !== stack || term.options.fontFamily === stack) return;
         term.options.fontFamily = stack;
         safeFit(fit);
@@ -170,10 +175,16 @@ export function useTerminal(
     };
     if (fontFamily !== wanted) follow(wanted);
     const unfollow = onMonoFontChange(follow);
+    // Follow the accessibility settings live: the text size (the cell is measured again, then refit), the screen
+    // reader mode and reduced motion.
+    const unfollowAccessibility = onAccessibilityChange(() => {
+      applyTerminalAccessibility(term, fit);
+    });
 
     return () => {
       disposed = true;
       unfollow();
+      unfollowAccessibility();
       themeObserver.disconnect();
       hint();
       fitRef.current = null;
@@ -426,6 +437,19 @@ function clipboardKeys(term: Terminal, e: KeyboardEvent): boolean {
     return false;
   }
   return true;
+}
+
+/** Brings `term` in line with the accessibility settings in effect; refits after a new font size. */
+export function applyTerminalAccessibility(term: Pick<Terminal, "options">, fit: FitAddon | null): void {
+  const size = scaledPx(FONT_SIZE);
+  const reader = currentAccessibility().terminalScreenReader;
+  const blink = !reducedMotion();
+  if (term.options.screenReaderMode !== reader) term.options.screenReaderMode = reader;
+  if (term.options.cursorBlink !== blink) term.options.cursorBlink = blink;
+  if (term.options.fontSize !== size) {
+    term.options.fontSize = size;
+    safeFit(fit);
+  }
 }
 
 function safeFit(fit: FitAddon | null): void {

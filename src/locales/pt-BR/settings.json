@@ -101,5 +101,19 @@
     "failed": "Não foi possível ler as fontes instaladas.",
     "notInstalled": "{{family}} não está instalada neste computador; a fonte embutida é usada.",
     "current": "Escolhida: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Reduzir movimento",
+    "reduceMotionChoices": {
+      "system": "Sistema",
+      "on": "Ativado",
+      "off": "Desativado"
+    },
+    "reduceMotionHint": "“Sistema” segue a configuração de movimento reduzido do sistema operacional. O movimento reduzido desliga transições, animações, rolagem suave e o cursor piscante do terminal.",
+    "textSize": "Tamanho do texto da interface",
+    "percent": "{{value}}%",
+    "textSizeHint": "Texto, linhas de tabelas e controles crescem com ele; o terminal, os logs e o editor YAML acompanham.",
+    "terminalScreenReader": "Suporte a leitores de tela no terminal",
+    "terminalScreenReaderHint": "Permite que um leitor de tela leia a saída do terminal. Isso deixa o terminal mais lento, então mantenha desligado se não usa um leitor de tela."
   }
 }

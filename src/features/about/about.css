@@ -25,13 +25,13 @@
 }
 
 .about__name {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
 .about__build {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .about__text {
@@ -41,7 +41,7 @@
 
 .about__text--muted {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .about__links,
@@ -58,7 +58,7 @@
 
 .about__fonts summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -70,6 +70,6 @@
   border: 1px solid var(--color-border);
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   white-space: pre-wrap;
 }

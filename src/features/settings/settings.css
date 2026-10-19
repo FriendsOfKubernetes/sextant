@@ -5,7 +5,7 @@
 
 .settings-page__title {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .settings {
@@ -27,7 +27,7 @@
 
 .settings__heading {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .settings__field {
@@ -43,7 +43,7 @@
 .settings__hint {
   margin: 4px 0 8px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .settings__choices {
@@ -82,7 +82,7 @@
 
 .settings__font-list {
   width: 100%;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .settings__select {
@@ -107,7 +107,7 @@
 .settings__status {
   margin: 8px 0 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-all;
 }
 
@@ -134,13 +134,13 @@
   flex: 1 1 200px;
   min-width: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-all;
 }
 
 .settings__source-kind {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .error-state.settings__error {
@@ -202,7 +202,7 @@
 
 .settings-banner__details {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 

@@ -15,7 +15,7 @@
 
 .tl-page__title {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 
 .tl-page__lead {
@@ -123,7 +123,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 

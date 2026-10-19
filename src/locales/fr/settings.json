@@ -101,5 +101,19 @@
     "failed": "Impossible de lire les polices installées.",
     "notInstalled": "{{family}} n’est pas installée sur cet ordinateur ; la police intégrée est utilisée.",
     "current": "Choisie : {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Réduire les animations",
+    "reduceMotionChoices": {
+      "system": "Système",
+      "on": "Activé",
+      "off": "Désactivé"
+    },
+    "reduceMotionHint": "« Système » suit le réglage de réduction des animations du système d’exploitation. La réduction désactive les transitions, les animations, le défilement fluide et le clignotement du curseur du terminal.",
+    "textSize": "Taille du texte de l’interface",
+    "percent": "{{value}} %",
+    "textSizeHint": "Le texte, les lignes des tableaux et les contrôles grandissent avec elle ; le terminal, les journaux et l’éditeur YAML suivent.",
+    "terminalScreenReader": "Prise en charge des lecteurs d’écran dans le terminal",
+    "terminalScreenReaderHint": "Permet à un lecteur d’écran de lire la sortie du terminal. Cela ralentit le terminal : laissez-la désactivée si vous n’utilisez pas de lecteur d’écran."
   }
 }

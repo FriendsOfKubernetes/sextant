@@ -29,12 +29,12 @@
 
 .gitops-install__muted {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gitops-install__mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 

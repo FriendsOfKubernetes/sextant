@@ -91,11 +91,11 @@ describe("Button", () => {
 });
 
 describe("button styles", () => {
-  it("share the size tokens: 32 px, 28 px compact, 13 px text, 16 px icons", () => {
+  it("share the size tokens: 32 px, 28 px compact, 13 px text at the default text size (rem, #186), 16 px icons", () => {
     const root = rule(globalCss, ":root");
-    expect(root["--control-height"]).toBe("32px");
-    expect(root["--control-height-compact"]).toBe("28px");
-    expect(root["--control-font-size"]).toBe("13px");
+    expect(root["--control-height"]).toBe("2rem");
+    expect(root["--control-height-compact"]).toBe("1.75rem");
+    expect(root["--control-font-size"]).toBe("0.8125rem");
     expect(root["--icon-size"]).toBe("16px");
   });
 

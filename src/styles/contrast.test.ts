@@ -61,6 +61,13 @@ function failures(tokens: Tokens): string[] {
       check(c("text-muted"), under, 4.5, `muted text on ${overlay} ${surface}`);
     }
   }
+  // Accent text that may sit on a hovered or selected background (the active sidebar item, links in table rows).
+  for (const surface of SURFACES) {
+    check(c("accent-strong"), c(surface), 4.5, `strong accent text on ${surface}`);
+    for (const overlay of ["hover", "selected"]) {
+      check(c("accent-strong"), c(overlay, c(surface)), 4.5, `strong accent text on ${overlay} ${surface}`);
+    }
+  }
   for (const surface of SURFACES) {
     for (const status of ["accent", "danger", "warning", "success"]) check(c(status), c(surface), 4.5, `${status} text on ${surface}`);
     for (const chart of ["cpu", "memory", "pods", "disk"]) check(c(`chart-${chart}`), c(surface), 3, `${chart} chart on ${surface}`);
@@ -68,6 +75,24 @@ function failures(tokens: Tokens): string[] {
   check(c("accent-text"), c("accent"), 4.5, "text on an accent fill (primary button, info badge)");
   for (const status of ["danger", "warning", "success"]) check(c("on-status"), c(status), 4.5, `text on a ${status} fill`);
   return out;
+}
+
+/** The rules of a sheet (path from the repository root, with a leading slash): selector and declarations. */
+function rulesOf(sheet: string): Array<[string, string]> {
+  const css = readFileSync(join(process.cwd(), sheet), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  return [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].map(([, selector, body]) => [selector!, body!]);
+}
+
+/** Classes that components put on <input>, <select> and <textarea> elements (src/**\/*.tsx, tests aside). */
+function fieldClassNames(): string[] {
+  const sources = import.meta.glob<string>(["/src/**/*.tsx", "!/src/**/*.test.tsx"], { query: "?raw", import: "default", eager: true });
+  const classes = new Set<string>();
+  for (const source of Object.values(sources)) {
+    for (const m of source.matchAll(/<(?:input|select|textarea)\b[^<]*?className=\{?\s*["'`]([^"'`]+)["'`]/g)) {
+      for (const name of m[1]!.split(/\s+/)) if (/^[a-z][\w-]*$/i.test(name)) classes.add(name);
+    }
+  }
+  return [...classes].sort();
 }
 
 describe("theme contrast (WCAG AA)", () => {
@@ -90,18 +115,53 @@ describe("theme contrast (WCAG AA)", () => {
 
   it("borders text fields and selects with the control border token, not the divider token", () => {
     const sheets = Object.keys(import.meta.glob("/src/**/*.css"));
+    // A field is recognised by its selector's wording, or by a class that a component puts on an <input>, <select> or
+    // <textarea> (`.clusters-paste` names neither).
+    const fieldClasses = fieldClassNames();
     const offenders: string[] = [];
     for (const sheet of sheets) {
-      const css = readFileSync(join(process.cwd(), sheet), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-      for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
-        const control = /\b(input|select|textarea)\b|-input\b|__input\b|__search\b/.test(selector!);
-        if (control && /(^|;)\s*border(-color)?\s*:[^;]*var\(--color-border\)/.test(body!)) {
-          offenders.push(`${sheet}: ${selector!.trim()}`);
+      for (const [selector, body] of rulesOf(sheet)) {
+        const control =
+          /\b(input|select|textarea)\b|-input\b|__input\b|__search\b/.test(selector) ||
+          selector.split(",").some((part) => fieldClasses.some((c) => new RegExp(`\\.${c}(?![\\w-])[^\\s>+~]*$`).test(part.trim())));
+        if (control && /(^|;)\s*border(-color)?\s*:[^;]*var\(--color-border\)/.test(body)) {
+          offenders.push(`${sheet}: ${selector.trim()}`);
         }
       }
     }
     expect(sheets.length).toBeGreaterThan(10);
+    expect(fieldClasses).toEqual(expect.arrayContaining(["settings__input", "clusters-paste", "logs__search", "st-input", "rs-select"]));
     expect(offenders).toEqual([]);
+  });
+
+  it("gives every text field, select and text area without a border rule of its own the control border", () => {
+    const base = rulesOf("/src/styles/global.css").find(([selector]) => selector.trim().startsWith(":where("));
+    expect(base, "the base rule of fields in global.css").toBeDefined();
+    const [selector, body] = base!;
+    for (const field of ["input:not(", "select", "textarea"]) expect(selector).toContain(field);
+    // Checkboxes and radio buttons draw their own box (src/components).
+    expect(selector).toContain('[type="checkbox"]');
+    expect(selector).toContain('[type="radio"]');
+    expect(body).toMatch(/(^|;)\s*border\s*:\s*1px solid var\(--color-control-border\)/);
+  });
+
+  it("draws accent text on hovered and selected backgrounds with the strong accent (axe on WebKit, #186)", () => {
+    // The active sidebar entry sits on --color-selected; --color-accent there is below 4.5:1 in both themes.
+    expect(cssRule("src/layout/layout.css", ".sidebar__item--active").color).toBe("var(--color-accent-strong)");
+    for (const [sheet, selector] of [
+      ["src/components/Table/table.css", ".rt-link"],
+      ["src/features/helm/helm.css", ".helm-link"],
+      ["src/features/fleet/fleet.css", ".fleet-link"],
+      ["src/features/metrics/metrics.css", ".mx-link"],
+      ["src/features/netpol/netpol.css", ".np-linkbutton"],
+      ["src/features/compare/compare.css", ".compare-link"],
+      ["src/features/rightsizing/rightsizing.css", ".rs-amounts__recommended"],
+    ] as const) {
+      expect(cssRule(sheet, selector).color, `${sheet} ${selector}`).toBe("var(--color-accent-strong)");
+    }
+    const under = (tokens: Tokens) => color(tokens, "selected", color(tokens, "sidebar"));
+    expect(ratio(color(LIGHT, "accent"), under(LIGHT))).toBeLessThan(4.5);
+    expect(ratio(color(DARK, "accent"), under(DARK))).toBeLessThan(4.5);
   });
 
   it("measures what it claims: black on white is 21:1, the old light accent under white text failed", () => {

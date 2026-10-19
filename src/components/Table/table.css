@@ -16,7 +16,7 @@
 
 .rt__title {
   margin: 0;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -101,7 +101,7 @@
   display: grid;
   grid-template-columns: var(--rt-columns);
   align-items: center;
-  height: 33px;
+  height: var(--table-row-height);
   border-bottom: 1px solid var(--color-border);
   cursor: pointer;
   min-width: 100%;
@@ -195,7 +195,7 @@
   background: var(--color-hover);
   border-radius: 3px;
   padding: 0 4px;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .rt-status-list {
@@ -224,7 +224,7 @@
   background: transparent;
   padding: 0;
   font: inherit;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   cursor: pointer;
 }
 
@@ -394,7 +394,7 @@
 
 .rt__resizer {
   position: relative;
-  height: 33px;
+  height: var(--table-row-height);
   min-width: 0;
 }
 

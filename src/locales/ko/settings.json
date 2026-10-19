@@ -101,5 +101,19 @@
     "failed": "설치된 글꼴을 읽을 수 없습니다.",
     "notInstalled": "{{family}}이(가) 이 컴퓨터에 설치되어 있지 않아 기본 제공 글꼴을 사용합니다.",
     "current": "선택됨: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "동작 줄이기",
+    "reduceMotionChoices": {
+      "system": "시스템",
+      "on": "켬",
+      "off": "끔"
+    },
+    "reduceMotionHint": "'시스템'은 운영 체제의 동작 줄이기 설정을 따릅니다. 동작을 줄이면 전환 효과, 애니메이션, 부드러운 스크롤, 터미널 커서 깜박임이 꺼집니다.",
+    "textSize": "인터페이스 글자 크기",
+    "percent": "{{value}}%",
+    "textSizeHint": "글자, 표의 행, 컨트롤이 함께 커지며 터미널, 로그, YAML 편집기도 따릅니다.",
+    "terminalScreenReader": "터미널의 화면 읽기 프로그램 지원",
+    "terminalScreenReaderHint": "화면 읽기 프로그램이 터미널 출력을 읽을 수 있게 합니다. 터미널이 느려지므로 화면 읽기 프로그램을 쓰지 않으면 꺼 두세요."
   }
 }

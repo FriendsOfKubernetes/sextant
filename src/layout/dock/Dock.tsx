@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useRef, type CSSProperties, type KeyboardEvent, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
 import { EmptyState, Icon, renderIcon } from "../../components";
@@ -58,7 +58,9 @@ export function Dock() {
     >
       <div className="dock__header">
         {/* The tab list holds only the tabs (ARIA). It spans a grid of tab/close column pairs and lays its tabs on the
-            odd columns (subgrid); the close buttons, its siblings, take the even ones, so each sits beside its tab. */}
+            odd columns (subgrid); the close buttons, its siblings, take the even ones, so each sits beside its tab. Without
+            subgrid (older engines) the tabs get one width and each close button is placed by `--dock-tab-index`
+            (layout.css). */}
         <div
           className="dock__tabs"
           style={dock.tabs.length > 0 ? { gridTemplateColumns: `repeat(${dock.tabs.length}, max-content max-content)` } : undefined}
@@ -81,7 +83,7 @@ export function Dock() {
                   aria-keyshortcuts="Delete"
                   tabIndex={active ? 0 : -1}
                   className={active ? "dock__tab-title dock__tab-title--active" : "dock__tab-title"}
-                  style={{ gridColumn: index * 2 + 1 }}
+                  style={{ gridColumn: index * 2 + 1, "--dock-tab-index": index } as CSSProperties}
                   onClick={() => setActiveDockTab(tab.id)}
                   onKeyDown={(e) => onTabKey(e, index)}
                 >
@@ -101,7 +103,7 @@ export function Dock() {
               }
               // Only the active tab's close button is a tab stop (right after its tab); Delete closes any tab.
               tabIndex={tab.id === dock.activeTabId ? 0 : -1}
-              style={{ gridColumn: index * 2 + 2 }}
+              style={{ gridColumn: index * 2 + 2, "--dock-tab-index": index } as CSSProperties}
               aria-label={t("common:actions.closeTab", { title: tab.title })}
               onClick={() => closeDockTab(tab.id)}
             >

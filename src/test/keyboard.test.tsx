@@ -1,5 +1,7 @@
 // Keyboard access (#158): dialogs trap and return the focus, the details panel and the dock take it and give it back,
 // the terminal has a key that leaves it, popups return the focus to their opener.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -290,6 +292,28 @@ describe("dock", () => {
     fireEvent.keyDown(document.activeElement!, { key: "Delete" });
     expect(useAppStore.getState().dock.tabs.map((t) => t.id)).toEqual(["b"]);
     expect(screen.getByRole("button", { name: "Close tab web-2" })).toBeInTheDocument();
+  });
+
+  it("keeps tabs and their close buttons in line where subgrid is missing, the tab list still a real box", () => {
+    render(<Dock />);
+    act(() => void useAppStore.getState().openDockTab({ id: "a", type: "logs", title: "web-1", payload: null }));
+    act(() => void useAppStore.getState().openDockTab({ id: "b", type: "logs", title: "web-2", payload: null }));
+    // Each tab and its close button carry the tab's index, which places the button in the fallback.
+    expect(screen.getByRole("tab", { name: "web-2" }).style.getPropertyValue("--dock-tab-index")).toBe("1");
+    expect(screen.getByRole("button", { name: "Close tab web-2" }).style.getPropertyValue("--dock-tab-index")).toBe("1");
+
+    const css = readFileSync(join(process.cwd(), "src/layout/layout.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    const start = css.indexOf("@supports not (grid-template-columns: subgrid)");
+    expect(start, "the fallback for engines without subgrid").toBeGreaterThan(-1);
+    const block = css.slice(start, css.indexOf("\n}\n", start));
+    const rule = (selector: string) =>
+      new RegExp(`${selector.replace(".", "\\.")}\\s*\\{([^}]*)\\}`).exec(block)?.[1] ?? "";
+    expect(rule(".dock__tablist")).toMatch(/display:\s*flex/);
+    expect(block).not.toMatch(/display:\s*contents/);
+    expect(rule(".dock__tab-title")).toMatch(/width:\s*var\(--dock-tab-width\)/);
+    expect(rule(".dock__tab-close")).toMatch(/position:\s*absolute/);
+    expect(rule(".dock__tab-close")).toMatch(/left:\s*calc\(\(var\(--dock-tab-index\) \+ 1\) \* var\(--dock-tab-width\)/);
+    expect(cssRule("src/layout/layout.css", ".dock__tabs")["--dock-tab-width"]).toBeDefined();
   });
 });
 

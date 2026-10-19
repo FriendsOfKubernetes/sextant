@@ -46,7 +46,7 @@
   border-radius: 4px;
   background: var(--color-sidebar);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -56,7 +56,7 @@
 }
 
 .mcp__feedback {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
@@ -68,7 +68,7 @@
   border-radius: 4px;
   background: var(--color-sidebar);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 260px;
@@ -111,7 +111,7 @@
 .mcp-activity__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .mcp-activity__table th,
@@ -183,7 +183,7 @@
 
 .mcp-confirm__details-title {
   margin: 12px 0 4px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .mcp-confirm__details {
@@ -195,7 +195,7 @@
   border-radius: 4px;
   background: var(--color-sidebar);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -208,7 +208,7 @@
 .mcp-confirm__countdown {
   margin-right: auto;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* "Allow" right after a request appeared: ignores the keyboard for a second (#158). */

@@ -16,7 +16,7 @@
 
 .gw-card__label {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   margin-bottom: 2px;
 }
 
@@ -104,13 +104,13 @@
 
 .gw-rule__line {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
 .gw-rule__filters {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -158,7 +158,7 @@
 
 .gw-page__title {
   margin: 0;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -187,7 +187,7 @@
 
 .gw-ptable th,
 .gw-ptable td {
-  height: 32px;
+  height: var(--control-height);
   padding: 0 8px;
   vertical-align: middle;
   white-space: nowrap;
@@ -223,7 +223,7 @@
 }
 
 .gw-address {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-address__url {
@@ -241,7 +241,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-tree__cell {
@@ -253,11 +253,11 @@
 
 .gw-tree__kind {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-tree__detail {
-  font-size: 12px;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -322,7 +322,7 @@
 
 .gw-check__label {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-check__toggle {
@@ -348,7 +348,7 @@
 .gw-check__url,
 .gw-check__headers {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-check__headers {
@@ -364,7 +364,7 @@
 .gw-check__error {
   margin: 0;
   color: var(--color-danger);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-check__outcome {
@@ -413,12 +413,12 @@
 .gw-step__match {
   margin-top: 2px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-step__why {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .gw-step__list {

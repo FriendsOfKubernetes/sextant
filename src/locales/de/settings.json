@@ -101,5 +101,19 @@
     "failed": "Die installierten Schriften konnten nicht gelesen werden.",
     "notInstalled": "{{family}} ist auf diesem Computer nicht installiert; die eingebaute Schrift wird verwendet.",
     "current": "Gewählt: {{family}}"
+  },
+  "accessibility": {
+    "reduceMotion": "Bewegung reduzieren",
+    "reduceMotionChoices": {
+      "system": "System",
+      "on": "Ein",
+      "off": "Aus"
+    },
+    "reduceMotionHint": "„System“ folgt der Einstellung „Bewegung reduzieren“ des Betriebssystems. Reduzierte Bewegung schaltet Übergänge, Animationen, sanftes Scrollen und den blinkenden Terminal-Cursor ab.",
+    "textSize": "Textgröße der Oberfläche",
+    "percent": "{{value}} %",
+    "textSizeHint": "Text, Tabellenzeilen und Bedienelemente wachsen mit; Terminal, Logs und YAML-Editor folgen.",
+    "terminalScreenReader": "Screenreader-Unterstützung im Terminal",
+    "terminalScreenReaderHint": "Lässt einen Screenreader die Terminalausgabe lesen. Das verlangsamt das Terminal; lassen Sie es aus, wenn Sie keinen Screenreader verwenden."
   }
 }

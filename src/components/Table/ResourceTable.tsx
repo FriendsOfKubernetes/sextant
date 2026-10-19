@@ -22,6 +22,7 @@ import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { isCapped, uidOf, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
+import { useCssLength } from "../../app/accessibility";
 import { useAppStore, useClusterView } from "../../app/store";
 import {
   actionLabel,
@@ -55,8 +56,11 @@ import { compileSearch, searchTerms } from "./search";
 import { joinSelectors, serverSelectors } from "./selectors";
 import "./table.css";
 
+/**
+ * A row's height at the default text size; the header row is as high. The table measures `--table-row-height`
+ * (table.css, in rem, so rows grow with the interface text size) and uses this only where nothing is laid out.
+ */
 export const ROW_HEIGHT = 33;
-const HEADER_HEIGHT = 33;
 const AGE_TICK_MS = 10_000;
 
 export interface ResourceTableProps {
@@ -370,7 +374,8 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     if (target.getAttribute("role") !== "row" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
     const from = Number(target.dataset.index ?? 0);
     const view = virtualizer.scrollElement?.clientHeight ?? 0;
-    const page = Math.max(1, Math.floor((view - HEADER_HEIGHT) / ROW_HEIGHT) - 1);
+    const rowHeight = virtualizer.options.estimateSize(from);
+    const page = Math.max(1, Math.floor((view - virtualizer.options.scrollMargin) / rowHeight) - 1);
     const last = rows.length - 1;
     const next = rowKeyTarget(e.key, from, last, page);
     if (next === null) return;
@@ -708,14 +713,20 @@ function RowsScroller({
   children: (virtualizer: Virtualizer<HTMLDivElement, Element>) => ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Rows and the header are `--table-row-height` high, measured again when the interface text size changes.
+  const rowHeight = useCssLength("--table-row-height", ROW_HEIGHT);
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeight,
     getItemKey,
     overscan: 10,
-    scrollMargin: HEADER_HEIGHT,
+    scrollMargin: rowHeight,
   });
+  // The rows were placed at the old height: place them again.
+  useEffect(() => {
+    virtualizer.measure();
+  }, [virtualizer, rowHeight]);
   return (
     <div className="rt__scroll" ref={scrollRef}>
       {children(virtualizer)}

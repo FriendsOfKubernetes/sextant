@@ -64,7 +64,7 @@
 .ext-row__version,
 .ext-row__meta {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .ext-row__meta {
@@ -125,7 +125,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .ext-consent__description {
@@ -151,7 +151,7 @@
 
 .ext-consent__heading {
   margin: 12px 0 4px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .ext-consent__review,
@@ -173,7 +173,7 @@
 
 .ext-perms__heading {
   margin: 8px 0 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   text-transform: uppercase;
 }

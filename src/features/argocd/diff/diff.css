@@ -68,7 +68,7 @@
 }
 
 .argo-diff__state {
-  font-size: 12px;
+  font-size: 0.75rem;
   opacity: 0.8;
 }
 
@@ -139,7 +139,7 @@
 
 .argo-login__hint,
 .argo-login__detail {
-  font-size: 12px;
+  font-size: 0.75rem;
   opacity: 0.8;
   overflow-wrap: anywhere;
 }

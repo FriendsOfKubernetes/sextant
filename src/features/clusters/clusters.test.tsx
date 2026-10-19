@@ -62,6 +62,8 @@ function setup(
 
 const rail = () => screen.getByRole("navigation", { name: "Clusters" });
 const railButton = (name: string) => within(rail()).getByRole("button", { name });
+/** The letters and seconds drawn on a cluster icon: generated content from `data-text` (WCAG 2.5.3, #186). */
+const drawnText = (el: HTMLElement) => [...el.querySelectorAll("[data-text]")].map((e) => e.getAttribute("data-text")).join(" ");
 const commands = (cmd: string) => backend.calls.filter((c) => c.cmd === cmd);
 
 beforeEach(() => {
@@ -112,7 +114,9 @@ describe("cluster rail", () => {
     const connection = screen.getByText("Connecting to kind-alpha…").closest("[role=status]");
     expect(connection).toHaveTextContent(/Connecting to kind-alpha…\s*7 s/);
     expect(within(connection as HTMLElement).getByText("The cluster is slow to respond")).toBeInTheDocument();
-    expect(within(railButton("kind-alpha")).getByText("7 s")).toBeInTheDocument();
+    expect(drawnText(railButton("kind-alpha"))).toContain("7 s");
+    // Only the name is text in the button, so its accessible name contains all of its visible text.
+    expect(railButton("kind-alpha")).not.toHaveTextContent("7 s");
     expect(railButton("kind-alpha")).toHaveAttribute("title", expect.stringContaining("The cluster is slow to respond"));
   });
 
@@ -451,16 +455,17 @@ describe("cluster icon", () => {
     setup([alpha]);
     render(<AppShell />);
     const dialog = await openIconSettings();
-    expect(preview(dialog)).toHaveTextContent("KA");
+    expect(drawnText(preview(dialog))).toBe("KA");
+    expect(railButton("kind-alpha")).not.toHaveTextContent("KA");
 
     const text = within(dialog).getByRole("textbox", { name: "Icon text" });
     expect(text).toHaveFocus();
     fireEvent.change(text, { target: { value: "🚀ab" } });
     expect(text).toHaveValue("🚀a");
-    expect(preview(dialog)).toHaveTextContent("🚀a");
+    expect(drawnText(preview(dialog))).toBe("🚀a");
     fireEvent.blur(text);
     await waitFor(() => expect(backend.settings.clusters.aaaa?.icon).toEqual({ type: "text", text: "🚀a" }));
-    expect(railButton("kind-alpha")).toHaveTextContent("🚀a");
+    expect(drawnText(railButton("kind-alpha"))).toBe("🚀a");
     expect(railButton("kind-alpha")).toHaveAttribute("data-state", "disconnected");
   });
 
@@ -478,12 +483,12 @@ describe("cluster icon", () => {
     await waitFor(() => expect(backend.settings.clusters.aaaa?.icon).toEqual({ type: "image", dataUrl: png }));
     expect(preview(dialog).querySelector("img")).toHaveAttribute("src", png);
     expect(railButton("kind-alpha").querySelector("img")).toHaveAttribute("src", png);
-    expect(railButton("kind-alpha")).not.toHaveTextContent("KA");
+    expect(drawnText(railButton("kind-alpha"))).not.toContain("KA");
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Reset icon" }));
     await waitFor(() => expect(backend.settings.clusters.aaaa?.icon).toBeNull());
     expect(railButton("kind-alpha").querySelector("img")).toBeNull();
-    expect(railButton("kind-alpha")).toHaveTextContent("KA");
+    expect(drawnText(railButton("kind-alpha"))).toBe("KA");
     // The color is not part of the icon.
     expect(backend.settings.clusters.aaaa?.color).toBe("#48a868");
     expect(railButton("kind-alpha").style.getPropertyValue("--cluster-color")).toBe("#48a868");
@@ -510,7 +515,7 @@ describe("cluster icon", () => {
 
     expect(commands("settings_update")).toHaveLength(0);
     expect(backend.settings.clusters.aaaa?.icon).toEqual({ type: "text", text: "Z" });
-    expect(railButton("kind-alpha")).toHaveTextContent("Z");
+    expect(drawnText(railButton("kind-alpha"))).toBe("Z");
   });
 });
 

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockBackend, type MockBackend, type SystemFont } from "../../api";
+import { defaultAppSettings, mockBackend, type MockBackend, type SystemFont } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { axeViolations } from "../../test/axe";
 import { resetClustersStore } from "../clusters/clustersStore";
@@ -87,7 +87,7 @@ describe("Fonts in Settings -> Appearance", () => {
       monospace: false,
     }));
     backend.on("system_fonts", () => many);
-    backend.settings.appearance = { uiFont: { kind: "custom", family: "Family 0500" }, monoFont: { kind: "builtin" } };
+    backend.settings.appearance = { ...defaultAppSettings().appearance, uiFont: { kind: "custom", family: "Family 0500" } };
     renderPage();
     const list = await screen.findByRole("listbox", { name: "Interface font: installed fonts" });
     const previewed = () =>
@@ -120,7 +120,7 @@ describe("Fonts in Settings -> Appearance", () => {
   });
 
   it("says when the chosen family is not installed here (the built-in font is used)", async () => {
-    backend.settings.appearance = { uiFont: { kind: "custom", family: "Gone Sans" }, monoFont: { kind: "builtin" } };
+    backend.settings.appearance = { ...defaultAppSettings().appearance, uiFont: { kind: "custom", family: "Gone Sans" } };
     renderPage();
     expect(
       await screen.findByText("Gone Sans is not installed on this computer; the built-in font is used."),

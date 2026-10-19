@@ -16,7 +16,7 @@
 
 .np-page__title {
   margin: 0;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -92,7 +92,7 @@
 
 .np-field__label {
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .np-field select,
@@ -155,7 +155,7 @@
 
 .np-side__title {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -210,12 +210,12 @@
 
 .np-warning-inline {
   color: var(--color-warning);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .np-subtitle {
   margin: 12px 0 6px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -223,7 +223,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   font: inherit;
   cursor: pointer;
   text-align: left;
@@ -262,13 +262,13 @@
 
 .np-policy__title {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
 .np-policy__dir {
   margin: 8px 0 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-muted);
 }

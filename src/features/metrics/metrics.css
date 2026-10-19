@@ -32,7 +32,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   font: inherit;
   cursor: pointer;
 }
@@ -61,7 +61,7 @@
 
 .mx-section__title {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -106,7 +106,7 @@
 .mx-amount__note {
   margin-inline-start: 0.3em;
   opacity: 0.8;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 div.mx-amount__spec {
@@ -133,7 +133,7 @@ div.mx-amount__spec {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .mx-chart__title {
