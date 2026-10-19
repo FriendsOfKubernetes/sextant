@@ -198,6 +198,26 @@ impl Drop for KillOnDrop {
     }
 }
 
+/// Starts `cmd`, retrying for a moment while the executable is busy (`ETXTBSY`): a binary just written, or being
+/// replaced by an upgrade, can still be open for writing in another process (seen with a fake `helm` written while a
+/// parallel test forks). The same rule as the cloud CLIs (`cloud::spawn_when_not_busy`), without blocking the runtime.
+async fn spawn_when_not_busy(cmd: &mut Command) -> std::io::Result<Child> {
+    let give_up = tokio::time::Instant::now() + Duration::from_secs(5);
+    let mut pause = Duration::from_millis(5);
+    loop {
+        match cmd.spawn() {
+            Err(e)
+                if e.kind() == std::io::ErrorKind::ExecutableFileBusy
+                    && tokio::time::Instant::now() + pause < give_up =>
+            {
+                tokio::time::sleep(pause).await;
+                pause = (pause * 2).min(Duration::from_millis(100));
+            }
+            spawned => return spawned,
+        }
+    }
+}
+
 /// Runs `cmd` to the end; `input` (if any) is written to its stdin, which is then closed. Waits without blocking the
 /// runtime, and kills the process when the returned future is dropped before it has exited (kill on drop). `keep`
 /// (temporary files the call reads) lives until the process has exited.
@@ -209,7 +229,7 @@ async fn run_child<K: Send + 'static>(
     if input.is_some() {
         cmd.stdin(Stdio::piped());
     }
-    let mut child = cmd.spawn()?;
+    let mut child = spawn_when_not_busy(&mut cmd).await?;
     if let (Some(mut stdin), Some(input)) = (child.stdin.take(), input) {
         // `helm` may exit before reading (e.g. a refused flag); its exit status and stderr tell what happened.
         std::thread::spawn(move || {
