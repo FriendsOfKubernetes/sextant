@@ -58,6 +58,10 @@ pub async fn kubeconfig_remove(
         .collect();
     write_registry(&state).remove_source(&source_id)?;
     save_sources(&state)?;
+    // Adding the same file again asks again before Sextant may edit it.
+    state.settings.update(|s| {
+        sextant_core::kubeconfig::edit::forget_source_settings(s, &source_id);
+    })?;
     for id in affected {
         disconnect_cluster(&state, &id).await;
     }

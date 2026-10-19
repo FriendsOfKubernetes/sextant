@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "Sütunlar",
+    "labelSelector": "Label selector: {{selector}}",
+    "clearLabelSelector": "Label selector'ı kaldır"
+  },
+  "save": {
+    "button": "Görünümü kaydet",
+    "title": "Görünümü kaydet",
+    "name": "Ad",
+    "namePlaceholder": "shop içindeki hatalı pod'lar",
+    "scope": "Gösterileceği yer",
+    "scopeCluster": "Bu küme",
+    "scopeAll": "Tüm kümeler",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "Kümeden istenir, örneğin app=web,tier!=db. Hiçbiri için boş bırakın.",
+    "pin": "Favorilere sabitle",
+    "captures": "Kaynak türünü, namespace'leri, arama metnini, \"Yalnızca sorunlar\"ı, label selector'ı, sıralamayı ve görünür sütunları kaydeder.",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "full": "Görünüm listesi dolu. Önce bir görünümü silin."
+  },
+  "sidebar": {
+    "favourites": "Favoriler",
+    "views": "Görünümler",
+    "manage": "Görünümleri ve çalışma alanlarını yönet",
+    "openView": "{{name}} görünümünü aç",
+    "openObject": "{{kind}} {{name}} öğesini aç",
+    "unpin": "{{name}} sabitlemesini kaldır",
+    "pinView": "{{name}} görünümünü sabitle",
+    "allClusters": "Tüm kümeler"
+  },
+  "pin": {
+    "action": "Favorilere sabitle",
+    "unpinAction": "Favorilerden kaldır"
+  },
+  "palette": {
+    "views": "Kaydedilmiş görünümler",
+    "favourites": "Favoriler",
+    "allClusters": "Tüm kümeler",
+    "thisCluster": "Bu küme"
+  },
+  "workspace": {
+    "switcher": "Çalışma alanı",
+    "current": "Çalışma alanı: {{name}}",
+    "all": "Tüm kümeler",
+    "manage": "Çalışma alanlarını yönet…",
+    "hint": "Bir çalışma alanı, çubukta yalnızca kendi kümelerini gösterir. Geçiş yapmak hiçbir zaman bir kümeyi bağlamaz veya bağlantısını kesmez."
+  },
+  "manager": {
+    "title": "Görünümler ve çalışma alanları",
+    "tabs": {
+      "views": "Görünümler",
+      "workspaces": "Çalışma alanları",
+      "transfer": "Dışa ve içe aktarma"
+    },
+    "noViews": "Henüz kaydedilmiş görünüm yok. Bir tablo açın ve başlığında \"Görünümü kaydet\"i seçin.",
+    "rename": "{{name}} adını değiştir",
+    "renameField": "{{name}} için yeni ad",
+    "moveUp": "{{name}} öğesini yukarı taşı",
+    "moveDown": "{{name}} öğesini aşağı taşı",
+    "delete": "{{name}} öğesini sil",
+    "deleteConfirm": "{{name}} görünümü silinsin mi? Sabitlemeleri de kaldırılır.",
+    "missingCluster": "Küme bulunamadı",
+    "kindIn": "{{cluster}} içinde {{kind}}",
+    "noWorkspaces": "Henüz çalışma alanı yok.",
+    "newWorkspace": "Yeni çalışma alanı",
+    "workspaceName": "Çalışma alanı adı",
+    "workspaceClusters": "Bu çalışma alanındaki kümeler",
+    "saveWorkspace": "Çalışma alanını kaydet",
+    "editWorkspace": "{{name}} öğesini düzenle",
+    "deleteWorkspace": "{{name}} çalışma alanını sil",
+    "deleteWorkspaceConfirm": "{{name}} çalışma alanı silinsin mi? Kümeleri, görünümleri ve sabitlemeleri kalır.",
+    "workspaceClusterCount": "Kümeler: {{number}}",
+    "use": "Kullan",
+    "inUse": "Kullanımda",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete_button": "Sil"
+  },
+  "transfer": {
+    "exportTitle": "Dışa aktar",
+    "exportHint": "Görünümlerinizi, sabitlemelerinizi, çalışma alanlarınızı ve kümeleri başvuru olarak içeren bir JSON dosyası yazar: kubeconfig dosyasının yolu ve context adı. Kimlik bilgileri, dosya içerikleri, token'lar ve uzantılar asla eklenmez.",
+    "includeAgentAccess": "Ajan erişim kurallarını ekle",
+    "export": "Dışa aktar…",
+    "exportDialog": "Görünümleri ve çalışma alanlarını dışa aktar",
+    "exported": "{{path}} konumuna kaydedildi",
+    "filter": "Sextant görünümleri",
+    "importTitle": "İçe aktar",
+    "importHint": "Bir şey kaydedilmeden önce neyin değişeceğini gösterir.",
+    "import": "İçe aktar…",
+    "importDialog": "Görünümleri ve çalışma alanlarını içe aktar",
+    "invalid": "Bu dosya içe aktarılamaz:",
+    "preview": "Önizleme",
+    "sections": {
+      "clusters": "Kümeler",
+      "views": "Görünümler",
+      "pins": "Sabitlemeler",
+      "workspaces": "Çalışma alanları"
+    },
+    "status": {
+      "added": "Eklenecek",
+      "changed": "Değişecek",
+      "kept": "Değişmedi",
+      "skipped": "Atlandı",
+      "missing": "Bu bilgisayarda yok"
+    },
+    "clusterFields": "Ayarlar: {{fields}}",
+    "clusterChanges": "Değiştirir: {{fields}}",
+    "clusterSame": "Değişecek bir şey yok",
+    "skippedHint": "Kümesi bu bilgisayarda yok",
+    "matchExact": "Aynı kubeconfig dosyası ve context",
+    "matchName": "Yalnızca context adıyla eşleşti: başka bir küme olabilir",
+    "agentAccessSkipped": "Ajan erişim kuralları uygulanmaz: küme yalnızca adıyla eşleşti",
+    "fields": {
+      "displayName": "görünen ad",
+      "color": "renk",
+      "icon": "simge",
+      "namespaces": "namespace filtresi",
+      "previewChanges": "değişiklik önizlemesi",
+      "agentAccess": "ajan erişim kuralları"
+    },
+    "overwrite": "Benimkilerden farklı olan kayıtları değiştir",
+    "applyAgentAccess": "Dosyadaki ajan erişim kurallarını uygula",
+    "agentAccessWarning": "Ajan erişim kuralları, yapay zekâ ajanlarının bir kümede ne yapabileceğini belirler. Bunları yalnızca güvendiğiniz bir dosyadan uygulayın.",
+    "nothing": "Bu seçimlerle içe aktarılacak bir şey yok.",
+    "changes": "Kaydedilecek kayıtlar: {{number}}",
+    "apply": "İçe aktar",
+    "cancel": "İptal",
+    "done": "İçe aktarıldı."
+  }
+}

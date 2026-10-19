@@ -36,6 +36,13 @@ import type { CloudQuery } from "./generated/CloudQuery";
 import type { CloudSearch } from "./generated/CloudSearch";
 import type { ClusterId } from "./generated/ClusterId";
 import type { ClusterInfo } from "./generated/ClusterInfo";
+import type { CredentialExpiry } from "./generated/CredentialExpiry";
+import type { EditOutcome } from "./generated/EditOutcome";
+import type { EditPreview } from "./generated/EditPreview";
+import type { EditTarget } from "./generated/EditTarget";
+import type { KubeconfigEdit } from "./generated/KubeconfigEdit";
+import type { KubeconfigInput } from "./generated/KubeconfigInput";
+import type { KubeconfigValidation } from "./generated/KubeconfigValidation";
 import type { ConnectionState } from "./generated/ConnectionState";
 import type { DebugSpec } from "./generated/DebugSpec";
 import type { DrainOptions } from "./generated/DrainOptions";
@@ -351,6 +358,11 @@ export const about = {
 
 export const files = {
   save: (path: string, contents: string) => call<void>("file_save", { path, contents }),
+  /**
+   * Shows the open dialog and reads the saved-views export file the user picked there: UTF-8 text, at most 1 MiB
+   * (#149); `null` when the dialog was cancelled. The window never names the path: the backend reads only the pick.
+   */
+  openViewsImport: (title: string, filter: string) => call<string | null>("views_import_open", { title, filter }),
   /** What `path` in a container is (file, folder, link) and how big. `container` null: the default one. */
   stat: (clusterId: ClusterId, pod: ObjectRef, container: string | null, path: string) =>
     call<RemoteEntry>("files_stat", { clusterId, pod, container, path }),
@@ -473,6 +485,26 @@ export const rbac = {
   canI: (clusterId: ClusterId, queries: AccessQuery[]) => call<AccessAnswer[]>("rbac_can_i", { clusterId, queries }),
   /** What the current user may do in `namespace` (SelfSubjectRulesReview; `incomplete` when an authorizer cannot list). */
   rulesReview: (clusterId: ClusterId, namespace: string) => call<RulesReview>("rbac_rules_review", { clusterId, namespace }),
+};
+
+/**
+ * Kubeconfig management (#150), window only: changes to kubeconfig files in two steps (`editPreview`, then
+ * `editApply` with the preview's `base`; a file changed meanwhile is a `conflict`), credential expiry, and the checks of
+ * a kubeconfig being added. Nothing of a credential comes back. Agents and extensions have no such call.
+ */
+export const kubeconfig = {
+  editPreview: (edit: KubeconfigEdit) => call<EditPreview>("kubeconfig_edit_preview", { edit }),
+  /** Writes the change (with a `.bak-<time>` copy); refresh the clusters and the settings after. */
+  editApply: (edit: KubeconfigEdit, base: string) => call<EditOutcome>("kubeconfig_edit_apply", { edit, base }),
+  /** What the kubeconfig tells about when each cluster's credentials expire; nothing is run. */
+  credentials: () => call<CredentialExpiry[]>("kubeconfig_credentials"),
+  /** Where a change to the source is really written (symlinks followed) and where its backups go. */
+  editTarget: (sourceId: string) => call<EditTarget>("kubeconfig_edit_target", { sourceId }),
+  /** Offline checks of a file or pasted text before it is added. */
+  validate: (input: KubeconfigInput) => call<KubeconfigValidation>("kubeconfig_validate", { input }),
+  /** Connects once to `context` (the user asked); rejects with the usual connection errors. */
+  checkConnection: (input: KubeconfigInput, context: string) =>
+    call<void>("kubeconfig_check_connection", { input, context }),
 };
 
 /**

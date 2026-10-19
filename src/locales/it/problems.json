@@ -27,6 +27,7 @@
     "argocd": "Argo CD",
     "gateway": "Gateway API",
     "security": "Sicurezza",
+    "credentials": "Credenziali",
     "events": "Eventi di avviso"
   },
   "messages": {

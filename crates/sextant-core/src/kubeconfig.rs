@@ -16,6 +16,10 @@ use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
+pub mod edit;
+pub mod expiry;
+pub mod validate;
+
 /// Where a kubeconfig file came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +36,9 @@ pub enum SourceKind {
     /// Clusters imported from a cloud CLI (`aws`, `gcloud`, `az`); Sextant's own file `cloud-<provider>.yaml` in the
     /// app data directory.
     Cloud,
+    /// Sextant's own file `merged.yaml` in the app data directory: kubeconfig files the user merged into one
+    /// ([`edit::KubeconfigEdit::Merge`]).
+    Merged,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -397,7 +404,10 @@ impl KubeconfigRegistry {
             );
         };
         let removed = self.extra_sources.remove(index);
-        let own_file = matches!(removed.kind, SourceKind::Pasted | SourceKind::Cloud);
+        let own_file = matches!(
+            removed.kind,
+            SourceKind::Pasted | SourceKind::Cloud | SourceKind::Merged
+        );
         if own_file && removed.path.starts_with(&self.pasted_dir) {
             match std::fs::remove_file(&removed.path) {
                 Err(err) if err.kind() != std::io::ErrorKind::NotFound => return Err(err.into()),
@@ -405,6 +415,69 @@ impl KubeconfigRegistry {
             }
         }
         Ok(())
+    }
+
+    /// The directory of Sextant's own kubeconfig files (pasted text, `cloud-<provider>.yaml`, `merged.yaml`).
+    pub fn own_dir(&self) -> &Path {
+        &self.pasted_dir
+    }
+
+    /// Whether `source` is one of Sextant's own files (pasted, cloud, merged) in [`Self::own_dir`]: those Sextant
+    /// may always edit; any other file only when the user allowed it.
+    pub fn is_own(&self, source: &KubeconfigSource) -> bool {
+        matches!(
+            source.kind,
+            SourceKind::Pasted | SourceKind::Cloud | SourceKind::Merged
+        ) && source.path.starts_with(&self.pasted_dir)
+    }
+
+    /// The source `id` belongs to and the context's name in it.
+    pub(crate) fn locate(&self, id: &ClusterId) -> CoreResult<(KubeconfigSource, String)> {
+        let (loaded, _) = self.load();
+        for entry in &loaded {
+            for ctx in &entry.own.contexts {
+                if ClusterId::for_context(&entry.source.path, &ctx.name) == *id {
+                    return Ok((entry.source.clone(), ctx.name.clone()));
+                }
+            }
+        }
+        Err(CoreError::new(
+            ErrorCode::NotFound,
+            "the cluster is no longer in the kubeconfig; refresh the list",
+        ))
+    }
+
+    /// Every listed source (without reading the files).
+    pub(crate) fn all_sources(&self) -> Vec<KubeconfigSource> {
+        self.listed_sources()
+    }
+
+    /// Registers Sextant's own merged file as a source (once) and returns it.
+    pub(crate) fn register_merged(&mut self, path: PathBuf) -> KubeconfigSource {
+        if let Some(existing) = self.listed_sources().into_iter().find(|s| s.path == path) {
+            return existing;
+        }
+        let added = source(path, SourceKind::Merged);
+        self.extra_sources.push(added.clone());
+        added
+    }
+
+    /// Every context with the config its names resolve in (the merged `KUBECONFIG` for its files), for read-only
+    /// checks ([`expiry`]).
+    pub(crate) fn resolved_contexts(&self) -> Vec<(ClusterId, String, Kubeconfig)> {
+        let (loaded, _) = self.load();
+        loaded
+            .iter()
+            .flat_map(|entry| {
+                entry.own.contexts.iter().map(|ctx| {
+                    (
+                        ClusterId::for_context(&entry.source.path, &ctx.name),
+                        ctx.name.clone(),
+                        single_context(&entry.resolve, &ctx.name),
+                    )
+                })
+            })
+            .collect()
     }
 
     /// A kubeconfig with just this context, `current-context` set to it.
@@ -630,7 +703,7 @@ impl Loaded {
     }
 }
 
-fn source(path: PathBuf, kind: SourceKind) -> KubeconfigSource {
+pub(crate) fn source(path: PathBuf, kind: SourceKind) -> KubeconfigSource {
     KubeconfigSource {
         id: short_hash(normalized_path(&path).as_os_str().as_encoded_bytes()),
         path,
@@ -651,7 +724,7 @@ fn ensure_contexts(config: &Kubeconfig) -> CoreResult<()> {
 
 /// `config` reduced to one context, its cluster and its user. Missing references are left out; connecting
 /// then reports them.
-fn single_context(config: &Kubeconfig, context: &str) -> Kubeconfig {
+pub(crate) fn single_context(config: &Kubeconfig, context: &str) -> Kubeconfig {
     let named = config.contexts.iter().find(|c| c.name == context).cloned();
     let (cluster, user) = named
         .as_ref()
@@ -680,14 +753,14 @@ fn single_context(config: &Kubeconfig, context: &str) -> Kubeconfig {
 }
 
 #[cfg(unix)]
-fn restrict_permissions(path: &Path) -> CoreResult<()> {
+pub(crate) fn restrict_permissions(path: &Path) -> CoreResult<()> {
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))?;
     Ok(())
 }
 
 #[cfg(not(unix))]
-fn restrict_permissions(_path: &Path) -> CoreResult<()> {
+pub(crate) fn restrict_permissions(_path: &Path) -> CoreResult<()> {
     // Files in the user's profile and temp directory are private to the user on Windows.
     Ok(())
 }
@@ -800,7 +873,7 @@ pub fn certificate_authority_sha256_of(config: &Kubeconfig) -> CoreResult<Option
 }
 
 /// The DER bytes of every `CERTIFICATE` block of PEM text, in order; a block that is not base64 is skipped.
-fn pem_certificates(bytes: &[u8]) -> Vec<Vec<u8>> {
+pub(crate) fn pem_certificates(bytes: &[u8]) -> Vec<Vec<u8>> {
     use base64::Engine as _;
     const BEGIN: &str = "-----BEGIN CERTIFICATE-----";
     const END: &str = "-----END CERTIFICATE-----";

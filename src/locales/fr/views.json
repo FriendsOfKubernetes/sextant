@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "Colonnes",
+    "labelSelector": "Label selector : {{selector}}",
+    "clearLabelSelector": "Retirer le label selector"
+  },
+  "save": {
+    "button": "Enregistrer la vue",
+    "title": "Enregistrer la vue",
+    "name": "Nom",
+    "namePlaceholder": "Pods en échec dans shop",
+    "scope": "Afficher dans",
+    "scopeCluster": "Ce cluster",
+    "scopeAll": "Tous les clusters",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "Demandé au cluster, par exemple app=web,tier!=db. Laissez vide pour aucun.",
+    "pin": "Épingler aux favoris",
+    "captures": "Enregistre le type de ressource, les namespaces, le texte de recherche, « Problèmes uniquement », le label selector, le tri et les colonnes visibles.",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "full": "La liste des vues est pleine. Supprimez d'abord une vue."
+  },
+  "sidebar": {
+    "favourites": "Favoris",
+    "views": "Vues",
+    "manage": "Gérer les vues et les espaces de travail",
+    "openView": "Ouvrir la vue {{name}}",
+    "openObject": "Ouvrir {{kind}} {{name}}",
+    "unpin": "Désépingler {{name}}",
+    "pinView": "Épingler la vue {{name}}",
+    "allClusters": "Tous les clusters"
+  },
+  "pin": {
+    "action": "Épingler aux favoris",
+    "unpinAction": "Retirer des favoris"
+  },
+  "palette": {
+    "views": "Vues enregistrées",
+    "favourites": "Favoris",
+    "allClusters": "Tous les clusters",
+    "thisCluster": "Ce cluster"
+  },
+  "workspace": {
+    "switcher": "Espace de travail",
+    "current": "Espace de travail : {{name}}",
+    "all": "Tous les clusters",
+    "manage": "Gérer les espaces de travail…",
+    "hint": "Un espace de travail n'affiche que ses clusters dans la barre. Changer d'espace ne connecte ni ne déconnecte jamais un cluster."
+  },
+  "manager": {
+    "title": "Vues et espaces de travail",
+    "tabs": {
+      "views": "Vues",
+      "workspaces": "Espaces de travail",
+      "transfer": "Export et import"
+    },
+    "noViews": "Aucune vue enregistrée pour l'instant. Ouvrez un tableau et choisissez « Enregistrer la vue » dans son en-tête.",
+    "rename": "Renommer {{name}}",
+    "renameField": "Nouveau nom de {{name}}",
+    "moveUp": "Monter {{name}}",
+    "moveDown": "Descendre {{name}}",
+    "delete": "Supprimer {{name}}",
+    "deleteConfirm": "Supprimer la vue {{name}} ? Ses épingles sont aussi supprimées.",
+    "missingCluster": "Cluster introuvable",
+    "kindIn": "{{kind}} dans {{cluster}}",
+    "noWorkspaces": "Aucun espace de travail pour l'instant.",
+    "newWorkspace": "Nouvel espace de travail",
+    "workspaceName": "Nom de l'espace de travail",
+    "workspaceClusters": "Clusters de cet espace de travail",
+    "saveWorkspace": "Enregistrer l'espace de travail",
+    "editWorkspace": "Modifier {{name}}",
+    "deleteWorkspace": "Supprimer l'espace de travail {{name}}",
+    "deleteWorkspaceConfirm": "Supprimer l'espace de travail {{name}} ? Ses clusters, vues et épingles sont conservés.",
+    "workspaceClusterCount": "Clusters : {{number}}",
+    "use": "Utiliser",
+    "inUse": "Utilisé",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete_button": "Supprimer"
+  },
+  "transfer": {
+    "exportTitle": "Export",
+    "exportHint": "Écrit un fichier JSON avec vos vues, épingles, espaces de travail et les clusters par référence : le chemin du fichier kubeconfig et le nom du context. Les identifiants, le contenu des fichiers, les jetons et les extensions ne sont jamais inclus.",
+    "includeAgentAccess": "Inclure les règles d'accès des agents",
+    "export": "Exporter…",
+    "exportDialog": "Exporter les vues et les espaces de travail",
+    "exported": "Enregistré dans {{path}}",
+    "filter": "Vues Sextant",
+    "importTitle": "Import",
+    "importHint": "Montre ce qui changerait avant tout enregistrement.",
+    "import": "Importer…",
+    "importDialog": "Importer des vues et des espaces de travail",
+    "invalid": "Ce fichier ne peut pas être importé :",
+    "preview": "Aperçu",
+    "sections": {
+      "clusters": "Clusters",
+      "views": "Vues",
+      "pins": "Épingles",
+      "workspaces": "Espaces de travail"
+    },
+    "status": {
+      "added": "Ajouté",
+      "changed": "Modifié",
+      "kept": "Inchangé",
+      "skipped": "Ignoré",
+      "missing": "Absent de cet ordinateur"
+    },
+    "clusterFields": "Définit : {{fields}}",
+    "clusterChanges": "Modifie : {{fields}}",
+    "clusterSame": "Rien à modifier",
+    "skippedHint": "Son cluster n'est pas sur cet ordinateur",
+    "matchExact": "Même fichier kubeconfig et même context",
+    "matchName": "Associé par le nom du context uniquement : il peut s'agir d'un autre cluster",
+    "agentAccessSkipped": "Les règles d'accès des agents ne sont pas appliquées : le cluster n'a été associé que par son nom",
+    "fields": {
+      "displayName": "nom affiché",
+      "color": "couleur",
+      "icon": "icône",
+      "namespaces": "filtre de namespaces",
+      "previewChanges": "aperçu des modifications",
+      "agentAccess": "règles d'accès des agents"
+    },
+    "overwrite": "Remplacer les entrées qui diffèrent des miennes",
+    "applyAgentAccess": "Appliquer les règles d'accès des agents du fichier",
+    "agentAccessWarning": "Les règles d'accès des agents décident de ce que les agents d'IA peuvent faire dans un cluster. Ne les appliquez qu'à partir d'un fichier de confiance.",
+    "nothing": "Rien à importer avec ces choix.",
+    "changes": "Entrées à enregistrer : {{number}}",
+    "apply": "Importer",
+    "cancel": "Annuler",
+    "done": "Importé."
+  }
+}

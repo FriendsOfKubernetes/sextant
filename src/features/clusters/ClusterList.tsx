@@ -21,6 +21,13 @@ import {
 } from "./clustersStore";
 import { InstallMenuItems } from "../gitops-install/InstallMenuItems";
 import { useClusters } from "./hooks";
+import { openContextEdit } from "./kubeconfig/apply";
+import { ContextEditDialog } from "./kubeconfig/ContextEditDialog";
+import { ExpiryBadge, useCredentialRefresh } from "./kubeconfig/ExpiryBadge";
+import { MergeDialog } from "./kubeconfig/MergeDialog";
+import { sourceKindLabelKey } from "./sources";
+// The active workspace (#149) filters which clusters the rail shows; nothing is connected or disconnected by it.
+import { workspaceClusters } from "../views/model";
 import "./clusters.css";
 
 const DISCONNECTED: ConnectionState = { state: "disconnected" };
@@ -43,11 +50,12 @@ export function ClusterList() {
   const [addOpen, setAddOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
   const broken = sources.filter((s) => s.error);
+  useCredentialRefresh(clusters);
 
   return (
     <div className={expanded ? "cluster-list cluster-list--expanded" : "cluster-list"}>
       <ul className="cluster-list__items" aria-label={t("clusters:rail.list")}>
-        {clusters.map((cluster) => (
+        {workspaceClusters(clusters, settings, activeClusterId).map((cluster) => (
           <li key={cluster.id}>
             <ClusterIcon
               cluster={cluster}
@@ -105,6 +113,8 @@ export function ClusterList() {
       <AddClusterDialog open={addOpen} onClose={() => setAddOpen(false)} />
       <SourceProblemsDialog open={problemsOpen} sources={broken} onClose={() => setProblemsOpen(false)} />
       <ClusterSettingsDialog />
+      <ContextEditDialog />
+      <MergeDialog />
     </div>
   );
 }
@@ -156,6 +166,7 @@ function ClusterIcon({
       <span className="cluster-icon__badge">
         <ClusterAvatar cluster={cluster} settings={settings} />
         <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
+        <ExpiryBadge clusterId={cluster.id} />
         {seconds >= 1 && (
           <span className="cluster-icon__elapsed" data-slow={slow ? "true" : undefined}>
             {t("clusters:connection.seconds", { seconds })}
@@ -217,6 +228,27 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
           {t("clusters:menu.changeIcon")}
         </button>
       </li>
+      <li role="separator" className="cluster-menu__separator" />
+      <li role="none">
+        <button type="button" role="menuitem" onClick={run(() => openContextEdit("rename", menu.cluster))}>
+          {t("kubeconfig:menu.rename")}
+        </button>
+      </li>
+      <li role="none">
+        <button type="button" role="menuitem" onClick={run(() => openContextEdit("namespace", menu.cluster))}>
+          {t("kubeconfig:menu.namespace")}
+        </button>
+      </li>
+      <li role="none">
+        <button type="button" role="menuitem" onClick={run(() => openContextEdit("duplicate", menu.cluster))}>
+          {t("kubeconfig:menu.duplicate")}
+        </button>
+      </li>
+      <li role="none">
+        <button type="button" role="menuitem" onClick={run(() => openContextEdit("delete", menu.cluster))}>
+          {t("kubeconfig:menu.delete")}
+        </button>
+      </li>
     </ul>
   );
 }
@@ -239,7 +271,7 @@ function SourceProblemsDialog({
         {sources.map((source) => (
           <li key={source.id} className="cluster-problems__item">
             <span className="cluster-problems__path">{source.path}</span>
-            <span className="cluster-problems__kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
+            <span className="cluster-problems__kind">{t(sourceKindLabelKey(source.kind))}</span>
             {source.error && <SourceError error={source.error} />}
           </li>
         ))}

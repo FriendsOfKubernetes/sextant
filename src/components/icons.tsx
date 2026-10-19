@@ -138,6 +138,16 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+// Saved views, pins and workspaces (#149).
+import {
+  Bookmark as ViewsBookmark,
+  BookmarkPlus as ViewsBookmarkPlus,
+  Briefcase as ViewsBriefcase,
+  Columns3 as ViewsColumns,
+  Pin as ViewsPin,
+  PinOff as ViewsPinOff,
+  Upload as ViewsUpload,
+} from "lucide-react";
 
 const ICONS = {
   // Actions on resources and the glyphs they replace.
@@ -300,6 +310,14 @@ const ICONS = {
   nodePool: ServerCog,
   nodeClaim: Server,
   nodeClass: Cpu,
+  // Saved views, pins and workspaces (#149).
+  savedView: ViewsBookmark,
+  saveView: ViewsBookmarkPlus,
+  workspace: ViewsBriefcase,
+  columns: ViewsColumns,
+  pin: ViewsPin,
+  unpin: ViewsPinOff,
+  upload: ViewsUpload,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */

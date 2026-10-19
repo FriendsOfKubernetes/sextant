@@ -1,0 +1,31 @@
+# ADR-0084: Kubeconfig files are changed only after a preview, with a backup and an atomic write, and only where the user allowed it
+
+## Context
+
+Until #150 Sextant only read kubeconfig files (and wrote its own: pasted text and `cloud-<provider>.yaml`, ADR-0044). Users asked to rename contexts, set a default namespace, duplicate a context for another namespace, delete stale contexts, merge files, and to know before a client certificate or token expires. A kubeconfig is shared with kubectl, Helm, cloud CLIs and IDEs, holds credentials, and is often a symlink into a dotfiles repository; a broken or half-written `~/.kube/config` locks a user out of every cluster at once. Expiry checks are tempting to do by running the exec plugin, but that starts a cloud login, may open a browser and talks to the network.
+
+## Decision
+
+- **One write path.** Every change goes through `crates/sextant-core/src/kubeconfig/edit.rs` (`KubeconfigRegistry::preview_edit` / `apply_edit`), reached only by the window's `kubeconfig_edit_preview` / `kubeconfig_edit_apply` (`src-tauri/src/commands/kubeconfig.rs`). MCP agents and extensions get none of these commands.
+- **Preview, then confirm.** The preview lists what would change (contexts, clusters, users, `current-context`; names and non-secret fields only, every credential `<hidden>`), says when comments would be lost or the layout would change, and returns `base`, a SHA-256 of what the change was computed from. Apply recomputes the change from the file as it is now and writes only when it is still `base`, and looks again right before the rename; otherwise `conflict` and the user previews again.
+- **Writable only where allowed, enforced in the backend.** Sextant's own files (pasted, cloud, `merged.yaml` in its data directory) are always writable. Any other source — `~/.kube/config`, `KUBECONFIG` files, added files — only when its id is in `kubeconfig.writableSources` ("Allow Sextant to edit" in Settings → Clusters, off by default, asked with a warning that names the real file after symlinks and the backup pattern). The check is in `ensure_writable` in the core, not only in the window; removing a source forgets its permission.
+- **Backup and atomic write.** Before every write the current file is copied to `<real file>.bak-<UTC YYYYMMDD-HHMMSS>` (0600 on Unix, never replacing a copy); only the newest 5 (`MAX_BACKUPS`) of Sextant's own backups of that file are kept, and no file with another name is ever touched. The new content goes to a temporary file in the same directory with the original's permissions (a new file 0600), is synced and renamed over the file, so a crash never leaves half a kubeconfig. A symlink stays a symlink: its target is replaced.
+- **Generic YAML edits.** The document is edited as YAML values, so fields Sextant does not know are kept; comments are not (the preview says so). Deleting a context removes its cluster and user entries only when no other context (also in other `KUBECONFIG` files) uses them; deleting the current context leaves `current-context` unset, never another cluster. Merging copies contexts, clusters and users into `merged.yaml` (registered as a `Merged` source), renames a taken name with `-2`, `-3`, makes relative file paths absolute against the origin's directory, and never changes the merged files.
+- **Settings follow the context.** A cluster's id is derived from its context name, so a rename moves everything kept under the old id (per-cluster settings including agent access, overview selection, muted clusters, last cluster, views, pins, workspaces) to the new id after first forgetting anything left under the new id; a delete purges all of it, so a context created later under the same name starts clean. Renamed and deleted clusters are disconnected.
+- **Credentials are never output.** Nothing of a credential (nor a password in a server or proxy URL) is returned, logged or put in an error.
+- **Expiry and validation are offline.** `expiry.rs` reads a client certificate's `notAfter`, a JWT bearer token's `exp` and an OIDC `id-token`'s `exp` (no signature check; files capped at 256 KiB); for exec plugins and other auth providers it only names the command — **an exec plugin is never run**. `validate.rs` checks a kubeconfig being added (YAML, current context, cluster and user references, server URL, CA and client certificates, named files, the exec command looked up in `PATH`, expired credentials, `insecure-skip-tls-verify`) and shows the problems before adding, with "Add anyway". Connecting happens only on "Check connection".
+- **Expiry notices are opt-in.** A badge on the rail marks expiring (within `kubeconfig.credentialExpiryDays`, 14 by default, 1–365) or expired credentials; notifications use the problem category `credentials`, which is opt-in like `security` and watches nothing.
+
+## Why
+
+- Writing in place was rejected: an interrupted write or a concurrent `kubectl config` call could leave a broken file; temp file + rename and the hash check make both visible as `conflict` instead.
+- Letting the window decide what is writable was rejected: the window is the less trusted side (extensions run in it, ADR-0047), and a stale frontend copy must not unlock `~/.kube/config`.
+- Running exec plugins to learn the token expiry was rejected: it starts logins, may prompt or open a browser, and sends requests the user did not ask for.
+- Keeping comments would need a YAML library that round-trips them; none in use does, so the loss is stated in the preview rather than hidden.
+
+## Consequences
+
+- A user who never ticks "Allow Sextant to edit" has `~/.kube/config` untouched; merging into Sextant's own file still works.
+- Expiry is unknown for exec-plugin users (EKS, GKE, AKS with kubelogin) by design.
+- Backups accumulate up to five per file next to the kubeconfig.
+- Tests: `kubeconfig/edit/tests.rs` (writes, backups, conflicts, symlinks, merge, settings migration), `expiry.rs` and `validate.rs` unit tests, `src/features/clusters/kubeconfig/kubeconfig.test.tsx`, `rail.test.tsx`.

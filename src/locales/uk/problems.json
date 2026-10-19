@@ -29,6 +29,7 @@
     "argocd": "Argo CD",
     "gateway": "Gateway API",
     "security": "Безпека",
+    "credentials": "Облікові дані",
     "events": "Події Warning"
   },
   "messages": {

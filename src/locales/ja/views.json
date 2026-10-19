@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "列",
+    "labelSelector": "Label selector: {{selector}}",
+    "clearLabelSelector": "label selector を解除"
+  },
+  "save": {
+    "button": "ビューを保存",
+    "title": "ビューを保存",
+    "name": "名前",
+    "namePlaceholder": "shop の失敗している Pod",
+    "scope": "表示先",
+    "scopeCluster": "このクラスター",
+    "scopeAll": "すべてのクラスター",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "クラスターに要求されます。例: app=web,tier!=db。不要なら空のままにします。",
+    "pin": "お気に入りにピン留め",
+    "captures": "リソースの種類、namespace、検索テキスト、「問題のみ」、label selector、並べ替え、表示する列を保存します。",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "full": "ビューの一覧がいっぱいです。先にビューを削除してください。"
+  },
+  "sidebar": {
+    "favourites": "お気に入り",
+    "views": "ビュー",
+    "manage": "ビューとワークスペースを管理",
+    "openView": "ビュー {{name}} を開く",
+    "openObject": "{{kind}} {{name}} を開く",
+    "unpin": "{{name}} のピン留めを外す",
+    "pinView": "ビュー {{name}} をピン留め",
+    "allClusters": "すべてのクラスター"
+  },
+  "pin": {
+    "action": "お気に入りにピン留め",
+    "unpinAction": "お気に入りから外す"
+  },
+  "palette": {
+    "views": "保存したビュー",
+    "favourites": "お気に入り",
+    "allClusters": "すべてのクラスター",
+    "thisCluster": "このクラスター"
+  },
+  "workspace": {
+    "switcher": "ワークスペース",
+    "current": "ワークスペース: {{name}}",
+    "all": "すべてのクラスター",
+    "manage": "ワークスペースを管理…",
+    "hint": "ワークスペースを選ぶと、レールにはそのクラスターだけが表示されます。切り替えでクラスターが接続・切断されることはありません。"
+  },
+  "manager": {
+    "title": "ビューとワークスペース",
+    "tabs": {
+      "views": "ビュー",
+      "workspaces": "ワークスペース",
+      "transfer": "エクスポートとインポート"
+    },
+    "noViews": "保存したビューはまだありません。テーブルを開き、ヘッダーの「ビューを保存」を選んでください。",
+    "rename": "{{name}} の名前を変更",
+    "renameField": "{{name}} の新しい名前",
+    "moveUp": "{{name}} を上へ移動",
+    "moveDown": "{{name}} を下へ移動",
+    "delete": "{{name}} を削除",
+    "deleteConfirm": "ビュー {{name}} を削除しますか？ そのピン留めも削除されます。",
+    "missingCluster": "クラスターが見つかりません",
+    "kindIn": "{{cluster}} の {{kind}}",
+    "noWorkspaces": "ワークスペースはまだありません。",
+    "newWorkspace": "新しいワークスペース",
+    "workspaceName": "ワークスペース名",
+    "workspaceClusters": "このワークスペースのクラスター",
+    "saveWorkspace": "ワークスペースを保存",
+    "editWorkspace": "{{name}} を編集",
+    "deleteWorkspace": "ワークスペース {{name}} を削除",
+    "deleteWorkspaceConfirm": "ワークスペース {{name}} を削除しますか？ そのクラスター、ビュー、ピン留めは残ります。",
+    "workspaceClusterCount": "クラスター: {{number}}",
+    "use": "使用",
+    "inUse": "使用中",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete_button": "削除"
+  },
+  "transfer": {
+    "exportTitle": "エクスポート",
+    "exportHint": "ビュー、ピン留め、ワークスペース、参照としてのクラスター（kubeconfig ファイルのパスと context 名）を含む JSON ファイルを書き出します。認証情報、ファイルの内容、トークン、拡張機能は決して含まれません。",
+    "includeAgentAccess": "エージェントのアクセスルールを含める",
+    "export": "エクスポート…",
+    "exportDialog": "ビューとワークスペースをエクスポート",
+    "exported": "{{path}} に保存しました",
+    "filter": "Sextant のビュー",
+    "importTitle": "インポート",
+    "importHint": "保存する前に、何が変わるかを表示します。",
+    "import": "インポート…",
+    "importDialog": "ビューとワークスペースをインポート",
+    "invalid": "このファイルはインポートできません:",
+    "preview": "プレビュー",
+    "sections": {
+      "clusters": "クラスター",
+      "views": "ビュー",
+      "pins": "ピン留め",
+      "workspaces": "ワークスペース"
+    },
+    "status": {
+      "added": "追加",
+      "changed": "変更",
+      "kept": "変更なし",
+      "skipped": "スキップ",
+      "missing": "このコンピューターにはありません"
+    },
+    "clusterFields": "設定: {{fields}}",
+    "clusterChanges": "変更: {{fields}}",
+    "clusterSame": "変更はありません",
+    "skippedHint": "そのクラスターはこのコンピューターにありません",
+    "matchExact": "同じ kubeconfig ファイルと context",
+    "matchName": "context 名だけで一致：別のクラスターの可能性があります",
+    "agentAccessSkipped": "エージェントのアクセスルールは適用されません：クラスターは名前だけで一致しました",
+    "fields": {
+      "displayName": "表示名",
+      "color": "色",
+      "icon": "アイコン",
+      "namespaces": "namespace フィルター",
+      "previewChanges": "変更のプレビュー",
+      "agentAccess": "エージェントのアクセスルール"
+    },
+    "overwrite": "自分のものと異なる項目を置き換える",
+    "applyAgentAccess": "ファイルのエージェントのアクセスルールを適用",
+    "agentAccessWarning": "エージェントのアクセスルールは、AI エージェントがクラスターで何をできるかを決めます。信頼できるファイルからのみ適用してください。",
+    "nothing": "この選択ではインポートするものがありません。",
+    "changes": "保存する項目: {{number}}",
+    "apply": "インポート",
+    "cancel": "キャンセル",
+    "done": "インポートしました。"
+  }
+}

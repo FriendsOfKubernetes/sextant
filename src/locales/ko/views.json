@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "열",
+    "labelSelector": "Label selector: {{selector}}",
+    "clearLabelSelector": "label selector 제거"
+  },
+  "save": {
+    "button": "보기 저장",
+    "title": "보기 저장",
+    "name": "이름",
+    "namePlaceholder": "shop의 실패한 Pod",
+    "scope": "표시 위치",
+    "scopeCluster": "이 클러스터",
+    "scopeAll": "모든 클러스터",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "클러스터에 요청합니다. 예: app=web,tier!=db. 사용하지 않으려면 비워 두세요.",
+    "pin": "즐겨찾기에 고정",
+    "captures": "리소스 종류, namespace, 검색어, '문제만', label selector, 정렬, 표시할 열을 저장합니다.",
+    "save": "저장",
+    "cancel": "취소",
+    "full": "보기 목록이 가득 찼습니다. 먼저 보기를 삭제하세요."
+  },
+  "sidebar": {
+    "favourites": "즐겨찾기",
+    "views": "보기",
+    "manage": "보기 및 작업 공간 관리",
+    "openView": "보기 {{name}} 열기",
+    "openObject": "{{kind}} {{name}} 열기",
+    "unpin": "{{name}} 고정 해제",
+    "pinView": "보기 {{name}} 고정",
+    "allClusters": "모든 클러스터"
+  },
+  "pin": {
+    "action": "즐겨찾기에 고정",
+    "unpinAction": "즐겨찾기에서 고정 해제"
+  },
+  "palette": {
+    "views": "저장된 보기",
+    "favourites": "즐겨찾기",
+    "allClusters": "모든 클러스터",
+    "thisCluster": "이 클러스터"
+  },
+  "workspace": {
+    "switcher": "작업 공간",
+    "current": "작업 공간: {{name}}",
+    "all": "모든 클러스터",
+    "manage": "작업 공간 관리…",
+    "hint": "작업 공간은 레일에 자신의 클러스터만 표시합니다. 전환해도 클러스터가 연결되거나 연결 해제되지 않습니다."
+  },
+  "manager": {
+    "title": "보기 및 작업 공간",
+    "tabs": {
+      "views": "보기",
+      "workspaces": "작업 공간",
+      "transfer": "내보내기 및 가져오기"
+    },
+    "noViews": "저장된 보기가 아직 없습니다. 테이블을 열고 헤더에서 '보기 저장'을 선택하세요.",
+    "rename": "{{name}} 이름 바꾸기",
+    "renameField": "{{name}}의 새 이름",
+    "moveUp": "{{name}} 위로 이동",
+    "moveDown": "{{name}} 아래로 이동",
+    "delete": "{{name}} 삭제",
+    "deleteConfirm": "보기 {{name}}을(를) 삭제할까요? 고정 항목도 함께 제거됩니다.",
+    "missingCluster": "클러스터를 찾을 수 없음",
+    "kindIn": "{{cluster}}의 {{kind}}",
+    "noWorkspaces": "작업 공간이 아직 없습니다.",
+    "newWorkspace": "새 작업 공간",
+    "workspaceName": "작업 공간 이름",
+    "workspaceClusters": "이 작업 공간의 클러스터",
+    "saveWorkspace": "작업 공간 저장",
+    "editWorkspace": "{{name}} 편집",
+    "deleteWorkspace": "작업 공간 {{name}} 삭제",
+    "deleteWorkspaceConfirm": "작업 공간 {{name}}을(를) 삭제할까요? 클러스터, 보기, 고정 항목은 그대로 남습니다.",
+    "workspaceClusterCount": "클러스터: {{number}}",
+    "use": "사용",
+    "inUse": "사용 중",
+    "save": "저장",
+    "cancel": "취소",
+    "delete_button": "삭제"
+  },
+  "transfer": {
+    "exportTitle": "내보내기",
+    "exportHint": "보기, 고정 항목, 작업 공간, 그리고 참조로 기록된 클러스터(kubeconfig 파일 경로와 context 이름)를 담은 JSON 파일을 씁니다. 자격 증명, 파일 내용, 토큰, 확장 프로그램은 절대 포함되지 않습니다.",
+    "includeAgentAccess": "에이전트 접근 규칙 포함",
+    "export": "내보내기…",
+    "exportDialog": "보기 및 작업 공간 내보내기",
+    "exported": "{{path}}에 저장했습니다",
+    "filter": "Sextant 보기",
+    "importTitle": "가져오기",
+    "importHint": "저장하기 전에 무엇이 바뀌는지 보여 줍니다.",
+    "import": "가져오기…",
+    "importDialog": "보기 및 작업 공간 가져오기",
+    "invalid": "이 파일은 가져올 수 없습니다:",
+    "preview": "미리 보기",
+    "sections": {
+      "clusters": "클러스터",
+      "views": "보기",
+      "pins": "고정 항목",
+      "workspaces": "작업 공간"
+    },
+    "status": {
+      "added": "추가",
+      "changed": "변경",
+      "kept": "변경 없음",
+      "skipped": "건너뜀",
+      "missing": "이 컴퓨터에 없음"
+    },
+    "clusterFields": "설정: {{fields}}",
+    "clusterChanges": "변경: {{fields}}",
+    "clusterSame": "변경할 내용 없음",
+    "skippedHint": "해당 클러스터가 이 컴퓨터에 없습니다",
+    "matchExact": "같은 kubeconfig 파일과 context",
+    "matchName": "context 이름으로만 일치: 다른 클러스터일 수 있습니다",
+    "agentAccessSkipped": "에이전트 접근 규칙은 적용되지 않습니다: 클러스터가 이름으로만 일치했습니다",
+    "fields": {
+      "displayName": "표시 이름",
+      "color": "색상",
+      "icon": "아이콘",
+      "namespaces": "namespace 필터",
+      "previewChanges": "변경 미리 보기",
+      "agentAccess": "에이전트 접근 규칙"
+    },
+    "overwrite": "내 항목과 다른 항목을 바꾸기",
+    "applyAgentAccess": "파일의 에이전트 접근 규칙 적용",
+    "agentAccessWarning": "에이전트 접근 규칙은 AI 에이전트가 클러스터에서 무엇을 할 수 있는지 결정합니다. 신뢰할 수 있는 파일에서만 적용하세요.",
+    "nothing": "이 선택으로는 가져올 내용이 없습니다.",
+    "changes": "저장할 항목: {{number}}",
+    "apply": "가져오기",
+    "cancel": "취소",
+    "done": "가져왔습니다."
+  }
+}

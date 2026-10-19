@@ -20,6 +20,35 @@ export interface ClusterView {
   /** Selected namespaces; `null` = all namespaces. */
   namespaces: string[] | null;
   search: string;
+  /**
+   * How the open table is shown beyond the search (#149: what a saved view captures): its filters, sort and hidden
+   * columns. Belongs to the view id it names; another view starts from the defaults (`null`).
+   */
+  table?: TableState | null;
+}
+
+/** Filters, sort and hidden columns of the table of one view (`ClusterView.table`). */
+export interface TableState {
+  /** The view id (sidebar entry) this state belongs to. */
+  view: string;
+  onlyProblems: boolean;
+  /** A label selector the watch is asked for; empty = none. */
+  labelSelector: string;
+  /** The sorted column; `null` = the table's default. */
+  sort: { column: string; desc: boolean } | null;
+  hiddenColumns: string[];
+}
+
+export const DEFAULT_TABLE_STATE: Omit<TableState, "view"> = Object.freeze({
+  onlyProblems: false,
+  labelSelector: "",
+  sort: null,
+  hiddenColumns: [],
+}) as Omit<TableState, "view">;
+
+/** The table state of `view` (the defaults when the stored one belongs to another view). */
+export function tableStateOf(cv: ClusterView, view: string): TableState {
+  return cv.table && cv.table.view === view ? cv.table : { ...DEFAULT_TABLE_STATE, view };
 }
 
 export interface DockState {
@@ -54,6 +83,10 @@ export interface AppState {
   setView(clusterId: ClusterId, view: string | null): void;
   setNamespaces(clusterId: ClusterId, namespaces: string[] | null): void;
   setSearch(clusterId: ClusterId, search: string): void;
+  /** Changes the table state of `view` (starting from the defaults when the stored one is of another view). */
+  setTableState(clusterId: ClusterId, view: string, patch: Partial<Omit<TableState, "view">>): void;
+  /** Opens `view` with this search and table state at once (a saved view); namespaces go through their own setter. */
+  openTableView(clusterId: ClusterId, view: string, search: string, table: Omit<TableState, "view">): void;
 
   openDetails(ref: ObjectRef): void;
   closeDetails(): void;
@@ -101,9 +134,17 @@ export const useAppStore = create<AppState>()((set, get) => {
     ...initialAppState,
 
     setActiveCluster: (clusterId) => set({ activeClusterId: clusterId, details: null }),
-    setView: (clusterId, view) => patchView(clusterId, { view }),
+    // Another view starts with its table's defaults ("Only problems" off, default sort, every column).
+    setView: (clusterId, view) =>
+      patchView(clusterId, get().clusterViews[clusterId]?.table && get().clusterViews[clusterId]?.view !== view ? { view, table: null } : { view }),
     setNamespaces: (clusterId, namespaces) => patchView(clusterId, { namespaces }),
     setSearch: (clusterId, search) => patchView(clusterId, { search }),
+    setTableState: (clusterId, view, patch) =>
+      patchView(clusterId, {
+        table: { ...tableStateOf(get().clusterViews[clusterId] ?? EMPTY_CLUSTER_VIEW, view), ...patch, view },
+      }),
+    openTableView: (clusterId, view, search, table) =>
+      patchView(clusterId, { view, search, table: { ...table, hiddenColumns: [...table.hiddenColumns], view } }),
 
     openDetails: (ref) => set({ details: ref }),
     closeDetails: () => set({ details: null }),

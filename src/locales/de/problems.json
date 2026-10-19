@@ -25,6 +25,7 @@
     "argocd": "Argo CD",
     "gateway": "Gateway API",
     "security": "Sicherheit",
+    "credentials": "Zugangsdaten",
     "events": "Warnereignisse"
   },
   "messages": {

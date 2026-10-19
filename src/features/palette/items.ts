@@ -108,6 +108,15 @@ function goTo(clusterId: ClusterId, view: string): void {
   app.setView(clusterId, view);
 }
 
+/** Groups another feature adds after "Go to" (features/views: saved views and pins). */
+export type NavigationProvider = (input: NavigationInput) => PaletteGroup[];
+const providers = new Map<string, NavigationProvider>();
+
+/** Adds (or replaces, by `id`) a provider of palette groups. */
+export function registerNavigationProvider(id: string, provider: NavigationProvider): void {
+  providers.set(id, provider);
+}
+
 export interface NavigationInput {
   t: TFunction;
   clusterId: ClusterId | null;
@@ -163,6 +172,13 @@ export function navigationGroups({ t, clusterId, kinds, clusters, states, settin
       });
     }
     groups.push({ id: "goTo", label: t("palette:groups.goTo"), items });
+  }
+  for (const provide of providers.values()) {
+    try {
+      groups.push(...provide({ t, clusterId, kinds, clusters, states, settings }).filter((g) => g.items.length > 0));
+    } catch {
+      // A provider's failure never empties the palette.
+    }
   }
 
   groups.push({

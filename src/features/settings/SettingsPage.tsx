@@ -19,7 +19,8 @@ import type { PageProps } from "../../layout/pages";
 import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
 import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
-import { isRemovableSource, removeConfirmKey } from "../clusters/sources";
+import { isRemovableSource, removeConfirmKey, sourceKindLabelKey } from "../clusters/sources";
+import { KubeconfigTools, SourceWritable } from "../clusters/kubeconfig/SourceSettings";
 import { EDITOR_THEME_IDS, parseEditorTheme } from "../editor/editorTheme";
 import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
 // The panels themselves, not the features' index files: those register UI of their own (features/mcp: the agent
@@ -379,7 +380,8 @@ function KubeconfigSection() {
         {sources.map((source) => (
           <li key={source.id} className="settings__source">
             <span className="settings__source-path">{source.path}</span>
-            <span className="settings__source-kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
+            <span className="settings__source-kind">{t(sourceKindLabelKey(source.kind))}</span>
+            <SourceWritable source={source} />
             {isRemovableSource(source.kind) && (
               <Button
                 aria-label={t("clusters:sources.removeNamed", { path: source.path })}
@@ -397,6 +399,7 @@ function KubeconfigSection() {
         <AddFileButton />
         <PasteButton />
       </div>
+      <KubeconfigTools />
       <ConfirmDialog
         open={removing !== null}
         title={t("clusters:sources.confirmTitle")}

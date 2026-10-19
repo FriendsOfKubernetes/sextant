@@ -46,8 +46,19 @@ export function openTarget(clusterId: ClusterId, object: ObjectRef | null): void
 
 function isObjectRef(value: unknown): value is ObjectRef {
   const v = value as Partial<ObjectRef> | null;
-  return !!v && typeof v === "object" && typeof v.name === "string" && !!v.kind && typeof v.kind.kind === "string";
+  return (
+    !!v &&
+    typeof v === "object" &&
+    typeof v.name === "string" &&
+    !!v.kind &&
+    typeof v.kind.kind === "string" &&
+    // A kubeconfig context (expiring credentials, #150) is not an object of the cluster: nothing to open but the cluster.
+    v.kind.group !== LOCAL_GROUP
+  );
 }
+
+/** The group of the pseudo-kinds of notifications about things outside the cluster (a kubeconfig context). */
+export const LOCAL_GROUP = "local.sextant.dev";
 
 /** What a click on a notification or its button does. */
 export function handleAction(action: NotificationAction, now = Date.now()): void {

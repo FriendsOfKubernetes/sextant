@@ -3,12 +3,16 @@ import type { CleanupSettings } from "./CleanupSettings";
 import type { ClusterSettings } from "./ClusterSettings";
 import type { FleetSettings } from "./FleetSettings";
 import type { InstalledExtension } from "./InstalledExtension";
+import type { KubeconfigSettings } from "./KubeconfigSettings";
 import type { KubeconfigSource } from "./KubeconfigSource";
 import type { McpSettings } from "./McpSettings";
 import type { NotificationSettings } from "./NotificationSettings";
+import type { Pin } from "./Pin";
+import type { SavedView } from "./SavedView";
 import type { Theme } from "./Theme";
 import type { TimelineSettings } from "./TimelineSettings";
 import type { WindowLayout } from "./WindowLayout";
+import type { Workspace } from "./Workspace";
 
 export type AppSettings = { theme: Theme, 
 /**
@@ -80,4 +84,26 @@ timeline: TimelineSettings,
 /**
  * The "Cleanup" page (#147): namespaces it never checks and how old a candidate must be. Written by the frontend.
  */
-cleanup: CleanupSettings, };
+cleanup: CleanupSettings, 
+/**
+ * Kubeconfig management (#150): which sources (besides Sextant's own files) the user allowed Sextant to edit, and
+ * how early expiring credentials are flagged. Written by the frontend.
+ */
+kubeconfig: KubeconfigSettings, 
+/**
+ * Saved views (#149): named resource tables, per cluster or for every cluster, in the user's order. Written by
+ * the frontend; an entry that does not read is left out ([`views`]).
+ */
+views: Array<SavedView>, 
+/**
+ * Pinned objects and views, per cluster (#149). Written by the frontend.
+ */
+pins: Array<Pin>, 
+/**
+ * Named sets of clusters (#149). Written by the frontend.
+ */
+workspaces: Array<Workspace>, 
+/**
+ * The workspace the cluster rail is filtered by; `None` = every cluster. Written by the frontend.
+ */
+activeWorkspace: string | null, };

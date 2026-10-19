@@ -5,8 +5,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KindRef, ResourceKind } from "../../api";
-import { useAppStore, useClusterView } from "../../app/store";
-import { Checkbox, EmptyState, ErrorState } from "../../components";
+import { tableStateOf, useAppStore, useClusterView } from "../../app/store";
+import { Badge, Checkbox, EmptyState, ErrorState, Icon } from "../../components";
 import { LoadingTable, ResourceTable } from "../../components/Table";
 import { NamespaceFilter, useSelectedNamespaces } from "../../features/namespaces";
 import {
@@ -16,9 +16,11 @@ import {
   useClusterKinds,
   useCrdPrinterColumns,
   useResourceDef,
+  viewIdOf,
 } from "../../resources";
 import { getPage, getPages, usePagesVersion } from "../pages";
 import { ActionDialogHost } from "./ActionDialogHost";
+import { getTableTools, useTableToolsVersion } from "./tableTools";
 import "./main.css";
 
 export function MainView({ clusterId }: { clusterId: ClusterId }) {
@@ -98,13 +100,21 @@ function KindTable({
   );
   const def = useResourceDef(kind, withColumns);
   const namespaces = useSelectedNamespaces(clusterId);
-  const search = useClusterView(clusterId).search;
+  const clusterView = useClusterView(clusterId);
+  const search = clusterView.search;
   const setSearch = useAppStore((s) => s.setSearch);
+  const setTableState = useAppStore((s) => s.setTableState);
+  useTableToolsVersion();
   const namespaced = resourceKind?.namespaced ?? def.namespaced ?? true;
   const title = def.sidebar ? t(def.sidebar.labelKey) : (def.title ?? kind.kind);
+  // Filters, sort and hidden columns live in the store (what a saved view captures and applies, #149).
+  const viewId = viewIdOf(kind);
+  const table = tableStateOf(clusterView, viewId);
+  const patchTable = (patch: Parameters<typeof setTableState>[2]) => setTableState(clusterId, viewId, patch);
   // Kinds that say what a problem is offer "Only problems".
-  const [onlyProblems, setOnlyProblems] = useState(false);
+  const onlyProblems = table.onlyProblems;
   const rowFilter = onlyProblems ? def.problem : undefined;
+  const labelSelector = table.labelSelector.trim();
 
   if (namespaces === undefined) return <LoadingTable title={title} since={openedAt} />;
   return (
@@ -116,11 +126,30 @@ function KindTable({
       namespaces={namespaces}
       search={search}
       rowFilter={rowFilter}
+      labelSelector={labelSelector || null}
+      sort={table.sort}
+      onSortChange={(sort) => patchTable({ sort })}
+      hiddenColumns={table.hiddenColumns}
+      onHiddenColumnsChange={(hiddenColumns) => patchTable({ hiddenColumns })}
       toolbar={
         <>
+          {labelSelector && (
+            <span className="main__selector">
+              <Badge tone="neutral">{t("views:table.labelSelector", { selector: labelSelector })}</Badge>
+              <button
+                type="button"
+                className="icon-btn icon-btn--small"
+                aria-label={t("views:table.clearLabelSelector")}
+                title={t("views:table.clearLabelSelector")}
+                onClick={() => patchTable({ labelSelector: "" })}
+              >
+                <Icon name="close" size={12} />
+              </button>
+            </span>
+          )}
           {def.problem && (
             <label className="main__filter">
-              <Checkbox checked={onlyProblems} onChange={(e) => setOnlyProblems(e.target.checked)} />
+              <Checkbox checked={onlyProblems} onChange={(e) => patchTable({ onlyProblems: e.target.checked })} />
               {t("resources:table.onlyProblems")}
             </label>
           )}
@@ -133,6 +162,9 @@ function KindTable({
             aria-label={t("resources:table.search")}
             onChange={(e) => setSearch(clusterId, e.target.value)}
           />
+          {getTableTools().map(({ id, Component }) => (
+            <Component key={id} clusterId={clusterId} view={viewId} />
+          ))}
         </>
       }
     />

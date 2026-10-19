@@ -76,6 +76,16 @@ export interface ResourceTableProps {
    * first render); a later watch (other namespaces) counts from its own start.
    */
   loadingSince?: number;
+  /**
+   * The sort, controlled by the caller (a saved view, #149): `null` = the default sort. Used together with
+   * `onSortChange`; without it the table keeps its own sort.
+   */
+  sort?: { column: string; desc: boolean } | null;
+  onSortChange?: (sort: { column: string; desc: boolean } | null) => void;
+  /** Column ids not shown. */
+  hiddenColumns?: readonly string[];
+  /** With it the header offers a "Columns" menu that shows or hides columns. */
+  onHiddenColumnsChange?: (hidden: string[]) => void;
 }
 
 /** Each retry ("Retry" after an error) starts a fresh watch. */
@@ -139,7 +149,14 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const details = useAppStore((s) => s.details);
   useActionsVersion();
 
-  const columns = props.columns ?? def.columns;
+  const allColumns = props.columns ?? def.columns;
+  const { hiddenColumns } = props;
+  const columns = useMemo(() => {
+    if (!hiddenColumns || hiddenColumns.length === 0) return allColumns;
+    const shown = allColumns.filter((c) => !hiddenColumns.includes(c.id));
+    // A table never loses every column.
+    return shown.length > 0 ? shown : allColumns;
+  }, [allColumns, hiddenColumns]);
   const namespaced = props.resourceKind?.namespaced ?? def.namespaced ?? true;
   const namespaces = props.namespaces !== undefined ? props.namespaces : view.namespaces;
   const search = props.search ?? view.search;
@@ -181,11 +198,30 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   );
 
   const initialSort = props.defaultSort === undefined ? { id: "name", desc: false } : props.defaultSort;
-  const [sorting, setSorting] = useState<SortingState>(() =>
+  const [ownSorting, setOwnSorting] = useState<SortingState>(() =>
     initialSort && columns.some((c) => c.id === initialSort.id)
       ? [{ id: initialSort.id, desc: initialSort.desc ?? false }]
       : [],
   );
+  const { onSortChange } = props;
+  const controlledSort = props.sort;
+  const sorting: SortingState = useMemo(() => {
+    if (!onSortChange) return ownSorting;
+    if (controlledSort && columns.some((c) => c.id === controlledSort.column))
+      return [{ id: controlledSort.column, desc: controlledSort.desc }];
+    return initialSort && columns.some((c) => c.id === initialSort.id)
+      ? [{ id: initialSort.id, desc: initialSort.desc ?? false }]
+      : [];
+  }, [onSortChange, ownSorting, controlledSort, columns, initialSort]);
+  const setSorting = (updater: SortingState | ((old: SortingState) => SortingState)) => {
+    const next = typeof updater === "function" ? updater(sorting) : updater;
+    if (!onSortChange) {
+      setOwnSorting(next);
+      return;
+    }
+    const first = next[0];
+    onSortChange(first ? { column: first.id, desc: first.desc } : null);
+  };
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const table = useTable({
@@ -249,7 +285,12 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       {selected.length > 0 && (
         <span className="rt__selected">{t("resources:table.selected", { count: selected.length })}</span>
       )}
-      <div className="rt__toolbar">{props.toolbar}</div>
+      <div className="rt__toolbar">
+        {props.toolbar}
+        {props.onHiddenColumnsChange && (
+          <ColumnsMenu columns={allColumns} hidden={hiddenColumns ?? []} onChange={props.onHiddenColumnsChange} />
+        )}
+      </div>
     </header>
   );
 
@@ -508,6 +549,59 @@ function ActionMenu({
             {actionLabel(action, t)}
           </button>
         ))
+      )}
+    </div>
+  );
+}
+
+/** The "Columns" button of the header: a checkbox per column; the last shown column cannot be hidden. */
+function ColumnsMenu({
+  columns,
+  hidden,
+  onChange,
+}: {
+  columns: ColumnDef[];
+  hidden: readonly string[];
+  onChange: (hidden: string[]) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  usePopup(ref, () => setOpen(false), open);
+  const shownCount = columns.filter((c) => !hidden.includes(c.id)).length;
+  const label = t("views:table.columns");
+  return (
+    <div className="rt-columns" ref={ref}>
+      <button
+        type="button"
+        className="icon-btn"
+        aria-label={label}
+        title={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <Icon name="columns" />
+      </button>
+      {open && (
+        <div className="rt-menu rt-columns__menu" role="menu" aria-label={label}>
+          {columns.map((c) => {
+            const shown = !hidden.includes(c.id);
+            const name = c.titleKey ? t(c.titleKey) : (c.title ?? c.id);
+            return (
+              <label key={c.id} className="rt-menu__item rt-columns__item" role="menuitemcheckbox" aria-checked={shown}>
+                <Checkbox
+                  checked={shown}
+                  disabled={shown && shownCount <= 1}
+                  onChange={() =>
+                    onChange(shown ? [...hidden, c.id] : hidden.filter((id) => id !== c.id))
+                  }
+                />
+                {name}
+              </label>
+            );
+          })}
+        </div>
       )}
     </div>
   );

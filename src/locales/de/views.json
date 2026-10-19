@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "Spalten",
+    "labelSelector": "Label-Selector: {{selector}}",
+    "clearLabelSelector": "Label-Selector entfernen"
+  },
+  "save": {
+    "button": "Ansicht speichern",
+    "title": "Ansicht speichern",
+    "name": "Name",
+    "namePlaceholder": "Fehlerhafte Pods in shop",
+    "scope": "Anzeigen in",
+    "scopeCluster": "Diesem Cluster",
+    "scopeAll": "Allen Clustern",
+    "labelSelector": "Label-Selector",
+    "labelSelectorHint": "Wird beim Cluster angefragt, z. B. app=web,tier!=db. Leer lassen für keinen.",
+    "pin": "An Favoriten anheften",
+    "captures": "Speichert die Art der Ressource, Namespaces, Suchtext, „Nur Probleme“, Label-Selector, Sortierung und sichtbare Spalten.",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "full": "Die Liste der Ansichten ist voll. Löschen Sie zuerst eine Ansicht."
+  },
+  "sidebar": {
+    "favourites": "Favoriten",
+    "views": "Ansichten",
+    "manage": "Ansichten und Arbeitsbereiche verwalten",
+    "openView": "Ansicht {{name}} öffnen",
+    "openObject": "{{kind}} {{name}} öffnen",
+    "unpin": "{{name}} lösen",
+    "pinView": "Ansicht {{name}} anheften",
+    "allClusters": "Alle Cluster"
+  },
+  "pin": {
+    "action": "An Favoriten anheften",
+    "unpinAction": "Von Favoriten lösen"
+  },
+  "palette": {
+    "views": "Gespeicherte Ansichten",
+    "favourites": "Favoriten",
+    "allClusters": "Alle Cluster",
+    "thisCluster": "Dieser Cluster"
+  },
+  "workspace": {
+    "switcher": "Arbeitsbereich",
+    "current": "Arbeitsbereich: {{name}}",
+    "all": "Alle Cluster",
+    "manage": "Arbeitsbereiche verwalten…",
+    "hint": "Ein Arbeitsbereich zeigt in der Leiste nur seine Cluster. Ein Wechsel verbindet oder trennt nie einen Cluster."
+  },
+  "manager": {
+    "title": "Ansichten und Arbeitsbereiche",
+    "tabs": {
+      "views": "Ansichten",
+      "workspaces": "Arbeitsbereiche",
+      "transfer": "Export und Import"
+    },
+    "noViews": "Noch keine gespeicherten Ansichten. Öffnen Sie eine Tabelle und wählen Sie „Ansicht speichern“ in ihrem Kopf.",
+    "rename": "{{name}} umbenennen",
+    "renameField": "Neuer Name für {{name}}",
+    "moveUp": "{{name}} nach oben",
+    "moveDown": "{{name}} nach unten",
+    "delete": "{{name}} löschen",
+    "deleteConfirm": "Ansicht {{name}} löschen? Ihre Anheftungen werden ebenfalls entfernt.",
+    "missingCluster": "Cluster nicht gefunden",
+    "kindIn": "{{kind}} in {{cluster}}",
+    "noWorkspaces": "Noch keine Arbeitsbereiche.",
+    "newWorkspace": "Neuer Arbeitsbereich",
+    "workspaceName": "Name des Arbeitsbereichs",
+    "workspaceClusters": "Cluster in diesem Arbeitsbereich",
+    "saveWorkspace": "Arbeitsbereich speichern",
+    "editWorkspace": "{{name}} bearbeiten",
+    "deleteWorkspace": "Arbeitsbereich {{name}} löschen",
+    "deleteWorkspaceConfirm": "Arbeitsbereich {{name}} löschen? Seine Cluster, Ansichten und Anheftungen bleiben erhalten.",
+    "workspaceClusterCount": "Cluster: {{number}}",
+    "use": "Verwenden",
+    "inUse": "Aktiv",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete_button": "Löschen"
+  },
+  "transfer": {
+    "exportTitle": "Export",
+    "exportHint": "Schreibt eine JSON-Datei mit Ihren Ansichten, Anheftungen, Arbeitsbereichen und den Clustern als Verweis: Pfad der kubeconfig-Datei und Name des Contexts. Zugangsdaten, Dateiinhalte, Tokens und Erweiterungen sind nie enthalten.",
+    "includeAgentAccess": "Zugriffsregeln für Agenten einschließen",
+    "export": "Exportieren…",
+    "exportDialog": "Ansichten und Arbeitsbereiche exportieren",
+    "exported": "Gespeichert unter {{path}}",
+    "filter": "Sextant-Ansichten",
+    "importTitle": "Import",
+    "importHint": "Zeigt, was sich ändern würde, bevor etwas gespeichert wird.",
+    "import": "Importieren…",
+    "importDialog": "Ansichten und Arbeitsbereiche importieren",
+    "invalid": "Diese Datei kann nicht importiert werden:",
+    "preview": "Vorschau",
+    "sections": {
+      "clusters": "Cluster",
+      "views": "Ansichten",
+      "pins": "Anheftungen",
+      "workspaces": "Arbeitsbereiche"
+    },
+    "status": {
+      "added": "Neu",
+      "changed": "Geändert",
+      "kept": "Unverändert",
+      "skipped": "Übersprungen",
+      "missing": "Auf diesem Computer nicht vorhanden"
+    },
+    "clusterFields": "Setzt: {{fields}}",
+    "clusterChanges": "Ändert: {{fields}}",
+    "clusterSame": "Nichts zu ändern",
+    "skippedHint": "Sein Cluster ist auf diesem Computer nicht vorhanden",
+    "matchExact": "Dieselbe kubeconfig-Datei und derselbe Context",
+    "matchName": "Nur über den Context-Namen zugeordnet: Es kann ein anderer Cluster sein",
+    "agentAccessSkipped": "Zugriffsregeln für Agenten werden nicht übernommen: Der Cluster wurde nur über den Namen zugeordnet",
+    "fields": {
+      "displayName": "Anzeigename",
+      "color": "Farbe",
+      "icon": "Symbol",
+      "namespaces": "Namespace-Filter",
+      "previewChanges": "Vorschau von Änderungen",
+      "agentAccess": "Zugriffsregeln für Agenten"
+    },
+    "overwrite": "Einträge ersetzen, die sich von meinen unterscheiden",
+    "applyAgentAccess": "Zugriffsregeln für Agenten aus der Datei übernehmen",
+    "agentAccessWarning": "Zugriffsregeln für Agenten legen fest, was KI-Agenten in einem Cluster tun dürfen. Übernehmen Sie sie nur aus einer Datei, der Sie vertrauen.",
+    "nothing": "Mit dieser Auswahl gibt es nichts zu importieren.",
+    "changes": "Zu speichernde Einträge: {{number}}",
+    "apply": "Importieren",
+    "cancel": "Abbrechen",
+    "done": "Importiert."
+  }
+}

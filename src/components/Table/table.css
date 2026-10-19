@@ -273,3 +273,23 @@
   padding: 6px 12px;
   color: var(--color-text-muted);
 }
+
+/* The "Columns" menu of the header (#149). */
+.rt-columns {
+  position: relative;
+}
+
+.rt-columns__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.rt-columns__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}

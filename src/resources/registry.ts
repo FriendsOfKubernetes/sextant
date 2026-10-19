@@ -51,7 +51,10 @@ export type BuiltInActionId =
   | "argoHardRefresh"
   | "argoTerminate"
   | "argoDiff"
-  | "argoOpenUi";
+  | "argoOpenUi"
+  // Favourites (src/features/views), offered for every kind through `extendActionsForAll`
+  | "pin"
+  | "unpin";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {
@@ -236,6 +239,20 @@ export function extendActions(kind: Pick<KindRef, "group" | "kind">, ids: readon
   };
 }
 
+/** Actions offered for every kind, after its own and its kind's extra ones (features/views: pin and unpin). */
+const actionsForAll = new Set<ActionId>();
+
+/** Offers `ids` for every kind (built-in and custom). Returns a function that removes them again. */
+export function extendActionsForAll(ids: readonly ActionId[]): () => void {
+  const added = ids.filter((id) => !actionsForAll.has(id));
+  for (const id of added) actionsForAll.add(id);
+  changed();
+  return () => {
+    for (const id of added) actionsForAll.delete(id);
+    changed();
+  };
+}
+
 function extensionKey(kind: Pick<KindRef, "group" | "kind">): string {
   return kindKey(kind).toLowerCase();
 }
@@ -267,6 +284,10 @@ export function getResourceDef(kind: KindRef, resourceKind?: ResourceKind | null
   if (actions && actions.size > 0) {
     const added = [...actions.values()].flat().filter((id) => !base.actions.includes(id));
     def = { ...def, actions: [...base.actions, ...new Set(added)] };
+  }
+  if (actionsForAll.size > 0) {
+    const forAll = [...actionsForAll].filter((id) => !def.actions.includes(id));
+    if (forAll.length > 0) def = { ...def, actions: [...def.actions, ...forAll] };
   }
   return def;
 }

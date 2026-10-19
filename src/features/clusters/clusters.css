@@ -630,3 +630,137 @@
   color: var(--color-text-muted);
   font-size: 12px;
 }
+
+/* Kubeconfig management (#150). */
+.cluster-icon__credentials {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-rail);
+  background: var(--color-warning);
+}
+
+.cluster-icon__credentials[data-state="expired"] {
+  background: var(--color-danger);
+}
+
+.cluster-menu__separator {
+  margin: 4px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.kc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kc-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kc-preview {
+  margin-top: 12px;
+}
+
+.kc-preview__path,
+.kc-preview__origin,
+.kc-check__server {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.kc-preview__list,
+.kc-preview__fields,
+.kc-check__problems {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.kc-preview__item {
+  margin: 4px 0;
+}
+
+.kc-preview__item > span + span {
+  margin-left: 6px;
+}
+
+.kc-preview__kind {
+  font-weight: 600;
+}
+
+.kc-preview__item[data-change="removed"] .kc-preview__kind {
+  color: var(--color-danger);
+}
+
+.kc-preview__item[data-change="added"] .kc-preview__kind {
+  color: var(--color-success);
+}
+
+.kc-preview__origin {
+  display: block;
+  color: var(--color-text-muted, inherit);
+}
+
+.kc-preview__warning,
+.kc-error {
+  color: var(--color-warning);
+}
+
+.kc-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.kc-source__own {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.kc-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.kc-days {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kc-days input {
+  width: 6em;
+}
+
+.kc-check__context {
+  margin-top: 12px;
+}
+
+.kc-check__name {
+  margin: 0;
+  font-size: 14px;
+}
+
+.kc-check__warning {
+  margin-right: 6px;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.kc-check__reach {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}

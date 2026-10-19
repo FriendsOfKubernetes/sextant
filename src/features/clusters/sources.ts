@@ -13,7 +13,14 @@ const POLICY: Record<SourceKind, SourcePolicy> = {
   // Sextant's own copies are deleted.
   pasted: { removable: true, confirmKey: "clusters:sources.confirmPasted" },
   cloud: { removable: true, confirmKey: "clusters:sources.confirmCloud" },
+  // Sextant's own merged file (#150) is deleted like the other copies.
+  merged: { removable: true, confirmKey: "clusters:sources.confirmPasted" },
 };
+
+/** The translation key of a source kind's label. */
+export function sourceKindLabelKey(kind: SourceKind): string {
+  return kind === "merged" ? "kubeconfig:sources.kindMerged" : `clusters:sources.kind.${kind}`;
+}
 
 /** Whether a source of this kind can be removed from the app (`default` and `KUBECONFIG` cannot). */
 export function isRemovableSource(kind: SourceKind): boolean {

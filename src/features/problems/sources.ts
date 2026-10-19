@@ -54,6 +54,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
   security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),
+  // Expiring kubeconfig credentials (#150, opt-in) come from the kubeconfig, not from a watch: nothing is watched for
+  // them (features/clusters/kubeconfig/CredentialsNotifier).
+  credentials: [],
   // Only Warning events are listed.
   events: [builtIn("events", EVENT, "type=Warning")],
 };

@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "欄",
+    "labelSelector": "Label selector：{{selector}}",
+    "clearLabelSelector": "移除 label selector"
+  },
+  "save": {
+    "button": "儲存檢視",
+    "title": "儲存檢視",
+    "name": "名稱",
+    "namePlaceholder": "shop 中失敗的 Pod",
+    "scope": "顯示於",
+    "scopeCluster": "此叢集",
+    "scopeAll": "所有叢集",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "向叢集請求，例如 app=web,tier!=db。留空表示不使用。",
+    "pin": "釘選到我的最愛",
+    "captures": "儲存資源種類、namespace、搜尋文字、「僅顯示問題」、label selector、排序和可見欄。",
+    "save": "儲存",
+    "cancel": "取消",
+    "full": "檢視清單已滿。請先刪除一個檢視。"
+  },
+  "sidebar": {
+    "favourites": "我的最愛",
+    "views": "檢視",
+    "manage": "管理檢視和工作區",
+    "openView": "開啟檢視 {{name}}",
+    "openObject": "開啟 {{kind}} {{name}}",
+    "unpin": "取消釘選 {{name}}",
+    "pinView": "釘選檢視 {{name}}",
+    "allClusters": "所有叢集"
+  },
+  "pin": {
+    "action": "釘選到我的最愛",
+    "unpinAction": "從我的最愛取消釘選"
+  },
+  "palette": {
+    "views": "已儲存的檢視",
+    "favourites": "我的最愛",
+    "allClusters": "所有叢集",
+    "thisCluster": "此叢集"
+  },
+  "workspace": {
+    "switcher": "工作區",
+    "current": "工作區：{{name}}",
+    "all": "所有叢集",
+    "manage": "管理工作區…",
+    "hint": "工作區只在側欄中顯示它的叢集。切換工作區從不連線或中斷任何叢集。"
+  },
+  "manager": {
+    "title": "檢視和工作區",
+    "tabs": {
+      "views": "檢視",
+      "workspaces": "工作區",
+      "transfer": "匯出和匯入"
+    },
+    "noViews": "還沒有已儲存的檢視。開啟一個表格，並在其標題列中選擇「儲存檢視」。",
+    "rename": "重新命名 {{name}}",
+    "renameField": "{{name}} 的新名稱",
+    "moveUp": "上移 {{name}}",
+    "moveDown": "下移 {{name}}",
+    "delete": "刪除 {{name}}",
+    "deleteConfirm": "刪除檢視 {{name}}？它的釘選項目也會一併移除。",
+    "missingCluster": "找不到叢集",
+    "kindIn": "{{cluster}} 中的 {{kind}}",
+    "noWorkspaces": "還沒有工作區。",
+    "newWorkspace": "新增工作區",
+    "workspaceName": "工作區名稱",
+    "workspaceClusters": "此工作區中的叢集",
+    "saveWorkspace": "儲存工作區",
+    "editWorkspace": "編輯 {{name}}",
+    "deleteWorkspace": "刪除工作區 {{name}}",
+    "deleteWorkspaceConfirm": "刪除工作區 {{name}}？其中的叢集、檢視和釘選項目會保留。",
+    "workspaceClusterCount": "叢集：{{number}}",
+    "use": "使用",
+    "inUse": "使用中",
+    "save": "儲存",
+    "cancel": "取消",
+    "delete_button": "刪除"
+  },
+  "transfer": {
+    "exportTitle": "匯出",
+    "exportHint": "寫入一個 JSON 檔案，包含你的檢視、釘選項目、工作區，以及以參照方式記錄的叢集：kubeconfig 檔案路徑和 context 名稱。從不包含憑證、檔案內容、權杖或擴充功能。",
+    "includeAgentAccess": "包含代理程式存取規則",
+    "export": "匯出…",
+    "exportDialog": "匯出檢視和工作區",
+    "exported": "已儲存到 {{path}}",
+    "filter": "Sextant 檢視",
+    "importTitle": "匯入",
+    "importHint": "在儲存任何內容之前顯示將會發生的變更。",
+    "import": "匯入…",
+    "importDialog": "匯入檢視和工作區",
+    "invalid": "無法匯入此檔案：",
+    "preview": "預覽",
+    "sections": {
+      "clusters": "叢集",
+      "views": "檢視",
+      "pins": "釘選項目",
+      "workspaces": "工作區"
+    },
+    "status": {
+      "added": "新增",
+      "changed": "變更",
+      "kept": "未變",
+      "skipped": "略過",
+      "missing": "此電腦上沒有"
+    },
+    "clusterFields": "設定：{{fields}}",
+    "clusterChanges": "變更：{{fields}}",
+    "clusterSame": "無需變更",
+    "skippedHint": "它的叢集不在此電腦上",
+    "matchExact": "相同的 kubeconfig 檔案與 context",
+    "matchName": "僅依 context 名稱比對：可能是另一個叢集",
+    "agentAccessSkipped": "不套用代理程式存取規則：此叢集僅依名稱比對",
+    "fields": {
+      "displayName": "顯示名稱",
+      "color": "顏色",
+      "icon": "圖示",
+      "namespaces": "namespace 篩選",
+      "previewChanges": "預覽變更",
+      "agentAccess": "代理程式存取規則"
+    },
+    "overwrite": "取代與我的不同的項目",
+    "applyAgentAccess": "套用檔案中的代理程式存取規則",
+    "agentAccessWarning": "代理程式存取規則決定 AI 代理程式在叢集中可以做什麼。只從你信任的檔案套用它們。",
+    "nothing": "依目前的選擇沒有可匯入的內容。",
+    "changes": "要儲存的項目：{{number}}",
+    "apply": "匯入",
+    "cancel": "取消",
+    "done": "已匯入。"
+  }
+}

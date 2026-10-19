@@ -6,7 +6,9 @@ import { api, toApiError, type ApiError, type CoreError, type KubeconfigSource }
 import { ConfirmDialog, Dialog, ErrorState, Tabs, type TabItem } from "../../components";
 import { CloudClusters } from "./CloudClusters";
 import { addKubeconfigFile, addPastedKubeconfig, removeKubeconfigSource, useClustersStore } from "./clustersStore";
-import { isRemovableSource, removeConfirmKey } from "./sources";
+import { isRemovableSource, removeConfirmKey, sourceKindLabelKey } from "./sources";
+import { checkKubeconfig, hasProblems, ValidationDialog } from "./kubeconfig/ValidationDialog";
+import type { KubeconfigInput, KubeconfigValidation } from "../../api";
 
 /** Opens the system file dialog and adds the chosen kubeconfig. Resolves to an error to show, if any. */
 export async function pickKubeconfigFile(title: string): Promise<ApiError | null> {
@@ -28,16 +30,44 @@ export function SourceError({ error }: { error: ApiError | CoreError }) {
 export function AddFileButton({ className = "btn" }: { className?: string }) {
   const { t } = useTranslation();
   const [error, setError] = useState<ApiError | null>(null);
+  const [checked, setChecked] = useState<{ input: KubeconfigInput; path: string; validation: KubeconfigValidation } | null>(
+    null,
+  );
+  const add = async (path: string) => {
+    try {
+      await addKubeconfigFile(path);
+      setError(null);
+    } catch (err) {
+      setError(toApiError(err));
+    }
+  };
+  const pick = async () => {
+    const path = await api.dialog.openFile({ title: t("clusters:add.fileDialogTitle") });
+    if (!path) return;
+    // Checked first, offline: problems are shown before the file is added.
+    const input: KubeconfigInput = { type: "file", path };
+    const validation = await checkKubeconfig(input);
+    if (hasProblems(validation)) setChecked({ input, path, validation });
+    else await add(path);
+  };
   return (
     <>
-      <button
-        type="button"
-        className={className}
-        onClick={async () => setError(await pickKubeconfigFile(t("clusters:add.fileDialogTitle")))}
-      >
+      <button type="button" className={className} onClick={() => void pick()}>
         {t("clusters:add.file")}
       </button>
       {error && <SourceError error={error} />}
+      {checked && (
+        <ValidationDialog
+          input={checked.input}
+          validation={checked.validation}
+          onClose={() => setChecked(null)}
+          onAdd={() => {
+            const { path } = checked;
+            setChecked(null);
+            void add(path);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -52,11 +82,22 @@ export function PasteKubeconfigDialog({ open, onClose }: { open: boolean; onClos
   const close = () => {
     setText("");
     setError(null);
+    setChecked(null);
     onClose();
   };
-  const submit = async () => {
+  const [checked, setChecked] = useState<KubeconfigValidation | null>(null);
+  const input: KubeconfigInput = { type: "text", text };
+  const submit = async (skipCheck = false) => {
     setBusy(true);
     try {
+      if (!skipCheck) {
+        // Checked first, offline: problems are shown before the text is saved.
+        const validation = await checkKubeconfig(input);
+        if (hasProblems(validation)) {
+          setChecked(validation);
+          return;
+        }
+      }
       await addPastedKubeconfig(text);
       close();
     } catch (err) {
@@ -76,7 +117,7 @@ export function PasteKubeconfigDialog({ open, onClose }: { open: boolean; onClos
           <button type="button" className="btn" onClick={close}>
             {t("common:actions.cancel")}
           </button>
-          <button type="button" className="btn btn--primary" disabled={busy || !text.trim()} onClick={submit}>
+          <button type="button" className="btn btn--primary" disabled={busy || !text.trim()} onClick={() => void submit()}>
             {t("clusters:paste.submit")}
           </button>
         </>
@@ -92,6 +133,17 @@ export function PasteKubeconfigDialog({ open, onClose }: { open: boolean; onClos
         rows={14}
       />
       {error && <SourceError error={error} />}
+      {checked && (
+        <ValidationDialog
+          input={input}
+          validation={checked}
+          onClose={() => setChecked(null)}
+          onAdd={() => {
+            setChecked(null);
+            void submit(true);
+          }}
+        />
+      )}
     </Dialog>
   );
 }
@@ -165,7 +217,7 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
           {sources.map((source) => (
             <li key={source.id} className="clusters-sources__item">
               <span className="clusters-sources__path">{source.path}</span>
-              <span className="clusters-sources__kind">{t(`clusters:sources.kind.${source.kind}`)}</span>
+              <span className="clusters-sources__kind">{t(sourceKindLabelKey(source.kind))}</span>
               {isRemovableSource(source.kind) && (
                 <button
                   type="button"

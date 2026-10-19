@@ -20,6 +20,12 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("kubeconfig_add_file", Some("path")),
     ("kubeconfig_add_pasted", Some("text")),
     ("kubeconfig_remove", Some("sourceId")),
+    ("kubeconfig_edit_preview", Some("edit")),
+    ("kubeconfig_edit_apply", Some("edit")),
+    ("kubeconfig_credentials", None),
+    ("kubeconfig_edit_target", Some("sourceId")),
+    ("kubeconfig_validate", Some("input")),
+    ("kubeconfig_check_connection", Some("input")),
     ("cluster_connect", Some("clusterId")),
     ("cluster_disconnect", Some("clusterId")),
     ("cluster_state", Some("clusterId")),
@@ -96,6 +102,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("gitops_install_stop", Some("streamId")),
     ("gitops_install_status", Some("clusterId")),
     ("file_save", Some("path")),
+    ("views_import_open", Some("title")),
     ("files_stat", Some("clusterId")),
     ("files_download_start", Some("clusterId")),
     ("files_upload_start", Some("clusterId")),
@@ -1375,4 +1382,38 @@ fn extension_api_commands_refuse_an_extension_that_is_not_installed_and_journal_
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn removing_a_kubeconfig_source_forgets_that_sextant_may_edit_it() {
+    let dirs = tempfile::tempdir().unwrap();
+    let file = dirs.path().join("team.yaml");
+    std::fs::write(
+        &file,
+        "apiVersion: v1\nkind: Config\nclusters:\n  - name: c\n    cluster: { server: https://c:6443 }\nusers:\n  - name: u\n    user: {}\ncontexts:\n  - name: x\n    context: { cluster: c, user: u }\n",
+    )
+    .unwrap();
+    let h = harness_in(dirs);
+    let added = invoke(&h, "kubeconfig_add_file", json!({ "path": file })).unwrap();
+    let id = added["id"].as_str().unwrap().to_owned();
+    let state = h.window.state::<sextant_lib::AppState>();
+    state
+        .settings
+        .update(|s| s.kubeconfig.writable_sources.push(id.clone()))
+        .unwrap();
+    invoke(&h, "kubeconfig_remove", json!({ "sourceId": id })).unwrap();
+    assert!(state.settings.get().kubeconfig.writable_sources.is_empty());
+    // Added again: the same id, not writable until the user allows it again.
+    let again = invoke(&h, "kubeconfig_add_file", json!({ "path": file })).unwrap();
+    assert_eq!(again["id"], added["id"]);
+    assert!(state.settings.get().kubeconfig.writable_sources.is_empty());
+}
+
+#[test]
+fn the_window_cannot_name_a_file_for_the_views_import_to_read() {
+    let h = harness();
+    // Only the command that shows the open dialog itself exists; there is no command taking a path to read.
+    let err = invoke(&h, "views_import_read", json!({ "path": "/etc/passwd" })).unwrap_err();
+    assert!(!err.to_string().contains("root:"), "{err}");
+    assert!(err.to_string().contains("not found"), "{err}");
 }

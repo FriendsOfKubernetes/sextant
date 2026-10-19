@@ -10,7 +10,8 @@
 import { createElement, Fragment, type ComponentType } from "react";
 import { createRegistryVersion } from "./registryVersion";
 
-export type SlotName = "clusterRail" | "welcome" | "railFooter" | "home";
+//   "sidebarTop"  — above the section tree of the active cluster (features/views: saved views and pins).
+export type SlotName = "clusterRail" | "welcome" | "railFooter" | "home" | "sidebarTop";
 
 interface SlotEntry {
   Component: ComponentType;

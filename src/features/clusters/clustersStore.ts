@@ -6,6 +6,7 @@ import {
   events,
   loadSettings,
   toApiError,
+  withBackendSettingsChange,
   type ApiError,
   type ClusterId,
   type ClusterInfo,
@@ -196,7 +197,9 @@ export async function addPastedKubeconfig(text: string): Promise<KubeconfigSourc
 
 export async function removeKubeconfigSource(sourceId: string): Promise<void> {
   const gone = useClustersStore.getState().clusters.filter((c) => c.sourceId === sourceId).map((c) => c.id);
-  await api.clusters.removeSource(sourceId);
+  // The backend forgets that Sextant may edit the source: the settings are read again, so a stale copy cannot bring
+  // the permission back.
+  await withBackendSettingsChange(() => api.clusters.removeSource(sourceId));
   for (const id of gone) {
     setClusterState(id, DISCONNECTED);
     if (useAppStore.getState().activeClusterId === id) useAppStore.getState().setActiveCluster(null);

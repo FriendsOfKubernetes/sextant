@@ -23,6 +23,7 @@
     "argocd": "Argo CD",
     "gateway": "Gateway API",
     "security": "セキュリティ",
+    "credentials": "認証情報",
     "events": "警告イベント"
   },
   "messages": {

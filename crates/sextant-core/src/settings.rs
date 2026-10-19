@@ -14,6 +14,9 @@ use crate::extensions::InstalledExtension;
 use crate::kubeconfig::KubeconfigSource;
 use crate::metrics::{PrometheusMode, UsageSource};
 
+pub mod views;
+pub use views::{Pin, PinTarget, SavedView, ViewSort, Workspace};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -377,6 +380,26 @@ pub struct AppSettings {
     pub timeline: TimelineSettings,
     /// The "Cleanup" page (#147): namespaces it never checks and how old a candidate must be. Written by the frontend.
     pub cleanup: CleanupSettings,
+    /// Kubeconfig management (#150): which sources (besides Sextant's own files) the user allowed Sextant to edit, and
+    /// how early expiring credentials are flagged. Written by the frontend.
+    pub kubeconfig: crate::kubeconfig::edit::KubeconfigSettings,
+    /// Saved views (#149): named resource tables, per cluster or for every cluster, in the user's order. Written by
+    /// the frontend; an entry that does not read is left out ([`views`]).
+    #[serde(with = "views::views_field")]
+    #[ts(as = "Vec<SavedView>")]
+    pub views: Vec<SavedView>,
+    /// Pinned objects and views, per cluster (#149). Written by the frontend.
+    #[serde(with = "views::pins_field")]
+    #[ts(as = "Vec<Pin>")]
+    pub pins: Vec<Pin>,
+    /// Named sets of clusters (#149). Written by the frontend.
+    #[serde(with = "views::workspaces_field")]
+    #[ts(as = "Vec<Workspace>")]
+    pub workspaces: Vec<Workspace>,
+    /// The workspace the cluster rail is filtered by; `None` = every cluster. Written by the frontend.
+    #[serde(with = "views::active_workspace_field")]
+    #[ts(as = "Option<String>")]
+    pub active_workspace: Option<String>,
 }
 
 impl Default for AppSettings {
@@ -400,6 +423,11 @@ impl Default for AppSettings {
             fleet: FleetSettings::default(),
             timeline: TimelineSettings::default(),
             cleanup: CleanupSettings::default(),
+            kubeconfig: crate::kubeconfig::edit::KubeconfigSettings::default(),
+            views: Vec::new(),
+            pins: Vec::new(),
+            workspaces: Vec::new(),
+            active_workspace: None,
         }
     }
 }

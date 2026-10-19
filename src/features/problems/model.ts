@@ -39,6 +39,7 @@ export const PROBLEM_CATEGORIES = [
   "argocd",
   "gateway",
   "security",
+  "credentials",
   "events",
 ] as const;
 export type ProblemCategory = (typeof PROBLEM_CATEGORIES)[number];
@@ -52,7 +53,7 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security"];
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials"];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
@@ -642,6 +643,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return gatewayProblems(obj, kind);
     case "security":
       return securityProblems(kind, obj);
+    // Kubeconfig credentials are no kind of the cluster (features/clusters/kubeconfig).
+    case "credentials":
     case undefined:
       return [];
   }

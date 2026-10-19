@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "Columns",
+    "labelSelector": "Label selector: {{selector}}",
+    "clearLabelSelector": "Remove the label selector"
+  },
+  "save": {
+    "button": "Save view",
+    "title": "Save view",
+    "name": "Name",
+    "namePlaceholder": "Failing pods in shop",
+    "scope": "Show in",
+    "scopeCluster": "This cluster",
+    "scopeAll": "All clusters",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "Asked from the cluster, e.g. app=web,tier!=db. Leave empty for none.",
+    "pin": "Pin to favourites",
+    "captures": "Saves the kind, namespaces, search text, Only problems, label selector, sort and visible columns.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "full": "The list of views is full. Delete a view first."
+  },
+  "sidebar": {
+    "favourites": "Favourites",
+    "views": "Views",
+    "manage": "Manage views and workspaces",
+    "openView": "Open view {{name}}",
+    "openObject": "Open {{kind}} {{name}}",
+    "unpin": "Unpin {{name}}",
+    "pinView": "Pin view {{name}}",
+    "allClusters": "All clusters"
+  },
+  "pin": {
+    "action": "Pin to favourites",
+    "unpinAction": "Unpin from favourites"
+  },
+  "palette": {
+    "views": "Saved views",
+    "favourites": "Favourites",
+    "allClusters": "All clusters",
+    "thisCluster": "This cluster"
+  },
+  "workspace": {
+    "switcher": "Workspace",
+    "current": "Workspace: {{name}}",
+    "all": "All clusters",
+    "manage": "Manage workspaces…",
+    "hint": "A workspace shows only its clusters in the rail. Switching never connects or disconnects a cluster."
+  },
+  "manager": {
+    "title": "Views and workspaces",
+    "tabs": {
+      "views": "Views",
+      "workspaces": "Workspaces",
+      "transfer": "Export and import"
+    },
+    "noViews": "No saved views yet. Open a table and choose Save view in its header.",
+    "rename": "Rename {{name}}",
+    "renameField": "New name of {{name}}",
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "delete": "Delete {{name}}",
+    "deleteConfirm": "Delete the view {{name}}? Its pins are removed too.",
+    "missingCluster": "Cluster not found",
+    "kindIn": "{{kind}} in {{cluster}}",
+    "noWorkspaces": "No workspaces yet.",
+    "newWorkspace": "New workspace",
+    "workspaceName": "Workspace name",
+    "workspaceClusters": "Clusters in this workspace",
+    "saveWorkspace": "Save workspace",
+    "editWorkspace": "Edit {{name}}",
+    "deleteWorkspace": "Delete workspace {{name}}",
+    "deleteWorkspaceConfirm": "Delete the workspace {{name}}? Its clusters, views and pins stay.",
+    "workspaceClusterCount": "Clusters: {{number}}",
+    "use": "Use",
+    "inUse": "In use",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete_button": "Delete"
+  },
+  "transfer": {
+    "exportTitle": "Export",
+    "exportHint": "Writes a JSON file with your views, pins, workspaces and the clusters by reference: the kubeconfig file path and the context name. Credentials, file contents, tokens and extensions are never included.",
+    "includeAgentAccess": "Include agent access rules",
+    "export": "Export…",
+    "exportDialog": "Export views and workspaces",
+    "exported": "Saved to {{path}}",
+    "filter": "Sextant views",
+    "importTitle": "Import",
+    "importHint": "Shows what would change before anything is saved.",
+    "import": "Import…",
+    "importDialog": "Import views and workspaces",
+    "invalid": "This file cannot be imported:",
+    "preview": "Preview",
+    "sections": {
+      "clusters": "Clusters",
+      "views": "Views",
+      "pins": "Pins",
+      "workspaces": "Workspaces"
+    },
+    "status": {
+      "added": "Added",
+      "changed": "Changed",
+      "kept": "Unchanged",
+      "skipped": "Skipped",
+      "missing": "Missing on this computer"
+    },
+    "clusterFields": "Sets: {{fields}}",
+    "clusterChanges": "Changes: {{fields}}",
+    "clusterSame": "Nothing to change",
+    "skippedHint": "Its cluster is not on this computer",
+    "matchExact": "Same kubeconfig file and context",
+    "matchName": "Matched by the context name only: it may be another cluster",
+    "agentAccessSkipped": "Agent access rules are not applied: the cluster matched by name only",
+    "fields": {
+      "displayName": "display name",
+      "color": "colour",
+      "icon": "icon",
+      "namespaces": "namespace filter",
+      "previewChanges": "preview changes",
+      "agentAccess": "agent access rules"
+    },
+    "overwrite": "Replace entries that differ from mine",
+    "applyAgentAccess": "Apply the agent access rules from the file",
+    "agentAccessWarning": "Agent access rules decide what AI agents may do in a cluster. Apply them only from a file you trust.",
+    "nothing": "Nothing to import with these choices.",
+    "changes": "Entries to save: {{number}}",
+    "apply": "Import",
+    "cancel": "Cancel",
+    "done": "Imported."
+  }
+}

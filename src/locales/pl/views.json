@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "Kolumny",
+    "labelSelector": "Label selector: {{selector}}",
+    "clearLabelSelector": "Usuń label selector"
+  },
+  "save": {
+    "button": "Zapisz widok",
+    "title": "Zapisz widok",
+    "name": "Nazwa",
+    "namePlaceholder": "Wadliwe pody w shop",
+    "scope": "Pokazuj w",
+    "scopeCluster": "Tym klastrze",
+    "scopeAll": "Wszystkich klastrach",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "Przekazywany do klastra, np. app=web,tier!=db. Pozostaw puste, jeśli niepotrzebny.",
+    "pin": "Przypnij do ulubionych",
+    "captures": "Zapisuje rodzaj zasobu, namespaces, tekst wyszukiwania, „Tylko problemy”, label selector, sortowanie i widoczne kolumny.",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "full": "Lista widoków jest pełna. Najpierw usuń jakiś widok."
+  },
+  "sidebar": {
+    "favourites": "Ulubione",
+    "views": "Widoki",
+    "manage": "Zarządzaj widokami i obszarami roboczymi",
+    "openView": "Otwórz widok {{name}}",
+    "openObject": "Otwórz {{kind}} {{name}}",
+    "unpin": "Odepnij {{name}}",
+    "pinView": "Przypnij widok {{name}}",
+    "allClusters": "Wszystkie klastry"
+  },
+  "pin": {
+    "action": "Przypnij do ulubionych",
+    "unpinAction": "Odepnij od ulubionych"
+  },
+  "palette": {
+    "views": "Zapisane widoki",
+    "favourites": "Ulubione",
+    "allClusters": "Wszystkie klastry",
+    "thisCluster": "Ten klaster"
+  },
+  "workspace": {
+    "switcher": "Obszar roboczy",
+    "current": "Obszar roboczy: {{name}}",
+    "all": "Wszystkie klastry",
+    "manage": "Zarządzaj obszarami roboczymi…",
+    "hint": "Obszar roboczy pokazuje na pasku tylko swoje klastry. Przełączenie nigdy nie łączy ani nie rozłącza klastra."
+  },
+  "manager": {
+    "title": "Widoki i obszary robocze",
+    "tabs": {
+      "views": "Widoki",
+      "workspaces": "Obszary robocze",
+      "transfer": "Eksport i import"
+    },
+    "noViews": "Nie ma jeszcze zapisanych widoków. Otwórz tabelę i wybierz „Zapisz widok” w jej nagłówku.",
+    "rename": "Zmień nazwę {{name}}",
+    "renameField": "Nowa nazwa dla {{name}}",
+    "moveUp": "Przesuń {{name}} wyżej",
+    "moveDown": "Przesuń {{name}} niżej",
+    "delete": "Usuń {{name}}",
+    "deleteConfirm": "Usunąć widok {{name}}? Jego przypięcia też zostaną usunięte.",
+    "missingCluster": "Nie znaleziono klastra",
+    "kindIn": "{{kind}} w {{cluster}}",
+    "noWorkspaces": "Nie ma jeszcze obszarów roboczych.",
+    "newWorkspace": "Nowy obszar roboczy",
+    "workspaceName": "Nazwa obszaru roboczego",
+    "workspaceClusters": "Klastry w tym obszarze roboczym",
+    "saveWorkspace": "Zapisz obszar roboczy",
+    "editWorkspace": "Edytuj {{name}}",
+    "deleteWorkspace": "Usuń obszar roboczy {{name}}",
+    "deleteWorkspaceConfirm": "Usunąć obszar roboczy {{name}}? Jego klastry, widoki i przypięcia pozostaną.",
+    "workspaceClusterCount": "Klastry: {{number}}",
+    "use": "Użyj",
+    "inUse": "W użyciu",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete_button": "Usuń"
+  },
+  "transfer": {
+    "exportTitle": "Eksport",
+    "exportHint": "Zapisuje plik JSON z widokami, przypięciami, obszarami roboczymi i klastrami jako odwołaniami: ścieżką pliku kubeconfig i nazwą context. Dane uwierzytelniające, zawartość plików, tokeny i rozszerzenia nigdy nie są dołączane.",
+    "includeAgentAccess": "Dołącz reguły dostępu agentów",
+    "export": "Eksportuj…",
+    "exportDialog": "Eksport widoków i obszarów roboczych",
+    "exported": "Zapisano w {{path}}",
+    "filter": "Widoki Sextant",
+    "importTitle": "Import",
+    "importHint": "Pokazuje, co się zmieni, zanim cokolwiek zostanie zapisane.",
+    "import": "Importuj…",
+    "importDialog": "Import widoków i obszarów roboczych",
+    "invalid": "Tego pliku nie można zaimportować:",
+    "preview": "Podgląd",
+    "sections": {
+      "clusters": "Klastry",
+      "views": "Widoki",
+      "pins": "Przypięcia",
+      "workspaces": "Obszary robocze"
+    },
+    "status": {
+      "added": "Nowe",
+      "changed": "Zmienione",
+      "kept": "Bez zmian",
+      "skipped": "Pominięte",
+      "missing": "Brak na tym komputerze"
+    },
+    "clusterFields": "Ustawia: {{fields}}",
+    "clusterChanges": "Zmienia: {{fields}}",
+    "clusterSame": "Nic do zmiany",
+    "skippedHint": "Jego klastra nie ma na tym komputerze",
+    "matchExact": "Ten sam plik kubeconfig i ten sam context",
+    "matchName": "Dopasowano tylko po nazwie context — może to być inny klaster",
+    "agentAccessSkipped": "Reguły dostępu agentów nie zostaną zastosowane: klaster dopasowano tylko po nazwie",
+    "fields": {
+      "displayName": "nazwa wyświetlana",
+      "color": "kolor",
+      "icon": "ikona",
+      "namespaces": "filtr namespaces",
+      "previewChanges": "podgląd zmian",
+      "agentAccess": "reguły dostępu agentów"
+    },
+    "overwrite": "Zastępuj wpisy, które różnią się od moich",
+    "applyAgentAccess": "Zastosuj reguły dostępu agentów z pliku",
+    "agentAccessWarning": "Reguły dostępu agentów decydują, co agenci AI mogą robić w klastrze. Stosuj je tylko z zaufanego pliku.",
+    "nothing": "Przy tych wyborach nie ma nic do zaimportowania.",
+    "changes": "Wpisy do zapisania: {{number}}",
+    "apply": "Importuj",
+    "cancel": "Anuluj",
+    "done": "Zaimportowano."
+  }
+}

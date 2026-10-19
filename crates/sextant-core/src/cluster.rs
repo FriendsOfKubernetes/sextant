@@ -324,52 +324,7 @@ impl ClusterManager {
                 .unwrap_or_else(|e| e.into_inner());
             registry.kubeconfig_for(id)?
         };
-        // Read from the very text the client is built from.
-        let binding = ServerBinding::of(&kubeconfig).ok();
-        // Only the file name of the exec plugin goes into error messages.
-        let plugin: Option<String> = kubeconfig
-            .auth_infos
-            .iter()
-            .filter_map(|u| u.auth_info.as_ref()?.exec.as_ref()?.command.as_deref())
-            .map(|cmd| {
-                std::path::Path::new(cmd)
-                    .file_name()
-                    .map_or_else(|| cmd.to_owned(), |n| n.to_string_lossy().into_owned())
-            })
-            .next();
-        let options = KubeConfigOptions {
-            context: kubeconfig.current_context.clone(),
-            ..Default::default()
-        };
-        let mut config = kube::Config::from_custom_kubeconfig(kubeconfig, &options)
-            .await
-            .map_err(kubeconfig_error)?;
-        config.connect_timeout = Some(CONNECT_TIMEOUT);
-        // kube's own retry (`server_retry`: 15 repeats, any `Retry-After`) is replaced by [`RetryPolicy`].
-        config.default_retry = false;
-
-        let client = retrying_client(config).map_err(|err| {
-            let core = kube_error(err, plugin.as_deref());
-            if core.code == ErrorCode::AuthPlugin {
-                core
-            } else {
-                // The client is built from the kubeconfig alone: a bad certificate or key is a kubeconfig problem.
-                CoreError::new(ErrorCode::Kubeconfig, core.message)
-            }
-        })?;
-
-        // `/api` needs an authenticated user (unlike `/version`), so a rejected token fails here with 401.
-        match tokio::time::timeout(CHECK_TIMEOUT, client.list_core_api_versions()).await {
-            Ok(Ok(_)) => Ok((client, binding)),
-            Ok(Err(err)) => Err(kube_error(err, plugin.as_deref())),
-            Err(_) => Err(CoreError::new(
-                ErrorCode::Unreachable,
-                format!(
-                    "no answer from the API server in {} seconds",
-                    CHECK_TIMEOUT.as_secs()
-                ),
-            )),
-        }
+        open_checked_client(kubeconfig).await
     }
 
     fn update<T>(&self, id: &ClusterId, f: impl FnOnce(&mut Entry) -> T) -> T {
@@ -387,6 +342,66 @@ impl ClusterManager {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
     }
+}
+
+/// Builds a client from a one-context kubeconfig (`current-context` set) and checks it with an authenticated request
+/// within the connect timeouts. Also the connection test of a kubeconfig that is not a source yet
+/// ([`check_connection`]).
+pub(crate) async fn open_checked_client(
+    kubeconfig: kube::config::Kubeconfig,
+) -> CoreResult<(kube::Client, Option<ServerBinding>)> {
+    // Read from the very text the client is built from.
+    let binding = ServerBinding::of(&kubeconfig).ok();
+    // Only the file name of the exec plugin goes into error messages.
+    let plugin: Option<String> = kubeconfig
+        .auth_infos
+        .iter()
+        .filter_map(|u| u.auth_info.as_ref()?.exec.as_ref()?.command.as_deref())
+        .map(|cmd| {
+            std::path::Path::new(cmd)
+                .file_name()
+                .map_or_else(|| cmd.to_owned(), |n| n.to_string_lossy().into_owned())
+        })
+        .next();
+    let options = KubeConfigOptions {
+        context: kubeconfig.current_context.clone(),
+        ..Default::default()
+    };
+    let mut config = kube::Config::from_custom_kubeconfig(kubeconfig, &options)
+        .await
+        .map_err(kubeconfig_error)?;
+    config.connect_timeout = Some(CONNECT_TIMEOUT);
+    // kube's own retry (`server_retry`: 15 repeats, any `Retry-After`) is replaced by [`RetryPolicy`].
+    config.default_retry = false;
+
+    let client = retrying_client(config).map_err(|err| {
+        let core = kube_error(err, plugin.as_deref());
+        if core.code == ErrorCode::AuthPlugin {
+            core
+        } else {
+            // The client is built from the kubeconfig alone: a bad certificate or key is a kubeconfig problem.
+            CoreError::new(ErrorCode::Kubeconfig, core.message)
+        }
+    })?;
+
+    // `/api` needs an authenticated user (unlike `/version`), so a rejected token fails here with 401.
+    match tokio::time::timeout(CHECK_TIMEOUT, client.list_core_api_versions()).await {
+        Ok(Ok(_)) => Ok((client, binding)),
+        Ok(Err(err)) => Err(kube_error(err, plugin.as_deref())),
+        Err(_) => Err(CoreError::new(
+            ErrorCode::Unreachable,
+            format!(
+                "no answer from the API server in {} seconds",
+                CHECK_TIMEOUT.as_secs()
+            ),
+        )),
+    }
+}
+
+/// Connects once to the context of `kubeconfig` (one context, `current-context` set) and drops the connection: the
+/// "Check connection" of a kubeconfig being added. Runs its exec plugin like any connection does.
+pub async fn check_connection(kubeconfig: kube::config::Kubeconfig) -> CoreResult<()> {
+    open_checked_client(kubeconfig).await.map(|_| ())
 }
 
 fn not_connected(id: &ClusterId) -> CoreError {

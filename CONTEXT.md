@@ -10,7 +10,7 @@ One entry in the list on the left: one context from kubeconfig, not a separate K
 _Avoid_: connection, server, profile
 
 **Kubeconfig source**:
-Where the app gets contexts from: the default path, the `KUBECONFIG` variable, an added file, pasted text or a cloud source. One source yields several clusters.
+Where the app gets contexts from: the default path, the `KUBECONFIG` variable, an added file, pasted text, a cloud source or the merged file. One source yields several clusters.
 _Avoid_: config, kubeconfig file
 
 **Failed source**:
@@ -504,3 +504,47 @@ _Avoid_: protected, locked down
 **Unevaluated policy kind**:
 A policy kind the cluster serves that the connectivity check does not evaluate (AdminNetworkPolicy, BaselineAdminNetworkPolicy, ClusterNetworkPolicy, Antrea, OVN-Kubernetes, GKE FQDN policies). Its objects make answers in their namespace, or everywhere when cluster-wide, "Unknown".
 _Avoid_: unsupported CNI, ignored policy
+
+**Saved view**:
+A resource table saved under a name: its kind, namespaces, search text, "Only problems", label selector, sort and visible columns, for one cluster or for all clusters. Opened from the sidebar, the command palette or a pin. Kept in the settings.
+_Avoid_: filter, bookmark, query
+
+**Pin (favourite)**:
+One object or one saved view put on the "Favourites" strip above the sidebar of a cluster. Pinning changes nothing in the cluster.
+_Avoid_: bookmark, star
+
+**Workspace**:
+A named set of clusters ("prod", "staging"). The active workspace filters the cluster rail and the views and pins offered; switching never connects or disconnects a cluster. Not a Kubernetes namespace and not a kubeconfig.
+_Avoid_: project, environment, profile
+
+**Export file (views)**:
+A JSON file (`sextant-workspace`, version 1) with views, pins, workspaces and clusters by reference (kubeconfig source path and context name) plus their shareable settings; agent access rules only when ticked. It never carries kubeconfig contents, credentials, tokens or extensions. Importing it shows a preview first.
+_Avoid_: backup, settings dump
+
+**Exact match / name match (import)**:
+How an imported cluster is found on this computer: exact — the same id, or the same kubeconfig path and context; name — only the context name is the same, so it may be another cluster. Agent access rules are applied only on an exact match.
+_Avoid_: same cluster
+
+**Writable source**:
+A kubeconfig source Sextant may change: its own files (pasted, cloud, merged) always, any other file only after "Allow Sextant to edit" in Settings → Clusters (off by default). Enforced by the backend.
+_Avoid_: editable config, managed kubeconfig
+
+**Kubeconfig edit**:
+A change Sextant makes to a kubeconfig file: rename a context, set its default namespace, duplicate it with another namespace, delete it, or merge files. Always previewed, confirmed, backed up and written atomically; refused with "conflict" when the file changed after the preview.
+_Avoid_: kubeconfig sync, config update
+
+**Merged file**:
+Sextant's own kubeconfig file `merged.yaml` in its data directory, into which chosen kubeconfig files are copied (taken names get `-2`, `-3`; relative paths made absolute). The chosen files are not changed.
+_Avoid_: combined kubeconfig, flattened config
+
+**Kubeconfig backup**:
+The copy `<file>.bak-<UTC time>` made before every kubeconfig edit, next to the real file (after symlinks), mode 0600. Sextant keeps its newest five per file and never touches other files.
+_Avoid_: snapshot, history
+
+**Credential expiry**:
+When a context's credentials stop working, as far as the kubeconfig tells without running anything: a client certificate's end date, a JWT token's or an OIDC id-token's `exp`. For exec plugins and auth providers only the program is named. Shown as a badge on the rail; notifications only through the opt-in "Credentials" category.
+_Avoid_: session timeout, login expiry
+
+**Kubeconfig check**:
+The offline check of a kubeconfig being added, per context: YAML, references, server URL, certificates, named files, the exec program in `PATH`, expired credentials. The server is contacted only on "Check connection".
+_Avoid_: lint, connection test

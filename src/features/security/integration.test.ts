@@ -128,7 +128,7 @@ describe("the problem store", () => {
 
 describe("notifications of the security category", () => {
   it("are off until turned on, and turned on by their own toggle", () => {
-    expect(OPT_IN_CATEGORIES).toEqual(["security"]);
+    expect(OPT_IN_CATEGORIES).toContain("security");
     expect(NOTIFY_CATEGORIES).toContain("security");
     let settings = defaultAppSettings();
     let prefs = prefsOf(settings)!;

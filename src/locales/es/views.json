@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "Columnas",
+    "labelSelector": "Label selector: {{selector}}",
+    "clearLabelSelector": "Quitar el label selector"
+  },
+  "save": {
+    "button": "Guardar vista",
+    "title": "Guardar vista",
+    "name": "Nombre",
+    "namePlaceholder": "Pods con fallos en shop",
+    "scope": "Mostrar en",
+    "scopeCluster": "Este clúster",
+    "scopeAll": "Todos los clústeres",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "Se pide al clúster, por ejemplo app=web,tier!=db. Déjelo vacío para ninguno.",
+    "pin": "Fijar en favoritos",
+    "captures": "Guarda el tipo de recurso, los namespaces, el texto de búsqueda, «Solo problemas», el label selector, el orden y las columnas visibles.",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "full": "La lista de vistas está llena. Elimine primero una vista."
+  },
+  "sidebar": {
+    "favourites": "Favoritos",
+    "views": "Vistas",
+    "manage": "Gestionar vistas y espacios de trabajo",
+    "openView": "Abrir la vista {{name}}",
+    "openObject": "Abrir {{kind}} {{name}}",
+    "unpin": "Desfijar {{name}}",
+    "pinView": "Fijar la vista {{name}}",
+    "allClusters": "Todos los clústeres"
+  },
+  "pin": {
+    "action": "Fijar en favoritos",
+    "unpinAction": "Quitar de favoritos"
+  },
+  "palette": {
+    "views": "Vistas guardadas",
+    "favourites": "Favoritos",
+    "allClusters": "Todos los clústeres",
+    "thisCluster": "Este clúster"
+  },
+  "workspace": {
+    "switcher": "Espacio de trabajo",
+    "current": "Espacio de trabajo: {{name}}",
+    "all": "Todos los clústeres",
+    "manage": "Gestionar espacios de trabajo…",
+    "hint": "Un espacio de trabajo muestra en la barra solo sus clústeres. Cambiar de espacio nunca conecta ni desconecta un clúster."
+  },
+  "manager": {
+    "title": "Vistas y espacios de trabajo",
+    "tabs": {
+      "views": "Vistas",
+      "workspaces": "Espacios de trabajo",
+      "transfer": "Exportar e importar"
+    },
+    "noViews": "Aún no hay vistas guardadas. Abra una tabla y elija «Guardar vista» en su encabezado.",
+    "rename": "Renombrar {{name}}",
+    "renameField": "Nuevo nombre de {{name}}",
+    "moveUp": "Subir {{name}}",
+    "moveDown": "Bajar {{name}}",
+    "delete": "Eliminar {{name}}",
+    "deleteConfirm": "¿Eliminar la vista {{name}}? También se quitan sus fijaciones.",
+    "missingCluster": "Clúster no encontrado",
+    "kindIn": "{{kind}} en {{cluster}}",
+    "noWorkspaces": "Aún no hay espacios de trabajo.",
+    "newWorkspace": "Nuevo espacio de trabajo",
+    "workspaceName": "Nombre del espacio de trabajo",
+    "workspaceClusters": "Clústeres de este espacio de trabajo",
+    "saveWorkspace": "Guardar espacio de trabajo",
+    "editWorkspace": "Editar {{name}}",
+    "deleteWorkspace": "Eliminar el espacio de trabajo {{name}}",
+    "deleteWorkspaceConfirm": "¿Eliminar el espacio de trabajo {{name}}? Sus clústeres, vistas y fijaciones se conservan.",
+    "workspaceClusterCount": "Clústeres: {{number}}",
+    "use": "Usar",
+    "inUse": "En uso",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete_button": "Eliminar"
+  },
+  "transfer": {
+    "exportTitle": "Exportar",
+    "exportHint": "Escribe un archivo JSON con sus vistas, fijaciones, espacios de trabajo y los clústeres por referencia: la ruta del archivo kubeconfig y el nombre del context. Nunca se incluyen credenciales, contenido de archivos, tokens ni extensiones.",
+    "includeAgentAccess": "Incluir las reglas de acceso de agentes",
+    "export": "Exportar…",
+    "exportDialog": "Exportar vistas y espacios de trabajo",
+    "exported": "Guardado en {{path}}",
+    "filter": "Vistas de Sextant",
+    "importTitle": "Importar",
+    "importHint": "Muestra lo que cambiaría antes de guardar nada.",
+    "import": "Importar…",
+    "importDialog": "Importar vistas y espacios de trabajo",
+    "invalid": "Este archivo no se puede importar:",
+    "preview": "Vista previa",
+    "sections": {
+      "clusters": "Clústeres",
+      "views": "Vistas",
+      "pins": "Fijaciones",
+      "workspaces": "Espacios de trabajo"
+    },
+    "status": {
+      "added": "Nuevo",
+      "changed": "Cambia",
+      "kept": "Sin cambios",
+      "skipped": "Omitido",
+      "missing": "No está en este equipo"
+    },
+    "clusterFields": "Establece: {{fields}}",
+    "clusterChanges": "Cambia: {{fields}}",
+    "clusterSame": "Nada que cambiar",
+    "skippedHint": "Su clúster no está en este equipo",
+    "matchExact": "Mismo archivo kubeconfig y mismo context",
+    "matchName": "Asociado solo por el nombre del context: puede ser otro clúster",
+    "agentAccessSkipped": "Las reglas de acceso de agentes no se aplican: el clúster se asoció solo por el nombre",
+    "fields": {
+      "displayName": "nombre visible",
+      "color": "color",
+      "icon": "icono",
+      "namespaces": "filtro de namespaces",
+      "previewChanges": "vista previa de cambios",
+      "agentAccess": "reglas de acceso de agentes"
+    },
+    "overwrite": "Reemplazar las entradas que difieren de las mías",
+    "applyAgentAccess": "Aplicar las reglas de acceso de agentes del archivo",
+    "agentAccessWarning": "Las reglas de acceso de agentes deciden qué pueden hacer los agentes de IA en un clúster. Aplíquelas solo desde un archivo de confianza.",
+    "nothing": "No hay nada que importar con estas opciones.",
+    "changes": "Entradas para guardar: {{number}}",
+    "apply": "Importar",
+    "cancel": "Cancelar",
+    "done": "Importado."
+  }
+}

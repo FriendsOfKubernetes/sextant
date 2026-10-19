@@ -25,6 +25,7 @@ export const api = {
   cleanup: commands.cleanup,
   timeline: commands.timeline,
   tls: commands.tls,
+  kubeconfig: commands.kubeconfig,
   mcp: commands.mcp,
   extensions: commands.extensions,
   streams: commands.streams,
@@ -49,6 +50,7 @@ export {
   type NotificationActionType,
 } from "./notifications";
 export { defaultAppSettings, loadSettings, updateSettings, useSettings, type UseSettings } from "./settings";
+export { withBackendSettingsChange } from "./settings";
 export type { FileFilter, OpenFileOptions, SaveFileOptions, StreamChannel, Unsubscribe } from "./transport";
 export { newStreamId, openStream, resetStreams, type StreamSpec } from "./stream";
 export { applyWatchUpdate, uidOf, useWatch, type WatchState, type WatchStatus } from "./useWatch";

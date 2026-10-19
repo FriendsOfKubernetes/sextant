@@ -1,0 +1,132 @@
+{
+  "table": {
+    "columns": "列",
+    "labelSelector": "Label selector：{{selector}}",
+    "clearLabelSelector": "移除 label selector"
+  },
+  "save": {
+    "button": "保存视图",
+    "title": "保存视图",
+    "name": "名称",
+    "namePlaceholder": "shop 中失败的 Pod",
+    "scope": "显示于",
+    "scopeCluster": "此集群",
+    "scopeAll": "所有集群",
+    "labelSelector": "Label selector",
+    "labelSelectorHint": "向集群请求，例如 app=web,tier!=db。留空表示不使用。",
+    "pin": "固定到收藏",
+    "captures": "保存资源种类、namespace、搜索文本、“仅显示问题”、label selector、排序和可见列。",
+    "save": "保存",
+    "cancel": "取消",
+    "full": "视图列表已满。请先删除一个视图。"
+  },
+  "sidebar": {
+    "favourites": "收藏",
+    "views": "视图",
+    "manage": "管理视图和工作区",
+    "openView": "打开视图 {{name}}",
+    "openObject": "打开 {{kind}} {{name}}",
+    "unpin": "取消固定 {{name}}",
+    "pinView": "固定视图 {{name}}",
+    "allClusters": "所有集群"
+  },
+  "pin": {
+    "action": "固定到收藏",
+    "unpinAction": "从收藏中取消固定"
+  },
+  "palette": {
+    "views": "已保存的视图",
+    "favourites": "收藏",
+    "allClusters": "所有集群",
+    "thisCluster": "此集群"
+  },
+  "workspace": {
+    "switcher": "工作区",
+    "current": "工作区：{{name}}",
+    "all": "所有集群",
+    "manage": "管理工作区…",
+    "hint": "工作区只在侧栏中显示它的集群。切换工作区从不连接或断开任何集群。"
+  },
+  "manager": {
+    "title": "视图和工作区",
+    "tabs": {
+      "views": "视图",
+      "workspaces": "工作区",
+      "transfer": "导出和导入"
+    },
+    "noViews": "还没有保存的视图。打开一个表格，并在其标题栏中选择“保存视图”。",
+    "rename": "重命名 {{name}}",
+    "renameField": "{{name}} 的新名称",
+    "moveUp": "上移 {{name}}",
+    "moveDown": "下移 {{name}}",
+    "delete": "删除 {{name}}",
+    "deleteConfirm": "删除视图 {{name}}？它的固定项也会被移除。",
+    "missingCluster": "未找到集群",
+    "kindIn": "{{cluster}} 中的 {{kind}}",
+    "noWorkspaces": "还没有工作区。",
+    "newWorkspace": "新建工作区",
+    "workspaceName": "工作区名称",
+    "workspaceClusters": "此工作区中的集群",
+    "saveWorkspace": "保存工作区",
+    "editWorkspace": "编辑 {{name}}",
+    "deleteWorkspace": "删除工作区 {{name}}",
+    "deleteWorkspaceConfirm": "删除工作区 {{name}}？其中的集群、视图和固定项会保留。",
+    "workspaceClusterCount": "集群：{{number}}",
+    "use": "使用",
+    "inUse": "使用中",
+    "save": "保存",
+    "cancel": "取消",
+    "delete_button": "删除"
+  },
+  "transfer": {
+    "exportTitle": "导出",
+    "exportHint": "写入一个 JSON 文件，包含你的视图、固定项、工作区，以及以引用方式记录的集群：kubeconfig 文件路径和 context 名称。从不包含凭据、文件内容、令牌或扩展。",
+    "includeAgentAccess": "包含智能体访问规则",
+    "export": "导出…",
+    "exportDialog": "导出视图和工作区",
+    "exported": "已保存到 {{path}}",
+    "filter": "Sextant 视图",
+    "importTitle": "导入",
+    "importHint": "在保存任何内容之前显示将会发生的变化。",
+    "import": "导入…",
+    "importDialog": "导入视图和工作区",
+    "invalid": "无法导入此文件：",
+    "preview": "预览",
+    "sections": {
+      "clusters": "集群",
+      "views": "视图",
+      "pins": "固定项",
+      "workspaces": "工作区"
+    },
+    "status": {
+      "added": "新增",
+      "changed": "更改",
+      "kept": "未变",
+      "skipped": "跳过",
+      "missing": "此计算机上没有"
+    },
+    "clusterFields": "设置：{{fields}}",
+    "clusterChanges": "更改：{{fields}}",
+    "clusterSame": "无需更改",
+    "skippedHint": "它的集群不在此计算机上",
+    "matchExact": "相同的 kubeconfig 文件和 context",
+    "matchName": "仅按 context 名称匹配：可能是另一个集群",
+    "agentAccessSkipped": "不应用智能体访问规则：该集群仅按名称匹配",
+    "fields": {
+      "displayName": "显示名称",
+      "color": "颜色",
+      "icon": "图标",
+      "namespaces": "namespace 筛选",
+      "previewChanges": "预览更改",
+      "agentAccess": "智能体访问规则"
+    },
+    "overwrite": "替换与我的不同的条目",
+    "applyAgentAccess": "应用文件中的智能体访问规则",
+    "agentAccessWarning": "智能体访问规则决定 AI 智能体在集群中可以做什么。仅从你信任的文件应用它们。",
+    "nothing": "按当前选择没有可导入的内容。",
+    "changes": "要保存的条目：{{number}}",
+    "apply": "导入",
+    "cancel": "取消",
+    "done": "已导入。"
+  }
+}

@@ -19,3 +19,11 @@
   white-space: nowrap;
   font-size: var(--control-font-size);
 }
+
+/* A label selector a saved view asked for (#149), removable. */
+.main__selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}

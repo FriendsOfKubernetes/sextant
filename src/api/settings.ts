@@ -40,6 +40,11 @@ export function defaultAppSettings(): AppSettings {
       checkConfigMaps: false,
       checkSecrets: false,
     },
+    kubeconfig: { writableSources: [], credentialExpiryDays: 14 },
+    views: [],
+    pins: [],
+    workspaces: [],
+    activeWorkspace: null,
   };
 }
 
@@ -93,11 +98,34 @@ export function updateSettings(change: (current: AppSettings) => AppSettings): P
   return result;
 }
 
+/**
+ * Runs `fn` (a backend command that changes the settings itself, such as a kubeconfig change that moves a renamed
+ * cluster's settings) between the queued updates, then reads the settings again: no stale copy is written over it.
+ */
+export function withBackendSettingsChange<T>(fn: () => Promise<T>): Promise<T> {
+  const run = async () => {
+    try {
+      return await fn();
+    } finally {
+      const settings = await call<AppSettings>("settings_get").catch(() => null);
+      if (settings) setState({ settings, error: null });
+    }
+  };
+  const result = queue.then(run, run);
+  queue = result.catch(() => undefined);
+  return result;
+}
+
 export function resetSettingsCache(): void {
   state = { settings: null, loading: false, error: null };
   loadStarted = false;
   queue = Promise.resolve();
   for (const fn of listeners) fn();
+}
+
+/** The cached settings, read outside React (`null` before they are loaded). */
+export function getSettingsSnapshot(): AppSettings | null {
+  return state.settings;
 }
 
 function subscribeSettings(fn: () => void): () => void {

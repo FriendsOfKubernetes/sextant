@@ -27,6 +27,7 @@ import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../re
 import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages, usePagesVersion } from "../pages";
 import { getSectionBadge, useSectionBadgesVersion, type SectionBadgeDef } from "../sectionBadges";
+import { getSlot, useSlotsVersion } from "../slots";
 import "./sidebar.css";
 
 /** Sections shown as one link (their only entry) instead of a collapsible group. */
@@ -58,6 +59,8 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   const registryVersion = useRegistryVersion();
   const pagesVersion = usePagesVersion();
   useSectionBadgesVersion();
+  useSlotsVersion();
+  const Top = getSlot("sidebarTop");
   const { kinds } = useClusterKinds(clusterId);
   useEffect(() => watchCrdChanges(clusterId), [clusterId]);
 
@@ -102,6 +105,11 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
 
   return (
     <ul className="sidebar__list">
+      {Top && (
+        <li className="sidebar__top">
+          <Top />
+        </li>
+      )}
       {sections.map((section) => {
         const only = section.entries[0];
         if (SINGLE_ENTRY.has(section.id) && section.entries.length === 1 && !section.groups?.length && only) {
