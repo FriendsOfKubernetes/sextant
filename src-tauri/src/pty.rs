@@ -1119,7 +1119,7 @@ mod tests {
     }
 
     /// A disowned job keeps the terminal's slave side open after the shell exits: the session still ends at once
-    /// (the job keeps running, it was disowned).
+    /// (the job keeps running, it was disowned), the output thread ends and our side of the terminal is closed (#124).
     #[cfg(unix)]
     #[test]
     fn the_session_ends_with_the_shell_while_a_disowned_job_holds_the_terminal() {
@@ -1127,6 +1127,13 @@ mod tests {
             eprintln!("skipped: no bash");
             return;
         };
+        within(Duration::from_secs(60), move || {
+            session_ends_while_a_disowned_job_holds_the_terminal(bash)
+        });
+    }
+
+    #[cfg(unix)]
+    fn session_ends_while_a_disowned_job_holds_the_terminal(bash: PathBuf) {
         let bash = bash.to_string_lossy().into_owned();
         let mut session =
             spawn_shell(&shell(&bash, &["--norc", "--noprofile"]), &[], 80, 24).unwrap();
@@ -1163,6 +1170,73 @@ mod tests {
             sent.elapsed()
         );
         assert!(!is_gone_or_zombie(&job.0), "the disowned job was killed");
+
+        // The output thread is the only sender: the channel closes when it has ended.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            match session.output.try_recv() {
+                Err(mpsc::error::TryRecvError::Disconnected) => break,
+                Err(mpsc::error::TryRecvError::Empty) => {
+                    assert!(
+                        Instant::now() < deadline,
+                        "the output thread is still running"
+                    );
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Ok(event) => panic!("output after the exit: {event:?}"),
+            }
+        }
+        // Nothing of this process holds the terminal's master side any more, although the job still holds the slave.
+        #[cfg(target_os = "linux")]
+        if let Some(index) = tty_index_of_job(&job.0) {
+            drop(session);
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while masters_open(index) > 0 {
+                assert!(
+                    Instant::now() < deadline,
+                    "the master of pts/{index} is still open"
+                );
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
+
+    /// The pts number the job's stdin is.
+    #[cfg(target_os = "linux")]
+    fn tty_index_of_job(pid: &str) -> Option<u32> {
+        let link = std::fs::read_link(format!("/proc/{pid}/fd/0")).ok()?;
+        link.to_str()?.strip_prefix("/dev/pts/")?.parse().ok()
+    }
+
+    /// How many descriptors of this process are the master side of pts `index` (by `tty-index` in their fdinfo).
+    #[cfg(target_os = "linux")]
+    fn masters_open(index: u32) -> usize {
+        let wanted = format!("tty-index:\t{index}");
+        std::fs::read_dir("/proc/self/fdinfo")
+            .expect("read /proc/self/fdinfo")
+            .filter_map(|entry| std::fs::read_to_string(entry.ok()?.path()).ok())
+            .filter(|info| info.lines().any(|line| line == wanted))
+            .count()
+    }
+
+    /// Runs `test` on a thread of its own and fails if it has not finished within `limit`, so a regression that
+    /// blocks fails the test instead of hanging the run (#159).
+    #[cfg(unix)]
+    fn within(limit: Duration, test: impl FnOnce() + Send + 'static) {
+        let (done_tx, done_rx) = std::sync::mpsc::channel();
+        let runner = std::thread::spawn(move || {
+            test();
+            let _ = done_tx.send(());
+        });
+        match done_rx.recv_timeout(limit) {
+            Ok(()) => {}
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                std::panic::resume_unwind(runner.join().expect_err("the test panicked"))
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                panic!("the test did not finish in {} s", limit.as_secs())
+            }
+        }
     }
 
     /// No such process, or only an unreaped zombie. `ps` instead of `/proc`, which macOS does not have.
