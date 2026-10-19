@@ -20,3 +20,5 @@ The CSP is built for every response from the extension's own base address (`sext
 - The header depends on the platform-specific base URL, so the Rust code has one place (`base_url(id)`) that every URL and every CSP goes through.
 - A view an extension opens with `window.open` (allowed by `allow-popups-to-escape-sandbox`) is not sandboxed by our attribute; that is intended for links, and the CSP keeps no network for our files.
 - The rule was checked on Linux (WebKitGTK); behaviour on WebView2 and WKWebView is expected from the same logic and is covered only by CI.
+
+Amended (#91): the `sandbox` tokens are one Rust constant (`protocol::SANDBOX`), pinned by a test to `FRAME_SANDBOX` in `src/extensions/ExtensionFrame.tsx`. Every response also carries `Referrer-Policy: no-referrer`. `Cross-Origin-Resource-Policy` is deliberately not sent: the frame's origin is opaque, so `same-site` would block the extension's own no-cors loads (images, stylesheets, classic scripts); the per-extension CSP sources do that job.

@@ -11,7 +11,7 @@
 //! only through [`resolve_package_file`]: exact names inside the extension's folder, no `..`, no dot-files, no links.
 //! A disabled, unknown or paused extension, or any file that cannot be served, is `404`. A file carries the CSP of
 //! its extension ([`extension_csp`]: sources only from its own folder, no network, a sandbox); a `404` or `405`
-//! carries [`ERROR_CSP`]. Every answer has `nosniff` and `no-store`. Why a file was refused (a link, a hard link,
+//! carries [`ERROR_CSP`]. Every answer has `nosniff`, `no-store` and `Referrer-Policy: no-referrer`. Why a file was refused (a link, a hard link,
 //! another spelling, a file system that cannot be checked, too big) goes to stderr once per file, without its contents;
 //! a file that is simply not there is not logged.
 
@@ -29,6 +29,10 @@ use super::ExtensionHost;
 /// The scheme name.
 pub const SCHEME: &str = "sextant-ext";
 
+/// The sandbox of an extension frame: the iframe attribute (`FRAME_SANDBOX` in `src/extensions/ExtensionFrame.tsx`,
+/// pinned by a test) and the CSP `sandbox` of every file. Never `allow-same-origin`.
+pub const SANDBOX: &str = "allow-scripts allow-forms allow-popups-to-escape-sandbox";
+
 /// The `Content-Security-Policy` of a `404` or `405`: nothing loads, nothing runs.
 pub const ERROR_CSP: &str = "default-src 'none'; sandbox";
 
@@ -43,8 +47,7 @@ pub const ERROR_CSP: &str = "default-src 'none'; sandbox";
 pub fn extension_csp(base: &str) -> String {
     format!(
         "default-src 'none'; script-src {base} 'unsafe-inline'; style-src {base} 'unsafe-inline'; \
-         img-src {base} data:; font-src {base} data:; connect-src 'none'; form-action 'none'; \
-         sandbox allow-scripts allow-forms allow-popups-to-escape-sandbox"
+         img-src {base} data:; font-src {base} data:; connect-src 'none'; form-action 'none'; sandbox {SANDBOX}"
     )
 }
 
@@ -147,6 +150,10 @@ fn response(status: StatusCode, content_type: &str, csp: &str, body: Vec<u8>) ->
         .header(header::CONTENT_SECURITY_POLICY, csp)
         .header(header::X_CONTENT_TYPE_OPTIONS, "nosniff")
         .header(header::CACHE_CONTROL, "no-store")
+        // The frame's links and loads never name the extension's file in a `Referer` (the iframe also sets it).
+        // No `Cross-Origin-Resource-Policy`: the frame's origin is opaque, so `same-site` would block its own images,
+        // styles and classic scripts; the CSP sources of each extension keep it to its own folder instead.
+        .header(header::REFERRER_POLICY, "no-referrer")
         // The frame is sandboxed without `allow-same-origin`, so its origin is opaque (`null`) and module scripts
         // (`<script type="module">`, fetched in CORS mode) load only with this. Other extensions cannot read the
         // files anyway: their CSP allows no `connect-src` and only scripts from their own folder.
@@ -493,6 +500,116 @@ mod tests {
                 "default-src 'none'; sandbox"
             );
         }
+    }
+
+    /// Every answer, whatever it carries (a document, a script, a style, an image, an error), has the hardening
+    /// headers: a CSP whose `sandbox` is the frame's (so a document opened outside the frame is still sandboxed and
+    /// never same-origin), `nosniff`, `no-store` and `Referrer-Policy: no-referrer`. No `Cross-Origin-Resource-Policy`:
+    /// the frame's origin is opaque, so `same-site`/`same-origin` would block its own `<img>`, `<link>` and classic
+    /// `<script src>` (no-cors loads); the per-extension CSP sources already keep extensions apart.
+    #[test]
+    fn every_answer_carries_the_hardening_headers() {
+        let dir = tempfile::tempdir().unwrap();
+        let host = dev_host(dir.path());
+        let src = dir.path().join("src");
+        std::fs::write(src.join("style.css"), "p{color:red}").unwrap();
+        std::fs::write(src.join("logo.png"), [0x89, b'P', b'N', b'G']).unwrap();
+        std::fs::write(
+            src.join("logo.svg"),
+            "<svg xmlns='http://www.w3.org/2000/svg'/>",
+        )
+        .unwrap();
+        let sandbox = format!("sandbox {SANDBOX}");
+        let served = [
+            (
+                "sextant-ext://widgets/index.html",
+                "text/html; charset=utf-8",
+            ),
+            ("sextant-ext://widgets/", "text/html; charset=utf-8"),
+            (
+                "sextant-ext://widgets/js/app.js",
+                "text/javascript; charset=utf-8",
+            ),
+            ("sextant-ext://widgets/style.css", "text/css; charset=utf-8"),
+            ("sextant-ext://widgets/logo.png", "image/png"),
+            (
+                "http://sextant-ext.localhost/widgets/logo.svg",
+                "image/svg+xml",
+            ),
+        ];
+        for (uri, kind) in served {
+            let answer = get(&host, uri);
+            assert_eq!(answer.status(), StatusCode::OK, "{uri}");
+            assert_eq!(header_of(&answer, header::CONTENT_TYPE), kind, "{uri}");
+            let policy = header_of(&answer, header::CONTENT_SECURITY_POLICY);
+            assert!(policy.ends_with(&sandbox), "{uri}: {policy}");
+            assert!(!policy.contains("allow-same-origin"), "{policy}");
+        }
+        let errors = [
+            get(&host, "sextant-ext://widgets/missing.js"),
+            get(&host, "sextant-ext://other/index.html"),
+            serve(
+                &host,
+                &Request::post("sextant-ext://widgets/index.html")
+                    .body(Vec::new())
+                    .unwrap(),
+            ),
+        ];
+        for answer in errors {
+            assert_ne!(answer.status(), StatusCode::OK);
+            assert_eq!(
+                header_of(&answer, header::CONTENT_SECURITY_POLICY),
+                ERROR_CSP
+            );
+        }
+        let answers = served.iter().map(|(uri, _)| get(&host, uri)).chain([
+            get(&host, "sextant-ext://widgets/missing.js"),
+            serve(
+                &host,
+                &Request::post("sextant-ext://widgets/index.html")
+                    .body(Vec::new())
+                    .unwrap(),
+            ),
+        ]);
+        for answer in answers {
+            let status = answer.status();
+            assert_eq!(
+                header_of(&answer, header::X_CONTENT_TYPE_OPTIONS),
+                "nosniff",
+                "{status}"
+            );
+            assert_eq!(
+                header_of(&answer, header::CACHE_CONTROL),
+                "no-store",
+                "{status}"
+            );
+            assert_eq!(
+                header_of(&answer, header::REFERRER_POLICY),
+                "no-referrer",
+                "{status}"
+            );
+            assert!(
+                answer
+                    .headers()
+                    .get("cross-origin-resource-policy")
+                    .is_none(),
+                "{status}"
+            );
+        }
+    }
+
+    /// The `sandbox` of the CSP is exactly the frame's attribute (`FRAME_SANDBOX`), so a document opened outside the
+    /// frame gets no more than inside it.
+    #[test]
+    fn the_csp_sandbox_is_the_frames_sandbox() {
+        let frame = include_str!("../../../src/extensions/ExtensionFrame.tsx");
+        let line = format!("export const FRAME_SANDBOX = \"{SANDBOX}\";");
+        assert!(
+            frame.contains(&line),
+            "FRAME_SANDBOX in ExtensionFrame.tsx is not {SANDBOX:?}"
+        );
+        assert!(!SANDBOX.contains("allow-same-origin"));
+        assert!(extension_csp("sextant-ext://widgets/").ends_with(&format!("; sandbox {SANDBOX}")));
     }
 
     #[test]
