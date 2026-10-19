@@ -138,7 +138,8 @@ describe("the editor's preview", () => {
     expect(calls("resource_dry_run")[0]!.args).toMatchObject({ clusterId: "c1", mode: "replace" });
     expect(calls("resource_replace")).toHaveLength(0);
     expect(screen.getByText("Nothing has been changed yet.")).toBeInTheDocument();
-    expect(within(region).getByLabelText("After the change").textContent).toContain("by-webhook");
+    // The diff view is drawn after the region appears (slow on macOS CI): wait for it.
+    expect((await within(region).findByLabelText("After the change")).textContent).toContain("by-webhook");
 
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(calls("resource_replace")).toHaveLength(1));
