@@ -1,0 +1,12 @@
+{
+  "dock": {
+    "tabs": "Alt panel sekmeleri"
+  },
+  "terminal": {
+    "leaveHint": "Odağı terminalin dışına taşımak için Ctrl+Shift+E tuşlarına basın."
+  },
+  "logs": {
+    "newLines_one": "{{count}} yeni satır",
+    "newLines_other": "{{count}} yeni satır"
+  }
+}

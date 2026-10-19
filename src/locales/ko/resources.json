@@ -19,6 +19,8 @@
     "velero": "Velero",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "istio": "Istio",
+    "linkerd": "Linkerd",
     "customResources": "사용자 지정 리소스"
   },
   "kinds": {

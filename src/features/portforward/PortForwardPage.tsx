@@ -37,7 +37,9 @@ export function PortForwardPage({ clusterId }: PageProps) {
             <th>{t("portforward:columns.target")}</th>
             <th>{t("portforward:columns.ports")}</th>
             <th>{t("portforward:columns.status")}</th>
-            <th />
+            <th>
+              <span className="visually-hidden">{t("resources:table.actions")}</span>
+            </th>
           </tr>
         </thead>
         <tbody>

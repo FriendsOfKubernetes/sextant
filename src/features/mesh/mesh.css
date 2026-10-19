@@ -1,0 +1,81 @@
+/* Service mesh views (#155). */
+.mesh-line {
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+}
+
+.mesh-line--warning {
+  color: var(--color-warning);
+}
+
+.mesh-problems {
+  margin: 0 0 8px;
+}
+
+.mesh-problem {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 2px 0;
+  color: var(--color-danger);
+}
+
+.mesh-route {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 6px 0;
+}
+
+.mesh-route__title {
+  margin: 0 0 4px;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.mesh-route__part {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 2px 8px;
+}
+
+.mesh-route__part > :not(.mesh-route__label) {
+  grid-column: 2;
+}
+
+.mesh-route__label {
+  grid-column: 1;
+  color: var(--color-text-muted);
+}
+
+.mesh-route__match + .mesh-route__match {
+  margin-top: 4px;
+}
+
+.mesh-caller {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 10px;
+  margin: 6px 0;
+}
+
+.mesh-caller input {
+  min-width: 0;
+}
+
+.mesh-decision {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin: 8px 0;
+}
+
+.mesh-rule-line {
+  display: contents;
+}
+
+.mesh-considered {
+  margin-top: 12px;
+}
+.mesh-rule-alt { grid-column: 1 / -1; font-weight: 600; }

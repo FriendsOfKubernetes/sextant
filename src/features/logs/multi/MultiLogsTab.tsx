@@ -22,6 +22,7 @@ import {
   type LogSourceRef,
   type ParsedLine,
 } from "./model";
+import { LogAnnouncer } from "../LogAnnouncer";
 import type { MultiLogsPayload } from "./open";
 import { MultiLogSession, type LogEntry, type LogSource, type MultiLogOptions, type RunState } from "./session";
 
@@ -395,6 +396,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
           {statusText}
         </span>
         <span data-testid="logs-count">{t("logs:lines", { count: lines.length })}</span>
+        <LogAnnouncer total={dropped + buffer.lines.length} />
         <span data-testid="logs-streams">{t("logs:multi.streams", { count: activeStreams, pods: pods.length })}</span>
         {canReconnect && <Button onClick={() => setAttempt((n) => n + 1)}>{t("logs:toolbar.reconnect")}</Button>}
       </div>
@@ -417,6 +419,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
         ref={scrollRef}
         className={wrap ? "logs__scroll logs__scroll--wrap" : "logs__scroll"}
         role="log"
+        aria-live="off"
         aria-label={t("logs:view")}
         onScroll={onScroll}
       >

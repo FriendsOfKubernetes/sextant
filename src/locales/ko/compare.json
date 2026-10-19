@@ -1,0 +1,124 @@
+{
+  "action": "비교…",
+  "sidebar": "namespace 비교",
+  "loading": "비교하는 중…",
+  "dialog": {
+    "title": "{{kind}} {{name}} 비교",
+    "with": "비교 대상",
+    "modes": {
+      "object": "다른 개체",
+      "lastApplied": "마지막으로 적용된 구성",
+      "helm": "소속 Helm 릴리스의 매니페스트"
+    },
+    "unavailable": {
+      "lastApplied": "이 개체에는 마지막으로 적용된 구성이 없습니다. kubectl apply로 만들거나 변경하지 않았습니다.",
+      "helm": "이 개체는 Helm 릴리스에 속하지 않습니다."
+    },
+    "compare": "비교"
+  },
+  "target": {
+    "cluster": "클러스터",
+    "namespace": "Namespace",
+    "name": "이름",
+    "notConnected": "연결되지 않음",
+    "connect": "연결",
+    "connecting": "연결하는 중…",
+    "suggestions": "일치하는 개체"
+  },
+  "side": {
+    "live": "현재",
+    "lastApplied": "마지막 적용",
+    "manifest": "Helm 매니페스트"
+  },
+  "options": {
+    "hideDefaults": "기본값 숨기기",
+    "hideDefaultsHint": "매니페스트가 설정하지 않을 때 API 서버가 채우는 필드와 할당된 클러스터 IP를 그 값인 동안 표시하지 않습니다.",
+    "ignoreTitle": "{{kind}}의 무시할 경로:",
+    "ignoreNone": "없음",
+    "ignoreRemove": "{{path}} 무시 중지",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "무시할 경로",
+    "ignoreAddButton": "무시",
+    "ignoreInvalid": "경로는 /로 시작하고 /로 구분한 키를 나열합니다. *는 임의의 키나 목록 항목을 뜻합니다(예: /metadata/labels/team, /spec/template/spec/containers/*/image).",
+    "ignoreFull": "종류마다 경로는 최대 {{max}}개입니다."
+  },
+  "diff": {
+    "same": "차이가 없습니다.",
+    "changes_other": "필드 {{count}}개가 다릅니다.",
+    "field": "필드",
+    "notSet": "설정 안 됨"
+  },
+  "secret": {
+    "hint": "값은 Sextant 내부에서 SHA-256 해시로 비교되며 \"값 표시\"를 클릭하기 전에는 창으로 읽어 오지 않습니다.",
+    "label": "Secret 키",
+    "key": "키",
+    "state": "비교 결과",
+    "values": "값",
+    "equal": "같은 값",
+    "different": "다른 값",
+    "onlyLeft": "왼쪽에만 있음",
+    "onlyRight": "오른쪽에만 있음",
+    "noKeys": "양쪽 모두 키가 없습니다.",
+    "show": "값 표시",
+    "hide": "값 숨기기"
+  },
+  "result": {
+    "sameObject": "이 개체 자신입니다. 다른 클러스터, namespace 또는 이름을 선택하십시오.",
+    "notFound": "그곳에는 {{kind}} {{name}}이(가) 없습니다.",
+    "noDrift": "현재 개체에서 마지막으로 적용된 구성의 모든 필드가 바뀌지 않았습니다.",
+    "drift_other": "필드 {{count}}개가 마지막으로 적용된 구성과 다릅니다.",
+    "driftLabel": "마지막으로 적용된 구성과 다른 필드",
+    "notInRelease": "Helm 릴리스 {{name}}의 매니페스트에 이 개체가 없습니다.",
+    "showRelease": "Helm 릴리스 {{name}} 전체 확인",
+    "hideRelease": "릴리스 숨기기"
+  },
+  "drift": {
+    "release": "{{namespace}}의 Helm 릴리스 {{name}}, 리비전 {{revision}}",
+    "unreadable_other": "매니페스트의 문서 {{count}}개를 읽을 수 없어 비교하지 않습니다.",
+    "truncated_other": "개체 {{count}}개를 더 비교하지 않습니다.",
+    "objectsLabel": "릴리스의 개체",
+    "object": "개체",
+    "state": "상태",
+    "details": "세부 정보",
+    "drifted_other": "차이 {{count}}개",
+    "states": {
+      "inSync": "일치",
+      "missing": "없음",
+      "error": "읽을 수 없음"
+    },
+    "showDetails": "세부 정보",
+    "hideDetails": "숨기기",
+    "missingObject": "클러스터에 이 개체가 없습니다.",
+    "changesLabel": "매니페스트와 다른 필드"
+  },
+  "page": {
+    "title": "namespace 비교",
+    "hint": "한쪽에만 있는 개체, 다른 개체, 같은 개체를 종류별로 표시합니다. 각 쪽에서 종류마다 최대 {{max}}개입니다.",
+    "left": "왼쪽",
+    "right": "오른쪽",
+    "kinds": "종류",
+    "result": "비교 결과",
+    "filter": "표시",
+    "objects": "개체",
+    "kind": "종류",
+    "state": "상태",
+    "nothing": "표시할 항목이 없습니다.",
+    "failedLeft": "왼쪽의 {{kind}} 목록을 가져올 수 없습니다: {{message}}",
+    "failedRight": "오른쪽의 {{kind}} 목록을 가져올 수 없습니다: {{message}}",
+    "truncated": "일부 종류는 한쪽에 개체가 {{max}}개를 넘어 나머지는 비교하지 않습니다.",
+    "secretsFailed": "Secret 값을 비교할 수 없습니다: {{message}}",
+    "secretsTruncated": "한 namespace에 Secret이 {{max}}개를 넘어 나머지의 값은 비교하지 않습니다."
+  },
+  "buckets": {
+    "onlyLeft": "왼쪽에만 있음({{count}})",
+    "onlyRight": "오른쪽에만 있음({{count}})",
+    "differ": "다름({{count}})",
+    "same": "같음({{count}})"
+  },
+  "states": {
+    "onlyLeft": "왼쪽에만 있음",
+    "onlyRight": "오른쪽에만 있음",
+    "differ": "다름",
+    "same": "같음"
+  }
+}

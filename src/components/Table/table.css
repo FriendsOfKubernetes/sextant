@@ -25,6 +25,39 @@
   color: var(--color-text-muted);
 }
 
+/* "Showing the first N of M …" and "Loading… N so far" (#157): cut like the forbidden list. */
+.rt__capped,
+.rt__listing {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.rt__capped .badge {
+  white-space: normal;
+}
+
+/* The question before a kind with very many objects is watched in every namespace. */
+.rt__guard {
+  max-width: 560px;
+  margin: 32px auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rt__guard-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.rt__guard-text {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
 /* "No permission in: …" — long lists are cut; the full list is in the tooltip. */
 .rt__forbidden {
   display: inline-flex;
@@ -258,6 +291,12 @@
 .rt-menu__item:focus-visible {
   background: var(--color-hover);
   outline: none;
+}
+
+/* The keyboard-focused item also gets the ring: the hover tint alone is too faint to find. */
+.rt-menu__item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .rt-menu__item--danger {

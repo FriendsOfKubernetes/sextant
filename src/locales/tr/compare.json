@@ -1,0 +1,129 @@
+{
+  "action": "Şununla karşılaştır…",
+  "sidebar": "Namespace karşılaştır",
+  "loading": "Karşılaştırılıyor…",
+  "dialog": {
+    "title": "{{kind}} {{name}} karşılaştırması",
+    "with": "Şununla karşılaştır",
+    "modes": {
+      "object": "Başka bir nesne",
+      "lastApplied": "Son uygulanan yapılandırması",
+      "helm": "Helm sürümünün manifest'i"
+    },
+    "unavailable": {
+      "lastApplied": "Bu nesnenin son uygulanan yapılandırması yok: kubectl apply ile oluşturulmadı ya da değiştirilmedi.",
+      "helm": "Bu nesne bir Helm sürümüne ait değil."
+    },
+    "compare": "Karşılaştır"
+  },
+  "target": {
+    "cluster": "Küme",
+    "namespace": "Namespace",
+    "name": "Ad",
+    "notConnected": "Bağlı değil",
+    "connect": "Bağlan",
+    "connecting": "Bağlanılıyor…",
+    "suggestions": "Eşleşen nesneler"
+  },
+  "side": {
+    "live": "Şu anki",
+    "lastApplied": "Son uygulanan",
+    "manifest": "Helm manifest'i"
+  },
+  "options": {
+    "hideDefaults": "Varsayılanları gizle",
+    "hideDefaultsHint": "Bir manifest ayarlamadığında API sunucusunun doldurduğu alanları ve atanmış küme IP'lerini, bu değeri taşıdıkları sürece gösterme.",
+    "ignoreTitle": "{{kind}} için yok sayılan yollar:",
+    "ignoreNone": "yok",
+    "ignoreRemove": "{{path}} yolunu yok saymayı bırak",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "Yok sayılacak yol",
+    "ignoreAddButton": "Yok say",
+    "ignoreInvalid": "Bir yol / ile başlar ve / ile ayrılmış anahtarları adlandırır; * herhangi bir anahtar ya da liste öğesi yerine geçer, örneğin /metadata/labels/team veya /spec/template/spec/containers/*/image.",
+    "ignoreFull": "Tür başına en fazla {{max}} yol."
+  },
+  "diff": {
+    "same": "Fark yok.",
+    "changes_one": "{{count}} alan farklı.",
+    "changes_other": "{{count}} alan farklı.",
+    "field": "Alan",
+    "notSet": "ayarlanmamış"
+  },
+  "secret": {
+    "hint": "Değerler Sextant içinde SHA-256 özetleriyle karşılaştırılır ve “Değerleri göster”e tıklayana kadar pencereye alınmaz.",
+    "label": "Secret anahtarları",
+    "key": "Anahtar",
+    "state": "Karşılaştırma",
+    "values": "Değerler",
+    "equal": "Aynı değer",
+    "different": "Farklı değer",
+    "onlyLeft": "Yalnızca solda",
+    "onlyRight": "Yalnızca sağda",
+    "noKeys": "İki tarafta da anahtar yok.",
+    "show": "Değerleri göster",
+    "hide": "Değerleri gizle"
+  },
+  "result": {
+    "sameObject": "Bu, nesnenin kendisi: başka bir küme, namespace veya ad seçin.",
+    "notFound": "{{kind}} {{name}} orada yok.",
+    "noDrift": "Şu anki nesnede son uygulanan yapılandırmanın tüm alanları değişmemiş.",
+    "drift_one": "{{count}} alan son uygulanan yapılandırmadan farklı.",
+    "drift_other": "{{count}} alan son uygulanan yapılandırmadan farklı.",
+    "driftLabel": "Son uygulanan yapılandırmadan farklı alanlar",
+    "notInRelease": "{{name}} Helm sürümünün manifest'inde bu nesne yok.",
+    "showRelease": "{{name}} Helm sürümünün tamamını denetle",
+    "hideRelease": "Sürümü gizle"
+  },
+  "drift": {
+    "release": "{{namespace}} içinde {{name}} Helm sürümü, revizyon {{revision}}",
+    "unreadable_one": "Manifest'in {{count}} belgesi okunamıyor ve karşılaştırılmıyor.",
+    "unreadable_other": "Manifest'in {{count}} belgesi okunamıyor ve karşılaştırılmıyor.",
+    "truncated_one": "{{count}} nesne daha karşılaştırılmıyor.",
+    "truncated_other": "{{count}} nesne daha karşılaştırılmıyor.",
+    "objectsLabel": "Sürümün nesneleri",
+    "object": "Nesne",
+    "state": "Durum",
+    "details": "Ayrıntılar",
+    "drifted_one": "{{count}} fark",
+    "drifted_other": "{{count}} fark",
+    "states": {
+      "inSync": "Eşit",
+      "missing": "Yok",
+      "error": "Okunamıyor"
+    },
+    "showDetails": "Ayrıntılar",
+    "hideDetails": "Gizle",
+    "missingObject": "Nesne kümede yok.",
+    "changesLabel": "Manifest'ten farklı alanlar"
+  },
+  "page": {
+    "title": "Namespace karşılaştır",
+    "hint": "Yalnızca bir tarafta olan, farklı olan ve aynı olan nesneler, tür tür; her tarafta bir türden en fazla {{max}} nesne.",
+    "left": "Sol",
+    "right": "Sağ",
+    "kinds": "Türler",
+    "result": "Karşılaştırma",
+    "filter": "Göster",
+    "objects": "Nesneler",
+    "kind": "Tür",
+    "state": "Durum",
+    "nothing": "Gösterilecek bir şey yok.",
+    "failedLeft": "Solda {{kind}} listelenemiyor: {{message}}",
+    "failedRight": "Sağda {{kind}} listelenemiyor: {{message}}",
+    "truncated": "Bazı türlerin bir tarafta {{max}} nesneden fazlası var: geri kalanı karşılaştırılmıyor.",
+    "secretsFailed": "Secret değerleri karşılaştırılamıyor: {{message}}",
+    "secretsTruncated": "Bir namespace'te {{max}} Secret'tan fazlası var: geri kalanların değerleri karşılaştırılmıyor."
+  },
+  "buckets": {
+    "onlyLeft": "Yalnızca solda ({{count}})",
+    "onlyRight": "Yalnızca sağda ({{count}})",
+    "differ": "Farklı ({{count}})",
+    "same": "Aynı ({{count}})"
+  },
+  "states": {
+    "onlyLeft": "Yalnızca solda",
+    "onlyRight": "Yalnızca sağda",
+    "differ": "Farklı",
+    "same": "Aynı"
+  }
+}

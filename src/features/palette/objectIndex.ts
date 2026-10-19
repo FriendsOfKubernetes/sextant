@@ -10,6 +10,8 @@
 //   failed, or took longer than `LIST_SLOT_TIMEOUT_MS`);
 // - a watch nobody uses any more (the palette closed, the query no longer names its kind) is kept `KEEP_ALIVE_MS`,
 //   so reopening the palette finds the names at once, then stopped;
+// - at most `MAX_INDEXED_OBJECTS` objects of a kind are kept (#157): the backend counts the rest by uid only and the
+//   palette says it searched the first ones (`isCapped`);
 // - React hears of changes at most every `FLUSH_INTERVAL_MS`.
 //
 // Kinds that cannot be watched (no permission) are left out silently: the palette searches what the user may see.
@@ -33,6 +35,8 @@ export const MAX_CONCURRENT_LISTS = 6;
 export const LIST_SLOT_TIMEOUT_MS = 10_000;
 export const FLUSH_INTERVAL_MS = 100;
 export const KEEP_ALIVE_MS = 30_000;
+/** Objects of one kind the index keeps (metadata only, about 1 KB each). */
+export const MAX_INDEXED_OBJECTS = 50_000;
 
 /** Kinds searched by default (`group/Kind`), when the cluster serves them. */
 export const COMMON_KINDS: readonly string[] = [
@@ -250,6 +254,7 @@ function start(entry: Entry): void {
         entry.clusterId,
         { kind: entry.search.kind, namespaces: null, labelSelector: null, fieldSelector: null, metadataOnly: true },
         id, channel,
+        { progressive: false, maxObjects: MAX_INDEXED_OBJECTS },
       ),
     stop: api.resources.watchStop,
     onEvent: (u) => {

@@ -1,0 +1,11 @@
+{
+  "dock": {
+    "tabs": "ドックのタブ"
+  },
+  "terminal": {
+    "leaveHint": "Ctrl+Shift+E を押すと、フォーカスがターミナルの外に移ります。"
+  },
+  "logs": {
+    "newLines_other": "新しい行が {{count}} 行"
+  }
+}

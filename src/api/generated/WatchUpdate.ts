@@ -5,4 +5,4 @@ import type { JsonValue } from "./serde_json/JsonValue";
 /**
  * One batch of a watch subscription. Serialized with a `type` tag.
  */
-export type WatchUpdate = { "type": "snapshot", items: Array<JsonValue>, } | { "type": "delta", upserted: Array<JsonValue>, deleted: Array<string>, } | { "type": "reconnecting" } | { "type": "error" } & CoreError | { "type": "forbidden", namespaces: Array<string>, };
+export type WatchUpdate = { "type": "snapshot", items: Array<JsonValue>, } | { "type": "delta", upserted: Array<JsonValue>, deleted: Array<string>, } | { "type": "reconnecting" } | { "type": "error" } & CoreError | { "type": "forbidden", namespaces: Array<string>, } | { "type": "snapshotPart", items: Array<JsonValue>, } | { "type": "snapshotEnd", items: Array<JsonValue>, deleted: Array<string>, } | { "type": "capped", total: number, };

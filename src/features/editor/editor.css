@@ -53,7 +53,8 @@
 }
 
 .yaml-editor .cm-editor.cm-focused {
-  outline: none;
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
 }
 
 .yaml-editor .cm-scroller {

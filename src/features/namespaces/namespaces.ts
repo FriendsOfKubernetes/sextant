@@ -17,7 +17,12 @@ export function useSelectedNamespaces(clusterId: ClusterId): string[] | null | u
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    if (restored.has(clusterId) || (!settings && !error)) return;
+    if (!settings && !error) return;
+    // Restored by another user of the hook (the sidebar and a table both ask): this one shows it too.
+    if (restored.has(clusterId)) {
+      setTick((n) => n + 1);
+      return;
+    }
     restored.add(clusterId);
     const saved = settings?.clusters[clusterId]?.namespaces;
     if (saved && saved.length > 0) useAppStore.getState().setNamespaces(clusterId, saved);

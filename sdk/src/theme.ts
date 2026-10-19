@@ -52,6 +52,7 @@ html[data-view="dock"] body { background: var(--color-dock, Canvas); }
 :where(button:disabled) { opacity: 0.6; cursor: default; }
 :where(button.primary) { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-text); }
 :where(button.danger) { color: var(--color-danger); }
+:where(:focus-visible) { outline: 2px solid var(--color-focus, var(--color-accent)); outline-offset: 1px; }
 :where(table) { border-collapse: collapse; width: 100%; }
 :where(th, td) { text-align: left; padding: 0 8px; height: var(--control-height-compact, 28px); border-bottom: 1px solid var(--color-border); }
 :where(th) { color: var(--color-text-muted); font-weight: 500; }

@@ -1,0 +1,26 @@
+{
+  "table": {
+    "loadingMore_one": "Wird geladen… bisher {{count}}",
+    "loadingMore_other": "Wird geladen… bisher {{count}}",
+    "updating": "Wird aktualisiert…",
+    "capped_one": "Angezeigt werden die ersten {{shown}} von {{count}} Objekt. Grenzen Sie die Liste nach Namespace oder Label ein, um den Rest zu sehen.",
+    "capped_other": "Angezeigt werden die ersten {{shown}} von {{count}} Objekten. Grenzen Sie die Liste nach Namespace oder Label ein, um den Rest zu sehen."
+  },
+  "guard": {
+    "title_one": "{{kind}}: etwa {{count}} Objekt in allen Namespaces",
+    "title_other": "{{kind}}: etwa {{count}} Objekte in allen Namespaces",
+    "titleAtLeast_one": "{{kind}}: mindestens {{count}} Objekt in allen Namespaces",
+    "titleAtLeast_other": "{{kind}}: mindestens {{count}} Objekte in allen Namespaces",
+    "text": "Um alle anzuzeigen, wird jedes Objekt heruntergeladen, was dauern kann; die Tabelle behält die ersten {{max}}. Wählen Sie Namespaces oder geben Sie einen Label-Selector (app=web) ein, um weniger zu sehen, oder zeigen Sie sie trotzdem an.",
+    "showAnyway": "Trotzdem anzeigen"
+  },
+  "sidebar": {
+    "count_one": "{{count}} Objekt",
+    "count_other": "{{count}} Objekte",
+    "countCapped": "Mehr als {{max}} Objekte"
+  },
+  "palette": {
+    "capped_one": "{{kind}}: durchsucht werden die ersten {{shown}} von {{count}} Objekt",
+    "capped_other": "{{kind}}: durchsucht werden die ersten {{shown}} von {{count}} Objekten"
+  }
+}

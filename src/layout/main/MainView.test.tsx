@@ -201,7 +201,7 @@ describe("Sidebar and main view", () => {
         .getAllByRole("columnheader")
         .map((h) => h.textContent?.replace(/[▲▼]/g, ""))
         .filter(Boolean);
-    await waitFor(() => expect(headers()).toEqual(["Name", "Namespace", "Size", "Replicas", "Age"]));
+    await waitFor(() => expect(headers()).toEqual(["Name", "Namespace", "Size", "Replicas", "Age", "Actions"]));
     expect(within(table).getByText("large")).toBeInTheDocument();
     const crdReads = backend.calls.filter((c) => c.cmd === "resource_get");
     expect(crdReads.map((c) => c.args.ref)).toEqual([

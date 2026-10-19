@@ -1,0 +1,139 @@
+{
+  "action": "Porównaj z…",
+  "sidebar": "Porównanie namespace",
+  "loading": "Porównywanie…",
+  "dialog": {
+    "title": "Porównanie {{kind}} {{name}}",
+    "with": "Porównaj z",
+    "modes": {
+      "object": "Innym obiektem",
+      "lastApplied": "Jego ostatnio zastosowaną konfiguracją",
+      "helm": "Manifestem jego wydania Helm"
+    },
+    "unavailable": {
+      "lastApplied": "Ten obiekt nie ma ostatnio zastosowanej konfiguracji: nie utworzono ani nie zmieniono go za pomocą kubectl apply.",
+      "helm": "Ten obiekt nie należy do wydania Helm."
+    },
+    "compare": "Porównaj"
+  },
+  "target": {
+    "cluster": "Klaster",
+    "namespace": "Namespace",
+    "name": "Nazwa",
+    "notConnected": "Niepołączone",
+    "connect": "Połącz",
+    "connecting": "Łączenie…",
+    "suggestions": "Pasujące obiekty"
+  },
+  "side": {
+    "live": "Obecnie",
+    "lastApplied": "Ostatnio zastosowana",
+    "manifest": "Manifest Helm"
+  },
+  "options": {
+    "hideDefaults": "Ukryj wartości domyślne",
+    "hideDefaultsHint": "Pomijaj pola, które serwer API wypełnia, gdy manifest ich nie ustawia, oraz przydzielone adresy IP klastra, dopóki mają tę wartość.",
+    "ignoreTitle": "Ignorowane ścieżki {{kind}}:",
+    "ignoreNone": "brak",
+    "ignoreRemove": "Przestań ignorować {{path}}",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "Ścieżka do zignorowania",
+    "ignoreAddButton": "Ignoruj",
+    "ignoreInvalid": "Ścieżka zaczyna się od / i wymienia klucze rozdzielone /; * oznacza dowolny klucz lub element listy, na przykład /metadata/labels/team lub /spec/template/spec/containers/*/image.",
+    "ignoreFull": "Najwyżej {{max}} ścieżek na rodzaj."
+  },
+  "diff": {
+    "same": "Brak różnic.",
+    "changes_one": "Różni się {{count}} pole.",
+    "changes_few": "Różnią się {{count}} pola.",
+    "changes_many": "Różni się {{count}} pól.",
+    "changes_other": "Różni się {{count}} pola.",
+    "field": "Pole",
+    "notSet": "nie ustawiono"
+  },
+  "secret": {
+    "hint": "Wartości są porównywane według skrótów SHA-256 wewnątrz Sextant i trafiają do okna dopiero po kliknięciu „Pokaż wartości”.",
+    "label": "Klucze Secret",
+    "key": "Klucz",
+    "state": "Porównanie",
+    "values": "Wartości",
+    "equal": "Ta sama wartość",
+    "different": "Inna wartość",
+    "onlyLeft": "Tylko po lewej",
+    "onlyRight": "Tylko po prawej",
+    "noKeys": "Żadna strona nie ma kluczy.",
+    "show": "Pokaż wartości",
+    "hide": "Ukryj wartości"
+  },
+  "result": {
+    "sameObject": "To ten sam obiekt: wybierz inny klaster, namespace lub nazwę.",
+    "notFound": "{{kind}} {{name}} tam nie istnieje.",
+    "noDrift": "Obecny obiekt ma niezmienione wszystkie pola ostatnio zastosowanej konfiguracji.",
+    "drift_one": "Od ostatnio zastosowanej konfiguracji różni się {{count}} pole.",
+    "drift_few": "Od ostatnio zastosowanej konfiguracji różnią się {{count}} pola.",
+    "drift_many": "Od ostatnio zastosowanej konfiguracji różni się {{count}} pól.",
+    "drift_other": "Od ostatnio zastosowanej konfiguracji różni się {{count}} pola.",
+    "driftLabel": "Pola różniące się od ostatnio zastosowanej konfiguracji",
+    "notInRelease": "Manifest wydania Helm {{name}} nie zawiera tego obiektu.",
+    "showRelease": "Sprawdź całe wydanie Helm {{name}}",
+    "hideRelease": "Ukryj wydanie"
+  },
+  "drift": {
+    "release": "Wydanie Helm {{name}} w {{namespace}}, rewizja {{revision}}",
+    "unreadable_one": "{{count}} dokument manifestu jest nieczytelny i nie jest porównywany.",
+    "unreadable_few": "{{count}} dokumenty manifestu są nieczytelne i nie są porównywane.",
+    "unreadable_many": "{{count}} dokumentów manifestu jest nieczytelnych i nie jest porównywanych.",
+    "unreadable_other": "{{count}} dokumentu manifestu jest nieczytelne i nie jest porównywane.",
+    "truncated_one": "Jeszcze {{count}} obiekt nie jest porównywany.",
+    "truncated_few": "Jeszcze {{count}} obiekty nie są porównywane.",
+    "truncated_many": "Jeszcze {{count}} obiektów nie jest porównywanych.",
+    "truncated_other": "Jeszcze {{count}} obiektu nie jest porównywane.",
+    "objectsLabel": "Obiekty wydania",
+    "object": "Obiekt",
+    "state": "Stan",
+    "details": "Szczegóły",
+    "drifted_one": "{{count}} różnica",
+    "drifted_few": "{{count}} różnice",
+    "drifted_many": "{{count}} różnic",
+    "drifted_other": "{{count}} różnicy",
+    "states": {
+      "inSync": "Zgodny",
+      "missing": "Brak",
+      "error": "Nieczytelny"
+    },
+    "showDetails": "Szczegóły",
+    "hideDetails": "Ukryj",
+    "missingObject": "Obiekt nie istnieje w klastrze.",
+    "changesLabel": "Pola różniące się od manifestu"
+  },
+  "page": {
+    "title": "Porównanie namespace",
+    "hint": "Obiekty tylko po jednej stronie, obiekty różne i takie same, rodzaj po rodzaju; najwyżej {{max}} obiektów jednego rodzaju na stronę.",
+    "left": "Lewa strona",
+    "right": "Prawa strona",
+    "kinds": "Rodzaje",
+    "result": "Porównanie",
+    "filter": "Pokaż",
+    "objects": "Obiekty",
+    "kind": "Rodzaj",
+    "state": "Stan",
+    "nothing": "Nic do pokazania.",
+    "failedLeft": "Nie można wyświetlić listy {{kind}} po lewej: {{message}}",
+    "failedRight": "Nie można wyświetlić listy {{kind}} po prawej: {{message}}",
+    "truncated": "Niektóre rodzaje mają po jednej stronie ponad {{max}} obiektów: reszta nie jest porównywana.",
+    "secretsFailed": "Nie można porównać wartości Secret: {{message}}",
+    "secretsTruncated": "Namespace ma ponad {{max}} Secret: wartości pozostałych nie są porównywane."
+  },
+  "buckets": {
+    "onlyLeft": "Tylko po lewej ({{count}})",
+    "onlyRight": "Tylko po prawej ({{count}})",
+    "differ": "Różne ({{count}})",
+    "same": "Takie same ({{count}})"
+  },
+  "states": {
+    "onlyLeft": "Tylko po lewej",
+    "onlyRight": "Tylko po prawej",
+    "differ": "Różny",
+    "same": "Taki sam"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "table": {
+    "loadingMore_other": "読み込み中… これまでに {{count}} 件",
+    "updating": "更新中…",
+    "capped_other": "{{count}} 個のオブジェクトのうち最初の {{shown}} 個を表示しています。残りを表示するには、namespace または label で一覧を絞り込んでください。"
+  },
+  "guard": {
+    "title_other": "{{kind}}: すべての namespace に約 {{count}} 個のオブジェクト",
+    "titleAtLeast_other": "{{kind}}: すべての namespace に少なくとも {{count}} 個のオブジェクト",
+    "text": "すべてを表示するとオブジェクトをすべてダウンロードするため、時間がかかる場合があります。表には最初の {{max}} 個が保持されます。namespace を選ぶか label selector (app=web) を入力して数を減らすか、そのまま表示してください。",
+    "showAnyway": "そのまま表示"
+  },
+  "sidebar": {
+    "count_other": "{{count}} 個のオブジェクト",
+    "countCapped": "{{max}} 個を超えるオブジェクト"
+  },
+  "palette": {
+    "capped_other": "{{kind}}: {{count}} 個のオブジェクトのうち最初の {{shown}} 個を検索しています"
+  }
+}

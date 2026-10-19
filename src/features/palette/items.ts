@@ -263,6 +263,9 @@ export function filterGroups(groups: PaletteGroup[], query: string, recentKeys: 
  * match the name (scattered characters in order are enough) or the namespace (as a substring). A query that names a
  * kind searches only that kind, up to `MAX_OBJECT_RESULTS`; with no words left (`crd:`) it lists the kind by name.
  */
+/** Compares like `localeCompare` without options, built once. */
+const collator = new Intl.Collator();
+
 export function objectGroups(t: TFunction, clusterId: ClusterId, index: IndexedKind[], query: KindQuery): PaletteGroup[] {
   const { kind: only, words } = query;
   if (!only && words.length === 0) return [];
@@ -272,7 +275,8 @@ export function objectGroups(t: TFunction, clusterId: ClusterId, index: IndexedK
     const { kind, resourceKind } = indexed;
     if (only && kindKey(only.kind) !== kindKey(kind)) continue;
     if (indexed.state.items.size === 0) continue;
-    const hits: PaletteItem[] = [];
+    // Light hits first: only the best `perKind` become palette items (a one-letter query matches every object).
+    const hits: { score: number; name: string; namespace: string | null; obj: KubeObject }[] = [];
     for (const obj of indexed.state.items.values()) {
       const name = obj.metadata?.name ?? "";
       const namespace = obj.metadata?.namespace ?? null;
@@ -289,14 +293,16 @@ export function objectGroups(t: TFunction, clusterId: ClusterId, index: IndexedK
         total += best;
       }
       if (!matched) continue;
-      const score = words.length > 0 ? total / words.length : 0;
-      hits.push(objectItem({ clusterId, kind, namespace, name, resourceKind, meta: obj }, score));
+      hits.push({ score: words.length > 0 ? total / words.length : 0, name, namespace, obj });
     }
     if (hits.length === 0) continue;
     hits.sort(
-      (a, b) => b.score - a.score || a.label.localeCompare(b.label) || (a.detail ?? "").localeCompare(b.detail ?? ""),
+      (a, b) => b.score - a.score || collator.compare(a.name, b.name) || collator.compare(a.namespace ?? "", b.namespace ?? ""),
     );
-    groups.push({ id: `kind:${kindKey(kind)}`, label: kindTitle(t, kind, resourceKind), items: hits.slice(0, perKind) });
+    const items = hits
+      .slice(0, perKind)
+      .map((h) => objectItem({ clusterId, kind, namespace: h.namespace, name: h.name, resourceKind, meta: h.obj }, h.score));
+    groups.push({ id: `kind:${kindKey(kind)}`, label: kindTitle(t, kind, resourceKind), items });
   }
   groups.sort((a, b) => (b.items[0]?.score ?? 0) - (a.items[0]?.score ?? 0) || a.label.localeCompare(b.label));
   let left = MAX_OBJECT_RESULTS;

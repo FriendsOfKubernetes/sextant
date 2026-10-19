@@ -38,6 +38,7 @@ export const PROBLEM_CATEGORIES = [
   "flux",
   "argocd",
   "gateway",
+  "mesh",
   "security",
   "credentials",
   "disk",
@@ -648,6 +649,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     // the kubelets or Prometheus, not from the claim (features/storage).
     case "credentials":
     case "disk":
+    case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case undefined:
       return [];
   }

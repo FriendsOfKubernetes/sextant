@@ -36,6 +36,16 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5h6' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
+/* The mark in the dark theme: `--color-accent-text` of that theme (a data URI cannot read a CSS variable; the white
+   mark on the lighter dark accent was under 3:1). src/styles/contrast.test.ts keeps both marks equal to the token. */
+:root[data-theme="dark"] .checkbox:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6 8.5 2.6' fill='none' stroke='%2315181b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] .checkbox:indeterminate {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5h6' stroke='%2315181b' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
 .checkbox:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;

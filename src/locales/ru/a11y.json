@@ -1,0 +1,14 @@
+{
+  "dock": {
+    "tabs": "Вкладки нижней панели"
+  },
+  "terminal": {
+    "leaveHint": "Нажмите Ctrl+Shift+E, чтобы вывести фокус из терминала."
+  },
+  "logs": {
+    "newLines_one": "{{count}} новая строка",
+    "newLines_few": "{{count}} новые строки",
+    "newLines_many": "{{count}} новых строк",
+    "newLines_other": "{{count}} новой строки"
+  }
+}

@@ -127,7 +127,7 @@ fn shown_documents(manifest: &str, unreadable: &mut u32) -> Vec<Shown> {
 }
 
 /// The documents of a multi-document YAML text, split on `---` lines.
-fn split(manifest: &str) -> Vec<String> {
+pub(crate) fn split(manifest: &str) -> Vec<String> {
     let mut docs = vec![String::new()];
     for line in manifest.lines() {
         if line.trim_end() == "---" || line.starts_with("--- ") {

@@ -1,0 +1,529 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "İstek yönlendirme"
+  },
+  "problemsCount_one": "{{count}} Istio yapılandırma sorunu",
+  "problemsCount_other": "{{count}} Istio yapılandırma sorunu",
+  "loading": "Ağ yapılandırması yükleniyor…",
+  "yes": "Evet",
+  "no": "Hayır",
+  "columns": {
+    "hosts": "Ana makineler",
+    "gateways": "Ağ geçitleri",
+    "routes": "Rotalar",
+    "host": "Ana makine",
+    "subsets": "Alt kümeler",
+    "tlsMode": "TLS modu",
+    "servers": "Sunucular",
+    "location": "Konum",
+    "resolution": "Çözümleme",
+    "appliesTo": "Uygulandığı yer",
+    "egressHosts": "Çıkış ana makineleri",
+    "address": "Adres",
+    "serviceAccount": "Service account",
+    "mtlsMode": "mTLS modu",
+    "issuers": "Yayıncılar",
+    "action": "Eylem",
+    "rules": "Kurallar",
+    "port": "Bağlantı noktası",
+    "proxyProtocol": "Protokol",
+    "podSelector": "Pod seçici",
+    "parents": "Üst öğeler",
+    "target": "Hedef",
+    "authentications": "Kimlik doğrulamaları",
+    "server": "Sunucu",
+    "identities": "Kimlikler",
+    "networks": "Ağlar",
+    "name": "Ad",
+    "labels": "Etiketler",
+    "protocol": "Protokol",
+    "issuer": "Yayıncı",
+    "audiences": "Hedef kitleler",
+    "keys": "Anahtarlar",
+    "condition": "Koşul",
+    "retryable": "Yinelenir",
+    "timeout": "Zaman aşımı",
+    "match": "Eşleşme",
+    "destinations": "Hedefler",
+    "destination": "Hedef",
+    "weight": "Ağırlık",
+    "subset": "Alt küme",
+    "destinationRule": "Hedef kuralı",
+    "pods": "Pod'lar",
+    "policy": "İlke",
+    "matches": "Eşleşir",
+    "notEvaluated": "Değerlendirilmedi"
+  },
+  "fields": {
+    "hosts": "Ana makineler",
+    "gateways": "Ağ geçitleri",
+    "exportTo": "Görünür olduğu yer",
+    "host": "Ana makine",
+    "tlsMode": "TLS modu",
+    "loadBalancer": "Yük dengeleme",
+    "workloadSelector": "İstemciler",
+    "selector": "Ağ geçidi Pod'ları",
+    "location": "Konum",
+    "resolution": "Çözümleme",
+    "ports": "Bağlantı noktaları",
+    "addresses": "Adresler",
+    "appliesTo": "Uygulandığı yer",
+    "egressHosts": "Çıkış ana makineleri",
+    "outboundTrafficPolicy": "Giden trafik",
+    "address": "Adres",
+    "labels": "Etiketler",
+    "serviceAccount": "Service account",
+    "network": "Ağ",
+    "tracing": "İzleme",
+    "metrics": "Ölçümler",
+    "accessLogging": "Erişim günlükleri",
+    "mtlsMode": "mTLS modu",
+    "action": "Eylem",
+    "provider": "Sağlayıcı",
+    "podSelector": "Pod seçici",
+    "port": "Bağlantı noktası",
+    "proxyProtocol": "Protokol",
+    "accessPolicy": "Varsayılan erişim",
+    "server": "Sunucu",
+    "target": "Hedef",
+    "requiredAuthentications": "Gerekli kimlik doğrulamaları",
+    "identities": "Kimlikler",
+    "identityRefs": "Kimlik başvuruları",
+    "networks": "Ağlar",
+    "parents": "Üst öğeler",
+    "hostnames": "Ana makine adları",
+    "revision": "Revizyon",
+    "injection": "Sidecar ekleme",
+    "proxyImage": "Proxy görüntüsü",
+    "linkerdInject": "Proxy ekleme",
+    "controlPlane": "Denetim düzlemi",
+    "proxyVersion": "Proxy sürümü"
+  },
+  "blocks": {
+    "virtualService": "Sanal hizmet",
+    "httpRoutes": "HTTP rotaları",
+    "l4Routes": "TCP ve TLS rotaları",
+    "destinationRule": "Hedef kuralı",
+    "portTls": "Bağlantı noktasına göre TLS",
+    "subsets": "Alt kümeler",
+    "gateway": "Ağ geçidi",
+    "servers": "Sunucular",
+    "boundVirtualServices": "Bu ağ geçidine bağlı sanal hizmetler",
+    "serviceEntry": "Hizmet girdisi",
+    "sidecar": "Sidecar",
+    "workloadEntry": "İş yükü girdisi",
+    "telemetry": "Telemetri",
+    "peerAuthentication": "Eş kimlik doğrulaması",
+    "portMtls": "Bağlantı noktasına göre mTLS",
+    "requestAuthentication": "İstek kimlik doğrulaması",
+    "authorizationPolicy": "Yetkilendirme ilkesi",
+    "istioMembership": "Istio",
+    "mtls": "Istio mTLS",
+    "whoMayCall": "Bu iş yükünü kimler çağırabilir?",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "Hizmet profili",
+    "profileRoutes": "Rotalar",
+    "server": "Sunucu",
+    "serverAuthorizations": "Bu sunucunun yetkilendirmeleri",
+    "serverAuthorization": "Sunucu yetkilendirmesi",
+    "linkerdAuthorizationPolicy": "Yetkilendirme ilkesi",
+    "meshTlsAuthentication": "Mesh TLS kimlik doğrulaması",
+    "networkAuthentication": "Ağ kimlik doğrulaması",
+    "linkerdHttpRoute": "HTTP rotası"
+  },
+  "exportTo": {
+    "everywhere": "Her namespace"
+  },
+  "vs": {
+    "delegate": "Yok: bir temsilci; yalnızca onu adlandıran diğer sanal hizmetlerin rotaları kullanır",
+    "meshGateway": "mesh (sidecar'lar)"
+  },
+  "scope": {
+    "mesh": "Ağın her iş yükü",
+    "namespace": "Namespace'in her iş yükü",
+    "targetRef": "Bir Gateway veya waypoint (targetRef)"
+  },
+  "route": {
+    "title": "Rota {{n}}",
+    "titleNamed": "Rota {{n}} ({{name}})",
+    "order": "Rotalar yukarıdan aşağı denenir; isteği ilk eşleşen alır.",
+    "when": "Koşul",
+    "then": "Sonuç",
+    "everyRequest": "Her istek",
+    "everyConnection": "Her bağlantı",
+    "alternative": "Seçenek {{n}}:",
+    "to": "%{{percent}} kısmını {{host}} adresine gönder",
+    "toSubset": "%{{percent}} kısmını {{host}} adresine, {{subset}} alt kümesine gönder",
+    "delegate": "İsteği {{name}} sanal hizmetinin rotalarına devret",
+    "directResponse": "Hiçbir yere göndermeden HTTP {{status}} ile yanıtla",
+    "redirect": "İstemciyi yönlendir",
+    "redirectTo": "İstemciyi {{target}} adresine yönlendir",
+    "timeout": "{{timeout}} sonra vazgeç",
+    "noRetries": "Asla yineleme",
+    "retries_one": "En fazla {{count}} kez yinele",
+    "retries_other": "En fazla {{count}} kez yinele",
+    "retriesPerTry_one": "En fazla {{count}} kez yinele, deneme başına {{perTry}}",
+    "retriesPerTry_other": "En fazla {{count}} kez yinele, deneme başına {{perTry}}",
+    "retryOn": "Şu durumlarda yinele: {{on}}",
+    "faultDelay": "İsteklerin %{{percent}} kısmını {{delay}} geciktir (hata ekleme)",
+    "faultAbort": "İsteklerin %{{percent}} kısmını HTTP {{status}} ile başarısız yap (hata ekleme)",
+    "mirror": "İsteklerin %{{percent}} kısmını {{host}} adresine kopyala (yanıtlar yok sayılır)",
+    "rewriteUri": "Yolu {{uri}} olarak yeniden yaz",
+    "rewriteAuthority": "Ana makineyi {{authority}} olarak yeniden yaz"
+  },
+  "match": {
+    "uri": {
+      "exact": "Yol {{value}}",
+      "prefix": "Yol {{value}} ile başlıyor",
+      "regex": "Yol {{value}} düzenli ifadesiyle eşleşiyor"
+    },
+    "uriIgnoreCase": {
+      "exact": "Yol {{value}} (büyük/küçük harf fark etmez)",
+      "prefix": "Yol {{value}} ile başlıyor (büyük/küçük harf fark etmez)",
+      "regex": "Yol {{value}} düzenli ifadesiyle eşleşiyor (büyük/küçük harf fark etmez)"
+    },
+    "method": {
+      "exact": "Yöntem {{value}}",
+      "prefix": "Yöntem {{value}} ile başlıyor",
+      "regex": "Yöntem {{value}} düzenli ifadesiyle eşleşiyor"
+    },
+    "scheme": {
+      "exact": "Şema {{value}}",
+      "prefix": "Şema {{value}} ile başlıyor",
+      "regex": "Şema {{value}} düzenli ifadesiyle eşleşiyor"
+    },
+    "authority": {
+      "exact": "Ana makine {{value}}",
+      "prefix": "Ana makine {{value}} ile başlıyor",
+      "regex": "Ana makine {{value}} düzenli ifadesiyle eşleşiyor"
+    },
+    "header": {
+      "exact": "{{name}} üst bilgisi {{value}}",
+      "prefix": "{{name}} üst bilgisi {{value}} ile başlıyor",
+      "regex": "{{name}} üst bilgisi {{value}} düzenli ifadesiyle eşleşiyor"
+    },
+    "query": {
+      "exact": "{{name}} sorgu parametresi {{value}}",
+      "prefix": "{{name}} sorgu parametresi {{value}} ile başlıyor",
+      "regex": "{{name}} sorgu parametresi {{value}} düzenli ifadesiyle eşleşiyor"
+    },
+    "headerPresent": "{{name}} üst bilgisi var",
+    "headerAbsent": "{{name}} üst bilgisi yok",
+    "headerNot": "{{name}} üst bilgisi {{value}} değil",
+    "queryPresent": "{{name}} sorgu parametresi var",
+    "port": "Bağlantı noktası {{port}}",
+    "sourceLabels": "Çağıranın etiketleri {{labels}}",
+    "sourceNamespace": "Çağıran {{namespace}} namespace'inde",
+    "gateways": "Şuradan geliyor: {{gateways}}"
+  },
+  "l4": {
+    "kind": "Tür",
+    "match": "Bağlantı noktaları ve SNI ana makineleri",
+    "destinations": "Hedefler"
+  },
+  "tls": {
+    "auto": "Ayarlanmamış: hedefte sidecar olan yerlerde Istio kendi mTLS'ini kendiliğinden kullanır",
+    "mode": {
+      "DISABLE": "DISABLE: düz metin, TLS yok",
+      "SIMPLE": "SIMPLE: hedefe TLS, istemci sertifikası olmadan",
+      "MUTUAL": "MUTUAL: kuralda verilen istemci sertifikasıyla TLS",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL: Istio'nun kendi mTLS'i"
+    }
+  },
+  "dr": {
+    "subsetsHint": "Alt küme, hedefin alt küme etiketlerini taşıyan Pod'larıdır; rotalar trafiği sürümler arasında bölmek için alt kümeleri adlandırır."
+  },
+  "gateway": {
+    "selectorHint": "Ağ geçidine bu etiketlere sahip Pod'lar hizmet eder (bir Istio giriş veya çıkış ağ geçidi).",
+    "noneBound": "Bu ağ geçidine bağlı sanal hizmet yok: her isteğe 404 ile yanıt verir."
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "Ağın dışında",
+      "MESH_INTERNAL": "Ağın içinde"
+    },
+    "resolution": {
+      "NONE": "Adreslendiği gibi",
+      "STATIC": "Sabit adresler",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS (sırayla)"
+    }
+  },
+  "sidecar": {
+    "meaning": "Seçilen iş yüklerinin sidecar'larının ağ hakkında bildiklerini sınırlar: yalnızca listelenen çıkış ana makinelerine ulaşılabilir.",
+    "wholeNamespace": "Namespace'in her iş yükü"
+  },
+  "workloadEntry": {
+    "meaning": "Ağın bu etiketlere sahip bir Pod gibi davrandığı, Kubernetes dışındaki bir iş yükü (bir sanal makine)."
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "Yalnızca Istio mTLS bağlantıları kabul edilir; düz metin çağrılar reddedilir.",
+      "PERMISSIVE": "Hem Istio mTLS hem düz metin bağlantıları kabul edilir.",
+      "DISABLE": "Istio mTLS kapalı: bağlantılar düz metindir.",
+      "UNSET": "Ayarlanmamış: mod devralınır (iş yükü, sonra namespace, sonra ağ; hiçbiri ayarlamazsa PERMISSIVE)."
+    },
+    "precedence": "Öncelik: iş yükü için seçicili bir ilke, sonra namespace'in ilkesi, sonra kök namespace istio-system'deki ağ geneli ilke.",
+    "source": {
+      "workload": "Bu iş yükü için {{name}} PeerAuthentication'ı ayarlıyor:",
+      "namespace": "Namespace'in {{name}} PeerAuthentication'ı ayarlıyor:",
+      "mesh": "Ağ genelindeki {{name}} PeerAuthentication'ı ayarlıyor:",
+      "default": "Hiçbir PeerAuthentication ayarlamıyor: Istio varsayılanı, PERMISSIVE."
+    }
+  },
+  "jwt": {
+    "meaning": "Geçersiz belirteçli bir istek reddedilir; belirteçsiz bir istek, bir AuthorizationPolicy istek sorumlusu istemedikçe geçer.",
+    "inlineKeys": "Kuraldaki anahtarlar"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "{{namespace}} namespace'inde seçicisiyle eşleşen iş yüklerine uygulanır.",
+      "namespace": "{{namespace}} namespace'inin her iş yüküne uygulanır.",
+      "mesh": "Ağın her iş yüküne uygulanır: kök namespace {{namespace}} içindedir.",
+      "targetRef": "İş yüklerinin kendi proxy'lerine değil, bir Gateway veya waypoint'e bağlı (targetRef)."
+    },
+    "action": {
+      "ALLOW": "Kurallarından biriyle eşleşen isteklere izin verir; bir iş yüküne ALLOW ilkesi uygulandığı anda ona yönelik diğer her istek reddedilir.",
+      "DENY": "ALLOW ilkeleri ne derse desin, kurallarından biriyle eşleşen istekleri reddeder.",
+      "AUDIT": "Eşleşen istekleri yalnızca denetim günlüğü için işaretler; hiçbir şeye izin vermez, hiçbir şeyi reddetmez.",
+      "CUSTOM": "Eşleşen istekleri, onları reddedebilecek {{provider}} dış yetkilendiricisine devreder.",
+      "INVALID": "Eylemini Istio kabul etmiyor: Istio ilkeyi reddeder, bu yüzden ne yaptığı söylenemez."
+    },
+    "special": {
+      "allowNothing": "Kuralı yok: hiçbir şeye izin vermez, bu yüzden bu iş yüklerine gelen her istek reddedilir.",
+      "noRules": "Kuralı yok: hiçbir istekle eşleşmez ve etkisi yoktur.",
+      "everything": "Boş kuralı her istekle eşleşir."
+    },
+    "order": "Istio önce CUSTOM ilkelerini, sonra DENY'yi, sonra ALLOW'u denetler.",
+    "rule": "Kural {{n}}",
+    "emptyRule": "Her istek (boş bir kural).",
+    "valuesExcept": "{{values}}, {{except}} hariç",
+    "anythingExcept": "{{except}} hariç her şey",
+    "fields": {
+      "principals": "Çağıranlar (sorumlular)",
+      "notPrincipals": "Hariç tutulan çağıranlar (sorumlular)",
+      "requestPrincipals": "Belirteç sorumluları",
+      "notRequestPrincipals": "Hariç tutulan belirteç sorumluları",
+      "namespaces": "Çağıranların namespace'leri",
+      "notNamespaces": "Hariç tutulan çağıran namespace'leri",
+      "ipBlocks": "Çağıran IP'leri",
+      "notIpBlocks": "Hariç tutulan çağıran IP'leri",
+      "remoteIpBlocks": "Uzak IP'ler",
+      "notRemoteIpBlocks": "Hariç tutulan uzak IP'ler",
+      "hosts": "Ana makineler",
+      "notHosts": "Hariç tutulan ana makineler",
+      "ports": "Bağlantı noktaları",
+      "notPorts": "Hariç tutulan bağlantı noktaları",
+      "methods": "Yöntemler",
+      "notMethods": "Hariç tutulan yöntemler",
+      "paths": "Yollar",
+      "notPaths": "Hariç tutulan yollar",
+      "condition": "Koşul: {{key}}"
+    },
+    "callerHint": "Çağıranı tanımlayın: boş bıraktığınız şey bilinmez sayılır ve ona bağlı bir ilke değerlendirilmedi olarak gösterilir. Çağıranın mTLS ile ağda olduğu ve cluster.local güven alanındaki namespace'i ile service account'u üzerinden tanındığı varsayılır.",
+    "caller": {
+      "namespace": "Çağıranın namespace'i",
+      "serviceAccount": "Service account",
+      "method": "Yöntem",
+      "path": "Yol",
+      "port": "Bağlantı noktası",
+      "ip": "Çağıranın IP'si",
+      "remoteIp": "Uzak IP (bir proxy arkasında)"
+    },
+    "decision": {
+      "allowed": "İzin verildi",
+      "denied": "Reddedildi",
+      "unknown": "Söylenemez",
+      "external": "Dış yetkilendirici karar verir"
+    },
+    "reason": {
+      "noPolicies": "Bu iş yüküne hiçbir ALLOW ilkesi uygulanmıyor ve hiçbir DENY ilkesi eşleşmiyor.",
+      "allowMatched": "{{name}} ALLOW ilkesinin {{rule}}. kuralı eşleşiyor.",
+      "noAllowMatched": "Bu iş yüküne ALLOW ilkeleri uygulanıyor ve hiçbiri eşleşmiyor.",
+      "denyMatched": "{{name}} DENY ilkesinin {{rule}}. kuralı eşleşiyor.",
+      "denyMayMatch": "{{name}} DENY ilkesi eşleşebilir: değerlendirilmeyen bir şeye bağlı.",
+      "allowMayMatch": "Yalnızca {{name}} ALLOW ilkesi geçirebilir ve o da değerlendirilmeyen bir şeye bağlı.",
+      "customMatched": "{{name}} CUSTOM ilkesi eşleşiyor: dış yetkilendirici karar verir.",
+      "customMayMatch": "{{name}} CUSTOM ilkesi eşleşebilir: değerlendirilmeyen bir şeye bağlı.",
+      "targetRefNotEvaluated": "targetRef ile bağlanan bir DENY veya CUSTOM ilkesi burada değerlendirilmez ve isteği reddedebilir.",
+      "invalidPolicy": "{{name}} ilkesinin eylemini Istio kabul etmiyor: ne yaptığı söylenemez."
+    },
+    "match": {
+      "yes": "Evet",
+      "no": "Hayır",
+      "unknown": "Değerlendirilmedi"
+    },
+    "targetRefSkipped": "targetRef ile bir Gateway veya waypoint'e bağlı, değerlendirilmedi:",
+    "dryRun": "Deneme (istio.io/dry-run): kararları yalnızca günlüğe yazılır, hiç uygulanmaz.",
+    "dryRunAction": "{{action}} (deneme, uygulanmaz)"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "Sidecar proxy ile Istio ağında.",
+      "nativeSidecar": "Yerel sidecar (bir init kapsayıcısı) olarak başlatılan sidecar proxy ile Istio ağında.",
+      "ambient": "Istio ağında ambient modda: sidecar yok, trafiğini ztunnel taşır.",
+      "none": "Istio ağında değil.",
+      "injectedPods": "Pod'larına oluşturulurken Istio sidecar'ı eklenir.",
+      "noInjection": "Pod'larına Istio sidecar'ı eklenmez.",
+      "optedOut": "Pod ağdan çıkmayı seçmiş.",
+      "restart": "Sidecar ekleme açık, ancak bu Pod'da proxy yok: ekleme açılmadan önce oluşturulmuş ya da ekleyici başarısız olmuş. Ağa eklemek için yeniden başlatın."
+    },
+    "linkerd": {
+      "proxy": "Linkerd ağında: yanında linkerd-proxy çalışıyor.",
+      "nativeProxy": "Linkerd ağında: linkerd-proxy yerel sidecar (bir init kapsayıcısı) olarak çalışıyor.",
+      "none": "Linkerd ağında değil.",
+      "injectedPods": "Pod'larına oluşturulurken Linkerd proxy'si eklenir.",
+      "noInjection": "Pod'larına Linkerd proxy'si eklenmez.",
+      "restart": "Proxy ekleme açık, ancak bu Pod'da proxy yok: ekleme açılmadan önce oluşturulmuş. Ağa eklemek için yeniden başlatın.",
+      "goldenMetrics": "linkerd-viz kurulu. Sextant onun başarı oranını, istek hızını ve gecikmesini okumaz: bunları linkerd viz stat veya linkerd-viz panosuyla görün."
+    },
+    "via": {
+      "pod": "Açık, Pod'da ayarlanmış",
+      "namespace": "Açık, namespace'te ayarlanmış"
+    },
+    "injectOn": {
+      "pod": "{{value}}, Pod'da ayarlanmış",
+      "namespace": "{{value}}, namespace'te ayarlanmış"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "{{host}} çağrılarının rotaları, yinelemeleri ve zaman aşımları.",
+    "retryBudget": "Yineleme bütçesi: istek başına en fazla {{ratio}} ek istek, saniyede en az {{min}} yineleme, {{ttl}} boyunca.",
+    "compoundCondition": "Birden çok koşul",
+    "serverMeaning": "Seçilen Pod'ların bir bağlantı noktasını tanımlar. Onu yalnızca yetkilendirmelerinin izin verdiği istemciler çağırabilir; hiç yoksa varsayılan erişimi karar verir.",
+    "noAuthorizations": "Bu namespace'teki hiçbir yetkilendirme bu sunucuyu hedeflemiyor: onu kimin çağırabileceğine varsayılan erişimi karar verir.",
+    "allows": "İçeri alır:",
+    "client": {
+      "unauthenticated": "Her istemciyi, mTLS olmadan da",
+      "unauthenticatedTls": "Kimliği ne olursa olsun ağdaki her istemciyi",
+      "identities": "Şu kimliklere sahip ağ istemcilerini: {{values}}",
+      "serviceAccounts": "Şu service account'lara sahip ağ istemcilerini: {{values}}",
+      "networks": "Şu ağlardan gelen istemcileri: {{values}}"
+    },
+    "policyMeaning": "Gerekli her kimlik doğrulamasını karşılayan istemcileri içeri alır.",
+    "policyNoAuth": "Kimlik doğrulaması gerektirmez: her istemciyi içeri alır.",
+    "meshTlsMeaning": "Bu mesh TLS kimliklerinden birini sunan istemciler.",
+    "networkMeaning": "Adresi bu ağlardan birinde olan istemciler.",
+    "networkExcept": "{{cidr}}, {{except}} hariç"
+  },
+  "check": {
+    "title": "İstek yönlendirme",
+    "open": "Bir isteği denetle…",
+    "hint": "Bir URL girip Denetle'ye basın: isteği karşılayacak sanal hizmet, rota, hedefler, alt kümeler ve Pod'lar Istio'nun yönlendirme kurallarıyla bulunur.",
+    "notServed": "Bu küme Istio VirtualService veya DestinationRule sunmuyor.",
+    "result": "İstek nereye gidiyor",
+    "notesTitle": "Notlar",
+    "alsoConsidered": "Ayrıca değerlendirilenler",
+    "form": {
+      "method": "Yöntem",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "Denetle",
+      "invalidUrl": "Ana makine içeren bir http:// veya https:// URL'si girin.",
+      "from": "Gönderen",
+      "fromMesh": "Ağdaki bir iş yükü",
+      "fromGateway": "Bir Istio ağ geçidi",
+      "gateway": "Ağ geçidi",
+      "pickGateway": "Bir ağ geçidi seçin",
+      "namespace": "Çağıranın namespace'i",
+      "labels": "Çağıranın etiketleri",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "key=value biçiminde değil: {{labels}}",
+      "headers": "Üst bilgiler",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_one": "{{lines}}. satır “ad: değer” biçiminde değil",
+      "badHeaders_other": "{{lines}}. satırlar “ad: değer” biçiminde değil"
+    },
+    "steps": {
+      "gateway": "Ağ geçidi",
+      "virtualService": "Sanal hizmet",
+      "route": "Rota",
+      "destinations": "Hedefler",
+      "answer": "Yanıt"
+    },
+    "outcome": {
+      "routed": "Yönlendirildi",
+      "defaultRoute": "Hizmete olduğu gibi gönderildi",
+      "redirected": "Yeniden yönlendirildi ({{status}})",
+      "directResponse": "Proxy yanıtladı ({{status}})",
+      "noRoute": "Rota yok: 404",
+      "passthrough": "Bilinmeyen ana makine",
+      "noGatewayServer": "Ağ geçidi karşılamıyor: 404",
+      "unknownGateway": "Böyle bir ağ geçidi yok",
+      "delegateMissing": "Temsilci bulunamadı: 404",
+      "l4Only": "Yalnızca TCP veya TLS rotaları",
+      "notEvaluated": "Değerlendirilmedi"
+    },
+    "server": "{{hosts}} için {{port}} bağlantı noktasındaki sunucu ({{protocol}})",
+    "matchedHost": "{{host}} ana makinesiyle eşleşti.",
+    "merged": "Ağ geçidi bu sanal hizmetlerin rotalarını en eskiden başlayarak birleştirir.",
+    "viaDelegate": "Devreden {{name}} sanal hizmeti üzerinden ulaşıldı.",
+    "skipped": {
+      "uri": "{{vs}} içindeki {{route}} rotası atlandı: yol eşleşmedi.",
+      "scheme": "{{vs}} içindeki {{route}} rotası atlandı: şema eşleşmedi.",
+      "method": "{{vs}} içindeki {{route}} rotası atlandı: yöntem eşleşmedi.",
+      "authority": "{{vs}} içindeki {{route}} rotası atlandı: ana makine eşleşmedi.",
+      "headers": "{{vs}} içindeki {{route}} rotası atlandı: bir üst bilgi eşleşmedi.",
+      "withoutHeaders": "{{vs}} içindeki {{route}} rotası atlandı: hariç tutulan bir üst bilgi var.",
+      "queryParams": "{{vs}} içindeki {{route}} rotası atlandı: bir sorgu parametresi eşleşmedi.",
+      "port": "{{vs}} içindeki {{route}} rotası atlandı: bağlantı noktası eşleşmedi.",
+      "sourceLabels": "{{vs}} içindeki {{route}} rotası atlandı: çağıranın etiketleri eşleşmedi.",
+      "sourceNamespace": "{{vs}} içindeki {{route}} rotası atlandı: çağıranın namespace'i eşleşmedi.",
+      "gateways": "{{vs}} içindeki {{route}} rotası atlandı: başka ağ geçitleri için."
+    },
+    "skippedNoReason": "{{vs}} içindeki {{route}} rotası atlandı.",
+    "pods": "{{total}} içinden {{ready}} hazır",
+    "why": {
+      "unknownGateway": "Ağ geçidi kümenin Istio Gateway'leri arasında yok.",
+      "noGatewayServer": "Ağ geçidinin hiçbir sunucusu {{host}} ana makinesini listelemiyor.",
+      "noVirtualService": "Çağıran {{host}} için hiçbir sanal hizmet görmüyor: sidecar isteği o adlı hizmete olduğu gibi gönderir.",
+      "noVirtualServiceGateway": "Bu ağ geçidine bağlı hiçbir sanal hizmet {{host}} ana makinesini kapsamıyor.",
+      "noRoute": "Sanal hizmetin hiçbir rotası istekle eşleşmiyor.",
+      "notEvaluated": "Bu rota JavaScript'in okuyamadığı bir düzenli ifade kullanıyor: eşleşip eşleşmediği ve sonraki rotalar değerlendirilmez.",
+      "delegateMissing": "Rota isteği var olmayan bir temsilci sanal hizmete devrediyor.",
+      "l4Only": "Sanal hizmetin yalnızca TCP veya TLS rotaları var ve bu denetim onları izlemez."
+    },
+    "problem": {
+      "unknownHost": "Hiçbir Service veya ServiceEntry bu ana makineye sahip değil.",
+      "noDestinationRule": "Hiçbir hedef kuralı {{subset}} alt kümesini tanımlamıyor: proxy 503 yanıtı veriyor.",
+      "missingSubset": "Hedef kuralında {{subset}} alt kümesi yok: proxy 503 yanıtı veriyor."
+    },
+    "answer": {
+      "redirected": "Proxy bir yönlendirmeyle yanıt veriyor ({{status}}).",
+      "directResponse": "Proxy kendisi HTTP {{status}} ile yanıt veriyor.",
+      "noRoute": "Proxy 404 yanıtı veriyor: isteği hiçbir rota almıyor.",
+      "passthrough": "Hiçbir Service, ServiceEntry veya sanal hizmet bu ana makineye sahip değil: ne olacağı ağın giden trafik ilkesine bağlı (ALLOW_ANY geçirir, REGISTRY_ONLY reddeder).",
+      "noGatewayServer": "Ağ geçidi 404 yanıtı veriyor.",
+      "delegateMissing": "Proxy 404 yanıtı veriyor."
+    },
+    "candidate": {
+      "notExported": "Çağıranın namespace'ine aktarılmamış (exportTo).",
+      "lessSpecificHost": "Daha az belirli bir ana makinesi var.",
+      "duplicateIgnored": "Sidecar'larda aynı ana makineye sahip: Istio yalnızca en eski sanal hizmeti kullanır.",
+      "invalidMeshWildcard": "Istio'nun reddettiği * ana makinesiyle sidecar'lara bağlı: hiçbir şeyi yönlendirmez."
+    },
+    "notes": {
+      "regexDialect": "Istio'nun düzenli ifadeleri RE2'dir; burada yaygın kalıplarda aynı sonucu veren JavaScript ifadeleri olarak okunurlar.",
+      "sidecarScope": "Bir Sidecar kaynağı ana makineleri çağırandan gizleyebilir; Sidecar kaynakları değerlendirilmez.",
+      "l4NotChecked": "TCP ve TLS rotaları denetlenmez.",
+      "gatewayPort": "Ağ geçidinin hiçbir sunucusu URL'nin bağlantı noktasında değil: ana makinenin başka bir bağlantı noktasındaki sunucusu gösteriliyor (ağ geçidinin Service'i bağlantı noktalarını eşleyebilir).",
+      "gatewaySourceLabels": "Çağıranın etiketleri ağ geçidinin seçicisiyle karşılaştırılır."
+    }
+  }
+}

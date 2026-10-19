@@ -14,7 +14,7 @@ import { getSlot } from "../../layout/slots";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
 import { SETTINGS_PAGE_ID, selectSettingsTab } from "../settings";
-import { ConfirmHost } from "./ConfirmHost";
+import { ALLOW_CLICK_DELAY_MS, ALLOW_KEYBOARD_DELAY_MS, ConfirmHost } from "./ConfirmHost";
 import { resetMcpUi } from "./store";
 import "./index";
 
@@ -297,6 +297,12 @@ describe("Settings → AI agents (MCP)", () => {
   });
 });
 
+/** "Allow" takes input only a moment after a request appears (#158): the clock moves past that. */
+function afterAllowDelay(ms = ALLOW_KEYBOARD_DELAY_MS) {
+  const later = Date.now() + ms;
+  vi.spyOn(Date, "now").mockReturnValue(later);
+}
+
 describe("Confirmation of what an agent asks to do", () => {
   it("shows who asks, where, what and on what, and sends the answer", async () => {
     setup();
@@ -318,6 +324,7 @@ describe("Confirmation of what an agent asks to do", () => {
     expect(dialog).toHaveTextContent("Deployment team-a/web");
     expect(dialog.querySelector("pre")?.textContent).toBe("kind: Deployment\nmetadata:\n  name: web");
 
+    afterAllowDelay();
     fireEvent.click(within(dialog).getByRole("button", { name: "Allow" }));
     await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(1));
     expect(calls("mcp_confirm_answer")[0]!.args).toEqual({ id: "r1", approved: true });
@@ -364,6 +371,7 @@ describe("Confirmation of what an agent asks to do", () => {
     expect(dialog).toHaveTextContent("Pod team-a/second");
     expect(dialog).toHaveTextContent("ls -l");
     expect(dialog).not.toHaveTextContent("more request");
+    afterAllowDelay();
     fireEvent.click(within(dialog).getByRole("button", { name: "Allow" }));
     await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(2));
     expect(calls("mcp_confirm_answer").map((c) => c.args)).toEqual([
@@ -378,6 +386,7 @@ describe("Confirmation of what an agent asks to do", () => {
     await listening("mcp-confirm");
     act(() => backend.emit("mcp-confirm", request()));
     const allow = screen.getByRole("button", { name: "Allow" });
+    afterAllowDelay();
     act(() => {
       allow.click();
       allow.click();
@@ -411,6 +420,7 @@ describe("Confirmation of what an agent asks to do", () => {
     renderConfirm();
     await listening("mcp-confirm");
     act(() => backend.emit("mcp-confirm", request()));
+    afterAllowDelay();
     fireEvent.click(screen.getByRole("button", { name: "Allow" }));
     await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(1));
     expect(screen.queryByRole("alertdialog")).toBeNull();
@@ -443,6 +453,7 @@ describe("Confirmation of what an agent asks to do", () => {
     expect(dialog).toHaveTextContent("Patch a resource");
     expect(dialog).toHaveTextContent("resources.patch");
     expect(dialog).not.toHaveTextContent("Agent");
+    afterAllowDelay();
     fireEvent.click(within(dialog).getByRole("button", { name: "Allow" }));
     await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(1));
     expect(calls("mcp_confirm_answer")[0]!.args).toEqual({ id: "e1", approved: true });
@@ -584,5 +595,28 @@ describe("Agent activity", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("The log could not be read");
     expect(alert).toHaveTextContent("journal is locked");
+  });
+
+  it("ignores Allow from the keyboard for a moment after a request appears, and clicks for a shorter one", async () => {
+    setup();
+    renderConfirm();
+    await listening("mcp-confirm");
+    const start = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(start);
+    act(() => backend.emit("mcp-confirm", request()));
+    const allow = screen.getByRole("button", { name: "Allow" });
+    expect(allow).toHaveAttribute("aria-disabled", "true");
+    // Typing Tab then Enter: the keyboard clicks with detail 0.
+    fireEvent.click(allow, { detail: 0 });
+    vi.spyOn(Date, "now").mockReturnValue(start + ALLOW_CLICK_DELAY_MS - 1);
+    fireEvent.click(allow, { detail: 1 });
+    vi.spyOn(Date, "now").mockReturnValue(start + ALLOW_KEYBOARD_DELAY_MS - 1);
+    fireEvent.click(allow, { detail: 0 });
+    expect(calls("mcp_confirm_answer")).toHaveLength(0);
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    fireEvent.click(allow, { detail: 1 });
+    await waitFor(() => expect(calls("mcp_confirm_answer")).toHaveLength(1));
+    expect(calls("mcp_confirm_answer")[0]!.args).toEqual({ id: "r1", approved: true });
   });
 });

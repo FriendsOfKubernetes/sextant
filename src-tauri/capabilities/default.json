@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Permissions of the main window",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default", "opener:allow-open-url", "opener:allow-default-urls"]
+  "permissions": ["core:default", "core:webview:allow-set-webview-zoom", "dialog:default", "opener:allow-open-url", "opener:allow-default-urls"]
 }

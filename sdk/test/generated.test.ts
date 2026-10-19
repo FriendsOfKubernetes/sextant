@@ -22,4 +22,10 @@ describe("generated types", () => {
       expect(names).toContain(name);
     }
   });
+
+  it("leave out the watch updates only the window's own watches get", () => {
+    const watchUpdate = plannedFiles().get("WatchUpdate.ts") ?? "";
+    expect(watchUpdate).toContain('"type": "snapshot"');
+    for (const type of ["snapshotPart", "snapshotEnd", "capped"]) expect(watchUpdate).not.toContain(`"type": "${type}"`);
+  });
 });

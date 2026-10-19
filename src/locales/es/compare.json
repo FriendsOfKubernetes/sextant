@@ -1,0 +1,134 @@
+{
+  "action": "Comparar con…",
+  "sidebar": "Comparar namespaces",
+  "loading": "Comparando…",
+  "dialog": {
+    "title": "Comparar {{kind}} {{name}}",
+    "with": "Comparar con",
+    "modes": {
+      "object": "Otro objeto",
+      "lastApplied": "Su última configuración aplicada",
+      "helm": "El manifiesto de su release de Helm"
+    },
+    "unavailable": {
+      "lastApplied": "Este objeto no tiene última configuración aplicada: no se creó ni se modificó con kubectl apply.",
+      "helm": "Este objeto no pertenece a ninguna release de Helm."
+    },
+    "compare": "Comparar"
+  },
+  "target": {
+    "cluster": "Clúster",
+    "namespace": "Namespace",
+    "name": "Nombre",
+    "notConnected": "Sin conectar",
+    "connect": "Conectar",
+    "connecting": "Conectando…",
+    "suggestions": "Objetos coincidentes"
+  },
+  "side": {
+    "live": "Actual",
+    "lastApplied": "Última aplicada",
+    "manifest": "Manifiesto de Helm"
+  },
+  "options": {
+    "hideDefaults": "Ocultar valores predeterminados",
+    "hideDefaultsHint": "Omitir los campos que el servidor de API rellena cuando un manifiesto no los define, y las IP de clúster asignadas, mientras tengan ese valor.",
+    "ignoreTitle": "Rutas ignoradas de {{kind}}:",
+    "ignoreNone": "ninguna",
+    "ignoreRemove": "Dejar de ignorar {{path}}",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "Ruta que se ignora",
+    "ignoreAddButton": "Ignorar",
+    "ignoreInvalid": "Una ruta empieza por / y nombra claves separadas por /; * equivale a cualquier clave o elemento de lista, por ejemplo /metadata/labels/team o /spec/template/spec/containers/*/image.",
+    "ignoreFull": "Como máximo {{max}} rutas por tipo."
+  },
+  "diff": {
+    "same": "No hay diferencias.",
+    "changes_one": "{{count}} campo es distinto.",
+    "changes_many": "{{count}} de campos son distintos.",
+    "changes_other": "{{count}} campos son distintos.",
+    "field": "Campo",
+    "notSet": "sin definir"
+  },
+  "secret": {
+    "hint": "Los valores se comparan por sus hashes SHA-256 dentro de Sextant y no se cargan en la ventana hasta hacer clic en “Mostrar valores”.",
+    "label": "Claves del Secret",
+    "key": "Clave",
+    "state": "Comparación",
+    "values": "Valores",
+    "equal": "Mismo valor",
+    "different": "Valor distinto",
+    "onlyLeft": "Solo a la izquierda",
+    "onlyRight": "Solo a la derecha",
+    "noKeys": "Ningún lado tiene claves.",
+    "show": "Mostrar valores",
+    "hide": "Ocultar valores"
+  },
+  "result": {
+    "sameObject": "Es este mismo objeto: elija otro clúster, namespace o nombre.",
+    "notFound": "{{kind}} {{name}} no existe allí.",
+    "noDrift": "El objeto actual tiene sin cambios todos los campos de la última configuración aplicada.",
+    "drift_one": "{{count}} campo difiere de la última configuración aplicada.",
+    "drift_many": "{{count}} de campos difieren de la última configuración aplicada.",
+    "drift_other": "{{count}} campos difieren de la última configuración aplicada.",
+    "driftLabel": "Campos que difieren de la última configuración aplicada",
+    "notInRelease": "El manifiesto de la release de Helm {{name}} no tiene este objeto.",
+    "showRelease": "Revisar toda la release de Helm {{name}}",
+    "hideRelease": "Ocultar la release"
+  },
+  "drift": {
+    "release": "Release de Helm {{name}} en {{namespace}}, revisión {{revision}}",
+    "unreadable_one": "{{count}} documento del manifiesto no se puede leer y no se compara.",
+    "unreadable_many": "{{count}} de documentos del manifiesto no se pueden leer y no se comparan.",
+    "unreadable_other": "{{count}} documentos del manifiesto no se pueden leer y no se comparan.",
+    "truncated_one": "{{count}} objeto más no se compara.",
+    "truncated_many": "{{count}} de objetos más no se comparan.",
+    "truncated_other": "{{count}} objetos más no se comparan.",
+    "objectsLabel": "Objetos de la release",
+    "object": "Objeto",
+    "state": "Estado",
+    "details": "Detalles",
+    "drifted_one": "{{count}} diferencia",
+    "drifted_many": "{{count}} de diferencias",
+    "drifted_other": "{{count}} diferencias",
+    "states": {
+      "inSync": "Sincronizado",
+      "missing": "No existe",
+      "error": "No se puede leer"
+    },
+    "showDetails": "Detalles",
+    "hideDetails": "Ocultar",
+    "missingObject": "El objeto no existe en el clúster.",
+    "changesLabel": "Campos que difieren del manifiesto"
+  },
+  "page": {
+    "title": "Comparar namespaces",
+    "hint": "Objetos de un solo lado, objetos distintos e iguales, tipo por tipo; como máximo {{max}} objetos de un tipo por lado.",
+    "left": "Izquierda",
+    "right": "Derecha",
+    "kinds": "Tipos",
+    "result": "Comparación",
+    "filter": "Mostrar",
+    "objects": "Objetos",
+    "kind": "Tipo",
+    "state": "Estado",
+    "nothing": "No hay nada que mostrar.",
+    "failedLeft": "No se puede listar {{kind}} a la izquierda: {{message}}",
+    "failedRight": "No se puede listar {{kind}} a la derecha: {{message}}",
+    "truncated": "Algunos tipos tienen más de {{max}} objetos en un lado: el resto no se compara.",
+    "secretsFailed": "No se pueden comparar los valores de los Secrets: {{message}}",
+    "secretsTruncated": "Un namespace tiene más de {{max}} Secrets: los valores del resto no se comparan."
+  },
+  "buckets": {
+    "onlyLeft": "Solo a la izquierda ({{count}})",
+    "onlyRight": "Solo a la derecha ({{count}})",
+    "differ": "Distintos ({{count}})",
+    "same": "Iguales ({{count}})"
+  },
+  "states": {
+    "onlyLeft": "Solo a la izquierda",
+    "onlyRight": "Solo a la derecha",
+    "differ": "Distinto",
+    "same": "Igual"
+  }
+}

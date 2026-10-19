@@ -149,15 +149,19 @@
   background: var(--color-success);
 }
 
+/* Not by colour alone (#158): connected is a dot, connecting a ring, an error a diamond. */
 .cluster-icon__status[data-state="connecting"] {
   display: block;
-  background: var(--color-warning);
+  background: var(--color-rail);
+  box-shadow: inset 0 0 0 3px var(--color-warning);
   animation: cluster-pulse 1s ease-in-out infinite alternate;
 }
 
 .cluster-icon__status[data-state="error"] {
   display: block;
   background: var(--color-danger);
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.85);
 }
 
 /* Seconds of a connection in progress, under the initials. */

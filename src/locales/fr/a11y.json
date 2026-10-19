@@ -1,0 +1,13 @@
+{
+  "dock": {
+    "tabs": "Onglets du panneau inférieur"
+  },
+  "terminal": {
+    "leaveHint": "Appuyez sur Ctrl+Shift+E pour sortir le focus du terminal."
+  },
+  "logs": {
+    "newLines_one": "{{count}} nouvelle ligne",
+    "newLines_many": "{{count}} de nouvelles lignes",
+    "newLines_other": "{{count}} nouvelles lignes"
+  }
+}

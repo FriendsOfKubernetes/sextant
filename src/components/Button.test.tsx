@@ -125,6 +125,6 @@ describe("button styles", () => {
 
   it("show disabled and keyboard focus", () => {
     expect(rule(globalCss, ".btn:disabled,.icon-btn:disabled")["cursor"]).toBe("default");
-    expect(rule(globalCss, ".btn:focus-visible,.icon-btn:focus-visible")["outline"]).toContain("var(--color-accent)");
+    expect(rule(globalCss, ".btn:focus-visible,.icon-btn:focus-visible")["outline"]).toContain("var(--color-focus)");
   });
 });

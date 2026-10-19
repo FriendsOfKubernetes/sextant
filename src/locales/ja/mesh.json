@@ -1,0 +1,525 @@
+{
+  "sidebar": {
+    "virtualServices": "VirtualService",
+    "destinationRules": "DestinationRule",
+    "gateways": "Gateway",
+    "serviceEntries": "ServiceEntry",
+    "sidecars": "Sidecar",
+    "workloadEntries": "WorkloadEntry",
+    "peerAuthentications": "PeerAuthentication",
+    "requestAuthentications": "RequestAuthentication",
+    "authorizationPolicies": "AuthorizationPolicy",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "ServiceProfile",
+    "servers": "Server",
+    "httpRoutes": "HTTPRoute",
+    "serverAuthorizations": "ServerAuthorization",
+    "meshTlsAuthentications": "MeshTLSAuthentication",
+    "networkAuthentications": "NetworkAuthentication",
+    "requestCheck": "リクエストのルーティング"
+  },
+  "problemsCount_other": "Istio 構成の問題 {{count}} 件",
+  "loading": "メッシュの構成を読み込み中…",
+  "yes": "はい",
+  "no": "いいえ",
+  "columns": {
+    "hosts": "ホスト",
+    "gateways": "ゲートウェイ",
+    "routes": "ルート",
+    "host": "ホスト",
+    "subsets": "サブセット",
+    "tlsMode": "TLS モード",
+    "servers": "サーバー",
+    "location": "場所",
+    "resolution": "解決方法",
+    "appliesTo": "適用先",
+    "egressHosts": "送信先ホスト",
+    "address": "アドレス",
+    "serviceAccount": "Service account",
+    "mtlsMode": "mTLS モード",
+    "issuers": "発行者",
+    "action": "アクション",
+    "rules": "ルール",
+    "port": "ポート",
+    "proxyProtocol": "プロトコル",
+    "podSelector": "Pod セレクター",
+    "parents": "親",
+    "target": "対象",
+    "authentications": "認証",
+    "server": "サーバー",
+    "identities": "ID",
+    "networks": "ネットワーク",
+    "name": "名前",
+    "labels": "ラベル",
+    "protocol": "プロトコル",
+    "issuer": "発行者",
+    "audiences": "オーディエンス",
+    "keys": "鍵",
+    "condition": "条件",
+    "retryable": "再試行",
+    "timeout": "タイムアウト",
+    "match": "一致条件",
+    "destinations": "宛先",
+    "destination": "宛先",
+    "weight": "重み",
+    "subset": "サブセット",
+    "destinationRule": "宛先ルール",
+    "pods": "Pod",
+    "policy": "ポリシー",
+    "matches": "一致",
+    "notEvaluated": "未評価"
+  },
+  "fields": {
+    "hosts": "ホスト",
+    "gateways": "ゲートウェイ",
+    "exportTo": "公開先",
+    "host": "ホスト",
+    "tlsMode": "TLS モード",
+    "loadBalancer": "負荷分散",
+    "workloadSelector": "クライアント",
+    "selector": "ゲートウェイの Pod",
+    "location": "場所",
+    "resolution": "解決方法",
+    "ports": "ポート",
+    "addresses": "アドレス",
+    "appliesTo": "適用先",
+    "egressHosts": "送信先ホスト",
+    "outboundTrafficPolicy": "送信トラフィック",
+    "address": "アドレス",
+    "labels": "ラベル",
+    "serviceAccount": "Service account",
+    "network": "ネットワーク",
+    "tracing": "トレース",
+    "metrics": "メトリクス",
+    "accessLogging": "アクセスログ",
+    "mtlsMode": "mTLS モード",
+    "action": "アクション",
+    "provider": "プロバイダー",
+    "podSelector": "Pod セレクター",
+    "port": "ポート",
+    "proxyProtocol": "プロトコル",
+    "accessPolicy": "既定のアクセス",
+    "server": "サーバー",
+    "target": "対象",
+    "requiredAuthentications": "必須の認証",
+    "identities": "ID",
+    "identityRefs": "ID の参照",
+    "networks": "ネットワーク",
+    "parents": "親",
+    "hostnames": "ホスト名",
+    "revision": "リビジョン",
+    "injection": "Sidecar の注入",
+    "proxyImage": "プロキシのイメージ",
+    "linkerdInject": "プロキシの注入",
+    "controlPlane": "コントロールプレーン",
+    "proxyVersion": "プロキシのバージョン"
+  },
+  "blocks": {
+    "virtualService": "仮想サービス",
+    "httpRoutes": "HTTP ルート",
+    "l4Routes": "TCP と TLS のルート",
+    "destinationRule": "宛先ルール",
+    "portTls": "ポートごとの TLS",
+    "subsets": "サブセット",
+    "gateway": "ゲートウェイ",
+    "servers": "サーバー",
+    "boundVirtualServices": "このゲートウェイにバインドされた仮想サービス",
+    "serviceEntry": "サービスエントリ",
+    "sidecar": "Sidecar",
+    "workloadEntry": "ワークロードエントリ",
+    "telemetry": "テレメトリ",
+    "peerAuthentication": "ピア認証",
+    "portMtls": "ポートごとの mTLS",
+    "requestAuthentication": "リクエスト認証",
+    "authorizationPolicy": "認可ポリシー",
+    "istioMembership": "Istio",
+    "mtls": "Istio の mTLS",
+    "whoMayCall": "このワークロードを呼び出せるのは誰か",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "サービスプロファイル",
+    "profileRoutes": "ルート",
+    "server": "サーバー",
+    "serverAuthorizations": "このサーバーの認可",
+    "serverAuthorization": "サーバー認可",
+    "linkerdAuthorizationPolicy": "認可ポリシー",
+    "meshTlsAuthentication": "メッシュ TLS 認証",
+    "networkAuthentication": "ネットワーク認証",
+    "linkerdHttpRoute": "HTTP ルート"
+  },
+  "exportTo": {
+    "everywhere": "すべての namespace"
+  },
+  "vs": {
+    "delegate": "なし: 委任先で、これを指定するほかの仮想サービスのルートからのみ使われます",
+    "meshGateway": "mesh (Sidecar)"
+  },
+  "scope": {
+    "mesh": "メッシュのすべてのワークロード",
+    "namespace": "namespace のすべてのワークロード",
+    "targetRef": "Gateway または waypoint (targetRef)"
+  },
+  "route": {
+    "title": "ルート {{n}}",
+    "titleNamed": "ルート {{n}} ({{name}})",
+    "order": "ルートは上から順に試され、最初に一致したルートがリクエストを受け取ります。",
+    "when": "条件",
+    "then": "処理",
+    "everyRequest": "すべてのリクエスト",
+    "everyConnection": "すべての接続",
+    "alternative": "候補 {{n}}:",
+    "to": "{{percent}}% を {{host}} に送信",
+    "toSubset": "{{percent}}% を {{host}} のサブセット {{subset}} に送信",
+    "delegate": "リクエストを仮想サービス {{name}} のルートに委ねる",
+    "directResponse": "どこにも送らず HTTP {{status}} で応答",
+    "redirect": "クライアントをリダイレクト",
+    "redirectTo": "クライアントを {{target}} にリダイレクト",
+    "timeout": "{{timeout}} 後に打ち切り",
+    "noRetries": "再試行しない",
+    "retries_other": "最大 {{count}} 回再試行",
+    "retriesPerTry_other": "最大 {{count}} 回再試行、1 回あたり {{perTry}}",
+    "retryOn": "再試行する条件: {{on}}",
+    "faultDelay": "リクエストの {{percent}}% を {{delay}} 遅らせる (障害注入)",
+    "faultAbort": "リクエストの {{percent}}% を HTTP {{status}} で失敗させる (障害注入)",
+    "mirror": "リクエストの {{percent}}% を {{host}} にコピー (応答は無視)",
+    "rewriteUri": "パスを {{uri}} に書き換え",
+    "rewriteAuthority": "ホストを {{authority}} に書き換え"
+  },
+  "match": {
+    "uri": {
+      "exact": "パスが {{value}}",
+      "prefix": "パスが {{value}} で始まる",
+      "regex": "パスが正規表現 {{value}} に一致"
+    },
+    "uriIgnoreCase": {
+      "exact": "パスが {{value}} (大文字小文字を区別しない)",
+      "prefix": "パスが {{value}} で始まる (大文字小文字を区別しない)",
+      "regex": "パスが正規表現 {{value}} に一致 (大文字小文字を区別しない)"
+    },
+    "method": {
+      "exact": "メソッドが {{value}}",
+      "prefix": "メソッドが {{value}} で始まる",
+      "regex": "メソッドが正規表現 {{value}} に一致"
+    },
+    "scheme": {
+      "exact": "スキームが {{value}}",
+      "prefix": "スキームが {{value}} で始まる",
+      "regex": "スキームが正規表現 {{value}} に一致"
+    },
+    "authority": {
+      "exact": "ホストが {{value}}",
+      "prefix": "ホストが {{value}} で始まる",
+      "regex": "ホストが正規表現 {{value}} に一致"
+    },
+    "header": {
+      "exact": "ヘッダー {{name}} が {{value}}",
+      "prefix": "ヘッダー {{name}} が {{value}} で始まる",
+      "regex": "ヘッダー {{name}} が正規表現 {{value}} に一致"
+    },
+    "query": {
+      "exact": "クエリパラメーター {{name}} が {{value}}",
+      "prefix": "クエリパラメーター {{name}} が {{value}} で始まる",
+      "regex": "クエリパラメーター {{name}} が正規表現 {{value}} に一致"
+    },
+    "headerPresent": "ヘッダー {{name}} がある",
+    "headerAbsent": "ヘッダー {{name}} がない",
+    "headerNot": "ヘッダー {{name}} が {{value}} ではない",
+    "queryPresent": "クエリパラメーター {{name}} がある",
+    "port": "ポートが {{port}}",
+    "sourceLabels": "呼び出し元にラベル {{labels}} がある",
+    "sourceNamespace": "呼び出し元が namespace {{namespace}} にある",
+    "gateways": "経由: {{gateways}}"
+  },
+  "l4": {
+    "kind": "種類",
+    "match": "ポートと SNI ホスト",
+    "destinations": "宛先"
+  },
+  "tls": {
+    "auto": "未設定: 宛先に Sidecar があれば Istio が自動で独自の mTLS を使います",
+    "mode": {
+      "DISABLE": "DISABLE: 平文、TLS なし",
+      "SIMPLE": "SIMPLE: 宛先への TLS、クライアント証明書なし",
+      "MUTUAL": "MUTUAL: ルールで指定したクライアント証明書による TLS",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL: Istio 独自の mTLS"
+    }
+  },
+  "dr": {
+    "subsetsHint": "サブセットは、宛先の Pod のうちサブセットのラベルを持つものです。ルートはサブセットを指定して、バージョン間でトラフィックを分けます。"
+  },
+  "gateway": {
+    "selectorHint": "このゲートウェイは、これらのラベルを持つ Pod (Istio の入力または出力ゲートウェイ) が処理します。",
+    "noneBound": "このゲートウェイにバインドされた仮想サービスはありません。すべてのリクエストに 404 を返します。"
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "メッシュの外部",
+      "MESH_INTERNAL": "メッシュの内部"
+    },
+    "resolution": {
+      "NONE": "指定どおり",
+      "STATIC": "固定アドレス",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS (ラウンドロビン)"
+    }
+  },
+  "sidecar": {
+    "meaning": "選択したワークロードの Sidecar がメッシュについて知る範囲を制限します。到達できるのは列挙した送信先ホストだけです。",
+    "wholeNamespace": "namespace のすべてのワークロード"
+  },
+  "workloadEntry": {
+    "meaning": "Kubernetes の外にあるワークロード (VM) で、メッシュはこれらのラベルを持つ Pod として扱います。"
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "Istio の mTLS 接続だけを受け付けます。平文の呼び出しは拒否されます。",
+      "PERMISSIVE": "Istio の mTLS 接続と平文の接続の両方を受け付けます。",
+      "DISABLE": "Istio の mTLS はオフです。接続は平文です。",
+      "UNSET": "未設定: モードは上位から継承されます (ワークロード、namespace、メッシュの順。どこにも設定がなければ PERMISSIVE)。"
+    },
+    "precedence": "優先順位: ワークロードを選択するポリシー、次に namespace のポリシー、最後にルート namespace istio-system にあるメッシュ全体のポリシー。",
+    "source": {
+      "workload": "このワークロード向けの PeerAuthentication {{name}} が設定:",
+      "namespace": "namespace の PeerAuthentication {{name}} が設定:",
+      "mesh": "メッシュ全体の PeerAuthentication {{name}} が設定:",
+      "default": "設定する PeerAuthentication はありません。Istio の既定値 PERMISSIVE です。"
+    }
+  },
+  "jwt": {
+    "meaning": "無効なトークンを持つリクエストは拒否されます。トークンのないリクエストは、AuthorizationPolicy がリクエストのプリンシパルを要求しない限り通過します。",
+    "inlineKeys": "ルール内の鍵"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "namespace {{namespace}} のうち、セレクターに一致するワークロードに適用されます。",
+      "namespace": "namespace {{namespace}} のすべてのワークロードに適用されます。",
+      "mesh": "メッシュのすべてのワークロードに適用されます (ルート namespace {{namespace}} にあるため)。",
+      "targetRef": "ワークロード自身のプロキシではなく、Gateway または waypoint にアタッチされています (targetRef)。"
+    },
+    "action": {
+      "ALLOW": "ルールのいずれかに一致するリクエストを許可します。ALLOW ポリシーがワークロードに適用されると、それ以外のリクエストはすべて拒否されます。",
+      "DENY": "ALLOW ポリシーにかかわらず、ルールのいずれかに一致するリクエストを拒否します。",
+      "AUDIT": "一致したリクエストを監査ログ用に記録するだけで、許可も拒否もしません。",
+      "CUSTOM": "一致したリクエストを外部認可サービス {{provider}} に渡します。外部認可サービスが拒否することもあります。",
+      "INVALID": "このアクションは Istio が受け付けません。Istio はポリシーを拒否するため、何をするかは判定できません。"
+    },
+    "special": {
+      "allowNothing": "ルールがありません。何も許可しないため、これらのワークロードへのリクエストはすべて拒否されます。",
+      "noRules": "ルールがありません。どのリクエストにも一致せず、効果はありません。",
+      "everything": "空のルールがすべてのリクエストに一致します。"
+    },
+    "order": "Istio は CUSTOM ポリシー、DENY、ALLOW の順に確認します。",
+    "rule": "ルール {{n}}",
+    "emptyRule": "すべてのリクエスト (空のルール)。",
+    "valuesExcept": "{{values}} ({{except}} を除く)",
+    "anythingExcept": "{{except}} 以外のすべて",
+    "fields": {
+      "principals": "呼び出し元 (プリンシパル)",
+      "notPrincipals": "除外する呼び出し元 (プリンシパル)",
+      "requestPrincipals": "トークンのプリンシパル",
+      "notRequestPrincipals": "除外するトークンのプリンシパル",
+      "namespaces": "呼び出し元の namespace",
+      "notNamespaces": "除外する呼び出し元の namespace",
+      "ipBlocks": "呼び出し元の IP",
+      "notIpBlocks": "除外する呼び出し元の IP",
+      "remoteIpBlocks": "リモート IP",
+      "notRemoteIpBlocks": "除外するリモート IP",
+      "hosts": "ホスト",
+      "notHosts": "除外するホスト",
+      "ports": "ポート",
+      "notPorts": "除外するポート",
+      "methods": "メソッド",
+      "notMethods": "除外するメソッド",
+      "paths": "パス",
+      "notPaths": "除外するパス",
+      "condition": "{{key}} の条件"
+    },
+    "callerHint": "呼び出し元を指定してください。空欄の項目は不明として扱われ、それに依存するポリシーは未評価と表示されます。呼び出し元は mTLS でメッシュ内にあり、トラストドメイン cluster.local の namespace と service account で識別されるものとします。",
+    "caller": {
+      "namespace": "呼び出し元の namespace",
+      "serviceAccount": "Service account",
+      "method": "メソッド",
+      "path": "パス",
+      "port": "ポート",
+      "ip": "呼び出し元の IP",
+      "remoteIp": "リモート IP (プロキシの背後)"
+    },
+    "decision": {
+      "allowed": "許可",
+      "denied": "拒否",
+      "unknown": "判定できません",
+      "external": "外部認可サービスが判定"
+    },
+    "reason": {
+      "noPolicies": "このワークロードに適用される ALLOW ポリシーはなく、一致する DENY ポリシーもありません。",
+      "allowMatched": "ALLOW ポリシー {{name}} のルール {{rule}} が一致します。",
+      "noAllowMatched": "このワークロードには ALLOW ポリシーが適用されていますが、どれも一致しません。",
+      "denyMatched": "DENY ポリシー {{name}} のルール {{rule}} が一致します。",
+      "denyMayMatch": "DENY ポリシー {{name}} が一致する可能性があります。未評価の項目しだいです。",
+      "allowMayMatch": "通過させうるのは ALLOW ポリシー {{name}} だけで、それは未評価の項目しだいです。",
+      "customMatched": "CUSTOM ポリシー {{name}} が一致します。外部認可サービスが判定します。",
+      "customMayMatch": "CUSTOM ポリシー {{name}} が一致する可能性があります。未評価の項目しだいです。",
+      "targetRefNotEvaluated": "targetRef でアタッチされた DENY または CUSTOM ポリシーはここでは評価されず、リクエストを拒否する可能性があります。",
+      "invalidPolicy": "ポリシー {{name}} のアクションは Istio が受け付けないものです。何をするかは判定できません。"
+    },
+    "match": {
+      "yes": "はい",
+      "no": "いいえ",
+      "unknown": "未評価"
+    },
+    "targetRefSkipped": "targetRef で Gateway または waypoint にアタッチされ、未評価:",
+    "dryRun": "ドライラン (istio.io/dry-run): 判定はログに記録されるだけで、適用されません。",
+    "dryRunAction": "{{action}} (ドライラン、適用されない)"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "Sidecar プロキシで Istio メッシュに参加しています。",
+      "nativeSidecar": "ネイティブ Sidecar (init コンテナー) として起動した Sidecar プロキシで Istio メッシュに参加しています。",
+      "ambient": "ambient モードで Istio メッシュに参加しています。Sidecar はなく、ztunnel がトラフィックを運びます。",
+      "none": "Istio メッシュに参加していません。",
+      "injectedPods": "作成時に Pod へ Istio の Sidecar が追加されます。",
+      "noInjection": "Pod に Istio の Sidecar は追加されません。",
+      "optedOut": "この Pod はメッシュから除外されています。",
+      "restart": "Sidecar の注入は有効ですが、この Pod にはプロキシがありません。注入を有効にする前に作成されたか、インジェクターが失敗しました。メッシュに追加するには再起動してください。"
+    },
+    "linkerd": {
+      "proxy": "Linkerd メッシュに参加しています。linkerd-proxy が横で動いています。",
+      "nativeProxy": "Linkerd メッシュに参加しています。linkerd-proxy はネイティブ Sidecar (init コンテナー) として動いています。",
+      "none": "Linkerd メッシュに参加していません。",
+      "injectedPods": "作成時に Pod へ Linkerd のプロキシが追加されます。",
+      "noInjection": "Pod に Linkerd のプロキシは追加されません。",
+      "restart": "プロキシの注入は有効ですが、この Pod にはプロキシがありません。注入を有効にする前に作成されました。メッシュに追加するには再起動してください。",
+      "goldenMetrics": "linkerd-viz がインストールされています。Sextant はその成功率、リクエストレート、レイテンシを読み取りません。linkerd viz stat か linkerd-viz のダッシュボードで確認してください。"
+    },
+    "via": {
+      "pod": "有効 (Pod で設定)",
+      "namespace": "有効 (namespace で設定)"
+    },
+    "injectOn": {
+      "pod": "{{value}} (Pod で設定)",
+      "namespace": "{{value}} (namespace で設定)"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "{{host}} への呼び出しのルート、再試行、タイムアウト。",
+    "retryBudget": "再試行バジェット: 1 リクエストあたり最大 {{ratio}} 件の追加リクエスト、毎秒最低 {{min}} 回の再試行、期間 {{ttl}}。",
+    "compoundCondition": "複数の条件",
+    "serverMeaning": "選択した Pod のポートを表します。呼び出せるのは認可で許可されたクライアントだけです。認可がなければ既定のアクセスで決まります。",
+    "noAuthorizations": "この namespace にこのサーバーを対象とする認可はありません。誰が呼び出せるかは既定のアクセスで決まります。",
+    "allows": "許可する相手:",
+    "client": {
+      "unauthenticated": "すべてのクライアント (mTLS なしも含む)",
+      "unauthenticatedTls": "メッシュ内のすべてのクライアント (ID を問わない)",
+      "identities": "次の ID を持つメッシュ内のクライアント: {{values}}",
+      "serviceAccounts": "次の service account を持つメッシュ内のクライアント: {{values}}",
+      "networks": "次のネットワークのクライアント: {{values}}"
+    },
+    "policyMeaning": "必須の認証をすべて満たすクライアントを許可します。",
+    "policyNoAuth": "認証を要求しません。すべてのクライアントを許可します。",
+    "meshTlsMeaning": "これらのメッシュ TLS ID のいずれかを示すクライアント。",
+    "networkMeaning": "アドレスがこれらのネットワークのいずれかにあるクライアント。",
+    "networkExcept": "{{cidr}} ({{except}} を除く)"
+  },
+  "check": {
+    "title": "リクエストのルーティング",
+    "open": "リクエストを確認…",
+    "hint": "URL を入力して「確認」を押すと、Istio のルーティングルールに従って、リクエストを処理する仮想サービス、ルート、宛先、サブセット、Pod が見つかります。",
+    "notServed": "このクラスターは Istio の VirtualService も DestinationRule も提供していません。",
+    "result": "リクエストの行き先",
+    "notesTitle": "注記",
+    "alsoConsidered": "ほかに検討したもの",
+    "form": {
+      "method": "メソッド",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "確認",
+      "invalidUrl": "ホストを含む http:// または https:// の URL を入力してください。",
+      "from": "送信元",
+      "fromMesh": "メッシュ内のワークロード",
+      "fromGateway": "Istio のゲートウェイ",
+      "gateway": "ゲートウェイ",
+      "pickGateway": "ゲートウェイを選択",
+      "namespace": "呼び出し元の namespace",
+      "labels": "呼び出し元のラベル",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "key=value 形式ではありません: {{labels}}",
+      "headers": "ヘッダー",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_other": "{{lines}} 行目が「name: value」の形式ではありません"
+    },
+    "steps": {
+      "gateway": "ゲートウェイ",
+      "virtualService": "仮想サービス",
+      "route": "ルート",
+      "destinations": "宛先",
+      "answer": "応答"
+    },
+    "outcome": {
+      "routed": "ルーティング済み",
+      "defaultRoute": "そのままサービスへ送信",
+      "redirected": "リダイレクト ({{status}})",
+      "directResponse": "プロキシが応答 ({{status}})",
+      "noRoute": "ルートなし: 404",
+      "passthrough": "不明なホスト",
+      "noGatewayServer": "ゲートウェイが処理しない: 404",
+      "unknownGateway": "ゲートウェイが存在しません",
+      "delegateMissing": "委任先が見つからない: 404",
+      "l4Only": "TCP または TLS のルートのみ",
+      "notEvaluated": "未評価"
+    },
+    "server": "ポート {{port}} ({{protocol}}) で {{hosts}} を受け持つサーバー",
+    "matchedHost": "ホスト {{host}} で一致しました。",
+    "merged": "ゲートウェイはこれらの仮想サービスのルートを古い順に結合します。",
+    "viaDelegate": "委任元の仮想サービス {{name}} を経由しました。",
+    "skipped": {
+      "uri": "{{vs}} のルート {{route}} をスキップ: パスが一致しませんでした。",
+      "scheme": "{{vs}} のルート {{route}} をスキップ: スキームが一致しませんでした。",
+      "method": "{{vs}} のルート {{route}} をスキップ: メソッドが一致しませんでした。",
+      "authority": "{{vs}} のルート {{route}} をスキップ: ホストが一致しませんでした。",
+      "headers": "{{vs}} のルート {{route}} をスキップ: ヘッダーが一致しませんでした。",
+      "withoutHeaders": "{{vs}} のルート {{route}} をスキップ: 除外対象のヘッダーがあります。",
+      "queryParams": "{{vs}} のルート {{route}} をスキップ: クエリパラメーターが一致しませんでした。",
+      "port": "{{vs}} のルート {{route}} をスキップ: ポートが一致しませんでした。",
+      "sourceLabels": "{{vs}} のルート {{route}} をスキップ: 呼び出し元のラベルが一致しませんでした。",
+      "sourceNamespace": "{{vs}} のルート {{route}} をスキップ: 呼び出し元の namespace が一致しませんでした。",
+      "gateways": "{{vs}} のルート {{route}} をスキップ: ほかのゲートウェイ用です。"
+    },
+    "skippedNoReason": "{{vs}} のルート {{route}} をスキップしました。",
+    "pods": "{{ready}}/{{total}} 準備完了",
+    "why": {
+      "unknownGateway": "このゲートウェイはクラスターの Istio Gateway にありません。",
+      "noGatewayServer": "ホスト {{host}} を挙げているゲートウェイのサーバーはありません。",
+      "noVirtualService": "呼び出し元から見える {{host}} の仮想サービスはありません。Sidecar はリクエストをその名前のサービスへそのまま送ります。",
+      "noVirtualServiceGateway": "このゲートウェイにバインドされた仮想サービスで {{host}} を扱うものはありません。",
+      "noRoute": "仮想サービスのどのルートもリクエストに一致しません。",
+      "notEvaluated": "このルートは JavaScript で読めない正規表現を使っています。一致するかどうかも、その後のルートも評価されません。",
+      "delegateMissing": "このルートは、存在しない委任先の仮想サービスにリクエストを渡します。",
+      "l4Only": "この仮想サービスには TCP または TLS のルートしかなく、この確認では追跡しません。"
+    },
+    "problem": {
+      "unknownHost": "このホストを持つ Service も ServiceEntry もありません。",
+      "noDestinationRule": "サブセット {{subset}} を定義する宛先ルールがありません。プロキシは 503 を返します。",
+      "missingSubset": "宛先ルールにサブセット {{subset}} がありません。プロキシは 503 を返します。"
+    },
+    "answer": {
+      "redirected": "プロキシはリダイレクトで応答します ({{status}})。",
+      "directResponse": "プロキシ自身が HTTP {{status}} で応答します。",
+      "noRoute": "プロキシは 404 を返します。リクエストを受け取るルートがありません。",
+      "passthrough": "このホストを持つ Service、ServiceEntry、仮想サービスはありません。どうなるかはメッシュの送信トラフィックポリシーしだいです (ALLOW_ANY は通し、REGISTRY_ONLY は拒否します)。",
+      "noGatewayServer": "ゲートウェイは 404 を返します。",
+      "delegateMissing": "プロキシは 404 を返します。"
+    },
+    "candidate": {
+      "notExported": "呼び出し元の namespace に公開されていません (exportTo)。",
+      "lessSpecificHost": "ホストの指定がより一般的です。",
+      "duplicateIgnored": "Sidecar で同じホストを持っています。Istio は最も古い仮想サービスだけを使います。",
+      "invalidMeshWildcard": "Istio が拒否するホスト * で Sidecar にバインドされています。何もルーティングしません。"
+    },
+    "notes": {
+      "regexDialect": "Istio の正規表現は RE2 です。ここでは JavaScript の正規表現として読み取ります。一般的なパターンでは結果は同じです。",
+      "sidecarScope": "Sidecar リソースは呼び出し元からホストを隠すことがあります。Sidecar リソースは評価されません。",
+      "l4NotChecked": "TCP と TLS のルートは確認されません。",
+      "gatewayPort": "URL のポートにあるゲートウェイのサーバーはありません。別のポートでこのホストを扱うサーバーを表示しています (ゲートウェイの Service がポートを変換している場合があります)。",
+      "gatewaySourceLabels": "呼び出し元のラベルはゲートウェイのセレクターと比較されます。"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "table": {
+    "loadingMore_other": "正在載入… 目前 {{count}} 個",
+    "updating": "正在更新…",
+    "capped_other": "顯示 {{count}} 個物件中的前 {{shown}} 個。依 namespace 或 label 縮小清單即可檢視其餘物件。"
+  },
+  "guard": {
+    "title_other": "{{kind}}：所有 namespace 中約有 {{count}} 個物件",
+    "titleAtLeast_other": "{{kind}}：所有 namespace 中至少有 {{count}} 個物件",
+    "text": "全部顯示需要下載每個物件，可能需要一段時間；表格只保留前 {{max}} 個。可以選擇 namespace 或輸入 label selector（app=web）來減少物件，也可以仍然全部顯示。",
+    "showAnyway": "仍然顯示"
+  },
+  "sidebar": {
+    "count_other": "{{count}} 個物件",
+    "countCapped": "超過 {{max}} 個物件"
+  },
+  "palette": {
+    "capped_other": "{{kind}}：僅搜尋 {{count}} 個物件中的前 {{shown}} 個"
+  }
+}

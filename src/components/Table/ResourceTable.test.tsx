@@ -87,6 +87,8 @@ describe("ResourceTable", () => {
       "QoS",
       "Age",
       "Status",
+      // The header of the "⋮" column, for screen readers only.
+      "Actions",
     ]);
     const cells = within(bodyRows()[0]!).getAllByRole("cell").map((c) => c.textContent);
     expect(cells).toEqual(expect.arrayContaining(["pod-0001", "default", "3", "ReplicaSet", "node-1", "Burstable", "Running"]));
@@ -476,7 +478,7 @@ describe("ResourceTable", () => {
       },
     ]);
     const headers = screen.getAllByRole("columnheader").map((h) => h.textContent?.replace(/[▲▼]/g, ""));
-    expect(headers.filter(Boolean)).toEqual(["Name", "Namespace", "Size", "Replicas", "Age"]);
+    expect(headers.filter(Boolean)).toEqual(["Name", "Namespace", "Size", "Replicas", "Age", "Actions"]);
     const cells = within(bodyRows()[0]!).getAllByRole("cell").map((c) => c.textContent);
     expect(cells).toEqual(expect.arrayContaining(["demo-widget", "sextant-demo", "large", "3"]));
     expect(screen.getByRole("heading", { name: "Widget" })).toBeInTheDocument();
@@ -495,5 +497,76 @@ describe("ResourceTable", () => {
     } finally {
       remove();
     }
+  });
+});
+
+describe("ResourceTable keyboard and screen readers (#158)", () => {
+  const pods = Array.from({ length: 25 }, (_, i) => pod(i));
+  const focused = () => (document.activeElement as HTMLElement | null)?.closest("[role='row']")?.getAttribute("aria-rowindex");
+
+  it("keeps one row in the tab order and moves between rows with the arrows, Home and End", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await snapshot(pods);
+    const rows = bodyRows();
+    expect(rows.filter((r) => r.tabIndex === 0)).toEqual([rows[0]]);
+    // The row's own controls are tab stops only in that row.
+    expect(within(rows[1]!).getByRole("checkbox")).toHaveAttribute("tabindex", "-1");
+    expect(within(rows[0]!).getByRole("checkbox")).toHaveAttribute("tabindex", "0");
+
+    act(() => rows[0]!.focus());
+    fireEvent.keyDown(rows[0]!, { key: "ArrowDown" });
+    await waitFor(() => expect(focused()).toBe("3"));
+    expect(bodyRows()[1]).toHaveAttribute("tabindex", "0");
+    expect(bodyRows()[0]).toHaveAttribute("tabindex", "-1");
+
+    fireEvent.keyDown(document.activeElement!, { key: "End" });
+    await waitFor(() => expect(focused()).toBe("26"));
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowDown" });
+    expect(focused()).toBe("26");
+    fireEvent.keyDown(document.activeElement!, { key: "Home" });
+    await waitFor(() => expect(focused()).toBe("2"));
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowUp" });
+    expect(focused()).toBe("2");
+  });
+
+  it("keeps the tab stop on the same object when an update moves the rows", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await snapshot(pods);
+    const row = bodyRows()[3]!;
+    act(() => row.focus());
+    expect(row).toHaveAttribute("data-uid", "uid-3");
+    const first: KubeObject = { ...pod(99), metadata: { ...pod(99).metadata, name: "aaa", uid: "uid-new" } };
+    act(() => backend.emit("watch:watch-1", { type: "delta", upserted: [first], deleted: [] }));
+    await waitFor(() => expect(bodyRows()[0]).toHaveAttribute("data-uid", "uid-new"));
+    expect(bodyRows().filter((r) => r.tabIndex === 0).map((r) => r.dataset.uid)).toEqual(["uid-3"]);
+  });
+
+  it("Space selects the focused row, Enter opens its details", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    await snapshot(pods);
+    const row = bodyRows()[2]!;
+    act(() => row.focus());
+    fireEvent.keyDown(row, { key: " " });
+    expect(bodyRows()[2]).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(bodyRows()[2]!, { key: "Enter" });
+    expect(useAppStore.getState().details?.name).toBe("pod-0002");
+  });
+
+  it("names the actions column and announces the row count after a search, not on every update", async () => {
+    const { rerender } = render(<ResourceTable clusterId="c1" kind={POD} search="" />);
+    await snapshot(pods);
+    expect(screen.getAllByRole("columnheader").at(-1)).toHaveTextContent("Actions");
+    const live = screen.getByTestId("rt-announce");
+    expect(live).toHaveAttribute("aria-live", "polite");
+    expect(live).toHaveTextContent("");
+    rerender(<ResourceTable clusterId="c1" kind={POD} search="pod-001" />);
+    await waitFor(() => expect(live).toHaveTextContent("10 of 25"), { timeout: 3000 });
+  });
+
+  it("marks the table busy while its first list loads", async () => {
+    render(<ResourceTable clusterId="c1" kind={POD} />);
+    expect(screen.getByRole("region")).toHaveAttribute("aria-busy", "true");
+    await snapshot(pods);
+    expect(screen.getByRole("region")).not.toHaveAttribute("aria-busy");
   });
 });

@@ -608,3 +608,79 @@ _Avoid_: variable, parameter
 **Broadcast input**:
 Typing into several chosen panes at once. Off by default, needs at least two panes, asks for a confirmation on the first keystroke and drops what was typed before it; ends when any of its panes closes.
 _Avoid_: sync panes, multi-exec
+
+**Service mesh (Istio / Linkerd)**:
+The "Istio" and "Linkerd" sidebar sections, shown when the cluster serves their kinds, and the "Service mesh" section of a Pod or workload. Sextant only reads the objects; it never asks istiod or a proxy.
+_Avoid_: mesh dashboard, Kiali
+
+**In the mesh (membership)**:
+Whether a Pod runs a mesh proxy (an Istio sidecar or native sidecar, Istio ambient mode, a Linkerd proxy), which revision, and whether injection is on for it or its namespace. "Restart needed" means injection is on but the running Pod has no proxy.
+_Avoid_: injected (alone), meshed
+
+**Request routing (mesh)**:
+The page that explains, from VirtualServices, Gateways and DestinationRules, where one request (URL, method, headers, from a workload or through a Gateway) would go: the matched route, the weighted destinations and their pods. An answer from objects, not from the proxies.
+_Avoid_: traffic trace, live routing
+
+**Who may call this workload?**:
+The answer of Istio AuthorizationPolicies for one caller (namespace, service account, method, path, port, IP): allowed, denied, up to the external authorizer, or "Cannot tell" when a condition cannot be evaluated. Never "allowed" when unsure.
+_Avoid_: access check, RBAC
+
+**Dry-run policy**:
+An AuthorizationPolicy annotated `istio.io/dry-run: "true"`: shown with what it would do, but not counted in the answer, as Istio does not enforce it.
+_Avoid_: disabled policy
+
+**mTLS mode**:
+STRICT, PERMISSIVE or DISABLE for a workload (and per port), from PeerAuthentications: the workload's own, else its namespace's, else the mesh-wide one in `istio-system`, else PERMISSIVE.
+_Avoid_: TLS setting, encryption
+
+**Compare with…**:
+Putting an object next to another object of its kind (another cluster or namespace, or another name), its last-applied configuration, or its Helm release's manifest, after removing what the server writes. Read-only; a cluster that is not connected is connected only by the user's click.
+_Avoid_: diff (alone), sync
+
+**Compare namespaces**:
+Two (cluster, namespace) sides compared kind by kind: only on the left, only on the right, different, same.
+_Avoid_: namespace sync, mirror
+
+**Drift**:
+A field that the desired side (last-applied configuration or Helm manifest) sets and the live object has otherwise. Fields the server or controllers add are not drift.
+_Avoid_: difference (for drift), out of sync (that is GitOps)
+
+**Ignored path**:
+A field path, per kind, left out of every comparison (`/spec/replicas`, `/metadata/annotations/*`). Saved in the settings.
+_Avoid_: exclude, filter
+
+**Same value / different value (Secret)**:
+How two Secret keys compare when their values are hashed inside Sextant; neither values nor hashes reach the window until "Show values".
+_Avoid_: equal hash, decrypted
+
+**List in parts**:
+A table's first list shown page by page while the API server is still sending it ("Loading… N so far").
+_Avoid_: lazy loading, pagination
+
+**Table limit (20 000 objects)**:
+The most objects one table keeps; the rest are counted, and the table says "Showing the first N of M" and how to narrow the list.
+_Avoid_: truncation, page size
+
+**Large list warning**:
+The question a table asks before listing more than 10 000 objects of a kind in all namespaces; "Show anyway" is remembered until restart.
+_Avoid_: count guard (in the interface), limit
+
+**Server-side filter**:
+Label terms (`app=web`) and supported field terms (`status.phase=Running`) of a table's search, sent to the API server as selectors so only matching objects are listed.
+_Avoid_: query, server search
+
+**Shared watch**:
+One watch of a cluster, kind, namespaces and selectors that every view showing that list uses at the same time.
+_Avoid_: cache, duplicate watch
+
+**Modal stack**:
+The open dialogs in the order they opened; only the top one takes the keyboard. The agent and extension confirmation stays on top while shown.
+_Avoid_: dialog queue, popup layer
+
+**Approval delay**:
+The moment after an agent or extension confirmation appears during which "Allow" ignores the keyboard (1 s) and clicks (300 ms), so a keystroke meant for something else cannot approve it. "Deny" works at once.
+_Avoid_: cooldown, lockout
+
+**Leave the terminal (Ctrl+Shift+E)**:
+The one key a terminal never takes: it moves the focus to the terminal's dock tab, so keyboard users can get out of a shell.
+_Avoid_: escape key, focus trap

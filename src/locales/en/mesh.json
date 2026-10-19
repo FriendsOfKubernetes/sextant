@@ -1,0 +1,529 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "Request routing"
+  },
+  "problemsCount_one": "{{count}} Istio configuration problem",
+  "problemsCount_other": "{{count}} Istio configuration problems",
+  "loading": "Loading the mesh configuration…",
+  "yes": "Yes",
+  "no": "No",
+  "columns": {
+    "hosts": "Hosts",
+    "gateways": "Gateways",
+    "routes": "Routes",
+    "host": "Host",
+    "subsets": "Subsets",
+    "tlsMode": "TLS mode",
+    "servers": "Servers",
+    "location": "Location",
+    "resolution": "Resolution",
+    "appliesTo": "Applies to",
+    "egressHosts": "Egress hosts",
+    "address": "Address",
+    "serviceAccount": "Service account",
+    "mtlsMode": "mTLS mode",
+    "issuers": "Issuers",
+    "action": "Action",
+    "rules": "Rules",
+    "port": "Port",
+    "proxyProtocol": "Protocol",
+    "podSelector": "Pod selector",
+    "parents": "Parents",
+    "target": "Target",
+    "authentications": "Authentications",
+    "server": "Server",
+    "identities": "Identities",
+    "networks": "Networks",
+    "name": "Name",
+    "labels": "Labels",
+    "protocol": "Protocol",
+    "issuer": "Issuer",
+    "audiences": "Audiences",
+    "keys": "Keys",
+    "condition": "Condition",
+    "retryable": "Retried",
+    "timeout": "Timeout",
+    "match": "Match",
+    "destinations": "Destinations",
+    "destination": "Destination",
+    "weight": "Weight",
+    "subset": "Subset",
+    "destinationRule": "Destination rule",
+    "pods": "Pods",
+    "policy": "Policy",
+    "matches": "Matches",
+    "notEvaluated": "Not evaluated"
+  },
+  "fields": {
+    "hosts": "Hosts",
+    "gateways": "Gateways",
+    "exportTo": "Visible in",
+    "host": "Host",
+    "tlsMode": "TLS mode",
+    "loadBalancer": "Load balancing",
+    "workloadSelector": "Clients",
+    "selector": "Gateway pods",
+    "location": "Location",
+    "resolution": "Resolution",
+    "ports": "Ports",
+    "addresses": "Addresses",
+    "appliesTo": "Applies to",
+    "egressHosts": "Egress hosts",
+    "outboundTrafficPolicy": "Outbound traffic",
+    "address": "Address",
+    "labels": "Labels",
+    "serviceAccount": "Service account",
+    "network": "Network",
+    "tracing": "Tracing",
+    "metrics": "Metrics",
+    "accessLogging": "Access logs",
+    "mtlsMode": "mTLS mode",
+    "action": "Action",
+    "provider": "Provider",
+    "podSelector": "Pod selector",
+    "port": "Port",
+    "proxyProtocol": "Protocol",
+    "accessPolicy": "Default access",
+    "server": "Server",
+    "target": "Target",
+    "requiredAuthentications": "Required authentications",
+    "identities": "Identities",
+    "identityRefs": "Identity references",
+    "networks": "Networks",
+    "parents": "Parents",
+    "hostnames": "Hostnames",
+    "revision": "Revision",
+    "injection": "Sidecar injection",
+    "proxyImage": "Proxy image",
+    "linkerdInject": "Proxy injection",
+    "controlPlane": "Control plane",
+    "proxyVersion": "Proxy version"
+  },
+  "blocks": {
+    "virtualService": "Virtual service",
+    "httpRoutes": "HTTP routes",
+    "l4Routes": "TCP and TLS routes",
+    "destinationRule": "Destination rule",
+    "portTls": "TLS by port",
+    "subsets": "Subsets",
+    "gateway": "Gateway",
+    "servers": "Servers",
+    "boundVirtualServices": "Virtual services bound to this gateway",
+    "serviceEntry": "Service entry",
+    "sidecar": "Sidecar",
+    "workloadEntry": "Workload entry",
+    "telemetry": "Telemetry",
+    "peerAuthentication": "Peer authentication",
+    "portMtls": "mTLS by port",
+    "requestAuthentication": "Request authentication",
+    "authorizationPolicy": "Authorization policy",
+    "istioMembership": "Istio",
+    "mtls": "Istio mTLS",
+    "whoMayCall": "Who may call this workload?",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "Service profile",
+    "profileRoutes": "Routes",
+    "server": "Server",
+    "serverAuthorizations": "Authorizations of this server",
+    "serverAuthorization": "Server authorization",
+    "linkerdAuthorizationPolicy": "Authorization policy",
+    "meshTlsAuthentication": "Mesh TLS authentication",
+    "networkAuthentication": "Network authentication",
+    "linkerdHttpRoute": "HTTP route"
+  },
+  "exportTo": {
+    "everywhere": "Every namespace"
+  },
+  "vs": {
+    "delegate": "None: a delegate, used only by the routes of other virtual services that name it",
+    "meshGateway": "mesh (sidecars)"
+  },
+  "scope": {
+    "mesh": "Every workload of the mesh",
+    "namespace": "Every workload of the namespace",
+    "targetRef": "A Gateway or waypoint (targetRef)"
+  },
+  "route": {
+    "title": "Route {{n}}",
+    "titleNamed": "Route {{n}} ({{name}})",
+    "order": "Routes are tried from the top; the first one that matches takes the request.",
+    "when": "When",
+    "then": "Then",
+    "everyRequest": "Every request",
+    "everyConnection": "Every connection",
+    "alternative": "Alternative {{n}}:",
+    "to": "Send {{percent}}% to {{host}}",
+    "toSubset": "Send {{percent}}% to {{host}}, subset {{subset}}",
+    "delegate": "Hand the request to the routes of virtual service {{name}}",
+    "directResponse": "Answer with HTTP {{status}} without sending it anywhere",
+    "redirect": "Redirect the client",
+    "redirectTo": "Redirect the client to {{target}}",
+    "timeout": "Give up after {{timeout}}",
+    "noRetries": "Never retry",
+    "retries_one": "Retry up to {{count}} time",
+    "retries_other": "Retry up to {{count}} times",
+    "retriesPerTry_one": "Retry up to {{count}} time, {{perTry}} per try",
+    "retriesPerTry_other": "Retry up to {{count}} times, {{perTry}} per try",
+    "retryOn": "Retry on: {{on}}",
+    "faultDelay": "Delay {{percent}}% of the requests by {{delay}} (fault injection)",
+    "faultAbort": "Fail {{percent}}% of the requests with HTTP {{status}} (fault injection)",
+    "mirror": "Copy {{percent}}% of the requests to {{host}} (answers ignored)",
+    "rewriteUri": "Rewrite the path to {{uri}}",
+    "rewriteAuthority": "Rewrite the host to {{authority}}"
+  },
+  "match": {
+    "uri": {
+      "exact": "The path is {{value}}",
+      "prefix": "The path starts with {{value}}",
+      "regex": "The path matches the regular expression {{value}}"
+    },
+    "uriIgnoreCase": {
+      "exact": "The path is {{value}} (any letter case)",
+      "prefix": "The path starts with {{value}} (any letter case)",
+      "regex": "The path matches the regular expression {{value}} (any letter case)"
+    },
+    "method": {
+      "exact": "The method is {{value}}",
+      "prefix": "The method starts with {{value}}",
+      "regex": "The method matches the regular expression {{value}}"
+    },
+    "scheme": {
+      "exact": "The scheme is {{value}}",
+      "prefix": "The scheme starts with {{value}}",
+      "regex": "The scheme matches the regular expression {{value}}"
+    },
+    "authority": {
+      "exact": "The host is {{value}}",
+      "prefix": "The host starts with {{value}}",
+      "regex": "The host matches the regular expression {{value}}"
+    },
+    "header": {
+      "exact": "Header {{name}} is {{value}}",
+      "prefix": "Header {{name}} starts with {{value}}",
+      "regex": "Header {{name}} matches the regular expression {{value}}"
+    },
+    "query": {
+      "exact": "Query parameter {{name}} is {{value}}",
+      "prefix": "Query parameter {{name}} starts with {{value}}",
+      "regex": "Query parameter {{name}} matches the regular expression {{value}}"
+    },
+    "headerPresent": "Header {{name}} is present",
+    "headerAbsent": "Header {{name}} is absent",
+    "headerNot": "Header {{name}} is not {{value}}",
+    "queryPresent": "Query parameter {{name}} is present",
+    "port": "The port is {{port}}",
+    "sourceLabels": "The caller has the labels {{labels}}",
+    "sourceNamespace": "The caller is in namespace {{namespace}}",
+    "gateways": "It comes through: {{gateways}}"
+  },
+  "l4": {
+    "kind": "Kind",
+    "match": "Ports and SNI hosts",
+    "destinations": "Destinations"
+  },
+  "tls": {
+    "auto": "Not set: Istio uses its mTLS by itself where the destination has a sidecar",
+    "mode": {
+      "DISABLE": "DISABLE: plain text, no TLS",
+      "SIMPLE": "SIMPLE: TLS to the destination, without a client certificate",
+      "MUTUAL": "MUTUAL: TLS with a client certificate given in the rule",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL: Istio's own mTLS"
+    }
+  },
+  "dr": {
+    "subsetsHint": "A subset is the destination's pods that carry the subset's labels; routes name subsets to split traffic between versions."
+  },
+  "gateway": {
+    "selectorHint": "The gateway is served by the pods with these labels (an Istio ingress or egress gateway).",
+    "noneBound": "No virtual service is bound to this gateway: it answers 404 to every request."
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "Outside the mesh",
+      "MESH_INTERNAL": "Inside the mesh"
+    },
+    "resolution": {
+      "NONE": "As addressed",
+      "STATIC": "Fixed addresses",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS (round robin)"
+    }
+  },
+  "sidecar": {
+    "meaning": "Limits what the selected workloads' sidecars know of the mesh: only the listed egress hosts can be reached.",
+    "wholeNamespace": "Every workload of the namespace"
+  },
+  "workloadEntry": {
+    "meaning": "A workload outside Kubernetes (a VM) that the mesh treats as a pod with these labels."
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "Only Istio mTLS connections are accepted; plain-text calls are refused.",
+      "PERMISSIVE": "Both Istio mTLS and plain-text connections are accepted.",
+      "DISABLE": "Istio mTLS is off: connections are plain text.",
+      "UNSET": "Not set: the mode is inherited (workload, then namespace, then mesh; PERMISSIVE when nothing sets it)."
+    },
+    "precedence": "Precedence: a policy with a selector for the workload, then the namespace's policy, then the mesh-wide one in the root namespace istio-system.",
+    "source": {
+      "workload": "Set by the PeerAuthentication {{name}} for this workload:",
+      "namespace": "Set by the namespace's PeerAuthentication {{name}}:",
+      "mesh": "Set by the mesh-wide PeerAuthentication {{name}}:",
+      "default": "No PeerAuthentication sets it: Istio's default, PERMISSIVE."
+    }
+  },
+  "jwt": {
+    "meaning": "A request with an invalid token is refused; a request without a token is let through unless an AuthorizationPolicy requires a request principal.",
+    "inlineKeys": "Keys in the rule"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "Applies to the workloads of namespace {{namespace}} that match its selector.",
+      "namespace": "Applies to every workload of namespace {{namespace}}.",
+      "mesh": "Applies to every workload of the mesh: it is in the root namespace {{namespace}}.",
+      "targetRef": "Attached to a Gateway or waypoint (targetRef), not to the workloads' own proxies."
+    },
+    "action": {
+      "ALLOW": "Allows the requests that match one of its rules; once an ALLOW policy applies to a workload, every other request to it is denied.",
+      "DENY": "Denies the requests that match one of its rules, whatever the ALLOW policies say.",
+      "AUDIT": "Only marks the requests that match for audit logging; it allows and denies nothing.",
+      "CUSTOM": "Hands the requests that match to the external authorizer {{provider}}, which may deny them.",
+      "INVALID": "Its action is not one Istio accepts: Istio rejects the policy, so what it does cannot be told."
+    },
+    "special": {
+      "allowNothing": "It has no rules: it allows nothing, so every request to these workloads is denied.",
+      "noRules": "It has no rules: it matches no request and has no effect.",
+      "everything": "Its empty rule matches every request."
+    },
+    "order": "Istio checks CUSTOM policies first, then DENY, then ALLOW.",
+    "rule": "Rule {{n}}",
+    "emptyRule": "Every request (an empty rule).",
+    "valuesExcept": "{{values}}, except {{except}}",
+    "anythingExcept": "Anything except {{except}}",
+    "fields": {
+      "principals": "Callers (principals)",
+      "notPrincipals": "Not callers (principals)",
+      "requestPrincipals": "Token principals",
+      "notRequestPrincipals": "Not token principals",
+      "namespaces": "Caller namespaces",
+      "notNamespaces": "Not caller namespaces",
+      "ipBlocks": "Caller IPs",
+      "notIpBlocks": "Not caller IPs",
+      "remoteIpBlocks": "Remote IPs",
+      "notRemoteIpBlocks": "Not remote IPs",
+      "hosts": "Hosts",
+      "notHosts": "Not hosts",
+      "ports": "Ports",
+      "notPorts": "Not ports",
+      "methods": "Methods",
+      "notMethods": "Not methods",
+      "paths": "Paths",
+      "notPaths": "Not paths",
+      "condition": "When {{key}}"
+    },
+    "callerHint": "Describe the caller: what you leave empty is unknown, and a policy that depends on it is shown as not evaluated. The caller is taken to be in the mesh with mTLS, known by its namespace and service account in the trust domain cluster.local.",
+    "caller": {
+      "namespace": "Caller namespace",
+      "serviceAccount": "Service account",
+      "method": "Method",
+      "path": "Path",
+      "port": "Port",
+      "ip": "Caller IP",
+      "remoteIp": "Remote IP (behind a proxy)"
+    },
+    "decision": {
+      "allowed": "Allowed",
+      "denied": "Denied",
+      "unknown": "Cannot tell",
+      "external": "Up to the external authorizer"
+    },
+    "reason": {
+      "noPolicies": "No ALLOW policy applies to this workload, and no DENY policy matches.",
+      "allowMatched": "Rule {{rule}} of the ALLOW policy {{name}} matches.",
+      "noAllowMatched": "ALLOW policies apply to this workload and none of them matches.",
+      "denyMatched": "Rule {{rule}} of the DENY policy {{name}} matches.",
+      "denyMayMatch": "The DENY policy {{name}} may match: it depends on something not evaluated.",
+      "allowMayMatch": "Only the ALLOW policy {{name}} may let it in, and it depends on something not evaluated.",
+      "customMatched": "The CUSTOM policy {{name}} matches: the external authorizer decides.",
+      "customMayMatch": "The CUSTOM policy {{name}} may match: it depends on something not evaluated.",
+      "targetRefNotEvaluated": "A DENY or CUSTOM policy attached by targetRef is not evaluated here and may refuse the request.",
+      "invalidPolicy": "The policy {{name}} has an action Istio does not accept: what it does cannot be told."
+    },
+    "match": {
+      "yes": "Yes",
+      "no": "No",
+      "unknown": "Not evaluated"
+    },
+    "targetRefSkipped": "Attached by targetRef to a Gateway or waypoint, not evaluated:",
+    "dryRun": "Dry run (istio.io/dry-run): its decisions are only logged, never enforced.",
+    "dryRunAction": "{{action}} (dry run, not enforced)"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "In the Istio mesh with a sidecar proxy.",
+      "nativeSidecar": "In the Istio mesh with a sidecar proxy started as a native sidecar (an init container).",
+      "ambient": "In the Istio mesh in ambient mode: no sidecar, ztunnel carries its traffic.",
+      "none": "Not in the Istio mesh.",
+      "injectedPods": "Its pods get an Istio sidecar when they are created.",
+      "noInjection": "Its pods get no Istio sidecar.",
+      "optedOut": "The pod opts out of the mesh.",
+      "restart": "Sidecar injection is on, but this pod has no proxy: it was created before injection was turned on, or the injector failed. Restart it to add it to the mesh."
+    },
+    "linkerd": {
+      "proxy": "In the Linkerd mesh: the linkerd-proxy runs beside it.",
+      "nativeProxy": "In the Linkerd mesh: the linkerd-proxy runs as a native sidecar (an init container).",
+      "none": "Not in the Linkerd mesh.",
+      "injectedPods": "Its pods get the Linkerd proxy when they are created.",
+      "noInjection": "Its pods get no Linkerd proxy.",
+      "restart": "Proxy injection is on, but this pod has no proxy: it was created before injection was turned on. Restart it to add it to the mesh.",
+      "goldenMetrics": "linkerd-viz is installed. Sextant does not read its success rate, request rate and latency: see them with linkerd viz stat or the linkerd-viz dashboard."
+    },
+    "via": {
+      "pod": "On, set on the pod",
+      "namespace": "On, set on the namespace"
+    },
+    "injectOn": {
+      "pod": "{{value}}, set on the pod",
+      "namespace": "{{value}}, set on the namespace"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "Routes, retries and timeouts of calls to {{host}}.",
+    "retryBudget": "Retry budget: at most {{ratio}} extra requests per request, at least {{min}} retries per second, over {{ttl}}.",
+    "compoundCondition": "Several conditions",
+    "serverMeaning": "Describes a port of the selected pods. Only the clients its authorizations allow may call it; with none, its default access decides.",
+    "noAuthorizations": "No authorization in this namespace targets this server: its default access decides who may call it.",
+    "allows": "Lets in:",
+    "client": {
+      "unauthenticated": "Any client, also without mTLS",
+      "unauthenticatedTls": "Any meshed client, whatever its identity",
+      "identities": "Meshed clients with the identities: {{values}}",
+      "serviceAccounts": "Meshed clients with the service accounts: {{values}}",
+      "networks": "Clients from the networks: {{values}}"
+    },
+    "policyMeaning": "Lets in the clients that meet every required authentication.",
+    "policyNoAuth": "Requires no authentication: lets every client in.",
+    "meshTlsMeaning": "Clients that present one of these mesh TLS identities.",
+    "networkMeaning": "Clients whose address is in one of these networks.",
+    "networkExcept": "{{cidr}} except {{except}}"
+  },
+  "check": {
+    "title": "Request routing",
+    "open": "Check a request…",
+    "hint": "Enter a URL and press Check: the virtual service, route, destinations, subsets and pods that would serve the request are found with Istio's routing rules.",
+    "notServed": "This cluster serves no Istio VirtualServices or DestinationRules.",
+    "result": "Where the request goes",
+    "notesTitle": "Notes",
+    "alsoConsidered": "Also considered",
+    "form": {
+      "method": "Method",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "Check",
+      "invalidUrl": "Enter an http:// or https:// URL with a host.",
+      "from": "Sent from",
+      "fromMesh": "A workload in the mesh",
+      "fromGateway": "An Istio gateway",
+      "gateway": "Gateway",
+      "pickGateway": "Pick a gateway",
+      "namespace": "Caller namespace",
+      "labels": "Caller labels",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "Not key=value: {{labels}}",
+      "headers": "Headers",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_one": "Line {{lines}} is not \"name: value\"",
+      "badHeaders_other": "Lines {{lines}} are not \"name: value\""
+    },
+    "steps": {
+      "gateway": "Gateway",
+      "virtualService": "Virtual service",
+      "route": "Route",
+      "destinations": "Destinations",
+      "answer": "Answer"
+    },
+    "outcome": {
+      "routed": "Routed",
+      "defaultRoute": "Sent to the service as is",
+      "redirected": "Redirected ({{status}})",
+      "directResponse": "Answered by the proxy ({{status}})",
+      "noRoute": "No route: 404",
+      "passthrough": "Unknown host",
+      "noGatewayServer": "Not served by the gateway: 404",
+      "unknownGateway": "No such gateway",
+      "delegateMissing": "Delegate not found: 404",
+      "l4Only": "TCP or TLS routes only",
+      "notEvaluated": "Not evaluated"
+    },
+    "server": "Server on port {{port}} ({{protocol}}) for {{hosts}}",
+    "matchedHost": "Matched by its host {{host}}.",
+    "merged": "The gateway merges the routes of these virtual services, the oldest first.",
+    "viaDelegate": "Reached through the delegating virtual service {{name}}.",
+    "skipped": {
+      "uri": "Route {{route}} of {{vs}} skipped: the path did not match.",
+      "scheme": "Route {{route}} of {{vs}} skipped: the scheme did not match.",
+      "method": "Route {{route}} of {{vs}} skipped: the method did not match.",
+      "authority": "Route {{route}} of {{vs}} skipped: the host did not match.",
+      "headers": "Route {{route}} of {{vs}} skipped: a header did not match.",
+      "withoutHeaders": "Route {{route}} of {{vs}} skipped: an excluded header is present.",
+      "queryParams": "Route {{route}} of {{vs}} skipped: a query parameter did not match.",
+      "port": "Route {{route}} of {{vs}} skipped: the port did not match.",
+      "sourceLabels": "Route {{route}} of {{vs}} skipped: the caller's labels did not match.",
+      "sourceNamespace": "Route {{route}} of {{vs}} skipped: the caller's namespace did not match.",
+      "gateways": "Route {{route}} of {{vs}} skipped: it is for other gateways."
+    },
+    "skippedNoReason": "Route {{route}} of {{vs}} skipped.",
+    "pods": "{{ready}} of {{total}} ready",
+    "why": {
+      "unknownGateway": "The gateway is not among the Istio Gateways of the cluster.",
+      "noGatewayServer": "No server of the gateway lists the host {{host}}.",
+      "noVirtualService": "No virtual service for {{host}} is visible to the caller: the sidecar sends the request to the service of that name as it is.",
+      "noVirtualServiceGateway": "No virtual service bound to this gateway covers {{host}}.",
+      "noRoute": "No route of the virtual service matches the request.",
+      "notEvaluated": "This route uses a regular expression JavaScript cannot read: whether it matches is not evaluated, and neither are the routes after it.",
+      "delegateMissing": "The route hands the request to a delegate virtual service that does not exist.",
+      "l4Only": "The virtual service has only TCP or TLS routes, which this check does not follow."
+    },
+    "problem": {
+      "unknownHost": "No Service or ServiceEntry has this host.",
+      "noDestinationRule": "No destination rule defines subset {{subset}}: the proxy answers 503.",
+      "missingSubset": "The destination rule has no subset {{subset}}: the proxy answers 503."
+    },
+    "answer": {
+      "redirected": "The proxy answers with a redirect ({{status}}).",
+      "directResponse": "The proxy answers with HTTP {{status}} itself.",
+      "noRoute": "The proxy answers 404: no route takes the request.",
+      "passthrough": "No Service, ServiceEntry or virtual service has this host: what happens depends on the mesh's outbound traffic policy (ALLOW_ANY passes it on, REGISTRY_ONLY refuses it).",
+      "noGatewayServer": "The gateway answers 404.",
+      "delegateMissing": "The proxy answers 404."
+    },
+    "candidate": {
+      "notExported": "Not exported to the caller's namespace (exportTo).",
+      "lessSpecificHost": "Has a less specific host.",
+      "duplicateIgnored": "Has the same host on the sidecars: Istio uses only the oldest virtual service.",
+      "invalidMeshWildcard": "Bound to the sidecars with the host *, which Istio rejects: it routes nothing."
+    },
+    "notes": {
+      "regexDialect": "Istio's regular expressions are RE2; they are read here as JavaScript ones, which agree on common patterns.",
+      "sidecarScope": "A Sidecar resource can hide hosts from the caller; Sidecar resources are not evaluated.",
+      "l4NotChecked": "TCP and TLS routes are not checked.",
+      "gatewayPort": "No server of the gateway is on the URL's port: the server for the host on another port is shown (the gateway Service may map ports).",
+      "gatewaySourceLabels": "Caller labels are compared with the gateway's selector."
+    }
+  }
+}

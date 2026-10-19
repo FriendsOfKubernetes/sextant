@@ -30,7 +30,7 @@ pub(crate) use dry_run::{secret_key_changes, secret_values};
 pub(crate) use get::hide_secret_values;
 pub(crate) use get::resolve_kind;
 pub use get::{get, get_full, secret_value};
-pub use list::{ListPage, events, list, resolve};
+pub use list::{ListPage, ObjectCount, count, events, list, resolve};
 pub use mutate::{
     ApplyTarget, Document, STEP_TIMEOUT, apply_planned, apply_yaml, cordon, delete, drain,
     drain_preview, parse_documents, patch, plan_apply, replace_yaml, restart, scale,
@@ -39,7 +39,7 @@ pub use mutate::{
 pub use mutate::{DeletePreconditions, delete_with};
 pub use mutate::{IMMUTABLE_SECRET, SecretWrites, apply_planned_with, patch_with};
 pub use sample::{KindSample, MAX_SAMPLE, MAX_SAMPLED_KINDS, SampledObject, sample_namespace};
-pub use watch::watch;
+pub use watch::{watch, watch_with_options};
 
 /// Group/version/kind. `group` is `""` for the core API group.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -126,6 +126,21 @@ pub struct WatchSpec {
     pub metadata_only: bool,
 }
 
+/// How the window wants a watch delivered (#157). The defaults are what agents and extensions get: the whole list in
+/// one `Snapshot`, every object kept.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct WatchOptions {
+    /// The first list reaches the window in parts as its pages come in (`SnapshotPart` … `SnapshotEnd`), so the first
+    /// rows show before a list of thousands of objects is complete. Later relists still send one `Snapshot`.
+    pub progressive: bool,
+    /// Keep (and send) at most this many objects; the others are counted by uid only, and `Capped` says how many
+    /// match in all. `None` keeps every object.
+    #[ts(optional)]
+    pub max_objects: Option<u32>,
+}
+
 /// One batch of a watch subscription. Serialized with a `type` tag.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -146,6 +161,22 @@ pub enum WatchUpdate {
     /// Some of the selected namespaces cannot be listed (no permission); the others keep streaming.
     Forbidden {
         namespaces: Vec<String>,
+    },
+    /// Objects of the first list that came in since the previous part, while the list still runs (only with
+    /// `WatchOptions::progressive`). Parts add up; a `SnapshotEnd` completes them.
+    SnapshotPart {
+        items: Vec<Arc<serde_json::Value>>,
+    },
+    /// The end of a list sent in parts: the parts, without the uids in `deleted` and with `items` added or replacing
+    /// their earlier copies, are the full list a `Snapshot` would have carried.
+    SnapshotEnd {
+        items: Vec<Arc<serde_json::Value>>,
+        deleted: Vec<String>,
+    },
+    /// The watch keeps only `WatchOptions::max_objects` objects and `total` match in all. Sent after the batch in which
+    /// the total changed; a `total` within the cap means nothing is left out any more.
+    Capped {
+        total: u64,
     },
 }
 

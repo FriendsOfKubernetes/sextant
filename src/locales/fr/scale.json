@@ -1,0 +1,32 @@
+{
+  "table": {
+    "loadingMore_one": "Chargement… {{count}} pour l'instant",
+    "loadingMore_many": "Chargement… {{count}} pour l'instant",
+    "loadingMore_other": "Chargement… {{count}} pour l'instant",
+    "updating": "Mise à jour…",
+    "capped_one": "Affichage des {{shown}} premiers sur {{count}} objet. Filtrez la liste par namespace ou label pour voir le reste.",
+    "capped_many": "Affichage des {{shown}} premiers sur {{count}} d'objets. Filtrez la liste par namespace ou label pour voir le reste.",
+    "capped_other": "Affichage des {{shown}} premiers sur {{count}} objets. Filtrez la liste par namespace ou label pour voir le reste."
+  },
+  "guard": {
+    "title_one": "{{kind}} : environ {{count}} objet dans tous les namespaces",
+    "title_many": "{{kind}} : environ {{count}} d'objets dans tous les namespaces",
+    "title_other": "{{kind}} : environ {{count}} objets dans tous les namespaces",
+    "titleAtLeast_one": "{{kind}} : au moins {{count}} objet dans tous les namespaces",
+    "titleAtLeast_many": "{{kind}} : au moins {{count}} d'objets dans tous les namespaces",
+    "titleAtLeast_other": "{{kind}} : au moins {{count}} objets dans tous les namespaces",
+    "text": "Les afficher tous télécharge chaque objet et peut prendre du temps ; le tableau conserve les {{max}} premiers. Choisissez des namespaces ou saisissez un label selector (app=web) pour en voir moins, ou affichez-les quand même.",
+    "showAnyway": "Afficher quand même"
+  },
+  "sidebar": {
+    "count_one": "{{count}} objet",
+    "count_many": "{{count}} d'objets",
+    "count_other": "{{count}} objets",
+    "countCapped": "Plus de {{max}} objets"
+  },
+  "palette": {
+    "capped_one": "{{kind}} : recherche dans les {{shown}} premiers sur {{count}} objet",
+    "capped_many": "{{kind}} : recherche dans les {{shown}} premiers sur {{count}} d'objets",
+    "capped_other": "{{kind}} : recherche dans les {{shown}} premiers sur {{count}} objets"
+  }
+}

@@ -59,7 +59,9 @@ export type BuiltInActionId =
   | "veleroRestore"
   // Favourites (src/features/views), offered for every kind through `extendActionsForAll`
   | "pin"
-  | "unpin";
+  | "unpin"
+  // Comparing objects (src/features/compare), offered for every kind through `extendActionsForAll`
+  | "compareWith";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {
@@ -117,6 +119,8 @@ export const SIDEBAR_SECTIONS = [
   "velero",
   "flux",
   "argocd",
+  "istio",
+  "linkerd",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -136,6 +140,8 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "karpenter",
   "volumeSnapshots",
   "velero",
+  "istio",
+  "linkerd",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -159,6 +165,8 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   velero: "velero",
   flux: "flux",
   argocd: "argocd",
+  istio: "istio",
+  linkerd: "linkerd",
   customResources: "customResources",
   settings: "settings",
 };

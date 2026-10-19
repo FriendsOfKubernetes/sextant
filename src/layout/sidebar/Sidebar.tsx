@@ -8,7 +8,8 @@
 // so a kind created or deleted while connected appears or goes without reconnecting.
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId } from "../../api";
+import type { ClusterId, KindRef } from "../../api";
+import { useSelectedNamespaces } from "../../features/namespaces";
 import { useAppStore, useClusterView } from "../../app/store";
 import { Badge, Icon, type IconName } from "../../components";
 import {
@@ -16,6 +17,7 @@ import {
   findKind,
   findResourceDef,
   getResourceDefs,
+  parseViewId,
   SIDEBAR_SECTIONS,
   useClusterKinds,
   type SidebarSection,
@@ -24,6 +26,7 @@ import {
 } from "../../resources";
 // Not re-exported from src/resources/index.ts: only the sidebar uses them.
 import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../resources/registry";
+import { formatCount, SIDEBAR_COUNT_CAP, useObjectCount } from "../../resources/counts";
 import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages, usePagesVersion } from "../pages";
 import { getSectionBadge, useSectionBadgesVersion, type SectionBadgeDef } from "../sectionBadges";
@@ -62,6 +65,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   useSlotsVersion();
   const Top = getSlot("sidebarTop");
   const { kinds } = useClusterKinds(clusterId);
+  const selectedNamespaces = useSelectedNamespaces(clusterId);
   useEffect(() => watchCrdChanges(clusterId), [clusterId]);
 
   // The versions re-read the registries when kinds or pages are registered, extended or removed.
@@ -88,7 +92,8 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
     setView(clusterId, id);
   };
   const label = (e: Entry) => (e.labelKey ? t(e.labelKey) : (e.label ?? e.id));
-  const item = (e: Entry, nested = true, icon: IconName | undefined = e.icon) => (
+  // `counted`: the entry shows how many objects its kind has (built-in sections only; any open entry always).
+  const item = (e: Entry, nested = true, icon: IconName | undefined = e.icon, counted = false) => (
     <li key={e.id}>
       <button
         type="button"
@@ -99,6 +104,9 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
       >
         <Icon name={icon ?? DEFAULT_ENTRY_ICON} className="sidebar__icon" />
         <span className="sidebar__label">{label(e)}</span>
+        {selectedNamespaces !== undefined && (counted || e.id === view) && (
+          <EntryCount clusterId={clusterId} entry={entryKind(e.id, kinds)} namespaces={selectedNamespaces} />
+        )}
       </button>
     </li>
   );
@@ -114,7 +122,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
         const only = section.entries[0];
         if (SINGLE_ENTRY.has(section.id) && section.entries.length === 1 && !section.groups?.length && only) {
           // The link stands for the whole section: it wears the section's icon.
-          return item(only, false, sectionIcon(section.id));
+          return item(only, false, sectionIcon(section.id), countedSection(section.id));
         }
         const sectionOpen = isOpen(section.id);
         const sectionLabel = section.title ?? t(`resources:sections.${section.id}`, { defaultValue: section.id });
@@ -137,7 +145,7 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
             </button>
             {sectionOpen && (
               <ul className="sidebar__list sidebar__list--nested">
-                {section.entries.map((e) => item(e))}
+                {section.entries.map((e) => item(e, true, e.icon, countedSection(section.id)))}
                 {section.groups?.map((g) => {
                   const groupKey = `${section.id}:${g.group}`;
                   const groupOpen = isOpen(groupKey) || g.entries.some((e) => e.id === view);
@@ -188,6 +196,56 @@ function SectionCount({ id, clusterId, def }: { id: string; clusterId: ClusterId
       </span>
     </>
   );
+}
+
+/** The kind a sidebar entry opens (with the version its table watches) and its scope; `null` for a page. */
+function entryKind(
+  id: string,
+  kinds: ReturnType<typeof useClusterKinds>["kinds"],
+): { kind: KindRef; namespaced: boolean } | null {
+  const ref = parseViewId(id);
+  if (!ref) return null;
+  const def = findResourceDef(ref);
+  const discovered = kinds ? findKind(kinds, ref) : undefined;
+  const version = def?.kind.version ?? discovered?.kindRef.version;
+  if (!version) return null;
+  return { kind: { ...ref, version }, namespaced: discovered?.namespaced ?? def?.namespaced ?? true };
+}
+
+/**
+ * How many objects an entry's kind has in the selected namespaces (#157): asked only while the entry is shown (its
+ * section open), one metadata request of one object per namespace, refreshed every minute; "999+" above that. The
+ * number is hidden from assistive technology so the entry keeps its name; the tooltip says it in words.
+ */
+function EntryCount({
+  clusterId,
+  entry,
+  namespaces,
+}: {
+  clusterId: ClusterId;
+  entry: { kind: KindRef; namespaced: boolean } | null;
+  namespaces: string[] | null;
+}) {
+  const { t } = useTranslation();
+  const { count } = useObjectCount(entry ? clusterId : null, entry?.kind ?? null, entry?.namespaced ? namespaces : null);
+  if (!count) return null;
+  const { text, capped } = formatCount(count);
+  const tooltip = capped
+    ? t("scale:sidebar.countCapped", { max: SIDEBAR_COUNT_CAP })
+    : t("scale:sidebar.count", { count: count.count });
+  return (
+    <span className="sidebar__count" title={tooltip} aria-hidden="true">
+      {text}
+    </span>
+  );
+}
+
+/**
+ * Whether the kinds of a section show counts while it is open (#157): Sextant's own sections, not the sections of
+ * installed tools or the custom resources (hundreds of kinds; only the open one is counted there).
+ */
+function countedSection(id: string): boolean {
+  return (SIDEBAR_SECTIONS as readonly string[]).includes(id) && !DISCOVERED_SECTIONS.has(id as SidebarSection) && id !== "customResources";
 }
 
 function sectionIcon(id: string): IconName | undefined {

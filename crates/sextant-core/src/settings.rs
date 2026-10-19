@@ -18,6 +18,8 @@ pub mod views;
 pub use views::{Pin, PinTarget, SavedView, ViewSort, Workspace};
 pub mod snippets;
 pub use snippets::Snippet;
+pub mod compare;
+pub use compare::CompareSettings;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -418,6 +420,10 @@ pub struct AppSettings {
     #[serde(with = "snippets::snippets_field")]
     #[ts(as = "Vec<Snippet>")]
     pub snippets: Vec<Snippet>,
+    /// Comparing objects (#156): paths ignored per kind. Written by the frontend; read leniently ([`compare`]).
+    #[serde(with = "compare::compare_field")]
+    #[ts(as = "CompareSettings")]
+    pub compare: CompareSettings,
 }
 
 impl Default for AppSettings {
@@ -447,6 +453,7 @@ impl Default for AppSettings {
             workspaces: Vec::new(),
             active_workspace: None,
             snippets: Vec::new(),
+            compare: CompareSettings::default(),
         }
     }
 }

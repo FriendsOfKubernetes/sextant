@@ -4,5 +4,6 @@ import type { JsonValue } from "./serde_json/JsonValue";
 
 /**
  * One batch of a watch subscription. Serialized with a `type` tag.
+ * (The SDK's copy leaves out the updates only the window's own watches get.)
  */
 export type WatchUpdate = { "type": "snapshot", items: Array<JsonValue>, } | { "type": "delta", upserted: Array<JsonValue>, deleted: Array<string>, } | { "type": "reconnecting" } | { "type": "error" } & CoreError | { "type": "forbidden", namespaces: Array<string>, };

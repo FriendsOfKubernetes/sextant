@@ -23,6 +23,7 @@ export const api = {
   rbac: commands.rbac,
   upgrade: commands.upgrade,
   cleanup: commands.cleanup,
+  compare: commands.compare,
   timeline: commands.timeline,
   storage: commands.storage,
   openapi: commands.openapi,
@@ -56,7 +57,22 @@ export { defaultAppSettings, loadSettings, updateSettings, useSettings, type Use
 export { withBackendSettingsChange } from "./settings";
 export type { FileFilter, OpenFileOptions, SaveFileOptions, StreamChannel, Unsubscribe } from "./transport";
 export { newStreamId, openStream, resetStreams, type StreamSpec } from "./stream";
-export { applyWatchUpdate, uidOf, useWatch, type WatchState, type WatchStatus } from "./useWatch";
+export { applyWatchUpdate, isCapped, uidOf, useWatch, type WatchState, type WatchStatus } from "./useWatch";
+export {
+  acquireWatch,
+  dropClusterWatches,
+  isWatchOpen,
+  openWatchCount,
+  resetWatchRegistry,
+  subscribeAllWatches,
+  subscribeWatchKey,
+  watchEpochOf,
+  watchHolders,
+  watchKey,
+  watchStateByKey,
+  watchStateOf,
+  type AcquireOptions,
+} from "./watchRegistry";
 export type * from "./types";
 export {
   RELEASES_URL,
@@ -67,3 +83,4 @@ export {
   type DownloadProgress,
   type UpdateInfo,
 } from "./updater";
+export { resetZoomOnLoad } from "./zoom";

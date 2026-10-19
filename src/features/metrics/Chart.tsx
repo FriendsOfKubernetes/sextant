@@ -9,7 +9,7 @@ export interface ChartProps {
   title: string;
   points: [number, number][];
   format: (value: number) => string;
-  /** Line color, `#rrggbb` (canvas does not resolve CSS variables). */
+  /** Line color: a theme token (`--color-chart-cpu`, read when drawn) or `#rrggbb` (canvas does not resolve CSS variables). */
   color: string;
   height?: number;
 }
@@ -38,6 +38,8 @@ export function Chart({ title, points, format, color, height = 120 }: ChartProps
       const width = () => Math.max(el.clientWidth, 200);
       const muted = token("--color-text-muted", "#59636e");
       const grid = token("--color-border", "#d6d9de");
+      // A theme token (`--color-chart-cpu`) or a colour; a token is read for the current theme.
+      const line = color.startsWith("--") ? token(color, "#3d90ce") : color;
       const options: uPlot.Options = {
         width: width(),
         height,
@@ -53,7 +55,7 @@ export function Chart({ title, points, format, color, height = 120 }: ChartProps
             values: (_u, splits) => splits.map((v) => format(v)),
           },
         ],
-        series: [{}, { label: title, stroke: color, width: 1.5, fill: `${color}26` }],
+        series: [{}, { label: title, stroke: line, width: 1.5, fill: `${line}26` }],
       };
       const data: uPlot.AlignedData = [points.map((p) => p[0]), points.map((p) => p[1])];
       plot = new UPlot(options, data, el);

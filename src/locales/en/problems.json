@@ -24,6 +24,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "Service mesh",
     "security": "Security",
     "credentials": "Credentials",
     "disk": "Disk almost full",
@@ -39,7 +40,14 @@
     "securityBaseline_one": "{{count}} Baseline Pod Security violation: {{fields}}",
     "securityBaseline_other": "{{count}} Baseline Pod Security violations: {{fields}}",
     "diskUsage": "{{percent}} of the space used ({{used}} of {{capacity}})",
-    "inodeUsage": "{{percent}} of the inodes used ({{used}} of {{total}})"
+    "inodeUsage": "{{percent}} of the inodes used ({{used}} of {{total}})",
+    "meshUnknownHost": "Routes to {{host}}, which no Service or ServiceEntry has: the proxy answers 503.",
+    "meshMissingDestinationRule": "Routes to subset {{subset}} of {{host}}, but no destination rule covers that host: the proxy answers 503.",
+    "meshMissingSubset": "Routes to subset {{subset}} of {{host}}, which destination rule {{rule}} does not define: the proxy answers 503.",
+    "meshMissingGateway": "Bound to gateway {{gateway}}, which does not exist.",
+    "meshTlsConflict": "Sets TLS mode {{mode}} toward {{host}}, whose workloads accept only Istio mTLS (STRICT): calls fail. Use ISTIO_MUTUAL.",
+    "meshConflictingVirtualService": "Host {{host}} on {{gateway}} is already taken by the older virtual service {{other}}: the routes of this one are not reached.",
+    "meshInvalidVirtualService": "Has the host * while bound to the sidecars (mesh): Istio rejects it, so none of its routes are used."
   },
   "showDisk": "Disk almost full"
 }

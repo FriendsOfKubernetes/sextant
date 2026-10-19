@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import { useAppStore } from "../../app/store";
@@ -8,12 +8,31 @@ import { getDetailsSections, useDetailsObject, useDetailsSectionsVersion, type D
 const OVERVIEW = "overview";
 
 /**
+ * What had the focus when the panel opened (#158): a table row, a link, a palette entry. Closing the panel gives the
+ * focus back to it; a panel opened from inside the panel (an owner link) keeps the first one.
+ */
+let trigger: HTMLElement | null = null;
+
+function returnFocus(): void {
+  const target = trigger?.isConnected ? trigger : document.querySelector<HTMLElement>("main [tabindex='0'], main button");
+  trigger = null;
+  target?.focus({ preventScroll: true });
+}
+
+/**
  * Panel that slides in from the right with the registered sections for the selected object. When a section placed as
  * a tab applies (an extension's), the panel gets a tab strip: "Overview" with the stacked sections, then those tabs.
  */
 export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; objectRef: ObjectRef }) {
   const { t } = useTranslation();
-  const closeDetails = useAppStore((s) => s.closeDetails);
+  const closeStore = useAppStore((s) => s.closeDetails);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // Opening moves the focus to the panel's heading, so a screen reader reads the object and Tab continues inside.
+  useEffect(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body && !active.closest(".details")) trigger = active;
+    headingRef.current?.focus({ preventScroll: true });
+  }, []);
   const { obj, loading, error } = useDetailsObject(clusterId, objectRef);
   useDetailsSectionsVersion();
   const all = getDetailsSections(objectRef.kind);
@@ -21,14 +40,21 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
   const tabs = all.filter((s) => s.placement === "tab");
   const [tab, setTab] = useState(OVERVIEW);
 
+  const closeDetails = () => {
+    closeStore();
+    returnFocus();
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // An open popup or dialog takes Escape for itself.
-      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("[aria-modal='true']")) closeDetails();
+      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("[aria-modal='true']")) {
+        closeStore();
+        returnFocus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [closeDetails]);
+  }, [closeStore]);
 
   const state = (
     <>
@@ -49,12 +75,14 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
       <header className="details__header">
         <div className="details__heading">
           <div className="details__kind">{objectRef.kind.kind}</div>
-          <h2 className="details__name">{objectRef.name}</h2>
+          <h2 ref={headingRef} className="details__name" tabIndex={-1}>
+            {objectRef.name}
+          </h2>
           {objectRef.namespace && (
             <div className="details__namespace">{t("common:details.inNamespace", { namespace: objectRef.namespace })}</div>
           )}
         </div>
-        <button type="button" className="icon-btn" aria-label={t("common:actions.closeDetails")} onClick={closeDetails}>
+        <button type="button" className="icon-btn" aria-label={t("common:actions.closeDetails")} onClick={() => closeDetails()}>
           <Icon name="close" />
         </button>
       </header>

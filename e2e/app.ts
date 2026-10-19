@@ -25,9 +25,14 @@ export function sectionGroup(sidebar: Element, group: string): Element {
   );
 }
 
-/** An entry of the sidebar (not a section header, which may have the same label: a section shown as one link). */
+/**
+ * An entry of the sidebar (not a section header, which may have the same label: a section shown as one link), found
+ * by its label alone: an entry may also show how many objects its kind has.
+ */
 export function sectionEntry(sidebar: Element, entry: string): Element {
-  return sidebar.$(`.//button[not(@aria-expanded) and normalize-space(.)="${entry}"]`);
+  return sidebar.$(
+    `.//button[not(@aria-expanded)][.//span[contains(concat(" ", @class, " "), " sidebar__label ") and normalize-space(.)="${entry}"]]`,
+  );
 }
 
 /** Opens a sidebar entry; `group` is the collapsible section it lives in. */

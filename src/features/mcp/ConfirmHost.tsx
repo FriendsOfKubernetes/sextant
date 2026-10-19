@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, events, type ConfirmRequest } from "../../api";
-import { Button } from "../../components";
+import { Button, useFocusTrap } from "../../components";
 import "./mcp.css";
 
 /** How long the backend waits for an answer (`confirm.rs`). */
@@ -17,6 +17,14 @@ const DANGEROUS_TOOLS: ReadonlySet<string> = new Set([
   "helm_uninstall",
   "resources.delete",
 ]);
+
+/**
+ * A confirmation that appears while the user is typing must not be approved by keys meant for something else (Tab then
+ * Enter or Space): "Allow" ignores the keyboard for this long after a request is shown, and clicks for
+ * {@link ALLOW_CLICK_DELAY_MS}. Deny works at once.
+ */
+export const ALLOW_KEYBOARD_DELAY_MS = 1000;
+export const ALLOW_CLICK_DELAY_MS = 300;
 
 /** How the backend names an extension that asks (`principal` is `Extension <name>`, `extensions/api.rs`). */
 const EXTENSION_PRINCIPAL_PREFIX = "Extension ";
@@ -43,6 +51,7 @@ export function ConfirmHost() {
   // The request just answered, so a second click before the dialog moves on sends nothing. Only the last id is kept:
   // an answered request has already left the queue, and a set of every id ever answered would only grow (#123).
   const answered = useRef<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let live = true;
@@ -73,6 +82,18 @@ export function ConfirmHost() {
   }, [waiting]);
 
   const first = queue[0];
+  const shownId = first?.request.id;
+  useFocusTrap(dialogRef, waiting, { key: shownId, alwaysOnTop: true });
+  // When the request on screen appeared, and whether "Allow" takes the keyboard yet.
+  const shownAt = useRef(0);
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!shownId) return;
+    shownAt.current = Date.now();
+    setArmed(false);
+    const timer = setTimeout(() => setArmed(true), ALLOW_KEYBOARD_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [shownId]);
   if (!first) return null;
   const { request } = first;
 
@@ -97,7 +118,9 @@ export function ConfirmHost() {
   return (
     <div className="dialog-backdrop mcp-confirm" key={request.id}>
       <div
+        ref={dialogRef}
         className="dialog mcp-confirm__dialog"
+        tabIndex={-1}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="mcp-confirm-title"
@@ -143,7 +166,17 @@ export function ConfirmHost() {
           <Button autoFocus onClick={() => answer(false)}>
             {t("mcp:confirm.deny")}
           </Button>
-          <Button variant={DANGEROUS_TOOLS.has(request.tool) ? "danger" : "primary"} onClick={() => answer(true)}>
+          <Button
+            variant={DANGEROUS_TOOLS.has(request.tool) ? "danger" : "primary"}
+            className={armed ? undefined : "mcp-confirm__allow--arming"}
+            aria-disabled={armed ? undefined : true}
+            onClick={(e) => {
+              // A keyboard activation clicks with `detail` 0.
+              const age = Date.now() - shownAt.current;
+              if (age < (e.detail === 0 ? ALLOW_KEYBOARD_DELAY_MS : ALLOW_CLICK_DELAY_MS)) return;
+              answer(true);
+            }}
+          >
             {t("mcp:confirm.allow")}
           </Button>
         </footer>

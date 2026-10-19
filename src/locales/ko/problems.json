@@ -22,6 +22,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "서비스 메시",
     "security": "보안",
     "credentials": "자격 증명",
     "disk": "디스크 거의 가득 참",
@@ -35,7 +36,14 @@
     "expired": "{{date}}에 만료됨",
     "securityBaseline_other": "Pod Security Baseline 위반 {{count}}건: {{fields}}",
     "diskUsage": "공간 {{percent}} 사용 ({{used}} / {{capacity}})",
-    "inodeUsage": "inode {{percent}} 사용 ({{used}} / {{total}})"
+    "inodeUsage": "inode {{percent}} 사용 ({{used}} / {{total}})",
+    "meshUnknownHost": "{{host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
+    "meshMissingDestinationRule": "{{host}}의 하위 집합 {{subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
+    "meshMissingSubset": "{{host}}의 하위 집합 {{subset}}(으)로 라우팅하지만 대상 규칙 {{rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
+    "meshMissingGateway": "존재하지 않는 게이트웨이 {{gateway}}에 바인딩되어 있습니다.",
+    "meshTlsConflict": "{{host}}에 대해 TLS 모드를 {{mode}}(으)로 설정했지만 해당 워크로드는 Istio mTLS(STRICT)만 받습니다. 호출이 실패합니다. ISTIO_MUTUAL을 사용하세요.",
+    "meshConflictingVirtualService": "{{gateway}}의 호스트 {{host}}은(는) 이미 더 오래된 가상 서비스 {{other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
+    "meshInvalidVirtualService": "Sidecar(mesh)에 바인딩된 상태에서 호스트 *를 가집니다. Istio가 거부하므로 경로가 하나도 사용되지 않습니다."
   },
   "showDisk": "디스크 거의 가득 참"
 }

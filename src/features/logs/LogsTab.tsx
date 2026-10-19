@@ -7,6 +7,7 @@ import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from
 import { Button, Checkbox, ErrorState, Icon } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { LOG_BUFFER_LIMIT, LOG_BUFFER_TEXT_LIMIT } from "./buffer";
+import { LogAnnouncer } from "./LogAnnouncer";
 import { MultiLogsTab } from "./multi/MultiLogsTab";
 import { isMultiLogsPayload } from "./multi/open";
 import { findMatches, MAX_MATCHES, splitLine } from "./search";
@@ -209,6 +210,7 @@ function PodLogsTab({ tab, active }: DockTabProps) {
           {statusText}
         </span>
         <span data-testid="logs-count">{t("logs:lines", { count: lines.length })}</span>
+        <LogAnnouncer total={dropped + lines.length} />
         {canReconnect && (
           <Button onClick={stream.reconnect}>
             {t("logs:toolbar.reconnect")}
@@ -227,6 +229,7 @@ function PodLogsTab({ tab, active }: DockTabProps) {
         ref={scrollRef}
         className={wrap ? "logs__scroll logs__scroll--wrap" : "logs__scroll"}
         role="log"
+        aria-live="off"
         aria-label={t("logs:view")}
         onScroll={onScroll}
       >

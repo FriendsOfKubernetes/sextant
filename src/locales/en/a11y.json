@@ -1,0 +1,12 @@
+{
+  "dock": {
+    "tabs": "Dock tabs"
+  },
+  "terminal": {
+    "leaveHint": "Press Ctrl+Shift+E to move the focus out of the terminal."
+  },
+  "logs": {
+    "newLines_one": "{{count}} new line",
+    "newLines_other": "{{count}} new lines"
+  }
+}

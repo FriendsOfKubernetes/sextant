@@ -56,6 +56,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   flux: FLUX_WATCHED.map((kind) => tool("flux", kind)),
   argocd: [tool("argocd", APPLICATION)],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
+  // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
+  // only where the cluster serves VirtualServices.
+  mesh: [{ category: "mesh", kind: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, fieldSelector: null, discovered: true, external: true }],
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
   security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),

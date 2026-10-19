@@ -7,7 +7,8 @@
   --icon-size: 16px;
 }
 
-/* Theme tokens. `data-theme` on <html> is set by useApplyTheme (system → follows the OS). */
+/* Theme tokens. `data-theme` on <html> is set by useApplyTheme (system → follows the OS). Text, statuses, focus rings
+   and chart lines meet WCAG AA in both themes; src/styles/contrast.test.ts computes the ratios from these values. */
 :root,
 :root[data-theme="light"] {
   --color-bg: #ffffff;
@@ -22,11 +23,19 @@
   --color-border: #d6d9de;
   --color-hover: rgba(31, 35, 40, 0.06);
   --color-selected: rgba(61, 144, 206, 0.16);
-  --color-accent: #3d90ce;
+  --color-accent: #3275a8;
   --color-accent-text: #ffffff;
+  --color-focus: #3275a8;
   --color-danger: #ce3933;
-  --color-warning: #c47a00;
-  --color-success: #3a9a46;
+  --color-warning: #9f6300;
+  --color-success: #30803a;
+  /* Text on a status fill (badges). */
+  --color-on-status: #ffffff;
+  /* Chart lines: 3:1 against the panels. */
+  --color-chart-cpu: #3d90ce;
+  --color-chart-memory: #a05ad0;
+  --color-chart-pods: #449f62;
+  --color-chart-disk: #b48619;
   --shadow-panel: -8px 0 24px rgba(0, 0, 0, 0.12);
   color-scheme: light;
 }
@@ -40,15 +49,21 @@
   --color-dock: #1e2124;
   --color-dock-header: #2e3136;
   --color-text: #dcddde;
-  --color-text-muted: #8e9297;
+  --color-text-muted: #a0a4a8;
   --color-border: #3a3e44;
   --color-hover: rgba(255, 255, 255, 0.06);
-  --color-selected: rgba(61, 144, 206, 0.24);
-  --color-accent: #3d90ce;
-  --color-accent-text: #ffffff;
-  --color-danger: #e05751;
+  --color-selected: rgba(61, 144, 206, 0.2);
+  --color-accent: #579fd5;
+  --color-accent-text: #15181b;
+  --color-focus: #579fd5;
+  --color-danger: #e67772;
   --color-warning: #e2a03f;
   --color-success: #48c774;
+  --color-on-status: #15181b;
+  --color-chart-cpu: #3d90ce;
+  --color-chart-memory: #a05ad0;
+  --color-chart-pods: #48a868;
+  --color-chart-disk: #d6a01e;
   --shadow-panel: -8px 0 24px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
 }
@@ -174,7 +189,7 @@ button {
 .btn--danger:hover:not(:disabled) {
   background: var(--color-danger);
   border-color: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-on-status);
 }
 
 .btn--primary:hover:not(:disabled),
@@ -235,7 +250,7 @@ button {
 
 .btn:focus-visible,
 .icon-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
 
@@ -290,17 +305,17 @@ button {
 
 .badge--success {
   background: var(--color-success);
-  color: #ffffff;
+  color: var(--color-on-status);
 }
 
 .badge--warning {
   background: var(--color-warning);
-  color: #ffffff;
+  color: var(--color-on-status);
 }
 
 .badge--danger {
   background: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-on-status);
 }
 
 .dialog-backdrop {
@@ -350,4 +365,39 @@ button {
   gap: 8px;
   padding: 12px 16px;
   border-top: 1px solid var(--color-border);
+}
+
+/* Accessibility (#158). Text for screen readers only (a live region, a header without a visible label). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Visible keyboard focus everywhere: anything focused from the keyboard gets the accent ring unless its own rule
+   draws one (rows, tabs and editors set their own). Mouse clicks do not show it (:focus-visible). */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* Reduced motion: the OS setting turns off transitions, animations and smooth scrolling; loading keeps its text, so
+   nothing depends on a spinner. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

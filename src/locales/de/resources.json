@@ -19,6 +19,8 @@
     "velero": "Velero",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "istio": "Istio",
+    "linkerd": "Linkerd",
     "customResources": "Custom Resources"
   },
   "kinds": {

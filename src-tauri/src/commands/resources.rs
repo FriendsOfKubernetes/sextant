@@ -8,8 +8,10 @@ use std::future::Future;
 
 use futures::{Stream, StreamExt};
 use sextant_core::error::with_timeout;
-use sextant_core::resources::{self, DryRunMode, DryRunResult, WatchUpdate};
-use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef, WatchSpec};
+use sextant_core::resources::{
+    self, DryRunMode, DryRunResult, ObjectCount, WatchOptions, WatchUpdate,
+};
+use sextant_core::{ClusterId, CoreError, CoreResult, KindRef, ObjectRef, WatchSpec};
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, Runtime, State};
 
@@ -29,9 +31,11 @@ pub async fn watch_start<R: Runtime>(
     spec: WatchSpec,
     stream_id: String,
     on_event: Channel<WatchUpdate>,
+    options: Option<WatchOptions>,
 ) -> Result<(), CoreError> {
     let (mgr, cluster) = (state.clusters.clone(), cluster_id.clone());
-    let open = async move { resources::watch(&mgr, &cluster, spec).await };
+    let options = options.unwrap_or_default();
+    let open = async move { resources::watch_with_options(&mgr, &cluster, spec, options).await };
     start_watch(&app, &state, stream_id, cluster_id, open, on_event).await
 }
 
@@ -165,6 +169,31 @@ where
     Ok(())
 }
 
+/// Most objects [`resource_count`] counts exactly when the API server does not say how many remain.
+const COUNT_UP_TO: u64 = 10_000;
+
+/// How many objects of `kind` there are in `namespaces` (all when `null`), optionally matching a label selector:
+/// the sidebar's counts and the check before a table watches every namespace (#157). Metadata-only lists of one
+/// object each; no object body is read. Window only — neither MCP agents nor extensions have it.
+#[tauri::command]
+pub async fn resource_count(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    kind: KindRef,
+    namespaces: Option<Vec<String>>,
+    label_selector: Option<String>,
+) -> Result<ObjectCount, CoreError> {
+    resources::count(
+        &state.clusters,
+        &cluster_id,
+        &kind,
+        namespaces.as_deref(),
+        label_selector.as_deref(),
+        COUNT_UP_TO,
+    )
+    .await
+}
+
 #[tauri::command]
 pub async fn resource_get(
     state: State<'_, AppState>,
@@ -258,6 +287,15 @@ mod tests {
             assert!(Instant::now() < deadline, "timed out waiting for {what}");
             std::thread::sleep(Duration::from_millis(10));
         }
+    }
+
+    #[test]
+    fn neither_agents_nor_extensions_get_object_counts() {
+        let tools = crate::mcp::server::all_tools().names();
+        assert!(tools.len() > 10, "{tools:?}");
+        assert!(!tools.iter().any(|t| t.contains("count")), "{tools:?}");
+        let methods = crate::extensions::api::METHODS;
+        assert!(!methods.iter().any(|m| m.contains("count")), "{methods:?}");
     }
 
     #[test]

@@ -1,0 +1,124 @@
+{
+  "action": "比较…",
+  "sidebar": "比较 namespace",
+  "loading": "正在比较…",
+  "dialog": {
+    "title": "比较 {{kind}} {{name}}",
+    "with": "比较对象",
+    "modes": {
+      "object": "另一个对象",
+      "lastApplied": "它的上次应用配置",
+      "helm": "它所属 Helm 发布的清单"
+    },
+    "unavailable": {
+      "lastApplied": "此对象没有上次应用配置：它不是用 kubectl apply 创建或更改的。",
+      "helm": "此对象不属于任何 Helm 发布。"
+    },
+    "compare": "比较"
+  },
+  "target": {
+    "cluster": "集群",
+    "namespace": "Namespace",
+    "name": "名称",
+    "notConnected": "未连接",
+    "connect": "连接",
+    "connecting": "正在连接…",
+    "suggestions": "匹配的对象"
+  },
+  "side": {
+    "live": "当前",
+    "lastApplied": "上次应用",
+    "manifest": "Helm 清单"
+  },
+  "options": {
+    "hideDefaults": "隐藏默认值",
+    "hideDefaultsHint": "当清单未设置时由 API 服务器填入的字段，以及分配的集群 IP，只要仍是该值就不显示。",
+    "ignoreTitle": "{{kind}} 忽略的路径：",
+    "ignoreNone": "无",
+    "ignoreRemove": "不再忽略 {{path}}",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "要忽略的路径",
+    "ignoreAddButton": "忽略",
+    "ignoreInvalid": "路径以 / 开头，列出以 / 分隔的键；* 代表任意键或列表项，例如 /metadata/labels/team 或 /spec/template/spec/containers/*/image。",
+    "ignoreFull": "每种类型最多 {{max}} 个路径。"
+  },
+  "diff": {
+    "same": "没有差异。",
+    "changes_other": "{{count}} 个字段不同。",
+    "field": "字段",
+    "notSet": "未设置"
+  },
+  "secret": {
+    "hint": "值在 Sextant 内部按 SHA-256 哈希比较，在您点击“显示值”之前不会读入窗口。",
+    "label": "Secret 键",
+    "key": "键",
+    "state": "比较结果",
+    "values": "值",
+    "equal": "值相同",
+    "different": "值不同",
+    "onlyLeft": "仅左侧",
+    "onlyRight": "仅右侧",
+    "noKeys": "两侧都没有键。",
+    "show": "显示值",
+    "hide": "隐藏值"
+  },
+  "result": {
+    "sameObject": "这是此对象本身：请选择其他集群、namespace 或名称。",
+    "notFound": "那里不存在 {{kind}} {{name}}。",
+    "noDrift": "当前对象中上次应用配置的所有字段均未更改。",
+    "drift_other": "{{count}} 个字段与上次应用配置不同。",
+    "driftLabel": "与上次应用配置不同的字段",
+    "notInRelease": "Helm 发布 {{name}} 的清单中没有此对象。",
+    "showRelease": "检查整个 Helm 发布 {{name}}",
+    "hideRelease": "隐藏发布"
+  },
+  "drift": {
+    "release": "{{namespace}} 中的 Helm 发布 {{name}}，修订版本 {{revision}}",
+    "unreadable_other": "清单中有 {{count}} 个文档无法读取，未参与比较。",
+    "truncated_other": "另有 {{count}} 个对象未参与比较。",
+    "objectsLabel": "发布的对象",
+    "object": "对象",
+    "state": "状态",
+    "details": "详细信息",
+    "drifted_other": "{{count}} 处差异",
+    "states": {
+      "inSync": "一致",
+      "missing": "缺失",
+      "error": "无法读取"
+    },
+    "showDetails": "详细信息",
+    "hideDetails": "隐藏",
+    "missingObject": "集群中不存在此对象。",
+    "changesLabel": "与清单不同的字段"
+  },
+  "page": {
+    "title": "比较 namespace",
+    "hint": "按类型列出仅在一侧的对象、不同的对象和相同的对象；每侧每种类型最多 {{max}} 个对象。",
+    "left": "左侧",
+    "right": "右侧",
+    "kinds": "类型",
+    "result": "比较结果",
+    "filter": "显示",
+    "objects": "对象",
+    "kind": "类型",
+    "state": "状态",
+    "nothing": "没有可显示的内容。",
+    "failedLeft": "无法列出左侧的 {{kind}}：{{message}}",
+    "failedRight": "无法列出右侧的 {{kind}}：{{message}}",
+    "truncated": "某些类型在一侧超过 {{max}} 个对象：其余对象未参与比较。",
+    "secretsFailed": "无法比较 Secret 的值：{{message}}",
+    "secretsTruncated": "某个 namespace 中的 Secret 超过 {{max}} 个：其余 Secret 的值未参与比较。"
+  },
+  "buckets": {
+    "onlyLeft": "仅左侧（{{count}}）",
+    "onlyRight": "仅右侧（{{count}}）",
+    "differ": "不同（{{count}}）",
+    "same": "相同（{{count}}）"
+  },
+  "states": {
+    "onlyLeft": "仅左侧",
+    "onlyRight": "仅右侧",
+    "differ": "不同",
+    "same": "相同"
+  }
+}

@@ -28,6 +28,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "Сервісна мережа",
     "security": "Безпека",
     "credentials": "Облікові дані",
     "disk": "Диск майже заповнений",
@@ -47,7 +48,14 @@
     "securityBaseline_many": "{{count}} порушень Pod Security рівня Baseline: {{fields}}",
     "securityBaseline_other": "{{count}} порушення Pod Security рівня Baseline: {{fields}}",
     "diskUsage": "Зайнято {{percent}} місця ({{used}} з {{capacity}})",
-    "inodeUsage": "Зайнято {{percent}} inodes ({{used}} з {{total}})"
+    "inodeUsage": "Зайнято {{percent}} inodes ({{used}} з {{total}})",
+    "meshUnknownHost": "Спрямовує на {{host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
+    "meshMissingDestinationRule": "Спрямовує на підмножину {{subset}} хоста {{host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
+    "meshMissingSubset": "Спрямовує на підмножину {{subset}} хоста {{host}}, якої немає в правилі призначення {{rule}}: проксі відповідає 503.",
+    "meshMissingGateway": "Прив'язаний до шлюзу {{gateway}}, якого не існує.",
+    "meshTlsConflict": "Задає режим TLS {{mode}} для {{host}}, а його робочі навантаження приймають лише mTLS Istio (STRICT): виклики не проходять. Використовуйте ISTIO_MUTUAL.",
+    "meshConflictingVirtualService": "Хост {{host}} на {{gateway}} уже зайнятий старішим віртуальним сервісом {{other}}: маршрути цього не використовуються.",
+    "meshInvalidVirtualService": "Має хост * при прив'язці до sidecar (mesh): Istio його відхиляє, тож жоден із його маршрутів не використовується."
   },
   "showDisk": "Диск майже заповнений"
 }

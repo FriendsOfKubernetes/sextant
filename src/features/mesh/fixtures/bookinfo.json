@@ -1,0 +1,135 @@
+{
+  "virtualServices": [
+    {
+      "apiVersion": "networking.istio.io/v1",
+      "kind": "VirtualService",
+      "metadata": { "name": "reviews", "namespace": "shop", "uid": "vs-reviews", "creationTimestamp": "2026-01-01T00:00:00Z" },
+      "spec": {
+        "hosts": ["reviews"],
+        "http": [
+          {
+            "name": "beta-users",
+            "match": [{ "headers": { "x-user": { "exact": "alice" } } }],
+            "route": [{ "destination": { "host": "reviews", "subset": "v2" } }]
+          },
+          {
+            "name": "default",
+            "retries": { "attempts": 3, "perTryTimeout": "2s" },
+            "timeout": "10s",
+            "route": [
+              { "destination": { "host": "reviews", "subset": "v1" }, "weight": 80 },
+              { "destination": { "host": "reviews", "subset": "v3" }, "weight": 20 }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.istio.io/v1",
+      "kind": "VirtualService",
+      "metadata": { "name": "storefront", "namespace": "shop", "uid": "vs-storefront", "creationTimestamp": "2026-01-02T00:00:00Z" },
+      "spec": {
+        "hosts": ["shop.example.com"],
+        "gateways": ["istio-ingress/public"],
+        "http": [
+          { "match": [{ "uri": { "prefix": "/reviews" } }], "route": [{ "destination": { "host": "reviews", "port": { "number": 9080 } } }] },
+          { "route": [{ "destination": { "host": "web" } }] }
+        ]
+      }
+    }
+  ],
+  "destinationRules": [
+    {
+      "apiVersion": "networking.istio.io/v1",
+      "kind": "DestinationRule",
+      "metadata": { "name": "reviews", "namespace": "shop", "uid": "dr-reviews", "creationTimestamp": "2026-01-01T00:00:00Z" },
+      "spec": {
+        "host": "reviews",
+        "trafficPolicy": { "tls": { "mode": "SIMPLE" } },
+        "subsets": [
+          { "name": "v1", "labels": { "version": "v1" } },
+          { "name": "v2", "labels": { "version": "v2" } }
+        ]
+      }
+    }
+  ],
+  "gateways": [
+    {
+      "apiVersion": "networking.istio.io/v1",
+      "kind": "Gateway",
+      "metadata": { "name": "public", "namespace": "istio-ingress", "uid": "gw-public", "creationTimestamp": "2026-01-01T00:00:00Z" },
+      "spec": {
+        "selector": { "istio": "ingressgateway" },
+        "servers": [{ "port": { "number": 80, "name": "http", "protocol": "HTTP" }, "hosts": ["*/shop.example.com"] }]
+      }
+    }
+  ],
+  "peerAuthentications": [
+    {
+      "apiVersion": "security.istio.io/v1",
+      "kind": "PeerAuthentication",
+      "metadata": { "name": "default", "namespace": "shop", "uid": "pa-shop", "creationTimestamp": "2026-01-01T00:00:00Z" },
+      "spec": { "mtls": { "mode": "STRICT" } }
+    }
+  ],
+  "authorizationPolicies": [
+    {
+      "apiVersion": "security.istio.io/v1",
+      "kind": "AuthorizationPolicy",
+      "metadata": { "name": "reviews-viewers", "namespace": "shop", "uid": "ap-reviews", "creationTimestamp": "2026-01-01T00:00:00Z" },
+      "spec": {
+        "selector": { "matchLabels": { "app": "reviews" } },
+        "rules": [
+          {
+            "from": [{ "source": { "principals": ["cluster.local/ns/shop/sa/web"] } }],
+            "to": [{ "operation": { "methods": ["GET"] } }]
+          }
+        ]
+      }
+    }
+  ],
+  "services": [
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": { "name": "reviews", "namespace": "shop", "uid": "svc-reviews" },
+      "spec": { "selector": { "app": "reviews" }, "ports": [{ "port": 9080 }] }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": { "name": "web", "namespace": "shop", "uid": "svc-web" },
+      "spec": { "selector": { "app": "web" }, "ports": [{ "port": 80 }] }
+    }
+  ],
+  "pods": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": { "name": "reviews-v1-a", "namespace": "shop", "uid": "pod-r1a", "labels": { "app": "reviews", "version": "v1" } },
+      "spec": { "containers": [{ "name": "reviews" }, { "name": "istio-proxy", "image": "docker.io/istio/proxyv2:1.27.0" }] },
+      "status": { "conditions": [{ "type": "Ready", "status": "True" }] }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": { "name": "reviews-v1-b", "namespace": "shop", "uid": "pod-r1b", "labels": { "app": "reviews", "version": "v1" } },
+      "spec": { "containers": [{ "name": "reviews" }, { "name": "istio-proxy" }] },
+      "status": { "conditions": [{ "type": "Ready", "status": "False" }] }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": { "name": "reviews-v2-a", "namespace": "shop", "uid": "pod-r2a", "labels": { "app": "reviews", "version": "v2" } },
+      "spec": { "containers": [{ "name": "reviews" }, { "name": "istio-proxy" }] },
+      "status": { "conditions": [{ "type": "Ready", "status": "True" }] }
+    }
+  ],
+  "namespaces": [
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": { "name": "shop", "uid": "ns-shop", "labels": { "istio-injection": "enabled" } }
+    }
+  ]
+}

@@ -25,6 +25,31 @@ export const ROOTS = [
   "CoreError",
 ];
 
+/** Updates only the window's own watches get (`WatchOptions`, #157): an extension never receives them. */
+const WINDOW_ONLY_UPDATES = ["snapshotPart", "snapshotEnd", "capped"];
+
+/**
+ * Files the SDK keeps narrower than Sextant: `WatchUpdate` without the window-only kinds, so an extension's exhaustive
+ * `switch` over the updates it can get stays complete. Throws when the generated file no longer has what it removes.
+ */
+const NARROW = {
+  "WatchUpdate.ts": (content) => {
+    let removed = 0;
+    const narrowed = content.replace(/ \| \{ "type": "([A-Za-z]+)",[^{}]*\}/g, (member, type) => {
+      if (!WINDOW_ONLY_UPDATES.includes(type)) return member;
+      removed++;
+      return "";
+    });
+    if (removed !== WINDOW_ONLY_UPDATES.length) {
+      throw new Error(`WatchUpdate.ts: expected to drop ${WINDOW_ONLY_UPDATES.join(", ")}, dropped ${removed}`);
+    }
+    return narrowed.replace(
+      "Serialized with a `type` tag.",
+      "Serialized with a `type` tag.\n * (The SDK's copy leaves out the updates only the window's own watches get.)",
+    );
+  },
+};
+
 /** `{relative path (posix, with .ts) → content}` of every file to copy. */
 export function plannedFiles(sourceDir = SOURCE_DIR) {
   const files = new Map();
@@ -32,7 +57,8 @@ export function plannedFiles(sourceDir = SOURCE_DIR) {
   while (pending.length > 0) {
     const file = pending.pop();
     if (files.has(file)) continue;
-    const content = readFileSync(join(sourceDir, ...file.split("/")), "utf8");
+    const generated = readFileSync(join(sourceDir, ...file.split("/")), "utf8");
+    const content = NARROW[file] ? NARROW[file](generated) : generated;
     files.set(file, content);
     for (const match of content.matchAll(/from\s+"(\.{1,2}\/[^"]+)"/g)) {
       const target = join(dirname(file), match[1]).split(sep).join("/");

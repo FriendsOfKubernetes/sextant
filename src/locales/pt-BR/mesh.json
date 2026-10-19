@@ -1,0 +1,533 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "Roteamento de requisições"
+  },
+  "problemsCount_one": "{{count}} problema de configuração do Istio",
+  "problemsCount_many": "{{count}} de problemas de configuração do Istio",
+  "problemsCount_other": "{{count}} problemas de configuração do Istio",
+  "loading": "Carregando a configuração da malha…",
+  "yes": "Sim",
+  "no": "Não",
+  "columns": {
+    "hosts": "Hosts",
+    "gateways": "Gateways",
+    "routes": "Rotas",
+    "host": "Host",
+    "subsets": "Subconjuntos",
+    "tlsMode": "Modo TLS",
+    "servers": "Servidores",
+    "location": "Localização",
+    "resolution": "Resolução",
+    "appliesTo": "Aplica-se a",
+    "egressHosts": "Hosts de saída",
+    "address": "Endereço",
+    "serviceAccount": "Service account",
+    "mtlsMode": "Modo mTLS",
+    "issuers": "Emissores",
+    "action": "Ação",
+    "rules": "Regras",
+    "port": "Porta",
+    "proxyProtocol": "Protocolo",
+    "podSelector": "Seletor de Pod",
+    "parents": "Pais",
+    "target": "Alvo",
+    "authentications": "Autenticações",
+    "server": "Servidor",
+    "identities": "Identidades",
+    "networks": "Redes",
+    "name": "Nome",
+    "labels": "Labels",
+    "protocol": "Protocolo",
+    "issuer": "Emissor",
+    "audiences": "Públicos",
+    "keys": "Chaves",
+    "condition": "Condição",
+    "retryable": "Repetida",
+    "timeout": "Tempo limite",
+    "match": "Correspondência",
+    "destinations": "Destinos",
+    "destination": "Destino",
+    "weight": "Peso",
+    "subset": "Subconjunto",
+    "destinationRule": "Regra de destino",
+    "pods": "Pods",
+    "policy": "Política",
+    "matches": "Corresponde",
+    "notEvaluated": "Não avaliado"
+  },
+  "fields": {
+    "hosts": "Hosts",
+    "gateways": "Gateways",
+    "exportTo": "Visível em",
+    "host": "Host",
+    "tlsMode": "Modo TLS",
+    "loadBalancer": "Balanceamento de carga",
+    "workloadSelector": "Clientes",
+    "selector": "Pods do gateway",
+    "location": "Localização",
+    "resolution": "Resolução",
+    "ports": "Portas",
+    "addresses": "Endereços",
+    "appliesTo": "Aplica-se a",
+    "egressHosts": "Hosts de saída",
+    "outboundTrafficPolicy": "Tráfego de saída",
+    "address": "Endereço",
+    "labels": "Labels",
+    "serviceAccount": "Service account",
+    "network": "Rede",
+    "tracing": "Rastreamento",
+    "metrics": "Métricas",
+    "accessLogging": "Logs de acesso",
+    "mtlsMode": "Modo mTLS",
+    "action": "Ação",
+    "provider": "Provedor",
+    "podSelector": "Seletor de Pod",
+    "port": "Porta",
+    "proxyProtocol": "Protocolo",
+    "accessPolicy": "Acesso padrão",
+    "server": "Servidor",
+    "target": "Alvo",
+    "requiredAuthentications": "Autenticações exigidas",
+    "identities": "Identidades",
+    "identityRefs": "Referências de identidade",
+    "networks": "Redes",
+    "parents": "Pais",
+    "hostnames": "Nomes de host",
+    "revision": "Revisão",
+    "injection": "Injeção do sidecar",
+    "proxyImage": "Imagem do proxy",
+    "linkerdInject": "Injeção do proxy",
+    "controlPlane": "Plano de controle",
+    "proxyVersion": "Versão do proxy"
+  },
+  "blocks": {
+    "virtualService": "Serviço virtual",
+    "httpRoutes": "Rotas HTTP",
+    "l4Routes": "Rotas TCP e TLS",
+    "destinationRule": "Regra de destino",
+    "portTls": "TLS por porta",
+    "subsets": "Subconjuntos",
+    "gateway": "Gateway",
+    "servers": "Servidores",
+    "boundVirtualServices": "Serviços virtuais vinculados a este gateway",
+    "serviceEntry": "Entrada de serviço",
+    "sidecar": "Sidecar",
+    "workloadEntry": "Entrada de carga de trabalho",
+    "telemetry": "Telemetria",
+    "peerAuthentication": "Autenticação entre pares",
+    "portMtls": "mTLS por porta",
+    "requestAuthentication": "Autenticação de requisições",
+    "authorizationPolicy": "Política de autorização",
+    "istioMembership": "Istio",
+    "mtls": "mTLS do Istio",
+    "whoMayCall": "Quem pode chamar esta carga de trabalho?",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "Perfil de serviço",
+    "profileRoutes": "Rotas",
+    "server": "Servidor",
+    "serverAuthorizations": "Autorizações deste servidor",
+    "serverAuthorization": "Autorização de servidor",
+    "linkerdAuthorizationPolicy": "Política de autorização",
+    "meshTlsAuthentication": "Autenticação mesh TLS",
+    "networkAuthentication": "Autenticação por rede",
+    "linkerdHttpRoute": "Rota HTTP"
+  },
+  "exportTo": {
+    "everywhere": "Todos os namespaces"
+  },
+  "vs": {
+    "delegate": "Nenhum: um delegado, usado só pelas rotas de outros serviços virtuais que o nomeiam",
+    "meshGateway": "mesh (sidecars)"
+  },
+  "scope": {
+    "mesh": "Todas as cargas de trabalho da malha",
+    "namespace": "Todas as cargas de trabalho do namespace",
+    "targetRef": "Um Gateway ou waypoint (targetRef)"
+  },
+  "route": {
+    "title": "Rota {{n}}",
+    "titleNamed": "Rota {{n}} ({{name}})",
+    "order": "As rotas são testadas de cima para baixo; a primeira que corresponde fica com a requisição.",
+    "when": "Quando",
+    "then": "Então",
+    "everyRequest": "Qualquer requisição",
+    "everyConnection": "Qualquer conexão",
+    "alternative": "Alternativa {{n}}:",
+    "to": "Enviar {{percent}}% para {{host}}",
+    "toSubset": "Enviar {{percent}}% para {{host}}, subconjunto {{subset}}",
+    "delegate": "Passar a requisição às rotas do serviço virtual {{name}}",
+    "directResponse": "Responder HTTP {{status}} sem enviá-la a lugar nenhum",
+    "redirect": "Redirecionar o cliente",
+    "redirectTo": "Redirecionar o cliente para {{target}}",
+    "timeout": "Desistir após {{timeout}}",
+    "noRetries": "Nunca repetir",
+    "retries_one": "Repetir até {{count}} vez",
+    "retries_many": "Repetir até {{count}} de vezes",
+    "retries_other": "Repetir até {{count}} vezes",
+    "retriesPerTry_one": "Repetir até {{count}} vez, {{perTry}} por tentativa",
+    "retriesPerTry_many": "Repetir até {{count}} de vezes, {{perTry}} por tentativa",
+    "retriesPerTry_other": "Repetir até {{count}} vezes, {{perTry}} por tentativa",
+    "retryOn": "Repetir em: {{on}}",
+    "faultDelay": "Atrasar {{percent}}% das requisições em {{delay}} (injeção de falhas)",
+    "faultAbort": "Fazer falhar {{percent}}% das requisições com HTTP {{status}} (injeção de falhas)",
+    "mirror": "Copiar {{percent}}% das requisições para {{host}} (respostas ignoradas)",
+    "rewriteUri": "Reescrever o caminho para {{uri}}",
+    "rewriteAuthority": "Reescrever o host para {{authority}}"
+  },
+  "match": {
+    "uri": {
+      "exact": "O caminho é {{value}}",
+      "prefix": "O caminho começa com {{value}}",
+      "regex": "O caminho corresponde à expressão regular {{value}}"
+    },
+    "uriIgnoreCase": {
+      "exact": "O caminho é {{value}} (sem diferenciar maiúsculas)",
+      "prefix": "O caminho começa com {{value}} (sem diferenciar maiúsculas)",
+      "regex": "O caminho corresponde à expressão regular {{value}} (sem diferenciar maiúsculas)"
+    },
+    "method": {
+      "exact": "O método é {{value}}",
+      "prefix": "O método começa com {{value}}",
+      "regex": "O método corresponde à expressão regular {{value}}"
+    },
+    "scheme": {
+      "exact": "O esquema é {{value}}",
+      "prefix": "O esquema começa com {{value}}",
+      "regex": "O esquema corresponde à expressão regular {{value}}"
+    },
+    "authority": {
+      "exact": "O host é {{value}}",
+      "prefix": "O host começa com {{value}}",
+      "regex": "O host corresponde à expressão regular {{value}}"
+    },
+    "header": {
+      "exact": "O cabeçalho {{name}} é {{value}}",
+      "prefix": "O cabeçalho {{name}} começa com {{value}}",
+      "regex": "O cabeçalho {{name}} corresponde à expressão regular {{value}}"
+    },
+    "query": {
+      "exact": "O parâmetro de consulta {{name}} é {{value}}",
+      "prefix": "O parâmetro de consulta {{name}} começa com {{value}}",
+      "regex": "O parâmetro de consulta {{name}} corresponde à expressão regular {{value}}"
+    },
+    "headerPresent": "O cabeçalho {{name}} está presente",
+    "headerAbsent": "O cabeçalho {{name}} está ausente",
+    "headerNot": "O cabeçalho {{name}} não é {{value}}",
+    "queryPresent": "O parâmetro de consulta {{name}} está presente",
+    "port": "A porta é {{port}}",
+    "sourceLabels": "O chamador tem os labels {{labels}}",
+    "sourceNamespace": "O chamador está no namespace {{namespace}}",
+    "gateways": "Chega por: {{gateways}}"
+  },
+  "l4": {
+    "kind": "Tipo",
+    "match": "Portas e hosts SNI",
+    "destinations": "Destinos"
+  },
+  "tls": {
+    "auto": "Não definido: o Istio usa seu mTLS por conta própria onde o destino tem um sidecar",
+    "mode": {
+      "DISABLE": "DISABLE: texto puro, sem TLS",
+      "SIMPLE": "SIMPLE: TLS até o destino, sem certificado de cliente",
+      "MUTUAL": "MUTUAL: TLS com um certificado de cliente indicado na regra",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL: o mTLS próprio do Istio"
+    }
+  },
+  "dr": {
+    "subsetsHint": "Um subconjunto são os Pods do destino que têm os labels do subconjunto; as rotas nomeiam subconjuntos para dividir o tráfego entre versões."
+  },
+  "gateway": {
+    "selectorHint": "O gateway é atendido pelos Pods com estes labels (um gateway de entrada ou de saída do Istio).",
+    "noneBound": "Nenhum serviço virtual está vinculado a este gateway: ele responde 404 a qualquer requisição."
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "Fora da malha",
+      "MESH_INTERNAL": "Dentro da malha"
+    },
+    "resolution": {
+      "NONE": "Como endereçado",
+      "STATIC": "Endereços fixos",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS (rodízio)"
+    }
+  },
+  "sidecar": {
+    "meaning": "Limita o que os sidecars das cargas de trabalho selecionadas conhecem da malha: só os hosts de saída listados podem ser alcançados.",
+    "wholeNamespace": "Todas as cargas de trabalho do namespace"
+  },
+  "workloadEntry": {
+    "meaning": "Uma carga de trabalho fora do Kubernetes (uma VM) que a malha trata como um Pod com estes labels."
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "Só conexões mTLS do Istio são aceitas; chamadas em texto puro são recusadas.",
+      "PERMISSIVE": "Conexões mTLS do Istio e em texto puro são aceitas.",
+      "DISABLE": "O mTLS do Istio está desligado: as conexões são em texto puro.",
+      "UNSET": "Não definido: o modo é herdado (carga de trabalho, depois namespace, depois malha; PERMISSIVE quando nada o define)."
+    },
+    "precedence": "Precedência: uma política com seletor para a carga de trabalho, depois a do namespace, depois a da malha inteira no namespace raiz istio-system.",
+    "source": {
+      "workload": "Definido pela PeerAuthentication {{name}} para esta carga de trabalho:",
+      "namespace": "Definido pela PeerAuthentication {{name}} do namespace:",
+      "mesh": "Definido pela PeerAuthentication {{name}} da malha inteira:",
+      "default": "Nenhuma PeerAuthentication o define: o padrão do Istio, PERMISSIVE."
+    }
+  },
+  "jwt": {
+    "meaning": "Uma requisição com token inválido é recusada; uma requisição sem token passa, a menos que uma AuthorizationPolicy exija um principal de requisição.",
+    "inlineKeys": "Chaves na regra"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "Aplica-se às cargas de trabalho do namespace {{namespace}} que correspondem ao seu seletor.",
+      "namespace": "Aplica-se a todas as cargas de trabalho do namespace {{namespace}}.",
+      "mesh": "Aplica-se a todas as cargas de trabalho da malha: ela está no namespace raiz {{namespace}}.",
+      "targetRef": "Vinculada a um Gateway ou waypoint (targetRef), não aos proxies das cargas de trabalho."
+    },
+    "action": {
+      "ALLOW": "Permite as requisições que correspondem a uma de suas regras; assim que uma política ALLOW se aplica a uma carga de trabalho, qualquer outra requisição a ela é negada.",
+      "DENY": "Nega as requisições que correspondem a uma de suas regras, independentemente das políticas ALLOW.",
+      "AUDIT": "Só marca as requisições que correspondem para o log de auditoria; não permite nem nega nada.",
+      "CUSTOM": "Passa as requisições que correspondem ao autorizador externo {{provider}}, que pode negá-las.",
+      "INVALID": "O Istio não aceita a ação dela: ele rejeita a política, então não dá para dizer o que ela faz."
+    },
+    "special": {
+      "allowNothing": "Não tem regras: não permite nada, então qualquer requisição a estas cargas de trabalho é negada.",
+      "noRules": "Não tem regras: não corresponde a nenhuma requisição e não tem efeito.",
+      "everything": "Sua regra vazia corresponde a qualquer requisição."
+    },
+    "order": "O Istio verifica primeiro as políticas CUSTOM, depois DENY, depois ALLOW.",
+    "rule": "Regra {{n}}",
+    "emptyRule": "Qualquer requisição (uma regra vazia).",
+    "valuesExcept": "{{values}}, exceto {{except}}",
+    "anythingExcept": "Qualquer um exceto {{except}}",
+    "fields": {
+      "principals": "Chamadores (principals)",
+      "notPrincipals": "Exceto chamadores (principals)",
+      "requestPrincipals": "Principals do token",
+      "notRequestPrincipals": "Exceto principals do token",
+      "namespaces": "Namespaces dos chamadores",
+      "notNamespaces": "Exceto namespaces dos chamadores",
+      "ipBlocks": "IPs dos chamadores",
+      "notIpBlocks": "Exceto IPs dos chamadores",
+      "remoteIpBlocks": "IPs remotos",
+      "notRemoteIpBlocks": "Exceto IPs remotos",
+      "hosts": "Hosts",
+      "notHosts": "Exceto hosts",
+      "ports": "Portas",
+      "notPorts": "Exceto portas",
+      "methods": "Métodos",
+      "notMethods": "Exceto métodos",
+      "paths": "Caminhos",
+      "notPaths": "Exceto caminhos",
+      "condition": "Quando {{key}}"
+    },
+    "callerHint": "Descreva o chamador: o que ficar vazio é desconhecido, e uma política que dependa disso aparece como não avaliada. Supõe-se que o chamador está na malha com mTLS e é conhecido por seu namespace e sua service account no domínio de confiança cluster.local.",
+    "caller": {
+      "namespace": "Namespace do chamador",
+      "serviceAccount": "Service account",
+      "method": "Método",
+      "path": "Caminho",
+      "port": "Porta",
+      "ip": "IP do chamador",
+      "remoteIp": "IP remoto (atrás de um proxy)"
+    },
+    "decision": {
+      "allowed": "Permitido",
+      "denied": "Negado",
+      "unknown": "Não é possível dizer",
+      "external": "Decide o autorizador externo"
+    },
+    "reason": {
+      "noPolicies": "Nenhuma política ALLOW se aplica a esta carga de trabalho, e nenhuma política DENY corresponde.",
+      "allowMatched": "A regra {{rule}} da política ALLOW {{name}} corresponde.",
+      "noAllowMatched": "Políticas ALLOW se aplicam a esta carga de trabalho e nenhuma delas corresponde.",
+      "denyMatched": "A regra {{rule}} da política DENY {{name}} corresponde.",
+      "denyMayMatch": "A política DENY {{name}} pode corresponder: depende de algo não avaliado.",
+      "allowMayMatch": "Só a política ALLOW {{name}} poderia deixá-la passar, e ela depende de algo não avaliado.",
+      "customMatched": "A política CUSTOM {{name}} corresponde: o autorizador externo decide.",
+      "customMayMatch": "A política CUSTOM {{name}} pode corresponder: depende de algo não avaliado.",
+      "targetRefNotEvaluated": "Uma política DENY ou CUSTOM vinculada por targetRef não é avaliada aqui e pode recusar a requisição.",
+      "invalidPolicy": "A política {{name}} tem uma ação que o Istio não aceita: não dá para dizer o que ela faz."
+    },
+    "match": {
+      "yes": "Sim",
+      "no": "Não",
+      "unknown": "Não avaliado"
+    },
+    "targetRefSkipped": "Vinculadas por targetRef a um Gateway ou waypoint, não avaliadas:",
+    "dryRun": "Teste (istio.io/dry-run): as decisões dela só são registradas, nunca aplicadas.",
+    "dryRunAction": "{{action}} (teste, não aplicada)"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "Na malha do Istio com um proxy sidecar.",
+      "nativeSidecar": "Na malha do Istio com um proxy sidecar iniciado como sidecar nativo (um contêiner de inicialização).",
+      "ambient": "Na malha do Istio em modo ambient: sem sidecar, o ztunnel carrega seu tráfego.",
+      "none": "Fora da malha do Istio.",
+      "injectedPods": "Seus Pods recebem um sidecar do Istio ao serem criados.",
+      "noInjection": "Seus Pods não recebem sidecar do Istio.",
+      "optedOut": "O Pod se exclui da malha.",
+      "restart": "A injeção do sidecar está ligada, mas este Pod não tem proxy: ele foi criado antes de a injeção ser ligada, ou o injetor falhou. Reinicie-o para adicioná-lo à malha."
+    },
+    "linkerd": {
+      "proxy": "Na malha do Linkerd: o linkerd-proxy roda ao lado.",
+      "nativeProxy": "Na malha do Linkerd: o linkerd-proxy roda como sidecar nativo (um contêiner de inicialização).",
+      "none": "Fora da malha do Linkerd.",
+      "injectedPods": "Seus Pods recebem o proxy do Linkerd ao serem criados.",
+      "noInjection": "Seus Pods não recebem proxy do Linkerd.",
+      "restart": "A injeção do proxy está ligada, mas este Pod não tem proxy: ele foi criado antes de a injeção ser ligada. Reinicie-o para adicioná-lo à malha.",
+      "goldenMetrics": "O linkerd-viz está instalado. O Sextant não lê sua taxa de sucesso, taxa de requisições e latência: veja-as com linkerd viz stat ou no painel do linkerd-viz."
+    },
+    "via": {
+      "pod": "Ligada, definida no Pod",
+      "namespace": "Ligada, definida no namespace"
+    },
+    "injectOn": {
+      "pod": "{{value}}, definido no Pod",
+      "namespace": "{{value}}, definido no namespace"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "Rotas, repetições e tempos limite das chamadas para {{host}}.",
+    "retryBudget": "Orçamento de repetições: no máximo {{ratio}} requisições extras por requisição, no mínimo {{min}} repetições por segundo, ao longo de {{ttl}}.",
+    "compoundCondition": "Várias condições",
+    "serverMeaning": "Descreve uma porta dos Pods selecionados. Só os clientes que suas autorizações permitem podem chamá-la; sem nenhuma, decide o acesso padrão.",
+    "noAuthorizations": "Nenhuma autorização deste namespace tem este servidor como alvo: o acesso padrão decide quem pode chamá-lo.",
+    "allows": "Deixa entrar:",
+    "client": {
+      "unauthenticated": "Qualquer cliente, também sem mTLS",
+      "unauthenticatedTls": "Qualquer cliente da malha, seja qual for a identidade",
+      "identities": "Clientes da malha com as identidades: {{values}}",
+      "serviceAccounts": "Clientes da malha com as service accounts: {{values}}",
+      "networks": "Clientes das redes: {{values}}"
+    },
+    "policyMeaning": "Deixa entrar os clientes que atendem a todas as autenticações exigidas.",
+    "policyNoAuth": "Não exige autenticação: deixa entrar todos os clientes.",
+    "meshTlsMeaning": "Clientes que apresentam uma destas identidades mesh TLS.",
+    "networkMeaning": "Clientes cujo endereço está em uma destas redes.",
+    "networkExcept": "{{cidr}} exceto {{except}}"
+  },
+  "check": {
+    "title": "Roteamento de requisições",
+    "open": "Verificar uma requisição…",
+    "hint": "Digite uma URL e clique em “Verificar”: pelas regras de roteamento do Istio são encontrados o serviço virtual, a rota, os destinos, os subconjuntos e os Pods que atenderiam a requisição.",
+    "notServed": "Este cluster não oferece VirtualServices nem DestinationRules do Istio.",
+    "result": "Para onde vai a requisição",
+    "notesTitle": "Observações",
+    "alsoConsidered": "Também considerados",
+    "form": {
+      "method": "Método",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "Verificar",
+      "invalidUrl": "Digite uma URL http:// ou https:// com host.",
+      "from": "Enviada de",
+      "fromMesh": "Uma carga de trabalho da malha",
+      "fromGateway": "Um gateway do Istio",
+      "gateway": "Gateway",
+      "pickGateway": "Escolha um gateway",
+      "namespace": "Namespace do chamador",
+      "labels": "Labels do chamador",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "Não está no formato key=value: {{labels}}",
+      "headers": "Cabeçalhos",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_one": "A linha {{lines}} não está no formato “nome: valor”",
+      "badHeaders_many": "As linhas {{lines}} não estão no formato “nome: valor”",
+      "badHeaders_other": "As linhas {{lines}} não estão no formato “nome: valor”"
+    },
+    "steps": {
+      "gateway": "Gateway",
+      "virtualService": "Serviço virtual",
+      "route": "Rota",
+      "destinations": "Destinos",
+      "answer": "Resposta"
+    },
+    "outcome": {
+      "routed": "Roteada",
+      "defaultRoute": "Enviada ao serviço como está",
+      "redirected": "Redirecionada ({{status}})",
+      "directResponse": "Respondida pelo proxy ({{status}})",
+      "noRoute": "Sem rota: 404",
+      "passthrough": "Host desconhecido",
+      "noGatewayServer": "Não atendida pelo gateway: 404",
+      "unknownGateway": "Gateway inexistente",
+      "delegateMissing": "Delegado não encontrado: 404",
+      "l4Only": "Só rotas TCP ou TLS",
+      "notEvaluated": "Não avaliada"
+    },
+    "server": "Servidor na porta {{port}} ({{protocol}}) para {{hosts}}",
+    "matchedHost": "Correspondeu pelo host {{host}}.",
+    "merged": "O gateway junta as rotas destes serviços virtuais, a partir do mais antigo.",
+    "viaDelegate": "Alcançada pelo serviço virtual delegante {{name}}.",
+    "skipped": {
+      "uri": "Rota {{route}} de {{vs}} ignorada: o caminho não correspondeu.",
+      "scheme": "Rota {{route}} de {{vs}} ignorada: o esquema não correspondeu.",
+      "method": "Rota {{route}} de {{vs}} ignorada: o método não correspondeu.",
+      "authority": "Rota {{route}} de {{vs}} ignorada: o host não correspondeu.",
+      "headers": "Rota {{route}} de {{vs}} ignorada: um cabeçalho não correspondeu.",
+      "withoutHeaders": "Rota {{route}} de {{vs}} ignorada: há um cabeçalho excluído.",
+      "queryParams": "Rota {{route}} de {{vs}} ignorada: um parâmetro de consulta não correspondeu.",
+      "port": "Rota {{route}} de {{vs}} ignorada: a porta não correspondeu.",
+      "sourceLabels": "Rota {{route}} de {{vs}} ignorada: os labels do chamador não corresponderam.",
+      "sourceNamespace": "Rota {{route}} de {{vs}} ignorada: o namespace do chamador não correspondeu.",
+      "gateways": "Rota {{route}} de {{vs}} ignorada: ela é para outros gateways."
+    },
+    "skippedNoReason": "Rota {{route}} de {{vs}} ignorada.",
+    "pods": "{{ready}} de {{total}} prontos",
+    "why": {
+      "unknownGateway": "O gateway não está entre os Gateways do Istio do cluster.",
+      "noGatewayServer": "Nenhum servidor do gateway lista o host {{host}}.",
+      "noVirtualService": "Nenhum serviço virtual para {{host}} é visível ao chamador: o sidecar envia a requisição ao serviço com esse nome como está.",
+      "noVirtualServiceGateway": "Nenhum serviço virtual vinculado a este gateway cobre {{host}}.",
+      "noRoute": "Nenhuma rota do serviço virtual corresponde à requisição.",
+      "notEvaluated": "Esta rota usa uma expressão regular que o JavaScript não consegue ler: a correspondência não é avaliada, nem a das rotas seguintes.",
+      "delegateMissing": "A rota passa a requisição a um serviço virtual delegado que não existe.",
+      "l4Only": "O serviço virtual só tem rotas TCP ou TLS, que esta verificação não segue."
+    },
+    "problem": {
+      "unknownHost": "Nenhum Service ou ServiceEntry tem este host.",
+      "noDestinationRule": "Nenhuma regra de destino define o subconjunto {{subset}}: o proxy responde 503.",
+      "missingSubset": "A regra de destino não tem o subconjunto {{subset}}: o proxy responde 503."
+    },
+    "answer": {
+      "redirected": "O proxy responde com um redirecionamento ({{status}}).",
+      "directResponse": "O próprio proxy responde HTTP {{status}}.",
+      "noRoute": "O proxy responde 404: nenhuma rota aceita a requisição.",
+      "passthrough": "Nenhum Service, ServiceEntry ou serviço virtual tem este host: o que acontece depende da política de tráfego de saída da malha (ALLOW_ANY deixa passar, REGISTRY_ONLY recusa).",
+      "noGatewayServer": "O gateway responde 404.",
+      "delegateMissing": "O proxy responde 404."
+    },
+    "candidate": {
+      "notExported": "Não é exportado para o namespace do chamador (exportTo).",
+      "lessSpecificHost": "Tem um host menos específico.",
+      "duplicateIgnored": "Tem o mesmo host nos sidecars: o Istio usa só o serviço virtual mais antigo.",
+      "invalidMeshWildcard": "Vinculado aos sidecars com o host *, que o Istio rejeita: não roteia nada."
+    },
+    "notes": {
+      "regexDialect": "As expressões regulares do Istio são RE2; aqui elas são lidas como JavaScript, que concorda nos padrões comuns.",
+      "sidecarScope": "Um recurso Sidecar pode esconder hosts do chamador; recursos Sidecar não são avaliados.",
+      "l4NotChecked": "Rotas TCP e TLS não são verificadas.",
+      "gatewayPort": "Nenhum servidor do gateway está na porta da URL: é mostrado o servidor do host em outra porta (o Service do gateway pode mapear portas).",
+      "gatewaySourceLabels": "Os labels do chamador são comparados com o seletor do gateway."
+    }
+  }
+}

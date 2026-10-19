@@ -1,0 +1,537 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "Trasowanie żądań"
+  },
+  "problemsCount_one": "{{count}} problem konfiguracji Istio",
+  "problemsCount_few": "{{count}} problemy konfiguracji Istio",
+  "problemsCount_many": "{{count}} problemów konfiguracji Istio",
+  "problemsCount_other": "{{count}} problemu konfiguracji Istio",
+  "loading": "Wczytywanie konfiguracji siatki…",
+  "yes": "Tak",
+  "no": "Nie",
+  "columns": {
+    "hosts": "Hosty",
+    "gateways": "Bramy",
+    "routes": "Trasy",
+    "host": "Host",
+    "subsets": "Podzbiory",
+    "tlsMode": "Tryb TLS",
+    "servers": "Serwery",
+    "location": "Położenie",
+    "resolution": "Rozwiązywanie",
+    "appliesTo": "Dotyczy",
+    "egressHosts": "Hosty wyjściowe",
+    "address": "Adres",
+    "serviceAccount": "Service account",
+    "mtlsMode": "Tryb mTLS",
+    "issuers": "Wystawcy",
+    "action": "Akcja",
+    "rules": "Reguły",
+    "port": "Port",
+    "proxyProtocol": "Protokół",
+    "podSelector": "Selektor Podów",
+    "parents": "Rodzice",
+    "target": "Cel",
+    "authentications": "Uwierzytelnienia",
+    "server": "Serwer",
+    "identities": "Tożsamości",
+    "networks": "Sieci",
+    "name": "Nazwa",
+    "labels": "Etykiety",
+    "protocol": "Protokół",
+    "issuer": "Wystawca",
+    "audiences": "Odbiorcy",
+    "keys": "Klucze",
+    "condition": "Warunek",
+    "retryable": "Ponawiana",
+    "timeout": "Limit czasu",
+    "match": "Dopasowanie",
+    "destinations": "Miejsca docelowe",
+    "destination": "Miejsce docelowe",
+    "weight": "Waga",
+    "subset": "Podzbiór",
+    "destinationRule": "Reguła docelowa",
+    "pods": "Pody",
+    "policy": "Zasada",
+    "matches": "Pasuje",
+    "notEvaluated": "Nieocenione"
+  },
+  "fields": {
+    "hosts": "Hosty",
+    "gateways": "Bramy",
+    "exportTo": "Widoczny w",
+    "host": "Host",
+    "tlsMode": "Tryb TLS",
+    "loadBalancer": "Równoważenie obciążenia",
+    "workloadSelector": "Klienci",
+    "selector": "Pody bramy",
+    "location": "Położenie",
+    "resolution": "Rozwiązywanie",
+    "ports": "Porty",
+    "addresses": "Adresy",
+    "appliesTo": "Dotyczy",
+    "egressHosts": "Hosty wyjściowe",
+    "outboundTrafficPolicy": "Ruch wychodzący",
+    "address": "Adres",
+    "labels": "Etykiety",
+    "serviceAccount": "Service account",
+    "network": "Sieć",
+    "tracing": "Śledzenie",
+    "metrics": "Metryki",
+    "accessLogging": "Logi dostępu",
+    "mtlsMode": "Tryb mTLS",
+    "action": "Akcja",
+    "provider": "Dostawca",
+    "podSelector": "Selektor Podów",
+    "port": "Port",
+    "proxyProtocol": "Protokół",
+    "accessPolicy": "Dostęp domyślny",
+    "server": "Serwer",
+    "target": "Cel",
+    "requiredAuthentications": "Wymagane uwierzytelnienia",
+    "identities": "Tożsamości",
+    "identityRefs": "Odwołania do tożsamości",
+    "networks": "Sieci",
+    "parents": "Rodzice",
+    "hostnames": "Nazwy hostów",
+    "revision": "Rewizja",
+    "injection": "Wstrzykiwanie sidecara",
+    "proxyImage": "Obraz proxy",
+    "linkerdInject": "Wstrzykiwanie proxy",
+    "controlPlane": "Płaszczyzna sterowania",
+    "proxyVersion": "Wersja proxy"
+  },
+  "blocks": {
+    "virtualService": "Usługa wirtualna",
+    "httpRoutes": "Trasy HTTP",
+    "l4Routes": "Trasy TCP i TLS",
+    "destinationRule": "Reguła docelowa",
+    "portTls": "TLS według portów",
+    "subsets": "Podzbiory",
+    "gateway": "Brama",
+    "servers": "Serwery",
+    "boundVirtualServices": "Usługi wirtualne powiązane z tą bramą",
+    "serviceEntry": "Wpis usługi",
+    "sidecar": "Sidecar",
+    "workloadEntry": "Wpis obciążenia",
+    "telemetry": "Telemetria",
+    "peerAuthentication": "Uwierzytelnianie równorzędne",
+    "portMtls": "mTLS według portów",
+    "requestAuthentication": "Uwierzytelnianie żądań",
+    "authorizationPolicy": "Zasada autoryzacji",
+    "istioMembership": "Istio",
+    "mtls": "mTLS Istio",
+    "whoMayCall": "Kto może wywołać to obciążenie?",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "Profil usługi",
+    "profileRoutes": "Trasy",
+    "server": "Serwer",
+    "serverAuthorizations": "Autoryzacje tego serwera",
+    "serverAuthorization": "Autoryzacja serwera",
+    "linkerdAuthorizationPolicy": "Zasada autoryzacji",
+    "meshTlsAuthentication": "Uwierzytelnianie mesh TLS",
+    "networkAuthentication": "Uwierzytelnianie sieciowe",
+    "linkerdHttpRoute": "Trasa HTTP"
+  },
+  "exportTo": {
+    "everywhere": "Każdy namespace"
+  },
+  "vs": {
+    "delegate": "Brak: delegat, używany tylko przez trasy innych usług wirtualnych, które go wskazują",
+    "meshGateway": "mesh (sidecary)"
+  },
+  "scope": {
+    "mesh": "Każde obciążenie siatki",
+    "namespace": "Każde obciążenie namespace",
+    "targetRef": "Gateway lub waypoint (targetRef)"
+  },
+  "route": {
+    "title": "Trasa {{n}}",
+    "titleNamed": "Trasa {{n}} ({{name}})",
+    "order": "Trasy są sprawdzane od góry; żądanie przejmuje pierwsza pasująca.",
+    "when": "Gdy",
+    "then": "Wtedy",
+    "everyRequest": "Każde żądanie",
+    "everyConnection": "Każde połączenie",
+    "alternative": "Wariant {{n}}:",
+    "to": "Wyślij {{percent}}% do {{host}}",
+    "toSubset": "Wyślij {{percent}}% do {{host}}, podzbiór {{subset}}",
+    "delegate": "Przekaż żądanie trasom usługi wirtualnej {{name}}",
+    "directResponse": "Odpowiedz HTTP {{status}} bez przesyłania dalej",
+    "redirect": "Przekieruj klienta",
+    "redirectTo": "Przekieruj klienta do {{target}}",
+    "timeout": "Przerwij po {{timeout}}",
+    "noRetries": "Nigdy nie ponawiaj",
+    "retries_one": "Ponów do {{count}} raza",
+    "retries_few": "Ponów do {{count}} razy",
+    "retries_many": "Ponów do {{count}} razy",
+    "retries_other": "Ponów do {{count}} razy",
+    "retriesPerTry_one": "Ponów do {{count}} raza, {{perTry}} na próbę",
+    "retriesPerTry_few": "Ponów do {{count}} razy, {{perTry}} na próbę",
+    "retriesPerTry_many": "Ponów do {{count}} razy, {{perTry}} na próbę",
+    "retriesPerTry_other": "Ponów do {{count}} razy, {{perTry}} na próbę",
+    "retryOn": "Ponawiaj przy: {{on}}",
+    "faultDelay": "Opóźnij {{percent}}% żądań o {{delay}} (wstrzykiwanie błędów)",
+    "faultAbort": "Zakończ {{percent}}% żądań błędem HTTP {{status}} (wstrzykiwanie błędów)",
+    "mirror": "Kopiuj {{percent}}% żądań do {{host}} (odpowiedzi pomijane)",
+    "rewriteUri": "Zmień ścieżkę na {{uri}}",
+    "rewriteAuthority": "Zmień host na {{authority}}"
+  },
+  "match": {
+    "uri": {
+      "exact": "Ścieżka to {{value}}",
+      "prefix": "Ścieżka zaczyna się od {{value}}",
+      "regex": "Ścieżka pasuje do wyrażenia regularnego {{value}}"
+    },
+    "uriIgnoreCase": {
+      "exact": "Ścieżka to {{value}} (bez rozróżniania wielkości liter)",
+      "prefix": "Ścieżka zaczyna się od {{value}} (bez rozróżniania wielkości liter)",
+      "regex": "Ścieżka pasuje do wyrażenia regularnego {{value}} (bez rozróżniania wielkości liter)"
+    },
+    "method": {
+      "exact": "Metoda to {{value}}",
+      "prefix": "Metoda zaczyna się od {{value}}",
+      "regex": "Metoda pasuje do wyrażenia regularnego {{value}}"
+    },
+    "scheme": {
+      "exact": "Schemat to {{value}}",
+      "prefix": "Schemat zaczyna się od {{value}}",
+      "regex": "Schemat pasuje do wyrażenia regularnego {{value}}"
+    },
+    "authority": {
+      "exact": "Host to {{value}}",
+      "prefix": "Host zaczyna się od {{value}}",
+      "regex": "Host pasuje do wyrażenia regularnego {{value}}"
+    },
+    "header": {
+      "exact": "Nagłówek {{name}} to {{value}}",
+      "prefix": "Nagłówek {{name}} zaczyna się od {{value}}",
+      "regex": "Nagłówek {{name}} pasuje do wyrażenia regularnego {{value}}"
+    },
+    "query": {
+      "exact": "Parametr zapytania {{name}} to {{value}}",
+      "prefix": "Parametr zapytania {{name}} zaczyna się od {{value}}",
+      "regex": "Parametr zapytania {{name}} pasuje do wyrażenia regularnego {{value}}"
+    },
+    "headerPresent": "Nagłówek {{name}} występuje",
+    "headerAbsent": "Nagłówka {{name}} nie ma",
+    "headerNot": "Nagłówek {{name}} to nie {{value}}",
+    "queryPresent": "Parametr zapytania {{name}} występuje",
+    "port": "Port to {{port}}",
+    "sourceLabels": "Wywołujący ma etykiety {{labels}}",
+    "sourceNamespace": "Wywołujący jest w namespace {{namespace}}",
+    "gateways": "Przychodzi przez: {{gateways}}"
+  },
+  "l4": {
+    "kind": "Rodzaj",
+    "match": "Porty i hosty SNI",
+    "destinations": "Miejsca docelowe"
+  },
+  "tls": {
+    "auto": "Nie ustawiono: Istio sam używa swojego mTLS tam, gdzie cel ma sidecar",
+    "mode": {
+      "DISABLE": "DISABLE: zwykły tekst, bez TLS",
+      "SIMPLE": "SIMPLE: TLS do celu, bez certyfikatu klienta",
+      "MUTUAL": "MUTUAL: TLS z certyfikatem klienta podanym w regule",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL: własny mTLS Istio"
+    }
+  },
+  "dr": {
+    "subsetsHint": "Podzbiór to Pody celu z etykietami podzbioru; trasy wskazują podzbiory, by dzielić ruch między wersje."
+  },
+  "gateway": {
+    "selectorHint": "Bramę obsługują Pody z tymi etykietami (brama wejściowa lub wyjściowa Istio).",
+    "noneBound": "Z tą bramą nie jest powiązana żadna usługa wirtualna: na każde żądanie odpowiada 404."
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "Poza siatką",
+      "MESH_INTERNAL": "W siatce"
+    },
+    "resolution": {
+      "NONE": "Jak zaadresowano",
+      "STATIC": "Stałe adresy",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS (round robin)"
+    }
+  },
+  "sidecar": {
+    "meaning": "Ogranicza, co sidecary wybranych obciążeń wiedzą o siatce: osiągalne są tylko wymienione hosty wyjściowe.",
+    "wholeNamespace": "Każde obciążenie namespace"
+  },
+  "workloadEntry": {
+    "meaning": "Obciążenie spoza Kubernetes (maszyna wirtualna), które siatka traktuje jak Pod z tymi etykietami."
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "Przyjmowane są tylko połączenia mTLS Istio; wywołania zwykłym tekstem są odrzucane.",
+      "PERMISSIVE": "Przyjmowane są zarówno połączenia mTLS Istio, jak i zwykłym tekstem.",
+      "DISABLE": "mTLS Istio jest wyłączony: połączenia idą zwykłym tekstem.",
+      "UNSET": "Nie ustawiono: tryb jest dziedziczony (obciążenie, potem namespace, potem siatka; PERMISSIVE, gdy nic go nie ustawia)."
+    },
+    "precedence": "Pierwszeństwo: zasada z selektorem obciążenia, potem zasada namespace, potem zasada całej siatki w głównym namespace istio-system.",
+    "source": {
+      "workload": "Ustawiony przez PeerAuthentication {{name}} dla tego obciążenia:",
+      "namespace": "Ustawiony przez PeerAuthentication {{name}} tego namespace:",
+      "mesh": "Ustawiony przez PeerAuthentication {{name}} całej siatki:",
+      "default": "Żadna PeerAuthentication go nie ustawia: domyślny tryb Istio, PERMISSIVE."
+    }
+  },
+  "jwt": {
+    "meaning": "Żądanie z nieprawidłowym tokenem jest odrzucane; żądanie bez tokenu przechodzi, chyba że AuthorizationPolicy wymaga podmiotu żądania.",
+    "inlineKeys": "Klucze w regule"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "Dotyczy obciążeń w namespace {{namespace}} pasujących do jej selektora.",
+      "namespace": "Dotyczy każdego obciążenia w namespace {{namespace}}.",
+      "mesh": "Dotyczy każdego obciążenia siatki: znajduje się w głównym namespace {{namespace}}.",
+      "targetRef": "Powiązana z Gateway lub waypointem (targetRef), a nie z własnymi proxy obciążeń."
+    },
+    "action": {
+      "ALLOW": "Zezwala na żądania pasujące do jednej z jej reguł; gdy tylko zasada ALLOW dotyczy obciążenia, każde inne żądanie do niego jest odrzucane.",
+      "DENY": "Odrzuca żądania pasujące do jednej z jej reguł, niezależnie od zasad ALLOW.",
+      "AUDIT": "Jedynie oznacza pasujące żądania do logu audytu; na nic nie zezwala i niczego nie odrzuca.",
+      "CUSTOM": "Przekazuje pasujące żądania zewnętrznemu autoryzatorowi {{provider}}, który może je odrzucić.",
+      "INVALID": "Istio nie akceptuje jej akcji: odrzuca zasadę, więc nie da się stwierdzić, co robi."
+    },
+    "special": {
+      "allowNothing": "Nie ma reguł: na nic nie zezwala, więc każde żądanie do tych obciążeń jest odrzucane.",
+      "noRules": "Nie ma reguł: nie pasuje do żadnego żądania i nie ma skutku.",
+      "everything": "Jej pusta reguła pasuje do każdego żądania."
+    },
+    "order": "Istio sprawdza najpierw zasady CUSTOM, potem DENY, potem ALLOW.",
+    "rule": "Reguła {{n}}",
+    "emptyRule": "Każde żądanie (pusta reguła).",
+    "valuesExcept": "{{values}}, z wyjątkiem {{except}}",
+    "anythingExcept": "Cokolwiek z wyjątkiem {{except}}",
+    "fields": {
+      "principals": "Wywołujący (podmioty)",
+      "notPrincipals": "Z wyjątkiem wywołujących (podmioty)",
+      "requestPrincipals": "Podmioty tokenu",
+      "notRequestPrincipals": "Z wyjątkiem podmiotów tokenu",
+      "namespaces": "Namespace wywołujących",
+      "notNamespaces": "Z wyjątkiem namespace wywołujących",
+      "ipBlocks": "IP wywołujących",
+      "notIpBlocks": "Z wyjątkiem IP wywołujących",
+      "remoteIpBlocks": "Zdalne IP",
+      "notRemoteIpBlocks": "Z wyjątkiem zdalnych IP",
+      "hosts": "Hosty",
+      "notHosts": "Z wyjątkiem hostów",
+      "ports": "Porty",
+      "notPorts": "Z wyjątkiem portów",
+      "methods": "Metody",
+      "notMethods": "Z wyjątkiem metod",
+      "paths": "Ścieżki",
+      "notPaths": "Z wyjątkiem ścieżek",
+      "condition": "Gdy {{key}}"
+    },
+    "callerHint": "Opisz wywołującego: to, co zostanie puste, jest nieznane, a zasada, która od tego zależy, jest pokazywana jako nieoceniona. Przyjmuje się, że wywołujący jest w siatce z mTLS i znany po namespace i service account w domenie zaufania cluster.local.",
+    "caller": {
+      "namespace": "Namespace wywołującego",
+      "serviceAccount": "Service account",
+      "method": "Metoda",
+      "path": "Ścieżka",
+      "port": "Port",
+      "ip": "IP wywołującego",
+      "remoteIp": "Zdalne IP (za proxy)"
+    },
+    "decision": {
+      "allowed": "Dozwolone",
+      "denied": "Odrzucone",
+      "unknown": "Nie da się stwierdzić",
+      "external": "Decyduje zewnętrzny autoryzator"
+    },
+    "reason": {
+      "noPolicies": "Tego obciążenia nie dotyczy żadna zasada ALLOW i nie pasuje żadna zasada DENY.",
+      "allowMatched": "Pasuje reguła {{rule}} zasady ALLOW {{name}}.",
+      "noAllowMatched": "Tego obciążenia dotyczą zasady ALLOW i żadna z nich nie pasuje.",
+      "denyMatched": "Pasuje reguła {{rule}} zasady DENY {{name}}.",
+      "denyMayMatch": "Zasada DENY {{name}} może pasować: zależy to od czegoś, czego nie oceniono.",
+      "allowMayMatch": "Wpuścić może tylko zasada ALLOW {{name}}, a zależy ona od czegoś, czego nie oceniono.",
+      "customMatched": "Pasuje zasada CUSTOM {{name}}: decyduje zewnętrzny autoryzator.",
+      "customMayMatch": "Zasada CUSTOM {{name}} może pasować: zależy to od czegoś, czego nie oceniono.",
+      "targetRefNotEvaluated": "Zasada DENY lub CUSTOM powiązana przez targetRef nie jest tu oceniana i może odrzucić żądanie.",
+      "invalidPolicy": "Zasada {{name}} ma akcję, której Istio nie akceptuje: nie da się stwierdzić, co robi."
+    },
+    "match": {
+      "yes": "Tak",
+      "no": "Nie",
+      "unknown": "Nieocenione"
+    },
+    "targetRefSkipped": "Powiązane przez targetRef z Gateway lub waypointem, nieocenione:",
+    "dryRun": "Próba (istio.io/dry-run): jej decyzje są tylko zapisywane w logu, nigdy egzekwowane.",
+    "dryRunAction": "{{action}} (próba, nieegzekwowana)"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "W siatce Istio z proxy sidecar.",
+      "nativeSidecar": "W siatce Istio z proxy sidecar uruchomionym jako natywny sidecar (kontener init).",
+      "ambient": "W siatce Istio w trybie ambient: bez sidecara, ruch przenosi ztunnel.",
+      "none": "Poza siatką Istio.",
+      "injectedPods": "Jego Pody dostają sidecar Istio przy tworzeniu.",
+      "noInjection": "Jego Pody nie dostają sidecara Istio.",
+      "optedOut": "Pod wyłączył się z siatki.",
+      "restart": "Wstrzykiwanie sidecara jest włączone, ale ten Pod nie ma proxy: utworzono go przed włączeniem wstrzykiwania albo wstrzykiwacz zawiódł. Uruchom go ponownie, aby dodać go do siatki."
+    },
+    "linkerd": {
+      "proxy": "W siatce Linkerd: obok działa linkerd-proxy.",
+      "nativeProxy": "W siatce Linkerd: linkerd-proxy działa jako natywny sidecar (kontener init).",
+      "none": "Poza siatką Linkerd.",
+      "injectedPods": "Jego Pody dostają proxy Linkerd przy tworzeniu.",
+      "noInjection": "Jego Pody nie dostają proxy Linkerd.",
+      "restart": "Wstrzykiwanie proxy jest włączone, ale ten Pod nie ma proxy: utworzono go przed włączeniem wstrzykiwania. Uruchom go ponownie, aby dodać go do siatki.",
+      "goldenMetrics": "linkerd-viz jest zainstalowany. Sextant nie odczytuje jego wskaźnika powodzeń, liczby żądań ani opóźnień: można je zobaczyć przez linkerd viz stat lub panel linkerd-viz."
+    },
+    "via": {
+      "pod": "Włączone, ustawione na Podzie",
+      "namespace": "Włączone, ustawione na namespace"
+    },
+    "injectOn": {
+      "pod": "{{value}}, ustawione na Podzie",
+      "namespace": "{{value}}, ustawione na namespace"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "Trasy, ponowienia i limity czasu wywołań {{host}}.",
+    "retryBudget": "Budżet ponowień: najwyżej {{ratio}} dodatkowych żądań na żądanie, co najmniej {{min}} ponowień na sekundę, w okresie {{ttl}}.",
+    "compoundCondition": "Kilka warunków",
+    "serverMeaning": "Opisuje port wybranych Podów. Wywoływać go mogą tylko klienci dopuszczeni przez jego autoryzacje; gdy ich brak, decyduje dostęp domyślny.",
+    "noAuthorizations": "Żadna autoryzacja w tym namespace nie wskazuje tego serwera: o tym, kto może go wywołać, decyduje jego dostęp domyślny.",
+    "allows": "Wpuszcza:",
+    "client": {
+      "unauthenticated": "Dowolnego klienta, także bez mTLS",
+      "unauthenticatedTls": "Dowolnego klienta z siatki, z dowolną tożsamością",
+      "identities": "Klientów z siatki o tożsamościach: {{values}}",
+      "serviceAccounts": "Klientów z siatki o service account: {{values}}",
+      "networks": "Klientów z sieci: {{values}}"
+    },
+    "policyMeaning": "Wpuszcza klientów, którzy spełniają każde wymagane uwierzytelnienie.",
+    "policyNoAuth": "Nie wymaga uwierzytelnienia: wpuszcza każdego klienta.",
+    "meshTlsMeaning": "Klienci przedstawiający jedną z tych tożsamości mesh TLS.",
+    "networkMeaning": "Klienci, których adres należy do jednej z tych sieci.",
+    "networkExcept": "{{cidr}} z wyjątkiem {{except}}"
+  },
+  "check": {
+    "title": "Trasowanie żądań",
+    "open": "Sprawdź żądanie…",
+    "hint": "Wpisz URL i kliknij „Sprawdź”: według reguł trasowania Istio zostaną znalezione usługa wirtualna, trasa, miejsca docelowe, podzbiory i Pody, które obsłużyłyby żądanie.",
+    "notServed": "Ten klaster nie udostępnia VirtualService ani DestinationRule Istio.",
+    "result": "Dokąd trafia żądanie",
+    "notesTitle": "Uwagi",
+    "alsoConsidered": "Rozważone również",
+    "form": {
+      "method": "Metoda",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "Sprawdź",
+      "invalidUrl": "Wpisz URL http:// lub https:// z hostem.",
+      "from": "Wysłane z",
+      "fromMesh": "Obciążenie w siatce",
+      "fromGateway": "Brama Istio",
+      "gateway": "Brama",
+      "pickGateway": "Wybierz bramę",
+      "namespace": "Namespace wywołującego",
+      "labels": "Etykiety wywołującego",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "Nie w formacie key=value: {{labels}}",
+      "headers": "Nagłówki",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_one": "Wiersz {{lines}} nie ma postaci „nazwa: wartość”",
+      "badHeaders_few": "Wiersze {{lines}} nie mają postaci „nazwa: wartość”",
+      "badHeaders_many": "Wiersze {{lines}} nie mają postaci „nazwa: wartość”",
+      "badHeaders_other": "Wiersze {{lines}} nie mają postaci „nazwa: wartość”"
+    },
+    "steps": {
+      "gateway": "Brama",
+      "virtualService": "Usługa wirtualna",
+      "route": "Trasa",
+      "destinations": "Miejsca docelowe",
+      "answer": "Odpowiedź"
+    },
+    "outcome": {
+      "routed": "Przekierowane trasą",
+      "defaultRoute": "Wysłane do usługi bez zmian",
+      "redirected": "Przekierowane ({{status}})",
+      "directResponse": "Odpowiedź proxy ({{status}})",
+      "noRoute": "Brak trasy: 404",
+      "passthrough": "Nieznany host",
+      "noGatewayServer": "Nieobsługiwane przez bramę: 404",
+      "unknownGateway": "Brak takiej bramy",
+      "delegateMissing": "Nie znaleziono delegata: 404",
+      "l4Only": "Tylko trasy TCP lub TLS",
+      "notEvaluated": "Nieocenione"
+    },
+    "server": "Serwer na porcie {{port}} ({{protocol}}) dla {{hosts}}",
+    "matchedHost": "Dopasowano po hoście {{host}}.",
+    "merged": "Brama łączy trasy tych usług wirtualnych, zaczynając od najstarszej.",
+    "viaDelegate": "Osiągnięte przez delegującą usługę wirtualną {{name}}.",
+    "skipped": {
+      "uri": "Trasa {{route}} z {{vs}} pominięta: ścieżka nie pasowała.",
+      "scheme": "Trasa {{route}} z {{vs}} pominięta: schemat nie pasował.",
+      "method": "Trasa {{route}} z {{vs}} pominięta: metoda nie pasowała.",
+      "authority": "Trasa {{route}} z {{vs}} pominięta: host nie pasował.",
+      "headers": "Trasa {{route}} z {{vs}} pominięta: nagłówek nie pasował.",
+      "withoutHeaders": "Trasa {{route}} z {{vs}} pominięta: występuje wykluczony nagłówek.",
+      "queryParams": "Trasa {{route}} z {{vs}} pominięta: parametr zapytania nie pasował.",
+      "port": "Trasa {{route}} z {{vs}} pominięta: port nie pasował.",
+      "sourceLabels": "Trasa {{route}} z {{vs}} pominięta: etykiety wywołującego nie pasowały.",
+      "sourceNamespace": "Trasa {{route}} z {{vs}} pominięta: namespace wywołującego nie pasował.",
+      "gateways": "Trasa {{route}} z {{vs}} pominięta: jest dla innych bram."
+    },
+    "skippedNoReason": "Trasa {{route}} z {{vs}} pominięta.",
+    "pods": "Gotowe: {{ready}} z {{total}}",
+    "why": {
+      "unknownGateway": "Bramy nie ma wśród Gateway Istio w klastrze.",
+      "noGatewayServer": "Żaden serwer bramy nie wymienia hosta {{host}}.",
+      "noVirtualService": "Wywołujący nie widzi żadnej usługi wirtualnej dla {{host}}: sidecar wysyła żądanie bez zmian do usługi o tej nazwie.",
+      "noVirtualServiceGateway": "Żadna usługa wirtualna powiązana z tą bramą nie obejmuje {{host}}.",
+      "noRoute": "Żadna trasa usługi wirtualnej nie pasuje do żądania.",
+      "notEvaluated": "Ta trasa używa wyrażenia regularnego, którego JavaScript nie potrafi odczytać: dopasowanie nie jest oceniane, podobnie jak trasy po niej.",
+      "delegateMissing": "Trasa przekazuje żądanie delegowanej usłudze wirtualnej, która nie istnieje.",
+      "l4Only": "Usługa wirtualna ma tylko trasy TCP lub TLS, których to sprawdzenie nie śledzi."
+    },
+    "problem": {
+      "unknownHost": "Żaden Service ani ServiceEntry nie ma tego hosta.",
+      "noDestinationRule": "Żadna reguła docelowa nie definiuje podzbioru {{subset}}: proxy odpowiada 503.",
+      "missingSubset": "Reguła docelowa nie ma podzbioru {{subset}}: proxy odpowiada 503."
+    },
+    "answer": {
+      "redirected": "Proxy odpowiada przekierowaniem ({{status}}).",
+      "directResponse": "Proxy sam odpowiada HTTP {{status}}.",
+      "noRoute": "Proxy odpowiada 404: żadna trasa nie przyjmuje żądania.",
+      "passthrough": "Żaden Service, ServiceEntry ani usługa wirtualna nie ma tego hosta: co się stanie, zależy od zasady ruchu wychodzącego siatki (ALLOW_ANY przepuszcza, REGISTRY_ONLY odrzuca).",
+      "noGatewayServer": "Brama odpowiada 404.",
+      "delegateMissing": "Proxy odpowiada 404."
+    },
+    "candidate": {
+      "notExported": "Nieeksportowana do namespace wywołującego (exportTo).",
+      "lessSpecificHost": "Ma mniej szczegółowy host.",
+      "duplicateIgnored": "Ma ten sam host w sidecarach: Istio używa tylko najstarszej usługi wirtualnej.",
+      "invalidMeshWildcard": "Powiązana z sidecarami z hostem *, który Istio odrzuca: niczego nie trasuje."
+    },
+    "notes": {
+      "regexDialect": "Wyrażenia regularne Istio to RE2; tutaj są odczytywane jako wyrażenia JavaScript, które zgadzają się w typowych wzorcach.",
+      "sidecarScope": "Zasób Sidecar może ukryć hosty przed wywołującym; zasoby Sidecar nie są oceniane.",
+      "l4NotChecked": "Trasy TCP i TLS nie są sprawdzane.",
+      "gatewayPort": "Żaden serwer bramy nie jest na porcie z URL: pokazano serwer hosta na innym porcie (Service bramy może mapować porty).",
+      "gatewaySourceLabels": "Etykiety wywołującego są porównywane z selektorem bramy."
+    }
+  }
+}

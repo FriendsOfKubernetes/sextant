@@ -69,6 +69,16 @@
   white-space: nowrap;
 }
 
+/* How many objects an entry's kind has (#157), quiet, at the right end of the entry. */
+.sidebar__count {
+  flex: none;
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* A section's counter (registerSectionBadge) at the right end of its header. */
 .sidebar__badge {
   flex: none;

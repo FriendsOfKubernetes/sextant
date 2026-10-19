@@ -2,6 +2,7 @@
 // while it is open. The listener runs in the capture phase, so a terminal or an editor that would take Ctrl+Shift+K
 // never sees it.
 import { useEffect } from "react";
+import { hasPinnedModal } from "../../components";
 import { Palette } from "./Palette";
 import { isPaletteShortcut } from "./shortcut";
 import { closePalette, togglePalette, usePalette } from "./store";
@@ -13,6 +14,8 @@ export function PaletteHost() {
     const onKey = (e: KeyboardEvent) => {
       const inside = e.target instanceof Element && e.target.closest(".palette") !== null;
       if (!isPaletteShortcut(e, inside)) return;
+      // The confirmation of an agent or an extension stays on top: the palette does not open over it (#158).
+      if (hasPinnedModal()) return;
       e.preventDefault();
       e.stopPropagation();
       togglePalette();

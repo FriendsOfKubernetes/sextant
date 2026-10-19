@@ -1,0 +1,129 @@
+{
+  "action": "Vergleichen mit…",
+  "sidebar": "Namespaces vergleichen",
+  "loading": "Wird verglichen…",
+  "dialog": {
+    "title": "{{kind}} {{name}} vergleichen",
+    "with": "Vergleichen mit",
+    "modes": {
+      "object": "Einem anderen Objekt",
+      "lastApplied": "Seiner zuletzt angewendeten Konfiguration",
+      "helm": "Dem Manifest seines Helm-Release"
+    },
+    "unavailable": {
+      "lastApplied": "Dieses Objekt hat keine zuletzt angewendete Konfiguration: Es wurde nicht mit kubectl apply erstellt oder geändert.",
+      "helm": "Dieses Objekt gehört zu keinem Helm-Release."
+    },
+    "compare": "Vergleichen"
+  },
+  "target": {
+    "cluster": "Cluster",
+    "namespace": "Namespace",
+    "name": "Name",
+    "notConnected": "Nicht verbunden",
+    "connect": "Verbinden",
+    "connecting": "Wird verbunden…",
+    "suggestions": "Passende Objekte"
+  },
+  "side": {
+    "live": "Aktuell",
+    "lastApplied": "Zuletzt angewendet",
+    "manifest": "Helm-Manifest"
+  },
+  "options": {
+    "hideDefaults": "Standardwerte ausblenden",
+    "hideDefaultsHint": "Felder, die der API-Server ausfüllt, wenn ein Manifest sie nicht setzt, sowie zugewiesene Cluster-IPs weglassen, solange sie diesen Wert haben.",
+    "ignoreTitle": "Ignorierte Pfade von {{kind}}:",
+    "ignoreNone": "keine",
+    "ignoreRemove": "{{path}} nicht mehr ignorieren",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "Zu ignorierender Pfad",
+    "ignoreAddButton": "Ignorieren",
+    "ignoreInvalid": "Ein Pfad beginnt mit / und nennt durch / getrennte Schlüssel; * steht für einen beliebigen Schlüssel oder Listeneintrag, zum Beispiel /metadata/labels/team oder /spec/template/spec/containers/*/image.",
+    "ignoreFull": "Höchstens {{max}} Pfade pro Art."
+  },
+  "diff": {
+    "same": "Keine Unterschiede.",
+    "changes_one": "{{count}} Feld unterscheidet sich.",
+    "changes_other": "{{count}} Felder unterscheiden sich.",
+    "field": "Feld",
+    "notSet": "nicht gesetzt"
+  },
+  "secret": {
+    "hint": "Werte werden in Sextant anhand ihrer SHA-256-Hashes verglichen und erst ins Fenster geladen, wenn Sie auf „Werte anzeigen“ klicken.",
+    "label": "Secret-Schlüssel",
+    "key": "Schlüssel",
+    "state": "Vergleich",
+    "values": "Werte",
+    "equal": "Gleicher Wert",
+    "different": "Anderer Wert",
+    "onlyLeft": "Nur links",
+    "onlyRight": "Nur rechts",
+    "noKeys": "Keine Seite hat Schlüssel.",
+    "show": "Werte anzeigen",
+    "hide": "Werte ausblenden"
+  },
+  "result": {
+    "sameObject": "Das ist dieses Objekt selbst: Wählen Sie einen anderen Cluster, Namespace oder Namen.",
+    "notFound": "{{kind}} {{name}} existiert dort nicht.",
+    "noDrift": "Das aktuelle Objekt hat jedes Feld der zuletzt angewendeten Konfiguration unverändert.",
+    "drift_one": "{{count}} Feld weicht von der zuletzt angewendeten Konfiguration ab.",
+    "drift_other": "{{count}} Felder weichen von der zuletzt angewendeten Konfiguration ab.",
+    "driftLabel": "Felder, die von der zuletzt angewendeten Konfiguration abweichen",
+    "notInRelease": "Das Manifest des Helm-Release {{name}} enthält dieses Objekt nicht.",
+    "showRelease": "Ganzes Helm-Release {{name}} prüfen",
+    "hideRelease": "Release ausblenden"
+  },
+  "drift": {
+    "release": "Helm-Release {{name}} in {{namespace}}, Revision {{revision}}",
+    "unreadable_one": "{{count}} Dokument des Manifests kann nicht gelesen werden und wird nicht verglichen.",
+    "unreadable_other": "{{count}} Dokumente des Manifests können nicht gelesen werden und werden nicht verglichen.",
+    "truncated_one": "{{count}} weiteres Objekt wird nicht verglichen.",
+    "truncated_other": "{{count}} weitere Objekte werden nicht verglichen.",
+    "objectsLabel": "Objekte des Release",
+    "object": "Objekt",
+    "state": "Zustand",
+    "details": "Details",
+    "drifted_one": "{{count}} Unterschied",
+    "drifted_other": "{{count}} Unterschiede",
+    "states": {
+      "inSync": "Synchron",
+      "missing": "Fehlt",
+      "error": "Nicht lesbar"
+    },
+    "showDetails": "Details",
+    "hideDetails": "Ausblenden",
+    "missingObject": "Das Objekt existiert nicht im Cluster.",
+    "changesLabel": "Felder, die vom Manifest abweichen"
+  },
+  "page": {
+    "title": "Namespaces vergleichen",
+    "hint": "Objekte nur auf einer Seite, abweichende und gleiche Objekte, Art für Art; höchstens {{max}} Objekte einer Art pro Seite.",
+    "left": "Links",
+    "right": "Rechts",
+    "kinds": "Arten",
+    "result": "Vergleich",
+    "filter": "Anzeigen",
+    "objects": "Objekte",
+    "kind": "Art",
+    "state": "Zustand",
+    "nothing": "Nichts anzuzeigen.",
+    "failedLeft": "{{kind}} kann links nicht aufgelistet werden: {{message}}",
+    "failedRight": "{{kind}} kann rechts nicht aufgelistet werden: {{message}}",
+    "truncated": "Einige Arten haben auf einer Seite mehr als {{max}} Objekte: Der Rest wird nicht verglichen.",
+    "secretsFailed": "Die Werte der Secrets können nicht verglichen werden: {{message}}",
+    "secretsTruncated": "Ein Namespace hat mehr als {{max}} Secrets: Die Werte der übrigen werden nicht verglichen."
+  },
+  "buckets": {
+    "onlyLeft": "Nur links ({{count}})",
+    "onlyRight": "Nur rechts ({{count}})",
+    "differ": "Abweichend ({{count}})",
+    "same": "Gleich ({{count}})"
+  },
+  "states": {
+    "onlyLeft": "Nur links",
+    "onlyRight": "Nur rechts",
+    "differ": "Abweichend",
+    "same": "Gleich"
+  }
+}

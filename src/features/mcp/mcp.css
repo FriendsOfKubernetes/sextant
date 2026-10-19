@@ -210,3 +210,8 @@
   color: var(--color-text-muted);
   font-size: 12px;
 }
+
+/* "Allow" right after a request appeared: ignores the keyboard for a second (#158). */
+.mcp-confirm__allow--arming {
+  opacity: 0.6;
+}

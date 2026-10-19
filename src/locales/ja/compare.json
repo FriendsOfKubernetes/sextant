@@ -1,0 +1,124 @@
+{
+  "action": "比較…",
+  "sidebar": "namespace の比較",
+  "loading": "比較中…",
+  "dialog": {
+    "title": "{{kind}} {{name}} の比較",
+    "with": "比較対象",
+    "modes": {
+      "object": "別のオブジェクト",
+      "lastApplied": "最後に適用された構成",
+      "helm": "所属する Helm リリースのマニフェスト"
+    },
+    "unavailable": {
+      "lastApplied": "このオブジェクトには最後に適用された構成がありません。kubectl apply で作成も変更もされていません。",
+      "helm": "このオブジェクトは Helm リリースに属していません。"
+    },
+    "compare": "比較"
+  },
+  "target": {
+    "cluster": "クラスター",
+    "namespace": "Namespace",
+    "name": "名前",
+    "notConnected": "未接続",
+    "connect": "接続",
+    "connecting": "接続中…",
+    "suggestions": "一致するオブジェクト"
+  },
+  "side": {
+    "live": "現在",
+    "lastApplied": "最後に適用",
+    "manifest": "Helm マニフェスト"
+  },
+  "options": {
+    "hideDefaults": "既定値を隠す",
+    "hideDefaultsHint": "マニフェストが設定しないときに API サーバーが埋めるフィールドと、割り当てられたクラスター IP を、その値のままであれば表示しません。",
+    "ignoreTitle": "{{kind}} の無視するパス:",
+    "ignoreNone": "なし",
+    "ignoreRemove": "{{path}} の無視をやめる",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "無視するパス",
+    "ignoreAddButton": "無視",
+    "ignoreInvalid": "パスは / で始まり、/ で区切ったキーを並べます。* は任意のキーまたはリスト項目を表します (例: /metadata/labels/team、/spec/template/spec/containers/*/image)。",
+    "ignoreFull": "種類ごとに最大 {{max}} 個のパスです。"
+  },
+  "diff": {
+    "same": "差分はありません。",
+    "changes_other": "{{count}} 個のフィールドが異なります。",
+    "field": "フィールド",
+    "notSet": "未設定"
+  },
+  "secret": {
+    "hint": "値は Sextant の内部で SHA-256 ハッシュによって比較され、「値を表示」をクリックするまでウィンドウには読み込まれません。",
+    "label": "Secret のキー",
+    "key": "キー",
+    "state": "比較結果",
+    "values": "値",
+    "equal": "同じ値",
+    "different": "異なる値",
+    "onlyLeft": "左側のみ",
+    "onlyRight": "右側のみ",
+    "noKeys": "どちらの側にもキーがありません。",
+    "show": "値を表示",
+    "hide": "値を隠す"
+  },
+  "result": {
+    "sameObject": "これはこのオブジェクト自身です。別のクラスター、namespace、名前を選択してください。",
+    "notFound": "そこには {{kind}} {{name}} がありません。",
+    "noDrift": "現在のオブジェクトでは、最後に適用された構成のフィールドはすべて変わっていません。",
+    "drift_other": "{{count}} 個のフィールドが最後に適用された構成と異なります。",
+    "driftLabel": "最後に適用された構成と異なるフィールド",
+    "notInRelease": "Helm リリース {{name}} のマニフェストにはこのオブジェクトがありません。",
+    "showRelease": "Helm リリース {{name}} 全体を確認",
+    "hideRelease": "リリースを隠す"
+  },
+  "drift": {
+    "release": "{{namespace}} の Helm リリース {{name}}、リビジョン {{revision}}",
+    "unreadable_other": "マニフェストの {{count}} 個のドキュメントは読み取れないため比較されません。",
+    "truncated_other": "ほかに {{count}} 個のオブジェクトは比較されません。",
+    "objectsLabel": "リリースのオブジェクト",
+    "object": "オブジェクト",
+    "state": "状態",
+    "details": "詳細",
+    "drifted_other": "{{count}} 件の差分",
+    "states": {
+      "inSync": "一致",
+      "missing": "なし",
+      "error": "読み取り不可"
+    },
+    "showDetails": "詳細",
+    "hideDetails": "隠す",
+    "missingObject": "このオブジェクトはクラスターに存在しません。",
+    "changesLabel": "マニフェストと異なるフィールド"
+  },
+  "page": {
+    "title": "namespace の比較",
+    "hint": "片側にだけあるオブジェクト、異なるオブジェクト、同じオブジェクトを種類ごとに表示します。各側で 1 種類につき最大 {{max}} 個です。",
+    "left": "左",
+    "right": "右",
+    "kinds": "種類",
+    "result": "比較結果",
+    "filter": "表示",
+    "objects": "オブジェクト",
+    "kind": "種類",
+    "state": "状態",
+    "nothing": "表示するものはありません。",
+    "failedLeft": "左側の {{kind}} を一覧できません: {{message}}",
+    "failedRight": "右側の {{kind}} を一覧できません: {{message}}",
+    "truncated": "一部の種類は片側に {{max}} 個を超えるオブジェクトがあり、残りは比較されません。",
+    "secretsFailed": "Secret の値を比較できません: {{message}}",
+    "secretsTruncated": "ある namespace に {{max}} 個を超える Secret があり、残りの値は比較されません。"
+  },
+  "buckets": {
+    "onlyLeft": "左側のみ ({{count}})",
+    "onlyRight": "右側のみ ({{count}})",
+    "differ": "異なる ({{count}})",
+    "same": "同じ ({{count}})"
+  },
+  "states": {
+    "onlyLeft": "左側のみ",
+    "onlyRight": "右側のみ",
+    "differ": "異なる",
+    "same": "同じ"
+  }
+}

@@ -46,6 +46,7 @@ export function defaultAppSettings(): AppSettings {
     workspaces: [],
     activeWorkspace: null,
     snippets: [],
+    compare: { ignorePaths: {} },
   };
 }
 

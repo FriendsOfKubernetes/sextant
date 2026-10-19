@@ -26,6 +26,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "Malha de serviços",
     "security": "Segurança",
     "credentials": "Credenciais",
     "disk": "Disco quase cheio",
@@ -43,7 +44,14 @@
     "securityBaseline_many": "{{count}} de violações do Pod Security Baseline: {{fields}}",
     "securityBaseline_other": "{{count}} violações do Pod Security Baseline: {{fields}}",
     "diskUsage": "{{percent}} do espaço usado ({{used}} de {{capacity}})",
-    "inodeUsage": "{{percent}} dos inodes usados ({{used}} de {{total}})"
+    "inodeUsage": "{{percent}} dos inodes usados ({{used}} de {{total}})",
+    "meshUnknownHost": "Envia para {{host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
+    "meshMissingDestinationRule": "Envia para o subconjunto {{subset}} de {{host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
+    "meshMissingSubset": "Envia para o subconjunto {{subset}} de {{host}}, que a regra de destino {{rule}} não define: o proxy responde 503.",
+    "meshMissingGateway": "Vinculado ao gateway {{gateway}}, que não existe.",
+    "meshTlsConflict": "Define o modo TLS {{mode}} para {{host}}, cujas cargas de trabalho só aceitam o mTLS do Istio (STRICT): as chamadas falham. Use ISTIO_MUTUAL.",
+    "meshConflictingVirtualService": "O host {{host}} em {{gateway}} já é ocupado pelo serviço virtual mais antigo {{other}}: as rotas deste não são alcançadas.",
+    "meshInvalidVirtualService": "Tem o host * estando vinculado aos sidecars (mesh): o Istio o rejeita, então nenhuma de suas rotas é usada."
   },
   "showDisk": "Disco quase cheio"
 }

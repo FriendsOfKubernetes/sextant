@@ -238,7 +238,9 @@ function HistoryTable({
           <th>{t("helm:columns.chart")}</th>
           <th>{t("helm:columns.appVersion")}</th>
           <th>{t("helm:columns.updated")}</th>
-          <th />
+          <th>
+            <span className="visually-hidden">{t("resources:table.actions")}</span>
+          </th>
         </tr>
       </thead>
       <tbody>

@@ -4,40 +4,35 @@
 // most every `FLUSH_MS`: twenty kinds batching every 250 ms each would otherwise rebuild the graph many times per
 // batch window. A cluster whose connection comes or goes loses its watches at once (the backend closes them without a
 // word) and `epochOf` moves on, so the views acquire anew — the same rule as the problems store.
+// The watches themselves live in the app-wide registry (`src/api/watchRegistry.ts`, #157), so a table and the map
+// asking for the same list share one stream; this module adds the linger, the flushed notifications of its own
+// watches and the following of connections.
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import {
-  api,
-  applyWatchUpdate,
-  openStream,
-  toApiError,
+  acquireWatch as acquireShared,
+  dropClusterWatches,
+  resetWatchRegistry,
+  subscribeWatchKey,
+  watchEpochOf,
+  watchHolders,
+  watchKey,
+  watchStateOf,
   type ClusterId,
   type WatchSpec,
   type WatchState,
-  type WatchUpdate,
 } from "../../api";
-import { reportWatchUpdate } from "../../api/watchObservers";
 import { useClustersStore } from "../clusters/clustersStore";
 
 export const LINGER_MS = 5000;
 export const FLUSH_MS = 100;
 let linger = LINGER_MS;
 
-const LOADING: WatchState = Object.freeze({ items: new Map(), status: "loading" }) as WatchState;
-
-interface Entry {
-  clusterId: ClusterId;
-  state: WatchState;
-  refs: number;
-  linger?: ReturnType<typeof setTimeout>;
-  stop: () => void;
-}
-
-const entries = new Map<string, Entry>();
 const listeners = new Set<() => void>();
 let version = 0;
 let flush: ReturnType<typeof setTimeout> | undefined;
-const epochs = new Map<ClusterId, number>();
 const connected = new Map<ClusterId, boolean>();
+/** Keys of the watches this module asked for, with how many of its holders hold each now. */
+const mine = new Map<string, number>();
 let unfollow: (() => void) | undefined;
 
 function notify(now = false): void {
@@ -52,13 +47,7 @@ function notify(now = false): void {
 }
 
 function dropCluster(clusterId: ClusterId): void {
-  for (const [key, entry] of [...entries]) {
-    if (entry.clusterId !== clusterId) continue;
-    if (entry.linger) clearTimeout(entry.linger);
-    entries.delete(key);
-    entry.stop();
-  }
-  epochs.set(clusterId, epochOf(clusterId) + 1);
+  dropClusterWatches(clusterId);
   notify(true);
 }
 
@@ -79,7 +68,7 @@ function followConnections(): void {
 }
 
 export function epochOf(clusterId: ClusterId): number {
-  return epochs.get(clusterId) ?? 0;
+  return watchEpochOf(clusterId);
 }
 
 export function specKey(clusterId: ClusterId, spec: WatchSpec): string {
@@ -89,52 +78,23 @@ export function specKey(clusterId: ClusterId, spec: WatchSpec): string {
 /** Starts (or shares) the watch; the returned function lets go of it. */
 export function acquireWatch(clusterId: ClusterId, spec: WatchSpec): () => void {
   followConnections();
-  const key = specKey(clusterId, spec);
-  let entry = entries.get(key);
-  if (!entry) {
-    const created: Entry = { clusterId, state: LOADING, refs: 0, stop: () => undefined };
-    entries.set(key, created);
-    created.stop = openStream<WatchUpdate>({
-      start: (id, channel) => api.resources.watchStart(clusterId, spec, id, channel),
-      stop: api.resources.watchStop,
-      onEvent: (update) => {
-        if (entries.get(key) !== created) return;
-        reportWatchUpdate(clusterId, spec, update);
-        const next = applyWatchUpdate(created.state, update);
-        if (next === created.state) return;
-        created.state = next;
-        notify();
-      },
-      onStartError: (err) => {
-        if (entries.get(key) !== created) return;
-        created.state = { items: new Map(), status: "error", error: toApiError(err) };
-        notify();
-      },
-    });
-    entry = created;
-  }
-  const held = entry;
-  if (held.linger) {
-    clearTimeout(held.linger);
-    held.linger = undefined;
-  }
-  held.refs++;
+  // The views hear of changes of their own watches only (flushed), not of every table's.
+  const key = watchKey(clusterId, spec);
+  mine.set(key, (mine.get(key) ?? 0) + 1);
+  const unsubscribe = subscribeWatchKey(key, () => notify());
+  const release = acquireShared(clusterId, spec, { linger });
   let released = false;
   return () => {
     if (released) return;
     released = true;
-    held.refs--;
-    if (held.refs > 0) return;
-    held.linger = setTimeout(() => {
-      if (entries.get(key) !== held || held.refs > 0) return;
-      entries.delete(key);
-      held.stop();
-    }, linger);
+    mine.set(key, (mine.get(key) ?? 1) - 1);
+    unsubscribe();
+    release();
   };
 }
 
 export function watchState(clusterId: ClusterId, spec: WatchSpec): WatchState {
-  return entries.get(specKey(clusterId, spec))?.state ?? LOADING;
+  return watchStateOf(clusterId, spec);
 }
 
 function subscribe(listener: () => void): () => void {
@@ -144,9 +104,23 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-/** How many watches are open (tests). */
+/**
+ * Calls `listener` after the states of the shared watches change (flushed as for the views) or a cluster's watches
+ * are dropped: for a store outside React (the service mesh analysis, #155). Returns the unsubscribe function.
+ */
+export function subscribeSharedWatches(listener: () => void): () => void {
+  return subscribe(listener);
+}
+
+/** How many of the watches this module asked for are open: held by its views, or lingering after them (tests). */
 export function openWatchCount(): number {
-  return entries.size;
+  let open = 0;
+  for (const [key, refs] of [...mine]) {
+    const holders = watchHolders(key);
+    if (holders === null) mine.delete(key);
+    else if (refs > 0 || holders === 0) open++;
+  }
+  return open;
 }
 
 /**
@@ -173,16 +147,12 @@ export function setWatchLinger(ms: number | null): void {
 
 /** Closes every watch and forgets them (tests). */
 export function resetSharedWatches(): void {
-  for (const entry of entries.values()) {
-    if (entry.linger) clearTimeout(entry.linger);
-    entry.stop();
-  }
-  entries.clear();
+  resetWatchRegistry();
+  mine.clear();
   if (flush) clearTimeout(flush);
   flush = undefined;
   unfollow?.();
   unfollow = undefined;
-  epochs.clear();
   connected.clear();
   version++;
 }

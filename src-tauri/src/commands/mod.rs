@@ -8,6 +8,7 @@ pub mod argocd;
 pub mod cleanup;
 pub mod cloud;
 pub mod clusters;
+pub mod compare;
 pub mod cost;
 pub mod files;
 pub mod gitops_install;

@@ -14,6 +14,8 @@ import type { ScanApi } from "./generated/ScanApi";
 import type { UpgradeScan } from "./generated/UpgradeScan";
 import type { KindSchema } from "./generated/KindSchema";
 import type { KindRef } from "./generated/KindRef";
+import type { ObjectCount } from "./generated/ObjectCount";
+import type { WatchOptions } from "./generated/WatchOptions";
 import type { ObjectManagers } from "./generated/ObjectManagers";
 import type { PartialHistory } from "./generated/PartialHistory";
 import type { AccessRule } from "./generated/AccessRule";
@@ -26,6 +28,12 @@ import type { DryRunMode } from "./generated/DryRunMode";
 import type { DeletePreconditions } from "./generated/DeletePreconditions";
 import type { KindSample } from "./generated/KindSample";
 import type { ClusterCheck } from "./generated/ClusterCheck";
+import type { CompareKindList } from "./generated/CompareKindList";
+import type { HelmDrift } from "./generated/HelmDrift";
+import type { NamespaceSide } from "./generated/NamespaceSide";
+import type { SecretComparison } from "./generated/SecretComparison";
+import type { SecretNamespaceComparison } from "./generated/SecretNamespaceComparison";
+import type { SecretSide } from "./generated/SecretSide";
 import type { NamedObject } from "./generated/NamedObject";
 import type { DryRunResult } from "./generated/DryRunResult";
 import type { HelmManifestDiff } from "./generated/HelmManifestDiff";
@@ -144,11 +152,26 @@ export const streams = {
 };
 
 export const resources = {
-  /** Starts a watch under `streamId`; updates arrive through `onEvent`. */
-  watchStart: (clusterId: ClusterId, spec: WatchSpec, streamId: string, onEvent: StreamChannel<WatchUpdate>) =>
-    call<void>("watch_start", { clusterId, spec, streamId, onEvent }),
+  /**
+   * Starts a watch under `streamId`; updates arrive through `onEvent`. `options` (the tables, #157): the first list in
+   * parts (`snapshotPart` … `snapshotEnd`) and a cap on the objects kept (`capped`); left out, one `snapshot`.
+   */
+  watchStart: (
+    clusterId: ClusterId,
+    spec: WatchSpec,
+    streamId: string,
+    onEvent: StreamChannel<WatchUpdate>,
+    options?: WatchOptions,
+  ) =>
+    call<void>("watch_start", options ? { clusterId, spec, streamId, onEvent, options } : { clusterId, spec, streamId, onEvent }),
   watchStop: (subscriptionId: string) => call<void>("watch_stop", { subscriptionId }),
   get: (clusterId: ClusterId, ref: ObjectRef) => call<KubeObject>("resource_get", { clusterId, ref }),
+  /**
+   * How many objects of `kind` there are in `namespaces` (`null` = all), from metadata-only lists of one object (the
+   * sidebar counts, the check before a table watches every namespace); `exact: false` = at least `count`.
+   */
+  count: (clusterId: ClusterId, kind: KindRef, namespaces: string[] | null, labelSelector: string | null = null) =>
+    call<ObjectCount>("resource_count", { clusterId, kind, namespaces, labelSelector }),
   /** The whole object, Secret values included (only for editing a Secret). */
   getFull: (clusterId: ClusterId, ref: ObjectRef) => call<KubeObject>("resource_get_full", { clusterId, ref }),
   /** One value of a Secret, decoded as text. */
@@ -471,6 +494,24 @@ export const cleanup = {
    */
   clusterCheck: (clusterId: ClusterId, kinds: KindRef[], targets: NamedObject[]) =>
     call<ClusterCheck>("cleanup_cluster_check", { clusterId, kinds, targets }),
+};
+
+/**
+ * Comparing objects (#156), read-only and window only. A cluster that is not connected is a `notFound` error: nothing
+ * here connects one.
+ */
+export const compare = {
+  /** The objects of `kinds` (at most 40) in `namespace`, at most `limit` (1–500) per kind, without `status`. */
+  list: (clusterId: ClusterId, namespace: string, kinds: KindRef[], limit: number) =>
+    call<CompareKindList[]>("compare_list", { clusterId, namespace, kinds, limit }),
+  /** Two Secrets by key names and whether each value is the same (hashed in the core; no value or hash comes back). */
+  secrets: (left: SecretSide, right: SecretSide) => call<SecretComparison>("compare_secrets", { left, right }),
+  /** The Secrets with the same name in two namespaces, compared the same way (at most 500 per namespace). */
+  secretNamespaces: (left: NamespaceSide, right: NamespaceSide) =>
+    call<SecretNamespaceComparison>("compare_secret_namespaces", { left, right }),
+  /** A Helm release's stored manifest next to the live objects; Secrets by key names and value hashes only. */
+  helmDrift: (clusterId: ClusterId, namespace: string, name: string) =>
+    call<HelmDrift>("compare_helm_drift", { clusterId, namespace, name }),
 };
 
 /**

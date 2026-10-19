@@ -53,6 +53,7 @@
 
 .palette__input:focus {
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-focus);
 }
 
 .palette__list {

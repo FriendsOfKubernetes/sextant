@@ -1,0 +1,26 @@
+{
+  "table": {
+    "loadingMore_one": "Yükleniyor… şimdiye kadar {{count}}",
+    "loadingMore_other": "Yükleniyor… şimdiye kadar {{count}}",
+    "updating": "Güncelleniyor…",
+    "capped_one": "{{count}} nesnenin ilk {{shown}} tanesi gösteriliyor. Geri kalanını görmek için listeyi namespace veya label ile daraltın.",
+    "capped_other": "{{count}} nesnenin ilk {{shown}} tanesi gösteriliyor. Geri kalanını görmek için listeyi namespace veya label ile daraltın."
+  },
+  "guard": {
+    "title_one": "{{kind}}: tüm namespace'lerde yaklaşık {{count}} nesne",
+    "title_other": "{{kind}}: tüm namespace'lerde yaklaşık {{count}} nesne",
+    "titleAtLeast_one": "{{kind}}: tüm namespace'lerde en az {{count}} nesne",
+    "titleAtLeast_other": "{{kind}}: tüm namespace'lerde en az {{count}} nesne",
+    "text": "Hepsini göstermek her nesnenin indirilmesini gerektirir ve zaman alabilir; tablo ilk {{max}} tanesini tutar. Daha azını görmek için namespace seçin veya bir label selector (app=web) yazın ya da yine de gösterin.",
+    "showAnyway": "Yine de göster"
+  },
+  "sidebar": {
+    "count_one": "{{count}} nesne",
+    "count_other": "{{count}} nesne",
+    "countCapped": "{{max}} nesneden fazla"
+  },
+  "palette": {
+    "capped_one": "{{kind}}: {{count}} nesnenin ilk {{shown}} tanesinde aranıyor",
+    "capped_other": "{{kind}}: {{count}} nesnenin ilk {{shown}} tanesinde aranıyor"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "table": {
+    "loadingMore_other": "正在加载… 目前 {{count}} 个",
+    "updating": "正在更新…",
+    "capped_other": "显示 {{count}} 个对象中的前 {{shown}} 个。按 namespace 或 label 缩小列表即可查看其余对象。"
+  },
+  "guard": {
+    "title_other": "{{kind}}：所有 namespace 中约有 {{count}} 个对象",
+    "titleAtLeast_other": "{{kind}}：所有 namespace 中至少有 {{count}} 个对象",
+    "text": "全部显示需要下载每个对象，可能需要一段时间；表格只保留前 {{max}} 个。可以选择 namespace 或输入 label selector（app=web）来减少对象，也可以仍然全部显示。",
+    "showAnyway": "仍然显示"
+  },
+  "sidebar": {
+    "count_other": "{{count}} 个对象",
+    "countCapped": "超过 {{max}} 个对象"
+  },
+  "palette": {
+    "capped_other": "{{kind}}：仅搜索 {{count}} 个对象中的前 {{shown}} 个"
+  }
+}

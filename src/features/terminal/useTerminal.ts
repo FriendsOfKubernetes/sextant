@@ -13,6 +13,7 @@ import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { api, openStream, toApiError, type ApiError, type StreamChannel, type TermPayload } from "../../api";
+import { i18n } from "../../i18n";
 import { isControl, isInvisible } from "./text";
 
 /** Starts a session of `cols`×`rows` under `streamId`, its output sent through `onEvent` (created before the start). */
@@ -105,11 +106,18 @@ export function useTerminal(
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.attachCustomKeyEventHandler((e) => {
+      // The one key the terminal never takes: it moves the focus out (a shell gets everything else, Tab included).
+      if (isLeaveTerminalKey(e)) {
+        e.preventDefault();
+        leaveTerminal(el);
+        return false;
+      }
       const onKey = optionsRef.current.onKey;
       if (onKey && !onKey(e)) return false;
       return clipboardKeys(term, e);
     });
     term.open(el);
+    const hint = describeLeaveKey(el, term.textarea);
     fitRef.current = fit;
     setTerminal(term);
 
@@ -121,6 +129,7 @@ export function useTerminal(
 
     return () => {
       themeObserver.disconnect();
+      hint();
       fitRef.current = null;
       setTerminal(null);
       term.dispose();
@@ -312,6 +321,48 @@ export function printable(text: string): string {
     out += ch;
   }
   return out.trim();
+}
+
+/**
+ * Ctrl+Shift+E leaves the terminal (#158): xterm takes every other key, Tab and Escape included, as the shell needs
+ * them. A shell never sees Ctrl+Shift+E apart from Ctrl+E, which still reaches it. The key is matched by the letter it
+ * types (Dvorak's E is elsewhere), and by the physical key only when the layout types no Latin letter there (Cyrillic).
+ */
+export function isLeaveTerminalKey(
+  e: Pick<KeyboardEvent, "type" | "key" | "code" | "ctrlKey" | "shiftKey" | "altKey" | "metaKey">,
+): boolean {
+  if (e.type !== "keydown" || !e.ctrlKey || !e.shiftKey || e.altKey || e.metaKey) return false;
+  return /^[a-z]$/i.test(e.key) ? e.key.toLowerCase() === "e" : e.code === "KeyE";
+}
+
+/** Moves the focus from the terminal in `el` to its dock tab (or, outside the dock, out of the terminal). */
+function leaveTerminal(el: HTMLElement): void {
+  const panel = el.closest('[role="tabpanel"]');
+  const tabId = panel?.getAttribute("aria-labelledby");
+  const tab = tabId ? document.getElementById(tabId) : null;
+  if (tab) tab.focus();
+  else (document.activeElement as HTMLElement | null)?.blur();
+}
+
+let hintIds = 0;
+
+/** Tells screen readers about the leave key when the terminal's input is focused; returns the cleanup. */
+function describeLeaveKey(el: HTMLElement, input: HTMLTextAreaElement | undefined): () => void {
+  if (!input) return () => undefined;
+  const hint = document.createElement("span");
+  hint.id = `terminal-leave-hint-${++hintIds}`;
+  hint.className = "visually-hidden";
+  const update = () => {
+    hint.textContent = i18n.t("a11y:terminal.leaveHint");
+  };
+  update();
+  el.appendChild(hint);
+  input.setAttribute("aria-describedby", hint.id);
+  i18n.on("languageChanged", update);
+  return () => {
+    i18n.off("languageChanged", update);
+    hint.remove();
+  };
 }
 
 /** Ctrl+Shift+C copies the selection, Ctrl+Shift+V pastes (the browser's own paste, handled by xterm). */

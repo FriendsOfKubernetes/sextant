@@ -1,0 +1,20 @@
+{
+  "table": {
+    "loadingMore_other": "불러오는 중… 지금까지 {{count}}개",
+    "updating": "업데이트하는 중…",
+    "capped_other": "개체 {{count}}개 중 처음 {{shown}}개를 표시합니다. 나머지를 보려면 namespace 또는 label로 목록을 좁히세요."
+  },
+  "guard": {
+    "title_other": "{{kind}}: 모든 namespace에 개체 약 {{count}}개",
+    "titleAtLeast_other": "{{kind}}: 모든 namespace에 개체 {{count}}개 이상",
+    "text": "모두 표시하려면 모든 개체를 내려받아야 하므로 시간이 걸릴 수 있습니다. 표에는 처음 {{max}}개만 유지됩니다. 개수를 줄이려면 namespace를 선택하거나 label selector(app=web)를 입력하고, 아니면 그대로 표시하세요.",
+    "showAnyway": "그래도 표시"
+  },
+  "sidebar": {
+    "count_other": "개체 {{count}}개",
+    "countCapped": "개체 {{max}}개 초과"
+  },
+  "palette": {
+    "capped_other": "{{kind}}: 개체 {{count}}개 중 처음 {{shown}}개를 검색합니다"
+  }
+}

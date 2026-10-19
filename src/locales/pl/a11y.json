@@ -1,0 +1,14 @@
+{
+  "dock": {
+    "tabs": "Karty panelu dolnego"
+  },
+  "terminal": {
+    "leaveHint": "Naciśnij Ctrl+Shift+E, aby przenieść fokus poza terminal."
+  },
+  "logs": {
+    "newLines_one": "{{count}} nowy wiersz",
+    "newLines_few": "{{count}} nowe wiersze",
+    "newLines_many": "{{count}} nowych wierszy",
+    "newLines_other": "{{count}} nowego wiersza"
+  }
+}

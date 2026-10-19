@@ -244,6 +244,8 @@ export const THEME_TOKENS: readonly string[] = [
   "--color-danger",
   "--color-warning",
   "--color-success",
+  "--color-focus",
+  "--color-on-status",
   "--shadow-panel",
   "--control-height",
   "--control-height-compact",

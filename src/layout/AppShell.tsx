@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DOCK_MAX_HEIGHT,
@@ -8,7 +8,7 @@ import {
   useAppStore,
   useClusterView,
 } from "../app/store";
-import { EmptyState, Icon } from "../components";
+import { EmptyState, Icon, useFocusTrap } from "../components";
 import { ExtensionsHost } from "../extensions/ExtensionsHost";
 import { AboutHost } from "../features/about/AboutHost";
 // The file, not the feature's index: the shell mounts the dialog, the feature registers the rest.
@@ -139,6 +139,8 @@ function NarrowMenu({ clusterId, children }: { clusterId: string | null; childre
   const { t } = useTranslation();
   const drawerId = useId();
   const [open, setOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(drawerRef, open);
   const { view } = useClusterView(clusterId);
 
   useEffect(() => setOpen(false), [clusterId, view]);
@@ -171,7 +173,9 @@ function NarrowMenu({ clusterId, children }: { clusterId: string | null; childre
       </header>
       {open && <div className="drawer-backdrop" aria-hidden="true" onClick={() => setOpen(false)} />}
       <div
+        ref={drawerRef}
         id={drawerId}
+        tabIndex={-1}
         className={open ? "drawer drawer--open" : "drawer"}
         data-open={open}
         role={open ? "dialog" : undefined}

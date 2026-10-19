@@ -1,0 +1,525 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "要求路由"
+  },
+  "problemsCount_other": "{{count}} 個 Istio 設定問題",
+  "loading": "正在載入網格設定…",
+  "yes": "是",
+  "no": "否",
+  "columns": {
+    "hosts": "主機",
+    "gateways": "閘道",
+    "routes": "路由",
+    "host": "主機",
+    "subsets": "子集",
+    "tlsMode": "TLS 模式",
+    "servers": "伺服器",
+    "location": "位置",
+    "resolution": "解析方式",
+    "appliesTo": "適用於",
+    "egressHosts": "輸出主機",
+    "address": "位址",
+    "serviceAccount": "Service account",
+    "mtlsMode": "mTLS 模式",
+    "issuers": "簽發者",
+    "action": "動作",
+    "rules": "規則",
+    "port": "連接埠",
+    "proxyProtocol": "通訊協定",
+    "podSelector": "Pod 選取器",
+    "parents": "父項",
+    "target": "目標",
+    "authentications": "驗證",
+    "server": "伺服器",
+    "identities": "身分",
+    "networks": "網路",
+    "name": "名稱",
+    "labels": "標籤",
+    "protocol": "通訊協定",
+    "issuer": "簽發者",
+    "audiences": "對象",
+    "keys": "金鑰",
+    "condition": "條件",
+    "retryable": "重試",
+    "timeout": "逾時",
+    "match": "比對",
+    "destinations": "目的地",
+    "destination": "目的地",
+    "weight": "權重",
+    "subset": "子集",
+    "destinationRule": "目的地規則",
+    "pods": "Pod",
+    "policy": "原則",
+    "matches": "相符",
+    "notEvaluated": "未評估"
+  },
+  "fields": {
+    "hosts": "主機",
+    "gateways": "閘道",
+    "exportTo": "可見於",
+    "host": "主機",
+    "tlsMode": "TLS 模式",
+    "loadBalancer": "負載平衡",
+    "workloadSelector": "用戶端",
+    "selector": "閘道 Pod",
+    "location": "位置",
+    "resolution": "解析方式",
+    "ports": "連接埠",
+    "addresses": "位址",
+    "appliesTo": "適用於",
+    "egressHosts": "輸出主機",
+    "outboundTrafficPolicy": "輸出流量",
+    "address": "位址",
+    "labels": "標籤",
+    "serviceAccount": "Service account",
+    "network": "網路",
+    "tracing": "追蹤",
+    "metrics": "指標",
+    "accessLogging": "存取記錄",
+    "mtlsMode": "mTLS 模式",
+    "action": "動作",
+    "provider": "提供者",
+    "podSelector": "Pod 選取器",
+    "port": "連接埠",
+    "proxyProtocol": "通訊協定",
+    "accessPolicy": "預設存取",
+    "server": "伺服器",
+    "target": "目標",
+    "requiredAuthentications": "必要的驗證",
+    "identities": "身分",
+    "identityRefs": "身分參照",
+    "networks": "網路",
+    "parents": "父項",
+    "hostnames": "主機名稱",
+    "revision": "修訂版本",
+    "injection": "Sidecar 注入",
+    "proxyImage": "代理映像檔",
+    "linkerdInject": "代理注入",
+    "controlPlane": "控制平面",
+    "proxyVersion": "代理版本"
+  },
+  "blocks": {
+    "virtualService": "虛擬服務",
+    "httpRoutes": "HTTP 路由",
+    "l4Routes": "TCP 與 TLS 路由",
+    "destinationRule": "目的地規則",
+    "portTls": "依連接埠的 TLS",
+    "subsets": "子集",
+    "gateway": "閘道",
+    "servers": "伺服器",
+    "boundVirtualServices": "繫結到此閘道的虛擬服務",
+    "serviceEntry": "服務項目",
+    "sidecar": "Sidecar",
+    "workloadEntry": "工作負載項目",
+    "telemetry": "遙測",
+    "peerAuthentication": "對等驗證",
+    "portMtls": "依連接埠的 mTLS",
+    "requestAuthentication": "要求驗證",
+    "authorizationPolicy": "授權原則",
+    "istioMembership": "Istio",
+    "mtls": "Istio mTLS",
+    "whoMayCall": "誰可以呼叫此工作負載？",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "服務設定檔",
+    "profileRoutes": "路由",
+    "server": "伺服器",
+    "serverAuthorizations": "此伺服器的授權",
+    "serverAuthorization": "伺服器授權",
+    "linkerdAuthorizationPolicy": "授權原則",
+    "meshTlsAuthentication": "Mesh TLS 驗證",
+    "networkAuthentication": "網路驗證",
+    "linkerdHttpRoute": "HTTP 路由"
+  },
+  "exportTo": {
+    "everywhere": "所有 namespace"
+  },
+  "vs": {
+    "delegate": "無：這是委派，只供參照它的其他虛擬服務的路由使用",
+    "meshGateway": "mesh（Sidecar）"
+  },
+  "scope": {
+    "mesh": "網格中的所有工作負載",
+    "namespace": "namespace 中的所有工作負載",
+    "targetRef": "Gateway 或 waypoint（targetRef）"
+  },
+  "route": {
+    "title": "路由 {{n}}",
+    "titleNamed": "路由 {{n}}（{{name}}）",
+    "order": "路由由上而下依序嘗試；第一個相符的路由會接收要求。",
+    "when": "條件",
+    "then": "動作",
+    "everyRequest": "所有要求",
+    "everyConnection": "所有連線",
+    "alternative": "替代方案 {{n}}：",
+    "to": "將 {{percent}}% 傳送到 {{host}}",
+    "toSubset": "將 {{percent}}% 傳送到 {{host}} 的子集 {{subset}}",
+    "delegate": "將要求交給虛擬服務 {{name}} 的路由",
+    "directResponse": "直接以 HTTP {{status}} 回應，不轉送",
+    "redirect": "重新導向用戶端",
+    "redirectTo": "將用戶端重新導向到 {{target}}",
+    "timeout": "{{timeout}} 後放棄",
+    "noRetries": "永不重試",
+    "retries_other": "最多重試 {{count}} 次",
+    "retriesPerTry_other": "最多重試 {{count}} 次，每次嘗試 {{perTry}}",
+    "retryOn": "在下列情況重試：{{on}}",
+    "faultDelay": "將 {{percent}}% 的要求延遲 {{delay}}（故障注入）",
+    "faultAbort": "讓 {{percent}}% 的要求以 HTTP {{status}} 失敗（故障注入）",
+    "mirror": "將 {{percent}}% 的要求複製到 {{host}}（忽略回應）",
+    "rewriteUri": "將路徑改寫為 {{uri}}",
+    "rewriteAuthority": "將主機改寫為 {{authority}}"
+  },
+  "match": {
+    "uri": {
+      "exact": "路徑為 {{value}}",
+      "prefix": "路徑以 {{value}} 開頭",
+      "regex": "路徑符合規則運算式 {{value}}"
+    },
+    "uriIgnoreCase": {
+      "exact": "路徑為 {{value}}（不分大小寫）",
+      "prefix": "路徑以 {{value}} 開頭（不分大小寫）",
+      "regex": "路徑符合規則運算式 {{value}}（不分大小寫）"
+    },
+    "method": {
+      "exact": "方法為 {{value}}",
+      "prefix": "方法以 {{value}} 開頭",
+      "regex": "方法符合規則運算式 {{value}}"
+    },
+    "scheme": {
+      "exact": "配置為 {{value}}",
+      "prefix": "配置以 {{value}} 開頭",
+      "regex": "配置符合規則運算式 {{value}}"
+    },
+    "authority": {
+      "exact": "主機為 {{value}}",
+      "prefix": "主機以 {{value}} 開頭",
+      "regex": "主機符合規則運算式 {{value}}"
+    },
+    "header": {
+      "exact": "標頭 {{name}} 為 {{value}}",
+      "prefix": "標頭 {{name}} 以 {{value}} 開頭",
+      "regex": "標頭 {{name}} 符合規則運算式 {{value}}"
+    },
+    "query": {
+      "exact": "查詢參數 {{name}} 為 {{value}}",
+      "prefix": "查詢參數 {{name}} 以 {{value}} 開頭",
+      "regex": "查詢參數 {{name}} 符合規則運算式 {{value}}"
+    },
+    "headerPresent": "有標頭 {{name}}",
+    "headerAbsent": "沒有標頭 {{name}}",
+    "headerNot": "標頭 {{name}} 不是 {{value}}",
+    "queryPresent": "有查詢參數 {{name}}",
+    "port": "連接埠為 {{port}}",
+    "sourceLabels": "呼叫端帶有標籤 {{labels}}",
+    "sourceNamespace": "呼叫端位於 namespace {{namespace}}",
+    "gateways": "經由：{{gateways}}"
+  },
+  "l4": {
+    "kind": "類型",
+    "match": "連接埠與 SNI 主機",
+    "destinations": "目的地"
+  },
+  "tls": {
+    "auto": "未設定：目的地有 Sidecar 時，Istio 會自行使用自己的 mTLS",
+    "mode": {
+      "DISABLE": "DISABLE：純文字，無 TLS",
+      "SIMPLE": "SIMPLE：到目的地的 TLS，不含用戶端憑證",
+      "MUTUAL": "MUTUAL：使用規則中用戶端憑證的 TLS",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL：Istio 自己的 mTLS"
+    }
+  },
+  "dr": {
+    "subsetsHint": "子集是目的地中帶有子集標籤的 Pod；路由藉由指定子集在各版本間分配流量。"
+  },
+  "gateway": {
+    "selectorHint": "閘道由帶有這些標籤的 Pod 提供服務（Istio 輸入或輸出閘道）。",
+    "noneBound": "沒有虛擬服務繫結到此閘道：它對所有要求都回應 404。"
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "網格外部",
+      "MESH_INTERNAL": "網格內部"
+    },
+    "resolution": {
+      "NONE": "依原位址",
+      "STATIC": "固定位址",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS（輪替）"
+    }
+  },
+  "sidecar": {
+    "meaning": "限制所選工作負載的 Sidecar 對網格的認識：只能連到列出的輸出主機。",
+    "wholeNamespace": "namespace 中的所有工作負載"
+  },
+  "workloadEntry": {
+    "meaning": "Kubernetes 以外的工作負載（虛擬機器），網格會將其視為帶有這些標籤的 Pod。"
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "只接受 Istio mTLS 連線；純文字呼叫會被拒絕。",
+      "PERMISSIVE": "Istio mTLS 連線與純文字連線都會被接受。",
+      "DISABLE": "Istio mTLS 已關閉：連線為純文字。",
+      "UNSET": "未設定：模式沿用上層（工作負載、namespace、網格；都未設定時為 PERMISSIVE）。"
+    },
+    "precedence": "優先順序：選取該工作負載的原則，其次是 namespace 的原則，最後是根 namespace istio-system 中的網格層級原則。",
+    "source": {
+      "workload": "由針對此工作負載的 PeerAuthentication {{name}} 設定：",
+      "namespace": "由該 namespace 的 PeerAuthentication {{name}} 設定：",
+      "mesh": "由網格層級的 PeerAuthentication {{name}} 設定：",
+      "default": "沒有 PeerAuthentication 設定它：使用 Istio 預設值 PERMISSIVE。"
+    }
+  },
+  "jwt": {
+    "meaning": "帶有無效權杖的要求會被拒絕；沒有權杖的要求會通過，除非有 AuthorizationPolicy 要求要求主體。",
+    "inlineKeys": "規則中的金鑰"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "適用於 namespace {{namespace}} 中符合其選取器的工作負載。",
+      "namespace": "適用於 namespace {{namespace}} 中的所有工作負載。",
+      "mesh": "適用於網格中的所有工作負載：它位於根 namespace {{namespace}}。",
+      "targetRef": "附加到 Gateway 或 waypoint（targetRef），而不是工作負載自己的代理。"
+    },
+    "action": {
+      "ALLOW": "允許符合其某條規則的要求；一旦有 ALLOW 原則適用於某個工作負載，傳往它的其他要求都會被拒絕。",
+      "DENY": "拒絕符合其某條規則的要求，不論 ALLOW 原則為何。",
+      "AUDIT": "只把符合的要求標記到稽核記錄；不允許也不拒絕任何要求。",
+      "CUSTOM": "把符合的要求交給外部授權器 {{provider}}，它可能拒絕這些要求。",
+      "INVALID": "Istio 不接受它的動作：Istio 會拒絕此原則，因此無法判斷它的作用。"
+    },
+    "special": {
+      "allowNothing": "它沒有規則：不允許任何要求，因此傳往這些工作負載的所有要求都會被拒絕。",
+      "noRules": "它沒有規則：不符合任何要求，也沒有作用。",
+      "everything": "它的空規則符合所有要求。"
+    },
+    "order": "Istio 先檢查 CUSTOM 原則，接著是 DENY，最後是 ALLOW。",
+    "rule": "規則 {{n}}",
+    "emptyRule": "所有要求（空規則）。",
+    "valuesExcept": "{{values}}，{{except}} 除外",
+    "anythingExcept": "{{except}} 以外的任何值",
+    "fields": {
+      "principals": "呼叫端（主體）",
+      "notPrincipals": "排除的呼叫端（主體）",
+      "requestPrincipals": "權杖主體",
+      "notRequestPrincipals": "排除的權杖主體",
+      "namespaces": "呼叫端 namespace",
+      "notNamespaces": "排除的呼叫端 namespace",
+      "ipBlocks": "呼叫端 IP",
+      "notIpBlocks": "排除的呼叫端 IP",
+      "remoteIpBlocks": "遠端 IP",
+      "notRemoteIpBlocks": "排除的遠端 IP",
+      "hosts": "主機",
+      "notHosts": "排除的主機",
+      "ports": "連接埠",
+      "notPorts": "排除的連接埠",
+      "methods": "方法",
+      "notMethods": "排除的方法",
+      "paths": "路徑",
+      "notPaths": "排除的路徑",
+      "condition": "當 {{key}}"
+    },
+    "callerHint": "描述呼叫端：留空的項目視為未知，依賴它的原則會顯示為未評估。假設呼叫端在網格中使用 mTLS，並以其在信任網域 cluster.local 中的 namespace 與 service account 識別。",
+    "caller": {
+      "namespace": "呼叫端 namespace",
+      "serviceAccount": "Service account",
+      "method": "方法",
+      "path": "路徑",
+      "port": "連接埠",
+      "ip": "呼叫端 IP",
+      "remoteIp": "遠端 IP（位於代理之後）"
+    },
+    "decision": {
+      "allowed": "允許",
+      "denied": "拒絕",
+      "unknown": "無法判斷",
+      "external": "由外部授權器決定"
+    },
+    "reason": {
+      "noPolicies": "沒有 ALLOW 原則適用於此工作負載，也沒有 DENY 原則相符。",
+      "allowMatched": "ALLOW 原則 {{name}} 的規則 {{rule}} 相符。",
+      "noAllowMatched": "有 ALLOW 原則適用於此工作負載，但都不相符。",
+      "denyMatched": "DENY 原則 {{name}} 的規則 {{rule}} 相符。",
+      "denyMayMatch": "DENY 原則 {{name}} 可能相符：取決於未評估的內容。",
+      "allowMayMatch": "只有 ALLOW 原則 {{name}} 可能放行，而它取決於未評估的內容。",
+      "customMatched": "CUSTOM 原則 {{name}} 相符：由外部授權器決定。",
+      "customMayMatch": "CUSTOM 原則 {{name}} 可能相符：取決於未評估的內容。",
+      "targetRefNotEvaluated": "透過 targetRef 附加的 DENY 或 CUSTOM 原則在此不評估，可能會拒絕要求。",
+      "invalidPolicy": "原則 {{name}} 的動作 Istio 不接受：無法判斷它的作用。"
+    },
+    "match": {
+      "yes": "是",
+      "no": "否",
+      "unknown": "未評估"
+    },
+    "targetRefSkipped": "透過 targetRef 附加到 Gateway 或 waypoint，未評估：",
+    "dryRun": "試執行（istio.io/dry-run）：其決定只會記錄，從不強制執行。",
+    "dryRunAction": "{{action}}（試執行，不強制執行）"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "在 Istio 網格中，帶有 Sidecar 代理。",
+      "nativeSidecar": "在 Istio 網格中，Sidecar 代理以原生 Sidecar（init 容器）方式啟動。",
+      "ambient": "在 Istio 網格中，處於 ambient 模式：沒有 Sidecar，流量由 ztunnel 承載。",
+      "none": "不在 Istio 網格中。",
+      "injectedPods": "它的 Pod 在建立時會取得 Istio Sidecar。",
+      "noInjection": "它的 Pod 不會取得 Istio Sidecar。",
+      "optedOut": "此 Pod 選擇退出網格。",
+      "restart": "Sidecar 注入已開啟，但此 Pod 沒有代理：它是在開啟注入前建立的，或注入器失敗了。重新啟動它即可加入網格。"
+    },
+    "linkerd": {
+      "proxy": "在 Linkerd 網格中：linkerd-proxy 在其旁邊執行。",
+      "nativeProxy": "在 Linkerd 網格中：linkerd-proxy 以原生 Sidecar（init 容器）方式執行。",
+      "none": "不在 Linkerd 網格中。",
+      "injectedPods": "它的 Pod 在建立時會取得 Linkerd 代理。",
+      "noInjection": "它的 Pod 不會取得 Linkerd 代理。",
+      "restart": "代理注入已開啟，但此 Pod 沒有代理：它是在開啟注入前建立的。重新啟動它即可加入網格。",
+      "goldenMetrics": "已安裝 linkerd-viz。Sextant 不讀取其成功率、要求速率與延遲：請用 linkerd viz stat 或 linkerd-viz 儀表板查看。"
+    },
+    "via": {
+      "pod": "已開啟，於 Pod 上設定",
+      "namespace": "已開啟，於 namespace 上設定"
+    },
+    "injectOn": {
+      "pod": "{{value}}，於 Pod 上設定",
+      "namespace": "{{value}}，於 namespace 上設定"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "對 {{host}} 呼叫的路由、重試與逾時。",
+    "retryBudget": "重試預算：每個要求最多 {{ratio}} 個額外要求，每秒至少 {{min}} 次重試，統計期間 {{ttl}}。",
+    "compoundCondition": "多個條件",
+    "serverMeaning": "描述所選 Pod 的一個連接埠。只有其授權允許的用戶端才能呼叫它；沒有授權時由預設存取決定。",
+    "noAuthorizations": "此 namespace 中沒有針對此伺服器的授權：由其預設存取決定誰可以呼叫它。",
+    "allows": "放行：",
+    "client": {
+      "unauthenticated": "任何用戶端，包括沒有 mTLS 的",
+      "unauthenticatedTls": "網格中的任何用戶端，不論身分",
+      "identities": "具有下列身分的網格用戶端：{{values}}",
+      "serviceAccounts": "具有下列 service account 的網格用戶端：{{values}}",
+      "networks": "來自下列網路的用戶端：{{values}}"
+    },
+    "policyMeaning": "放行符合所有必要驗證的用戶端。",
+    "policyNoAuth": "不需要驗證：放行所有用戶端。",
+    "meshTlsMeaning": "出示這些 mesh TLS 身分之一的用戶端。",
+    "networkMeaning": "位址位於這些網路之一的用戶端。",
+    "networkExcept": "{{cidr}}，{{except}} 除外"
+  },
+  "check": {
+    "title": "要求路由",
+    "open": "檢查要求…",
+    "hint": "輸入 URL 並按「檢查」：會依照 Istio 的路由規則找出將處理該要求的虛擬服務、路由、目的地、子集與 Pod。",
+    "notServed": "此叢集不提供 Istio VirtualService 或 DestinationRule。",
+    "result": "要求會去哪裡",
+    "notesTitle": "說明",
+    "alsoConsidered": "也考慮過",
+    "form": {
+      "method": "方法",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "檢查",
+      "invalidUrl": "請輸入含主機的 http:// 或 https:// URL。",
+      "from": "傳送端",
+      "fromMesh": "網格中的工作負載",
+      "fromGateway": "Istio 閘道",
+      "gateway": "閘道",
+      "pickGateway": "選擇閘道",
+      "namespace": "呼叫端 namespace",
+      "labels": "呼叫端標籤",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "不是 key=value 格式：{{labels}}",
+      "headers": "標頭",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_other": "第 {{lines}} 行不是「名稱: 值」格式"
+    },
+    "steps": {
+      "gateway": "閘道",
+      "virtualService": "虛擬服務",
+      "route": "路由",
+      "destinations": "目的地",
+      "answer": "回應"
+    },
+    "outcome": {
+      "routed": "已路由",
+      "defaultRoute": "原樣傳送到服務",
+      "redirected": "已重新導向（{{status}}）",
+      "directResponse": "由代理回應（{{status}}）",
+      "noRoute": "沒有路由：404",
+      "passthrough": "未知主機",
+      "noGatewayServer": "閘道不處理：404",
+      "unknownGateway": "沒有此閘道",
+      "delegateMissing": "找不到委派：404",
+      "l4Only": "只有 TCP 或 TLS 路由",
+      "notEvaluated": "未評估"
+    },
+    "server": "連接埠 {{port}}（{{protocol}}）上為 {{hosts}} 服務的伺服器",
+    "matchedHost": "透過其主機 {{host}} 相符。",
+    "merged": "閘道會合併這些虛擬服務的路由，從最早建立的開始。",
+    "viaDelegate": "經由委派端虛擬服務 {{name}} 到達。",
+    "skipped": {
+      "uri": "已略過 {{vs}} 的路由 {{route}}：路徑不相符。",
+      "scheme": "已略過 {{vs}} 的路由 {{route}}：配置不相符。",
+      "method": "已略過 {{vs}} 的路由 {{route}}：方法不相符。",
+      "authority": "已略過 {{vs}} 的路由 {{route}}：主機不相符。",
+      "headers": "已略過 {{vs}} 的路由 {{route}}：某個標頭不相符。",
+      "withoutHeaders": "已略過 {{vs}} 的路由 {{route}}：有被排除的標頭。",
+      "queryParams": "已略過 {{vs}} 的路由 {{route}}：某個查詢參數不相符。",
+      "port": "已略過 {{vs}} 的路由 {{route}}：連接埠不相符。",
+      "sourceLabels": "已略過 {{vs}} 的路由 {{route}}：呼叫端標籤不相符。",
+      "sourceNamespace": "已略過 {{vs}} 的路由 {{route}}：呼叫端 namespace 不相符。",
+      "gateways": "已略過 {{vs}} 的路由 {{route}}：它用於其他閘道。"
+    },
+    "skippedNoReason": "已略過 {{vs}} 的路由 {{route}}。",
+    "pods": "{{ready}}/{{total}} 就緒",
+    "why": {
+      "unknownGateway": "此閘道不在叢集的 Istio Gateway 中。",
+      "noGatewayServer": "閘道沒有任何伺服器列出主機 {{host}}。",
+      "noVirtualService": "呼叫端看不到 {{host}} 的任何虛擬服務：Sidecar 會將要求原樣傳送到同名服務。",
+      "noVirtualServiceGateway": "繫結到此閘道的虛擬服務都不涵蓋 {{host}}。",
+      "noRoute": "虛擬服務的路由都不符合該要求。",
+      "notEvaluated": "此路由使用 JavaScript 無法讀取的規則運算式：不評估它是否相符，也不評估其後的路由。",
+      "delegateMissing": "此路由將要求交給不存在的委派虛擬服務。",
+      "l4Only": "此虛擬服務只有 TCP 或 TLS 路由，本檢查不追蹤這些路由。"
+    },
+    "problem": {
+      "unknownHost": "沒有任何 Service 或 ServiceEntry 擁有此主機。",
+      "noDestinationRule": "沒有目的地規則定義子集 {{subset}}：代理回應 503。",
+      "missingSubset": "目的地規則中沒有子集 {{subset}}：代理回應 503。"
+    },
+    "answer": {
+      "redirected": "代理以重新導向回應（{{status}}）。",
+      "directResponse": "代理自行以 HTTP {{status}} 回應。",
+      "noRoute": "代理回應 404：沒有路由接收此要求。",
+      "passthrough": "沒有 Service、ServiceEntry 或虛擬服務擁有此主機：結果取決於網格的輸出流量原則（ALLOW_ANY 放行，REGISTRY_ONLY 拒絕）。",
+      "noGatewayServer": "閘道回應 404。",
+      "delegateMissing": "代理回應 404。"
+    },
+    "candidate": {
+      "notExported": "未匯出到呼叫端的 namespace（exportTo）。",
+      "lessSpecificHost": "其主機不夠具體。",
+      "duplicateIgnored": "在 Sidecar 上主機相同：Istio 只使用最早建立的虛擬服務。",
+      "invalidMeshWildcard": "以主機 * 繫結到 Sidecar，Istio 會拒絕：它不路由任何要求。"
+    },
+    "notes": {
+      "regexDialect": "Istio 的規則運算式是 RE2；這裡以 JavaScript 規則運算式讀取，兩者在常見模式上一致。",
+      "sidecarScope": "Sidecar 資源可能對呼叫端隱藏主機；不評估 Sidecar 資源。",
+      "l4NotChecked": "不檢查 TCP 與 TLS 路由。",
+      "gatewayPort": "閘道沒有伺服器位於 URL 的連接埠：顯示的是此主機在另一個連接埠上的伺服器（閘道的 Service 可能對應連接埠）。",
+      "gatewaySourceLabels": "呼叫端標籤會與閘道的選取器比較。"
+    }
+  }
+}

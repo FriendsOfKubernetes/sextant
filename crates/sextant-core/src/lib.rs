@@ -12,6 +12,7 @@ pub mod argocd;
 #[cfg(feature = "desktop")]
 pub mod cloud;
 pub mod cluster;
+pub mod compare;
 pub mod cost;
 pub mod debug;
 pub mod error;

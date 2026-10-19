@@ -1,0 +1,11 @@
+{
+  "dock": {
+    "tabs": "底部面板标签页"
+  },
+  "terminal": {
+    "leaveHint": "按 Ctrl+Shift+E 可将焦点移出终端。"
+  },
+  "logs": {
+    "newLines_other": "{{count}} 行新内容"
+  }
+}

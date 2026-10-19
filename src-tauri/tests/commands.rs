@@ -40,6 +40,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("watch_stop", Some("subscriptionId")),
     ("streams_reset", None),
     ("resource_get", Some("clusterId")),
+    ("resource_count", Some("clusterId")),
     ("resource_replace", Some("clusterId")),
     ("resource_apply", Some("clusterId")),
     ("resource_dry_run", Some("clusterId")),
@@ -119,6 +120,10 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("upgrade_scan", Some("clusterId")),
     ("cleanup_sample", Some("clusterId")),
     ("cleanup_cluster_check", Some("clusterId")),
+    ("compare_list", Some("clusterId")),
+    ("compare_secrets", Some("left")),
+    ("compare_secret_namespaces", Some("left")),
+    ("compare_helm_drift", Some("clusterId")),
     ("openapi_kind_schema", Some("clusterId")),
     ("timeline_managers", Some("clusterId")),
     ("timeline_history", Some("clusterId")),
@@ -389,6 +394,56 @@ fn the_cleanup_sample_checks_its_input_first_and_needs_a_connected_cluster() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn the_comparison_checks_its_input_first_and_never_connects_a_cluster() {
+    let h = harness();
+    let config_maps = json!([{ "group": "", "version": "v1", "kind": "ConfigMap" }]);
+    let err = invoke(
+        &h,
+        "compare_list",
+        json!({ "clusterId": "nope", "namespace": "Not A Namespace", "kinds": config_maps, "limit": 10 }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    let err = invoke(
+        &h,
+        "compare_list",
+        json!({ "clusterId": "nope", "namespace": "team", "kinds": config_maps, "limit": 10 }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let side = |ns: &str| json!({ "clusterId": "nope", "namespace": ns, "name": "app" });
+    let err = invoke(
+        &h,
+        "compare_secrets",
+        json!({ "left": side("team"), "right": side("prod") }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "compare_secrets",
+        json!({ "left": side("Bad"), "right": side("prod") }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    let ns = |ns: &str| json!({ "clusterId": "nope", "namespace": ns });
+    let err = invoke(
+        &h,
+        "compare_secret_namespaces",
+        json!({ "left": ns("team"), "right": ns("prod") }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(
+        &h,
+        "compare_helm_drift",
+        json!({ "clusterId": "nope", "namespace": "team", "name": "web" }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
 }
 
 #[test]
@@ -957,6 +1012,7 @@ fn later_argument_names_match_the_frontend() {
     // (command, arguments given, next argument expected)
     let cases = [
         ("resource_get", json!({ "clusterId": "c" }), "ref"),
+        ("resource_count", json!({ "clusterId": "c" }), "kind"),
         ("workload_scale", json!({ "clusterId": "c" }), "ref"),
         ("logs_start", json!({ "clusterId": "c" }), "pod"),
         (

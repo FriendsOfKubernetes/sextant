@@ -27,6 +27,14 @@
 //!
 //! The first snapshot is sent as soon as everything is listed (the caller listens before it starts the watch);
 //! after it, at most one update per 250 ms.
+//!
+//! [`WatchOptions`] (the window's tables, #157): with `progressive`, the first list goes out in parts while its pages
+//! come in (kube lists 500 objects per page): `SnapshotPart` with the objects listed so far as soon as there are any,
+//! then at most one part per 250 ms, and a `SnapshotEnd` that completes them (a list that is in before any part went
+//! out is one `Snapshot`, as without the option). With `max_objects`, only that many objects are kept (the first ones
+//! listed; a slot freed by a deletion goes to the next object that changes); the others are remembered by uid only,
+//! so their bodies are neither kept nor sent, and `Capped { total }` follows a batch whenever the number of matching
+//! objects changes.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -34,7 +42,7 @@ use std::time::Duration;
 
 use futures::future::BoxFuture;
 use futures::stream::{AbortHandle, BoxStream, FuturesUnordered, SelectAll};
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures::{FutureExt, Stream, StreamExt, TryStreamExt};
 use kube::Api;
 use kube::api::{ApiResource, DynamicObject, ListParams, PartialObjectMeta, WatchParams};
 use kube::core::ObjectList;
@@ -43,7 +51,7 @@ use serde_json::Value;
 use tokio::time::{Instant, Interval, MissedTickBehavior};
 
 use super::get::{ResolvedKind, resolve_kind, to_json};
-use super::{WatchSpec, WatchUpdate};
+use super::{WatchOptions, WatchSpec, WatchUpdate};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
@@ -75,7 +83,17 @@ pub async fn watch(
     cluster: &ClusterId,
     spec: WatchSpec,
 ) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + use<>> {
-    watch_with(mgr, cluster, spec, FORBIDDEN_RETRY).await
+    watch_with(mgr, cluster, spec, WatchOptions::default(), FORBIDDEN_RETRY).await
+}
+
+/// [`watch`] delivered as `options` ask (the window's tables: the first list in parts, a cap on the objects kept).
+pub async fn watch_with_options(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    spec: WatchSpec,
+    options: WatchOptions,
+) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + use<>> {
+    watch_with(mgr, cluster, spec, options, FORBIDDEN_RETRY).await
 }
 
 /// [`watch`] with its own pauses before a forbidden namespace is tried again (tests make them short).
@@ -83,6 +101,7 @@ async fn watch_with(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     spec: WatchSpec,
+    options: WatchOptions,
     forbidden_retry: ForbiddenRetry,
 ) -> CoreResult<impl Stream<Item = WatchUpdate> + Send + use<>> {
     let client = mgr.client(cluster)?;
@@ -156,7 +175,9 @@ async fn watch_with(
         }
     }
 
-    let state = Batcher::new(sources, kind.resource, BATCH_INTERVAL, forbidden_retry);
+    let mut state = Batcher::new(sources, kind.resource, BATCH_INTERVAL, forbidden_retry);
+    state.progressive = options.progressive.then(HashMap::new);
+    state.cap = options.max_objects.map(|max| max as usize);
     Ok(futures::stream::unfold(state, |mut state| async move {
         let update = state.next_update().await?;
         Some((update, state))
@@ -357,6 +378,9 @@ async fn refused_metadata_watch(
     }
 }
 
+/// At most this many events already received are taken in at once during a progressive first list (a page is 500).
+const PAGE_DRAIN: usize = 2000;
+
 /// How long [`refused_metadata_watch`] and [`may_list_and_watch`] wait for the API server.
 const REFUSAL_CHECK_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -400,6 +424,21 @@ struct Batcher {
     /// A fatal error waits here; the stream ends after it.
     fatal: Option<CoreError>,
     done: bool,
+    /// `WatchOptions::progressive` while the first list runs: what the parts sent, by uid (the very object, so a
+    /// changed one is told apart); `None` without the option and once the first full list went out.
+    progressive: Option<HashMap<String, Arc<Value>>>,
+    /// `WatchOptions::max_objects`.
+    cap: Option<usize>,
+    /// Matching objects left out for the cap: uid → source.
+    dropped: HashMap<String, usize>,
+    /// Uids a source's running (re)list leaves out for the cap.
+    init_dropped: Vec<Vec<String>>,
+    /// How many objects of the store a source's running (re)list replaces (they leave the store at its end).
+    init_old: Vec<usize>,
+    /// The `total` of the last `Capped` sent.
+    capped_sent: Option<u64>,
+    /// A `Capped` waits to be sent after the batch just returned.
+    capped_pending: Option<u64>,
 }
 
 /// What woke the batcher up. Lives for one loop iteration, so its size does not matter.
@@ -448,6 +487,13 @@ impl Batcher {
             ticker,
             fatal: None,
             done: false,
+            progressive: None,
+            cap: None,
+            dropped: HashMap::new(),
+            init_dropped: vec![Vec::new(); count],
+            init_old: vec![0; count],
+            capped_sent: None,
+            capped_pending: None,
         };
         batcher.start_streams();
         batcher
@@ -464,6 +510,7 @@ impl Batcher {
         }
         self.listed.iter_mut().for_each(|l| *l = false);
         self.init_buffers.iter_mut().for_each(|b| *b = None);
+        self.init_dropped.iter_mut().for_each(Vec::clear);
         self.retry_at = None;
     }
 
@@ -485,7 +532,9 @@ impl Batcher {
             abort.abort();
         }
         self.init_buffers[index] = None;
+        self.init_dropped[index].clear();
         self.store.retain(|_, (source, _)| *source != index);
+        self.dropped.retain(|_, source| *source != index);
     }
 
     /// Every source that is still watched has finished its (re)list.
@@ -513,6 +562,9 @@ impl Batcher {
                 self.done = true;
                 return Some(WatchUpdate::Error(err));
             }
+            if let Some(total) = self.capped_pending.take() {
+                return Some(WatchUpdate::Capped { total });
+            }
             if self.forbidden_pending {
                 self.forbidden_pending = false;
                 let mut namespaces: Vec<String> = self
@@ -526,8 +578,12 @@ impl Batcher {
                 namespaces.dedup();
                 return Some(WatchUpdate::Forbidden { namespaces });
             }
-            // The first full list goes out at once; the interval counts from it.
-            if self.snapshot_pending && !self.snapshot_sent {
+            // The first full list goes out at once, and so does the first part of a progressive one; the interval
+            // counts from it.
+            let first_part = self.progressive.as_ref().is_some_and(HashMap::is_empty)
+                && !self.snapshot_sent
+                && self.has_listed_objects();
+            if (self.snapshot_pending || first_part) && !self.snapshot_sent {
                 self.ticker.reset();
                 if let Some(update) = self.flush() {
                     return Some(update);
@@ -550,10 +606,24 @@ impl Batcher {
                         return Some(update);
                     }
                 }
-                Wake::Event(Some((index, Ok(event)))) => self.apply(index, event),
-                Wake::Event(Some((index, Err(err)))) => self.fail(index, err),
-                // Watcher streams do not end by themselves; treat it like a lost connection.
-                Wake::Event(None) => self.lose_connection(),
+                Wake::Event(event) => {
+                    self.handle(event);
+                    // A progressive first list takes in everything already received (the rest of a page) before
+                    // it decides on a part, so a part is not one object of a page.
+                    if self.progressive.is_some() {
+                        for _ in 0..PAGE_DRAIN {
+                            // A lost connection empties the streams: an empty set "ends" at once, which is not
+                            // another lost connection.
+                            if self.streams.is_empty() {
+                                break;
+                            }
+                            match self.streams.next().now_or_never() {
+                                Some(event) => self.handle(event),
+                                None => break,
+                            }
+                        }
+                    }
+                }
                 Wake::Retry => self.start_streams(),
                 Wake::RetryForbidden => self.retry_forbidden(),
                 Wake::Checked(Some((index, allowed))) => self.checked(index, allowed),
@@ -562,14 +632,31 @@ impl Batcher {
         }
     }
 
+    fn handle(&mut self, event: Option<(usize, watcher::Result<watcher::Event<DynamicObject>>)>) {
+        match event {
+            Some((index, Ok(event))) => self.apply(index, event),
+            Some((index, Err(err))) => self.fail(index, err),
+            // Watcher streams do not end by themselves; treat it like a lost connection.
+            None => self.lose_connection(),
+        }
+    }
+
     fn apply(&mut self, index: usize, event: watcher::Event<DynamicObject>) {
         match event {
             watcher::Event::Init => {
                 self.init_buffers[index] = Some(Vec::new());
+                self.init_dropped[index].clear();
                 self.listed[index] = false;
+                self.init_old[index] = match self.cap {
+                    Some(_) => self.store.values().filter(|(s, _)| *s == index).count(),
+                    None => 0,
+                };
             }
             watcher::Event::InitApply(obj) => {
-                if let Some(value) = self.json(obj) {
+                if !self.has_room_while_listing() {
+                    // Over the cap: only the uid is remembered, the object is neither converted nor kept.
+                    self.init_dropped[index].push(meta_uid(&obj.metadata));
+                } else if let Some(value) = self.json(obj) {
                     self.init_buffers[index]
                         .get_or_insert_with(Vec::new)
                         .push(value);
@@ -577,9 +664,21 @@ impl Batcher {
             }
             watcher::Event::InitDone => {
                 let items = self.init_buffers[index].take().unwrap_or_default();
+                let left_out = std::mem::take(&mut self.init_dropped[index]);
                 self.store.retain(|_, (source, _)| *source != index);
+                self.dropped.retain(|_, source| *source != index);
                 for value in items {
-                    self.store.insert(uid_of(&value), (index, value));
+                    let uid = uid_of(&value);
+                    if self.has_room() {
+                        self.store.insert(uid, (index, value));
+                    } else {
+                        self.dropped.insert(uid, index);
+                    }
+                }
+                for uid in left_out {
+                    if !self.store.contains_key(&uid) {
+                        self.dropped.insert(uid, index);
+                    }
                 }
                 if self.forbidden[index] {
                     // A retry listed the forbidden namespace: it is back, and a snapshot with its objects follows.
@@ -594,22 +693,70 @@ impl Batcher {
                 }
             }
             watcher::Event::Apply(obj) => {
+                let uid = meta_uid(&obj.metadata);
+                if !self.store.contains_key(&uid) && !self.has_room() {
+                    // Over the cap: counted, not kept.
+                    self.dropped.insert(uid, index);
+                    return;
+                }
                 if let Some(value) = self.json(obj) {
-                    let uid = uid_of(&value);
+                    self.dropped.remove(&uid);
                     self.deleted.remove(&uid);
                     self.upserted.insert(uid.clone(), Arc::clone(&value));
                     self.store.insert(uid, (index, value));
                 }
             }
             watcher::Event::Delete(obj) => {
-                if let Some(value) = self.json(obj) {
-                    let uid = uid_of(&value);
-                    self.upserted.remove(&uid);
-                    if self.store.remove(&uid).is_some() || self.snapshot_sent {
-                        self.deleted.insert(uid);
-                    }
+                let uid = meta_uid(&obj.metadata);
+                if self.dropped.remove(&uid).is_some() {
+                    // The window never had it.
+                    return;
+                }
+                self.upserted.remove(&uid);
+                if self.store.remove(&uid).is_some() || self.snapshot_sent {
+                    self.deleted.insert(uid);
                 }
             }
+        }
+    }
+
+    /// Whether a running (re)list may keep one more object: the cap counts what every source keeps and what the
+    /// running lists have taken so far (namespaces listed side by side share the cap), less what those lists replace.
+    fn has_room_while_listing(&self) -> bool {
+        let Some(cap) = self.cap else { return true };
+        let (mut taken, mut replaced) = (0, 0);
+        for (buffer, old) in self.init_buffers.iter().zip(&self.init_old) {
+            if let Some(buffer) = buffer {
+                taken += buffer.len();
+                replaced += old;
+            }
+        }
+        self.store.len().saturating_sub(replaced) + taken < cap
+    }
+
+    /// Whether one more object may be kept (always, without a cap).
+    fn has_room(&self) -> bool {
+        self.cap.is_none_or(|cap| self.store.len() < cap)
+    }
+
+    /// Objects listed so far, kept by the store or by a running list.
+    fn has_listed_objects(&self) -> bool {
+        !self.store.is_empty() || self.init_buffers.iter().flatten().any(|b| !b.is_empty())
+    }
+
+    /// Matching objects: those kept and those left out for the cap.
+    fn total(&self) -> u64 {
+        (self.store.len() + self.dropped.len()) as u64
+    }
+
+    /// Notes a `Capped` to send after the current batch when the total changed while a cap is (or was) in force.
+    fn note_capped(&mut self) {
+        let Some(cap) = self.cap else { return };
+        let total = self.total();
+        let was_over = self.capped_sent.is_some_and(|sent| sent > cap as u64);
+        if self.capped_sent != Some(total) && (total > cap as u64 || was_over) {
+            self.capped_sent = Some(total);
+            self.capped_pending = Some(total);
         }
     }
 
@@ -750,6 +897,28 @@ impl Batcher {
 
     /// The batch to send on this tick, if any.
     fn flush(&mut self) -> Option<WatchUpdate> {
+        let update = self.batch();
+        match &update {
+            Some(
+                WatchUpdate::Snapshot { .. }
+                | WatchUpdate::SnapshotEnd { .. }
+                | WatchUpdate::Delta { .. },
+            ) => self.note_capped(),
+            Some(_) => {}
+            // Nothing else changed, but objects left out for the cap may have come or gone.
+            None if self.snapshot_sent && !self.reconnecting => {
+                self.note_capped();
+                return self
+                    .capped_pending
+                    .take()
+                    .map(|total| WatchUpdate::Capped { total });
+            }
+            None => {}
+        }
+        update
+    }
+
+    fn batch(&mut self) -> Option<WatchUpdate> {
         if self.reconnect_pending {
             self.reconnect_pending = false;
             return Some(WatchUpdate::Reconnecting);
@@ -760,12 +929,29 @@ impl Batcher {
             self.reconnecting = false;
             self.upserted.clear();
             self.deleted.clear();
+            if let Some(sent) = self.progressive.take().filter(|sent| !sent.is_empty()) {
+                // The parts sent so far, completed: what changed or came since, and what went.
+                let items = self
+                    .store
+                    .iter()
+                    .filter(|(uid, (_, v))| !sent.get(*uid).is_some_and(|s| Arc::ptr_eq(s, v)))
+                    .map(|(_, (_, v))| Arc::clone(v))
+                    .collect();
+                let deleted = sent
+                    .into_keys()
+                    .filter(|uid| !self.store.contains_key(uid))
+                    .collect();
+                return Some(WatchUpdate::SnapshotEnd { items, deleted });
+            }
             // Pointers to the stored objects, not copies: a deep copy of a large list was several times its size.
             let items = self.store.values().map(|(_, v)| Arc::clone(v)).collect();
             return Some(WatchUpdate::Snapshot { items });
         }
-        // Changes wait until the first (or the post-reconnect) snapshot; it includes them.
-        if !self.snapshot_sent || self.reconnecting {
+        if !self.snapshot_sent {
+            return self.part();
+        }
+        // Changes wait until the post-reconnect snapshot; it includes them.
+        if self.reconnecting {
             return None;
         }
         if self.upserted.is_empty() && self.deleted.is_empty() {
@@ -775,6 +961,26 @@ impl Batcher {
             upserted: self.upserted.drain().map(|(_, v)| v).collect(),
             deleted: self.deleted.drain().collect(),
         })
+    }
+
+    /// A part of a progressive first list: the objects listed (or changed) since the previous part.
+    fn part(&mut self) -> Option<WatchUpdate> {
+        let sent = self.progressive.as_mut()?;
+        let listed = self
+            .store
+            .values()
+            .map(|(_, v)| v)
+            .chain(self.init_buffers.iter().flatten().flatten());
+        let mut items = Vec::new();
+        for value in listed {
+            let uid = uid_of(value);
+            if sent.get(&uid).is_some_and(|s| Arc::ptr_eq(s, value)) {
+                continue;
+            }
+            sent.insert(uid, Arc::clone(value));
+            items.push(Arc::clone(value));
+        }
+        (!items.is_empty()).then_some(WatchUpdate::SnapshotPart { items })
     }
 
     fn json(&self, obj: DynamicObject) -> Option<Arc<Value>> {
@@ -814,6 +1020,18 @@ async fn sleep_until(at: Option<Instant>) {
     }
 }
 
+/// [`uid_of`] of an object kube handed over, before it is converted.
+fn meta_uid(meta: &kube::api::ObjectMeta) -> String {
+    match &meta.uid {
+        Some(uid) => uid.clone(),
+        None => format!(
+            "{}/{}",
+            meta.namespace.as_deref().unwrap_or_default(),
+            meta.name.as_deref().unwrap_or_default()
+        ),
+    }
+}
+
 /// `metadata.uid`, or `namespace/name` for the rare object without one.
 fn uid_of(obj: &Value) -> String {
     let meta = &obj["metadata"];
@@ -826,6 +1044,10 @@ fn uid_of(obj: &Value) -> String {
         ),
     }
 }
+
+#[cfg(test)]
+#[path = "watch_scale_tests.rs"]
+mod scale_tests;
 
 #[cfg(test)]
 mod tests {
@@ -1480,6 +1702,7 @@ mod tests {
                 &mgr,
                 &id,
                 spec("", "ConfigMap", Some(&["a", "b"])),
+                WatchOptions::default(),
                 SHORT_RETRY,
             )
             .await

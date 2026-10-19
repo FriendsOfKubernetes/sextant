@@ -130,7 +130,9 @@ function Repositories({ available }: { available: boolean }) {
             <tr>
               <th>{t("helm:charts.repoName")}</th>
               <th>{t("helm:charts.repoUrl")}</th>
-              <th />
+              <th>
+                <span className="visually-hidden">{t("resources:table.actions")}</span>
+              </th>
             </tr>
           </thead>
           <tbody>

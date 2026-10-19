@@ -1,0 +1,124 @@
+{
+  "action": "比較…",
+  "sidebar": "比較 namespace",
+  "loading": "正在比較…",
+  "dialog": {
+    "title": "比較 {{kind}} {{name}}",
+    "with": "比較對象",
+    "modes": {
+      "object": "另一個物件",
+      "lastApplied": "它的上次套用設定",
+      "helm": "它所屬 Helm 發行版本的資訊清單"
+    },
+    "unavailable": {
+      "lastApplied": "此物件沒有上次套用設定：它不是以 kubectl apply 建立或變更的。",
+      "helm": "此物件不屬於任何 Helm 發行版本。"
+    },
+    "compare": "比較"
+  },
+  "target": {
+    "cluster": "叢集",
+    "namespace": "Namespace",
+    "name": "名稱",
+    "notConnected": "未連線",
+    "connect": "連線",
+    "connecting": "正在連線…",
+    "suggestions": "相符的物件"
+  },
+  "side": {
+    "live": "目前",
+    "lastApplied": "上次套用",
+    "manifest": "Helm 資訊清單"
+  },
+  "options": {
+    "hideDefaults": "隱藏預設值",
+    "hideDefaultsHint": "資訊清單未設定時由 API 伺服器填入的欄位，以及指派的叢集 IP，只要仍是該值就不顯示。",
+    "ignoreTitle": "{{kind}} 忽略的路徑：",
+    "ignoreNone": "無",
+    "ignoreRemove": "不再忽略 {{path}}",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "要忽略的路徑",
+    "ignoreAddButton": "忽略",
+    "ignoreInvalid": "路徑以 / 開頭，列出以 / 分隔的鍵；* 代表任意鍵或清單項目，例如 /metadata/labels/team 或 /spec/template/spec/containers/*/image。",
+    "ignoreFull": "每種類型最多 {{max}} 個路徑。"
+  },
+  "diff": {
+    "same": "沒有差異。",
+    "changes_other": "{{count}} 個欄位不同。",
+    "field": "欄位",
+    "notSet": "未設定"
+  },
+  "secret": {
+    "hint": "值會在 Sextant 內部以 SHA-256 雜湊比較，在您按下「顯示值」之前不會讀入視窗。",
+    "label": "Secret 鍵",
+    "key": "鍵",
+    "state": "比較結果",
+    "values": "值",
+    "equal": "值相同",
+    "different": "值不同",
+    "onlyLeft": "僅左側",
+    "onlyRight": "僅右側",
+    "noKeys": "兩側都沒有鍵。",
+    "show": "顯示值",
+    "hide": "隱藏值"
+  },
+  "result": {
+    "sameObject": "這就是此物件本身：請選擇其他叢集、namespace 或名稱。",
+    "notFound": "那裡不存在 {{kind}} {{name}}。",
+    "noDrift": "目前物件中上次套用設定的所有欄位皆未變更。",
+    "drift_other": "{{count}} 個欄位與上次套用設定不同。",
+    "driftLabel": "與上次套用設定不同的欄位",
+    "notInRelease": "Helm 發行版本 {{name}} 的資訊清單中沒有此物件。",
+    "showRelease": "檢查整個 Helm 發行版本 {{name}}",
+    "hideRelease": "隱藏發行版本"
+  },
+  "drift": {
+    "release": "{{namespace}} 中的 Helm 發行版本 {{name}}，修訂版本 {{revision}}",
+    "unreadable_other": "資訊清單中有 {{count}} 份文件無法讀取，未納入比較。",
+    "truncated_other": "另有 {{count}} 個物件未納入比較。",
+    "objectsLabel": "發行版本的物件",
+    "object": "物件",
+    "state": "狀態",
+    "details": "詳細資料",
+    "drifted_other": "{{count}} 處差異",
+    "states": {
+      "inSync": "一致",
+      "missing": "缺少",
+      "error": "無法讀取"
+    },
+    "showDetails": "詳細資料",
+    "hideDetails": "隱藏",
+    "missingObject": "叢集中不存在此物件。",
+    "changesLabel": "與資訊清單不同的欄位"
+  },
+  "page": {
+    "title": "比較 namespace",
+    "hint": "依類型列出僅在一側的物件、不同的物件和相同的物件；每側每種類型最多 {{max}} 個物件。",
+    "left": "左側",
+    "right": "右側",
+    "kinds": "類型",
+    "result": "比較結果",
+    "filter": "顯示",
+    "objects": "物件",
+    "kind": "類型",
+    "state": "狀態",
+    "nothing": "沒有可顯示的內容。",
+    "failedLeft": "無法列出左側的 {{kind}}：{{message}}",
+    "failedRight": "無法列出右側的 {{kind}}：{{message}}",
+    "truncated": "某些類型在一側超過 {{max}} 個物件：其餘物件未納入比較。",
+    "secretsFailed": "無法比較 Secret 的值：{{message}}",
+    "secretsTruncated": "某個 namespace 中的 Secret 超過 {{max}} 個：其餘 Secret 的值未納入比較。"
+  },
+  "buckets": {
+    "onlyLeft": "僅左側（{{count}}）",
+    "onlyRight": "僅右側（{{count}}）",
+    "differ": "不同（{{count}}）",
+    "same": "相同（{{count}}）"
+  },
+  "states": {
+    "onlyLeft": "僅左側",
+    "onlyRight": "僅右側",
+    "differ": "不同",
+    "same": "相同"
+  }
+}

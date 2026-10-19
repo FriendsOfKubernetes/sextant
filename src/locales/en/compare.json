@@ -1,0 +1,129 @@
+{
+  "action": "Compare with…",
+  "sidebar": "Compare namespaces",
+  "loading": "Comparing…",
+  "dialog": {
+    "title": "Compare {{kind}} {{name}}",
+    "with": "Compare with",
+    "modes": {
+      "object": "Another object",
+      "lastApplied": "Its last-applied configuration",
+      "helm": "Its Helm release manifest"
+    },
+    "unavailable": {
+      "lastApplied": "This object has no last-applied configuration: it was not created or changed with kubectl apply.",
+      "helm": "This object does not belong to a Helm release."
+    },
+    "compare": "Compare"
+  },
+  "target": {
+    "cluster": "Cluster",
+    "namespace": "Namespace",
+    "name": "Name",
+    "notConnected": "Not connected",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "suggestions": "Matching objects"
+  },
+  "side": {
+    "live": "Live",
+    "lastApplied": "Last applied",
+    "manifest": "Helm manifest"
+  },
+  "options": {
+    "hideDefaults": "Hide defaults",
+    "hideDefaultsHint": "Leave out fields the API server fills in when a manifest does not set them, and assigned cluster IPs, while they hold that value.",
+    "ignoreTitle": "Ignored paths of {{kind}}:",
+    "ignoreNone": "none",
+    "ignoreRemove": "Stop ignoring {{path}}",
+    "ignorePlaceholder": "/spec/replicas",
+    "ignoreAdd": "Path to ignore",
+    "ignoreAddButton": "Ignore",
+    "ignoreInvalid": "A path starts with / and names keys separated by /; * stands for any key or list item, for example /metadata/labels/team or /spec/template/spec/containers/*/image.",
+    "ignoreFull": "At most {{max}} paths per kind."
+  },
+  "diff": {
+    "same": "No differences.",
+    "changes_one": "{{count}} field differs.",
+    "changes_other": "{{count}} fields differ.",
+    "field": "Field",
+    "notSet": "not set"
+  },
+  "secret": {
+    "hint": "Values are compared by their SHA-256 hashes inside Sextant and are not read into the window until you click “Show values”.",
+    "label": "Secret keys",
+    "key": "Key",
+    "state": "Comparison",
+    "values": "Values",
+    "equal": "Same value",
+    "different": "Different value",
+    "onlyLeft": "Only on the left",
+    "onlyRight": "Only on the right",
+    "noKeys": "Neither side has keys.",
+    "show": "Show values",
+    "hide": "Hide values"
+  },
+  "result": {
+    "sameObject": "That is this object: choose another cluster, namespace or name.",
+    "notFound": "{{kind}} {{name}} does not exist there.",
+    "noDrift": "The live object has every field of the last-applied configuration unchanged.",
+    "drift_one": "{{count}} field differs from the last-applied configuration.",
+    "drift_other": "{{count}} fields differ from the last-applied configuration.",
+    "driftLabel": "Fields that differ from the last-applied configuration",
+    "notInRelease": "The manifest of Helm release {{name}} does not have this object.",
+    "showRelease": "Check all of Helm release {{name}}",
+    "hideRelease": "Hide the release"
+  },
+  "drift": {
+    "release": "Helm release {{name}} in {{namespace}}, revision {{revision}}",
+    "unreadable_one": "{{count}} document of the manifest cannot be read and is not compared.",
+    "unreadable_other": "{{count}} documents of the manifest cannot be read and are not compared.",
+    "truncated_one": "{{count}} more object is not compared.",
+    "truncated_other": "{{count}} more objects are not compared.",
+    "objectsLabel": "Objects of the release",
+    "object": "Object",
+    "state": "State",
+    "details": "Details",
+    "drifted_one": "{{count}} difference",
+    "drifted_other": "{{count}} differences",
+    "states": {
+      "inSync": "In sync",
+      "missing": "Missing",
+      "error": "Cannot be read"
+    },
+    "showDetails": "Details",
+    "hideDetails": "Hide",
+    "missingObject": "The object does not exist in the cluster.",
+    "changesLabel": "Fields that differ from the manifest"
+  },
+  "page": {
+    "title": "Compare namespaces",
+    "hint": "Objects only on one side, objects that differ and the same ones, kind by kind; at most {{max}} objects of a kind per side.",
+    "left": "Left",
+    "right": "Right",
+    "kinds": "Kinds",
+    "result": "Comparison",
+    "filter": "Show",
+    "objects": "Objects",
+    "kind": "Kind",
+    "state": "State",
+    "nothing": "Nothing to show.",
+    "failedLeft": "{{kind}} cannot be listed on the left: {{message}}",
+    "failedRight": "{{kind}} cannot be listed on the right: {{message}}",
+    "truncated": "Some kinds have more than {{max}} objects on a side: the rest are not compared.",
+    "secretsFailed": "The values of Secrets cannot be compared: {{message}}",
+    "secretsTruncated": "A namespace has more than {{max}} Secrets: the values of the rest are not compared."
+  },
+  "buckets": {
+    "onlyLeft": "Only on the left ({{count}})",
+    "onlyRight": "Only on the right ({{count}})",
+    "differ": "Different ({{count}})",
+    "same": "Same ({{count}})"
+  },
+  "states": {
+    "onlyLeft": "Only on the left",
+    "onlyRight": "Only on the right",
+    "differ": "Different",
+    "same": "Same"
+  }
+}

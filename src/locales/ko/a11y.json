@@ -1,0 +1,11 @@
+{
+  "dock": {
+    "tabs": "도크 탭"
+  },
+  "terminal": {
+    "leaveHint": "터미널에서 포커스를 옮기려면 Ctrl+Shift+E를 누르세요."
+  },
+  "logs": {
+    "newLines_other": "새 줄 {{count}}줄"
+  }
+}

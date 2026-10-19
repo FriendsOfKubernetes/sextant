@@ -11,11 +11,12 @@ import "./metrics.css";
 
 export type MetricName = "cpu" | "memory" | "pods" | "disk";
 
+// Theme tokens (src/styles/global.css): each line keeps 3:1 against the panel in both themes.
 const COLORS: Record<MetricName, string> = {
-  cpu: "#3d90ce",
-  memory: "#a05ad0",
-  pods: "#48a868",
-  disk: "#d6a01e",
+  cpu: "--color-chart-cpu",
+  memory: "--color-chart-memory",
+  pods: "--color-chart-pods",
+  disk: "--color-chart-disk",
 };
 
 const FORMATS: Record<MetricName, (v: number) => string> = {

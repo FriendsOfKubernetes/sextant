@@ -239,6 +239,11 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
     case "forbidden":
       // Some namespaces cannot be listed; the others are watched.
       return null;
+    case "snapshotPart":
+    case "snapshotEnd":
+    case "capped":
+      // Only watches started with `WatchOptions` (the tables) send these; the problem sources start without.
+      return null;
   }
 }
 
@@ -286,6 +291,10 @@ function applyToTap(tap: Tap, update: WatchUpdate): RowsState | null {
     case "error":
       return { ...state, status: "error", error: toApiError(update) };
     case "forbidden":
+    case "snapshotPart":
+    case "snapshotEnd":
+    case "capped":
+      // The last three come only from watches started with `WatchOptions`, which the sources are not.
       return null;
   }
 }

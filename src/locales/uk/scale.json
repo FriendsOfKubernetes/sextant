@@ -1,0 +1,38 @@
+{
+  "table": {
+    "loadingMore_one": "Завантаження… отримано {{count}}",
+    "loadingMore_few": "Завантаження… отримано {{count}}",
+    "loadingMore_many": "Завантаження… отримано {{count}}",
+    "loadingMore_other": "Завантаження… отримано {{count}}",
+    "updating": "Оновлення…",
+    "capped_one": "Показано перші {{shown}} з {{count}} об'єкта. Щоб побачити решту, звузьте список за namespace або label.",
+    "capped_few": "Показано перші {{shown}} з {{count}} об'єктів. Щоб побачити решту, звузьте список за namespace або label.",
+    "capped_many": "Показано перші {{shown}} з {{count}} об'єктів. Щоб побачити решту, звузьте список за namespace або label.",
+    "capped_other": "Показано перші {{shown}} з {{count}} об'єкта. Щоб побачити решту, звузьте список за namespace або label."
+  },
+  "guard": {
+    "title_one": "{{kind}}: близько {{count}} об'єкта в усіх namespace",
+    "title_few": "{{kind}}: близько {{count}} об'єктів в усіх namespace",
+    "title_many": "{{kind}}: близько {{count}} об'єктів в усіх namespace",
+    "title_other": "{{kind}}: близько {{count}} об'єкта в усіх namespace",
+    "titleAtLeast_one": "{{kind}}: щонайменше {{count}} об'єкт в усіх namespace",
+    "titleAtLeast_few": "{{kind}}: щонайменше {{count}} об'єкти в усіх namespace",
+    "titleAtLeast_many": "{{kind}}: щонайменше {{count}} об'єктів в усіх namespace",
+    "titleAtLeast_other": "{{kind}}: щонайменше {{count}} об'єкта в усіх namespace",
+    "text": "Щоб показати їх усі, доведеться завантажити кожен об'єкт, це може зайняти час; таблиця зберігає перші {{max}}. Виберіть namespace або введіть label selector (app=web), щоб об'єктів було менше, або все одно покажіть їх.",
+    "showAnyway": "Усе одно показати"
+  },
+  "sidebar": {
+    "count_one": "{{count}} об'єкт",
+    "count_few": "{{count}} об'єкти",
+    "count_many": "{{count}} об'єктів",
+    "count_other": "{{count}} об'єкта",
+    "countCapped": "Понад {{max}} об'єктів"
+  },
+  "palette": {
+    "capped_one": "{{kind}}: пошук серед перших {{shown}} з {{count}} об'єкта",
+    "capped_few": "{{kind}}: пошук серед перших {{shown}} з {{count}} об'єктів",
+    "capped_many": "{{kind}}: пошук серед перших {{shown}} з {{count}} об'єктів",
+    "capped_other": "{{kind}}: пошук серед перших {{shown}} з {{count}} об'єкта"
+  }
+}

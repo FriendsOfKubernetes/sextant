@@ -24,6 +24,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "Hizmet ağı",
     "security": "Güvenlik",
     "credentials": "Kimlik bilgileri",
     "disk": "Disk neredeyse dolu",
@@ -39,7 +40,14 @@
     "securityBaseline_one": "{{count}} Pod Security Baseline ihlali: {{fields}}",
     "securityBaseline_other": "{{count}} Pod Security Baseline ihlali: {{fields}}",
     "diskUsage": "Alanın {{percent}} kadarı kullanılıyor ({{used}} / {{capacity}})",
-    "inodeUsage": "Inode'ların {{percent}} kadarı kullanılıyor ({{used}} / {{total}})"
+    "inodeUsage": "Inode'ların {{percent}} kadarı kullanılıyor ({{used}} / {{total}})",
+    "meshUnknownHost": "Hiçbir Service veya ServiceEntry'de olmayan {{host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
+    "meshMissingDestinationRule": "{{host}} için {{subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
+    "meshMissingSubset": "{{host}} için {{rule}} hedef kuralının tanımlamadığı {{subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
+    "meshMissingGateway": "Var olmayan {{gateway}} ağ geçidine bağlı.",
+    "meshTlsConflict": "Yalnızca Istio mTLS kabul eden (STRICT) iş yüklerine sahip {{host}} için TLS modunu {{mode}} yapıyor: çağrılar başarısız olur. ISTIO_MUTUAL kullanın.",
+    "meshConflictingVirtualService": "{{gateway}} üzerindeki {{host}} ana makinesi daha eski {{other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
+    "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz."
   },
   "showDisk": "Disk neredeyse dolu"
 }

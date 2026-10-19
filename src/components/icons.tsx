@@ -159,6 +159,16 @@ import {
   HardDriveUpload as StorageHardDriveUpload,
   MapPinned as StorageMapPinned,
 } from "lucide-react";
+// Service mesh: Istio and Linkerd (#155).
+import {
+  Globe as MeshGlobe,
+  KeyRound as MeshKeyRound,
+  Link2 as MeshLink,
+  LockKeyhole as MeshLock,
+  Sailboat as MeshSailboat,
+  ShieldCheck as MeshShieldCheck,
+  Signpost as MeshSignpost,
+} from "lucide-react";
 
 const ICONS = {
   // Actions on resources and the glyphs they replace.
@@ -342,6 +352,15 @@ const ICONS = {
   veleroSchedule: StorageCalendarClock,
   veleroRestore: StorageArchiveRestore,
   veleroLocation: StorageMapPinned,
+  // Service mesh (#155).
+  istio: MeshSailboat,
+  linkerd: MeshLink,
+  meshRoute: MeshSignpost,
+  meshDestination: Waypoints,
+  meshServiceEntry: MeshGlobe,
+  meshMtls: MeshLock,
+  meshJwt: MeshKeyRound,
+  meshAuthz: MeshShieldCheck,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */

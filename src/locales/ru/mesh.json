@@ -1,0 +1,537 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "Маршрутизация запроса"
+  },
+  "problemsCount_one": "{{count}} проблема конфигурации Istio",
+  "problemsCount_few": "{{count}} проблемы конфигурации Istio",
+  "problemsCount_many": "{{count}} проблем конфигурации Istio",
+  "problemsCount_other": "{{count}} проблемы конфигурации Istio",
+  "loading": "Загрузка конфигурации сервисной сети…",
+  "yes": "Да",
+  "no": "Нет",
+  "columns": {
+    "hosts": "Хосты",
+    "gateways": "Шлюзы",
+    "routes": "Маршруты",
+    "host": "Хост",
+    "subsets": "Подмножества",
+    "tlsMode": "Режим TLS",
+    "servers": "Серверы",
+    "location": "Расположение",
+    "resolution": "Разрешение адресов",
+    "appliesTo": "Применяется к",
+    "egressHosts": "Исходящие хосты",
+    "address": "Адрес",
+    "serviceAccount": "Service account",
+    "mtlsMode": "Режим mTLS",
+    "issuers": "Издатели",
+    "action": "Действие",
+    "rules": "Правила",
+    "port": "Порт",
+    "proxyProtocol": "Протокол",
+    "podSelector": "Селектор Pod",
+    "parents": "Родители",
+    "target": "Цель",
+    "authentications": "Аутентификации",
+    "server": "Сервер",
+    "identities": "Идентичности",
+    "networks": "Сети",
+    "name": "Имя",
+    "labels": "Метки",
+    "protocol": "Протокол",
+    "issuer": "Издатель",
+    "audiences": "Аудитории",
+    "keys": "Ключи",
+    "condition": "Условие",
+    "retryable": "Повтор",
+    "timeout": "Тайм-аут",
+    "match": "Совпадение",
+    "destinations": "Назначения",
+    "destination": "Назначение",
+    "weight": "Вес",
+    "subset": "Подмножество",
+    "destinationRule": "Правило назначения",
+    "pods": "Pod",
+    "policy": "Политика",
+    "matches": "Совпадает",
+    "notEvaluated": "Не оценено"
+  },
+  "fields": {
+    "hosts": "Хосты",
+    "gateways": "Шлюзы",
+    "exportTo": "Виден в",
+    "host": "Хост",
+    "tlsMode": "Режим TLS",
+    "loadBalancer": "Балансировка",
+    "workloadSelector": "Клиенты",
+    "selector": "Pod шлюза",
+    "location": "Расположение",
+    "resolution": "Разрешение адресов",
+    "ports": "Порты",
+    "addresses": "Адреса",
+    "appliesTo": "Применяется к",
+    "egressHosts": "Исходящие хосты",
+    "outboundTrafficPolicy": "Исходящий трафик",
+    "address": "Адрес",
+    "labels": "Метки",
+    "serviceAccount": "Service account",
+    "network": "Сеть",
+    "tracing": "Трассировка",
+    "metrics": "Метрики",
+    "accessLogging": "Журналы доступа",
+    "mtlsMode": "Режим mTLS",
+    "action": "Действие",
+    "provider": "Провайдер",
+    "podSelector": "Селектор Pod",
+    "port": "Порт",
+    "proxyProtocol": "Протокол",
+    "accessPolicy": "Доступ по умолчанию",
+    "server": "Сервер",
+    "target": "Цель",
+    "requiredAuthentications": "Обязательные аутентификации",
+    "identities": "Идентичности",
+    "identityRefs": "Ссылки на идентичности",
+    "networks": "Сети",
+    "parents": "Родители",
+    "hostnames": "Имена хостов",
+    "revision": "Ревизия",
+    "injection": "Внедрение sidecar",
+    "proxyImage": "Образ прокси",
+    "linkerdInject": "Внедрение прокси",
+    "controlPlane": "Плоскость управления",
+    "proxyVersion": "Версия прокси"
+  },
+  "blocks": {
+    "virtualService": "Виртуальный сервис",
+    "httpRoutes": "HTTP-маршруты",
+    "l4Routes": "TCP- и TLS-маршруты",
+    "destinationRule": "Правило назначения",
+    "portTls": "TLS по портам",
+    "subsets": "Подмножества",
+    "gateway": "Шлюз",
+    "servers": "Серверы",
+    "boundVirtualServices": "Виртуальные сервисы, привязанные к этому шлюзу",
+    "serviceEntry": "Запись сервиса",
+    "sidecar": "Sidecar",
+    "workloadEntry": "Запись рабочей нагрузки",
+    "telemetry": "Телеметрия",
+    "peerAuthentication": "Аутентификация узлов",
+    "portMtls": "mTLS по портам",
+    "requestAuthentication": "Аутентификация запросов",
+    "authorizationPolicy": "Политика авторизации",
+    "istioMembership": "Istio",
+    "mtls": "mTLS Istio",
+    "whoMayCall": "Кто может вызывать эту рабочую нагрузку?",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "Профиль сервиса",
+    "profileRoutes": "Маршруты",
+    "server": "Сервер",
+    "serverAuthorizations": "Авторизации этого сервера",
+    "serverAuthorization": "Авторизация сервера",
+    "linkerdAuthorizationPolicy": "Политика авторизации",
+    "meshTlsAuthentication": "Аутентификация по mesh TLS",
+    "networkAuthentication": "Аутентификация по сети",
+    "linkerdHttpRoute": "HTTP-маршрут"
+  },
+  "exportTo": {
+    "everywhere": "Все namespace"
+  },
+  "vs": {
+    "delegate": "Нет: это делегат, его используют только маршруты других виртуальных сервисов, которые на него ссылаются",
+    "meshGateway": "mesh (sidecar)"
+  },
+  "scope": {
+    "mesh": "Все рабочие нагрузки сервисной сети",
+    "namespace": "Все рабочие нагрузки namespace",
+    "targetRef": "Gateway или waypoint (targetRef)"
+  },
+  "route": {
+    "title": "Маршрут {{n}}",
+    "titleNamed": "Маршрут {{n}} ({{name}})",
+    "order": "Маршруты проверяются сверху вниз; запрос забирает первый подходящий.",
+    "when": "Когда",
+    "then": "Тогда",
+    "everyRequest": "Любой запрос",
+    "everyConnection": "Любое соединение",
+    "alternative": "Вариант {{n}}:",
+    "to": "Отправить {{percent}}% на {{host}}",
+    "toSubset": "Отправить {{percent}}% на {{host}}, подмножество {{subset}}",
+    "delegate": "Передать запрос маршрутам виртуального сервиса {{name}}",
+    "directResponse": "Ответить HTTP {{status}}, никуда не отправляя запрос",
+    "redirect": "Перенаправить клиента",
+    "redirectTo": "Перенаправить клиента на {{target}}",
+    "timeout": "Прервать через {{timeout}}",
+    "noRetries": "Не повторять",
+    "retries_one": "Повторить до {{count}} раза",
+    "retries_few": "Повторить до {{count}} раз",
+    "retries_many": "Повторить до {{count}} раз",
+    "retries_other": "Повторить до {{count}} раза",
+    "retriesPerTry_one": "Повторить до {{count}} раза, {{perTry}} на попытку",
+    "retriesPerTry_few": "Повторить до {{count}} раз, {{perTry}} на попытку",
+    "retriesPerTry_many": "Повторить до {{count}} раз, {{perTry}} на попытку",
+    "retriesPerTry_other": "Повторить до {{count}} раза, {{perTry}} на попытку",
+    "retryOn": "Повторять при: {{on}}",
+    "faultDelay": "Задержать {{percent}}% запросов на {{delay}} (внедрение сбоев)",
+    "faultAbort": "Завершить {{percent}}% запросов с HTTP {{status}} (внедрение сбоев)",
+    "mirror": "Копировать {{percent}}% запросов на {{host}} (ответы игнорируются)",
+    "rewriteUri": "Заменить путь на {{uri}}",
+    "rewriteAuthority": "Заменить хост на {{authority}}"
+  },
+  "match": {
+    "uri": {
+      "exact": "Путь равен {{value}}",
+      "prefix": "Путь начинается с {{value}}",
+      "regex": "Путь соответствует регулярному выражению {{value}}"
+    },
+    "uriIgnoreCase": {
+      "exact": "Путь равен {{value}} (без учёта регистра)",
+      "prefix": "Путь начинается с {{value}} (без учёта регистра)",
+      "regex": "Путь соответствует регулярному выражению {{value}} (без учёта регистра)"
+    },
+    "method": {
+      "exact": "Метод — {{value}}",
+      "prefix": "Метод начинается с {{value}}",
+      "regex": "Метод соответствует регулярному выражению {{value}}"
+    },
+    "scheme": {
+      "exact": "Схема — {{value}}",
+      "prefix": "Схема начинается с {{value}}",
+      "regex": "Схема соответствует регулярному выражению {{value}}"
+    },
+    "authority": {
+      "exact": "Хост — {{value}}",
+      "prefix": "Хост начинается с {{value}}",
+      "regex": "Хост соответствует регулярному выражению {{value}}"
+    },
+    "header": {
+      "exact": "Заголовок {{name}} равен {{value}}",
+      "prefix": "Заголовок {{name}} начинается с {{value}}",
+      "regex": "Заголовок {{name}} соответствует регулярному выражению {{value}}"
+    },
+    "query": {
+      "exact": "Параметр запроса {{name}} равен {{value}}",
+      "prefix": "Параметр запроса {{name}} начинается с {{value}}",
+      "regex": "Параметр запроса {{name}} соответствует регулярному выражению {{value}}"
+    },
+    "headerPresent": "Заголовок {{name}} присутствует",
+    "headerAbsent": "Заголовка {{name}} нет",
+    "headerNot": "Заголовок {{name}} не равен {{value}}",
+    "queryPresent": "Параметр запроса {{name}} присутствует",
+    "port": "Порт — {{port}}",
+    "sourceLabels": "У вызывающей стороны метки {{labels}}",
+    "sourceNamespace": "Вызывающая сторона в namespace {{namespace}}",
+    "gateways": "Запрос приходит через: {{gateways}}"
+  },
+  "l4": {
+    "kind": "Вид",
+    "match": "Порты и хосты SNI",
+    "destinations": "Назначения"
+  },
+  "tls": {
+    "auto": "Не задан: Istio сам использует свой mTLS, где у назначения есть sidecar",
+    "mode": {
+      "DISABLE": "DISABLE: открытый текст, без TLS",
+      "SIMPLE": "SIMPLE: TLS до назначения без клиентского сертификата",
+      "MUTUAL": "MUTUAL: TLS с клиентским сертификатом из правила",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL: собственный mTLS Istio"
+    }
+  },
+  "dr": {
+    "subsetsHint": "Подмножество — это Pod назначения с метками подмножества; маршруты указывают подмножества, чтобы делить трафик между версиями."
+  },
+  "gateway": {
+    "selectorHint": "Шлюз обслуживают Pod с этими метками (входной или выходной шлюз Istio).",
+    "noneBound": "К этому шлюзу не привязан ни один виртуальный сервис: на любой запрос он отвечает 404."
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "Вне сервисной сети",
+      "MESH_INTERNAL": "Внутри сервисной сети"
+    },
+    "resolution": {
+      "NONE": "Как адресовано",
+      "STATIC": "Фиксированные адреса",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS (по кругу)"
+    }
+  },
+  "sidecar": {
+    "meaning": "Ограничивает, что sidecar выбранных рабочих нагрузок знают о сервисной сети: доступны только перечисленные исходящие хосты.",
+    "wholeNamespace": "Все рабочие нагрузки namespace"
+  },
+  "workloadEntry": {
+    "meaning": "Рабочая нагрузка вне Kubernetes (ВМ), которую сервисная сеть считает Pod с этими метками."
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "Принимаются только соединения mTLS Istio; вызовы открытым текстом отклоняются.",
+      "PERMISSIVE": "Принимаются и соединения mTLS Istio, и открытым текстом.",
+      "DISABLE": "mTLS Istio выключен: соединения идут открытым текстом.",
+      "UNSET": "Не задан: режим наследуется (рабочая нагрузка, затем namespace, затем сервисная сеть; PERMISSIVE, если нигде не задан)."
+    },
+    "precedence": "Приоритет: политика с селектором рабочей нагрузки, затем политика namespace, затем общая политика сервисной сети в корневом namespace istio-system.",
+    "source": {
+      "workload": "Задан PeerAuthentication {{name}} для этой рабочей нагрузки:",
+      "namespace": "Задан PeerAuthentication {{name}} этого namespace:",
+      "mesh": "Задан общим PeerAuthentication {{name}} сервисной сети:",
+      "default": "Ни один PeerAuthentication его не задаёт: по умолчанию в Istio — PERMISSIVE."
+    }
+  },
+  "jwt": {
+    "meaning": "Запрос с недействительным токеном отклоняется; запрос без токена пропускается, если AuthorizationPolicy не требует принципала запроса.",
+    "inlineKeys": "Ключи в правиле"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "Применяется к рабочим нагрузкам namespace {{namespace}}, подходящим под её селектор.",
+      "namespace": "Применяется ко всем рабочим нагрузкам namespace {{namespace}}.",
+      "mesh": "Применяется ко всем рабочим нагрузкам сервисной сети: она в корневом namespace {{namespace}}.",
+      "targetRef": "Прикреплена к Gateway или waypoint (targetRef), а не к собственным прокси рабочих нагрузок."
+    },
+    "action": {
+      "ALLOW": "Разрешает запросы, подходящие под одно из её правил; как только к рабочей нагрузке применяется политика ALLOW, все остальные запросы к ней запрещены.",
+      "DENY": "Запрещает запросы, подходящие под одно из её правил, что бы ни говорили политики ALLOW.",
+      "AUDIT": "Только помечает подходящие запросы для журнала аудита; ничего не разрешает и не запрещает.",
+      "CUSTOM": "Передаёт подходящие запросы внешнему авторизатору {{provider}}, который может их запретить.",
+      "INVALID": "Её действие Istio не принимает: Istio отклоняет политику, поэтому что она делает, сказать нельзя."
+    },
+    "special": {
+      "allowNothing": "У неё нет правил: она ничего не разрешает, поэтому все запросы к этим рабочим нагрузкам запрещены.",
+      "noRules": "У неё нет правил: она не подходит ни к одному запросу и ни на что не влияет.",
+      "everything": "Её пустое правило подходит к любому запросу."
+    },
+    "order": "Istio проверяет сначала политики CUSTOM, затем DENY, затем ALLOW.",
+    "rule": "Правило {{n}}",
+    "emptyRule": "Любой запрос (пустое правило).",
+    "valuesExcept": "{{values}}, кроме {{except}}",
+    "anythingExcept": "Что угодно, кроме {{except}}",
+    "fields": {
+      "principals": "Вызывающие (принципалы)",
+      "notPrincipals": "Не вызывающие (принципалы)",
+      "requestPrincipals": "Принципалы токена",
+      "notRequestPrincipals": "Не принципалы токена",
+      "namespaces": "Namespace вызывающих",
+      "notNamespaces": "Не namespace вызывающих",
+      "ipBlocks": "IP вызывающих",
+      "notIpBlocks": "Не IP вызывающих",
+      "remoteIpBlocks": "Удалённые IP",
+      "notRemoteIpBlocks": "Не удалённые IP",
+      "hosts": "Хосты",
+      "notHosts": "Не хосты",
+      "ports": "Порты",
+      "notPorts": "Не порты",
+      "methods": "Методы",
+      "notMethods": "Не методы",
+      "paths": "Пути",
+      "notPaths": "Не пути",
+      "condition": "Когда {{key}}"
+    },
+    "callerHint": "Опишите вызывающую сторону: незаполненное считается неизвестным, и политика, которая от этого зависит, показывается как не оценённая. Считается, что вызывающая сторона в сервисной сети с mTLS и известна по своему namespace и service account в домене доверия cluster.local.",
+    "caller": {
+      "namespace": "Namespace вызывающего",
+      "serviceAccount": "Service account",
+      "method": "Метод",
+      "path": "Путь",
+      "port": "Порт",
+      "ip": "IP вызывающего",
+      "remoteIp": "Удалённый IP (за прокси)"
+    },
+    "decision": {
+      "allowed": "Разрешено",
+      "denied": "Запрещено",
+      "unknown": "Нельзя сказать",
+      "external": "Решает внешний авторизатор"
+    },
+    "reason": {
+      "noPolicies": "К этой рабочей нагрузке не применяется ни одна политика ALLOW, и ни одна политика DENY не подходит.",
+      "allowMatched": "Подходит правило {{rule}} политики ALLOW {{name}}.",
+      "noAllowMatched": "К этой рабочей нагрузке применяются политики ALLOW, и ни одна из них не подходит.",
+      "denyMatched": "Подходит правило {{rule}} политики DENY {{name}}.",
+      "denyMayMatch": "Политика DENY {{name}} может подойти: это зависит от того, что не оценено.",
+      "allowMayMatch": "Пропустить может только политика ALLOW {{name}}, а она зависит от того, что не оценено.",
+      "customMatched": "Подходит политика CUSTOM {{name}}: решает внешний авторизатор.",
+      "customMayMatch": "Политика CUSTOM {{name}} может подойти: это зависит от того, что не оценено.",
+      "targetRefNotEvaluated": "Политика DENY или CUSTOM, прикреплённая через targetRef, здесь не оценивается и может отклонить запрос.",
+      "invalidPolicy": "У политики {{name}} действие, которое Istio не принимает: что она делает, сказать нельзя."
+    },
+    "match": {
+      "yes": "Да",
+      "no": "Нет",
+      "unknown": "Не оценено"
+    },
+    "targetRefSkipped": "Прикреплены через targetRef к Gateway или waypoint, не оценены:",
+    "dryRun": "Пробный режим (istio.io/dry-run): её решения только записываются в журнал и не применяются.",
+    "dryRunAction": "{{action}} (пробный режим, не применяется)"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "В сервисной сети Istio с прокси sidecar.",
+      "nativeSidecar": "В сервисной сети Istio с прокси sidecar, запущенным как нативный sidecar (init-контейнер).",
+      "ambient": "В сервисной сети Istio в режиме ambient: без sidecar, трафик несёт ztunnel.",
+      "none": "Не в сервисной сети Istio.",
+      "injectedPods": "Его Pod получают sidecar Istio при создании.",
+      "noInjection": "Его Pod не получают sidecar Istio.",
+      "optedOut": "Pod отказался от сервисной сети.",
+      "restart": "Внедрение sidecar включено, но у этого Pod нет прокси: он создан до включения внедрения, или инжектор не сработал. Перезапустите его, чтобы добавить в сервисную сеть."
+    },
+    "linkerd": {
+      "proxy": "В сервисной сети Linkerd: рядом работает linkerd-proxy.",
+      "nativeProxy": "В сервисной сети Linkerd: linkerd-proxy работает как нативный sidecar (init-контейнер).",
+      "none": "Не в сервисной сети Linkerd.",
+      "injectedPods": "Его Pod получают прокси Linkerd при создании.",
+      "noInjection": "Его Pod не получают прокси Linkerd.",
+      "restart": "Внедрение прокси включено, но у этого Pod нет прокси: он создан до включения внедрения. Перезапустите его, чтобы добавить в сервисную сеть.",
+      "goldenMetrics": "linkerd-viz установлен. Sextant не читает его долю успешных запросов, частоту запросов и задержку: смотрите их через linkerd viz stat или панель linkerd-viz."
+    },
+    "via": {
+      "pod": "Включено, задано на Pod",
+      "namespace": "Включено, задано на namespace"
+    },
+    "injectOn": {
+      "pod": "{{value}}, задано на Pod",
+      "namespace": "{{value}}, задано на namespace"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "Маршруты, повторы и тайм-ауты вызовов {{host}}.",
+    "retryBudget": "Бюджет повторов: не больше {{ratio}} дополнительных запросов на запрос, не меньше {{min}} повторов в секунду, за {{ttl}}.",
+    "compoundCondition": "Несколько условий",
+    "serverMeaning": "Описывает порт выбранных Pod. Вызывать его могут только клиенты, которых пускают его авторизации; если их нет, решает доступ по умолчанию.",
+    "noAuthorizations": "Ни одна авторизация в этом namespace не нацелена на этот сервер: кто может его вызывать, решает доступ по умолчанию.",
+    "allows": "Пускает:",
+    "client": {
+      "unauthenticated": "Любого клиента, в том числе без mTLS",
+      "unauthenticatedTls": "Любого клиента из сервисной сети, с любой идентичностью",
+      "identities": "Клиентов из сервисной сети с идентичностями: {{values}}",
+      "serviceAccounts": "Клиентов из сервисной сети с service account: {{values}}",
+      "networks": "Клиентов из сетей: {{values}}"
+    },
+    "policyMeaning": "Пускает клиентов, прошедших все обязательные аутентификации.",
+    "policyNoAuth": "Не требует аутентификации: пускает всех клиентов.",
+    "meshTlsMeaning": "Клиенты, предъявившие одну из этих идентичностей mesh TLS.",
+    "networkMeaning": "Клиенты, чей адрес входит в одну из этих сетей.",
+    "networkExcept": "{{cidr}}, кроме {{except}}"
+  },
+  "check": {
+    "title": "Маршрутизация запроса",
+    "open": "Проверить запрос…",
+    "hint": "Введите URL и нажмите «Проверить»: по правилам маршрутизации Istio найдутся виртуальный сервис, маршрут, назначения, подмножества и Pod, которые обслужат запрос.",
+    "notServed": "Этот кластер не обслуживает VirtualService и DestinationRule Istio.",
+    "result": "Куда идёт запрос",
+    "notesTitle": "Примечания",
+    "alsoConsidered": "Также рассмотрены",
+    "form": {
+      "method": "Метод",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "Проверить",
+      "invalidUrl": "Введите URL http:// или https:// с хостом.",
+      "from": "Откуда",
+      "fromMesh": "Рабочая нагрузка в сервисной сети",
+      "fromGateway": "Шлюз Istio",
+      "gateway": "Шлюз",
+      "pickGateway": "Выберите шлюз",
+      "namespace": "Namespace вызывающего",
+      "labels": "Метки вызывающего",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "Не в формате key=value: {{labels}}",
+      "headers": "Заголовки",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_one": "Строка {{lines}} не в формате «имя: значение»",
+      "badHeaders_few": "Строки {{lines}} не в формате «имя: значение»",
+      "badHeaders_many": "Строки {{lines}} не в формате «имя: значение»",
+      "badHeaders_other": "Строки {{lines}} не в формате «имя: значение»"
+    },
+    "steps": {
+      "gateway": "Шлюз",
+      "virtualService": "Виртуальный сервис",
+      "route": "Маршрут",
+      "destinations": "Назначения",
+      "answer": "Ответ"
+    },
+    "outcome": {
+      "routed": "Маршрутизирован",
+      "defaultRoute": "Отправлен в сервис как есть",
+      "redirected": "Перенаправлен ({{status}})",
+      "directResponse": "Ответил прокси ({{status}})",
+      "noRoute": "Нет маршрута: 404",
+      "passthrough": "Неизвестный хост",
+      "noGatewayServer": "Шлюз не обслуживает: 404",
+      "unknownGateway": "Нет такого шлюза",
+      "delegateMissing": "Делегат не найден: 404",
+      "l4Only": "Только TCP- или TLS-маршруты",
+      "notEvaluated": "Не оценено"
+    },
+    "server": "Сервер на порту {{port}} ({{protocol}}) для {{hosts}}",
+    "matchedHost": "Подошёл по хосту {{host}}.",
+    "merged": "Шлюз объединяет маршруты этих виртуальных сервисов, начиная со старейшего.",
+    "viaDelegate": "Достигнут через делегирующий виртуальный сервис {{name}}.",
+    "skipped": {
+      "uri": "Маршрут {{route}} в {{vs}} пропущен: не совпал путь.",
+      "scheme": "Маршрут {{route}} в {{vs}} пропущен: не совпала схема.",
+      "method": "Маршрут {{route}} в {{vs}} пропущен: не совпал метод.",
+      "authority": "Маршрут {{route}} в {{vs}} пропущен: не совпал хост.",
+      "headers": "Маршрут {{route}} в {{vs}} пропущен: не совпал заголовок.",
+      "withoutHeaders": "Маршрут {{route}} в {{vs}} пропущен: есть исключённый заголовок.",
+      "queryParams": "Маршрут {{route}} в {{vs}} пропущен: не совпал параметр запроса.",
+      "port": "Маршрут {{route}} в {{vs}} пропущен: не совпал порт.",
+      "sourceLabels": "Маршрут {{route}} в {{vs}} пропущен: не совпали метки вызывающего.",
+      "sourceNamespace": "Маршрут {{route}} в {{vs}} пропущен: не совпал namespace вызывающего.",
+      "gateways": "Маршрут {{route}} в {{vs}} пропущен: он для других шлюзов."
+    },
+    "skippedNoReason": "Маршрут {{route}} в {{vs}} пропущен.",
+    "pods": "Готово {{ready}} из {{total}}",
+    "why": {
+      "unknownGateway": "Такого шлюза нет среди Gateway Istio в кластере.",
+      "noGatewayServer": "Ни один сервер шлюза не указывает хост {{host}}.",
+      "noVirtualService": "Вызывающей стороне не виден ни один виртуальный сервис для {{host}}: sidecar отправляет запрос в сервис с этим именем как есть.",
+      "noVirtualServiceGateway": "Ни один виртуальный сервис, привязанный к этому шлюзу, не покрывает {{host}}.",
+      "noRoute": "Ни один маршрут виртуального сервиса не подходит под запрос.",
+      "notEvaluated": "В этом маршруте регулярное выражение, которое JavaScript не может прочитать: совпадение не оценивается, как и маршруты после него.",
+      "delegateMissing": "Маршрут передаёт запрос делегирующему виртуальному сервису, которого не существует.",
+      "l4Only": "У виртуального сервиса только TCP- или TLS-маршруты, а эта проверка их не отслеживает."
+    },
+    "problem": {
+      "unknownHost": "Этого хоста нет ни у одного Service или ServiceEntry.",
+      "noDestinationRule": "Ни одно правило назначения не задаёт подмножество {{subset}}: прокси отвечает 503.",
+      "missingSubset": "В правиле назначения нет подмножества {{subset}}: прокси отвечает 503."
+    },
+    "answer": {
+      "redirected": "Прокси отвечает перенаправлением ({{status}}).",
+      "directResponse": "Прокси сам отвечает HTTP {{status}}.",
+      "noRoute": "Прокси отвечает 404: ни один маршрут не принимает запрос.",
+      "passthrough": "Этого хоста нет ни у Service, ни у ServiceEntry, ни у виртуального сервиса: что будет, зависит от политики исходящего трафика сервисной сети (ALLOW_ANY пропускает, REGISTRY_ONLY отклоняет).",
+      "noGatewayServer": "Шлюз отвечает 404.",
+      "delegateMissing": "Прокси отвечает 404."
+    },
+    "candidate": {
+      "notExported": "Не экспортирован в namespace вызывающего (exportTo).",
+      "lessSpecificHost": "Хост менее конкретный.",
+      "duplicateIgnored": "Тот же хост на sidecar: Istio использует только старейший виртуальный сервис.",
+      "invalidMeshWildcard": "Привязан к sidecar с хостом *, который Istio отклоняет: ничего не маршрутизирует."
+    },
+    "notes": {
+      "regexDialect": "Регулярные выражения Istio — RE2; здесь они читаются как JavaScript, а в обычных шаблонах они совпадают.",
+      "sidecarScope": "Ресурс Sidecar может скрыть хосты от вызывающей стороны; ресурсы Sidecar не оцениваются.",
+      "l4NotChecked": "TCP- и TLS-маршруты не проверяются.",
+      "gatewayPort": "Ни один сервер шлюза не слушает порт из URL: показан сервер для хоста на другом порту (Service шлюза может переназначать порты).",
+      "gatewaySourceLabels": "Метки вызывающего сравниваются с селектором шлюза."
+    }
+  }
+}

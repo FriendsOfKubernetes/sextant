@@ -28,6 +28,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "Siatka usług",
     "security": "Bezpieczeństwo",
     "credentials": "Poświadczenia",
     "disk": "Dysk prawie pełny",
@@ -47,7 +48,14 @@
     "securityBaseline_many": "{{count}} naruszeń Pod Security Baseline: {{fields}}",
     "securityBaseline_other": "{{count}} naruszenia Pod Security Baseline: {{fields}}",
     "diskUsage": "Zajęte {{percent}} miejsca ({{used}} z {{capacity}})",
-    "inodeUsage": "Zajęte {{percent}} inodes ({{used}} z {{total}})"
+    "inodeUsage": "Zajęte {{percent}} inodes ({{used}} z {{total}})",
+    "meshUnknownHost": "Kieruje do {{host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
+    "meshMissingDestinationRule": "Kieruje do podzbioru {{subset}} hosta {{host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
+    "meshMissingSubset": "Kieruje do podzbioru {{subset}} hosta {{host}}, którego reguła docelowa {{rule}} nie definiuje: proxy odpowiada 503.",
+    "meshMissingGateway": "Powiązany z bramą {{gateway}}, która nie istnieje.",
+    "meshTlsConflict": "Ustawia tryb TLS {{mode}} wobec {{host}}, którego obciążenia przyjmują tylko mTLS Istio (STRICT): wywołania się nie udają. Należy użyć ISTIO_MUTUAL.",
+    "meshConflictingVirtualService": "Host {{host}} na {{gateway}} jest już zajęty przez starszą usługę wirtualną {{other}}: trasy tej usługi nie są osiągane.",
+    "meshInvalidVirtualService": "Ma host * przy powiązaniu z sidecarami (mesh): Istio ją odrzuca, więc żadna z jej tras nie jest używana."
   },
   "showDisk": "Dysk prawie pełny"
 }

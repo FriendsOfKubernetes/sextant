@@ -5,7 +5,7 @@
 // panel's buttons. Keyboard only: arrows, Home/End, Enter, Tab, Shift+Tab or Backspace back to the results, Escape.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, useSettings, type ApiError, type KubeObject } from "../../api";
+import { api, isCapped, toApiError, useSettings, type ApiError, type KubeObject } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
 import { Icon } from "../../components";
 import { usePagesVersion } from "../../layout/pages";
@@ -328,6 +328,8 @@ export function Palette({ onClose }: { onClose: () => void }) {
 
   const searching = clusterId && !step && index.pending > 0 && query.trim() !== "";
   const limited = clusterId && !step && allKinds && (searchable?.length ?? 0) > MAX_SEARCH_KINDS;
+  // A kind with more objects than the index keeps (#157): only the first ones were searched.
+  const capped = clusterId && !step && query.trim() !== "" ? index.kinds.find((k) => isCapped(k.state)) : undefined;
 
   let note: string | null = null;
   if (step?.error) note = t("palette:actionsFailed", { message: step.error.message });
@@ -393,7 +395,13 @@ export function Palette({ onClose }: { onClose: () => void }) {
                   })
                 : limited
                   ? t("palette:limited", { count: MAX_SEARCH_KINDS, total: searchable?.length ?? 0 })
-                  : "")}
+                  : capped
+                    ? t("scale:palette.capped", {
+                        kind: kindTitle(t, capped.kind, capped.resourceKind),
+                        shown: capped.state.items.size,
+                        count: capped.state.total,
+                      })
+                    : "")}
           </span>
           <span className="palette__hint">{step ? t("palette:hintActions") : t("palette:hint")}</span>
         </div>

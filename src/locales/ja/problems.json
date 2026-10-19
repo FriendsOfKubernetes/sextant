@@ -22,6 +22,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "サービスメッシュ",
     "security": "セキュリティ",
     "credentials": "認証情報",
     "disk": "ディスク残りわずか",
@@ -35,7 +36,14 @@
     "expired": "{{date}} に期限切れ",
     "securityBaseline_other": "Pod Security Baseline 違反 {{count}} 件: {{fields}}",
     "diskUsage": "容量の {{percent}} を使用中 ({{used}} / {{capacity}})",
-    "inodeUsage": "inode の {{percent}} を使用中 ({{used}} / {{total}})"
+    "inodeUsage": "inode の {{percent}} を使用中 ({{used}} / {{total}})",
+    "meshUnknownHost": "{{host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
+    "meshMissingDestinationRule": "{{host}} のサブセット {{subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
+    "meshMissingSubset": "{{host}} のサブセット {{subset}} へルーティングしていますが、宛先ルール {{rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
+    "meshMissingGateway": "存在しないゲートウェイ {{gateway}} にバインドされています。",
+    "meshTlsConflict": "{{host}} への TLS モードを {{mode}} にしていますが、そのワークロードは Istio の mTLS (STRICT) しか受け付けません。呼び出しは失敗します。ISTIO_MUTUAL を使用してください。",
+    "meshConflictingVirtualService": "{{gateway}} のホスト {{host}} は、より古い仮想サービス {{other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
+    "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。"
   },
   "showDisk": "ディスク残りわずか"
 }

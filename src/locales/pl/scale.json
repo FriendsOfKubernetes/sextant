@@ -1,0 +1,38 @@
+{
+  "table": {
+    "loadingMore_one": "Wczytywanie… dotąd {{count}}",
+    "loadingMore_few": "Wczytywanie… dotąd {{count}}",
+    "loadingMore_many": "Wczytywanie… dotąd {{count}}",
+    "loadingMore_other": "Wczytywanie… dotąd {{count}}",
+    "updating": "Aktualizowanie…",
+    "capped_one": "Wyświetlane jest pierwszych {{shown}} z {{count}} obiektu. Aby zobaczyć resztę, zawęź listę według namespace lub label.",
+    "capped_few": "Wyświetlane jest pierwszych {{shown}} z {{count}} obiektów. Aby zobaczyć resztę, zawęź listę według namespace lub label.",
+    "capped_many": "Wyświetlane jest pierwszych {{shown}} z {{count}} obiektów. Aby zobaczyć resztę, zawęź listę według namespace lub label.",
+    "capped_other": "Wyświetlane jest pierwszych {{shown}} z {{count}} obiektu. Aby zobaczyć resztę, zawęź listę według namespace lub label."
+  },
+  "guard": {
+    "title_one": "{{kind}}: około {{count}} obiektu we wszystkich namespace",
+    "title_few": "{{kind}}: około {{count}} obiektów we wszystkich namespace",
+    "title_many": "{{kind}}: około {{count}} obiektów we wszystkich namespace",
+    "title_other": "{{kind}}: około {{count}} obiektu we wszystkich namespace",
+    "titleAtLeast_one": "{{kind}}: co najmniej {{count}} obiekt we wszystkich namespace",
+    "titleAtLeast_few": "{{kind}}: co najmniej {{count}} obiekty we wszystkich namespace",
+    "titleAtLeast_many": "{{kind}}: co najmniej {{count}} obiektów we wszystkich namespace",
+    "titleAtLeast_other": "{{kind}}: co najmniej {{count}} obiektu we wszystkich namespace",
+    "text": "Wyświetlenie wszystkich wymaga pobrania każdego obiektu i może potrwać; tabela przechowuje pierwszych {{max}}. Wybierz namespace lub wpisz label selector (app=web), aby było ich mniej, albo mimo to je pokaż.",
+    "showAnyway": "Pokaż mimo to"
+  },
+  "sidebar": {
+    "count_one": "{{count}} obiekt",
+    "count_few": "{{count}} obiekty",
+    "count_many": "{{count}} obiektów",
+    "count_other": "{{count}} obiektu",
+    "countCapped": "Ponad {{max}} obiektów"
+  },
+  "palette": {
+    "capped_one": "{{kind}}: przeszukiwanych jest pierwszych {{shown}} z {{count}} obiektu",
+    "capped_few": "{{kind}}: przeszukiwanych jest pierwszych {{shown}} z {{count}} obiektów",
+    "capped_many": "{{kind}}: przeszukiwanych jest pierwszych {{shown}} z {{count}} obiektów",
+    "capped_other": "{{kind}}: przeszukiwanych jest pierwszych {{shown}} z {{count}} obiektu"
+  }
+}

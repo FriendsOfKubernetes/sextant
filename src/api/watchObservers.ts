@@ -7,9 +7,10 @@
 //
 // Observers run synchronously in the watch's callback: they must be cheap and must not throw (a throw is swallowed so a
 // watch never breaks because of one).
-import type { ClusterId, WatchSpec, WatchUpdate } from "./types";
+import type { ClusterId, WatchOptions, WatchSpec, WatchUpdate } from "./types";
 
-export type WatchObserver = (clusterId: ClusterId, spec: WatchSpec, update: WatchUpdate) => void;
+/** `options`: how the reporting stream was opened (a capped list may not be the whole list). */
+export type WatchObserver = (clusterId: ClusterId, spec: WatchSpec, update: WatchUpdate, options?: WatchOptions) => void;
 
 const observers = new Set<WatchObserver>();
 
@@ -22,11 +23,16 @@ export function observeWatchUpdates(observer: WatchObserver): () => void {
 }
 
 /** Called by the watch layers with each update they receive. */
-export function reportWatchUpdate(clusterId: ClusterId, spec: WatchSpec, update: WatchUpdate): void {
+export function reportWatchUpdate(
+  clusterId: ClusterId,
+  spec: WatchSpec,
+  update: WatchUpdate,
+  options?: WatchOptions,
+): void {
   if (observers.size === 0) return;
   for (const observer of [...observers]) {
     try {
-      observer(clusterId, spec, update);
+      observer(clusterId, spec, update, options);
     } catch {
       // An observer's bug never breaks the watch that reported.
     }

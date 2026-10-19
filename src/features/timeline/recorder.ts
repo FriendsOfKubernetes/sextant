@@ -29,6 +29,7 @@ import {
   type FieldManager,
   type KindRef,
   type KubeObject,
+  type WatchOptions,
   type WatchSpec,
   type WatchUpdate,
 } from "../../api";
@@ -292,8 +293,7 @@ export function followsDeletions(spec: WatchSpec): boolean {
  * A fresh, complete list of `spec`: the remembered objects it would hold but does not were deleted while nothing
  * watched them (or are out of reach now): they are forgotten, without a record — when is not known.
  */
-function prune(log: ClusterLog, spec: WatchSpec, items: readonly KubeObject[]): void {
-  const listed = new Set(items.map(uidOf));
+function prune(log: ClusterLog, spec: WatchSpec, listed: ReadonlySet<string>): void {
   const namespaces = spec.namespaces ? new Set(spec.namespaces) : null;
   const name = spec.fieldSelector ? BY_NAME.exec(spec.fieldSelector)?.[1] : undefined;
   for (const [uid, b] of [...log.baselines]) {
@@ -304,18 +304,47 @@ function prune(log: ClusterLog, spec: WatchSpec, items: readonly KubeObject[]): 
   }
 }
 
+/** Uids of the lists that arrive in parts (`WatchOptions.progressive`), by cluster and spec, until their end. */
+const listing = new Map<string, Set<string>>();
+
+/** Whether a list of `count` objects is the whole list: a capped watch that kept its cap may have left some out. */
+function isWhole(count: number, options: WatchOptions | undefined): boolean {
+  return options?.maxObjects === undefined || count < options.maxObjects;
+}
+
 /** Every update of every watch the window has open. */
-export function observe(clusterId: ClusterId, spec: WatchSpec, update: WatchUpdate): void {
+export function observe(clusterId: ClusterId, spec: WatchSpec, update: WatchUpdate, options?: WatchOptions): void {
   if (spec.metadataOnly || !isRecordedKind(spec.kind) || !followsDeletions(spec)) return;
-  if (update.type !== "snapshot" && update.type !== "delta") return;
+  if (update.type === "reconnecting" || update.type === "error" || update.type === "forbidden" || update.type === "capped") {
+    return;
+  }
   const log = logOf(clusterId);
   let any = false;
   // A list's objects keep the kind's served version; an object's own apiVersion may be the same kind in another one.
   const kind = spec.kind;
+  const listKey = JSON.stringify([clusterId, spec]);
   if (update.type === "snapshot") {
+    listing.delete(listKey);
     const items = update.items as KubeObject[];
-    prune(log, spec, items);
+    if (isWhole(items.length, options)) prune(log, spec, new Set(items.map(uidOf)));
     for (const obj of items) any = see(clusterId, log, kind, obj, true) || any;
+  } else if (update.type === "snapshotPart" || update.type === "snapshotEnd") {
+    // A list in parts: every part is a baseline (no "created"); its end prunes like a whole snapshot.
+    const listed = listing.get(listKey) ?? new Set<string>();
+    listing.set(listKey, listed);
+    const items = update.items as KubeObject[];
+    for (const obj of items) {
+      listed.add(uidOf(obj));
+      any = see(clusterId, log, kind, obj, true) || any;
+    }
+    if (update.type === "snapshotEnd") {
+      listing.delete(listKey);
+      for (const uid of update.deleted) {
+        listed.delete(uid);
+        dropBaseline(log, uid);
+      }
+      if (isWhole(listed.size, options)) prune(log, spec, listed);
+    }
   } else {
     for (const obj of update.upserted as KubeObject[]) any = see(clusterId, log, kind, obj, false) || any;
     for (const uid of update.deleted) {
@@ -616,6 +645,7 @@ export function startRecorder(): void {
 
 /** Stops and forgets everything (tests); `now` replaces the clock. */
 export function resetRecorder(now: (() => number) | null = null): void {
+  listing.clear();
   stopObserving?.();
   stopObserving = undefined;
   unfollow?.();

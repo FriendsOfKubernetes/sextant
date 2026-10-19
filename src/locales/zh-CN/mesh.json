@@ -1,0 +1,525 @@
+{
+  "sidebar": {
+    "virtualServices": "Virtual Services",
+    "destinationRules": "Destination Rules",
+    "gateways": "Gateways",
+    "serviceEntries": "Service Entries",
+    "sidecars": "Sidecars",
+    "workloadEntries": "Workload Entries",
+    "peerAuthentications": "Peer Authentications",
+    "requestAuthentications": "Request Authentications",
+    "authorizationPolicies": "Authorization Policies",
+    "telemetries": "Telemetry",
+    "serviceProfiles": "Service Profiles",
+    "servers": "Servers",
+    "httpRoutes": "HTTP Routes",
+    "serverAuthorizations": "Server Authorizations",
+    "meshTlsAuthentications": "Mesh TLS Authentications",
+    "networkAuthentications": "Network Authentications",
+    "requestCheck": "请求路由"
+  },
+  "problemsCount_other": "{{count}} 个 Istio 配置问题",
+  "loading": "正在加载网格配置…",
+  "yes": "是",
+  "no": "否",
+  "columns": {
+    "hosts": "主机",
+    "gateways": "网关",
+    "routes": "路由",
+    "host": "主机",
+    "subsets": "子集",
+    "tlsMode": "TLS 模式",
+    "servers": "服务器",
+    "location": "位置",
+    "resolution": "解析方式",
+    "appliesTo": "适用于",
+    "egressHosts": "出口主机",
+    "address": "地址",
+    "serviceAccount": "Service account",
+    "mtlsMode": "mTLS 模式",
+    "issuers": "签发者",
+    "action": "动作",
+    "rules": "规则",
+    "port": "端口",
+    "proxyProtocol": "协议",
+    "podSelector": "Pod 选择器",
+    "parents": "父级",
+    "target": "目标",
+    "authentications": "认证",
+    "server": "服务器",
+    "identities": "身份",
+    "networks": "网络",
+    "name": "名称",
+    "labels": "标签",
+    "protocol": "协议",
+    "issuer": "签发者",
+    "audiences": "受众",
+    "keys": "密钥",
+    "condition": "条件",
+    "retryable": "重试",
+    "timeout": "超时",
+    "match": "匹配",
+    "destinations": "目标",
+    "destination": "目标",
+    "weight": "权重",
+    "subset": "子集",
+    "destinationRule": "目标规则",
+    "pods": "Pod",
+    "policy": "策略",
+    "matches": "匹配",
+    "notEvaluated": "未评估"
+  },
+  "fields": {
+    "hosts": "主机",
+    "gateways": "网关",
+    "exportTo": "可见于",
+    "host": "主机",
+    "tlsMode": "TLS 模式",
+    "loadBalancer": "负载均衡",
+    "workloadSelector": "客户端",
+    "selector": "网关 Pod",
+    "location": "位置",
+    "resolution": "解析方式",
+    "ports": "端口",
+    "addresses": "地址",
+    "appliesTo": "适用于",
+    "egressHosts": "出口主机",
+    "outboundTrafficPolicy": "出站流量",
+    "address": "地址",
+    "labels": "标签",
+    "serviceAccount": "Service account",
+    "network": "网络",
+    "tracing": "追踪",
+    "metrics": "指标",
+    "accessLogging": "访问日志",
+    "mtlsMode": "mTLS 模式",
+    "action": "动作",
+    "provider": "提供方",
+    "podSelector": "Pod 选择器",
+    "port": "端口",
+    "proxyProtocol": "协议",
+    "accessPolicy": "默认访问",
+    "server": "服务器",
+    "target": "目标",
+    "requiredAuthentications": "必需的认证",
+    "identities": "身份",
+    "identityRefs": "身份引用",
+    "networks": "网络",
+    "parents": "父级",
+    "hostnames": "主机名",
+    "revision": "修订版本",
+    "injection": "Sidecar 注入",
+    "proxyImage": "代理镜像",
+    "linkerdInject": "代理注入",
+    "controlPlane": "控制平面",
+    "proxyVersion": "代理版本"
+  },
+  "blocks": {
+    "virtualService": "虚拟服务",
+    "httpRoutes": "HTTP 路由",
+    "l4Routes": "TCP 和 TLS 路由",
+    "destinationRule": "目标规则",
+    "portTls": "按端口的 TLS",
+    "subsets": "子集",
+    "gateway": "网关",
+    "servers": "服务器",
+    "boundVirtualServices": "绑定到此网关的虚拟服务",
+    "serviceEntry": "服务条目",
+    "sidecar": "Sidecar",
+    "workloadEntry": "工作负载条目",
+    "telemetry": "遥测",
+    "peerAuthentication": "对等认证",
+    "portMtls": "按端口的 mTLS",
+    "requestAuthentication": "请求认证",
+    "authorizationPolicy": "授权策略",
+    "istioMembership": "Istio",
+    "mtls": "Istio mTLS",
+    "whoMayCall": "谁可以调用此工作负载？",
+    "linkerdMembership": "Linkerd",
+    "serviceProfile": "服务配置文件",
+    "profileRoutes": "路由",
+    "server": "服务器",
+    "serverAuthorizations": "此服务器的授权",
+    "serverAuthorization": "服务器授权",
+    "linkerdAuthorizationPolicy": "授权策略",
+    "meshTlsAuthentication": "Mesh TLS 认证",
+    "networkAuthentication": "网络认证",
+    "linkerdHttpRoute": "HTTP 路由"
+  },
+  "exportTo": {
+    "everywhere": "所有 namespace"
+  },
+  "vs": {
+    "delegate": "无：这是委托，仅由引用它的其他虚拟服务的路由使用",
+    "meshGateway": "mesh（Sidecar）"
+  },
+  "scope": {
+    "mesh": "网格中的所有工作负载",
+    "namespace": "namespace 中的所有工作负载",
+    "targetRef": "Gateway 或 waypoint（targetRef）"
+  },
+  "route": {
+    "title": "路由 {{n}}",
+    "titleNamed": "路由 {{n}}（{{name}}）",
+    "order": "路由从上到下依次尝试；第一个匹配的路由接收请求。",
+    "when": "条件",
+    "then": "动作",
+    "everyRequest": "所有请求",
+    "everyConnection": "所有连接",
+    "alternative": "备选 {{n}}：",
+    "to": "将 {{percent}}% 发送到 {{host}}",
+    "toSubset": "将 {{percent}}% 发送到 {{host}} 的子集 {{subset}}",
+    "delegate": "将请求交给虚拟服务 {{name}} 的路由",
+    "directResponse": "直接以 HTTP {{status}} 应答，不转发",
+    "redirect": "重定向客户端",
+    "redirectTo": "将客户端重定向到 {{target}}",
+    "timeout": "{{timeout}} 后放弃",
+    "noRetries": "从不重试",
+    "retries_other": "最多重试 {{count}} 次",
+    "retriesPerTry_other": "最多重试 {{count}} 次，每次尝试 {{perTry}}",
+    "retryOn": "在以下情况重试：{{on}}",
+    "faultDelay": "将 {{percent}}% 的请求延迟 {{delay}}（故障注入）",
+    "faultAbort": "让 {{percent}}% 的请求以 HTTP {{status}} 失败（故障注入）",
+    "mirror": "将 {{percent}}% 的请求复制到 {{host}}（忽略应答）",
+    "rewriteUri": "将路径重写为 {{uri}}",
+    "rewriteAuthority": "将主机重写为 {{authority}}"
+  },
+  "match": {
+    "uri": {
+      "exact": "路径为 {{value}}",
+      "prefix": "路径以 {{value}} 开头",
+      "regex": "路径匹配正则表达式 {{value}}"
+    },
+    "uriIgnoreCase": {
+      "exact": "路径为 {{value}}（不区分大小写）",
+      "prefix": "路径以 {{value}} 开头（不区分大小写）",
+      "regex": "路径匹配正则表达式 {{value}}（不区分大小写）"
+    },
+    "method": {
+      "exact": "方法为 {{value}}",
+      "prefix": "方法以 {{value}} 开头",
+      "regex": "方法匹配正则表达式 {{value}}"
+    },
+    "scheme": {
+      "exact": "协议方案为 {{value}}",
+      "prefix": "协议方案以 {{value}} 开头",
+      "regex": "协议方案匹配正则表达式 {{value}}"
+    },
+    "authority": {
+      "exact": "主机为 {{value}}",
+      "prefix": "主机以 {{value}} 开头",
+      "regex": "主机匹配正则表达式 {{value}}"
+    },
+    "header": {
+      "exact": "请求头 {{name}} 为 {{value}}",
+      "prefix": "请求头 {{name}} 以 {{value}} 开头",
+      "regex": "请求头 {{name}} 匹配正则表达式 {{value}}"
+    },
+    "query": {
+      "exact": "查询参数 {{name}} 为 {{value}}",
+      "prefix": "查询参数 {{name}} 以 {{value}} 开头",
+      "regex": "查询参数 {{name}} 匹配正则表达式 {{value}}"
+    },
+    "headerPresent": "存在请求头 {{name}}",
+    "headerAbsent": "没有请求头 {{name}}",
+    "headerNot": "请求头 {{name}} 不是 {{value}}",
+    "queryPresent": "存在查询参数 {{name}}",
+    "port": "端口为 {{port}}",
+    "sourceLabels": "调用方带有标签 {{labels}}",
+    "sourceNamespace": "调用方位于 namespace {{namespace}}",
+    "gateways": "经由：{{gateways}}"
+  },
+  "l4": {
+    "kind": "类型",
+    "match": "端口和 SNI 主机",
+    "destinations": "目标"
+  },
+  "tls": {
+    "auto": "未设置：目标有 Sidecar 时，Istio 会自动使用自己的 mTLS",
+    "mode": {
+      "DISABLE": "DISABLE：明文，无 TLS",
+      "SIMPLE": "SIMPLE：到目标的 TLS，不带客户端证书",
+      "MUTUAL": "MUTUAL：使用规则中客户端证书的 TLS",
+      "ISTIO_MUTUAL": "ISTIO_MUTUAL：Istio 自己的 mTLS"
+    }
+  },
+  "dr": {
+    "subsetsHint": "子集是目标中带有子集标签的 Pod；路由通过引用子集在各版本之间分配流量。"
+  },
+  "gateway": {
+    "selectorHint": "网关由带有这些标签的 Pod 提供服务（Istio 入口或出口网关）。",
+    "noneBound": "没有虚拟服务绑定到此网关：它对所有请求都返回 404。"
+  },
+  "serviceEntry": {
+    "location": {
+      "MESH_EXTERNAL": "网格外部",
+      "MESH_INTERNAL": "网格内部"
+    },
+    "resolution": {
+      "NONE": "按原地址",
+      "STATIC": "固定地址",
+      "DNS": "DNS",
+      "DNS_ROUND_ROBIN": "DNS（轮询）"
+    }
+  },
+  "sidecar": {
+    "meaning": "限制所选工作负载的 Sidecar 对网格的了解：只能访问列出的出口主机。",
+    "wholeNamespace": "namespace 中的所有工作负载"
+  },
+  "workloadEntry": {
+    "meaning": "Kubernetes 之外的工作负载（虚拟机），网格将其视为带有这些标签的 Pod。"
+  },
+  "mtls": {
+    "meaning": {
+      "STRICT": "只接受 Istio mTLS 连接；明文调用会被拒绝。",
+      "PERMISSIVE": "Istio mTLS 连接和明文连接都会被接受。",
+      "DISABLE": "Istio mTLS 已关闭：连接为明文。",
+      "UNSET": "未设置：模式继承上级（工作负载、namespace、网格；都未设置时为 PERMISSIVE）。"
+    },
+    "precedence": "优先级：选择该工作负载的策略，其次是 namespace 的策略，最后是根 namespace istio-system 中的网格级策略。",
+    "source": {
+      "workload": "由针对此工作负载的 PeerAuthentication {{name}} 设置：",
+      "namespace": "由该 namespace 的 PeerAuthentication {{name}} 设置：",
+      "mesh": "由网格级 PeerAuthentication {{name}} 设置：",
+      "default": "没有 PeerAuthentication 设置它：使用 Istio 默认值 PERMISSIVE。"
+    }
+  },
+  "jwt": {
+    "meaning": "带无效令牌的请求会被拒绝；不带令牌的请求会被放行，除非某个 AuthorizationPolicy 要求请求主体。",
+    "inlineKeys": "规则中的密钥"
+  },
+  "authz": {
+    "scope": {
+      "workloads": "适用于 namespace {{namespace}} 中与其选择器匹配的工作负载。",
+      "namespace": "适用于 namespace {{namespace}} 中的所有工作负载。",
+      "mesh": "适用于网格中的所有工作负载：它位于根 namespace {{namespace}}。",
+      "targetRef": "附加到 Gateway 或 waypoint（targetRef），而不是工作负载自身的代理。"
+    },
+    "action": {
+      "ALLOW": "允许与其某条规则匹配的请求；一旦有 ALLOW 策略适用于某个工作负载，发往它的其他请求都会被拒绝。",
+      "DENY": "拒绝与其某条规则匹配的请求，无论 ALLOW 策略如何。",
+      "AUDIT": "只把匹配的请求标记到审计日志；不允许也不拒绝任何请求。",
+      "CUSTOM": "把匹配的请求交给外部授权器 {{provider}}，它可能拒绝这些请求。",
+      "INVALID": "Istio 不接受它的动作：Istio 会拒绝该策略，因此无法判断它的作用。"
+    },
+    "special": {
+      "allowNothing": "它没有规则：不允许任何请求，因此发往这些工作负载的所有请求都会被拒绝。",
+      "noRules": "它没有规则：不匹配任何请求，也没有任何作用。",
+      "everything": "它的空规则匹配所有请求。"
+    },
+    "order": "Istio 先检查 CUSTOM 策略，然后是 DENY，最后是 ALLOW。",
+    "rule": "规则 {{n}}",
+    "emptyRule": "所有请求（空规则）。",
+    "valuesExcept": "{{values}}，{{except}} 除外",
+    "anythingExcept": "除 {{except}} 外的任何值",
+    "fields": {
+      "principals": "调用方（主体）",
+      "notPrincipals": "排除的调用方（主体）",
+      "requestPrincipals": "令牌主体",
+      "notRequestPrincipals": "排除的令牌主体",
+      "namespaces": "调用方 namespace",
+      "notNamespaces": "排除的调用方 namespace",
+      "ipBlocks": "调用方 IP",
+      "notIpBlocks": "排除的调用方 IP",
+      "remoteIpBlocks": "远程 IP",
+      "notRemoteIpBlocks": "排除的远程 IP",
+      "hosts": "主机",
+      "notHosts": "排除的主机",
+      "ports": "端口",
+      "notPorts": "排除的端口",
+      "methods": "方法",
+      "notMethods": "排除的方法",
+      "paths": "路径",
+      "notPaths": "排除的路径",
+      "condition": "当 {{key}}"
+    },
+    "callerHint": "描述调用方：留空的项视为未知，依赖它的策略显示为未评估。假定调用方在网格中使用 mTLS，并以其在信任域 cluster.local 中的 namespace 和 service account 标识。",
+    "caller": {
+      "namespace": "调用方 namespace",
+      "serviceAccount": "Service account",
+      "method": "方法",
+      "path": "路径",
+      "port": "端口",
+      "ip": "调用方 IP",
+      "remoteIp": "远程 IP（位于代理之后）"
+    },
+    "decision": {
+      "allowed": "允许",
+      "denied": "拒绝",
+      "unknown": "无法判断",
+      "external": "由外部授权器决定"
+    },
+    "reason": {
+      "noPolicies": "没有 ALLOW 策略适用于此工作负载，也没有 DENY 策略匹配。",
+      "allowMatched": "ALLOW 策略 {{name}} 的规则 {{rule}} 匹配。",
+      "noAllowMatched": "有 ALLOW 策略适用于此工作负载，但都不匹配。",
+      "denyMatched": "DENY 策略 {{name}} 的规则 {{rule}} 匹配。",
+      "denyMayMatch": "DENY 策略 {{name}} 可能匹配：取决于未评估的内容。",
+      "allowMayMatch": "只有 ALLOW 策略 {{name}} 可能放行，而它取决于未评估的内容。",
+      "customMatched": "CUSTOM 策略 {{name}} 匹配：由外部授权器决定。",
+      "customMayMatch": "CUSTOM 策略 {{name}} 可能匹配：取决于未评估的内容。",
+      "targetRefNotEvaluated": "通过 targetRef 附加的 DENY 或 CUSTOM 策略在此不评估，可能会拒绝请求。",
+      "invalidPolicy": "策略 {{name}} 的动作 Istio 不接受：无法判断它的作用。"
+    },
+    "match": {
+      "yes": "是",
+      "no": "否",
+      "unknown": "未评估"
+    },
+    "targetRefSkipped": "通过 targetRef 附加到 Gateway 或 waypoint，未评估：",
+    "dryRun": "试运行（istio.io/dry-run）：其决定只记录到日志，从不强制执行。",
+    "dryRunAction": "{{action}}（试运行，不强制执行）"
+  },
+  "membership": {
+    "istio": {
+      "sidecar": "在 Istio 网格中，带有 Sidecar 代理。",
+      "nativeSidecar": "在 Istio 网格中，Sidecar 代理以原生 Sidecar（init 容器）方式启动。",
+      "ambient": "在 Istio 网格中，处于 ambient 模式：没有 Sidecar，流量由 ztunnel 承载。",
+      "none": "不在 Istio 网格中。",
+      "injectedPods": "它的 Pod 在创建时会获得 Istio Sidecar。",
+      "noInjection": "它的 Pod 不会获得 Istio Sidecar。",
+      "optedOut": "此 Pod 选择退出网格。",
+      "restart": "Sidecar 注入已开启，但此 Pod 没有代理：它是在开启注入之前创建的，或注入器失败了。重启它即可加入网格。"
+    },
+    "linkerd": {
+      "proxy": "在 Linkerd 网格中：linkerd-proxy 在其旁边运行。",
+      "nativeProxy": "在 Linkerd 网格中：linkerd-proxy 以原生 Sidecar（init 容器）方式运行。",
+      "none": "不在 Linkerd 网格中。",
+      "injectedPods": "它的 Pod 在创建时会获得 Linkerd 代理。",
+      "noInjection": "它的 Pod 不会获得 Linkerd 代理。",
+      "restart": "代理注入已开启，但此 Pod 没有代理：它是在开启注入之前创建的。重启它即可加入网格。",
+      "goldenMetrics": "已安装 linkerd-viz。Sextant 不读取其成功率、请求速率和延迟：请用 linkerd viz stat 或 linkerd-viz 仪表板查看。"
+    },
+    "via": {
+      "pod": "已开启，在 Pod 上设置",
+      "namespace": "已开启，在 namespace 上设置"
+    },
+    "injectOn": {
+      "pod": "{{value}}，在 Pod 上设置",
+      "namespace": "{{value}}，在 namespace 上设置"
+    }
+  },
+  "linkerd": {
+    "profileMeaning": "对 {{host}} 调用的路由、重试和超时。",
+    "retryBudget": "重试预算：每个请求最多 {{ratio}} 个额外请求，每秒至少 {{min}} 次重试，统计窗口 {{ttl}}。",
+    "compoundCondition": "多个条件",
+    "serverMeaning": "描述所选 Pod 的一个端口。只有其授权允许的客户端才能调用它；没有授权时由默认访问决定。",
+    "noAuthorizations": "此 namespace 中没有针对此服务器的授权：由其默认访问决定谁可以调用它。",
+    "allows": "放行：",
+    "client": {
+      "unauthenticated": "任何客户端，包括没有 mTLS 的",
+      "unauthenticatedTls": "网格中的任何客户端，无论身份",
+      "identities": "具有以下身份的网格客户端：{{values}}",
+      "serviceAccounts": "具有以下 service account 的网格客户端：{{values}}",
+      "networks": "来自以下网络的客户端：{{values}}"
+    },
+    "policyMeaning": "放行满足所有必需认证的客户端。",
+    "policyNoAuth": "不要求认证：放行所有客户端。",
+    "meshTlsMeaning": "出示这些 mesh TLS 身份之一的客户端。",
+    "networkMeaning": "地址位于这些网络之一的客户端。",
+    "networkExcept": "{{cidr}}，{{except}} 除外"
+  },
+  "check": {
+    "title": "请求路由",
+    "open": "检查请求…",
+    "hint": "输入 URL 并点击“检查”：将按照 Istio 的路由规则找出会处理该请求的虚拟服务、路由、目标、子集和 Pod。",
+    "notServed": "此集群不提供 Istio VirtualService 或 DestinationRule。",
+    "result": "请求去往何处",
+    "notesTitle": "说明",
+    "alsoConsidered": "也考虑过",
+    "form": {
+      "method": "方法",
+      "url": "URL",
+      "urlPlaceholder": "http://reviews.shop:9080/api/items",
+      "check": "检查",
+      "invalidUrl": "请输入带主机的 http:// 或 https:// URL。",
+      "from": "发送方",
+      "fromMesh": "网格中的工作负载",
+      "fromGateway": "Istio 网关",
+      "gateway": "网关",
+      "pickGateway": "选择网关",
+      "namespace": "调用方 namespace",
+      "labels": "调用方标签",
+      "labelsPlaceholder": "app=web, version=v1",
+      "badLabels": "不是 key=value 格式：{{labels}}",
+      "headers": "请求头",
+      "headersPlaceholder": "x-user: alice",
+      "badHeaders_other": "第 {{lines}} 行不是“名称: 值”格式"
+    },
+    "steps": {
+      "gateway": "网关",
+      "virtualService": "虚拟服务",
+      "route": "路由",
+      "destinations": "目标",
+      "answer": "应答"
+    },
+    "outcome": {
+      "routed": "已路由",
+      "defaultRoute": "原样发送到服务",
+      "redirected": "已重定向（{{status}}）",
+      "directResponse": "由代理应答（{{status}}）",
+      "noRoute": "没有路由：404",
+      "passthrough": "未知主机",
+      "noGatewayServer": "网关不处理：404",
+      "unknownGateway": "没有此网关",
+      "delegateMissing": "找不到委托：404",
+      "l4Only": "只有 TCP 或 TLS 路由",
+      "notEvaluated": "未评估"
+    },
+    "server": "端口 {{port}}（{{protocol}}）上为 {{hosts}} 服务的服务器",
+    "matchedHost": "通过其主机 {{host}} 匹配。",
+    "merged": "网关会合并这些虚拟服务的路由，从最早创建的开始。",
+    "viaDelegate": "经由委托方虚拟服务 {{name}} 到达。",
+    "skipped": {
+      "uri": "已跳过 {{vs}} 的路由 {{route}}：路径不匹配。",
+      "scheme": "已跳过 {{vs}} 的路由 {{route}}：协议方案不匹配。",
+      "method": "已跳过 {{vs}} 的路由 {{route}}：方法不匹配。",
+      "authority": "已跳过 {{vs}} 的路由 {{route}}：主机不匹配。",
+      "headers": "已跳过 {{vs}} 的路由 {{route}}：某个请求头不匹配。",
+      "withoutHeaders": "已跳过 {{vs}} 的路由 {{route}}：存在被排除的请求头。",
+      "queryParams": "已跳过 {{vs}} 的路由 {{route}}：某个查询参数不匹配。",
+      "port": "已跳过 {{vs}} 的路由 {{route}}：端口不匹配。",
+      "sourceLabels": "已跳过 {{vs}} 的路由 {{route}}：调用方标签不匹配。",
+      "sourceNamespace": "已跳过 {{vs}} 的路由 {{route}}：调用方 namespace 不匹配。",
+      "gateways": "已跳过 {{vs}} 的路由 {{route}}：它用于其他网关。"
+    },
+    "skippedNoReason": "已跳过 {{vs}} 的路由 {{route}}。",
+    "pods": "{{ready}}/{{total}} 就绪",
+    "why": {
+      "unknownGateway": "该网关不在集群的 Istio Gateway 中。",
+      "noGatewayServer": "网关没有任何服务器列出主机 {{host}}。",
+      "noVirtualService": "调用方看不到 {{host}} 的任何虚拟服务：Sidecar 会将请求原样发送到同名服务。",
+      "noVirtualServiceGateway": "绑定到此网关的虚拟服务都不覆盖 {{host}}。",
+      "noRoute": "虚拟服务的路由都不匹配该请求。",
+      "notEvaluated": "此路由使用了 JavaScript 无法读取的正则表达式：不评估它是否匹配，也不评估其后的路由。",
+      "delegateMissing": "该路由将请求交给一个不存在的委托虚拟服务。",
+      "l4Only": "该虚拟服务只有 TCP 或 TLS 路由，本检查不跟踪这些路由。"
+    },
+    "problem": {
+      "unknownHost": "没有任何 Service 或 ServiceEntry 拥有此主机。",
+      "noDestinationRule": "没有目标规则定义子集 {{subset}}：代理返回 503。",
+      "missingSubset": "目标规则中没有子集 {{subset}}：代理返回 503。"
+    },
+    "answer": {
+      "redirected": "代理以重定向应答（{{status}}）。",
+      "directResponse": "代理自己以 HTTP {{status}} 应答。",
+      "noRoute": "代理返回 404：没有路由接收该请求。",
+      "passthrough": "没有 Service、ServiceEntry 或虚拟服务拥有此主机：结果取决于网格的出站流量策略（ALLOW_ANY 放行，REGISTRY_ONLY 拒绝）。",
+      "noGatewayServer": "网关返回 404。",
+      "delegateMissing": "代理返回 404。"
+    },
+    "candidate": {
+      "notExported": "未导出到调用方的 namespace（exportTo）。",
+      "lessSpecificHost": "其主机不够具体。",
+      "duplicateIgnored": "在 Sidecar 上主机相同：Istio 只使用最早创建的虚拟服务。",
+      "invalidMeshWildcard": "以主机 * 绑定到 Sidecar，Istio 会拒绝：它不路由任何请求。"
+    },
+    "notes": {
+      "regexDialect": "Istio 的正则表达式是 RE2；这里按 JavaScript 正则读取，两者在常见模式上一致。",
+      "sidecarScope": "Sidecar 资源可能对调用方隐藏主机；不评估 Sidecar 资源。",
+      "l4NotChecked": "不检查 TCP 和 TLS 路由。",
+      "gatewayPort": "网关没有服务器位于 URL 的端口：显示的是该主机在另一端口上的服务器（网关的 Service 可能映射端口）。",
+      "gatewaySourceLabels": "调用方标签与网关的选择器进行比较。"
+    }
+  }
+}

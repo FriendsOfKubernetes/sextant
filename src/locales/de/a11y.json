@@ -1,0 +1,12 @@
+{
+  "dock": {
+    "tabs": "Dock-Tabs"
+  },
+  "terminal": {
+    "leaveHint": "Drücken Sie Ctrl+Shift+E, um den Fokus aus dem Terminal zu verschieben."
+  },
+  "logs": {
+    "newLines_one": "{{count}} neue Zeile",
+    "newLines_other": "{{count}} neue Zeilen"
+  }
+}

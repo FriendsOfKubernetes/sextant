@@ -168,6 +168,35 @@ describe("the recorder", () => {
     expect(getTimeline("c1")).toHaveLength(3);
   });
 
+  it("takes a list in parts as a baseline and prunes with its end, unless a cap may have left objects out", () => {
+    const spec = SPEC("ConfigMap");
+    const cm = (uid: string, rv: number, mode: string): KubeObject => ({
+      apiVersion: "v1",
+      kind: "ConfigMap",
+      metadata: { name: uid, namespace: "shop", uid, resourceVersion: String(rv), creationTimestamp: "2026-03-02T09:59:00Z" },
+      data: { mode },
+    });
+    const part = (items: KubeObject[]): WatchUpdate => ({ type: "snapshotPart", items: items as never[] });
+    const end = (items: KubeObject[], deleted: string[]): WatchUpdate => ({ type: "snapshotEnd", items: items as never[], deleted });
+    const options = { progressive: true, maxObjects: 10 };
+    observe("c1", spec, part([cm("a", 1, "x")]), options);
+    observe("c1", spec, part([cm("b", 1, "x")]), options);
+    observe("c1", spec, end([cm("c", 1, "x")], ["b"]), options);
+    // Parts are no creations; the first change after them is recorded.
+    expect(getTimeline("c1")).toHaveLength(0);
+    observe("c1", spec, delta([cm("a", 2, "y")]), options);
+    expect(getTimeline("c1").map((e) => [e.name, e.action])).toEqual([["a", "updated"]]);
+    // A whole fresh list without "c" forgets it: its deletion later is not recorded.
+    observe("c1", spec, snap([cm("a", 2, "y")]), options);
+    observe("c1", spec, delta([], ["c"]), options);
+    expect(getTimeline("c1")).toHaveLength(1);
+    // A list as long as the cap may have left objects out: nothing is forgotten.
+    observe("c1", spec, delta([cm("d", 1, "x")]), options);
+    observe("c1", spec, snap([cm("a", 2, "y")]), { progressive: true, maxObjects: 1 });
+    observe("c1", spec, delta([], ["d"]), options);
+    expect(getTimeline("c1").map((e) => [e.name, e.action]).at(-1)).toEqual(["d", "deleted"]);
+  });
+
   it("records nothing of churning kinds, metadata-only watches or a CronJob's runs", () => {
     const pod = (rv: number, image: string): KubeObject => ({
       metadata: { name: "p", namespace: "shop", uid: "p1", resourceVersion: String(rv) },

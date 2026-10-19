@@ -2,14 +2,18 @@
 //! serves, a page of objects of a kind, the events of an object or a namespace.
 
 use k8s_openapi::jiff::Timestamp;
-use kube::api::{DynamicObject, ListParams};
+use std::time::Duration;
+
+use futures::StreamExt;
+use kube::api::{DynamicObject, ListParams, PartialObjectMeta};
 use serde::Serialize;
 use serde_json::Value;
+use ts_rs::TS;
 
 use super::get::{is_built_in, resolve_kind, to_json};
 use super::{KindRef, ObjectRef, ResourceKind};
 use crate::cluster::ClusterManager;
-use crate::error::{CoreError, CoreResult, ErrorCode};
+use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::kubeconfig::ClusterId;
 
 /// Objects of one `list`: at most `limit` of them; `truncated` when the cluster has more.
@@ -19,6 +23,28 @@ pub struct ListPage {
     pub items: Vec<Value>,
     pub truncated: bool,
 }
+
+/// How many objects of a kind there are (`resource_count`, #157): the window's sidebar counts and its check before
+/// a watch of every namespace.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ObjectCount {
+    /// The number of objects; with `exact` false, at least this many.
+    pub count: u64,
+    pub exact: bool,
+}
+
+/// Metadata pages read by [`count`] when the API server does not say how many objects remain.
+const COUNT_PAGE: u32 = 500;
+/// How long one request of [`count`] may take: a count is a hint, never worth a long wait.
+const COUNT_TIMEOUT: Duration = if cfg!(test) {
+    Duration::from_secs(1)
+} else {
+    Duration::from_secs(10)
+};
+/// Namespaces [`count`] counts at the same time.
+const COUNT_PARALLEL: usize = 8;
 
 /// Events are read in pages of this size before they are sorted.
 const EVENT_PAGE: u32 = 500;
@@ -110,6 +136,97 @@ pub async fn list(
                 });
             }
         }
+    }
+}
+
+/// How many objects of `kind` there are in `namespaces` (all when `None` or empty; a cluster-scoped kind ignores
+/// them), counting at most `up_to` exactly. Each namespace costs one metadata-only list of one object, whose
+/// `remainingItemCount` gives the rest; when the API server leaves it out (selectors, or an old server), metadata pages
+/// are counted up to `up_to` and a larger number is "at least" (`exact: false`). No object body is downloaded.
+pub async fn count(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    kind: &KindRef,
+    namespaces: Option<&[String]>,
+    label_selector: Option<&str>,
+    up_to: u64,
+) -> CoreResult<ObjectCount> {
+    let client = mgr.client(cluster)?;
+    let resolved = resolve_kind(mgr, cluster, kind).await?;
+    let mut scopes: Vec<Option<&str>> = match namespaces {
+        Some(list) if resolved.namespaced && !list.is_empty() => {
+            list.iter().map(|ns| Some(ns.as_str())).collect()
+        }
+        _ => vec![None],
+    };
+    scopes.sort();
+    scopes.dedup();
+    let labels = label_selector
+        .filter(|s| !s.trim().is_empty())
+        .map(str::to_owned);
+    // Namespaces are counted side by side (a few at a time), each request within `COUNT_TIMEOUT`.
+    let apis: Vec<kube::Api<PartialObjectMeta<DynamicObject>>> = scopes
+        .into_iter()
+        .map(|ns| match ns {
+            Some(ns) => kube::Api::namespaced_with(client.clone(), ns, &resolved.resource),
+            None => kube::Api::all_with(client.clone(), &resolved.resource),
+        })
+        .collect();
+    let counts: Vec<CoreResult<ObjectCount>> = futures::stream::iter(apis)
+        .map(|api| count_in(api, labels.clone(), up_to.max(1)))
+        .buffer_unordered(COUNT_PARALLEL)
+        .collect()
+        .await;
+    let mut total = ObjectCount {
+        count: 0,
+        exact: true,
+    };
+    for one in counts {
+        let one = one?;
+        total.count += one.count;
+        total.exact &= one.exact;
+    }
+    Ok(total)
+}
+
+async fn count_in(
+    api: kube::Api<PartialObjectMeta<DynamicObject>>,
+    labels: Option<String>,
+    up_to: u64,
+) -> CoreResult<ObjectCount> {
+    let mut params = ListParams {
+        label_selector: labels,
+        limit: Some(1),
+        ..ListParams::default()
+    };
+    let mut counted = 0u64;
+    loop {
+        let page = with_timeout(COUNT_TIMEOUT, "counting the objects", async {
+            api.list_metadata(&params).await.map_err(CoreError::from)
+        })
+        .await?;
+        counted += page.items.len() as u64;
+        let more = page.metadata.continue_.filter(|token| !token.is_empty());
+        let Some(token) = more else {
+            return Ok(ObjectCount {
+                count: counted,
+                exact: true,
+            });
+        };
+        if let Some(rest) = page.metadata.remaining_item_count.filter(|n| *n >= 0) {
+            return Ok(ObjectCount {
+                count: counted + rest as u64,
+                exact: true,
+            });
+        }
+        if counted >= up_to {
+            return Ok(ObjectCount {
+                count: counted,
+                exact: false,
+            });
+        }
+        params.continue_token = Some(token);
+        params.limit = Some(COUNT_PAGE);
     }
 }
 

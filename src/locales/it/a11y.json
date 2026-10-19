@@ -1,0 +1,13 @@
+{
+  "dock": {
+    "tabs": "Schede del pannello inferiore"
+  },
+  "terminal": {
+    "leaveHint": "Premi Ctrl+Shift+E per spostare il focus fuori dal terminale."
+  },
+  "logs": {
+    "newLines_one": "{{count}} nuova riga",
+    "newLines_many": "{{count}} di nuove righe",
+    "newLines_other": "{{count}} nuove righe"
+  }
+}

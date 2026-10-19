@@ -19,9 +19,9 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { uidOf, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
+import { isCapped, uidOf, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
 import {
   actionLabel,
@@ -30,16 +30,26 @@ import {
   useActionsVersion,
   type RegisteredAction,
 } from "../../features/actions/registry";
-import { refOf } from "../../resources/refs";
+import { useObjectCount } from "../../resources/counts";
+import { kindKey, refOf } from "../../resources/refs";
 import { useResourceDef, type ActionId, type CellContext, type ColumnDef } from "../../resources/registry";
 import { Badge } from "../Badge";
+import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
 import { Icon, renderIcon } from "../icons";
 import { usePopup } from "../usePopup";
 import { LoadingIndicator } from "../LoadingIndicator";
-import { matchesSearch } from "./search";
+import {
+  COUNT_WAIT_MS,
+  SERVER_FILTER_DELAY_MS,
+  TABLE_GUARD_OBJECTS,
+  TABLE_MAX_OBJECTS,
+  TABLE_WATCH_OPTIONS,
+} from "./limits";
+import { compileSearch, searchTerms } from "./search";
+import { joinSelectors, serverSelectors } from "./selectors";
 import "./table.css";
 
 export const ROW_HEIGHT = 33;
@@ -104,12 +114,48 @@ const features = tableFeatures({
   sortedRowModel: createSortedRowModel(),
 });
 
+/** One collator for every comparison: `localeCompare` with options builds one per call (5× slower on 50k rows). */
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
 /** Numbers numerically, text naturally ("pod-2" < "pod-10"), case-insensitive. */
 export function compareCellValues(a: unknown, b: unknown): number {
   if (typeof a === "number" && typeof b === "number") return a - b;
   if (typeof a === "boolean" && typeof b === "boolean") return Number(a) - Number(b);
-  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+  return collator.compare(String(a), String(b));
 }
+
+/** `value`, but a change reaches the caller only after `ms` without another one (compared by value). */
+function useDebouncedValue<T>(value: T, ms: number): T {
+  const key = JSON.stringify(value);
+  const [current, setCurrent] = useState(() => ({ key, value }));
+  useEffect(() => {
+    if (key === current.key) return;
+    const timer = setTimeout(() => setCurrent({ key, value }), ms);
+    return () => clearTimeout(timer);
+    // `key` stands for `value`.
+  }, [key, current.key, ms]);
+  return current.value;
+}
+
+/** Delay before the row count is announced after the search or the filter changed (typing settles first). */
+export const ANNOUNCE_DELAY_MS = 700;
+
+/**
+ * The text a live region says: `message` once `key` (the search and the filter) changed and stayed for
+ * {@link ANNOUNCE_DELAY_MS}; empty before the first change, so opening a table announces nothing.
+ */
+function useSearchAnnouncement(key: string, message: string): string {
+  const [said, setSaid] = useState({ key, text: "" });
+  useEffect(() => {
+    if (key === said.key) return;
+    const timer = setTimeout(() => setSaid({ key, text: message }), ANNOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [key, said.key, message]);
+  return said.text;
+}
+
+/** Kinds the user chose to list in every namespace although they are many (cluster|group/Kind), for the session. */
+const shownAnyway = new Set<string>();
 
 const sortByValue: SortFn<typeof features, KubeObject> = (a, b, id) =>
   compareCellValues(a.getValue(id), b.getValue(id));
@@ -163,24 +209,59 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const actionIds = props.actions ?? def.actions;
   const title = props.title ?? (def.sidebar ? t(def.sidebar.labelKey) : (def.title ?? kind.kind));
 
+  // The search's selector terms are sent to the API server (after a pause in typing), so the watch lists only what
+  // they keep; the whole search still filters the rows here (#157).
+  const kindId = kindKey(kind);
+  const pushed = useDebouncedValue(
+    useMemo(() => serverSelectors(searchTerms(search), kindId), [search, kindId]),
+    SERVER_FILTER_DELAY_MS,
+  );
   const spec = useMemo(
     () => ({
       kind,
       namespaces: namespaced && namespaces && namespaces.length > 0 ? namespaces : null,
-      labelSelector: props.labelSelector ?? null,
-      fieldSelector: props.fieldSelector ?? null,
+      labelSelector: joinSelectors(props.labelSelector, pushed.labelSelector),
+      fieldSelector: joinSelectors(props.fieldSelector, pushed.fieldSelector),
     }),
-    [kind, namespaced, namespaces, props.labelSelector, props.fieldSelector],
+    [kind, namespaced, namespaces, props.labelSelector, props.fieldSelector, pushed],
   );
-  const watch = useWatch(clusterId, spec);
+  // Before a namespaced kind is watched in every namespace with no selector, it is counted (one metadata request);
+  // with more than TABLE_GUARD_OBJECTS objects the table asks first. A failed count does not hold the table back.
+  const everywhere = namespaced && spec.namespaces === null && !spec.labelSelector && !spec.fieldSelector;
+  const anywayKey = `${clusterId}|${kindId}`;
+  const [anyway, setAnyway] = useState(() => shownAnyway.has(anywayKey));
+  const counted = useObjectCount(everywhere && !anyway ? clusterId : null, kind, null, true);
+  // A count that takes longer than COUNT_WAIT_MS does not hold the (capped) watch back either.
+  const [countKey, setCountGaveUp] = useState<string | null>(null);
+  const gaveUp = countKey === anywayKey;
+  const counting = everywhere && !anyway && !gaveUp && counted.count === undefined && counted.error === undefined;
+  useEffect(() => {
+    if (!counting) return;
+    const timer = setTimeout(() => setCountGaveUp(anywayKey), COUNT_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [counting, anywayKey]);
+  const guarded = everywhere && !anyway && counted.count !== undefined && counted.count.count > TABLE_GUARD_OBJECTS;
+  const watch = useWatch(clusterId, guarded || counting ? null : spec, TABLE_WATCH_OPTIONS);
   const watchKey = JSON.stringify([clusterId, spec]);
   const loadingSince = useWatchStart(watchKey, props.loadingSince);
 
+  // While a narrower (or wider) watch of the same list starts, the rows of the previous one stay, filtered by the
+  // search here, instead of a loading indicator at every keystroke that changes a selector term.
+  const listKey = JSON.stringify([clusterId, kind, spec.namespaces, props.labelSelector ?? null, props.fieldSelector ?? null]);
+  // Kept in a ref, not state: noting the rows of each batch must not cost another render.
+  const lastReady = useRef<{ listKey: string; items: Map<string, KubeObject> } | null>(null);
+  useEffect(() => {
+    if (watch.status === "ready") lastReady.current = { listKey, items: watch.items };
+  }, [watch.status, watch.items, listKey]);
+  const previous = watch.status === "loading" && watch.items.size === 0 ? lastReady.current : null;
+  const stale = previous?.listKey === listKey;
+  const items = stale && previous ? previous.items : watch.items;
+
   const { rowFilter } = props;
-  const data = useMemo(
-    () => [...watch.items.values()].filter((obj) => matchesSearch(obj, search) && (!rowFilter || rowFilter(obj))),
-    [watch.items, search, rowFilter],
-  );
+  const data = useMemo(() => {
+    const matches = compileSearch(search, kindId);
+    return [...items.values()].filter((obj) => matches(obj) && (!rowFilter || rowFilter(obj)));
+  }, [items, search, kindId, rowFilter]);
   const filtered = Boolean(search.trim()) || rowFilter !== undefined;
 
   const tableColumns = useMemo(
@@ -260,21 +341,76 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     setMenu({ x, y, objects: inSelection ? selected : [obj] });
   };
 
+  // Keyboard: the row in the tab order and a row to focus once it is drawn (after a scroll to it), by object uid, so
+  // an update of the watch that moves rows keeps the same object.
+  const sectionRef = useRef<HTMLElement>(null);
+  const [focusUid, setFocusUid] = useState<string | null>(null);
+  const pendingFocus = useRef<string | null>(null);
+  useEffect(() => {
+    const uid = pendingFocus.current;
+    if (uid === null) return;
+    const drawnRows = sectionRef.current?.querySelectorAll<HTMLElement>(".rt__body [role='row']") ?? [];
+    const el = [...drawnRows].find((row) => row.dataset.uid === uid);
+    if (el) {
+      pendingFocus.current = null;
+      el.focus({ preventScroll: true });
+    }
+  });
+  const onRowsKey = (e: KeyboardEvent<HTMLDivElement>, virtualizer: Virtualizer<HTMLDivElement, Element>) => {
+    const target = e.target as HTMLElement;
+    if (target.getAttribute("role") !== "row" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const from = Number(target.dataset.index ?? 0);
+    const view = virtualizer.scrollElement?.clientHeight ?? 0;
+    const page = Math.max(1, Math.floor((view - HEADER_HEIGHT) / ROW_HEIGHT) - 1);
+    const last = rows.length - 1;
+    const next = rowKeyTarget(e.key, from, last, page);
+    if (next === null) return;
+    const uid = rows[next]?.id;
+    if (uid === undefined) return;
+    e.preventDefault();
+    setFocusUid(uid);
+    pendingFocus.current = uid;
+    virtualizer.scrollToIndex(next, { align: "auto" });
+  };
+
   const template = `32px ${columns.map((c) => c.width ?? "minmax(80px, 1fr)").join(" ")} 32px`;
   const gridStyle = { "--rt-columns": template } as CSSProperties;
-  const total = watch.items.size;
+  const total = items.size;
+  const listing = watch.status === "loading" && items.size > 0;
+
+  const countText =
+    filtered && data.length !== total
+      ? t("resources:table.countFiltered", { shown: data.length, total })
+      : t("resources:table.count", { count: total });
+  const announced = useSearchAnnouncement(`${search.trim()}|${rowFilter ? 1 : 0}`, countText);
 
   const header = (
     <header className="rt__header">
       <h2 className="rt__title">{title}</h2>
       <span className="rt__count" data-testid="rt-count">
-        {filtered && data.length !== total
-          ? t("resources:table.countFiltered", { shown: data.length, total })
-          : t("resources:table.count", { count: total })}
+        {countText}
+      </span>
+      {/* Screen readers hear the count after the search or the filter changes, not on every update of the watch. */}
+      <span className="visually-hidden" aria-live="polite" aria-atomic="true" data-testid="rt-announce">
+        {announced}
       </span>
       {watch.status === "reconnecting" && (
         <span role="status" className="rt__reconnecting">
           <Badge tone="warning">{t("resources:table.reconnecting")}</Badge>
+        </span>
+      )}
+      {listing && (
+        <span role="status" className="rt__listing" data-testid="rt-listing">
+          <Badge tone="neutral">
+            {stale ? t("scale:table.updating") : t("scale:table.loadingMore", { count: total })}
+          </Badge>
+        </span>
+      )}
+      {isCapped(watch) && (
+        <span className="rt__capped" data-testid="rt-capped">
+          <Badge tone="warning">
+            {t("scale:table.capped", { count: watch.total, shown: watch.items.size })}
+          </Badge>
         </span>
       )}
       {watch.forbidden && watch.forbidden.length > 0 && watch.status !== "error" && (
@@ -296,7 +432,26 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
 
   // Instead of the rows: an error, the loading indicator or "nothing here" — inside the same scroll container.
   let state: ReactNode = null;
-  if (watch.status === "error") {
+  if (guarded && counted.count) {
+    state = (
+      <div className="rt__guard" role="status">
+        <p className="rt__guard-title">
+          {counted.count.exact
+            ? t("scale:guard.title", { count: counted.count.count, kind: title })
+            : t("scale:guard.titleAtLeast", { count: counted.count.count, kind: title })}
+        </p>
+        <p className="rt__guard-text">{t("scale:guard.text", { max: TABLE_MAX_OBJECTS })}</p>
+        <Button
+          onClick={() => {
+            shownAnyway.add(anywayKey);
+            setAnyway(true);
+          }}
+        >
+          {t("scale:guard.showAnyway")}
+        </Button>
+      </div>
+    );
+  } else if (watch.status === "error") {
     const forbidden = watch.error?.code === "forbidden";
     state = (
       <ErrorState
@@ -305,7 +460,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         onRetry={forbidden ? undefined : onRetry}
       />
     );
-  } else if (watch.status === "loading") {
+  } else if (watch.status === "loading" && items.size === 0) {
     state = (
       <LoadingIndicator
         className="rt__loading"
@@ -331,14 +486,16 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
 
   const renderGrid = (virtualizer: Virtualizer<HTMLDivElement, Element>) => {
     const allSelected = table.getIsAllRowsSelected();
+    const drawn = virtualizer.getVirtualItems();
+    const tabUid = drawn.some((i) => rows[i.index]?.id === focusUid) ? focusUid : rows[drawn[0]?.index ?? 0]?.id;
     return (
       <div
         className="rt__grid"
         role="table"
         aria-label={title}
         aria-rowcount={rows.length + 1}
-        aria-multiselectable
         style={gridStyle}
+        onKeyDown={(e) => onRowsKey(e, virtualizer)}
       >
         <div className="rt__head" role="rowgroup">
           <div className="rt__row rt__row--head" role="row" aria-rowindex={1}>
@@ -375,7 +532,9 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                 </div>
               );
             })}
-            <div className="rt__cell rt__cell--menu" role="columnheader" />
+            <div className="rt__cell rt__cell--menu" role="columnheader">
+              <span className="visually-hidden">{t("resources:table.actions")}</span>
+            </div>
           </div>
         </div>
         <div className="rt__body" role="rowgroup" style={{ height: virtualizer.getTotalSize() }}>
@@ -384,6 +543,9 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
             if (!row) return null;
             const obj = row.original;
             const isSelected = row.getIsSelected();
+            // One row is in the tab order (the last focused one, or the first drawn); arrows move between rows, and
+            // the row's own controls are tab stops only in that row.
+            const current = row.id === tabUid;
             const active =
               details !== null &&
               details.kind.kind === kind.kind &&
@@ -398,13 +560,25 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                 aria-rowindex={item.index + 2}
                 aria-selected={isSelected}
                 data-uid={row.id}
-                tabIndex={0}
+                data-index={item.index}
+                tabIndex={current ? 0 : -1}
+                onFocus={(e) => {
+                  if (e.target === e.currentTarget) setFocusUid(row.id);
+                }}
                 style={{ transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}
                 onClick={() => (props.onRowClick ? props.onRowClick(obj) : openDetails(refOf(obj, kind)))}
                 onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
                   if (e.key === "Enter") {
                     if (props.onRowClick) props.onRowClick(obj);
                     else openDetails(refOf(obj, kind));
+                  } else if (e.key === " ") {
+                    e.preventDefault();
+                    row.toggleSelected();
+                  } else if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    openMenu(obj, rect.left + 32, rect.bottom);
                   }
                 }}
                 onContextMenu={(e) => {
@@ -415,6 +589,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                 <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     aria-label={t("resources:table.selectRow", { name: obj.metadata?.name ?? "" })}
+                    tabIndex={current ? 0 : -1}
                     checked={isSelected}
                     onChange={() => undefined}
                     onClick={row.getToggleSelectedHandler()}
@@ -429,6 +604,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                   <button
                     type="button"
                     className="icon-btn icon-btn--small"
+                    tabIndex={current ? 0 : -1}
                     aria-label={t("resources:table.actionsFor", { name: obj.metadata?.name ?? "" })}
                     aria-haspopup="menu"
                     onClick={(e) => {
@@ -449,7 +625,13 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   };
 
   return (
-    <section className="rt" aria-label={title} data-kind={kind.kind}>
+    <section
+      ref={sectionRef}
+      className="rt"
+      aria-label={title}
+      aria-busy={watch.status === "loading" || undefined}
+      data-kind={kind.kind}
+    >
       {header}
       {/* A new set of rows (cluster, namespaces, selectors, search) gets a new scroller, from its first row. */}
       <RowsScroller
@@ -504,6 +686,27 @@ function RowsScroller({
       {children(virtualizer)}
     </div>
   );
+}
+
+/** The row a navigation key moves to (ARIA practices for rows: ↑ ↓, Home, End, Page Up/Down), `null` for any other key. */
+export function rowKeyTarget(key: string, from: number, last: number, page: number): number | null {
+  if (last < 0) return null;
+  switch (key) {
+    case "ArrowDown":
+      return Math.min(last, from + 1);
+    case "ArrowUp":
+      return Math.max(0, from - 1);
+    case "Home":
+      return 0;
+    case "End":
+      return last;
+    case "PageDown":
+      return Math.min(last, from + page);
+    case "PageUp":
+      return Math.max(0, from - page);
+    default:
+      return null;
+  }
 }
 
 function formatValue(value: ReturnType<ColumnDef["value"]>): string {

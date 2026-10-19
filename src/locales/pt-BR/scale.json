@@ -1,0 +1,32 @@
+{
+  "table": {
+    "loadingMore_one": "Carregando… {{count}} até agora",
+    "loadingMore_many": "Carregando… {{count}} até agora",
+    "loadingMore_other": "Carregando… {{count}} até agora",
+    "updating": "Atualizando…",
+    "capped_one": "Mostrando os primeiros {{shown}} de {{count}} objeto. Filtre a lista por namespace ou label para ver o restante.",
+    "capped_many": "Mostrando os primeiros {{shown}} de {{count}} de objetos. Filtre a lista por namespace ou label para ver o restante.",
+    "capped_other": "Mostrando os primeiros {{shown}} de {{count}} objetos. Filtre a lista por namespace ou label para ver o restante."
+  },
+  "guard": {
+    "title_one": "{{kind}}: cerca de {{count}} objeto em todos os namespaces",
+    "title_many": "{{kind}}: cerca de {{count}} de objetos em todos os namespaces",
+    "title_other": "{{kind}}: cerca de {{count}} objetos em todos os namespaces",
+    "titleAtLeast_one": "{{kind}}: pelo menos {{count}} objeto em todos os namespaces",
+    "titleAtLeast_many": "{{kind}}: pelo menos {{count}} de objetos em todos os namespaces",
+    "titleAtLeast_other": "{{kind}}: pelo menos {{count}} objetos em todos os namespaces",
+    "text": "Mostrar todos baixa cada objeto e pode demorar; a tabela mantém os primeiros {{max}}. Escolha namespaces ou digite um label selector (app=web) para ver menos, ou mostre-os mesmo assim.",
+    "showAnyway": "Mostrar mesmo assim"
+  },
+  "sidebar": {
+    "count_one": "{{count}} objeto",
+    "count_many": "{{count}} de objetos",
+    "count_other": "{{count}} objetos",
+    "countCapped": "Mais de {{max}} objetos"
+  },
+  "palette": {
+    "capped_one": "{{kind}}: pesquisando os primeiros {{shown}} de {{count}} objeto",
+    "capped_many": "{{kind}}: pesquisando os primeiros {{shown}} de {{count}} de objetos",
+    "capped_other": "{{kind}}: pesquisando os primeiros {{shown}} de {{count}} objetos"
+  }
+}

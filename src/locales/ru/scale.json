@@ -1,0 +1,38 @@
+{
+  "table": {
+    "loadingMore_one": "Загрузка… получено {{count}}",
+    "loadingMore_few": "Загрузка… получено {{count}}",
+    "loadingMore_many": "Загрузка… получено {{count}}",
+    "loadingMore_other": "Загрузка… получено {{count}}",
+    "updating": "Обновление…",
+    "capped_one": "Показаны первые {{shown}} из {{count}} объекта. Чтобы увидеть остальные, сузьте список по namespace или label.",
+    "capped_few": "Показаны первые {{shown}} из {{count}} объектов. Чтобы увидеть остальные, сузьте список по namespace или label.",
+    "capped_many": "Показаны первые {{shown}} из {{count}} объектов. Чтобы увидеть остальные, сузьте список по namespace или label.",
+    "capped_other": "Показаны первые {{shown}} из {{count}} объекта. Чтобы увидеть остальные, сузьте список по namespace или label."
+  },
+  "guard": {
+    "title_one": "{{kind}}: около {{count}} объекта во всех namespace",
+    "title_few": "{{kind}}: около {{count}} объектов во всех namespace",
+    "title_many": "{{kind}}: около {{count}} объектов во всех namespace",
+    "title_other": "{{kind}}: около {{count}} объекта во всех namespace",
+    "titleAtLeast_one": "{{kind}}: не менее {{count}} объекта во всех namespace",
+    "titleAtLeast_few": "{{kind}}: не менее {{count}} объектов во всех namespace",
+    "titleAtLeast_many": "{{kind}}: не менее {{count}} объектов во всех namespace",
+    "titleAtLeast_other": "{{kind}}: не менее {{count}} объекта во всех namespace",
+    "text": "Чтобы показать их все, придется загрузить каждый объект, это может занять время; таблица хранит первые {{max}}. Выберите namespace или введите label selector (app=web), чтобы объектов было меньше, или все равно покажите их.",
+    "showAnyway": "Все равно показать"
+  },
+  "sidebar": {
+    "count_one": "{{count}} объект",
+    "count_few": "{{count}} объекта",
+    "count_many": "{{count}} объектов",
+    "count_other": "{{count}} объекта",
+    "countCapped": "Больше {{max}} объектов"
+  },
+  "palette": {
+    "capped_one": "{{kind}}: поиск по первым {{shown}} из {{count}} объекта",
+    "capped_few": "{{kind}}: поиск по первым {{shown}} из {{count}} объектов",
+    "capped_many": "{{kind}}: поиск по первым {{shown}} из {{count}} объектов",
+    "capped_other": "{{kind}}: поиск по первым {{shown}} из {{count}} объекта"
+  }
+}

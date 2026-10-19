@@ -22,6 +22,7 @@
     "flux": "Flux",
     "argocd": "Argo CD",
     "gateway": "Gateway API",
+    "mesh": "服务网格",
     "security": "安全",
     "credentials": "凭据",
     "disk": "磁盘即将用满",
@@ -35,7 +36,14 @@
     "expired": "已于 {{date}} 过期",
     "securityBaseline_other": "{{count}} 项 Pod Security Baseline 违规：{{fields}}",
     "diskUsage": "空间已用 {{percent}}（{{used}}/{{capacity}}）",
-    "inodeUsage": "Inode 已用 {{percent}}（{{used}}/{{total}}）"
+    "inodeUsage": "Inode 已用 {{percent}}（{{used}}/{{total}}）",
+    "meshUnknownHost": "路由到 {{host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
+    "meshMissingDestinationRule": "路由到 {{host}} 的子集 {{subset}}，但没有目标规则覆盖该主机：代理返回 503。",
+    "meshMissingSubset": "路由到 {{host}} 的子集 {{subset}}，但目标规则 {{rule}} 未定义该子集：代理返回 503。",
+    "meshMissingGateway": "绑定到不存在的网关 {{gateway}}。",
+    "meshTlsConflict": "对 {{host}} 设置了 TLS 模式 {{mode}}，而其工作负载只接受 Istio mTLS（STRICT）：调用会失败。请使用 ISTIO_MUTUAL。",
+    "meshConflictingVirtualService": "{{gateway}} 上的主机 {{host}} 已被更早的虚拟服务 {{other}} 占用：此虚拟服务的路由不会生效。",
+    "meshInvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。"
   },
   "showDisk": "磁盘即将用满"
 }

@@ -20,7 +20,8 @@
         "minWidth": 360,
         "minHeight": 480,
         "resizable": true,
-        "visible": false
+        "visible": false,
+        "zoomHotkeysEnabled": true
       }
     ],
     "security": {

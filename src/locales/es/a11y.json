@@ -1,0 +1,13 @@
+{
+  "dock": {
+    "tabs": "Pestañas del panel inferior"
+  },
+  "terminal": {
+    "leaveHint": "Pulse Ctrl+Shift+E para sacar el foco del terminal."
+  },
+  "logs": {
+    "newLines_one": "{{count}} línea nueva",
+    "newLines_many": "{{count}} de líneas nuevas",
+    "newLines_other": "{{count}} líneas nuevas"
+  }
+}
