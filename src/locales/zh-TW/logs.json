@@ -9,7 +9,11 @@
     "follow": "追蹤",
     "timestamps": "時間戳記",
     "previous": "前一個容器",
+    "lines": "行",
     "wrap": "自動換行",
+    "oneLine": "每筆一行",
+    "colours": "色彩",
+    "coloursHint": "顯示程式以 ANSI 跳脫碼寫出的色彩與樣式。跳脫碼本身從不顯示；儲存的檔案會保留它們。",
     "save": "儲存",
     "reconnect": "重新連線"
   },
@@ -34,6 +38,7 @@
   "lineCut": " …［此行在 64 KiB 處截斷，於下一行繼續］",
   "empty": "尚無日誌行。",
   "view": "日誌行",
+  "lineBreak": "換行字元",
   "save": {
     "title": "儲存日誌",
     "filter": "日誌檔案",

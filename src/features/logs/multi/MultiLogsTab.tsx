@@ -22,12 +22,15 @@ import {
   type LogSourceRef,
   type ParsedLine,
 } from "./model";
+import { visibleText } from "../ansi";
 import { LogAnnouncer } from "../LogAnnouncer";
+import { logText, type TextRange } from "../LogText";
+import { LogViewControls, useFollowScroll } from "../view";
+import { useLogView, type LogView } from "../viewSettings";
 import type { MultiLogsPayload } from "./open";
 import { MultiLogSession, type LogEntry, type LogSource, type MultiLogOptions, type RunState } from "./session";
 
 const LINE_HEIGHT = 18;
-const BOTTOM_SLACK = 24;
 
 /** The watch of the pods a merged tab reads: by selector in its namespace, or the namespaces of a fixed set. */
 function watchSpecOf(payload: MultiLogsPayload, selector: string): WatchSpec | null {
@@ -56,6 +59,8 @@ function useSession(clusterId: ClusterId, options: MultiLogOptions, attempt: num
 interface LineView {
   length: number;
   at(index: number): LogEntry | undefined;
+  /** A key of the line that stays with it while older lines are discarded or the filter changes. */
+  keyAt(index: number): number;
 }
 
 interface FilterCache {
@@ -80,7 +85,7 @@ function useFilteredLines(
   const cache = useRef<FilterCache | null>(null);
   return useMemo(() => {
     const { lines, dropped } = buffer;
-    if (!predicate) return lines;
+    if (!predicate) return { length: lines.length, at: (i: number) => lines.at(i), keyAt: (i: number) => dropped + i };
     const key = `${generation}\u0000${predicateKey}`;
     let c = cache.current;
     if (!c || c.key !== key) c = cache.current = { key, indices: [], head: 0, scanned: dropped };
@@ -97,7 +102,11 @@ function useFilteredLines(
     c.scanned = end;
     const { indices, head } = c;
     const length = indices.length - head;
-    return { length, at: (i: number) => (i >= 0 && i < length ? lines.at(indices[head + i]! - dropped) : undefined) };
+    return {
+      length,
+      at: (i: number) => (i >= 0 && i < length ? lines.at(indices[head + i]! - dropped) : undefined),
+      keyAt: (i: number) => indices[head + i] ?? -1 - i,
+    };
     // `predicateKey` stands for `predicate`.
   }, [buffer, generation, predicateKey]);
 }
@@ -114,7 +123,8 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
   const [follow, setFollow] = useState(true);
   const [timestamps, setTimestamps] = useState(false);
   const [previous, setPrevious] = useState(false);
-  const [wrap, setWrap] = useState(false);
+  const view = useLogView();
+  const { wrap, colours } = view;
   const [json, setJson] = useState(false);
   const [minLevel, setMinLevel] = useState<LogLevel | null>(null);
   const [query, setQuery] = useState("");
@@ -187,7 +197,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
         const source = sessionSources[e.src];
         if (source && excluded.has(source.key)) return false;
         if (levelFilter !== null && !passesLevel(parse(e)?.level, levelFilter)) return false;
-        return filter.pattern === null || filter.pattern.test(e.text);
+        return filter.pattern === null || filter.pattern.test(visibleText(e.text));
       }
     : null;
   const predicateKey = JSON.stringify([[...excluded].sort(), levelFilter, filter.pattern?.source ?? null]);
@@ -196,22 +206,22 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
 
   // ---- the list ----
   const scrollRef = useRef<HTMLDivElement>(null);
-  const atBottom = useRef(true);
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => LINE_HEIGHT,
+    getItemKey: (index) => lines.keyAt(index),
     overscan: 20,
   });
-  const onScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (el) atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_SLACK;
-  }, []);
   const count = lines.length;
-  useEffect(() => {
-    if (count === 0) atBottom.current = true;
-    if (follow && active && atBottom.current && count > 0) virtualizer.scrollToIndex(count - 1, { align: "end" });
-  }, [follow, active, count, virtualizer]);
+  const { atBottom, onScroll } = useFollowScroll(virtualizer, scrollRef, {
+    follow,
+    active,
+    count,
+    wrap,
+    colours,
+    generation: session,
+  });
 
   // ---- save ----
   const prefixOf = (e: LogEntry) => {
@@ -268,6 +278,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
   // The first failed stream's error (a forbidden namespace, an unknown container) says why lines are missing.
   const streamError = [...runStates.values()].find((r) => r.status === "error" && r.error)?.error;
   const levelLabel = (level: LogLevel) => t(`logs:multi.levels.${level}`);
+  const look: Look = { colours, wrap, lineBreakLabel: t("logs:lineBreak") };
 
   return (
     <div className="logs">
@@ -315,10 +326,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
           <Checkbox checked={previous} onChange={(e) => setPrevious(e.target.checked)} />
           <span>{t("logs:toolbar.previous")}</span>
         </label>
-        <label className="logs__check">
-          <Checkbox checked={wrap} onChange={(e) => setWrap(e.target.checked)} />
-          <span>{t("logs:toolbar.wrap")}</span>
-        </label>
+        <LogViewControls view={view} />
         <label className="logs__check">
           <Checkbox checked={json} onChange={(e) => setJson(e.target.checked)} />
           <span>{t("logs:multi.json")}</span>
@@ -437,7 +445,7 @@ export function MultiLogsTab({ tab, active }: DockTabProps) {
             return (
               <div key={item.key} ref={wrap ? virtualizer.measureElement : undefined} data-index={item.index} className={lineClass} style={style}>
                 {source && <span className={`logs__prefix logs__src--${source.colour}`}>{prefixOf(entry)}</span>}
-                {parsedLine ? renderJson(parsedLine, filter.pattern, levelLabel) : highlighted(entry.text, filter.pattern)}
+                {parsedLine ? renderJson(parsedLine, filter.pattern, levelLabel, look) : highlighted(entry.text, filter.pattern, look)}
               </div>
             );
           })}
@@ -451,21 +459,25 @@ function lineClassOf(line: ParsedLine | null): string {
   return line?.level ? `logs__line logs__line--${line.level}` : "logs__line";
 }
 
-function highlighted(text: string, pattern: RegExp | null): ReactNode {
-  if (text === "") return " ";
-  if (!pattern) return text;
-  return splitMatches(text, pattern).map((part, i) =>
-    part.match ? (
-      <mark key={i} className="logs__mark">
-        {part.text}
-      </mark>
-    ) : (
-      part.text
-    ),
-  );
+/** How text is drawn: the view settings and the name of the line-break symbol. */
+type Look = Pick<LogView, "colours" | "wrap"> & { lineBreakLabel: string };
+
+/** The parts of the visible text that `pattern` matches. */
+function rangesOf(visible: string, pattern: RegExp): TextRange[] {
+  const ranges: TextRange[] = [];
+  let at = 0;
+  for (const part of splitMatches(visible, pattern)) {
+    if (part.match) ranges.push({ start: at, end: at + part.text.length });
+    at += part.text.length;
+  }
+  return ranges;
 }
 
-function renderJson(line: ParsedLine, pattern: RegExp | null, levelLabel: (level: LogLevel) => string): ReactNode {
+function highlighted(text: string, pattern: RegExp | null, look: Look): ReactNode {
+  return logText(text, { ...look, ranges: pattern ? (visible) => rangesOf(visible, pattern) : undefined });
+}
+
+function renderJson(line: ParsedLine, pattern: RegExp | null, levelLabel: (level: LogLevel) => string, look: Look): ReactNode {
   const timestamp = line.timestamp ? `${line.timestamp} ` : null;
   const level = line.level ? `${levelLabel(line.level)} ` : null;
   const fields = line.fields.length > 0 ? ` ${line.fields.join(" ")}` : null;
@@ -473,8 +485,8 @@ function renderJson(line: ParsedLine, pattern: RegExp | null, levelLabel: (level
     <>
       {timestamp && <span className="logs__muted">{timestamp}</span>}
       {level && <span className="logs__level">{level}</span>}
-      {line.message !== undefined && highlighted(line.message, pattern)}
-      {fields && <span className="logs__muted">{highlighted(fields, pattern)}</span>}
+      {line.message !== undefined && highlighted(line.message, pattern, look)}
+      {fields && <span className="logs__muted">{highlighted(fields, pattern, look)}</span>}
     </>
   );
 }

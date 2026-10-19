@@ -242,6 +242,46 @@ describe("merged logs of several pods", () => {
     expect(lines[1]).toHaveClass("logs__line--error");
   });
 
+  it("draws ANSI colours, filters on the visible text and shows the remembered Lines mode", async () => {
+    backend.restore();
+    backend = mockBackend(
+      {
+        logs_start: (args) => {
+          const { pod, opts } = args as { pod: { name: string }; opts: { container: string } };
+          return `${pod.name}/${opts.container}`;
+        },
+        logs_stop: () => undefined,
+        watch_start: () => "pods",
+        watch_stop: () => undefined,
+      },
+      { settings: { logs: { wrap: true, colours: true } } },
+    );
+    await openTab();
+    snapshot([podOf("web-a")]);
+    await listening("web-a/app");
+    await emit("web-a/app", ["\u001b[31mERROR\u001b[0m disk full", "\u001b[32mok\u001b[0m\rnext", '{"level":"error","msg":"\\u001b[1mbold\\u001b[0m"}']);
+    await waitFor(() => expect(shownLines()).toHaveLength(3));
+    expect(screen.getByRole("combobox", { name: "Lines" })).toHaveValue("wrap");
+    expect(screen.getByRole("log")).toHaveClass("logs__scroll--wrap");
+    expect(shownLines()[0]).toBe("web-a app ERROR disk full");
+    expect(shownLines()[1]).toBe("web-a app ok\nnext");
+    expect(screen.getByRole("log").querySelector(".logs__ansi-fg1")).toHaveTextContent("ERROR");
+
+    // "31m" is a code, not text: nothing matches it.
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter" }), { target: { value: "31m" } });
+    expect(shownLines()).toEqual([]);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter" }), { target: { value: "error disk" } });
+    expect(shownLines()).toEqual(["web-a app ERROR disk full"]);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter" }), { target: { value: "" } });
+
+    // A JSON message with escape codes is drawn too.
+    fireEvent.click(screen.getByRole("checkbox", { name: "Parse JSON" }));
+    expect(screen.getByRole("log").querySelector(".logs__ansi-bold")).toHaveTextContent("bold");
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Lines" }), { target: { value: "oneLine" } });
+    expect(within(screen.getByRole("log")).getByRole("img", { name: "line break" })).toHaveTextContent("\u21b5");
+  });
+
   it("restarts every stream with timestamps or the previous containers", async () => {
     await openTab();
     snapshot([podOf("web-a", ["app"], { restarts: 1 }), podOf("web-b")]);

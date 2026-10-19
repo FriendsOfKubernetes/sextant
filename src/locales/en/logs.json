@@ -9,7 +9,11 @@
     "follow": "Follow",
     "timestamps": "Timestamps",
     "previous": "Previous container",
+    "lines": "Lines",
     "wrap": "Wrap lines",
+    "oneLine": "One line per entry",
+    "colours": "Colours",
+    "coloursHint": "Show the colours and styles the program wrote with ANSI escape codes. The codes themselves are never shown; a saved file keeps them.",
     "save": "Save",
     "reconnect": "Reconnect"
   },
@@ -36,6 +40,7 @@
   "lineCut": " … [line cut at 64 KiB, continued on the next line]",
   "empty": "No log lines yet.",
   "view": "Log lines",
+  "lineBreak": "line break",
   "save": {
     "title": "Save logs",
     "filter": "Log files",

@@ -9,7 +9,11 @@
     "follow": "Segui",
     "timestamps": "Timestamp",
     "previous": "Container precedente",
+    "lines": "Righe",
     "wrap": "A capo automatico",
+    "oneLine": "Una riga per voce",
+    "colours": "Colori",
+    "coloursHint": "Mostra i colori e gli stili scritti dal programma con i codici di escape ANSI. I codici non vengono mai mostrati; un file salvato li conserva.",
     "save": "Salva",
     "reconnect": "Riconnetti"
   },
@@ -38,6 +42,7 @@
   "lineCut": " … [riga troncata a 64 KiB, continua alla riga successiva]",
   "empty": "Ancora nessuna riga di log.",
   "view": "Righe di log",
+  "lineBreak": "a capo",
   "save": {
     "title": "Salva log",
     "filter": "File di log",

@@ -9,7 +9,11 @@
     "follow": "Mitverfolgen",
     "timestamps": "Zeitstempel",
     "previous": "Vorheriger Container",
+    "lines": "Zeilen",
     "wrap": "Zeilen umbrechen",
+    "oneLine": "Eine Zeile pro Eintrag",
+    "colours": "Farben",
+    "coloursHint": "Zeigt die Farben und Stile, die das Programm mit ANSI-Escape-Codes geschrieben hat. Die Codes selbst werden nie angezeigt; eine gespeicherte Datei enthält sie.",
     "save": "Speichern",
     "reconnect": "Neu verbinden"
   },
@@ -36,6 +40,7 @@
   "lineCut": " … [Zeile bei 64 KiB abgeschnitten, Fortsetzung in der nächsten Zeile]",
   "empty": "Noch keine Log-Zeilen.",
   "view": "Log-Zeilen",
+  "lineBreak": "Zeilenumbruch",
   "save": {
     "title": "Logs speichern",
     "filter": "Log-Dateien",

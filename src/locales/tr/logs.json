@@ -9,7 +9,11 @@
     "follow": "İzle",
     "timestamps": "Zaman damgaları",
     "previous": "Önceki kapsayıcı",
+    "lines": "Satırlar",
     "wrap": "Satırları kaydır",
+    "oneLine": "Kayıt başına bir satır",
+    "colours": "Renkler",
+    "coloursHint": "Programın ANSI kaçış kodlarıyla yazdığı renkleri ve stilleri gösterir. Kodların kendisi hiçbir zaman gösterilmez; kaydedilen dosya onları korur.",
     "save": "Kaydet",
     "reconnect": "Yeniden bağlan"
   },
@@ -36,6 +40,7 @@
   "lineCut": " … [satır 64 KiB'ta kesildi, sonraki satırda devam ediyor]",
   "empty": "Henüz günlük satırı yok.",
   "view": "Günlük satırları",
+  "lineBreak": "satır sonu",
   "save": {
     "title": "Günlükleri kaydet",
     "filter": "Günlük dosyaları",

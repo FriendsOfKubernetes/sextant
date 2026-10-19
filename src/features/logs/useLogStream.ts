@@ -29,6 +29,8 @@ const INITIAL: LogStreamState = Object.freeze({ buffer: EMPTY_BUFFER, status: "c
 export interface UseLogStream extends LogStreamState {
   /** Starts a new stream with the same options (after "Stream ended" or an error). The text is cleared. */
   reconnect: () => void;
+  /** Changes whenever a new stream starts over with an empty buffer. */
+  generation: string;
 }
 
 /**
@@ -73,5 +75,5 @@ export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogO
 
   const reconnect = useCallback(() => setAttempt((n) => n + 1), []);
   const value = state.key === key ? state.value : INITIAL;
-  return { ...value, reconnect };
+  return { ...value, reconnect, generation: key };
 }

@@ -67,7 +67,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
@@ -261,4 +261,105 @@
 
 .logs__line--error {
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+}
+
+/* ANSI colours of log lines (ansi.ts, LogText.tsx): the 16-colour palette as theme tokens, each readable on the dock
+   (4.5:1 or more against --color-dock). "Black" and "white" become greys that stay visible in either theme. */
+:root,
+:root[data-theme="light"] {
+  --logs-ansi-0: #24292f;
+  --logs-ansi-1: #c62828;
+  --logs-ansi-2: #1a7f37;
+  --logs-ansi-3: #855d00;
+  --logs-ansi-4: #0550ae;
+  --logs-ansi-5: #a626a4;
+  --logs-ansi-6: #0e7490;
+  --logs-ansi-7: #59636e;
+  --logs-ansi-8: #57606a;
+  --logs-ansi-9: #a40e26;
+  --logs-ansi-10: #116329;
+  --logs-ansi-11: #633c01;
+  --logs-ansi-12: #0969da;
+  --logs-ansi-13: #8250df;
+  --logs-ansi-14: #0b6e69;
+  --logs-ansi-15: #1f2328;
+}
+
+:root[data-theme="dark"] {
+  --logs-ansi-0: #8b949e;
+  --logs-ansi-1: #ff7b72;
+  --logs-ansi-2: #3fb950;
+  --logs-ansi-3: #d29922;
+  --logs-ansi-4: #58a6ff;
+  --logs-ansi-5: #bc8cff;
+  --logs-ansi-6: #39c5cf;
+  --logs-ansi-7: #c9d1d9;
+  --logs-ansi-8: #a0a4a8;
+  --logs-ansi-9: #ffa198;
+  --logs-ansi-10: #56d364;
+  --logs-ansi-11: #e3b341;
+  --logs-ansi-12: #79c0ff;
+  --logs-ansi-13: #d2a8ff;
+  --logs-ansi-14: #56d4dd;
+  --logs-ansi-15: #f0f6fc;
+}
+
+.logs__ansi-fg0 { color: var(--logs-ansi-0); }
+.logs__ansi-fg1 { color: var(--logs-ansi-1); }
+.logs__ansi-fg2 { color: var(--logs-ansi-2); }
+.logs__ansi-fg3 { color: var(--logs-ansi-3); }
+.logs__ansi-fg4 { color: var(--logs-ansi-4); }
+.logs__ansi-fg5 { color: var(--logs-ansi-5); }
+.logs__ansi-fg6 { color: var(--logs-ansi-6); }
+.logs__ansi-fg7 { color: var(--logs-ansi-7); }
+.logs__ansi-fg8 { color: var(--logs-ansi-8); }
+.logs__ansi-fg9 { color: var(--logs-ansi-9); }
+.logs__ansi-fg10 { color: var(--logs-ansi-10); }
+.logs__ansi-fg11 { color: var(--logs-ansi-11); }
+.logs__ansi-fg12 { color: var(--logs-ansi-12); }
+.logs__ansi-fg13 { color: var(--logs-ansi-13); }
+.logs__ansi-fg14 { color: var(--logs-ansi-14); }
+.logs__ansi-fg15 { color: var(--logs-ansi-15); }
+
+/* Backgrounds are a tint of the colour, so the text on them keeps its contrast. */
+.logs__ansi-bg0 { background-color: color-mix(in srgb, var(--logs-ansi-0) 35%, transparent); }
+.logs__ansi-bg1 { background-color: color-mix(in srgb, var(--logs-ansi-1) 35%, transparent); }
+.logs__ansi-bg2 { background-color: color-mix(in srgb, var(--logs-ansi-2) 35%, transparent); }
+.logs__ansi-bg3 { background-color: color-mix(in srgb, var(--logs-ansi-3) 35%, transparent); }
+.logs__ansi-bg4 { background-color: color-mix(in srgb, var(--logs-ansi-4) 35%, transparent); }
+.logs__ansi-bg5 { background-color: color-mix(in srgb, var(--logs-ansi-5) 35%, transparent); }
+.logs__ansi-bg6 { background-color: color-mix(in srgb, var(--logs-ansi-6) 35%, transparent); }
+.logs__ansi-bg7 { background-color: color-mix(in srgb, var(--logs-ansi-7) 35%, transparent); }
+.logs__ansi-bg8 { background-color: color-mix(in srgb, var(--logs-ansi-8) 35%, transparent); }
+.logs__ansi-bg9 { background-color: color-mix(in srgb, var(--logs-ansi-9) 35%, transparent); }
+.logs__ansi-bg10 { background-color: color-mix(in srgb, var(--logs-ansi-10) 35%, transparent); }
+.logs__ansi-bg11 { background-color: color-mix(in srgb, var(--logs-ansi-11) 35%, transparent); }
+.logs__ansi-bg12 { background-color: color-mix(in srgb, var(--logs-ansi-12) 35%, transparent); }
+.logs__ansi-bg13 { background-color: color-mix(in srgb, var(--logs-ansi-13) 35%, transparent); }
+.logs__ansi-bg14 { background-color: color-mix(in srgb, var(--logs-ansi-14) 35%, transparent); }
+.logs__ansi-bg15 { background-color: color-mix(in srgb, var(--logs-ansi-15) 35%, transparent); }
+
+.logs__ansi-bold { font-weight: 700; }
+.logs__ansi-dim { opacity: 0.75; }
+.logs__ansi-italic { font-style: italic; }
+.logs__ansi-underline { text-decoration-line: underline; }
+.logs__ansi-strike { text-decoration-line: line-through; }
+.logs__ansi-underline.logs__ansi-strike { text-decoration-line: underline line-through; }
+
+.logs__ansi-inverse {
+  background-color: var(--color-text);
+  color: var(--color-dock);
+}
+
+/* The current match keeps the accent colours over any ANSI colour. */
+.logs__mark--current .logs__ansi {
+  color: inherit;
+  background-color: transparent;
+}
+
+/* A line break inside an entry in the one-line view: a dimmed symbol, left out of a copied selection. */
+.logs__nl {
+  padding: 0 2px;
+  color: var(--color-text-muted);
+  user-select: none;
 }

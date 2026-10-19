@@ -9,7 +9,11 @@
     "follow": "Suivre",
     "timestamps": "Horodatages",
     "previous": "Conteneur précédent",
+    "lines": "Lignes",
     "wrap": "Retour à la ligne",
+    "oneLine": "Une ligne par entrée",
+    "colours": "Couleurs",
+    "coloursHint": "Affiche les couleurs et les styles écrits par le programme avec des codes d’échappement ANSI. Les codes eux-mêmes ne sont jamais affichés ; un fichier enregistré les conserve.",
     "save": "Enregistrer",
     "reconnect": "Se reconnecter"
   },
@@ -38,6 +42,7 @@
   "lineCut": " … [ligne coupée à 64 KiB, suite à la ligne suivante]",
   "empty": "Aucune ligne de journal pour l'instant.",
   "view": "Lignes de journal",
+  "lineBreak": "saut de ligne",
   "save": {
     "title": "Enregistrer les journaux",
     "filter": "Fichiers journaux",

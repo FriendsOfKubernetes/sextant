@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { appendLines, bufferOf, EMPTY_BUFFER, LOG_BUFFER_LIMIT, LOG_BUFFER_TEXT_LIMIT, markCutLines, type LogBuffer } from "./buffer";
-import { findMatches, splitLine } from "./search";
+import { findMatches, matchRanges } from "./search";
 import { labelSelectorOf } from "./selector";
 
 describe("log buffer", () => {
@@ -96,14 +96,21 @@ describe("search", () => {
     expect(findMatches(["a"], "")).toEqual([]);
   });
 
-  it("splits a line into plain and matching parts", () => {
-    expect(splitLine("an Error and error", "error")).toEqual([
-      { text: "an ", match: false },
-      { text: "Error", match: true },
-      { text: " and ", match: false },
-      { text: "error", match: true },
+  it("gives the offsets of every match in a line", () => {
+    expect(matchRanges("an Error and error", "error")).toEqual([
+      { start: 3, end: 8 },
+      { start: 13, end: 18 },
     ]);
-    expect(splitLine("nothing", "x")).toEqual([{ text: "nothing", match: false }]);
+    expect(matchRanges("nothing", "x")).toEqual([]);
+    expect(matchRanges("nothing", "")).toEqual([]);
+  });
+
+  it("searches the visible text: escape codes neither match nor shift the offsets", () => {
+    const red = "\u001b[31mError\u001b[0m: \u001b[1mdisk\u001b[0m";
+    expect(findMatches([red], "error: disk")).toEqual([{ line: 0, start: 0 }]);
+    // "[31m" is in the raw line, not in what the reader sees.
+    expect(findMatches([red], "31m")).toEqual([]);
+    expect(findMatches(["a\r\nb"], "a\nb")).toEqual([{ line: 0, start: 0 }]);
   });
 });
 

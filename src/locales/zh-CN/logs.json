@@ -9,7 +9,11 @@
     "follow": "跟踪",
     "timestamps": "时间戳",
     "previous": "上一个容器",
+    "lines": "行",
     "wrap": "自动换行",
+    "oneLine": "每条一行",
+    "colours": "颜色",
+    "coloursHint": "显示程序用 ANSI 转义码写出的颜色和样式。转义码本身从不显示；保存的文件会保留它们。",
     "save": "保存",
     "reconnect": "重新连接"
   },
@@ -34,6 +38,7 @@
   "lineCut": " …［该行在 64 KiB 处截断，下一行继续］",
   "empty": "暂无日志行。",
   "view": "日志行",
+  "lineBreak": "换行符",
   "save": {
     "title": "保存日志",
     "filter": "日志文件",

@@ -9,7 +9,11 @@
     "follow": "Acompanhar",
     "timestamps": "Carimbos de data/hora",
     "previous": "Contêiner anterior",
+    "lines": "Linhas",
     "wrap": "Quebrar linhas",
+    "oneLine": "Uma linha por entrada",
+    "colours": "Cores",
+    "coloursHint": "Mostra as cores e os estilos que o programa escreveu com códigos de escape ANSI. Os códigos em si nunca são exibidos; um arquivo salvo os mantém.",
     "save": "Salvar",
     "reconnect": "Reconectar"
   },
@@ -38,6 +42,7 @@
   "lineCut": " … [linha cortada em 64 KiB, continua na próxima linha]",
   "empty": "Ainda não há linhas de log.",
   "view": "Linhas de log",
+  "lineBreak": "quebra de linha",
   "save": {
     "title": "Salvar logs",
     "filter": "Arquivos de log",

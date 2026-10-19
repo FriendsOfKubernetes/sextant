@@ -9,7 +9,11 @@
     "follow": "Seguir",
     "timestamps": "Marcas de tiempo",
     "previous": "Contenedor anterior",
+    "lines": "Líneas",
     "wrap": "Ajustar líneas",
+    "oneLine": "Una línea por entrada",
+    "colours": "Colores",
+    "coloursHint": "Muestra los colores y estilos que el programa escribió con códigos de escape ANSI. Los códigos nunca se muestran; un archivo guardado los conserva.",
     "save": "Guardar",
     "reconnect": "Reconectar"
   },
@@ -38,6 +42,7 @@
   "lineCut": " … [línea cortada a 64 KiB, continúa en la línea siguiente]",
   "empty": "Todavía no hay líneas de registro.",
   "view": "Líneas de registro",
+  "lineBreak": "salto de línea",
   "save": {
     "title": "Guardar registros",
     "filter": "Archivos de registro",

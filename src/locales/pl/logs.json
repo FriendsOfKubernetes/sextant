@@ -9,7 +9,11 @@
     "follow": "Śledź",
     "timestamps": "Znaczniki czasu",
     "previous": "Poprzedni kontener",
+    "lines": "Wiersze",
     "wrap": "Zawijaj wiersze",
+    "oneLine": "Jeden wiersz na wpis",
+    "colours": "Kolory",
+    "coloursHint": "Pokazuje kolory i style zapisane przez program kodami ucieczki ANSI. Same kody nigdy nie są wyświetlane; zapisany plik je zachowuje.",
     "save": "Zapisz",
     "reconnect": "Połącz ponownie"
   },
@@ -40,6 +44,7 @@
   "lineCut": " … [wiersz obcięty przy 64 KiB, ciąg dalszy w następnym wierszu]",
   "empty": "Brak wierszy logów.",
   "view": "Wiersze logów",
+  "lineBreak": "podział wiersza",
   "save": {
     "title": "Zapisz logi",
     "filter": "Pliki logów",

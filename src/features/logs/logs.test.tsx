@@ -284,15 +284,90 @@ describe("search", () => {
 });
 
 describe("wrap and save", () => {
-  it("wrap lines toggles the wrapping of long lines", async () => {
-    await opened();
+  it("the Lines choice switches between wrapped lines and one line per entry, and is remembered", async () => {
+    const view = await opened();
     emitLines(["a very long line"]);
-    const view = screen.getByRole("log");
-    expect(view).not.toHaveClass("logs__scroll--wrap");
-    fireEvent.click(screen.getByRole("checkbox", { name: "Wrap lines" }));
-    expect(view).toHaveClass("logs__scroll--wrap");
-    fireEvent.click(screen.getByRole("checkbox", { name: "Wrap lines" }));
-    expect(view).not.toHaveClass("logs__scroll--wrap");
+    const log = screen.getByRole("log");
+    const lines = screen.getByRole("combobox", { name: "Lines" });
+    expect(lines).toHaveValue("oneLine");
+    expect(log).not.toHaveClass("logs__scroll--wrap");
+    fireEvent.change(lines, { target: { value: "wrap" } });
+    expect(log).toHaveClass("logs__scroll--wrap");
+    await waitFor(() => expect(calls("settings_update").at(-1)).toMatchObject({ settings: { logs: { wrap: true, colours: true } } }));
+
+    // A new tab starts in the remembered mode.
+    view.unmount();
+    renderTab();
+    expect(await screen.findByRole("combobox", { name: "Lines" })).toHaveValue("wrap");
+    await waitFor(() => expect(screen.getByRole("log")).toHaveClass("logs__scroll--wrap"));
+  });
+
+  it("a line break inside an entry is a line break when wrapping and a labelled symbol on one line", async () => {
+    await opened();
+    emitLines(["first\r\nsecond\rthird"]);
+    const row = () => screen.getByRole("log").querySelector(".logs__line")!;
+    const breaks = within(screen.getByRole("log")).getAllByRole("img", { name: "line break" });
+    expect(breaks).toHaveLength(2);
+    expect(breaks[0]).toHaveTextContent("\u21b5");
+    expect(row().textContent).toBe("first\u21b5second\u21b5third");
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Lines" }), { target: { value: "wrap" } });
+    expect(within(screen.getByRole("log")).queryAllByRole("img")).toHaveLength(0);
+    expect(row().textContent).toBe("first\nsecond\nthird");
+  });
+
+  it("draws ANSI colours instead of showing the escape codes; Colours off shows the plain text", async () => {
+    await opened();
+    const ESC = "\u001b";
+    emitLines([`[2026-10-19] ${ESC}[1mChain worker${ESC}[0m.${ESC}[0;33mwarning${ESC}[0m: ${ESC}[1;35m(276.09ms)${ESC}[0m <b>x</b>`]);
+    const row = screen.getByRole("log").querySelector(".logs__line")!;
+    expect(row.textContent).toBe("[2026-10-19] Chain worker.warning: (276.09ms) <b>x</b>");
+    expect(row.querySelector(".logs__ansi-bold")).toHaveTextContent("Chain worker");
+    expect(row.querySelector(".logs__ansi-fg3")).toHaveTextContent("warning");
+    expect(row.querySelector(".logs__ansi-fg5.logs__ansi-bold")).toHaveTextContent("(276.09ms)");
+    expect(row.querySelector("b")).toBeNull();
+
+    const colours = screen.getByRole("checkbox", { name: "Colours" });
+    expect(colours).toBeChecked();
+    fireEvent.click(colours);
+    const plain = screen.getByRole("log").querySelector(".logs__line")!;
+    expect(plain.querySelector(".logs__ansi")).toBeNull();
+    expect(plain.textContent).toBe("[2026-10-19] Chain worker.warning: (276.09ms) <b>x</b>");
+    await waitFor(() => expect(calls("settings_update").at(-1)).toMatchObject({ settings: { logs: { colours: false } } }));
+  });
+
+  it("search finds the visible text, not the escape codes, and highlights across colours", async () => {
+    await opened();
+    emitLines(["\u001b[31mdisk\u001b[0m full", "33m"]);
+    const search = screen.getByRole("searchbox", { name: "Search logs" });
+    fireEvent.change(search, { target: { value: "31m" } });
+    expect(screen.getByTestId("logs-match-count")).toHaveTextContent("No matches");
+    fireEvent.change(search, { target: { value: "k f" } });
+    expect(screen.getByTestId("logs-match-count")).toHaveTextContent("1 of 1");
+    const marks = [...screen.getByRole("log").querySelectorAll("mark")];
+    expect(marks.map((m) => m.textContent).join("")).toBe("k f");
+    expect(marks[0]!.querySelector(".logs__ansi-fg1")).toHaveTextContent("k");
+  });
+
+  it("10 000 coloured lines arrive, wrap and are searched without a slow path", async () => {
+    await opened();
+    const ESC = "\u001b";
+    const lines = Array.from({ length: 10_000 }, (_, i) => `${ESC}[1mworker${ESC}[0m ${ESC}[33mrequest ${i}${ESC}[0m\rdone`);
+    // Wrapped rows measure two lines high (jsdom has no layout).
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains("logs__scroll") ? 400 : this.classList.contains("logs__line") ? 36 : 0;
+    });
+    const t0 = performance.now();
+    emitLines(lines);
+    fireEvent.change(screen.getByRole("combobox", { name: "Lines" }), { target: { value: "wrap" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search logs" }), { target: { value: "request 9999" } });
+    const elapsed = performance.now() - t0;
+    expect(screen.getByTestId("logs-count")).toHaveTextContent(/^10\D?000 lines$/);
+    expect(screen.getByTestId("logs-match-count")).toHaveTextContent("1 of 1");
+    // Only the rows in view are drawn.
+    expect(screen.getByRole("log").querySelectorAll(".logs__line").length).toBeLessThan(100);
+    // Typically well under 300 ms in jsdom; the bound only catches a pass over every line per row or per render.
+    expect(elapsed).toBeLessThan(3000);
   });
 
   it("Save writes the lines in the buffer to the file chosen in the system dialog", async () => {
@@ -309,10 +384,11 @@ describe("wrap and save", () => {
     );
     await opened();
     emitLines(["one", "two"]);
-    emitLines(["three"]);
+    emitLines(["\u001b[31mthree\u001b[0m"]);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(calls("file_save")).toHaveLength(1));
-    expect(calls("file_save")[0]).toEqual({ path: "/home/me/web-1-app.log", contents: "one\ntwo\nthree\n" });
+    // The file keeps what the container wrote, escape codes included (`less -R` shows them).
+    expect(calls("file_save")[0]).toEqual({ path: "/home/me/web-1-app.log", contents: "one\ntwo\n\u001b[31mthree\u001b[0m\n" });
     expect(picked[0]).toMatchObject({ defaultPath: "web-1-app.log" });
   });
 

@@ -1,7 +1,7 @@
 // The dock tab with a pod's logs: toolbar (container, follow, timestamps, previous, wrap, search, save) and a
 // virtualized list of the buffered lines. A `MultiLogsPayload` gets the merged logs of several pods (multi/).
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
 import { Button, Checkbox, ErrorState, Icon } from "../../components";
@@ -10,8 +10,11 @@ import { LOG_BUFFER_LIMIT, LOG_BUFFER_TEXT_LIMIT } from "./buffer";
 import { LogAnnouncer } from "./LogAnnouncer";
 import { MultiLogsTab } from "./multi/MultiLogsTab";
 import { isMultiLogsPayload } from "./multi/open";
-import { findMatches, MAX_MATCHES, splitLine } from "./search";
+import { logText, type TextRange } from "./LogText";
+import { MatchIndex, MAX_MATCHES, matchRanges } from "./search";
 import { useLogStream } from "./useLogStream";
+import { LogViewControls, useFollowScroll } from "./view";
+import { useLogView } from "./viewSettings";
 
 export interface LogContainer {
   name: string;
@@ -30,8 +33,6 @@ export interface LogsPayload {
 /** Lines requested from the pod before following. */
 const INITIAL_TAIL_LINES = 1000;
 const LINE_HEIGHT = 18;
-/** How close to the end (px) still counts as "at the end" for following. */
-const BOTTOM_SLACK = 24;
 
 /** The "logs" dock tab: one pod's logs, or the merged logs of several pods (`MultiLogsPayload`). */
 export function LogsTab(props: DockTabProps) {
@@ -47,7 +48,8 @@ function PodLogsTab({ tab, active }: DockTabProps) {
   const [follow, setFollow] = useState(true);
   const [timestamps, setTimestamps] = useState(false);
   const [previous, setPrevious] = useState(false);
-  const [wrap, setWrap] = useState(false);
+  const view = useLogView();
+  const { wrap, colours } = view;
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const [saveError, setSaveError] = useState<unknown>(null);
@@ -57,7 +59,12 @@ function PodLogsTab({ tab, active }: DockTabProps) {
   const { lines, dropped } = stream.buffer;
 
   // ---- search ----
-  const matches = useMemo(() => findMatches(lines, query), [lines, query]);
+  // Each line is read once as it arrives, not on every batch (MatchIndex).
+  const [index] = useState(() => new MatchIndex());
+  const matches = useMemo(
+    () => index.update(lines, dropped, query, stream.generation),
+    [index, lines, dropped, query, stream.generation],
+  );
   const current = matches.length === 0 ? -1 : Math.min(cursor, matches.length - 1);
   const currentMatch = current >= 0 ? matches[current] : undefined;
   const firstMatchOfLine = useMemo(() => {
@@ -79,25 +86,23 @@ function PodLogsTab({ tab, active }: DockTabProps) {
 
   // ---- the list ----
   const scrollRef = useRef<HTMLDivElement>(null);
-  const atBottom = useRef(true);
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => LINE_HEIGHT,
+    // Keys follow the line, not its place: when the oldest lines are discarded, a measured (wrapped) height stays
+    // with its line.
+    getItemKey: (index) => dropped + index,
     overscan: 20,
   });
-
-  const onScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (el) atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_SLACK;
-  }, []);
-
-  // Following: stay at the end while new lines arrive, unless the reader scrolled up.
   const count = lines.length;
-  useEffect(() => {
-    if (count === 0) atBottom.current = true; // a fresh stream starts at the end
-    if (follow && active && atBottom.current && count > 0 && !currentMatch) virtualizer.scrollToIndex(count - 1, { align: "end" });
-  }, [follow, active, count, currentMatch, virtualizer]);
+  const { atBottom, onScroll } = useFollowScroll(virtualizer, scrollRef, {
+    follow: follow && !currentMatch,
+    active,
+    count,
+    wrap,
+    colours,
+  });
 
   // Jump to the current match when the query or the chosen match changes (not on every new line).
   const matchLine = currentMatch?.line;
@@ -124,6 +129,7 @@ function PodLogsTab({ tab, active }: DockTabProps) {
     }
   };
 
+  const lineBreakLabel = t("logs:lineBreak");
   const statusText =
     stream.status === "connecting"
       ? t("logs:status.connecting")
@@ -172,10 +178,7 @@ function PodLogsTab({ tab, active }: DockTabProps) {
           <Checkbox checked={previous} onChange={(e) => setPrevious(e.target.checked)} />
           <span>{t("logs:toolbar.previous")}</span>
         </label>
-        <label className="logs__check">
-          <Checkbox checked={wrap} onChange={(e) => setWrap(e.target.checked)} />
-          <span>{t("logs:toolbar.wrap")}</span>
-        </label>
+        <LogViewControls view={view} />
         <span className="logs__spacer" />
         <input
           type="search"
@@ -240,7 +243,12 @@ function PodLogsTab({ tab, active }: DockTabProps) {
             const style: CSSProperties = { transform: `translateY(${item.start}px)` };
             return (
               <div key={item.key} ref={wrap ? virtualizer.measureElement : undefined} data-index={item.index} className="logs__line" style={style}>
-                {renderLine(text, item.index, query, firstMatchOfLine, currentMatch?.line === item.index ? current : -1)}
+                {logText(text, {
+                  colours,
+                  wrap,
+                  lineBreakLabel,
+                  ranges: rangesOf(item.index, query, firstMatchOfLine, currentMatch?.line === item.index ? current : -1),
+                })}
               </div>
             );
           })}
@@ -250,19 +258,10 @@ function PodLogsTab({ tab, active }: DockTabProps) {
   );
 }
 
-/** A line with its matches in `<mark>`; the current match (`current` = its index among all matches) is stronger. */
-function renderLine(text: string, line: number, query: string, firstMatchOfLine: Map<number, number>, current: number) {
+/** The matches of `query` in a line (`current` = the index of the current match among all matches). */
+function rangesOf(line: number, query: string, firstMatchOfLine: Map<number, number>, current: number) {
   const first = firstMatchOfLine.get(line);
-  if (first === undefined) return text === "" ? " " : text;
-  let ordinal = 0;
-  return splitLine(text, query).map((part, i) => {
-    if (!part.match) return part.text;
-    const isCurrent = first + ordinal === current;
-    ordinal++;
-    return (
-      <mark key={i} className={isCurrent ? "logs__mark logs__mark--current" : "logs__mark"}>
-        {part.text}
-      </mark>
-    );
-  });
+  if (first === undefined) return undefined;
+  return (visible: string): TextRange[] =>
+    matchRanges(visible, query).map((r, i) => (first + i === current ? { ...r, current: true } : r));
 }

@@ -9,7 +9,11 @@
     "follow": "따라가기",
     "timestamps": "타임스탬프",
     "previous": "이전 컨테이너",
+    "lines": "줄",
     "wrap": "줄 바꿈",
+    "oneLine": "항목당 한 줄",
+    "colours": "색상",
+    "coloursHint": "프로그램이 ANSI 이스케이프 코드로 지정한 색상과 스타일을 표시합니다. 코드 자체는 표시되지 않으며, 저장한 파일에는 코드가 남습니다.",
     "save": "저장",
     "reconnect": "다시 연결"
   },
@@ -34,6 +38,7 @@
   "lineCut": " … [64 KiB에서 줄이 잘림, 다음 줄에 계속]",
   "empty": "아직 로그 줄이 없습니다.",
   "view": "로그 줄",
+  "lineBreak": "줄 바꿈",
   "save": {
     "title": "로그 저장",
     "filter": "로그 파일",
