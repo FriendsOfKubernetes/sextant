@@ -1722,3 +1722,41 @@ fn the_agents_journal_still_drops_its_oldest_entry_first_with_not_checked_calls(
     assert!(journal.iter().any(|e| e.at == 1));
     state.close_all();
 }
+
+/// A process another thread starts copies every open descriptor of the application, the listening socket too, and
+/// keeps the copy until it runs its program (`exec`): closing the application's own descriptor then leaves the port
+/// listening (#187). Stopping must close the port whatever such a copy holds. (Linux: the platform where a starting
+/// process holds such a copy, see `stop_listening`.)
+#[cfg(target_os = "linux")]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn stopping_closes_the_port_while_other_threads_start_processes() {
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let (state, _) = state_in(dir.path(), None);
+    let spawning = Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let spawners: Vec<_> = (0..4)
+        .map(|_| {
+            let spawning = Arc::clone(&spawning);
+            std::thread::spawn(move || {
+                while spawning.load(std::sync::atomic::Ordering::Relaxed) {
+                    if let Ok(mut child) = std::process::Command::new("true").spawn() {
+                        let _ = child.wait();
+                    }
+                }
+            })
+        })
+        .collect();
+    let mut still_listening = 0;
+    for _ in 0..200 {
+        let port = turn_on_free(&state).await;
+        state.mcp.stop();
+        if !port_is_closed_now(port) {
+            still_listening += 1;
+        }
+    }
+    spawning.store(false, std::sync::atomic::Ordering::Relaxed);
+    for spawner in spawners {
+        spawner.join().unwrap();
+    }
+    assert_eq!(still_listening, 0, "ports still listening after stop");
+}

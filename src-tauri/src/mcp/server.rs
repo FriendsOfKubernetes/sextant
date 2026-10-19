@@ -282,6 +282,10 @@ struct Running {
 /// connections to it (Windows reports them as connected). Taking the socket out of here and dropping it closes the
 /// port at once instead. Not a duplicated socket handle (`try_clone`): the socket is closed only when every handle
 /// to it is.
+///
+/// A process another thread is starting holds such a handle too: on Linux the child gets a copy of every descriptor
+/// and keeps it until it runs its program, so the port would still listen for that moment after the drop (#187).
+/// Closing therefore shuts the socket down first, which stops it listening whoever holds a copy.
 #[derive(Clone)]
 struct SharedListener(Arc<Mutex<Option<tokio::net::TcpListener>>>);
 
@@ -290,11 +294,29 @@ impl SharedListener {
         Self(Arc::new(Mutex::new(Some(listener))))
     }
 
-    /// Closes the socket: the port is free on return, whatever task still accepts on it.
+    /// Closes the socket: the port is free on return, whatever task still accepts on it and whatever starting
+    /// process still holds a copy of it.
     fn close(&self) {
-        drop(lock(&self.0).take());
+        let listener = lock(&self.0).take();
+        if let Some(listener) = listener {
+            stop_listening(&listener);
+        }
     }
 }
+
+/// Takes `listener` out of the listening state for every copy of its descriptor (Linux: `shutdown` of a listening
+/// socket closes it). Elsewhere dropping it is all there is: Windows does not hand sockets to child processes, and
+/// macOS starts processes without a moment in which the child holds the parent's descriptors (`posix_spawn`).
+#[cfg(target_os = "linux")]
+fn stop_listening(listener: &tokio::net::TcpListener) {
+    use std::os::fd::AsRawFd;
+    // SAFETY: `listener` owns the open descriptor for the whole call; `shutdown` touches no memory of ours. An
+    // error (the socket already closed by the system) leaves nothing to do.
+    unsafe { libc::shutdown(listener.as_raw_fd(), libc::SHUT_RDWR) };
+}
+
+#[cfg(not(target_os = "linux"))]
+fn stop_listening(_: &tokio::net::TcpListener) {}
 
 impl axum::serve::Listener for SharedListener {
     type Io = tokio::net::TcpStream;
