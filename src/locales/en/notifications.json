@@ -28,6 +28,10 @@
     "title": "Recent notifications",
     "clear": "Clear",
     "empty": "No notifications yet.",
+    "emptyCluster": "No notifications from this cluster yet.",
+    "allClusters": "All clusters",
+    "muteAll": "Mute all notifications for 1 hour",
+    "mutedAllUntil": "All notifications muted until {{time}}",
     "off": "Notifications are off (Settings → General → Notifications).",
     "delivery": {
       "summary": "in a summary",

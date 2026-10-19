@@ -26,6 +26,10 @@
     "title": "最近的通知",
     "clear": "清除",
     "empty": "尚無通知。",
+    "emptyCluster": "尚無來自此叢集的通知。",
+    "allClusters": "所有叢集",
+    "muteAll": "將所有通知靜音 1 小時",
+    "mutedAllUntil": "所有通知靜音至 {{time}}",
     "off": "通知已關閉（設定 → 一般 → 通知）。",
     "delivery": {
       "summary": "彙整通知",

@@ -292,4 +292,17 @@ describe("notifications", () => {
     expect(engine.history()).toHaveLength(100);
     expect(engine.history()[0]!.object.name).toBe("p119");
   });
+
+  it("clear the history of one cluster and keep the others'", () => {
+    engine.observe(source([]));
+    engine.observe(source([], "c2|/v1/Pod|", "c2"));
+    engine.observe(source(problems([crashing("a")])));
+    engine.observe(source(problems([crashing("b")]), "c2|/v1/Pod|", "c2"));
+    flush();
+    expect(engine.history().map((h) => h.clusterId).sort()).toEqual(["c1", "c2"]);
+    engine.clearHistory("c1");
+    expect(engine.history().map((h) => h.clusterId)).toEqual(["c2"]);
+    engine.clearHistory();
+    expect(engine.history()).toEqual([]);
+  });
 });

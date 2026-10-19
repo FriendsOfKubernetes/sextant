@@ -28,6 +28,10 @@
     "title": "Letzte Benachrichtigungen",
     "clear": "Leeren",
     "empty": "Noch keine Benachrichtigungen.",
+    "emptyCluster": "Noch keine Benachrichtigungen von diesem Cluster.",
+    "allClusters": "Alle Cluster",
+    "muteAll": "Alle Benachrichtigungen 1 Stunde stummschalten",
+    "mutedAllUntil": "Alle Benachrichtigungen stummgeschaltet bis {{time}}",
     "off": "Benachrichtigungen sind ausgeschaltet (Einstellungen → Allgemein → Benachrichtigungen).",
     "delivery": {
       "summary": "in einer Zusammenfassung",

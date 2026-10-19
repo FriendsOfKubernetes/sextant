@@ -1,7 +1,8 @@
 // The problems screen (#136): everything that is red in the cluster on one page — nodes, pods, workloads, Jobs,
 // volume claims, certificates, Flux, Argo CD and Gateway API objects and Warning events — grouped by category and
 // namespace with the reason and the age, each a link to its details. Follows the namespace filter; "Only new since…"
-// hides what began before the mark. The last desktop notifications are listed below.
+// hides what began before the mark. The cluster's last desktop notifications are listed below (every cluster's under
+// "All clusters").
 // Security findings (Baseline Pod Security Standard violations, #143) are an opt-in category: listed while
 // "Security findings" is on — the saved setting `notifications.enabledCategories`, which the sidebar counter and the
 // notifications follow too.
@@ -114,7 +115,7 @@ export function ProblemsPage({ clusterId }: PageProps) {
         ))
       )}
 
-      <NotificationHistory />
+      <NotificationHistory clusterId={clusterId} />
     </div>
   );
 }

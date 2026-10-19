@@ -32,6 +32,10 @@
     "title": "Ostatnie powiadomienia",
     "clear": "Wyczyść",
     "empty": "Brak powiadomień.",
+    "emptyCluster": "Brak powiadomień z tego klastra.",
+    "allClusters": "Wszystkie klastry",
+    "muteAll": "Wycisz wszystkie powiadomienia na 1 godzinę",
+    "mutedAllUntil": "Wszystkie powiadomienia wyciszone do {{time}}",
     "off": "Powiadomienia są wyłączone (Ustawienia → Ogólne → Powiadomienia).",
     "delivery": {
       "summary": "w podsumowaniu",

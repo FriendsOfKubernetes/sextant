@@ -30,6 +30,10 @@
     "title": "Notificaciones recientes",
     "clear": "Borrar",
     "empty": "Todavía no hay notificaciones.",
+    "emptyCluster": "Todavía no hay notificaciones de este clúster.",
+    "allClusters": "Todos los clústeres",
+    "muteAll": "Silenciar todas las notificaciones durante 1 hora",
+    "mutedAllUntil": "Todas las notificaciones silenciadas hasta {{time}}",
     "off": "Las notificaciones están desactivadas (Configuración → General → Notificaciones).",
     "delivery": {
       "summary": "en un resumen",

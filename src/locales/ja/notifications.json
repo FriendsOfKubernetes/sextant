@@ -26,6 +26,10 @@
     "title": "最近の通知",
     "clear": "クリア",
     "empty": "通知はまだありません。",
+    "emptyCluster": "このクラスターからの通知はまだありません。",
+    "allClusters": "すべてのクラスター",
+    "muteAll": "すべての通知を 1 時間ミュート",
+    "mutedAllUntil": "すべての通知を {{time}} までミュート中",
     "off": "通知はオフです (設定 → 一般 → 通知)。",
     "delivery": {
       "summary": "まとめて通知",

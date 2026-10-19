@@ -278,8 +278,9 @@ export class NotificationEngine {
     return this.failure;
   }
 
-  clearHistory(): void {
-    this.entries = [];
+  /** Forgets the history, or only the entries of `clusterId` when one is named. */
+  clearHistory(clusterId?: ClusterId): void {
+    this.entries = clusterId === undefined ? [] : this.entries.filter((e) => e.clusterId !== clusterId);
     for (const fn of [...this.listeners]) fn();
   }
 

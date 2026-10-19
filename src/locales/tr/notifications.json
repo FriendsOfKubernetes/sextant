@@ -28,6 +28,10 @@
     "title": "Son bildirimler",
     "clear": "Temizle",
     "empty": "Henüz bildirim yok.",
+    "emptyCluster": "Bu kümeden henüz bildirim yok.",
+    "allClusters": "Tüm kümeler",
+    "muteAll": "Tüm bildirimleri 1 saat sessize al",
+    "mutedAllUntil": "Tüm bildirimler şu saate kadar sessizde: {{time}}",
     "off": "Bildirimler kapalı (Ayarlar → Genel → Bildirimler).",
     "delivery": {
       "summary": "özet içinde",

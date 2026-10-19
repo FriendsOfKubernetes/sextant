@@ -30,6 +30,10 @@
     "title": "Notifiche recenti",
     "clear": "Cancella",
     "empty": "Ancora nessuna notifica.",
+    "emptyCluster": "Ancora nessuna notifica da questo cluster.",
+    "allClusters": "Tutti i cluster",
+    "muteAll": "Silenzia tutte le notifiche per 1 ora",
+    "mutedAllUntil": "Tutte le notifiche silenziate fino alle {{time}}",
     "off": "Le notifiche sono disattivate (Impostazioni → Generale → Notifiche).",
     "delivery": {
       "summary": "in un riepilogo",

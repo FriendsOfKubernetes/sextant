@@ -30,6 +30,10 @@
     "title": "Notifications récentes",
     "clear": "Effacer",
     "empty": "Aucune notification pour l'instant.",
+    "emptyCluster": "Aucune notification de ce cluster pour l'instant.",
+    "allClusters": "Tous les clusters",
+    "muteAll": "Désactiver toutes les notifications pendant 1 heure",
+    "mutedAllUntil": "Toutes les notifications désactivées jusqu'à {{time}}",
     "off": "Les notifications sont désactivées (Paramètres → Général → Notifications).",
     "delivery": {
       "summary": "dans un récapitulatif",

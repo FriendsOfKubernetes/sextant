@@ -26,6 +26,10 @@
     "title": "최근 알림",
     "clear": "지우기",
     "empty": "아직 알림이 없습니다.",
+    "emptyCluster": "이 클러스터의 알림이 아직 없습니다.",
+    "allClusters": "모든 클러스터",
+    "muteAll": "모든 알림을 1시간 동안 끄기",
+    "mutedAllUntil": "{{time}}까지 모든 알림 꺼짐",
     "off": "알림이 꺼져 있습니다(설정 → 일반 → 알림).",
     "delivery": {
       "summary": "요약으로 표시",

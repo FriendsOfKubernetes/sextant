@@ -6,13 +6,14 @@ import "../../resources";
 import { resetClusterKinds } from "../../resources/useKinds";
 import { resetClustersStore, useClustersStore } from "../clusters/clustersStore";
 import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
-import { POD } from "../problems/model";
+import { POD, resolve } from "../problems/model";
 import { resetProblemSources } from "../problems/store";
 import { GROUP_WINDOW_MS } from "./engine";
 import { notifier, resetNotifier } from "./notifier";
 import { NotificationHistory } from "./NotificationHistory";
 import { NotificationsHost } from "./NotificationsHost";
 import { NotificationsPanel } from "./NotificationsPanel";
+import { prefsOf } from "./prefs";
 import { useSettings } from "../../api";
 
 function crashing(name: string): KubeObject {
@@ -210,5 +211,46 @@ describe("the Notifications settings", () => {
     fireEvent.change(field, { target: { value: "5000" } });
     fireEvent.blur(field);
     await waitFor(() => expect(stored.notifications.certExpiryDays).toBe(365));
+  });
+});
+
+/** One notification about a crashing pod of each cluster, through the real notifier. */
+function notifyAbout(pods: Record<string, string>) {
+  const now = Date.now();
+  notifier.setPrefs(prefsOf(defaultAppSettings()));
+  for (const clusterId of Object.keys(pods)) notifier.observe({ key: `${clusterId}|pods`, clusterId, status: "ready", problems: [] }, now);
+  for (const [clusterId, name] of Object.entries(pods)) {
+    const problems = resolve(POD, crashing(name), now);
+    notifier.observe({ key: `${clusterId}|pods`, clusterId, status: "ready", problems }, now);
+  }
+  act(() => notifier.flush());
+}
+
+describe("the recent notifications on a cluster's problems screen", () => {
+  it("list that cluster's only, every cluster's under All clusters, and clear what is listed", async () => {
+    start();
+    render(<NotificationHistory clusterId="c1" />);
+    expect(await screen.findByText("No notifications from this cluster yet.")).toBeInTheDocument();
+    notifyAbout({ c1: "web", c3: "api" });
+    const list = () => screen.getByRole("region", { name: "Recent notifications" });
+    expect(list()).toHaveTextContent("Pod: shop/web");
+    expect(list()).not.toHaveTextContent("Pod: shop/api");
+    expect(list()).not.toHaveTextContent("ctx-c1");
+    // The mute is app-wide, and says so here.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Mute all notifications for 1 hour" })).toBeEnabled());
+
+    const every = screen.getByRole("checkbox", { name: "All clusters" });
+    expect(every).not.toBeChecked();
+    fireEvent.click(every);
+    expect(list()).toHaveTextContent("Pod: shop/api");
+    expect(list()).toHaveTextContent("ctx-c3");
+    fireEvent.click(every);
+
+    // "Clear" forgets this cluster's entries only.
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByText("No notifications from this cluster yet.")).toBeInTheDocument();
+    expect(notifier.history().map((h) => h.clusterId)).toEqual(["c3"]);
+    fireEvent.click(screen.getByRole("checkbox", { name: "All clusters" }));
+    expect(list()).toHaveTextContent("Pod: shop/api");
   });
 });

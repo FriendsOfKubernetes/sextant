@@ -26,6 +26,10 @@
     "title": "最近的通知",
     "clear": "清除",
     "empty": "尚无通知。",
+    "emptyCluster": "尚无来自此集群的通知。",
+    "allClusters": "所有集群",
+    "muteAll": "将所有通知静音 1 小时",
+    "mutedAllUntil": "所有通知静音至 {{time}}",
     "off": "通知已关闭（设置 → 常规 → 通知）。",
     "delivery": {
       "summary": "汇总通知",

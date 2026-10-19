@@ -1,9 +1,11 @@
 // The last notifications (`HISTORY_LIMIT`) of every cluster, newest first, with "Mute for 1 hour" — also where a
-// notification muted or folded into a summary can still be read. Shown on the problems screen.
-import { useSyncExternalStore } from "react";
+// notification muted or folded into a summary can still be read. Shown on the problems screen of a cluster
+// (`clusterId`): there only that cluster's notifications by default, every cluster's (with the cluster column) under
+// "All clusters". "Clear" forgets what is listed; the mute is app-wide, and says so on a cluster's screen.
+import { useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { toApiError, useSettings } from "../../api";
-import { Age, Badge, Button } from "../../components";
+import { toApiError, useSettings, type ClusterId } from "../../api";
+import { Age, Badge, Button, Checkbox } from "../../components";
 import { displayNameOf } from "../clusters/clusterSettings";
 import { useClustersStore } from "../clusters/clustersStore";
 import { useNow } from "../problems/hooks";
@@ -20,9 +22,13 @@ export function useNotificationHistory(): readonly HistoryEntry[] {
   return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 
-export function NotificationHistory() {
+export function NotificationHistory({ clusterId }: { clusterId?: ClusterId } = {}) {
   const { t } = useTranslation();
-  const entries = useNotificationHistory();
+  const all = useNotificationHistory();
+  const [everyCluster, setEveryCluster] = useState(false);
+  /** The cluster the list is narrowed to; `undefined`: every cluster. */
+  const only = clusterId !== undefined && !everyCluster ? clusterId : undefined;
+  const entries = only === undefined ? all : all.filter((e) => e.clusterId === only);
   const failure = useSyncExternalStore(subscribe, failureSnapshot, failureSnapshot);
   const save = (change: Parameters<typeof update>[0]) =>
     update(change).then(
@@ -46,7 +52,9 @@ export function NotificationHistory() {
         {muted && prefs?.mutedUntil ? (
           <>
             <span className="problems__muted" role="status">
-              {t("notifications:settings.mutedUntil", { time: formatTime(prefs.mutedUntil) })}
+              {t(clusterId === undefined ? "notifications:settings.mutedUntil" : "notifications:history.mutedAllUntil", {
+                time: formatTime(prefs.mutedUntil),
+              })}
             </span>
             <Button size="compact" onClick={() => void save(unmute())}>
               {t("notifications:unmute")}
@@ -58,13 +66,19 @@ export function NotificationHistory() {
             disabled={!prefs?.enabled}
             onClick={() => void save(muteForHour(Date.now()))}
           >
-            {t("notifications:muteHour")}
+            {t(clusterId === undefined ? "notifications:muteHour" : "notifications:history.muteAll")}
           </Button>
         )}
         {entries.length > 0 && (
-          <Button size="compact" onClick={() => notifier.clearHistory()}>
+          <Button size="compact" onClick={() => notifier.clearHistory(only)}>
             {t("notifications:history.clear")}
           </Button>
+        )}
+        {clusterId !== undefined && (
+          <label className="problems__choice">
+            <Checkbox checked={everyCluster} onChange={(e) => setEveryCluster(e.target.checked)} />
+            {t("notifications:history.allClusters")}
+          </label>
         )}
       </div>
       {failure && (
@@ -74,9 +88,11 @@ export function NotificationHistory() {
       )}
       {prefs && !prefs.enabled && <p className="problems__hint">{t("notifications:history.off")}</p>}
       {entries.length === 0 ? (
-        <p className="problems__hint">{t("notifications:history.empty")}</p>
+        <p className="problems__hint">
+          {t(only === undefined ? "notifications:history.empty" : "notifications:history.emptyCluster")}
+        </p>
       ) : (
-        <ul className="problems__history-list">
+        <ul className={`problems__history-list${only === undefined ? "" : " problems__history-list--cluster"}`}>
           {entries.map((entry) => {
             const object = entry.object;
             const where = object.namespace ? `${object.namespace}/${object.name}` : object.name;
@@ -85,7 +101,7 @@ export function NotificationHistory() {
                 <span className="problems__history-time">
                   <Age timestamp={new Date(entry.at).toISOString()} now={now} />
                 </span>
-                <span className="problems__history-cluster">{nameOf(entry.clusterId)}</span>
+                {only === undefined && <span className="problems__history-cluster">{nameOf(entry.clusterId)}</span>}
                 <Badge tone="danger">{entry.reason}</Badge>
                 <button
                   type="button"

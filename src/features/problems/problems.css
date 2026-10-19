@@ -72,6 +72,11 @@
   grid-template-columns: auto auto auto minmax(140px, 2fr) auto minmax(0, 3fr);
 }
 
+/* One cluster's notifications: no cluster column. */
+.problems__history-list--cluster .problems__history-item {
+  grid-template-columns: auto auto minmax(140px, 2fr) auto minmax(0, 3fr);
+}
+
 .problems__object {
   text-align: left;
   overflow: hidden;
@@ -129,7 +134,8 @@
   }
 
   .problems__row,
-  .problems__history-item {
+  .problems__history-item,
+  .problems__history-list--cluster .problems__history-item {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
