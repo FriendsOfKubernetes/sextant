@@ -43,7 +43,7 @@
   "workspace": {
     "switcher": "Workspace",
     "current": "Workspace: {{name}}",
-    "all": "All clusters",
+    "none": "No workspace",
     "manage": "Manage workspaces…",
     "hint": "A workspace shows only its clusters in the rail. Switching never connects or disconnects a cluster."
   },

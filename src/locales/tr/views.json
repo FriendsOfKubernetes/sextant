@@ -43,7 +43,7 @@
   "workspace": {
     "switcher": "Çalışma alanı",
     "current": "Çalışma alanı: {{name}}",
-    "all": "Tüm kümeler",
+    "none": "Çalışma alanı yok",
     "manage": "Çalışma alanlarını yönet…",
     "hint": "Bir çalışma alanı, çubukta yalnızca kendi kümelerini gösterir. Geçiş yapmak hiçbir zaman bir kümeyi bağlamaz veya bağlantısını kesmez."
   },

@@ -43,7 +43,7 @@
   "workspace": {
     "switcher": "Espacio de trabajo",
     "current": "Espacio de trabajo: {{name}}",
-    "all": "Todos los clústeres",
+    "none": "Ningún espacio de trabajo",
     "manage": "Gestionar espacios de trabajo…",
     "hint": "Un espacio de trabajo muestra en la barra solo sus clústeres. Cambiar de espacio nunca conecta ni desconecta un clúster."
   },

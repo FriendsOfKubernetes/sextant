@@ -43,7 +43,7 @@
   "workspace": {
     "switcher": "Obszar roboczy",
     "current": "Obszar roboczy: {{name}}",
-    "all": "Wszystkie klastry",
+    "none": "Brak obszaru roboczego",
     "manage": "Zarządzaj obszarami roboczymi…",
     "hint": "Obszar roboczy pokazuje na pasku tylko swoje klastry. Przełączenie nigdy nie łączy ani nie rozłącza klastra."
   },

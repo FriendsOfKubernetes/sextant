@@ -43,7 +43,7 @@
   "workspace": {
     "switcher": "Arbeitsbereich",
     "current": "Arbeitsbereich: {{name}}",
-    "all": "Alle Cluster",
+    "none": "Kein Arbeitsbereich",
     "manage": "Arbeitsbereiche verwalten…",
     "hint": "Ein Arbeitsbereich zeigt in der Leiste nur seine Cluster. Ein Wechsel verbindet oder trennt nie einen Cluster."
   },

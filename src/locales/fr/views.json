@@ -43,7 +43,7 @@
   "workspace": {
     "switcher": "Espace de travail",
     "current": "Espace de travail : {{name}}",
-    "all": "Tous les clusters",
+    "none": "Aucun espace de travail",
     "manage": "Gérer les espaces de travail…",
     "hint": "Un espace de travail n'affiche que ses clusters dans la barre. Changer d'espace ne connecte ni ne déconnecte jamais un cluster."
   },

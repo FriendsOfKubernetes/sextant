@@ -274,7 +274,7 @@ Something wrong with one object that Sextant's rules recognise: a crash-looping 
 _Avoid_: alert, issue, error (bare), incident
 
 **Problems page**:
-The page "Problems" in the Cluster section, after "Overview": the problems of the open cluster grouped by category and namespace, each a link to its object, with "Only new since…" and the recent notifications below. The counter on the section header counts only problems that would notify.
+The page "Problems" in the Cluster section, after "Overview": the problems of the open cluster grouped by category and namespace, each a link to its object, with "Only new since…" and the cluster's recent notifications below (every cluster's under "All clusters"). The counter on the section header counts only problems that would notify.
 _Avoid_: dashboard, health page, alerts
 
 **Notification**:

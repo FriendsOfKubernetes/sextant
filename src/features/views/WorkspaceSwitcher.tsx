@@ -1,5 +1,7 @@
-// The workspace switcher at the top of the cluster rail: "All clusters" or one workspace, whose clusters alone the
+// The workspace switcher at the top of the cluster rail: no workspace (every cluster) or one workspace, whose clusters alone the
 // rail then shows. Switching only filters the rail: no cluster is connected or disconnected.
+// Without a workspace it reads "No workspace", not "All clusters": that is the name of the overview button (#144) just
+// below it, and two "All clusters" one above the other read as a duplicate.
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../../api";
@@ -37,7 +39,7 @@ export function WorkspaceSwitcher() {
         <Icon name="workspace" size={20} />
         {expanded && (
           <span className="fleet-rail__name" aria-hidden="true">
-            {current ? current.name : t("views:workspace.all")}
+            {current ? current.name : t("views:workspace.none")}
           </span>
         )}
       </button>
@@ -50,7 +52,7 @@ export function WorkspaceSwitcher() {
             className="rt-menu__item"
             onClick={() => choose(null)}
           >
-            {t("views:workspace.all")}
+            {t("views:workspace.none")}
           </button>
           {workspaces.map((w) => (
             <button
