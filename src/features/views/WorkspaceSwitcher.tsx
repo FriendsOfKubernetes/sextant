@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Icon, usePopup } from "../../components";
+import { Icon, usePopup, usePopupPosition } from "../../components";
 import { activeWorkspace, switchWorkspace } from "./model";
 import { openManager, save } from "./ui";
 import "./views.css";
@@ -17,7 +17,11 @@ export function WorkspaceSwitcher() {
   const expanded = useAppStore((s) => s.railExpanded);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   usePopup(ref, () => setOpen(false), open);
+  // Right of the rail button, top-aligned; flipped or shifted to stay inside the window.
+  usePopupPosition(menuRef, buttonRef, { open, side: "right", gap: 4 });
   const workspaces = settings?.workspaces ?? [];
   const current = activeWorkspace(settings);
   const label = current ? t("views:workspace.current", { name: current.name }) : t("views:workspace.switcher");
@@ -28,6 +32,7 @@ export function WorkspaceSwitcher() {
   return (
     <div className="workspace-switch" ref={ref}>
       <button
+        ref={buttonRef}
         type="button"
         className={`fleet-rail${current ? " fleet-rail--active" : ""}${expanded ? " fleet-rail--expanded" : ""}`}
         aria-label={label}
@@ -44,7 +49,7 @@ export function WorkspaceSwitcher() {
         )}
       </button>
       {open && (
-        <div className="rt-menu workspace-switch__menu" role="menu" aria-label={t("views:workspace.switcher")}>
+        <div ref={menuRef} className="rt-menu workspace-switch__menu" role="menu" aria-label={t("views:workspace.switcher")}>
           <button
             type="button"
             role="menuitemradio"

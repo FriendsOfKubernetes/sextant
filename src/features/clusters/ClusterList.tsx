@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings, type AppSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Dialog, Icon, SLOW_AFTER_S, useElapsedSeconds, usePopup } from "../../components";
+import { Dialog, Icon, pointRect, SLOW_AFTER_S, useElapsedSeconds, usePopup, usePopupPosition } from "../../components";
 import { AddClusterDialog, SourceError } from "./AddClusterDialog";
 import { ClusterAvatar } from "./ClusterAvatar";
 import { ClusterSettingsDialog } from "./ClusterSettingsDialog";
@@ -188,6 +188,8 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
   const id = menu.cluster.id;
 
   usePopup(ref, onClose);
+  // At the pointer, flipped or shifted to stay inside the window (#176).
+  usePopupPosition(ref, pointRect(menu.x, menu.y));
   useEffect(() => {
     ref.current?.querySelector("button")?.focus();
   }, []);
@@ -199,7 +201,7 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
   const connected = state.state === "connected" || state.state === "connecting";
 
   return (
-    <ul ref={ref} className="cluster-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
+    <ul ref={ref} className="cluster-menu" role="menu">
       <li role="none">
         <button type="button" role="menuitem" onClick={run(() => selectCluster(id))}>
           {t("clusters:menu.open")}

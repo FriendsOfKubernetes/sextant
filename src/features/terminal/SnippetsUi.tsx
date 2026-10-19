@@ -3,7 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { updateSettings, useSettings } from "../../api";
-import { Button, Dialog, usePopup } from "../../components";
+import { Button, Dialog, usePopup, usePopupPosition } from "../../components";
 import { formatList } from "../../i18n/format";
 import {
   deleteSnippet,
@@ -44,7 +44,10 @@ export function SnippetsMenu({ context, shell, send, afterInsert }: SnippetsMenu
   const [filter, setFilter] = useState("");
   const ref = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
+  const menuRef = useRef<HTMLDivElement | null>(null);
   usePopup(ref, () => setOpen(false), open);
+  // Under the button's right edge; the terminal sits at the bottom of the window, so it usually opens upwards.
+  usePopupPosition(menuRef, ref, { open, align: "end", gap: 4 });
   const broadcasting = useBroadcast((s) => s.targets !== null);
   const snippets = settings?.snippets ?? [];
   const needle = filter.trim().toLowerCase();
@@ -64,7 +67,7 @@ export function SnippetsMenu({ context, shell, send, afterInsert }: SnippetsMenu
         {t("terminal:snippets.button")}
       </Button>
       {open && (
-        <div id={menuId} className="terminal-snippets__menu" role="region" aria-label={t("terminal:snippets.button")}>
+        <div id={menuId} ref={menuRef} className="terminal-snippets__menu" role="region" aria-label={t("terminal:snippets.button")}>
           {snippets.length > FILTER_FROM && (
             <input
               type="search"

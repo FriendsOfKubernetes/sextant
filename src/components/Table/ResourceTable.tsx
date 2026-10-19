@@ -39,6 +39,7 @@ import { Checkbox } from "../Checkbox";
 import { EmptyState } from "../EmptyState";
 import { ErrorState } from "../ErrorState";
 import { Icon, renderIcon } from "../icons";
+import { pointRect, usePopupPosition, type PopupRect } from "../placePopup";
 import { usePopup } from "../usePopup";
 import { LoadingIndicator } from "../LoadingIndicator";
 import {
@@ -188,8 +189,8 @@ function useWatchStart(watchKey: string, askedAt: number | undefined): number | 
 }
 
 interface MenuState {
-  x: number;
-  y: number;
+  /** What the menu opens at: the "⋮" button, or the pointer / row for a context menu. */
+  anchor: PopupRect;
   objects: KubeObject[];
 }
 
@@ -343,10 +344,10 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const cellContext: CellContext = useMemo(() => ({ clusterId, kind, now }), [clusterId, kind, now]);
 
   const [menu, setMenu] = useState<MenuState | null>(null);
-  const openMenu = (obj: KubeObject, x: number, y: number) => {
+  const openMenu = (obj: KubeObject, anchor: PopupRect) => {
     const uid = uidOf(obj);
     const inSelection = rowSelection[uid] && selected.length > 1;
-    setMenu({ x, y, objects: inSelection ? selected : [obj] });
+    setMenu({ anchor, objects: inSelection ? selected : [obj] });
   };
 
   // Keyboard: the row in the tab order and a row to focus once it is drawn (after a scroll to it), by object uid, so
@@ -612,12 +613,12 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                   } else if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    openMenu(obj, rect.left + 32, rect.bottom);
+                    openMenu(obj, pointRect(rect.left + 32, rect.bottom));
                   }
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
-                  openMenu(obj, e.clientX, e.clientY);
+                  openMenu(obj, pointRect(e.clientX, e.clientY));
                 }}
               >
                 <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
@@ -643,8 +644,8 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                     aria-haspopup="menu"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      openMenu(obj, rect.left, rect.bottom);
+                      const { left, top, right, bottom } = e.currentTarget.getBoundingClientRect();
+                      openMenu(obj, { left, top, right, bottom });
                     }}
                   >
                     <Icon name="more" />
@@ -678,8 +679,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       </RowsScroller>
       {menu && (
         <ActionMenu
-          x={menu.x}
-          y={menu.y}
+          anchor={menu.anchor}
           actions={getActionsFor(menu.objects, kind, actionIds)}
           onClose={() => setMenu(null)}
           onRun={(action) => {
@@ -750,14 +750,12 @@ function formatValue(value: ReturnType<ColumnDef["value"]>): string {
 }
 
 function ActionMenu({
-  x,
-  y,
+  anchor,
   actions,
   onClose,
   onRun,
 }: {
-  x: number;
-  y: number;
+  anchor: PopupRect;
   actions: RegisteredAction[];
   onClose: () => void;
   onRun: (action: RegisteredAction) => void;
@@ -765,11 +763,13 @@ function ActionMenu({
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   usePopup(ref, onClose);
+  // Under the "⋮" button (or the pointer), flipped or shifted to stay inside the window (#176).
+  usePopupPosition(ref, anchor);
   useEffect(() => {
     ref.current?.querySelector<HTMLButtonElement>("[role='menuitem']")?.focus();
   }, []);
   return (
-    <div ref={ref} className="rt-menu" role="menu" aria-label={t("resources:table.actions")} style={{ left: x, top: y }}>
+    <div ref={ref} className="rt-menu" role="menu" aria-label={t("resources:table.actions")}>
       {actions.length === 0 ? (
         <div className="rt-menu__empty">{t("resources:table.noActions")}</div>
       ) : (
@@ -812,12 +812,17 @@ function ColumnsMenu({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   usePopup(ref, () => setOpen(false), open);
+  // Under the button, lined up with its right edge; flipped or shifted to stay inside the window.
+  usePopupPosition(menuRef, buttonRef, { open, align: "end", gap: 4 });
   const shownCount = columns.filter((c) => !hidden.includes(c.id)).length;
   const label = t("views:table.columns");
   return (
     <div className="rt-columns" ref={ref}>
       <button
+        ref={buttonRef}
         type="button"
         className="icon-btn"
         aria-label={label}
@@ -829,7 +834,7 @@ function ColumnsMenu({
         <Icon name="columns" />
       </button>
       {open && (
-        <div className="rt-menu rt-columns__menu" role="menu" aria-label={label}>
+        <div ref={menuRef} className="rt-menu rt-columns__menu" role="menu" aria-label={label}>
           {onChange && columns.map((c) => {
             const shown = !hidden.includes(c.id);
             const name = c.titleKey ? t(c.titleKey) : (c.title ?? c.id);

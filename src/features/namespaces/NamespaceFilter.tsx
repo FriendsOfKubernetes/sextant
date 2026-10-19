@@ -1,9 +1,9 @@
 // Namespace filter in the table header: "All namespaces" or a multi-selection, with a filter box.
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
-import { Button, Checkbox, Icon, usePopup } from "../../components";
+import { Button, Checkbox, Icon, usePopup, usePopupPosition } from "../../components";
 import { formatList } from "../../i18n/format";
 import { selectNamespaces } from "./namespaces";
 import "./namespaces.css";
@@ -24,16 +24,15 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
   const ref = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   // The popup opens under the button's right edge (the filter usually sits at the right of a header); where that
-  // would cross the left edge of the main area (a filter at the left of a page), it opens under the left edge.
-  const [alignLeft, setAlignLeft] = useState(false);
+  // would cross the left edge of the main area (a filter at the left of a page, #168), it opens under the left edge;
+  // where it would cross the window's right or bottom edge, it flips or shifts to stay inside (#176).
+  usePopupPosition(popupRef, ref, {
+    open,
+    align: "end",
+    gap: 4,
+    bounds: () => ref.current?.closest("main")?.getBoundingClientRect() ?? null,
+  });
   const { items } = useWatch(clusterId, NAMESPACES);
-
-  useLayoutEffect(() => {
-    if (!open || !ref.current || !popupRef.current) return;
-    const button = ref.current.getBoundingClientRect();
-    const area = (ref.current.closest("main") ?? document.body).getBoundingClientRect();
-    setAlignLeft(button.right - popupRef.current.offsetWidth < area.left);
-  }, [open]);
 
   const all = useMemo(() => {
     const names = new Set<string>();
@@ -81,7 +80,7 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
         <div
           id={popupId}
           ref={popupRef}
-          className={alignLeft ? "ns-filter__popup ns-filter__popup--left" : "ns-filter__popup"}
+          className="ns-filter__popup"
           role="dialog"
           aria-label={t("resources:namespaces.title")}
         >

@@ -7,6 +7,7 @@ import { DetailsPanel } from "../../layout/details/DetailsPanel";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import "../../resources";
 import { extendColumns } from "../../resources";
+import { layOutPopups, placed } from "../../test/popupLayout";
 import { ResourceTable } from "./ResourceTable";
 
 const POD: KindRef = { group: "", version: "v1", kind: "Pod" };
@@ -568,5 +569,62 @@ describe("ResourceTable keyboard and screen readers (#158)", () => {
     expect(screen.getByRole("region")).toHaveAttribute("aria-busy", "true");
     await snapshot(pods);
     expect(screen.getByRole("region")).not.toHaveAttribute("aria-busy");
+  });
+});
+
+describe("ResourceTable menus stay inside the window (#176)", () => {
+  // Long Russian labels make the menu wider than its 160 px minimum.
+  const LONG = ["Перезапустить развёртывание", "Изменить масштаб реплик", "Удалить сертификат"];
+
+  function layout(button: { left: number; top: number }): void {
+    layOutPopups({
+      window: { width: 1280, height: 720 },
+      isPopup: (el) => el.classList.contains("rt-menu"),
+      popupSize: (el) => {
+        const labels = [...el.querySelectorAll("[role='menuitem']")].map((m) => m.textContent ?? "");
+        return { width: Math.max(160, 60 + 8 * Math.max(0, ...labels.map((l) => l.length))), height: 36 * labels.length + 8 };
+      },
+      anchorOf: (el) =>
+        el.getAttribute("aria-label")?.startsWith("Actions for") ? { ...button, width: 24, height: 24 } : null,
+    });
+  }
+
+  async function withLongActions() {
+    const ids = ["restart", "scale", "delete"] as const;
+    for (const [i, id] of ids.entries()) {
+      registerAction(id, { labelKey: LONG[i]!, icon: "edit", appliesTo: () => true, run: vi.fn() });
+    }
+    render(<ResourceTable clusterId="c1" kind={POD} actions={[...ids]} />);
+    await snapshot([pod(1)]);
+  }
+
+  it("the ⋮ menu of the last column opens leftwards instead of past the right edge", async () => {
+    layout({ left: 1240, top: 200 });
+    await withLongActions();
+    fireEvent.click(screen.getByRole("button", { name: "Actions for pod-0001" }));
+    const menu = screen.getByRole("menu");
+    const { box, inside } = placed(menu);
+    expect(inside).toBe(true);
+    // Lined up with the button's right edge, under it.
+    expect(box.right).toBe(1264);
+    expect(box.top).toBe(224);
+    expect(within(menu).getAllByRole("menuitem")).toHaveLength(3);
+  });
+
+  it("the ⋮ menu of a row near the bottom opens upwards", async () => {
+    layout({ left: 600, top: 690 });
+    await withLongActions();
+    fireEvent.click(screen.getByRole("button", { name: "Actions for pod-0001" }));
+    const { box, inside } = placed(screen.getByRole("menu"));
+    expect(inside).toBe(true);
+    expect(box.bottom).toBe(690);
+    expect(box.left).toBe(600);
+  });
+
+  it("a context menu opened at the bottom-right corner is kept inside the window", async () => {
+    layout({ left: 0, top: 0 });
+    await withLongActions();
+    fireEvent.contextMenu(screen.getByText("pod-0001"), { clientX: 1278, clientY: 718 });
+    expect(placed(screen.getByRole("menu")).inside).toBe(true);
   });
 });

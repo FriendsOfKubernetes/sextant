@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type ClusterInfo, type KubeconfigSource, type MockBackend } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { AppShell } from "../../layout";
+import { layOutPopups, placed } from "../../test/popupLayout";
 import { resetClusterKinds, useClusterKinds } from "../../resources";
 import { connectCluster, resetClustersStore } from "./clustersStore";
 import "./index";
@@ -221,6 +222,23 @@ describe("cluster rail", () => {
     await waitFor(() => expect(useAppStore.getState().activeClusterId).toBeNull());
     expect(commands("cluster_disconnect")[0]?.args).toEqual({ clusterId: "aaaa" });
     expect(railButton("kind-alpha")).toHaveAttribute("data-state", "disconnected");
+  });
+
+  it("the context menu opened at the bottom of the rail stays inside the window (#176)", async () => {
+    setup([alpha]);
+    render(<AppShell />);
+    await within(rail()).findByRole("button", { name: "kind-alpha" });
+    layOutPopups({
+      window: { width: 1024, height: 600 },
+      isPopup: (el) => el.classList.contains("cluster-menu"),
+      popupSize: () => ({ width: 240, height: 360 }),
+    });
+    fireEvent.contextMenu(railButton("kind-alpha"), { clientX: 30, clientY: 590 });
+    const { box, inside } = placed(screen.getByRole("menu"));
+    expect(inside).toBe(true);
+    // Opened upwards from the pointer, to its right.
+    expect(box.bottom).toBe(590);
+    expect(box.left).toBe(30);
   });
 
   it("Refresh re-reads the kubeconfig and picks up a new context", async () => {

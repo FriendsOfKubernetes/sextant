@@ -263,6 +263,7 @@
   background: var(--color-danger);
 }
 
+/* Popup menus are fixed and placed by `usePopupPosition`, which keeps them inside the window (#176). */
 .rt-menu {
   position: fixed;
   z-index: 50;
@@ -318,10 +319,8 @@
   position: relative;
 }
 
+/* Placed by `usePopupPosition` (fixed, under the button, kept inside the window). */
 .rt-columns__menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
   max-height: 60vh;
   overflow: auto;
 }

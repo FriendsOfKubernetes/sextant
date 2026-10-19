@@ -55,10 +55,8 @@
   justify-content: center;
 }
 
+/* Placed by `usePopupPosition`: right of the rail button, kept inside the window. */
 .workspace-switch__menu {
-  position: absolute;
-  left: calc(100% + 4px);
-  top: 0;
   min-width: 220px;
 }
 

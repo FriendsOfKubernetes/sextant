@@ -11,4 +11,16 @@ export { LoadingIndicator, SLOW_AFTER_S, useElapsedSeconds, type LoadingIndicato
 export { Radio, type RadioProps } from "./Radio";
 export { Tabs, type TabItem, type TabsProps } from "./Tabs";
 export { usePopup } from "./usePopup";
+export {
+  placePopup,
+  pointRect,
+  usePopupPosition,
+  windowRect,
+  POPUP_MARGIN,
+  type PopupAnchor,
+  type PopupPlacement,
+  type PopupPlacementOptions,
+  type PopupPositionOptions,
+  type PopupRect,
+} from "./placePopup";
 export { focusableIn, hasPinnedModal, isTopModal, useFocusTrap, type FocusTrapOptions } from "./useFocusTrap";
