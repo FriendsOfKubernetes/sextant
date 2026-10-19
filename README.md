@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/FriendsOfKubernetes/sextant/actions/workflows/ci.yml/badge.svg)](https://github.com/FriendsOfKubernetes/sextant/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/FriendsOfKubernetes/sextant?sort=semver)](https://github.com/FriendsOfKubernetes/sextant/releases/latest)
+[![Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FFriendsOfKubernetes%2Fsextant%2Fbadges%2Fdownloads.json)](https://github.com/FriendsOfKubernetes/sextant/releases)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
 
 Sextant is a desktop application for managing Kubernetes clusters — an alternative to Lens, written in Rust on

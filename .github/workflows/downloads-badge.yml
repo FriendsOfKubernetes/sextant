@@ -1,0 +1,62 @@
+# The README's downloads badge. shields.io's own GitHub downloads badge sums every release asset, and most of those
+# are not downloads: installed apps fetch latest.json and the .sig files on every update check. This counts only the
+# installers and the packages the updater installs (.deb, .AppImage, .dmg, .msi, .app.tar.gz) over all releases and
+# writes a shields.io endpoint file to the branch `badges`, one orphan commit that is replaced on each change:
+#
+#   https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/<repo>/badges/downloads.json
+name: Downloads badge
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: downloads-badge
+  cancel-in-progress: false
+
+jobs:
+  count:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Count installer downloads
+        id: count
+        run: |
+          total=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq '.[].assets[] | select(.name | test("\\.(deb|AppImage|dmg|msi|app\\.tar\\.gz)$")) | .download_count' \
+            | awk '{ s += $1 } END { print s + 0 }')
+          # The way shields.io writes its own counters: 950, 1.2k, 12k, 1.3M.
+          message=$(awk -v n="$total" 'BEGIN {
+            if (n < 1000) printf "%d", n
+            else if (n < 10000) printf "%.1fk", n / 1000
+            else if (n < 1000000) printf "%dk", n / 1000
+            else printf "%.1fM", n / 1000000
+          }')
+          echo "Installer downloads: $total ($message)"
+          jq -n --arg message "$message" \
+            '{schemaVersion: 1, label: "downloads", message: $message, color: "blue", cacheSeconds: 3600}' \
+            > downloads.json
+          if gh api -H "Accept: application/vnd.github.raw+json" \
+              "repos/$GITHUB_REPOSITORY/contents/downloads.json?ref=badges" > published.json 2>/dev/null \
+              && cmp -s downloads.json published.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to the badges branch
+        if: steps.count.outputs.changed == 'true'
+        run: |
+          mkdir badge && mv downloads.json badge/ && cd badge
+          git init -q -b badges
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads.json
+          git commit -q -m "chore: installer downloads badge"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" badges
