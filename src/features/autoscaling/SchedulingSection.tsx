@@ -37,6 +37,12 @@ import {
 } from "./scheduling";
 import { EventsTable, Note, PhraseLine, Phrases, ReasonsTable } from "./ui";
 
+/** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
+const TABLE_IDS = {
+  schedulingNodes: "scheduling.nodes",
+  karpenterNominated: "karpenter.nominated",
+};
+
 const { get, str } = status;
 const FIELDS = "autoscaling:fields";
 const NODE_CLAIM_TYPE = { apiVersion: "karpenter.sh/v1", kind: "NodeClaim" };
@@ -183,6 +189,7 @@ function LocalCheck({ clusterId, pod, schedulerTotal }: { clusterId: ClusterId; 
           <Note>{t("autoscaling:check.otherTotal", { scheduler: schedulerTotal, total: result.total })}</Note>
         )}
         {table(
+          TABLE_IDS.schedulingNodes,
           [t("autoscaling:check.node"), t("autoscaling:check.why")],
           shown.map((v) => [
             link(KINDS.node, v.node),
@@ -238,6 +245,7 @@ function Karpenter({ clusterId, events }: { clusterId: ClusterId; events: readon
       {nominated.length === 0 && own.length === 0 && <Note>{t("autoscaling:karpenter.noDecision")}</Note>}
       {nominated.length > 0 &&
         table(
+          TABLE_IDS.karpenterNominated,
           [t("autoscaling:karpenter.nodeClaim"), t("autoscaling:karpenter.state")],
           nominated.map((n) => [
             link(NODE_CLAIM_TYPE, n.name),

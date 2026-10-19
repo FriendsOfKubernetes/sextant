@@ -16,6 +16,7 @@ import { useNow } from "../problems/hooks";
 import { CertExpiryField } from "../notifications/CertExpiryField";
 import { useExpiryDays } from "./hooks";
 import { EXPIRY_TONE, expiryOf } from "./model";
+import { ResizableTable } from "../../components/Table";
 
 /** `tls::SCAN_MAX_NAMESPACES` in the backend. */
 const SCAN_MAX_NAMESPACES = 200;
@@ -103,7 +104,7 @@ export function TlsCertificatesPage({ clusterId }: PageProps) {
           {items.length === 0 ? (
             <p className="cm-muted">{t("certmanager:tlsPage.none")}</p>
           ) : (
-            <table className="cm-table">
+            <ResizableTable tableId="certManager.tls" className="cm-table">
               <thead>
                 <tr>
                   <th>{t("certmanager:tlsPage.columns.name")}</th>
@@ -128,7 +129,7 @@ export function TlsCertificatesPage({ clusterId }: PageProps) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </ResizableTable>
           )}
         </>
       )}

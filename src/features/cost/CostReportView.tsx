@@ -14,6 +14,7 @@ import {
   UNMOUNTED,
   type CostPart,
 } from "./model";
+import { ResizableTable } from "../../components/Table";
 
 const DASH = "—";
 
@@ -83,20 +84,26 @@ export function CostReportView({
         <p className="cost-note">{t("cost:empty")}</p>
       ) : (
         <div className="cost-table-wrap">
-          <table className="cost-table">
+          <ResizableTable tableId="cost.report" className="cost-table">
             <thead>
               <tr>
-                <th scope="col">{t("cost:column.name")}</th>
-                {withNamespace && <th scope="col">{t("cost:column.namespace")}</th>}
+                <th scope="col" data-col="name">
+                  {t("cost:column.name")}
+                </th>
+                {withNamespace && (
+                  <th scope="col" data-col="namespace">
+                    {t("cost:column.namespace")}
+                  </th>
+                )}
                 {parts.map((p) => (
-                  <th key={p} scope="col" className="cost-num">
+                  <th key={p} scope="col" className="cost-num" data-col={`part-${p}`}>
                     {t(`cost:parts.${p}`)}
                   </th>
                 ))}
-                <th scope="col" className="cost-num">
+                <th scope="col" className="cost-num" data-col="total">
                   {t("cost:column.total")}
                 </th>
-                <th scope="col" className="cost-num" title={t("cost:efficiencyHint")}>
+                <th scope="col" className="cost-num" data-col="efficiency" title={t("cost:efficiencyHint")}>
                   {t("cost:column.efficiency")}
                 </th>
               </tr>
@@ -148,7 +155,7 @@ export function CostReportView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       )}
     </>

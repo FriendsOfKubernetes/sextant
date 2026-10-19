@@ -141,7 +141,10 @@
     "noActions": "Nenhuma ação disponível",
     "openObject": "Abrir {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "há {{age}}"
+    "ago": "há {{age}}",
+    "resizeColumn": "Redimensionar a coluna {{name}}",
+    "resetWidths": "Redefinir a largura das colunas",
+    "resizeHint": "As setas para a esquerda e para a direita mudam a largura (Shift: passos maiores), Enter restaura a largura padrão, Ctrl com esquerda ou direita vai para outra coluna."
   },
   "namespaces": {
     "all": "Todos os namespaces",

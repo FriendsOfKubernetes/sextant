@@ -39,6 +39,7 @@ import {
 import { labelsText, VERDICT_TONE, verdictText, type T } from "./text";
 import { Field, NamespaceField } from "./fields";
 import { DnsWarning, EnforcementBanner, SideView } from "./views";
+import { ResizableTable } from "../../components/Table";
 
 /** Pods behind a Service shown at most. */
 export const MAX_BACKENDS = 50;
@@ -322,7 +323,7 @@ function ServiceView({ outcome, service, source }: { outcome: ServiceResult; ser
       {outcome.empty && <p className="np-warning">{t(`netpol:service.${outcome.empty}`)}</p>}
       {backends.length > 0 && (
         <div className="dt-table-wrap">
-          <table className="dt-table dt-table--words np-backends" aria-label={t("netpol:service.backends")}>
+          <ResizableTable tableId="netpol.backends" className="dt-table dt-table--words np-backends" aria-label={t("netpol:service.backends")}>
             <thead>
               <tr>
                 <th>{t("netpol:service.pod")}</th>
@@ -343,7 +344,7 @@ function ServiceView({ outcome, service, source }: { outcome: ServiceResult; ser
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       )}
       {outcome.backends.length > MAX_BACKENDS && <p className="dt-muted">{t("netpol:service.more", { count: outcome.backends.length - MAX_BACKENDS })}</p>}

@@ -137,7 +137,10 @@
     "noActions": "沒有可用的動作",
     "openObject": "開啟 {{kind}} {{name}}",
     "containerState": "{{name}}：{{state}}",
-    "ago": "{{age}}前"
+    "ago": "{{age}}前",
+    "resizeColumn": "調整欄寬：{{name}}",
+    "resetWidths": "重設欄寬",
+    "resizeHint": "左右方向鍵調整寬度（Shift：更大步幅），Enter 恢復預設寬度，Ctrl 加左右方向鍵切換到其他欄。"
   },
   "namespaces": {
     "all": "所有 Namespace",

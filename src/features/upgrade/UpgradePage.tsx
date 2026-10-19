@@ -27,6 +27,7 @@ import { kubeletVersions, skewIssues } from "./skew";
 import { runScan, useUpgradeState, useUpgradeStore } from "./state";
 import { DEPRECATION_SOURCE, minorText, parseMinor, REVIEWED_FOR } from "./table";
 import "./upgrade.css";
+import { ResizableTable } from "../../components/Table";
 
 function CopyButton({ label, text }: { label: string; text: () => string }) {
   const { t } = useTranslation();
@@ -239,7 +240,7 @@ export function UpgradePage({ clusterId }: PageProps) {
               <EmptyState title={findings.length === 0 ? t("upgrade:usages.none") : t("upgrade:usages.noneShown")} />
             ) : (
               <div className="upgrade__table-wrap">
-                <table className="upgrade__table">
+                <ResizableTable tableId="upgrade.findings" className="upgrade__table">
                   <thead>
                     <tr>
                       <th>{t("upgrade:columns.status")}</th>
@@ -257,7 +258,7 @@ export function UpgradePage({ clusterId }: PageProps) {
                       <FindingRow key={f.key} f={f} />
                     ))}
                   </tbody>
-                </table>
+                </ResizableTable>
               </div>
             )}
             {hidden > 0 && <p className="upgrade__muted">{t("upgrade:usages.hidden", { count: hidden })}</p>}

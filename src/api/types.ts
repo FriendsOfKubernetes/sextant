@@ -78,6 +78,7 @@ export type { KindSample } from "./generated/KindSample";
 export type { ClusterCheck } from "./generated/ClusterCheck";
 export type { CompareKindList } from "./generated/CompareKindList";
 export type { CompareSettings } from "./generated/CompareSettings";
+export type { TableColumnWidths } from "./generated/TableColumnWidths";
 export type { DriftObject } from "./generated/DriftObject";
 export type { HelmDrift } from "./generated/HelmDrift";
 export type { NamedSecretComparison } from "./generated/NamedSecretComparison";

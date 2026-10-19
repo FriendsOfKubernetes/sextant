@@ -77,6 +77,7 @@ function RouteCard({ route, t }: { route: HttpRoute; t: T }) {
 function L4Table({ routes, t }: { routes: L4Route[]; t: T }) {
   return (
     <SimpleTable
+      tableId="mesh.l4Routes"
       headers={[t("mesh:l4.kind"), t("mesh:l4.match"), t("mesh:l4.destinations")]}
       rows={routes.map((r) => ({
         key: `${r.kind}${r.index}`,
@@ -159,6 +160,7 @@ function DestinationRuleDetails({ clusterId, obj }: { clusterId: ClusterId; obj:
       {rule.portTls.length > 0 && (
         <Block title={t("mesh:blocks.portTls")}>
           <SimpleTable
+            tableId="mesh.portTls"
             headers={[t("mesh:columns.port"), t("mesh:columns.tlsMode")]}
             rows={rule.portTls.map((p) => ({ key: `${p.port}`, cells: [p.port, p.mode] }))}
           />
@@ -168,6 +170,7 @@ function DestinationRuleDetails({ clusterId, obj }: { clusterId: ClusterId; obj:
         <Block title={t("mesh:blocks.subsets")}>
           <p className="dt-muted">{t("mesh:dr.subsetsHint")}</p>
           <SimpleTable
+            tableId="mesh.subsets"
             headers={[t("mesh:columns.name"), t("mesh:columns.labels"), t("mesh:columns.tlsMode")]}
             rows={rule.subsets.map((s) => ({
               key: s.name,
@@ -196,6 +199,7 @@ function GatewayDetails({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObj
       </Block>
       <Block title={t("mesh:blocks.servers")}>
         <SimpleTable
+          tableId="mesh.servers"
           headers={[t("mesh:columns.port"), t("mesh:columns.protocol"), t("mesh:columns.hosts"), t("mesh:columns.tlsMode")]}
           rows={gateway.servers.map((s, i) => ({
             key: `${i}`,
@@ -308,6 +312,7 @@ function PeerAuthenticationDetails({ obj }: { obj: KubeObject }) {
       {pa.ports.length > 0 && (
         <Block title={t("mesh:blocks.portMtls")}>
           <SimpleTable
+            tableId="mesh.portMtls"
             headers={[t("mesh:columns.port"), t("mesh:columns.mtlsMode")]}
             rows={ports}
           />
@@ -332,6 +337,7 @@ function RequestAuthenticationDetails({ obj }: { obj: KubeObject }) {
       <Fields rows={[scopeRow(obj, t)]} labelPrefix={FIELDS} />
       <p className="mesh-line">{t("mesh:jwt.meaning")}</p>
       <SimpleTable
+        tableId="mesh.requestAuthentication"
         headers={[t("mesh:columns.issuer"), t("mesh:columns.audiences"), t("mesh:columns.keys")]}
         rows={rules}
       />

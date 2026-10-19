@@ -12,6 +12,7 @@ import { podInfo, SHOWN_DIRECTIONS, type Direction, type PodInfo, type Policy } 
 import { useClusterConnectivity, useConnectivityStore } from "./state";
 import { flavorText, phrase, policyName, unreadableText, type T } from "./text";
 import { PolicyLink, RulesView } from "./views";
+import { ResizableTable } from "../../components/Table";
 
 /** Pods listed at most. */
 export const MAX_MAP_PODS = 200;
@@ -119,7 +120,7 @@ export function PolicyMap({ clusterId }: { clusterId: ClusterId }) {
               </p>
               {pods.length > 0 && (
                 <div className="dt-table-wrap">
-                  <table className="dt-table dt-table--words np-map__pods" aria-label={t("netpol:map.pods")}>
+                  <ResizableTable tableId="netpol.mapPods" className="dt-table dt-table--words np-map__pods" aria-label={t("netpol:map.pods")}>
                     <thead>
                       <tr>
                         <th>{t("netpol:map.pod")}</th>
@@ -132,7 +133,7 @@ export function PolicyMap({ clusterId }: { clusterId: ClusterId }) {
                         <PodRow key={pod.name} pod={pod} world={world} dnsPods={data.dnsPods} />
                       ))}
                     </tbody>
-                  </table>
+                  </ResizableTable>
                 </div>
               )}
               {pods.length > MAX_MAP_PODS && <p className="dt-muted">{t("netpol:map.more", { count: pods.length - MAX_MAP_PODS })}</p>}

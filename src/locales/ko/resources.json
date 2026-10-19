@@ -137,7 +137,10 @@
     "noActions": "사용할 수 있는 작업이 없습니다",
     "openObject": "{{kind}} {{name}} 열기",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} 전"
+    "ago": "{{age}} 전",
+    "resizeColumn": "{{name}} 열 너비 조정",
+    "resetWidths": "열 너비 초기화",
+    "resizeHint": "왼쪽/오른쪽 화살표로 너비를 바꾸고(Shift: 더 크게), Enter로 기본 너비로 되돌리며, Ctrl과 왼쪽/오른쪽 화살표로 다른 열로 이동합니다."
   },
   "namespaces": {
     "all": "모든 namespace",

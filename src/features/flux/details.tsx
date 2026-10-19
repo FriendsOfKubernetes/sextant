@@ -34,6 +34,7 @@ import {
   usesSource,
   type FluxRef,
 } from "./model";
+import { ResizableTable } from "../../components/Table";
 
 const { arr, get, str } = status;
 
@@ -219,7 +220,7 @@ function RefRow({ objectRef }: { objectRef: ObjectRef }) {
 function RefTable({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <table className="dt-table">
+    <ResizableTable tableId="flux.details" className="dt-table">
       <thead>
         <tr>
           <th>{t("flux:related.kind")}</th>
@@ -228,7 +229,7 @@ function RefTable({ children }: { children: ReactNode }) {
         </tr>
       </thead>
       <tbody>{children}</tbody>
-    </table>
+    </ResizableTable>
   );
 }
 

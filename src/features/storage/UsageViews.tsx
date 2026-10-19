@@ -12,6 +12,7 @@ import { UsageBar } from "../metrics";
 import { DISK_FORMAT } from "./problems";
 import { bytesPercent, bytesTotal, bytesUsed, claimKey, claimLevel, inodesPercent, inodesUsedOf, thresholdsOf, type Level, type Thresholds } from "./usage";
 import { latestClaimUsage, useVolumeUsage, type UsageState } from "./usageStore";
+import { ResizableTable } from "../../components/Table";
 
 const { arr, get, str } = status;
 const USAGE_LABELS = "storage:usage.fields";
@@ -173,7 +174,7 @@ function PodVolumes({ clusterId, pod, claims }: { clusterId: ClusterId; pod: Kub
   const namespace = pod.metadata?.namespace ?? null;
   return (
     <Block title={t("storage:usage.podTitle")}>
-      <table className="st-table">
+      <ResizableTable tableId="storage.usage" className="st-table">
         <thead>
           <tr>
             <th>{t("storage:usage.volume")}</th>
@@ -193,7 +194,7 @@ function PodVolumes({ clusterId, pod, claims }: { clusterId: ClusterId; pod: Kub
             );
           })}
         </tbody>
-      </table>
+      </ResizableTable>
       {state.error && <ErrorState error={state.error} title={t("storage:usage.failed")} />}
       <SourceNote state={state} />
     </Block>

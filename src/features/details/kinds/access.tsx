@@ -25,6 +25,7 @@ export function ServiceAccountDetails({ obj }: { obj: KubeObject }) {
 export function RoleDetails({ obj }: { obj: KubeObject }) {
   const { t } = useTranslation();
   const rules = table(
+    "role.rules",
     [
       t("details:columns.resources"),
       t("details:columns.verbs"),
@@ -60,6 +61,7 @@ export function RoleBindingDetails({ obj }: { obj: KubeObject }) {
     ? link({ apiVersion: RBAC, kind: roleKind }, roleName, roleKind === "Role" ? ns : null, `${roleKind} ${roleName ?? ""}`)
     : null;
   const subjects = table(
+    "binding.subjects",
     [t("details:columns.kind"), t("details:columns.name"), t("details:columns.namespace")],
     arr(get(obj, "subjects")).map((s) => {
       const kind = str(get(s, "kind")) ?? "";

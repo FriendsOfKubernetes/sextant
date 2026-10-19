@@ -20,6 +20,7 @@ import {
   verdictText,
   type T,
 } from "./text";
+import { ResizableTable } from "../../components/Table";
 
 const NO = "no" as const;
 
@@ -117,7 +118,7 @@ function PolicyChecks({ side }: { side: SideResult }) {
     <details className="np-checks" open={side.verdict !== "allowed"}>
       <summary>{t(`netpol:checks.title.${side.direction}`, { count: side.policies.length })}</summary>
       <div className="dt-table-wrap">
-        <table className="dt-table dt-table--words">
+        <ResizableTable tableId="netpol.policies" className="dt-table dt-table--words">
           <thead>
             <tr>
               <th>{t("netpol:checks.policy")}</th>
@@ -127,7 +128,7 @@ function PolicyChecks({ side }: { side: SideResult }) {
             </tr>
           </thead>
           <tbody>{rows}</tbody>
-        </table>
+        </ResizableTable>
       </div>
     </details>
   );
@@ -143,7 +144,7 @@ export function RulesView({ policy, direction }: { policy: Policy; direction: Di
   if (rules.length === 0) return <p>{t(`netpol:rules.denyAll.${direction}`)}</p>;
   return (
     <div className="dt-table-wrap">
-      <table className="dt-table dt-table--words np-rules">
+      <ResizableTable tableId="netpol.rules" className="dt-table dt-table--words np-rules">
         <thead>
           <tr>
             <th>{t("netpol:rules.rule")}</th>
@@ -156,7 +157,7 @@ export function RulesView({ policy, direction }: { policy: Policy; direction: Di
             <RuleRow key={`${rule.list}-${rule.index}`} rule={rule} direction={direction} />
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }

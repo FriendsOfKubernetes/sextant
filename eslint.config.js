@@ -34,11 +34,15 @@ export default tseslint.config(
             // Technical attributes; anything a user reads (aria-label, title, alt, placeholder) must be translated.
             exclude: [
               "className",
+              // Class names passed down to an element (`wrapperClassName`, `slotClassName`…).
+              "[a-z]+ClassName",
               "styleName",
               "style",
               "type",
               "key",
               "id",
+              // Where a table's column widths are saved (src/components/Table/ResizableTable.tsx).
+              "tableId",
               "width",
               "height",
               "role",

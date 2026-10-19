@@ -12,10 +12,12 @@ const { get, record, str } = status;
 export function ConfigMapDetails({ obj }: { obj: KubeObject }) {
   const { t } = useTranslation();
   const data = table(
+    "configMap.data",
     [t("details:columns.key"), t("details:columns.value")],
     Object.entries(record(get(obj, "data"))).map(([key, value]) => [key, pre(String(value))]),
   );
   const binary = table(
+    "configMap.binaryData",
     [t("details:columns.key"), t("details:columns.size")],
     Object.entries(record(get(obj, "binaryData"))).map(([key, value]) => [
       key,
@@ -41,6 +43,7 @@ export function SecretDetails({ obj, clusterId }: KindViewProps) {
   ];
   // The backend sends the keys with empty values; each value is read on its own when asked for.
   const data = table(
+    "secret.data",
     [t("details:columns.key"), t("details:columns.value")],
     Object.keys(record(get(obj, "data"))).map((field) => [
       <span key="key" className="dt-secret-key">

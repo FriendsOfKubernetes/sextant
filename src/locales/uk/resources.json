@@ -143,7 +143,10 @@
     "noActions": "Немає доступних дій",
     "openObject": "Відкрити {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} тому"
+    "ago": "{{age}} тому",
+    "resizeColumn": "Змінити ширину стовпця {{name}}",
+    "resetWidths": "Скинути ширину стовпців",
+    "resizeHint": "Стрілки вліво і вправо змінюють ширину (Shift — більший крок), Enter повертає типову ширину, Ctrl зі стрілкою вліво або вправо переходить до іншого стовпця."
   },
   "namespaces": {
     "all": "Усі namespace",

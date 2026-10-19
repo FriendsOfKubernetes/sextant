@@ -141,7 +141,10 @@
     "noActions": "Nessuna azione disponibile",
     "openObject": "Apri {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} fa"
+    "ago": "{{age}} fa",
+    "resizeColumn": "Ridimensiona la colonna {{name}}",
+    "resetWidths": "Ripristina la larghezza delle colonne",
+    "resizeHint": "Le frecce sinistra e destra cambiano la larghezza (Maiusc: passi più grandi), Invio ripristina la larghezza predefinita, Ctrl con sinistra o destra passa a un'altra colonna."
   },
   "namespaces": {
     "all": "Tutti i namespace",

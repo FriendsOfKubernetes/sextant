@@ -20,6 +20,8 @@ pub mod snippets;
 pub use snippets::Snippet;
 pub mod compare;
 pub use compare::CompareSettings;
+pub mod columns;
+pub use columns::{ColumnWidths, TableColumnWidths};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -424,6 +426,12 @@ pub struct AppSettings {
     #[serde(with = "compare::compare_field")]
     #[ts(as = "CompareSettings")]
     pub compare: CompareSettings,
+    /// Column widths the user dragged, per table id (`kind:apps/Deployment`, `helm.releases`) and column id, in
+    /// pixels, with when each table's widths last changed. Written by the frontend; read leniently, the most recently
+    /// changed tables kept past the cap ([`columns`]).
+    #[serde(with = "columns::column_widths_field")]
+    #[ts(as = "std::collections::BTreeMap<String, TableColumnWidths>")]
+    pub column_widths: ColumnWidths,
 }
 
 impl Default for AppSettings {
@@ -454,6 +462,7 @@ impl Default for AppSettings {
             active_workspace: None,
             snippets: Vec::new(),
             compare: CompareSettings::default(),
+            column_widths: ColumnWidths::new(),
         }
     }
 }

@@ -7,6 +7,13 @@ import { table, type ColumnWrap } from "../details";
 import { newestEvents, type EventRow, type Phrase } from "./model";
 import type { MessageReason } from "./scheduling";
 
+/** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
+const TABLE_IDS = {
+  autoscalingReasons: "autoscaling.reasons",
+  eventsWithCause: "autoscaling.eventsWithCause",
+  events: "autoscaling.events",
+};
+
 const EVENT_WRAP: readonly ColumnWrap[] = ["nowrap", undefined, "nowrap"];
 const FIRST_WRAP: readonly ColumnWrap[] = ["nowrap"];
 const REASON_WRAP: readonly ColumnWrap[] = ["nowrap", undefined];
@@ -49,6 +56,7 @@ export function EventsTable({ events, first }: { events: readonly EventRow[]; fi
   return (
     <>
       {table(
+        (first ? TABLE_IDS.eventsWithCause : TABLE_IDS.events),
         headers,
         rows.map((e) => [
           ...(first ? [first.cell(e)] : []),
@@ -81,6 +89,7 @@ export function ReasonsTable({ reasons, countHeader }: { reasons: readonly Messa
   return (
     <>
       {table(
+        TABLE_IDS.autoscalingReasons,
         [countHeader, t("autoscaling:sched.reason")],
         reasons.map((r) => [r.count === undefined ? "" : String(r.count), <span title={r.text}>{text(r)}</span>]),
         REASON_WRAP,

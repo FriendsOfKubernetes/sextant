@@ -27,6 +27,7 @@ import { PermissionMatrix } from "./Matrix";
 import { clusterScopedOf } from "./query";
 import { openRbacPage } from "./state";
 import { ComputedNote, entryText, ImplicitGroups, ListProblems, RefLink, RulesTable, scopeText, Warnings, refName, refText } from "./ui";
+import { ResizableTable } from "../../components/Table";
 
 const clusterRoleRef = (name: string): RbacRef => ({ kind: "ClusterRole", name, namespace: null });
 
@@ -97,7 +98,7 @@ export function RoleAccessSection({ clusterId, obj }: DetailsSectionProps) {
         {!rbac.loading && bindings.length === 0 && <p className="dt-muted">{t("rbac:details.noBindings")}</p>}
         {bindings.length > 0 && (
           <div className="dt-table-wrap">
-            <table className="dt-table rbac-grants">
+            <ResizableTable tableId="rbac.subjectGrants" className="dt-table rbac-grants">
               <thead>
                 <tr>
                   <th>{t("rbac:grants.binding")}</th>
@@ -125,7 +126,7 @@ export function RoleAccessSection({ clusterId, obj }: DetailsSectionProps) {
                   );
                 })}
               </tbody>
-            </table>
+            </ResizableTable>
           </div>
         )}
       </Block>

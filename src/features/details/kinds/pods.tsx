@@ -114,7 +114,7 @@ function Volumes({ volumes, namespace }: { volumes: unknown; namespace: string |
     else if (source === "hostPath") target = str(get(v, "hostPath", "path"));
     return [name, source, target];
   });
-  const content = table([t("details:columns.name"), t("details:columns.type"), t("details:columns.source")], rows);
+  const content = table("pod.volumes", [t("details:columns.name"), t("details:columns.type"), t("details:columns.source")], rows);
   if (!content) return null;
   return <Block title={t("details:pod.volumes")}>{content}</Block>;
 }
@@ -342,10 +342,12 @@ function Container({
   ];
 
   const env = table(
+    "container.env",
     [t("details:columns.name"), t("details:columns.value")],
     arr(get(container, "env")).map((e) => [str(get(e, "name")), envValue(e, t)]),
   );
   const envFrom = table(
+    "container.envFrom",
     [t("details:columns.prefix"), t("details:columns.type"), t("details:columns.source")],
     arr(get(container, "envFrom")).map((e) => {
       const prefix = str(get(e, "prefix"));
@@ -359,6 +361,7 @@ function Container({
     }),
   );
   const mounts = table(
+    "container.mounts",
     [t("details:columns.path"), t("details:columns.volume"), t("details:columns.access")],
     arr(get(container, "volumeMounts")).map((m) => [
       str(get(m, "mountPath")),

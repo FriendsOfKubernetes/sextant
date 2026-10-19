@@ -143,7 +143,10 @@
     "noActions": "Brak dostępnych akcji",
     "openObject": "Otwórz {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} temu"
+    "ago": "{{age}} temu",
+    "resizeColumn": "Zmień szerokość kolumny {{name}}",
+    "resetWidths": "Przywróć szerokość kolumn",
+    "resizeHint": "Strzałki w lewo i w prawo zmieniają szerokość (Shift: większe kroki), Enter przywraca domyślną szerokość, Ctrl ze strzałką w lewo lub w prawo przechodzi do innej kolumny."
   },
   "namespaces": {
     "all": "Wszystkie namespace’y",

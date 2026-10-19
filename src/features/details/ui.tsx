@@ -7,6 +7,7 @@ import type { KubeObject } from "../../api";
 import { ObjectLink, StatusText, status } from "../../resources";
 import type { Tone } from "../../resources/status";
 import "./details.css";
+import { ResizableTable } from "../../components/Table";
 
 const { arr, get, record, str } = status;
 
@@ -160,15 +161,22 @@ export function breakable(text: string): ReactNode {
 export type ColumnWrap = "nowrap" | undefined;
 
 /**
- * A small table; `headers` are already translated; `null` without rows. With `columns` the table keeps words whole
+ * A small table; `id` names it for its saved column widths (`details:<id>`, never derived from the translated
+ * headers, so a change of language keeps them); `headers` are already translated; `null` without rows. With `columns` the table keeps words whole
  * (`dt-table--words`): the marked columns stay on one line, the rest wrap at word boundaries, and a table too wide
  * for the panel scrolls sideways instead of breaking words letter by letter.
  */
-export function table(headers: string[], rows: ReactNode[][], columns?: readonly ColumnWrap[]): ReactNode {
+export function table(id: string, headers: string[], rows: ReactNode[][], columns?: readonly ColumnWrap[]): ReactNode {
   if (rows.length === 0) return null;
   const colClass = (i: number) => (columns?.[i] ? `dt-col--${columns[i]}` : undefined);
-  const body = (
-    <table className={columns ? "dt-table dt-table--words" : "dt-table"}>
+  // With `columns`, a table too wide for the panel scrolls sideways in its wrapper.
+  const wrapper = columns ? "dt-table-wrap" : undefined;
+  return (
+    <ResizableTable
+      tableId={`details:${id}`}
+      wrapperClassName={wrapper}
+      className={columns ? "dt-table dt-table--words" : "dt-table"}
+    >
       <thead>
         <tr>
           {headers.map((h, i) => (
@@ -189,9 +197,8 @@ export function table(headers: string[], rows: ReactNode[][], columns?: readonly
           </tr>
         ))}
       </tbody>
-    </table>
+    </ResizableTable>
   );
-  return columns ? <div className="dt-table-wrap">{body}</div> : body;
 }
 
 /** Namespace of an object (`null` for cluster-scoped ones). */

@@ -36,6 +36,7 @@ export function NodeDetails({ obj }: { obj: KubeObject }) {
     ["providerId", str(get(spec, "providerID"))],
   ];
   const resourceTable = table(
+    "node.resources",
     [t("details:columns.resource"), t("details:columns.capacity"), t("details:columns.allocatable")],
     resources,
   );

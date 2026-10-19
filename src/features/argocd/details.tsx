@@ -42,6 +42,7 @@ const FIELD_LABELS = "argocd:fields";
 function SourcesTable({ sources }: { sources: Source[] }) {
   const { t } = useTranslation();
   return table(
+    "argocd.sources",
     [t("argocd:sources.repo"), t("argocd:sources.path"), t("argocd:sources.targetRevision")],
     sources.map((s) => [s.repoURL, s.path ?? s.chart, s.targetRevision]),
   );
@@ -119,6 +120,7 @@ export function AppProjectDetails({ obj }: { obj: KubeObject }) {
     [
       "destinations",
       table(
+        "argocd.destinations",
         [t("argocd:destinations.cluster"), t("argocd:destinations.namespace")],
         destinations.map((d) => [clusterOf(d), d.namespace]),
       ),

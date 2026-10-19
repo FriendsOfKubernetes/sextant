@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ClusterId, type SecretKeyComparison } from "../../api";
 import { Badge, Button, type BadgeTone } from "../../components";
+import { ResizableTable } from "../../components/Table";
 
 /** A live Secret whose values may be revealed. */
 export interface RevealableSecret {
@@ -34,7 +35,7 @@ export function SecretKeys({ keys, leftTitle, rightTitle, revealLeft, revealRigh
   return (
     <div className="compare-secret">
       <p className="compare-muted">{t("compare:secret.hint")}</p>
-      <table className="compare-table" aria-label={t("compare:secret.label")}>
+      <ResizableTable tableId="compare.secretKeys" className="compare-table" aria-label={t("compare:secret.label")}>
         <thead>
           <tr>
             <th>{t("compare:secret.key")}</th>
@@ -54,7 +55,7 @@ export function SecretKeys({ keys, leftTitle, rightTitle, revealLeft, revealRigh
             />
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }

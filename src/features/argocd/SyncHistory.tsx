@@ -6,6 +6,11 @@ import { Block, table } from "../details";
 import { shortRevision, syncHistory } from "./model";
 import { when } from "./ui";
 
+/** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
+const TABLE_IDS = {
+  argocdSyncHistory: "argocd.syncHistory",
+};
+
 export function SyncHistorySection({ obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   if (!obj) return null;
@@ -23,6 +28,7 @@ export function SyncHistorySection({ obj }: DetailsSectionProps) {
   return (
     <Block title={t("argocd:history.title")}>
       {table(
+        TABLE_IDS.argocdSyncHistory,
         [
           t("argocd:history.id"),
           t("argocd:history.revision"),

@@ -139,7 +139,10 @@
     "noActions": "No actions available",
     "openObject": "Open {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} ago"
+    "ago": "{{age}} ago",
+    "resizeColumn": "Resize column {{name}}",
+    "resetWidths": "Reset column widths",
+    "resizeHint": "Left and Right arrows change the width (Shift: larger steps), Enter restores the default width, Control with Left or Right moves to another column."
   },
   "namespaces": {
     "all": "All namespaces",

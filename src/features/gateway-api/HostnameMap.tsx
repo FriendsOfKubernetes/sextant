@@ -9,6 +9,7 @@ import type { CheckData } from "./checkData";
 import { breakable, gatewayRef, LoadingLine, refLink } from "./details";
 import { hostnameMap, type HostnameConflict, type HostnameRow, type NamespacedName, type RouteId } from "./matching";
 import { backendText, GATEWAY_GROUP } from "./model";
+import { ResizableTable } from "../../components/Table";
 
 const fullName = (n: NamespacedName) => (n.namespace ? `${n.namespace}/${n.name}` : n.name);
 
@@ -71,7 +72,7 @@ export function HostnameMap({ data, onCheck }: { data: CheckData; onCheck: (row:
         {conflicted > 0 && <StatusText value={t("gateway:hostnames.conflictCount", { count: conflicted })} tone="warning" />}
       </div>
       {shown.length > 0 && (
-        <table className="dt-table gw-table gw-hosts__table" aria-label={t("gateway:hostnames.label")}>
+        <ResizableTable tableId="gateway.hostnames" className="dt-table gw-table gw-hosts__table" aria-label={t("gateway:hostnames.label")}>
           <thead>
             <tr>
               <th>{t("gateway:hostnames.hostname")}</th>
@@ -133,7 +134,7 @@ export function HostnameMap({ data, onCheck }: { data: CheckData; onCheck: (row:
               );
             })}
           </tbody>
-        </table>
+        </ResizableTable>
       )}
       {loading ? (
         <LoadingLine text={t("gateway:hostnames.loading")} />

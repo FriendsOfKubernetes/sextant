@@ -141,7 +141,10 @@
     "noActions": "No hay acciones disponibles",
     "openObject": "Abrir {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "hace {{age}}"
+    "ago": "hace {{age}}",
+    "resizeColumn": "Cambiar el ancho de la columna {{name}}",
+    "resetWidths": "Restablecer el ancho de las columnas",
+    "resizeHint": "Las flechas izquierda y derecha cambian el ancho (Mayús: pasos más grandes), Intro restablece el ancho predeterminado, Control con izquierda o derecha pasa a otra columna."
   },
   "namespaces": {
     "all": "Todos los namespaces",

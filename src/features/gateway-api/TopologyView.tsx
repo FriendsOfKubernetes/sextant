@@ -17,6 +17,7 @@ import { LoadingLine, nameFrom, phrasesText, refLink } from "./details";
 import { useBackendState, useGrants, useServedRoutes } from "./hooks";
 import { backendText, explainReason, isKind, GATEWAY, type Health } from "./model";
 import { flattenTopology, gatewayTopology, onlyProblems, type TopologyNode } from "./topology";
+import { ResizableTable } from "../../components/Table";
 
 function HealthDot({ health }: { health: Health }) {
   const { t } = useTranslation();
@@ -149,7 +150,7 @@ function GatewayTopology({ clusterId, gateway }: { clusterId: ClusterId; gateway
         }
       >
         {rows.length > 0 ? (
-          <table className="dt-table gw-table gw-tree" aria-label={title}>
+          <ResizableTable tableId="gateway.topology" className="dt-table gw-table gw-tree" aria-label={title}>
             <thead>
               <tr>
                 <th>{t("gateway:topology.node")}</th>
@@ -178,7 +179,7 @@ function GatewayTopology({ clusterId, gateway }: { clusterId: ClusterId; gateway
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResizableTable>
         ) : (
           <p className="dt-muted">{t("gateway:topology.noProblems")}</p>
         )}

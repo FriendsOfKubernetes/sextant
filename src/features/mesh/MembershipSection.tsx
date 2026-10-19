@@ -90,6 +90,7 @@ function MtlsBlock({ clusterId, namespace, labels, t }: { clusterId: ClusterId; 
       </p>
       {r.ports.length > 0 && (
         <SimpleTable
+          tableId="mesh.membershipPorts"
           headers={[t("mesh:columns.port"), t("mesh:columns.mtlsMode")]}
           rows={r.ports.map((p) => ({ key: `${p.port}`, cells: [p.port, p.mode] }))}
         />
@@ -148,6 +149,7 @@ function WhoMayCall({ clusterId, namespace, labels, t }: { clusterId: ClusterId;
       </div>
       {result.verdicts.length > 0 && (
         <SimpleTable
+          tableId="mesh.authzVerdicts"
           headers={[t("mesh:columns.policy"), t("mesh:columns.action"), t("mesh:columns.matches"), t("mesh:columns.notEvaluated")]}
           rows={result.verdicts.map((v) => ({
             key: `${v.ref.namespace}/${v.ref.name}`,

@@ -8,6 +8,7 @@ import { displayNameOf } from "../clusters/clusterSettings";
 import { useClusters } from "../clusters/hooks";
 import "./mcp.css";
 import { formatDateTime } from "../../i18n";
+import { ResizableTable } from "../../components/Table";
 
 /** The backend keeps this many entries. */
 const MAX_ENTRIES = 2000;
@@ -124,11 +125,11 @@ export function ActivityDialog({ open, onClose }: { open: boolean; onClose: () =
           {!error && entries !== null && entries.length === 0 && <p className="mcp-activity__empty">{t("mcp:activity.empty")}</p>}
           {!error && entries !== null && entries.length > 0 && (
             <div className="mcp-activity__scroll">
-              <table className="mcp-activity__table">
+              <ResizableTable tableId="mcp.activity" className="mcp-activity__table">
                 <thead>
                   <tr>
                     {columns.map((column) => (
-                      <th key={column} scope="col">
+                      <th key={column} scope="col" data-col={column}>
                         {t(`mcp:activity.columns.${column}`)}
                       </th>
                     ))}
@@ -160,7 +161,7 @@ export function ActivityDialog({ open, onClose }: { open: boolean; onClose: () =
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </ResizableTable>
             </div>
           )}
         </div>

@@ -17,6 +17,7 @@ import { isSecretKind } from "./objects";
 import { IgnorePathsEditor } from "./Options";
 import { SecretKeys } from "./SecretKeys";
 import { ConnectOther } from "./TargetPicker";
+import { ResizableTable } from "../../components/Table";
 
 export const COMPARE_PAGE_ID = "compareNamespaces";
 
@@ -126,7 +127,7 @@ export function NamespaceComparePage({ clusterId }: PageProps) {
           {visible.length === 0 ? (
             <p className="compare-muted">{t("compare:page.nothing")}</p>
           ) : (
-            <table className="compare-table" aria-label={t("compare:page.objects")}>
+            <ResizableTable tableId="compare.namespaceObjects" className="compare-table" aria-label={t("compare:page.objects")}>
               <thead>
                 <tr>
                   <th>{t("compare:page.kind")}</th>
@@ -149,7 +150,7 @@ export function NamespaceComparePage({ clusterId }: PageProps) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </ResizableTable>
           )}
           {selectedRow && (
             <RowDetails row={selectedRow} request={request} secrets={result.data.secrets} hideDefaults={hideDefaults} ignorePaths={ignorePaths} label={label} />

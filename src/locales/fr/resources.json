@@ -141,7 +141,10 @@
     "noActions": "Aucune action disponible",
     "openObject": "Ouvrir {{kind}} {{name}}",
     "containerState": "{{name}} : {{state}}",
-    "ago": "il y a {{age}}"
+    "ago": "il y a {{age}}",
+    "resizeColumn": "Redimensionner la colonne {{name}}",
+    "resetWidths": "Réinitialiser la largeur des colonnes",
+    "resizeHint": "Les flèches gauche et droite modifient la largeur (Maj : pas plus grands), Entrée rétablit la largeur par défaut, Ctrl avec gauche ou droite passe à une autre colonne."
   },
   "namespaces": {
     "all": "Tous les namespaces",

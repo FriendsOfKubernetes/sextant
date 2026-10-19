@@ -11,6 +11,7 @@ import type { NotificationSettings } from "./NotificationSettings";
 import type { Pin } from "./Pin";
 import type { SavedView } from "./SavedView";
 import type { Snippet } from "./Snippet";
+import type { TableColumnWidths } from "./TableColumnWidths";
 import type { Theme } from "./Theme";
 import type { TimelineSettings } from "./TimelineSettings";
 import type { WindowLayout } from "./WindowLayout";
@@ -117,4 +118,10 @@ snippets: Array<Snippet>,
 /**
  * Comparing objects (#156): paths ignored per kind. Written by the frontend; read leniently ([`compare`]).
  */
-compare: CompareSettings, };
+compare: CompareSettings, 
+/**
+ * Column widths the user dragged, per table id (`kind:apps/Deployment`, `helm.releases`) and column id, in
+ * pixels, with when each table's widths last changed. Written by the frontend; read leniently, the most recently
+ * changed tables kept past the cap ([`columns`]).
+ */
+columnWidths: { [key in string]: TableColumnWidths }, };

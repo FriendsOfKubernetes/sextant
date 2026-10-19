@@ -181,6 +181,7 @@ export function ConditionsSection({ obj }: DetailsSectionProps) {
     ];
   });
   const content = table(
+    "conditions",
     [
       t("details:columns.type"),
       t("details:columns.status"),

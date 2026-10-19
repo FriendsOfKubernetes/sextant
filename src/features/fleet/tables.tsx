@@ -23,6 +23,7 @@ import {
 } from "./rows";
 import type { RowsState } from "./rowsStore";
 import { openInCluster } from "./store";
+import { ResizableTable } from "../../components/Table";
 
 export interface FleetCluster {
   id: ClusterId;
@@ -152,7 +153,7 @@ export function PodsTable({
       <Notes groups={visible} />
       {any ? (
         <div className="fleet-table-wrap">
-          <table className="fleet-table" aria-label={t("fleet:tabs.pods")}>
+          <ResizableTable tableId="fleet.pods" className="fleet-table" aria-label={t("fleet:tabs.pods")}>
             <thead>
               <tr>
                 <th scope="col">{t("fleet:columns.cluster")}</th>
@@ -192,7 +193,7 @@ export function PodsTable({
                 </Fragment>
               ))}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       ) : (
         visible.every((g) => g.status !== "loading") && <Empty text={t("fleet:empty")} />
@@ -243,7 +244,7 @@ export function WorkloadsTable({
       <Notes groups={visible} />
       {any ? (
         <div className="fleet-table-wrap">
-          <table className="fleet-table" aria-label={t("fleet:tabs.workloads")}>
+          <ResizableTable tableId="fleet.workloads" className="fleet-table" aria-label={t("fleet:tabs.workloads")}>
             <thead>
               <tr>
                 <th scope="col">{t("fleet:columns.cluster")}</th>
@@ -279,7 +280,7 @@ export function WorkloadsTable({
                 </Fragment>
               ))}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       ) : (
         visible.every((g) => g.status !== "loading") && <Empty text={t("fleet:empty")} />
@@ -327,7 +328,7 @@ export function EventsTable({ clusters, only, namespace, children }: TableProps)
       <Notes groups={visible} />
       {any ? (
         <div className="fleet-table-wrap">
-          <table className="fleet-table" aria-label={t("fleet:tabs.events")}>
+          <ResizableTable tableId="fleet.events" className="fleet-table" aria-label={t("fleet:tabs.events")}>
             <thead>
               <tr>
                 <th scope="col">{t("fleet:columns.cluster")}</th>
@@ -363,7 +364,7 @@ export function EventsTable({ clusters, only, namespace, children }: TableProps)
                 </Fragment>
               ))}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       ) : (
         visible.every((g) => g.status !== "loading") && <Empty text={t("fleet:noWarnings")} />

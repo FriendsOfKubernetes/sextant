@@ -11,6 +11,7 @@ import { ChangeList, ObjectDiff } from "./DiffView";
 import { objectDrift, type FieldChange } from "./model";
 import type { NormalizeOptions } from "./normalize";
 import { SecretKeys } from "./SecretKeys";
+import { ResizableTable } from "../../components/Table";
 
 export type DriftState = "inSync" | "drifted" | "missing" | "error";
 
@@ -83,7 +84,7 @@ export function ReleaseDrift({ clusterId, drift, hideDefaults, ignorePaths }: Re
       </p>
       {drift.unreadable > 0 && <p className="compare-muted">{t("compare:drift.unreadable", { count: drift.unreadable })}</p>}
       {drift.truncated > 0 && <p className="compare-muted">{t("compare:drift.truncated", { count: drift.truncated })}</p>}
-      <table className="compare-table" aria-label={t("compare:drift.objectsLabel")}>
+      <ResizableTable tableId="compare.helmDrift" className="compare-table" aria-label={t("compare:drift.objectsLabel")}>
         <thead>
           <tr>
             <th>{t("compare:drift.object")}</th>
@@ -108,7 +109,7 @@ export function ReleaseDrift({ clusterId, drift, hideDefaults, ignorePaths }: Re
             );
           })}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }

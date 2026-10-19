@@ -7,6 +7,7 @@ import { Badge, Button, ConfirmDialog, Dialog, ErrorState, LoadingIndicator, typ
 import { useExtensions } from "../../extensions";
 import { withEntry } from "../mcp/ActivityDialog";
 import { formatDateTime } from "../../i18n";
+import { ResizableTable } from "../../components/Table";
 
 const TONES: Record<AuditDecision, BadgeTone> = {
   allowed: "success",
@@ -123,11 +124,11 @@ export function ExtensionActivityDialog({ open, extensionId = "", onClose }: Ext
           )}
           {!error && entries !== null && entries.length > 0 && (
             <div className="mcp-activity__scroll">
-              <table className="mcp-activity__table">
+              <ResizableTable tableId="extensions.activity" className="mcp-activity__table">
                 <thead>
                   <tr>
                     {COLUMNS.map((column) => (
-                      <th key={column} scope="col">
+                      <th key={column} scope="col" data-col={column}>
                         {t(`extensions:activity.columns.${column}`)}
                       </th>
                     ))}
@@ -153,7 +154,7 @@ export function ExtensionActivityDialog({ open, extensionId = "", onClose }: Ext
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </ResizableTable>
             </div>
           )}
         </div>

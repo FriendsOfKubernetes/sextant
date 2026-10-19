@@ -9,6 +9,7 @@ import { usePortForwards } from "./hooks";
 import { targetName } from "./model";
 import { openInBrowser } from "./openInBrowser";
 import "./portforward.css";
+import { ResizableTable } from "../../components/Table";
 
 export function PortForwardPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
@@ -31,7 +32,7 @@ export function PortForwardPage({ clusterId }: PageProps) {
     body = <EmptyState title={t("portforward:empty")} text={t("portforward:emptyText")} />;
   else
     body = (
-      <table className="pf-table" aria-label={t("portforward:title")}>
+      <ResizableTable tableId="portforward" className="pf-table" aria-label={t("portforward:title")}>
         <thead>
           <tr>
             <th>{t("portforward:columns.target")}</th>
@@ -47,7 +48,7 @@ export function PortForwardPage({ clusterId }: PageProps) {
             <ForwardRow key={f.id} forward={f} onStop={() => void stop(f.id)} />
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
     );
 
   return (

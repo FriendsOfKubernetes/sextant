@@ -7,6 +7,7 @@ import { toYaml } from "../details";
 import { TemplateDiff } from "../rollouts/TemplateDiff";
 import { fieldChanges, valueText, type FieldChange } from "./model";
 import { normalize, type NormalizeOptions } from "./normalize";
+import { ResizableTable } from "../../components/Table";
 
 export interface ObjectDiffProps {
   kind: Pick<KindRef, "group" | "kind">;
@@ -53,7 +54,7 @@ export function ChangeList({ changes, leftTitle, rightTitle, label }: ChangeList
   const { t } = useTranslation();
   if (changes.length === 0) return null;
   return (
-    <table className="compare-table compare-changes" aria-label={label}>
+    <ResizableTable tableId="compare.changes" className="compare-table compare-changes" aria-label={label}>
       <thead>
         <tr>
           <th>{t("compare:diff.field")}</th>
@@ -70,7 +71,7 @@ export function ChangeList({ changes, leftTitle, rightTitle, label }: ChangeList
           </tr>
         ))}
       </tbody>
-    </table>
+    </ResizableTable>
   );
 }
 

@@ -52,6 +52,7 @@ function ServiceProfileDetails({ obj }: { obj: KubeObject }) {
       </Block>
       <Block title={t("mesh:blocks.profileRoutes")}>
         <SimpleTable
+          tableId="mesh.profileRoutes"
           headers={[t("mesh:columns.name"), t("mesh:columns.condition"), t("mesh:columns.retryable"), t("mesh:columns.timeout")]}
           rows={rows}
         />
@@ -232,6 +233,7 @@ function LinkerdHttpRouteDetails({ obj }: { obj: KubeObject }) {
       </Block>
       <Block title={t("mesh:blocks.httpRoutes")}>
         <SimpleTable
+          tableId="mesh.httpRoutes"
           headers={[t("mesh:columns.match"), t("mesh:columns.destinations")]}
           rows={rows}
         />

@@ -17,6 +17,7 @@ import {
   type FlagSeverity,
 } from "./recommend";
 import { resourcesYaml } from "./yaml";
+import { ResizableTable } from "../../components/Table";
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
@@ -221,23 +222,24 @@ export function RowsTable({
 }) {
   const { t } = useTranslation();
   const openDetails = useAppStore((s) => s.openDetails);
-  const head: ReactNode[] = [
-    ...(showWorkload ? [t("rightsizing:columns.workload")] : []),
-    t("rightsizing:columns.container"),
-    t("rightsizing:columns.replicas"),
-    t("rightsizing:columns.cpu"),
-    t("rightsizing:columns.memory"),
-    t("rightsizing:columns.findings"),
-    t("rightsizing:columns.actions"),
+  // Column keys (not translated): the saved widths follow the column when "Workload" comes and goes.
+  const head: { key: string; label: ReactNode }[] = [
+    ...(showWorkload ? [{ key: "workload", label: t("rightsizing:columns.workload") }] : []),
+    { key: "container", label: t("rightsizing:columns.container") },
+    { key: "replicas", label: t("rightsizing:columns.replicas") },
+    { key: "cpu", label: t("rightsizing:columns.cpu") },
+    { key: "memory", label: t("rightsizing:columns.memory") },
+    { key: "findings", label: t("rightsizing:columns.findings") },
+    { key: "actions", label: t("rightsizing:columns.actions") },
   ];
   return (
     <div className="rs-table-wrap">
-      <table className="rs-table">
+      <ResizableTable tableId="rightsizing" className="rs-table">
         <thead>
           <tr>
-            {head.map((h, i) => (
-              <th key={i} scope="col">
-                {h}
+            {head.map((h) => (
+              <th key={h.key} scope="col" data-col={h.key}>
+                {h.label}
               </th>
             ))}
           </tr>
@@ -298,7 +300,7 @@ export function RowsTable({
             );
           })}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }

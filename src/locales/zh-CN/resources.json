@@ -137,7 +137,10 @@
     "noActions": "没有可用的操作",
     "openObject": "打开 {{kind}} {{name}}",
     "containerState": "{{name}}：{{state}}",
-    "ago": "{{age}}前"
+    "ago": "{{age}}前",
+    "resizeColumn": "调整列宽：{{name}}",
+    "resetWidths": "重置列宽",
+    "resizeHint": "左右方向键调整宽度（Shift：更大步长），Enter 恢复默认宽度，Ctrl 加左右方向键切换到其他列。"
   },
   "namespaces": {
     "all": "所有 Namespace",

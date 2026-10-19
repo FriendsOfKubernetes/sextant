@@ -25,6 +25,7 @@ export function ServiceDetails({ obj }: { obj: KubeObject }) {
     ["endpoints", link(KINDS.endpoints, obj.metadata?.name, ns)],
   ];
   const ports = table(
+    "service.ports",
     [
       t("details:columns.name"),
       t("details:columns.port"),
@@ -78,6 +79,7 @@ export function EndpointsDetails({ obj }: { obj: KubeObject }) {
     ];
   });
   const content = table(
+    "endpoints.addresses",
     [
       t("details:columns.address"),
       t("details:columns.node"),
@@ -116,6 +118,7 @@ export function IngressDetails({ obj }: { obj: KubeObject }) {
     ["loadBalancer", chips(lb)],
   ];
   const rules = table(
+    "ingress.rules",
     [t("details:columns.host"), t("details:columns.path"), t("details:columns.pathType"), t("details:columns.backend")],
     arr(get(spec, "rules")).flatMap((rule) => {
       const host = str(get(rule, "host")) ?? "*";
@@ -128,6 +131,7 @@ export function IngressDetails({ obj }: { obj: KubeObject }) {
     }),
   );
   const tls = table(
+    "ingress.tls",
     [t("details:columns.hosts"), t("details:columns.secret")],
     arr(get(spec, "tls")).map((entry) => [
       strings(get(entry, "hosts")).join(", "),

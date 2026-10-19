@@ -151,6 +151,7 @@ function ExposedBy({ clusterId, service }: { clusterId: ClusterId; service: Kube
   return (
     <Block title={t("gateway:exposedBy.title")}>
       <SimpleTable
+        tableId="gateway.exposedBy"
         headers={[
           t("gateway:exposedBy.address"),
           t("gateway:exposedBy.route"),
@@ -184,6 +185,7 @@ function UsedByListeners({ clusterId, secret }: { clusterId: ClusterId; secret: 
   return (
     <Block title={t("gateway:secretUse.title")}>
       <SimpleTable
+        tableId="gateway.secretUse"
         headers={[t("gateway:secretUse.gateway"), t("gateway:secretUse.listener"), t("gateway:secretUse.status")]}
         rows={uses.map(({ key, gateway, listener, notPermitted }) => ({
           key,
@@ -326,6 +328,7 @@ function PoliciesAttached({ clusterId, obj, kind }: { clusterId: ClusterId; obj:
       {rows.length > 0 && (
         <Block title={t("gateway:attachedPolicies.title")}>
           <SimpleTable
+            tableId="gateway.attachedPolicies"
             headers={[
               t("gateway:attachedPolicies.kind"),
               t("gateway:attachedPolicies.name"),

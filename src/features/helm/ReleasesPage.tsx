@@ -12,6 +12,7 @@ import { useHelmReleases, useHelmStatus } from "./hooks";
 import { ReleaseDetails } from "./ReleaseDetails";
 import { StatusBadge } from "./StatusBadge";
 import "./helm.css";
+import { ResizableTable } from "../../components/Table";
 
 const keyOf = (r: { namespace: string; name: string }) => `${r.namespace}/${r.name}`;
 
@@ -95,7 +96,7 @@ function ReleaseTable({
 }) {
   const { t } = useTranslation();
   return (
-    <table className="helm-table" aria-label={t("helm:releases.title")}>
+    <ResizableTable tableId="helm.releases" className="helm-table" aria-label={t("helm:releases.title")}>
       <thead>
         <tr>
           <th>{t("helm:columns.name")}</th>
@@ -150,6 +151,6 @@ function ReleaseTable({
           );
         })}
       </tbody>
-    </table>
+    </ResizableTable>
   );
 }

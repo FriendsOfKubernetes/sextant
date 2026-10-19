@@ -139,7 +139,10 @@
     "noActions": "Kullanılabilir eylem yok",
     "openObject": "Aç: {{kind}} {{name}}",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} önce"
+    "ago": "{{age}} önce",
+    "resizeColumn": "{{name}} sütununu yeniden boyutlandır",
+    "resetWidths": "Sütun genişliklerini sıfırla",
+    "resizeHint": "Sol ve sağ oklar genişliği değiştirir (Shift: daha büyük adımlar), Enter varsayılan genişliğe döndürür, Ctrl ile sol veya sağ ok başka bir sütuna geçer."
   },
   "namespaces": {
     "all": "Tüm namespace'ler",

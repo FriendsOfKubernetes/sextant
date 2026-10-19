@@ -17,6 +17,7 @@ import {
 } from "./model";
 import { RollbackDialog } from "./RollbackDialog";
 import { TemplateDiff } from "./TemplateDiff";
+import { ResizableTable } from "../../components/Table";
 
 const STATE_TONE: Record<RolloutState, BadgeTone> = {
   complete: "success",
@@ -100,7 +101,7 @@ function History({
         <p>{t("rollouts:history.empty")}</p>
       ) : (
         <>
-          <table className="rollouts__table">
+          <ResizableTable tableId="rollouts.history" className="rollouts__table">
             <thead>
               <tr>
                 <th scope="col" className="rollouts__select">
@@ -150,7 +151,7 @@ function History({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResizableTable>
           {pair ? (
             <TemplateDiff
               left={templateYaml(pair[0].template)}

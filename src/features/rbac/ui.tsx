@@ -10,6 +10,7 @@ import type { BindingSubject, Explanation, Grant, PolicyRule, RbacRef, RbacWarni
 import { explainRule, identityOf, RBAC_GROUP } from "./engine";
 import type { RbacList, RbacState } from "./hooks";
 import { RBAC_LISTS } from "./hooks";
+import { ResizableTable } from "../../components/Table";
 
 const RBAC_API = `${RBAC_GROUP}/v1`;
 
@@ -102,7 +103,7 @@ export function RulesTable({ rules }: { rules: readonly SourcedRule[] }) {
   if (rules.length === 0) return <p className="dt-muted">{t("rbac:rules.none")}</p>;
   return (
     <div className="dt-table-wrap">
-      <table className="dt-table rbac-rules">
+      <ResizableTable tableId="rbac.rules" className="dt-table rbac-rules">
         <thead>
           <tr>
             <th>{t("rbac:rules.verbs")}</th>
@@ -129,7 +130,7 @@ export function RulesTable({ rules }: { rules: readonly SourcedRule[] }) {
             );
           })}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }
@@ -144,14 +145,14 @@ export function GrantList({ grants, onlyNames, showSource = true }: { grants: re
   const { t } = useTranslation();
   return (
     <div className="dt-table-wrap">
-      <table className="dt-table rbac-grants">
+      <ResizableTable tableId={showSource ? "rbac.grants.source" : "rbac.grants"} className="dt-table rbac-grants">
         <thead>
           <tr>
-            {showSource && <th>{t("rbac:grants.binding")}</th>}
-            {showSource && <th>{t("rbac:grants.role")}</th>}
-            <th>{t("rbac:grants.scope")}</th>
-            {showSource && <th>{t("rbac:grants.matchedBy")}</th>}
-            <th>{t("rbac:grants.rule")}</th>
+            {showSource && <th data-col="binding">{t("rbac:grants.binding")}</th>}
+            {showSource && <th data-col="role">{t("rbac:grants.role")}</th>}
+            <th data-col="scope">{t("rbac:grants.scope")}</th>
+            {showSource && <th data-col="matchedBy">{t("rbac:grants.matchedBy")}</th>}
+            <th data-col="rule">{t("rbac:grants.rule")}</th>
           </tr>
         </thead>
         <tbody>
@@ -182,7 +183,7 @@ export function GrantList({ grants, onlyNames, showSource = true }: { grants: re
             );
           })}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }

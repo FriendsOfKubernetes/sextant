@@ -139,7 +139,10 @@
     "noActions": "Keine Aktionen verfügbar",
     "openObject": "{{kind}} {{name}} öffnen",
     "containerState": "{{name}}: {{state}}",
-    "ago": "vor {{age}}"
+    "ago": "vor {{age}}",
+    "resizeColumn": "Spaltenbreite ändern: {{name}}",
+    "resetWidths": "Spaltenbreiten zurücksetzen",
+    "resizeHint": "Pfeil links und rechts ändern die Breite (Umschalt: größere Schritte), Eingabe stellt die Standardbreite wieder her, Strg mit Pfeil links oder rechts wechselt zu einer anderen Spalte."
   },
   "namespaces": {
     "all": "Alle Namespaces",

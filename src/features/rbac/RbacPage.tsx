@@ -52,6 +52,7 @@ import {
   SubjectLabel,
   Warnings,
 } from "./ui";
+import { ResizableTable } from "../../components/Table";
 
 /** At most this many subjects in the picker list; the search narrows it. */
 export const MAX_PICKER = 200;
@@ -348,7 +349,7 @@ function WhoCanTab({ clusterId, rbac, namespaces }: { clusterId: ClusterId; rbac
           <p className="dt-muted">{t("rbac:whoCan.masters", { group: MASTERS })}</p>
           {result.answers.length > 0 && (
             <div className="dt-table-wrap">
-              <table className="dt-table rbac-grants" aria-label={t("rbac:whoCan.tableLabel")}>
+              <ResizableTable tableId="rbac.whoCan" className="dt-table rbac-grants" aria-label={t("rbac:whoCan.tableLabel")}>
                 <thead>
                   <tr>
                     <th>{t("rbac:whoCan.subject")}</th>
@@ -386,7 +387,7 @@ function WhoCanTab({ clusterId, rbac, namespaces }: { clusterId: ClusterId; rbac
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </ResizableTable>
             </div>
           )}
           {result.truncated && <p className="dt-muted">{t("rbac:whoCan.truncated", { count: result.answers.length })}</p>}

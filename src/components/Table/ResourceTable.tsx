@@ -48,6 +48,8 @@ import {
   TABLE_MAX_OBJECTS,
   TABLE_WATCH_OPTIONS,
 } from "./limits";
+import { showCutText, useColumnWidths, type ColumnWidthMap } from "./columnWidths";
+import { ResizeHandles } from "./ResizeHandle";
 import { compileSearch, searchTerms } from "./search";
 import { joinSelectors, serverSelectors } from "./selectors";
 import "./table.css";
@@ -96,6 +98,11 @@ export interface ResourceTableProps {
   hiddenColumns?: readonly string[];
   /** With it the header offers a "Columns" menu that shows or hides columns. */
   onHiddenColumnsChange?: (hidden: string[]) => void;
+  /**
+   * Id the column widths the user drags are saved under (`useColumnWidths`). Default: `kind:<group>/<Kind>`, shared
+   * by every table of the kind; `null` = not saved.
+   */
+  widthsId?: string | null;
 }
 
 /** Each retry ("Retry" after an error) starts a fresh watch. */
@@ -203,6 +210,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     // A table never loses every column.
     return shown.length > 0 ? shown : allColumns;
   }, [allColumns, hiddenColumns]);
+  const colWidths = useColumnWidths(props.widthsId !== undefined ? props.widthsId : `kind:${kindKey(kind)}`);
   const namespaced = props.resourceKind?.namespaced ?? def.namespaced ?? true;
   const namespaces = props.namespaces !== undefined ? props.namespaces : view.namespaces;
   const search = props.search ?? view.search;
@@ -373,8 +381,13 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     virtualizer.scrollToIndex(next, { align: "auto" });
   };
 
-  const template = `32px ${columns.map((c) => c.width ?? "minmax(80px, 1fr)").join(" ")} 32px`;
-  const gridStyle = { "--rt-columns": template } as CSSProperties;
+  const templateOf = (widths: ColumnWidthMap) =>
+    `32px ${columns.map((c) => (widths[c.id] !== undefined ? `${widths[c.id]}px` : (c.width ?? "minmax(80px, 1fr)"))).join(" ")} 32px`;
+  const gridStyle = { "--rt-columns": templateOf(colWidths.widths) } as CSSProperties;
+  // A drag moves the columns through the grid's CSS variable (once per frame), not through a render of the rows.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const previewWidth = (column: string, px: number) =>
+    gridRef.current?.style.setProperty("--rt-columns", templateOf({ ...colWidths.widths, [column]: px }));
   const total = items.size;
   const listing = watch.status === "loading" && items.size > 0;
 
@@ -423,8 +436,14 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       )}
       <div className="rt__toolbar">
         {props.toolbar}
-        {props.onHiddenColumnsChange && (
-          <ColumnsMenu columns={allColumns} hidden={hiddenColumns ?? []} onChange={props.onHiddenColumnsChange} />
+        {(props.onHiddenColumnsChange || colWidths.customized) && (
+          <ColumnsMenu
+            columns={allColumns}
+            hidden={hiddenColumns ?? []}
+            onChange={props.onHiddenColumnsChange}
+            widthsCustomized={colWidths.customized}
+            onResetWidths={colWidths.reset}
+          />
         )}
       </div>
     </header>
@@ -489,13 +508,28 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     const drawn = virtualizer.getVirtualItems();
     const tabUid = drawn.some((i) => rows[i.index]?.id === focusUid) ? focusUid : rows[drawn[0]?.index ?? 0]?.id;
     return (
+      // The handles that resize the columns lie over the header in a grid of their own with the same columns (inside
+      // a header cell they would become part of its name), before the table in the tab order.
+      <div ref={gridRef} className="rt__frame" style={gridStyle}>
+      <ResizeHandles
+        className="rt__resizers"
+        slotClassName="rt__resizer"
+        leading={<div />}
+        columns={columns.map((c) => ({
+          key: c.id,
+          name: c.titleKey ? t(c.titleKey) : (c.title ?? c.id),
+          width: colWidths.widths[c.id],
+        }))}
+        onPreview={previewWidth}
+        onCommit={colWidths.setWidth}
+      />
       <div
         className="rt__grid"
         role="table"
         aria-label={title}
         aria-rowcount={rows.length + 1}
-        style={gridStyle}
         onKeyDown={(e) => onRowsKey(e, virtualizer)}
+        onMouseOver={showCutText}
       >
         <div className="rt__head" role="rowgroup">
           <div className="rt__row rt__row--head" role="row" aria-rowindex={1}>
@@ -518,7 +552,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                 <div key={c.id} className="rt__cell rt__cell--head" role="columnheader" aria-sort={ariaSort}>
                   {column?.getCanSort() ? (
                     <button type="button" className="rt__sort" onClick={() => column.toggleSorting()}>
-                      {label}
+                      <span className="rt__sort-label">{label}</span>
                       {/* Only the sorted column has the icon: an empty slot cut narrow headers ("Repl…"). */}
                       {sorted && (
                         <span className="rt__sort-icon" aria-hidden>
@@ -527,7 +561,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                       )}
                     </button>
                   ) : (
-                    label
+                    <span className="rt__head-label">{label}</span>
                   )}
                 </div>
               );
@@ -620,6 +654,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
             );
           })}
         </div>
+      </div>
       </div>
     );
   };
@@ -757,15 +792,22 @@ function ActionMenu({
   );
 }
 
-/** The "Columns" button of the header: a checkbox per column; the last shown column cannot be hidden. */
+/**
+ * The "Columns" button of the header: a checkbox per column (when the caller lets columns be hidden; the last shown
+ * column cannot be hidden) and "Reset column widths".
+ */
 function ColumnsMenu({
   columns,
   hidden,
   onChange,
+  widthsCustomized,
+  onResetWidths,
 }: {
   columns: ColumnDef[];
   hidden: readonly string[];
-  onChange: (hidden: string[]) => void;
+  onChange?: (hidden: string[]) => void;
+  widthsCustomized: boolean;
+  onResetWidths: () => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -788,7 +830,7 @@ function ColumnsMenu({
       </button>
       {open && (
         <div className="rt-menu rt-columns__menu" role="menu" aria-label={label}>
-          {columns.map((c) => {
+          {onChange && columns.map((c) => {
             const shown = !hidden.includes(c.id);
             const name = c.titleKey ? t(c.titleKey) : (c.title ?? c.id);
             return (
@@ -804,6 +846,18 @@ function ColumnsMenu({
               </label>
             );
           })}
+          <button
+            type="button"
+            role="menuitem"
+            className={`rt-menu__item${onChange ? " rt-columns__reset" : ""}`}
+            disabled={!widthsCustomized}
+            onClick={() => {
+              onResetWidths();
+              setOpen(false);
+            }}
+          >
+            {t("resources:table.resetWidths")}
+          </button>
         </div>
       )}
     </div>

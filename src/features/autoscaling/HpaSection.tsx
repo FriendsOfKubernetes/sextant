@@ -15,6 +15,12 @@ import { useObject, useObjectEvents, useServed } from "./hooks";
 import { HPA, phrase, type Phrase } from "./model";
 import { EventsTable, Note, PhraseLine, Phrases } from "./ui";
 
+/** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
+const TABLE_IDS = {
+  hpaMetrics: "hpa.metrics",
+  hpaConditions: "hpa.conditions",
+};
+
 const FIELDS = "autoscaling:fields";
 const METRIC_WRAP: readonly ColumnWrap[] = [undefined, "nowrap", "nowrap", "nowrap"];
 const CONDITION_WRAP: readonly ColumnWrap[] = ["nowrap", "nowrap", undefined];
@@ -43,6 +49,7 @@ function MetricsTable({ metrics }: { metrics: readonly MetricRow[] }) {
   return (
     <>
       {table(
+        TABLE_IDS.hpaMetrics,
         [t("autoscaling:hpa.metric"), t("autoscaling:hpa.current"), t("autoscaling:hpa.target"), t("autoscaling:hpa.proposes")],
         metrics.map((m) => [
           metricName(m),
@@ -97,6 +104,7 @@ function ConditionsTable({ a }: { a: HpaAnalysis }) {
   return (
     <>
       {table(
+        TABLE_IDS.hpaConditions,
         [t("autoscaling:hpa.condition"), t("autoscaling:hpa.status"), t("autoscaling:hpa.meaning")],
         a.conditions.map((c) => [
           c.type,

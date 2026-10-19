@@ -13,6 +13,12 @@ import { authSources, kedaState, managedHpaName, scaleTargetOf, triggersOf } fro
 import { HPA, phrase } from "./model";
 import { Note, PhraseLine, Phrases } from "./ui";
 
+/** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
+const TABLE_IDS = {
+  kedaTriggers: "keda.triggers",
+  kedaSources: "keda.sources",
+};
+
 const { get, num, str } = status;
 const FIELDS = "autoscaling:fields";
 const KEDA_API = "keda.sh/v1alpha1";
@@ -33,7 +39,7 @@ function TriggersTable({ obj }: { obj: KubeObject }) {
     tr.health ? (tr.failures ? `${tr.health} (${tr.failures})` : tr.health) : "",
   ]);
   const headers = [t("autoscaling:keda.trigger"), t("autoscaling:keda.metadata"), t("autoscaling:keda.auth"), t("autoscaling:keda.health")];
-  return <>{table(headers, rows, TRIGGER_WRAP)}</>;
+  return <>{table(TABLE_IDS.kedaTriggers, headers, rows, TRIGGER_WRAP)}</>;
 }
 
 export function ScaledObjectSection({ clusterId, obj }: DetailsSectionProps) {
@@ -121,7 +127,7 @@ export function TriggerAuthenticationSection({ obj }: DetailsSectionProps) {
     <Block title={t("autoscaling:keda.authTitle")}>
       <Fields labelPrefix={FIELDS} rows={fields} />
       {sources.length === 0 && !podIdentity && <Note>{t("autoscaling:keda.noSources")}</Note>}
-      {table(headers, rows, SOURCE_WRAP)}
+      {table(TABLE_IDS.kedaSources, headers, rows, SOURCE_WRAP)}
     </Block>
   );
 }

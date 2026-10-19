@@ -8,6 +8,7 @@ import { YamlViewer } from "../details";
 import { RollbackDialog, UninstallDialog, UpgradeDialog } from "./dialogs";
 import { useLoad } from "./hooks";
 import { StatusBadge } from "./StatusBadge";
+import { ResizableTable } from "../../components/Table";
 
 type Tab = "values" | "manifest" | "notes" | "history";
 const TABS: Tab[] = ["values", "manifest", "notes", "history"];
@@ -230,7 +231,7 @@ function HistoryTable({
   }
   const newestFirst = [...history].sort((a, b) => b.revision - a.revision);
   return (
-    <table className="helm-table" aria-label={t("helm:details.tabs.history")}>
+    <ResizableTable tableId="helm.history" className="helm-table" aria-label={t("helm:details.tabs.history")}>
       <thead>
         <tr>
           <th>{t("helm:columns.revision")}</th>
@@ -267,7 +268,7 @@ function HistoryTable({
           </tr>
         ))}
       </tbody>
-    </table>
+    </ResizableTable>
   );
 }
 

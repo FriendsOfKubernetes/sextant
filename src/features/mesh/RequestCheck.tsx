@@ -277,6 +277,7 @@ function DestinationsStep({ result, pods, t }: { result: MeshRouteResult; pods: 
   return (
     <Step id="destinations" label={t("mesh:check.steps.destinations")} tone={tone}>
       <SimpleTable
+        tableId="mesh.destinations"
         headers={[t("mesh:columns.destination"), t("mesh:columns.weight"), t("mesh:columns.subset"), t("mesh:columns.destinationRule"), t("mesh:columns.tlsMode"), t("mesh:columns.pods")]}
         rows={result.destinations.map((d, i) => ({
           key: `${i}`,

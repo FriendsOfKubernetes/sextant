@@ -16,6 +16,7 @@ import {
   type Top,
   type Vulnerability,
 } from "./trivy";
+import { ResizableTable } from "../../components/Table";
 
 export const LEVEL_TONE: Record<FindingLevel, BadgeTone> = { baseline: "danger", restricted: "warning", hint: "neutral" };
 export const POSTURE_TONE: Record<Posture, BadgeTone> = { restricted: "success", baseline: "warning", privileged: "danger" };
@@ -228,7 +229,7 @@ export function VulnerabilityTable({ top }: { top: Top<Vulnerability> }) {
   return (
     <>
       <div className="sec-table-wrap">
-        <table className="sec-table">
+        <ResizableTable tableId="security.vulnerabilities" className="sec-table">
           <thead>
             <tr>
               <th>{t("security:trivy.table.severity")}</th>
@@ -251,7 +252,7 @@ export function VulnerabilityTable({ top }: { top: Top<Vulnerability> }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       </div>
       <MoreNote top={top} />
     </>
@@ -284,7 +285,7 @@ export function SecretTable({ top }: { top: Top<ExposedSecret> }) {
   return (
     <>
       <div className="sec-table-wrap">
-        <table className="sec-table">
+        <ResizableTable tableId="security.secrets" className="sec-table">
           <thead>
             <tr>
               <th>{t("security:trivy.table.severity")}</th>
@@ -305,7 +306,7 @@ export function SecretTable({ top }: { top: Top<ExposedSecret> }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       </div>
       <MoreNote top={top} />
     </>
@@ -317,7 +318,7 @@ export function ControlTable({ top }: { top: Top<ComplianceControl> }) {
   return (
     <>
       <div className="sec-table-wrap">
-        <table className="sec-table">
+        <ResizableTable tableId="security.controls" className="sec-table">
           <thead>
             <tr>
               <th>{t("security:trivy.table.severity")}</th>
@@ -338,7 +339,7 @@ export function ControlTable({ top }: { top: Top<ComplianceControl> }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       </div>
       <MoreNote top={top} />
     </>

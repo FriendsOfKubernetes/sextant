@@ -11,6 +11,7 @@ import { InstallDialog, RemoveRepoDialog } from "./dialogs";
 import { HelmMissing } from "./HelmMissing";
 import { useHelmStatus, useLoad } from "./hooks";
 import "./helm.css";
+import { ResizableTable } from "../../components/Table";
 
 const DEFAULT_NAMESPACE = "default";
 
@@ -125,7 +126,7 @@ function Repositories({ available }: { available: boolean }) {
       {repos.error && <ErrorState error={repos.error} onRetry={repos.reload} />}
       {available && repos.data && list.length === 0 && <p className="helm-muted">{t("helm:charts.noRepos")}</p>}
       {list.length > 0 && (
-        <table className="helm-table" aria-label={t("helm:charts.repositories")}>
+        <ResizableTable tableId="helm.repositories" className="helm-table" aria-label={t("helm:charts.repositories")}>
           <thead>
             <tr>
               <th>{t("helm:charts.repoName")}</th>
@@ -153,7 +154,7 @@ function Repositories({ available }: { available: boolean }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       )}
       <form className="helm-form" onSubmit={add}>
         <label htmlFor={nameId}>{t("helm:charts.repoName")}</label>
@@ -279,7 +280,7 @@ function ChartSearch({
       {error && <ErrorState error={error} />}
       {hits && hits.length === 0 && <p className="helm-muted">{t("helm:charts.noResults")}</p>}
       {hits && hits.length > 0 && (
-        <table className="helm-table" aria-label={t("helm:charts.search")}>
+        <ResizableTable tableId="helm.chartSearch" className="helm-table" aria-label={t("helm:charts.search")}>
           <thead>
             <tr>
               <th>{t("helm:columns.chart")}</th>
@@ -316,7 +317,7 @@ function ChartSearch({
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       )}
     </section>
   );

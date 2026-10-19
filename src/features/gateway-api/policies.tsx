@@ -16,6 +16,7 @@ import { NamespaceFilter, useSelectedNamespaces } from "../namespaces";
 import { customResourceKinds, kindKey, ObjectLink, StatusText, useClusterKinds } from "../../resources";
 import { HEALTH_TONE, policyStatusText } from "./columns";
 import { apiVersionFor, GATEWAY_GROUP, policyHealth, policyTargets } from "./model";
+import { ResizableTable } from "../../components/Table";
 
 export const POLICIES_PAGE = "gatewayApiPolicies";
 
@@ -162,7 +163,7 @@ export function PoliciesPage({ clusterId }: PageProps) {
         : t("resources:table.count", { count: rows });
     body = (
       <>
-        <table className="dt-table gw-ptable" aria-label={title}>
+        <ResizableTable tableId="gateway.policies" className="dt-table gw-ptable" aria-label={title}>
           <thead>
             <tr>
               <th>{t("gateway:policies.kind")}</th>
@@ -184,7 +185,7 @@ export function PoliciesPage({ clusterId }: PageProps) {
               />
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
         {loading ? (
           <LoadingIndicator text={t("gateway:policies.loading")} />
         ) : rows === 0 ? (

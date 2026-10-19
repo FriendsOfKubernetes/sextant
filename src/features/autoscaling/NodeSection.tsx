@@ -32,6 +32,12 @@ import { NODE_CLAIM, NODE_POOL, phrase, type EventRow, type Phrase } from "./mod
 import { CaStatusFields } from "./SchedulingSection";
 import { EventsTable, Note, PhraseLine, Phrases } from "./ui";
 
+/** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
+const TABLE_IDS = {
+  karpenterLimits: "karpenter.limits",
+  clusterAutoscalerGroups: "clusterAutoscaler.groups",
+};
+
 const { get, record, str } = status;
 const FIELDS = "autoscaling:fields";
 const NODE_POOL_TYPE = { apiVersion: "karpenter.sh/v1", kind: "NodePool" };
@@ -178,6 +184,7 @@ function NodePoolDetails({ clusterId, pool }: { clusterId: ClusterId; pool: Kube
     ["budgets", budgets.length > 0 ? <Lines lines={budgets} /> : null],
   ];
   const limitTable = table(
+    TABLE_IDS.karpenterLimits,
     [t("autoscaling:karpenter.resource"), t("autoscaling:karpenter.inUse"), t("autoscaling:karpenter.limit")],
     limits.map((l) => [l.resource, l.used ?? "", l.reached ? <StatusText value={l.limit} tone="danger" /> : l.limit]),
     LIMIT_WRAP,
@@ -216,6 +223,7 @@ export function CaStatusSection({ obj }: DetailsSectionProps) {
       <CaStatusFields ca={ca} />
       {ca.groups.length > 0 &&
         table(
+          TABLE_IDS.clusterAutoscalerGroups,
           [t("autoscaling:ca.group"), t("autoscaling:ca.health"), t("autoscaling:ca.nodes"), t("autoscaling:ca.size"), t("autoscaling:ca.scaleUp"), t("autoscaling:ca.scaleDown")],
           ca.groups.map((g) => [
             g.name,

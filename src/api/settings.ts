@@ -47,6 +47,7 @@ export function defaultAppSettings(): AppSettings {
     activeWorkspace: null,
     snippets: [],
     compare: { ignorePaths: {} },
+    columnWidths: {},
   };
 }
 
@@ -130,7 +131,8 @@ export function getSettingsSnapshot(): AppSettings | null {
   return state.settings;
 }
 
-function subscribeSettings(fn: () => void): () => void {
+/** Calls `fn` after every change of the cached settings; returns the unsubscribe. */
+export function subscribeSettings(fn: () => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }

@@ -66,6 +66,7 @@ import {
   type RouteRule,
 } from "./model";
 import { gatewayPrefill, openRequestCheck } from "./checkState";
+import { ResizableTable } from "../../components/Table";
 
 const { arr, get, str } = status;
 
@@ -254,10 +255,13 @@ const PARENT_COLUMNS = [undefined, NOWRAP, undefined, undefined];
 const CLASS_GATEWAY_COLUMNS = [NOWRAP, NOWRAP, undefined, undefined];
 
 export function SimpleTable({
+  tableId,
   headers,
   rows,
   columns = [],
 }: {
+  /** Where the table's column widths are saved: one id per table, never shared by tables of other columns. */
+  tableId: string;
   headers: string[];
   rows: { key: string; cells: ReactNode[]; className?: string }[];
   columns?: readonly ColumnWrap[];
@@ -265,7 +269,7 @@ export function SimpleTable({
   const colClass = (i: number) => (columns[i] ? `gw-col--${columns[i]}` : undefined);
   return (
     <div className="gw-table-wrap">
-      <table className="dt-table gw-table">
+      <ResizableTable tableId={tableId} className="dt-table gw-table">
         <thead>
           <tr>
             {headers.map((h, i) => (
@@ -286,7 +290,7 @@ export function SimpleTable({
             </tr>
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }
@@ -413,6 +417,7 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
       </Block>
       <Block title={t("gateway:blocks.listeners")}>
         <SimpleTable
+          tableId="gateway.listeners"
           headers={[
             t("gateway:listener.name"),
             t("gateway:listener.port"),
@@ -479,7 +484,7 @@ function AttachedRoutes({ gateway, served }: { gateway: KubeObject; served: Serv
     <>
       <Block title={t("gateway:blocks.attachedRoutesCount", { count: attachedRows.length })}>
         {attachedRows.length > 0 && (
-          <SimpleTable headers={[...headers, t("gateway:attached.status")]} columns={ROUTE_COLUMNS} rows={attachedRows} />
+          <SimpleTable tableId="gateway.attachedRoutes" headers={[...headers, t("gateway:attached.status")]} columns={ROUTE_COLUMNS} rows={attachedRows} />
         )}
         {loading ? (
           <LoadingLine text={t("gateway:attached.loading")} />
@@ -489,7 +494,7 @@ function AttachedRoutes({ gateway, served }: { gateway: KubeObject; served: Serv
       </Block>
       {refusedRows.length > 0 && (
         <Block title={t("gateway:blocks.notAttached", { count: refusedRows.length })}>
-          <SimpleTable headers={[...headers, t("gateway:attached.reason")]} columns={ROUTE_COLUMNS} rows={refusedRows} />
+          <SimpleTable tableId="gateway.refusedRoutes" headers={[...headers, t("gateway:attached.reason")]} columns={ROUTE_COLUMNS} rows={refusedRows} />
         </Block>
       )}
     </>
@@ -517,6 +522,7 @@ function ParentsBlock({ route, ruleReasons }: { route: KubeObject; ruleReasons: 
   return (
     <Block title={t("gateway:blocks.parents")}>
       <SimpleTable
+        tableId="gateway.routeParents"
         headers={[
           t("gateway:route.parent"),
           t("gateway:route.listener"),
@@ -790,6 +796,7 @@ function ClassGateways({ clusterId, gatewayClass }: { clusterId: ClusterId; gate
     <Block title={t("gateway:blocks.gateways")}>
       {rows.length > 0 && (
         <SimpleTable
+          tableId="gateway.classGateways"
           headers={[
             t("gateway:attached.name"),
             t("gateway:attached.namespace"),
@@ -828,6 +835,7 @@ function ReferenceGrantDetails({ grant }: { grant: KubeObject }) {
         </p>
       ))}
       <SimpleTable
+        tableId="gateway.grantFrom"
         headers={[t("gateway:grantTable.from"), t("gateway:grantTable.kind"), t("gateway:grantTable.namespace")]}
         rows={from.map((f, i) => ({
           key: `${i}`,
@@ -835,6 +843,7 @@ function ReferenceGrantDetails({ grant }: { grant: KubeObject }) {
         }))}
       />
       <SimpleTable
+        tableId="gateway.grantTo"
         headers={[t("gateway:grantTable.to"), t("gateway:grantTable.kind"), t("gateway:grantTable.name")]}
         rows={to.map((x, i) => ({
           key: `${i}`,
@@ -883,6 +892,7 @@ function BackendTlsPolicyDetails({ policy }: { policy: KubeObject }) {
       {ancestors.length > 0 && (
         <Block title={t("gateway:blocks.ancestors")}>
           <SimpleTable
+            tableId="gateway.ancestors"
             headers={[t("gateway:route.parent"), t("gateway:route.accepted"), t("gateway:attached.status")]}
             rows={ancestors.map((a, i) => ({
               key: `${i}`,

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { formatList } from "../../i18n/format";
 import { buildMatrix, type ClusterScoped, type Grant, type MatrixCell } from "./engine";
 import { GrantList, groupText, refText } from "./ui";
+import { ResizableTable } from "../../components/Table";
 
 interface Selected {
   row: string;
@@ -84,13 +85,17 @@ export function PermissionMatrix({
         onChange={(e) => setFilter(e.target.value)}
       />
       <div className="rbac-matrix__scroll">
-        <table className="rbac-matrix__table" aria-label={label}>
+        <ResizableTable tableId="rbac.matrix" className="rbac-matrix__table" aria-label={label}>
           <thead>
             <tr>
-              <th scope="col">{t("rbac:matrix.resource")}</th>
-              <th scope="col">{t("rbac:matrix.group")}</th>
+              <th scope="col" data-col="resource">
+                {t("rbac:matrix.resource")}
+              </th>
+              <th scope="col" data-col="group">
+                {t("rbac:matrix.group")}
+              </th>
               {matrix.verbs.map((v) => (
-                <th key={v} scope="col" className="rbac-matrix__verb">
+                <th key={v} scope="col" className="rbac-matrix__verb" data-col={`verb-${v}`}>
                   {verbHeader(v)}
                 </th>
               ))}
@@ -123,7 +128,7 @@ export function PermissionMatrix({
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       </div>
       {matrix.truncated && <p className="dt-muted">{t("rbac:matrix.truncated", { count: matrix.rows.length })}</p>}
       {selectedCells && selected && (

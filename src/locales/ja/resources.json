@@ -137,7 +137,10 @@
     "noActions": "使用できる操作はありません",
     "openObject": "{{kind}} {{name}} を開く",
     "containerState": "{{name}}: {{state}}",
-    "ago": "{{age}} 前"
+    "ago": "{{age}} 前",
+    "resizeColumn": "列 {{name}} の幅を変更",
+    "resetWidths": "列幅をリセット",
+    "resizeHint": "左右の矢印キーで幅を変更（Shift で大きく）、Enter で既定の幅に戻し、Ctrl と左右の矢印キーで別の列に移動します。"
   },
   "namespaces": {
     "all": "すべての namespace",

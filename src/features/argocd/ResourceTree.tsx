@@ -24,6 +24,7 @@ import {
   type ManagedResource,
   type TreeNode,
 } from "./model";
+import { ResizableTable } from "../../components/Table";
 
 const { podStatus, readyOfDesired, sortStatuses, trueConditions } = status;
 
@@ -150,7 +151,7 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
   return (
     <Block title={t("argocd:tree.title")}>
       {!local && <p className="dt-muted">{t("argocd:tree.remote")}</p>}
-      <table className="dt-table argo-tree" aria-label={t("argocd:tree.title")}>
+      <ResizableTable tableId="argocd.tree" className="dt-table argo-tree" aria-label={t("argocd:tree.title")}>
         <thead>
           <tr>
             {headers.map((h) => (
@@ -169,7 +170,7 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
             />
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
       {failed ? (
         <ErrorState error={failed.error} onRetry={onRetry} />
       ) : (

@@ -19,6 +19,7 @@ import { MAX_CLEANUP_NAMESPACES, useCleanup } from "./hooks";
 import type { Manager } from "./managed";
 import { objectName, type Candidate, type RuleId } from "./rules";
 import "./hygiene.css";
+import { ResizableTable } from "../../components/Table";
 
 export const CLEANUP_PAGE_ID = "cleanup";
 /** At most this many rows are drawn (candidates and managed objects together). */
@@ -249,14 +250,14 @@ function CandidateTable({
   const openDetails = useAppStore((s) => s.openDetails);
   const managed = !picked;
   return (
-    <table className="cln-table">
+    <ResizableTable tableId={managed ? "cleanup.managed" : "cleanup.candidates"} className="cln-table">
       <thead>
         <tr>
-          {!managed && <th className="cln-table__check" />}
-          <th>{t("hygiene:column.object")}</th>
-          <th>{t("hygiene:column.reason")}</th>
-          <th>{t("hygiene:column.age")}</th>
-          <th>{managed ? t("hygiene:column.manager") : t("hygiene:column.impact")}</th>
+          {!managed && <th className="cln-table__check" data-col="check" />}
+          <th data-col="object">{t("hygiene:column.object")}</th>
+          <th data-col="reason">{t("hygiene:column.reason")}</th>
+          <th data-col="age">{t("hygiene:column.age")}</th>
+          <th data-col={managed ? "manager" : "impact"}>{managed ? t("hygiene:column.manager") : t("hygiene:column.impact")}</th>
         </tr>
       </thead>
       <tbody>
@@ -307,6 +308,6 @@ function CandidateTable({
           </tr>
         ))}
       </tbody>
-    </table>
+    </ResizableTable>
   );
 }
