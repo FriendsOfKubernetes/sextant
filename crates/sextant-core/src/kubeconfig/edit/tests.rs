@@ -110,7 +110,9 @@ fn contexts(registry: &KubeconfigRegistry) -> Vec<String> {
 
 fn backups(path: &Path) -> Vec<PathBuf> {
     let name = path.file_name().unwrap().to_string_lossy().into_owned();
-    let mut found: Vec<PathBuf> = std::fs::read_dir(path.parent().unwrap())
+    // The real directory, as the edit reports it (macOS: /var is /private/var; Windows: no \\?\ prefix).
+    let dir = dunce::canonicalize(path.parent().unwrap()).unwrap();
+    let mut found: Vec<PathBuf> = std::fs::read_dir(&dir)
         .unwrap()
         .filter_map(Result::ok)
         .filter(|e| {
@@ -585,7 +587,7 @@ fn a_symlinked_kubeconfig_stays_a_symlink() {
     );
     assert_eq!(
         outcome.backup_path.unwrap().parent().unwrap(),
-        real.parent().unwrap()
+        dunce::canonicalize(real.parent().unwrap()).unwrap()
     );
 }
 
@@ -769,7 +771,8 @@ fn merged_entries_keep_pointing_at_their_files_and_previews_hide_url_credentials
     };
     let preview = registry.preview_edit(&edit, &[]).unwrap();
     let json = serde_json::to_string(&preview).unwrap();
-    for secret in ["admin", "hunter2", "pu:", "pp@"] {
+    // "admin:" rather than "admin": a Windows temp path holds the user name "runneradmin".
+    for secret in ["admin:", "hunter2", "pu:", "pp@"] {
         assert!(!json.contains(secret), "{secret} in {json}");
     }
     let cluster = preview
@@ -824,7 +827,7 @@ fn merged_entries_keep_pointing_at_their_files_and_previews_hide_url_credentials
 fn a_preview_names_the_real_file_and_only_the_newest_backups_are_kept() {
     let fx = Fixture::new();
     let path = fx.home_config();
-    let real = std::fs::canonicalize(&path).unwrap();
+    let real = dunce::canonicalize(&path).unwrap();
     // Files that only look like backups are never touched.
     let dir = path.parent().unwrap();
     let foreign = [

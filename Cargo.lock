@@ -4631,6 +4631,7 @@ name = "sextant-core"
 version = "0.13.0"
 dependencies = [
  "base64 0.23.1",
+ "dunce",
  "flate2",
  "futures",
  "http",

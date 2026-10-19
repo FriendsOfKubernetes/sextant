@@ -214,7 +214,7 @@ pub struct EditTarget {
 impl EditTarget {
     /// The target of a change to `path` (which may not exist yet).
     pub fn of(path: &Path) -> Self {
-        let real = std::fs::canonicalize(path).ok();
+        let real = dunce::canonicalize(path).ok();
         let backup_pattern = real.as_ref().and_then(|real| {
             let name = real.file_name()?.to_string_lossy().into_owned();
             Some(real.with_file_name(format!("{name}.bak-YYYYMMDD-HHMMSS")))
@@ -550,10 +550,10 @@ impl KubeconfigRegistry {
             None => base.update(b"absent"),
         }
 
-        let real_target = std::fs::canonicalize(&target).ok();
+        let real_target = dunce::canonicalize(&target).ok();
         let mut inputs: Vec<(PathBuf, Value)> = Vec::new();
         for path in paths {
-            let canonical = std::fs::canonicalize(path).map_err(|_| {
+            let canonical = dunce::canonicalize(path).map_err(|_| {
                 CoreError::new(
                     ErrorCode::NotFound,
                     format!("cannot open {}", path.display()),
@@ -1380,7 +1380,7 @@ fn hex(bytes: &[u8]) -> String {
 /// file gets 0600. Returns the copy's path.
 fn replace_file(path: &Path, before: Option<&[u8]>, content: &[u8]) -> CoreResult<Option<PathBuf>> {
     let real = match before {
-        Some(_) => std::fs::canonicalize(path)?,
+        Some(_) => dunce::canonicalize(path)?,
         None => path.to_path_buf(),
     };
     let dir = real

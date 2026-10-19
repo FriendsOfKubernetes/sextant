@@ -13,6 +13,7 @@ default = ["desktop"]
 desktop = []
 
 [dependencies]
+dunce = "1"
 kube.workspace = true
 k8s-openapi.workspace = true
 tokio.workspace = true
