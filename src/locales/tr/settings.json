@@ -80,5 +80,26 @@
     "title": "Terminal",
     "nodeShellImage": "Düğüm kabuğu imajı",
     "nodeShellImageHint": "Bir düğümdeki “Kabuk” eyleminin arkasındaki geçici ayrıcalıklı Pod'un imajı. nsenter gerektirir (busybox'ta vardır); kabuğun kendisi düğümünkidir. Yapay zekâ ajanlarına hiçbir zaman düğüm kabuğu verilmez."
+  },
+  "fonts": {
+    "ui": "Arayüz yazı tipi",
+    "mono": "Eş aralıklı yazı tipi",
+    "monoHint": "Terminal, YAML düzenleyici, günlükler ve kod.",
+    "kinds": {
+      "builtin_ui": "Yerleşik (Fira Sans)",
+      "builtin_mono": "Yerleşik (Fira Mono)",
+      "system": "Sistem varsayılanı",
+      "custom": "Yüklü başka bir yazı tipi…"
+    },
+    "search": "Yazı tiplerinde ara",
+    "searchLabel": "Ara: {{font}}",
+    "list": "{{font}}: yüklü yazı tipleri",
+    "showAll": "Yalnızca eş aralıklı değil, tüm yazı tiplerini göster",
+    "proportionalHint": "Orantılı yazı tipleri terminalin sütun düzenini ve kodun hizalamasını bozar; eş aralıklı bir yazı tipi seçin.",
+    "loading": "Yüklü yazı tipleri okunuyor…",
+    "none": "Eşleşen yazı tipi yok.",
+    "failed": "Yüklü yazı tipleri okunamadı.",
+    "notInstalled": "{{family}} bu bilgisayarda yüklü değil; yerleşik yazı tipi kullanılıyor.",
+    "current": "Seçilen: {{family}}"
   }
 }

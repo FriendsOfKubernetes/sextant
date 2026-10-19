@@ -77,11 +77,17 @@
   box-sizing: border-box;
 }
 
-/* The UI font: the system's, then fonts with Chinese, Japanese and Korean glyphs (`system-ui` may lack them on
-   Linux). `<html lang>` follows the UI language (src/i18n), so each CJK language prefers its own glyph forms. */
+/* The UI font: the bundled Fira Sans (fonts.css, ADR-0093) for Latin, Cyrillic and the rest of its subsets, then the
+   system's, then fonts with Chinese, Japanese and Korean glyphs (`system-ui` may lack them on Linux). `<html lang>`
+   follows the UI language (src/i18n), so each CJK language prefers its own glyph forms. `--font-mono` is the one
+   monospace stack (code, YAML, logs, the terminal): the bundled Fira Mono, then the system's. */
 :root {
   --font-latin:
-    system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue";
+    "Fira Sans", system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+    "Helvetica Neue";
+  --font-mono:
+    "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
   --font-ui:
     var(--font-latin), "PingFang SC", "Hiragino Sans", "Microsoft YaHei",
     "Noto Sans CJK SC", "Source Han Sans SC", "Malgun Gothic",
@@ -287,7 +293,7 @@ button {
 }
 
 .error-state__message {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   word-break: break-word;
 }

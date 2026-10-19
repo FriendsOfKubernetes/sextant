@@ -80,5 +80,26 @@
     "title": "Terminal",
     "nodeShellImage": "Image für die Knoten-Shell",
     "nodeShellImageHint": "Image des temporären privilegierten Pods hinter „Shell“ auf einem Knoten. Es benötigt nsenter (busybox enthält es); die Shell selbst ist die des Knotens. KI-Agenten erhalten nie eine Knoten-Shell."
+  },
+  "fonts": {
+    "ui": "Schrift der Oberfläche",
+    "mono": "Festbreitenschrift",
+    "monoHint": "Terminal, YAML-Editor, Logs und Code.",
+    "kinds": {
+      "builtin_ui": "Eingebaut (Fira Sans)",
+      "builtin_mono": "Eingebaut (Fira Mono)",
+      "system": "Systemstandard",
+      "custom": "Andere installierte Schrift…"
+    },
+    "search": "Schriften suchen",
+    "searchLabel": "Suchen: {{font}}",
+    "list": "{{font}}: installierte Schriften",
+    "showAll": "Alle Schriften zeigen, nicht nur Festbreitenschriften",
+    "proportionalHint": "Proportionalschriften zerstören das Spaltenraster des Terminals und die Ausrichtung von Code; wähle dafür eine Festbreitenschrift.",
+    "loading": "Installierte Schriften werden gelesen…",
+    "none": "Keine Schrift passt.",
+    "failed": "Die installierten Schriften konnten nicht gelesen werden.",
+    "notInstalled": "{{family}} ist auf diesem Computer nicht installiert; die eingebaute Schrift wird verwendet.",
+    "current": "Gewählt: {{family}}"
   }
 }

@@ -28,5 +28,6 @@
   "unknown": "不明",
   "copy": "バージョン情報をコピー",
   "copied": "コピーしました",
-  "copyFailed": "クリップボードにコピーできませんでした"
+  "copyFailed": "クリップボードにコピーできませんでした",
+  "fonts": "フォント: Fira Sans と Fira Mono、SIL Open Font License 1.1"
 }

@@ -1,0 +1,28 @@
+# ADR-0093: Bundled Fira fonts with the system's CJK fallback, and a choice of the system's or an installed font
+
+## Context
+
+Sextant drew its interface with `system-ui` and its code with `ui-monospace…`: Cantarell or Ubuntu on Linux, San Francisco on macOS, Segoe UI on Windows, and a different monospace font (with a different cell width) on each. Screenshots, the documentation and bug reports looked different per machine, and some Linux setups fell back to a poor monospace font in the terminal. The user decided that Sextant should look the same on Linux, macOS and Windows, and that people must still be able to use their own fonts.
+
+## Decision
+
+- **Bundled fonts.** Fira Sans (interface) and Fira Mono (terminal, YAML editor, logs, code) are bundled as WOFF2 files from the npm packages `@fontsource/fira-sans` and `@fontsource/fira-mono` (regular dependencies, Google Fonts builds). Vite emits them into `dist/`, which the `sextant` binary embeds; nothing is fetched at run time and the app CSP (`font-src 'self' data:`) needed no change. `src/styles/fonts.css` declares only what the CSS uses: Sans 400/500/600/700 and 400 italic, Mono 400/700; subsets latin, latin-ext (Polish, Turkish), cyrillic and cyrillic-ext (Russian, Ukrainian). Greek and Vietnamese are left out (no UI language needs them; the system font draws them). The WOFF2 files add about 630 KB to `dist/`; a page downloads a subset only when it shows one of its characters. Sans uses `font-display: swap`; Mono uses `block` so code does not jump from a fallback width.
+- **Tokens.** `--font-latin` starts with "Fira Sans", then the former system stack; the CJK stacks of `--font-ui` (per `<html lang>`) are built on it and keep the system's Chinese, Japanese and Korean fonts. `--font-mono` is the one monospace stack ("Fira Mono", then `ui-monospace…monospace`); every stylesheet uses it, none repeats a monospace list.
+- **Terminal.** xterm measures its cell once, on the font it is given. `useTerminal` creates the terminal (and starts the session, whose size depends on the cell) only once the monospace stack is loaded (`document.fonts.load`, regular and bold), or after `FONT_WAIT_MS` (1.5 s) on the system's monospace stack; when the font arrives later, or the setting changes, it sets `fontFamily` (xterm measures again) and refits.
+- **A choice in Settings -> Appearance.** "Interface font" and "Monospace font": Built-in (default), System default (the former stacks) or "Other installed font…", a searchable list (monospace families only for code, unless "Show all fonts") with each name drawn in its own font. The choice is the frontend-written `AppSettings.appearance` (`uiFont` / `monoFont`: `{kind: builtin|system|custom, family?}`), read leniently by the core (`settings/appearance.rs`: anything unknown, or a custom choice without a usable name, is the built-in font). The window applies it as inline `--font-latin` / `--font-mono` on `<html>` (`src/app/fonts.ts`): a custom family first, then the built-in and system stacks, so the CJK fallbacks still follow and a family missing on this computer (a settings file from another one) silently falls back to the built-in font (Settings says so). A family name is sanitised on both sides before it goes into CSS: quotes, backslashes, semicolons, braces and angle brackets dropped, control characters and white space runs made one space, at most 100 characters.
+- **Installed fonts.** A web view cannot list fonts (WebKitGTK has no font enumeration), so the window command `system_fonts` (`src-tauri/src/commands/fonts.rs`) reads the system font folders with `fontdb` (pure Rust, MIT; fontconfig's files are parsed, nothing is run) and returns family names and a monospace flag only, never paths, read once per run and cached. It is a window command only: no MCP tool and no extension method lists fonts (a test pins it).
+- **Licence.** Both fonts are under the SIL Open Font License 1.1 with no Reserved Font Name (the copyright lines: "Copyright (c) 2012-2015, The Mozilla Foundation and Telefonica S.A." for Fira Sans, "Copyright (c) 2012-2013, The Mozilla Corporation and Telefonica S.A." for Fira Mono; the fontsource LICENSE file names only "Google Inc."). The licence text with these lines is `src/assets/fonts/OFL.txt`, compiled into the app and shown in About Sextant; `THIRD_PARTY_NOTICES.md` lists the fonts.
+- **Extensions.** Extension frames get `--font-family` / `--font-mono` with the font names (`THEME_TOKENS`), re-read when the fonts change, but a frame cannot load the host's font files (its origin is opaque), so it draws with the fallbacks unless the font is installed; fonts are not bundled into extensions.
+
+## Why
+
+- Bundled fonts are the only way to the same look and the same terminal cell width on every OS; Fira is legible at small sizes, has a matching monospace, covers Latin and Cyrillic for the UI languages, and is OFL without a Reserved Font Name, so subsets may be shipped under its name.
+- npm packages were chosen over a CDN or a copy in the repository: no run-time fetch (the app works offline and the CSP stays closed), and updates come with the dependency.
+- CJK stays on system fonts: a bundled CJK font would add tens of megabytes.
+- A backend command was chosen over asking the user to type a family name: names are easy to get wrong and the web view gives no feedback.
+
+## Consequences
+
+- A new stylesheet uses `var(--font-mono)` for code; a new font weight or subset needs a rule in `src/styles/fonts.css` (and grows `dist/`).
+- Updating the fontsource packages may change the font versions; `src/assets/fonts/OFL.txt` and `THIRD_PARTY_NOTICES.md` name them.
+- Weights the CSS uses that are not bundled (Mono 500, 600) are drawn by the nearest bundled weight.

@@ -28,5 +28,6 @@
   "unknown": "unbekannt",
   "copy": "Versionsinfo kopieren",
   "copied": "Kopiert",
-  "copyFailed": "Kopieren in die Zwischenablage fehlgeschlagen"
+  "copyFailed": "Kopieren in die Zwischenablage fehlgeschlagen",
+  "fonts": "Schriften: Fira Sans und Fira Mono, SIL Open Font License 1.1"
 }

@@ -22,6 +22,10 @@ pub mod compare;
 pub use compare::CompareSettings;
 pub mod columns;
 pub use columns::{ColumnWidths, TableColumnWidths};
+pub mod logs;
+pub use logs::LogViewSettings;
+pub mod appearance;
+pub use appearance::{AppearanceSettings, FontChoice, FontKind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -370,6 +374,10 @@ pub struct AppSettings {
     /// Colour scheme of the YAML editors: `auto` (follows the app theme) or a scheme id. Owned by the frontend,
     /// which treats an unknown value as `auto`; kept as text so a value from another version never damages the file.
     pub editor_theme: String,
+    /// The interface and monospace fonts (ADR-0093). Written by the frontend; read leniently ([`appearance`]).
+    #[serde(with = "appearance::appearance_field")]
+    #[ts(as = "AppearanceSettings")]
+    pub appearance: AppearanceSettings,
     /// Look for a new Sextant release when the application starts (the "Check for updates" button works anyway).
     pub check_for_updates: bool,
     /// Closing the main window only hides it while the tray icon exists; quitting is "Quit" in the tray menu.
@@ -432,6 +440,11 @@ pub struct AppSettings {
     #[serde(with = "columns::column_widths_field")]
     #[ts(as = "std::collections::BTreeMap<String, TableColumnWidths>")]
     pub column_widths: ColumnWidths,
+    /// The logs view: wrapped lines or one line per entry, ANSI colours on or off. Written by the frontend; read
+    /// leniently ([`logs`]).
+    #[serde(with = "logs::logs_field")]
+    #[ts(as = "LogViewSettings")]
+    pub logs: LogViewSettings,
 }
 
 impl Default for AppSettings {
@@ -445,6 +458,7 @@ impl Default for AppSettings {
             window: WindowLayout::default(),
             helm_path: None,
             editor_theme: "auto".to_owned(),
+            appearance: AppearanceSettings::default(),
             check_for_updates: true,
             close_to_tray: false,
             mcp: McpSettings::default(),
@@ -463,6 +477,7 @@ impl Default for AppSettings {
             snippets: Vec::new(),
             compare: CompareSettings::default(),
             column_widths: ColumnWidths::new(),
+            logs: LogViewSettings::default(),
         }
     }
 }

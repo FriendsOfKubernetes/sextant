@@ -25,6 +25,7 @@ export function defaultAppSettings(): AppSettings {
     },
     helmPath: null,
     editorTheme: "auto",
+    appearance: { uiFont: { kind: "builtin" }, monoFont: { kind: "builtin" } },
     checkForUpdates: true,
     closeToTray: false,
     mcp: { enabled: false, port: 47391 },
@@ -48,6 +49,7 @@ export function defaultAppSettings(): AppSettings {
     snippets: [],
     compare: { ignorePaths: {} },
     columnWidths: {},
+    logs: { wrap: false, colours: true },
   };
 }
 

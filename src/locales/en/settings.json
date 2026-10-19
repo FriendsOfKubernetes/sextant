@@ -80,5 +80,26 @@
     "title": "Terminal",
     "nodeShellImage": "Node shell image",
     "nodeShellImageHint": "Image of the temporary privileged pod behind \"Shell\" on a node. It needs nsenter (busybox has it); the shell itself is the node's. AI agents never get a node shell."
+  },
+  "fonts": {
+    "ui": "Interface font",
+    "mono": "Monospace font",
+    "monoHint": "Terminal, YAML editor, logs and code.",
+    "kinds": {
+      "builtin_ui": "Built-in (Fira Sans)",
+      "builtin_mono": "Built-in (Fira Mono)",
+      "system": "System default",
+      "custom": "Other installed font…"
+    },
+    "search": "Search fonts",
+    "searchLabel": "Search: {{font}}",
+    "list": "{{font}}: installed fonts",
+    "showAll": "Show all fonts, not only monospace",
+    "proportionalHint": "Proportional fonts break the terminal's column grid and the alignment of code; pick a monospace font for them.",
+    "loading": "Reading the installed fonts…",
+    "none": "No font matches.",
+    "failed": "The installed fonts could not be read.",
+    "notInstalled": "{{family}} is not installed on this computer; the built-in font is used.",
+    "current": "Chosen: {{family}}"
   }
 }

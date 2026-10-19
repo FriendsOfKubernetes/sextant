@@ -1,6 +1,7 @@
 // One function per backend command (interfaces.md, "Commands"). Argument names are the camelCase names the
 // Rust commands expect. Every function rejects with `ApiError`.
 import type { AboutInfo } from "./generated/AboutInfo";
+import type { SystemFont } from "./generated/SystemFont";
 import type { AccessAnswer } from "./generated/AccessAnswer";
 import type { AccessPreset } from "./generated/AccessPreset";
 import type { AccessQuery } from "./generated/AccessQuery";
@@ -392,6 +393,11 @@ export const settings = {
 /** What "About Sextant" shows about the machine (no paths, no user names). */
 export const about = {
   info: () => call<AboutInfo>("about_info"),
+};
+
+/** The font families installed on this computer (names only, read once per run), for Settings -> Appearance. */
+export const fonts = {
+  system: () => call<SystemFont[]>("system_fonts"),
 };
 
 export const files = {

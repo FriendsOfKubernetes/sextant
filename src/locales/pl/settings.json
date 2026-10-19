@@ -80,5 +80,26 @@
     "title": "Terminal",
     "nodeShellImage": "Obraz powłoki węzła",
     "nodeShellImageHint": "Obraz tymczasowego uprzywilejowanego Poda używanego przez polecenie „Powłoka” na węźle. Wymaga programu nsenter (zawiera go busybox); sama powłoka należy do węzła. Agenci AI nigdy nie otrzymują powłoki węzła."
+  },
+  "fonts": {
+    "ui": "Czcionka interfejsu",
+    "mono": "Czcionka o stałej szerokości",
+    "monoHint": "Terminal, edytor YAML, logi i kod.",
+    "kinds": {
+      "builtin_ui": "Wbudowana (Fira Sans)",
+      "builtin_mono": "Wbudowana (Fira Mono)",
+      "system": "Domyślna systemowa",
+      "custom": "Inna zainstalowana czcionka…"
+    },
+    "search": "Szukaj czcionek",
+    "searchLabel": "Szukaj: {{font}}",
+    "list": "{{font}}: zainstalowane czcionki",
+    "showAll": "Pokaż wszystkie czcionki, nie tylko o stałej szerokości",
+    "proportionalHint": "Czcionki proporcjonalne psują siatkę kolumn terminala i wyrównanie kodu; wybierz czcionkę o stałej szerokości.",
+    "loading": "Odczytywanie zainstalowanych czcionek…",
+    "none": "Żadna czcionka nie pasuje.",
+    "failed": "Nie udało się odczytać zainstalowanych czcionek.",
+    "notInstalled": "Czcionka {{family}} nie jest zainstalowana na tym komputerze; używana jest czcionka wbudowana.",
+    "current": "Wybrana: {{family}}"
   }
 }

@@ -152,7 +152,7 @@
 }
 
 .cln-field__text {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono);
 }
 
 .cln-ages {

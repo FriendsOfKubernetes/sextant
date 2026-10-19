@@ -28,5 +28,6 @@
   "unknown": "unknown",
   "copy": "Copy version info",
   "copied": "Copied",
-  "copyFailed": "Could not copy to the clipboard"
+  "copyFailed": "Could not copy to the clipboard",
+  "fonts": "Fonts: Fira Sans and Fira Mono, SIL Open Font License 1.1"
 }

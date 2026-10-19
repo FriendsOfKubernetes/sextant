@@ -148,7 +148,7 @@
 }
 
 .sec-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -174,7 +174,7 @@
   padding: 6px 8px;
   max-width: 100%;
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   background: var(--color-hover);
   border-radius: 4px;

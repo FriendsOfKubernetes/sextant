@@ -28,5 +28,6 @@
   "unknown": "неизвестно",
   "copy": "Скопировать сведения о версии",
   "copied": "Скопировано",
-  "copyFailed": "Не удалось скопировать в буфер обмена"
+  "copyFailed": "Не удалось скопировать в буфер обмена",
+  "fonts": "Шрифты: Fira Sans и Fira Mono, SIL Open Font License 1.1"
 }

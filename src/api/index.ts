@@ -16,6 +16,7 @@ export const api = {
   helm: commands.helm,
   settings: commands.settings,
   about: commands.about,
+  fonts: commands.fonts,
   files: commands.files,
   argocd: commands.argocd,
   gitopsInstall: commands.gitopsInstall,

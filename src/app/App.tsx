@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { resetStreams, useSettings } from "../api";
 import { setLanguage } from "../i18n";
 import { AppShell } from "../layout";
+import { useApplyFonts } from "./fonts";
 import { useApplyTheme } from "./theme";
 import { useLayoutPersistence } from "./useLayoutPersistence";
 
@@ -11,6 +12,7 @@ export function App() {
   void resetStreams();
   const { settings } = useSettings();
   useApplyTheme(settings?.theme ?? "system");
+  useApplyFonts(settings?.appearance);
   useLayoutPersistence(settings);
   const language = settings?.language;
   useEffect(() => {

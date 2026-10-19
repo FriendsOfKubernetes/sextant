@@ -124,6 +124,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::tray::tray_status,
         commands::tray::tray_set_texts,
         commands::about::about_info,
+        commands::fonts::system_fonts,
         commands::gitops_install::gitops_install_versions,
         commands::gitops_install::gitops_install_prepare,
         commands::gitops_install::gitops_install_start,

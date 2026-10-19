@@ -184,7 +184,7 @@
 }
 
 .compare-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .compare-summary {

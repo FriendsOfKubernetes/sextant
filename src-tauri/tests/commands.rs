@@ -99,6 +99,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("tray_status", None),
     ("tray_set_texts", Some("texts")),
     ("about_info", None),
+    ("system_fonts", None),
     ("gitops_install_versions", Some("tool")),
     ("gitops_install_prepare", Some("clusterId")),
     ("gitops_install_start", Some("clusterId")),
@@ -279,6 +280,23 @@ fn without_a_tray_icon_the_window_is_told_the_tray_is_unavailable() {
     // The mock runtime never creates a tray icon, like a Linux desktop without AppIndicator.
     let status = invoke(&h, "tray_status", json!({})).unwrap();
     assert_eq!(status, json!({ "available": false }));
+}
+
+#[test]
+fn system_fonts_lists_family_names_only() {
+    let h = harness();
+    let fonts = invoke(&h, "system_fonts", json!({})).unwrap();
+    // A build machine may have no fonts; every entry is a name and a flag, never a path.
+    for font in fonts.as_array().unwrap() {
+        let mut keys: Vec<_> = font.as_object().unwrap().keys().cloned().collect();
+        keys.sort();
+        assert_eq!(keys, ["family", "monospace"], "{font}");
+        assert!(font["monospace"].is_boolean(), "{font}");
+        let family = font["family"].as_str().unwrap();
+        assert!(!family.is_empty() && !family.contains('/'), "{font}");
+    }
+    // The second call is answered from the cache, the same list.
+    assert_eq!(invoke(&h, "system_fonts", json!({})).unwrap(), fonts);
 }
 
 #[test]

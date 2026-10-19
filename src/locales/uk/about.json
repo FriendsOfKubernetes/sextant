@@ -28,5 +28,6 @@
   "unknown": "невідомо",
   "copy": "Копіювати відомості про версію",
   "copied": "Скопійовано",
-  "copyFailed": "Не вдалося скопіювати в буфер обміну"
+  "copyFailed": "Не вдалося скопіювати в буфер обміну",
+  "fonts": "Шрифти: Fira Sans і Fira Mono, SIL Open Font License 1.1"
 }

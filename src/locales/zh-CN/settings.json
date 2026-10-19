@@ -80,5 +80,26 @@
     "title": "终端",
     "nodeShellImage": "节点 Shell 镜像",
     "nodeShellImageHint": "节点上“Shell”所使用的临时特权 Pod 的镜像。该镜像需要包含 nsenter（busybox 中就有）；Shell 本身来自节点。AI 智能体永远无法获得节点 Shell。"
+  },
+  "fonts": {
+    "ui": "界面字体",
+    "mono": "等宽字体",
+    "monoHint": "终端、YAML 编辑器、日志和代码。",
+    "kinds": {
+      "builtin_ui": "内置（Fira Sans）",
+      "builtin_mono": "内置（Fira Mono）",
+      "system": "系统默认",
+      "custom": "其他已安装字体…"
+    },
+    "search": "搜索字体",
+    "searchLabel": "搜索：{{font}}",
+    "list": "{{font}}：已安装字体",
+    "showAll": "显示所有字体，而不只是等宽字体",
+    "proportionalHint": "比例字体会打乱终端的列网格和代码对齐；请选择等宽字体。",
+    "loading": "正在读取已安装字体…",
+    "none": "没有匹配的字体。",
+    "failed": "无法读取已安装字体。",
+    "notInstalled": "此电脑未安装 {{family}}，将使用内置字体。",
+    "current": "已选择：{{family}}"
   }
 }

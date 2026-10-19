@@ -4,7 +4,7 @@
   padding-left: 18px;
   max-height: 240px;
   overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 

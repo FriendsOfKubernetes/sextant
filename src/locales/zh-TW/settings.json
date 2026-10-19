@@ -80,5 +80,26 @@
     "title": "終端機",
     "nodeShellImage": "節點 Shell 映像檔",
     "nodeShellImageHint": "節點上「Shell」所使用之暫時特權 Pod 的映像檔。此映像檔需要包含 nsenter（busybox 就有）；Shell 本身則來自節點。AI 代理程式永遠無法取得節點 Shell。"
+  },
+  "fonts": {
+    "ui": "介面字型",
+    "mono": "等寬字型",
+    "monoHint": "終端機、YAML 編輯器、日誌和程式碼。",
+    "kinds": {
+      "builtin_ui": "內建（Fira Sans）",
+      "builtin_mono": "內建（Fira Mono）",
+      "system": "系統預設",
+      "custom": "其他已安裝字型…"
+    },
+    "search": "搜尋字型",
+    "searchLabel": "搜尋：{{font}}",
+    "list": "{{font}}：已安裝字型",
+    "showAll": "顯示所有字型，而不只是等寬字型",
+    "proportionalHint": "比例字型會打亂終端機的欄格線與程式碼對齊；請選擇等寬字型。",
+    "loading": "正在讀取已安裝字型…",
+    "none": "沒有符合的字型。",
+    "failed": "無法讀取已安裝字型。",
+    "notInstalled": "這台電腦未安裝 {{family}}，將使用內建字型。",
+    "current": "已選擇：{{family}}"
   }
 }

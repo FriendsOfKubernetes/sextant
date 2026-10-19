@@ -28,5 +28,6 @@
   "unknown": "inconnu",
   "copy": "Copier les informations de version",
   "copied": "Copié",
-  "copyFailed": "Impossible de copier dans le presse-papiers"
+  "copyFailed": "Impossible de copier dans le presse-papiers",
+  "fonts": "Polices : Fira Sans et Fira Mono, SIL Open Font License 1.1"
 }

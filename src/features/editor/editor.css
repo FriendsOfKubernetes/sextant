@@ -58,7 +58,7 @@
 }
 
 .yaml-editor .cm-scroller {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 /* Holds the editor; hidden (but kept) while a dry-run preview is shown. */
@@ -100,7 +100,7 @@
 }
 
 .yaml-editor .schema-doc__type {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .yaml-editor .schema-doc__required {
@@ -142,7 +142,7 @@
 .yaml-editor .schema-explain__name {
   border: none;
   padding: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   text-decoration: underline;
 }
 

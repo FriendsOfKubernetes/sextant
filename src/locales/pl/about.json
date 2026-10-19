@@ -28,5 +28,6 @@
   "unknown": "nieznany",
   "copy": "Kopiuj informacje o wersji",
   "copied": "Skopiowano",
-  "copyFailed": "Nie można skopiować do schowka"
+  "copyFailed": "Nie można skopiować do schowka",
+  "fonts": "Czcionki: Fira Sans i Fira Mono, SIL Open Font License 1.1"
 }

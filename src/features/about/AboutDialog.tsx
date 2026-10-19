@@ -1,4 +1,4 @@
-// "About Sextant": icon, version and how this copy was installed, licence, links, the check for updates (the one of
+// "About Sextant": icon, version and how this copy was installed, licence (and the bundled fonts' licence), links, the check for updates (the one of
 // Settings → Updates) and "Copy version info" for a bug report.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import logoUrl from "../../assets/sextant.svg";
 import { Button, Dialog } from "../../components";
 import { checkForUpdates, useAppInfo, useUpdates } from "../updates/store";
 import { ReleasePageButton, UpdateDetails, UpdateError } from "../updates/UpdateDetails";
+import fontLicense from "../../assets/fonts/OFL.txt?raw";
 import { ABOUT_LINKS } from "./links";
 import { buildKey, versionInfoText } from "./versionInfo";
 import "./about.css";
@@ -98,6 +99,13 @@ function AboutBody() {
       <p className="about__text">{t("about:tagline")}</p>
       <p className="about__text">{t("about:license", { license })}</p>
       <p className="about__text about__text--muted">{copyright}</p>
+      {/* The bundled fonts' copyright and licence travel with the app (ADR-0093). */}
+      <details className="about__fonts">
+        <summary>{t("about:fonts")}</summary>
+        <pre className="about__license-text" tabIndex={0}>
+          {fontLicense}
+        </pre>
+      </details>
 
       <div className="about__links" role="group" aria-label={t("about:links")}>
         {ABOUT_LINKS.map((link) => (

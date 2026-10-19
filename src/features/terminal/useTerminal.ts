@@ -13,6 +13,14 @@ import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { api, openStream, toApiError, type ApiError, type StreamChannel, type TermPayload } from "../../api";
+import {
+  currentMonoStack,
+  fontLoaded,
+  loadFont,
+  onMonoFontChange,
+  SYSTEM_MONO_STACK,
+  whenFontLoaded,
+} from "../../app/fonts";
 import { i18n } from "../../i18n";
 import { isControl, isInvisible } from "./text";
 
@@ -53,6 +61,9 @@ export interface UseTerminalOptions {
 }
 
 const DEFAULT_COLS = 80;
+const FONT_SIZE = 13;
+/** How long a new terminal waits for its monospace font before it starts on the system's. */
+export const FONT_WAIT_MS = 1500;
 const DEFAULT_ROWS = 24;
 /** The initial input is typed once the shell has been quiet this long after printing (its prompt is up). */
 const INPUT_QUIET_MS = 300;
@@ -91,14 +102,33 @@ export function useTerminal(
   /** Sends to the current session (set while one runs). */
   const sendRef = useRef<(data: string) => void>(() => undefined);
 
-  // The xterm instance lives as long as the component.
+  // The xterm instance lives as long as the component. xterm measures its cell once, on the font it is given: it is
+  // created only once the monospace font (`--font-mono`, the bundled Fira Mono by default) is loaded, or on the system
+  // stack after FONT_WAIT_MS, and switches (re-measures and refits) when that font arrives later or the setting
+  // changes.
   useEffect(() => {
     const el = container.current;
     if (!el) return;
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
+    const target = currentMonoStack();
+    if (fontLoaded(target, FONT_SIZE)) cleanup = createTerminal(el, target);
+    else
+      void loadFont(target, FONT_SIZE, FONT_WAIT_MS).then((ok) => {
+        if (!disposed) cleanup = createTerminal(el, ok ? target : SYSTEM_MONO_STACK);
+      });
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
+  }, [container]);
+
+  /** Creates the xterm in `el` on `fontFamily`; returns its cleanup. */
+  function createTerminal(el: HTMLElement, fontFamily: string): () => void {
     const term = new Terminal({
       cursorBlink: true,
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
-      fontSize: 13,
+      fontFamily,
+      fontSize: FONT_SIZE,
       scrollback: 10_000,
       allowProposedApi: false,
       theme: themeFromCss(el),
@@ -127,14 +157,30 @@ export function useTerminal(
     });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
+    // Follow the monospace font: switch once the wanted stack is loaded (the cell is measured again), then refit.
+    let disposed = false;
+    let wanted = currentMonoStack();
+    const follow = (stack: string) => {
+      wanted = stack;
+      void whenFontLoaded(stack, FONT_SIZE).then(() => {
+        if (disposed || wanted !== stack || term.options.fontFamily === stack) return;
+        term.options.fontFamily = stack;
+        safeFit(fit);
+      });
+    };
+    if (fontFamily !== wanted) follow(wanted);
+    const unfollow = onMonoFontChange(follow);
+
     return () => {
+      disposed = true;
+      unfollow();
       themeObserver.disconnect();
       hint();
       fitRef.current = null;
       setTerminal(null);
       term.dispose();
     };
-  }, [container]);
+  }
 
   // One session per attempt.
   useEffect(() => {

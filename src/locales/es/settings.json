@@ -80,5 +80,26 @@
     "title": "Terminal",
     "nodeShellImage": "Imagen del shell de nodo",
     "nodeShellImageHint": "Imagen del Pod privilegiado temporal que hay detrás de “Shell” en un nodo. Necesita nsenter (busybox lo incluye); el shell en sí es el del nodo. Los agentes de IA nunca obtienen un shell de nodo."
+  },
+  "fonts": {
+    "ui": "Fuente de la interfaz",
+    "mono": "Fuente monoespaciada",
+    "monoHint": "Terminal, editor YAML, registros y código.",
+    "kinds": {
+      "builtin_ui": "Integrada (Fira Sans)",
+      "builtin_mono": "Integrada (Fira Mono)",
+      "system": "Predeterminada del sistema",
+      "custom": "Otra fuente instalada…"
+    },
+    "search": "Buscar fuentes",
+    "searchLabel": "Buscar: {{font}}",
+    "list": "{{font}}: fuentes instaladas",
+    "showAll": "Mostrar todas las fuentes, no solo las monoespaciadas",
+    "proportionalHint": "Las fuentes proporcionales rompen la cuadrícula de columnas del terminal y la alineación del código; elige una fuente monoespaciada.",
+    "loading": "Leyendo las fuentes instaladas…",
+    "none": "Ninguna fuente coincide.",
+    "failed": "No se pudieron leer las fuentes instaladas.",
+    "notInstalled": "{{family}} no está instalada en este equipo; se usa la fuente integrada.",
+    "current": "Elegida: {{family}}"
   }
 }

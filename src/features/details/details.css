@@ -102,7 +102,7 @@
 
 .dt-pre {
   margin: 0;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -146,7 +146,7 @@
 }
 
 .dt-annotations__value--long {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
   white-space: pre-wrap;
 }
@@ -212,7 +212,7 @@
 }
 
 .dt-yaml .cm-scroller {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
 }
 
 /* Container tabs (pods.tsx): the name, a mark for init containers, the state and the restarts in one row. */

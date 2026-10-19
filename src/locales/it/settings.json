@@ -80,5 +80,26 @@
     "title": "Terminale",
     "nodeShellImage": "Immagine della shell del nodo",
     "nodeShellImageHint": "Immagine del pod privilegiato temporaneo usato da “Shell” su un nodo. Deve contenere nsenter (busybox lo include); la shell vera e propria è quella del nodo. Gli agenti IA non ottengono mai una shell del nodo."
+  },
+  "fonts": {
+    "ui": "Carattere dell’interfaccia",
+    "mono": "Carattere a spaziatura fissa",
+    "monoHint": "Terminale, editor YAML, log e codice.",
+    "kinds": {
+      "builtin_ui": "Integrato (Fira Sans)",
+      "builtin_mono": "Integrato (Fira Mono)",
+      "system": "Predefinito di sistema",
+      "custom": "Altro carattere installato…"
+    },
+    "search": "Cerca caratteri",
+    "searchLabel": "Cerca: {{font}}",
+    "list": "{{font}}: caratteri installati",
+    "showAll": "Mostra tutti i caratteri, non solo a spaziatura fissa",
+    "proportionalHint": "I caratteri proporzionali rompono la griglia di colonne del terminale e l’allineamento del codice; scegli un carattere a spaziatura fissa.",
+    "loading": "Lettura dei caratteri installati…",
+    "none": "Nessun carattere corrisponde.",
+    "failed": "Impossibile leggere i caratteri installati.",
+    "notInstalled": "{{family}} non è installato su questo computer; si usa il carattere integrato.",
+    "current": "Scelto: {{family}}"
   }
 }

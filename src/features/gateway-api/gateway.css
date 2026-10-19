@@ -103,7 +103,7 @@
 }
 
 .gw-rule__line {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -227,7 +227,7 @@
 }
 
 .gw-address__url {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
 }
 
 /* A condition ("header x-env=prod") or a share stays in one piece. */
@@ -347,7 +347,7 @@
 
 .gw-check__url,
 .gw-check__headers {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
@@ -412,7 +412,7 @@
 
 .gw-step__match {
   margin-top: 2px;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 

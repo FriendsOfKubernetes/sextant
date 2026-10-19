@@ -28,5 +28,6 @@
   "unknown": "desconocido",
   "copy": "Copiar información de versión",
   "copied": "Copiado",
-  "copyFailed": "No se pudo copiar al portapapeles"
+  "copyFailed": "No se pudo copiar al portapapeles",
+  "fonts": "Fuentes: Fira Sans y Fira Mono, SIL Open Font License 1.1"
 }

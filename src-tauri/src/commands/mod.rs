@@ -11,6 +11,7 @@ pub mod clusters;
 pub mod compare;
 pub mod cost;
 pub mod files;
+pub mod fonts;
 pub mod gitops_install;
 pub mod helm;
 pub mod kubeconfig;

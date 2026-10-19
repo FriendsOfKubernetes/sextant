@@ -93,7 +93,7 @@
   width: 100%;
   justify-content: flex-start;
   text-align: left;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .terminal__toolbar {
@@ -130,7 +130,7 @@
 
 .terminal-form__field input[type="text"] {
   width: 100%;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .terminal-form__row {
@@ -158,7 +158,7 @@
 }
 
 .terminal-form__mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   overflow-wrap: anywhere;
 }
 

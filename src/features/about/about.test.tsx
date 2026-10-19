@@ -96,6 +96,18 @@ describe("what it shows", () => {
     expect(within(dialog).getByText(/Sextant contributors/).textContent).not.toContain("Apache");
   });
 
+  it("carries the bundled fonts' copyright and licence (OFL-1.1)", async () => {
+    setup({}, { app: { version: "0.6.1", bundleKind: "appimage" } });
+    render(<AboutHost />);
+    const dialog = await openFromTray();
+    const fonts = await within(dialog).findByText("Fonts: Fira Sans and Fira Mono, SIL Open Font License 1.1");
+    const details = fonts.closest("details");
+    if (!details) throw new Error("the font licence is not in a details element");
+    expect(details).toHaveTextContent("Copyright (c) 2012-2015, The Mozilla Foundation and Telefonica S.A.");
+    expect(details).toHaveTextContent("Copyright (c) 2012-2013, The Mozilla Corporation and Telefonica S.A.");
+    expect(details).toHaveTextContent("SIL OPEN FONT LICENSE Version 1.1");
+  });
+
   it.each([
     [{ bundleKind: null, devBuild: true }, "development build"],
     [{ bundleKind: null, devBuild: false }, "not installed from a release package"],

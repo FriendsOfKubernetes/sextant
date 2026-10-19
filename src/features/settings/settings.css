@@ -72,6 +72,19 @@
   font: inherit;
 }
 
+/* The installed-font picker (FontSettings): a search field over a list whose names are drawn in their own fonts. */
+.settings__font-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+}
+
+.settings__font-list {
+  width: 100%;
+  font-size: 14px;
+}
+
 .settings__select {
   min-width: 200px;
   max-width: 100%;
@@ -88,12 +101,12 @@
 .settings__path {
   flex: 1 1 240px;
   min-width: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 .settings__status {
   margin: 8px 0 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   word-break: break-all;
 }
@@ -120,7 +133,7 @@
 .settings__source-path {
   flex: 1 1 200px;
   min-width: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   word-break: break-all;
 }
@@ -188,7 +201,7 @@
 }
 
 .settings-banner__details {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--color-text-muted);
 }

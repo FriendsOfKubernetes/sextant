@@ -80,5 +80,26 @@
     "title": "터미널",
     "nodeShellImage": "노드 셸 이미지",
     "nodeShellImageHint": "노드의 “셸” 뒤에서 실행되는 임시 권한 있는 Pod의 이미지입니다. nsenter가 필요하며(busybox에 포함됨), 셸 자체는 노드의 셸입니다. AI 에이전트는 노드 셸을 사용할 수 없습니다."
+  },
+  "fonts": {
+    "ui": "인터페이스 글꼴",
+    "mono": "고정폭 글꼴",
+    "monoHint": "터미널, YAML 편집기, 로그 및 코드.",
+    "kinds": {
+      "builtin_ui": "기본 제공 (Fira Sans)",
+      "builtin_mono": "기본 제공 (Fira Mono)",
+      "system": "시스템 기본값",
+      "custom": "설치된 다른 글꼴…"
+    },
+    "search": "글꼴 검색",
+    "searchLabel": "검색: {{font}}",
+    "list": "{{font}}: 설치된 글꼴",
+    "showAll": "고정폭뿐 아니라 모든 글꼴 표시",
+    "proportionalHint": "비례 글꼴은 터미널의 열 격자와 코드 정렬을 깨뜨립니다. 고정폭 글꼴을 선택하세요.",
+    "loading": "설치된 글꼴을 읽는 중…",
+    "none": "일치하는 글꼴이 없습니다.",
+    "failed": "설치된 글꼴을 읽을 수 없습니다.",
+    "notInstalled": "{{family}}이(가) 이 컴퓨터에 설치되어 있지 않아 기본 제공 글꼴을 사용합니다.",
+    "current": "선택됨: {{family}}"
   }
 }

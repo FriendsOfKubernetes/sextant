@@ -80,5 +80,26 @@
     "title": "Terminal",
     "nodeShellImage": "Image du shell de nœud",
     "nodeShellImageHint": "Image du pod privilégié temporaire utilisé par « Shell » sur un nœud. Elle doit contenir nsenter (c'est le cas de busybox) ; le shell lui-même est celui du nœud. Les agents IA n'obtiennent jamais de shell de nœud."
+  },
+  "fonts": {
+    "ui": "Police de l’interface",
+    "mono": "Police à chasse fixe",
+    "monoHint": "Terminal, éditeur YAML, journaux et code.",
+    "kinds": {
+      "builtin_ui": "Intégrée (Fira Sans)",
+      "builtin_mono": "Intégrée (Fira Mono)",
+      "system": "Police du système",
+      "custom": "Autre police installée…"
+    },
+    "search": "Rechercher une police",
+    "searchLabel": "Rechercher : {{font}}",
+    "list": "{{font}} : polices installées",
+    "showAll": "Afficher toutes les polices, pas seulement à chasse fixe",
+    "proportionalHint": "Les polices proportionnelles cassent la grille de colonnes du terminal et l’alignement du code ; choisissez une police à chasse fixe.",
+    "loading": "Lecture des polices installées…",
+    "none": "Aucune police ne correspond.",
+    "failed": "Impossible de lire les polices installées.",
+    "notInstalled": "{{family}} n’est pas installée sur cet ordinateur ; la police intégrée est utilisée.",
+    "current": "Choisie : {{family}}"
   }
 }

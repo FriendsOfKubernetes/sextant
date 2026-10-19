@@ -1,13 +1,18 @@
 // What a frame gets of Sextant's look: the effective theme (`<html data-theme>`, set by `useApplyTheme`) and the
 // values of the CSS variables in `THEME_TOKENS`, read again whenever the theme changes.
 import { useEffect, useMemo, useState } from "react";
+import { BUILTIN_MONO_STACK, BUILTIN_UI_STACK } from "../app/fonts";
 import { THEME_TOKENS } from "./protocol";
 
 export type FrameTheme = "light" | "dark";
 
-/** The body font of global.css, for when the computed style has none (tests). */
-const FONT_FAMILY = 'system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", sans-serif';
-const FONT_MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+/**
+ * The fonts of global.css, for when the computed style has none (tests). They name the bundled Fira Sans / Fira Mono
+ * (or the font the user chose, ADR-0093), but a frame cannot load the host's font files (its origin is opaque), so the
+ * system fallbacks after them are what an extension draws with unless the font is installed.
+ */
+const FONT_FAMILY = `${BUILTIN_UI_STACK}, sans-serif`;
+const FONT_MONO = BUILTIN_MONO_STACK;
 
 function currentTheme(): FrameTheme {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
@@ -26,16 +31,20 @@ export function readThemeTokens(): Record<string, string> {
   return tokens;
 }
 
-/** The effective theme and its tokens, updated when `<html data-theme>` changes. */
+/** The effective theme and its tokens, updated when `<html data-theme>` or its inline style (the fonts) changes. */
 export function useFrameTheme(): { theme: FrameTheme; tokens: Record<string, string> } {
   const [theme, setTheme] = useState(currentTheme);
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
-    const observer = new MutationObserver(() => setTheme(currentTheme()));
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const observer = new MutationObserver(() => {
+      setTheme(currentTheme());
+      setRevision((n) => n + 1);
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "style"] });
     setTheme(currentTheme());
     return () => observer.disconnect();
   }, []);
-  // `theme` is the cause: the tokens are re-read when it changes.
-  const tokens = useMemo(() => (void theme, readThemeTokens()), [theme]);
+  // `theme` and `revision` are the cause: the tokens are re-read when they change.
+  const tokens = useMemo(() => (void theme, void revision, readThemeTokens()), [theme, revision]);
   return { theme, tokens };
 }

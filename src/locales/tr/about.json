@@ -28,5 +28,6 @@
   "unknown": "bilinmiyor",
   "copy": "Sürüm bilgilerini kopyala",
   "copied": "Kopyalandı",
-  "copyFailed": "Panoya kopyalanamadı"
+  "copyFailed": "Panoya kopyalanamadı",
+  "fonts": "Yazı tipleri: Fira Sans ve Fira Mono, SIL Open Font License 1.1"
 }
