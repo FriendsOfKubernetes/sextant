@@ -21,6 +21,7 @@
     "failed": "Помилка сеансу: {{message}}"
   },
   "reconnect": "Перепідключити",
+  "leaveHint": "Ctrl+Shift+E — вийти з термінала",
   "terminal": "Термінал",
   "node": {
     "confirmTitle": "Відкрити оболонку на вузлі {{node}}?",

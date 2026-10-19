@@ -1,5 +1,7 @@
 // WCAG AA contrast of the theme tokens (src/styles/global.css), computed from their values: axe cannot judge colours
 // in jsdom. Text needs 4.5:1, focus rings and chart lines 3:1 (non-text contrast).
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { cssRule } from "../test/css";
 
@@ -50,6 +52,8 @@ function failures(tokens: Tokens): string[] {
     check(c("text-muted"), c(surface), 4.5, `muted text on ${surface}`);
     check(c("focus"), c(surface), 3, `focus ring on ${surface}`);
   }
+  // The edge of a text field or select identifies the control (non-text contrast); dividers are decorative.
+  for (const surface of SURFACES) check(c("control-border"), c(surface), 3, `control border on ${surface}`);
   for (const surface of ["main", "sidebar"]) {
     for (const overlay of ["hover", "selected"]) {
       const under = c(overlay, c(surface));
@@ -82,6 +86,22 @@ describe("theme contrast (WCAG AA)", () => {
       expect(`#${stroke(`.checkbox:${state}`)}`).toBe(LIGHT["--color-accent-text"]);
       expect(`#${stroke(`:root[data-theme="dark"] .checkbox:${state}`)}`).toBe(DARK["--color-accent-text"]);
     }
+  });
+
+  it("borders text fields and selects with the control border token, not the divider token", () => {
+    const sheets = Object.keys(import.meta.glob("/src/**/*.css"));
+    const offenders: string[] = [];
+    for (const sheet of sheets) {
+      const css = readFileSync(join(process.cwd(), sheet), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+        const control = /\b(input|select|textarea)\b|-input\b|__input\b|__search\b/.test(selector!);
+        if (control && /(^|;)\s*border(-color)?\s*:[^;]*var\(--color-border\)/.test(body!)) {
+          offenders.push(`${sheet}: ${selector!.trim()}`);
+        }
+      }
+    }
+    expect(sheets.length).toBeGreaterThan(10);
+    expect(offenders).toEqual([]);
   });
 
   it("measures what it claims: black on white is 21:1, the old light accent under white text failed", () => {

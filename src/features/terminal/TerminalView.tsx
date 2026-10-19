@@ -76,7 +76,15 @@ export function TerminalView({
           {t("terminal:local.kubeconfigNotice")}
         </div>
       )}
-      <div ref={container} className="terminal__screen" role="region" aria-label={label} />
+      <div className="terminal__body">
+        <div ref={container} className="terminal__screen" role="region" aria-label={label} />
+        {session.status === "running" && (
+          // Seen only while the focus is in the terminal (CSS); screen readers get the same as its description.
+          <div className="terminal__leave-hint" aria-hidden="true">
+            {t("terminal:leaveHint")}
+          </div>
+        )}
+      </div>
       <StatusBar session={session} connectingText={connectingText} onReconnect={reconnect} />
       {asking &&
         confirmReconnect?.(

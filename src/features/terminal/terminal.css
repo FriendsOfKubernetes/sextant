@@ -8,6 +8,32 @@
   background: var(--color-dock);
 }
 
+/* The screen and the leave-key hint laid over its corner, so showing the hint moves nothing. */
+.terminal__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.terminal__leave-hint {
+  position: absolute;
+  top: 4px;
+  right: 16px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-dock-header);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.terminal__body:focus-within .terminal__leave-hint {
+  visibility: visible;
+}
+
 .terminal__screen {
   flex: 1;
   min-height: 0;
@@ -272,10 +298,9 @@
   position: relative;
 }
 
+/* Placed by `usePopupPosition` (fixed, under the button, kept inside the window). */
 .terminal-snippets__menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
+  position: fixed;
   z-index: 20;
   display: flex;
   flex-direction: column;

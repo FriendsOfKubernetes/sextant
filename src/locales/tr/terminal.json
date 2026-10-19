@@ -21,6 +21,7 @@
     "failed": "Oturum başarısız oldu: {{message}}"
   },
   "reconnect": "Yeniden bağlan",
+  "leaveHint": "Ctrl+Shift+E — terminalden çık",
   "terminal": "Terminal",
   "node": {
     "confirmTitle": "{{node}} düğümünde kabuk açılsın mı?",

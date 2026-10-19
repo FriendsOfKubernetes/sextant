@@ -32,3 +32,5 @@
 - A new colour is a token in both themes and is added to the contrast test.
 - An IBus setup that binds Ctrl+Shift+E to emoji input (a default on several GNOME versions) takes the key before the window; such users change that IBus shortcut.
 - Screen-reader behaviour was checked through the accessibility tree and tests, not with every screen reader.
+
+Amended (after v0.15.1, #186): the leave key also has a visible hint over the terminal's corner while it has the focus; text fields and selects are edged with `--color-control-border` (3:1, checked by the contrast test, which also refuses `--color-border` on such a rule); a cluster icon's letters are white or black by contrast with its color.

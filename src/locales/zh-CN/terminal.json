@@ -21,6 +21,7 @@
     "failed": "会话失败：{{message}}"
   },
   "reconnect": "重新连接",
+  "leaveHint": "Ctrl+Shift+E — 离开终端",
   "terminal": "终端",
   "node": {
     "confirmTitle": "在节点 {{node}} 上打开 Shell？",

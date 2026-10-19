@@ -21,6 +21,7 @@
     "failed": "セッションが失敗しました: {{message}}"
   },
   "reconnect": "再接続",
+  "leaveHint": "Ctrl+Shift+E — ターミナルから離れる",
   "terminal": "ターミナル",
   "node": {
     "confirmTitle": "ノード {{node}} でシェルを開きますか?",

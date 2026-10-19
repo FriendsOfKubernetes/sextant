@@ -21,6 +21,7 @@
     "failed": "Sitzung fehlgeschlagen: {{message}}"
   },
   "reconnect": "Neu verbinden",
+  "leaveHint": "Ctrl+Shift+E — Terminal verlassen",
   "terminal": "Terminal",
   "node": {
     "confirmTitle": "Shell auf Knoten {{node}} öffnen?",

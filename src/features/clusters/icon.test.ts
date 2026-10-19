@@ -1,6 +1,18 @@
+import { render } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultAppSettings, type AppSettings, type ClusterInfo, type ClusterSettings } from "../../api";
-import { defaultClusterSettings, iconOf, normalizeIconText } from "./clusterSettings";
+import { ClusterAvatar } from "./ClusterAvatar";
+import {
+  CLUSTER_COLORS,
+  contrastRatio,
+  defaultClusterSettings,
+  iconOf,
+  INITIALS_DARK,
+  INITIALS_LIGHT,
+  initialsColorOn,
+  normalizeIconText,
+} from "./clusterSettings";
 import { IconImageError, readIconImage } from "./iconImage";
 
 const prod: ClusterInfo = {
@@ -110,5 +122,38 @@ describe("readIconImage", () => {
     decodeFails = true;
     await expect(readIconImage(file("image/png"))).rejects.toMatchObject({ code: "type" });
     expect(drawImage).not.toHaveBeenCalled();
+  });
+});
+
+describe("the letters on the label color", () => {
+  it("are light or dark, whichever contrasts more with the color", () => {
+    // Yellow and other light or mid colors take dark letters; red and dark ones keep white.
+    for (const light of ["#ffff00", "#ffd700", "#f0f0f0", "#fff", "#d6a01e", "#2aa3a3", "#48a868", "#3d90ce"]) {
+      expect(initialsColorOn(light), light).toBe(INITIALS_DARK);
+    }
+    for (const dark of ["#000000", "#123", "#ce3933", "#1e2124", "#5a2d82"]) {
+      expect(initialsColorOn(dark), dark).toBe(INITIALS_LIGHT);
+    }
+  });
+
+  it("reach 4.5:1 on every offered color and never lose to the other choice", () => {
+    for (const color of [...CLUSTER_COLORS, "#ffff00", "#00ffff", "#ff00ff", "#808080"]) {
+      const chosen = initialsColorOn(color);
+      const other = chosen === INITIALS_DARK ? INITIALS_LIGHT : INITIALS_DARK;
+      expect(contrastRatio(chosen, color), color).toBeGreaterThanOrEqual(contrastRatio(other, color)!);
+      if (CLUSTER_COLORS.includes(color)) expect(contrastRatio(chosen, color), color).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("stay white on a value that is not a hex color", () => {
+    expect(initialsColorOn("rebeccapurple")).toBe(INITIALS_LIGHT);
+  });
+
+  it("are drawn in the chosen color", () => {
+    const cluster = { ...defaultClusterSettings(), color: "#ffff00" };
+    const settings: AppSettings = { ...defaultAppSettings(), clusters: { [prod.id]: cluster } };
+    const { container } = render(createElement(ClusterAvatar, { cluster: prod, settings }));
+    const avatar = container.querySelector<HTMLElement>(".cluster-avatar")!;
+    expect(avatar.style.getPropertyValue("--cluster-text")).toBe(INITIALS_DARK);
   });
 });

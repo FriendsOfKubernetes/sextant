@@ -21,6 +21,7 @@
     "failed": "세션 실패: {{message}}"
   },
   "reconnect": "다시 연결",
+  "leaveHint": "Ctrl+Shift+E — 터미널에서 나가기",
   "terminal": "터미널",
   "node": {
     "confirmTitle": "노드 {{node}}에서 셸을 여시겠습니까?",

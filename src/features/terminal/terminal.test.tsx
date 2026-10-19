@@ -5,6 +5,7 @@ import { api, mockBackend, type KindRef, type KubeObject, type MockBackend } fro
 import { resetAppStore, useAppStore } from "../../app/store";
 import { Dock } from "../../layout/dock/Dock";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
+import { cssRule } from "../../test/css";
 import { getAction, getActionsFor, runAction } from "../actions/registry";
 import { useClustersStore } from "../clusters/clustersStore";
 import { CloudProblemView } from "../clusters/CloudClusters";
@@ -186,6 +187,30 @@ describe("Shell action", () => {
     await waitFor(() => expect(calls("term_resize").at(-1)).toMatchObject({ sessionId: sessionIds()[1] }));
     expect(calls("term_stop")).toContainEqual({ sessionId: sessionIds()[0] });
     expect(screen.queryByText(/Session ended/)).not.toBeInTheDocument();
+  });
+
+  it("shows the leave key over the screen's corner while the focus is in a running terminal", async () => {
+    render(<App />);
+    await runShell(pod("web", ["nginx"]));
+    const hint = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>(".terminal__leave-hint");
+      if (!found) throw new Error("no hint yet");
+      return found;
+    });
+    expect(hint).toHaveTextContent("Ctrl+Shift+E — leave the terminal");
+    // Screen readers have it as the input's description already; the visible one is laid over, so it moves nothing.
+    expect(hint).toHaveAttribute("aria-hidden", "true");
+    expect(cssRule("src/features/terminal/terminal.css", ".terminal__leave-hint")).toMatchObject({
+      position: "absolute",
+      visibility: "hidden",
+      "pointer-events": "none",
+    });
+    expect(cssRule("src/features/terminal/terminal.css", ".terminal__body:focus-within .terminal__leave-hint")).toEqual({
+      visibility: "visible",
+    });
+
+    act(() => backend.emit("term:term-1", { type: "exit", code: 0 }));
+    await waitFor(() => expect(document.querySelector(".terminal__leave-hint")).toBeNull());
   });
 
   it("shows a broken connection and a start failure with Reconnect", async () => {

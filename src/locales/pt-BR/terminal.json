@@ -21,6 +21,7 @@
     "failed": "Falha na sessão: {{message}}"
   },
   "reconnect": "Reconectar",
+  "leaveHint": "Ctrl+Shift+E — sair do terminal",
   "terminal": "Terminal",
   "node": {
     "confirmTitle": "Abrir um shell no nó {{node}}?",

@@ -21,6 +21,7 @@
     "failed": "Błąd sesji: {{message}}"
   },
   "reconnect": "Połącz ponownie",
+  "leaveHint": "Ctrl+Shift+E — opuść terminal",
   "terminal": "Terminal",
   "node": {
     "confirmTitle": "Otworzyć powłokę na węźle {{node}}?",

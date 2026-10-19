@@ -72,7 +72,7 @@
 .rbac-field select {
   height: var(--control-height);
   padding: 4px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   border-radius: 4px;
   background: var(--color-bg);
   color: inherit;

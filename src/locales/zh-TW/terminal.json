@@ -21,6 +21,7 @@
     "failed": "工作階段失敗：{{message}}"
   },
   "reconnect": "重新連線",
+  "leaveHint": "Ctrl+Shift+E — 離開終端機",
   "terminal": "終端機",
   "node": {
     "confirmTitle": "要在節點 {{node}} 上開啟 Shell 嗎？",

@@ -115,7 +115,7 @@
   overflow: hidden;
   border-radius: 8px;
   background: var(--cluster-color, var(--color-accent));
-  color: #ffffff;
+  color: var(--cluster-text, #ffffff);
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -353,7 +353,7 @@
 .clusters-field input {
   font: inherit;
   padding: 4px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   border-radius: 4px;
   background: var(--color-main);
   color: var(--color-text);
