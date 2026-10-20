@@ -143,7 +143,10 @@
     "apiGroups": "Grupos de API",
     "resourceNames": "Nombres de recursos",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Sonda",
+    "check": "Comprobación",
+    "timing": "Tiempos"
   },
   "pod": {
     "containers": "Contenedores",
@@ -230,5 +233,34 @@
     "length_one": "{{count}} carácter",
     "length_many": "{{count}} de caracteres",
     "length_other": "{{count}} caracteres"
+  },
+  "probes": {
+    "title": "Sondas",
+    "none": "Sin sondas",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "retraso inicial",
+    "period": "periodo",
+    "timeout": "tiempo de espera",
+    "success": "umbral de éxito",
+    "failure": "umbral de fallo",
+    "grace": "periodo de gracia",
+    "default": "valor predeterminado de Kubernetes",
+    "headers_one": "+{{count}} encabezado",
+    "headers_many": "+{{count}} encabezados",
+    "headers_other": "+{{count}} encabezados",
+    "grpcService": "servicio {{service}}",
+    "hint": {
+      "liveness_one": "El contenedor se reinicia tras aproximadamente {{count}} segundo de comprobaciones fallidas",
+      "liveness_many": "El contenedor se reinicia tras aproximadamente {{count}} segundos de comprobaciones fallidas",
+      "liveness_other": "El contenedor se reinicia tras aproximadamente {{count}} segundos de comprobaciones fallidas",
+      "readiness_one": "El Pod se marca como no listo tras aproximadamente {{count}} segundo de comprobaciones fallidas",
+      "readiness_many": "El Pod se marca como no listo tras aproximadamente {{count}} segundos de comprobaciones fallidas",
+      "readiness_other": "El Pod se marca como no listo tras aproximadamente {{count}} segundos de comprobaciones fallidas",
+      "startup_one": "El contenedor tiene aproximadamente {{count}} segundo para arrancar; después se reinicia",
+      "startup_many": "El contenedor tiene aproximadamente {{count}} segundos para arrancar; después se reinicia",
+      "startup_other": "El contenedor tiene aproximadamente {{count}} segundos para arrancar; después se reinicia"
+    }
   }
 }

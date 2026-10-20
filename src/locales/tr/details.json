@@ -143,7 +143,10 @@
     "apiGroups": "API grupları",
     "resourceNames": "Kaynak adları",
     "kind": "Tür",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Prob",
+    "check": "Denetim",
+    "timing": "Zamanlama"
   },
   "pod": {
     "containers": "Kapsayıcılar",
@@ -227,5 +230,30 @@
     "copied": "Kopyalandı",
     "length_one": "{{count}} karakter",
     "length_other": "{{count}} karakter"
+  },
+  "probes": {
+    "title": "Problar",
+    "none": "Prob yok",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "gecikme",
+    "period": "periyot",
+    "timeout": "zaman aşımı",
+    "success": "başarı eşiği",
+    "failure": "hata eşiği",
+    "grace": "sonlandırma süresi",
+    "default": "Kubernetes varsayılanı",
+    "headers_one": "+{{count}} başlık",
+    "headers_other": "+{{count}} başlık",
+    "grpcService": "servis {{service}}",
+    "hint": {
+      "liveness_one": "Denetimler yaklaşık {{count}} saniye başarısız olursa kapsayıcı yeniden başlatılır",
+      "liveness_other": "Denetimler yaklaşık {{count}} saniye başarısız olursa kapsayıcı yeniden başlatılır",
+      "readiness_one": "Denetimler yaklaşık {{count}} saniye başarısız olursa Pod hazır değil olarak işaretlenir",
+      "readiness_other": "Denetimler yaklaşık {{count}} saniye başarısız olursa Pod hazır değil olarak işaretlenir",
+      "startup_one": "Kapsayıcının başlamak için yaklaşık {{count}} saniyesi vardır, ardından yeniden başlatılır",
+      "startup_other": "Kapsayıcının başlamak için yaklaşık {{count}} saniyesi vardır, ardından yeniden başlatılır"
+    }
   }
 }

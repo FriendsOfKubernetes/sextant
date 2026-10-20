@@ -143,7 +143,10 @@
     "apiGroups": "Grupos de API",
     "resourceNames": "Nomes de recursos",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Sonda",
+    "check": "Verificação",
+    "timing": "Tempos"
   },
   "pod": {
     "containers": "Contêineres",
@@ -230,5 +233,34 @@
     "length_one": "{{count}} caractere",
     "length_many": "{{count}} caracteres",
     "length_other": "{{count}} caracteres"
+  },
+  "probes": {
+    "title": "Sondas",
+    "none": "Sem sondas",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "atraso inicial",
+    "period": "período",
+    "timeout": "tempo limite",
+    "success": "limiar de sucesso",
+    "failure": "limiar de falha",
+    "grace": "período de tolerância",
+    "default": "padrão do Kubernetes",
+    "headers_one": "+{{count}} cabeçalho",
+    "headers_many": "+{{count}} cabeçalhos",
+    "headers_other": "+{{count}} cabeçalhos",
+    "grpcService": "serviço {{service}}",
+    "hint": {
+      "liveness_one": "O contêiner é reiniciado após cerca de {{count}} segundo de verificações com falha",
+      "liveness_many": "O contêiner é reiniciado após cerca de {{count}} segundos de verificações com falha",
+      "liveness_other": "O contêiner é reiniciado após cerca de {{count}} segundos de verificações com falha",
+      "readiness_one": "O Pod é marcado como não pronto após cerca de {{count}} segundo de verificações com falha",
+      "readiness_many": "O Pod é marcado como não pronto após cerca de {{count}} segundos de verificações com falha",
+      "readiness_other": "O Pod é marcado como não pronto após cerca de {{count}} segundos de verificações com falha",
+      "startup_one": "O contêiner tem cerca de {{count}} segundo para iniciar; depois é reiniciado",
+      "startup_many": "O contêiner tem cerca de {{count}} segundos para iniciar; depois é reiniciado",
+      "startup_other": "O contêiner tem cerca de {{count}} segundos para iniciar; depois é reiniciado"
+    }
   }
 }

@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resetAppStore } from "../../app/store";
+import { resetAppStore, useAppStore } from "../../app/store";
+import { axeViolations } from "../../test/axe";
 import { layOutPopups, placed } from "../../test/popupLayout";
-import { watchBackend, type WatchBackend } from "../details/testing";
+import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { NamespaceFilter } from "./NamespaceFilter";
 import { resetNamespaceRestore } from "./namespaces";
 
@@ -64,5 +65,79 @@ describe("the namespace filter popup", () => {
     const { box, inside } = placed(openFilter());
     expect(box.bottom).toBe(596);
     expect(inside).toBe(true);
+  });
+});
+
+describe("the order of the namespace list (#219)", () => {
+  const NAMES = ["default", "kube-system", "shop", "payments", "web"];
+
+  /** The namespace names of the open list, top to bottom, with "|" where the separator is. */
+  function listed(dialog: HTMLElement): string[] {
+    const list = dialog.querySelector(".ns-filter__list")!;
+    return [...list.children].map((el) => (el.getAttribute("role") === "separator" ? "|" : (el.textContent ?? "")));
+  }
+
+  async function renderWithNamespaces(selected: string[] | null): Promise<HTMLElement> {
+    useAppStore.getState().setNamespaces("c1", selected);
+    render(
+      <main>
+        <NamespaceFilter clusterId="c1" />
+      </main>,
+    );
+    const id = await watchOf(wb, "Namespace");
+    emitSnapshot(
+      wb,
+      id,
+      NAMES.map((name) => ({ apiVersion: "v1", kind: "Namespace", metadata: { name, uid: name } })),
+    );
+    return screen.getByRole("button", { name: /^Namespaces: / });
+  }
+
+  function toggleOpen(button: HTMLElement): HTMLElement | null {
+    fireEvent.click(button);
+    return screen.queryByRole("dialog", { name: "Choose namespaces" });
+  }
+
+  it("lists the selected namespaces first on opening, does not move them while open, and sorts again on reopening", async () => {
+    const button = await renderWithNamespaces(["web", "payments"]);
+    const dialog = toggleOpen(button)!;
+    expect(listed(dialog)).toEqual(["payments", "web", "|", "default", "kube-system", "shop"]);
+
+    // Unticking "web" and ticking "shop" while the list is open moves nothing.
+    fireEvent.click(screen.getByRole("checkbox", { name: "web" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "shop" }));
+    expect(useAppStore.getState().clusterViews.c1?.namespaces).toEqual(["payments", "shop"]);
+    expect(listed(dialog)).toEqual(["payments", "web", "|", "default", "kube-system", "shop"]);
+
+    // Closed and opened again: the new selection is on top.
+    expect(toggleOpen(button)).toBeNull();
+    const reopened = toggleOpen(button)!;
+    expect(listed(reopened)).toEqual(["payments", "shop", "|", "default", "kube-system", "web"]);
+  });
+
+  it("keeps the split while filtering, and the focus order follows the list", async () => {
+    const button = await renderWithNamespaces(["web", "kube-system"]);
+    const dialog = toggleOpen(button)!;
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "e" } });
+    expect(listed(dialog)).toEqual(["kube-system", "web", "|", "default", "payments"]);
+    const boxes = [...dialog.querySelectorAll<HTMLInputElement>("input[type=checkbox]")].map(
+      (box) => box.closest("label")?.textContent,
+    );
+    expect(boxes).toEqual(["All namespaces", "kube-system", "web", "default", "payments"]);
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "web" } });
+    expect(listed(dialog)).toEqual(["web"]);
+  });
+
+  it("has no axe violations with both groups shown", async () => {
+    const button = await renderWithNamespaces(["web"]);
+    toggleOpen(button);
+    expect(await axeViolations(document)).toEqual([]);
+  });
+
+  it("shows no separator while all namespaces are selected", async () => {
+    const button = await renderWithNamespaces(null);
+    const dialog = toggleOpen(button)!;
+    expect(listed(dialog)).toEqual(["default", "kube-system", "payments", "shop", "web"]);
   });
 });

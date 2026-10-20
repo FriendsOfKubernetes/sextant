@@ -234,3 +234,38 @@
   flex-wrap: wrap;
   overflow-x: visible;
 }
+
+/* Probes (pods.tsx): the handler, then the timing items in a wrapping row and the derived hint under them. */
+.dt-probe__handler {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+.dt-probe__code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.dt-probe__timing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem 0.75rem;
+}
+
+.dt-probe__item {
+  white-space: nowrap;
+}
+
+.dt-probe__label {
+  color: var(--color-text-muted);
+}
+
+.dt-probe__hint {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+}

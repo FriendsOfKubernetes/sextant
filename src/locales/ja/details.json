@@ -143,7 +143,10 @@
     "apiGroups": "API グループ",
     "resourceNames": "リソース名",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "プローブ",
+    "check": "チェック",
+    "timing": "タイミング"
   },
   "pod": {
     "containers": "コンテナー",
@@ -224,5 +227,26 @@
     "copy": "{{key}} の値をコピー",
     "copied": "コピーしました",
     "length_other": "{{count}} 文字"
+  },
+  "probes": {
+    "title": "プローブ",
+    "none": "プローブなし",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "初期遅延",
+    "period": "間隔",
+    "timeout": "タイムアウト",
+    "success": "成功しきい値",
+    "failure": "失敗しきい値",
+    "grace": "終了猶予期間",
+    "default": "Kubernetes のデフォルト値",
+    "headers_other": "+{{count}} 個のヘッダー",
+    "grpcService": "サービス {{service}}",
+    "hint": {
+      "liveness_other": "チェックの失敗が約 {{count}} 秒続くとコンテナーは再起動されます",
+      "readiness_other": "チェックの失敗が約 {{count}} 秒続くと Pod は未準備としてマークされます",
+      "startup_other": "コンテナーの起動猶予は約 {{count}} 秒で、それを過ぎると再起動されます"
+    }
   }
 }

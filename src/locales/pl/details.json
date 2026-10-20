@@ -143,7 +143,10 @@
     "apiGroups": "Grupy API",
     "resourceNames": "Nazwy zasobów",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Sonda",
+    "check": "Sprawdzenie",
+    "timing": "Czasy"
   },
   "pod": {
     "containers": "Kontenery",
@@ -233,5 +236,38 @@
     "length_few": "{{count}} znaki",
     "length_many": "{{count}} znaków",
     "length_other": "{{count}} znaku"
+  },
+  "probes": {
+    "title": "Sondy",
+    "none": "Brak sond",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "opóźnienie",
+    "period": "okres",
+    "timeout": "limit czasu",
+    "success": "próg sukcesu",
+    "failure": "próg błędu",
+    "grace": "okres zakończenia",
+    "default": "wartość domyślna Kubernetes",
+    "headers_one": "+{{count}} nagłówek",
+    "headers_few": "+{{count}} nagłówki",
+    "headers_many": "+{{count}} nagłówków",
+    "headers_other": "+{{count}} nagłówka",
+    "grpcService": "usługa {{service}}",
+    "hint": {
+      "liveness_one": "Kontener jest uruchamiany ponownie, gdy sprawdzenia zawodzą przez około {{count}} sekundę",
+      "liveness_few": "Kontener jest uruchamiany ponownie, gdy sprawdzenia zawodzą przez około {{count}} sekundy",
+      "liveness_many": "Kontener jest uruchamiany ponownie, gdy sprawdzenia zawodzą przez około {{count}} sekund",
+      "liveness_other": "Kontener jest uruchamiany ponownie, gdy sprawdzenia zawodzą przez około {{count}} sekundy",
+      "readiness_one": "Pod jest oznaczany jako niegotowy, gdy sprawdzenia zawodzą przez około {{count}} sekundę",
+      "readiness_few": "Pod jest oznaczany jako niegotowy, gdy sprawdzenia zawodzą przez około {{count}} sekundy",
+      "readiness_many": "Pod jest oznaczany jako niegotowy, gdy sprawdzenia zawodzą przez około {{count}} sekund",
+      "readiness_other": "Pod jest oznaczany jako niegotowy, gdy sprawdzenia zawodzą przez około {{count}} sekundy",
+      "startup_one": "Kontener ma około {{count}} sekundę na uruchomienie, potem jest uruchamiany ponownie",
+      "startup_few": "Kontener ma około {{count}} sekundy na uruchomienie, potem jest uruchamiany ponownie",
+      "startup_many": "Kontener ma około {{count}} sekund na uruchomienie, potem jest uruchamiany ponownie",
+      "startup_other": "Kontener ma około {{count}} sekundy na uruchomienie, potem jest uruchamiany ponownie"
+    }
   }
 }

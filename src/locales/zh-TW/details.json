@@ -143,7 +143,10 @@
     "apiGroups": "API 群組",
     "resourceNames": "資源名稱",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "探針",
+    "check": "檢查",
+    "timing": "時間"
   },
   "pod": {
     "containers": "容器",
@@ -224,5 +227,26 @@
     "copy": "複製 {{key}} 的值",
     "copied": "已複製",
     "length_other": "{{count}} 個字元"
+  },
+  "probes": {
+    "title": "探針",
+    "none": "無探針",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "初始延遲",
+    "period": "週期",
+    "timeout": "逾時",
+    "success": "成功閾值",
+    "failure": "失敗閾值",
+    "grace": "終止寬限期",
+    "default": "Kubernetes 預設值",
+    "headers_other": "+{{count}} 個標頭",
+    "grpcService": "服務 {{service}}",
+    "hint": {
+      "liveness_other": "檢查持續失敗約 {{count}} 秒後重新啟動容器",
+      "readiness_other": "檢查持續失敗約 {{count}} 秒後 Pod 會被標記為未就緒",
+      "startup_other": "容器約有 {{count}} 秒可以啟動，逾時後將被重新啟動"
+    }
   }
 }

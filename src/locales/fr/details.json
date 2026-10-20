@@ -143,7 +143,10 @@
     "apiGroups": "Groupes d'API",
     "resourceNames": "Noms de ressources",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Sonde",
+    "check": "Vérification",
+    "timing": "Délais"
   },
   "pod": {
     "containers": "Conteneurs",
@@ -230,5 +233,34 @@
     "length_one": "{{count}} caractère",
     "length_many": "{{count}} de caractères",
     "length_other": "{{count}} caractères"
+  },
+  "probes": {
+    "title": "Sondes",
+    "none": "Aucune sonde",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "délai initial",
+    "period": "période",
+    "timeout": "délai d'expiration",
+    "success": "seuil de succès",
+    "failure": "seuil d'échec",
+    "grace": "délai de grâce",
+    "default": "valeur par défaut de Kubernetes",
+    "headers_one": "+{{count}} en-tête",
+    "headers_many": "+{{count}} en-têtes",
+    "headers_other": "+{{count}} en-têtes",
+    "grpcService": "service {{service}}",
+    "hint": {
+      "liveness_one": "Le conteneur est redémarré après environ {{count}} seconde de vérifications en échec",
+      "liveness_many": "Le conteneur est redémarré après environ {{count}} secondes de vérifications en échec",
+      "liveness_other": "Le conteneur est redémarré après environ {{count}} secondes de vérifications en échec",
+      "readiness_one": "Le Pod est marqué non prêt après environ {{count}} seconde de vérifications en échec",
+      "readiness_many": "Le Pod est marqué non prêt après environ {{count}} secondes de vérifications en échec",
+      "readiness_other": "Le Pod est marqué non prêt après environ {{count}} secondes de vérifications en échec",
+      "startup_one": "Le conteneur dispose d'environ {{count}} seconde pour démarrer, puis il est redémarré",
+      "startup_many": "Le conteneur dispose d'environ {{count}} secondes pour démarrer, puis il est redémarré",
+      "startup_other": "Le conteneur dispose d'environ {{count}} secondes pour démarrer, puis il est redémarré"
+    }
   }
 }

@@ -1,4 +1,5 @@
-// Namespace filter in the table header: "All namespaces" or a multi-selection, with a filter box.
+// Namespace filter in the table header: "All namespaces" or a multi-selection, with a filter box; the namespaces
+// selected when the list opens are listed first (`order.ts`).
 import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type WatchSpec } from "../../api";
@@ -6,6 +7,7 @@ import { useAppStore } from "../../app/store";
 import { Button, Checkbox, Icon, usePopup, usePopupPosition } from "../../components";
 import { formatList } from "../../i18n/format";
 import { selectNamespaces } from "./namespaces";
+import { orderNamespaces } from "./order";
 import "./namespaces.css";
 
 const NAMESPACES: WatchSpec = {
@@ -20,6 +22,8 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
   const selected = useAppStore((s) => s.clusterViews[clusterId]?.namespaces ?? null);
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState("");
+  // The selection when the list was opened: those namespaces are listed first until it is opened again (#219).
+  const [pinned, setPinned] = useState<readonly string[]>([]);
   const popupId = useId();
   const ref = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -42,7 +46,8 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
     return [...names].sort();
   }, [items, selected]);
 
-  const visible = all.filter((ns) => ns.toLowerCase().includes(filter.trim().toLowerCase()));
+  const groups = orderNamespaces(all, pinned, filter);
+  const visible = [...groups.selected, ...groups.others];
 
   usePopup(ref, () => setOpen(false), open);
 
@@ -55,6 +60,13 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
     const current = selected ?? [];
     choose(current.includes(ns) ? current.filter((n) => n !== ns) : [...current, ns]);
   };
+
+  const option = (ns: string) => (
+    <label key={ns} className="ns-filter__option">
+      <Checkbox checked={selected?.includes(ns) ?? false} onChange={() => toggle(ns)} />
+      {ns}
+    </label>
+  );
 
   const label =
     selected === null
@@ -71,7 +83,10 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
         aria-expanded={open}
         aria-controls={open ? popupId : undefined}
         aria-label={t("resources:namespaces.label", { value: label })}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (!open) setPinned(selected ?? []);
+          setOpen(!open);
+        }}
       >
         <span className="ns-filter__label">{label}</span>
         <Icon name="chevronDown" />
@@ -107,12 +122,11 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
             {t("resources:namespaces.all")}
           </label>
           <div className="ns-filter__list">
-            {visible.map((ns) => (
-              <label key={ns} className="ns-filter__option">
-                <Checkbox checked={selected?.includes(ns) ?? false} onChange={() => toggle(ns)} />
-                {ns}
-              </label>
-            ))}
+            {groups.selected.map(option)}
+            {groups.selected.length > 0 && groups.others.length > 0 && (
+              <div role="separator" className="ns-filter__separator" />
+            )}
+            {groups.others.map(option)}
             {visible.length === 0 && <div className="ns-filter__empty">{t("resources:namespaces.none")}</div>}
           </div>
         </div>

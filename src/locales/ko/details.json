@@ -143,7 +143,10 @@
     "apiGroups": "API 그룹",
     "resourceNames": "리소스 이름",
     "kind": "종류",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "프로브",
+    "check": "검사",
+    "timing": "타이밍"
   },
   "pod": {
     "containers": "컨테이너",
@@ -224,5 +227,26 @@
     "copy": "{{key}} 값 복사",
     "copied": "복사됨",
     "length_other": "{{count}}자"
+  },
+  "probes": {
+    "title": "프로브",
+    "none": "프로브 없음",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "초기 지연",
+    "period": "주기",
+    "timeout": "타임아웃",
+    "success": "성공 임계값",
+    "failure": "실패 임계값",
+    "grace": "종료 유예 기간",
+    "default": "Kubernetes 기본값",
+    "headers_other": "+{{count}}개 헤더",
+    "grpcService": "서비스 {{service}}",
+    "hint": {
+      "liveness_other": "검사가 약 {{count}}초 동안 실패하면 컨테이너가 다시 시작됩니다",
+      "readiness_other": "검사가 약 {{count}}초 동안 실패하면 Pod가 준비되지 않음으로 표시됩니다",
+      "startup_other": "컨테이너에는 시작에 약 {{count}}초가 주어지며, 그 후에는 다시 시작됩니다"
+    }
   }
 }
