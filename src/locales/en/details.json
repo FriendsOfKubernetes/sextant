@@ -143,7 +143,10 @@
     "apiGroups": "API groups",
     "resourceNames": "Resource names",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Probe",
+    "check": "Check",
+    "timing": "Timing"
   },
   "pod": {
     "containers": "Containers",
@@ -227,5 +230,30 @@
     "copied": "Copied",
     "length_one": "{{count}} character",
     "length_other": "{{count}} characters"
+  },
+  "probes": {
+    "title": "Probes",
+    "none": "No probes",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "delay",
+    "period": "period",
+    "timeout": "timeout",
+    "success": "success threshold",
+    "failure": "failure threshold",
+    "grace": "grace period",
+    "default": "Kubernetes default",
+    "headers_one": "+{{count}} header",
+    "headers_other": "+{{count}} headers",
+    "grpcService": "service {{service}}",
+    "hint": {
+      "liveness_one": "The container is restarted after about {{count}} second of failed checks",
+      "liveness_other": "The container is restarted after about {{count}} seconds of failed checks",
+      "readiness_one": "The Pod is marked not ready after about {{count}} second of failed checks",
+      "readiness_other": "The Pod is marked not ready after about {{count}} seconds of failed checks",
+      "startup_one": "The container has about {{count}} second to start before it is restarted",
+      "startup_other": "The container has about {{count}} seconds to start before it is restarted"
+    }
   }
 }

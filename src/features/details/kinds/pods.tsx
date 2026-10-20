@@ -1,5 +1,5 @@
-// Pod details: status, node, IPs, service account, QoS, volumes and every container (image, ports, env, mounts,
-// state, restarts). `ContainerList` also shows the pod template of workloads (without statuses).
+// Pod details: status, node, IPs, service account, QoS, volumes and every container (image, ports, probes, env,
+// mounts, state, restarts). `ContainerList` also shows the pod template of workloads (without statuses).
 import type { TFunction } from "i18next";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import type { ClusterId, KubeObject, ObjectRef } from "../../../api";
 import { Tabs } from "../../../components";
 import { status } from "../../../resources";
 import { ContainerTools } from "../../terminal/ContainerTools";
+import { formatList, formatNumber } from "../../../i18n/format";
 import type { Tone } from "../../../resources/status";
 import {
   Block,
@@ -25,6 +26,7 @@ import {
   tolerations,
   type FieldRow,
 } from "../ui";
+import { HANDLER_LABELS, probeRows, SECONDS_FIELDS, showsProbes, type ProbeRow, type ProbeTiming } from "./probes";
 
 const { arr, get, num, podStatus, record, str } = status;
 
@@ -180,6 +182,7 @@ export function ContainerList({
         {items.map((item) => (
           <Container
             key={item.name}
+            init={item.init}
             container={item.container}
             status={item.status}
             namespace={namespace}
@@ -248,6 +251,7 @@ function ContainerTabs({
         className="dt-container-tabs"
       >
         <Container
+          init={selected.init}
           container={selected.container}
           status={selected.status}
           namespace={namespace}
@@ -306,11 +310,14 @@ function envValue(env: unknown, t: TFunction): ReactNode {
 }
 
 function Container({
+  init = false,
   container,
   status: st,
   namespace,
   tools,
 }: {
+  /** An init container: it has probes only as a restartable sidecar. */
+  init?: boolean;
   container: unknown;
   status: unknown;
   namespace: string | null;
@@ -371,6 +378,8 @@ function Container({
   );
   const state = current ? statusText(current.state, stateTone(current.state, current.reason)) : null;
   const ready = st !== undefined && get(st, "ready") === true ? muted(t("details:pod.ready")) : null;
+  // Plain init containers cannot have probes; a sidecar (a restartable init container) can.
+  const probes = showsProbes(container, init ? "init" : "container");
 
   return (
     <div className="dt-container" data-container={name}>
@@ -382,9 +391,114 @@ function Container({
         {tools}
       </div>
       <Fields rows={rows} />
+      {probes && <Probes container={container} />}
       {env && <Block title={t("details:pod.env")}>{env}</Block>}
       {envFrom && <Block title={t("details:pod.envFrom")}>{envFrom}</Block>}
       {mounts && <Block title={t("details:pod.mounts")}>{mounts}</Block>}
     </div>
+  );
+}
+
+/** A container's probes, one row each: what is checked and how often, defaults muted; "No probes" without any. */
+function Probes({ container }: { container: unknown }) {
+  const { t } = useTranslation();
+  const probes = probeRows(container);
+  const content =
+    probes.length === 0
+      ? muted(t("details:probes.none"))
+      : table(
+          "container.probes",
+          [t("details:columns.probe"), t("details:columns.check"), t("details:columns.timing")],
+          probes.map((probe) => [t(PROBE_LABELS[probe.kind]), probeHandler(probe, t), probeTiming(probe, t)]),
+          ["nowrap", undefined, undefined],
+        );
+  return <Block title={t("details:probes.title")}>{content}</Block>;
+}
+
+const PROBE_LABELS = {
+  liveness: "details:probes.liveness",
+  readiness: "details:probes.readiness",
+  startup: "details:probes.startup",
+} as const;
+
+/** "Restarted after about 30 seconds of failed checks" and the like, one sentence per probe kind. */
+const BUDGET_HINTS = {
+  liveness: "details:probes.hint.liveness",
+  readiness: "details:probes.hint.readiness",
+  startup: "details:probes.hint.startup",
+} as const;
+
+const TIMING_LABELS = {
+  initialDelaySeconds: "details:probes.delay",
+  periodSeconds: "details:probes.period",
+  timeoutSeconds: "details:probes.timeout",
+  successThreshold: "details:probes.success",
+  failureThreshold: "details:probes.failure",
+} as const;
+
+function probeHandler({ handler }: ProbeRow, t: TFunction): ReactNode {
+  if (handler.type === "none") return null;
+  let target: ReactNode;
+  let extra: ReactNode = null;
+  if (handler.type === "exec") {
+    target = (
+      <code className="dt-probe__code" title={handler.clipped ? handler.command : undefined}>
+        {handler.shown}
+      </code>
+    );
+  } else {
+    target = <code className="dt-probe__code">{handler.target}</code>;
+    if (handler.type === "httpGet") {
+      // Without a host the target carries no scheme: a scheme other than HTTP is named beside it.
+      const scheme = !handler.target.includes("://") && handler.scheme !== "HTTP" ? handler.scheme : undefined;
+      const headers = handler.headers.length;
+      extra = (
+        <>
+          {scheme && <span className="dt-tag">{scheme}</span>}
+          {headers > 0 && (
+            <span className="dt-muted" title={formatList(handler.headers)}>
+              {t("details:probes.headers", { count: headers })}
+            </span>
+          )}
+        </>
+      );
+    } else if (handler.type === "grpc" && handler.service) {
+      extra = muted(t("details:probes.grpcService", { service: handler.service }));
+    }
+  }
+  return (
+    <span className="dt-probe__handler">
+      <span className="dt-tag">{HANDLER_LABELS[handler.type]}</span>
+      {target}
+      {extra}
+    </span>
+  );
+}
+
+/** Delay, period, timeout and thresholds (a default muted, titled and named for screen readers), then the hint. */
+function probeTiming(probe: ProbeRow, t: TFunction): ReactNode {
+  const seconds = (count: number) => t("common:age.seconds", { count });
+  const defaultText = t("details:probes.default");
+  const item = (key: string, label: string, value: string, isDefault: boolean) => (
+    <span
+      key={key}
+      className={isDefault ? "dt-probe__item dt-muted" : "dt-probe__item"}
+      title={isDefault ? defaultText : undefined}
+    >
+      <span className="dt-probe__label">{label}</span> {value}
+      {isDefault && <span className="visually-hidden"> {defaultText}</span>}
+    </span>
+  );
+  const valueOf = ({ field, value }: ProbeTiming) => (SECONDS_FIELDS.has(field) ? seconds(value) : formatNumber(value));
+  const items = probe.timings.map((timing) =>
+    item(timing.field, t(TIMING_LABELS[timing.field]), valueOf(timing), timing.isDefault),
+  );
+  if (probe.terminationGracePeriodSeconds !== undefined)
+    items.push(item("grace", t("details:probes.grace"), seconds(probe.terminationGracePeriodSeconds), false));
+  return (
+    <>
+      <span className="dt-probe__timing">{items}</span>
+      <span className="dt-probe__hint dt-muted">{t(BUDGET_HINTS[probe.kind], { count: probe.budgetSeconds })}</span>
+    </>
   );
 }

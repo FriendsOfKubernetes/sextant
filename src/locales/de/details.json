@@ -143,7 +143,10 @@
     "apiGroups": "API-Gruppen",
     "resourceNames": "Ressourcennamen",
     "kind": "Art",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Probe",
+    "check": "Prüfung",
+    "timing": "Zeitverhalten"
   },
   "pod": {
     "containers": "Container",
@@ -227,5 +230,30 @@
     "copied": "Kopiert",
     "length_one": "{{count}} Zeichen",
     "length_other": "{{count}} Zeichen"
+  },
+  "probes": {
+    "title": "Probes",
+    "none": "Keine Probes",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "Verzögerung",
+    "period": "Intervall",
+    "timeout": "Timeout",
+    "success": "Erfolgsschwelle",
+    "failure": "Fehlerschwelle",
+    "grace": "Beendigungsfrist",
+    "default": "Kubernetes-Standardwert",
+    "headers_one": "+{{count}} Header",
+    "headers_other": "+{{count}} Header",
+    "grpcService": "Dienst {{service}}",
+    "hint": {
+      "liveness_one": "Der Container wird nach etwa {{count}} Sekunde fehlgeschlagener Prüfungen neu gestartet",
+      "liveness_other": "Der Container wird nach etwa {{count}} Sekunden fehlgeschlagener Prüfungen neu gestartet",
+      "readiness_one": "Der Pod wird nach etwa {{count}} Sekunde fehlgeschlagener Prüfungen als nicht bereit markiert",
+      "readiness_other": "Der Pod wird nach etwa {{count}} Sekunden fehlgeschlagener Prüfungen als nicht bereit markiert",
+      "startup_one": "Der Container hat etwa {{count}} Sekunde zum Starten, danach wird er neu gestartet",
+      "startup_other": "Der Container hat etwa {{count}} Sekunden zum Starten, danach wird er neu gestartet"
+    }
   }
 }

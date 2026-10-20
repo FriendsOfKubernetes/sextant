@@ -14,6 +14,7 @@ import widgetJson from "./fixtures/widget.json";
 import "./index";
 // Every details panel of the app has the "Related" tab (resource map, #139): test against the real tab strip.
 import "../resource-map";
+import { axeViolations } from "../../test/axe";
 import { copy, emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "./testing";
 
 const pod = podJson as KubeObject;
@@ -78,6 +79,56 @@ describe("details of a pod", () => {
     expect(within(fields).getByRole("button", { name: "Open Node sextant-test-control-plane" })).toBeInTheDocument();
     expect(within(fields).getByText("10.244.0.4")).toBeInTheDocument();
     expect(within(fields).getByText("Burstable")).toBeInTheDocument();
+  });
+
+  it("shows each probe's check and timing, defaults muted, and the time failing checks take", async () => {
+    const obj = copy(pod);
+    const container = (obj.spec as { containers: Record<string, unknown>[] }).containers[0]!;
+    container.livenessProbe = {
+      httpGet: { path: "/healthz", port: "http", httpHeaders: [{ name: "X-Probe", value: "secret-value" }] },
+      periodSeconds: 5,
+      failureThreshold: 4,
+      terminationGracePeriodSeconds: 7,
+    };
+    container.readinessProbe = { tcpSocket: { port: 80 } };
+    container.startupProbe = { exec: { command: ["sh", "-c", "test -f /tmp/ready"] }, failureThreshold: 30 };
+    await openDetails(obj, POD_REF);
+
+    const probes = within(section("fields")).getByRole("heading", { name: "Probes" }).closest(".dt-block") as HTMLElement;
+    const rows = within(probes).getAllByRole("row").slice(1);
+    expect(rows.map((row) => row.querySelector("td")?.textContent)).toEqual(["Liveness", "Readiness", "Startup"]);
+
+    const [liveness, readiness, startup] = rows.map((row) => within(row));
+    expect(liveness!.getByText("HTTP GET")).toBeInTheDocument();
+    expect(liveness!.getByText(":http/healthz")).toBeInTheDocument();
+    // A header is named, never its value.
+    expect(liveness!.getByText("+1 header")).toHaveAttribute("title", "X-Probe");
+    expect(probes.textContent).not.toContain("secret-value");
+    // Set values are plain; omitted ones are the Kubernetes defaults, muted and said so.
+    expect(liveness!.getByText("period").parentElement).not.toHaveClass("dt-muted");
+    expect(liveness!.getByText("period").parentElement).toHaveTextContent("period 5s");
+    const timeout = liveness!.getByText("timeout").parentElement!;
+    expect(timeout).toHaveClass("dt-muted");
+    expect(timeout).toHaveAttribute("title", "Kubernetes default");
+    expect(timeout).toHaveTextContent("timeout 1s Kubernetes default");
+    expect(liveness!.getByText("grace period").parentElement).toHaveTextContent("grace period 7s");
+    expect(liveness!.getByText("The container is restarted after about 20 seconds of failed checks")).toBeInTheDocument();
+
+    expect(readiness!.getByText("TCP")).toBeInTheDocument();
+    expect(readiness!.getByText(":80")).toBeInTheDocument();
+    expect(readiness!.getByText("The Pod is marked not ready after about 30 seconds of failed checks")).toBeInTheDocument();
+
+    expect(startup!.getByText("exec")).toBeInTheDocument();
+    expect(startup!.getByText("sh -c 'test -f /tmp/ready'")).toBeInTheDocument();
+    expect(startup!.getByText("The container has about 300 seconds to start before it is restarted")).toBeInTheDocument();
+
+    expect(await axeViolations(section("fields"))).toEqual([]);
+  });
+
+  it("says a container has no probes", async () => {
+    await openDetails(pod, POD_REF);
+    const probes = within(section("fields")).getByRole("heading", { name: "Probes" }).closest(".dt-block") as HTMLElement;
+    expect(within(probes).getByText("No probes")).toBeInTheDocument();
   });
 
   it("follows the object live and says so when it is deleted", async () => {
@@ -158,6 +209,30 @@ describe("containers of a pod in tabs", () => {
     expect(shownContainers()).toEqual(["proxy"]);
     expect(within(containers().getByRole("tabpanel")).getByText("envoy:v1.30")).toBeInTheDocument();
     expect(screen.queryByText("busybox:1.36")).toBeNull();
+  });
+
+  it("shows probes for containers and sidecars, not for plain init containers", async () => {
+    const obj = crowded();
+    const spec = obj.spec as { initContainers: Record<string, unknown>[] };
+    spec.initContainers.push({
+      name: "mesh",
+      image: "envoy:v1.30",
+      restartPolicy: "Always",
+      readinessProbe: { httpGet: { port: 15021, path: "/healthz/ready" } },
+    });
+    await openDetails(obj, POD_REF);
+    const panel = () => within(containers().getByRole("tabpanel"));
+
+    expect(shownContainers()).toEqual(["setup"]);
+    expect(panel().queryByRole("heading", { name: "Probes" })).toBeNull();
+    expect(panel().queryByText("No probes")).toBeNull();
+
+    fireEvent.click(screen.getByRole("tab", { name: /^mesh/ }));
+    expect(panel().getByRole("heading", { name: "Probes" })).toBeInTheDocument();
+    expect(panel().getByText(":15021/healthz/ready")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /^proxy/ }));
+    expect(panel().getByText("No probes")).toBeInTheDocument();
   });
 
   it("is operated from the keyboard: arrows, Home and End move the selection", async () => {

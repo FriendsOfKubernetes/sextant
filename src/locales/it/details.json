@@ -143,7 +143,10 @@
     "apiGroups": "Gruppi API",
     "resourceNames": "Nomi delle risorse",
     "kind": "Kind",
-    "namespace": "Namespace"
+    "namespace": "Namespace",
+    "probe": "Sonda",
+    "check": "Controllo",
+    "timing": "Tempi"
   },
   "pod": {
     "containers": "Container",
@@ -230,5 +233,34 @@
     "length_one": "{{count}} carattere",
     "length_many": "{{count}} di caratteri",
     "length_other": "{{count}} caratteri"
+  },
+  "probes": {
+    "title": "Sonde",
+    "none": "Nessuna sonda",
+    "liveness": "Liveness",
+    "readiness": "Readiness",
+    "startup": "Startup",
+    "delay": "ritardo iniziale",
+    "period": "periodo",
+    "timeout": "timeout",
+    "success": "soglia di successo",
+    "failure": "soglia di errore",
+    "grace": "periodo di tolleranza",
+    "default": "valore predefinito di Kubernetes",
+    "headers_one": "+{{count}} intestazione",
+    "headers_many": "+{{count}} intestazioni",
+    "headers_other": "+{{count}} intestazioni",
+    "grpcService": "servizio {{service}}",
+    "hint": {
+      "liveness_one": "Il container viene riavviato dopo circa {{count}} secondo di controlli falliti",
+      "liveness_many": "Il container viene riavviato dopo circa {{count}} secondi di controlli falliti",
+      "liveness_other": "Il container viene riavviato dopo circa {{count}} secondi di controlli falliti",
+      "readiness_one": "Il Pod viene segnato come non pronto dopo circa {{count}} secondo di controlli falliti",
+      "readiness_many": "Il Pod viene segnato come non pronto dopo circa {{count}} secondi di controlli falliti",
+      "readiness_other": "Il Pod viene segnato come non pronto dopo circa {{count}} secondi di controlli falliti",
+      "startup_one": "Il container ha circa {{count}} secondo per avviarsi, poi viene riavviato",
+      "startup_many": "Il container ha circa {{count}} secondi per avviarsi, poi viene riavviato",
+      "startup_other": "Il container ha circa {{count}} secondi per avviarsi, poi viene riavviato"
+    }
   }
 }
