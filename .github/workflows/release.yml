@@ -18,6 +18,23 @@
 # A rebuild of an already published release does not let the build jobs touch its latest.json (they would put
 # stale darwin signatures into it): the publish job refreshes the published one and swaps it in under a temporary
 # name, so installed apps never find the release without a manifest.
+#
+# With `dry_run` checked the run builds and signs everything for that tag the same way but creates, changes and
+# publishes no release: the bundles become workflow artifacts (bundles-<os>) instead. Running one from main shortly
+# before pushing a tag also warms the caches the tag's build restores (see "Caches" below).
+#
+# macOS: the universal app is no longer compiled in one job (both architectures one after the other). Two jobs build
+# the aarch64 and x86_64 binaries in parallel (`tauri build --target <triple> --no-bundle`), and a third joins them
+# with `lipo` into target/universal-apple-darwin/release/sextant — exactly what `tauri build --target
+# universal-apple-darwin` does — and runs only the bundle step on it (`tauri bundle`, which compiles nothing and signs
+# the updater archive like `tauri build`). Same .dmg, Sextant_universal.app.tar.gz(.sig) and latest.json entries.
+#
+# Caches: Swatinem/rust-cache (the target directory) and sccache (compiler outputs, GitHub Actions cache backend).
+# A run can restore only caches written by its own ref or by the default branch (main); pull requests, forks
+# included, write only into their own refs/pull/<n>/merge scope, so nothing a pull request builds reaches a release.
+# A tag build only reads (rust-cache save-if, SCCACHE_GHA_RW_MODE=READ_ONLY): the next tag could not restore it
+# anyway, and it would only push main's entries out of the repository's cache quota. Runs on main (dispatched
+# rebuilds and dry runs) write.
 name: Release
 
 on:
@@ -29,12 +46,17 @@ on:
         description: Existing tag to (re)build the release for, e.g. v0.1.0
         required: true
         type: string
+      dry_run:
+        description: Build and sign everything, but create and publish no release (bundles become workflow artifacts)
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ inputs.tag || github.ref_name }}${{ inputs.dry_run && '-dry-run' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -56,7 +78,9 @@ jobs:
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: node scripts/check-version.mjs --tag "$TAG"
+      # A dry run touches no release: release-id and published stay empty.
       - name: Find or create the draft release and output its id
+        if: ${{ !inputs.dry_run }}
         id: create
         env:
           GH_TOKEN: ${{ github.token }}
@@ -151,13 +175,18 @@ jobs:
           - name: linux
             os: ubuntu-22.04
             args: --bundles deb,appimage
-          - name: macos
-            os: macos-latest
-            args: --target universal-apple-darwin --bundles app,dmg
+            bundles: |
+              target/release/bundle/deb/*.deb*
+              target/release/bundle/appimage/*.AppImage*
           - name: windows
             os: windows-latest
             args: --bundles msi
+            bundles: target/release/bundle/msi/*.msi*
     runs-on: ${{ matrix.os }}
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_RW_MODE: ${{ github.ref == 'refs/heads/main' && 'READ_WRITE' || 'READ_ONLY' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -176,11 +205,13 @@ jobs:
           cache: npm
 
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
-        with:
-          # A universal macOS app needs both architectures.
-          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: release-${{ matrix.name }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install npm packages
         run: npm ci
@@ -193,9 +224,10 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          releaseId: ${{ needs.create-release.outputs.release-id }}
+          # A dry run passes neither: tauri-action then builds and signs but uploads nothing.
+          releaseId: ${{ !inputs.dry_run && needs.create-release.outputs.release-id || '' }}
           # Only names the tag in the download URLs of latest.json (a draft's asset URLs are "untagged-…").
-          tagName: ${{ inputs.tag || github.ref_name }}
+          tagName: ${{ !inputs.dry_run && (inputs.tag || github.ref_name) || '' }}
           args: ${{ matrix.args }}
           # The .sig files are uploaded either way. A draft: add this platform to the release asset latest.json.
           # A published release (a rebuild): leave its latest.json, which installed apps read, to the publish job;
@@ -204,9 +236,159 @@ jobs:
           updaterJsonPreferNsis: false
           retryAttempts: 2
 
+      - name: Keep the bundles as a workflow artifact (dry run)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundles-${{ matrix.name }}
+          path: ${{ matrix.bundles }}
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  # The two halves of the universal macOS app, in parallel. No secrets here: nothing is signed until the bundle step.
+  build-macos-binary:
+    name: Build (macos, ${{ matrix.target }})
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+    runs-on: macos-latest
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_RW_MODE: ${{ github.ref == 'refs/heads/main' && 'READ_WRITE' || 'READ_ONLY' }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: release-${{ matrix.target }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Install npm packages
+        run: npm ci
+
+      # The same compile `tauri build` runs (beforeBuildCommand builds the frontend, the release profile, the
+      # tauri/custom-protocol feature), without bundling.
+      - name: Build the ${{ matrix.target }} binary
+        env:
+          TARGET: ${{ matrix.target }}
+        run: npm run tauri -- build --target "$TARGET" --no-bundle --ci
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-binary-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/sextant
+          if-no-files-found: error
+          # A re-run of the bundle job alone needs them; after that the arch jobs have to be re-run too.
+          retention-days: 3
+          overwrite: true
+
+  build-macos:
+    name: Build (macos)
+    needs: [create-release, build-macos-binary]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      # Only for `cargo metadata --no-deps`, which the Tauri CLI reads the target directory from.
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
+
+      - name: Install npm packages
+        run: npm ci
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: macos-binary-*
+          path: ${{ runner.temp }}/macos-binaries
+
+      # What `tauri build --target universal-apple-darwin` does after compiling both targets.
+      - name: Join both binaries into the universal one
+        env:
+          BINARIES: ${{ runner.temp }}/macos-binaries
+        run: |
+          set -euo pipefail
+          out=target/universal-apple-darwin/release
+          mkdir -p "$out"
+          lipo -create -output "$out/sextant" \
+            "$BINARIES/macos-binary-aarch64-apple-darwin/sextant" \
+            "$BINARIES/macos-binary-x86_64-apple-darwin/sextant"
+          chmod +x "$out/sextant"
+          lipo "$out/sextant" -verify_arch arm64 x86_64
+          lipo -info "$out/sextant"
+
+      # tauri-action always runs `<tauriScript> build <args>`; this script turns that into `tauri bundle <args>`, which
+      # takes the binary above as it is (it compiles nothing) and signs the updater archive like `tauri build`.
+      - name: Make tauri-action bundle instead of build
+        run: |
+          cat > "$RUNNER_TEMP/tauri-bundle.mjs" <<'SCRIPT'
+          import { spawnSync } from 'node:child_process';
+          import { resolve } from 'node:path';
+          const [command, ...args] = process.argv.slice(2);
+          if (command !== 'build') {
+            console.error(`tauri-bundle.mjs: expected "build", got "${command}"`);
+            process.exit(2);
+          }
+          const result = spawnSync(resolve('node_modules/.bin/tauri'), ['bundle', ...args], { stdio: 'inherit' });
+          process.exit(result.status ?? 1);
+          SCRIPT
+
+      - name: Bundle the universal app and upload it to the release
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the updater artifacts (bundle.createUpdaterArtifacts); without the key the bundle step fails.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tauriScript: node ${{ runner.temp }}/tauri-bundle.mjs
+          releaseId: ${{ !inputs.dry_run && needs.create-release.outputs.release-id || '' }}
+          tagName: ${{ !inputs.dry_run && (inputs.tag || github.ref_name) || '' }}
+          args: --target universal-apple-darwin --bundles app,dmg
+          # See the build job: a rebuild of a published release leaves latest.json to the publish job.
+          includeUpdaterJson: ${{ needs.create-release.outputs.published != 'true' }}
+          updaterJsonPreferNsis: false
+          retryAttempts: 2
+
+      - name: Keep the bundles as a workflow artifact (dry run)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundles-macos
+          path: |
+            target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz*
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
   publish:
     name: Publish the release
-    needs: [create-release, build]
+    needs: [create-release, build, build-macos]
+    # A dry run publishes nothing.
+    if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     steps:
       # The build jobs of a draft merge latest.json one after another and may overwrite each other when they finish
