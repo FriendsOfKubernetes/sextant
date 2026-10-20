@@ -24,6 +24,7 @@
     "gateway": "Gateway API",
     "mesh": "서비스 메시",
     "security": "보안",
+    "practices": "모범 사례",
     "credentials": "자격 증명",
     "disk": "디스크 거의 가득 참",
     "events": "Warning 이벤트"
@@ -35,6 +36,7 @@
     "expires": "{{date}}에 만료",
     "expired": "{{date}}에 만료됨",
     "securityBaseline_other": "Pod Security Baseline 위반 {{count}}건: {{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "공간 {{percent}} 사용 ({{used}} / {{capacity}})",
     "inodeUsage": "inode {{percent}} 사용 ({{used}} / {{total}})",
     "meshUnknownHost": "{{host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
@@ -45,5 +47,6 @@
     "meshConflictingVirtualService": "{{gateway}}의 호스트 {{host}}은(는) 이미 더 오래된 가상 서비스 {{other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
     "meshInvalidVirtualService": "Sidecar(mesh)에 바인딩된 상태에서 호스트 *를 가집니다. Istio가 거부하므로 경로가 하나도 사용되지 않습니다."
   },
-  "showDisk": "디스크 거의 가득 참"
+  "showDisk": "디스크 거의 가득 참",
+  "showPractices": "모범 사례 발견 사항"
 }

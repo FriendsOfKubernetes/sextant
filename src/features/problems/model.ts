@@ -40,6 +40,7 @@ export const PROBLEM_CATEGORIES = [
   "gateway",
   "mesh",
   "security",
+  "practices",
   "credentials",
   "disk",
   "events",
@@ -54,8 +55,9 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * problems screen, the sidebar counter and the notifications): security findings (#143) are lasting states of a
  * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
+ * Best-practice findings (#207) are lasting states too, and most clusters have many.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk"];
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices"];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
@@ -648,6 +650,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     // Kubeconfig credentials are no kind of the cluster (features/clusters/kubeconfig); volume fill levels come from
     // the kubelets or Prometheus, not from the claim (features/storage).
     case "credentials":
+    case "practices": // Best-practice findings (#207) span several objects: the provider of features/practices finds them.
     case "disk":
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case undefined:
@@ -673,6 +676,8 @@ export function resolve(
   category: ProblemCategory | undefined = categoryOf(kind),
 ): Problem[] {
   if (!category) return [];
+  // The practices sources only carry the rows of features/practices (`external` or tapped): nothing is judged here.
+  if (category === "practices") return [];
   const uid = uidOfObject(obj);
   const self: ObjectRef = { kind, namespace: obj.metadata?.namespace ?? null, name: obj.metadata?.name ?? "" };
   const identity = ownerIdentity(kind, obj) ?? uid;

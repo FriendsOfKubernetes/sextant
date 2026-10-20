@@ -30,6 +30,7 @@
     "gateway": "Gateway API",
     "mesh": "Siatka usług",
     "security": "Bezpieczeństwo",
+    "practices": "Dobre praktyki",
     "credentials": "Poświadczenia",
     "disk": "Dysk prawie pełny",
     "events": "Zdarzenia ostrzegawcze"
@@ -47,6 +48,7 @@
     "securityBaseline_few": "{{count}} naruszenia Pod Security Baseline: {{fields}}",
     "securityBaseline_many": "{{count}} naruszeń Pod Security Baseline: {{fields}}",
     "securityBaseline_other": "{{count}} naruszenia Pod Security Baseline: {{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "Zajęte {{percent}} miejsca ({{used}} z {{capacity}})",
     "inodeUsage": "Zajęte {{percent}} inodes ({{used}} z {{total}})",
     "meshUnknownHost": "Kieruje do {{host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
@@ -57,5 +59,6 @@
     "meshConflictingVirtualService": "Host {{host}} na {{gateway}} jest już zajęty przez starszą usługę wirtualną {{other}}: trasy tej usługi nie są osiągane.",
     "meshInvalidVirtualService": "Ma host * przy powiązaniu z sidecarami (mesh): Istio ją odrzuca, więc żadna z jej tras nie jest używana."
   },
-  "showDisk": "Dysk prawie pełny"
+  "showDisk": "Dysk prawie pełny",
+  "showPractices": "Ustalenia dotyczące dobrych praktyk"
 }

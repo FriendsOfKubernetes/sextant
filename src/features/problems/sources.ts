@@ -62,6 +62,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
   security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),
+  // Best-practice findings (#207, opt-in) span several objects (HPAs, PodDisruptionBudgets, LimitRanges, the nodes of
+  // live pods): the provider of features/practices taps the shared watches and judges them (`external`).
+  practices: [{ category: "practices", kind: DEPLOYMENT, fieldSelector: null, discovered: false, external: true }],
   // Expiring kubeconfig credentials (#150, opt-in) come from the kubeconfig, not from a watch: nothing is watched for
   // them (features/clusters/kubeconfig/CredentialsNotifier).
   credentials: [],
@@ -110,5 +113,6 @@ export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fiel
   const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
   // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
   // provider's source of full claims, which watches nothing.
+  if (def.category === "practices") return `${key}|${def.category}`;
   return def.category === "security" || def.category === "disk" ? `${key}|${def.category}` : key;
 }

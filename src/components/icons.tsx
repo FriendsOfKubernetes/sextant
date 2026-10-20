@@ -36,6 +36,7 @@ import {
   ChevronRight,
   ChevronUp,
   ClipboardCheck,
+  ClipboardList,
   Clock,
   Coins,
   Container,
@@ -322,6 +323,8 @@ const ICONS = {
   changeTimeline: ChartNoAxesGantt,
   // Cleanup (src/features/hygiene): the page of the Cluster section.
   cleanup: BrushCleaning,
+  // Best practices (src/features/practices): the page of the Cluster section.
+  bestPractices: ClipboardList,
   // Cost (src/features/cost): the page of the Cluster section.
   cost: Coins,
   // Autoscaling insights (src/features/autoscaling): the KEDA and Karpenter sections and their kinds.

@@ -28,6 +28,7 @@
     "gateway": "Gateway API",
     "mesh": "Maillage de services",
     "security": "Sécurité",
+    "practices": "Bonnes pratiques",
     "credentials": "Identifiants",
     "disk": "Disque presque plein",
     "events": "Événements d'avertissement"
@@ -43,6 +44,7 @@
     "securityBaseline_one": "{{count}} violation de Pod Security Baseline : {{fields}}",
     "securityBaseline_many": "{{count}} de violations de Pod Security Baseline : {{fields}}",
     "securityBaseline_other": "{{count}} violations de Pod Security Baseline : {{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "{{percent}} de l'espace utilisé ({{used}} sur {{capacity}})",
     "inodeUsage": "{{percent}} des inodes utilisés ({{used}} sur {{total}})",
     "meshUnknownHost": "Envoie vers {{host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
@@ -53,5 +55,6 @@
     "meshConflictingVirtualService": "L'hôte {{host}} sur {{gateway}} est déjà pris par le service virtuel plus ancien {{other}} : les routes de celui-ci ne sont pas atteintes.",
     "meshInvalidVirtualService": "A l'hôte * alors qu'il est lié aux sidecars (mesh) : Istio le rejette, aucune de ses routes n'est donc utilisée."
   },
-  "showDisk": "Disque presque plein"
+  "showDisk": "Disque presque plein",
+  "showPractices": "Constats de bonnes pratiques"
 }

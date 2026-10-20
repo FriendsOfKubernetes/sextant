@@ -1,0 +1,122 @@
+{
+  "sidebar": "ベストプラクティス",
+  "title": "ベストプラクティス",
+  "intro": "ワークロードを壊れやすくしたり無駄を生んだりする日常的なミスを、ワークロードの Pod テンプレートとその周辺 (オートスケーラー、中断バジェット、LimitRange、レプリカが動いているノード) で確認します。Sextant が読み取れないものを必要とするチェックはスキップされます。クラスターは何も変更されません。修正案は YAML としてコピーされます。",
+  "loading": "ワークロードを確認しています…",
+  "chooseNamespace": "namespace を選択",
+  "chooseNamespaceText": "このページは namespace フィルターで選択した namespace を確認します。開始するには 1 つ以上の namespace を選択してください。",
+  "firstNamespaces_other": "選択した namespace のうち最初の {{count}} 個のみを確認します。",
+  "watchFailed": "{{kind}} を監視できませんでした",
+  "skipped": "{{kind}} を読み取れませんでした。これを必要とするチェックはスキップされます。",
+  "excluded": "設定で除外されているため確認しません: {{namespaces}}",
+  "truncated_other": "指摘が多すぎるため、最初の {{count}} 個のワークロードのみを表示します。",
+  "empty": "この namespace に指摘はありません。",
+  "emptyFiltered": "この namespace にフィルターに一致する指摘はありません。",
+  "filter": {
+    "area": "領域",
+    "areas": {
+      "all": "すべての領域",
+      "reliability": "信頼性",
+      "efficiency": "効率"
+    },
+    "severity": "重大度",
+    "severities": {
+      "any": "すべて",
+      "high": "高",
+      "medium": "中以上"
+    }
+  },
+  "areas": {
+    "reliability": "信頼性",
+    "efficiency": "効率"
+  },
+  "severity": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  },
+  "counts": {
+    "high_other": "重大度が高い指摘 {{count}} 件",
+    "medium_other": "重大度が中程度の指摘 {{count}} 件",
+    "low_other": "重大度が低い指摘 {{count}} 件"
+  },
+  "row": {
+    "expand": "{{name}} の指摘を表示",
+    "collapse": "{{name}} の指摘を非表示"
+  },
+  "finding": {
+    "container": "コンテナー {{name}}",
+    "on": "{{kind}} {{name}} 内",
+    "value": "値: {{value}}",
+    "unset": "未設定",
+    "fix": "修正案",
+    "create": "作成するオブジェクト",
+    "copy": "修正案をコピー",
+    "copied": "コピーしました",
+    "copyFailed": "コピーできませんでした"
+  },
+  "details": {
+    "title": "ベストプラクティス",
+    "noFindings": "指摘はありません。ここで適用されるすべてのチェックに合格しています。",
+    "excluded": "namespace {{namespace}} はベストプラクティスチェックの設定で除外されています。"
+  },
+  "settings": {
+    "open": "設定…",
+    "title": "ベストプラクティスのチェック",
+    "excluded": "確認しない namespace",
+    "excludedHint": "1 行に 1 つ、またはスペースかコンマで区切って入力します。除外した namespace はページ、詳細、問題のいずれにも表示されません。",
+    "save": "保存",
+    "saveFailed": "設定を保存できませんでした"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "readiness プローブがない",
+      "why": "readiness プローブがないと、Pod はコンテナーが起動した直後、アプリケーションの準備が整う前にトラフィックを受け取り、新しい Pod が応答できなくてもロールアウトが続きます。このコンテナーはポート {{port}} を宣言しているので、何かを提供しています。"
+    },
+    "livenessProbe": {
+      "title": "liveness プローブがない",
+      "why": "liveness プローブがないと、終了せずに停止したコンテナーは再起動されません。プローブは依存先ではなくプロセス自体だけを確認するようにしてください。そうしないと、データベースが遅いだけで正常な Pod が再起動されます。"
+    },
+    "mutableImage": {
+      "title": "バージョンが固定されていないイメージ",
+      "why": "latest タグやタグなしのイメージは同じ名前のまま中身が変わることがあります。新しい Pod が誰もデプロイしていないコードを実行したり、ロールバックで古いイメージではなく最新のイメージが戻ったりします。"
+    },
+    "pullAlwaysDigest": {
+      "title": "digest で固定したイメージを起動のたびに pull している",
+      "why": "digest で固定したイメージは変わらないため、imagePullPolicy Always は起動のたびにレジストリへのリクエストを増やすだけで、レジストリに到達できない間は Pod が起動できません。"
+    },
+    "singleReplica": {
+      "title": "レプリカが 1 つだけ",
+      "why": "レプリカが 1 つだけだと、再起動、退避、ノードのドレイン、ロールアウトのたびにダウンタイムが発生します。",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} によってレプリカが 1 つまで縮小される可能性があります。その場合、再起動、退避、ノードのドレイン、ロールアウトのたびにダウンタイムが発生します。"
+    },
+    "noPdb": {
+      "title": "PodDisruptionBudget がない",
+      "why": "PodDisruptionBudget がないと、ノードのドレインやクラスターのアップグレードですべてのレプリカが一度に退避されることがあります。バジェットがあれば、十分なレプリカの準備が整うまで退避が待たされます。"
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget が中断をまったく許可しない",
+      "why": "PodDisruptionBudget {{pdb}} はどの Pod の退避も許可しません (想定 Pod 数: {{pods}})。バジェットが変更または削除されるまで、ノードのドレインとクラスターのアップグレードは止まります。"
+    },
+    "sameNode": {
+      "title": "すべてのレプリカが 1 つのノード上にある",
+      "why": "実行中のレプリカ ({{count}}) はすべてノード {{node}} 上にあります。このノードが故障またはドレインされると、ワークロードは停止します。トポロジー分散制約や Pod のアンチアフィニティを使うと、スケジューラーがレプリカを別々のノードに配置します。"
+    },
+    "noRequests": {
+      "title": "リソース要求がない",
+      "why": "requests がないと、スケジューラーは Pod を何も必要としないものとして配置します。ノードが過剰に割り当てられ、ノードのメモリが不足したときにこの Pod は真っ先に退避されます。"
+    },
+    "noMemoryLimit": {
+      "title": "メモリ制限がない",
+      "why": "メモリ制限がないと、メモリリークのあるコンテナーがノードのメモリをすべて使い、ほかの Pod が退避または強制終了されることがあります。CPU 制限は求めません。ノードに空き CPU があってもコンテナーを抑制してしまうためです。"
+    },
+    "limitsAboveRecommendation": {
+      "title": "制限が適正化の推奨値を大きく上回っている",
+      "why": "制限が使用履歴に基づく推奨値 ({{recommended}}) の 2 倍を超えています。ノードは来ることのない使用量のために領域を確保する必要があり、暴走したコンテナーは停止されるまでに大きく膨らむことがあります。"
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler がスケールできない",
+      "why": "HorizontalPodAutoscaler {{hpa}} は最小値と最大値が同じ ({{min}}) なので、スケールしません。最大値を上げるか、オートスケーラーを削除してレプリカ数を設定してください。"
+    }
+  }
+}

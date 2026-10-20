@@ -26,6 +26,7 @@
     "gateway": "Gateway API",
     "mesh": "Hizmet ağı",
     "security": "Güvenlik",
+    "practices": "En iyi uygulamalar",
     "credentials": "Kimlik bilgileri",
     "disk": "Disk neredeyse dolu",
     "events": "Uyarı olayları"
@@ -39,6 +40,7 @@
     "expired": "Sona erdi: {{date}}",
     "securityBaseline_one": "{{count}} Pod Security Baseline ihlali: {{fields}}",
     "securityBaseline_other": "{{count}} Pod Security Baseline ihlali: {{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "Alanın {{percent}} kadarı kullanılıyor ({{used}} / {{capacity}})",
     "inodeUsage": "Inode'ların {{percent}} kadarı kullanılıyor ({{used}} / {{total}})",
     "meshUnknownHost": "Hiçbir Service veya ServiceEntry'de olmayan {{host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
@@ -49,5 +51,6 @@
     "meshConflictingVirtualService": "{{gateway}} üzerindeki {{host}} ana makinesi daha eski {{other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
     "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz."
   },
-  "showDisk": "Disk neredeyse dolu"
+  "showDisk": "Disk neredeyse dolu",
+  "showPractices": "En iyi uygulama bulguları"
 }

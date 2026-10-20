@@ -24,6 +24,7 @@
     "gateway": "Gateway API",
     "mesh": "サービスメッシュ",
     "security": "セキュリティ",
+    "practices": "ベストプラクティス",
     "credentials": "認証情報",
     "disk": "ディスク残りわずか",
     "events": "警告イベント"
@@ -35,6 +36,7 @@
     "expires": "有効期限: {{date}}",
     "expired": "{{date}} に期限切れ",
     "securityBaseline_other": "Pod Security Baseline 違反 {{count}} 件: {{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "容量の {{percent}} を使用中 ({{used}} / {{capacity}})",
     "inodeUsage": "inode の {{percent}} を使用中 ({{used}} / {{total}})",
     "meshUnknownHost": "{{host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
@@ -45,5 +47,6 @@
     "meshConflictingVirtualService": "{{gateway}} のホスト {{host}} は、より古い仮想サービス {{other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
     "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。"
   },
-  "showDisk": "ディスク残りわずか"
+  "showDisk": "ディスク残りわずか",
+  "showPractices": "ベストプラクティスの指摘"
 }

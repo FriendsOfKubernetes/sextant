@@ -1,0 +1,32 @@
+/* The settings dialog of the best-practice checks; the page and the section use the Security page's classes. */
+.bp-settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.bp-settings__group legend {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.bp-settings__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bp-settings__text {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  resize: vertical;
+}

@@ -11,6 +11,7 @@ import type { LogViewSettings } from "./LogViewSettings";
 import type { McpSettings } from "./McpSettings";
 import type { NotificationSettings } from "./NotificationSettings";
 import type { Pin } from "./Pin";
+import type { PracticesSettings } from "./PracticesSettings";
 import type { SavedView } from "./SavedView";
 import type { Snippet } from "./Snippet";
 import type { TableColumnWidths } from "./TableColumnWidths";
@@ -140,4 +141,9 @@ logs: LogViewSettings,
  * The order of clusters in the cluster rail, as cluster ids; empty = the default order. Clusters not in the list
  * follow the listed ones in the default order. Written by the frontend; read leniently and capped ([`rail`]).
  */
-clusterOrder: Array<string>, };
+clusterOrder: Array<string>, 
+/**
+ * The "Best practices" checks (#207): checks turned off and namespaces never checked. Written by the frontend;
+ * read leniently and capped ([`practices`]).
+ */
+practices: PracticesSettings, };

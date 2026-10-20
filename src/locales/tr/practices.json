@@ -1,0 +1,127 @@
+{
+  "sidebar": "En iyi uygulamalar",
+  "title": "En iyi uygulamalar",
+  "intro": "İş yüklerini kırılgan ya da savurgan yapan gündelik hatalar; iş yüklerinin Pod şablonlarında ve çevrelerinde denetlenir: otomatik ölçekleyiciler, kesinti bütçeleri, LimitRange'ler ve replikaların çalıştığı düğümler. Sextant'ın okuyamadığı bir şeye ihtiyaç duyan denetim atlanır. Kümede hiçbir şey değiştirilmez: önerilen düzeltme YAML olarak kopyalanır.",
+  "loading": "İş yükleri denetleniyor…",
+  "chooseNamespace": "Namespace seçin",
+  "chooseNamespaceText": "Bu sayfa namespace filtresinde seçilen namespace'leri denetler. Başlamak için bir veya daha fazla namespace seçin.",
+  "firstNamespaces_one": "Yalnızca seçilen ilk {{count}} namespace denetlenir.",
+  "firstNamespaces_other": "Yalnızca seçilen ilk {{count}} namespace denetlenir.",
+  "watchFailed": "{{kind}} izlenemedi",
+  "skipped": "{{kind}} okunamadı: buna ihtiyaç duyan denetimler atlandı.",
+  "excluded": "Denetlenmiyor, ayarlarda hariç tutuldu: {{namespaces}}",
+  "truncated_one": "Çok fazla bulgu var: yalnızca ilk {{count}} iş yükü listelenir.",
+  "truncated_other": "Çok fazla bulgu var: yalnızca ilk {{count}} iş yükü listelenir.",
+  "empty": "Bu namespace'te bulgu yok.",
+  "emptyFiltered": "Bu namespace'te filtrelere uyan bulgu yok.",
+  "filter": {
+    "area": "Alan",
+    "areas": {
+      "all": "Tüm alanlar",
+      "reliability": "Güvenilirlik",
+      "efficiency": "Verimlilik"
+    },
+    "severity": "Önem",
+    "severities": {
+      "any": "Herhangi",
+      "high": "Yüksek",
+      "medium": "Orta ve üzeri"
+    }
+  },
+  "areas": {
+    "reliability": "Güvenilirlik",
+    "efficiency": "Verimlilik"
+  },
+  "severity": {
+    "high": "Yüksek",
+    "medium": "Orta",
+    "low": "Düşük"
+  },
+  "counts": {
+    "high_one": "{{count}} yüksek önemli bulgu",
+    "high_other": "{{count}} yüksek önemli bulgu",
+    "medium_one": "{{count}} orta önemli bulgu",
+    "medium_other": "{{count}} orta önemli bulgu",
+    "low_one": "{{count}} düşük önemli bulgu",
+    "low_other": "{{count}} düşük önemli bulgu"
+  },
+  "row": {
+    "expand": "{{name}} bulgularını göster",
+    "collapse": "{{name}} bulgularını gizle"
+  },
+  "finding": {
+    "container": "Kapsayıcı {{name}}",
+    "on": "{{kind}} {{name}} içinde",
+    "value": "Değer: {{value}}",
+    "unset": "Ayarlanmamış",
+    "fix": "Önerilen düzeltme",
+    "create": "Oluşturulacak nesne",
+    "copy": "Düzeltmeyi kopyala",
+    "copied": "Kopyalandı",
+    "copyFailed": "Kopyalanamadı"
+  },
+  "details": {
+    "title": "En iyi uygulamalar",
+    "noFindings": "Bulgu yok: burada geçerli olan tüm denetimlerden geçiyor.",
+    "excluded": "{{namespace}} namespace'i en iyi uygulama denetimlerinin ayarlarında hariç tutuldu."
+  },
+  "settings": {
+    "open": "Ayarlar…",
+    "title": "En iyi uygulama denetimleri",
+    "excluded": "Hiç denetlenmeyen namespace'ler",
+    "excludedHint": "Her satıra bir ad ya da boşluk veya virgülle ayrılmış adlar. Hariç tutulan namespace'ler sayfada, ayrıntılarda ve sorunlarda yer almaz.",
+    "save": "Kaydet",
+    "saveFailed": "Ayarlar kaydedilemedi"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "Readiness yoklaması yok",
+      "why": "Readiness yoklaması olmadan Pod, kapsayıcıları başlar başlamaz, uygulama hazır olmadan trafik alır ve yeni Pod'lar hizmet veremese bile dağıtım devam eder. Kapsayıcı {{port}} bağlantı noktasını bildiriyor, yani bir şeye hizmet veriyor."
+    },
+    "livenessProbe": {
+      "title": "Liveness yoklaması yok",
+      "why": "Liveness yoklaması olmadan, çıkmadan takılan bir kapsayıcı hiçbir zaman yeniden başlatılmaz. Yoklama bağımlılıkları değil yalnızca sürecin kendisini denetlemelidir: aksi halde yavaş bir veritabanı sağlıklı Pod'ları yeniden başlatır."
+    },
+    "mutableImage": {
+      "title": "Sürümü sabitlenmemiş imaj",
+      "why": "latest etiketli ya da etiketsiz bir imaj aynı ad altında değişebilir: yeni Pod'lar kimsenin dağıtmadığı kodu çalıştırabilir ve geri alma eski imaj yerine en yenisini getirir."
+    },
+    "pullAlwaysDigest": {
+      "title": "Digest ile sabitlenmiş imaj her başlatmada çekiliyor",
+      "why": "Digest ile sabitlenmiş bir imaj asla değişmez; bu yüzden imagePullPolicy Always her başlatmada kayıt defterine yalnızca bir istek ekler ve kayıt defterine ulaşılamadığı sürece Pod'lar başlayamaz."
+    },
+    "singleReplica": {
+      "title": "Tek replika",
+      "why": "Tek replikayla her yeniden başlatma, tahliye, düğüm boşaltma ve dağıtım bir kesinti demektir.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} bunu tek replikaya düşürebilir: o zaman her yeniden başlatma, tahliye, düğüm boşaltma ve dağıtım bir kesinti demektir."
+    },
+    "noPdb": {
+      "title": "PodDisruptionBudget yok",
+      "why": "PodDisruptionBudget olmadan bir düğüm boşaltma ya da küme yükseltmesi tüm replikaları aynı anda tahliye edebilir. Bütçe, yeterli replika hazır olana kadar tahliyelerin beklemesini sağlar."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget hiçbir kesintiye izin vermiyor",
+      "why": "PodDisruptionBudget {{pdb}} hiçbir Pod'un tahliyesine izin vermiyor (beklenen Pod'lar: {{pods}}): bütçe değiştirilene ya da silinene kadar düğüm boşaltmaları ve küme yükseltmeleri durur."
+    },
+    "sameNode": {
+      "title": "Tüm replikalar tek düğümde",
+      "why": "Çalışan replikaların tümü ({{count}}) {{node}} düğümünde: bu düğüm arızalanır ya da boşaltılırsa iş yükü kullanılamaz. Topoloji yayılım kısıtlamaları ya da Pod karşıt benzeşimi, zamanlayıcının replikaları farklı düğümlere yerleştirmesini sağlar."
+    },
+    "noRequests": {
+      "title": "Kaynak isteği yok",
+      "why": "requests olmadan zamanlayıcı Pod'u hiçbir şeye ihtiyacı yokmuş gibi yerleştirir: düğümler aşırı yüklenir ve bir düğümde bellek azaldığında Pod ilk tahliye edilenler arasında olur."
+    },
+    "noMemoryLimit": {
+      "title": "Bellek sınırı yok",
+      "why": "Bellek sınırı olmadan, bellek sızdıran bir kapsayıcı düğümünün tüm belleğini alabilir ve diğer Pod'ların tahliye edilmesine ya da sonlandırılmasına yol açabilir. CPU sınırı istenmez: düğümde boş CPU olsa bile kapsayıcıyı kısıtlar."
+    },
+    "limitsAboveRecommendation": {
+      "title": "Sınır, boyutlandırma önerisinin çok üstünde",
+      "why": "Sınır, kullanım geçmişinden gelen önerinin ({{recommended}}) iki katından fazla: düğüm hiç gelmeyen kullanım için yer ayırmak zorunda kalır ve kontrolden çıkan bir kapsayıcı durdurulmadan önce çok büyüyebilir."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler ölçeklendiremiyor",
+      "why": "HorizontalPodAutoscaler {{hpa}} için en düşük ve en yüksek değer aynı ({{min}}), bu yüzden hiç ölçeklendirmez: en yüksek değeri artırın ya da otomatik ölçekleyiciyi kaldırıp replika sayısını ayarlayın."
+    }
+  }
+}

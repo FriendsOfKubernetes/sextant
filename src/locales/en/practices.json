@@ -1,0 +1,127 @@
+{
+  "sidebar": "Best practices",
+  "title": "Best practices",
+  "intro": "Everyday mistakes that make workloads fragile or wasteful, checked on the pod templates of workloads and on what surrounds them: autoscalers, disruption budgets, LimitRanges and where the replicas run. A check that needs something Sextant cannot read is skipped. Nothing is changed in the cluster: a suggested fix is copied as YAML.",
+  "loading": "Checking workloads…",
+  "chooseNamespace": "Choose namespaces",
+  "chooseNamespaceText": "This page checks the namespaces chosen in the namespace filter. Choose one or more namespaces to start.",
+  "firstNamespaces_one": "Only the first {{count}} chosen namespace is checked.",
+  "firstNamespaces_other": "Only the first {{count}} chosen namespaces are checked.",
+  "watchFailed": "Could not watch {{kind}}",
+  "skipped": "Could not read {{kind}}: the checks that need it are skipped.",
+  "excluded": "Not checked, excluded in the settings: {{namespaces}}",
+  "truncated_one": "There are too many findings: only the first {{count}} workload is listed.",
+  "truncated_other": "There are too many findings: only the first {{count}} workloads are listed.",
+  "empty": "No findings in this namespace.",
+  "emptyFiltered": "No findings match the filters in this namespace.",
+  "filter": {
+    "area": "Area",
+    "areas": {
+      "all": "All areas",
+      "reliability": "Reliability",
+      "efficiency": "Efficiency"
+    },
+    "severity": "Severity",
+    "severities": {
+      "any": "Any",
+      "high": "High",
+      "medium": "Medium and above"
+    }
+  },
+  "areas": {
+    "reliability": "Reliability",
+    "efficiency": "Efficiency"
+  },
+  "severity": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "counts": {
+    "high_one": "{{count}} high-severity finding",
+    "high_other": "{{count}} high-severity findings",
+    "medium_one": "{{count}} medium-severity finding",
+    "medium_other": "{{count}} medium-severity findings",
+    "low_one": "{{count}} low-severity finding",
+    "low_other": "{{count}} low-severity findings"
+  },
+  "row": {
+    "expand": "Show the findings of {{name}}",
+    "collapse": "Hide the findings of {{name}}"
+  },
+  "finding": {
+    "container": "Container {{name}}",
+    "on": "In {{kind}} {{name}}",
+    "value": "Value: {{value}}",
+    "unset": "Not set",
+    "fix": "Suggested fix",
+    "create": "Object to create",
+    "copy": "Copy the fix",
+    "copied": "Copied",
+    "copyFailed": "Could not copy"
+  },
+  "details": {
+    "title": "Best practices",
+    "noFindings": "No findings: every check that applies here passes.",
+    "excluded": "Namespace {{namespace}} is excluded in the settings of the best-practice checks."
+  },
+  "settings": {
+    "open": "Settings…",
+    "title": "Best-practice checks",
+    "excluded": "Namespaces never checked",
+    "excludedHint": "One name per line, or separated by spaces or commas. Excluded namespaces are left out of the page, the details and the problems.",
+    "save": "Save",
+    "saveFailed": "Could not save the settings"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "No readiness probe",
+      "why": "Without a readiness probe a pod gets traffic as soon as its containers start, before the application is ready, and a rollout goes on even when the new pods cannot serve. The container declares port {{port}}, so it serves something."
+    },
+    "livenessProbe": {
+      "title": "No liveness probe",
+      "why": "Without a liveness probe a container that hangs without exiting is never restarted. Let the probe check only the process itself, not its dependencies: otherwise a slow database restarts healthy pods."
+    },
+    "mutableImage": {
+      "title": "Image without a pinned version",
+      "why": "An image tagged latest, or without a tag, can change under the same name: new pods may run code nobody deployed, and a rollback brings back the newest image instead of the old one."
+    },
+    "pullAlwaysDigest": {
+      "title": "Image pinned by digest is pulled on every start",
+      "why": "An image pinned by digest never changes, so imagePullPolicy Always only adds a request to the registry on every start, and pods cannot start while the registry is unreachable."
+    },
+    "singleReplica": {
+      "title": "Single replica",
+      "why": "With one replica every restart, eviction, node drain and rollout is downtime.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} may scale it down to one replica: then every restart, eviction, node drain and rollout is downtime."
+    },
+    "noPdb": {
+      "title": "No PodDisruptionBudget",
+      "why": "Without a PodDisruptionBudget a node drain or a cluster upgrade may evict every replica at once. A budget makes evictions wait until enough replicas are ready."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget allows no disruption",
+      "why": "PodDisruptionBudget {{pdb}} lets no pod be evicted (expected pods: {{pods}}): node drains and cluster upgrades stop until the budget is changed or deleted."
+    },
+    "sameNode": {
+      "title": "All replicas on one node",
+      "why": "The running replicas ({{count}}) are all on node {{node}}: when that node fails or is drained, the workload is down. Topology spread constraints or pod anti-affinity make the scheduler place replicas on different nodes."
+    },
+    "noRequests": {
+      "title": "No resource requests",
+      "why": "Without requests the scheduler places the pod as if it needed nothing: nodes get overcommitted, and the pod is among the first to be evicted when a node runs short of memory."
+    },
+    "noMemoryLimit": {
+      "title": "No memory limit",
+      "why": "Without a memory limit a leaking container can take all the memory of its node and get other pods evicted or killed. A CPU limit is not asked for: it throttles the container even when the node has CPU to spare."
+    },
+    "limitsAboveRecommendation": {
+      "title": "Limit far above the right-sizing recommendation",
+      "why": "The limit is more than twice the recommendation from the usage history ({{recommended}}): the node must keep room for usage that never comes, and a runaway container can grow far before it is stopped."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler cannot scale",
+      "why": "HorizontalPodAutoscaler {{hpa}} has the same minimum and maximum ({{min}}), so it never scales: raise the maximum, or remove the autoscaler and set the replicas."
+    }
+  }
+}

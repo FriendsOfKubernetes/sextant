@@ -24,6 +24,7 @@
     "gateway": "Gateway API",
     "mesh": "服务网格",
     "security": "安全",
+    "practices": "最佳实践",
     "credentials": "凭据",
     "disk": "磁盘即将用满",
     "events": "警告事件"
@@ -35,6 +36,7 @@
     "expires": "将于 {{date}} 过期",
     "expired": "已于 {{date}} 过期",
     "securityBaseline_other": "{{count}} 项 Pod Security Baseline 违规：{{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "空间已用 {{percent}}（{{used}}/{{capacity}}）",
     "inodeUsage": "Inode 已用 {{percent}}（{{used}}/{{total}}）",
     "meshUnknownHost": "路由到 {{host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
@@ -45,5 +47,6 @@
     "meshConflictingVirtualService": "{{gateway}} 上的主机 {{host}} 已被更早的虚拟服务 {{other}} 占用：此虚拟服务的路由不会生效。",
     "meshInvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。"
   },
-  "showDisk": "磁盘即将用满"
+  "showDisk": "磁盘即将用满",
+  "showPractices": "最佳实践发现"
 }

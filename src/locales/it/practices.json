@@ -1,0 +1,132 @@
+{
+  "sidebar": "Buone pratiche",
+  "title": "Buone pratiche",
+  "intro": "Gli errori di tutti i giorni che rendono i carichi di lavoro fragili o dispendiosi, verificati sui modelli di Pod dei carichi di lavoro e su ciò che li circonda: autoscaler, budget di interruzione, LimitRange e i nodi su cui girano le repliche. Una verifica che richiede qualcosa che Sextant non può leggere viene saltata. Nel cluster non cambia nulla: una correzione suggerita si copia come YAML.",
+  "loading": "Verifica dei carichi di lavoro…",
+  "chooseNamespace": "Scegli i namespace",
+  "chooseNamespaceText": "Questa pagina verifica i namespace scelti nel filtro dei namespace. Scegli uno o più namespace per iniziare.",
+  "firstNamespaces_one": "Viene verificato solo il primo namespace scelto ({{count}}).",
+  "firstNamespaces_many": "Vengono verificati solo i primi {{count}} namespace scelti.",
+  "firstNamespaces_other": "Vengono verificati solo i primi {{count}} namespace scelti.",
+  "watchFailed": "Impossibile osservare {{kind}}",
+  "skipped": "Impossibile leggere {{kind}}: le verifiche che ne hanno bisogno vengono saltate.",
+  "excluded": "Non verificati, esclusi nelle impostazioni: {{namespaces}}",
+  "truncated_one": "Troppi rilievi: viene elencato solo il primo carico di lavoro ({{count}}).",
+  "truncated_many": "Troppi rilievi: vengono elencati solo i primi {{count}} carichi di lavoro.",
+  "truncated_other": "Troppi rilievi: vengono elencati solo i primi {{count}} carichi di lavoro.",
+  "empty": "Nessun rilievo in questo namespace.",
+  "emptyFiltered": "Nessun rilievo di questo namespace corrisponde ai filtri.",
+  "filter": {
+    "area": "Area",
+    "areas": {
+      "all": "Tutte le aree",
+      "reliability": "Affidabilità",
+      "efficiency": "Efficienza"
+    },
+    "severity": "Gravità",
+    "severities": {
+      "any": "Qualsiasi",
+      "high": "Alta",
+      "medium": "Media o superiore"
+    }
+  },
+  "areas": {
+    "reliability": "Affidabilità",
+    "efficiency": "Efficienza"
+  },
+  "severity": {
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Bassa"
+  },
+  "counts": {
+    "high_one": "{{count}} rilievo di gravità alta",
+    "high_many": "{{count}} di rilievi di gravità alta",
+    "high_other": "{{count}} rilievi di gravità alta",
+    "medium_one": "{{count}} rilievo di gravità media",
+    "medium_many": "{{count}} di rilievi di gravità media",
+    "medium_other": "{{count}} rilievi di gravità media",
+    "low_one": "{{count}} rilievo di gravità bassa",
+    "low_many": "{{count}} di rilievi di gravità bassa",
+    "low_other": "{{count}} rilievi di gravità bassa"
+  },
+  "row": {
+    "expand": "Mostra i rilievi di {{name}}",
+    "collapse": "Nascondi i rilievi di {{name}}"
+  },
+  "finding": {
+    "container": "Container {{name}}",
+    "on": "In {{kind}} {{name}}",
+    "value": "Valore: {{value}}",
+    "unset": "Non impostato",
+    "fix": "Correzione suggerita",
+    "create": "Oggetto da creare",
+    "copy": "Copia la correzione",
+    "copied": "Copiato",
+    "copyFailed": "Impossibile copiare"
+  },
+  "details": {
+    "title": "Buone pratiche",
+    "noFindings": "Nessun rilievo: tutte le verifiche applicabili qui sono superate.",
+    "excluded": "Il namespace {{namespace}} è escluso nelle impostazioni delle verifiche delle buone pratiche."
+  },
+  "settings": {
+    "open": "Impostazioni…",
+    "title": "Verifiche delle buone pratiche",
+    "excluded": "Namespace mai verificati",
+    "excludedHint": "Un nome per riga, oppure separati da spazi o virgole. I namespace esclusi non compaiono nella pagina, nei dettagli né nei problemi.",
+    "save": "Salva",
+    "saveFailed": "Impossibile salvare le impostazioni"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "Nessuna sonda readiness",
+      "why": "Senza una sonda readiness un Pod riceve traffico appena partono i suoi container, prima che l'applicazione sia pronta, e un rollout prosegue anche quando i nuovi Pod non riescono a servire. Il container dichiara la porta {{port}}, quindi serve qualcosa."
+    },
+    "livenessProbe": {
+      "title": "Nessuna sonda liveness",
+      "why": "Senza una sonda liveness un container bloccato che non termina non viene mai riavviato. Fai verificare alla sonda solo il processo stesso, non le sue dipendenze: altrimenti un database lento riavvia Pod sani."
+    },
+    "mutableImage": {
+      "title": "Immagine senza versione fissata",
+      "why": "Un'immagine con il tag latest, o senza tag, può cambiare con lo stesso nome: i nuovi Pod possono eseguire codice che nessuno ha rilasciato, e un rollback riporta l'immagine più recente invece di quella vecchia."
+    },
+    "pullAlwaysDigest": {
+      "title": "Immagine fissata per digest scaricata a ogni avvio",
+      "why": "Un'immagine fissata per digest non cambia mai, quindi imagePullPolicy Always aggiunge solo una richiesta al registry a ogni avvio, e i Pod non possono partire finché il registry non è raggiungibile."
+    },
+    "singleReplica": {
+      "title": "Una sola replica",
+      "why": "Con una sola replica ogni riavvio, espulsione, svuotamento di un nodo e rollout è un'interruzione del servizio.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} può ridurlo a una sola replica: allora ogni riavvio, espulsione, svuotamento di un nodo e rollout è un'interruzione del servizio."
+    },
+    "noPdb": {
+      "title": "Nessun PodDisruptionBudget",
+      "why": "Senza un PodDisruptionBudget lo svuotamento di un nodo o un aggiornamento del cluster può espellere tutte le repliche insieme. Un budget fa attendere le espulsioni finché non ci sono abbastanza repliche pronte."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget che non consente interruzioni",
+      "why": "PodDisruptionBudget {{pdb}} non consente l'espulsione di alcun Pod (Pod attesi: {{pods}}): gli svuotamenti dei nodi e gli aggiornamenti del cluster si fermano finché il budget non viene modificato o eliminato."
+    },
+    "sameNode": {
+      "title": "Tutte le repliche su un nodo",
+      "why": "Le repliche in esecuzione ({{count}}) sono tutte sul nodo {{node}}: se quel nodo si guasta o viene svuotato, il carico di lavoro non è disponibile. I vincoli di distribuzione topologica o l'anti-affinità dei Pod fanno collocare le repliche su nodi diversi."
+    },
+    "noRequests": {
+      "title": "Nessuna richiesta di risorse",
+      "why": "Senza requests lo scheduler colloca il Pod come se non avesse bisogno di nulla: i nodi vengono sovraccaricati e il Pod è tra i primi a essere espulsi quando un nodo resta senza memoria."
+    },
+    "noMemoryLimit": {
+      "title": "Nessun limite di memoria",
+      "why": "Senza un limite di memoria un container con una perdita può occupare tutta la memoria del nodo e far espellere o terminare altri Pod. Un limite di CPU non è richiesto: rallenta il container anche quando il nodo ha CPU libera."
+    },
+    "limitsAboveRecommendation": {
+      "title": "Limite molto sopra la raccomandazione di dimensionamento",
+      "why": "Il limite supera il doppio della raccomandazione dalla cronologia di utilizzo ({{recommended}}): il nodo deve tenere spazio per un consumo che non arriva mai, e un container fuori controllo può crescere molto prima di essere fermato."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler che non può scalare",
+      "why": "HorizontalPodAutoscaler {{hpa}} ha lo stesso minimo e massimo ({{min}}), quindi non scala mai: aumenta il massimo, oppure rimuovi l'autoscaler e imposta le repliche."
+    }
+  }
+}

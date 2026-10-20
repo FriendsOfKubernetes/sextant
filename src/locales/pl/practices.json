@@ -1,0 +1,137 @@
+{
+  "sidebar": "Dobre praktyki",
+  "title": "Dobre praktyki",
+  "intro": "Codzienne błędy, przez które obciążenia stają się kruche lub rozrzutne, sprawdzane w szablonach Podów obciążeń i w ich otoczeniu: autoskalerach, budżetach zakłóceń, LimitRange i węzłach, na których działają repliki. Sprawdzenie, które potrzebuje czegoś, czego Sextant nie może odczytać, jest pomijane. W klastrze nic się nie zmienia: sugerowaną poprawkę kopiuje się jako YAML.",
+  "loading": "Sprawdzanie obciążeń…",
+  "chooseNamespace": "Wybierz namespace",
+  "chooseNamespaceText": "Ta strona sprawdza namespace wybrane w filtrze namespace. Aby zacząć, wybierz jeden lub kilka namespace.",
+  "firstNamespaces_one": "Sprawdzany jest tylko pierwszy wybrany namespace ({{count}}).",
+  "firstNamespaces_few": "Sprawdzane są tylko pierwsze {{count}} wybrane namespace.",
+  "firstNamespaces_many": "Sprawdzanych jest tylko pierwszych {{count}} wybranych namespace.",
+  "firstNamespaces_other": "Sprawdzanych jest tylko pierwszych {{count}} wybranego namespace.",
+  "watchFailed": "Nie można obserwować {{kind}}",
+  "skipped": "Nie można odczytać {{kind}}: sprawdzenia, które tego potrzebują, są pomijane.",
+  "excluded": "Niesprawdzane, wykluczone w ustawieniach: {{namespaces}}",
+  "truncated_one": "Za dużo ustaleń: wyświetlane jest tylko pierwsze obciążenie ({{count}}).",
+  "truncated_few": "Za dużo ustaleń: wyświetlane są tylko pierwsze {{count}} obciążenia.",
+  "truncated_many": "Za dużo ustaleń: wyświetlanych jest tylko pierwszych {{count}} obciążeń.",
+  "truncated_other": "Za dużo ustaleń: wyświetlanych jest tylko pierwszych {{count}} obciążenia.",
+  "empty": "Brak ustaleń w tym namespace.",
+  "emptyFiltered": "Żadne ustalenie w tym namespace nie pasuje do filtrów.",
+  "filter": {
+    "area": "Obszar",
+    "areas": {
+      "all": "Wszystkie obszary",
+      "reliability": "Niezawodność",
+      "efficiency": "Wydajność"
+    },
+    "severity": "Ważność",
+    "severities": {
+      "any": "Dowolna",
+      "high": "Wysoka",
+      "medium": "Średnia i wyższa"
+    }
+  },
+  "areas": {
+    "reliability": "Niezawodność",
+    "efficiency": "Wydajność"
+  },
+  "severity": {
+    "high": "Wysoka",
+    "medium": "Średnia",
+    "low": "Niska"
+  },
+  "counts": {
+    "high_one": "{{count}} ustalenie o wysokiej ważności",
+    "high_few": "{{count}} ustalenia o wysokiej ważności",
+    "high_many": "{{count}} ustaleń o wysokiej ważności",
+    "high_other": "{{count}} ustalenia o wysokiej ważności",
+    "medium_one": "{{count}} ustalenie o średniej ważności",
+    "medium_few": "{{count}} ustalenia o średniej ważności",
+    "medium_many": "{{count}} ustaleń o średniej ważności",
+    "medium_other": "{{count}} ustalenia o średniej ważności",
+    "low_one": "{{count}} ustalenie o niskiej ważności",
+    "low_few": "{{count}} ustalenia o niskiej ważności",
+    "low_many": "{{count}} ustaleń o niskiej ważności",
+    "low_other": "{{count}} ustalenia o niskiej ważności"
+  },
+  "row": {
+    "expand": "Pokaż ustalenia dla {{name}}",
+    "collapse": "Ukryj ustalenia dla {{name}}"
+  },
+  "finding": {
+    "container": "Kontener {{name}}",
+    "on": "W {{kind}} {{name}}",
+    "value": "Wartość: {{value}}",
+    "unset": "Nie ustawiono",
+    "fix": "Sugerowana poprawka",
+    "create": "Obiekt do utworzenia",
+    "copy": "Kopiuj poprawkę",
+    "copied": "Skopiowano",
+    "copyFailed": "Nie można skopiować"
+  },
+  "details": {
+    "title": "Dobre praktyki",
+    "noFindings": "Brak ustaleń: wszystkie sprawdzenia, które mają tu zastosowanie, są spełnione.",
+    "excluded": "Namespace {{namespace}} jest wykluczony w ustawieniach sprawdzeń dobrych praktyk."
+  },
+  "settings": {
+    "open": "Ustawienia…",
+    "title": "Sprawdzenia dobrych praktyk",
+    "excluded": "Namespace nigdy niesprawdzane",
+    "excludedHint": "Jedna nazwa w wierszu albo nazwy rozdzielone spacjami lub przecinkami. Wykluczone namespace nie trafiają na stronę, do szczegółów ani do problemów.",
+    "save": "Zapisz",
+    "saveFailed": "Nie można zapisać ustawień"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "Brak sondy readiness",
+      "why": "Bez sondy readiness Pod dostaje ruch, gdy tylko uruchomią się jego kontenery, zanim aplikacja będzie gotowa, a wdrożenie trwa nawet wtedy, gdy nowe Pody nie mogą obsługiwać żądań. Kontener deklaruje port {{port}}, więc coś obsługuje."
+    },
+    "livenessProbe": {
+      "title": "Brak sondy liveness",
+      "why": "Bez sondy liveness kontener, który się zawiesza, ale nie kończy, nigdy nie jest uruchamiany ponownie. Sonda powinna sprawdzać tylko sam proces, a nie jego zależności: w przeciwnym razie wolna baza danych uruchamia ponownie zdrowe Pody."
+    },
+    "mutableImage": {
+      "title": "Obraz bez przypiętej wersji",
+      "why": "Obraz z tagiem latest lub bez tagu może się zmienić pod tą samą nazwą: nowe Pody mogą uruchomić kod, którego nikt nie wdrożył, a wycofanie przywraca najnowszy obraz zamiast starego."
+    },
+    "pullAlwaysDigest": {
+      "title": "Obraz przypięty przez digest jest pobierany przy każdym starcie",
+      "why": "Obraz przypięty przez digest nigdy się nie zmienia, więc imagePullPolicy Always tylko dodaje żądanie do rejestru przy każdym starcie, a Pody nie mogą wystartować, dopóki rejestr jest nieosiągalny."
+    },
+    "singleReplica": {
+      "title": "Jedna replika",
+      "why": "Przy jednej replice każde ponowne uruchomienie, eksmisja, opróżnianie węzła i wdrożenie oznacza przestój.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} może zmniejszyć liczbę replik do jednej: wtedy każde ponowne uruchomienie, eksmisja, opróżnianie węzła i wdrożenie oznacza przestój."
+    },
+    "noPdb": {
+      "title": "Brak PodDisruptionBudget",
+      "why": "Bez PodDisruptionBudget opróżnianie węzła lub aktualizacja klastra może eksmitować wszystkie repliki naraz. Budżet sprawia, że eksmisje czekają, aż wystarczająco wiele replik będzie gotowych."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget nie dopuszcza zakłóceń",
+      "why": "PodDisruptionBudget {{pdb}} nie pozwala eksmitować żadnego Poda (oczekiwane Pody: {{pods}}): opróżnianie węzłów i aktualizacje klastra stoją, dopóki budżet nie zostanie zmieniony lub usunięty."
+    },
+    "sameNode": {
+      "title": "Wszystkie repliki na jednym węźle",
+      "why": "Wszystkie działające repliki ({{count}}) są na węźle {{node}}: gdy ten węzeł ulegnie awarii lub zostanie opróżniony, obciążenie jest niedostępne. Ograniczenia rozkładu topologii lub anty-koligacja Podów sprawiają, że harmonogram umieszcza repliki na różnych węzłach."
+    },
+    "noRequests": {
+      "title": "Brak żądań zasobów",
+      "why": "Bez requests harmonogram umieszcza Pod tak, jakby niczego nie potrzebował: węzły są przeciążane, a Pod jest jednym z pierwszych eksmitowanych, gdy na węźle brakuje pamięci."
+    },
+    "noMemoryLimit": {
+      "title": "Brak limitu pamięci",
+      "why": "Bez limitu pamięci kontener z wyciekiem może zająć całą pamięć węzła i doprowadzić do eksmisji lub zabicia innych Podów. Limit CPU nie jest wymagany: dławi kontener nawet wtedy, gdy węzeł ma wolny CPU."
+    },
+    "limitsAboveRecommendation": {
+      "title": "Limit znacznie powyżej rekomendacji doboru zasobów",
+      "why": "Limit przekracza dwukrotność rekomendacji z historii użycia ({{recommended}}): węzeł musi rezerwować miejsce na zużycie, które nigdy nie nadchodzi, a kontener, który wymknął się spod kontroli, może bardzo urosnąć, zanim zostanie zatrzymany."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler nie może skalować",
+      "why": "HorizontalPodAutoscaler {{hpa}} ma takie samo minimum i maksimum ({{min}}), więc nigdy nie skaluje: zwiększ maksimum albo usuń autoskaler i ustaw liczbę replik."
+    }
+  }
+}

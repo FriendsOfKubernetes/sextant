@@ -1,0 +1,127 @@
+{
+  "sidebar": "Best Practices",
+  "title": "Best Practices",
+  "intro": "Alltägliche Fehler, die Workloads anfällig oder verschwenderisch machen, geprüft an den Pod-Vorlagen der Workloads und an ihrem Umfeld: Autoscaler, Disruption Budgets, LimitRanges und die Knoten, auf denen die Replikate laufen. Eine Prüfung, die etwas braucht, das Sextant nicht lesen kann, wird übersprungen. Im Cluster wird nichts geändert: Ein vorgeschlagener Fix wird als YAML kopiert.",
+  "loading": "Workloads werden geprüft…",
+  "chooseNamespace": "Namespaces auswählen",
+  "chooseNamespaceText": "Diese Seite prüft die im Namespace-Filter ausgewählten Namespaces. Wählen Sie einen oder mehrere Namespaces aus, um zu beginnen.",
+  "firstNamespaces_one": "Nur der erste {{count}} ausgewählte Namespace wird geprüft.",
+  "firstNamespaces_other": "Nur die ersten {{count}} ausgewählten Namespaces werden geprüft.",
+  "watchFailed": "{{kind}} konnte nicht beobachtet werden",
+  "skipped": "{{kind}} konnte nicht gelesen werden: Die Prüfungen, die es brauchen, werden übersprungen.",
+  "excluded": "Nicht geprüft, in den Einstellungen ausgeschlossen: {{namespaces}}",
+  "truncated_one": "Zu viele Befunde: Nur der erste {{count}} Workload wird aufgelistet.",
+  "truncated_other": "Zu viele Befunde: Nur die ersten {{count}} Workloads werden aufgelistet.",
+  "empty": "Keine Befunde in diesem Namespace.",
+  "emptyFiltered": "Keine Befunde in diesem Namespace entsprechen den Filtern.",
+  "filter": {
+    "area": "Bereich",
+    "areas": {
+      "all": "Alle Bereiche",
+      "reliability": "Zuverlässigkeit",
+      "efficiency": "Effizienz"
+    },
+    "severity": "Schweregrad",
+    "severities": {
+      "any": "Beliebig",
+      "high": "Hoch",
+      "medium": "Mittel und höher"
+    }
+  },
+  "areas": {
+    "reliability": "Zuverlässigkeit",
+    "efficiency": "Effizienz"
+  },
+  "severity": {
+    "high": "Hoch",
+    "medium": "Mittel",
+    "low": "Niedrig"
+  },
+  "counts": {
+    "high_one": "{{count}} Befund mit hohem Schweregrad",
+    "high_other": "{{count}} Befunde mit hohem Schweregrad",
+    "medium_one": "{{count}} Befund mit mittlerem Schweregrad",
+    "medium_other": "{{count}} Befunde mit mittlerem Schweregrad",
+    "low_one": "{{count}} Befund mit niedrigem Schweregrad",
+    "low_other": "{{count}} Befunde mit niedrigem Schweregrad"
+  },
+  "row": {
+    "expand": "Befunde von {{name}} anzeigen",
+    "collapse": "Befunde von {{name}} ausblenden"
+  },
+  "finding": {
+    "container": "Container {{name}}",
+    "on": "In {{kind}} {{name}}",
+    "value": "Wert: {{value}}",
+    "unset": "Nicht gesetzt",
+    "fix": "Vorgeschlagener Fix",
+    "create": "Zu erstellendes Objekt",
+    "copy": "Fix kopieren",
+    "copied": "Kopiert",
+    "copyFailed": "Kopieren fehlgeschlagen"
+  },
+  "details": {
+    "title": "Best Practices",
+    "noFindings": "Keine Befunde: Jede Prüfung, die hier gilt, ist bestanden.",
+    "excluded": "Namespace {{namespace}} ist in den Einstellungen der Best-Practice-Prüfungen ausgeschlossen."
+  },
+  "settings": {
+    "open": "Einstellungen…",
+    "title": "Best-Practice-Prüfungen",
+    "excluded": "Nie geprüfte Namespaces",
+    "excludedHint": "Ein Name pro Zeile oder durch Leerzeichen bzw. Kommas getrennt. Ausgeschlossene Namespaces fehlen auf der Seite, in den Details und bei den Problemen.",
+    "save": "Speichern",
+    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "Keine Readiness-Probe",
+      "why": "Ohne Readiness-Probe erhält ein Pod Traffic, sobald seine Container starten, bevor die Anwendung bereit ist, und ein Rollout läuft weiter, auch wenn die neuen Pods nichts bedienen können. Der Container deklariert Port {{port}}, er bedient also etwas."
+    },
+    "livenessProbe": {
+      "title": "Keine Liveness-Probe",
+      "why": "Ohne Liveness-Probe wird ein Container, der hängt, ohne sich zu beenden, nie neu gestartet. Lassen Sie die Probe nur den Prozess selbst prüfen, nicht seine Abhängigkeiten: Sonst startet eine langsame Datenbank gesunde Pods neu."
+    },
+    "mutableImage": {
+      "title": "Image ohne feste Version",
+      "why": "Ein Image mit dem Tag latest oder ohne Tag kann sich unter demselben Namen ändern: Neue Pods können Code ausführen, den niemand ausgerollt hat, und ein Rollback bringt das neueste Image statt des alten zurück."
+    },
+    "pullAlwaysDigest": {
+      "title": "Per Digest festgelegtes Image wird bei jedem Start gezogen",
+      "why": "Ein per Digest festgelegtes Image ändert sich nie, daher fügt imagePullPolicy Always bei jedem Start nur eine Anfrage an die Registry hinzu, und Pods können nicht starten, solange die Registry nicht erreichbar ist."
+    },
+    "singleReplica": {
+      "title": "Einzelnes Replikat",
+      "why": "Mit einem Replikat ist jeder Neustart, jede Verdrängung, jedes Leeren eines Knotens und jeder Rollout eine Ausfallzeit.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} kann auf ein Replikat herunterskalieren: Dann ist jeder Neustart, jede Verdrängung, jedes Leeren eines Knotens und jeder Rollout eine Ausfallzeit."
+    },
+    "noPdb": {
+      "title": "Kein PodDisruptionBudget",
+      "why": "Ohne PodDisruptionBudget kann das Leeren eines Knotens oder ein Cluster-Upgrade alle Replikate auf einmal verdrängen. Ein Budget lässt Verdrängungen warten, bis genug Replikate bereit sind."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget erlaubt keine Unterbrechung",
+      "why": "PodDisruptionBudget {{pdb}} lässt keine Verdrängung eines Pods zu (erwartete Pods: {{pods}}): Das Leeren von Knoten und Cluster-Upgrades stocken, bis das Budget geändert oder gelöscht wird."
+    },
+    "sameNode": {
+      "title": "Alle Replikate auf einem Knoten",
+      "why": "Die laufenden Replikate ({{count}}) liegen alle auf Knoten {{node}}: Fällt dieser Knoten aus oder wird er geleert, ist der Workload nicht verfügbar. Topology Spread Constraints oder Pod-Anti-Affinity lassen den Scheduler Replikate auf verschiedene Knoten verteilen."
+    },
+    "noRequests": {
+      "title": "Keine Ressourcenanforderungen",
+      "why": "Ohne Requests plant der Scheduler den Pod ein, als bräuchte er nichts: Knoten werden überbucht, und der Pod gehört zu den ersten, die verdrängt werden, wenn einem Knoten der Speicher ausgeht."
+    },
+    "noMemoryLimit": {
+      "title": "Kein Speicherlimit",
+      "why": "Ohne Speicherlimit kann ein Container mit Speicherleck den gesamten Speicher seines Knotens belegen und andere Pods verdrängen oder beenden lassen. Ein CPU-Limit wird nicht verlangt: Es drosselt den Container, auch wenn der Knoten freie CPU hat."
+    },
+    "limitsAboveRecommendation": {
+      "title": "Limit weit über der Right-Sizing-Empfehlung",
+      "why": "Das Limit ist mehr als doppelt so hoch wie die Empfehlung aus dem Nutzungsverlauf ({{recommended}}): Der Knoten muss Platz für Verbrauch freihalten, der nie kommt, und ein außer Kontrolle geratener Container kann stark wachsen, bevor er gestoppt wird."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler kann nicht skalieren",
+      "why": "HorizontalPodAutoscaler {{hpa}} hat dasselbe Minimum und Maximum ({{min}}) und skaliert daher nie: Erhöhen Sie das Maximum, oder entfernen Sie den Autoscaler und legen Sie die Replikate fest."
+    }
+  }
+}

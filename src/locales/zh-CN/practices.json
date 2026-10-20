@@ -1,0 +1,122 @@
+{
+  "sidebar": "最佳实践",
+  "title": "最佳实践",
+  "intro": "让工作负载变得脆弱或浪费资源的常见错误，在工作负载的 Pod 模板及其周边对象上检查：自动伸缩器、中断预算、LimitRange 以及副本所在的节点。需要 Sextant 无法读取的内容的检查会被跳过。不会更改集群中的任何内容：建议的修复以 YAML 形式复制。",
+  "loading": "正在检查工作负载…",
+  "chooseNamespace": "选择 namespace",
+  "chooseNamespaceText": "此页面检查在 namespace 筛选器中选择的 namespace。请选择一个或多个 namespace 开始。",
+  "firstNamespaces_other": "仅检查所选的前 {{count}} 个 namespace。",
+  "watchFailed": "无法监视 {{kind}}",
+  "skipped": "无法读取 {{kind}}：已跳过需要它的检查。",
+  "excluded": "未检查，已在设置中排除：{{namespaces}}",
+  "truncated_other": "发现过多：仅列出前 {{count}} 个工作负载。",
+  "empty": "此 namespace 中没有发现。",
+  "emptyFiltered": "此 namespace 中没有符合筛选条件的发现。",
+  "filter": {
+    "area": "领域",
+    "areas": {
+      "all": "所有领域",
+      "reliability": "可靠性",
+      "efficiency": "效率"
+    },
+    "severity": "严重程度",
+    "severities": {
+      "any": "任意",
+      "high": "高",
+      "medium": "中及以上"
+    }
+  },
+  "areas": {
+    "reliability": "可靠性",
+    "efficiency": "效率"
+  },
+  "severity": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  },
+  "counts": {
+    "high_other": "{{count}} 个高严重程度发现",
+    "medium_other": "{{count}} 个中严重程度发现",
+    "low_other": "{{count}} 个低严重程度发现"
+  },
+  "row": {
+    "expand": "显示 {{name}} 的发现",
+    "collapse": "隐藏 {{name}} 的发现"
+  },
+  "finding": {
+    "container": "容器 {{name}}",
+    "on": "位于 {{kind}} {{name}}",
+    "value": "值：{{value}}",
+    "unset": "未设置",
+    "fix": "建议的修复",
+    "create": "要创建的对象",
+    "copy": "复制修复",
+    "copied": "已复制",
+    "copyFailed": "无法复制"
+  },
+  "details": {
+    "title": "最佳实践",
+    "noFindings": "没有发现：此处适用的所有检查均已通过。",
+    "excluded": "namespace {{namespace}} 已在最佳实践检查的设置中排除。"
+  },
+  "settings": {
+    "open": "设置…",
+    "title": "最佳实践检查",
+    "excluded": "从不检查的 namespace",
+    "excludedHint": "每行一个名称，或用空格或逗号分隔。被排除的 namespace 不会出现在页面、详细信息和问题中。",
+    "save": "保存",
+    "saveFailed": "无法保存设置"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "没有 readiness 探针",
+      "why": "没有 readiness 探针时，Pod 在容器启动后立即接收流量，此时应用尚未就绪；即使新 Pod 无法提供服务，发布也会继续。该容器声明了端口 {{port}}，说明它在提供服务。"
+    },
+    "livenessProbe": {
+      "title": "没有 liveness 探针",
+      "why": "没有 liveness 探针时，挂起但未退出的容器永远不会被重启。让探针只检查进程本身，而不是其依赖：否则缓慢的数据库会导致健康的 Pod 被重启。"
+    },
+    "mutableImage": {
+      "title": "镜像未固定版本",
+      "why": "标签为 latest 或没有标签的镜像可能在同一名称下发生变化：新 Pod 可能运行没有人部署过的代码，回滚也会拿回最新的镜像而不是旧镜像。"
+    },
+    "pullAlwaysDigest": {
+      "title": "按 digest 固定的镜像每次启动都会拉取",
+      "why": "按 digest 固定的镜像永远不会改变，因此 imagePullPolicy Always 只会在每次启动时多一次对镜像仓库的请求，而在仓库不可达时 Pod 无法启动。"
+    },
+    "singleReplica": {
+      "title": "单个副本",
+      "why": "只有一个副本时，每次重启、驱逐、节点排空和发布都意味着停机。",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} 可能将其缩减到一个副本：届时每次重启、驱逐、节点排空和发布都意味着停机。"
+    },
+    "noPdb": {
+      "title": "没有 PodDisruptionBudget",
+      "why": "没有 PodDisruptionBudget 时，节点排空或集群升级可能一次驱逐所有副本。预算会让驱逐等待，直到有足够的副本就绪。"
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget 不允许任何中断",
+      "why": "PodDisruptionBudget {{pdb}} 不允许驱逐任何 Pod（预期 Pod：{{pods}}）：在修改或删除该预算之前，节点排空和集群升级都会停滞。"
+    },
+    "sameNode": {
+      "title": "所有副本都在一个节点上",
+      "why": "所有运行中的副本（{{count}}）都在节点 {{node}} 上：该节点故障或被排空时，工作负载将不可用。拓扑分布约束或 Pod 反亲和性会让调度器把副本放到不同节点上。"
+    },
+    "noRequests": {
+      "title": "没有资源请求",
+      "why": "没有 requests 时，调度器会把 Pod 当作什么都不需要来放置：节点会被超额分配，并且当节点内存不足时，该 Pod 会最先被驱逐。"
+    },
+    "noMemoryLimit": {
+      "title": "没有内存限制",
+      "why": "没有内存限制时，内存泄漏的容器可能占用其节点的全部内存，导致其他 Pod 被驱逐或终止。不要求 CPU 限制：即使节点有空闲 CPU，它也会限制容器。"
+    },
+    "limitsAboveRecommendation": {
+      "title": "限制远高于资源调整建议",
+      "why": "该限制超过根据使用历史得出的建议（{{recommended}}）的两倍：节点需要为永远不会出现的用量预留空间，而失控的容器在被停止前可能增长得非常多。"
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler 无法伸缩",
+      "why": "HorizontalPodAutoscaler {{hpa}} 的最小值与最大值相同（{{min}}），因此永远不会伸缩：请提高最大值，或删除自动伸缩器并设置副本数。"
+    }
+  }
+}

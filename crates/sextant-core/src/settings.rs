@@ -25,8 +25,10 @@ pub use columns::{ColumnWidths, TableColumnWidths};
 pub mod logs;
 pub use logs::LogViewSettings;
 pub mod appearance;
+pub mod practices;
 pub mod rail;
 pub use appearance::{AppearanceSettings, FontChoice, FontKind, ReduceMotion};
+pub use practices::PracticesSettings;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -451,6 +453,11 @@ pub struct AppSettings {
     #[serde(with = "rail::cluster_order_field")]
     #[ts(as = "Vec<String>")]
     pub cluster_order: Vec<String>,
+    /// The "Best practices" checks (#207): checks turned off and namespaces never checked. Written by the frontend;
+    /// read leniently and capped ([`practices`]).
+    #[serde(with = "practices::practices_field")]
+    #[ts(as = "PracticesSettings")]
+    pub practices: PracticesSettings,
 }
 
 impl Default for AppSettings {
@@ -485,6 +492,7 @@ impl Default for AppSettings {
             column_widths: ColumnWidths::new(),
             logs: LogViewSettings::default(),
             cluster_order: Vec::new(),
+            practices: PracticesSettings::default(),
         }
     }
 }

@@ -1,0 +1,122 @@
+{
+  "sidebar": "모범 사례",
+  "title": "모범 사례",
+  "intro": "워크로드를 취약하거나 낭비가 심하게 만드는 일상적인 실수를 워크로드의 Pod 템플릿과 그 주변(오토스케일러, 중단 예산, LimitRange, 복제본이 실행되는 노드)에서 확인합니다. Sextant가 읽을 수 없는 것이 필요한 검사는 건너뜁니다. 클러스터에서는 아무것도 변경되지 않으며, 제안된 수정은 YAML로 복사됩니다.",
+  "loading": "워크로드를 확인하는 중…",
+  "chooseNamespace": "namespace 선택",
+  "chooseNamespaceText": "이 페이지는 namespace 필터에서 선택한 namespace를 확인합니다. 시작하려면 namespace를 하나 이상 선택하세요.",
+  "firstNamespaces_other": "선택한 namespace 중 처음 {{count}}개만 확인합니다.",
+  "watchFailed": "{{kind}}을(를) 감시할 수 없습니다",
+  "skipped": "{{kind}}을(를) 읽을 수 없습니다. 이것이 필요한 검사는 건너뜁니다.",
+  "excluded": "설정에서 제외되어 확인하지 않음: {{namespaces}}",
+  "truncated_other": "발견 사항이 너무 많아 처음 {{count}}개 워크로드만 표시합니다.",
+  "empty": "이 namespace에는 발견 사항이 없습니다.",
+  "emptyFiltered": "이 namespace에는 필터와 일치하는 발견 사항이 없습니다.",
+  "filter": {
+    "area": "영역",
+    "areas": {
+      "all": "모든 영역",
+      "reliability": "안정성",
+      "efficiency": "효율성"
+    },
+    "severity": "심각도",
+    "severities": {
+      "any": "전체",
+      "high": "높음",
+      "medium": "보통 이상"
+    }
+  },
+  "areas": {
+    "reliability": "안정성",
+    "efficiency": "효율성"
+  },
+  "severity": {
+    "high": "높음",
+    "medium": "보통",
+    "low": "낮음"
+  },
+  "counts": {
+    "high_other": "심각도 높음 발견 사항 {{count}}개",
+    "medium_other": "심각도 보통 발견 사항 {{count}}개",
+    "low_other": "심각도 낮음 발견 사항 {{count}}개"
+  },
+  "row": {
+    "expand": "{{name}}의 발견 사항 표시",
+    "collapse": "{{name}}의 발견 사항 숨기기"
+  },
+  "finding": {
+    "container": "컨테이너 {{name}}",
+    "on": "{{kind}} {{name}} 내",
+    "value": "값: {{value}}",
+    "unset": "설정되지 않음",
+    "fix": "제안된 수정",
+    "create": "만들 객체",
+    "copy": "수정 복사",
+    "copied": "복사됨",
+    "copyFailed": "복사할 수 없음"
+  },
+  "details": {
+    "title": "모범 사례",
+    "noFindings": "발견 사항 없음: 여기에 적용되는 모든 검사를 통과합니다.",
+    "excluded": "namespace {{namespace}}은(는) 모범 사례 검사 설정에서 제외되었습니다."
+  },
+  "settings": {
+    "open": "설정…",
+    "title": "모범 사례 검사",
+    "excluded": "확인하지 않는 namespace",
+    "excludedHint": "한 줄에 하나씩, 또는 공백이나 쉼표로 구분합니다. 제외된 namespace는 페이지, 세부 정보, 문제에 나타나지 않습니다.",
+    "save": "저장",
+    "saveFailed": "설정을 저장할 수 없습니다"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "readiness 프로브 없음",
+      "why": "readiness 프로브가 없으면 Pod는 애플리케이션이 준비되기 전, 컨테이너가 시작되자마자 트래픽을 받고, 새 Pod가 요청을 처리하지 못해도 롤아웃이 계속됩니다. 이 컨테이너는 포트 {{port}}을(를) 선언하므로 무언가를 제공합니다."
+    },
+    "livenessProbe": {
+      "title": "liveness 프로브 없음",
+      "why": "liveness 프로브가 없으면 종료되지 않고 멈춘 컨테이너가 다시 시작되지 않습니다. 프로브는 의존 대상이 아니라 프로세스 자체만 확인해야 합니다. 그렇지 않으면 데이터베이스가 느릴 때 정상 Pod가 다시 시작됩니다."
+    },
+    "mutableImage": {
+      "title": "버전이 고정되지 않은 이미지",
+      "why": "latest 태그나 태그가 없는 이미지는 같은 이름으로 내용이 바뀔 수 있습니다. 새 Pod가 아무도 배포하지 않은 코드를 실행할 수 있고, 롤백하면 이전 이미지 대신 최신 이미지가 돌아옵니다."
+    },
+    "pullAlwaysDigest": {
+      "title": "digest로 고정한 이미지를 시작할 때마다 가져옴",
+      "why": "digest로 고정한 이미지는 바뀌지 않으므로 imagePullPolicy Always는 시작할 때마다 레지스트리 요청만 늘리며, 레지스트리에 연결할 수 없는 동안에는 Pod가 시작되지 않습니다."
+    },
+    "singleReplica": {
+      "title": "복제본 하나",
+      "why": "복제본이 하나뿐이면 다시 시작, 축출, 노드 드레인, 롤아웃이 있을 때마다 다운타임이 발생합니다.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}}이(가) 복제본을 하나로 줄일 수 있습니다. 그러면 다시 시작, 축출, 노드 드레인, 롤아웃이 있을 때마다 다운타임이 발생합니다."
+    },
+    "noPdb": {
+      "title": "PodDisruptionBudget 없음",
+      "why": "PodDisruptionBudget이 없으면 노드 드레인이나 클러스터 업그레이드가 모든 복제본을 한꺼번에 축출할 수 있습니다. 예산이 있으면 충분한 복제본이 준비될 때까지 축출이 기다립니다."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget이 중단을 전혀 허용하지 않음",
+      "why": "PodDisruptionBudget {{pdb}}은(는) 어떤 Pod의 축출도 허용하지 않습니다(예상 Pod: {{pods}}). 예산을 변경하거나 삭제할 때까지 노드 드레인과 클러스터 업그레이드가 멈춥니다."
+    },
+    "sameNode": {
+      "title": "모든 복제본이 한 노드에 있음",
+      "why": "실행 중인 복제본({{count}})이 모두 노드 {{node}}에 있습니다. 이 노드에 장애가 나거나 드레인되면 워크로드를 사용할 수 없습니다. 토폴로지 분산 제약이나 Pod 안티어피니티를 사용하면 스케줄러가 복제본을 서로 다른 노드에 배치합니다."
+    },
+    "noRequests": {
+      "title": "리소스 요청 없음",
+      "why": "requests가 없으면 스케줄러는 Pod에 아무것도 필요하지 않은 것처럼 배치합니다. 노드가 과다 할당되고, 노드 메모리가 부족해지면 이 Pod가 가장 먼저 축출됩니다."
+    },
+    "noMemoryLimit": {
+      "title": "메모리 제한 없음",
+      "why": "메모리 제한이 없으면 메모리가 누수되는 컨테이너가 노드의 메모리를 모두 차지해 다른 Pod가 축출되거나 종료될 수 있습니다. CPU 제한은 요구하지 않습니다. 노드에 여유 CPU가 있어도 컨테이너를 제한하기 때문입니다."
+    },
+    "limitsAboveRecommendation": {
+      "title": "제한이 적정 크기 권장값보다 훨씬 높음",
+      "why": "제한이 사용 기록에 따른 권장값({{recommended}})의 두 배를 넘습니다. 노드는 오지 않는 사용량을 위해 공간을 비워 두어야 하고, 통제를 벗어난 컨테이너는 중지되기 전에 크게 늘어날 수 있습니다."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler가 스케일링할 수 없음",
+      "why": "HorizontalPodAutoscaler {{hpa}}의 최솟값과 최댓값이 같으므로({{min}}) 스케일링하지 않습니다. 최댓값을 높이거나, 오토스케일러를 제거하고 복제본 수를 설정하세요."
+    }
+  }
+}

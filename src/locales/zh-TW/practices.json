@@ -1,0 +1,122 @@
+{
+  "sidebar": "最佳做法",
+  "title": "最佳做法",
+  "intro": "讓工作負載變得脆弱或浪費資源的常見錯誤，在工作負載的 Pod 範本及其周邊物件上檢查：自動調整規模器、中斷預算、LimitRange，以及複本所在的節點。需要 Sextant 無法讀取之內容的檢查會略過。不會變更叢集中的任何內容：建議的修正會以 YAML 形式複製。",
+  "loading": "正在檢查工作負載…",
+  "chooseNamespace": "選擇 namespace",
+  "chooseNamespaceText": "此頁面會檢查在 namespace 篩選器中選擇的 namespace。請選擇一個或多個 namespace 以開始。",
+  "firstNamespaces_other": "僅檢查所選的前 {{count}} 個 namespace。",
+  "watchFailed": "無法監看 {{kind}}",
+  "skipped": "無法讀取 {{kind}}：已略過需要它的檢查。",
+  "excluded": "未檢查，已在設定中排除：{{namespaces}}",
+  "truncated_other": "發現過多：僅列出前 {{count}} 個工作負載。",
+  "empty": "此 namespace 中沒有發現。",
+  "emptyFiltered": "此 namespace 中沒有符合篩選條件的發現。",
+  "filter": {
+    "area": "領域",
+    "areas": {
+      "all": "所有領域",
+      "reliability": "可靠性",
+      "efficiency": "效率"
+    },
+    "severity": "嚴重性",
+    "severities": {
+      "any": "任何",
+      "high": "高",
+      "medium": "中以上"
+    }
+  },
+  "areas": {
+    "reliability": "可靠性",
+    "efficiency": "效率"
+  },
+  "severity": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  },
+  "counts": {
+    "high_other": "{{count}} 個高嚴重性發現",
+    "medium_other": "{{count}} 個中嚴重性發現",
+    "low_other": "{{count}} 個低嚴重性發現"
+  },
+  "row": {
+    "expand": "顯示 {{name}} 的發現",
+    "collapse": "隱藏 {{name}} 的發現"
+  },
+  "finding": {
+    "container": "容器 {{name}}",
+    "on": "位於 {{kind}} {{name}}",
+    "value": "值：{{value}}",
+    "unset": "未設定",
+    "fix": "建議的修正",
+    "create": "要建立的物件",
+    "copy": "複製修正",
+    "copied": "已複製",
+    "copyFailed": "無法複製"
+  },
+  "details": {
+    "title": "最佳做法",
+    "noFindings": "沒有發現：此處適用的所有檢查皆已通過。",
+    "excluded": "namespace {{namespace}} 已在最佳做法檢查的設定中排除。"
+  },
+  "settings": {
+    "open": "設定…",
+    "title": "最佳做法檢查",
+    "excluded": "從不檢查的 namespace",
+    "excludedHint": "每行一個名稱，或以空格或逗號分隔。排除的 namespace 不會出現在頁面、詳細資料與問題中。",
+    "save": "儲存",
+    "saveFailed": "無法儲存設定"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "沒有 readiness 探測",
+      "why": "沒有 readiness 探測時，Pod 會在容器啟動後立即接收流量，此時應用程式尚未就緒；即使新 Pod 無法提供服務，推出仍會繼續。此容器宣告了連接埠 {{port}}，表示它在提供服務。"
+    },
+    "livenessProbe": {
+      "title": "沒有 liveness 探測",
+      "why": "沒有 liveness 探測時，停滯但未結束的容器永遠不會重新啟動。讓探測只檢查處理程序本身，而不是其相依項目：否則緩慢的資料庫會讓健康的 Pod 重新啟動。"
+    },
+    "mutableImage": {
+      "title": "映像檔未固定版本",
+      "why": "標籤為 latest 或沒有標籤的映像檔可能在同一名稱下改變：新的 Pod 可能執行沒有人部署過的程式碼，而回復會帶回最新的映像檔，而非舊的。"
+    },
+    "pullAlwaysDigest": {
+      "title": "依 digest 固定的映像檔每次啟動都會提取",
+      "why": "依 digest 固定的映像檔永遠不會改變，因此 imagePullPolicy Always 只會在每次啟動時多一次對登錄的要求，而登錄無法連線時 Pod 便無法啟動。"
+    },
+    "singleReplica": {
+      "title": "單一複本",
+      "why": "只有一個複本時，每次重新啟動、收回、節點清空與推出都代表停機。",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} 可能將其縮減為一個複本：屆時每次重新啟動、收回、節點清空與推出都代表停機。"
+    },
+    "noPdb": {
+      "title": "沒有 PodDisruptionBudget",
+      "why": "沒有 PodDisruptionBudget 時，節點清空或叢集升級可能一次收回所有複本。預算會讓收回等待，直到有足夠的複本就緒。"
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget 不允許任何中斷",
+      "why": "PodDisruptionBudget {{pdb}} 不允許收回任何 Pod（預期的 Pod：{{pods}}）：在變更或刪除該預算之前，節點清空與叢集升級都會停滯。"
+    },
+    "sameNode": {
+      "title": "所有複本都在同一個節點上",
+      "why": "所有執行中的複本（{{count}}）都在節點 {{node}} 上：該節點故障或被清空時，工作負載將無法使用。拓撲分散限制或 Pod 反親和性會讓排程器將複本放在不同節點上。"
+    },
+    "noRequests": {
+      "title": "沒有資源要求",
+      "why": "沒有 requests 時，排程器會把 Pod 當作什麼都不需要來放置：節點會被過度分配，而節點記憶體不足時，該 Pod 會是最先被收回的之一。"
+    },
+    "noMemoryLimit": {
+      "title": "沒有記憶體限制",
+      "why": "沒有記憶體限制時，記憶體洩漏的容器可能佔用節點的全部記憶體，導致其他 Pod 被收回或終止。不要求 CPU 限制：即使節點有閒置的 CPU，它也會節流容器。"
+    },
+    "limitsAboveRecommendation": {
+      "title": "限制遠高於資源調整建議",
+      "why": "此限制超過依使用記錄得出之建議（{{recommended}}）的兩倍：節點必須為永遠不會出現的用量保留空間，而失控的容器在被停止前可能成長許多。"
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler 無法調整規模",
+      "why": "HorizontalPodAutoscaler {{hpa}} 的最小值與最大值相同（{{min}}），因此永遠不會調整規模：請提高最大值，或移除自動調整規模器並設定複本數。"
+    }
+  }
+}

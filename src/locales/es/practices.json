@@ -1,0 +1,132 @@
+{
+  "sidebar": "Buenas prácticas",
+  "title": "Buenas prácticas",
+  "intro": "Errores cotidianos que vuelven frágiles o derrochadoras las cargas de trabajo, comprobados en las plantillas de Pod de las cargas de trabajo y en lo que las rodea: escaladores automáticos, presupuestos de interrupción, LimitRange y los nodos donde se ejecutan las réplicas. Una comprobación que necesita algo que Sextant no puede leer se omite. No se cambia nada en el clúster: una corrección sugerida se copia como YAML.",
+  "loading": "Comprobando cargas de trabajo…",
+  "chooseNamespace": "Elija namespaces",
+  "chooseNamespaceText": "Esta página comprueba los namespaces elegidos en el filtro de namespaces. Elija uno o varios namespaces para empezar.",
+  "firstNamespaces_one": "Solo se comprueba el primer namespace elegido ({{count}}).",
+  "firstNamespaces_many": "Solo se comprueban los primeros {{count}} namespaces elegidos.",
+  "firstNamespaces_other": "Solo se comprueban los primeros {{count}} namespaces elegidos.",
+  "watchFailed": "No se pudo vigilar {{kind}}",
+  "skipped": "No se pudo leer {{kind}}: se omiten las comprobaciones que lo necesitan.",
+  "excluded": "Sin comprobar, excluidos en la configuración: {{namespaces}}",
+  "truncated_one": "Hay demasiados hallazgos: solo se lista la primera carga de trabajo ({{count}}).",
+  "truncated_many": "Hay demasiados hallazgos: solo se listan las primeras {{count}} cargas de trabajo.",
+  "truncated_other": "Hay demasiados hallazgos: solo se listan las primeras {{count}} cargas de trabajo.",
+  "empty": "No hay hallazgos en este namespace.",
+  "emptyFiltered": "Ningún hallazgo de este namespace coincide con los filtros.",
+  "filter": {
+    "area": "Área",
+    "areas": {
+      "all": "Todas las áreas",
+      "reliability": "Fiabilidad",
+      "efficiency": "Eficiencia"
+    },
+    "severity": "Gravedad",
+    "severities": {
+      "any": "Cualquiera",
+      "high": "Alta",
+      "medium": "Media o superior"
+    }
+  },
+  "areas": {
+    "reliability": "Fiabilidad",
+    "efficiency": "Eficiencia"
+  },
+  "severity": {
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Baja"
+  },
+  "counts": {
+    "high_one": "{{count}} hallazgo de gravedad alta",
+    "high_many": "{{count}} de hallazgos de gravedad alta",
+    "high_other": "{{count}} hallazgos de gravedad alta",
+    "medium_one": "{{count}} hallazgo de gravedad media",
+    "medium_many": "{{count}} de hallazgos de gravedad media",
+    "medium_other": "{{count}} hallazgos de gravedad media",
+    "low_one": "{{count}} hallazgo de gravedad baja",
+    "low_many": "{{count}} de hallazgos de gravedad baja",
+    "low_other": "{{count}} hallazgos de gravedad baja"
+  },
+  "row": {
+    "expand": "Mostrar los hallazgos de {{name}}",
+    "collapse": "Ocultar los hallazgos de {{name}}"
+  },
+  "finding": {
+    "container": "Contenedor {{name}}",
+    "on": "En {{kind}} {{name}}",
+    "value": "Valor: {{value}}",
+    "unset": "Sin definir",
+    "fix": "Corrección sugerida",
+    "create": "Objeto que se debe crear",
+    "copy": "Copiar la corrección",
+    "copied": "Copiado",
+    "copyFailed": "No se pudo copiar"
+  },
+  "details": {
+    "title": "Buenas prácticas",
+    "noFindings": "Sin hallazgos: se cumplen todas las comprobaciones que aplican aquí.",
+    "excluded": "El namespace {{namespace}} está excluido en la configuración de las comprobaciones de buenas prácticas."
+  },
+  "settings": {
+    "open": "Configuración…",
+    "title": "Comprobaciones de buenas prácticas",
+    "excluded": "Namespaces que nunca se comprueban",
+    "excludedHint": "Un nombre por línea, o separados por espacios o comas. Los namespaces excluidos quedan fuera de la página, de los detalles y de los problemas.",
+    "save": "Guardar",
+    "saveFailed": "No se pudo guardar la configuración"
+  },
+  "checks": {
+    "readinessProbe": {
+      "title": "Sin sonda readiness",
+      "why": "Sin una sonda readiness, un Pod recibe tráfico en cuanto arrancan sus contenedores, antes de que la aplicación esté lista, y un despliegue continúa aunque los Pods nuevos no puedan atender. El contenedor declara el puerto {{port}}, así que atiende algo."
+    },
+    "livenessProbe": {
+      "title": "Sin sonda liveness",
+      "why": "Sin una sonda liveness, un contenedor que se cuelga sin terminar nunca se reinicia. Haga que la sonda compruebe solo el propio proceso, no sus dependencias: de lo contrario, una base de datos lenta reinicia Pods sanos."
+    },
+    "mutableImage": {
+      "title": "Imagen sin versión fijada",
+      "why": "Una imagen con la etiqueta latest, o sin etiqueta, puede cambiar con el mismo nombre: los Pods nuevos pueden ejecutar código que nadie desplegó, y una reversión trae la imagen más reciente en lugar de la anterior."
+    },
+    "pullAlwaysDigest": {
+      "title": "Imagen fijada por digest que se descarga en cada arranque",
+      "why": "Una imagen fijada por digest nunca cambia, así que imagePullPolicy Always solo añade una petición al registro en cada arranque, y los Pods no pueden arrancar mientras el registro no esté accesible."
+    },
+    "singleReplica": {
+      "title": "Una sola réplica",
+      "why": "Con una sola réplica, cada reinicio, desalojo, vaciado de nodo y despliegue es una interrupción del servicio.",
+      "whyHpa": "HorizontalPodAutoscaler {{hpa}} puede reducirlo a una sola réplica: entonces cada reinicio, desalojo, vaciado de nodo y despliegue es una interrupción del servicio."
+    },
+    "noPdb": {
+      "title": "Sin PodDisruptionBudget",
+      "why": "Sin un PodDisruptionBudget, el vaciado de un nodo o una actualización del clúster puede desalojar todas las réplicas a la vez. Un presupuesto hace que los desalojos esperen hasta que haya suficientes réplicas listas."
+    },
+    "pdbBlocksDisruption": {
+      "title": "PodDisruptionBudget que no permite interrupciones",
+      "why": "PodDisruptionBudget {{pdb}} no deja desalojar ningún Pod (Pods esperados: {{pods}}): el vaciado de nodos y las actualizaciones del clúster se detienen hasta que se cambie o se elimine el presupuesto."
+    },
+    "sameNode": {
+      "title": "Todas las réplicas en un nodo",
+      "why": "Las réplicas en ejecución ({{count}}) están todas en el nodo {{node}}: si ese nodo falla o se vacía, la carga de trabajo deja de estar disponible. Las restricciones de distribución por topología o la antiafinidad de Pods hacen que el programador coloque las réplicas en nodos distintos."
+    },
+    "noRequests": {
+      "title": "Sin solicitudes de recursos",
+      "why": "Sin requests, el programador coloca el Pod como si no necesitara nada: los nodos se sobrecomprometen y el Pod está entre los primeros desalojados cuando a un nodo le falta memoria."
+    },
+    "noMemoryLimit": {
+      "title": "Sin límite de memoria",
+      "why": "Sin límite de memoria, un contenedor con una fuga puede ocupar toda la memoria de su nodo y provocar que otros Pods sean desalojados o terminados. No se pide un límite de CPU: limita el contenedor incluso cuando el nodo tiene CPU libre."
+    },
+    "limitsAboveRecommendation": {
+      "title": "Límite muy por encima de la recomendación de dimensionamiento",
+      "why": "El límite supera el doble de la recomendación del historial de uso ({{recommended}}): el nodo debe reservar espacio para un consumo que nunca llega, y un contenedor descontrolado puede crecer mucho antes de que se detenga."
+    },
+    "hpaMinEqualsMax": {
+      "title": "HorizontalPodAutoscaler que no puede escalar",
+      "why": "HorizontalPodAutoscaler {{hpa}} tiene el mismo mínimo y máximo ({{min}}), así que nunca escala: suba el máximo, o elimine el escalador automático y fije las réplicas."
+    }
+  }
+}

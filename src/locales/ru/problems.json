@@ -30,6 +30,7 @@
     "gateway": "Gateway API",
     "mesh": "Сервисная сеть",
     "security": "Безопасность",
+    "practices": "Лучшие практики",
     "credentials": "Учётные данные",
     "disk": "Диск почти заполнен",
     "events": "События Warning"
@@ -47,6 +48,7 @@
     "securityBaseline_few": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}",
     "securityBaseline_many": "{{count}} нарушений Pod Security уровня Baseline: {{fields}}",
     "securityBaseline_other": "{{count}} нарушения Pod Security уровня Baseline: {{fields}}",
+    "practice": "$t(practices:checks.{{check}}.title)",
     "diskUsage": "Занято {{percent}} места ({{used}} из {{capacity}})",
     "inodeUsage": "Занято {{percent}} inodes ({{used}} из {{total}})",
     "meshUnknownHost": "Направляет на {{host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
@@ -57,5 +59,6 @@
     "meshConflictingVirtualService": "Хост {{host}} на {{gateway}} уже занят более старым виртуальным сервисом {{other}}: маршруты этого не используются.",
     "meshInvalidVirtualService": "Имеет хост * при привязке к sidecar (mesh): Istio его отклоняет, поэтому ни один из его маршрутов не используется."
   },
-  "showDisk": "Диск почти заполнен"
+  "showDisk": "Диск почти заполнен",
+  "showPractices": "Замечания по лучшим практикам"
 }
