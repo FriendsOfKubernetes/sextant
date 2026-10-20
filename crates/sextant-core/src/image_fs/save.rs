@@ -6,7 +6,7 @@
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
-use super::layer::{Extracted, StreamOptions, extract_file};
+use super::layer::{EntryAt, Extracted, StreamOptions, extract_file};
 use super::{invalid, limits};
 use crate::{CoreError, CoreResult, ErrorCode};
 
@@ -19,11 +19,12 @@ fn local_error(path: &Path, err: &std::io::Error) -> CoreError {
     CoreError::new(code, format!("cannot write {}: {err}", path.display()))
 }
 
-/// Saves the regular file `entry` (a normalised path) of the layer stream `inner` to `destination` (absolute).
+/// Saves the regular file `entry` (from [`super::tree::DataSource::entry`]) of the layer stream `inner` to
+/// `destination` (absolute).
 pub fn save_file<R: std::io::Read>(
     inner: R,
     options: &StreamOptions,
-    entry: &str,
+    entry: EntryAt<'_>,
     destination: &Path,
     progress: &mut dyn FnMut(u64),
 ) -> CoreResult<u64> {

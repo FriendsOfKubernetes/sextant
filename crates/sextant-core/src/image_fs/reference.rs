@@ -242,8 +242,10 @@ fn split_host_port(text: &str) -> CoreResult<(&str, Option<&str>)> {
 }
 
 /// Addresses Sextant never sends a registry request to: loopback, link-local (`169.254.0.0/16` holds cloud metadata
-/// services; `fe80::/10`), unspecified, multicast, broadcast, and the IPv4-mapped/compatible forms of those. Private
-/// ranges are allowed: in-cluster and corporate registries live there.
+/// services; `fe80::/10`), unspecified, multicast, broadcast, the cloud metadata addresses outside link-local
+/// ([`METADATA_V4`], [`METADATA_V6`]), and the IPv4-mapped, IPv4-compatible and NAT64 (`64:ff9b::/96`,
+/// `64:ff9b:1::/48`) forms of the IPv4 ones. Private ranges are allowed: in-cluster and corporate registries live
+/// there.
 pub fn forbidden_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => forbidden_v4(v4),
@@ -251,16 +253,27 @@ pub fn forbidden_ip(ip: IpAddr) -> bool {
             if let Some(v4) = v6.to_ipv4_mapped() {
                 return forbidden_v4(v4);
             }
-            let first = v6.segments()[0];
+            let segments = v6.segments();
+            let first = segments[0];
             v6.is_loopback()
                 || v6.is_unspecified()
                 || v6.is_multicast()
                 || (first & 0xffc0) == 0xfe80
+                || METADATA_V6.contains(&v6)
                 // IPv4-compatible (deprecated) ::a.b.c.d
-                || (v6.segments()[..6].iter().all(|&s| s == 0) && forbidden_v4(ipv4_tail(v6)))
+                || (segments[..6].iter().all(|&s| s == 0) && forbidden_v4(ipv4_tail(v6)))
+                // NAT64: the well-known prefix 64:ff9b::/96 and the local-use 64:ff9b:1::/48 (RFC 6052, RFC 8215)
+                // reach the IPv4 address in the last 32 bits.
+                || (segments[..6] == [0x64, 0xff9b, 0, 0, 0, 0] && forbidden_v4(ipv4_tail(v6)))
+                || (segments[..3] == [0x64, 0xff9b, 1] && forbidden_v4(ipv4_tail(v6)))
         }
     }
 }
+
+/// Cloud metadata services outside `169.254.0.0/16`: Alibaba Cloud.
+const METADATA_V4: [Ipv4Addr; 1] = [Ipv4Addr::new(100, 100, 100, 200)];
+/// Cloud metadata services over IPv6: AWS (`fd00:ec2::254`, in the otherwise allowed `fc00::/7`).
+const METADATA_V6: [Ipv6Addr; 1] = [Ipv6Addr::new(0xfd00, 0xec2, 0, 0, 0, 0, 0, 0x254)];
 
 fn ipv4_tail(v6: Ipv6Addr) -> Ipv4Addr {
     let o = v6.octets();
@@ -274,6 +287,7 @@ fn forbidden_v4(v4: Ipv4Addr) -> bool {
         || v4.is_multicast()
         || v4.is_broadcast()
         || v4.octets()[0] == 0
+        || METADATA_V4.contains(&v4)
 }
 
 /// The digest in a container status' `imageID` (`docker-pullable://repo@sha256:…`, `repo@sha256:…`), if any.

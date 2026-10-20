@@ -986,3 +986,25 @@ fn a_rename_follows_the_current_context_of_another_kubeconfig_file_only_when_it_
     );
     assert_eq!(contexts(&registry), ["three"]);
 }
+
+#[test]
+fn previews_hide_exec_flag_values_and_context_extensions() {
+    let fx = Fixture::new();
+    let a = fx.write(
+        "team/exec.yaml",
+        "apiVersion: v1\nkind: Config\nclusters:\n  - name: c\n    cluster: { server: https://c:6443 }\nusers:\n  - name: me\n    user:\n      exec:\n        apiVersion: client.authentication.k8s.io/v1\n        command: kubelogin\n        args: [get-token, --token=exec-arg-secret, --password, exec-next-secret]\n        other: exec-other-secret\ncontexts:\n  - name: dev\n    context: { cluster: c, user: me, extensions: [{ name: e, extension: ctx-ext-secret }] }\n",
+    );
+    let registry = fx.registry();
+    let preview = registry
+        .preview_edit(&KubeconfigEdit::Merge { paths: vec![a] }, &[])
+        .unwrap();
+    let json = serde_json::to_string(&preview).unwrap();
+    for secret in [
+        "exec-arg-secret",
+        "exec-next-secret",
+        "exec-other-secret",
+        "ctx-ext-secret",
+    ] {
+        assert!(!json.contains(secret), "{secret} in {json}");
+    }
+}

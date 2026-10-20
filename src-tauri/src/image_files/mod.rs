@@ -21,7 +21,7 @@ use sextant_core::image_fs::manifest::{
     parse_manifest, sha256_digest,
 };
 use sextant_core::image_fs::reference::ImageRef;
-use sextant_core::image_fs::tree::MergedTree;
+use sextant_core::image_fs::tree::{DataSource, MergedTree};
 use sextant_core::image_fs::{ImageCredentials, ImageFileText, limits, pull_secrets};
 use sextant_core::{ClusterId, ClusterManager, CoreError, CoreResult, ErrorCode};
 use ts_rs::TS;
@@ -533,7 +533,7 @@ async fn with_layer<T: Send + 'static>(
     session: &ImageSession,
     path: &str,
     cancel: Arc<AtomicBool>,
-    work: impl FnOnce(BodyReader, StreamOptions, String, u64) -> CoreResult<T> + Send + 'static,
+    work: impl FnOnce(BodyReader, StreamOptions, DataSource, u64) -> CoreResult<T> + Send + 'static,
 ) -> CoreResult<T> {
     let source = session.tree.data_source(path)?;
     let layer = session
@@ -543,10 +543,11 @@ async fn with_layer<T: Send + 'static>(
     let reader = BodyReader::start(session.registry.blob(&layer.digest).await?);
     let options = layer.options(cancel);
     let size = layer.size;
-    joined(tokio::task::spawn_blocking(move || work(reader, options, source.path, size)).await)
+    joined(tokio::task::spawn_blocking(move || work(reader, options, source, size)).await)
 }
 
-/// The first [`limits::MAX_TEXT_BYTES`] of a file for the viewer; the layer is read only up to the file.
+/// The first [`limits::MAX_TEXT_BYTES`] of a file for the viewer. The whole layer is read and its digest checked
+/// before anything is shown (the index was verified when the image opened, but this is a new download of the layer).
 pub async fn read_text(
     session: &ImageSession,
     path: &str,
@@ -569,9 +570,9 @@ pub async fn read_text(
             let found = extract_file(
                 reader,
                 &options,
-                &entry,
+                entry.entry(),
                 limits::MAX_TEXT_BYTES,
-                false,
+                true,
                 &mut out,
                 &mut progress,
             )?;
@@ -598,7 +599,7 @@ pub async fn save(
             sextant_core::image_fs::save::save_file(
                 reader,
                 &options,
-                &entry,
+                entry.entry(),
                 &destination,
                 &mut |bytes| progress(bytes, total),
             )

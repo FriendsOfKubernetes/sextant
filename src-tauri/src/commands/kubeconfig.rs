@@ -157,28 +157,228 @@ pub async fn view(state: &AppState, cluster_id: ClusterId) -> Result<String, Cor
     blocking(move || read(&registry).view_kubeconfig(&cluster_id)).await
 }
 
-/// Puts the kubeconfig of one cluster on the clipboard (#228): with `with_credentials` the full working one (the
-/// window asked the user first), otherwise what the viewer shows. Written from Rust, so the credentials never cross
-/// into the window; as a secret, so clipboard managers that honour the hint keep it out of their history. Returns
-/// nothing; an error never carries the text.
+/// Puts the kubeconfig of one cluster on the clipboard (#228): with `with_credentials` the full working one, otherwise
+/// what the viewer shows. Written from Rust, so the credentials never cross into the window; as a secret, so
+/// clipboard managers that honour the hint keep it out of their history. Returns whether it was copied.
+///
+/// Credentials are copied only after the user confirmed in a native dialog shown from here (not in the webview), so
+/// a compromised window cannot copy them silently; the dialog's texts are Sextant's own translations
+/// ([`copy_confirmation`], `language` only picks one) and the context name is read from the registry. With no dialog
+/// the copy is refused. The clipboard is cleared [`CLEAR_AFTER`] later if it still holds that text. An error never
+/// carries the text.
 #[tauri::command]
 pub async fn kubeconfig_copy<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
     state: State<'_, AppState>,
     cluster_id: ClusterId,
     with_credentials: bool,
-) -> Result<(), CoreError> {
-    let text = copy_text(&state, cluster_id, with_credentials).await?;
+    language: String,
+) -> Result<bool, CoreError> {
     use tauri::Manager;
+    if with_credentials {
+        let context = context_of(&state, cluster_id.clone()).await?;
+        let texts = copy_confirmation(&language, &context);
+        let dialog = app
+            .try_state::<tauri_plugin_dialog::Dialog<R>>()
+            .map(|d| d.inner().clone())
+            .ok_or_else(|| CoreError::other("the confirmation cannot be shown"))?;
+        if !ask(dialog, window, texts).await? {
+            return Ok(false);
+        }
+    }
+    let text = copy_text(&state, cluster_id, with_credentials).await?;
     let clipboard = app
         .try_state::<tauri_plugin_clipboard_manager::Clipboard<R>>()
         .ok_or_else(clipboard_failed)?;
-    let written = if with_credentials {
-        clipboard.write_secret(text)
+    if with_credentials {
+        clipboard
+            .write_secret(text.as_str())
+            .map_err(|_| clipboard_failed())?;
+        clear_later(app.clone(), &text);
     } else {
-        clipboard.write_text(text)
+        clipboard.write_text(text).map_err(|_| clipboard_failed())?;
+    }
+    Ok(true)
+}
+
+/// Shows the native confirmation over `window` and waits for the answer (off the async runtime).
+async fn ask<R: tauri::Runtime>(
+    dialog: tauri_plugin_dialog::Dialog<R>,
+    window: tauri::WebviewWindow<R>,
+    texts: CopyConfirmation,
+) -> Result<bool, CoreError> {
+    use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogKind};
+    tokio::task::spawn_blocking(move || {
+        dialog
+            .message(texts.message)
+            .title(texts.title)
+            .kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                texts.copy,
+                texts.cancel,
+            ))
+            .parent(&window)
+            .blocking_show()
+    })
+    .await
+    .map_err(|_| CoreError::other("the confirmation failed"))
+}
+
+/// How long credentials stay on the clipboard: then it is cleared, unless it holds something else by then.
+pub const CLEAR_AFTER: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// Counts copies with credentials: a timer clears the clipboard only when no later copy happened.
+static COPIES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Clears the clipboard [`CLEAR_AFTER`] from now if it still holds `text` (compared by hash; the text itself is not
+/// kept) and no later copy with credentials was made. Failures are ignored.
+fn clear_later<R: tauri::Runtime>(app: tauri::AppHandle<R>, text: &str) {
+    use std::sync::atomic::Ordering;
+    let copy = COPIES.fetch_add(1, Ordering::SeqCst) + 1;
+    let hash = text_hash(text);
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(CLEAR_AFTER).await;
+        if COPIES.load(Ordering::SeqCst) != copy {
+            return;
+        }
+        use tauri::Manager;
+        let Some(clipboard) = app.try_state::<tauri_plugin_clipboard_manager::Clipboard<R>>()
+        else {
+            return;
+        };
+        if should_clear(clipboard.read_text().ok().as_deref(), &hash) {
+            let _ = clipboard.clear();
+        }
+    });
+}
+
+fn text_hash(text: &str) -> [u8; 32] {
+    use sha2::Digest;
+    sha2::Sha256::digest(text.as_bytes()).into()
+}
+
+/// Whether the clipboard, holding `current`, still holds the text hashed to `hash`.
+fn should_clear(current: Option<&str>, hash: &[u8; 32]) -> bool {
+    current.is_some_and(|text| text_hash(text) == *hash)
+}
+
+/// The texts of the confirmation before credentials are copied.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CopyConfirmation {
+    pub title: String,
+    pub message: String,
+    pub copy: String,
+    pub cancel: String,
+}
+
+/// `src/locales/<language>/kubeconfigview.json` of every UI language, built in: the native dialog's texts come from
+/// Sextant itself, not from the window.
+const CONFIRMATION_TEXTS: [(&str, &str); 14] = [
+    (
+        "en",
+        include_str!("../../../src/locales/en/kubeconfigview.json"),
+    ),
+    (
+        "ru",
+        include_str!("../../../src/locales/ru/kubeconfigview.json"),
+    ),
+    (
+        "uk",
+        include_str!("../../../src/locales/uk/kubeconfigview.json"),
+    ),
+    (
+        "de",
+        include_str!("../../../src/locales/de/kubeconfigview.json"),
+    ),
+    (
+        "fr",
+        include_str!("../../../src/locales/fr/kubeconfigview.json"),
+    ),
+    (
+        "es",
+        include_str!("../../../src/locales/es/kubeconfigview.json"),
+    ),
+    (
+        "pt-BR",
+        include_str!("../../../src/locales/pt-BR/kubeconfigview.json"),
+    ),
+    (
+        "it",
+        include_str!("../../../src/locales/it/kubeconfigview.json"),
+    ),
+    (
+        "pl",
+        include_str!("../../../src/locales/pl/kubeconfigview.json"),
+    ),
+    (
+        "tr",
+        include_str!("../../../src/locales/tr/kubeconfigview.json"),
+    ),
+    (
+        "zh-CN",
+        include_str!("../../../src/locales/zh-CN/kubeconfigview.json"),
+    ),
+    (
+        "zh-TW",
+        include_str!("../../../src/locales/zh-TW/kubeconfigview.json"),
+    ),
+    (
+        "ja",
+        include_str!("../../../src/locales/ja/kubeconfigview.json"),
+    ),
+    (
+        "ko",
+        include_str!("../../../src/locales/ko/kubeconfigview.json"),
+    ),
+];
+
+/// The confirmation in `language` (a UI language tag; English when unknown), naming `context`.
+pub fn copy_confirmation(language: &str, context: &str) -> CopyConfirmation {
+    let file = |tag: &str| {
+        CONFIRMATION_TEXTS
+            .iter()
+            .find(|(lang, _)| *lang == tag)
+            .and_then(|(_, text)| serde_json::from_str::<serde_json::Value>(text).ok())
     };
-    written.map_err(|_| clipboard_failed())
+    let english = file("en").unwrap_or_default();
+    let chosen = file(language).unwrap_or_else(|| english.clone());
+    let text = |key: &str| {
+        chosen[key]
+            .as_str()
+            .or_else(|| english[key].as_str())
+            .unwrap_or(key)
+            .to_owned()
+    };
+    let context: String = context
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(253)
+        .collect();
+    CopyConfirmation {
+        title: text("confirmTitle"),
+        message: format!(
+            "{}\n\n{}",
+            text("confirmText").replace("{{context}}", &context),
+            text("confirmClears")
+        ),
+        copy: text("confirmCopy"),
+        cancel: text("confirmCancel"),
+    }
+}
+
+/// The context name of `cluster_id`, as the registry has it.
+async fn context_of(state: &AppState, cluster_id: ClusterId) -> Result<String, CoreError> {
+    let registry = Arc::clone(&state.registry);
+    blocking(move || {
+        read(&registry)
+            .clusters()?
+            .into_iter()
+            .find(|c| c.id == cluster_id)
+            .map(|c| c.context)
+            .ok_or_else(|| CoreError::new(sextant_core::ErrorCode::NotFound, "no such cluster"))
+    })
+    .await
 }
 
 /// The text `kubeconfig_copy` writes: full or masked.
@@ -377,5 +577,71 @@ mod tests {
         assert_eq!(err.code, sextant_core::ErrorCode::NotFound);
         let err = copy_text(&state, missing, true).await.unwrap_err();
         assert!(!format!("{err:?}").contains(FAKE_TOKEN));
+    }
+
+    #[tokio::test]
+    async fn the_native_confirmation_names_the_context_from_the_registry() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(&dir.path().join("config"), &dir.path().join("data"));
+        state
+            .registry
+            .write()
+            .unwrap()
+            .set_env(sextant_core::kubeconfig::KubeconfigEnv {
+                kubeconfig: None,
+                home: Some(dir.path().join("home")),
+            });
+        state
+            .registry
+            .write()
+            .unwrap()
+            .add_pasted(&kubeconfig())
+            .unwrap();
+        let id = state.registry.read().unwrap().clusters().unwrap()[0]
+            .id
+            .clone();
+        assert_eq!(context_of(&state, id).await.unwrap(), "prod");
+        let missing = context_of(&state, ClusterId("gone".to_owned())).await;
+        assert_eq!(missing.unwrap_err().code, sextant_core::ErrorCode::NotFound);
+    }
+
+    #[test]
+    fn the_confirmation_is_sextants_own_text_in_every_language() {
+        let en = copy_confirmation("en", "prod");
+        assert_eq!(en.title, "Copy the kubeconfig with credentials?");
+        assert!(en.message.contains("can use prod as you"), "{}", en.message);
+        assert!(en.message.contains("after 60 seconds"), "{}", en.message);
+        assert_eq!(
+            (en.copy.as_str(), en.cancel.as_str()),
+            ("Copy with credentials", "Cancel")
+        );
+        // An unknown language falls back to English; a control character cannot reshape the text.
+        assert_eq!(copy_confirmation("xx", "prod"), en);
+        assert!(!copy_confirmation("en", "a\nb").message.contains("a\nb"));
+        for (language, _) in CONFIRMATION_TEXTS {
+            let texts = copy_confirmation(language, "ctx-name");
+            assert!(texts.message.contains("ctx-name"), "{language}");
+            assert!(!texts.message.contains("{{"), "{language}");
+            for text in [&texts.title, &texts.copy, &texts.cancel] {
+                assert!(!text.is_empty(), "{language}");
+            }
+            // The plugin tells the buttons apart by their labels: equal labels would make Cancel confirm.
+            assert_ne!(texts.copy, texts.cancel, "{language}");
+            if language != "en" {
+                assert_ne!(texts.title, en.title, "{language} is translated");
+            }
+        }
+    }
+
+    #[test]
+    fn the_clipboard_is_cleared_only_while_it_holds_the_copied_text() {
+        let hash = text_hash("full kubeconfig");
+        assert!(should_clear(Some("full kubeconfig"), &hash));
+        assert!(!should_clear(
+            Some("something the user copied since"),
+            &hash
+        ));
+        assert!(!should_clear(None, &hash));
+        assert_eq!(CLEAR_AFTER.as_secs(), 60);
     }
 }

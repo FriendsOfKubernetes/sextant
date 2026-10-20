@@ -272,3 +272,120 @@ fn unknown_shapes_are_hidden() {
         mask::HIDDEN
     );
 }
+
+#[test]
+fn exec_flag_values_that_look_secret_are_hidden_in_both_forms() {
+    let mut doc = parse(
+        r#"users:
+  - name: u
+    user:
+      exec:
+        apiVersion: client.authentication.k8s.io/v1
+        command: kubectl
+        args:
+          - oidc-login
+          - get-token
+          - --oidc-issuer-url=https://issuer.example
+          - --oidc-client-secret=arg-secret-01
+          - --token=arg-secret-02
+          - --password
+          - arg-secret-03
+          - --Client-Secret
+          - arg-secret-04
+          - -bearer
+          - arg-secret-05
+          - --Refresh-Token=arg-secret-06
+          - --auth-header
+          - arg-secret-07
+          - api_key=arg-secret-08
+          - --cluster-name
+          - prod
+        installHint: install kubelogin
+        interactiveMode: Never
+        provideClusterInfo: true
+        futureField: exec-other-09
+        env:
+          - { name: MODE, value: plain, extra: env-extra-10 }
+"#,
+    );
+    mask::mask_document(&mut doc);
+    let text = serde_yaml::to_string(&doc).unwrap();
+    for n in 1..=10 {
+        assert!(
+            !text.contains(&format!("-{n:02}")),
+            "secret {n} shown:\n{text}"
+        );
+    }
+    let exec = &doc["users"][0]["user"]["exec"];
+    let args: Vec<&str> = exec["args"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .map(|a| a.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        args,
+        [
+            "oidc-login",
+            "get-token",
+            "--oidc-issuer-url=https://issuer.example",
+            "--oidc-client-secret=<hidden>",
+            "--token=<hidden>",
+            "--password",
+            mask::HIDDEN,
+            "--Client-Secret",
+            mask::HIDDEN,
+            "-bearer",
+            mask::HIDDEN,
+            "--Refresh-Token=<hidden>",
+            "--auth-header",
+            mask::HIDDEN,
+            "api_key=<hidden>",
+            "--cluster-name",
+            "prod",
+        ]
+    );
+    assert_eq!(exec["command"], "kubectl");
+    assert_eq!(exec["installHint"], "install kubelogin");
+    assert_eq!(exec["interactiveMode"], "Never");
+    assert_eq!(exec["provideClusterInfo"], true);
+    assert_eq!(exec["futureField"], mask::HIDDEN);
+    assert_eq!(exec["env"][0]["value"], "plain");
+    assert_eq!(exec["env"][0]["extra"], mask::HIDDEN);
+}
+
+#[test]
+fn exec_fields_kube_keeps_beyond_the_known_ones_are_hidden_in_the_view() {
+    let fx = Fixture::new();
+    let path = fx.kube_dir().join("config");
+    let yaml = std::fs::read_to_string(&path).unwrap().replace(
+        "        command: aws\n",
+        "        command: aws\n        unknownField: exec-unknown-0201\n",
+    );
+    std::fs::write(&path, yaml).unwrap();
+    let shown = fx.registry.view_kubeconfig(&fx.id("aws")).unwrap();
+    assert!(!shown.contains("exec-unknown-0201"), "{shown}");
+    assert!(
+        fx.registry
+            .full_kubeconfig(&fx.id("aws"))
+            .unwrap()
+            .contains("exec-unknown-0201")
+    );
+}
+
+#[test]
+fn contexts_show_only_their_cluster_user_and_namespace() {
+    let mut doc = parse(
+        "contexts:\n  - name: c\n    context:\n      cluster: main\n      user: me\n      namespace: web\n      extensions: [{ name: e, extension: ctx-secret-01 }]\n      other: ctx-secret-02\n    extra: ctx-secret-03\n",
+    );
+    mask::mask_document(&mut doc);
+    let text = serde_yaml::to_string(&doc).unwrap();
+    for leaked in ["ctx-secret-01", "ctx-secret-02", "ctx-secret-03"] {
+        assert!(!text.contains(leaked), "{leaked}: {text}");
+    }
+    let ctx = &doc["contexts"][0]["context"];
+    assert_eq!(ctx["cluster"], "main");
+    assert_eq!(ctx["user"], "me");
+    assert_eq!(ctx["namespace"], "web");
+    assert_eq!(doc["contexts"][0]["name"], "c");
+}

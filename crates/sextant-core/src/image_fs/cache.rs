@@ -12,7 +12,8 @@ use super::layer::LayerIndex;
 use super::limits;
 use super::reference::check_digest;
 
-const FORMAT: u32 = 1;
+/// 2: entries carry their position in the layer (`LayerEntry::position`).
+const FORMAT: u32 = 2;
 
 #[derive(Serialize, Deserialize)]
 struct Cached {

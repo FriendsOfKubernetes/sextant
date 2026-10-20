@@ -1,5 +1,6 @@
-// "View kubeconfig" (#228): the window shows only what the backend masked, "Copy" asks first and then lets the
-// backend write the clipboard (no credential reaches the window), "Copy without credentials" copies at once.
+// "View kubeconfig" (#228): the window shows only what the backend masked, "Copy" lets the backend ask in a native
+// dialog and write the clipboard (no credential reaches the window, no confirmation in the window to bypass),
+// "Copy without credentials" copies at once.
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockBackend, type ClusterInfo, type MockBackend } from "../../../api";
@@ -37,10 +38,11 @@ current-context: prod
 let backend: MockBackend;
 const calls = (cmd: string) => backend.calls.filter((c) => c.cmd === cmd);
 
-function setup() {
+function setup(confirmed = true) {
   backend = mockBackend({
     kubeconfig_view: () => MASKED,
-    kubeconfig_copy: () => undefined,
+    // The backend's native dialog: declined → false.
+    kubeconfig_copy: (args) => !(args as { withCredentials: boolean }).withCredentials || confirmed,
   });
   render(<KubeconfigViewDialog />);
   act(() => openKubeconfigView(prod));
@@ -61,20 +63,23 @@ describe("kubeconfig viewer", () => {
     expect(await axeViolations(dialog)).toEqual([]);
   });
 
-  it("copies with credentials only after the confirmation, through the backend", async () => {
+  it("leaves the confirmation of a copy with credentials to the backend's native dialog", async () => {
     setup();
     await screen.findByLabelText("Kubeconfig with credentials hidden");
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    const confirm = await screen.findByRole("dialog", { name: "Copy the kubeconfig with credentials?" });
-    expect(confirm.textContent).toContain("This copies credentials to the clipboard");
-    expect(await axeViolations(confirm)).toEqual([]);
-    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }));
-    expect(calls("kubeconfig_copy")).toHaveLength(0);
-
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Copy with credentials" }));
     expect(await screen.findByText("The kubeconfig with credentials is on the clipboard.")).toBeInTheDocument();
-    expect(calls("kubeconfig_copy")[0]?.args).toEqual({ clusterId: "prod-id", withCredentials: true });
+    expect(calls("kubeconfig_copy")[0]?.args).toEqual({ clusterId: "prod-id", withCredentials: true, language: "en" });
+    // No confirmation of the window's own: the backend asks, so a compromised window cannot skip it.
+    expect(screen.queryByRole("dialog", { name: "Copy the kubeconfig with credentials?" })).not.toBeInTheDocument();
+  });
+
+  it("says nothing was copied when the user declines in the native dialog", async () => {
+    setup(false);
+    await screen.findByLabelText("Kubeconfig with credentials hidden");
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await waitFor(() => expect(calls("kubeconfig_copy")).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled());
+    expect(screen.queryByText("The kubeconfig with credentials is on the clipboard.")).not.toBeInTheDocument();
   });
 
   it("copies without credentials at once", async () => {
@@ -82,7 +87,7 @@ describe("kubeconfig viewer", () => {
     await screen.findByLabelText("Kubeconfig with credentials hidden");
     fireEvent.click(screen.getByRole("button", { name: "Copy without credentials" }));
     await waitFor(() => expect(calls("kubeconfig_copy")).toHaveLength(1));
-    expect(calls("kubeconfig_copy")[0]?.args).toEqual({ clusterId: "prod-id", withCredentials: false });
+    expect(calls("kubeconfig_copy")[0]?.args).toEqual({ clusterId: "prod-id", withCredentials: false, language: "en" });
     expect(screen.queryByRole("dialog", { name: "Copy the kubeconfig with credentials?" })).not.toBeInTheDocument();
     expect(await screen.findByText("The kubeconfig without credentials is on the clipboard.")).toBeInTheDocument();
   });

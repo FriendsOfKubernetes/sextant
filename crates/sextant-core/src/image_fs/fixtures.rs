@@ -93,24 +93,59 @@ fn padded(out: &mut Vec<u8>, data: &[u8]) {
 pub fn tar(entries: &[Entry]) -> Vec<u8> {
     let mut out = Vec::new();
     for entry in entries {
-        let name = entry.path.as_bytes();
-        if name.len() > 100 {
-            let mut long = name.to_vec();
-            long.push(0);
-            out.extend_from_slice(&header(b"././@LongLink", long.len() as u64, b'L', entry));
-            padded(&mut out, &long);
-        }
-        let size = if entry.kind == b'0' {
-            entry.data.len() as u64
-        } else {
-            0
-        };
-        out.extend_from_slice(&header(name, size, entry.kind, entry));
-        if size > 0 {
-            padded(&mut out, &entry.data);
-        }
+        out.extend_from_slice(&entry_bytes(entry));
     }
     out.extend_from_slice(&[0u8; 1024]);
+    out
+}
+
+/// A tar stream where each entry may be preceded by a pax extended header of its `records` (`key`, `value`).
+pub fn tar_with_pax(entries: &[(Entry, Vec<(String, String)>)]) -> Vec<u8> {
+    let mut out = Vec::new();
+    for (entry, records) in entries {
+        if !records.is_empty() {
+            let mut data = Vec::new();
+            for (key, value) in records {
+                data.extend_from_slice(&pax_record(key, value));
+            }
+            out.extend_from_slice(&header(b"././@PaxHeader", data.len() as u64, b'x', entry));
+            padded(&mut out, &data);
+        }
+        out.extend_from_slice(&entry_bytes(entry));
+    }
+    out.extend_from_slice(&[0u8; 1024]);
+    out
+}
+
+/// One pax record, `"<length> <key>=<value>\n"`, the length counting itself.
+fn pax_record(key: &str, value: &str) -> Vec<u8> {
+    let body = format!(" {key}={value}\n");
+    let mut len = body.len() + 1;
+    while format!("{len}").len() + body.len() != len {
+        len = format!("{len}").len() + body.len();
+    }
+    format!("{len}{body}").into_bytes()
+}
+
+/// One entry's headers and data (no end marker).
+fn entry_bytes(entry: &Entry) -> Vec<u8> {
+    let mut out = Vec::new();
+    let name = entry.path.as_bytes();
+    if name.len() > 100 {
+        let mut long = name.to_vec();
+        long.push(0);
+        out.extend_from_slice(&header(b"././@LongLink", long.len() as u64, b'L', entry));
+        padded(&mut out, &long);
+    }
+    let size = if entry.kind == b'0' {
+        entry.data.len() as u64
+    } else {
+        0
+    };
+    out.extend_from_slice(&header(name, size, entry.kind, entry));
+    if size > 0 {
+        padded(&mut out, &entry.data);
+    }
     out
 }
 

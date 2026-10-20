@@ -673,10 +673,12 @@ export const kubeconfig = {
   view: (clusterId: ClusterId) => call<string>("kubeconfig_view", { clusterId }),
   /**
    * Puts the cluster's kubeconfig on the clipboard from the backend: with `withCredentials` the full working one
-   * (ask the user first; the text never comes to the window), otherwise what `view` shows.
+   * (the backend asks the user in a native dialog in `language`, and clears the clipboard 60 s later if it still holds
+   * the text; the text never comes to the window), otherwise what `view` shows. Resolves to whether it was copied
+   * (`false`: the user declined).
    */
-  copy: (clusterId: ClusterId, withCredentials: boolean) =>
-    call<void>("kubeconfig_copy", { clusterId, withCredentials }),
+  copy: (clusterId: ClusterId, withCredentials: boolean, language: string) =>
+    call<boolean>("kubeconfig_copy", { clusterId, withCredentials, language }),
 };
 
 /**

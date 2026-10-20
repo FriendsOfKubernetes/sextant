@@ -7,22 +7,32 @@
 //!   `insecure-skip-tls-verify`, `disable-compression` and the certificate authority (`certificate-authority` path,
 //!   `certificate-authority-data`: a CA certificate is public). Everything else (`extensions`, …) is hidden.
 //! - User: `username`, file references (`client-certificate`, `client-key`, `tokenFile` — paths, never read here),
-//!   impersonation (`as`, `as-uid`, `as-groups`, `as-user-extra`) and the `exec` block as written (it holds a command,
-//!   not a secret) except the values of its `env` entries whose name looks secret; `auth-provider` with its name
-//!   and the `config` keys that do not look secret (`access-token`, `refresh-token`, `client-secret`, `id-token`, any
-//!   key naming a token, secret, password, key or credential are hidden). `token`, `password`,
-//!   `client-certificate-data`, `client-key-data`, `extensions` and anything unknown are hidden.
+//!   impersonation (`as`, `as-uid`, `as-groups`, `as-user-extra`), the `exec` block (below) and `auth-provider` with
+//!   its name and the `config` keys that do not look secret (`access-token`, `refresh-token`, `client-secret`,
+//!   `id-token`, any key naming a token, secret, password, key, credential, auth, bearer or refresh are hidden).
+//!   `token`, `password`, `client-certificate-data`, `client-key-data`, `extensions` and anything unknown are hidden.
+//! - `exec`: only `apiVersion`, `command`, `installHint`, `interactiveMode`, `provideClusterInfo`, `args` and `env`
+//!   (anything else — kube-rs keeps unknown fields — is hidden). `env` entries keep `name`, and `value` unless the
+//!   name looks secret. `args` are shown, but the value of every secret-looking flag is hidden, in both forms:
+//!   `--token=abc` → `--token=<hidden>`, and `--password abc` → `--password <hidden>` (the argument after such a
+//!   flag is hidden whatever it is: a flag cannot be told from a value). A flag is an argument starting with `-`,
+//!   its name the text before `=` without the dashes; a plain `name=value` argument with a secret-looking name is
+//!   masked the same way. Masking only values keeps the command readable (`eks get-token --cluster-name prod`);
+//!   a value passed without a flag name (positional) cannot be recognised and is shown.
+//! - Context: `cluster`, `user` and `namespace`; `extensions` and anything else are hidden.
 
 use serde_yaml::{Mapping, Value};
 
 /// What is shown instead of a credential (or any value that is not shown).
 pub const HIDDEN: &str = "<hidden>";
 
-/// Masks the `cluster` of every `clusters` entry and the `user` of every `users` entry of a kubeconfig document.
+/// Masks the `cluster` of every `clusters` entry, the `user` of every `users` entry and the `context` of every
+/// `contexts` entry of a kubeconfig document.
 pub(crate) fn mask_document(doc: &mut Value) {
     for (list, inner, mask) in [
         ("clusters", "cluster", mask_cluster as fn(&mut Mapping)),
         ("users", "user", mask_user),
+        ("contexts", "context", mask_context),
     ] {
         let Some(items) = doc.get_mut(list).and_then(Value::as_sequence_mut) else {
             continue;
@@ -61,6 +71,16 @@ pub(crate) fn mask_cluster(map: &mut Mapping) {
     }
 }
 
+/// A context entry's fields, masked in place: names only.
+pub(crate) fn mask_context(map: &mut Mapping) {
+    for (key, value) in map.iter_mut() {
+        match key.as_str().unwrap_or("") {
+            "cluster" | "user" | "namespace" => keep_scalar(value),
+            _ => *value = hidden(),
+        }
+    }
+}
+
 /// A user entry's fields, masked in place.
 pub(crate) fn mask_user(map: &mut Mapping) {
     for (key, value) in map.iter_mut() {
@@ -80,35 +100,94 @@ pub(crate) fn mask_user(map: &mut Mapping) {
     }
 }
 
-/// Whether a field name looks like it holds a secret (an auth-provider `config` key, an exec `env` name).
+/// Whether a field name looks like it holds a secret (an auth-provider `config` key, an exec `env` name, an exec
+/// flag name): it contains one of [`SECRET_WORDS`], in any case.
 pub(crate) fn looks_secret(name: &str) -> bool {
     let name = name.to_ascii_lowercase();
-    ["token", "secret", "password", "passwd", "key", "credential"]
-        .iter()
-        .any(|word| name.contains(word))
+    SECRET_WORDS.iter().any(|word| name.contains(word))
 }
 
-/// The `exec` block as written, but the values of `env` entries with a secret-looking name.
+/// Parts of a name that make it look secret (`client-secret` and `refresh-token` are covered by `secret`/`refresh`).
+const SECRET_WORDS: [&str; 9] = [
+    "token",
+    "secret",
+    "password",
+    "passwd",
+    "key",
+    "credential",
+    "auth",
+    "bearer",
+    "refresh",
+];
+
+/// The `exec` block: its allowed fields, `env` values and flag values that look secret hidden.
 fn mask_exec(value: &mut Value) {
     let Some(exec) = value.as_mapping_mut() else {
         *value = hidden();
         return;
     };
-    if let Some(env) = exec.get_mut("env").and_then(Value::as_sequence_mut) {
-        for entry in env.iter_mut() {
-            let Some(pair) = entry.as_mapping_mut() else {
-                *entry = hidden();
-                continue;
-            };
-            let secret = pair
-                .get("name")
-                .and_then(Value::as_str)
-                .is_none_or(looks_secret);
-            if let Some(v) = pair.get_mut("value")
-                && (secret || !v.is_string())
-            {
-                *v = hidden();
+    for (key, field) in exec.iter_mut() {
+        match key.as_str().unwrap_or("") {
+            "apiVersion" | "command" | "installHint" | "interactiveMode" | "provideClusterInfo" => {
+                keep_scalar(field);
             }
+            "args" => mask_args(field),
+            "env" => mask_env(field),
+            _ => *field = hidden(),
+        }
+    }
+}
+
+/// Exec `env`: each entry's `name`, and its `value` unless the name looks secret (or is missing).
+fn mask_env(value: &mut Value) {
+    let Some(env) = value.as_sequence_mut() else {
+        *value = hidden();
+        return;
+    };
+    for entry in env.iter_mut() {
+        let Some(pair) = entry.as_mapping_mut() else {
+            *entry = hidden();
+            continue;
+        };
+        let secret = pair
+            .get("name")
+            .and_then(Value::as_str)
+            .is_none_or(looks_secret);
+        for (k, v) in pair.iter_mut() {
+            match k.as_str().unwrap_or("") {
+                "name" => keep_scalar(v),
+                "value" if !secret && v.is_string() => {}
+                _ => *v = hidden(),
+            }
+        }
+    }
+}
+
+/// Exec `args`: the value of every secret-looking flag hidden (`--token=x`, `--token x`, `token=x`).
+fn mask_args(value: &mut Value) {
+    let Some(args) = value.as_sequence_mut() else {
+        *value = hidden();
+        return;
+    };
+    let mut hide_next = false;
+    for arg in args.iter_mut() {
+        let Some(text) = arg.as_str() else {
+            *arg = hidden();
+            hide_next = false;
+            continue;
+        };
+        if hide_next {
+            *arg = hidden();
+            hide_next = false;
+            continue;
+        }
+        let is_flag = text.starts_with('-');
+        match text.split_once('=') {
+            Some((name, _)) if looks_secret(name.trim_start_matches('-')) => {
+                *arg = Value::String(format!("{name}={HIDDEN}"));
+            }
+            Some(_) => {}
+            None => hide_next = is_flag && looks_secret(text.trim_start_matches('-')),
         }
     }
 }

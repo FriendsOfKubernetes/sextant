@@ -5,6 +5,7 @@
 pub mod tar;
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -39,6 +40,14 @@ pub struct LayerEntry {
     /// A symlink's target as written; a hard link's normalised path.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
+    /// The entry's position in its layer's tar stream (0-based, every header counted, skipped ones too): a path may
+    /// occur more than once, the last occurrence is the one the tree keeps (as runtimes extract it), and reading
+    /// the file must take the same one ([`extract_file`]).
+    pub position: u64,
+    /// A hard link: the position of the regular file it names, the last one with that path before the link (what
+    /// tar extraction links to); `None` when the layer has none before it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link_position: Option<u64>,
 }
 
 /// What one layer adds and removes.
@@ -64,9 +73,10 @@ pub struct StreamOptions {
     pub cancel: Arc<AtomicBool>,
 }
 
-/// Normalises a tar path: `./` and `/` prefixes and `.` components dropped; `None` for `..`, empty or too long.
+/// Normalises a tar path: `./` and `/` prefixes and `.` components dropped; `None` for `..`, empty or too long, and
+/// for a path holding NUL or another control character (the merged tree joins components with NUL).
 pub fn normalize(raw: &str) -> Option<String> {
-    if raw.len() > limits::MAX_PATH_BYTES {
+    if raw.len() > limits::MAX_PATH_BYTES || raw.chars().any(char::is_control) {
         return None;
     }
     let mut parts = Vec::new();
@@ -285,8 +295,8 @@ fn kind_of(entry: &RawEntry) -> EntryKind {
     }
 }
 
-/// What is left of an image's index budget: entries ([`limits::MAX_ENTRIES`]) and path bytes
-/// ([`limits::MAX_INDEX_BYTES`]) over all its layers.
+/// What is left of an image's index budget: entries ([`limits::MAX_ENTRIES`]) and the bytes of every text an entry
+/// keeps — path, link, user and group names — ([`limits::MAX_INDEX_BYTES`]) over all its layers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Budget {
     pub entries: usize,
@@ -321,13 +331,22 @@ impl Budget {
     /// Charges a layer index read from the cache as if it had been read now.
     pub fn charge(&mut self, index: &LayerIndex) -> CoreResult<()> {
         for entry in &index.entries {
-            self.take(entry.path.len() + entry.link.as_ref().map_or(0, String::len))?;
+            self.take(
+                entry.path.len()
+                    + text_len(entry.link.as_ref())
+                    + text_len(entry.user.as_ref())
+                    + text_len(entry.group.as_ref()),
+            )?;
         }
         for path in index.whiteouts.iter().chain(&index.opaque) {
             self.take(path.len())?;
         }
         Ok(())
     }
+}
+
+fn text_len(text: Option<&String>) -> usize {
+    text.map_or(0, String::len)
 }
 
 /// Indexes a layer stream (verifying its digest) within the image's `budget`; `progress` gets the compressed bytes
@@ -340,8 +359,18 @@ pub fn index_layer<R: Read>(
 ) -> CoreResult<LayerIndex> {
     let mut layer = Layer::open(inner, options, progress);
     let mut index = LayerIndex::default();
+    // The last position of each regular file's path, for hard links (bounded like the paths themselves).
+    let mut last_file: HashMap<String, u64> = HashMap::new();
+    let mut position: u64 = 0;
     while let Some(raw) = layer.next()? {
-        budget.take(raw.path.len() + raw.link.as_ref().map_or(0, String::len))?;
+        let here = position;
+        position += 1;
+        budget.take(
+            raw.path.len()
+                + text_len(raw.link.as_ref())
+                + text_len(raw.user.as_ref())
+                + text_len(raw.group.as_ref()),
+        )?;
         let kind = kind_of(&raw);
         let Some(path) = normalize(&raw.path) else {
             // The root folder's own entry (`./`) is no entry of the tree.
@@ -385,6 +414,13 @@ pub fn index_layer<R: Read>(
             },
             _ => None,
         };
+        let link_position = match (kind, link.as_ref()) {
+            (EntryKind::Hardlink, Some(target)) => last_file.get(target).copied(),
+            _ => None,
+        };
+        if kind == EntryKind::File {
+            last_file.insert(path.clone(), here);
+        }
         index.entries.push(LayerEntry {
             path,
             kind,
@@ -396,6 +432,8 @@ pub fn index_layer<R: Read>(
             group: raw.group,
             mtime: raw.mtime,
             link,
+            position: here,
+            link_position,
         });
     }
     layer.finish()?;
@@ -411,12 +449,20 @@ pub struct Extracted {
     pub written: u64,
 }
 
-/// Writes up to `max` bytes of the regular file `path` (normalised) of a layer stream to `out`. With `verify`, the
-/// whole layer is read and its digest checked before returning (a download); without, reading stops at the file.
+/// Which entry of a layer holds a file's data: its normalised path and its [`LayerEntry::position`] (the occurrence
+/// the tree kept). Without a position the first regular file with that path is taken.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EntryAt<'a> {
+    pub path: &'a str,
+    pub position: Option<u64>,
+}
+
+/// Writes up to `max` bytes of the regular file `at` of a layer stream to `out`. With `verify`, the whole layer is
+/// read and its digest checked before returning; without, reading stops at the file.
 pub fn extract_file<R: Read>(
     inner: R,
     options: &StreamOptions,
-    path: &str,
+    at: EntryAt<'_>,
     max: u64,
     verify: bool,
     out: &mut dyn Write,
@@ -424,10 +470,14 @@ pub fn extract_file<R: Read>(
 ) -> CoreResult<Extracted> {
     let mut layer = Layer::open(inner, options, progress);
     let mut found = None;
+    let mut position: u64 = 0;
     while let Some(raw) = layer.next()? {
+        let here = position;
+        position += 1;
         if found.is_some()
+            || at.position.is_some_and(|p| p != here)
             || kind_of(&raw) != EntryKind::File
-            || normalize(&raw.path).as_deref() != Some(path)
+            || normalize(&raw.path).as_deref() != Some(at.path)
         {
             continue;
         }

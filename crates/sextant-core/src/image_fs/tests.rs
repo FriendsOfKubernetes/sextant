@@ -7,7 +7,9 @@ use super::auth::{
 };
 use super::cache::IndexCache;
 use super::fixtures::{self, Blob, Image, dir, file, hardlink, symlink};
-use super::layer::{Budget, LayerIndex, StreamOptions, extract_file, index_layer, normalize};
+use super::layer::{
+    Budget, EntryAt, LayerIndex, StreamOptions, extract_file, index_layer, normalize,
+};
 use super::manifest::{
     Compression, ImagePlatform, Parsed, choose_platform, compression_of, layer_history,
     parse_manifest,
@@ -35,6 +37,14 @@ fn index(blob: &Blob) -> CoreResult<LayerIndex> {
 }
 
 use crate::CoreResult;
+
+/// The first regular file `path` of a layer (no position).
+fn at(path: &str) -> EntryAt<'_> {
+    EntryAt {
+        path,
+        position: None,
+    }
+}
 
 #[test]
 fn references_are_read_as_docker_reads_them() {
@@ -91,6 +101,15 @@ fn loopback_link_local_and_mapped_addresses_are_forbidden() {
         "fe80::1",
         "::ffff:127.0.0.1",
         "::ffff:169.254.1.1",
+        // Cloud metadata outside link-local: AWS over IPv6, Alibaba Cloud.
+        "fd00:ec2::254",
+        "100.100.100.200",
+        "::ffff:100.100.100.200",
+        // NAT64 forms of forbidden IPv4 addresses.
+        "64:ff9b::a9fe:a9fe",
+        "64:ff9b::7f00:1",
+        "64:ff9b::6464:64c8",
+        "64:ff9b:1::a9fe:a9fe",
     ] {
         assert!(forbidden_ip(ip.parse().unwrap()), "{ip}");
     }
@@ -101,7 +120,12 @@ fn loopback_link_local_and_mapped_addresses_are_forbidden() {
         "100.64.0.1",
         "8.8.8.8",
         "fd00::1",
+        "fd00:ec2::253",
+        "100.100.100.201",
         "2001:db8::1",
+        // NAT64 to an ordinary public or private IPv4 address.
+        "64:ff9b::808:808",
+        "64:ff9b::a01:203",
     ] {
         assert!(!forbidden_ip(ip.parse().unwrap()), "{ip}");
     }
@@ -488,7 +512,7 @@ fn a_file_is_extracted_from_its_layer_and_hard_links_read_their_target() {
     let got = extract_file(
         &blob.bytes[..],
         &options(&blob),
-        &source.path,
+        source.entry(),
         4,
         false,
         &mut out,
@@ -503,7 +527,7 @@ fn a_file_is_extracted_from_its_layer_and_hard_links_read_their_target() {
     extract_file(
         &blob.bytes[..],
         &options(&blob),
-        "etc/os-release",
+        at("etc/os-release"),
         100,
         true,
         &mut out,
@@ -517,7 +541,7 @@ fn a_file_is_extracted_from_its_layer_and_hard_links_read_their_target() {
         extract_file(
             &blob.bytes[..],
             &wrong,
-            "etc/os-release",
+            at("etc/os-release"),
             100,
             true,
             &mut Vec::new(),
@@ -530,7 +554,7 @@ fn a_file_is_extracted_from_its_layer_and_hard_links_read_their_target() {
         extract_file(
             &blob.bytes[..],
             &options(&blob),
-            "nope",
+            at("nope"),
             100,
             false,
             &mut Vec::new(),
@@ -725,7 +749,7 @@ fn a_saved_file_appears_only_after_its_layer_was_verified() {
     let bytes = save::save_file(
         &blob.bytes[..],
         &options(&blob),
-        "etc/os-release",
+        at("etc/os-release"),
         &dest,
         &mut |_| {},
     )
@@ -741,7 +765,7 @@ fn a_saved_file_appears_only_after_its_layer_was_verified() {
         save::save_file(
             &blob.bytes[..],
             &wrong,
-            "etc/os-release",
+            at("etc/os-release"),
             &other,
             &mut |_| {}
         )
@@ -761,7 +785,7 @@ fn a_saved_file_appears_only_after_its_layer_was_verified() {
         save::save_file(
             &blob.bytes[..],
             &options(&blob),
-            "etc/os-release",
+            at("etc/os-release"),
             std::path::Path::new("rel"),
             &mut |_| {}
         )
@@ -777,4 +801,113 @@ fn text_and_binary_files_are_told_apart() {
     // "é" cut in half by the size limit is dropped, the rest is text.
     let cut = file_text("/d", 100, &[b'a', 0xc3]);
     assert_eq!((cut.text.as_deref(), cut.truncated), (Some("a"), true));
+}
+
+#[test]
+fn pax_owner_names_are_clipped_and_every_kept_text_is_counted() {
+    // 25 entries whose pax records carry ~1 MiB user and group names: 50 MiB of names if kept.
+    let big = "u".repeat(1024 * 1024 - 1024);
+    let entries: Vec<_> = (0..25)
+        .map(|i| {
+            (
+                file(&format!("f{i}"), b"x"),
+                vec![
+                    ("uname".to_owned(), big.clone()),
+                    ("gname".to_owned(), format!("é{big}")),
+                ],
+            )
+        })
+        .collect();
+    let blob = Blob {
+        media_type: "application/vnd.oci.image.layer.v1.tar+gzip".into(),
+        bytes: fixtures::gzip(&fixtures::tar_with_pax(&entries)),
+    };
+    let mut budget = Budget {
+        entries: 1_000,
+        bytes: 10_000,
+    };
+    let index = index_layer(&blob.bytes[..], &options(&blob), &mut budget, &mut |_| {}).unwrap();
+    assert_eq!(index.entries.len(), 25);
+    let mut kept = 0u64;
+    for entry in &index.entries {
+        let user = entry.user.as_deref().unwrap();
+        let group = entry.group.as_deref().unwrap();
+        assert_eq!(user.len(), 32, "{user}");
+        // Clipped on a character boundary: "é" is two bytes, 31 more fit.
+        assert!(group.len() <= 32 && group.starts_with('é'), "{group}");
+        kept += (entry.path.len() + user.len() + group.len()) as u64;
+    }
+    // Path, user and group bytes are all charged, while indexing and again from the cache.
+    assert_eq!(10_000 - budget.bytes, kept);
+    let mut again = Budget {
+        entries: 1_000,
+        bytes: 10_000,
+    };
+    again.charge(&index).unwrap();
+    assert_eq!(again, budget);
+    // A budget the names do not fit in refuses the layer.
+    let mut small = Budget {
+        entries: 1_000,
+        bytes: 25 * 40,
+    };
+    assert!(index_layer(&blob.bytes[..], &options(&blob), &mut small, &mut |_| {}).is_err());
+}
+
+#[test]
+fn a_duplicated_path_reads_the_occurrence_the_tree_kept() {
+    let blob = Blob::gzip_layer(&[
+        file("etc/conf", b"first"),
+        hardlink("etc/old", "etc/conf"),
+        file("etc/conf", b"second"),
+        hardlink("etc/new", "etc/conf"),
+    ]);
+    let mut tree = MergedTree::new();
+    tree.apply(0, &index(&blob).unwrap()).unwrap();
+    let read = |path: &str, verify: bool| {
+        let source = tree.data_source(path).unwrap();
+        let mut out = Vec::new();
+        extract_file(
+            &blob.bytes[..],
+            &options(&blob),
+            source.entry(),
+            100,
+            verify,
+            &mut out,
+            &mut |_| {},
+        )
+        .unwrap();
+        String::from_utf8(out).unwrap()
+    };
+    for verify in [false, true] {
+        assert_eq!(read("/etc/conf", verify), "second", "the last one wins");
+        // A hard link names the file as it was when the link was written.
+        assert_eq!(read("/etc/old", verify), "first");
+        assert_eq!(read("/etc/new", verify), "second");
+    }
+}
+
+#[test]
+fn paths_with_nul_or_control_characters_are_skipped() {
+    assert_eq!(normalize("etc\0shadow"), None);
+    assert_eq!(normalize("etc/\u{7}bell"), None);
+    assert_eq!(normalize("etc/a\nb"), None);
+    assert_eq!(normalize("etc/ok name"), Some("etc/ok name".into()));
+    // A NUL would make "etc\0shadow" the tree key of /etc/shadow.
+    let blob = Blob {
+        media_type: "application/vnd.oci.image.layer.v1.tar".into(),
+        bytes: fixtures::tar_with_pax(&[
+            (file("etc/shadow", b"real"), Vec::new()),
+            (
+                file("fake", b"forged"),
+                vec![("path".to_owned(), "etc\0shadow".to_owned())],
+            ),
+        ]),
+    };
+    let index = index(&blob).unwrap();
+    assert_eq!(index.skipped, 1);
+    let paths: Vec<_> = index.entries.iter().map(|e| e.path.as_str()).collect();
+    assert_eq!(paths, ["etc/shadow"]);
+    let mut tree = MergedTree::new();
+    tree.apply(0, &index).unwrap();
+    assert_eq!(tree.entry("/etc/shadow").unwrap().size, 4);
 }

@@ -1094,6 +1094,11 @@ fn later_argument_names_match_the_frontend() {
             json!({ "clusterId": "c" }),
             "withCredentials",
         ),
+        (
+            "kubeconfig_copy",
+            json!({ "clusterId": "c", "withCredentials": true }),
+            "language",
+        ),
         ("workload_set_image", json!({ "clusterId": "c" }), "ref"),
         (
             "workload_set_image_dry_run",

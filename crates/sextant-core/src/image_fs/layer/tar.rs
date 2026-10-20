@@ -165,12 +165,12 @@ impl<R: Read> TarStream<R> {
                 uid: field(108..116),
                 gid: field(116..124),
                 user: if ustar {
-                    non_empty(text(&block[265..297]))
+                    owner_name(text(&block[265..297]))
                 } else {
                     None
                 },
                 group: if ustar {
-                    non_empty(text(&block[297..329]))
+                    owner_name(text(&block[297..329]))
                 } else {
                     None
                 },
@@ -186,8 +186,8 @@ impl<R: Read> TarStream<R> {
                     "size" => entry.size = value.parse().unwrap_or(entry.size),
                     "uid" => entry.uid = value.parse().unwrap_or(entry.uid),
                     "gid" => entry.gid = value.parse().unwrap_or(entry.gid),
-                    "uname" => entry.user = non_empty(value),
-                    "gname" => entry.group = non_empty(value),
+                    "uname" => entry.user = owner_name(value),
+                    "gname" => entry.group = owner_name(value),
                     "mtime" => {
                         let whole = value.split('.').next().unwrap_or("");
                         entry.mtime = whole.parse().unwrap_or(entry.mtime);
@@ -227,6 +227,22 @@ impl<R: Read> TarStream<R> {
         self.pending = self.pending.saturating_sub(want);
         Ok(want)
     }
+}
+
+/// The longest user or group name kept, in bytes: the size of the ustar field. A pax record may carry a longer one
+/// (up to the 2 MiB header cap); it is clipped so an entry's names cannot outgrow the index budget.
+pub const MAX_OWNER_NAME_BYTES: usize = 32;
+
+/// A user or group name as kept: `None` when empty, else clipped to [`MAX_OWNER_NAME_BYTES`] on a character boundary.
+fn owner_name(mut name: String) -> Option<String> {
+    if name.len() > MAX_OWNER_NAME_BYTES {
+        let mut end = MAX_OWNER_NAME_BYTES;
+        while !name.is_char_boundary(end) {
+            end -= 1;
+        }
+        name.truncate(end);
+    }
+    Some(name).filter(|n| !n.is_empty())
 }
 
 /// An octal number field, or GNU's base-256 form.

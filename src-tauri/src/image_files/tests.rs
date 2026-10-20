@@ -37,6 +37,9 @@ struct Fake {
     realm: Option<String>,
     /// Corrupts every blob served.
     tamper: bool,
+    /// Changes the last byte of the layers served (not the configs), keeping their size: a layer that changed since its
+    /// index was cached, in a part the text view would not reach without verifying.
+    tamper_layers: bool,
     /// Where a manifest request redirects to.
     manifest_redirect: Option<String>,
 }
@@ -89,6 +92,15 @@ async fn handle(State(fake): State<Arc<Fake>>, request: Request) -> Response {
             let digest = rest.trim_start_matches("/b/");
             return match blob_of(&fake, digest) {
                 Some(mut bytes) => {
+                    let config = [&fake.image.config, &fake.arm.config]
+                        .iter()
+                        .any(|c| sextant_core::image_fs::manifest::sha256_digest(c) == digest);
+                    if fake.tamper_layers
+                        && !config
+                        && let Some(last) = bytes.last_mut()
+                    {
+                        *last ^= 0xff;
+                    }
                     if fake.tamper {
                         bytes.push(0);
                     }
@@ -183,6 +195,7 @@ async fn serve(configure: impl FnOnce(&mut Fake)) -> Server {
         redirect: Some("https://storage.example/b/{digest}?sig=1".into()),
         realm: Some("https://auth.example/token".into()),
         tamper: false,
+        tamper_layers: false,
         manifest_redirect: None,
     };
     configure(&mut fake);
@@ -441,6 +454,33 @@ async fn a_tampered_blob_is_refused_and_not_cached() {
         err.message
     );
     assert_eq!(std::fs::read_dir(cache_dir.path()).unwrap().count(), 0);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_text_view_verifies_the_layer_it_reads_again() {
+    let cache_dir = tempfile::tempdir().unwrap();
+    let cache = IndexCache::new(cache_dir.path());
+    let clean = serve(|_| {}).await;
+    open_with(&clean, &reference(), None, &cache).await.unwrap();
+    // The indexes come from the cache; the layer the text view downloads no longer matches its digest.
+    let changed = serve(|f| f.tamper_layers = true).await;
+    let opened = open_with(&changed, &reference(), None, &cache)
+        .await
+        .unwrap();
+    assert!(opened.summary.layers.iter().all(|l| l.cached));
+    let err = read_text(
+        &opened.session,
+        "/etc/os-release",
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(|_| {}),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        err.message.contains("digest") || err.message.contains("could not be read"),
+        "{}",
+        err.message
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]

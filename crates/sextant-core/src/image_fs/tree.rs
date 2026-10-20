@@ -26,6 +26,9 @@ struct Node {
     mtime: u64,
     link: Option<String>,
     layer: u32,
+    /// [`LayerEntry::position`] and [`LayerEntry::link_position`]: which occurrence in the layer holds the data.
+    position: u64,
+    link_position: Option<u64>,
 }
 
 impl Node {
@@ -41,6 +44,8 @@ impl Node {
             mtime: 0,
             link: None,
             layer,
+            position: 0,
+            link_position: None,
         }
     }
 
@@ -56,6 +61,8 @@ impl Node {
             mtime: entry.mtime,
             link: entry.link.clone(),
             layer,
+            position: entry.position,
+            link_position: entry.link_position,
         }
     }
 }
@@ -356,6 +363,7 @@ impl MergedTree {
             EntryKind::File => Ok(DataSource {
                 layer: node.layer,
                 path: key.replace(SEP, "/"),
+                position: Some(node.position),
                 size: node.size,
             }),
             EntryKind::Hardlink => {
@@ -368,6 +376,7 @@ impl MergedTree {
                 Ok(DataSource {
                     layer: node.layer,
                     path: target,
+                    position: node.link_position,
                     size,
                 })
             }
@@ -376,10 +385,23 @@ impl MergedTree {
     }
 }
 
-/// Where a file's data is: layer `layer`, entry `path` (normalised), `size` bytes (as the tree knows it).
+/// Where a file's data is: layer `layer`, entry `path` (normalised) at `position` in that layer's stream (the
+/// occurrence the tree kept; `None` for a hard link whose target does not precede it in its layer), `size` bytes (as
+/// the tree knows it).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataSource {
     pub layer: u32,
     pub path: String,
+    pub position: Option<u64>,
     pub size: u64,
+}
+
+impl DataSource {
+    /// The entry to pass to [`super::layer::extract_file`].
+    pub fn entry(&self) -> super::layer::EntryAt<'_> {
+        super::layer::EntryAt {
+            path: &self.path,
+            position: self.position,
+        }
+    }
 }
