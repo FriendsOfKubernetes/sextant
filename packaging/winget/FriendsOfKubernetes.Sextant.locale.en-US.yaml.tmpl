@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+# Rendered by scripts/packaging.mjs from a published release (ADR-0104).
+
+PackageIdentifier: {{wingetId}}
+PackageVersion: {{version}}
+PackageLocale: en-US
+Publisher: Sextant contributors
+PublisherUrl: https://github.com/{{repo}}
+PublisherSupportUrl: https://github.com/{{repo}}/issues
+PackageName: Sextant
+PackageUrl: https://github.com/{{repo}}
+License: MIT OR Apache-2.0
+LicenseUrl: https://github.com/{{repo}}#license
+ShortDescription: Desktop Kubernetes client with a built-in MCP server for AI agents
+Description: >-
+  Sextant is a desktop client for Kubernetes clusters for developers and SREs: resources, logs, shells, port
+  forwarding, metrics, Helm, Flux and Argo CD, with a built-in MCP server that lets AI agents work with the clusters
+  only as far as the user allows. The installed app updates itself from signed releases.
+Moniker: sextant
+Tags:
+  - kubernetes
+  - k8s
+  - kubectl
+  - devops
+  - helm
+  - mcp
+ReleaseNotesUrl: https://github.com/{{repo}}/releases/tag/v{{version}}
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+# Rendered by scripts/packaging.mjs from a published release (ADR-0104).
+
+PackageIdentifier: {{wingetId}}
+PackageVersion: {{version}}
+InstallerLocale: en-US
+InstallerType: wix
+UpgradeBehavior: install
+ReleaseDate: {{releaseDate}}
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/{{repo}}/releases/download/v{{version}}/Sextant_{{version}}_x64_en-US.msi
+    InstallerSha256: {{msiSha256Upper}}
+ManifestType: installer
+ManifestVersion: 1.6.0

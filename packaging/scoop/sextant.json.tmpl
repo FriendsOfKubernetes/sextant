@@ -1,0 +1,28 @@
+{
+  "version": "{{version}}",
+  "description": "Desktop Kubernetes client with a built-in MCP server for AI agents",
+  "homepage": "https://github.com/{{repo}}",
+  "license": "MIT|Apache-2.0",
+  "notes": [
+    "Sextant from Scoop is updated by Scoop: scoop update sextant",
+    "Settings and data stay in %APPDATA%\\{{identifier}} and %LOCALAPPDATA%\\{{identifier}}."
+  ],
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/{{repo}}/releases/download/v{{version}}/Sextant_{{version}}_x64_portable.zip",
+      "hash": "{{zipSha256}}"
+    }
+  },
+  "bin": "sextant.exe",
+  "shortcuts": [["sextant.exe", "Sextant"]],
+  "checkver": {
+    "github": "https://github.com/{{repo}}"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/{{repo}}/releases/download/v$version/Sextant_$version_x64_portable.zip"
+      }
+    }
+  }
+}

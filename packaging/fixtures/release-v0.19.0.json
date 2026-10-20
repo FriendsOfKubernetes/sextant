@@ -1,0 +1,74 @@
+{
+  "tag_name": "v0.19.0",
+  "draft": false,
+  "prerelease": false,
+  "published_at": "2026-11-02T10:20:30Z",
+  "assets": [
+    {
+      "name": "latest.json",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/latest.json",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "Sextant_0.19.0_amd64.AppImage",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_amd64.AppImage",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "name": "Sextant_0.19.0_amd64.deb",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_amd64.deb",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+      "name": "Sextant-0.19.0-1.x86_64.rpm",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant-0.19.0-1.x86_64.rpm",
+      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    {
+      "name": "Sextant_0.19.0_aarch64.AppImage",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_aarch64.AppImage",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    {
+      "name": "Sextant_0.19.0_arm64.deb",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_arm64.deb",
+      "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    },
+    {
+      "name": "Sextant-0.19.0-1.aarch64.rpm",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant-0.19.0-1.aarch64.rpm",
+      "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    },
+    {
+      "name": "Sextant_0.19.0_universal.dmg",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_universal.dmg",
+      "digest": "sha256:7C0E895A259027E7F60830B25CD00BEDC150DD40AD0DC097CF01A34A129979D8"
+    },
+    {
+      "name": "Sextant_universal.app.tar.gz",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_universal.app.tar.gz",
+      "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+    },
+    {
+      "name": "Sextant_0.19.0_x64_en-US.msi",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_x64_en-US.msi",
+      "digest": "sha256:f28392f25a7c7a75de21e89cdd2640ecaaaf1206d9c0d55bd9a5f73cd9b9db02"
+    },
+    {
+      "name": "Sextant_0.19.0_x64_portable.zip",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/FriendsOfKubernetes/sextant/releases/download/v0.19.0/Sextant_0.19.0_x64_portable.zip",
+      "digest": "sha256:2f1286c6a3ea643fc659734b283915b4a451d49ee8cc239ce86b280850899c38"
+    }
+  ]
+}

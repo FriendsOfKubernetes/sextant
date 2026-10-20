@@ -67,9 +67,26 @@ An AI agent asks to scale a deployment; Sextant asks you first and records the c
 
 ## Install
 
-Download the installer (`.deb`, `.AppImage`, `.dmg` or `.msi`) from the
-[latest release](https://github.com/FriendsOfKubernetes/sextant/releases/latest). The installers are not code-signed,
-so macOS and Windows warn on first start — see [Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation).
+Download the installer from the [latest release](https://github.com/FriendsOfKubernetes/sextant/releases/latest):
+
+| System | Files |
+|---|---|
+| Linux x86_64 and arm64 | `.AppImage`, `.deb`, `.rpm` |
+| macOS (Apple silicon and Intel) | universal `.dmg` |
+| Windows x64 | `.msi`, or the portable `.zip` |
+
+The installers are not code-signed, so macOS and Windows warn on first start — see
+[Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation). The AppImage, `.dmg` and `.msi`
+update themselves; `.deb`, `.rpm` and the portable `.zip` are updated with your package manager.
+
+Package managers (coming soon):
+
+```sh
+brew install --cask friendsofkubernetes/sextant/sextant                 # macOS, Homebrew
+scoop bucket add sextant https://github.com/FriendsOfKubernetes/scoop-sextant
+scoop install sextant/sextant                                           # Windows, Scoop
+winget install FriendsOfKubernetes.Sextant                              # Windows, winget
+```
 
 ## Documentation
 

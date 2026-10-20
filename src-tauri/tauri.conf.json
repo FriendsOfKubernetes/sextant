@@ -47,6 +47,10 @@
     "linux": {
       "deb": {
         "section": "devel"
+      },
+      "rpm": {
+        "depends": ["libwebkit2gtk-4.1.so.0()(64bit)", "libgtk-3.so.0()(64bit)"],
+        "recommends": ["libayatana-appindicator3.so.1()(64bit)"]
       }
     }
   },
