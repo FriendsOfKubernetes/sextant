@@ -72,9 +72,7 @@ impl CompactObject {
         let raw: Arc<str> = serde_json::to_string(&value).ok()?.into();
         let uid = value["metadata"]["uid"].as_str().map(Into::into);
         let name = value["metadata"]["name"].as_str().map(Into::into);
-        let namespace = value["metadata"]["namespace"]
-            .as_str()
-            .map(Into::into);
+        let namespace = value["metadata"]["namespace"].as_str().map(Into::into);
         Some(Self {
             raw,
             uid,
@@ -1015,7 +1013,11 @@ impl Batcher {
             return None;
         }
         Some(WatchUpdate::Delta {
-            upserted: self.upserted.drain().map(|(_, v)| v.to_arc_value()).collect(),
+            upserted: self
+                .upserted
+                .drain()
+                .map(|(_, v)| v.to_arc_value())
+                .collect(),
             deleted: self.deleted.drain().collect(),
         })
     }
