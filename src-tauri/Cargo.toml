@@ -11,7 +11,10 @@ default-run = "sextant"
 [lib]
 # `_lib` suffix avoids a name clash with the binary on Windows (cargo issue #8519).
 name = "sextant_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Only the rlib the binary links. "staticlib" and "cdylib" (the Tauri template's mobile outputs: iOS and Android) made
+# every release build run a second whole-program fat LTO in this crate and write a ~0.5 GB static library that nothing
+# uses. A mobile build (#17) would add them back.
+crate-type = ["rlib"]
 
 [[bin]]
 name = "sextant"

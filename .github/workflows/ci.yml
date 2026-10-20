@@ -25,13 +25,12 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
-      # sccache keeps compiler outputs in the GitHub Actions cache next to rust-cache's target directory. A pull
-      # request (from a fork too) writes only into its own refs/pull/<n>/merge scope; main's caches are written only
-      # by pushes to main, and release.yml restores nothing else.
-      RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
-      # sccache cannot cache incremental builds (rust-cache sets this too); without debug info the test binaries,
-      # their links and the cached target directory are much smaller.
+      # rust-cache keeps the target directory (the dependencies) in the GitHub Actions cache. A pull request (from a
+      # fork too) writes only into its own refs/pull/<n>/merge scope; main's caches are written only by pushes to main.
+      # No sccache: rust-cache already restores every dependency and the workspace crates change on every push, so it
+      # got no hits, failed most of its writes and its per-crate entries pushed the repository over the 10 GB cache
+      # quota, evicting the release caches. Incremental builds are not cached (rust-cache sets this too); without debug
+      # info the test binaries, their links and the cached target directory are much smaller.
       CARGO_INCREMENTAL: "0"
       CARGO_PROFILE_DEV_DEBUG: "0"
     steps:
@@ -56,8 +55,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-
-      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
 
       - uses: Swatinem/rust-cache@v2
 

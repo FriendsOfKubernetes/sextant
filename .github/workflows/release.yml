@@ -29,12 +29,14 @@
 # universal-apple-darwin` does — and runs only the bundle step on it (`tauri bundle`, which compiles nothing and signs
 # the updater archive like `tauri build`). Same .dmg, Sextant_universal.app.tar.gz(.sig) and latest.json entries.
 #
-# Caches: Swatinem/rust-cache (the target directory) and sccache (compiler outputs, GitHub Actions cache backend).
+# Caches: Swatinem/rust-cache (the target directory, one key per OS / target).
 # A run can restore only caches written by its own ref or by the default branch (main); pull requests, forks
 # included, write only into their own refs/pull/<n>/merge scope, so nothing a pull request builds reaches a release.
-# A tag build only reads (rust-cache save-if, SCCACHE_GHA_RW_MODE=READ_ONLY): the next tag could not restore it
-# anyway, and it would only push main's entries out of the repository's cache quota. Runs on main (dispatched
-# rebuilds and dry runs) write.
+# A tag build only reads (rust-cache save-if): the next tag could not restore it anyway, and it would only push
+# main's entries out of the repository's cache quota. Runs on main (dispatched rebuilds and dry runs) write.
+# No sccache: with the dependencies restored by rust-cache it got no hits (the workspace crates change with every tag
+# and the binary is not cacheable), failed many writes, and its per-crate entries pushed the repository over the
+# 10 GB cache quota, which evicts the release caches that only tags read (least recently used first).
 name: Release
 
 on:
@@ -183,10 +185,6 @@ jobs:
             args: --bundles msi
             bundles: target/release/bundle/msi/*.msi*
     runs-on: ${{ matrix.os }}
-    env:
-      RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
-      SCCACHE_GHA_RW_MODE: ${{ github.ref == 'refs/heads/main' && 'READ_WRITE' || 'READ_ONLY' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -205,8 +203,6 @@ jobs:
           cache: npm
 
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
-
-      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
@@ -255,10 +251,6 @@ jobs:
       matrix:
         target: [aarch64-apple-darwin, x86_64-apple-darwin]
     runs-on: macos-latest
-    env:
-      RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
-      SCCACHE_GHA_RW_MODE: ${{ github.ref == 'refs/heads/main' && 'READ_WRITE' || 'READ_ONLY' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -272,8 +264,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
         with:
           targets: ${{ matrix.target }}
-
-      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
