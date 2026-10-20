@@ -20,7 +20,11 @@
     "reconnect": "Se reconnecter",
     "disconnect": "Se déconnecter",
     "settings": "Paramètres",
-    "changeIcon": "Changer l'icône…"
+    "changeIcon": "Changer l'icône…",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "moveTop": "Placer en premier",
+    "moveBottom": "Placer en dernier"
   },
   "add": {
     "title": "Ajouter un cluster",
@@ -157,5 +161,9 @@
     "copyCommand": "Copier la commande",
     "copied": "Copié",
     "copyFailed": "Le presse-papiers n'est pas disponible ; sélectionnez la commande et copiez-la."
+  },
+  "order": {
+    "hint": "Faites glisser pour changer l’ordre, ou appuyez sur Alt+Flèche haut ou Alt+Flèche bas.",
+    "moved": "{{name}} déplacé en position {{position}} sur {{count}}"
   }
 }

@@ -20,7 +20,11 @@
     "reconnect": "Reconectar",
     "disconnect": "Desconectar",
     "settings": "Configuración",
-    "changeIcon": "Cambiar icono…"
+    "changeIcon": "Cambiar icono…",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "moveTop": "Mover al principio",
+    "moveBottom": "Mover al final"
   },
   "add": {
     "title": "Agregar clúster",
@@ -157,5 +161,9 @@
     "copyCommand": "Copiar comando",
     "copied": "Copiado",
     "copyFailed": "El portapapeles no está disponible; seleccione el comando y cópielo."
+  },
+  "order": {
+    "hint": "Arrastre para cambiar el orden, o pulse Alt+Flecha arriba o Alt+Flecha abajo.",
+    "moved": "{{name}} movido a la posición {{position}} de {{count}}"
   }
 }

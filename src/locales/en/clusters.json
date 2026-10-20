@@ -20,7 +20,11 @@
     "reconnect": "Reconnect",
     "disconnect": "Disconnect",
     "settings": "Settings",
-    "changeIcon": "Change icon…"
+    "changeIcon": "Change icon…",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "moveTop": "Move to top",
+    "moveBottom": "Move to bottom"
   },
   "add": {
     "title": "Add cluster",
@@ -155,5 +159,9 @@
     "copyCommand": "Copy command",
     "copied": "Copied",
     "copyFailed": "The clipboard is not available; select the command and copy it."
+  },
+  "order": {
+    "hint": "Drag to change the order, or press Alt+Up Arrow or Alt+Down Arrow.",
+    "moved": "{{name}} moved to position {{position}} of {{count}}"
   }
 }

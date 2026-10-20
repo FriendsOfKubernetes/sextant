@@ -20,7 +20,11 @@
     "reconnect": "重新连接",
     "disconnect": "断开连接",
     "settings": "设置",
-    "changeIcon": "更改图标…"
+    "changeIcon": "更改图标…",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "moveTop": "移到顶部",
+    "moveBottom": "移到底部"
   },
   "add": {
     "title": "添加集群",
@@ -153,5 +157,9 @@
     "copyCommand": "复制命令",
     "copied": "已复制",
     "copyFailed": "剪贴板不可用；请选中该命令并手动复制。"
+  },
+  "order": {
+    "hint": "拖动以更改顺序，或按 Alt+上箭头 或 Alt+下箭头。",
+    "moved": "{{name}} 已移到第 {{position}} 位（共 {{count}} 个）"
   }
 }

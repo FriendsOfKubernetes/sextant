@@ -674,7 +674,7 @@ impl KubeconfigRegistry {
 
 /// Moves what the settings keep under a cluster's id to its new id (a renamed context): its per-cluster settings,
 /// the overview's choice, the muted clusters, the last open cluster, and the cluster of saved views, pins and
-/// workspaces. The moved settings win: anything still kept under the new id belongs to a context that is gone (a new
+/// workspaces, and its place in the rail's order. The moved settings win: anything still kept under the new id belongs to a context that is gone (a new
 /// name is always free in its file), so it is forgotten first — a renamed cluster never inherits, say, the agent
 /// access of a deleted context that had its name.
 pub fn move_cluster_settings(settings: &mut AppSettings, from: &ClusterId, to: &ClusterId) {
@@ -720,11 +720,12 @@ pub fn move_cluster_settings(settings: &mut AppSettings, from: &ClusterId, to: &
     for workspace in &mut settings.workspaces {
         replace(&mut workspace.clusters);
     }
+    replace(&mut settings.cluster_order);
 }
 
 /// Forgets what the settings keep for a cluster whose context was deleted: its per-cluster settings (display name,
 /// icon, agent access…), its place in the overview, the muted clusters and the last open cluster, its saved views
-/// (and every pin of those views), its pins, and its place in workspaces. A context created later under the same
+/// (and every pin of those views), its pins, its place in workspaces and in the rail's order. A context created later under the same
 /// name then starts clean.
 pub fn forget_cluster_settings(settings: &mut AppSettings, id: &ClusterId) {
     let id = id.as_str();
@@ -748,6 +749,7 @@ pub fn forget_cluster_settings(settings: &mut AppSettings, id: &ClusterId) {
     for workspace in &mut settings.workspaces {
         workspace.clusters.retain(|c| c != id);
     }
+    settings.cluster_order.retain(|c| c != id);
 }
 
 /// Forgets that the user allowed Sextant to edit a kubeconfig source that was removed: adding the file again asks

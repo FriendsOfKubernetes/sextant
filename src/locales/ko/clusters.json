@@ -20,7 +20,11 @@
     "reconnect": "다시 연결",
     "disconnect": "연결 끊기",
     "settings": "설정",
-    "changeIcon": "아이콘 변경…"
+    "changeIcon": "아이콘 변경…",
+    "moveUp": "위로 이동",
+    "moveDown": "아래로 이동",
+    "moveTop": "맨 위로 이동",
+    "moveBottom": "맨 아래로 이동"
   },
   "add": {
     "title": "클러스터 추가",
@@ -153,5 +157,9 @@
     "copyCommand": "명령 복사",
     "copied": "복사됨",
     "copyFailed": "클립보드를 사용할 수 없습니다. 명령을 선택하여 복사하세요."
+  },
+  "order": {
+    "hint": "드래그하여 순서를 바꾸거나 Alt+위쪽 화살표 또는 Alt+아래쪽 화살표를 누르세요.",
+    "moved": "{{name}}을(를) {{count}}개 중 {{position}}번째로 이동했습니다"
   }
 }

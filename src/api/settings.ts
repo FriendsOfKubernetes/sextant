@@ -56,6 +56,7 @@ export function defaultAppSettings(): AppSettings {
     compare: { ignorePaths: {} },
     columnWidths: {},
     logs: { wrap: false, colours: true },
+    clusterOrder: [],
   };
 }
 

@@ -628,7 +628,10 @@ fn settings_of_a_renamed_cluster_move_to_its_new_id() {
         name: "Prod".into(),
         clusters: vec!["old".into(), "new".into()],
     }];
+    // A stale "new" (a context that is gone) is dropped; the renamed cluster keeps its place in the rail.
+    settings.cluster_order = vec!["b".into(), "old".into(), "a".into(), "new".into()];
     move_cluster_settings(&mut settings, &old, &new);
+    assert_eq!(settings.cluster_order, ["b", "new", "a"]);
     assert_eq!(settings.views[0].cluster.as_deref(), Some("new"));
     assert_eq!(settings.pins[0].cluster, "new");
     assert_eq!(settings.workspaces[0].clusters, ["new"]);
@@ -678,6 +681,7 @@ fn a_renamed_cluster_never_inherits_the_settings_of_a_deleted_context_with_its_n
     }];
     settings.fleet.selected = vec!["prod".into()];
     settings.window.last_cluster = Some("prod".into());
+    settings.cluster_order = vec!["x".into(), "prod".into(), "dev".into()];
 
     // Deleting the context "prod" forgets everything kept for it.
     forget_cluster_settings(&mut settings, &prod);
@@ -690,6 +694,7 @@ fn a_renamed_cluster_never_inherits_the_settings_of_a_deleted_context_with_its_n
     assert_eq!(settings.workspaces[0].clusters, ["dev"]);
     assert!(settings.fleet.selected.is_empty());
     assert_eq!(settings.window.last_cluster, None);
+    assert_eq!(settings.cluster_order, ["x", "dev"]);
 
     // Even when stale settings are still there, the renamed cluster's own settings win.
     settings.clusters.insert("prod".into(), named("Stale prod"));
@@ -700,6 +705,7 @@ fn a_renamed_cluster_never_inherits_the_settings_of_a_deleted_context_with_its_n
     );
     assert!(!settings.clusters.contains_key("dev"));
     assert_eq!(settings.workspaces[0].clusters, ["prod"]);
+    assert_eq!(settings.cluster_order, ["x", "prod"]);
 }
 
 #[test]

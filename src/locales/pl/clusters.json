@@ -20,7 +20,11 @@
     "reconnect": "Połącz ponownie",
     "disconnect": "Rozłącz",
     "settings": "Ustawienia",
-    "changeIcon": "Zmień ikonę…"
+    "changeIcon": "Zmień ikonę…",
+    "moveUp": "Przenieś w górę",
+    "moveDown": "Przenieś w dół",
+    "moveTop": "Przenieś na początek",
+    "moveBottom": "Przenieś na koniec"
   },
   "add": {
     "title": "Dodaj klaster",
@@ -159,5 +163,9 @@
     "copyCommand": "Kopiuj polecenie",
     "copied": "Skopiowano",
     "copyFailed": "Schowek jest niedostępny; zaznacz polecenie i skopiuj je."
+  },
+  "order": {
+    "hint": "Przeciągnij, aby zmienić kolejność, lub naciśnij Alt+Strzałka w górę albo Alt+Strzałka w dół.",
+    "moved": "{{name}} przeniesiono na pozycję {{position}} z {{count}}"
   }
 }

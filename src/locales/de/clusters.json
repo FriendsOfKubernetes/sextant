@@ -20,7 +20,11 @@
     "reconnect": "Neu verbinden",
     "disconnect": "Trennen",
     "settings": "Einstellungen",
-    "changeIcon": "Symbol ändern…"
+    "changeIcon": "Symbol ändern…",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "moveTop": "An den Anfang",
+    "moveBottom": "Ans Ende"
   },
   "add": {
     "title": "Cluster hinzufügen",
@@ -155,5 +159,9 @@
     "copyCommand": "Befehl kopieren",
     "copied": "Kopiert",
     "copyFailed": "Die Zwischenablage ist nicht verfügbar; markieren und kopieren Sie den Befehl."
+  },
+  "order": {
+    "hint": "Zum Ändern der Reihenfolge ziehen oder Alt+Pfeil nach oben bzw. Alt+Pfeil nach unten drücken.",
+    "moved": "{{name}} an Position {{position}} von {{count}} verschoben"
   }
 }

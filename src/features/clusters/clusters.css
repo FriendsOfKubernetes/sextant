@@ -54,6 +54,49 @@
   color: var(--color-text);
   font: inherit;
   text-align: left;
+  user-select: none;
+}
+
+/* Reordering by drag (railDrag.ts): the dragged cluster fades, a line marks where it would drop (half the list's
+   gap above the item, or below the last one). */
+.cluster-list__items {
+  --cluster-gap: 10px;
+}
+
+.cluster-list--expanded .cluster-list__items {
+  --cluster-gap: 4px;
+}
+
+.cluster-list__items > li {
+  position: relative;
+}
+
+.cluster-list__items--dragging,
+.cluster-list__items--dragging .cluster-icon {
+  cursor: grabbing;
+}
+
+.cluster-icon[data-dragging] {
+  opacity: 0.45;
+}
+
+.cluster-list__items > li[data-drop]::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+.cluster-list__items > li[data-drop="before"]::before {
+  top: calc(var(--cluster-gap) / -2 - 1px);
+}
+
+.cluster-list__items > li[data-drop="after"]::before {
+  bottom: calc(var(--cluster-gap) / -2 - 1px);
 }
 
 .cluster-list--expanded .cluster-icon {

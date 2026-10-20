@@ -25,6 +25,7 @@ pub use columns::{ColumnWidths, TableColumnWidths};
 pub mod logs;
 pub use logs::LogViewSettings;
 pub mod appearance;
+pub mod rail;
 pub use appearance::{AppearanceSettings, FontChoice, FontKind, ReduceMotion};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -445,6 +446,11 @@ pub struct AppSettings {
     #[serde(with = "logs::logs_field")]
     #[ts(as = "LogViewSettings")]
     pub logs: LogViewSettings,
+    /// The order of clusters in the cluster rail, as cluster ids; empty = the default order. Clusters not in the list
+    /// follow the listed ones in the default order. Written by the frontend; read leniently and capped ([`rail`]).
+    #[serde(with = "rail::cluster_order_field")]
+    #[ts(as = "Vec<String>")]
+    pub cluster_order: Vec<String>,
 }
 
 impl Default for AppSettings {
@@ -478,6 +484,7 @@ impl Default for AppSettings {
             compare: CompareSettings::default(),
             column_widths: ColumnWidths::new(),
             logs: LogViewSettings::default(),
+            cluster_order: Vec::new(),
         }
     }
 }

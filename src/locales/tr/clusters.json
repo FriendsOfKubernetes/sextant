@@ -20,7 +20,11 @@
     "reconnect": "Yeniden bağlan",
     "disconnect": "Bağlantıyı kes",
     "settings": "Ayarlar",
-    "changeIcon": "Simgeyi değiştir…"
+    "changeIcon": "Simgeyi değiştir…",
+    "moveUp": "Yukarı taşı",
+    "moveDown": "Aşağı taşı",
+    "moveTop": "En üste taşı",
+    "moveBottom": "En alta taşı"
   },
   "add": {
     "title": "Küme ekle",
@@ -155,5 +159,9 @@
     "copyCommand": "Komutu kopyala",
     "copied": "Kopyalandı",
     "copyFailed": "Pano kullanılamıyor; komutu seçip kopyalayın."
+  },
+  "order": {
+    "hint": "Sırayı değiştirmek için sürükleyin ya da Alt+Yukarı Ok veya Alt+Aşağı Ok tuşlarına basın.",
+    "moved": "{{name}}, {{count}} içinde {{position}}. konuma taşındı"
   }
 }

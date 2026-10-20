@@ -135,4 +135,9 @@ columnWidths: { [key in string]: TableColumnWidths },
  * The logs view: wrapped lines or one line per entry, ANSI colours on or off. Written by the frontend; read
  * leniently ([`logs`]).
  */
-logs: LogViewSettings, };
+logs: LogViewSettings, 
+/**
+ * The order of clusters in the cluster rail, as cluster ids; empty = the default order. Clusters not in the list
+ * follow the listed ones in the default order. Written by the frontend; read leniently and capped ([`rail`]).
+ */
+clusterOrder: Array<string>, };

@@ -20,7 +20,11 @@
     "reconnect": "Riconnetti",
     "disconnect": "Disconnetti",
     "settings": "Impostazioni",
-    "changeIcon": "Cambia icona…"
+    "changeIcon": "Cambia icona…",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "moveTop": "Sposta in cima",
+    "moveBottom": "Sposta in fondo"
   },
   "add": {
     "title": "Aggiungi cluster",
@@ -157,5 +161,9 @@
     "copyCommand": "Copia comando",
     "copied": "Copiato",
     "copyFailed": "Gli appunti non sono disponibili; seleziona il comando e copialo."
+  },
+  "order": {
+    "hint": "Trascina per cambiare l’ordine, oppure premi Alt+Freccia su o Alt+Freccia giù.",
+    "moved": "{{name}} spostato in posizione {{position}} di {{count}}"
   }
 }

@@ -1,10 +1,28 @@
 // Content of the cluster rail: one icon per kubeconfig context with its connection state (and, when the rail is
 // expanded, its name), a context menu (connect / reconnect / disconnect / install Flux or Argo CD / settings / change
 // icon), the "add" and "refresh" buttons and, when a kubeconfig source cannot be read, a warning that lists those
-// sources with their errors.
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+// sources with their errors. The user puts the clusters in order by dragging them, with Alt+Up / Alt+Down on a focused
+// cluster or with "Move up / down / to top / to bottom" in its menu (`order.ts`, `railDrag.ts`); the order is saved in
+// `settings.clusterOrder`.
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { useSettings, type AppSettings, type ClusterInfo, type ConnectionState, type KubeconfigSource } from "../../api";
+import {
+  useSettings,
+  type AppSettings,
+  type ClusterId,
+  type ClusterInfo,
+  type ConnectionState,
+  type KubeconfigSource,
+} from "../../api";
 import { useAppStore } from "../../app/store";
 import { Dialog, Icon, pointRect, SLOW_AFTER_S, useElapsedSeconds, usePopup, usePopupPosition } from "../../components";
 import { AddClusterDialog, SourceError } from "./AddClusterDialog";
@@ -21,6 +39,8 @@ import {
 } from "./clustersStore";
 import { InstallMenuItems } from "../gitops-install/InstallMenuItems";
 import { useClusters } from "./hooks";
+import { gapTarget, moveCluster, orderClusters, stepTarget, type MoveStep } from "./order";
+import { useRailDrag } from "./railDrag";
 import { openContextEdit } from "./kubeconfig/apply";
 import { ContextEditDialog } from "./kubeconfig/ContextEditDialog";
 import { ExpiryBadge, useCredentialRefresh } from "./kubeconfig/ExpiryBadge";
@@ -38,10 +58,24 @@ interface MenuState {
   y: number;
 }
 
+/** Where a cluster is among the clusters the rail shows, for the "Move" items of its menu. */
+interface Place {
+  index: number;
+  count: number;
+}
+
+/** Alt+Up / Alt+Down on a focused cluster moves it one place. */
+function keyStep(e: KeyboardEvent): MoveStep | null {
+  if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return null;
+  if (e.key === "ArrowUp") return "up";
+  if (e.key === "ArrowDown") return "down";
+  return null;
+}
+
 export function ClusterList() {
   const { t } = useTranslation();
   const { clusters, sources, loading } = useClusters();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const states = useClustersStore((s) => s.states);
   const pendingId = useClustersStore((s) => s.pendingId);
   const activeClusterId = useAppStore((s) => s.activeClusterId);
@@ -52,11 +86,79 @@ export function ClusterList() {
   const broken = sources.filter((s) => s.error);
   useCredentialRefresh(clusters);
 
+  // The order shown right after a move, until every save of it is done (the settings then carry it; a failed save
+  // falls back to what is saved).
+  const [moved, setMoved] = useState<ClusterId[] | null>(null);
+  const saving = useRef(0);
+  const ordered = orderClusters(clusters, moved ?? settings?.clusterOrder);
+  const visible = workspaceClusters(ordered, settings, activeClusterId);
+  const [announcement, setAnnouncement] = useState("");
+  const hintId = useId();
+  const listRef = useRef<HTMLUListElement>(null);
+  const buttons = useRef(new Map<ClusterId, HTMLButtonElement>());
+  const refocus = useRef<ClusterId | null>(null);
+
+  /** Moves `id` to the `to`-th place among the clusters shown, saves the order and says where it went. */
+  const move = (id: ClusterId, to: number) => {
+    const next = moveCluster(
+      ordered.map((c) => c.id),
+      visible.map((c) => c.id),
+      id,
+      to,
+    );
+    const cluster = visible.find((c) => c.id === id);
+    if (!next || !cluster) return;
+    setMoved(next);
+    const position = Math.max(0, Math.min(to, visible.length - 1)) + 1;
+    setAnnouncement(
+      t("clusters:order.moved", { name: displayNameOf(cluster, settings), position, count: visible.length }),
+    );
+    saving.current += 1;
+    update((current) => ({ ...current, clusterOrder: next }))
+      .catch(() => undefined)
+      .finally(() => {
+        saving.current -= 1;
+        if (saving.current === 0) setMoved(null);
+      });
+  };
+  const step = (id: ClusterId, by: MoveStep) => {
+    const index = visible.findIndex((c) => c.id === id);
+    if (index < 0) return;
+    refocus.current = id;
+    move(id, stepTarget(by, index, visible.length));
+  };
+  const drag = useRailDrag(listRef, (id, gap) => {
+    const index = visible.findIndex((c) => c.id === id);
+    if (index >= 0) move(id, gapTarget(gap, index));
+  });
+  // A moved item may lose the focus when its node moves: give it back.
+  useLayoutEffect(() => {
+    const id = refocus.current;
+    if (!id) return;
+    refocus.current = null;
+    const button = buttons.current.get(id);
+    if (button && document.activeElement !== button) button.focus();
+  });
+
+  // The drop line: before the item at the gap, or after the last one; none where the drop would change nothing.
+  const dragIndex = drag.dragging ? visible.findIndex((c) => c.id === drag.dragging!.id) : -1;
+  const dropGap =
+    drag.dragging && dragIndex >= 0 && gapTarget(drag.dragging.gap, dragIndex) !== dragIndex ? drag.dragging.gap : -1;
+
   return (
     <div className={expanded ? "cluster-list cluster-list--expanded" : "cluster-list"}>
-      <ul className="cluster-list__items" aria-label={t("clusters:rail.list")}>
-        {workspaceClusters(clusters, settings, activeClusterId).map((cluster) => (
-          <li key={cluster.id}>
+      <ul
+        ref={listRef}
+        className={drag.dragging ? "cluster-list__items cluster-list__items--dragging" : "cluster-list__items"}
+        aria-label={t("clusters:rail.list")}
+      >
+        {visible.map((cluster, index) => (
+          <li
+            key={cluster.id}
+            data-drop={
+              dropGap === index ? "before" : dropGap === visible.length && index === visible.length - 1 ? "after" : undefined
+            }
+          >
             <ClusterIcon
               cluster={cluster}
               settings={settings}
@@ -66,11 +168,32 @@ export function ClusterList() {
               state={states[cluster.id] ?? DISCONNECTED}
               selected={cluster.id === activeClusterId || cluster.id === pendingId}
               active={cluster.id === activeClusterId}
+              dragging={drag.dragging?.id === cluster.id}
+              describedBy={visible.length > 1 ? hintId : undefined}
+              buttonRef={(el) => {
+                if (el) buttons.current.set(cluster.id, el);
+                else buttons.current.delete(cluster.id);
+              }}
+              pointer={drag.handlers(cluster.id)}
+              ignoreClick={drag.consumeClick}
+              onKeyDown={(e) => {
+                const by = keyStep(e);
+                if (!by) return;
+                e.preventDefault();
+                e.stopPropagation();
+                step(cluster.id, by);
+              }}
               onMenu={(x, y) => setMenu({ cluster, x, y })}
             />
           </li>
         ))}
       </ul>
+      <span id={hintId} hidden>
+        {t("clusters:order.hint")}
+      </span>
+      <span className="visually-hidden" aria-live="polite" aria-atomic="true" data-testid="rail-announce">
+        {announcement}
+      </span>
       <div className="cluster-list__actions">
         {broken.length > 0 && (
           <button
@@ -107,6 +230,8 @@ export function ClusterList() {
         <ClusterMenu
           menu={menu}
           state={states[menu.cluster.id] ?? DISCONNECTED}
+          place={{ index: visible.findIndex((c) => c.id === menu.cluster.id), count: visible.length }}
+          onMove={(by) => step(menu.cluster.id, by)}
           onClose={() => setMenu(null)}
         />
       )}
@@ -132,6 +257,12 @@ function ClusterIcon({
   state,
   selected,
   active,
+  dragging,
+  describedBy,
+  buttonRef,
+  pointer,
+  ignoreClick,
+  onKeyDown,
   onMenu,
 }: {
   cluster: ClusterInfo;
@@ -142,6 +273,15 @@ function ClusterIcon({
   state: ConnectionState;
   selected: boolean;
   active: boolean;
+  dragging: boolean;
+  describedBy: string | undefined;
+  buttonRef: (el: HTMLButtonElement | null) => void;
+  pointer: Record<
+    "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel" | "onLostPointerCapture",
+    (e: PointerEvent<HTMLElement>) => void
+  >;
+  ignoreClick: () => boolean;
+  onKeyDown: (e: KeyboardEvent) => void;
   onMenu: (x: number, y: number) => void;
 }) {
   const { t } = useTranslation();
@@ -150,14 +290,22 @@ function ClusterIcon({
   const slow = seconds >= SLOW_AFTER_S ? t("clusters:rail.slow", { tooltip, seconds }) : null;
   return (
     <button
+      ref={buttonRef}
       type="button"
       className={selected ? "cluster-icon cluster-icon--active" : "cluster-icon"}
       style={{ "--cluster-color": color } as CSSProperties}
       aria-label={name}
       aria-current={active ? "true" : undefined}
+      aria-describedby={describedBy}
+      aria-keyshortcuts={describedBy ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
       title={slow ?? tooltip}
       data-state={state.state}
-      onClick={() => selectCluster(cluster.id)}
+      data-dragging={dragging ? "true" : undefined}
+      {...pointer}
+      onKeyDown={onKeyDown}
+      onClick={() => {
+        if (!ignoreClick()) selectCluster(cluster.id);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         onMenu(e.clientX, e.clientY);
@@ -187,7 +335,26 @@ function ClusterIcon({
   );
 }
 
-function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: ConnectionState; onClose: () => void }) {
+const MOVES: readonly [MoveStep, string][] = [
+  ["up", "clusters:menu.moveUp"],
+  ["down", "clusters:menu.moveDown"],
+  ["top", "clusters:menu.moveTop"],
+  ["bottom", "clusters:menu.moveBottom"],
+];
+
+function ClusterMenu({
+  menu,
+  state,
+  place,
+  onMove,
+  onClose,
+}: {
+  menu: MenuState;
+  state: ConnectionState;
+  place: Place;
+  onMove: (by: MoveStep) => void;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const ref = useRef<HTMLUListElement>(null);
   const id = menu.cluster.id;
@@ -235,6 +402,23 @@ function ClusterMenu({ menu, state, onClose }: { menu: MenuState; state: Connect
           {t("clusters:menu.changeIcon")}
         </button>
       </li>
+      {place.index >= 0 && place.count > 1 && (
+        <>
+          <li role="separator" className="cluster-menu__separator" />
+          {MOVES.map(([by, label]) => (
+            <li role="none" key={by}>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={by === "up" || by === "top" ? place.index === 0 : place.index === place.count - 1}
+                onClick={run(() => onMove(by))}
+              >
+                {t(label)}
+              </button>
+            </li>
+          ))}
+        </>
+      )}
       <li role="separator" className="cluster-menu__separator" />
       <li role="none">
         <button type="button" role="menuitem" onClick={run(() => openContextEdit("rename", menu.cluster))}>

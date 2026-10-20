@@ -20,7 +20,11 @@
     "reconnect": "Reconectar",
     "disconnect": "Desconectar",
     "settings": "Configurações",
-    "changeIcon": "Alterar ícone…"
+    "changeIcon": "Alterar ícone…",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "moveTop": "Mover para o início",
+    "moveBottom": "Mover para o fim"
   },
   "add": {
     "title": "Adicionar cluster",
@@ -157,5 +161,9 @@
     "copyCommand": "Copiar comando",
     "copied": "Copiado",
     "copyFailed": "A área de transferência não está disponível; selecione o comando e copie-o."
+  },
+  "order": {
+    "hint": "Arraste para mudar a ordem ou pressione Alt+Seta para cima ou Alt+Seta para baixo.",
+    "moved": "{{name}} movido para a posição {{position}} de {{count}}"
   }
 }
