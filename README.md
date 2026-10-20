@@ -84,7 +84,7 @@ Package managers (coming soon):
 
 ```sh
 brew install --cask friendsofkubernetes/sextant/sextant                 # macOS, Homebrew
-scoop bucket add sextant https://github.com/FriendsOfKubernetes/scoop-sextant
+scoop bucket add sextant https://github.com/FriendsOfKubernetes/sextant-scoop
 scoop install sextant/sextant                                           # Windows, Scoop
 winget install FriendsOfKubernetes.Sextant                              # Windows, winget
 ```

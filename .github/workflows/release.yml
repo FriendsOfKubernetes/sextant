@@ -47,7 +47,7 @@
 # assets (scripts/packaging.mjs) and keeps them as the workflow artifact packages-<tag>. Each outward step runs only
 # when its secret exists, and none of them can fail the release (it is already published):
 #   TAP_GITHUB_TOKEN    -> commits Casks/sextant.rb to FriendsOfKubernetes/homebrew-sextant
-#   BUCKET_GITHUB_TOKEN -> commits bucket/sextant.json to FriendsOfKubernetes/scoop-sextant
+#   BUCKET_GITHUB_TOKEN -> commits bucket/sextant.json to FriendsOfKubernetes/sextant-scoop
 #   WINGET_GITHUB_TOKEN -> wingetcreate (a pinned release, its SHA-256 checked) opens a pull request with the
 #                          manifests in microsoft/winget-pkgs
 # Only a release that became "latest" with a plain vX.Y.Z tag goes to package managers. A dry run renders the
@@ -740,7 +740,7 @@ jobs:
         continue-on-error: true
         env:
           TOKEN: ${{ secrets.BUCKET_GITHUB_TOKEN }}
-          REPO: FriendsOfKubernetes/scoop-sextant
+          REPO: FriendsOfKubernetes/sextant-scoop
           SOURCE: ${{ runner.temp }}/packages/scoop/bucket/sextant.json
           TARGET: bucket/sextant.json
         run: bash packaging/push-manifest.sh
