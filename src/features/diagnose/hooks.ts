@@ -9,7 +9,8 @@
 // For an AI agent's diagnosis (`scope`, ADR-0094) nothing is read beyond what the agent may read: a list of a kind
 // in a namespace it may not read is never watched (the engine sees it as unknown), the cluster-wide lists only with
 // Read in all namespaces, and certificates only when the agent may have them read (`scope.certificates`: Read and
-// "Secret values" on the namespace's Secrets) — otherwise `tls_certificate_info` is never called.
+// "Secret values" on the namespace's Secrets) — otherwise `tls_certificate_info` is never called. Pods and network
+// policies follow the same scope (`NetpolOptions.scope`): a policy list it may not read is unreadable, never watched.
 import { useEffect, useMemo, useState } from "react";
 import { api, toApiError, type ClusterId, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
 import { useClusterKinds } from "../../resources";
@@ -140,7 +141,7 @@ export function useDiagnosisData(
   const controllerSpecs = selector && served.pod && may(POD, null) ? [spec(served.pod, null, selector)] : [];
   const [controllerState] = useSharedWatches(clusterId, controllerSpecs);
 
-  const netpol = useNetpolData(clusterId, namespaces, { pods: true });
+  const netpol = useNetpolData(clusterId, namespaces, { pods: true, scope });
   const grantsIn = useGrants(clusterId, which === "route" ? namespaces.filter((n) => n !== namespace && may(REFERENCE_GRANT, n)) : []);
   const certificates = useCertificates(clusterId, which === "ingress" && (!scope || scope.certificates) ? obj : null);
 

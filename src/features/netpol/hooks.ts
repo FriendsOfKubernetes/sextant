@@ -4,6 +4,10 @@
 // cluster DNS pods (`k8s-app=kube-dns` in kube-system) for the DNS check. Every list is a shared watch
 // (`resource-map/watches.ts`), per (kind, namespace) as the resource map opens them, so the map, the "Related" tab and
 // these views list a namespace once; all of them close when the view unmounts. Nothing is watched before discovery.
+//
+// For an AI agent's answer (`NetpolOptions.scope`, ADR-0094) nothing is watched beyond what the agent may read: a
+// policy list of a kind in a namespace (or cluster-wide) it may not read is never opened and counts as unreadable, so
+// whatever it could decide is "unknown"; pods, Services, the DNS pods and the Namespaces it may not read are not listed.
 import { useMemo, useRef } from "react";
 import type { ClusterId, KindRef, KubeObject, WatchSpec, WatchState } from "../../api";
 import { findKind, status, useClusterKinds } from "../../resources";
@@ -137,6 +141,13 @@ export interface NetpolOptions {
   dns?: boolean;
   /** List the pods of the namespaces in view (default); a pod's own isolation needs only the policies. */
   pods?: boolean;
+  /** For an AI agent: only lists it may read are watched; the rest are unreadable (policies) or not listed. */
+  scope?: NetpolScope;
+}
+
+/** What an AI agent may read (`null` namespace: in every namespace, or a cluster-wide kind). */
+export interface NetpolScope {
+  may(kind: Pick<KindRef, "group" | "kind">, namespace: string | null): boolean;
 }
 
 export interface NetpolData {
@@ -185,34 +196,34 @@ export function useNetpolData(clusterId: ClusterId, namespacesInView: readonly s
   const inView = unique(namespacesInView);
   const serviceNs = unique(options.services ?? []);
   const dnsListed = options.dns === true && (options.pods === false || !inView.includes(DNS_NAMESPACE));
+  const scope = options.scope;
+  const may = (kind: KindRef, namespace: string | null) => !scope || scope.may(kind, namespace);
 
   const plan: Planned[] = [];
+  // Policy lists an agent may not read: never watched, unreadable to the engine.
+  const withheld: Unreadable[] = [];
+  const policies = (kind: KindRef, namespace: string | null, unevaluated?: boolean) => {
+    if (!may(kind, namespace)) withheld.push({ kind: kindLabel(kind), namespace });
+    else plan.push({ spec: spec(kind, namespace === null ? null : [namespace]), role: "policies", namespace, policyKind: kind, unevaluated });
+  };
   if (served && pod !== undefined && svc !== undefined && ns !== undefined) {
-    if (ns) plan.push({ spec: spec(ns, null), role: "namespaces", namespace: null });
+    if (ns && may(ns, null)) plan.push({ spec: spec(ns, null), role: "namespaces", namespace: null });
     for (const namespace of inView) {
-      if (pod && options.pods !== false) plan.push({ spec: spec(pod, [namespace]), role: "pods", namespace });
-      for (const kind of [served.networkPolicy, served.cilium, served.calico]) {
-        if (kind) plan.push({ spec: spec(kind, [namespace]), role: "policies", namespace, policyKind: kind });
-      }
-      for (const { kind } of served.unevaluated.filter((u) => u.namespaced)) {
-        plan.push({ spec: spec(kind, [namespace]), role: "policies", namespace, policyKind: kind, unevaluated: true });
-      }
+      if (pod && options.pods !== false && may(pod, namespace)) plan.push({ spec: spec(pod, [namespace]), role: "pods", namespace });
+      for (const kind of [served.networkPolicy, served.cilium, served.calico]) if (kind) policies(kind, namespace);
+      for (const { kind } of served.unevaluated.filter((u) => u.namespaced)) policies(kind, namespace, true);
     }
-    for (const namespace of serviceNs) if (svc) plan.push({ spec: spec(svc, [namespace]), role: "services", namespace });
-    if (dnsListed && pod) {
+    for (const namespace of serviceNs) if (svc && may(svc, namespace)) plan.push({ spec: spec(svc, [namespace]), role: "services", namespace });
+    if (dnsListed && pod && may(pod, DNS_NAMESPACE)) {
       plan.push({ spec: spec(pod, [DNS_NAMESPACE], Object.entries(DNS_LABELS).map(([a, b]) => `${a}=${b}`).join(",")), role: "dns", namespace: DNS_NAMESPACE });
     }
-    for (const kind of [served.ciliumClusterwide, served.calicoGlobal]) {
-      if (kind) plan.push({ spec: spec(kind, null), role: "policies", namespace: null, policyKind: kind });
-    }
-    for (const { kind } of served.unevaluated.filter((u) => !u.namespaced)) {
-      plan.push({ spec: spec(kind, null), role: "policies", namespace: null, policyKind: kind, unevaluated: true });
-    }
+    for (const kind of [served.ciliumClusterwide, served.calicoGlobal]) if (kind) policies(kind, null);
+    for (const { kind } of served.unevaluated.filter((u) => !u.namespaced)) policies(kind, null, true);
   }
   const states = useSharedWatches(clusterId, plan.map((p) => p.spec));
   const statusKey = states.map((s) => `${s.status}:${(s.forbidden ?? []).join(",")}`).join("|");
   const items = useStable(states.map((s) => s.items));
-  const planKey = JSON.stringify(plan.map((p) => p.spec));
+  const planKey = JSON.stringify([plan.map((p) => p.spec), withheld]);
   const servedKey = JSON.stringify(served ?? null);
 
   return useMemo((): NetpolData => {
@@ -223,7 +234,7 @@ export function useNetpolData(clusterId: ClusterId, namespacesInView: readonly s
     if (nsEntry && nsReadable) for (const o of nsEntry.state.items.values()) nsLabels.set(o.metadata?.name ?? "", namespaceLabels(o));
 
     const policies: Policy[] = [];
-    const unreadable: Unreadable[] = [];
+    const unreadable: Unreadable[] = [...withheld];
     const unevaluated: NonNullable<World["unevaluated"]>[number][] = [];
     // Without discovery the Cilium, Calico and other plugins' policy kinds cannot be known: nothing is "allowed".
     if (served?.discoveryFailed) {
@@ -272,7 +283,7 @@ export function useNetpolData(clusterId: ClusterId, namespacesInView: readonly s
       dnsPods: dnsObjects.filter((o) => !isFinished(o)).map(podInfo),
       served,
     };
-    // `statusKey` and `items` stand for the states by value, `planKey` for the plan.
+    // `statusKey` and `items` stand for the states by value, `planKey` for the plan and the withheld lists.
   }, [statusKey, items, planKey, servedKey]);
 }
 

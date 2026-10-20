@@ -320,7 +320,6 @@ describe("connectivity and the traffic diagnosis for an agent", () => {
     };
     act(() => wb.backend.emit("mcp-diagnostic", { id: "d2", tool: "connectivity", clusterId: "c1", reads: TEAM_A, args }));
     const inTeamA = (spec: WatchSpec) => spec.namespaces?.[0] === "team-a";
-    emitSnapshot(wb, await watchOf(wb, "Namespace"), [{ metadata: { name: "team-a", uid: "ns" } }]);
     emitSnapshot(wb, await watchOf(wb, "Pod", (s) => inTeamA(s) && !s.labelSelector), [
       pod("team-a", "web", { app: "web" }),
       { ...pod("team-a", "db-0", { app: "db" }), spec: { containers: [{ name: "db", ports: [{ containerPort: 5432 }] }] } },
@@ -334,8 +333,9 @@ describe("connectivity and the traffic diagnosis for an agent", () => {
         spec: { selector: { app: "db" }, ports: [{ name: "pg", port: 5432, targetPort: 5432, protocol: "TCP" }] },
       },
     ]);
-    emitSnapshot(wb, await watchOf(wb, "Pod", (s) => s.namespaces?.[0] === "kube-system"), []);
     await waitFor(() => expect(answers).toHaveLength(1));
+    // Nothing a team-a agent may not read is watched: no Namespaces, no DNS pods in kube-system.
+    expect([...wb.specs.values()].filter((s) => s.namespaces === null || s.namespaces.some((ns) => ns !== "team-a"))).toEqual([]);
     const answer = answers[0]!.answer as { type: "ok"; result: Record<string, unknown> };
     expect(answer.type).toBe("ok");
     expect(answer.result.verdict).toBe("allowed");
@@ -343,6 +343,33 @@ describe("connectivity and the traffic diagnosis for an agent", () => {
       { pod: { group: "", kind: "Pod", namespace: "team-a", name: "db-0" }, port: 5432, verdict: "allowed" },
     ]);
     expect(answer.result.summary).toBe("Allowed to every pod behind the Service.");
+  });
+
+  it("answers team-a to team-b as unknown without watching team-b's policies", async () => {
+    render(<DiagnosticsHost />);
+    await waitFor(() => expect(wb.backend.listenerCount("mcp-diagnostic")).toBe(1));
+    const inTeamA = (spec: WatchSpec) => spec.namespaces?.[0] === "team-a";
+    const ask = (id: string, from: Record<string, string>, to: Record<string, string>) =>
+      act(() => wb.backend.emit("mcp-diagnostic", { id, tool: "connectivity", clusterId: "c1", reads: TEAM_A, args: { from, to, port: "80", protocol: "TCP" } }));
+    const web = { ...pod("team-a", "web", { app: "web" }), spec: { containers: [{ name: "web", ports: [{ containerPort: 80 }] }] } };
+
+    // A team-a pod to a team-b pod: team-b is neither listed nor its policies watched.
+    ask("c1", { type: "pod", namespace: "team-a", value: "web" }, { type: "pod", namespace: "team-b", value: "api" });
+    emitSnapshot(wb, await watchOf(wb, "Pod", inTeamA), [web]);
+    emitSnapshot(wb, await watchOf(wb, "NetworkPolicy", inTeamA), []);
+    await waitFor(() => expect(answers).toHaveLength(1));
+    expect((answers[0]!.answer as { result: { verdict: string } }).result.verdict).toBe("unknown");
+
+    // Pods of team-b by labels to the team-a pod: the engine judges the egress from team-b, whose policies it may
+    // not read, as unknown — never allowed.
+    ask("c2", { type: "labels", namespace: "team-b", value: "app=api" }, { type: "pod", namespace: "team-a", value: "web" });
+    await waitFor(() => expect(answers).toHaveLength(2));
+    const second = (answers[1]!.answer as { result: { verdict: string; egress: { verdict: string } } }).result;
+    expect(second.verdict).toBe("unknown");
+    expect(second.egress.verdict).toBe("unknown");
+
+    const outside = [...wb.specs.values()].filter((s) => s.namespaces === null || s.namespaces.some((ns) => ns !== "team-a"));
+    expect(outside).toEqual([]);
   });
 });
 
@@ -419,6 +446,9 @@ describe("what the window reads for an agent", () => {
     // Nothing cluster-wide for a team-a agent: no IngressClasses, no controller pods across the cluster.
     expect([...wb.specs.values()].filter((s) => s.kind.kind === "IngressClass")).toEqual([]);
     expect([...wb.specs.values()].filter((s) => s.kind.kind === "Pod" && s.labelSelector)).toEqual([]);
+    // Network policies (and every other list) only in team-a; not even the Namespaces cluster-wide.
+    await watchOf(wb, "NetworkPolicy", (s) => s.namespaces?.[0] === "team-a");
+    expect([...wb.specs.values()].filter((s) => s.namespaces === null || s.namespaces.some((ns) => ns !== "team-a"))).toEqual([]);
     act(() => wb.backend.emit("mcp-diagnostic-cancel", { id: "d1" }));
 
     await diagnoseIngress("d2", true);

@@ -125,6 +125,9 @@ describe("the Connectivity page", () => {
     const ingress = within(result()).getByRole("region", { name: "Ingress to shop/web" });
     expect(ingress).toHaveTextContent("Policies select this pod, and none of their rules allow this traffic.");
     expect(ingress).toHaveTextContent("Namespace payments has the labels team=payments, kubernetes.io/metadata.name=payments, which do not match team=ops.");
+    // The page reads with the user's own permissions: both namespaces' policies, the Namespaces and the DNS pods.
+    const watched = [...wb.specs.values()].map((s) => `${s.kind.kind} ${JSON.stringify(s.namespaces)}`);
+    expect(watched).toEqual(expect.arrayContaining(['NetworkPolicy ["shop"]', 'NetworkPolicy ["payments"]', "Namespace null", 'Pod ["kube-system"]']));
   });
 
   it("checks a Service: each pod behind it at its target port", async () => {

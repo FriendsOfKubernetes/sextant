@@ -1,15 +1,16 @@
 // `check_connectivity`: the connectivity page's check (`resolveForm`, `runCheck`, ADR-0082) on the data the agent may
-// read (`restrictNetpol`), in words.
+// read (`restrictNetpol`), in words. A list the agent may not read is not even watched (`NetpolOptions.scope`): a
+// policy list there is unreadable, so a side it could decide is "unknown".
 import { useMemo } from "react";
 import { EMPTY_FORM, type ConnectivityForm } from "../netpol/state";
 import { resolveForm, runCheck, MAX_BACKENDS } from "../netpol/ConnectivityPage";
 import type { ConnectionResult } from "../netpol/engine";
 import { DNS_NAMESPACE } from "../netpol/engine";
-import { POD, useNetpolData } from "../netpol/hooks";
+import { POD, useNetpolData, type NetpolScope } from "../netpol/hooks";
 import { serviceInfo, type Protocol } from "../netpol/model";
 import { en } from "./english";
 import { restrictNetpol, sideOut } from "./netpol";
-import { objectName } from "./scope";
+import { canRead, objectName } from "./scope";
 import { useAnswer, type WorkerProps } from "./worker";
 
 interface End {
@@ -53,7 +54,8 @@ export function ConnectivityWorker(props: WorkerProps) {
     [args.from, args.to],
   );
   const serviceNs = useMemo(() => (args.to.type === "service" && args.to.namespace ? [args.to.namespace] : []), [args.to]);
-  const raw = useNetpolData(request.clusterId, inView, { services: serviceNs, dns: args.from.type !== "ip" });
+  const scope = useMemo((): NetpolScope => ({ may: (k, ns) => canRead(request.reads, k, ns) }), [request.reads]);
+  const raw = useNetpolData(request.clusterId, inView, { services: serviceNs, dns: args.from.type !== "ip", scope });
   const data = useMemo(() => restrictNetpol(raw, [...inView, DNS_NAMESPACE], request.reads), [raw, inView, request.reads]);
 
   useAnswer(props, !raw.loading, () => {
