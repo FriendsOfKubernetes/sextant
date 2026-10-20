@@ -1,0 +1,113 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_one": "{{count}} nesne ilgi gerektiriyor",
+  "badge_other": "{{count}} nesne ilgi gerektiriyor",
+  "state": {
+    "ready": "Kullanılabilir",
+    "degraded": "Düşük performanslı",
+    "failed": "Başarısız",
+    "pending": "Bekliyor"
+  },
+  "columns": {
+    "namespaces": "Namespace'ler",
+    "selector": "Selector",
+    "ports": "Bağlantı noktaları",
+    "prober": "Prober",
+    "module": "Modül",
+    "interval": "Aralık",
+    "groups": "Gruplar",
+    "rules": "Kurallar",
+    "status": "Durum",
+    "replicas": "Kopyalar",
+    "version": "Sürüm",
+    "reason": "Neden"
+  },
+  "fields": {
+    "namespaces": "Namespace'ler",
+    "selector": "Selector",
+    "jobLabel": "Job label'ı",
+    "prober": "Prober",
+    "module": "Modül",
+    "interval": "Aralık",
+    "staticTargets": "Hedefler",
+    "ingressSelector": "Ingress selector'ı",
+    "status": "Durum",
+    "reason": "Neden",
+    "replicas": "Kopyalar",
+    "shards": "Parçalar",
+    "version": "Sürüm",
+    "retention": "Saklama",
+    "paused": "Duraklatıldı"
+  },
+  "anyNamespace": "Tüm namespace'ler",
+  "selectsAll": "Tümü",
+  "selectsNone": "Hiçbiri",
+  "loading": "Yükleniyor…",
+  "yes": "Evet",
+  "replicasAvailable": "{{available}}/{{total}} kullanılabilir",
+  "targets": {
+    "title": "Şu anda seçtikleri",
+    "error": "Liste okunamadı.",
+    "invalidSelector": "Selector, Kubernetes'in bilmediği bir operatör kullanıyor; bu yüzden hiçbir şey seçmiyor.",
+    "everything": {
+      "services": "Tüm namespace'lerdeki tüm Service'ler: listelenmez.",
+      "pods": "Tüm namespace'lerdeki tüm Pod'lar: listelenmez."
+    },
+    "tooMany_one": "{{count}} namespace'e bakıyor: burada listelemek için çok fazla.",
+    "tooMany_other": "{{count}} namespace'e bakıyor: burada listelemek için çok fazla.",
+    "none": {
+      "services": "Hiçbir Service seçmiyor: Prometheus onun için hiçbir şey toplamıyor.",
+      "pods": "Hiçbir Pod seçmiyor: Prometheus onun için hiçbir şey toplamıyor."
+    },
+    "selected": {
+      "services_one": "{{count}} Service",
+      "services_other": "{{count}} Service",
+      "pods_one": "{{count}} Pod",
+      "pods_other": "{{count}} Pod"
+    },
+    "more_one": "ve {{count}} tane daha",
+    "more_other": "ve {{count}} tane daha",
+    "portFound": "{{found}}/{{total}} üzerinde"
+  },
+  "endpoints": {
+    "port": "Bağlantı noktası",
+    "path": "Yol",
+    "interval": "Aralık",
+    "found": "Bağlantı noktası adı bulundu"
+  },
+  "pickup": {
+    "title": "Seçen",
+    "none": "Hiçbir Prometheus onu seçmiyor: hiçbir Prometheus selector'ı label'ları ve namespace'i ile eşleşmiyor.",
+    "unknown": "Bilinmiyor: namespace'lerin label'ları okunamadı.",
+    "noPrometheus": "Kümede hiç Prometheus nesnesi yok."
+  },
+  "groups": {
+    "title": "Kural grupları",
+    "name": "Grup",
+    "interval": "Aralık",
+    "alerts": "Uyarılar",
+    "records": "Kayıt kuralları",
+    "none": "Kural grubu yok."
+  },
+  "selectors": {
+    "title": "Neleri seçiyor",
+    "what": "Kind",
+    "selector": "Selector",
+    "namespaces": "Namespace'ler",
+    "none": "Hiçbiri",
+    "all": "Tümü",
+    "ownNamespace": "Kendi namespace'i",
+    "allNamespaces": "Tüm namespace'ler",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "action": "Définir l'image…",
+  "title": "Images de {{name}}",
+  "intro": {
+    "Deployment": "Les pods sont remplacés comme lors de toute mise à jour. La modification apparaît dans l'historique de déploiement et peut être annulée.",
+    "StatefulSet": "Les pods sont remplacés selon la stratégie de mise à jour du StatefulSet. La modification apparaît dans l'historique de déploiement et peut être annulée.",
+    "DaemonSet": "Les pods sont remplacés selon la stratégie de mise à jour du DaemonSet. La modification apparaît dans l'historique de déploiement et peut être annulée.",
+    "CronJob": "Seuls les Jobs lancés après la modification utilisent les nouvelles images ; les Jobs en cours gardent les leurs.",
+    "Pod": "Kubernetes ne permet de modifier, dans un Pod en cours d'exécution, que les images de ses conteneurs. Le kubelet redémarre chaque conteneur modifié avec sa nouvelle image."
+  },
+  "columns": {
+    "container": "Conteneur",
+    "current": "Image actuelle",
+    "image": "Nouvelle image"
+  },
+  "initContainer": "conteneur d'initialisation",
+  "imageLabel": "Nouvelle image du conteneur {{name}}",
+  "none": "Cet objet n'a aucun conteneur.",
+  "invalid": {
+    "empty": "Saisissez une image.",
+    "spaces": "Une référence d'image ne peut pas contenir d'espaces.",
+    "tooLong": "Le nom de l'image dépasse 255 caractères.",
+    "uppercase": "Le chemin du dépôt doit être en minuscules.",
+    "name": "Le chemin du dépôt n'est pas valide : utilisez des minuscules et des chiffres, séparés par « . », « _ », « __ », « - » ou « / ».",
+    "host": "L'hôte du registre n'est pas valide.",
+    "tag": "Le tag n'est pas valide : jusqu'à 128 lettres, chiffres, « _ », « . » et « - », sans commencer par « . » ni « - ».",
+    "digest": "Le digest n'est pas valide : écrivez sha256: suivi de 64 chiffres hexadécimaux."
+  },
+  "warning": {
+    "latest": "Le tag « latest » peut désigner une autre image à chaque téléchargement : les pods peuvent alors exécuter des versions différentes.",
+    "noTag": "Sans tag, l'image « latest » est téléchargée ; elle peut désigner une autre image à chaque téléchargement."
+  },
+  "changes": {
+    "title": "Ce qui change",
+    "none": "Modifiez au moins une image.",
+    "line": "{{container}} : {{from}} → {{to}}",
+    "lineInit": "{{container}} (conteneur d'initialisation) : {{from}} → {{to}}"
+  },
+  "confirm": "Définir l'image",
+  "previewAndSet": "Vérifier et définir l'image…",
+  "owned": {
+    "intro": "Ce Pod est géré par {{kind}} {{name}} : le contrôleur remplacerait le Pod ou ignorerait une image modifiée. Définissez plutôt l'image dans le {{kind}}.",
+    "open": "Ouvrir {{kind}} {{name}}",
+    "looking": "Recherche du propriétaire…"
+  },
+  "mirror": "Ce Pod est statique : le kubelet le lance à partir d'un fichier manifeste sur son nœud. Modifiez l'image dans ce fichier."
+}

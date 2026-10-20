@@ -1,0 +1,125 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim или составной ресурс требует внимания",
+  "badge_few": "{{count}} claim или составных ресурса требуют внимания",
+  "badge_many": "{{count}} claim или составных ресурсов требуют внимания",
+  "badge_other": "{{count}} claim или составного ресурса требуют внимания",
+  "health": {
+    "ready": "Готов",
+    "progressing": "Выполняется",
+    "failed": "Сбой",
+    "unknown": "Неизвестно"
+  },
+  "served": "обслуживается",
+  "referenceable": "основная",
+  "failing": "Первое невыполненное условие: {{type}} ({{reason}})",
+  "failingWithMessage": "Первое невыполненное условие: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Составной ресурс",
+    "managed": "Управляемый ресурс"
+  },
+  "columns": {
+    "composite": "Kind составного",
+    "claim": "Kind claim",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Тип составного",
+    "mode": "Режим",
+    "status": "Состояние",
+    "package": "Пакет",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Группа",
+    "compositeKind": "Kind составного ресурса",
+    "claimKind": "Kind claim",
+    "versions": "Версии",
+    "defaultComposition": "Composition по умолчанию",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Тип составного ресурса",
+    "mode": "Режим",
+    "resources": "Ресурсы (классический режим)",
+    "package": "Пакет",
+    "revision": "Текущая ревизия",
+    "identifier": "Текущий пакет",
+    "activation": "Активация ревизий",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Роль",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Secret подключения",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Внешнее имя",
+    "deletionPolicy": "Политика удаления",
+    "managementPolicies": "Политики управления",
+    "composite": "Составной ресурс"
+  },
+  "pipeline": {
+    "step": "Шаг",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Ресурсы",
+    "loading": "Чтение ресурсов…",
+    "noResources": "Составляющих ресурсов пока нет.",
+    "noComposite": "Составного ресурса пока нет: Crossplane еще не привязал этот claim.",
+    "missing": "Не найден",
+    "unreadable": "Не удается прочитать",
+    "more": "Не показано: {{count}}"
+  },
+  "explain": {
+    "ready": "Синхронизирован и готов.",
+    "creating": "Еще не готов: Crossplane еще создает его или его ресурсы.",
+    "deleting": "Удаляется.",
+    "notSynced": "Crossplane не может согласовать его ({{reason}}): причина — в первом невыполненном условии ниже.",
+    "notReady": "Не готов ({{reason}}): причина — в первом невыполненном условии ниже.",
+    "packageHealthy": "Установлен и исправен.",
+    "packageInstalling": "Устанавливается: еще не исправен.",
+    "packageNotInstalled": "Пакет не установлен ({{reason}}).",
+    "packageUnhealthy": "Пакет установлен, но неисправен ({{reason}}).",
+    "xrdNotEstablished": "Не установлен: определяемые им виды еще не обслуживаются.",
+    "xrdClaimNotOffered": "Kind claim {{claim}} еще не предлагается.",
+    "xrdEstablishedWithClaim": "Установлен: определяет составной ресурс {{kind}} и claim {{claim}}.",
+    "xrdEstablished": "Установлен: определяет составной ресурс {{kind}}."
+  },
+  "page": {
+    "sidebar": "Составные ресурсы",
+    "title": "Составные ресурсы",
+    "hint": "Claim и составные ресурсы видов, определенных XRD, с первым невыполненным условием.",
+    "onlyProblems": "Только проблемы",
+    "total": "Показано: {{count}}",
+    "loading": "Чтение claim и составных ресурсов…",
+    "xrdsTruncated": "Показаны только виды первых XRD (до {{count}}).",
+    "rowsTruncated": "Показаны только первые (до {{count}}).",
+    "noXrds": "XRD нет: в кластере не определены составные ресурсы.",
+    "none": "Нет claim и составных ресурсов.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Имя",
+      "namespace": "Namespace",
+      "state": "Состояние",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Причина",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (составной)"
+    }
+  }
+}

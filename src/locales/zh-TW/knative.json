@@ -1,0 +1,77 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_other": "{{count}} 個 Knative 物件需要注意",
+  "health": {
+    "ready": "就緒",
+    "progressing": "進行中",
+    "failed": "失敗",
+    "unknown": "未知"
+  },
+  "latest": "最新",
+  "unlimited": "不限",
+  "replicas": "{{actual}} / {{desired}}",
+  "timeoutSeconds": "{{seconds}} 秒",
+  "columns": {
+    "status": "狀態",
+    "reason": "原因",
+    "url": "URL",
+    "latestCreated": "最新建立",
+    "latestReady": "最新就緒",
+    "traffic": "流量",
+    "configuration": "Configuration",
+    "generation": "世代",
+    "replicas": "副本",
+    "target": "目標"
+  },
+  "fields": {
+    "status": "狀態",
+    "url": "URL",
+    "address": "叢集內位址",
+    "latestCreated": "最新建立的修訂版本",
+    "latestReady": "最新就緒的修訂版本",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "世代",
+    "replicas": "副本（實際 / 期望）",
+    "routingState": "路由狀態",
+    "images": "映像檔",
+    "concurrency": "每個容器的同時請求數",
+    "timeout": "請求逾時",
+    "target": "指向"
+  },
+  "traffic": {
+    "title": "流量",
+    "askedTitle": "流量（已要求，尚未生效）",
+    "revision": "修訂版本",
+    "tag": "標籤",
+    "share": "比例",
+    "latest": "跟隨最新",
+    "url": "URL",
+    "latestReady": "最新就緒的修訂版本（{{revision}}）",
+    "percent": "{{percent}}%",
+    "followsLatest": "是"
+  },
+  "explain": {
+    "readyAt": "就緒：於 {{url}} 提供服務。",
+    "ready": "就緒。",
+    "progressing": "尚未就緒：Knative 仍在推出最新修訂版本或其路由。",
+    "revisionFailedTrafficStays": "最新修訂版本 {{revision}} 失敗（{{reason}}）。流量仍留在最後一個就緒的修訂版本 {{ready}}。",
+    "revisionFailedNoneReady": "最新修訂版本 {{revision}} 失敗（{{reason}}），且尚無修訂版本就緒：沒有任何執行個體處理請求。",
+    "routeFailed": "路由未就緒（{{reason}}）：請求可能無法依流量分配的要求抵達各修訂版本。",
+    "domainNotClaimed": "網域名稱未被認領（{{reason}}）：可能已有其他對應在使用。",
+    "certificateFailed": "無法佈建 TLS 憑證（{{reason}}）。",
+    "notReady": "未就緒（{{reason}}）。",
+    "revisionReady": "已就緒，可處理請求。",
+    "revisionScaledToZero": "已就緒且已縮減到零：目前沒有流量抵達，因此沒有執行中的 Pod。第一個請求會啟動一個 Pod。",
+    "revisionProgressing": "啟動中：此修訂版本的 Pod 尚未就緒。",
+    "revisionContainerUnhealthy": "容器無法啟動或未通過健康檢查（{{reason}}）。",
+    "revisionResourcesUnavailable": "Knative 無法取得此修訂版本所需的資源（{{reason}}），例如映像檔或 Pod。",
+    "revisionFailed": "修訂版本失敗（{{reason}}）。"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_other": "{{count}} 個物件需要注意",
+  "state": {
+    "ready": "就緒",
+    "notReady": "未就緒",
+    "pending": "等待中"
+  },
+  "columns": {
+    "status": "狀態",
+    "reason": "原因",
+    "cluster": "Kafka",
+    "replicas": "複本",
+    "version": "版本",
+    "listeners": "Listener",
+    "roles": "角色",
+    "partitions": "分割區",
+    "topicReplicas": "複本",
+    "authentication": "驗證",
+    "authorization": "授權"
+  },
+  "fields": {
+    "status": "狀態",
+    "reason": "原因",
+    "version": "Kafka 版本",
+    "metadataState": "中繼資料",
+    "clusterId": "叢集 ID",
+    "nodePools": "節點集區",
+    "cluster": "Kafka",
+    "roles": "角色",
+    "replicas": "複本",
+    "nodeIds": "節點 ID",
+    "storage": "儲存空間",
+    "topicName": "主題名稱",
+    "partitions": "分割區",
+    "topicReplicas": "複寫係數",
+    "config": "設定",
+    "authentication": "驗證",
+    "authorization": "授權",
+    "acls": "ACL 規則",
+    "username": "使用者名稱",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap 伺服器",
+    "connectCluster": "Connect 叢集",
+    "url": "REST API",
+    "plugins": "連接器外掛程式"
+  },
+  "warnings": "警告",
+  "warningReason": "原因",
+  "warningMessage": "訊息",
+  "listeners": {
+    "title": "Listener",
+    "name": "名稱",
+    "type": "類型",
+    "port": "連接埠",
+    "bootstrap": "Bootstrap",
+    "addresses": "位址",
+    "tls": "TLS",
+    "noAddress": "尚無位址"
+  },
+  "mirrors": {
+    "title": "鏡像",
+    "source": "來源",
+    "target": "目標",
+    "topics": "主題"
+  },
+  "connectors": {
+    "title": "連接器",
+    "name": "名稱",
+    "state": "狀態",
+    "tasks": "工作"
+  }
+}

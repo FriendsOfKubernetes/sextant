@@ -1,0 +1,83 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} об'єкт потребує уваги",
+  "badge_few": "{{count}} об'єкти потребують уваги",
+  "badge_many": "{{count}} об'єктів потребують уваги",
+  "badge_other": "{{count}} об'єкта потребують уваги",
+  "state": {
+    "ready": "Готовий",
+    "notReady": "Не готовий",
+    "pending": "Очікує"
+  },
+  "columns": {
+    "status": "Статус",
+    "reason": "Причина",
+    "cluster": "Kafka",
+    "replicas": "Репліки",
+    "version": "Версія",
+    "listeners": "Listener",
+    "roles": "Ролі",
+    "partitions": "Розділи",
+    "topicReplicas": "Репліки",
+    "authentication": "Автентифікація",
+    "authorization": "Авторизація"
+  },
+  "fields": {
+    "status": "Статус",
+    "reason": "Причина",
+    "version": "Версія Kafka",
+    "metadataState": "Метадані",
+    "clusterId": "ID кластера",
+    "nodePools": "Пули вузлів",
+    "cluster": "Kafka",
+    "roles": "Ролі",
+    "replicas": "Репліки",
+    "nodeIds": "ID вузлів",
+    "storage": "Сховище",
+    "topicName": "Ім'я топіка",
+    "partitions": "Розділи",
+    "topicReplicas": "Фактор реплікації",
+    "config": "Конфігурація",
+    "authentication": "Автентифікація",
+    "authorization": "Авторизація",
+    "acls": "Правила ACL",
+    "username": "Ім'я користувача",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap-сервери",
+    "connectCluster": "Кластер Connect",
+    "url": "REST API",
+    "plugins": "Плагіни конекторів"
+  },
+  "warnings": "Попередження",
+  "warningReason": "Причина",
+  "warningMessage": "Повідомлення",
+  "listeners": {
+    "title": "Listener",
+    "name": "Ім'я",
+    "type": "Тип",
+    "port": "Порт",
+    "bootstrap": "Bootstrap",
+    "addresses": "Адреси",
+    "tls": "TLS",
+    "noAddress": "Адреси ще немає"
+  },
+  "mirrors": {
+    "title": "Дзеркала",
+    "source": "Джерело",
+    "target": "Ціль",
+    "topics": "Топіки"
+  },
+  "connectors": {
+    "title": "Конектори",
+    "name": "Ім'я",
+    "state": "Стан",
+    "tasks": "Завдання"
+  }
+}

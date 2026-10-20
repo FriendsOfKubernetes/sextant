@@ -1,0 +1,83 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} obiekt wymaga uwagi",
+  "badge_few": "{{count}} obiekty wymagają uwagi",
+  "badge_many": "{{count}} obiektów wymaga uwagi",
+  "badge_other": "{{count}} obiektu wymaga uwagi",
+  "state": {
+    "ready": "Gotowe",
+    "notReady": "Niegotowe",
+    "pending": "Oczekuje"
+  },
+  "columns": {
+    "status": "Stan",
+    "reason": "Przyczyna",
+    "cluster": "Kafka",
+    "replicas": "Repliki",
+    "version": "Wersja",
+    "listeners": "Listenery",
+    "roles": "Role",
+    "partitions": "Partycje",
+    "topicReplicas": "Repliki",
+    "authentication": "Uwierzytelnianie",
+    "authorization": "Autoryzacja"
+  },
+  "fields": {
+    "status": "Stan",
+    "reason": "Przyczyna",
+    "version": "Wersja Kafka",
+    "metadataState": "Metadane",
+    "clusterId": "ID klastra",
+    "nodePools": "Pule węzłów",
+    "cluster": "Kafka",
+    "roles": "Role",
+    "replicas": "Repliki",
+    "nodeIds": "ID węzłów",
+    "storage": "Magazyn",
+    "topicName": "Nazwa tematu",
+    "partitions": "Partycje",
+    "topicReplicas": "Współczynnik replikacji",
+    "config": "Konfiguracja",
+    "authentication": "Uwierzytelnianie",
+    "authorization": "Autoryzacja",
+    "acls": "Reguły ACL",
+    "username": "Nazwa użytkownika",
+    "secret": "Secret",
+    "bootstrapServers": "Serwery bootstrap",
+    "connectCluster": "Klaster Connect",
+    "url": "REST API",
+    "plugins": "Wtyczki konektorów"
+  },
+  "warnings": "Ostrzeżenia",
+  "warningReason": "Przyczyna",
+  "warningMessage": "Komunikat",
+  "listeners": {
+    "title": "Listenery",
+    "name": "Nazwa",
+    "type": "Typ",
+    "port": "Port",
+    "bootstrap": "Bootstrap",
+    "addresses": "Adresy",
+    "tls": "TLS",
+    "noAddress": "Jeszcze bez adresu"
+  },
+  "mirrors": {
+    "title": "Kopie lustrzane",
+    "source": "Źródło",
+    "target": "Cel",
+    "topics": "Tematy"
+  },
+  "connectors": {
+    "title": "Konektory",
+    "name": "Nazwa",
+    "state": "Stan",
+    "tasks": "Zadania"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_other": "{{count}} 个对象需要关注",
+  "state": {
+    "healthy": "健康",
+    "switchover": "切换中",
+    "failover": "故障转移中",
+    "progressing": "进行中",
+    "unhealthy": "不健康"
+  },
+  "backupState": {
+    "completed": "已完成",
+    "failed": "失败",
+    "running": "运行中",
+    "pending": "等待中"
+  },
+  "role": {
+    "primary": "主",
+    "replica": "副本"
+  },
+  "columns": {
+    "status": "状态",
+    "instances": "实例",
+    "primary": "主实例",
+    "phase": "阶段",
+    "cluster": "集群",
+    "method": "方式",
+    "started": "开始于",
+    "schedule": "计划",
+    "suspended": "已暂停",
+    "lastBackup": "上次备份",
+    "type": "类型",
+    "poolMode": "池模式"
+  },
+  "fields": {
+    "status": "状态",
+    "phase": "阶段",
+    "instances": "实例",
+    "primary": "当前主实例",
+    "targetPrimary": "目标主实例",
+    "image": "镜像",
+    "storage": "存储",
+    "archiving": "持续归档",
+    "lastBackup": "上次备份",
+    "lastSuccessfulBackup": "上次成功备份",
+    "lastFailedBackup": "上次失败备份",
+    "firstRecoverabilityPoint": "可恢复起点",
+    "cluster": "集群",
+    "method": "方式",
+    "target": "目标",
+    "startedAt": "开始于",
+    "stoppedAt": "结束于",
+    "backupId": "备份 ID",
+    "destination": "目标路径",
+    "schedule": "计划",
+    "suspended": "已暂停",
+    "lastScheduleTime": "上次运行",
+    "nextScheduleTime": "下次运行",
+    "type": "类型",
+    "poolerInstances": "实例",
+    "poolMode": "池模式"
+  },
+  "instancesReady": "{{ready}}/{{total}} 就绪",
+  "switchover": "主实例正在从 {{from}} 切换到 {{to}}。",
+  "failover": "故障转移：{{primary}} 已不可用，正在选择新的主实例。",
+  "replicaCluster": "副本集群：其主实例跟随另一个集群。",
+  "members": {
+    "title": "实例",
+    "instance": "实例",
+    "role": "角色",
+    "health": "健康状况",
+    "timeline": "Timeline"
+  },
+  "backups": "备份",
+  "noBackups": "此集群未设置备份。",
+  "archivingOk": "正常",
+  "archivingFailing": "失败",
+  "backupOk": "成功",
+  "backupFailing": "失败",
+  "unknown": "未知",
+  "error": "错误",
+  "yes": "是",
+  "no": "否"
+}

@@ -1,0 +1,92 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} объект требует внимания",
+  "badge_few": "{{count}} объекта требуют внимания",
+  "badge_many": "{{count}} объектов требуют внимания",
+  "badge_other": "{{count}} объекта требуют внимания",
+  "state": {
+    "healthy": "Исправен",
+    "switchover": "Переключение",
+    "failover": "Аварийное переключение",
+    "progressing": "Выполняется",
+    "unhealthy": "Неисправен"
+  },
+  "backupState": {
+    "completed": "Завершён",
+    "failed": "Ошибка",
+    "running": "Выполняется",
+    "pending": "Ожидает"
+  },
+  "role": {
+    "primary": "Основной",
+    "replica": "Реплика"
+  },
+  "columns": {
+    "status": "Статус",
+    "instances": "Экземпляры",
+    "primary": "Основной",
+    "phase": "Фаза",
+    "cluster": "Кластер",
+    "method": "Метод",
+    "started": "Начат",
+    "schedule": "Расписание",
+    "suspended": "Приостановлен",
+    "lastBackup": "Последний",
+    "type": "Тип",
+    "poolMode": "Режим пула"
+  },
+  "fields": {
+    "status": "Статус",
+    "phase": "Фаза",
+    "instances": "Экземпляры",
+    "primary": "Текущий основной",
+    "targetPrimary": "Целевой основной",
+    "image": "Образ",
+    "storage": "Хранилище",
+    "archiving": "Непрерывное архивирование",
+    "lastBackup": "Последняя резервная копия",
+    "lastSuccessfulBackup": "Последняя успешная копия",
+    "lastFailedBackup": "Последняя неудачная копия",
+    "firstRecoverabilityPoint": "Восстановление возможно с",
+    "cluster": "Кластер",
+    "method": "Метод",
+    "target": "Цель",
+    "startedAt": "Начато",
+    "stoppedAt": "Остановлено",
+    "backupId": "ID копии",
+    "destination": "Назначение",
+    "schedule": "Расписание",
+    "suspended": "Приостановлено",
+    "lastScheduleTime": "Последний запуск",
+    "nextScheduleTime": "Следующий запуск",
+    "type": "Тип",
+    "poolerInstances": "Экземпляры",
+    "poolMode": "Режим пула"
+  },
+  "instancesReady": "{{ready}} из {{total}} готовы",
+  "switchover": "Основной экземпляр переходит с {{from}} на {{to}}.",
+  "failover": "Аварийное переключение: {{primary}} недоступен, выбирается новый основной экземпляр.",
+  "replicaCluster": "Кластер-реплика: его основной экземпляр следует за другим кластером.",
+  "members": {
+    "title": "Экземпляры",
+    "instance": "Экземпляр",
+    "role": "Роль",
+    "health": "Состояние",
+    "timeline": "Timeline"
+  },
+  "backups": "Резервные копии",
+  "noBackups": "Для этого кластера резервное копирование не настроено.",
+  "archivingOk": "Работает",
+  "archivingFailing": "Сбой",
+  "backupOk": "Успешно",
+  "backupFailing": "Ошибка",
+  "unknown": "Неизвестно",
+  "error": "Ошибка",
+  "yes": "Да",
+  "no": "Нет"
+}

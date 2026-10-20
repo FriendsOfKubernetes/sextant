@@ -19,8 +19,17 @@
     "velero": "Velero",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "argoRollouts": "Argo Rollouts",
+    "argoWorkflows": "Argo Workflows",
     "istio": "Istio",
     "linkerd": "Linkerd",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "kyverno": "Kyverno",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "customResources": "Özel kaynaklar"
   },
   "kinds": {

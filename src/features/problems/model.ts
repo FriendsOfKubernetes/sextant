@@ -12,6 +12,14 @@ import { kindFromApiVersion } from "../../resources/refs";
 import { APPLICATION, healthStatus, operationPhase } from "../argocd/model";
 import { eventTimestamp, involvedObject } from "../events/model";
 import { isSuspended, readyMessage, readyReason, readyStatus } from "../flux/model";
+import { ROLLOUT } from "../argo-rollouts/model";
+import { rolloutProblemsDetected } from "../argo-rollouts/problemRules";
+import { knativeProblems } from "../knative/problemRules";
+import { policyProblems } from "../kyverno/problemRules";
+import { cnpgProblems, CNPG_GROUP } from "../cnpg/model";
+import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
+import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
+import { STRIMZI_GROUP, strimziProblems } from "../strimzi/model";
 import {
   BACKEND_TLS_POLICY,
   GATEWAY,
@@ -37,8 +45,17 @@ export const PROBLEM_CATEGORIES = [
   "certificates",
   "flux",
   "argocd",
+  "rollouts",
+  "workflows",
   "gateway",
   "mesh",
+  "knative",
+  "crossplane",
+  "policies",
+  "externalSecrets",
+  "cnpg",
+  "strimzi",
+  "prometheusOperator",
   "security",
   "practices",
   "credentials",
@@ -56,8 +73,9 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
  * Best-practice findings (#207) are lasting states too, and most clusters have many.
+ * Kyverno policy failures (#213, `policies`) too: an Audit policy can fail on hundreds of objects at once.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices"];
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices", "policies"];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
@@ -205,8 +223,18 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (same(kind, EVENT)) return "events";
   if (same(kind, CERTIFICATE)) return "certificates";
   if (same(kind, APPLICATION)) return "argocd";
+  // Argo Rollouts (#213); Workflows come from the provider of features/argo-workflows.
+  if (same(kind, ROLLOUT)) return "rollouts";
   if (FLUX_GROUPS.has(kind.group)) return "flux";
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
+  // Knative Services and Configurations (#213); Kyverno policy reports (#213, opt-in).
+  if (kind.group === "serving.knative.dev" && (kind.kind === "Service" || kind.kind === "Configuration")) return "knative";
+  if (kind.group === "wgpolicyk8s.io") return "policies";
+  // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
+  if (kind.group === ESO_GROUP) return "externalSecrets";
+  if (kind.group === CNPG_GROUP) return "cnpg";
+  if (kind.group === STRIMZI_GROUP) return "strimzi";
+  if (kind.group === MONITORING_GROUP) return "prometheusOperator";
   return undefined;
 }
 
@@ -643,8 +671,24 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return fluxProblems(obj);
     case "argocd":
       return argoProblems(obj);
+    case "rollouts":
+      return rolloutProblemsDetected(kind, obj);
+    case "workflows": // Recent failed Workflows: the provider of features/argo-workflows finds them.
+      return [];
     case "gateway":
       return gatewayProblems(obj, kind);
+    case "knative":
+      return knativeProblems(kind, obj);
+    case "policies":
+      return policyProblems(kind, obj);
+    case "externalSecrets":
+      return externalSecretsProblems(obj);
+    case "cnpg":
+      return cnpgProblems(kind, obj);
+    case "strimzi":
+      return strimziProblems(obj);
+    case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.
+      return prometheusOperatorProblems(kind, obj);
     case "security":
       return securityProblems(kind, obj);
     // Kubeconfig credentials are no kind of the cluster (features/clusters/kubeconfig); volume fill levels come from
@@ -653,6 +697,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "practices": // Best-practice findings (#207) span several objects: the provider of features/practices finds them.
     case "disk":
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
+    case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];
   }

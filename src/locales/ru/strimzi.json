@@ -1,0 +1,83 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} объект требует внимания",
+  "badge_few": "{{count}} объекта требуют внимания",
+  "badge_many": "{{count}} объектов требуют внимания",
+  "badge_other": "{{count}} объекта требуют внимания",
+  "state": {
+    "ready": "Готов",
+    "notReady": "Не готов",
+    "pending": "Ожидает"
+  },
+  "columns": {
+    "status": "Статус",
+    "reason": "Причина",
+    "cluster": "Kafka",
+    "replicas": "Реплики",
+    "version": "Версия",
+    "listeners": "Listener",
+    "roles": "Роли",
+    "partitions": "Партиции",
+    "topicReplicas": "Реплики",
+    "authentication": "Аутентификация",
+    "authorization": "Авторизация"
+  },
+  "fields": {
+    "status": "Статус",
+    "reason": "Причина",
+    "version": "Версия Kafka",
+    "metadataState": "Метаданные",
+    "clusterId": "ID кластера",
+    "nodePools": "Пулы узлов",
+    "cluster": "Kafka",
+    "roles": "Роли",
+    "replicas": "Реплики",
+    "nodeIds": "ID узлов",
+    "storage": "Хранилище",
+    "topicName": "Имя топика",
+    "partitions": "Партиции",
+    "topicReplicas": "Фактор репликации",
+    "config": "Конфигурация",
+    "authentication": "Аутентификация",
+    "authorization": "Авторизация",
+    "acls": "Правила ACL",
+    "username": "Имя пользователя",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap-серверы",
+    "connectCluster": "Кластер Connect",
+    "url": "REST API",
+    "plugins": "Плагины коннекторов"
+  },
+  "warnings": "Предупреждения",
+  "warningReason": "Причина",
+  "warningMessage": "Сообщение",
+  "listeners": {
+    "title": "Listener",
+    "name": "Имя",
+    "type": "Тип",
+    "port": "Порт",
+    "bootstrap": "Bootstrap",
+    "addresses": "Адреса",
+    "tls": "TLS",
+    "noAddress": "Адреса ещё нет"
+  },
+  "mirrors": {
+    "title": "Зеркала",
+    "source": "Источник",
+    "target": "Цель",
+    "topics": "Топики"
+  },
+  "connectors": {
+    "title": "Коннекторы",
+    "name": "Имя",
+    "state": "Состояние",
+    "tasks": "Задачи"
+  }
+}

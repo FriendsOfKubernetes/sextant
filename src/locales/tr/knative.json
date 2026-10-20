@@ -1,0 +1,78 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_one": "{{count}} Knative nesnesi ilgi bekliyor",
+  "badge_other": "{{count}} Knative nesnesi ilgi bekliyor",
+  "health": {
+    "ready": "Hazır",
+    "progressing": "Sürüyor",
+    "failed": "Başarısız",
+    "unknown": "Bilinmiyor"
+  },
+  "latest": "en son",
+  "unlimited": "Sınırsız",
+  "replicas": "{{actual}} / {{desired}}",
+  "timeoutSeconds": "{{seconds}} sn",
+  "columns": {
+    "status": "Durum",
+    "reason": "Neden",
+    "url": "URL",
+    "latestCreated": "Son oluşturulan",
+    "latestReady": "Son hazır",
+    "traffic": "Trafik",
+    "configuration": "Configuration",
+    "generation": "Nesil",
+    "replicas": "Replikalar",
+    "target": "Hedef"
+  },
+  "fields": {
+    "status": "Durum",
+    "url": "URL",
+    "address": "Küme içindeki adres",
+    "latestCreated": "Son oluşturulan revizyon",
+    "latestReady": "Son hazır revizyon",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "Nesil",
+    "replicas": "Replikalar (gerçek / istenen)",
+    "routingState": "Yönlendirme durumu",
+    "images": "İmajlar",
+    "concurrency": "Kapsayıcı başına eşzamanlı istek",
+    "timeout": "İstek zaman aşımı",
+    "target": "Gösterdiği yer"
+  },
+  "traffic": {
+    "title": "Trafik",
+    "askedTitle": "Trafik (istendi, henüz geçerli değil)",
+    "revision": "Revizyon",
+    "tag": "Etiket",
+    "share": "Pay",
+    "latest": "En sonu izler",
+    "url": "URL",
+    "latestReady": "Son hazır revizyon ({{revision}})",
+    "percent": "%{{percent}}",
+    "followsLatest": "Evet"
+  },
+  "explain": {
+    "readyAt": "Hazır: {{url}} adresinde hizmet veriyor.",
+    "ready": "Hazır.",
+    "progressing": "Henüz hazır değil: Knative en son revizyonu veya rotasını hâlâ dağıtıyor.",
+    "revisionFailedTrafficStays": "En son revizyon {{revision}} başarısız oldu ({{reason}}). Trafik, hazır hâle gelen son revizyon olan {{ready}} üzerinde kalıyor.",
+    "revisionFailedNoneReady": "En son revizyon {{revision}} başarısız oldu ({{reason}}) ve henüz hiçbir revizyon hazır olmadı: isteklere yanıt veren yok.",
+    "routeFailed": "Rota hazır değil ({{reason}}): istekler revizyonlara trafik dağılımının istediği gibi ulaşmayabilir.",
+    "domainNotClaimed": "Alan adı sahiplenilmedi ({{reason}}): başka bir eşleme onu zaten kullanıyor olabilir.",
+    "certificateFailed": "TLS sertifikası sağlanamadı ({{reason}}).",
+    "notReady": "Hazır değil ({{reason}}).",
+    "revisionReady": "İsteklere yanıt vermeye hazır.",
+    "revisionScaledToZero": "Hazır ve sıfıra ölçeklendi: şu anda ona trafik gelmiyor, bu yüzden hiçbir Pod çalışmıyor. İlk istek bir Pod başlatır.",
+    "revisionProgressing": "Başlıyor: revizyonun Pod'ları henüz hazır değil.",
+    "revisionContainerUnhealthy": "Kapsayıcı başlamıyor veya sağlık denetimlerini geçemiyor ({{reason}}).",
+    "revisionResourcesUnavailable": "Knative, revizyonun ihtiyaç duyduğu kaynakları alamadı ({{reason}}); örneğin imajını veya Pod'larını.",
+    "revisionFailed": "Revizyon başarısız oldu ({{reason}})."
+  }
+}

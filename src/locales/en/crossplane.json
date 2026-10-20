@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim or composite resource needs attention",
+  "badge_other": "{{count}} claims or composite resources need attention",
+  "health": {
+    "ready": "Ready",
+    "progressing": "Progressing",
+    "failed": "Failed",
+    "unknown": "Unknown"
+  },
+  "served": "served",
+  "referenceable": "referenceable",
+  "failing": "First failing condition: {{type}} ({{reason}})",
+  "failingWithMessage": "First failing condition: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Composite resource",
+    "managed": "Managed resource"
+  },
+  "columns": {
+    "composite": "Composite kind",
+    "claim": "Claim kind",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Composite type",
+    "mode": "Mode",
+    "status": "Status",
+    "package": "Package",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Group",
+    "compositeKind": "Composite kind",
+    "claimKind": "Claim kind",
+    "versions": "Versions",
+    "defaultComposition": "Default Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Composite type",
+    "mode": "Mode",
+    "resources": "Resources (classic mode)",
+    "package": "Package",
+    "revision": "Current revision",
+    "identifier": "Current package",
+    "activation": "Revision activation",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Role",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Connection Secret",
+    "providerConfig": "ProviderConfig",
+    "externalName": "External name",
+    "deletionPolicy": "Deletion policy",
+    "managementPolicies": "Management policies",
+    "composite": "Composite resource"
+  },
+  "pipeline": {
+    "step": "Step",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Resources",
+    "loading": "Reading the resources…",
+    "noResources": "No composed resources yet.",
+    "noComposite": "No composite resource yet: Crossplane has not bound this claim.",
+    "missing": "Not found",
+    "unreadable": "Cannot be read",
+    "more": "Not shown: {{count}}"
+  },
+  "explain": {
+    "ready": "Synced and ready.",
+    "creating": "Not ready yet: Crossplane is still creating it or its resources.",
+    "deleting": "Being deleted.",
+    "notSynced": "Crossplane cannot reconcile it ({{reason}}): the first failing condition below says why.",
+    "notReady": "Not ready ({{reason}}): the first failing condition below says why.",
+    "packageHealthy": "Installed and healthy.",
+    "packageInstalling": "Being installed: not healthy yet.",
+    "packageNotInstalled": "The package is not installed ({{reason}}).",
+    "packageUnhealthy": "The package is installed but not healthy ({{reason}}).",
+    "xrdNotEstablished": "Not established: the kinds it defines are not served yet.",
+    "xrdClaimNotOffered": "The claim kind {{claim}} is not offered yet.",
+    "xrdEstablishedWithClaim": "Established: defines the composite resource {{kind}} and the claim {{claim}}.",
+    "xrdEstablished": "Established: defines the composite resource {{kind}}."
+  },
+  "page": {
+    "sidebar": "Composite Resources",
+    "title": "Composite resources",
+    "hint": "Claims and composite resources of the kinds the XRDs define, with the first condition that fails.",
+    "onlyProblems": "Only problems",
+    "total": "Shown: {{count}}",
+    "loading": "Reading claims and composite resources…",
+    "xrdsTruncated": "Only the kinds of the first {{count}} XRDs are listed.",
+    "rowsTruncated": "Only the first {{count}} are listed.",
+    "noXrds": "No XRDs: the cluster defines no composite resources.",
+    "none": "No claims or composite resources.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Name",
+      "namespace": "Namespace",
+      "state": "State",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Reason",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (composite)"
+    }
+  }
+}

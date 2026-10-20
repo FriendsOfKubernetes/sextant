@@ -1,0 +1,125 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim lub zasób złożony wymaga uwagi",
+  "badge_few": "{{count}} claimy lub zasoby złożone wymagają uwagi",
+  "badge_many": "{{count}} claimów lub zasobów złożonych wymaga uwagi",
+  "badge_other": "{{count}} claimu lub zasobu złożonego wymaga uwagi",
+  "health": {
+    "ready": "Gotowy",
+    "progressing": "W toku",
+    "failed": "Błąd",
+    "unknown": "Nieznany"
+  },
+  "served": "udostępniana",
+  "referenceable": "referencyjna",
+  "failing": "Pierwszy niespełniony warunek: {{type}} ({{reason}})",
+  "failingWithMessage": "Pierwszy niespełniony warunek: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Zasób złożony",
+    "managed": "Zasób zarządzany"
+  },
+  "columns": {
+    "composite": "Kind złożony",
+    "claim": "Kind claimu",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Typ złożony",
+    "mode": "Tryb",
+    "status": "Stan",
+    "package": "Pakiet",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Grupa",
+    "compositeKind": "Kind zasobu złożonego",
+    "claimKind": "Kind claimu",
+    "versions": "Wersje",
+    "defaultComposition": "Domyślna Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Typ zasobu złożonego",
+    "mode": "Tryb",
+    "resources": "Zasoby (tryb klasyczny)",
+    "package": "Pakiet",
+    "revision": "Bieżąca rewizja",
+    "identifier": "Bieżący pakiet",
+    "activation": "Aktywacja rewizji",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Rola",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Secret połączenia",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Nazwa zewnętrzna",
+    "deletionPolicy": "Zasada usuwania",
+    "managementPolicies": "Zasady zarządzania",
+    "composite": "Zasób złożony"
+  },
+  "pipeline": {
+    "step": "Krok",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Zasoby",
+    "loading": "Odczytywanie zasobów…",
+    "noResources": "Brak jeszcze zasobów składowych.",
+    "noComposite": "Brak jeszcze zasobu złożonego: Crossplane nie powiązał jeszcze tego claimu.",
+    "missing": "Nie znaleziono",
+    "unreadable": "Nie można odczytać",
+    "more": "Nie pokazano: {{count}}"
+  },
+  "explain": {
+    "ready": "Zsynchronizowany i gotowy.",
+    "creating": "Jeszcze niegotowy: Crossplane wciąż tworzy go lub jego zasoby.",
+    "deleting": "Usuwanie.",
+    "notSynced": "Crossplane nie może go uzgodnić ({{reason}}): przyczynę podaje pierwszy niespełniony warunek poniżej.",
+    "notReady": "Niegotowy ({{reason}}): przyczynę podaje pierwszy niespełniony warunek poniżej.",
+    "packageHealthy": "Zainstalowany i sprawny.",
+    "packageInstalling": "Instalowanie: jeszcze niesprawny.",
+    "packageNotInstalled": "Pakiet nie jest zainstalowany ({{reason}}).",
+    "packageUnhealthy": "Pakiet jest zainstalowany, ale niesprawny ({{reason}}).",
+    "xrdNotEstablished": "Nieustanowiona: definiowane przez nią rodzaje nie są jeszcze udostępniane.",
+    "xrdClaimNotOffered": "Kind claimu {{claim}} nie jest jeszcze oferowany.",
+    "xrdEstablishedWithClaim": "Ustanowiona: definiuje zasób złożony {{kind}} i claim {{claim}}.",
+    "xrdEstablished": "Ustanowiona: definiuje zasób złożony {{kind}}."
+  },
+  "page": {
+    "sidebar": "Zasoby złożone",
+    "title": "Zasoby złożone",
+    "hint": "Claimy i zasoby złożone rodzajów zdefiniowanych przez XRD, z pierwszym niespełnionym warunkiem.",
+    "onlyProblems": "Tylko problemy",
+    "total": "Pokazano: {{count}}",
+    "loading": "Odczytywanie claimów i zasobów złożonych…",
+    "xrdsTruncated": "Wymieniono tylko rodzaje pierwszych XRD (do {{count}}).",
+    "rowsTruncated": "Wymieniono tylko pierwsze (do {{count}}).",
+    "noXrds": "Brak XRD: klaster nie definiuje zasobów złożonych.",
+    "none": "Brak claimów i zasobów złożonych.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Nazwa",
+      "namespace": "Namespace",
+      "state": "Stan",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Przyczyna",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (złożony)"
+    }
+  }
+}

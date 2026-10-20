@@ -1,0 +1,47 @@
+{
+  "action": "设置镜像…",
+  "title": "{{name}} 的镜像",
+  "intro": {
+    "Deployment": "Pod 会像任何更新一样被替换。此更改会出现在发布历史中，并且可以回滚。",
+    "StatefulSet": "Pod 会按 StatefulSet 的更新策略被替换。此更改会出现在发布历史中，并且可以回滚。",
+    "DaemonSet": "Pod 会按 DaemonSet 的更新策略被替换。此更改会出现在发布历史中，并且可以回滚。",
+    "CronJob": "只有更改之后启动的 Job 才使用新镜像；正在运行的 Job 保留原有镜像。",
+    "Pod": "对于正在运行的 Pod，Kubernetes 只允许更改其容器的镜像。kubelet 会用新镜像重启每个被更改的容器。"
+  },
+  "columns": {
+    "container": "容器",
+    "current": "当前镜像",
+    "image": "新镜像"
+  },
+  "initContainer": "Init 容器",
+  "imageLabel": "容器 {{name}} 的新镜像",
+  "none": "此对象没有容器。",
+  "invalid": {
+    "empty": "请输入镜像。",
+    "spaces": "镜像引用不能包含空格。",
+    "tooLong": "镜像名称超过 255 个字符。",
+    "uppercase": "仓库路径必须为小写。",
+    "name": "仓库路径无效：请使用小写字母和数字，以“.”、“_”、“__”、“-”或“/”分隔。",
+    "host": "镜像仓库主机无效。",
+    "tag": "标签无效：最多 128 个字母、数字、“_”、“.”和“-”，且不能以“.”或“-”开头。",
+    "digest": "摘要无效：请写成 sha256: 加 64 位十六进制数字。"
+  },
+  "warning": {
+    "latest": "标签“latest”每次拉取都可能指向不同的镜像，因此 Pod 可能运行不同的版本。",
+    "noTag": "不带标签时会拉取“latest”镜像，它每次拉取都可能指向不同的镜像。"
+  },
+  "changes": {
+    "title": "更改内容",
+    "none": "请至少更改一个镜像。",
+    "line": "{{container}}：{{from}} → {{to}}",
+    "lineInit": "{{container}}（Init 容器）：{{from}} → {{to}}"
+  },
+  "confirm": "设置镜像",
+  "previewAndSet": "预览并设置镜像…",
+  "owned": {
+    "intro": "此 Pod 由 {{kind}} {{name}} 管理：控制器会替换该 Pod 或忽略更改后的镜像。请改为在该 {{kind}} 中设置镜像。",
+    "open": "打开 {{kind}} {{name}}",
+    "looking": "正在查找所有者…"
+  },
+  "mirror": "这是一个静态 Pod：kubelet 从其节点上的清单文件运行它。请在该文件中更改镜像。"
+}

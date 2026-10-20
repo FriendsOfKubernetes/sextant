@@ -23,8 +23,17 @@
     "certificates": "Sertifikalar",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Hizmet ağı",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Kyverno ilkeleri",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "Güvenlik",
     "practices": "En iyi uygulamalar",
     "credentials": "Kimlik bilgileri",
@@ -32,6 +41,7 @@
     "events": "Uyarı olayları"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "Kapsayıcı {{container}}",
     "restarts_one": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",
     "restarts_other": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",
@@ -49,8 +59,14 @@
     "meshMissingGateway": "Var olmayan {{gateway}} ağ geçidine bağlı.",
     "meshTlsConflict": "Yalnızca Istio mTLS kabul eden (STRICT) iş yüklerine sahip {{host}} için TLS modunu {{mode}} yapıyor: çağrılar başarısız olur. ISTIO_MUTUAL kullanın.",
     "meshConflictingVirtualService": "{{gateway}} üzerindeki {{host}} ana makinesi daha eski {{other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
-    "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz."
+    "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz.",
+    "policyFailures_one": "{{count}} ilke kuralı başarısız: {{policies}}",
+    "policyFailures_other": "{{count}} ilke kuralı başarısız: {{policies}}",
+    "serviceMonitorSelectsNothing": "Şu namespace'lerde hiçbir Service seçmiyor: {{namespaces}}",
+    "podMonitorSelectsNothing": "Şu namespace'lerde hiçbir Pod seçmiyor: {{namespaces}}",
+    "monitorNotPickedUp": "Hiçbir Prometheus selector'larıyla onu seçmiyor"
   },
   "showDisk": "Disk neredeyse dolu",
-  "showPractices": "En iyi uygulama bulguları"
+  "showPractices": "En iyi uygulama bulguları",
+  "showPolicies": "Kyverno ilkesi ihlalleri"
 }

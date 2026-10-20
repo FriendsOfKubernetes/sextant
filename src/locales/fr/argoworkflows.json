@@ -1,0 +1,68 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow a échoué récemment",
+  "badge_many": "{{count}} workflows ont échoué récemment",
+  "badge_other": "{{count}} workflows ont échoué récemment",
+  "columns": {
+    "phase": "Phase",
+    "progress": "Progression",
+    "duration": "Durée",
+    "failedStep": "Étape en échec",
+    "schedule": "Planification",
+    "suspended": "Suspendu",
+    "active": "Actifs",
+    "lastScheduled": "Dernière exécution",
+    "entrypoint": "Point d'entrée",
+    "templates": "Modèles"
+  },
+  "yes": "Oui",
+  "failedStep": "{{step}} : {{message}}",
+  "fields": {
+    "phase": "Phase",
+    "progress": "Progression",
+    "startedAt": "Début",
+    "finishedAt": "Fin",
+    "duration": "Durée",
+    "message": "Message",
+    "failedStep": "Étape en échec",
+    "failedMessage": "Son message",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Planifications",
+    "timezone": "Fuseau horaire",
+    "concurrencyPolicy": "Politique de concurrence",
+    "suspended": "Suspendu",
+    "lastScheduled": "Dernière exécution",
+    "active": "Workflows actifs",
+    "succeeded": "Réussis",
+    "failed": "En échec",
+    "entrypoint": "Point d'entrée",
+    "templates": "Modèles"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Étapes",
+    "cron": "Planification",
+    "template": "Modèle"
+  },
+  "tree": {
+    "count_one": "{{count}} étape",
+    "count_many": "{{count}} étapes",
+    "count_other": "{{count}} étapes",
+    "capped": "Seules les {{shown}} premières étapes sur {{count}} sont affichées.",
+    "expandFailed": "Afficher l'étape en échec",
+    "collapseAll": "Tout réduire",
+    "expand": "Développer {{name}}",
+    "collapse": "Réduire {{name}}",
+    "logs": "Journaux",
+    "logsOf": "Journaux de {{name}}",
+    "offloaded": "Le contrôleur conserve les étapes de ce workflow dans sa base de données (offloaded node status) : elles ne sont pas dans l'objet et ne peuvent pas être affichées ici.",
+    "compressed": "Le contrôleur a stocké les étapes de ce workflow sous forme compressée : elles ne peuvent pas être affichées ici.",
+    "none": "Aucune étape pour l'instant."
+  }
+}

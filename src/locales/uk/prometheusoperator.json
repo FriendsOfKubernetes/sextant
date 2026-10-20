@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_one": "{{count}} об'єкт потребує уваги",
+  "badge_few": "{{count}} об'єкти потребують уваги",
+  "badge_many": "{{count}} об'єктів потребують уваги",
+  "badge_other": "{{count}} об'єкта потребують уваги",
+  "state": {
+    "ready": "Доступний",
+    "degraded": "Деградований",
+    "failed": "Помилка",
+    "pending": "Очікує"
+  },
+  "columns": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "ports": "Порти",
+    "prober": "Prober",
+    "module": "Модуль",
+    "interval": "Інтервал",
+    "groups": "Групи",
+    "rules": "Правила",
+    "status": "Статус",
+    "replicas": "Репліки",
+    "version": "Версія",
+    "reason": "Причина"
+  },
+  "fields": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "jobLabel": "Мітка job",
+    "prober": "Prober",
+    "module": "Модуль",
+    "interval": "Інтервал",
+    "staticTargets": "Цілі",
+    "ingressSelector": "Selector Ingress",
+    "status": "Статус",
+    "reason": "Причина",
+    "replicas": "Репліки",
+    "shards": "Шарди",
+    "version": "Версія",
+    "retention": "Зберігання",
+    "paused": "Призупинено"
+  },
+  "anyNamespace": "Усі namespace",
+  "selectsAll": "Усе",
+  "selectsNone": "Нічого",
+  "loading": "Завантаження…",
+  "yes": "Так",
+  "replicasAvailable": "{{available}} з {{total}} доступні",
+  "targets": {
+    "title": "Зараз вибирає",
+    "error": "Не вдалося прочитати список.",
+    "invalidSelector": "Selector використовує оператор, якого немає в Kubernetes, тому нічого не вибирає.",
+    "everything": {
+      "services": "Усі Service в усіх namespace: не перелічуються.",
+      "pods": "Усі Pod в усіх namespace: не перелічуються."
+    },
+    "tooMany_one": "Дивиться в {{count}} namespace: забагато, щоб перелічити тут.",
+    "tooMany_few": "Дивиться в {{count}} namespace: забагато, щоб перелічити тут.",
+    "tooMany_many": "Дивиться в {{count}} namespace: забагато, щоб перелічити тут.",
+    "tooMany_other": "Дивиться в {{count}} namespace: забагато, щоб перелічити тут.",
+    "none": {
+      "services": "Не вибирає жодного Service: Prometheus нічого для нього не збирає.",
+      "pods": "Не вибирає жодного Pod: Prometheus нічого для нього не збирає."
+    },
+    "selected": {
+      "services_one": "{{count}} Service",
+      "services_few": "{{count}} Service",
+      "services_many": "{{count}} Service",
+      "services_other": "{{count}} Service",
+      "pods_one": "{{count}} Pod",
+      "pods_few": "{{count}} Pod",
+      "pods_many": "{{count}} Pod",
+      "pods_other": "{{count}} Pod"
+    },
+    "more_one": "і ще {{count}}",
+    "more_few": "і ще {{count}}",
+    "more_many": "і ще {{count}}",
+    "more_other": "і ще {{count}}",
+    "portFound": "на {{found}} з {{total}}"
+  },
+  "endpoints": {
+    "port": "Порт",
+    "path": "Шлях",
+    "interval": "Інтервал",
+    "found": "Ім'я порту знайдено"
+  },
+  "pickup": {
+    "title": "Підхоплюється",
+    "none": "Жоден Prometheus його не підхоплює: жоден selector Prometheus не підходить до його label і namespace.",
+    "unknown": "Невідомо: не вдалося прочитати label namespace.",
+    "noPrometheus": "У кластері немає об'єктів Prometheus."
+  },
+  "groups": {
+    "title": "Групи правил",
+    "name": "Група",
+    "interval": "Інтервал",
+    "alerts": "Сповіщення",
+    "records": "Правила запису",
+    "none": "Немає груп правил."
+  },
+  "selectors": {
+    "title": "Що підхоплює",
+    "what": "Вид",
+    "selector": "Selector",
+    "namespaces": "Namespaces",
+    "none": "Нічого",
+    "all": "Усе",
+    "ownNamespace": "Власний namespace",
+    "allNamespaces": "Усі namespace",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

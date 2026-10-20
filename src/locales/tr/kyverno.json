@@ -1,0 +1,99 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} nesne ilke kurallarını ihlal ediyor",
+  "badge_other": "{{count}} nesne ilke kurallarını ihlal ediyor",
+  "yes": "Evet",
+  "no": "Hayır",
+  "ready": {
+    "True": "Hazır",
+    "False": "Hazır değil",
+    "Unknown": "Bekliyor"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Karma"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: bir kuralı ihlal eden istek reddedilir.",
+    "Audit": "Audit: bir kuralı ihlal eden isteğe izin verilir ve ihlal bir rapora yazılır.",
+    "Mixed": "Bazı kurallar kendilerini ihlal eden isteği reddeder (Enforce); diğerleri ihlali yalnızca bir rapora yazar (Audit)."
+  },
+  "explain": {
+    "ready": "Hazır: Kyverno bu ilkeyi uyguluyor.",
+    "notReady": "Hazır değil: Kyverno, aşağıdaki sorun düzeltilene kadar bu ilkeyi uygulamaz.",
+    "pending": "Kyverno bu ilkeyi yüklemeyi henüz bitirmedi."
+  },
+  "columns": {
+    "ready": "Hazır",
+    "mode": "Mod",
+    "background": "Arka plan",
+    "rules": "Kurallar",
+    "message": "İleti",
+    "object": "Nesne",
+    "pass": "Geçti",
+    "fail": "İhlal",
+    "warn": "Uyarı",
+    "error": "Hata",
+    "skip": "Atlandı"
+  },
+  "fields": {
+    "ready": "Hazır",
+    "mode": "Mod",
+    "background": "Arka plan taramaları",
+    "object": "Nesne"
+  },
+  "rules": {
+    "name": "Kural",
+    "type": "Tür",
+    "mode": "Mod",
+    "kinds": "Kind'lar"
+  },
+  "ruleType": {
+    "validate": "Doğrulama",
+    "mutate": "Değiştirme",
+    "generate": "Oluşturma",
+    "verifyImages": "İmaj doğrulama"
+  },
+  "result": {
+    "pass": "Geçti",
+    "fail": "İhlal",
+    "warn": "Uyarı",
+    "error": "Hata",
+    "skip": "Atlandı"
+  },
+  "summary": {
+    "pass": "Geçen: {{count}}",
+    "fail": "İhlal: {{count}}",
+    "warn": "Uyarı: {{count}}",
+    "error": "Hata: {{count}}",
+    "skip": "Atlanan: {{count}}"
+  },
+  "results": {
+    "object": "Nesne",
+    "policy": "İlke",
+    "rule": "Kural",
+    "result": "Sonuç",
+    "message": "İleti",
+    "more": "Gösterilmeyen: {{count}}"
+  },
+  "policySummary": {
+    "title": "Raporlardaki sonuçlar",
+    "loading": "Raporlar okunuyor…",
+    "none": "Henüz hiçbir rapor bu ilkenin sonuçlarını içermiyor.",
+    "unlabelled": "İlkenin adı, Kyverno'nun raporlarına koyduğu label için fazla uzun; bu yüzden sonuçları burada özetlenemiyor.",
+    "capped": "Raporların yalnızca bir kısmı okundu: sayılar eksik ({{count}} sonuç sayıldı)."
+  },
+  "objectResults": {
+    "title": "İlke sonuçları",
+    "failing": "İhlal edilen ilke kuralları: denetlenen {{total}} kuraldan {{count}}.",
+    "passing": "Hiçbir ilke kuralı ihlal edilmiyor ({{count}} denetlendi)."
+  }
+}

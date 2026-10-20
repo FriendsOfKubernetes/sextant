@@ -1,0 +1,36 @@
+{
+  "apiVersion": "rds.aws.upbound.io/v1beta1",
+  "kind": "Instance",
+  "metadata": {
+    "name": "my-db-x7k2p-9fz2l",
+    "uid": "5b0e7c2a-0000-4000-8000-0000000000d1",
+    "creationTimestamp": "2026-10-10T10:00:02Z",
+    "annotations": { "crossplane.io/external-name": "my-db-x7k2p-9fz2l" },
+    "labels": {
+      "crossplane.io/composite": "my-db-x7k2p",
+      "crossplane.io/claim-name": "my-db",
+      "crossplane.io/claim-namespace": "default"
+    },
+    "ownerReferences": [
+      { "apiVersion": "database.example.org/v1alpha1", "kind": "XPostgreSQLInstance", "name": "my-db-x7k2p", "uid": "5b0e7c2a-0000-4000-8000-0000000000c1", "controller": true }
+    ]
+  },
+  "spec": {
+    "deletionPolicy": "Delete",
+    "managementPolicies": ["*"],
+    "providerConfigRef": { "name": "default" },
+    "forProvider": { "region": "us-east-1", "engine": "postgres", "engineVersion": "9.1", "instanceClass": "db.t3.micro", "allocatedStorage": 20 }
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "False",
+        "reason": "ReconcileError",
+        "message": "create failed: async create failed: failed to create the resource: InvalidParameterCombination: Cannot find version 9.1 for postgres",
+        "lastTransitionTime": "2026-10-10T10:00:30Z"
+      },
+      { "type": "Ready", "status": "False", "reason": "Creating", "lastTransitionTime": "2026-10-10T10:00:02Z" }
+    ]
+  }
+}

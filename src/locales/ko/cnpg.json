@@ -1,0 +1,89 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_other": "주의가 필요한 개체 {{count}}개",
+  "state": {
+    "healthy": "정상",
+    "switchover": "전환 중",
+    "failover": "장애 조치 중",
+    "progressing": "진행 중",
+    "unhealthy": "비정상"
+  },
+  "backupState": {
+    "completed": "완료",
+    "failed": "실패",
+    "running": "실행 중",
+    "pending": "대기 중"
+  },
+  "role": {
+    "primary": "기본",
+    "replica": "복제본"
+  },
+  "columns": {
+    "status": "상태",
+    "instances": "인스턴스",
+    "primary": "기본",
+    "phase": "단계",
+    "cluster": "클러스터",
+    "method": "방법",
+    "started": "시작",
+    "schedule": "일정",
+    "suspended": "일시 중지됨",
+    "lastBackup": "마지막 백업",
+    "type": "유형",
+    "poolMode": "풀 모드"
+  },
+  "fields": {
+    "status": "상태",
+    "phase": "단계",
+    "instances": "인스턴스",
+    "primary": "현재 기본 인스턴스",
+    "targetPrimary": "대상 기본 인스턴스",
+    "image": "이미지",
+    "storage": "스토리지",
+    "archiving": "연속 아카이빙",
+    "lastBackup": "마지막 백업",
+    "lastSuccessfulBackup": "마지막 성공 백업",
+    "lastFailedBackup": "마지막 실패 백업",
+    "firstRecoverabilityPoint": "복구 가능 시점",
+    "cluster": "클러스터",
+    "method": "방법",
+    "target": "대상",
+    "startedAt": "시작",
+    "stoppedAt": "중지",
+    "backupId": "백업 ID",
+    "destination": "저장 위치",
+    "schedule": "일정",
+    "suspended": "일시 중지됨",
+    "lastScheduleTime": "마지막 실행",
+    "nextScheduleTime": "다음 실행",
+    "type": "유형",
+    "poolerInstances": "인스턴스",
+    "poolMode": "풀 모드"
+  },
+  "instancesReady": "{{ready}}/{{total}} 준비됨",
+  "switchover": "기본 인스턴스를 {{from}}에서 {{to}}(으)로 옮기는 중입니다.",
+  "failover": "장애 조치 중: {{primary}}이(가) 사라져 새 기본 인스턴스를 선택하는 중입니다.",
+  "replicaCluster": "복제본 클러스터: 기본 인스턴스가 다른 클러스터를 따릅니다.",
+  "members": {
+    "title": "인스턴스",
+    "instance": "인스턴스",
+    "role": "역할",
+    "health": "상태",
+    "timeline": "Timeline"
+  },
+  "backups": "백업",
+  "noBackups": "이 클러스터에는 백업이 설정되어 있지 않습니다.",
+  "archivingOk": "작동 중",
+  "archivingFailing": "실패",
+  "backupOk": "성공",
+  "backupFailing": "실패",
+  "unknown": "알 수 없음",
+  "error": "오류",
+  "yes": "예",
+  "no": "아니요"
+}

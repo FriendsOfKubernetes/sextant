@@ -1,0 +1,20 @@
+{
+  "apiVersion": "database.example.org/v1alpha1",
+  "kind": "XPostgreSQLInstance",
+  "metadata": { "name": "my-db-x7k2p", "uid": "5b0e7c2a-0000-4000-8000-0000000000c1", "resourceVersion": "101", "creationTimestamp": "2026-10-10T10:00:01Z" },
+  "spec": {
+    "parameters": { "storageGB": 20 },
+    "compositionRef": { "name": "xpostgresqlinstances.aws.database.example.org" },
+    "claimRef": { "apiVersion": "database.example.org/v1alpha1", "kind": "PostgreSQLInstance", "name": "my-db", "namespace": "default" },
+    "resourceRefs": [
+      { "apiVersion": "rds.aws.upbound.io/v1beta1", "kind": "Instance", "name": "my-db-x7k2p-9fz2l" },
+      { "apiVersion": "ec2.aws.upbound.io/v1beta1", "kind": "SecurityGroup", "name": "my-db-x7k2p-4kq8m" }
+    ]
+  },
+  "status": {
+    "conditions": [
+      { "type": "Synced", "status": "True", "reason": "ReconcileSuccess", "lastTransitionTime": "2026-10-10T10:00:02Z" },
+      { "type": "Ready", "status": "False", "reason": "Creating", "message": "Unready resources: my-db-x7k2p-9fz2l", "lastTransitionTime": "2026-10-10T10:00:02Z" }
+    ]
+  }
+}

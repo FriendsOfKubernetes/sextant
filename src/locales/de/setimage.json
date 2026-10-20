@@ -1,0 +1,47 @@
+{
+  "action": "Image festlegen…",
+  "title": "Images von {{name}}",
+  "intro": {
+    "Deployment": "Die Pods werden wie bei jedem Update ersetzt. Die Änderung erscheint im Rollout-Verlauf und kann zurückgesetzt werden.",
+    "StatefulSet": "Die Pods werden nach der Update-Strategie des StatefulSet ersetzt. Die Änderung erscheint im Rollout-Verlauf und kann zurückgesetzt werden.",
+    "DaemonSet": "Die Pods werden nach der Update-Strategie des DaemonSet ersetzt. Die Änderung erscheint im Rollout-Verlauf und kann zurückgesetzt werden.",
+    "CronJob": "Nur Jobs, die nach der Änderung starten, verwenden die neuen Images; laufende Jobs behalten ihre.",
+    "Pod": "Bei einem laufenden Pod erlaubt Kubernetes nur, die Images seiner Container zu ändern. Das Kubelet startet jeden geänderten Container mit seinem neuen Image neu."
+  },
+  "columns": {
+    "container": "Container",
+    "current": "Aktuelles Image",
+    "image": "Neues Image"
+  },
+  "initContainer": "Init-Container",
+  "imageLabel": "Neues Image von Container {{name}}",
+  "none": "Dieses Objekt hat keine Container.",
+  "invalid": {
+    "empty": "Geben Sie ein Image ein.",
+    "spaces": "Eine Image-Referenz darf keine Leerzeichen enthalten.",
+    "tooLong": "Der Image-Name ist länger als 255 Zeichen.",
+    "uppercase": "Der Repository-Pfad muss kleingeschrieben sein.",
+    "name": "Der Repository-Pfad ist ungültig: Verwenden Sie Kleinbuchstaben und Ziffern, getrennt durch „.“, „_“, „__“, „-“ oder „/“.",
+    "host": "Der Registry-Host ist ungültig.",
+    "tag": "Der Tag ist ungültig: bis zu 128 Buchstaben, Ziffern, „_“, „.“ und „-“, nicht beginnend mit „.“ oder „-“.",
+    "digest": "Der Digest ist ungültig: Schreiben Sie sha256: gefolgt von 64 Hexadezimalziffern."
+  },
+  "warning": {
+    "latest": "Der Tag „latest“ kann bei jedem Pull auf ein anderes Image zeigen, sodass Pods unterschiedliche Versionen ausführen können.",
+    "noTag": "Ohne Tag wird das Image „latest“ gezogen, das bei jedem Pull auf ein anderes Image zeigen kann."
+  },
+  "changes": {
+    "title": "Was sich ändert",
+    "none": "Ändern Sie mindestens ein Image.",
+    "line": "{{container}}: {{from}} → {{to}}",
+    "lineInit": "{{container}} (Init-Container): {{from}} → {{to}}"
+  },
+  "confirm": "Image festlegen",
+  "previewAndSet": "Prüfen und Image festlegen…",
+  "owned": {
+    "intro": "Dieser Pod wird von {{kind}} {{name}} verwaltet: Der Controller würde den Pod ersetzen oder ein geändertes Image ignorieren. Legen Sie das Image stattdessen im {{kind}} fest.",
+    "open": "{{kind}} {{name}} öffnen",
+    "looking": "Besitzer wird gesucht…"
+  },
+  "mirror": "Dies ist ein statischer Pod: Das Kubelet startet ihn aus einer Manifestdatei auf seinem Knoten. Ändern Sie das Image in dieser Datei."
+}

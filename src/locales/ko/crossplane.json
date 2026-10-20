@@ -1,0 +1,122 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_other": "claim 또는 복합 리소스 {{count}}개에 주의가 필요합니다",
+  "health": {
+    "ready": "준비됨",
+    "progressing": "진행 중",
+    "failed": "실패",
+    "unknown": "알 수 없음"
+  },
+  "served": "제공됨",
+  "referenceable": "참조 가능",
+  "failing": "처음 충족되지 않은 조건: {{type}}({{reason}})",
+  "failingWithMessage": "처음 충족되지 않은 조건: {{type}}({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "복합 리소스",
+    "managed": "관리형 리소스"
+  },
+  "columns": {
+    "composite": "복합 Kind",
+    "claim": "Claim Kind",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "복합 유형",
+    "mode": "모드",
+    "status": "상태",
+    "package": "패키지",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "그룹",
+    "compositeKind": "복합 리소스 Kind",
+    "claimKind": "Claim Kind",
+    "versions": "버전",
+    "defaultComposition": "기본 Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "복합 리소스 유형",
+    "mode": "모드",
+    "resources": "리소스(기존 모드)",
+    "package": "패키지",
+    "revision": "현재 리비전",
+    "identifier": "현재 패키지",
+    "activation": "리비전 활성화",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "역할",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "연결 Secret",
+    "providerConfig": "ProviderConfig",
+    "externalName": "외부 이름",
+    "deletionPolicy": "삭제 정책",
+    "managementPolicies": "관리 정책",
+    "composite": "복합 리소스"
+  },
+  "pipeline": {
+    "step": "단계",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "리소스",
+    "loading": "리소스를 읽는 중…",
+    "noResources": "아직 구성 리소스가 없습니다.",
+    "noComposite": "아직 복합 리소스가 없습니다. Crossplane이 이 claim을 아직 바인딩하지 않았습니다.",
+    "missing": "찾을 수 없음",
+    "unreadable": "읽을 수 없음",
+    "more": "표시 안 됨: {{count}}"
+  },
+  "explain": {
+    "ready": "동기화되었고 준비되었습니다.",
+    "creating": "아직 준비되지 않음: Crossplane이 아직 이 리소스나 그 구성 리소스를 만들고 있습니다.",
+    "deleting": "삭제 중입니다.",
+    "notSynced": "Crossplane이 조정할 수 없습니다({{reason}}). 이유는 아래 처음 충족되지 않은 조건에 있습니다.",
+    "notReady": "준비되지 않음({{reason}}). 이유는 아래 처음 충족되지 않은 조건에 있습니다.",
+    "packageHealthy": "설치되었고 정상입니다.",
+    "packageInstalling": "설치 중: 아직 정상이 아닙니다.",
+    "packageNotInstalled": "패키지가 설치되지 않았습니다({{reason}}).",
+    "packageUnhealthy": "패키지는 설치되었지만 정상이 아닙니다({{reason}}).",
+    "xrdNotEstablished": "설정되지 않음: 정의하는 Kind가 아직 제공되지 않습니다.",
+    "xrdClaimNotOffered": "Claim Kind {{claim}}이(가) 아직 제공되지 않습니다.",
+    "xrdEstablishedWithClaim": "설정됨: 복합 리소스 {{kind}}와(과) claim {{claim}}을(를) 정의합니다.",
+    "xrdEstablished": "설정됨: 복합 리소스 {{kind}}을(를) 정의합니다."
+  },
+  "page": {
+    "sidebar": "복합 리소스",
+    "title": "복합 리소스",
+    "hint": "XRD가 정의한 Kind의 claim과 복합 리소스를 처음 충족되지 않은 조건과 함께 보여 줍니다.",
+    "onlyProblems": "문제만",
+    "total": "표시됨: {{count}}",
+    "loading": "claim과 복합 리소스를 읽는 중…",
+    "xrdsTruncated": "처음 {{count}}개 XRD의 Kind만 표시합니다.",
+    "rowsTruncated": "처음 {{count}}개만 표시합니다.",
+    "noXrds": "XRD 없음: 클러스터에 정의된 복합 리소스가 없습니다.",
+    "none": "claim이나 복합 리소스가 없습니다.",
+    "columns": {
+      "kind": "Kind",
+      "name": "이름",
+      "namespace": "Namespace",
+      "state": "상태",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "이유",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}}(claim)",
+      "composite": "{{kind}}(복합)"
+    }
+  }
+}

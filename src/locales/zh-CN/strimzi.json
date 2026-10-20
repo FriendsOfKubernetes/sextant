@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_other": "{{count}} 个对象需要关注",
+  "state": {
+    "ready": "就绪",
+    "notReady": "未就绪",
+    "pending": "等待中"
+  },
+  "columns": {
+    "status": "状态",
+    "reason": "原因",
+    "cluster": "Kafka",
+    "replicas": "副本",
+    "version": "版本",
+    "listeners": "Listener",
+    "roles": "角色",
+    "partitions": "分区",
+    "topicReplicas": "副本",
+    "authentication": "身份验证",
+    "authorization": "授权"
+  },
+  "fields": {
+    "status": "状态",
+    "reason": "原因",
+    "version": "Kafka 版本",
+    "metadataState": "元数据",
+    "clusterId": "集群 ID",
+    "nodePools": "节点池",
+    "cluster": "Kafka",
+    "roles": "角色",
+    "replicas": "副本",
+    "nodeIds": "节点 ID",
+    "storage": "存储",
+    "topicName": "主题名称",
+    "partitions": "分区",
+    "topicReplicas": "副本因子",
+    "config": "配置",
+    "authentication": "身份验证",
+    "authorization": "授权",
+    "acls": "ACL 规则",
+    "username": "用户名",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap 服务器",
+    "connectCluster": "Connect 集群",
+    "url": "REST API",
+    "plugins": "连接器插件"
+  },
+  "warnings": "警告",
+  "warningReason": "原因",
+  "warningMessage": "消息",
+  "listeners": {
+    "title": "Listener",
+    "name": "名称",
+    "type": "类型",
+    "port": "端口",
+    "bootstrap": "Bootstrap",
+    "addresses": "地址",
+    "tls": "TLS",
+    "noAddress": "尚无地址"
+  },
+  "mirrors": {
+    "title": "镜像",
+    "source": "源",
+    "target": "目标",
+    "topics": "主题"
+  },
+  "connectors": {
+    "title": "连接器",
+    "name": "名称",
+    "state": "状态",
+    "tasks": "任务"
+  }
+}

@@ -40,6 +40,8 @@ export type BuiltInActionId =
   | "suspend"
   // Rollout history (src/features/rollouts)
   | "rolloutUndo"
+  // Set image (src/features/set-image)
+  | "setImage"
   // Flux (src/features/flux)
   | "reconcile"
   | "reconcileWithSource"
@@ -52,6 +54,11 @@ export type BuiltInActionId =
   | "argoTerminate"
   | "argoDiff"
   | "argoOpenUi"
+  // Argo Rollouts (src/features/argo-rollouts)
+  | "rolloutPromote"
+  | "rolloutPromoteFull"
+  | "rolloutAbort"
+  | "rolloutRetry"
   // Storage insights (src/features/storage)
   | "snapshotCreate"
   | "snapshotRestore"
@@ -121,8 +128,17 @@ export const SIDEBAR_SECTIONS = [
   "velero",
   "flux",
   "argocd",
+  "argoRollouts",
+  "argoWorkflows",
   "istio",
   "linkerd",
+  "knative",
+  "crossplane",
+  "kyverno",
+  "externalSecrets",
+  "cnpg",
+  "strimzi",
+  "prometheusOperator",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -136,6 +152,8 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "gatewayApi",
   "flux",
   "argocd",
+  "argoRollouts",
+  "argoWorkflows",
   "certManager",
   "trivy",
   "keda",
@@ -144,6 +162,13 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "velero",
   "istio",
   "linkerd",
+  "knative",
+  "crossplane",
+  "kyverno",
+  "externalSecrets",
+  "cnpg",
+  "strimzi",
+  "prometheusOperator",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -167,8 +192,17 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   velero: "velero",
   flux: "flux",
   argocd: "argocd",
+  argoRollouts: "argoRollouts",
+  argoWorkflows: "argoWorkflows",
   istio: "istio",
   linkerd: "linkerd",
+  knative: "knative",
+  crossplane: "crossplane",
+  kyverno: "kyverno",
+  externalSecrets: "externalSecrets",
+  cnpg: "cnpg",
+  strimzi: "strimzi",
+  prometheusOperator: "prometheusOperator",
   customResources: "customResources",
   settings: "settings",
 };

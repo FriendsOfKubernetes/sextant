@@ -1,0 +1,15 @@
+/* Strimzi: why an object is not ready, and muted notes of the details. */
+.strimzi-note {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.strimzi-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.strimzi-muted {
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,108 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_other": "{{count}} 個物件需要注意",
+  "state": {
+    "ready": "可用",
+    "degraded": "降級",
+    "failed": "失敗",
+    "pending": "等待中"
+  },
+  "columns": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "ports": "連接埠",
+    "prober": "Prober",
+    "module": "模組",
+    "interval": "間隔",
+    "groups": "群組",
+    "rules": "規則",
+    "status": "狀態",
+    "replicas": "複本",
+    "version": "版本",
+    "reason": "原因"
+  },
+  "fields": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "jobLabel": "Job label",
+    "prober": "Prober",
+    "module": "模組",
+    "interval": "間隔",
+    "staticTargets": "目標",
+    "ingressSelector": "Ingress selector",
+    "status": "狀態",
+    "reason": "原因",
+    "replicas": "複本",
+    "shards": "分片",
+    "version": "版本",
+    "retention": "保留期間",
+    "paused": "已暫停"
+  },
+  "anyNamespace": "所有 namespace",
+  "selectsAll": "全部",
+  "selectsNone": "無",
+  "loading": "正在載入…",
+  "yes": "是",
+  "replicasAvailable": "{{available}}/{{total}} 可用",
+  "targets": {
+    "title": "目前選取",
+    "error": "無法讀取清單。",
+    "invalidSelector": "此 selector 使用 Kubernetes 不認得的運算子，因此不會選取任何物件。",
+    "everything": {
+      "services": "所有 namespace 中的所有 Service：不列出。",
+      "pods": "所有 namespace 中的所有 Pod：不列出。"
+    },
+    "tooMany_other": "它查看 {{count}} 個 namespace：太多，無法在此列出。",
+    "none": {
+      "services": "未選取任何 Service：Prometheus 不會為它收集任何資料。",
+      "pods": "未選取任何 Pod：Prometheus 不會為它收集任何資料。"
+    },
+    "selected": {
+      "services_other": "{{count}} 個 Service",
+      "pods_other": "{{count}} 個 Pod"
+    },
+    "more_other": "還有 {{count}} 個",
+    "portFound": "在 {{found}}/{{total}} 個上"
+  },
+  "endpoints": {
+    "port": "連接埠",
+    "path": "路徑",
+    "interval": "間隔",
+    "found": "找到連接埠名稱"
+  },
+  "pickup": {
+    "title": "被下列物件選取",
+    "none": "沒有 Prometheus 選取它：沒有任何 Prometheus 的 selector 符合它的 label 和 namespace。",
+    "unknown": "未知：無法讀取 namespace 的 label。",
+    "noPrometheus": "叢集中沒有 Prometheus 物件。"
+  },
+  "groups": {
+    "title": "規則群組",
+    "name": "群組",
+    "interval": "間隔",
+    "alerts": "警示",
+    "records": "記錄規則",
+    "none": "沒有規則群組。"
+  },
+  "selectors": {
+    "title": "選取的內容",
+    "what": "Kind",
+    "selector": "Selector",
+    "namespaces": "Namespaces",
+    "none": "無",
+    "all": "全部",
+    "ownNamespace": "自身的 namespace",
+    "allNamespaces": "所有 namespace",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

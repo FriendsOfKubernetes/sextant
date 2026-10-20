@@ -1,0 +1,47 @@
+{
+  "action": "İmaj ayarla…",
+  "title": "{{name}} imajları",
+  "intro": {
+    "Deployment": "Pod'lar her güncellemede olduğu gibi değiştirilir. Değişiklik dağıtım geçmişinde görünür ve geri alınabilir.",
+    "StatefulSet": "Pod'lar StatefulSet'in güncelleme stratejisine göre değiştirilir. Değişiklik dağıtım geçmişinde görünür ve geri alınabilir.",
+    "DaemonSet": "Pod'lar DaemonSet'in güncelleme stratejisine göre değiştirilir. Değişiklik dağıtım geçmişinde görünür ve geri alınabilir.",
+    "CronJob": "Yeni imajları yalnızca değişiklikten sonra başlayan Job'lar kullanır; çalışan Job'lar kendi imajlarını korur.",
+    "Pod": "Kubernetes, çalışan bir Pod'da yalnızca kapsayıcıların imajlarının değiştirilmesine izin verir. Kubelet değişen her kapsayıcıyı yeni imajıyla yeniden başlatır."
+  },
+  "columns": {
+    "container": "Kapsayıcı",
+    "current": "Geçerli imaj",
+    "image": "Yeni imaj"
+  },
+  "initContainer": "başlatma kapsayıcısı",
+  "imageLabel": "{{name}} kapsayıcısının yeni imajı",
+  "none": "Bu nesnenin kapsayıcısı yok.",
+  "invalid": {
+    "empty": "Bir imaj girin.",
+    "spaces": "İmaj başvurusu boşluk içeremez.",
+    "tooLong": "İmaj adı 255 karakterden uzun.",
+    "uppercase": "Depo yolu küçük harfle yazılmalıdır.",
+    "name": "Depo yolu geçersiz: “.”, “_”, “__”, “-” veya “/” ile ayrılmış küçük harfler ve rakamlar kullanın.",
+    "host": "Kayıt defteri ana bilgisayarı geçersiz.",
+    "tag": "Etiket geçersiz: en fazla 128 harf, rakam, “_”, “.” ve “-”; “.” veya “-” ile başlayamaz.",
+    "digest": "Özet geçersiz: sha256: ve ardından 64 onaltılık rakam yazın."
+  },
+  "warning": {
+    "latest": "“latest” etiketi her çekişte başka bir imajı gösterebilir; bu yüzden Pod'lar farklı sürümler çalıştırabilir.",
+    "noTag": "Etiket olmadan “latest” imajı çekilir; bu da her çekişte başka bir imajı gösterebilir."
+  },
+  "changes": {
+    "title": "Neler değişecek",
+    "none": "En az bir imajı değiştirin.",
+    "line": "{{container}}: {{from}} → {{to}}",
+    "lineInit": "{{container}} (başlatma kapsayıcısı): {{from}} → {{to}}"
+  },
+  "confirm": "İmaj ayarla",
+  "previewAndSet": "Önizle ve imaj ayarla…",
+  "owned": {
+    "intro": "Bu Pod'u {{kind}} {{name}} yönetiyor: denetleyici Pod'u değiştirir veya değişen imajı yok sayar. İmajı bunun yerine {{kind}} içinde ayarlayın.",
+    "open": "{{kind}} {{name}} aç",
+    "looking": "Sahip aranıyor…"
+  },
+  "mirror": "Bu statik bir Pod: kubelet onu düğümündeki bir manifest dosyasından çalıştırır. İmajı o dosyada değiştirin."
+}

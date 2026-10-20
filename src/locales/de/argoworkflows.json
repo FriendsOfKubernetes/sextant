@@ -1,0 +1,66 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} Workflow ist kürzlich fehlgeschlagen",
+  "badge_other": "{{count}} Workflows sind kürzlich fehlgeschlagen",
+  "columns": {
+    "phase": "Phase",
+    "progress": "Fortschritt",
+    "duration": "Dauer",
+    "failedStep": "Fehlgeschlagener Schritt",
+    "schedule": "Zeitplan",
+    "suspended": "Angehalten",
+    "active": "Aktiv",
+    "lastScheduled": "Zuletzt geplant",
+    "entrypoint": "Einstiegspunkt",
+    "templates": "Vorlagen"
+  },
+  "yes": "Ja",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Phase",
+    "progress": "Fortschritt",
+    "startedAt": "Gestartet",
+    "finishedAt": "Beendet",
+    "duration": "Dauer",
+    "message": "Meldung",
+    "failedStep": "Fehlgeschlagener Schritt",
+    "failedMessage": "Seine Meldung",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Zeitpläne",
+    "timezone": "Zeitzone",
+    "concurrencyPolicy": "Parallelitätsrichtlinie",
+    "suspended": "Angehalten",
+    "lastScheduled": "Zuletzt geplant",
+    "active": "Aktive Workflows",
+    "succeeded": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "entrypoint": "Einstiegspunkt",
+    "templates": "Vorlagen"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Schritte",
+    "cron": "Zeitplan",
+    "template": "Vorlage"
+  },
+  "tree": {
+    "count_one": "{{count}} Schritt",
+    "count_other": "{{count}} Schritte",
+    "capped": "Nur die ersten {{shown}} von {{count}} Schritten werden angezeigt.",
+    "expandFailed": "Fehlgeschlagenen Schritt zeigen",
+    "collapseAll": "Alle einklappen",
+    "expand": "{{name}} aufklappen",
+    "collapse": "{{name}} einklappen",
+    "logs": "Logs",
+    "logsOf": "Logs von {{name}}",
+    "offloaded": "Der Controller speichert die Schritte dieses Workflows in seiner Datenbank (offloaded node status): Sie sind nicht im Objekt und können hier nicht angezeigt werden.",
+    "compressed": "Der Controller hat die Schritte dieses Workflows komprimiert gespeichert: Sie können hier nicht angezeigt werden.",
+    "none": "Noch keine Schritte."
+  }
+}

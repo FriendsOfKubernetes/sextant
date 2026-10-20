@@ -1,0 +1,64 @@
+{
+  "sidebar": {
+    "workflows": "Workflow",
+    "cronWorkflows": "CronWorkflow",
+    "workflowTemplates": "WorkflowTemplate",
+    "clusterWorkflowTemplates": "ClusterWorkflowTemplate"
+  },
+  "badge_other": "最近 {{count}} 件の Workflow が失敗しました",
+  "columns": {
+    "phase": "フェーズ",
+    "progress": "進捗",
+    "duration": "所要時間",
+    "failedStep": "失敗したステップ",
+    "schedule": "スケジュール",
+    "suspended": "停止中",
+    "active": "実行中",
+    "lastScheduled": "前回の実行",
+    "entrypoint": "エントリーポイント",
+    "templates": "テンプレート"
+  },
+  "yes": "はい",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "フェーズ",
+    "progress": "進捗",
+    "startedAt": "開始",
+    "finishedAt": "終了",
+    "duration": "所要時間",
+    "message": "メッセージ",
+    "failedStep": "失敗したステップ",
+    "failedMessage": "そのメッセージ",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "スケジュール",
+    "timezone": "タイムゾーン",
+    "concurrencyPolicy": "同時実行ポリシー",
+    "suspended": "停止中",
+    "lastScheduled": "前回の実行",
+    "active": "実行中の Workflow",
+    "succeeded": "成功",
+    "failed": "失敗",
+    "entrypoint": "エントリーポイント",
+    "templates": "テンプレート"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "ステップ",
+    "cron": "スケジュール",
+    "template": "テンプレート"
+  },
+  "tree": {
+    "count_other": "{{count}} ステップ",
+    "capped": "{{count}} ステップのうち最初の {{shown}} ステップのみを表示しています。",
+    "expandFailed": "失敗したステップを表示",
+    "collapseAll": "すべて折りたたむ",
+    "expand": "{{name}} を展開",
+    "collapse": "{{name}} を折りたたむ",
+    "logs": "ログ",
+    "logsOf": "{{name}} のログ",
+    "offloaded": "コントローラーはこの Workflow のステップを自身のデータベースに保存しています (offloaded node status)。オブジェクトに含まれていないため、ここには表示できません。",
+    "compressed": "コントローラーはこの Workflow のステップを圧縮して保存しました。ここには表示できません。",
+    "none": "まだステップはありません。"
+  }
+}

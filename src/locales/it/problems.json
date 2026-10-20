@@ -25,8 +25,17 @@
     "certificates": "Certificati",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Service mesh",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Policy Kyverno",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "Sicurezza",
     "practices": "Buone pratiche",
     "credentials": "Credenziali",
@@ -34,6 +43,7 @@
     "events": "Eventi di avviso"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "Container {{container}}",
     "restarts_one": "Il container {{container}} è stato riavviato ({{count}} riavvio)",
     "restarts_many": "Il container {{container}} è stato riavviato ({{count}} di riavvii)",
@@ -53,8 +63,15 @@
     "meshMissingGateway": "Associato al gateway {{gateway}}, che non esiste.",
     "meshTlsConflict": "Imposta la modalità TLS {{mode}} verso {{host}}, i cui carichi di lavoro accettano solo l'mTLS di Istio (STRICT): le chiamate falliscono. Usare ISTIO_MUTUAL.",
     "meshConflictingVirtualService": "L'host {{host}} su {{gateway}} è già occupato dal servizio virtuale più vecchio {{other}}: le route di questo non vengono raggiunte.",
-    "meshInvalidVirtualService": "Ha l'host * pur essendo associato ai sidecar (mesh): Istio lo rifiuta, quindi nessuna delle sue route viene usata."
+    "meshInvalidVirtualService": "Ha l'host * pur essendo associato ai sidecar (mesh): Istio lo rifiuta, quindi nessuna delle sue route viene usata.",
+    "policyFailures_one": "{{count}} regola di policy non rispettata: {{policies}}",
+    "policyFailures_many": "{{count}} di regole di policy non rispettate: {{policies}}",
+    "policyFailures_other": "{{count}} regole di policy non rispettate: {{policies}}",
+    "serviceMonitorSelectsNothing": "Non seleziona alcun Service nei namespace: {{namespaces}}",
+    "podMonitorSelectsNothing": "Non seleziona alcun Pod nei namespace: {{namespaces}}",
+    "monitorNotPickedUp": "Nessun Prometheus lo raccoglie con i suoi selector"
   },
   "showDisk": "Disco quasi pieno",
-  "showPractices": "Rilievi sulle buone pratiche"
+  "showPractices": "Rilievi sulle buone pratiche",
+  "showPolicies": "Violazioni delle policy Kyverno"
 }

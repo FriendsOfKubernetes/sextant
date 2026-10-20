@@ -1,0 +1,217 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "Workflow",
+  "metadata": {
+    "name": "dag-diamond-x7k2p",
+    "generateName": "dag-diamond-",
+    "namespace": "argo",
+    "uid": "wf-uid-1",
+    "creationTimestamp": "2026-10-20T09:00:00Z",
+    "labels": {
+      "workflows.argoproj.io/completed": "true",
+      "workflows.argoproj.io/phase": "Failed",
+      "workflows.argoproj.io/cron-workflow": "nightly-diamond"
+    },
+    "annotations": {
+      "workflows.argoproj.io/pod-name-format": "v2"
+    }
+  },
+  "spec": {
+    "entrypoint": "diamond",
+    "templates": [
+      {
+        "name": "echo",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message"
+            }
+          ]
+        },
+        "container": {
+          "image": "alpine:3.7",
+          "command": [
+            "echo",
+            "{{inputs.parameters.message}}"
+          ]
+        }
+      },
+      {
+        "name": "diamond",
+        "dag": {
+          "tasks": [
+            {
+              "name": "A",
+              "template": "echo",
+              "arguments": {
+                "parameters": [
+                  {
+                    "name": "message",
+                    "value": "A"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "B",
+              "dependencies": [
+                "A"
+              ],
+              "template": "echo",
+              "arguments": {
+                "parameters": [
+                  {
+                    "name": "message",
+                    "value": "B"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "C",
+              "dependencies": [
+                "A"
+              ],
+              "template": "echo",
+              "arguments": {
+                "parameters": [
+                  {
+                    "name": "message",
+                    "value": "C"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "D",
+              "dependencies": [
+                "B",
+                "C"
+              ],
+              "template": "echo",
+              "arguments": {
+                "parameters": [
+                  {
+                    "name": "message",
+                    "value": "D"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "status": {
+    "phase": "Failed",
+    "startedAt": "2026-10-20T09:00:00Z",
+    "finishedAt": "2026-10-20T09:00:41Z",
+    "progress": "2/3",
+    "message": "child 'dag-diamond-x7k2p-2532386132' failed",
+    "nodes": {
+      "dag-diamond-x7k2p": {
+        "id": "dag-diamond-x7k2p",
+        "name": "dag-diamond-x7k2p",
+        "displayName": "dag-diamond-x7k2p",
+        "type": "DAG",
+        "templateName": "diamond",
+        "templateScope": "local/dag-diamond-x7k2p",
+        "phase": "Failed",
+        "message": "child 'dag-diamond-x7k2p-2532386132' failed",
+        "startedAt": "2026-10-20T09:00:00Z",
+        "finishedAt": "2026-10-20T09:00:41Z",
+        "progress": "2/3",
+        "children": [
+          "dag-diamond-x7k2p-2565941370"
+        ],
+        "outboundNodes": [
+          "dag-diamond-x7k2p-2515608513"
+        ]
+      },
+      "dag-diamond-x7k2p-2565941370": {
+        "id": "dag-diamond-x7k2p-2565941370",
+        "name": "dag-diamond-x7k2p.A",
+        "displayName": "A",
+        "type": "Pod",
+        "templateName": "echo",
+        "templateScope": "local/dag-diamond-x7k2p",
+        "phase": "Succeeded",
+        "boundaryID": "dag-diamond-x7k2p",
+        "startedAt": "2026-10-20T09:00:00Z",
+        "finishedAt": "2026-10-20T09:00:10Z",
+        "progress": "1/1",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "A"
+            }
+          ]
+        },
+        "hostNodeName": "kind-worker",
+        "children": [
+          "dag-diamond-x7k2p-2549163751",
+          "dag-diamond-x7k2p-2532386132"
+        ]
+      },
+      "dag-diamond-x7k2p-2549163751": {
+        "id": "dag-diamond-x7k2p-2549163751",
+        "name": "dag-diamond-x7k2p.B",
+        "displayName": "B",
+        "type": "Pod",
+        "templateName": "echo",
+        "templateScope": "local/dag-diamond-x7k2p",
+        "phase": "Succeeded",
+        "boundaryID": "dag-diamond-x7k2p",
+        "startedAt": "2026-10-20T09:00:11Z",
+        "finishedAt": "2026-10-20T09:00:20Z",
+        "progress": "1/1",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "B"
+            }
+          ]
+        },
+        "hostNodeName": "kind-worker",
+        "children": []
+      },
+      "dag-diamond-x7k2p-2532386132": {
+        "id": "dag-diamond-x7k2p-2532386132",
+        "name": "dag-diamond-x7k2p.C",
+        "displayName": "C",
+        "type": "Pod",
+        "templateName": "echo",
+        "templateScope": "local/dag-diamond-x7k2p",
+        "phase": "Failed",
+        "boundaryID": "dag-diamond-x7k2p",
+        "startedAt": "2026-10-20T09:00:11Z",
+        "finishedAt": "2026-10-20T09:00:40Z",
+        "progress": "0/1",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "C"
+            }
+          ]
+        },
+        "hostNodeName": "kind-worker",
+        "children": [],
+        "message": "Error (exit code 1)"
+      }
+    },
+    "conditions": [
+      {
+        "type": "PodRunning",
+        "status": "False"
+      },
+      {
+        "type": "Completed",
+        "status": "True"
+      }
+    ]
+  }
+}

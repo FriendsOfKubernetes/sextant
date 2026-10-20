@@ -1,0 +1,64 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_other": "최근 workflow {{count}}개가 실패했습니다",
+  "columns": {
+    "phase": "단계 상태",
+    "progress": "진행률",
+    "duration": "소요 시간",
+    "failedStep": "실패한 단계",
+    "schedule": "일정",
+    "suspended": "일시 중단됨",
+    "active": "활성",
+    "lastScheduled": "마지막 실행",
+    "entrypoint": "진입점",
+    "templates": "템플릿"
+  },
+  "yes": "예",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "단계 상태",
+    "progress": "진행률",
+    "startedAt": "시작",
+    "finishedAt": "종료",
+    "duration": "소요 시간",
+    "message": "메시지",
+    "failedStep": "실패한 단계",
+    "failedMessage": "해당 메시지",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "일정",
+    "timezone": "시간대",
+    "concurrencyPolicy": "동시 실행 정책",
+    "suspended": "일시 중단됨",
+    "lastScheduled": "마지막 실행",
+    "active": "활성 workflow",
+    "succeeded": "성공",
+    "failed": "실패",
+    "entrypoint": "진입점",
+    "templates": "템플릿"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "단계",
+    "cron": "일정",
+    "template": "템플릿"
+  },
+  "tree": {
+    "count_other": "단계 {{count}}개",
+    "capped": "단계 {{count}}개 중 처음 {{shown}}개만 표시됩니다.",
+    "expandFailed": "실패한 단계 표시",
+    "collapseAll": "모두 접기",
+    "expand": "{{name}} 펼치기",
+    "collapse": "{{name}} 접기",
+    "logs": "로그",
+    "logsOf": "{{name}} 로그",
+    "offloaded": "컨트롤러가 이 workflow의 단계를 자체 데이터베이스에 보관합니다(offloaded node status). 객체에 없으므로 여기에 표시할 수 없습니다.",
+    "compressed": "컨트롤러가 이 workflow의 단계를 압축하여 저장했습니다. 여기에 표시할 수 없습니다.",
+    "none": "아직 단계가 없습니다."
+  }
+}

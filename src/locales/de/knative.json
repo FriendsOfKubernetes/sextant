@@ -1,0 +1,78 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_one": "{{count}} Knative-Objekt braucht Aufmerksamkeit",
+  "badge_other": "{{count}} Knative-Objekte brauchen Aufmerksamkeit",
+  "health": {
+    "ready": "Bereit",
+    "progressing": "In Arbeit",
+    "failed": "Fehlgeschlagen",
+    "unknown": "Unbekannt"
+  },
+  "latest": "neueste",
+  "unlimited": "Unbegrenzt",
+  "replicas": "{{actual}} von {{desired}}",
+  "timeoutSeconds": "{{seconds}} s",
+  "columns": {
+    "status": "Status",
+    "reason": "Grund",
+    "url": "URL",
+    "latestCreated": "Zuletzt erstellt",
+    "latestReady": "Zuletzt bereit",
+    "traffic": "Traffic",
+    "configuration": "Configuration",
+    "generation": "Generation",
+    "replicas": "Replikate",
+    "target": "Ziel"
+  },
+  "fields": {
+    "status": "Status",
+    "url": "URL",
+    "address": "Adresse im Cluster",
+    "latestCreated": "Zuletzt erstellte Revision",
+    "latestReady": "Zuletzt bereite Revision",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "Generation",
+    "replicas": "Replikate (tatsächlich von gewünscht)",
+    "routingState": "Routing-Status",
+    "images": "Images",
+    "concurrency": "Gleichzeitige Anfragen pro Container",
+    "timeout": "Anfrage-Timeout",
+    "target": "Zeigt auf"
+  },
+  "traffic": {
+    "title": "Traffic",
+    "askedTitle": "Traffic (angefordert, noch nicht wirksam)",
+    "revision": "Revision",
+    "tag": "Tag",
+    "share": "Anteil",
+    "latest": "Folgt der neuesten",
+    "url": "URL",
+    "latestReady": "Zuletzt bereite Revision ({{revision}})",
+    "percent": "{{percent}} %",
+    "followsLatest": "Ja"
+  },
+  "explain": {
+    "readyAt": "Bereit: erreichbar unter {{url}}.",
+    "ready": "Bereit.",
+    "progressing": "Noch nicht bereit: Knative rollt die neueste Revision oder ihre Route noch aus.",
+    "revisionFailedTrafficStays": "Die neueste Revision {{revision}} ist fehlgeschlagen ({{reason}}). Der Traffic bleibt bei {{ready}}, der letzten Revision, die bereit wurde.",
+    "revisionFailedNoneReady": "Die neueste Revision {{revision}} ist fehlgeschlagen ({{reason}}), und noch keine Revision wurde bereit: Niemand beantwortet Anfragen.",
+    "routeFailed": "Die Route ist nicht bereit ({{reason}}): Anfragen erreichen die Revisionen möglicherweise nicht so, wie die Traffic-Aufteilung es verlangt.",
+    "domainNotClaimed": "Der Domainname ist nicht beansprucht ({{reason}}): Möglicherweise nutzt ihn bereits ein anderes Mapping.",
+    "certificateFailed": "Das TLS-Zertifikat konnte nicht bereitgestellt werden ({{reason}}).",
+    "notReady": "Nicht bereit ({{reason}}).",
+    "revisionReady": "Bereit, Anfragen zu beantworten.",
+    "revisionScaledToZero": "Bereit und auf null skaliert: Gerade erreicht sie kein Traffic, daher laufen keine Pods. Die erste Anfrage startet einen.",
+    "revisionProgressing": "Startet: Die Pods der Revision sind noch nicht bereit.",
+    "revisionContainerUnhealthy": "Der Container startet nicht oder besteht seine Health Checks nicht ({{reason}}).",
+    "revisionResourcesUnavailable": "Knative konnte die Ressourcen nicht beschaffen, die die Revision braucht ({{reason}}), etwa ihr Image oder ihre Pods.",
+    "revisionFailed": "Die Revision ist fehlgeschlagen ({{reason}})."
+  }
+}

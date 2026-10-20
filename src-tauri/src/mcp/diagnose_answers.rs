@@ -182,7 +182,7 @@ fn verdict_word(word: &str) -> String {
 
 /// The problem categories of the problems screen, in its order (`PROBLEM_CATEGORIES` in
 /// `src/features/problems/model.ts`; a test keeps them equal).
-pub const PROBLEM_CATEGORIES: [&str; 15] = [
+pub const PROBLEM_CATEGORIES: [&str; 24] = [
     "nodes",
     "pods",
     "workloads",
@@ -191,8 +191,17 @@ pub const PROBLEM_CATEGORIES: [&str; 15] = [
     "certificates",
     "flux",
     "argocd",
+    "rollouts",
+    "workflows",
     "gateway",
     "mesh",
+    "knative",
+    "crossplane",
+    "policies",
+    "externalSecrets",
+    "cnpg",
+    "strimzi",
+    "prometheusOperator",
     "security",
     "practices",
     "credentials",
@@ -200,9 +209,24 @@ pub const PROBLEM_CATEGORIES: [&str; 15] = [
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 4] = ["security", "credentials", "disk", "practices"];
+pub const OPT_IN_CATEGORIES: [&str; 5] =
+    ["security", "credentials", "disk", "practices", "policies"];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
-pub const NEVER_FOR_AGENTS: [&str; 1] = ["credentials"];
+/// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
+/// So are External Secrets, CloudNativePG, Strimzi and Prometheus Operator problems (#213).
+/// And Argo Rollouts and Argo Workflows problems (#213, ADR-0097).
+pub const NEVER_FOR_AGENTS: [&str; 10] = [
+    "rollouts",
+    "workflows",
+    "credentials",
+    "knative",
+    "crossplane",
+    "policies",
+    "externalSecrets",
+    "cnpg",
+    "strimzi",
+    "prometheusOperator",
+];
 
 /// Whether an agent may get problems of `category` now (`enabled`: `notifications.enabledCategories`).
 pub fn category_for_agents(category: &str, enabled: &[String]) -> bool {

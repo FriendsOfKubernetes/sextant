@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_one": "{{count}} объект Knative требует внимания",
+  "badge_few": "{{count}} объекта Knative требуют внимания",
+  "badge_many": "{{count}} объектов Knative требуют внимания",
+  "badge_other": "{{count}} объекта Knative требуют внимания",
+  "health": {
+    "ready": "Готов",
+    "progressing": "Выполняется",
+    "failed": "Сбой",
+    "unknown": "Неизвестно"
+  },
+  "latest": "последняя",
+  "unlimited": "Без ограничений",
+  "replicas": "{{actual}} из {{desired}}",
+  "timeoutSeconds": "{{seconds}} с",
+  "columns": {
+    "status": "Состояние",
+    "reason": "Причина",
+    "url": "URL",
+    "latestCreated": "Последняя созданная",
+    "latestReady": "Последняя готовая",
+    "traffic": "Трафик",
+    "configuration": "Configuration",
+    "generation": "Поколение",
+    "replicas": "Реплики",
+    "target": "Цель"
+  },
+  "fields": {
+    "status": "Состояние",
+    "url": "URL",
+    "address": "Адрес в кластере",
+    "latestCreated": "Последняя созданная ревизия",
+    "latestReady": "Последняя готовая ревизия",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "Поколение",
+    "replicas": "Реплики (фактически из желаемых)",
+    "routingState": "Состояние маршрутизации",
+    "images": "Образы",
+    "concurrency": "Одновременных запросов на контейнер",
+    "timeout": "Тайм-аут запроса",
+    "target": "Указывает на"
+  },
+  "traffic": {
+    "title": "Трафик",
+    "askedTitle": "Трафик (запрошен, еще не действует)",
+    "revision": "Ревизия",
+    "tag": "Тег",
+    "share": "Доля",
+    "latest": "Следует за последней",
+    "url": "URL",
+    "latestReady": "Последняя готовая ревизия ({{revision}})",
+    "percent": "{{percent}}%",
+    "followsLatest": "Да"
+  },
+  "explain": {
+    "readyAt": "Готов: обслуживает запросы по адресу {{url}}.",
+    "ready": "Готов.",
+    "progressing": "Еще не готов: Knative еще развертывает последнюю ревизию или ее маршрут.",
+    "revisionFailedTrafficStays": "Последняя ревизия {{revision}} завершилась сбоем ({{reason}}). Трафик остается на {{ready}} — последней ревизии, которая стала готовой.",
+    "revisionFailedNoneReady": "Последняя ревизия {{revision}} завершилась сбоем ({{reason}}), и ни одна ревизия еще не стала готовой: запросы никто не обслуживает.",
+    "routeFailed": "Маршрут не готов ({{reason}}): запросы могут не доходить до ревизий так, как задано распределением трафика.",
+    "domainNotClaimed": "Доменное имя не закреплено ({{reason}}): возможно, его уже использует другое сопоставление.",
+    "certificateFailed": "Не удалось выпустить TLS-сертификат ({{reason}}).",
+    "notReady": "Не готов ({{reason}}).",
+    "revisionReady": "Готова обслуживать запросы.",
+    "revisionScaledToZero": "Готова и масштабирована до нуля: трафик к ней сейчас не идет, поэтому Pod не запущены. Первый запрос запустит Pod.",
+    "revisionProgressing": "Запускается: Pod ревизии еще не готовы.",
+    "revisionContainerUnhealthy": "Контейнер не запускается или не проходит проверки работоспособности ({{reason}}).",
+    "revisionResourcesUnavailable": "Knative не смог получить ресурсы, нужные ревизии ({{reason}}), например ее образ или Pod.",
+    "revisionFailed": "Ревизия завершилась сбоем ({{reason}})."
+  }
+}

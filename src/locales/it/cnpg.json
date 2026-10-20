@@ -1,0 +1,91 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} oggetto richiede attenzione",
+  "badge_many": "{{count}} di oggetti richiedono attenzione",
+  "badge_other": "{{count}} oggetti richiedono attenzione",
+  "state": {
+    "healthy": "Integro",
+    "switchover": "Switchover",
+    "failover": "Failover",
+    "progressing": "In corso",
+    "unhealthy": "Non integro"
+  },
+  "backupState": {
+    "completed": "Completato",
+    "failed": "Non riuscito",
+    "running": "In esecuzione",
+    "pending": "In attesa"
+  },
+  "role": {
+    "primary": "Primaria",
+    "replica": "Replica"
+  },
+  "columns": {
+    "status": "Stato",
+    "instances": "Istanze",
+    "primary": "Primaria",
+    "phase": "Fase",
+    "cluster": "Cluster",
+    "method": "Metodo",
+    "started": "Avviato",
+    "schedule": "Pianificazione",
+    "suspended": "Sospeso",
+    "lastBackup": "Ultimo backup",
+    "type": "Tipo",
+    "poolMode": "Modalità pool"
+  },
+  "fields": {
+    "status": "Stato",
+    "phase": "Fase",
+    "instances": "Istanze",
+    "primary": "Primaria attuale",
+    "targetPrimary": "Primaria di destinazione",
+    "image": "Immagine",
+    "storage": "Archiviazione",
+    "archiving": "Archiviazione continua",
+    "lastBackup": "Ultimo backup",
+    "lastSuccessfulBackup": "Ultimo backup riuscito",
+    "lastFailedBackup": "Ultimo backup non riuscito",
+    "firstRecoverabilityPoint": "Ripristinabile da",
+    "cluster": "Cluster",
+    "method": "Metodo",
+    "target": "Destinazione",
+    "startedAt": "Avviato",
+    "stoppedAt": "Fermato",
+    "backupId": "ID del backup",
+    "destination": "Percorso di destinazione",
+    "schedule": "Pianificazione",
+    "suspended": "Sospeso",
+    "lastScheduleTime": "Ultima esecuzione",
+    "nextScheduleTime": "Prossima esecuzione",
+    "type": "Tipo",
+    "poolerInstances": "Istanze",
+    "poolMode": "Modalità pool"
+  },
+  "instancesReady": "{{ready}} di {{total}} pronte",
+  "switchover": "La primaria sta passando da {{from}} a {{to}}.",
+  "failover": "Failover: {{primary}} non c'è più e si sta scegliendo una nuova primaria.",
+  "replicaCluster": "Un cluster replica: la sua primaria segue un altro cluster.",
+  "members": {
+    "title": "Istanze",
+    "instance": "Istanza",
+    "role": "Ruolo",
+    "health": "Integrità",
+    "timeline": "Timeline"
+  },
+  "backups": "Backup",
+  "noBackups": "Per questo cluster non è configurato alcun backup.",
+  "archivingOk": "Funziona",
+  "archivingFailing": "Non funziona",
+  "backupOk": "Riuscito",
+  "backupFailing": "Non riuscito",
+  "unknown": "Sconosciuto",
+  "error": "Errore",
+  "yes": "Sì",
+  "no": "No"
+}

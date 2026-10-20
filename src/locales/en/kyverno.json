@@ -1,0 +1,99 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} object fails policy rules",
+  "badge_other": "{{count}} objects fail policy rules",
+  "yes": "Yes",
+  "no": "No",
+  "ready": {
+    "True": "Ready",
+    "False": "Not ready",
+    "Unknown": "Pending"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Mixed"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: a request that breaks a rule is refused.",
+    "Audit": "Audit: a request that breaks a rule is let through, and the failure goes into a report.",
+    "Mixed": "Some rules refuse a request that breaks them (Enforce); the others only record the failure in a report (Audit)."
+  },
+  "explain": {
+    "ready": "Ready: Kyverno applies this policy.",
+    "notReady": "Not ready: Kyverno does not apply this policy until the problem below is fixed.",
+    "pending": "Kyverno has not finished loading this policy yet."
+  },
+  "columns": {
+    "ready": "Ready",
+    "mode": "Mode",
+    "background": "Background",
+    "rules": "Rules",
+    "message": "Message",
+    "object": "Object",
+    "pass": "Pass",
+    "fail": "Fail",
+    "warn": "Warn",
+    "error": "Error",
+    "skip": "Skip"
+  },
+  "fields": {
+    "ready": "Ready",
+    "mode": "Mode",
+    "background": "Background scans",
+    "object": "Object"
+  },
+  "rules": {
+    "name": "Rule",
+    "type": "Type",
+    "mode": "Mode",
+    "kinds": "Kinds"
+  },
+  "ruleType": {
+    "validate": "Validate",
+    "mutate": "Mutate",
+    "generate": "Generate",
+    "verifyImages": "Verify images"
+  },
+  "result": {
+    "pass": "Pass",
+    "fail": "Fail",
+    "warn": "Warn",
+    "error": "Error",
+    "skip": "Skip"
+  },
+  "summary": {
+    "pass": "Passed: {{count}}",
+    "fail": "Failed: {{count}}",
+    "warn": "Warnings: {{count}}",
+    "error": "Errors: {{count}}",
+    "skip": "Skipped: {{count}}"
+  },
+  "results": {
+    "object": "Object",
+    "policy": "Policy",
+    "rule": "Rule",
+    "result": "Result",
+    "message": "Message",
+    "more": "Not shown: {{count}}"
+  },
+  "policySummary": {
+    "title": "Results in reports",
+    "loading": "Reading the reports…",
+    "none": "No report holds results of this policy yet.",
+    "unlabelled": "The policy's name is too long for the label Kyverno puts on its reports, so its results cannot be summed up here.",
+    "capped": "Only part of the reports was read: the counts are incomplete ({{count}} results counted)."
+  },
+  "objectResults": {
+    "title": "Policy results",
+    "failing": "Failing policy rules: {{count}} of {{total}} checked.",
+    "passing": "No policy rule fails ({{count}} checked)."
+  }
+}

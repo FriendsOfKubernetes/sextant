@@ -1,0 +1,47 @@
+{
+  "action": "Imposta immagine…",
+  "title": "Immagini di {{name}}",
+  "intro": {
+    "Deployment": "I pod vengono sostituiti come per qualsiasi aggiornamento. La modifica compare nella cronologia del rollout e può essere annullata.",
+    "StatefulSet": "I pod vengono sostituiti secondo la strategia di aggiornamento dello StatefulSet. La modifica compare nella cronologia del rollout e può essere annullata.",
+    "DaemonSet": "I pod vengono sostituiti secondo la strategia di aggiornamento del DaemonSet. La modifica compare nella cronologia del rollout e può essere annullata.",
+    "CronJob": "Solo i Job avviati dopo la modifica usano le nuove immagini; i Job in esecuzione mantengono le loro.",
+    "Pod": "In un Pod in esecuzione Kubernetes consente di modificare solo le immagini dei container. Il kubelet riavvia ogni container modificato con la nuova immagine."
+  },
+  "columns": {
+    "container": "Container",
+    "current": "Immagine attuale",
+    "image": "Nuova immagine"
+  },
+  "initContainer": "container di inizializzazione",
+  "imageLabel": "Nuova immagine del container {{name}}",
+  "none": "Questo oggetto non ha container.",
+  "invalid": {
+    "empty": "Inserisci un'immagine.",
+    "spaces": "Un riferimento a un'immagine non può contenere spazi.",
+    "tooLong": "Il nome dell'immagine supera i 255 caratteri.",
+    "uppercase": "Il percorso del repository deve essere in minuscolo.",
+    "name": "Il percorso del repository non è valido: usa lettere minuscole e cifre, separate da «.», «_», «__», «-» o «/».",
+    "host": "L'host del registry non è valido.",
+    "tag": "Il tag non è valido: fino a 128 lettere, cifre, «_», «.» e «-», senza iniziare con «.» o «-».",
+    "digest": "Il digest non è valido: scrivi sha256: seguito da 64 cifre esadecimali."
+  },
+  "warning": {
+    "latest": "Il tag «latest» può indicare un'immagine diversa a ogni pull, quindi i pod possono eseguire versioni diverse.",
+    "noTag": "Senza tag viene scaricata l'immagine «latest», che può indicare un'immagine diversa a ogni pull."
+  },
+  "changes": {
+    "title": "Cosa cambia",
+    "none": "Modifica almeno un'immagine.",
+    "line": "{{container}}: {{from}} → {{to}}",
+    "lineInit": "{{container}} (container di inizializzazione): {{from}} → {{to}}"
+  },
+  "confirm": "Imposta immagine",
+  "previewAndSet": "Verifica e imposta immagine…",
+  "owned": {
+    "intro": "Questo Pod è gestito da {{kind}} {{name}}: il controller sostituirebbe il Pod o ignorerebbe un'immagine modificata. Imposta invece l'immagine nel {{kind}}.",
+    "open": "Apri {{kind}} {{name}}",
+    "looking": "Ricerca del proprietario…"
+  },
+  "mirror": "Questo è un Pod statico: il kubelet lo esegue da un file manifest sul suo nodo. Modifica l'immagine in quel file."
+}

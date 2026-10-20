@@ -1,0 +1,77 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_other": "{{count}} 件の Knative オブジェクトに対応が必要です",
+  "health": {
+    "ready": "準備完了",
+    "progressing": "進行中",
+    "failed": "失敗",
+    "unknown": "不明"
+  },
+  "latest": "最新",
+  "unlimited": "無制限",
+  "replicas": "{{actual}} / {{desired}}",
+  "timeoutSeconds": "{{seconds}} 秒",
+  "columns": {
+    "status": "状態",
+    "reason": "理由",
+    "url": "URL",
+    "latestCreated": "最新の作成",
+    "latestReady": "最新の準備完了",
+    "traffic": "トラフィック",
+    "configuration": "Configuration",
+    "generation": "世代",
+    "replicas": "レプリカ",
+    "target": "対象"
+  },
+  "fields": {
+    "status": "状態",
+    "url": "URL",
+    "address": "クラスター内のアドレス",
+    "latestCreated": "最新の作成済みリビジョン",
+    "latestReady": "最新の準備完了リビジョン",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "世代",
+    "replicas": "レプリカ（実際 / 希望）",
+    "routingState": "ルーティング状態",
+    "images": "イメージ",
+    "concurrency": "コンテナーあたりの同時リクエスト数",
+    "timeout": "リクエストのタイムアウト",
+    "target": "参照先"
+  },
+  "traffic": {
+    "title": "トラフィック",
+    "askedTitle": "トラフィック（要求済み、未反映）",
+    "revision": "リビジョン",
+    "tag": "タグ",
+    "share": "割合",
+    "latest": "最新に追従",
+    "url": "URL",
+    "latestReady": "最新の準備完了リビジョン（{{revision}}）",
+    "percent": "{{percent}}%",
+    "followsLatest": "はい"
+  },
+  "explain": {
+    "readyAt": "準備完了: {{url}} で応答しています。",
+    "ready": "準備完了。",
+    "progressing": "まだ準備できていません。Knative が最新のリビジョンまたはそのルートをロールアウト中です。",
+    "revisionFailedTrafficStays": "最新のリビジョン {{revision}} が失敗しました（{{reason}}）。トラフィックは最後に準備完了になったリビジョン {{ready}} に残っています。",
+    "revisionFailedNoneReady": "最新のリビジョン {{revision}} が失敗しました（{{reason}}）。準備完了になったリビジョンはまだなく、リクエストに応答するものがありません。",
+    "routeFailed": "ルートの準備ができていません（{{reason}}）。リクエストがトラフィック配分どおりにリビジョンへ届かない可能性があります。",
+    "domainNotClaimed": "ドメイン名が確保されていません（{{reason}}）。別のマッピングがすでに使用している可能性があります。",
+    "certificateFailed": "TLS 証明書を発行できませんでした（{{reason}}）。",
+    "notReady": "準備できていません（{{reason}}）。",
+    "revisionReady": "リクエストに応答できます。",
+    "revisionScaledToZero": "準備完了で、ゼロにスケールされています。現在トラフィックが来ていないため Pod は動いていません。最初のリクエストで Pod が起動します。",
+    "revisionProgressing": "起動中: リビジョンの Pod がまだ準備できていません。",
+    "revisionContainerUnhealthy": "コンテナーが起動しないか、ヘルスチェックに失敗しています（{{reason}}）。",
+    "revisionResourcesUnavailable": "Knative はリビジョンに必要なリソース（イメージや Pod など）を取得できませんでした（{{reason}}）。",
+    "revisionFailed": "リビジョンが失敗しました（{{reason}}）。"
+  }
+}

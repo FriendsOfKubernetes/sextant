@@ -1,0 +1,90 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "state": {
+    "healthy": "Healthy",
+    "switchover": "Switchover",
+    "failover": "Failing over",
+    "progressing": "Progressing",
+    "unhealthy": "Unhealthy"
+  },
+  "backupState": {
+    "completed": "Completed",
+    "failed": "Failed",
+    "running": "Running",
+    "pending": "Pending"
+  },
+  "role": {
+    "primary": "Primary",
+    "replica": "Replica"
+  },
+  "columns": {
+    "status": "Status",
+    "instances": "Instances",
+    "primary": "Primary",
+    "phase": "Phase",
+    "cluster": "Cluster",
+    "method": "Method",
+    "started": "Started",
+    "schedule": "Schedule",
+    "suspended": "Suspended",
+    "lastBackup": "Last backup",
+    "type": "Type",
+    "poolMode": "Pool mode"
+  },
+  "fields": {
+    "status": "Status",
+    "phase": "Phase",
+    "instances": "Instances",
+    "primary": "Current primary",
+    "targetPrimary": "Target primary",
+    "image": "Image",
+    "storage": "Storage",
+    "archiving": "Continuous archiving",
+    "lastBackup": "Last backup",
+    "lastSuccessfulBackup": "Last successful backup",
+    "lastFailedBackup": "Last failed backup",
+    "firstRecoverabilityPoint": "Recoverable from",
+    "cluster": "Cluster",
+    "method": "Method",
+    "target": "Target",
+    "startedAt": "Started",
+    "stoppedAt": "Stopped",
+    "backupId": "Backup ID",
+    "destination": "Destination",
+    "schedule": "Schedule",
+    "suspended": "Suspended",
+    "lastScheduleTime": "Last run",
+    "nextScheduleTime": "Next run",
+    "type": "Type",
+    "poolerInstances": "Instances",
+    "poolMode": "Pool mode"
+  },
+  "instancesReady": "{{ready}} of {{total}} ready",
+  "switchover": "The primary is moving from {{from}} to {{to}}.",
+  "failover": "Failing over: {{primary}} is gone and a new primary is being chosen.",
+  "replicaCluster": "A replica cluster: its primary follows another cluster.",
+  "members": {
+    "title": "Instances",
+    "instance": "Instance",
+    "role": "Role",
+    "health": "Health",
+    "timeline": "Timeline"
+  },
+  "backups": "Backups",
+  "noBackups": "No backup is set up for this cluster.",
+  "archivingOk": "Working",
+  "archivingFailing": "Failing",
+  "backupOk": "Succeeded",
+  "backupFailing": "Failed",
+  "unknown": "Unknown",
+  "error": "Error",
+  "yes": "Yes",
+  "no": "No"
+}

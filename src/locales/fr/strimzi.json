@@ -1,0 +1,82 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} objet requiert votre attention",
+  "badge_many": "{{count}} d'objets requièrent votre attention",
+  "badge_other": "{{count}} objets requièrent votre attention",
+  "state": {
+    "ready": "Prêt",
+    "notReady": "Pas prêt",
+    "pending": "En attente"
+  },
+  "columns": {
+    "status": "Statut",
+    "reason": "Raison",
+    "cluster": "Kafka",
+    "replicas": "Réplicas",
+    "version": "Version",
+    "listeners": "Listeners",
+    "roles": "Rôles",
+    "partitions": "Partitions",
+    "topicReplicas": "Réplicas",
+    "authentication": "Authentification",
+    "authorization": "Autorisation"
+  },
+  "fields": {
+    "status": "Statut",
+    "reason": "Raison",
+    "version": "Version de Kafka",
+    "metadataState": "Métadonnées",
+    "clusterId": "ID du cluster",
+    "nodePools": "Pools de nœuds",
+    "cluster": "Kafka",
+    "roles": "Rôles",
+    "replicas": "Réplicas",
+    "nodeIds": "ID des nœuds",
+    "storage": "Stockage",
+    "topicName": "Nom du topic",
+    "partitions": "Partitions",
+    "topicReplicas": "Facteur de réplication",
+    "config": "Configuration",
+    "authentication": "Authentification",
+    "authorization": "Autorisation",
+    "acls": "Règles ACL",
+    "username": "Nom d'utilisateur",
+    "secret": "Secret",
+    "bootstrapServers": "Serveurs bootstrap",
+    "connectCluster": "Cluster Connect",
+    "url": "API REST",
+    "plugins": "Plugins de connecteurs"
+  },
+  "warnings": "Avertissements",
+  "warningReason": "Raison",
+  "warningMessage": "Message",
+  "listeners": {
+    "title": "Listeners",
+    "name": "Nom",
+    "type": "Type",
+    "port": "Port",
+    "bootstrap": "Bootstrap",
+    "addresses": "Adresses",
+    "tls": "TLS",
+    "noAddress": "Pas encore d'adresse"
+  },
+  "mirrors": {
+    "title": "Miroirs",
+    "source": "Source",
+    "target": "Cible",
+    "topics": "Topics"
+  },
+  "connectors": {
+    "title": "Connecteurs",
+    "name": "Nom",
+    "state": "État",
+    "tasks": "Tâches"
+  }
+}

@@ -23,6 +23,7 @@ pub mod portforward;
 pub mod rbac;
 pub mod resources;
 pub mod secrets;
+pub mod set_image;
 pub mod settings;
 pub mod storage;
 pub mod terminal;

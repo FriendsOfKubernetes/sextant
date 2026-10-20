@@ -1,0 +1,29 @@
+/* Prometheus Operator: notes on what a monitor selects and who picks it up. */
+.promop-note {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.promop-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.promop-note--muted {
+  padding: 0;
+  border-left: none;
+  color: var(--color-text-muted);
+}
+
+.promop-summary {
+  margin: 0 0 4px;
+}
+
+.promop-bad {
+  color: var(--color-danger);
+}
+
+.promop-warn {
+  color: var(--color-warning);
+}

@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} Claim oder Composite Resource braucht Aufmerksamkeit",
+  "badge_other": "{{count}} Claims oder Composite Resources brauchen Aufmerksamkeit",
+  "health": {
+    "ready": "Bereit",
+    "progressing": "In Arbeit",
+    "failed": "Fehlgeschlagen",
+    "unknown": "Unbekannt"
+  },
+  "served": "bereitgestellt",
+  "referenceable": "referenzierbar",
+  "failing": "Erste nicht erfüllte Bedingung: {{type}} ({{reason}})",
+  "failingWithMessage": "Erste nicht erfüllte Bedingung: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Composite Resource",
+    "managed": "Managed Resource"
+  },
+  "columns": {
+    "composite": "Composite-Kind",
+    "claim": "Claim-Kind",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Composite-Typ",
+    "mode": "Modus",
+    "status": "Status",
+    "package": "Paket",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Gruppe",
+    "compositeKind": "Composite-Kind",
+    "claimKind": "Claim-Kind",
+    "versions": "Versionen",
+    "defaultComposition": "Standard-Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Composite-Typ",
+    "mode": "Modus",
+    "resources": "Ressourcen (klassischer Modus)",
+    "package": "Paket",
+    "revision": "Aktuelle Revision",
+    "identifier": "Aktuelles Paket",
+    "activation": "Aktivierung von Revisionen",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Rolle",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Verbindungs-Secret",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Externer Name",
+    "deletionPolicy": "Löschrichtlinie",
+    "managementPolicies": "Verwaltungsrichtlinien",
+    "composite": "Composite Resource"
+  },
+  "pipeline": {
+    "step": "Schritt",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Ressourcen",
+    "loading": "Ressourcen werden gelesen…",
+    "noResources": "Noch keine zusammengesetzten Ressourcen.",
+    "noComposite": "Noch keine Composite Resource: Crossplane hat diesen Claim noch nicht gebunden.",
+    "missing": "Nicht gefunden",
+    "unreadable": "Nicht lesbar",
+    "more": "Nicht angezeigt: {{count}}"
+  },
+  "explain": {
+    "ready": "Synchronisiert und bereit.",
+    "creating": "Noch nicht bereit: Crossplane erstellt sie oder ihre Ressourcen noch.",
+    "deleting": "Wird gelöscht.",
+    "notSynced": "Crossplane kann sie nicht abgleichen ({{reason}}): Die erste nicht erfüllte Bedingung unten nennt den Grund.",
+    "notReady": "Nicht bereit ({{reason}}): Die erste nicht erfüllte Bedingung unten nennt den Grund.",
+    "packageHealthy": "Installiert und fehlerfrei.",
+    "packageInstalling": "Wird installiert: noch nicht fehlerfrei.",
+    "packageNotInstalled": "Das Paket ist nicht installiert ({{reason}}).",
+    "packageUnhealthy": "Das Paket ist installiert, aber nicht fehlerfrei ({{reason}}).",
+    "xrdNotEstablished": "Nicht etabliert: Die definierten Kinds werden noch nicht bereitgestellt.",
+    "xrdClaimNotOffered": "Der Claim-Kind {{claim}} wird noch nicht angeboten.",
+    "xrdEstablishedWithClaim": "Etabliert: definiert die Composite Resource {{kind}} und den Claim {{claim}}.",
+    "xrdEstablished": "Etabliert: definiert die Composite Resource {{kind}}."
+  },
+  "page": {
+    "sidebar": "Composite Resources",
+    "title": "Composite Resources",
+    "hint": "Claims und Composite Resources der Kinds, die die XRDs definieren, mit der ersten nicht erfüllten Bedingung.",
+    "onlyProblems": "Nur Probleme",
+    "total": "Angezeigt: {{count}}",
+    "loading": "Claims und Composite Resources werden gelesen…",
+    "xrdsTruncated": "Nur die Kinds der ersten {{count}} XRDs werden aufgeführt.",
+    "rowsTruncated": "Nur die ersten {{count}} werden aufgeführt.",
+    "noXrds": "Keine XRDs: Der Cluster definiert keine Composite Resources.",
+    "none": "Keine Claims oder Composite Resources.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Name",
+      "namespace": "Namespace",
+      "state": "Zustand",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Grund",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (Claim)",
+      "composite": "{{kind}} (Composite)"
+    }
+  }
+}

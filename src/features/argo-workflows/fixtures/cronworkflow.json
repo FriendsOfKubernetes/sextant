@@ -1,0 +1,49 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "CronWorkflow",
+  "metadata": {
+    "name": "nightly-diamond",
+    "namespace": "argo",
+    "uid": "cron-uid-1",
+    "creationTimestamp": "2026-10-01T00:00:00Z"
+  },
+  "spec": {
+    "schedules": [
+      "0 2 * * *"
+    ],
+    "timezone": "Europe/Berlin",
+    "concurrencyPolicy": "Replace",
+    "startingDeadlineSeconds": 0,
+    "workflowSpec": {
+      "entrypoint": "diamond",
+      "templates": [
+        {
+          "name": "diamond"
+        },
+        {
+          "name": "echo"
+        }
+      ]
+    }
+  },
+  "status": {
+    "active": [
+      {
+        "kind": "Workflow",
+        "namespace": "argo",
+        "name": "nightly-diamond-1760925600",
+        "uid": "wf-uid-2",
+        "apiVersion": "argoproj.io/v1alpha1"
+      }
+    ],
+    "lastScheduledTime": "2026-10-20T00:00:00Z",
+    "succeeded": 12,
+    "failed": 1,
+    "conditions": [
+      {
+        "type": "SubmissionError",
+        "status": "False"
+      }
+    ]
+  }
+}

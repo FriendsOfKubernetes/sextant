@@ -1,0 +1,98 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_other": "{{count}} 个对象违反策略规则",
+  "yes": "是",
+  "no": "否",
+  "ready": {
+    "True": "就绪",
+    "False": "未就绪",
+    "Unknown": "等待中"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "混合"
+  },
+  "modeHint": {
+    "Enforce": "Enforce：违反规则的请求会被拒绝。",
+    "Audit": "Audit：违反规则的请求会被放行，违规情况记入报告。",
+    "Mixed": "部分规则会拒绝违反它们的请求（Enforce），其余规则只把违规情况记入报告（Audit）。"
+  },
+  "explain": {
+    "ready": "就绪：Kyverno 正在应用此策略。",
+    "notReady": "未就绪：在下方问题修复之前，Kyverno 不会应用此策略。",
+    "pending": "Kyverno 尚未加载完此策略。"
+  },
+  "columns": {
+    "ready": "就绪",
+    "mode": "模式",
+    "background": "后台",
+    "rules": "规则",
+    "message": "消息",
+    "object": "对象",
+    "pass": "通过",
+    "fail": "违规",
+    "warn": "警告",
+    "error": "错误",
+    "skip": "跳过"
+  },
+  "fields": {
+    "ready": "就绪",
+    "mode": "模式",
+    "background": "后台扫描",
+    "object": "对象"
+  },
+  "rules": {
+    "name": "规则",
+    "type": "类型",
+    "mode": "模式",
+    "kinds": "Kind"
+  },
+  "ruleType": {
+    "validate": "校验",
+    "mutate": "变更",
+    "generate": "生成",
+    "verifyImages": "验证镜像"
+  },
+  "result": {
+    "pass": "通过",
+    "fail": "违规",
+    "warn": "警告",
+    "error": "错误",
+    "skip": "跳过"
+  },
+  "summary": {
+    "pass": "通过：{{count}}",
+    "fail": "违规：{{count}}",
+    "warn": "警告：{{count}}",
+    "error": "错误：{{count}}",
+    "skip": "跳过：{{count}}"
+  },
+  "results": {
+    "object": "对象",
+    "policy": "策略",
+    "rule": "规则",
+    "result": "结果",
+    "message": "消息",
+    "more": "未显示：{{count}}"
+  },
+  "policySummary": {
+    "title": "报告中的结果",
+    "loading": "正在读取报告…",
+    "none": "暂无报告包含此策略的结果。",
+    "unlabelled": "策略名称过长，无法用作 Kyverno 给报告加的 label，因此无法在此汇总其结果。",
+    "capped": "只读取了部分报告：计数不完整（已计入 {{count}} 条结果）。"
+  },
+  "objectResults": {
+    "title": "策略结果",
+    "failing": "违反的策略规则：已检查 {{total}} 条中的 {{count}} 条。",
+    "passing": "没有违反任何策略规则（已检查 {{count}} 条）。"
+  }
+}

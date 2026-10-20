@@ -696,3 +696,19 @@ _Avoid_: cooldown, lockout
 **Leave the terminal (Ctrl+Shift+E)**:
 The one key a terminal never takes: it moves the focus to the terminal's dock tab, so keyboard users can get out of a shell.
 _Avoid_: escape key, focus trap
+
+**Claim / composite resource / managed resource (Crossplane)**:
+A claim is the namespaced request a team writes; Crossplane binds it to a composite resource (`resourceRef`), whose Composition creates managed resources (`resourceRefs`), each one object of a cloud API. Their kinds are defined at run time: claims and composites by the XRDs, managed resources by the providers. "Synced" says Crossplane can reconcile it; "Ready" says the thing exists and works.
+_Avoid_: instance, XR request
+
+**Policy result (Kyverno)**:
+One rule of one policy judged against one object: pass, fail, warn, error or skip, as written in the object's PolicyReport. A failing result is a problem only in the opt-in category `policies`.
+_Avoid_: violation event, audit log
+
+**Promote / abort / retry (Argo Rollouts)**:
+What `kubectl argo rollouts` does to a paused or failing Rollout, by patching its spec and status: promote moves it past its pause to the next step (fully: skips every remaining step and analysis), abort sends all traffic back to the stable ReplicaSet and leaves it Degraded, retry starts an aborted update again.
+_Avoid_: resume, rollback, undo (that is `kubectl rollout undo`, ADR-0068)
+
+**Workflow node (Argo Workflows)**:
+One step of a Workflow as its status records it (`status.nodes`): a pod, a container of a container set, a DAG task group, a steps group, a retry or a skipped step. Pod nodes run in pods named by the Workflow's pod-name format; the failed step is the first pod node that failed.
+_Avoid_: task (only DAG nodes are tasks), job

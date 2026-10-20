@@ -1,0 +1,91 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} objeto requiere atención",
+  "badge_many": "{{count}} de objetos requieren atención",
+  "badge_other": "{{count}} objetos requieren atención",
+  "state": {
+    "healthy": "Correcto",
+    "switchover": "Conmutación",
+    "failover": "Failover",
+    "progressing": "En curso",
+    "unhealthy": "Con fallos"
+  },
+  "backupState": {
+    "completed": "Completada",
+    "failed": "Fallida",
+    "running": "En ejecución",
+    "pending": "Pendiente"
+  },
+  "role": {
+    "primary": "Primaria",
+    "replica": "Réplica"
+  },
+  "columns": {
+    "status": "Estado",
+    "instances": "Instancias",
+    "primary": "Primaria",
+    "phase": "Fase",
+    "cluster": "Clúster",
+    "method": "Método",
+    "started": "Iniciada",
+    "schedule": "Programación",
+    "suspended": "Suspendida",
+    "lastBackup": "Última copia",
+    "type": "Tipo",
+    "poolMode": "Modo del pool"
+  },
+  "fields": {
+    "status": "Estado",
+    "phase": "Fase",
+    "instances": "Instancias",
+    "primary": "Primaria actual",
+    "targetPrimary": "Primaria de destino",
+    "image": "Imagen",
+    "storage": "Almacenamiento",
+    "archiving": "Archivado continuo",
+    "lastBackup": "Última copia de seguridad",
+    "lastSuccessfulBackup": "Última copia correcta",
+    "lastFailedBackup": "Última copia fallida",
+    "firstRecoverabilityPoint": "Recuperable desde",
+    "cluster": "Clúster",
+    "method": "Método",
+    "target": "Destino",
+    "startedAt": "Iniciada",
+    "stoppedAt": "Detenida",
+    "backupId": "ID de la copia",
+    "destination": "Destino de la copia",
+    "schedule": "Programación",
+    "suspended": "Suspendida",
+    "lastScheduleTime": "Última ejecución",
+    "nextScheduleTime": "Próxima ejecución",
+    "type": "Tipo",
+    "poolerInstances": "Instancias",
+    "poolMode": "Modo del pool"
+  },
+  "instancesReady": "{{ready}} de {{total}} listas",
+  "switchover": "La primaria pasa de {{from}} a {{to}}.",
+  "failover": "Failover: {{primary}} ya no está y se está eligiendo una nueva primaria.",
+  "replicaCluster": "Un clúster réplica: su primaria sigue a otro clúster.",
+  "members": {
+    "title": "Instancias",
+    "instance": "Instancia",
+    "role": "Rol",
+    "health": "Salud",
+    "timeline": "Timeline"
+  },
+  "backups": "Copias de seguridad",
+  "noBackups": "Este clúster no tiene copias de seguridad configuradas.",
+  "archivingOk": "Funciona",
+  "archivingFailing": "Con fallos",
+  "backupOk": "Correcta",
+  "backupFailing": "Fallida",
+  "unknown": "Desconocido",
+  "error": "Error",
+  "yes": "Sí",
+  "no": "No"
+}

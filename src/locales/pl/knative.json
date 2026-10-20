@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_one": "{{count}} obiekt Knative wymaga uwagi",
+  "badge_few": "{{count}} obiekty Knative wymagają uwagi",
+  "badge_many": "{{count}} obiektów Knative wymaga uwagi",
+  "badge_other": "{{count}} obiektu Knative wymaga uwagi",
+  "health": {
+    "ready": "Gotowy",
+    "progressing": "W toku",
+    "failed": "Błąd",
+    "unknown": "Nieznany"
+  },
+  "latest": "najnowsza",
+  "unlimited": "Bez limitu",
+  "replicas": "{{actual}} z {{desired}}",
+  "timeoutSeconds": "{{seconds}} s",
+  "columns": {
+    "status": "Stan",
+    "reason": "Przyczyna",
+    "url": "URL",
+    "latestCreated": "Ostatnio utworzona",
+    "latestReady": "Ostatnio gotowa",
+    "traffic": "Ruch",
+    "configuration": "Configuration",
+    "generation": "Generacja",
+    "replicas": "Repliki",
+    "target": "Cel"
+  },
+  "fields": {
+    "status": "Stan",
+    "url": "URL",
+    "address": "Adres w klastrze",
+    "latestCreated": "Ostatnio utworzona rewizja",
+    "latestReady": "Ostatnio gotowa rewizja",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "Generacja",
+    "replicas": "Repliki (rzeczywiste z żądanych)",
+    "routingState": "Stan routingu",
+    "images": "Obrazy",
+    "concurrency": "Równoczesne żądania na kontener",
+    "timeout": "Limit czasu żądania",
+    "target": "Wskazuje na"
+  },
+  "traffic": {
+    "title": "Ruch",
+    "askedTitle": "Ruch (żądany, jeszcze nie obowiązuje)",
+    "revision": "Rewizja",
+    "tag": "Tag",
+    "share": "Udział",
+    "latest": "Podąża za najnowszą",
+    "url": "URL",
+    "latestReady": "Ostatnio gotowa rewizja ({{revision}})",
+    "percent": "{{percent}}%",
+    "followsLatest": "Tak"
+  },
+  "explain": {
+    "readyAt": "Gotowy: obsługuje żądania pod adresem {{url}}.",
+    "ready": "Gotowy.",
+    "progressing": "Jeszcze niegotowy: Knative wciąż wdraża najnowszą rewizję lub jej trasę.",
+    "revisionFailedTrafficStays": "Najnowsza rewizja {{revision}} zakończyła się błędem ({{reason}}). Ruch pozostaje na {{ready}}, ostatniej rewizji, która była gotowa.",
+    "revisionFailedNoneReady": "Najnowsza rewizja {{revision}} zakończyła się błędem ({{reason}}), a żadna rewizja nie była jeszcze gotowa: nikt nie obsługuje żądań.",
+    "routeFailed": "Trasa nie jest gotowa ({{reason}}): żądania mogą nie docierać do rewizji tak, jak wymaga podział ruchu.",
+    "domainNotClaimed": "Nazwa domeny nie jest zajęta ({{reason}}): możliwe, że używa jej już inne mapowanie.",
+    "certificateFailed": "Nie udało się wystawić certyfikatu TLS ({{reason}}).",
+    "notReady": "Niegotowy ({{reason}}).",
+    "revisionReady": "Gotowa do obsługi żądań.",
+    "revisionScaledToZero": "Gotowa i przeskalowana do zera: obecnie nie trafia do niej ruch, więc nie działa żaden Pod. Pierwsze żądanie uruchomi jeden.",
+    "revisionProgressing": "Uruchamianie: Pody rewizji nie są jeszcze gotowe.",
+    "revisionContainerUnhealthy": "Kontener się nie uruchamia lub nie przechodzi testów kondycji ({{reason}}).",
+    "revisionResourcesUnavailable": "Knative nie mógł uzyskać zasobów potrzebnych rewizji ({{reason}}), na przykład jej obrazu lub Podów.",
+    "revisionFailed": "Rewizja zakończyła się błędem ({{reason}})."
+  }
+}

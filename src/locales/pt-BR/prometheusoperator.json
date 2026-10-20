@@ -1,0 +1,118 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_one": "{{count}} objeto precisa de atenção",
+  "badge_many": "{{count}} de objetos precisam de atenção",
+  "badge_other": "{{count}} objetos precisam de atenção",
+  "state": {
+    "ready": "Disponível",
+    "degraded": "Degradado",
+    "failed": "Falhou",
+    "pending": "Pendente"
+  },
+  "columns": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "ports": "Portas",
+    "prober": "Prober",
+    "module": "Módulo",
+    "interval": "Intervalo",
+    "groups": "Grupos",
+    "rules": "Regras",
+    "status": "Status",
+    "replicas": "Réplicas",
+    "version": "Versão",
+    "reason": "Motivo"
+  },
+  "fields": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "jobLabel": "Label de job",
+    "prober": "Prober",
+    "module": "Módulo",
+    "interval": "Intervalo",
+    "staticTargets": "Destinos",
+    "ingressSelector": "Selector de Ingress",
+    "status": "Status",
+    "reason": "Motivo",
+    "replicas": "Réplicas",
+    "shards": "Shards",
+    "version": "Versão",
+    "retention": "Retenção",
+    "paused": "Pausado"
+  },
+  "anyNamespace": "Todos os namespaces",
+  "selectsAll": "Tudo",
+  "selectsNone": "Nada",
+  "loading": "Carregando…",
+  "yes": "Sim",
+  "replicasAvailable": "{{available}} de {{total}} disponíveis",
+  "targets": {
+    "title": "Seleciona agora",
+    "error": "Não foi possível ler a lista.",
+    "invalidSelector": "O selector usa um operador que o Kubernetes não conhece, então não seleciona nada.",
+    "everything": {
+      "services": "Todos os Services de todos os namespaces: não listados.",
+      "pods": "Todos os Pods de todos os namespaces: não listados."
+    },
+    "tooMany_one": "Procura em {{count}} namespace: muitos para listar aqui.",
+    "tooMany_many": "Procura em {{count}} de namespaces: muitos para listar aqui.",
+    "tooMany_other": "Procura em {{count}} namespaces: muitos para listar aqui.",
+    "none": {
+      "services": "Não seleciona nenhum Service: o Prometheus não coleta nada para ele.",
+      "pods": "Não seleciona nenhum Pod: o Prometheus não coleta nada para ele."
+    },
+    "selected": {
+      "services_one": "{{count}} Service",
+      "services_many": "{{count}} de Services",
+      "services_other": "{{count}} Services",
+      "pods_one": "{{count}} Pod",
+      "pods_many": "{{count}} de Pods",
+      "pods_other": "{{count}} Pods"
+    },
+    "more_one": "e mais {{count}}",
+    "more_many": "e mais {{count}}",
+    "more_other": "e mais {{count}}",
+    "portFound": "em {{found}} de {{total}}"
+  },
+  "endpoints": {
+    "port": "Porta",
+    "path": "Caminho",
+    "interval": "Intervalo",
+    "found": "Nome da porta encontrado"
+  },
+  "pickup": {
+    "title": "Selecionado por",
+    "none": "Nenhum Prometheus o seleciona: nenhum selector de Prometheus corresponde às suas labels e ao seu namespace.",
+    "unknown": "Desconhecido: não foi possível ler as labels dos namespaces.",
+    "noPrometheus": "Não há nenhum objeto Prometheus no cluster."
+  },
+  "groups": {
+    "title": "Grupos de regras",
+    "name": "Grupo",
+    "interval": "Intervalo",
+    "alerts": "Alertas",
+    "records": "Regras de gravação",
+    "none": "Nenhum grupo de regras."
+  },
+  "selectors": {
+    "title": "O que ele seleciona",
+    "what": "Kind",
+    "selector": "Selector",
+    "namespaces": "Namespaces",
+    "none": "Nenhum",
+    "all": "Todos",
+    "ownNamespace": "O próprio namespace",
+    "allNamespaces": "Todos os namespaces",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

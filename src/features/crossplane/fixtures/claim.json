@@ -1,0 +1,17 @@
+{
+  "apiVersion": "database.example.org/v1alpha1",
+  "kind": "PostgreSQLInstance",
+  "metadata": { "name": "my-db", "namespace": "default", "uid": "5b0e7c2a-0000-4000-8000-0000000000b1", "resourceVersion": "100", "creationTimestamp": "2026-10-10T10:00:00Z" },
+  "spec": {
+    "parameters": { "storageGB": 20 },
+    "compositionRef": { "name": "xpostgresqlinstances.aws.database.example.org" },
+    "resourceRef": { "apiVersion": "database.example.org/v1alpha1", "kind": "XPostgreSQLInstance", "name": "my-db-x7k2p" },
+    "writeConnectionSecretToRef": { "name": "db-conn" }
+  },
+  "status": {
+    "conditions": [
+      { "type": "Synced", "status": "True", "reason": "ReconcileSuccess", "lastTransitionTime": "2026-10-10T10:00:02Z" },
+      { "type": "Ready", "status": "False", "reason": "Creating", "lastTransitionTime": "2026-10-10T10:00:02Z" }
+    ]
+  }
+}

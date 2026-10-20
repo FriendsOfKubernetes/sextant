@@ -1,0 +1,98 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_other": "{{count}} 件のオブジェクトがポリシールールに違反しています",
+  "yes": "はい",
+  "no": "いいえ",
+  "ready": {
+    "True": "準備完了",
+    "False": "準備未完了",
+    "Unknown": "保留中"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "混在"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: ルールに違反するリクエストは拒否されます。",
+    "Audit": "Audit: ルールに違反するリクエストは通され、違反はレポートに記録されます。",
+    "Mixed": "一部のルールは違反するリクエストを拒否し（Enforce）、それ以外は違反をレポートに記録するだけです（Audit）。"
+  },
+  "explain": {
+    "ready": "準備完了: Kyverno がこのポリシーを適用しています。",
+    "notReady": "準備未完了: 下の問題が解決するまで Kyverno はこのポリシーを適用しません。",
+    "pending": "Kyverno はこのポリシーをまだ読み込み終えていません。"
+  },
+  "columns": {
+    "ready": "準備完了",
+    "mode": "モード",
+    "background": "バックグラウンド",
+    "rules": "ルール",
+    "message": "メッセージ",
+    "object": "オブジェクト",
+    "pass": "合格",
+    "fail": "違反",
+    "warn": "警告",
+    "error": "エラー",
+    "skip": "スキップ"
+  },
+  "fields": {
+    "ready": "準備完了",
+    "mode": "モード",
+    "background": "バックグラウンドスキャン",
+    "object": "オブジェクト"
+  },
+  "rules": {
+    "name": "ルール",
+    "type": "種類",
+    "mode": "モード",
+    "kinds": "Kind"
+  },
+  "ruleType": {
+    "validate": "検証",
+    "mutate": "変更",
+    "generate": "生成",
+    "verifyImages": "イメージ検証"
+  },
+  "result": {
+    "pass": "合格",
+    "fail": "違反",
+    "warn": "警告",
+    "error": "エラー",
+    "skip": "スキップ"
+  },
+  "summary": {
+    "pass": "合格: {{count}}",
+    "fail": "違反: {{count}}",
+    "warn": "警告: {{count}}",
+    "error": "エラー: {{count}}",
+    "skip": "スキップ: {{count}}"
+  },
+  "results": {
+    "object": "オブジェクト",
+    "policy": "ポリシー",
+    "rule": "ルール",
+    "result": "結果",
+    "message": "メッセージ",
+    "more": "非表示: {{count}}"
+  },
+  "policySummary": {
+    "title": "レポート内の結果",
+    "loading": "レポートを読み込み中…",
+    "none": "このポリシーの結果を含むレポートはまだありません。",
+    "unlabelled": "ポリシー名が長すぎて Kyverno がレポートに付ける label に使えないため、ここでは結果を集計できません。",
+    "capped": "レポートの一部しか読み込んでいないため、件数は不完全です（{{count}} 件の結果を集計）。"
+  },
+  "objectResults": {
+    "title": "ポリシーの結果",
+    "failing": "違反しているポリシールール: 確認した {{total}} 件中 {{count}} 件。",
+    "passing": "違反しているポリシールールはありません（{{count}} 件を確認）。"
+  }
+}

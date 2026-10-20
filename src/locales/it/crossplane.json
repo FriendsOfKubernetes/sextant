@@ -1,0 +1,124 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim o risorsa composita richiede attenzione",
+  "badge_many": "{{count}} di claim o risorse composite richiedono attenzione",
+  "badge_other": "{{count}} claim o risorse composite richiedono attenzione",
+  "health": {
+    "ready": "Pronto",
+    "progressing": "In corso",
+    "failed": "Non riuscito",
+    "unknown": "Sconosciuto"
+  },
+  "served": "servita",
+  "referenceable": "referenziabile",
+  "failing": "Prima condizione non soddisfatta: {{type}} ({{reason}})",
+  "failingWithMessage": "Prima condizione non soddisfatta: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Risorsa composita",
+    "managed": "Risorsa gestita"
+  },
+  "columns": {
+    "composite": "Kind composito",
+    "claim": "Kind del claim",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Tipo composito",
+    "mode": "Modalità",
+    "status": "Stato",
+    "package": "Pacchetto",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Gruppo",
+    "compositeKind": "Kind della risorsa composita",
+    "claimKind": "Kind del claim",
+    "versions": "Versioni",
+    "defaultComposition": "Composition predefinita",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Tipo di risorsa composita",
+    "mode": "Modalità",
+    "resources": "Risorse (modalità classica)",
+    "package": "Pacchetto",
+    "revision": "Revisione attuale",
+    "identifier": "Pacchetto attuale",
+    "activation": "Attivazione delle revisioni",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Ruolo",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Secret di connessione",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Nome esterno",
+    "deletionPolicy": "Criterio di eliminazione",
+    "managementPolicies": "Criteri di gestione",
+    "composite": "Risorsa composita"
+  },
+  "pipeline": {
+    "step": "Passo",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Risorse",
+    "loading": "Lettura delle risorse…",
+    "noResources": "Ancora nessuna risorsa che la compone.",
+    "noComposite": "Ancora nessuna risorsa composita: Crossplane non ha ancora associato questo claim.",
+    "missing": "Non trovato",
+    "unreadable": "Impossibile leggere",
+    "more": "Non mostrate: {{count}}"
+  },
+  "explain": {
+    "ready": "Sincronizzata e pronta.",
+    "creating": "Non ancora pronta: Crossplane sta ancora creando lei o le sue risorse.",
+    "deleting": "Eliminazione in corso.",
+    "notSynced": "Crossplane non riesce a riconciliarla ({{reason}}): la prima condizione non soddisfatta qui sotto dice perché.",
+    "notReady": "Non pronta ({{reason}}): la prima condizione non soddisfatta qui sotto dice perché.",
+    "packageHealthy": "Installato e integro.",
+    "packageInstalling": "Installazione in corso: non ancora integro.",
+    "packageNotInstalled": "Il pacchetto non è installato ({{reason}}).",
+    "packageUnhealthy": "Il pacchetto è installato ma non è integro ({{reason}}).",
+    "xrdNotEstablished": "Non stabilita: i kind che definisce non sono ancora serviti.",
+    "xrdClaimNotOffered": "Il kind di claim {{claim}} non è ancora offerto.",
+    "xrdEstablishedWithClaim": "Stabilita: definisce la risorsa composita {{kind}} e il claim {{claim}}.",
+    "xrdEstablished": "Stabilita: definisce la risorsa composita {{kind}}."
+  },
+  "page": {
+    "sidebar": "Risorse composite",
+    "title": "Risorse composite",
+    "hint": "Claim e risorse composite dei kind definiti dalle XRD, con la prima condizione non soddisfatta.",
+    "onlyProblems": "Solo problemi",
+    "total": "Mostrati: {{count}}",
+    "loading": "Lettura di claim e risorse composite…",
+    "xrdsTruncated": "Sono elencati solo i kind delle prime {{count}} XRD.",
+    "rowsTruncated": "Sono elencati solo i primi {{count}}.",
+    "noXrds": "Nessuna XRD: il cluster non definisce risorse composite.",
+    "none": "Nessun claim né risorsa composita.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Nome",
+      "namespace": "Namespace",
+      "state": "Stato",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Motivo",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (composita)"
+    }
+  }
+}

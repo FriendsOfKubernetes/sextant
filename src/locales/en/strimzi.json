@@ -1,0 +1,81 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "state": {
+    "ready": "Ready",
+    "notReady": "Not ready",
+    "pending": "Pending"
+  },
+  "columns": {
+    "status": "Status",
+    "reason": "Reason",
+    "cluster": "Kafka",
+    "replicas": "Replicas",
+    "version": "Version",
+    "listeners": "Listeners",
+    "roles": "Roles",
+    "partitions": "Partitions",
+    "topicReplicas": "Replicas",
+    "authentication": "Authentication",
+    "authorization": "Authorization"
+  },
+  "fields": {
+    "status": "Status",
+    "reason": "Reason",
+    "version": "Kafka version",
+    "metadataState": "Metadata",
+    "clusterId": "Cluster ID",
+    "nodePools": "Node pools",
+    "cluster": "Kafka",
+    "roles": "Roles",
+    "replicas": "Replicas",
+    "nodeIds": "Node IDs",
+    "storage": "Storage",
+    "topicName": "Topic name",
+    "partitions": "Partitions",
+    "topicReplicas": "Replication factor",
+    "config": "Config",
+    "authentication": "Authentication",
+    "authorization": "Authorization",
+    "acls": "ACL rules",
+    "username": "User name",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap servers",
+    "connectCluster": "Connect cluster",
+    "url": "REST API",
+    "plugins": "Connector plugins"
+  },
+  "warnings": "Warnings",
+  "warningReason": "Reason",
+  "warningMessage": "Message",
+  "listeners": {
+    "title": "Listeners",
+    "name": "Name",
+    "type": "Type",
+    "port": "Port",
+    "bootstrap": "Bootstrap",
+    "addresses": "Addresses",
+    "tls": "TLS",
+    "noAddress": "No address yet"
+  },
+  "mirrors": {
+    "title": "Mirrors",
+    "source": "Source",
+    "target": "Target",
+    "topics": "Topics"
+  },
+  "connectors": {
+    "title": "Connectors",
+    "name": "Name",
+    "state": "State",
+    "tasks": "Tasks"
+  }
+}

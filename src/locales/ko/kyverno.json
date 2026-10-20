@@ -1,0 +1,98 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_other": "객체 {{count}}개가 정책 규칙을 위반합니다",
+  "yes": "예",
+  "no": "아니요",
+  "ready": {
+    "True": "준비됨",
+    "False": "준비 안 됨",
+    "Unknown": "대기 중"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "혼합"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: 규칙을 위반하는 요청은 거부됩니다.",
+    "Audit": "Audit: 규칙을 위반하는 요청도 통과되며, 위반 내용은 보고서에 기록됩니다.",
+    "Mixed": "일부 규칙은 위반하는 요청을 거부하고(Enforce), 나머지는 위반 내용을 보고서에 기록하기만 합니다(Audit)."
+  },
+  "explain": {
+    "ready": "준비됨: Kyverno가 이 정책을 적용합니다.",
+    "notReady": "준비 안 됨: 아래 문제가 해결될 때까지 Kyverno는 이 정책을 적용하지 않습니다.",
+    "pending": "Kyverno가 아직 이 정책을 다 불러오지 않았습니다."
+  },
+  "columns": {
+    "ready": "준비됨",
+    "mode": "모드",
+    "background": "백그라운드",
+    "rules": "규칙",
+    "message": "메시지",
+    "object": "객체",
+    "pass": "통과",
+    "fail": "위반",
+    "warn": "경고",
+    "error": "오류",
+    "skip": "건너뜀"
+  },
+  "fields": {
+    "ready": "준비됨",
+    "mode": "모드",
+    "background": "백그라운드 검사",
+    "object": "객체"
+  },
+  "rules": {
+    "name": "규칙",
+    "type": "유형",
+    "mode": "모드",
+    "kinds": "Kind"
+  },
+  "ruleType": {
+    "validate": "검증",
+    "mutate": "변경",
+    "generate": "생성",
+    "verifyImages": "이미지 확인"
+  },
+  "result": {
+    "pass": "통과",
+    "fail": "위반",
+    "warn": "경고",
+    "error": "오류",
+    "skip": "건너뜀"
+  },
+  "summary": {
+    "pass": "통과: {{count}}",
+    "fail": "위반: {{count}}",
+    "warn": "경고: {{count}}",
+    "error": "오류: {{count}}",
+    "skip": "건너뜀: {{count}}"
+  },
+  "results": {
+    "object": "객체",
+    "policy": "정책",
+    "rule": "규칙",
+    "result": "결과",
+    "message": "메시지",
+    "more": "표시 안 됨: {{count}}"
+  },
+  "policySummary": {
+    "title": "보고서의 결과",
+    "loading": "보고서를 읽는 중…",
+    "none": "아직 이 정책의 결과가 담긴 보고서가 없습니다.",
+    "unlabelled": "정책 이름이 너무 길어 Kyverno가 보고서에 붙이는 label로 쓸 수 없으므로 여기서 결과를 요약할 수 없습니다.",
+    "capped": "보고서의 일부만 읽었으므로 개수가 불완전합니다(결과 {{count}}개 집계)."
+  },
+  "objectResults": {
+    "title": "정책 결과",
+    "failing": "위반된 정책 규칙: 확인한 {{total}}개 중 {{count}}개.",
+    "passing": "위반된 정책 규칙이 없습니다({{count}}개 확인)."
+  }
+}

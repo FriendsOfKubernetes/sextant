@@ -1,0 +1,100 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} objeto incumple reglas de política",
+  "badge_many": "{{count}} de objetos incumplen reglas de política",
+  "badge_other": "{{count}} objetos incumplen reglas de política",
+  "yes": "Sí",
+  "no": "No",
+  "ready": {
+    "True": "Lista",
+    "False": "No lista",
+    "Unknown": "Pendiente"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Mixto"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: se rechaza una solicitud que incumple una regla.",
+    "Audit": "Audit: se deja pasar una solicitud que incumple una regla y el fallo queda registrado en un informe.",
+    "Mixed": "Algunas reglas rechazan la solicitud que las incumple (Enforce); las demás solo registran el fallo en un informe (Audit)."
+  },
+  "explain": {
+    "ready": "Lista: Kyverno aplica esta política.",
+    "notReady": "No está lista: Kyverno no aplica esta política hasta que se corrija el problema de abajo.",
+    "pending": "Kyverno aún no ha terminado de cargar esta política."
+  },
+  "columns": {
+    "ready": "Lista",
+    "mode": "Modo",
+    "background": "Segundo plano",
+    "rules": "Reglas",
+    "message": "Mensaje",
+    "object": "Objeto",
+    "pass": "Correctos",
+    "fail": "Fallos",
+    "warn": "Avisos",
+    "error": "Errores",
+    "skip": "Omitidos"
+  },
+  "fields": {
+    "ready": "Lista",
+    "mode": "Modo",
+    "background": "Análisis en segundo plano",
+    "object": "Objeto"
+  },
+  "rules": {
+    "name": "Regla",
+    "type": "Tipo",
+    "mode": "Modo",
+    "kinds": "Kinds"
+  },
+  "ruleType": {
+    "validate": "Validar",
+    "mutate": "Modificar",
+    "generate": "Generar",
+    "verifyImages": "Verificar imágenes"
+  },
+  "result": {
+    "pass": "Correcto",
+    "fail": "Fallo",
+    "warn": "Aviso",
+    "error": "Error",
+    "skip": "Omitido"
+  },
+  "summary": {
+    "pass": "Correctos: {{count}}",
+    "fail": "Fallos: {{count}}",
+    "warn": "Avisos: {{count}}",
+    "error": "Errores: {{count}}",
+    "skip": "Omitidos: {{count}}"
+  },
+  "results": {
+    "object": "Objeto",
+    "policy": "Política",
+    "rule": "Regla",
+    "result": "Resultado",
+    "message": "Mensaje",
+    "more": "Sin mostrar: {{count}}"
+  },
+  "policySummary": {
+    "title": "Resultados en informes",
+    "loading": "Leyendo los informes…",
+    "none": "Ningún informe contiene aún resultados de esta política.",
+    "unlabelled": "El nombre de la política es demasiado largo para la etiqueta que Kyverno pone en sus informes, así que sus resultados no se pueden resumir aquí.",
+    "capped": "Solo se leyó una parte de los informes: los recuentos están incompletos ({{count}} resultados contados)."
+  },
+  "objectResults": {
+    "title": "Resultados de políticas",
+    "failing": "Reglas de política incumplidas: {{count}} de {{total}} comprobadas.",
+    "passing": "No se incumple ninguna regla de política ({{count}} comprobadas)."
+  }
+}

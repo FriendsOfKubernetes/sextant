@@ -1,0 +1,70 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow niedawno zakończył się niepowodzeniem",
+  "badge_few": "{{count}} workflowy niedawno zakończyły się niepowodzeniem",
+  "badge_many": "{{count}} workflowów niedawno zakończyło się niepowodzeniem",
+  "badge_other": "{{count}} workflowu niedawno zakończyło się niepowodzeniem",
+  "columns": {
+    "phase": "Faza",
+    "progress": "Postęp",
+    "duration": "Czas trwania",
+    "failedStep": "Nieudany krok",
+    "schedule": "Harmonogram",
+    "suspended": "Wstrzymany",
+    "active": "Aktywne",
+    "lastScheduled": "Ostatnie uruchomienie",
+    "entrypoint": "Punkt wejścia",
+    "templates": "Szablony"
+  },
+  "yes": "Tak",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Faza",
+    "progress": "Postęp",
+    "startedAt": "Start",
+    "finishedAt": "Koniec",
+    "duration": "Czas trwania",
+    "message": "Komunikat",
+    "failedStep": "Nieudany krok",
+    "failedMessage": "Jego komunikat",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Harmonogramy",
+    "timezone": "Strefa czasowa",
+    "concurrencyPolicy": "Zasada współbieżności",
+    "suspended": "Wstrzymany",
+    "lastScheduled": "Ostatnie uruchomienie",
+    "active": "Aktywne workflowy",
+    "succeeded": "Udane",
+    "failed": "Nieudane",
+    "entrypoint": "Punkt wejścia",
+    "templates": "Szablony"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Kroki",
+    "cron": "Harmonogram",
+    "template": "Szablon"
+  },
+  "tree": {
+    "count_one": "{{count}} krok",
+    "count_few": "{{count}} kroki",
+    "count_many": "{{count}} kroków",
+    "count_other": "{{count}} kroku",
+    "capped": "Pokazano tylko pierwsze {{shown}} z {{count}} kroków.",
+    "expandFailed": "Pokaż nieudany krok",
+    "collapseAll": "Zwiń wszystko",
+    "expand": "Rozwiń {{name}}",
+    "collapse": "Zwiń {{name}}",
+    "logs": "Logi",
+    "logsOf": "Logi {{name}}",
+    "offloaded": "Kontroler przechowuje kroki tego workflow w swojej bazie danych (offloaded node status): nie ma ich w obiekcie, więc nie można ich tu pokazać.",
+    "compressed": "Kontroler zapisał kroki tego workflow w postaci skompresowanej: nie można ich tu pokazać.",
+    "none": "Brak kroków."
+  }
+}

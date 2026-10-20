@@ -1,0 +1,39 @@
+{
+  "apiVersion": "postgresql.cnpg.io/v1",
+  "kind": "Cluster",
+  "metadata": { "name": "cluster-example", "namespace": "db", "uid": "pg-cluster-example", "creationTimestamp": "2026-10-01T10:00:00Z" },
+  "spec": {
+    "instances": 3,
+    "imageName": "ghcr.io/cloudnative-pg/postgresql:17.5",
+    "storage": { "size": "1Gi" },
+    "backup": { "barmanObjectStore": { "destinationPath": "s3://backups/", "endpointURL": "http://minio:9000" } }
+  },
+  "status": {
+    "phase": "Switchover in progress",
+    "instances": 3,
+    "readyInstances": 2,
+    "currentPrimary": "cluster-example-1",
+    "targetPrimary": "cluster-example-2",
+    "instanceNames": ["cluster-example-1", "cluster-example-2", "cluster-example-3"],
+    "instancesStatus": { "healthy": ["cluster-example-1", "cluster-example-2"], "failed": ["cluster-example-3"] },
+    "instancesReportedState": {
+      "cluster-example-1": { "isPrimary": true, "timeLineID": 1 },
+      "cluster-example-2": { "isPrimary": false, "timeLineID": 1 },
+      "cluster-example-3": { "isPrimary": false, "timeLineID": 1 }
+    },
+    "lastSuccessfulBackup": "2026-10-09T00:00:12Z",
+    "lastFailedBackup": "2026-10-10T00:00:09Z",
+    "firstRecoverabilityPoint": "2026-10-02T00:00:12Z",
+    "conditions": [
+      { "type": "Ready", "status": "False", "reason": "ClusterIsNotReady", "message": "Cluster Is Not Ready", "lastTransitionTime": "2026-10-10T08:00:00Z" },
+      {
+        "type": "ContinuousArchiving",
+        "status": "False",
+        "reason": "ContinuousArchivingFailing",
+        "message": "unexpected failure invoking barman-cloud-wal-archive: exit status 4",
+        "lastTransitionTime": "2026-10-10T08:00:00Z"
+      },
+      { "type": "LastBackupSucceeded", "status": "False", "reason": "LastBackupFailed", "message": "can't execute backup: exit status 1", "lastTransitionTime": "2026-10-10T00:00:09Z" }
+    ]
+  }
+}

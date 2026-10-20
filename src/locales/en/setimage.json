@@ -1,0 +1,47 @@
+{
+  "action": "Set image…",
+  "title": "Set image of {{name}}",
+  "intro": {
+    "Deployment": "The pods are replaced as for any update. The change appears in the rollout history and can be rolled back.",
+    "StatefulSet": "The pods are replaced by the StatefulSet's update strategy. The change appears in the rollout history and can be rolled back.",
+    "DaemonSet": "The pods are replaced by the DaemonSet's update strategy. The change appears in the rollout history and can be rolled back.",
+    "CronJob": "Only Jobs started after the change use the new images; running Jobs keep theirs.",
+    "Pod": "Kubernetes lets a running Pod change only the images of its containers. The kubelet restarts each changed container with its new image."
+  },
+  "columns": {
+    "container": "Container",
+    "current": "Current image",
+    "image": "New image"
+  },
+  "initContainer": "init container",
+  "imageLabel": "New image of container {{name}}",
+  "none": "This object has no containers.",
+  "invalid": {
+    "empty": "Enter an image.",
+    "spaces": "An image reference cannot contain spaces.",
+    "tooLong": "The image name is longer than 255 characters.",
+    "uppercase": "The repository path must be in lowercase.",
+    "name": "The repository path is not valid: use lowercase letters and digits, separated by “.”, “_”, “__”, “-” or “/”.",
+    "host": "The registry host is not valid.",
+    "tag": "The tag is not valid: up to 128 letters, digits, “_”, “.” and “-”, not starting with “.” or “-”.",
+    "digest": "The digest is not valid: write it as sha256: followed by 64 hexadecimal digits."
+  },
+  "warning": {
+    "latest": "The tag “latest” can point to another image at each pull, so pods may run different versions.",
+    "noTag": "Without a tag the image “latest” is pulled, which can point to another image at each pull."
+  },
+  "changes": {
+    "title": "What changes",
+    "none": "Change at least one image.",
+    "line": "{{container}}: {{from}} → {{to}}",
+    "lineInit": "{{container}} (init container): {{from}} → {{to}}"
+  },
+  "confirm": "Set image",
+  "previewAndSet": "Preview and set image…",
+  "owned": {
+    "intro": "This Pod is managed by {{kind}} {{name}}: the controller would replace the Pod or ignore a changed image. Set the image in the {{kind}} instead.",
+    "open": "Open {{kind}} {{name}}",
+    "looking": "Looking up the owner…"
+  },
+  "mirror": "This is a static Pod: the kubelet runs it from a manifest file on its node. Change the image in that file."
+}

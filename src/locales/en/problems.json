@@ -23,8 +23,17 @@
     "certificates": "Certificates",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Service mesh",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Kyverno policies",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "Security",
     "practices": "Best practices",
     "credentials": "Credentials",
@@ -32,6 +41,7 @@
     "events": "Warning events"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "Container {{container}}",
     "restarts_one": "Container {{container}} restarted ({{count}} restart)",
     "restarts_other": "Container {{container}} restarted ({{count}} restarts)",
@@ -49,8 +59,14 @@
     "meshMissingGateway": "Bound to gateway {{gateway}}, which does not exist.",
     "meshTlsConflict": "Sets TLS mode {{mode}} toward {{host}}, whose workloads accept only Istio mTLS (STRICT): calls fail. Use ISTIO_MUTUAL.",
     "meshConflictingVirtualService": "Host {{host}} on {{gateway}} is already taken by the older virtual service {{other}}: the routes of this one are not reached.",
-    "meshInvalidVirtualService": "Has the host * while bound to the sidecars (mesh): Istio rejects it, so none of its routes are used."
+    "meshInvalidVirtualService": "Has the host * while bound to the sidecars (mesh): Istio rejects it, so none of its routes are used.",
+    "policyFailures_one": "{{count}} policy rule fails: {{policies}}",
+    "policyFailures_other": "{{count}} policy rules fail: {{policies}}",
+    "serviceMonitorSelectsNothing": "Selects no Service in the namespaces: {{namespaces}}",
+    "podMonitorSelectsNothing": "Selects no Pod in the namespaces: {{namespaces}}",
+    "monitorNotPickedUp": "No Prometheus picks it up by its selectors"
   },
   "showDisk": "Disk almost full",
-  "showPractices": "Best-practice findings"
+  "showPractices": "Best-practice findings",
+  "showPolicies": "Kyverno policy failures"
 }

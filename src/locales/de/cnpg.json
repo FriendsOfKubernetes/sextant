@@ -1,0 +1,90 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} Objekt erfordert Aufmerksamkeit",
+  "badge_other": "{{count}} Objekte erfordern Aufmerksamkeit",
+  "state": {
+    "healthy": "Fehlerfrei",
+    "switchover": "Umschaltung",
+    "failover": "Failover",
+    "progressing": "In Arbeit",
+    "unhealthy": "Fehlerhaft"
+  },
+  "backupState": {
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "running": "Läuft",
+    "pending": "Ausstehend"
+  },
+  "role": {
+    "primary": "Primär",
+    "replica": "Replikat"
+  },
+  "columns": {
+    "status": "Status",
+    "instances": "Instanzen",
+    "primary": "Primär",
+    "phase": "Phase",
+    "cluster": "Cluster",
+    "method": "Methode",
+    "started": "Gestartet",
+    "schedule": "Zeitplan",
+    "suspended": "Angehalten",
+    "lastBackup": "Letztes Backup",
+    "type": "Typ",
+    "poolMode": "Pool-Modus"
+  },
+  "fields": {
+    "status": "Status",
+    "phase": "Phase",
+    "instances": "Instanzen",
+    "primary": "Aktuelle primäre Instanz",
+    "targetPrimary": "Ziel-Primärinstanz",
+    "image": "Image",
+    "storage": "Speicher",
+    "archiving": "Kontinuierliche Archivierung",
+    "lastBackup": "Letztes Backup",
+    "lastSuccessfulBackup": "Letztes erfolgreiches Backup",
+    "lastFailedBackup": "Letztes fehlgeschlagenes Backup",
+    "firstRecoverabilityPoint": "Wiederherstellbar ab",
+    "cluster": "Cluster",
+    "method": "Methode",
+    "target": "Ziel",
+    "startedAt": "Gestartet",
+    "stoppedAt": "Beendet",
+    "backupId": "Backup-ID",
+    "destination": "Ziel-Pfad",
+    "schedule": "Zeitplan",
+    "suspended": "Angehalten",
+    "lastScheduleTime": "Letzter Lauf",
+    "nextScheduleTime": "Nächster Lauf",
+    "type": "Typ",
+    "poolerInstances": "Instanzen",
+    "poolMode": "Pool-Modus"
+  },
+  "instancesReady": "{{ready}} von {{total}} bereit",
+  "switchover": "Die primäre Instanz wechselt von {{from}} zu {{to}}.",
+  "failover": "Failover: {{primary}} ist weg, eine neue primäre Instanz wird gewählt.",
+  "replicaCluster": "Ein Replikat-Cluster: seine primäre Instanz folgt einem anderen Cluster.",
+  "members": {
+    "title": "Instanzen",
+    "instance": "Instanz",
+    "role": "Rolle",
+    "health": "Zustand",
+    "timeline": "Timeline"
+  },
+  "backups": "Backups",
+  "noBackups": "Für diesen Cluster ist kein Backup eingerichtet.",
+  "archivingOk": "Funktioniert",
+  "archivingFailing": "Fehlerhaft",
+  "backupOk": "Erfolgreich",
+  "backupFailing": "Fehlgeschlagen",
+  "unknown": "Unbekannt",
+  "error": "Fehler",
+  "yes": "Ja",
+  "no": "Nein"
+}

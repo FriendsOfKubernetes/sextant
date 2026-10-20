@@ -1,0 +1,90 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} nesne ilgi gerektiriyor",
+  "badge_other": "{{count}} nesne ilgi gerektiriyor",
+  "state": {
+    "healthy": "Sağlıklı",
+    "switchover": "Geçiş",
+    "failover": "Yük devri",
+    "progressing": "Sürüyor",
+    "unhealthy": "Sağlıksız"
+  },
+  "backupState": {
+    "completed": "Tamamlandı",
+    "failed": "Başarısız",
+    "running": "Çalışıyor",
+    "pending": "Bekliyor"
+  },
+  "role": {
+    "primary": "Birincil",
+    "replica": "Kopya"
+  },
+  "columns": {
+    "status": "Durum",
+    "instances": "Örnekler",
+    "primary": "Birincil",
+    "phase": "Aşama",
+    "cluster": "Küme",
+    "method": "Yöntem",
+    "started": "Başladı",
+    "schedule": "Zamanlama",
+    "suspended": "Askıda",
+    "lastBackup": "Son yedek",
+    "type": "Tür",
+    "poolMode": "Havuz modu"
+  },
+  "fields": {
+    "status": "Durum",
+    "phase": "Aşama",
+    "instances": "Örnekler",
+    "primary": "Geçerli birincil",
+    "targetPrimary": "Hedef birincil",
+    "image": "İmaj",
+    "storage": "Depolama",
+    "archiving": "Sürekli arşivleme",
+    "lastBackup": "Son yedek",
+    "lastSuccessfulBackup": "Son başarılı yedek",
+    "lastFailedBackup": "Son başarısız yedek",
+    "firstRecoverabilityPoint": "Şu andan itibaren kurtarılabilir",
+    "cluster": "Küme",
+    "method": "Yöntem",
+    "target": "Hedef",
+    "startedAt": "Başladı",
+    "stoppedAt": "Durdu",
+    "backupId": "Yedek kimliği",
+    "destination": "Hedef konum",
+    "schedule": "Zamanlama",
+    "suspended": "Askıda",
+    "lastScheduleTime": "Son çalışma",
+    "nextScheduleTime": "Sonraki çalışma",
+    "type": "Tür",
+    "poolerInstances": "Örnekler",
+    "poolMode": "Havuz modu"
+  },
+  "instancesReady": "{{ready}}/{{total}} hazır",
+  "switchover": "Birincil örnek {{from}} konumundan {{to}} konumuna geçiyor.",
+  "failover": "Yük devri: {{primary}} gitti, yeni bir birincil örnek seçiliyor.",
+  "replicaCluster": "Kopya küme: birincil örneği başka bir kümeyi izliyor.",
+  "members": {
+    "title": "Örnekler",
+    "instance": "Örnek",
+    "role": "Rol",
+    "health": "Sağlık",
+    "timeline": "Timeline"
+  },
+  "backups": "Yedekler",
+  "noBackups": "Bu küme için yedekleme ayarlanmamış.",
+  "archivingOk": "Çalışıyor",
+  "archivingFailing": "Başarısız",
+  "backupOk": "Başarılı",
+  "backupFailing": "Başarısız",
+  "unknown": "Bilinmiyor",
+  "error": "Hata",
+  "yes": "Evet",
+  "no": "Hayır"
+}

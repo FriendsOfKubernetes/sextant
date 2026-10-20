@@ -1,0 +1,108 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_other": "주의가 필요한 개체 {{count}}개",
+  "state": {
+    "ready": "사용 가능",
+    "degraded": "성능 저하",
+    "failed": "실패",
+    "pending": "대기 중"
+  },
+  "columns": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "ports": "포트",
+    "prober": "Prober",
+    "module": "모듈",
+    "interval": "간격",
+    "groups": "그룹",
+    "rules": "규칙",
+    "status": "상태",
+    "replicas": "복제본",
+    "version": "버전",
+    "reason": "이유"
+  },
+  "fields": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "jobLabel": "Job label",
+    "prober": "Prober",
+    "module": "모듈",
+    "interval": "간격",
+    "staticTargets": "대상",
+    "ingressSelector": "Ingress selector",
+    "status": "상태",
+    "reason": "이유",
+    "replicas": "복제본",
+    "shards": "샤드",
+    "version": "버전",
+    "retention": "보존 기간",
+    "paused": "일시 중지됨"
+  },
+  "anyNamespace": "모든 namespace",
+  "selectsAll": "모두",
+  "selectsNone": "없음",
+  "loading": "불러오는 중…",
+  "yes": "예",
+  "replicasAvailable": "{{available}}/{{total}} 사용 가능",
+  "targets": {
+    "title": "현재 선택",
+    "error": "목록을 읽을 수 없습니다.",
+    "invalidSelector": "selector가 Kubernetes에 없는 연산자를 사용하므로 아무것도 선택하지 않습니다.",
+    "everything": {
+      "services": "모든 namespace의 모든 Service: 나열하지 않습니다.",
+      "pods": "모든 namespace의 모든 Pod: 나열하지 않습니다."
+    },
+    "tooMany_other": "namespace {{count}}개를 살펴봅니다: 여기에 나열하기에는 너무 많습니다.",
+    "none": {
+      "services": "Service를 하나도 선택하지 않습니다: Prometheus가 이에 대해 아무것도 수집하지 않습니다.",
+      "pods": "Pod를 하나도 선택하지 않습니다: Prometheus가 이에 대해 아무것도 수집하지 않습니다."
+    },
+    "selected": {
+      "services_other": "Service {{count}}개",
+      "pods_other": "Pod {{count}}개"
+    },
+    "more_other": "외 {{count}}개",
+    "portFound": "{{found}}/{{total}}개에서 찾음"
+  },
+  "endpoints": {
+    "port": "포트",
+    "path": "경로",
+    "interval": "간격",
+    "found": "포트 이름 확인"
+  },
+  "pickup": {
+    "title": "선택하는 Prometheus",
+    "none": "어떤 Prometheus도 이를 선택하지 않습니다: label과 namespace에 맞는 Prometheus selector가 없습니다.",
+    "unknown": "알 수 없음: namespace의 label을 읽을 수 없습니다.",
+    "noPrometheus": "클러스터에 Prometheus 개체가 없습니다."
+  },
+  "groups": {
+    "title": "규칙 그룹",
+    "name": "그룹",
+    "interval": "간격",
+    "alerts": "알림",
+    "records": "기록 규칙",
+    "none": "규칙 그룹이 없습니다."
+  },
+  "selectors": {
+    "title": "선택하는 대상",
+    "what": "Kind",
+    "selector": "Selector",
+    "namespaces": "Namespaces",
+    "none": "없음",
+    "all": "모두",
+    "ownNamespace": "자체 namespace",
+    "allNamespaces": "모든 namespace",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

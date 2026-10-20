@@ -77,6 +77,13 @@ export function ProblemsPage({ clusterId }: PageProps) {
           />
           {t("problems:showPractices")}
         </label>
+        <label className="problems__choice">
+          <Checkbox
+            checked={categories.includes("policies")}
+            onChange={(e) => void updateSettings(setCategory("policies", e.target.checked)).catch(() => undefined)}
+          />
+          {t("problems:showPolicies")}
+        </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}
         </Button>

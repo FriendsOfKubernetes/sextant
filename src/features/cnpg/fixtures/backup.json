@@ -1,0 +1,14 @@
+{
+  "apiVersion": "postgresql.cnpg.io/v1",
+  "kind": "Backup",
+  "metadata": { "name": "backup-example", "namespace": "db", "uid": "pg-backup-example", "creationTimestamp": "2026-10-10T00:00:00Z" },
+  "spec": { "cluster": { "name": "cluster-example" }, "method": "barmanObjectStore" },
+  "status": {
+    "phase": "failed",
+    "method": "barmanObjectStore",
+    "error": "can't execute backup: exit status 1",
+    "startedAt": "2026-10-10T00:00:01Z",
+    "stoppedAt": "2026-10-10T00:00:09Z",
+    "destinationPath": "s3://backups/"
+  }
+}

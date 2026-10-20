@@ -1,0 +1,79 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_one": "{{count}} objeto de Knative requiere atención",
+  "badge_many": "{{count}} de objetos de Knative requieren atención",
+  "badge_other": "{{count}} objetos de Knative requieren atención",
+  "health": {
+    "ready": "Listo",
+    "progressing": "En curso",
+    "failed": "Falló",
+    "unknown": "Desconocido"
+  },
+  "latest": "última",
+  "unlimited": "Sin límite",
+  "replicas": "{{actual}} de {{desired}}",
+  "timeoutSeconds": "{{seconds}} s",
+  "columns": {
+    "status": "Estado",
+    "reason": "Motivo",
+    "url": "URL",
+    "latestCreated": "Última creada",
+    "latestReady": "Última lista",
+    "traffic": "Tráfico",
+    "configuration": "Configuration",
+    "generation": "Generación",
+    "replicas": "Réplicas",
+    "target": "Destino"
+  },
+  "fields": {
+    "status": "Estado",
+    "url": "URL",
+    "address": "Dirección en el clúster",
+    "latestCreated": "Última revisión creada",
+    "latestReady": "Última revisión lista",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "Generación",
+    "replicas": "Réplicas (reales de deseadas)",
+    "routingState": "Estado de enrutamiento",
+    "images": "Imágenes",
+    "concurrency": "Solicitudes simultáneas por contenedor",
+    "timeout": "Tiempo de espera de solicitud",
+    "target": "Apunta a"
+  },
+  "traffic": {
+    "title": "Tráfico",
+    "askedTitle": "Tráfico (solicitado, aún no aplicado)",
+    "revision": "Revisión",
+    "tag": "Etiqueta",
+    "share": "Proporción",
+    "latest": "Sigue a la última",
+    "url": "URL",
+    "latestReady": "Última revisión lista ({{revision}})",
+    "percent": "{{percent}} %",
+    "followsLatest": "Sí"
+  },
+  "explain": {
+    "readyAt": "Listo: responde en {{url}}.",
+    "ready": "Listo.",
+    "progressing": "Aún no está listo: Knative sigue desplegando la última revisión o su ruta.",
+    "revisionFailedTrafficStays": "La última revisión {{revision}} falló ({{reason}}). El tráfico sigue en {{ready}}, la última revisión que llegó a estar lista.",
+    "revisionFailedNoneReady": "La última revisión {{revision}} falló ({{reason}}) y ninguna revisión ha llegado a estar lista: nadie atiende las solicitudes.",
+    "routeFailed": "La ruta no está lista ({{reason}}): puede que las solicitudes no lleguen a las revisiones como pide el reparto del tráfico.",
+    "domainNotClaimed": "El nombre de dominio no está reservado ({{reason}}): puede que otra asignación ya lo use.",
+    "certificateFailed": "No se pudo emitir el certificado TLS ({{reason}}).",
+    "notReady": "No está listo ({{reason}}).",
+    "revisionReady": "Lista para atender solicitudes.",
+    "revisionScaledToZero": "Lista y escalada a cero: ahora no le llega tráfico, así que no se ejecuta ningún Pod. La primera solicitud inicia uno.",
+    "revisionProgressing": "Iniciándose: los Pods de la revisión aún no están listos.",
+    "revisionContainerUnhealthy": "El contenedor no se inicia o no supera sus comprobaciones de estado ({{reason}}).",
+    "revisionResourcesUnavailable": "Knative no pudo obtener los recursos que necesita la revisión ({{reason}}), por ejemplo su imagen o sus Pods.",
+    "revisionFailed": "La revisión falló ({{reason}})."
+  }
+}

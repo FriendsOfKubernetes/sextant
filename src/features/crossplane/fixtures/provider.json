@@ -1,0 +1,20 @@
+{
+  "apiVersion": "pkg.crossplane.io/v1",
+  "kind": "Provider",
+  "metadata": { "name": "provider-aws-rds", "uid": "5b0e7c2a-0000-4000-8000-0000000000e1", "creationTimestamp": "2026-10-01T09:00:00Z" },
+  "spec": { "package": "xpkg.upbound.io/upbound/provider-aws-rds:v1.14.0", "revisionActivationPolicy": "Automatic" },
+  "status": {
+    "currentRevision": "provider-aws-rds-3d2f1c0b9a87",
+    "currentIdentifier": "xpkg.upbound.io/upbound/provider-aws-rds:v1.14.0",
+    "conditions": [
+      { "type": "Installed", "status": "True", "reason": "ActivePackageRevision", "lastTransitionTime": "2026-10-01T09:00:10Z" },
+      {
+        "type": "Healthy",
+        "status": "False",
+        "reason": "UnhealthyPackageRevision",
+        "message": "cannot resolve package dependencies: incompatible dependencies: [xpkg.upbound.io/upbound/provider-family-aws]",
+        "lastTransitionTime": "2026-10-01T09:00:10Z"
+      }
+    ]
+  }
+}

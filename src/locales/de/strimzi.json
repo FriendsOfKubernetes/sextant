@@ -1,0 +1,81 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} Objekt erfordert Aufmerksamkeit",
+  "badge_other": "{{count}} Objekte erfordern Aufmerksamkeit",
+  "state": {
+    "ready": "Bereit",
+    "notReady": "Nicht bereit",
+    "pending": "Ausstehend"
+  },
+  "columns": {
+    "status": "Status",
+    "reason": "Grund",
+    "cluster": "Kafka",
+    "replicas": "Replikate",
+    "version": "Version",
+    "listeners": "Listener",
+    "roles": "Rollen",
+    "partitions": "Partitionen",
+    "topicReplicas": "Replikate",
+    "authentication": "Authentifizierung",
+    "authorization": "Autorisierung"
+  },
+  "fields": {
+    "status": "Status",
+    "reason": "Grund",
+    "version": "Kafka-Version",
+    "metadataState": "Metadaten",
+    "clusterId": "Cluster-ID",
+    "nodePools": "Knotenpools",
+    "cluster": "Kafka",
+    "roles": "Rollen",
+    "replicas": "Replikate",
+    "nodeIds": "Knoten-IDs",
+    "storage": "Speicher",
+    "topicName": "Topic-Name",
+    "partitions": "Partitionen",
+    "topicReplicas": "Replikationsfaktor",
+    "config": "Konfiguration",
+    "authentication": "Authentifizierung",
+    "authorization": "Autorisierung",
+    "acls": "ACL-Regeln",
+    "username": "Benutzername",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap-Server",
+    "connectCluster": "Connect-Cluster",
+    "url": "REST-API",
+    "plugins": "Connector-Plugins"
+  },
+  "warnings": "Warnungen",
+  "warningReason": "Grund",
+  "warningMessage": "Meldung",
+  "listeners": {
+    "title": "Listener",
+    "name": "Name",
+    "type": "Typ",
+    "port": "Port",
+    "bootstrap": "Bootstrap",
+    "addresses": "Adressen",
+    "tls": "TLS",
+    "noAddress": "Noch keine Adresse"
+  },
+  "mirrors": {
+    "title": "Spiegelungen",
+    "source": "Quelle",
+    "target": "Ziel",
+    "topics": "Topics"
+  },
+  "connectors": {
+    "title": "Connectors",
+    "name": "Name",
+    "state": "Zustand",
+    "tasks": "Tasks"
+  }
+}

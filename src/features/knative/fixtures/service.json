@@ -1,0 +1,54 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "hello",
+    "namespace": "default",
+    "uid": "6f2a5c1e-0d1b-4a55-9b1e-1f6f0b8a0001",
+    "resourceVersion": "4711",
+    "generation": 3,
+    "creationTimestamp": "2026-10-01T10:00:00Z"
+  },
+  "spec": {
+    "template": {
+      "metadata": { "name": "hello-00003" },
+      "spec": {
+        "containerConcurrency": 0,
+        "timeoutSeconds": 300,
+        "containers": [{ "image": "ghcr.io/knative/helloworld-go:latest", "env": [{ "name": "TARGET", "value": "Knative" }] }]
+      }
+    },
+    "traffic": [
+      { "revisionName": "hello-00001", "percent": 20, "tag": "v1" },
+      { "latestRevision": true, "percent": 80 }
+    ]
+  },
+  "status": {
+    "observedGeneration": 3,
+    "url": "http://hello.default.example.com",
+    "address": { "url": "http://hello.default.svc.cluster.local" },
+    "latestCreatedRevisionName": "hello-00003",
+    "latestReadyRevisionName": "hello-00002",
+    "traffic": [
+      { "revisionName": "hello-00001", "latestRevision": false, "percent": 20, "tag": "v1", "url": "http://v1-hello.default.example.com" },
+      { "revisionName": "hello-00002", "latestRevision": true, "percent": 80 }
+    ],
+    "conditions": [
+      {
+        "type": "ConfigurationsReady",
+        "status": "False",
+        "reason": "RevisionFailed",
+        "message": "Revision \"hello-00003\" failed with message: Container failed with: exec format error.",
+        "lastTransitionTime": "2026-10-10T09:00:00Z"
+      },
+      {
+        "type": "Ready",
+        "status": "False",
+        "reason": "RevisionFailed",
+        "message": "Revision \"hello-00003\" failed with message: Container failed with: exec format error.",
+        "lastTransitionTime": "2026-10-10T09:00:00Z"
+      },
+      { "type": "RoutesReady", "status": "True", "lastTransitionTime": "2026-10-05T09:00:00Z" }
+    ]
+  }
+}

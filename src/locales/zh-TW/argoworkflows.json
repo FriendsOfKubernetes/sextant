@@ -1,0 +1,64 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_other": "{{count}} 個 workflow 最近失敗",
+  "columns": {
+    "phase": "階段",
+    "progress": "進度",
+    "duration": "時長",
+    "failedStep": "失敗的步驟",
+    "schedule": "排程",
+    "suspended": "已暫停",
+    "active": "作用中",
+    "lastScheduled": "上次執行",
+    "entrypoint": "進入點",
+    "templates": "範本"
+  },
+  "yes": "是",
+  "failedStep": "{{step}}：{{message}}",
+  "fields": {
+    "phase": "階段",
+    "progress": "進度",
+    "startedAt": "開始",
+    "finishedAt": "結束",
+    "duration": "時長",
+    "message": "訊息",
+    "failedStep": "失敗的步驟",
+    "failedMessage": "其訊息",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "排程",
+    "timezone": "時區",
+    "concurrencyPolicy": "並行原則",
+    "suspended": "已暫停",
+    "lastScheduled": "上次執行",
+    "active": "作用中的 workflow",
+    "succeeded": "成功",
+    "failed": "失敗",
+    "entrypoint": "進入點",
+    "templates": "範本"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "步驟",
+    "cron": "排程",
+    "template": "範本"
+  },
+  "tree": {
+    "count_other": "{{count}} 個步驟",
+    "capped": "僅顯示 {{count}} 個步驟中的前 {{shown}} 個。",
+    "expandFailed": "顯示失敗的步驟",
+    "collapseAll": "全部摺疊",
+    "expand": "展開 {{name}}",
+    "collapse": "摺疊 {{name}}",
+    "logs": "日誌",
+    "logsOf": "{{name}} 的日誌",
+    "offloaded": "控制器將此 workflow 的步驟保存在其資料庫中（offloaded node status）：它們不在物件中，因此無法在此顯示。",
+    "compressed": "控制器以壓縮形式儲存了此 workflow 的步驟：無法在此顯示。",
+    "none": "尚無步驟。"
+  }
+}

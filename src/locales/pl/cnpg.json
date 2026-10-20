@@ -1,0 +1,92 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} obiekt wymaga uwagi",
+  "badge_few": "{{count}} obiekty wymagają uwagi",
+  "badge_many": "{{count}} obiektów wymaga uwagi",
+  "badge_other": "{{count}} obiektu wymaga uwagi",
+  "state": {
+    "healthy": "Sprawny",
+    "switchover": "Przełączanie",
+    "failover": "Przełączanie awaryjne",
+    "progressing": "W toku",
+    "unhealthy": "Niesprawny"
+  },
+  "backupState": {
+    "completed": "Ukończona",
+    "failed": "Błąd",
+    "running": "Trwa",
+    "pending": "Oczekuje"
+  },
+  "role": {
+    "primary": "Główna",
+    "replica": "Replika"
+  },
+  "columns": {
+    "status": "Stan",
+    "instances": "Instancje",
+    "primary": "Główna",
+    "phase": "Faza",
+    "cluster": "Klaster",
+    "method": "Metoda",
+    "started": "Rozpoczęto",
+    "schedule": "Harmonogram",
+    "suspended": "Wstrzymano",
+    "lastBackup": "Ostatnia kopia",
+    "type": "Typ",
+    "poolMode": "Tryb puli"
+  },
+  "fields": {
+    "status": "Stan",
+    "phase": "Faza",
+    "instances": "Instancje",
+    "primary": "Bieżąca instancja główna",
+    "targetPrimary": "Docelowa instancja główna",
+    "image": "Obraz",
+    "storage": "Magazyn",
+    "archiving": "Ciągła archiwizacja",
+    "lastBackup": "Ostatnia kopia zapasowa",
+    "lastSuccessfulBackup": "Ostatnia udana kopia",
+    "lastFailedBackup": "Ostatnia nieudana kopia",
+    "firstRecoverabilityPoint": "Możliwe odtworzenie od",
+    "cluster": "Klaster",
+    "method": "Metoda",
+    "target": "Cel",
+    "startedAt": "Rozpoczęto",
+    "stoppedAt": "Zatrzymano",
+    "backupId": "ID kopii",
+    "destination": "Miejsce docelowe",
+    "schedule": "Harmonogram",
+    "suspended": "Wstrzymano",
+    "lastScheduleTime": "Ostatnie uruchomienie",
+    "nextScheduleTime": "Następne uruchomienie",
+    "type": "Typ",
+    "poolerInstances": "Instancje",
+    "poolMode": "Tryb puli"
+  },
+  "instancesReady": "Gotowe: {{ready}} z {{total}}",
+  "switchover": "Instancja główna przechodzi z {{from}} na {{to}}.",
+  "failover": "Przełączanie awaryjne: {{primary}} zniknęła, trwa wybór nowej instancji głównej.",
+  "replicaCluster": "Klaster repliki: jego instancja główna podąża za innym klastrem.",
+  "members": {
+    "title": "Instancje",
+    "instance": "Instancja",
+    "role": "Rola",
+    "health": "Kondycja",
+    "timeline": "Timeline"
+  },
+  "backups": "Kopie zapasowe",
+  "noBackups": "Dla tego klastra nie skonfigurowano kopii zapasowych.",
+  "archivingOk": "Działa",
+  "archivingFailing": "Błąd",
+  "backupOk": "Udana",
+  "backupFailing": "Nieudana",
+  "unknown": "Nieznany",
+  "error": "Błąd",
+  "yes": "Tak",
+  "no": "Nie"
+}

@@ -1,0 +1,47 @@
+/* Argo Rollouts details: the plain-language status and the canary steps. */
+.ar-explain {
+  margin: 0 0 0.5rem;
+  color: var(--color-text);
+}
+
+.ar-explain--danger {
+  color: var(--color-danger);
+}
+
+.ar-muted {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.ar-steps {
+  margin: 0;
+  padding-left: 1.75rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.ar-step {
+  color: var(--color-text-muted);
+}
+
+.ar-step code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.ar-step--current {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.ar-step--current code {
+  padding: 0 0.25rem;
+  border-radius: 3px;
+  background: var(--color-selected);
+}
+
+.ar-step__mark {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-accent);
+}

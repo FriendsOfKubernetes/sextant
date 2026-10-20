@@ -4,8 +4,17 @@
 import type { KindRef, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
 import { APPLICATION } from "../argocd/model";
+import { ROLLOUT } from "../argo-rollouts/model";
+import { WORKFLOW } from "../argo-workflows/model";
 import { BUCKET, GIT_REPOSITORY, HELM_RELEASE, HELM_REPOSITORY, KUSTOMIZATION, OCI_REPOSITORY } from "../flux/model";
 import { COUNTED_KINDS } from "../gateway-api/problems";
+import { CONFIGURATION as KNATIVE_CONFIGURATION, KSERVICE } from "../knative/model";
+import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
+import { XRD } from "../crossplane/model";
+import { BACKUP as CNPG_BACKUP, PG_CLUSTER } from "../cnpg/model";
+import { CLUSTER_EXTERNAL_SECRET, CLUSTER_SECRET_STORE, EXTERNAL_SECRET, PUSH_SECRET, SECRET_STORE } from "../external-secrets/model";
+import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
+import { STRIMZI_KINDS } from "../strimzi/model";
 import {
   CERTIFICATE,
   CRONJOB,
@@ -55,10 +64,38 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   certificates: [tool("certificates", CERTIFICATE)],
   flux: FLUX_WATCHED.map((kind) => tool("flux", kind)),
   argocd: [tool("argocd", APPLICATION)],
+  // Argo Rollouts (#213): Degraded or aborted Rollouts and the failed analyses they report.
+  rollouts: [tool("rollouts", ROLLOUT)],
+  // Recent failed Workflows (#213): the provider of features/argo-workflows watches only failed ones, metadata only,
+  // by their phase label (`external`), held only where Workflows are served.
+  workflows: [{ category: "workflows", kind: WORKFLOW, fieldSelector: null, discovered: true, external: true }],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
   // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
   // only where the cluster serves VirtualServices.
   mesh: [{ category: "mesh", kind: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, fieldSelector: null, discovered: true, external: true }],
+  // Knative Services and Configurations of their own (#213): a failed latest revision shows through them.
+  knative: [tool("knative", KSERVICE), tool("knative", KNATIVE_CONFIGURATION)],
+  // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
+  // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
+  crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
+  // Kyverno policy failures (#213, opt-in): the reports Kyverno writes, one per resource.
+  policies: [tool("policies", POLICY_REPORT), tool("policies", CLUSTER_POLICY_REPORT)],
+  // External Secrets (#213): failed syncs and stores that do not validate.
+  externalSecrets: [EXTERNAL_SECRET, CLUSTER_EXTERNAL_SECRET, SECRET_STORE, CLUSTER_SECRET_STORE, PUSH_SECRET].map((kind) =>
+    tool("externalSecrets", kind),
+  ),
+  // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
+  cnpg: [tool("cnpg", PG_CLUSTER), tool("cnpg", CNPG_BACKUP)],
+  // Strimzi (#213): every kind of the section not ready.
+  strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind)),
+  // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged
+  // across objects by the provider of features/prometheus-operator (`external`), held only where ServiceMonitors are
+  // served.
+  prometheusOperator: [
+    tool("prometheusOperator", PROMETHEUS),
+    tool("prometheusOperator", ALERTMANAGER),
+    { category: "prometheusOperator", kind: SERVICE_MONITOR, fieldSelector: null, discovered: true, external: true },
+  ],
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
   security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),

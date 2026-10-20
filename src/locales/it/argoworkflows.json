@@ -1,0 +1,68 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow non riuscito di recente",
+  "badge_many": "{{count}} workflow non riusciti di recente",
+  "badge_other": "{{count}} workflow non riusciti di recente",
+  "columns": {
+    "phase": "Fase",
+    "progress": "Avanzamento",
+    "duration": "Durata",
+    "failedStep": "Passo non riuscito",
+    "schedule": "Pianificazione",
+    "suspended": "Sospeso",
+    "active": "Attivi",
+    "lastScheduled": "Ultima esecuzione",
+    "entrypoint": "Punto di ingresso",
+    "templates": "Modelli"
+  },
+  "yes": "Sì",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Fase",
+    "progress": "Avanzamento",
+    "startedAt": "Inizio",
+    "finishedAt": "Fine",
+    "duration": "Durata",
+    "message": "Messaggio",
+    "failedStep": "Passo non riuscito",
+    "failedMessage": "Il suo messaggio",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Pianificazioni",
+    "timezone": "Fuso orario",
+    "concurrencyPolicy": "Criterio di concorrenza",
+    "suspended": "Sospeso",
+    "lastScheduled": "Ultima esecuzione",
+    "active": "Workflow attivi",
+    "succeeded": "Riusciti",
+    "failed": "Non riusciti",
+    "entrypoint": "Punto di ingresso",
+    "templates": "Modelli"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Passi",
+    "cron": "Pianificazione",
+    "template": "Modello"
+  },
+  "tree": {
+    "count_one": "{{count}} passo",
+    "count_many": "{{count}} passi",
+    "count_other": "{{count}} passi",
+    "capped": "Sono mostrati solo i primi {{shown}} di {{count}} passi.",
+    "expandFailed": "Mostra il passo non riuscito",
+    "collapseAll": "Comprimi tutto",
+    "expand": "Espandi {{name}}",
+    "collapse": "Comprimi {{name}}",
+    "logs": "Log",
+    "logsOf": "Log di {{name}}",
+    "offloaded": "Il controller conserva i passi di questo workflow nel suo database (offloaded node status): non sono nell'oggetto e non possono essere mostrati qui.",
+    "compressed": "Il controller ha salvato i passi di questo workflow in forma compressa: non possono essere mostrati qui.",
+    "none": "Ancora nessun passo."
+  }
+}

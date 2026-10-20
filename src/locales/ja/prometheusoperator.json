@@ -1,0 +1,108 @@
+{
+  "sidebar": {
+    "serviceMonitors": "ServiceMonitor",
+    "podMonitors": "PodMonitor",
+    "probes": "Probe",
+    "prometheusRules": "PrometheusRule",
+    "prometheuses": "Prometheus",
+    "alertmanagers": "Alertmanager"
+  },
+  "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
+  "state": {
+    "ready": "利用可能",
+    "degraded": "低下",
+    "failed": "失敗",
+    "pending": "保留中"
+  },
+  "columns": {
+    "namespaces": "Namespace",
+    "selector": "Selector",
+    "ports": "ポート",
+    "prober": "Prober",
+    "module": "モジュール",
+    "interval": "間隔",
+    "groups": "グループ",
+    "rules": "ルール",
+    "status": "状態",
+    "replicas": "レプリカ",
+    "version": "バージョン",
+    "reason": "理由"
+  },
+  "fields": {
+    "namespaces": "Namespace",
+    "selector": "Selector",
+    "jobLabel": "Job label",
+    "prober": "Prober",
+    "module": "モジュール",
+    "interval": "間隔",
+    "staticTargets": "ターゲット",
+    "ingressSelector": "Ingress selector",
+    "status": "状態",
+    "reason": "理由",
+    "replicas": "レプリカ",
+    "shards": "シャード",
+    "version": "バージョン",
+    "retention": "保持期間",
+    "paused": "一時停止"
+  },
+  "anyNamespace": "すべての namespace",
+  "selectsAll": "すべて",
+  "selectsNone": "なし",
+  "loading": "読み込み中…",
+  "yes": "はい",
+  "replicasAvailable": "{{available}}/{{total}} 利用可能",
+  "targets": {
+    "title": "現在選択しているもの",
+    "error": "一覧を読み取れませんでした。",
+    "invalidSelector": "selector が Kubernetes にない演算子を使っているため、何も選択しません。",
+    "everything": {
+      "services": "すべての namespace のすべての Service: 一覧表示しません。",
+      "pods": "すべての namespace のすべての Pod: 一覧表示しません。"
+    },
+    "tooMany_other": "{{count}} 個の namespace を対象にしています: 多すぎてここには一覧表示できません。",
+    "none": {
+      "services": "Service を 1 つも選択していません: Prometheus はこれについて何も収集しません。",
+      "pods": "Pod を 1 つも選択していません: Prometheus はこれについて何も収集しません。"
+    },
+    "selected": {
+      "services_other": "{{count}} 個の Service",
+      "pods_other": "{{count}} 個の Pod"
+    },
+    "more_other": "ほか {{count}} 個",
+    "portFound": "{{found}}/{{total}} で検出"
+  },
+  "endpoints": {
+    "port": "ポート",
+    "path": "パス",
+    "interval": "間隔",
+    "found": "ポート名の検出"
+  },
+  "pickup": {
+    "title": "選択している Prometheus",
+    "none": "どの Prometheus にも選択されていません: label と namespace に一致する Prometheus の selector がありません。",
+    "unknown": "不明: namespace の label を読み取れませんでした。",
+    "noPrometheus": "クラスターに Prometheus オブジェクトがありません。"
+  },
+  "groups": {
+    "title": "ルールグループ",
+    "name": "グループ",
+    "interval": "間隔",
+    "alerts": "アラート",
+    "records": "記録ルール",
+    "none": "ルールグループはありません。"
+  },
+  "selectors": {
+    "title": "選択するもの",
+    "what": "Kind",
+    "selector": "Selector",
+    "namespaces": "Namespace",
+    "none": "なし",
+    "all": "すべて",
+    "ownNamespace": "自身の namespace",
+    "allNamespaces": "すべての namespace",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

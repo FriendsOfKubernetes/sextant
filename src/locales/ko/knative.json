@@ -1,0 +1,77 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_other": "Knative 객체 {{count}}개에 주의가 필요합니다",
+  "health": {
+    "ready": "준비됨",
+    "progressing": "진행 중",
+    "failed": "실패",
+    "unknown": "알 수 없음"
+  },
+  "latest": "최신",
+  "unlimited": "무제한",
+  "replicas": "{{actual}} / {{desired}}",
+  "timeoutSeconds": "{{seconds}}초",
+  "columns": {
+    "status": "상태",
+    "reason": "이유",
+    "url": "URL",
+    "latestCreated": "최근 생성",
+    "latestReady": "최근 준비됨",
+    "traffic": "트래픽",
+    "configuration": "Configuration",
+    "generation": "세대",
+    "replicas": "복제본",
+    "target": "대상"
+  },
+  "fields": {
+    "status": "상태",
+    "url": "URL",
+    "address": "클러스터 내 주소",
+    "latestCreated": "최근 생성된 리비전",
+    "latestReady": "최근 준비된 리비전",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "세대",
+    "replicas": "복제본(실제 / 원하는 수)",
+    "routingState": "라우팅 상태",
+    "images": "이미지",
+    "concurrency": "컨테이너당 동시 요청 수",
+    "timeout": "요청 시간 제한",
+    "target": "가리키는 대상"
+  },
+  "traffic": {
+    "title": "트래픽",
+    "askedTitle": "트래픽(요청됨, 아직 적용 안 됨)",
+    "revision": "리비전",
+    "tag": "태그",
+    "share": "비율",
+    "latest": "최신 따라가기",
+    "url": "URL",
+    "latestReady": "최근 준비된 리비전({{revision}})",
+    "percent": "{{percent}}%",
+    "followsLatest": "예"
+  },
+  "explain": {
+    "readyAt": "준비됨: {{url}}에서 응답합니다.",
+    "ready": "준비됨.",
+    "progressing": "아직 준비되지 않음: Knative가 최신 리비전이나 그 경로를 아직 배포하고 있습니다.",
+    "revisionFailedTrafficStays": "최신 리비전 {{revision}}이(가) 실패했습니다({{reason}}). 트래픽은 마지막으로 준비된 리비전 {{ready}}에 그대로 있습니다.",
+    "revisionFailedNoneReady": "최신 리비전 {{revision}}이(가) 실패했고({{reason}}) 아직 준비된 리비전이 없습니다. 요청을 처리하는 것이 없습니다.",
+    "routeFailed": "경로가 준비되지 않았습니다({{reason}}). 요청이 트래픽 분할대로 리비전에 도달하지 않을 수 있습니다.",
+    "domainNotClaimed": "도메인 이름이 확보되지 않았습니다({{reason}}). 다른 매핑이 이미 사용 중일 수 있습니다.",
+    "certificateFailed": "TLS 인증서를 발급할 수 없습니다({{reason}}).",
+    "notReady": "준비되지 않음({{reason}}).",
+    "revisionReady": "요청을 처리할 준비가 되었습니다.",
+    "revisionScaledToZero": "준비되었고 0으로 축소되었습니다. 지금은 트래픽이 오지 않아 실행 중인 Pod가 없습니다. 첫 요청이 Pod를 시작합니다.",
+    "revisionProgressing": "시작 중: 리비전의 Pod가 아직 준비되지 않았습니다.",
+    "revisionContainerUnhealthy": "컨테이너가 시작되지 않거나 상태 검사에 실패합니다({{reason}}).",
+    "revisionResourcesUnavailable": "Knative가 리비전에 필요한 리소스(예: 이미지나 Pod)를 얻지 못했습니다({{reason}}).",
+    "revisionFailed": "리비전이 실패했습니다({{reason}})."
+  }
+}

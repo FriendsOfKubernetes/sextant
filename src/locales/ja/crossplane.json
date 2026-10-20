@@ -1,0 +1,122 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_other": "{{count}} 件の claim または複合リソースに対応が必要です",
+  "health": {
+    "ready": "準備完了",
+    "progressing": "進行中",
+    "failed": "失敗",
+    "unknown": "不明"
+  },
+  "served": "提供中",
+  "referenceable": "参照可能",
+  "failing": "最初の未達成条件: {{type}}（{{reason}}）",
+  "failingWithMessage": "最初の未達成条件: {{type}}（{{reason}}）: {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "複合リソース",
+    "managed": "マネージドリソース"
+  },
+  "columns": {
+    "composite": "複合リソースの Kind",
+    "claim": "Claim の Kind",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "複合の種類",
+    "mode": "モード",
+    "status": "状態",
+    "package": "パッケージ",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "グループ",
+    "compositeKind": "複合リソースの Kind",
+    "claimKind": "Claim の Kind",
+    "versions": "バージョン",
+    "defaultComposition": "既定の Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "複合リソースの種類",
+    "mode": "モード",
+    "resources": "リソース（クラシックモード）",
+    "package": "パッケージ",
+    "revision": "現在のリビジョン",
+    "identifier": "現在のパッケージ",
+    "activation": "リビジョンの有効化",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "役割",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "接続用 Secret",
+    "providerConfig": "ProviderConfig",
+    "externalName": "外部名",
+    "deletionPolicy": "削除ポリシー",
+    "managementPolicies": "管理ポリシー",
+    "composite": "複合リソース"
+  },
+  "pipeline": {
+    "step": "ステップ",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "リソース",
+    "loading": "リソースを読み込み中…",
+    "noResources": "構成するリソースはまだありません。",
+    "noComposite": "複合リソースはまだありません。Crossplane はこの claim をまだバインドしていません。",
+    "missing": "見つかりません",
+    "unreadable": "読み取れません",
+    "more": "非表示: {{count}}"
+  },
+  "explain": {
+    "ready": "同期済みで準備完了です。",
+    "creating": "まだ準備できていません。Crossplane がこのリソースまたはその構成リソースを作成中です。",
+    "deleting": "削除中です。",
+    "notSynced": "Crossplane が調整できません（{{reason}}）。理由は下の最初の未達成条件を参照してください。",
+    "notReady": "準備できていません（{{reason}}）。理由は下の最初の未達成条件を参照してください。",
+    "packageHealthy": "インストール済みで正常です。",
+    "packageInstalling": "インストール中: まだ正常ではありません。",
+    "packageNotInstalled": "パッケージがインストールされていません（{{reason}}）。",
+    "packageUnhealthy": "パッケージはインストール済みですが正常ではありません（{{reason}}）。",
+    "xrdNotEstablished": "確立されていません。定義する Kind はまだ提供されていません。",
+    "xrdClaimNotOffered": "Claim の Kind {{claim}} はまだ提供されていません。",
+    "xrdEstablishedWithClaim": "確立済み: 複合リソース {{kind}} と claim {{claim}} を定義します。",
+    "xrdEstablished": "確立済み: 複合リソース {{kind}} を定義します。"
+  },
+  "page": {
+    "sidebar": "複合リソース",
+    "title": "複合リソース",
+    "hint": "XRD が定義する Kind の claim と複合リソースを、最初の未達成条件とともに表示します。",
+    "onlyProblems": "問題のみ",
+    "total": "表示: {{count}}",
+    "loading": "claim と複合リソースを読み込み中…",
+    "xrdsTruncated": "最初の {{count}} 個の XRD の Kind だけを表示しています。",
+    "rowsTruncated": "最初の {{count}} 件だけを表示しています。",
+    "noXrds": "XRD がありません。クラスターは複合リソースを定義していません。",
+    "none": "claim も複合リソースもありません。",
+    "columns": {
+      "kind": "Kind",
+      "name": "名前",
+      "namespace": "Namespace",
+      "state": "状態",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "理由",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}}（claim）",
+      "composite": "{{kind}}（複合）"
+    }
+  }
+}

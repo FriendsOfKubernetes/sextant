@@ -1,0 +1,64 @@
+/* Argo Workflows details: the node tree. */
+.aw-muted {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.aw-when {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.aw-tree__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.aw-tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aw-node {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aw-node__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--control-height-compact);
+}
+
+.aw-node__spacer {
+  display: inline-block;
+  width: var(--control-height-compact);
+}
+
+.aw-node__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.aw-node__type,
+.aw-node__time {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.aw-node__message {
+  margin-left: calc(var(--control-height-compact) + 0.5rem);
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.aw-node--failed .aw-node__message {
+  color: var(--color-danger);
+}

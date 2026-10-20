@@ -1,0 +1,99 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} Objekt verstößt gegen Richtlinienregeln",
+  "badge_other": "{{count}} Objekte verstoßen gegen Richtlinienregeln",
+  "yes": "Ja",
+  "no": "Nein",
+  "ready": {
+    "True": "Bereit",
+    "False": "Nicht bereit",
+    "Unknown": "Ausstehend"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Gemischt"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: Eine Anfrage, die eine Regel verletzt, wird abgewiesen.",
+    "Audit": "Audit: Eine Anfrage, die eine Regel verletzt, wird durchgelassen, und der Verstoß wird in einem Bericht festgehalten.",
+    "Mixed": "Einige Regeln weisen eine Anfrage ab, die sie verletzt (Enforce); die anderen halten den Verstoß nur in einem Bericht fest (Audit)."
+  },
+  "explain": {
+    "ready": "Bereit: Kyverno wendet diese Richtlinie an.",
+    "notReady": "Nicht bereit: Kyverno wendet diese Richtlinie erst an, wenn das Problem unten behoben ist.",
+    "pending": "Kyverno hat diese Richtlinie noch nicht fertig geladen."
+  },
+  "columns": {
+    "ready": "Bereit",
+    "mode": "Modus",
+    "background": "Hintergrund",
+    "rules": "Regeln",
+    "message": "Meldung",
+    "object": "Objekt",
+    "pass": "Bestanden",
+    "fail": "Verstoß",
+    "warn": "Warnung",
+    "error": "Fehler",
+    "skip": "Übersprungen"
+  },
+  "fields": {
+    "ready": "Bereit",
+    "mode": "Modus",
+    "background": "Hintergrundprüfungen",
+    "object": "Objekt"
+  },
+  "rules": {
+    "name": "Regel",
+    "type": "Typ",
+    "mode": "Modus",
+    "kinds": "Kinds"
+  },
+  "ruleType": {
+    "validate": "Validieren",
+    "mutate": "Ändern",
+    "generate": "Erzeugen",
+    "verifyImages": "Images prüfen"
+  },
+  "result": {
+    "pass": "Bestanden",
+    "fail": "Verstoß",
+    "warn": "Warnung",
+    "error": "Fehler",
+    "skip": "Übersprungen"
+  },
+  "summary": {
+    "pass": "Bestanden: {{count}}",
+    "fail": "Verstöße: {{count}}",
+    "warn": "Warnungen: {{count}}",
+    "error": "Fehler: {{count}}",
+    "skip": "Übersprungen: {{count}}"
+  },
+  "results": {
+    "object": "Objekt",
+    "policy": "Richtlinie",
+    "rule": "Regel",
+    "result": "Ergebnis",
+    "message": "Meldung",
+    "more": "Nicht angezeigt: {{count}}"
+  },
+  "policySummary": {
+    "title": "Ergebnisse in Berichten",
+    "loading": "Berichte werden gelesen…",
+    "none": "Noch kein Bericht enthält Ergebnisse dieser Richtlinie.",
+    "unlabelled": "Der Name der Richtlinie ist zu lang für das Label, das Kyverno an seine Berichte setzt, daher lassen sich ihre Ergebnisse hier nicht zusammenfassen.",
+    "capped": "Nur ein Teil der Berichte wurde gelesen: Die Zahlen sind unvollständig ({{count}} Ergebnisse gezählt)."
+  },
+  "objectResults": {
+    "title": "Richtlinienergebnisse",
+    "failing": "Verletzte Richtlinienregeln: {{count}} von {{total}} geprüften.",
+    "passing": "Keine Richtlinienregel wird verletzt ({{count}} geprüft)."
+  }
+}

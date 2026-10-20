@@ -37,6 +37,7 @@ import type { SecretNamespaceComparison } from "./generated/SecretNamespaceCompa
 import type { SecretSide } from "./generated/SecretSide";
 import type { NamedObject } from "./generated/NamedObject";
 import type { DryRunResult } from "./generated/DryRunResult";
+import type { SetImageChange } from "./generated/SetImageChange";
 import type { HelmManifestDiff } from "./generated/HelmManifestDiff";
 import type { ChartUpdates } from "./generated/ChartUpdates";
 import type { HelmRevisionDiff } from "./generated/HelmRevisionDiff";
@@ -206,6 +207,12 @@ export const resources = {
    */
   patch: (clusterId: ClusterId, ref: ObjectRef, patch: unknown, patchType: PatchType) =>
     call<KubeObject>("resource_patch", { clusterId, ref, patch, patchType }),
+  /**
+   * Patch of the `status` subresource of an Argo Rollouts Rollout (promote, abort, retry, ADR-0097); any other kind is
+   * `invalid`. Resolves to the object as saved.
+   */
+  patchStatus: (clusterId: ClusterId, ref: ObjectRef, patch: unknown, patchType: PatchType) =>
+    call<KubeObject>("resource_patch_status", { clusterId, ref, patch, patchType }),
 };
 
 export const actions = {
@@ -220,6 +227,15 @@ export const actions = {
   triggerCronJob: (clusterId: ClusterId, ref: ObjectRef) => call<ObjectRef>("cronjob_trigger", { clusterId, ref }),
   suspendCronJob: (clusterId: ClusterId, ref: ObjectRef, suspend: boolean) =>
     call<void>("cronjob_suspend", { clusterId, ref, suspend }),
+  /**
+   * "Set image…" (#215): one strategic-merge patch of the named containers' images (Deployment, StatefulSet,
+   * DaemonSet, CronJob, bare Pod); refused when a container is missing or its image is no longer `from`.
+   */
+  setImage: (clusterId: ClusterId, ref: ObjectRef, changes: SetImageChange[]) =>
+    call<void>("workload_set_image", { clusterId, ref, changes }),
+  /** The same patch with `dryRun=All`: the live object and what the API server would store. Changes nothing. */
+  setImageDryRun: (clusterId: ClusterId, ref: ObjectRef, changes: SetImageChange[]) =>
+    call<DryRunResult>("workload_set_image_dry_run", { clusterId, ref, changes }),
 };
 
 export const logs = {

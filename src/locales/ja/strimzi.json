@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "kafkas": "Kafka",
+    "nodePools": "KafkaNodePool",
+    "topics": "KafkaTopic",
+    "users": "KafkaUser",
+    "connects": "KafkaConnect",
+    "mirrorMakers": "KafkaMirrorMaker2"
+  },
+  "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
+  "state": {
+    "ready": "準備完了",
+    "notReady": "未準備",
+    "pending": "保留中"
+  },
+  "columns": {
+    "status": "状態",
+    "reason": "理由",
+    "cluster": "Kafka",
+    "replicas": "レプリカ",
+    "version": "バージョン",
+    "listeners": "Listener",
+    "roles": "ロール",
+    "partitions": "パーティション",
+    "topicReplicas": "レプリカ",
+    "authentication": "認証",
+    "authorization": "認可"
+  },
+  "fields": {
+    "status": "状態",
+    "reason": "理由",
+    "version": "Kafka のバージョン",
+    "metadataState": "メタデータ",
+    "clusterId": "クラスター ID",
+    "nodePools": "ノードプール",
+    "cluster": "Kafka",
+    "roles": "ロール",
+    "replicas": "レプリカ",
+    "nodeIds": "ノード ID",
+    "storage": "ストレージ",
+    "topicName": "トピック名",
+    "partitions": "パーティション",
+    "topicReplicas": "レプリケーション係数",
+    "config": "設定",
+    "authentication": "認証",
+    "authorization": "認可",
+    "acls": "ACL ルール",
+    "username": "ユーザー名",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap サーバー",
+    "connectCluster": "Connect クラスター",
+    "url": "REST API",
+    "plugins": "コネクタープラグイン"
+  },
+  "warnings": "警告",
+  "warningReason": "理由",
+  "warningMessage": "メッセージ",
+  "listeners": {
+    "title": "Listener",
+    "name": "名前",
+    "type": "種類",
+    "port": "ポート",
+    "bootstrap": "Bootstrap",
+    "addresses": "アドレス",
+    "tls": "TLS",
+    "noAddress": "アドレスはまだありません"
+  },
+  "mirrors": {
+    "title": "ミラー",
+    "source": "ソース",
+    "target": "ターゲット",
+    "topics": "トピック"
+  },
+  "connectors": {
+    "title": "コネクター",
+    "name": "名前",
+    "state": "状態",
+    "tasks": "タスク"
+  }
+}

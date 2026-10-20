@@ -27,8 +27,17 @@
     "certificates": "Сертифікати",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Сервісна мережа",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Політики Kyverno",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "Безпека",
     "practices": "Найкращі практики",
     "credentials": "Облікові дані",
@@ -36,6 +45,7 @@
     "events": "Події Warning"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "Контейнер {{container}}",
     "restarts_one": "Контейнер {{container}} перезапускався ({{count}} перезапуск)",
     "restarts_few": "Контейнер {{container}} перезапускався ({{count}} перезапуски)",
@@ -57,8 +67,16 @@
     "meshMissingGateway": "Прив'язаний до шлюзу {{gateway}}, якого не існує.",
     "meshTlsConflict": "Задає режим TLS {{mode}} для {{host}}, а його робочі навантаження приймають лише mTLS Istio (STRICT): виклики не проходять. Використовуйте ISTIO_MUTUAL.",
     "meshConflictingVirtualService": "Хост {{host}} на {{gateway}} уже зайнятий старішим віртуальним сервісом {{other}}: маршрути цього не використовуються.",
-    "meshInvalidVirtualService": "Має хост * при прив'язці до sidecar (mesh): Istio його відхиляє, тож жоден із його маршрутів не використовується."
+    "meshInvalidVirtualService": "Має хост * при прив'язці до sidecar (mesh): Istio його відхиляє, тож жоден із його маршрутів не використовується.",
+    "policyFailures_one": "{{count}} правило політик не виконано: {{policies}}",
+    "policyFailures_few": "{{count}} правила політик не виконано: {{policies}}",
+    "policyFailures_many": "{{count}} правил політик не виконано: {{policies}}",
+    "policyFailures_other": "{{count}} правила політик не виконано: {{policies}}",
+    "serviceMonitorSelectsNothing": "Не вибирає жодного Service у namespace: {{namespaces}}",
+    "podMonitorSelectsNothing": "Не вибирає жодного Pod у namespace: {{namespaces}}",
+    "monitorNotPickedUp": "Жоден Prometheus не підхоплює його своїми selector"
   },
   "showDisk": "Диск майже заповнений",
-  "showPractices": "Зауваження щодо найкращих практик"
+  "showPractices": "Зауваження щодо найкращих практик",
+  "showPolicies": "Порушення політик Kyverno"
 }

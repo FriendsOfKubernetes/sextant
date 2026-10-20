@@ -1,0 +1,100 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} objeto viola regras de política",
+  "badge_many": "{{count}} de objetos violam regras de política",
+  "badge_other": "{{count}} objetos violam regras de política",
+  "yes": "Sim",
+  "no": "Não",
+  "ready": {
+    "True": "Pronta",
+    "False": "Não pronta",
+    "Unknown": "Pendente"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Misto"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: uma solicitação que viola uma regra é recusada.",
+    "Audit": "Audit: uma solicitação que viola uma regra é aceita, e a falha é registrada em um relatório.",
+    "Mixed": "Algumas regras recusam a solicitação que as viola (Enforce); as outras apenas registram a falha em um relatório (Audit)."
+  },
+  "explain": {
+    "ready": "Pronta: o Kyverno aplica esta política.",
+    "notReady": "Não pronta: o Kyverno não aplica esta política até que o problema abaixo seja corrigido.",
+    "pending": "O Kyverno ainda não terminou de carregar esta política."
+  },
+  "columns": {
+    "ready": "Pronta",
+    "mode": "Modo",
+    "background": "Segundo plano",
+    "rules": "Regras",
+    "message": "Mensagem",
+    "object": "Objeto",
+    "pass": "Aprovados",
+    "fail": "Falhas",
+    "warn": "Avisos",
+    "error": "Erros",
+    "skip": "Ignorados"
+  },
+  "fields": {
+    "ready": "Pronta",
+    "mode": "Modo",
+    "background": "Verificações em segundo plano",
+    "object": "Objeto"
+  },
+  "rules": {
+    "name": "Regra",
+    "type": "Tipo",
+    "mode": "Modo",
+    "kinds": "Kinds"
+  },
+  "ruleType": {
+    "validate": "Validar",
+    "mutate": "Modificar",
+    "generate": "Gerar",
+    "verifyImages": "Verificar imagens"
+  },
+  "result": {
+    "pass": "Aprovado",
+    "fail": "Falha",
+    "warn": "Aviso",
+    "error": "Erro",
+    "skip": "Ignorado"
+  },
+  "summary": {
+    "pass": "Aprovados: {{count}}",
+    "fail": "Falhas: {{count}}",
+    "warn": "Avisos: {{count}}",
+    "error": "Erros: {{count}}",
+    "skip": "Ignorados: {{count}}"
+  },
+  "results": {
+    "object": "Objeto",
+    "policy": "Política",
+    "rule": "Regra",
+    "result": "Resultado",
+    "message": "Mensagem",
+    "more": "Não exibidos: {{count}}"
+  },
+  "policySummary": {
+    "title": "Resultados nos relatórios",
+    "loading": "Lendo os relatórios…",
+    "none": "Nenhum relatório contém ainda resultados desta política.",
+    "unlabelled": "O nome da política é longo demais para o label que o Kyverno coloca nos relatórios, então os resultados dela não podem ser resumidos aqui.",
+    "capped": "Só uma parte dos relatórios foi lida: as contagens estão incompletas ({{count}} resultados contados)."
+  },
+  "objectResults": {
+    "title": "Resultados de políticas",
+    "failing": "Regras de política violadas: {{count}} de {{total}} verificadas.",
+    "passing": "Nenhuma regra de política é violada ({{count}} verificadas)."
+  }
+}

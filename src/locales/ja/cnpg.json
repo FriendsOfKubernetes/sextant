@@ -1,0 +1,89 @@
+{
+  "sidebar": {
+    "clusters": "Cluster",
+    "backups": "Backup",
+    "scheduledBackups": "ScheduledBackup",
+    "poolers": "Pooler"
+  },
+  "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
+  "state": {
+    "healthy": "正常",
+    "switchover": "スイッチオーバー中",
+    "failover": "フェイルオーバー中",
+    "progressing": "処理中",
+    "unhealthy": "異常"
+  },
+  "backupState": {
+    "completed": "完了",
+    "failed": "失敗",
+    "running": "実行中",
+    "pending": "保留中"
+  },
+  "role": {
+    "primary": "プライマリ",
+    "replica": "レプリカ"
+  },
+  "columns": {
+    "status": "状態",
+    "instances": "インスタンス",
+    "primary": "プライマリ",
+    "phase": "フェーズ",
+    "cluster": "クラスター",
+    "method": "方式",
+    "started": "開始",
+    "schedule": "スケジュール",
+    "suspended": "一時停止",
+    "lastBackup": "最終バックアップ",
+    "type": "種類",
+    "poolMode": "プールモード"
+  },
+  "fields": {
+    "status": "状態",
+    "phase": "フェーズ",
+    "instances": "インスタンス",
+    "primary": "現在のプライマリ",
+    "targetPrimary": "移行先のプライマリ",
+    "image": "イメージ",
+    "storage": "ストレージ",
+    "archiving": "継続的アーカイブ",
+    "lastBackup": "最終バックアップ",
+    "lastSuccessfulBackup": "最後に成功したバックアップ",
+    "lastFailedBackup": "最後に失敗したバックアップ",
+    "firstRecoverabilityPoint": "復旧可能な最古の時点",
+    "cluster": "クラスター",
+    "method": "方式",
+    "target": "対象",
+    "startedAt": "開始",
+    "stoppedAt": "停止",
+    "backupId": "バックアップ ID",
+    "destination": "保存先",
+    "schedule": "スケジュール",
+    "suspended": "一時停止",
+    "lastScheduleTime": "前回の実行",
+    "nextScheduleTime": "次回の実行",
+    "type": "種類",
+    "poolerInstances": "インスタンス",
+    "poolMode": "プールモード"
+  },
+  "instancesReady": "{{ready}}/{{total}} 準備完了",
+  "switchover": "プライマリを {{from}} から {{to}} に移しています。",
+  "failover": "フェイルオーバー中: {{primary}} が失われ、新しいプライマリを選んでいます。",
+  "replicaCluster": "レプリカクラスター: プライマリは別のクラスターに追従します。",
+  "members": {
+    "title": "インスタンス",
+    "instance": "インスタンス",
+    "role": "ロール",
+    "health": "正常性",
+    "timeline": "Timeline"
+  },
+  "backups": "バックアップ",
+  "noBackups": "このクラスターにはバックアップが設定されていません。",
+  "archivingOk": "動作中",
+  "archivingFailing": "失敗中",
+  "backupOk": "成功",
+  "backupFailing": "失敗",
+  "unknown": "不明",
+  "error": "エラー",
+  "yes": "はい",
+  "no": "いいえ"
+}

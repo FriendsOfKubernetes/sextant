@@ -1,0 +1,82 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} oggetto richiede attenzione",
+  "badge_many": "{{count}} di oggetti richiedono attenzione",
+  "badge_other": "{{count}} oggetti richiedono attenzione",
+  "state": {
+    "ready": "Pronto",
+    "notReady": "Non pronto",
+    "pending": "In attesa"
+  },
+  "columns": {
+    "status": "Stato",
+    "reason": "Motivo",
+    "cluster": "Kafka",
+    "replicas": "Repliche",
+    "version": "Versione",
+    "listeners": "Listener",
+    "roles": "Ruoli",
+    "partitions": "Partizioni",
+    "topicReplicas": "Repliche",
+    "authentication": "Autenticazione",
+    "authorization": "Autorizzazione"
+  },
+  "fields": {
+    "status": "Stato",
+    "reason": "Motivo",
+    "version": "Versione di Kafka",
+    "metadataState": "Metadati",
+    "clusterId": "ID del cluster",
+    "nodePools": "Pool di nodi",
+    "cluster": "Kafka",
+    "roles": "Ruoli",
+    "replicas": "Repliche",
+    "nodeIds": "ID dei nodi",
+    "storage": "Archiviazione",
+    "topicName": "Nome del topic",
+    "partitions": "Partizioni",
+    "topicReplicas": "Fattore di replica",
+    "config": "Configurazione",
+    "authentication": "Autenticazione",
+    "authorization": "Autorizzazione",
+    "acls": "Regole ACL",
+    "username": "Nome utente",
+    "secret": "Secret",
+    "bootstrapServers": "Server bootstrap",
+    "connectCluster": "Cluster Connect",
+    "url": "API REST",
+    "plugins": "Plugin dei connettori"
+  },
+  "warnings": "Avvisi",
+  "warningReason": "Motivo",
+  "warningMessage": "Messaggio",
+  "listeners": {
+    "title": "Listener",
+    "name": "Nome",
+    "type": "Tipo",
+    "port": "Porta",
+    "bootstrap": "Bootstrap",
+    "addresses": "Indirizzi",
+    "tls": "TLS",
+    "noAddress": "Ancora nessun indirizzo"
+  },
+  "mirrors": {
+    "title": "Mirror",
+    "source": "Origine",
+    "target": "Destinazione",
+    "topics": "Topic"
+  },
+  "connectors": {
+    "title": "Connettori",
+    "name": "Nome",
+    "state": "Stato",
+    "tasks": "Task"
+  }
+}

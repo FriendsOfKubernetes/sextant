@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_other": "주의가 필요한 개체 {{count}}개",
+  "state": {
+    "ready": "준비",
+    "notReady": "준비 안 됨",
+    "pending": "대기 중"
+  },
+  "columns": {
+    "status": "상태",
+    "reason": "이유",
+    "cluster": "Kafka",
+    "replicas": "복제본",
+    "version": "버전",
+    "listeners": "Listener",
+    "roles": "역할",
+    "partitions": "파티션",
+    "topicReplicas": "복제본",
+    "authentication": "인증",
+    "authorization": "권한 부여"
+  },
+  "fields": {
+    "status": "상태",
+    "reason": "이유",
+    "version": "Kafka 버전",
+    "metadataState": "메타데이터",
+    "clusterId": "클러스터 ID",
+    "nodePools": "노드 풀",
+    "cluster": "Kafka",
+    "roles": "역할",
+    "replicas": "복제본",
+    "nodeIds": "노드 ID",
+    "storage": "스토리지",
+    "topicName": "토픽 이름",
+    "partitions": "파티션",
+    "topicReplicas": "복제 계수",
+    "config": "구성",
+    "authentication": "인증",
+    "authorization": "권한 부여",
+    "acls": "ACL 규칙",
+    "username": "사용자 이름",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap 서버",
+    "connectCluster": "Connect 클러스터",
+    "url": "REST API",
+    "plugins": "커넥터 플러그인"
+  },
+  "warnings": "경고",
+  "warningReason": "이유",
+  "warningMessage": "메시지",
+  "listeners": {
+    "title": "Listener",
+    "name": "이름",
+    "type": "유형",
+    "port": "포트",
+    "bootstrap": "Bootstrap",
+    "addresses": "주소",
+    "tls": "TLS",
+    "noAddress": "아직 주소 없음"
+  },
+  "mirrors": {
+    "title": "미러",
+    "source": "소스",
+    "target": "대상",
+    "topics": "토픽"
+  },
+  "connectors": {
+    "title": "커넥터",
+    "name": "이름",
+    "state": "상태",
+    "tasks": "작업"
+  }
+}

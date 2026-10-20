@@ -1,0 +1,38 @@
+{
+  "apiVersion": "kyverno.io/v1",
+  "kind": "ClusterPolicy",
+  "metadata": {
+    "name": "require-labels",
+    "uid": "2c7d8a90-1111-4c3a-9f00-00000000c001",
+    "creationTimestamp": "2026-10-01T10:00:00Z",
+    "annotations": {
+      "policies.kyverno.io/title": "Require Labels",
+      "policies.kyverno.io/category": "Best Practices",
+      "policies.kyverno.io/severity": "medium"
+    }
+  },
+  "spec": {
+    "background": true,
+    "rules": [
+      {
+        "name": "check-team",
+        "match": { "any": [{ "resources": { "kinds": ["Pod"] } }] },
+        "validate": {
+          "failureAction": "Enforce",
+          "message": "The label `team` is required.",
+          "pattern": { "metadata": { "labels": { "team": "?*" } } }
+        }
+      },
+      {
+        "name": "add-default-owner",
+        "match": { "any": [{ "resources": { "kinds": ["Deployment", "StatefulSet"] } }] },
+        "mutate": { "patchStrategicMerge": { "metadata": { "labels": { "+(owner)": "platform" } } } }
+      }
+    ]
+  },
+  "status": {
+    "conditions": [
+      { "type": "Ready", "status": "True", "reason": "Succeeded", "message": "Ready", "lastTransitionTime": "2026-10-01T10:00:05Z" }
+    ]
+  }
+}

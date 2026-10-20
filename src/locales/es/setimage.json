@@ -1,0 +1,47 @@
+{
+  "action": "Establecer imagen…",
+  "title": "Imágenes de {{name}}",
+  "intro": {
+    "Deployment": "Los pods se reemplazan como en cualquier actualización. El cambio aparece en el historial de despliegue y se puede revertir.",
+    "StatefulSet": "Los pods se reemplazan según la estrategia de actualización del StatefulSet. El cambio aparece en el historial de despliegue y se puede revertir.",
+    "DaemonSet": "Los pods se reemplazan según la estrategia de actualización del DaemonSet. El cambio aparece en el historial de despliegue y se puede revertir.",
+    "CronJob": "Solo los Jobs que se inicien después del cambio usan las nuevas imágenes; los Jobs en ejecución conservan las suyas.",
+    "Pod": "En un Pod en ejecución, Kubernetes solo permite cambiar las imágenes de sus contenedores. El kubelet reinicia cada contenedor cambiado con su nueva imagen."
+  },
+  "columns": {
+    "container": "Contenedor",
+    "current": "Imagen actual",
+    "image": "Nueva imagen"
+  },
+  "initContainer": "contenedor de inicialización",
+  "imageLabel": "Nueva imagen del contenedor {{name}}",
+  "none": "Este objeto no tiene contenedores.",
+  "invalid": {
+    "empty": "Introduzca una imagen.",
+    "spaces": "Una referencia de imagen no puede contener espacios.",
+    "tooLong": "El nombre de la imagen supera los 255 caracteres.",
+    "uppercase": "La ruta del repositorio debe estar en minúsculas.",
+    "name": "La ruta del repositorio no es válida: use letras minúsculas y dígitos, separados por «.», «_», «__», «-» o «/».",
+    "host": "El host del registro no es válido.",
+    "tag": "La etiqueta no es válida: hasta 128 letras, dígitos, «_», «.» y «-», sin empezar por «.» ni «-».",
+    "digest": "El digest no es válido: escriba sha256: seguido de 64 dígitos hexadecimales."
+  },
+  "warning": {
+    "latest": "La etiqueta «latest» puede apuntar a otra imagen en cada descarga, así que los pods pueden ejecutar versiones distintas.",
+    "noTag": "Sin etiqueta se descarga la imagen «latest», que puede apuntar a otra imagen en cada descarga."
+  },
+  "changes": {
+    "title": "Qué cambia",
+    "none": "Cambie al menos una imagen.",
+    "line": "{{container}}: {{from}} → {{to}}",
+    "lineInit": "{{container}} (contenedor de inicialización): {{from}} → {{to}}"
+  },
+  "confirm": "Establecer imagen",
+  "previewAndSet": "Revisar y establecer imagen…",
+  "owned": {
+    "intro": "Este Pod lo gestiona {{kind}} {{name}}: el controlador reemplazaría el Pod o ignoraría una imagen cambiada. Establezca la imagen en el {{kind}}.",
+    "open": "Abrir {{kind}} {{name}}",
+    "looking": "Buscando el propietario…"
+  },
+  "mirror": "Es un Pod estático: el kubelet lo ejecuta desde un archivo de manifiesto en su nodo. Cambie la imagen en ese archivo."
+}

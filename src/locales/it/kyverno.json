@@ -1,0 +1,100 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} oggetto viola regole di policy",
+  "badge_many": "{{count}} di oggetti violano regole di policy",
+  "badge_other": "{{count}} oggetti violano regole di policy",
+  "yes": "Sì",
+  "no": "No",
+  "ready": {
+    "True": "Pronta",
+    "False": "Non pronta",
+    "Unknown": "In attesa"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Misto"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: una richiesta che viola una regola viene rifiutata.",
+    "Audit": "Audit: una richiesta che viola una regola viene lasciata passare e la violazione viene registrata in un report.",
+    "Mixed": "Alcune regole rifiutano la richiesta che le viola (Enforce); le altre registrano solo la violazione in un report (Audit)."
+  },
+  "explain": {
+    "ready": "Pronta: Kyverno applica questa policy.",
+    "notReady": "Non pronta: Kyverno non applica questa policy finché il problema qui sotto non viene risolto.",
+    "pending": "Kyverno non ha ancora finito di caricare questa policy."
+  },
+  "columns": {
+    "ready": "Pronta",
+    "mode": "Modalità",
+    "background": "In background",
+    "rules": "Regole",
+    "message": "Messaggio",
+    "object": "Oggetto",
+    "pass": "Superati",
+    "fail": "Violazioni",
+    "warn": "Avvisi",
+    "error": "Errori",
+    "skip": "Saltati"
+  },
+  "fields": {
+    "ready": "Pronta",
+    "mode": "Modalità",
+    "background": "Controlli in background",
+    "object": "Oggetto"
+  },
+  "rules": {
+    "name": "Regola",
+    "type": "Tipo",
+    "mode": "Modalità",
+    "kinds": "Kinds"
+  },
+  "ruleType": {
+    "validate": "Convalida",
+    "mutate": "Modifica",
+    "generate": "Genera",
+    "verifyImages": "Verifica immagini"
+  },
+  "result": {
+    "pass": "Superato",
+    "fail": "Violazione",
+    "warn": "Avviso",
+    "error": "Errore",
+    "skip": "Saltato"
+  },
+  "summary": {
+    "pass": "Superati: {{count}}",
+    "fail": "Violazioni: {{count}}",
+    "warn": "Avvisi: {{count}}",
+    "error": "Errori: {{count}}",
+    "skip": "Saltati: {{count}}"
+  },
+  "results": {
+    "object": "Oggetto",
+    "policy": "Policy",
+    "rule": "Regola",
+    "result": "Risultato",
+    "message": "Messaggio",
+    "more": "Non mostrati: {{count}}"
+  },
+  "policySummary": {
+    "title": "Risultati nei report",
+    "loading": "Lettura dei report…",
+    "none": "Nessun report contiene ancora risultati di questa policy.",
+    "unlabelled": "Il nome della policy è troppo lungo per il label che Kyverno mette sui report, quindi i suoi risultati non si possono riassumere qui.",
+    "capped": "È stata letta solo una parte dei report: i conteggi sono incompleti ({{count}} risultati contati)."
+  },
+  "objectResults": {
+    "title": "Risultati delle policy",
+    "failing": "Regole di policy violate: {{count}} di {{total}} controllate.",
+    "passing": "Nessuna regola di policy è violata ({{count}} controllate)."
+  }
+}

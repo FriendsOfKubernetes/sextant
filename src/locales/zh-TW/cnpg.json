@@ -1,0 +1,89 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_other": "{{count}} 個物件需要注意",
+  "state": {
+    "healthy": "健康",
+    "switchover": "切換中",
+    "failover": "容錯移轉中",
+    "progressing": "進行中",
+    "unhealthy": "不健康"
+  },
+  "backupState": {
+    "completed": "已完成",
+    "failed": "失敗",
+    "running": "執行中",
+    "pending": "等待中"
+  },
+  "role": {
+    "primary": "主要",
+    "replica": "複本"
+  },
+  "columns": {
+    "status": "狀態",
+    "instances": "執行個體",
+    "primary": "主要執行個體",
+    "phase": "階段",
+    "cluster": "叢集",
+    "method": "方式",
+    "started": "開始於",
+    "schedule": "排程",
+    "suspended": "已暫停",
+    "lastBackup": "上次備份",
+    "type": "類型",
+    "poolMode": "集區模式"
+  },
+  "fields": {
+    "status": "狀態",
+    "phase": "階段",
+    "instances": "執行個體",
+    "primary": "目前的主要執行個體",
+    "targetPrimary": "目標主要執行個體",
+    "image": "映像檔",
+    "storage": "儲存空間",
+    "archiving": "持續封存",
+    "lastBackup": "上次備份",
+    "lastSuccessfulBackup": "上次成功的備份",
+    "lastFailedBackup": "上次失敗的備份",
+    "firstRecoverabilityPoint": "可復原的起點",
+    "cluster": "叢集",
+    "method": "方式",
+    "target": "目標",
+    "startedAt": "開始於",
+    "stoppedAt": "結束於",
+    "backupId": "備份 ID",
+    "destination": "目的地路徑",
+    "schedule": "排程",
+    "suspended": "已暫停",
+    "lastScheduleTime": "上次執行",
+    "nextScheduleTime": "下次執行",
+    "type": "類型",
+    "poolerInstances": "執行個體",
+    "poolMode": "集區模式"
+  },
+  "instancesReady": "{{ready}}/{{total}} 就緒",
+  "switchover": "主要執行個體正從 {{from}} 切換到 {{to}}。",
+  "failover": "容錯移轉：{{primary}} 已無法使用，正在選擇新的主要執行個體。",
+  "replicaCluster": "複本叢集：其主要執行個體跟隨另一個叢集。",
+  "members": {
+    "title": "執行個體",
+    "instance": "執行個體",
+    "role": "角色",
+    "health": "健康狀態",
+    "timeline": "Timeline"
+  },
+  "backups": "備份",
+  "noBackups": "此叢集未設定備份。",
+  "archivingOk": "正常",
+  "archivingFailing": "失敗",
+  "backupOk": "成功",
+  "backupFailing": "失敗",
+  "unknown": "未知",
+  "error": "錯誤",
+  "yes": "是",
+  "no": "否"
+}

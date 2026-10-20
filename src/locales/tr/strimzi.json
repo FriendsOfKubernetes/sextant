@@ -1,0 +1,81 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} nesne ilgi gerektiriyor",
+  "badge_other": "{{count}} nesne ilgi gerektiriyor",
+  "state": {
+    "ready": "Hazır",
+    "notReady": "Hazır değil",
+    "pending": "Bekliyor"
+  },
+  "columns": {
+    "status": "Durum",
+    "reason": "Neden",
+    "cluster": "Kafka",
+    "replicas": "Kopyalar",
+    "version": "Sürüm",
+    "listeners": "Listener'lar",
+    "roles": "Roller",
+    "partitions": "Bölümler",
+    "topicReplicas": "Kopyalar",
+    "authentication": "Kimlik doğrulama",
+    "authorization": "Yetkilendirme"
+  },
+  "fields": {
+    "status": "Durum",
+    "reason": "Neden",
+    "version": "Kafka sürümü",
+    "metadataState": "Meta veriler",
+    "clusterId": "Küme kimliği",
+    "nodePools": "Düğüm havuzları",
+    "cluster": "Kafka",
+    "roles": "Roller",
+    "replicas": "Kopyalar",
+    "nodeIds": "Düğüm kimlikleri",
+    "storage": "Depolama",
+    "topicName": "Konu adı",
+    "partitions": "Bölümler",
+    "topicReplicas": "Çoğaltma faktörü",
+    "config": "Yapılandırma",
+    "authentication": "Kimlik doğrulama",
+    "authorization": "Yetkilendirme",
+    "acls": "ACL kuralları",
+    "username": "Kullanıcı adı",
+    "secret": "Secret",
+    "bootstrapServers": "Bootstrap sunucuları",
+    "connectCluster": "Connect kümesi",
+    "url": "REST API",
+    "plugins": "Bağlayıcı eklentileri"
+  },
+  "warnings": "Uyarılar",
+  "warningReason": "Neden",
+  "warningMessage": "İleti",
+  "listeners": {
+    "title": "Listener'lar",
+    "name": "Ad",
+    "type": "Tür",
+    "port": "Bağlantı noktası",
+    "bootstrap": "Bootstrap",
+    "addresses": "Adresler",
+    "tls": "TLS",
+    "noAddress": "Henüz adres yok"
+  },
+  "mirrors": {
+    "title": "Yansılar",
+    "source": "Kaynak",
+    "target": "Hedef",
+    "topics": "Konular"
+  },
+  "connectors": {
+    "title": "Bağlayıcılar",
+    "name": "Ad",
+    "state": "Durum",
+    "tasks": "Görevler"
+  }
+}

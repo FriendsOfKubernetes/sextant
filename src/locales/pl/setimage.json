@@ -1,0 +1,47 @@
+{
+  "action": "Ustaw obraz…",
+  "title": "Obrazy {{name}}",
+  "intro": {
+    "Deployment": "Pody zostaną zastąpione jak przy każdej aktualizacji. Zmiana pojawi się w historii wdrożeń i można ją wycofać.",
+    "StatefulSet": "Pody zostaną zastąpione zgodnie ze strategią aktualizacji StatefulSet. Zmiana pojawi się w historii wdrożeń i można ją wycofać.",
+    "DaemonSet": "Pody zostaną zastąpione zgodnie ze strategią aktualizacji DaemonSet. Zmiana pojawi się w historii wdrożeń i można ją wycofać.",
+    "CronJob": "Nowych obrazów użyją tylko Joby uruchomione po zmianie; działające Joby zachowają swoje.",
+    "Pod": "W działającym Podzie Kubernetes pozwala zmienić tylko obrazy kontenerów. Kubelet uruchomi ponownie każdy zmieniony kontener z nowym obrazem."
+  },
+  "columns": {
+    "container": "Kontener",
+    "current": "Bieżący obraz",
+    "image": "Nowy obraz"
+  },
+  "initContainer": "kontener init",
+  "imageLabel": "Nowy obraz kontenera {{name}}",
+  "none": "Ten obiekt nie ma kontenerów.",
+  "invalid": {
+    "empty": "Wpisz obraz.",
+    "spaces": "Odwołanie do obrazu nie może zawierać spacji.",
+    "tooLong": "Nazwa obrazu ma ponad 255 znaków.",
+    "uppercase": "Ścieżka repozytorium musi być zapisana małymi literami.",
+    "name": "Nieprawidłowa ścieżka repozytorium: użyj małych liter i cyfr rozdzielonych „.”, „_”, „__”, „-” lub „/”.",
+    "host": "Nieprawidłowy host rejestru.",
+    "tag": "Nieprawidłowy tag: do 128 liter, cyfr, „_”, „.” i „-”, bez „.” lub „-” na początku.",
+    "digest": "Nieprawidłowy digest: wpisz sha256: i 64 cyfry szesnastkowe."
+  },
+  "warning": {
+    "latest": "Tag „latest” przy każdym pobraniu może wskazywać inny obraz, więc Pody mogą działać w różnych wersjach.",
+    "noTag": "Bez tagu pobierany jest obraz „latest”, który przy każdym pobraniu może wskazywać inny obraz."
+  },
+  "changes": {
+    "title": "Co się zmieni",
+    "none": "Zmień co najmniej jeden obraz.",
+    "line": "{{container}}: {{from}} → {{to}}",
+    "lineInit": "{{container}} (kontener init): {{from}} → {{to}}"
+  },
+  "confirm": "Ustaw obraz",
+  "previewAndSet": "Sprawdź i ustaw obraz…",
+  "owned": {
+    "intro": "Tym Podem zarządza {{kind}} {{name}}: kontroler zastąpiłby Pod lub zignorował zmieniony obraz. Ustaw obraz w {{kind}}.",
+    "open": "Otwórz {{kind}} {{name}}",
+    "looking": "Wyszukiwanie właściciela…"
+  },
+  "mirror": "To statyczny Pod: kubelet uruchamia go z pliku manifestu na swoim węźle. Zmień obraz w tym pliku."
+}

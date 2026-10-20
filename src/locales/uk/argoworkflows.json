@@ -1,0 +1,70 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow нещодавно завершився збоєм",
+  "badge_few": "{{count}} workflow нещодавно завершилися збоєм",
+  "badge_many": "{{count}} workflow нещодавно завершилися збоєм",
+  "badge_other": "{{count}} workflow нещодавно завершилися збоєм",
+  "columns": {
+    "phase": "Фаза",
+    "progress": "Прогрес",
+    "duration": "Тривалість",
+    "failedStep": "Крок зі збоєм",
+    "schedule": "Розклад",
+    "suspended": "Призупинено",
+    "active": "Активні",
+    "lastScheduled": "Останній запуск",
+    "entrypoint": "Точка входу",
+    "templates": "Шаблони"
+  },
+  "yes": "Так",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Фаза",
+    "progress": "Прогрес",
+    "startedAt": "Початок",
+    "finishedAt": "Завершення",
+    "duration": "Тривалість",
+    "message": "Повідомлення",
+    "failedStep": "Крок зі збоєм",
+    "failedMessage": "Його повідомлення",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Розклади",
+    "timezone": "Часовий пояс",
+    "concurrencyPolicy": "Політика паралельності",
+    "suspended": "Призупинено",
+    "lastScheduled": "Останній запуск",
+    "active": "Активні workflow",
+    "succeeded": "Успішно",
+    "failed": "Зі збоєм",
+    "entrypoint": "Точка входу",
+    "templates": "Шаблони"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Кроки",
+    "cron": "Розклад",
+    "template": "Шаблон"
+  },
+  "tree": {
+    "count_one": "{{count}} крок",
+    "count_few": "{{count}} кроки",
+    "count_many": "{{count}} кроків",
+    "count_other": "{{count}} кроку",
+    "capped": "Показано лише перші {{shown}} кроків із {{count}}.",
+    "expandFailed": "Показати крок зі збоєм",
+    "collapseAll": "Згорнути все",
+    "expand": "Розгорнути {{name}}",
+    "collapse": "Згорнути {{name}}",
+    "logs": "Логи",
+    "logsOf": "Логи {{name}}",
+    "offloaded": "Контролер зберігає кроки цього workflow у своїй базі даних (offloaded node status): їх немає в об'єкті, тому показати їх тут неможливо.",
+    "compressed": "Контролер зберіг кроки цього workflow у стиснутому вигляді: показати їх тут неможливо.",
+    "none": "Кроків поки немає."
+  }
+}

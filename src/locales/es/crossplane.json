@@ -1,0 +1,124 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim o recurso compuesto requiere atención",
+  "badge_many": "{{count}} de claims o recursos compuestos requieren atención",
+  "badge_other": "{{count}} claims o recursos compuestos requieren atención",
+  "health": {
+    "ready": "Listo",
+    "progressing": "En curso",
+    "failed": "Falló",
+    "unknown": "Desconocido"
+  },
+  "served": "servida",
+  "referenceable": "referenciable",
+  "failing": "Primera condición no cumplida: {{type}} ({{reason}})",
+  "failingWithMessage": "Primera condición no cumplida: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Recurso compuesto",
+    "managed": "Recurso gestionado"
+  },
+  "columns": {
+    "composite": "Kind compuesto",
+    "claim": "Kind del claim",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Tipo compuesto",
+    "mode": "Modo",
+    "status": "Estado",
+    "package": "Paquete",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Grupo",
+    "compositeKind": "Kind del recurso compuesto",
+    "claimKind": "Kind del claim",
+    "versions": "Versiones",
+    "defaultComposition": "Composition predeterminada",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Tipo de recurso compuesto",
+    "mode": "Modo",
+    "resources": "Recursos (modo clásico)",
+    "package": "Paquete",
+    "revision": "Revisión actual",
+    "identifier": "Paquete actual",
+    "activation": "Activación de revisiones",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Función",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Secret de conexión",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Nombre externo",
+    "deletionPolicy": "Política de eliminación",
+    "managementPolicies": "Políticas de gestión",
+    "composite": "Recurso compuesto"
+  },
+  "pipeline": {
+    "step": "Paso",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Recursos",
+    "loading": "Leyendo los recursos…",
+    "noResources": "Aún no hay recursos que lo compongan.",
+    "noComposite": "Aún no hay recurso compuesto: Crossplane no ha vinculado este claim.",
+    "missing": "No encontrado",
+    "unreadable": "No se puede leer",
+    "more": "Sin mostrar: {{count}}"
+  },
+  "explain": {
+    "ready": "Sincronizado y listo.",
+    "creating": "Aún no está listo: Crossplane sigue creándolo a él o a sus recursos.",
+    "deleting": "Eliminándose.",
+    "notSynced": "Crossplane no puede reconciliarlo ({{reason}}): la primera condición no cumplida de abajo indica el motivo.",
+    "notReady": "No está listo ({{reason}}): la primera condición no cumplida de abajo indica el motivo.",
+    "packageHealthy": "Instalado y en buen estado.",
+    "packageInstalling": "Instalándose: aún no está en buen estado.",
+    "packageNotInstalled": "El paquete no está instalado ({{reason}}).",
+    "packageUnhealthy": "El paquete está instalado, pero no en buen estado ({{reason}}).",
+    "xrdNotEstablished": "No establecida: los kinds que define aún no se sirven.",
+    "xrdClaimNotOffered": "El kind de claim {{claim}} aún no se ofrece.",
+    "xrdEstablishedWithClaim": "Establecida: define el recurso compuesto {{kind}} y el claim {{claim}}.",
+    "xrdEstablished": "Establecida: define el recurso compuesto {{kind}}."
+  },
+  "page": {
+    "sidebar": "Recursos compuestos",
+    "title": "Recursos compuestos",
+    "hint": "Claims y recursos compuestos de los kinds que definen las XRD, con la primera condición no cumplida.",
+    "onlyProblems": "Solo problemas",
+    "total": "Mostrados: {{count}}",
+    "loading": "Leyendo claims y recursos compuestos…",
+    "xrdsTruncated": "Solo se listan los kinds de las primeras {{count}} XRD.",
+    "rowsTruncated": "Solo se listan los primeros {{count}}.",
+    "noXrds": "No hay XRD: el clúster no define recursos compuestos.",
+    "none": "No hay claims ni recursos compuestos.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Nombre",
+      "namespace": "Namespace",
+      "state": "Estado",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Motivo",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (compuesto)"
+    }
+  }
+}

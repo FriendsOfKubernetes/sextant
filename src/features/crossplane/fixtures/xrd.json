@@ -1,0 +1,26 @@
+{
+  "apiVersion": "apiextensions.crossplane.io/v1",
+  "kind": "CompositeResourceDefinition",
+  "metadata": { "name": "xpostgresqlinstances.database.example.org", "uid": "5b0e7c2a-0000-4000-8000-0000000000a1", "creationTimestamp": "2026-10-01T10:00:00Z" },
+  "spec": {
+    "group": "database.example.org",
+    "names": { "kind": "XPostgreSQLInstance", "plural": "xpostgresqlinstances" },
+    "claimNames": { "kind": "PostgreSQLInstance", "plural": "postgresqlinstances" },
+    "defaultCompositionRef": { "name": "xpostgresqlinstances.aws.database.example.org" },
+    "connectionSecretKeys": ["username", "password", "endpoint", "port"],
+    "versions": [
+      {
+        "name": "v1alpha1",
+        "served": true,
+        "referenceable": true,
+        "schema": { "openAPIV3Schema": { "type": "object", "properties": { "spec": { "type": "object", "properties": { "parameters": { "type": "object", "properties": { "storageGB": { "type": "integer" } } } } } } } }
+      }
+    ]
+  },
+  "status": {
+    "conditions": [
+      { "type": "Established", "status": "True", "reason": "WatchingCompositeResource", "lastTransitionTime": "2026-10-01T10:00:05Z" },
+      { "type": "Offered", "status": "True", "reason": "WatchingCompositeResourceClaim", "lastTransitionTime": "2026-10-01T10:00:05Z" }
+    ]
+  }
+}

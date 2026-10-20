@@ -1,0 +1,66 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow yakın zamanda başarısız oldu",
+  "badge_other": "{{count}} workflow yakın zamanda başarısız oldu",
+  "columns": {
+    "phase": "Aşama",
+    "progress": "İlerleme",
+    "duration": "Süre",
+    "failedStep": "Başarısız adım",
+    "schedule": "Zamanlama",
+    "suspended": "Askıda",
+    "active": "Etkin",
+    "lastScheduled": "Son çalıştırma",
+    "entrypoint": "Giriş noktası",
+    "templates": "Şablonlar"
+  },
+  "yes": "Evet",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Aşama",
+    "progress": "İlerleme",
+    "startedAt": "Başlangıç",
+    "finishedAt": "Bitiş",
+    "duration": "Süre",
+    "message": "İleti",
+    "failedStep": "Başarısız adım",
+    "failedMessage": "İletisi",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Zamanlamalar",
+    "timezone": "Saat dilimi",
+    "concurrencyPolicy": "Eşzamanlılık ilkesi",
+    "suspended": "Askıda",
+    "lastScheduled": "Son çalıştırma",
+    "active": "Etkin workflow'lar",
+    "succeeded": "Başarılı",
+    "failed": "Başarısız",
+    "entrypoint": "Giriş noktası",
+    "templates": "Şablonlar"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Adımlar",
+    "cron": "Zamanlama",
+    "template": "Şablon"
+  },
+  "tree": {
+    "count_one": "{{count}} adım",
+    "count_other": "{{count}} adım",
+    "capped": "{{count}} adımın yalnızca ilk {{shown}} tanesi gösteriliyor.",
+    "expandFailed": "Başarısız adımı göster",
+    "collapseAll": "Tümünü daralt",
+    "expand": "{{name}} genişlet",
+    "collapse": "{{name}} daralt",
+    "logs": "Günlükler",
+    "logsOf": "{{name}} günlükleri",
+    "offloaded": "Denetleyici bu workflow'un adımlarını kendi veritabanında tutuyor (offloaded node status): nesnede olmadıkları için burada gösterilemezler.",
+    "compressed": "Denetleyici bu workflow'un adımlarını sıkıştırılmış olarak sakladı: burada gösterilemezler.",
+    "none": "Henüz adım yok."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "apiVersion": "wgpolicyk8s.io/v1alpha2",
+  "kind": "PolicyReport",
+  "metadata": {
+    "name": "9a1c3b7e-2222-4f1a-8b00-00000000d001",
+    "namespace": "default",
+    "uid": "9a1c3b7e-3333-4f1a-8b00-00000000e001",
+    "creationTimestamp": "2026-10-10T10:00:00Z",
+    "labels": {
+      "app.kubernetes.io/managed-by": "kyverno",
+      "cpol.kyverno.io/require-labels": "1234",
+      "cpol.kyverno.io/disallow-latest-tag": "1235"
+    },
+    "ownerReferences": [{ "apiVersion": "v1", "kind": "Pod", "name": "nginx", "uid": "9a1c3b7e-2222-4f1a-8b00-00000000d001" }]
+  },
+  "scope": { "apiVersion": "v1", "kind": "Pod", "name": "nginx", "namespace": "default", "uid": "9a1c3b7e-2222-4f1a-8b00-00000000d001" },
+  "results": [
+    {
+      "message": "validation error: The label `team` is required. rule check-team failed at path /metadata/labels/team/",
+      "policy": "require-labels",
+      "result": "fail",
+      "rule": "check-team",
+      "scored": true,
+      "severity": "medium",
+      "category": "Best Practices",
+      "source": "kyverno",
+      "timestamp": { "nanos": 0, "seconds": 1791712800 }
+    },
+    {
+      "message": "validation rule 'validate-image-tag' passed.",
+      "policy": "disallow-latest-tag",
+      "result": "pass",
+      "rule": "validate-image-tag",
+      "scored": true,
+      "source": "kyverno",
+      "timestamp": { "nanos": 0, "seconds": 1791712800 }
+    }
+  ],
+  "summary": { "error": 0, "fail": 1, "pass": 1, "skip": 0, "warn": 0 }
+}

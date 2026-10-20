@@ -1,0 +1,18 @@
+{
+  "apiVersion": "kafka.strimzi.io/v1beta2",
+  "kind": "KafkaTopic",
+  "metadata": { "name": "my-topic", "namespace": "kafka", "uid": "topic-my-topic", "labels": { "strimzi.io/cluster": "my-cluster" }, "creationTimestamp": "2026-10-01T10:00:00Z" },
+  "spec": { "partitions": 10, "replicas": 3, "config": { "retention.ms": 7200000, "segment.bytes": 1073741824 } },
+  "status": {
+    "topicName": "my-topic",
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "False",
+        "reason": "KafkaError",
+        "message": "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 3 larger than available brokers: 1.",
+        "lastTransitionTime": "2026-10-10T08:00:00Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "action": "設定映像檔…",
+  "title": "{{name}} 的映像檔",
+  "intro": {
+    "Deployment": "Pod 會像任何更新一樣被替換。此變更會出現在發布歷程中，而且可以回復。",
+    "StatefulSet": "Pod 會依 StatefulSet 的更新策略被替換。此變更會出現在發布歷程中，而且可以回復。",
+    "DaemonSet": "Pod 會依 DaemonSet 的更新策略被替換。此變更會出現在發布歷程中，而且可以回復。",
+    "CronJob": "只有變更之後啟動的 Job 才會使用新映像檔；執行中的 Job 保留原有映像檔。",
+    "Pod": "對於執行中的 Pod，Kubernetes 只允許變更其容器的映像檔。kubelet 會以新映像檔重新啟動每個被變更的容器。"
+  },
+  "columns": {
+    "container": "容器",
+    "current": "目前映像檔",
+    "image": "新映像檔"
+  },
+  "initContainer": "Init 容器",
+  "imageLabel": "容器 {{name}} 的新映像檔",
+  "none": "此物件沒有容器。",
+  "invalid": {
+    "empty": "請輸入映像檔。",
+    "spaces": "映像檔參照不能包含空格。",
+    "tooLong": "映像檔名稱超過 255 個字元。",
+    "uppercase": "儲存庫路徑必須為小寫。",
+    "name": "儲存庫路徑無效：請使用小寫字母和數字，以「.」、「_」、「__」、「-」或「/」分隔。",
+    "host": "登錄主機無效。",
+    "tag": "標籤無效：最多 128 個字母、數字、「_」、「.」和「-」，且不能以「.」或「-」開頭。",
+    "digest": "摘要無效：請寫成 sha256: 加上 64 位十六進位數字。"
+  },
+  "warning": {
+    "latest": "標籤「latest」每次提取都可能指向不同的映像檔，因此 Pod 可能執行不同的版本。",
+    "noTag": "不帶標籤時會提取「latest」映像檔，它每次提取都可能指向不同的映像檔。"
+  },
+  "changes": {
+    "title": "變更內容",
+    "none": "請至少變更一個映像檔。",
+    "line": "{{container}}：{{from}} → {{to}}",
+    "lineInit": "{{container}}（Init 容器）：{{from}} → {{to}}"
+  },
+  "confirm": "設定映像檔",
+  "previewAndSet": "預覽並設定映像檔…",
+  "owned": {
+    "intro": "此 Pod 由 {{kind}} {{name}} 管理：控制器會替換該 Pod 或忽略變更後的映像檔。請改在該 {{kind}} 中設定映像檔。",
+    "open": "開啟 {{kind}} {{name}}",
+    "looking": "正在尋找擁有者…"
+  },
+  "mirror": "這是靜態 Pod：kubelet 從其節點上的資訊清單檔案執行它。請在該檔案中變更映像檔。"
+}

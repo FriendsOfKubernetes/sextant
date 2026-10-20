@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim veya bileşik kaynak ilgi bekliyor",
+  "badge_other": "{{count}} claim veya bileşik kaynak ilgi bekliyor",
+  "health": {
+    "ready": "Hazır",
+    "progressing": "Sürüyor",
+    "failed": "Başarısız",
+    "unknown": "Bilinmiyor"
+  },
+  "served": "sunuluyor",
+  "referenceable": "başvurulabilir",
+  "failing": "Karşılanmayan ilk koşul: {{type}} ({{reason}})",
+  "failingWithMessage": "Karşılanmayan ilk koşul: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Bileşik kaynak",
+    "managed": "Yönetilen kaynak"
+  },
+  "columns": {
+    "composite": "Bileşik kind",
+    "claim": "Claim kind'ı",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Bileşik tür",
+    "mode": "Mod",
+    "status": "Durum",
+    "package": "Paket",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Grup",
+    "compositeKind": "Bileşik kaynak kind'ı",
+    "claimKind": "Claim kind'ı",
+    "versions": "Sürümler",
+    "defaultComposition": "Varsayılan Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Bileşik kaynak türü",
+    "mode": "Mod",
+    "resources": "Kaynaklar (klasik mod)",
+    "package": "Paket",
+    "revision": "Geçerli revizyon",
+    "identifier": "Geçerli paket",
+    "activation": "Revizyon etkinleştirme",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Rol",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Bağlantı Secret'ı",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Harici ad",
+    "deletionPolicy": "Silme ilkesi",
+    "managementPolicies": "Yönetim ilkeleri",
+    "composite": "Bileşik kaynak"
+  },
+  "pipeline": {
+    "step": "Adım",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Kaynaklar",
+    "loading": "Kaynaklar okunuyor…",
+    "noResources": "Henüz oluşturulan kaynak yok.",
+    "noComposite": "Henüz bileşik kaynak yok: Crossplane bu claim'i henüz bağlamadı.",
+    "missing": "Bulunamadı",
+    "unreadable": "Okunamıyor",
+    "more": "Gösterilmeyen: {{count}}"
+  },
+  "explain": {
+    "ready": "Eşitlendi ve hazır.",
+    "creating": "Henüz hazır değil: Crossplane onu veya kaynaklarını hâlâ oluşturuyor.",
+    "deleting": "Siliniyor.",
+    "notSynced": "Crossplane onu uzlaştıramıyor ({{reason}}): nedenini aşağıdaki karşılanmayan ilk koşul söylüyor.",
+    "notReady": "Hazır değil ({{reason}}): nedenini aşağıdaki karşılanmayan ilk koşul söylüyor.",
+    "packageHealthy": "Kurulu ve sağlıklı.",
+    "packageInstalling": "Kuruluyor: henüz sağlıklı değil.",
+    "packageNotInstalled": "Paket kurulu değil ({{reason}}).",
+    "packageUnhealthy": "Paket kurulu ama sağlıklı değil ({{reason}}).",
+    "xrdNotEstablished": "Kurulmadı: tanımladığı kind'lar henüz sunulmuyor.",
+    "xrdClaimNotOffered": "{{claim}} claim kind'ı henüz sunulmuyor.",
+    "xrdEstablishedWithClaim": "Kuruldu: {{kind}} bileşik kaynağını ve {{claim}} claim'ini tanımlar.",
+    "xrdEstablished": "Kuruldu: {{kind}} bileşik kaynağını tanımlar."
+  },
+  "page": {
+    "sidebar": "Bileşik Kaynaklar",
+    "title": "Bileşik kaynaklar",
+    "hint": "XRD'lerin tanımladığı kind'lardaki claim'ler ve bileşik kaynaklar, karşılanmayan ilk koşullarıyla.",
+    "onlyProblems": "Yalnızca sorunlar",
+    "total": "Gösterilen: {{count}}",
+    "loading": "Claim'ler ve bileşik kaynaklar okunuyor…",
+    "xrdsTruncated": "Yalnızca ilk {{count}} XRD'nin kind'ları listeleniyor.",
+    "rowsTruncated": "Yalnızca ilk {{count}} tanesi listeleniyor.",
+    "noXrds": "XRD yok: küme hiçbir bileşik kaynak tanımlamıyor.",
+    "none": "Claim veya bileşik kaynak yok.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Ad",
+      "namespace": "Namespace",
+      "state": "Durum",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Neden",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (bileşik)"
+    }
+  }
+}

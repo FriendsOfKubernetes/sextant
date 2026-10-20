@@ -1,0 +1,98 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_other": "{{count}} 個物件違反原則規則",
+  "yes": "是",
+  "no": "否",
+  "ready": {
+    "True": "就緒",
+    "False": "未就緒",
+    "Unknown": "等待中"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "混合"
+  },
+  "modeHint": {
+    "Enforce": "Enforce：違反規則的請求會被拒絕。",
+    "Audit": "Audit：違反規則的請求會被放行，違規情況記入報告。",
+    "Mixed": "部分規則會拒絕違反它們的請求（Enforce），其餘規則只把違規情況記入報告（Audit）。"
+  },
+  "explain": {
+    "ready": "就緒：Kyverno 正在套用此原則。",
+    "notReady": "未就緒：在下方問題修正之前，Kyverno 不會套用此原則。",
+    "pending": "Kyverno 尚未載入完此原則。"
+  },
+  "columns": {
+    "ready": "就緒",
+    "mode": "模式",
+    "background": "背景",
+    "rules": "規則",
+    "message": "訊息",
+    "object": "物件",
+    "pass": "通過",
+    "fail": "違規",
+    "warn": "警告",
+    "error": "錯誤",
+    "skip": "略過"
+  },
+  "fields": {
+    "ready": "就緒",
+    "mode": "模式",
+    "background": "背景掃描",
+    "object": "物件"
+  },
+  "rules": {
+    "name": "規則",
+    "type": "類型",
+    "mode": "模式",
+    "kinds": "Kind"
+  },
+  "ruleType": {
+    "validate": "驗證",
+    "mutate": "變更",
+    "generate": "產生",
+    "verifyImages": "驗證映像檔"
+  },
+  "result": {
+    "pass": "通過",
+    "fail": "違規",
+    "warn": "警告",
+    "error": "錯誤",
+    "skip": "略過"
+  },
+  "summary": {
+    "pass": "通過：{{count}}",
+    "fail": "違規：{{count}}",
+    "warn": "警告：{{count}}",
+    "error": "錯誤：{{count}}",
+    "skip": "略過：{{count}}"
+  },
+  "results": {
+    "object": "物件",
+    "policy": "原則",
+    "rule": "規則",
+    "result": "結果",
+    "message": "訊息",
+    "more": "未顯示：{{count}}"
+  },
+  "policySummary": {
+    "title": "報告中的結果",
+    "loading": "正在讀取報告…",
+    "none": "目前沒有報告包含此原則的結果。",
+    "unlabelled": "原則名稱太長，無法作為 Kyverno 加在報告上的 label，因此無法在此彙總其結果。",
+    "capped": "只讀取了部分報告：計數不完整（已計入 {{count}} 筆結果）。"
+  },
+  "objectResults": {
+    "title": "原則結果",
+    "failing": "違反的原則規則：已檢查 {{total}} 條中的 {{count}} 條。",
+    "passing": "沒有違反任何原則規則（已檢查 {{count}} 條）。"
+  }
+}

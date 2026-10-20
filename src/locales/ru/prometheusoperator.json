@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_one": "{{count}} объект требует внимания",
+  "badge_few": "{{count}} объекта требуют внимания",
+  "badge_many": "{{count}} объектов требуют внимания",
+  "badge_other": "{{count}} объекта требуют внимания",
+  "state": {
+    "ready": "Доступен",
+    "degraded": "Деградирован",
+    "failed": "Ошибка",
+    "pending": "Ожидает"
+  },
+  "columns": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "ports": "Порты",
+    "prober": "Prober",
+    "module": "Модуль",
+    "interval": "Интервал",
+    "groups": "Группы",
+    "rules": "Правила",
+    "status": "Статус",
+    "replicas": "Реплики",
+    "version": "Версия",
+    "reason": "Причина"
+  },
+  "fields": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "jobLabel": "Метка job",
+    "prober": "Prober",
+    "module": "Модуль",
+    "interval": "Интервал",
+    "staticTargets": "Цели",
+    "ingressSelector": "Selector Ingress",
+    "status": "Статус",
+    "reason": "Причина",
+    "replicas": "Реплики",
+    "shards": "Шарды",
+    "version": "Версия",
+    "retention": "Хранение",
+    "paused": "Приостановлен"
+  },
+  "anyNamespace": "Все namespace",
+  "selectsAll": "Всё",
+  "selectsNone": "Ничего",
+  "loading": "Загрузка…",
+  "yes": "Да",
+  "replicasAvailable": "{{available}} из {{total}} доступны",
+  "targets": {
+    "title": "Сейчас выбирает",
+    "error": "Не удалось прочитать список.",
+    "invalidSelector": "Selector использует оператор, которого нет в Kubernetes, поэтому ничего не выбирает.",
+    "everything": {
+      "services": "Все Service во всех namespace: не перечисляются.",
+      "pods": "Все Pod во всех namespace: не перечисляются."
+    },
+    "tooMany_one": "Смотрит в {{count}} namespace: слишком много, чтобы перечислить здесь.",
+    "tooMany_few": "Смотрит в {{count}} namespace: слишком много, чтобы перечислить здесь.",
+    "tooMany_many": "Смотрит в {{count}} namespace: слишком много, чтобы перечислить здесь.",
+    "tooMany_other": "Смотрит в {{count}} namespace: слишком много, чтобы перечислить здесь.",
+    "none": {
+      "services": "Не выбирает ни одного Service: Prometheus ничего для него не собирает.",
+      "pods": "Не выбирает ни одного Pod: Prometheus ничего для него не собирает."
+    },
+    "selected": {
+      "services_one": "{{count}} Service",
+      "services_few": "{{count}} Service",
+      "services_many": "{{count}} Service",
+      "services_other": "{{count}} Service",
+      "pods_one": "{{count}} Pod",
+      "pods_few": "{{count}} Pod",
+      "pods_many": "{{count}} Pod",
+      "pods_other": "{{count}} Pod"
+    },
+    "more_one": "и ещё {{count}}",
+    "more_few": "и ещё {{count}}",
+    "more_many": "и ещё {{count}}",
+    "more_other": "и ещё {{count}}",
+    "portFound": "на {{found}} из {{total}}"
+  },
+  "endpoints": {
+    "port": "Порт",
+    "path": "Путь",
+    "interval": "Интервал",
+    "found": "Имя порта найдено"
+  },
+  "pickup": {
+    "title": "Подхватывается",
+    "none": "Ни один Prometheus его не подхватывает: ни один selector Prometheus не подходит к его label и namespace.",
+    "unknown": "Неизвестно: не удалось прочитать label namespace.",
+    "noPrometheus": "В кластере нет объектов Prometheus."
+  },
+  "groups": {
+    "title": "Группы правил",
+    "name": "Группа",
+    "interval": "Интервал",
+    "alerts": "Оповещения",
+    "records": "Правила записи",
+    "none": "Нет групп правил."
+  },
+  "selectors": {
+    "title": "Что подхватывает",
+    "what": "Вид",
+    "selector": "Selector",
+    "namespaces": "Namespaces",
+    "none": "Ничего",
+    "all": "Всё",
+    "ownNamespace": "Свой namespace",
+    "allNamespaces": "Все namespace",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

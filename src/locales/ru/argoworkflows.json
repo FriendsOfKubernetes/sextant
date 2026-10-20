@@ -1,0 +1,70 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow недавно завершился сбоем",
+  "badge_few": "{{count}} workflow недавно завершились сбоем",
+  "badge_many": "{{count}} workflow недавно завершились сбоем",
+  "badge_other": "{{count}} workflow недавно завершились сбоем",
+  "columns": {
+    "phase": "Фаза",
+    "progress": "Прогресс",
+    "duration": "Длительность",
+    "failedStep": "Шаг со сбоем",
+    "schedule": "Расписание",
+    "suspended": "Приостановлен",
+    "active": "Активные",
+    "lastScheduled": "Последний запуск",
+    "entrypoint": "Точка входа",
+    "templates": "Шаблоны"
+  },
+  "yes": "Да",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Фаза",
+    "progress": "Прогресс",
+    "startedAt": "Начало",
+    "finishedAt": "Завершение",
+    "duration": "Длительность",
+    "message": "Сообщение",
+    "failedStep": "Шаг со сбоем",
+    "failedMessage": "Его сообщение",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "Расписания",
+    "timezone": "Часовой пояс",
+    "concurrencyPolicy": "Политика параллельности",
+    "suspended": "Приостановлен",
+    "lastScheduled": "Последний запуск",
+    "active": "Активные workflow",
+    "succeeded": "Успешно",
+    "failed": "Со сбоем",
+    "entrypoint": "Точка входа",
+    "templates": "Шаблоны"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Шаги",
+    "cron": "Расписание",
+    "template": "Шаблон"
+  },
+  "tree": {
+    "count_one": "{{count}} шаг",
+    "count_few": "{{count}} шага",
+    "count_many": "{{count}} шагов",
+    "count_other": "{{count}} шага",
+    "capped": "Показаны только первые {{shown}} шагов из {{count}}.",
+    "expandFailed": "Показать шаг со сбоем",
+    "collapseAll": "Свернуть всё",
+    "expand": "Развернуть {{name}}",
+    "collapse": "Свернуть {{name}}",
+    "logs": "Логи",
+    "logsOf": "Логи {{name}}",
+    "offloaded": "Контроллер хранит шаги этого workflow в своей базе данных (offloaded node status): их нет в объекте, поэтому показать их здесь нельзя.",
+    "compressed": "Контроллер сохранил шаги этого workflow в сжатом виде: показать их здесь нельзя.",
+    "none": "Шагов пока нет."
+  }
+}

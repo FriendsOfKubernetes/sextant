@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "serviceMonitors": "Service Monitors",
+    "podMonitors": "Pod Monitors",
+    "probes": "Probes",
+    "prometheusRules": "Prometheus Rules",
+    "prometheuses": "Prometheuses",
+    "alertmanagers": "Alertmanagers"
+  },
+  "badge_one": "{{count}} obiekt wymaga uwagi",
+  "badge_few": "{{count}} obiekty wymagają uwagi",
+  "badge_many": "{{count}} obiektów wymaga uwagi",
+  "badge_other": "{{count}} obiektu wymaga uwagi",
+  "state": {
+    "ready": "Dostępny",
+    "degraded": "Zdegradowany",
+    "failed": "Błąd",
+    "pending": "Oczekuje"
+  },
+  "columns": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "ports": "Porty",
+    "prober": "Prober",
+    "module": "Moduł",
+    "interval": "Interwał",
+    "groups": "Grupy",
+    "rules": "Reguły",
+    "status": "Stan",
+    "replicas": "Repliki",
+    "version": "Wersja",
+    "reason": "Przyczyna"
+  },
+  "fields": {
+    "namespaces": "Namespaces",
+    "selector": "Selector",
+    "jobLabel": "Etykieta job",
+    "prober": "Prober",
+    "module": "Moduł",
+    "interval": "Interwał",
+    "staticTargets": "Cele",
+    "ingressSelector": "Selector Ingress",
+    "status": "Stan",
+    "reason": "Przyczyna",
+    "replicas": "Repliki",
+    "shards": "Shardy",
+    "version": "Wersja",
+    "retention": "Retencja",
+    "paused": "Wstrzymano"
+  },
+  "anyNamespace": "Wszystkie namespace",
+  "selectsAll": "Wszystko",
+  "selectsNone": "Nic",
+  "loading": "Wczytywanie…",
+  "yes": "Tak",
+  "replicasAvailable": "Dostępne: {{available}} z {{total}}",
+  "targets": {
+    "title": "Wybiera teraz",
+    "error": "Nie udało się odczytać listy.",
+    "invalidSelector": "Selector używa operatora, którego Kubernetes nie zna, więc niczego nie wybiera.",
+    "everything": {
+      "services": "Każdy Service w każdym namespace: nie wyświetlono listy.",
+      "pods": "Każdy Pod w każdym namespace: nie wyświetlono listy."
+    },
+    "tooMany_one": "Szuka w {{count}} namespace: za dużo, by je tu wymienić.",
+    "tooMany_few": "Szuka w {{count}} namespace: za dużo, by je tu wymienić.",
+    "tooMany_many": "Szuka w {{count}} namespace: za dużo, by je tu wymienić.",
+    "tooMany_other": "Szuka w {{count}} namespace: za dużo, by je tu wymienić.",
+    "none": {
+      "services": "Nie wybiera żadnego Service: Prometheus nic dla niego nie zbiera.",
+      "pods": "Nie wybiera żadnego Poda: Prometheus nic dla niego nie zbiera."
+    },
+    "selected": {
+      "services_one": "{{count}} Service",
+      "services_few": "{{count}} Service",
+      "services_many": "{{count}} Service",
+      "services_other": "{{count}} Service",
+      "pods_one": "{{count}} Pod",
+      "pods_few": "{{count}} Pody",
+      "pods_many": "{{count}} Podów",
+      "pods_other": "{{count}} Poda"
+    },
+    "more_one": "i jeszcze {{count}}",
+    "more_few": "i jeszcze {{count}}",
+    "more_many": "i jeszcze {{count}}",
+    "more_other": "i jeszcze {{count}}",
+    "portFound": "na {{found}} z {{total}}"
+  },
+  "endpoints": {
+    "port": "Port",
+    "path": "Ścieżka",
+    "interval": "Interwał",
+    "found": "Znaleziono nazwę portu"
+  },
+  "pickup": {
+    "title": "Wybierany przez",
+    "none": "Żaden Prometheus go nie wybiera: żaden selector Prometheus nie pasuje do jego etykiet i namespace.",
+    "unknown": "Nieznane: nie udało się odczytać etykiet namespace.",
+    "noPrometheus": "W klastrze nie ma żadnego obiektu Prometheus."
+  },
+  "groups": {
+    "title": "Grupy reguł",
+    "name": "Grupa",
+    "interval": "Interwał",
+    "alerts": "Alerty",
+    "records": "Reguły zapisu",
+    "none": "Brak grup reguł."
+  },
+  "selectors": {
+    "title": "Co wybiera",
+    "what": "Kind",
+    "selector": "Selector",
+    "namespaces": "Namespaces",
+    "none": "Nic",
+    "all": "Wszystko",
+    "ownNamespace": "Własny namespace",
+    "allNamespaces": "Wszystkie namespace",
+    "serviceMonitors": "ServiceMonitors",
+    "podMonitors": "PodMonitors",
+    "probes": "Probes",
+    "rules": "PrometheusRules"
+  }
+}

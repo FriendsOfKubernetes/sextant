@@ -1,0 +1,125 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_one": "{{count}} claim або складений ресурс потребує уваги",
+  "badge_few": "{{count}} claim або складені ресурси потребують уваги",
+  "badge_many": "{{count}} claim або складених ресурсів потребують уваги",
+  "badge_other": "{{count}} claim або складеного ресурсу потребують уваги",
+  "health": {
+    "ready": "Готовий",
+    "progressing": "Виконується",
+    "failed": "Збій",
+    "unknown": "Невідомо"
+  },
+  "served": "обслуговується",
+  "referenceable": "основна",
+  "failing": "Перша невиконана умова: {{type}} ({{reason}})",
+  "failingWithMessage": "Перша невиконана умова: {{type}} ({{reason}}): {{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "Складений ресурс",
+    "managed": "Керований ресурс"
+  },
+  "columns": {
+    "composite": "Kind складеного",
+    "claim": "Kind claim",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Тип складеного",
+    "mode": "Режим",
+    "status": "Стан",
+    "package": "Пакет",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "Група",
+    "compositeKind": "Kind складеного ресурсу",
+    "claimKind": "Kind claim",
+    "versions": "Версії",
+    "defaultComposition": "Composition за замовчуванням",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "Тип складеного ресурсу",
+    "mode": "Режим",
+    "resources": "Ресурси (класичний режим)",
+    "package": "Пакет",
+    "revision": "Поточна ревізія",
+    "identifier": "Поточний пакет",
+    "activation": "Активація ревізій",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "Роль",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "Secret підключення",
+    "providerConfig": "ProviderConfig",
+    "externalName": "Зовнішнє ім’я",
+    "deletionPolicy": "Політика видалення",
+    "managementPolicies": "Політики керування",
+    "composite": "Складений ресурс"
+  },
+  "pipeline": {
+    "step": "Крок",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "Ресурси",
+    "loading": "Читання ресурсів…",
+    "noResources": "Складових ресурсів поки немає.",
+    "noComposite": "Складеного ресурсу поки немає: Crossplane ще не прив’язав цей claim.",
+    "missing": "Не знайдено",
+    "unreadable": "Не вдається прочитати",
+    "more": "Не показано: {{count}}"
+  },
+  "explain": {
+    "ready": "Синхронізований і готовий.",
+    "creating": "Ще не готовий: Crossplane ще створює його або його ресурси.",
+    "deleting": "Видаляється.",
+    "notSynced": "Crossplane не може узгодити його ({{reason}}): причина — у першій невиконаній умові нижче.",
+    "notReady": "Не готовий ({{reason}}): причина — у першій невиконаній умові нижче.",
+    "packageHealthy": "Встановлений і справний.",
+    "packageInstalling": "Встановлюється: ще не справний.",
+    "packageNotInstalled": "Пакет не встановлено ({{reason}}).",
+    "packageUnhealthy": "Пакет встановлено, але він несправний ({{reason}}).",
+    "xrdNotEstablished": "Не встановлений: види, які він визначає, ще не обслуговуються.",
+    "xrdClaimNotOffered": "Kind claim {{claim}} ще не пропонується.",
+    "xrdEstablishedWithClaim": "Встановлений: визначає складений ресурс {{kind}} і claim {{claim}}.",
+    "xrdEstablished": "Встановлений: визначає складений ресурс {{kind}}."
+  },
+  "page": {
+    "sidebar": "Складені ресурси",
+    "title": "Складені ресурси",
+    "hint": "Claim і складені ресурси видів, визначених XRD, з першою невиконаною умовою.",
+    "onlyProblems": "Лише проблеми",
+    "total": "Показано: {{count}}",
+    "loading": "Читання claim і складених ресурсів…",
+    "xrdsTruncated": "Показано лише види перших XRD (до {{count}}).",
+    "rowsTruncated": "Показано лише перші (до {{count}}).",
+    "noXrds": "XRD немає: у кластері не визначено складених ресурсів.",
+    "none": "Немає claim і складених ресурсів.",
+    "columns": {
+      "kind": "Kind",
+      "name": "Ім’я",
+      "namespace": "Namespace",
+      "state": "Стан",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "Причина",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}} (claim)",
+      "composite": "{{kind}} (складений)"
+    }
+  }
+}

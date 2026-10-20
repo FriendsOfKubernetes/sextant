@@ -1,0 +1,101 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} obiekt narusza reguły zasad",
+  "badge_few": "{{count}} obiekty naruszają reguły zasad",
+  "badge_many": "{{count}} obiektów narusza reguły zasad",
+  "badge_other": "{{count}} obiektu narusza reguły zasad",
+  "yes": "Tak",
+  "no": "Nie",
+  "ready": {
+    "True": "Gotowe",
+    "False": "Niegotowe",
+    "Unknown": "Oczekuje"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Mieszany"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: żądanie naruszające regułę jest odrzucane.",
+    "Audit": "Audit: żądanie naruszające regułę jest przepuszczane, a naruszenie trafia do raportu.",
+    "Mixed": "Niektóre reguły odrzucają naruszające je żądanie (Enforce); pozostałe tylko zapisują naruszenie w raporcie (Audit)."
+  },
+  "explain": {
+    "ready": "Gotowe: Kyverno stosuje te zasady.",
+    "notReady": "Niegotowe: Kyverno nie stosuje tych zasad, dopóki problem poniżej nie zostanie naprawiony.",
+    "pending": "Kyverno nie zakończył jeszcze wczytywania tych zasad."
+  },
+  "columns": {
+    "ready": "Gotowe",
+    "mode": "Tryb",
+    "background": "W tle",
+    "rules": "Reguły",
+    "message": "Komunikat",
+    "object": "Obiekt",
+    "pass": "Zgodne",
+    "fail": "Naruszenia",
+    "warn": "Ostrz.",
+    "error": "Błędy",
+    "skip": "Pominięte"
+  },
+  "fields": {
+    "ready": "Gotowe",
+    "mode": "Tryb",
+    "background": "Skanowanie w tle",
+    "object": "Obiekt"
+  },
+  "rules": {
+    "name": "Reguła",
+    "type": "Typ",
+    "mode": "Tryb",
+    "kinds": "Rodzaje"
+  },
+  "ruleType": {
+    "validate": "Walidacja",
+    "mutate": "Modyfikacja",
+    "generate": "Generowanie",
+    "verifyImages": "Weryfikacja obrazów"
+  },
+  "result": {
+    "pass": "Zgodne",
+    "fail": "Naruszenie",
+    "warn": "Ostrzeżenie",
+    "error": "Błąd",
+    "skip": "Pominięte"
+  },
+  "summary": {
+    "pass": "Zgodne: {{count}}",
+    "fail": "Naruszenia: {{count}}",
+    "warn": "Ostrzeżenia: {{count}}",
+    "error": "Błędy: {{count}}",
+    "skip": "Pominięte: {{count}}"
+  },
+  "results": {
+    "object": "Obiekt",
+    "policy": "Zasady",
+    "rule": "Reguła",
+    "result": "Wynik",
+    "message": "Komunikat",
+    "more": "Nie pokazano: {{count}}"
+  },
+  "policySummary": {
+    "title": "Wyniki w raportach",
+    "loading": "Odczytywanie raportów…",
+    "none": "Żaden raport nie zawiera jeszcze wyników tych zasad.",
+    "unlabelled": "Nazwa zasad jest za długa na label, który Kyverno nadaje raportom, więc ich wyników nie da się tu podsumować.",
+    "capped": "Odczytano tylko część raportów: liczby są niepełne (policzone wyniki: {{count}})."
+  },
+  "objectResults": {
+    "title": "Wyniki zasad",
+    "failing": "Naruszone reguły zasad: {{count}} z {{total}} sprawdzonych.",
+    "passing": "Żadna reguła zasad nie jest naruszona (sprawdzono: {{count}})."
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_other": "{{count}} 个 workflow 最近失败",
+  "columns": {
+    "phase": "阶段",
+    "progress": "进度",
+    "duration": "时长",
+    "failedStep": "失败的步骤",
+    "schedule": "计划",
+    "suspended": "已挂起",
+    "active": "活动",
+    "lastScheduled": "上次运行",
+    "entrypoint": "入口",
+    "templates": "模板"
+  },
+  "yes": "是",
+  "failedStep": "{{step}}：{{message}}",
+  "fields": {
+    "phase": "阶段",
+    "progress": "进度",
+    "startedAt": "开始",
+    "finishedAt": "结束",
+    "duration": "时长",
+    "message": "消息",
+    "failedStep": "失败的步骤",
+    "failedMessage": "其消息",
+    "cronWorkflow": "CronWorkflow",
+    "workflowTemplate": "WorkflowTemplate",
+    "schedules": "计划",
+    "timezone": "时区",
+    "concurrencyPolicy": "并发策略",
+    "suspended": "已挂起",
+    "lastScheduled": "上次运行",
+    "active": "活动的 workflow",
+    "succeeded": "成功",
+    "failed": "失败",
+    "entrypoint": "入口",
+    "templates": "模板"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "步骤",
+    "cron": "计划",
+    "template": "模板"
+  },
+  "tree": {
+    "count_other": "{{count}} 个步骤",
+    "capped": "仅显示 {{count}} 个步骤中的前 {{shown}} 个。",
+    "expandFailed": "显示失败的步骤",
+    "collapseAll": "全部折叠",
+    "expand": "展开 {{name}}",
+    "collapse": "折叠 {{name}}",
+    "logs": "日志",
+    "logsOf": "{{name}} 的日志",
+    "offloaded": "控制器将此 workflow 的步骤保存在其数据库中（offloaded node status）：它们不在对象中，因此无法在此显示。",
+    "compressed": "控制器以压缩形式存储了此 workflow 的步骤：无法在此显示。",
+    "none": "暂无步骤。"
+  }
+}

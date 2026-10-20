@@ -1,0 +1,92 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "backups": "Backups",
+    "scheduledBackups": "Scheduled Backups",
+    "poolers": "Poolers"
+  },
+  "badge_one": "{{count}} об'єкт потребує уваги",
+  "badge_few": "{{count}} об'єкти потребують уваги",
+  "badge_many": "{{count}} об'єктів потребують уваги",
+  "badge_other": "{{count}} об'єкта потребують уваги",
+  "state": {
+    "healthy": "Справний",
+    "switchover": "Перемикання",
+    "failover": "Аварійне перемикання",
+    "progressing": "Виконується",
+    "unhealthy": "Несправний"
+  },
+  "backupState": {
+    "completed": "Завершено",
+    "failed": "Помилка",
+    "running": "Виконується",
+    "pending": "Очікує"
+  },
+  "role": {
+    "primary": "Основний",
+    "replica": "Репліка"
+  },
+  "columns": {
+    "status": "Статус",
+    "instances": "Екземпляри",
+    "primary": "Основний",
+    "phase": "Фаза",
+    "cluster": "Кластер",
+    "method": "Метод",
+    "started": "Почато",
+    "schedule": "Розклад",
+    "suspended": "Призупинено",
+    "lastBackup": "Остання",
+    "type": "Тип",
+    "poolMode": "Режим пулу"
+  },
+  "fields": {
+    "status": "Статус",
+    "phase": "Фаза",
+    "instances": "Екземпляри",
+    "primary": "Поточний основний",
+    "targetPrimary": "Цільовий основний",
+    "image": "Образ",
+    "storage": "Сховище",
+    "archiving": "Безперервне архівування",
+    "lastBackup": "Остання резервна копія",
+    "lastSuccessfulBackup": "Остання успішна копія",
+    "lastFailedBackup": "Остання невдала копія",
+    "firstRecoverabilityPoint": "Відновлення можливе з",
+    "cluster": "Кластер",
+    "method": "Метод",
+    "target": "Ціль",
+    "startedAt": "Почато",
+    "stoppedAt": "Зупинено",
+    "backupId": "ID копії",
+    "destination": "Призначення",
+    "schedule": "Розклад",
+    "suspended": "Призупинено",
+    "lastScheduleTime": "Останній запуск",
+    "nextScheduleTime": "Наступний запуск",
+    "type": "Тип",
+    "poolerInstances": "Екземпляри",
+    "poolMode": "Режим пулу"
+  },
+  "instancesReady": "{{ready}} з {{total}} готові",
+  "switchover": "Основний екземпляр переходить з {{from}} на {{to}}.",
+  "failover": "Аварійне перемикання: {{primary}} недоступний, обирається новий основний екземпляр.",
+  "replicaCluster": "Кластер-репліка: його основний екземпляр слідує за іншим кластером.",
+  "members": {
+    "title": "Екземпляри",
+    "instance": "Екземпляр",
+    "role": "Роль",
+    "health": "Стан",
+    "timeline": "Timeline"
+  },
+  "backups": "Резервні копії",
+  "noBackups": "Для цього кластера резервне копіювання не налаштовано.",
+  "archivingOk": "Працює",
+  "archivingFailing": "Збій",
+  "backupOk": "Успішно",
+  "backupFailing": "Помилка",
+  "unknown": "Невідомо",
+  "error": "Помилка",
+  "yes": "Так",
+  "no": "Ні"
+}

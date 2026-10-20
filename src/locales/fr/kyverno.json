@@ -1,0 +1,100 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} objet enfreint des règles de politique",
+  "badge_many": "{{count}} d’objets enfreignent des règles de politique",
+  "badge_other": "{{count}} objets enfreignent des règles de politique",
+  "yes": "Oui",
+  "no": "Non",
+  "ready": {
+    "True": "Prête",
+    "False": "Pas prête",
+    "Unknown": "En attente"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Mixte"
+  },
+  "modeHint": {
+    "Enforce": "Enforce : une requête qui enfreint une règle est refusée.",
+    "Audit": "Audit : une requête qui enfreint une règle est acceptée, et l’échec est consigné dans un rapport.",
+    "Mixed": "Certaines règles refusent une requête qui les enfreint (Enforce) ; les autres consignent seulement l’échec dans un rapport (Audit)."
+  },
+  "explain": {
+    "ready": "Prête : Kyverno applique cette politique.",
+    "notReady": "Pas prête : Kyverno n’applique pas cette politique tant que le problème ci-dessous n’est pas corrigé.",
+    "pending": "Kyverno n’a pas encore fini de charger cette politique."
+  },
+  "columns": {
+    "ready": "Prête",
+    "mode": "Mode",
+    "background": "Arrière-plan",
+    "rules": "Règles",
+    "message": "Message",
+    "object": "Objet",
+    "pass": "Réussite",
+    "fail": "Échec",
+    "warn": "Avert.",
+    "error": "Erreur",
+    "skip": "Ignoré"
+  },
+  "fields": {
+    "ready": "Prête",
+    "mode": "Mode",
+    "background": "Analyses en arrière-plan",
+    "object": "Objet"
+  },
+  "rules": {
+    "name": "Règle",
+    "type": "Type",
+    "mode": "Mode",
+    "kinds": "Kinds"
+  },
+  "ruleType": {
+    "validate": "Valider",
+    "mutate": "Modifier",
+    "generate": "Générer",
+    "verifyImages": "Vérifier les images"
+  },
+  "result": {
+    "pass": "Réussite",
+    "fail": "Échec",
+    "warn": "Avertissement",
+    "error": "Erreur",
+    "skip": "Ignoré"
+  },
+  "summary": {
+    "pass": "Réussites : {{count}}",
+    "fail": "Échecs : {{count}}",
+    "warn": "Avertissements : {{count}}",
+    "error": "Erreurs : {{count}}",
+    "skip": "Ignorés : {{count}}"
+  },
+  "results": {
+    "object": "Objet",
+    "policy": "Politique",
+    "rule": "Règle",
+    "result": "Résultat",
+    "message": "Message",
+    "more": "Non affichés : {{count}}"
+  },
+  "policySummary": {
+    "title": "Résultats dans les rapports",
+    "loading": "Lecture des rapports…",
+    "none": "Aucun rapport ne contient encore de résultats de cette politique.",
+    "unlabelled": "Le nom de la politique est trop long pour le label que Kyverno appose sur ses rapports : ses résultats ne peuvent pas être résumés ici.",
+    "capped": "Seule une partie des rapports a été lue : les totaux sont incomplets ({{count}} résultats comptés)."
+  },
+  "objectResults": {
+    "title": "Résultats des politiques",
+    "failing": "Règles de politique en échec : {{count}} sur {{total}} vérifiées.",
+    "passing": "Aucune règle de politique en échec ({{count}} vérifiées)."
+  }
+}

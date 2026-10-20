@@ -1,0 +1,26 @@
+# ADR-0098: "Set image" is one strategic-merge patch of the image fields, checked against the live object
+
+## Context
+
+#215 asked for a quick "Set image…" on Deployments, StatefulSets, DaemonSets, CronJobs and bare Pods (ephemeral containers excluded): every container and init container with its current image, one or several edited with tag/digest checks, through safe apply (#141), as a strategic-merge patch of the image fields only; the change shows in the change timeline (#145) and rollout history and rollback (#134) keep working; no MCP tool (agents have `patch_resource`).
+
+`resource_patch` takes a JSON merge patch or a JSON patch only. A merge patch replaces the whole `containers` list; a JSON patch addresses containers by index. Neither is what `kubectl set image` sends, and the window had no dry run of a patch.
+
+## Decision
+
+- **A narrow core path, window only.** `resources::set_image` (`crates/sextant-core/src/resources/set_image.rs`) takes `SetImageChange { container, init, from, image }` (≤ 64, each container once, an image without spaces or control characters, ≤ 1024 bytes) and builds the body itself: under the kind's pod spec (`spec.template.spec`; CronJob `spec.jobTemplate.spec.template.spec`; Pod `spec`) `containers` and/or `initContainers` with `{name, image}` of each changed container, nothing else. Commands `workload_set_image` and `workload_set_image_dry_run` (`src-tauri/src/commands/set_image.rs`), each one request under `CHANGE_TIMEOUT`, never repeated (ADR-0055). `PatchType` is not widened: a strategic merge in `resource_patch` would reach the agents' `patch_resource` and the extensions, and its Secret checks (ADR-0043). Agents and extensions get nothing new (test in the command file).
+- **Checked against a fresh read.** The core reads the object right before the patch and refuses when a named container is not in the list the change names (`notFound` — a strategic merge would otherwise add a container with only a name and an image), when its image is no longer the one the dialog showed (`from`; `conflict`), or when the object is a Pod a controller owns (`invalid`). The patch carries that read's `resourceVersion`, so a write landing between the read and the patch is refused (`conflict`), never merged. Status updates do not trip it in practice: the read and the patch are milliseconds apart.
+- **Safe apply as for the editor.** The dry run is the same patch with `dryRun=All`; both sides come out through `dry_run::compared` (as the editor's), shown by `ChangePreview`. A cluster that previews changes (`clusters[id].previewChanges`, the production-name default) gets "Preview and set image…" first; elsewhere "Preview changes" is a button beside "Set image". The dialog's own list of changes ("web: nginx:1.25 → nginx:1.27") is the confirmation; "Set image" sends exactly the previewed changes.
+- **The image grammar in the window.** `src/features/set-image/reference.ts` checks distribution's reference grammar (host[:port], lowercase path components, tag `[\w][\w.-]{0,127}`, digest `algorithm:hex` with sha256/384/512 lengths, tag and digest together allowed) and warns on `:latest` or no tag (not with a digest). Kubernetes checks almost nothing, so a typo would surface only as ImagePullBackOff; the core repeats only the coarse checks.
+- **An owned Pod is redirected.** A Pod with a controller owner reference gets a dialog that names its owner and opens it — through a ReplicaSet to its Deployment and through a Job to its CronJob (one GET of the middle object; on failure the direct owner). A static Pod's mirror says to change the manifest on the node. A bare Pod may change only `image` in place, which Kubernetes allows; the dialog says the kubelet restarts the changed containers. Ephemeral containers are never listed.
+- **No change-cause annotation.** `kubectl set image` stopped recording `kubernetes.io/change-cause` (`--record` is deprecated); Sextant does not add one. Rollout history shows the revision without a cause, and `rollout undo` works on the template as before.
+
+## Why
+
+- The core builds and checks the body, so the window cannot send more than image fields, and a container renamed meanwhile cannot be added by the merge.
+- A dedicated command keeps the agents' and extensions' patch surface exactly as it was.
+
+## Consequences
+
+- ReplicaSets and Jobs are not offered: a ReplicaSet's change does not replace its pods, and a Job's pod template is immutable.
+- The change appears in the change timeline through the open watches (#145), signed by the field manager `sextant`.

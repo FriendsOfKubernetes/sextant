@@ -1,0 +1,82 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} objeto requiere atención",
+  "badge_many": "{{count}} de objetos requieren atención",
+  "badge_other": "{{count}} objetos requieren atención",
+  "state": {
+    "ready": "Listo",
+    "notReady": "No listo",
+    "pending": "Pendiente"
+  },
+  "columns": {
+    "status": "Estado",
+    "reason": "Motivo",
+    "cluster": "Kafka",
+    "replicas": "Réplicas",
+    "version": "Versión",
+    "listeners": "Listeners",
+    "roles": "Roles",
+    "partitions": "Particiones",
+    "topicReplicas": "Réplicas",
+    "authentication": "Autenticación",
+    "authorization": "Autorización"
+  },
+  "fields": {
+    "status": "Estado",
+    "reason": "Motivo",
+    "version": "Versión de Kafka",
+    "metadataState": "Metadatos",
+    "clusterId": "ID del clúster",
+    "nodePools": "Grupos de nodos",
+    "cluster": "Kafka",
+    "roles": "Roles",
+    "replicas": "Réplicas",
+    "nodeIds": "ID de nodos",
+    "storage": "Almacenamiento",
+    "topicName": "Nombre del topic",
+    "partitions": "Particiones",
+    "topicReplicas": "Factor de replicación",
+    "config": "Configuración",
+    "authentication": "Autenticación",
+    "authorization": "Autorización",
+    "acls": "Reglas ACL",
+    "username": "Nombre de usuario",
+    "secret": "Secret",
+    "bootstrapServers": "Servidores bootstrap",
+    "connectCluster": "Clúster de Connect",
+    "url": "API REST",
+    "plugins": "Plugins de conectores"
+  },
+  "warnings": "Advertencias",
+  "warningReason": "Motivo",
+  "warningMessage": "Mensaje",
+  "listeners": {
+    "title": "Listeners",
+    "name": "Nombre",
+    "type": "Tipo",
+    "port": "Puerto",
+    "bootstrap": "Bootstrap",
+    "addresses": "Direcciones",
+    "tls": "TLS",
+    "noAddress": "Aún sin dirección"
+  },
+  "mirrors": {
+    "title": "Réplicas espejo",
+    "source": "Origen",
+    "target": "Destino",
+    "topics": "Topics"
+  },
+  "connectors": {
+    "title": "Conectores",
+    "name": "Nombre",
+    "state": "Estado",
+    "tasks": "Tareas"
+  }
+}

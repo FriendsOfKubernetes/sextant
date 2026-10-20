@@ -1,0 +1,20 @@
+{
+  "apiVersion": "kafka.strimzi.io/v1beta2",
+  "kind": "KafkaUser",
+  "metadata": { "name": "my-user", "namespace": "kafka", "uid": "user-my-user", "labels": { "strimzi.io/cluster": "my-cluster" }, "creationTimestamp": "2026-10-01T10:00:00Z" },
+  "spec": {
+    "authentication": { "type": "tls" },
+    "authorization": {
+      "type": "simple",
+      "acls": [
+        { "resource": { "type": "topic", "name": "my-topic", "patternType": "literal" }, "operations": ["Describe", "Read"], "host": "*" },
+        { "resource": { "type": "group", "name": "my-group", "patternType": "literal" }, "operations": ["Read"], "host": "*" }
+      ]
+    }
+  },
+  "status": {
+    "username": "CN=my-user",
+    "secret": "my-user",
+    "conditions": [{ "type": "Ready", "status": "True", "lastTransitionTime": "2026-10-10T08:00:00Z" }]
+  }
+}

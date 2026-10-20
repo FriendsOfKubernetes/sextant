@@ -1,0 +1,122 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_other": "{{count}} 個 claim 或組合資源需要注意",
+  "health": {
+    "ready": "就緒",
+    "progressing": "進行中",
+    "failed": "失敗",
+    "unknown": "未知"
+  },
+  "served": "已提供",
+  "referenceable": "可參照",
+  "failing": "第一個未滿足的條件：{{type}}（{{reason}}）",
+  "failingWithMessage": "第一個未滿足的條件：{{type}}（{{reason}}）：{{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "組合資源",
+    "managed": "受管資源"
+  },
+  "columns": {
+    "composite": "組合資源 Kind",
+    "claim": "Claim Kind",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "組合類型",
+    "mode": "模式",
+    "status": "狀態",
+    "package": "套件",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "群組",
+    "compositeKind": "組合資源 Kind",
+    "claimKind": "Claim Kind",
+    "versions": "版本",
+    "defaultComposition": "預設 Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "組合資源類型",
+    "mode": "模式",
+    "resources": "資源（傳統模式）",
+    "package": "套件",
+    "revision": "目前修訂版本",
+    "identifier": "目前套件",
+    "activation": "修訂版本啟用",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "角色",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "連線 Secret",
+    "providerConfig": "ProviderConfig",
+    "externalName": "外部名稱",
+    "deletionPolicy": "刪除原則",
+    "managementPolicies": "管理原則",
+    "composite": "組合資源"
+  },
+  "pipeline": {
+    "step": "步驟",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "資源",
+    "loading": "正在讀取資源…",
+    "noResources": "尚無組成它的資源。",
+    "noComposite": "尚無組合資源：Crossplane 尚未繫結此 claim。",
+    "missing": "找不到",
+    "unreadable": "無法讀取",
+    "more": "未顯示：{{count}}"
+  },
+  "explain": {
+    "ready": "已同步且就緒。",
+    "creating": "尚未就緒：Crossplane 仍在建立它或它的資源。",
+    "deleting": "正在刪除。",
+    "notSynced": "Crossplane 無法協調它（{{reason}}）：下方第一個未滿足的條件說明了原因。",
+    "notReady": "未就緒（{{reason}}）：下方第一個未滿足的條件說明了原因。",
+    "packageHealthy": "已安裝且健康。",
+    "packageInstalling": "正在安裝：尚不健康。",
+    "packageNotInstalled": "套件未安裝（{{reason}}）。",
+    "packageUnhealthy": "套件已安裝但不健康（{{reason}}）。",
+    "xrdNotEstablished": "未建立：它定義的 Kind 尚未提供。",
+    "xrdClaimNotOffered": "Claim Kind {{claim}} 尚未提供。",
+    "xrdEstablishedWithClaim": "已建立：定義了組合資源 {{kind}} 與 claim {{claim}}。",
+    "xrdEstablished": "已建立：定義了組合資源 {{kind}}。"
+  },
+  "page": {
+    "sidebar": "組合資源",
+    "title": "組合資源",
+    "hint": "XRD 所定義 Kind 的 claim 與組合資源，以及第一個未滿足的條件。",
+    "onlyProblems": "僅問題",
+    "total": "已顯示：{{count}}",
+    "loading": "正在讀取 claim 與組合資源…",
+    "xrdsTruncated": "只列出前 {{count}} 個 XRD 的 Kind。",
+    "rowsTruncated": "只列出前 {{count}} 個。",
+    "noXrds": "沒有 XRD：叢集未定義組合資源。",
+    "none": "沒有 claim 或組合資源。",
+    "columns": {
+      "kind": "Kind",
+      "name": "名稱",
+      "namespace": "Namespace",
+      "state": "狀態",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "原因",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}}（claim）",
+      "composite": "{{kind}}（組合）"
+    }
+  }
+}

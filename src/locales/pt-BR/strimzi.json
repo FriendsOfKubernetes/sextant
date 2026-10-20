@@ -1,0 +1,82 @@
+{
+  "sidebar": {
+    "kafkas": "Kafkas",
+    "nodePools": "Kafka Node Pools",
+    "topics": "Kafka Topics",
+    "users": "Kafka Users",
+    "connects": "Kafka Connects",
+    "mirrorMakers": "Kafka MirrorMaker 2"
+  },
+  "badge_one": "{{count}} objeto precisa de atenção",
+  "badge_many": "{{count}} de objetos precisam de atenção",
+  "badge_other": "{{count}} objetos precisam de atenção",
+  "state": {
+    "ready": "Pronto",
+    "notReady": "Não pronto",
+    "pending": "Pendente"
+  },
+  "columns": {
+    "status": "Status",
+    "reason": "Motivo",
+    "cluster": "Kafka",
+    "replicas": "Réplicas",
+    "version": "Versão",
+    "listeners": "Listeners",
+    "roles": "Funções",
+    "partitions": "Partições",
+    "topicReplicas": "Réplicas",
+    "authentication": "Autenticação",
+    "authorization": "Autorização"
+  },
+  "fields": {
+    "status": "Status",
+    "reason": "Motivo",
+    "version": "Versão do Kafka",
+    "metadataState": "Metadados",
+    "clusterId": "ID do cluster",
+    "nodePools": "Pools de nós",
+    "cluster": "Kafka",
+    "roles": "Funções",
+    "replicas": "Réplicas",
+    "nodeIds": "IDs dos nós",
+    "storage": "Armazenamento",
+    "topicName": "Nome do tópico",
+    "partitions": "Partições",
+    "topicReplicas": "Fator de replicação",
+    "config": "Configuração",
+    "authentication": "Autenticação",
+    "authorization": "Autorização",
+    "acls": "Regras de ACL",
+    "username": "Nome de usuário",
+    "secret": "Secret",
+    "bootstrapServers": "Servidores bootstrap",
+    "connectCluster": "Cluster do Connect",
+    "url": "API REST",
+    "plugins": "Plugins de conectores"
+  },
+  "warnings": "Avisos",
+  "warningReason": "Motivo",
+  "warningMessage": "Mensagem",
+  "listeners": {
+    "title": "Listeners",
+    "name": "Nome",
+    "type": "Tipo",
+    "port": "Porta",
+    "bootstrap": "Bootstrap",
+    "addresses": "Endereços",
+    "tls": "TLS",
+    "noAddress": "Ainda sem endereço"
+  },
+  "mirrors": {
+    "title": "Espelhos",
+    "source": "Origem",
+    "target": "Destino",
+    "topics": "Tópicos"
+  },
+  "connectors": {
+    "title": "Conectores",
+    "name": "Nome",
+    "state": "Estado",
+    "tasks": "Tarefas"
+  }
+}

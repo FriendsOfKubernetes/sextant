@@ -1,0 +1,61 @@
+[
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Revision",
+    "metadata": {
+      "name": "hello-00001",
+      "namespace": "default",
+      "uid": "6f2a5c1e-0d1b-4a55-9b1e-1f6f0b8a0011",
+      "creationTimestamp": "2026-10-01T10:00:00Z",
+      "labels": {
+        "serving.knative.dev/configuration": "hello",
+        "serving.knative.dev/configurationGeneration": "1",
+        "serving.knative.dev/service": "hello",
+        "serving.knative.dev/routingState": "active"
+      }
+    },
+    "spec": { "containerConcurrency": 0, "timeoutSeconds": 300, "containers": [{ "image": "ghcr.io/knative/helloworld-go:v1" }] },
+    "status": {
+      "actualReplicas": 0,
+      "desiredReplicas": 0,
+      "containerStatuses": [{ "name": "user-container", "imageDigest": "ghcr.io/knative/helloworld-go@sha256:5ea9a4d2" }],
+      "conditions": [
+        { "type": "Active", "status": "False", "reason": "NoTraffic", "message": "The target is not receiving traffic." },
+        { "type": "ContainerHealthy", "status": "True" },
+        { "type": "Ready", "status": "True" },
+        { "type": "ResourcesAvailable", "status": "True" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Revision",
+    "metadata": {
+      "name": "hello-00003",
+      "namespace": "default",
+      "uid": "6f2a5c1e-0d1b-4a55-9b1e-1f6f0b8a0013",
+      "creationTimestamp": "2026-10-10T08:59:00Z",
+      "labels": {
+        "serving.knative.dev/configuration": "hello",
+        "serving.knative.dev/configurationGeneration": "3",
+        "serving.knative.dev/service": "hello",
+        "serving.knative.dev/routingState": "active"
+      }
+    },
+    "spec": { "containerConcurrency": 10, "timeoutSeconds": 300, "containers": [{ "image": "ghcr.io/knative/helloworld-go:latest" }] },
+    "status": {
+      "actualReplicas": 0,
+      "desiredReplicas": 1,
+      "conditions": [
+        {
+          "type": "ContainerHealthy",
+          "status": "False",
+          "reason": "ExitCode1",
+          "message": "Container failed with: exec format error."
+        },
+        { "type": "Ready", "status": "False", "reason": "ExitCode1", "message": "Container failed with: exec format error." },
+        { "type": "ResourcesAvailable", "status": "True" }
+      ]
+    }
+  }
+]

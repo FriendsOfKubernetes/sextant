@@ -1,0 +1,101 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "Rollout",
+  "metadata": {
+    "name": "rollout-analysis",
+    "namespace": "shop",
+    "uid": "9a1b2c3d-0000-4000-8000-000000000002",
+    "generation": 3,
+    "resourceVersion": "8812",
+    "creationTimestamp": "2026-10-20T08:00:00Z"
+  },
+  "spec": {
+    "replicas": 5,
+    "revisionHistoryLimit": 2,
+    "selector": {
+      "matchLabels": {
+        "app": "rollout-canary"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "rollout-canary"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "rollouts-demo",
+            "image": "argoproj/rollouts-demo:yellow",
+            "imagePullPolicy": "Always",
+            "ports": [
+              {
+                "containerPort": 8080
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "strategy": {
+      "canary": {
+        "steps": [
+          {
+            "setWeight": 20
+          },
+          {
+            "analysis": {
+              "templates": [
+                {
+                  "templateName": "success-rate"
+                }
+              ]
+            }
+          },
+          {
+            "setWeight": 60
+          },
+          {
+            "pause": {
+              "duration": "1m"
+            }
+          }
+        ],
+        "canaryService": "rollout-analysis-canary",
+        "stableService": "rollout-analysis-stable"
+      }
+    }
+  },
+  "status": {
+    "observedGeneration": "3",
+    "phase": "Degraded",
+    "abort": true,
+    "abortedAt": "2026-10-20T09:10:00Z",
+    "message": "RolloutAborted: Rollout aborted update to revision 3: Metric \"success-rate\" assessed Failed due to failed (3) > failureLimit (2)",
+    "currentStepIndex": 0,
+    "currentPodHash": "84c5f9d7b",
+    "stableRS": "6c9f8b5d4",
+    "replicas": 5,
+    "updatedReplicas": 0,
+    "readyReplicas": 5,
+    "availableReplicas": 5,
+    "canary": {
+      "currentStepAnalysisRunStatus": {
+        "name": "rollout-analysis-84c5f9d7b-3-1",
+        "status": "Failed",
+        "message": "Metric \"success-rate\" assessed Failed due to failed (3) > failureLimit (2)"
+      }
+    },
+    "conditions": [
+      {
+        "type": "Progressing",
+        "status": "False",
+        "reason": "RolloutAborted",
+        "message": "Rollout aborted update to revision 3: Metric \"success-rate\" assessed Failed due to failed (3) > failureLimit (2)",
+        "lastTransitionTime": "2026-10-20T09:10:00Z",
+        "lastUpdateTime": "2026-10-20T09:10:00Z"
+      }
+    ]
+  }
+}

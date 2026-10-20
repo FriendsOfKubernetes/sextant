@@ -1,0 +1,80 @@
+{
+  "sidebar": {
+    "services": "Services",
+    "configurations": "Configurations",
+    "revisions": "Revisions",
+    "routes": "Routes",
+    "domainMappings": "Domain Mappings"
+  },
+  "badge_one": "{{count}} об’єкт Knative потребує уваги",
+  "badge_few": "{{count}} об’єкти Knative потребують уваги",
+  "badge_many": "{{count}} об’єктів Knative потребують уваги",
+  "badge_other": "{{count}} об’єкта Knative потребують уваги",
+  "health": {
+    "ready": "Готовий",
+    "progressing": "Виконується",
+    "failed": "Збій",
+    "unknown": "Невідомо"
+  },
+  "latest": "остання",
+  "unlimited": "Без обмежень",
+  "replicas": "{{actual}} з {{desired}}",
+  "timeoutSeconds": "{{seconds}} с",
+  "columns": {
+    "status": "Стан",
+    "reason": "Причина",
+    "url": "URL",
+    "latestCreated": "Остання створена",
+    "latestReady": "Остання готова",
+    "traffic": "Трафік",
+    "configuration": "Configuration",
+    "generation": "Покоління",
+    "replicas": "Репліки",
+    "target": "Ціль"
+  },
+  "fields": {
+    "status": "Стан",
+    "url": "URL",
+    "address": "Адреса в кластері",
+    "latestCreated": "Остання створена ревізія",
+    "latestReady": "Остання готова ревізія",
+    "configuration": "Configuration",
+    "service": "Service",
+    "generation": "Покоління",
+    "replicas": "Репліки (фактично з бажаних)",
+    "routingState": "Стан маршрутизації",
+    "images": "Образи",
+    "concurrency": "Одночасних запитів на контейнер",
+    "timeout": "Тайм-аут запиту",
+    "target": "Вказує на"
+  },
+  "traffic": {
+    "title": "Трафік",
+    "askedTitle": "Трафік (запитаний, ще не діє)",
+    "revision": "Ревізія",
+    "tag": "Тег",
+    "share": "Частка",
+    "latest": "Слідує за останньою",
+    "url": "URL",
+    "latestReady": "Остання готова ревізія ({{revision}})",
+    "percent": "{{percent}}%",
+    "followsLatest": "Так"
+  },
+  "explain": {
+    "readyAt": "Готовий: обслуговує запити за адресою {{url}}.",
+    "ready": "Готовий.",
+    "progressing": "Ще не готовий: Knative ще розгортає останню ревізію або її маршрут.",
+    "revisionFailedTrafficStays": "Остання ревізія {{revision}} завершилася збоєм ({{reason}}). Трафік лишається на {{ready}} — останній ревізії, що стала готовою.",
+    "revisionFailedNoneReady": "Остання ревізія {{revision}} завершилася збоєм ({{reason}}), і жодна ревізія ще не стала готовою: запити ніхто не обслуговує.",
+    "routeFailed": "Маршрут не готовий ({{reason}}): запити можуть не доходити до ревізій так, як задано розподілом трафіку.",
+    "domainNotClaimed": "Доменне ім’я не закріплене ({{reason}}): можливо, його вже використовує інше зіставлення.",
+    "certificateFailed": "Не вдалося випустити TLS-сертифікат ({{reason}}).",
+    "notReady": "Не готовий ({{reason}}).",
+    "revisionReady": "Готова обслуговувати запити.",
+    "revisionScaledToZero": "Готова й масштабована до нуля: трафік до неї зараз не йде, тому Pod не запущені. Перший запит запустить Pod.",
+    "revisionProgressing": "Запускається: Pod ревізії ще не готові.",
+    "revisionContainerUnhealthy": "Контейнер не запускається або не проходить перевірки працездатності ({{reason}}).",
+    "revisionResourcesUnavailable": "Knative не зміг отримати ресурси, потрібні ревізії ({{reason}}), наприклад її образ або Pod.",
+    "revisionFailed": "Ревізія завершилася збоєм ({{reason}})."
+  }
+}

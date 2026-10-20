@@ -227,7 +227,7 @@ pub async fn dry_run_patch(
 }
 
 /// Both sides as the frontend gets objects, without the fields every write changes, and how they differ.
-fn compared(
+pub(super) fn compared(
     object: ObjectRef,
     label: String,
     kind: &ResolvedKind,

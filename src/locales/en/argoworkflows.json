@@ -1,0 +1,66 @@
+{
+  "sidebar": {
+    "workflows": "Workflows",
+    "cronWorkflows": "Cron Workflows",
+    "workflowTemplates": "Workflow Templates",
+    "clusterWorkflowTemplates": "Cluster Workflow Templates"
+  },
+  "badge_one": "{{count}} workflow failed recently",
+  "badge_other": "{{count}} workflows failed recently",
+  "columns": {
+    "phase": "Phase",
+    "progress": "Progress",
+    "duration": "Duration",
+    "failedStep": "Failed step",
+    "schedule": "Schedule",
+    "suspended": "Suspended",
+    "active": "Active",
+    "lastScheduled": "Last scheduled",
+    "entrypoint": "Entrypoint",
+    "templates": "Templates"
+  },
+  "yes": "Yes",
+  "failedStep": "{{step}}: {{message}}",
+  "fields": {
+    "phase": "Phase",
+    "progress": "Progress",
+    "startedAt": "Started",
+    "finishedAt": "Finished",
+    "duration": "Duration",
+    "message": "Message",
+    "failedStep": "Failed step",
+    "failedMessage": "Its message",
+    "cronWorkflow": "Cron workflow",
+    "workflowTemplate": "Workflow template",
+    "schedules": "Schedules",
+    "timezone": "Time zone",
+    "concurrencyPolicy": "Concurrency policy",
+    "suspended": "Suspended",
+    "lastScheduled": "Last scheduled",
+    "active": "Active workflows",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "entrypoint": "Entrypoint",
+    "templates": "Templates"
+  },
+  "sections": {
+    "workflow": "Workflow",
+    "nodes": "Steps",
+    "cron": "Schedule",
+    "template": "Template"
+  },
+  "tree": {
+    "count_one": "{{count}} step",
+    "count_other": "{{count}} steps",
+    "capped": "Only the first {{shown}} of {{count}} steps are shown.",
+    "expandFailed": "Show the failed step",
+    "collapseAll": "Collapse all",
+    "expand": "Expand {{name}}",
+    "collapse": "Collapse {{name}}",
+    "logs": "Logs",
+    "logsOf": "Logs of {{name}}",
+    "offloaded": "The controller keeps this workflow's steps in its database (offloaded node status): they are not in the object, so they cannot be shown here.",
+    "compressed": "The controller stored this workflow's steps compressed: they cannot be shown here.",
+    "none": "No steps yet."
+  }
+}

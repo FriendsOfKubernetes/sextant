@@ -1,0 +1,81 @@
+/* "Set image…" (#215): the containers with their images, what changes, and the dry-run preview. */
+.set-image {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(960px, calc(100vw - 64px));
+  overflow-wrap: anywhere;
+}
+
+.set-image__note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.set-image__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.set-image__table th,
+.set-image__table td {
+  padding: 4px 8px 4px 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.set-image__table thead th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.set-image__name {
+  font-weight: 400;
+}
+
+.set-image__name > span {
+  margin-right: 6px;
+}
+
+.set-image__image,
+.set-image__input,
+.set-image__changes li {
+  font-family: var(--font-mono);
+}
+
+.set-image__input {
+  width: 100%;
+  min-width: 16rem;
+  box-sizing: border-box;
+}
+
+.set-image__row--changed .set-image__image {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.set-image__message {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+}
+
+.set-image__message--error {
+  color: var(--color-danger);
+}
+
+.set-image__message--warning {
+  color: var(--color-warning);
+}
+
+.set-image__heading {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+}
+
+.set-image__changes ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+}

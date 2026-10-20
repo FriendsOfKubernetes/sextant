@@ -1,0 +1,101 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} об’єкт порушує правила політик",
+  "badge_few": "{{count}} об’єкти порушують правила політик",
+  "badge_many": "{{count}} об’єктів порушують правила політик",
+  "badge_other": "{{count}} об’єкта порушують правила політик",
+  "yes": "Так",
+  "no": "Ні",
+  "ready": {
+    "True": "Готова",
+    "False": "Не готова",
+    "Unknown": "Очікує"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Змішаний"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: запит, що порушує правило, відхиляється.",
+    "Audit": "Audit: запит, що порушує правило, пропускається, а порушення записується у звіт.",
+    "Mixed": "Одні правила відхиляють запит, що їх порушує (Enforce), інші лише записують порушення у звіт (Audit)."
+  },
+  "explain": {
+    "ready": "Готова: Kyverno застосовує цю політику.",
+    "notReady": "Не готова: Kyverno не застосовує цю політику, доки не виправлено помилку нижче.",
+    "pending": "Kyverno ще не завершив завантаження цієї політики."
+  },
+  "columns": {
+    "ready": "Готова",
+    "mode": "Режим",
+    "background": "Фонова перевірка",
+    "rules": "Правила",
+    "message": "Повідомлення",
+    "object": "Об’єкт",
+    "pass": "Пройдено",
+    "fail": "Порушено",
+    "warn": "Попер.",
+    "error": "Помилки",
+    "skip": "Пропущено"
+  },
+  "fields": {
+    "ready": "Готова",
+    "mode": "Режим",
+    "background": "Фонові перевірки",
+    "object": "Об’єкт"
+  },
+  "rules": {
+    "name": "Правило",
+    "type": "Тип",
+    "mode": "Режим",
+    "kinds": "Види"
+  },
+  "ruleType": {
+    "validate": "Перевірка",
+    "mutate": "Зміна",
+    "generate": "Створення",
+    "verifyImages": "Перевірка образів"
+  },
+  "result": {
+    "pass": "Пройдено",
+    "fail": "Порушено",
+    "warn": "Попередження",
+    "error": "Помилка",
+    "skip": "Пропущено"
+  },
+  "summary": {
+    "pass": "Пройдено: {{count}}",
+    "fail": "Порушено: {{count}}",
+    "warn": "Попереджень: {{count}}",
+    "error": "Помилок: {{count}}",
+    "skip": "Пропущено: {{count}}"
+  },
+  "results": {
+    "object": "Об’єкт",
+    "policy": "Політика",
+    "rule": "Правило",
+    "result": "Результат",
+    "message": "Повідомлення",
+    "more": "Не показано: {{count}}"
+  },
+  "policySummary": {
+    "title": "Результати у звітах",
+    "loading": "Читання звітів…",
+    "none": "Жоден звіт поки не містить результатів цієї політики.",
+    "unlabelled": "Ім’я політики задовге для label, яку Kyverno ставить на звіти, тому її результати тут не підрахувати.",
+    "capped": "Прочитано лише частину звітів: лічильники неповні (враховано результатів: {{count}})."
+  },
+  "objectResults": {
+    "title": "Результати політик",
+    "failing": "Порушено правил політик: {{count}} з {{total}} перевірених.",
+    "passing": "Жодне правило політик не порушено (перевірено: {{count}})."
+  }
+}

@@ -21,8 +21,17 @@
     "certificates": "証明書",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "サービスメッシュ",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Kyverno ポリシー",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "セキュリティ",
     "practices": "ベストプラクティス",
     "credentials": "認証情報",
@@ -30,6 +39,7 @@
     "events": "警告イベント"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "コンテナー {{container}}",
     "restarts_other": "コンテナー {{container}} が再起動しました (再起動 {{count}} 回)",
     "replicas": "{{desired}} 個中 {{ready}} 個のレプリカが準備完了",
@@ -45,8 +55,13 @@
     "meshMissingGateway": "存在しないゲートウェイ {{gateway}} にバインドされています。",
     "meshTlsConflict": "{{host}} への TLS モードを {{mode}} にしていますが、そのワークロードは Istio の mTLS (STRICT) しか受け付けません。呼び出しは失敗します。ISTIO_MUTUAL を使用してください。",
     "meshConflictingVirtualService": "{{gateway}} のホスト {{host}} は、より古い仮想サービス {{other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
-    "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。"
+    "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
+    "policyFailures_other": "{{count}} 件のポリシールールが失敗：{{policies}}",
+    "serviceMonitorSelectsNothing": "次の namespace で Service を 1 つも選択していません: {{namespaces}}",
+    "podMonitorSelectsNothing": "次の namespace で Pod を 1 つも選択していません: {{namespaces}}",
+    "monitorNotPickedUp": "どの Prometheus の selector にも選択されていません"
   },
   "showDisk": "ディスク残りわずか",
-  "showPractices": "ベストプラクティスの指摘"
+  "showPractices": "ベストプラクティスの指摘",
+  "showPolicies": "Kyverno ポリシー違反"
 }

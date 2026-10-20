@@ -1,0 +1,101 @@
+{
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "policies": "Policies",
+    "policyReports": "Policy Reports",
+    "clusterPolicyReports": "Cluster Policy Reports",
+    "ephemeralReports": "Ephemeral Reports",
+    "clusterEphemeralReports": "Cluster Ephemeral Reports"
+  },
+  "badge_one": "{{count}} объект нарушает правила политик",
+  "badge_few": "{{count}} объекта нарушают правила политик",
+  "badge_many": "{{count}} объектов нарушают правила политик",
+  "badge_other": "{{count}} объекта нарушают правила политик",
+  "yes": "Да",
+  "no": "Нет",
+  "ready": {
+    "True": "Готова",
+    "False": "Не готова",
+    "Unknown": "Ожидает"
+  },
+  "mode": {
+    "Enforce": "Enforce",
+    "Audit": "Audit",
+    "Mixed": "Смешанный"
+  },
+  "modeHint": {
+    "Enforce": "Enforce: запрос, нарушающий правило, отклоняется.",
+    "Audit": "Audit: запрос, нарушающий правило, пропускается, а нарушение записывается в отчет.",
+    "Mixed": "Одни правила отклоняют нарушающий их запрос (Enforce), другие только записывают нарушение в отчет (Audit)."
+  },
+  "explain": {
+    "ready": "Готова: Kyverno применяет эту политику.",
+    "notReady": "Не готова: Kyverno не применяет эту политику, пока не исправлена ошибка ниже.",
+    "pending": "Kyverno еще не закончил загрузку этой политики."
+  },
+  "columns": {
+    "ready": "Готова",
+    "mode": "Режим",
+    "background": "Фоновая проверка",
+    "rules": "Правила",
+    "message": "Сообщение",
+    "object": "Объект",
+    "pass": "Пройдено",
+    "fail": "Нарушено",
+    "warn": "Предупр.",
+    "error": "Ошибки",
+    "skip": "Пропущено"
+  },
+  "fields": {
+    "ready": "Готова",
+    "mode": "Режим",
+    "background": "Фоновые проверки",
+    "object": "Объект"
+  },
+  "rules": {
+    "name": "Правило",
+    "type": "Тип",
+    "mode": "Режим",
+    "kinds": "Виды"
+  },
+  "ruleType": {
+    "validate": "Проверка",
+    "mutate": "Изменение",
+    "generate": "Создание",
+    "verifyImages": "Проверка образов"
+  },
+  "result": {
+    "pass": "Пройдено",
+    "fail": "Нарушено",
+    "warn": "Предупреждение",
+    "error": "Ошибка",
+    "skip": "Пропущено"
+  },
+  "summary": {
+    "pass": "Пройдено: {{count}}",
+    "fail": "Нарушено: {{count}}",
+    "warn": "Предупреждений: {{count}}",
+    "error": "Ошибок: {{count}}",
+    "skip": "Пропущено: {{count}}"
+  },
+  "results": {
+    "object": "Объект",
+    "policy": "Политика",
+    "rule": "Правило",
+    "result": "Результат",
+    "message": "Сообщение",
+    "more": "Не показано: {{count}}"
+  },
+  "policySummary": {
+    "title": "Результаты в отчетах",
+    "loading": "Чтение отчетов…",
+    "none": "Ни один отчет пока не содержит результатов этой политики.",
+    "unlabelled": "Имя политики слишком длинное для label, которую Kyverno ставит на отчеты, поэтому ее результаты здесь не подсчитать.",
+    "capped": "Прочитана только часть отчетов: счетчики неполные (учтено результатов: {{count}})."
+  },
+  "objectResults": {
+    "title": "Результаты политик",
+    "failing": "Нарушено правил политик: {{count}} из {{total}} проверенных.",
+    "passing": "Ни одно правило политик не нарушено (проверено: {{count}})."
+  }
+}

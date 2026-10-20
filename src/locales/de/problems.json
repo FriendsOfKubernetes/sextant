@@ -23,8 +23,17 @@
     "certificates": "Zertifikate",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Service Mesh",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Kyverno-Richtlinien",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "Sicherheit",
     "practices": "Best Practices",
     "credentials": "Zugangsdaten",
@@ -32,6 +41,7 @@
     "events": "Warnereignisse"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "Container {{container}}",
     "restarts_one": "Container {{container}} neu gestartet ({{count}} Neustart)",
     "restarts_other": "Container {{container}} neu gestartet ({{count}} Neustarts)",
@@ -49,8 +59,14 @@
     "meshMissingGateway": "An das Gateway {{gateway}} gebunden, das es nicht gibt.",
     "meshTlsConflict": "Setzt den TLS-Modus {{mode}} für {{host}}, dessen Workloads nur Istio-mTLS annehmen (STRICT): Aufrufe schlagen fehl. Verwenden Sie ISTIO_MUTUAL.",
     "meshConflictingVirtualService": "Host {{host}} auf {{gateway}} ist bereits durch den älteren virtuellen Service {{other}} belegt: Die Routen dieses Service werden nicht erreicht.",
-    "meshInvalidVirtualService": "Hat den Host *, obwohl an die Sidecars (mesh) gebunden: Istio lehnt ihn ab, daher wird keine seiner Routen verwendet."
+    "meshInvalidVirtualService": "Hat den Host *, obwohl an die Sidecars (mesh) gebunden: Istio lehnt ihn ab, daher wird keine seiner Routen verwendet.",
+    "policyFailures_one": "{{count}} Richtlinienregel schlägt fehl: {{policies}}",
+    "policyFailures_other": "{{count}} Richtlinienregeln schlagen fehl: {{policies}}",
+    "serviceMonitorSelectsNothing": "Wählt keinen Service in den Namespaces aus: {{namespaces}}",
+    "podMonitorSelectsNothing": "Wählt keinen Pod in den Namespaces aus: {{namespaces}}",
+    "monitorNotPickedUp": "Kein Prometheus erfasst ihn über seine Selectors"
   },
   "showDisk": "Datenträger fast voll",
-  "showPractices": "Best-Practice-Befunde"
+  "showPractices": "Best-Practice-Befunde",
+  "showPolicies": "Kyverno-Richtlinienverstöße"
 }

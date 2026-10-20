@@ -1,0 +1,122 @@
+{
+  "sidebar": {
+    "xrds": "Composite Resource Definitions",
+    "compositions": "Compositions",
+    "providers": "Providers",
+    "configurations": "Configurations",
+    "functions": "Functions"
+  },
+  "badge_other": "{{count}} 个 claim 或组合资源需要关注",
+  "health": {
+    "ready": "就绪",
+    "progressing": "进行中",
+    "failed": "失败",
+    "unknown": "未知"
+  },
+  "served": "已提供",
+  "referenceable": "可引用",
+  "failing": "第一个未满足的条件：{{type}}（{{reason}}）",
+  "failingWithMessage": "第一个未满足的条件：{{type}}（{{reason}}）：{{message}}",
+  "syncedIs": "Synced: {{status}}",
+  "readyIs": "Ready: {{status}}",
+  "role": {
+    "claim": "Claim",
+    "composite": "组合资源",
+    "managed": "托管资源"
+  },
+  "columns": {
+    "composite": "组合资源 Kind",
+    "claim": "Claim Kind",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "组合类型",
+    "mode": "模式",
+    "status": "状态",
+    "package": "包",
+    "installed": "Installed",
+    "healthy": "Healthy"
+  },
+  "fields": {
+    "group": "组",
+    "compositeKind": "组合资源 Kind",
+    "claimKind": "Claim Kind",
+    "versions": "版本",
+    "defaultComposition": "默认 Composition",
+    "established": "Established",
+    "offered": "Offered",
+    "compositeType": "组合资源类型",
+    "mode": "模式",
+    "resources": "资源（经典模式）",
+    "package": "包",
+    "revision": "当前修订版本",
+    "identifier": "当前包",
+    "activation": "修订版本激活",
+    "installed": "Installed",
+    "healthy": "Healthy",
+    "role": "角色",
+    "synced": "Synced",
+    "ready": "Ready",
+    "composition": "Composition",
+    "claim": "Claim",
+    "connectionSecret": "连接 Secret",
+    "providerConfig": "ProviderConfig",
+    "externalName": "外部名称",
+    "deletionPolicy": "删除策略",
+    "managementPolicies": "管理策略",
+    "composite": "组合资源"
+  },
+  "pipeline": {
+    "step": "步骤",
+    "function": "Function"
+  },
+  "chain": {
+    "title": "资源",
+    "loading": "正在读取资源…",
+    "noResources": "还没有组成它的资源。",
+    "noComposite": "还没有组合资源：Crossplane 尚未绑定此 claim。",
+    "missing": "未找到",
+    "unreadable": "无法读取",
+    "more": "未显示：{{count}}"
+  },
+  "explain": {
+    "ready": "已同步且就绪。",
+    "creating": "尚未就绪：Crossplane 仍在创建它或它的资源。",
+    "deleting": "正在删除。",
+    "notSynced": "Crossplane 无法协调它（{{reason}}）：下方第一个未满足的条件说明了原因。",
+    "notReady": "未就绪（{{reason}}）：下方第一个未满足的条件说明了原因。",
+    "packageHealthy": "已安装且健康。",
+    "packageInstalling": "正在安装：尚不健康。",
+    "packageNotInstalled": "包未安装（{{reason}}）。",
+    "packageUnhealthy": "包已安装但不健康（{{reason}}）。",
+    "xrdNotEstablished": "未建立：它定义的 Kind 尚未提供。",
+    "xrdClaimNotOffered": "Claim Kind {{claim}} 尚未提供。",
+    "xrdEstablishedWithClaim": "已建立：定义了组合资源 {{kind}} 和 claim {{claim}}。",
+    "xrdEstablished": "已建立：定义了组合资源 {{kind}}。"
+  },
+  "page": {
+    "sidebar": "组合资源",
+    "title": "组合资源",
+    "hint": "XRD 所定义 Kind 的 claim 和组合资源，以及第一个未满足的条件。",
+    "onlyProblems": "仅问题",
+    "total": "已显示：{{count}}",
+    "loading": "正在读取 claim 和组合资源…",
+    "xrdsTruncated": "只列出前 {{count}} 个 XRD 的 Kind。",
+    "rowsTruncated": "只列出前 {{count}} 个。",
+    "noXrds": "没有 XRD：集群未定义组合资源。",
+    "none": "没有 claim 或组合资源。",
+    "columns": {
+      "kind": "Kind",
+      "name": "名称",
+      "namespace": "Namespace",
+      "state": "状态",
+      "synced": "Synced",
+      "ready": "Ready",
+      "reason": "原因",
+      "composition": "Composition"
+    },
+    "kindWithRole": {
+      "claim": "{{kind}}（claim）",
+      "composite": "{{kind}}（组合）"
+    }
+  }
+}

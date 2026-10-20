@@ -55,6 +55,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("cronjob_trigger", Some("clusterId")),
     ("cronjob_suspend", Some("clusterId")),
     ("resource_patch", Some("clusterId")),
+    ("resource_patch_status", Some("clusterId")),
     ("logs_start", Some("clusterId")),
     ("logs_stop", Some("streamId")),
     ("exec_start", Some("clusterId")),
@@ -129,6 +130,8 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("compare_secrets", Some("left")),
     ("compare_secret_namespaces", Some("left")),
     ("compare_helm_drift", Some("clusterId")),
+    ("workload_set_image", Some("clusterId")),
+    ("workload_set_image_dry_run", Some("clusterId")),
     ("openapi_kind_schema", Some("clusterId")),
     ("timeline_managers", Some("clusterId")),
     ("timeline_history", Some("clusterId")),
@@ -417,6 +420,38 @@ fn the_cleanup_sample_checks_its_input_first_and_needs_a_connected_cluster() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+#[test]
+fn set_image_checks_its_input_before_it_reaches_a_cluster() {
+    let h = harness();
+    let deployment = json!({ "kind": { "group": "apps", "version": "v1", "kind": "Deployment" }, "namespace": "n", "name": "web" });
+    let config_map = json!({ "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "web" });
+    let change =
+        json!([{ "container": "web", "init": false, "from": "nginx:1", "image": "nginx:2" }]);
+    for command in ["workload_set_image", "workload_set_image_dry_run"] {
+        let err = invoke(
+            &h,
+            command,
+            json!({ "clusterId": "nope", "ref": deployment, "changes": [] }),
+        )
+        .unwrap_err();
+        assert_eq!(err["code"], "invalid", "{command}: {err}");
+        let err = invoke(
+            &h,
+            command,
+            json!({ "clusterId": "nope", "ref": config_map, "changes": change }),
+        )
+        .unwrap_err();
+        assert_eq!(err["code"], "invalid", "{command}: {err}");
+        let err = invoke(
+            &h,
+            command,
+            json!({ "clusterId": "nope", "ref": deployment, "changes": change }),
+        )
+        .unwrap_err();
+        assert_eq!(err["code"], "notFound", "{command}: {err}");
+    }
 }
 
 #[test]
@@ -1045,6 +1080,12 @@ fn later_argument_names_match_the_frontend() {
         ("resource_get", json!({ "clusterId": "c" }), "ref"),
         ("resource_count", json!({ "clusterId": "c" }), "kind"),
         ("workload_scale", json!({ "clusterId": "c" }), "ref"),
+        ("workload_set_image", json!({ "clusterId": "c" }), "ref"),
+        (
+            "workload_set_image_dry_run",
+            json!({ "clusterId": "c" }),
+            "ref",
+        ),
         ("logs_start", json!({ "clusterId": "c" }), "pod"),
         (
             "exec_start",
@@ -1204,6 +1245,7 @@ fn later_argument_names_match_the_frontend() {
         ),
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
         ("resource_patch", json!({ "clusterId": "c" }), "ref"),
+        ("resource_patch_status", json!({ "clusterId": "c" }), "ref"),
         (
             "resource_patch",
             json!({ "clusterId": "c", "ref": { "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "x" } }),

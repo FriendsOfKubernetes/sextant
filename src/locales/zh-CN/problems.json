@@ -21,8 +21,17 @@
     "certificates": "证书",
     "flux": "Flux",
     "argocd": "Argo CD",
+    "rollouts": "Argo Rollouts",
+    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "服务网格",
+    "knative": "Knative",
+    "crossplane": "Crossplane",
+    "policies": "Kyverno 策略",
+    "externalSecrets": "External Secrets",
+    "cnpg": "CloudNativePG",
+    "strimzi": "Strimzi",
+    "prometheusOperator": "Prometheus Operator",
     "security": "安全",
     "practices": "最佳实践",
     "credentials": "凭据",
@@ -30,6 +39,7 @@
     "events": "警告事件"
   },
   "messages": {
+    "analysisRun": "AnalysisRun {{name}}",
     "container": "容器 {{container}}",
     "restarts_other": "容器 {{container}} 已重启（{{count}} 次）",
     "replicas": "{{ready}}/{{desired}} 个副本就绪",
@@ -45,8 +55,13 @@
     "meshMissingGateway": "绑定到不存在的网关 {{gateway}}。",
     "meshTlsConflict": "对 {{host}} 设置了 TLS 模式 {{mode}}，而其工作负载只接受 Istio mTLS（STRICT）：调用会失败。请使用 ISTIO_MUTUAL。",
     "meshConflictingVirtualService": "{{gateway}} 上的主机 {{host}} 已被更早的虚拟服务 {{other}} 占用：此虚拟服务的路由不会生效。",
-    "meshInvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。"
+    "meshInvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。",
+    "policyFailures_other": "{{count}} 条策略规则未通过：{{policies}}",
+    "serviceMonitorSelectsNothing": "在以下 namespace 中未选中任何 Service：{{namespaces}}",
+    "podMonitorSelectsNothing": "在以下 namespace 中未选中任何 Pod：{{namespaces}}",
+    "monitorNotPickedUp": "没有 Prometheus 通过其 selector 选中它"
   },
   "showDisk": "磁盘即将用满",
-  "showPractices": "最佳实践发现"
+  "showPractices": "最佳实践发现",
+  "showPolicies": "Kyverno 策略违规"
 }
