@@ -45,7 +45,7 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   compare and newer chart versions, and container probes in plain words.
 - **Live traffic** — a workload's request rate, error rate and latency (p50/p95/p99) with CPU throttling and a hint
   when the CPU limit is the cause, and a live graph of who calls whom with the rate, errors and latency of each call,
-  from what Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble already report to Prometheus — nothing
+  from what Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble already report to Prometheus or VictoriaMetrics — nothing
   installed.
 - **Ecosystem** — Argo Rollouts (status, steps, weights, analysis; promote, abort and retry as the kubectl plugin
   sends them), Argo Workflows (the step tree with the failed step and its logs, CronWorkflows), Knative Serving,
@@ -54,7 +54,7 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   Prometheus Operator (what a monitor selects and which Prometheus picks it up), each from the operator's own status.
 - **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
   Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
-- **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
+- **Metrics** from metrics-server and Prometheus or VictoriaMetrics (both found automatically); **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
 - **MCP server for AI agents** — connect Claude Code, Claude Desktop or Cursor to your clusters, with permissions you
   set per cluster, confirmations in the window and an activity log; read-only diagnostic tools give agents the
   window's own answers (problems, traffic diagnosis, connectivity, permissions, recent changes, autoscaling), only
