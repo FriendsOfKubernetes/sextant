@@ -1,0 +1,137 @@
+/* The traffic path diagnosis (#208): the summary, the steps of a path and its folding branches. */
+.dg-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.dg-dialog {
+  min-width: min(40rem, 80vw);
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.dg-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-success);
+  border-radius: 4px;
+}
+
+.dg-summary--warn {
+  border-left-color: var(--color-warning);
+}
+
+.dg-summary--broken {
+  border-left-color: var(--color-danger);
+}
+
+.dg-summary--unknown {
+  border-left-color: var(--color-border);
+}
+
+.dg-banner,
+.dg-stopped,
+.dg-gone {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.dg-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dg-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0 6px 12px;
+  border-left: 2px solid var(--color-border);
+}
+
+.dg-step--broken {
+  border-left-color: var(--color-danger);
+}
+
+.dg-step--warn {
+  border-left-color: var(--color-warning);
+}
+
+.dg-mark {
+  flex: none;
+  min-width: 5.5rem;
+}
+
+.dg-step__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dg-step__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dg-step__notes {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.dg-step__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dg-branch {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.dg-branch__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dg-branch__summary::-webkit-details-marker {
+  display: none;
+}
+
+.dg-branch__chevron {
+  flex: none;
+  transition: transform 0.15s;
+}
+
+.dg-branch[open] > .dg-branch__summary .dg-branch__chevron {
+  transform: rotate(90deg);
+}
+
+.dg-branch__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+}
+
+.dg-branch__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px 8px;
+}

@@ -61,7 +61,9 @@ export type BuiltInActionId =
   | "pin"
   | "unpin"
   // Comparing objects (src/features/compare), offered for every kind through `extendActionsForAll`
-  | "compareWith";
+  | "compareWith"
+  // Traffic path diagnosis (src/features/diagnose), offered for Services, Ingresses and HTTP/GRPC routes
+  | "diagnose";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {
