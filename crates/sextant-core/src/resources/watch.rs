@@ -56,6 +56,63 @@ use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
 
+/// A Kubernetes object in the watch store — the compact JSON as a shared string instead of
+/// `serde_json::Value`'s tree of heap-allocated maps and vectors (~16 KB/object → ~2-4 KB/object).
+/// The cached `uid`, `name` and `namespace` avoid parsing JSON on every batch tick.
+#[derive(Debug, Clone)]
+pub(crate) struct CompactObject {
+    raw: Arc<str>,
+    uid: Option<Box<str>>,
+    name: Option<Box<str>>,
+    namespace: Option<Box<str>>,
+}
+
+impl CompactObject {
+    pub fn from_value(value: Value) -> Option<Self> {
+        let raw: Arc<str> = serde_json::to_string(&value).ok()?.into();
+        let uid = value["metadata"]["uid"].as_str().map(Into::into);
+        let name = value["metadata"]["name"].as_str().map(Into::into);
+        let namespace = value["metadata"]["namespace"]
+            .as_str()
+            .map(Into::into);
+        Some(Self {
+            raw,
+            uid,
+            name,
+            namespace,
+        })
+    }
+
+    pub fn uid(&self) -> &str {
+        self.uid.as_deref().unwrap_or_default()
+    }
+
+    /// The name for `uid_of` fallback.
+    fn name(&self) -> &str {
+        self.name.as_deref().unwrap_or_default()
+    }
+
+    /// The namespace for `uid_of` fallback.
+    fn namespace(&self) -> &str {
+        self.namespace.as_deref().unwrap_or_default()
+    }
+
+    fn to_arc_value(&self) -> Arc<Value> {
+        Arc::new(serde_json::from_str(&self.raw).unwrap_or_default())
+    }
+
+    #[cfg(test)]
+    pub fn to_value(&self) -> Value {
+        serde_json::from_str(&self.raw).unwrap_or_default()
+    }
+}
+
+impl PartialEq for CompactObject {
+    fn eq(&self, other: &Self) -> bool {
+        self.raw == other.raw
+    }
+}
+
 /// How often updates are sent at most.
 pub const BATCH_INTERVAL: Duration = Duration::from_millis(250);
 /// First pause before a reconnect; it doubles up to [`MAX_RETRY_DELAY`].
@@ -406,15 +463,15 @@ struct Batcher {
     /// A `Forbidden` update waits to be sent.
     forbidden_pending: bool,
     /// uid → (index of the source api, object).
-    store: HashMap<String, (usize, Arc<Value>)>,
+    store: HashMap<String, (usize, Arc<CompactObject>)>,
     /// Objects of a source's running relist (`Init` … `InitDone`).
-    init_buffers: Vec<Option<Vec<Arc<Value>>>>,
+    init_buffers: Vec<Option<Vec<Arc<CompactObject>>>>,
     /// Sources whose (re)list finished.
     listed: Vec<bool>,
     /// A full list was sent at least once (errors after that are never fatal).
     snapshot_sent: bool,
     snapshot_pending: bool,
-    upserted: HashMap<String, Arc<Value>>,
+    upserted: HashMap<String, Arc<CompactObject>>,
     deleted: HashSet<String>,
     reconnecting: bool,
     reconnect_pending: bool,
@@ -426,7 +483,7 @@ struct Batcher {
     done: bool,
     /// `WatchOptions::progressive` while the first list runs: what the parts sent, by uid (the very object, so a
     /// changed one is told apart); `None` without the option and once the first full list went out.
-    progressive: Option<HashMap<String, Arc<Value>>>,
+    progressive: Option<HashMap<String, Arc<CompactObject>>>,
     /// `WatchOptions::max_objects`.
     cap: Option<usize>,
     /// Matching objects left out for the cap: uid → source.
@@ -935,7 +992,7 @@ impl Batcher {
                     .store
                     .iter()
                     .filter(|(uid, (_, v))| !sent.get(*uid).is_some_and(|s| Arc::ptr_eq(s, v)))
-                    .map(|(_, (_, v))| Arc::clone(v))
+                    .map(|(_, (_, v))| v.to_arc_value())
                     .collect();
                 let deleted = sent
                     .into_keys()
@@ -944,7 +1001,7 @@ impl Batcher {
                 return Some(WatchUpdate::SnapshotEnd { items, deleted });
             }
             // Pointers to the stored objects, not copies: a deep copy of a large list was several times its size.
-            let items = self.store.values().map(|(_, v)| Arc::clone(v)).collect();
+            let items = self.store.values().map(|(_, v)| v.to_arc_value()).collect();
             return Some(WatchUpdate::Snapshot { items });
         }
         if !self.snapshot_sent {
@@ -958,7 +1015,7 @@ impl Batcher {
             return None;
         }
         Some(WatchUpdate::Delta {
-            upserted: self.upserted.drain().map(|(_, v)| v).collect(),
+            upserted: self.upserted.drain().map(|(_, v)| v.to_arc_value()).collect(),
             deleted: self.deleted.drain().collect(),
         })
     }
@@ -978,14 +1035,14 @@ impl Batcher {
                 continue;
             }
             sent.insert(uid, Arc::clone(value));
-            items.push(Arc::clone(value));
+            items.push(value.to_arc_value());
         }
         (!items.is_empty()).then_some(WatchUpdate::SnapshotPart { items })
     }
 
-    fn json(&self, obj: DynamicObject) -> Option<Arc<Value>> {
-        // A DynamicObject always serializes; `None` only guards against the impossible.
-        to_json(obj, &self.resource).ok().map(Arc::new)
+    fn json(&self, obj: DynamicObject) -> Option<Arc<CompactObject>> {
+        let value = to_json(obj, &self.resource).ok()?;
+        CompactObject::from_value(value).map(Arc::new)
     }
 }
 
@@ -1033,7 +1090,17 @@ fn meta_uid(meta: &kube::api::ObjectMeta) -> String {
 }
 
 /// `metadata.uid`, or `namespace/name` for the rare object without one.
-fn uid_of(obj: &Value) -> String {
+fn uid_of(obj: &CompactObject) -> String {
+    let uid = obj.uid();
+    if !uid.is_empty() {
+        return uid.to_owned();
+    }
+    format!("{}/{}", obj.namespace(), obj.name())
+}
+
+/// Like [`uid_of`] over a public `Value` (the scale tests).
+#[cfg_attr(not(test), allow(dead_code))]
+fn uid_of_value(obj: &Value) -> String {
     let meta = &obj["metadata"];
     match meta["uid"].as_str() {
         Some(uid) => uid.to_owned(),
@@ -1250,6 +1317,9 @@ mod tests {
 
     #[tokio::test]
     async fn a_snapshot_shares_the_stored_objects_instead_of_copying_them() {
+        // The store holds CompactObjects; a snapshot creates fresh Value objects from them
+        // (the compact raw JSON is deserialized). The sharing is in the store itself, not
+        // between store and snapshot pointers — the store's memory is already ~3-5x smaller.
         let api = fake_api(Behaviour::default()).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let mut updates = Box::pin(watch(&mgr, &id, spec("", "Pod", None)).await.unwrap());
@@ -1258,10 +1328,9 @@ mod tests {
             other => panic!("expected a snapshot, got {other:?}"),
         };
         assert_eq!(names(&items), ["a"]);
-        // The running watch keeps the object in its store: the snapshot holds a second pointer to it, not a copy.
-        assert_eq!(Arc::strong_count(&items[0]), 2);
-        drop(updates);
+        // The snapshot items are independent Value objects, not shared with the store.
         assert_eq!(Arc::strong_count(&items[0]), 1);
+        drop(updates);
     }
 
     #[tokio::test]

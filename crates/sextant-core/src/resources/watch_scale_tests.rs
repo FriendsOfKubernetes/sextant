@@ -332,7 +332,7 @@ fn options(progressive: bool, max_objects: Option<u32>) -> WatchOptions {
 }
 
 fn uids(items: &[Arc<Value>]) -> Vec<String> {
-    items.iter().map(|v| uid_of(v)).collect()
+    items.iter().map(|v| super::uid_of_value(v)).collect()
 }
 
 #[tokio::test]
