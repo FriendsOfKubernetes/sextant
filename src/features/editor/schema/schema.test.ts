@@ -117,17 +117,29 @@ describe("validate", () => {
     expect(found.map((p) => p.code)).toEqual(["syntax"]);
   });
 
-  it("checks a 2000-line text in under 200 ms", () => {
+  it("checks a 2000-line text in time that grows linearly, not with the square of its length", () => {
+    // Compared with a pass over a tenth of the text in the same run, not a fixed time: a loaded runner is slow for
+    // both (#220). Linear work takes ~10x as long for 10x the text; a quadratic check would take ~100x.
     const one = HEAD + VALID_SPEC.replace("  replicas: 2", "  replicas: 2\n  replica: 3");
     const lines = one.split("\n").length;
-    const text = Array.from({ length: Math.ceil(2000 / lines) }, () => one).join("---\n");
+    const docs = Math.ceil(2000 / lines);
+    const text = Array.from({ length: docs }, () => one).join("---\n");
+    const tenth = Array.from({ length: Math.ceil(docs / 10) }, () => one).join("---\n");
     expect(text.split("\n").length).toBeGreaterThanOrEqual(2000);
-    validate(text, lookup);
-    const started = performance.now();
-    const found = validate(text, lookup);
-    const took = performance.now() - started;
-    expect(found.length).toBe(Math.ceil(2000 / lines));
-    expect(took).toBeLessThan(200);
+    const fastest = (input: string, times: number) => {
+      validate(input, lookup);
+      let best = Infinity;
+      for (let i = 0; i < times; i++) {
+        const started = performance.now();
+        validate(input, lookup);
+        best = Math.min(best, performance.now() - started);
+      }
+      return best;
+    };
+    const small = fastest(tenth, 5);
+    const big = fastest(text, 3);
+    expect(validate(text, lookup).length).toBe(docs);
+    expect(big).toBeLessThan(Math.max(30 * small * (docs / Math.ceil(docs / 10)) / 10, 20));
   });
 });
 
