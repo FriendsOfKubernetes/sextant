@@ -262,8 +262,10 @@ describe("performance", () => {
       expect(found).toEqual([{ line: 99_999 - buffer.dropped, start: expect.any(Number) }]);
     }
     expect(initial).toBeLessThan(1500);
-    // A batch reads 100 lines: well under a millisecond, far from a pass over the whole buffer.
-    expect(Math.max(...batches)).toBeLessThan(20);
+    // A batch reads 100 lines, a full pass reads 100 000: compare with the full pass measured on the same machine
+    // rather than a fixed number of milliseconds (a loaded CI runner took 23 ms for a batch once).
+    const median = [...batches].sort((a, b) => a - b)[Math.floor(batches.length / 2)]!;
+    expect(median).toBeLessThan(Math.max(initial / 10, 5));
   });
 
   it("the incremental search gives what a full search gives, through drops, a new query and a new stream", () => {
