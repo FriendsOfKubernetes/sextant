@@ -1,0 +1,58 @@
+{
+  "title": "Запити",
+  "loading": "Читання метрик запитів…",
+  "fromSource": "З {{source}}",
+  "viaLinkerdViz": "Прочитано з Prometheus у linkerd-viz.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Запити, отримані проксі Istio цих Pod.",
+    "linkerd": "Запити, отримані проксі Linkerd цих Pod; помилки — так, як їх класифікує Linkerd.",
+    "ingressNginx": "Лише запити, що прийшли через ingress-nginx до Service, які вибирають ці Pod.",
+    "beyla": "Запити, які, за даними Grafana Beyla, обслужили ці Pod.",
+    "hubble": "Запити, які, за даними Cilium Hubble, дійшли до цих Pod."
+  },
+  "fields": {
+    "rate": "Частота запитів",
+    "errors": "Частка помилок",
+    "latency": "Затримка"
+  },
+  "value": {
+    "rate": "{{value}} запит./с",
+    "percent": "{{value}}%",
+    "ms": "{{value}} мс",
+    "seconds": "{{value}} с",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "невідомо"
+  },
+  "noRequestsNow": "За останні 5 хвилин запитів не було.",
+  "noErrorsWithoutRequests": "Немає запитів, серед яких рахувати помилки.",
+  "noLatency": "У цього джерела немає гістограми затримок.",
+  "chart": {
+    "rate": "Запитів за секунду за останню годину",
+    "errors": "Невдалих запитів за секунду за останню годину"
+  },
+  "failed": "Не вдалося прочитати метрики {{sources}}.",
+  "noPrometheus": "Метрики запитів і тротлінг CPU читаються з Prometheus, а для цього кластера його не налаштовано й не знайдено.",
+  "openSettings": "Налаштування кластера",
+  "noSource": "У Prometheus немає метрик запитів: ні Istio, ні Linkerd, ні ingress-nginx, ні Grafana Beyla, ні Cilium Hubble не надсилають їх туди.",
+  "wouldProvide": "Їх дав би будь-який із варіантів: сервісна мережа Istio, сервісна мережа Linkerd з linkerd-viz (або Prometheus, що збирає метрики його проксі), ingress-nginx зі збором метрик, Grafana Beyla або Cilium Hubble з увімкненими HTTP-метриками.",
+  "noDataHere": "У Prometheus є метрики {{sources}}, але для цих Pod їх немає.",
+  "throttling": {
+    "title": "Тротлінг CPU",
+    "about": "Частка періодів CPU, у яких кожен контейнер був обмежений, за останню годину.",
+    "unknown": "Не вдалося прочитати тротлінг CPU з Prometheus.",
+    "none": "У Prometheus немає лічильників тротлінгу CPU для цих контейнерів.",
+    "percent": "{{value}}%",
+    "limitCause": "Обмежений у {{percent}} періодів CPU за ліміту CPU {{limit}}: імовірна причина повільних відповідей — ліміт.",
+    "suggested": "Підбір ресурсів за історією використання пропонує ліміт CPU {{limit}}.",
+    "seeRightsizing": "Розділ «Підбір ресурсів» запропонує ліміт, коли накопичить достатньо історії використання."
+  },
+  "showRequests": "Показати метрики запитів",
+  "linkerdViz": "linkerd-viz встановлено: частка успішних запитів, частота запитів і затримка цих Pod — у розділі «Запити»."
+}

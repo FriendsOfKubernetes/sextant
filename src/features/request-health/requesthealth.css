@@ -1,0 +1,44 @@
+/* The "Requests" details section (#212); rows and charts reuse the metrics feature's `mx-current` and `mx-charts`. */
+.rh-section {
+  margin: 12px 0;
+}
+
+.rh-section__title {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.rh-section__title:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.rh-source {
+  margin: 0 0 12px;
+}
+
+.rh-source__title {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.rh-note {
+  margin: 0 0 6px;
+  color: var(--color-text-muted);
+}
+
+.rh-missing p {
+  margin: 0 0 6px;
+}
+
+.rh-hint {
+  margin: 2px 0;
+  color: var(--color-warning);
+}
+
+.rh-throttled {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

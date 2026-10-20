@@ -1,0 +1,58 @@
+{
+  "title": "请求",
+  "loading": "正在读取请求指标…",
+  "fromSource": "来自 {{source}}",
+  "viaLinkerdViz": "读取自 linkerd-viz 的 Prometheus。",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "这些 Pod 的 Istio 代理收到的请求。",
+    "linkerd": "这些 Pod 的 Linkerd 代理收到的请求；失败按 Linkerd 的分类计算。",
+    "ingressNginx": "仅统计经由 ingress-nginx 到达选中这些 Pod 的 Service 的请求。",
+    "beyla": "Grafana Beyla 观察到这些 Pod 处理的请求。",
+    "hubble": "Cilium Hubble 观察到到达这些 Pod 的请求。"
+  },
+  "fields": {
+    "rate": "请求速率",
+    "errors": "错误率",
+    "latency": "延迟"
+  },
+  "value": {
+    "rate": "{{value}} 次/秒",
+    "percent": "{{value}}%",
+    "ms": "{{value}} 毫秒",
+    "seconds": "{{value}} 秒",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "未知"
+  },
+  "noRequestsNow": "最近 5 分钟内没有请求。",
+  "noErrorsWithoutRequests": "没有可统计错误的请求。",
+  "noLatency": "此来源没有延迟直方图。",
+  "chart": {
+    "rate": "每秒请求数（最近一小时）",
+    "errors": "每秒失败请求数（最近一小时）"
+  },
+  "failed": "无法读取以下来源的指标：{{sources}}。",
+  "noPrometheus": "请求指标和 CPU 限流从 Prometheus 读取，而此集群没有配置或找到 Prometheus。",
+  "openSettings": "集群设置",
+  "noSource": "Prometheus 中没有请求指标：Istio、Linkerd、ingress-nginx、Grafana Beyla 和 Cilium Hubble 都没有向其报告。",
+  "wouldProvide": "以下任一来源都可提供：Istio 网格、带 linkerd-viz 的 Linkerd 网格（或采集其代理的 Prometheus）、指标被采集的 ingress-nginx、Grafana Beyla，或启用了 HTTP 指标的 Cilium Hubble。",
+  "noDataHere": "Prometheus 中有 {{sources}} 的指标，但没有这些 Pod 的。",
+  "throttling": {
+    "title": "CPU 限流",
+    "about": "最近一小时内每个容器被限流的 CPU 周期占比。",
+    "unknown": "无法从 Prometheus 读取 CPU 限流。",
+    "none": "Prometheus 中没有这些容器的 CPU 限流计数器。",
+    "percent": "{{value}}%",
+    "limitCause": "在 CPU 限制为 {{limit}} 时，{{percent}} 的 CPU 周期被限流：该限制很可能是响应变慢的原因。",
+    "suggested": "资源调优根据使用历史建议将 CPU 限制设为 {{limit}}。",
+    "seeRightsizing": "“资源调优”部分在有足够的使用历史后会建议一个限制。"
+  },
+  "showRequests": "显示请求指标",
+  "linkerdViz": "已安装 linkerd-viz：这些 Pod 的成功率、请求速率和延迟见“请求”部分。"
+}

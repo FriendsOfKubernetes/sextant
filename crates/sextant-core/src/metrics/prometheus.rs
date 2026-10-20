@@ -17,10 +17,15 @@ use serde_json::Value;
 
 use super::{ChartTarget, NodeUsage, PodUsage, PrometheusTarget, Series, Usage};
 
+mod requests;
 mod rightsizing;
 mod volumes;
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::ClusterId;
+pub(crate) use requests::{
+    golden, golden_query, request_metric_names, request_selectors, series_query, sources_in,
+    throttling,
+};
 pub(crate) use rightsizing::usage_history;
 pub(crate) use volumes::volume_stats;
 

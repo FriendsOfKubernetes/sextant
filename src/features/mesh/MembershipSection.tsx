@@ -17,6 +17,8 @@ import { istioMembership, linkerdMembership, namespaceShape, podShape, type Isti
 import { mtlsModeFor } from "./mtls";
 import { useMeshConfig } from "./store";
 import { meshLink, type T } from "./ui";
+import { revealRequestHealth } from "../request-health/hooks";
+import { requestHealthApplies } from "../request-health/model";
 
 const NAMESPACE: KindRef = { group: "", version: "v1", kind: "Namespace" };
 const FIELDS = "mesh:fields";
@@ -54,12 +56,26 @@ function IstioBlock({ m, template, t }: { m: IstioMembership; template: boolean;
   );
 }
 
-function LinkerdBlock({ clusterId, m, template, t }: { clusterId: ClusterId; m: LinkerdMembership; template: boolean; t: T }) {
+function LinkerdBlock({
+  clusterId,
+  m,
+  template,
+  requests,
+  t,
+}: {
+  clusterId: ClusterId;
+  m: LinkerdMembership;
+  template: boolean;
+  /** The details have a "Requests" section to point to. */
+  requests: boolean;
+  t: T;
+}) {
   const on = m.inject === "enabled" || m.inject === "ingress";
   const sentence = template ? (on ? "mesh:membership.linkerd.injectedPods" : "mesh:membership.linkerd.noInjection") : `mesh:membership.linkerd.${m.mode}`;
   const meshed = m.mode !== "none" || (template && on);
-  // Golden metrics need linkerd-viz: only its presence is checked (one Namespace by name).
-  const viz = useWatch(clusterId, meshed ? oneNamespace("linkerd-viz") : null);
+  // Golden metrics (#212) come from linkerd-viz's Prometheus or the cluster's: the "Requests" section shows them; here
+  // only linkerd-viz's presence is checked (one Namespace by name) to point there.
+  const viz = useWatch(clusterId, meshed && requests ? oneNamespace("linkerd-viz") : null);
   const rows: FieldRow[] = [
     ["linkerdInject", m.inject ? t(`mesh:membership.injectOn.${m.via ?? "pod"}`, { value: m.inject }) : null],
     ["controlPlane", m.controlPlane],
@@ -70,7 +86,14 @@ function LinkerdBlock({ clusterId, m, template, t }: { clusterId: ClusterId; m: 
       <p className="mesh-line">{t(sentence)}</p>
       {m.restartNeeded && <p className="mesh-line mesh-line--warning">{t("mesh:membership.linkerd.restart")}</p>}
       <Fields rows={rows} labelPrefix={FIELDS} />
-      {meshed && viz.status === "ready" && viz.items.size > 0 && <p className="dt-muted">{t("mesh:membership.linkerd.goldenMetrics")}</p>}
+      {meshed && requests && viz.status === "ready" && viz.items.size > 0 && (
+        <p className="dt-muted">
+          {t("requesthealth:linkerdViz")}{" "}
+          <button type="button" className="mx-link" onClick={(e) => revealRequestHealth(e.currentTarget)}>
+            {t("requesthealth:showRequests")}
+          </button>
+        </p>
+      )}
     </>
   );
 }
@@ -210,7 +233,13 @@ export function MeshMembershipSection({ clusterId, objectRef, obj }: DetailsSect
       )}
       {showLinkerd && (
         <Block title={t("mesh:blocks.linkerdMembership")}>
-          <LinkerdBlock clusterId={clusterId} m={linkerd} template={template} t={t} />
+          <LinkerdBlock
+            clusterId={clusterId}
+            m={linkerd}
+            template={template}
+            requests={requestHealthApplies(objectRef.kind)}
+            t={t}
+          />
         </Block>
       )}
     </>

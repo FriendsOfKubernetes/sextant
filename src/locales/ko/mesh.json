@@ -387,8 +387,7 @@
       "none": "Linkerd 메시에 속해 있지 않습니다.",
       "injectedPods": "Pod가 생성될 때 Linkerd 프록시가 추가됩니다.",
       "noInjection": "Pod에 Linkerd 프록시가 추가되지 않습니다.",
-      "restart": "프록시 삽입이 켜져 있지만 이 Pod에는 프록시가 없습니다. 삽입을 켜기 전에 생성되었습니다. 메시에 추가하려면 다시 시작하세요.",
-      "goldenMetrics": "linkerd-viz가 설치되어 있습니다. Sextant는 성공률, 요청 속도, 지연 시간을 읽지 않습니다. linkerd viz stat이나 linkerd-viz 대시보드에서 확인하세요."
+      "restart": "프록시 삽입이 켜져 있지만 이 Pod에는 프록시가 없습니다. 삽입을 켜기 전에 생성되었습니다. 메시에 추가하려면 다시 시작하세요."
     },
     "via": {
       "pod": "켜짐, Pod에서 설정",

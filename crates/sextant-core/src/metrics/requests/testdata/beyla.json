@@ -1,0 +1,110 @@
+{
+ "names": {
+  "status": "success",
+  "data": [
+   "http_server_request_duration_seconds_count",
+   "http_server_request_duration_seconds_bucket",
+   "rpc_server_duration_seconds_count",
+   "rpc_server_duration_seconds_bucket"
+  ]
+ },
+ "instant": {
+  "status": "success",
+  "data": {
+   "resultType": "vector",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "value": [
+      1760000000,
+      "2"
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "value": [
+      1760000000,
+      "0"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p50"
+     },
+     "value": [
+      1760000000,
+      "0.004"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p95"
+     },
+     "value": [
+      1760000000,
+      "0.02"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p99"
+     },
+     "value": [
+      1760000000,
+      "0.05"
+     ]
+    }
+   ]
+  }
+ },
+ "range": {
+  "status": "success",
+  "data": {
+   "resultType": "matrix",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "values": [
+      [
+       1759996400,
+       "2"
+      ],
+      [
+       1759996460,
+       "2"
+      ],
+      [
+       1759996520,
+       "2"
+      ]
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "values": [
+      [
+       1759996400,
+       "0"
+      ],
+      [
+       1759996460,
+       "0"
+      ],
+      [
+       1759996520,
+       "0"
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

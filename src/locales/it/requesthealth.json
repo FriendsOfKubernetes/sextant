@@ -1,0 +1,58 @@
+{
+  "title": "Richieste",
+  "loading": "Lettura delle metriche delle richieste…",
+  "fromSource": "Da {{source}}",
+  "viaLinkerdViz": "Letto dal Prometheus di linkerd-viz.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Richieste ricevute dai proxy Istio di questi pod.",
+    "linkerd": "Richieste ricevute dai proxy Linkerd di questi pod; errori secondo la classificazione di Linkerd.",
+    "ingressNginx": "Solo le richieste arrivate tramite ingress-nginx ai Service che selezionano questi pod.",
+    "beyla": "Richieste che Grafana Beyla ha visto servire da questi pod.",
+    "hubble": "Richieste che Cilium Hubble ha visto raggiungere questi pod."
+  },
+  "fields": {
+    "rate": "Tasso di richieste",
+    "errors": "Tasso di errori",
+    "latency": "Latenza"
+  },
+  "value": {
+    "rate": "{{value}} rich./s",
+    "percent": "{{value}}%",
+    "ms": "{{value}} ms",
+    "seconds": "{{value}} s",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "sconosciuta"
+  },
+  "noRequestsNow": "Nessuna richiesta negli ultimi 5 minuti.",
+  "noErrorsWithoutRequests": "Nessuna richiesta di cui contare gli errori.",
+  "noLatency": "Questa fonte non ha un istogramma della latenza.",
+  "chart": {
+    "rate": "Richieste al secondo, ultima ora",
+    "errors": "Richieste non riuscite al secondo, ultima ora"
+  },
+  "failed": "Impossibile leggere le metriche di {{sources}}.",
+  "noPrometheus": "Le metriche delle richieste e la limitazione della CPU si leggono da Prometheus, e per questo cluster non ne è configurato né trovato nessuno.",
+  "openSettings": "Impostazioni del cluster",
+  "noSource": "Prometheus non ha metriche delle richieste: né Istio, né Linkerd, né ingress-nginx, né Grafana Beyla, né Cilium Hubble gliele inviano.",
+  "wouldProvide": "Una qualsiasi di queste fonti le fornirebbe: una mesh Istio, una mesh Linkerd con linkerd-viz (o un Prometheus che raccoglie i suoi proxy), ingress-nginx con le metriche raccolte, Grafana Beyla o Cilium Hubble con le metriche HTTP attive.",
+  "noDataHere": "Prometheus ha metriche di {{sources}}, ma nessuna di questi pod.",
+  "throttling": {
+    "title": "Limitazione della CPU",
+    "about": "Quota dei periodi di CPU in cui ogni container è stato limitato nell'ultima ora.",
+    "unknown": "Impossibile leggere la limitazione della CPU da Prometheus.",
+    "none": "Prometheus non ha contatori della limitazione della CPU per questi container.",
+    "percent": "{{value}}%",
+    "limitCause": "Limitato nel {{percent}} dei periodi di CPU con un limite di CPU di {{limit}}: il limite è la causa probabile delle risposte lente.",
+    "suggested": "Il dimensionamento suggerisce un limite di CPU di {{limit}} in base allo storico di utilizzo.",
+    "seeRightsizing": "La sezione «Dimensionamento» suggerisce un limite quando ha abbastanza storico di utilizzo."
+  },
+  "showRequests": "Mostra le metriche delle richieste",
+  "linkerdViz": "linkerd-viz è installato: tasso di successo, tasso di richieste e latenza di questi pod sono nella sezione «Richieste»."
+}

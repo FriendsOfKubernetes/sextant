@@ -1,0 +1,58 @@
+{
+  "title": "İstekler",
+  "loading": "İstek metrikleri okunuyor…",
+  "fromSource": "Kaynak: {{source}}",
+  "viaLinkerdViz": "linkerd-viz'in Prometheus'undan okundu.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Bu Pod'ların Istio proxy'lerinin aldığı istekler.",
+    "linkerd": "Bu Pod'ların Linkerd proxy'lerinin aldığı istekler; hatalar Linkerd'ün sınıflandırdığı gibi.",
+    "ingressNginx": "Yalnızca ingress-nginx üzerinden bu Pod'ları seçen Service'lere gelen istekler.",
+    "beyla": "Grafana Beyla'nın bu Pod'ların yanıtladığını gördüğü istekler.",
+    "hubble": "Cilium Hubble'ın bu Pod'lara ulaştığını gördüğü istekler."
+  },
+  "fields": {
+    "rate": "İstek hızı",
+    "errors": "Hata oranı",
+    "latency": "Gecikme"
+  },
+  "value": {
+    "rate": "{{value}} istek/sn",
+    "percent": "%{{value}}",
+    "ms": "{{value}} ms",
+    "seconds": "{{value}} sn",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "bilinmiyor"
+  },
+  "noRequestsNow": "Son 5 dakikada istek yok.",
+  "noErrorsWithoutRequests": "Hatası sayılacak istek yok.",
+  "noLatency": "Bu kaynağın gecikme histogramı yok.",
+  "chart": {
+    "rate": "Saniyedeki istekler, son bir saat",
+    "errors": "Saniyedeki başarısız istekler, son bir saat"
+  },
+  "failed": "Şu kaynakların metrikleri okunamadı: {{sources}}.",
+  "noPrometheus": "İstek metrikleri ve CPU kısıtlaması Prometheus'tan okunur; bu küme için ayarlanmış ya da bulunmuş bir Prometheus yok.",
+  "openSettings": "Küme ayarları",
+  "noSource": "Prometheus'ta istek metriği yok: Istio, Linkerd, ingress-nginx, Grafana Beyla ve Cilium Hubble'ın hiçbiri ona veri göndermiyor.",
+  "wouldProvide": "Bunlardan herhangi biri sağlardı: bir Istio ağı, linkerd-viz ile bir Linkerd ağı (ya da proxy'lerini toplayan bir Prometheus), metrikleri toplanan ingress-nginx, Grafana Beyla veya HTTP metrikleri açık Cilium Hubble.",
+  "noDataHere": "Prometheus'ta şu kaynakların metrikleri var: {{sources}}; ama bu Pod'lar için hiç yok.",
+  "throttling": {
+    "title": "CPU kısıtlaması",
+    "about": "Son bir saatte her kapsayıcının kısıtlandığı CPU dönemlerinin payı.",
+    "unknown": "CPU kısıtlaması Prometheus'tan okunamadı.",
+    "none": "Prometheus'ta bu kapsayıcılar için CPU kısıtlama sayaçları yok.",
+    "percent": "%{{value}}",
+    "limitCause": "{{limit}} CPU limitiyle CPU dönemlerinin {{percent}} kadarında kısıtlandı: yavaş yanıtların olası nedeni limit.",
+    "suggested": "Doğru boyutlandırma, kullanım geçmişine göre {{limit}} CPU limiti öneriyor.",
+    "seeRightsizing": "\"Doğru boyutlandırma\" bölümü yeterli kullanım geçmişi olunca bir limit önerir."
+  },
+  "showRequests": "İstek metriklerini göster",
+  "linkerdViz": "linkerd-viz kurulu: bu Pod'ların başarı oranı, istek hızı ve gecikmesi \"İstekler\" bölümünde."
+}

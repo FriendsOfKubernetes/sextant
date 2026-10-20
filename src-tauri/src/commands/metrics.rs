@@ -3,7 +3,7 @@
 
 use sextant_core::metrics::{
     self, ChartTarget, HistoryScope, HistoryWindow, MetricsStatus, NodeUsage, PodUsage,
-    PrometheusMode, Series, UsageHistory,
+    PrometheusMode, RequestHealth, RequestTarget, Series, UsageHistory,
 };
 use sextant_core::{ClusterId, ClusterSettings, CoreError, ErrorCode};
 use tauri::State;
@@ -101,6 +101,19 @@ pub async fn metrics_usage_history(
     metrics::usage_history(&state.clusters, &cluster_id, &target, scope, window).await
 }
 
+/// Request rate, errors and latency of a workload or pod from the request-metric sources its Prometheus has, and CPU
+/// throttling per container (#212). Read-only; every query is fixed in the core (`metrics::requests`), the target's
+/// names are validated there, and no Prometheus is not an error (the answer says so). Window only.
+#[tauri::command]
+pub async fn metrics_request_health(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    target: RequestTarget,
+) -> Result<RequestHealth, CoreError> {
+    let settings = cluster_settings(&state, &cluster_id);
+    metrics::request_health(&state.clusters, &cluster_id, &settings.prometheus, target).await
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -118,6 +131,26 @@ mod tests {
             !methods
                 .iter()
                 .any(|m| m.contains("history") || m.contains("rightsizing")),
+            "{methods:?}"
+        );
+    }
+
+    #[test]
+    fn neither_agents_nor_extensions_get_the_request_metrics() {
+        let tools = crate::mcp::server::all_tools().names();
+        assert!(tools.len() > 10, "{tools:?}");
+        let forbidden = ["request_health", "golden", "throttl", "latency"];
+        assert!(
+            !tools
+                .iter()
+                .any(|t| forbidden.iter().any(|f| t.contains(f))),
+            "{tools:?}"
+        );
+        let methods = crate::extensions::api::METHODS;
+        assert!(
+            !methods
+                .iter()
+                .any(|m| forbidden.iter().any(|f| m.contains(f)) || m.contains("metrics")),
             "{methods:?}"
         );
     }

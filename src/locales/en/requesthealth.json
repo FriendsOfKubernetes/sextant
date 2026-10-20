@@ -1,0 +1,58 @@
+{
+  "title": "Requests",
+  "loading": "Reading request metrics…",
+  "fromSource": "From {{source}}",
+  "viaLinkerdViz": "Read from the Prometheus of linkerd-viz.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Requests the Istio proxies of these pods received.",
+    "linkerd": "Requests the Linkerd proxies of these pods received; failures as Linkerd classifies them.",
+    "ingressNginx": "Only requests that came through ingress-nginx to the Services that select these pods.",
+    "beyla": "Requests Grafana Beyla saw these pods serve.",
+    "hubble": "Requests Cilium Hubble saw reach these pods."
+  },
+  "fields": {
+    "rate": "Request rate",
+    "errors": "Error rate",
+    "latency": "Latency"
+  },
+  "value": {
+    "rate": "{{value}} req/s",
+    "percent": "{{value}}%",
+    "ms": "{{value}} ms",
+    "seconds": "{{value}} s",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "unknown"
+  },
+  "noRequestsNow": "No requests in the last 5 minutes.",
+  "noErrorsWithoutRequests": "No requests to count errors of.",
+  "noLatency": "This source has no latency histogram.",
+  "chart": {
+    "rate": "Requests per second, last hour",
+    "errors": "Failed requests per second, last hour"
+  },
+  "failed": "Could not read the metrics of {{sources}}.",
+  "noPrometheus": "Request metrics and CPU throttling are read from Prometheus, and none is set up or found for this cluster.",
+  "openSettings": "Cluster settings",
+  "noSource": "Prometheus has no request metrics: none of Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble is reporting to it.",
+  "wouldProvide": "Any of these would provide them: an Istio mesh, a Linkerd mesh with linkerd-viz (or a Prometheus that scrapes its proxies), ingress-nginx with its metrics scraped, Grafana Beyla, or Cilium Hubble with HTTP metrics enabled.",
+  "noDataHere": "Prometheus has metrics of {{sources}}, but none for these pods.",
+  "throttling": {
+    "title": "CPU throttling",
+    "about": "Share of CPU periods each container was throttled in over the last hour.",
+    "unknown": "CPU throttling could not be read from Prometheus.",
+    "none": "Prometheus has no CPU throttling counters for these containers.",
+    "percent": "{{value}}%",
+    "limitCause": "Throttled in {{percent}} of CPU periods with a CPU limit of {{limit}}: the limit is the likely cause of slow responses.",
+    "suggested": "Right-sizing suggests a CPU limit of {{limit}} from its usage history.",
+    "seeRightsizing": "The Right-sizing section suggests a limit once it has enough usage history."
+  },
+  "showRequests": "Show request metrics",
+  "linkerdViz": "linkerd-viz is installed: the success rate, request rate and latency of these pods are in the Requests section."
+}

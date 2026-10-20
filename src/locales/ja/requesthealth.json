@@ -1,0 +1,58 @@
+{
+  "title": "リクエスト",
+  "loading": "リクエストメトリクスを読み取っています…",
+  "fromSource": "{{source}} から",
+  "viaLinkerdViz": "linkerd-viz の Prometheus から読み取りました。",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "これらの Pod の Istio プロキシが受け取ったリクエストです。",
+    "linkerd": "これらの Pod の Linkerd プロキシが受け取ったリクエストです。失敗は Linkerd の分類に従います。",
+    "ingressNginx": "ingress-nginx を経由して、これらの Pod を選択する Service に届いたリクエストだけです。",
+    "beyla": "これらの Pod が処理したと Grafana Beyla が観測したリクエストです。",
+    "hubble": "これらの Pod に届いたと Cilium Hubble が観測したリクエストです。"
+  },
+  "fields": {
+    "rate": "リクエストレート",
+    "errors": "エラー率",
+    "latency": "レイテンシ"
+  },
+  "value": {
+    "rate": "{{value}} 件/秒",
+    "percent": "{{value}}%",
+    "ms": "{{value}} ミリ秒",
+    "seconds": "{{value}} 秒",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "不明"
+  },
+  "noRequestsNow": "直近 5 分間にリクエストはありません。",
+  "noErrorsWithoutRequests": "エラーを数えるリクエストがありません。",
+  "noLatency": "このソースにはレイテンシのヒストグラムがありません。",
+  "chart": {
+    "rate": "1 秒あたりのリクエスト数（直近 1 時間）",
+    "errors": "1 秒あたりの失敗リクエスト数（直近 1 時間）"
+  },
+  "failed": "次のソースのメトリクスを読み取れませんでした: {{sources}}。",
+  "noPrometheus": "リクエストメトリクスと CPU スロットリングは Prometheus から読み取りますが、このクラスターには設定済みの、または見つかった Prometheus がありません。",
+  "openSettings": "クラスターの設定",
+  "noSource": "Prometheus にリクエストメトリクスがありません。Istio、Linkerd、ingress-nginx、Grafana Beyla、Cilium Hubble のいずれも送っていません。",
+  "wouldProvide": "次のいずれかがあれば得られます: Istio メッシュ、linkerd-viz 付きの Linkerd メッシュ（またはそのプロキシを収集する Prometheus）、メトリクスが収集される ingress-nginx、Grafana Beyla、HTTP メトリクスを有効にした Cilium Hubble。",
+  "noDataHere": "Prometheus には {{sources}} のメトリクスがありますが、これらの Pod のものはありません。",
+  "throttling": {
+    "title": "CPU スロットリング",
+    "about": "直近 1 時間に各コンテナーがスロットリングされた CPU 期間の割合です。",
+    "unknown": "CPU スロットリングを Prometheus から読み取れませんでした。",
+    "none": "Prometheus にはこれらのコンテナーの CPU スロットリングのカウンターがありません。",
+    "percent": "{{value}}%",
+    "limitCause": "CPU 上限 {{limit}} のもとで CPU 期間の {{percent}} がスロットリングされました。応答が遅い原因はおそらくこの上限です。",
+    "suggested": "適正サイズは使用履歴から CPU 上限 {{limit}} を提案しています。",
+    "seeRightsizing": "「適正サイズ」セクションは十分な使用履歴がたまると上限を提案します。"
+  },
+  "showRequests": "リクエストメトリクスを表示",
+  "linkerdViz": "linkerd-viz がインストールされています。これらの Pod の成功率、リクエストレート、レイテンシは「リクエスト」セクションにあります。"
+}

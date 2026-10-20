@@ -1,0 +1,109 @@
+{
+ "names": {
+  "status": "success",
+  "data": [
+   "istio_requests_total",
+   "istio_request_duration_milliseconds_bucket",
+   "up"
+  ]
+ },
+ "instant": {
+  "status": "success",
+  "data": {
+   "resultType": "vector",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "value": [
+      1760000000,
+      "12.5"
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "value": [
+      1760000000,
+      "0.25"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p50"
+     },
+     "value": [
+      1760000000,
+      "8.2"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p95"
+     },
+     "value": [
+      1760000000,
+      "45"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p99"
+     },
+     "value": [
+      1760000000,
+      "120"
+     ]
+    }
+   ]
+  }
+ },
+ "range": {
+  "status": "success",
+  "data": {
+   "resultType": "matrix",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "values": [
+      [
+       1759996400,
+       "10"
+      ],
+      [
+       1759996460,
+       "12"
+      ],
+      [
+       1759996520,
+       "12.5"
+      ]
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "values": [
+      [
+       1759996400,
+       "0"
+      ],
+      [
+       1759996460,
+       "0.5"
+      ],
+      [
+       1759996520,
+       "0.25"
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

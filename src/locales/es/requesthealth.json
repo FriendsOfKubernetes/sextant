@@ -1,0 +1,58 @@
+{
+  "title": "Solicitudes",
+  "loading": "Leyendo las métricas de solicitudes…",
+  "fromSource": "Desde {{source}}",
+  "viaLinkerdViz": "Leído del Prometheus de linkerd-viz.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Solicitudes que recibieron los proxies de Istio de estos pods.",
+    "linkerd": "Solicitudes que recibieron los proxies de Linkerd de estos pods; los fallos, según los clasifica Linkerd.",
+    "ingressNginx": "Solo las solicitudes que llegaron por ingress-nginx a los Services que seleccionan estos pods.",
+    "beyla": "Solicitudes que Grafana Beyla vio servir a estos pods.",
+    "hubble": "Solicitudes que Cilium Hubble vio llegar a estos pods."
+  },
+  "fields": {
+    "rate": "Tasa de solicitudes",
+    "errors": "Tasa de errores",
+    "latency": "Latencia"
+  },
+  "value": {
+    "rate": "{{value}} sol./s",
+    "percent": "{{value}} %",
+    "ms": "{{value}} ms",
+    "seconds": "{{value}} s",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "desconocida"
+  },
+  "noRequestsNow": "Ninguna solicitud en los últimos 5 minutos.",
+  "noErrorsWithoutRequests": "No hay solicitudes de las que contar errores.",
+  "noLatency": "Esta fuente no tiene histograma de latencia.",
+  "chart": {
+    "rate": "Solicitudes por segundo, última hora",
+    "errors": "Solicitudes fallidas por segundo, última hora"
+  },
+  "failed": "No se pudieron leer las métricas de {{sources}}.",
+  "noPrometheus": "Las métricas de solicitudes y la limitación de CPU se leen de Prometheus, y no hay ninguno configurado ni encontrado para este clúster.",
+  "openSettings": "Configuración del clúster",
+  "noSource": "Prometheus no tiene métricas de solicitudes: ni Istio, ni Linkerd, ni ingress-nginx, ni Grafana Beyla, ni Cilium Hubble le envían datos.",
+  "wouldProvide": "Cualquiera de estas fuentes las proporcionaría: una malla de Istio, una malla de Linkerd con linkerd-viz (o un Prometheus que recoja sus proxies), ingress-nginx con sus métricas recogidas, Grafana Beyla o Cilium Hubble con las métricas HTTP activadas.",
+  "noDataHere": "Prometheus tiene métricas de {{sources}}, pero ninguna de estos pods.",
+  "throttling": {
+    "title": "Limitación de CPU",
+    "about": "Parte de los periodos de CPU en que cada contenedor fue limitado durante la última hora.",
+    "unknown": "No se pudo leer la limitación de CPU de Prometheus.",
+    "none": "Prometheus no tiene contadores de limitación de CPU para estos contenedores.",
+    "percent": "{{value}} %",
+    "limitCause": "Limitado en el {{percent}} de los periodos de CPU con un límite de CPU de {{limit}}: el límite es la causa probable de las respuestas lentas.",
+    "suggested": "El ajuste de recursos sugiere un límite de CPU de {{limit}} a partir de su historial de uso.",
+    "seeRightsizing": "La sección «Ajuste de recursos» sugiere un límite cuando tiene suficiente historial de uso."
+  },
+  "showRequests": "Mostrar las métricas de solicitudes",
+  "linkerdViz": "linkerd-viz está instalado: la tasa de éxito, la tasa de solicitudes y la latencia de estos pods están en la sección «Solicitudes»."
+}

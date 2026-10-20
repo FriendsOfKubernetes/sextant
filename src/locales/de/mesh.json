@@ -390,8 +390,7 @@
       "none": "Nicht im Linkerd-Mesh.",
       "injectedPods": "Seine Pods erhalten beim Erstellen den Linkerd-Proxy.",
       "noInjection": "Seine Pods erhalten keinen Linkerd-Proxy.",
-      "restart": "Die Proxy-Injektion ist an, aber dieser Pod hat keinen Proxy: Er wurde erstellt, bevor die Injektion eingeschaltet wurde. Starten Sie ihn neu, um ihn ins Mesh aufzunehmen.",
-      "goldenMetrics": "linkerd-viz ist installiert. Sextant liest dessen Erfolgsrate, Anfragerate und Latenz nicht: Sie sehen sie mit linkerd viz stat oder im linkerd-viz-Dashboard."
+      "restart": "Die Proxy-Injektion ist an, aber dieser Pod hat keinen Proxy: Er wurde erstellt, bevor die Injektion eingeschaltet wurde. Starten Sie ihn neu, um ihn ins Mesh aufzunehmen."
     },
     "via": {
       "pod": "An, am Pod gesetzt",

@@ -396,8 +396,7 @@
       "none": "Poza siatką Linkerd.",
       "injectedPods": "Jego Pody dostają proxy Linkerd przy tworzeniu.",
       "noInjection": "Jego Pody nie dostają proxy Linkerd.",
-      "restart": "Wstrzykiwanie proxy jest włączone, ale ten Pod nie ma proxy: utworzono go przed włączeniem wstrzykiwania. Uruchom go ponownie, aby dodać go do siatki.",
-      "goldenMetrics": "linkerd-viz jest zainstalowany. Sextant nie odczytuje jego wskaźnika powodzeń, liczby żądań ani opóźnień: można je zobaczyć przez linkerd viz stat lub panel linkerd-viz."
+      "restart": "Wstrzykiwanie proxy jest włączone, ale ten Pod nie ma proxy: utworzono go przed włączeniem wstrzykiwania. Uruchom go ponownie, aby dodać go do siatki."
     },
     "via": {
       "pod": "Włączone, ustawione na Podzie",

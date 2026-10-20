@@ -74,6 +74,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("metrics_status", Some("clusterId")),
     ("metrics_charts", Some("clusterId")),
     ("metrics_usage_history", Some("clusterId")),
+    ("metrics_request_health", Some("clusterId")),
     ("storage_volume_usage", Some("clusterId")),
     ("resource_create", Some("clusterId")),
     ("helm_status", None),
@@ -1063,6 +1064,11 @@ fn later_argument_names_match_the_frontend() {
             "metrics_usage_history",
             json!({ "clusterId": "c" }),
             "scope",
+        ),
+        (
+            "metrics_request_health",
+            json!({ "clusterId": "c" }),
+            "target",
         ),
         (
             "metrics_usage_history",

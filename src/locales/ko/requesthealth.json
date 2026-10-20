@@ -1,0 +1,58 @@
+{
+  "title": "요청",
+  "loading": "요청 메트릭을 읽는 중…",
+  "fromSource": "{{source}}에서",
+  "viaLinkerdViz": "linkerd-viz의 Prometheus에서 읽었습니다.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "이 Pod들의 Istio 프록시가 받은 요청입니다.",
+    "linkerd": "이 Pod들의 Linkerd 프록시가 받은 요청입니다. 실패는 Linkerd의 분류를 따릅니다.",
+    "ingressNginx": "ingress-nginx를 거쳐 이 Pod들을 선택하는 Service로 들어온 요청만 셉니다.",
+    "beyla": "Grafana Beyla가 관찰한, 이 Pod들이 처리한 요청입니다.",
+    "hubble": "Cilium Hubble이 관찰한, 이 Pod들에 도달한 요청입니다."
+  },
+  "fields": {
+    "rate": "요청 속도",
+    "errors": "오류율",
+    "latency": "지연 시간"
+  },
+  "value": {
+    "rate": "초당 {{value}}건",
+    "percent": "{{value}}%",
+    "ms": "{{value}}ms",
+    "seconds": "{{value}}초",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "알 수 없음"
+  },
+  "noRequestsNow": "최근 5분 동안 요청이 없습니다.",
+  "noErrorsWithoutRequests": "오류를 셀 요청이 없습니다.",
+  "noLatency": "이 소스에는 지연 시간 히스토그램이 없습니다.",
+  "chart": {
+    "rate": "초당 요청 수, 최근 1시간",
+    "errors": "초당 실패한 요청 수, 최근 1시간"
+  },
+  "failed": "다음 소스의 메트릭을 읽지 못했습니다: {{sources}}.",
+  "noPrometheus": "요청 메트릭과 CPU 스로틀링은 Prometheus에서 읽는데, 이 클러스터에는 설정되었거나 찾은 Prometheus가 없습니다.",
+  "openSettings": "클러스터 설정",
+  "noSource": "Prometheus에 요청 메트릭이 없습니다. Istio, Linkerd, ingress-nginx, Grafana Beyla, Cilium Hubble 중 어느 것도 보내고 있지 않습니다.",
+  "wouldProvide": "다음 중 하나가 있으면 제공됩니다: Istio 메시, linkerd-viz가 있는 Linkerd 메시(또는 그 프록시를 수집하는 Prometheus), 메트릭이 수집되는 ingress-nginx, Grafana Beyla, HTTP 메트릭을 켠 Cilium Hubble.",
+  "noDataHere": "Prometheus에 {{sources}}의 메트릭이 있지만 이 Pod들의 것은 없습니다.",
+  "throttling": {
+    "title": "CPU 스로틀링",
+    "about": "최근 1시간 동안 각 컨테이너가 스로틀링된 CPU 주기의 비율입니다.",
+    "unknown": "Prometheus에서 CPU 스로틀링을 읽지 못했습니다.",
+    "none": "Prometheus에 이 컨테이너들의 CPU 스로틀링 카운터가 없습니다.",
+    "percent": "{{value}}%",
+    "limitCause": "CPU 제한 {{limit}}에서 CPU 주기의 {{percent}}가 스로틀링되었습니다. 응답이 느린 원인은 이 제한일 가능성이 큽니다.",
+    "suggested": "적정 크기 조정은 사용 기록을 바탕으로 CPU 제한 {{limit}}을(를) 제안합니다.",
+    "seeRightsizing": "'적정 크기 조정' 섹션은 사용 기록이 충분히 쌓이면 제한을 제안합니다."
+  },
+  "showRequests": "요청 메트릭 보기",
+  "linkerdViz": "linkerd-viz가 설치되어 있습니다. 이 Pod들의 성공률, 요청 속도, 지연 시간은 '요청' 섹션에 있습니다."
+}

@@ -393,8 +393,7 @@
       "none": "Fora da malha do Linkerd.",
       "injectedPods": "Seus Pods recebem o proxy do Linkerd ao serem criados.",
       "noInjection": "Seus Pods não recebem proxy do Linkerd.",
-      "restart": "A injeção do proxy está ligada, mas este Pod não tem proxy: ele foi criado antes de a injeção ser ligada. Reinicie-o para adicioná-lo à malha.",
-      "goldenMetrics": "O linkerd-viz está instalado. O Sextant não lê sua taxa de sucesso, taxa de requisições e latência: veja-as com linkerd viz stat ou no painel do linkerd-viz."
+      "restart": "A injeção do proxy está ligada, mas este Pod não tem proxy: ele foi criado antes de a injeção ser ligada. Reinicie-o para adicioná-lo à malha."
     },
     "via": {
       "pod": "Ligada, definida no Pod",

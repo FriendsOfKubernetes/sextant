@@ -1,0 +1,58 @@
+{
+  "title": "Запросы",
+  "loading": "Чтение метрик запросов…",
+  "fromSource": "Из {{source}}",
+  "viaLinkerdViz": "Прочитано из Prometheus в linkerd-viz.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Запросы, полученные прокси Istio этих Pod.",
+    "linkerd": "Запросы, полученные прокси Linkerd этих Pod; ошибки — так, как их классифицирует Linkerd.",
+    "ingressNginx": "Только запросы, пришедшие через ingress-nginx к Service, которые выбирают эти Pod.",
+    "beyla": "Запросы, которые, по данным Grafana Beyla, обслужили эти Pod.",
+    "hubble": "Запросы, которые, по данным Cilium Hubble, дошли до этих Pod."
+  },
+  "fields": {
+    "rate": "Частота запросов",
+    "errors": "Доля ошибок",
+    "latency": "Задержка"
+  },
+  "value": {
+    "rate": "{{value}} запр./с",
+    "percent": "{{value}}%",
+    "ms": "{{value}} мс",
+    "seconds": "{{value}} с",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "неизвестно"
+  },
+  "noRequestsNow": "За последние 5 минут запросов не было.",
+  "noErrorsWithoutRequests": "Нет запросов, среди которых считать ошибки.",
+  "noLatency": "У этого источника нет гистограммы задержек.",
+  "chart": {
+    "rate": "Запросов в секунду за последний час",
+    "errors": "Неудачных запросов в секунду за последний час"
+  },
+  "failed": "Не удалось прочитать метрики {{sources}}.",
+  "noPrometheus": "Метрики запросов и троттлинг CPU читаются из Prometheus, а для этого кластера он не настроен и не найден.",
+  "openSettings": "Настройки кластера",
+  "noSource": "В Prometheus нет метрик запросов: ни Istio, ни Linkerd, ни ingress-nginx, ни Grafana Beyla, ни Cilium Hubble не отправляют их туда.",
+  "wouldProvide": "Их дал бы любой из вариантов: сервисная сеть Istio, сервисная сеть Linkerd с linkerd-viz (или Prometheus, который собирает метрики его прокси), ingress-nginx со сбором метрик, Grafana Beyla или Cilium Hubble с включёнными HTTP-метриками.",
+  "noDataHere": "В Prometheus есть метрики {{sources}}, но для этих Pod их нет.",
+  "throttling": {
+    "title": "Троттлинг CPU",
+    "about": "Доля периодов CPU, в которых каждый контейнер был ограничен, за последний час.",
+    "unknown": "Не удалось прочитать троттлинг CPU из Prometheus.",
+    "none": "В Prometheus нет счётчиков троттлинга CPU для этих контейнеров.",
+    "percent": "{{value}}%",
+    "limitCause": "Ограничен в {{percent}} периодов CPU при лимите CPU {{limit}}: вероятная причина медленных ответов — лимит.",
+    "suggested": "Подбор ресурсов по истории использования предлагает лимит CPU {{limit}}.",
+    "seeRightsizing": "Раздел «Подбор ресурсов» предложит лимит, когда накопит достаточно истории использования."
+  },
+  "showRequests": "Показать метрики запросов",
+  "linkerdViz": "linkerd-viz установлен: доля успешных запросов, частота запросов и задержка этих Pod — в разделе «Запросы»."
+}

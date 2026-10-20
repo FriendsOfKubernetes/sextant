@@ -1,0 +1,109 @@
+{
+ "names": {
+  "status": "success",
+  "data": [
+   "response_total",
+   "response_latency_ms_bucket",
+   "request_total"
+  ]
+ },
+ "instant": {
+  "status": "success",
+  "data": {
+   "resultType": "vector",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "value": [
+      1760000000,
+      "4"
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "value": [
+      1760000000,
+      "0.4"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p50"
+     },
+     "value": [
+      1760000000,
+      "3"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p95"
+     },
+     "value": [
+      1760000000,
+      "10"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p99"
+     },
+     "value": [
+      1760000000,
+      "25"
+     ]
+    }
+   ]
+  }
+ },
+ "range": {
+  "status": "success",
+  "data": {
+   "resultType": "matrix",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "values": [
+      [
+       1759996400,
+       "4"
+      ],
+      [
+       1759996460,
+       "4"
+      ],
+      [
+       1759996520,
+       "4"
+      ]
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "values": [
+      [
+       1759996400,
+       "0.4"
+      ],
+      [
+       1759996460,
+       "0.4"
+      ],
+      [
+       1759996520,
+       "0.4"
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -94,6 +94,8 @@ import type { Series } from "./generated/Series";
 import type { HistoryScope } from "./generated/HistoryScope";
 import type { HistoryWindow } from "./generated/HistoryWindow";
 import type { UsageHistory } from "./generated/UsageHistory";
+import type { RequestHealth } from "./generated/RequestHealth";
+import type { RequestTarget } from "./generated/RequestTarget";
 import type { SettingsStatus } from "./generated/SettingsStatus";
 import type { TermPayload } from "./generated/TermPayload";
 import type { TransferEvent } from "./generated/TransferEvent";
@@ -304,6 +306,9 @@ export const metrics = {
     call<Series[]>("metrics_charts", { clusterId, chart, rangeSecs }),
   usageHistory: (clusterId: ClusterId, scope: HistoryScope, window: HistoryWindow) =>
     call<UsageHistory>("metrics_usage_history", { clusterId, scope, window }),
+  /** Request rate, errors, latency and CPU throttling of a workload or pod (#212); fixed queries in the core. */
+  requestHealth: (clusterId: ClusterId, target: RequestTarget) =>
+    call<RequestHealth>("metrics_request_health", { clusterId, target }),
 };
 
 /** Storage insights (#152): the fill levels, and creating the one object a storage action confirmed. */

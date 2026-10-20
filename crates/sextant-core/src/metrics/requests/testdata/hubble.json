@@ -1,0 +1,109 @@
+{
+ "names": {
+  "status": "success",
+  "data": [
+   "hubble_http_requests_total",
+   "hubble_http_request_duration_seconds_bucket",
+   "hubble_flows_processed_total"
+  ]
+ },
+ "instant": {
+  "status": "success",
+  "data": {
+   "resultType": "vector",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "value": [
+      1760000000,
+      "1"
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "value": [
+      1760000000,
+      "0.5"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p50"
+     },
+     "value": [
+      1760000000,
+      "0.1"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p95"
+     },
+     "value": [
+      1760000000,
+      "0.4"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p99"
+     },
+     "value": [
+      1760000000,
+      "NaN"
+     ]
+    }
+   ]
+  }
+ },
+ "range": {
+  "status": "success",
+  "data": {
+   "resultType": "matrix",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "values": [
+      [
+       1759996400,
+       "1"
+      ],
+      [
+       1759996460,
+       "1"
+      ],
+      [
+       1759996520,
+       "1"
+      ]
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "values": [
+      [
+       1759996400,
+       "0.5"
+      ],
+      [
+       1759996460,
+       "0.5"
+      ],
+      [
+       1759996520,
+       "0.5"
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

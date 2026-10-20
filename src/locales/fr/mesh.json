@@ -393,8 +393,7 @@
       "none": "Hors du maillage Linkerd.",
       "injectedPods": "Ses Pods reçoivent le proxy Linkerd à leur création.",
       "noInjection": "Ses Pods ne reçoivent pas de proxy Linkerd.",
-      "restart": "L'injection du proxy est active, mais ce Pod n'a pas de proxy : il a été créé avant l'activation de l'injection. Redémarrez-le pour l'ajouter au maillage.",
-      "goldenMetrics": "linkerd-viz est installé. Sextant ne lit pas son taux de succès, son débit de requêtes et sa latence : consultez-les avec linkerd viz stat ou le tableau de bord linkerd-viz."
+      "restart": "L'injection du proxy est active, mais ce Pod n'a pas de proxy : il a été créé avant l'activation de l'injection. Redémarrez-le pour l'ajouter au maillage."
     },
     "via": {
       "pod": "Active, définie sur le Pod",

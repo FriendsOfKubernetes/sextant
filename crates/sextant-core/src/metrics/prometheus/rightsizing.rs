@@ -17,7 +17,7 @@ use crate::metrics::history::{
 };
 
 /// Asked of Prometheus so it gives up before the client does (`QUERY_TIMEOUT`, 20 s).
-const SERVER_TIMEOUT: &str = "18s";
+pub(super) const SERVER_TIMEOUT: &str = "18s";
 /// `rate()` window and step of the CPU subqueries.
 const CPU_STEP: &str = "5m";
 /// Step of the memory peak subquery; each step takes the peak of its own raw samples, so no spike is missed.
@@ -49,24 +49,25 @@ pub(crate) fn scope_selector(scope: &HistoryScope) -> Option<String> {
             namespace,
             kind,
             name,
-        } => {
-            let name = regex_literal(name);
-            // Exactly the names the controllers give their pods (`=~` is anchored), so pods replaced inside the window
-            // still count but pods of `web-api` or `web-agent` are not taken for pods of `web`: a Deployment's pods
-            // are `<name>-<pod-template-hash>-<5>`, a StatefulSet's `<name>-<ordinal>`, a DaemonSet's `<name>-<5>`.
-            // The hash and the suffix use Kubernetes' safe alphabet (no vowels, no 0, 1, 3), which also keeps out most
-            // pods of a CronJob `<name>-<minutes>-<5>`.
-            let pods = match kind.as_str() {
-                "Deployment" => format!("{name}-{SAFE}{{6,10}}-{SAFE}{{5}}"),
-                "StatefulSet" => format!("{name}-[0-9]+"),
-                _ => format!("{name}-{SAFE}{{5}}"),
-            };
-            Some(format!(
-                r#"{base},namespace="{}",pod=~"{}""#,
-                literal(namespace),
-                literal(&pods)
-            ))
-        }
+        } => Some(format!(
+            r#"{base},namespace="{}",pod=~"{}""#,
+            literal(namespace),
+            literal(&pod_name_pattern(kind, name))
+        )),
+    }
+}
+
+/// The regular expression (not yet a PromQL literal) of the names a workload's controller gives its pods. Exactly
+/// those names (`=~` is anchored), so pods replaced inside a window still count but pods of `web-api` or `web-agent`
+/// are not taken for pods of `web`: a Deployment's pods are `<name>-<pod-template-hash>-<5>`, a StatefulSet's
+/// `<name>-<ordinal>`, a DaemonSet's `<name>-<5>`. The hash and the suffix use Kubernetes' safe alphabet (no vowels, no
+/// 0, 1, 3), which also keeps out most pods of a CronJob `<name>-<minutes>-<5>`. Shared with the request metrics.
+pub(crate) fn pod_name_pattern(kind: &str, name: &str) -> String {
+    let name = regex_literal(name);
+    match kind {
+        "Deployment" => format!("{name}-{SAFE}{{6,10}}-{SAFE}{{5}}"),
+        "StatefulSet" => format!("{name}-[0-9]+"),
+        _ => format!("{name}-{SAFE}{{5}}"),
     }
 }
 
@@ -117,11 +118,11 @@ pub(crate) enum Field {
     LastSeen,
 }
 
-type Samples = Vec<(BTreeMap<String, String>, f64)>;
+pub(super) type Samples = Vec<(BTreeMap<String, String>, f64)>;
 
 impl Prometheus {
     /// Instant query at `time`, bounded by Prometheus' own `timeout` as well.
-    async fn query_at(&self, promql: &str, time: i64) -> CoreResult<Samples> {
+    pub(super) async fn query_at(&self, promql: &str, time: i64) -> CoreResult<Samples> {
         let data: Value = self
             .get(&format!(
                 "api/v1/query?query={}&time={time}&timeout={SERVER_TIMEOUT}",

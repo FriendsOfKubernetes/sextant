@@ -390,8 +390,7 @@
       "none": "Linkerd ağında değil.",
       "injectedPods": "Pod'larına oluşturulurken Linkerd proxy'si eklenir.",
       "noInjection": "Pod'larına Linkerd proxy'si eklenmez.",
-      "restart": "Proxy ekleme açık, ancak bu Pod'da proxy yok: ekleme açılmadan önce oluşturulmuş. Ağa eklemek için yeniden başlatın.",
-      "goldenMetrics": "linkerd-viz kurulu. Sextant onun başarı oranını, istek hızını ve gecikmesini okumaz: bunları linkerd viz stat veya linkerd-viz panosuyla görün."
+      "restart": "Proxy ekleme açık, ancak bu Pod'da proxy yok: ekleme açılmadan önce oluşturulmuş. Ağa eklemek için yeniden başlatın."
     },
     "via": {
       "pod": "Açık, Pod'da ayarlanmış",

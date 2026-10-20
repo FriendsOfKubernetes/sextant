@@ -321,6 +321,14 @@ _Avoid_: clone, debug pod, test pod
 Downloading a file or folder from a running container, or uploading one file into it, through `tar` in the container, as `kubectl cp` does. A file arrives as itself, a folder as a `.tar.gz`; the local file appears only when the download is complete. An upload asks first.
 _Avoid_: sync, mount, file browser
 
+**Request metrics**:
+A workload's or pod's request rate, error rate and latency (p50/p95/p99) over the last 5 minutes and the last hour, from a request-metric source Prometheus has: Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble. Each source says what it saw (the ingress only what came through the ingress); an error is HTTP 5xx or a non-OK gRPC status (Linkerd: its own failure classification). Shown in the "Requests" details section with CPU throttling per container.
+_Avoid_: golden signals, SLIs, APM
+
+**Request-metric source**:
+Something that exports request metrics of workloads to Prometheus, found by asking Prometheus which of a fixed list of metric names it has. Sextant reads what is there; it installs or enables none of them.
+_Avoid_: provider, integration, exporter
+
 **Right-sizing**:
 Comparing each container's requests and limits with what it really used over the last day or 7 days (from Prometheus), with a recommendation and findings per container of a workload. The page is in the Workloads section; Deployments, StatefulSets, DaemonSets and pods have the same rows in their details. Nothing is changed in the cluster: the recommendation is a `resources:` snippet to copy.
 _Avoid_: autoscaling, VPA, optimization

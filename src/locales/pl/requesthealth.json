@@ -1,0 +1,58 @@
+{
+  "title": "Żądania",
+  "loading": "Odczytywanie metryk żądań…",
+  "fromSource": "Źródło: {{source}}",
+  "viaLinkerdViz": "Odczytane z Prometheusa linkerd-viz.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Żądania odebrane przez proxy Istio tych Podów.",
+    "linkerd": "Żądania odebrane przez proxy Linkerd tych Podów; błędy według klasyfikacji Linkerd.",
+    "ingressNginx": "Tylko żądania, które przyszły przez ingress-nginx do Service wybierających te Pody.",
+    "beyla": "Żądania, które według Grafana Beyla obsłużyły te Pody.",
+    "hubble": "Żądania, które według Cilium Hubble dotarły do tych Podów."
+  },
+  "fields": {
+    "rate": "Liczba żądań",
+    "errors": "Odsetek błędów",
+    "latency": "Opóźnienie"
+  },
+  "value": {
+    "rate": "{{value}} żądań/s",
+    "percent": "{{value}}%",
+    "ms": "{{value}} ms",
+    "seconds": "{{value}} s",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "nieznane"
+  },
+  "noRequestsNow": "Brak żądań w ostatnich 5 minutach.",
+  "noErrorsWithoutRequests": "Brak żądań, wśród których można liczyć błędy.",
+  "noLatency": "To źródło nie ma histogramu opóźnień.",
+  "chart": {
+    "rate": "Żądania na sekundę, ostatnia godzina",
+    "errors": "Nieudane żądania na sekundę, ostatnia godzina"
+  },
+  "failed": "Nie udało się odczytać metryk: {{sources}}.",
+  "noPrometheus": "Metryki żądań i dławienie CPU są odczytywane z Prometheusa, a dla tego klastra żaden nie jest skonfigurowany ani znaleziony.",
+  "openSettings": "Ustawienia klastra",
+  "noSource": "Prometheus nie ma metryk żądań: nie wysyła ich do niego ani Istio, ani Linkerd, ani ingress-nginx, ani Grafana Beyla, ani Cilium Hubble.",
+  "wouldProvide": "Dostarczyłoby je dowolne z tych źródeł: siatka Istio, siatka Linkerd z linkerd-viz (lub Prometheusem zbierającym metryki jej proxy), ingress-nginx ze zbieranymi metrykami, Grafana Beyla albo Cilium Hubble z włączonymi metrykami HTTP.",
+  "noDataHere": "Prometheus ma metryki źródeł: {{sources}}, ale żadnych dla tych Podów.",
+  "throttling": {
+    "title": "Dławienie CPU",
+    "about": "Odsetek okresów CPU, w których każdy kontener był dławiony w ostatniej godzinie.",
+    "unknown": "Nie udało się odczytać dławienia CPU z Prometheusa.",
+    "none": "Prometheus nie ma liczników dławienia CPU dla tych kontenerów.",
+    "percent": "{{value}}%",
+    "limitCause": "Dławiony w {{percent}} okresów CPU przy limicie CPU {{limit}}: limit jest prawdopodobną przyczyną wolnych odpowiedzi.",
+    "suggested": "Dopasowanie zasobów na podstawie historii użycia proponuje limit CPU {{limit}}.",
+    "seeRightsizing": "Sekcja „Dopasowanie zasobów” zaproponuje limit, gdy zbierze dość historii użycia."
+  },
+  "showRequests": "Pokaż metryki żądań",
+  "linkerdViz": "linkerd-viz jest zainstalowany: odsetek powodzeń, liczba żądań i opóźnienie tych Podów są w sekcji „Żądania”."
+}

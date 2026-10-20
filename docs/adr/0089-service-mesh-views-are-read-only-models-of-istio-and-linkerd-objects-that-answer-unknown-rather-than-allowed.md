@@ -21,7 +21,7 @@
 
 - Reading the proxies was rejected: it needs privileged access (exec, port-forward to istiod), is version-specific, and would make a read-only view depend on the control plane's health. The objects are what users write and review.
 - Answering "allowed" when unsure was rejected for the same reason as in ADR-0082: a wrong "allowed" invites a false sense of safety, while "unknown" sends the user to check.
-- Linkerd golden metrics were left out: they would need a new backend command with fixed queries against linkerd-viz's own Prometheus; the pod section only says whether linkerd-viz is installed.
+- Linkerd golden metrics were left out: they would need a new backend command with fixed queries against linkerd-viz's own Prometheus; the pod section only says whether linkerd-viz is installed. Amended (v0.17.0): #212 added them — the "Requests" details section reads Linkerd's success rate, request rate and latency from the cluster's Prometheus or linkerd-viz's own (ADR-0095); the Linkerd block points there when linkerd-viz is installed.
 
 ## Consequences
 

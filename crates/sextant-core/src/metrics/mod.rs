@@ -8,12 +8,20 @@
 mod history;
 mod prometheus;
 mod quantity;
+mod requests;
 mod server;
 mod volumes;
 
 pub use history::{
     ContainerHistory, HISTORY_WORKLOAD_KINDS, HistoryScope, HistoryWindow, MAX_HISTORY_CONTAINERS,
     MAX_HISTORY_NAMESPACES, UsageHistory, usage_history,
+};
+pub use requests::{
+    ContainerThrottling, DetectedSource, GoldenMetrics, LINKERD_VIZ_NAMESPACE, LatencyMs,
+    MAX_SELECTING_SERVICES, MAX_THROTTLED_CONTAINERS, REQUEST_SOURCES_TTL, RequestHealth,
+    RequestSourceKind, RequestSources, RequestTarget, RequestVia, SERIES_RANGE_SECS,
+    SERIES_STEP_SECS, linkerd_viz_target, request_health, request_queries, request_sources,
+    validate_target,
 };
 pub use volumes::{
     MAX_NODES, MAX_SUMMARY_BYTES, MAX_VOLUMES, VolumeUsage, VolumeUsageReport, VolumeUsageSource,

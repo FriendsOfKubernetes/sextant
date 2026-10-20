@@ -1,0 +1,58 @@
+{
+  "title": "要求",
+  "loading": "正在讀取要求指標…",
+  "fromSource": "來自 {{source}}",
+  "viaLinkerdViz": "讀取自 linkerd-viz 的 Prometheus。",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "這些 Pod 的 Istio 代理收到的要求。",
+    "linkerd": "這些 Pod 的 Linkerd 代理收到的要求；失敗依 Linkerd 的分類計算。",
+    "ingressNginx": "僅計入經由 ingress-nginx 到達選取這些 Pod 的 Service 的要求。",
+    "beyla": "Grafana Beyla 觀察到這些 Pod 處理的要求。",
+    "hubble": "Cilium Hubble 觀察到抵達這些 Pod 的要求。"
+  },
+  "fields": {
+    "rate": "要求速率",
+    "errors": "錯誤率",
+    "latency": "延遲"
+  },
+  "value": {
+    "rate": "{{value}} 次/秒",
+    "percent": "{{value}}%",
+    "ms": "{{value}} 毫秒",
+    "seconds": "{{value}} 秒",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "未知"
+  },
+  "noRequestsNow": "最近 5 分鐘內沒有要求。",
+  "noErrorsWithoutRequests": "沒有可統計錯誤的要求。",
+  "noLatency": "此來源沒有延遲直方圖。",
+  "chart": {
+    "rate": "每秒要求數（最近一小時）",
+    "errors": "每秒失敗要求數（最近一小時）"
+  },
+  "failed": "無法讀取以下來源的指標：{{sources}}。",
+  "noPrometheus": "要求指標與 CPU 節流從 Prometheus 讀取，而此叢集沒有設定或找到 Prometheus。",
+  "openSettings": "叢集設定",
+  "noSource": "Prometheus 中沒有要求指標：Istio、Linkerd、ingress-nginx、Grafana Beyla 與 Cilium Hubble 都沒有向其回報。",
+  "wouldProvide": "以下任一來源皆可提供：Istio 網格、搭配 linkerd-viz 的 Linkerd 網格（或收集其代理的 Prometheus）、指標有被收集的 ingress-nginx、Grafana Beyla，或啟用 HTTP 指標的 Cilium Hubble。",
+  "noDataHere": "Prometheus 中有 {{sources}} 的指標，但沒有這些 Pod 的。",
+  "throttling": {
+    "title": "CPU 節流",
+    "about": "最近一小時內每個容器遭到節流的 CPU 週期比例。",
+    "unknown": "無法從 Prometheus 讀取 CPU 節流。",
+    "none": "Prometheus 中沒有這些容器的 CPU 節流計數器。",
+    "percent": "{{value}}%",
+    "limitCause": "在 CPU 限制為 {{limit}} 時，{{percent}} 的 CPU 週期遭到節流：此限制很可能是回應變慢的原因。",
+    "suggested": "資源最佳化依使用歷史建議將 CPU 限制設為 {{limit}}。",
+    "seeRightsizing": "「資源最佳化」區段在有足夠的使用歷史後會建議一個限制。"
+  },
+  "showRequests": "顯示要求指標",
+  "linkerdViz": "已安裝 linkerd-viz：這些 Pod 的成功率、要求速率與延遲請見「要求」區段。"
+}

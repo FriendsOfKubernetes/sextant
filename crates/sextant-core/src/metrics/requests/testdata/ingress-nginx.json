@@ -1,0 +1,109 @@
+{
+ "names": {
+  "status": "success",
+  "data": [
+   "nginx_ingress_controller_requests",
+   "nginx_ingress_controller_request_duration_seconds_bucket",
+   "nginx_ingress_controller_bytes_sent_sum"
+  ]
+ },
+ "instant": {
+  "status": "success",
+  "data": {
+   "resultType": "vector",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "value": [
+      1760000000,
+      "20"
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "value": [
+      1760000000,
+      "1"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p50"
+     },
+     "value": [
+      1760000000,
+      "0.012"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p95"
+     },
+     "value": [
+      1760000000,
+      "0.08"
+     ]
+    },
+    {
+     "metric": {
+      "m": "p99"
+     },
+     "value": [
+      1760000000,
+      "0.25"
+     ]
+    }
+   ]
+  }
+ },
+ "range": {
+  "status": "success",
+  "data": {
+   "resultType": "matrix",
+   "result": [
+    {
+     "metric": {
+      "m": "rate"
+     },
+     "values": [
+      [
+       1759996400,
+       "18"
+      ],
+      [
+       1759996460,
+       "19"
+      ],
+      [
+       1759996520,
+       "20"
+      ]
+     ]
+    },
+    {
+     "metric": {
+      "m": "errors"
+     },
+     "values": [
+      [
+       1759996400,
+       "1"
+      ],
+      [
+       1759996460,
+       "1"
+      ],
+      [
+       1759996520,
+       "1"
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

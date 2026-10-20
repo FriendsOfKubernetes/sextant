@@ -387,8 +387,7 @@
       "none": "不在 Linkerd 網格中。",
       "injectedPods": "它的 Pod 在建立時會取得 Linkerd 代理。",
       "noInjection": "它的 Pod 不會取得 Linkerd 代理。",
-      "restart": "代理注入已開啟，但此 Pod 沒有代理：它是在開啟注入前建立的。重新啟動它即可加入網格。",
-      "goldenMetrics": "已安裝 linkerd-viz。Sextant 不讀取其成功率、要求速率與延遲：請用 linkerd viz stat 或 linkerd-viz 儀表板查看。"
+      "restart": "代理注入已開啟，但此 Pod 沒有代理：它是在開啟注入前建立的。重新啟動它即可加入網格。"
     },
     "via": {
       "pod": "已開啟，於 Pod 上設定",

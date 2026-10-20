@@ -99,6 +99,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         metrics::metrics_status,
         metrics::metrics_charts,
         metrics::metrics_usage_history,
+        metrics::metrics_request_health,
         storage::storage_volume_usage,
         storage::resource_create,
         helm::helm_status,

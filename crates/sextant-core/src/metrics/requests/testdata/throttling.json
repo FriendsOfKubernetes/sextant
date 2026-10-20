@@ -1,0 +1,26 @@
+{
+ "status": "success",
+ "data": {
+  "resultType": "vector",
+  "result": [
+   {
+    "metric": {
+     "container": "app"
+    },
+    "value": [
+     1760000000,
+     "0.42"
+    ]
+   },
+   {
+    "metric": {
+     "container": "sidecar"
+    },
+    "value": [
+     1760000000,
+     "0.01"
+    ]
+   }
+  ]
+ }
+}

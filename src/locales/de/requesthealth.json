@@ -1,0 +1,58 @@
+{
+  "title": "Anfragen",
+  "loading": "Anfragemetriken werden gelesen…",
+  "fromSource": "Von {{source}}",
+  "viaLinkerdViz": "Aus dem Prometheus von linkerd-viz gelesen.",
+  "source": {
+    "istio": "Istio",
+    "linkerd": "Linkerd",
+    "ingressNginx": "ingress-nginx",
+    "beyla": "Grafana Beyla",
+    "hubble": "Cilium Hubble"
+  },
+  "scope": {
+    "istio": "Anfragen, die die Istio-Proxys dieser Pods empfangen haben.",
+    "linkerd": "Anfragen, die die Linkerd-Proxys dieser Pods empfangen haben; Fehler so, wie Linkerd sie einstuft.",
+    "ingressNginx": "Nur Anfragen, die über ingress-nginx zu den Services kamen, die diese Pods auswählen.",
+    "beyla": "Anfragen, die diese Pods laut Grafana Beyla bedient haben.",
+    "hubble": "Anfragen, die diese Pods laut Cilium Hubble erreicht haben."
+  },
+  "fields": {
+    "rate": "Anfragerate",
+    "errors": "Fehlerrate",
+    "latency": "Latenz"
+  },
+  "value": {
+    "rate": "{{value}} Anfr./s",
+    "percent": "{{value}} %",
+    "ms": "{{value}} ms",
+    "seconds": "{{value}} s",
+    "latency": "p50 {{p50}} · p95 {{p95}} · p99 {{p99}}",
+    "unknown": "unbekannt"
+  },
+  "noRequestsNow": "Keine Anfragen in den letzten 5 Minuten.",
+  "noErrorsWithoutRequests": "Keine Anfragen, deren Fehler sich zählen ließen.",
+  "noLatency": "Diese Quelle hat kein Latenz-Histogramm.",
+  "chart": {
+    "rate": "Anfragen pro Sekunde, letzte Stunde",
+    "errors": "Fehlgeschlagene Anfragen pro Sekunde, letzte Stunde"
+  },
+  "failed": "Die Metriken von {{sources}} konnten nicht gelesen werden.",
+  "noPrometheus": "Anfragemetriken und CPU-Drosselung werden aus Prometheus gelesen, und für diesen Cluster ist keins eingerichtet oder gefunden.",
+  "openSettings": "Clustereinstellungen",
+  "noSource": "Prometheus hat keine Anfragemetriken: Weder Istio noch Linkerd, ingress-nginx, Grafana Beyla oder Cilium Hubble liefern sie dorthin.",
+  "wouldProvide": "Jede dieser Quellen würde sie liefern: ein Istio-Mesh, ein Linkerd-Mesh mit linkerd-viz (oder einem Prometheus, der seine Proxys abfragt), ingress-nginx mit abgefragten Metriken, Grafana Beyla oder Cilium Hubble mit aktivierten HTTP-Metriken.",
+  "noDataHere": "Prometheus hat Metriken von {{sources}}, aber keine für diese Pods.",
+  "throttling": {
+    "title": "CPU-Drosselung",
+    "about": "Anteil der CPU-Perioden, in denen jeder Container in der letzten Stunde gedrosselt wurde.",
+    "unknown": "Die CPU-Drosselung konnte nicht aus Prometheus gelesen werden.",
+    "none": "Prometheus hat keine Zähler der CPU-Drosselung für diese Container.",
+    "percent": "{{value}} %",
+    "limitCause": "In {{percent}} der CPU-Perioden gedrosselt bei einem CPU-Limit von {{limit}}: Das Limit ist die wahrscheinliche Ursache langsamer Antworten.",
+    "suggested": "Right-Sizing schlägt aus seinem Nutzungsverlauf ein CPU-Limit von {{limit}} vor.",
+    "seeRightsizing": "Der Abschnitt „Right-Sizing“ schlägt ein Limit vor, sobald er genug Nutzungsverlauf hat."
+  },
+  "showRequests": "Anfragemetriken anzeigen",
+  "linkerdViz": "linkerd-viz ist installiert: Erfolgsrate, Anfragerate und Latenz dieser Pods stehen im Abschnitt „Anfragen“."
+}
