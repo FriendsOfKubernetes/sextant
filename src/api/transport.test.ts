@@ -48,9 +48,35 @@ describe("tauriTransport.appInfo bundle kind", () => {
       tauri.bundle = kind;
       expect((await tauriTransport.appInfo()).bundleKind).toBe(kind);
     }
+    expect(tauri.resourceDirCalls).toBe(0);
     tauri.bundle = null;
     expect((await tauriTransport.appInfo()).bundleKind).toBeNull();
-    expect(tauri.resourceDirCalls).toBe(0);
+  });
+
+  it("tells Scoop's portable copy (no bundle kind, run from Scoop's app directory) from a bare executable", async () => {
+    tauri.bundle = null;
+    for (const dir of [
+      "C:\\Users\\dev\\scoop\\apps\\sextant\\current",
+      "C:\\Users\\dev\\scoop\\apps\\sextant\\0.19.0\\",
+      "\\\\?\\D:\\Scoop\\Apps\\Sextant\\0.19.0",
+      "C:\\ProgramData\\scoop\\apps\\sextant\\current",
+    ]) {
+      tauri.resourceDir = () => Promise.resolve(dir);
+      expect((await tauriTransport.appInfo()).bundleKind, dir).toBe("scoop");
+    }
+    for (const dir of [
+      "C:\\Users\\dev\\Downloads",
+      "C:\\Users\\dev\\scoop\\apps\\sextant",
+      "C:\\Users\\dev\\scoop\\apps\\other\\current",
+      "/home/dev/apps/sextant/current",
+    ]) {
+      tauri.resourceDir = () => Promise.resolve(dir);
+      expect((await tauriTransport.appInfo()).bundleKind, dir).toBeNull();
+    }
+    // An installer's kind wins: the .msi copy is never taken for Scoop's.
+    tauri.bundle = "msi";
+    tauri.resourceDir = () => Promise.resolve("C:\\Users\\dev\\scoop\\apps\\sextant\\current");
+    expect((await tauriTransport.appInfo()).bundleKind).toBe("msi");
   });
 
   it("reports a Vite dev build", async () => {

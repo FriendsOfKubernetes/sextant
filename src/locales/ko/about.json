@@ -19,6 +19,7 @@
     "appimage": "AppImage",
     "deb": ".deb 패키지",
     "rpm": ".rpm 패키지",
+    "scoop": "Scoop(포터블 .zip)",
     "app": "macOS 앱(.dmg)",
     "msi": "Windows 설치 관리자(.msi)",
     "nsis": "Windows 설치 관리자(NSIS)",

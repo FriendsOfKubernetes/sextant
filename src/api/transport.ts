@@ -103,8 +103,9 @@ export const tauriTransport: Transport = {
   updaterConfigured: () => updaterConfiguredIn(tauriConfig),
   appInfo: async () => {
     const [version, bundle] = await Promise.all([getVersion(), getBundleType().catch(() => null)]);
-    // Only macOS reports `app`; there the resource directory tells a real `.app` from a bare binary.
-    const resources = bundle === "app" ? await resourceDir().catch(() => null) : null;
+    // Only macOS reports `app`; there the resource directory tells a real `.app` from a bare binary. A copy with no
+    // bundle kind may be Scoop's (its directory tells).
+    const resources = bundle === "app" || !bundle ? await resourceDir().catch(() => null) : null;
     return { version, bundleKind: installedBundleKind(bundle, resources), devBuild: import.meta.env.DEV };
   },
   checkUpdate: async () => {

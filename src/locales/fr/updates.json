@@ -17,8 +17,9 @@
   "openReleasePage": "Ouvrir la page de la version",
   "notConfigured": "Les mises à jour sont désactivées dans cette version : elle n'a pas de clé de signature des mises à jour (plugins.updater.pubkey dans src-tauri/tauri.conf.json). Téléchargez les nouvelles versions depuis la page des versions.",
   "manual": {
-    "deb": "Sextant a été installé depuis un paquet .deb et ne peut donc pas se remplacer lui-même. Téléchargez le nouveau .deb depuis la page de la version et installez-le avec votre gestionnaire de paquets, par exemple : sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "deb": "Sextant a été installé depuis un paquet .deb et ne peut donc pas se remplacer lui-même. Téléchargez le nouveau .deb depuis la page de la version et installez-le avec votre gestionnaire de paquets, par exemple : sudo apt install ./{{file}}",
     "rpm": "Sextant a été installé depuis un paquet .rpm et ne peut donc pas se remplacer lui-même. Téléchargez le nouveau paquet depuis la page de la version et installez-le avec votre gestionnaire de paquets.",
+    "scoop": "Sextant a été installé avec Scoop et ne peut donc pas se remplacer lui-même. Mettez-le à jour avec Scoop : scoop update sextant",
     "other": "Cette copie de Sextant n'a pas été installée depuis un paquet de version (AppImage, .dmg ou .msi) et ne peut donc pas se mettre à jour elle-même. Téléchargez la nouvelle version depuis la page des versions."
   },
   "error": {

@@ -1,4 +1,6 @@
 // "Copy namespace/name" (#229): the text, where it is offered, the confirmation and Ctrl+C on a table row.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type KindRef, type KubeObject, type MockBackend } from "../../api";
@@ -7,6 +9,7 @@ import { ResourceTable } from "../../components/Table";
 import { getResourceDef } from "../../resources/registry";
 import { axeViolations } from "../../test/axe";
 import { getAction, getActionsFor, runAction } from "../actions/registry";
+import { isCopyKey } from "../../components/Table/ResourceTable";
 import { CopyToast } from "./CopyToast";
 import "./index";
 import { MAX_SHOWN_CHARS, nameOf, namesText, shownName } from "./model";
@@ -117,16 +120,61 @@ describe("in a table", () => {
     web.focus();
     fireEvent.keyDown(web, { key: "c", ctrlKey: true });
     await waitFor(() => expect(clipboard).toEqual(["demo/web"]));
+    // On a non-Latin layout the key is another letter; the physical key decides (Cyrillic "с" on KeyC).
+    fireEvent.keyDown(web, { key: "с", code: "KeyC", ctrlKey: true });
+    await waitFor(() => expect(clipboard).toEqual(["demo/web", "demo/web"]));
+    clipboard.length = 0;
+    writeText.mockClear();
     // Ctrl+Shift+C and plain "c" do nothing.
     fireEvent.keyDown(web, { key: "C", ctrlKey: true, shiftKey: true });
     fireEvent.keyDown(web, { key: "c" });
-    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(writeText).not.toHaveBeenCalled();
 
     // Both rows selected (Space): ⌘C copies both, one per line.
     for (const row of rows()) fireEvent.keyDown(row, { key: " " });
     fireEvent.keyDown(web, { key: "c", metaKey: true });
-    await waitFor(() => expect(clipboard).toHaveLength(2));
-    expect(clipboard[1]!.split("\n").sort()).toEqual(["demo/web", "prod/db"]);
+    await waitFor(() => expect(clipboard).toHaveLength(1));
+    expect(clipboard[0]!.split("\n").sort()).toEqual(["demo/web", "prod/db"]);
     expect(within(screen.getByRole("status")).getByText("Copied 2 names, one per line")).toBeInTheDocument();
+  });
+});
+
+describe("the copy key", () => {
+  it("is Ctrl+C or ⌘C by the letter or by the physical key, never with Shift or Alt", () => {
+    const key = (init: Partial<KeyboardEvent>) =>
+      isCopyKey({ key: "", code: "", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...init });
+    expect(key({ key: "c", code: "KeyC", ctrlKey: true })).toBe(true);
+    expect(key({ key: "C", code: "KeyC", metaKey: true })).toBe(true);
+    expect(key({ key: "с", code: "KeyC", ctrlKey: true })).toBe(true);
+    expect(key({ key: "c", code: "KeyC" })).toBe(false);
+    expect(key({ key: "c", code: "KeyC", ctrlKey: true, shiftKey: true })).toBe(false);
+    expect(key({ key: "c", code: "KeyC", ctrlKey: true, altKey: true })).toBe(false);
+    expect(key({ key: "v", code: "KeyV", ctrlKey: true })).toBe(false);
+  });
+});
+
+describe("in a narrow window", () => {
+  it("the confirmation stays visible and announced inside the closed drawer", async () => {
+    const style = document.createElement("style");
+    // The stylesheets themselves (vitest leaves CSS imports out): the drawer's rule and the toast's.
+    style.textContent = ["src/layout/layout.css", "src/features/copy-name/copyName.css"]
+      .map((file) => readFileSync(join(process.cwd(), file), "utf8"))
+      .join("\n");
+    document.head.append(style);
+    try {
+      render(
+        <div className="drawer">
+          <CopyToast />
+        </div>,
+      );
+      await act(() => runAction(getAction("copyName")!, "c1", NODE, [obj(NODE, "node-a")]));
+      const status = screen.getByRole("status");
+      expect(getComputedStyle(status.closest(".drawer")!).visibility).toBe("hidden");
+      expect(getComputedStyle(status).visibility).toBe("visible");
+      expect(getComputedStyle(status.firstElementChild!).visibility).toBe("visible");
+      expect(status).toHaveTextContent("Copied node-a");
+    } finally {
+      style.remove();
+    }
   });
 });

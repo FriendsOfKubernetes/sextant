@@ -847,9 +847,12 @@ export function rowKeyTarget(key: string, from: number, last: number, page: numb
 /** The actions Ctrl+C / ⌘C on a row runs (features/copy-name), whichever applies to the kind. */
 const COPY_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>(["copyNamespacedName", "copyName"]);
 
-/** Ctrl+C, or ⌘C on macOS, without other modifiers (Ctrl+Shift+C stays the terminal's). */
-export function isCopyKey(e: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">): boolean {
-  return (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "c";
+/**
+ * Ctrl+C, or ⌘C on macOS, without other modifiers (Ctrl+Shift+C stays the terminal's). `code` too: on a non-Latin
+ * layout `key` is another letter (Cyrillic "с"), as in the palette's shortcut.
+ */
+export function isCopyKey(e: Pick<KeyboardEvent, "key" | "code" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">): boolean {
+  return (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key.toLowerCase() === "c" || e.code === "KeyC");
 }
 
 function formatValue(value: ReturnType<ColumnDef["value"]>): string {

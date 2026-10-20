@@ -19,6 +19,7 @@
     "appimage": "AppImage",
     "deb": ".deb paketi",
     "rpm": ".rpm paketi",
+    "scoop": "Scoop (taşınabilir .zip)",
     "app": "macOS uygulaması (.dmg)",
     "msi": "Windows yükleyicisi (.msi)",
     "nsis": "Windows yükleyicisi (NSIS)",

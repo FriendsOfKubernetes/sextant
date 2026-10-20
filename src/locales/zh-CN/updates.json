@@ -17,8 +17,9 @@
   "openReleasePage": "打开发布页面",
   "notConfigured": "此版本已关闭更新：它没有更新签名密钥（src-tauri/tauri.conf.json 中的 plugins.updater.pubkey）。请从发布页面下载新版本。",
   "manual": {
-    "deb": "Sextant 是通过 .deb 软件包安装的，因此不会自行替换。请从发布页面下载新的 .deb 包，并使用软件包管理器安装，例如：sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "deb": "Sextant 是通过 .deb 软件包安装的，因此不会自行替换。请从发布页面下载新的 .deb 包，并使用软件包管理器安装，例如：sudo apt install ./{{file}}",
     "rpm": "Sextant 是通过 .rpm 软件包安装的，因此不会自行替换。请从发布页面下载新的软件包，并使用软件包管理器安装。",
+    "scoop": "Sextant 是通过 Scoop 安装的，因此不会自行替换。请使用 Scoop 更新：scoop update sextant",
     "other": "此 Sextant 副本并非通过发布包（AppImage、.dmg 或 .msi）安装，因此无法自行更新。请从发布页面下载新版本。"
   },
   "error": {

@@ -3,8 +3,11 @@
 import { toApiError } from "./errors";
 import { currentTransport } from "./transport";
 
-/** How this copy of Sextant was installed (Tauri's bundle type); `null` for a build that is not a release package. */
-export type BundleKind = "appimage" | "deb" | "rpm" | "app" | "msi" | "nsis";
+/**
+ * How this copy of Sextant was installed: Tauri's bundle type, or `scoop` — the portable zip that Scoop installs
+ * (ADR-0104), which Tauri reports as no bundle; `null` for a build that is not a release package.
+ */
+export type BundleKind = "appimage" | "deb" | "rpm" | "app" | "msi" | "nsis" | "scoop";
 
 export interface AppInfo {
   /** Version of the running application, e.g. `0.2.0`. */
@@ -14,19 +17,28 @@ export interface AppInfo {
   devBuild: boolean;
 }
 
+/** The kinds Tauri itself reports (`scoop` is never one of them). */
 const BUNDLE_KINDS: readonly string[] = ["appimage", "deb", "rpm", "app", "msi", "nsis"] satisfies BundleKind[];
 const APP_RESOURCES = /\.app\/Contents\/Resources\/?$/;
+/**
+ * Scoop's layout: `<scoop>\apps\sextant\<version>\sextant.exe`, run through the `current` junction (also a global
+ * install under `C:\ProgramData\scoop`). On Windows the resource directory is the executable's directory.
+ */
+const SCOOP_APP_DIR = /\\apps\\sextant\\[^\\]+\\?$/i;
 
 /**
  * The bundle kind of the running copy, from what Tauri reports (`getBundleType()`) and its resource directory.
  * Tauri reports `app` on macOS for every binary it did not patch at bundling, so `tauri dev` and a bare
  * `--no-bundle` build would pass for an installed app: `app` counts only when the resources resolve inside
  * `<name>.app/Contents/Resources`, i.e. the executable runs from `<name>.app/Contents/MacOS/`. The resource
- * directory is the directory of the executable for a Cargo output directory, and unresolvable for a binary
- * copied elsewhere (`null` here).
+ * directory is the directory of the executable for a Cargo output directory and on Windows, and unresolvable for a
+ * binary copied elsewhere (`null` here). An executable Tauri reports as no bundle that runs from Scoop's app
+ * directory is the Scoop copy (`scoop`): Scoop updates it, never the in-app updater.
  */
 export function installedBundleKind(reported: unknown, resourceDir: string | null): BundleKind | null {
-  if (typeof reported !== "string" || !BUNDLE_KINDS.includes(reported)) return null;
+  if (typeof reported !== "string" || !BUNDLE_KINDS.includes(reported)) {
+    return SCOOP_APP_DIR.test(resourceDir ?? "") ? "scoop" : null;
+  }
   if (reported === "app" && !APP_RESOURCES.test(resourceDir ?? "")) return null;
   return reported as BundleKind;
 }

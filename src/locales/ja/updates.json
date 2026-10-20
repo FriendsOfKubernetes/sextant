@@ -17,8 +17,9 @@
   "openReleasePage": "リリースページを開く",
   "notConfigured": "このビルドではアップデートが無効です。アップデートの署名鍵 (src-tauri/tauri.conf.json の plugins.updater.pubkey) がありません。新しいバージョンはリリースページからダウンロードしてください。",
   "manual": {
-    "deb": "Sextant は .deb パッケージからインストールされているため、自身を置き換えることはできません。リリースページから新しい .deb をダウンロードし、パッケージマネージャーでインストールしてください。例: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "deb": "Sextant は .deb パッケージからインストールされているため、自身を置き換えることはできません。リリースページから新しい .deb をダウンロードし、パッケージマネージャーでインストールしてください。例: sudo apt install ./{{file}}",
     "rpm": "Sextant は .rpm パッケージからインストールされているため、自身を置き換えることはできません。リリースページから新しいパッケージをダウンロードし、パッケージマネージャーでインストールしてください。",
+    "scoop": "Sextant は Scoop でインストールされているため、自身を置き換えることはできません。Scoop で更新してください: scoop update sextant",
     "other": "この Sextant はリリースパッケージ (AppImage、.dmg、.msi) からインストールされていないため、自動でアップデートできません。新しいバージョンはリリースページからダウンロードしてください。"
   },
   "error": {

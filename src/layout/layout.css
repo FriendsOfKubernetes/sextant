@@ -485,8 +485,11 @@
   }
 }
 
+/* The confirmation of a copy (features/copy-name) lives in the rail's footer: it shows and is announced while the
+   drawer is closed too. */
 .drawer .dialog-backdrop,
-.drawer .cluster-menu {
+.drawer .cluster-menu,
+.drawer .copy-toast {
   visibility: visible;
 }
 

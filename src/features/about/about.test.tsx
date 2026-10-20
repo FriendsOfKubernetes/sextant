@@ -112,6 +112,7 @@ describe("what it shows", () => {
     [{ bundleKind: null, devBuild: true }, "development build"],
     [{ bundleKind: null, devBuild: false }, "not installed from a release package"],
     [{ bundleKind: "deb" as const, devBuild: false }, ".deb package"],
+    [{ bundleKind: "scoop" as const, devBuild: false }, "Scoop (portable .zip)"],
   ])("tells how it was installed: %j", async (app, text) => {
     setup({}, { app });
     render(<AboutHost />);

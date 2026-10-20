@@ -9,13 +9,20 @@
 # In-app updates: `bundle.createUpdaterArtifacts` makes the build sign the AppImage, the macOS .app.tar.gz and the
 # .msi with the updater key (secrets TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD; the public
 # half is `plugins.updater.pubkey` in src-tauri/tauri.conf.json). tauri-action uploads the .sig files and, while the
-# release is a draft, merges every platform into the release asset `latest.json`; the publish job checks that all
-# platforms are there, takes every signature from the .sig assets, puts the release notes into it and only then
+# release is a draft, merges every platform into the release asset `latest.json`; the publish job
+# (`node scripts/packaging.mjs latest-json`) checks every entry against the release's assets, takes every signature
+# from the .sig assets, rebuilds the entries that build jobs finishing together overwrote from the assets and their
+# .sig, fails only when a required platform has no signed asset, puts the release notes into it and only then
 # publishes. The notes list the closed issues of the milestone named like the tag (v0.2.0). A rebuild of an older
 # tag does not become the "latest" release. Installed apps read
 # https://github.com/<repo>/releases/latest/download/latest.json, so an update reaches them once it is published.
 #
 # To rebuild the release of an already pushed tag without moving it: Actions -> Release -> Run workflow, input `tag`.
+# Prefer running the tag's own workflow: gh workflow run release.yml --ref vX.Y.Z -f tag=vX.Y.Z (its jobs, scripts and
+# checks are the ones the tag was released with). Run from main for an older tag, this workflow builds what that
+# checkout knows: a tag without scripts/packaging.mjs (before ADR-0104) is built as it was then — no arm64 row, no
+# .rpm, no portable zip, no package-manager manifests, and the publish job requires only linux-x86_64, darwin-x86_64,
+# darwin-aarch64 and windows-x86_64. The publish job's own script always comes from this workflow's commit.
 # A rebuild of an already published release does not let the build jobs touch its latest.json (they would put
 # stale darwin signatures into it): the publish job refreshes the published one and swaps it in under a temporary
 # name, so installed apps never find the release without a manifest.
@@ -41,7 +48,8 @@
 # when its secret exists, and none of them can fail the release (it is already published):
 #   TAP_GITHUB_TOKEN    -> commits Casks/sextant.rb to FriendsOfKubernetes/homebrew-sextant
 #   BUCKET_GITHUB_TOKEN -> commits bucket/sextant.json to FriendsOfKubernetes/scoop-sextant
-#   WINGET_GITHUB_TOKEN -> wingetcreate opens a pull request with the manifests in microsoft/winget-pkgs
+#   WINGET_GITHUB_TOKEN -> wingetcreate (a pinned release, its SHA-256 checked) opens a pull request with the
+#                          manifests in microsoft/winget-pkgs
 # Only a release that became "latest" with a plain vX.Y.Z tag goes to package managers. A dry run renders the
 # manifests from its own bundles (the artifact) and sends nothing anywhere.
 #
@@ -87,6 +95,9 @@ jobs:
       release-id: ${{ steps.create.outputs.release-id }}
       # "true" when the release was already published (a rebuild): then only the publish job writes latest.json.
       published: ${{ steps.create.outputs.published }}
+      # "true" when the checkout has ADR-0104's layout (scripts/packaging.mjs): arm64, .rpm, the portable zip and the
+      # package-manager manifests. An older tag rebuilt by this workflow is built as it was then.
+      packaging: ${{ steps.layout.outputs.packaging }}
     steps:
       - name: Choose the commit to build
         id: ref
@@ -118,6 +129,16 @@ jobs:
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: node scripts/check-version.mjs --tag "$TAG"
+      - name: Tell which release layout the checkout has
+        id: layout
+        run: |
+          if [ -f scripts/packaging.mjs ]; then
+            packaging=true
+          else
+            packaging=false
+            echo "::notice::This checkout predates ADR-0104: no arm64, .rpm, portable zip or package-manager manifests"
+          fi
+          echo "packaging=$packaging" >> "$GITHUB_OUTPUT"
       # A dry run touches no release: release-id and published stay empty.
       - name: Find or create the draft release and output its id
         if: ${{ !inputs.dry_run }}
@@ -215,6 +236,8 @@ jobs:
           - name: linux
             os: ubuntu-22.04
             args: --bundles deb,rpm,appimage
+            # A checkout from before ADR-0104 has no rpm dependencies configured: built as it was then.
+            legacy-args: --bundles deb,appimage
             bundles: |
               target/release/bundle/deb/*.deb*
               target/release/bundle/rpm/*.rpm*
@@ -235,34 +258,50 @@ jobs:
               target/release/bundle/msi/*.msi*
               target/release/bundle/portable/*.zip
     runs-on: ${{ matrix.os }}
+    env:
+      # The arm64 row builds only a checkout with ADR-0104's layout; on an older tag its steps are skipped.
+      BUILD: ${{ matrix.name != 'linux-arm64' || needs.create-release.outputs.packaging == 'true' }}
+      PACKAGING: ${{ needs.create-release.outputs.packaging }}
     steps:
+      - name: Skip the arm64 row (a tag from before ADR-0104)
+        if: env.BUILD != 'true'
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: echo "::notice::$TAG predates the linux-arm64 builds of ADR-0104; nothing is built here"
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        if: env.BUILD == 'true'
         with:
           ref: ${{ needs.create-release.outputs.ref }}
 
       - name: Install Linux system dependencies
-        if: runner.os == 'Linux'
+        if: env.BUILD == 'true' && runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libxdo-dev libssl-dev build-essential file patchelf
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        if: env.BUILD == 'true'
         with:
           node-version: 24
           cache: npm
 
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (branch head on 2026-10-12)
+        if: env.BUILD == 'true'
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        if: env.BUILD == 'true'
         with:
           key: release-${{ matrix.name }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install npm packages
+        if: env.BUILD == 'true'
         run: npm ci
 
       - name: Build installers and upload them to the release
+        if: env.BUILD == 'true'
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -274,7 +313,7 @@ jobs:
           releaseId: ${{ !inputs.dry_run && needs.create-release.outputs.release-id || '' }}
           # Only names the tag in the download URLs of latest.json (a draft's asset URLs are "untagged-…").
           tagName: ${{ !inputs.dry_run && (inputs.tag || github.ref_name) || '' }}
-          args: ${{ matrix.args }}
+          args: ${{ env.PACKAGING != 'true' && matrix.legacy-args || matrix.args }}
           # The .sig files are uploaded either way. A draft: add this platform to the release asset latest.json.
           # A published release (a rebuild): leave its latest.json, which installed apps read, to the publish job;
           # tauri-action would keep the old darwin entries and re-upload it with stale signatures.
@@ -284,26 +323,33 @@ jobs:
 
       # Scoop installs this zip (ADR-0104). The bundler patches the bundle kind into the executable it packs and puts
       # the plain one back, so target/release/sextant.exe says "no bundle": a Scoop copy is updated by Scoop and never
-      # runs the .msi updater into Program Files. check-unbundled fails if that ever stops being true.
+      # runs the .msi updater into Program Files. If check-unbundled ever finds it patched, no zip is made (a
+      # warning): the release goes out without it and the packages job leaves the Scoop manifest out. A checkout
+      # from before ADR-0104 has no scripts/packaging.mjs and gets no zip.
       - name: Pack the portable zip (Windows)
-        if: matrix.name == 'windows'
+        id: pack
+        if: matrix.name == 'windows' && env.PACKAGING == 'true' && hashFiles('scripts/packaging.mjs') != ''
         shell: pwsh
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           $ErrorActionPreference = 'Stop'
           node scripts/packaging.mjs check-unbundled target/release/sextant.exe
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Output "::warning::target/release/sextant.exe is patched for an installer: no portable zip for $env:TAG, so Scoop is not updated"
+            exit 0
+          }
           $version = $env:TAG.Substring(1)
           New-Item -ItemType Directory -Force -Path target/release/bundle/portable | Out-Null
           $zip = "target/release/bundle/portable/Sextant_${version}_x64_portable.zip"
           Remove-Item -Force -ErrorAction SilentlyContinue $zip
           Compress-Archive -Path target/release/sextant.exe -DestinationPath $zip
           Get-Item $zip | Format-List Name, Length
+          "packed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       # Like tauri-action's uploads: a rebuild replaces the asset of the same name.
       - name: Upload the portable zip to the release (Windows)
-        if: ${{ matrix.name == 'windows' && !inputs.dry_run }}
+        if: ${{ matrix.name == 'windows' && !inputs.dry_run && steps.pack.outputs.packed == 'true' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -330,7 +376,7 @@ jobs:
           echo "Uploaded $name as asset $id"
 
       - name: Keep the bundles as a workflow artifact (dry run)
-        if: ${{ inputs.dry_run }}
+        if: ${{ inputs.dry_run && env.BUILD == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bundles-${{ matrix.name }}
@@ -481,105 +527,67 @@ jobs:
       # "true" when this release became the latest one (then package managers may get it).
       latest: ${{ steps.publish.outputs.latest }}
     steps:
+      # The script of this workflow's own commit (the tag's for a tag push, the branch head for a dispatched run), so a
+      # rebuild of an older tag from main still runs the checks this file describes.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          sparse-checkout: scripts
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+
       # The build jobs of a draft merge latest.json one after another and may overwrite each other when they finish
-      # together; an update manifest without a platform would leave that platform without updates, so check before
-      # publishing. A rebuild of a published release re-uploads the bundles and their .sig files but not latest.json,
-      # and tauri-action keeps the darwin entries of an old latest.json anyway ("don't overwrite native builds"), so
-      # every signature is taken again from the .sig asset of the file its url names. tauri-action writes no notes
-      # into it: take them from the release body. The new manifest goes up as latest.json.new, the old asset is
-      # deleted and the new one renamed, so a published release is without latest.json only between two API calls.
+      # together; an update manifest without a platform would leave that platform without updates. A rebuild of a
+      # published release re-uploads the bundles and their .sig files but not latest.json, and tauri-action keeps the
+      # darwin entries of an old latest.json anyway ("don't overwrite native builds"). So `latest-json` checks every
+      # entry against the release's assets, takes every signature again from the .sig asset of the file its url
+      # names, rebuilds every entry an asset gives but latest.json lacks from that asset and its .sig (url: the
+      # tagged download URL, as tauri-action writes it), and fails only when a required platform has no signed asset
+      # (full: both Linux arches with -deb/-rpm, macOS, Windows; legacy, a tag from before ADR-0104: the four
+      # platforms it always had). tauri-action writes no notes into it: they come from the release body. The new
+      # manifest goes up as latest.json.new, the old asset is deleted and the new one renamed, so a published release
+      # is without latest.json only between two API calls.
       - name: Check latest.json, refresh its signatures and put the release notes into it
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.create-release.outputs.release-id }}
           PUBLISHED: ${{ needs.create-release.outputs.published }}
+          PLATFORMS: ${{ needs.create-release.outputs.packaging == 'true' && 'full' || 'legacy' }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
           api="repos/$GITHUB_REPOSITORY/releases"
 
-          assets=$(gh api "$api/$RELEASE_ID/assets?per_page=100")
-          find_asset() { jq -r --arg n "$1" '.[] | select(.name == $n) | .id' <<<"$assets"; }
+          gh api --paginate "$api/$RELEASE_ID/assets?per_page=100" --jq '.[]' | jq -s . > assets.json
+          find_asset() { jq -r --arg n "$1" '.[] | select(.name == $n) | .id' assets.json; }
+
+          # Every .sig asset, for the signatures (names checked before they become file names).
+          mkdir -p sigs
+          while read -r id name; do
+            [ -n "$id" ] || continue
+            if ! [[ "$id" =~ ^[0-9]+$ && "$name" =~ ^[A-Za-z0-9._+-]+\.sig$ ]]; then
+              echo "::error::Unexpected signature asset '$name' ($id)"
+              exit 1
+            fi
+            gh api -H "Accept: application/octet-stream" "$api/assets/$id" > "sigs/$name"
+          done < <(jq -r '.[] | select(.name | endswith(".sig")) | "\(.id) \(.name)"' assets.json)
 
           # A run that stopped between deleting latest.json and renaming its replacement left only latest.json.new:
-          # then that one is the manifest to start from.
+          # then that one is the manifest to start from. Without either, latest-json builds it from the assets.
           asset_id=$(find_asset latest.json)
           leftover_id=$(find_asset latest.json.new)
           source_id=${asset_id:-$leftover_id}
-          if [ -z "$source_id" ]; then
-            if [ "$PUBLISHED" = true ]; then
-              echo "::error::The published release has no latest.json to refresh: turn it back into a draft and run the release again, so the builds write a new one"
-            else
-              echo "::error::The release has no latest.json: the updater artifacts were not signed or uploaded"
-            fi
-            exit 1
+          rm -f latest.json
+          if [ -n "$source_id" ]; then
+            gh api -H "Accept: application/octet-stream" "$api/assets/$source_id" > latest.json
           fi
-          gh api -H "Accept: application/octet-stream" "$api/assets/$source_id" > latest.json
-
-          version=$(jq -r '.version // ""' latest.json)
-          if [ "v$version" != "$TAG" ]; then
-            echo "::error::latest.json is for version '$version', not for $TAG"
-            exit 1
-          fi
-
-          # Every platform an installed copy may ask for: the AppImage keys (linux-<arch>), the .deb and .rpm keys
-          # (no in-app install, but the bundles' signatures), macOS and Windows.
-          missing=$(jq -r '[ "linux-x86_64", "linux-x86_64-deb", "linux-x86_64-rpm",
-              "linux-aarch64", "linux-aarch64-deb", "linux-aarch64-rpm",
-              "darwin-x86_64", "darwin-aarch64", "windows-x86_64" ][] as $p
-            | select((.platforms[$p].url // "") == "" or (.platforms[$p].signature // "") == "") | $p' latest.json)
-          if [ -n "$missing" ]; then
-            echo "::error::latest.json lacks platforms: $(echo "$missing" | tr '\n' ' ')- re-run the failed build jobs"
-            cat latest.json
-            exit 1
-          fi
-
-          stray=$(jq -r --arg dir "/releases/download/$TAG/" \
-            '.platforms | to_entries[] | select(.value.url | contains($dir) | not) | "\(.key): \(.value.url)"' latest.json)
-          if [ -n "$stray" ]; then
-            echo "::error::latest.json links files outside the release $TAG:"
-            echo "$stray"
-            exit 1
-          fi
-
-          mapfile -t platforms < <(jq -r '.platforms | keys[]' latest.json)
-          for p in "${platforms[@]}"; do
-            url=$(jq -r --arg p "$p" '.platforms[$p].url' latest.json)
-            file=${url##*/}
-            case "$p" in
-              *-deb) want=.deb ;;
-              *-rpm) want=.rpm ;;
-              *-nsis) want=-setup.exe ;;
-              linux-*) want=.AppImage ;;
-              darwin-*) want=.app.tar.gz ;;
-              windows-*) want=.msi ;;
-              *) want="" ;;
-            esac
-            if [ -z "$want" ] || [[ "$file" != *"$want" ]]; then
-              echo "::error::latest.json: $p links $file, expected a *${want:-<known bundle>} file"
-              exit 1
-            fi
-            if [ -z "$(find_asset "$file")" ]; then
-              echo "::error::latest.json: $p links $file, which is not an asset of the release"
-              exit 1
-            fi
-            sig_id=$(find_asset "$file.sig")
-            if [ -z "$sig_id" ]; then
-              echo "::error::latest.json: $p: the release has no $file.sig"
-              exit 1
-            fi
-            gh api -H "Accept: application/octet-stream" "$api/assets/$sig_id" > signature.txt
-            if [ "$(jq -r --arg p "$p" '.platforms[$p].signature' latest.json)" != "$(cat signature.txt)" ]; then
-              echo "::notice::latest.json: $p had a stale signature, replaced with $file.sig of this release"
-            fi
-            jq --arg p "$p" --rawfile sig signature.txt '.platforms[$p].signature = $sig' latest.json > latest.tmp.json
-            mv latest.tmp.json latest.json
-          done
 
           # The notes from the release body; a rebuild also dates the manifest by its new bundles.
           gh api "$api/$RELEASE_ID" --jq '.body // ""' > notes.md
-          jq --rawfile notes notes.md --argjson rebuild "$PUBLISHED" --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '.notes = $notes | if $rebuild then .pub_date = $now else . end' latest.json > latest.new.json
+          node scripts/packaging.mjs latest-json --tag "$TAG" --repo "$GITHUB_REPOSITORY" --assets assets.json \
+            --sigs sigs --manifest latest.json --platforms "$PLATFORMS" --notes notes.md --published "$PUBLISHED" \
+            --out latest.new.json
 
           # Upload under a temporary name, delete the old asset, rename the new one (asset names are unique within
           # a release, so the old one has to go first). A leftover latest.json.new of a stopped run is replaced.
@@ -612,7 +620,6 @@ jobs:
             echo "::error::The release has latest.json.new but no latest.json: re-run this job, it takes latest.json.new up again"
             exit 1
           fi
-          echo "latest.json: version $(jq -r .version latest.new.json), platforms $(jq -r '.platforms | keys | join(", ")' latest.new.json)"
 
       # Installed apps update from the "latest" release: a rebuild of an older tag must not take that place.
       - name: Publish (no longer a draft; latest only if no newer release is)
@@ -653,10 +660,14 @@ jobs:
   packages:
     name: Package-manager manifests
     needs: [create-release, build, build-macos, publish]
+    # A tag from before ADR-0104 has no templates, no portable zip and no packaging script: nothing to render.
     if: >-
       ${{ !cancelled() && needs.build.result == 'success' && needs.build-macos.result == 'success'
-      && (inputs.dry_run || needs.publish.result == 'success') }}
+      && (inputs.dry_run || needs.publish.result == 'success') && needs.create-release.outputs.packaging == 'true' }}
     runs-on: ubuntu-latest
+    # Reads the release; the pushes use their own tokens (secrets), never this one.
+    permissions:
+      contents: read
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     outputs:
@@ -699,8 +710,12 @@ jobs:
             ship=false
             if [ "$LATEST" = true ] && [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then ship=true; fi
           fi
-          echo "Package managers get $TAG: $ship"
+          # Without the portable zip (the Windows job skipped it) there is no Scoop manifest to push.
+          scoop=false
+          if [ -f "$out/scoop/bucket/sextant.json" ]; then scoop=true; fi
+          echo "Package managers get $TAG: $ship (Scoop: $scoop)"
           echo "ship=$ship" >> "$GITHUB_OUTPUT"
+          echo "scoop=$scoop" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -721,7 +736,7 @@ jobs:
         run: bash packaging/push-manifest.sh
 
       - name: Update the Scoop bucket
-        if: ${{ steps.render.outputs.ship == 'true' }}
+        if: ${{ steps.render.outputs.ship == 'true' && steps.render.outputs.scoop == 'true' }}
         continue-on-error: true
         env:
           TOKEN: ${{ secrets.BUCKET_GITHUB_TOKEN }}
@@ -738,6 +753,14 @@ jobs:
     if: ${{ !cancelled() && needs.packages.outputs.ship == 'true' }}
     runs-on: windows-latest
     continue-on-error: true
+    # The pull request is opened with WINGET_GITHUB_TOKEN; this job needs nothing of the workflow's token.
+    permissions: {}
+    env:
+      # A pinned wingetcreate (https://github.com/microsoft/winget-create/releases/tag/v1.12.13.0). The SHA-256 is the
+      # one Microsoft publishes beside the asset (wingetcreate.exe.txt) and GitHub's digest of wingetcreate.exe; a
+      # newer release is taken by changing both lines from that release's page.
+      WINGETCREATE_URL: https://github.com/microsoft/winget-create/releases/download/v1.12.13.0/wingetcreate.exe
+      WINGETCREATE_SHA256: 24042BD37915805615E6CF969AC57C6439124C3FE85823327F5F3FB24BD9FFEA
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -756,6 +779,11 @@ jobs:
           if (-not $env:WINGET_CREATE_GITHUB_TOKEN) { Write-Output "No WINGET_GITHUB_TOKEN: skipped"; exit 0 }
           $version = $env:TAG.Substring(1)
           $manifests = Join-Path $env:PACKAGES "winget/manifests/f/FriendsOfKubernetes/Sextant/$version"
-          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          Invoke-WebRequest -Uri $env:WINGETCREATE_URL -OutFile wingetcreate.exe
+          $hash = (Get-FileHash -Algorithm SHA256 wingetcreate.exe).Hash
+          if ($hash -ne $env:WINGETCREATE_SHA256) {
+            Write-Output "::error::wingetcreate.exe has SHA-256 $hash, expected $env:WINGETCREATE_SHA256: not run"
+            exit 1
+          }
           .\wingetcreate.exe submit --no-open --prtitle "New version: FriendsOfKubernetes.Sextant version $version" $manifests
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -1,13 +1,39 @@
 // What a found update looks like in Settings and in the dialog at start: version, release notes, and either
-// "Install and restart" or, for a copy that cannot replace itself (.deb, .rpm, a bare binary), how to update by hand.
+// "Install and restart" or, for a copy that cannot replace itself (.deb, .rpm, Scoop, a bare binary), how to update
+// by hand.
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, RELEASES_URL, type AppInfo, type AvailableUpdate } from "../../api";
+import { api, RELEASES_URL, type AppInfo, type AvailableUpdate, type BundleKind } from "../../api";
 import { Button, ErrorState } from "../../components";
-import { canInstall, installUpdate, type UpdateFailure, type UpdatesState } from "./store";
+import { canInstall, debFileName, installUpdate, type UpdateFailure, type UpdatesState } from "./store";
+
+const MANUAL_KEYS: Partial<Record<BundleKind, string>> = {
+  deb: "updates:manual.deb",
+  rpm: "updates:manual.rpm",
+  scoop: "updates:manual.scoop",
+};
+
+/** The machine's architecture as `about_info` reports it (`x86_64`, `aarch64`), only while `wanted`. */
+function useArch(wanted: boolean): string | null {
+  const [arch, setArch] = useState<string | null>(null);
+  useEffect(() => {
+    if (!wanted) return;
+    let live = true;
+    api.about
+      .info()
+      .then((info) => live && setArch(info.arch))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [wanted]);
+  return arch;
+}
 
 export function UpdateDetails({ update, info, state }: { update: AvailableUpdate; info: AppInfo | null; state: UpdatesState }) {
   const { t } = useTranslation();
   const kind = info?.bundleKind ?? null;
+  const arch = useArch(kind === "deb");
   const busy = state.phase === "installing" || state.phase === "restarting";
   const notes = update.notes?.trim();
 
@@ -45,8 +71,9 @@ export function UpdateDetails({ update, info, state }: { update: AvailableUpdate
       ) : (
         <>
           <p className="updates__hint">
-            {t(kind === "deb" ? "updates:manual.deb" : kind === "rpm" ? "updates:manual.rpm" : "updates:manual.other", {
+            {t((kind && MANUAL_KEYS[kind]) ?? "updates:manual.other", {
               version: update.version,
+              file: debFileName(update.version, arch),
             })}
           </p>
           <ReleasePageButton />

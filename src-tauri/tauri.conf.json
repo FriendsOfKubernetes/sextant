@@ -44,6 +44,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "windows": {
+      "wix": {
+        "upgradeCode": "f2b05806-dabf-521c-add8-bda0f7263eb3"
+      }
+    },
     "linux": {
       "deb": {
         "section": "devel"

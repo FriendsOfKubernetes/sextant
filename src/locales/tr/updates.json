@@ -17,8 +17,9 @@
   "openReleasePage": "Sürüm sayfasını aç",
   "notConfigured": "Bu derlemede güncellemeler kapalı: güncelleme imzalama anahtarı yok (src-tauri/tauri.conf.json içinde plugins.updater.pubkey). Yeni sürümleri sürüm sayfasından indirin.",
   "manual": {
-    "deb": "Sextant bir .deb paketinden yüklendiği için kendini güncelleyemez. Yeni .deb paketini sürüm sayfasından indirin ve paket yöneticinizle yükleyin, örneğin: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "deb": "Sextant bir .deb paketinden yüklendiği için kendini güncelleyemez. Yeni .deb paketini sürüm sayfasından indirin ve paket yöneticinizle yükleyin, örneğin: sudo apt install ./{{file}}",
     "rpm": "Sextant bir .rpm paketinden yüklendiği için kendini güncelleyemez. Yeni paketi sürüm sayfasından indirin ve paket yöneticinizle yükleyin.",
+    "scoop": "Sextant Scoop ile yüklendiği için kendini güncelleyemez. Scoop ile güncelleyin: scoop update sextant",
     "other": "Sextant'ın bu kopyası bir sürüm paketinden (AppImage, .dmg veya .msi) yüklenmediği için kendini güncelleyemez. Yeni sürümü sürüm sayfasından indirin."
   },
   "error": {

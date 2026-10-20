@@ -11,5 +11,11 @@ Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/{{repo}}/releases/download/v{{version}}/Sextant_{{version}}_x64_en-US.msi
     InstallerSha256: {{msiSha256Upper}}
+    # What the .msi registers in Apps & Features (scripts/packaging.mjs `msiIdentity`, as Tauri's bundler writes it):
+    # winget matches an installed copy by these, so an update is found however Sextant was installed from the .msi.
+    AppsAndFeaturesEntries:
+      - DisplayName: "{{msiProductName}}"
+        Publisher: "{{msiManufacturer}}"
+        UpgradeCode: "{{msiUpgradeCode}}"
 ManifestType: installer
 ManifestVersion: 1.6.0

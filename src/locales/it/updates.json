@@ -17,8 +17,9 @@
   "openReleasePage": "Apri la pagina della release",
   "notConfigured": "Gli aggiornamenti sono disattivati in questa build: manca la chiave di firma degli aggiornamenti (plugins.updater.pubkey in src-tauri/tauri.conf.json). Scarica le nuove versioni dalla pagina delle release.",
   "manual": {
-    "deb": "Sextant è stato installato da un pacchetto .deb, quindi non può sostituirsi da solo. Scarica il nuovo .deb dalla pagina della release e installalo con il gestore di pacchetti, ad esempio: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "deb": "Sextant è stato installato da un pacchetto .deb, quindi non può sostituirsi da solo. Scarica il nuovo .deb dalla pagina della release e installalo con il gestore di pacchetti, ad esempio: sudo apt install ./{{file}}",
     "rpm": "Sextant è stato installato da un pacchetto .rpm, quindi non può sostituirsi da solo. Scarica il nuovo pacchetto dalla pagina della release e installalo con il gestore di pacchetti.",
+    "scoop": "Sextant è stato installato con Scoop, quindi non può sostituirsi da solo. Aggiornalo con Scoop: scoop update sextant",
     "other": "Questa copia di Sextant non è stata installata da un pacchetto di release (AppImage, .dmg o .msi), quindi non può aggiornarsi da sola. Scarica la nuova versione dalla pagina delle release."
   },
   "error": {

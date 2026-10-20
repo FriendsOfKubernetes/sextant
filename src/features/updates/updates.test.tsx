@@ -14,6 +14,7 @@ import {
 import { resetAppStore } from "../../app/store";
 import { SettingsButton, SettingsContent, selectSettingsTab } from "../settings";
 import { resetUpdatesState } from "./index";
+import { canInstall, debFileName } from "./store";
 
 const NEWER: UpdateInfo = {
   version: "0.3.0",
@@ -155,15 +156,41 @@ describe("Settings: version and updates", () => {
   });
 
   it("tells a .deb install to update with the package manager instead of installing", async () => {
-    setup({}, { app: { bundleKind: "deb" } });
+    setup(
+      {
+        about_info: () => ({ os: "Linux", arch: "aarch64", osVersion: null, webviewVersion: null, tauriVersion: "2" }),
+      },
+      { app: { bundleKind: "deb" } },
+    );
     render(<SettingsContent />);
     const section = updatesSection();
     fireEvent.click(within(section).getByRole("button", { name: "Check for updates" }));
     await waitFor(() => expect(section).toHaveTextContent("Sextant 0.3.0 is available"));
     expect(section).toHaveTextContent("installed from a .deb package");
+    // The example names this machine's .deb (arm64 here), not always the amd64 one.
+    await waitFor(() => expect(section).toHaveTextContent("sudo apt install ./Sextant_0.3.0_arm64.deb"));
     expect(within(section).queryByRole("button", { name: "Install and restart" })).not.toBeInTheDocument();
     fireEvent.click(within(section).getByRole("button", { name: "Open the release page" }));
     await waitFor(() => expect(backend.openedUrls).toEqual([RELEASES_URL]));
+  });
+
+  it("tells Scoop's copy to update with Scoop", async () => {
+    setup({}, { app: { bundleKind: "scoop" } });
+    render(<SettingsContent />);
+    const section = updatesSection();
+    fireEvent.click(within(section).getByRole("button", { name: "Check for updates" }));
+    await waitFor(() => expect(section).toHaveTextContent("Sextant 0.3.0 is available"));
+    expect(section).toHaveTextContent("installed with Scoop");
+    expect(section).toHaveTextContent("scoop update sextant");
+    expect(within(section).queryByRole("button", { name: "Install and restart" })).not.toBeInTheDocument();
+  });
+
+  it("names the .deb of the machine's architecture, or a pattern when it is unknown", () => {
+    expect(debFileName("0.3.0", "x86_64")).toBe("Sextant_0.3.0_amd64.deb");
+    expect(debFileName("0.3.0", "aarch64")).toBe("Sextant_0.3.0_arm64.deb");
+    expect(debFileName("0.3.0", "riscv64")).toBe("Sextant_0.3.0_*.deb");
+    expect(debFileName("0.3.0", null)).toBe("Sextant_0.3.0_*.deb");
+    expect(canInstall("scoop")).toBe(false);
   });
 
   it("turns the check at start off and on", async () => {

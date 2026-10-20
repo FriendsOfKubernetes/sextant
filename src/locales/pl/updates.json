@@ -17,8 +17,9 @@
   "openReleasePage": "Otwórz stronę wydania",
   "notConfigured": "Aktualizacje są wyłączone w tej kompilacji: brak klucza podpisującego aktualizacje (plugins.updater.pubkey w src-tauri/tauri.conf.json). Nowe wersje można pobrać ze strony wydania.",
   "manual": {
-    "deb": "Sextant zainstalowano z pakietu .deb, więc nie aktualizuje się samodzielnie. Pobierz nowy pakiet .deb ze strony wydania i zainstaluj go menedżerem pakietów, na przykład: sudo apt install ./Sextant_{{version}}_amd64.deb",
+    "deb": "Sextant zainstalowano z pakietu .deb, więc nie aktualizuje się samodzielnie. Pobierz nowy pakiet .deb ze strony wydania i zainstaluj go menedżerem pakietów, na przykład: sudo apt install ./{{file}}",
     "rpm": "Sextant zainstalowano z pakietu .rpm, więc nie aktualizuje się samodzielnie. Pobierz nowy pakiet ze strony wydania i zainstaluj go menedżerem pakietów.",
+    "scoop": "Sextant zainstalowano przez Scoop, więc nie aktualizuje się samodzielnie. Zaktualizuj go przez Scoop: scoop update sextant",
     "other": "Ta kopia programu Sextant nie została zainstalowana z pakietu wydania (AppImage, .dmg lub .msi), więc nie może aktualizować się samodzielnie. Pobierz nową wersję ze strony wydania."
   },
   "error": {

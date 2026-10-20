@@ -19,6 +19,7 @@
     "appimage": "AppImage",
     "deb": "пакет .deb",
     "rpm": "пакет .rpm",
+    "scoop": "Scoop (портативний .zip)",
     "app": "застосунок macOS (.dmg)",
     "msi": "інсталятор Windows (.msi)",
     "nsis": "інсталятор Windows (NSIS)",

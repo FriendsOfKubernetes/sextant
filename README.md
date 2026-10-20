@@ -77,7 +77,8 @@ Download the installer from the [latest release](https://github.com/FriendsOfKub
 
 The installers are not code-signed, so macOS and Windows warn on first start — see
 [Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation). The AppImage, `.dmg` and `.msi`
-update themselves; `.deb`, `.rpm` and the portable `.zip` are updated with your package manager.
+update themselves; `.deb`, `.rpm` and the portable `.zip` (Scoop's: `scoop update sextant`) are updated with your
+package manager, and the app tells which when a new version is out.
 
 Package managers (coming soon):
 

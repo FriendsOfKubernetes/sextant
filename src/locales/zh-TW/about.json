@@ -19,6 +19,7 @@
     "appimage": "AppImage",
     "deb": ".deb 套件",
     "rpm": ".rpm 套件",
+    "scoop": "Scoop（可攜式 .zip）",
     "app": "macOS 應用程式 (.dmg)",
     "msi": "Windows 安裝程式 (.msi)",
     "nsis": "Windows 安裝程式 (NSIS)",

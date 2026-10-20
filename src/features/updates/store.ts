@@ -45,9 +45,20 @@ function setState(next: Partial<UpdatesState>): void {
   for (const fn of listeners) fn();
 }
 
-/** Bundles that the updater replaces in place; `.deb`/`.rpm` belong to the package manager. */
+/** Bundles that the updater replaces in place; `.deb`/`.rpm` and Scoop's copy belong to the package manager. */
 export function canInstall(kind: BundleKind | null): boolean {
   return kind === "appimage" || kind === "app" || kind === "msi" || kind === "nsis";
+}
+
+/** Debian's names of the architectures the release builds a .deb for, by Rust's names (`about_info`). */
+const DEB_ARCH: Record<string, string> = { x86_64: "amd64", aarch64: "arm64" };
+
+/**
+ * The release's .deb for this machine, as the bundler names it (`Sextant_0.19.0_arm64.deb`); with the architecture
+ * unknown (not read yet, or one the release has no .deb for) a shell pattern that matches the one downloaded.
+ */
+export function debFileName(version: string, arch: string | null): string {
+  return `Sextant_${version}_${(arch && DEB_ARCH[arch]) ?? "*"}.deb`;
 }
 
 /** Sorts an updater error (the plugins report plain text) into something to tell the user. */
