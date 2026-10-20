@@ -98,11 +98,6 @@ impl CompactObject {
     fn to_arc_value(&self) -> Arc<Value> {
         Arc::new(serde_json::from_str(&self.raw).unwrap_or_default())
     }
-
-    #[cfg(test)]
-    pub fn to_value(&self) -> Value {
-        serde_json::from_str(&self.raw).unwrap_or_default()
-    }
 }
 
 impl PartialEq for CompactObject {
