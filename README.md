@@ -99,6 +99,10 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace *(released)* | Saved views and workspaces, kubeconfig management |
 | [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools *(released)* | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
 | [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach *(released)* | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
+| [0.16](https://github.com/FriendsOfKubernetes/sextant/milestone/19) | Faster diagnosis | Best-practice checks (probes, `:latest`, single replicas, PDBs, requests and limits), why a Service or Ingress gets no traffic, Helm revision diff and newer chart versions, read-only diagnostic tools for AI agents |
+| [0.17](https://github.com/FriendsOfKubernetes/sextant/milestone/20) | Live traffic | A live graph of requests between services (Hubble, Istio, Linkerd, Beyla), request rate, errors, latency and CPU throttling per workload |
+| [0.18](https://github.com/FriendsOfKubernetes/sextant/milestone/21) | Ecosystem | Views for Argo Rollouts, Argo Workflows, Knative, Crossplane, Kyverno, External Secrets, CloudNativePG, Strimzi and Prometheus Operator, custom columns, a Set image action |
+| [0.19](https://github.com/FriendsOfKubernetes/sextant/milestone/22) | Inside images, more installers | Browsing an image's files straight from the registry (no exec, no pull), Homebrew, Scoop, winget, rpm and Linux arm64 |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
 a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
