@@ -1,19 +1,32 @@
-// One release: its user values, manifest, notes and revision history, with the actions that go through `helm`
-// (edit values and upgrade, roll back to a revision, uninstall). Without `helm` the actions are disabled.
-import { useState } from "react";
+// One release: its user values, manifest, notes and revision history, two revisions compared (#209), with the actions
+// that go through `helm` (edit values and upgrade, roll back to a revision, uninstall). Without `helm` the actions are
+// disabled.
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type ClusterId, type HelmRelease } from "../../api";
 import { Age, Badge, Button, ErrorState, Icon } from "../../components";
 import { YamlViewer } from "../details";
 import { RollbackDialog, UninstallDialog, UpgradeDialog } from "./dialogs";
 import { useLoad } from "./hooks";
+import { RevisionCompare, type RevisionPair } from "./RevisionCompare";
+import { lastUpgradePair } from "./revisionModel";
 import { StatusBadge } from "./StatusBadge";
 import { ResizableTable } from "../../components/Table";
 
-type Tab = "values" | "manifest" | "notes" | "history";
-const TABS: Tab[] = ["values", "manifest", "notes", "history"];
+type Tab = "values" | "manifest" | "notes" | "history" | "compare";
+const TABS: Tab[] = ["values", "manifest", "notes", "history", "compare"];
 
-type OpenDialog = { type: "upgrade" } | { type: "uninstall" } | { type: "rollback"; revision: number } | null;
+/** A newer chart picked in the release list (#209): the upgrade dialog opens with it. */
+export interface UpgradeTarget {
+  chartRef: string;
+  version: string;
+}
+
+type OpenDialog =
+  | { type: "upgrade"; target?: UpgradeTarget }
+  | { type: "uninstall" }
+  | { type: "rollback"; revision: number }
+  | null;
 
 export function ReleaseDetails({
   clusterId,
@@ -21,6 +34,8 @@ export function ReleaseDetails({
   helmAvailable,
   onClose,
   onChanged,
+  upgradeTo = null,
+  onUpgradeOpened,
 }: {
   clusterId: ClusterId;
   release: HelmRelease;
@@ -28,6 +43,10 @@ export function ReleaseDetails({
   onClose: () => void;
   /** After an upgrade, rollback or uninstall. */
   onChanged: () => void;
+  /** Open the upgrade dialog with this chart version as soon as the values are read. */
+  upgradeTo?: UpgradeTarget | null;
+  /** The dialog for `upgradeTo` was opened. */
+  onUpgradeOpened?: () => void;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("values");
@@ -52,6 +71,15 @@ export function ReleaseDetails({
   const detail = useLoad(key, () => api.helm.releaseDetail(clusterId, release.namespace, release.name, null));
   const history = useLoad(key, () => api.helm.releaseHistory(clusterId, release.namespace, release.name));
   const disabledHint = helmAvailable ? undefined : t("helm:missing.short");
+  // Revisions compared: picked by the user, else the last upgrade.
+  const [pair, setPair] = useState<RevisionPair | null>(null);
+  const lastUpgrade = history.data ? lastUpgradePair(history.data, release.revision) : null;
+  const shownPair = pair ?? lastUpgrade;
+  useEffect(() => {
+    if (!upgradeTo || !detail.data || !helmAvailable) return;
+    setDialog({ type: "upgrade", target: upgradeTo });
+    onUpgradeOpened?.();
+  }, [upgradeTo, detail.data, helmAvailable, onUpgradeOpened]);
   const rollbackTo = (revision: number) => setDialog({ type: "rollback", revision });
   const changed = () => {
     onChanged();
@@ -94,6 +122,16 @@ export function ReleaseDetails({
           {t("helm:actions.editValues")}
         </Button>
         <Button
+          icon="diff"
+          disabled={!lastUpgrade}
+          onClick={() => {
+            setPair(lastUpgrade);
+            setTab("compare");
+          }}
+        >
+          {t("helm:actions.lastUpgrade")}
+        </Button>
+        <Button
           variant="danger"
           disabled={!helmAvailable}
           title={disabledHint}
@@ -119,11 +157,11 @@ export function ReleaseDetails({
       </div>
 
       <div className="helm-details__body" role="tabpanel">
-        {tab !== "history" && detail.error && <ErrorState error={detail.error} onRetry={detail.reload} />}
+        {tab !== "history" && tab !== "compare" && detail.error && <ErrorState error={detail.error} onRetry={detail.reload} />}
         {(tab === "values" || tab === "manifest") && (
           <ShowToggle tab={tab} shown={isShown(tab)} onToggle={() => toggleShown(tab)} />
         )}
-        {tab !== "history" && contentWanted && !detail.data && !detail.error && (
+        {tab !== "history" && tab !== "compare" && contentWanted && !detail.data && !detail.error && (
           <div className="helm-muted" role="status">
             {t("helm:details.loading")}
           </div>
@@ -155,6 +193,15 @@ export function ReleaseDetails({
             onRollback={rollbackTo}
           />
         )}
+        {tab === "compare" && (
+          <RevisionCompare
+            clusterId={clusterId}
+            release={release}
+            history={history.error ? [] : history.data}
+            pair={shownPair}
+            onPair={setPair}
+          />
+        )}
       </div>
 
       {dialog?.type === "upgrade" && detail.data && (
@@ -162,6 +209,7 @@ export function ReleaseDetails({
           clusterId={clusterId}
           release={release}
           values={detail.data.valuesYaml}
+          target={dialog.target ?? null}
           close={() => setDialog(null)}
           onDone={changed}
         />

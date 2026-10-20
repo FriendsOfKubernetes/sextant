@@ -243,3 +243,69 @@
   gap: 8px;
   margin-bottom: 8px;
 }
+
+/* Newer chart versions (#209): the bar above the release list and the "Latest chart" cell. */
+.helm-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.helm-updates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.helm-latest {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Two revisions compared (#209). */
+.helm-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.helm-compare__picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.helm-compare__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.helm-compare__section h4 {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.helm-compare__objects {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.helm-compare__summary {
+  margin: 0;
+}
+
+.helm-compare__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.helm-mono {
+  font-family: var(--font-mono);
+}

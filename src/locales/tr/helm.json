@@ -29,7 +29,8 @@
     "status": "Durum",
     "updated": "Güncellenme",
     "revision": "Revizyon",
-    "description": "Açıklama"
+    "description": "Açıklama",
+    "latestChart": "En yeni chart"
   },
   "details": {
     "title": "{{name}} yayını",
@@ -40,7 +41,8 @@
       "values": "Değerler",
       "manifest": "Manifest",
       "notes": "Notlar",
-      "history": "Geçmiş"
+      "history": "Geçmiş",
+      "compare": "Karşılaştır"
     },
     "tabsLabel": "Yayın ayrıntıları",
     "valuesLabel": "{{name}} kullanıcı değerleri",
@@ -69,7 +71,8 @@
     "editValues": "Değerleri düzenle",
     "rollback": "Geri al",
     "rollbackTo": "Revizyon {{revision}} durumuna geri al",
-    "uninstall": "Kaldır"
+    "uninstall": "Kaldır",
+    "lastUpgrade": "Son yükseltmede neler değişti"
   },
   "upgrade": {
     "title": "{{name}} değerlerini düzenle",
@@ -78,7 +81,11 @@
     "chartRefHint": "{{chart}} {{version}} chart'ı ile yükseltir. Yayında saklanan chart'ı yeniden kullanmak için boş bırakın; alt chart'ları olan bir chart için depo başvurusu gerekir, ör. repo/{{chart}}.",
     "confirm": "Yükselt",
     "done": "{{name}} yayını yükseltildi. Yeni bir revizyon oluşturuldu.",
-    "failed": "Helm yayını yükseltemedi"
+    "failed": "Helm yayını yükseltemedi",
+    "titleVersion": "{{name}} yayınını {{chart}} {{version}} sürümüne yükselt",
+    "chartRefVersionHint": "{{chart}} chart'ının kaynağı: eklenmiş bir deponun repo/{{chart}} başvurusu veya bir oci:// başvurusu.",
+    "version": "Chart sürümü",
+    "versionHint": "Şu anda kurulu: {{chart}} {{version}}. Yeni bir chart sürümü birçok nesneyi değiştirebilir: önce önizlemeyi kontrol edin."
   },
   "rollback": {
     "title": "{{name}} geri alınsın mı?",
@@ -142,5 +149,75 @@
   },
   "status": {
     "loading": "Helm aranıyor…"
+  },
+  "compare": {
+    "oneRevision": "Bu yayının okunabilir tek bir revizyonu var: karşılaştırılacak başka revizyon yok.",
+    "from": "Başlangıç",
+    "to": "Bitiş",
+    "revisionOption": "Revizyon {{revision}}",
+    "side": "Revizyon {{revision}} · {{chart}} {{version}}",
+    "values": "Kullanıcı değerleri",
+    "manifest": "Manifest",
+    "notes": "Notlar",
+    "valuesSame": "Kullanıcı değerleri iki revizyonda da aynı.",
+    "notesSame": "Notlar iki revizyonda da aynı.",
+    "manifestSame": "Manifestler aynı.",
+    "objectsDiffer_one": "{{count}} nesne farklı.",
+    "objectsDiffer_other": "{{count}} nesne farklı.",
+    "unreadable_one": "{{count}} belge okunamadı ve dışarıda bırakıldı.",
+    "unreadable_other": "{{count}} belge okunamadı ve dışarıda bırakıldı.",
+    "truncated_one": "{{count}} nesne daha karşılaştırılmadı.",
+    "truncated_other": "{{count}} nesne daha karşılaştırılmadı.",
+    "onlyChanges": "Yalnızca değişen nesneler",
+    "objectsLabel": "İki revizyonun nesneleri",
+    "object": "Nesne",
+    "state": "Değişiklik",
+    "details": "Ayrıntılar",
+    "states": {
+      "added": "Eklendi",
+      "removed": "Kaldırıldı",
+      "changed": "Değişti",
+      "same": "Değişmedi"
+    },
+    "showDetails": "Değişiklikleri göster",
+    "hideDetails": "Değişiklikleri gizle",
+    "showObject": "{{object}} için değişiklikleri göster",
+    "hideObject": "{{object}} için değişiklikleri gizle",
+    "hidden": {
+      "values": "Değerler gizli. Göstermek için göz düğmesini kullanın.",
+      "manifest": "Manifest gizli: yalnızca değişikliklerin listesi gösteriliyor. Nesneleri göstermek için göz düğmesini kullanın."
+    },
+    "show": {
+      "values": "Değerleri göster",
+      "manifest": "Manifesti göster"
+    },
+    "hide": {
+      "values": "Değerleri gizle",
+      "manifest": "Manifesti gizle"
+    }
+  },
+  "updates": {
+    "label": "Daha yeni chart sürümleri",
+    "onlyUpdates": "Güncellemesi olanlar",
+    "refresh": "Daha yeni chart'ları denetle",
+    "checking": "Denetleniyor…",
+    "unknown": "Bilinmiyor",
+    "unknownHint": "Eklenen depoların hiçbirinde bu chart yok. OCI kayıt defterlerinden veya yerel yollardan gelen chart'lar denetlenemez.",
+    "failed": "Denetlenmedi",
+    "upToDate": "Güncel",
+    "step": {
+      "patch": "yama",
+      "minor": "küçük",
+      "major": "büyük"
+    },
+    "upgrade": "Yükselt…",
+    "upgradeLabel": "{{name}} yayınını {{version}} chart sürümüne yükselt…",
+    "from": "Kaynak: {{chartRef}}",
+    "alsoIn": "Şunlarda da var: {{repos}}",
+    "noRepos": "Hiç chart deposu eklenmedi, bu yüzden daha yeni chart sürümleri denetlenemiyor. Helm → Chart'lar bölümünden bir depo ekleyin.",
+    "skipped_one": "{{count}} chart daha denetlenmedi.",
+    "skipped_other": "{{count}} chart daha denetlenmedi.",
+    "repoProblem": "{{repo}} deposu okunamıyor: depoları güncelleyin.",
+    "error": "Daha yeni chart sürümleri denetlenemedi"
   }
 }

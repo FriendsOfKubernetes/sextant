@@ -119,6 +119,7 @@ export function UpgradeDialog({
   clusterId,
   release,
   values,
+  target = null,
   close,
   onDone,
 }: {
@@ -126,21 +127,28 @@ export function UpgradeDialog({
   release: HelmRelease;
   /** The release's current user values. */
   values: string;
+  /** A newer chart picked in the release list (#209): its reference and version are filled in. */
+  target?: { chartRef: string; version: string } | null;
   close: () => void;
   onDone: () => void;
 }) {
   const { t } = useTranslation();
   const refId = useId();
+  const versionId = useId();
   const [text, setText] = useState(values);
-  const [chartRef, setChartRef] = useState("");
-  const refTouched = useRef(false);
+  const [chartRef, setChartRef] = useState(target?.chartRef ?? "");
+  const [version, setVersion] = useState(target?.version ?? "");
+  const refTouched = useRef(target !== null);
   const required = useAlwaysPreview(clusterId);
-  const preview = useHelmPreview(JSON.stringify([text, chartRef.trim()]), (previewId) =>
-    api.helm.upgradePreview(clusterId, release.namespace, release.name, chartRef.trim(), text, previewId),
+  // Without a picked version the release keeps its chart version (the backend pins it).
+  const pinned = target ? version.trim() || null : null;
+  const preview = useHelmPreview(JSON.stringify([text, chartRef.trim(), pinned]), (previewId) =>
+    api.helm.upgradePreview(clusterId, release.namespace, release.name, chartRef.trim(), text, previewId, pinned),
   );
 
-  // Suggest the repository reference once; what the user typed wins.
+  // Suggest the repository reference once; what the user typed (or picked in the list) wins.
   useEffect(() => {
+    if (refTouched.current) return;
     let alive = true;
     void findChartRef(release.chart).then((found) => {
       if (alive && !refTouched.current) setChartRef(found);
@@ -152,13 +160,17 @@ export function UpgradeDialog({
 
   return (
     <ConfirmAction
-      title={t("helm:upgrade.title", { name: release.name })}
+      title={
+        target
+          ? t("helm:upgrade.titleVersion", { name: release.name, chart: release.chart, version: target.version })
+          : t("helm:upgrade.title", { name: release.name })
+      }
       confirmLabel={t("helm:upgrade.confirm")}
       close={close}
       errorTitle={() => t("helm:upgrade.failed")}
-      canConfirm={!required || preview.diff !== null}
+      canConfirm={(!required || preview.diff !== null) && (!target || (pinned !== null && chartRef.trim() !== ""))}
       onConfirm={async () => {
-        await api.helm.upgrade(clusterId, release.namespace, release.name, chartRef.trim(), text);
+        await api.helm.upgrade(clusterId, release.namespace, release.name, chartRef.trim(), text, pinned);
         onDone();
         return t("helm:upgrade.done", { name: release.name });
       }}
@@ -178,9 +190,20 @@ export function UpgradeDialog({
           }}
         />
         <span className="action-dialog__hint">
-          {t("helm:upgrade.chartRefHint", { chart: release.chart, version: release.chartVersion })}
+          {target
+            ? t("helm:upgrade.chartRefVersionHint", { chart: release.chart })
+            : t("helm:upgrade.chartRefHint", { chart: release.chart, version: release.chartVersion })}
         </span>
       </div>
+      {target && (
+        <div className="action-dialog__field">
+          <label htmlFor={versionId}>{t("helm:upgrade.version")}</label>
+          <input id={versionId} value={version} spellCheck={false} onChange={(e) => setVersion(e.target.value)} />
+          <span className="action-dialog__hint">
+            {t("helm:upgrade.versionHint", { chart: release.chart, version: release.chartVersion })}
+          </span>
+        </div>
+      )}
       <HelmPreview release={release.name} preview={preview} required={required} />
     </ConfirmAction>
   );

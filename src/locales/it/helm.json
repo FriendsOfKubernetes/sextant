@@ -29,7 +29,8 @@
     "status": "Stato",
     "updated": "Aggiornamento",
     "revision": "Revisione",
-    "description": "Descrizione"
+    "description": "Descrizione",
+    "latestChart": "Chart più recente"
   },
   "details": {
     "title": "Release {{name}}",
@@ -40,7 +41,8 @@
       "values": "Valori",
       "manifest": "Manifest",
       "notes": "Note",
-      "history": "Cronologia"
+      "history": "Cronologia",
+      "compare": "Confronto"
     },
     "tabsLabel": "Dettagli della release",
     "valuesLabel": "Valori utente di {{name}}",
@@ -69,7 +71,8 @@
     "editValues": "Modifica valori",
     "rollback": "Rollback",
     "rollbackTo": "Ripristina la revisione {{revision}}",
-    "uninstall": "Disinstalla"
+    "uninstall": "Disinstalla",
+    "lastUpgrade": "Cosa è cambiato nell'ultimo aggiornamento"
   },
   "upgrade": {
     "title": "Modifica valori di {{name}}",
@@ -78,7 +81,11 @@
     "chartRefHint": "L'aggiornamento usa il chart {{chart}} {{version}}. Lascia vuoto per riutilizzare il chart salvato nella release; un chart con subchart richiede il riferimento al suo repository, ad es. repo/{{chart}}.",
     "confirm": "Aggiorna",
     "done": "Release {{name}} aggiornata. È stata creata una nuova revisione.",
-    "failed": "Helm non è riuscito ad aggiornare la release"
+    "failed": "Helm non è riuscito ad aggiornare la release",
+    "titleVersion": "Aggiorna {{name}} a {{chart}} {{version}}",
+    "chartRefVersionHint": "Da dove prendere il chart {{chart}}: repo/{{chart}} di un repository aggiunto, oppure un riferimento oci://.",
+    "version": "Versione del chart",
+    "versionHint": "Installato ora: {{chart}} {{version}}. Una nuova versione del chart può cambiare molti oggetti: controlla prima l'anteprima."
   },
   "rollback": {
     "title": "Eseguire il rollback di {{name}}?",
@@ -142,5 +149,79 @@
   },
   "status": {
     "loading": "Ricerca di Helm…"
+  },
+  "compare": {
+    "oneRevision": "Questa release ha una sola revisione leggibile: non c'è nulla con cui confrontarla.",
+    "from": "Da",
+    "to": "A",
+    "revisionOption": "Revisione {{revision}}",
+    "side": "Revisione {{revision}} · {{chart}} {{version}}",
+    "values": "Valori dell'utente",
+    "manifest": "Manifest",
+    "notes": "Note",
+    "valuesSame": "I valori dell'utente sono uguali nelle due revisioni.",
+    "notesSame": "Le note sono uguali nelle due revisioni.",
+    "manifestSame": "I manifest sono uguali.",
+    "objectsDiffer_one": "{{count}} oggetto è diverso.",
+    "objectsDiffer_many": "{{count}} di oggetti sono diversi.",
+    "objectsDiffer_other": "{{count}} oggetti sono diversi.",
+    "unreadable_one": "{{count}} documento non è leggibile ed è escluso.",
+    "unreadable_many": "{{count}} di documenti non sono leggibili e sono esclusi.",
+    "unreadable_other": "{{count}} documenti non sono leggibili e sono esclusi.",
+    "truncated_one": "{{count}} altro oggetto non viene confrontato.",
+    "truncated_many": "Altri {{count}} di oggetti non vengono confrontati.",
+    "truncated_other": "Altri {{count}} oggetti non vengono confrontati.",
+    "onlyChanges": "Solo oggetti modificati",
+    "objectsLabel": "Oggetti delle due revisioni",
+    "object": "Oggetto",
+    "state": "Modifica",
+    "details": "Dettagli",
+    "states": {
+      "added": "Aggiunto",
+      "removed": "Rimosso",
+      "changed": "Modificato",
+      "same": "Invariato"
+    },
+    "showDetails": "Mostra modifiche",
+    "hideDetails": "Nascondi modifiche",
+    "showObject": "Mostra modifiche di {{object}}",
+    "hideObject": "Nascondi modifiche di {{object}}",
+    "hidden": {
+      "values": "I valori sono nascosti. Usa il pulsante con l'occhio per mostrarli.",
+      "manifest": "Il manifest è nascosto: è mostrato solo l'elenco delle modifiche. Usa il pulsante con l'occhio per mostrare gli oggetti."
+    },
+    "show": {
+      "values": "Mostra valori",
+      "manifest": "Mostra manifest"
+    },
+    "hide": {
+      "values": "Nascondi valori",
+      "manifest": "Nascondi manifest"
+    }
+  },
+  "updates": {
+    "label": "Versioni più recenti dei chart",
+    "onlyUpdates": "Con aggiornamenti",
+    "refresh": "Cerca chart più recenti",
+    "checking": "Verifica…",
+    "unknown": "Sconosciuta",
+    "unknownHint": "Nessun repository aggiunto ha questo chart. I chart da registry OCI o percorsi locali non possono essere verificati.",
+    "failed": "Non verificata",
+    "upToDate": "Aggiornata",
+    "step": {
+      "patch": "patch",
+      "minor": "minore",
+      "major": "maggiore"
+    },
+    "upgrade": "Aggiorna…",
+    "upgradeLabel": "Aggiorna {{name}} alla versione {{version}} del chart…",
+    "from": "Da {{chartRef}}",
+    "alsoIn": "Anche in: {{repos}}",
+    "noRepos": "Non è stato aggiunto alcun repository di chart, quindi le versioni più recenti non possono essere verificate. Aggiungine uno in Helm → Chart.",
+    "skipped_one": "{{count}} altro chart non è stato verificato.",
+    "skipped_many": "Altri {{count}} di chart non sono stati verificati.",
+    "skipped_other": "Altri {{count}} chart non sono stati verificati.",
+    "repoProblem": "Impossibile leggere il repository {{repo}}: aggiorna i repository.",
+    "error": "Impossibile verificare le versioni più recenti dei chart"
   }
 }

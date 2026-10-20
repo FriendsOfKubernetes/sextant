@@ -225,6 +225,7 @@ async fn run_child<K: Send + 'static>(
     mut cmd: Command,
     input: Option<String>,
     keep: K,
+    limit: Option<usize>,
 ) -> std::io::Result<Output> {
     if input.is_some() {
         cmd.stdin(Stdio::piped());
@@ -237,11 +238,21 @@ async fn run_child<K: Send + 'static>(
             let _ = stdin.write_all(input.as_bytes());
         });
     }
-    let reader = |pipe: Option<Box<dyn Read + Send>>| {
+    // With a `limit`, one byte more than it is kept (to tell a larger output) and the rest is read and dropped, so
+    // `helm` never blocks on a full pipe.
+    let reader = move |pipe: Option<Box<dyn Read + Send>>| {
         std::thread::spawn(move || {
             let mut bytes = Vec::new();
             if let Some(mut pipe) = pipe {
-                let _ = pipe.read_to_end(&mut bytes);
+                match limit {
+                    Some(max) => {
+                        let _ = pipe.by_ref().take(max as u64 + 1).read_to_end(&mut bytes);
+                        let _ = std::io::copy(&mut pipe, &mut std::io::sink());
+                    }
+                    None => {
+                        let _ = pipe.read_to_end(&mut bytes);
+                    }
+                }
             }
             bytes
         })
@@ -489,18 +500,43 @@ impl HelmCli {
         keep: K,
         secret_input: Option<String>,
     ) -> CoreResult<String> {
+        self.exec_full(args, keep, secret_input, None)
+            .await
+            .map(|(stdout, _)| stdout)
+    }
+
+    /// [`HelmCli::exec`] that also returns what `helm` printed to stderr on success (its warnings); with `limit`, an
+    /// output (stdout or stderr) larger than that many bytes is an error.
+    async fn exec_full<K: Send + 'static>(
+        &self,
+        args: Args,
+        keep: K,
+        secret_input: Option<String>,
+        limit: Option<usize>,
+    ) -> CoreResult<(String, String)> {
         let binary = self.binary().ok_or_else(helm_missing)?;
         let mut cmd = self.command(&binary);
         cmd.args(args.into_vec());
         let secret = secret_input.clone();
-        let output = run_child(cmd, secret_input, keep)
+        let output = run_child(cmd, secret_input, keep, limit)
             .await
             .map_err(|e| match e.kind() {
                 std::io::ErrorKind::NotFound => helm_missing(),
                 _ => CoreError::other(format!("cannot run helm: {e}")),
             })?;
+        if let Some(max) = limit
+            && (output.stdout.len() > max || output.stderr.len() > max)
+        {
+            return Err(CoreError::other(format!(
+                "helm printed more than {} KiB",
+                max >> 10
+            )));
+        }
         if output.status.success() {
-            return Ok(String::from_utf8_lossy(&output.stdout).into_owned());
+            return Ok((
+                String::from_utf8_lossy(&output.stdout).into_owned(),
+                String::from_utf8_lossy(&output.stderr).into_owned(),
+            ));
         }
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
         let message = if stderr.is_empty() {
@@ -793,6 +829,44 @@ impl HelmCli {
         })
     }
 
+    /// Every version of the charts named `chart` in the added repositories, read from Helm's local copies of their
+    /// indexes (no network): `helm search repo --regexp --versions --devel`, one call for every repository. Helm
+    /// matches the pattern against `<chart>\v<repo>/<chart>\v<description>…` lines, so `(^|/)<chart>(\v|$)` finds
+    /// that name (and only names that end the same way, which the caller filters out). Prereleases are included
+    /// (`--devel`); the caller decides about them. Also returns Helm's warnings (a repository whose index is
+    /// missing or broken). The output is limited to [`SEARCH_OUTPUT_LIMIT`].
+    pub async fn chart_versions(&self, chart: &str) -> CoreResult<(Vec<ChartHit>, String)> {
+        let pattern = format!("(^|/){}(\\v|$)", regex_escape(&chart.to_lowercase()));
+        let args = Args::new(&["search", "repo"])
+            .switch("--regexp")
+            .switch("--versions")
+            .switch("--devel")
+            .flag("--output", "json")
+            .arg(pattern);
+        let (out, warnings) = match self
+            .exec_full(args, (), None, Some(SEARCH_OUTPUT_LIMIT))
+            .await
+        {
+            Ok(printed) => printed,
+            Err(e) if no_repositories(&e) => return Ok((Vec::new(), String::new())),
+            Err(e) => return Err(e),
+        };
+        if out.trim().is_empty() {
+            return Ok((Vec::new(), warnings));
+        }
+        let raw: Vec<RawHit> = serde_json::from_str(&out)?;
+        let hits = raw
+            .into_iter()
+            .map(|h| ChartHit {
+                name: h.name,
+                version: h.version,
+                app_version: h.app_version,
+                description: h.description,
+            })
+            .collect();
+        Ok((hits, warnings))
+    }
+
     /// The chart's default `values.yaml`.
     pub async fn show_values(&self, chart: &str, version: Option<&str>) -> CoreResult<String> {
         let mut args = Args::new(&["show", "values"]);
@@ -801,6 +875,21 @@ impl HelmCli {
         }
         self.run(args.arg(chart), ()).await
     }
+}
+
+/// The most one `helm search` may print (stdout or stderr) for [`HelmCli::chart_versions`].
+pub const SEARCH_OUTPUT_LIMIT: usize = 8 << 20;
+
+/// `text` with every character a Go regular expression gives a meaning escaped.
+fn regex_escape(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        if c.is_ascii_punctuation() {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
 }
 
 fn no_repositories(e: &CoreError) -> bool {
@@ -823,9 +912,42 @@ pub async fn upgrade_release(
     chart_ref: &str,
     values_yaml: &str,
 ) -> CoreResult<()> {
+    upgrade_release_to(cli, mgr, cluster, ns, release, chart_ref, None, values_yaml).await
+}
+
+/// The chart version an upgrade pins: `version` when given (a newer chart, #209; it needs `chart_ref`, since the
+/// chart stored in the release is only the installed version), else the release's own chart version.
+fn upgrade_version(
+    current: &super::StoredRelease,
+    chart_ref: &str,
+    version: Option<&str>,
+) -> CoreResult<Option<String>> {
+    match version.map(str::trim).filter(|v| !v.is_empty()) {
+        Some(_) if chart_ref.is_empty() => Err(invalid(
+            "a chart version needs a chart reference (repo/chart, a path or an oci:// reference)",
+        )),
+        Some(v) => Ok(Some(v.to_owned())),
+        None if chart_ref.is_empty() => Ok(None),
+        None => Ok(Some(current.summary().chart_version)),
+    }
+}
+
+/// [`upgrade_release`] to chart `version` of `chart_ref` (`None`: the release's chart version).
+#[allow(clippy::too_many_arguments)]
+pub async fn upgrade_release_to(
+    cli: &HelmCli,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    ns: &str,
+    release: &str,
+    chart_ref: &str,
+    version: Option<&str>,
+    values_yaml: &str,
+) -> CoreResult<()> {
     let current = super::stored_release(mgr, cluster, ns, release, None).await?;
-    let target = kube_target(mgr, cluster)?;
     let chart_ref = chart_ref.trim();
+    let pinned = upgrade_version(&current, chart_ref, version)?;
+    let target = kube_target(mgr, cluster)?;
     if chart_ref.is_empty() {
         let dir = tempfile::tempdir()?;
         let chart_dir = write_stored_chart(&current.chart, dir.path())?;
@@ -840,14 +962,13 @@ pub async fn upgrade_release(
         )
         .await
     } else {
-        let version = current.summary().chart_version;
         cli.upgrade_with_version(
             &target.kubeconfig,
             &target.context,
             ns,
             release,
             chart_ref,
-            Some(&version),
+            pinned.as_deref(),
             values_yaml,
         )
         .await
@@ -867,9 +988,25 @@ pub async fn preview_upgrade(
     chart_ref: &str,
     values_yaml: &str,
 ) -> CoreResult<super::diff::HelmManifestDiff> {
+    preview_upgrade_to(cli, mgr, cluster, ns, release, chart_ref, None, values_yaml).await
+}
+
+/// What [`upgrade_release_to`] would change (see [`preview_upgrade`]).
+#[allow(clippy::too_many_arguments)]
+pub async fn preview_upgrade_to(
+    cli: &HelmCli,
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    ns: &str,
+    release: &str,
+    chart_ref: &str,
+    version: Option<&str>,
+    values_yaml: &str,
+) -> CoreResult<super::diff::HelmManifestDiff> {
     let current = super::stored_release(mgr, cluster, ns, release, None).await?;
-    let target = kube_target(mgr, cluster)?;
     let chart_ref = chart_ref.trim();
+    let pinned = upgrade_version(&current, chart_ref, version)?;
+    let target = kube_target(mgr, cluster)?;
     let proposed = if chart_ref.is_empty() {
         let dir = tempfile::tempdir()?;
         let chart_dir = write_stored_chart(&current.chart, dir.path())?;
@@ -884,14 +1021,13 @@ pub async fn preview_upgrade(
         )
         .await?
     } else {
-        let version = current.summary().chart_version;
         cli.render_upgrade(
             &target.kubeconfig,
             &target.context,
             ns,
             release,
             chart_ref,
-            Some(&version),
+            pinned.as_deref(),
             values_yaml,
         )
         .await?
@@ -1879,6 +2015,36 @@ printf '%s' '{"manifest":"kind: Secret\n"}'"#,
         assert!(args.lines().any(|l| l == "--dry-run"), "{args}");
         assert!(!args.contains("--values"), "{args}");
         assert!(!args.contains("--create-namespace"), "{args}");
+    }
+
+    /// An upgrade keeps the release's chart version unless a newer one is picked (#209), which needs a reference.
+    #[test]
+    fn an_upgrade_pins_the_picked_version_or_the_installed_one() {
+        let current = super::super::StoredRelease {
+            chart: json!({ "metadata": { "name": "app", "version": "1.0.0" } }),
+            ..Default::default()
+        };
+        assert_eq!(upgrade_version(&current, "", None).unwrap(), None);
+        assert_eq!(
+            upgrade_version(&current, "repo/app", None)
+                .unwrap()
+                .as_deref(),
+            Some("1.0.0")
+        );
+        assert_eq!(
+            upgrade_version(&current, "repo/app", Some(" 1.2.0 "))
+                .unwrap()
+                .as_deref(),
+            Some("1.2.0")
+        );
+        assert_eq!(
+            upgrade_version(&current, "repo/app", Some(""))
+                .unwrap()
+                .as_deref(),
+            Some("1.0.0")
+        );
+        let err = upgrade_version(&current, "", Some("1.2.0")).unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
     }
 
     #[test]

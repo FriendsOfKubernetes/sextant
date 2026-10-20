@@ -118,6 +118,8 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         helm::helm_repo_update,
         helm::helm_search,
         helm::helm_show_values,
+        helm::helm_revision_diff,
+        helm::helm_chart_updates,
         settings::settings_get,
         settings::settings_update,
         settings::settings_status,

@@ -29,7 +29,8 @@
     "status": "Stan",
     "updated": "Zaktualizowano",
     "revision": "Rewizja",
-    "description": "Opis"
+    "description": "Opis",
+    "latestChart": "Najnowszy chart"
   },
   "details": {
     "title": "Wydanie {{name}}",
@@ -40,7 +41,8 @@
       "values": "Wartości",
       "manifest": "Manifest",
       "notes": "Uwagi",
-      "history": "Historia"
+      "history": "Historia",
+      "compare": "Porównanie"
     },
     "tabsLabel": "Szczegóły wydania",
     "valuesLabel": "Wartości użytkownika dla {{name}}",
@@ -69,7 +71,8 @@
     "editValues": "Edytuj wartości",
     "rollback": "Wycofaj",
     "rollbackTo": "Przywróć rewizję {{revision}}",
-    "uninstall": "Odinstaluj"
+    "uninstall": "Odinstaluj",
+    "lastUpgrade": "Co zmieniło się w ostatnim uaktualnieniu"
   },
   "upgrade": {
     "title": "Edycja wartości {{name}}",
@@ -78,7 +81,11 @@
     "chartRefHint": "Uaktualnia przy użyciu chartu {{chart}} {{version}}. Pozostaw puste, aby ponownie użyć chartu zapisanego w wydaniu; chart z subchartami wymaga odwołania do repozytorium, np. repo/{{chart}}.",
     "confirm": "Uaktualnij",
     "done": "Wydanie {{name}} zostało uaktualnione. Utworzono nową rewizję.",
-    "failed": "Helm nie mógł uaktualnić wydania"
+    "failed": "Helm nie mógł uaktualnić wydania",
+    "titleVersion": "Uaktualnianie {{name}} do {{chart}} {{version}}",
+    "chartRefVersionHint": "Skąd pobrać chart {{chart}}: repo/{{chart}} z dodanego repozytorium lub odwołanie oci://.",
+    "version": "Wersja chartu",
+    "versionHint": "Obecnie zainstalowano: {{chart}} {{version}}. Nowa wersja chartu może zmienić wiele obiektów: najpierw sprawdź podgląd."
   },
   "rollback": {
     "title": "Wycofać {{name}}?",
@@ -142,5 +149,83 @@
   },
   "status": {
     "loading": "Wyszukiwanie Helm…"
+  },
+  "compare": {
+    "oneRevision": "To wydanie ma tylko jedną czytelną rewizję: nie ma z czym jej porównać.",
+    "from": "Od",
+    "to": "Do",
+    "revisionOption": "Rewizja {{revision}}",
+    "side": "Rewizja {{revision}} · {{chart}} {{version}}",
+    "values": "Wartości użytkownika",
+    "manifest": "Manifest",
+    "notes": "Uwagi",
+    "valuesSame": "Wartości użytkownika są takie same w obu rewizjach.",
+    "notesSame": "Uwagi są takie same w obu rewizjach.",
+    "manifestSame": "Manifesty są takie same.",
+    "objectsDiffer_one": "Różni się {{count}} obiekt.",
+    "objectsDiffer_few": "Różnią się {{count}} obiekty.",
+    "objectsDiffer_many": "Różni się {{count}} obiektów.",
+    "objectsDiffer_other": "Różni się {{count}} obiektu.",
+    "unreadable_one": "Nie udało się odczytać {{count}} dokumentu; został pominięty.",
+    "unreadable_few": "Nie udało się odczytać {{count}} dokumentów; zostały pominięte.",
+    "unreadable_many": "Nie udało się odczytać {{count}} dokumentów; zostały pominięte.",
+    "unreadable_other": "Nie udało się odczytać {{count}} dokumentu; zostały pominięte.",
+    "truncated_one": "Jeszcze {{count}} obiekt nie jest porównywany.",
+    "truncated_few": "Jeszcze {{count}} obiekty nie są porównywane.",
+    "truncated_many": "Jeszcze {{count}} obiektów nie jest porównywanych.",
+    "truncated_other": "Jeszcze {{count}} obiektu nie jest porównywane.",
+    "onlyChanges": "Tylko zmienione obiekty",
+    "objectsLabel": "Obiekty obu rewizji",
+    "object": "Obiekt",
+    "state": "Zmiana",
+    "details": "Szczegóły",
+    "states": {
+      "added": "Dodany",
+      "removed": "Usunięty",
+      "changed": "Zmieniony",
+      "same": "Bez zmian"
+    },
+    "showDetails": "Pokaż zmiany",
+    "hideDetails": "Ukryj zmiany",
+    "showObject": "Pokaż zmiany: {{object}}",
+    "hideObject": "Ukryj zmiany: {{object}}",
+    "hidden": {
+      "values": "Wartości są ukryte. Użyj przycisku z okiem, aby je pokazać.",
+      "manifest": "Manifest jest ukryty: widać tylko listę zmian. Użyj przycisku z okiem, aby pokazać obiekty."
+    },
+    "show": {
+      "values": "Pokaż wartości",
+      "manifest": "Pokaż manifest"
+    },
+    "hide": {
+      "values": "Ukryj wartości",
+      "manifest": "Ukryj manifest"
+    }
+  },
+  "updates": {
+    "label": "Nowsze wersje chartów",
+    "onlyUpdates": "Z aktualizacjami",
+    "refresh": "Sprawdź nowsze charty",
+    "checking": "Sprawdzanie…",
+    "unknown": "Nieznana",
+    "unknownHint": "Żadne dodane repozytorium nie ma tego chartu. Chartów z rejestrów OCI ani ścieżek lokalnych nie można sprawdzić.",
+    "failed": "Niesprawdzona",
+    "upToDate": "Aktualna",
+    "step": {
+      "patch": "poprawka",
+      "minor": "pomniejsza",
+      "major": "główna"
+    },
+    "upgrade": "Uaktualnij…",
+    "upgradeLabel": "Uaktualnij {{name}} do wersji chartu {{version}}…",
+    "from": "Z {{chartRef}}",
+    "alsoIn": "Również w: {{repos}}",
+    "noRepos": "Nie dodano repozytoriów chartów, więc nie można sprawdzić nowszych wersji. Dodaj repozytorium w Helm → Charty.",
+    "skipped_one": "Jeszcze {{count}} chart nie został sprawdzony.",
+    "skipped_few": "Jeszcze {{count}} charty nie zostały sprawdzone.",
+    "skipped_many": "Jeszcze {{count}} chartów nie zostało sprawdzonych.",
+    "skipped_other": "Jeszcze {{count}} chartu nie zostało sprawdzone.",
+    "repoProblem": "Nie można odczytać repozytorium {{repo}}: zaktualizuj repozytoria.",
+    "error": "Nie udało się sprawdzić nowszych wersji chartów"
   }
 }

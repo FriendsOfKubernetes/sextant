@@ -29,7 +29,8 @@
     "status": "状態",
     "updated": "更新日時",
     "revision": "リビジョン",
-    "description": "説明"
+    "description": "説明",
+    "latestChart": "最新チャート"
   },
   "details": {
     "title": "リリース {{name}}",
@@ -40,7 +41,8 @@
       "values": "値",
       "manifest": "マニフェスト",
       "notes": "ノート",
-      "history": "履歴"
+      "history": "履歴",
+      "compare": "比較"
     },
     "tabsLabel": "リリースの詳細",
     "valuesLabel": "{{name}} のユーザー指定の値",
@@ -69,7 +71,8 @@
     "editValues": "値を編集",
     "rollback": "ロールバック",
     "rollbackTo": "リビジョン {{revision}} にロールバック",
-    "uninstall": "アンインストール"
+    "uninstall": "アンインストール",
+    "lastUpgrade": "前回のアップグレードでの変更"
   },
   "upgrade": {
     "title": "{{name}} の値を編集",
@@ -78,7 +81,11 @@
     "chartRefHint": "チャート {{chart}} {{version}} でアップグレードします。空欄の場合はリリースに保存されたチャートを再利用します。サブチャートを含むチャートにはリポジトリの参照が必要です (例: repo/{{chart}})。",
     "confirm": "アップグレード",
     "done": "リリース {{name}} をアップグレードしました。新しいリビジョンが作成されました。",
-    "failed": "Helm はリリースをアップグレードできませんでした"
+    "failed": "Helm はリリースをアップグレードできませんでした",
+    "titleVersion": "{{name}} を {{chart}} {{version}} にアップグレード",
+    "chartRefVersionHint": "チャート {{chart}} の取得元: 追加済みリポジトリの repo/{{chart}}、または oci:// の参照。",
+    "version": "チャートのバージョン",
+    "versionHint": "現在インストール済み: {{chart}} {{version}}。新しいチャートのバージョンは多くのオブジェクトを変更する場合があります。先にプレビューを確認してください。"
   },
   "rollback": {
     "title": "{{name}} をロールバックしますか?",
@@ -142,5 +149,71 @@
   },
   "status": {
     "loading": "Helm を確認中…"
+  },
+  "compare": {
+    "oneRevision": "このリリースには読み取れるリビジョンが 1 つしかないため、比較する対象がありません。",
+    "from": "比較元",
+    "to": "比較先",
+    "revisionOption": "リビジョン {{revision}}",
+    "side": "リビジョン {{revision}} · {{chart}} {{version}}",
+    "values": "ユーザーの値",
+    "manifest": "マニフェスト",
+    "notes": "ノート",
+    "valuesSame": "ユーザーの値は両方のリビジョンで同じです。",
+    "notesSame": "ノートは両方のリビジョンで同じです。",
+    "manifestSame": "マニフェストは同じです。",
+    "objectsDiffer_other": "{{count}} 個のオブジェクトが異なります。",
+    "unreadable_other": "{{count}} 個のドキュメントを読み取れなかったため、除外しました。",
+    "truncated_other": "さらに {{count}} 個のオブジェクトは比較されていません。",
+    "onlyChanges": "変更されたオブジェクトのみ",
+    "objectsLabel": "両方のリビジョンのオブジェクト",
+    "object": "オブジェクト",
+    "state": "変更",
+    "details": "詳細",
+    "states": {
+      "added": "追加",
+      "removed": "削除",
+      "changed": "変更",
+      "same": "変更なし"
+    },
+    "showDetails": "変更を表示",
+    "hideDetails": "変更を隠す",
+    "showObject": "{{object}} の変更を表示",
+    "hideObject": "{{object}} の変更を隠す",
+    "hidden": {
+      "values": "値は隠されています。目のボタンで表示できます。",
+      "manifest": "マニフェストは隠されています。変更の一覧のみ表示しています。目のボタンでオブジェクトを表示できます。"
+    },
+    "show": {
+      "values": "値を表示",
+      "manifest": "マニフェストを表示"
+    },
+    "hide": {
+      "values": "値を隠す",
+      "manifest": "マニフェストを隠す"
+    }
+  },
+  "updates": {
+    "label": "新しいチャートのバージョン",
+    "onlyUpdates": "更新あり",
+    "refresh": "新しいチャートを確認",
+    "checking": "確認中…",
+    "unknown": "不明",
+    "unknownHint": "追加済みのリポジトリにこのチャートはありません。OCI レジストリやローカルパスのチャートは確認できません。",
+    "failed": "未確認",
+    "upToDate": "最新",
+    "step": {
+      "patch": "パッチ",
+      "minor": "マイナー",
+      "major": "メジャー"
+    },
+    "upgrade": "アップグレード…",
+    "upgradeLabel": "{{name}} をチャートのバージョン {{version}} にアップグレード…",
+    "from": "取得元: {{chartRef}}",
+    "alsoIn": "他の掲載先: {{repos}}",
+    "noRepos": "チャートのリポジトリが追加されていないため、新しいバージョンを確認できません。Helm → チャートで追加してください。",
+    "skipped_other": "さらに {{count}} 個のチャートは確認されていません。",
+    "repoProblem": "リポジトリ {{repo}} を読み取れません。リポジトリを更新してください。",
+    "error": "新しいチャートのバージョンを確認できませんでした"
   }
 }

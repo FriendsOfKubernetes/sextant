@@ -25,11 +25,14 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
 
 pub use drift::{DriftObject, HelmDrift, MAX_DRIFT_OBJECTS, helm_drift};
+// The Helm revision comparison (`helm::revisions`, #209) reads manifests and Secrets the same way.
+pub(crate) use drift::manifest_objects;
 pub use lists::{CompareKindList, MAX_COMPARE_KINDS, MAX_COMPARE_LIMIT, list_namespace};
 pub use secrets::{
     MAX_COMPARED_SECRETS, NamedSecretComparison, SecretComparison, SecretKeyComparison,
     SecretNamespaceComparison, SecretSideState, compare_secret_namespaces, compare_secrets,
 };
+pub(crate) use secrets::{compare_keys, value_hashes};
 
 /// One side of a Secret comparison: a Secret in a cluster, or (`lastApplied`) the values of its
 /// `kubectl.kubernetes.io/last-applied-configuration` annotation.

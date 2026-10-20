@@ -38,6 +38,9 @@ import type { SecretSide } from "./generated/SecretSide";
 import type { NamedObject } from "./generated/NamedObject";
 import type { DryRunResult } from "./generated/DryRunResult";
 import type { HelmManifestDiff } from "./generated/HelmManifestDiff";
+import type { ChartUpdates } from "./generated/ChartUpdates";
+import type { HelmRevisionDiff } from "./generated/HelmRevisionDiff";
+import type { InstalledChart } from "./generated/InstalledChart";
 import type { ChartTarget } from "./generated/ChartTarget";
 import type { CloudAccounts } from "./generated/CloudAccounts";
 import type { CloudCliStatus } from "./generated/CloudCliStatus";
@@ -321,8 +324,15 @@ export const helm = {
     call<HelmReleaseDetail>("helm_release_detail", { clusterId, namespace, name, revision }),
   releaseHistory: (clusterId: ClusterId, namespace: string, name: string) =>
     call<HelmRelease[]>("helm_release_history", { clusterId, namespace, name }),
-  upgrade: (clusterId: ClusterId, namespace: string, release: string, chartRef: string, valuesYaml: string) =>
-    call<void>("helm_upgrade", { clusterId, namespace, release, chartRef, valuesYaml }),
+  /** New user values; `version` (with a `chartRef`) moves the release to that chart version, else it keeps its own. */
+  upgrade: (
+    clusterId: ClusterId,
+    namespace: string,
+    release: string,
+    chartRef: string,
+    valuesYaml: string,
+    version: string | null = null,
+  ) => call<void>("helm_upgrade", { clusterId, namespace, release, chartRef, valuesYaml, version }),
   rollback: (clusterId: ClusterId, namespace: string, release: string, revision: number) =>
     call<void>("helm_rollback", { clusterId, namespace, release, revision }),
   uninstall: (clusterId: ClusterId, namespace: string, release: string) =>
@@ -346,8 +356,17 @@ export const helm = {
     chartRef: string,
     valuesYaml: string,
     previewId: string,
+    version: string | null = null,
   ) =>
-    call<HelmManifestDiff>("helm_upgrade_preview", { clusterId, namespace, release, chartRef, valuesYaml, previewId }),
+    call<HelmManifestDiff>("helm_upgrade_preview", {
+      clusterId,
+      namespace,
+      release,
+      chartRef,
+      valuesYaml,
+      previewId,
+      version,
+    }),
   /** What `install` with the same arguments would apply, against a release of that name already there. */
   installPreview: (
     clusterId: ClusterId,
@@ -376,6 +395,11 @@ export const helm = {
   repoUpdate: () => call<void>("helm_repo_update"),
   search: (query: string) => call<ChartHit[]>("helm_search", { query }),
   showValues: (chart: string, version: string | null = null) => call<string>("helm_show_values", { chart, version }),
+  /** Two stored revisions of a release compared (#209): values, manifest object by object, notes. */
+  revisionDiff: (clusterId: ClusterId, namespace: string, name: string, left: number, right: number) =>
+    call<HelmRevisionDiff>("helm_revision_diff", { clusterId, namespace, name, left, right }),
+  /** The newest version of each chart in the added repositories (Helm's local indexes; nothing is downloaded). */
+  chartUpdates: (charts: InstalledChart[]) => call<ChartUpdates>("helm_chart_updates", { charts }),
 };
 
 export const settings = {

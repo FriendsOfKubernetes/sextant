@@ -7,6 +7,8 @@
 
 use sextant_core::helm::cli::{self, ChartHit, HelmCli, HelmRepo, HelmStatus};
 use sextant_core::helm::diff::HelmManifestDiff;
+use sextant_core::helm::revisions::{self, HelmRevisionDiff};
+use sextant_core::helm::updates::{self, ChartUpdates, InstalledChart};
 use sextant_core::helm::{self, HelmRelease, HelmReleaseDetail};
 use std::future::Future;
 use std::time::Duration;
@@ -71,9 +73,36 @@ pub async fn helm_release_history(
     helm::release_history(&state.clusters, &cluster_id, &namespace, &name).await
 }
 
-/// New user values for a release, same chart and chart version. An empty `chart_ref` reuses the chart stored in
-/// the release; otherwise `chart_ref` (e.g. `repo/chart`) is used at the release's chart version.
+/// Two stored revisions of a release compared (#209): values, manifest object by object (Secrets by key names and
+/// value hashes only), notes. Read natively; `helm` is not needed. A window command only: neither the MCP server nor
+/// the extension API offers it.
 #[tauri::command]
+pub async fn helm_revision_diff(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    namespace: String,
+    name: String,
+    left: i32,
+    right: i32,
+) -> Result<HelmRevisionDiff, CoreError> {
+    revisions::compare_revisions(&state.clusters, &cluster_id, &namespace, &name, left, right).await
+}
+
+/// The newest version of each installed chart in the repositories Helm has (#209), from Helm's local copies of their
+/// indexes (`helm search repo`); nothing is downloaded (that is `helm_repo_update`). A window command only.
+#[tauri::command]
+pub async fn helm_chart_updates<R: Runtime>(
+    app: AppHandle<R>,
+    charts: Vec<InstalledChart>,
+) -> Result<ChartUpdates, CoreError> {
+    updates::chart_updates(&helm_cli(&app), &charts).await
+}
+
+/// New user values for a release. An empty `chart_ref` reuses the chart stored in the release; otherwise `chart_ref`
+/// (e.g. `repo/chart`) is used at `version` (a newer chart picked in the window, #209), else at the release's chart
+/// version.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn helm_upgrade<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, AppState>,
@@ -82,14 +111,16 @@ pub async fn helm_upgrade<R: Runtime>(
     release: String,
     chart_ref: String,
     values_yaml: String,
+    version: Option<String>,
 ) -> Result<(), CoreError> {
-    cli::upgrade_release(
+    cli::upgrade_release_to(
         &helm_cli(&app),
         &state.clusters,
         &cluster_id,
         &namespace,
         &release,
         &chart_ref,
+        version.as_deref(),
         &values_yaml,
     )
     .await
@@ -211,16 +242,18 @@ pub async fn helm_upgrade_preview<R: Runtime>(
     chart_ref: String,
     values_yaml: String,
     preview_id: String,
+    version: Option<String>,
 ) -> Result<HelmManifestDiff, CoreError> {
     let (cli, mgr, cluster) = (helm_cli(&app), state.clusters.clone(), cluster_id.clone());
     let render = async move {
-        cli::preview_upgrade(
+        cli::preview_upgrade_to(
             &cli,
             &mgr,
             &cluster,
             &namespace,
             &release,
             &chart_ref,
+            version.as_deref(),
             &values_yaml,
         )
         .await
@@ -351,6 +384,23 @@ mod tests {
         let _guard = Dropped(dropped);
         std::future::pending::<()>().await;
         Err(CoreError::other("unreachable"))
+    }
+
+    #[test]
+    fn neither_agents_nor_extensions_compare_revisions_or_look_for_chart_updates() {
+        let tools = crate::mcp::server::all_tools().names();
+        assert!(tools.len() > 10, "{tools:?}");
+        let hidden = |name: &str| {
+            let name = name.to_lowercase();
+            name.contains("revision_diff")
+                || name.contains("revisiondiff")
+                || name.contains("chart_update")
+                || name.contains("chartupdate")
+                || name.contains("search")
+        };
+        assert!(!tools.iter().any(|t| hidden(t)), "{tools:?}");
+        let methods = crate::extensions::api::METHODS;
+        assert!(!methods.iter().any(|m| hidden(m)), "{methods:?}");
     }
 
     #[test]

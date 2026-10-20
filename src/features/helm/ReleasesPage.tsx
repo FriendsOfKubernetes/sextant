@@ -1,16 +1,21 @@
 // Helm → Releases: the latest revision of every release in the selected namespaces, read natively from the
 // cluster and refreshed on every change of the release Secrets. A row opens the release's details beside the list.
-import { useMemo, useState } from "react";
+// The "Latest chart" column (#209) tells whether an added repository has a newer version of the release's chart; its
+// "Upgrade…" opens the release's upgrade dialog (with its preview) at that version.
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { HelmRelease } from "../../api";
+import type { ChartUpdate, HelmRelease } from "../../api";
 import { useAppStore, useClusterView } from "../../app/store";
-import { Age, Badge, EmptyState, ErrorState, LoadingIndicator } from "../../components";
+import { Age, Badge, Checkbox, EmptyState, ErrorState, LoadingIndicator } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { NamespaceFilter, useSelectedNamespaces } from "../namespaces";
 import { HelmMissing } from "./HelmMissing";
 import { useHelmReleases, useHelmStatus } from "./hooks";
-import { ReleaseDetails } from "./ReleaseDetails";
+import { ReleaseDetails, type UpgradeTarget } from "./ReleaseDetails";
+import { chartKey, hasUpdate } from "./revisionModel";
 import { StatusBadge } from "./StatusBadge";
+import { LatestChart, UpdatesBar } from "./UpdateCells";
+import { useChartUpdates } from "./updates";
 import "./helm.css";
 import { ResizableTable } from "../../components/Table";
 
@@ -32,15 +37,28 @@ export function ReleasesPage({ clusterId }: PageProps) {
   const helm = useHelmStatus();
   const { releases, loading, error, refresh } = useHelmReleases(clusterId, namespaces);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [onlyUpdates, setOnlyUpdates] = useState(false);
+  const [upgradeTo, setUpgradeTo] = useState<UpgradeTarget | null>(null);
+  const updates = useChartUpdates(clusterId, releases, helm?.available ?? false);
+  const updateOf = useCallback(
+    (r: HelmRelease): ChartUpdate | undefined => updates.updates.get(chartKey(r.chart, r.chartVersion)),
+    [updates.updates],
+  );
 
   const shown = useMemo(
     () =>
       releases
         .filter((r) => matches(r, search, t("helm:releases.unreadable")))
+        .filter((r) => !onlyUpdates || !helm?.available || hasUpdate(updateOf(r)))
         .sort((a, b) => a.namespace.localeCompare(b.namespace) || a.name.localeCompare(b.name)),
-    [releases, search, t],
+    [releases, search, t, onlyUpdates, updateOf, helm?.available],
   );
   const selected = releases.find((r) => keyOf(r) === selectedKey) ?? null;
+  const upgrade = (r: HelmRelease, target: UpgradeTarget) => {
+    setSelectedKey(keyOf(r));
+    setUpgradeTo(target);
+  };
+  const clearUpgrade = useCallback(() => setUpgradeTo(null), []);
 
   return (
     <div className="helm-page">
@@ -55,7 +73,14 @@ export function ReleasesPage({ clusterId }: PageProps) {
           aria-label={t("helm:releases.search")}
           onChange={(e) => setSearch(clusterId, e.target.value)}
         />
+        {helm?.available && (
+          <label className="helm-filter">
+            <Checkbox checked={onlyUpdates} onChange={(e) => setOnlyUpdates(e.target.checked)} />
+            {t("helm:updates.onlyUpdates")}
+          </label>
+        )}
       </header>
+      {helm?.available && <UpdatesBar state={updates} />}
       {helm && !helm.available && <HelmMissing />}
       {error && <ErrorState error={error} onRetry={refresh} />}
       <div className="helm-page__body">
@@ -67,7 +92,18 @@ export function ReleasesPage({ clusterId }: PageProps) {
           ) : shown.length === 0 && !error ? (
             <EmptyState title={t("helm:releases.noMatch")} />
           ) : (
-            <ReleaseTable releases={shown} selectedKey={selectedKey} onSelect={setSelectedKey} />
+            <ReleaseTable
+              releases={shown}
+              selectedKey={selectedKey}
+              onSelect={(key) => {
+                setSelectedKey(key);
+                setUpgradeTo(null);
+              }}
+              updateOf={updateOf}
+              checking={updates.loading}
+              helmAvailable={helm?.available ?? false}
+              onUpgrade={upgrade}
+            />
           )}
         </div>
         {selected && (
@@ -78,6 +114,8 @@ export function ReleasesPage({ clusterId }: PageProps) {
             helmAvailable={helm?.available ?? false}
             onClose={() => setSelectedKey(null)}
             onChanged={refresh}
+            upgradeTo={upgradeTo}
+            onUpgradeOpened={clearUpgrade}
           />
         )}
       </div>
@@ -89,10 +127,19 @@ function ReleaseTable({
   releases,
   selectedKey,
   onSelect,
+  updateOf,
+  checking,
+  helmAvailable,
+  onUpgrade,
 }: {
   releases: HelmRelease[];
   selectedKey: string | null;
   onSelect: (key: string) => void;
+  updateOf: (r: HelmRelease) => ChartUpdate | undefined;
+  /** Newer chart versions are being looked up. */
+  checking: boolean;
+  helmAvailable: boolean;
+  onUpgrade: (r: HelmRelease, target: UpgradeTarget) => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -106,6 +153,7 @@ function ReleaseTable({
           <th>{t("helm:columns.appVersion")}</th>
           <th>{t("helm:columns.status")}</th>
           <th>{t("helm:columns.updated")}</th>
+          <th>{t("helm:columns.latestChart")}</th>
         </tr>
       </thead>
       <tbody>
@@ -146,6 +194,11 @@ function ReleaseTable({
               </td>
               <td>
                 <Age timestamp={r.updated} />
+              </td>
+              <td>
+                {helmAvailable && !r.unreadable && (
+                  <LatestChart release={r} update={updateOf(r)} checking={checking} onUpgrade={(target) => onUpgrade(r, target)} />
+                )}
               </td>
             </tr>
           );

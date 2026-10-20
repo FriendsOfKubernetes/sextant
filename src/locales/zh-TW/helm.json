@@ -29,7 +29,8 @@
     "status": "狀態",
     "updated": "更新時間",
     "revision": "修訂版本",
-    "description": "描述"
+    "description": "描述",
+    "latestChart": "最新 Chart"
   },
   "details": {
     "title": "發行版本 {{name}}",
@@ -40,7 +41,8 @@
       "values": "Values",
       "manifest": "資訊清單",
       "notes": "說明",
-      "history": "歷程記錄"
+      "history": "歷程記錄",
+      "compare": "比較"
     },
     "tabsLabel": "發行版本詳細資料",
     "valuesLabel": "{{name}} 的使用者 values",
@@ -69,7 +71,8 @@
     "editValues": "編輯 values",
     "rollback": "回復",
     "rollbackTo": "回復到修訂版本 {{revision}}",
-    "uninstall": "解除安裝"
+    "uninstall": "解除安裝",
+    "lastUpgrade": "上次升級變更了什麼"
   },
   "upgrade": {
     "title": "編輯 {{name}} 的 values",
@@ -78,7 +81,11 @@
     "chartRefHint": "將使用 Chart {{chart}} {{version}} 升級。留白則重複使用發行版本中儲存的 Chart；含有子 Chart 的 Chart 需要其儲存庫參照，例如 repo/{{chart}}。",
     "confirm": "升級",
     "done": "發行版本 {{name}} 已升級，並建立了新的修訂版本。",
-    "failed": "Helm 無法升級此發行版本"
+    "failed": "Helm 無法升級此發行版本",
+    "titleVersion": "將 {{name}} 升級到 {{chart}} {{version}}",
+    "chartRefVersionHint": "Chart {{chart}} 的來源：已新增儲存庫的 repo/{{chart}}，或 oci:// 參照。",
+    "version": "Chart 版本",
+    "versionHint": "目前已安裝：{{chart}} {{version}}。新的 Chart 版本可能變更許多物件：請先檢查預覽。"
   },
   "rollback": {
     "title": "要回復 {{name}} 嗎？",
@@ -142,5 +149,71 @@
   },
   "status": {
     "loading": "正在檢查 Helm…"
+  },
+  "compare": {
+    "oneRevision": "此發行版本只有一個可讀取的修訂版本，沒有可與之比較的版本。",
+    "from": "從",
+    "to": "到",
+    "revisionOption": "修訂版本 {{revision}}",
+    "side": "修訂版本 {{revision}} · {{chart}} {{version}}",
+    "values": "使用者 values",
+    "manifest": "資訊清單",
+    "notes": "說明",
+    "valuesSame": "兩個修訂版本的使用者 values 相同。",
+    "notesSame": "兩個修訂版本的說明相同。",
+    "manifestSame": "資訊清單相同。",
+    "objectsDiffer_other": "{{count}} 個物件不同。",
+    "unreadable_other": "{{count}} 個文件無法讀取，已略過。",
+    "truncated_other": "另有 {{count}} 個物件未比較。",
+    "onlyChanges": "僅已變更的物件",
+    "objectsLabel": "兩個修訂版本的物件",
+    "object": "物件",
+    "state": "變更",
+    "details": "詳細資料",
+    "states": {
+      "added": "已新增",
+      "removed": "已移除",
+      "changed": "已變更",
+      "same": "未變更"
+    },
+    "showDetails": "顯示變更",
+    "hideDetails": "隱藏變更",
+    "showObject": "顯示 {{object}} 的變更",
+    "hideObject": "隱藏 {{object}} 的變更",
+    "hidden": {
+      "values": "Values 已隱藏。按一下眼睛按鈕即可顯示。",
+      "manifest": "資訊清單已隱藏：只顯示變更清單。按一下眼睛按鈕即可顯示物件。"
+    },
+    "show": {
+      "values": "顯示 values",
+      "manifest": "顯示資訊清單"
+    },
+    "hide": {
+      "values": "隱藏 values",
+      "manifest": "隱藏資訊清單"
+    }
+  },
+  "updates": {
+    "label": "較新的 Chart 版本",
+    "onlyUpdates": "有更新",
+    "refresh": "檢查較新的 Chart",
+    "checking": "正在檢查…",
+    "unknown": "未知",
+    "unknownHint": "已新增的儲存庫中沒有此 Chart。來自 OCI 登錄或本機路徑的 Chart 無法檢查。",
+    "failed": "未檢查",
+    "upToDate": "已是最新",
+    "step": {
+      "patch": "修補",
+      "minor": "次要",
+      "major": "主要"
+    },
+    "upgrade": "升級…",
+    "upgradeLabel": "將 {{name}} 升級到 Chart 版本 {{version}}…",
+    "from": "來自 {{chartRef}}",
+    "alsoIn": "也在：{{repos}}",
+    "noRepos": "尚未新增 Chart 儲存庫，因此無法檢查較新的 Chart 版本。請在 Helm → Chart 中新增一個。",
+    "skipped_other": "另有 {{count}} 個 Chart 未檢查。",
+    "repoProblem": "無法讀取儲存庫 {{repo}}：請更新儲存庫。",
+    "error": "無法檢查較新的 Chart 版本"
   }
 }

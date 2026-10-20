@@ -29,7 +29,8 @@
     "status": "状态",
     "updated": "更新时间",
     "revision": "修订版本",
-    "description": "描述"
+    "description": "描述",
+    "latestChart": "最新 Chart"
   },
   "details": {
     "title": "发布 {{name}}",
@@ -40,7 +41,8 @@
       "values": "Values",
       "manifest": "清单",
       "notes": "说明",
-      "history": "历史记录"
+      "history": "历史记录",
+      "compare": "比较"
     },
     "tabsLabel": "发布详细信息",
     "valuesLabel": "{{name}} 的用户 values",
@@ -69,7 +71,8 @@
     "editValues": "编辑 values",
     "rollback": "回滚",
     "rollbackTo": "回滚到修订版本 {{revision}}",
-    "uninstall": "卸载"
+    "uninstall": "卸载",
+    "lastUpgrade": "上次升级更改了什么"
   },
   "upgrade": {
     "title": "编辑 {{name}} 的 values",
@@ -78,7 +81,11 @@
     "chartRefHint": "将使用 Chart {{chart}} {{version}} 升级。留空则重用发布中存储的 Chart；包含子 Chart 的 Chart 需要其仓库引用，例如 repo/{{chart}}。",
     "confirm": "升级",
     "done": "发布 {{name}} 已升级，并创建了新的修订版本。",
-    "failed": "Helm 无法升级该发布"
+    "failed": "Helm 无法升级该发布",
+    "titleVersion": "将 {{name}} 升级到 {{chart}} {{version}}",
+    "chartRefVersionHint": "Chart {{chart}} 的来源：已添加仓库的 repo/{{chart}}，或 oci:// 引用。",
+    "version": "Chart 版本",
+    "versionHint": "当前已安装：{{chart}} {{version}}。新的 Chart 版本可能更改许多对象：请先检查预览。"
   },
   "rollback": {
     "title": "回滚 {{name}}？",
@@ -142,5 +149,71 @@
   },
   "status": {
     "loading": "正在检查 Helm…"
+  },
+  "compare": {
+    "oneRevision": "此发布只有一个可读的修订版本，没有可与之比较的版本。",
+    "from": "从",
+    "to": "到",
+    "revisionOption": "修订版本 {{revision}}",
+    "side": "修订版本 {{revision}} · {{chart}} {{version}}",
+    "values": "用户 values",
+    "manifest": "清单",
+    "notes": "说明",
+    "valuesSame": "两个修订版本的用户 values 相同。",
+    "notesSame": "两个修订版本的说明相同。",
+    "manifestSame": "清单相同。",
+    "objectsDiffer_other": "{{count}} 个对象不同。",
+    "unreadable_other": "{{count}} 个文档无法读取，已略过。",
+    "truncated_other": "另有 {{count}} 个对象未比较。",
+    "onlyChanges": "仅已更改的对象",
+    "objectsLabel": "两个修订版本的对象",
+    "object": "对象",
+    "state": "更改",
+    "details": "详细信息",
+    "states": {
+      "added": "已添加",
+      "removed": "已移除",
+      "changed": "已更改",
+      "same": "未更改"
+    },
+    "showDetails": "显示更改",
+    "hideDetails": "隐藏更改",
+    "showObject": "显示 {{object}} 的更改",
+    "hideObject": "隐藏 {{object}} 的更改",
+    "hidden": {
+      "values": "Values 已隐藏。点击眼睛按钮即可显示。",
+      "manifest": "清单已隐藏：只显示更改列表。点击眼睛按钮即可显示对象。"
+    },
+    "show": {
+      "values": "显示 values",
+      "manifest": "显示清单"
+    },
+    "hide": {
+      "values": "隐藏 values",
+      "manifest": "隐藏清单"
+    }
+  },
+  "updates": {
+    "label": "较新的 Chart 版本",
+    "onlyUpdates": "有更新",
+    "refresh": "检查较新的 Chart",
+    "checking": "正在检查…",
+    "unknown": "未知",
+    "unknownHint": "已添加的仓库中没有此 Chart。来自 OCI 仓库或本地路径的 Chart 无法检查。",
+    "failed": "未检查",
+    "upToDate": "已是最新",
+    "step": {
+      "patch": "补丁",
+      "minor": "次要",
+      "major": "主要"
+    },
+    "upgrade": "升级…",
+    "upgradeLabel": "将 {{name}} 升级到 Chart 版本 {{version}}…",
+    "from": "来自 {{chartRef}}",
+    "alsoIn": "也在：{{repos}}",
+    "noRepos": "未添加 Chart 仓库，因此无法检查较新的 Chart 版本。请在 Helm → Chart 中添加一个。",
+    "skipped_other": "另有 {{count}} 个 Chart 未检查。",
+    "repoProblem": "无法读取仓库 {{repo}}：请更新仓库。",
+    "error": "无法检查较新的 Chart 版本"
   }
 }

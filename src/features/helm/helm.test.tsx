@@ -362,6 +362,7 @@ describe("Releases", () => {
       release: "web",
       chartRef: "bitnami/nginx",
       valuesYaml: "replicaCount: 5\n",
+      version: null,
     });
   });
 

@@ -27,6 +27,9 @@ use crate::kubeconfig::ClusterId;
 #[cfg(feature = "desktop")]
 pub mod cli;
 pub mod diff;
+pub mod revisions;
+#[cfg(feature = "desktop")]
+pub mod updates;
 
 /// The Secret type Helm gives release revisions.
 pub const RELEASE_SECRET_TYPE: &str = "helm.sh/release.v1";

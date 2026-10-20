@@ -29,7 +29,8 @@
     "status": "Status",
     "updated": "Updated",
     "revision": "Revision",
-    "description": "Description"
+    "description": "Description",
+    "latestChart": "Latest chart"
   },
   "details": {
     "title": "Release {{name}}",
@@ -40,7 +41,8 @@
       "values": "Values",
       "manifest": "Manifest",
       "notes": "Notes",
-      "history": "History"
+      "history": "History",
+      "compare": "Compare"
     },
     "tabsLabel": "Release details",
     "valuesLabel": "User values of {{name}}",
@@ -69,7 +71,8 @@
     "editValues": "Edit values",
     "rollback": "Roll back",
     "rollbackTo": "Roll back to revision {{revision}}",
-    "uninstall": "Uninstall"
+    "uninstall": "Uninstall",
+    "lastUpgrade": "What changed in the last upgrade"
   },
   "upgrade": {
     "title": "Edit values of {{name}}",
@@ -78,7 +81,11 @@
     "chartRefHint": "Upgrades with chart {{chart}} {{version}}. Leave empty to reuse the chart stored in the release; a chart with subcharts needs its repository reference, e.g. repo/{{chart}}.",
     "confirm": "Upgrade",
     "done": "Release {{name}} upgraded. A new revision was created.",
-    "failed": "Helm could not upgrade the release"
+    "failed": "Helm could not upgrade the release",
+    "titleVersion": "Upgrade {{name}} to {{chart}} {{version}}",
+    "chartRefVersionHint": "Where to get chart {{chart}}: repo/{{chart}} of an added repository, or an oci:// reference.",
+    "version": "Chart version",
+    "versionHint": "Installed now: {{chart}} {{version}}. A new chart version can change many objects: check the preview first."
   },
   "rollback": {
     "title": "Roll back {{name}}?",
@@ -142,5 +149,75 @@
   },
   "status": {
     "loading": "Checking for Helm…"
+  },
+  "compare": {
+    "oneRevision": "This release has only one readable revision: there is nothing to compare it with.",
+    "from": "From",
+    "to": "To",
+    "revisionOption": "Revision {{revision}}",
+    "side": "Revision {{revision}} · {{chart}} {{version}}",
+    "values": "User values",
+    "manifest": "Manifest",
+    "notes": "Notes",
+    "valuesSame": "The user values are the same in both revisions.",
+    "notesSame": "The notes are the same in both revisions.",
+    "manifestSame": "The manifests are the same.",
+    "objectsDiffer_one": "{{count}} object differs.",
+    "objectsDiffer_other": "{{count}} objects differ.",
+    "unreadable_one": "{{count}} document could not be read and is left out.",
+    "unreadable_other": "{{count}} documents could not be read and are left out.",
+    "truncated_one": "{{count}} more object is not compared.",
+    "truncated_other": "{{count}} more objects are not compared.",
+    "onlyChanges": "Only changed objects",
+    "objectsLabel": "Objects of both revisions",
+    "object": "Object",
+    "state": "Change",
+    "details": "Details",
+    "states": {
+      "added": "Added",
+      "removed": "Removed",
+      "changed": "Changed",
+      "same": "Unchanged"
+    },
+    "showDetails": "Show changes",
+    "hideDetails": "Hide changes",
+    "showObject": "Show changes of {{object}}",
+    "hideObject": "Hide changes of {{object}}",
+    "hidden": {
+      "values": "The values are hidden. Use the eye button to show them.",
+      "manifest": "The manifest is hidden: only what changed is listed. Use the eye button to show the objects."
+    },
+    "show": {
+      "values": "Show values",
+      "manifest": "Show manifest"
+    },
+    "hide": {
+      "values": "Hide values",
+      "manifest": "Hide manifest"
+    }
+  },
+  "updates": {
+    "label": "Newer chart versions",
+    "onlyUpdates": "Has updates",
+    "refresh": "Check for newer charts",
+    "checking": "Checking…",
+    "unknown": "Unknown",
+    "unknownHint": "No added repository has this chart. Charts from OCI registries or local paths cannot be checked.",
+    "failed": "Not checked",
+    "upToDate": "Up to date",
+    "step": {
+      "patch": "patch",
+      "minor": "minor",
+      "major": "major"
+    },
+    "upgrade": "Upgrade…",
+    "upgradeLabel": "Upgrade {{name}} to chart version {{version}}…",
+    "from": "From {{chartRef}}",
+    "alsoIn": "Also in: {{repos}}",
+    "noRepos": "No chart repositories are added, so newer chart versions cannot be checked. Add one under Helm → Charts.",
+    "skipped_one": "{{count}} more chart was not checked.",
+    "skipped_other": "{{count}} more charts were not checked.",
+    "repoProblem": "Repository {{repo}} cannot be read: update the repositories.",
+    "error": "Newer chart versions could not be checked"
   }
 }

@@ -120,7 +120,7 @@ const cases: Array<[string, () => Promise<unknown>, Record<string, unknown> | un
   [
     "helm_upgrade",
     () => api.helm.upgrade("c1", "ns", "r", "repo/chart", "a: 1"),
-    { clusterId: "c1", namespace: "ns", release: "r", chartRef: "repo/chart", valuesYaml: "a: 1" },
+    { clusterId: "c1", namespace: "ns", release: "r", chartRef: "repo/chart", valuesYaml: "a: 1", version: null },
   ],
   [
     "helm_rollback",

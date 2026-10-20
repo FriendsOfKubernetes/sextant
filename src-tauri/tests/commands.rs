@@ -93,6 +93,8 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("helm_repo_update", None),
     ("helm_search", Some("query")),
     ("helm_show_values", Some("chart")),
+    ("helm_revision_diff", Some("clusterId")),
+    ("helm_chart_updates", Some("charts")),
     ("settings_get", None),
     ("settings_update", Some("settings")),
     ("settings_status", None),
@@ -1534,4 +1536,71 @@ fn the_cost_allocation_checks_its_query_first_and_needs_a_connected_cluster() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+/// Comparing two revisions reads the release Secrets of a connected cluster; the input is checked first (#209).
+#[test]
+fn helm_revision_diff_checks_its_input_and_needs_a_connected_cluster() {
+    let h = harness();
+    let args = |name: &str, left: i32, right: i32| json!({ "clusterId": "nope", "namespace": "apps", "name": name, "left": left, "right": right });
+    let err = invoke(&h, "helm_revision_diff", args("web", 1, 2)).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    for bad in [args("Not A Release", 1, 2), args("web", 0, 2)] {
+        let err = invoke(&h, "helm_revision_diff", bad).unwrap_err();
+        assert_eq!(err["code"], "invalid", "{err}");
+    }
+}
+
+/// Newer chart versions come from the `helm` of Settings (a fake one here, answering JSON fixtures): one search per
+/// chart name in Helm's local indexes, never a `repo update`; without helm the command answers `helmMissing`.
+#[cfg(unix)]
+#[test]
+fn helm_chart_updates_search_the_added_repositories_with_the_chosen_helm() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let h = harness();
+    let charts = json!({ "charts": [{ "chart": "nginx", "version": "15.1.0" }] });
+    let err = invoke(&h, "helm_chart_updates", charts.clone()).unwrap_err();
+    assert_eq!(err["code"], "helmMissing", "{err}");
+
+    let dir = tempfile::tempdir().unwrap();
+    let record = dir.path().join("args");
+    let fake = dir.path().join("fake-helm");
+    std::fs::write(
+        &fake,
+        format!(
+            r#"#!/bin/sh
+printf '%s\n' "$*" >> '{}'
+case "$1 $2" in
+  "repo list") printf '%s' '[{{"name":"bitnami","url":"https://charts.example/bitnami"}}]' ;;
+  "search repo") printf '%s' '[{{"name":"bitnami/nginx","version":"16.0.1","app_version":"1.27.0","description":"d"}},{{"name":"bitnami/nginx","version":"15.1.0","app_version":"1.25.3","description":"d"}}]' ;;
+esac
+"#,
+            record.display()
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let mut settings = invoke(&h, "settings_get", json!({})).unwrap();
+    settings["helmPath"] = json!(fake.display().to_string());
+    invoke(&h, "settings_update", json!({ "settings": settings })).unwrap();
+
+    let report = invoke(&h, "helm_chart_updates", charts).unwrap();
+    assert_eq!(report["repos"], 1, "{report}");
+    let chart = &report["charts"][0];
+    assert_eq!(chart["chartRef"], "bitnami/nginx", "{report}");
+    assert_eq!(chart["latest"], "16.0.1", "{report}");
+    assert_eq!(chart["latestAppVersion"], "1.27.0", "{report}");
+    assert_eq!(chart["step"], "major", "{report}");
+    assert_eq!(chart["upToDate"], false, "{report}");
+    let calls = std::fs::read_to_string(&record).unwrap();
+    assert_eq!(
+        calls
+            .lines()
+            .filter(|l| l.starts_with("search repo"))
+            .count(),
+        1,
+        "{calls}"
+    );
+    assert!(!calls.contains("update"), "{calls}");
 }
