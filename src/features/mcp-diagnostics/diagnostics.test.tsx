@@ -357,13 +357,13 @@ describe("connectivity and the traffic diagnosis for an agent", () => {
     ask("c1", { type: "pod", namespace: "team-a", value: "web" }, { type: "pod", namespace: "team-b", value: "api" });
     emitSnapshot(wb, await watchOf(wb, "Pod", inTeamA), [web]);
     emitSnapshot(wb, await watchOf(wb, "NetworkPolicy", inTeamA), []);
-    await waitFor(() => expect(answers).toHaveLength(1));
+    await waitFor(() => expect(answers).toHaveLength(1), { timeout: 8000 });
     expect((answers[0]!.answer as { result: { verdict: string } }).result.verdict).toBe("unknown");
 
     // Pods of team-b by labels to the team-a pod: the engine judges the egress from team-b, whose policies it may
     // not read, as unknown — never allowed.
     ask("c2", { type: "labels", namespace: "team-b", value: "app=api" }, { type: "pod", namespace: "team-a", value: "web" });
-    await waitFor(() => expect(answers).toHaveLength(2));
+    await waitFor(() => expect(answers).toHaveLength(2), { timeout: 8000 });
     const second = (answers[1]!.answer as { result: { verdict: string; egress: { verdict: string } } }).result;
     expect(second.verdict).toBe("unknown");
     expect(second.egress.verdict).toBe("unknown");

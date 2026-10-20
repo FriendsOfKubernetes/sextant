@@ -673,7 +673,8 @@ esac
         let limit_kib = crate::helm::cli::SEARCH_OUTPUT_LIMIT / 1024 + 64;
         std::fs::write(
             &fake,
-            format!("#!/bin/sh\nhead -c {limit_kib}K /dev/zero\n"),
+            // `dd`, not `head -c 1K`: the BSD `head` of macOS takes no size suffix.
+            format!("#!/bin/sh\ndd if=/dev/zero bs=1024 count={limit_kib} 2>/dev/null\n"),
         )
         .unwrap();
         std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
