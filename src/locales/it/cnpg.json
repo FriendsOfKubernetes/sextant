@@ -10,10 +10,16 @@
   "badge_other": "{{count}} oggetti richiedono attenzione",
   "state": {
     "healthy": "Integro",
+    "hibernated": "Ibernato",
+    "hibernating": "In ibernazione",
     "switchover": "Switchover",
     "failover": "Failover",
     "progressing": "In corso",
     "unhealthy": "Non integro"
+  },
+  "hibernation": {
+    "hibernated": "Ibernato su richiesta (annotazione cnpg.io/hibernation: \"on\"): i pod sono eliminati e i volumi conservati. Imposta l’annotazione a \"off\" per riprendere.",
+    "hibernating": "In ibernazione su richiesta (annotazione cnpg.io/hibernation: \"on\"): l’operatore sta eliminando i pod e conserva i volumi."
   },
   "backupState": {
     "completed": "Completato",

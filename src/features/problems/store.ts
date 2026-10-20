@@ -97,6 +97,8 @@ interface Entry {
   taps: Map<string, Tap>;
   retry?: ReturnType<typeof setTimeout>;
   attempts: number;
+  /** A capped source (`SourceDef.maxObjects`) holds fewer objects than match: the last `capped` total said so. */
+  capped?: boolean;
 }
 
 const entries = new Map<string, Entry>();
@@ -218,7 +220,7 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
           truncated = true;
         }
       }
-      return { status: "ready", error: undefined, truncated };
+      return { status: "ready", error: undefined, truncated: truncated || entry.capped === true };
     }
     case "delta": {
       // Most updates are of objects without problems: those change nothing, and nobody is told.
@@ -239,10 +241,13 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
     case "forbidden":
       // Some namespaces cannot be listed; the others are watched.
       return null;
+    case "capped":
+      // A capped source (`SourceDef.maxObjects`): objects past the cap are not judged. Sent when the total changes.
+      entry.capped = update.total > (entry.state.def.maxObjects ?? Number.POSITIVE_INFINITY);
+      return { truncated: entry.capped || entry.byUid.size >= MAX_PROBLEM_OBJECTS };
     case "snapshotPart":
     case "snapshotEnd":
-    case "capped":
-      // Only watches started with `WatchOptions` (the tables) send these; the problem sources start without.
+      // Only watches started with `progressive` (the tables) send these; the problem sources never ask for parts.
       return null;
   }
 }
@@ -290,11 +295,13 @@ function applyToTap(tap: Tap, update: WatchUpdate): RowsState | null {
       return { ...state, status: state.status === "loading" ? "loading" : "reconnecting" };
     case "error":
       return { ...state, status: "error", error: toApiError(update) };
+    case "capped":
+      // A capped source's taps see only the objects it keeps.
+      return { ...state, truncated: state.truncated || update.total > state.rows.size };
     case "forbidden":
     case "snapshotPart":
     case "snapshotEnd":
-    case "capped":
-      // The last three come only from watches started with `WatchOptions`, which the sources are not.
+      // The parts come only from watches started with `progressive` (the tables), which the sources are not.
       return null;
   }
 }
@@ -341,7 +348,10 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     const spec: WatchSpec = { kind: def.kind, namespaces: null, labelSelector: null, fieldSelector: def.fieldSelector };
     created.open = () => {
       created.stop = openStream<WatchUpdate>({
-        start: (id, channel) => api.resources.watchStart(clusterId, spec, id, channel),
+        start: (id, channel) =>
+          def.maxObjects === undefined
+            ? api.resources.watchStart(clusterId, spec, id, channel)
+            : api.resources.watchStart(clusterId, spec, id, channel, { progressive: false, maxObjects: def.maxObjects }),
         stop: api.resources.watchStop,
         onEvent: (update) => {
           if (entries.get(key) !== created) return;

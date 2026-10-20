@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import i18n from "i18next";
 import { defaultAppSettings, type KindRef, type KubeObject, type ObjectRef, type ResourceKind } from "../../api";
 import { resetSettingsCache } from "../../api/settings";
 import { resetAppStore, useAppStore } from "../../app/store";
@@ -34,7 +35,7 @@ import {
   XRD,
 } from "./model";
 import { CREATING_GRACE_MS, FAILURE_GRACE_MS, toProblems } from "./provider";
-import { resetCrossplaneStore, toRow } from "./store";
+import { acquireCrossplane, getCrossplane, MAX_ROWS, resetCrossplaneStore, toRow } from "./store";
 
 const xrd = xrdJson as KubeObject;
 const claim = claimJson as KubeObject;
@@ -63,6 +64,26 @@ describe("the model", () => {
     expect(explainResource(managed)).toEqual({ key: "notSynced", params: { reason: "ReconcileError" } });
     expect(packageHealth(provider)).toBe("failed");
     expect(getResourceDef(PROVIDER).problem?.(provider)).toBe(true);
+  });
+
+  it("a paused resource (ReconcilePaused) is neutral: paused, never failed, never a problem", () => {
+    // As crossplane-runtime marks it: Synced=False, reason ReconcilePaused, with the annotation crossplane.io/paused.
+    const paused = copy(claim);
+    paused.metadata!.annotations = { ...(paused.metadata!.annotations ?? {}), "crossplane.io/paused": "true" };
+    (paused.status as { conditions: unknown[] }).conditions = [
+      { type: "Synced", status: "False", reason: "ReconcilePaused", lastTransitionTime: "2026-10-10T10:00:00Z" },
+      { type: "Ready", status: "True", reason: "Available" },
+    ];
+    expect(resourceHealth(paused)).toBe("paused");
+    expect(firstFailing(paused)).toBeUndefined();
+    expect(explainResource(paused)).toEqual({ key: "paused" });
+    expect(toProblems([toRow(paused, CLAIM, "claim")], new Map(), Date.parse("2026-10-10T12:00:00Z"))).toEqual([]);
+    // The condition alone (management policies pause it too).
+    paused.metadata!.annotations = {};
+    expect(resourceHealth(paused)).toBe("paused");
+    // Another Synced=False reason is still a failure.
+    (paused.status as { conditions: { reason: string }[] }).conditions[0]!.reason = "ReconcileError";
+    expect(resourceHealth(paused)).toBe("failed");
   });
 
   it("reads Crossplane v2's fields under spec.crossplane", () => {
@@ -176,6 +197,25 @@ describe("the Crossplane section", () => {
   });
 });
 
+describe("the store", () => {
+  it("caps the claim and composite watches and says when a list is cut", async () => {
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(sections()).toContain("Crossplane"));
+    const release = acquireCrossplane("c1");
+    emitSnapshot(wb, await watchOf(wb, "CompositeResourceDefinition"), [xrd]);
+    const claims = await watchOf(wb, "PostgreSQLInstance");
+    const start = wb.backend.calls.find((c) => c.cmd === "watch_start" && (c.args.spec as { kind: KindRef }).kind.kind === "PostgreSQLInstance")!;
+    expect(start.args.options).toEqual({ progressive: false, maxObjects: MAX_ROWS });
+    emitSnapshot(wb, claims, [claim]);
+    emitSnapshot(wb, await watchOf(wb, "XPostgreSQLInstance"), [composite]);
+    await waitFor(() => expect(getCrossplane("c1").loading).toBe(false));
+    expect(getCrossplane("c1").rowsTruncated).toBe(false);
+    act(() => wb.backend.emit(`watch:${claims}`, { type: "capped", total: MAX_ROWS + 1 }));
+    await waitFor(() => expect(getCrossplane("c1").rowsTruncated).toBe(true));
+    release();
+  });
+});
+
 describe("the Composite resources page", () => {
   it("watches the kinds the XRDs define and lists claims and composites, problems first", async () => {
     render(<CompositesPage clusterId="c1" />);
@@ -235,6 +275,32 @@ describe("details", () => {
     expect(xp.getByText("Managed resource")).toBeInTheDocument();
     expect(xp.getByRole("button", { name: "Open XPostgreSQLInstance my-db-x7k2p" })).toBeInTheDocument();
     expect(xp.getByText("default/my-db")).toBeInTheDocument();
+  });
+
+  it("of a paused claim: says it is paused, with nothing failing", async () => {
+    const paused = copy(claim);
+    paused.metadata!.annotations = { "crossplane.io/paused": "true" };
+    (paused.status as { conditions: unknown[] }).conditions = [{ type: "Synced", status: "False", reason: "ReconcilePaused" }];
+    await openDetails(paused);
+    emitSnapshot(wb, await watchOf(wb, "CompositeResourceDefinition"), [xrd]);
+    const xp = section("crossplaneResource");
+    await waitFor(() => expect(xp.getByText(/^Paused: Crossplane does not reconcile it/)).toBeInTheDocument());
+    expect(xp.queryByText(/ReconcilePaused/)).toBeNull();
+  });
+
+  it("of an XRD: a version's flags as one list in the UI language", async () => {
+    i18n.addResourceBundle("xx", "common", { list: { separator: "; " } }, true, true);
+    i18n.addResourceBundle("xx", "crossplane", { versionWithFlags: "{{flags}} — {{name}}" }, true, true);
+    await i18n.changeLanguage("xx");
+    try {
+      await openDetails(xrd);
+      const xp = section("crossplane");
+      await waitFor(() => expect(xp.getByText("served; referenceable — v1alpha1")).toBeInTheDocument());
+    } finally {
+      await i18n.changeLanguage("en");
+      i18n.removeResourceBundle("xx", "common");
+      i18n.removeResourceBundle("xx", "crossplane");
+    }
   });
 
   it("of a Provider: why the package is not healthy", async () => {

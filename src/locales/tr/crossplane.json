@@ -11,11 +11,13 @@
   "health": {
     "ready": "Hazır",
     "progressing": "Sürüyor",
+    "paused": "Duraklatıldı",
     "failed": "Başarısız",
     "unknown": "Bilinmiyor"
   },
   "served": "sunuluyor",
   "referenceable": "başvurulabilir",
+  "versionWithFlags": "{{name}} ({{flags}})",
   "failing": "Karşılanmayan ilk koşul: {{type}} ({{reason}})",
   "failingWithMessage": "Karşılanmayan ilk koşul: {{type}} ({{reason}}): {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -83,6 +85,7 @@
     "ready": "Eşitlendi ve hazır.",
     "creating": "Henüz hazır değil: Crossplane onu veya kaynaklarını hâlâ oluşturuyor.",
     "deleting": "Siliniyor.",
+    "paused": "Duraklatıldı: Crossplane onu uzlaştırmıyor (crossplane.io/paused ek açıklaması \"true\" ya da yönetim ilkeleri onu duraklatıyor).",
     "notSynced": "Crossplane onu uzlaştıramıyor ({{reason}}): nedenini aşağıdaki karşılanmayan ilk koşul söylüyor.",
     "notReady": "Hazır değil ({{reason}}): nedenini aşağıdaki karşılanmayan ilk koşul söylüyor.",
     "packageHealthy": "Kurulu ve sağlıklı.",

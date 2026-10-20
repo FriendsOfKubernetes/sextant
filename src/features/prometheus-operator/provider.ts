@@ -1,4 +1,5 @@
-// The cross-object part of the problems category "Prometheus Operator": while the problems store holds its source (the
+// The cross-object part of the problems category "Prometheus Operator" (opt-in: monitors and their targets are listed
+// only while the user has it on): while the problems store holds its source (the
 // problems screen, the section counter or the notifications look at a cluster that serves ServiceMonitors), the
 // monitors are held (store.ts) and each one that selects nothing, or that no Prometheus picks up, becomes a problem of
 // that monitor. Prometheus and Alertmanager readiness come from the category's watched sources (problems/model.ts).
@@ -46,12 +47,12 @@ export function toProblems(findings: readonly MonitorFinding[], firstSeen: Map<s
 registerProblemProvider("prometheusOperator", (clusterId, set) => {
   const firstSeen = new Map<string, number>();
   const release = acquireMonitoring(clusterId);
-  let last: string | undefined;
+  let last: unknown;
   const look = () => {
+    // The store keeps one state object until its inputs change: the same object is the same findings.
     const state = getMonitoring(clusterId);
-    const signature = state.loading ? "loading" : JSON.stringify(state.findings);
-    if (signature === last) return;
-    last = signature;
+    if (state === last) return;
+    last = state;
     if (state.loading) set({ status: "loading", problems: [] });
     else
       set({

@@ -13,11 +13,13 @@
   "health": {
     "ready": "Готов",
     "progressing": "Выполняется",
+    "paused": "Приостановлен",
     "failed": "Сбой",
     "unknown": "Неизвестно"
   },
   "served": "обслуживается",
   "referenceable": "основная",
+  "versionWithFlags": "{{name}} ({{flags}})",
   "failing": "Первое невыполненное условие: {{type}} ({{reason}})",
   "failingWithMessage": "Первое невыполненное условие: {{type}} ({{reason}}): {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -85,6 +87,7 @@
     "ready": "Синхронизирован и готов.",
     "creating": "Еще не готов: Crossplane еще создает его или его ресурсы.",
     "deleting": "Удаляется.",
+    "paused": "Приостановлен: Crossplane его не согласовывает (аннотация crossplane.io/paused равна \"true\" или его останавливают политики управления).",
     "notSynced": "Crossplane не может согласовать его ({{reason}}): причина — в первом невыполненном условии ниже.",
     "notReady": "Не готов ({{reason}}): причина — в первом невыполненном условии ниже.",
     "packageHealthy": "Установлен и исправен.",

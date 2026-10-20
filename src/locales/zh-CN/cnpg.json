@@ -8,10 +8,16 @@
   "badge_other": "{{count}} 个对象需要关注",
   "state": {
     "healthy": "健康",
+    "hibernated": "已休眠",
+    "hibernating": "正在休眠",
     "switchover": "切换中",
     "failover": "故障转移中",
     "progressing": "进行中",
     "unhealthy": "不健康"
+  },
+  "hibernation": {
+    "hibernated": "已按要求休眠（注解 cnpg.io/hibernation: \"on\"）：Pod 已删除，卷保留。将注解设为 \"off\" 即可恢复。",
+    "hibernating": "正在按要求休眠（注解 cnpg.io/hibernation: \"on\"）：operator 正在删除 Pod，并保留卷。"
   },
   "backupState": {
     "completed": "已完成",

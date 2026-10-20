@@ -4,7 +4,8 @@
 // the cluster serves, in all namespaces. Kinds the cluster does not serve are never watched and nothing is watched
 // before discovery. The watches are the shared ones (`resource-map/watches.ts`), released `LINGER_MS` after the last
 // user and taken anew when the cluster reconnects. Each object is reduced to a row; objects stay only in the shared
-// registry, which a table of the same kind reuses.
+// registry, which a table of the same kind reuses. A claim or composite kind is watched with at most `MAX_ROWS`
+// objects kept (a cluster can hold thousands of managed resources' claims); a capped list counts as truncated.
 import { useEffect, useSyncExternalStore } from "react";
 import type { ClusterId, KindRef, KubeObject, ObjectRef, WatchSpec } from "../../api";
 import { findKind, status, useClusterKinds } from "../../resources";
@@ -106,6 +107,7 @@ function sync(entry: Entry): void {
   const kinds = knownClusterKinds(entry.clusterId);
   entry.xrdKind = kinds ? (findKind(kinds, XRD)?.kindRef ?? null) : undefined;
   const wanted = new Map<string, WatchSpec>();
+  const capped = new Set<string>();
   entry.watched = [];
   if (entry.xrdKind) {
     wanted.set(specKey(entry.clusterId, everywhere(entry.xrdKind)), everywhere(entry.xrdKind));
@@ -115,6 +117,7 @@ function sync(entry: Entry): void {
         if (!served) continue;
         entry.watched.push({ kind: served, role });
         wanted.set(specKey(entry.clusterId, everywhere(served)), everywhere(served));
+        capped.add(specKey(entry.clusterId, everywhere(served)));
       }
     }
   }
@@ -124,7 +127,7 @@ function sync(entry: Entry): void {
     entry.held.delete(key);
   }
   for (const [key, spec] of wanted) {
-    if (!entry.held.has(key)) entry.held.set(key, { spec, release: acquireWatch(entry.clusterId, spec) });
+    if (!entry.held.has(key)) entry.held.set(key, { spec, release: acquireWatch(entry.clusterId, spec, capped.has(key) ? MAX_ROWS : undefined) });
   }
 }
 
@@ -155,7 +158,8 @@ function build(entry: Entry): CrossplaneState {
   const states = entry.watched.map((w) => watchState(entry.clusterId, everywhere(w.kind)));
   const loading = entry.xrdKind === undefined || xrdState?.status === "loading" || states.some((s) => s.status === "loading");
   const rows: Row[] = [];
-  let rowsTruncated = false;
+  // A list the watch capped holds fewer objects than there are.
+  let rowsTruncated = states.some((s) => s.total !== undefined && s.total > s.items.size);
   entry.watched.forEach((w, i) => {
     for (const obj of states[i]!.items.values()) {
       if (rows.length >= MAX_ROWS) {

@@ -38,6 +38,7 @@
   },
   "confirm": "İmaj ayarla",
   "previewAndSet": "Önizle ve imaj ayarla…",
+  "changedSincePreview": "{{kind}} {{name}} önizlemeden sonra değişti. Bu, güncel nesnenin yeni önizlemesidir: kontrol edin ve imajı yeniden ayarlayın.",
   "owned": {
     "intro": "Bu Pod'u {{kind}} {{name}} yönetiyor: denetleyici Pod'u değiştirir veya değişen imajı yok sayar. İmajı bunun yerine {{kind}} içinde ayarlayın.",
     "open": "{{kind}} {{name}} aç",

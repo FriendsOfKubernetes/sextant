@@ -9,10 +9,16 @@
   "badge_other": "{{count}} Objekte erfordern Aufmerksamkeit",
   "state": {
     "healthy": "Fehlerfrei",
+    "hibernated": "Im Ruhezustand",
+    "hibernating": "Geht in Ruhezustand",
     "switchover": "Umschaltung",
     "failover": "Failover",
     "progressing": "In Arbeit",
     "unhealthy": "Fehlerhaft"
+  },
+  "hibernation": {
+    "hibernated": "Auf Wunsch im Ruhezustand (Annotation cnpg.io/hibernation: \"on\"): Die Pods sind gelöscht, die Volumes bleiben erhalten. Setzen Sie die Annotation auf \"off\", um fortzufahren.",
+    "hibernating": "Geht auf Wunsch in den Ruhezustand (Annotation cnpg.io/hibernation: \"on\"): Der Operator löscht die Pods und behält die Volumes."
   },
   "backupState": {
     "completed": "Abgeschlossen",

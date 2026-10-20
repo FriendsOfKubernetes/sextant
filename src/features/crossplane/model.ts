@@ -74,15 +74,33 @@ export const conditionTone = (value: string | undefined): Tone =>
 /** Ready=False reasons that are progress, not failure: a resource being created or deleted. */
 const IN_PROGRESS = new Set(["Creating", "Deleting"]);
 
-export type Health = "ready" | "progressing" | "failed" | "unknown";
-export const HEALTH_TONE: Record<Health, Tone> = { ready: "success", progressing: "warning", failed: "danger", unknown: "muted" };
+export type Health = "ready" | "progressing" | "paused" | "failed" | "unknown";
+export const HEALTH_TONE: Record<Health, Tone> = { ready: "success", progressing: "warning", paused: "muted", failed: "danger", unknown: "muted" };
+
+/** The annotation that pauses reconciling (crossplane-runtime `meta.AnnotationKeyReconciliationPaused`, value "true"). */
+export const PAUSED_ANNOTATION = "crossplane.io/paused";
+/** The reason of `Synced=False` while paused (`ReconcilePaused()`, apis/core/v2/condition.go). */
+export const REASON_PAUSED = "ReconcilePaused";
+
+const isPausedCondition = (c: Condition) => c.type === "Synced" && c.status === "False" && c.reason === REASON_PAUSED;
 
 /**
- * A claim's, composite's or managed resource's state: failed when it is not Synced (Crossplane cannot reconcile it)
- * or not Ready for another reason than being created or deleted; progressing while being created or deleted or
- * Unknown; ready when Ready and not out of sync.
+ * Paused by the user: Crossplane writes `Synced=False` with reason `ReconcilePaused` when `crossplane.io/paused` is
+ * "true" (or management policies pause it) and leaves the object alone — a state asked for, not a failure.
+ */
+export function isPaused(obj: KubeObject): boolean {
+  const synced = conditionOf(obj, "Synced");
+  if (synced && isPausedCondition(synced)) return true;
+  return str(get(obj, "metadata", "annotations", PAUSED_ANNOTATION)) === "true";
+}
+
+/**
+ * A claim's, composite's or managed resource's state: paused when its reconciling is paused (`isPaused`); failed when
+ * it is not Synced (Crossplane cannot reconcile it) or not Ready for another reason than being created or deleted;
+ * progressing while being created or deleted or Unknown; ready when Ready and not out of sync.
  */
 export function resourceHealth(obj: KubeObject): Health {
+  if (isPaused(obj)) return "paused";
   const synced = conditionOf(obj, "Synced");
   const ready = conditionOf(obj, "Ready");
   if (!synced && !ready) return "unknown";
@@ -92,9 +110,12 @@ export function resourceHealth(obj: KubeObject): Health {
   return "progressing";
 }
 
-/** The first condition that is False: Synced first (a reconcile error), then the others, Ready last. */
+/**
+ * The first condition that is False: Synced first (a reconcile error), then the others, Ready last. `Synced=False`
+ * for a pause is not a failure and is skipped.
+ */
 export function firstFailing(obj: KubeObject): Condition | undefined {
-  const all = conditionsOf(obj).filter((c) => c.status === "False");
+  const all = conditionsOf(obj).filter((c) => c.status === "False" && !isPausedCondition(c));
   return all.find((c) => c.type === "Synced") ?? all.find((c) => c.type !== "Ready") ?? all.find((c) => c.type === "Ready");
 }
 
@@ -278,6 +299,8 @@ export function explainResource(obj: KubeObject): Phrase | undefined {
   switch (resourceHealth(obj)) {
     case "ready":
       return { key: "ready" };
+    case "paused":
+      return { key: "paused" };
     case "progressing":
       return conditionOf(obj, "Ready")?.reason === "Deleting" ? { key: "deleting" } : { key: "creating" };
     case "failed":

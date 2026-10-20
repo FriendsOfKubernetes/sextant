@@ -33,7 +33,7 @@ pub const FIELD_MANAGER: &str = "sextant";
 /// Pod template annotation `kubectl rollout restart` sets; a new value rolls the pods.
 pub const RESTARTED_AT_ANNOTATION: &str = "kubectl.kubernetes.io/restartedAt";
 /// Static pods have a read-only "mirror" in the API; evicting it does nothing.
-const MIRROR_ANNOTATION: &str = "kubernetes.io/config.mirror";
+pub(crate) const MIRROR_ANNOTATION: &str = "kubernetes.io/config.mirror";
 /// The annotation `kubectl create job --from=cronjob/…` puts on a Job started by hand.
 const INSTANTIATE_ANNOTATION: &str = "cronjob.kubernetes.io/instantiate";
 /// Longest name of a Job (its name goes into a pod label).

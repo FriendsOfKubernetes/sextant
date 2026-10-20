@@ -109,5 +109,6 @@
     "podMonitors": "PodMonitors",
     "probes": "Probes",
     "rules": "PrometheusRules"
-  }
+  },
+  "ignoredNamespaceSelector": "Onu alan bir Prometheus, izleyicilerin namespace seçicilerini yok sayıyor (ignoreNamespaceSelectors): hedefleri yalnızca izleyicinin kendi namespace’inde arıyor."
 }

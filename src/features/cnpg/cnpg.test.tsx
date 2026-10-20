@@ -16,7 +16,7 @@ import { resetSharedWatches } from "../resource-map/watches";
 import backupJson from "./fixtures/backup.json";
 import clusterJson from "./fixtures/cluster.json";
 import "./index";
-import { BACKUP, backupState, CLUSTER_GRACE_MS, clusterInfo, FAILED_BACKUP_MS, HEALTHY_PHASE, PG_CLUSTER, POOLER, SCHEDULED_BACKUP } from "./model";
+import { BACKUP, backupState, backupStoppedAt, CLUSTER_GRACE_MS, cnpgProblems, clusterInfo, FAILED_BACKUP_MS, HEALTHY_PHASE, PG_CLUSTER, POOLER, SCHEDULED_BACKUP } from "./model";
 
 const cluster = clusterJson as KubeObject;
 const backup = backupJson as KubeObject;
@@ -73,6 +73,59 @@ describe("the model", () => {
     const done = copy(backup);
     (done.status as Record<string, unknown>).phase = "completed";
     expect(detect(BACKUP, done)).toEqual([]);
+  });
+
+  it("a failed Backup without stoppedAt (as the operator's SetAsFailed leaves it) still stops counting after a day", () => {
+    // SetAsFailed writes the phase, the error and reconciliationTerminatedAt only.
+    const failed = copy(backup);
+    const st = failed.status as Record<string, unknown>;
+    delete st.stoppedAt;
+    delete st.startedAt;
+    st.reconciliationStartedAt = "2026-10-10T00:00:00Z";
+    st.reconciliationTerminatedAt = "2026-10-10T00:00:04Z";
+    expect(backupStoppedAt(failed)).toBe("2026-10-10T00:00:04Z");
+    const [d] = detect(BACKUP, failed);
+    expect(d?.until).toBe(Date.parse("2026-10-10T00:00:04Z") + FAILED_BACKUP_MS);
+    expect(cnpgProblems(BACKUP, failed, Date.parse("2026-10-12T00:00:00Z"))).toEqual([]);
+    expect(cnpgProblems(BACKUP, failed, Date.parse("2026-10-10T12:00:00Z"))).toHaveLength(1);
+    // Nothing but the creation time: that counts.
+    delete st.reconciliationStartedAt;
+    delete st.reconciliationTerminatedAt;
+    expect(backupStoppedAt(failed)).toBe("2026-10-10T00:00:00Z");
+    expect(detect(BACKUP, failed)[0]?.until).toBe(Date.parse("2026-10-10T00:00:00Z") + FAILED_BACKUP_MS);
+    st.startedAt = "2026-10-10T00:00:01Z";
+    expect(backupStoppedAt(failed)).toBe("2026-10-10T00:00:01Z");
+  });
+
+  it("a hibernated cluster is a steady state, not a problem", () => {
+    // As the operator leaves it: the phase unchanged, no ready instance, the hibernation condition True.
+    const sleeping = healthy();
+    sleeping.metadata!.annotations = { "cnpg.io/hibernation": "on" };
+    const s = sleeping.status as Record<string, unknown>;
+    s.readyInstances = 0;
+    s.instancesStatus = {};
+    s.conditions = [
+      { type: "Ready", status: "False", reason: "ClusterIsNotReady", lastTransitionTime: "2026-10-10T08:00:00Z" },
+      { type: "cnpg.io/hibernation", status: "True", reason: "Hibernated", message: "Cluster has been hibernated" },
+    ];
+    expect(clusterInfo(sleeping).state).toBe("hibernated");
+    expect(detect(PG_CLUSTER, sleeping)).toEqual([]);
+    expect(getResourceDef(PG_CLUSTER).problem?.(sleeping)).toBe(false);
+    s.conditions = [{ type: "cnpg.io/hibernation", status: "False", reason: "DeletingPods" }];
+    expect(clusterInfo(sleeping).state).toBe("hibernating");
+    expect(detect(PG_CLUSTER, sleeping)).toEqual([]);
+    // Waiting for a healthy cluster: hibernation has not started, the cluster is judged as any other.
+    s.conditions = [
+      { type: "Ready", status: "False", reason: "ClusterIsNotReady" },
+      { type: "cnpg.io/hibernation", status: "False", reason: "WaitingForHealthy" },
+    ];
+    s.phase = "Setting up primary";
+    expect(clusterInfo(sleeping).state).toBe("progressing");
+    expect(detect(PG_CLUSTER, sleeping).map((d) => d.reason)).toEqual(["ClusterIsNotReady"]);
+    // Only exactly "on" hibernates.
+    sleeping.metadata!.annotations = { "cnpg.io/hibernation": "off" };
+    s.conditions = [{ type: "Ready", status: "False", reason: "ClusterIsNotReady" }];
+    expect(detect(PG_CLUSTER, sleeping).map((d) => d.reason)).toEqual(["ClusterIsNotReady"]);
   });
 
   it("the tables show the state, instances and primary; the filter marks failures", () => {

@@ -13,11 +13,13 @@
   "health": {
     "ready": "Gotowy",
     "progressing": "W toku",
+    "paused": "Wstrzymany",
     "failed": "Błąd",
     "unknown": "Nieznany"
   },
   "served": "udostępniana",
   "referenceable": "referencyjna",
+  "versionWithFlags": "{{name}} ({{flags}})",
   "failing": "Pierwszy niespełniony warunek: {{type}} ({{reason}})",
   "failingWithMessage": "Pierwszy niespełniony warunek: {{type}} ({{reason}}): {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -85,6 +87,7 @@
     "ready": "Zsynchronizowany i gotowy.",
     "creating": "Jeszcze niegotowy: Crossplane wciąż tworzy go lub jego zasoby.",
     "deleting": "Usuwanie.",
+    "paused": "Wstrzymany: Crossplane go nie uzgadnia (jego adnotacja crossplane.io/paused ma wartość \"true\" albo wstrzymują go jego zasady zarządzania).",
     "notSynced": "Crossplane nie może go uzgodnić ({{reason}}): przyczynę podaje pierwszy niespełniony warunek poniżej.",
     "notReady": "Niegotowy ({{reason}}): przyczynę podaje pierwszy niespełniony warunek poniżej.",
     "packageHealthy": "Zainstalowany i sprawny.",

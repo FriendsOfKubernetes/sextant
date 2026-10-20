@@ -72,11 +72,16 @@
     "policyFailures_few": "{{count}} reguły zasad nie są spełnione: {{policies}}",
     "policyFailures_many": "{{count}} reguł zasad nie jest spełnionych: {{policies}}",
     "policyFailures_other": "{{count}} reguły zasad nie jest spełnione: {{policies}}",
+    "policyErrors_one": "{{count}} reguły zasad nie udało się ocenić: {{policies}}",
+    "policyErrors_few": "{{count}} reguł zasad nie udało się ocenić: {{policies}}",
+    "policyErrors_many": "{{count}} reguł zasad nie udało się ocenić: {{policies}}",
+    "policyErrors_other": "{{count}} reguły zasad nie udało się ocenić: {{policies}}",
     "serviceMonitorSelectsNothing": "Nie wybiera żadnego Service w namespace: {{namespaces}}",
     "podMonitorSelectsNothing": "Nie wybiera żadnego Poda w namespace: {{namespaces}}",
     "monitorNotPickedUp": "Żaden Prometheus nie wybiera go swoimi selectorami"
   },
   "showDisk": "Dysk prawie pełny",
   "showPractices": "Ustalenia dotyczące dobrych praktyk",
-  "showPolicies": "Naruszenia zasad Kyverno"
+  "showPolicies": "Naruszenia zasad Kyverno",
+  "showPrometheusOperator": "Monitory i serwery Prometheus Operator"
 }

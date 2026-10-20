@@ -43,5 +43,6 @@
     "open": "Open {{kind}} {{name}}",
     "looking": "Looking up the owner…"
   },
-  "mirror": "This is a static Pod: the kubelet runs it from a manifest file on its node. Change the image in that file."
+  "mirror": "This is a static Pod: the kubelet runs it from a manifest file on its node. Change the image in that file.",
+  "changedSincePreview": "{{kind}} {{name}} changed after the preview. This is a new preview of the live object: check it and set the image again."
 }

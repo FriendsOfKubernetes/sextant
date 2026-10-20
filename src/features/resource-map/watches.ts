@@ -75,14 +75,17 @@ export function specKey(clusterId: ClusterId, spec: WatchSpec): string {
   return JSON.stringify([clusterId, spec.kind, spec.namespaces, spec.labelSelector, spec.fieldSelector, spec.metadataOnly ?? false]);
 }
 
-/** Starts (or shares) the watch; the returned function lets go of it. */
-export function acquireWatch(clusterId: ClusterId, spec: WatchSpec): () => void {
+/**
+ * Starts (or shares) the watch; the returned function lets go of it. `maxObjects` caps what the watch keeps (the
+ * holder reads `total` to tell it is truncated); a holder without a cap lifts it for everyone.
+ */
+export function acquireWatch(clusterId: ClusterId, spec: WatchSpec, maxObjects?: number): () => void {
   followConnections();
   // The views hear of changes of their own watches only (flushed), not of every table's.
   const key = watchKey(clusterId, spec);
   mine.set(key, (mine.get(key) ?? 0) + 1);
   const unsubscribe = subscribeWatchKey(key, () => notify());
-  const release = acquireShared(clusterId, spec, { linger });
+  const release = acquireShared(clusterId, spec, maxObjects === undefined ? { linger } : { linger, watch: { progressive: false, maxObjects } });
   let released = false;
   return () => {
     if (released) return;

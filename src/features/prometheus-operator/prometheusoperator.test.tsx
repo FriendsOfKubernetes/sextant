@@ -32,7 +32,9 @@ import {
   targetNamespaces,
 } from "./model";
 import { toProblems } from "./provider";
-import { acquireMonitoring, getMonitoring, resetMonitoringStore } from "./store";
+import { acquireMonitoring, getMonitoring, REBUILD_DELAY_MS, resetMonitoringStore } from "./store";
+import { acquireWatch as acquireSharedWatch } from "../resource-map/watches";
+import { OPT_IN_CATEGORIES } from "../problems/model";
 
 const fx = fixtures as unknown as Record<string, KubeObject> & { services: KubeObject[] };
 const monitor = fx.serviceMonitor!;
@@ -59,6 +61,21 @@ describe("the model", () => {
     expect(selectorText(selector)).toBe("app=web,tier in (a,b),!canary");
     expect(selectorText(labelSelector({}))).toBe("");
     expect(selectorText(labelSelector({ matchExpressions: [{ key: "x", operator: "Bogus" }] }))).toBeNull();
+  });
+
+  it("a Prometheus with ignoreNamespaceSelectors makes its monitors look in their own namespace only", () => {
+    const wide = copy(monitor);
+    (wide.spec as Record<string, unknown>).namespaceSelector = { matchNames: ["a", "b"] };
+    const ignoring = copy(prometheus);
+    (ignoring.spec as Record<string, unknown>).ignoreNamespaceSelectors = true;
+    expect(targetNamespaces(wide)).toEqual({ type: "list", names: ["a", "b"] });
+    expect(targetNamespaces(wide, [prometheus])).toEqual({ type: "list", names: ["a", "b"] });
+    expect(targetNamespaces(wide, [ignoring])).toEqual({ type: "list", names: ["default"] });
+    // One ignores, one does not: both sets of namespaces are scraped.
+    expect(targetNamespaces(wide, [ignoring, prometheus])).toEqual({ type: "list", names: ["a", "b", "default"] });
+    const anywhere = copy(monitor);
+    (anywhere.spec as Record<string, unknown>).namespaceSelector = { any: true };
+    expect(targetNamespaces(anywhere, [ignoring])).toEqual({ type: "list", names: ["default"] });
   });
 
   it("a Prometheus picks a monitor up by its selector and namespace selector", () => {
@@ -139,10 +156,11 @@ function emitAll(kind: string, items: KubeObject[], match: (s: WatchSpec) => boo
   }
 }
 
-const settle = () => act(() => new Promise<void>((r) => setTimeout(r, 150)));
+const settle = () => act(() => new Promise<void>((r) => setTimeout(r, REBUILD_DELAY_MS + 150)));
 
 describe("what the monitors select, for the problems screen", () => {
   it("finds a monitor that selects nothing and one no Prometheus picks up", async () => {
+    stored.notifications.enabledCategories = ["prometheusOperator"];
     render(<Sidebar clusterId="c1" />);
     const release = acquireMonitoring("c1");
     await watchOf(wb, "ServiceMonitor");
@@ -170,6 +188,43 @@ describe("what the monitors select, for the problems screen", () => {
     expect(problems[0]?.messageLists).toEqual({ namespaces: ["default"] });
     // The section counts the monitor that selects nothing and the degraded Prometheus, not the warning.
     await waitFor(() => expect(screen.getByTitle("2 objects need attention")).toHaveTextContent("2"));
+    release();
+  });
+
+  it("is an opt-in category: nothing is listed or counted until it is turned on", async () => {
+    expect(OPT_IN_CATEGORIES).toContain("prometheusOperator");
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(wb.backend.calls.some((c) => c.cmd === "cluster_kinds")).toBe(true));
+    await settle();
+    expect([...wb.specs.values()].some((s) => s.kind.kind === "ServiceMonitor" || s.kind.kind === "Prometheus")).toBe(false);
+  });
+
+  it("is rebuilt only when its own watches change, not on every change of another shared watch", async () => {
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(wb.backend.calls.some((c) => c.cmd === "cluster_kinds")).toBe(true));
+    await settle();
+    const release = acquireMonitoring("c1");
+    await watchOf(wb, "ServiceMonitor");
+    emitAll("ServiceMonitor", [monitor]);
+    emitAll("PodMonitor", []);
+    emitAll("Prometheus", [prometheus]);
+    emitAll("PrometheusAgent", []);
+    await settle();
+    emitAll("Service", fx.services, (s) => s.metadataOnly === true);
+    await waitFor(() => expect(getMonitoring("c1").loading).toBe(false), { timeout: 3000 });
+    const built = getMonitoring("c1");
+    // A busy unrelated list (the resource map's ConfigMaps) changes twice.
+    const other = acquireSharedWatch("c1", { kind: { group: "", version: "v1", kind: "ConfigMap" }, namespaces: ["x"], labelSelector: null, fieldSelector: null });
+    const cm = await watchOf(wb, "ConfigMap");
+    act(() => wb.backend.emit(`watch:${cm}`, { type: "snapshot", items: [] }));
+    act(() => wb.backend.emit(`watch:${cm}`, { type: "snapshot", items: [{ metadata: { name: "a", namespace: "x", uid: "a" } }] }));
+    await settle();
+    expect(getMonitoring("c1")).toBe(built);
+    // Its own list changes: rebuilt once the delay has passed.
+    emitAll("ServiceMonitor", [monitor, orphan]);
+    await settle();
+    expect(getMonitoring("c1")).not.toBe(built);
+    other();
     release();
   });
 });

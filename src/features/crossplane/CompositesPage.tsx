@@ -12,7 +12,7 @@ import { link } from "../details";
 import { conditionTone, HEALTH_TONE, type Health } from "./model";
 import { MAX_XRDS, useCrossplane, type Row } from "./store";
 
-const RANK: Record<Health, number> = { failed: 0, progressing: 1, unknown: 2, ready: 3 };
+const RANK: Record<Health, number> = { failed: 0, progressing: 1, unknown: 2, paused: 3, ready: 4 };
 
 const byState = (a: Row, b: Row) =>
   RANK[a.health] - RANK[b.health] ||

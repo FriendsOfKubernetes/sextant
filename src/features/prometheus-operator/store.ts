@@ -5,6 +5,9 @@
 // for a monitor of every namespace, nothing is judged); and the Namespaces' labels only when a Prometheus selects
 // namespaces by labels. The watches are the shared ones of the resource map (`acquireWatch`), released `LINGER_MS`
 // after the last user and taken anew when the cluster reconnects. Kinds the cluster does not serve are never watched.
+// Its only holder is the problems category `prometheusOperator`, which is opt-in: nothing is listed until the user turns
+// it on. The shared watches change often on a busy cluster (every Pod), so a change is looked at once per
+// `REBUILD_DELAY_MS`, and an entry is rebuilt only when one of its own watches (or the connection) changed.
 import { useEffect, useSyncExternalStore } from "react";
 import type { ClusterId, KindRef, KubeObject, ObjectRef, WatchSpec, WatchState } from "../../api";
 import { findKind, status, useClusterKinds } from "../../resources";
@@ -12,6 +15,7 @@ import { knownClusterKinds } from "../../resources/useKinds";
 import { acquireWatch, epochOf, specKey, subscribeSharedWatches, watchState } from "../resource-map/watches";
 import { matches, type Labels } from "../resource-map/selectors";
 import {
+  ignoresNamespaceSelectors,
   monitorSelector,
   needsNamespaceLabels,
   pickedUpBy,
@@ -24,6 +28,8 @@ import {
 
 export const LINGER_MS = 5000;
 export const MAX_TARGET_NAMESPACES = 40;
+/** Changes of the shared watches are looked at together, at most this often. */
+export const REBUILD_DELAY_MS = 500;
 
 const SERVICE: KindRef = { group: "", version: "v1", kind: "Service" };
 const POD: KindRef = { group: "", version: "v1", kind: "Pod" };
@@ -58,11 +64,14 @@ interface Entry {
   targets: (WatchSpec | undefined)[];
   namespacesSpec?: WatchSpec;
   state?: MonitoringState;
+  /** What the state was built from: the connection's epoch and the states of the held watches, by identity. */
+  inputs?: unknown[];
 }
 
 const entries = new Map<ClusterId, Entry>();
 const listeners = new Set<() => void>();
 let unsubscribeShared: (() => void) | undefined;
+let rebuild: ReturnType<typeof setTimeout> | undefined;
 
 const everywhere = (kind: KindRef, metadataOnly = false): WatchSpec => ({
   kind,
@@ -76,12 +85,30 @@ function notify(): void {
   for (const fn of [...listeners]) fn();
 }
 
+/**
+ * What a state is built from: the connection's epoch, what the cluster serves and the states of the held watches
+ * (compared by identity).
+ */
+function inputsOf(entry: Entry): unknown[] {
+  return [epochOf(entry.clusterId), knownClusterKinds(entry.clusterId), ...[...entry.held.values()].map((h) => watchState(entry.clusterId, h.spec))];
+}
+
+const sameInputs = (a: unknown[] | undefined, b: unknown[]) => a !== undefined && a.length === b.length && b.every((v, i) => v === a[i]);
+
 function onShared(): void {
-  for (const entry of entries.values()) {
-    entry.state = undefined;
-    sync(entry);
-  }
-  notify();
+  rebuild ??= setTimeout(() => {
+    rebuild = undefined;
+    let changed = false;
+    for (const entry of entries.values()) {
+      const inputs = inputsOf(entry);
+      if (sameInputs(entry.inputs, inputs)) continue;
+      entry.inputs = inputs;
+      entry.state = undefined;
+      sync(entry);
+      changed = true;
+    }
+    if (changed) notify();
+  }, REBUILD_DELAY_MS);
 }
 
 function items(entry: Entry, kind: KindRef | null | undefined): KubeObject[] {
@@ -89,12 +116,17 @@ function items(entry: Entry, kind: KindRef | null | undefined): KubeObject[] {
   return [...watchState(entry.clusterId, everywhere(kind)).items.values()];
 }
 
-/** The metadata-only list of `kind` in the namespaces `monitors` look in, if they are few enough. */
-function targetsSpec(kind: KindRef, monitors: KubeObject[]): WatchSpec | undefined {
+/**
+ * The metadata-only list of `kind` in the namespaces `monitors` look in, if they are few enough; with a Prometheus that
+ * ignores namespace selectors, each monitor's own namespace too.
+ */
+function targetsSpec(kind: KindRef, monitors: KubeObject[], proms: readonly KubeObject[]): WatchSpec | undefined {
   const namespaces = new Set<string>();
+  const ownToo = proms.some(ignoresNamespaceSelectors);
   for (const m of monitors) {
     const t = targetNamespaces(m);
     if (t.type === "list") for (const n of t.names) namespaces.add(n);
+    if (ownToo) namespaces.add(m.metadata?.namespace ?? "");
   }
   if (namespaces.size === 0 || namespaces.size > MAX_TARGET_NAMESPACES) return undefined;
   return {
@@ -120,9 +152,9 @@ function sync(entry: Entry): void {
   const want = (spec: WatchSpec | undefined) => spec && wanted.set(specKey(entry.clusterId, spec), spec);
   for (const kind of entry.served ?? []) if (kind) want(everywhere(kind));
   const [sm, pm, prom, agent] = entry.served ?? [];
-  entry.targets = [sm ? targetsSpec(SERVICE, items(entry, sm)) : undefined, pm ? targetsSpec(POD, items(entry, pm)) : undefined];
-  entry.targets.forEach(want);
   const proms = [...items(entry, prom), ...items(entry, agent)];
+  entry.targets = [sm ? targetsSpec(SERVICE, items(entry, sm), proms) : undefined, pm ? targetsSpec(POD, items(entry, pm), proms) : undefined];
+  entry.targets.forEach(want);
   entry.namespacesSpec = needsNamespaceLabels(proms) ? everywhere(NAMESPACE, true) : undefined;
   want(entry.namespacesSpec);
   for (const [key, h] of [...entry.held]) {
@@ -149,6 +181,7 @@ function labelsByNamespace(state: WatchState | undefined, spec: WatchSpec | unde
 }
 
 function build(entry: Entry): MonitoringState {
+  entry.inputs = inputsOf(entry);
   const served = entry.served;
   const watched = (served ?? []).map((kind) => (kind ? watchState(entry.clusterId, everywhere(kind)) : undefined));
   const targetStates = entry.targets.map((spec) => (spec ? watchState(entry.clusterId, spec) : undefined));
@@ -165,13 +198,14 @@ function build(entry: Entry): MonitoringState {
     if (!kind) return;
     const targets = labelsByNamespace(targetStates[i], entry.targets[i]);
     for (const monitor of items(entry, kind)) {
-      const where = targetNamespaces(monitor);
+      const picked = proms.length > 0 ? pickedUpBy(proms, kind, monitor, namespaceLabels) : undefined;
+      // Every Prometheus that picks it up decides where it looks (`ignoreNamespaceSelectors`); unknown ones count too.
+      const where = targetNamespaces(monitor, picked && !picked.unknown ? picked.by : undefined);
       let selected: number | undefined;
       if (where.type === "list" && targets && where.names.every((n) => targets.has(n))) {
         const selector = monitorSelector(monitor);
         selected = where.names.reduce((n, ns) => n + targets.get(ns)!.filter((labels) => matches(selector, labels)).length, 0);
       }
-      const picked = proms.length > 0 ? pickedUpBy(proms, kind, monitor, namespaceLabels) : undefined;
       findings.push({
         uid: monitor.metadata?.uid ?? `${monitor.metadata?.namespace}/${monitor.metadata?.name}`,
         ref: {
@@ -284,6 +318,8 @@ export function resetMonitoringStore(): void {
   entries.clear();
   unsubscribeShared?.();
   unsubscribeShared = undefined;
+  if (rebuild) clearTimeout(rebuild);
+  rebuild = undefined;
 }
 
 /** Whether `kind` is one the store judges. */

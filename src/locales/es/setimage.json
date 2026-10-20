@@ -38,6 +38,7 @@
   },
   "confirm": "Establecer imagen",
   "previewAndSet": "Revisar y establecer imagen…",
+  "changedSincePreview": "{{kind}} {{name}} cambió después de la vista previa. Esta es una nueva vista previa del objeto actual: revísela y vuelva a establecer la imagen.",
   "owned": {
     "intro": "Este Pod lo gestiona {{kind}} {{name}}: el controlador reemplazaría el Pod o ignoraría una imagen cambiada. Establezca la imagen en el {{kind}}.",
     "open": "Abrir {{kind}} {{name}}",

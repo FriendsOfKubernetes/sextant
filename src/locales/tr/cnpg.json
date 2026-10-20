@@ -9,10 +9,16 @@
   "badge_other": "{{count}} nesne ilgi gerektiriyor",
   "state": {
     "healthy": "Sağlıklı",
+    "hibernated": "Hazırda bekletiliyor",
+    "hibernating": "Hazırda beklemeye geçiyor",
     "switchover": "Geçiş",
     "failover": "Yük devri",
     "progressing": "Sürüyor",
     "unhealthy": "Sağlıksız"
+  },
+  "hibernation": {
+    "hibernated": "İstek üzerine hazırda bekletiliyor (cnpg.io/hibernation: \"on\" ek açıklaması): pod’lar silindi, birimler korunuyor. Sürdürmek için ek açıklamayı \"off\" yapın.",
+    "hibernating": "İstek üzerine hazırda beklemeye geçiyor (cnpg.io/hibernation: \"on\" ek açıklaması): operatör pod’ları siliyor ve birimleri koruyor."
   },
   "backupState": {
     "completed": "Tamamlandı",

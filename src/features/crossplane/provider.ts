@@ -1,8 +1,9 @@
 // The source of the problems category "Crossplane" (#213): while the problems store holds it (the problems screen, a
 // counter or the notifications look at a cluster that serves XRDs), the cluster's claims and composites are held
 // (store.ts) and each one that is not Synced, or not Ready for another reason than being created or deleted, is a
-// problem; one still being created counts after `CREATING_GRACE_MS` (cloud resources take minutes). A composite a
-// claim stands for is told through its claim. Nothing is kept once the source is released.
+// problem; one still being created counts after `CREATING_GRACE_MS` (cloud resources take minutes). A paused one
+// (`crossplane.io/paused`, `Synced=False` with reason `ReconcilePaused`) is the user's choice, never a problem. A
+// composite a claim stands for is told through its claim. Nothing is kept once the source is released.
 import type { Problem } from "../problems/model";
 import { registerProblemProvider } from "../problems/store";
 import { acquireCrossplane, getCrossplane, subscribeCrossplane, type Row } from "./store";
@@ -23,7 +24,7 @@ export function toProblems(rows: readonly Row[], firstSeen: Map<string, number>,
   const keys = new Set<string>();
   const out: Problem[] = [];
   for (const row of rows) {
-    if (row.claimed || row.health === "ready" || row.health === "unknown") continue;
+    if (row.claimed || row.health === "ready" || row.health === "paused" || row.health === "unknown") continue;
     const creating = row.health === "progressing";
     // Deleting is the user's own doing: never a problem.
     if (creating && row.failing?.reason === "Deleting") continue;

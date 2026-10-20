@@ -104,5 +104,6 @@
     "podMonitors": "PodMonitors",
     "probes": "Probes",
     "rules": "PrometheusRules"
-  }
+  },
+  "ignoredNamespaceSelector": "選取它的某個 Prometheus 忽略監視器的 namespace 選擇器（ignoreNamespaceSelectors）：只在監視器自己的 namespace 中尋找目標。"
 }

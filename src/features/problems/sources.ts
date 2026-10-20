@@ -27,6 +27,7 @@ import {
   POD,
   PVC,
   STATEFULSET,
+  categoryOf,
   type ProblemCategory,
 } from "./model";
 
@@ -42,7 +43,15 @@ export interface SourceDef {
    * fill levels of volume claims ("disk almost full", #152), polled by features/storage while the source is held.
    */
   external?: boolean;
+  /**
+   * The watch keeps at most this many objects (`WatchOptions.maxObjects`), for kinds a cluster can hold by the
+   * thousand (Kafka topics and users, policy reports); beyond it the source says it is truncated.
+   */
+  maxObjects?: number;
 }
+
+/** The cap of a source whose kind a cluster can hold by the thousand. */
+export const MAX_SOURCE_OBJECTS = 5000;
 
 const builtIn = (category: ProblemCategory, kind: KindRef, fieldSelector: string | null = null): SourceDef => ({
   category,
@@ -50,7 +59,13 @@ const builtIn = (category: ProblemCategory, kind: KindRef, fieldSelector: string
   fieldSelector,
   discovered: false,
 });
-const tool = (category: ProblemCategory, kind: KindRef): SourceDef => ({ category, kind, fieldSelector: null, discovered: true });
+const tool = (category: ProblemCategory, kind: KindRef, maxObjects?: number): SourceDef => ({
+  category,
+  kind,
+  fieldSelector: null,
+  discovered: true,
+  ...(maxObjects !== undefined ? { maxObjects } : {}),
+});
 
 /** Flux kinds with a Ready condition worth watching: the sources and what applies them. */
 const FLUX_WATCHED = [GIT_REPOSITORY, OCI_REPOSITORY, HELM_REPOSITORY, BUCKET, KUSTOMIZATION, HELM_RELEASE];
@@ -79,15 +94,16 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
   // Kyverno policy failures (#213, opt-in): the reports Kyverno writes, one per resource.
-  policies: [tool("policies", POLICY_REPORT), tool("policies", CLUSTER_POLICY_REPORT)],
+  // One report per resource: capped.
+  policies: [tool("policies", POLICY_REPORT, MAX_SOURCE_OBJECTS), tool("policies", CLUSTER_POLICY_REPORT, MAX_SOURCE_OBJECTS)],
   // External Secrets (#213): failed syncs and stores that do not validate.
   externalSecrets: [EXTERNAL_SECRET, CLUSTER_EXTERNAL_SECRET, SECRET_STORE, CLUSTER_SECRET_STORE, PUSH_SECRET].map((kind) =>
     tool("externalSecrets", kind),
   ),
   // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
   cnpg: [tool("cnpg", PG_CLUSTER), tool("cnpg", CNPG_BACKUP)],
-  // Strimzi (#213): every kind of the section not ready.
-  strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind)),
+  // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
+  strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind, d.label === "topics" || d.label === "users" ? MAX_SOURCE_OBJECTS : undefined)),
   // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged
   // across objects by the provider of features/prometheus-operator (`external`), held only where ServiceMonitors are
   // served.
@@ -140,6 +156,19 @@ export function sourcesFor(categories: readonly ProblemCategory[], kinds: Resour
 }
 
 /** Whether `categories` need discovery to be watched. */
+/**
+ * Whether the rules alone judge `kind` (its category watches it with a source of its own): when they find nothing it
+ * is fine. A kind of a category whose problems come also from a provider (`external`: a ServiceMonitor that selects
+ * nothing, judged across objects) is not: no rule finding does not mean no problem.
+ */
+export function judgedByRules(kind: Pick<KindRef, "group" | "kind">): boolean {
+  const category = categoryOf(kind);
+  if (!category) return false;
+  const defs = CATEGORY_SOURCES[category];
+  if (!defs.some((d) => d.external)) return true;
+  return defs.some((d) => !d.external && d.kind.group === kind.group && d.kind.kind === kind.kind);
+}
+
 export function needsDiscovery(categories: readonly ProblemCategory[]): boolean {
   return categories.some((c) => CATEGORY_SOURCES[c].some((d) => d.discovered));
 }

@@ -11,10 +11,16 @@
   "badge_other": "{{count}} объекта требуют внимания",
   "state": {
     "healthy": "Исправен",
+    "hibernated": "Спит",
+    "hibernating": "Засыпает",
     "switchover": "Переключение",
     "failover": "Аварийное переключение",
     "progressing": "Выполняется",
     "unhealthy": "Неисправен"
+  },
+  "hibernation": {
+    "hibernated": "Усыплён по запросу (аннотация cnpg.io/hibernation: \"on\"): поды удалены, тома сохранены. Чтобы возобновить работу, задайте аннотации значение \"off\".",
+    "hibernating": "Усыпляется по запросу (аннотация cnpg.io/hibernation: \"on\"): оператор удаляет поды и сохраняет тома."
   },
   "backupState": {
     "completed": "Завершён",

@@ -1,0 +1,85 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "Workflow",
+  "metadata": {
+    "name": "build-cs-q7v2n",
+    "generateName": "build-cs-",
+    "namespace": "argo",
+    "uid": "wf-container-set",
+    "creationTimestamp": "2026-10-20T10:00:00Z",
+    "labels": { "workflows.argoproj.io/phase": "Failed", "workflows.argoproj.io/completed": "true" },
+    "annotations": { "workflows.argoproj.io/pod-name-format": "v2" }
+  },
+  "spec": {
+    "entrypoint": "main",
+    "templates": [
+      { "name": "main", "dag": { "tasks": [{ "name": "build", "template": "build-set" }] } },
+      {
+        "name": "build-set",
+        "containerSet": {
+          "containers": [
+            { "name": "compile", "image": "golang:1.25", "command": ["go", "build", "./..."] },
+            { "name": "test", "image": "golang:1.25", "command": ["go", "test", "./..."], "dependencies": ["compile"] }
+          ]
+        }
+      }
+    ]
+  },
+  "status": {
+    "phase": "Failed",
+    "startedAt": "2026-10-20T10:00:00Z",
+    "finishedAt": "2026-10-20T10:03:10Z",
+    "progress": "1/2",
+    "message": "child 'build-cs-q7v2n-601456081' failed",
+    "nodes": {
+      "build-cs-q7v2n": {
+        "id": "build-cs-q7v2n",
+        "name": "build-cs-q7v2n",
+        "displayName": "build-cs-q7v2n",
+        "type": "DAG",
+        "templateName": "main",
+        "phase": "Failed",
+        "startedAt": "2026-10-20T10:00:00Z",
+        "finishedAt": "2026-10-20T10:03:10Z",
+        "children": ["build-cs-q7v2n-601456081"]
+      },
+      "build-cs-q7v2n-601456081": {
+        "id": "build-cs-q7v2n-601456081",
+        "name": "build-cs-q7v2n.build",
+        "displayName": "build",
+        "type": "Pod",
+        "templateName": "build-set",
+        "boundaryID": "build-cs-q7v2n",
+        "phase": "Failed",
+        "message": "child 'build-cs-q7v2n-3423757485' failed",
+        "startedAt": "2026-10-20T10:00:01Z",
+        "finishedAt": "2026-10-20T10:03:09Z",
+        "children": ["build-cs-q7v2n-1513831638"]
+      },
+      "build-cs-q7v2n-1513831638": {
+        "id": "build-cs-q7v2n-1513831638",
+        "name": "build-cs-q7v2n.build.compile",
+        "displayName": "compile",
+        "type": "Container",
+        "templateName": "build-set",
+        "boundaryID": "build-cs-q7v2n-601456081",
+        "phase": "Succeeded",
+        "startedAt": "2026-10-20T10:00:05Z",
+        "finishedAt": "2026-10-20T10:01:40Z",
+        "children": ["build-cs-q7v2n-3423757485"]
+      },
+      "build-cs-q7v2n-3423757485": {
+        "id": "build-cs-q7v2n-3423757485",
+        "name": "build-cs-q7v2n.build.test",
+        "displayName": "test",
+        "type": "Container",
+        "templateName": "build-set",
+        "boundaryID": "build-cs-q7v2n-601456081",
+        "phase": "Failed",
+        "message": "Error (exit code 1)",
+        "startedAt": "2026-10-20T10:01:41Z",
+        "finishedAt": "2026-10-20T10:03:08Z"
+      }
+    }
+  }
+}

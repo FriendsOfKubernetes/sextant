@@ -7,7 +7,10 @@
 //! image, or overwrite a change made meanwhile. The patch carries that read's `resourceVersion`, so a change landing
 //! between the read and the patch is refused (`conflict`) instead of merged. Ephemeral containers are never touched
 //! (their images cannot change). A Pod a controller owns is refused: its controller would replace it or ignore the
-//! change; the window offers its owner instead. Window only: agents have `patch_resource`, extensions nothing new.
+//! change; the window offers its owner instead. A static Pod's mirror (`kubernetes.io/config.mirror`) is refused too:
+//! the kubelet runs it from a file on the node and the API server only shows it. A change sent after a preview carries
+//! the `resourceVersion` the preview read ([`SetImagePreview`]), so anything written after the preview is a `conflict`
+//! and the window previews again. Window only: agents have `patch_resource`, extensions nothing new.
 
 use kube::api::{DynamicObject, Patch, PatchParams};
 use serde::{Deserialize, Serialize};
@@ -21,6 +24,7 @@ use super::{DryRunResult, KindRef, ObjectRef};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
+use crate::resources::mutate::MIRROR_ANNOTATION;
 
 /// At most this many containers change in one patch.
 pub const MAX_IMAGE_CHANGES: usize = 64;
@@ -42,6 +46,16 @@ pub struct SetImageChange {
     pub image: String,
 }
 
+/// The dry run of a change and the `resourceVersion` of the live object it was compared with: the change the user
+/// confirms after this preview sends it back, so it lands only on exactly what was previewed.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SetImagePreview {
+    pub result: DryRunResult,
+    pub resource_version: String,
+}
+
 /// Where the pod spec is in an object of `kind`; `None` for a kind this action does not change.
 pub fn pod_spec_path(kind: &KindRef) -> Option<&'static [&'static str]> {
     match (kind.group.as_str(), kind.kind.as_str()) {
@@ -57,7 +71,8 @@ fn invalid(message: impl Into<String>) -> CoreError {
 }
 
 /// The changes are well formed: some, at most [`MAX_IMAGE_CHANGES`], each container once, every image a plausible
-/// reference (the window checks the full grammar; here: not empty, no spaces or control characters, bounded).
+/// reference (the window checks the full grammar; here: not empty, bounded, and printable ASCII only — every character
+/// of the reference grammar is one, so spaces, control, invisible and text-direction characters are refused).
 pub fn check_changes(changes: &[SetImageChange]) -> CoreResult<()> {
     if changes.is_empty() {
         return Err(invalid("no image to change"));
@@ -83,7 +98,7 @@ pub fn check_changes(changes: &[SetImageChange]) -> CoreResult<()> {
         let image = &change.image;
         let bad = image.is_empty()
             || image.len() > MAX_IMAGE_LENGTH
-            || image.chars().any(|c| c.is_whitespace() || c.is_control());
+            || !image.chars().all(|c| c.is_ascii_graphic());
         if bad {
             return Err(invalid(format!(
                 "the image of container {} is not an image reference",
@@ -140,6 +155,16 @@ fn check_live(kind: &KindRef, live: &DynamicObject, changes: &[SetImageChange]) 
                 owner.kind, owner.name
             )));
         }
+        let mirror = live
+            .metadata
+            .annotations
+            .as_ref()
+            .is_some_and(|a| a.contains_key(MIRROR_ANNOTATION));
+        if mirror {
+            return Err(invalid(
+                "this Pod is the mirror of a static Pod: set the image in its manifest on the node",
+            ));
+        }
     }
     let mut spec = &live.data;
     for key in pod_spec_path(kind).unwrap_or_default() {
@@ -175,12 +200,14 @@ fn check_live(kind: &KindRef, live: &DynamicObject, changes: &[SetImageChange]) 
     Ok(())
 }
 
-/// The live object, checked, and the patch for it (with its `resourceVersion`).
+/// The live object, checked, and the patch for it (with its `resourceVersion`). With `previewed`, the live object
+/// must still be the one the preview read: anything written since is a `conflict` and nothing is sent.
 async fn prepare(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     r: &ObjectRef,
     changes: &[SetImageChange],
+    previewed: Option<&str>,
 ) -> CoreResult<(kube::Api<DynamicObject>, ResolvedKind, DynamicObject, Value)> {
     if pod_spec_path(&r.kind).is_none() {
         return Err(invalid(format!(
@@ -192,31 +219,46 @@ async fn prepare(
     let (api, kind) = object_api(mgr, cluster, r).await?;
     let live = api.get(&r.name).await?;
     check_live(&r.kind, &live, changes)?;
+    if let Some(previewed) = previewed
+        && live.metadata.resource_version.as_deref() != Some(previewed)
+    {
+        return Err(CoreError::new(
+            ErrorCode::Conflict,
+            format!(
+                "{} {} has changed since the preview; preview the change again",
+                r.kind.kind, r.name
+            ),
+        ));
+    }
     let body = image_patch(&r.kind, changes, live.metadata.resource_version.as_deref())?;
     Ok((api, kind, live, body))
 }
 
-/// Sets the images: one strategic-merge patch signed by Sextant's field manager, never repeated.
+/// Sets the images: one strategic-merge patch signed by Sextant's field manager, never repeated. `previewed` is the
+/// `resourceVersion` of the preview the user confirmed, if there was one.
 pub async fn set_images(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     r: &ObjectRef,
     changes: &[SetImageChange],
+    previewed: Option<&str>,
 ) -> CoreResult<()> {
-    let (api, _, _, body) = prepare(mgr, cluster, r, changes).await?;
+    let (api, _, _, body) = prepare(mgr, cluster, r, changes, previewed).await?;
     api.patch(&r.name, &patch_params(), &Patch::Strategic(&body))
         .await?;
     Ok(())
 }
 
-/// The same patch with `dryRun=All`: the live object against what the API server would store.
+/// The same patch with `dryRun=All`: the live object against what the API server would store, and the live object's
+/// `resourceVersion` for the change that follows the preview.
 pub async fn dry_run_set_images(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     r: &ObjectRef,
     changes: &[SetImageChange],
-) -> CoreResult<DryRunResult> {
-    let (api, kind, live, body) = prepare(mgr, cluster, r, changes).await?;
+) -> CoreResult<SetImagePreview> {
+    let (api, kind, live, body) = prepare(mgr, cluster, r, changes, None).await?;
+    let resource_version = live.metadata.resource_version.clone().unwrap_or_default();
     let params = PatchParams {
         dry_run: true,
         ..patch_params()
@@ -225,8 +267,11 @@ pub async fn dry_run_set_images(
         .patch(&r.name, &params, &Patch::Strategic(&body))
         .await?;
     let object = compared(r.clone(), String::new(), &kind, Some(live), after)?;
-    Ok(DryRunResult {
-        objects: vec![object],
+    Ok(SetImagePreview {
+        result: DryRunResult {
+            objects: vec![object],
+        },
+        resource_version,
     })
 }
 
@@ -295,6 +340,11 @@ mod tests {
             vec![change("web", false, "a", "")],
             vec![change("web", false, "a", "nginx :1")],
             vec![change("web", false, "a", "nginx\n")],
+            vec![change("web", false, "a", "nginx\u{202e}:1")],
+            vec![change("web", false, "a", "nginx\u{200b}:1")],
+            vec![change("web", false, "a", "\u{feff}nginx:1")],
+            vec![change("web", false, "a", "nginx:1\u{00a0}")],
+            vec![change("web", false, "a", "nginx:ü")],
             vec![change("web", false, "a", &"x".repeat(MAX_IMAGE_LENGTH + 1))],
             vec![
                 change("web", false, "a", "b"),
@@ -378,7 +428,7 @@ mod tests {
         let api = FakeApi::start(server(deployment("nginx:1.25"), DEPLOYMENT)).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let changes = [change("web", false, "nginx:1.25", "nginx:1.27")];
-        set_images(&mgr, &id, &object("apps", "Deployment"), &changes)
+        set_images(&mgr, &id, &object("apps", "Deployment"), &changes, None)
             .await
             .unwrap();
         let sent = patches(&api);
@@ -408,9 +458,11 @@ mod tests {
         let api = FakeApi::start(server(deployment("nginx:1.25"), DEPLOYMENT)).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let changes = [change("web", false, "nginx:1.25", "nginx:1.27")];
-        let result = dry_run_set_images(&mgr, &id, &object("apps", "Deployment"), &changes)
+        let preview = dry_run_set_images(&mgr, &id, &object("apps", "Deployment"), &changes)
             .await
             .unwrap();
+        assert_eq!(preview.resource_version, "41");
+        let result = preview.result;
         let sent = patches(&api);
         assert_eq!(sent.len(), 1);
         assert!(sent[0].query.contains("dryRun=All"), "{}", sent[0].query);
@@ -443,7 +495,7 @@ mod tests {
             ),
         ];
         for (change, code) in cases {
-            let err = set_images(&mgr, &id, &target, std::slice::from_ref(&change))
+            let err = set_images(&mgr, &id, &target, std::slice::from_ref(&change), None)
                 .await
                 .unwrap_err();
             assert_eq!(err.code, code, "{change:?}");
@@ -457,7 +509,7 @@ mod tests {
         let api = FakeApi::start(server(pod(true), "/api/v1/namespaces/ns/pods/web")).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let changes = [change("web", false, "nginx:1.25", "nginx:1.27")];
-        let err = set_images(&mgr, &id, &object("", "Pod"), &changes)
+        let err = set_images(&mgr, &id, &object("", "Pod"), &changes, None)
             .await
             .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
@@ -470,11 +522,62 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_static_pods_mirror_is_refused_in_the_core() {
+        let mut mirror = pod(false);
+        mirror["metadata"]["annotations"] = json!({ "kubernetes.io/config.mirror": "abc" });
+        let api = FakeApi::start(server(mirror, "/api/v1/namespaces/ns/pods/web")).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let changes = [change("web", false, "nginx:1.25", "nginx:1.27")];
+        let err = set_images(&mgr, &id, &object("", "Pod"), &changes, None)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
+        assert!(err.message.contains("static Pod"), "{}", err.message);
+        let err = dry_run_set_images(&mgr, &id, &object("", "Pod"), &changes)
+            .await
+            .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid);
+        assert!(patches(&api).is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_change_after_the_preview_is_a_conflict_and_sends_nothing() {
+        let api = FakeApi::start(server(deployment("nginx:1.25"), DEPLOYMENT)).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let changes = [change("web", false, "nginx:1.25", "nginx:1.27")];
+        // The preview read version 40; the object is at 41 now (a scale, a label…).
+        let err = set_images(
+            &mgr,
+            &id,
+            &object("apps", "Deployment"),
+            &changes,
+            Some("40"),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.code, ErrorCode::Conflict);
+        assert!(err.message.contains("preview"), "{}", err.message);
+        assert!(patches(&api).is_empty());
+        // The version the preview read is still the live one: the patch goes out with it.
+        set_images(
+            &mgr,
+            &id,
+            &object("apps", "Deployment"),
+            &changes,
+            Some("41"),
+        )
+        .await
+        .unwrap();
+        let body: Value = serde_json::from_slice(&patches(&api)[0].body).unwrap();
+        assert_eq!(body["metadata"]["resourceVersion"], "41");
+    }
+
+    #[tokio::test]
     async fn a_bare_pod_gets_its_image_in_place() {
         let api = FakeApi::start(server(pod(false), "/api/v1/namespaces/ns/pods/web")).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let changes = [change("web", false, "nginx:1.25", "nginx:1.27")];
-        set_images(&mgr, &id, &object("", "Pod"), &changes)
+        set_images(&mgr, &id, &object("", "Pod"), &changes, None)
             .await
             .unwrap();
         let body: Value = serde_json::from_slice(&patches(&api)[0].body).unwrap();

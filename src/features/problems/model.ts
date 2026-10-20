@@ -74,8 +74,10 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
  * Best-practice findings (#207) are lasting states too, and most clusters have many.
  * Kyverno policy failures (#213, `policies`) too: an Audit policy can fail on hundreds of objects at once.
+ * Prometheus Operator findings (`prometheusOperator`) judge every ServiceMonitor and PodMonitor against metadata
+ * lists of the Services and Pods they look at: a cost a cluster pays only when asked for.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices", "policies"];
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices", "policies", "prometheusOperator"];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;

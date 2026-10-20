@@ -57,11 +57,13 @@
     "meshConflictingVirtualService": "{{gateway}} 上的主机 {{host}} 已被更早的虚拟服务 {{other}} 占用：此虚拟服务的路由不会生效。",
     "meshInvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。",
     "policyFailures_other": "{{count}} 条策略规则未通过：{{policies}}",
+    "policyErrors_other": "{{count}} 条策略规则无法评估：{{policies}}",
     "serviceMonitorSelectsNothing": "在以下 namespace 中未选中任何 Service：{{namespaces}}",
     "podMonitorSelectsNothing": "在以下 namespace 中未选中任何 Pod：{{namespaces}}",
     "monitorNotPickedUp": "没有 Prometheus 通过其 selector 选中它"
   },
   "showDisk": "磁盘即将用满",
   "showPractices": "最佳实践发现",
-  "showPolicies": "Kyverno 策略违规"
+  "showPolicies": "Kyverno 策略违规",
+  "showPrometheusOperator": "Prometheus Operator 监视器和服务器"
 }

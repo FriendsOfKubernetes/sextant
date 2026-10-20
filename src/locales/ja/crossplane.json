@@ -10,11 +10,13 @@
   "health": {
     "ready": "準備完了",
     "progressing": "進行中",
+    "paused": "一時停止",
     "failed": "失敗",
     "unknown": "不明"
   },
   "served": "提供中",
   "referenceable": "参照可能",
+  "versionWithFlags": "{{name}}（{{flags}}）",
   "failing": "最初の未達成条件: {{type}}（{{reason}}）",
   "failingWithMessage": "最初の未達成条件: {{type}}（{{reason}}）: {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -82,6 +84,7 @@
     "ready": "同期済みで準備完了です。",
     "creating": "まだ準備できていません。Crossplane がこのリソースまたはその構成リソースを作成中です。",
     "deleting": "削除中です。",
+    "paused": "一時停止中: Crossplane はこれを調整しません (アノテーション crossplane.io/paused が \"true\"、または管理ポリシーが一時停止しています)。",
     "notSynced": "Crossplane が調整できません（{{reason}}）。理由は下の最初の未達成条件を参照してください。",
     "notReady": "準備できていません（{{reason}}）。理由は下の最初の未達成条件を参照してください。",
     "packageHealthy": "インストール済みで正常です。",

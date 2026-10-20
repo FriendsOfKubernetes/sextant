@@ -38,6 +38,7 @@
   },
   "confirm": "Image festlegen",
   "previewAndSet": "Prüfen und Image festlegen…",
+  "changedSincePreview": "{{kind}} {{name}} hat sich nach der Vorschau geändert. Dies ist eine neue Vorschau des aktuellen Objekts: Prüfen Sie sie und setzen Sie das Image erneut.",
   "owned": {
     "intro": "Dieser Pod wird von {{kind}} {{name}} verwaltet: Der Controller würde den Pod ersetzen oder ein geändertes Image ignorieren. Legen Sie das Image stattdessen im {{kind}} fest.",
     "open": "{{kind}} {{name}} öffnen",

@@ -1,6 +1,6 @@
 // What the CloudNativePG section reads from postgresql.cnpg.io objects: the kinds it knows, a Cluster's phase,
 // instances, primary and replicas (from its status, as the operator reports them), a switchover or failover in
-// progress, backups and continuous archiving; a Backup's phase. Pure functions, no React.
+// progress, declarative hibernation, backups and continuous archiving; a Backup's phase. Pure functions, no React.
 import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
@@ -66,7 +66,28 @@ const SWITCHOVER_PHASES = new Set(["Switchover in progress", "Promoting to prima
 /** Phases that need someone: an unrecoverable cluster, objects it cannot create, a plugin or image catalog error. */
 const STUCK_PHASE = /unrecoverable|cannot|unable|waiting for user|error/i;
 
-export type ClusterState = "healthy" | "switchover" | "failover" | "progressing" | "unhealthy";
+export type ClusterState = "healthy" | "hibernated" | "hibernating" | "switchover" | "failover" | "progressing" | "unhealthy";
+
+/**
+ * Declarative hibernation (pkg/reconciler/hibernation in CloudNativePG): the annotation `cnpg.io/hibernation: "on"`
+ * (exactly "on"; any other value turns it off and removes the condition) makes the operator delete the instances' pods
+ * and keep their volumes. The condition `cnpg.io/hibernation` says how far it is: True/`Hibernated` once no pod is
+ * left; False/`DeletingPods` or `WaitingPodsDeletion` on the way; False/`WaitingForHealthy` while the cluster is not
+ * healthy enough to start. The phase is left as it was (often "Cluster in healthy state") and `readyInstances` drops to
+ * 0, so a hibernated cluster looks unready by every other field: it is a steady state the user asked for, not a fault.
+ */
+export const HIBERNATION_ANNOTATION = "cnpg.io/hibernation";
+export const HIBERNATION_CONDITION = "cnpg.io/hibernation";
+
+/** `hibernated` / `hibernating` while hibernation is on and has started; `undefined` otherwise. */
+export function hibernationOf(obj: KubeObject): "hibernated" | "hibernating" | undefined {
+  if (record(obj.metadata?.annotations)[HIBERNATION_ANNOTATION] !== "on") return undefined;
+  const c = conditionOf(obj, HIBERNATION_CONDITION);
+  if (c?.status === "True") return "hibernated";
+  // Not started yet: the cluster must first be healthy, and is judged as any other until then.
+  if (c?.reason === "WaitingForHealthy") return undefined;
+  return "hibernating";
+}
 
 export interface Instance {
   name: string;
@@ -143,6 +164,8 @@ export function clusterInfo(obj: KubeObject): ClusterInfo {
 }
 
 function clusterState(obj: KubeObject, info: Omit<ClusterInfo, "state">): ClusterState {
+  const hibernation = hibernationOf(obj);
+  if (hibernation) return hibernation;
   if (info.phase === "Failing over" || (info.changingPrimary && info.targetPrimary === "pending")) return "failover";
   if (info.changingPrimary || (info.phase && SWITCHOVER_PHASES.has(info.phase))) return "switchover";
   const ready = conditionOf(obj, "Ready");
@@ -153,6 +176,8 @@ function clusterState(obj: KubeObject, info: Omit<ClusterInfo, "state">): Cluste
 
 export const CLUSTER_TONE: Record<ClusterState, Tone> = {
   healthy: "success",
+  hibernated: "muted",
+  hibernating: "muted",
   switchover: "warning",
   failover: "danger",
   progressing: "warning",
@@ -203,6 +228,21 @@ export const CLUSTER_GRACE_MS = 5 * 60_000;
 /** A failed Backup is a problem for a day after it stopped; the Cluster's LastBackupSucceeded keeps the lasting state. */
 export const FAILED_BACKUP_MS = 24 * 3600_000;
 
+/**
+ * When a failed Backup stopped. The operator's `SetAsFailed` (api/v1/backup_funcs.go) sets only the phase, the error
+ * and `reconciliationTerminatedAt`; `stoppedAt` is written only by the backup tools when a backup ran to its end
+ * (barman, a plugin, a volume snapshot on completion), so most failed Backups have none. The first time known of:
+ * `stoppedAt`, `reconciliationTerminatedAt`, `startedAt`, `reconciliationStartedAt`, the object's creation.
+ */
+export function backupStoppedAt(obj: KubeObject): string | undefined {
+  for (const field of ["stoppedAt", "reconciliationTerminatedAt", "startedAt", "reconciliationStartedAt"]) {
+    const value = str(get(obj, "status", field));
+    if (time(value) !== undefined) return value;
+  }
+  const created = str(obj.metadata?.creationTimestamp);
+  return time(created) !== undefined ? created : undefined;
+}
+
 function time(value: string | undefined): number | undefined {
   const t = value ? Date.parse(value) : NaN;
   return Number.isNaN(t) ? undefined : t;
@@ -218,7 +258,8 @@ export function cnpgProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObj
   if (isKind(kind, PG_CLUSTER)) {
     const info = clusterInfo(obj);
     const ready = conditionOf(obj, "Ready");
-    if (info.state !== "healthy" && (ready?.status === "False" || info.ready < info.instances)) {
+    const steady = info.state === "healthy" || info.state === "hibernated" || info.state === "hibernating";
+    if (!steady && (ready?.status === "False" || info.ready < info.instances)) {
       found.push({
         reason: info.state === "failover" ? "FailingOver" : ready?.reason || "ClusterNotReady",
         group: "notReady",
@@ -247,13 +288,14 @@ export function cnpgProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObj
       });
     }
   } else if (isKind(kind, BACKUP) && backupState(obj) === "failed") {
-    const stopped = time(str(get(obj, "status", "stoppedAt")));
+    const stoppedAt = backupStoppedAt(obj);
+    const stopped = time(stoppedAt);
     const until = stopped === undefined ? undefined : stopped + FAILED_BACKUP_MS;
     if (until !== undefined && now !== undefined && Number.isFinite(now) && now >= until) return [];
     found.push({
       reason: "BackupFailed",
       message: str(get(obj, "status", "error")),
-      since: str(get(obj, "status", "stoppedAt")) ?? str(get(obj, "status", "startedAt")),
+      since: stoppedAt,
       until,
       notify: true,
     });

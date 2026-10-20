@@ -54,7 +54,27 @@ export const monitoringKind = (kind: Pick<KindRef, "group" | "kind">): Monitorin
 /** Where a monitor looks: every namespace (`any: true`), the names it lists, else its own namespace. */
 export type TargetNamespaces = { type: "any" } | { type: "list"; names: string[] };
 
-export function targetNamespaces(monitor: KubeObject): TargetNamespaces {
+/**
+ * A Prometheus (or PrometheusAgent) with `spec.ignoreNamespaceSelectors: true` ignores the `spec.namespaceSelector` of
+ * every ServiceMonitor, PodMonitor and Probe it picks up: they find targets in their own namespace only
+ * (`getNamespacesFromNamespaceSelector`, pkg/prometheus/promcfg.go). Which monitors it picks up is not affected.
+ */
+export const ignoresNamespaceSelectors = (prom: KubeObject): boolean => get(prom, "spec", "ignoreNamespaceSelectors") === true;
+
+/**
+ * Where a monitor looks for targets. `pickedBy`, when known, are the Prometheus objects that pick it up: if every one
+ * ignores namespace selectors, its own namespace only; if some do, its own namespace too.
+ */
+export function targetNamespaces(monitor: KubeObject, pickedBy?: readonly KubeObject[]): TargetNamespaces {
+  const own = monitor.metadata?.namespace ?? "";
+  const ignoring = pickedBy?.filter(ignoresNamespaceSelectors).length ?? 0;
+  if (pickedBy && ignoring > 0 && ignoring === pickedBy.length) return { type: "list", names: [own] };
+  const fromSpec = specNamespaces(monitor);
+  if (ignoring === 0 || fromSpec.type === "any") return fromSpec;
+  return { type: "list", names: [...new Set([...fromSpec.names, own])].sort() };
+}
+
+function specNamespaces(monitor: KubeObject): TargetNamespaces {
   if (get(monitor, "spec", "namespaceSelector", "any") === true) return { type: "any" };
   const names = arr(get(monitor, "spec", "namespaceSelector", "matchNames"))
     .map(String)

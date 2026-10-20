@@ -105,6 +105,7 @@ function NodeRow({
   clusterId,
   wf,
   node,
+  pod,
   depth,
   hasChildren,
   open,
@@ -114,6 +115,8 @@ function NodeRow({
   clusterId: ClusterId;
   wf: KubeObject;
   node: WorkflowNode;
+  /** The node's pod (`podNameOf`), if it has one. */
+  pod: string | undefined;
   depth: number;
   hasChildren: boolean;
   open: boolean;
@@ -122,7 +125,6 @@ function NodeRow({
 }) {
   const { t } = useTranslation();
   const ns = wf.metadata?.namespace ?? "";
-  const pod = podNameOf(wf, node);
   const failed = node.phase === "Failed" || node.phase === "Error";
   return (
     <li className={`aw-node${failed ? " aw-node--failed" : ""}`} style={{ paddingLeft: `${depth * 1.25}rem` }}>
@@ -197,6 +199,7 @@ function NodeTree({ clusterId, wf }: { clusterId: ClusterId; wf: KubeObject }) {
             clusterId={clusterId}
             wf={wf}
             node={row.node}
+            pod={podNameOf(wf, row.node, nodes)}
             depth={row.depth}
             hasChildren={row.hasChildren}
             open={expanded.has(row.node.id)}

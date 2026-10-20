@@ -33,6 +33,7 @@ import {
   SERVICE_MONITOR,
   servicePortNames,
   targetNamespaces,
+  type TargetNamespaces,
 } from "./model";
 
 const { arr, get, num, str } = status;
@@ -82,10 +83,9 @@ function PickedUp({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRe
   return <Block title={t(`${NS}:pickup.title`)}>{body}</Block>;
 }
 
-function MonitorTargets({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
+function MonitorTargets({ clusterId, kind, obj, where }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject; where: TargetNamespaces }) {
   const { t } = useTranslation();
   const pods = isKind(kind, POD_MONITOR);
-  const where = targetNamespaces(obj);
   const targets = useMonitorTargets(clusterId, pods ? POD : SERVICE, where, monitorSelector(obj));
   const what = pods ? "pods" : "services";
   let body: ReactNode;
@@ -155,9 +155,20 @@ function MonitorTargets({ clusterId, kind, obj }: { clusterId: ClusterId; kind: 
   return <Block title={t(`${NS}:targets.title`)}>{body}</Block>;
 }
 
+/** Where a monitor looks, once the Prometheus objects that pick it up are known (`ignoreNamespaceSelectors`). */
+function useTargetNamespaces(clusterId: ClusterId, kind: KindRef, obj: KubeObject): { where: TargetNamespaces; ignored: boolean } {
+  const { loading, servers, namespaceLabels } = usePrometheuses(clusterId);
+  const spec = targetNamespaces(obj);
+  if (loading || servers.length === 0) return { where: spec, ignored: false };
+  const picked = pickedUpBy(servers, kind, obj, namespaceLabels);
+  if (picked.unknown) return { where: spec, ignored: false };
+  const where = targetNamespaces(obj, picked.by);
+  return { where, ignored: JSON.stringify(where) !== JSON.stringify(spec) };
+}
+
 function MonitorView({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
   const { t } = useTranslation();
-  const where = targetNamespaces(obj);
+  const { where, ignored } = useTargetNamespaces(clusterId, kind, obj);
   const rows: FieldRow[] = [
     ["namespaces", where.type === "any" ? t(`${NS}:anyNamespace`) : chips(where.names)],
     ["selector", selectorChips(get(obj, "spec", "selector")) ?? t(`${NS}:selectsAll`)],
@@ -166,7 +177,8 @@ function MonitorView({ clusterId, kind, obj }: { clusterId: ClusterId; kind: Kin
   return (
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
-      <MonitorTargets clusterId={clusterId} kind={kind} obj={obj} />
+      {ignored && <Note text={t(`${NS}:ignoredNamespaceSelector`)} tone="muted" />}
+      <MonitorTargets clusterId={clusterId} kind={kind} obj={obj} where={where} />
       <PickedUp clusterId={clusterId} kind={kind} obj={obj} />
     </>
   );

@@ -11,11 +11,13 @@
   "health": {
     "ready": "Ready",
     "progressing": "Progressing",
+    "paused": "Paused",
     "failed": "Failed",
     "unknown": "Unknown"
   },
   "served": "served",
   "referenceable": "referenceable",
+  "versionWithFlags": "{{name}} ({{flags}})",
   "failing": "First failing condition: {{type}} ({{reason}})",
   "failingWithMessage": "First failing condition: {{type}} ({{reason}}): {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -83,6 +85,7 @@
     "ready": "Synced and ready.",
     "creating": "Not ready yet: Crossplane is still creating it or its resources.",
     "deleting": "Being deleted.",
+    "paused": "Paused: Crossplane does not reconcile it (its annotation crossplane.io/paused is \"true\", or its management policies pause it).",
     "notSynced": "Crossplane cannot reconcile it ({{reason}}): the first failing condition below says why.",
     "notReady": "Not ready ({{reason}}): the first failing condition below says why.",
     "packageHealthy": "Installed and healthy.",

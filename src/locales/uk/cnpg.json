@@ -11,10 +11,16 @@
   "badge_other": "{{count}} об'єкта потребують уваги",
   "state": {
     "healthy": "Справний",
+    "hibernated": "Приспаний",
+    "hibernating": "Присипляється",
     "switchover": "Перемикання",
     "failover": "Аварійне перемикання",
     "progressing": "Виконується",
     "unhealthy": "Несправний"
+  },
+  "hibernation": {
+    "hibernated": "Приспаний на запит (анотація cnpg.io/hibernation: \"on\"): поди видалено, томи збережено. Щоб відновити роботу, задайте анотації значення \"off\".",
+    "hibernating": "Присипляється на запит (анотація cnpg.io/hibernation: \"on\"): оператор видаляє поди й зберігає томи."
   },
   "backupState": {
     "completed": "Завершено",

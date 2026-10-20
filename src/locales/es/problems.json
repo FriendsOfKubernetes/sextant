@@ -67,11 +67,15 @@
     "policyFailures_one": "{{count}} regla de política falla: {{policies}}",
     "policyFailures_many": "{{count}} de reglas de política fallan: {{policies}}",
     "policyFailures_other": "{{count}} reglas de política fallan: {{policies}}",
+    "policyErrors_one": "{{count}} regla de política no se pudo evaluar: {{policies}}",
+    "policyErrors_many": "{{count}} de reglas de política no se pudieron evaluar: {{policies}}",
+    "policyErrors_other": "{{count}} reglas de política no se pudieron evaluar: {{policies}}",
     "serviceMonitorSelectsNothing": "No selecciona ningún Service en los namespaces: {{namespaces}}",
     "podMonitorSelectsNothing": "No selecciona ningún Pod en los namespaces: {{namespaces}}",
     "monitorNotPickedUp": "Ningún Prometheus lo recoge con sus selectors"
   },
   "showDisk": "Disco casi lleno",
   "showPractices": "Hallazgos de buenas prácticas",
-  "showPolicies": "Fallos de políticas de Kyverno"
+  "showPolicies": "Fallos de políticas de Kyverno",
+  "showPrometheusOperator": "Monitores y servidores de Prometheus Operator"
 }

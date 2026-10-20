@@ -11,10 +11,16 @@
   "badge_other": "{{count}} obiektu wymaga uwagi",
   "state": {
     "healthy": "Sprawny",
+    "hibernated": "Zahibernowany",
+    "hibernating": "Hibernuje",
     "switchover": "Przełączanie",
     "failover": "Przełączanie awaryjne",
     "progressing": "W toku",
     "unhealthy": "Niesprawny"
+  },
+  "hibernation": {
+    "hibernated": "Zahibernowany na żądanie (adnotacja cnpg.io/hibernation: \"on\"): pody są usunięte, a wolumeny zachowane. Ustaw adnotację na \"off\", aby wznowić.",
+    "hibernating": "Hibernuje na żądanie (adnotacja cnpg.io/hibernation: \"on\"): operator usuwa pody i zachowuje wolumeny."
   },
   "backupState": {
     "completed": "Ukończona",

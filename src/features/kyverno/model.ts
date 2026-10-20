@@ -206,7 +206,11 @@ export function countResults(results: readonly PolicyResult[]): Summary {
   return out;
 }
 
-export const isReportProblem = (kind: Pick<KindRef, "group" | "kind">) => (report: KubeObject) => reportSummary(kind, report).fail > 0;
+/** A report with a failed or errored result (an error is a rule that could not be evaluated: unsuccessful too). */
+export const isReportProblem = (kind: Pick<KindRef, "group" | "kind">) => (report: KubeObject) => {
+  const summary = reportSummary(kind, report);
+  return summary.fail > 0 || summary.error > 0;
+};
 
 /** Failures first, then errors, warnings, passes and skips; by policy and rule within each. */
 export function sortResults(results: readonly PolicyResult[]): PolicyResult[] {

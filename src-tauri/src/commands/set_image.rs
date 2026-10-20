@@ -3,38 +3,45 @@
 //! [`CHANGE_TIMEOUT`] and never repeated. Window only: agents use `patch_resource`, extensions get nothing new.
 
 use sextant_core::error::with_timeout;
-use sextant_core::resources::DryRunResult;
-use sextant_core::resources::set_image::{self, SetImageChange};
+use sextant_core::resources::set_image::{self, SetImageChange, SetImagePreview};
 use sextant_core::{ClusterId, CoreError, ObjectRef};
 use tauri::State;
 
 use super::actions::CHANGE_TIMEOUT;
 use crate::state::AppState;
 
-/// Sets the images of the named containers.
+/// Sets the images of the named containers. `resource_version` is the one the confirmed preview read: the change is
+/// refused (`conflict`) when the object has changed since.
 #[tauri::command]
 pub async fn workload_set_image(
     state: State<'_, AppState>,
     cluster_id: ClusterId,
     _ref: ObjectRef,
     changes: Vec<SetImageChange>,
+    resource_version: Option<String>,
 ) -> Result<(), CoreError> {
     with_timeout(
         CHANGE_TIMEOUT,
         "setting the image",
-        set_image::set_images(&state.clusters, &cluster_id, &_ref, &changes),
+        set_image::set_images(
+            &state.clusters,
+            &cluster_id,
+            &_ref,
+            &changes,
+            resource_version.as_deref(),
+        ),
     )
     .await
 }
 
-/// What setting the images would store (`dryRun=All`); changes nothing.
+/// What setting the images would store (`dryRun=All`) and the version it was compared with; changes nothing.
 #[tauri::command]
 pub async fn workload_set_image_dry_run(
     state: State<'_, AppState>,
     cluster_id: ClusterId,
     _ref: ObjectRef,
     changes: Vec<SetImageChange>,
-) -> Result<DryRunResult, CoreError> {
+) -> Result<SetImagePreview, CoreError> {
     with_timeout(
         CHANGE_TIMEOUT,
         "the dry run",

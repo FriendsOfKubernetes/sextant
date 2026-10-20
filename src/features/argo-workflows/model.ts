@@ -212,23 +212,31 @@ export function fnv32a(text: string): number {
 }
 
 /**
- * The pod of a pod node, as the controller names it (`GeneratePodName`): `v1` is the node id; `v2` (the default,
- * also without the annotation) is `<workflow>-<template>-<hash>`, the hash taken from the node id (the workflow name
- * followed by the hash of the node name) or computed from the node name, the prefix cut to fit 253 characters. A
- * container-set container runs in the pod of its boundary node. `undefined` for a node that has no pod.
+ * The pod of a pod node, as the controller names it (`GeneratePodName` in workflow/util/pod_name.go): `v1` is the
+ * node id; `v2` (the default, also without the annotation) is `<workflow>-<template>-<hash>`, the hash taken from the
+ * node id (the workflow name followed by the hash of the node name) or computed from the node name, the prefix cut to
+ * fit 253 characters. A container-set container (`Container` node) runs in the pod of its boundary node: the
+ * controller creates each container node with the template's Pod node as `boundaryID` and names the pod after that
+ * node (container_set_template.go), so the id, the name and the template are the boundary node's — from `nodes` when
+ * it is there, else the container node's own template (the controller gives it the pod's). `undefined` for a node
+ * that has no pod.
  */
-export function podNameOf(wf: KubeObject, node: WorkflowNode): string | undefined {
+export function podNameOf(wf: KubeObject, node: WorkflowNode, nodes?: ReadonlyMap<string, WorkflowNode>): string | undefined {
   if (!POD_TYPES.has(node.type)) return undefined;
+  const boundary = node.type === "Container" && node.boundaryID ? nodes?.get(node.boundaryID) : undefined;
+  const podNode = boundary ?? node;
   const podNodeId = (node.type === "Container" ? node.boundaryID : node.id) ?? node.id;
   const version = str(record(wf.metadata?.annotations)[POD_NAME_FORMAT_ANNOTATION]);
   if (version === "v1") return podNodeId;
   const workflowName = wf.metadata?.name ?? "";
   if (workflowName === podNodeId) return workflowName;
-  const templateName = node.templateName || str(get(node.raw, "templateRef", "template")) || "";
+  const templateName = podNode.templateName || str(get(podNode.raw, "templateRef", "template")) || node.templateName || "";
   let prefix = templateName ? `${workflowName}-${templateName}` : workflowName;
   if (prefix.length > MAX_PREFIX - 1) prefix = prefix.substring(0, MAX_PREFIX - 1);
   const idPrefix = `${workflowName}-`;
-  const hash = podNodeId.startsWith(idPrefix) ? podNodeId.substring(idPrefix.length) : String(fnv32a(node.name));
+  // The node name the hash falls back to is the pod node's: a container node's own is `<pod node>.<container>`.
+  const nameForHash = boundary ? boundary.name : node.type === "Container" ? node.name.replace(/\.[^.]*$/, "") : node.name;
+  const hash = podNodeId.startsWith(idPrefix) ? podNodeId.substring(idPrefix.length) : String(fnv32a(nameForHash));
   const excess = prefix.length + 1 + hash.length - MAX_NAME;
   if (excess > 0) prefix = prefix.substring(0, prefix.length - excess);
   return `${prefix}-${hash}`;
@@ -270,9 +278,14 @@ export function templateSummary(obj: KubeObject): { entrypoint?: string; templat
 
 // ---------- Problems ----------
 
-/** How long a failed Workflow counts as a problem after it was created. */
+/** How long a failed Workflow counts as a problem after it failed (or, when that time is unknown, was created). */
 export const RECENT_FAILURE_MS = 24 * 3600_000;
-/** Failed Workflows the problems source keeps (metadata only). */
-export const MAX_FAILED_WORKFLOWS = 500;
+/**
+ * Failed Workflows the problems source lists (metadata only, about 1 KB each). The API server lists in namespace/name
+ * order, so past this cap the list is incomplete whatever its age: the source says it is truncated.
+ */
+export const MAX_FAILED_WORKFLOWS = 5000;
+/** At most this many failed Workflows become problems, the most recent failures first. */
+export const MAX_WORKFLOW_PROBLEMS = 500;
 /** The label selector of the problems source: failed and errored Workflows only. */
 export const FAILED_SELECTOR = `${PHASE_LABEL} in (Failed,Error)`;

@@ -13,11 +13,13 @@
   "health": {
     "ready": "Готовий",
     "progressing": "Виконується",
+    "paused": "Призупинено",
     "failed": "Збій",
     "unknown": "Невідомо"
   },
   "served": "обслуговується",
   "referenceable": "основна",
+  "versionWithFlags": "{{name}} ({{flags}})",
   "failing": "Перша невиконана умова: {{type}} ({{reason}})",
   "failingWithMessage": "Перша невиконана умова: {{type}} ({{reason}}): {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -85,6 +87,7 @@
     "ready": "Синхронізований і готовий.",
     "creating": "Ще не готовий: Crossplane ще створює його або його ресурси.",
     "deleting": "Видаляється.",
+    "paused": "Призупинено: Crossplane його не узгоджує (анотація crossplane.io/paused дорівнює \"true\" або його зупиняють політики керування).",
     "notSynced": "Crossplane не може узгодити його ({{reason}}): причина — у першій невиконаній умові нижче.",
     "notReady": "Не готовий ({{reason}}): причина — у першій невиконаній умові нижче.",
     "packageHealthy": "Встановлений і справний.",

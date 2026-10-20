@@ -12,6 +12,7 @@ import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "..
 import "../logs";
 import { resetProblemSources } from "../problems/store";
 import cronJson from "./fixtures/cronworkflow.json";
+import containerSetJson from "./fixtures/workflow-container-set.json";
 import workflowJson from "./fixtures/workflow-dag-failed.json";
 import "./index";
 import {
@@ -20,17 +21,20 @@ import {
   failedNode,
   FAILED_SELECTOR,
   fnv32a,
+  MAX_FAILED_WORKFLOWS,
   MAX_TREE_NODES,
+  MAX_WORKFLOW_PROBLEMS,
   nodesOf,
   pathTo,
   podNameOf,
   progressOf,
+  RECENT_FAILURE_MS,
   schedulesOf,
   treeRows,
   WORKFLOW,
   WORKFLOW_TEMPLATE,
 } from "./model";
-import { workflowProblems } from "./provider";
+import { newFailedSeen, workflowProblems } from "./provider";
 
 const workflow = workflowJson as unknown as KubeObject;
 const cron = cronJson as unknown as KubeObject;
@@ -61,6 +65,28 @@ describe("the Workflow model", () => {
     expect(podNameOf(none, c)).toBe(`${NAME}-echo-2532386132`);
     // A node id that does not start with the workflow name: the hash of the node name.
     expect(podNameOf(workflow, { ...c, id: "other-1" })).toBe(`${NAME}-echo-${fnv32a(c.name)}`);
+  });
+
+  it("names a container-set container's pod after its boundary Pod node", () => {
+    const wf = containerSetJson as unknown as KubeObject;
+    const nodes = nodesOf(wf);
+    const POD = "build-cs-q7v2n-build-set-601456081";
+    const pod = nodes.get("build-cs-q7v2n-601456081")!;
+    const test = nodes.get("build-cs-q7v2n-3423757485")!;
+    const compile = nodes.get("build-cs-q7v2n-1513831638")!;
+    expect(podNameOf(wf, pod, nodes)).toBe(POD);
+    expect(podNameOf(wf, test, nodes)).toBe(POD);
+    expect(podNameOf(wf, compile, nodes)).toBe(POD);
+    expect(failedNode(wf, nodes)?.displayName).toBe("test");
+    // The template and the name the hash falls back to are the boundary node's, not the container node's.
+    const bare = { ...test, templateName: undefined, raw: {} };
+    expect(podNameOf(wf, bare, nodes)).toBe(POD);
+    const renamed = new Map(nodes);
+    renamed.set("other-1", { ...pod, id: "other-1" });
+    expect(podNameOf(wf, { ...test, boundaryID: "other-1" }, renamed)).toBe(`build-cs-q7v2n-build-set-${fnv32a(pod.name)}`);
+    const v1 = copy(wf);
+    v1.metadata!.annotations = { "workflows.argoproj.io/pod-name-format": "v1" };
+    expect(podNameOf(v1, test, nodes)).toBe("build-cs-q7v2n-601456081");
   });
 
   it("finds the failed step, the progress and the tree, collapsed below the root and bounded", () => {
@@ -95,17 +121,56 @@ describe("the Workflow model", () => {
       metadata: { name: `w-${phase}`, namespace: "argo", uid: `u-${phase}-${created}`, creationTimestamp: created, labels: { "workflows.argoproj.io/phase": phase } },
     });
     const now = Date.parse("2026-10-20T12:00:00Z");
-    const found = workflowProblems(
+    const { problems: found, truncated } = workflowProblems(
       [meta("Failed", "2026-10-20T09:00:00Z"), meta("Error", "2026-10-20T10:00:00Z"), meta("Succeeded", "2026-10-20T10:00:00Z"), meta("Failed", "2026-10-18T10:00:00Z")],
       now,
-      new Map(),
+      newFailedSeen(),
     );
+    // The most recent failure first.
     expect(found.map((p) => [p.reason, p.category])).toEqual([
-      ["Failed", "workflows"],
       ["Error", "workflows"],
+      ["Failed", "workflows"],
     ]);
-    expect(found[0]?.until).toBe(Date.parse("2026-10-21T09:00:00Z"));
+    expect(truncated).toBe(false);
+    expect(found[1]?.until).toBe(Date.parse("2026-10-21T09:00:00Z"));
     expect(FAILED_SELECTOR).toBe("workflows.argoproj.io/phase in (Failed,Error)");
+  });
+
+  it("problems: a long-running Workflow failing while watched counts from its failure, not its creation", () => {
+    const wf = (name: string, created: string, phase = "Failed"): KubeObject => ({
+      metadata: { name, namespace: "argo", uid: name, creationTimestamp: created, labels: { "workflows.argoproj.io/phase": phase } },
+    });
+    const memory = newFailedSeen();
+    const start = Date.parse("2026-10-20T12:00:00Z");
+    // At the first look an old failure is not recent (its failure time is unknown: creation counts).
+    expect(workflowProblems([wf("old", "2026-10-15T00:00:00Z")], start, memory).problems).toEqual([]);
+    // Three days after it started, a long-running Workflow enters the failed list while the source watches.
+    const later = start + 60_000;
+    const { problems } = workflowProblems([wf("old", "2026-10-15T00:00:00Z"), wf("long", "2026-10-17T12:00:00Z")], later, memory);
+    expect(problems.map((p) => p.object.name)).toEqual(["long"]);
+    expect(problems[0]?.since).toBe(new Date(later).toISOString());
+    expect(problems[0]?.until).toBe(later + RECENT_FAILURE_MS);
+    expect(workflowProblems([wf("long", "2026-10-17T12:00:00Z")], later + RECENT_FAILURE_MS, memory).problems).toEqual([]);
+  });
+
+  it("problems: the newest failures are kept past the cap, wherever they are in the list", () => {
+    const now = Date.parse("2026-10-20T12:00:00Z");
+    // Listed in name order: the oldest failures first, the newest last.
+    const items: KubeObject[] = Array.from({ length: MAX_WORKFLOW_PROBLEMS + 10 }, (_, i) => ({
+      metadata: {
+        name: `w-${String(i).padStart(4, "0")}`,
+        namespace: "argo",
+        uid: `u${i}`,
+        creationTimestamp: new Date(now - (MAX_WORKFLOW_PROBLEMS + 10 - i) * 60_000).toISOString(),
+        labels: { "workflows.argoproj.io/phase": "Failed" },
+      },
+    }));
+    const { problems, truncated } = workflowProblems(items, now, newFailedSeen());
+    expect(truncated).toBe(true);
+    expect(problems).toHaveLength(MAX_WORKFLOW_PROBLEMS);
+    expect(problems[0]?.object.name).toBe(`w-${String(MAX_WORKFLOW_PROBLEMS + 9).padStart(4, "0")}`);
+    expect(problems.some((p) => p.object.name === "w-0000")).toBe(false);
+    expect(MAX_FAILED_WORKFLOWS).toBeGreaterThanOrEqual(5000);
   });
 });
 

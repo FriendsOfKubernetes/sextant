@@ -702,7 +702,7 @@ A claim is the namespaced request a team writes; Crossplane binds it to a compos
 _Avoid_: instance, XR request
 
 **Policy result (Kyverno)**:
-One rule of one policy judged against one object: pass, fail, warn, error or skip, as written in the object's PolicyReport. A failing result is a problem only in the opt-in category `policies`.
+One rule of one policy judged against one object: pass, fail, warn, error or skip, as written in the object's PolicyReport. A failing result is a problem only in the opt-in category `policies`; an `error` result (the rule could not be evaluated) is listed there too, never notified.
 _Avoid_: violation event, audit log
 
 **Promote / abort / retry (Argo Rollouts)**:

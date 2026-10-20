@@ -8,10 +8,16 @@
   "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
   "state": {
     "healthy": "正常",
+    "hibernated": "休止中",
+    "hibernating": "休止処理中",
     "switchover": "スイッチオーバー中",
     "failover": "フェイルオーバー中",
     "progressing": "処理中",
     "unhealthy": "異常"
+  },
+  "hibernation": {
+    "hibernated": "要求により休止中です (アノテーション cnpg.io/hibernation: \"on\")。Pod は削除され、ボリュームは保持されます。再開するにはアノテーションを \"off\" にしてください。",
+    "hibernating": "要求により休止処理中です (アノテーション cnpg.io/hibernation: \"on\")。オペレーターが Pod を削除しており、ボリュームは保持されます。"
   },
   "backupState": {
     "completed": "完了",

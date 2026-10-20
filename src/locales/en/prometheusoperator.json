@@ -109,5 +109,6 @@
     "podMonitors": "PodMonitors",
     "probes": "Probes",
     "rules": "PrometheusRules"
-  }
+  },
+  "ignoredNamespaceSelector": "A Prometheus that picks it up ignores the namespace selectors of monitors (ignoreNamespaceSelectors): it finds targets in the monitor's own namespace."
 }

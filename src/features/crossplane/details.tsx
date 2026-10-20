@@ -12,6 +12,7 @@
 // `spec.providerConfigRef`). Read-only.
 import { useTranslation } from "react-i18next";
 import { useWatch, type KindRef, type KubeObject, type ObjectRef } from "../../api";
+import { formatList } from "../../i18n/format";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { status, StatusText } from "../../resources";
 import { apiVersionOf as refApiVersion } from "../../resources/refs";
@@ -86,8 +87,10 @@ function XrdView({ obj, info }: { obj: KubeObject; info: XrdInfo }) {
   const { t } = useTranslation();
   const versions = arr(get(obj, "spec", "versions")).map((v) => {
     const name = str(get(v, "name")) ?? "";
-    const flags = [get(v, "served") === true ? t("crossplane:served") : undefined, get(v, "referenceable") === true ? t("crossplane:referenceable") : undefined].filter(Boolean);
-    return flags.length > 0 ? `${name} (${flags.join(", ")})` : name;
+    const flags = [get(v, "served") === true ? t("crossplane:served") : undefined, get(v, "referenceable") === true ? t("crossplane:referenceable") : undefined].filter(
+      (f): f is string => Boolean(f),
+    );
+    return flags.length > 0 ? t("crossplane:versionWithFlags", { name, flags: formatList(flags) }) : name;
   });
   const rows: FieldRow[] = [
     ["group", info.group],

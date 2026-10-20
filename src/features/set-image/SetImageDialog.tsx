@@ -1,7 +1,9 @@
 // "Set image of <name>": every container and init container with its current image and a field for the new one,
 // checked as it is typed; what would change; then, through safe apply (#141), the API server's dry run of the patch
 // next to the live object — always first on a cluster that asks for previews, one button away otherwise. "Set image"
-// sends the one patch the core builds (`workload_set_image`), never repeated; a failure keeps the dialog open.
+// sends the one patch the core builds (`workload_set_image`), never repeated; a failure keeps the dialog open. A change
+// confirmed from a preview carries the version the preview read: when the object changed since (`conflict`), the
+// dialog previews again and says so, so the user confirms what is live now.
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,6 +20,15 @@ import { Badge, Button, Dialog, ErrorState } from "../../components";
 import { ChangePreview, useAlwaysPreview } from "../safe-apply";
 import { changesOf, containerKey, containersOf, type ContainerImage, type SetImageKind } from "./model";
 import { checkImage } from "./reference";
+
+interface Preview {
+  changes: SetImageChange[];
+  result: DryRunResult;
+  /** The live object's version the dry run read; the change is refused when it is no longer the live one. */
+  resourceVersion: string;
+  /** This preview replaced one the object had changed since. */
+  renewed: boolean;
+}
 
 export interface SetImageDialogProps {
   clusterId: ClusterId;
@@ -36,19 +47,24 @@ export function SetImageDialog({ clusterId, objectRef, obj, kind, close }: SetIm
     Object.fromEntries(containers.map((c) => [containerKey(c), c.image])),
   );
   const [phase, setPhase] = useState<Phase>("edit");
-  const [preview, setPreview] = useState<{ changes: SetImageChange[]; result: DryRunResult } | null>(null);
+  const [preview, setPreview] = useState<Preview | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const alwaysPreview = useAlwaysPreview(clusterId);
   const changes = useMemo(() => changesOf(containers, typed), [containers, typed]);
   const valid = changes.length > 0 && changes.every((c) => checkImage(c.image).ok);
   const busy = phase !== "edit";
 
+  const dryRun = async (asked: SetImageChange[], renewed: boolean) => {
+    const { result, resourceVersion } = await api.actions.setImageDryRun(clusterId, objectRef, asked);
+    setPreview({ changes: asked, result, resourceVersion, renewed });
+  };
+
   const runPreview = async () => {
     const asked = changes;
     setPhase("checking");
     setError(null);
     try {
-      setPreview({ changes: asked, result: await api.actions.setImageDryRun(clusterId, objectRef, asked) });
+      await dryRun(asked, false);
     } catch (err) {
       setError(toApiError(err));
     } finally {
@@ -56,14 +72,29 @@ export function SetImageDialog({ clusterId, objectRef, obj, kind, close }: SetIm
     }
   };
 
-  const apply = async (asked: SetImageChange[]) => {
+  const apply = async (asked: SetImageChange[], previewed?: string) => {
     setPhase("saving");
     setError(null);
     try {
-      await api.actions.setImage(clusterId, objectRef, asked);
+      await api.actions.setImage(clusterId, objectRef, asked, previewed);
       close();
+      return;
     } catch (err) {
+      const refused = toApiError(err);
+      if (previewed === undefined || refused.code !== "conflict") {
+        setError(refused);
+        setPhase("edit");
+        return;
+      }
+    }
+    // The object changed after the preview: preview the live object again instead of sending anything.
+    setPhase("checking");
+    try {
+      await dryRun(asked, true);
+    } catch (err) {
+      setPreview(null);
       setError(toApiError(err));
+    } finally {
       setPhase("edit");
     }
   };
@@ -73,7 +104,7 @@ export function SetImageDialog({ clusterId, objectRef, obj, kind, close }: SetIm
       <Button disabled={busy} onClick={() => setPreview(null)}>
         {t("safeapply:actions.back")}
       </Button>
-      <Button variant="primary" disabled={busy} onClick={() => void apply(preview.changes)}>
+      <Button variant="primary" disabled={busy} onClick={() => void apply(preview.changes, preview.resourceVersion)}>
         {phase === "saving" ? t("actions:dialog.working") : t("setimage:confirm")}
       </Button>
     </>
@@ -107,6 +138,11 @@ export function SetImageDialog({ clusterId, objectRef, obj, kind, close }: SetIm
         {preview ? (
           <>
             <ChangeList changes={preview.changes} />
+            {preview.renewed && (
+              <p className="set-image__message set-image__message--warning" role="status">
+                {t("setimage:changedSincePreview", { kind: objectRef.kind.kind, name: objectRef.name })}
+              </p>
+            )}
             <p className="set-image__note">{t("safeapply:actions.ready")}</p>
             <ChangePreview result={preview.result} />
           </>

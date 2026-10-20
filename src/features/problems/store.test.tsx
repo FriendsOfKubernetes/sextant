@@ -76,6 +76,25 @@ describe("problem sources", () => {
     expect(state.problems.some((p) => p.object.name === `p${MAX_PROBLEM_OBJECTS + 9}`)).toBe(true);
   });
 
+  it("a capped source asks the backend for a cap and says when objects are left out", async () => {
+    const capped = { ...PODS, maxObjects: 3 };
+    acquireSource("c1", capped);
+    const id = await watchOf(wb, "Pod");
+    const start = wb.backend.calls.find((c) => c.cmd === "watch_start")!;
+    expect(start.args.options).toEqual({ progressive: false, maxObjects: 3 });
+    emitSnapshot(wb, id, [pod(1, "CrashLoopBackOff"), pod(2), pod(3)]);
+    expect(getSource(sourceKey("c1", capped))!.truncated).toBe(false);
+    act(() => wb.backend.emit(`watch:${id}`, { type: "capped", total: 10 }));
+    expect(getSource(sourceKey("c1", capped))!.truncated).toBe(true);
+    // A relist keeps saying so (the backend sends `capped` only when the total changes).
+    emitSnapshot(wb, id, [pod(1, "CrashLoopBackOff"), pod(2), pod(3)]);
+    expect(getSource(sourceKey("c1", capped))!.truncated).toBe(true);
+    act(() => wb.backend.emit(`watch:${id}`, { type: "capped", total: 3 }));
+    expect(getSource(sourceKey("c1", capped))!.truncated).toBe(false);
+    // Strimzi caps the kinds a cluster holds by the thousand.
+    expect(CATEGORY_SOURCES.strimzi.filter((d) => d.maxObjects !== undefined).map((d) => d.kind.kind)).toEqual(["KafkaTopic", "KafkaUser"]);
+  });
+
   it("follow deltas: a recovered object leaves, an update of a healthy one changes nothing", async () => {
     acquireSource("c1", PODS);
     const id = await watchOf(wb, "Pod");

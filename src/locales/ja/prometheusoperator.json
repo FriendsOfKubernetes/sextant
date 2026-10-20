@@ -104,5 +104,6 @@
     "podMonitors": "PodMonitors",
     "probes": "Probes",
     "rules": "PrometheusRules"
-  }
+  },
+  "ignoredNamespaceSelector": "これを取り込む Prometheus はモニターの namespace セレクターを無視します (ignoreNamespaceSelectors)。ターゲットはモニター自身の namespace でのみ探されます。"
 }

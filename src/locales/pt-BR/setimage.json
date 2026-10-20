@@ -38,6 +38,7 @@
   },
   "confirm": "Definir imagem",
   "previewAndSet": "Revisar e definir imagem…",
+  "changedSincePreview": "{{kind}} {{name}} mudou depois da prévia. Esta é uma nova prévia do objeto atual: confira e defina a imagem novamente.",
   "owned": {
     "intro": "Este Pod é gerenciado por {{kind}} {{name}}: o controlador substituiria o Pod ou ignoraria uma imagem alterada. Defina a imagem no {{kind}}.",
     "open": "Abrir {{kind}} {{name}}",

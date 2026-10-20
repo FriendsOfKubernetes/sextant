@@ -38,6 +38,7 @@
   },
   "confirm": "Imposta immagine",
   "previewAndSet": "Verifica e imposta immagine…",
+  "changedSincePreview": "{{kind}} {{name}} è cambiato dopo l’anteprima. Questa è una nuova anteprima dell’oggetto attuale: controllala e imposta di nuovo l’immagine.",
   "owned": {
     "intro": "Questo Pod è gestito da {{kind}} {{name}}: il controller sostituirebbe il Pod o ignorerebbe un'immagine modificata. Imposta invece l'immagine nel {{kind}}.",
     "open": "Apri {{kind}} {{name}}",

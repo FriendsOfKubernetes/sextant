@@ -108,6 +108,7 @@ export type { DryRunMode } from "./generated/DryRunMode";
 export type { DryRunObject } from "./generated/DryRunObject";
 export type { DryRunResult } from "./generated/DryRunResult";
 export type { SetImageChange } from "./generated/SetImageChange";
+export type { SetImagePreview } from "./generated/SetImagePreview";
 export type { SecretKeyChanges } from "./generated/SecretKeyChanges";
 export type { HelmRepo } from "./generated/HelmRepo";
 export type { HelmStatus } from "./generated/HelmStatus";

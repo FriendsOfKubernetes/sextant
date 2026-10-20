@@ -10,11 +10,13 @@
   "health": {
     "ready": "就緒",
     "progressing": "進行中",
+    "paused": "已暫停",
     "failed": "失敗",
     "unknown": "未知"
   },
   "served": "已提供",
   "referenceable": "可參照",
+  "versionWithFlags": "{{name}}（{{flags}}）",
   "failing": "第一個未滿足的條件：{{type}}（{{reason}}）",
   "failingWithMessage": "第一個未滿足的條件：{{type}}（{{reason}}）：{{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -82,6 +84,7 @@
     "ready": "已同步且就緒。",
     "creating": "尚未就緒：Crossplane 仍在建立它或它的資源。",
     "deleting": "正在刪除。",
+    "paused": "已暫停：Crossplane 不會協調它（其註解 crossplane.io/paused 為 \"true\"，或其管理原則將其暫停）。",
     "notSynced": "Crossplane 無法協調它（{{reason}}）：下方第一個未滿足的條件說明了原因。",
     "notReady": "未就緒（{{reason}}）：下方第一個未滿足的條件說明了原因。",
     "packageHealthy": "已安裝且健康。",

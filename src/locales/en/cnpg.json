@@ -9,6 +9,8 @@
   "badge_other": "{{count}} objects need attention",
   "state": {
     "healthy": "Healthy",
+    "hibernated": "Hibernated",
+    "hibernating": "Hibernating",
     "switchover": "Switchover",
     "failover": "Failing over",
     "progressing": "Progressing",
@@ -86,5 +88,9 @@
   "unknown": "Unknown",
   "error": "Error",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "hibernation": {
+    "hibernated": "Hibernated on request (annotation cnpg.io/hibernation: \"on\"): the pods are deleted and the volumes kept. Set the annotation to \"off\" to resume.",
+    "hibernating": "Hibernating on request (annotation cnpg.io/hibernation: \"on\"): the operator is deleting the pods and keeps the volumes."
+  }
 }

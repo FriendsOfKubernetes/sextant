@@ -12,11 +12,13 @@
   "health": {
     "ready": "Prêt",
     "progressing": "En cours",
+    "paused": "En pause",
     "failed": "Échec",
     "unknown": "Inconnu"
   },
   "served": "servie",
   "referenceable": "référençable",
+  "versionWithFlags": "{{name}} ({{flags}})",
   "failing": "Première condition non remplie : {{type}} ({{reason}})",
   "failingWithMessage": "Première condition non remplie : {{type}} ({{reason}}) : {{message}}",
   "syncedIs": "Synced: {{status}}",
@@ -84,6 +86,7 @@
     "ready": "Synchronisée et prête.",
     "creating": "Pas encore prête : Crossplane la crée encore, elle ou ses ressources.",
     "deleting": "Suppression en cours.",
+    "paused": "En pause : Crossplane ne le réconcilie pas (son annotation crossplane.io/paused vaut \"true\", ou ses politiques de gestion le mettent en pause).",
     "notSynced": "Crossplane ne parvient pas à la réconcilier ({{reason}}) : la première condition non remplie ci-dessous en donne la raison.",
     "notReady": "Pas prête ({{reason}}) : la première condition non remplie ci-dessous en donne la raison.",
     "packageHealthy": "Installé et sain.",

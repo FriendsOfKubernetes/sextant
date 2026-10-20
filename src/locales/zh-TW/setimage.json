@@ -38,6 +38,7 @@
   },
   "confirm": "設定映像檔",
   "previewAndSet": "預覽並設定映像檔…",
+  "changedSincePreview": "預覽之後 {{kind}} {{name}} 已變更。這是目前物件的新預覽：請檢查後再次設定映像檔。",
   "owned": {
     "intro": "此 Pod 由 {{kind}} {{name}} 管理：控制器會替換該 Pod 或忽略變更後的映像檔。請改在該 {{kind}} 中設定映像檔。",
     "open": "開啟 {{kind}} {{name}}",

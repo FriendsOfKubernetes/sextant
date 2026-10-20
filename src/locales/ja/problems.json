@@ -57,11 +57,13 @@
     "meshConflictingVirtualService": "{{gateway}} のホスト {{host}} は、より古い仮想サービス {{other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
     "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
     "policyFailures_other": "{{count}} 件のポリシールールが失敗：{{policies}}",
+    "policyErrors_other": "{{count}} 件のポリシールールを評価できませんでした：{{policies}}",
     "serviceMonitorSelectsNothing": "次の namespace で Service を 1 つも選択していません: {{namespaces}}",
     "podMonitorSelectsNothing": "次の namespace で Pod を 1 つも選択していません: {{namespaces}}",
     "monitorNotPickedUp": "どの Prometheus の selector にも選択されていません"
   },
   "showDisk": "ディスク残りわずか",
   "showPractices": "ベストプラクティスの指摘",
-  "showPolicies": "Kyverno ポリシー違反"
+  "showPolicies": "Kyverno ポリシー違反",
+  "showPrometheusOperator": "Prometheus Operator のモニターとサーバー"
 }

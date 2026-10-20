@@ -62,11 +62,14 @@
     "meshInvalidVirtualService": "Has the host * while bound to the sidecars (mesh): Istio rejects it, so none of its routes are used.",
     "policyFailures_one": "{{count}} policy rule fails: {{policies}}",
     "policyFailures_other": "{{count}} policy rules fail: {{policies}}",
+    "policyErrors_one": "{{count}} policy rule could not be evaluated: {{policies}}",
+    "policyErrors_other": "{{count}} policy rules could not be evaluated: {{policies}}",
     "serviceMonitorSelectsNothing": "Selects no Service in the namespaces: {{namespaces}}",
     "podMonitorSelectsNothing": "Selects no Pod in the namespaces: {{namespaces}}",
     "monitorNotPickedUp": "No Prometheus picks it up by its selectors"
   },
   "showDisk": "Disk almost full",
   "showPractices": "Best-practice findings",
-  "showPolicies": "Kyverno policy failures"
+  "showPolicies": "Kyverno policy failures",
+  "showPrometheusOperator": "Prometheus Operator monitors and servers"
 }

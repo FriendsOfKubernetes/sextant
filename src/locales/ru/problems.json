@@ -72,11 +72,16 @@
     "policyFailures_few": "{{count}} правила политик не выполнены: {{policies}}",
     "policyFailures_many": "{{count}} правил политик не выполнено: {{policies}}",
     "policyFailures_other": "{{count}} правила политик не выполнено: {{policies}}",
+    "policyErrors_one": "{{count}} правило политик не удалось проверить: {{policies}}",
+    "policyErrors_few": "{{count}} правила политик не удалось проверить: {{policies}}",
+    "policyErrors_many": "{{count}} правил политик не удалось проверить: {{policies}}",
+    "policyErrors_other": "{{count}} правила политик не удалось проверить: {{policies}}",
     "serviceMonitorSelectsNothing": "Не выбирает ни одного Service в namespace: {{namespaces}}",
     "podMonitorSelectsNothing": "Не выбирает ни одного Pod в namespace: {{namespaces}}",
     "monitorNotPickedUp": "Ни один Prometheus не подхватывает его своими selector"
   },
   "showDisk": "Диск почти заполнен",
   "showPractices": "Замечания по лучшим практикам",
-  "showPolicies": "Нарушения политик Kyverno"
+  "showPolicies": "Нарушения политик Kyverno",
+  "showPrometheusOperator": "Мониторы и серверы Prometheus Operator"
 }

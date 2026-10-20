@@ -11,7 +11,7 @@ import "../details";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
 import { OPT_IN_CATEGORIES, resolve } from "../problems/model";
-import { CATEGORY_SOURCES } from "../problems/sources";
+import { CATEGORY_SOURCES, MAX_SOURCE_OBJECTS } from "../problems/sources";
 import { resetProblemSources } from "../problems/store";
 import clusterPolicyJson from "./fixtures/clusterpolicy.json";
 import podJson from "./fixtures/pod.json";
@@ -92,6 +92,22 @@ describe("problems", () => {
     const passing = copy(report);
     (passing.results as { result: string }[])[0]!.result = "pass";
     expect(policyProblems(POLICY_REPORT, passing)).toEqual([]);
+  });
+
+  it("a rule that could not be evaluated (result error) is a problem of its own, listed but not notified", () => {
+    const errored = copy(report);
+    (errored.results as { result: string }[])[0]!.result = "error";
+    expect(getResourceDef(POLICY_REPORT).problem?.(errored)).toBe(true);
+    expect(policyProblems(POLICY_REPORT, errored)).toMatchObject([
+      { reason: "PolicyError", messageKey: "messages.policyErrors", messageParams: { count: 1 }, notify: false, messageLists: { policies: ["require-labels"] } },
+    ]);
+    // Both on one report: two problems.
+    (errored.results as { result: string; policy: string }[]).push({ ...(report.results as { result: string; policy: string }[])[0]!, result: "fail" });
+    expect(policyProblems(POLICY_REPORT, errored).map((p) => p.reason)).toEqual(["PolicyViolation", "PolicyError"]);
+  });
+
+  it("the report sources are capped and say so", () => {
+    expect(CATEGORY_SOURCES.policies.map((d) => d.maxObjects)).toEqual([MAX_SOURCE_OBJECTS, MAX_SOURCE_OBJECTS]);
   });
 });
 

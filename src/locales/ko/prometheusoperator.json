@@ -104,5 +104,6 @@
     "podMonitors": "PodMonitors",
     "probes": "Probes",
     "rules": "PrometheusRules"
-  }
+  },
+  "ignoredNamespaceSelector": "이를 가져가는 Prometheus가 모니터의 namespace 셀렉터를 무시합니다(ignoreNamespaceSelectors). 대상은 모니터 자신의 namespace에서만 찾습니다."
 }

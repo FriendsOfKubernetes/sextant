@@ -62,11 +62,14 @@
     "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz.",
     "policyFailures_one": "{{count}} ilke kuralı başarısız: {{policies}}",
     "policyFailures_other": "{{count}} ilke kuralı başarısız: {{policies}}",
+    "policyErrors_one": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}",
+    "policyErrors_other": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}",
     "serviceMonitorSelectsNothing": "Şu namespace'lerde hiçbir Service seçmiyor: {{namespaces}}",
     "podMonitorSelectsNothing": "Şu namespace'lerde hiçbir Pod seçmiyor: {{namespaces}}",
     "monitorNotPickedUp": "Hiçbir Prometheus selector'larıyla onu seçmiyor"
   },
   "showDisk": "Disk neredeyse dolu",
   "showPractices": "En iyi uygulama bulguları",
-  "showPolicies": "Kyverno ilkesi ihlalleri"
+  "showPolicies": "Kyverno ilkesi ihlalleri",
+  "showPrometheusOperator": "Prometheus Operator izleyicileri ve sunucuları"
 }

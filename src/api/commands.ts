@@ -38,6 +38,7 @@ import type { SecretSide } from "./generated/SecretSide";
 import type { NamedObject } from "./generated/NamedObject";
 import type { DryRunResult } from "./generated/DryRunResult";
 import type { SetImageChange } from "./generated/SetImageChange";
+import type { SetImagePreview } from "./generated/SetImagePreview";
 import type { HelmManifestDiff } from "./generated/HelmManifestDiff";
 import type { ChartUpdates } from "./generated/ChartUpdates";
 import type { HelmRevisionDiff } from "./generated/HelmRevisionDiff";
@@ -229,13 +230,17 @@ export const actions = {
     call<void>("cronjob_suspend", { clusterId, ref, suspend }),
   /**
    * "Set image…" (#215): one strategic-merge patch of the named containers' images (Deployment, StatefulSet,
-   * DaemonSet, CronJob, bare Pod); refused when a container is missing or its image is no longer `from`.
+   * DaemonSet, CronJob, bare Pod); refused when a container is missing or its image is no longer `from`. After a
+   * preview, `resourceVersion` is the one it read: the change is a `conflict` when the object has changed since.
    */
-  setImage: (clusterId: ClusterId, ref: ObjectRef, changes: SetImageChange[]) =>
-    call<void>("workload_set_image", { clusterId, ref, changes }),
-  /** The same patch with `dryRun=All`: the live object and what the API server would store. Changes nothing. */
+  setImage: (clusterId: ClusterId, ref: ObjectRef, changes: SetImageChange[], resourceVersion?: string) =>
+    call<void>("workload_set_image", { clusterId, ref, changes, ...(resourceVersion !== undefined ? { resourceVersion } : {}) }),
+  /**
+   * The same patch with `dryRun=All`: the live object and what the API server would store, and the version of the live
+   * object it read (for `setImage` after this preview). Changes nothing.
+   */
   setImageDryRun: (clusterId: ClusterId, ref: ObjectRef, changes: SetImageChange[]) =>
-    call<DryRunResult>("workload_set_image_dry_run", { clusterId, ref, changes }),
+    call<SetImagePreview>("workload_set_image_dry_run", { clusterId, ref, changes }),
 };
 
 export const logs = {

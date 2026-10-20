@@ -68,7 +68,7 @@ const calls = (cmd: string) => backend.calls.filter((c) => c.cmd === cmd);
 function start(previewChanges: boolean | null, handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}) {
   backend.restore();
   backend = mockBackend(
-    { workload_set_image: () => undefined, workload_set_image_dry_run: () => structuredClone(dryRun), ...handlers },
+    { workload_set_image: () => undefined, workload_set_image_dry_run: () => ({ result: structuredClone(dryRun), resourceVersion: "41" }), ...handlers },
     { settings: { clusters: { c1: { ...defaultClusterSettings(), previewChanges } } } },
   );
 }
@@ -164,7 +164,37 @@ describe("the dialog", () => {
 
     fireEvent.click(button("Set image"));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(calls("workload_set_image").map((c) => c.args)).toEqual([{ clusterId: "c1", ref: ref(DEPLOYMENT), changes }]);
+    // The change carries the version the preview read.
+    expect(calls("workload_set_image").map((c) => c.args)).toEqual([
+      { clusterId: "c1", ref: ref(DEPLOYMENT), changes, resourceVersion: "41" },
+    ]);
+  });
+
+  it("previews again when the object changed after the preview, and sends the new version", async () => {
+    let version = 41;
+    start(true, {
+      workload_set_image_dry_run: () => ({ result: structuredClone(dryRun), resourceVersion: String(version) }),
+      workload_set_image: (args) => {
+        if (args.resourceVersion !== String(version)) {
+          throw { code: "conflict", message: "Deployment web has changed since the preview; preview the change again" };
+        }
+        return undefined;
+      },
+    });
+    const dialog = await openFor(DEPLOYMENT, deployment);
+    type("web", "nginx:1.27");
+    fireEvent.click(button("Preview and set image…"));
+    await within(dialog).findByRole("region", { name: "Change preview" });
+    version = 42; // someone scaled the Deployment meanwhile
+    fireEvent.click(button("Set image"));
+    expect(await within(dialog).findByText(/Deployment web changed after the preview/)).toBeInTheDocument();
+    expect(calls("workload_set_image_dry_run")).toHaveLength(2);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(await axeViolations(dialog)).toEqual([]);
+
+    fireEvent.click(button("Set image"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(calls("workload_set_image").map((c) => c.args.resourceVersion)).toEqual(["41", "42"]);
   });
 
   it("offers the preview as a button elsewhere, and goes back to editing from it", async () => {

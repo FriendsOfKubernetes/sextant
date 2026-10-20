@@ -8,10 +8,16 @@
   "badge_other": "주의가 필요한 개체 {{count}}개",
   "state": {
     "healthy": "정상",
+    "hibernated": "최대 절전",
+    "hibernating": "최대 절전 전환 중",
     "switchover": "전환 중",
     "failover": "장애 조치 중",
     "progressing": "진행 중",
     "unhealthy": "비정상"
+  },
+  "hibernation": {
+    "hibernated": "요청에 따라 최대 절전 중입니다(어노테이션 cnpg.io/hibernation: \"on\"). Pod는 삭제되고 볼륨은 유지됩니다. 다시 시작하려면 어노테이션을 \"off\"로 설정하세요.",
+    "hibernating": "요청에 따라 최대 절전으로 전환 중입니다(어노테이션 cnpg.io/hibernation: \"on\"). 오퍼레이터가 Pod를 삭제하고 있으며 볼륨은 유지됩니다."
   },
   "backupState": {
     "completed": "완료",

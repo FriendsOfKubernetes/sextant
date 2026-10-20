@@ -38,6 +38,7 @@
   },
   "confirm": "设置镜像",
   "previewAndSet": "预览并设置镜像…",
+  "changedSincePreview": "预览之后 {{kind}} {{name}} 已更改。这是当前对象的新预览：请检查后再次设置镜像。",
   "owned": {
     "intro": "此 Pod 由 {{kind}} {{name}} 管理：控制器会替换该 Pod 或忽略更改后的镜像。请改为在该 {{kind}} 中设置镜像。",
     "open": "打开 {{kind}} {{name}}",

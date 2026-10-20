@@ -105,6 +105,7 @@ function ClusterView({ obj }: { obj: KubeObject }) {
     <>
       {change && <Note text={change} tone={info.state === "failover" ? "danger" : "warning"} />}
       {info.state === "unhealthy" && info.phaseReason && <Note text={info.phaseReason} tone="danger" />}
+      {(info.state === "hibernated" || info.state === "hibernating") && <p className="cnpg-muted">{t(`cnpg:hibernation.${info.state}`)}</p>}
       {info.replicaCluster && <p className="cnpg-muted">{t("cnpg:replicaCluster")}</p>}
       <Fields rows={rows} labelPrefix={LABELS} />
       {members.length > 0 && <Block title={t("cnpg:members.title")}>{membersTable}</Block>}

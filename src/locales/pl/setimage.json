@@ -38,6 +38,7 @@
   },
   "confirm": "Ustaw obraz",
   "previewAndSet": "Sprawdź i ustaw obraz…",
+  "changedSincePreview": "{{kind}} {{name}} zmienił się po podglądzie. To nowy podgląd bieżącego obiektu: sprawdź go i ustaw obraz ponownie.",
   "owned": {
     "intro": "Tym Podem zarządza {{kind}} {{name}}: kontroler zastąpiłby Pod lub zignorował zmieniony obraz. Ustaw obraz w {{kind}}.",
     "open": "Otwórz {{kind}} {{name}}",
