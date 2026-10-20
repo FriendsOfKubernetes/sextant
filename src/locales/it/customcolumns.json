@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Aggiungi colonna…",
+    "custom": "Colonne personalizzate",
+    "remove": "Rimuovi la colonna {{name}}",
+    "keep": "Mantieni la colonna {{name}} per questo cluster",
+    "scopeCluster": "Questo cluster",
+    "scopeAll": "Tutti i cluster",
+    "scopeView": "Dalla vista salvata"
+  },
+  "dialog": {
+    "heading": "Aggiungi colonna",
+    "header": "Intestazione",
+    "source": "Leggi da",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Percorso del campo",
+    "key": "Chiave",
+    "path": "Percorso",
+    "keyHint": "Una chiave di label o annotation, ad es. app.kubernetes.io/name.",
+    "pathHint": "Un percorso con punti, ad es. .spec.nodeName, .status.phase o .spec.containers[0].image. Le chiavi con punti vanno tra parentesi quadre: .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "Questa tabella elenca solo metadata: i percorsi devono iniziare con .metadata.",
+    "titlePlaceholder": "La chiave o il percorso",
+    "scope": "Mostra in",
+    "scopeCluster": "Questo cluster",
+    "scopeAll": "Tutti i cluster",
+    "secretNote": "I valori dei Secret non vengono mai mostrati: Sextant legge gli oggetti già privi di essi.",
+    "add": "Aggiungi",
+    "cancel": "Annulla"
+  },
+  "errors": {
+    "keyEmpty": "Inserire una chiave.",
+    "keyInvalid": "Chiave non valida. Una chiave è un prefisso facoltativo come example.com/ e un nome di massimo 63 lettere, cifre, -, _ e . che inizia e finisce con una lettera o una cifra.",
+    "keyTooLong": "La chiave è troppo lunga.",
+    "pathEmpty": "Inserire un percorso.",
+    "pathInvalid": "Non è un percorso semplice. Unire i nomi con punti, usare [0] per un elemento di lista e [\"key\"] per una chiave con punti. Caratteri jolly, filtri e funzioni non sono supportati.",
+    "pathTooLong": "Il percorso è troppo lungo.",
+    "secretData": "I valori di un Secret (data e stringData) non possono essere mostrati in una colonna.",
+    "metadataOnly": "Questa tabella elenca solo metadata: usare un percorso che inizia con .metadata.",
+    "titleTooLong": "L'intestazione è troppo lunga.",
+    "titleInvalid": "L'intestazione contiene caratteri di controllo.",
+    "full": "Questa tabella ha già il numero massimo di colonne personalizzate: {{max}}. Rimuoverne prima una.",
+    "duplicate": "Questa tabella ha già questa colonna.",
+    "tooMany": "L'elenco delle colonne personalizzate è pieno. Rimuovere prima colonne di altre tabelle."
+  },
+  "transfer": {
+    "section": "Colonne personalizzate"
+  }
+}

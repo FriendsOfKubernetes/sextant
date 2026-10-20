@@ -12,6 +12,8 @@ import type { ClusterIcon } from "../../api/generated/ClusterIcon";
 import type { Snippet } from "../../api/generated/Snippet";
 import type { SourceKind } from "../../api/generated/SourceKind";
 import { clusterSettingsOf } from "../clusters/clusterSettings";
+import { MAX_COLUMNS_PER_KIND, MAX_CUSTOM_COLUMNS, type CustomColumn } from "../custom-columns/model";
+import { checkSpec, type ColumnSource, type CustomColumnSpec } from "../custom-columns/path";
 import { hasHiddenChars } from "../terminal/text";
 import {
   MAX_PINS,
@@ -26,12 +28,13 @@ import {
 
 export const EXPORT_FORMAT = "sextant-workspace";
 /**
- * The version written. Version 2 (#154) added the required `snippets` section (terminal snippets); a version 1 file
- * (without it) still imports, with no snippets. Each version is read strictly: a field it does not have is an error.
+ * The version written. Version 2 (#154) added the required `snippets` section (terminal snippets); version 3 (#214)
+ * the required `customColumns` section and a view's optional `customColumns`. An older file (without them) still
+ * imports, with none. Each version is read strictly: a field it does not have is an error.
  */
-export const EXPORT_VERSION = 2;
+export const EXPORT_VERSION = 3;
 /** Versions an import reads. */
-export const IMPORT_VERSIONS: readonly number[] = [1, 2];
+export const IMPORT_VERSIONS: readonly number[] = [1, 2, 3];
 /** Most snippets an import reads (`MAX_SNIPPETS` of the settings). */
 export const MAX_IMPORT_SNIPPETS = 500;
 
@@ -63,6 +66,8 @@ export interface ExportFile {
   workspaces: Workspace[];
   /** Terminal snippets (version 2; empty when a version 1 file is read). */
   snippets: Snippet[];
+  /** Custom table columns (version 3; empty when an older file is read). */
+  customColumns: CustomColumn[];
 }
 
 export interface ExportOptions {
@@ -109,6 +114,7 @@ export function buildExport(
     pins: settings.pins.map((p) => ({ ...p })),
     workspaces: settings.workspaces.map((w) => ({ ...w })),
     snippets: options.includeSnippets === false ? [] : settings.snippets.map((s) => ({ ...s })),
+    customColumns: (settings.customColumns ?? []).map((c) => ({ ...c })),
   };
 }
 
@@ -180,11 +186,51 @@ class Reader {
   }
 }
 
-function readView(r: Reader, value: Json, path: string): SavedView | null {
+const COLUMN_SOURCES: readonly ColumnSource[] = ["label", "annotation", "field"];
+
+/** One column spec (`source`, `path`, `title`) checked by the rules of a table of `group/kind`. */
+function readColumnSpec(r: Reader, o: Record<string, Json>, path: string, group: string, kind: string): CustomColumnSpec {
+  const source = r.string(o.source, `${path}.source`) as ColumnSource;
+  const text = r.string(o.path, `${path}.path`, { empty: false, max: 512 });
+  const title = r.string(o.title, `${path}.title`, { max: 64 });
+  if (!COLUMN_SOURCES.includes(source)) {
+    r.problems.push(`${path}.source: not "label", "annotation" or "field"`);
+    return { source: "label", path: text, title };
+  }
+  const checked = checkSpec({ group, kind }, source, text, title);
+  if ("problem" in checked) {
+    r.problems.push(
+      checked.problem === "secretData"
+        ? `${path}.path: a Secret's data or stringData is never a column`
+        : `${path}: not a valid column (${checked.problem})`,
+    );
+    return { source, path: text, title };
+  }
+  return checked.spec;
+}
+
+function readViewColumns(r: Reader, value: Json, path: string, group: string, kind: string): CustomColumnSpec[] {
+  return r.array(value, path, MAX_COLUMNS_PER_KIND).flatMap((v, i) => {
+    const o = r.object(v, `${path}[${i}]`, ["source", "path", "title"]);
+    return o ? [readColumnSpec(r, o, `${path}[${i}]`, group, kind)] : [];
+  });
+}
+
+function readCustomColumn(r: Reader, value: Json, path: string): CustomColumn | null {
+  const o = r.object(value, path, ["cluster", "group", "kind", "source", "path", "title"]);
+  if (!o) return null;
+  const group = r.string(o.group, `${path}.group`, { max: 253 });
+  const kind = r.string(o.kind, `${path}.kind`, { empty: false, max: 253 });
+  const cluster = r.nullableString(o.cluster, `${path}.cluster`, 128);
+  return { cluster, group, kind, ...readColumnSpec(r, o, path, group, kind) };
+}
+
+function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION): SavedView | null {
   const o = r.object(
     value,
     path,
     ["id", "name", "cluster", "group", "kind", "namespaces", "search", "onlyProblems", "labelSelector", "sort", "hiddenColumns"],
+    version >= 3 ? ["customColumns"] : [],
   );
   if (!o) return null;
   let sort: SavedView["sort"] = null;
@@ -205,6 +251,9 @@ function readView(r: Reader, value: Json, path: string): SavedView | null {
     labelSelector: r.string(o.labelSelector, `${path}.labelSelector`, { max: 1000 }),
     sort,
     hiddenColumns: r.strings(o.hiddenColumns, `${path}.hiddenColumns`, 200),
+    ...("customColumns" in o
+      ? { customColumns: readViewColumns(r, o.customColumns, `${path}.customColumns`, String(o.group), String(o.kind)) }
+      : {}),
   };
 }
 
@@ -332,7 +381,11 @@ export function parseImport(text: string): ExportFile {
   if (typeof version === "number" && json !== null && typeof json === "object" && !IMPORT_VERSIONS.includes(version))
     throw new ImportError([`$.version: ${String(version)} is not supported`]);
   const sections = ["format", "version", "clusters", "views", "pins", "workspaces"];
-  const o = r.object(json, "$", version === 1 ? sections : [...sections, "snippets"]);
+  const o = r.object(
+    json,
+    "$",
+    version === 1 ? sections : version === 2 ? [...sections, "snippets"] : [...sections, "snippets", "customColumns"],
+  );
   if (!o) throw new ImportError(r.problems);
   if (o.format !== EXPORT_FORMAT) throw new ImportError([`$.format: not "${EXPORT_FORMAT}"`]);
   if (typeof o.version !== "number" || !IMPORT_VERSIONS.includes(o.version))
@@ -341,7 +394,7 @@ export function parseImport(text: string): ExportFile {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
     clusters: r.array(o.clusters, "$.clusters", 1000).flatMap((c, i) => readCluster(r, c, `$.clusters[${i}]`) ?? []),
-    views: r.array(o.views, "$.views", MAX_VIEWS).flatMap((v, i) => readView(r, v, `$.views[${i}]`) ?? []),
+    views: r.array(o.views, "$.views", MAX_VIEWS).flatMap((v, i) => readView(r, v, `$.views[${i}]`, o.version as number) ?? []),
     pins: r.array(o.pins, "$.pins", MAX_PINS).flatMap((p, i) => readPin(r, p, `$.pins[${i}]`) ?? []),
     workspaces: r
       .array(o.workspaces, "$.workspaces", MAX_WORKSPACES)
@@ -350,6 +403,12 @@ export function parseImport(text: string): ExportFile {
       o.version === 1
         ? []
         : r.array(o.snippets, "$.snippets", MAX_IMPORT_SNIPPETS).flatMap((s, i) => readSnippet(r, s, `$.snippets[${i}]`) ?? []),
+    customColumns:
+      (o.version as number) < 3 || !("customColumns" in o)
+        ? []
+        : r
+            .array(o.customColumns, "$.customColumns", MAX_CUSTOM_COLUMNS)
+            .flatMap((c, i) => readCustomColumn(r, c, `$.customColumns[${i}]`) ?? []),
   };
   if (r.problems.length > 0) throw new ImportError(r.problems.slice(0, 50));
   return file;
@@ -401,6 +460,8 @@ export interface ImportPlan {
   pins: PlannedEntry<Pin>[];
   workspaces: PlannedEntry<Workspace>[];
   snippets: PlannedEntry<Snippet>[];
+  /** Custom table columns (#214); a changed one differs in its header only. */
+  customColumns: PlannedEntry<CustomColumn>[];
   /** Whether the file carries agent access rules that would change a cluster matched exactly (applied only when the
    *  user ticks it). */
   hasAgentAccess: boolean;
@@ -528,12 +589,25 @@ export function planImport(
       : { status, entry: { ...snippet }, label: snippet.name };
   });
 
+  const sameColumn = (a: CustomColumn, b: CustomColumn) =>
+    a.cluster === b.cluster && a.group === b.group && a.kind === b.kind && a.source === b.source && a.path === b.path;
+  const customColumns: PlannedEntry<CustomColumn>[] = file.customColumns.map((column) => {
+    const cluster = column.cluster === null ? null : mapCluster(column.cluster);
+    const entry = { ...column, cluster };
+    const label = `${column.kind} ${column.title || column.path}`;
+    if (column.cluster !== null && cluster === null) return { status: "skipped", entry, label };
+    const local = (settings.customColumns ?? []).find((c) => sameColumn(c, entry));
+    const status: EntryStatus = !local ? "added" : local.title === entry.title ? "kept" : "changed";
+    return status === "changed" ? { status, entry, label, previous: local } : { status, entry, label };
+  });
+
   return {
     clusters: plannedClusters,
     views,
     pins,
     workspaces,
     snippets,
+    customColumns,
     hasAgentAccess: plannedClusters.some((c) => c.added.includes("agentAccess") || c.changed.includes("agentAccess")),
   };
 }
@@ -592,12 +666,23 @@ export function applyImport(settings: AppSettings, plan: ImportPlan, options: Ap
     if (p.status === "added" && snippets.length < MAX_IMPORT_SNIPPETS) snippets.push(p.entry);
     else if (p.status === "changed" && options.overwrite) snippets = snippets.map((s) => (s.id === p.entry.id ? p.entry : s));
   }
-  return { ...settings, clusters: clustersNext, views, pins, workspaces, snippets };
+  let customColumns = [...(settings.customColumns ?? [])];
+  for (const p of plan.customColumns) {
+    const { entry } = p;
+    const sameTable = (c: CustomColumn) => c.cluster === entry.cluster && c.group === entry.group && c.kind === entry.kind;
+    const same = (c: CustomColumn) => sameTable(c) && c.source === entry.source && c.path === entry.path;
+    if (p.status === "added") {
+      // A table that is full, or a list that is full, keeps what it has.
+      if (customColumns.filter(sameTable).length >= MAX_COLUMNS_PER_KIND || customColumns.length >= MAX_CUSTOM_COLUMNS) continue;
+      if (!customColumns.some(same)) customColumns.push(entry);
+    } else if (p.status === "changed" && options.overwrite) customColumns = customColumns.map((c) => (same(c) ? entry : c));
+  }
+  return { ...settings, clusters: clustersNext, views, pins, workspaces, snippets, customColumns };
 }
 
 /** How many entries of the plan would change something with these options. */
 export function countChanges(plan: ImportPlan, options: ApplyOptions): number {
-  const entries = [...plan.views, ...plan.pins, ...plan.workspaces, ...plan.snippets];
+  const entries = [...plan.views, ...plan.pins, ...plan.workspaces, ...plan.snippets, ...plan.customColumns];
   const fromEntries = entries.filter((e) => e.status === "added" || (e.status === "changed" && options.overwrite)).length;
   const fromClusters = plan.clusters.filter((c) =>
     [...c.added, ...(options.overwrite ? c.changed : [])].some(

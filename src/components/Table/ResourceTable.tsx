@@ -21,7 +21,7 @@ import {
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { isCapped, uidOf, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
+import { isCapped, uidOf, updateSettings, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
 import { useCssLength } from "../../app/accessibility";
 import { useAppStore, useClusterView } from "../../app/store";
 import {
@@ -31,6 +31,16 @@ import {
   useActionsVersion,
   type RegisteredAction,
 } from "../../features/actions/registry";
+import { AddColumnDialog } from "../../features/custom-columns/AddColumnDialog";
+import {
+  columnDefOf,
+  useShownColumns,
+  withColumn,
+  withoutColumn,
+  type ShownColumn,
+} from "../../features/custom-columns/model";
+import { columnIdOf, type CustomColumnSpec } from "../../features/custom-columns/path";
+import { listSeparator } from "../../i18n/format";
 import { useObjectCount } from "../../resources/counts";
 import { kindKey, refOf } from "../../resources/refs";
 import { useResourceDef, type ActionId, type CellContext, type ColumnDef } from "../../resources/registry";
@@ -108,6 +118,28 @@ export interface ResourceTableProps {
    * by every table of the kind; `null` = not saved.
    */
   widthsId?: string | null;
+  /**
+   * The user's own columns of the kind (#214): with it the table shows the custom columns stored for the kind in this
+   * cluster and in every cluster, plus `viewColumns` (those of an opened saved view), and the Columns menu offers
+   * "Add column…" and removing them. Values are read from the objects the table already watches.
+   */
+  customColumns?: CustomColumnsOptions;
+}
+
+export interface CustomColumnsOptions {
+  /** Columns of the opened saved view (`TableState.viewColumns`). */
+  viewColumns?: readonly CustomColumnSpec[];
+  /** Removing or keeping a view column; without it they cannot be removed. */
+  onViewColumnsChange?: (columns: CustomColumnSpec[]) => void;
+  /** The table lists metadata only: only labels, annotations and `.metadata` paths are offered. */
+  metadataOnly?: boolean;
+}
+
+/** Custom columns go before "age" when the table has it, else at the end. */
+function withCustomColumns(columns: ColumnDef[], custom: ColumnDef[]): ColumnDef[] {
+  if (custom.length === 0) return columns;
+  const age = columns.findIndex((c) => c.id === "age");
+  return age < 0 ? [...columns, ...custom] : [...columns.slice(0, age), ...custom, ...columns.slice(age)];
 }
 
 /** Each retry ("Retry" after an error) starts a fresh watch. */
@@ -207,7 +239,15 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const details = useAppStore((s) => s.details);
   useActionsVersion();
 
-  const allColumns = props.columns ?? def.columns;
+  const customOptions = props.customColumns;
+  const shownCustom = useShownColumns(
+    customOptions ? clusterId : null,
+    { group: kind.group, kind: kind.kind, metadataOnly: customOptions?.metadataOnly },
+    customOptions?.viewColumns,
+  );
+  const customDefs = useMemo(() => shownCustom.map((c) => columnDefOf(c, listSeparator())), [shownCustom]);
+  const baseColumns = props.columns ?? def.columns;
+  const allColumns = useMemo(() => withCustomColumns(baseColumns, customDefs), [baseColumns, customDefs]);
   const { hiddenColumns } = props;
   const columns = useMemo(() => {
     if (!hiddenColumns || hiddenColumns.length === 0) return allColumns;
@@ -272,9 +312,14 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
 
   const { rowFilter } = props;
   const data = useMemo(() => {
-    const matches = compileSearch(search, kindId);
+    // Plain search words also match the text of the custom columns (#214).
+    const customText =
+      customDefs.length > 0
+        ? (obj: KubeObject) => customDefs.map((c) => c.value(obj)).filter((v) => v !== undefined && v !== null).map(String)
+        : undefined;
+    const matches = compileSearch(search, kindId, customText);
     return [...items.values()].filter((obj) => matches(obj) && (!rowFilter || rowFilter(obj)));
-  }, [items, search, kindId, rowFilter]);
+  }, [items, search, kindId, rowFilter, customDefs]);
   const filtered = Boolean(search.trim()) || rowFilter !== undefined;
 
   const tableColumns = useMemo(
@@ -348,6 +393,29 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const cellContext: CellContext = useMemo(() => ({ clusterId, kind, now }), [clusterId, kind, now]);
 
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [addingColumn, setAddingColumn] = useState(false);
+  const dropViewColumn = (id: string) =>
+    customOptions?.onViewColumnsChange?.(
+      (customOptions.viewColumns ?? []).filter((c) => columnIdOf(c.source, c.path) !== id),
+    );
+  const removeCustom = (column: ShownColumn) => {
+    if (column.scope === "view") {
+      dropViewColumn(column.id);
+      return;
+    }
+    const cluster = column.scope === "cluster" ? clusterId : null;
+    void updateSettings((current) => withoutColumn(current, cluster, kind, column.id)).catch(() => undefined);
+  };
+  // A saved view's column kept for this cluster: stored, then no longer the view's.
+  const keepCustom = (column: ShownColumn) => {
+    void updateSettings((current) => {
+      const next = withColumn(current, clusterId, kind, column.spec);
+      return "problem" in next ? current : next;
+    }).then(
+      () => dropViewColumn(column.id),
+      () => undefined,
+    );
+  };
   const openMenu = (obj: KubeObject, anchor: PopupRect) => {
     const uid = uidOf(obj);
     const inSelection = rowSelection[uid] && selected.length > 1;
@@ -442,13 +510,18 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       )}
       <div className="rt__toolbar">
         {props.toolbar}
-        {(props.onHiddenColumnsChange || colWidths.customized) && (
+        {(props.onHiddenColumnsChange || colWidths.customized || customOptions) && (
           <ColumnsMenu
             columns={allColumns}
             hidden={hiddenColumns ?? []}
             onChange={props.onHiddenColumnsChange}
             widthsCustomized={colWidths.customized}
             onResetWidths={colWidths.reset}
+            custom={customOptions ? shownCustom : undefined}
+            onAddCustom={customOptions ? () => setAddingColumn(true) : undefined}
+            onRemoveCustom={removeCustom}
+            onKeepCustom={keepCustom}
+            canRemoveView={Boolean(customOptions?.onViewColumnsChange)}
           />
         )}
       </div>
@@ -682,6 +755,14 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       >
         {(virtualizer) => state ?? renderGrid(virtualizer)}
       </RowsScroller>
+      {addingColumn && (
+        <AddColumnDialog
+          clusterId={clusterId}
+          target={{ group: kind.group, kind: kind.kind, metadataOnly: customOptions?.metadataOnly }}
+          objects={items}
+          onClose={() => setAddingColumn(false)}
+        />
+      )}
       {menu && (
         <ActionMenu
           anchor={menu.anchor}
@@ -813,12 +894,24 @@ function ColumnsMenu({
   onChange,
   widthsCustomized,
   onResetWidths,
+  custom,
+  onAddCustom,
+  onRemoveCustom,
+  onKeepCustom,
+  canRemoveView,
 }: {
   columns: ColumnDef[];
   hidden: readonly string[];
   onChange?: (hidden: string[]) => void;
   widthsCustomized: boolean;
   onResetWidths: () => void;
+  /** Custom columns shown (#214); with `onAddCustom` the menu offers "Add column…". */
+  custom?: readonly ShownColumn[];
+  onAddCustom?: () => void;
+  onRemoveCustom?: (column: ShownColumn) => void;
+  onKeepCustom?: (column: ShownColumn) => void;
+  /** Whether a saved view's columns can be removed (or kept) here. */
+  canRemoveView?: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -874,11 +967,72 @@ function ColumnsMenu({
           >
             {t("resources:table.resetWidths")}
           </button>
+          {custom && custom.length > 0 && (
+            <div className="rt-columns__custom" role="group" aria-label={t("customcolumns:menu.custom")}>
+              <div className="rt-columns__heading" aria-hidden>
+                {t("customcolumns:menu.custom")}
+              </div>
+              {custom.map((column) => {
+                const name = column.spec.title || column.spec.path;
+                const removable = column.scope !== "view" || canRemoveView;
+                return (
+                  <div key={column.id} className="rt-columns__custom-row">
+                    <span className="rt-columns__custom-name" title={column.spec.path}>
+                      {name}
+                    </span>
+                    <span className="rt-columns__custom-scope">{t(`customcolumns:menu.${SCOPE_KEYS[column.scope]}`)}</span>
+                    {column.scope === "view" && canRemoveView && onKeepCustom && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="icon-btn icon-btn--small"
+                        aria-label={t("customcolumns:menu.keep", { name })}
+                        title={t("customcolumns:menu.keep", { name })}
+                        onClick={() => onKeepCustom(column)}
+                      >
+                        <Icon name="pin" size={12} />
+                      </button>
+                    )}
+                    {removable && onRemoveCustom && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="icon-btn icon-btn--small"
+                        aria-label={t("customcolumns:menu.remove", { name })}
+                        title={t("customcolumns:menu.remove", { name })}
+                        onClick={() => onRemoveCustom(column)}
+                      >
+                        <Icon name="close" size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {onAddCustom && (
+            <button
+              type="button"
+              role="menuitem"
+              className={`rt-menu__item${custom && custom.length > 0 ? "" : " rt-columns__reset"}`}
+              onClick={() => {
+                setOpen(false);
+                onAddCustom();
+              }}
+            >
+              <span className="rt-menu__icon" aria-hidden>
+                <Icon name="add" size={14} />
+              </span>
+              {t("customcolumns:menu.add")}
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+const SCOPE_KEYS = { cluster: "scopeCluster", all: "scopeAll", view: "scopeView" } as const;
 
 /** Current time, refreshed every `ms` (ages in the table tick). */
 function useNow(ms: number): number {

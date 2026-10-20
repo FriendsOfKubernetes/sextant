@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Add column…",
+    "custom": "Custom columns",
+    "remove": "Remove column {{name}}",
+    "keep": "Keep column {{name}} for this cluster",
+    "scopeCluster": "This cluster",
+    "scopeAll": "All clusters",
+    "scopeView": "From the saved view"
+  },
+  "dialog": {
+    "heading": "Add column",
+    "header": "Header",
+    "source": "Read from",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Field path",
+    "key": "Key",
+    "path": "Path",
+    "keyHint": "A label or annotation key, e.g. app.kubernetes.io/name.",
+    "pathHint": "A dotted path, e.g. .spec.nodeName, .status.phase or .spec.containers[0].image. Keys with dots go in brackets: .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "This table lists metadata only: field paths must start with .metadata.",
+    "titlePlaceholder": "The key or path",
+    "scope": "Show in",
+    "scopeCluster": "This cluster",
+    "scopeAll": "All clusters",
+    "secretNote": "Secret values are never shown: Sextant reads objects with them already removed.",
+    "add": "Add",
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "keyEmpty": "Enter a key.",
+    "keyInvalid": "Not a valid key. A key is an optional prefix such as example.com/ and a name of up to 63 letters, digits, -, _ and . that starts and ends with a letter or digit.",
+    "keyTooLong": "The key is too long.",
+    "pathEmpty": "Enter a path.",
+    "pathInvalid": "Not a simple path. Use names joined by dots, [0] for a list item and [\"key\"] for a key with dots. Wildcards, filters and functions are not supported.",
+    "pathTooLong": "The path is too long.",
+    "secretData": "The values of a Secret (data and stringData) cannot be shown in a column.",
+    "metadataOnly": "This table lists metadata only: use a path that starts with .metadata.",
+    "titleTooLong": "The header is too long.",
+    "titleInvalid": "The header contains control characters.",
+    "full": "This table has the most custom columns it can have: {{max}}. Remove one first.",
+    "duplicate": "This table already has this column.",
+    "tooMany": "The list of custom columns is full. Remove columns of other tables first."
+  },
+  "transfer": {
+    "section": "Custom columns"
+  }
+}

@@ -38,10 +38,10 @@ function problems(text: string): string[] {
 }
 
 describe("snippets in the export file", () => {
-  it("are written in version 2", () => {
+  it("are written since version 2", () => {
     const file = exported();
-    expect(EXPORT_VERSION).toBe(2);
-    expect(file.version).toBe(2);
+    expect(EXPORT_VERSION).toBe(3);
+    expect(file.version).toBe(3);
     expect(file.snippets).toEqual(SNIPPETS);
     expect(parseImport(JSON.stringify(file)).snippets).toEqual(SNIPPETS);
   });
@@ -49,6 +49,7 @@ describe("snippets in the export file", () => {
   it("a version 1 file without them still imports, with no snippets", () => {
     const v1: Record<string, unknown> = { ...exported(), version: 1 };
     delete v1.snippets;
+    delete v1.customColumns;
     const file = parseImport(JSON.stringify(v1));
     expect(file.snippets).toEqual([]);
     const plan = planImport(file, withSnippets(), [], []);
@@ -71,7 +72,7 @@ describe("snippets in the export file", () => {
         "$.snippets[0].command: not a string",
       ]),
     );
-    expect(problems(JSON.stringify({ ...exported(), version: 3 }))).toEqual(["$.version: 3 is not supported"]);
+    expect(problems(JSON.stringify({ ...exported(), version: 4 }))).toEqual(["$.version: 4 is not supported"]);
   });
 
   it("are previewed as added, changed or kept and replace a local one only when overwriting is allowed", () => {

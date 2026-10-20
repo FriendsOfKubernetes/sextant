@@ -1,0 +1,46 @@
+/* Custom table columns (#214): the "Add column" dialog. */
+.cc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: min(460px, 80vw);
+  max-width: 560px;
+}
+
+.cc-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cc-form__field small,
+.cc-form__note {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.cc-form__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.cc-form__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-form__mono {
+  font-family: var(--font-mono);
+}
+
+.cc-form__error {
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+  margin: 0;
+}

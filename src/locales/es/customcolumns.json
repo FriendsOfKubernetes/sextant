@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Añadir columna…",
+    "custom": "Columnas personalizadas",
+    "remove": "Quitar la columna {{name}}",
+    "keep": "Conservar la columna {{name}} para este clúster",
+    "scopeCluster": "Este clúster",
+    "scopeAll": "Todos los clústeres",
+    "scopeView": "De la vista guardada"
+  },
+  "dialog": {
+    "heading": "Añadir columna",
+    "header": "Encabezado",
+    "source": "Leer de",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Ruta de campo",
+    "key": "Clave",
+    "path": "Ruta",
+    "keyHint": "Una clave de label o annotation, p. ej. app.kubernetes.io/name.",
+    "pathHint": "Una ruta con puntos, p. ej. .spec.nodeName, .status.phase o .spec.containers[0].image. Las claves con puntos van entre corchetes: .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "Esta tabla solo lista metadata: las rutas deben empezar por .metadata.",
+    "titlePlaceholder": "La clave o la ruta",
+    "scope": "Mostrar en",
+    "scopeCluster": "Este clúster",
+    "scopeAll": "Todos los clústeres",
+    "secretNote": "Los valores de los Secret nunca se muestran: Sextant lee los objetos ya sin ellos.",
+    "add": "Añadir",
+    "cancel": "Cancelar"
+  },
+  "errors": {
+    "keyEmpty": "Introduzca una clave.",
+    "keyInvalid": "La clave no es válida. Una clave es un prefijo opcional como example.com/ y un nombre de hasta 63 letras, dígitos, -, _ y . que empieza y termina con una letra o un dígito.",
+    "keyTooLong": "La clave es demasiado larga.",
+    "pathEmpty": "Introduzca una ruta.",
+    "pathInvalid": "No es una ruta simple. Una los nombres con puntos y use [0] para un elemento de lista y [\"key\"] para una clave con puntos. No se admiten comodines, filtros ni funciones.",
+    "pathTooLong": "La ruta es demasiado larga.",
+    "secretData": "Los valores de un Secret (data y stringData) no se pueden mostrar en una columna.",
+    "metadataOnly": "Esta tabla solo lista metadata: use una ruta que empiece por .metadata.",
+    "titleTooLong": "El encabezado es demasiado largo.",
+    "titleInvalid": "El encabezado contiene caracteres de control.",
+    "full": "Esta tabla ya tiene el máximo de columnas personalizadas: {{max}}. Quite una primero.",
+    "duplicate": "Esta tabla ya tiene esta columna.",
+    "tooMany": "La lista de columnas personalizadas está llena. Quite primero columnas de otras tablas."
+  },
+  "transfer": {
+    "section": "Columnas personalizadas"
+  }
+}

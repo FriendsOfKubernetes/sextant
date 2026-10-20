@@ -131,6 +131,10 @@ function KindTable({
       onSortChange={(sort) => patchTable({ sort })}
       hiddenColumns={table.hiddenColumns}
       onHiddenColumnsChange={(hiddenColumns) => patchTable({ hiddenColumns })}
+      customColumns={{
+        viewColumns: table.viewColumns,
+        onViewColumnsChange: (viewColumns) => patchTable({ viewColumns }),
+      }}
       toolbar={
         <>
           {labelSelector && (

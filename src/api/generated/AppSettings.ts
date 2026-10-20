@@ -3,6 +3,7 @@ import type { AppearanceSettings } from "./AppearanceSettings";
 import type { CleanupSettings } from "./CleanupSettings";
 import type { ClusterSettings } from "./ClusterSettings";
 import type { CompareSettings } from "./CompareSettings";
+import type { CustomColumn } from "./CustomColumn";
 import type { FleetSettings } from "./FleetSettings";
 import type { InstalledExtension } from "./InstalledExtension";
 import type { KubeconfigSettings } from "./KubeconfigSettings";
@@ -146,4 +147,10 @@ clusterOrder: Array<string>,
  * The "Best practices" checks (#207): checks turned off and namespaces never checked. Written by the frontend;
  * read leniently and capped ([`practices`]).
  */
-practices: PracticesSettings, };
+practices: PracticesSettings, 
+/**
+ * Custom table columns (#214): the user's own columns of a kind's table, per cluster or for every cluster, read
+ * from a label, an annotation or a simple field path. Written by the frontend; an entry that does not read or
+ * breaks a rule is left out, capped per kind ([`custom_columns`]).
+ */
+customColumns: Array<CustomColumn>, };

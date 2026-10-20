@@ -457,3 +457,39 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Custom columns (#214) in the Columns menu: one row each, with where it comes from and Keep / Remove. */
+.rt-columns__custom {
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.rt-columns__heading {
+  padding: 4px 12px;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.rt-columns__custom-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 12px;
+  max-width: 360px;
+}
+
+.rt-columns__custom-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rt-columns__custom-scope {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

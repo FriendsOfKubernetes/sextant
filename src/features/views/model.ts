@@ -1,13 +1,15 @@
 // Saved views, pins and workspaces (#149): what they are and how they change the settings. Pure functions over
 // `AppSettings` plus the few calls that apply a view to the window. Everything lives in settings.json
 // (`views`, `pins`, `workspaces`, `activeWorkspace`; written by the frontend, read leniently by the backend).
-import type { AppSettings, ClusterId, KindRef, ObjectRef } from "../../api";
+import { getSettingsSnapshot, type AppSettings, type ClusterId, type KindRef, type ObjectRef } from "../../api";
+import type { CustomColumnSpec } from "../../api/generated/CustomColumnSpec";
 import type { Pin } from "../../api/generated/Pin";
 import type { SavedView } from "../../api/generated/SavedView";
 import type { Workspace } from "../../api/generated/Workspace";
 import { DEFAULT_TABLE_STATE, EMPTY_CLUSTER_VIEW, tableStateOf, useAppStore } from "../../app/store";
 import { parseViewId, viewIdOf } from "../../resources";
 import { selectNamespaces } from "../namespaces";
+import { shownColumns } from "../custom-columns/model";
 
 export type { Pin, SavedView, Workspace };
 
@@ -64,7 +66,21 @@ export function captureView(
     labelSelector: table.labelSelector.trim(),
     sort: table.sort ? { ...table.sort } : null,
     hiddenColumns: [...table.hiddenColumns],
+    ...viewColumnsOf(clusterId, kind, table.viewColumns),
   };
+}
+
+/**
+ * The custom columns the table shows (#214: this cluster's, every cluster's and the open view's), as a saved view
+ * carries them; nothing when there are none, so a view without them is written as before.
+ */
+function viewColumnsOf(
+  clusterId: ClusterId,
+  kind: { group: string; kind: string },
+  viewColumns: readonly CustomColumnSpec[] | undefined,
+): Pick<SavedView, "customColumns"> {
+  const shown = shownColumns(getSettingsSnapshot(), clusterId, { group: kind.group, kind: kind.kind }, viewColumns);
+  return shown.length > 0 ? { customColumns: shown.map((c) => ({ ...c.spec })) } : {};
 }
 
 /**
@@ -79,6 +95,9 @@ export async function applyView(clusterId: ClusterId, view: SavedView): Promise<
     labelSelector: view.labelSelector,
     sort: view.sort ? { ...view.sort } : null,
     hiddenColumns: [...view.hiddenColumns],
+    ...(view.customColumns && view.customColumns.length > 0
+      ? { viewColumns: view.customColumns.map((c) => ({ ...c })) }
+      : {}),
   });
   await selectNamespaces(clusterId, view.namespaces);
 }

@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "列を追加…",
+    "custom": "カスタム列",
+    "remove": "列 {{name}} を削除",
+    "keep": "列 {{name}} をこのクラスターに保存",
+    "scopeCluster": "このクラスター",
+    "scopeAll": "すべてのクラスター",
+    "scopeView": "保存したビューから"
+  },
+  "dialog": {
+    "heading": "列を追加",
+    "header": "見出し",
+    "source": "読み取り元",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "フィールドパス",
+    "key": "キー",
+    "path": "パス",
+    "keyHint": "label または annotation のキー（例: app.kubernetes.io/name）。",
+    "pathHint": "ドット区切りのパス（例: .spec.nodeName、.status.phase、.spec.containers[0].image）。ドットを含むキーは角かっこで囲みます: .metadata.labels[\"app.kubernetes.io/name\"]。",
+    "metadataOnlyHint": "この表は metadata のみを一覧します。フィールドパスは .metadata で始める必要があります。",
+    "titlePlaceholder": "キーまたはパス",
+    "scope": "表示先",
+    "scopeCluster": "このクラスター",
+    "scopeAll": "すべてのクラスター",
+    "secretNote": "Secret の値は表示されません。Sextant は値が取り除かれたオブジェクトを読み取ります。",
+    "add": "追加",
+    "cancel": "キャンセル"
+  },
+  "errors": {
+    "keyEmpty": "キーを入力してください。",
+    "keyInvalid": "無効なキーです。キーは example.com/ のような省略可能な接頭辞と、英字・数字・-・_・. からなる 63 文字以内の名前で、名前は英字か数字で始まり英字か数字で終わります。",
+    "keyTooLong": "キーが長すぎます。",
+    "pathEmpty": "パスを入力してください。",
+    "pathInvalid": "単純なパスではありません。名前をドットでつなぎ、リスト要素には [0]、ドットを含むキーには [\"key\"] を使います。ワイルドカード、フィルター、関数には対応していません。",
+    "pathTooLong": "パスが長すぎます。",
+    "secretData": "Secret の値（data と stringData）は列に表示できません。",
+    "metadataOnly": "この表は metadata のみを一覧します。.metadata で始まるパスを使ってください。",
+    "titleTooLong": "見出しが長すぎます。",
+    "titleInvalid": "見出しに制御文字が含まれています。",
+    "full": "この表のカスタム列は上限に達しています: {{max}}。先にどれかを削除してください。",
+    "duplicate": "この表にはすでにこの列があります。",
+    "tooMany": "カスタム列の一覧がいっぱいです。先に他の表の列を削除してください。"
+  },
+  "transfer": {
+    "section": "カスタム列"
+  }
+}

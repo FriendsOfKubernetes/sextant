@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Sütun ekle…",
+    "custom": "Özel sütunlar",
+    "remove": "{{name}} sütununu kaldır",
+    "keep": "{{name}} sütununu bu küme için sakla",
+    "scopeCluster": "Bu küme",
+    "scopeAll": "Tüm kümeler",
+    "scopeView": "Kaydedilmiş görünümden"
+  },
+  "dialog": {
+    "heading": "Sütun ekle",
+    "header": "Başlık",
+    "source": "Kaynak",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Alan yolu",
+    "key": "Anahtar",
+    "path": "Yol",
+    "keyHint": "Bir label veya annotation anahtarı, örneğin app.kubernetes.io/name.",
+    "pathHint": "Noktalı bir yol, örneğin .spec.nodeName, .status.phase veya .spec.containers[0].image. Nokta içeren anahtarlar köşeli parantez içine yazılır: .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "Bu tablo yalnızca metadata listeler: alan yolları .metadata ile başlamalıdır.",
+    "titlePlaceholder": "Anahtar veya yol",
+    "scope": "Gösterileceği yer",
+    "scopeCluster": "Bu küme",
+    "scopeAll": "Tüm kümeler",
+    "secretNote": "Secret değerleri asla gösterilmez: Sextant nesneleri bu değerler kaldırılmış olarak okur.",
+    "add": "Ekle",
+    "cancel": "İptal"
+  },
+  "errors": {
+    "keyEmpty": "Bir anahtar girin.",
+    "keyInvalid": "Geçerli bir anahtar değil. Anahtar, example.com/ gibi isteğe bağlı bir önek ve harf, rakam, -, _ ve . içeren, harf veya rakamla başlayıp biten en fazla 63 karakterlik bir addır.",
+    "keyTooLong": "Anahtar çok uzun.",
+    "pathEmpty": "Bir yol girin.",
+    "pathInvalid": "Basit bir yol değil. Adları noktayla birleştirin, liste öğesi için [0], nokta içeren anahtar için [\"key\"] kullanın. Joker karakterler, filtreler ve fonksiyonlar desteklenmez.",
+    "pathTooLong": "Yol çok uzun.",
+    "secretData": "Bir Secret'ın değerleri (data ve stringData) sütunda gösterilemez.",
+    "metadataOnly": "Bu tablo yalnızca metadata listeler: .metadata ile başlayan bir yol kullanın.",
+    "titleTooLong": "Başlık çok uzun.",
+    "titleInvalid": "Başlık kontrol karakterleri içeriyor.",
+    "full": "Bu tablo zaten en fazla özel sütuna sahip: {{max}}. Önce birini kaldırın.",
+    "duplicate": "Bu tabloda bu sütun zaten var.",
+    "tooMany": "Özel sütun listesi dolu. Önce diğer tabloların sütunlarını kaldırın."
+  },
+  "transfer": {
+    "section": "Özel sütunlar"
+  }
+}

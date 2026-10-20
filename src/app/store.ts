@@ -1,6 +1,7 @@
 // UI state of the window (zustand). Data from clusters lives in src/api hooks, not here.
 import { create } from "zustand";
 import type { ClusterId, ObjectRef, WindowLayout } from "../api";
+import type { CustomColumnSpec } from "../api/generated/CustomColumnSpec";
 
 /** Built-in tab kinds, and `ext:<extensionId>:<id>` for an extension's dock tab. */
 export type DockTabType = "logs" | "exec" | "terminal" | "create" | "edit" | `ext:${string}`;
@@ -37,6 +38,8 @@ export interface TableState {
   /** The sorted column; `null` = the table's default. */
   sort: { column: string; desc: boolean } | null;
   hiddenColumns: string[];
+  /** Custom columns an opened saved view brought (#214), shown besides the stored ones; absent = none. */
+  viewColumns?: CustomColumnSpec[];
 }
 
 export const DEFAULT_TABLE_STATE: Omit<TableState, "view"> = Object.freeze({

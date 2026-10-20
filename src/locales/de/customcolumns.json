@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Spalte hinzufügen…",
+    "custom": "Eigene Spalten",
+    "remove": "Spalte {{name}} entfernen",
+    "keep": "Spalte {{name}} für diesen Cluster behalten",
+    "scopeCluster": "Dieser Cluster",
+    "scopeAll": "Alle Cluster",
+    "scopeView": "Aus der gespeicherten Ansicht"
+  },
+  "dialog": {
+    "heading": "Spalte hinzufügen",
+    "header": "Überschrift",
+    "source": "Lesen aus",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Feldpfad",
+    "key": "Schlüssel",
+    "path": "Pfad",
+    "keyHint": "Ein Label- oder Annotation-Schlüssel, z. B. app.kubernetes.io/name.",
+    "pathHint": "Ein Pfad mit Punkten, z. B. .spec.nodeName, .status.phase oder .spec.containers[0].image. Schlüssel mit Punkten stehen in Klammern: .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "Diese Tabelle listet nur metadata: Feldpfade müssen mit .metadata beginnen.",
+    "titlePlaceholder": "Der Schlüssel oder Pfad",
+    "scope": "Anzeigen in",
+    "scopeCluster": "Diesem Cluster",
+    "scopeAll": "Allen Clustern",
+    "secretNote": "Secret-Werte werden nie angezeigt: Sextant liest Objekte, aus denen sie bereits entfernt sind.",
+    "add": "Hinzufügen",
+    "cancel": "Abbrechen"
+  },
+  "errors": {
+    "keyEmpty": "Geben Sie einen Schlüssel ein.",
+    "keyInvalid": "Kein gültiger Schlüssel. Ein Schlüssel ist ein optionales Präfix wie example.com/ und ein Name aus bis zu 63 Buchstaben, Ziffern, -, _ und ., der mit einem Buchstaben oder einer Ziffer beginnt und endet.",
+    "keyTooLong": "Der Schlüssel ist zu lang.",
+    "pathEmpty": "Geben Sie einen Pfad ein.",
+    "pathInvalid": "Kein einfacher Pfad. Verbinden Sie Namen mit Punkten, verwenden Sie [0] für ein Listenelement und [\"key\"] für einen Schlüssel mit Punkten. Platzhalter, Filter und Funktionen werden nicht unterstützt.",
+    "pathTooLong": "Der Pfad ist zu lang.",
+    "secretData": "Die Werte eines Secret (data und stringData) können nicht in einer Spalte angezeigt werden.",
+    "metadataOnly": "Diese Tabelle listet nur metadata: Verwenden Sie einen Pfad, der mit .metadata beginnt.",
+    "titleTooLong": "Die Überschrift ist zu lang.",
+    "titleInvalid": "Die Überschrift enthält Steuerzeichen.",
+    "full": "Diese Tabelle hat bereits die Höchstzahl eigener Spalten: {{max}}. Entfernen Sie zuerst eine.",
+    "duplicate": "Diese Tabelle hat diese Spalte bereits.",
+    "tooMany": "Die Liste eigener Spalten ist voll. Entfernen Sie zuerst Spalten anderer Tabellen."
+  },
+  "transfer": {
+    "section": "Eigene Spalten"
+  }
+}

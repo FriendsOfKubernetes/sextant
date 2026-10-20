@@ -1,0 +1,25 @@
+# ADR-0099: Custom table columns read a small field-path grammar from watched objects and are stored per kind and scope
+
+## Context
+
+#214 asked for the user's own columns in resource tables: from a label key, an annotation key or a simple field path (`.spec.nodeName`, `.status.phase`), with a header; sortable and filterable like the built-in columns, widths remembered (#191); saved per kind, for one cluster or all; carried by saved views and their export (#149); values read from objects already watched; Secret data refused.
+
+## Decision
+
+- **A small grammar, not JSONPath.** A field path is `["."] name ("." name | "[" digits "]" | "[\"" key "\"]")*`: a name is `[A-Za-z0-9_-]+`, an index has at most 6 digits, a quoted key has no `"`, `\` or control character. `.spec.containers[0].image` and `.metadata.labels["app.kubernetes.io/name"]` read; wildcards (`[*]`), filters (`?()`), recursion (`..`), `$`, `{…}` and functions do not — the whole text must parse. At most 256 characters; stored in a canonical form (`.name`, `[n]`, `["key"]` only where a key is not a plain name). A label or annotation key follows Kubernetes syntax (an optional DNS-subdomain prefix and `/`, a name of ≤ 63 characters), ≤ 317 characters. A header has ≤ 64 characters and no control characters; empty means the key or path. The same parser exists twice, `src/features/custom-columns/path.ts` (the dialog, the table, import) and `crates/sextant-core/src/settings/custom_columns.rs` (reading `settings.json`), with the same cases in both test tables.
+- **Secret values are refused by path, and are not there anyway.** On a core Secret (`group ""`, `kind Secret`) a path whose first step is `data` or `stringData` is refused with a message saying why — in the dialog, in the import (`$.customColumns[i].path: a Secret's data or stringData is never a column`), in `shownColumns` (a hand-edited file) and by the backend reading the settings (the column, or a saved view carrying one, is left out). The objects a table has are the core's stripped copies (`resources::get::to_json`), so even another path cannot reach a value.
+- **No new watch.** A column reads `metadata.labels`, `metadata.annotations` or the path of the objects the table already has; a table whose list is metadata-only is offered `.metadata` paths only (`SpecTarget.metadataOnly`). Values: strings, numbers and booleans as they are; a list joined by `common:list.separator` (objects in it as compact JSON); an object as compact JSON; texts clipped to 200 characters; a missing value sorts last. Own properties only (no `constructor` from the prototype).
+- **Sorting, search, widths.** The column id is `custom:<source>:<path>` (hashed past 128 characters, the widths' id cap), the same on every machine: a saved view's sort and hidden columns and the saved widths (#191, `useColumnWidths`) find it with no extra storage. Sorting is the table's `compareCellValues` (numbers numerically, text with a numeric collator). A plain search word also matches the text of the custom columns (`compileSearch`'s `extraText`).
+- **Storage.** `AppSettings.customColumns`, frontend-written: `{cluster: ClusterId | null, group, kind, source: "label" | "annotation" | "field", path, title}`; identity is (cluster, group, kind, source, path). Read leniently entry by entry, at most 20 per kind and scope (`MAX_COLUMNS_PER_KIND`) and 1000 in all. A table shows its kind's columns for this cluster and for every cluster (a cluster's wins over the same column for all), placed before "Age". A context rename moves the cluster's columns, a deleted context's are purged (`move_cluster_settings` / `forget_cluster_settings`, ADR-0084).
+- **Saved views and export.** A saved view carries the columns its table showed (`SavedView.customColumns`, optional, written only when non-empty, ≤ 20); applying it puts them in the table state (`TableState.viewColumns`) as "From the saved view" columns, which the Columns menu can remove or keep for the cluster. The export becomes version 3: a required `customColumns` section and a view's optional `customColumns`. Versions 1 and 2 still import (with none); each version stays strict — a field of a newer version is an unknown field. The preview lists the columns as added, changed (header only, replaced only with "overwrite"), kept or skipped (a cluster not here).
+- Window only: agents and extensions get nothing new.
+
+## Why
+
+- A grammar this small is easy to check the same way in two languages and to explain in one sentence of the dialog; JSONPath's filters and wildcards would make a column a query over every object on each render.
+- Ids derived from the source and path need no id field, survive export to another machine and keep #149's and #191's references working.
+
+## Consequences
+
+- A value inside a list of unknown position (`containers[*].image`) cannot be a column; `[0]` is the way.
+- Only tables that pass `customColumns` (the main kind table) show and offer them; tables of details sections and the Events page do not.

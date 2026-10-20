@@ -45,6 +45,12 @@ pub struct SavedView {
     pub sort: Option<ViewSort>,
     /// Column ids the table hides.
     pub hidden_columns: Vec<String>,
+    /// The custom columns the table showed (#214), so the view shows them wherever it is opened. Absent in views
+    /// saved before them; written only when there are some.
+    #[serde(with = "super::custom_columns::view_columns_field")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<super::CustomColumnSpec>>", optional)]
+    pub custom_columns: Vec<super::CustomColumnSpec>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -121,6 +127,12 @@ impl SavedView {
             && self.cluster.as_deref().is_none_or(|c| !c.is_empty())
             && is_filter(&self.search)
             && is_filter(&self.label_selector)
+            && !self.custom_columns.iter().any(|c| {
+                c.source == super::ColumnSource::Field
+                    && super::custom_columns::parse_field_path(&c.path).is_some_and(|steps| {
+                        super::custom_columns::is_secret_data_path(&self.group, &self.kind, &steps)
+                    })
+            })
     }
 }
 
@@ -239,6 +251,7 @@ mod tests {
                 desc: true,
             }),
             hidden_columns: vec!["images".to_owned()],
+            custom_columns: Vec::new(),
         }
     }
 

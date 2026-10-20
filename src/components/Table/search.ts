@@ -17,9 +17,14 @@ export function searchTerms(query: string): string[] {
 
 /**
  * The search compiled once for many objects: the predicate a table runs over every row (the terms are split and
- * lowered once, not per object). `kind` (`group/Kind`) tells which `key=value` terms are fields.
+ * lowered once, not per object). `kind` (`group/Kind`) tells which `key=value` terms are fields. `extraText` gives
+ * more texts a plain word may match (the values of the table's custom columns, #214).
  */
-export function compileSearch(query: string, kind?: string): (obj: KubeObject) => boolean {
+export function compileSearch(
+  query: string,
+  kind?: string,
+  extraText?: (obj: KubeObject) => readonly string[],
+): (obj: KubeObject) => boolean {
   const terms = searchTerms(query);
   if (terms.length === 0) return () => true;
   const tests = terms.map((term): ((obj: KubeObject) => boolean) => {
@@ -42,6 +47,7 @@ export function compileSearch(query: string, kind?: string): (obj: KubeObject) =
       if ((meta.name ?? "").toLowerCase().includes(lower)) return true;
       if ((meta.namespace ?? "").toLowerCase().includes(lower)) return true;
       for (const [k, v] of Object.entries(labelsOf(obj))) if (`${k}=${v}`.toLowerCase().includes(lower)) return true;
+      if (extraText) for (const text of extraText(obj)) if (text.toLowerCase().includes(lower)) return true;
       return false;
     };
   });

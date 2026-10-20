@@ -490,6 +490,7 @@ export function ImportPreview({
       {section(t(`views:transfer.sections.${SECTION_PINS}`), plan.pins)}
       {section(t(`views:transfer.sections.${SECTION_WORKSPACES}`), plan.workspaces)}
       {section(t("terminal:snippets.managerTitle"), plan.snippets, (e) => <SnippetCommands planned={e} />)}
+      {section(t("customcolumns:transfer.section"), plan.customColumns)}
       <label className="views-form__choice">
         <Checkbox checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} />
         {t("views:transfer.overwrite")}

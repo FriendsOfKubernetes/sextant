@@ -630,7 +630,22 @@ fn settings_of_a_renamed_cluster_move_to_its_new_id() {
     }];
     // A stale "new" (a context that is gone) is dropped; the renamed cluster keeps its place in the rail.
     settings.cluster_order = vec!["b".into(), "old".into(), "a".into(), "new".into()];
+    let column = |cluster: Option<&str>, path: &str| crate::settings::CustomColumn {
+        cluster: cluster.map(str::to_owned),
+        kind: "Pod".into(),
+        path: path.into(),
+        ..Default::default()
+    };
+    settings.custom_columns = vec![
+        column(Some("old"), "app"),
+        column(None, "tier"),
+        column(Some("new"), "stale"),
+    ];
     move_cluster_settings(&mut settings, &old, &new);
+    assert_eq!(
+        settings.custom_columns,
+        [column(Some("new"), "app"), column(None, "tier")]
+    );
     assert_eq!(settings.cluster_order, ["b", "new", "a"]);
     assert_eq!(settings.views[0].cluster.as_deref(), Some("new"));
     assert_eq!(settings.pins[0].cluster, "new");
@@ -683,8 +698,29 @@ fn a_renamed_cluster_never_inherits_the_settings_of_a_deleted_context_with_its_n
     settings.window.last_cluster = Some("prod".into());
     settings.cluster_order = vec!["x".into(), "prod".into(), "dev".into()];
 
+    settings.custom_columns = vec![
+        crate::settings::CustomColumn {
+            cluster: Some("prod".into()),
+            kind: "Pod".into(),
+            path: "app".into(),
+            ..Default::default()
+        },
+        crate::settings::CustomColumn {
+            cluster: None,
+            kind: "Pod".into(),
+            path: "app".into(),
+            ..Default::default()
+        },
+    ];
+
     // Deleting the context "prod" forgets everything kept for it.
     forget_cluster_settings(&mut settings, &prod);
+    assert_eq!(
+        settings.custom_columns.len(),
+        1,
+        "only the all-clusters column stays"
+    );
+    assert_eq!(settings.custom_columns[0].cluster, None);
     assert!(!settings.clusters.contains_key("prod"));
     assert!(settings.views.is_empty());
     assert!(

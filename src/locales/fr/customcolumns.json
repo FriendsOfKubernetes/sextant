@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Ajouter une colonne…",
+    "custom": "Colonnes personnalisées",
+    "remove": "Supprimer la colonne {{name}}",
+    "keep": "Conserver la colonne {{name}} pour ce cluster",
+    "scopeCluster": "Ce cluster",
+    "scopeAll": "Tous les clusters",
+    "scopeView": "De la vue enregistrée"
+  },
+  "dialog": {
+    "heading": "Ajouter une colonne",
+    "header": "En-tête",
+    "source": "Lire depuis",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Chemin de champ",
+    "key": "Clé",
+    "path": "Chemin",
+    "keyHint": "Une clé de label ou d’annotation, par exemple app.kubernetes.io/name.",
+    "pathHint": "Un chemin à points, par exemple .spec.nodeName, .status.phase ou .spec.containers[0].image. Les clés contenant des points vont entre crochets : .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "Ce tableau ne liste que les metadata : les chemins doivent commencer par .metadata.",
+    "titlePlaceholder": "La clé ou le chemin",
+    "scope": "Afficher dans",
+    "scopeCluster": "Ce cluster",
+    "scopeAll": "Tous les clusters",
+    "secretNote": "Les valeurs des Secret ne sont jamais affichées : Sextant lit les objets dont elles ont déjà été retirées.",
+    "add": "Ajouter",
+    "cancel": "Annuler"
+  },
+  "errors": {
+    "keyEmpty": "Saisissez une clé.",
+    "keyInvalid": "Clé non valide. Une clé est un préfixe facultatif comme example.com/ suivi d’un nom de 63 caractères au plus (lettres, chiffres, -, _ et .) qui commence et finit par une lettre ou un chiffre.",
+    "keyTooLong": "La clé est trop longue.",
+    "pathEmpty": "Saisissez un chemin.",
+    "pathInvalid": "Ce n’est pas un chemin simple. Reliez les noms par des points, utilisez [0] pour un élément de liste et [\"key\"] pour une clé contenant des points. Les jokers, filtres et fonctions ne sont pas pris en charge.",
+    "pathTooLong": "Le chemin est trop long.",
+    "secretData": "Les valeurs d’un Secret (data et stringData) ne peuvent pas être affichées dans une colonne.",
+    "metadataOnly": "Ce tableau ne liste que les metadata : utilisez un chemin qui commence par .metadata.",
+    "titleTooLong": "L’en-tête est trop long.",
+    "titleInvalid": "L’en-tête contient des caractères de contrôle.",
+    "full": "Ce tableau a déjà le maximum de colonnes personnalisées : {{max}}. Supprimez-en une d’abord.",
+    "duplicate": "Ce tableau a déjà cette colonne.",
+    "tooMany": "La liste des colonnes personnalisées est pleine. Supprimez d’abord des colonnes d’autres tableaux."
+  },
+  "transfer": {
+    "section": "Colonnes personnalisées"
+  }
+}

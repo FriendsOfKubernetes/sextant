@@ -721,12 +721,17 @@ pub fn move_cluster_settings(settings: &mut AppSettings, from: &ClusterId, to: &
         replace(&mut workspace.clusters);
     }
     replace(&mut settings.cluster_order);
+    for column in &mut settings.custom_columns {
+        if column.cluster.as_deref() == Some(from) {
+            column.cluster = Some(to.to_owned());
+        }
+    }
 }
 
 /// Forgets what the settings keep for a cluster whose context was deleted: its per-cluster settings (display name,
 /// icon, agent access…), its place in the overview, the muted clusters and the last open cluster, its saved views
-/// (and every pin of those views), its pins, its place in workspaces and in the rail's order. A context created later under the same
-/// name then starts clean.
+/// (and every pin of those views), its pins, its place in workspaces and in the rail's order, its custom table columns.
+/// A context created later under the same name then starts clean.
 pub fn forget_cluster_settings(settings: &mut AppSettings, id: &ClusterId) {
     let id = id.as_str();
     settings.clusters.remove(id);
@@ -750,6 +755,9 @@ pub fn forget_cluster_settings(settings: &mut AppSettings, id: &ClusterId) {
         workspace.clusters.retain(|c| c != id);
     }
     settings.cluster_order.retain(|c| c != id);
+    settings
+        .custom_columns
+        .retain(|c| c.cluster.as_deref() != Some(id));
 }
 
 /// Forgets that the user allowed Sextant to edit a kubeconfig source that was removed: adding the file again asks

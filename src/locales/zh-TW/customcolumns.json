@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "新增欄…",
+    "custom": "自訂欄",
+    "remove": "移除欄 {{name}}",
+    "keep": "為此叢集保留欄 {{name}}",
+    "scopeCluster": "此叢集",
+    "scopeAll": "所有叢集",
+    "scopeView": "來自已儲存的檢視"
+  },
+  "dialog": {
+    "heading": "新增欄",
+    "header": "欄標題",
+    "source": "讀取自",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "欄位路徑",
+    "key": "鍵",
+    "path": "路徑",
+    "keyHint": "label 或 annotation 的鍵，例如 app.kubernetes.io/name。",
+    "pathHint": "以點分隔的路徑，例如 .spec.nodeName、.status.phase 或 .spec.containers[0].image。含點的鍵寫在方括號中：.metadata.labels[\"app.kubernetes.io/name\"]。",
+    "metadataOnlyHint": "此表只列出 metadata：欄位路徑必須以 .metadata 開頭。",
+    "titlePlaceholder": "鍵或路徑",
+    "scope": "顯示於",
+    "scopeCluster": "此叢集",
+    "scopeAll": "所有叢集",
+    "secretNote": "Secret 的值從不顯示：Sextant 讀取的物件已移除這些值。",
+    "add": "新增",
+    "cancel": "取消"
+  },
+  "errors": {
+    "keyEmpty": "請輸入鍵。",
+    "keyInvalid": "鍵無效。鍵由選用的前綴（如 example.com/）與名稱組成，名稱最多 63 個字元，可含字母、數字、-、_ 與 .，且須以字母或數字開頭和結尾。",
+    "keyTooLong": "鍵太長。",
+    "pathEmpty": "請輸入路徑。",
+    "pathInvalid": "這不是簡單路徑。請以點連接名稱，以 [0] 表示清單項目，以 [\"key\"] 表示含點的鍵。不支援萬用字元、篩選器與函式。",
+    "pathTooLong": "路徑太長。",
+    "secretData": "Secret 的值（data 與 stringData）不能顯示在欄中。",
+    "metadataOnly": "此表只列出 metadata：請使用以 .metadata 開頭的路徑。",
+    "titleTooLong": "欄標題太長。",
+    "titleInvalid": "欄標題包含控制字元。",
+    "full": "此表的自訂欄已達上限：{{max}}。請先移除一欄。",
+    "duplicate": "此表已有這一欄。",
+    "tooMany": "自訂欄清單已滿。請先移除其他表的欄。"
+  },
+  "transfer": {
+    "section": "自訂欄"
+  }
+}

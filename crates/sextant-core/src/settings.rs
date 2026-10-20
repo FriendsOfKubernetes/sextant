@@ -25,9 +25,11 @@ pub use columns::{ColumnWidths, TableColumnWidths};
 pub mod logs;
 pub use logs::LogViewSettings;
 pub mod appearance;
+pub mod custom_columns;
 pub mod practices;
 pub mod rail;
 pub use appearance::{AppearanceSettings, FontChoice, FontKind, ReduceMotion};
+pub use custom_columns::{ColumnSource, CustomColumn, CustomColumnSpec};
 pub use practices::PracticesSettings;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -458,6 +460,12 @@ pub struct AppSettings {
     #[serde(with = "practices::practices_field")]
     #[ts(as = "PracticesSettings")]
     pub practices: PracticesSettings,
+    /// Custom table columns (#214): the user's own columns of a kind's table, per cluster or for every cluster, read
+    /// from a label, an annotation or a simple field path. Written by the frontend; an entry that does not read or
+    /// breaks a rule is left out, capped per kind ([`custom_columns`]).
+    #[serde(with = "custom_columns::custom_columns_field")]
+    #[ts(as = "Vec<CustomColumn>")]
+    pub custom_columns: Vec<CustomColumn>,
 }
 
 impl Default for AppSettings {
@@ -493,6 +501,7 @@ impl Default for AppSettings {
             logs: LogViewSettings::default(),
             cluster_order: Vec::new(),
             practices: PracticesSettings::default(),
+            custom_columns: Vec::new(),
         }
     }
 }

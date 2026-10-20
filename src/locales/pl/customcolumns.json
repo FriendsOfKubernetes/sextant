@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "Dodaj kolumnę…",
+    "custom": "Własne kolumny",
+    "remove": "Usuń kolumnę {{name}}",
+    "keep": "Zachowaj kolumnę {{name}} dla tego klastra",
+    "scopeCluster": "Ten klaster",
+    "scopeAll": "Wszystkie klastry",
+    "scopeView": "Z zapisanego widoku"
+  },
+  "dialog": {
+    "heading": "Dodaj kolumnę",
+    "header": "Nagłówek",
+    "source": "Źródło",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "Ścieżka pola",
+    "key": "Klucz",
+    "path": "Ścieżka",
+    "keyHint": "Klucz label lub annotation, np. app.kubernetes.io/name.",
+    "pathHint": "Ścieżka z kropkami, np. .spec.nodeName, .status.phase lub .spec.containers[0].image. Klucze z kropkami zapisuje się w nawiasach: .metadata.labels[\"app.kubernetes.io/name\"].",
+    "metadataOnlyHint": "Ta tabela pobiera tylko metadata: ścieżki muszą zaczynać się od .metadata.",
+    "titlePlaceholder": "Klucz lub ścieżka",
+    "scope": "Pokazuj w",
+    "scopeCluster": "Tym klastrze",
+    "scopeAll": "Wszystkich klastrach",
+    "secretNote": "Wartości Secret nigdy nie są pokazywane: Sextant odczytuje obiekty już bez nich.",
+    "add": "Dodaj",
+    "cancel": "Anuluj"
+  },
+  "errors": {
+    "keyEmpty": "Wpisz klucz.",
+    "keyInvalid": "Nieprawidłowy klucz. Klucz to opcjonalny prefiks, np. example.com/, i nazwa z maksymalnie 63 liter, cyfr, -, _ i ., zaczynająca się i kończąca literą lub cyfrą.",
+    "keyTooLong": "Klucz jest za długi.",
+    "pathEmpty": "Wpisz ścieżkę.",
+    "pathInvalid": "To nie jest prosta ścieżka. Łącz nazwy kropkami, użyj [0] dla elementu listy i [\"key\"] dla klucza z kropkami. Symbole wieloznaczne, filtry i funkcje nie są obsługiwane.",
+    "pathTooLong": "Ścieżka jest za długa.",
+    "secretData": "Wartości Secret (data i stringData) nie mogą być pokazane w kolumnie.",
+    "metadataOnly": "Ta tabela pobiera tylko metadata: użyj ścieżki zaczynającej się od .metadata.",
+    "titleTooLong": "Nagłówek jest za długi.",
+    "titleInvalid": "Nagłówek zawiera znaki sterujące.",
+    "full": "Ta tabela ma już maksymalną liczbę własnych kolumn: {{max}}. Najpierw usuń jedną.",
+    "duplicate": "Ta tabela ma już tę kolumnę.",
+    "tooMany": "Lista własnych kolumn jest pełna. Najpierw usuń kolumny innych tabel."
+  },
+  "transfer": {
+    "section": "Własne kolumny"
+  }
+}

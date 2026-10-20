@@ -58,6 +58,7 @@ export function defaultAppSettings(): AppSettings {
     logs: { wrap: false, colours: true },
     clusterOrder: [],
     practices: { disabledChecks: [], excludedNamespaces: ["kube-system", "kube-public", "kube-node-lease"] },
+    customColumns: [],
   };
 }
 

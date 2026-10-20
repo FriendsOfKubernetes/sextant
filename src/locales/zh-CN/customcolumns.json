@@ -1,0 +1,49 @@
+{
+  "menu": {
+    "add": "添加列…",
+    "custom": "自定义列",
+    "remove": "移除列 {{name}}",
+    "keep": "为此集群保留列 {{name}}",
+    "scopeCluster": "此集群",
+    "scopeAll": "所有集群",
+    "scopeView": "来自已保存的视图"
+  },
+  "dialog": {
+    "heading": "添加列",
+    "header": "列标题",
+    "source": "读取自",
+    "sourceLabel": "Label",
+    "sourceAnnotation": "Annotation",
+    "sourceField": "字段路径",
+    "key": "键",
+    "path": "路径",
+    "keyHint": "label 或 annotation 的键，例如 app.kubernetes.io/name。",
+    "pathHint": "以点分隔的路径，例如 .spec.nodeName、.status.phase 或 .spec.containers[0].image。含点的键写在方括号中：.metadata.labels[\"app.kubernetes.io/name\"]。",
+    "metadataOnlyHint": "此表只列出 metadata：字段路径必须以 .metadata 开头。",
+    "titlePlaceholder": "键或路径",
+    "scope": "显示于",
+    "scopeCluster": "此集群",
+    "scopeAll": "所有集群",
+    "secretNote": "Secret 的值从不显示：Sextant 读取的对象已去除这些值。",
+    "add": "添加",
+    "cancel": "取消"
+  },
+  "errors": {
+    "keyEmpty": "请输入键。",
+    "keyInvalid": "键无效。键由可选前缀（如 example.com/）和名称组成，名称最多 63 个字符，可含字母、数字、-、_ 和 .，且须以字母或数字开头和结尾。",
+    "keyTooLong": "键太长。",
+    "pathEmpty": "请输入路径。",
+    "pathInvalid": "这不是简单路径。请用点连接名称，用 [0] 表示列表项，用 [\"key\"] 表示含点的键。不支持通配符、过滤器和函数。",
+    "pathTooLong": "路径太长。",
+    "secretData": "Secret 的值（data 和 stringData）不能显示在列中。",
+    "metadataOnly": "此表只列出 metadata：请使用以 .metadata 开头的路径。",
+    "titleTooLong": "列标题太长。",
+    "titleInvalid": "列标题包含控制字符。",
+    "full": "此表的自定义列已达上限：{{max}}。请先移除一列。",
+    "duplicate": "此表已有该列。",
+    "tooMany": "自定义列列表已满。请先移除其他表的列。"
+  },
+  "transfer": {
+    "section": "自定义列"
+  }
+}
