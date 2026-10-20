@@ -125,7 +125,7 @@
     "classes": "respostas por status",
     "latency": "latência"
   },
-  "noPrometheus": "O grafo de tráfego é lido do Prometheus, e nenhum está configurado ou foi encontrado para este cluster.",
+  "noPrometheus": "O grafo de tráfego é lido de uma fonte compatível com o Prometheus (Prometheus ou VictoriaMetrics), e nenhuma está configurada ou foi encontrada para este cluster.",
   "openSettings": "Configurações do cluster",
   "noSource": "O Prometheus não tem métricas que nomeiem as duas pontas de uma chamada: nem Istio, nem Linkerd, nem o grafo de serviços do Grafana Beyla, nem o Cilium Hubble enviam dados a ele.",
   "requestOnly": "Requisições por carga de trabalho, sem quem as enviou, vêm de {{sources}}: veja a seção “Requisições” de cada carga.",

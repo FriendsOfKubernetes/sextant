@@ -120,7 +120,7 @@
     "classes": "Antworten nach Status",
     "latency": "Latenz"
   },
-  "noPrometheus": "Der Verkehrsgraph wird aus Prometheus gelesen, und für diesen Cluster ist keines eingerichtet oder gefunden.",
+  "noPrometheus": "Der Verkehrsgraph wird aus einer Prometheus-kompatiblen Quelle (Prometheus oder VictoriaMetrics) gelesen, und für diesen Cluster ist keine eingerichtet oder gefunden.",
   "openSettings": "Clustereinstellungen",
   "noSource": "Prometheus hat keine Metriken, die beide Enden eines Aufrufs nennen: Weder Istio noch Linkerd, der Service-Graph von Grafana Beyla oder Cilium Hubble melden an es.",
   "requestOnly": "Anfragen pro Workload, ohne den Absender, kommen von {{sources}}: siehe den Abschnitt „Anfragen“ jedes Workloads.",

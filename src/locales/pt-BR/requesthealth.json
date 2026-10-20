@@ -38,7 +38,7 @@
     "errors": "Requisições com falha por segundo, última hora"
   },
   "failed": "Não foi possível ler as métricas de {{sources}}.",
-  "noPrometheus": "As métricas de requisições e o throttling de CPU são lidos do Prometheus, e nenhum está configurado ou foi encontrado para este cluster.",
+  "noPrometheus": "As métricas de requisições e o throttling de CPU são lidos de uma fonte compatível com o Prometheus (Prometheus ou VictoriaMetrics), e nenhuma está configurada ou foi encontrada para este cluster.",
   "openSettings": "Configurações do cluster",
   "noSource": "O Prometheus não tem métricas de requisições: nem Istio, nem Linkerd, nem ingress-nginx, nem Grafana Beyla, nem Cilium Hubble enviam dados a ele.",
   "wouldProvide": "Qualquer uma destas fontes as forneceria: uma malha Istio, uma malha Linkerd com linkerd-viz (ou um Prometheus que colete seus proxies), ingress-nginx com suas métricas coletadas, Grafana Beyla ou Cilium Hubble com métricas HTTP ativadas.",

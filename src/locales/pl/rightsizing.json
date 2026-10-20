@@ -20,7 +20,7 @@
       "day": "Użycie z Prometheus z ostatniego dnia: CPU — 95. percentyl, pamięć — szczyt.",
       "week": "Użycie z Prometheus z ostatnich 7 dni: CPU — 95. percentyl, pamięć — szczyt."
     },
-    "snapshot": "Dostępne są tylko bieżące wartości (migawka z {{source}}). Pojedynczy pomiar nie wystarcza do zalecenia: zainstaluj Prometheus, aby mieć historię.",
+    "snapshot": "Dostępne są tylko bieżące wartości (migawka z {{source}}). Pojedynczy pomiar nie wystarcza do zalecenia: zainstaluj Prometheus lub VictoriaMetrics, aby mieć historię.",
     "snapshotAfterError": "Nie można odczytać historii z Prometheus, więc wyświetlane są tylko bieżące wartości (migawka). Brak zaleceń.",
     "none": "Brak dostępnych metryk: sprawdzane są tylko requests i limity ze specyfikacji Podów.",
     "loading": "Odczytywanie użycia…",

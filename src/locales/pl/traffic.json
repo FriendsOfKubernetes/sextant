@@ -130,7 +130,7 @@
     "classes": "odpowiedzi według statusu",
     "latency": "opóźnienie"
   },
-  "noPrometheus": "Graf ruchu jest odczytywany z Prometheus, a dla tego klastra nie jest skonfigurowany ani znaleziony.",
+  "noPrometheus": "Graf ruchu jest odczytywany ze źródła zgodnego z Prometheus (Prometheus lub VictoriaMetrics), a dla tego klastra żadne nie jest skonfigurowane ani znalezione.",
   "openSettings": "Ustawienia klastra",
   "noSource": "Prometheus nie ma metryk nazywających oba końce wywołania: nie zapisuje do niego ani Istio, ani Linkerd, ani graf usług Grafana Beyla, ani Cilium Hubble.",
   "requestOnly": "Żądania według obciążeń, ale bez nadawcy, pochodzą z: {{sources}}. Zobacz sekcję „Żądania” każdego obciążenia.",

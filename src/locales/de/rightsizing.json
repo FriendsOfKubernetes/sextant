@@ -20,7 +20,7 @@
       "day": "Nutzung aus Prometheus über den letzten Tag: CPU als 95. Perzentil, Speicher als Spitzenwert.",
       "week": "Nutzung aus Prometheus über die letzten 7 Tage: CPU als 95. Perzentil, Speicher als Spitzenwert."
     },
-    "snapshot": "Nur aktuelle Werte sind verfügbar (eine Momentaufnahme von {{source}}). Ein einzelner Messpunkt reicht für eine Empfehlung nicht aus: Installieren Sie Prometheus für einen Verlauf.",
+    "snapshot": "Nur aktuelle Werte sind verfügbar (eine Momentaufnahme von {{source}}). Ein einzelner Messpunkt reicht für eine Empfehlung nicht aus: Installieren Sie Prometheus oder VictoriaMetrics für einen Verlauf.",
     "snapshotAfterError": "Der Prometheus-Verlauf konnte nicht gelesen werden, daher werden nur aktuelle Werte angezeigt (eine Momentaufnahme). Keine Empfehlungen.",
     "none": "Keine Metriken verfügbar: Geprüft werden nur Requests und Limits aus den Pod-Spezifikationen.",
     "loading": "Nutzung wird gelesen…",

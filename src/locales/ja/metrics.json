@@ -30,11 +30,11 @@
     "disk": "ディスク",
     "loading": "グラフを読み込み中…",
     "noData": "過去 1 時間のデータはまだありません。",
-    "needPrometheus": "過去 1 時間のグラフには Prometheus が必要です。"
+    "needPrometheus": "過去 1 時間のグラフには Prometheus 互換のソース (Prometheus または VictoriaMetrics) が必要です。"
   },
   "settings": {
     "title": "メトリクス",
-    "prometheus": "Prometheus",
+    "prometheus": "Prometheus 互換のソース",
     "mode": {
       "auto": "自動検出",
       "manual": "アドレスを指定",
@@ -43,18 +43,21 @@
     "serviceKind": "クラスター内の Service",
     "urlKind": "URL",
     "service": "Service (namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "パスのプレフィックス",
-    "url": "Prometheus の URL",
+    "preset": "種類",
+    "presetCustom": "その他",
+    "tenant": "テナント (accountID または accountID:projectID)",
+    "url": "Prometheus 互換 API の URL",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "namespace/service:port の形式で入力してください (例: monitoring/prometheus-operated:9090)。",
     "invalidUrl": "http:// または https:// で始まる URL を入力してください。",
+    "invalidTenant": "0 や 12:34 のようなテナントを指定してください。",
     "save": "このアドレスを使用",
     "usageSource": "現在の CPU とメモリの取得元",
     "source": {
-      "auto": "自動 (metrics-server、なければ Prometheus)",
+      "auto": "自動 (metrics-server、なければ Prometheus 互換のソース)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Prometheus 互換のソース",
       "off": "オフ"
     },
     "detected": "検出結果",
@@ -66,6 +69,13 @@
     "foundManual": "{{target}} で応答あり",
     "notFound": "見つかりません",
     "manualNoAnswer": "このアドレスは応答しません",
+    "kindLabel": "種類",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics (シングルノード)",
+      "victoriaMetricsCluster": "VictoriaMetrics クラスター (vmselect)",
+      "unknown": "Prometheus 互換 API"
+    },
     "prometheusOff": "オフ",
     "currentFrom": "現在の値の取得元",
     "noSource": "ソースなし — メトリクスを利用できません"

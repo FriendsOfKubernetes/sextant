@@ -185,7 +185,7 @@ describe("Cluster overview", () => {
     expect(within(usage).getByText("25%")).toBeInTheDocument();
     expect(within(usage).getByText("7.00GiB of 27.3GiB allocatable")).toBeInTheDocument();
     // No Prometheus: no charts are asked for.
-    expect(within(screen.getByRole("region", { name: "Last hour" })).getByText("Charts of the last hour need Prometheus.")).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Last hour" })).getByText("Charts of the last hour need a Prometheus-compatible source (Prometheus or VictoriaMetrics).")).toBeInTheDocument();
     expect(wb.backend.calls.filter((c) => c.cmd === "metrics_charts")).toHaveLength(0);
   });
 

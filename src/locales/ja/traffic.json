@@ -115,7 +115,7 @@
     "classes": "ステータス別の応答",
     "latency": "レイテンシ"
   },
-  "noPrometheus": "トラフィックグラフは Prometheus から読み取りますが、このクラスターには設定済みの、または見つかった Prometheus がありません。",
+  "noPrometheus": "トラフィックグラフは Prometheus 互換のソース (Prometheus または VictoriaMetrics) から読み取りますが、このクラスターには設定済みの、または見つかったソースがありません。",
   "openSettings": "クラスターの設定",
   "noSource": "Prometheus に呼び出しの両端を示すメトリクスがありません。Istio、Linkerd、Grafana Beyla のサービスグラフ、Cilium Hubble のいずれも報告していません。",
   "requestOnly": "送信元を含まないワークロード単位のリクエストは {{sources}} から届いています。各ワークロードの「リクエスト」セクションを参照してください。",

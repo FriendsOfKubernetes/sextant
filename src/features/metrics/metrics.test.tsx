@@ -314,7 +314,7 @@ describe("Metrics section of the details panel", () => {
     serve(status({ mode: { mode: "off" } }), { pods: [nginxUsage] });
     const Section = section(POD);
     render(<Section clusterId="c1" objectRef={{ kind: POD, namespace: "sextant-demo", name: "nginx-9f755754d-g85tv" }} obj={pod} />);
-    expect(await screen.findByText("Charts of the last hour need Prometheus.")).toBeInTheDocument();
+    expect(await screen.findByText("Charts of the last hour need a Prometheus-compatible source (Prometheus or VictoriaMetrics).")).toBeInTheDocument();
     expect(await screen.findByText("34.0MiB")).toBeInTheDocument();
     expect(calls("metrics_charts")).toHaveLength(0);
   });
@@ -382,12 +382,73 @@ describe("Metrics cluster settings", () => {
     await waitFor(() => expect(calls("metrics_status").length).toBeGreaterThanOrEqual(2));
   });
 
+  it("says what kind of Prometheus-compatible source was found", async () => {
+    serve(
+      status({
+        prometheus: { type: "service", namespace: "vm", service: "vmsingle-vm", port: 8429, pathPrefix: "" },
+        prometheusKind: "victoriaMetricsSingle",
+      }),
+    );
+    settingsSection();
+    expect(await screen.findByText("Found automatically: vm/vmsingle-vm:8429")).toBeInTheDocument();
+    const detected = screen.getByLabelText("Found");
+    expect(within(detected).getByText("VictoriaMetrics single-node", { selector: "dd" })).toBeInTheDocument();
+  });
+
+  it("an answering source of unknown kind is a Prometheus-compatible API", async () => {
+    serve(status({ prometheus: { type: "url", url: "http://10.0.0.5:9090" } }));
+    settingsSection();
+    const detected = await screen.findByLabelText("Found");
+    expect(await within(detected).findByText("Prometheus-compatible API", { selector: "dd" })).toBeInTheDocument();
+  });
+
+  it("the VictoriaMetrics presets fill in the port and the vmselect path with its tenant", async () => {
+    serve(status());
+    settingsSection();
+    fireEvent.click(await screen.findByRole("radio", { name: "Manual address" }));
+    const kind = screen.getByRole("combobox", { name: "Kind" });
+    const address = screen.getByRole("textbox", { name: "Service (namespace/service:port)" });
+    const prefix = screen.getByRole("textbox", { name: "Path prefix" });
+    expect(kind).toHaveValue("prometheus");
+
+    fireEvent.change(address, { target: { value: "vm/vmsingle-vm:9090" } });
+    fireEvent.change(kind, { target: { value: "victoriaMetricsSingle" } });
+    expect(address).toHaveValue("vm/vmsingle-vm:8428");
+    expect(prefix).toHaveValue("");
+    expect(screen.queryByRole("textbox", { name: /Tenant/ })).toBeNull();
+
+    fireEvent.change(address, { target: { value: "vm/vmselect-vm" } });
+    fireEvent.change(kind, { target: { value: "victoriaMetricsCluster" } });
+    expect(address).toHaveValue("vm/vmselect-vm:8481");
+    expect(prefix).toHaveValue("/select/0/prometheus");
+    const tenant = screen.getByRole("textbox", { name: "Tenant (accountID or accountID:projectID)" });
+    expect(tenant).toHaveValue("0");
+
+    fireEvent.change(tenant, { target: { value: "x" } });
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Expected a tenant such as 0 or 12:34.");
+    expect(saved()?.prometheus).toBeUndefined();
+
+    fireEvent.change(tenant, { target: { value: "12:34" } });
+    expect(prefix).toHaveValue("/select/12:34/prometheus");
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    await waitFor(() =>
+      expect(saved()?.prometheus).toEqual({
+        mode: "manual",
+        target: { type: "service", namespace: "vm", service: "vmselect-vm", port: 8481, pathPrefix: "/select/12:34/prometheus" },
+      }),
+    );
+    // Another prefix is no preset any more.
+    fireEvent.change(prefix, { target: { value: "/prom" } });
+    expect(kind).toHaveValue("custom");
+  });
+
   it("a manual URL is saved as a direct address", async () => {
     serve(status());
     settingsSection();
     fireEvent.click(await screen.findByRole("radio", { name: "Manual address" }));
     fireEvent.click(screen.getByRole("radio", { name: "URL" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Prometheus URL" }), { target: { value: "http://10.0.0.5:9090" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "URL of the Prometheus-compatible API" }), { target: { value: "http://10.0.0.5:9090" } });
     fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
     await waitFor(() =>
       expect(saved()?.prometheus).toEqual({ mode: "manual", target: { type: "url", url: "http://10.0.0.5:9090" } }),

@@ -38,7 +38,7 @@
     "errors": "Requêtes en échec par seconde, dernière heure"
   },
   "failed": "Impossible de lire les métriques de {{sources}}.",
-  "noPrometheus": "Les métriques de requêtes et le bridage du CPU sont lus dans Prometheus, et aucun n'est configuré ni trouvé pour ce cluster.",
+  "noPrometheus": "Les métriques de requêtes et le bridage du CPU sont lus dans une source compatible Prometheus (Prometheus ou VictoriaMetrics), et aucune n'est configurée ni trouvée pour ce cluster.",
   "openSettings": "Paramètres du cluster",
   "noSource": "Prometheus n'a aucune métrique de requêtes : ni Istio, ni Linkerd, ni ingress-nginx, ni Grafana Beyla, ni Cilium Hubble ne lui en envoie.",
   "wouldProvide": "N'importe laquelle de ces sources les fournirait : un maillage Istio, un maillage Linkerd avec linkerd-viz (ou un Prometheus qui collecte ses proxys), ingress-nginx avec ses métriques collectées, Grafana Beyla, ou Cilium Hubble avec les métriques HTTP activées.",

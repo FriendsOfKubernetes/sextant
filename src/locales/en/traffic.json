@@ -120,7 +120,7 @@
     "classes": "answers by status",
     "latency": "latency"
   },
-  "noPrometheus": "The traffic graph is read from Prometheus, and none is set up or found for this cluster.",
+  "noPrometheus": "The traffic graph is read from a Prometheus-compatible source (Prometheus or VictoriaMetrics), and none is set up or found for this cluster.",
   "openSettings": "Cluster settings",
   "noSource": "Prometheus has no metrics that name both ends of a call: none of Istio, Linkerd, Grafana Beyla's service graph or Cilium Hubble is reporting to it.",
   "requestOnly": "Requests per workload, without who sent them, come from {{sources}}: see the Requests section of each workload.",

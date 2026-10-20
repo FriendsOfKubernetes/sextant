@@ -115,7 +115,7 @@
     "classes": "상태별 응답",
     "latency": "지연 시간"
   },
-  "noPrometheus": "트래픽 그래프는 Prometheus에서 읽는데, 이 클러스터에는 설정되었거나 발견된 Prometheus가 없습니다.",
+  "noPrometheus": "트래픽 그래프는 Prometheus 호환 소스(Prometheus 또는 VictoriaMetrics)에서 읽는데, 이 클러스터에는 설정되었거나 발견된 소스가 없습니다.",
   "openSettings": "클러스터 설정",
   "noSource": "Prometheus에 호출의 양쪽 끝을 모두 나타내는 메트릭이 없습니다. Istio, Linkerd, Grafana Beyla 서비스 그래프, Cilium Hubble 중 어느 것도 보고하지 않습니다.",
   "requestOnly": "보낸 쪽 없이 워크로드별로 집계된 요청은 {{sources}}에서 옵니다. 각 워크로드의 요청 섹션을 확인하세요.",

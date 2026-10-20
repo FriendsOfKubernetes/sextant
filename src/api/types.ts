@@ -148,6 +148,7 @@ export type { NotificationSettings } from "./generated/NotificationSettings";
 export type { FleetSettings } from "./generated/FleetSettings";
 export type { McpState } from "./generated/McpState";
 export type { McpStatus } from "./generated/McpStatus";
+export type { MetricsSourceKind } from "./generated/MetricsSourceKind";
 export type { MetricsStatus } from "./generated/MetricsStatus";
 export type { NamespaceScope } from "./generated/NamespaceScope";
 export type { NodeUsage } from "./generated/NodeUsage";

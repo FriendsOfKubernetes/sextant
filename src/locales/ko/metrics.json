@@ -30,11 +30,11 @@
     "disk": "디스크",
     "loading": "차트를 로드하는 중…",
     "noData": "아직 지난 1시간 동안의 데이터가 없습니다.",
-    "needPrometheus": "지난 1시간의 차트를 보려면 Prometheus가 필요합니다."
+    "needPrometheus": "지난 1시간의 차트를 보려면 Prometheus 호환 소스(Prometheus 또는 VictoriaMetrics)가 필요합니다."
   },
   "settings": {
     "title": "메트릭",
-    "prometheus": "Prometheus",
+    "prometheus": "Prometheus 호환 소스",
     "mode": {
       "auto": "자동으로 찾기",
       "manual": "수동 주소",
@@ -43,18 +43,21 @@
     "serviceKind": "클러스터의 Service",
     "urlKind": "URL",
     "service": "Service(namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "경로 접두사",
-    "url": "Prometheus URL",
+    "preset": "종류",
+    "presetCustom": "기타",
+    "tenant": "테넌트(accountID 또는 accountID:projectID)",
+    "url": "Prometheus 호환 API의 URL",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "namespace/service:port 형식이어야 합니다(예: monitoring/prometheus-operated:9090).",
     "invalidUrl": "http:// 또는 https:// URL이어야 합니다.",
+    "invalidTenant": "0이나 12:34 같은 테넌트를 입력해야 합니다.",
     "save": "이 주소 사용",
     "usageSource": "현재 CPU 및 메모리 출처",
     "source": {
-      "auto": "자동(metrics-server, 없으면 Prometheus)",
+      "auto": "자동(metrics-server, 없으면 Prometheus 호환 소스)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Prometheus 호환 소스",
       "off": "끔"
     },
     "detected": "발견됨",
@@ -66,6 +69,13 @@
     "foundManual": "{{target}}에서 응답함",
     "notFound": "찾을 수 없음",
     "manualNoAnswer": "주소가 응답하지 않습니다",
+    "kindLabel": "종류",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics 단일 노드",
+      "victoriaMetricsCluster": "VictoriaMetrics 클러스터(vmselect)",
+      "unknown": "Prometheus 호환 API"
+    },
     "prometheusOff": "끔",
     "currentFrom": "현재 값 출처",
     "noSource": "소스 없음 — 메트릭을 사용할 수 없습니다"

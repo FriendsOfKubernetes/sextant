@@ -12,6 +12,12 @@
 #                                               the official release) and the fixtures of scripts/fixtures/gateway-api/
 #                                               (namespaces gw-infra, gw-shop, gw-payments). There is no Gateway controller:
 #                                               the status is patched in from status.yaml, as a controller would
+#   scripts/test-cluster.sh up --victoria-metrics
+#                                               the same, plus VictoriaMetrics in namespace `victoria-metrics`
+#                                               (scripts/fixtures/victoria-metrics/: vmagent scraping what the Prometheus
+#                                               fixture scrapes into vm-victoria-metrics-single-server:8428 and a cluster
+#                                               behind vmselect-vm:8481, plus the empty vm-replay:8428); with
+#                                               --prometheus the tests compare the two
 #   scripts/test-cluster.sh kubeconfig          print the path of the admin kubeconfig
 #   scripts/test-cluster.sh kubeconfig limited  print the path of a kubeconfig for the `limited`
 #                                               ServiceAccount (no access to Secrets)
@@ -201,6 +207,27 @@ install_prometheus() {
   die "Prometheus did not collect metrics"
 }
 
+install_victoria_metrics() {
+  log "installing VictoriaMetrics (namespace victoria-metrics)"
+  kc apply -f "$FIXTURES_DIR/victoria-metrics/victoria-metrics.yaml" >/dev/null
+  local d
+  for d in vmagent vm-victoria-metrics-single-server vmstorage-vm vminsert-vm vmselect-vm vm-replay; do
+    kc -n victoria-metrics rollout status "deployment/$d" --timeout=300s >/dev/null
+  done
+  log "waiting for the first samples"
+  local i base="/api/v1/namespaces/victoria-metrics/services"
+  for i in $(seq 1 60); do
+    if kc get --raw "$base/vm-victoria-metrics-single-server:8428/proxy/api/v1/query?query=count(container_memory_working_set_bytes)" 2>/dev/null |
+      grep -q '"result":\[{' &&
+      kc get --raw "$base/vmselect-vm:8481/proxy/select/0/prometheus/api/v1/query?query=count(container_memory_working_set_bytes)" 2>/dev/null |
+      grep -q '"result":\[{'; then
+      return 0
+    fi
+    sleep 5
+  done
+  die "VictoriaMetrics did not collect metrics"
+}
+
 # Downloads `url` once into $STATE_DIR/`name` (kept for the next run) and prints the path.
 cached_manifest() {
   local url="$1" name="$2"
@@ -327,21 +354,26 @@ cmd_down() {
   rm -f "$ADMIN_KUBECONFIG" "$LIMITED_KUBECONFIG"
 }
 
-# `up [--prometheus] [--gitops] [--gateway]`
+# `up [--prometheus] [--victoria-metrics] [--gitops] [--gateway]`
 cmd_up_with() {
-  local prometheus=0 gitops=0 gateway=0 flag
+  local prometheus=0 victoria=0 gitops=0 gateway=0 flag
   for flag in "$@"; do
     case "$flag" in
       --prometheus) prometheus=1 ;;
+      --victoria-metrics) victoria=1 ;;
       --gitops) gitops=1 ;;
       --gateway) gateway=1 ;;
-      *) die "unknown flag '$flag' (expected: --prometheus, --gitops, --gateway)" ;;
+      *) die "unknown flag '$flag' (expected: --prometheus, --victoria-metrics, --gitops, --gateway)" ;;
     esac
   done
   cmd_up
   if ((prometheus)); then
     install_prometheus
     log "Prometheus ready: monitoring/prometheus-operated:9090"
+  fi
+  if ((victoria)); then
+    install_victoria_metrics
+    log "VictoriaMetrics ready: victoria-metrics/vm-victoria-metrics-single-server:8428, vmselect-vm:8481 (/select/0/prometheus)"
   fi
   if ((gitops)); then
     install_gitops
@@ -361,7 +393,7 @@ case "${1:-}" in
   kubeconfig) cmd_kubeconfig "${2:-admin}" ;;
   down) cmd_down ;;
   *)
-    echo "usage: $0 up [--prometheus] [--gitops] [--gateway] | kubeconfig [limited] | down" >&2
+    echo "usage: $0 up [--prometheus] [--victoria-metrics] [--gitops] [--gateway] | kubeconfig [limited] | down" >&2
     exit 2
     ;;
 esac

@@ -20,7 +20,7 @@
       "day": "Prometheus'tan son bir günlük kullanım: CPU için 95. yüzdelik, bellek için tepe değeri.",
       "week": "Prometheus'tan son 7 günlük kullanım: CPU için 95. yüzdelik, bellek için tepe değeri."
     },
-    "snapshot": "Yalnızca geçerli değerler kullanılabilir ({{source}} kaynağından anlık görüntü). Bir öneri için tek bir nokta yetmez: geçmiş için Prometheus yükleyin.",
+    "snapshot": "Yalnızca geçerli değerler kullanılabilir ({{source}} kaynağından anlık görüntü). Bir öneri için tek bir nokta yetmez: geçmiş için Prometheus veya VictoriaMetrics yükleyin.",
     "snapshotAfterError": "Prometheus geçmişi okunamadı, bu yüzden yalnızca geçerli değerler (anlık görüntü) gösteriliyor. Öneri yok.",
     "none": "Kullanılabilir ölçüm yok: yalnızca Pod belirtimlerindeki istekler ve sınırlar denetleniyor.",
     "loading": "Kullanım okunuyor…",

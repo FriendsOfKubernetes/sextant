@@ -30,11 +30,11 @@
     "disk": "磁盘",
     "loading": "正在加载图表…",
     "noData": "暂无过去一小时的数据。",
-    "needPrometheus": "过去一小时的图表需要 Prometheus。"
+    "needPrometheus": "过去一小时的图表需要兼容 Prometheus 的数据源（Prometheus 或 VictoriaMetrics）。"
   },
   "settings": {
     "title": "指标",
-    "prometheus": "Prometheus",
+    "prometheus": "兼容 Prometheus 的数据源",
     "mode": {
       "auto": "自动查找",
       "manual": "手动指定地址",
@@ -43,18 +43,21 @@
     "serviceKind": "集群中的 Service",
     "urlKind": "URL",
     "service": "Service（namespace/service:port）",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "路径前缀",
-    "url": "Prometheus URL",
+    "preset": "类型",
+    "presetCustom": "其他",
+    "tenant": "租户（accountID 或 accountID:projectID）",
+    "url": "兼容 Prometheus 的 API 的 URL",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "格式应为 namespace/service:port，例如 monitoring/prometheus-operated:9090。",
     "invalidUrl": "应为 http:// 或 https:// URL。",
+    "invalidTenant": "租户格式应为 0 或 12:34 这样的形式。",
     "save": "使用此地址",
     "usageSource": "当前 CPU 和内存数据来源",
     "source": {
-      "auto": "自动（优先 metrics-server，否则 Prometheus）",
+      "auto": "自动（优先 metrics-server，否则兼容 Prometheus 的数据源）",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "兼容 Prometheus 的数据源",
       "off": "关闭"
     },
     "detected": "已找到",
@@ -66,6 +69,13 @@
     "foundManual": "{{target}} 有响应",
     "notFound": "未找到",
     "manualNoAnswer": "该地址无响应",
+    "kindLabel": "类型",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics 单节点",
+      "victoriaMetricsCluster": "VictoriaMetrics 集群（vmselect）",
+      "unknown": "兼容 Prometheus 的 API"
+    },
     "prometheusOff": "已关闭",
     "currentFrom": "当前值来源",
     "noSource": "无来源 — 指标不可用"

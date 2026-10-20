@@ -61,6 +61,10 @@ _Avoid_: tunnel, proxy
 Where the CPU and memory numbers in tables come from: metrics-server or the latest point from Prometheus. Charts always come from Prometheus, and that is a separate setting.
 _Avoid_: metrics in general, monitor
 
+**Prometheus-compatible source**:
+What charts, history, request metrics and the traffic graph are read from: Prometheus itself or VictoriaMetrics (single-node, or a cluster's vmselect under `/select/<tenant>/prometheus`), found automatically (every Prometheus first) or set as a manual address. Where the docs or the code say "Prometheus" about reading metrics, they mean this.
+_Avoid_: TSDB, metrics backend
+
 **Release**:
 A Helm chart installed in the cluster under its own name and with a revision history. It has nothing to do with a release on GitHub, which the app update comes from. A Flux HelmRelease is a Flux object that drives a Helm release; in this glossary it is not called a "release".
 _Avoid_: deployment, installation, app

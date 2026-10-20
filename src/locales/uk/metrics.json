@@ -36,11 +36,11 @@
     "disk": "Диск",
     "loading": "Завантаження графіків…",
     "noData": "Даних за останню годину поки немає.",
-    "needPrometheus": "Для графіків за останню годину потрібен Prometheus."
+    "needPrometheus": "Для графіків за останню годину потрібне Prometheus-сумісне джерело (Prometheus або VictoriaMetrics)."
   },
   "settings": {
     "title": "Метрики",
-    "prometheus": "Prometheus",
+    "prometheus": "Prometheus-сумісне джерело",
     "mode": {
       "auto": "Шукати автоматично",
       "manual": "Вказати адресу",
@@ -49,18 +49,21 @@
     "serviceKind": "Service у кластері",
     "urlKind": "URL",
     "service": "Service (namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "Префікс шляху",
-    "url": "URL Prometheus",
+    "preset": "Тип",
+    "presetCustom": "Інший",
+    "tenant": "Тенант (accountID або accountID:projectID)",
+    "url": "URL Prometheus-сумісного API",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "Очікується namespace/service:port, наприклад monitoring/prometheus-operated:9090.",
     "invalidUrl": "Очікується URL, що починається з http:// або https://.",
+    "invalidTenant": "Очікується тенант на кшталт 0 або 12:34.",
     "save": "Використовувати цю адресу",
     "usageSource": "Джерело поточних CPU і пам'яті",
     "source": {
-      "auto": "Автоматично (metrics-server, інакше Prometheus)",
+      "auto": "Автоматично (metrics-server, інакше Prometheus-сумісне джерело)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Prometheus-сумісне джерело",
       "off": "Вимкнено"
     },
     "detected": "Знайдено",
@@ -72,6 +75,13 @@
     "foundManual": "Відповідає за адресою {{target}}",
     "notFound": "Не знайдено",
     "manualNoAnswer": "Адреса не відповідає",
+    "kindLabel": "Тип",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics (один вузол)",
+      "victoriaMetricsCluster": "Кластер VictoriaMetrics (vmselect)",
+      "unknown": "Prometheus-сумісний API"
+    },
     "prometheusOff": "Вимкнено",
     "currentFrom": "Джерело поточних значень",
     "noSource": "Немає джерела — метрики недоступні"

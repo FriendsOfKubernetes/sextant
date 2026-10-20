@@ -115,7 +115,7 @@
     "classes": "依狀態的回應",
     "latency": "延遲"
   },
-  "noPrometheus": "流量圖從 Prometheus 讀取，而此叢集沒有設定或找到 Prometheus。",
+  "noPrometheus": "流量圖從相容 Prometheus 的資料來源（Prometheus 或 VictoriaMetrics）讀取，而此叢集沒有設定或找到這樣的資料來源。",
   "openSettings": "叢集設定",
   "noSource": "Prometheus 中沒有同時指明呼叫兩端的指標：Istio、Linkerd、Grafana Beyla 的服務圖與 Cilium Hubble 都沒有向它回報。",
   "requestOnly": "依工作負載統計但不含傳送端的要求來自 {{sources}}：請查看各工作負載的「要求」區段。",

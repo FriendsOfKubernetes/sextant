@@ -26,3 +26,5 @@ Requests and limits are guessed when a workload is written and rarely revisited:
 - Without Prometheus (or with Prometheus that has no cAdvisor series) the page checks only requests and limits.
 - Rows group pods by their controlling workload (a ReplicaSet of a Deployment counts as the Deployment); a Job's pods group under the Job and a bare pod is its own workload, but a gone pod is recovered only for Deployments, StatefulSets and DaemonSets, whose pod names are predictable.
 - The thresholds are Sextant's judgement, constants in `recommend.ts`, not settings; tests in `recommend.test.ts`, `group.test.ts`, `rightsizing.test.tsx` and `crates/sextant-core/tests/rightsizing.rs`.
+
+Amended (v0.18.1, #226): the history may come from VictoriaMetrics, found or set like Prometheus (ADR-0102); the same queries answer within a few percent (CPU p95 a median of 5–9 % apart in the measurements, memory peaks under 2 %), and VictoriaMetrics evaluates "now" 30 s earlier (`-search.latencyOffset`), so "first seen" of a container younger than one 10-minute step plus 30 s is not known yet.

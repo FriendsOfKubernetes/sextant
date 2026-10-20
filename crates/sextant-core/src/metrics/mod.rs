@@ -4,6 +4,8 @@
 //! `metrics.k8s.io` answers and the latest Prometheus point otherwise. Prometheus is found by [`PrometheusMode`]:
 //! `auto` tries the known services in [`CANDIDATE_NAMESPACES`] through the API server's service proxy (no direct
 //! network access to the cluster is needed), `manual` uses the configured service or URL, `off` disables it.
+//! "Prometheus" here is any Prometheus-compatible HTTP API: Prometheus itself or VictoriaMetrics (single-node, or a
+//! cluster's vmselect under `/select/<tenant>/prometheus`), which answer the same fixed queries (ADR-0102).
 
 mod history;
 mod prometheus;
@@ -42,8 +44,8 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
 use crate::settings::ClusterSettings;
 
-pub use prometheus::CANDIDATE_NAMESPACES;
 use prometheus::Prometheus;
+pub use prometheus::{CANDIDATE_NAMESPACES, VMSELECT_PATH_PREFIX, source_kind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -119,12 +121,28 @@ pub enum UsageSource {
     Off,
 }
 
+/// What answers at a [`PrometheusTarget`], as far as its name or path tells ([`source_kind`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum MetricsSourceKind {
+    Prometheus,
+    /// Single-node VictoriaMetrics (`vmsingle`).
+    VictoriaMetricsSingle,
+    /// A VictoriaMetrics cluster's vmselect, under `/select/<tenant>/prometheus`.
+    VictoriaMetricsCluster,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct MetricsStatus {
     pub metrics_server: bool,
     pub prometheus: Option<PrometheusTarget>,
+    /// What `prometheus` is, when its name or path tells; absent for an unknown Prometheus-compatible API.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub prometheus_kind: Option<MetricsSourceKind>,
     pub mode: PrometheusMode,
     pub usage_source: UsageSource,
     /// `MetricsServer` or `Prometheus`; `None` when nothing is available.
@@ -246,6 +264,7 @@ pub async fn metrics_status(
     };
     MetricsStatus {
         metrics_server,
+        prometheus_kind: prometheus.as_ref().and_then(source_kind),
         prometheus,
         mode: mode.clone(),
         usage_source: *usage,

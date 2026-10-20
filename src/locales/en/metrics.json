@@ -32,11 +32,11 @@
     "disk": "Disk",
     "loading": "Loading charts…",
     "noData": "No data for the last hour yet.",
-    "needPrometheus": "Charts of the last hour need Prometheus."
+    "needPrometheus": "Charts of the last hour need a Prometheus-compatible source (Prometheus or VictoriaMetrics)."
   },
   "settings": {
     "title": "Metrics",
-    "prometheus": "Prometheus",
+    "prometheus": "Prometheus-compatible source",
     "mode": {
       "auto": "Find automatically",
       "manual": "Manual address",
@@ -45,18 +45,21 @@
     "serviceKind": "Service in the cluster",
     "urlKind": "URL",
     "service": "Service (namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "Path prefix",
-    "url": "Prometheus URL",
+    "preset": "Kind",
+    "presetCustom": "Other",
+    "tenant": "Tenant (accountID or accountID:projectID)",
+    "url": "URL of the Prometheus-compatible API",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "Expected namespace/service:port, e.g. monitoring/prometheus-operated:9090.",
     "invalidUrl": "Expected an http:// or https:// URL.",
+    "invalidTenant": "Expected a tenant such as 0 or 12:34.",
     "save": "Use this address",
     "usageSource": "Current CPU and memory from",
     "source": {
-      "auto": "Automatic (metrics-server, else Prometheus)",
+      "auto": "Automatic (metrics-server, else the Prometheus-compatible source)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Prometheus-compatible source",
       "off": "Off"
     },
     "detected": "Found",
@@ -68,6 +71,13 @@
     "foundManual": "Answers at {{target}}",
     "notFound": "Not found",
     "manualNoAnswer": "The address does not answer",
+    "kindLabel": "Kind",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics single-node",
+      "victoriaMetricsCluster": "VictoriaMetrics cluster (vmselect)",
+      "unknown": "Prometheus-compatible API"
+    },
     "prometheusOff": "Off",
     "currentFrom": "Current values from",
     "noSource": "No source — metrics are unavailable"

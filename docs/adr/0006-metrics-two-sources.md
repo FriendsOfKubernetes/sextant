@@ -21,3 +21,5 @@ Current CPU and memory values come from metrics-server, and charts for the last 
 - The auto-detection result is cached for 60 seconds. After Prometheus is installed, the interface may show "Metrics are unavailable" for a few seconds.
 - Proxying requires permissions on `services/proxy`. On a refusal the user will see the absence of a source, not the reason.
 - Current values are polled every 30 seconds rather than arriving through a watch, so they lag behind tables that update on their own. The chart window is fixed at one hour.
+
+Amended (v0.18.1, #226): auto-detection also finds VictoriaMetrics (single-node and a cluster's vmselect under `/select/0/prometheus`) and searches the namespaces `victoria-metrics` and `vm`; every Prometheus comes first, so a cluster with both keeps its Prometheus. "Prometheus" in this ADR means any Prometheus-compatible source. See ADR-0102.

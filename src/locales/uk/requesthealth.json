@@ -38,7 +38,7 @@
     "errors": "Невдалих запитів за секунду за останню годину"
   },
   "failed": "Не вдалося прочитати метрики {{sources}}.",
-  "noPrometheus": "Метрики запитів і тротлінг CPU читаються з Prometheus, а для цього кластера його не налаштовано й не знайдено.",
+  "noPrometheus": "Метрики запитів і тротлінг CPU читаються з Prometheus-сумісного джерела (Prometheus або VictoriaMetrics), а для цього кластера його не налаштовано й не знайдено.",
   "openSettings": "Налаштування кластера",
   "noSource": "У Prometheus немає метрик запитів: ні Istio, ні Linkerd, ні ingress-nginx, ні Grafana Beyla, ні Cilium Hubble не надсилають їх туди.",
   "wouldProvide": "Їх дав би будь-який із варіантів: сервісна мережа Istio, сервісна мережа Linkerd з linkerd-viz (або Prometheus, що збирає метрики його проксі), ingress-nginx зі збором метрик, Grafana Beyla або Cilium Hubble з увімкненими HTTP-метриками.",

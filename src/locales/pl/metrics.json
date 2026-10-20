@@ -36,11 +36,11 @@
     "disk": "Dysk",
     "loading": "Wczytywanie wykresów…",
     "noData": "Brak danych z ostatniej godziny.",
-    "needPrometheus": "Wykresy z ostatniej godziny wymagają Prometheus."
+    "needPrometheus": "Wykresy z ostatniej godziny wymagają źródła zgodnego z Prometheus (Prometheus lub VictoriaMetrics)."
   },
   "settings": {
     "title": "Metryki",
-    "prometheus": "Prometheus",
+    "prometheus": "Źródło zgodne z Prometheus",
     "mode": {
       "auto": "Znajdź automatycznie",
       "manual": "Adres ręczny",
@@ -49,18 +49,21 @@
     "serviceKind": "Service w klastrze",
     "urlKind": "URL",
     "service": "Service (namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "Prefiks ścieżki",
-    "url": "URL Prometheus",
+    "preset": "Rodzaj",
+    "presetCustom": "Inny",
+    "tenant": "Tenant (accountID lub accountID:projectID)",
+    "url": "URL API zgodnego z Prometheus",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "Oczekiwano formatu namespace/service:port, np. monitoring/prometheus-operated:9090.",
     "invalidUrl": "Oczekiwano adresu URL http:// lub https://.",
+    "invalidTenant": "Oczekiwano tenanta, np. 0 lub 12:34.",
     "save": "Użyj tego adresu",
     "usageSource": "Bieżące użycie CPU i pamięci z",
     "source": {
-      "auto": "Automatycznie (metrics-server, w przeciwnym razie Prometheus)",
+      "auto": "Automatycznie (metrics-server, w przeciwnym razie źródło zgodne z Prometheus)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Źródło zgodne z Prometheus",
       "off": "Wyłączone"
     },
     "detected": "Znaleziono",
@@ -72,6 +75,13 @@
     "foundManual": "Odpowiada pod adresem {{target}}",
     "notFound": "Nie znaleziono",
     "manualNoAnswer": "Adres nie odpowiada",
+    "kindLabel": "Rodzaj",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics (jeden węzeł)",
+      "victoriaMetricsCluster": "Klaster VictoriaMetrics (vmselect)",
+      "unknown": "API zgodne z Prometheus"
+    },
     "prometheusOff": "Wyłączony",
     "currentFrom": "Bieżące wartości z",
     "noSource": "Brak źródła — metryki są niedostępne"

@@ -38,7 +38,7 @@
     "errors": "Nieudane żądania na sekundę, ostatnia godzina"
   },
   "failed": "Nie udało się odczytać metryk: {{sources}}.",
-  "noPrometheus": "Metryki żądań i dławienie CPU są odczytywane z Prometheusa, a dla tego klastra żaden nie jest skonfigurowany ani znaleziony.",
+  "noPrometheus": "Metryki żądań i dławienie CPU są odczytywane ze źródła zgodnego z Prometheus (Prometheus lub VictoriaMetrics), a dla tego klastra żadne nie jest skonfigurowane ani znalezione.",
   "openSettings": "Ustawienia klastra",
   "noSource": "Prometheus nie ma metryk żądań: nie wysyła ich do niego ani Istio, ani Linkerd, ani ingress-nginx, ani Grafana Beyla, ani Cilium Hubble.",
   "wouldProvide": "Dostarczyłoby je dowolne z tych źródeł: siatka Istio, siatka Linkerd z linkerd-viz (lub Prometheusem zbierającym metryki jej proxy), ingress-nginx ze zbieranymi metrykami, Grafana Beyla albo Cilium Hubble z włączonymi metrykami HTTP.",

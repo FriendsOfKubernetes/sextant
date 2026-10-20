@@ -20,7 +20,7 @@
       "day": "Usage from Prometheus over the last day: CPU at the 95th percentile, memory at its peak.",
       "week": "Usage from Prometheus over the last 7 days: CPU at the 95th percentile, memory at its peak."
     },
-    "snapshot": "Only current values are available (a snapshot from {{source}}). A single point is not enough for a recommendation: install Prometheus for history.",
+    "snapshot": "Only current values are available (a snapshot from {{source}}). A single point is not enough for a recommendation: install Prometheus or VictoriaMetrics for history.",
     "snapshotAfterError": "Prometheus history could not be read, so only current values are shown (a snapshot). No recommendations.",
     "none": "No metrics are available: only requests and limits from the pod specs are checked.",
     "loading": "Reading usage…",

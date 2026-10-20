@@ -120,7 +120,7 @@
     "classes": "duruma göre yanıtlar",
     "latency": "gecikme"
   },
-  "noPrometheus": "Trafik grafiği Prometheus’tan okunur ve bu küme için ayarlanmış ya da bulunmuş bir Prometheus yok.",
+  "noPrometheus": "Trafik grafiği Prometheus uyumlu bir kaynaktan (Prometheus veya VictoriaMetrics) okunur ve bu küme için ayarlanmış ya da bulunmuş bir kaynak yok.",
   "openSettings": "Küme ayarları",
   "noSource": "Prometheus’ta bir çağrının iki ucunu da adlandıran metrik yok: Istio, Linkerd, Grafana Beyla hizmet grafiği veya Cilium Hubble’dan hiçbiri ona veri göndermiyor.",
   "requestOnly": "Gönderen olmadan iş yükü başına istekler şuradan geliyor: {{sources}}. Her iş yükünün İstekler bölümüne bakın.",

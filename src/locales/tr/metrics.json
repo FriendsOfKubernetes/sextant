@@ -32,11 +32,11 @@
     "disk": "Disk",
     "loading": "Grafikler yükleniyor…",
     "noData": "Son bir saat için henüz veri yok.",
-    "needPrometheus": "Son bir saatin grafikleri için Prometheus gerekir."
+    "needPrometheus": "Son bir saatin grafikleri için Prometheus uyumlu bir kaynak (Prometheus veya VictoriaMetrics) gerekir."
   },
   "settings": {
     "title": "Ölçümler",
-    "prometheus": "Prometheus",
+    "prometheus": "Prometheus uyumlu kaynak",
     "mode": {
       "auto": "Otomatik bul",
       "manual": "Elle adres",
@@ -45,18 +45,21 @@
     "serviceKind": "Kümedeki Service",
     "urlKind": "URL",
     "service": "Service (namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "Yol öneki",
-    "url": "Prometheus URL'si",
+    "preset": "Tür",
+    "presetCustom": "Diğer",
+    "tenant": "Tenant (accountID veya accountID:projectID)",
+    "url": "Prometheus uyumlu API'nin URL'si",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "namespace/service:port bekleniyor, örneğin monitoring/prometheus-operated:9090.",
     "invalidUrl": "http:// veya https:// ile başlayan bir URL bekleniyor.",
+    "invalidTenant": "0 veya 12:34 gibi bir tenant bekleniyor.",
     "save": "Bu adresi kullan",
     "usageSource": "Geçerli CPU ve bellek kaynağı",
     "source": {
-      "auto": "Otomatik (metrics-server, yoksa Prometheus)",
+      "auto": "Otomatik (metrics-server, yoksa Prometheus uyumlu kaynak)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Prometheus uyumlu kaynak",
       "off": "Kapalı"
     },
     "detected": "Bulunan",
@@ -68,6 +71,13 @@
     "foundManual": "Yanıt veriyor: {{target}}",
     "notFound": "Bulunamadı",
     "manualNoAnswer": "Adres yanıt vermiyor",
+    "kindLabel": "Tür",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics (tek düğüm)",
+      "victoriaMetricsCluster": "VictoriaMetrics kümesi (vmselect)",
+      "unknown": "Prometheus uyumlu API"
+    },
     "prometheusOff": "Kapalı",
     "currentFrom": "Geçerli değerlerin kaynağı",
     "noSource": "Kaynak yok — ölçümler kullanılamıyor"

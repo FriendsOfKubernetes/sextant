@@ -38,7 +38,7 @@
     "errors": "Saniyedeki başarısız istekler, son bir saat"
   },
   "failed": "Şu kaynakların metrikleri okunamadı: {{sources}}.",
-  "noPrometheus": "İstek metrikleri ve CPU kısıtlaması Prometheus'tan okunur; bu küme için ayarlanmış ya da bulunmuş bir Prometheus yok.",
+  "noPrometheus": "İstek metrikleri ve CPU kısıtlaması Prometheus uyumlu bir kaynaktan (Prometheus veya VictoriaMetrics) okunur; bu küme için ayarlanmış ya da bulunmuş bir kaynak yok.",
   "openSettings": "Küme ayarları",
   "noSource": "Prometheus'ta istek metriği yok: Istio, Linkerd, ingress-nginx, Grafana Beyla ve Cilium Hubble'ın hiçbiri ona veri göndermiyor.",
   "wouldProvide": "Bunlardan herhangi biri sağlardı: bir Istio ağı, linkerd-viz ile bir Linkerd ağı (ya da proxy'lerini toplayan bir Prometheus), metrikleri toplanan ingress-nginx, Grafana Beyla veya HTTP metrikleri açık Cilium Hubble.",

@@ -15,8 +15,10 @@ use kube::Api;
 use kube::api::{GetParams, ListParams};
 use serde_json::Value;
 
-use super::{ChartTarget, NodeUsage, PodUsage, PrometheusTarget, Series, Usage};
+use super::{ChartTarget, MetricsSourceKind, NodeUsage, PodUsage, PrometheusTarget, Series, Usage};
 
+#[cfg(test)]
+mod detect_tests;
 mod requests;
 mod rightsizing;
 mod traffic;
@@ -31,14 +33,20 @@ pub(crate) use rightsizing::usage_history;
 pub(crate) use traffic::{edge_queries, traffic_edges};
 pub(crate) use volumes::volume_stats;
 
-/// Namespaces searched by auto-detection, in order.
-pub const CANDIDATE_NAMESPACES: [&str; 5] = [
+/// Namespaces searched by auto-detection, in order (the last two are VictoriaMetrics' usual ones: `vm` in its charts' and
+/// operator's documentation, `victoria-metrics` by the project's name).
+pub const CANDIDATE_NAMESPACES: [&str; 7] = [
     "monitoring",
     "prometheus",
     "kube-prometheus-stack",
     "lens-metrics",
     "observability",
+    "victoria-metrics",
+    "vm",
 ];
+
+/// The path prefix of a VictoriaMetrics cluster's Prometheus API on vmselect, for the default tenant `0`.
+pub const VMSELECT_PATH_PREFIX: &str = "/select/0/prometheus";
 
 /// How long one Prometheus request may take.
 const QUERY_TIMEOUT: Duration = Duration::from_secs(20);
@@ -222,9 +230,19 @@ impl Prometheus {
         answer_data(status, &body)
     }
 
-    /// Whether this is a Prometheus that answers.
+    /// Whether this is a Prometheus-compatible API that answers: `api/v1/status/buildinfo` (Prometheus, and
+    /// VictoriaMetrics from v1.77.0 on, single-node and vmselect alike); when something answered that with an error
+    /// (an older VictoriaMetrics has no such handler), an instant query of a constant.
     pub(crate) async fn probe(&self) -> CoreResult<()> {
-        self.get("api/v1/status/buildinfo").await.map(|_| ())
+        match self.get("api/v1/status/buildinfo").await {
+            Ok(_) => Ok(()),
+            Err(err) if err.code == ErrorCode::Unreachable => Err(err),
+            Err(err) => self
+                .get("api/v1/query?query=vector%281%29")
+                .await
+                .map(|_| ())
+                .map_err(|_| err),
+        }
     }
 
     /// Instant query: `(labels, value)` per series.
@@ -375,8 +393,70 @@ type Detected = HashMap<ClusterId, (Instant, Option<PrometheusTarget>)>;
 
 static DETECTED: LazyLock<Mutex<Detected>> = LazyLock::new(Default::default);
 
-/// Rank of a service among the known Prometheus service names (lower is better) and the port to use.
-fn candidate(service: &Service) -> Option<(u8, u16)> {
+/// A known service name: what it is, its rank (lower is better; every Prometheus before every VictoriaMetrics), the
+/// ports to use (the first the Service has) and the path prefix of the Prometheus API.
+struct Known {
+    kind: MetricsSourceKind,
+    rank: u8,
+    ports: &'static [u16],
+    path_prefix: &'static str,
+}
+
+/// What a Service of this name is, by the names Prometheus' and VictoriaMetrics' charts and operators give.
+///
+/// VictoriaMetrics (ADR-0102): the operator names a VMSingle `vmsingle-<name>` (port 8429, with 8428 added as an
+/// alias) and a VMCluster's select `vmselect-<name>` (8481); the victoria-metrics-k8s-stack chart creates those
+/// objects, and the victoria-metrics-single / -cluster charts use the same names with `useLegacyNaming: false`. Their
+/// default (legacy) naming is `<release>-victoria-metrics-single-server` (8428) and
+/// `<release>-victoria-metrics-cluster-vmselect` (8481), or `<release>-server` / `<release>-vmselect` when the
+/// release name already contains the chart's, as the operator's `useLegacyNaming: true` does for a VMCluster.
+fn known(name: &str) -> Option<Known> {
+    let (kind, rank, ports, path_prefix): (_, _, &'static [u16], _) =
+        if name == "prometheus-operated" {
+            (MetricsSourceKind::Prometheus, 0, &[9090], "")
+        } else if name == "prometheus-server" {
+            (MetricsSourceKind::Prometheus, 1, &[80], "")
+        } else if name.ends_with("-kube-prometheus-prometheus") {
+            (MetricsSourceKind::Prometheus, 2, &[9090], "")
+        } else if name == "prometheus" {
+            (MetricsSourceKind::Prometheus, 3, &[9090], "")
+        } else if name.starts_with("vmsingle-") {
+            (
+                MetricsSourceKind::VictoriaMetricsSingle,
+                10,
+                &[8429, 8428],
+                "",
+            )
+        } else if name.ends_with("-server") && name.contains("victoria-metrics-single") {
+            (MetricsSourceKind::VictoriaMetricsSingle, 11, &[8428], "")
+        } else if name.starts_with("vmselect-") {
+            (
+                MetricsSourceKind::VictoriaMetricsCluster,
+                12,
+                &[8481],
+                VMSELECT_PATH_PREFIX,
+            )
+        } else if name.ends_with("-vmselect") {
+            (
+                MetricsSourceKind::VictoriaMetricsCluster,
+                13,
+                &[8481],
+                VMSELECT_PATH_PREFIX,
+            )
+        } else {
+            return None;
+        };
+    Some(Known {
+        kind,
+        rank,
+        ports,
+        path_prefix,
+    })
+}
+
+/// A known service's kind and rank, the port and the path prefix to use; `None` for an unknown name or one without
+/// its port.
+fn candidate(service: &Service) -> Option<(Known, u16)> {
     let name = service.metadata.name.as_deref()?;
     let ports: Vec<u16> = service
         .spec
@@ -386,22 +466,47 @@ fn candidate(service: &Service) -> Option<(u8, u16)> {
         .flatten()
         .filter_map(|p| u16::try_from(p.port).ok())
         .collect();
-    let rank = if name == "prometheus-operated" {
-        (0, 9090)
-    } else if name == "prometheus-server" {
-        (1, 80)
-    } else if name.ends_with("-kube-prometheus-prometheus") {
-        (2, 9090)
-    } else if name == "prometheus" {
-        (3, 9090)
-    } else {
-        return None;
-    };
-    ports.contains(&rank.1).then_some(rank)
+    let known = known(name)?;
+    let port = *known.ports.iter().find(|p| ports.contains(p))?;
+    Some((known, port))
 }
 
-/// The first known Prometheus service (see [`CANDIDATE_NAMESPACES`]) that answers through the API server proxy.
-/// Results, including "not found", are cached per cluster for a minute.
+/// What kind of Prometheus-compatible API `target` is, by the same names auto-detection knows, else by a vmselect
+/// path (`/select/<tenant>/prometheus`); `None` when it cannot tell.
+pub fn source_kind(target: &PrometheusTarget) -> Option<MetricsSourceKind> {
+    let path = match target {
+        PrometheusTarget::Service {
+            service,
+            path_prefix,
+            ..
+        } => {
+            if let Some(known) = known(service) {
+                return Some(known.kind);
+            }
+            path_prefix.as_str()
+        }
+        PrometheusTarget::Url { url } => url.as_str(),
+    };
+    is_vmselect_path(path).then_some(MetricsSourceKind::VictoriaMetricsCluster)
+}
+
+/// Whether `path` contains `/select/<tenant>/prometheus` (`<tenant>` = `accountID` or `accountID:projectID`).
+fn is_vmselect_path(path: &str) -> bool {
+    let mut parts = path.split('/').skip_while(|p| *p != "select");
+    parts.next().is_some()
+        && parts.next().is_some_and(|tenant| {
+            let mut ids = tenant.split(':');
+            let digits = |s: Option<&str>| {
+                s.is_some_and(|s| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit()))
+            };
+            digits(ids.next()) && ids.next().is_none_or(|p| digits(Some(p))) && ids.next().is_none()
+        })
+        && parts.next() == Some("prometheus")
+}
+
+/// The first known Prometheus-compatible service (see [`CANDIDATE_NAMESPACES`] and [`known`]) that answers through
+/// the API server proxy: every Prometheus first, then VictoriaMetrics, each by namespace, then by rank (in one
+/// namespace single-node before vmselect). Results, including "not found", are cached per cluster for a minute.
 pub(crate) async fn detect(client: &kube::Client, cluster: &ClusterId) -> Option<PrometheusTarget> {
     if let Some((at, found)) = lock_detected().get(cluster)
         && at.elapsed() < DETECT_TTL
@@ -427,25 +532,27 @@ async fn detect_uncached(client: &kube::Client) -> Option<PrometheusTarget> {
             .unwrap_or_default()
     }))
     .await;
-    let mut candidates: Vec<(usize, u8, PrometheusTarget)> = Vec::new();
+    let mut candidates: Vec<(bool, usize, u8, PrometheusTarget)> = Vec::new();
     for (index, services) in lists.into_iter().enumerate() {
         for service in services {
-            if let Some((rank, port)) = candidate(&service) {
+            if let Some((known, port)) = candidate(&service) {
                 candidates.push((
+                    // Every Prometheus first, in any namespace: a cluster that has both keeps the Prometheus it had.
+                    known.kind != MetricsSourceKind::Prometheus,
                     index,
-                    rank,
+                    known.rank,
                     PrometheusTarget::Service {
                         namespace: CANDIDATE_NAMESPACES[index].to_owned(),
                         service: service.metadata.name.clone().unwrap_or_default(),
                         port,
-                        path_prefix: String::new(),
+                        path_prefix: known.path_prefix.to_owned(),
                     },
                 ));
             }
         }
     }
-    candidates.sort_by_key(|(index, rank, _)| (*index, *rank));
-    for (_, _, target) in candidates {
+    candidates.sort_by_key(|(victoria, index, rank, _)| (*victoria, *index, *rank));
+    for (_, _, _, target) in candidates {
         let Ok(prometheus) = Prometheus::new(client, &target) else {
             continue;
         };

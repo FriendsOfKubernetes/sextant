@@ -38,7 +38,7 @@
     "errors": "每秒失敗要求數（最近一小時）"
   },
   "failed": "無法讀取以下來源的指標：{{sources}}。",
-  "noPrometheus": "要求指標與 CPU 節流從 Prometheus 讀取，而此叢集沒有設定或找到 Prometheus。",
+  "noPrometheus": "要求指標與 CPU 節流從相容 Prometheus 的資料來源（Prometheus 或 VictoriaMetrics）讀取，而此叢集沒有設定或找到這樣的資料來源。",
   "openSettings": "叢集設定",
   "noSource": "Prometheus 中沒有要求指標：Istio、Linkerd、ingress-nginx、Grafana Beyla 與 Cilium Hubble 都沒有向其回報。",
   "wouldProvide": "以下任一來源皆可提供：Istio 網格、搭配 linkerd-viz 的 Linkerd 網格（或收集其代理的 Prometheus）、指標有被收集的 ingress-nginx、Grafana Beyla，或啟用 HTTP 指標的 Cilium Hubble。",

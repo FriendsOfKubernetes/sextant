@@ -1,0 +1,472 @@
+# VictoriaMetrics for the Sextant test cluster (`scripts/test-cluster.sh up --victoria-metrics`, #226).
+#
+# Namespace `victoria-metrics`, one of the namespaces Sextant's auto-detection searches:
+# - vmagent scrapes what the Prometheus fixture scrapes (scripts/fixtures/prometheus/: the kubelet's `/metrics` and
+#   cAdvisor of every node through the API server proxy, the same relabelling, every 15 s) and writes every sample to
+#   both stores below, so they hold the same series.
+# - single-node VictoriaMetrics behind `vm-victoria-metrics-single-server:8428`: the name the victoria-metrics-single
+#   Helm chart gives its Service for a release `vm` (legacy naming, the chart's default). Its data is on a claim
+#   (`vm-data`, a `local` volume) so the kubelet reports `kubelet_volume_stats_*` for it.
+# - a VictoriaMetrics cluster (vmstorage, vminsert, vmselect) named as the operator names a VMCluster `vm`:
+#   `vmselect-vm:8481`, queried under `/select/0/prometheus`.
+# - `vm-replay:8428`, an empty single-node VictoriaMetrics that keeps any timestamp (`-retentionPeriod=100y`) and
+#   drops repeated samples (`-dedup.minScrapeInterval=1ms`): a test imports the synthetic series of the request and
+#   traffic fixtures into it and compares its answers with the recorded Prometheus answers. Its name is not one
+#   auto-detection knows.
+# - the ServiceAccount `vm-reader` may only list Services and use the service proxy in this namespace (no nodes, no
+#   other namespace): a test connects as it to see auto-detection pick VictoriaMetrics where no Prometheus is visible.
+# Data keeps one day.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: victoria-metrics
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vmagent
+  namespace: victoria-metrics
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sextant-test-vmagent
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/proxy", "nodes/metrics", "services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sextant-test-vmagent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sextant-test-vmagent
+subjects:
+  - kind: ServiceAccount
+    name: vmagent
+    namespace: victoria-metrics
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vmagent-config
+  namespace: victoria-metrics
+data:
+  scrape.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: kubelet
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+      - job_name: cadvisor
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmagent
+  namespace: victoria-metrics
+  labels:
+    app.kubernetes.io/name: vmagent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmagent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmagent
+    spec:
+      serviceAccountName: vmagent
+      containers:
+        - name: vmagent
+          image: victoriametrics/vmagent:v1.154.0
+          args:
+            - -promscrape.config=/etc/vmagent/scrape.yml
+            - -remoteWrite.url=http://vm-victoria-metrics-single-server:8428/api/v1/write
+            - -remoteWrite.url=http://vminsert-vm:8480/insert/0/prometheus/api/v1/write
+            - -remoteWrite.tmpDataPath=/tmp-data
+          ports:
+            - name: http
+              containerPort: 8429
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vmagent
+            - name: tmp-data
+              mountPath: /tmp-data
+      volumes:
+        - name: config
+          configMap:
+            name: vmagent-config
+        - name: tmp-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vm-data
+  namespace: victoria-metrics
+  annotations:
+    # local-path-provisioner: a `local` PersistentVolume (a `hostPath` one has no volume stats).
+    volumeType: local
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vm-victoria-metrics-single-server
+  namespace: victoria-metrics
+  labels:
+    app.kubernetes.io/name: vmsingle
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmsingle
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmsingle
+    spec:
+      containers:
+        - name: vmsingle
+          image: victoriametrics/victoria-metrics:v1.154.0
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod=1d
+          ports:
+            - name: http
+              containerPort: 8428
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /storage
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vm-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vm-victoria-metrics-single-server
+  namespace: victoria-metrics
+spec:
+  selector:
+    app.kubernetes.io/name: vmsingle
+  ports:
+    - name: http
+      port: 8428
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmstorage-vm
+  namespace: victoria-metrics
+  labels:
+    app.kubernetes.io/name: vmstorage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmstorage
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmstorage
+    spec:
+      containers:
+        - name: vmstorage
+          image: victoriametrics/vmstorage:v1.154.0-cluster
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod=1d
+          ports:
+            - name: http
+              containerPort: 8482
+            - name: vminsert
+              containerPort: 8400
+            - name: vmselect
+              containerPort: 8401
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /storage
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmstorage-vm
+  namespace: victoria-metrics
+spec:
+  selector:
+    app.kubernetes.io/name: vmstorage
+  ports:
+    - name: http
+      port: 8482
+      targetPort: http
+    - name: vminsert
+      port: 8400
+      targetPort: vminsert
+    - name: vmselect
+      port: 8401
+      targetPort: vmselect
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vminsert-vm
+  namespace: victoria-metrics
+  labels:
+    app.kubernetes.io/name: vminsert
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vminsert
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vminsert
+    spec:
+      containers:
+        - name: vminsert
+          image: victoriametrics/vminsert:v1.154.0-cluster
+          args:
+            - -storageNode=vmstorage-vm:8400
+          ports:
+            - name: http
+              containerPort: 8480
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vminsert-vm
+  namespace: victoria-metrics
+spec:
+  selector:
+    app.kubernetes.io/name: vminsert
+  ports:
+    - name: http
+      port: 8480
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmselect-vm
+  namespace: victoria-metrics
+  labels:
+    app.kubernetes.io/name: vmselect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmselect
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmselect
+    spec:
+      containers:
+        - name: vmselect
+          image: victoriametrics/vmselect:v1.154.0-cluster
+          args:
+            - -storageNode=vmstorage-vm:8401
+          ports:
+            - name: http
+              containerPort: 8481
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmselect-vm
+  namespace: victoria-metrics
+spec:
+  selector:
+    app.kubernetes.io/name: vmselect
+  ports:
+    - name: http
+      port: 8481
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vm-replay
+  namespace: victoria-metrics
+  labels:
+    app.kubernetes.io/name: vm-replay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vm-replay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vm-replay
+    spec:
+      containers:
+        - name: vm-replay
+          image: victoriametrics/victoria-metrics:v1.154.0
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod=100y
+            - -dedup.minScrapeInterval=1ms
+          ports:
+            - name: http
+              containerPort: 8428
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /storage
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vm-replay
+  namespace: victoria-metrics
+spec:
+  selector:
+    app.kubernetes.io/name: vm-replay
+  ports:
+    - name: http
+      port: 8428
+      targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vm-reader
+  namespace: victoria-metrics
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vm-reader-token
+  namespace: victoria-metrics
+  annotations:
+    kubernetes.io/service-account.name: vm-reader
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vm-reader
+  namespace: victoria-metrics
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vm-reader
+  namespace: victoria-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vm-reader
+subjects:
+  - kind: ServiceAccount
+    name: vm-reader
+    namespace: victoria-metrics

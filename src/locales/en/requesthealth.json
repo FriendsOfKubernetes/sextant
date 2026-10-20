@@ -38,7 +38,7 @@
     "errors": "Failed requests per second, last hour"
   },
   "failed": "Could not read the metrics of {{sources}}.",
-  "noPrometheus": "Request metrics and CPU throttling are read from Prometheus, and none is set up or found for this cluster.",
+  "noPrometheus": "Request metrics and CPU throttling are read from a Prometheus-compatible source (Prometheus or VictoriaMetrics), and none is set up or found for this cluster.",
   "openSettings": "Cluster settings",
   "noSource": "Prometheus has no request metrics: none of Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble is reporting to it.",
   "wouldProvide": "Any of these would provide them: an Istio mesh, a Linkerd mesh with linkerd-viz (or a Prometheus that scrapes its proxies), ingress-nginx with its metrics scraped, Grafana Beyla, or Cilium Hubble with HTTP metrics enabled.",

@@ -32,11 +32,11 @@
     "disk": "Festplatte",
     "loading": "Diagramme werden geladen…",
     "noData": "Noch keine Daten für die letzte Stunde.",
-    "needPrometheus": "Diagramme der letzten Stunde erfordern Prometheus."
+    "needPrometheus": "Diagramme der letzten Stunde erfordern eine Prometheus-kompatible Quelle (Prometheus oder VictoriaMetrics)."
   },
   "settings": {
     "title": "Metriken",
-    "prometheus": "Prometheus",
+    "prometheus": "Prometheus-kompatible Quelle",
     "mode": {
       "auto": "Automatisch finden",
       "manual": "Manuelle Adresse",
@@ -45,18 +45,21 @@
     "serviceKind": "Service im Cluster",
     "urlKind": "URL",
     "service": "Service (namespace/service:port)",
-    "servicePlaceholder": "monitoring/prometheus-operated:9090",
     "pathPrefix": "Pfadpräfix",
-    "url": "Prometheus-URL",
+    "preset": "Art",
+    "presetCustom": "Andere",
+    "tenant": "Tenant (accountID oder accountID:projectID)",
+    "url": "URL der Prometheus-kompatiblen API",
     "urlPlaceholder": "http://prometheus.example.com:9090",
     "invalidService": "Erwartet wird namespace/service:port, z. B. monitoring/prometheus-operated:9090.",
     "invalidUrl": "Erwartet wird eine http://- oder https://-URL.",
+    "invalidTenant": "Erwartet wird ein Tenant wie 0 oder 12:34.",
     "save": "Diese Adresse verwenden",
     "usageSource": "Aktuelle CPU- und Speicherwerte aus",
     "source": {
-      "auto": "Automatisch (metrics-server, sonst Prometheus)",
+      "auto": "Automatisch (metrics-server, sonst die Prometheus-kompatible Quelle)",
       "metricsServer": "metrics-server",
-      "prometheus": "Prometheus",
+      "prometheus": "Prometheus-kompatible Quelle",
       "off": "Aus"
     },
     "detected": "Gefunden",
@@ -68,6 +71,13 @@
     "foundManual": "Antwortet unter {{target}}",
     "notFound": "Nicht gefunden",
     "manualNoAnswer": "Die Adresse antwortet nicht",
+    "kindLabel": "Art",
+    "kind": {
+      "prometheus": "Prometheus",
+      "victoriaMetricsSingle": "VictoriaMetrics (Einzelknoten)",
+      "victoriaMetricsCluster": "VictoriaMetrics-Cluster (vmselect)",
+      "unknown": "Prometheus-kompatible API"
+    },
     "prometheusOff": "Aus",
     "currentFrom": "Aktuelle Werte aus",
     "noSource": "Keine Quelle – Metriken sind nicht verfügbar"

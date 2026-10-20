@@ -1,8 +1,16 @@
-// "Metrics" section of the cluster settings: how Prometheus is found (auto / manual address / off), where current
-// CPU/memory values come from, and what was found.
+// "Metrics" section of the cluster settings: how the Prometheus-compatible source (Prometheus or VictoriaMetrics) is
+// found (auto / manual address / off), where current CPU/memory values come from, and what was found.
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toApiError, type ApiError, type ClusterId, type PrometheusMode, type PrometheusTarget, type UsageSource } from "../../api";
+import {
+  toApiError,
+  type ApiError,
+  type ClusterId,
+  type MetricsSourceKind,
+  type PrometheusMode,
+  type PrometheusTarget,
+  type UsageSource,
+} from "../../api";
 import { Button, ErrorState, Radio } from "../../components";
 import { updateClusterSettings } from "../clusters/clusterSettings";
 import type { ClusterSettingsSectionProps } from "../clusters/settingsRegistry";
@@ -13,6 +21,61 @@ const MODES = ["auto", "manual", "off"] as const;
 const TARGET_KINDS = ["service", "url"] as const;
 type Mode = (typeof MODES)[number];
 const SOURCES: UsageSource[] = ["auto", "metricsServer", "prometheus", "off"];
+
+/** What a manual service address is: a known kind fills in its usual port and path prefix (ADR-0102). */
+export type Preset = MetricsSourceKind | "custom";
+const PRESETS: Preset[] = ["prometheus", "victoriaMetricsSingle", "victoriaMetricsCluster", "custom"];
+/** The port, path prefix and an example address of each kind's usual Service. VictoriaMetrics single-node answers on
+ * 8428 from the Helm chart and from the operator (8429 there, with 8428 as an alias); a cluster's vmselect on 8481
+ * under `/select/<tenant>/prometheus`. */
+const PRESET_ADDRESS: Record<MetricsSourceKind, { port: number; example: string }> = {
+  prometheus: { port: 9090, example: "monitoring/prometheus-operated:9090" },
+  victoriaMetricsSingle: { port: 8428, example: "vm/vmsingle-vm:8428" },
+  victoriaMetricsCluster: { port: 8481, example: "vm/vmselect-vm:8481" },
+};
+const DEFAULT_TENANT = "0";
+const VMSELECT_PATH = /^\/select\/([^/]*)\/prometheus\/?$/;
+
+/** vmselect's Prometheus API of `tenant` (`accountID` or `accountID:projectID`). */
+export function vmselectPrefix(tenant: string): string {
+  return `/select/${tenant.trim()}/prometheus`;
+}
+
+/** The tenant of a vmselect path prefix; `null` for another prefix. */
+export function tenantOf(prefix: string): string | null {
+  return VMSELECT_PATH.exec(prefix.trim())?.[1] ?? null;
+}
+
+/** A VictoriaMetrics tenant: `accountID` or `accountID:projectID`, both unsigned 32-bit numbers. */
+export function isTenant(text: string): boolean {
+  const match = /^(\d{1,10})(?::(\d{1,10}))?$/.exec(text.trim());
+  return match !== null && match.slice(1).every((id) => id === undefined || Number(id) <= 0xffffffff);
+}
+
+/** The preset a saved port and path prefix match; `custom` when none does. */
+export function presetOf(port: number | null, prefix: string): Preset {
+  if (port === PRESET_ADDRESS.victoriaMetricsCluster.port && tenantOf(prefix) !== null) return "victoriaMetricsCluster";
+  if (prefix.trim() !== "" && prefix.trim() !== "/") return "custom";
+  if (port === PRESET_ADDRESS.prometheus.port) return "prometheus";
+  if (port === PRESET_ADDRESS.victoriaMetricsSingle.port || port === 8429) return "victoriaMetricsSingle";
+  return "custom";
+}
+
+/** `namespace/service[:port]` with its port replaced by (or completed with) `port`; empty text stays empty. */
+export function withPort(text: string, port: number): string {
+  const trimmed = text.trim();
+  if (trimmed === "") return text;
+  return `${trimmed.replace(/:\d*$/, "")}:${port}`;
+}
+
+function presetPort(preset: Preset): number | null {
+  return preset === "custom" ? null : PRESET_ADDRESS[preset].port;
+}
+
+function portOf(text: string): number | null {
+  const match = /:(\d{1,5})\s*$/.exec(text);
+  return match ? Number(match[1]) : null;
+}
 
 /** `namespace/service:port` → a service target; `null` if it does not have that form. */
 export function parseServiceAddress(text: string, pathPrefix = ""): PrometheusTarget | null {
@@ -50,7 +113,10 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
   const [service, setService] = useState(savedTarget?.type === "service" ? describeService(savedTarget) : "");
   const [prefix, setPrefix] = useState(savedTarget?.type === "service" ? savedTarget.pathPrefix : "");
   const [url, setUrl] = useState(savedTarget?.type === "url" ? savedTarget.url : "");
-  const [invalid, setInvalid] = useState(false);
+  const [preset, setPreset] = useState<Preset>(
+    savedTarget?.type === "service" ? presetOf(savedTarget.port, savedTarget.pathPrefix) : "prometheus",
+  );
+  const [invalid, setInvalid] = useState<"address" | "tenant" | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const savedKey = JSON.stringify(saved);
@@ -63,6 +129,7 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
       if (current.target.type === "service") {
         setService(describeService(current.target));
         setPrefix(current.target.pathPrefix);
+        setPreset(presetOf(current.target.port, current.target.pathPrefix));
       } else setUrl(current.target.url);
     }
   }, [savedKey]);
@@ -78,15 +145,30 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
 
   const chooseMode = (next: Mode) => {
     setMode(next);
-    setInvalid(false);
+    setInvalid(null);
     if (next !== "manual") void save({ prometheus: { mode: next } });
   };
 
+  const choosePreset = (next: Preset) => {
+    setPreset(next);
+    if (next === "custom") return;
+    setService(withPort(service, PRESET_ADDRESS[next].port));
+    setPrefix(next === "victoriaMetricsCluster" ? vmselectPrefix(tenantOf(prefix) ?? DEFAULT_TENANT) : "");
+  };
+
   const saveManual = () => {
+    const tenant = kind === "service" && preset === "victoriaMetricsCluster" ? tenantOf(prefix) : null;
+    if (tenant !== null && !isTenant(tenant)) {
+      setInvalid("tenant");
+      return;
+    }
     const target = kind === "service" ? parseServiceAddress(service, prefix) : parseUrlAddress(url);
-    setInvalid(target === null);
+    setInvalid(target === null ? "address" : null);
     if (target) void save({ prometheus: { mode: "manual", target } });
   };
+
+  const tenant = preset === "victoriaMetricsCluster" ? (tenantOf(prefix) ?? "") : null;
+  const example = PRESET_ADDRESS[preset === "custom" ? "prometheus" : preset].example;
 
   return (
     <div className="mx-settings">
@@ -109,18 +191,53 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
             {kind === "service" ? (
               <>
                 <label className="mx-settings__field">
+                  <span>{t("metrics:settings.preset")}</span>
+                  <select value={preset} onChange={(e) => choosePreset(e.target.value as Preset)}>
+                    {PRESETS.map((p) => (
+                      <option key={p} value={p}>
+                        {t(p === "custom" ? "metrics:settings.presetCustom" : `metrics:settings.kind.${p}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="mx-settings__field">
                   <span>{t("metrics:settings.service")}</span>
                   <input
                     type="text"
                     value={service}
-                    placeholder={t("metrics:settings.servicePlaceholder")}
-                    onChange={(e) => setService(e.target.value)}
+                    placeholder={example}
+                    onChange={(e) => {
+                      setService(e.target.value);
+                      // Typed without a port (yet): the chosen kind stays.
+                      const port = portOf(e.target.value);
+                      if (port !== null) setPreset(presetOf(port, prefix));
+                    }}
                     onKeyDown={(e) => e.key === "Enter" && saveManual()}
                   />
                 </label>
+                {tenant !== null && (
+                  <label className="mx-settings__field">
+                    <span>{t("metrics:settings.tenant")}</span>
+                    <input
+                      type="text"
+                      value={tenant}
+                      placeholder={DEFAULT_TENANT}
+                      onChange={(e) => setPrefix(vmselectPrefix(e.target.value))}
+                      onKeyDown={(e) => e.key === "Enter" && saveManual()}
+                    />
+                  </label>
+                )}
                 <label className="mx-settings__field">
                   <span>{t("metrics:settings.pathPrefix")}</span>
-                  <input type="text" value={prefix} placeholder="/" onChange={(e) => setPrefix(e.target.value)} />
+                  <input
+                    type="text"
+                    value={prefix}
+                    placeholder="/"
+                    onChange={(e) => {
+                      setPrefix(e.target.value);
+                      setPreset(presetOf(portOf(service) ?? presetPort(preset), e.target.value));
+                    }}
+                  />
                 </label>
               </>
             ) : (
@@ -137,7 +254,13 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
             )}
             {invalid && (
               <div className="mx-settings__invalid" role="alert">
-                {t(kind === "service" ? "metrics:settings.invalidService" : "metrics:settings.invalidUrl")}
+                {t(
+                  invalid === "tenant"
+                    ? "metrics:settings.invalidTenant"
+                    : kind === "service"
+                      ? "metrics:settings.invalidService"
+                      : "metrics:settings.invalidUrl",
+                )}
               </div>
             )}
             <Button onClick={saveManual}>
@@ -198,6 +321,12 @@ function Detected({ clusterId }: { clusterId: ClusterId }) {
       <dd>{t(data.metricsServer ? "metrics:settings.available" : "metrics:settings.notAvailable")}</dd>
       <dt>{t("metrics:settings.prometheus")}</dt>
       <dd>{prometheus}</dd>
+      {data.prometheus && (
+        <>
+          <dt>{t("metrics:settings.kindLabel")}</dt>
+          <dd>{t(`metrics:settings.kind.${data.prometheusKind ?? "unknown"}`)}</dd>
+        </>
+      )}
       <dt>{t("metrics:settings.currentFrom")}</dt>
       <dd>{source}</dd>
     </dl>

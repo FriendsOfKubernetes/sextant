@@ -38,7 +38,7 @@
     "errors": "Richieste non riuscite al secondo, ultima ora"
   },
   "failed": "Impossibile leggere le metriche di {{sources}}.",
-  "noPrometheus": "Le metriche delle richieste e la limitazione della CPU si leggono da Prometheus, e per questo cluster non ne è configurato né trovato nessuno.",
+  "noPrometheus": "Le metriche delle richieste e la limitazione della CPU si leggono da una sorgente compatibile con Prometheus (Prometheus o VictoriaMetrics), e per questo cluster non ne è configurata né trovata nessuna.",
   "openSettings": "Impostazioni del cluster",
   "noSource": "Prometheus non ha metriche delle richieste: né Istio, né Linkerd, né ingress-nginx, né Grafana Beyla, né Cilium Hubble gliele inviano.",
   "wouldProvide": "Una qualsiasi di queste fonti le fornirebbe: una mesh Istio, una mesh Linkerd con linkerd-viz (o un Prometheus che raccoglie i suoi proxy), ingress-nginx con le metriche raccolte, Grafana Beyla o Cilium Hubble con le metriche HTTP attive.",

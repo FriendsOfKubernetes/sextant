@@ -115,7 +115,7 @@
     "classes": "按状态的响应",
     "latency": "延迟"
   },
-  "noPrometheus": "流量图从 Prometheus 读取，而此集群没有设置或找到 Prometheus。",
+  "noPrometheus": "流量图从兼容 Prometheus 的数据源（Prometheus 或 VictoriaMetrics）读取，而此集群没有设置或找到这样的数据源。",
   "openSettings": "集群设置",
   "noSource": "Prometheus 中没有同时指明调用两端的指标：Istio、Linkerd、Grafana Beyla 的服务图和 Cilium Hubble 都没有向它上报。",
   "requestOnly": "按工作负载统计但不含发送方的请求来自 {{sources}}：请查看各工作负载的“请求”部分。",

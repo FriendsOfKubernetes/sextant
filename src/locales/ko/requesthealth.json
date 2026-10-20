@@ -38,7 +38,7 @@
     "errors": "초당 실패한 요청 수, 최근 1시간"
   },
   "failed": "다음 소스의 메트릭을 읽지 못했습니다: {{sources}}.",
-  "noPrometheus": "요청 메트릭과 CPU 스로틀링은 Prometheus에서 읽는데, 이 클러스터에는 설정되었거나 찾은 Prometheus가 없습니다.",
+  "noPrometheus": "요청 메트릭과 CPU 스로틀링은 Prometheus 호환 소스(Prometheus 또는 VictoriaMetrics)에서 읽는데, 이 클러스터에는 설정되었거나 찾은 소스가 없습니다.",
   "openSettings": "클러스터 설정",
   "noSource": "Prometheus에 요청 메트릭이 없습니다. Istio, Linkerd, ingress-nginx, Grafana Beyla, Cilium Hubble 중 어느 것도 보내고 있지 않습니다.",
   "wouldProvide": "다음 중 하나가 있으면 제공됩니다: Istio 메시, linkerd-viz가 있는 Linkerd 메시(또는 그 프록시를 수집하는 Prometheus), 메트릭이 수집되는 ingress-nginx, Grafana Beyla, HTTP 메트릭을 켠 Cilium Hubble.",

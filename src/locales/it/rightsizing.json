@@ -20,7 +20,7 @@
       "day": "Utilizzo da Prometheus nell'ultimo giorno: CPU al 95° percentile, memoria al picco.",
       "week": "Utilizzo da Prometheus negli ultimi 7 giorni: CPU al 95° percentile, memoria al picco."
     },
-    "snapshot": "Sono disponibili solo i valori attuali (un'istantanea da {{source}}). Un solo punto non basta per una raccomandazione: installa Prometheus per avere una cronologia.",
+    "snapshot": "Sono disponibili solo i valori attuali (un'istantanea da {{source}}). Un solo punto non basta per una raccomandazione: installa Prometheus o VictoriaMetrics per avere una cronologia.",
     "snapshotAfterError": "Impossibile leggere la cronologia di Prometheus, quindi vengono mostrati solo i valori attuali (un'istantanea). Nessuna raccomandazione.",
     "none": "Nessuna metrica disponibile: vengono controllati solo richieste e limiti delle specifiche dei pod.",
     "loading": "Lettura dell'utilizzo…",

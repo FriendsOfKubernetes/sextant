@@ -38,7 +38,7 @@
     "errors": "Solicitudes fallidas por segundo, última hora"
   },
   "failed": "No se pudieron leer las métricas de {{sources}}.",
-  "noPrometheus": "Las métricas de solicitudes y la limitación de CPU se leen de Prometheus, y no hay ninguno configurado ni encontrado para este clúster.",
+  "noPrometheus": "Las métricas de solicitudes y la limitación de CPU se leen de una fuente compatible con Prometheus (Prometheus o VictoriaMetrics), y no hay ninguna configurada ni encontrada para este clúster.",
   "openSettings": "Configuración del clúster",
   "noSource": "Prometheus no tiene métricas de solicitudes: ni Istio, ni Linkerd, ni ingress-nginx, ni Grafana Beyla, ni Cilium Hubble le envían datos.",
   "wouldProvide": "Cualquiera de estas fuentes las proporcionaría: una malla de Istio, una malla de Linkerd con linkerd-viz (o un Prometheus que recoja sus proxies), ingress-nginx con sus métricas recogidas, Grafana Beyla o Cilium Hubble con las métricas HTTP activadas.",

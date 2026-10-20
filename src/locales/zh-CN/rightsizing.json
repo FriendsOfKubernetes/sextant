@@ -20,7 +20,7 @@
       "day": "来自 Prometheus 的过去一天使用量：CPU 取第 95 百分位数，内存取峰值。",
       "week": "来自 Prometheus 的过去 7 天使用量：CPU 取第 95 百分位数，内存取峰值。"
     },
-    "snapshot": "仅有当前值可用（来自 {{source}} 的快照）。单个数据点不足以给出建议：请安装 Prometheus 以获取历史数据。",
+    "snapshot": "仅有当前值可用（来自 {{source}} 的快照）。单个数据点不足以给出建议：请安装 Prometheus 或 VictoriaMetrics 以获取历史数据。",
     "snapshotAfterError": "无法读取 Prometheus 历史数据，因此仅显示当前值（快照）。不提供建议。",
     "none": "没有可用的指标：仅检查 Pod 规约中的请求和限制。",
     "loading": "正在读取使用量…",

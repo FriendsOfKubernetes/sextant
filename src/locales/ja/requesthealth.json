@@ -38,7 +38,7 @@
     "errors": "1 秒あたりの失敗リクエスト数（直近 1 時間）"
   },
   "failed": "次のソースのメトリクスを読み取れませんでした: {{sources}}。",
-  "noPrometheus": "リクエストメトリクスと CPU スロットリングは Prometheus から読み取りますが、このクラスターには設定済みの、または見つかった Prometheus がありません。",
+  "noPrometheus": "リクエストメトリクスと CPU スロットリングは Prometheus 互換のソース (Prometheus または VictoriaMetrics) から読み取りますが、このクラスターには設定済みの、または見つかったソースがありません。",
   "openSettings": "クラスターの設定",
   "noSource": "Prometheus にリクエストメトリクスがありません。Istio、Linkerd、ingress-nginx、Grafana Beyla、Cilium Hubble のいずれも送っていません。",
   "wouldProvide": "次のいずれかがあれば得られます: Istio メッシュ、linkerd-viz 付きの Linkerd メッシュ（またはそのプロキシを収集する Prometheus）、メトリクスが収集される ingress-nginx、Grafana Beyla、HTTP メトリクスを有効にした Cilium Hubble。",

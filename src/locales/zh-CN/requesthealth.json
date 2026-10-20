@@ -38,7 +38,7 @@
     "errors": "每秒失败请求数（最近一小时）"
   },
   "failed": "无法读取以下来源的指标：{{sources}}。",
-  "noPrometheus": "请求指标和 CPU 限流从 Prometheus 读取，而此集群没有配置或找到 Prometheus。",
+  "noPrometheus": "请求指标和 CPU 限流从兼容 Prometheus 的数据源（Prometheus 或 VictoriaMetrics）读取，而此集群没有配置或找到这样的数据源。",
   "openSettings": "集群设置",
   "noSource": "Prometheus 中没有请求指标：Istio、Linkerd、ingress-nginx、Grafana Beyla 和 Cilium Hubble 都没有向其报告。",
   "wouldProvide": "以下任一来源都可提供：Istio 网格、带 linkerd-viz 的 Linkerd 网格（或采集其代理的 Prometheus）、指标被采集的 ingress-nginx、Grafana Beyla，或启用了 HTTP 指标的 Cilium Hubble。",

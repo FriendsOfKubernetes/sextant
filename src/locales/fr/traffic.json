@@ -125,7 +125,7 @@
     "classes": "réponses par statut",
     "latency": "latence"
   },
-  "noPrometheus": "Le graphe du trafic est lu dans Prometheus, et aucun n’est configuré ni trouvé pour ce cluster.",
+  "noPrometheus": "Le graphe du trafic est lu dans une source compatible Prometheus (Prometheus ou VictoriaMetrics), et aucune n’est configurée ni trouvée pour ce cluster.",
   "openSettings": "Paramètres du cluster",
   "noSource": "Prometheus n’a aucune métrique qui nomme les deux extrémités d’un appel : ni Istio, ni Linkerd, ni le graphe de services de Grafana Beyla, ni Cilium Hubble ne lui envoient de données.",
   "requestOnly": "Les requêtes par charge de travail, sans leur expéditeur, viennent de {{sources}} : voir la section « Requêtes » de chaque charge.",
