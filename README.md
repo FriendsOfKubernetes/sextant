@@ -38,11 +38,16 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Scale and reach** — Istio and Linkerd views with request routing and who may call a workload, comparing objects
   and namespaces across clusters (and drift from Helm), comfortable on clusters with tens of thousands of pods, and
   keyboard and screen-reader friendly.
+- **Faster diagnosis** — best-practice checks (probes, `:latest` images, single replicas, PodDisruptionBudgets,
+  requests and limits) with a fix to copy, why a Service, Ingress or route gets no traffic, link by link, Helm revision
+  compare and newer chart versions, and container probes in plain words.
 - **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
   Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
 - **MCP server for AI agents** — connect Claude Code, Claude Desktop or Cursor to your clusters, with permissions you
-  set per cluster, confirmations in the window and an activity log.
+  set per cluster, confirmations in the window and an activity log; read-only diagnostic tools give agents the
+  window's own answers (problems, traffic diagnosis, connectivity, permissions, recent changes, autoscaling), only
+  from what the agent may read.
 - No account, no server, no telemetry.
 
 An AI agent asks to scale a deployment; Sextant asks you first and records the call:
@@ -66,6 +71,7 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Right-sizing](https://github.com/FriendsOfKubernetes/sextant/wiki/Right-sizing), [cert-manager and certificates](https://github.com/FriendsOfKubernetes/sextant/wiki/cert-manager-and-certificates), [Resource map](https://github.com/FriendsOfKubernetes/sextant/wiki/Resource-map), [RBAC](https://github.com/FriendsOfKubernetes/sextant/wiki/RBAC)
 - [Safe apply](https://github.com/FriendsOfKubernetes/sextant/wiki/Safe-apply), [Upgrade readiness](https://github.com/FriendsOfKubernetes/sextant/wiki/Upgrade-readiness), [Security posture](https://github.com/FriendsOfKubernetes/sextant/wiki/Security-posture), [All clusters](https://github.com/FriendsOfKubernetes/sextant/wiki/All-clusters)
 - [Change timeline](https://github.com/FriendsOfKubernetes/sextant/wiki/Change-timeline), [Autoscaling](https://github.com/FriendsOfKubernetes/sextant/wiki/Autoscaling), [Cleanup](https://github.com/FriendsOfKubernetes/sextant/wiki/Cleanup), [Connectivity](https://github.com/FriendsOfKubernetes/sextant/wiki/Connectivity)
+- [Best practices](https://github.com/FriendsOfKubernetes/sextant/wiki/Best-practices), [Traffic diagnosis](https://github.com/FriendsOfKubernetes/sextant/wiki/Traffic-diagnosis)
 - [Views and workspaces](https://github.com/FriendsOfKubernetes/sextant/wiki/Views-and-workspaces), [Kubeconfig management](https://github.com/FriendsOfKubernetes/sextant/wiki/Kubeconfig-management)
 - [YAML editor](https://github.com/FriendsOfKubernetes/sextant/wiki/YAML-editor), [Storage](https://github.com/FriendsOfKubernetes/sextant/wiki/Storage), [Cost](https://github.com/FriendsOfKubernetes/sextant/wiki/Cost), [Terminal](https://github.com/FriendsOfKubernetes/sextant/wiki/Terminal)
 - [Service mesh](https://github.com/FriendsOfKubernetes/sextant/wiki/Service-mesh), [Compare](https://github.com/FriendsOfKubernetes/sextant/wiki/Compare), [Large clusters](https://github.com/FriendsOfKubernetes/sextant/wiki/Large-clusters), [Accessibility](https://github.com/FriendsOfKubernetes/sextant/wiki/Accessibility)
@@ -99,7 +105,7 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.13](https://github.com/FriendsOfKubernetes/sextant/milestone/16) | Your workspace *(released)* | Saved views and workspaces, kubeconfig management |
 | [0.14](https://github.com/FriendsOfKubernetes/sextant/milestone/17) | Power tools *(released)* | YAML editor with the cluster's schema, storage insights (PVC usage, snapshots, Velero), cost view (OpenCost), terminal panes and snippets |
 | [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach *(released)* | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
-| [0.16](https://github.com/FriendsOfKubernetes/sextant/milestone/19) | Faster diagnosis | Best-practice checks (probes, `:latest`, single replicas, PDBs, requests and limits), why a Service or Ingress gets no traffic, Helm revision diff and newer chart versions, read-only diagnostic tools for AI agents |
+| [0.16](https://github.com/FriendsOfKubernetes/sextant/milestone/19) | Faster diagnosis *(released)* | Best-practice checks (probes, `:latest`, single replicas, PDBs, requests and limits), why a Service or Ingress gets no traffic, Helm revision diff and newer chart versions, read-only diagnostic tools for AI agents |
 | [0.17](https://github.com/FriendsOfKubernetes/sextant/milestone/20) | Live traffic | A live graph of requests between services (Hubble, Istio, Linkerd, Beyla), request rate, errors, latency and CPU throttling per workload |
 | [0.18](https://github.com/FriendsOfKubernetes/sextant/milestone/21) | Ecosystem | Views for Argo Rollouts, Argo Workflows, Knative, Crossplane, Kyverno, External Secrets, CloudNativePG, Strimzi and Prometheus Operator, custom columns, a Set image action |
 | [0.19](https://github.com/FriendsOfKubernetes/sextant/milestone/22) | Inside images, more installers | Browsing an image's files straight from the registry (no exec, no pull), Homebrew, Scoop, winget, rpm and Linux arm64 |
