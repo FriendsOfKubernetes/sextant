@@ -16,6 +16,8 @@ export default tseslint.config(
       "src/api/generated/**",
       "node_modules/**",
       ".autopilot/**",
+      // Agent git worktrees: other checkouts of this repository, each with its own tsconfig.
+      ".claude/**",
     ],
   },
   js.configs.recommended,
