@@ -60,7 +60,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Außerhalb des Mesh oder ohne Labels",
     "unknownIn": "Außerhalb des Mesh oder ohne Labels ({{namespace}})",
-    "cannotOpen": "Die Quelle sagt nicht, wer das ist: ein Aufrufer oder Ziel außerhalb des Mesh oder des Clusters oder eines, das seine Labels nicht benennen."
+    "cannotOpen": "Die Quelle sagt nicht, wer das ist: ein Aufrufer oder Ziel außerhalb des Mesh oder des Clusters oder eines, das seine Labels nicht benennen.",
+    "noNamespace": "Die Quelle nennt {{name}} ohne Namespace, daher gibt es nichts zu öffnen."
   },
   "nodeLabel": "{{kind}} {{name}}: Aufrufe anzeigen",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -83,7 +84,8 @@
     "noLatency": "kein Latenzhistogramm",
     "noVerdict": "keine Bewertung für TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "kein HTTP-Status gemeldet"
+    "noClasses": "kein HTTP-Status gemeldet",
+    "notRead": "konnte nicht gelesen werden"
   },
   "open": "{{name}} öffnen",
   "openRequests": "Anfragen von {{name}}",
@@ -111,6 +113,13 @@
   "truncated_other": "Die {{shown}} meistgenutzten von {{count}} Verbindungen zwischen zwei Enden werden gezeigt.",
   "filteredOut": "Kein Aufruf passt zu diesen Filtern.",
   "failed": "Die Verkehrsmetriken von {{sources}} konnten nicht gelesen werden.",
+  "tooLong": "Die Abfrage für {{sources}} war für einen Proxy vor Prometheus zu lang. Erhöhen Sie das URL-Limit des Proxys oder geben Sie Prometheus in den Cluster-Einstellungen per URL an: Lange Abfragen werden dann per POST gesendet.",
+  "partial": "Einige Angaben zu den Aufrufen von {{sources}} konnten nicht gelesen werden ({{details}}): Prometheus hat diese Abfragen nicht beantwortet.",
+  "detail": {
+    "errors": "Fehlerraten",
+    "classes": "Antworten nach Status",
+    "latency": "Latenz"
+  },
   "noPrometheus": "Der Verkehrsgraph wird aus Prometheus gelesen, und für diesen Cluster ist keines eingerichtet oder gefunden.",
   "openSettings": "Clustereinstellungen",
   "noSource": "Prometheus hat keine Metriken, die beide Enden eines Aufrufs nennen: Weder Istio noch Linkerd, der Service-Graph von Grafana Beyla oder Cilium Hubble melden an es.",

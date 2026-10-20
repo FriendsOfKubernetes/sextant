@@ -60,7 +60,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Outside the mesh or unlabelled",
     "unknownIn": "Outside the mesh or unlabelled ({{namespace}})",
-    "cannotOpen": "The source does not say who this is: a caller or callee outside the mesh or the cluster, or one its labels do not name."
+    "cannotOpen": "The source does not say who this is: a caller or callee outside the mesh or the cluster, or one its labels do not name.",
+    "noNamespace": "The source names {{name}} without a namespace, so there is nothing to open."
   },
   "nodeLabel": "{{kind}} {{name}}: show its calls",
   "linkTitle": "{{from}} to {{to}}: {{rate}}",
@@ -83,7 +84,8 @@
     "noLatency": "no latency histogram",
     "noVerdict": "no verdict for TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "no HTTP status reported"
+    "noClasses": "no HTTP status reported",
+    "notRead": "could not be read"
   },
   "open": "Open {{name}}",
   "openRequests": "Requests of {{name}}",
@@ -111,6 +113,13 @@
   "truncated_other": "Showing the {{shown}} busiest of {{count}} calls between two ends.",
   "filteredOut": "No call matches these filters.",
   "failed": "Could not read the traffic metrics of {{sources}}.",
+  "tooLong": "The query for {{sources}} was too long for a proxy in front of Prometheus. Raise the proxy's URL limit, or set Prometheus by its URL in the cluster settings: long queries are then sent as a POST.",
+  "partial": "Some details of the calls from {{sources}} could not be read ({{details}}): Prometheus did not answer those queries.",
+  "detail": {
+    "errors": "error rates",
+    "classes": "answers by status",
+    "latency": "latency"
+  },
   "noPrometheus": "The traffic graph is read from Prometheus, and none is set up or found for this cluster.",
   "openSettings": "Cluster settings",
   "noSource": "Prometheus has no metrics that name both ends of a call: none of Istio, Linkerd, Grafana Beyla's service graph or Cilium Hubble is reporting to it.",

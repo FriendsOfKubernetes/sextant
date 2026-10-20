@@ -1,7 +1,7 @@
 // How the traffic graph's values read: ends, rates (requests or, for TCP, connections), error shares, latency, the
 // source. The numbers keep the "Requests" section's formats (#212).
 import type { TFunction } from "i18next";
-import type { RequestSourceKind, TrafficEdge, TrafficPeer } from "../../../api";
+import type { RequestSourceKind, TrafficDetail, TrafficEdge, TrafficPeer } from "../../../api";
 import { formatList, formatNumber } from "../../../i18n";
 import { formatLatency, formatShare, SOURCE_KEY } from "../../request-health/model";
 
@@ -33,11 +33,28 @@ export function rateText(t: TFunction, edge: Pick<TrafficEdge, "rate" | "protoco
   return edge.protocol === "tcp" ? t("traffic:value.connections", { value }) : t("traffic:value.rate", { value });
 }
 
+/** A line's rate: its requests per second, and its new TCP connections per second when it has any (the two are
+ * another unit, never added up). */
+export function linkRateText(t: TFunction, link: { rate: number; tcpRate: number }): string {
+  const parts: string[] = [];
+  if (link.rate > 0 || link.tcpRate === 0) parts.push(rateText(t, { rate: link.rate, protocol: "http" }));
+  if (link.tcpRate > 0) parts.push(rateText(t, { rate: link.tcpRate, protocol: "tcp" }));
+  return formatList(parts);
+}
+
+/** Whether the query of `detail` failed for this edge (its value is unknown, not absent). */
+function unread(edge: TrafficEdge, detail: TrafficDetail): boolean {
+  return edge.missing.includes(detail);
+}
+
 export function errorsText(t: TFunction, edge: TrafficEdge): string {
-  return edge.errorRatio === null ? t("traffic:value.noVerdict") : formatShare(t, edge.errorRatio);
+  if (edge.errorRatio !== null) return formatShare(t, edge.errorRatio);
+  if (unread(edge, "errors")) return t("traffic:value.notRead");
+  return edge.protocol === "tcp" ? t("traffic:value.noVerdict") : t("traffic:level.unknown");
 }
 
 export function latencyText(t: TFunction, edge: TrafficEdge): string {
+  if (unread(edge, "latency") && edge.p50Ms === null && edge.p95Ms === null) return t("traffic:value.notRead");
   if (edge.p50Ms === null && edge.p95Ms === null) return t("traffic:value.noLatency");
   return t("traffic:value.latency", { p50: formatLatency(t, edge.p50Ms), p95: formatLatency(t, edge.p95Ms) });
 }
@@ -47,12 +64,30 @@ export function protocolText(t: TFunction, edge: TrafficEdge): string {
 }
 
 export function classesText(t: TFunction, edge: TrafficEdge): string {
+  if (unread(edge, "classes")) return t("traffic:value.notRead");
   if (edge.statusClasses.length === 0) return t("traffic:value.noClasses");
   return formatList(
     edge.statusClasses.map((c) =>
       t("traffic:value.class", { class: c.class, value: formatNumber(c.rate, digits(c.rate)) }),
     ),
   );
+}
+
+/** The details some edges of these sources lack because their queries failed, as one list. */
+export function missingDetails(t: TFunction, edges: readonly TrafficEdge[]): { sources: string; details: string } | null {
+  const sources = new Set<RequestSourceKind>();
+  const details = new Set<TrafficDetail>();
+  for (const edge of edges) {
+    if (edge.missing.length === 0) continue;
+    sources.add(edge.source);
+    for (const d of edge.missing) details.add(d);
+  }
+  if (sources.size === 0) return null;
+  const order: TrafficDetail[] = ["errors", "classes", "latency"];
+  return {
+    sources: sourceNames(t, [...sources]),
+    details: formatList(order.filter((d) => details.has(d)).map((d) => t(`traffic:detail.${d}`))),
+  };
 }
 
 /** One sentence naming the edge for screen readers and tooltips. */

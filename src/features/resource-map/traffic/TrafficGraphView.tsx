@@ -1,12 +1,12 @@
-// The traffic graph drawn: ends as buttons in the map's columns (callers left), calls as lines as thick as their rate
-// and coloured by their error rate. A node is a button (Tab reaches it, Enter shows its calls); a line is clicked with
+// The traffic graph drawn: ends as buttons in the map's columns (callers left), calls as lines as thick as their
+// request rate (a pair seen only as TCP connections is drawn thinnest) and coloured by their error rate. A node is a button (Tab reaches it, Enter shows its calls); a line is clicked with
 // the mouse — the list view offers every call to the keyboard and screen readers, so the drawing itself is hidden
 // from them.
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { edgePath, NODE_H, NODE_W } from "../layout";
-import { peerKind, peerName, rateText } from "./format";
+import { linkRateText, peerKind, peerName } from "./format";
 import { strokeWidth, type TrafficLayout, type TrafficLink, type TrafficNode } from "./model";
 
 function linkClass(link: TrafficLink, selected: boolean, dimmed: boolean): string {
@@ -84,7 +84,7 @@ export function TrafficGraphView({
                   {t("traffic:linkTitle", {
                     from: peerName(t, link.edges[0]!.from),
                     to: peerName(t, link.edges[0]!.to),
-                    rate: rateText(t, { rate: link.rate, protocol: link.edges[0]!.protocol }),
+                    rate: linkRateText(t, link),
                   })}
                 </title>
               </path>

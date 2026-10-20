@@ -59,7 +59,8 @@
     "inNamespace": "{{name}}（{{namespace}}）",
     "unknown": "メッシュ外またはラベルなし",
     "unknownIn": "メッシュ外またはラベルなし（{{namespace}}）",
-    "cannotOpen": "ソースはこれが誰かを示していません。メッシュやクラスターの外にある呼び出し元・呼び出し先か、ラベルで識別できない相手です。"
+    "cannotOpen": "ソースはこれが誰かを示していません。メッシュやクラスターの外にある呼び出し元・呼び出し先か、ラベルで識別できない相手です。",
+    "noNamespace": "ソースは {{name}} を namespace なしで示しているため、開けるものがありません。"
   },
   "nodeLabel": "{{kind}} {{name}}：呼び出しを表示",
   "linkTitle": "{{from}} → {{to}}：{{rate}}",
@@ -82,7 +83,8 @@
     "noLatency": "レイテンシのヒストグラムなし",
     "noVerdict": "TCP は判定なし",
     "class": "{{class}} {{value}}/秒",
-    "noClasses": "HTTP ステータスの報告なし"
+    "noClasses": "HTTP ステータスの報告なし",
+    "notRead": "読み取れませんでした"
   },
   "open": "{{name}} を開く",
   "openRequests": "{{name}} のリクエスト",
@@ -106,6 +108,13 @@
   "truncated_other": "両端間の {{count}} 件の接続のうち、最も多い {{shown}} 件を表示しています。",
   "filteredOut": "これらのフィルターに一致する呼び出しはありません。",
   "failed": "{{sources}} のトラフィックメトリクスを読み取れませんでした。",
+  "tooLong": "{{sources}} のクエリは、Prometheus の前にあるプロキシにとって長すぎました。プロキシの URL 長の上限を引き上げるか、クラスター設定で Prometheus を URL で指定してください。その場合、長いクエリは POST で送信されます。",
+  "partial": "{{sources}} からの呼び出しの一部の詳細を読み取れませんでした（{{details}}）。Prometheus がそれらのクエリに応答しませんでした。",
+  "detail": {
+    "errors": "エラー率",
+    "classes": "ステータス別の応答",
+    "latency": "レイテンシ"
+  },
   "noPrometheus": "トラフィックグラフは Prometheus から読み取りますが、このクラスターには設定済みの、または見つかった Prometheus がありません。",
   "openSettings": "クラスターの設定",
   "noSource": "Prometheus に呼び出しの両端を示すメトリクスがありません。Istio、Linkerd、Grafana Beyla のサービスグラフ、Cilium Hubble のいずれも報告していません。",

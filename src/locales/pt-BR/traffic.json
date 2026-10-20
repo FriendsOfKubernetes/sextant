@@ -61,7 +61,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Fora da malha ou sem labels",
     "unknownIn": "Fora da malha ou sem labels ({{namespace}})",
-    "cannotOpen": "A fonte não diz quem é: quem chama ou é chamado fora da malha ou do cluster, ou alguém que seus labels não nomeiam."
+    "cannotOpen": "A fonte não diz quem é: quem chama ou é chamado fora da malha ou do cluster, ou alguém que seus labels não nomeiam.",
+    "noNamespace": "A fonte nomeia {{name}} sem namespace, então não há o que abrir."
   },
   "nodeLabel": "{{kind}} {{name}}: mostrar suas chamadas",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -84,7 +85,8 @@
     "noLatency": "sem histograma de latência",
     "noVerdict": "sem veredito para TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "nenhum status HTTP informado"
+    "noClasses": "nenhum status HTTP informado",
+    "notRead": "não foi possível ler"
   },
   "open": "Abrir {{name}}",
   "openRequests": "Requisições de {{name}}",
@@ -116,6 +118,13 @@
   "truncated_other": "Mostrando as {{shown}} mais carregadas de {{count}} ligações entre duas pontas.",
   "filteredOut": "Nenhuma chamada corresponde a estes filtros.",
   "failed": "Não foi possível ler as métricas de tráfego de {{sources}}.",
+  "tooLong": "A consulta para {{sources}} era longa demais para um proxy na frente do Prometheus. Aumente o limite de URL do proxy ou informe o Prometheus pela URL nas configurações do cluster: assim as consultas longas são enviadas por POST.",
+  "partial": "Não foi possível ler alguns detalhes das chamadas de {{sources}} ({{details}}): o Prometheus não respondeu a essas consultas.",
+  "detail": {
+    "errors": "taxas de erro",
+    "classes": "respostas por status",
+    "latency": "latência"
+  },
   "noPrometheus": "O grafo de tráfego é lido do Prometheus, e nenhum está configurado ou foi encontrado para este cluster.",
   "openSettings": "Configurações do cluster",
   "noSource": "O Prometheus não tem métricas que nomeiem as duas pontas de uma chamada: nem Istio, nem Linkerd, nem o grafo de serviços do Grafana Beyla, nem o Cilium Hubble enviam dados a ele.",

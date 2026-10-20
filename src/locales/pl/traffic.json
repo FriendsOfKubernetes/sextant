@@ -62,7 +62,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Poza siatką lub bez etykiet",
     "unknownIn": "Poza siatką lub bez etykiet ({{namespace}})",
-    "cannotOpen": "Źródło nie podaje, kto to jest: strona wywołania spoza siatki lub klastra albo bez etykiet, które by ją nazywały."
+    "cannotOpen": "Źródło nie podaje, kto to jest: strona wywołania spoza siatki lub klastra albo bez etykiet, które by ją nazywały.",
+    "noNamespace": "Źródło podaje {{name}} bez przestrzeni nazw, więc nie ma czego otworzyć."
   },
   "nodeLabel": "{{kind}} {{name}}: pokaż wywołania",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -85,7 +86,8 @@
     "noLatency": "brak histogramu opóźnień",
     "noVerdict": "brak oceny dla TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "brak statusu HTTP"
+    "noClasses": "brak statusu HTTP",
+    "notRead": "nie udało się odczytać"
   },
   "open": "Otwórz {{name}}",
   "openRequests": "Żądania {{name}}",
@@ -121,6 +123,13 @@
   "truncated_other": "Pokazano {{shown}} najbardziej obciążonych z {{count}} połączenia między dwoma końcami.",
   "filteredOut": "Żadne wywołanie nie pasuje do tych filtrów.",
   "failed": "Nie udało się odczytać metryk ruchu: {{sources}}.",
+  "tooLong": "Zapytanie dla {{sources}} było za długie dla proxy przed Prometheusem. Zwiększ limit długości URL w proxy albo podaj Prometheusa przez URL w ustawieniach klastra: wtedy długie zapytania są wysyłane metodą POST.",
+  "partial": "Nie udało się odczytać części szczegółów wywołań z {{sources}} ({{details}}): Prometheus nie odpowiedział na te zapytania.",
+  "detail": {
+    "errors": "odsetek błędów",
+    "classes": "odpowiedzi według statusu",
+    "latency": "opóźnienie"
+  },
   "noPrometheus": "Graf ruchu jest odczytywany z Prometheus, a dla tego klastra nie jest skonfigurowany ani znaleziony.",
   "openSettings": "Ustawienia klastra",
   "noSource": "Prometheus nie ma metryk nazywających oba końce wywołania: nie zapisuje do niego ani Istio, ani Linkerd, ani graf usług Grafana Beyla, ani Cilium Hubble.",

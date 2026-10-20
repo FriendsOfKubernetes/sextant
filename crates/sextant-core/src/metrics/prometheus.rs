@@ -53,6 +53,17 @@ pub(crate) struct Prometheus {
     client: kube::Client,
     /// Path in front of `api/v1/...`, without a trailing slash.
     base: String,
+    /// Reached by its own URL (not through the API server's service proxy): a query refused as too long is sent again
+    /// as a form POST, which the service proxy would need the `create` verb on `services/proxy` for.
+    direct: bool,
+}
+
+/// The start of the error of a query refused as too long (HTTP 414 or 431) by something in front of Prometheus.
+pub(crate) const QUERY_TOO_LONG: &str = "the query was too long for a proxy in front of Prometheus";
+
+/// Whether `err` is a query refused as too long ([`QUERY_TOO_LONG`]).
+pub(crate) fn is_query_too_long(err: &CoreError) -> bool {
+    err.message.starts_with(QUERY_TOO_LONG)
 }
 
 impl Prometheus {
@@ -75,6 +86,7 @@ impl Prometheus {
                     base: format!(
                         "/api/v1/namespaces/{namespace}/services/{service}:{port}/proxy{prefix}"
                     ),
+                    direct: false,
                 })
             }
             PrometheusTarget::Url { url } => {
@@ -91,6 +103,7 @@ impl Prometheus {
                 Ok(Self {
                     client,
                     base: String::new(),
+                    direct: true,
                 })
             }
         }
@@ -129,14 +142,14 @@ impl Prometheus {
         Ok(body.get("data").cloned().unwrap_or(Value::Null))
     }
 
-    /// `GET <base>/<path>` reading at most `limit` bytes of the answer (a bigger one is an error, not cut); the `data`
-    /// of a successful answer. Prometheus' own error message is kept for a refused query.
-    async fn get_limited(&self, path: &str, limit: usize) -> CoreResult<Value> {
+    /// Sends `request` and reads at most `limit` bytes of the answer (a bigger one is an error, not cut).
+    async fn send_limited(
+        &self,
+        request: http::Request<Vec<u8>>,
+        limit: usize,
+    ) -> CoreResult<(http::StatusCode, Vec<u8>)> {
         use http_body_util::{BodyExt, LengthLimitError, Limited};
-        let request = kube::core::Request::new(self.base.clone())
-            .get(path, &GetParams::default())
-            .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?
-            .map(kube::client::Body::from);
+        let request = request.map(kube::client::Body::from);
         let exchange = async {
             let response = self
                 .client
@@ -160,10 +173,11 @@ impl Prometheus {
                         CoreError::new(ErrorCode::Unreachable, format!("Prometheus: {err}"))
                     }
                 })?
-                .to_bytes();
+                .to_bytes()
+                .to_vec();
             Ok::<_, CoreError>((status, body))
         };
-        let (status, body) = tokio::time::timeout(QUERY_TIMEOUT, exchange)
+        tokio::time::timeout(QUERY_TIMEOUT, exchange)
             .await
             .map_err(|_| {
                 CoreError::new(
@@ -173,29 +187,39 @@ impl Prometheus {
                         QUERY_TIMEOUT.as_secs()
                     ),
                 )
-            })??;
-        let parsed: Option<Value> = serde_json::from_slice(&body).ok();
-        let Some(body) = parsed.filter(|b| b.get("status").is_some()) else {
-            return Err(if status.is_success() {
-                CoreError::new(
-                    ErrorCode::Invalid,
-                    "the answer is not from the Prometheus HTTP API",
+            })?
+    }
+
+    /// Instant query at `time` (with the server-side timeout), the answer read up to `limit` bytes; the `data` of a
+    /// successful answer, Prometheus' own error message kept for a refused query. A GET refused as too long (HTTP 414
+    /// or 431, a proxy's URL or header limit) is sent again as a form POST when Prometheus is reached by its own URL;
+    /// through the API server's service proxy it is an error that says so ([`QUERY_TOO_LONG`]).
+    pub(crate) async fn query_limited(
+        &self,
+        promql: &str,
+        time: i64,
+        limit: usize,
+    ) -> CoreResult<Value> {
+        let form = format!(
+            "query={}&time={time}&timeout={}",
+            encode(promql),
+            rightsizing::SERVER_TIMEOUT
+        );
+        let get = http::Request::get(format!("{}/api/v1/query?{form}", self.base))
+            .body(Vec::new())
+            .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?;
+        let (mut status, mut body) = self.send_limited(get, limit).await?;
+        if too_long(status) && self.direct {
+            let post = http::Request::post(format!("{}/api/v1/query", self.base))
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
                 )
-            } else {
-                CoreError::new(
-                    crate::error::code_for_http_status(status.as_u16()),
-                    format!("Prometheus: HTTP {status}"),
-                )
-            });
-        };
-        if body.get("status").and_then(Value::as_str) != Some("success") {
-            let message = body
-                .get("error")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown error");
-            return Err(CoreError::other(format!("Prometheus: {message}")));
+                .body(form.into_bytes())
+                .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?;
+            (status, body) = self.send_limited(post, limit).await?;
         }
-        Ok(body.get("data").cloned().unwrap_or(Value::Null))
+        answer_data(status, &body)
     }
 
     /// Whether this is a Prometheus that answers.
@@ -244,6 +268,42 @@ impl Prometheus {
             })
             .collect())
     }
+}
+
+/// HTTP 414 (URI too long) or 431 (headers too large): a proxy's limit, not Prometheus' answer.
+fn too_long(status: http::StatusCode) -> bool {
+    matches!(status.as_u16(), 414 | 431)
+}
+
+/// The `data` of a Prometheus HTTP API answer with `status`; Prometheus' own error message kept for a refused query.
+fn answer_data(status: http::StatusCode, body: &[u8]) -> CoreResult<Value> {
+    let parsed: Option<Value> = serde_json::from_slice(body).ok();
+    let Some(body) = parsed.filter(|b| b.get("status").is_some()) else {
+        return Err(if status.is_success() {
+            CoreError::new(
+                ErrorCode::Invalid,
+                "the answer is not from the Prometheus HTTP API",
+            )
+        } else if too_long(status) {
+            CoreError::new(
+                ErrorCode::Invalid,
+                format!("{QUERY_TOO_LONG} (HTTP {})", status.as_u16()),
+            )
+        } else {
+            CoreError::new(
+                crate::error::code_for_http_status(status.as_u16()),
+                format!("Prometheus: HTTP {status}"),
+            )
+        });
+    };
+    if body.get("status").and_then(Value::as_str) != Some("success") {
+        let message = body
+            .get("error")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown error");
+        return Err(CoreError::other(format!("Prometheus: {message}")));
+    }
+    Ok(body.get("data").cloned().unwrap_or(Value::Null))
 }
 
 fn prometheus_error(err: CoreError) -> CoreError {

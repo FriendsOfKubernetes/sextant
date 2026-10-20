@@ -59,7 +59,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "메시 외부 또는 레이블 없음",
     "unknownIn": "메시 외부 또는 레이블 없음 ({{namespace}})",
-    "cannotOpen": "소스가 누구인지 알려 주지 않습니다. 메시나 클러스터 밖의 호출자 또는 피호출자이거나, 레이블로 식별되지 않는 대상입니다."
+    "cannotOpen": "소스가 누구인지 알려 주지 않습니다. 메시나 클러스터 밖의 호출자 또는 피호출자이거나, 레이블로 식별되지 않는 대상입니다.",
+    "noNamespace": "소스가 {{name}}을(를) 네임스페이스 없이 알려 주므로 열 대상이 없습니다."
   },
   "nodeLabel": "{{kind}} {{name}}: 호출 보기",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -82,7 +83,8 @@
     "noLatency": "지연 시간 히스토그램 없음",
     "noVerdict": "TCP는 판정 없음",
     "class": "{{class}} 초당 {{value}}",
-    "noClasses": "HTTP 상태 미보고"
+    "noClasses": "HTTP 상태 미보고",
+    "notRead": "읽을 수 없음"
   },
   "open": "{{name}} 열기",
   "openRequests": "{{name}}의 요청",
@@ -106,6 +108,13 @@
   "truncated_other": "두 끝 사이의 연결 {{count}}개 중 가장 많은 {{shown}}개를 표시합니다.",
   "filteredOut": "이 필터와 일치하는 호출이 없습니다.",
   "failed": "{{sources}}의 트래픽 메트릭을 읽지 못했습니다.",
+  "tooLong": "{{sources}}의 쿼리가 Prometheus 앞의 프록시에 비해 너무 길었습니다. 프록시의 URL 길이 제한을 늘리거나 클러스터 설정에서 Prometheus를 URL로 지정하세요. 그러면 긴 쿼리는 POST로 전송됩니다.",
+  "partial": "{{sources}}에서 온 호출의 일부 세부 정보를 읽을 수 없었습니다({{details}}). Prometheus가 해당 쿼리에 응답하지 않았습니다.",
+  "detail": {
+    "errors": "오류율",
+    "classes": "상태별 응답",
+    "latency": "지연 시간"
+  },
   "noPrometheus": "트래픽 그래프는 Prometheus에서 읽는데, 이 클러스터에는 설정되었거나 발견된 Prometheus가 없습니다.",
   "openSettings": "클러스터 설정",
   "noSource": "Prometheus에 호출의 양쪽 끝을 모두 나타내는 메트릭이 없습니다. Istio, Linkerd, Grafana Beyla 서비스 그래프, Cilium Hubble 중 어느 것도 보고하지 않습니다.",

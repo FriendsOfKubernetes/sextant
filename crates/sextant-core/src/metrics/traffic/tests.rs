@@ -21,13 +21,32 @@ fn decode(text: &str) -> String {
     String::from_utf8(out).unwrap()
 }
 
-fn answers(file: &str) -> Vec<Value> {
+/// The answer of `metrics/traffic/testdata/<file>.json` to `promql` (an empty vector for a query it has none of).
+fn answer(file: &str, promql: &str) -> String {
     let path = format!(
         "{}/src/metrics/traffic/testdata/{file}.json",
         env!("CARGO_MANIFEST_DIR")
     );
     let all: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    all["answers"].as_array().unwrap().clone()
+    let data = all["queries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|q| q["promql"] == promql)
+        .map_or_else(
+            || serde_json::json!({ "resultType": "vector", "result": [] }),
+            |q| q["data"].clone(),
+        );
+    serde_json::json!({ "status": "success", "data": data }).to_string()
+}
+
+/// The `query` parameter of a query string.
+fn promql_of(query: &str) -> String {
+    query
+        .split('&')
+        .find_map(|p| p.strip_prefix("query="))
+        .map(decode)
+        .unwrap_or_default()
 }
 
 fn ns(list: &[&str]) -> Vec<String> {
@@ -78,19 +97,7 @@ fn manual() -> PrometheusMode {
     }
 }
 
-/// Which of a source's queries this is: 0 the edges and their count, then errors, classes, p50, p95.
-fn query_index(promql: &str) -> usize {
-    let tags = [
-        r#""m", "rate""#,
-        r#""m", "errors""#,
-        r#""m", "class""#,
-        r#""m", "p50""#,
-        r#""m", "p95""#,
-    ];
-    tags.iter().position(|t| promql.contains(t)).unwrap()
-}
-
-/// A cluster whose Prometheus has Istio, Linkerd, Hubble (whose queries fail) and ingress-nginx metrics.
+/// A cluster whose Prometheus has Istio, Linkerd, Hubble (whose queries a proxy refuses) and ingress-nginx metrics.
 async fn cluster() -> FakeApi {
     FakeApi::start(|req: &Request| {
         let path = req.path.as_str();
@@ -100,19 +107,19 @@ async fn cluster() -> FakeApi {
                 _ => Reply::not_found(),
             };
         };
-        let promql = decode(&req.query);
+        let promql = promql_of(&req.query);
         match rest {
             "/api/v1/label/__name__/values" => Reply::json(
                 200,
                 r#"{"status":"success","data":["istio_requests_total","istio_request_duration_milliseconds_bucket","response_total","response_latency_ms_bucket","hubble_http_requests_total","nginx_ingress_controller_requests"]}"#,
             ),
-            "/api/v1/query" if promql.contains("hubble_") => Reply::json(
-                422,
-                r#"{"status":"error","errorType":"execution","error":"query timed out"}"#,
-            ),
+            // A proxy in front of Prometheus refuses Hubble's URL as too long.
+            "/api/v1/query" if promql.contains("hubble_") => {
+                Reply::json(414, "<html><body>414 Request-URI Too Large</body></html>")
+            }
             "/api/v1/query" => {
                 let file = if promql.contains("istio_") { "istio" } else { "linkerd" };
-                Reply::json(200, answers(file)[query_index(&promql)].to_string())
+                Reply::json(200, answer(file, &promql))
             }
             _ => Reply::not_found(),
         }
@@ -147,8 +154,9 @@ async fn edges_of_every_source_merged_busiest_first() {
         ]
     );
     assert_eq!(graph.request_only, [RequestSourceKind::IngressNginx]);
-    // Hubble's query failed: its edges are unknown, not absent.
+    // Hubble's query failed: its edges are unknown, not absent, and the reason is told.
     assert_eq!(graph.failed, [RequestSourceKind::Hubble]);
+    assert_eq!(graph.query_too_long, [RequestSourceKind::Hubble]);
     assert_eq!(graph.edges.len(), 9);
     assert_eq!(graph.total_edges, 9);
     assert!(graph.edges.windows(2).all(|w| w[0].rate >= w[1].rate));
@@ -165,7 +173,8 @@ async fn edges_of_every_source_merged_busiest_first() {
         .filter(|r| r.path == format!("{PROXY}/api/v1/query"))
         .map(|r| decode(&r.query))
         .collect();
-    assert_eq!(queries.len(), 5 + 5 + 1);
+    // Istio: 4 parts' edges, 2 parts with HTTP edges × 4 details; Linkerd: 3 parts' edges, 2 × 4 details; Hubble 1.
+    assert_eq!(queries.len(), 12 + 11 + 1);
     for q in &queries {
         assert!(
             q.contains(r#"=~"shop|pay""#) && q.contains("timeout=18s"),

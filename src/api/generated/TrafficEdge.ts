@@ -2,6 +2,7 @@
 import type { RequestSourceKind } from "./RequestSourceKind";
 import type { RequestVia } from "./RequestVia";
 import type { StatusClassRate } from "./StatusClassRate";
+import type { TrafficDetail } from "./TrafficDetail";
 import type { TrafficPeer } from "./TrafficPeer";
 import type { TrafficProtocol } from "./TrafficProtocol";
 
@@ -25,4 +26,9 @@ p50Ms: number | null, p95Ms: number | null,
  * By class; empty when the source has no HTTP status (TCP, Beyla's service graph). A gRPC call counts under
  * its HTTP status (usually 2xx; its own status decides `error_ratio`).
  */
-statusClasses: Array<StatusClassRate>, };
+statusClasses: Array<StatusClassRate>, 
+/**
+ * Details whose query failed (a timeout, a limit of Prometheus, an answer too big): their fields are unknown,
+ * not absent.
+ */
+missing: Array<TrafficDetail>, };

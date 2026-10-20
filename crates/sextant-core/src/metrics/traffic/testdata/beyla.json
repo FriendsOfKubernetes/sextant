@@ -1,57 +1,281 @@
 {
- "names": {
-  "status": "success",
-  "data": [
-   "traces_service_graph_request_total",
-   "traces_service_graph_request_server_seconds_bucket",
-   "traces_service_graph_request_failed_total"
-  ]
- },
- "answers": [
+ "prometheus": "3.15.0",
+ "time": 1760000000,
+ "series": [
   {
-   "status": "success",
+   "metric": "traces_service_graph_request_total",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop"
+   },
+   "rate": 2.0
+  },
+  {
+   "metric": "traces_service_graph_request_server_seconds_count",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_count",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "traces_service_graph_request_server_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.005"
+   },
+   "rate": 0.0
+  },
+  {
+   "metric": "traces_service_graph_request_server_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.01"
+   },
+   "rate": 0.5
+  },
+  {
+   "metric": "traces_service_graph_request_server_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.05"
+   },
+   "rate": 0.95
+  },
+  {
+   "metric": "traces_service_graph_request_server_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.1"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "traces_service_graph_request_server_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "+Inf"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.01"
+   },
+   "rate": 0.0
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.02"
+   },
+   "rate": 0.5
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.1"
+   },
+   "rate": 0.95
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "0.2"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop",
+    "le": "+Inf"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "traces_service_graph_request_failed_total",
+   "labels": {
+    "client": "frontend",
+    "client_service_namespace": "shop",
+    "server": "web",
+    "server_service_namespace": "shop"
+   },
+   "rate": 0.2
+  },
+  {
+   "metric": "traces_service_graph_request_total",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay"
+   },
+   "rate": 0.5
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_count",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay"
+   },
+   "rate": 0.5
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay",
+    "le": "0.005"
+   },
+   "rate": 0.0
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay",
+    "le": "0.01"
+   },
+   "rate": 0.25
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay",
+    "le": "0.05"
+   },
+   "rate": 0.475
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay",
+    "le": "0.1"
+   },
+   "rate": 0.5
+  },
+  {
+   "metric": "traces_service_graph_request_client_seconds_bucket",
+   "labels": {
+    "client": "web",
+    "client_service_namespace": "shop",
+    "server": "db",
+    "server_service_namespace": "pay",
+    "le": "+Inf"
+   },
+   "rate": 0.5
+  }
+ ],
+ "queries": [
+  {
+   "ask": "Rate",
+   "part": 0,
+   "promql": "topk(200,(sum by(client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_server_seconds_count{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_server_seconds_count{client_service_namespace=~\"shop|pay\"}[5m])) or on(client_service_namespace,client,server_service_namespace,server) sum by(client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_client_seconds_count{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_client_seconds_count{client_service_namespace=~\"shop|pay\"}[5m])))>0)",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "count"
+       "client": "frontend",
+       "client_service_namespace": "shop",
+       "server": "web",
+       "server_service_namespace": "shop"
       },
       "value": [
        1760000000,
-       "1"
+       "0.9999999999999999"
       ]
      },
      {
       "metric": {
-       "m": "rate",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
+       "client": "web",
+       "client_service_namespace": "shop",
+       "server": "db",
+       "server_service_namespace": "pay"
       },
       "value": [
        1760000000,
-       "1"
+       "0.49999999999999994"
       ]
      }
     ]
    }
   },
   {
-   "status": "success",
+   "ask": "Share",
+   "part": 0,
+   "promql": "(sum by(client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_failed_total{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_failed_total{client_service_namespace=~\"shop|pay\"}[5m]))/sum by(client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_server_seconds_count{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_server_seconds_count{client_service_namespace=~\"shop|pay\"}[5m]) or label_replace(rate(traces_service_graph_request_client_seconds_count{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_client_seconds_count{client_service_namespace=~\"shop|pay\"}[5m]),\"sx_side\",\"caller\",\"\",\"\")))>0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "errors",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
+       "client": "frontend",
+       "client_service_namespace": "shop",
+       "server": "web",
+       "server_service_namespace": "shop"
       },
       "value": [
        1760000000,
@@ -62,18 +286,30 @@
    }
   },
   {
-   "status": "success",
+   "ask": "P50",
+   "part": 0,
+   "promql": "(histogram_quantile(0.5,sum by(le,client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_server_seconds_bucket{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_server_seconds_bucket{client_service_namespace=~\"shop|pay\"}[5m])) or on(client_service_namespace,client,server_service_namespace,server) sum by(le,client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_client_seconds_bucket{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_client_seconds_bucket{client_service_namespace=~\"shop|pay\"}[5m]))))>=0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "p50",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
+       "client": "frontend",
+       "client_service_namespace": "shop",
+       "server": "web",
+       "server_service_namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.01"
+      ]
+     },
+     {
+      "metric": {
+       "client": "web",
+       "client_service_namespace": "shop",
+       "server": "db",
+       "server_service_namespace": "pay"
       },
       "value": [
        1760000000,
@@ -84,22 +320,34 @@
    }
   },
   {
-   "status": "success",
+   "ask": "P95",
+   "part": 0,
+   "promql": "(histogram_quantile(0.95,sum by(le,client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_server_seconds_bucket{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_server_seconds_bucket{client_service_namespace=~\"shop|pay\"}[5m])) or on(client_service_namespace,client,server_service_namespace,server) sum by(le,client_service_namespace,client,server_service_namespace,server)(rate(traces_service_graph_request_client_seconds_bucket{server_service_namespace=~\"shop|pay\"}[5m]) or rate(traces_service_graph_request_client_seconds_bucket{client_service_namespace=~\"shop|pay\"}[5m]))))>=0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "p95",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
+       "client": "frontend",
+       "client_service_namespace": "shop",
+       "server": "web",
+       "server_service_namespace": "shop"
       },
       "value": [
        1760000000,
-       "0.05"
+       "0.049999999999999996"
+      ]
+     },
+     {
+      "metric": {
+       "client": "web",
+       "client_service_namespace": "shop",
+       "server": "db",
+       "server_service_namespace": "pay"
+      },
+      "value": [
+       1760000000,
+       "0.049999999999999996"
       ]
      }
     ]

@@ -31,6 +31,10 @@ requestOnly: Array<RequestSourceKind>,
  */
 failed: Array<RequestSourceKind>, 
 /**
+ * Those of `failed` whose query a proxy in front of Prometheus refused as too long (HTTP 414 or 431).
+ */
+queryTooLong: Array<RequestSourceKind>, 
+/**
  * The busiest first, at most [`MAX_TRAFFIC_EDGES`].
  */
 edges: Array<TrafficEdge>, 

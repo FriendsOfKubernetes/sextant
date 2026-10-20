@@ -59,7 +59,8 @@
     "inNamespace": "{{name}}（{{namespace}}）",
     "unknown": "网格外或无标签",
     "unknownIn": "网格外或无标签（{{namespace}}）",
-    "cannotOpen": "来源没有说明这是谁：可能是网格或集群之外的调用方或被调用方，或其标签未能指明。"
+    "cannotOpen": "来源没有说明这是谁：可能是网格或集群之外的调用方或被调用方，或其标签未能指明。",
+    "noNamespace": "来源给出的 {{name}} 没有命名空间，因此无法打开。"
   },
   "nodeLabel": "{{kind}} {{name}}：显示其调用",
   "linkTitle": "{{from}} → {{to}}：{{rate}}",
@@ -82,7 +83,8 @@
     "noLatency": "无延迟直方图",
     "noVerdict": "TCP 无判定",
     "class": "{{class}} {{value}}/秒",
-    "noClasses": "未报告 HTTP 状态"
+    "noClasses": "未报告 HTTP 状态",
+    "notRead": "无法读取"
   },
   "open": "打开 {{name}}",
   "openRequests": "{{name}} 的请求",
@@ -106,6 +108,13 @@
   "truncated_other": "显示两端之间 {{count}} 条连接中最繁忙的 {{shown}} 条。",
   "filteredOut": "没有调用符合这些筛选条件。",
   "failed": "无法读取 {{sources}} 的流量指标。",
+  "tooLong": "{{sources}} 的查询对 Prometheus 前面的代理来说太长了。请提高代理的 URL 长度限制，或在集群设置中通过 URL 指定 Prometheus：这样长查询会以 POST 发送。",
+  "partial": "无法读取来自 {{sources}} 的调用的部分详情（{{details}}）：Prometheus 未响应这些查询。",
+  "detail": {
+    "errors": "错误率",
+    "classes": "按状态的响应",
+    "latency": "延迟"
+  },
   "noPrometheus": "流量图从 Prometheus 读取，而此集群没有设置或找到 Prometheus。",
   "openSettings": "集群设置",
   "noSource": "Prometheus 中没有同时指明调用两端的指标：Istio、Linkerd、Grafana Beyla 的服务图和 Cilium Hubble 都没有向它上报。",

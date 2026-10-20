@@ -20,6 +20,7 @@ export function edge(from: TrafficPeer, to: TrafficPeer, patch: Partial<TrafficE
     p50Ms: 10,
     p95Ms: 50,
     statusClasses: [{ class: "2xx", rate: 1 }],
+    missing: [],
     ...patch,
   };
 }
@@ -56,6 +57,7 @@ export function graph(patch: Partial<TrafficGraph> = {}): TrafficGraph {
     sources: [{ kind: "istio", via: "cluster", latency: true }],
     requestOnly: [],
     failed: [],
+    queryTooLong: [],
     edges: SHOP_EDGES,
     totalEdges: SHOP_EDGES.length,
     ...patch,

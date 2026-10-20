@@ -170,6 +170,7 @@ export type { RequestHealth } from "./generated/RequestHealth";
 export type { RequestSourceKind } from "./generated/RequestSourceKind";
 export type { RequestTarget } from "./generated/RequestTarget";
 export type { StatusClassRate } from "./generated/StatusClassRate";
+export type { TrafficDetail } from "./generated/TrafficDetail";
 export type { TrafficEdge } from "./generated/TrafficEdge";
 export type { TrafficGraph } from "./generated/TrafficGraph";
 export type { TrafficPeer } from "./generated/TrafficPeer";

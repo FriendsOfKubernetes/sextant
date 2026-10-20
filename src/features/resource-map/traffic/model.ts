@@ -81,7 +81,7 @@ export function strokeWidth(rate: number, maxRate: number): number {
 
 export interface TrafficNode extends Placed {
   peer: TrafficPeer;
-  /** Requests per second into and out of the node over the drawn edges. */
+  /** Requests per second into and out of the node over the drawn links (TCP connections not counted). */
   inRate: number;
   outRate: number;
 }
@@ -92,8 +92,24 @@ export interface TrafficLink {
   from: string;
   to: string;
   edges: TrafficEdge[];
+  /** Requests per second (HTTP, gRPC, or a protocol the source does not tell): per source the sum of its edges, then
+   * the busiest source's — two sources seeing the same calls (Istio and Hubble on Cilium) are not added up. The line
+   * is as thick as this. */
   rate: number;
+  /** New TCP connections per second, the same way; never added to `rate` (another unit). */
+  tcpRate: number;
   level: ErrorLevel;
+}
+
+/** Per pair of ends: the busiest source's requests, and its connections, each family on its own. */
+function linkRates(edges: readonly TrafficEdge[]): { rate: number; tcpRate: number } {
+  const requests = new Map<string, number>();
+  const connections = new Map<string, number>();
+  for (const edge of edges) {
+    const family = edge.protocol === "tcp" ? connections : requests;
+    family.set(edge.source, (family.get(edge.source) ?? 0) + edge.rate);
+  }
+  return { rate: Math.max(0, ...requests.values()), tcpRate: Math.max(0, ...connections.values()) };
 }
 
 export interface TrafficLayout {
@@ -123,14 +139,18 @@ export function layoutTraffic(edges: readonly TrafficEdge[]): TrafficLayout {
   for (const edge of edges) {
     const from = node(edge.from);
     const to = node(edge.to);
-    from.outRate += edge.rate;
-    to.inRate += edge.rate;
     const id = `${from.id}>${to.id}`;
-    const link = links.get(id) ?? links.set(id, { id, from: from.id, to: to.id, edges: [], rate: 0, level: "unknown" }).get(id)!;
+    const link =
+      links.get(id) ??
+      links.set(id, { id, from: from.id, to: to.id, edges: [], rate: 0, tcpRate: 0, level: "unknown" }).get(id)!;
     link.edges.push(edge);
-    link.rate += edge.rate;
   }
-  for (const link of links.values()) link.level = worstLevel(link.edges.map((e) => errorLevel(e.errorRatio)));
+  for (const link of links.values()) {
+    Object.assign(link, linkRates(link.edges));
+    link.level = worstLevel(link.edges.map((e) => errorLevel(e.errorRatio)));
+    nodes.get(link.from)!.outRate += link.rate;
+    nodes.get(link.to)!.inRate += link.rate;
+  }
 
   const callees = new Map<string, string[]>();
   const called = new Set<string>();

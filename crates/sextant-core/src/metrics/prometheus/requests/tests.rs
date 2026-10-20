@@ -39,15 +39,19 @@ fn every_source_names_the_workload_by_its_own_labels() {
             r#"k8s_namespace_name="shop",k8s_pod_name=~"web-{SAFE}{{6,10}}-{SAFE}{{5}}""#
         )]
     );
+    // Hubble's selector names the callee only: which side's report counts is the query's ([`Sides`]).
     assert_eq!(
         one(RequestSourceKind::Hubble),
-        [r#"reporter!="client",destination_namespace="shop",destination_workload="web""#]
+        [r#"destination_namespace="shop",destination_workload="web""#]
     );
+    // The metric's own labels; renamed by a ServiceMonitor without `honorLabels`; the namespace alone renamed by a
+    // PodMonitor (its targets have no `service` label).
     assert_eq!(
         one(RequestSourceKind::IngressNginx),
         [
             r#"namespace="shop",service=~"web""#,
-            r#"exported_namespace="shop",exported_service=~"web""#
+            r#"exported_namespace="shop",exported_service=~"web""#,
+            r#"exported_namespace="shop",service=~"web""#
         ]
     );
     // Without a Service selecting the pods, ingress-nginx cannot name them.
@@ -69,7 +73,7 @@ fn every_source_names_the_workload_by_its_own_labels() {
     );
     assert_eq!(
         request_selectors(RequestSourceKind::Hubble, &p, &[]),
-        [r#"reporter!="client",destination_namespace="shop",destination_pod="web-0""#]
+        [r#"destination_namespace="shop",destination_pod="web-0""#]
     );
     assert_eq!(
         request_selectors(RequestSourceKind::Beyla, &p, &[]),
@@ -170,6 +174,39 @@ fn metric_names(query: &str) -> BTreeSet<String> {
         out.extend(rest[..end].split('|').map(str::to_owned));
     }
     out
+}
+
+#[test]
+fn hubble_counts_the_callees_report_and_the_callers_only_where_the_callee_has_none() {
+    let sel = [r#"destination_namespace="shop",destination_workload="web""#.to_owned()];
+    let pair = HUBBLE_SIDES.pair;
+    let query = series_query(RequestSourceKind::Hubble, &sel);
+    let callee = format!(
+        r#"sum by ({pair}) (rate(hubble_http_requests_total{{{},reporter!="client"}}[5m]))"#,
+        sel[0]
+    );
+    let caller = format!(
+        r#"(sum by ({pair}) (rate(hubble_http_requests_total{{{},reporter="client"}}[5m])) unless on({pair}) {callee})"#,
+        sel[0]
+    );
+    assert!(
+        query.contains(&format!("sum({callee} or {caller})")),
+        "{query}"
+    );
+    // Errors of the caller's report count only where the callee has no report at all (not merely no errors).
+    assert!(
+        query.contains(&format!(
+            r#"(sum by ({pair}) (rate(hubble_http_requests_total{{{},reporter="client",status=~"5.."}}[5m])) unless on({pair}) {callee})"#,
+            sel[0]
+        )),
+        "{query}"
+    );
+    let golden = golden_query(RequestSourceKind::Hubble, &sel, true);
+    assert!(golden.contains(&format!(r#"sum by (le) (sum by (le,{pair}) (rate(hubble_http_request_duration_seconds_bucket{{{},reporter!="client"}}[5m]))"#, sel[0])), "{golden}");
+    assert!(
+        golden.contains(&format!(" unless on({pair}) {callee}")),
+        "{golden}"
+    );
 }
 
 #[test]

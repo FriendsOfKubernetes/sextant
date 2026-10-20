@@ -2,66 +2,97 @@
 //! labels mean. Every query is built here from fixed tables and validated namespace names (escaped anyway); nothing the
 //! caller writes becomes PromQL, a metric name or a label matcher.
 //!
-//! Each source's series are first summed by the source's own labels, then renamed into one set of labels (`sx_*`, by
-//! `label_replace`), so every source answers in the same shape: caller namespace and name, callee namespace, name and
-//! kind, protocol. One instant query per source returns every value tagged by `m`: the busiest edges (`topk`), how
-//! many there are, and — only for those edges (`and on(...)`) — errors, status classes and p50/p95.
+//! A source is made of parts: families of series that name both ends of a call in their own labels. Each part is asked
+//! on its own, so that no URL repeats much (a proxy in front of Prometheus refuses long URLs, 8 KiB is common):
+//! first its busiest edges (`topk`, the only query that may fail the source), and only when there are any, one query
+//! per detail — errors, status classes, p50, p95 — each best-effort. A detail query covers every edge of the part
+//! when the part has fewer than [`MAX_TRAFFIC_EDGES`] edges (filtered to non-zero values, so it returns no more than
+//! the edges); only a capped part restricts it to its busiest edges (`and on(...) topk(...)`), which repeats the edge
+//! expression once. The answers keep the source's own labels; which label names which end is in the tables below and
+//! read back by [`assemble`].
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::Value;
 
-use super::rightsizing::SERVER_TIMEOUT;
-use super::{Prometheus, encode, labels, literal, number, regex_literal, results};
+use super::{Prometheus, labels, literal, number, regex_literal, results};
 use crate::error::CoreResult;
 use crate::metrics::requests::{DetectedSource, RequestSourceKind};
 use crate::metrics::traffic::{
     MAX_TRAFFIC_BODY, MAX_TRAFFIC_EDGES, MAX_TRAFFIC_SERIES, SourceEdges, StatusClassRate,
-    TrafficEdge, TrafficPeer, TrafficPeerKind, TrafficProtocol, TrafficWindow,
+    TrafficDetail, TrafficEdge, TrafficPeer, TrafficPeerKind, TrafficProtocol, TrafficWindow,
 };
 
-// The labels every source's series are renamed into.
-const SRC_NS: &str = "sx_sn";
-const SRC: &str = "sx_s";
-const DST_NS: &str = "sx_dn";
-const DST: &str = "sx_d";
-const DST_KIND: &str = "sx_dk";
+/// Set by `label_replace` where the protocol is told by another label's presence (Linkerd's `grpc_status`).
 const PROTO: &str = "sx_p";
+/// The status class (`2xx`…`5xx`) of the HTTP code label.
 const CLASS: &str = "sx_c";
-/// Keeps the parts (and the error alternatives) of a source apart until they are summed.
-const PART: &str = "sx_part";
-const ALT: &str = "sx_alt";
-/// What an edge is.
-const EDGE: &str = "sx_sn, sx_s, sx_dn, sx_d, sx_dk, sx_p";
+/// Tells the caller's series from the callee's where both are kept before summing.
+const SIDE: &str = "sx_side";
 
-/// One `label_replace` step: (target label, replacement, source label, regex). The regex is anchored, so `(.+)` sets
-/// the target only from a non-empty source label, and an empty source label with regex `""` sets a constant.
-type Step = (&'static str, &'static str, &'static str, &'static str);
+/// One end of a call in a part's labels.
+pub(crate) struct End {
+    /// The label with the end's namespace; empty when the part does not tell.
+    pub namespace: &'static str,
+    /// Labels naming the end, with what they name; the first one set wins.
+    pub names: &'static [(&'static str, TrafficPeerKind)],
+}
+
+/// Nobody the part can name (a caller without a mesh identity).
+const NOBODY: End = End {
+    namespace: "",
+    names: &[],
+};
+
+pub(crate) enum Protocol {
+    Fixed(TrafficProtocol),
+    /// A label whose value is `http` or `grpc`.
+    Label(&'static str),
+    /// gRPC where this label is set, else HTTP.
+    GrpcWhen(&'static str),
+}
 
 /// What a failed request is in a part.
 pub(crate) enum Errors {
     /// TCP: no verdict.
     None,
-    /// Matchers on the request counter; each picks other series, so their rates add up.
-    Matchers(&'static [&'static str]),
-    /// A counter of failed requests with the same labels.
-    Counter(&'static str),
+    /// A matcher of the failed requests.
+    Matcher(&'static str),
+    /// A matcher of the successful requests (one selector, where the failed ones would need two): errors = requests −
+    /// those.
+    Ok(&'static str),
+    /// The failed requests are the `5xx` class: read from the classes, no query of its own.
+    Class5xx,
+    /// The share of failed spans: a counter of failed spans of both sides over the spans of both sides (Beyla, whose
+    /// failed counter has no side).
+    Share { failed: &'static str },
+}
+
+/// One side's series of a part.
+pub(crate) struct Side {
+    /// The request (or connection) counter.
+    pub count: &'static str,
+    /// Fixed matchers of the side's series (may be empty).
+    pub matchers: &'static str,
+    /// The latency histogram's buckets.
+    pub bucket: Option<&'static str>,
 }
 
 /// One family of series of a source that names both ends of a call.
 pub(crate) struct Part {
-    /// The request (or connection) counter.
-    pub count: &'static str,
-    /// Fixed matchers of the series that make edges.
-    pub matchers: &'static str,
+    /// The series every call is counted from: the callee's report where the source has two.
+    pub series: Side,
+    /// The caller's report, counted only for the pairs of ends `series` has no series of (`or on(<the pair>)`, which
+    /// is `caller unless on(<the pair>) callee` added to the callee's).
+    pub caller: Option<Side>,
     /// Labels holding a namespace of an end: an edge is in scope when one of them names a chosen namespace.
     pub namespaces: &'static [&'static str],
-    /// The source's labels the series are summed by before renaming.
+    /// The source's labels that make an edge (the series are summed by them).
     pub by: &'static [&'static str],
-    pub steps: &'static [Step],
+    pub from: End,
+    pub to: End,
+    pub protocol: Protocol,
     pub errors: Errors,
-    /// The latency histogram's buckets.
-    pub bucket: Option<&'static str>,
     /// The label with the HTTP status code.
     pub class: Option<&'static str>,
 }
@@ -74,24 +105,23 @@ pub(crate) struct EdgeShape {
     pub unknown: &'static str,
 }
 
-const ISTIO_ERRORS: Errors = Errors::Matchers(&[
-    r#"response_code=~"5..""#,
-    r#"response_code!~"5..",grpc_response_status!~"|0""#,
-]);
-const ISTIO_SOURCE: [Step; 2] = [
-    (SRC_NS, "$1", "source_workload_namespace", "(.*)"),
-    (SRC, "$1", "source_workload", "(.*)"),
-];
-const ISTIO_TO_WORKLOAD: [Step; 3] = [
-    (DST_NS, "$1", "destination_workload_namespace", "(.*)"),
-    (DST, "$1", "destination_workload", "(.*)"),
-    (DST_KIND, "workload", "", ""),
-];
-const ISTIO_TO_SERVICE: [Step; 3] = [
-    (DST_NS, "$1", "destination_service_namespace", "(.*)"),
-    (DST, "$1", "destination_service_name", "(.*)"),
-    (DST_KIND, "service", "", ""),
-];
+use TrafficPeerKind::{Service, Workload};
+
+const ISTIO_FROM: End = End {
+    namespace: "source_workload_namespace",
+    names: &[("source_workload", Workload)],
+};
+const ISTIO_TO_WORKLOAD: End = End {
+    namespace: "destination_workload_namespace",
+    names: &[("destination_workload", Workload)],
+};
+const ISTIO_TO_SERVICE: End = End {
+    namespace: "destination_service_namespace",
+    names: &[("destination_service_name", Service)],
+};
+/// Not 5xx and no gRPC error: the complement of ADR-0095's Istio errors in one selector.
+const ISTIO_OK: &str = r#"response_code!~"5..",grpc_response_status=~"|0""#;
+const ISTIO_REQUESTS_BUCKET: Option<&str> = Some("istio_request_duration_milliseconds_bucket");
 
 const ISTIO: EdgeShape = EdgeShape {
     to_ms: 1.0,
@@ -99,8 +129,12 @@ const ISTIO: EdgeShape = EdgeShape {
     parts: &[
         // Reported by the callee's proxy: counted once, with the caller as the callee saw it (`unknown` without a proxy).
         Part {
-            count: "istio_requests_total",
-            matchers: r#"reporter="destination""#,
+            series: Side {
+                count: "istio_requests_total",
+                matchers: r#"reporter="destination""#,
+                bucket: ISTIO_REQUESTS_BUCKET,
+            },
+            caller: None,
             namespaces: &[
                 "destination_workload_namespace",
                 "source_workload_namespace",
@@ -112,22 +146,20 @@ const ISTIO: EdgeShape = EdgeShape {
                 "destination_workload",
                 "request_protocol",
             ],
-            steps: &[
-                ISTIO_SOURCE[0],
-                ISTIO_SOURCE[1],
-                ISTIO_TO_WORKLOAD[0],
-                ISTIO_TO_WORKLOAD[1],
-                ISTIO_TO_WORKLOAD[2],
-                (PROTO, "$1", "request_protocol", "(.*)"),
-            ],
-            errors: ISTIO_ERRORS,
-            bucket: Some("istio_request_duration_milliseconds_bucket"),
+            from: ISTIO_FROM,
+            to: ISTIO_TO_WORKLOAD,
+            protocol: Protocol::Label("request_protocol"),
+            errors: Errors::Ok(ISTIO_OK),
             class: Some("response_code"),
         },
         // Reported by the caller's proxy when the callee has none (no callee report exists): the Service it called.
         Part {
-            count: "istio_requests_total",
-            matchers: r#"reporter="source",destination_workload="unknown""#,
+            series: Side {
+                count: "istio_requests_total",
+                matchers: r#"reporter="source",destination_workload="unknown""#,
+                bucket: ISTIO_REQUESTS_BUCKET,
+            },
+            caller: None,
             namespaces: &["destination_service_namespace", "source_workload_namespace"],
             by: &[
                 "source_workload_namespace",
@@ -136,22 +168,20 @@ const ISTIO: EdgeShape = EdgeShape {
                 "destination_service_name",
                 "request_protocol",
             ],
-            steps: &[
-                ISTIO_SOURCE[0],
-                ISTIO_SOURCE[1],
-                ISTIO_TO_SERVICE[0],
-                ISTIO_TO_SERVICE[1],
-                ISTIO_TO_SERVICE[2],
-                (PROTO, "$1", "request_protocol", "(.*)"),
-            ],
-            errors: ISTIO_ERRORS,
-            bucket: Some("istio_request_duration_milliseconds_bucket"),
+            from: ISTIO_FROM,
+            to: ISTIO_TO_SERVICE,
+            protocol: Protocol::Label("request_protocol"),
+            errors: Errors::Ok(ISTIO_OK),
             class: Some("response_code"),
         },
         // Plain TCP services, the same two ways.
         Part {
-            count: "istio_tcp_connections_opened_total",
-            matchers: r#"reporter="destination""#,
+            series: Side {
+                count: "istio_tcp_connections_opened_total",
+                matchers: r#"reporter="destination""#,
+                bucket: None,
+            },
+            caller: None,
             namespaces: &[
                 "destination_workload_namespace",
                 "source_workload_namespace",
@@ -162,21 +192,19 @@ const ISTIO: EdgeShape = EdgeShape {
                 "destination_workload_namespace",
                 "destination_workload",
             ],
-            steps: &[
-                ISTIO_SOURCE[0],
-                ISTIO_SOURCE[1],
-                ISTIO_TO_WORKLOAD[0],
-                ISTIO_TO_WORKLOAD[1],
-                ISTIO_TO_WORKLOAD[2],
-                (PROTO, "tcp", "", ""),
-            ],
+            from: ISTIO_FROM,
+            to: ISTIO_TO_WORKLOAD,
+            protocol: Protocol::Fixed(TrafficProtocol::Tcp),
             errors: Errors::None,
-            bucket: None,
             class: None,
         },
         Part {
-            count: "istio_tcp_connections_opened_total",
-            matchers: r#"reporter="source",destination_workload="unknown""#,
+            series: Side {
+                count: "istio_tcp_connections_opened_total",
+                matchers: r#"reporter="source",destination_workload="unknown""#,
+                bucket: None,
+            },
+            caller: None,
             namespaces: &["destination_service_namespace", "source_workload_namespace"],
             by: &[
                 "source_workload_namespace",
@@ -184,44 +212,34 @@ const ISTIO: EdgeShape = EdgeShape {
                 "destination_service_namespace",
                 "destination_service_name",
             ],
-            steps: &[
-                ISTIO_SOURCE[0],
-                ISTIO_SOURCE[1],
-                ISTIO_TO_SERVICE[0],
-                ISTIO_TO_SERVICE[1],
-                ISTIO_TO_SERVICE[2],
-                (PROTO, "tcp", "", ""),
-            ],
+            from: ISTIO_FROM,
+            to: ISTIO_TO_SERVICE,
+            protocol: Protocol::Fixed(TrafficProtocol::Tcp),
             errors: Errors::None,
-            bucket: None,
             class: None,
         },
     ],
 };
 
 /// The workload labels Linkerd's proxy puts on its own series (one of them is set).
-const LINKERD_SOURCE: [Step; 4] = [
-    (SRC_NS, "$1", "namespace", "(.*)"),
-    (SRC, "$1", "deployment", "(.+)"),
-    (SRC, "$1", "statefulset", "(.+)"),
-    (SRC, "$1", "daemonset", "(.+)"),
-];
+const LINKERD_FROM: End = End {
+    namespace: "namespace",
+    names: &[
+        ("deployment", Workload),
+        ("statefulset", Workload),
+        ("daemonset", Workload),
+    ],
+};
 /// The callee as the destination controller told the caller's proxy: a workload when it knows one, else the Service.
-const LINKERD_DESTINATION: [Step; 9] = [
-    (DST_NS, "$1", "dst_namespace", "(.*)"),
-    (DST, "$1", "dst_service", "(.+)"),
-    (DST_KIND, "service", "dst_service", "(.+)"),
-    (DST, "$1", "dst_deployment", "(.+)"),
-    (DST_KIND, "workload", "dst_deployment", "(.+)"),
-    (DST, "$1", "dst_statefulset", "(.+)"),
-    (DST_KIND, "workload", "dst_statefulset", "(.+)"),
-    (DST, "$1", "dst_daemonset", "(.+)"),
-    (DST_KIND, "workload", "dst_daemonset", "(.+)"),
-];
-const LINKERD_PROTOCOL: [Step; 2] = [
-    (PROTO, "http", "", ""),
-    (PROTO, "grpc", "grpc_status", "(.+)"),
-];
+const LINKERD_TO: End = End {
+    namespace: "dst_namespace",
+    names: &[
+        ("dst_deployment", Workload),
+        ("dst_statefulset", Workload),
+        ("dst_daemonset", Workload),
+        ("dst_service", Service),
+    ],
+};
 const LINKERD_OUT_BY: &[&str] = &[
     "namespace",
     "deployment",
@@ -233,6 +251,7 @@ const LINKERD_OUT_BY: &[&str] = &[
     "dst_statefulset",
     "dst_daemonset",
 ];
+const LINKERD_FAILED: Errors = Errors::Matcher(r#"classification="failure""#);
 
 const LINKERD: EdgeShape = EdgeShape {
     to_ms: 1.0,
@@ -240,103 +259,74 @@ const LINKERD: EdgeShape = EdgeShape {
     parts: &[
         // The caller's proxy, outbound: both ends named.
         Part {
-            count: "response_total",
-            matchers: r#"direction="outbound""#,
+            series: Side {
+                count: "response_total",
+                matchers: r#"direction="outbound""#,
+                bucket: Some("response_latency_ms_bucket"),
+            },
+            caller: None,
             namespaces: &["namespace", "dst_namespace"],
-            by: &[
-                "namespace",
-                "deployment",
-                "statefulset",
-                "daemonset",
-                "dst_namespace",
-                "dst_service",
-                "dst_deployment",
-                "dst_statefulset",
-                "dst_daemonset",
-                "grpc_status",
-            ],
-            steps: &[
-                LINKERD_SOURCE[0],
-                LINKERD_SOURCE[1],
-                LINKERD_SOURCE[2],
-                LINKERD_SOURCE[3],
-                LINKERD_DESTINATION[0],
-                LINKERD_DESTINATION[1],
-                LINKERD_DESTINATION[2],
-                LINKERD_DESTINATION[3],
-                LINKERD_DESTINATION[4],
-                LINKERD_DESTINATION[5],
-                LINKERD_DESTINATION[6],
-                LINKERD_DESTINATION[7],
-                LINKERD_DESTINATION[8],
-                LINKERD_PROTOCOL[0],
-                LINKERD_PROTOCOL[1],
-            ],
-            errors: Errors::Matchers(&[r#"classification="failure""#]),
-            bucket: Some("response_latency_ms_bucket"),
+            by: LINKERD_OUT_BY,
+            from: LINKERD_FROM,
+            to: LINKERD_TO,
+            protocol: Protocol::GrpcWhen("grpc_status"),
+            errors: LINKERD_FAILED,
             class: Some("status_code"),
         },
         // The callee's proxy, inbound, from callers without a mesh identity (no outbound report of theirs exists).
         Part {
-            count: "response_total",
-            matchers: r#"direction="inbound",tls!="true""#,
+            series: Side {
+                count: "response_total",
+                matchers: r#"direction="inbound",tls!="true""#,
+                bucket: Some("response_latency_ms_bucket"),
+            },
+            caller: None,
             namespaces: &["namespace"],
-            by: &[
-                "namespace",
-                "deployment",
-                "statefulset",
-                "daemonset",
-                "grpc_status",
-            ],
-            steps: &[
-                (DST_NS, "$1", "namespace", "(.*)"),
-                (DST, "$1", "deployment", "(.+)"),
-                (DST, "$1", "statefulset", "(.+)"),
-                (DST, "$1", "daemonset", "(.+)"),
-                (DST_KIND, "workload", "", ""),
-                LINKERD_PROTOCOL[0],
-                LINKERD_PROTOCOL[1],
-            ],
-            errors: Errors::Matchers(&[r#"classification="failure""#]),
-            bucket: Some("response_latency_ms_bucket"),
+            by: &["namespace", "deployment", "statefulset", "daemonset"],
+            from: NOBODY,
+            to: LINKERD_FROM,
+            protocol: Protocol::GrpcWhen("grpc_status"),
+            errors: LINKERD_FAILED,
             class: Some("status_code"),
         },
         // Connections the caller's proxy opened (dropped where the same ends have HTTP or gRPC edges).
         Part {
-            count: "tcp_open_total",
-            matchers: r#"direction="outbound",peer="dst""#,
+            series: Side {
+                count: "tcp_open_total",
+                matchers: r#"direction="outbound",peer="dst""#,
+                bucket: None,
+            },
+            caller: None,
             namespaces: &["namespace", "dst_namespace"],
             by: LINKERD_OUT_BY,
-            steps: &[
-                LINKERD_SOURCE[0],
-                LINKERD_SOURCE[1],
-                LINKERD_SOURCE[2],
-                LINKERD_SOURCE[3],
-                LINKERD_DESTINATION[0],
-                LINKERD_DESTINATION[1],
-                LINKERD_DESTINATION[2],
-                LINKERD_DESTINATION[3],
-                LINKERD_DESTINATION[4],
-                LINKERD_DESTINATION[5],
-                LINKERD_DESTINATION[6],
-                LINKERD_DESTINATION[7],
-                LINKERD_DESTINATION[8],
-                (PROTO, "tcp", "", ""),
-            ],
+            from: LINKERD_FROM,
+            to: LINKERD_TO,
+            protocol: Protocol::Fixed(TrafficProtocol::Tcp),
             errors: Errors::None,
-            bucket: None,
             class: None,
         },
     ],
 };
 
+/// Beyla's service graph (`application_service_graph`): `client` and `server` are the services (by default the
+/// workloads) with their namespaces. `traces_service_graph_request_total` is not read: Beyla up to 2.x adds every
+/// client and every server span to it (a call between two instrumented services counts twice), and OBI, which Beyla
+/// builds on now, adds a client span only when the server is not instrumented — so the server histogram's count, plus
+/// the client's only for pairs without a server report, is the same number of calls under both (ADR-0096).
 const BEYLA: EdgeShape = EdgeShape {
     to_ms: 1000.0,
     unknown: "",
-    // The service graph: `client` and `server` are the services (by default the workloads) with their namespaces.
     parts: &[Part {
-        count: "traces_service_graph_request_total",
-        matchers: "",
+        series: Side {
+            count: "traces_service_graph_request_server_seconds_count",
+            matchers: "",
+            bucket: Some("traces_service_graph_request_server_seconds_bucket"),
+        },
+        caller: Some(Side {
+            count: "traces_service_graph_request_client_seconds_count",
+            matchers: "",
+            bucket: Some("traces_service_graph_request_client_seconds_bucket"),
+        }),
         namespaces: &["server_service_namespace", "client_service_namespace"],
         by: &[
             "client_service_namespace",
@@ -344,61 +334,59 @@ const BEYLA: EdgeShape = EdgeShape {
             "server_service_namespace",
             "server",
         ],
-        steps: &[
-            (SRC_NS, "$1", "client_service_namespace", "(.*)"),
-            (SRC, "$1", "client", "(.*)"),
-            (DST_NS, "$1", "server_service_namespace", "(.*)"),
-            (DST, "$1", "server", "(.*)"),
-            (DST_KIND, "workload", "", ""),
-        ],
-        errors: Errors::Counter("traces_service_graph_request_failed_total"),
-        bucket: Some("traces_service_graph_request_server_seconds_bucket"),
+        from: End {
+            namespace: "client_service_namespace",
+            names: &[("client", Workload)],
+        },
+        to: End {
+            namespace: "server_service_namespace",
+            names: &[("server", Workload)],
+        },
+        protocol: Protocol::Fixed(TrafficProtocol::Unknown),
+        errors: Errors::Share {
+            failed: "traces_service_graph_request_failed_total",
+        },
         class: None,
     }],
 };
 
-const HUBBLE_STEPS: [Step; 6] = [
-    (SRC_NS, "$1", "source_namespace", "(.*)"),
-    (SRC, "$1", "source_workload", "(.*)"),
-    (DST_NS, "$1", "destination_namespace", "(.*)"),
-    (DST, "$1", "destination_workload", "(.*)"),
-    (DST_KIND, "workload", "", ""),
-    (PROTO, "http", "", ""),
-];
-const HUBBLE_BY: &[&str] = &[
-    "source_namespace",
-    "source_workload",
-    "destination_namespace",
-    "destination_workload",
-];
-
+/// Hubble's HTTP metrics (`labelsContext` must name the workloads, as for the Requests section). A call between two
+/// pods is seen at the callee with ingress L7 visibility (`reporter="server"`) and at the caller with egress
+/// visibility (`reporter="client"`), so the callee's report counts and the caller's only where the callee has none —
+/// egress-only visibility and callees outside the cluster.
 const HUBBLE: EdgeShape = EdgeShape {
     to_ms: 1000.0,
     unknown: "",
-    parts: &[
-        // Seen at the callee (`labelsContext` must name the workloads, as for the Requests section).
-        Part {
+    parts: &[Part {
+        series: Side {
             count: "hubble_http_requests_total",
             matchers: r#"reporter!="client""#,
-            namespaces: &["destination_namespace", "source_namespace"],
-            by: HUBBLE_BY,
-            steps: &HUBBLE_STEPS,
-            errors: Errors::Matchers(&[r#"status=~"5..""#]),
             bucket: Some("hubble_http_request_duration_seconds_bucket"),
-            class: Some("status"),
         },
-        // Seen only at the caller: calls to no workload (outside the cluster).
-        Part {
+        caller: Some(Side {
             count: "hubble_http_requests_total",
-            matchers: r#"reporter="client",destination_workload="""#,
-            namespaces: &["source_namespace"],
-            by: HUBBLE_BY,
-            steps: &HUBBLE_STEPS,
-            errors: Errors::Matchers(&[r#"status=~"5..""#]),
+            matchers: r#"reporter="client""#,
             bucket: Some("hubble_http_request_duration_seconds_bucket"),
-            class: Some("status"),
+        }),
+        namespaces: &["destination_namespace", "source_namespace"],
+        by: &[
+            "source_namespace",
+            "source_workload",
+            "destination_namespace",
+            "destination_workload",
+        ],
+        from: End {
+            namespace: "source_namespace",
+            names: &[("source_workload", Workload)],
         },
-    ],
+        to: End {
+            namespace: "destination_namespace",
+            names: &[("destination_workload", Workload)],
+        },
+        protocol: Protocol::Fixed(TrafficProtocol::Http),
+        errors: Errors::Class5xx,
+        class: Some("status"),
+    }],
 };
 
 /// The edge series of a source; `None` for ingress-nginx, which names no caller.
@@ -415,25 +403,37 @@ pub(crate) fn edge_shape(kind: RequestSourceKind) -> Option<&'static EdgeShape> 
 // ---------------------------------------------------------------------------------------------------------------
 // Queries
 
-/// What a part's series are asked for: which metric, an extra matcher, extra labels to keep and steps after the
-/// part's own.
-struct Ask<'a> {
-    metric: &'a str,
-    matcher: &'a str,
-    by: &'a [&'a str],
-    steps: &'a [Step],
+/// What one query of a part asks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Ask {
+    /// The busiest edges with requests in the window.
+    Rate,
+    /// How many edges have requests (asked only when the busiest fill the cap).
+    Count,
+    Errors,
+    /// Successful requests ([`Errors::Ok`]).
+    Ok,
+    /// Share of failed spans ([`Errors::Share`]).
+    Share,
+    Classes,
+    P50,
+    P95,
+}
+
+impl Ask {
+    /// The detail an answer of this query gives; `None` for the edges themselves.
+    fn detail(self) -> Option<TrafficDetail> {
+        match self {
+            Ask::Rate | Ask::Count => None,
+            Ask::Errors | Ask::Ok | Ask::Share => Some(TrafficDetail::Errors),
+            Ask::Classes => Some(TrafficDetail::Classes),
+            Ask::P50 | Ask::P95 => Some(TrafficDetail::Latency),
+        }
+    }
 }
 
 fn label_replace(expr: &str, target: &str, replacement: &str, source: &str, regex: &str) -> String {
-    format!(r#"label_replace({expr}, "{target}", "{replacement}", "{source}", "{regex}")"#)
-}
-
-fn relabel(expr: String, steps: &[Step]) -> String {
-    steps
-        .iter()
-        .fold(expr, |acc, (target, replacement, source, regex)| {
-            label_replace(&acc, target, replacement, source, regex)
-        })
+    format!(r#"label_replace({expr},"{target}","{replacement}","{source}","{regex}")"#)
 }
 
 /// `namespaces` as the body of a regular expression literal (each name matched literally).
@@ -442,60 +442,174 @@ fn namespace_regex(namespaces: &[String]) -> String {
     literal(&alternatives.join("|"))
 }
 
-/// The part's series of `ask` in scope (either end in a chosen namespace: one alternative per namespace label, the
-/// same series from two of them counted once by `or`), summed by the part's labels, renamed and tagged `sx_part`.
-fn part_expr(
-    index: usize,
-    part: &Part,
-    ask: &Ask,
-    namespaces: &str,
-    window: TrafficWindow,
-) -> String {
+/// The labels an edge of the part is told apart by.
+fn edge_labels(part: &Part) -> String {
+    let mut by = part.by.join(",");
+    if matches!(part.protocol, Protocol::GrpcWhen(_)) {
+        by.push(',');
+        by.push_str(PROTO);
+    }
+    by
+}
+
+/// The rate of `metric` with `matchers` in scope: one selector per namespace label, joined by
+/// `or` (the same series from two of them counted once).
+fn scoped(part: &Part, metric: &str, matchers: &[&str], ns: &str, window: TrafficWindow) -> String {
     let w = window.promql();
-    let alternatives: Vec<String> = part
-        .namespaces
+    part.namespaces
         .iter()
         .map(|label| {
-            let mut matchers: Vec<String> = [part.matchers, ask.matcher]
-                .into_iter()
+            let scope = format!(r#"{label}=~"{ns}""#);
+            let all: Vec<&str> = matchers
+                .iter()
+                .copied()
                 .filter(|m| !m.is_empty())
-                .map(str::to_owned)
+                .chain([scope.as_str()])
                 .collect();
-            matchers.push(format!(r#"{label}=~"{namespaces}""#));
-            format!("rate({}{{{}}}[{w}])", ask.metric, matchers.join(","))
+            format!("rate({metric}{{{}}}[{w}])", all.join(","))
         })
-        .collect();
-    let by: Vec<&str> = part.by.iter().chain(ask.by).copied().collect();
-    let summed = format!("sum by ({}) ({})", by.join(", "), alternatives.join(" or "));
-    let renamed = relabel(relabel(summed, part.steps), ask.steps);
-    label_replace(&renamed, PART, &index.to_string(), "", "")
+        .collect::<Vec<_>>()
+        .join(" or ")
 }
 
-/// The union of `each` over the parts that give something, or `None`.
-fn union(shape: &EdgeShape, mut each: impl FnMut(usize, &Part) -> Vec<String>) -> Option<String> {
-    let all: Vec<String> = shape
-        .parts
-        .iter()
-        .enumerate()
-        .flat_map(|(i, p)| each(i, p))
-        .collect();
-    (!all.is_empty()).then(|| all.join(" or "))
+/// A side's series of `metric` (with `extra` matchers) summed by the edge labels and `by_extra`; with `class`, by
+/// status class as well.
+#[allow(clippy::too_many_arguments)]
+fn side_sum(
+    part: &Part,
+    side: &Side,
+    metric: &str,
+    extra: &str,
+    by_extra: &str,
+    class: bool,
+    ns: &str,
+    window: TrafficWindow,
+) -> String {
+    let mut inner = scoped(part, metric, &[side.matchers, extra], ns, window);
+    if let Protocol::GrpcWhen(label) = part.protocol {
+        inner = label_replace(&inner, PROTO, "grpc", label, ".+");
+    }
+    if let (true, Some(label)) = (class, part.class) {
+        inner = label_replace(&inner, CLASS, "${1}xx", label, "([1-5])..");
+    }
+    let by = match by_extra {
+        "" => edge_labels(part),
+        more => format!("{more},{}", edge_labels(part)),
+    };
+    format!("sum by({by})({inner})")
 }
 
-/// The status class of an HTTP code label: `2xx`…`5xx` (other codes keep no class).
-fn class_steps(label: &'static str) -> [Step; 1] {
-    [(CLASS, "${1}xx", label, "([1-5])..")]
+/// `each` of the callee's series, and of the caller's for the pairs the callee has none of.
+fn sides(part: &Part, each: impl Fn(&Side) -> Option<String>) -> Option<String> {
+    let callee = each(&part.series)?;
+    Some(match part.caller.as_ref().and_then(each) {
+        Some(caller) => format!("{callee} or on({}) {caller}", edge_labels(part)),
+        None => callee,
+    })
 }
 
-fn tagged(expr: &str, tag: &str) -> String {
-    label_replace(expr, "m", tag, "", "")
+/// Requests (or connections) per second of every edge of the part in scope.
+fn rate_expr(part: &Part, ns: &str, window: TrafficWindow) -> String {
+    sides(part, |s| {
+        Some(side_sum(part, s, s.count, "", "", false, ns, window))
+    })
+    .unwrap_or_default()
 }
 
-/// The instant queries of a source's edges about `namespaces` (validated), each value tagged by `m`: first `rate`
-/// (the [`MAX_TRAFFIC_EDGES`] busiest edges with requests in the window) with `count` (how many there are); then, for
-/// those edges only, `errors`, `class` (per `sx_c`) and with `latency` `p50` and `p95` (in the histogram's unit), one
-/// query each so that no query repeats the edge expression more than twice (a few KiB of URL). Empty for a source
-/// without edges.
+/// The part's [`MAX_TRAFFIC_EDGES`] busiest edges with requests in the window.
+fn top(part: &Part, ns: &str, window: TrafficWindow) -> String {
+    format!(
+        "topk({MAX_TRAFFIC_EDGES},({})>0)",
+        rate_expr(part, ns, window)
+    )
+}
+
+/// The queries of a part's details: errors, classes and latency, as the part has them.
+fn detail_asks(part: &Part, latency: bool) -> Vec<Ask> {
+    let mut asks = match part.errors {
+        Errors::None | Errors::Class5xx => Vec::new(),
+        Errors::Matcher(_) => vec![Ask::Errors],
+        Errors::Ok(_) => vec![Ask::Ok],
+        Errors::Share { .. } => vec![Ask::Share],
+    };
+    if part.class.is_some() {
+        asks.push(Ask::Classes);
+    }
+    if latency && part.series.bucket.is_some() {
+        asks.extend([Ask::P50, Ask::P95]);
+    }
+    asks
+}
+
+/// The query of `ask` about the part; `capped`: the part has more edges than the busiest ones, so a detail is asked
+/// only for those.
+fn part_query(part: &Part, ask: Ask, ns: &str, window: TrafficWindow, capped: bool) -> String {
+    let count = |extra: &str, class: bool| {
+        sides(part, |s| {
+            let by = if class { CLASS } else { "" };
+            Some(side_sum(part, s, s.count, extra, by, class, ns, window))
+        })
+        .unwrap_or_default()
+    };
+    let quantile = |q: &str| {
+        let buckets = sides(part, |s| {
+            s.bucket
+                .map(|b| side_sum(part, s, b, "", "le", false, ns, window))
+        })
+        .unwrap_or_default();
+        format!("histogram_quantile({q},{buckets})")
+    };
+    let (expr, keep) = match ask {
+        Ask::Rate => return top(part, ns, window),
+        Ask::Count => return format!("count(({})>0)", rate_expr(part, ns, window)),
+        Ask::Errors | Ask::Ok => {
+            let matcher = match part.errors {
+                Errors::Matcher(m) | Errors::Ok(m) => m,
+                _ => "",
+            };
+            (count(matcher, false), ">0")
+        }
+        Ask::Share => {
+            let Errors::Share { failed } = part.errors else {
+                return String::new();
+            };
+            // Both sides' spans; the caller's tagged, so that `or` keeps them beside the callee's of the same pair.
+            let mut spans = scoped(part, part.series.count, &[part.series.matchers], ns, window);
+            if let Some(caller) = &part.caller {
+                let theirs = scoped(part, caller.count, &[caller.matchers], ns, window);
+                spans = format!(
+                    "{spans} or {}",
+                    label_replace(&theirs, SIDE, "caller", "", "")
+                );
+            }
+            let by = edge_labels(part);
+            (
+                format!(
+                    "sum by({by})({})/sum by({by})({spans})",
+                    scoped(part, failed, &[], ns, window),
+                ),
+                ">0",
+            )
+        }
+        Ask::Classes => (count("", true), ">0"),
+        Ask::P50 => (quantile("0.5"), ">=0"),
+        Ask::P95 => (quantile("0.95"), ">=0"),
+    };
+    let filtered = format!("({expr}){keep}");
+    if capped {
+        format!(
+            "{filtered} and on({}) {}",
+            edge_labels(part),
+            top(part, ns, window)
+        )
+    } else {
+        filtered
+    }
+}
+
+/// Every instant query the traffic graph may send for `kind` about `namespaces` (validated): per part its busiest
+/// edges, their count, and each detail both for every edge and for the busiest only. Empty for a source without
+/// edges. For review, tests and the kind-cluster check.
 pub(crate) fn edge_queries(
     kind: RequestSourceKind,
     namespaces: &[String],
@@ -506,126 +620,89 @@ pub(crate) fn edge_queries(
         return Vec::new();
     };
     let ns = namespace_regex(namespaces);
-    let plain = |metric: &'static str| Ask {
-        metric,
-        matcher: "",
-        by: &[],
-        steps: &[],
-    };
-    let Some(requests) = union(shape, |i, p| {
-        vec![part_expr(i, p, &plain(p.count), &ns, window)]
-    }) else {
+    let mut out = Vec::new();
+    for part in shape.parts {
+        out.push(part_query(part, Ask::Rate, &ns, window, false));
+        out.push(part_query(part, Ask::Count, &ns, window, false));
+        for ask in detail_asks(part, latency) {
+            out.push(part_query(part, ask, &ns, window, false));
+            out.push(part_query(part, ask, &ns, window, true));
+        }
+    }
+    out
+}
+
+/// The queries of every part of `kind` as `(part, ask, promql)` (fixtures and tests): rate, then the details for every
+/// edge.
+#[cfg(test)]
+pub(crate) fn part_queries(
+    kind: RequestSourceKind,
+    namespaces: &[String],
+    window: TrafficWindow,
+    latency: bool,
+) -> Vec<(usize, Ask, String)> {
+    let Some(shape) = edge_shape(kind) else {
         return Vec::new();
     };
-    let rate = format!("(sum by ({EDGE}) ({requests}) > 0)");
-    let top = format!("topk({MAX_TRAFFIC_EDGES}, {rate})");
-    let only_top = |expr: String, tag: &str| tagged(&format!("({expr}) and on({EDGE}) {top}"), tag);
-    let mut queries = vec![format!(
-        "{} or {}",
-        tagged(&top, "rate"),
-        tagged(&format!("count({rate})"), "count")
-    )];
-
-    // Each error alternative is tagged too, so equal label sets of two alternatives are added, not merged by `or`.
-    let errors = union(shape, |i, p| match p.errors {
-        Errors::None => Vec::new(),
-        Errors::Matchers(list) => list
-            .iter()
-            .enumerate()
-            .map(|(alt, m)| {
-                let ask = Ask {
-                    metric: p.count,
-                    matcher: m,
-                    by: &[],
-                    steps: &[],
-                };
-                label_replace(
-                    &part_expr(i, p, &ask, &ns, window),
-                    ALT,
-                    &alt.to_string(),
-                    "",
-                    "",
-                )
-            })
-            .collect(),
-        Errors::Counter(metric) => vec![part_expr(i, p, &plain(metric), &ns, window)],
-    });
-    if let Some(errors) = errors {
-        queries.push(only_top(format!("sum by ({EDGE}) ({errors})"), "errors"));
-    }
-    let classes = union(shape, |i, p| match p.class {
-        None => Vec::new(),
-        Some(label) => {
-            let steps = class_steps(label);
-            let ask = Ask {
-                metric: p.count,
-                matcher: "",
-                by: &[label],
-                steps: &steps,
-            };
-            vec![part_expr(i, p, &ask, &ns, window)]
-        }
-    });
-    if let Some(classes) = classes {
-        queries.push(only_top(
-            format!("sum by ({EDGE}, {CLASS}) ({classes})"),
-            "class",
+    let ns = namespace_regex(namespaces);
+    let mut out = Vec::new();
+    for (index, part) in shape.parts.iter().enumerate() {
+        out.push((
+            index,
+            Ask::Rate,
+            part_query(part, Ask::Rate, &ns, window, false),
         ));
-    }
-    let buckets = union(shape, |i, p| match p.bucket {
-        Some(metric) if latency => {
-            let ask = Ask {
-                metric,
-                matcher: "",
-                by: &["le"],
-                steps: &[],
-            };
-            vec![part_expr(i, p, &ask, &ns, window)]
-        }
-        _ => Vec::new(),
-    });
-    if let Some(buckets) = buckets {
-        for (tag, q) in [("p50", "0.5"), ("p95", "0.95")] {
-            let quantile = format!("histogram_quantile({q}, sum by (le, {EDGE}) ({buckets}))");
-            queries.push(only_top(quantile, tag));
+        for ask in detail_asks(part, latency) {
+            out.push((index, ask, part_query(part, ask, &ns, window, false)));
         }
     }
-    queries
+    out
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 // Answers
 
-/// The renamed labels of an edge: caller namespace and name, callee namespace, name and kind, protocol.
-type EdgeKey = [String; 6];
+/// What a part's queries answered: the busiest edges, their count when asked, and each detail (`None`: the query
+/// failed).
+#[derive(Debug, Clone, Default)]
+pub(crate) struct PartAnswers {
+    pub rate: Value,
+    pub count: Option<Value>,
+    pub details: Vec<(Ask, Option<Value>)>,
+}
+
+type EdgeKey = (TrafficPeer, TrafficPeer, TrafficProtocol);
 
 #[derive(Default)]
 struct Values {
-    rate: Option<f64>,
+    rate: f64,
     errors: Option<f64>,
+    ok: Option<f64>,
+    share: Option<f64>,
     p50: Option<f64>,
     p95: Option<f64>,
     classes: BTreeMap<String, f64>,
+    missing: BTreeSet<TrafficDetail>,
 }
 
-fn peer(shape: &EdgeShape, namespace: &str, name: &str, kind: &str) -> TrafficPeer {
-    let known = |v: &str| !v.is_empty() && v != shape.unknown;
-    let namespace = known(namespace).then(|| namespace.to_owned());
-    if !known(name) {
-        return TrafficPeer {
+fn peer(shape: &EdgeShape, end: &End, labels: &BTreeMap<String, String>) -> TrafficPeer {
+    let known = |v: &&String| !v.is_empty() && v.as_str() != shape.unknown;
+    let namespace = labels.get(end.namespace).filter(known).cloned();
+    let named = end
+        .names
+        .iter()
+        .find_map(|(label, kind)| labels.get(*label).filter(known).map(|n| (n, *kind)));
+    match named {
+        Some((name, kind)) => TrafficPeer {
+            kind,
+            namespace,
+            name: Some(name.clone()),
+        },
+        None => TrafficPeer {
             kind: TrafficPeerKind::Unknown,
             namespace,
             name: None,
-        };
-    }
-    TrafficPeer {
-        kind: if kind == "service" {
-            TrafficPeerKind::Service
-        } else {
-            TrafficPeerKind::Workload
         },
-        namespace,
-        name: Some(name.to_owned()),
     }
 }
 
@@ -638,78 +715,144 @@ fn protocol(value: &str) -> TrafficProtocol {
     }
 }
 
-/// The edges of one source's answers (at most [`MAX_TRAFFIC_SERIES`] series of each are read): busiest first, a TCP
-/// edge dropped where the same ends have an HTTP or gRPC edge (the same traffic seen as connections).
-pub(crate) fn assemble(source: DetectedSource, answers: &[Value]) -> SourceEdges {
+fn edge_key(shape: &EdgeShape, part: &Part, labels: &BTreeMap<String, String>) -> EdgeKey {
+    let protocol = match part.protocol {
+        Protocol::Fixed(p) => p,
+        Protocol::Label(label) => protocol(labels.get(label).map_or("", String::as_str)),
+        Protocol::GrpcWhen(_) => match labels.get(PROTO).map(String::as_str) {
+            Some("grpc") => TrafficProtocol::Grpc,
+            _ => TrafficProtocol::Http,
+        },
+    };
+    (
+        peer(shape, &part.from, labels),
+        peer(shape, &part.to, labels),
+        protocol,
+    )
+}
+
+/// `(labels, value)` of at most [`MAX_TRAFFIC_SERIES`] series of an answer.
+fn samples(data: &Value) -> impl Iterator<Item = (BTreeMap<String, String>, f64)> {
+    results(data).take(MAX_TRAFFIC_SERIES).filter_map(|r| {
+        let value = r.get("value").and_then(|v| v.get(1)).and_then(number)?;
+        Some((labels(r), value))
+    })
+}
+
+/// The edges of one part's answers, with how many edges the part has.
+fn part_edges(
+    shape: &EdgeShape,
+    part: &Part,
+    answers: &PartAnswers,
+) -> (BTreeMap<EdgeKey, Values>, usize) {
+    let mut values: BTreeMap<EdgeKey, Values> = BTreeMap::new();
+    for (labels, value) in samples(&answers.rate) {
+        values
+            .entry(edge_key(shape, part, &labels))
+            .or_default()
+            .rate += value.max(0.0);
+    }
+    let total = answers
+        .count
+        .as_ref()
+        .and_then(|data| samples(data).next())
+        .map_or(values.len(), |(_, n)| n.max(0.0) as usize);
+    for (ask, answer) in &answers.details {
+        let Some(data) = answer else {
+            let detail = ask.detail();
+            for v in values.values_mut() {
+                v.missing.extend(detail);
+                if *ask == Ask::Classes && matches!(part.errors, Errors::Class5xx) {
+                    v.missing.insert(TrafficDetail::Errors);
+                }
+            }
+            continue;
+        };
+        for (labels, value) in samples(data) {
+            // Only the edges of the rate answer are kept; the details come for those (or fewer) anyway.
+            let Some(v) = values.get_mut(&edge_key(shape, part, &labels)) else {
+                continue;
+            };
+            let add = |slot: &mut Option<f64>| *slot = Some(slot.unwrap_or(0.0) + value.max(0.0));
+            match ask {
+                Ask::Errors => add(&mut v.errors),
+                Ask::Ok => add(&mut v.ok),
+                Ask::Share => v.share = Some(value.clamp(0.0, 1.0)),
+                Ask::P50 if value >= 0.0 => v.p50 = Some(value * shape.to_ms),
+                Ask::P95 if value >= 0.0 => v.p95 = Some(value * shape.to_ms),
+                Ask::Classes => {
+                    if let Some(class) = labels.get(CLASS).filter(|c| !c.is_empty()) {
+                        *v.classes.entry(class.clone()).or_default() += value.max(0.0);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    // Failed requests per second, by the part's rule; `None` when the query that tells failed.
+    for ((_, _, protocol), v) in values.iter_mut() {
+        let missing = v.missing.contains(&TrafficDetail::Errors);
+        v.errors = match (&part.errors, missing) {
+            _ if *protocol == TrafficProtocol::Tcp => None,
+            (Errors::None, _) | (_, true) => None,
+            (Errors::Matcher(_), false) => Some(v.errors.unwrap_or(0.0)),
+            (Errors::Ok(_), false) => Some((v.rate - v.ok.unwrap_or(0.0)).max(0.0)),
+            (Errors::Share { .. }, false) => Some(v.share.unwrap_or(0.0) * v.rate),
+            (Errors::Class5xx, false) => Some(v.classes.get("5xx").copied().unwrap_or(0.0)),
+        };
+    }
+    (values, total)
+}
+
+/// The edges of one source's answers (one entry per part, in the shape's order): busiest first, a TCP edge dropped
+/// where the same ends have an HTTP or gRPC edge (the same traffic seen as connections).
+pub(crate) fn assemble(source: DetectedSource, answers: &[PartAnswers]) -> SourceEdges {
     let Some(shape) = edge_shape(source.kind) else {
         return SourceEdges::default();
     };
-    let mut values: BTreeMap<EdgeKey, Values> = BTreeMap::new();
+    let mut merged: BTreeMap<EdgeKey, Values> = BTreeMap::new();
     let mut total = 0usize;
-    for result in answers
-        .iter()
-        .flat_map(|data| results(data).take(MAX_TRAFFIC_SERIES))
-    {
-        let Some(value) = result.get("value").and_then(|v| v.get(1)).and_then(number) else {
-            continue;
-        };
-        let mut labels = labels(result);
-        let Some(tag) = labels.remove("m") else {
-            continue;
-        };
-        if tag == "count" {
-            total = value.max(0.0) as usize;
-            continue;
-        }
-        let mut take = |name: &str| labels.remove(name).unwrap_or_default();
-        let key: EdgeKey = [
-            take(SRC_NS),
-            take(SRC),
-            take(DST_NS),
-            take(DST),
-            take(DST_KIND),
-            take(PROTO),
-        ];
-        let class = take(CLASS);
-        // Only the edges of the `rate` answer are kept; the others come for those edges only anyway.
-        let entry = match (tag.as_str(), values.get_mut(&key)) {
-            ("rate", _) => values.entry(key).or_default(),
-            (_, Some(entry)) => entry,
-            (_, None) => continue,
-        };
-        match tag.as_str() {
-            "rate" => entry.rate = Some(value.max(0.0)),
-            "errors" => entry.errors = Some(value.max(0.0)),
-            "p50" if value >= 0.0 => entry.p50 = Some(value * shape.to_ms),
-            "p95" if value >= 0.0 => entry.p95 = Some(value * shape.to_ms),
-            "class" if !class.is_empty() => {
-                *entry.classes.entry(class).or_default() += value.max(0.0);
+    for (part, answers) in shape.parts.iter().zip(answers) {
+        let (values, part_total) = part_edges(shape, part, answers);
+        total += part_total;
+        for (key, v) in values {
+            // Parts pick other series, so an edge comes from one part; should two give one, they add up.
+            let Some(m) = merged.get_mut(&key) else {
+                merged.insert(key, v);
+                continue;
+            };
+            if v.rate > m.rate {
+                (m.p50, m.p95) = (v.p50, v.p95);
             }
-            _ => {}
+            m.rate += v.rate;
+            m.errors = m.errors.zip(v.errors).map(|(a, b)| a + b);
+            for (class, rate) in v.classes {
+                *m.classes.entry(class).or_default() += rate;
+            }
+            m.missing.extend(v.missing);
         }
     }
-    let mut edges: Vec<TrafficEdge> = values
+    let mut edges: Vec<TrafficEdge> = merged
         .into_iter()
-        .filter_map(|([sn, s, dn, d, dk, p], v)| {
-            let rate = v.rate?;
-            let protocol = protocol(&p);
-            Some(TrafficEdge {
-                source: source.kind,
-                via: source.via,
-                from: peer(shape, &sn, &s, "workload"),
-                to: peer(shape, &dn, &d, &dk),
-                protocol,
-                rate,
-                error_ratio: (protocol != TrafficProtocol::Tcp && rate > 0.0)
-                    .then(|| (v.errors.unwrap_or(0.0) / rate).clamp(0.0, 1.0)),
-                p50_ms: v.p50,
-                p95_ms: v.p95,
-                status_classes: v
-                    .classes
-                    .into_iter()
-                    .map(|(class, rate)| StatusClassRate { class, rate })
-                    .collect(),
-            })
+        .map(|((from, to, protocol), v)| TrafficEdge {
+            source: source.kind,
+            via: source.via,
+            from,
+            to,
+            protocol,
+            rate: v.rate,
+            error_ratio: v
+                .errors
+                .filter(|_| v.rate > 0.0)
+                .map(|e| (e / v.rate).clamp(0.0, 1.0)),
+            p50_ms: v.p50,
+            p95_ms: v.p95,
+            status_classes: v
+                .classes
+                .into_iter()
+                .map(|(class, rate)| StatusClassRate { class, rate })
+                .collect(),
+            missing: v.missing.into_iter().collect(),
         })
         .collect();
     let requests: BTreeSet<(TrafficPeer, TrafficPeer)> = edges
@@ -727,22 +870,9 @@ pub(crate) fn assemble(source: DetectedSource, answers: &[Value]) -> SourceEdges
     SourceEdges { edges, total }
 }
 
-impl Prometheus {
-    /// Instant query at `time`, the answer read up to [`MAX_TRAFFIC_BODY`].
-    async fn query_limited(&self, promql: &str, time: i64) -> CoreResult<Value> {
-        self.get_limited(
-            &format!(
-                "api/v1/query?query={}&time={time}&timeout={SERVER_TIMEOUT}",
-                encode(promql)
-            ),
-            MAX_TRAFFIC_BODY,
-        )
-        .await
-    }
-}
-
-/// The edges of `source` about `namespaces` (validated) over `window`, evaluated at `now`: the busiest edges first,
-/// then — when there are any — their errors, classes and latency, those queries at once.
+/// The edges of `source` about `namespaces` (validated) over `window`, evaluated at `now`. Fails only when a part's
+/// edge query fails; the count and the details are best-effort (a failed one leaves its fields unknown and is named
+/// in each edge's `missing`).
 pub(crate) async fn traffic_edges(
     prometheus: &Prometheus,
     source: DetectedSource,
@@ -750,16 +880,54 @@ pub(crate) async fn traffic_edges(
     window: TrafficWindow,
     now: i64,
 ) -> CoreResult<SourceEdges> {
-    let queries = edge_queries(source.kind, namespaces, window, source.latency);
-    let Some((first, rest)) = queries.split_first() else {
+    let Some(shape) = edge_shape(source.kind) else {
         return Ok(SourceEdges::default());
     };
-    let mut answers = vec![prometheus.query_limited(first, now).await?];
-    if results(&answers[0]).next().is_some() {
-        let more =
-            futures::future::try_join_all(rest.iter().map(|q| prometheus.query_limited(q, now)));
-        answers.extend(more.await?);
-    }
+    let ns = namespace_regex(namespaces);
+    let ask = |query: String| async move {
+        prometheus
+            .query_limited(&query, now, MAX_TRAFFIC_BODY)
+            .await
+    };
+    let rates = futures::future::try_join_all(
+        shape
+            .parts
+            .iter()
+            .map(|part| ask(part_query(part, Ask::Rate, &ns, window, false))),
+    )
+    .await?;
+    let answers = futures::future::join_all(shape.parts.iter().zip(rates).map(|(part, rate)| {
+        let ns = &ns;
+        async move {
+            let edges = results(&rate).count();
+            if edges == 0 {
+                return PartAnswers {
+                    rate,
+                    ..PartAnswers::default()
+                };
+            }
+            let capped = edges >= MAX_TRAFFIC_EDGES;
+            let count = async {
+                match capped {
+                    true => ask(part_query(part, Ask::Count, ns, window, false))
+                        .await
+                        .ok(),
+                    false => None,
+                }
+            };
+            let details =
+                futures::future::join_all(detail_asks(part, source.latency).into_iter().map(
+                    |a| async move { (a, ask(part_query(part, a, ns, window, capped)).await.ok()) },
+                ));
+            let (count, details) = tokio::join!(count, details);
+            PartAnswers {
+                rate,
+                count,
+                details,
+            }
+        }
+    }))
+    .await;
     Ok(assemble(source, &answers))
 }
 

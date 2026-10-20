@@ -10,6 +10,7 @@ import {
   classesText,
   errorsText,
   latencyText,
+  linkRateText,
   peerKind,
   peerName,
   protocolText,
@@ -29,6 +30,9 @@ function PeerActions({ clusterId, peer }: { clusterId: ClusterId; peer: TrafficP
   const [note, setNote] = useState<string | null>(null);
   if (peer.kind === "unknown" || !peer.name) return <p className="traffic-note">{t("traffic:peer.cannotOpen")}</p>;
   const name = peer.name;
+  // Istio names a host outside the mesh with no namespace: nothing to look it up in.
+  if (!peer.namespace) return <p className="traffic-note">{t("traffic:peer.noNamespace", { name })}</p>;
+  const namespace = peer.namespace;
   const go = async (requests: boolean) => {
     setNote(null);
     try {
@@ -36,8 +40,8 @@ function PeerActions({ clusterId, peer }: { clusterId: ClusterId; peer: TrafficP
       if (!ref) {
         setNote(
           peer.kind === "service"
-            ? t("traffic:notFound.service", { name, namespace: peer.namespace ?? "" })
-            : t("traffic:notFound.workload", { name, namespace: peer.namespace ?? "" }),
+            ? t("traffic:notFound.service", { name, namespace })
+            : t("traffic:notFound.workload", { name, namespace }),
         );
         return;
       }
@@ -148,7 +152,7 @@ export function SelectionPanel({
                     <button type="button" className="traffic-linkbtn" onClick={() => onSelect({ type: "link", link })}>
                       {t("traffic:selection.linkItem", {
                         peer: peerName(t, other),
-                        rate: rateText(t, { rate: link.rate, protocol: edge.protocol }),
+                        rate: linkRateText(t, link),
                       })}
                     </button>
                   </li>

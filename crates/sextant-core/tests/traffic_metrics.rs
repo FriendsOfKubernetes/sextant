@@ -119,6 +119,7 @@ async fn every_sources_edge_query_is_valid_promql() {
             }
         }
     }
-    // Istio, Linkerd, Hubble: 5 queries each; Beyla 4 (no status classes); × 2 windows × 2 namespace sets.
-    assert_eq!(asked, 76);
+    // Per part: its edges, their count, and each detail for every edge and for the busiest only — Istio 24 (two
+    // HTTP parts × 10, two TCP parts × 2), Linkerd 22, Beyla 8, Hubble 8 — × 2 windows × 2 namespace sets.
+    assert_eq!(asked, 248);
 }

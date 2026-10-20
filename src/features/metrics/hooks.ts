@@ -1,6 +1,6 @@
 // Hooks of the metrics feature. Every value is fetched by one shared poller per key (cluster + metrics settings +
-// what is asked), refreshed every 30 seconds while at least one component uses it and stopped when the last one
-// unmounts — so a table with a thousand CPU cells makes one `metrics_pods` call, and only while the table is open.
+// what is asked), refreshed every 30 seconds while at least one component uses it (a tick is skipped while the last
+// load is still in flight, so rounds never overlap) and stopped when the last one unmounts — so a table with a thousand CPU cells makes one `metrics_pods` call, and only while the table is open.
 // A value nobody shows is kept for `IDLE_TTL_MS` (at most `MAX_IDLE_ENTRIES` of them) and then forgotten.
 // A change of the cluster's metrics settings changes the key, so the next values come from the new source at once.
 import { useCallback, useRef, useSyncExternalStore } from "react";
@@ -42,6 +42,9 @@ interface Entry {
   timer: ReturnType<typeof setInterval> | null;
   fetchedAt: number;
   seq: number;
+  /** A load is in flight: the next tick is skipped rather than overlapping it (a slow Prometheus would otherwise
+   * get a new round of queries every interval while the last are still running). */
+  busy: boolean;
   fetch: () => Promise<unknown>;
   listeners: Set<() => void>;
   /** Drops the entry once nobody has shown it for `IDLE_TTL_MS`. */
@@ -60,18 +63,36 @@ function setEntryState(entry: Entry, state: Polled<unknown>): void {
 }
 
 function load(entry: Entry): void {
+  if (entry.busy) return;
+  entry.busy = true;
   const seq = ++entry.seq;
   entry.fetchedAt = Date.now();
-  entry.fetch().then(
-    (data) => seq === entry.seq && setEntryState(entry, { data, error: null, loading: false }),
-    (err: unknown) => seq === entry.seq && setEntryState(entry, { data: null, error: toApiError(err), loading: false }),
-  );
+  const done = () => {
+    entry.busy = false;
+  };
+  entry
+    .fetch()
+    .then(
+      (data) => seq === entry.seq && setEntryState(entry, { data, error: null, loading: false }),
+      (err: unknown) => seq === entry.seq && setEntryState(entry, { data: null, error: toApiError(err), loading: false }),
+    )
+    .finally(done);
 }
 
 function acquire(key: string, fetch: () => Promise<unknown>, interval: number): Entry {
   let entry = entries.get(key);
   if (!entry) {
-    entry = { state: LOADING, refs: 0, timer: null, fetchedAt: 0, seq: 0, fetch, listeners: new Set(), expiry: null };
+    entry = {
+      state: LOADING,
+      refs: 0,
+      timer: null,
+      fetchedAt: 0,
+      seq: 0,
+      busy: false,
+      fetch,
+      listeners: new Set(),
+      expiry: null,
+    };
     entries.set(key, entry);
   }
   idle.delete(key);

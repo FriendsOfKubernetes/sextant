@@ -90,6 +90,19 @@ pub enum TrafficProtocol {
     Unknown,
 }
 
+/// A detail of an edge read by a query of its own, which may fail without hiding the edge.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum TrafficDetail {
+    /// `error_ratio` (and, where the classes tell the errors, both).
+    Errors,
+    /// `status_classes`.
+    Classes,
+    /// `p50_ms` and `p95_ms`.
+    Latency,
+}
+
 /// Requests per second of one HTTP status class (`"2xx"`…`"5xx"`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -119,6 +132,9 @@ pub struct TrafficEdge {
     /// By class; empty when the source has no HTTP status (TCP, Beyla's service graph). A gRPC call counts under
     /// its HTTP status (usually 2xx; its own status decides `error_ratio`).
     pub status_classes: Vec<StatusClassRate>,
+    /// Details whose query failed (a timeout, a limit of Prometheus, an answer too big): their fields are unknown,
+    /// not absent.
+    pub missing: Vec<TrafficDetail>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -139,6 +155,8 @@ pub struct TrafficGraph {
     pub request_only: Vec<RequestSourceKind>,
     /// Sources whose queries failed (their edges are unknown, not absent).
     pub failed: Vec<RequestSourceKind>,
+    /// Those of `failed` whose query a proxy in front of Prometheus refused as too long (HTTP 414 or 431).
+    pub query_too_long: Vec<RequestSourceKind>,
     /// The busiest first, at most [`MAX_TRAFFIC_EDGES`].
     pub edges: Vec<TrafficEdge>,
     /// How many edges there are in all (more than `edges.len()` when the cap cut some).
@@ -168,9 +186,9 @@ pub fn validate_namespaces(namespaces: &[String]) -> CoreResult<()> {
     Ok(())
 }
 
-/// The instant queries the traffic graph sends for `kind` about `namespaces` (validated) — the busiest edges and their
-/// count first, then their errors, status classes and latency — or none when the source has no edges (ingress-nginx).
-/// For review, tests and the kind-cluster check.
+/// Every instant query the traffic graph may send for `kind` about `namespaces` (validated) — per part of the source,
+/// the busiest edges, their count, then each of errors, status classes and latency for every edge and for the busiest
+/// only — or none when the source has no edges (ingress-nginx). For review, tests and the kind-cluster check.
 pub fn traffic_queries(
     kind: RequestSourceKind,
     namespaces: &[String],
@@ -227,6 +245,7 @@ pub async fn traffic_graph(
             .filter(|k| !edge_kinds.contains(k))
             .collect(),
         failed: Vec::new(),
+        query_too_long: Vec::new(),
         edges: Vec::new(),
         total_edges: 0,
     };
@@ -237,7 +256,12 @@ pub async fn traffic_graph(
                 graph.edges.extend(part.edges);
             }
             Ok(None) => {}
-            Err(_) => graph.failed.push(kind),
+            Err(err) => {
+                if prometheus::is_query_too_long(&err) {
+                    graph.query_too_long.push(kind);
+                }
+                graph.failed.push(kind);
+            }
         }
     }
     graph.edges.sort_by(|a, b| b.rate.total_cmp(&a.rate));

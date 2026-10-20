@@ -330,7 +330,7 @@ Something that exports request metrics of workloads to Prometheus, found by aski
 _Avoid_: provider, integration, exporter
 
 **Traffic graph**:
-The "Traffic" mode of the map: calls between workloads (and Services, and unknown ends) with an end in the chosen namespaces, each line one caller → callee pair with its rate, error rate and latency over the last 5 minutes or hour, from the request-metric sources whose metrics name both ends. An end the source cannot name is an "unknown" node (outside the mesh or unlabelled), never left out.
+The "Traffic" mode of the map: calls between workloads (and Services, and unknown ends) with an end in the chosen namespaces, each line one caller → callee pair with its rate, error rate and latency over the last 5 minutes or hour, from the request-metric sources whose metrics name both ends. An end the source cannot name is an "unknown" node (outside the mesh or unlabelled), never left out. A call a source sees at both ends (Hubble, Beyla) counts once, from the callee's report where there is one; a line carries the busiest source's requests per second, never the sum of two sources seeing the same calls.
 _Avoid_: service map, topology, dependency graph
 
 **Right-sizing**:

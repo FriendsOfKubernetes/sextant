@@ -61,7 +61,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Fuori dalla mesh o senza label",
     "unknownIn": "Fuori dalla mesh o senza label ({{namespace}})",
-    "cannotOpen": "La fonte non dice chi sia: un chiamante o un destinatario fuori dalla mesh o dal cluster, o che le sue label non nominano."
+    "cannotOpen": "La fonte non dice chi sia: un chiamante o un destinatario fuori dalla mesh o dal cluster, o che le sue label non nominano.",
+    "noNamespace": "La sorgente indica {{name}} senza namespace, quindi non c'è nulla da aprire."
   },
   "nodeLabel": "{{kind}} {{name}}: mostra le sue chiamate",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -84,7 +85,8 @@
     "noLatency": "nessun istogramma di latenza",
     "noVerdict": "nessun verdetto per TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "nessuno stato HTTP indicato"
+    "noClasses": "nessuno stato HTTP indicato",
+    "notRead": "non è stato possibile leggerlo"
   },
   "open": "Apri {{name}}",
   "openRequests": "Richieste di {{name}}",
@@ -116,6 +118,13 @@
   "truncated_other": "Sono mostrati i {{shown}} più carichi su {{count}} collegamenti tra due estremi.",
   "filteredOut": "Nessuna chiamata corrisponde a questi filtri.",
   "failed": "Impossibile leggere le metriche del traffico di {{sources}}.",
+  "tooLong": "La query per {{sources}} era troppo lunga per un proxy davanti a Prometheus. Aumenta il limite di URL del proxy oppure indica Prometheus tramite URL nelle impostazioni del cluster: le query lunghe vengono allora inviate con POST.",
+  "partial": "Non è stato possibile leggere alcuni dettagli delle chiamate da {{sources}} ({{details}}): Prometheus non ha risposto a quelle query.",
+  "detail": {
+    "errors": "tassi di errore",
+    "classes": "risposte per stato",
+    "latency": "latenza"
+  },
   "noPrometheus": "Il grafo del traffico viene letto da Prometheus, e per questo cluster non ne è configurato né trovato nessuno.",
   "openSettings": "Impostazioni del cluster",
   "noSource": "Prometheus non ha metriche che nominino entrambi gli estremi di una chiamata: né Istio, né Linkerd, né il grafo dei servizi di Grafana Beyla, né Cilium Hubble gli inviano dati.",

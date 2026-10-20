@@ -127,18 +127,19 @@ pub(crate) fn request_selectors(
             q(target.namespace()),
             pod_matcher("k8s_pod_name", target)
         )],
+        // Either side's report ([`Shape::sides`] picks): the callee's, or the caller's where the callee has none.
         (
             RequestSourceKind::Hubble,
             RequestTarget::Workload {
                 namespace, name, ..
             },
         ) => vec![format!(
-            r#"reporter!="client",destination_namespace="{}",destination_workload="{}""#,
+            r#"destination_namespace="{}",destination_workload="{}""#,
             q(namespace),
             q(name)
         )],
         (RequestSourceKind::Hubble, RequestTarget::Pod { namespace, name }) => vec![format!(
-            r#"reporter!="client",destination_namespace="{}",destination_pod="{}""#,
+            r#"destination_namespace="{}",destination_pod="{}""#,
             q(namespace),
             q(name)
         )],
@@ -148,11 +149,13 @@ pub(crate) fn request_selectors(
                 services.iter().map(|s| super::regex_literal(s)).collect();
             let names = q(&alternatives.join("|"));
             let namespace = q(target.namespace());
-            // The metric's own `namespace` and `service`, or — when the scrape kept the target's labels (a
-            // ServiceMonitor without `honorLabels`) — the same values renamed `exported_namespace`/`exported_service`.
+            // The metric's own `namespace` and `service`; or — when the scrape kept the target's labels (a
+            // ServiceMonitor without `honorLabels`) — the same values renamed `exported_namespace`/`exported_service`;
+            // or, through a PodMonitor (whose targets have a `namespace` but no `service`), only the namespace renamed.
             vec![
                 format!(r#"namespace="{namespace}",service=~"{names}""#),
                 format!(r#"exported_namespace="{namespace}",exported_service=~"{names}""#),
+                format!(r#"exported_namespace="{namespace}",service=~"{names}""#),
             ]
         }
     }
@@ -181,7 +184,26 @@ pub(crate) struct Shape {
     pub errors: &'static [&'static str],
     /// The histogram's unit in milliseconds.
     pub to_ms: f64,
+    /// A source that reports a call at both ends (selectors then name only the callee).
+    pub sides: Option<Sides>,
 }
+
+/// Matchers of the two reports of one call, and the labels that make a pair of ends.
+pub(crate) struct Sides {
+    /// The callee's report: every call it sees counts.
+    pub callee: &'static str,
+    /// The caller's report: counted only for the pairs the callee does not report (`unless on(<pair>)`).
+    pub caller: &'static str,
+    pub pair: &'static str,
+}
+
+/// Hubble reports a call at the callee with ingress L7 visibility and at the caller with egress visibility; with only
+/// egress visibility (or a callee outside the cluster) the caller's report is the only one.
+const HUBBLE_SIDES: Sides = Sides {
+    callee: r#"reporter!="client""#,
+    caller: r#"reporter="client""#,
+    pair: "source_namespace,source_workload,source_pod,destination_namespace,destination_workload,destination_pod",
+};
 
 pub(crate) fn shape(kind: RequestSourceKind) -> Shape {
     match kind {
@@ -194,6 +216,7 @@ pub(crate) fn shape(kind: RequestSourceKind) -> Shape {
                 r#"response_code!~"5..",grpc_response_status!~"|0""#,
             ],
             to_ms: 1.0,
+            sides: None,
         },
         RequestSourceKind::Linkerd => Shape {
             count: &["response_total"],
@@ -201,12 +224,14 @@ pub(crate) fn shape(kind: RequestSourceKind) -> Shape {
             // The proxy's own verdict: 5xx, a non-OK gRPC status, or no response.
             errors: &[r#"classification="failure""#],
             to_ms: 1.0,
+            sides: None,
         },
         RequestSourceKind::IngressNginx => Shape {
             count: &["nginx_ingress_controller_requests"],
             bucket: &["nginx_ingress_controller_request_duration_seconds_bucket"],
             errors: &[r#"status=~"5..""#],
             to_ms: 1000.0,
+            sides: None,
         },
         RequestSourceKind::Beyla => Shape {
             count: &[
@@ -223,12 +248,14 @@ pub(crate) fn shape(kind: RequestSourceKind) -> Shape {
                 r#"rpc_grpc_status_code!~"|0""#,
             ],
             to_ms: 1000.0,
+            sides: None,
         },
         RequestSourceKind::Hubble => Shape {
             count: &["hubble_http_requests_total"],
             bucket: &["hubble_http_request_duration_seconds_bucket"],
             errors: &[r#"status=~"5..""#],
             to_ms: 1000.0,
+            sides: Some(HUBBLE_SIDES),
         },
     }
 }
@@ -246,16 +273,33 @@ fn series(names: &[&str], matchers: &[&str]) -> String {
     }
 }
 
+/// The series of `names` matching `selector` and `extra`, per second. With two [`Sides`]: the callee's report, and the
+/// caller's for the pairs of ends the callee does not report, each summed by the pair (and `by`).
+fn per_second(shape: &Shape, names: &[&str], selector: &str, extra: &str, by: &str) -> String {
+    let rate = |names: &[&str], matchers: &[&str]| {
+        format!("rate({}[{RATE_WINDOW}])", series(names, matchers))
+    };
+    let Some(sides) = &shape.sides else {
+        return rate(names, &[selector, extra]);
+    };
+    let pair = sides.pair;
+    let by = match by {
+        "" => pair.to_owned(),
+        more => format!("{more},{pair}"),
+    };
+    format!(
+        "sum by ({by}) ({}) or (sum by ({by}) ({}) unless on({pair}) sum by ({pair}) ({}))",
+        rate(names, &[selector, sides.callee, extra]),
+        rate(names, &[selector, sides.caller, extra]),
+        rate(shape.count, &[selector, sides.callee]),
+    )
+}
+
 /// Requests per second matching `extra`, the first alternative selector that has series.
 fn rate_expr(shape: &Shape, selectors: &[String], extra: &str) -> String {
     let alternatives: Vec<String> = selectors
         .iter()
-        .map(|s| {
-            format!(
-                "sum(rate({}[{RATE_WINDOW}]))",
-                series(shape.count, &[s, extra])
-            )
-        })
+        .map(|s| format!("sum({})", per_second(shape, shape.count, s, extra, "")))
         .collect();
     format!("({})", alternatives.join(" or "))
 }
@@ -275,8 +319,8 @@ fn quantile_expr(shape: &Shape, selectors: &[String], q: &str) -> String {
         .iter()
         .map(|s| {
             format!(
-                "sum by (le) (rate({}[{RATE_WINDOW}]))",
-                series(shape.bucket, &[s])
+                "sum by (le) ({})",
+                per_second(shape, shape.bucket, s, "", "le")
             )
         })
         .collect();

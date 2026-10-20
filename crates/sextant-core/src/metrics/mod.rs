@@ -26,8 +26,8 @@ pub use requests::{
 };
 pub use traffic::{
     MAX_TRAFFIC_BODY, MAX_TRAFFIC_EDGES, MAX_TRAFFIC_NAMESPACES, MAX_TRAFFIC_SERIES,
-    StatusClassRate, TrafficEdge, TrafficGraph, TrafficPeer, TrafficPeerKind, TrafficProtocol,
-    TrafficWindow, traffic_graph, traffic_queries, validate_namespaces,
+    StatusClassRate, TrafficDetail, TrafficEdge, TrafficGraph, TrafficPeer, TrafficPeerKind,
+    TrafficProtocol, TrafficWindow, traffic_graph, traffic_queries, validate_namespaces,
 };
 pub use volumes::{
     MAX_NODES, MAX_SUMMARY_BYTES, MAX_VOLUMES, VolumeUsage, VolumeUsageReport, VolumeUsageSource,

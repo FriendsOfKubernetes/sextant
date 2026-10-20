@@ -10,7 +10,7 @@ import { ErrorState, LoadingIndicator, Radio, Tabs } from "../../../components";
 import { formatNumber } from "../../../i18n";
 import { openClusterSettings } from "../../clusters/clustersStore";
 import { SelectionPanel, type Selection } from "./EdgePanel";
-import { sourceNames } from "./format";
+import { missingDetails, sourceNames } from "./format";
 import { useTrafficGraph } from "./hooks";
 import {
   edgeId,
@@ -70,6 +70,34 @@ function Missing({ clusterId, graph }: { clusterId: ClusterId; graph: TrafficGra
     <p className="traffic-note" role="status">
       {t(`traffic:noEdges.${graph.window}`, { sources: sourceNames(t, answered) })}
     </p>
+  );
+}
+
+/** Sources whose edges could not be read (and why, when a proxy refused the query as too long), and details some
+ * edges lack because their own queries failed. */
+function Failures({ graph }: { graph: TrafficGraph }) {
+  const { t } = useTranslation();
+  const tooLong = graph.queryTooLong;
+  const other = graph.failed.filter((k) => !tooLong.includes(k));
+  const partial = missingDetails(t, graph.edges);
+  return (
+    <>
+      {tooLong.length > 0 && (
+        <p className="traffic-note" role="status">
+          {t("traffic:tooLong", { sources: sourceNames(t, tooLong) })}
+        </p>
+      )}
+      {other.length > 0 && (
+        <p className="traffic-note" role="status">
+          {t("traffic:failed", { sources: sourceNames(t, other) })}
+        </p>
+      )}
+      {partial && (
+        <p className="traffic-note" role="status">
+          {t("traffic:partial", partial)}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -262,11 +290,7 @@ export function TrafficView({ clusterId, namespaces }: { clusterId: ClusterId; n
           ))}
         </div>
       </div>
-      {data && data.failed.length > 0 && (
-        <p className="traffic-note" role="status">
-          {t("traffic:failed", { sources: sourceNames(t, data.failed) })}
-        </p>
-      )}
+      {data && <Failures graph={data} />}
       {body}
     </div>
   );

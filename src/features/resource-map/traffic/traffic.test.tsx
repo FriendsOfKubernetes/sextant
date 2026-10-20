@@ -10,9 +10,9 @@ import { resetNamespaceRestore, selectNamespaces } from "../../namespaces";
 import { resetClusterKinds } from "../../../resources";
 import { MapPage, resetMapFilters } from "../MapPage";
 import { resetSharedWatches } from "../watches";
-import { graph } from "./fixtures";
+import { edge, graph, SHOP_EDGES } from "./fixtures";
 import { TRAFFIC_POLL_MS } from "./hooks";
-import { resetResolved } from "./resolve";
+import { NOT_FOUND_TTL_MS, resetResolved, resolvePeer } from "./resolve";
 
 let wb: WatchBackend;
 const asked = () => wb.backend.calls.filter((c) => c.cmd === "metrics_traffic_graph");
@@ -123,6 +123,64 @@ describe("the Traffic mode of the map", () => {
   });
 });
 
+describe("opening an end", () => {
+  const gets = () => wb.backend.calls.filter((c) => c.cmd === "resource_get");
+
+  it("a host named without a namespace says so instead of offering to open it", async () => {
+    await openTraffic();
+    fireEvent.click(await screen.findByRole("button", { name: "Service api.example.com: show its calls" }));
+    const panel = screen.getByRole("complementary", { name: "api.example.com" });
+    expect(
+      within(panel).getByText("The source names api.example.com without a namespace, so there is nothing to open."),
+    ).toBeTruthy();
+    expect(within(panel).queryByRole("button", { name: "Open api.example.com" })).toBeNull();
+    expect(gets()).toHaveLength(0);
+  });
+
+  it("asks nothing for a name the kind cannot have", async () => {
+    wb.backend.on("resource_get", () => ({ metadata: {} }));
+    const peers = [
+      { kind: "workload" as const, namespace: "shop", name: "Web_1" },
+      { kind: "workload" as const, namespace: "Shop", name: "web" },
+      { kind: "workload" as const, namespace: "shop", name: "x".repeat(254) },
+      // A Service name is a DNS-1035 label: no dots, a letter first.
+      { kind: "service" as const, namespace: "shop", name: "api.example.com" },
+      { kind: "service" as const, namespace: "shop", name: "1api" },
+    ];
+    for (const peer of peers) expect(await resolvePeer("c1", peer)).toBeNull();
+    expect(gets()).toHaveLength(0);
+    // A dotted workload name is a valid DNS-1123 subdomain.
+    expect(await resolvePeer("c1", { kind: "workload", namespace: "shop", name: "web.v2" })).not.toBeNull();
+  });
+
+  it("believes 'not found' for a minute only: the object may be created since", async () => {
+    let now = 1_000_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    try {
+      let exists = false;
+      wb.backend.on("resource_get", () => {
+        if (exists) return { metadata: { name: "web" } };
+        throw { code: "notFound", message: "not found" };
+      });
+      const peer = { kind: "service" as const, namespace: "shop", name: "web" };
+      expect(await resolvePeer("c1", peer)).toBeNull();
+      exists = true;
+      now += NOT_FOUND_TTL_MS - 1;
+      expect(await resolvePeer("c1", peer)).toBeNull();
+      expect(gets()).toHaveLength(1);
+      now += 2;
+      expect(await resolvePeer("c1", peer)).toEqual({ kind: { group: "", version: "v1", kind: "Service" }, namespace: "shop", name: "web" });
+      expect(gets()).toHaveLength(2);
+      // What was found is kept.
+      now += NOT_FOUND_TTL_MS * 10;
+      await resolvePeer("c1", peer);
+      expect(gets()).toHaveLength(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+});
+
 describe("the list of calls", () => {
   it("offers every call to the keyboard and screen readers", async () => {
     const { container } = await openTraffic();
@@ -211,6 +269,50 @@ describe("without a graph", () => {
     );
     expect(await screen.findByText("Istio saw no calls with an end in these namespaces in the last 5 minutes.")).toBeTruthy();
     expect(screen.getByText("Could not read the traffic metrics of Cilium Hubble.")).toBeTruthy();
+  });
+
+  it("says when a proxy refused a source's query as too long, apart from other failures", async () => {
+    await openTraffic(
+      graph({
+        sources: [
+          { kind: "istio", via: "cluster", latency: true },
+          { kind: "linkerd", via: "cluster", latency: true },
+          { kind: "hubble", via: "cluster", latency: true },
+        ],
+        failed: ["linkerd", "hubble"],
+        queryTooLong: ["hubble"],
+      }),
+    );
+    expect(
+      await screen.findByText(
+        "The query for Cilium Hubble was too long for a proxy in front of Prometheus. Raise the proxy's URL limit, or set Prometheus by its URL in the cluster settings: long queries are then sent as a POST.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Could not read the traffic metrics of Linkerd.")).toBeTruthy();
+  });
+
+  it("keeps the calls whose details could not be read, and says which", async () => {
+    const [first, ...rest] = SHOP_EDGES;
+    const partial = edge(first!.from, first!.to, {
+      rate: 12,
+      errorRatio: null,
+      p50Ms: null,
+      p95Ms: null,
+      missing: ["errors", "latency"],
+    });
+    await openTraffic(graph({ edges: [partial, ...rest] }));
+    expect(
+      await screen.findByText(
+        "Some details of the calls from Istio could not be read (error rates, latency): Prometheus did not answer those queries.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "List" }));
+    const table = screen.getByRole("table");
+    const row = within(table).getAllByRole("row")[1]!;
+    expect(within(row).getAllByRole("cell").map((c) => c.textContent).slice(4, 6)).toEqual([
+      "could not be read",
+      "could not be read",
+    ]);
   });
 
   it("says when the busiest calls are all it shows", async () => {

@@ -59,7 +59,8 @@
     "inNamespace": "{{name}}（{{namespace}}）",
     "unknown": "網格外或無標籤",
     "unknownIn": "網格外或無標籤（{{namespace}}）",
-    "cannotOpen": "來源沒有說明這是誰：可能是網格或叢集之外的呼叫端或被呼叫端，或其標籤未能指明。"
+    "cannotOpen": "來源沒有說明這是誰：可能是網格或叢集之外的呼叫端或被呼叫端，或其標籤未能指明。",
+    "noNamespace": "來源提供的 {{name}} 沒有命名空間，因此無法開啟。"
   },
   "nodeLabel": "{{kind}} {{name}}：顯示其呼叫",
   "linkTitle": "{{from}} → {{to}}：{{rate}}",
@@ -82,7 +83,8 @@
     "noLatency": "無延遲直方圖",
     "noVerdict": "TCP 無判定",
     "class": "{{class}} {{value}}/秒",
-    "noClasses": "未回報 HTTP 狀態"
+    "noClasses": "未回報 HTTP 狀態",
+    "notRead": "無法讀取"
   },
   "open": "開啟 {{name}}",
   "openRequests": "{{name}} 的要求",
@@ -106,6 +108,13 @@
   "truncated_other": "顯示兩端之間 {{count}} 條連結中最繁忙的 {{shown}} 條。",
   "filteredOut": "沒有呼叫符合這些篩選條件。",
   "failed": "無法讀取 {{sources}} 的流量指標。",
+  "tooLong": "{{sources}} 的查詢對 Prometheus 前方的代理來說太長了。請提高代理的 URL 長度上限，或在叢集設定中以 URL 指定 Prometheus：這樣長查詢會以 POST 傳送。",
+  "partial": "無法讀取來自 {{sources}} 的呼叫的部分詳細資料（{{details}}）：Prometheus 未回應這些查詢。",
+  "detail": {
+    "errors": "錯誤率",
+    "classes": "依狀態的回應",
+    "latency": "延遲"
+  },
   "noPrometheus": "流量圖從 Prometheus 讀取，而此叢集沒有設定或找到 Prometheus。",
   "openSettings": "叢集設定",
   "noSource": "Prometheus 中沒有同時指明呼叫兩端的指標：Istio、Linkerd、Grafana Beyla 的服務圖與 Cilium Hubble 都沒有向它回報。",

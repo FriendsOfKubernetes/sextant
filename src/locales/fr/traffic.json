@@ -61,7 +61,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Hors du maillage ou sans labels",
     "unknownIn": "Hors du maillage ou sans labels ({{namespace}})",
-    "cannotOpen": "La source ne dit pas de qui il s’agit : un appelant ou un appelé hors du maillage ou du cluster, ou que ses labels ne nomment pas."
+    "cannotOpen": "La source ne dit pas de qui il s’agit : un appelant ou un appelé hors du maillage ou du cluster, ou que ses labels ne nomment pas.",
+    "noNamespace": "La source nomme {{name}} sans namespace : il n’y a rien à ouvrir."
   },
   "nodeLabel": "{{kind}} {{name}} : afficher ses appels",
   "linkTitle": "{{from}} → {{to}} : {{rate}}",
@@ -84,7 +85,8 @@
     "noLatency": "pas d’histogramme de latence",
     "noVerdict": "pas de verdict pour TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "aucun statut HTTP indiqué"
+    "noClasses": "aucun statut HTTP indiqué",
+    "notRead": "n’a pas pu être lu"
   },
   "open": "Ouvrir {{name}}",
   "openRequests": "Requêtes de {{name}}",
@@ -116,6 +118,13 @@
   "truncated_other": "Les {{shown}} plus chargées sur {{count}} liaisons entre deux extrémités sont affichées.",
   "filteredOut": "Aucun appel ne correspond à ces filtres.",
   "failed": "Impossible de lire les métriques de trafic de {{sources}}.",
+  "tooLong": "La requête pour {{sources}} était trop longue pour un proxy placé devant Prometheus. Augmentez la limite d’URL du proxy, ou indiquez Prometheus par son URL dans les paramètres du cluster : les requêtes longues sont alors envoyées en POST.",
+  "partial": "Certains détails des appels de {{sources}} n’ont pas pu être lus ({{details}}) : Prometheus n’a pas répondu à ces requêtes.",
+  "detail": {
+    "errors": "taux d'erreurs",
+    "classes": "réponses par statut",
+    "latency": "latence"
+  },
   "noPrometheus": "Le graphe du trafic est lu dans Prometheus, et aucun n’est configuré ni trouvé pour ce cluster.",
   "openSettings": "Paramètres du cluster",
   "noSource": "Prometheus n’a aucune métrique qui nomme les deux extrémités d’un appel : ni Istio, ni Linkerd, ni le graphe de services de Grafana Beyla, ni Cilium Hubble ne lui envoient de données.",

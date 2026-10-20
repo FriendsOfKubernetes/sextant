@@ -109,8 +109,12 @@ impl RequestSourceKind {
             // The outbound side of the same pair (`direction="outbound"`, `dst_*` labels).
             RequestSourceKind::Linkerd => &[&["response_total", "response_latency_ms_bucket"]],
             RequestSourceKind::IngressNginx => &[],
-            // Beyla's service graph metrics (`application_service_graph`), which name both ends with namespaces.
-            RequestSourceKind::Beyla => &[&["traces_service_graph_request_total"]],
+            // Beyla's service graph metrics (`application_service_graph`), which name both ends with namespaces: the
+            // server's spans or the client's (not `traces_service_graph_request_total`, which may count both; ADR-0096).
+            RequestSourceKind::Beyla => &[
+                &["traces_service_graph_request_server_seconds_count"],
+                &["traces_service_graph_request_client_seconds_count"],
+            ],
             RequestSourceKind::Hubble => &[&["hubble_http_requests_total"]],
         }
     }
@@ -118,7 +122,10 @@ impl RequestSourceKind {
     /// The histogram that gives an edge's latency; without it the edges have rates only.
     pub fn edge_latency_metrics(self) -> &'static [&'static str] {
         match self {
-            RequestSourceKind::Beyla => &["traces_service_graph_request_server_seconds_bucket"],
+            RequestSourceKind::Beyla => &[
+                "traces_service_graph_request_server_seconds_bucket",
+                "traces_service_graph_request_client_seconds_bucket",
+            ],
             RequestSourceKind::IngressNginx => &[],
             other => other.latency_metrics(),
         }
@@ -516,17 +523,16 @@ pub async fn request_health(
     let found = request_sources(mgr, cluster, mode).await?;
     let client = mgr.client(cluster)?;
     let now = now_secs();
-    // ingress-nginx names Services, not pods: the Services that select the target's pods, read from the cluster.
+    // ingress-nginx names Services, not pods: the Services that select the target's pods, read from the cluster. A
+    // failed or forbidden read leaves ingress-nginx unknown (in `failed`), not absent.
     let services = if found
         .sources
         .iter()
         .any(|s| s.kind == RequestSourceKind::IngressNginx)
     {
-        services::selecting(&client, &target)
-            .await
-            .unwrap_or_default()
+        services::selecting(&client, &target).await
     } else {
-        Vec::new()
+        Ok(Vec::new())
     };
     let golden = futures::future::join_all(found.sources.iter().map(|source| {
         let (client, target, services) = (&client, &target, &services);
@@ -534,6 +540,13 @@ pub async fn request_health(
         async move {
             let Some(via_target) = via_target else {
                 return (source.kind, Ok(None));
+            };
+            let services = match services {
+                Ok(services) => services.as_slice(),
+                Err(err) if source.kind == RequestSourceKind::IngressNginx => {
+                    return (source.kind, Err(err.clone()));
+                }
+                Err(_) => &[],
             };
             let selectors = prometheus::request_selectors(source.kind, target, services);
             if selectors.is_empty() {

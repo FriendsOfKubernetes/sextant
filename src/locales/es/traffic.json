@@ -61,7 +61,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Fuera de la malla o sin labels",
     "unknownIn": "Fuera de la malla o sin labels ({{namespace}})",
-    "cannotOpen": "La fuente no dice quién es: un llamante o destino fuera de la malla o del clúster, o que sus labels no nombran."
+    "cannotOpen": "La fuente no dice quién es: un llamante o destino fuera de la malla o del clúster, o que sus labels no nombran.",
+    "noNamespace": "La fuente nombra {{name}} sin namespace, así que no hay nada que abrir."
   },
   "nodeLabel": "{{kind}} {{name}}: mostrar sus llamadas",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -84,7 +85,8 @@
     "noLatency": "sin histograma de latencia",
     "noVerdict": "sin veredicto para TCP",
     "class": "{{class}} {{value}}/s",
-    "noClasses": "sin estado HTTP"
+    "noClasses": "sin estado HTTP",
+    "notRead": "no se pudo leer"
   },
   "open": "Abrir {{name}}",
   "openRequests": "Solicitudes de {{name}}",
@@ -116,6 +118,13 @@
   "truncated_other": "Se muestran los {{shown}} más cargados de {{count}} enlaces entre dos extremos.",
   "filteredOut": "Ninguna llamada coincide con estos filtros.",
   "failed": "No se pudieron leer las métricas de tráfico de {{sources}}.",
+  "tooLong": "La consulta para {{sources}} era demasiado larga para un proxy delante de Prometheus. Aumente el límite de URL del proxy o indique Prometheus por su URL en la configuración del clúster: entonces las consultas largas se envían por POST.",
+  "partial": "No se pudieron leer algunos detalles de las llamadas de {{sources}} ({{details}}): Prometheus no respondió a esas consultas.",
+  "detail": {
+    "errors": "tasas de error",
+    "classes": "respuestas por estado",
+    "latency": "latencia"
+  },
   "noPrometheus": "El grafo de tráfico se lee de Prometheus, y no hay ninguno configurado ni encontrado para este clúster.",
   "openSettings": "Configuración del clúster",
   "noSource": "Prometheus no tiene métricas que nombren ambos extremos de una llamada: ni Istio, ni Linkerd, ni el grafo de servicios de Grafana Beyla, ni Cilium Hubble le envían datos.",

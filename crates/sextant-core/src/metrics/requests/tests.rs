@@ -112,9 +112,12 @@ fn detection_asks_for_the_known_names_only() {
     assert_eq!(known.len(), known.iter().collect::<BTreeSet<_>>().len());
     assert!(known.contains(&"istio_requests_total"));
     assert!(known.contains(&"hubble_http_request_duration_seconds_bucket"));
-    // 12 of the workload request metrics, 3 more of the traffic graph's edges (#211).
-    assert!(known.contains(&"traces_service_graph_request_total"));
-    assert_eq!(known.len(), 15);
+    // 12 of the workload request metrics, 5 more of the traffic graph's edges (#211); not Beyla's
+    // `traces_service_graph_request_total`, which may count a call twice (ADR-0096).
+    assert!(known.contains(&"traces_service_graph_request_server_seconds_count"));
+    assert!(known.contains(&"traces_service_graph_request_client_seconds_count"));
+    assert!(!known.contains(&"traces_service_graph_request_total"));
+    assert_eq!(known.len(), 17);
 }
 
 /// What the fixtures of each source must give: (source file, kind, rate, error ratio, p50, p95, p99 in ms).
@@ -243,6 +246,57 @@ async fn each_sources_answers_become_golden_metrics() {
     }
 }
 
+/// Hubble with L7 visibility at the callee only, at the caller only, and at both: real Prometheus answers
+/// (`testdata/hubble-<case>.json`, made from the series listed in each file) to the query the core sends.
+#[tokio::test]
+async fn hubble_counts_each_call_once_whichever_side_sees_it() {
+    let web = RequestTarget::Workload {
+        namespace: "shop".into(),
+        kind: "Deployment".into(),
+        name: "web".into(),
+    };
+    let selectors = prometheus::request_selectors(RequestSourceKind::Hubble, &web, &[]);
+    let query = prometheus::golden_query(RequestSourceKind::Hubble, &selectors, true);
+    for case in ["ingress", "egress", "both"] {
+        let file: Value = serde_json::from_str(&fixture_file(&format!("hubble-{case}"))).unwrap();
+        // The answers are to the query the core sends now.
+        assert_eq!(file["queries"][0]["promql"], query.as_str(), "{case}");
+        let instant =
+            json!({ "status": "success", "data": file["queries"][0]["data"] }).to_string();
+        let api = FakeApi::start(move |req: &Request| match req.path.as_str() {
+            "/api/v1/query" => Reply::json(200, instant.clone()),
+            _ => Reply::json(
+                200,
+                r#"{"status":"success","data":{"resultType":"matrix","result":[]}}"#,
+            ),
+        })
+        .await;
+        let source = DetectedSource {
+            kind: RequestSourceKind::Hubble,
+            via: RequestVia::Cluster,
+            latency: true,
+        };
+        let golden = prometheus::golden(&url_prometheus(&api), source, &selectors, 1_760_000_000)
+            .await
+            .unwrap()
+            .unwrap();
+        // 1 request/s from frontend, 10 % of them 5xx, whether one side or both report it.
+        assert!(
+            close(golden.request_rate.map(|r| (r * 1e6).round() / 1e6), 1.0),
+            "{case}: {golden:?}"
+        );
+        assert!(
+            close(golden.error_ratio.map(|r| (r * 1e6).round() / 1e6), 0.1),
+            "{case}: {golden:?}"
+        );
+        // The callee's histogram where it has one (the caller's measures twice as long in `both`).
+        assert!(
+            close(golden.latency_ms.p50.map(f64::round), 10.0),
+            "{case}: {golden:?}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn throttling_is_read_per_container_and_bounded() {
     let api = FakeApi::start(|req: &Request| match req.path.as_str() {
@@ -348,6 +402,17 @@ async fn cluster() -> FakeApi {
                                   "template": { "metadata": { "labels": { "app": "web", "tier": "front" } } } } })
                 .to_string(),
             ),
+            // A namespace whose Services may not be listed.
+            "/apis/apps/v1/namespaces/pay/deployments/web" => Reply::json(
+                200,
+                json!({ "metadata": { "name": "web", "namespace": "pay" },
+                        "spec": { "template": { "metadata": { "labels": { "app": "web" } } } } })
+                .to_string(),
+            ),
+            "/api/v1/namespaces/pay/services" => Reply::json(
+                403,
+                r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","code":403}"#,
+            ),
             "/api/v1/namespaces/shop/services" => Reply::json(
                 200,
                 json!({ "kind": "ServiceList", "apiVersion": "v1", "metadata": {}, "items": [
@@ -431,6 +496,29 @@ async fn a_workloads_request_health_from_every_source_it_has() {
         ErrorCode::Invalid
     );
     assert_eq!(api.requests().len(), before);
+}
+
+#[tokio::test]
+async fn services_that_cannot_be_read_leave_ingress_nginx_unknown_not_absent() {
+    let _serial = SOURCES_TEST_LOCK.lock().await;
+    forget_sources();
+    let api = cluster().await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let target = RequestTarget::Workload {
+        namespace: "pay".into(),
+        kind: "Deployment".into(),
+        name: "web".into(),
+    };
+    let health = request_health(&mgr, &id, &manual(), target).await.unwrap();
+    assert_eq!(health.failed, [RequestSourceKind::IngressNginx]);
+    assert_eq!(health.golden.len(), 1);
+    assert_eq!(health.golden[0].source, RequestSourceKind::Istio);
+    // No ingress query was sent without the Services.
+    assert!(
+        api.requests()
+            .iter()
+            .all(|r| !decode(&r.query).contains("nginx_ingress_controller_requests{"))
+    );
 }
 
 #[tokio::test]

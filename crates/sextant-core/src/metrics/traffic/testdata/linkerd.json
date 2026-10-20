@@ -1,225 +1,263 @@
 {
- "names": {
-  "status": "success",
-  "data": [
-   "response_total",
-   "response_latency_ms_bucket",
-   "up"
-  ]
- },
- "answers": [
+ "prometheus": "3.15.0",
+ "time": 1760000000,
+ "series": [
   {
-   "status": "success",
+   "metric": "response_total",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web",
+    "status_code": "200",
+    "classification": "success"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "response_latency_ms_bucket",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web",
+    "le": "5.0"
+   },
+   "rate": 0.0
+  },
+  {
+   "metric": "response_latency_ms_bucket",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web",
+    "le": "10.0"
+   },
+   "rate": 0.5
+  },
+  {
+   "metric": "response_latency_ms_bucket",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web",
+    "le": "50.0"
+   },
+   "rate": 0.95
+  },
+  {
+   "metric": "response_latency_ms_bucket",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web",
+    "le": "100.0"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "response_latency_ms_bucket",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web",
+    "le": "+Inf"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "response_total",
+   "labels": {
+    "direction": "outbound",
+    "namespace": "shop",
+    "deployment": "web",
+    "dst_namespace": "pay",
+    "dst_service": "db",
+    "status_code": "200",
+    "grpc_status": "14",
+    "classification": "failure"
+   },
+   "rate": 0.4
+  },
+  {
+   "metric": "response_total",
+   "labels": {
+    "direction": "inbound",
+    "namespace": "shop",
+    "deployment": "web",
+    "tls": "no_identity",
+    "status_code": "200",
+    "classification": "success"
+   },
+   "rate": 0.3
+  },
+  {
+   "metric": "response_total",
+   "labels": {
+    "direction": "inbound",
+    "namespace": "shop",
+    "deployment": "web",
+    "tls": "true",
+    "status_code": "200",
+    "classification": "success"
+   },
+   "rate": 1.0
+  },
+  {
+   "metric": "tcp_open_total",
+   "labels": {
+    "direction": "outbound",
+    "peer": "dst",
+    "namespace": "shop",
+    "deployment": "frontend",
+    "dst_namespace": "shop",
+    "dst_deployment": "web",
+    "dst_service": "web"
+   },
+   "rate": 0.05
+  },
+  {
+   "metric": "tcp_open_total",
+   "labels": {
+    "direction": "outbound",
+    "peer": "dst",
+    "namespace": "shop",
+    "deployment": "web",
+    "dst_namespace": "cache",
+    "dst_statefulset": "redis",
+    "dst_service": "redis"
+   },
+   "rate": 0.1
+  }
+ ],
+ "queries": [
+  {
+   "ask": "Rate",
+   "part": 0,
+   "promql": "topk(200,(sum by(namespace,deployment,statefulset,daemonset,dst_namespace,dst_service,dst_deployment,dst_statefulset,dst_daemonset,sx_p)(label_replace(rate(response_total{direction=\"outbound\",namespace=~\"shop|pay\"}[5m]) or rate(response_total{direction=\"outbound\",dst_namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\")))>0)",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "count"
+       "deployment": "frontend",
+       "dst_deployment": "web",
+       "dst_namespace": "shop",
+       "dst_service": "web",
+       "namespace": "shop"
       },
       "value": [
        1760000000,
-       "5"
+       "0.9999999999999999"
       ]
      },
      {
       "metric": {
-       "m": "rate",
-       "sx_d": "db",
-       "sx_dk": "service",
-       "sx_dn": "pay",
-       "sx_p": "grpc",
-       "sx_s": "web",
-       "sx_sn": "shop"
+       "deployment": "web",
+       "dst_namespace": "pay",
+       "dst_service": "db",
+       "namespace": "shop",
+       "sx_p": "grpc"
       },
       "value": [
        1760000000,
-       "0.5"
-      ]
-     },
-     {
-      "metric": {
-       "m": "rate",
-       "sx_d": "redis",
-       "sx_dk": "workload",
-       "sx_dn": "cache",
-       "sx_p": "tcp",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
-      },
-      "value": [
-       1760000000,
-       "0.1"
-      ]
-     },
-     {
-      "metric": {
-       "m": "rate",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http"
-      },
-      "value": [
-       1760000000,
-       "1"
-      ]
-     },
-     {
-      "metric": {
-       "m": "rate",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
-      },
-      "value": [
-       1760000000,
-       "1"
-      ]
-     },
-     {
-      "metric": {
-       "m": "rate",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "tcp",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
-      },
-      "value": [
-       1760000000,
-       "0.1"
+       "0.39999999999999997"
       ]
      }
     ]
    }
   },
   {
-   "status": "success",
+   "ask": "Errors",
+   "part": 0,
+   "promql": "(sum by(namespace,deployment,statefulset,daemonset,dst_namespace,dst_service,dst_deployment,dst_statefulset,dst_daemonset,sx_p)(label_replace(rate(response_total{direction=\"outbound\",classification=\"failure\",namespace=~\"shop|pay\"}[5m]) or rate(response_total{direction=\"outbound\",classification=\"failure\",dst_namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\")))>0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "errors",
-       "sx_d": "db",
-       "sx_dk": "service",
-       "sx_dn": "pay",
-       "sx_p": "grpc",
-       "sx_s": "web",
-       "sx_sn": "shop"
+       "deployment": "web",
+       "dst_namespace": "pay",
+       "dst_service": "db",
+       "namespace": "shop",
+       "sx_p": "grpc"
       },
       "value": [
        1760000000,
-       "0.5"
-      ]
-     },
-     {
-      "metric": {
-       "m": "errors",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
-      },
-      "value": [
-       1760000000,
-       "0.1"
+       "0.39999999999999997"
       ]
      }
     ]
    }
   },
   {
-   "status": "success",
+   "ask": "Classes",
+   "part": 0,
+   "promql": "(sum by(sx_c,namespace,deployment,statefulset,daemonset,dst_namespace,dst_service,dst_deployment,dst_statefulset,dst_daemonset,sx_p)(label_replace(label_replace(rate(response_total{direction=\"outbound\",namespace=~\"shop|pay\"}[5m]) or rate(response_total{direction=\"outbound\",dst_namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\"),\"sx_c\",\"${1}xx\",\"status_code\",\"([1-5])..\")))>0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "class",
+       "deployment": "web",
+       "dst_namespace": "pay",
+       "dst_service": "db",
+       "namespace": "shop",
        "sx_c": "2xx",
-       "sx_d": "db",
-       "sx_dk": "service",
-       "sx_dn": "pay",
-       "sx_p": "grpc",
-       "sx_s": "web",
-       "sx_sn": "shop"
+       "sx_p": "grpc"
       },
       "value": [
        1760000000,
-       "0.5"
+       "0.39999999999999997"
       ]
      },
      {
       "metric": {
-       "m": "class",
-       "sx_c": "2xx",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http"
+       "deployment": "frontend",
+       "dst_deployment": "web",
+       "dst_namespace": "shop",
+       "dst_service": "web",
+       "namespace": "shop",
+       "sx_c": "2xx"
       },
       "value": [
        1760000000,
-       "1"
-      ]
-     },
-     {
-      "metric": {
-       "m": "class",
-       "sx_c": "2xx",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
-      },
-      "value": [
-       1760000000,
-       "0.9"
-      ]
-     },
-     {
-      "metric": {
-       "m": "class",
-       "sx_c": "5xx",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
-      },
-      "value": [
-       1760000000,
-       "0.1"
+       "0.9999999999999999"
       ]
      }
     ]
    }
   },
   {
-   "status": "success",
+   "ask": "P50",
+   "part": 0,
+   "promql": "(histogram_quantile(0.5,sum by(le,namespace,deployment,statefulset,daemonset,dst_namespace,dst_service,dst_deployment,dst_statefulset,dst_daemonset,sx_p)(label_replace(rate(response_latency_ms_bucket{direction=\"outbound\",namespace=~\"shop|pay\"}[5m]) or rate(response_latency_ms_bucket{direction=\"outbound\",dst_namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\"))))>=0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "p50",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
+       "deployment": "frontend",
+       "dst_deployment": "web",
+       "dst_namespace": "shop",
+       "dst_service": "web",
+       "namespace": "shop"
       },
       "value": [
        1760000000,
@@ -230,23 +268,127 @@
    }
   },
   {
-   "status": "success",
+   "ask": "P95",
+   "part": 0,
+   "promql": "(histogram_quantile(0.95,sum by(le,namespace,deployment,statefulset,daemonset,dst_namespace,dst_service,dst_deployment,dst_statefulset,dst_daemonset,sx_p)(label_replace(rate(response_latency_ms_bucket{direction=\"outbound\",namespace=~\"shop|pay\"}[5m]) or rate(response_latency_ms_bucket{direction=\"outbound\",dst_namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\"))))>=0",
    "data": {
     "resultType": "vector",
     "result": [
      {
       "metric": {
-       "m": "p95",
-       "sx_d": "web",
-       "sx_dk": "workload",
-       "sx_dn": "shop",
-       "sx_p": "http",
-       "sx_s": "frontend",
-       "sx_sn": "shop"
+       "deployment": "frontend",
+       "dst_deployment": "web",
+       "dst_namespace": "shop",
+       "dst_service": "web",
+       "namespace": "shop"
       },
       "value": [
        1760000000,
-       "50"
+       "49.99999999999999"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "ask": "Rate",
+   "part": 1,
+   "promql": "topk(200,(sum by(namespace,deployment,statefulset,daemonset,sx_p)(label_replace(rate(response_total{direction=\"inbound\",tls!=\"true\",namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\")))>0)",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "deployment": "web",
+       "namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.3"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "ask": "Errors",
+   "part": 1,
+   "promql": "(sum by(namespace,deployment,statefulset,daemonset,sx_p)(label_replace(rate(response_total{direction=\"inbound\",tls!=\"true\",classification=\"failure\",namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\")))>0",
+   "data": {
+    "resultType": "vector",
+    "result": []
+   }
+  },
+  {
+   "ask": "Classes",
+   "part": 1,
+   "promql": "(sum by(sx_c,namespace,deployment,statefulset,daemonset,sx_p)(label_replace(label_replace(rate(response_total{direction=\"inbound\",tls!=\"true\",namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\"),\"sx_c\",\"${1}xx\",\"status_code\",\"([1-5])..\")))>0",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "deployment": "web",
+       "namespace": "shop",
+       "sx_c": "2xx"
+      },
+      "value": [
+       1760000000,
+       "0.3"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "ask": "P50",
+   "part": 1,
+   "promql": "(histogram_quantile(0.5,sum by(le,namespace,deployment,statefulset,daemonset,sx_p)(label_replace(rate(response_latency_ms_bucket{direction=\"inbound\",tls!=\"true\",namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\"))))>=0",
+   "data": {
+    "resultType": "vector",
+    "result": []
+   }
+  },
+  {
+   "ask": "P95",
+   "part": 1,
+   "promql": "(histogram_quantile(0.95,sum by(le,namespace,deployment,statefulset,daemonset,sx_p)(label_replace(rate(response_latency_ms_bucket{direction=\"inbound\",tls!=\"true\",namespace=~\"shop|pay\"}[5m]),\"sx_p\",\"grpc\",\"grpc_status\",\".+\"))))>=0",
+   "data": {
+    "resultType": "vector",
+    "result": []
+   }
+  },
+  {
+   "ask": "Rate",
+   "part": 2,
+   "promql": "topk(200,(sum by(namespace,deployment,statefulset,daemonset,dst_namespace,dst_service,dst_deployment,dst_statefulset,dst_daemonset)(rate(tcp_open_total{direction=\"outbound\",peer=\"dst\",namespace=~\"shop|pay\"}[5m]) or rate(tcp_open_total{direction=\"outbound\",peer=\"dst\",dst_namespace=~\"shop|pay\"}[5m])))>0)",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "deployment": "web",
+       "dst_namespace": "cache",
+       "dst_service": "redis",
+       "dst_statefulset": "redis",
+       "namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.09999999999999999"
+      ]
+     },
+     {
+      "metric": {
+       "deployment": "frontend",
+       "dst_deployment": "web",
+       "dst_namespace": "shop",
+       "dst_service": "web",
+       "namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.049999999999999996"
       ]
      }
     ]

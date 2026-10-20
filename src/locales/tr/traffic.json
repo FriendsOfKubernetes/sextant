@@ -60,7 +60,8 @@
     "inNamespace": "{{name}} ({{namespace}})",
     "unknown": "Ağın (mesh) dışında veya etiketsiz",
     "unknownIn": "Ağın (mesh) dışında veya etiketsiz ({{namespace}})",
-    "cannotOpen": "Kaynak bunun kim olduğunu söylemiyor: ağın (mesh) veya kümenin dışında ya da etiketlerinin adlandırmadığı bir çağıran veya çağrılan."
+    "cannotOpen": "Kaynak bunun kim olduğunu söylemiyor: ağın (mesh) veya kümenin dışında ya da etiketlerinin adlandırmadığı bir çağıran veya çağrılan.",
+    "noNamespace": "Kaynak {{name}} adını namespace olmadan veriyor, bu yüzden açılacak bir şey yok."
   },
   "nodeLabel": "{{kind}} {{name}}: çağrılarını göster",
   "linkTitle": "{{from}} → {{to}}: {{rate}}",
@@ -83,7 +84,8 @@
     "noLatency": "gecikme histogramı yok",
     "noVerdict": "TCP için değerlendirme yok",
     "class": "{{class}} {{value}}/sn",
-    "noClasses": "HTTP durumu bildirilmedi"
+    "noClasses": "HTTP durumu bildirilmedi",
+    "notRead": "okunamadı"
   },
   "open": "{{name}} öğesini aç",
   "openRequests": "{{name}} istekleri",
@@ -111,6 +113,13 @@
   "truncated_other": "İki uç arasındaki {{count}} bağlantıdan en yoğun {{shown}} tanesi gösteriliyor.",
   "filteredOut": "Bu filtrelere uyan çağrı yok.",
   "failed": "{{sources}} trafik metrikleri okunamadı.",
+  "tooLong": "{{sources}} için sorgu, Prometheus'un önündeki bir proxy için fazla uzundu. Proxy'nin URL sınırını artırın ya da küme ayarlarında Prometheus'u URL'siyle belirtin: uzun sorgular o zaman POST ile gönderilir.",
+  "partial": "{{sources}} kaynaklı çağrıların bazı ayrıntıları okunamadı ({{details}}): Prometheus bu sorguları yanıtlamadı.",
+  "detail": {
+    "errors": "hata oranları",
+    "classes": "duruma göre yanıtlar",
+    "latency": "gecikme"
+  },
   "noPrometheus": "Trafik grafiği Prometheus’tan okunur ve bu küme için ayarlanmış ya da bulunmuş bir Prometheus yok.",
   "openSettings": "Küme ayarları",
   "noSource": "Prometheus’ta bir çağrının iki ucunu da adlandıran metrik yok: Istio, Linkerd, Grafana Beyla hizmet grafiği veya Cilium Hubble’dan hiçbiri ona veri göndermiyor.",

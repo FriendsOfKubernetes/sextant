@@ -56,8 +56,32 @@ describe("the traffic model", () => {
       edge(from, to, { source: "hubble", rate: 3, errorRatio: 0.2 }),
     ]);
     expect(layout.links).toHaveLength(1);
-    expect(layout.links[0]!.rate).toBe(5);
     expect(layout.links[0]!.level).toBe("bad");
+  });
+
+  it("does not add up two sources seeing the same calls, nor connections to requests", () => {
+    const from = workload("shop", "web");
+    const to = workload("pay", "db");
+    const layout = layoutTraffic([
+      // Istio and Hubble on Cilium both see these calls: the busier source's, not 5.
+      edge(from, to, { source: "istio", rate: 2 }),
+      edge(from, to, { source: "istio", protocol: "grpc", rate: 1 }),
+      edge(from, to, { source: "hubble", rate: 2.5 }),
+      // Connections per second are another unit: kept apart, never added to the requests.
+      edge(from, to, { source: "istio", protocol: "tcp", rate: 40, errorRatio: null }),
+    ]);
+    const link = layout.links[0]!;
+    // Istio's HTTP and gRPC are different calls: 3 req/s, the busier of 3 (Istio) and 2.5 (Hubble).
+    expect(link.rate).toBe(3);
+    expect(link.tcpRate).toBe(40);
+    expect(layout.maxRate).toBe(3);
+    const node = (id: string) => layout.nodes.find((n) => n.id === id)!;
+    expect(node("workload|shop|web").outRate).toBe(3);
+    expect(node("workload|pay|db").inRate).toBe(3);
+    // A pair seen only as TCP connections is drawn thin.
+    const tcpOnly = layoutTraffic([edge(from, to, { protocol: "tcp", rate: 100, errorRatio: null })]);
+    expect(tcpOnly.links[0]!.rate).toBe(0);
+    expect(strokeWidth(tcpOnly.links[0]!.rate, tcpOnly.maxRate)).toBe(MIN_STROKE);
   });
 
   it("colours by error share: under 1 %, up to 5 %, above; TCP is unknown", () => {
