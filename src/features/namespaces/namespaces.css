@@ -61,6 +61,12 @@
   padding-bottom: 6px;
 }
 
+/* Between the namespaces selected at opening and the others (#219). */
+.ns-filter__separator {
+  margin: 4px 0;
+  border-top: 1px solid var(--color-border);
+}
+
 .ns-filter__empty {
   padding: 4px;
   color: var(--color-text-muted);
