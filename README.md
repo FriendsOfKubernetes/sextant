@@ -16,7 +16,9 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Your kubeconfig** — every context is a cluster; several can be connected at once.
 - **Cloud clusters** — find your Amazon EKS, Google GKE and Azure AKS clusters through the `aws`, `gcloud` and `az`
   you already use, and add them in a few clicks.
-- **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions.
+- **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions;
+  **custom columns** from labels, annotations and field paths, and **Set image…** with a preview and a patch of the
+  image fields only.
 - **Logs, shells and port forwarding** — container logs with search, logs of several pods at once, a shell in any
   container, debug containers, copying files to and from containers, a shell on a node (a temporary privileged pod,
   removed when you close it), a local terminal already pointed at the cluster.
@@ -45,6 +47,11 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   when the CPU limit is the cause, and a live graph of who calls whom with the rate, errors and latency of each call,
   from what Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble already report to Prometheus — nothing
   installed.
+- **Ecosystem** — Argo Rollouts (status, steps, weights, analysis; promote, abort and retry as the kubectl plugin
+  sends them), Argo Workflows (the step tree with the failed step and its logs, CronWorkflows), Knative Serving,
+  Crossplane (claim → composite → managed resources, paused state), Kyverno (policy results on every object),
+  External Secrets (never the secret data), CloudNativePG (primary, replicas, backups, hibernation), Strimzi and
+  Prometheus Operator (what a monitor selects and which Prometheus picks it up), each from the operator's own status.
 - **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
   Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
 - **Metrics** from metrics-server and Prometheus; **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff).
@@ -79,6 +86,8 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Views and workspaces](https://github.com/FriendsOfKubernetes/sextant/wiki/Views-and-workspaces), [Kubeconfig management](https://github.com/FriendsOfKubernetes/sextant/wiki/Kubeconfig-management)
 - [YAML editor](https://github.com/FriendsOfKubernetes/sextant/wiki/YAML-editor), [Storage](https://github.com/FriendsOfKubernetes/sextant/wiki/Storage), [Cost](https://github.com/FriendsOfKubernetes/sextant/wiki/Cost), [Terminal](https://github.com/FriendsOfKubernetes/sextant/wiki/Terminal)
 - [Service mesh](https://github.com/FriendsOfKubernetes/sextant/wiki/Service-mesh), [Compare](https://github.com/FriendsOfKubernetes/sextant/wiki/Compare), [Large clusters](https://github.com/FriendsOfKubernetes/sextant/wiki/Large-clusters), [Accessibility](https://github.com/FriendsOfKubernetes/sextant/wiki/Accessibility)
+- [Argo Rollouts and Argo Workflows](https://github.com/FriendsOfKubernetes/sextant/wiki/Argo-Rollouts-and-Workflows), [Ecosystem views](https://github.com/FriendsOfKubernetes/sextant/wiki/Ecosystem-views) — Knative, Crossplane, Kyverno, External Secrets, CloudNativePG, Strimzi, Prometheus Operator
+- [Custom columns](https://github.com/FriendsOfKubernetes/sextant/wiki/Custom-columns), [Set image](https://github.com/FriendsOfKubernetes/sextant/wiki/Set-image)
 - [Gateway API](https://github.com/FriendsOfKubernetes/sextant/wiki/Gateway-API) — Gateways and routes with explained problems, topology, the request check and the hostname map
 - [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
@@ -111,7 +120,7 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.15](https://github.com/FriendsOfKubernetes/sextant/milestone/18) | Scale and reach *(released)* | Service mesh views (Istio, Linkerd), comparing objects across clusters and namespaces, very large clusters, accessibility |
 | [0.16](https://github.com/FriendsOfKubernetes/sextant/milestone/19) | Faster diagnosis *(released)* | Best-practice checks (probes, `:latest`, single replicas, PDBs, requests and limits), why a Service or Ingress gets no traffic, Helm revision diff and newer chart versions, read-only diagnostic tools for AI agents |
 | [0.17](https://github.com/FriendsOfKubernetes/sextant/milestone/20) | Live traffic *(released)* | A live graph of requests between services (Hubble, Istio, Linkerd, Beyla), request rate, errors, latency and CPU throttling per workload |
-| [0.18](https://github.com/FriendsOfKubernetes/sextant/milestone/21) | Ecosystem | Views for Argo Rollouts, Argo Workflows, Knative, Crossplane, Kyverno, External Secrets, CloudNativePG, Strimzi and Prometheus Operator, custom columns, a Set image action |
+| [0.18](https://github.com/FriendsOfKubernetes/sextant/milestone/21) | Ecosystem *(released)* | Views for Argo Rollouts, Argo Workflows, Knative, Crossplane, Kyverno, External Secrets, CloudNativePG, Strimzi and Prometheus Operator, custom columns, a Set image action |
 | [0.19](https://github.com/FriendsOfKubernetes/sextant/milestone/22) | Inside images, more installers | Browsing an image's files straight from the registry (no exec, no pull), Homebrew, Scoop, winget, rpm and Linux arm64 |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
