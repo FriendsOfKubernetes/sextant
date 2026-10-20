@@ -1,11 +1,13 @@
 // The path through an Ingress: its IngressClass resolves and a controller runs for it, the controller published an
 // address, the TLS Secrets hold certificates that cover the hosts, then each host and path (and the default backend)
 // leads to an existing Service and port — and on into the Service's own checks, with the controller's pods as the
-// source of traffic for the network policy check when they are known.
+// source of traffic for the network policy check when they are known (and the controller is an in-cluster proxy). An
+// Ingress no IngressClass decides for, but with an address, was claimed by some controller: a warning, and the walk goes
+// on to the backends.
 import type { KubeObject } from "../../api";
 import { status } from "../../resources";
 import { podInfo } from "../netpol/model";
-import { controllerOf, resolveClass } from "./controllers";
+import { controllerOf, isOutsideProxy, resolveClass } from "./controllers";
 import { phrase, Walk, type Chain, type ClusterView, type Finding, type Phrase, type TrafficSource } from "./model";
 import { INGRESS, INGRESS_CLASS, isReady, linkOf, loadBalancerAddresses, namespaceOf, nameOf, SERVICE } from "./objects";
 import { diagnoseService } from "./service";
@@ -16,7 +18,12 @@ const { arr, get, num, str } = status;
 /** Host/path chains an Ingress diagnosis follows at most. */
 export const MAX_PATHS = 30;
 
-function classFinding(ingress: KubeObject, view: ClusterView): { finding: Finding; controller?: string } {
+/**
+ * The class step. `claimed`: no IngressClass decides, but the Ingress has an address, so some controller took it
+ * (ingress-nginx with `--watch-ingress-without-class`, Traefik, a controller that ignores classes): which one, and its
+ * pods, cannot be told.
+ */
+function classFinding(ingress: KubeObject, view: ClusterView, hasAddress: boolean): { finding: Finding; controller?: string; claimed?: boolean } {
   const id = "ingress.class";
   const classes = view.ingressClasses;
   if (classes === undefined) return { finding: { id, status: "unknown", text: phrase("ingress.classUnknown") } };
@@ -29,7 +36,10 @@ function classFinding(ingress: KubeObject, view: ClusterView): { finding: Findin
         const key = cls ? "ingress.classAnnotation" : "ingress.classAnnotationNoObject";
         return { finding: { id, status: "warn", text: phrase(key, { name: resolved.name }), links }, controller: controllerOf(cls) };
       }
-      if (!cls) return { finding: { id, status: "broken", text: phrase("ingress.classMissing", { name: resolved.name }) } };
+      if (!cls) {
+        if (hasAddress) return { finding: { id, status: "warn", text: phrase("ingress.classMissingClaimed", { name: resolved.name }) }, claimed: true };
+        return { finding: { id, status: "broken", text: phrase("ingress.classMissing", { name: resolved.name }) } };
+      }
       const controller = controllerOf(cls);
       return { finding: { id, status: "ok", text: phrase("ingress.class", { name: resolved.name, controller: controller ?? "" }), links }, controller };
     }
@@ -41,6 +51,7 @@ function classFinding(ingress: KubeObject, view: ClusterView): { finding: Findin
     case "manyDefaults":
       return { finding: { id, status: "warn", text: phrase("ingress.classManyDefaults", { names: resolved.names }) } };
     case "none":
+      if (hasAddress) return { finding: { id, status: "warn", text: phrase("ingress.classNoneClaimed") }, claimed: true };
       return { finding: { id, status: "broken", text: phrase("ingress.classNone") } };
   }
 }
@@ -57,10 +68,14 @@ function controllerFinding(controller: string | undefined, hasAddress: boolean, 
   }
   if (found === undefined) return { finding: { id, status: "unknown", text: phrase("ingress.controllerUnread", { controller }) }, source: outside };
   const ready = found.pods.filter(isReady);
-  const source: TrafficSource = { type: "controller", controller, pods: (ready.length > 0 ? ready : found.pods).map(podInfo) };
-  if (ready.length > 0) return { finding: { id, status: "ok", text: phrase("ingress.controllerPods", { controller, count: ready.length }) }, source };
+  // A controller that provisions a load balancer outside the cluster (AWS ALB) only configures it: traffic comes
+  // from that load balancer, not from the controller's pods.
+  const outsideProxy = isOutsideProxy(controller);
+  const source: TrafficSource = outsideProxy ? outside : { type: "controller", controller, pods: (ready.length > 0 ? ready : found.pods).map(podInfo) };
+  const notes = outsideProxy ? [phrase("ingress.controllerOutside", { controller })] : undefined;
+  if (ready.length > 0) return { finding: { id, status: "ok", text: phrase("ingress.controllerPods", { controller, count: ready.length }), notes }, source };
   if (found.pods.length > 0) {
-    return { finding: { id, status: "broken", text: phrase("ingress.controllerNotReady", { controller, count: found.pods.length }) }, source };
+    return { finding: { id, status: "broken", text: phrase("ingress.controllerNotReady", { controller, count: found.pods.length }), notes }, source };
   }
   const key = hasAddress ? "ingress.controllerNotFound" : "ingress.controllerNone";
   return { finding: { id, status: hasAddress ? "warn" : "broken", text: phrase(key, { controller, selector: found.selector }) }, source: outside };
@@ -113,11 +128,13 @@ function backendChain(backend: unknown, title: Phrase, first: Finding | undefine
 
 export function diagnoseIngress(ingress: KubeObject, view: ClusterView): Chain {
   const walk = new Walk(undefined, linkOf(INGRESS, ingress));
-  const { finding, controller } = classFinding(ingress, view);
-  if (!walk.add(finding)) return walk.chain;
   const addresses = loadBalancerAddresses(ingress);
-  const control = controllerFinding(controller, addresses.length > 0, view);
-  if (!walk.add(control.finding)) return walk.chain;
+  const { finding, controller, claimed } = classFinding(ingress, view, addresses.length > 0);
+  if (!walk.add(finding)) return walk.chain;
+  // A claimed Ingress has no controller to look for: the class step said so, and the source is someone outside.
+  const control = claimed ? undefined : controllerFinding(controller, addresses.length > 0, view);
+  if (control && !walk.add(control.finding)) return walk.chain;
+  const source: TrafficSource = control?.source ?? { type: "outside" };
   const address: Finding =
     addresses.length > 0
       ? { id: "ingress.address", status: "ok", text: phrase("ingress.address", { addresses }) }
@@ -145,12 +162,12 @@ export function diagnoseIngress(ingress: KubeObject, view: ClusterView): Chain {
       if (shown++ >= MAX_PATHS) continue;
       const path = str(get(p, "path"));
       const title = phrase(host ? "ingress.ruleTitle" : "ingress.ruleTitleAnyHost", { host, path: path || "/" });
-      walk.branch(backendChain(get(p, "backend"), title, pathFinding(path, str(get(p, "pathType")), i), ingress, view, control.source));
+      walk.branch(backendChain(get(p, "backend"), title, pathFinding(path, str(get(p, "pathType")), i), ingress, view, source));
     }
   }
   if (shown > MAX_PATHS) walk.add({ id: "ingress.paths", status: "ok", text: phrase("ingress.morePaths", { count: shown - MAX_PATHS }) });
   if (defaultBackend !== undefined) {
-    walk.branch(backendChain(defaultBackend, phrase("ingress.defaultBackend"), undefined, ingress, view, control.source));
+    walk.branch(backendChain(defaultBackend, phrase("ingress.defaultBackend"), undefined, ingress, view, source));
   }
   return walk.chain;
 }

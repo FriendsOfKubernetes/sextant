@@ -38,6 +38,7 @@ describe("best-practice problems", () => {
     recreate: false,
     templateLabels: {},
     spread: false,
+    scheduling: { nodeSelector: {}, requiredAffinity: undefined, tolerations: [] },
     prefix: ["spec", "template"],
     containers: [],
   });

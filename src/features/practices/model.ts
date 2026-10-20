@@ -86,9 +86,39 @@ export interface WorkloadInfo {
   templateLabels: Record<string, string>;
   /** Topology spread constraints or pod anti-affinity are set. */
   spread: boolean;
+  /** What limits the nodes the pods may run on. */
+  scheduling: TemplateScheduling;
   /** Path from the root of the object to the pod template (`["spec", "template"]`). */
   prefix: string[];
   containers: ContainerInfo[];
+}
+
+export interface Toleration {
+  key: string;
+  operator: string;
+  value: string;
+  effect: string;
+}
+
+/** The pod template's `nodeSelector`, required node affinity and tolerations. */
+export interface TemplateScheduling {
+  nodeSelector: Record<string, string>;
+  /** `affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution` as written. */
+  requiredAffinity: unknown;
+  tolerations: Toleration[];
+}
+
+function schedulingOf(spec: Record<string, unknown>): TemplateScheduling {
+  return {
+    nodeSelector: Object.fromEntries(Object.entries(record(spec.nodeSelector)).map(([k, v]) => [k, String(v)])),
+    requiredAffinity: get(spec, "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution"),
+    tolerations: arr(spec.tolerations).map((t) => ({
+      key: str(get(t, "key")) ?? "",
+      operator: str(get(t, "operator")) ?? "Equal",
+      value: str(get(t, "value")) ?? "",
+      effect: str(get(t, "effect")) ?? "",
+    })),
+  };
 }
 
 const TEMPLATE: Record<PracticeKind, string[]> = {
@@ -155,6 +185,7 @@ function computeInfo(kind: string, obj: KubeObject): WorkloadInfo | null {
     recreate: kind === "Deployment" && str(get(obj, "spec", "strategy", "type")) === "Recreate",
     templateLabels: Object.fromEntries(Object.entries(record(get(template, "metadata", "labels"))).map(([k, v]) => [k, String(v)])),
     spread: arr(spec.topologySpreadConstraints).length > 0 || (affinity != null && Object.keys(record(affinity)).length > 0),
+    scheduling: schedulingOf(spec),
     prefix,
     containers: [
       ...arr(spec.containers).map((c, i) => containerInfo("containers", c, i)),

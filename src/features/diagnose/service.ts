@@ -45,11 +45,16 @@ export function diagnoseService(svc: KubeObject, view: ClusterView, options: Ser
     walk.add({ id: "service.port", status: "broken", text: phrase("service.portMissing", { port: String(options.focus), name: info.name, ports: available }), links: [link] });
     return walk.chain;
   }
-  if (ports.length === 0) {
+  const headless = get(svc, "spec", "clusterIP") === "None";
+  // A headless Service with a selector needs no ports: its DNS name returns the pods' addresses, on any port.
+  if (ports.length === 0 && !(headless && info.hasSelector)) {
     walk.add({ id: "service.port", status: "broken", text: phrase("service.noPorts", { name: info.name }), links: [link] });
     return walk.chain;
   }
-  if (get(svc, "spec", "clusterIP") === "None") walk.add({ id: "service.headless", status: "ok", text: phrase("service.headless") });
+  if (headless) {
+    const notes = ports.length === 0 ? [phrase("service.headlessNoPorts")] : undefined;
+    walk.add({ id: "service.headless", status: "ok", text: phrase("service.headless"), notes });
+  }
 
   if (!info.hasSelector) {
     // Endpoints written by hand (or by another controller): only the EndpointSlices can say where traffic goes.
@@ -73,7 +78,9 @@ export function diagnoseService(svc: KubeObject, view: ClusterView, options: Ser
     // With publishNotReadyAddresses every live pod gets traffic; otherwise only the Ready ones.
     const backends = publish ? live : ready;
     for (const [i, port] of ports.entries()) if (!walk.add(targetPortFinding(port, backends, i))) return walk.chain;
-    if (!walk.add(slicesFinding(view.endpointSlices(namespace), info, publish ? live.length : ready.length, false))) return walk.chain;
+    // A pod gets an endpoint only once it has an IP: a published pod still waiting for one is not expected yet.
+    const expected = publish ? live.filter((p) => Boolean(get(p, "status", "podIP"))).length : ready.length;
+    if (!walk.add(slicesFinding(view.endpointSlices(namespace), info, expected, false))) return walk.chain;
     const traffic: BackendTraffic[] = ready.flatMap((pod) => {
       const p = podInfo(pod);
       return ports.flatMap((port) => {

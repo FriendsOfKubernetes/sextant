@@ -1,7 +1,7 @@
 // The source of the opt-in problems category `practices` (#207): while the problems store holds it (the category is on
 // and a problems screen, the Cluster counter or the notifications look at a cluster), the provider taps the store's
 // cluster-wide watches instead of opening its own: the workloads and Jobs (shared with the `workloads` and `jobs`
-// categories), the Pods and Nodes (shared with `pods` and `nodes`: which node each replica runs on, how many nodes take
+// categories), the Pods and Nodes (shared with `pods` and `nodes`: which node each replica runs on, which nodes take
 // pods), and — only while this category is held — CronJobs, HPAs, PodDisruptionBudgets and LimitRanges. Every update
 // is reduced to compact rows at once (model.ts); no object is kept. The right-sizing check needs Prometheus history and
 // is shown on the page and in the details only. Nothing is kept once the source is released.
@@ -14,7 +14,7 @@ import { evaluateAll, indexLimits, indexPlacements, type Context } from "./check
 import { practicesConfigOf } from "./config";
 import { hpaInfo, limitDefaults, pdbInfo, placementOf, workloadInfo, type HpaInfo, type LimitDefaults, type PdbInfo, type Placement, type WorkloadInfo } from "./model";
 import { practiceProblems } from "./problems";
-import { NODE_SOURCE, NODE_TAP_DEF } from "./taps";
+import { NODE_SOURCE, NODE_TAP_DEF, type SchedulingNode } from "./taps";
 
 /** Updates of the shared watches come in bursts (every pod's status): the findings are looked at again at most this often. */
 export const LOOK_MS = 500;
@@ -47,7 +47,7 @@ const HPA_TAP = tapped<HpaInfo>(HPA_SOURCE, "hpas", hpaInfo, MAX_OTHER_ROWS);
 const PDB_TAP = tapped<PdbInfo>(PDB_SOURCE, "pdbs", pdbInfo, MAX_OTHER_ROWS);
 const LIMIT_TAP = tapped<LimitDefaults>(LIMIT_RANGE_SOURCE, "limitRanges", limitDefaults, MAX_OTHER_ROWS);
 const POD_TAP = tapped<Placement | null>(CATEGORY_SOURCES.pods[0]!, "placements", placementOf, MAX_POD_ROWS);
-const NODE_TAP: Tapped<boolean> = { def: NODE_SOURCE, tap: NODE_TAP_DEF };
+const NODE_TAP: Tapped<SchedulingNode | null> = { def: NODE_SOURCE, tap: NODE_TAP_DEF };
 
 const ALL: Tapped<unknown>[] = [...WORKLOAD_TAPS, HPA_TAP, PDB_TAP, LIMIT_TAP, POD_TAP, NODE_TAP] as Tapped<unknown>[];
 
@@ -69,7 +69,7 @@ export function contextOf(states: ReadonlyMap<string, RowsState<unknown> | undef
     pdbs: pdbs && [...pdbs],
     limits: limits && indexLimits(limits),
     nodes: pods && indexPlacements(pods),
-    schedulableNodes: nodes && [...nodes].filter(Boolean).length,
+    schedulableNodes: nodes && [...nodes].filter((n): n is SchedulingNode => n !== null),
   };
 }
 

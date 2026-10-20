@@ -1,8 +1,10 @@
 // Newer chart versions of the listed releases (#209). Asked of the backend only while the Releases page is open (this
 // hook runs nowhere else, and there is no timer): the backend reads Helm's local copies of the repository indexes.
 // Answers are kept per cluster for an hour; Refresh asks again, and "Update repositories" (the only path to
-// `helm repo update`) downloads the indexes first, on the user's click. A cluster's answers are dropped whenever its
+// `helm repo update`) downloads the indexes first, on the user's click — and since the indexes are Helm's, shared by
+// every cluster, it drops the kept answers of all clusters. A cluster's answers are also dropped whenever its
 // connection comes or goes (a reconnect may reach other releases), like the problem and map stores drop their watches.
+// Asking only for the charts not yet kept adds to the kept answer: its repository problems and skipped charts too.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   api,
@@ -30,6 +32,8 @@ interface Entry {
 }
 
 const cache = new Map<ClusterId, Entry>();
+/** Bumped by every successful "Update repositories": an answer asked before it read the old indexes and is not kept. */
+let indexes = 0;
 /** Per cluster: bumped whenever its connection comes or goes (its kept answer is dropped then). */
 const epochs = new Map<ClusterId, number>();
 /** Per cluster: connected when last looked at. */
@@ -59,6 +63,7 @@ function followConnections(): void {
 /** Forgets every kept answer and the connections seen (tests). */
 export function resetChartUpdates(): void {
   cache.clear();
+  indexes = 0;
   epochs.clear();
   connected.clear();
   unfollow?.();
@@ -88,6 +93,13 @@ function chartsOf(releases: readonly HelmRelease[]): InstalledChart[] {
     seen.set(chartKey(r.chart, r.chartVersion), { chart: r.chart, version: r.chartVersion });
   }
   return [...seen.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, c]) => c);
+}
+
+/** The kept repository problems with the new ones, one per repository (the newer message wins). */
+function mergeProblems(kept: readonly RepoProblem[], found: readonly RepoProblem[]): RepoProblem[] {
+  const byRepo = new Map(kept.map((p) => [p.repo, p]));
+  for (const p of found) byRepo.set(p.repo, p);
+  return [...byRepo.values()].sort((a, b) => a.repo.localeCompare(b.repo));
 }
 
 /** Newer chart versions for `releases` of `clusterId`; nothing is asked while `enabled` is false (no `helm`). */
@@ -132,6 +144,7 @@ export function useChartUpdates(clusterId: ClusterId, releases: readonly HelmRel
     }
     let alive = true;
     const askedIn = epochs.get(clusterId) ?? 0;
+    const askedOf = indexes;
     setView((v) => ({ entry: v.entry, loading: true, error: null }));
     api.helm
       .chartUpdates(missing)
@@ -143,11 +156,12 @@ export function useChartUpdates(clusterId: ClusterId, releases: readonly HelmRel
           at: base?.at ?? Date.now(),
           byKey,
           repos: report.repos,
-          problems: report.repoProblems,
-          skipped: report.skipped,
+          problems: mergeProblems(base?.problems ?? [], report.repoProblems),
+          skipped: (base?.skipped ?? 0) + report.skipped,
         };
-        // An answer asked before the connection changed belongs to the old one: shown at most, never kept.
-        if ((epochs.get(clusterId) ?? 0) === askedIn) cache.set(clusterId, entry);
+        // An answer asked before the connection changed belongs to the old one, and one asked before the indexes were
+        // updated to the old indexes: shown at most, never kept.
+        if ((epochs.get(clusterId) ?? 0) === askedIn && indexes === askedOf) cache.set(clusterId, entry);
         if (alive) setView({ entry, loading: false, error: null });
       })
       .catch((err: unknown) => {
@@ -163,7 +177,11 @@ export function useChartUpdates(clusterId: ClusterId, releases: readonly HelmRel
     setUpdatingRepos(true);
     api.helm
       .repoUpdate()
-      .then(() => setForce((n) => n + 1))
+      .then(() => {
+        indexes++;
+        cache.clear();
+        setForce((n) => n + 1);
+      })
       .catch((err: unknown) => setView((v) => ({ ...v, error: toApiError(err) })))
       .finally(() => setUpdatingRepos(false));
   }, []);

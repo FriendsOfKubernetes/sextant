@@ -12,7 +12,8 @@
 // - PodDisruptionBudgets: missing only with more than one replica; blocking when `maxUnavailable` is 0 or
 //   `minAvailable` leaves no pod to evict at the current replicas (the HPA's scale) and the PDB's expected pods;
 // - one node: two or more live replicas on one node, without topology spread or pod anti-affinity, in a cluster with
-//   at least two schedulable nodes;
+//   at least two nodes the template may run on (not cordoned, matching its nodeSelector and required node affinity,
+//   every NoSchedule/NoExecute taint tolerated);
 // - requests: CPU and memory requests (a limit set alone is also the request); a LimitRange default of the namespace
 //   counts as set. Limits: only a memory limit is asked for (a CPU limit throttles and is often left out on purpose);
 // - limits far above the right-sizing recommendation (#137): only from Prometheus history, never a snapshot.
@@ -20,6 +21,8 @@ import type { Recommendation } from "../rightsizing/recommend";
 import { cpuQuantity, memoryQuantity } from "../rightsizing/units";
 import { imageRepository, imageTag } from "../security/pss";
 import { matches } from "../resource-map/selectors";
+import { nodeSelectorMatches, tolerates } from "../autoscaling/scheduling";
+import type { SchedulingNode } from "./taps";
 import {
   cpuMillicores,
   memoryBytes,
@@ -47,7 +50,8 @@ export interface Context {
   limits?: ReadonlyMap<string, LimitDefaults>;
   /** Nodes of the live pods, by workload key (`workloadKey`). */
   nodes?: ReadonlyMap<string, readonly string[]>;
-  schedulableNodes?: number;
+  /** The nodes that take new pods (not cordoned). */
+  schedulableNodes?: readonly SchedulingNode[];
   /** Right-sizing recommendations from history, by workload key and container. */
   recommendations?: ReadonlyMap<string, ReadonlyMap<string, Recommendation>>;
 }
@@ -296,9 +300,23 @@ function budgets(w: WorkloadInfo, ctx: Context, hpa: HpaInfo | undefined, expect
   }
 }
 
+/** Whether the workload's pods may land on `node`: its nodeSelector, required node affinity and tolerations. */
+export function fitsNode(w: WorkloadInfo, node: SchedulingNode): boolean {
+  const { nodeSelector, requiredAffinity, tolerations } = w.scheduling;
+  return (
+    Object.entries(nodeSelector).every(([k, v]) => node.labels[k] === v) &&
+    nodeSelectorMatches(requiredAffinity, node) &&
+    node.taints.every((taint) => tolerations.some((t) => tolerates(t, taint)))
+  );
+}
+
 function placement(w: WorkloadInfo, ctx: Context, at: At, out: PracticeFinding[]): void {
   if (!REPLICATED.has(w.kind) || w.spread || (w.replicas ?? 0) < 2) return;
-  if (!ctx.nodes || ctx.schedulableNodes === undefined || ctx.schedulableNodes < 2) return;
+  if (!ctx.nodes || ctx.schedulableNodes === undefined) return;
+  // Only nodes the pods may run on: one such node leaves no choice (tainted control planes, a dedicated pool).
+  let fitting = 0;
+  for (const node of ctx.schedulableNodes) if (fitsNode(w, node) && ++fitting >= 2) break;
+  if (fitting < 2) return;
   const nodes = ctx.nodes.get(workloadKey(w.namespace, w.kind, w.name)) ?? [];
   if (nodes.length < 2 || new Set(nodes).size !== 1) return;
   const matchLabels = w.selector?.matchLabels;

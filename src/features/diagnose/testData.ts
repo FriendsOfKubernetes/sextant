@@ -22,7 +22,8 @@ export interface PodOptions {
   waiting?: string;
   namespace?: string;
   terminating?: boolean;
-  ip?: string;
+  /** `null`: no IP yet. */
+  ip?: string | null;
 }
 
 export function pod(name: string, labels: Record<string, string>, o: PodOptions = {}): KubeObject {
@@ -34,7 +35,7 @@ export function pod(name: string, labels: Record<string, string>, o: PodOptions 
     spec: { containers: [{ name: "app", ports: o.ports ?? [{ name: "http", containerPort: 8080 }] }] },
     status: {
       phase: "Running",
-      podIP: o.ip ?? "10.0.0.1",
+      ...(o.ip === null ? {} : { podIP: o.ip ?? "10.0.0.1" }),
       conditions: [{ type: "Ready", status: ready ? "True" : "False", lastTransitionTime: "2026-10-20T11:00:00Z" }],
       containerStatuses: [
         o.waiting

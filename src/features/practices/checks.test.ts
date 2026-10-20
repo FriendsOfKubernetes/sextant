@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { KubeObject } from "../../api";
 import { allowsNoDisruption, evaluate, evaluateAll, indexLimits, indexPlacements, type Context } from "./checks";
 import { hpaInfo, limitDefaults, pdbInfo, placementOf, workloadInfo, type CheckId, type WorkloadInfo } from "./model";
+import { schedulingNode, type SchedulingNode } from "./taps";
 
 const good = {
   name: "app",
@@ -24,8 +25,11 @@ function workload(kind: string, spec: Record<string, unknown> = {}, pod: Record<
 }
 
 const info = (obj: KubeObject): WorkloadInfo => workloadInfo(obj.kind!, obj)!;
+const node = (name: string, spec: Record<string, unknown> = {}, labels: Record<string, string> = {}): SchedulingNode | null =>
+  schedulingNode({ apiVersion: "v1", kind: "Node", metadata: { name, labels: { "kubernetes.io/hostname": name, ...labels } }, spec });
+const plainNodes = (...names: string[]) => names.map((n) => node(n)!);
 /** Everything is known and nothing surrounds the workload. */
-const known: Context = { hpas: [], pdbs: [], limits: new Map(), nodes: new Map(), schedulableNodes: 3 };
+const known: Context = { hpas: [], pdbs: [], limits: new Map(), nodes: new Map(), schedulableNodes: plainNodes("n1", "n2", "n3") };
 const pdb = (spec: Record<string, unknown>, extra: Record<string, unknown> = {}): KubeObject => ({
   apiVersion: "policy/v1",
   kind: "PodDisruptionBudget",
@@ -136,12 +140,23 @@ describe("replicas on one node", () => {
     status: { phase },
   });
   const nodes = (...pods: KubeObject[]) => indexPlacements(pods.map(placementOf));
+  const onN1 = nodes(pod("a", "n1"), pod("b", "n1"));
+  const cp = (name: string) => node(name, { taints: [{ key: "node-role.kubernetes.io/control-plane", effect: "NoSchedule" }] })!;
+  const dedicated = (name: string) => node(name, { taints: [{ key: "dedicated", value: "gpu", effect: "NoExecute" }] })!;
 
   it.each<[string, KubeObject, Context, boolean]>([
     ["all on one node", workload("Deployment"), { ...withPdb, nodes: nodes(pod("a", "n1"), pod("b", "n1"), pod("c", "n1")) }, true],
     ["spread over nodes", workload("Deployment"), { ...withPdb, nodes: nodes(pod("a", "n1"), pod("b", "n2")) }, false],
     ["a finished pod does not count", workload("Deployment"), { ...withPdb, nodes: nodes(pod("a", "n1"), pod("b", "n2", "Failed")) }, false],
-    ["a single-node cluster", workload("Deployment"), { ...withPdb, schedulableNodes: 1, nodes: nodes(pod("a", "n1"), pod("b", "n1")) }, false],
+    ["a single-node cluster", workload("Deployment"), { ...withPdb, schedulableNodes: plainNodes("n1"), nodes: nodes(pod("a", "n1"), pod("b", "n1")) }, false],
+    ["the other nodes are tainted", workload("Deployment"), { ...withPdb, schedulableNodes: [node("n1")!, cp("cp1"), cp("cp2"), dedicated("gpu1")], nodes: onN1 }, false],
+    ["the taints are tolerated", workload("Deployment", {}, { tolerations: [{ key: "node-role.kubernetes.io/control-plane", operator: "Exists", effect: "NoSchedule" }] }), { ...withPdb, schedulableNodes: [node("n1")!, cp("cp1")], nodes: onN1 }, true],
+    ["every taint tolerated by an empty-key Exists", workload("Deployment", {}, { tolerations: [{ operator: "Exists" }] }), { ...withPdb, schedulableNodes: [cp("cp1"), dedicated("gpu1")], nodes: onN1 }, true],
+    ["a PreferNoSchedule taint does not keep pods off", workload("Deployment"), { ...withPdb, schedulableNodes: [node("n1")!, node("n2", { taints: [{ key: "spot", effect: "PreferNoSchedule" }] })!], nodes: onN1 }, true],
+    ["a cordoned node does not count", workload("Deployment"), { ...withPdb, schedulableNodes: [node("n1")!, node("n2", { unschedulable: true })].filter((n) => n !== null), nodes: onN1 }, false],
+    ["the nodeSelector matches one node", workload("Deployment", {}, { nodeSelector: { pool: "web" } }), { ...withPdb, schedulableNodes: [node("n1", {}, { pool: "web" })!, node("n2", {}, { pool: "db" })!], nodes: onN1 }, false],
+    ["the nodeSelector matches two nodes", workload("Deployment", {}, { nodeSelector: { pool: "web" } }), { ...withPdb, schedulableNodes: [node("n1", {}, { pool: "web" })!, node("n2", {}, { pool: "web" })!], nodes: onN1 }, true],
+    ["required node affinity matches one node", workload("Deployment", {}, { affinity: { nodeAffinity: { requiredDuringSchedulingIgnoredDuringExecution: { nodeSelectorTerms: [{ matchExpressions: [{ key: "kubernetes.io/hostname", operator: "In", values: ["n1"] }] }] } } } }), { ...withPdb, nodes: onN1 }, false],
     ["unknown nodes", workload("Deployment"), { ...withPdb, schedulableNodes: undefined, nodes: nodes(pod("a", "n1"), pod("b", "n1")) }, false],
     ["with topology spread", workload("Deployment", {}, { topologySpreadConstraints: [{ maxSkew: 1 }] }), { ...withPdb, nodes: nodes(pod("a", "n1"), pod("b", "n1")) }, false],
     ["with pod anti-affinity", workload("Deployment", {}, { affinity: { podAntiAffinity: { preferredDuringSchedulingIgnoredDuringExecution: [] } } }), { ...withPdb, nodes: nodes(pod("a", "n1"), pod("b", "n1")) }, false],

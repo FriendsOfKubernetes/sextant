@@ -8,6 +8,7 @@ import { nameCovers } from "./tls";
 
 const WEB = { app: "web" };
 const NGINX = "k8s.io/ingress-nginx";
+const ALB = "ingress.k8s.aws/alb";
 const steps = (chain: Chain) => [...chain.findings.map((f) => `${f.id}:${f.status}`), ...(chain.stopped ? ["…"] : [])];
 const branchSteps = (chain: Chain) => chain.chains.map((c) => steps(c));
 
@@ -42,17 +43,31 @@ const cases: Case[] = [
     status: "ok",
   },
   {
-    name: "a class that does not exist stops everything",
-    obj: ingress("shop", { ingressClassName: "traefik", rules: [rule("shop.example.com")] }),
+    name: "a class that does not exist and no address stops everything",
+    obj: ingress("shop", { ingressClassName: "traefik", rules: [rule("shop.example.com")] }, []),
     steps: ["ingress.class:broken", "…"],
     branches: [],
     status: "broken",
   },
   {
-    name: "no class and no default class",
-    obj: ingress("shop", { rules: [rule("shop.example.com")] }),
+    name: "a class that does not exist, but a controller claimed the Ingress",
+    obj: ingress("shop", { ingressClassName: "traefik", rules: [rule("shop.example.com")] }),
+    steps: ["ingress.class:warn", "ingress.address:ok"],
+    branches: [["ingress.path.0:ok", "ingress.backend:ok", "service.selector:ok", "service.ready:ok", "service.targetPort.0:ok", "service.slices:ok", "policies:ok"]],
+    status: "warn",
+  },
+  {
+    name: "no class, no default class and no address",
+    obj: ingress("shop", { rules: [rule("shop.example.com")] }, []),
     steps: ["ingress.class:broken", "…"],
     status: "broken",
+  },
+  {
+    name: "no class and no default class, but a controller claimed the Ingress",
+    obj: ingress("shop", { rules: [rule("shop.example.com")] }),
+    steps: ["ingress.class:warn", "ingress.address:ok"],
+    branches: [["ingress.path.0:ok", "ingress.backend:ok", "service.selector:ok", "service.ready:ok", "service.targetPort.0:ok", "service.slices:ok", "policies:ok"]],
+    status: "warn",
   },
   {
     name: "no class: the default class applies",
@@ -165,6 +180,34 @@ describe("diagnoseIngress", () => {
     expect(steps(chain)).toEqual(c.steps);
     if (c.branches) expect(branchSteps(chain)).toEqual(c.branches);
     expect(chainStatus(chain)).toBe(c.status);
+  });
+
+  it("names the class step of a claimed Ingress and takes traffic from outside", () => {
+    const chain = diagnoseIngress(ingress("shop", { rules: [rule("shop.example.com")] }), view(healthy));
+    expect(chain.findings[0]?.text.key).toBe("diagnose:ingress.classNoneClaimed");
+    const policies = chain.chains[0]?.findings.find((f) => f.id === "policies");
+    expect((policies?.text.params?.source as { key: string } | undefined)?.key).toBe("diagnose:policies.source.outside");
+  });
+
+  it("takes traffic from outside for a controller that is not an in-cluster proxy (AWS ALB)", () => {
+    const albPod = pod("aws-load-balancer-controller-1", { "app.kubernetes.io/name": "aws-load-balancer-controller" }, { namespace: "kube-system" });
+    const fromKubeSystem = networkPolicy("from-kube-system", {
+      podSelector: {},
+      ingress: [{ from: [{ namespaceSelector: { matchLabels: { "kubernetes.io/metadata.name": "kube-system" } } }] }],
+    });
+    const input: ViewInput = {
+      ...healthy,
+      classes: [ingressClass("alb", ALB)],
+      controllerPods: { [ALB]: [albPod] },
+      policies: [fromKubeSystem],
+    };
+    const chain = diagnoseIngress(ingress("shop", { ingressClassName: "alb", rules: [rule("shop.example.com")] }), view(input));
+    expect(steps(chain)).toEqual(["ingress.class:ok", "ingress.controller:ok", "ingress.address:ok"]);
+    expect(chain.findings[1]?.notes?.map((n) => n.key)).toEqual(["diagnose:ingress.controllerOutside"]);
+    const policies = chain.chains[0]?.findings.find((f) => f.id === "policies");
+    expect((policies?.text.params?.source as { key: string } | undefined)?.key).toBe("diagnose:policies.source.outside");
+    // The controller's pods in kube-system would be let in; the load balancer outside the cluster is not known to be.
+    expect(policies?.status).not.toBe("ok");
   });
 
   it("says what a path type means", () => {

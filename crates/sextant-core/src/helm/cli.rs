@@ -915,6 +915,38 @@ pub async fn upgrade_release(
     upgrade_release_to(cli, mgr, cluster, ns, release, chart_ref, None, values_yaml).await
 }
 
+/// The longest chart version an upgrade accepts.
+const MAX_CHART_VERSION: usize = 128;
+
+/// An exact version as `helm upgrade --version` takes one: `MAJOR.MINOR.PATCH`, an optional `v` in front, an
+/// optional prerelease after `-` and build metadata after `+` (dot-separated letters, digits and `-`). A constraint
+/// (`^15`, `~1.2`, `*`, `>=1`, `1.x`, `1.2`) is not one: Helm would pick some version that matches it.
+fn is_exact_chart_version(v: &str) -> bool {
+    if v.is_empty() || v.len() > MAX_CHART_VERSION {
+        return false;
+    }
+    let v = v.strip_prefix('v').unwrap_or(v);
+    let (v, build) = match v.split_once('+') {
+        Some((v, build)) => (v, Some(build)),
+        None => (v, None),
+    };
+    let (core, pre) = match v.split_once('-') {
+        Some((core, pre)) => (core, Some(pre)),
+        None => (v, None),
+    };
+    let identifiers = |s: &str| {
+        s.split('.')
+            .all(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'))
+    };
+    let numbers: Vec<&str> = core.split('.').collect();
+    numbers.len() == 3
+        && numbers
+            .iter()
+            .all(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+        && pre.is_none_or(identifiers)
+        && build.is_none_or(identifiers)
+}
+
 /// The chart version an upgrade pins: `version` when given (a newer chart, #209; it needs `chart_ref`, since the
 /// chart stored in the release is only the installed version), else the release's own chart version.
 fn upgrade_version(
@@ -926,6 +958,10 @@ fn upgrade_version(
         Some(_) if chart_ref.is_empty() => Err(invalid(
             "a chart version needs a chart reference (repo/chart, a path or an oci:// reference)",
         )),
+        Some(v) if !is_exact_chart_version(v) => Err(invalid(format!(
+            "{:?} is not an exact chart version (MAJOR.MINOR.PATCH, optionally with a v, a prerelease and build metadata)",
+            v.chars().take(MAX_CHART_VERSION).collect::<String>()
+        ))),
         Some(v) => Ok(Some(v.to_owned())),
         None if chart_ref.is_empty() => Ok(None),
         None => Ok(Some(current.summary().chart_version)),
@@ -2045,6 +2081,52 @@ printf '%s' '{"manifest":"kind: Secret\n"}'"#,
         );
         let err = upgrade_version(&current, "", Some("1.2.0")).unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
+    }
+
+    /// A picked version is exact: Helm reads a range as "some version that matches", so it never reaches `helm`.
+    #[test]
+    fn an_upgrade_takes_only_an_exact_chart_version() {
+        let current = super::super::StoredRelease {
+            chart: json!({ "metadata": { "name": "app", "version": "1.0.0" } }),
+            ..Default::default()
+        };
+        for ok in [
+            "15.0.1",
+            "v15.0.1",
+            "1.2.3-rc.1",
+            "1.2.3-beta-2+build.7",
+            "1.2.3+20261020",
+        ] {
+            assert_eq!(
+                upgrade_version(&current, "repo/app", Some(ok))
+                    .unwrap()
+                    .as_deref(),
+                Some(ok),
+                "{ok}"
+            );
+        }
+        let long = format!("1.2.3-{}", "a".repeat(130));
+        for bad in [
+            "^15",
+            "~1.2.0",
+            "*",
+            ">=1.0.0",
+            "1.x",
+            "1.2",
+            "15",
+            "1.2.3 || 2.0.0",
+            "1.2.3,<2",
+            "--devel",
+            "1.2.3-",
+            "1.2.3-a..b",
+            "1.2.3+",
+            "1.2.3-ä",
+            "vv1.2.3",
+            long.as_str(),
+        ] {
+            let err = upgrade_version(&current, "repo/app", Some(bad)).unwrap_err();
+            assert_eq!(err.code, ErrorCode::Invalid, "{bad}");
+        }
     }
 
     #[test]

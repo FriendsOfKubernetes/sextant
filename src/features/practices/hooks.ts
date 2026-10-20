@@ -4,7 +4,7 @@
 // - the details section reads its namespace's HPAs, PodDisruptionBudgets and LimitRanges through the resource map's
 //   shared watches (shared with the "Related" tab) and the workload's pods through the watch the right-sizing and cost
 //   sections share;
-// - how many nodes take pods comes from a tap on the problems store's cluster-wide Node watch (the same tap the
+// - which nodes take pods comes from a tap on the problems store's cluster-wide Node watch (the same tap the
 //   problems category uses), never a watch of its own;
 // - the right-sizing recommendation comes from the right-sizing feature's Prometheus history (polled every five
 //   minutes, shared with its page and section), only when Prometheus answers; without history that check is skipped.
@@ -18,7 +18,7 @@ import { useUsageHistory } from "../rightsizing/hooks";
 import type { Recommendation } from "../rightsizing/recommend";
 import { indexLimits, indexPlacements, type Context } from "./checks";
 import { hpaInfo, limitDefaults, pdbInfo, placementOf, workloadKey } from "./model";
-import { NODE_SOURCE, NODE_TAP_DEF } from "./taps";
+import { NODE_SOURCE, NODE_TAP_DEF, type SchedulingNode } from "./taps";
 
 export const HPA: KindRef = { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler" };
 export const PDB: KindRef = { group: "policy", version: "v1", kind: "PodDisruptionBudget" };
@@ -30,8 +30,8 @@ export function listed(watch: WatchState | undefined): KubeObject[] | undefined 
   return [...watch.items.values()];
 }
 
-/** How many nodes take pods (not cordoned); `undefined` until known. */
-export function useSchedulableNodes(clusterId: ClusterId): number | undefined {
+/** The nodes that take pods (not cordoned); `undefined` until known. */
+export function useSchedulableNodes(clusterId: ClusterId): SchedulingNode[] | undefined {
   const version = useSyncExternalStore(subscribeSources, sourcesVersion, sourcesVersion);
   const epoch = epochOf(clusterId);
   useEffect(() => acquireRows(clusterId, NODE_SOURCE, NODE_TAP_DEF as RowTap), [clusterId, epoch]);
@@ -39,7 +39,7 @@ export function useSchedulableNodes(clusterId: ClusterId): number | undefined {
     void version;
     const state = getRows(sourceKey(clusterId, NODE_SOURCE), NODE_TAP_DEF.id);
     if (!state || state.status === "loading" || state.status === "error" || state.truncated) return undefined;
-    return [...state.rows.values()].filter(Boolean).length;
+    return [...state.rows.values()].filter((n): n is SchedulingNode => n !== null);
   }, [clusterId, version, epoch]);
 }
 
@@ -73,7 +73,7 @@ export function contextFrom(input: {
   pdbs?: readonly KubeObject[];
   limitRanges?: readonly KubeObject[];
   pods?: readonly KubeObject[];
-  schedulableNodes?: number;
+  schedulableNodes?: readonly SchedulingNode[];
   recommendations?: ReadonlyMap<string, ReadonlyMap<string, Recommendation>>;
 }): Context {
   return {

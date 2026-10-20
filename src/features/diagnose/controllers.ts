@@ -19,6 +19,19 @@ export const KNOWN_CONTROLLERS: Readonly<Record<string, string>> = {
   "ingress.k8s.aws/alb": "app.kubernetes.io/name=aws-load-balancer-controller",
 };
 
+/**
+ * Controllers that are not an in-cluster proxy: they provision a load balancer outside the cluster, which sends the
+ * traffic to the pods itself (AWS ALB in IP mode, GCE, Application Gateway). Their pods are no traffic source.
+ */
+export const OUTSIDE_PROXY_CONTROLLERS: ReadonlySet<string> = new Set([
+  "ingress.k8s.aws/alb",
+  "k8s.io/ingress-gce",
+  "networking.gke.io/ingress-gce",
+  "azure/application-gateway",
+]);
+
+export const isOutsideProxy = (controller: string) => OUTSIDE_PROXY_CONTROLLERS.has(controller);
+
 /** The label selector of a controller's pods, `undefined` for a controller Sextant does not know. */
 export function controllerSelector(controller: string): string | undefined {
   return Object.hasOwn(KNOWN_CONTROLLERS, controller) ? KNOWN_CONTROLLERS[controller] : undefined;
