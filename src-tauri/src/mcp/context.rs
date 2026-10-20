@@ -14,6 +14,7 @@ use super::confirm::{ConfirmRequest, Confirmations};
 use super::paths;
 use super::server::McpStatus;
 use super::token::{self, Token};
+use super::window::{DiagnosticRequest, WindowRequests};
 
 /// Something the server tells the window.
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +25,8 @@ pub enum McpEvent {
     Confirm(ConfirmRequest),
     /// `mcp-audit`
     Audit(AuditEntry),
+    /// `mcp-diagnostic`: the window computes a diagnostic tool's answer (ADR-0094).
+    Diagnostic(DiagnosticRequest),
 }
 
 /// Delivers an event to the window; `false` when there is no window to deliver it to.
@@ -39,6 +42,8 @@ pub struct McpContext {
     pub confirmations: Arc<Confirmations>,
     /// Ids of the port forwards agents started: `port_forward_list`/`port_forward_stop` see only these.
     pub agent_forwards: Mutex<HashSet<String>>,
+    /// Diagnostic requests waiting for the window's answer (`mcp_diagnostic_answer`).
+    pub window: WindowRequests,
     token_path: PathBuf,
     /// The token requests must carry; read on every request, so a new token works (and the old one stops) at once.
     token: RwLock<Option<Token>>,
@@ -63,6 +68,7 @@ impl McpContext {
             audit: AuditLog::open(AuditLog::path_in(data_dir)),
             confirmations: Arc::new(Confirmations::default()),
             agent_forwards: Mutex::new(HashSet::new()),
+            window: WindowRequests::default(),
             token_path: paths::token_path(config_dir),
             token: RwLock::new(None),
             emitter: RwLock::new(None),

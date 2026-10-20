@@ -7,11 +7,13 @@
 //! - `guard` — the permission check of every call, confirmation in the window, the journal record;
 //! - `confirm`, `audit` — waiting confirmations (`mcp-confirm`), the journal (`mcp-audit`);
 //! - `tools`, `tools_read` — the tool registry and the reading tools;
-//! - `dry_run` — what `apply_yaml` / `patch_resource` with `dryRun: true` return.
+//! - `dry_run` — what `apply_yaml` / `patch_resource` with `dryRun: true` return;
+//! - `window`, `tools_diagnose`, `diagnose_answers` — the read-only diagnostic tools the window computes (ADR-0094).
 
 pub mod audit;
 pub mod confirm;
 pub mod context;
+pub mod diagnose_answers;
 pub mod dry_run;
 pub mod guard;
 pub mod http;
@@ -19,8 +21,10 @@ pub mod paths;
 pub mod server;
 pub mod token;
 pub mod tools;
+pub mod tools_diagnose;
 pub mod tools_read;
 pub mod tools_write;
+pub mod window;
 
 #[cfg(test)]
 mod tests;

@@ -24,3 +24,5 @@
 - The numbers can differ from the controller's next decision by the ready-pod count and the stabilization window; the view says "estimate" and shows the controller's own conditions next to it.
 - A new Kubernetes release that changes the HPA algorithm (a new behavior field, tolerance defaults) needs `hpa.ts` and its tests updated against `horizontal.go`.
 - Clusters without metrics-server or with an autoscaler Sextant does not know get the HPA's own conditions and the scheduler's message, without the tool-specific views.
+
+Amended (v0.16.0): the read-only MCP tool `get_autoscaling_status` (#210, ADR-0094) gives AI agents the HPA analysis, KEDA state and the scheduler's reasons of pending pods, computed in the window by these engines; no Rust re-implementation.

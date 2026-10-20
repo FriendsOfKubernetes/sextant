@@ -15,6 +15,7 @@ import { AboutHost } from "../features/about/AboutHost";
 import { ConsentNotice } from "../features/extensions/ConsentNotice";
 import { InstallHost } from "../features/gitops-install/InstallHost";
 import { ConfirmHost } from "../features/mcp/ConfirmHost";
+import { DiagnosticsHost } from "../features/mcp-diagnostics/DiagnosticsHost";
 import { PaletteHost } from "../features/palette/PaletteHost";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
@@ -38,7 +39,8 @@ import "./layout.css";
  * host, which keeps extension contributions registered (`ExtensionsHost`), the About dialog (`AboutHost`, opened
  * by the tray menu and by Settings) and the Flux / Argo CD install dialog (`InstallHost`, opened from the cluster
  * menu and the cluster settings; outside the rail, so switching between the narrow and the wide layout never
- * unmounts a running install) and the command palette with its Ctrl+K / Cmd+K shortcut (`PaletteHost`).
+ * unmounts a running install), the command palette with its Ctrl+K / Cmd+K shortcut (`PaletteHost`) and, drawing
+ * nothing, the window's side of the agents' diagnostic tools (`DiagnosticsHost`, ADR-0094).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -123,6 +125,7 @@ export function AppShell() {
       <AboutHost />
       <InstallHost />
       <ConfirmHost />
+      <DiagnosticsHost />
       <ConsentNotice />
       <ExtensionsHost />
       <PaletteHost />

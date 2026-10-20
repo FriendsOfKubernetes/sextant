@@ -1,7 +1,7 @@
 // How the connectivity views say things: the engine's phrases, reasons and references as translated text (keys under
 // `netpol:`), built outside JSX.
 import { formatList, formatParts } from "../../i18n";
-import type { RuleCheck, UnknownReason } from "./engine";
+import type { RuleCheck, SideResult, UnknownReason } from "./engine";
 import { unmodelledFeatures } from "./engine";
 import type { Labels, PeerReason, Phrase, PolicyRef, PortReason, Rule, Tri, Verdict } from "./model";
 
@@ -150,4 +150,12 @@ export function matchText(t: T, rule: Rule, peer: number | null, port: number | 
     peerDef ? t("netpol:match.peer", { n: peerDef.index + 1, peer: phrase(t, peerDef.text) }) : t("netpol:match.anyPeer"),
     portDef ? t("netpol:match.port", { n: portDef.index + 1, port: phrase(t, portDef.text) }) : t("netpol:match.anyPort"),
   ]);
+}
+
+/** Why one side of a connection has its verdict, in words. */
+export function sideWhyText(t: T, side: Pick<SideResult, "why" | "direction">): string {
+  if (side.why === "notIsolated" || side.why === "hostNetwork" || side.why === "external") {
+    return t(`netpol:why.${side.why}.${side.direction}`);
+  }
+  return t(`netpol:why.${side.why}`);
 }

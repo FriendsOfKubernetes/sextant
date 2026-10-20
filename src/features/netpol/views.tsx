@@ -15,10 +15,10 @@ import {
   ruleText,
   ruleWhy,
   triMark,
+  sideWhyText as whyText,
   unknownText,
   VERDICT_TONE,
   verdictText,
-  type T,
 } from "./text";
 import { ResizableTable } from "../../components/Table";
 
@@ -44,13 +44,6 @@ function MatchList({ matches }: { matches: Match[] }) {
       ))}
     </ul>
   );
-}
-
-function whyText(t: T, side: SideResult): string {
-  if (side.why === "notIsolated" || side.why === "hostNetwork" || side.why === "external") {
-    return t(`netpol:why.${side.why}.${side.direction}`);
-  }
-  return t(`netpol:why.${side.why}`);
 }
 
 /** One side of a connection: its verdict, why, and the rules of every policy that selects the pod. */

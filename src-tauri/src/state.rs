@@ -130,6 +130,8 @@ impl AppState {
         self.gitops.stop_all();
         // Extensions' streams; the confirmations the old page was showing are declined.
         self.ext_api.reset();
+        // Agents' diagnostic requests the old page was computing fail (ADR-0094).
+        self.mcp.context().window.fail_all();
     }
 
     /// Taken by a `*_start` before it waits for the core; passed to [`AppState::undo_if_reset`] after registering.

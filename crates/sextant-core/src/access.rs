@@ -344,6 +344,29 @@ pub fn allowed_namespaces(
     NamespaceScope::Only { namespaces }
 }
 
+/// The rules in force (a preset's own, or Custom's) that include `action` — what an agent's diagnostic request tells
+/// the window it may read (ADR-0094).
+pub fn rules_with(access: &ClusterAccess, action: AccessAction) -> Vec<AccessRule> {
+    rules_in_force(access)
+        .into_iter()
+        .filter(|rule| rule.actions.contains(&action))
+        .collect()
+}
+
+/// Whether some rule in force allows `action` on some kind in `namespace` (`None`: anywhere at all).
+pub fn allows_somewhere(
+    access: &ClusterAccess,
+    namespace: Option<&str>,
+    action: AccessAction,
+) -> bool {
+    rules_with(access, action)
+        .iter()
+        .any(|rule| match namespace {
+            None => true,
+            Some(ns) => rule.namespaces.covers(Some(ns)),
+        })
+}
+
 /// Whether any action at all is allowed on `kind` somewhere (for `list_kinds`).
 pub fn has_any_permission(access: &ClusterAccess, kind: &KindPattern) -> bool {
     rules_in_force(access)
@@ -391,6 +414,30 @@ mod tests {
 
     const ALLOWED: Decision = Decision::Allowed { confirm: false };
     const ASK: Decision = Decision::Allowed { confirm: true };
+
+    #[test]
+    fn read_rules_for_the_window_are_the_rules_in_force_with_read() {
+        let team_a = custom(vec![
+            rule(&["team-a"], &[], &[Read, Logs]),
+            rule(&["team-b"], &[pod()], &[Delete]),
+        ]);
+        assert_eq!(
+            rules_with(&team_a, Read),
+            vec![rule(&["team-a"], &[], &[Read, Logs])]
+        );
+        assert!(allows_somewhere(&team_a, Some("team-a"), Read));
+        assert!(!allows_somewhere(&team_a, Some("team-b"), Read));
+        assert!(allows_somewhere(&team_a, None, Read));
+        assert!(!allows_somewhere(&ClusterAccess::default(), None, Read));
+        // A preset acts with its own rules.
+        let read_only = ClusterAccess {
+            preset: AccessPreset::ReadOnly,
+            rules: Vec::new(),
+        };
+        assert_eq!(rules_with(&read_only, Read).len(), 1);
+        assert!(allows_somewhere(&read_only, Some("anything"), Read));
+        assert!(rules_with(&read_only, Delete).is_empty());
+    }
 
     #[test]
     fn off_and_no_rules_deny_everything() {

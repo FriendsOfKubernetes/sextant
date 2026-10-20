@@ -143,6 +143,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("mcp_audit_list", None),
     ("mcp_audit_clear", None),
     ("mcp_confirm_answer", Some("id")),
+    ("mcp_diagnostic_answer", Some("id")),
     ("mcp_binary_path", None),
     ("extensions_list", None),
     ("extension_inspect_file", Some("path")),
@@ -1001,6 +1002,14 @@ fn mcp_token_journal_and_confirmation_commands() {
     .unwrap_err();
     assert_eq!(err["code"], "notFound", "{err}");
 
+    let err = invoke(
+        &h,
+        "mcp_diagnostic_answer",
+        json!({ "id": "diagnostic-1", "answer": { "type": "ok", "result": {} } }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+
     let path = invoke(&h, "mcp_binary_path", json!({})).unwrap();
     assert!(std::path::Path::new(path.as_str().unwrap()).is_absolute());
 }
@@ -1197,6 +1206,7 @@ fn later_argument_names_match_the_frontend() {
         ("argocd_logout", json!({ "clusterId": "c" }), "options"),
         ("argocd_diff", json!({ "clusterId": "c" }), "app"),
         ("mcp_confirm_answer", json!({ "id": "x" }), "approved"),
+        ("mcp_diagnostic_answer", json!({ "id": "x" }), "answer"),
         (
             "gitops_install_prepare",
             json!({ "clusterId": "c" }),

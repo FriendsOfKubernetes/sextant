@@ -379,6 +379,38 @@ impl Guard {
         Ok(scope)
     }
 
+    /// The check of a diagnostic tool over a namespace or the whole cluster (ADR-0094): some Read rule must cover
+    /// `namespace` (for `None`, any Read rule at all), else the call is refused. Gives the Read rules in force, which
+    /// tell the window what it may feed its engines; the answer is filtered again object by object.
+    pub fn check_reads(
+        &self,
+        cluster: &ClusterTarget,
+        namespace: Option<&str>,
+        summary: &CallSummary,
+    ) -> Result<Vec<access::AccessRule>, Refusal> {
+        self.lock().target = clip(&summary.target);
+        let access = self.access(cluster)?;
+        let namespace = namespace.filter(|ns| !ns.trim().is_empty());
+        if !access::allows_somewhere(&access, namespace, AccessAction::Read) {
+            self.decide(AuditDecision::Denied);
+            return Err(Refusal::Denied {
+                action: AccessAction::Read,
+                object: match namespace {
+                    Some(ns) => format!("objects in namespace {ns}"),
+                    None => "objects of any kind".to_owned(),
+                },
+                cluster: cluster.name.clone(),
+            });
+        }
+        self.pass(false);
+        Ok(access::rules_with(&access, AccessAction::Read))
+    }
+
+    /// How the call looks up whether a kind has namespaces (for filtering objects by the rules).
+    pub fn kinds(&self) -> Arc<dyn KindLookup> {
+        Arc::clone(&self.kinds)
+    }
+
     /// A check let the call act; `changes` — for more than reading.
     fn pass(&self, changes: bool) {
         let mut record = self.lock();

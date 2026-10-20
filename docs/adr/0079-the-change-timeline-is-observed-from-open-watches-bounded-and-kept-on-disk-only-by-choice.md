@@ -30,3 +30,5 @@
 - Memory is capped, so on a very large cluster old changes and object texts are dropped first; a change of an object kept as a hash says "Changed" without fields.
 - "Who" is a field manager name, not a person: `kubectl-client-side-apply`, `helm`, `argocd-controller` or `sextant`.
 - Tests: `model.test.ts` (projection, diff, managers), `recorder.test.ts` (selectors, bounds, late changes, persistence), `timeline.test.tsx` (page and tab), `crates/sextant-core/src/timeline/tests.rs` and `crates/sextant-core/tests/timeline.rs` (kind cluster).
+
+Amended (v0.16.0): the read-only MCP tool `get_recent_changes` (#210, ADR-0094) gives AI agents what the recorder already holds (filtered by their Read rules, Secrets by key names only); it never opens a watch, and the `timeline_*` commands stay window-only.

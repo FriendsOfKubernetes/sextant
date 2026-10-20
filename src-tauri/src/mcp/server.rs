@@ -80,6 +80,7 @@ pub fn all_tools() -> ToolSet {
     let mut tools = ToolSet::new();
     tools_read::register_read_tools(&mut tools);
     register_write_tools(&mut tools);
+    super::tools_diagnose::register_diagnostic_tools(&mut tools);
     tools
 }
 
@@ -503,6 +504,7 @@ impl McpServer {
             running.take()
         };
         self.ctx.confirmations.close(ConfirmSource::Agent);
+        self.ctx.window.fail_all();
         if let Some(running) = running {
             running.task.abort();
             // Now, not when the runtime gets to the aborted task (see `SharedListener`).

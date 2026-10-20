@@ -165,6 +165,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::mcp::mcp_audit_list,
         commands::mcp::mcp_audit_clear,
         commands::mcp::mcp_confirm_answer,
+        commands::mcp::mcp_diagnostic_answer,
         commands::mcp::mcp_binary_path,
         extensions::manage::extensions_list,
         extensions::manage::extension_inspect_file,
@@ -247,6 +248,10 @@ fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
             McpEvent::Status(status) => handle.emit(events::MCP_STATUS, status).is_ok(),
             McpEvent::Audit(entry) => handle.emit(events::MCP_AUDIT, entry).is_ok(),
             McpEvent::Confirm(request) => ask_in_window(&handle, request),
+            // A diagnostic request is computed quietly: the window is neither revealed nor asks for attention.
+            McpEvent::Diagnostic(request) => handle
+                .get_webview_window(window::MAIN_WINDOW)
+                .is_some_and(|w| w.emit(events::MCP_DIAGNOSTIC, request).is_ok()),
         }
     }));
     let handle = app.clone();

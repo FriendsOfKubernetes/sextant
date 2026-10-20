@@ -25,3 +25,5 @@
 - A new kind of problem is added in one place and appears on the screen, in the badge (if `notify`) and in notifications together; tests in `model.test.ts` cover the rules.
 - On a large cluster the shared watches of pods, events and nodes stay open while the screen, the badge or notifications need them; notifications keep them open in the background for connected clusters (ADR-0067).
 - The judgement is Sextant's: thresholds such as the 10 minute rollout stall, the 14 day certificate warning and the graces are constants in `model.ts`, not settings.
+
+Amended (v0.16.0): AI agents get the screen's findings through the read-only MCP tool `get_problems` (#210, ADR-0094): the backend checks the agent's Read rules, the window computes from these same shared sources and rules (no second detector), and the backend filters the answer again; opt-in categories only while they are on, `credentials` never.

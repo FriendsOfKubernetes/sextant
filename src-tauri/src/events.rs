@@ -14,6 +14,9 @@ pub const MCP_STATUS: &str = "mcp-status";
 pub const MCP_CONFIRM: &str = "mcp-confirm";
 /// `mcp-audit` — payload `AuditEntry` (one more call of an agent in the journal).
 pub const MCP_AUDIT: &str = "mcp-audit";
+/// `mcp-diagnostic` — payload `DiagnosticRequest`: the window computes an agent's diagnostic answer (ADR-0094) and
+/// answers with the command `mcp_diagnostic_answer`.
+pub const MCP_DIAGNOSTIC: &str = "mcp-diagnostic";
 /// `extensions-changed` — no payload (`null`): installed extensions, a state or a manifest changed; read
 /// `extensions_list` again.
 pub const EXTENSIONS_CHANGED: &str = "extensions-changed";
@@ -107,8 +110,20 @@ mod tests {
     #[test]
     fn event_names() {
         assert_eq!(
-            [MCP_STATUS, MCP_CONFIRM, MCP_AUDIT, OPEN_ABOUT],
-            ["mcp-status", "mcp-confirm", "mcp-audit", "open-about"]
+            [
+                MCP_STATUS,
+                MCP_CONFIRM,
+                MCP_AUDIT,
+                MCP_DIAGNOSTIC,
+                OPEN_ABOUT
+            ],
+            [
+                "mcp-status",
+                "mcp-confirm",
+                "mcp-audit",
+                "mcp-diagnostic",
+                "open-about"
+            ]
         );
     }
 }

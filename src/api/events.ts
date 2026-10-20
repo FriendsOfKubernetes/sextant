@@ -7,6 +7,7 @@ import type { ConfirmRequest } from "./generated/ConfirmRequest";
 import type { ExtensionFilesChangedPayload } from "./generated/ExtensionFilesChangedPayload";
 import type { ForwardInfo } from "./generated/ForwardInfo";
 import type { McpStatus } from "./generated/McpStatus";
+import type { DiagnosticRequest } from "./generated/DiagnosticRequest";
 import { subscribe, type Unsubscribe } from "./transport";
 
 export const events = {
@@ -22,6 +23,11 @@ export const events = {
   /** A new call of an agent was written to the journal. */
   onMcpAudit: (handler: (entry: AuditEntry) => void): Promise<Unsubscribe> => subscribe("mcp-audit", handler),
   onMcpStatus: (handler: (status: McpStatus) => void): Promise<Unsubscribe> => subscribe("mcp-status", handler),
+  /**
+   * An agent's diagnostic tool asks the window to compute (ADR-0094); answer with `api.mcp.diagnosticAnswer(id, …)`.
+   */
+  onMcpDiagnostic: (handler: (request: DiagnosticRequest) => void): Promise<Unsubscribe> =>
+    subscribe("mcp-diagnostic", handler),
   /** The list of installed extensions changed (installed, enabled, disabled, removed, reloaded); ask `list` again. */
   onExtensionsChanged: (handler: () => void): Promise<Unsubscribe> => subscribe("extensions-changed", () => handler()),
   /** Files of an extension running from a folder changed (development mode): its frames reload. */

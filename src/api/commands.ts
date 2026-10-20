@@ -80,6 +80,7 @@ import type { LogOptions } from "./generated/LogOptions";
 import type { LogUpdate } from "./generated/LogUpdate";
 import type { ManagedResource } from "./generated/ManagedResource";
 import type { McpStatus } from "./generated/McpStatus";
+import type { DiagnosticAnswer } from "./generated/DiagnosticAnswer";
 import type { MetricsStatus } from "./generated/MetricsStatus";
 import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
@@ -645,6 +646,8 @@ export const mcp = {
   auditClear: () => call<void>("mcp_audit_clear"),
   /** Answers an `mcp-confirm` request; rejects with `notFound` when it no longer waits. */
   confirmAnswer: (id: string, approved: boolean) => call<void>("mcp_confirm_answer", { id, approved }),
+  /** Answers an `mcp-diagnostic` request (ADR-0094); rejects with `notFound` when it no longer waits. */
+  diagnosticAnswer: (id: string, answer: DiagnosticAnswer) => call<void>("mcp_diagnostic_answer", { id, answer }),
   /** Path of the running Sextant executable, for the Claude Desktop snippet. */
   binaryPath: () => call<string>("mcp_binary_path"),
 };

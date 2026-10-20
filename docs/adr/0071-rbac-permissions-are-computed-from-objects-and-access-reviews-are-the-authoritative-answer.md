@@ -25,3 +25,5 @@
 - A cluster with a webhook authorizer or users in `system:masters` shows computed permissions that differ from reality; the note on the page and the **Can I** tab are the remedy.
 - Subjects are only those named in bindings, or typed; there is no list of "all users".
 - Tests: `engine.test.ts` (matching, scopes, aggregation, service accounts), `rbac.test.tsx`, and the Rust tests of `sextant_core::rbac`.
+
+Amended (v0.16.0): the computed views (Subject, Who can) reach AI agents through the read-only MCP tool `get_permissions` (#210, ADR-0094), always labelled as computed and over the RBAC lists the agent may read; the access reviews stay window-only.

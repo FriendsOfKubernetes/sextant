@@ -6,6 +6,7 @@ use tauri::State;
 
 use crate::mcp::McpStatus;
 use crate::mcp::audit::AuditEntry;
+use crate::mcp::window::DiagnosticAnswer;
 use crate::state::AppState;
 
 /// Off, running at `url`, or an error (port taken, …).
@@ -50,6 +51,17 @@ pub async fn mcp_confirm_answer(
     approved: bool,
 ) -> Result<(), CoreError> {
     state.mcp.context().confirmations.answer(&id, approved)
+}
+
+/// The window's answer to an `mcp-diagnostic` request (ADR-0094); `notFound` when it no longer waits (timed out, the
+/// call was dropped). The backend checks and filters the answer before the agent reads it.
+#[tauri::command]
+pub async fn mcp_diagnostic_answer(
+    state: State<'_, AppState>,
+    id: String,
+    answer: DiagnosticAnswer,
+) -> Result<(), CoreError> {
+    state.mcp.context().window.answer(&id, answer)
 }
 
 /// The path of the running Sextant executable, for the Claude Desktop snippet (`<path> mcp`).

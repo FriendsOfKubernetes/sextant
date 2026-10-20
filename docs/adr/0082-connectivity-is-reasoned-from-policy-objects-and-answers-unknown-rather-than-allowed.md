@@ -25,3 +25,5 @@
 - The answer is as good as the CNI's enforcement: a CNI that does not enforce NetworkPolicy allows everything regardless.
 - A new policy kind or a new field of a modelled one must either be modelled with tests or added to the "unknown" path; it must never be silently ignored.
 - Tests: `engine.test.ts` (Kubernetes semantics, table-driven), `cni.test.ts` (Cilium and Calico), `netpol.test.tsx` (page and details).
+
+Amended (v0.16.0): the read-only MCP tool `check_connectivity` (#210, ADR-0094) runs the page's check for AI agents in the window; policy lists, namespace labels and pods the agent may not read are unreadable to the engine, so such answers are "unknown".
