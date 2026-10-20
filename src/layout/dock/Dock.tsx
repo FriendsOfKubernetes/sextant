@@ -1,7 +1,7 @@
 import { useEffect, useRef, type CSSProperties, type KeyboardEvent, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
-import { EmptyState, Icon, renderIcon } from "../../components";
+import { EmptyState, Icon, renderIcon, revealInStrip, useStripScroll } from "../../components";
 import { getDockActions, getDockTabComponent, useDockVersion, type DockActionDef } from "./registry";
 
 /**
@@ -20,6 +20,15 @@ export function Dock() {
   const tabButtons = useRef(new Map<string, HTMLButtonElement>());
   const sectionRef = useRef<HTMLElement>(null);
   const trigger = useDockFocus(sectionRef, dock.activeTabId, dock.open, tabButtons);
+  // The tab strip scrolls sideways without a scrollbar (stripScroll.ts): the wheel scrolls it, and the active tab with
+  // its close button is brought into view.
+  const strip = useRef<HTMLDivElement>(null);
+  const closeButtons = useRef(new Map<string, HTMLButtonElement>());
+  useStripScroll(strip, [dock.tabs.length, dock.open]);
+  useEffect(() => {
+    const id = dock.activeTabId;
+    if (id) revealInStrip(strip.current, tabButtons.current.get(id), closeButtons.current.get(id));
+  }, [dock.activeTabId, dock.tabs.length, dock.open]);
 
   // The WAI-ARIA tabs pattern: ←/→ (wrapping), Home/End select and focus a tab; Delete closes it; Escape returns
   // focus to where it was before the tab opened.
@@ -62,6 +71,7 @@ export function Dock() {
             subgrid (older engines) the tabs get one width and each close button is placed by `--dock-tab-index`
             (layout.css). */}
         <div
+          ref={strip}
           className="dock__tabs"
           style={dock.tabs.length > 0 ? { gridTemplateColumns: `repeat(${dock.tabs.length}, max-content max-content)` } : undefined}
         >
@@ -95,12 +105,14 @@ export function Dock() {
           {dock.tabs.map((tab, index) => (
             <button
               key={tab.id}
+              ref={(el) => {
+                if (el) closeButtons.current.set(tab.id, el);
+                else closeButtons.current.delete(tab.id);
+              }}
               type="button"
-              className={
-                tab.id === dock.activeTabId
-                  ? "icon-btn icon-btn--small dock__tab-close dock__tab-close--active"
-                  : "icon-btn icon-btn--small dock__tab-close"
-              }
+              // Its own class only: the shared `.icon-btn` rules load after layout.css and would make it a shorter,
+              // rounded box beside its tab instead of the tab's end.
+              className={tab.id === dock.activeTabId ? "dock__tab-close dock__tab-close--active" : "dock__tab-close"}
               // Only the active tab's close button is a tab stop (right after its tab); Delete closes any tab.
               tabIndex={tab.id === dock.activeTabId ? 0 : -1}
               style={{ gridColumn: index * 2 + 2, "--dock-tab-index": index } as CSSProperties}

@@ -99,6 +99,20 @@ describe("Sextant against sextant-test", () => {
     const screen = activeDockPanel().$(".terminal__screen");
     await expect(screen).toBeDisplayed();
     await eventually(async () => (await textOf(activeDockPanel().$(".xterm-rows"))).trim().length > 0, "the shell prompt");
+    // Each dock tab ends in its close button: right after the tab, as high as it, square (v0.15.4 drew a shorter,
+    // rounded box there, the shared button rules overriding the dock's own).
+    const misfits = await browser.execute(() => {
+      const dock = document.querySelector('section[aria-label="Dock"]')!;
+      const closes = [...dock.querySelectorAll<HTMLElement>('button[aria-label^="Close tab "]')];
+      return [...dock.querySelectorAll<HTMLElement>('[role="tab"]')].flatMap((tab, i) => {
+        const t = tab.getBoundingClientRect();
+        const c = closes[i]!.getBoundingClientRect();
+        const off = Math.max(Math.abs(c.left - t.right), Math.abs(c.top - t.top), Math.abs(c.bottom - t.bottom));
+        const radius = getComputedStyle(closes[i]!).borderTopRightRadius;
+        return off > 0.5 || radius !== "0px" ? [`${tab.textContent}: off by ${off}px, radius ${radius}`] : [];
+      });
+    });
+    expect(misfits).toEqual([]);
     await screen.click();
     await typeText("echo sextant-$((40 + 2))");
     await browser.keys("Enter");

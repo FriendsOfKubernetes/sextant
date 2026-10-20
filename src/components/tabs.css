@@ -4,6 +4,27 @@
   gap: 2px;
   overflow-x: auto;
   border-bottom: 1px solid var(--color-border);
+  /* No scrollbar (GTK overlays it on the labels): the wheel scrolls the list and the edges fade (stripScroll.ts). */
+  scrollbar-width: none;
+}
+
+.tabs__list::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs__list[data-fade="end"] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+
+.tabs__list[data-fade="start"] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 24px), transparent);
+}
+
+.tabs__list[data-fade="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
 }
 
 .tabs__tab {

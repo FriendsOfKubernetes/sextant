@@ -242,6 +242,27 @@
   grid-template-rows: 100%;
   overflow-x: auto;
   height: 100%;
+  /* No scrollbar (GTK overlays it on the tab labels): the wheel scrolls the strip and the edges fade (stripScroll.ts). */
+  scrollbar-width: none;
+}
+
+.dock__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.dock__tabs[data-fade="end"] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+
+.dock__tabs[data-fade="start"] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 24px), transparent);
+}
+
+.dock__tabs[data-fade="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
 }
 
 /* The tab list is a real box (WebKit drops a `display: contents` tablist from the accessibility tree): it spans every
@@ -253,10 +274,6 @@
   grid-template-columns: subgrid;
   grid-template-rows: 100%;
   min-width: 0;
-}
-
-.dock__tab-close {
-  grid-row: 1;
 }
 
 .dock__tab-title {
@@ -276,11 +293,37 @@
   outline-offset: -2px;
 }
 
+/* The end of its tab: as high as the tab, square, on the tab's background (the active one's below). A class of its
+   own, not `.icon-btn`: global.css loads after this file, so the shared button rules (28 px high, rounded,
+   transparent) would win and draw the button as a separate box beside its tab. */
 .dock__tab-close {
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
   align-self: stretch;
-  height: auto;
+  width: var(--control-height-compact);
+  padding: 0;
+  border: none;
   border-right: 1px solid var(--color-border);
   border-radius: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Hover marks the icon, not the whole button, so the tab keeps one background. */
+.dock__tab-close:hover {
+  color: var(--color-text);
+}
+
+.dock__tab-close:hover .icon {
+  border-radius: 3px;
+  background: var(--color-hover);
+  box-shadow: 0 0 0 3px var(--color-hover);
 }
 
 .dock__tab-title--active,
@@ -290,6 +333,7 @@
 }
 
 .dock__tab-close:focus-visible {
+  outline: 2px solid var(--color-focus);
   outline-offset: -2px;
 }
 

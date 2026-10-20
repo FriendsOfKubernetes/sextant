@@ -315,6 +315,24 @@ describe("dock", () => {
     expect(rule(".dock__tab-close")).toMatch(/left:\s*calc\(\(var\(--dock-tab-index\) \+ 1\) \* var\(--dock-tab-width\)/);
     expect(cssRule("src/layout/layout.css", ".dock__tabs")["--dock-tab-width"]).toBeDefined();
   });
+
+  it("draws each close button as the end of its tab: full height, square, the tab's background", () => {
+    render(<Dock />);
+    act(() => void useAppStore.getState().openDockTab({ id: "a", type: "logs", title: "search-nodes-0", payload: null }));
+    // global.css is bundled after layout.css, so a shared button class (`.icon-btn`: 28 px high, rounded, transparent)
+    // would override the dock's own rule and leave the button a shorter, rounded box beside its tab (v0.15.4).
+    const close = screen.getByRole("button", { name: "Close tab search-nodes-0" });
+    expect([...close.classList].filter((c) => !c.startsWith("dock__"))).toEqual([]);
+    expect(cssRule("src/layout/layout.css", ".dock__tab-close")).toMatchObject({
+      "align-self": "stretch",
+      width: "var(--control-height-compact)",
+      "border-radius": "0",
+      background: "transparent",
+    });
+    expect(cssRule("src/layout/layout.css", ".dock__tab-title--active,\n.dock__tab-close--active")).toMatchObject({
+      background: "var(--color-dock)",
+    });
+  });
 });
 
 describe("terminal", () => {

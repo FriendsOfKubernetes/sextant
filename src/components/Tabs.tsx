@@ -6,7 +6,8 @@
 //   <Tabs label={t("…containers")} tabs={[{ id: "app", label: "app" }]} selected={id} onSelect={setId}>
 //     <ContainerFields container={selectedContainer} />
 //   </Tabs>
-import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { revealInStrip, useStripScroll } from "./stripScroll";
 import "./tabs.css";
 
 export interface TabItem<T extends string> {
@@ -33,7 +34,13 @@ export function Tabs<T extends string>({ label, tabs, selected, onSelect, childr
   const generated = useId();
   const prefix = idPrefix ?? generated;
   const buttons = useRef(new Map<T, HTMLButtonElement>());
+  const list = useRef<HTMLDivElement>(null);
   const current = tabs.some((tab) => tab.id === selected) ? selected : tabs[0]?.id;
+  // The list scrolls sideways without a scrollbar (stripScroll.ts): the wheel scrolls it, the selected tab is shown.
+  useStripScroll(list, [tabs.length]);
+  useEffect(() => {
+    if (current !== undefined) revealInStrip(list.current, buttons.current.get(current));
+  }, [current]);
   const tabId = (id: T) => `${prefix}-tab-${id}`;
   const panelId = (id: T) => `${prefix}-panel-${id}`;
 
@@ -63,7 +70,7 @@ export function Tabs<T extends string>({ label, tabs, selected, onSelect, childr
 
   return (
     <div className={className ? `tabs ${className}` : "tabs"}>
-      <div className="tabs__list" role="tablist" aria-label={label}>
+      <div ref={list} className="tabs__list" role="tablist" aria-label={label}>
         {tabs.map((tab, index) => {
           const active = tab.id === current;
           return (
