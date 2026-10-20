@@ -284,3 +284,25 @@ async fn a_server_without_buildinfo_is_probed_with_a_constant_query() {
     .await;
     assert_eq!(detect_uncached(&client(&api)).await, None);
 }
+
+#[tokio::test]
+async fn a_missing_or_refused_service_is_probed_once() {
+    // The API server's 404 for a missing Service, a refusal: no second request.
+    for status in [404, 401, 403] {
+        let api = FakeApi::start(move |req: &Request| {
+            if req.path.ends_with("/api/v1/query") {
+                Reply::json(200, VECTOR)
+            } else {
+                Reply::json(
+                    status,
+                    format!(r#"{{"kind":"Status","apiVersion":"v1","status":"Failure","code":{status}}}"#),
+                )
+            }
+        })
+        .await;
+        let prometheus =
+            Prometheus::new(&client(&api), &service("vm", "vmsingle-vm", 8429, "")).unwrap();
+        assert!(prometheus.probe().await.is_err(), "{status}");
+        assert_eq!(api.requests().len(), 1, "{status}: {:?}", api.requests());
+    }
+}

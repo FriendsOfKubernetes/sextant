@@ -231,12 +231,13 @@ impl Prometheus {
     }
 
     /// Whether this is a Prometheus-compatible API that answers: `api/v1/status/buildinfo` (Prometheus, and
-    /// VictoriaMetrics from v1.77.0 on, single-node and vmselect alike); when something answered that with an error
-    /// (an older VictoriaMetrics has no such handler), an instant query of a constant.
+    /// VictoriaMetrics from v1.77.0 on, single-node and vmselect alike); when the server refused that path the way an
+    /// older VictoriaMetrics does (no such handler: HTTP 400, or an answer that is not the Prometheus API), an
+    /// instant query of a constant. A missing Service (404), a refusal (401/403) or no answer is not asked again.
     pub(crate) async fn probe(&self) -> CoreResult<()> {
         match self.get("api/v1/status/buildinfo").await {
             Ok(_) => Ok(()),
-            Err(err) if err.code == ErrorCode::Unreachable => Err(err),
+            Err(err) if !matches!(err.code, ErrorCode::Invalid | ErrorCode::Other) => Err(err),
             Err(err) => self
                 .get("api/v1/query?query=vector%281%29")
                 .await

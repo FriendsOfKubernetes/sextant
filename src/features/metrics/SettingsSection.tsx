@@ -56,7 +56,8 @@ export function isTenant(text: string): boolean {
 export function presetOf(port: number | null, prefix: string): Preset {
   if (port === PRESET_ADDRESS.victoriaMetricsCluster.port && tenantOf(prefix) !== null) return "victoriaMetricsCluster";
   if (prefix.trim() !== "" && prefix.trim() !== "/") return "custom";
-  if (port === PRESET_ADDRESS.prometheus.port) return "prometheus";
+  // 80: the prometheus-community chart's `prometheus-server`.
+  if (port === PRESET_ADDRESS.prometheus.port || port === 80) return "prometheus";
   if (port === PRESET_ADDRESS.victoriaMetricsSingle.port || port === 8429) return "victoriaMetricsSingle";
   return "custom";
 }
@@ -116,6 +117,10 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
   const [preset, setPreset] = useState<Preset>(
     savedTarget?.type === "service" ? presetOf(savedTarget.port, savedTarget.pathPrefix) : "prometheus",
   );
+  // The tenant as typed: the path prefix is built from it, and it is checked on saving.
+  const [tenant, setTenant] = useState(
+    (savedTarget?.type === "service" ? tenantOf(savedTarget.pathPrefix) : null) ?? DEFAULT_TENANT,
+  );
   const [invalid, setInvalid] = useState<"address" | "tenant" | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -130,6 +135,7 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
         setService(describeService(current.target));
         setPrefix(current.target.pathPrefix);
         setPreset(presetOf(current.target.port, current.target.pathPrefix));
+        setTenant(tenantOf(current.target.pathPrefix) ?? DEFAULT_TENANT);
       } else setUrl(current.target.url);
     }
   }, [savedKey]);
@@ -153,21 +159,38 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
     setPreset(next);
     if (next === "custom") return;
     setService(withPort(service, PRESET_ADDRESS[next].port));
-    setPrefix(next === "victoriaMetricsCluster" ? vmselectPrefix(tenantOf(prefix) ?? DEFAULT_TENANT) : "");
+    if (next === "victoriaMetricsCluster") {
+      const kept = isTenant(tenant) ? tenant.trim() : DEFAULT_TENANT;
+      setTenant(kept);
+      setPrefix(vmselectPrefix(kept));
+    } else setPrefix("");
+  };
+
+  /** The kind the address and prefix now match, asked when a field is left, not on every keystroke. A typed port
+   * that is still vmselect's keeps the VictoriaMetrics cluster kind, whose prefix is checked on saving. */
+  const rederive = (address: string, pathPrefix: string) => {
+    const port = portOf(address) ?? presetPort(preset);
+    if (preset === "victoriaMetricsCluster" && port === PRESET_ADDRESS.victoriaMetricsCluster.port) return;
+    const next = presetOf(port, pathPrefix);
+    setPreset(next);
+    if (next === "victoriaMetricsCluster") setTenant(tenantOf(pathPrefix) ?? DEFAULT_TENANT);
   };
 
   const saveManual = () => {
-    const tenant = kind === "service" && preset === "victoriaMetricsCluster" ? tenantOf(prefix) : null;
-    if (tenant !== null && !isTenant(tenant)) {
-      setInvalid("tenant");
-      return;
+    if (kind === "service" && preset === "victoriaMetricsCluster") {
+      const inPrefix = tenantOf(prefix);
+      if (inPrefix === null || !isTenant(inPrefix) || inPrefix !== tenant.trim()) {
+        setInvalid("tenant");
+        return;
+      }
     }
     const target = kind === "service" ? parseServiceAddress(service, prefix) : parseUrlAddress(url);
     setInvalid(target === null ? "address" : null);
-    if (target) void save({ prometheus: { mode: "manual", target } });
+    if (!target) return;
+    if (target.type === "service") rederive(service, prefix);
+    void save({ prometheus: { mode: "manual", target } });
   };
 
-  const tenant = preset === "victoriaMetricsCluster" ? (tenantOf(prefix) ?? "") : null;
   const example = PRESET_ADDRESS[preset === "custom" ? "prometheus" : preset].example;
 
   return (
@@ -206,23 +229,22 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
                     type="text"
                     value={service}
                     placeholder={example}
-                    onChange={(e) => {
-                      setService(e.target.value);
-                      // Typed without a port (yet): the chosen kind stays.
-                      const port = portOf(e.target.value);
-                      if (port !== null) setPreset(presetOf(port, prefix));
-                    }}
+                    onChange={(e) => setService(e.target.value)}
+                    onBlur={(e) => rederive(e.target.value, prefix)}
                     onKeyDown={(e) => e.key === "Enter" && saveManual()}
                   />
                 </label>
-                {tenant !== null && (
+                {preset === "victoriaMetricsCluster" && (
                   <label className="mx-settings__field">
                     <span>{t("metrics:settings.tenant")}</span>
                     <input
                       type="text"
                       value={tenant}
                       placeholder={DEFAULT_TENANT}
-                      onChange={(e) => setPrefix(vmselectPrefix(e.target.value))}
+                      onChange={(e) => {
+                        setTenant(e.target.value);
+                        setPrefix(vmselectPrefix(e.target.value));
+                      }}
                       onKeyDown={(e) => e.key === "Enter" && saveManual()}
                     />
                   </label>
@@ -235,8 +257,10 @@ export function MetricsSettingsSection({ clusterId }: ClusterSettingsSectionProp
                     placeholder="/"
                     onChange={(e) => {
                       setPrefix(e.target.value);
-                      setPreset(presetOf(portOf(service) ?? presetPort(preset), e.target.value));
+                      const typed = tenantOf(e.target.value);
+                      if (preset === "victoriaMetricsCluster" && typed !== null) setTenant(typed);
                     }}
+                    onBlur={(e) => rederive(service, e.target.value)}
                   />
                 </label>
               </>

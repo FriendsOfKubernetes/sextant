@@ -16,6 +16,7 @@ import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "..
 import { resetNamespaceRestore } from "../namespaces";
 import { IDLE_TTL_MS, MAX_IDLE_ENTRIES, metricsCacheStats, POLL_INTERVAL_MS, resetMetricsCache, usePodUsage } from "./hooks";
 import "./index";
+import { presetOf } from "./SettingsSection";
 
 const pod = podJson as KubeObject;
 const node = nodeJson as KubeObject;
@@ -438,9 +439,66 @@ describe("Metrics cluster settings", () => {
         target: { type: "service", namespace: "vm", service: "vmselect-vm", port: 8481, pathPrefix: "/select/12:34/prometheus" },
       }),
     );
-    // Another prefix is no preset any more.
+    // Under the VictoriaMetrics cluster kind another prefix is refused; "Other" takes it.
     fireEvent.change(prefix, { target: { value: "/prom" } });
+    fireEvent.blur(prefix);
+    expect(kind).toHaveValue("victoriaMetricsCluster");
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Expected a tenant such as 0 or 12:34.");
+    fireEvent.change(kind, { target: { value: "custom" } });
+    expect(prefix).toHaveValue("/prom");
+    fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+    await waitFor(() =>
+      expect(saved()?.prometheus).toEqual({
+        mode: "manual",
+        target: { type: "service", namespace: "vm", service: "vmselect-vm", port: 8481, pathPrefix: "/prom" },
+      }),
+    );
+  });
+
+  it("a tenant with a slash is shown as typed and refused, not saved as another path", async () => {
+    serve(status());
+    settingsSection();
+    fireEvent.click(await screen.findByRole("radio", { name: "Manual address" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Service (namespace/service:port)" }), {
+      target: { value: "vm/vmselect-vm" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Kind" }), { target: { value: "victoriaMetricsCluster" } });
+    const tenant = screen.getByRole("textbox", { name: "Tenant (accountID or accountID:projectID)" });
+    for (const typed of ["1/", "0/../x"]) {
+      fireEvent.change(tenant, { target: { value: typed } });
+      expect(tenant).toHaveValue(typed);
+      fireEvent.click(screen.getByRole("button", { name: "Use this address" }));
+      expect(screen.getByRole("alert")).toHaveTextContent("Expected a tenant such as 0 or 12:34.");
+    }
+    expect(saved()?.prometheus).toBeUndefined();
+  });
+
+  it("the kind is judged when the address is left, not while its port is typed", async () => {
+    serve(status());
+    settingsSection();
+    fireEvent.click(await screen.findByRole("radio", { name: "Manual address" }));
+    const kind = screen.getByRole("combobox", { name: "Kind" });
+    const address = screen.getByRole("textbox", { name: "Service (namespace/service:port)" });
+    fireEvent.change(address, { target: { value: "vm/vmselect-vm" } });
+    fireEvent.change(kind, { target: { value: "victoriaMetricsCluster" } });
+    fireEvent.change(address, { target: { value: "vm/vmselect-vm:84" } });
+    expect(kind).toHaveValue("victoriaMetricsCluster");
+    expect(screen.getByRole("textbox", { name: "Tenant (accountID or accountID:projectID)" })).toBeInTheDocument();
+    fireEvent.change(address, { target: { value: "vm/vmselect-vm:8481" } });
+    fireEvent.blur(address);
+    expect(kind).toHaveValue("victoriaMetricsCluster");
+    // Another port, once left: no longer vmselect's.
+    fireEvent.change(address, { target: { value: "monitoring/prometheus-server:80" } });
+    fireEvent.blur(address);
     expect(kind).toHaveValue("custom");
+  });
+
+  it("prometheus-server on port 80 is the Prometheus kind", () => {
+    expect(presetOf(80, "")).toBe("prometheus");
+    expect(presetOf(9090, "")).toBe("prometheus");
+    expect(presetOf(8481, "/select/0/prometheus")).toBe("victoriaMetricsCluster");
+    expect(presetOf(8481, "/select/1//prometheus")).toBe("custom");
   });
 
   it("a manual URL is saved as a direct address", async () => {
