@@ -45,6 +45,11 @@ impl FakeKinds {
             "Role",
             "RoleBinding",
             "ScaledObject",
+            "VirtualService",
+            "DestinationRule",
+            "ServiceEntry",
+            "PersistentVolumeClaim",
+            "HorizontalPodAutoscaler",
         ];
         let cluster = ["Node", "Namespace", "ClusterRole", "ClusterRoleBinding"];
         let mut map: HashMap<String, bool> =
@@ -259,13 +264,131 @@ async fn a_diagnosis_names_only_what_the_agent_may_read() {
     }))
     .unwrap();
     let checked = object("", "Service", Some("team-a"), "web");
-    let out = answers::diagnosis(answer, &mut filter(team_a()), checked.clone()).await;
+    let out = answers::diagnosis(answer, &mut filter(team_a()), checked.clone(), true).await;
     assert_eq!(out.chain.object, Some(checked));
     assert_eq!(out.chain.findings[0].objects.len(), 1);
     assert_eq!(out.chain.findings[1].status, "unknown");
     assert_eq!(out.chain.chains.len(), 1);
     assert_eq!(out.chain.chains[0].title.as_deref(), Some("to team-a"));
     assert!(!all_text(&answers::to_value(&out)).contains("team-b"));
+}
+
+#[tokio::test]
+async fn a_problem_resting_on_another_namespace_says_nothing_about_it() {
+    // Mesh findings are judged across objects: a team-a VirtualService whose subset lives in a team-b
+    // DestinationRule, a host judged unknown against every namespace's ServiceEntries, a conflict with a team-b
+    // VirtualService. The window sends what each rests on (`refs`); a team-a agent gets none of them.
+    let mesh = |reason: &str, refs: Value| {
+        json!({
+            "category": "mesh", "reason": reason, "message": "a subset is missing",
+            "object": obj("networking.istio.io", "VirtualService", Some("team-a"), "reviews"),
+            "source": { "group": "networking.istio.io", "kind": "VirtualService" },
+            "refs": refs,
+        })
+    };
+    let dr = |ns: Option<&str>, name: Option<&str>| json!({ "group": "networking.istio.io", "kind": "DestinationRule", "namespace": ns, "name": name });
+    let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
+        "problems": [
+            mesh("MissingSubset", json!([dr(Some("team-a"), None), dr(Some("team-b"), None), dr(Some("team-b"), Some("reviews"))])),
+            mesh("UnknownHost", json!([{ "group": "networking.istio.io", "kind": "ServiceEntry" }])),
+            mesh("ConflictingVirtualService", json!([{ "group": "networking.istio.io", "kind": "VirtualService" }])),
+            mesh("MissingDestinationRule", json!([dr(Some("team-a"), None)])),
+            // Best practices judged against the Nodes (cluster-scoped).
+            { "category": "practices", "reason": "ReplicasOnOneNode", "object": obj("apps", "Deployment", Some("team-a"), "web"),
+              "source": { "group": "apps", "kind": "Deployment" },
+              "refs": [{ "group": "", "kind": "Pod", "namespace": "team-a" }, { "group": "", "kind": "Node" }] },
+        ],
+        "categories": ["mesh", "practices"],
+        "notChecked": ["disk", "made-up"],
+    }))
+    .unwrap();
+    let on = vec!["practices".to_owned(), "disk".to_owned()];
+    let kept = answers::problems(answer.clone(), &mut filter(team_a()), &on, None, 100).await;
+    let reasons: Vec<&str> = kept.problems.iter().map(|p| p.reason.as_str()).collect();
+    assert_eq!(reasons, ["MissingDestinationRule"]);
+    assert_eq!(kept.not_checked, ["disk"]);
+    // What a finding rests on is checked, never shown.
+    let text = all_text(&answers::to_value(&kept));
+    assert!(!text.contains("team-b") && !text.contains("refs"), "{text}");
+
+    let mut all = filter(custom(vec![rule(&[], &[], &[AccessAction::Read])]));
+    let kept = answers::problems(answer, &mut all, &on, None, 100).await;
+    assert_eq!(kept.problems.len(), 5);
+}
+
+#[tokio::test]
+async fn a_diagnosis_reports_the_status_and_summary_of_what_is_left() {
+    // The only broken step is in a branch about team-b: once it is dropped, neither the status nor the summary may
+    // still say "broken" (that alone would tell about team-b).
+    let answer: answers::DiagnoseAnswer = serde_json::from_value(json!({
+        "status": "broken",
+        "summary": "Service team-b/db has no ready pod",
+        "chain": {
+            "findings": [{ "id": "service.selector", "status": "ok", "text": "selects 2 pods" },
+                         { "id": "service.ports", "status": "warn", "text": "a port has no name" }],
+            "chains": [
+                { "title": "to team-b", "object": obj("", "Service", Some("team-b"), "db"),
+                  "findings": [{ "id": "service.ready", "status": "broken", "text": "Service team-b/db has no ready pod" }] },
+                { "title": "to team-a", "object": obj("", "Service", Some("team-a"), "cache"),
+                  "findings": [{ "id": "service.ready", "status": "unknown", "text": "cannot tell" }] },
+            ],
+        },
+    }))
+    .unwrap();
+    let checked = object("", "Service", Some("team-a"), "web");
+    let out =
+        answers::diagnosis(answer.clone(), &mut filter(team_a()), checked.clone(), true).await;
+    assert_eq!(out.status, "warn");
+    assert_eq!(out.summary, None);
+    assert!(!all_text(&answers::to_value(&out)).contains("team-b"));
+    let mut all = filter(custom(vec![rule(&[], &[], &[AccessAction::Read])]));
+    let out = answers::diagnosis(answer, &mut all, checked, true).await;
+    assert_eq!(out.status, "broken");
+    assert_eq!(
+        out.summary.as_deref(),
+        Some("Service team-b/db has no ready pod")
+    );
+}
+
+#[tokio::test]
+async fn a_tls_step_without_secret_values_is_not_checked() {
+    let answer: answers::DiagnoseAnswer = serde_json::from_value(json!({
+        "status": "broken",
+        "summary": "The certificate in Secret web-tls does not cover shop.example.com",
+        "chain": { "findings": [
+            { "id": "ingress.class", "status": "ok", "text": "class nginx" },
+            { "id": "ingress.tls.0", "status": "broken",
+              "text": "The certificate in Secret web-tls does not cover shop.example.com. It covers: internal.corp.",
+              "notes": ["only a common name"], "objects": [obj("", "Secret", Some("team-a"), "web-tls")] },
+        ] },
+    }))
+    .unwrap();
+    let checked = object("networking.k8s.io", "Ingress", Some("team-a"), "web");
+    let out = answers::diagnosis(answer, &mut filter(team_a()), checked, false).await;
+    let tls = &out.chain.findings[1];
+    assert_eq!(tls.status, "unknown");
+    assert_eq!(tls.text, answers::CERTIFICATE_NOT_CHECKED);
+    assert!(tls.notes.is_empty());
+    assert_eq!(out.status, "unknown");
+    assert_eq!(out.summary, None);
+    assert!(!all_text(&answers::to_value(&out)).contains("internal.corp"));
+
+    // Read on Secrets is not enough: the names and dates come from tls.crt, a Secret value.
+    let secrets =
+        |actions: &[AccessAction]| custom(vec![rule(&["team-a"], &[("", "Secret")], actions)]);
+    assert!(!super::certificates_allowed(&team_a(), "team-a"));
+    assert!(!super::certificates_allowed(
+        &secrets(&[AccessAction::Read]),
+        "team-a"
+    ));
+    assert!(super::certificates_allowed(
+        &secrets(&[AccessAction::Read, AccessAction::SecretValues]),
+        "team-a"
+    ));
+    assert!(!super::certificates_allowed(
+        &secrets(&[AccessAction::Read, AccessAction::SecretValues]),
+        "team-b"
+    ));
 }
 
 #[tokio::test]
@@ -615,9 +738,11 @@ async fn a_team_a_agent_gets_nothing_about_team_b() {
     );
 
     for (tool, args) in calls(&cluster, "team-a") {
-        call(&state, tool, args)
+        let answer = call(&state, tool, args)
             .await
             .unwrap_or_else(|e| panic!("{tool}: {e}"));
+        // Every answer says that the cluster's words are data, not instructions.
+        assert_eq!(answer["dataNotice"], json!(super::DATA_NOTICE), "{tool}");
     }
     let asked = window.asked();
     assert_eq!(asked.len(), DIAGNOSTIC_TOOLS.len());
@@ -632,6 +757,12 @@ async fn a_team_a_agent_gets_nothing_about_team_b() {
         );
         assert!(request.args.get("cluster").is_none(), "{}", request.args);
     }
+    // Read on everything in team-a, but not "Secret values": the window is told not to read certificates.
+    let diagnose = asked
+        .iter()
+        .find(|r| r.tool == DiagnosticTool::DiagnoseService)
+        .unwrap();
+    assert_eq!(diagnose.args["checkCertificates"], json!(false));
 
     // Over every namespace it may read: the window's team-b problem is dropped.
     let all = call(&state, "get_problems", json!({ "cluster": cluster.0 }))

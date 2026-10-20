@@ -7,6 +7,7 @@ import type { ConfirmRequest } from "./generated/ConfirmRequest";
 import type { ExtensionFilesChangedPayload } from "./generated/ExtensionFilesChangedPayload";
 import type { ForwardInfo } from "./generated/ForwardInfo";
 import type { McpStatus } from "./generated/McpStatus";
+import type { DiagnosticCancel } from "./generated/DiagnosticCancel";
 import type { DiagnosticRequest } from "./generated/DiagnosticRequest";
 import { subscribe, type Unsubscribe } from "./transport";
 
@@ -28,6 +29,9 @@ export const events = {
    */
   onMcpDiagnostic: (handler: (request: DiagnosticRequest) => void): Promise<Unsubscribe> =>
     subscribe("mcp-diagnostic", handler),
+  /** The backend no longer waits for that diagnostic request (timed out, the call was dropped, the server stopped). */
+  onMcpDiagnosticCancel: (handler: (cancel: DiagnosticCancel) => void): Promise<Unsubscribe> =>
+    subscribe("mcp-diagnostic-cancel", handler),
   /** The list of installed extensions changed (installed, enabled, disabled, removed, reloaded); ask `list` again. */
   onExtensionsChanged: (handler: () => void): Promise<Unsubscribe> => subscribe("extensions-changed", () => handler()),
   /** Files of an extension running from a folder changed (development mode): its frames reload. */

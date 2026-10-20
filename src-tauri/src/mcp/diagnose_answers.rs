@@ -42,6 +42,20 @@ pub struct KindName {
     pub kind: String,
 }
 
+/// A list (or one object of it) an answer's finding rests on or names in its words: a kind in a namespace, or (no
+/// namespace) in all of them. The agent must be able to read it, or the finding goes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListRef {
+    #[serde(default)]
+    pub group: String,
+    pub kind: String,
+    #[serde(default)]
+    pub namespace: Option<String>,
+    #[serde(default)]
+    pub name: Option<String>,
+}
+
 /// Reads the window's answer into `T`; a shape that does not fit is an error, not a partial answer.
 pub fn parse<T: serde::de::DeserializeOwned>(value: Value) -> Result<T, CoreError> {
     serde_json::from_value(value).map_err(|e| {
@@ -101,6 +115,16 @@ impl ReadFilter {
     pub async fn can_object(&mut self, object: &ObjectRef) -> bool {
         self.can(&object.group, &object.kind, object.namespace.as_deref())
             .await
+    }
+
+    /// Whether the agent may read every list (or object) of `refs`.
+    pub async fn lists(&mut self, refs: &[ListRef]) -> bool {
+        for r in refs {
+            if !self.can(&r.group, &r.kind, r.namespace.as_deref()).await {
+                return false;
+            }
+        }
+        true
     }
 
     /// The objects of `list` the agent may read, in order.
@@ -203,6 +227,10 @@ pub struct Problem {
     /// It would notify (a crash loop, a failed Job, a node not ready), not just show on the screen.
     #[serde(default)]
     pub needs_attention: bool,
+    /// The lists the finding was judged against and the objects its words name (a DestinationRule, another
+    /// VirtualService, the Nodes): every one must be readable for the agent. Not shown to it.
+    #[serde(default, skip_serializing)]
+    pub refs: Vec<ListRef>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -219,6 +247,10 @@ pub struct ProblemsAnswer {
     pub truncated: bool,
     #[serde(default)]
     pub incomplete: bool,
+    /// Categories that could not be looked at with what the agent may read (disk without Read on claims and Nodes
+    /// in all namespaces, …).
+    #[serde(default)]
+    pub not_checked: Vec<String>,
 }
 
 /// The problems the agent may see: known categories it may get, in `namespace` when given, objects (and the kinds
@@ -244,6 +276,7 @@ pub async fn problems(
             || !filter
                 .can(&p.source.group, &p.source.kind, ns.as_deref())
                 .await
+            || !filter.lists(&p.refs).await
         {
             continue;
         }
@@ -264,6 +297,7 @@ pub async fn problems(
         loading: known(answer.loading),
         truncated,
         incomplete: answer.incomplete,
+        not_checked: known(answer.not_checked),
     }
 }
 
@@ -348,12 +382,68 @@ fn chain<'a>(
     })
 }
 
+/// Said instead of a TLS step's result when the agent may not have certificates read ([`diagnosis`]).
+pub const CERTIFICATE_NOT_CHECKED: &str = "Not checked: a certificate's names and dates are read from the TLS \
+Secret's tls.crt, a Secret value, so checking it needs the \"Secret values\" permission on Secrets in this namespace.";
+
+/// The id prefix of a traffic diagnosis's TLS steps (`ingress.tls.<n>`, `src/features/diagnose/tls.ts`).
+const TLS_STEP: &str = "ingress.tls.";
+
+/// Makes every TLS step of `c` "unknown — not checked" (the agent may not have certificates read).
+fn without_certificates(c: &mut Chain) {
+    for f in &mut c.findings {
+        if f.id.starts_with(TLS_STEP) {
+            f.status = "unknown".to_owned();
+            f.text = CERTIFICATE_NOT_CHECKED.to_owned();
+            f.notes.clear();
+        }
+    }
+    for sub in &mut c.chains {
+        without_certificates(sub);
+    }
+}
+
+fn rank(status: &str) -> u8 {
+    match status {
+        "ok" => 0,
+        "unknown" => 1,
+        "warn" => 2,
+        _ => 3,
+    }
+}
+
+/// The worst status of a chain, its branches included (`chainStatus` in `src/features/diagnose/model.ts`).
+pub fn chain_status(c: &Chain) -> String {
+    let mut worst = "ok".to_owned();
+    let all = c
+        .findings
+        .iter()
+        .map(|f| f.status.clone())
+        .chain(c.chains.iter().map(chain_status));
+    for status in all {
+        if rank(&status) > rank(&worst) {
+            worst = status;
+        }
+    }
+    worst
+}
+
+/// The first broken finding, depth first (`firstBroken` there).
+pub fn first_broken(c: &Chain) -> Option<&Finding> {
+    c.findings
+        .iter()
+        .find(|f| f.status == "broken")
+        .or_else(|| c.chains.iter().find_map(first_broken))
+}
+
 /// The diagnosis the agent may see; the root is `checked`, the object the call was checked for, whatever the window
-/// named.
+/// named. Without `certificates` (the agent lacks "Secret values" on Secrets there) every TLS step is unknown, not
+/// checked. The status and the summary are those of what is left, never of what was dropped.
 pub async fn diagnosis(
     answer: DiagnoseAnswer,
     filter: &mut ReadFilter,
     checked: ObjectRef,
+    certificates: bool,
 ) -> DiagnoseAnswer {
     let mut root = answer.chain;
     root.object = None;
@@ -364,10 +454,13 @@ pub async fn diagnosis(
         chains: Vec::new(),
         stopped: false,
     });
+    if !certificates {
+        without_certificates(&mut root);
+    }
     root.object = Some(checked);
     DiagnoseAnswer {
-        status: status_word(&answer.status),
-        summary: answer.summary,
+        status: chain_status(&root),
+        summary: first_broken(&root).map(|f| f.text.clone()),
         chain: root,
         incomplete: answer.incomplete,
     }

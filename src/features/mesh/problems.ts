@@ -12,7 +12,13 @@
 //                              oldest), or on one Gateway where an older one ends in a catch-all route that leaves
 //                              the newer one's routes unreachable.
 // A DestinationRule is looked up as a client in the VirtualService's namespace would (client, Service, root).
-import { allDestinations, MESH_GATEWAY, meshWildcardInvalid, olderFirst, serviceOfHost, type DestinationRuleInfo, type IstioGatewayInfo, type Ref, type ServiceEntryInfo, type VirtualService } from "./istio";
+//
+// Each finding also says what it rests on (`needs`): the lists it was judged against — in a namespace, or in all of
+// them — and the objects its words name. A view for someone who may not read all of them (an AI agent, ADR-0094)
+// leaves the finding out, so it says nothing about namespaces that someone may not read.
+import type { KindRef } from "../../api";
+import { allDestinations, MESH_GATEWAY, meshWildcardInvalid, olderFirst, ROOT_NAMESPACE, serviceOfHost, type DestinationRuleInfo, type IstioGatewayInfo, type Ref, type ServiceEntryInfo, type VirtualService } from "./istio";
+import { DESTINATION_RULE, ISTIO_GATEWAY, PEER_AUTHENTICATION, SERVICE_ENTRY, VIRTUAL_SERVICE } from "./kinds";
 import { mtlsModeFor, type PeerAuthInfo } from "./mtls";
 import { resolveDestination } from "./routing";
 
@@ -25,13 +31,24 @@ export type MeshProblemReason =
   | "InvalidVirtualService"
   | "ConflictingVirtualService";
 
+/** A list a finding was judged against (`namespace` `null`: in every namespace), or one object of it (`name`). */
+export interface MeshNeed {
+  kind: Pick<KindRef, "group" | "kind">;
+  namespace: string | null;
+  name?: string;
+}
+
 export interface MeshProblem {
   ref: Ref;
   uid: string;
   reason: MeshProblemReason;
   /** Values of the message (`problems:messages.mesh<Reason>`). */
   params: Record<string, string>;
+  /** What the finding rests on and the objects its words name (besides `ref`). */
+  needs: MeshNeed[];
 }
+
+const SERVICE_KIND = { group: "", kind: "Service" };
 
 export interface AnalysisInput {
   virtualServices: readonly VirtualService[];
@@ -64,11 +81,16 @@ const catchAll = (vs: VirtualService) => vs.http.some((r) => r.matches.length ==
 export function meshProblems(input: AnalysisInput): MeshProblem[] {
   const out: MeshProblem[] = [];
   const seen = new Set<string>();
-  const add = (owner: { obj: { metadata?: { uid?: string } }; ref: Ref }, reason: MeshProblemReason, params: Record<string, string>) => {
+  const add = (
+    owner: { obj: { metadata?: { uid?: string } }; ref: Ref },
+    reason: MeshProblemReason,
+    params: Record<string, string>,
+    needs: MeshNeed[] = [],
+  ) => {
     const key = `${uidOf(owner)}|${reason}|${JSON.stringify(params)}`;
     if (seen.has(key)) return;
     seen.add(key);
-    out.push({ ref: owner.ref, uid: uidOf(owner), reason, params });
+    out.push({ ref: owner.ref, uid: uidOf(owner), reason, params, needs });
   };
 
   for (const vs of input.virtualServices) {
@@ -78,14 +100,25 @@ export function meshProblems(input: AnalysisInput): MeshProblem[] {
     }
     for (const d of allDestinations(vs)) {
       const r = resolveDestination(d, 0, vs.namespace, input);
-      if (r.problem === "unknownHost") add(vs, "UnknownHost", { host: d.host });
-      else if (r.problem === "noDestinationRule") add(vs, "MissingDestinationRule", { host: d.host, subset: d.subset ?? "" });
-      else if (r.problem === "missingSubset") add(vs, "MissingSubset", { host: d.host, subset: d.subset ?? "", rule: r.rule?.name ?? "" });
+      const service = serviceOfHost(d.fqdn);
+      // Where a client in the VirtualService's namespace looks for the host's DestinationRule.
+      const lookup = [...new Set([vs.namespace, service?.namespace, ROOT_NAMESPACE].filter((n): n is string => !!n))];
+      const rules: MeshNeed[] = lookup.map((namespace) => ({ kind: DESTINATION_RULE, namespace }));
+      if (r.problem === "unknownHost") {
+        const needs: MeshNeed[] = [{ kind: SERVICE_ENTRY, namespace: null }];
+        if (service) needs.push({ kind: SERVICE_KIND, namespace: service.namespace, name: service.name });
+        add(vs, "UnknownHost", { host: d.host }, needs);
+      } else if (r.problem === "noDestinationRule") add(vs, "MissingDestinationRule", { host: d.host, subset: d.subset ?? "" }, rules);
+      else if (r.problem === "missingSubset") {
+        const named: MeshNeed[] = r.rule ? [{ kind: DESTINATION_RULE, namespace: r.rule.namespace, name: r.rule.name }] : [];
+        add(vs, "MissingSubset", { host: d.host, subset: d.subset ?? "", rule: r.rule?.name ?? "" }, [...rules, ...named]);
+      }
     }
     if (input.gateways) {
       for (const g of vs.gateways) {
         if (g === MESH_GATEWAY || input.gateways.some((x) => x.key === g)) continue;
-        add(vs, "MissingGateway", { gateway: g });
+        const [namespace = "", name = ""] = g.split("/");
+        add(vs, "MissingGateway", { gateway: g }, [{ kind: ISTIO_GATEWAY, namespace, name }]);
       }
     }
   }
@@ -101,7 +134,11 @@ export function meshProblems(input: AnalysisInput): MeshProblem[] {
     if (!bad) continue;
     // The workload's own selector policies need the pods' labels: the namespace and mesh levels decide here.
     const mtls = mtlsModeFor(service.namespace, {}, input.peerAuthentications);
-    if (mtls.mode === "STRICT") add(rule, "TlsConflict", { host: rule.host, mode: bad, policy: mtls.policy?.name ?? "" });
+    if (mtls.mode === "STRICT") {
+      const needs: MeshNeed[] = [...new Set([service.namespace, ROOT_NAMESPACE])].map((namespace) => ({ kind: PEER_AUTHENTICATION, namespace }));
+      if (mtls.policy) needs.push({ kind: PEER_AUTHENTICATION, namespace: mtls.policy.namespace, name: mtls.policy.name });
+      add(rule, "TlsConflict", { host: rule.host, mode: bad, policy: mtls.policy?.name ?? "" }, needs);
+    }
   }
 
   // The same host on the same gateway.
@@ -123,7 +160,14 @@ export function meshProblems(input: AnalysisInput): MeshProblem[] {
       if (i === 0) continue;
       const earlier = ordered.slice(0, i).filter((o) => exportsOverlap(o, vs));
       const winner = gateway === MESH_GATEWAY ? earlier[0] : earlier.find(catchAll);
-      if (winner) add(vs, "ConflictingVirtualService", { host, gateway, other: `${winner.namespace}/${winner.ref.name}` });
+      if (winner) {
+        // Judged against every namespace's VirtualServices, and it names the other one.
+        const needs: MeshNeed[] = [
+          { kind: VIRTUAL_SERVICE, namespace: null },
+          { kind: VIRTUAL_SERVICE, namespace: winner.namespace, name: winner.ref.name },
+        ];
+        add(vs, "ConflictingVirtualService", { host, gateway, other: `${winner.namespace}/${winner.ref.name}` }, needs);
+      }
     }
   }
   return out;

@@ -133,6 +133,9 @@ pub struct Guard {
     /// Cancelled when the server the call came through stops: from then on every check refuses.
     stopped: CancellationToken,
     client: String,
+    /// The MCP session the call came through (its client's name when not known): the diagnostic tools' waiting cap
+    /// is per session.
+    session: String,
     tool: String,
     record: Arc<Mutex<CallRecord>>,
 }
@@ -153,18 +156,30 @@ impl Guard {
         client: impl Into<String>,
         tool: impl Into<String>,
     ) -> Self {
+        let client = clip(&client.into());
         Self {
             ctx,
             kinds,
             stopped,
-            client: clip(&client.into()),
+            session: client.clone(),
+            client,
             tool: tool.into(),
             record: Arc::new(Mutex::new(CallRecord::default())),
         }
     }
 
+    /// The call came through MCP session `session`.
+    pub fn in_session(mut self, session: impl Into<String>) -> Self {
+        self.session = session.into();
+        self
+    }
+
     pub fn client(&self) -> &str {
         &self.client
+    }
+
+    pub fn session(&self) -> &str {
+        &self.session
     }
 
     pub fn context(&self) -> &Arc<McpContext> {

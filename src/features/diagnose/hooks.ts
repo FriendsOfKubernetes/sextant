@@ -5,6 +5,11 @@
 // pods and network policies come from the connectivity engine's own hook (`useNetpolData`). Cluster-wide lists are
 // only IngressClasses and, for a controller Sextant knows, its pods by label selector. TLS certificates are read by
 // the core (`tls_certificate_info`), once per Secret and Ingress version. Everything is let go on unmount.
+//
+// For an AI agent's diagnosis (`scope`, ADR-0094) nothing is read beyond what the agent may read: a list of a kind
+// in a namespace it may not read is never watched (the engine sees it as unknown), the cluster-wide lists only with
+// Read in all namespaces, and certificates only when the agent may have them read (`scope.certificates`: Read and
+// "Secret values" on the namespace's Secrets) — otherwise `tls_certificate_info` is never called.
 import { useEffect, useMemo, useState } from "react";
 import { api, toApiError, type ClusterId, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
 import { useClusterKinds } from "../../resources";
@@ -62,6 +67,16 @@ function routeNamespaces(kind: KindRef, obj: KubeObject | null, own: string): { 
   return { backends: capped([own, ...backends]), parents: capped(parentRefs(obj).map((p) => p.namespace ?? own)) };
 }
 
+/** What a diagnosis computed for an AI agent may read. */
+export interface DiagnosisScope {
+  /** Whether the agent may read `kind` in `namespace` (`null`: in every namespace, or a cluster-scoped kind). */
+  may(kind: Pick<KindRef, "group" | "kind">, namespace: string | null): boolean;
+  /** Whether a TLS Secret's certificate may be read for it. */
+  certificates: boolean;
+}
+
+const REFERENCE_GRANT = { group: "gateway.networking.k8s.io", kind: "ReferenceGrant" };
+
 export interface DiagnosisData {
   /** The object as the live list has it (the given one until the list comes); `null` once it is gone. */
   obj: KubeObject | null;
@@ -69,7 +84,15 @@ export interface DiagnosisData {
   loading: boolean;
 }
 
-export function useDiagnosisData(clusterId: ClusterId, kind: KindRef, namespace: string, name: string, given: KubeObject | null): DiagnosisData {
+export function useDiagnosisData(
+  clusterId: ClusterId,
+  kind: KindRef,
+  namespace: string,
+  name: string,
+  given: KubeObject | null,
+  scope?: DiagnosisScope,
+): DiagnosisData {
+  const may = (k: Pick<KindRef, "group" | "kind">, ns: string | null) => !scope || scope.may(k, ns);
   const kinds = useClusterKinds(clusterId);
   const now = useNow();
   const which = diagnosedKind(kind);
@@ -84,7 +107,7 @@ export function useDiagnosisData(clusterId: ClusterId, kind: KindRef, namespace:
   const discovering = Object.values(served).some((k) => k === undefined);
 
   // The root first: what it names decides the rest of the plan.
-  const rootSpecs = served.root ? [spec(served.root, namespace)] : [];
+  const rootSpecs = served.root && may(kind, namespace) ? [spec(served.root, namespace)] : [];
   const [rootState] = useSharedWatches(clusterId, discovering ? [] : rootSpecs);
   // A list that cannot be read there (no permission) says nothing about the object: the given one stays.
   const live = readable(rootState, namespace) ? ([...rootState!.items.values()].find((o) => nameOf(o) === name) ?? null) : undefined;
@@ -92,15 +115,17 @@ export function useDiagnosisData(clusterId: ClusterId, kind: KindRef, namespace:
 
   const routes = which === "route" ? routeNamespaces(kind, obj, namespace) : { backends: [namespace], parents: [] };
   const namespaces = routes.backends;
-  const classesSpec = served.ingressClass ? spec(served.ingressClass, null) : null;
+  const classesSpec = served.ingressClass && may(INGRESS_CLASS, null) ? spec(served.ingressClass, null) : null;
   const plan: Planned[] = [];
   if (!discovering) {
     for (const ns of namespaces) {
-      if (served.service) plan.push({ role: "services", namespace: ns, spec: spec(served.service, ns) });
-      if (served.slice) plan.push({ role: "slices", namespace: ns, spec: spec(served.slice, ns) });
+      if (served.service && may(SERVICE, ns)) plan.push({ role: "services", namespace: ns, spec: spec(served.service, ns) });
+      if (served.slice && may(ENDPOINT_SLICE, ns)) plan.push({ role: "slices", namespace: ns, spec: spec(served.slice, ns) });
     }
     if (classesSpec) plan.push({ role: "classes", namespace: null, spec: classesSpec });
-    for (const ns of routes.parents) if (served.gateway) plan.push({ role: "gateways", namespace: ns, spec: spec(served.gateway, ns) });
+    for (const ns of routes.parents) {
+      if (served.gateway && may(GATEWAY, ns)) plan.push({ role: "gateways", namespace: ns, spec: spec(served.gateway, ns) });
+    }
   }
   const firstStates = useSharedWatches(clusterId, plan.map((p) => p.spec));
   const classesState = firstStates[plan.findIndex((p) => p.role === "classes")];
@@ -111,12 +136,13 @@ export function useDiagnosisData(clusterId: ClusterId, kind: KindRef, namespace:
   const controller =
     resolved?.type === "named" ? controllerOf(resolved.ingressClass) : resolved?.type === "default" ? controllerOf(resolved.ingressClass) : undefined;
   const selector = controller ? controllerSelector(controller) : undefined;
-  const controllerSpecs = selector && served.pod ? [spec(served.pod, null, selector)] : [];
+  // The controller's pods are found across the cluster: only with Read on Pods in every namespace.
+  const controllerSpecs = selector && served.pod && may(POD, null) ? [spec(served.pod, null, selector)] : [];
   const [controllerState] = useSharedWatches(clusterId, controllerSpecs);
 
   const netpol = useNetpolData(clusterId, namespaces, { pods: true });
-  const grantsIn = useGrants(clusterId, which === "route" ? namespaces.filter((n) => n !== namespace) : []);
-  const certificates = useCertificates(clusterId, which === "ingress" ? obj : null);
+  const grantsIn = useGrants(clusterId, which === "route" ? namespaces.filter((n) => n !== namespace && may(REFERENCE_GRANT, n)) : []);
+  const certificates = useCertificates(clusterId, which === "ingress" && (!scope || scope.certificates) ? obj : null);
 
   const view = useMemo((): ClusterView => {
     const entries = plan.map((p, i) => ({ ...p, state: firstStates[i] }));

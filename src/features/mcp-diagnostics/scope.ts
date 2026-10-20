@@ -43,3 +43,42 @@ export const objectName = (kind: Kind, namespace: string | null | undefined, nam
   namespace: namespace || null,
   name,
 });
+
+/** Namespaces a namespaced view for an agent covers at most (the rules may name more; the rest are left out). */
+export const MAX_AGENT_NAMESPACES = 50;
+
+/**
+ * The namespaces the agent's rules name (in order, without repeats, at most `MAX_AGENT_NAMESPACES`): where a view
+ * watches a kind the agent may not read in every namespace. `truncated`: the rules name more.
+ */
+export function ruleNamespaces(reads: readonly ReadRule[]): { namespaces: string[]; truncated: boolean } {
+  const all = new Set<string>();
+  for (const rule of reads) {
+    if (rule.namespaces.type === "all") continue;
+    for (const ns of rule.namespaces.namespaces) if (ns.trim() !== "") all.add(ns);
+  }
+  const list = [...all];
+  return { namespaces: list.slice(0, MAX_AGENT_NAMESPACES), truncated: list.length > MAX_AGENT_NAMESPACES };
+}
+
+/**
+ * Where a view for an agent watches `kind`: `null` — in every namespace (the agent may read them all); a list — only
+ * there (the asked namespace, else the namespaces of the rules, each one readable); empty — nowhere.
+ */
+export function watchedNamespaces(
+  reads: readonly ReadRule[],
+  kind: Kind,
+  asked: string | null,
+  ruled: readonly string[],
+): string[] | null {
+  if (!asked && canRead(reads, kind, null)) return null;
+  return (asked ? [asked] : ruled).filter((ns) => canRead(reads, kind, ns));
+}
+
+/** A list (a kind in a namespace, or in all of them) or one object of it that an answer rests on or names. */
+export interface ListRef {
+  group: string;
+  kind: string;
+  namespace: string | null;
+  name?: string;
+}

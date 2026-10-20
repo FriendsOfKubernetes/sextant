@@ -252,6 +252,9 @@ fn start_mcp<R: Runtime>(app: &tauri::AppHandle<R>) {
             McpEvent::Diagnostic(request) => handle
                 .get_webview_window(window::MAIN_WINDOW)
                 .is_some_and(|w| w.emit(events::MCP_DIAGNOSTIC, request).is_ok()),
+            McpEvent::DiagnosticCancel(cancel) => handle
+                .get_webview_window(window::MAIN_WINDOW)
+                .is_some_and(|w| w.emit(events::MCP_DIAGNOSTIC_CANCEL, cancel).is_ok()),
         }
     }));
     let handle = app.clone();

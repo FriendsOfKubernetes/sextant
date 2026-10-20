@@ -138,6 +138,7 @@ export type { ManagedResource } from "./generated/ManagedResource";
 export type { ConfirmRequest } from "./generated/ConfirmRequest";
 export type { DiagnosticAnswer } from "./generated/DiagnosticAnswer";
 export type { DiagnosticRequest } from "./generated/DiagnosticRequest";
+export type { DiagnosticCancel } from "./generated/DiagnosticCancel";
 export type { DiagnosticTool } from "./generated/DiagnosticTool";
 export type { ReadRule } from "./generated/ReadRule";
 export type { McpSettings } from "./generated/McpSettings";

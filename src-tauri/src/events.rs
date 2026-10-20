@@ -17,6 +17,9 @@ pub const MCP_AUDIT: &str = "mcp-audit";
 /// `mcp-diagnostic` — payload `DiagnosticRequest`: the window computes an agent's diagnostic answer (ADR-0094) and
 /// answers with the command `mcp_diagnostic_answer`.
 pub const MCP_DIAGNOSTIC: &str = "mcp-diagnostic";
+/// `mcp-diagnostic-cancel` — payload `DiagnosticCancel`: the backend no longer waits for that request (timed out, the
+/// call was dropped, the server stopped); the window drops its worker and lets go of its watches.
+pub const MCP_DIAGNOSTIC_CANCEL: &str = "mcp-diagnostic-cancel";
 /// `extensions-changed` — no payload (`null`): installed extensions, a state or a manifest changed; read
 /// `extensions_list` again.
 pub const EXTENSIONS_CHANGED: &str = "extensions-changed";
@@ -115,6 +118,7 @@ mod tests {
                 MCP_CONFIRM,
                 MCP_AUDIT,
                 MCP_DIAGNOSTIC,
+                MCP_DIAGNOSTIC_CANCEL,
                 OPEN_ABOUT
             ],
             [
@@ -122,6 +126,7 @@ mod tests {
                 "mcp-confirm",
                 "mcp-audit",
                 "mcp-diagnostic",
+                "mcp-diagnostic-cancel",
                 "open-about"
             ]
         );

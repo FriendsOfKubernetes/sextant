@@ -1,8 +1,11 @@
 // The window's side of the agents' diagnostic tools (ADR-0094), mounted once by `AppShell` and drawing nothing: each
 // `mcp-diagnostic` request runs as a hidden worker that uses the same hooks and engines as the screens (shared,
 // bounded watches, released when the worker ends) and answers once with `api.mcp.diagnosticAnswer`. At most
-// `MAX_RUNNING` workers run at once, the rest wait in order; a worker answers when its data is in, or after
-// `SETTLE_MS` with what it has (`incomplete`).
+// `MAX_RUNNING` workers run at once — as many as the backend lets wait (`MAX_PENDING` in `src-tauri/src/mcp/window.rs`),
+// so an admitted request starts at once and answers within `SETTLE_MS` (20 s), well inside the backend's 40 s
+// `WINDOW_TIMEOUT`; a worker answers when its data is in, or after `SETTLE_MS` with what it has (`incomplete`). When
+// the backend stops waiting (timed out, the call was dropped, the server stopped) it sends `mcp-diagnostic-cancel`:
+// the request is dropped, queued or running, and its worker lets go of its watches.
 import { Component, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { api, events, type DiagnosticAnswer, type DiagnosticRequest, type DiagnosticTool } from "../../api";
 import { AutoscalingWorker } from "./autoscaling";
@@ -13,9 +16,9 @@ import { PermissionsWorker } from "./permissions";
 import { ProblemsWorker } from "./problems";
 import type { WorkerProps } from "./worker";
 
-/** Workers computing at once. */
-export const MAX_RUNNING = 2;
-/** Requests waiting at most (the backend lets 4 wait; more here would only time out there). */
+/** Workers computing at once: the backend's `MAX_PENDING`, so no admitted request waits behind another. */
+export const MAX_RUNNING = 4;
+/** Requests held at most (more than `MAX_RUNNING` only while a cancel is on its way). */
 export const MAX_QUEUED = 8;
 /** How long a worker waits for its data before it answers with what it has. */
 export const SETTLE_MS = 20_000;
@@ -85,9 +88,14 @@ export function DiagnosticsHost() {
         return q;
       });
     });
+    // The backend no longer waits: drop the request, whether it waits here or runs (its worker unmounts).
+    const unsubscribeCancel = events.onMcpDiagnosticCancel(({ id }) => {
+      if (live) setQueue((q) => q.filter((r) => r.id !== id));
+    });
     return () => {
       live = false;
       void unsubscribe.then((stop) => stop());
+      void unsubscribeCancel.then((stop) => stop());
     };
   }, []);
 

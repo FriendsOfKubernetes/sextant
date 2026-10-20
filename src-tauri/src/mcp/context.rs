@@ -14,7 +14,7 @@ use super::confirm::{ConfirmRequest, Confirmations};
 use super::paths;
 use super::server::McpStatus;
 use super::token::{self, Token};
-use super::window::{DiagnosticRequest, WindowRequests};
+use super::window::{DiagnosticCancel, DiagnosticRequest, WindowRequests};
 
 /// Something the server tells the window.
 #[derive(Debug, Clone, PartialEq)]
@@ -27,6 +27,8 @@ pub enum McpEvent {
     Audit(AuditEntry),
     /// `mcp-diagnostic`: the window computes a diagnostic tool's answer (ADR-0094).
     Diagnostic(DiagnosticRequest),
+    /// `mcp-diagnostic-cancel`: the backend no longer waits for that request; the window drops it.
+    DiagnosticCancel(DiagnosticCancel),
 }
 
 /// Delivers an event to the window; `false` when there is no window to deliver it to.

@@ -39,7 +39,7 @@ pub fn router(handler: SextantMcp, port: u16, cancel: CancellationToken) -> Rout
         .with_max_request_body_bytes(MAX_BODY_BYTES)
         .with_cancellation_token(cancel);
     let service = StreamableHttpService::new(
-        move || Ok(handler.clone()),
+        move || Ok(handler.for_new_session()),
         Arc::new(LocalSessionManager::default()),
         config,
     );

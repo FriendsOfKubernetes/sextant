@@ -94,6 +94,18 @@ pub struct SextantMcp {
     tools: Arc<ToolSet>,
     /// Cancelled when the server this handler belongs to stops: its calls end refused, nothing more is run.
     stopped: CancellationToken,
+    /// This handler's MCP session ([`SextantMcp::for_new_session`]).
+    session: String,
+}
+
+/// Numbers the MCP sessions of this process.
+static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+
+fn next_session() -> String {
+    format!(
+        "session-{}",
+        NEXT_SESSION.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    )
 }
 
 impl SextantMcp {
@@ -108,6 +120,15 @@ impl SextantMcp {
             kinds,
             tools,
             stopped,
+            session: next_session(),
+        }
+    }
+
+    /// A copy for a new MCP session (the HTTP service makes one per session).
+    pub fn for_new_session(&self) -> Self {
+        Self {
+            session: next_session(),
+            ..self.clone()
         }
     }
 
@@ -126,7 +147,8 @@ impl SextantMcp {
             self.stopped.clone(),
             client,
             tool,
-        );
+        )
+        .in_session(self.session.clone());
         let client = guard.client().to_owned();
         let record = guard.record_handle();
         let run = async {
