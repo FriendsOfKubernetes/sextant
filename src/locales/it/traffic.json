@@ -1,0 +1,128 @@
+{
+  "mode": {
+    "label": "Cosa mostra la mappa",
+    "objects": "Oggetti",
+    "traffic": "Traffico"
+  },
+  "firstNamespaces_one": "Il grafo del traffico copre {{count}} namespace alla volta: è mostrato solo il primo scelto.",
+  "firstNamespaces_many": "Il grafo del traffico copre al massimo {{count}} namespace alla volta: sono mostrati solo i primi scelti.",
+  "firstNamespaces_other": "Il grafo del traffico copre al massimo {{count}} namespace alla volta: sono mostrati solo i primi scelti.",
+  "about": "Le chiamate tra carichi di lavoro con un estremo in questi namespace, dalle metriche delle richieste in Prometheus. Lo spessore di una linea ne indica il tasso, il colore il tasso di errori.",
+  "loading": "Lettura delle metriche del traffico…",
+  "window": {
+    "label": "Periodo",
+    "minutes5": "Ultimi 5 minuti",
+    "hour1": "Ultima ora"
+  },
+  "view": {
+    "label": "Vista",
+    "graph": "Grafo",
+    "list": "Elenco"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Tutti questi",
+    "protocol": "Protocollo",
+    "status": "Stato"
+  },
+  "protocolFilter": {
+    "all": "Tutti i protocolli",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Qualsiasi stato",
+    "errors": "Con richieste non riuscite",
+    "5xx": "Con risposte 5xx",
+    "4xx": "Con risposte 4xx",
+    "2xx": "Con risposte 2xx"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "protocollo non indicato"
+  },
+  "level": {
+    "ok": "Errori sotto l’1%",
+    "warn": "Errori 1–5%",
+    "bad": "Errori dal 5% in su",
+    "unknown": "Tasso di errori sconosciuto"
+  },
+  "legend": "Legenda",
+  "thickness": "Le linee più spesse portano più richieste.",
+  "peerKind": {
+    "workload": "Carico di lavoro",
+    "service": "Service",
+    "unknown": "Sconosciuto"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Fuori dalla mesh o senza label",
+    "unknownIn": "Fuori dalla mesh o senza label ({{namespace}})",
+    "cannotOpen": "La fonte non dice chi sia: un chiamante o un destinatario fuori dalla mesh o dal cluster, o che le sue label non nominano."
+  },
+  "nodeLabel": "{{kind}} {{name}}: mostra le sue chiamate",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}} via {{protocol}}: {{rate}}, tasso di errori {{errors}}, fonte {{source}}",
+  "fromSource": "Da {{source}}, {{protocol}}",
+  "fields": {
+    "from": "Da",
+    "to": "A",
+    "protocol": "Protocollo",
+    "rate": "Tasso",
+    "errors": "Tasso di errori",
+    "latency": "Latenza",
+    "classes": "Risposte",
+    "source": "Fonte"
+  },
+  "value": {
+    "rate": "{{value}} rich./s",
+    "connections": "{{value}} conn./s",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "nessun istogramma di latenza",
+    "noVerdict": "nessun verdetto per TCP",
+    "class": "{{class}} {{value}}/s",
+    "noClasses": "nessuno stato HTTP indicato"
+  },
+  "open": "Apri {{name}}",
+  "openRequests": "Richieste di {{name}}",
+  "notFound": {
+    "workload": "Nessun Deployment, StatefulSet o DaemonSet chiamato {{name}} in {{namespace}}.",
+    "service": "Nessun Service chiamato {{name}} in {{namespace}}."
+  },
+  "selection": {
+    "link": "Chiamate da {{from}} a {{to}}",
+    "in_one": "{{count}} chiamante",
+    "in_many": "{{count}} chiamanti",
+    "in_other": "{{count}} chiamanti",
+    "out_one": "{{count}} destinatario",
+    "out_many": "{{count}} destinatari",
+    "out_other": "{{count}} destinatari",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Chiudi"
+  },
+  "list": {
+    "caption_one": "{{count}} collegamento tra due estremi, prima i più carichi",
+    "caption_many": "{{count}} collegamenti tra due estremi, prima i più carichi",
+    "caption_other": "{{count}} collegamenti tra due estremi, prima i più carichi",
+    "actions": "Azioni",
+    "details": "Dettagli",
+    "show": "Mostra i dettagli: {{edge}}"
+  },
+  "truncated_one": "Sono mostrati i {{shown}} più carichi su {{count}} collegamento tra due estremi.",
+  "truncated_many": "Sono mostrati i {{shown}} più carichi su {{count}} collegamenti tra due estremi.",
+  "truncated_other": "Sono mostrati i {{shown}} più carichi su {{count}} collegamenti tra due estremi.",
+  "filteredOut": "Nessuna chiamata corrisponde a questi filtri.",
+  "failed": "Impossibile leggere le metriche del traffico di {{sources}}.",
+  "noPrometheus": "Il grafo del traffico viene letto da Prometheus, e per questo cluster non ne è configurato né trovato nessuno.",
+  "openSettings": "Impostazioni del cluster",
+  "noSource": "Prometheus non ha metriche che nominino entrambi gli estremi di una chiamata: né Istio, né Linkerd, né il grafo dei servizi di Grafana Beyla, né Cilium Hubble gli inviano dati.",
+  "requestOnly": "Le richieste per carico di lavoro, senza chi le ha inviate, vengono da {{sources}}: vedere la sezione “Richieste” di ogni carico.",
+  "wouldProvide": "Una qualsiasi di queste fonti fornirebbe il grafo: una mesh Istio, una mesh Linkerd con linkerd-viz (o un Prometheus che raccolga i suoi proxy), Grafana Beyla con le metriche del grafo dei servizi attive, o Cilium Hubble con metriche HTTP il cui labelsContext nomini i carichi di lavoro di origine e destinazione.",
+  "noEdges": {
+    "minutes5": "Secondo {{sources}}, nessuna chiamata con un estremo in questi namespace negli ultimi 5 minuti.",
+    "hour1": "Secondo {{sources}}, nessuna chiamata con un estremo in questi namespace nell’ultima ora."
+  }
+}

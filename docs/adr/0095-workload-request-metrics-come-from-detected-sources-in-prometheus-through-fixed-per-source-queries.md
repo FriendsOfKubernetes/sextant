@@ -34,3 +34,5 @@
 - #211 reuses `request_sources`, `RequestSourceKind`, `RequestVia`, `linkerd_viz_target` and the per-source selectors (`metrics::prometheus::requests::request_selectors`, `shape`) and adds edge queries of its own.
 - A scrape configuration that renames `pod`/`namespace` (e.g. `kubernetes_pod_name`) gives "no data for these pods" for the sources matched by pod; the label names are fixed by this ADR.
 - Older Beyla releases that label `http_status_code` instead of `http_response_status_code` show no errors; Linkerd's newer metrics (if a future proxy drops `response_total`) need a new row here.
+
+Amended (v0.17.0): the traffic graph (#211, ADR-0096) adds three edge metric names to the known set (15 in all) and `RequestSources.edges`; the sources of the Requests section are unchanged.

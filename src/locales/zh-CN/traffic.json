@@ -1,0 +1,118 @@
+{
+  "mode": {
+    "label": "地图显示的内容",
+    "objects": "对象",
+    "traffic": "流量"
+  },
+  "firstNamespaces_other": "流量图一次最多涵盖 {{count}} 个 namespace：只显示最先选择的几个。",
+  "about": "至少一端在这些 namespace 中的工作负载之间的调用，来自 Prometheus 中的请求指标。线条粗细表示速率，颜色表示错误率。",
+  "loading": "正在读取流量指标…",
+  "window": {
+    "label": "时间范围",
+    "minutes5": "最近 5 分钟",
+    "hour1": "最近 1 小时"
+  },
+  "view": {
+    "label": "视图",
+    "graph": "图",
+    "list": "列表"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "全部",
+    "protocol": "协议",
+    "status": "状态"
+  },
+  "protocolFilter": {
+    "all": "所有协议",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "任意状态",
+    "errors": "有失败的请求",
+    "5xx": "有 5xx 响应",
+    "4xx": "有 4xx 响应",
+    "2xx": "有 2xx 响应"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "未报告协议"
+  },
+  "level": {
+    "ok": "错误低于 1%",
+    "warn": "错误 1–5%",
+    "bad": "错误 5% 或更多",
+    "unknown": "错误率未知"
+  },
+  "legend": "图例",
+  "thickness": "线条越粗，请求越多。",
+  "peerKind": {
+    "workload": "工作负载",
+    "service": "Service",
+    "unknown": "未知"
+  },
+  "peer": {
+    "inNamespace": "{{name}}（{{namespace}}）",
+    "unknown": "网格外或无标签",
+    "unknownIn": "网格外或无标签（{{namespace}}）",
+    "cannotOpen": "来源没有说明这是谁：可能是网格或集群之外的调用方或被调用方，或其标签未能指明。"
+  },
+  "nodeLabel": "{{kind}} {{name}}：显示其调用",
+  "linkTitle": "{{from}} → {{to}}：{{rate}}",
+  "edgeSentence": "{{from}} → {{to}}，经由 {{protocol}}：{{rate}}，错误率 {{errors}}，来源 {{source}}",
+  "fromSource": "来自 {{source}}，{{protocol}}",
+  "fields": {
+    "from": "从",
+    "to": "到",
+    "protocol": "协议",
+    "rate": "速率",
+    "errors": "错误率",
+    "latency": "延迟",
+    "classes": "响应",
+    "source": "来源"
+  },
+  "value": {
+    "rate": "{{value}} 次/秒",
+    "connections": "{{value}} 连接/秒",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "无延迟直方图",
+    "noVerdict": "TCP 无判定",
+    "class": "{{class}} {{value}}/秒",
+    "noClasses": "未报告 HTTP 状态"
+  },
+  "open": "打开 {{name}}",
+  "openRequests": "{{name}} 的请求",
+  "notFound": {
+    "workload": "{{namespace}} 中没有名为 {{name}} 的 Deployment、StatefulSet 或 DaemonSet。",
+    "service": "{{namespace}} 中没有名为 {{name}} 的 Service。"
+  },
+  "selection": {
+    "link": "从 {{from}} 到 {{to}} 的调用",
+    "in_other": "{{count}} 个调用方",
+    "out_other": "{{count}} 个被调用方",
+    "linkItem": "{{peer}}：{{rate}}",
+    "close": "关闭"
+  },
+  "list": {
+    "caption_other": "两端之间的 {{count}} 条连接，最繁忙的在前",
+    "actions": "操作",
+    "details": "详细信息",
+    "show": "显示详细信息：{{edge}}"
+  },
+  "truncated_other": "显示两端之间 {{count}} 条连接中最繁忙的 {{shown}} 条。",
+  "filteredOut": "没有调用符合这些筛选条件。",
+  "failed": "无法读取 {{sources}} 的流量指标。",
+  "noPrometheus": "流量图从 Prometheus 读取，而此集群没有设置或找到 Prometheus。",
+  "openSettings": "集群设置",
+  "noSource": "Prometheus 中没有同时指明调用两端的指标：Istio、Linkerd、Grafana Beyla 的服务图和 Cilium Hubble 都没有向它上报。",
+  "requestOnly": "按工作负载统计但不含发送方的请求来自 {{sources}}：请查看各工作负载的“请求”部分。",
+  "wouldProvide": "以下任一项都能提供该图：Istio 网格、带 linkerd-viz 的 Linkerd 网格（或采集其代理的 Prometheus）、启用服务图指标的 Grafana Beyla，或 HTTP 指标的 labelsContext 指明源和目标工作负载的 Cilium Hubble。",
+  "noEdges": {
+    "minutes5": "据 {{sources}}，最近 5 分钟内没有一端在这些 namespace 中的调用。",
+    "hour1": "据 {{sources}}，最近 1 小时内没有一端在这些 namespace 中的调用。"
+  }
+}

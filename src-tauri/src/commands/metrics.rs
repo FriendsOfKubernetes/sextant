@@ -3,7 +3,8 @@
 
 use sextant_core::metrics::{
     self, ChartTarget, HistoryScope, HistoryWindow, MetricsStatus, NodeUsage, PodUsage,
-    PrometheusMode, RequestHealth, RequestTarget, Series, UsageHistory,
+    PrometheusMode, RequestHealth, RequestTarget, Series, TrafficGraph, TrafficWindow,
+    UsageHistory,
 };
 use sextant_core::{ClusterId, ClusterSettings, CoreError, ErrorCode};
 use tauri::State;
@@ -114,6 +115,28 @@ pub async fn metrics_request_health(
     metrics::request_health(&state.clusters, &cluster_id, &settings.prometheus, target).await
 }
 
+/// The live traffic graph of up to five namespaces (#211): edges between workloads with their request rate, error
+/// share and latency, from the request-metric sources' edge metrics in Prometheus. Read-only; every query is fixed in
+/// the core (`metrics::traffic`), the namespace names are validated there, and no Prometheus is not an error (the
+/// answer says so). Window only: not an MCP tool, not an extension method.
+#[tauri::command]
+pub async fn metrics_traffic_graph(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    namespaces: Vec<String>,
+    window: TrafficWindow,
+) -> Result<TrafficGraph, CoreError> {
+    let settings = cluster_settings(&state, &cluster_id);
+    metrics::traffic_graph(
+        &state.clusters,
+        &cluster_id,
+        &settings.prometheus,
+        namespaces,
+        window,
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -140,6 +163,26 @@ mod tests {
         let tools = crate::mcp::server::all_tools().names();
         assert!(tools.len() > 10, "{tools:?}");
         let forbidden = ["request_health", "golden", "throttl", "latency"];
+        assert!(
+            !tools
+                .iter()
+                .any(|t| forbidden.iter().any(|f| t.contains(f))),
+            "{tools:?}"
+        );
+        let methods = crate::extensions::api::METHODS;
+        assert!(
+            !methods
+                .iter()
+                .any(|m| forbidden.iter().any(|f| m.contains(f)) || m.contains("metrics")),
+            "{methods:?}"
+        );
+    }
+
+    #[test]
+    fn neither_agents_nor_extensions_get_the_traffic_graph() {
+        let tools = crate::mcp::server::all_tools().names();
+        assert!(tools.len() > 10, "{tools:?}");
+        let forbidden = ["traffic", "edges", "service_graph"];
         assert!(
             !tools
                 .iter()

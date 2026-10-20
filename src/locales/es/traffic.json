@@ -1,0 +1,128 @@
+{
+  "mode": {
+    "label": "Qué muestra el mapa",
+    "objects": "Objetos",
+    "traffic": "Tráfico"
+  },
+  "firstNamespaces_one": "El grafo de tráfico abarca {{count}} namespace a la vez: solo se muestra el primero elegido.",
+  "firstNamespaces_many": "El grafo de tráfico abarca como máximo {{count}} namespaces a la vez: solo se muestran los primeros elegidos.",
+  "firstNamespaces_other": "El grafo de tráfico abarca como máximo {{count}} namespaces a la vez: solo se muestran los primeros elegidos.",
+  "about": "Llamadas entre cargas de trabajo con un extremo en estos namespaces, según las métricas de solicitudes en Prometheus. El grosor de una línea indica su tasa y el color, su tasa de errores.",
+  "loading": "Leyendo métricas de tráfico…",
+  "window": {
+    "label": "Periodo",
+    "minutes5": "Últimos 5 minutos",
+    "hour1": "Última hora"
+  },
+  "view": {
+    "label": "Vista",
+    "graph": "Grafo",
+    "list": "Lista"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Todos ellos",
+    "protocol": "Protocolo",
+    "status": "Estado"
+  },
+  "protocolFilter": {
+    "all": "Todos los protocolos",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Cualquier estado",
+    "errors": "Con solicitudes fallidas",
+    "5xx": "Con respuestas 5xx",
+    "4xx": "Con respuestas 4xx",
+    "2xx": "Con respuestas 2xx"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "protocolo no indicado"
+  },
+  "level": {
+    "ok": "Errores por debajo del 1 %",
+    "warn": "Errores del 1 al 5 %",
+    "bad": "Errores del 5 % o más",
+    "unknown": "Tasa de errores desconocida"
+  },
+  "legend": "Leyenda",
+  "thickness": "Las líneas más gruesas llevan más solicitudes.",
+  "peerKind": {
+    "workload": "Carga de trabajo",
+    "service": "Service",
+    "unknown": "Desconocido"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Fuera de la malla o sin labels",
+    "unknownIn": "Fuera de la malla o sin labels ({{namespace}})",
+    "cannotOpen": "La fuente no dice quién es: un llamante o destino fuera de la malla o del clúster, o que sus labels no nombran."
+  },
+  "nodeLabel": "{{kind}} {{name}}: mostrar sus llamadas",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}} por {{protocol}}: {{rate}}, tasa de errores {{errors}}, fuente {{source}}",
+  "fromSource": "De {{source}}, {{protocol}}",
+  "fields": {
+    "from": "Desde",
+    "to": "Hacia",
+    "protocol": "Protocolo",
+    "rate": "Tasa",
+    "errors": "Tasa de errores",
+    "latency": "Latencia",
+    "classes": "Respuestas",
+    "source": "Fuente"
+  },
+  "value": {
+    "rate": "{{value}} sol./s",
+    "connections": "{{value}} con./s",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "sin histograma de latencia",
+    "noVerdict": "sin veredicto para TCP",
+    "class": "{{class}} {{value}}/s",
+    "noClasses": "sin estado HTTP"
+  },
+  "open": "Abrir {{name}}",
+  "openRequests": "Solicitudes de {{name}}",
+  "notFound": {
+    "workload": "No hay ningún Deployment, StatefulSet ni DaemonSet llamado {{name}} en {{namespace}}.",
+    "service": "No hay ningún Service llamado {{name}} en {{namespace}}."
+  },
+  "selection": {
+    "link": "Llamadas de {{from}} a {{to}}",
+    "in_one": "{{count}} llamante",
+    "in_many": "{{count}} llamantes",
+    "in_other": "{{count}} llamantes",
+    "out_one": "{{count}} destino",
+    "out_many": "{{count}} destinos",
+    "out_other": "{{count}} destinos",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Cerrar"
+  },
+  "list": {
+    "caption_one": "{{count}} enlace entre dos extremos, primero los más cargados",
+    "caption_many": "{{count}} enlaces entre dos extremos, primero los más cargados",
+    "caption_other": "{{count}} enlaces entre dos extremos, primero los más cargados",
+    "actions": "Acciones",
+    "details": "Detalles",
+    "show": "Mostrar los detalles: {{edge}}"
+  },
+  "truncated_one": "Se muestran los {{shown}} más cargados de {{count}} enlace entre dos extremos.",
+  "truncated_many": "Se muestran los {{shown}} más cargados de {{count}} enlaces entre dos extremos.",
+  "truncated_other": "Se muestran los {{shown}} más cargados de {{count}} enlaces entre dos extremos.",
+  "filteredOut": "Ninguna llamada coincide con estos filtros.",
+  "failed": "No se pudieron leer las métricas de tráfico de {{sources}}.",
+  "noPrometheus": "El grafo de tráfico se lee de Prometheus, y no hay ninguno configurado ni encontrado para este clúster.",
+  "openSettings": "Configuración del clúster",
+  "noSource": "Prometheus no tiene métricas que nombren ambos extremos de una llamada: ni Istio, ni Linkerd, ni el grafo de servicios de Grafana Beyla, ni Cilium Hubble le envían datos.",
+  "requestOnly": "Las solicitudes por carga de trabajo, sin quién las envió, vienen de {{sources}}: consulte la sección “Solicitudes” de cada carga.",
+  "wouldProvide": "Cualquiera de estas fuentes daría el grafo: una malla Istio, una malla Linkerd con linkerd-viz (o un Prometheus que recoja sus proxies), Grafana Beyla con las métricas del grafo de servicios activadas, o Cilium Hubble con métricas HTTP cuyo labelsContext nombre las cargas de trabajo de origen y destino.",
+  "noEdges": {
+    "minutes5": "Según {{sources}}, no hubo llamadas con un extremo en estos namespaces en los últimos 5 minutos.",
+    "hour1": "Según {{sources}}, no hubo llamadas con un extremo en estos namespaces en la última hora."
+  }
+}

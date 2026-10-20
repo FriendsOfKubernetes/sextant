@@ -1,0 +1,118 @@
+{
+  "mode": {
+    "label": "マップの表示内容",
+    "objects": "オブジェクト",
+    "traffic": "トラフィック"
+  },
+  "firstNamespaces_other": "トラフィックグラフが一度に扱えるのは {{count}} 個の namespace までです。最初に選択したものだけを表示しています。",
+  "about": "これらの namespace に少なくとも一端があるワークロード間の呼び出しを、Prometheus のリクエストメトリクスから表示します。線の太さはレート、色はエラー率を表します。",
+  "loading": "トラフィックメトリクスを読み込み中…",
+  "window": {
+    "label": "期間",
+    "minutes5": "直近 5 分",
+    "hour1": "直近 1 時間"
+  },
+  "view": {
+    "label": "表示",
+    "graph": "グラフ",
+    "list": "リスト"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "すべて",
+    "protocol": "プロトコル",
+    "status": "ステータス"
+  },
+  "protocolFilter": {
+    "all": "すべてのプロトコル",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "任意のステータス",
+    "errors": "失敗したリクエストあり",
+    "5xx": "5xx 応答あり",
+    "4xx": "4xx 応答あり",
+    "2xx": "2xx 応答あり"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "プロトコル不明"
+  },
+  "level": {
+    "ok": "エラー 1% 未満",
+    "warn": "エラー 1～5%",
+    "bad": "エラー 5% 以上",
+    "unknown": "エラー率不明"
+  },
+  "legend": "凡例",
+  "thickness": "線が太いほどリクエストが多くなります。",
+  "peerKind": {
+    "workload": "ワークロード",
+    "service": "Service",
+    "unknown": "不明"
+  },
+  "peer": {
+    "inNamespace": "{{name}}（{{namespace}}）",
+    "unknown": "メッシュ外またはラベルなし",
+    "unknownIn": "メッシュ外またはラベルなし（{{namespace}}）",
+    "cannotOpen": "ソースはこれが誰かを示していません。メッシュやクラスターの外にある呼び出し元・呼び出し先か、ラベルで識別できない相手です。"
+  },
+  "nodeLabel": "{{kind}} {{name}}：呼び出しを表示",
+  "linkTitle": "{{from}} → {{to}}：{{rate}}",
+  "edgeSentence": "{{from}} → {{to}}（{{protocol}}）：{{rate}}、エラー率 {{errors}}、ソース {{source}}",
+  "fromSource": "{{source}} から、{{protocol}}",
+  "fields": {
+    "from": "呼び出し元",
+    "to": "呼び出し先",
+    "protocol": "プロトコル",
+    "rate": "レート",
+    "errors": "エラー率",
+    "latency": "レイテンシ",
+    "classes": "応答",
+    "source": "ソース"
+  },
+  "value": {
+    "rate": "{{value}} 件/秒",
+    "connections": "{{value}} 接続/秒",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "レイテンシのヒストグラムなし",
+    "noVerdict": "TCP は判定なし",
+    "class": "{{class}} {{value}}/秒",
+    "noClasses": "HTTP ステータスの報告なし"
+  },
+  "open": "{{name}} を開く",
+  "openRequests": "{{name}} のリクエスト",
+  "notFound": {
+    "workload": "{{namespace}} に {{name}} という名前の Deployment、StatefulSet、DaemonSet はありません。",
+    "service": "{{namespace}} に {{name}} という名前の Service はありません。"
+  },
+  "selection": {
+    "link": "{{from}} から {{to}} への呼び出し",
+    "in_other": "呼び出し元 {{count}} 件",
+    "out_other": "呼び出し先 {{count}} 件",
+    "linkItem": "{{peer}}：{{rate}}",
+    "close": "閉じる"
+  },
+  "list": {
+    "caption_other": "両端間の {{count}} 件の接続（多い順）",
+    "actions": "操作",
+    "details": "詳細",
+    "show": "詳細を表示：{{edge}}"
+  },
+  "truncated_other": "両端間の {{count}} 件の接続のうち、最も多い {{shown}} 件を表示しています。",
+  "filteredOut": "これらのフィルターに一致する呼び出しはありません。",
+  "failed": "{{sources}} のトラフィックメトリクスを読み取れませんでした。",
+  "noPrometheus": "トラフィックグラフは Prometheus から読み取りますが、このクラスターには設定済みの、または見つかった Prometheus がありません。",
+  "openSettings": "クラスターの設定",
+  "noSource": "Prometheus に呼び出しの両端を示すメトリクスがありません。Istio、Linkerd、Grafana Beyla のサービスグラフ、Cilium Hubble のいずれも報告していません。",
+  "requestOnly": "送信元を含まないワークロード単位のリクエストは {{sources}} から届いています。各ワークロードの「リクエスト」セクションを参照してください。",
+  "wouldProvide": "次のいずれかがあればグラフを表示できます：Istio メッシュ、linkerd-viz 付きの Linkerd メッシュ（またはそのプロキシを収集する Prometheus）、サービスグラフのメトリクスを有効にした Grafana Beyla、labelsContext で送信元と宛先のワークロードを示す HTTP メトリクスを持つ Cilium Hubble。",
+  "noEdges": {
+    "minutes5": "{{sources}} によると、直近 5 分間にこれらの namespace に端がある呼び出しはありません。",
+    "hour1": "{{sources}} によると、直近 1 時間にこれらの namespace に端がある呼び出しはありません。"
+  }
+}

@@ -329,6 +329,10 @@ _Avoid_: golden signals, SLIs, APM
 Something that exports request metrics of workloads to Prometheus, found by asking Prometheus which of a fixed list of metric names it has. Sextant reads what is there; it installs or enables none of them.
 _Avoid_: provider, integration, exporter
 
+**Traffic graph**:
+The "Traffic" mode of the map: calls between workloads (and Services, and unknown ends) with an end in the chosen namespaces, each line one caller → callee pair with its rate, error rate and latency over the last 5 minutes or hour, from the request-metric sources whose metrics name both ends. An end the source cannot name is an "unknown" node (outside the mesh or unlabelled), never left out.
+_Avoid_: service map, topology, dependency graph
+
 **Right-sizing**:
 Comparing each container's requests and limits with what it really used over the last day or 7 days (from Prometheus), with a recommendation and findings per container of a workload. The page is in the Workloads section; Deployments, StatefulSets, DaemonSets and pods have the same rows in their details. Nothing is changed in the cluster: the recommendation is a `resources:` snippet to copy.
 _Avoid_: autoscaling, VPA, optimization

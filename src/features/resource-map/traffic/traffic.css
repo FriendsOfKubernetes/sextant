@@ -1,0 +1,253 @@
+/* The "Traffic" mode of the map (#211). Colours only through the theme tokens; lines reuse the map's canvas. */
+.rmap-modes {
+  margin-top: 4px;
+}
+
+.traffic-note {
+  margin: 6px 0;
+  color: var(--color-text-muted);
+}
+
+.traffic-controls,
+.traffic-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin: 8px 0;
+}
+
+.traffic-windows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.traffic-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.traffic-missing p {
+  margin: 6px 0;
+}
+
+.traffic-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.traffic-main {
+  flex: 1 1 480px;
+  min-width: 0;
+}
+
+.traffic-links-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.traffic-link {
+  fill: none;
+  stroke: var(--color-text-muted);
+  opacity: 0.8;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.traffic-link--ok {
+  stroke: var(--color-success);
+}
+
+.traffic-link--warn {
+  stroke: var(--color-warning);
+}
+
+.traffic-link--bad {
+  stroke: var(--color-danger);
+}
+
+.traffic-link--unknown {
+  stroke: var(--color-control-border);
+  stroke-dasharray: 5 4;
+}
+
+.traffic-link--selected {
+  opacity: 1;
+  filter: drop-shadow(0 0 2px var(--color-accent));
+}
+
+.traffic-link--dimmed {
+  opacity: 0.15;
+}
+
+.traffic-arrow {
+  fill: var(--color-text-muted);
+}
+
+.traffic-node--unknown {
+  border-style: dashed;
+}
+
+.traffic-node--service {
+  border-left-color: var(--color-accent);
+}
+
+.traffic-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 3px solid var(--color-text-muted);
+}
+
+.traffic-swatch--ok {
+  border-top-color: var(--color-success);
+}
+
+.traffic-swatch--warn {
+  border-top-color: var(--color-warning);
+}
+
+.traffic-swatch--bad {
+  border-top-color: var(--color-danger);
+}
+
+.traffic-swatch--unknown {
+  border-top: 3px dashed var(--color-control-border);
+}
+
+.traffic-panel {
+  flex: 0 1 320px;
+  min-width: 240px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-panel);
+}
+
+.traffic-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.traffic-panel__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.traffic-peers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.traffic-peer {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.traffic-peer__title,
+.traffic-edge__title {
+  margin: 10px 0 4px;
+  font-size: 0.875rem;
+}
+
+.traffic-peer__name {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.traffic-peer__kind {
+  color: var(--color-text-muted);
+}
+
+.traffic-peer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.traffic-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 12px;
+  margin: 0;
+}
+
+.traffic-facts dt {
+  color: var(--color-text-muted);
+}
+
+.traffic-facts dd {
+  margin: 0;
+}
+
+.traffic-links {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.traffic-linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.traffic-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.traffic-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+
+.traffic-table__caption {
+  margin-bottom: 6px;
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.traffic-table th,
+.traffic-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.traffic-table__num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.traffic-table__row--selected {
+  background: var(--color-selected);
+}
+
+.traffic-level--warn {
+  color: var(--color-warning);
+}
+
+.traffic-level--bad {
+  color: var(--color-danger);
+}

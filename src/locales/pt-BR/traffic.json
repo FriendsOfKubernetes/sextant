@@ -1,0 +1,128 @@
+{
+  "mode": {
+    "label": "O que o mapa mostra",
+    "objects": "Objetos",
+    "traffic": "Tráfego"
+  },
+  "firstNamespaces_one": "O grafo de tráfego abrange {{count}} namespace de cada vez: só o primeiro escolhido é mostrado.",
+  "firstNamespaces_many": "O grafo de tráfego abrange no máximo {{count}} namespaces de cada vez: só os primeiros escolhidos são mostrados.",
+  "firstNamespaces_other": "O grafo de tráfego abrange no máximo {{count}} namespaces de cada vez: só os primeiros escolhidos são mostrados.",
+  "about": "Chamadas entre cargas de trabalho com uma ponta nestes namespaces, pelas métricas de requisições no Prometheus. A espessura de uma linha indica sua taxa e a cor, sua taxa de erros.",
+  "loading": "Lendo métricas de tráfego…",
+  "window": {
+    "label": "Período",
+    "minutes5": "Últimos 5 minutos",
+    "hour1": "Última hora"
+  },
+  "view": {
+    "label": "Visualização",
+    "graph": "Grafo",
+    "list": "Lista"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Todos eles",
+    "protocol": "Protocolo",
+    "status": "Status"
+  },
+  "protocolFilter": {
+    "all": "Todos os protocolos",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Qualquer status",
+    "errors": "Com requisições com falha",
+    "5xx": "Com respostas 5xx",
+    "4xx": "Com respostas 4xx",
+    "2xx": "Com respostas 2xx"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "protocolo não informado"
+  },
+  "level": {
+    "ok": "Erros abaixo de 1%",
+    "warn": "Erros de 1 a 5%",
+    "bad": "Erros de 5% ou mais",
+    "unknown": "Taxa de erros desconhecida"
+  },
+  "legend": "Legenda",
+  "thickness": "Linhas mais grossas levam mais requisições.",
+  "peerKind": {
+    "workload": "Carga de trabalho",
+    "service": "Service",
+    "unknown": "Desconhecido"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Fora da malha ou sem labels",
+    "unknownIn": "Fora da malha ou sem labels ({{namespace}})",
+    "cannotOpen": "A fonte não diz quem é: quem chama ou é chamado fora da malha ou do cluster, ou alguém que seus labels não nomeiam."
+  },
+  "nodeLabel": "{{kind}} {{name}}: mostrar suas chamadas",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}} por {{protocol}}: {{rate}}, taxa de erros {{errors}}, fonte {{source}}",
+  "fromSource": "De {{source}}, {{protocol}}",
+  "fields": {
+    "from": "De",
+    "to": "Para",
+    "protocol": "Protocolo",
+    "rate": "Taxa",
+    "errors": "Taxa de erros",
+    "latency": "Latência",
+    "classes": "Respostas",
+    "source": "Fonte"
+  },
+  "value": {
+    "rate": "{{value}} req/s",
+    "connections": "{{value}} con./s",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "sem histograma de latência",
+    "noVerdict": "sem veredito para TCP",
+    "class": "{{class}} {{value}}/s",
+    "noClasses": "nenhum status HTTP informado"
+  },
+  "open": "Abrir {{name}}",
+  "openRequests": "Requisições de {{name}}",
+  "notFound": {
+    "workload": "Nenhum Deployment, StatefulSet ou DaemonSet chamado {{name}} em {{namespace}}.",
+    "service": "Nenhum Service chamado {{name}} em {{namespace}}."
+  },
+  "selection": {
+    "link": "Chamadas de {{from}} para {{to}}",
+    "in_one": "{{count}} chamador",
+    "in_many": "{{count}} chamadores",
+    "in_other": "{{count}} chamadores",
+    "out_one": "{{count}} destino",
+    "out_many": "{{count}} destinos",
+    "out_other": "{{count}} destinos",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Fechar"
+  },
+  "list": {
+    "caption_one": "{{count}} ligação entre duas pontas, as mais carregadas primeiro",
+    "caption_many": "{{count}} ligações entre duas pontas, as mais carregadas primeiro",
+    "caption_other": "{{count}} ligações entre duas pontas, as mais carregadas primeiro",
+    "actions": "Ações",
+    "details": "Detalhes",
+    "show": "Mostrar os detalhes: {{edge}}"
+  },
+  "truncated_one": "Mostrando as {{shown}} mais carregadas de {{count}} ligação entre duas pontas.",
+  "truncated_many": "Mostrando as {{shown}} mais carregadas de {{count}} ligações entre duas pontas.",
+  "truncated_other": "Mostrando as {{shown}} mais carregadas de {{count}} ligações entre duas pontas.",
+  "filteredOut": "Nenhuma chamada corresponde a estes filtros.",
+  "failed": "Não foi possível ler as métricas de tráfego de {{sources}}.",
+  "noPrometheus": "O grafo de tráfego é lido do Prometheus, e nenhum está configurado ou foi encontrado para este cluster.",
+  "openSettings": "Configurações do cluster",
+  "noSource": "O Prometheus não tem métricas que nomeiem as duas pontas de uma chamada: nem Istio, nem Linkerd, nem o grafo de serviços do Grafana Beyla, nem o Cilium Hubble enviam dados a ele.",
+  "requestOnly": "Requisições por carga de trabalho, sem quem as enviou, vêm de {{sources}}: veja a seção “Requisições” de cada carga.",
+  "wouldProvide": "Qualquer uma destas fontes daria o grafo: uma malha Istio, uma malha Linkerd com linkerd-viz (ou um Prometheus que colete seus proxies), Grafana Beyla com as métricas do grafo de serviços ativadas, ou Cilium Hubble com métricas HTTP cujo labelsContext nomeie as cargas de trabalho de origem e destino.",
+  "noEdges": {
+    "minutes5": "Segundo {{sources}}, não houve chamadas com uma ponta nestes namespaces nos últimos 5 minutos.",
+    "hour1": "Segundo {{sources}}, não houve chamadas com uma ponta nestes namespaces na última hora."
+  }
+}

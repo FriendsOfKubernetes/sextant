@@ -1,0 +1,123 @@
+{
+  "mode": {
+    "label": "Was die Karte zeigt",
+    "objects": "Objekte",
+    "traffic": "Datenverkehr"
+  },
+  "firstNamespaces_one": "Der Verkehrsgraph umfasst {{count}} Namespace auf einmal: Er zeigt den ersten gewählten.",
+  "firstNamespaces_other": "Der Verkehrsgraph umfasst höchstens {{count}} Namespaces auf einmal: Er zeigt die ersten gewählten.",
+  "about": "Aufrufe zwischen Workloads mit einem Ende in diesen Namespaces, aus den Anfragemetriken in Prometheus. Eine Linie ist so dick wie ihre Rate und nach ihrer Fehlerrate gefärbt.",
+  "loading": "Verkehrsmetriken werden gelesen…",
+  "window": {
+    "label": "Zeitraum",
+    "minutes5": "Letzte 5 Minuten",
+    "hour1": "Letzte Stunde"
+  },
+  "view": {
+    "label": "Ansicht",
+    "graph": "Graph",
+    "list": "Liste"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Alle davon",
+    "protocol": "Protokoll",
+    "status": "Status"
+  },
+  "protocolFilter": {
+    "all": "Alle Protokolle",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Beliebiger Status",
+    "errors": "Mit fehlgeschlagenen Anfragen",
+    "5xx": "Mit 5xx-Antworten",
+    "4xx": "Mit 4xx-Antworten",
+    "2xx": "Mit 2xx-Antworten"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "Protokoll nicht gemeldet"
+  },
+  "level": {
+    "ok": "Fehler unter 1 %",
+    "warn": "Fehler 1–5 %",
+    "bad": "Fehler ab 5 %",
+    "unknown": "Fehlerrate unbekannt"
+  },
+  "legend": "Legende",
+  "thickness": "Dickere Linien tragen mehr Anfragen.",
+  "peerKind": {
+    "workload": "Workload",
+    "service": "Service",
+    "unknown": "Unbekannt"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Außerhalb des Mesh oder ohne Labels",
+    "unknownIn": "Außerhalb des Mesh oder ohne Labels ({{namespace}})",
+    "cannotOpen": "Die Quelle sagt nicht, wer das ist: ein Aufrufer oder Ziel außerhalb des Mesh oder des Clusters oder eines, das seine Labels nicht benennen."
+  },
+  "nodeLabel": "{{kind}} {{name}}: Aufrufe anzeigen",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}} über {{protocol}}: {{rate}}, Fehlerrate {{errors}}, aus {{source}}",
+  "fromSource": "Aus {{source}}, {{protocol}}",
+  "fields": {
+    "from": "Von",
+    "to": "Nach",
+    "protocol": "Protokoll",
+    "rate": "Rate",
+    "errors": "Fehlerrate",
+    "latency": "Latenz",
+    "classes": "Antworten",
+    "source": "Quelle"
+  },
+  "value": {
+    "rate": "{{value}} Anfr./s",
+    "connections": "{{value}} Verb./s",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "kein Latenzhistogramm",
+    "noVerdict": "keine Bewertung für TCP",
+    "class": "{{class}} {{value}}/s",
+    "noClasses": "kein HTTP-Status gemeldet"
+  },
+  "open": "{{name}} öffnen",
+  "openRequests": "Anfragen von {{name}}",
+  "notFound": {
+    "workload": "Kein Deployment, StatefulSet oder DaemonSet namens {{name}} in {{namespace}}.",
+    "service": "Kein Service namens {{name}} in {{namespace}}."
+  },
+  "selection": {
+    "link": "Aufrufe von {{from}} an {{to}}",
+    "in_one": "{{count}} Aufrufer",
+    "in_other": "{{count}} Aufrufer",
+    "out_one": "{{count}} Ziel",
+    "out_other": "{{count}} Ziele",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Schließen"
+  },
+  "list": {
+    "caption_one": "{{count}} Verbindung zwischen zwei Enden, die meistgenutzten zuerst",
+    "caption_other": "{{count}} Verbindungen zwischen zwei Enden, die meistgenutzten zuerst",
+    "actions": "Aktionen",
+    "details": "Details",
+    "show": "Details anzeigen: {{edge}}"
+  },
+  "truncated_one": "Die {{shown}} meistgenutzten von {{count}} Verbindung zwischen zwei Enden werden gezeigt.",
+  "truncated_other": "Die {{shown}} meistgenutzten von {{count}} Verbindungen zwischen zwei Enden werden gezeigt.",
+  "filteredOut": "Kein Aufruf passt zu diesen Filtern.",
+  "failed": "Die Verkehrsmetriken von {{sources}} konnten nicht gelesen werden.",
+  "noPrometheus": "Der Verkehrsgraph wird aus Prometheus gelesen, und für diesen Cluster ist keines eingerichtet oder gefunden.",
+  "openSettings": "Clustereinstellungen",
+  "noSource": "Prometheus hat keine Metriken, die beide Enden eines Aufrufs nennen: Weder Istio noch Linkerd, der Service-Graph von Grafana Beyla oder Cilium Hubble melden an es.",
+  "requestOnly": "Anfragen pro Workload, ohne den Absender, kommen von {{sources}}: siehe den Abschnitt „Anfragen“ jedes Workloads.",
+  "wouldProvide": "Jede dieser Quellen liefert den Graphen: ein Istio-Mesh, ein Linkerd-Mesh mit linkerd-viz (oder ein Prometheus, das seine Proxys abfragt), Grafana Beyla mit aktivierten Service-Graph-Metriken oder Cilium Hubble mit HTTP-Metriken, deren labelsContext die Quell- und Ziel-Workloads nennt.",
+  "noEdges": {
+    "minutes5": "Laut {{sources}} gab es in den letzten 5 Minuten keine Aufrufe mit einem Ende in diesen Namespaces.",
+    "hour1": "Laut {{sources}} gab es in der letzten Stunde keine Aufrufe mit einem Ende in diesen Namespaces."
+  }
+}

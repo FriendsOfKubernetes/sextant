@@ -96,6 +96,8 @@ import type { HistoryWindow } from "./generated/HistoryWindow";
 import type { UsageHistory } from "./generated/UsageHistory";
 import type { RequestHealth } from "./generated/RequestHealth";
 import type { RequestTarget } from "./generated/RequestTarget";
+import type { TrafficGraph } from "./generated/TrafficGraph";
+import type { TrafficWindow } from "./generated/TrafficWindow";
 import type { SettingsStatus } from "./generated/SettingsStatus";
 import type { TermPayload } from "./generated/TermPayload";
 import type { TransferEvent } from "./generated/TransferEvent";
@@ -309,6 +311,9 @@ export const metrics = {
   /** Request rate, errors, latency and CPU throttling of a workload or pod (#212); fixed queries in the core. */
   requestHealth: (clusterId: ClusterId, target: RequestTarget) =>
     call<RequestHealth>("metrics_request_health", { clusterId, target }),
+  /** Who calls whom in up to 5 namespaces over the window (#211); fixed queries in the core. */
+  trafficGraph: (clusterId: ClusterId, namespaces: string[], window: TrafficWindow) =>
+    call<TrafficGraph>("metrics_traffic_graph", { clusterId, namespaces, window }),
 };
 
 /** Storage insights (#152): the fill levels, and creating the one object a storage action confirmed. */

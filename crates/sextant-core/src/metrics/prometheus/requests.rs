@@ -69,6 +69,24 @@ pub(crate) fn sources_in(names: &BTreeSet<String>, via: RequestVia) -> Vec<Detec
         .collect()
 }
 
+/// The sources whose edge metrics these names make up (the traffic graph, #211), in [`RequestSourceKind::ALL`] order.
+pub(crate) fn edge_sources_in(names: &BTreeSet<String>, via: RequestVia) -> Vec<DetectedSource> {
+    let has = |name: &&str| names.contains(*name);
+    RequestSourceKind::ALL
+        .iter()
+        .filter(|kind| {
+            kind.edge_metrics()
+                .iter()
+                .any(|group| group.iter().all(has))
+        })
+        .map(|&kind| DetectedSource {
+            kind,
+            via,
+            latency: kind.edge_latency_metrics().iter().any(has),
+        })
+        .collect()
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Selectors
 

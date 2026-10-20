@@ -1,0 +1,277 @@
+{
+ "names": {
+  "status": "success",
+  "data": [
+   "istio_requests_total",
+   "istio_request_duration_milliseconds_bucket",
+   "istio_tcp_connections_opened_total",
+   "up"
+  ]
+ },
+ "answers": [
+  {
+   "status": "success",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "m": "count"
+      },
+      "value": [
+       1760000000,
+       "5"
+      ]
+     },
+     {
+      "metric": {
+       "m": "rate",
+       "sx_d": "api.example.com",
+       "sx_dk": "service",
+       "sx_dn": "unknown",
+       "sx_p": "http",
+       "sx_s": "web",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.2"
+      ]
+     },
+     {
+      "metric": {
+       "m": "rate",
+       "sx_d": "db",
+       "sx_dk": "workload",
+       "sx_dn": "pay",
+       "sx_p": "grpc",
+       "sx_s": "web",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "1"
+      ]
+     },
+     {
+      "metric": {
+       "m": "rate",
+       "sx_d": "redis",
+       "sx_dk": "workload",
+       "sx_dn": "cache",
+       "sx_p": "tcp",
+       "sx_s": "web",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.1"
+      ]
+     },
+     {
+      "metric": {
+       "m": "rate",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "frontend",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "1"
+      ]
+     },
+     {
+      "metric": {
+       "m": "rate",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "unknown",
+       "sx_sn": "unknown"
+      },
+      "value": [
+       1760000000,
+       "1"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "status": "success",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "m": "errors",
+       "sx_d": "db",
+       "sx_dk": "workload",
+       "sx_dn": "pay",
+       "sx_p": "grpc",
+       "sx_s": "web",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.5"
+      ]
+     },
+     {
+      "metric": {
+       "m": "errors",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "frontend",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.1"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "status": "success",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "m": "class",
+       "sx_c": "2xx",
+       "sx_d": "api.example.com",
+       "sx_dk": "service",
+       "sx_dn": "unknown",
+       "sx_p": "http",
+       "sx_s": "web",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.2"
+      ]
+     },
+     {
+      "metric": {
+       "m": "class",
+       "sx_c": "2xx",
+       "sx_d": "db",
+       "sx_dk": "workload",
+       "sx_dn": "pay",
+       "sx_p": "grpc",
+       "sx_s": "web",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "1"
+      ]
+     },
+     {
+      "metric": {
+       "m": "class",
+       "sx_c": "2xx",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "frontend",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.9"
+      ]
+     },
+     {
+      "metric": {
+       "m": "class",
+       "sx_c": "4xx",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "unknown",
+       "sx_sn": "unknown"
+      },
+      "value": [
+       1760000000,
+       "1"
+      ]
+     },
+     {
+      "metric": {
+       "m": "class",
+       "sx_c": "5xx",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "frontend",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "0.1"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "status": "success",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "m": "p50",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "frontend",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "10"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "status": "success",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "m": "p95",
+       "sx_d": "web",
+       "sx_dk": "workload",
+       "sx_dn": "shop",
+       "sx_p": "http",
+       "sx_s": "frontend",
+       "sx_sn": "shop"
+      },
+      "value": [
+       1760000000,
+       "50"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

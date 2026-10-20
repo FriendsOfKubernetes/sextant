@@ -1,0 +1,133 @@
+{
+  "mode": {
+    "label": "Что показывает карта",
+    "objects": "Объекты",
+    "traffic": "Трафик"
+  },
+  "firstNamespaces_one": "Граф трафика охватывает не больше {{count}} namespace за раз: показаны только первые из выбранных.",
+  "firstNamespaces_few": "Граф трафика охватывает не больше {{count}} namespace за раз: показаны только первые из выбранных.",
+  "firstNamespaces_many": "Граф трафика охватывает не больше {{count}} namespace за раз: показаны только первые из выбранных.",
+  "firstNamespaces_other": "Граф трафика охватывает не больше {{count}} namespace за раз: показаны только первые из выбранных.",
+  "about": "Вызовы между рабочими нагрузками, у которых хотя бы один конец в этих namespace, по метрикам запросов в Prometheus. Толщина линии — частота вызовов, цвет — доля ошибок.",
+  "loading": "Чтение метрик трафика…",
+  "window": {
+    "label": "Период",
+    "minutes5": "Последние 5 минут",
+    "hour1": "Последний час"
+  },
+  "view": {
+    "label": "Вид",
+    "graph": "Граф",
+    "list": "Список"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Все выбранные",
+    "protocol": "Протокол",
+    "status": "Статус"
+  },
+  "protocolFilter": {
+    "all": "Все протоколы",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Любой статус",
+    "errors": "С неудачными запросами",
+    "5xx": "С ответами 5xx",
+    "4xx": "С ответами 4xx",
+    "2xx": "С ответами 2xx"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "протокол не указан"
+  },
+  "level": {
+    "ok": "Ошибок меньше 1%",
+    "warn": "Ошибок 1–5%",
+    "bad": "Ошибок 5% и больше",
+    "unknown": "Доля ошибок неизвестна"
+  },
+  "legend": "Легенда",
+  "thickness": "Чем толще линия, тем больше запросов.",
+  "peerKind": {
+    "workload": "Рабочая нагрузка",
+    "service": "Service",
+    "unknown": "Неизвестно"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Вне mesh или без меток",
+    "unknownIn": "Вне mesh или без меток ({{namespace}})",
+    "cannotOpen": "Источник не говорит, кто это: вызывающая или вызываемая сторона вне mesh или кластера либо без меток, которые бы её назвали."
+  },
+  "nodeLabel": "{{kind}} {{name}}: показать вызовы",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}} по {{protocol}}: {{rate}}, доля ошибок {{errors}}, источник — {{source}}",
+  "fromSource": "Из {{source}}, {{protocol}}",
+  "fields": {
+    "from": "Откуда",
+    "to": "Куда",
+    "protocol": "Протокол",
+    "rate": "Частота",
+    "errors": "Доля ошибок",
+    "latency": "Задержка",
+    "classes": "Ответы",
+    "source": "Источник"
+  },
+  "value": {
+    "rate": "{{value}} запр./с",
+    "connections": "{{value}} соед./с",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "нет гистограммы задержек",
+    "noVerdict": "для TCP нет оценки",
+    "class": "{{class}} {{value}}/с",
+    "noClasses": "HTTP-статус не сообщается"
+  },
+  "open": "Открыть {{name}}",
+  "openRequests": "Запросы {{name}}",
+  "notFound": {
+    "workload": "В {{namespace}} нет Deployment, StatefulSet или DaemonSet с именем {{name}}.",
+    "service": "В {{namespace}} нет Service с именем {{name}}."
+  },
+  "selection": {
+    "link": "Вызовы из {{from}} в {{to}}",
+    "in_one": "Кто вызывает: {{count}}",
+    "in_few": "Кто вызывает: {{count}}",
+    "in_many": "Кто вызывает: {{count}}",
+    "in_other": "Кто вызывает: {{count}}",
+    "out_one": "Кого вызывает: {{count}}",
+    "out_few": "Кого вызывает: {{count}}",
+    "out_many": "Кого вызывает: {{count}}",
+    "out_other": "Кого вызывает: {{count}}",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Закрыть"
+  },
+  "list": {
+    "caption_one": "{{count}} связь между двумя концами, сначала самые загруженные",
+    "caption_few": "{{count}} связи между двумя концами, сначала самые загруженные",
+    "caption_many": "{{count}} связей между двумя концами, сначала самые загруженные",
+    "caption_other": "{{count}} связи между двумя концами, сначала самые загруженные",
+    "actions": "Действия",
+    "details": "Подробности",
+    "show": "Показать подробности: {{edge}}"
+  },
+  "truncated_one": "Показаны {{shown}} самых загруженных из {{count}} связи между двумя концами.",
+  "truncated_few": "Показаны {{shown}} самых загруженных из {{count}} связей между двумя концами.",
+  "truncated_many": "Показаны {{shown}} самых загруженных из {{count}} связей между двумя концами.",
+  "truncated_other": "Показаны {{shown}} самых загруженных из {{count}} связи между двумя концами.",
+  "filteredOut": "Ни один вызов не подходит под эти фильтры.",
+  "failed": "Не удалось прочитать метрики трафика: {{sources}}.",
+  "noPrometheus": "Граф трафика читается из Prometheus, а для этого кластера он не настроен и не найден.",
+  "openSettings": "Настройки кластера",
+  "noSource": "В Prometheus нет метрик, которые называют оба конца вызова: ни Istio, ни Linkerd, ни граф сервисов Grafana Beyla, ни Cilium Hubble в него не пишут.",
+  "requestOnly": "Запросы по рабочим нагрузкам, но без того, кто их отправил, приходят от {{sources}}: смотрите раздел «Запросы» каждой нагрузки.",
+  "wouldProvide": "Граф дал бы любой из них: mesh Istio, mesh Linkerd с linkerd-viz (или Prometheus, который собирает метрики его прокси), Grafana Beyla с включёнными метриками графа сервисов или Cilium Hubble с HTTP-метриками, у которых labelsContext называет рабочие нагрузки источника и назначения.",
+  "noEdges": {
+    "minutes5": "{{sources}}: за последние 5 минут нет вызовов с концом в этих namespace.",
+    "hour1": "{{sources}}: за последний час нет вызовов с концом в этих namespace."
+  }
+}

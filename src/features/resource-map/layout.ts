@@ -263,6 +263,28 @@ export function layoutMap(graph: Graph, options: MapOptions): MapLayout {
   const kept = new Set(drawn.map((n) => n.id));
   const edges = [...edgeMap.values()].filter((e) => kept.has(e.from) && kept.has(e.to));
 
+  const { nodes, width, height } = placeColumns(drawn, edges);
+  const kinds = [...kindCounts.values()].sort((a, b) => columnOf(a.id) - columnOf(b.id) || a.kind.localeCompare(b.kind));
+  return { nodes, edges, width, height, truncated, kinds };
+}
+
+/** A node `placeColumns` places: its column, and where it ends up. */
+export interface Placed {
+  id: string;
+  column: number;
+  x: number;
+  y: number;
+}
+
+/**
+ * Places nodes in their columns (only the columns that have nodes, in order) and orders each column by the average
+ * row of its neighbours to the left, then to the right, which untangles most edges in two sweeps. Nodes come in the
+ * order they should keep when nothing else decides; shared by the namespace map and the traffic graph.
+ */
+export function placeColumns<T extends Placed>(
+  drawn: T[],
+  edges: readonly { from: string; to: string }[],
+): { nodes: T[]; width: number; height: number } {
   const columns = [...new Set(drawn.map((n) => n.column))].sort((a, b) => a - b);
   const lanes = columns.map((c) => drawn.filter((n) => n.column === c));
   const neighboursOf = new Map<string, string[]>();
@@ -271,9 +293,9 @@ export function layoutMap(graph: Graph, options: MapOptions): MapLayout {
     (neighboursOf.get(e.to) ?? neighboursOf.set(e.to, []).get(e.to)!).push(e.from);
   }
   const row = new Map<string, number>();
-  const place = (lane: MapNode[]) => lane.forEach((n, i) => row.set(n.id, i));
+  const place = (lane: T[]) => lane.forEach((n, i) => row.set(n.id, i));
   lanes.forEach(place);
-  const sweep = (lane: MapNode[], laneIndex: number, towards: "left" | "right") => {
+  const sweep = (lane: T[], laneIndex: number, towards: "left" | "right") => {
     const side = new Set(
       (towards === "left" ? lanes.slice(0, laneIndex) : lanes.slice(laneIndex + 1)).flatMap((l) => l.map((n) => n.id)),
     );
@@ -296,8 +318,24 @@ export function layoutMap(graph: Graph, options: MapOptions): MapLayout {
     });
     height = Math.max(height, lane.length * (NODE_H + GAP_Y) - GAP_Y);
   });
-  const nodes = lanes.flat();
   const width = lanes.length > 0 ? lanes.length * (NODE_W + GAP_X) - GAP_X : 0;
-  const kinds = [...kindCounts.values()].sort((a, b) => columnOf(a.id) - columnOf(b.id) || a.kind.localeCompare(b.kind));
-  return { nodes, edges, width, height: Math.max(height, 0), truncated, kinds };
+  return { nodes: lanes.flat(), width, height: Math.max(height, 0) };
+}
+
+/** A curve from the side of `a` facing `b` to the side of `b` facing `a` (both right sides within one column). */
+export function edgePath(a: Pick<MapNode, "x" | "y">, b: Pick<MapNode, "x" | "y">): string {
+  const ay = a.y + NODE_H / 2;
+  const by = b.y + NODE_H / 2;
+  if (a.x === b.x) {
+    const x = a.x + NODE_W;
+    const bulge = Math.min(GAP_X - 8, 24 + Math.abs(by - ay) / 8);
+    return `M ${x} ${ay} C ${x + bulge} ${ay}, ${x + bulge} ${by}, ${x} ${by}`;
+  }
+  const forward = b.x > a.x;
+  const sx = forward ? a.x + NODE_W : a.x;
+  const tx = forward ? b.x : b.x + NODE_W;
+  const dx = Math.max(24, Math.abs(tx - sx) / 2);
+  const c1 = forward ? sx + dx : sx - dx;
+  const c2 = forward ? tx - dx : tx + dx;
+  return `M ${sx} ${ay} C ${c1} ${ay}, ${c2} ${by}, ${tx} ${by}`;
 }

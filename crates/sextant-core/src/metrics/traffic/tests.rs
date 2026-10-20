@@ -1,0 +1,206 @@
+use serde_json::Value;
+
+use super::*;
+use crate::fake_api::{FakeApi, Reply, Request, connected_to};
+use crate::metrics::PrometheusTarget;
+use crate::metrics::requests::{SOURCES_TEST_LOCK, forget_sources};
+
+fn decode(text: &str) -> String {
+    let bytes = text.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            out.push(u8::from_str_radix(&text[i + 1..i + 3], 16).unwrap());
+            i += 3;
+        } else {
+            out.push(bytes[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).unwrap()
+}
+
+fn answers(file: &str) -> Vec<Value> {
+    let path = format!(
+        "{}/src/metrics/traffic/testdata/{file}.json",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let all: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    all["answers"].as_array().unwrap().clone()
+}
+
+fn ns(list: &[&str]) -> Vec<String> {
+    list.iter().map(|s| (*s).to_owned()).collect()
+}
+
+#[test]
+fn one_to_five_distinct_namespace_names_pass() {
+    validate_namespaces(&ns(&["shop", "pay"])).unwrap();
+    validate_namespaces(&ns(&["a", "b", "c", "d", "e"])).unwrap();
+    let bad: [&[&str]; 5] = [
+        &[],
+        &["a", "b", "c", "d", "e", "f"],
+        &["shop|pay"],
+        &["shop\"} or vector(1) #"],
+        &["shop", "shop"],
+    ];
+    for list in bad {
+        assert_eq!(
+            validate_namespaces(&ns(list)).unwrap_err().code,
+            ErrorCode::Invalid,
+            "{list:?}"
+        );
+    }
+}
+
+#[test]
+fn the_window_names_only_two_ranges() {
+    assert_eq!(TrafficWindow::Minutes5.promql(), "5m");
+    assert_eq!(TrafficWindow::Hour1.promql(), "1h");
+    let parsed: TrafficWindow = serde_json::from_str(r#""hour1""#).unwrap();
+    assert_eq!(parsed, TrafficWindow::Hour1);
+    assert!(serde_json::from_str::<TrafficWindow>(r#""2h""#).is_err());
+}
+
+const API_VERSIONS: &str =
+    r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+const PROXY: &str = "/api/v1/namespaces/monitoring/services/prometheus:9090/proxy";
+
+fn manual() -> PrometheusMode {
+    PrometheusMode::Manual {
+        target: PrometheusTarget::Service {
+            namespace: "monitoring".into(),
+            service: "prometheus".into(),
+            port: 9090,
+            path_prefix: String::new(),
+        },
+    }
+}
+
+/// Which of a source's queries this is: 0 the edges and their count, then errors, classes, p50, p95.
+fn query_index(promql: &str) -> usize {
+    let tags = [
+        r#""m", "rate""#,
+        r#""m", "errors""#,
+        r#""m", "class""#,
+        r#""m", "p50""#,
+        r#""m", "p95""#,
+    ];
+    tags.iter().position(|t| promql.contains(t)).unwrap()
+}
+
+/// A cluster whose Prometheus has Istio, Linkerd, Hubble (whose queries fail) and ingress-nginx metrics.
+async fn cluster() -> FakeApi {
+    FakeApi::start(|req: &Request| {
+        let path = req.path.as_str();
+        let Some(rest) = path.strip_prefix(PROXY) else {
+            return match path {
+                "/api" => Reply::json(200, API_VERSIONS),
+                _ => Reply::not_found(),
+            };
+        };
+        let promql = decode(&req.query);
+        match rest {
+            "/api/v1/label/__name__/values" => Reply::json(
+                200,
+                r#"{"status":"success","data":["istio_requests_total","istio_request_duration_milliseconds_bucket","response_total","response_latency_ms_bucket","hubble_http_requests_total","nginx_ingress_controller_requests"]}"#,
+            ),
+            "/api/v1/query" if promql.contains("hubble_") => Reply::json(
+                422,
+                r#"{"status":"error","errorType":"execution","error":"query timed out"}"#,
+            ),
+            "/api/v1/query" => {
+                let file = if promql.contains("istio_") { "istio" } else { "linkerd" };
+                Reply::json(200, answers(file)[query_index(&promql)].to_string())
+            }
+            _ => Reply::not_found(),
+        }
+    })
+    .await
+}
+
+#[tokio::test]
+async fn edges_of_every_source_merged_busiest_first() {
+    let _serial = SOURCES_TEST_LOCK.lock().await;
+    forget_sources();
+    let api = cluster().await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let graph = traffic_graph(
+        &mgr,
+        &id,
+        &manual(),
+        ns(&["shop", "pay"]),
+        TrafficWindow::Minutes5,
+    )
+    .await
+    .unwrap();
+    assert!(graph.prometheus);
+    assert_eq!(graph.namespaces, ns(&["shop", "pay"]));
+    let kinds: Vec<RequestSourceKind> = graph.sources.iter().map(|s| s.kind).collect();
+    assert_eq!(
+        kinds,
+        [
+            RequestSourceKind::Istio,
+            RequestSourceKind::Linkerd,
+            RequestSourceKind::Hubble
+        ]
+    );
+    assert_eq!(graph.request_only, [RequestSourceKind::IngressNginx]);
+    // Hubble's query failed: its edges are unknown, not absent.
+    assert_eq!(graph.failed, [RequestSourceKind::Hubble]);
+    assert_eq!(graph.edges.len(), 9);
+    assert_eq!(graph.total_edges, 9);
+    assert!(graph.edges.windows(2).all(|w| w[0].rate >= w[1].rate));
+    assert!(
+        graph
+            .edges
+            .iter()
+            .any(|e| e.source == RequestSourceKind::Linkerd)
+    );
+    // Every query asked the chosen namespaces, through the cluster's Prometheus, with the server-side timeout.
+    let queries: Vec<String> = api
+        .requests()
+        .iter()
+        .filter(|r| r.path == format!("{PROXY}/api/v1/query"))
+        .map(|r| decode(&r.query))
+        .collect();
+    assert_eq!(queries.len(), 5 + 5 + 1);
+    for q in &queries {
+        assert!(
+            q.contains(r#"=~"shop|pay""#) && q.contains("timeout=18s"),
+            "{q}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn bad_names_and_prometheus_off_ask_nothing() {
+    let _serial = SOURCES_TEST_LOCK.lock().await;
+    forget_sources();
+    let api = cluster().await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let before = api.requests().len();
+    let refused = traffic_graph(
+        &mgr,
+        &id,
+        &manual(),
+        ns(&["shop|pay"]),
+        TrafficWindow::Hour1,
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(refused.code, ErrorCode::Invalid);
+    assert_eq!(api.requests().len(), before);
+    let off = traffic_graph(
+        &mgr,
+        &id,
+        &PrometheusMode::Off,
+        ns(&["shop"]),
+        TrafficWindow::Hour1,
+    )
+    .await
+    .unwrap();
+    assert!(!off.prometheus && off.sources.is_empty() && off.edges.is_empty());
+    assert_eq!(api.requests().len(), before);
+}

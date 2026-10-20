@@ -1,0 +1,123 @@
+{
+  "mode": {
+    "label": "What the map shows",
+    "objects": "Objects",
+    "traffic": "Traffic"
+  },
+  "firstNamespaces_one": "The traffic graph covers {{count}} namespace at once: it shows the first one chosen.",
+  "firstNamespaces_other": "The traffic graph covers at most {{count}} namespaces at once: it shows the first ones chosen.",
+  "about": "Calls between workloads with an end in these namespaces, from the request metrics in Prometheus. A line is as thick as its rate and coloured by its error rate.",
+  "loading": "Reading traffic metrics…",
+  "window": {
+    "label": "Window",
+    "minutes5": "Last 5 minutes",
+    "hour1": "Last hour"
+  },
+  "view": {
+    "label": "View",
+    "graph": "Graph",
+    "list": "List"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "All of them",
+    "protocol": "Protocol",
+    "status": "Status"
+  },
+  "protocolFilter": {
+    "all": "All protocols",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Any status",
+    "errors": "With failed requests",
+    "5xx": "With 5xx answers",
+    "4xx": "With 4xx answers",
+    "2xx": "With 2xx answers"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "protocol not reported"
+  },
+  "level": {
+    "ok": "Errors under 1%",
+    "warn": "Errors 1–5%",
+    "bad": "Errors 5% or more",
+    "unknown": "Error rate not known"
+  },
+  "legend": "Legend",
+  "thickness": "Thicker lines carry more requests.",
+  "peerKind": {
+    "workload": "Workload",
+    "service": "Service",
+    "unknown": "Unknown"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Outside the mesh or unlabelled",
+    "unknownIn": "Outside the mesh or unlabelled ({{namespace}})",
+    "cannotOpen": "The source does not say who this is: a caller or callee outside the mesh or the cluster, or one its labels do not name."
+  },
+  "nodeLabel": "{{kind}} {{name}}: show its calls",
+  "linkTitle": "{{from}} to {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} to {{to}} over {{protocol}}: {{rate}}, error rate {{errors}}, from {{source}}",
+  "fromSource": "From {{source}}, {{protocol}}",
+  "fields": {
+    "from": "From",
+    "to": "To",
+    "protocol": "Protocol",
+    "rate": "Rate",
+    "errors": "Error rate",
+    "latency": "Latency",
+    "classes": "Answers",
+    "source": "Source"
+  },
+  "value": {
+    "rate": "{{value}} req/s",
+    "connections": "{{value}} conn/s",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "no latency histogram",
+    "noVerdict": "no verdict for TCP",
+    "class": "{{class}} {{value}}/s",
+    "noClasses": "no HTTP status reported"
+  },
+  "open": "Open {{name}}",
+  "openRequests": "Requests of {{name}}",
+  "notFound": {
+    "workload": "No Deployment, StatefulSet or DaemonSet named {{name}} in {{namespace}}.",
+    "service": "No Service named {{name}} in {{namespace}}."
+  },
+  "selection": {
+    "link": "Calls from {{from}} to {{to}}",
+    "in_one": "{{count}} caller",
+    "in_other": "{{count}} callers",
+    "out_one": "{{count}} callee",
+    "out_other": "{{count}} callees",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Close"
+  },
+  "list": {
+    "caption_one": "{{count}} call between two ends, busiest first",
+    "caption_other": "{{count}} calls between two ends, busiest first",
+    "actions": "Actions",
+    "details": "Details",
+    "show": "Show the details of {{edge}}"
+  },
+  "truncated_one": "Showing the {{shown}} busiest of {{count}} call between two ends.",
+  "truncated_other": "Showing the {{shown}} busiest of {{count}} calls between two ends.",
+  "filteredOut": "No call matches these filters.",
+  "failed": "Could not read the traffic metrics of {{sources}}.",
+  "noPrometheus": "The traffic graph is read from Prometheus, and none is set up or found for this cluster.",
+  "openSettings": "Cluster settings",
+  "noSource": "Prometheus has no metrics that name both ends of a call: none of Istio, Linkerd, Grafana Beyla's service graph or Cilium Hubble is reporting to it.",
+  "requestOnly": "Requests per workload, without who sent them, come from {{sources}}: see the Requests section of each workload.",
+  "wouldProvide": "Any of these would provide the graph: an Istio mesh, a Linkerd mesh with linkerd-viz (or a Prometheus that scrapes its proxies), Grafana Beyla with its service graph metrics enabled, or Cilium Hubble with HTTP metrics whose labelsContext names the source and destination workloads.",
+  "noEdges": {
+    "minutes5": "{{sources}} saw no calls with an end in these namespaces in the last 5 minutes.",
+    "hour1": "{{sources}} saw no calls with an end in these namespaces in the last hour."
+  }
+}

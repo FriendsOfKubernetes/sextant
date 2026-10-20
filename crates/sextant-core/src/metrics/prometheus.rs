@@ -19,14 +19,16 @@ use super::{ChartTarget, NodeUsage, PodUsage, PrometheusTarget, Series, Usage};
 
 mod requests;
 mod rightsizing;
+mod traffic;
 mod volumes;
 use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
 use crate::kubeconfig::ClusterId;
 pub(crate) use requests::{
-    golden, golden_query, request_metric_names, request_selectors, series_query, sources_in,
-    throttling,
+    edge_sources_in, golden, golden_query, request_metric_names, request_selectors, series_query,
+    sources_in, throttling,
 };
 pub(crate) use rightsizing::usage_history;
+pub(crate) use traffic::{edge_queries, traffic_edges};
 pub(crate) use volumes::volume_stats;
 
 /// Namespaces searched by auto-detection, in order.
@@ -117,6 +119,75 @@ impl Prometheus {
                 "the answer is not from the Prometheus HTTP API",
             )
         })?;
+        if body.get("status").and_then(Value::as_str) != Some("success") {
+            let message = body
+                .get("error")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown error");
+            return Err(CoreError::other(format!("Prometheus: {message}")));
+        }
+        Ok(body.get("data").cloned().unwrap_or(Value::Null))
+    }
+
+    /// `GET <base>/<path>` reading at most `limit` bytes of the answer (a bigger one is an error, not cut); the `data`
+    /// of a successful answer. Prometheus' own error message is kept for a refused query.
+    async fn get_limited(&self, path: &str, limit: usize) -> CoreResult<Value> {
+        use http_body_util::{BodyExt, LengthLimitError, Limited};
+        let request = kube::core::Request::new(self.base.clone())
+            .get(path, &GetParams::default())
+            .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?
+            .map(kube::client::Body::from);
+        let exchange = async {
+            let response = self
+                .client
+                .send(request)
+                .await
+                .map_err(|e| prometheus_error(kube_error(e, None)))?;
+            let status = response.status();
+            let body = Limited::new(response.into_body(), limit)
+                .collect()
+                .await
+                .map_err(|err| {
+                    if err.downcast_ref::<LengthLimitError>().is_some() {
+                        CoreError::new(
+                            ErrorCode::Invalid,
+                            format!(
+                                "the Prometheus answer is larger than {} MiB",
+                                limit / (1024 * 1024)
+                            ),
+                        )
+                    } else {
+                        CoreError::new(ErrorCode::Unreachable, format!("Prometheus: {err}"))
+                    }
+                })?
+                .to_bytes();
+            Ok::<_, CoreError>((status, body))
+        };
+        let (status, body) = tokio::time::timeout(QUERY_TIMEOUT, exchange)
+            .await
+            .map_err(|_| {
+                CoreError::new(
+                    ErrorCode::Unreachable,
+                    format!(
+                        "Prometheus did not answer in {} seconds",
+                        QUERY_TIMEOUT.as_secs()
+                    ),
+                )
+            })??;
+        let parsed: Option<Value> = serde_json::from_slice(&body).ok();
+        let Some(body) = parsed.filter(|b| b.get("status").is_some()) else {
+            return Err(if status.is_success() {
+                CoreError::new(
+                    ErrorCode::Invalid,
+                    "the answer is not from the Prometheus HTTP API",
+                )
+            } else {
+                CoreError::new(
+                    crate::error::code_for_http_status(status.as_u16()),
+                    format!("Prometheus: HTTP {status}"),
+                )
+            });
+        };
         if body.get("status").and_then(Value::as_str) != Some("success") {
             let message = body
                 .get("error")

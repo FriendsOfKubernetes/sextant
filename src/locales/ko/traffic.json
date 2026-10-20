@@ -1,0 +1,118 @@
+{
+  "mode": {
+    "label": "맵에 표시할 내용",
+    "objects": "오브젝트",
+    "traffic": "트래픽"
+  },
+  "firstNamespaces_other": "트래픽 그래프는 한 번에 최대 {{count}}개 namespace를 다룹니다. 처음 선택한 것만 표시합니다.",
+  "about": "이 namespace에 한쪽 끝이 있는 워크로드 간 호출을 Prometheus의 요청 메트릭으로 보여 줍니다. 선 두께는 속도, 색은 오류율을 나타냅니다.",
+  "loading": "트래픽 메트릭을 읽는 중…",
+  "window": {
+    "label": "기간",
+    "minutes5": "최근 5분",
+    "hour1": "최근 1시간"
+  },
+  "view": {
+    "label": "보기",
+    "graph": "그래프",
+    "list": "목록"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "모두",
+    "protocol": "프로토콜",
+    "status": "상태"
+  },
+  "protocolFilter": {
+    "all": "모든 프로토콜",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "모든 상태",
+    "errors": "실패한 요청 있음",
+    "5xx": "5xx 응답 있음",
+    "4xx": "4xx 응답 있음",
+    "2xx": "2xx 응답 있음"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "프로토콜 미보고"
+  },
+  "level": {
+    "ok": "오류 1% 미만",
+    "warn": "오류 1–5%",
+    "bad": "오류 5% 이상",
+    "unknown": "오류율 알 수 없음"
+  },
+  "legend": "범례",
+  "thickness": "선이 굵을수록 요청이 많습니다.",
+  "peerKind": {
+    "workload": "워크로드",
+    "service": "Service",
+    "unknown": "알 수 없음"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "메시 외부 또는 레이블 없음",
+    "unknownIn": "메시 외부 또는 레이블 없음 ({{namespace}})",
+    "cannotOpen": "소스가 누구인지 알려 주지 않습니다. 메시나 클러스터 밖의 호출자 또는 피호출자이거나, 레이블로 식별되지 않는 대상입니다."
+  },
+  "nodeLabel": "{{kind}} {{name}}: 호출 보기",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}}, {{protocol}}: {{rate}}, 오류율 {{errors}}, 소스 {{source}}",
+  "fromSource": "{{source}}에서, {{protocol}}",
+  "fields": {
+    "from": "보낸 쪽",
+    "to": "받는 쪽",
+    "protocol": "프로토콜",
+    "rate": "속도",
+    "errors": "오류율",
+    "latency": "지연 시간",
+    "classes": "응답",
+    "source": "소스"
+  },
+  "value": {
+    "rate": "초당 {{value}}건",
+    "connections": "초당 연결 {{value}}개",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "지연 시간 히스토그램 없음",
+    "noVerdict": "TCP는 판정 없음",
+    "class": "{{class}} 초당 {{value}}",
+    "noClasses": "HTTP 상태 미보고"
+  },
+  "open": "{{name}} 열기",
+  "openRequests": "{{name}}의 요청",
+  "notFound": {
+    "workload": "{{namespace}}에 이름이 {{name}}인 Deployment, StatefulSet 또는 DaemonSet이 없습니다.",
+    "service": "{{namespace}}에 이름이 {{name}}인 Service가 없습니다."
+  },
+  "selection": {
+    "link": "{{from}}에서 {{to}}(으)로의 호출",
+    "in_other": "호출자 {{count}}개",
+    "out_other": "피호출자 {{count}}개",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "닫기"
+  },
+  "list": {
+    "caption_other": "두 끝 사이의 연결 {{count}}개, 가장 많은 순",
+    "actions": "작업",
+    "details": "세부 정보",
+    "show": "세부 정보 보기: {{edge}}"
+  },
+  "truncated_other": "두 끝 사이의 연결 {{count}}개 중 가장 많은 {{shown}}개를 표시합니다.",
+  "filteredOut": "이 필터와 일치하는 호출이 없습니다.",
+  "failed": "{{sources}}의 트래픽 메트릭을 읽지 못했습니다.",
+  "noPrometheus": "트래픽 그래프는 Prometheus에서 읽는데, 이 클러스터에는 설정되었거나 발견된 Prometheus가 없습니다.",
+  "openSettings": "클러스터 설정",
+  "noSource": "Prometheus에 호출의 양쪽 끝을 모두 나타내는 메트릭이 없습니다. Istio, Linkerd, Grafana Beyla 서비스 그래프, Cilium Hubble 중 어느 것도 보고하지 않습니다.",
+  "requestOnly": "보낸 쪽 없이 워크로드별로 집계된 요청은 {{sources}}에서 옵니다. 각 워크로드의 요청 섹션을 확인하세요.",
+  "wouldProvide": "다음 중 하나가 있으면 그래프를 제공할 수 있습니다: Istio 메시, linkerd-viz가 있는 Linkerd 메시(또는 프록시를 수집하는 Prometheus), 서비스 그래프 메트릭을 켠 Grafana Beyla, labelsContext가 소스와 대상 워크로드를 나타내는 HTTP 메트릭이 있는 Cilium Hubble.",
+  "noEdges": {
+    "minutes5": "{{sources}}에 따르면 최근 5분 동안 이 namespace에 한쪽 끝이 있는 호출이 없습니다.",
+    "hour1": "{{sources}}에 따르면 최근 1시간 동안 이 namespace에 한쪽 끝이 있는 호출이 없습니다."
+  }
+}

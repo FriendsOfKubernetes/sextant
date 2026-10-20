@@ -5,18 +5,21 @@
 //
 // Bounded: the namespaces' lists of the kinds the cluster serves (shared with the "Related" tab), at most
 // `MAX_MAP_NAMESPACES` namespaces, closed when the page is left; with "All namespaces" the page asks for a choice.
+// The "Traffic" mode (#211, ./traffic/) draws the calls between workloads instead, from Prometheus, with the same
+// layout and namespace choice (at most `MAX_TRAFFIC_NAMESPACES`), and opens no watch.
 import { useMemo, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
-import { Button, Checkbox, EmptyState, LoadingIndicator } from "../../components";
+import { Button, Checkbox, EmptyState, LoadingIndicator, Tabs } from "../../components";
 import { i18n } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
 import { useClusterKinds } from "../../resources";
 import { NamespaceFilter, useSelectedNamespaces } from "../namespaces";
 import { namespacePlan, useRelationGraph } from "./data";
 import { HEALTH_ORDER } from "./health";
-import { GAP_X, HIDDEN_BY_DEFAULT, layoutMap, NODE_H, NODE_W, type MapEdge, type MapNode } from "./layout";
+import { edgePath, HIDDEN_BY_DEFAULT, layoutMap, NODE_H, NODE_W, type MapEdge, type MapNode } from "./layout";
 import { keyOf } from "./relations";
+import { MAX_TRAFFIC_NAMESPACES, resetTrafficChoices, TrafficView } from "./traffic/TrafficView";
 import { formatNames, HealthDot, objectRefOf, useOpenDetails } from "./ui";
 
 export const MAP_PAGE_ID = "resourceMap";
@@ -29,31 +32,61 @@ const hiddenByCluster = new Map<string, ReadonlySet<string>>();
 /** Forgets the kinds hidden on each cluster's map (tests). */
 export function resetMapFilters(): void {
   hiddenByCluster.clear();
+  modeByCluster.clear();
+  resetTrafficChoices();
 }
+
+/** What the page draws: the objects and their relations, or the calls between workloads (#211). */
+export type MapMode = "objects" | "traffic";
+const MODES: readonly MapMode[] = ["objects", "traffic"];
+
+/** The mode chosen on each cluster's map, kept while the window lives. */
+const modeByCluster = new Map<string, MapMode>();
 
 export function MapPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
   const namespaces = useSelectedNamespaces(clusterId);
+  const [mode, setModeState] = useState<MapMode>(() => modeByCluster.get(clusterId) ?? "objects");
+  const setMode = (next: MapMode) => {
+    modeByCluster.set(clusterId, next);
+    setModeState(next);
+  };
+  // The traffic graph draws only the workloads that talk, so it takes more namespaces than the object map.
+  const max = mode === "traffic" ? MAX_TRAFFIC_NAMESPACES : MAX_MAP_NAMESPACES;
   return (
     <div className="rmap-page">
       <h2 className="rmap-page__title">{t("resourcemap:map.title")}</h2>
       <div className="rmap-page__toolbar">
         <NamespaceFilter clusterId={clusterId} />
       </div>
-      {namespaces === undefined ? (
-        <LoadingIndicator text={t("resourcemap:map.loading")} />
-      ) : namespaces === null || namespaces.length === 0 ? (
-        <EmptyState title={t("resourcemap:map.chooseNamespace")} text={t("resourcemap:map.chooseNamespaceText")} />
-      ) : (
-        <>
-          {namespaces.length > MAX_MAP_NAMESPACES && (
-            <p className="rmap-page__note" role="status">
-              {t("resourcemap:map.firstNamespaces", { count: MAX_MAP_NAMESPACES })}
-            </p>
-          )}
-          <NamespaceMap clusterId={clusterId} namespaces={namespaces.slice(0, MAX_MAP_NAMESPACES)} />
-        </>
-      )}
+      <Tabs
+        label={t("traffic:mode.label")}
+        tabs={MODES.map((id) => ({ id, label: t(`traffic:mode.${id}`) }))}
+        selected={mode}
+        onSelect={setMode}
+        className="rmap-modes"
+      >
+        {namespaces === undefined ? (
+          <LoadingIndicator text={t("resourcemap:map.loading")} />
+        ) : namespaces === null || namespaces.length === 0 ? (
+          <EmptyState title={t("resourcemap:map.chooseNamespace")} text={t("resourcemap:map.chooseNamespaceText")} />
+        ) : (
+          <>
+            {namespaces.length > max && (
+              <p className="rmap-page__note" role="status">
+                {mode === "traffic"
+                  ? t("traffic:firstNamespaces", { count: max })
+                  : t("resourcemap:map.firstNamespaces", { count: max })}
+              </p>
+            )}
+            {mode === "traffic" ? (
+              <TrafficView clusterId={clusterId} namespaces={namespaces.slice(0, max)} />
+            ) : (
+              <NamespaceMap clusterId={clusterId} namespaces={namespaces.slice(0, max)} />
+            )}
+          </>
+        )}
+      </Tabs>
     </div>
   );
 }
@@ -260,22 +293,4 @@ function MapEdges({ nodes, edges, focus }: { nodes: MapNode[]; edges: MapEdge[];
       })}
     </svg>
   );
-}
-
-/** A curve from the side of `a` facing `b` to the side of `b` facing `a` (both right sides within one column). */
-export function edgePath(a: Pick<MapNode, "x" | "y">, b: Pick<MapNode, "x" | "y">): string {
-  const ay = a.y + NODE_H / 2;
-  const by = b.y + NODE_H / 2;
-  if (a.x === b.x) {
-    const x = a.x + NODE_W;
-    const bulge = Math.min(GAP_X - 8, 24 + Math.abs(by - ay) / 8);
-    return `M ${x} ${ay} C ${x + bulge} ${ay}, ${x + bulge} ${by}, ${x} ${by}`;
-  }
-  const forward = b.x > a.x;
-  const sx = forward ? a.x + NODE_W : a.x;
-  const tx = forward ? b.x : b.x + NODE_W;
-  const dx = Math.max(24, Math.abs(tx - sx) / 2);
-  const c1 = forward ? sx + dx : sx - dx;
-  const c2 = forward ? tx - dx : tx + dx;
-  return `M ${sx} ${ay} C ${c1} ${ay}, ${c2} ${by}, ${tx} ${by}`;
 }

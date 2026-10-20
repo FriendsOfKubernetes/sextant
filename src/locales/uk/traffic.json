@@ -1,0 +1,133 @@
+{
+  "mode": {
+    "label": "Що показує мапа",
+    "objects": "Об’єкти",
+    "traffic": "Трафік"
+  },
+  "firstNamespaces_one": "Граф трафіку охоплює не більше {{count}} namespace за раз: показано лише перші з вибраних.",
+  "firstNamespaces_few": "Граф трафіку охоплює не більше {{count}} namespace за раз: показано лише перші з вибраних.",
+  "firstNamespaces_many": "Граф трафіку охоплює не більше {{count}} namespace за раз: показано лише перші з вибраних.",
+  "firstNamespaces_other": "Граф трафіку охоплює не більше {{count}} namespace за раз: показано лише перші з вибраних.",
+  "about": "Виклики між робочими навантаженнями, у яких хоча б один кінець у цих namespace, за метриками запитів у Prometheus. Товщина лінії — частота викликів, колір — частка помилок.",
+  "loading": "Читання метрик трафіку…",
+  "window": {
+    "label": "Період",
+    "minutes5": "Останні 5 хвилин",
+    "hour1": "Остання година"
+  },
+  "view": {
+    "label": "Вигляд",
+    "graph": "Граф",
+    "list": "Список"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Усі вибрані",
+    "protocol": "Протокол",
+    "status": "Статус"
+  },
+  "protocolFilter": {
+    "all": "Усі протоколи",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Будь-який статус",
+    "errors": "З невдалими запитами",
+    "5xx": "З відповідями 5xx",
+    "4xx": "З відповідями 4xx",
+    "2xx": "З відповідями 2xx"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "протокол не вказано"
+  },
+  "level": {
+    "ok": "Помилок менше 1%",
+    "warn": "Помилок 1–5%",
+    "bad": "Помилок 5% і більше",
+    "unknown": "Частка помилок невідома"
+  },
+  "legend": "Легенда",
+  "thickness": "Що товща лінія, то більше запитів.",
+  "peerKind": {
+    "workload": "Робоче навантаження",
+    "service": "Service",
+    "unknown": "Невідомо"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Поза mesh або без міток",
+    "unknownIn": "Поза mesh або без міток ({{namespace}})",
+    "cannotOpen": "Джерело не каже, хто це: сторона виклику поза mesh або кластером чи без міток, які б її назвали."
+  },
+  "nodeLabel": "{{kind}} {{name}}: показати виклики",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}} через {{protocol}}: {{rate}}, частка помилок {{errors}}, джерело — {{source}}",
+  "fromSource": "З {{source}}, {{protocol}}",
+  "fields": {
+    "from": "Звідки",
+    "to": "Куди",
+    "protocol": "Протокол",
+    "rate": "Частота",
+    "errors": "Частка помилок",
+    "latency": "Затримка",
+    "classes": "Відповіді",
+    "source": "Джерело"
+  },
+  "value": {
+    "rate": "{{value}} запит./с",
+    "connections": "{{value}} з’єдн./с",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "немає гістограми затримок",
+    "noVerdict": "для TCP немає оцінки",
+    "class": "{{class}} {{value}}/с",
+    "noClasses": "HTTP-статус не повідомляється"
+  },
+  "open": "Відкрити {{name}}",
+  "openRequests": "Запити {{name}}",
+  "notFound": {
+    "workload": "У {{namespace}} немає Deployment, StatefulSet або DaemonSet з іменем {{name}}.",
+    "service": "У {{namespace}} немає Service з іменем {{name}}."
+  },
+  "selection": {
+    "link": "Виклики з {{from}} до {{to}}",
+    "in_one": "Хто викликає: {{count}}",
+    "in_few": "Хто викликає: {{count}}",
+    "in_many": "Хто викликає: {{count}}",
+    "in_other": "Хто викликає: {{count}}",
+    "out_one": "Кого викликає: {{count}}",
+    "out_few": "Кого викликає: {{count}}",
+    "out_many": "Кого викликає: {{count}}",
+    "out_other": "Кого викликає: {{count}}",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Закрити"
+  },
+  "list": {
+    "caption_one": "{{count}} зв’язок між двома кінцями, спершу найзавантаженіші",
+    "caption_few": "{{count}} зв’язки між двома кінцями, спершу найзавантаженіші",
+    "caption_many": "{{count}} зв’язків між двома кінцями, спершу найзавантаженіші",
+    "caption_other": "{{count}} зв’язку між двома кінцями, спершу найзавантаженіші",
+    "actions": "Дії",
+    "details": "Подробиці",
+    "show": "Показати подробиці: {{edge}}"
+  },
+  "truncated_one": "Показано {{shown}} найзавантаженіших із {{count}} зв’язку між двома кінцями.",
+  "truncated_few": "Показано {{shown}} найзавантаженіших із {{count}} зв’язків між двома кінцями.",
+  "truncated_many": "Показано {{shown}} найзавантаженіших із {{count}} зв’язків між двома кінцями.",
+  "truncated_other": "Показано {{shown}} найзавантаженіших із {{count}} зв’язку між двома кінцями.",
+  "filteredOut": "Жоден виклик не відповідає цим фільтрам.",
+  "failed": "Не вдалося прочитати метрики трафіку: {{sources}}.",
+  "noPrometheus": "Граф трафіку читається з Prometheus, а для цього кластера його не налаштовано й не знайдено.",
+  "openSettings": "Налаштування кластера",
+  "noSource": "У Prometheus немає метрик, які називають обидва кінці виклику: ні Istio, ні Linkerd, ні граф сервісів Grafana Beyla, ні Cilium Hubble до нього не пишуть.",
+  "requestOnly": "Запити за робочими навантаженнями, але без того, хто їх надіслав, надходять від {{sources}}: дивіться розділ «Запити» кожного навантаження.",
+  "wouldProvide": "Граф дав би будь-який із них: mesh Istio, mesh Linkerd з linkerd-viz (або Prometheus, що збирає метрики його проксі), Grafana Beyla з увімкненими метриками графа сервісів або Cilium Hubble з HTTP-метриками, у яких labelsContext називає робочі навантаження джерела й призначення.",
+  "noEdges": {
+    "minutes5": "{{sources}}: за останні 5 хвилин немає викликів з кінцем у цих namespace.",
+    "hour1": "{{sources}}: за останню годину немає викликів з кінцем у цих namespace."
+  }
+}

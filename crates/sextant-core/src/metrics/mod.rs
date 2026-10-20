@@ -10,6 +10,7 @@ mod prometheus;
 mod quantity;
 mod requests;
 mod server;
+mod traffic;
 mod volumes;
 
 pub use history::{
@@ -22,6 +23,11 @@ pub use requests::{
     RequestSourceKind, RequestSources, RequestTarget, RequestVia, SERIES_RANGE_SECS,
     SERIES_STEP_SECS, linkerd_viz_target, request_health, request_queries, request_sources,
     validate_target,
+};
+pub use traffic::{
+    MAX_TRAFFIC_BODY, MAX_TRAFFIC_EDGES, MAX_TRAFFIC_NAMESPACES, MAX_TRAFFIC_SERIES,
+    StatusClassRate, TrafficEdge, TrafficGraph, TrafficPeer, TrafficPeerKind, TrafficProtocol,
+    TrafficWindow, traffic_graph, traffic_queries, validate_namespaces,
 };
 pub use volumes::{
     MAX_NODES, MAX_SUMMARY_BYTES, MAX_VOLUMES, VolumeUsage, VolumeUsageReport, VolumeUsageSource,

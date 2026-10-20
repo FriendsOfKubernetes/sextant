@@ -112,7 +112,9 @@ fn detection_asks_for_the_known_names_only() {
     assert_eq!(known.len(), known.iter().collect::<BTreeSet<_>>().len());
     assert!(known.contains(&"istio_requests_total"));
     assert!(known.contains(&"hubble_http_request_duration_seconds_bucket"));
-    assert_eq!(known.len(), 12);
+    // 12 of the workload request metrics, 3 more of the traffic graph's edges (#211).
+    assert!(known.contains(&"traces_service_graph_request_total"));
+    assert_eq!(known.len(), 15);
 }
 
 /// What the fixtures of each source must give: (source file, kind, rate, error ratio, p50, p95, p99 in ms).
@@ -363,6 +365,7 @@ async fn cluster() -> FakeApi {
 
 #[tokio::test]
 async fn a_workloads_request_health_from_every_source_it_has() {
+    let _serial = SOURCES_TEST_LOCK.lock().await;
     forget_sources();
     let api = cluster().await;
     let (_tmp, mgr, id) = connected_to(api.url()).await;
@@ -432,6 +435,7 @@ async fn a_workloads_request_health_from_every_source_it_has() {
 
 #[tokio::test]
 async fn prometheus_off_asks_nothing() {
+    let _serial = SOURCES_TEST_LOCK.lock().await;
     forget_sources();
     let api = cluster().await;
     let (_tmp, mgr, id) = connected_to(api.url()).await;

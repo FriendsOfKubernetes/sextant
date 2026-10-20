@@ -98,13 +98,43 @@ impl RequestSourceKind {
         }
     }
 
+    /// The traffic graph (#211, ADR-0096) has edges of this source when every metric of one of these groups exists:
+    /// metrics that name both the caller and the callee. ingress-nginx names no caller and has none.
+    pub fn edge_metrics(self) -> &'static [&'static [&'static str]] {
+        match self {
+            RequestSourceKind::Istio => &[
+                &["istio_requests_total"],
+                &["istio_tcp_connections_opened_total"],
+            ],
+            // The outbound side of the same pair (`direction="outbound"`, `dst_*` labels).
+            RequestSourceKind::Linkerd => &[&["response_total", "response_latency_ms_bucket"]],
+            RequestSourceKind::IngressNginx => &[],
+            // Beyla's service graph metrics (`application_service_graph`), which name both ends with namespaces.
+            RequestSourceKind::Beyla => &[&["traces_service_graph_request_total"]],
+            RequestSourceKind::Hubble => &[&["hubble_http_requests_total"]],
+        }
+    }
+
+    /// The histogram that gives an edge's latency; without it the edges have rates only.
+    pub fn edge_latency_metrics(self) -> &'static [&'static str] {
+        match self {
+            RequestSourceKind::Beyla => &["traces_service_graph_request_server_seconds_bucket"],
+            RequestSourceKind::IngressNginx => &[],
+            other => other.latency_metrics(),
+        }
+    }
+
     /// Every metric name detection asks about (and the only names it keeps from the answer).
     pub fn known_metrics() -> Vec<&'static str> {
         let mut names: Vec<&'static str> = Self::ALL
             .iter()
             .flat_map(|k| {
                 let required = k.required_metrics().iter().flat_map(|g| g.iter().copied());
-                required.chain(k.latency_metrics().iter().copied())
+                let edges = k.edge_metrics().iter().flat_map(|g| g.iter().copied());
+                required
+                    .chain(k.latency_metrics().iter().copied())
+                    .chain(edges)
+                    .chain(k.edge_latency_metrics().iter().copied())
             })
             .collect();
         names.sort_unstable();
@@ -144,6 +174,8 @@ pub struct RequestSources {
     pub linkerd_viz: Option<PrometheusTarget>,
     /// In [`RequestSourceKind::ALL`] order.
     pub sources: Vec<DetectedSource>,
+    /// The sources with edge metrics (the traffic graph, #211); `latency` tells whether the edge histogram exists.
+    pub edges: Vec<DetectedSource>,
 }
 
 impl RequestSources {
@@ -393,6 +425,11 @@ pub(crate) fn forget_sources() {
     lock_sources().clear();
 }
 
+/// Held by the tests that look up sources: every fake cluster has the same id, so two of them at once would share
+/// (or clear) each other's cached sources.
+#[cfg(test)]
+pub(crate) static SOURCES_TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 async fn detect_sources(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -410,6 +447,7 @@ async fn detect_sources(
         let names =
             prometheus::request_metric_names(&Prometheus::new(&client, target)?, now).await?;
         found.sources = prometheus::sources_in(&names, RequestVia::Cluster);
+        found.edges = prometheus::edge_sources_in(&names, RequestVia::Cluster);
     }
     if !found
         .sources
@@ -431,6 +469,12 @@ async fn detect_sources(
                 found.linkerd_viz = Some(viz);
                 found.sources.extend(linkerd);
                 found.sources.sort_by_key(|s| s.kind);
+                found.edges.extend(
+                    prometheus::edge_sources_in(&names, RequestVia::LinkerdViz)
+                        .into_iter()
+                        .filter(|s| s.kind == RequestSourceKind::Linkerd),
+                );
+                found.edges.sort_by_key(|s| s.kind);
             }
         }
     }

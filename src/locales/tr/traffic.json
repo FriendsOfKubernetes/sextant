@@ -1,0 +1,123 @@
+{
+  "mode": {
+    "label": "Haritanın gösterdiği",
+    "objects": "Nesneler",
+    "traffic": "Trafik"
+  },
+  "firstNamespaces_one": "Trafik grafiği aynı anda en fazla {{count}} namespace kapsar: yalnızca seçilen ilk namespace gösteriliyor.",
+  "firstNamespaces_other": "Trafik grafiği aynı anda en fazla {{count}} namespace kapsar: yalnızca seçilen ilk namespace’ler gösteriliyor.",
+  "about": "Bir ucu bu namespace’lerde olan iş yükleri arasındaki çağrılar, Prometheus’taki istek metriklerinden. Çizginin kalınlığı hızını, rengi hata oranını gösterir.",
+  "loading": "Trafik metrikleri okunuyor…",
+  "window": {
+    "label": "Dönem",
+    "minutes5": "Son 5 dakika",
+    "hour1": "Son bir saat"
+  },
+  "view": {
+    "label": "Görünüm",
+    "graph": "Grafik",
+    "list": "Liste"
+  },
+  "filter": {
+    "namespace": "Namespace",
+    "allNamespaces": "Hepsi",
+    "protocol": "Protokol",
+    "status": "Durum"
+  },
+  "protocolFilter": {
+    "all": "Tüm protokoller",
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP"
+  },
+  "statusFilter": {
+    "all": "Herhangi bir durum",
+    "errors": "Başarısız istekleri olan",
+    "5xx": "5xx yanıtları olan",
+    "4xx": "4xx yanıtları olan",
+    "2xx": "2xx yanıtları olan"
+  },
+  "protocol": {
+    "http": "HTTP",
+    "grpc": "gRPC",
+    "tcp": "TCP",
+    "unknown": "protokol bildirilmedi"
+  },
+  "level": {
+    "ok": "Hatalar %1’in altında",
+    "warn": "Hatalar %1–5",
+    "bad": "Hatalar %5 veya daha fazla",
+    "unknown": "Hata oranı bilinmiyor"
+  },
+  "legend": "Açıklama",
+  "thickness": "Kalın çizgiler daha çok istek taşır.",
+  "peerKind": {
+    "workload": "İş yükü",
+    "service": "Service",
+    "unknown": "Bilinmiyor"
+  },
+  "peer": {
+    "inNamespace": "{{name}} ({{namespace}})",
+    "unknown": "Ağın (mesh) dışında veya etiketsiz",
+    "unknownIn": "Ağın (mesh) dışında veya etiketsiz ({{namespace}})",
+    "cannotOpen": "Kaynak bunun kim olduğunu söylemiyor: ağın (mesh) veya kümenin dışında ya da etiketlerinin adlandırmadığı bir çağıran veya çağrılan."
+  },
+  "nodeLabel": "{{kind}} {{name}}: çağrılarını göster",
+  "linkTitle": "{{from}} → {{to}}: {{rate}}",
+  "edgeSentence": "{{from}} → {{to}}, {{protocol}} üzerinden: {{rate}}, hata oranı {{errors}}, kaynak {{source}}",
+  "fromSource": "Kaynak: {{source}}, {{protocol}}",
+  "fields": {
+    "from": "Kimden",
+    "to": "Kime",
+    "protocol": "Protokol",
+    "rate": "Hız",
+    "errors": "Hata oranı",
+    "latency": "Gecikme",
+    "classes": "Yanıtlar",
+    "source": "Kaynak"
+  },
+  "value": {
+    "rate": "{{value}} istek/sn",
+    "connections": "{{value}} bağlantı/sn",
+    "latency": "p50 {{p50}} · p95 {{p95}}",
+    "noLatency": "gecikme histogramı yok",
+    "noVerdict": "TCP için değerlendirme yok",
+    "class": "{{class}} {{value}}/sn",
+    "noClasses": "HTTP durumu bildirilmedi"
+  },
+  "open": "{{name}} öğesini aç",
+  "openRequests": "{{name}} istekleri",
+  "notFound": {
+    "workload": "{{namespace}} içinde {{name}} adlı Deployment, StatefulSet veya DaemonSet yok.",
+    "service": "{{namespace}} içinde {{name}} adlı Service yok."
+  },
+  "selection": {
+    "link": "{{from}} → {{to}} çağrıları",
+    "in_one": "{{count}} çağıran",
+    "in_other": "{{count}} çağıran",
+    "out_one": "{{count}} çağrılan",
+    "out_other": "{{count}} çağrılan",
+    "linkItem": "{{peer}}: {{rate}}",
+    "close": "Kapat"
+  },
+  "list": {
+    "caption_one": "İki uç arasında {{count}} bağlantı, en yoğunlar önce",
+    "caption_other": "İki uç arasında {{count}} bağlantı, en yoğunlar önce",
+    "actions": "Eylemler",
+    "details": "Ayrıntılar",
+    "show": "Ayrıntıları göster: {{edge}}"
+  },
+  "truncated_one": "İki uç arasındaki {{count}} bağlantıdan en yoğun {{shown}} tanesi gösteriliyor.",
+  "truncated_other": "İki uç arasındaki {{count}} bağlantıdan en yoğun {{shown}} tanesi gösteriliyor.",
+  "filteredOut": "Bu filtrelere uyan çağrı yok.",
+  "failed": "{{sources}} trafik metrikleri okunamadı.",
+  "noPrometheus": "Trafik grafiği Prometheus’tan okunur ve bu küme için ayarlanmış ya da bulunmuş bir Prometheus yok.",
+  "openSettings": "Küme ayarları",
+  "noSource": "Prometheus’ta bir çağrının iki ucunu da adlandıran metrik yok: Istio, Linkerd, Grafana Beyla hizmet grafiği veya Cilium Hubble’dan hiçbiri ona veri göndermiyor.",
+  "requestOnly": "Gönderen olmadan iş yükü başına istekler şuradan geliyor: {{sources}}. Her iş yükünün İstekler bölümüne bakın.",
+  "wouldProvide": "Bunlardan herhangi biri grafiği sağlar: bir Istio ağı (mesh), linkerd-viz ile bir Linkerd ağı (veya proxy’lerini toplayan bir Prometheus), hizmet grafiği metrikleri açık Grafana Beyla ya da labelsContext’i kaynak ve hedef iş yüklerini adlandıran HTTP metrikleriyle Cilium Hubble.",
+  "noEdges": {
+    "minutes5": "{{sources}} verilerine göre son 5 dakikada bu namespace’lerde ucu olan çağrı yok.",
+    "hour1": "{{sources}} verilerine göre son bir saatte bu namespace’lerde ucu olan çağrı yok."
+  }
+}
