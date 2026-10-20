@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Sekcje ustawień klastra",
+  "tabs": {
+    "general": "Ogólne",
+    "connection": "Połączenie",
+    "metrics": "Metryki",
+    "agentAccess": "Dostęp agentów AI",
+    "safeApply": "Podgląd zmian",
+    "gitops": "GitOps",
+    "more": "Więcej"
+  },
+  "sections": {
+    "connection": "Szczegóły połączenia"
+  }
+}

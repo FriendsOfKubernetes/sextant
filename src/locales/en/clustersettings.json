@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Cluster settings sections",
+  "tabs": {
+    "general": "General",
+    "connection": "Connection",
+    "metrics": "Metrics",
+    "agentAccess": "AI agent access",
+    "safeApply": "Change preview",
+    "gitops": "GitOps",
+    "more": "More"
+  },
+  "sections": {
+    "connection": "Connection details"
+  }
+}

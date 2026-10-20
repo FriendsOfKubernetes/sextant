@@ -31,6 +31,9 @@ tauri-plugin-opener = "2.7"
 # Desktop notifications about new cluster problems (`src/features/notifications/`); a click on one is reported back
 # (`on_action` in `lib.rs` reveals the window, the page opens the object).
 tauri-plugin-notification = "2.7"
+# "Copy kubeconfig" (#228) writes the clipboard from Rust, so credentials never cross into the webview. The window
+# is granted no clipboard permission: the plugin is used by `kubeconfig_copy` only.
+tauri-plugin-clipboard-manager = "2.3"
 tokio.workspace = true
 futures.workspace = true
 serde.workspace = true

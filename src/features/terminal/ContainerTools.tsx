@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import { Button } from "../../components";
+import { openImageFiles } from "../image-files/state";
 import { DebugDialog } from "./DebugDialog";
 import { FilesDialog } from "./FilesDialog";
 import { shellContainers } from "./tabs";
@@ -21,8 +22,9 @@ function isRunning(status: unknown): boolean {
 }
 
 /**
- * "Debug" and "Files" for one regular container of a pod in its details: a debug container targeting it (any pod: a
- * crashed one is debugged as a copy) and copying files to and from it (only while it runs).
+ * "Debug", "Files" and "Browse image files" for one regular container of a pod in its details: a debug container
+ * targeting it (any pod: a crashed one is debugged as a copy), copying files to and from it (only while it runs), and
+ * its image's files read from the registry (#216).
  */
 export function ContainerTools({ clusterId, pod, obj, container, status }: ContainerToolsProps) {
   const { t } = useTranslation();
@@ -38,6 +40,13 @@ export function ContainerTools({ clusterId, pod, obj, container, status }: Conta
           {t("terminal:files.action")}
         </Button>
       )}
+      <Button
+        size="compact"
+        icon="imageFiles"
+        onClick={() => openImageFiles(clusterId, pod.namespace ?? "", pod.name, container)}
+      >
+        {t("imagefiles:action")}
+      </Button>
       {open === "debug" && (
         <DebugDialog
           clusterId={clusterId}

@@ -1,0 +1,9 @@
+{
+  "action": "Copier namespace/nom",
+  "actionClusterScoped": "Copier le nom",
+  "copied": "Copié : {{name}}",
+  "copiedMany_one": "{{count}} nom copié, un par ligne",
+  "copiedMany_many": "{{count}} de noms copiés, un par ligne",
+  "copiedMany_other": "{{count}} noms copiés, un par ligne",
+  "failed": "Impossible de copier dans le presse-papiers"
+}

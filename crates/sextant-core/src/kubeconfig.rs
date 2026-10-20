@@ -18,7 +18,9 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub mod edit;
 pub mod expiry;
+pub(crate) mod mask;
 pub mod validate;
+pub mod view;
 
 /// Where a kubeconfig file came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]

@@ -8,6 +8,7 @@ import { GitopsSection } from "./GitopsSection";
 registerClusterSettingsSection({
   id: "gitops",
   order: 40,
+  tab: "gitops",
   titleKey: "gitops:section.title",
   Component: GitopsSection,
 });

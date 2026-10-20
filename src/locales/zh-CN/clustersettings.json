@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "集群设置分区",
+  "tabs": {
+    "general": "常规",
+    "connection": "连接",
+    "metrics": "指标",
+    "agentAccess": "AI 智能体访问权限",
+    "safeApply": "更改预览",
+    "gitops": "GitOps",
+    "more": "更多"
+  },
+  "sections": {
+    "connection": "连接详情"
+  }
+}

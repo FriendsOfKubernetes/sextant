@@ -43,6 +43,8 @@ zip = { version = "4.6.1", default-features = false, features = ["deflate-flate2
 x509-parser = { version = "0.18.1", default-features = false }
 # Reading a kubeconfig token for its expiry (`kubeconfig::expiry`): the version kube already brings.
 secrecy = { version = "0.10.3", default-features = false }
+# Image file viewer (`image_fs`): zstd-compressed layers, a pure-Rust streaming decoder (its encoder serves the tests).
+ruzstd = "0.9.1"
 
 # Signals without spawning `kill`: the liveness check of a temporary kubeconfig's owner (`kubeconfig.rs`) and stopping
 # a timed-out cloud CLI's whole process group (`cloud.rs`); `fs`: the `openat` walk that serves extension files without

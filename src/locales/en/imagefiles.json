@@ -1,0 +1,96 @@
+{
+  "sidebar": "Image files",
+  "title": "Image files",
+  "intro": "Browse the files of a container image straight from its registry: nothing runs in a container and nothing is pulled on a node.",
+  "action": "Browse image files",
+  "form": {
+    "reference": "Image reference",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Open",
+    "close": "Close image",
+    "podSource": "The image of container {{container}} in Pod {{namespace}}/{{pod}}",
+    "openPod": "Open this image",
+    "platform": "Platform",
+    "dockerCredentials": "Use my Docker credentials for registries the pull secrets do not cover",
+    "dockerCredentialsHint": "Reads ~/.docker/config.json and runs the credential helpers it names. Off by default."
+  },
+  "progress": {
+    "resolving": "Finding the image in its registry…",
+    "cached": "Layer {{index}} of {{count}}: from the cache",
+    "downloading": "Layer {{index}} of {{count}}: {{done}} of {{total}}",
+    "indexed": "Layer {{index}} of {{count}}: read",
+    "stop": "Stop"
+  },
+  "summary": {
+    "label": "Image",
+    "digest": "Digest",
+    "platform": "Platform",
+    "credentials": "Credentials",
+    "anonymous": "Anonymous",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Your Docker credentials",
+    "files_one": "{{count}} file in the image",
+    "files_other": "{{count}} files in the image",
+    "skipped_one": "{{count}} entry with an unsafe or too long path was left out.",
+    "skipped_other": "{{count}} entries with unsafe or too long paths were left out.",
+    "unreadableSecrets": "These pull secrets could not be read: {{names}}"
+  },
+  "tabs": {
+    "label": "Image",
+    "files": "Files",
+    "layers": "Layers"
+  },
+  "tree": {
+    "label": "Files of the image",
+    "expand": "Expand {{name}}",
+    "collapse": "Collapse {{name}}",
+    "truncated": "Only the first {{count}} entries of this folder are listed.",
+    "empty": "This folder is empty.",
+    "loading": "Listing the folder…"
+  },
+  "search": {
+    "label": "Search by path",
+    "placeholder": "e.g. etc/nginx",
+    "clear": "Clear the search",
+    "none": "No path contains this text.",
+    "truncated": "Only the first {{count}} matches are shown."
+  },
+  "file": {
+    "none": "Select a file or a folder.",
+    "path": "Path",
+    "kind": "Type",
+    "size": "Size",
+    "mode": "Mode",
+    "owner": "Owner",
+    "modified": "Modified",
+    "target": "Target",
+    "layer": "Layer",
+    "layerNumber": "Layer {{index}}",
+    "goToTarget": "Go to the target",
+    "targetOutside": "The link leads nowhere in the image.",
+    "download": "Download",
+    "downloading": "Downloading: layer {{done}} of {{total}} read",
+    "downloaded": "Saved.",
+    "reading": "Reading the file's layer: {{done}} of {{total}}",
+    "binary": "This file is binary. Download it to look inside.",
+    "truncated": "Only the first MiB of the file is shown.",
+    "text": "Contents of {{name}}",
+    "saveTitle": "Save the file from the image"
+  },
+  "kind": {
+    "file": "File",
+    "directory": "Folder",
+    "symlink": "Symbolic link",
+    "hardlink": "Hard link",
+    "other": "Special file"
+  },
+  "layers": {
+    "label": "Layers of the image",
+    "index": "#",
+    "digest": "Digest",
+    "size": "Size",
+    "files": "Files",
+    "createdBy": "Created by",
+    "cached": "From the cache"
+  }
+}

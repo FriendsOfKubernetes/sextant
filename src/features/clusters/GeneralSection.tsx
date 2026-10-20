@@ -1,4 +1,5 @@
-// "General" cluster settings: display name, icon and color label in the rail, plus where the context comes from.
+// "General" cluster settings: display name, icon and color label in the rail (where the context comes from is in
+// ConnectionSection, the "Connection" tab).
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toApiError, useSettings, type ApiError, type AppSettings, type ClusterInfo } from "../../api";
@@ -20,7 +21,6 @@ export function GeneralSection({ clusterId, cluster }: ClusterSettingsSectionPro
   const { t } = useTranslation();
   const { settings } = useSettings();
   const current = clusterSettingsOf(settings, clusterId);
-  const source = useClustersStore((s) => s.sources.find((src) => src.id === cluster.sourceId));
   const [name, setName] = useState(current.displayName ?? "");
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -79,22 +79,6 @@ export function GeneralSection({ clusterId, cluster }: ClusterSettingsSectionPro
           ))}
         </div>
       </div>
-      <dl className="clusters-facts">
-        <dt>{t("clusters:info.context")}</dt>
-        <dd>{cluster.context}</dd>
-        <dt>{t("clusters:info.cluster")}</dt>
-        <dd>{cluster.clusterName}</dd>
-        <dt>{t("clusters:info.server")}</dt>
-        <dd>{cluster.server}</dd>
-        <dt>{t("clusters:info.user")}</dt>
-        <dd>{cluster.user}</dd>
-        {source && (
-          <>
-            <dt>{t("clusters:info.source")}</dt>
-            <dd>{source.path}</dd>
-          </>
-        )}
-      </dl>
       {error && <SourceError error={error} />}
     </div>
   );

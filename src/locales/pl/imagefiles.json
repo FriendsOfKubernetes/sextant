@@ -1,0 +1,100 @@
+{
+  "sidebar": "Pliki obrazu",
+  "title": "Pliki obrazu",
+  "intro": "Przeglądaj pliki obrazu kontenera prosto z jego rejestru: nic nie jest uruchamiane w kontenerze ani pobierane na węzeł.",
+  "action": "Przeglądaj pliki obrazu",
+  "form": {
+    "reference": "Odwołanie do obrazu",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Otwórz",
+    "close": "Zamknij obraz",
+    "podSource": "Obraz kontenera {{container}} w Pod {{namespace}}/{{pod}}",
+    "openPod": "Otwórz ten obraz",
+    "platform": "Platforma",
+    "dockerCredentials": "Używaj moich poświadczeń Dockera dla rejestrów, których nie obejmują pull secrets",
+    "dockerCredentialsHint": "Odczytuje ~/.docker/config.json i uruchamia wskazane w nim pomocniki poświadczeń. Domyślnie wyłączone."
+  },
+  "progress": {
+    "resolving": "Szukanie obrazu w jego rejestrze…",
+    "cached": "Warstwa {{index}} z {{count}}: z pamięci podręcznej",
+    "downloading": "Warstwa {{index}} z {{count}}: {{done}} z {{total}}",
+    "indexed": "Warstwa {{index}} z {{count}}: odczytana",
+    "stop": "Zatrzymaj"
+  },
+  "summary": {
+    "label": "Obraz",
+    "digest": "Skrót",
+    "platform": "Platforma",
+    "credentials": "Poświadczenia",
+    "anonymous": "Anonimowo",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Twoje poświadczenia Dockera",
+    "files_one": "{{count}} plik w obrazie",
+    "files_few": "{{count}} pliki w obrazie",
+    "files_many": "{{count}} plików w obrazie",
+    "files_other": "{{count}} pliku w obrazie",
+    "skipped_one": "Pominięto {{count}} wpis z niebezpieczną lub zbyt długą ścieżką.",
+    "skipped_few": "Pominięto {{count}} wpisy z niebezpiecznymi lub zbyt długimi ścieżkami.",
+    "skipped_many": "Pominięto {{count}} wpisów z niebezpiecznymi lub zbyt długimi ścieżkami.",
+    "skipped_other": "Pominięto {{count}} wpisu z niebezpiecznymi lub zbyt długimi ścieżkami.",
+    "unreadableSecrets": "Nie udało się odczytać tych pull secrets: {{names}}"
+  },
+  "tabs": {
+    "label": "Obraz",
+    "files": "Pliki",
+    "layers": "Warstwy"
+  },
+  "tree": {
+    "label": "Pliki obrazu",
+    "expand": "Rozwiń {{name}}",
+    "collapse": "Zwiń {{name}}",
+    "truncated": "Wyświetlono tylko pierwsze {{count}} wpisów tego folderu.",
+    "empty": "Ten folder jest pusty.",
+    "loading": "Odczytywanie folderu…"
+  },
+  "search": {
+    "label": "Szukaj według ścieżki",
+    "placeholder": "np. etc/nginx",
+    "clear": "Wyczyść wyszukiwanie",
+    "none": "Żadna ścieżka nie zawiera tego tekstu.",
+    "truncated": "Wyświetlono tylko pierwsze {{count}} dopasowań."
+  },
+  "file": {
+    "none": "Wybierz plik lub folder.",
+    "path": "Ścieżka",
+    "kind": "Typ",
+    "size": "Rozmiar",
+    "mode": "Uprawnienia",
+    "owner": "Właściciel",
+    "modified": "Zmodyfikowano",
+    "target": "Cel",
+    "layer": "Warstwa",
+    "layerNumber": "Warstwa {{index}}",
+    "goToTarget": "Przejdź do celu",
+    "targetOutside": "Dowiązanie nie prowadzi nigdzie w obrazie.",
+    "download": "Pobierz",
+    "downloading": "Pobieranie: odczytano {{done}} z {{total}} warstwy",
+    "downloaded": "Zapisano.",
+    "reading": "Odczyt warstwy z plikiem: {{done}} z {{total}}",
+    "binary": "To plik binarny. Pobierz go, aby zobaczyć zawartość.",
+    "truncated": "Wyświetlono tylko pierwszy MiB pliku.",
+    "text": "Zawartość {{name}}",
+    "saveTitle": "Zapisz plik z obrazu"
+  },
+  "kind": {
+    "file": "Plik",
+    "directory": "Folder",
+    "symlink": "Dowiązanie symboliczne",
+    "hardlink": "Dowiązanie twarde",
+    "other": "Plik specjalny"
+  },
+  "layers": {
+    "label": "Warstwy obrazu",
+    "index": "Nr",
+    "digest": "Skrót",
+    "size": "Rozmiar",
+    "files": "Pliki",
+    "createdBy": "Utworzona przez",
+    "cached": "Z pamięci podręcznej"
+  }
+}

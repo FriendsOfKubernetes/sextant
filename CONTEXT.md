@@ -81,6 +81,10 @@ _Avoid_: masking, masked Secret
 The list of a node's pods before the node is drained: which will be evicted, which have no controller, which use emptyDir, which belong to a DaemonSet. Pods with no controller and with emptyDir are touched only when the "force" and "delete emptyDir data" boxes are checked.
 _Avoid_: node check, dry-run
 
+**Image files**:
+The files of a container image as the merged tree of its layers, read straight from the registry named in the image reference (ADR-0103): nothing runs in a container and nothing is pulled on a node. A **layer index** is the list of one layer's entries, whiteouts and opaque folders; only indexes are cached, never layer content.
+_Avoid_: image pull, container filesystem (that is a running container's files, copied with `kubectl cp`)
+
 **Editor scheme**:
 A set of YAML highlighting colors: Auto, One Dark, GitHub Dark, GitHub Light, Dracula, Nord, Solarized Dark, Solarized Light. Auto takes One Dark in the app's dark theme and GitHub Light in the light one. The choice is shared by all YAML editors and viewers and is stored in settings.
 _Avoid_: editor theme (a theme is the light or dark look of the whole app)

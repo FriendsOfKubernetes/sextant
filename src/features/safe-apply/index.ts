@@ -10,6 +10,7 @@ import "./safeApply.css";
 registerClusterSettingsSection({
   id: "safeApply",
   order: 35,
+  tab: "safeApply",
   titleKey: "safeapply:section.title",
   Component: PreviewSection,
 });

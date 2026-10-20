@@ -1,0 +1,7 @@
+{
+  "action": "复制 namespace/名称",
+  "actionClusterScoped": "复制名称",
+  "copied": "已复制 {{name}}",
+  "copiedMany_other": "已复制 {{count}} 个名称，每行一个",
+  "failed": "无法复制到剪贴板"
+}

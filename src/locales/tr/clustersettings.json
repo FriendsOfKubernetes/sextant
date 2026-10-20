@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Küme ayarı bölümleri",
+  "tabs": {
+    "general": "Genel",
+    "connection": "Bağlantı",
+    "metrics": "Ölçümler",
+    "agentAccess": "Yapay zekâ ajanı erişimi",
+    "safeApply": "Değişiklik önizlemesi",
+    "gitops": "GitOps",
+    "more": "Diğer"
+  },
+  "sections": {
+    "connection": "Bağlantı ayrıntıları"
+  }
+}

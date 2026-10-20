@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "クラスター設定のセクション",
+  "tabs": {
+    "general": "一般",
+    "connection": "接続",
+    "metrics": "メトリクス",
+    "agentAccess": "AI エージェントのアクセス",
+    "safeApply": "変更のプレビュー",
+    "gitops": "GitOps",
+    "more": "その他"
+  },
+  "sections": {
+    "connection": "接続の詳細"
+  }
+}

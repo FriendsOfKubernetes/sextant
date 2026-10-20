@@ -1,0 +1,36 @@
+/* "View kubeconfig" (#228). */
+.kc-view {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  max-height: 50vh;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre;
+  color: var(--color-text);
+  background: var(--color-sidebar);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.kc-view:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.kc-view__status {
+  min-height: 1.25rem;
+  margin: 8px 0 0;
+}
+
+.kc-view__status:empty {
+  margin: 0;
+}
+
+.kc-view__section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}

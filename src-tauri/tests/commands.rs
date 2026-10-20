@@ -26,6 +26,8 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("kubeconfig_edit_target", Some("sourceId")),
     ("kubeconfig_validate", Some("input")),
     ("kubeconfig_check_connection", Some("input")),
+    ("kubeconfig_view", Some("clusterId")),
+    ("kubeconfig_copy", Some("clusterId")),
     ("cluster_connect", Some("clusterId")),
     ("cluster_disconnect", Some("clusterId")),
     ("cluster_state", Some("clusterId")),
@@ -116,6 +118,13 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("files_download_start", Some("clusterId")),
     ("files_upload_start", Some("clusterId")),
     ("files_transfer_stop", Some("streamId")),
+    ("image_files_open_start", Some("source")),
+    ("image_files_read_start", Some("sessionId")),
+    ("image_files_download_start", Some("sessionId")),
+    ("image_files_list", Some("sessionId")),
+    ("image_files_search", Some("sessionId")),
+    ("image_files_resolve", Some("sessionId")),
+    ("image_files_stop", Some("streamId")),
     ("argocd_status", Some("clusterId")),
     ("argocd_login", Some("clusterId")),
     ("argocd_logout", Some("clusterId")),
@@ -1080,6 +1089,11 @@ fn later_argument_names_match_the_frontend() {
         ("resource_get", json!({ "clusterId": "c" }), "ref"),
         ("resource_count", json!({ "clusterId": "c" }), "kind"),
         ("workload_scale", json!({ "clusterId": "c" }), "ref"),
+        (
+            "kubeconfig_copy",
+            json!({ "clusterId": "c" }),
+            "withCredentials",
+        ),
         ("workload_set_image", json!({ "clusterId": "c" }), "ref"),
         (
             "workload_set_image_dry_run",
@@ -1325,6 +1339,31 @@ fn later_argument_names_match_the_frontend() {
         (
             "gitops_install_start",
             json!({ "clusterId": "c", "token": "t", "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "image_files_open_start",
+            json!({ "source": { "type": "reference", "reference": "nginx" } }),
+            "streamId",
+        ),
+        (
+            "image_files_open_start",
+            json!({ "source": { "type": "reference", "reference": "nginx" }, "platform": null, "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "image_files_read_start",
+            json!({ "sessionId": "x", "path": "/etc/os-release", "streamId": "s" }),
+            "onEvent",
+        ),
+        (
+            "image_files_download_start",
+            json!({ "sessionId": "x", "path": "/etc/os-release" }),
+            "title",
+        ),
+        (
+            "image_files_download_start",
+            json!({ "sessionId": "x", "path": "/etc/os-release", "title": "t", "streamId": "s" }),
             "onEvent",
         ),
     ];

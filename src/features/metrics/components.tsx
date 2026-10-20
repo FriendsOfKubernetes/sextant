@@ -39,7 +39,7 @@ export function nothingAvailable(status: Polled<MetricsStatus>): boolean {
 function openSettings(clusterId: ClusterId) {
   return (e: MouseEvent) => {
     e.stopPropagation();
-    openClusterSettings(clusterId);
+    openClusterSettings(clusterId, "metrics");
   };
 }
 

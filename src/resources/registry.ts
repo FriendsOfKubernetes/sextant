@@ -70,7 +70,10 @@ export type BuiltInActionId =
   // Comparing objects (src/features/compare), offered for every kind through `extendActionsForAll`
   | "compareWith"
   // Traffic path diagnosis (src/features/diagnose), offered for Services, Ingresses and HTTP/GRPC routes
-  | "diagnose";
+  | "diagnose"
+  // Copy namespace/name (src/features/copy-name), offered for every kind through `extendActionsForAll`
+  | "copyNamespacedName"
+  | "copyName";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {

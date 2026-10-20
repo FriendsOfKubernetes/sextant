@@ -46,6 +46,9 @@ pub struct AppState {
     /// Flux / Argo CD installs: plans prepared for the user's "Install" and the installs running
     /// (`gitops_install_*`); stopped with their cluster, on a reload and on exit.
     pub gitops: GitopsInstalls,
+    /// Images open in the image file viewer (#216): their trees and registry sessions (credentials in memory only);
+    /// dropped with a pod's cluster, on a reload and on exit.
+    pub image_files: crate::image_files::ImageSessions,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -87,6 +90,7 @@ impl AppState {
             mcp,
             ext_api,
             gitops: GitopsInstalls::default(),
+            image_files: crate::image_files::ImageSessions::default(),
             streams_generation: AtomicU64::new(0),
         }
     }
@@ -96,6 +100,7 @@ impl AppState {
     pub fn close_cluster(&self, cluster: &ClusterId) {
         self.subscriptions.stop_cluster(cluster);
         self.gitops.stop_cluster(cluster);
+        self.image_files.close_cluster(cluster);
         self.ext_api.streams.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
         self.forwarder.stop_cluster(cluster);
@@ -128,6 +133,7 @@ impl AppState {
         self.subscriptions.stop_all();
         self.sessions.stop_all();
         self.gitops.stop_all();
+        self.image_files.clear();
         // Extensions' streams; the confirmations the old page was showing are declined.
         self.ext_api.reset();
         // Agents' diagnostic requests the old page was computing fail (ADR-0094).

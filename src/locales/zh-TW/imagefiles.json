@@ -1,0 +1,94 @@
+{
+  "sidebar": "映像檔案",
+  "title": "映像檔案",
+  "intro": "直接從映像倉庫瀏覽容器映像的檔案：不在容器中執行任何東西，也不在節點上拉取任何東西。",
+  "action": "瀏覽映像檔案",
+  "form": {
+    "reference": "映像參照",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "開啟",
+    "close": "關閉映像",
+    "podSource": "Pod {{namespace}}/{{pod}} 中容器 {{container}} 的映像",
+    "openPod": "開啟此映像",
+    "platform": "平台",
+    "dockerCredentials": "對拉取密鑰未涵蓋的映像倉庫使用我的 Docker 憑證",
+    "dockerCredentialsHint": "讀取 ~/.docker/config.json 並執行其中指定的憑證輔助程式。預設關閉。"
+  },
+  "progress": {
+    "resolving": "正在映像倉庫中尋找映像…",
+    "cached": "第 {{index}} 層，共 {{count}} 層：來自快取",
+    "downloading": "第 {{index}} 層，共 {{count}} 層：{{done}} / {{total}}",
+    "indexed": "第 {{index}} 層，共 {{count}} 層：已讀取",
+    "stop": "停止"
+  },
+  "summary": {
+    "label": "映像",
+    "digest": "摘要",
+    "platform": "平台",
+    "credentials": "憑證",
+    "anonymous": "匿名",
+    "pullSecret": "拉取密鑰 {{name}}",
+    "dockerConfig": "你的 Docker 憑證",
+    "files_other": "映像中有 {{count}} 個檔案",
+    "skipped_other": "已略過 {{count}} 個路徑不安全或過長的項目。",
+    "unreadableSecrets": "無法讀取這些拉取密鑰：{{names}}"
+  },
+  "tabs": {
+    "label": "映像",
+    "files": "檔案",
+    "layers": "層"
+  },
+  "tree": {
+    "label": "映像的檔案",
+    "expand": "展開 {{name}}",
+    "collapse": "收合 {{name}}",
+    "truncated": "僅列出此資料夾的前 {{count}} 個項目。",
+    "empty": "此資料夾是空的。",
+    "loading": "正在讀取資料夾…"
+  },
+  "search": {
+    "label": "依路徑搜尋",
+    "placeholder": "例如 etc/nginx",
+    "clear": "清除搜尋",
+    "none": "沒有路徑包含此文字。",
+    "truncated": "僅顯示前 {{count}} 個相符項目。"
+  },
+  "file": {
+    "none": "選擇一個檔案或資料夾。",
+    "path": "路徑",
+    "kind": "類型",
+    "size": "大小",
+    "mode": "權限",
+    "owner": "擁有者",
+    "modified": "修改時間",
+    "target": "目標",
+    "layer": "層",
+    "layerNumber": "第 {{index}} 層",
+    "goToTarget": "前往目標",
+    "targetOutside": "此連結在映像內無處可去。",
+    "download": "下載",
+    "downloading": "正在下載：已讀取該層的 {{done}} / {{total}}",
+    "downloaded": "已儲存。",
+    "reading": "正在讀取檔案所在的層：{{done}} / {{total}}",
+    "binary": "這是二進位檔案。下載後可查看其內容。",
+    "truncated": "僅顯示檔案的前 1 MiB。",
+    "text": "{{name}} 的內容",
+    "saveTitle": "從映像儲存檔案"
+  },
+  "kind": {
+    "file": "檔案",
+    "directory": "資料夾",
+    "symlink": "符號連結",
+    "hardlink": "硬連結",
+    "other": "特殊檔案"
+  },
+  "layers": {
+    "label": "映像的層",
+    "index": "#",
+    "digest": "摘要",
+    "size": "大小",
+    "files": "檔案",
+    "createdBy": "建立指令",
+    "cached": "來自快取"
+  }
+}

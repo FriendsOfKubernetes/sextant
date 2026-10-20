@@ -1,0 +1,7 @@
+{
+  "action": "namespace/名前をコピー",
+  "actionClusterScoped": "名前をコピー",
+  "copied": "{{name}} をコピーしました",
+  "copiedMany_other": "{{count}} 件の名前を 1 行に 1 つずつコピーしました",
+  "failed": "クリップボードにコピーできませんでした"
+}

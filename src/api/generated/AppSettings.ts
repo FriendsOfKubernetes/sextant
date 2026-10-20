@@ -5,6 +5,7 @@ import type { ClusterSettings } from "./ClusterSettings";
 import type { CompareSettings } from "./CompareSettings";
 import type { CustomColumn } from "./CustomColumn";
 import type { FleetSettings } from "./FleetSettings";
+import type { ImageFilesSettings } from "./ImageFilesSettings";
 import type { InstalledExtension } from "./InstalledExtension";
 import type { KubeconfigSettings } from "./KubeconfigSettings";
 import type { KubeconfigSource } from "./KubeconfigSource";
@@ -153,4 +154,8 @@ practices: PracticesSettings,
  * from a label, an annotation or a simple field path. Written by the frontend; an entry that does not read or
  * breaks a rule is left out, capped per kind ([`custom_columns`]).
  */
-customColumns: Array<CustomColumn>, };
+customColumns: Array<CustomColumn>, 
+/**
+ * The image file viewer (#216): whether the user's Docker credentials may be used. Written by the frontend.
+ */
+imageFiles: ImageFilesSettings, };

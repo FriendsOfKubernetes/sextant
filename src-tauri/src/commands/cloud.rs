@@ -17,7 +17,7 @@ use tauri::{AppHandle, Manager, Runtime, State};
 use crate::pty::{self, Platform};
 use crate::state::AppState;
 
-fn cloud_cli<R: Runtime>(app: &AppHandle<R>) -> CloudCli {
+pub(crate) fn cloud_cli<R: Runtime>(app: &AppHandle<R>) -> CloudCli {
     app.try_state::<CloudCli>()
         .map(|cli| cli.inner().clone())
         .unwrap_or_else(|| cli_with_env(std::env::vars_os()))

@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "叢集設定區段",
+  "tabs": {
+    "general": "一般",
+    "connection": "連線",
+    "metrics": "指標",
+    "agentAccess": "AI 代理程式存取權限",
+    "safeApply": "變更預覽",
+    "gitops": "GitOps",
+    "more": "更多"
+  },
+  "sections": {
+    "connection": "連線詳細資料"
+  }
+}

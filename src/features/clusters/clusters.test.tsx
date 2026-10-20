@@ -5,7 +5,8 @@ import { resetAppStore, useAppStore } from "../../app/store";
 import { AppShell } from "../../layout";
 import { layOutPopups, placed } from "../../test/popupLayout";
 import { resetClusterKinds, useClusterKinds } from "../../resources";
-import { connectCluster, resetClustersStore } from "./clustersStore";
+import { axeViolations } from "../../test/axe";
+import { connectCluster, openClusterSettings, resetClustersStore } from "./clustersStore";
 import "./index";
 import { registerClusterSettingsSection, unregisterClusterSettingsSection } from "./settingsRegistry";
 import { VIEW_PERSIST_DELAY_MS } from "./viewPersistence";
@@ -400,7 +401,7 @@ describe("cluster settings", () => {
     expect(within(dialog).getByRole("radio", { name: "Auto" })).toHaveAttribute("aria-checked", "true");
   });
 
-  it("shows sections registered by other features", async () => {
+  it("shows sections registered by other features: a section without a tab goes to “More”", async () => {
     registerClusterSettingsSection({
       id: "test-metrics",
       order: 50,
@@ -412,9 +413,70 @@ describe("cluster settings", () => {
       render(<AppShell />);
       fireEvent.contextMenu(await within(rail()).findByRole("button", { name: "kind-alpha" }));
       fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
-      expect(screen.getByRole("dialog")).toHaveTextContent("metrics of aaaa");
+      const dialog = screen.getByRole("dialog");
+      expect(dialog).not.toHaveTextContent("metrics of aaaa");
+      fireEvent.click(within(dialog).getByRole("tab", { name: "More" }));
+      expect(within(dialog).getByRole("tabpanel")).toHaveTextContent("metrics of aaaa");
     } finally {
       unregisterClusterSettingsSection("test-metrics");
+    }
+  });
+
+  it("groups the sections into tabs: arrows move between them, the last one is remembered, a link opens a section", async () => {
+    registerClusterSettingsSection({
+      id: "test-extra",
+      order: 5,
+      tab: "connection",
+      titleKey: "test:extra",
+      Component: () => <p>extra connection facts</p>,
+    });
+    try {
+      setup([alpha]);
+      render(<AppShell />);
+      fireEvent.contextMenu(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+      let dialog = screen.getByRole("dialog", { name: "Cluster settings — kind-alpha" });
+      const list = within(dialog).getByRole("tablist", { name: "Cluster settings sections" });
+      expect(within(list).getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["General", "Connection"]);
+      const general = within(list).getByRole("tab", { name: "General" });
+      expect(general).toHaveAttribute("aria-selected", "true");
+      expect(within(dialog).getByRole("textbox", { name: "Display name" })).toBeInTheDocument();
+      expect(dialog).not.toHaveTextContent("kind-alpha.example");
+
+      // ←/→ as in the WAI-ARIA tabs pattern: the next tab is selected and focused.
+      general.focus();
+      fireEvent.keyDown(general, { key: "ArrowRight" });
+      const connection = within(list).getByRole("tab", { name: "Connection" });
+      expect(connection).toHaveAttribute("aria-selected", "true");
+      expect(connection).toHaveFocus();
+      const panel = within(dialog).getByRole("tabpanel", { name: "Connection" });
+      expect(panel).toHaveTextContent("https://kind-alpha.example:6443");
+      // Two sections in one tab: each keeps its heading.
+      expect(within(panel).getByRole("heading", { name: "extra" })).toBeInTheDocument();
+
+      // Closed and opened again: the tab picked last.
+      fireEvent.click(within(dialog).getAllByRole("button", { name: "Close" })[0]!);
+      fireEvent.contextMenu(within(rail()).getByRole("button", { name: "kind-alpha" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+      dialog = screen.getByRole("dialog", { name: "Cluster settings — kind-alpha" });
+      expect(within(dialog).getByRole("tab", { name: "Connection" })).toHaveAttribute("aria-selected", "true");
+      fireEvent.click(within(dialog).getAllByRole("button", { name: "Close" })[0]!);
+
+      // A link to a section opens its tab and puts the focus on it.
+      act(() => openClusterSettings("aaaa", "test-extra"));
+      dialog = screen.getByRole("dialog", { name: "Cluster settings — kind-alpha" });
+      expect(within(dialog).getByRole("tab", { name: "Connection" })).toHaveAttribute("aria-selected", "true");
+      await waitFor(() => expect(within(dialog).getByRole("region", { name: "extra" })).toHaveFocus());
+      // "Change icon…" opens "General" whatever was picked last.
+      fireEvent.click(within(dialog).getAllByRole("button", { name: "Close" })[0]!);
+      fireEvent.contextMenu(within(rail()).getByRole("button", { name: "kind-alpha" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "Change icon…" }));
+      dialog = screen.getByRole("dialog", { name: "Cluster settings — kind-alpha" });
+      expect(within(dialog).getByRole("tab", { name: "General" })).toHaveAttribute("aria-selected", "true");
+      expect(within(dialog).getByRole("textbox", { name: "Icon text" })).toHaveFocus();
+      expect(await axeViolations(dialog)).toEqual([]);
+    } finally {
+      unregisterClusterSettingsSection("test-extra");
     }
   });
 });

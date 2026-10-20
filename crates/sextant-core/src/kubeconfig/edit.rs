@@ -41,8 +41,9 @@ use crate::settings::AppSettings;
 
 /// Sextant's own file kubeconfig files are merged into, in [`KubeconfigRegistry::own_dir`].
 pub const MERGED_FILE: &str = "merged.yaml";
-/// What a preview shows instead of a credential (or any value it does not show).
-pub const HIDDEN: &str = "<hidden>";
+/// What a preview shows instead of a credential (or any value it does not show); the masking is
+/// [`super::mask`], shared with the kubeconfig viewer.
+pub use super::mask::HIDDEN;
 /// A kubeconfig larger than this is not read for a change.
 pub const MAX_FILE_BYTES: u64 = 4 * 1024 * 1024;
 /// At most this many files are merged at once.
@@ -1270,36 +1271,32 @@ fn context_fields(ctx: &Value) -> Vec<FieldChange> {
         .collect()
 }
 
-/// A cluster entry's fields: where it points shown, its CA data and anything else [`HIDDEN`].
+/// A cluster entry's fields as [`super::mask::mask_cluster`] shows them (where it points, TLS settings);
+/// certificate data are [`HIDDEN`] here too, to keep the preview short.
 fn cluster_fields(entry: &Value) -> Vec<FieldChange> {
-    const SHOWN: [&str; 5] = [
-        "server",
-        "proxy-url",
-        "tls-server-name",
-        "insecure-skip-tls-verify",
-        "certificate-authority",
-    ];
-    fields_of(entry.get("cluster"), |key| SHOWN.contains(&key))
+    fields_of(entry.get("cluster"), super::mask::mask_cluster)
 }
 
-/// A user entry's fields: names only, every value [`HIDDEN`].
+/// A user entry's fields as [`super::mask::mask_user`] shows them: names, file paths; every credential [`HIDDEN`].
 fn user_fields(entry: &Value) -> Vec<FieldChange> {
-    fields_of(entry.get("user"), |_| false)
+    fields_of(entry.get("user"), super::mask::mask_user)
 }
 
-fn fields_of(inner: Option<&Value>, shown: impl Fn(&str) -> bool) -> Vec<FieldChange> {
-    let Some(map) = inner.and_then(Value::as_mapping) else {
+/// The fields of `inner` after `mask`: a text, boolean or number is shown, a block (`exec`, `auth-provider`, lists)
+/// and any `*-data` field are [`HIDDEN`] (a preview line names the field; the viewer shows it).
+fn fields_of(inner: Option<&Value>, mask: fn(&mut Mapping)) -> Vec<FieldChange> {
+    let Some(mut map) = inner.and_then(Value::as_mapping).cloned() else {
         return Vec::new();
     };
+    mask(&mut map);
     map.iter()
         .filter_map(|(key, value)| {
             let key = key.as_str()?;
             let text = match value {
-                Value::String(s) if shown(key) && (key == "server" || key == "proxy-url") => {
-                    without_userinfo(s)
-                }
-                Value::String(s) if shown(key) => s.clone(),
-                Value::Bool(b) if shown(key) => b.to_string(),
+                _ if key.ends_with("-data") => HIDDEN.to_owned(),
+                Value::String(s) => s.clone(),
+                Value::Bool(b) => b.to_string(),
+                Value::Number(n) => n.to_string(),
                 _ => HIDDEN.to_owned(),
             };
             Some(FieldChange {
@@ -1309,19 +1306,6 @@ fn fields_of(inner: Option<&Value>, shown: impl Fn(&str) -> bool) -> Vec<FieldCh
             })
         })
         .collect()
-}
-
-/// A URL without the user name and password it may carry (`http://user:pass@proxy:3128` → `http://proxy:3128`).
-fn without_userinfo(url: &str) -> String {
-    let (scheme, rest) = match url.find("://") {
-        Some(i) => url.split_at(i + 3),
-        None => ("", url),
-    };
-    let authority_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
-    match rest[..authority_end].rfind('@') {
-        Some(at) => format!("{scheme}{}", &rest[at + 1..]),
-        None => url.to_owned(),
-    }
 }
 
 /// A context name kubectl can use: not empty, at most 253 characters, no control characters.

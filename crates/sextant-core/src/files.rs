@@ -36,7 +36,7 @@ use crate::exec::{
 use crate::kubeconfig::ClusterId;
 use crate::resources::ObjectRef;
 
-const BLOCK: usize = 512;
+pub(crate) const BLOCK: usize = 512;
 /// Tar writers pad an archive to whole records of 20 blocks; a reader may stop after the end marker without waiting
 /// for the end of its input.
 const RECORD: usize = 20 * BLOCK;
@@ -1093,12 +1093,12 @@ fn truncated(reason: &str) -> CoreError {
     )
 }
 
-fn text(bytes: &[u8]) -> String {
+pub(crate) fn text(bytes: &[u8]) -> String {
     let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
     String::from_utf8_lossy(&bytes[..end]).into_owned()
 }
 
-fn checksum_ok(block: &[u8; BLOCK]) -> bool {
+pub(crate) fn checksum_ok(block: &[u8; BLOCK]) -> bool {
     let stored = text(&block[148..156]);
     let Ok(stored) = u32::from_str_radix(stored.trim(), 8) else {
         return false;
@@ -1138,7 +1138,7 @@ fn parse_number(field: &[u8]) -> CoreResult<u64> {
 }
 
 /// `<len> <key>=<value>\n` records of a pax header.
-fn pax_records(data: &[u8]) -> Vec<(String, String)> {
+pub(crate) fn pax_records(data: &[u8]) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let mut rest = data;
     while !rest.is_empty() {

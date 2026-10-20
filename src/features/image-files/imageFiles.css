@@ -1,0 +1,248 @@
+/* Image file viewer (#216): the page, the tree, the file panel, the layers table. */
+.imgf-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.imgf-page__title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.imgf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  margin: 8px 0;
+}
+
+.imgf-field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.imgf-toolbar .imgf-field {
+  flex: 1 1 24rem;
+  max-width: 48rem;
+}
+
+.imgf-input,
+.imgf-select {
+  min-height: var(--control-height);
+  max-width: 100%;
+  font-family: var(--font-mono);
+}
+
+.imgf-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.imgf-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+}
+
+.imgf-note--small {
+  font-size: 0.8125rem;
+}
+
+.imgf-note--warning {
+  color: var(--color-warning);
+}
+
+.imgf-mono {
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.imgf-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.imgf-summary {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.imgf-summary__reference {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.imgf-files {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  margin-top: 8px;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .imgf-files {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.imgf-files__side {
+  min-width: 0;
+  border-right: 1px solid var(--color-border);
+  padding-right: 8px;
+}
+
+.imgf-files__main {
+  min-width: 0;
+}
+
+.imgf-search__row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.imgf-search__row .imgf-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.imgf-search__list,
+.imgf-tree__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.imgf-search__list {
+  max-height: 16rem;
+  overflow: auto;
+  margin: 4px 0 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.imgf-tree__list .imgf-tree__list {
+  padding-left: 16px;
+}
+
+.imgf-tree__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.imgf-tree__spacer {
+  display: inline-block;
+  width: var(--control-height-compact);
+  flex: none;
+}
+
+.imgf-tree__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.imgf-tree__name:hover {
+  background: var(--color-hover);
+}
+
+.imgf-tree__name--selected {
+  background: var(--color-selected);
+}
+
+.imgf-tree__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.imgf-view__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.imgf-view__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px 12px;
+  margin: 0 0 8px;
+}
+
+.imgf-view__fact {
+  display: contents;
+}
+
+.imgf-view__fact dt {
+  color: var(--color-text-muted);
+}
+
+.imgf-view__fact dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.imgf-view__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.imgf-view__text {
+  margin: 8px 0 0;
+  padding: 8px;
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-panel);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  white-space: pre;
+}
+
+.imgf-layers {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.imgf-layers th,
+.imgf-layers td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.imgf-layers__cmd {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  word-break: break-word;
+}

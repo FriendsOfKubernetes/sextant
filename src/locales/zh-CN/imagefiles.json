@@ -1,0 +1,94 @@
+{
+  "sidebar": "镜像文件",
+  "title": "镜像文件",
+  "intro": "直接从镜像仓库浏览容器镜像的文件：不在容器中运行任何东西，也不在节点上拉取任何东西。",
+  "action": "浏览镜像文件",
+  "form": {
+    "reference": "镜像引用",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "打开",
+    "close": "关闭镜像",
+    "podSource": "Pod {{namespace}}/{{pod}} 中容器 {{container}} 的镜像",
+    "openPod": "打开此镜像",
+    "platform": "平台",
+    "dockerCredentials": "对拉取密钥未覆盖的镜像仓库使用我的 Docker 凭据",
+    "dockerCredentialsHint": "读取 ~/.docker/config.json 并运行其中指定的凭据助手。默认关闭。"
+  },
+  "progress": {
+    "resolving": "正在镜像仓库中查找镜像…",
+    "cached": "第 {{index}} 层，共 {{count}} 层：来自缓存",
+    "downloading": "第 {{index}} 层，共 {{count}} 层：{{done}} / {{total}}",
+    "indexed": "第 {{index}} 层，共 {{count}} 层：已读取",
+    "stop": "停止"
+  },
+  "summary": {
+    "label": "镜像",
+    "digest": "摘要",
+    "platform": "平台",
+    "credentials": "凭据",
+    "anonymous": "匿名",
+    "pullSecret": "拉取密钥 {{name}}",
+    "dockerConfig": "你的 Docker 凭据",
+    "files_other": "镜像中有 {{count}} 个文件",
+    "skipped_other": "已跳过 {{count}} 个路径不安全或过长的条目。",
+    "unreadableSecrets": "无法读取这些拉取密钥：{{names}}"
+  },
+  "tabs": {
+    "label": "镜像",
+    "files": "文件",
+    "layers": "层"
+  },
+  "tree": {
+    "label": "镜像的文件",
+    "expand": "展开 {{name}}",
+    "collapse": "折叠 {{name}}",
+    "truncated": "仅列出此文件夹的前 {{count}} 个条目。",
+    "empty": "此文件夹为空。",
+    "loading": "正在读取文件夹…"
+  },
+  "search": {
+    "label": "按路径搜索",
+    "placeholder": "例如 etc/nginx",
+    "clear": "清除搜索",
+    "none": "没有路径包含此文本。",
+    "truncated": "仅显示前 {{count}} 个匹配项。"
+  },
+  "file": {
+    "none": "选择一个文件或文件夹。",
+    "path": "路径",
+    "kind": "类型",
+    "size": "大小",
+    "mode": "权限",
+    "owner": "所有者",
+    "modified": "修改时间",
+    "target": "目标",
+    "layer": "层",
+    "layerNumber": "第 {{index}} 层",
+    "goToTarget": "转到目标",
+    "targetOutside": "该链接在镜像内无处可去。",
+    "download": "下载",
+    "downloading": "正在下载：已读取该层的 {{done}} / {{total}}",
+    "downloaded": "已保存。",
+    "reading": "正在读取文件所在的层：{{done}} / {{total}}",
+    "binary": "这是二进制文件。下载后可查看其内容。",
+    "truncated": "仅显示文件的前 1 MiB。",
+    "text": "{{name}} 的内容",
+    "saveTitle": "从镜像保存文件"
+  },
+  "kind": {
+    "file": "文件",
+    "directory": "文件夹",
+    "symlink": "符号链接",
+    "hardlink": "硬链接",
+    "other": "特殊文件"
+  },
+  "layers": {
+    "label": "镜像的层",
+    "index": "#",
+    "digest": "摘要",
+    "size": "大小",
+    "files": "文件",
+    "createdBy": "创建命令",
+    "cached": "来自缓存"
+  }
+}

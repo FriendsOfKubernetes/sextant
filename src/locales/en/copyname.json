@@ -1,0 +1,8 @@
+{
+  "action": "Copy namespace/name",
+  "actionClusterScoped": "Copy name",
+  "copied": "Copied {{name}}",
+  "copiedMany_one": "Copied {{count}} name, one per line",
+  "copiedMany_other": "Copied {{count}} names, one per line",
+  "failed": "Could not copy to the clipboard"
+}

@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Secciones de la configuración del clúster",
+  "tabs": {
+    "general": "General",
+    "connection": "Conexión",
+    "metrics": "Métricas",
+    "agentAccess": "Acceso de agentes de IA",
+    "safeApply": "Vista previa de cambios",
+    "gitops": "GitOps",
+    "more": "Más"
+  },
+  "sections": {
+    "connection": "Detalles de la conexión"
+  }
+}

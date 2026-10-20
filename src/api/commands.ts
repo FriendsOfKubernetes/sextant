@@ -103,6 +103,12 @@ import type { TrafficWindow } from "./generated/TrafficWindow";
 import type { SettingsStatus } from "./generated/SettingsStatus";
 import type { TermPayload } from "./generated/TermPayload";
 import type { TransferEvent } from "./generated/TransferEvent";
+import type { ImageDir } from "./generated/ImageDir";
+import type { ImageOpenEvent } from "./generated/ImageOpenEvent";
+import type { ImagePlatform } from "./generated/ImagePlatform";
+import type { ImageReadEvent } from "./generated/ImageReadEvent";
+import type { ImageSearch } from "./generated/ImageSearch";
+import type { ImageSource } from "./generated/ImageSource";
 import type { TrayStatus } from "./generated/TrayStatus";
 import type { TrayTexts } from "./generated/TrayTexts";
 import type { WatchSpec } from "./generated/WatchSpec";
@@ -496,6 +502,37 @@ export const files = {
 };
 
 /**
+ * The image file viewer (#216, ADR-0103), window only: an image's files read from its registry, without exec or a
+ * pull. An image opened under a stream id stays open until `stop` of that id; reads and downloads are streams too.
+ */
+export const imageFiles = {
+  /** Opens `source` (`platform` null: linux/amd64, else the first); progress, then `opened` or `error`. */
+  openStart: (
+    source: ImageSource,
+    platform: ImagePlatform | null,
+    streamId: string,
+    onEvent: StreamChannel<ImageOpenEvent>,
+  ) => call<void>("image_files_open_start", { source, platform, streamId, onEvent }),
+  /** The first MiB of a file for the viewer (its layer is read up to the file). */
+  readStart: (sessionId: string, path: string, streamId: string, onEvent: StreamChannel<ImageReadEvent>) =>
+    call<void>("image_files_read_start", { sessionId, path, streamId, onEvent }),
+  /** Shows the save dialog and downloads the file; `false` when the dialog was cancelled. */
+  downloadStart: (
+    sessionId: string,
+    path: string,
+    title: string,
+    streamId: string,
+    onEvent: StreamChannel<TransferEvent>,
+  ) => call<boolean>("image_files_download_start", { sessionId, path, title, streamId, onEvent }),
+  list: (sessionId: string, path: string) => call<ImageDir>("image_files_list", { sessionId, path }),
+  search: (sessionId: string, query: string) => call<ImageSearch>("image_files_search", { sessionId, query }),
+  /** Where a symbolic link leads inside the image; null when nowhere. */
+  resolve: (sessionId: string, path: string) => call<string | null>("image_files_resolve", { sessionId, path }),
+  /** Stops a stream and closes the image opened under that id. */
+  stop: (streamId: string) => call<void>("image_files_stop", { streamId }),
+};
+
+/**
  * Argo CD API through a port forward to `argocd-server`. Passwords and tokens only go in (`login`); nothing the
  * backend answers carries one.
  */
@@ -632,6 +669,14 @@ export const kubeconfig = {
   /** Connects once to `context` (the user asked); rejects with the usual connection errors. */
   checkConnection: (input: KubeconfigInput, context: string) =>
     call<void>("kubeconfig_check_connection", { input, context }),
+  /** The kubeconfig of one cluster (#228) as YAML, every credential `<hidden>`. */
+  view: (clusterId: ClusterId) => call<string>("kubeconfig_view", { clusterId }),
+  /**
+   * Puts the cluster's kubeconfig on the clipboard from the backend: with `withCredentials` the full working one
+   * (ask the user first; the text never comes to the window), otherwise what `view` shows.
+   */
+  copy: (clusterId: ClusterId, withCredentials: boolean) =>
+    call<void>("kubeconfig_copy", { clusterId, withCredentials }),
 };
 
 /**

@@ -73,6 +73,9 @@ export const STREAM_PREFIXES: Readonly<Record<string, string>> = {
   files_download_start: "files",
   files_upload_start: "files",
   extension_call: "ext-watch",
+  image_files_open_start: "image-open",
+  image_files_read_start: "image-read",
+  image_files_download_start: "files",
 };
 
 /** The mock's stream channel: the handler, and what `close` removes it from once it is registered. */

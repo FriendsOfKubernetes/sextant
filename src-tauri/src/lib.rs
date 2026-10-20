@@ -6,6 +6,7 @@ pub mod download;
 pub mod events;
 pub mod extensions;
 pub mod gitops_install;
+pub mod image_files;
 pub mod malloc;
 pub mod mcp;
 pub mod mcp_proxy;
@@ -49,6 +50,8 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::kubeconfig::kubeconfig_edit_target,
         commands::kubeconfig::kubeconfig_validate,
         commands::kubeconfig::kubeconfig_check_connection,
+        commands::kubeconfig::kubeconfig_view,
+        commands::kubeconfig::kubeconfig_copy,
         clusters::cluster_connect,
         clusters::cluster_disconnect,
         clusters::cluster_state,
@@ -141,6 +144,13 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         files::files_download_start,
         files::files_upload_start,
         files::files_transfer_stop,
+        commands::image_files::image_files_open_start,
+        commands::image_files::image_files_read_start,
+        commands::image_files::image_files_download_start,
+        commands::image_files::image_files_list,
+        commands::image_files::image_files_search,
+        commands::image_files::image_files_resolve,
+        commands::image_files::image_files_stop,
         argocd::argocd_status,
         argocd::argocd_login,
         argocd::argocd_logout,
@@ -395,7 +405,9 @@ pub fn run() {
     let builder = extensions::protocol::register(with_commands(builder))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init());
+        .plugin(tauri_plugin_notification::init())
+        // Used from Rust only (`kubeconfig_copy`); the window has no clipboard permission.
+        .plugin(tauri_plugin_clipboard_manager::init());
     with_updates(builder, context.config())
         .setup(|app| {
             // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.

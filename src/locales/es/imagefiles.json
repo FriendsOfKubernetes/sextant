@@ -1,0 +1,98 @@
+{
+  "sidebar": "Archivos de imagen",
+  "title": "Archivos de imagen",
+  "intro": "Explora los archivos de una imagen de contenedor directamente desde su registro: no se ejecuta nada en un contenedor ni se descarga nada en un nodo.",
+  "action": "Explorar archivos de la imagen",
+  "form": {
+    "reference": "Referencia de imagen",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Abrir",
+    "close": "Cerrar imagen",
+    "podSource": "La imagen del contenedor {{container}} en el Pod {{namespace}}/{{pod}}",
+    "openPod": "Abrir esta imagen",
+    "platform": "Plataforma",
+    "dockerCredentials": "Usar mis credenciales de Docker para los registros que no cubren los pull secrets",
+    "dockerCredentialsHint": "Lee ~/.docker/config.json y ejecuta los asistentes de credenciales que indica. Desactivado por defecto."
+  },
+  "progress": {
+    "resolving": "Buscando la imagen en su registro…",
+    "cached": "Capa {{index}} de {{count}}: desde la caché",
+    "downloading": "Capa {{index}} de {{count}}: {{done}} de {{total}}",
+    "indexed": "Capa {{index}} de {{count}}: leída",
+    "stop": "Detener"
+  },
+  "summary": {
+    "label": "Imagen",
+    "digest": "Digest",
+    "platform": "Plataforma",
+    "credentials": "Credenciales",
+    "anonymous": "Anónimo",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Tus credenciales de Docker",
+    "files_one": "{{count}} archivo en la imagen",
+    "files_many": "{{count}} de archivos en la imagen",
+    "files_other": "{{count}} archivos en la imagen",
+    "skipped_one": "Se omitió {{count}} entrada con una ruta insegura o demasiado larga.",
+    "skipped_many": "Se omitieron {{count}} de entradas con rutas inseguras o demasiado largas.",
+    "skipped_other": "Se omitieron {{count}} entradas con rutas inseguras o demasiado largas.",
+    "unreadableSecrets": "No se pudieron leer estos pull secrets: {{names}}"
+  },
+  "tabs": {
+    "label": "Imagen",
+    "files": "Archivos",
+    "layers": "Capas"
+  },
+  "tree": {
+    "label": "Archivos de la imagen",
+    "expand": "Expandir {{name}}",
+    "collapse": "Contraer {{name}}",
+    "truncated": "Solo se listan las primeras {{count}} entradas de esta carpeta.",
+    "empty": "Esta carpeta está vacía.",
+    "loading": "Leyendo la carpeta…"
+  },
+  "search": {
+    "label": "Buscar por ruta",
+    "placeholder": "p. ej. etc/nginx",
+    "clear": "Borrar la búsqueda",
+    "none": "Ninguna ruta contiene este texto.",
+    "truncated": "Solo se muestran las primeras {{count}} coincidencias."
+  },
+  "file": {
+    "none": "Selecciona un archivo o una carpeta.",
+    "path": "Ruta",
+    "kind": "Tipo",
+    "size": "Tamaño",
+    "mode": "Modo",
+    "owner": "Propietario",
+    "modified": "Modificado",
+    "target": "Destino",
+    "layer": "Capa",
+    "layerNumber": "Capa {{index}}",
+    "goToTarget": "Ir al destino",
+    "targetOutside": "El enlace no lleva a ningún sitio dentro de la imagen.",
+    "download": "Descargar",
+    "downloading": "Descargando: leídos {{done}} de {{total}} de la capa",
+    "downloaded": "Guardado.",
+    "reading": "Leyendo la capa del archivo: {{done}} de {{total}}",
+    "binary": "Este archivo es binario. Descárgalo para ver su contenido.",
+    "truncated": "Solo se muestra el primer MiB del archivo.",
+    "text": "Contenido de {{name}}",
+    "saveTitle": "Guardar el archivo de la imagen"
+  },
+  "kind": {
+    "file": "Archivo",
+    "directory": "Carpeta",
+    "symlink": "Enlace simbólico",
+    "hardlink": "Enlace duro",
+    "other": "Archivo especial"
+  },
+  "layers": {
+    "label": "Capas de la imagen",
+    "index": "N.º",
+    "digest": "Digest",
+    "size": "Tamaño",
+    "files": "Archivos",
+    "createdBy": "Creada por",
+    "cached": "Desde la caché"
+  }
+}

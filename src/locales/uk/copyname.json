@@ -1,0 +1,10 @@
+{
+  "action": "Копіювати namespace/ім’я",
+  "actionClusterScoped": "Копіювати ім’я",
+  "copied": "Скопійовано: {{name}}",
+  "copiedMany_one": "Скопійовано {{count}} ім’я, по одному в рядку",
+  "copiedMany_few": "Скопійовано {{count}} імені, по одному в рядку",
+  "copiedMany_many": "Скопійовано {{count}} імен, по одному в рядку",
+  "copiedMany_other": "Скопійовано {{count}} імені, по одному в рядку",
+  "failed": "Не вдалося скопіювати в буфер обміну"
+}

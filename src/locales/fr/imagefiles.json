@@ -1,0 +1,98 @@
+{
+  "sidebar": "Fichiers d’image",
+  "title": "Fichiers d’image",
+  "intro": "Parcourez les fichiers d’une image de conteneur directement depuis son registre : rien ne s’exécute dans un conteneur et rien n’est tiré sur un nœud.",
+  "action": "Parcourir les fichiers de l’image",
+  "form": {
+    "reference": "Référence d’image",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Ouvrir",
+    "close": "Fermer l’image",
+    "podSource": "L’image du conteneur {{container}} dans le Pod {{namespace}}/{{pod}}",
+    "openPod": "Ouvrir cette image",
+    "platform": "Plateforme",
+    "dockerCredentials": "Utiliser mes identifiants Docker pour les registres que les pull secrets ne couvrent pas",
+    "dockerCredentialsHint": "Lit ~/.docker/config.json et exécute les assistants d’identifiants qu’il nomme. Désactivé par défaut."
+  },
+  "progress": {
+    "resolving": "Recherche de l’image dans son registre…",
+    "cached": "Couche {{index}} sur {{count}} : depuis le cache",
+    "downloading": "Couche {{index}} sur {{count}} : {{done}} sur {{total}}",
+    "indexed": "Couche {{index}} sur {{count}} : lue",
+    "stop": "Arrêter"
+  },
+  "summary": {
+    "label": "Image",
+    "digest": "Digest",
+    "platform": "Plateforme",
+    "credentials": "Identifiants",
+    "anonymous": "Anonyme",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Vos identifiants Docker",
+    "files_one": "{{count}} fichier dans l’image",
+    "files_many": "{{count}} de fichiers dans l’image",
+    "files_other": "{{count}} fichiers dans l’image",
+    "skipped_one": "{{count}} entrée au chemin dangereux ou trop long a été ignorée.",
+    "skipped_many": "{{count}} d’entrées aux chemins dangereux ou trop longs ont été ignorées.",
+    "skipped_other": "{{count}} entrées aux chemins dangereux ou trop longs ont été ignorées.",
+    "unreadableSecrets": "Ces pull secrets n’ont pas pu être lus : {{names}}"
+  },
+  "tabs": {
+    "label": "Image",
+    "files": "Fichiers",
+    "layers": "Couches"
+  },
+  "tree": {
+    "label": "Fichiers de l’image",
+    "expand": "Déplier {{name}}",
+    "collapse": "Replier {{name}}",
+    "truncated": "Seules les {{count}} premières entrées de ce dossier sont listées.",
+    "empty": "Ce dossier est vide.",
+    "loading": "Lecture du dossier…"
+  },
+  "search": {
+    "label": "Rechercher par chemin",
+    "placeholder": "par ex. etc/nginx",
+    "clear": "Effacer la recherche",
+    "none": "Aucun chemin ne contient ce texte.",
+    "truncated": "Seules les {{count}} premières correspondances sont affichées."
+  },
+  "file": {
+    "none": "Sélectionnez un fichier ou un dossier.",
+    "path": "Chemin",
+    "kind": "Type",
+    "size": "Taille",
+    "mode": "Mode",
+    "owner": "Propriétaire",
+    "modified": "Modifié",
+    "target": "Cible",
+    "layer": "Couche",
+    "layerNumber": "Couche {{index}}",
+    "goToTarget": "Aller à la cible",
+    "targetOutside": "Le lien ne mène nulle part dans l’image.",
+    "download": "Télécharger",
+    "downloading": "Téléchargement : {{done}} sur {{total}} de la couche lus",
+    "downloaded": "Enregistré.",
+    "reading": "Lecture de la couche du fichier : {{done}} sur {{total}}",
+    "binary": "Ce fichier est binaire. Téléchargez-le pour voir son contenu.",
+    "truncated": "Seul le premier Mio du fichier est affiché.",
+    "text": "Contenu de {{name}}",
+    "saveTitle": "Enregistrer le fichier de l’image"
+  },
+  "kind": {
+    "file": "Fichier",
+    "directory": "Dossier",
+    "symlink": "Lien symbolique",
+    "hardlink": "Lien physique",
+    "other": "Fichier spécial"
+  },
+  "layers": {
+    "label": "Couches de l’image",
+    "index": "N°",
+    "digest": "Digest",
+    "size": "Taille",
+    "files": "Fichiers",
+    "createdBy": "Créée par",
+    "cached": "Depuis le cache"
+  }
+}

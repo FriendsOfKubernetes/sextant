@@ -23,6 +23,7 @@ mod fake_api;
 pub mod files;
 pub mod gitops_install;
 pub mod helm;
+pub mod image_fs;
 pub mod kubeconfig;
 pub mod logs;
 pub mod metrics;

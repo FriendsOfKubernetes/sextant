@@ -1,0 +1,9 @@
+{
+  "action": "Copiar namespace/nombre",
+  "actionClusterScoped": "Copiar nombre",
+  "copied": "Copiado: {{name}}",
+  "copiedMany_one": "{{count}} nombre copiado, uno por línea",
+  "copiedMany_many": "{{count}} de nombres copiados, uno por línea",
+  "copiedMany_other": "{{count}} nombres copiados, uno por línea",
+  "failed": "No se pudo copiar al portapapeles"
+}

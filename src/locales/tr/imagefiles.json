@@ -1,0 +1,96 @@
+{
+  "sidebar": "İmaj dosyaları",
+  "title": "İmaj dosyaları",
+  "intro": "Bir container imajının dosyalarına doğrudan kayıt defterinden göz atın: container içinde hiçbir şey çalışmaz, hiçbir node'a bir şey çekilmez.",
+  "action": "İmaj dosyalarına göz at",
+  "form": {
+    "reference": "İmaj referansı",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Aç",
+    "close": "İmajı kapat",
+    "podSource": "Pod {{namespace}}/{{pod}} içindeki {{container}} container'ının imajı",
+    "openPod": "Bu imajı aç",
+    "platform": "Platform",
+    "dockerCredentials": "Pull secret'ların kapsamadığı kayıt defterleri için Docker kimlik bilgilerimi kullan",
+    "dockerCredentialsHint": "~/.docker/config.json dosyasını okur ve adını verdiği kimlik bilgisi yardımcılarını çalıştırır. Varsayılan olarak kapalı."
+  },
+  "progress": {
+    "resolving": "İmaj kayıt defterinde aranıyor…",
+    "cached": "Katman {{index}}/{{count}}: önbellekten",
+    "downloading": "Katman {{index}}/{{count}}: {{done}} / {{total}}",
+    "indexed": "Katman {{index}}/{{count}}: okundu",
+    "stop": "Durdur"
+  },
+  "summary": {
+    "label": "İmaj",
+    "digest": "Özet",
+    "platform": "Platform",
+    "credentials": "Kimlik bilgileri",
+    "anonymous": "Anonim",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Docker kimlik bilgileriniz",
+    "files_one": "İmajda {{count}} dosya",
+    "files_other": "İmajda {{count}} dosya",
+    "skipped_one": "Güvensiz veya çok uzun yollu {{count}} girdi atlandı.",
+    "skipped_other": "Güvensiz veya çok uzun yollu {{count}} girdi atlandı.",
+    "unreadableSecrets": "Bu pull secret'lar okunamadı: {{names}}"
+  },
+  "tabs": {
+    "label": "İmaj",
+    "files": "Dosyalar",
+    "layers": "Katmanlar"
+  },
+  "tree": {
+    "label": "İmajın dosyaları",
+    "expand": "{{name}} genişlet",
+    "collapse": "{{name}} daralt",
+    "truncated": "Bu klasörün yalnızca ilk {{count}} girdisi listeleniyor.",
+    "empty": "Bu klasör boş.",
+    "loading": "Klasör okunuyor…"
+  },
+  "search": {
+    "label": "Yola göre ara",
+    "placeholder": "ör. etc/nginx",
+    "clear": "Aramayı temizle",
+    "none": "Bu metni içeren yol yok.",
+    "truncated": "Yalnızca ilk {{count}} eşleşme gösteriliyor."
+  },
+  "file": {
+    "none": "Bir dosya veya klasör seçin.",
+    "path": "Yol",
+    "kind": "Tür",
+    "size": "Boyut",
+    "mode": "Mod",
+    "owner": "Sahip",
+    "modified": "Değiştirilme",
+    "target": "Hedef",
+    "layer": "Katman",
+    "layerNumber": "Katman {{index}}",
+    "goToTarget": "Hedefe git",
+    "targetOutside": "Bağlantı imaj içinde hiçbir yere gitmiyor.",
+    "download": "İndir",
+    "downloading": "İndiriliyor: katmanın {{done}} / {{total}} kısmı okundu",
+    "downloaded": "Kaydedildi.",
+    "reading": "Dosyanın katmanı okunuyor: {{done}} / {{total}}",
+    "binary": "Bu dosya ikili. İçine bakmak için indirin.",
+    "truncated": "Dosyanın yalnızca ilk MiB'ı gösteriliyor.",
+    "text": "{{name}} içeriği",
+    "saveTitle": "Dosyayı imajdan kaydet"
+  },
+  "kind": {
+    "file": "Dosya",
+    "directory": "Klasör",
+    "symlink": "Sembolik bağlantı",
+    "hardlink": "Sabit bağlantı",
+    "other": "Özel dosya"
+  },
+  "layers": {
+    "label": "İmajın katmanları",
+    "index": "#",
+    "digest": "Özet",
+    "size": "Boyut",
+    "files": "Dosyalar",
+    "createdBy": "Oluşturan",
+    "cached": "Önbellekten"
+  }
+}

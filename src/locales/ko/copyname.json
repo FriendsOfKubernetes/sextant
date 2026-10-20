@@ -1,0 +1,7 @@
+{
+  "action": "namespace/이름 복사",
+  "actionClusterScoped": "이름 복사",
+  "copied": "{{name}}을(를) 복사했습니다",
+  "copiedMany_other": "이름 {{count}}개를 한 줄에 하나씩 복사했습니다",
+  "failed": "클립보드에 복사하지 못했습니다"
+}

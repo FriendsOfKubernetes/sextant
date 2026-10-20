@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Bereiche der Cluster-Einstellungen",
+  "tabs": {
+    "general": "Allgemein",
+    "connection": "Verbindung",
+    "metrics": "Metriken",
+    "agentAccess": "Zugriff für KI-Agenten",
+    "safeApply": "Änderungsvorschau",
+    "gitops": "GitOps",
+    "more": "Weitere"
+  },
+  "sections": {
+    "connection": "Verbindungsdetails"
+  }
+}

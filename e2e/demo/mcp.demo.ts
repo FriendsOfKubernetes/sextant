@@ -127,12 +127,10 @@ describe("MCP demo", () => {
     await browser.pause(300);
     await demoClick(menu.$("[role='menuitem']=Settings"));
 
+    // The cluster settings are in tabs (#230): agent access has its own.
+    await demoClick($('[role="dialog"] [role="tab"]=AI agent access'));
     const section = $('section[aria-label="AI agent access"]');
     await section.waitForExist();
-    await browser.execute(
-      (el: HTMLElement) => el.scrollIntoView({ behavior: "smooth", block: "start" }),
-      await section.getElement(),
-    );
     await browser.pause(900);
     await demoClick(byName("Read + write (no delete)", section));
     await eventually(async () => (await textOf(section)).includes("It asks you first each time"), "the preset description");

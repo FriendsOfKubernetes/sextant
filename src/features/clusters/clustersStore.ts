@@ -16,6 +16,7 @@ import {
 } from "../../api";
 import { useAppStore } from "../../app/store";
 import { refreshClusterKinds } from "../../resources/useKinds";
+import { tabOfSection } from "./settingsRegistry";
 import { startViewPersistence } from "./viewPersistence";
 
 export interface ClustersState {
@@ -32,8 +33,13 @@ export interface ClustersState {
   pendingId: ClusterId | null;
   /** Cluster whose settings dialog is open. */
   settingsFor: ClusterId | null;
-  /** What the settings dialog puts the focus on when it opens ("Change icon…" — the icon). */
-  settingsFocus: "icon" | null;
+  /**
+   * What the settings dialog opens at: "icon" ("Change icon…" — the icon field) or the id of a section (its tab is
+   * selected and the section scrolled to and focused). Cleared when the user picks a tab.
+   */
+  settingsFocus: string | null;
+  /** The tab of the settings dialog picked last; kept for the window's lifetime (not in settings.json). */
+  settingsTab: string | null;
 }
 
 const initialState = (): ClustersState => ({
@@ -46,6 +52,7 @@ const initialState = (): ClustersState => ({
   pendingId: null,
   settingsFor: null,
   settingsFocus: null,
+  settingsTab: null,
 });
 
 export const useClustersStore = create<ClustersState>()(initialState);
@@ -208,8 +215,22 @@ export async function removeKubeconfigSource(sourceId: string): Promise<void> {
   await refreshClusters();
 }
 
-export function openClusterSettings(id: ClusterId | null, focus: "icon" | null = null): void {
-  useClustersStore.setState({ settingsFor: id, settingsFocus: id ? focus : null });
+/**
+ * Opens (or with `null` closes) the settings of a cluster. `target` is "icon" (the icon field of "General") or the id
+ * of a section (e.g. "metrics", "agentAccess"): its tab is selected and the section is shown. Without a target the tab
+ * picked last opens.
+ */
+export function openClusterSettings(id: ClusterId | null, target: string | null = null): void {
+  const focus = id ? target : null;
+  const tab = focus === null ? null : tabOfSection(focus === "icon" ? "general" : focus);
+  useClustersStore.setState(
+    tab === null ? { settingsFor: id, settingsFocus: focus } : { settingsFor: id, settingsFocus: focus, settingsTab: tab },
+  );
+}
+
+/** The user picked a tab of the settings dialog: remembered for the next opening. */
+export function selectClusterSettingsTab(tab: string): void {
+  useClustersStore.setState({ settingsTab: tab, settingsFocus: null });
 }
 
 /** Forgets everything (tests). */

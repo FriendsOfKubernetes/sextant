@@ -1,0 +1,96 @@
+{
+  "sidebar": "Image-Dateien",
+  "title": "Image-Dateien",
+  "intro": "Die Dateien eines Container-Images direkt aus seiner Registry ansehen: Im Container läuft nichts, auf keinen Knoten wird etwas gezogen.",
+  "action": "Image-Dateien ansehen",
+  "form": {
+    "reference": "Image-Referenz",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Öffnen",
+    "close": "Image schließen",
+    "podSource": "Das Image von Container {{container}} in Pod {{namespace}}/{{pod}}",
+    "openPod": "Dieses Image öffnen",
+    "platform": "Plattform",
+    "dockerCredentials": "Meine Docker-Anmeldedaten für Registrys verwenden, die die Pull-Secrets nicht abdecken",
+    "dockerCredentialsHint": "Liest ~/.docker/config.json und führt die darin genannten Credential-Helper aus. Standardmäßig aus."
+  },
+  "progress": {
+    "resolving": "Image wird in seiner Registry gesucht…",
+    "cached": "Schicht {{index}} von {{count}}: aus dem Cache",
+    "downloading": "Schicht {{index}} von {{count}}: {{done}} von {{total}}",
+    "indexed": "Schicht {{index}} von {{count}}: gelesen",
+    "stop": "Anhalten"
+  },
+  "summary": {
+    "label": "Image",
+    "digest": "Digest",
+    "platform": "Plattform",
+    "credentials": "Anmeldedaten",
+    "anonymous": "Anonym",
+    "pullSecret": "Pull-Secret {{name}}",
+    "dockerConfig": "Ihre Docker-Anmeldedaten",
+    "files_one": "{{count}} Datei im Image",
+    "files_other": "{{count}} Dateien im Image",
+    "skipped_one": "{{count}} Eintrag mit unsicherem oder zu langem Pfad wurde ausgelassen.",
+    "skipped_other": "{{count}} Einträge mit unsicheren oder zu langen Pfaden wurden ausgelassen.",
+    "unreadableSecrets": "Diese Pull-Secrets konnten nicht gelesen werden: {{names}}"
+  },
+  "tabs": {
+    "label": "Image",
+    "files": "Dateien",
+    "layers": "Schichten"
+  },
+  "tree": {
+    "label": "Dateien des Images",
+    "expand": "{{name}} aufklappen",
+    "collapse": "{{name}} zuklappen",
+    "truncated": "Nur die ersten {{count}} Einträge dieses Ordners werden aufgelistet.",
+    "empty": "Dieser Ordner ist leer.",
+    "loading": "Ordner wird gelesen…"
+  },
+  "search": {
+    "label": "Nach Pfad suchen",
+    "placeholder": "z. B. etc/nginx",
+    "clear": "Suche löschen",
+    "none": "Kein Pfad enthält diesen Text.",
+    "truncated": "Nur die ersten {{count}} Treffer werden angezeigt."
+  },
+  "file": {
+    "none": "Wählen Sie eine Datei oder einen Ordner.",
+    "path": "Pfad",
+    "kind": "Typ",
+    "size": "Größe",
+    "mode": "Modus",
+    "owner": "Eigentümer",
+    "modified": "Geändert",
+    "target": "Ziel",
+    "layer": "Schicht",
+    "layerNumber": "Schicht {{index}}",
+    "goToTarget": "Zum Ziel",
+    "targetOutside": "Der Link führt im Image nirgendwohin.",
+    "download": "Herunterladen",
+    "downloading": "Download: {{done}} von {{total}} der Schicht gelesen",
+    "downloaded": "Gespeichert.",
+    "reading": "Schicht der Datei wird gelesen: {{done}} von {{total}}",
+    "binary": "Diese Datei ist binär. Laden Sie sie herunter, um hineinzusehen.",
+    "truncated": "Nur das erste MiB der Datei wird angezeigt.",
+    "text": "Inhalt von {{name}}",
+    "saveTitle": "Datei aus dem Image speichern"
+  },
+  "kind": {
+    "file": "Datei",
+    "directory": "Ordner",
+    "symlink": "Symbolischer Link",
+    "hardlink": "Harter Link",
+    "other": "Spezialdatei"
+  },
+  "layers": {
+    "label": "Schichten des Images",
+    "index": "#",
+    "digest": "Digest",
+    "size": "Größe",
+    "files": "Dateien",
+    "createdBy": "Erstellt durch",
+    "cached": "Aus dem Cache"
+  }
+}

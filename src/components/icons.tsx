@@ -228,6 +228,12 @@ import {
   Vault as EsoVault,
   Waves as KafkaWaves,
 } from "lucide-react";
+import {
+  File as ImageFile,
+  FileSymlink as ImageFileSymlink,
+  Folder as ImageFolder,
+  FolderSearch as ImageFolderSearch,
+} from "lucide-react";
 
 const ICONS = {
   // Actions on resources and the glyphs they replace.
@@ -476,6 +482,11 @@ const ICONS = {
   prometheusRule: PromScrollText,
   prometheus: PromChartLine,
   alertmanager: PromBellRing,
+  // Image file viewer (#216): the page and the entries of an image's tree.
+  imageFiles: ImageFolderSearch,
+  imageFolder: ImageFolder,
+  imageFile: ImageFile,
+  imageSymlink: ImageFileSymlink,
 } satisfies Record<string, LucideIcon>;
 
 /** Name of an icon of the set. */

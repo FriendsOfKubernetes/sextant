@@ -190,7 +190,7 @@ describe("where the install is offered", () => {
     setup();
     kinds = [POD, APPLICATION];
     await connect();
-    act(() => openClusterSettings("aaaa"));
+    act(() => openClusterSettings("aaaa", "gitops"));
     const settings = await screen.findByRole("dialog", { name: /Cluster settings/ });
     expect(await within(settings).findByText("GitOps")).toBeInTheDocument();
     expect(await within(settings).findByText("Installed")).toBeInTheDocument();
@@ -225,7 +225,7 @@ describe("a tool that is partly installed", () => {
     setup({ gitops_install_status: partlyFlux });
     kinds = [POD, KUSTOMIZATION, APPLICATION];
     await connect();
-    act(() => openClusterSettings("aaaa"));
+    act(() => openClusterSettings("aaaa", "gitops"));
     const settings = await screen.findByRole("dialog", { name: /Cluster settings/ });
     expect(await within(settings).findByText("Partly installed")).toBeInTheDocument();
     expect(within(settings).getByText("Installed")).toBeInTheDocument();

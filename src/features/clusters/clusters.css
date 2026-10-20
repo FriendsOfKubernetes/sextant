@@ -387,6 +387,21 @@
   font-size: 0.75rem;
 }
 
+/* Tabs (#230): one width and a minimum height for every tab, so switching tabs does not resize the dialog. */
+.cluster-settings {
+  width: min(44rem, calc(100vw - 80px));
+}
+
+.cluster-settings__tabs .tabs__panel {
+  min-height: min(22rem, calc(100vh - 240px));
+  padding-top: 12px;
+}
+
+/* A section focused by a deep link: the tab panel's outline is enough. */
+.cluster-settings__section:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .cluster-settings__section + .cluster-settings__section {
   border-top: 1px solid var(--color-border);
   margin-top: 12px;

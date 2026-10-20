@@ -18,6 +18,7 @@ export const api = {
   about: commands.about,
   fonts: commands.fonts,
   files: commands.files,
+  imageFiles: commands.imageFiles,
   argocd: commands.argocd,
   gitopsInstall: commands.gitopsInstall,
   access: commands.access,

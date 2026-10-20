@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Разделы настроек кластера",
+  "tabs": {
+    "general": "Общие",
+    "connection": "Подключение",
+    "metrics": "Метрики",
+    "agentAccess": "Доступ ИИ-агентов",
+    "safeApply": "Предпросмотр изменений",
+    "gitops": "GitOps",
+    "more": "Еще"
+  },
+  "sections": {
+    "connection": "Сведения о подключении"
+  }
+}

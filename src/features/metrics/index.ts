@@ -17,6 +17,7 @@ registerDetailsSection({ id: "metrics", order: 50, appliesTo: metricsApplyTo, Co
 registerClusterSettingsSection({
   id: "metrics",
   order: 20,
+  tab: "metrics",
   titleKey: "metrics:settings.title",
   Component: MetricsSettingsSection,
 });

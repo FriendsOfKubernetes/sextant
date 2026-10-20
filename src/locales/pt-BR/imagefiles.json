@@ -1,0 +1,98 @@
+{
+  "sidebar": "Arquivos da imagem",
+  "title": "Arquivos da imagem",
+  "intro": "Navegue pelos arquivos de uma imagem de contêiner direto do registro dela: nada é executado em um contêiner e nada é baixado em um nó.",
+  "action": "Navegar pelos arquivos da imagem",
+  "form": {
+    "reference": "Referência da imagem",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Abrir",
+    "close": "Fechar imagem",
+    "podSource": "A imagem do contêiner {{container}} no Pod {{namespace}}/{{pod}}",
+    "openPod": "Abrir esta imagem",
+    "platform": "Plataforma",
+    "dockerCredentials": "Usar minhas credenciais do Docker para registros que os pull secrets não cobrem",
+    "dockerCredentialsHint": "Lê ~/.docker/config.json e executa os auxiliares de credenciais que ele indica. Desativado por padrão."
+  },
+  "progress": {
+    "resolving": "Procurando a imagem no registro…",
+    "cached": "Camada {{index}} de {{count}}: do cache",
+    "downloading": "Camada {{index}} de {{count}}: {{done}} de {{total}}",
+    "indexed": "Camada {{index}} de {{count}}: lida",
+    "stop": "Parar"
+  },
+  "summary": {
+    "label": "Imagem",
+    "digest": "Digest",
+    "platform": "Plataforma",
+    "credentials": "Credenciais",
+    "anonymous": "Anônimo",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Suas credenciais do Docker",
+    "files_one": "{{count}} arquivo na imagem",
+    "files_many": "{{count}} de arquivos na imagem",
+    "files_other": "{{count}} arquivos na imagem",
+    "skipped_one": "{{count}} entrada com caminho inseguro ou longo demais foi ignorada.",
+    "skipped_many": "{{count}} de entradas com caminhos inseguros ou longos demais foram ignoradas.",
+    "skipped_other": "{{count}} entradas com caminhos inseguros ou longos demais foram ignoradas.",
+    "unreadableSecrets": "Não foi possível ler estes pull secrets: {{names}}"
+  },
+  "tabs": {
+    "label": "Imagem",
+    "files": "Arquivos",
+    "layers": "Camadas"
+  },
+  "tree": {
+    "label": "Arquivos da imagem",
+    "expand": "Expandir {{name}}",
+    "collapse": "Recolher {{name}}",
+    "truncated": "Só as primeiras {{count}} entradas desta pasta são listadas.",
+    "empty": "Esta pasta está vazia.",
+    "loading": "Lendo a pasta…"
+  },
+  "search": {
+    "label": "Pesquisar por caminho",
+    "placeholder": "ex.: etc/nginx",
+    "clear": "Limpar a pesquisa",
+    "none": "Nenhum caminho contém este texto.",
+    "truncated": "Só as primeiras {{count}} correspondências são mostradas."
+  },
+  "file": {
+    "none": "Selecione um arquivo ou uma pasta.",
+    "path": "Caminho",
+    "kind": "Tipo",
+    "size": "Tamanho",
+    "mode": "Modo",
+    "owner": "Proprietário",
+    "modified": "Modificado",
+    "target": "Destino",
+    "layer": "Camada",
+    "layerNumber": "Camada {{index}}",
+    "goToTarget": "Ir para o destino",
+    "targetOutside": "O link não leva a lugar nenhum dentro da imagem.",
+    "download": "Baixar",
+    "downloading": "Baixando: {{done}} de {{total}} da camada lidos",
+    "downloaded": "Salvo.",
+    "reading": "Lendo a camada do arquivo: {{done}} de {{total}}",
+    "binary": "Este arquivo é binário. Baixe-o para ver o conteúdo.",
+    "truncated": "Só o primeiro MiB do arquivo é mostrado.",
+    "text": "Conteúdo de {{name}}",
+    "saveTitle": "Salvar o arquivo da imagem"
+  },
+  "kind": {
+    "file": "Arquivo",
+    "directory": "Pasta",
+    "symlink": "Link simbólico",
+    "hardlink": "Link físico",
+    "other": "Arquivo especial"
+  },
+  "layers": {
+    "label": "Camadas da imagem",
+    "index": "Nº",
+    "digest": "Digest",
+    "size": "Tamanho",
+    "files": "Arquivos",
+    "createdBy": "Criada por",
+    "cached": "Do cache"
+  }
+}

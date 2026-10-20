@@ -1,0 +1,94 @@
+{
+  "sidebar": "이미지 파일",
+  "title": "이미지 파일",
+  "intro": "컨테이너 이미지의 파일을 레지스트리에서 바로 살펴봅니다. 컨테이너에서는 아무것도 실행하지 않고 노드에는 아무것도 풀하지 않습니다.",
+  "action": "이미지 파일 살펴보기",
+  "form": {
+    "reference": "이미지 참조",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "열기",
+    "close": "이미지 닫기",
+    "podSource": "Pod {{namespace}}/{{pod}}의 컨테이너 {{container}} 이미지",
+    "openPod": "이 이미지 열기",
+    "platform": "플랫폼",
+    "dockerCredentials": "풀 시크릿이 다루지 않는 레지스트리에는 내 Docker 자격 증명 사용",
+    "dockerCredentialsHint": "~/.docker/config.json을 읽고 거기에 지정된 자격 증명 도우미를 실행합니다. 기본값은 꺼짐입니다."
+  },
+  "progress": {
+    "resolving": "레지스트리에서 이미지를 찾는 중…",
+    "cached": "레이어 {{index}}/{{count}}: 캐시에서",
+    "downloading": "레이어 {{index}}/{{count}}: {{done}} / {{total}}",
+    "indexed": "레이어 {{index}}/{{count}}: 읽음",
+    "stop": "중지"
+  },
+  "summary": {
+    "label": "이미지",
+    "digest": "다이제스트",
+    "platform": "플랫폼",
+    "credentials": "자격 증명",
+    "anonymous": "익명",
+    "pullSecret": "풀 시크릿 {{name}}",
+    "dockerConfig": "내 Docker 자격 증명",
+    "files_other": "이미지의 파일 {{count}}개",
+    "skipped_other": "안전하지 않거나 너무 긴 경로의 항목 {{count}}개를 제외했습니다.",
+    "unreadableSecrets": "다음 풀 시크릿을 읽을 수 없습니다: {{names}}"
+  },
+  "tabs": {
+    "label": "이미지",
+    "files": "파일",
+    "layers": "레이어"
+  },
+  "tree": {
+    "label": "이미지의 파일",
+    "expand": "{{name}} 펼치기",
+    "collapse": "{{name}} 접기",
+    "truncated": "이 폴더의 처음 {{count}}개 항목만 표시합니다.",
+    "empty": "이 폴더는 비어 있습니다.",
+    "loading": "폴더를 읽는 중…"
+  },
+  "search": {
+    "label": "경로로 검색",
+    "placeholder": "예: etc/nginx",
+    "clear": "검색 지우기",
+    "none": "이 텍스트를 포함한 경로가 없습니다.",
+    "truncated": "처음 {{count}}개 일치 항목만 표시합니다."
+  },
+  "file": {
+    "none": "파일이나 폴더를 선택하세요.",
+    "path": "경로",
+    "kind": "유형",
+    "size": "크기",
+    "mode": "모드",
+    "owner": "소유자",
+    "modified": "수정 시각",
+    "target": "대상",
+    "layer": "레이어",
+    "layerNumber": "레이어 {{index}}",
+    "goToTarget": "대상으로 이동",
+    "targetOutside": "이 링크는 이미지 안의 어디로도 이어지지 않습니다.",
+    "download": "다운로드",
+    "downloading": "다운로드 중: 레이어의 {{done}} / {{total}} 읽음",
+    "downloaded": "저장했습니다.",
+    "reading": "파일이 있는 레이어를 읽는 중: {{done}} / {{total}}",
+    "binary": "바이너리 파일입니다. 내용을 보려면 다운로드하세요.",
+    "truncated": "파일의 처음 1 MiB만 표시합니다.",
+    "text": "{{name}}의 내용",
+    "saveTitle": "이미지에서 파일 저장"
+  },
+  "kind": {
+    "file": "파일",
+    "directory": "폴더",
+    "symlink": "심볼릭 링크",
+    "hardlink": "하드 링크",
+    "other": "특수 파일"
+  },
+  "layers": {
+    "label": "이미지의 레이어",
+    "index": "#",
+    "digest": "다이제스트",
+    "size": "크기",
+    "files": "파일",
+    "createdBy": "생성 명령",
+    "cached": "캐시에서"
+  }
+}

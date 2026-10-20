@@ -43,6 +43,7 @@ import { gapTarget, moveCluster, orderClusters, stepTarget, type MoveStep } from
 import { useRailDrag } from "./railDrag";
 import { openContextEdit } from "./kubeconfig/apply";
 import { ContextEditDialog } from "./kubeconfig/ContextEditDialog";
+import { KubeconfigViewDialog, openKubeconfigView } from "./kubeconfig/ViewKubeconfig";
 import { ExpiryBadge, useCredentialRefresh } from "./kubeconfig/ExpiryBadge";
 import { MergeDialog } from "./kubeconfig/MergeDialog";
 import { sourceKindLabelKey } from "./sources";
@@ -239,6 +240,7 @@ export function ClusterList() {
       <SourceProblemsDialog open={problemsOpen} sources={broken} onClose={() => setProblemsOpen(false)} />
       <ClusterSettingsDialog />
       <ContextEditDialog />
+      <KubeconfigViewDialog />
       <MergeDialog />
     </div>
   );
@@ -420,6 +422,11 @@ function ClusterMenu({
         </>
       )}
       <li role="separator" className="cluster-menu__separator" />
+      <li role="none">
+        <button type="button" role="menuitem" onClick={run(() => openKubeconfigView(menu.cluster))}>
+          {t("kubeconfigview:menu.view")}
+        </button>
+      </li>
       <li role="none">
         <button type="button" role="menuitem" onClick={run(() => openContextEdit("rename", menu.cluster))}>
           {t("kubeconfig:menu.rename")}

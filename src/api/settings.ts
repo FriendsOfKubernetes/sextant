@@ -59,6 +59,7 @@ export function defaultAppSettings(): AppSettings {
     clusterOrder: [],
     practices: { disabledChecks: [], excludedNamespaces: ["kube-system", "kube-public", "kube-node-lease"] },
     customColumns: [],
+    imageFiles: { dockerCredentials: false },
   };
 }
 

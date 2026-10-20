@@ -1,0 +1,98 @@
+{
+  "sidebar": "File dell’immagine",
+  "title": "File dell’immagine",
+  "intro": "Sfoglia i file di un’immagine di container direttamente dal suo registro: niente viene eseguito in un container e niente viene scaricato su un nodo.",
+  "action": "Sfoglia i file dell’immagine",
+  "form": {
+    "reference": "Riferimento dell’immagine",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "Apri",
+    "close": "Chiudi immagine",
+    "podSource": "L’immagine del container {{container}} nel Pod {{namespace}}/{{pod}}",
+    "openPod": "Apri questa immagine",
+    "platform": "Piattaforma",
+    "dockerCredentials": "Usa le mie credenziali Docker per i registri non coperti dai pull secret",
+    "dockerCredentialsHint": "Legge ~/.docker/config.json ed esegue gli helper delle credenziali che indica. Disattivato per impostazione predefinita."
+  },
+  "progress": {
+    "resolving": "Ricerca dell’immagine nel suo registro…",
+    "cached": "Livello {{index}} di {{count}}: dalla cache",
+    "downloading": "Livello {{index}} di {{count}}: {{done}} di {{total}}",
+    "indexed": "Livello {{index}} di {{count}}: letto",
+    "stop": "Interrompi"
+  },
+  "summary": {
+    "label": "Immagine",
+    "digest": "Digest",
+    "platform": "Piattaforma",
+    "credentials": "Credenziali",
+    "anonymous": "Anonimo",
+    "pullSecret": "Pull secret {{name}}",
+    "dockerConfig": "Le tue credenziali Docker",
+    "files_one": "{{count}} file nell’immagine",
+    "files_many": "{{count}} di file nell’immagine",
+    "files_other": "{{count}} file nell’immagine",
+    "skipped_one": "{{count}} voce con un percorso non sicuro o troppo lungo è stata esclusa.",
+    "skipped_many": "{{count}} di voci con percorsi non sicuri o troppo lunghi sono state escluse.",
+    "skipped_other": "{{count}} voci con percorsi non sicuri o troppo lunghi sono state escluse.",
+    "unreadableSecrets": "Impossibile leggere questi pull secret: {{names}}"
+  },
+  "tabs": {
+    "label": "Immagine",
+    "files": "File",
+    "layers": "Livelli"
+  },
+  "tree": {
+    "label": "File dell’immagine",
+    "expand": "Espandi {{name}}",
+    "collapse": "Comprimi {{name}}",
+    "truncated": "Sono elencate solo le prime {{count}} voci di questa cartella.",
+    "empty": "Questa cartella è vuota.",
+    "loading": "Lettura della cartella…"
+  },
+  "search": {
+    "label": "Cerca per percorso",
+    "placeholder": "ad es. etc/nginx",
+    "clear": "Cancella la ricerca",
+    "none": "Nessun percorso contiene questo testo.",
+    "truncated": "Sono mostrate solo le prime {{count}} corrispondenze."
+  },
+  "file": {
+    "none": "Seleziona un file o una cartella.",
+    "path": "Percorso",
+    "kind": "Tipo",
+    "size": "Dimensione",
+    "mode": "Modalità",
+    "owner": "Proprietario",
+    "modified": "Modificato",
+    "target": "Destinazione",
+    "layer": "Livello",
+    "layerNumber": "Livello {{index}}",
+    "goToTarget": "Vai alla destinazione",
+    "targetOutside": "Il collegamento non porta da nessuna parte nell’immagine.",
+    "download": "Scarica",
+    "downloading": "Download: letti {{done}} di {{total}} del livello",
+    "downloaded": "Salvato.",
+    "reading": "Lettura del livello del file: {{done}} di {{total}}",
+    "binary": "Questo file è binario. Scaricalo per vederne il contenuto.",
+    "truncated": "Viene mostrato solo il primo MiB del file.",
+    "text": "Contenuto di {{name}}",
+    "saveTitle": "Salva il file dall’immagine"
+  },
+  "kind": {
+    "file": "File",
+    "directory": "Cartella",
+    "symlink": "Collegamento simbolico",
+    "hardlink": "Collegamento fisico",
+    "other": "File speciale"
+  },
+  "layers": {
+    "label": "Livelli dell’immagine",
+    "index": "N.",
+    "digest": "Digest",
+    "size": "Dimensione",
+    "files": "File",
+    "createdBy": "Creato da",
+    "cached": "Dalla cache"
+  }
+}

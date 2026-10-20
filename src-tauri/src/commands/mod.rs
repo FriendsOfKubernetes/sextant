@@ -14,6 +14,7 @@ pub mod files;
 pub mod fonts;
 pub mod gitops_install;
 pub mod helm;
+pub mod image_files;
 pub mod kubeconfig;
 pub mod logs;
 pub mod mcp;

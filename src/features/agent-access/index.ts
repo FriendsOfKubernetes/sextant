@@ -6,6 +6,7 @@ import { AgentAccessSection } from "./AgentAccessSection";
 registerClusterSettingsSection({
   id: "agentAccess",
   order: 30,
+  tab: "agentAccess",
   titleKey: "access:title",
   Component: AgentAccessSection,
 });

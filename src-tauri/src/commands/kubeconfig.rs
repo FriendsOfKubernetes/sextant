@@ -143,6 +143,66 @@ pub async fn kubeconfig_check_connection(
     sextant_core::cluster::check_connection(kubeconfig).await
 }
 
+/// The kubeconfig of one cluster (#228) as YAML, every credential `<hidden>` — what the viewer shows.
+#[tauri::command]
+pub async fn kubeconfig_view(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+) -> Result<String, CoreError> {
+    view(&state, cluster_id).await
+}
+
+pub async fn view(state: &AppState, cluster_id: ClusterId) -> Result<String, CoreError> {
+    let registry = Arc::clone(&state.registry);
+    blocking(move || read(&registry).view_kubeconfig(&cluster_id)).await
+}
+
+/// Puts the kubeconfig of one cluster on the clipboard (#228): with `with_credentials` the full working one (the
+/// window asked the user first), otherwise what the viewer shows. Written from Rust, so the credentials never cross
+/// into the window; as a secret, so clipboard managers that honour the hint keep it out of their history. Returns
+/// nothing; an error never carries the text.
+#[tauri::command]
+pub async fn kubeconfig_copy<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+    with_credentials: bool,
+) -> Result<(), CoreError> {
+    let text = copy_text(&state, cluster_id, with_credentials).await?;
+    use tauri::Manager;
+    let clipboard = app
+        .try_state::<tauri_plugin_clipboard_manager::Clipboard<R>>()
+        .ok_or_else(clipboard_failed)?;
+    let written = if with_credentials {
+        clipboard.write_secret(text)
+    } else {
+        clipboard.write_text(text)
+    };
+    written.map_err(|_| clipboard_failed())
+}
+
+/// The text `kubeconfig_copy` writes: full or masked.
+async fn copy_text(
+    state: &AppState,
+    cluster_id: ClusterId,
+    with_credentials: bool,
+) -> Result<String, CoreError> {
+    let registry = Arc::clone(&state.registry);
+    blocking(move || {
+        let registry = read(&registry);
+        if with_credentials {
+            registry.full_kubeconfig(&cluster_id)
+        } else {
+            registry.view_kubeconfig(&cluster_id)
+        }
+    })
+    .await
+}
+
+fn clipboard_failed() -> CoreError {
+    CoreError::other("the clipboard cannot be written")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -273,5 +333,49 @@ mod tests {
                 || m.contains("credential")),
             "{methods:?}"
         );
+        // Nor the clipboard the kubeconfig copy writes (#228).
+        assert!(!tools.iter().any(|t| t.contains("clipboard")), "{tools:?}");
+        assert!(
+            !methods.iter().any(|m| m.contains("clipboard")),
+            "{methods:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_view_hides_the_token_and_only_the_copy_with_credentials_holds_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = AppState::new(&dir.path().join("config"), &dir.path().join("data"));
+        state
+            .registry
+            .write()
+            .unwrap()
+            .set_env(sextant_core::kubeconfig::KubeconfigEnv {
+                kubeconfig: None,
+                home: Some(dir.path().join("home")),
+            });
+        state
+            .registry
+            .write()
+            .unwrap()
+            .add_pasted(&kubeconfig())
+            .unwrap();
+        let id = state.registry.read().unwrap().clusters().unwrap()[0]
+            .id
+            .clone();
+        let shown = view(&state, id.clone()).await.unwrap();
+        assert!(shown.contains("<hidden>") && shown.contains("current-context: prod"));
+        assert!(!shown.contains(FAKE_TOKEN), "{shown}");
+        assert_eq!(copy_text(&state, id.clone(), false).await.unwrap(), shown);
+        assert!(
+            copy_text(&state, id, true)
+                .await
+                .unwrap()
+                .contains(FAKE_TOKEN)
+        );
+        let missing = ClusterId("gone".to_owned());
+        let err = view(&state, missing.clone()).await.unwrap_err();
+        assert_eq!(err.code, sextant_core::ErrorCode::NotFound);
+        let err = copy_text(&state, missing, true).await.unwrap_err();
+        assert!(!format!("{err:?}").contains(FAKE_TOKEN));
     }
 }

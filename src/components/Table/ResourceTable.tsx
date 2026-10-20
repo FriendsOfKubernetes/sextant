@@ -692,6 +692,14 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
                     openMenu(obj, pointRect(rect.left + 32, rect.bottom));
+                  } else if (isCopyKey(e) && !window.getSelection()?.toString()) {
+                    // Ctrl+C / ⌘C: "Copy namespace/name" of the row, or of every selected row when it is one of them.
+                    const objects = rowSelection[uidOf(obj)] && selected.length > 1 ? selected : [obj];
+                    const copy = getActionsFor(objects, kind, actionIds).find((a) => COPY_ACTIONS.has(a.id));
+                    if (copy) {
+                      e.preventDefault();
+                      void runAction(copy, clusterId, kind, objects);
+                    }
                   }
                 }}
                 onContextMenu={(e) => {
@@ -834,6 +842,14 @@ export function rowKeyTarget(key: string, from: number, last: number, page: numb
     default:
       return null;
   }
+}
+
+/** The actions Ctrl+C / ⌘C on a row runs (features/copy-name), whichever applies to the kind. */
+const COPY_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>(["copyNamespacedName", "copyName"]);
+
+/** Ctrl+C, or ⌘C on macOS, without other modifiers (Ctrl+Shift+C stays the terminal's). */
+export function isCopyKey(e: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">): boolean {
+  return (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "c";
 }
 
 function formatValue(value: ReturnType<ColumnDef["value"]>): string {

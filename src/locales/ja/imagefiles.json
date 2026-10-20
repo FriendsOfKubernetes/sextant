@@ -1,0 +1,94 @@
+{
+  "sidebar": "イメージのファイル",
+  "title": "イメージのファイル",
+  "intro": "コンテナイメージのファイルをレジストリから直接参照します。コンテナ内では何も実行せず、ノードには何もプルしません。",
+  "action": "イメージのファイルを参照",
+  "form": {
+    "reference": "イメージ参照",
+    "placeholder": "registry.example.com/team/app:1.0",
+    "open": "開く",
+    "close": "イメージを閉じる",
+    "podSource": "Pod {{namespace}}/{{pod}} のコンテナ {{container}} のイメージ",
+    "openPod": "このイメージを開く",
+    "platform": "プラットフォーム",
+    "dockerCredentials": "プルシークレットで扱えないレジストリには自分の Docker 認証情報を使う",
+    "dockerCredentialsHint": "~/.docker/config.json を読み込み、そこで指定された認証情報ヘルパーを実行します。既定ではオフです。"
+  },
+  "progress": {
+    "resolving": "レジストリでイメージを探しています…",
+    "cached": "レイヤー {{index}}/{{count}}：キャッシュから",
+    "downloading": "レイヤー {{index}}/{{count}}：{{done}} / {{total}}",
+    "indexed": "レイヤー {{index}}/{{count}}：読み込み済み",
+    "stop": "停止"
+  },
+  "summary": {
+    "label": "イメージ",
+    "digest": "ダイジェスト",
+    "platform": "プラットフォーム",
+    "credentials": "認証情報",
+    "anonymous": "匿名",
+    "pullSecret": "プルシークレット {{name}}",
+    "dockerConfig": "あなたの Docker 認証情報",
+    "files_other": "イメージ内のファイル {{count}} 個",
+    "skipped_other": "安全でないパスまたは長すぎるパスのエントリ {{count}} 個を除外しました。",
+    "unreadableSecrets": "次のプルシークレットを読み込めませんでした：{{names}}"
+  },
+  "tabs": {
+    "label": "イメージ",
+    "files": "ファイル",
+    "layers": "レイヤー"
+  },
+  "tree": {
+    "label": "イメージのファイル",
+    "expand": "{{name}} を展開",
+    "collapse": "{{name}} を折りたたむ",
+    "truncated": "このフォルダーの最初の {{count}} 件のみ表示しています。",
+    "empty": "このフォルダーは空です。",
+    "loading": "フォルダーを読み込んでいます…"
+  },
+  "search": {
+    "label": "パスで検索",
+    "placeholder": "例: etc/nginx",
+    "clear": "検索をクリア",
+    "none": "このテキストを含むパスはありません。",
+    "truncated": "最初の {{count}} 件の一致のみ表示しています。"
+  },
+  "file": {
+    "none": "ファイルまたはフォルダーを選択してください。",
+    "path": "パス",
+    "kind": "種類",
+    "size": "サイズ",
+    "mode": "モード",
+    "owner": "所有者",
+    "modified": "更新日時",
+    "target": "リンク先",
+    "layer": "レイヤー",
+    "layerNumber": "レイヤー {{index}}",
+    "goToTarget": "リンク先へ移動",
+    "targetOutside": "このリンクはイメージ内のどこも指していません。",
+    "download": "ダウンロード",
+    "downloading": "ダウンロード中：レイヤーの {{done}} / {{total}} を読み込み済み",
+    "downloaded": "保存しました。",
+    "reading": "ファイルのレイヤーを読み込んでいます：{{done}} / {{total}}",
+    "binary": "このファイルはバイナリです。中身を見るにはダウンロードしてください。",
+    "truncated": "ファイルの先頭 1 MiB のみ表示しています。",
+    "text": "{{name}} の内容",
+    "saveTitle": "イメージからファイルを保存"
+  },
+  "kind": {
+    "file": "ファイル",
+    "directory": "フォルダー",
+    "symlink": "シンボリックリンク",
+    "hardlink": "ハードリンク",
+    "other": "特殊ファイル"
+  },
+  "layers": {
+    "label": "イメージのレイヤー",
+    "index": "#",
+    "digest": "ダイジェスト",
+    "size": "サイズ",
+    "files": "ファイル",
+    "createdBy": "作成コマンド",
+    "cached": "キャッシュから"
+  }
+}

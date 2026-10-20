@@ -40,7 +40,7 @@ function Missing({ clusterId, graph }: { clusterId: ClusterId; graph: TrafficGra
   const { t } = useTranslation();
   const open = (e: MouseEvent) => {
     e.stopPropagation();
-    openClusterSettings(clusterId);
+    openClusterSettings(clusterId, "metrics");
   };
   if (!graph.prometheus && graph.sources.length === 0)
     return (

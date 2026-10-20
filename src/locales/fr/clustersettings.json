@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Sections des paramètres du cluster",
+  "tabs": {
+    "general": "Général",
+    "connection": "Connexion",
+    "metrics": "Métriques",
+    "agentAccess": "Accès des agents IA",
+    "safeApply": "Aperçu des modifications",
+    "gitops": "GitOps",
+    "more": "Plus"
+  },
+  "sections": {
+    "connection": "Détails de la connexion"
+  }
+}

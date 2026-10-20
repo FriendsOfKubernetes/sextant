@@ -1,0 +1,8 @@
+{
+  "action": "Namespace/adı kopyala",
+  "actionClusterScoped": "Adı kopyala",
+  "copied": "Kopyalandı: {{name}}",
+  "copiedMany_one": "{{count}} ad kopyalandı, her satırda bir tane",
+  "copiedMany_other": "{{count}} ad kopyalandı, her satırda bir tane",
+  "failed": "Panoya kopyalanamadı"
+}

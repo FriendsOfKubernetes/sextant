@@ -1,0 +1,15 @@
+{
+  "tabsLabel": "Розділи налаштувань кластера",
+  "tabs": {
+    "general": "Загальні",
+    "connection": "Підключення",
+    "metrics": "Метрики",
+    "agentAccess": "Доступ ШІ-агентів",
+    "safeApply": "Попередній перегляд змін",
+    "gitops": "GitOps",
+    "more": "Ще"
+  },
+  "sections": {
+    "connection": "Відомості про підключення"
+  }
+}

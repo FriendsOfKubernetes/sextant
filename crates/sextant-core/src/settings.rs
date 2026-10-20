@@ -229,6 +229,16 @@ pub struct TimelineSettings {
     pub persist: bool,
 }
 
+/// The image file viewer (#216, ADR-0103). Written by the frontend.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(default, rename_all = "camelCase")]
+#[ts(export)]
+pub struct ImageFilesSettings {
+    /// Use the user's Docker credentials (`~/.docker/config.json`, running the credential helpers it names) for
+    /// registries the pull secrets do not cover. Off by default.
+    pub docker_credentials: bool,
+}
+
 /// The "Cleanup" page (#147). Written by the frontend, which keeps the always-skipped system namespaces
 /// (`kube-system`, `kube-public`, `kube-node-lease`) out of this list and applies its own bounds to the ages.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -466,6 +476,8 @@ pub struct AppSettings {
     #[serde(with = "custom_columns::custom_columns_field")]
     #[ts(as = "Vec<CustomColumn>")]
     pub custom_columns: Vec<CustomColumn>,
+    /// The image file viewer (#216): whether the user's Docker credentials may be used. Written by the frontend.
+    pub image_files: ImageFilesSettings,
 }
 
 impl Default for AppSettings {
@@ -502,6 +514,7 @@ impl Default for AppSettings {
             cluster_order: Vec::new(),
             practices: PracticesSettings::default(),
             custom_columns: Vec::new(),
+            image_files: ImageFilesSettings::default(),
         }
     }
 }

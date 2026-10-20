@@ -42,7 +42,7 @@ function SettingsLink({ clusterId }: { clusterId: ClusterId }) {
   const { t } = useTranslation();
   const open = (e: MouseEvent) => {
     e.stopPropagation();
-    openClusterSettings(clusterId);
+    openClusterSettings(clusterId, "metrics");
   };
   return (
     <button type="button" className="mx-link" onClick={open}>
