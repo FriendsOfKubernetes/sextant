@@ -80,14 +80,15 @@ The installers are not code-signed, so macOS and Windows warn on first start —
 update themselves; `.deb`, `.rpm` and the portable `.zip` (Scoop's: `scoop update sextant`) are updated with your
 package manager, and the app tells which when a new version is out.
 
-Package managers (coming soon):
+Package managers:
 
 ```sh
 brew install --cask friendsofkubernetes/sextant/sextant                 # macOS, Homebrew
 scoop bucket add sextant https://github.com/FriendsOfKubernetes/sextant-scoop
 scoop install sextant/sextant                                           # Windows, Scoop
-winget install FriendsOfKubernetes.Sextant                              # Windows, winget
 ```
+
+winget (`winget install FriendsOfKubernetes.Sextant`) is coming soon.
 
 ## Documentation
 
@@ -139,7 +140,7 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.16](https://github.com/FriendsOfKubernetes/sextant/milestone/19) | Faster diagnosis *(released)* | Best-practice checks (probes, `:latest`, single replicas, PDBs, requests and limits), why a Service or Ingress gets no traffic, Helm revision diff and newer chart versions, read-only diagnostic tools for AI agents |
 | [0.17](https://github.com/FriendsOfKubernetes/sextant/milestone/20) | Live traffic *(released)* | A live graph of requests between services (Hubble, Istio, Linkerd, Beyla), request rate, errors, latency and CPU throttling per workload |
 | [0.18](https://github.com/FriendsOfKubernetes/sextant/milestone/21) | Ecosystem *(released)* | Views for Argo Rollouts, Argo Workflows, Knative, Crossplane, Kyverno, External Secrets, CloudNativePG, Strimzi and Prometheus Operator, custom columns, a Set image action |
-| [0.19](https://github.com/FriendsOfKubernetes/sextant/milestone/22) | Inside images, more installers | Browsing an image's files straight from the registry (no exec, no pull), Homebrew, Scoop, winget, rpm and Linux arm64 |
+| [0.19](https://github.com/FriendsOfKubernetes/sextant/milestone/22) | Inside images, more installers *(released)* | Browsing an image's files straight from the registry (no exec, no pull), Homebrew, Scoop, winget, rpm and Linux arm64 |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
 a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
