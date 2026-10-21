@@ -1,0 +1,28 @@
+# ADR-0107: Contour views read Contour's own status, follow includes through one shared proxy watch, and diagnose proxies as a registered route kind
+
+## Context
+
+#233 asked for Contour (projectcontour.io) in the style of the other CRD projects (ADR-0097, 0100, 0101): HTTPProxy with its includes (the delegation tree, root against included, valid / invalid / orphaned), routes, conditions, services with weights, TLS with TLSCertificateDelegation, ExtensionService and the policies attached to a proxy; a traffic diagnosis that follows a proxy to Services and pods (#208); invalid and orphaned proxies as problems. Contour's semantics are in its processor (`internal/dag/httpproxy_processor.go`, read for this decision), not in the objects alone: which proxies are roots depends on a flag Sextant cannot see, and a proxy's routes are served under a host its root decides.
+
+## Decision
+
+- **Read-only, frontend only.** `src/features/contour/` adds no Rust command; HTTPProxy, TLSCertificateDelegation (`projectcontour.io/v1`) and ExtensionService (`v1alpha1`) offer the generic Edit and Delete only, in a discovered sidebar section `contour` shown only for the kinds the cluster serves.
+- **State is what Contour wrote.** `status.currentStatus` (`valid`, `invalid`, `orphaned`; the CRD's default `NotReconciled` means no Contour has processed the proxy) and the `Valid` DetailedCondition with its `errors` and `warnings` sub-conditions. The status column shows the state in Contour's words, coloured as ready / failed / progressing; the details explain it (a few reasons — DuplicateVhost, RootProxyNotAllowedInNamespace, IncludeCreatesCycle, DelegationNotPermitted… — in words of their own) and list every error and warning. Sextant does not re-validate a proxy.
+- **Partly served.** After `ServiceUnresolvedReference`, `IncludeNotFound`, `RootIncludesRoot`, `DuplicateMatchConditions` or `PathMatchConditionsNotValid` (on an include) Contour still serves the rest of the proxy (502 / 503 for the failed part); any other error drops the virtual host or every route of the proxy. The details and the diagnosis say "in part" for the first group (the diagnosis warns and goes on) and "rejected" otherwise (the diagnosis stops).
+- **Weights and mirrors as Contour programs Envoy.** No weight on any service of a route: an equal split; some weights: a service without one gets nothing; a mirror takes no share and copies the percent its weight says (none or 0: 100). Services are always looked up in the proxy's own namespace.
+- **Root namespaces are unknown.** Contour's `--root-namespaces` is not visible to Sextant; a root outside them is told only by Contour's `RootNamespaceError`, and the words say the flag exists. The same for `enableExternalNameService`: an ExternalName Service is a warning, not a verdict.
+- **The delegation tree** (root: everything it includes, with the path prefixes concatenated from the root down; included proxy: the roots that reach it, only the branches leading to it, then everything under it; a missing include, a root included and a cycle marked) reads compact rows of every HTTPProxy through a row tap on the problems store's cluster-wide HTTPProxy watch (the source of the `contour` category, capped at 5000), so the details open no second watch of the kind; at most 200 nodes and 5 roots are drawn. The TLSCertificateDelegation that allows a delegated Secret (`namespace/name` in `secretName`) is looked up in the Secret's namespace only, through the shared watches.
+- **Diagnosis** (`src/features/diagnose/contour.ts`) is registered through the route-kind registry (`routeKinds.ts`): Contour's state first, then for a root the host and the address Contour reports, the delegation and the certificate (`tls_certificate_info`, as for an Ingress); then a chain per service of each route (share above 0 or a mirror, the Service exists in the proxy's namespace, then the Service's own checks) and per include (exists, not a root, no cycle, its own state, routes and includes, at most 3 levels down, at most 30 services). The HTTPProxy lists read are the proxy's namespace and its direct includes' namespaces (at most 4 namespaces, as every diagnosis); an include in a namespace not listed is "unknown", never "fine".
+- **Problems: category `contour`** (on by default): an invalid proxy (named by Contour's first error) and an orphaned one, after a 2-minute grace (a proxy and the include naming it are often applied a moment apart); a proxy not processed yet is no problem (no Contour may be meant to serve it). The category is in `NEVER_FOR_AGENTS`; the diagnosis is not offered to agents (their view has no project lists, and `diagnose_service` never resolves an HTTPProxy); extensions get nothing new.
+
+## Why
+
+- Re-deriving validity from the spec was rejected: Contour knows its flags, its other proxies and its Secrets; repeating its checks would disagree with it in exactly the cases a user needs explained.
+- A watch of all HTTPProxies per details panel was rejected: the problems source already watches them for the category, and a row tap keeps a few strings per proxy.
+- Following includes into every namespace was rejected for the bound on watched namespaces; the tree (from the shared watch) shows the whole delegation, the diagnosis the path's Services.
+
+## Consequences
+
+- With the `contour` category's watch failing (no permission to list HTTPProxies cluster-wide), the tree says it is not known; the rest of the details still work.
+- A cluster with more than 5000 HTTPProxies gets a tree that may be incomplete, and it says so.
+- Contour fields added later (new policies) appear in the details only once added to the field lists in `model.ts`.

@@ -3,4 +3,4 @@
 /**
  * The protocol of an edge, where the source tells.
  */
-export type TrafficProtocol = "http" | "grpc" | "tcp" | "unknown";
+export type TrafficProtocol = "http" | "grpc" | "tcp" | "tcpBytes" | "unknown";

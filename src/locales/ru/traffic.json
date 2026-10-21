@@ -43,7 +43,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "протокол не указан"
+    "unknown": "протокол не указан",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Ошибок меньше 1%",
@@ -87,7 +88,8 @@
     "noVerdict": "для TCP нет оценки",
     "class": "{{class}} {{value}}/с",
     "noClasses": "HTTP-статус не сообщается",
-    "notRead": "не удалось прочитать"
+    "notRead": "не удалось прочитать",
+    "bytes": "{{value}}/с"
   },
   "open": "Открыть {{name}}",
   "openRequests": "Запросы {{name}}",
@@ -135,8 +137,10 @@
   "noSource": "В Prometheus нет метрик, которые называют оба конца вызова: ни Istio, ни Linkerd, ни граф сервисов Grafana Beyla, ни Cilium Hubble в него не пишут.",
   "requestOnly": "Запросы по рабочим нагрузкам, но без того, кто их отправил, приходят от {{sources}}: смотрите раздел «Запросы» каждой нагрузки.",
   "wouldProvide": "Граф дал бы любой из них: mesh Istio, mesh Linkerd с linkerd-viz (или Prometheus, который собирает метрики его прокси), Grafana Beyla с включёнными метриками графа сервисов или Cilium Hubble с HTTP-метриками, у которых labelsContext называет рабочие нагрузки источника и назначения.",
+  "wouldProvideTcp": "Caretta показала бы TCP-соединения между рабочими нагрузками в байтах в секунду.",
   "noEdges": {
     "minutes5": "{{sources}}: за последние 5 минут нет вызовов с концом в этих namespace.",
     "hour1": "{{sources}}: за последний час нет вызовов с концом в этих namespace."
-  }
+  },
+  "bytesNote": "Caretta видит только TCP-соединения: её линии показывают байты в секунду в обе стороны, без запросов, ошибок и задержки."
 }

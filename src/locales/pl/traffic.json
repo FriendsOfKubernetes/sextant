@@ -43,7 +43,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "protokół nieznany"
+    "unknown": "protokół nieznany",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Błędy poniżej 1%",
@@ -87,7 +88,8 @@
     "noVerdict": "brak oceny dla TCP",
     "class": "{{class}} {{value}}/s",
     "noClasses": "brak statusu HTTP",
-    "notRead": "nie udało się odczytać"
+    "notRead": "nie udało się odczytać",
+    "bytes": "{{value}}/s"
   },
   "open": "Otwórz {{name}}",
   "openRequests": "Żądania {{name}}",
@@ -135,8 +137,10 @@
   "noSource": "Prometheus nie ma metryk nazywających oba końce wywołania: nie zapisuje do niego ani Istio, ani Linkerd, ani graf usług Grafana Beyla, ani Cilium Hubble.",
   "requestOnly": "Żądania według obciążeń, ale bez nadawcy, pochodzą z: {{sources}}. Zobacz sekcję „Żądania” każdego obciążenia.",
   "wouldProvide": "Graf zapewni dowolne z nich: siatka Istio, siatka Linkerd z linkerd-viz (lub Prometheus zbierający metryki jego proxy), Grafana Beyla z włączonymi metrykami grafu usług albo Cilium Hubble z metrykami HTTP, których labelsContext nazywa obciążenia źródła i celu.",
+  "wouldProvideTcp": "Caretta pokazałaby połączenia TCP między obciążeniami w bajtach na sekundę.",
   "noEdges": {
     "minutes5": "{{sources}}: brak wywołań z końcem w tych namespace w ostatnich 5 minutach.",
     "hour1": "{{sources}}: brak wywołań z końcem w tych namespace w ostatniej godzinie."
-  }
+  },
+  "bytesNote": "Caretta widzi tylko połączenia TCP: jej linie pokazują bajty na sekundę w obu kierunkach, bez żądań, błędów i opóźnień."
 }

@@ -182,7 +182,7 @@ fn verdict_word(word: &str) -> String {
 
 /// The problem categories of the problems screen, in its order (`PROBLEM_CATEGORIES` in
 /// `src/features/problems/model.ts`; a test keeps them equal).
-pub const PROBLEM_CATEGORIES: [&str; 24] = [
+pub const PROBLEM_CATEGORIES: &[&str] = &[
     "nodes",
     "pods",
     "workloads",
@@ -195,6 +195,8 @@ pub const PROBLEM_CATEGORIES: [&str; 24] = [
     "workflows",
     "gateway",
     "mesh",
+    "traefik",
+    "contour",
     "knative",
     "crossplane",
     "policies",
@@ -221,10 +223,14 @@ pub const OPT_IN_CATEGORIES: [&str; 6] = [
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
 /// So are External Secrets, CloudNativePG, Strimzi and Prometheus Operator problems (#213).
 /// And Argo Rollouts and Argo Workflows problems (#213, ADR-0097).
-pub const NEVER_FOR_AGENTS: [&str; 10] = [
+pub const NEVER_FOR_AGENTS: &[&str] = &[
     "rollouts",
     "workflows",
     "credentials",
+    // Traefik references (#232): a window view of 0.20.0.
+    "traefik",
+    // Contour proxies (#233): a window view of 0.20.0.
+    "contour",
     "knative",
     "crossplane",
     "policies",

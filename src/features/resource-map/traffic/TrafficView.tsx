@@ -52,6 +52,7 @@ function Missing({ clusterId, graph }: { clusterId: ClusterId; graph: TrafficGra
           </button>
         </p>
         <p className="traffic-note">{t("traffic:wouldProvide")}</p>
+        <p className="traffic-note">{t("traffic:wouldProvideTcp")}</p>
       </div>
     );
   if (graph.sources.length === 0)
@@ -62,6 +63,7 @@ function Missing({ clusterId, graph }: { clusterId: ClusterId; graph: TrafficGra
           <p>{t("traffic:requestOnly", { sources: sourceNames(t, graph.requestOnly) })}</p>
         )}
         <p className="traffic-note">{t("traffic:wouldProvide")}</p>
+        <p className="traffic-note">{t("traffic:wouldProvideTcp")}</p>
       </div>
     );
   const answered = graph.sources.map((s) => s.kind).filter((k) => !graph.failed.includes(k));
@@ -99,6 +101,13 @@ function Failures({ graph }: { graph: TrafficGraph }) {
       )}
     </>
   );
+}
+
+/** A source that sees TCP connections only (Caretta, #236): what its lines show and what they cannot. */
+function TcpOnlyNote({ graph }: { graph: TrafficGraph }) {
+  const { t } = useTranslation();
+  if (!graph.sources.some((s) => s.kind === "caretta")) return null;
+  return <p className="traffic-note">{t("traffic:bytesNote")}</p>;
 }
 
 function Legend() {
@@ -291,6 +300,7 @@ export function TrafficView({ clusterId, namespaces }: { clusterId: ClusterId; n
         </div>
       </div>
       {data && <Failures graph={data} />}
+      {data && <TcpOnlyNote graph={data} />}
       {body}
     </div>
   );

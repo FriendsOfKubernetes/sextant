@@ -8,7 +8,8 @@
     "linkerd": "Linkerd",
     "ingressNginx": "ingress-nginx",
     "beyla": "Grafana Beyla",
-    "hubble": "Cilium Hubble"
+    "hubble": "Cilium Hubble",
+    "caretta": "Caretta"
   },
   "scope": {
     "istio": "Żądania odebrane przez proxy Istio tych Podów.",

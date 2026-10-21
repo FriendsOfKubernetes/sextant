@@ -3,6 +3,7 @@
 import type { TFunction } from "i18next";
 import type { RequestSourceKind, TrafficDetail, TrafficEdge, TrafficPeer } from "../../../api";
 import { formatList, formatNumber } from "../../../i18n";
+import { formatBytes } from "../../metrics/format";
 import { formatLatency, formatShare, SOURCE_KEY } from "../../request-health/model";
 
 export function peerName(t: TFunction, peer: TrafficPeer): string {
@@ -27,18 +28,21 @@ function digits(value: number): number {
   return value < 10 ? 2 : value < 100 ? 1 : 0;
 }
 
-/** Requests per second, or new connections per second for TCP. */
+/** Requests per second, new connections per second for TCP, or bytes per second for TCP seen as bytes (Caretta). */
 export function rateText(t: TFunction, edge: Pick<TrafficEdge, "rate" | "protocol">): string {
+  if (edge.protocol === "tcpBytes") return t("traffic:value.bytes", { value: formatBytes(edge.rate) });
   const value = formatNumber(edge.rate, digits(edge.rate));
   return edge.protocol === "tcp" ? t("traffic:value.connections", { value }) : t("traffic:value.rate", { value });
 }
 
-/** A line's rate: its requests per second, and its new TCP connections per second when it has any (the two are
- * another unit, never added up). */
-export function linkRateText(t: TFunction, link: { rate: number; tcpRate: number }): string {
+/** A line's rate: its requests per second, its new TCP connections per second and its TCP bytes per second when it
+ * has any (each another unit, never added up). */
+export function linkRateText(t: TFunction, link: { rate: number; tcpRate: number; bytesRate: number }): string {
   const parts: string[] = [];
-  if (link.rate > 0 || link.tcpRate === 0) parts.push(rateText(t, { rate: link.rate, protocol: "http" }));
+  if (link.rate > 0 || (link.tcpRate === 0 && link.bytesRate === 0))
+    parts.push(rateText(t, { rate: link.rate, protocol: "http" }));
   if (link.tcpRate > 0) parts.push(rateText(t, { rate: link.tcpRate, protocol: "tcp" }));
+  if (link.bytesRate > 0) parts.push(rateText(t, { rate: link.bytesRate, protocol: "tcpBytes" }));
   return formatList(parts);
 }
 
@@ -50,7 +54,8 @@ function unread(edge: TrafficEdge, detail: TrafficDetail): boolean {
 export function errorsText(t: TFunction, edge: TrafficEdge): string {
   if (edge.errorRatio !== null) return formatShare(t, edge.errorRatio);
   if (unread(edge, "errors")) return t("traffic:value.notRead");
-  return edge.protocol === "tcp" ? t("traffic:value.noVerdict") : t("traffic:level.unknown");
+  const tcp = edge.protocol === "tcp" || edge.protocol === "tcpBytes";
+  return tcp ? t("traffic:value.noVerdict") : t("traffic:level.unknown");
 }
 
 export function latencyText(t: TFunction, edge: TrafficEdge): string {

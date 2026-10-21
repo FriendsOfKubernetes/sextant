@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_other": "주의가 필요한 개체 {{count}}개",
   "state": {
@@ -24,7 +25,12 @@
     "partitions": "파티션",
     "topicReplicas": "복제본",
     "authentication": "인증",
-    "authorization": "권한 부여"
+    "authorization": "권한 부여",
+    "connectCluster": "Connect 클러스터",
+    "connectorState": "커넥터",
+    "tasks": "실행 중인 작업",
+    "class": "클래스",
+    "restarts": "자동 재시작"
   },
   "fields": {
     "status": "상태",
@@ -50,7 +56,17 @@
     "bootstrapServers": "Bootstrap 서버",
     "connectCluster": "Connect 클러스터",
     "url": "REST API",
-    "plugins": "커넥터 플러그인"
+    "plugins": "커넥터 플러그인",
+    "class": "커넥터 클래스",
+    "tasksMax": "최대 작업 수",
+    "desiredState": "요청된 상태",
+    "connectorState": "커넥터 상태",
+    "connectorType": "유형",
+    "worker": "워커",
+    "autoRestart": "자동 재시작",
+    "restarts": "자동 재시작 횟수",
+    "lastRestart": "마지막 자동 재시작",
+    "topics": "토픽"
   },
   "warnings": "경고",
   "warningReason": "이유",
@@ -75,6 +91,26 @@
     "title": "커넥터",
     "name": "이름",
     "state": "상태",
-    "tasks": "작업"
+    "tasks": "작업",
+    "restarts": "자동 재시작"
+  },
+  "connector": {
+    "tasksTitle": "작업",
+    "task": "작업",
+    "state": "상태",
+    "worker": "워커",
+    "error": "오류",
+    "autoRestartOn": "켜짐",
+    "autoRestartOff": "꺼짐",
+    "failuresTitle": "장애",
+    "connectorFailed": "커넥터 {{name}}이(가) 실패했습니다",
+    "failed": "커넥터가 실패했습니다",
+    "taskFailed": "작업 {{id}}이(가) 실패했습니다",
+    "mirrorTaskFailed": "{{name}}의 작업 {{id}}이(가) 실패했습니다",
+    "trace": "스택 추적",
+    "noTrace": "Kafka Connect가 스택 추적을 보고하지 않았습니다.",
+    "traceCut": "스택 추적이 짧게 줄여졌습니다.",
+    "autoRestartMax_other": "켜짐, 최대 {{count}}회 재시작",
+    "restartsExhausted_other": "Strimzi가 {{count}}회 재시작한 뒤 자동 재시작을 멈췄습니다."
   }
 }

@@ -1,0 +1,656 @@
+[
+  {
+    "apiVersion": "eventing.knative.dev/v1",
+    "kind": "Broker",
+    "metadata": {
+      "name": "default",
+      "namespace": "default",
+      "uid": "b1",
+      "creationTimestamp": "2026-10-20T10:00:00Z",
+      "annotations": {
+        "eventing.knative.dev/broker.class": "MTChannelBasedBroker"
+      }
+    },
+    "spec": {
+      "config": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "name": "config-br-default-channel",
+        "namespace": "knative-eventing"
+      },
+      "delivery": {
+        "deadLetterSink": {
+          "ref": {
+            "apiVersion": "serving.knative.dev/v1",
+            "kind": "Service",
+            "name": "dlq"
+          }
+        }
+      }
+    },
+    "status": {
+      "address": {
+        "name": "http",
+        "url": "http://broker-ingress.knative-eventing.svc.cluster.local/default/default"
+      },
+      "deadLetterSinkUri": "http://dlq.default.svc.cluster.local",
+      "conditions": [
+        {
+          "type": "Addressable",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "DeadLetterSinkResolved",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "EventPoliciesReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "FilterReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "IngressReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "TriggerChannelReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "eventing.knative.dev/v1",
+    "kind": "Trigger",
+    "metadata": {
+      "name": "my-service-trigger",
+      "namespace": "default",
+      "uid": "t1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "broker": "default",
+      "filter": {
+        "attributes": {
+          "type": "dev.knative.sources.ping"
+        }
+      },
+      "subscriber": {
+        "ref": {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "name": "event-display"
+        }
+      }
+    },
+    "status": {
+      "subscriberUri": "http://event-display.default.svc.cluster.local",
+      "conditions": [
+        {
+          "type": "BrokerReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "DependencyReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "SubscriberResolved",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "SubscriptionReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "eventing.knative.dev/v1",
+    "kind": "Trigger",
+    "metadata": {
+      "name": "orders-trigger",
+      "namespace": "default",
+      "uid": "t2",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "broker": "default",
+      "filters": [
+        {
+          "exact": {
+            "type": "com.example.order"
+          }
+        },
+        {
+          "any": [
+            {
+              "prefix": {
+                "source": "/orders/"
+              }
+            },
+            {
+              "suffix": {
+                "subject": ".json"
+              }
+            }
+          ]
+        }
+      ],
+      "filter": {
+        "attributes": {
+          "type": "old"
+        }
+      },
+      "subscriber": {
+        "ref": {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "name": "orders"
+        },
+        "uri": "/events"
+      }
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "BrokerReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "Unable to get the Subscriber's URI",
+          "message": "services \"orders\" not found"
+        },
+        {
+          "type": "SubscriberResolved",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "Unable to get the Subscriber's URI",
+          "message": "services \"orders\" not found"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "sources.knative.dev/v1",
+    "kind": "PingSource",
+    "metadata": {
+      "name": "test-ping-source",
+      "namespace": "default",
+      "uid": "p1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "schedule": "*/1 * * * *",
+      "contentType": "application/json",
+      "data": "{\"message\": \"Hello world!\"}",
+      "sink": {
+        "ref": {
+          "apiVersion": "eventing.knative.dev/v1",
+          "kind": "Broker",
+          "name": "default"
+        }
+      }
+    },
+    "status": {
+      "sinkUri": "http://broker-ingress.knative-eventing.svc.cluster.local/default/default",
+      "conditions": [
+        {
+          "type": "Deployed",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "SinkProvided",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "sources.knative.dev/v1",
+    "kind": "ApiServerSource",
+    "metadata": {
+      "name": "testevents",
+      "namespace": "default",
+      "uid": "a1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "mode": "Reference",
+      "serviceAccountName": "events-sa",
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Event"
+        }
+      ],
+      "sink": {
+        "ref": {
+          "apiVersion": "eventing.knative.dev/v1",
+          "kind": "Broker",
+          "name": "default"
+        }
+      }
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Deployed",
+          "status": "Unknown",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "Forbidden",
+          "message": "User system:serviceaccount:default:events-sa cannot get, list, watch resource \"events\" in API group \"\""
+        },
+        {
+          "type": "SinkProvided",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "SufficientPermissions",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "Forbidden",
+          "message": "User system:serviceaccount:default:events-sa cannot get, list, watch resource \"events\" in API group \"\""
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "messaging.knative.dev/v1",
+    "kind": "Channel",
+    "metadata": {
+      "name": "my-channel",
+      "namespace": "default",
+      "uid": "c1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "channelTemplate": {
+        "apiVersion": "messaging.knative.dev/v1",
+        "kind": "InMemoryChannel"
+      }
+    },
+    "status": {
+      "address": {
+        "url": "http://my-channel-kn-channel.default.svc.cluster.local"
+      },
+      "channel": {
+        "apiVersion": "messaging.knative.dev/v1",
+        "kind": "InMemoryChannel",
+        "name": "my-channel",
+        "namespace": "default"
+      },
+      "conditions": [
+        {
+          "type": "Addressable",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "BackingChannelReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "messaging.knative.dev/v1",
+    "kind": "Subscription",
+    "metadata": {
+      "name": "my-subscription",
+      "namespace": "default",
+      "uid": "s1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "channel": {
+        "apiVersion": "messaging.knative.dev/v1",
+        "kind": "Channel",
+        "name": "my-channel"
+      },
+      "subscriber": {
+        "ref": {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "name": "event-display"
+        }
+      },
+      "reply": {
+        "ref": {
+          "apiVersion": "eventing.knative.dev/v1",
+          "kind": "Broker",
+          "name": "default"
+        }
+      }
+    },
+    "status": {
+      "physicalSubscription": {
+        "subscriberUri": "http://event-display.default.svc.cluster.local",
+        "replyUri": "http://broker-ingress.knative-eventing.svc.cluster.local/default/default"
+      },
+      "conditions": [
+        {
+          "type": "AddedToChannel",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "ChannelReady",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "ReferencesResolved",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "messaging.knative.dev/v1",
+    "kind": "InMemoryChannel",
+    "metadata": {
+      "name": "my-channel",
+      "namespace": "default",
+      "uid": "i1",
+      "creationTimestamp": "2026-10-20T10:00:00Z",
+      "ownerReferences": [
+        {
+          "apiVersion": "messaging.knative.dev/v1",
+          "kind": "Channel",
+          "name": "my-channel",
+          "uid": "c1",
+          "controller": true
+        }
+      ]
+    },
+    "spec": {},
+    "status": {
+      "conditions": [
+        {
+          "type": "DispatcherReady",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "DispatcherDeploymentFalse",
+          "message": "The status of Dispatcher Deployment is False"
+        },
+        {
+          "type": "Ready",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "DispatcherDeploymentFalse",
+          "message": "The status of Dispatcher Deployment is False"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "flows.knative.dev/v1",
+    "kind": "Sequence",
+    "metadata": {
+      "name": "sequence",
+      "namespace": "default",
+      "uid": "q1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "channelTemplate": {
+        "apiVersion": "messaging.knative.dev/v1",
+        "kind": "InMemoryChannel"
+      },
+      "steps": [
+        {
+          "ref": {
+            "apiVersion": "serving.knative.dev/v1",
+            "kind": "Service",
+            "name": "first"
+          }
+        },
+        {
+          "ref": {
+            "apiVersion": "serving.knative.dev/v1",
+            "kind": "Service",
+            "name": "second"
+          }
+        },
+        {
+          "uri": "http://third.default.svc.cluster.local"
+        }
+      ],
+      "reply": {
+        "ref": {
+          "kind": "Service",
+          "apiVersion": "serving.knative.dev/v1",
+          "name": "event-display"
+        }
+      }
+    },
+    "status": {
+      "address": {
+        "url": "http://sequence-kn-sequence-0-kn-channel.default.svc.cluster.local"
+      },
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "Unknown",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "SubscriptionsNotReady",
+          "message": "Subscriptions are not ready yet, or there are none"
+        },
+        {
+          "type": "SubscriptionsReady",
+          "status": "Unknown",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "SubscriptionsNotReady",
+          "message": "Subscriptions are not ready yet, or there are none"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "flows.knative.dev/v1",
+    "kind": "Parallel",
+    "metadata": {
+      "name": "odd-even-parallel",
+      "namespace": "default",
+      "uid": "r1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "branches": [
+        {
+          "filter": {
+            "ref": {
+              "apiVersion": "serving.knative.dev/v1",
+              "kind": "Service",
+              "name": "even-filter"
+            }
+          },
+          "subscriber": {
+            "ref": {
+              "apiVersion": "serving.knative.dev/v1",
+              "kind": "Service",
+              "name": "even-transformer"
+            }
+          }
+        },
+        {
+          "filter": {
+            "ref": {
+              "apiVersion": "serving.knative.dev/v1",
+              "kind": "Service",
+              "name": "odd-filter"
+            }
+          },
+          "subscriber": {
+            "ref": {
+              "apiVersion": "serving.knative.dev/v1",
+              "kind": "Service",
+              "name": "odd-transformer"
+            }
+          }
+        }
+      ],
+      "reply": {
+        "ref": {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "name": "event-display"
+        }
+      }
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "sources.knative.dev/v1",
+    "kind": "SinkBinding",
+    "metadata": {
+      "name": "bind-heartbeat",
+      "namespace": "default",
+      "uid": "sb1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "subject": {
+        "apiVersion": "batch/v1",
+        "kind": "Job",
+        "selector": {
+          "matchLabels": {
+            "app": "heartbeat-cron"
+          }
+        }
+      },
+      "sink": {
+        "ref": {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "name": "event-display"
+        }
+      }
+    },
+    "status": {
+      "sinkUri": "http://event-display.default.svc.cluster.local",
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "SinkBindingAvailable",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        },
+        {
+          "type": "SinkProvided",
+          "status": "True",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "sources.knative.dev/v1beta1",
+    "kind": "KafkaSource",
+    "metadata": {
+      "name": "kafka-source",
+      "namespace": "default",
+      "uid": "k1",
+      "creationTimestamp": "2026-10-20T10:00:00Z"
+    },
+    "spec": {
+      "consumerGroup": "knative-group",
+      "bootstrapServers": [
+        "my-cluster-kafka-bootstrap.kafka:9092"
+      ],
+      "topics": [
+        "knative-demo-topic"
+      ],
+      "sink": {
+        "ref": {
+          "apiVersion": "serving.knative.dev/v1",
+          "kind": "Service",
+          "name": "event-display"
+        }
+      }
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "ConnectionEstablished",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "ErrorConnecting",
+          "message": "failed to connect to Kafka"
+        },
+        {
+          "type": "Ready",
+          "status": "False",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "reason": "ErrorConnecting",
+          "message": "failed to connect to Kafka"
+        }
+      ]
+    }
+  }
+]

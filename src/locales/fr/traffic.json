@@ -42,7 +42,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "protocole non indiqué"
+    "unknown": "protocole non indiqué",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Erreurs sous 1 %",
@@ -86,7 +87,8 @@
     "noVerdict": "pas de verdict pour TCP",
     "class": "{{class}} {{value}}/s",
     "noClasses": "aucun statut HTTP indiqué",
-    "notRead": "n’a pas pu être lu"
+    "notRead": "n’a pas pu être lu",
+    "bytes": "{{value}}/s"
   },
   "open": "Ouvrir {{name}}",
   "openRequests": "Requêtes de {{name}}",
@@ -130,8 +132,10 @@
   "noSource": "Prometheus n’a aucune métrique qui nomme les deux extrémités d’un appel : ni Istio, ni Linkerd, ni le graphe de services de Grafana Beyla, ni Cilium Hubble ne lui envoient de données.",
   "requestOnly": "Les requêtes par charge de travail, sans leur expéditeur, viennent de {{sources}} : voir la section « Requêtes » de chaque charge.",
   "wouldProvide": "N’importe laquelle de ces sources fournirait le graphe : un maillage Istio, un maillage Linkerd avec linkerd-viz (ou un Prometheus qui collecte ses proxys), Grafana Beyla avec les métriques de graphe de services activées, ou Cilium Hubble avec des métriques HTTP dont le labelsContext nomme les charges de travail source et destination.",
+  "wouldProvideTcp": "Caretta montrerait les connexions TCP entre les charges de travail, en octets par seconde.",
   "noEdges": {
     "minutes5": "D’après {{sources}}, aucun appel avec une extrémité dans ces namespaces au cours des 5 dernières minutes.",
     "hour1": "D’après {{sources}}, aucun appel avec une extrémité dans ces namespaces au cours de la dernière heure."
-  }
+  },
+  "bytesNote": "Caretta ne voit que des connexions TCP : ses lignes montrent les octets par seconde dans les deux sens, sans requêtes, erreurs ni latence."
 }

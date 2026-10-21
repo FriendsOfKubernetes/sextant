@@ -180,6 +180,7 @@ fn queries_are_bounded_scoped_and_escaped() {
         RequestSourceKind::Linkerd,
         RequestSourceKind::Beyla,
         RequestSourceKind::Hubble,
+        RequestSourceKind::Caretta,
     ] {
         let shape = edge_shape(kind).unwrap();
         let ns_regex = namespace_regex(&ns(&["shop", "a.b"]));
@@ -247,6 +248,7 @@ fn the_fixtures_answer_the_queries_sent_now() {
             RequestSourceKind::Hubble,
             &["hubble-both", "hubble-egress", "hubble-ingress"][..],
         ),
+        (RequestSourceKind::Caretta, &["caretta"][..]),
     ] {
         let now: Vec<(u64, String, String)> =
             part_queries(kind, &ns(&["shop", "pay"]), TrafficWindow::Minutes5, true)
@@ -272,6 +274,67 @@ fn the_fixtures_answer_the_queries_sent_now() {
             );
         }
     }
+}
+
+#[test]
+fn caretta_links_are_bytes_per_second_between_workloads_both_ways() {
+    let edges = assemble(
+        detected(RequestSourceKind::Caretta),
+        &fixture_answers(RequestSourceKind::Caretta, "caretta"),
+    );
+    // Six pairs in scope (the `other` namespace's link is not).
+    assert_eq!(edges.total, 6);
+    assert!(
+        edges
+            .edges
+            .iter()
+            .all(|e| e.protocol == TrafficProtocol::TcpBytes
+                && e.error_ratio.is_none()
+                && e.p50_ms.is_none()
+                && e.status_classes.is_empty()
+                && e.missing.is_empty())
+    );
+    let between = |from: &TrafficPeer, to: &TrafficPeer| {
+        edges
+            .edges
+            .iter()
+            .find(|e| &e.from == from && &e.to == to)
+            .unwrap_or_else(|| panic!("{from:?} -> {to:?}"))
+    };
+    // The client's bytes (role 1) and the server's answer (role 2), from two nodes' Caretta, add up.
+    let web = between(&workload("shop", "frontend"), &workload("shop", "web"));
+    assert_eq!(r6(web.rate), 32000.0);
+    // Ports of one pair are one edge.
+    assert_eq!(
+        r6(between(&workload("shop", "web"), &workload("pay", "db")).rate),
+        2100.0
+    );
+    // A ClusterIP Caretta resolved is the Service.
+    let cache = peer_of(Some("shop"), Some("cache"), TrafficPeerKind::Service);
+    assert_eq!(r6(between(&workload("shop", "web"), &cache).rate), 400.0);
+    // An address outside the cluster and a node's address are no object of a namespace: unknown ends.
+    let unknown = peer_of(None, None, TrafficPeerKind::Unknown);
+    assert_eq!(r6(between(&workload("shop", "web"), &unknown).rate), 300.0);
+    assert_eq!(r6(between(&unknown, &workload("shop", "web")).rate), 50.0);
+    // A pod without an owner keeps its own name.
+    assert_eq!(
+        r6(between(&workload("pay", "migrate-x7k2p"), &workload("pay", "db")).rate),
+        20.0
+    );
+    assert!(edges.edges.windows(2).all(|w| w[0].rate >= w[1].rate));
+    // The one query: no details to ask.
+    let parts = part_queries(
+        RequestSourceKind::Caretta,
+        &ns(&["shop"]),
+        TrafficWindow::Minutes5,
+        true,
+    );
+    assert_eq!(parts.len(), 1);
+    assert!(
+        parts[0]
+            .2
+            .contains("rate(caretta_links_observed{client_namespace=~\"shop\"}[5m])")
+    );
 }
 
 #[test]

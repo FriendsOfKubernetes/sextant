@@ -111,8 +111,13 @@ async fn every_sources_queries_are_valid_promql() {
     };
     for kind in RequestSourceKind::ALL {
         for target in [coredns(), pod.clone()] {
-            let (instant, range) =
-                metrics::request_queries(kind, &target, &["kube-dns".into()], true).unwrap();
+            let queries = metrics::request_queries(kind, &target, &["kube-dns".into()], true);
+            // Caretta (#236) has edges of the traffic graph only, no request metrics of a workload.
+            if kind == RequestSourceKind::Caretta {
+                assert!(queries.is_none());
+                continue;
+            }
+            let (instant, range) = queries.unwrap();
             let answer = ask(&client, &format!("api/v1/query?query={}", encode(&instant))).await;
             assert_eq!(answer["status"], "success", "{kind:?}: {instant}\n{answer}");
             let path = format!(

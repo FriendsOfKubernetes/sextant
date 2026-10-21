@@ -15,6 +15,7 @@ import { isSuspended, readyMessage, readyReason, readyStatus } from "../flux/mod
 import { ROLLOUT } from "../argo-rollouts/model";
 import { rolloutProblemsDetected } from "../argo-rollouts/problemRules";
 import { knativeProblems } from "../knative/problemRules";
+import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
 import { cnpgProblems, CNPG_GROUP } from "../cnpg/model";
 import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
@@ -49,6 +50,8 @@ export const PROBLEM_CATEGORIES = [
   "workflows",
   "gateway",
   "mesh",
+  "traefik",
+  "contour",
   "knative",
   "crossplane",
   "policies",
@@ -202,6 +205,7 @@ const FLUX_GROUPS = new Set([
   "helm.toolkit.fluxcd.io",
   "image.toolkit.fluxcd.io",
 ]);
+const KNATIVE_EVENTING_GROUPS = new Set(["eventing.knative.dev", "messaging.knative.dev", "flows.knative.dev", "sources.knative.dev"]);
 
 function time(value: string | undefined): number | undefined {
   if (!value) return undefined;
@@ -231,7 +235,11 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   // Knative Services and Configurations (#213); Kyverno policy reports (#213, opt-in).
   if (kind.group === "serving.knative.dev" && (kind.kind === "Service" || kind.kind === "Configuration")) return "knative";
+  // Knative Eventing (#234): its kinds are judged in features/knative/eventingProblems.ts.
+  if (KNATIVE_EVENTING_GROUPS.has(kind.group)) return "knative";
   if (kind.group === "wgpolicyk8s.io") return "policies";
+  // Contour HTTPProxies (#233): invalid and orphaned ones.
+  if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
   // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
   if (kind.group === ESO_GROUP) return "externalSecrets";
   if (kind.group === CNPG_GROUP) return "cnpg";
@@ -681,6 +689,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return gatewayProblems(obj, kind);
     case "knative":
       return knativeProblems(kind, obj);
+    case "contour":
+      return contourProblems(kind, obj);
     case "policies":
       return policyProblems(kind, obj);
     case "externalSecrets":
@@ -699,6 +709,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "practices": // Best-practice findings (#207) span several objects: the provider of features/practices finds them.
     case "disk":
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
+    case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];

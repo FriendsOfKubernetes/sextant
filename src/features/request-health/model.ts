@@ -34,6 +34,8 @@ export const SOURCE_KEY: Record<RequestSourceKind, string> = {
   ingressNginx: "ingressNginx",
   beyla: "beyla",
   hubble: "hubble",
+  // The traffic graph's TCP-only source (#236); it has no request metrics of a workload.
+  caretta: "caretta",
 };
 
 /** Requests per second: two decimals below 10, one below 100, none above. */

@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} Objekt erfordert Aufmerksamkeit",
   "badge_other": "{{count}} Objekte erfordern Aufmerksamkeit",
@@ -25,7 +26,12 @@
     "partitions": "Partitionen",
     "topicReplicas": "Replikate",
     "authentication": "Authentifizierung",
-    "authorization": "Autorisierung"
+    "authorization": "Autorisierung",
+    "connectCluster": "Connect-Cluster",
+    "connectorState": "Connector",
+    "tasks": "Laufende Tasks",
+    "class": "Klasse",
+    "restarts": "Auto-Neustarts"
   },
   "fields": {
     "status": "Status",
@@ -51,7 +57,17 @@
     "bootstrapServers": "Bootstrap-Server",
     "connectCluster": "Connect-Cluster",
     "url": "REST-API",
-    "plugins": "Connector-Plugins"
+    "plugins": "Connector-Plugins",
+    "class": "Connector-Klasse",
+    "tasksMax": "Max. Tasks",
+    "desiredState": "Angeforderter Zustand",
+    "connectorState": "Connector-Zustand",
+    "connectorType": "Typ",
+    "worker": "Worker",
+    "autoRestart": "Automatischer Neustart",
+    "restarts": "Automatische Neustarts",
+    "lastRestart": "Letzter automatischer Neustart",
+    "topics": "Topics"
   },
   "warnings": "Warnungen",
   "warningReason": "Grund",
@@ -76,6 +92,28 @@
     "title": "Connectors",
     "name": "Name",
     "state": "Zustand",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "restarts": "Auto-Neustarts"
+  },
+  "connector": {
+    "tasksTitle": "Tasks",
+    "task": "Task",
+    "state": "Zustand",
+    "worker": "Worker",
+    "error": "Fehler",
+    "autoRestartOn": "An",
+    "autoRestartOff": "Aus",
+    "failuresTitle": "Ausfälle",
+    "connectorFailed": "Connector {{name}} ist ausgefallen",
+    "failed": "Der Connector ist ausgefallen",
+    "taskFailed": "Task {{id}} ist ausgefallen",
+    "mirrorTaskFailed": "Task {{id}} von {{name}} ist ausgefallen",
+    "trace": "Stacktrace",
+    "noTrace": "Kafka Connect hat keinen Stacktrace gemeldet.",
+    "traceCut": "Der Stacktrace ist gekürzt.",
+    "autoRestartMax_one": "An, höchstens {{count}} Neustart",
+    "autoRestartMax_other": "An, höchstens {{count}} Neustarts",
+    "restartsExhausted_one": "Strimzi hat ihn nach {{count}} Neustart nicht mehr automatisch neu gestartet.",
+    "restartsExhausted_other": "Strimzi hat ihn nach {{count}} Neustarts nicht mehr automatisch neu gestartet."
   }
 }

@@ -213,3 +213,115 @@ async fn bad_names_and_prometheus_off_ask_nothing() {
     assert!(!off.prometheus && off.sources.is_empty() && off.edges.is_empty());
     assert_eq!(api.requests().len(), before);
 }
+
+/// A cluster whose Prometheus has Istio's metrics and Caretta's (#236).
+async fn cluster_with_caretta() -> FakeApi {
+    FakeApi::start(|req: &Request| {
+        let path = req.path.as_str();
+        let Some(rest) = path.strip_prefix(PROXY) else {
+            return match path {
+                "/api" => Reply::json(200, API_VERSIONS),
+                _ => Reply::not_found(),
+            };
+        };
+        let promql = promql_of(&req.query);
+        match rest {
+            "/api/v1/label/__name__/values" => Reply::json(
+                200,
+                r#"{"status":"success","data":["istio_requests_total","istio_request_duration_milliseconds_bucket","caretta_links_observed","caretta_tcp_states"]}"#,
+            ),
+            "/api/v1/query" => {
+                let file = if promql.contains("caretta_") { "caretta" } else { "istio" };
+                Reply::json(200, answer(file, &promql))
+            }
+            _ => Reply::not_found(),
+        }
+    })
+    .await
+}
+
+#[tokio::test]
+async fn caretta_is_an_edge_source_whose_bytes_never_crowd_out_requests() {
+    let _serial = SOURCES_TEST_LOCK.lock().await;
+    forget_sources();
+    let api = cluster_with_caretta().await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let graph = traffic_graph(
+        &mgr,
+        &id,
+        &manual(),
+        ns(&["shop", "pay"]),
+        TrafficWindow::Minutes5,
+    )
+    .await
+    .unwrap();
+    let kinds: Vec<RequestSourceKind> = graph.sources.iter().map(|s| s.kind).collect();
+    assert_eq!(
+        kinds,
+        [RequestSourceKind::Istio, RequestSourceKind::Caretta]
+    );
+    // Not a source of request metrics, and not "request only" either.
+    assert!(graph.request_only.is_empty());
+    assert!(graph.failed.is_empty());
+    assert_eq!(graph.edges.len(), 5 + 6);
+    // Taken in turns: Istio's busiest (1 request/s) first, then Caretta's busiest (32 000 bytes/s), …
+    let order: Vec<(RequestSourceKind, TrafficProtocol)> = graph
+        .edges
+        .iter()
+        .take(4)
+        .map(|e| (e.source, e.protocol))
+        .collect();
+    assert_eq!(order[0].0, RequestSourceKind::Istio);
+    assert_eq!(
+        order[1],
+        (RequestSourceKind::Caretta, TrafficProtocol::TcpBytes)
+    );
+    assert_eq!(order[2].0, RequestSourceKind::Istio);
+    assert_eq!(
+        order[3],
+        (RequestSourceKind::Caretta, TrafficProtocol::TcpBytes)
+    );
+    // Caretta was asked its one edge query only: no errors, classes or latency to ask.
+    let caretta_queries = api
+        .requests()
+        .iter()
+        .filter(|r| promql_of(&r.query).contains("caretta_"))
+        .count();
+    assert_eq!(caretta_queries, 1);
+}
+
+fn edge(source: RequestSourceKind, protocol: TrafficProtocol, rate: f64) -> TrafficEdge {
+    let peer = TrafficPeer {
+        kind: TrafficPeerKind::Workload,
+        namespace: Some("shop".into()),
+        name: Some(format!("{rate}")),
+    };
+    TrafficEdge {
+        source,
+        via: RequestVia::Cluster,
+        from: peer.clone(),
+        to: peer,
+        protocol,
+        rate,
+        error_ratio: None,
+        p50_ms: None,
+        p95_ms: None,
+        status_classes: Vec::new(),
+        missing: Vec::new(),
+    }
+}
+
+#[test]
+fn bytes_and_calls_are_ranked_apart_and_taken_in_turns() {
+    use RequestSourceKind::{Caretta, Istio};
+    use TrafficProtocol::{Http, Tcp, TcpBytes};
+    let edges = vec![
+        edge(Caretta, TcpBytes, 9000.0),
+        edge(Istio, Http, 1.0),
+        edge(Caretta, TcpBytes, 50.0),
+        edge(Istio, Tcp, 3.0),
+        edge(Caretta, TcpBytes, 700.0),
+    ];
+    let rates: Vec<f64> = busiest_first(edges).iter().map(|e| e.rate).collect();
+    assert_eq!(rates, [3.0, 9000.0, 1.0, 700.0, 50.0]);
+}

@@ -11,7 +11,8 @@ import type { TrafficProtocol } from "./TrafficProtocol";
  */
 export type TrafficEdge = { source: RequestSourceKind, via: RequestVia, from: TrafficPeer, to: TrafficPeer, protocol: TrafficProtocol, 
 /**
- * Requests (TCP: new connections) per second.
+ * Requests per second; for [`TrafficProtocol::Tcp`] new connections, for [`TrafficProtocol::TcpBytes`] bytes per
+ * second.
  */
 rate: number, 
 /**

@@ -1,0 +1,302 @@
+{
+ "prometheus": "3.15.0",
+ "time": 1760000000,
+ "series": [
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "1085737379",
+    "client_id": "3590297643",
+    "client_name": "frontend",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "4142368622",
+    "server_name": "web",
+    "server_namespace": "shop",
+    "server_kind": "Deployment",
+    "server_port": "8080",
+    "role": "1",
+    "instance": "10.244.1.2:7117",
+    "job": "caretta"
+   },
+   "rate": 2000.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "1805277792",
+    "client_id": "3590297643",
+    "client_name": "frontend",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "4142368622",
+    "server_name": "web",
+    "server_namespace": "shop",
+    "server_kind": "Deployment",
+    "server_port": "8080",
+    "role": "2",
+    "instance": "10.244.2.2:7117",
+    "job": "caretta"
+   },
+   "rate": 30000.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "982792566",
+    "client_id": "4142368622",
+    "client_name": "web",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "2617065604",
+    "server_name": "db",
+    "server_namespace": "pay",
+    "server_kind": "StatefulSet",
+    "server_port": "5432",
+    "role": "1",
+    "instance": "10.244.2.2:7117",
+    "job": "caretta"
+   },
+   "rate": 500.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "297364149",
+    "client_id": "4142368622",
+    "client_name": "web",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "2617065604",
+    "server_name": "db",
+    "server_namespace": "pay",
+    "server_kind": "StatefulSet",
+    "server_port": "5432",
+    "role": "2",
+    "instance": "10.244.1.2:7117",
+    "job": "caretta"
+   },
+   "rate": 1500.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "982792566",
+    "client_id": "4142368622",
+    "client_name": "web",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "2617065604",
+    "server_name": "db",
+    "server_namespace": "pay",
+    "server_kind": "StatefulSet",
+    "server_port": "9187",
+    "role": "1",
+    "instance": "10.244.2.2:7117",
+    "job": "caretta"
+   },
+   "rate": 100.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "3470726212",
+    "client_id": "4142368622",
+    "client_name": "web",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "2767205053",
+    "server_name": "cache",
+    "server_namespace": "shop",
+    "server_kind": "Service",
+    "server_port": "6379",
+    "role": "1",
+    "instance": "10.244.2.2:7117",
+    "job": "caretta"
+   },
+   "rate": 400.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "3421272456",
+    "client_id": "4142368622",
+    "client_name": "web",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "4170533747",
+    "server_name": "api.example.com",
+    "server_namespace": "external",
+    "server_kind": "external",
+    "server_port": "443",
+    "role": "1",
+    "instance": "10.244.2.2:7117",
+    "job": "caretta"
+   },
+   "rate": 300.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "4001386416",
+    "client_id": "3917403503",
+    "client_name": "kind-worker",
+    "client_namespace": "node",
+    "client_kind": "node",
+    "client_owner": "",
+    "server_id": "4142368622",
+    "server_name": "web",
+    "server_namespace": "shop",
+    "server_kind": "Deployment",
+    "server_port": "8080",
+    "role": "2",
+    "instance": "10.244.2.2:7117",
+    "job": "caretta"
+   },
+   "rate": 50.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "731759044",
+    "client_id": "543228105",
+    "client_name": "migrate-x7k2p",
+    "client_namespace": "pay",
+    "client_kind": "pod",
+    "client_owner": "",
+    "server_id": "2617065604",
+    "server_name": "db",
+    "server_namespace": "pay",
+    "server_kind": "StatefulSet",
+    "server_port": "5432",
+    "role": "1",
+    "instance": "10.244.1.2:7117",
+    "job": "caretta"
+   },
+   "rate": 20.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
+    "link_id": "2129040914",
+    "client_id": "1577925716",
+    "client_name": "a",
+    "client_namespace": "other",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "697560740",
+    "server_name": "b",
+    "server_namespace": "other",
+    "server_kind": "Deployment",
+    "server_port": "80",
+    "role": "1",
+    "instance": "10.244.1.2:7117",
+    "job": "caretta"
+   },
+   "rate": 9000.0
+  }
+ ],
+ "queries": [
+  {
+   "ask": "Rate",
+   "part": 0,
+   "promql": "topk(200,(sum by(client_namespace,client_name,client_kind,server_namespace,server_name,server_kind)(rate(caretta_links_observed{client_namespace=~\"shop|pay\"}[5m]) or rate(caretta_links_observed{server_namespace=~\"shop|pay\"}[5m])))>0)",
+   "data": {
+    "resultType": "vector",
+    "result": [
+     {
+      "metric": {
+       "client_kind": "Deployment",
+       "client_name": "frontend",
+       "client_namespace": "shop",
+       "server_kind": "Deployment",
+       "server_name": "web",
+       "server_namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "31999.999999999996"
+      ]
+     },
+     {
+      "metric": {
+       "client_kind": "Deployment",
+       "client_name": "web",
+       "client_namespace": "shop",
+       "server_kind": "StatefulSet",
+       "server_name": "db",
+       "server_namespace": "pay"
+      },
+      "value": [
+       1760000000,
+       "2099.9999999999995"
+      ]
+     },
+     {
+      "metric": {
+       "client_kind": "Deployment",
+       "client_name": "web",
+       "client_namespace": "shop",
+       "server_kind": "Service",
+       "server_name": "cache",
+       "server_namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "399.99999999999994"
+      ]
+     },
+     {
+      "metric": {
+       "client_kind": "Deployment",
+       "client_name": "web",
+       "client_namespace": "shop",
+       "server_kind": "external",
+       "server_name": "api.example.com",
+       "server_namespace": "external"
+      },
+      "value": [
+       1760000000,
+       "299.99999999999994"
+      ]
+     },
+     {
+      "metric": {
+       "client_kind": "node",
+       "client_name": "kind-worker",
+       "client_namespace": "node",
+       "server_kind": "Deployment",
+       "server_name": "web",
+       "server_namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "49.99999999999999"
+      ]
+     },
+     {
+      "metric": {
+       "client_kind": "pod",
+       "client_name": "migrate-x7k2p",
+       "client_namespace": "pay",
+       "server_kind": "StatefulSet",
+       "server_name": "db",
+       "server_namespace": "pay"
+      },
+      "value": [
+       1760000000,
+       "19.999999999999996"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} object needs attention",
   "badge_other": "{{count}} objects need attention",
@@ -25,7 +26,12 @@
     "partitions": "Partitions",
     "topicReplicas": "Replicas",
     "authentication": "Authentication",
-    "authorization": "Authorization"
+    "authorization": "Authorization",
+    "connectCluster": "Connect cluster",
+    "connectorState": "Connector",
+    "tasks": "Running tasks",
+    "class": "Class",
+    "restarts": "Auto-restarts"
   },
   "fields": {
     "status": "Status",
@@ -51,7 +57,17 @@
     "bootstrapServers": "Bootstrap servers",
     "connectCluster": "Connect cluster",
     "url": "REST API",
-    "plugins": "Connector plugins"
+    "plugins": "Connector plugins",
+    "class": "Connector class",
+    "tasksMax": "Max tasks",
+    "desiredState": "Requested state",
+    "connectorState": "Connector state",
+    "connectorType": "Type",
+    "worker": "Worker",
+    "autoRestart": "Automatic restart",
+    "restarts": "Automatic restarts",
+    "lastRestart": "Last automatic restart",
+    "topics": "Topics"
   },
   "warnings": "Warnings",
   "warningReason": "Reason",
@@ -76,6 +92,28 @@
     "title": "Connectors",
     "name": "Name",
     "state": "State",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "restarts": "Auto-restarts"
+  },
+  "connector": {
+    "tasksTitle": "Tasks",
+    "task": "Task",
+    "state": "State",
+    "worker": "Worker",
+    "error": "Error",
+    "autoRestartOn": "On",
+    "autoRestartMax_one": "On, at most {{count}} restart",
+    "autoRestartMax_other": "On, at most {{count}} restarts",
+    "autoRestartOff": "Off",
+    "failuresTitle": "Failures",
+    "connectorFailed": "Connector {{name}} failed",
+    "failed": "The connector failed",
+    "taskFailed": "Task {{id}} failed",
+    "mirrorTaskFailed": "Task {{id}} of {{name}} failed",
+    "trace": "Stack trace",
+    "noTrace": "Kafka Connect reported no stack trace.",
+    "traceCut": "The stack trace is shortened.",
+    "restartsExhausted_one": "Strimzi stopped restarting it automatically after {{count}} restart.",
+    "restartsExhausted_other": "Strimzi stopped restarting it automatically after {{count}} restarts."
   }
 }

@@ -143,6 +143,8 @@ pub(crate) fn request_selectors(
             q(namespace),
             q(name)
         )],
+        // Connections, not requests: nothing to ask about a workload's requests.
+        (RequestSourceKind::Caretta, _) => Vec::new(),
         (RequestSourceKind::IngressNginx, _) if services.is_empty() => Vec::new(),
         (RequestSourceKind::IngressNginx, _) => {
             let alternatives: Vec<String> =
@@ -256,6 +258,14 @@ pub(crate) fn shape(kind: RequestSourceKind) -> Shape {
             errors: &[r#"status=~"5..""#],
             to_ms: 1000.0,
             sides: Some(HUBBLE_SIDES),
+        },
+        // Never asked: Caretta has no request metrics, so `request_selectors` names nothing for it.
+        RequestSourceKind::Caretta => Shape {
+            count: &[],
+            bucket: &[],
+            errors: &[],
+            to_ms: 1.0,
+            sides: None,
         },
     }
 }

@@ -27,6 +27,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Service Mesh",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Kyverno-Richtlinien",
@@ -64,6 +66,8 @@
     "policyFailures_other": "{{count}} Richtlinienregeln schlagen fehl: {{policies}}",
     "policyErrors_one": "{{count}} Richtlinienregel konnte nicht ausgewertet werden: {{policies}}",
     "policyErrors_other": "{{count}} Richtlinienregeln konnten nicht ausgewertet werden: {{policies}}",
+    "traefikMissingReference": "Verweist auf Objekte, die nicht existieren: {{refs}}. Traefik überspringt, was davon abhängt.",
+    "traefikSkippedRoute": "Traefik überspringt seine Routen {{routes}}: eine leere Match-Regel oder ein anderer Kind als Rule.",
     "serviceMonitorSelectsNothing": "Wählt keinen Service in den Namespaces aus: {{namespaces}}",
     "podMonitorSelectsNothing": "Wählt keinen Pod in den Namespaces aus: {{namespaces}}",
     "monitorNotPickedUp": "Kein Prometheus erfasst ihn über seine Selectors"

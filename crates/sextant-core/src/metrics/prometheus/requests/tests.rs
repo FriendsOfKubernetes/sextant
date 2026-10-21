@@ -212,6 +212,15 @@ fn hubble_counts_the_callees_report_and_the_callers_only_where_the_callee_has_no
 #[test]
 fn each_source_reads_only_its_own_metrics() {
     for kind in RequestSourceKind::ALL {
+        // Caretta (#236) has no request metrics: no selector, so no query is ever built for it.
+        if kind.required_metrics().is_empty() {
+            let pod = RequestTarget::Pod {
+                namespace: "shop".into(),
+                name: "web-0".into(),
+            };
+            assert!(request_selectors(kind, &pod, &[]).is_empty(), "{kind:?}");
+            continue;
+        }
         let sel = ["x=\"y\"".to_owned()];
         let mut read = metric_names(&golden_query(kind, &sel, true));
         read.extend(metric_names(&series_query(kind, &sel)));

@@ -25,6 +25,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "服務網格",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Kyverno 原則",
@@ -58,6 +60,8 @@
     "meshInvalidVirtualService": "繫結到 Sidecar（mesh）時使用了主機 *：Istio 會拒絕它，因此它的路由都不會被使用。",
     "policyFailures_other": "{{count}} 條原則規則未通過：{{policies}}",
     "policyErrors_other": "{{count}} 條原則規則無法評估：{{policies}}",
+    "traefikMissingReference": "參照了不存在的物件：{{refs}}。Traefik 會略過依賴它們的部分。",
+    "traefikSkippedRoute": "Traefik 略過其路由 {{routes}}：match 規則為空，或 kind 不是 Rule。",
     "serviceMonitorSelectsNothing": "在下列 namespace 中未選取任何 Service：{{namespaces}}",
     "podMonitorSelectsNothing": "在下列 namespace 中未選取任何 Pod：{{namespaces}}",
     "monitorNotPickedUp": "沒有 Prometheus 透過其 selector 選取它"

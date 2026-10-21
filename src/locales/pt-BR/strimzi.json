@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} objeto precisa de atenção",
   "badge_many": "{{count}} de objetos precisam de atenção",
@@ -26,7 +27,12 @@
     "partitions": "Partições",
     "topicReplicas": "Réplicas",
     "authentication": "Autenticação",
-    "authorization": "Autorização"
+    "authorization": "Autorização",
+    "connectCluster": "Cluster do Connect",
+    "connectorState": "Conector",
+    "tasks": "Tarefas em execução",
+    "class": "Classe",
+    "restarts": "Reinícios automáticos"
   },
   "fields": {
     "status": "Status",
@@ -52,7 +58,17 @@
     "bootstrapServers": "Servidores bootstrap",
     "connectCluster": "Cluster do Connect",
     "url": "API REST",
-    "plugins": "Plugins de conectores"
+    "plugins": "Plugins de conectores",
+    "class": "Classe do conector",
+    "tasksMax": "Máx. de tarefas",
+    "desiredState": "Estado solicitado",
+    "connectorState": "Estado do conector",
+    "connectorType": "Tipo",
+    "worker": "Worker",
+    "autoRestart": "Reinício automático",
+    "restarts": "Reinícios automáticos",
+    "lastRestart": "Último reinício automático",
+    "topics": "Tópicos"
   },
   "warnings": "Avisos",
   "warningReason": "Motivo",
@@ -77,6 +93,30 @@
     "title": "Conectores",
     "name": "Nome",
     "state": "Estado",
-    "tasks": "Tarefas"
+    "tasks": "Tarefas",
+    "restarts": "Reinícios automáticos"
+  },
+  "connector": {
+    "tasksTitle": "Tarefas",
+    "task": "Tarefa",
+    "state": "Estado",
+    "worker": "Worker",
+    "error": "Erro",
+    "autoRestartOn": "Ativado",
+    "autoRestartOff": "Desativado",
+    "failuresTitle": "Falhas",
+    "connectorFailed": "O conector {{name}} falhou",
+    "failed": "O conector falhou",
+    "taskFailed": "A tarefa {{id}} falhou",
+    "mirrorTaskFailed": "A tarefa {{id}} de {{name}} falhou",
+    "trace": "Rastreamento de pilha",
+    "noTrace": "O Kafka Connect não informou nenhum rastreamento de pilha.",
+    "traceCut": "O rastreamento de pilha foi encurtado.",
+    "autoRestartMax_one": "Ativado, no máximo {{count}} reinício",
+    "autoRestartMax_many": "Ativado, no máximo {{count}} reinícios",
+    "autoRestartMax_other": "Ativado, no máximo {{count}} reinícios",
+    "restartsExhausted_one": "O Strimzi parou de reiniciá-lo automaticamente após {{count}} reinício.",
+    "restartsExhausted_many": "O Strimzi parou de reiniciá-lo automaticamente após {{count}} reinícios.",
+    "restartsExhausted_other": "O Strimzi parou de reiniciá-lo automaticamente após {{count}} reinícios."
   }
 }

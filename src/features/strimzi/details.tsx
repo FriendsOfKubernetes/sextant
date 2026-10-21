@@ -5,7 +5,9 @@
 //   KafkaTopic        — its Kafka, the topic name, partitions, replicas and config;
 //   KafkaUser         — its Kafka, authentication, authorization, the user name and the Secret's name (a link; its
 //                       data is never read);
-//   KafkaConnect / KafkaMirrorMaker2 — replicas, URL, plugins, mirrors and connectors' states.
+//   KafkaConnect / KafkaMirrorMaker2 — replicas, URL, plugins, mirrors, connectors' states, automatic restarts and
+//                       failed connectors and tasks with their traces;
+//   KafkaConnector    — connectorDetails.tsx (#235).
 // Conditions and YAML are the panel's own sections. Read-only.
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
@@ -14,11 +16,14 @@ import { formatList, formatParts } from "../../i18n";
 import { status, StatusText } from "../../resources";
 import { Block, chips, Fields, KINDS, link, mapChips, table, type ColumnWrap, type FieldRow } from "../details";
 import { ReadyCell } from "./columns";
+import { ConnectorFailures, KafkaConnectorView } from "./connectorDetails";
+import { autoRestartsOf, mirrorConnectorsOf, stateTone } from "./connectors";
 import {
   clusterLabelOf,
   isKind,
   KAFKA,
   KAFKA_CONNECT,
+  KAFKA_CONNECTOR,
   KAFKA_MIRROR_MAKER_2,
   KAFKA_NODE_POOL,
   KAFKA_TOPIC,
@@ -42,6 +47,7 @@ const NODE_POOL_REF = ref("KafkaNodePool");
 const WARNINGS_WRAP: ColumnWrap[] = ["nowrap", undefined];
 const LISTENERS_WRAP: ColumnWrap[] = ["nowrap", "nowrap", "nowrap", undefined, undefined];
 const THREE_WRAP: ColumnWrap[] = ["nowrap", "nowrap", undefined];
+const CONNECTORS_WRAP: ColumnWrap[] = ["nowrap", "nowrap", undefined, "nowrap"];
 
 /** Why it is not ready, and the warnings Strimzi reports. */
 function Messages({ obj }: { obj: KubeObject }) {
@@ -183,13 +189,16 @@ function ConnectView({ obj, mirror }: { obj: KubeObject; mirror: boolean }) {
     str(get(m, "targetCluster")) ?? str(get(obj, "spec", "target", "alias")) ?? "",
     str(get(m, "topicsPattern")) ?? "",
   ]);
-  const connectors = arr(get(obj, "status", "connectors")).map((c) => {
-    const state = str(get(c, "connector", "state")) ?? "";
-    const tasks = arr(get(c, "tasks")).map((task) => str(get(task, "state")) ?? "");
+  const reported = mirrorConnectorsOf(obj);
+  const restarts = autoRestartsOf(obj);
+  const connectors = reported.map((c) => {
+    const state = c.state ?? "";
+    const count = restarts.find((r) => r.connectorName === c.name)?.count;
     return [
-      str(get(c, "name")) ?? "",
-      <StatusText key="s" value={state} tone={state === "RUNNING" ? "success" : state === "FAILED" ? "danger" : "warning"} />,
-      formatList(tasks),
+      c.name ?? "",
+      <StatusText key="s" value={state} tone={stateTone(state)} />,
+      formatList(c.tasks.map((task) => task.state ?? "")),
+      count === undefined ? "" : String(count),
     ];
   });
   const mirrorsTable = table(
@@ -200,9 +209,9 @@ function ConnectView({ obj, mirror }: { obj: KubeObject; mirror: boolean }) {
   );
   const connectorsTable = table(
     "strimziConnectors",
-    [t("strimzi:connectors.name"), t("strimzi:connectors.state"), t("strimzi:connectors.tasks")],
+    [t("strimzi:connectors.name"), t("strimzi:connectors.state"), t("strimzi:connectors.tasks"), t("strimzi:connectors.restarts")],
     connectors,
-    THREE_WRAP,
+    CONNECTORS_WRAP,
   );
   return (
     <>
@@ -210,6 +219,7 @@ function ConnectView({ obj, mirror }: { obj: KubeObject; mirror: boolean }) {
       <Fields rows={rows} labelPrefix={LABELS} />
       {mirror && mirrors.length > 0 && <Block title={t("strimzi:mirrors.title")}>{mirrorsTable}</Block>}
       {connectors.length > 0 && <Block title={t("strimzi:connectors.title")}>{connectorsTable}</Block>}
+      <ConnectorFailures connectors={reported} />
     </>
   );
 }
@@ -223,6 +233,7 @@ export function StrimziSection({ objectRef, obj }: DetailsSectionProps) {
   if (isKind(kind, KAFKA_USER)) return <UserView obj={obj} />;
   if (isKind(kind, KAFKA_CONNECT)) return <ConnectView obj={obj} mirror={false} />;
   if (isKind(kind, KAFKA_MIRROR_MAKER_2)) return <ConnectView obj={obj} mirror />;
+  if (isKind(kind, KAFKA_CONNECTOR)) return <KafkaConnectorView obj={obj} />;
   return null;
 }
 

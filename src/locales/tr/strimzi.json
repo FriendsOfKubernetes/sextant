@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} nesne ilgi gerektiriyor",
   "badge_other": "{{count}} nesne ilgi gerektiriyor",
@@ -25,7 +26,12 @@
     "partitions": "Bölümler",
     "topicReplicas": "Kopyalar",
     "authentication": "Kimlik doğrulama",
-    "authorization": "Yetkilendirme"
+    "authorization": "Yetkilendirme",
+    "connectCluster": "Connect kümesi",
+    "connectorState": "Connector",
+    "tasks": "Çalışan görevler",
+    "class": "Sınıf",
+    "restarts": "Otomatik yeniden başlatmalar"
   },
   "fields": {
     "status": "Durum",
@@ -51,7 +57,17 @@
     "bootstrapServers": "Bootstrap sunucuları",
     "connectCluster": "Connect kümesi",
     "url": "REST API",
-    "plugins": "Bağlayıcı eklentileri"
+    "plugins": "Bağlayıcı eklentileri",
+    "class": "Connector sınıfı",
+    "tasksMax": "En fazla görev",
+    "desiredState": "İstenen durum",
+    "connectorState": "Connector durumu",
+    "connectorType": "Tür",
+    "worker": "Worker",
+    "autoRestart": "Otomatik yeniden başlatma",
+    "restarts": "Otomatik yeniden başlatmalar",
+    "lastRestart": "Son otomatik yeniden başlatma",
+    "topics": "Topic'ler"
   },
   "warnings": "Uyarılar",
   "warningReason": "Neden",
@@ -76,6 +92,28 @@
     "title": "Bağlayıcılar",
     "name": "Ad",
     "state": "Durum",
-    "tasks": "Görevler"
+    "tasks": "Görevler",
+    "restarts": "Otomatik yeniden başlatmalar"
+  },
+  "connector": {
+    "tasksTitle": "Görevler",
+    "task": "Görev",
+    "state": "Durum",
+    "worker": "Worker",
+    "error": "Hata",
+    "autoRestartOn": "Açık",
+    "autoRestartOff": "Kapalı",
+    "failuresTitle": "Hatalar",
+    "connectorFailed": "{{name}} connector'ı başarısız oldu",
+    "failed": "Connector başarısız oldu",
+    "taskFailed": "{{id}} görevi başarısız oldu",
+    "mirrorTaskFailed": "{{name}} connector'ının {{id}} görevi başarısız oldu",
+    "trace": "Yığın izi",
+    "noTrace": "Kafka Connect yığın izi bildirmedi.",
+    "traceCut": "Yığın izi kısaltıldı.",
+    "autoRestartMax_one": "Açık, en fazla {{count}} yeniden başlatma",
+    "autoRestartMax_other": "Açık, en fazla {{count}} yeniden başlatma",
+    "restartsExhausted_one": "Strimzi {{count}} yeniden başlatmadan sonra onu otomatik olarak yeniden başlatmayı bıraktı.",
+    "restartsExhausted_other": "Strimzi {{count}} yeniden başlatmadan sonra onu otomatik olarak yeniden başlatmayı bıraktı."
   }
 }

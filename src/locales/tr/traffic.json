@@ -41,7 +41,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "protokol bildirilmedi"
+    "unknown": "protokol bildirilmedi",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Hatalar %1’in altında",
@@ -85,7 +86,8 @@
     "noVerdict": "TCP için değerlendirme yok",
     "class": "{{class}} {{value}}/sn",
     "noClasses": "HTTP durumu bildirilmedi",
-    "notRead": "okunamadı"
+    "notRead": "okunamadı",
+    "bytes": "{{value}}/sn"
   },
   "open": "{{name}} öğesini aç",
   "openRequests": "{{name}} istekleri",
@@ -125,8 +127,10 @@
   "noSource": "Prometheus’ta bir çağrının iki ucunu da adlandıran metrik yok: Istio, Linkerd, Grafana Beyla hizmet grafiği veya Cilium Hubble’dan hiçbiri ona veri göndermiyor.",
   "requestOnly": "Gönderen olmadan iş yükü başına istekler şuradan geliyor: {{sources}}. Her iş yükünün İstekler bölümüne bakın.",
   "wouldProvide": "Bunlardan herhangi biri grafiği sağlar: bir Istio ağı (mesh), linkerd-viz ile bir Linkerd ağı (veya proxy’lerini toplayan bir Prometheus), hizmet grafiği metrikleri açık Grafana Beyla ya da labelsContext’i kaynak ve hedef iş yüklerini adlandıran HTTP metrikleriyle Cilium Hubble.",
+  "wouldProvideTcp": "Caretta, iş yükleri arasındaki TCP bağlantılarını saniye başına bayt olarak gösterirdi.",
   "noEdges": {
     "minutes5": "{{sources}} verilerine göre son 5 dakikada bu namespace’lerde ucu olan çağrı yok.",
     "hour1": "{{sources}} verilerine göre son bir saatte bu namespace’lerde ucu olan çağrı yok."
-  }
+  },
+  "bytesNote": "Caretta yalnızca TCP bağlantılarını görür: çizgileri her iki yönde saniye başına baytı gösterir; istek, hata veya gecikme yoktur."
 }

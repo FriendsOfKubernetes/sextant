@@ -1,0 +1,118 @@
+[
+  {
+    "apiVersion": "projectcontour.io/v1",
+    "kind": "HTTPProxy",
+    "metadata": { "name": "root-blog", "namespace": "roots", "uid": "c0a1-root-blog", "resourceVersion": "101", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "virtualhost": {
+        "fqdn": "root.bar.com",
+        "tls": { "secretName": "www-admin/example-com-wildcard", "minimumProtocolVersion": "1.2" },
+        "authorization": { "extensionRef": { "name": "authserver", "namespace": "projectcontour-auth" } },
+        "rateLimitPolicy": { "local": { "requests": 100, "unit": "minute" } }
+      },
+      "includes": [
+        { "name": "blogsite", "namespace": "marketing", "conditions": [{ "prefix": "/blog" }] },
+        { "name": "missing-site", "namespace": "marketing", "conditions": [{ "prefix": "/missing" }] }
+      ],
+      "routes": [
+        { "conditions": [{ "prefix": "/" }], "services": [{ "name": "rootapp", "port": 80 }] }
+      ]
+    },
+    "status": {
+      "currentStatus": "invalid",
+      "description": "At least one error present, see Errors for details",
+      "loadBalancer": { "ingress": [{ "ip": "203.0.113.10" }] },
+      "conditions": [
+        {
+          "type": "Valid",
+          "status": "False",
+          "reason": "ErrorPresent",
+          "message": "At least one error present, see Errors for details",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "observedGeneration": 2,
+          "errors": [
+            { "type": "IncludeError", "status": "True", "reason": "IncludeNotFound", "message": "include marketing/missing-site not found" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "projectcontour.io/v1",
+    "kind": "HTTPProxy",
+    "metadata": { "name": "blogsite", "namespace": "marketing", "uid": "c0a1-blogsite", "resourceVersion": "102", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "routes": [
+        {
+          "conditions": [{ "prefix": "/" }],
+          "services": [
+            { "name": "blog", "port": 80, "weight": 90 },
+            { "name": "blog-canary", "port": 80, "weight": 10 },
+            { "name": "blog-shadow", "port": 80, "mirror": true, "weight": 20 }
+          ],
+          "timeoutPolicy": { "response": "5s" }
+        },
+        {
+          "conditions": [{ "prefix": "/admin" }, { "header": { "name": "x-env", "exact": "staging" } }],
+          "services": [{ "name": "blog-admin", "port": 8080 }, { "name": "blog-admin-old", "port": 8080 }]
+        }
+      ]
+    },
+    "status": {
+      "currentStatus": "valid",
+      "description": "Valid HTTPProxy",
+      "conditions": [{ "type": "Valid", "status": "True", "reason": "Valid", "message": "Valid HTTPProxy", "lastTransitionTime": "2026-10-20T10:00:00Z" }]
+    }
+  },
+  {
+    "apiVersion": "projectcontour.io/v1",
+    "kind": "HTTPProxy",
+    "metadata": { "name": "old-blog", "namespace": "marketing", "uid": "c0a1-old-blog", "resourceVersion": "103", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": { "routes": [{ "services": [{ "name": "blog-v1", "port": 80 }] }] },
+    "status": {
+      "currentStatus": "orphaned",
+      "description": "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+      "conditions": [
+        {
+          "type": "Valid",
+          "status": "False",
+          "reason": "Orphaned",
+          "message": "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "errors": [
+            { "type": "Orphaned", "status": "True", "reason": "Orphaned", "message": "this HTTPProxy is not part of a delegation chain from a root HTTPProxy" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "projectcontour.io/v1",
+    "kind": "HTTPProxy",
+    "metadata": { "name": "duplicate", "namespace": "default", "uid": "c0a1-duplicate", "resourceVersion": "104", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": { "virtualhost": { "fqdn": "root.bar.com" }, "routes": [{ "services": [{ "name": "web", "port": 80 }] }] },
+    "status": {
+      "currentStatus": "invalid",
+      "description": "fqdn \"root.bar.com\" is used in multiple HTTPProxies: default/duplicate, roots/root-blog",
+      "conditions": [
+        {
+          "type": "Valid",
+          "status": "False",
+          "reason": "DuplicateVhost",
+          "message": "fqdn \"root.bar.com\" is used in multiple HTTPProxies: default/duplicate, roots/root-blog",
+          "lastTransitionTime": "2026-10-20T10:00:00Z",
+          "errors": [
+            { "type": "VirtualHostError", "status": "True", "reason": "DuplicateVhost", "message": "fqdn \"root.bar.com\" is used in multiple HTTPProxies: default/duplicate, roots/root-blog" }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "projectcontour.io/v1",
+    "kind": "HTTPProxy",
+    "metadata": { "name": "fresh", "namespace": "default", "uid": "c0a1-fresh", "resourceVersion": "105", "creationTimestamp": "2026-10-20T11:59:00Z" },
+    "spec": { "ingressClassName": "contour-internal", "virtualhost": { "fqdn": "fresh.bar.com" }, "routes": [{ "services": [{ "name": "web", "port": 80 }] }] },
+    "status": { "currentStatus": "NotReconciled", "description": "Waiting for controller" }
+  }
+]

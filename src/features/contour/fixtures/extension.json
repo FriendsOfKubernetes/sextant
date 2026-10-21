@@ -1,0 +1,18 @@
+{
+  "apiVersion": "projectcontour.io/v1alpha1",
+  "kind": "ExtensionService",
+  "metadata": { "name": "authserver", "namespace": "projectcontour-auth", "uid": "c0a1-extension", "resourceVersion": "301", "creationTimestamp": "2026-10-01T10:00:00Z" },
+  "spec": { "protocol": "h2", "services": [{ "name": "htpasswd", "port": 9443 }], "timeoutPolicy": { "response": "100ms" } },
+  "status": {
+    "conditions": [
+      {
+        "type": "Valid",
+        "status": "False",
+        "reason": "ErrorPresent",
+        "message": "At least one error present, see Errors for details",
+        "lastTransitionTime": "2026-10-20T10:00:00Z",
+        "errors": [{ "type": "ServiceError", "status": "True", "reason": "ServiceUnresolvedReference", "message": "unresolved service \"projectcontour-auth/htpasswd\"" }]
+      }
+    ]
+  }
+}

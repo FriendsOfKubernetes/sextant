@@ -117,7 +117,9 @@ fn detection_asks_for_the_known_names_only() {
     assert!(known.contains(&"traces_service_graph_request_server_seconds_count"));
     assert!(known.contains(&"traces_service_graph_request_client_seconds_count"));
     assert!(!known.contains(&"traces_service_graph_request_total"));
-    assert_eq!(known.len(), 17);
+    // And Caretta's links (#236), an edge source only.
+    assert!(known.contains(&"caretta_links_observed"));
+    assert_eq!(known.len(), 18);
 }
 
 /// What the fixtures of each source must give: (source file, kind, rate, error ratio, p50, p95, p99 in ms).

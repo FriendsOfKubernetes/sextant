@@ -1,0 +1,69 @@
+{
+  "apiVersion": "kafka.strimzi.io/v1",
+  "kind": "KafkaMirrorMaker2",
+  "metadata": {
+    "name": "my-mirror-maker-2",
+    "namespace": "kafka",
+    "uid": "mm2-my-mirror-maker-2",
+    "creationTimestamp": "2026-10-01T10:00:00Z"
+  },
+  "spec": {
+    "version": "4.0.0",
+    "replicas": 1,
+    "target": {
+      "alias": "cluster-b",
+      "bootstrapServers": "cluster-b-kafka-bootstrap:9092"
+    },
+    "mirrors": [
+      {
+        "source": {
+          "alias": "cluster-a",
+          "bootstrapServers": "cluster-a-kafka-bootstrap:9092"
+        },
+        "topicsPattern": ".*"
+      }
+    ]
+  },
+  "status": {
+    "observedGeneration": 1,
+    "replicas": 1,
+    "url": "http://my-mirror-maker-2-mirrormaker2-api.kafka.svc:8083",
+    "connectors": [
+      {
+        "name": "cluster-a->cluster-b.MirrorCheckpointConnector",
+        "type": "source",
+        "connector": { "state": "RUNNING", "worker_id": "10.244.0.31:8083" },
+        "tasks": [
+          { "id": 0, "state": "RUNNING", "worker_id": "10.244.0.31:8083" }
+        ]
+      },
+      {
+        "name": "cluster-a->cluster-b.MirrorSourceConnector",
+        "type": "source",
+        "connector": { "state": "RUNNING", "worker_id": "10.244.0.31:8083" },
+        "tasks": [
+          {
+            "id": 0,
+            "state": "FAILED",
+            "worker_id": "10.244.0.31:8083",
+            "trace": "org.apache.kafka.common.errors.TopicAuthorizationException: Not authorized to access topics: [orders]\n"
+          }
+        ]
+      }
+    ],
+    "autoRestartStatuses": [
+      {
+        "count": 1,
+        "connectorName": "cluster-a->cluster-b.MirrorSourceConnector",
+        "lastRestartTimestamp": "2026-10-10T08:05:00Z"
+      }
+    ],
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-10-10T08:00:00Z"
+      }
+    ]
+  }
+}

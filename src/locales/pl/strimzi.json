@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} obiekt wymaga uwagi",
   "badge_few": "{{count}} obiekty wymagają uwagi",
@@ -27,7 +28,12 @@
     "partitions": "Partycje",
     "topicReplicas": "Repliki",
     "authentication": "Uwierzytelnianie",
-    "authorization": "Autoryzacja"
+    "authorization": "Autoryzacja",
+    "connectCluster": "Klaster Connect",
+    "connectorState": "Konektor",
+    "tasks": "Działające zadania",
+    "class": "Klasa",
+    "restarts": "Autorestarty"
   },
   "fields": {
     "status": "Stan",
@@ -53,7 +59,17 @@
     "bootstrapServers": "Serwery bootstrap",
     "connectCluster": "Klaster Connect",
     "url": "REST API",
-    "plugins": "Wtyczki konektorów"
+    "plugins": "Wtyczki konektorów",
+    "class": "Klasa konektora",
+    "tasksMax": "Maks. zadań",
+    "desiredState": "Żądany stan",
+    "connectorState": "Stan konektora",
+    "connectorType": "Typ",
+    "worker": "Worker",
+    "autoRestart": "Automatyczny restart",
+    "restarts": "Automatyczne restarty",
+    "lastRestart": "Ostatni automatyczny restart",
+    "topics": "Tematy"
   },
   "warnings": "Ostrzeżenia",
   "warningReason": "Przyczyna",
@@ -78,6 +94,32 @@
     "title": "Konektory",
     "name": "Nazwa",
     "state": "Stan",
-    "tasks": "Zadania"
+    "tasks": "Zadania",
+    "restarts": "Autorestarty"
+  },
+  "connector": {
+    "tasksTitle": "Zadania",
+    "task": "Zadanie",
+    "state": "Stan",
+    "worker": "Worker",
+    "error": "Błąd",
+    "autoRestartOn": "Włączony",
+    "autoRestartOff": "Wyłączony",
+    "failuresTitle": "Awarie",
+    "connectorFailed": "Konektor {{name}} uległ awarii",
+    "failed": "Konektor uległ awarii",
+    "taskFailed": "Zadanie {{id}} uległo awarii",
+    "mirrorTaskFailed": "Zadanie {{id}} konektora {{name}} uległo awarii",
+    "trace": "Ślad stosu",
+    "noTrace": "Kafka Connect nie przekazał śladu stosu.",
+    "traceCut": "Ślad stosu jest skrócony.",
+    "autoRestartMax_one": "Włączony, najwyżej {{count}} restart",
+    "autoRestartMax_few": "Włączony, najwyżej {{count}} restarty",
+    "autoRestartMax_many": "Włączony, najwyżej {{count}} restartów",
+    "autoRestartMax_other": "Włączony, najwyżej {{count}} restartu",
+    "restartsExhausted_one": "Strimzi przestał go automatycznie restartować po {{count}} restarcie.",
+    "restartsExhausted_few": "Strimzi przestał go automatycznie restartować po {{count}} restartach.",
+    "restartsExhausted_many": "Strimzi przestał go automatycznie restartować po {{count}} restartach.",
+    "restartsExhausted_other": "Strimzi przestał go automatycznie restartować po {{count}} restartu."
   }
 }

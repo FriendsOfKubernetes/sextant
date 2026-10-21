@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} об'єкт потребує уваги",
   "badge_few": "{{count}} об'єкти потребують уваги",
@@ -27,7 +28,12 @@
     "partitions": "Розділи",
     "topicReplicas": "Репліки",
     "authentication": "Автентифікація",
-    "authorization": "Авторизація"
+    "authorization": "Авторизація",
+    "connectCluster": "Кластер Connect",
+    "connectorState": "Конектор",
+    "tasks": "Задачі в роботі",
+    "class": "Клас",
+    "restarts": "Автоперезапуски"
   },
   "fields": {
     "status": "Статус",
@@ -53,7 +59,17 @@
     "bootstrapServers": "Bootstrap-сервери",
     "connectCluster": "Кластер Connect",
     "url": "REST API",
-    "plugins": "Плагіни конекторів"
+    "plugins": "Плагіни конекторів",
+    "class": "Клас конектора",
+    "tasksMax": "Макс. задач",
+    "desiredState": "Запитаний стан",
+    "connectorState": "Стан конектора",
+    "connectorType": "Тип",
+    "worker": "Воркер",
+    "autoRestart": "Автоматичний перезапуск",
+    "restarts": "Автоматичні перезапуски",
+    "lastRestart": "Останній автоматичний перезапуск",
+    "topics": "Топіки"
   },
   "warnings": "Попередження",
   "warningReason": "Причина",
@@ -78,6 +94,32 @@
     "title": "Конектори",
     "name": "Ім'я",
     "state": "Стан",
-    "tasks": "Завдання"
+    "tasks": "Завдання",
+    "restarts": "Автоперезапуски"
+  },
+  "connector": {
+    "tasksTitle": "Задачі",
+    "task": "Задача",
+    "state": "Стан",
+    "worker": "Воркер",
+    "error": "Помилка",
+    "autoRestartOn": "Увімкнено",
+    "autoRestartOff": "Вимкнено",
+    "failuresTitle": "Збої",
+    "connectorFailed": "Конектор {{name}} впав",
+    "failed": "Конектор впав",
+    "taskFailed": "Задача {{id}} впала",
+    "mirrorTaskFailed": "Задача {{id}} конектора {{name}} впала",
+    "trace": "Трасування стека",
+    "noTrace": "Kafka Connect не надіслав трасування стека.",
+    "traceCut": "Трасування стека скорочено.",
+    "autoRestartMax_one": "Увімкнено, не більше {{count}} перезапуску",
+    "autoRestartMax_few": "Увімкнено, не більше {{count}} перезапусків",
+    "autoRestartMax_many": "Увімкнено, не більше {{count}} перезапусків",
+    "autoRestartMax_other": "Увімкнено, не більше {{count}} перезапуску",
+    "restartsExhausted_one": "Strimzi припинив автоматично перезапускати його після {{count}} перезапуску.",
+    "restartsExhausted_few": "Strimzi припинив автоматично перезапускати його після {{count}} перезапусків.",
+    "restartsExhausted_many": "Strimzi припинив автоматично перезапускати його після {{count}} перезапусків.",
+    "restartsExhausted_other": "Strimzi припинив автоматично перезапускати його після {{count}} перезапуску."
   }
 }

@@ -1,0 +1,13 @@
+/* Contour: the services of a route, each with its share or the percent mirrored. */
+.ct-services {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ct-service {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}

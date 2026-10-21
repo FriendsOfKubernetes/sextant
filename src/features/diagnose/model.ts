@@ -133,6 +133,11 @@ export interface ClusterView {
   certificates(namespace: string, secret: string): CertificateState | undefined;
   gateways(namespace: string): readonly KubeObject[] | null | undefined;
   grants(namespace: string): readonly KubeObject[] | undefined;
+  /**
+   * A list a registered route kind asked for (`routeKinds.ts`): `null` where the cluster does not serve the kind.
+   * Absent from an AI agent's view.
+   */
+  objects?(kind: Pick<KindRef, "group" | "kind">, namespace: string): readonly KubeObject[] | null | undefined;
 }
 
 /** Where traffic to the backend pods comes from, for the network policy check. */

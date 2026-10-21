@@ -1,0 +1,50 @@
+{
+  "apiVersion": "kafka.strimzi.io/v1",
+  "kind": "KafkaConnector",
+  "metadata": {
+    "name": "my-source-connector",
+    "namespace": "kafka",
+    "uid": "kafkaconnector-my-source-connector",
+    "creationTimestamp": "2026-10-01T10:00:00Z",
+    "labels": { "strimzi.io/cluster": "my-connect-cluster" }
+  },
+  "spec": {
+    "class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+    "tasksMax": 2,
+    "autoRestart": { "enabled": true, "maxRestarts": 3 },
+    "config": { "file": "/opt/kafka/LICENSE", "topic": "my-topic" }
+  },
+  "status": {
+    "observedGeneration": 1,
+    "tasksMax": 2,
+    "topics": ["my-topic"],
+    "autoRestart": {
+      "count": 3,
+      "connectorName": "my-source-connector",
+      "lastRestartTimestamp": "2026-10-10T08:12:00Z"
+    },
+    "connectorStatus": {
+      "name": "my-source-connector",
+      "type": "source",
+      "connector": { "state": "RUNNING", "worker_id": "10.244.0.21:8083" },
+      "tasks": [
+        { "id": 0, "state": "RUNNING", "worker_id": "10.244.0.21:8083" },
+        {
+          "id": 1,
+          "state": "FAILED",
+          "worker_id": "10.244.0.22:8083",
+          "trace": "org.apache.kafka.connect.errors.ConnectException: java.nio.file.NoSuchFileException: /opt/kafka/LICENSE\n\tat org.apache.kafka.connect.file.FileStreamSourceTask.poll(FileStreamSourceTask.java:98)\n\tat org.apache.kafka.connect.runtime.AbstractWorkerSourceTask.poll(AbstractWorkerSourceTask.java:488)\nCaused by: java.nio.file.NoSuchFileException: /opt/kafka/LICENSE\n"
+        }
+      ]
+    },
+    "conditions": [
+      {
+        "type": "NotReady",
+        "status": "True",
+        "reason": "Throwable",
+        "message": "The following tasks have failed: 1, see connectorStatus for more details.",
+        "lastTransitionTime": "2026-10-10T08:00:00Z"
+      }
+    ]
+  }
+}

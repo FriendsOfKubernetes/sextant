@@ -40,7 +40,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "未回報通訊協定"
+    "unknown": "未回報通訊協定",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "錯誤低於 1%",
@@ -84,7 +85,8 @@
     "noVerdict": "TCP 無判定",
     "class": "{{class}} {{value}}/秒",
     "noClasses": "未回報 HTTP 狀態",
-    "notRead": "無法讀取"
+    "notRead": "無法讀取",
+    "bytes": "{{value}}/秒"
   },
   "open": "開啟 {{name}}",
   "openRequests": "{{name}} 的要求",
@@ -120,8 +122,10 @@
   "noSource": "Prometheus 中沒有同時指明呼叫兩端的指標：Istio、Linkerd、Grafana Beyla 的服務圖與 Cilium Hubble 都沒有向它回報。",
   "requestOnly": "依工作負載統計但不含傳送端的要求來自 {{sources}}：請查看各工作負載的「要求」區段。",
   "wouldProvide": "以下任一項都能提供此圖：Istio 網格、搭配 linkerd-viz 的 Linkerd 網格（或收集其代理的 Prometheus）、啟用服務圖指標的 Grafana Beyla，或 HTTP 指標的 labelsContext 指明來源與目的工作負載的 Cilium Hubble。",
+  "wouldProvideTcp": "Caretta 可以用每秒位元組數顯示工作負載之間的 TCP 連線。",
   "noEdges": {
     "minutes5": "根據 {{sources}}，最近 5 分鐘內沒有一端在這些 namespace 中的呼叫。",
     "hour1": "根據 {{sources}}，最近 1 小時內沒有一端在這些 namespace 中的呼叫。"
-  }
+  },
+  "bytesNote": "Caretta 只能看到 TCP 連線：它的線條顯示雙向的每秒位元組數，沒有請求、錯誤和延遲。"
 }

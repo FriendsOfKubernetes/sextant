@@ -5,6 +5,7 @@ import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
 import type { Detected } from "../problems/model";
+import { connectorsOf, failedTasks, FAILED, firstLine } from "./connectors";
 
 const { arr, get, num, str } = status;
 
@@ -22,6 +23,7 @@ export const KAFKA_TOPIC = k("KafkaTopic");
 export const KAFKA_USER = k("KafkaUser");
 export const KAFKA_CONNECT = k("KafkaConnect");
 export const KAFKA_MIRROR_MAKER_2 = k("KafkaMirrorMaker2");
+export const KAFKA_CONNECTOR = k("KafkaConnector");
 
 export interface StrimziKind {
   kind: KindRef;
@@ -37,6 +39,7 @@ export const STRIMZI_KINDS: StrimziKind[] = [
   { kind: KAFKA_USER, order: 21, label: "users" },
   { kind: KAFKA_CONNECT, order: 30, label: "connects" },
   { kind: KAFKA_MIRROR_MAKER_2, order: 31, label: "mirrorMakers" },
+  { kind: KAFKA_CONNECTOR, order: 32, label: "connectors" },
 ];
 
 export const isKind = (a: Pick<KindRef, "group" | "kind">, ...of: Pick<KindRef, "group" | "kind">[]): boolean =>
@@ -159,12 +162,43 @@ export const userSecretOf = (user: KubeObject): string | undefined => str(get(us
 export const NOT_READY_GRACE_MS = 5 * 60_000;
 
 export function isProblem(obj: KubeObject): boolean {
-  return readinessOf(obj).state === "notReady";
+  return readinessOf(obj).state === "notReady" || connectorFailures(obj).length > 0;
 }
 
-/** The problems of a Strimzi object: not ready (after a grace). Warnings are not problems. */
+/**
+ * Failed connectors and tasks (#235) from the Kafka Connect REST status Strimzi copies into a KafkaConnector or a
+ * KafkaMirrorMaker2: one problem per reason, the message the first line of the first failure's trace. They count at
+ * once (a FAILED state is final until a restart; Strimzi's own auto-restart shows in the details).
+ */
+export function connectorFailures(obj: KubeObject): Detected[] {
+  const connectors = connectorsOf(obj);
+  const many = connectors.length > 1;
+  const named = (name: string | undefined, line: string | undefined) => (many && name && line ? `${name}: ${line}` : line);
+  const r = readinessOf(obj);
+  const since = r.state === "notReady" ? r.since : undefined;
+  const found: Detected[] = [];
+  const failed = connectors.find((c) => c.state === FAILED);
+  if (failed) {
+    const message = named(failed.name, firstLine(failed.trace));
+    found.push({ reason: "ConnectorFailed", group: "connectorFailed", message, since, notify: true });
+  }
+  const task = connectors.map((c) => ({ c, t: failedTasks(c)[0] })).find((x) => x.t !== undefined);
+  if (task) {
+    const message = named(task.c.name, firstLine(task.t?.trace));
+    found.push({ reason: "TaskFailed", group: "taskFailed", message, since, notify: true });
+  }
+  return found;
+}
+
+/**
+ * The problems of a Strimzi object: failed connectors and tasks; otherwise not ready (after a grace). Warnings are not
+ * problems.
+ */
 export function strimziProblems(obj: KubeObject): Detected[] {
   if (obj.metadata?.deletionTimestamp) return [];
+  // Strimzi's NotReady of a failed connector or task only says "see connectorStatus": the failures say more.
+  const failures = connectorFailures(obj);
+  if (failures.length > 0) return failures;
   const r = readinessOf(obj);
   if (r.state !== "notReady") return [];
   return [

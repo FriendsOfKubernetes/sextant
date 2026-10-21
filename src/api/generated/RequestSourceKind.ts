@@ -3,4 +3,4 @@
 /**
  * A source of request-level metrics.
  */
-export type RequestSourceKind = "istio" | "linkerd" | "ingressNginx" | "beyla" | "hubble";
+export type RequestSourceKind = "istio" | "linkerd" | "ingressNginx" | "beyla" | "hubble" | "caretta";

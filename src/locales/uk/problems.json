@@ -31,6 +31,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Сервісна мережа",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Політики Kyverno",
@@ -76,6 +78,8 @@
     "policyErrors_few": "{{count}} правила політик не вдалося перевірити: {{policies}}",
     "policyErrors_many": "{{count}} правил політик не вдалося перевірити: {{policies}}",
     "policyErrors_other": "{{count}} правила політик не вдалося перевірити: {{policies}}",
+    "traefikMissingReference": "Посилається на об'єкти, яких не існує: {{refs}}. Traefik пропускає те, що від них залежить.",
+    "traefikSkippedRoute": "Traefik пропускає його маршрути {{routes}}: порожнє правило match або kind, відмінний від Rule.",
     "serviceMonitorSelectsNothing": "Не вибирає жодного Service у namespace: {{namespaces}}",
     "podMonitorSelectsNothing": "Не вибирає жодного Pod у namespace: {{namespaces}}",
     "monitorNotPickedUp": "Жоден Prometheus не підхоплює його своїми selector"

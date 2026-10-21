@@ -870,3 +870,13 @@ async fn opt_in_problem_categories_are_computed_only_while_the_user_has_them_on(
     assert!(!categories.as_array().unwrap().contains(&json!("practices")));
     state.close_all();
 }
+
+/// Traefik's broken references (#232) are a window view: agents get none of them, even when the category is on.
+#[test]
+fn traefik_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"traefik"));
+    assert!(!answers::category_for_agents(
+        "traefik",
+        &["traefik".to_owned()]
+    ));
+}

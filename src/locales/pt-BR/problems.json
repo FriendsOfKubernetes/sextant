@@ -29,6 +29,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Malha de serviços",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Políticas do Kyverno",
@@ -70,6 +72,8 @@
     "policyErrors_one": "{{count}} regra de política não pôde ser avaliada: {{policies}}",
     "policyErrors_many": "{{count}} de regras de política não puderam ser avaliadas: {{policies}}",
     "policyErrors_other": "{{count}} regras de política não puderam ser avaliadas: {{policies}}",
+    "traefikMissingReference": "Faz referência a objetos que não existem: {{refs}}. O Traefik ignora o que depende deles.",
+    "traefikSkippedRoute": "O Traefik ignora as rotas {{routes}}: uma regra match vazia ou um kind diferente de Rule.",
     "serviceMonitorSelectsNothing": "Não seleciona nenhum Service nos namespaces: {{namespaces}}",
     "podMonitorSelectsNothing": "Não seleciona nenhum Pod nos namespaces: {{namespaces}}",
     "monitorNotPickedUp": "Nenhum Prometheus o seleciona pelos seus selectors"

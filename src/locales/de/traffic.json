@@ -41,7 +41,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "Protokoll nicht gemeldet"
+    "unknown": "Protokoll nicht gemeldet",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Fehler unter 1 %",
@@ -85,7 +86,8 @@
     "noVerdict": "keine Bewertung für TCP",
     "class": "{{class}} {{value}}/s",
     "noClasses": "kein HTTP-Status gemeldet",
-    "notRead": "konnte nicht gelesen werden"
+    "notRead": "konnte nicht gelesen werden",
+    "bytes": "{{value}}/s"
   },
   "open": "{{name}} öffnen",
   "openRequests": "Anfragen von {{name}}",
@@ -125,8 +127,10 @@
   "noSource": "Prometheus hat keine Metriken, die beide Enden eines Aufrufs nennen: Weder Istio noch Linkerd, der Service-Graph von Grafana Beyla oder Cilium Hubble melden an es.",
   "requestOnly": "Anfragen pro Workload, ohne den Absender, kommen von {{sources}}: siehe den Abschnitt „Anfragen“ jedes Workloads.",
   "wouldProvide": "Jede dieser Quellen liefert den Graphen: ein Istio-Mesh, ein Linkerd-Mesh mit linkerd-viz (oder ein Prometheus, das seine Proxys abfragt), Grafana Beyla mit aktivierten Service-Graph-Metriken oder Cilium Hubble mit HTTP-Metriken, deren labelsContext die Quell- und Ziel-Workloads nennt.",
+  "wouldProvideTcp": "Caretta würde die TCP-Verbindungen zwischen Workloads in Bytes pro Sekunde zeigen.",
   "noEdges": {
     "minutes5": "Laut {{sources}} gab es in den letzten 5 Minuten keine Aufrufe mit einem Ende in diesen Namespaces.",
     "hour1": "Laut {{sources}} gab es in der letzten Stunde keine Aufrufe mit einem Ende in diesen Namespaces."
-  }
+  },
+  "bytesNote": "Caretta sieht nur TCP-Verbindungen: Ihre Linien zeigen Bytes pro Sekunde in beide Richtungen, ohne Anfragen, Fehler oder Latenz."
 }

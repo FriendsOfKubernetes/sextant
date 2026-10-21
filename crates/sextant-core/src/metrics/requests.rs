@@ -1,6 +1,7 @@
 //! Request metrics of a workload (#212): request rate, error share and latency (p50/p95/p99) from whichever source of
 //! request-level metrics the cluster's Prometheus has — Istio, Linkerd (also through linkerd-viz's own Prometheus),
-//! ingress-nginx, Grafana Beyla, Cilium Hubble — and CPU throttling per container from cAdvisor.
+//! ingress-nginx, Grafana Beyla, Cilium Hubble — and CPU throttling per container from cAdvisor. Caretta (#236) is a
+//! source of the traffic graph's edges only.
 //!
 //! Which sources there are is asked of Prometheus once per connection (a fixed list of metric names, at most
 //! [`REQUEST_SOURCES_TTL`] old) by [`request_sources`]; the live traffic graph (#211) reuses it. Every query is fixed
@@ -55,16 +56,20 @@ pub enum RequestSourceKind {
     Beyla,
     /// Cilium Hubble's HTTP metrics (`hubble_http_requests_total`, `hubble_http_request_duration_seconds`).
     Hubble,
+    /// Caretta (groundcover): TCP links its eBPF probes observe (`caretta_links_observed`, bytes sent). Edges of the
+    /// traffic graph only (#236): it sees connections, not requests, so it has no request metrics of a workload.
+    Caretta,
 }
 
 impl RequestSourceKind {
     /// In the order the sources are listed.
-    pub const ALL: [RequestSourceKind; 5] = [
+    pub const ALL: [RequestSourceKind; 6] = [
         RequestSourceKind::Istio,
         RequestSourceKind::Linkerd,
         RequestSourceKind::IngressNginx,
         RequestSourceKind::Beyla,
         RequestSourceKind::Hubble,
+        RequestSourceKind::Caretta,
     ];
 
     /// The source is there when every metric of one of these groups exists.
@@ -79,6 +84,8 @@ impl RequestSourceKind {
                 &["rpc_server_duration_seconds_count"],
             ],
             RequestSourceKind::Hubble => &[&["hubble_http_requests_total"]],
+            // No request metrics: never a source of the Requests section.
+            RequestSourceKind::Caretta => &[],
         }
     }
 
@@ -95,6 +102,7 @@ impl RequestSourceKind {
                 "rpc_server_duration_seconds_bucket",
             ],
             RequestSourceKind::Hubble => &["hubble_http_request_duration_seconds_bucket"],
+            RequestSourceKind::Caretta => &[],
         }
     }
 
@@ -116,6 +124,8 @@ impl RequestSourceKind {
                 &["traces_service_graph_request_client_seconds_count"],
             ],
             RequestSourceKind::Hubble => &[&["hubble_http_requests_total"]],
+            // Its gauge of bytes sent per link, named by both ends (groundcover-com/caretta `pkg/caretta/caretta.go`).
+            RequestSourceKind::Caretta => &[&["caretta_links_observed"]],
         }
     }
 
@@ -126,7 +136,7 @@ impl RequestSourceKind {
                 "traces_service_graph_request_server_seconds_bucket",
                 "traces_service_graph_request_client_seconds_bucket",
             ],
-            RequestSourceKind::IngressNginx => &[],
+            RequestSourceKind::IngressNginx | RequestSourceKind::Caretta => &[],
             other => other.latency_metrics(),
         }
     }

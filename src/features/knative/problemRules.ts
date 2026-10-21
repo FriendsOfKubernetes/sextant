@@ -3,14 +3,19 @@
 // not ready is a problem; so is a Configuration of its own (one a Service made is told through that Service). A
 // Revision is not watched: an old revision that failed is history, and the failure of the latest one is what makes
 // its Configuration and Service not ready (ConfigurationsReady), so the latest revision's failure counts once, there.
+// Knative Eventing kinds (#234) are judged in eventingProblems.ts.
 import type { KindRef, KubeObject } from "../../api";
 import type { Detected } from "../problems/model";
+import { EVENTING_GROUPS } from "./eventing";
+import { eventingProblems } from "./eventingProblems";
 import { CONFIGURATION, failingCondition, KSERVICE, ownedByService, readyStatus, sameKind } from "./model";
 
 /** A rollout the next reconcile fixes passes quietly (as `SHORT_GRACE_MS` of the problems model). */
 export const KNATIVE_GRACE_MS = 2 * 60_000;
 
 export function knativeProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObject): Detected[] {
+  // Knative Eventing (#234): Brokers, Triggers, Channels, Subscriptions, flows and sources (eventingProblems.ts).
+  if (EVENTING_GROUPS.has(kind.group)) return eventingProblems(kind, obj);
   if (!sameKind(kind, KSERVICE) && !sameKind(kind, CONFIGURATION)) return [];
   if (sameKind(kind, CONFIGURATION) && ownedByService(obj)) return [];
   if (readyStatus(obj) !== "False") return [];

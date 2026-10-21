@@ -11,6 +11,10 @@
 // Read in all namespaces, and certificates only when the agent may have them read (`scope.certificates`: Read and
 // "Secret values" on the namespace's Secrets) — otherwise `tls_certificate_info` is never called. Pods and network
 // policies follow the same scope (`NetpolOptions.scope`): a policy list it may not read is unreadable, never watched.
+//
+// A route kind registered by another project (`routeKinds.ts`: Traefik, Contour) adds the namespaces of its Services
+// (within `MAX_NAMESPACES`), its own lists (one spec per kind and namespace, served kinds only, seen by the engine as
+// `ClusterView.objects`) and its TLS Secrets (within `MAX_SECRETS`).
 import { useEffect, useMemo, useState } from "react";
 import { api, toApiError, type ClusterId, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
 import { useClusterKinds } from "../../resources";
@@ -22,6 +26,7 @@ import { useSharedWatches } from "../resource-map/watches";
 import { controllerOf, controllerSelector, resolveClass } from "./controllers";
 import { diagnosedKind } from "./engine";
 import type { CertificateState, ClusterView } from "./model";
+import { routeDiagnoserOf, type SecretRef } from "./routeKinds";
 import { ENDPOINT_SLICE, INGRESS_CLASS, nameOf, POD, SERVICE } from "./objects";
 import { tlsEntries } from "./tls";
 
@@ -32,12 +37,16 @@ export const MAX_SECRETS = 8;
 /** How often "now" moves on (a load balancer pending for how long). */
 export const CLOCK_MS = 30_000;
 
-type Role = "root" | "services" | "slices" | "classes" | "controller" | "gateways";
+type Role = "root" | "services" | "slices" | "classes" | "controller" | "gateways" | "registered";
 interface Planned {
   role: Role;
   namespace: string | null;
   spec: WatchSpec;
+  /** `group/kind` of a registered route kind's list. */
+  key?: string;
 }
+
+const kindKey = (kind: Pick<KindRef, "group" | "kind">) => `${kind.group}/${kind.kind}`;
 
 const spec = (kind: KindRef, namespace: string | null, labelSelector: string | null = null): WatchSpec => ({
   kind,
@@ -114,7 +123,15 @@ export function useDiagnosisData(
   const live = readable(rootState, namespace) ? ([...rootState!.items.values()].find((o) => nameOf(o) === name) ?? null) : undefined;
   const obj = live === undefined ? given : live;
 
-  const routes = which === "route" ? routeNamespaces(kind, obj, namespace) : { backends: [namespace], parents: [] };
+  const registered = which === "registered" ? routeDiagnoserOf(kind) : undefined;
+  const routes =
+    which === "route"
+      ? routeNamespaces(kind, obj, namespace)
+      : registered
+        ? { backends: capped([namespace, ...registered.namespaces(obj, namespace)]), parents: [] }
+        : { backends: [namespace], parents: [] };
+  // A registered kind's own lists, each of a kind the cluster serves (`null`: not served, `undefined`: discovering).
+  const registeredLists = (registered?.lists(obj, namespace) ?? []).map((l) => ({ ...l, served: servedKind(kinds, l.kind) }));
   const namespaces = routes.backends;
   const classesSpec = served.ingressClass && may(INGRESS_CLASS, null) ? spec(served.ingressClass, null) : null;
   const plan: Planned[] = [];
@@ -126,6 +143,13 @@ export function useDiagnosisData(
     if (classesSpec) plan.push({ role: "classes", namespace: null, spec: classesSpec });
     for (const ns of routes.parents) {
       if (served.gateway && may(GATEWAY, ns)) plan.push({ role: "gateways", namespace: ns, spec: spec(served.gateway, ns) });
+    }
+    const listed = new Set<string>();
+    for (const l of registeredLists) {
+      const id = `${kindKey(l.kind)}|${l.namespace}`;
+      if (!l.served || !may(l.kind, l.namespace) || listed.has(id)) continue;
+      listed.add(id);
+      plan.push({ role: "registered", namespace: l.namespace, spec: spec(l.served, l.namespace), key: kindKey(l.kind) });
     }
   }
   const firstStates = useSharedWatches(clusterId, plan.map((p) => p.spec));
@@ -143,7 +167,8 @@ export function useDiagnosisData(
 
   const netpol = useNetpolData(clusterId, namespaces, { pods: true, scope });
   const grantsIn = useGrants(clusterId, which === "route" ? namespaces.filter((n) => n !== namespace && may(REFERENCE_GRANT, n)) : []);
-  const certificates = useCertificates(clusterId, which === "ingress" && (!scope || scope.certificates) ? obj : null);
+  const certificateSecrets = which === "ingress" ? ingressSecrets(obj) : registered ? registered.secrets(obj, namespace) : [];
+  const certificates = useCertificates(clusterId, !scope || scope.certificates ? certificateSecrets : [], String(obj?.metadata?.resourceVersion ?? ""));
 
   const view = useMemo((): ClusterView => {
     const entries = plan.map((p, i) => ({ ...p, state: firstStates[i] }));
@@ -167,12 +192,19 @@ export function useDiagnosisData(
       certificates: (ns, secret) => certificates.get(`${ns}/${secret}`),
       gateways: (ns) => (served.gateway === null ? null : listOf("gateways", ns)),
       grants: grantsIn,
+      objects: (k, ns) => {
+        const l = registeredLists.find((x) => kindKey(x.kind) === kindKey(k) && x.namespace === ns);
+        if (l?.served === null) return null;
+        const e = entries.find((x) => x.role === "registered" && x.key === kindKey(k) && x.namespace === ns);
+        return e && readable(e.state, ns) ? [...e.state!.items.values()].filter((o) => o.metadata?.namespace === ns) : undefined;
+      },
     };
   }, [now, firstStates, controllerState, netpol, certificates, classes, controller, grantsIn]);
 
   const loading =
     discovering ||
     rootState?.status === "loading" ||
+    registeredLists.some((l) => l.served === undefined) ||
     firstStates.some((s) => s.status === "loading") ||
     controllerState?.status === "loading" ||
     netpol.loading ||
@@ -186,20 +218,23 @@ interface Certificates {
   pending: boolean;
 }
 
-/** The certificates of an Ingress's TLS Secrets (`namespace/name` → state), read again when the Ingress changes. */
-function useCertificates(clusterId: ClusterId, ingress: KubeObject | null): Certificates {
+/** An Ingress's TLS Secrets, in its namespace. */
+function ingressSecrets(ingress: KubeObject | null): SecretRef[] {
   const namespace = ingress?.metadata?.namespace ?? "";
-  const secrets = ingress
-    ? [...new Set(tlsEntries(ingress).flatMap((e) => (e.secretName ? [e.secretName] : [])))].slice(0, MAX_SECRETS)
-    : [];
-  const key = JSON.stringify([clusterId, namespace, secrets, ingress?.metadata?.resourceVersion ?? ""]);
+  return ingress ? tlsEntries(ingress).flatMap((e) => (e.secretName ? [{ namespace, name: e.secretName }] : [])) : [];
+}
+
+/** The certificates of the path's TLS Secrets (`namespace/name` → state), read again when the object changes. */
+function useCertificates(clusterId: ClusterId, named: readonly SecretRef[], version: string): Certificates {
+  const secrets = [...new Set(named.map((s) => `${s.namespace}/${s.name}`))].slice(0, MAX_SECRETS);
+  const key = JSON.stringify([clusterId, secrets, version]);
   const [loaded, setLoaded] = useState<{ key: string; states: Map<string, CertificateState> } | null>(null);
   useEffect(() => {
     if (secrets.length === 0) return;
     let cancelled = false;
     void Promise.all(
       secrets.map((secret) =>
-        api.tls.certificateInfo(clusterId, namespace, secret).then(
+        api.tls.certificateInfo(clusterId, secret.slice(0, secret.indexOf("/")), secret.slice(secret.indexOf("/") + 1)).then(
           (info): CertificateState => ({ state: "ready", info }),
           (err: unknown): CertificateState => {
             const code = toApiError(err).code;
@@ -208,12 +243,12 @@ function useCertificates(clusterId: ClusterId, ingress: KubeObject | null): Cert
         ),
       ),
     ).then((states) => {
-      if (!cancelled) setLoaded({ key, states: new Map(secrets.map((s, i) => [`${namespace}/${s}`, states[i]!])) });
+      if (!cancelled) setLoaded({ key, states: new Map(secrets.map((s, i) => [s, states[i]!])) });
     });
     return () => {
       cancelled = true;
     };
-    // `key` stands for the cluster, the namespace, the Secrets and the Ingress's version.
+    // `key` stands for the cluster, the Secrets and the object's version.
   }, [key]);
   const current = loaded?.key === key ? loaded.states : undefined;
   return useMemo(

@@ -39,7 +39,12 @@ export function edgeId(edge: TrafficEdge): string {
   return `${edge.source}|${edge.protocol}|${peerId(edge.from)}>${peerId(edge.to)}`;
 }
 
-const PROTOCOL_OF: Record<Exclude<ProtocolFilter, "all">, TrafficProtocol> = { http: "http", grpc: "grpc", tcp: "tcp" };
+/** The protocols a filter keeps: "TCP" is connections counted (`tcp`) and their bytes (`tcpBytes`, Caretta). */
+const PROTOCOLS_OF: Record<Exclude<ProtocolFilter, "all">, readonly TrafficProtocol[]> = {
+  http: ["http"],
+  grpc: ["grpc"],
+  tcp: ["tcp", "tcpBytes"],
+};
 
 function classRate(edge: TrafficEdge, cls: string): number {
   return edge.statusClasses.find((c) => c.class === cls)?.rate ?? 0;
@@ -48,7 +53,7 @@ function classRate(edge: TrafficEdge, cls: string): number {
 export function matchesFilters(edge: TrafficEdge, filters: TrafficFilters): boolean {
   if (filters.namespace !== null && edge.from.namespace !== filters.namespace && edge.to.namespace !== filters.namespace)
     return false;
-  if (filters.protocol !== "all" && edge.protocol !== PROTOCOL_OF[filters.protocol]) return false;
+  if (filters.protocol !== "all" && !PROTOCOLS_OF[filters.protocol].includes(edge.protocol)) return false;
   switch (filters.status) {
     case "all":
       return true;
@@ -98,18 +103,25 @@ export interface TrafficLink {
   rate: number;
   /** New TCP connections per second, the same way; never added to `rate` (another unit). */
   tcpRate: number;
+  /** Bytes per second over TCP (Caretta, #236), the same way; another unit again. */
+  bytesRate: number;
   level: ErrorLevel;
 }
 
-/** Per pair of ends: the busiest source's requests, and its connections, each family on its own. */
-function linkRates(edges: readonly TrafficEdge[]): { rate: number; tcpRate: number } {
+/** Per pair of ends: the busiest source's requests, its connections and its bytes, each family on its own. */
+function linkRates(edges: readonly TrafficEdge[]): { rate: number; tcpRate: number; bytesRate: number } {
   const requests = new Map<string, number>();
   const connections = new Map<string, number>();
+  const bytes = new Map<string, number>();
   for (const edge of edges) {
-    const family = edge.protocol === "tcp" ? connections : requests;
+    const family = edge.protocol === "tcp" ? connections : edge.protocol === "tcpBytes" ? bytes : requests;
     family.set(edge.source, (family.get(edge.source) ?? 0) + edge.rate);
   }
-  return { rate: Math.max(0, ...requests.values()), tcpRate: Math.max(0, ...connections.values()) };
+  return {
+    rate: Math.max(0, ...requests.values()),
+    tcpRate: Math.max(0, ...connections.values()),
+    bytesRate: Math.max(0, ...bytes.values()),
+  };
 }
 
 export interface TrafficLayout {
@@ -142,7 +154,7 @@ export function layoutTraffic(edges: readonly TrafficEdge[]): TrafficLayout {
     const id = `${from.id}>${to.id}`;
     const link =
       links.get(id) ??
-      links.set(id, { id, from: from.id, to: to.id, edges: [], rate: 0, tcpRate: 0, level: "unknown" }).get(id)!;
+      links.set(id, { id, from: from.id, to: to.id, edges: [], rate: 0, tcpRate: 0, bytesRate: 0, level: "unknown" }).get(id)!;
     link.edges.push(edge);
   }
   for (const link of links.values()) {

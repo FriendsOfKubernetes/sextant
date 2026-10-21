@@ -3,9 +3,9 @@
 import type { IconName } from "../../components";
 import { registerDetailsSection } from "../../layout/details/registry";
 import { registerResource, type ColumnDef } from "../../resources";
-import { connectColumns, kafkaColumns, nodePoolColumns, topicColumns, userColumns } from "./columns";
+import { connectColumns, connectorColumns, kafkaColumns, nodePoolColumns, topicColumns, userColumns } from "./columns";
 import { appliesTo, StrimziSection } from "./details";
-import { isKind, isProblem, KAFKA, KAFKA_NODE_POOL, KAFKA_TOPIC, KAFKA_USER, STRIMZI_KINDS, type StrimziKind } from "./model";
+import { isKind, isProblem, KAFKA, KAFKA_CONNECTOR, KAFKA_NODE_POOL, KAFKA_TOPIC, KAFKA_USER, STRIMZI_KINDS, type StrimziKind } from "./model";
 
 const ICONS: Record<string, IconName> = {
   kafkas: "kafka",
@@ -14,6 +14,7 @@ const ICONS: Record<string, IconName> = {
   users: "kafkaUser",
   connects: "kafkaConnect",
   mirrorMakers: "kafkaMirror",
+  connectors: "kafkaConnector",
 };
 
 function columnsOf({ kind }: StrimziKind): ColumnDef[] {
@@ -21,6 +22,7 @@ function columnsOf({ kind }: StrimziKind): ColumnDef[] {
   if (isKind(kind, KAFKA_NODE_POOL)) return nodePoolColumns;
   if (isKind(kind, KAFKA_TOPIC)) return topicColumns;
   if (isKind(kind, KAFKA_USER)) return userColumns;
+  if (isKind(kind, KAFKA_CONNECTOR)) return connectorColumns;
   return connectColumns;
 }
 

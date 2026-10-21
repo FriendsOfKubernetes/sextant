@@ -38,3 +38,5 @@
 Amended (v0.17.0): the traffic graph (#211, ADR-0096) adds three edge metric names to the known set (15 in all) and `RequestSources.edges`; the sources of the Requests section are unchanged.
 
 Amended (review of v0.17.0): Hubble counts the callee's report and the caller's only for pairs without one (egress-only L7 visibility gave nothing before); ingress-nginx through a PodMonitor (`exported_namespace` + `service`) is matched; a failed Service read leaves ingress-nginx in `failed`. The traffic graph (ADR-0096) now asks for Beyla's service graph histograms instead of `traces_service_graph_request_total` (17 known names).
+
+Amended (v0.20.0, #236): Caretta's `caretta_links_observed` joins the known names (18 in all) as an edge-only source of the traffic graph (ADR-0096); it has no request metrics, so the Requests section never lists it.

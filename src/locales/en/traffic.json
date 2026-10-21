@@ -41,7 +41,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "protocol not reported"
+    "unknown": "protocol not reported",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Errors under 1%",
@@ -85,7 +86,8 @@
     "noVerdict": "no verdict for TCP",
     "class": "{{class}} {{value}}/s",
     "noClasses": "no HTTP status reported",
-    "notRead": "could not be read"
+    "notRead": "could not be read",
+    "bytes": "{{value}}/s"
   },
   "open": "Open {{name}}",
   "openRequests": "Requests of {{name}}",
@@ -125,8 +127,10 @@
   "noSource": "Prometheus has no metrics that name both ends of a call: none of Istio, Linkerd, Grafana Beyla's service graph or Cilium Hubble is reporting to it.",
   "requestOnly": "Requests per workload, without who sent them, come from {{sources}}: see the Requests section of each workload.",
   "wouldProvide": "Any of these would provide the graph: an Istio mesh, a Linkerd mesh with linkerd-viz (or a Prometheus that scrapes its proxies), Grafana Beyla with its service graph metrics enabled, or Cilium Hubble with HTTP metrics whose labelsContext names the source and destination workloads.",
+  "wouldProvideTcp": "Caretta would show the TCP connections between workloads, as bytes per second.",
   "noEdges": {
     "minutes5": "{{sources}} saw no calls with an end in these namespaces in the last 5 minutes.",
     "hour1": "{{sources}} saw no calls with an end in these namespaces in the last hour."
-  }
+  },
+  "bytesNote": "Caretta sees TCP connections only: its lines show bytes per second in both directions, without requests, errors or latency."
 }

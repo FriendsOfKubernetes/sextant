@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_one": "{{count}} oggetto richiede attenzione",
   "badge_many": "{{count}} di oggetti richiedono attenzione",
@@ -26,7 +27,12 @@
     "partitions": "Partizioni",
     "topicReplicas": "Repliche",
     "authentication": "Autenticazione",
-    "authorization": "Autorizzazione"
+    "authorization": "Autorizzazione",
+    "connectCluster": "Cluster Connect",
+    "connectorState": "Connettore",
+    "tasks": "Task in esecuzione",
+    "class": "Classe",
+    "restarts": "Riavvii automatici"
   },
   "fields": {
     "status": "Stato",
@@ -52,7 +58,17 @@
     "bootstrapServers": "Server bootstrap",
     "connectCluster": "Cluster Connect",
     "url": "API REST",
-    "plugins": "Plugin dei connettori"
+    "plugins": "Plugin dei connettori",
+    "class": "Classe del connettore",
+    "tasksMax": "Task massimi",
+    "desiredState": "Stato richiesto",
+    "connectorState": "Stato del connettore",
+    "connectorType": "Tipo",
+    "worker": "Worker",
+    "autoRestart": "Riavvio automatico",
+    "restarts": "Riavvii automatici",
+    "lastRestart": "Ultimo riavvio automatico",
+    "topics": "Topic"
   },
   "warnings": "Avvisi",
   "warningReason": "Motivo",
@@ -77,6 +93,30 @@
     "title": "Connettori",
     "name": "Nome",
     "state": "Stato",
-    "tasks": "Task"
+    "tasks": "Task",
+    "restarts": "Riavvii automatici"
+  },
+  "connector": {
+    "tasksTitle": "Task",
+    "task": "Task",
+    "state": "Stato",
+    "worker": "Worker",
+    "error": "Errore",
+    "autoRestartOn": "Attivo",
+    "autoRestartOff": "Disattivato",
+    "failuresTitle": "Errori",
+    "connectorFailed": "Il connettore {{name}} è fallito",
+    "failed": "Il connettore è fallito",
+    "taskFailed": "Il task {{id}} è fallito",
+    "mirrorTaskFailed": "Il task {{id}} di {{name}} è fallito",
+    "trace": "Stack trace",
+    "noTrace": "Kafka Connect non ha riportato alcuno stack trace.",
+    "traceCut": "Lo stack trace è abbreviato.",
+    "autoRestartMax_one": "Attivo, al massimo {{count}} riavvio",
+    "autoRestartMax_many": "Attivo, al massimo {{count}} riavvii",
+    "autoRestartMax_other": "Attivo, al massimo {{count}} riavvii",
+    "restartsExhausted_one": "Strimzi ha smesso di riavviarlo automaticamente dopo {{count}} riavvio.",
+    "restartsExhausted_many": "Strimzi ha smesso di riavviarlo automaticamente dopo {{count}} riavvii.",
+    "restartsExhausted_other": "Strimzi ha smesso di riavviarlo automaticamente dopo {{count}} riavvii."
   }
 }

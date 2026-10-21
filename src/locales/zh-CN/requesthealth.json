@@ -8,7 +8,8 @@
     "linkerd": "Linkerd",
     "ingressNginx": "ingress-nginx",
     "beyla": "Grafana Beyla",
-    "hubble": "Cilium Hubble"
+    "hubble": "Cilium Hubble",
+    "caretta": "Caretta"
   },
   "scope": {
     "istio": "这些 Pod 的 Istio 代理收到的请求。",

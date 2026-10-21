@@ -40,7 +40,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "プロトコル不明"
+    "unknown": "プロトコル不明",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "エラー 1% 未満",
@@ -84,7 +85,8 @@
     "noVerdict": "TCP は判定なし",
     "class": "{{class}} {{value}}/秒",
     "noClasses": "HTTP ステータスの報告なし",
-    "notRead": "読み取れませんでした"
+    "notRead": "読み取れませんでした",
+    "bytes": "{{value}}/秒"
   },
   "open": "{{name}} を開く",
   "openRequests": "{{name}} のリクエスト",
@@ -120,8 +122,10 @@
   "noSource": "Prometheus に呼び出しの両端を示すメトリクスがありません。Istio、Linkerd、Grafana Beyla のサービスグラフ、Cilium Hubble のいずれも報告していません。",
   "requestOnly": "送信元を含まないワークロード単位のリクエストは {{sources}} から届いています。各ワークロードの「リクエスト」セクションを参照してください。",
   "wouldProvide": "次のいずれかがあればグラフを表示できます：Istio メッシュ、linkerd-viz 付きの Linkerd メッシュ（またはそのプロキシを収集する Prometheus）、サービスグラフのメトリクスを有効にした Grafana Beyla、labelsContext で送信元と宛先のワークロードを示す HTTP メトリクスを持つ Cilium Hubble。",
+  "wouldProvideTcp": "Caretta があれば、ワークロード間の TCP 接続を毎秒バイト数で表示できます。",
   "noEdges": {
     "minutes5": "{{sources}} によると、直近 5 分間にこれらの namespace に端がある呼び出しはありません。",
     "hour1": "{{sources}} によると、直近 1 時間にこれらの namespace に端がある呼び出しはありません。"
-  }
+  },
+  "bytesNote": "Caretta は TCP 接続しか見ません。その線は双方向の毎秒バイト数を示し、リクエスト、エラー、レイテンシはありません。"
 }

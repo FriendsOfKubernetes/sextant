@@ -186,6 +186,33 @@ import {
   ShieldHalf as KyvernoShieldHalf,
   SquareFunction as CrossplaneFunction,
 } from "lucide-react";
+// Traefik (#232).
+import {
+  Combine as TraefikCombine,
+  Shuffle as TraefikShuffle,
+  SquareSplitHorizontal as TraefikSplit,
+  TrafficCone as TraefikCone,
+} from "lucide-react";
+// Contour (#233).
+import {
+  KeySquare as ContourKeySquare,
+  Milestone as ContourMilestone,
+  MountainSnow as ContourMountainSnow,
+  Plug as ContourPlug,
+} from "lucide-react";
+// Knative Eventing (#234).
+import {
+  Antenna as EventingAntenna,
+  Cable as EventingCable,
+  Inbox as EventingInbox,
+  Link2 as EventingLink,
+  ListFilter as EventingListFilter,
+  ListOrdered as EventingListOrdered,
+  RadioTower as EventingRadioTower,
+  Split as EventingSplit,
+  Timer as EventingTimer,
+  Zap as EventingZap,
+} from "lucide-react";
 
 import {
   CalendarClock as ArgoCalendarClock,
@@ -433,6 +460,27 @@ const ICONS = {
   knativeRevision: KnativeGitCommit,
   knativeRoute: KnativeRoute,
   knativeDomain: KnativeGlobe,
+  // Traefik (#232).
+  traefik: TraefikCone,
+  traefikRoute: TraefikShuffle,
+  traefikMiddleware: TraefikCombine,
+  traefikService: TraefikSplit,
+  // Contour (#233).
+  contour: ContourMountainSnow,
+  contourProxy: ContourMilestone,
+  contourDelegation: ContourKeySquare,
+  contourExtension: ContourPlug,
+  // Knative Eventing (#234).
+  knativeEventing: EventingZap,
+  knativeBroker: EventingRadioTower,
+  knativeTrigger: EventingListFilter,
+  knativeChannel: EventingCable,
+  knativeSubscription: EventingInbox,
+  knativeSequence: EventingListOrdered,
+  knativeParallel: EventingSplit,
+  knativeSource: EventingAntenna,
+  knativePingSource: EventingTimer,
+  knativeSinkBinding: EventingLink,
   crossplane: CrossplaneLayers,
   crossplaneXrd: CrossplaneFileCog,
   crossplaneComposition: CrossplaneBlocks,
@@ -475,6 +523,7 @@ const ICONS = {
   kafkaUser: KafkaUsersRound,
   kafkaConnect: KafkaCable,
   kafkaMirror: KafkaRepeat,
+  kafkaConnector: Plug,
   prometheusOperator: PromFlame,
   serviceMonitor: PromRadar,
   podMonitor: PromScanEye,

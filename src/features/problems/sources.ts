@@ -9,6 +9,9 @@ import { WORKFLOW } from "../argo-workflows/model";
 import { BUCKET, GIT_REPOSITORY, HELM_RELEASE, HELM_REPOSITORY, KUSTOMIZATION, OCI_REPOSITORY } from "../flux/model";
 import { COUNTED_KINDS } from "../gateway-api/problems";
 import { CONFIGURATION as KNATIVE_CONFIGURATION, KSERVICE } from "../knative/model";
+import { HTTP_PROXY } from "../contour/model";
+import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
+import { EVENTING_KINDS } from "../knative/eventing";
 import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
 import { XRD } from "../crossplane/model";
 import { BACKUP as CNPG_BACKUP, PG_CLUSTER } from "../cnpg/model";
@@ -89,7 +92,18 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // only where the cluster serves VirtualServices.
   mesh: [{ category: "mesh", kind: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, fieldSelector: null, discovered: true, external: true }],
   // Knative Services and Configurations of their own (#213): a failed latest revision shows through them.
-  knative: [tool("knative", KSERVICE), tool("knative", KNATIVE_CONFIGURATION)],
+  // Knative Eventing (#234): every kind of its section the cluster serves; Triggers and Subscriptions can be thousands:
+  // capped.
+  knative: [
+    tool("knative", KSERVICE),
+    tool("knative", KNATIVE_CONFIGURATION),
+    ...EVENTING_KINDS.map((d) => tool("knative", d.kind, MAX_SOURCE_OBJECTS)),
+  ],
+  // Traefik (#232): references to objects that do not exist, judged across objects by the provider of features/traefik
+  // (`external`), held only where the cluster serves IngressRoutes (traefik.io).
+  traefik: [{ category: "traefik", kind: TRAEFIK_INGRESS_ROUTE, fieldSelector: null, discovered: true, external: true }],
+  // Contour (#233): invalid and orphaned HTTPProxies; the same watch feeds the delegation tree (a row tap).
+  contour: [tool("contour", HTTP_PROXY, MAX_SOURCE_OBJECTS)],
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],

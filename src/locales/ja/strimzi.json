@@ -5,7 +5,8 @@
     "topics": "KafkaTopic",
     "users": "KafkaUser",
     "connects": "KafkaConnect",
-    "mirrorMakers": "KafkaMirrorMaker2"
+    "mirrorMakers": "KafkaMirrorMaker2",
+    "connectors": "Kafka Connectors"
   },
   "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
   "state": {
@@ -24,7 +25,12 @@
     "partitions": "パーティション",
     "topicReplicas": "レプリカ",
     "authentication": "認証",
-    "authorization": "認可"
+    "authorization": "認可",
+    "connectCluster": "Connect クラスター",
+    "connectorState": "コネクター",
+    "tasks": "実行中のタスク",
+    "class": "クラス",
+    "restarts": "自動再起動"
   },
   "fields": {
     "status": "状態",
@@ -50,7 +56,17 @@
     "bootstrapServers": "Bootstrap サーバー",
     "connectCluster": "Connect クラスター",
     "url": "REST API",
-    "plugins": "コネクタープラグイン"
+    "plugins": "コネクタープラグイン",
+    "class": "コネクタークラス",
+    "tasksMax": "最大タスク数",
+    "desiredState": "要求された状態",
+    "connectorState": "コネクターの状態",
+    "connectorType": "種類",
+    "worker": "ワーカー",
+    "autoRestart": "自動再起動",
+    "restarts": "自動再起動の回数",
+    "lastRestart": "最後の自動再起動",
+    "topics": "トピック"
   },
   "warnings": "警告",
   "warningReason": "理由",
@@ -75,6 +91,26 @@
     "title": "コネクター",
     "name": "名前",
     "state": "状態",
-    "tasks": "タスク"
+    "tasks": "タスク",
+    "restarts": "自動再起動"
+  },
+  "connector": {
+    "tasksTitle": "タスク",
+    "task": "タスク",
+    "state": "状態",
+    "worker": "ワーカー",
+    "error": "エラー",
+    "autoRestartOn": "オン",
+    "autoRestartOff": "オフ",
+    "failuresTitle": "障害",
+    "connectorFailed": "コネクター {{name}} が失敗しました",
+    "failed": "コネクターが失敗しました",
+    "taskFailed": "タスク {{id}} が失敗しました",
+    "mirrorTaskFailed": "{{name}} のタスク {{id}} が失敗しました",
+    "trace": "スタックトレース",
+    "noTrace": "Kafka Connect はスタックトレースを報告していません。",
+    "traceCut": "スタックトレースは短縮されています。",
+    "autoRestartMax_other": "オン、最大 {{count}} 回まで再起動",
+    "restartsExhausted_other": "Strimzi は {{count}} 回の再起動の後、自動再起動を停止しました。"
   }
 }

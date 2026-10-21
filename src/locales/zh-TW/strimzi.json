@@ -5,7 +5,8 @@
     "topics": "Kafka Topics",
     "users": "Kafka Users",
     "connects": "Kafka Connects",
-    "mirrorMakers": "Kafka MirrorMaker 2"
+    "mirrorMakers": "Kafka MirrorMaker 2",
+    "connectors": "Kafka Connectors"
   },
   "badge_other": "{{count}} 個物件需要注意",
   "state": {
@@ -24,7 +25,12 @@
     "partitions": "分割區",
     "topicReplicas": "複本",
     "authentication": "驗證",
-    "authorization": "授權"
+    "authorization": "授權",
+    "connectCluster": "Connect 叢集",
+    "connectorState": "連接器",
+    "tasks": "執行中的任務",
+    "class": "類別",
+    "restarts": "自動重新啟動"
   },
   "fields": {
     "status": "狀態",
@@ -50,7 +56,17 @@
     "bootstrapServers": "Bootstrap 伺服器",
     "connectCluster": "Connect 叢集",
     "url": "REST API",
-    "plugins": "連接器外掛程式"
+    "plugins": "連接器外掛程式",
+    "class": "連接器類別",
+    "tasksMax": "最大任務數",
+    "desiredState": "要求的狀態",
+    "connectorState": "連接器狀態",
+    "connectorType": "類型",
+    "worker": "Worker",
+    "autoRestart": "自動重新啟動",
+    "restarts": "自動重新啟動次數",
+    "lastRestart": "上次自動重新啟動",
+    "topics": "主題"
   },
   "warnings": "警告",
   "warningReason": "原因",
@@ -75,6 +91,26 @@
     "title": "連接器",
     "name": "名稱",
     "state": "狀態",
-    "tasks": "工作"
+    "tasks": "工作",
+    "restarts": "自動重新啟動"
+  },
+  "connector": {
+    "tasksTitle": "任務",
+    "task": "任務",
+    "state": "狀態",
+    "worker": "Worker",
+    "error": "錯誤",
+    "autoRestartOn": "開啟",
+    "autoRestartOff": "關閉",
+    "failuresTitle": "故障",
+    "connectorFailed": "連接器 {{name}} 失敗",
+    "failed": "連接器失敗",
+    "taskFailed": "任務 {{id}} 失敗",
+    "mirrorTaskFailed": "{{name}} 的任務 {{id}} 失敗",
+    "trace": "堆疊追蹤",
+    "noTrace": "Kafka Connect 未回報堆疊追蹤。",
+    "traceCut": "堆疊追蹤已截短。",
+    "autoRestartMax_other": "開啟，最多重新啟動 {{count}} 次",
+    "restartsExhausted_other": "Strimzi 在重新啟動 {{count}} 次後不再自動重新啟動它。"
   }
 }

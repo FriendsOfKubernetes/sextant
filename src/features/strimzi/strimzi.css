@@ -13,3 +13,25 @@
 .strimzi-muted {
   color: var(--color-text-muted);
 }
+
+/* Failed connectors and tasks (#235): the first line of the trace, the whole trace folded and scrollable. */
+.strimzi-failure + .strimzi-failure {
+  margin-top: 8px;
+}
+
+.strimzi-failure__line {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.strimzi-trace > summary {
+  cursor: pointer;
+}
+
+.strimzi-trace__text {
+  max-height: 20rem;
+  overflow: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+}

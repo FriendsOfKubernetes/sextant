@@ -109,9 +109,9 @@ const sections = () =>
 describe("the Knative section", () => {
   it("lists the kinds the cluster serves and counts the Services that need attention", async () => {
     render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("Knative"));
-    fireEvent.click(screen.getByRole("button", { name: /Knative/ }));
-    const section = within(screen.getByRole("button", { name: /Knative/ }).closest("li")!);
+    await waitFor(() => expect(sections()).toContain("Knative Serving"));
+    fireEvent.click(screen.getByRole("button", { name: /Knative Serving/ }));
+    const section = within(screen.getByRole("button", { name: /Knative Serving/ }).closest("li")!);
     for (const label of ["Services", "Configurations", "Revisions", "Routes"]) expect(section.getByRole("button", { name: label })).toBeInTheDocument();
     expect(section.queryByRole("button", { name: "Domain Mappings" })).toBeNull();
     expect(discovery.some((k) => k.kind === DOMAIN_MAPPING.kind)).toBe(false);
@@ -125,7 +125,7 @@ describe("the Knative section", () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(wb.backend.calls.some((c) => c.cmd === "cluster_kinds")).toBe(true));
     await waitFor(() => expect(sections()).toContain("Workloads"));
-    expect(sections()).not.toContain("Knative");
+    expect(sections()).not.toContain("Knative Serving");
   });
 });
 

@@ -25,6 +25,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "サービスメッシュ",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Kyverno ポリシー",
@@ -58,6 +60,8 @@
     "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
     "policyFailures_other": "{{count}} 件のポリシールールが失敗：{{policies}}",
     "policyErrors_other": "{{count}} 件のポリシールールを評価できませんでした：{{policies}}",
+    "traefikMissingReference": "存在しないオブジェクトを参照しています: {{refs}}。Traefik はそれに依存する部分をスキップします。",
+    "traefikSkippedRoute": "Traefik はルート {{routes}} をスキップします: match ルールが空か、kind が Rule ではありません。",
     "serviceMonitorSelectsNothing": "次の namespace で Service を 1 つも選択していません: {{namespaces}}",
     "podMonitorSelectsNothing": "次の namespace で Pod を 1 つも選択していません: {{namespaces}}",
     "monitorNotPickedUp": "どの Prometheus の selector にも選択されていません"

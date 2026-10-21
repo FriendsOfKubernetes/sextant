@@ -34,6 +34,9 @@ const SIDE: &str = "sx_side";
 pub(crate) struct End {
     /// The label with the end's namespace; empty when the part does not tell.
     pub namespace: &'static str,
+    /// A label whose value tells what the end is (Caretta's `client_kind`/`server_kind`, see [`kind_of`]); empty: the
+    /// `names` table says.
+    pub kind: &'static str,
     /// Labels naming the end, with what they name; the first one set wins.
     pub names: &'static [(&'static str, TrafficPeerKind)],
 }
@@ -41,6 +44,7 @@ pub(crate) struct End {
 /// Nobody the part can name (a caller without a mesh identity).
 const NOBODY: End = End {
     namespace: "",
+    kind: "",
     names: &[],
 };
 
@@ -109,14 +113,17 @@ use TrafficPeerKind::{Service, Workload};
 
 const ISTIO_FROM: End = End {
     namespace: "source_workload_namespace",
+    kind: "",
     names: &[("source_workload", Workload)],
 };
 const ISTIO_TO_WORKLOAD: End = End {
     namespace: "destination_workload_namespace",
+    kind: "",
     names: &[("destination_workload", Workload)],
 };
 const ISTIO_TO_SERVICE: End = End {
     namespace: "destination_service_namespace",
+    kind: "",
     names: &[("destination_service_name", Service)],
 };
 /// Not 5xx and no gRPC error: the complement of ADR-0095's Istio errors in one selector.
@@ -224,6 +231,7 @@ const ISTIO: EdgeShape = EdgeShape {
 /// The workload labels Linkerd's proxy puts on its own series (one of them is set).
 const LINKERD_FROM: End = End {
     namespace: "namespace",
+    kind: "",
     names: &[
         ("deployment", Workload),
         ("statefulset", Workload),
@@ -233,6 +241,7 @@ const LINKERD_FROM: End = End {
 /// The callee as the destination controller told the caller's proxy: a workload when it knows one, else the Service.
 const LINKERD_TO: End = End {
     namespace: "dst_namespace",
+    kind: "",
     names: &[
         ("dst_deployment", Workload),
         ("dst_statefulset", Workload),
@@ -336,10 +345,12 @@ const BEYLA: EdgeShape = EdgeShape {
         ],
         from: End {
             namespace: "client_service_namespace",
+            kind: "",
             names: &[("client", Workload)],
         },
         to: End {
             namespace: "server_service_namespace",
+            kind: "",
             names: &[("server", Workload)],
         },
         protocol: Protocol::Fixed(TrafficProtocol::Unknown),
@@ -377,10 +388,12 @@ const HUBBLE: EdgeShape = EdgeShape {
         ],
         from: End {
             namespace: "source_namespace",
+            kind: "",
             names: &[("source_workload", Workload)],
         },
         to: End {
             namespace: "destination_namespace",
+            kind: "",
             names: &[("destination_workload", Workload)],
         },
         protocol: Protocol::Fixed(TrafficProtocol::Http),
@@ -389,6 +402,59 @@ const HUBBLE: EdgeShape = EdgeShape {
     }],
 };
 
+/// Caretta (groundcover, #236): `caretta_links_observed` is a gauge of the bytes sent on the TCP links Caretta's eBPF
+/// probes saw since it started (`pkg/caretta/caretta.go`: labels `link_id`, `client_id`, `client_name`,
+/// `client_namespace`, `client_kind`, `client_owner`, `server_id`, `server_name`, `server_namespace`, `server_kind`,
+/// `server_port`, `role`; `role` 1 is the client's socket — the bytes it sent — and 2 the server's, the bytes it
+/// answered). Its rate summed over roles and ports is the link's throughput both ways, as Caretta's own dashboard sums
+/// it. TCP only: no requests, errors, status or latency.
+const CARETTA: EdgeShape = EdgeShape {
+    to_ms: 1.0,
+    unknown: "",
+    parts: &[Part {
+        series: Side {
+            count: "caretta_links_observed",
+            matchers: "",
+            bucket: None,
+        },
+        caller: None,
+        namespaces: &["client_namespace", "server_namespace"],
+        by: &[
+            "client_namespace",
+            "client_name",
+            "client_kind",
+            "server_namespace",
+            "server_name",
+            "server_kind",
+        ],
+        from: End {
+            namespace: "client_namespace",
+            kind: "client_kind",
+            names: &[("client_name", Workload)],
+        },
+        to: End {
+            namespace: "server_namespace",
+            kind: "server_kind",
+            names: &[("server_name", Workload)],
+        },
+        protocol: Protocol::Fixed(TrafficProtocol::TcpBytes),
+        errors: Errors::None,
+        class: None,
+    }],
+};
+
+/// What Caretta's kind label says an end is (`pkg/k8s/ipresolver.go`): the top owner of a pod (Deployment,
+/// StatefulSet, DaemonSet, Job, CronJob…) or a bare `pod` is a workload, `Service` a Service; `node` (a node's
+/// address, with the namespace `node`) and `external` (an address outside the cluster, the namespace `external`) are
+/// no object of a namespace: unknown, without a namespace.
+fn kind_of(value: &str) -> Option<TrafficPeerKind> {
+    match value {
+        "Service" => Some(Service),
+        "node" | "external" | "" => None,
+        _ => Some(Workload),
+    }
+}
+
 /// The edge series of a source; `None` for ingress-nginx, which names no caller.
 pub(crate) fn edge_shape(kind: RequestSourceKind) -> Option<&'static EdgeShape> {
     match kind {
@@ -396,6 +462,7 @@ pub(crate) fn edge_shape(kind: RequestSourceKind) -> Option<&'static EdgeShape> 
         RequestSourceKind::Linkerd => Some(&LINKERD),
         RequestSourceKind::Beyla => Some(&BEYLA),
         RequestSourceKind::Hubble => Some(&HUBBLE),
+        RequestSourceKind::Caretta => Some(&CARETTA),
         RequestSourceKind::IngressNginx => None,
     }
 }
@@ -687,6 +754,28 @@ struct Values {
 
 fn peer(shape: &EdgeShape, end: &End, labels: &BTreeMap<String, String>) -> TrafficPeer {
     let known = |v: &&String| !v.is_empty() && v.as_str() != shape.unknown;
+    if !end.kind.is_empty() {
+        let name = end
+            .names
+            .first()
+            .and_then(|(label, _)| labels.get(*label))
+            .filter(known);
+        return match (
+            kind_of(labels.get(end.kind).map_or("", String::as_str)),
+            name,
+        ) {
+            (Some(kind), Some(name)) => TrafficPeer {
+                kind,
+                namespace: labels.get(end.namespace).filter(known).cloned(),
+                name: Some(name.clone()),
+            },
+            _ => TrafficPeer {
+                kind: TrafficPeerKind::Unknown,
+                namespace: None,
+                name: None,
+            },
+        };
+    }
     let namespace = labels.get(end.namespace).filter(known).cloned();
     let named = end
         .names
@@ -793,7 +882,7 @@ fn part_edges(
     for ((_, _, protocol), v) in values.iter_mut() {
         let missing = v.missing.contains(&TrafficDetail::Errors);
         v.errors = match (&part.errors, missing) {
-            _ if *protocol == TrafficProtocol::Tcp => None,
+            _ if is_tcp(*protocol) => None,
             (Errors::None, _) | (_, true) => None,
             (Errors::Matcher(_), false) => Some(v.errors.unwrap_or(0.0)),
             (Errors::Ok(_), false) => Some((v.rate - v.ok.unwrap_or(0.0)).max(0.0)),
@@ -802,6 +891,11 @@ fn part_edges(
         };
     }
     (values, total)
+}
+
+/// Traffic seen as connections (their count or their bytes), never as requests.
+fn is_tcp(protocol: TrafficProtocol) -> bool {
+    matches!(protocol, TrafficProtocol::Tcp | TrafficProtocol::TcpBytes)
 }
 
 /// The edges of one source's answers (one entry per part, in the shape's order): busiest first, a TCP edge dropped
@@ -857,15 +951,13 @@ pub(crate) fn assemble(source: DetectedSource, answers: &[PartAnswers]) -> Sourc
         .collect();
     let requests: BTreeSet<(TrafficPeer, TrafficPeer)> = edges
         .iter()
-        .filter(|e| e.protocol != TrafficProtocol::Tcp)
+        .filter(|e| !is_tcp(e.protocol))
         .map(|e| (e.from.clone(), e.to.clone()))
         .collect();
     let before = edges.len();
-    edges.retain(|e| {
-        e.protocol != TrafficProtocol::Tcp || !requests.contains(&(e.from.clone(), e.to.clone()))
-    });
+    edges.retain(|e| !is_tcp(e.protocol) || !requests.contains(&(e.from.clone(), e.to.clone())));
     let dropped = before - edges.len();
-    edges.sort_by(|a, b| b.rate.total_cmp(&a.rate));
+    let edges = crate::metrics::traffic::busiest_first(edges);
     let total = total.saturating_sub(dropped).max(edges.len());
     SourceEdges { edges, total }
 }

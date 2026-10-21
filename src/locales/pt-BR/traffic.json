@@ -42,7 +42,8 @@
     "http": "HTTP",
     "grpc": "gRPC",
     "tcp": "TCP",
-    "unknown": "protocolo não informado"
+    "unknown": "protocolo não informado",
+    "tcpBytes": "TCP"
   },
   "level": {
     "ok": "Erros abaixo de 1%",
@@ -86,7 +87,8 @@
     "noVerdict": "sem veredito para TCP",
     "class": "{{class}} {{value}}/s",
     "noClasses": "nenhum status HTTP informado",
-    "notRead": "não foi possível ler"
+    "notRead": "não foi possível ler",
+    "bytes": "{{value}}/s"
   },
   "open": "Abrir {{name}}",
   "openRequests": "Requisições de {{name}}",
@@ -130,8 +132,10 @@
   "noSource": "O Prometheus não tem métricas que nomeiem as duas pontas de uma chamada: nem Istio, nem Linkerd, nem o grafo de serviços do Grafana Beyla, nem o Cilium Hubble enviam dados a ele.",
   "requestOnly": "Requisições por carga de trabalho, sem quem as enviou, vêm de {{sources}}: veja a seção “Requisições” de cada carga.",
   "wouldProvide": "Qualquer uma destas fontes daria o grafo: uma malha Istio, uma malha Linkerd com linkerd-viz (ou um Prometheus que colete seus proxies), Grafana Beyla com as métricas do grafo de serviços ativadas, ou Cilium Hubble com métricas HTTP cujo labelsContext nomeie as cargas de trabalho de origem e destino.",
+  "wouldProvideTcp": "O Caretta mostraria as conexões TCP entre cargas de trabalho, em bytes por segundo.",
   "noEdges": {
     "minutes5": "Segundo {{sources}}, não houve chamadas com uma ponta nestes namespaces nos últimos 5 minutos.",
     "hour1": "Segundo {{sources}}, não houve chamadas com uma ponta nestes namespaces na última hora."
-  }
+  },
+  "bytesNote": "O Caretta vê apenas conexões TCP: suas linhas mostram bytes por segundo nos dois sentidos, sem requisições, erros nem latência."
 }

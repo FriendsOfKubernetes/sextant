@@ -27,6 +27,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Hizmet ağı",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Kyverno ilkeleri",
@@ -64,6 +66,8 @@
     "policyFailures_other": "{{count}} ilke kuralı başarısız: {{policies}}",
     "policyErrors_one": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}",
     "policyErrors_other": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}",
+    "traefikMissingReference": "Var olmayan nesnelere başvuruyor: {{refs}}. Traefik onlara bağlı olanı atlar.",
+    "traefikSkippedRoute": "Traefik {{routes}} rotalarını atlar: boş bir match kuralı ya da Rule dışında bir kind.",
     "serviceMonitorSelectsNothing": "Şu namespace'lerde hiçbir Service seçmiyor: {{namespaces}}",
     "podMonitorSelectsNothing": "Şu namespace'lerde hiçbir Pod seçmiyor: {{namespaces}}",
     "monitorNotPickedUp": "Hiçbir Prometheus selector'larıyla onu seçmiyor"

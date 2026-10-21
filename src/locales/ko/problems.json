@@ -25,6 +25,8 @@
     "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "서비스 메시",
+    "traefik": "Traefik",
+    "contour": "Contour",
     "knative": "Knative",
     "crossplane": "Crossplane",
     "policies": "Kyverno 정책",
@@ -58,6 +60,8 @@
     "meshInvalidVirtualService": "Sidecar(mesh)에 바인딩된 상태에서 호스트 *를 가집니다. Istio가 거부하므로 경로가 하나도 사용되지 않습니다.",
     "policyFailures_other": "정책 규칙 {{count}}개 실패: {{policies}}",
     "policyErrors_other": "정책 규칙 {{count}}개를 평가할 수 없음: {{policies}}",
+    "traefikMissingReference": "존재하지 않는 오브젝트를 참조합니다: {{refs}}. Traefik은 그것에 의존하는 부분을 건너뜁니다.",
+    "traefikSkippedRoute": "Traefik이 라우트 {{routes}}을(를) 건너뜁니다: match 규칙이 비어 있거나 kind가 Rule이 아닙니다.",
     "serviceMonitorSelectsNothing": "다음 namespace에서 Service를 하나도 선택하지 않습니다: {{namespaces}}",
     "podMonitorSelectsNothing": "다음 namespace에서 Pod를 하나도 선택하지 않습니다: {{namespaces}}",
     "monitorNotPickedUp": "어떤 Prometheus의 selector도 이를 선택하지 않습니다"

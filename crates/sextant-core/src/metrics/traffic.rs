@@ -1,8 +1,9 @@
 //! The live traffic graph (#211): who calls whom inside and around a few namespaces, how often, how many calls fail
 //! and how slow they are — from the edge metrics of the request-metric sources the cluster's Prometheus has (Istio,
 //! Linkerd, Grafana Beyla's service graph, Cilium Hubble), found by [`request_sources`] like the workload request
-//! metrics (#212, ADR-0095). Every query is fixed and built in `metrics/prometheus/traffic.rs`; the caller names only
-//! namespaces (checked against the Kubernetes naming rules, escaped again in the query) and one of two windows.
+//! metrics (#212, ADR-0095); and Caretta's TCP links (#236), bytes per second without errors or latency. Every query
+//! is fixed and built in `metrics/prometheus/traffic.rs`; the caller names only namespaces (checked against the
+//! Kubernetes naming rules, escaped again in the query) and one of two windows.
 //! Bounded: at most [`MAX_TRAFFIC_NAMESPACES`] namespaces, the [`MAX_TRAFFIC_EDGES`] busiest edges (`topk` in the
 //! query), [`MAX_TRAFFIC_BODY`] bytes and [`MAX_TRAFFIC_SERIES`] series of an answer. Read-only. Decision: ADR-0096.
 
@@ -86,6 +87,9 @@ pub enum TrafficProtocol {
     Grpc,
     /// New TCP connections per second, of traffic the source sees only as connections.
     Tcp,
+    /// Bytes per second sent over TCP connections, both ways where both ends are seen (Caretta, #236): a source that
+    /// sees connections and their bytes, never requests.
+    TcpBytes,
     /// The source does not say (Beyla's service graph).
     Unknown,
 }
@@ -122,7 +126,8 @@ pub struct TrafficEdge {
     pub from: TrafficPeer,
     pub to: TrafficPeer,
     pub protocol: TrafficProtocol,
-    /// Requests (TCP: new connections) per second.
+    /// Requests per second; for [`TrafficProtocol::Tcp`] new connections, for [`TrafficProtocol::TcpBytes`] bytes per
+    /// second.
     pub rate: f64,
     /// Share (0–1) of failed requests by the source's own rule (ADR-0095); `None` for TCP.
     pub error_ratio: Option<f64>,
@@ -264,10 +269,31 @@ pub async fn traffic_graph(
             }
         }
     }
-    graph.edges.sort_by(|a, b| b.rate.total_cmp(&a.rate));
+    graph.edges = busiest_first(std::mem::take(&mut graph.edges));
     graph.edges.truncate(MAX_TRAFFIC_EDGES);
     graph.total_edges = graph.total_edges.max(graph.edges.len());
     Ok(graph)
+}
+
+/// Edges busiest first. Bytes per second (Caretta) are another unit than requests and connections per second, and
+/// would push every request edge out of the cut: the two families are ranked apart, then taken in turns — the busiest
+/// of each, the second of each, … (request edges first within a rank).
+pub(crate) fn busiest_first(edges: Vec<TrafficEdge>) -> Vec<TrafficEdge> {
+    let (mut bytes, mut calls): (Vec<_>, Vec<_>) = edges
+        .into_iter()
+        .partition(|e| e.protocol == TrafficProtocol::TcpBytes);
+    calls.sort_by(|a, b| b.rate.total_cmp(&a.rate));
+    bytes.sort_by(|a, b| b.rate.total_cmp(&a.rate));
+    let mut out = Vec::with_capacity(calls.len() + bytes.len());
+    let (mut calls, mut bytes) = (calls.into_iter(), bytes.into_iter());
+    loop {
+        let (a, b) = (calls.next(), bytes.next());
+        if a.is_none() && b.is_none() {
+            return out;
+        }
+        out.extend(a);
+        out.extend(b);
+    }
 }
 
 /// The edges one source gave, and how many it has in all.
