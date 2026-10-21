@@ -64,5 +64,39 @@
     "offloaded": "Le contrôleur conserve les étapes de ce workflow dans sa base de données (offloaded node status) : elles ne sont pas dans l'objet et ne peuvent pas être affichées ici.",
     "compressed": "Le contrôleur a stocké les étapes de ce workflow sous forme compressée : elles ne peuvent pas être affichées ici.",
     "none": "Aucune étape pour l'instant."
-  }
+  },
+  "actions": {
+    "suspend": "Suspendre",
+    "resume": "Reprendre",
+    "stop": "Arrêter",
+    "terminate": "Terminer"
+  },
+  "dialog": {
+    "suspendTitle": "Suspendre le workflow {{name}} ?",
+    "suspendText": "Le workflow ne lance plus de nouvelles étapes tant qu'il n'est pas repris ; les étapes déjà en cours continuent, comme avec argo suspend.",
+    "resumeTitle": "Reprendre le workflow {{name}} ?",
+    "resumeText": "La suspension du workflow est levée et chaque étape suspend en attente est marquée Succeeded, comme avec argo resume.",
+    "stopTitle": "Arrêter le workflow {{name}} ?",
+    "stopText": "Les étapes en cours sont arrêtées et aucune nouvelle ne démarre, mais les gestionnaires de sortie s'exécutent encore, comme avec argo stop.",
+    "terminateTitle": "Terminer le workflow {{name}} ?",
+    "terminateText": "Les étapes en cours sont arrêtées et plus rien ne s'exécute, gestionnaires de sortie compris, comme avec argo terminate.",
+    "loading": "Lecture du workflow…",
+    "patch": "Envoyé au workflow (un JSON merge patch) :",
+    "versioned": "Il porte la resourceVersion lue juste avant l'envoi : le serveur d'API le refuse si le workflow change entre-temps ; rien n'est réessayé.",
+    "stamped": "finishedAt prend l'heure de l'envoi.",
+    "changed": "Le workflow a changé pendant que cette boîte de dialogue était ouverte. Vérifiez la modification mise à jour et confirmez à nouveau.",
+    "nothing": {
+      "suspend": "Rien à modifier : le workflow est déjà suspendu.",
+      "resume": "Rien à modifier : le workflow n'est pas suspendu et aucune étape suspend n'attend.",
+      "stop": "Rien à modifier : le workflow est déjà en cours d'arrêt.",
+      "terminate": "Rien à modifier : le workflow est déjà en cours de terminaison."
+    },
+    "refusal": {
+      "completed": "Un workflow achevé ne peut pas être suspendu.",
+      "finished": "Le workflow est déjà fini : il n'y a rien à arrêter.",
+      "nodesElsewhere": "Les nœuds de ce workflow sont compressés ou conservés dans la base de données du contrôleur, Sextant ne peut donc pas reprendre ses étapes suspend. Exécutez plutôt argo resume {{name}} -n {{namespace}}.",
+      "noDefault": "L'étape suspend {{step}} attend son paramètre de sortie {{parameter}}, qui n'a ni valeur ni valeur par défaut : elle ne peut pas être reprise. Définissez-le d'abord avec argo node set."
+    }
+  },
+  "retryHint": "Sextant ne relance pas les workflows : une relance réinitialise les nœuds en échec et supprime leurs pods, ce que fait le serveur Argo. Exécutez argo retry {{name}} -n {{namespace}}."
 }

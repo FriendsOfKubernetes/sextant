@@ -94,7 +94,9 @@
     "promote": "プロモート",
     "promoteFull": "完全にプロモート",
     "abort": "中止",
-    "retry": "再試行"
+    "retry": "再試行",
+    "pause": "一時停止",
+    "resume": "再開"
   },
   "dialog": {
     "promoteTitle": "Rollout {{name}} をプロモートしますか?",
@@ -110,6 +112,12 @@
     "specPatch": "Rollout に送信する内容:",
     "fallbackPatch": "クラスターの Argo Rollouts に status サブリソースがない場合 (v0.9)、代わりに Rollout に送信する内容:",
     "nothing": "変更はありません。Rollout はすでに完全にプロモートされており、一時停止していません。",
-    "changed": "このダイアログを開いている間に Rollout が変更されました。更新された変更内容を確認して、もう一度確定してください。"
+    "changed": "このダイアログを開いている間に Rollout が変更されました。更新された変更内容を確認して、もう一度確定してください。",
+    "pauseTitle": "Rollout {{name}} を一時停止しますか?",
+    "pauseText": "Rollout は手動で一時停止され（spec.paused）、再開またはプロモートされるまで進みません。kubectl argo rollouts pause と同じです。",
+    "resumeTitle": "Rollout {{name}} を再開しますか?",
+    "resumeText": "Rollout は一時停止を抜けます。spec.paused が解除され、一時停止の条件が削除されます。プラグインの以前の resume コマンドや Argo CD の resume アクションと同じです。「プロモート」と違い、Rollout を自ら次のステップに進めることはありません。",
+    "nothingPause": "変更はありません。Rollout はすでに一時停止しています。",
+    "nothingResume": "変更はありません。Rollout は一時停止していません。"
   }
 }

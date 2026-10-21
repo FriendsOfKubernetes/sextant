@@ -1,0 +1,80 @@
+{
+  "title": "Réflexion",
+  "column": "Réflexion",
+  "role": {
+    "source": "Source",
+    "sourceAuto": "Source, copiée automatiquement",
+    "mirror": "Miroir",
+    "autoMirror": "Miroir automatique"
+  },
+  "state": {
+    "inSync": "Synchronisé",
+    "stale": "Obsolète",
+    "sourceMissing": "Source absente",
+    "notAllowed": "Non autorisé",
+    "unknown": "Inconnu",
+    "loading": "Vérification…"
+  },
+  "expected": {
+    "notCreated": "Non créé",
+    "conflict": "Nom déjà pris"
+  },
+  "fields": {
+    "role": "Rôle",
+    "source": "Source",
+    "state": "État",
+    "reflectedVersion": "Version copiée",
+    "sourceVersion": "Version de la source",
+    "reflectedAt": "Copié le",
+    "allowed": "Réflexion autorisée",
+    "allowedNamespaces": "Namespaces autorisés",
+    "allowedSelector": "Selector des namespaces autorisés",
+    "autoEnabled": "Miroirs automatiques",
+    "autoNamespaces": "Namespaces des miroirs automatiques",
+    "autoSelector": "Selector des namespaces des miroirs automatiques",
+    "autoTargets": "Copiée automatiquement vers"
+  },
+  "values": {
+    "yes": "Oui",
+    "no": "Non",
+    "everyNamespace": "Tous les namespaces",
+    "none": "Aucun",
+    "automatic": "Automatique",
+    "direct": "Manuel",
+    "more_one": "et {{count}} de plus",
+    "more_many": "et {{count}} de plus",
+    "more_other": "et {{count}} de plus"
+  },
+  "headers": {
+    "mirror": "Miroir",
+    "mode": "Mode",
+    "state": "État"
+  },
+  "mirrorsTitle": "Miroirs",
+  "patternIssue": {
+    "invalid": "Le motif de namespace {{pattern}} n’est pas une expression régulière que Sextant peut exécuter : les namespaces qu’il désigne sont inconnus.",
+    "notEvaluated": "Le motif de namespace {{pattern}} est trop long ou répète une répétition : Sextant ne l’exécute pas et les namespaces qu’il désigne sont inconnus."
+  },
+  "explain": {
+    "valuesNotCompared": "Les valeurs ne sont jamais lues ni comparées : l’état vient des annotations de Reflector et du resourceVersion de la source.",
+    "inSync": "Reflector a copié la version actuelle de la source dans ce {{kind}}.",
+    "stale": "La source a changé depuis la dernière copie : ce miroir contient la version {{reflected}}, la source en est à {{current}}. Reflector rattrape d’habitude en quelques secondes ; sinon, vérifiez que Reflector tourne.",
+    "staleNever": "Reflector n’a pas encore copié la source dans ce {{kind}}. Si cela dure, vérifiez que Reflector tourne et que la source autorise ce namespace.",
+    "sourceMissing": "La source {{source}} n’existe pas. Reflector laisse un miroir manuel tel quel et supprime un miroir automatique.",
+    "notAllowed": "La source n’autorise plus de miroirs dans le namespace {{namespace}} : Reflector cesse de mettre ce miroir à jour.",
+    "notAllowedAuto": "La source ne crée plus de miroirs automatiques dans le namespace {{namespace}} : Reflector supprime ce miroir.",
+    "unknown": "Le namespace de la source n’a pas pu être lu : l’état de ce miroir est inconnu.",
+    "permittedUnknown": "On ne sait pas si la source autorise encore le namespace {{namespace}} : un motif de namespace ne peut pas être exécuté ici, ou les labels du namespace ne sont pas connus.",
+    "invalidReflects": "L’annotation reflects n’est pas de la forme namespace/name : Reflector ignore cet objet.",
+    "autoNeedsAllowed": "Les miroirs automatiques sont activés mais sans effet : la réflexion depuis cet objet n’est pas autorisée.",
+    "selectorInvalid": "Reflector ne sait pas lire le selector {{selector}} et ne choisit aucun namespace avec.",
+    "targetsUnknown_one": "On ne sait pas si la source peut être copiée dans {{count}} namespace : {{namespaces}}.",
+    "targetsUnknown_many": "On ne sait pas si la source peut être copiée dans {{count}} de namespaces : {{namespaces}}.",
+    "targetsUnknown_other": "On ne sait pas si la source peut être copiée dans {{count}} namespaces : {{namespaces}}.",
+    "noMirrors": "Aucun miroir n’a été trouvé dans les namespaces vérifiés.",
+    "conflict": "Là où un autre objet porte déjà le nom, Reflector ne crée pas le miroir automatique.",
+    "notChecked_one": "{{count}} namespace où la source peut être copiée n’a pas été vérifié : {{namespaces}}.",
+    "notChecked_many": "{{count}} de namespaces où la source peut être copiée n’ont pas été vérifiés : {{namespaces}}.",
+    "notChecked_other": "{{count}} namespaces où la source peut être copiée n’ont pas été vérifiés : {{namespaces}}."
+  }
+}

@@ -33,9 +33,11 @@
     "crossplane": "Crossplane",
     "policies": "Kyverno ilkeleri",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "Güvenlik",
     "practices": "En iyi uygulamalar",
     "credentials": "Kimlik bilgileri",
@@ -68,13 +70,18 @@
     "policyErrors_other": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}",
     "traefikMissingReference": "Var olmayan nesnelere başvuruyor: {{refs}}. Traefik onlara bağlı olanı atlar.",
     "traefikSkippedRoute": "Traefik {{routes}} rotalarını atlar: boş bir match kuralı ya da Rule dışında bir kind.",
+    "sealedSecretTargetMissing": "Eşitlenmiş görünüyor, ancak Secret {{name}} mevcut değil.",
     "serviceMonitorSelectsNothing": "Şu namespace'lerde hiçbir Service seçmiyor: {{namespaces}}",
     "podMonitorSelectsNothing": "Şu namespace'lerde hiçbir Pod seçmiyor: {{namespaces}}",
-    "monitorNotPickedUp": "Hiçbir Prometheus selector'larıyla onu seçmiyor"
+    "monitorNotPickedUp": "Hiçbir Prometheus selector'larıyla onu seçmiyor",
+    "reflectorStale": "Reflector, kaynak {{source}} nesnesinin güncel sürümünü bu yansıya kopyalamadı.",
+    "reflectorNotAllowed": "Kaynak {{source}} artık bu namespace'e izin vermiyor ve yansı güncel değil.",
+    "reflectorSourceMissing": "Kaynak {{source}} mevcut değil."
   },
   "showDisk": "Disk neredeyse dolu",
   "showPractices": "En iyi uygulama bulguları",
   "showPolicies": "Kyverno ilkesi ihlalleri",
   "showPrometheusOperator": "Prometheus Operator izleyicileri ve sunucuları",
-  "showTraefik": "Traefik başvuruları"
+  "showTraefik": "Traefik başvuruları",
+  "showReflector": "Reflector yansıları"
 }

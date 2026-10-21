@@ -1,0 +1,102 @@
+{
+  "_source": "SealedSecret from the bitnami-labs/sealed-secrets README (mysecret in mynamespace), with the status the controller writes (pkg/controller/controller.go updateSealedSecretsStatusConditions); a failed one with the message HybridDecrypt returns, tagged by key (mkmik/multierror Uniq); a cluster-wide one with template data; the Helm chart's Deployment (helm/sealed-secrets, release sealed-secrets-controller in kube-system); the Secret the controller writes and a sealing key (metadata only, as the window gets them). Ciphertexts shortened.",
+  "synced": {
+    "apiVersion": "bitnami.com/v1alpha1",
+    "kind": "SealedSecret",
+    "metadata": { "name": "mysecret", "namespace": "mynamespace", "uid": "ss-1", "generation": 1, "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "encryptedData": {
+        "foo": "AgBy3i4OJSWK+PiTySYZZA9rO43cGDEqAQDXV4RcS+P2a0NeXH4L5Cq1LwV4c2hGqZp1zCZHXZJjH8m0j4Qn9W1y",
+        "bar": "AgCt8XyLqH2sRk5M0Jp3bGq9Yt7XrN1aF6cEw2vU0iZxLmQo"
+      },
+      "template": { "metadata": { "name": "mysecret", "namespace": "mynamespace" }, "type": "Opaque" }
+    },
+    "status": {
+      "observedGeneration": 1,
+      "conditions": [
+        { "type": "Synced", "status": "True", "lastUpdateTime": "2026-10-20T08:00:00Z", "lastTransitionTime": "2026-10-01T10:00:02Z" }
+      ]
+    }
+  },
+  "failed": {
+    "apiVersion": "bitnami.com/v1alpha1",
+    "kind": "SealedSecret",
+    "metadata": { "name": "db-credentials", "namespace": "shop", "uid": "ss-2", "generation": 2, "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "encryptedData": { "password": "AgA1b2c3d4e5f6g7h8i9j0kLmNoPqRsTuVwXyZ0123456789+/==", "username": "AgBzYXNkZmFzZGZhc2RmYXNkZg==" },
+      "template": { "metadata": { "name": "db-credentials", "namespace": "shop" }, "type": "Opaque" }
+    },
+    "status": {
+      "observedGeneration": 2,
+      "conditions": [
+        {
+          "type": "Synced",
+          "status": "False",
+          "message": "no key could decrypt secret (password, username)",
+          "lastUpdateTime": "2025-10-15T09:00:00Z",
+          "lastTransitionTime": "2025-10-15T08:00:00Z"
+        }
+      ]
+    }
+  },
+  "clusterWide": {
+    "apiVersion": "bitnami.com/v1alpha1",
+    "kind": "SealedSecret",
+    "metadata": {
+      "name": "registry-auth",
+      "namespace": "ci",
+      "uid": "ss-3",
+      "generation": 3,
+      "annotations": { "sealedsecrets.bitnami.com/cluster-wide": "true" }
+    },
+    "spec": {
+      "encryptedData": { ".dockerconfigjson": "AgDockerConfigCiphertextAbCdEfGh" },
+      "template": {
+        "metadata": { "name": "registry-auth", "annotations": { "sealedsecrets.bitnami.com/skip-set-owner-references": "true" } },
+        "type": "kubernetes.io/dockerconfigjson",
+        "immutable": true,
+        "data": { "config.yaml": "user: {{ .user }}", "legacy": null }
+      }
+    },
+    "status": {
+      "observedGeneration": 2,
+      "conditions": [{ "type": "Synced", "status": "True", "lastUpdateTime": "2026-10-20T08:00:00Z", "lastTransitionTime": "2026-10-01T10:00:02Z" }]
+    }
+  },
+  "controller": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "sealed-secrets-controller",
+      "namespace": "kube-system",
+      "uid": "dep-1",
+      "labels": { "app.kubernetes.io/name": "sealed-secrets", "app.kubernetes.io/instance": "sealed-secrets-controller" }
+    },
+    "spec": {
+      "replicas": 1,
+      "template": { "spec": { "containers": [{ "name": "controller", "image": "docker.io/bitnami/sealed-secrets-controller:0.32.2" }] } }
+    },
+    "status": { "replicas": 1, "readyReplicas": 1 }
+  },
+  "target": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "mysecret",
+      "namespace": "mynamespace",
+      "uid": "sec-1",
+      "ownerReferences": [{ "apiVersion": "bitnami.com/v1alpha1", "kind": "SealedSecret", "name": "mysecret", "uid": "ss-1", "controller": true }]
+    }
+  },
+  "sealingKey": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "sealed-secrets-keyx7k2p",
+      "namespace": "kube-system",
+      "uid": "key-1",
+      "creationTimestamp": "2026-10-01T00:00:00Z",
+      "labels": { "sealedsecrets.bitnami.com/sealed-secrets-key": "active" }
+    }
+  }
+}

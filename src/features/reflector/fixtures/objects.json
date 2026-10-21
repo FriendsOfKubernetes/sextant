@@ -1,0 +1,230 @@
+{
+  "_comment": "Objects shaped after the examples of emberstack/kubernetes-reflector's README (source-secret, source-config-map, mirror-secret); Secret values are empty as Sextant's core strips them.",
+  "namespaces": [
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "default",
+        "uid": "ns-default",
+        "labels": {
+          "kubernetes.io/metadata.name": "default"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "namespace-1",
+        "uid": "ns-namespace-1",
+        "labels": {
+          "kubernetes.io/metadata.name": "namespace-1"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "namespace-2",
+        "uid": "ns-namespace-2",
+        "labels": {
+          "kubernetes.io/metadata.name": "namespace-2"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "namespace-30",
+        "uid": "ns-namespace-30",
+        "labels": {
+          "kubernetes.io/metadata.name": "namespace-30"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "team-x",
+        "uid": "ns-team-x",
+        "labels": {
+          "kubernetes.io/metadata.name": "team-x",
+          "env": "production"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "other",
+        "uid": "ns-other",
+        "labels": {
+          "kubernetes.io/metadata.name": "other"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "kube-system",
+        "uid": "ns-kube-system",
+        "labels": {
+          "kubernetes.io/metadata.name": "kube-system"
+        }
+      }
+    }
+  ],
+  "sourceSecret": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "source-secret",
+      "namespace": "default",
+      "uid": "secret-default-source-secret",
+      "resourceVersion": "1001",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflection-allowed": "true",
+        "reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces": "namespace-1,namespace-2,namespace-[0-9]*",
+        "reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces-selector": "env=production",
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled": "true",
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces": "namespace-[0-9]+"
+      }
+    },
+    "type": "Opaque",
+    "data": {
+      "password": ""
+    }
+  },
+  "autoMirror": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "source-secret",
+      "namespace": "namespace-1",
+      "uid": "secret-namespace-1-source-secret",
+      "resourceVersion": "2001",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflects": "default/source-secret",
+        "reflector.v1.k8s.emberstack.com/auto-reflects": "True",
+        "reflector.v1.k8s.emberstack.com/reflected-version": "1001",
+        "reflector.v1.k8s.emberstack.com/reflected-at": "\"2026-10-20T08:00:00.0000000+00:00\""
+      }
+    },
+    "type": "Opaque",
+    "data": {
+      "password": ""
+    }
+  },
+  "staleMirror": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "source-secret",
+      "namespace": "namespace-2",
+      "uid": "secret-namespace-2-source-secret",
+      "resourceVersion": "2002",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflects": "default/source-secret",
+        "reflector.v1.k8s.emberstack.com/auto-reflects": "True",
+        "reflector.v1.k8s.emberstack.com/reflected-version": "900",
+        "reflector.v1.k8s.emberstack.com/reflected-at": "\"2026-10-19T08:00:00.0000000+00:00\""
+      }
+    },
+    "type": "Opaque",
+    "data": {
+      "password": ""
+    }
+  },
+  "selectorMirror": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "mirror-secret",
+      "namespace": "team-x",
+      "uid": "secret-team-x-mirror-secret",
+      "resourceVersion": "2003",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflects": "default/source-secret",
+        "reflector.v1.k8s.emberstack.com/reflected-version": "1001"
+      }
+    },
+    "type": "Opaque",
+    "data": {
+      "password": ""
+    }
+  },
+  "notAllowedMirror": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "mirror-secret",
+      "namespace": "other",
+      "uid": "secret-other-mirror-secret",
+      "resourceVersion": "2004",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflects": "default/source-secret",
+        "reflector.v1.k8s.emberstack.com/reflected-version": "1001"
+      }
+    },
+    "type": "Opaque",
+    "data": {
+      "password": ""
+    }
+  },
+  "conflict": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "source-secret",
+      "namespace": "namespace-30",
+      "uid": "secret-namespace-30-source-secret",
+      "resourceVersion": "2005",
+      "annotations": {}
+    },
+    "type": "Opaque",
+    "data": {
+      "password": ""
+    }
+  },
+  "sourceConfigMap": {
+    "apiVersion": "v1",
+    "kind": "ConfigMap",
+    "metadata": {
+      "name": "source-config-map",
+      "namespace": "default",
+      "uid": "configmap-default-source-config-map",
+      "resourceVersion": "3001",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflection-allowed": "true",
+        "reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces": "",
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled": "true"
+      }
+    },
+    "data": {
+      "key": "value"
+    }
+  },
+  "missingSourceMirror": {
+    "apiVersion": "v1",
+    "kind": "ConfigMap",
+    "metadata": {
+      "name": "mirror-config-map",
+      "namespace": "namespace-1",
+      "uid": "configmap-namespace-1-mirror-config-map",
+      "resourceVersion": "3002",
+      "annotations": {
+        "reflector.v1.k8s.emberstack.com/reflects": "default/gone-config-map",
+        "reflector.v1.k8s.emberstack.com/reflected-version": "17"
+      }
+    },
+    "data": {
+      "key": "value"
+    }
+  }
+}

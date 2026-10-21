@@ -37,9 +37,11 @@
     "crossplane": "Crossplane",
     "policies": "Политики Kyverno",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "Безопасность",
     "practices": "Лучшие практики",
     "credentials": "Учётные данные",
@@ -80,13 +82,18 @@
     "policyErrors_other": "{{count}} правила политик не удалось проверить: {{policies}}",
     "traefikMissingReference": "Ссылается на несуществующие объекты: {{refs}}. Traefik пропускает то, что от них зависит.",
     "traefikSkippedRoute": "Traefik пропускает его маршруты {{routes}}: пустое правило match или kind, отличный от Rule.",
+    "sealedSecretTargetMissing": "Отмечен как синхронизированный, но его Secret {{name}} не существует.",
     "serviceMonitorSelectsNothing": "Не выбирает ни одного Service в namespace: {{namespaces}}",
     "podMonitorSelectsNothing": "Не выбирает ни одного Pod в namespace: {{namespaces}}",
-    "monitorNotPickedUp": "Ни один Prometheus не подхватывает его своими selector"
+    "monitorNotPickedUp": "Ни один Prometheus не подхватывает его своими selector",
+    "reflectorStale": "Reflector не скопировал в это зеркало текущую версию источника {{source}}.",
+    "reflectorNotAllowed": "Источник {{source}} больше не разрешает этот namespace, а зеркало устарело.",
+    "reflectorSourceMissing": "Источник {{source}} не существует."
   },
   "showDisk": "Диск почти заполнен",
   "showPractices": "Замечания по лучшим практикам",
   "showPolicies": "Нарушения политик Kyverno",
   "showPrometheusOperator": "Мониторы и серверы Prometheus Operator",
-  "showTraefik": "Ссылки Traefik"
+  "showTraefik": "Ссылки Traefik",
+  "showReflector": "Зеркала Reflector"
 }

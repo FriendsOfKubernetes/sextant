@@ -3,7 +3,8 @@
 // destination a pod, a Service (each pod behind it, at its target port) or an outside address, with a port and
 // protocol. The answer — allowed, denied or unknown — comes per side (the source's egress, the destination's ingress)
 // with the policies that select each side and the rule that allows (index, peer, port), or why nothing does; plus the
-// DNS warning for an egress-isolated source. A second tab maps a namespace's isolation (`PolicyMap.tsx`). Read-only:
+// DNS warning for an egress-isolated source. A second tab maps a namespace's isolation (`PolicyMap.tsx`), a third shows
+// which pods of the filter's namespaces no policy isolates (`CoverageView.tsx`, #239). Read-only:
 // objects are watched only while the page is open, for the namespaces the form names (`useNetpolData`).
 import { useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +27,7 @@ import {
   type Protocol,
   type ServiceInfo,
 } from "./model";
+import { CoverageView } from "./CoverageView";
 import { PolicyMap } from "./PolicyMap";
 import {
   CONNECTIVITY_PAGE,
@@ -426,6 +428,7 @@ export function ConnectivityPage({ clusterId }: PageProps) {
   const tabs: { id: ConnectivityTab; label: string }[] = [
     { id: "check", label: t("netpol:tabs.check") },
     { id: "map", label: t("netpol:tabs.map") },
+    { id: "coverage", label: t("netpol:tabs.coverage") },
   ];
   return (
     <div className="np-page">
@@ -435,7 +438,7 @@ export function ConnectivityPage({ clusterId }: PageProps) {
       <div className="np-page__body">
         <EnforcementBanner />
         <Tabs label={t("netpol:tabs.label")} tabs={tabs} selected={tab} onSelect={(id) => patch(clusterId, { tab: id })}>
-          {tab === "map" ? <PolicyMap clusterId={clusterId} /> : <CheckPanel clusterId={clusterId} />}
+          {tab === "map" ? <PolicyMap clusterId={clusterId} /> : tab === "coverage" ? <CoverageView clusterId={clusterId} /> : <CheckPanel clusterId={clusterId} />}
         </Tabs>
       </div>
     </div>

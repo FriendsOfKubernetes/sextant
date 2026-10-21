@@ -269,6 +269,8 @@ describe("details", () => {
     const view = within(section("argoWorkflows"));
     expect(view.getAllByText("Error (exit code 1)").length).toBeGreaterThan(0);
     expect(view.getByRole("button", { name: "Open CronWorkflow nightly-diamond" })).toBeInTheDocument();
+    // Retry is not an action (ADR-0097): the details say how to do it outside Sextant.
+    expect(view.getByText(new RegExp(`argo retry ${NAME} -n argo`))).toBeInTheDocument();
     const tree = () => within(section("argoWorkflows").querySelector<HTMLElement>(".aw-tree")!);
     expect(tree().queryByText("C")).toBeNull();
     fireEvent.click(view.getByRole("button", { name: "Show the failed step" }));

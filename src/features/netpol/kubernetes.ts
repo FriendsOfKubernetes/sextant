@@ -212,6 +212,7 @@ export function kubernetesPolicy(obj: KubeObject): Policy {
       if (pod.namespace !== namespace) return { result: "no", reason: null };
       return { result: tri(matches(selector, pod.labels)), reason: null };
     },
+    everyPodIn: (ns) => tri(ns === namespace && selector.type === "everything"),
     selectorText: text ? { key: "selects.pods", params: { selector: text, namespace } } : { key: "selects.allPods", params: { namespace } },
     isolates: types,
     applies: types,

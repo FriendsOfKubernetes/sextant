@@ -720,3 +720,7 @@ _Avoid_: resume, rollback, undo (that is `kubectl rollout undo`, ADR-0068)
 **Workflow node (Argo Workflows)**:
 One step of a Workflow as its status records it (`status.nodes`): a pod, a container of a container set, a DAG task group, a steps group, a retry or a skipped step. Pod nodes run in pods named by the Workflow's pod-name format; the failed step is the first pod node that failed.
 _Avoid_: task (only DAG nodes are tasks), job
+
+**Mirror (Reflector)**:
+A Secret or ConfigMap that emberstack Reflector keeps as a copy of another one, its source, named by the annotation `reflector.v1.k8s.emberstack.com/reflects` (`namespace/name`). Automatic when Reflector created it (`auto-reflects`), manual when someone did. In sync when its `reflected-version` is the source's resourceVersion; stale when not; Sextant never compares values (ADR-0110).
+_Avoid_: replica, clone, synced copy

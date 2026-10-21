@@ -6,7 +6,8 @@
   "tabs": {
     "label": "連通性檢視",
     "check": "檢查",
-    "map": "原則圖"
+    "map": "原則圖",
+    "coverage": "涵蓋"
   },
   "form": {
     "source": "來源",
@@ -327,5 +328,52 @@
     "policies": "原則",
     "noPolicies": "此 namespace 中沒有原則選取任何 Pod：每個 Pod 都接受所有輸入流量並傳送所有輸出流量。",
     "selects_other": "{{what}} — 目前選取了 {{count}} 個 Pod"
+  },
+  "coverage": {
+    "intro": "哪些 Pod 沒有被任何原則隔離，依 Ingress 與 Egress 分別列出。某個方向上沒有任何原則選取的 Pod 會接收（或傳送）該方向的所有流量。「無法判斷」表示可能有原則適用，但 Sextant 無法確定。",
+    "chooseNamespace": "選擇 namespace",
+    "chooseNamespaceText": "在上方的篩選器中選擇一個或多個 namespace，查看其中哪些 Pod 已隔離。",
+    "firstNamespaces_other": "僅顯示篩選器中的前 {{count}} 個 namespace。",
+    "table": "namespace 的涵蓋情況",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress 已隔離",
+    "egress": "Egress 已隔離",
+    "defaultDeny": "預設拒絕",
+    "level": {
+      "all": "全部",
+      "some": "部分",
+      "none": "無",
+      "unknown": "無法判斷",
+      "noPods": "沒有 Pod"
+    },
+    "levelCount": "{{level}}（{{isolated}}/{{total}}）",
+    "directions": "Ingress：{{ingress}} · Egress：{{egress}}",
+    "state": {
+      "isolated": "已隔離",
+      "notIsolated": "未隔離",
+      "unknown": "無法判斷",
+      "hostNetwork": "主機網路：不受原則約束"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} 可能選取此 Pod：Sextant 無法在此評估其選取器。",
+    "noPolicies": "Sextant 評估的原則中沒有任何一條隔離此 namespace 中的 Pod。",
+    "policies": "隔離 {{namespace}} 中 Pod 的原則",
+    "policy": "原則",
+    "flavor": "類型",
+    "ingressPods": "Ingress 已隔離的 Pod",
+    "egressPods": "Egress 已隔離的 Pod",
+    "openPods": "{{namespace}} 中在某個方向未隔離的 Pod",
+    "allIsolated": "所有 Pod 的 Ingress 與 Egress 都已隔離。",
+    "podFields": {
+      "coverage": "涵蓋",
+      "defaultDeny": "namespace 預設拒絕"
+    },
+    "column": {
+      "ingress": "Ingress 已隔離",
+      "egress": "Egress 已隔離",
+      "loading": "正在載入…",
+      "notInFilter": "不在篩選中",
+      "notInFilterHint": "在 namespace 篩選器中選擇此 namespace 以查看其涵蓋情況。"
+    }
   }
 }

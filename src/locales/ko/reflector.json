@@ -1,0 +1,74 @@
+{
+  "title": "리플렉션",
+  "column": "리플렉션",
+  "role": {
+    "source": "소스",
+    "sourceAuto": "소스, 자동 미러링",
+    "mirror": "미러",
+    "autoMirror": "자동 미러"
+  },
+  "state": {
+    "inSync": "동기화됨",
+    "stale": "오래됨",
+    "sourceMissing": "소스 없음",
+    "notAllowed": "허용 안 됨",
+    "unknown": "판단할 수 없음",
+    "loading": "확인 중…"
+  },
+  "expected": {
+    "notCreated": "생성되지 않음",
+    "conflict": "이름 사용 중"
+  },
+  "fields": {
+    "role": "역할",
+    "source": "소스",
+    "state": "상태",
+    "reflectedVersion": "복사된 버전",
+    "sourceVersion": "소스 버전",
+    "reflectedAt": "복사 시각",
+    "allowed": "리플렉션 허용",
+    "allowedNamespaces": "허용된 namespace",
+    "allowedSelector": "허용된 namespace selector",
+    "autoEnabled": "자동 미러",
+    "autoNamespaces": "자동 미러 namespace",
+    "autoSelector": "자동 미러 namespace selector",
+    "autoTargets": "자동 미러 대상"
+  },
+  "values": {
+    "yes": "예",
+    "no": "아니요",
+    "everyNamespace": "모든 namespace",
+    "none": "없음",
+    "automatic": "자동",
+    "direct": "수동",
+    "more_other": "외 {{count}}개"
+  },
+  "headers": {
+    "mirror": "미러",
+    "mode": "방식",
+    "state": "상태"
+  },
+  "mirrorsTitle": "미러",
+  "patternIssue": {
+    "invalid": "namespace 패턴 {{pattern}}은(는) Sextant가 실행할 수 있는 정규식이 아니므로 어떤 namespace를 가리키는지 판단할 수 없습니다.",
+    "notEvaluated": "namespace 패턴 {{pattern}}이(가) 너무 길거나 반복을 반복하므로 Sextant가 실행하지 않으며 어떤 namespace를 가리키는지 판단할 수 없습니다."
+  },
+  "explain": {
+    "valuesNotCompared": "값은 읽거나 비교하지 않습니다. 상태는 Reflector의 annotation과 소스의 resourceVersion으로 판단합니다.",
+    "inSync": "Reflector가 소스의 현재 버전을 이 {{kind}}에 복사했습니다.",
+    "stale": "마지막 복사 이후 소스가 바뀌었습니다. 이 미러는 버전 {{reflected}}, 소스는 {{current}}입니다. Reflector는 보통 몇 초 안에 따라잡습니다. 그렇지 않으면 Reflector가 실행 중인지 확인하세요.",
+    "staleNever": "Reflector가 아직 소스를 이 {{kind}}에 복사하지 않았습니다. 계속 그렇다면 Reflector가 실행 중인지, 소스가 이 namespace를 허용하는지 확인하세요.",
+    "sourceMissing": "소스 {{source}}이(가) 존재하지 않습니다. Reflector는 수동 미러는 그대로 두고 자동 미러는 삭제합니다.",
+    "notAllowed": "소스가 더 이상 namespace {{namespace}}의 미러를 허용하지 않습니다. Reflector는 이 미러를 더 이상 업데이트하지 않습니다.",
+    "notAllowedAuto": "소스가 더 이상 namespace {{namespace}}에 자동 미러를 만들지 않습니다. Reflector는 이 미러를 삭제합니다.",
+    "unknown": "소스의 namespace를 읽을 수 없어 이 미러의 상태를 판단할 수 없습니다.",
+    "permittedUnknown": "소스가 아직 namespace {{namespace}}을(를) 허용하는지 판단할 수 없습니다. 여기서 실행할 수 없는 namespace 패턴이 있거나 namespace의 label을 알 수 없습니다.",
+    "invalidReflects": "reflects annotation이 namespace/name 형식이 아니므로 Reflector는 이 오브젝트를 무시합니다.",
+    "autoNeedsAllowed": "자동 미러가 켜져 있지만 효과가 없습니다. 이 오브젝트에서의 리플렉션이 허용되지 않습니다.",
+    "selectorInvalid": "Reflector는 selector {{selector}}을(를) 해석할 수 없어 이것으로 어떤 namespace도 선택하지 않습니다.",
+    "targetsUnknown_other": "소스를 {{count}}개 namespace에 미러링할 수 있는지 판단할 수 없습니다: {{namespaces}}.",
+    "noMirrors": "확인한 namespace에서 미러를 찾지 못했습니다.",
+    "conflict": "다른 오브젝트가 이름을 사용 중인 곳에는 Reflector가 자동 미러를 만들지 않습니다.",
+    "notChecked_other": "미러링될 수 있는 namespace {{count}}개는 확인하지 않았습니다: {{namespaces}}."
+  }
+}

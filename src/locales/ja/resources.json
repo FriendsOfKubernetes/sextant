@@ -30,6 +30,7 @@
     "crossplane": "Crossplane",
     "kyverno": "Kyverno",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",

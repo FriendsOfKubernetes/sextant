@@ -1,0 +1,83 @@
+{
+  "title": "Odbicie",
+  "column": "Odbicie",
+  "role": {
+    "source": "Źródło",
+    "sourceAuto": "Źródło, kopiowane automatycznie",
+    "mirror": "Kopia lustrzana",
+    "autoMirror": "Automatyczna kopia lustrzana"
+  },
+  "state": {
+    "inSync": "Zsynchronizowana",
+    "stale": "Nieaktualna",
+    "sourceMissing": "Brak źródła",
+    "notAllowed": "Niedozwolona",
+    "unknown": "Nie wiadomo",
+    "loading": "Sprawdzanie…"
+  },
+  "expected": {
+    "notCreated": "Nie utworzono",
+    "conflict": "Nazwa zajęta"
+  },
+  "fields": {
+    "role": "Rola",
+    "source": "Źródło",
+    "state": "Stan",
+    "reflectedVersion": "Skopiowana wersja",
+    "sourceVersion": "Wersja źródła",
+    "reflectedAt": "Skopiowano",
+    "allowed": "Odbicie dozwolone",
+    "allowedNamespaces": "Dozwolone namespace",
+    "allowedSelector": "Selector dozwolonych namespace",
+    "autoEnabled": "Automatyczne kopie",
+    "autoNamespaces": "Namespace automatycznych kopii",
+    "autoSelector": "Selector namespace automatycznych kopii",
+    "autoTargets": "Kopiowane automatycznie do"
+  },
+  "values": {
+    "yes": "Tak",
+    "no": "Nie",
+    "everyNamespace": "Każdy namespace",
+    "none": "Brak",
+    "automatic": "Automatyczna",
+    "direct": "Ręczna",
+    "more_one": "i {{count}} więcej",
+    "more_few": "i {{count}} więcej",
+    "more_many": "i {{count}} więcej",
+    "more_other": "i {{count}} więcej"
+  },
+  "headers": {
+    "mirror": "Kopia lustrzana",
+    "mode": "Tryb",
+    "state": "Stan"
+  },
+  "mirrorsTitle": "Kopie lustrzane",
+  "patternIssue": {
+    "invalid": "Wzorzec namespace {{pattern}} nie jest wyrażeniem regularnym, które Sextant może wykonać, więc nie wiadomo, które namespace wskazuje.",
+    "notEvaluated": "Wzorzec namespace {{pattern}} jest za długi lub powtarza powtórzenie, więc Sextant go nie wykonuje i nie wiadomo, które namespace wskazuje."
+  },
+  "explain": {
+    "valuesNotCompared": "Wartości nigdy nie są odczytywane ani porównywane: stan pochodzi z adnotacji Reflectora i resourceVersion źródła.",
+    "inSync": "Reflector skopiował bieżącą wersję źródła do tego obiektu {{kind}}.",
+    "stale": "Źródło zmieniło się od ostatniego kopiowania: ta kopia ma wersję {{reflected}}, źródło jest w wersji {{current}}. Reflector zwykle nadrabia to w kilka sekund; jeśli nie, sprawdź, czy Reflector działa.",
+    "staleNever": "Reflector nie skopiował jeszcze źródła do tego obiektu {{kind}}. Jeśli tak zostanie, sprawdź, czy Reflector działa i czy źródło zezwala na ten namespace.",
+    "sourceMissing": "Źródło {{source}} nie istnieje. Ręczną kopię Reflector zostawia bez zmian, a automatyczną usuwa.",
+    "notAllowed": "Źródło nie zezwala już na kopie w namespace {{namespace}}: Reflector przestaje aktualizować tę kopię.",
+    "notAllowedAuto": "Źródło nie tworzy już automatycznych kopii w namespace {{namespace}}: Reflector usuwa tę kopię.",
+    "unknown": "Nie udało się odczytać namespace źródła, więc stan tej kopii jest nieznany.",
+    "permittedUnknown": "Nie wiadomo, czy źródło nadal zezwala na namespace {{namespace}}: wzorca namespace nie da się tu wykonać albo label tego namespace nie są znane.",
+    "invalidReflects": "Adnotacja reflects nie ma postaci namespace/name, więc Reflector ignoruje ten obiekt.",
+    "autoNeedsAllowed": "Automatyczne kopie są włączone, ale nie działają: odbicie z tego obiektu nie jest dozwolone.",
+    "selectorInvalid": "Reflector nie potrafi odczytać selectora {{selector}} i nie wybiera nim żadnego namespace.",
+    "targetsUnknown_one": "Nie wiadomo, czy źródło może być kopiowane do {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_few": "Nie wiadomo, czy źródło może być kopiowane do {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_many": "Nie wiadomo, czy źródło może być kopiowane do {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_other": "Nie wiadomo, czy źródło może być kopiowane do {{count}} namespace: {{namespaces}}.",
+    "noMirrors": "W sprawdzonych namespace nie znaleziono żadnej jego kopii.",
+    "conflict": "Tam, gdzie nazwę zajmuje inny obiekt, Reflector nie tworzy automatycznej kopii.",
+    "notChecked_one": "Nie sprawdzono {{count}} namespace, do którego źródło może być kopiowane: {{namespaces}}.",
+    "notChecked_few": "Nie sprawdzono {{count}} namespace, do których źródło może być kopiowane: {{namespaces}}.",
+    "notChecked_many": "Nie sprawdzono {{count}} namespace, do których źródło może być kopiowane: {{namespaces}}.",
+    "notChecked_other": "Nie sprawdzono {{count}} namespace, do których źródło może być kopiowane: {{namespaces}}."
+  }
+}

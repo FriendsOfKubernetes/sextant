@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Vistas de conectividad",
     "check": "Comprobación",
-    "map": "Mapa de políticas"
+    "map": "Mapa de políticas",
+    "coverage": "Cobertura"
   },
   "form": {
     "source": "Origen",
@@ -343,5 +344,54 @@
     "selects_one": "{{what}} — {{count}} Pod seleccionado ahora",
     "selects_many": "{{what}} — {{count}} Pods seleccionados ahora",
     "selects_other": "{{what}} — {{count}} Pods seleccionados ahora"
+  },
+  "coverage": {
+    "intro": "Qué Pods no aísla ninguna política, por separado para Ingress y Egress. Un Pod que ninguna política selecciona para una dirección acepta (o envía) todo el tráfico de esa dirección. “No se puede saber” significa que una política podría aplicarse, pero Sextant no puede decidirlo.",
+    "chooseNamespace": "Elija namespaces",
+    "chooseNamespaceText": "Elija uno o más namespaces en el filtro de arriba para ver cuáles de sus Pods están aislados.",
+    "firstNamespaces_one": "Solo se muestra el primer {{count}} namespace del filtro.",
+    "firstNamespaces_many": "Solo se muestran los primeros {{count}} namespaces del filtro.",
+    "firstNamespaces_other": "Solo se muestran los primeros {{count}} namespaces del filtro.",
+    "table": "Cobertura de los namespaces",
+    "namespace": "Namespace",
+    "pods": "Pods",
+    "ingress": "Ingress aislado",
+    "egress": "Egress aislado",
+    "defaultDeny": "Denegación por defecto",
+    "level": {
+      "all": "Todos",
+      "some": "Algunos",
+      "none": "Ninguno",
+      "unknown": "No se puede saber",
+      "noPods": "Sin Pods"
+    },
+    "levelCount": "{{level}} ({{isolated}} de {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Aislado",
+      "notIsolated": "No aislado",
+      "unknown": "No se puede saber",
+      "hostNetwork": "Red del host: sin políticas"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} podría seleccionar el Pod: Sextant no puede evaluar su selector aquí.",
+    "noPolicies": "Ninguna política que Sextant evalúa aísla un Pod en este namespace.",
+    "policies": "Políticas que aíslan Pods en {{namespace}}",
+    "policy": "Política",
+    "flavor": "Tipo",
+    "ingressPods": "Pods aislados para Ingress",
+    "egressPods": "Pods aislados para Egress",
+    "openPods": "Pods de {{namespace}} no aislados en alguna dirección",
+    "allIsolated": "Todos los Pods están aislados para Ingress y Egress.",
+    "podFields": {
+      "coverage": "Cobertura",
+      "defaultDeny": "Denegación por defecto del namespace"
+    },
+    "column": {
+      "ingress": "Ingress aislado",
+      "egress": "Egress aislado",
+      "loading": "Cargando…",
+      "notInFilter": "Fuera del filtro",
+      "notInFilterHint": "Elija este namespace en el filtro de namespaces para ver su cobertura."
+    }
   }
 }

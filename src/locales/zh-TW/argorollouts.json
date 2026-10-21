@@ -94,7 +94,9 @@
     "promote": "升級",
     "promoteFull": "完全升級",
     "abort": "中止",
-    "retry": "重試"
+    "retry": "重試",
+    "pause": "暫停",
+    "resume": "繼續"
   },
   "dialog": {
     "promoteTitle": "要升級 rollout {{name}} 嗎？",
@@ -110,6 +112,12 @@
     "specPatch": "傳送到 rollout：",
     "fallbackPatch": "如果叢集中的 Argo Rollouts 沒有 status 子資源（v0.9），則改為向 rollout 傳送：",
     "nothing": "無需變更：rollout 已完全升級且未暫停。",
-    "changed": "此對話方塊開啟期間 rollout 已變更。請檢查更新後的變更並再次確認。"
+    "changed": "此對話方塊開啟期間 rollout 已變更。請檢查更新後的變更並再次確認。",
+    "pauseTitle": "要暫停 rollout {{name}} 嗎？",
+    "pauseText": "rollout 會被手動暫停（spec.paused），在繼續或升級之前不會推進，與 kubectl argo rollouts pause 相同。",
+    "resumeTitle": "要繼續 rollout {{name}} 嗎？",
+    "resumeText": "rollout 會結束暫停：清除 spec.paused 並移除其暫停條件，與外掛先前的 resume 命令和 Argo CD 的 resume 動作相同。與「升級」不同，它不會自行將 rollout 推進到下一步。",
+    "nothingPause": "無需變更：rollout 已暫停。",
+    "nothingResume": "無需變更：rollout 未暫停。"
   }
 }

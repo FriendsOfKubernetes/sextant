@@ -1,0 +1,80 @@
+{
+  "title": "Reflexión",
+  "column": "Reflexión",
+  "role": {
+    "source": "Origen",
+    "sourceAuto": "Origen, se refleja automáticamente",
+    "mirror": "Espejo",
+    "autoMirror": "Espejo automático"
+  },
+  "state": {
+    "inSync": "Sincronizado",
+    "stale": "Desactualizado",
+    "sourceMissing": "Falta el origen",
+    "notAllowed": "No permitido",
+    "unknown": "Desconocido",
+    "loading": "Comprobando…"
+  },
+  "expected": {
+    "notCreated": "No creado",
+    "conflict": "Nombre ocupado"
+  },
+  "fields": {
+    "role": "Rol",
+    "source": "Origen",
+    "state": "Estado",
+    "reflectedVersion": "Versión copiada",
+    "sourceVersion": "Versión del origen",
+    "reflectedAt": "Copiado el",
+    "allowed": "Reflexión permitida",
+    "allowedNamespaces": "Namespaces permitidos",
+    "allowedSelector": "Selector de namespaces permitidos",
+    "autoEnabled": "Espejos automáticos",
+    "autoNamespaces": "Namespaces de espejos automáticos",
+    "autoSelector": "Selector de namespaces de espejos automáticos",
+    "autoTargets": "Se refleja automáticamente en"
+  },
+  "values": {
+    "yes": "Sí",
+    "no": "No",
+    "everyNamespace": "Todos los namespaces",
+    "none": "Ninguno",
+    "automatic": "Automático",
+    "direct": "Manual",
+    "more_one": "y {{count}} más",
+    "more_many": "y {{count}} más",
+    "more_other": "y {{count}} más"
+  },
+  "headers": {
+    "mirror": "Espejo",
+    "mode": "Modo",
+    "state": "Estado"
+  },
+  "mirrorsTitle": "Espejos",
+  "patternIssue": {
+    "invalid": "El patrón de namespace {{pattern}} no es una expresión regular que Sextant pueda ejecutar, así que no se sabe qué namespaces nombra.",
+    "notEvaluated": "El patrón de namespace {{pattern}} es demasiado largo o repite una repetición; Sextant no lo ejecuta y no se sabe qué namespaces nombra."
+  },
+  "explain": {
+    "valuesNotCompared": "Los valores nunca se leen ni se comparan: el estado sale de las anotaciones de Reflector y del resourceVersion del origen.",
+    "inSync": "Reflector copió la versión actual del origen en este {{kind}}.",
+    "stale": "El origen cambió desde la última copia: este espejo tiene la versión {{reflected}} y el origen está en {{current}}. Reflector suele ponerse al día en segundos; si no, compruebe que Reflector está en marcha.",
+    "staleNever": "Reflector aún no ha copiado el origen en este {{kind}}. Si sigue así, compruebe que Reflector está en marcha y que el origen permite este namespace.",
+    "sourceMissing": "El origen {{source}} no existe. Reflector deja un espejo manual tal cual y borra uno automático.",
+    "notAllowed": "El origen ya no permite espejos en el namespace {{namespace}}: Reflector deja de actualizar este espejo.",
+    "notAllowedAuto": "El origen ya no crea espejos automáticos en el namespace {{namespace}}: Reflector borra este espejo.",
+    "unknown": "No se pudo leer el namespace del origen, así que no se sabe el estado de este espejo.",
+    "permittedUnknown": "No se sabe si el origen aún permite el namespace {{namespace}}: un patrón de namespace no se puede ejecutar aquí o no se conocen los labels del namespace.",
+    "invalidReflects": "La anotación reflects no tiene la forma namespace/name, así que Reflector ignora este objeto.",
+    "autoNeedsAllowed": "Los espejos automáticos están activados pero no tienen efecto: la reflexión desde este objeto no está permitida.",
+    "selectorInvalid": "Reflector no puede interpretar el selector {{selector}} y no elige ningún namespace con él.",
+    "targetsUnknown_one": "No se sabe si el origen puede reflejarse en {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_many": "No se sabe si el origen puede reflejarse en {{count}} de namespaces: {{namespaces}}.",
+    "targetsUnknown_other": "No se sabe si el origen puede reflejarse en {{count}} namespaces: {{namespaces}}.",
+    "noMirrors": "No se encontró ningún espejo en los namespaces comprobados.",
+    "conflict": "Donde otro objeto ya usa el nombre, Reflector no crea el espejo automático.",
+    "notChecked_one": "No se comprobó {{count}} namespace en el que el origen puede reflejarse: {{namespaces}}.",
+    "notChecked_many": "No se comprobaron {{count}} de namespaces en los que el origen puede reflejarse: {{namespaces}}.",
+    "notChecked_other": "No se comprobaron {{count}} namespaces en los que el origen puede reflejarse: {{namespaces}}."
+  }
+}

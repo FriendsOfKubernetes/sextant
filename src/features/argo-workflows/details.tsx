@@ -4,7 +4,8 @@
 //                       each pod node linked to its pod with its logs one click away (the logs dock tab);
 //   CronWorkflow      — the schedules, time zone, concurrency, suspension, last run, the active Workflows, counts;
 //   (Cluster)WorkflowTemplate — the entrypoint and the templates.
-// Read-only. Conditions and YAML are the panel's own sections.
+// The actions live in ./actions.tsx; a failed Workflow says how to retry it outside Sextant. Conditions and YAML are
+// the panel's own sections.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type ClusterId, type KindRef, type KubeObject } from "../../api";
@@ -56,6 +57,7 @@ const POD_KIND: KindRef = { group: "", version: "v1", kind: "Pod" };
 const date = (value: string | undefined) => (value ? <time dateTime={value}>{formatDateTime(value)}</time> : null);
 
 function WorkflowFields({ wf }: { wf: KubeObject }) {
+  const { t } = useTranslation();
   const now = useNow(1000);
   const ns = wf.metadata?.namespace ?? null;
   const phase = workflowPhase(wf);
@@ -76,7 +78,15 @@ function WorkflowFields({ wf }: { wf: KubeObject }) {
       template ? link(typeOf(template.cluster ? CLUSTER_WORKFLOW_TEMPLATE : WORKFLOW_TEMPLATE), template.name, template.cluster ? null : ns) : null,
     ],
   ];
-  return <Fields rows={rows} labelPrefix={FIELDS} />;
+  return (
+    <>
+      <Fields rows={rows} labelPrefix={FIELDS} />
+      {/* Retry is not an action (ADR-0097): it rebuilds the node tree and deletes pods, as only Argo does. */}
+      {phase === "Failed" || phase === "Error" ? (
+        <p className="aw-muted">{t("argoworkflows:retryHint", { name: wf.metadata?.name ?? "", namespace: ns ?? "" })}</p>
+      ) : null}
+    </>
+  );
 }
 
 /** Opens the logs of the pod of a node; says so when the pod is gone (Argo deletes pods by its pod GC). */

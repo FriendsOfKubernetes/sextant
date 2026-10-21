@@ -243,6 +243,7 @@ import {
   FileKey as EsoFileKey,
   Flame as PromFlame,
   FolderKey as EsoFolderKey,
+  FolderLock as SealedFolderLock,
   MessagesSquare as KafkaMessagesSquare,
   RadioTower as KafkaRadioTower,
   Radar as PromRadar,
@@ -511,6 +512,9 @@ const ICONS = {
   externalSecret: EsoFileKey,
   secretStore: EsoVault,
   pushSecret: EsoCloudUpload,
+  // Sealed Secrets (#240): the section and its kind.
+  sealedSecrets: SealedFolderLock,
+  sealedSecret: FileLock,
   cnpg: CnpgDatabase,
   postgresCluster: CnpgCylinder,
   postgresBackup: CnpgDatabaseBackup,

@@ -60,5 +60,39 @@
     "offloaded": "控制器將此 workflow 的步驟保存在其資料庫中（offloaded node status）：它們不在物件中，因此無法在此顯示。",
     "compressed": "控制器以壓縮形式儲存了此 workflow 的步驟：無法在此顯示。",
     "none": "尚無步驟。"
-  }
+  },
+  "actions": {
+    "suspend": "暫停",
+    "resume": "繼續",
+    "stop": "停止",
+    "terminate": "終止"
+  },
+  "dialog": {
+    "suspendTitle": "要暫停 workflow {{name}} 嗎？",
+    "suspendText": "在繼續之前，workflow 不會啟動新的步驟；已在執行的步驟會繼續，與 argo suspend 相同。",
+    "resumeTitle": "要繼續 workflow {{name}} 嗎？",
+    "resumeText": "解除 workflow 的暫停，並將每個等待中的 suspend 步驟標記為 Succeeded，與 argo resume 相同。",
+    "stopTitle": "要停止 workflow {{name}} 嗎？",
+    "stopText": "執行中的步驟會被停止，也不會啟動新步驟，但結束處理常式仍會執行，與 argo stop 相同。",
+    "terminateTitle": "要終止 workflow {{name}} 嗎？",
+    "terminateText": "執行中的步驟會被停止，不再執行任何內容，包括結束處理常式，與 argo terminate 相同。",
+    "loading": "正在讀取 workflow…",
+    "patch": "傳送到 workflow 的內容（JSON merge patch）：",
+    "versioned": "它帶有傳送前剛讀取的 resourceVersion，因此如果 workflow 在此期間變更，API 伺服器會拒絕它；不會重試。",
+    "stamped": "finishedAt 設為傳送時間。",
+    "changed": "此對話方塊開啟期間 workflow 已變更。請檢查更新後的變更並再次確認。",
+    "nothing": {
+      "suspend": "無需變更：workflow 已暫停。",
+      "resume": "無需變更：workflow 未暫停，也沒有等待中的 suspend 步驟。",
+      "stop": "無需變更：workflow 已在停止中。",
+      "terminate": "無需變更：workflow 已在終止中。"
+    },
+    "refusal": {
+      "completed": "已完成的 workflow 無法暫停。",
+      "finished": "workflow 已經結束，沒有可停止的內容。",
+      "nodesElsewhere": "此 workflow 的節點已壓縮或儲存在控制器的資料庫中，因此 Sextant 無法繼續其 suspend 步驟。請改為執行 argo resume {{name}} -n {{namespace}}。",
+      "noDefault": "suspend 步驟 {{step}} 正在等待其輸出參數 {{parameter}}，該參數既沒有值也沒有預設值，因此無法繼續。請先用 argo node set 設定它。"
+    }
+  },
+  "retryHint": "Sextant 不會重試 workflow：重試會重設失敗的節點並刪除其 Pod，這由 Argo 伺服器完成。請執行 argo retry {{name}} -n {{namespace}}。"
 }

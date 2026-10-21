@@ -201,9 +201,11 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "crossplane",
     "policies",
     "externalSecrets",
+    "sealedSecrets",
     "cnpg",
     "strimzi",
     "prometheusOperator",
+    "reflector",
     "security",
     "practices",
     "credentials",
@@ -211,7 +213,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 7] = [
+pub const OPT_IN_CATEGORIES: [&str; 8] = [
     "security",
     "credentials",
     "disk",
@@ -219,6 +221,7 @@ pub const OPT_IN_CATEGORIES: [&str; 7] = [
     "policies",
     "prometheusOperator",
     "traefik",
+    "reflector",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
@@ -236,6 +239,10 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "crossplane",
     "policies",
     "externalSecrets",
+    // Sealed Secrets (#240): a window view of 0.21.0.
+    "sealedSecrets",
+    // Reflector mirrors (#241): a window view of 0.21.0.
+    "reflector",
     "cnpg",
     "strimzi",
     "prometheusOperator",

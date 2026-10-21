@@ -31,9 +31,11 @@
     "crossplane": "Crossplane",
     "policies": "Kyverno ポリシー",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "セキュリティ",
     "practices": "ベストプラクティス",
     "credentials": "認証情報",
@@ -62,13 +64,18 @@
     "policyErrors_other": "{{count}} 件のポリシールールを評価できませんでした：{{policies}}",
     "traefikMissingReference": "存在しないオブジェクトを参照しています: {{refs}}。Traefik はそれに依存する部分をスキップします。",
     "traefikSkippedRoute": "Traefik はルート {{routes}} をスキップします: match ルールが空か、kind が Rule ではありません。",
+    "sealedSecretTargetMissing": "同期済みとされていますが、Secret {{name}} が存在しません。",
     "serviceMonitorSelectsNothing": "次の namespace で Service を 1 つも選択していません: {{namespaces}}",
     "podMonitorSelectsNothing": "次の namespace で Pod を 1 つも選択していません: {{namespaces}}",
-    "monitorNotPickedUp": "どの Prometheus の selector にも選択されていません"
+    "monitorNotPickedUp": "どの Prometheus の selector にも選択されていません",
+    "reflectorStale": "Reflector はソース {{source}} の現在のバージョンをこのミラーにコピーしていません。",
+    "reflectorNotAllowed": "ソース {{source}} はこの namespace を許可しなくなり、ミラーは古くなっています。",
+    "reflectorSourceMissing": "ソース {{source}} は存在しません。"
   },
   "showDisk": "ディスク残りわずか",
   "showPractices": "ベストプラクティスの指摘",
   "showPolicies": "Kyverno ポリシー違反",
   "showPrometheusOperator": "Prometheus Operator のモニターとサーバー",
-  "showTraefik": "Traefik の参照"
+  "showTraefik": "Traefik の参照",
+  "showReflector": "Reflector のミラー"
 }

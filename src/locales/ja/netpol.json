@@ -6,7 +6,8 @@
   "tabs": {
     "label": "接続性ビュー",
     "check": "チェック",
-    "map": "ポリシーマップ"
+    "map": "ポリシーマップ",
+    "coverage": "カバレッジ"
   },
   "form": {
     "source": "送信元",
@@ -327,5 +328,52 @@
     "policies": "ポリシー",
     "noPolicies": "この namespace の Pod を選択するポリシーはありません。各 Pod はすべての受信トラフィックを受け入れ、すべての送信トラフィックを送信します。",
     "selects_other": "{{what}} — 現在 {{count}} 個の Pod を選択"
+  },
+  "coverage": {
+    "intro": "どのポリシーにも分離されていない Pod を、Ingress と Egress で別々に示します。ある方向についてどのポリシーにも選択されていない Pod は、その方向のすべてのトラフィックを受け付けます（または送信します）。「判断不可」は、ポリシーが適用される可能性があるものの Sextant が判断できないことを意味します。",
+    "chooseNamespace": "namespace を選択してください",
+    "chooseNamespaceText": "上のフィルターで 1 つ以上の namespace を選ぶと、その Pod のうちどれが分離されているかを確認できます。",
+    "firstNamespaces_other": "フィルターの最初の {{count}} 個の namespace のみ表示しています。",
+    "table": "namespace のカバレッジ",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress 分離",
+    "egress": "Egress 分離",
+    "defaultDeny": "デフォルト拒否",
+    "level": {
+      "all": "すべて",
+      "some": "一部",
+      "none": "なし",
+      "unknown": "判断不可",
+      "noPods": "Pod なし"
+    },
+    "levelCount": "{{level}}（{{total}} 中 {{isolated}}）",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "分離済み",
+      "notIsolated": "分離なし",
+      "unknown": "判断不可",
+      "hostNetwork": "ホストネットワーク: ポリシー対象外"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} がこの Pod を選択している可能性があります: Sextant はここでそのセレクターを評価できません。",
+    "noPolicies": "Sextant が評価するポリシーで、この namespace の Pod を分離しているものはありません。",
+    "policies": "{{namespace}} の Pod を分離しているポリシー",
+    "policy": "ポリシー",
+    "flavor": "種類",
+    "ingressPods": "Ingress で分離された Pod",
+    "egressPods": "Egress で分離された Pod",
+    "openPods": "{{namespace}} でいずれかの方向が分離されていない Pod",
+    "allIsolated": "すべての Pod が Ingress と Egress の両方で分離されています。",
+    "podFields": {
+      "coverage": "カバレッジ",
+      "defaultDeny": "namespace のデフォルト拒否"
+    },
+    "column": {
+      "ingress": "Ingress 分離",
+      "egress": "Egress 分離",
+      "loading": "読み込み中…",
+      "notInFilter": "フィルター外",
+      "notInFilterHint": "カバレッジを見るには、namespace フィルターでこの namespace を選択してください。"
+    }
   }
 }

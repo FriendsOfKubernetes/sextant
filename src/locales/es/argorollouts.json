@@ -96,7 +96,9 @@
     "promote": "Promover",
     "promoteFull": "Promover por completo",
     "abort": "Interrumpir",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "pause": "Pausar",
+    "resume": "Reanudar"
   },
   "dialog": {
     "promoteTitle": "¿Promover el rollout {{name}}?",
@@ -112,6 +114,12 @@
     "specPatch": "Se envía al rollout:",
     "fallbackPatch": "Si Argo Rollouts no tiene el subrecurso status en el clúster (v0.9), en su lugar se envía esto al rollout:",
     "nothing": "Nada que cambiar: el rollout ya está promovido por completo y no está en pausa.",
-    "changed": "El rollout cambió mientras este diálogo estaba abierto. Revise los cambios actualizados y vuelva a confirmar."
+    "changed": "El rollout cambió mientras este diálogo estaba abierto. Revise los cambios actualizados y vuelva a confirmar.",
+    "pauseTitle": "¿Pausar el rollout {{name}}?",
+    "pauseText": "El rollout se pausa a mano (spec.paused) y no avanza hasta que se reanude o se promueva, como con kubectl argo rollouts pause.",
+    "resumeTitle": "¿Reanudar el rollout {{name}}?",
+    "resumeText": "El rollout sale de su pausa: se quita spec.paused y se eliminan sus condiciones de pausa, como hacían el antiguo comando resume del plugin y la acción resume de Argo CD. A diferencia de “Promover”, no lleva por sí mismo el rollout al siguiente paso.",
+    "nothingPause": "Nada que cambiar: el rollout ya está en pausa.",
+    "nothingResume": "Nada que cambiar: el rollout no está en pausa."
   }
 }

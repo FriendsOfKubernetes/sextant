@@ -62,5 +62,39 @@
     "offloaded": "Denetleyici bu workflow'un adımlarını kendi veritabanında tutuyor (offloaded node status): nesnede olmadıkları için burada gösterilemezler.",
     "compressed": "Denetleyici bu workflow'un adımlarını sıkıştırılmış olarak sakladı: burada gösterilemezler.",
     "none": "Henüz adım yok."
-  }
+  },
+  "actions": {
+    "suspend": "Askıya al",
+    "resume": "Sürdür",
+    "stop": "Durdur",
+    "terminate": "Sonlandır"
+  },
+  "dialog": {
+    "suspendTitle": "{{name}} workflow'u askıya alınsın mı?",
+    "suspendText": "Workflow sürdürülene kadar yeni adım başlatmaz; çalışmakta olan adımlar devam eder; argo suspend gibi.",
+    "resumeTitle": "{{name}} workflow'u sürdürülsün mü?",
+    "resumeText": "Workflow'un askıya alınması kaldırılır ve bekleyen her suspend adımı Succeeded olarak işaretlenir; argo resume gibi.",
+    "stopTitle": "{{name}} workflow'u durdurulsun mu?",
+    "stopText": "Çalışan adımlar durdurulur ve yenileri başlamaz, ancak çıkış işleyicileri yine de çalışır; argo stop gibi.",
+    "terminateTitle": "{{name}} workflow'u sonlandırılsın mı?",
+    "terminateText": "Çalışan adımlar durdurulur ve çıkış işleyicileri dahil başka hiçbir şey çalışmaz; argo terminate gibi.",
+    "loading": "Workflow okunuyor…",
+    "patch": "Workflow'a gönderilen (bir JSON merge patch):",
+    "versioned": "Göndermeden hemen önce okunan resourceVersion'ı taşır; workflow bu arada değişirse API sunucusu reddeder ve hiçbir şey yeniden denenmez.",
+    "stamped": "finishedAt gönderme zamanına ayarlanır.",
+    "changed": "Bu iletişim kutusu açıkken workflow değişti. Güncellenen değişikliği kontrol edip yeniden onaylayın.",
+    "nothing": {
+      "suspend": "Değiştirilecek bir şey yok: workflow zaten askıda.",
+      "resume": "Değiştirilecek bir şey yok: workflow askıda değil ve bekleyen suspend adımı yok.",
+      "stop": "Değiştirilecek bir şey yok: workflow zaten durduruluyor.",
+      "terminate": "Değiştirilecek bir şey yok: workflow zaten sonlandırılıyor."
+    },
+    "refusal": {
+      "completed": "Tamamlanmış bir workflow askıya alınamaz.",
+      "finished": "Workflow zaten bitti, durdurulacak bir şey yok.",
+      "nodesElsewhere": "Bu workflow'un düğümleri sıkıştırılmış veya denetleyicinin veritabanında tutuluyor; bu yüzden Sextant suspend adımlarını sürdüremez. Bunun yerine argo resume {{name}} -n {{namespace}} çalıştırın.",
+      "noDefault": "{{step}} suspend adımı, ne değeri ne de varsayılanı olan {{parameter}} çıkış parametresini bekliyor; bu yüzden sürdürülemez. Önce argo node set ile ayarlayın."
+    }
+  },
+  "retryHint": "Sextant workflow'ları yeniden denemez: yeniden deneme başarısız düğümleri sıfırlar ve pod'larını siler; bunu Argo sunucusu yapar. argo retry {{name}} -n {{namespace}} çalıştırın."
 }

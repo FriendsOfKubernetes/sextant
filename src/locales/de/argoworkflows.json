@@ -62,5 +62,39 @@
     "offloaded": "Der Controller speichert die Schritte dieses Workflows in seiner Datenbank (offloaded node status): Sie sind nicht im Objekt und können hier nicht angezeigt werden.",
     "compressed": "Der Controller hat die Schritte dieses Workflows komprimiert gespeichert: Sie können hier nicht angezeigt werden.",
     "none": "Noch keine Schritte."
-  }
+  },
+  "actions": {
+    "suspend": "Anhalten",
+    "resume": "Fortsetzen",
+    "stop": "Stoppen",
+    "terminate": "Beenden"
+  },
+  "dialog": {
+    "suspendTitle": "Workflow {{name}} anhalten?",
+    "suspendText": "Der Workflow startet keine neuen Schritte, bis er fortgesetzt wird; laufende Schritte gehen weiter, wie bei argo suspend.",
+    "resumeTitle": "Workflow {{name}} fortsetzen?",
+    "resumeText": "Das Anhalten des Workflows wird aufgehoben, und jeder wartende suspend-Schritt wird als Succeeded markiert, wie bei argo resume.",
+    "stopTitle": "Workflow {{name}} stoppen?",
+    "stopText": "Laufende Schritte werden gestoppt und keine neuen gestartet, Exit-Handler laufen aber noch, wie bei argo stop.",
+    "terminateTitle": "Workflow {{name}} beenden?",
+    "terminateText": "Laufende Schritte werden gestoppt und nichts weiter läuft, auch keine Exit-Handler, wie bei argo terminate.",
+    "loading": "Workflow wird gelesen…",
+    "patch": "An den Workflow gesendet (ein JSON Merge Patch):",
+    "versioned": "Er enthält die direkt vor dem Senden gelesene resourceVersion, daher lehnt der API-Server ihn ab, wenn sich der Workflow inzwischen ändert; nichts wird wiederholt.",
+    "stamped": "finishedAt wird auf den Zeitpunkt des Sendens gesetzt.",
+    "changed": "Der Workflow hat sich geändert, während dieser Dialog geöffnet war. Prüfen Sie die aktualisierte Änderung und bestätigen Sie erneut.",
+    "nothing": {
+      "suspend": "Nichts zu ändern: Der Workflow ist bereits angehalten.",
+      "resume": "Nichts zu ändern: Der Workflow ist nicht angehalten, und kein suspend-Schritt wartet.",
+      "stop": "Nichts zu ändern: Der Workflow wird bereits gestoppt.",
+      "terminate": "Nichts zu ändern: Der Workflow wird bereits beendet."
+    },
+    "refusal": {
+      "completed": "Ein abgeschlossener Workflow kann nicht angehalten werden.",
+      "finished": "Der Workflow ist bereits fertig, es gibt nichts zu stoppen.",
+      "nodesElsewhere": "Die Knoten dieses Workflows sind komprimiert oder liegen in der Datenbank des Controllers, daher kann Sextant seine suspend-Schritte nicht fortsetzen. Führen Sie stattdessen argo resume {{name}} -n {{namespace}} aus.",
+      "noDefault": "Der suspend-Schritt {{step}} wartet auf seinen Ausgabeparameter {{parameter}}, der weder einen Wert noch einen Standardwert hat, daher kann er nicht fortgesetzt werden. Setzen Sie ihn zuerst mit argo node set."
+    }
+  },
+  "retryHint": "Sextant wiederholt keine Workflows: Eine Wiederholung setzt die fehlgeschlagenen Knoten zurück und löscht ihre Pods, was der Argo-Server tut. Führen Sie argo retry {{name}} -n {{namespace}} aus."
 }

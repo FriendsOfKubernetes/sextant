@@ -282,3 +282,16 @@
   padding-top: 8px;
   border-top: 1px solid var(--color-border);
 }
+
+.np-coverage__intro {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+}
+
+.np-coverage__table {
+  margin-top: 8px;
+}
+
+.np-coverage__ns {
+  margin-top: 16px;
+}

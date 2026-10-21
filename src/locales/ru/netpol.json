@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Представления связности",
     "check": "Проверка",
-    "map": "Карта политик"
+    "map": "Карта политик",
+    "coverage": "Покрытие"
   },
   "form": {
     "source": "Источник",
@@ -351,5 +352,55 @@
     "selects_few": "{{what}} — сейчас выбрано {{count}} Pod",
     "selects_many": "{{what}} — сейчас выбрано {{count}} Pod",
     "selects_other": "{{what}} — сейчас выбрано {{count}} Pod"
+  },
+  "coverage": {
+    "intro": "Какие Pod не изолирует ни одна политика — отдельно для входящего и исходящего трафика. Pod, который ни одна политика не выбирает для направления, принимает (или отправляет) весь трафик этого направления. «Нельзя определить» значит, что политика может применяться, но Sextant не может это решить.",
+    "chooseNamespace": "Выберите namespace",
+    "chooseNamespaceText": "Выберите один или несколько namespace в фильтре выше, чтобы увидеть, какие из их Pod изолированы.",
+    "firstNamespaces_one": "Показан только первый {{count}} namespace из фильтра.",
+    "firstNamespaces_few": "Показаны только первые {{count}} namespace из фильтра.",
+    "firstNamespaces_many": "Показаны только первые {{count}} namespace из фильтра.",
+    "firstNamespaces_other": "Показаны только первые {{count}} namespace из фильтра.",
+    "table": "Покрытие namespace",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress изолирован",
+    "egress": "Egress изолирован",
+    "defaultDeny": "Запрет по умолчанию",
+    "level": {
+      "all": "Все",
+      "some": "Часть",
+      "none": "Ни один",
+      "unknown": "Нельзя определить",
+      "noPods": "Нет Pod"
+    },
+    "levelCount": "{{level}} ({{isolated}} из {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Изолирован",
+      "notIsolated": "Не изолирован",
+      "unknown": "Нельзя определить",
+      "hostNetwork": "Сеть узла: политики не применяются"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} может выбирать этот Pod: Sextant не может вычислить её селектор здесь.",
+    "noPolicies": "Ни одна политика, которую оценивает Sextant, не изолирует Pod в этом namespace.",
+    "policies": "Политики, изолирующие Pod в {{namespace}}",
+    "policy": "Политика",
+    "flavor": "Вид",
+    "ingressPods": "Pod, изолированные для Ingress",
+    "egressPods": "Pod, изолированные для Egress",
+    "openPods": "Pod из {{namespace}}, не изолированные хотя бы в одном направлении",
+    "allIsolated": "Все Pod изолированы для Ingress и Egress.",
+    "podFields": {
+      "coverage": "Покрытие",
+      "defaultDeny": "Запрет по умолчанию в namespace"
+    },
+    "column": {
+      "ingress": "Ingress изолирован",
+      "egress": "Egress изолирован",
+      "loading": "Загрузка…",
+      "notInFilter": "Не в фильтре",
+      "notInFilterHint": "Выберите этот namespace в фильтре namespace, чтобы увидеть его покрытие."
+    }
   }
 }

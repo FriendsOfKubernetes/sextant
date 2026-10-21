@@ -3,9 +3,11 @@
 // duration and the step that failed with its message; its details hold the node tree (bounded, collapsed by default)
 // with each pod node linked to its pod and its logs; a CronWorkflow shows its schedule, last run and active Workflows.
 // Workflows that failed within a day feed the problems screen (category `workflows`) from one metadata-only watch of
-// failed Workflows (./provider.ts). Read-only (ADR-0097).
+// failed Workflows (./provider.ts). A Workflow can be suspended, resumed, stopped or terminated with the patch
+// util.go sends, after a confirmation that lists it; retry is not offered (ADR-0097).
 import { registerSectionBadge } from "../../layout/sectionBadges";
 import { useWorkflowProblemCount } from "./problems";
+import "./actions";
 import "./provider";
 import "./register";
 

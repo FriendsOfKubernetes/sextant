@@ -1,0 +1,74 @@
+{
+  "title": "反射",
+  "column": "反射",
+  "role": {
+    "source": "來源",
+    "sourceAuto": "來源，自動鏡像",
+    "mirror": "鏡像",
+    "autoMirror": "自動鏡像"
+  },
+  "state": {
+    "inSync": "已同步",
+    "stale": "已過時",
+    "sourceMissing": "來源不存在",
+    "notAllowed": "不允許",
+    "unknown": "無法判斷",
+    "loading": "正在檢查…"
+  },
+  "expected": {
+    "notCreated": "未建立",
+    "conflict": "名稱已被佔用"
+  },
+  "fields": {
+    "role": "角色",
+    "source": "來源",
+    "state": "狀態",
+    "reflectedVersion": "已複製版本",
+    "sourceVersion": "來源版本",
+    "reflectedAt": "複製時間",
+    "allowed": "允許反射",
+    "allowedNamespaces": "允許的 namespace",
+    "allowedSelector": "允許的 namespace selector",
+    "autoEnabled": "自動鏡像",
+    "autoNamespaces": "自動鏡像的 namespace",
+    "autoSelector": "自動鏡像的 namespace selector",
+    "autoTargets": "自動鏡像到"
+  },
+  "values": {
+    "yes": "是",
+    "no": "否",
+    "everyNamespace": "所有 namespace",
+    "none": "無",
+    "automatic": "自動",
+    "direct": "手動",
+    "more_other": "另有 {{count}} 個"
+  },
+  "headers": {
+    "mirror": "鏡像",
+    "mode": "方式",
+    "state": "狀態"
+  },
+  "mirrorsTitle": "鏡像",
+  "patternIssue": {
+    "invalid": "namespace 模式 {{pattern}} 不是 Sextant 能執行的正規表示式，因此無法判斷它指定哪些 namespace。",
+    "notEvaluated": "namespace 模式 {{pattern}} 過長或包含巢狀重複，Sextant 不執行它，因此無法判斷它指定哪些 namespace。"
+  },
+  "explain": {
+    "valuesNotCompared": "從不讀取或比較值：狀態來自 Reflector 的 annotation 和來源的 resourceVersion。",
+    "inSync": "Reflector 已將來源的目前版本複製到此 {{kind}}。",
+    "stale": "來源在上次複製後已變更：此鏡像為版本 {{reflected}}，來源為 {{current}}。Reflector 通常幾秒內即可跟上；若沒有，請檢查 Reflector 是否在執行。",
+    "staleNever": "Reflector 尚未將來源複製到此 {{kind}}。若一直如此，請檢查 Reflector 是否在執行，以及來源是否允許此 namespace。",
+    "sourceMissing": "來源 {{source}} 不存在。Reflector 會保留手動鏡像，並刪除自動鏡像。",
+    "notAllowed": "來源已不再允許在 namespace {{namespace}} 中建立鏡像：Reflector 不再更新此鏡像。",
+    "notAllowedAuto": "來源已不再在 namespace {{namespace}} 中建立自動鏡像：Reflector 會刪除此鏡像。",
+    "unknown": "無法讀取來源所在的 namespace，因此無法判斷此鏡像的狀態。",
+    "permittedUnknown": "無法判斷來源是否仍允許 namespace {{namespace}}：此處無法執行某個 namespace 模式，或該 namespace 的 label 未知。",
+    "invalidReflects": "reflects annotation 不是 namespace/name 形式，因此 Reflector 忽略此物件。",
+    "autoNeedsAllowed": "已啟用自動鏡像，但不起作用：此物件不允許反射。",
+    "selectorInvalid": "Reflector 無法解析 selector {{selector}}，不會依它選中任何 namespace。",
+    "targetsUnknown_other": "無法判斷來源能否鏡像到 {{count}} 個 namespace：{{namespaces}}。",
+    "noMirrors": "在已檢查的 namespace 中找不到它的鏡像。",
+    "conflict": "若名稱已被其他物件佔用，Reflector 不會建立自動鏡像。",
+    "notChecked_other": "有 {{count}} 個可鏡像到的 namespace 未檢查：{{namespaces}}。"
+  }
+}

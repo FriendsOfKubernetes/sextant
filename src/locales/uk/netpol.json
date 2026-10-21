@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Подання зв'язності",
     "check": "Перевірка",
-    "map": "Мапа політик"
+    "map": "Мапа політик",
+    "coverage": "Покриття"
   },
   "form": {
     "source": "Джерело",
@@ -351,5 +352,55 @@
     "selects_few": "{{what}} — зараз вибрано {{count}} Pod",
     "selects_many": "{{what}} — зараз вибрано {{count}} Pod",
     "selects_other": "{{what}} — зараз вибрано {{count}} Pod"
+  },
+  "coverage": {
+    "intro": "Які Pod не ізолює жодна політика — окремо для вхідного й вихідного трафіку. Pod, який жодна політика не вибирає для напрямку, приймає (або надсилає) увесь трафік цього напрямку. «Неможливо визначити» означає, що політика може застосовуватися, але Sextant не може цього вирішити.",
+    "chooseNamespace": "Виберіть namespace",
+    "chooseNamespaceText": "Виберіть один або кілька namespace у фільтрі вище, щоб побачити, які з їхніх Pod ізольовано.",
+    "firstNamespaces_one": "Показано лише перший {{count}} namespace із фільтра.",
+    "firstNamespaces_few": "Показано лише перші {{count}} namespace із фільтра.",
+    "firstNamespaces_many": "Показано лише перші {{count}} namespace із фільтра.",
+    "firstNamespaces_other": "Показано лише перші {{count}} namespace із фільтра.",
+    "table": "Покриття namespace",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress ізольовано",
+    "egress": "Egress ізольовано",
+    "defaultDeny": "Заборона за замовчуванням",
+    "level": {
+      "all": "Усі",
+      "some": "Частина",
+      "none": "Жоден",
+      "unknown": "Неможливо визначити",
+      "noPods": "Немає Pod"
+    },
+    "levelCount": "{{level}} ({{isolated}} з {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Ізольовано",
+      "notIsolated": "Не ізольовано",
+      "unknown": "Неможливо визначити",
+      "hostNetwork": "Мережа вузла: політики не застосовуються"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} може вибирати цей Pod: Sextant не може обчислити її селектор тут.",
+    "noPolicies": "Жодна політика, яку оцінює Sextant, не ізолює Pod у цьому namespace.",
+    "policies": "Політики, що ізолюють Pod у {{namespace}}",
+    "policy": "Політика",
+    "flavor": "Вид",
+    "ingressPods": "Pod, ізольовані для Ingress",
+    "egressPods": "Pod, ізольовані для Egress",
+    "openPods": "Pod із {{namespace}}, не ізольовані хоча б в одному напрямку",
+    "allIsolated": "Усі Pod ізольовано для Ingress та Egress.",
+    "podFields": {
+      "coverage": "Покриття",
+      "defaultDeny": "Заборона за замовчуванням у namespace"
+    },
+    "column": {
+      "ingress": "Ingress ізольовано",
+      "egress": "Egress ізольовано",
+      "loading": "Завантаження…",
+      "notInFilter": "Не у фільтрі",
+      "notInFilterHint": "Виберіть цей namespace у фільтрі namespace, щоб побачити його покриття."
+    }
   }
 }

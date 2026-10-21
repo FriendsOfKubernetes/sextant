@@ -1,0 +1,74 @@
+{
+  "title": "リフレクション",
+  "column": "リフレクション",
+  "role": {
+    "source": "ソース",
+    "sourceAuto": "ソース（自動ミラー）",
+    "mirror": "ミラー",
+    "autoMirror": "自動ミラー"
+  },
+  "state": {
+    "inSync": "同期済み",
+    "stale": "古い",
+    "sourceMissing": "ソースなし",
+    "notAllowed": "許可なし",
+    "unknown": "判断できません",
+    "loading": "確認中…"
+  },
+  "expected": {
+    "notCreated": "未作成",
+    "conflict": "名前が使用済み"
+  },
+  "fields": {
+    "role": "役割",
+    "source": "ソース",
+    "state": "状態",
+    "reflectedVersion": "コピー済みのバージョン",
+    "sourceVersion": "ソースのバージョン",
+    "reflectedAt": "コピー日時",
+    "allowed": "リフレクションを許可",
+    "allowedNamespaces": "許可された namespace",
+    "allowedSelector": "許可された namespace の selector",
+    "autoEnabled": "自動ミラー",
+    "autoNamespaces": "自動ミラーの namespace",
+    "autoSelector": "自動ミラーの namespace selector",
+    "autoTargets": "自動ミラー先"
+  },
+  "values": {
+    "yes": "はい",
+    "no": "いいえ",
+    "everyNamespace": "すべての namespace",
+    "none": "なし",
+    "automatic": "自動",
+    "direct": "手動",
+    "more_other": "ほか {{count}} 件"
+  },
+  "headers": {
+    "mirror": "ミラー",
+    "mode": "方式",
+    "state": "状態"
+  },
+  "mirrorsTitle": "ミラー",
+  "patternIssue": {
+    "invalid": "namespace のパターン {{pattern}} は Sextant が実行できる正規表現ではないため、どの namespace を指すか判断できません。",
+    "notEvaluated": "namespace のパターン {{pattern}} は長すぎるか繰り返しを繰り返しているため、Sextant は実行せず、どの namespace を指すか判断できません。"
+  },
+  "explain": {
+    "valuesNotCompared": "値は読み取りも比較もしません。状態は Reflector の annotation とソースの resourceVersion から判断します。",
+    "inSync": "Reflector はソースの現在のバージョンをこの {{kind}} にコピーしました。",
+    "stale": "前回のコピー以降にソースが変更されました。このミラーはバージョン {{reflected}}、ソースは {{current}} です。通常 Reflector は数秒で追いつきます。追いつかない場合は Reflector が動作しているか確認してください。",
+    "staleNever": "Reflector はまだソースをこの {{kind}} にコピーしていません。このままの場合は、Reflector が動作しているか、ソースがこの namespace を許可しているか確認してください。",
+    "sourceMissing": "ソース {{source}} は存在しません。Reflector は手動のミラーをそのまま残し、自動のミラーを削除します。",
+    "notAllowed": "ソースは namespace {{namespace}} でのミラーを許可しなくなりました。Reflector はこのミラーの更新を止めます。",
+    "notAllowedAuto": "ソースは namespace {{namespace}} に自動ミラーを作成しなくなりました。Reflector はこのミラーを削除します。",
+    "unknown": "ソースの namespace を読み取れなかったため、このミラーの状態は判断できません。",
+    "permittedUnknown": "ソースがまだ namespace {{namespace}} を許可しているか判断できません。ここでは実行できない namespace のパターンがあるか、namespace の label が不明です。",
+    "invalidReflects": "reflects annotation が namespace/name の形式ではないため、Reflector はこのオブジェクトを無視します。",
+    "autoNeedsAllowed": "自動ミラーは有効ですが効果がありません。このオブジェクトからのリフレクションは許可されていません。",
+    "selectorInvalid": "Reflector は selector {{selector}} を解析できず、これでは namespace を選びません。",
+    "targetsUnknown_other": "ソースを {{count}} 個の namespace にミラーできるか判断できません: {{namespaces}}。",
+    "noMirrors": "確認した namespace にミラーは見つかりませんでした。",
+    "conflict": "名前が別のオブジェクトに使われている場所では、Reflector は自動ミラーを作成しません。",
+    "notChecked_other": "ミラー先になり得る {{count}} 個の namespace は確認していません: {{namespaces}}。"
+  }
+}

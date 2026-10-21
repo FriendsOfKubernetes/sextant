@@ -6,7 +6,8 @@
   "tabs": {
     "label": "连通性视图",
     "check": "检查",
-    "map": "策略图"
+    "map": "策略图",
+    "coverage": "覆盖"
   },
   "form": {
     "source": "源",
@@ -327,5 +328,52 @@
     "policies": "策略",
     "noPolicies": "此 namespace 中没有策略选择任何 Pod：每个 Pod 都接受所有入站流量并发送所有出站流量。",
     "selects_other": "{{what}} — 当前选择了 {{count}} 个 Pod"
+  },
+  "coverage": {
+    "intro": "哪些 Pod 没有被任何策略隔离，按 Ingress 和 Egress 分别列出。某个方向上没有任何策略选中的 Pod 会接收（或发送）该方向的所有流量。“无法判断”表示可能有策略适用，但 Sextant 无法确定。",
+    "chooseNamespace": "选择 namespace",
+    "chooseNamespaceText": "在上方的筛选器中选择一个或多个 namespace，查看其中哪些 Pod 已隔离。",
+    "firstNamespaces_other": "仅显示筛选器中的前 {{count}} 个 namespace。",
+    "table": "namespace 的覆盖情况",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress 已隔离",
+    "egress": "Egress 已隔离",
+    "defaultDeny": "默认拒绝",
+    "level": {
+      "all": "全部",
+      "some": "部分",
+      "none": "无",
+      "unknown": "无法判断",
+      "noPods": "没有 Pod"
+    },
+    "levelCount": "{{level}}（{{isolated}}/{{total}}）",
+    "directions": "Ingress：{{ingress}} · Egress：{{egress}}",
+    "state": {
+      "isolated": "已隔离",
+      "notIsolated": "未隔离",
+      "unknown": "无法判断",
+      "hostNetwork": "主机网络：不受策略约束"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} 可能选中该 Pod：Sextant 无法在此评估其选择器。",
+    "noPolicies": "Sextant 评估的策略中没有任何一条隔离此 namespace 中的 Pod。",
+    "policies": "隔离 {{namespace}} 中 Pod 的策略",
+    "policy": "策略",
+    "flavor": "类型",
+    "ingressPods": "Ingress 已隔离的 Pod",
+    "egressPods": "Egress 已隔离的 Pod",
+    "openPods": "{{namespace}} 中在某个方向未隔离的 Pod",
+    "allIsolated": "所有 Pod 的 Ingress 和 Egress 都已隔离。",
+    "podFields": {
+      "coverage": "覆盖",
+      "defaultDeny": "namespace 默认拒绝"
+    },
+    "column": {
+      "ingress": "Ingress 已隔离",
+      "egress": "Egress 已隔离",
+      "loading": "正在加载…",
+      "notInFilter": "不在筛选中",
+      "notInFilterHint": "在 namespace 筛选器中选择此 namespace 以查看其覆盖情况。"
+    }
   }
 }

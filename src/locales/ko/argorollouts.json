@@ -94,7 +94,9 @@
     "promote": "승격",
     "promoteFull": "완전 승격",
     "abort": "중단",
-    "retry": "다시 시도"
+    "retry": "다시 시도",
+    "pause": "일시 중지",
+    "resume": "재개"
   },
   "dialog": {
     "promoteTitle": "rollout {{name}}을(를) 승격할까요?",
@@ -110,6 +112,12 @@
     "specPatch": "rollout으로 보낼 내용:",
     "fallbackPatch": "클러스터의 Argo Rollouts에 status 하위 리소스가 없으면(v0.9) 대신 rollout으로 보낼 내용:",
     "nothing": "변경할 내용이 없습니다. rollout이 이미 완전히 승격되었고 일시 중지되지 않았습니다.",
-    "changed": "이 대화 상자가 열려 있는 동안 rollout이 변경되었습니다. 업데이트된 변경 내용을 확인하고 다시 확인하세요."
+    "changed": "이 대화 상자가 열려 있는 동안 rollout이 변경되었습니다. 업데이트된 변경 내용을 확인하고 다시 확인하세요.",
+    "pauseTitle": "rollout {{name}}을(를) 일시 중지할까요?",
+    "pauseText": "rollout이 수동으로 일시 중지되며(spec.paused) 재개되거나 승격될 때까지 진행되지 않습니다. kubectl argo rollouts pause와 같습니다.",
+    "resumeTitle": "rollout {{name}}을(를) 재개할까요?",
+    "resumeText": "rollout이 일시 중지에서 벗어납니다. spec.paused가 해제되고 일시 중지 조건이 제거되며, 플러그인의 이전 resume 명령과 Argo CD의 resume 작업과 같습니다. “승격”과 달리 rollout을 스스로 다음 단계로 진행시키지 않습니다.",
+    "nothingPause": "변경할 내용이 없습니다. rollout이 이미 일시 중지되었습니다.",
+    "nothingResume": "변경할 내용이 없습니다. rollout이 일시 중지되지 않았습니다."
   }
 }

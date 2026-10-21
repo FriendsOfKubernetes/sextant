@@ -98,6 +98,13 @@ export function ProblemsPage({ clusterId }: PageProps) {
           />
           {t("problems:showTraefik")}
         </label>
+        <label className="problems__choice">
+          <Checkbox
+            checked={categories.includes("reflector")}
+            onChange={(e) => void updateSettings(setCategory("reflector", e.target.checked)).catch(() => undefined)}
+          />
+          {t("problems:showReflector")}
+        </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}
         </Button>

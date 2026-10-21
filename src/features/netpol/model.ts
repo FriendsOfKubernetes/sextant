@@ -320,6 +320,11 @@ export interface Policy {
   /** The name Calico sorts policies of the same order by. */
   sortName: string;
   selects(pod: PodInfo, ctx: Ctx): Check<string | null>;
+  /**
+   * Whether it selects every pod of `namespace` whatever the pod's own labels (an empty pod selector, or one naming only
+   * the namespace): what makes it a namespace-wide default (`coverage.ts`). Left out: "no".
+   */
+  everyPodIn?(namespace: string, ctx: Ctx): Tri;
   /** Which pods it selects, in words. */
   selectorText: Phrase;
   /** Whether a pod it selects is isolated (default deny) for the direction. */

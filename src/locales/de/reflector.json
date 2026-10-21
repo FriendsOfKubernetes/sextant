@@ -1,0 +1,77 @@
+{
+  "title": "Spiegelung",
+  "column": "Spiegelung",
+  "role": {
+    "source": "Quelle",
+    "sourceAuto": "Quelle, automatisch gespiegelt",
+    "mirror": "Spiegel",
+    "autoMirror": "Automatischer Spiegel"
+  },
+  "state": {
+    "inSync": "Synchron",
+    "stale": "Veraltet",
+    "sourceMissing": "Quelle fehlt",
+    "notAllowed": "Nicht erlaubt",
+    "unknown": "Unbekannt",
+    "loading": "Wird geprüft…"
+  },
+  "expected": {
+    "notCreated": "Nicht angelegt",
+    "conflict": "Name belegt"
+  },
+  "fields": {
+    "role": "Rolle",
+    "source": "Quelle",
+    "state": "Zustand",
+    "reflectedVersion": "Kopierte Version",
+    "sourceVersion": "Version der Quelle",
+    "reflectedAt": "Kopiert am",
+    "allowed": "Spiegelung erlaubt",
+    "allowedNamespaces": "Erlaubte Namespaces",
+    "allowedSelector": "Selector erlaubter Namespaces",
+    "autoEnabled": "Automatische Spiegel",
+    "autoNamespaces": "Namespaces für automatische Spiegel",
+    "autoSelector": "Namespace-Selector für automatische Spiegel",
+    "autoTargets": "Automatisch gespiegelt nach"
+  },
+  "values": {
+    "yes": "Ja",
+    "no": "Nein",
+    "everyNamespace": "Jeder Namespace",
+    "none": "Keine",
+    "automatic": "Automatisch",
+    "direct": "Manuell",
+    "more_one": "und {{count}} weiterer",
+    "more_other": "und {{count}} weitere"
+  },
+  "headers": {
+    "mirror": "Spiegel",
+    "mode": "Art",
+    "state": "Zustand"
+  },
+  "mirrorsTitle": "Spiegel",
+  "patternIssue": {
+    "invalid": "Das Namespace-Muster {{pattern}} ist kein regulärer Ausdruck, den Sextant ausführen kann; welche Namespaces es nennt, ist daher unbekannt.",
+    "notEvaluated": "Das Namespace-Muster {{pattern}} ist zu lang oder wiederholt eine Wiederholung; Sextant führt es nicht aus, welche Namespaces es nennt, ist daher unbekannt."
+  },
+  "explain": {
+    "valuesNotCompared": "Werte werden nie gelesen oder verglichen: Der Zustand stammt aus den Annotationen von Reflector und der resourceVersion der Quelle.",
+    "inSync": "Reflector hat die aktuelle Version der Quelle in dieses {{kind}} kopiert.",
+    "stale": "Die Quelle hat sich seit der letzten Kopie geändert: Dieser Spiegel hat Version {{reflected}}, die Quelle ist bei {{current}}. Reflector holt das meist in Sekunden nach; wenn nicht, prüfen Sie, ob Reflector läuft.",
+    "staleNever": "Reflector hat die Quelle noch nicht in dieses {{kind}} kopiert. Bleibt es so, prüfen Sie, ob Reflector läuft und ob die Quelle diesen Namespace erlaubt.",
+    "sourceMissing": "Die Quelle {{source}} existiert nicht. Einen manuellen Spiegel lässt Reflector stehen, einen automatischen löscht er.",
+    "notAllowed": "Die Quelle erlaubt keine Spiegel im Namespace {{namespace}} mehr: Reflector aktualisiert diesen Spiegel nicht mehr.",
+    "notAllowedAuto": "Die Quelle legt im Namespace {{namespace}} keine automatischen Spiegel mehr an: Reflector löscht diesen Spiegel.",
+    "unknown": "Der Namespace der Quelle konnte nicht gelesen werden, daher ist der Zustand dieses Spiegels unbekannt.",
+    "permittedUnknown": "Ob die Quelle den Namespace {{namespace}} noch erlaubt, ist unbekannt: Ein Namespace-Muster kann hier nicht ausgeführt werden, oder die Labels des Namespace sind nicht bekannt.",
+    "invalidReflects": "Die Annotation reflects hat nicht die Form namespace/name, daher ignoriert Reflector dieses Objekt.",
+    "autoNeedsAllowed": "Automatische Spiegel sind eingeschaltet, wirken aber nicht: Die Spiegelung aus diesem Objekt ist nicht erlaubt.",
+    "selectorInvalid": "Reflector kann den Selector {{selector}} nicht lesen und wählt damit keinen Namespace.",
+    "targetsUnknown_one": "Ob die Quelle in {{count}} Namespace gespiegelt werden darf, ist unbekannt: {{namespaces}}.",
+    "targetsUnknown_other": "Ob die Quelle in {{count}} Namespaces gespiegelt werden darf, ist unbekannt: {{namespaces}}.",
+    "noMirrors": "In den geprüften Namespaces wurde kein Spiegel davon gefunden.",
+    "conflict": "Wo ein anderes Objekt den Namen belegt, legt Reflector den automatischen Spiegel nicht an.",
+    "notChecked_one": "{{count}} Namespace, in den es gespiegelt werden darf, wurde nicht geprüft: {{namespaces}}.",
+    "notChecked_other": "{{count}} Namespaces, in die es gespiegelt werden darf, wurden nicht geprüft: {{namespaces}}."
+  }
+}

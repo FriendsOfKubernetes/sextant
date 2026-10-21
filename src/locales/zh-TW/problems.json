@@ -31,9 +31,11 @@
     "crossplane": "Crossplane",
     "policies": "Kyverno 原則",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "安全性",
     "practices": "最佳做法",
     "credentials": "認證資訊",
@@ -62,13 +64,18 @@
     "policyErrors_other": "{{count}} 條原則規則無法評估：{{policies}}",
     "traefikMissingReference": "參照了不存在的物件：{{refs}}。Traefik 會略過依賴它們的部分。",
     "traefikSkippedRoute": "Traefik 略過其路由 {{routes}}：match 規則為空，或 kind 不是 Rule。",
+    "sealedSecretTargetMissing": "顯示已同步，但其 Secret {{name}} 不存在。",
     "serviceMonitorSelectsNothing": "在下列 namespace 中未選取任何 Service：{{namespaces}}",
     "podMonitorSelectsNothing": "在下列 namespace 中未選取任何 Pod：{{namespaces}}",
-    "monitorNotPickedUp": "沒有 Prometheus 透過其 selector 選取它"
+    "monitorNotPickedUp": "沒有 Prometheus 透過其 selector 選取它",
+    "reflectorStale": "Reflector 尚未將來源 {{source}} 的目前版本複製到此鏡像。",
+    "reflectorNotAllowed": "來源 {{source}} 已不再允許此 namespace，且鏡像已過時。",
+    "reflectorSourceMissing": "來源 {{source}} 不存在。"
   },
   "showDisk": "磁碟即將用盡",
   "showPractices": "最佳做法發現",
   "showPolicies": "Kyverno 原則違規",
   "showPrometheusOperator": "Prometheus Operator 監視器與伺服器",
-  "showTraefik": "Traefik 參照"
+  "showTraefik": "Traefik 參照",
+  "showReflector": "Reflector 鏡像"
 }

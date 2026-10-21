@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Connectivity views",
     "check": "Check",
-    "map": "Policy map"
+    "map": "Policy map",
+    "coverage": "Coverage"
   },
   "form": {
     "source": "Source",
@@ -335,5 +336,53 @@
     "noPolicies": "No policy selects pods in this namespace: every pod accepts all ingress and sends all egress.",
     "selects_one": "{{what}} — {{count}} pod selected now",
     "selects_other": "{{what}} — {{count}} pods selected now"
+  },
+  "coverage": {
+    "intro": "Which pods no policy isolates, for ingress and egress separately. A pod no policy selects for a direction accepts (or sends) all traffic of that direction. \"Cannot tell\" means a policy might apply but Sextant cannot decide it.",
+    "chooseNamespace": "Choose namespaces",
+    "chooseNamespaceText": "Pick one or more namespaces in the filter above to see which of their pods are isolated.",
+    "firstNamespaces_one": "Only the first {{count}} namespace of the filter is shown.",
+    "firstNamespaces_other": "Only the first {{count}} namespaces of the filter are shown.",
+    "table": "Coverage of the namespaces",
+    "namespace": "Namespace",
+    "pods": "Pods",
+    "ingress": "Ingress isolated",
+    "egress": "Egress isolated",
+    "defaultDeny": "Default deny",
+    "level": {
+      "all": "All",
+      "some": "Some",
+      "none": "None",
+      "unknown": "Cannot tell",
+      "noPods": "No pods"
+    },
+    "levelCount": "{{level}} ({{isolated}} of {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Isolated",
+      "notIsolated": "Not isolated",
+      "unknown": "Cannot tell",
+      "hostNetwork": "Host network: not subject to policy"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} may select the pod: Sextant cannot evaluate its selector here.",
+    "noPolicies": "No policy Sextant evaluates isolates a pod in this namespace.",
+    "policies": "Policies that isolate pods in {{namespace}}",
+    "policy": "Policy",
+    "flavor": "Kind",
+    "ingressPods": "Pods isolated for ingress",
+    "egressPods": "Pods isolated for egress",
+    "openPods": "Pods of {{namespace}} not isolated in some direction",
+    "allIsolated": "Every pod is isolated for ingress and egress.",
+    "podFields": {
+      "coverage": "Coverage",
+      "defaultDeny": "Namespace default deny"
+    },
+    "column": {
+      "ingress": "Ingress isolated",
+      "egress": "Egress isolated",
+      "loading": "Loading…",
+      "notInFilter": "Not in filter",
+      "notInFilterHint": "Choose this namespace in the namespace filter to see its coverage."
+    }
   }
 }

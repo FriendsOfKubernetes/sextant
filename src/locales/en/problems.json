@@ -33,9 +33,11 @@
     "crossplane": "Crossplane",
     "policies": "Kyverno policies",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "Security",
     "practices": "Best practices",
     "credentials": "Credentials",
@@ -68,13 +70,18 @@
     "policyErrors_other": "{{count}} policy rules could not be evaluated: {{policies}}",
     "traefikMissingReference": "Refers to objects that do not exist: {{refs}}. Traefik skips what depends on them.",
     "traefikSkippedRoute": "Traefik skips its routes {{routes}}: an empty match rule or a kind other than Rule.",
+    "sealedSecretTargetMissing": "Says it is synced, but its Secret {{name}} does not exist.",
     "serviceMonitorSelectsNothing": "Selects no Service in the namespaces: {{namespaces}}",
     "podMonitorSelectsNothing": "Selects no Pod in the namespaces: {{namespaces}}",
-    "monitorNotPickedUp": "No Prometheus picks it up by its selectors"
+    "monitorNotPickedUp": "No Prometheus picks it up by its selectors",
+    "reflectorStale": "Reflector has not copied the current version of its source {{source}} into this mirror.",
+    "reflectorNotAllowed": "Its source {{source}} no longer allows this namespace, and the mirror is out of date.",
+    "reflectorSourceMissing": "Its source {{source}} does not exist."
   },
   "showDisk": "Disk almost full",
   "showPractices": "Best-practice findings",
   "showPolicies": "Kyverno policy failures",
   "showPrometheusOperator": "Prometheus Operator monitors and servers",
-  "showTraefik": "Traefik references"
+  "showTraefik": "Traefik references",
+  "showReflector": "Reflector mirrors"
 }

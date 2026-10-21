@@ -6,7 +6,8 @@
   "tabs": {
     "label": "연결성 보기",
     "check": "검사",
-    "map": "정책 맵"
+    "map": "정책 맵",
+    "coverage": "적용 범위"
   },
   "form": {
     "source": "출발지",
@@ -327,5 +328,52 @@
     "policies": "정책",
     "noPolicies": "이 namespace의 Pod를 선택하는 정책이 없습니다. 모든 Pod가 들어오는 트래픽을 모두 받고 나가는 트래픽을 모두 보냅니다.",
     "selects_other": "{{what}} — 현재 Pod {{count}}개 선택됨"
+  },
+  "coverage": {
+    "intro": "어떤 정책으로도 격리되지 않은 Pod를 Ingress와 Egress별로 보여 줍니다. 한 방향에 대해 어떤 정책도 선택하지 않은 Pod는 그 방향의 모든 트래픽을 받거나 보냅니다. “판단할 수 없음”은 정책이 적용될 수 있지만 Sextant가 판단할 수 없다는 뜻입니다.",
+    "chooseNamespace": "namespace 선택",
+    "chooseNamespaceText": "위 필터에서 namespace를 하나 이상 선택하면 그 Pod 중 어떤 것이 격리되었는지 볼 수 있습니다.",
+    "firstNamespaces_other": "필터의 처음 {{count}}개 namespace만 표시합니다.",
+    "table": "namespace 적용 범위",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress 격리",
+    "egress": "Egress 격리",
+    "defaultDeny": "기본 거부",
+    "level": {
+      "all": "모두",
+      "some": "일부",
+      "none": "없음",
+      "unknown": "판단할 수 없음",
+      "noPods": "Pod 없음"
+    },
+    "levelCount": "{{level}} ({{total}}개 중 {{isolated}}개)",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "격리됨",
+      "notIsolated": "격리 안 됨",
+      "unknown": "판단할 수 없음",
+      "hostNetwork": "호스트 네트워크: 정책 적용 안 됨"
+    },
+    "maybeSelected": "{{flavor}} {{policy}}이(가) 이 Pod를 선택할 수 있습니다: Sextant는 여기서 그 선택기를 평가할 수 없습니다.",
+    "noPolicies": "Sextant가 평가하는 정책 중 이 namespace의 Pod를 격리하는 정책이 없습니다.",
+    "policies": "{{namespace}}의 Pod를 격리하는 정책",
+    "policy": "정책",
+    "flavor": "종류",
+    "ingressPods": "Ingress로 격리된 Pod",
+    "egressPods": "Egress로 격리된 Pod",
+    "openPods": "{{namespace}}에서 한 방향 이상 격리되지 않은 Pod",
+    "allIsolated": "모든 Pod가 Ingress와 Egress 모두 격리되어 있습니다.",
+    "podFields": {
+      "coverage": "적용 범위",
+      "defaultDeny": "namespace 기본 거부"
+    },
+    "column": {
+      "ingress": "Ingress 격리",
+      "egress": "Egress 격리",
+      "loading": "불러오는 중…",
+      "notInFilter": "필터에 없음",
+      "notInFilterHint": "적용 범위를 보려면 namespace 필터에서 이 namespace를 선택하세요."
+    }
   }
 }

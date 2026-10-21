@@ -60,5 +60,39 @@
     "offloaded": "컨트롤러가 이 workflow의 단계를 자체 데이터베이스에 보관합니다(offloaded node status). 객체에 없으므로 여기에 표시할 수 없습니다.",
     "compressed": "컨트롤러가 이 workflow의 단계를 압축하여 저장했습니다. 여기에 표시할 수 없습니다.",
     "none": "아직 단계가 없습니다."
-  }
+  },
+  "actions": {
+    "suspend": "일시 중단",
+    "resume": "재개",
+    "stop": "중지",
+    "terminate": "종료"
+  },
+  "dialog": {
+    "suspendTitle": "workflow {{name}}을(를) 일시 중단할까요?",
+    "suspendText": "workflow는 재개될 때까지 새 단계를 시작하지 않으며, 이미 실행 중인 단계는 계속됩니다. argo suspend와 같습니다.",
+    "resumeTitle": "workflow {{name}}을(를) 재개할까요?",
+    "resumeText": "workflow의 일시 중단이 해제되고 대기 중인 모든 suspend 단계가 Succeeded로 표시됩니다. argo resume과 같습니다.",
+    "stopTitle": "workflow {{name}}을(를) 중지할까요?",
+    "stopText": "실행 중인 단계가 중지되고 새 단계는 시작되지 않지만, 종료 핸들러는 계속 실행됩니다. argo stop과 같습니다.",
+    "terminateTitle": "workflow {{name}}을(를) 종료할까요?",
+    "terminateText": "실행 중인 단계가 중지되고 종료 핸들러를 포함해 더 이상 아무것도 실행되지 않습니다. argo terminate와 같습니다.",
+    "loading": "workflow를 읽는 중…",
+    "patch": "workflow로 보내는 내용(JSON merge patch):",
+    "versioned": "보내기 직전에 읽은 resourceVersion을 담고 있어, 그 사이 workflow가 변경되면 API 서버가 거부합니다. 다시 시도하지 않습니다.",
+    "stamped": "finishedAt은 보내는 시각으로 설정됩니다.",
+    "changed": "이 대화 상자가 열려 있는 동안 workflow가 변경되었습니다. 업데이트된 변경 내용을 확인하고 다시 확인하세요.",
+    "nothing": {
+      "suspend": "변경할 내용이 없습니다. workflow가 이미 일시 중단되었습니다.",
+      "resume": "변경할 내용이 없습니다. workflow가 일시 중단되지 않았고 대기 중인 suspend 단계도 없습니다.",
+      "stop": "변경할 내용이 없습니다. workflow가 이미 중지되는 중입니다.",
+      "terminate": "변경할 내용이 없습니다. workflow가 이미 종료되는 중입니다."
+    },
+    "refusal": {
+      "completed": "완료된 workflow는 일시 중단할 수 없습니다.",
+      "finished": "workflow가 이미 끝났으므로 중지할 것이 없습니다.",
+      "nodesElsewhere": "이 workflow의 노드는 압축되었거나 컨트롤러의 데이터베이스에 저장되어 있어 Sextant가 suspend 단계를 재개할 수 없습니다. 대신 argo resume {{name}} -n {{namespace}}을(를) 실행하세요.",
+      "noDefault": "suspend 단계 {{step}}이(가) 출력 매개변수 {{parameter}}을(를) 기다리고 있지만 값도 기본값도 없어 재개할 수 없습니다. 먼저 argo node set으로 설정하세요."
+    }
+  },
+  "retryHint": "Sextant는 workflow를 다시 시도하지 않습니다. 다시 시도는 실패한 노드를 재설정하고 해당 Pod를 삭제하며, 이는 Argo 서버가 수행합니다. argo retry {{name}} -n {{namespace}}을(를) 실행하세요."
 }

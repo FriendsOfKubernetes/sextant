@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Viste della connettività",
     "check": "Verifica",
-    "map": "Mappa delle policy"
+    "map": "Mappa delle policy",
+    "coverage": "Copertura"
   },
   "form": {
     "source": "Origine",
@@ -343,5 +344,54 @@
     "selects_one": "{{what}} — {{count}} Pod selezionato ora",
     "selects_many": "{{what}} — {{count}} Pod selezionati ora",
     "selects_other": "{{what}} — {{count}} Pod selezionati ora"
+  },
+  "coverage": {
+    "intro": "Quali Pod nessuna policy isola, separatamente per Ingress ed Egress. Un Pod che nessuna policy seleziona per una direzione accetta (o invia) tutto il traffico di quella direzione. “Non determinabile” significa che una policy potrebbe applicarsi, ma Sextant non può deciderlo.",
+    "chooseNamespace": "Scegli i namespace",
+    "chooseNamespaceText": "Scegli uno o più namespace nel filtro qui sopra per vedere quali dei loro Pod sono isolati.",
+    "firstNamespaces_one": "Viene mostrato solo il primo {{count}} namespace del filtro.",
+    "firstNamespaces_many": "Vengono mostrati solo i primi {{count}} namespace del filtro.",
+    "firstNamespaces_other": "Vengono mostrati solo i primi {{count}} namespace del filtro.",
+    "table": "Copertura dei namespace",
+    "namespace": "Namespace",
+    "pods": "Pod",
+    "ingress": "Ingress isolato",
+    "egress": "Egress isolato",
+    "defaultDeny": "Rifiuto predefinito",
+    "level": {
+      "all": "Tutti",
+      "some": "Alcuni",
+      "none": "Nessuno",
+      "unknown": "Non determinabile",
+      "noPods": "Nessun Pod"
+    },
+    "levelCount": "{{level}} ({{isolated}} su {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Isolato",
+      "notIsolated": "Non isolato",
+      "unknown": "Non determinabile",
+      "hostNetwork": "Rete dell'host: nessuna policy"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} potrebbe selezionare il Pod: Sextant non può valutarne qui il selettore.",
+    "noPolicies": "Nessuna policy valutata da Sextant isola un Pod in questo namespace.",
+    "policies": "Policy che isolano Pod in {{namespace}}",
+    "policy": "Policy",
+    "flavor": "Tipo",
+    "ingressPods": "Pod isolati per Ingress",
+    "egressPods": "Pod isolati per Egress",
+    "openPods": "Pod di {{namespace}} non isolati in almeno una direzione",
+    "allIsolated": "Ogni Pod è isolato per Ingress ed Egress.",
+    "podFields": {
+      "coverage": "Copertura",
+      "defaultDeny": "Rifiuto predefinito del namespace"
+    },
+    "column": {
+      "ingress": "Ingress isolato",
+      "egress": "Egress isolato",
+      "loading": "Caricamento…",
+      "notInFilter": "Fuori dal filtro",
+      "notInFilterHint": "Scegli questo namespace nel filtro dei namespace per vederne la copertura."
+    }
   }
 }

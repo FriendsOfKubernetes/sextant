@@ -59,6 +59,13 @@ export type BuiltInActionId =
   | "rolloutPromoteFull"
   | "rolloutAbort"
   | "rolloutRetry"
+  | "rolloutPause"
+  | "rolloutResume"
+  // Argo Workflows (src/features/argo-workflows)
+  | "workflowSuspend"
+  | "workflowResume"
+  | "workflowStop"
+  | "workflowTerminate"
   // Storage insights (src/features/storage)
   | "snapshotCreate"
   | "snapshotRestore"
@@ -142,6 +149,7 @@ export const SIDEBAR_SECTIONS = [
   "crossplane",
   "kyverno",
   "externalSecrets",
+  "sealedSecrets",
   "cnpg",
   "strimzi",
   "prometheusOperator",
@@ -175,6 +183,7 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "crossplane",
   "kyverno",
   "externalSecrets",
+  "sealedSecrets",
   "cnpg",
   "strimzi",
   "prometheusOperator",
@@ -212,6 +221,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   crossplane: "crossplane",
   kyverno: "kyverno",
   externalSecrets: "externalSecrets",
+  sealedSecrets: "sealedSecrets",
   cnpg: "cnpg",
   strimzi: "strimzi",
   prometheusOperator: "prometheusOperator",

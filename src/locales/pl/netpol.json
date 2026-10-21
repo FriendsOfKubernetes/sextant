@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Widoki łączności",
     "check": "Sprawdzenie",
-    "map": "Mapa zasad"
+    "map": "Mapa zasad",
+    "coverage": "Pokrycie"
   },
   "form": {
     "source": "Źródło",
@@ -351,5 +352,55 @@
     "selects_few": "{{what}} — obecnie wybrano {{count}} Pody",
     "selects_many": "{{what}} — obecnie wybrano {{count}} Podów",
     "selects_other": "{{what}} — obecnie wybrano {{count}} Poda"
+  },
+  "coverage": {
+    "intro": "Które Pody nie są izolowane przez żadną zasadę, osobno dla Ingress i Egress. Pod, którego żadna zasada nie wybiera dla danego kierunku, przyjmuje (lub wysyła) cały ruch w tym kierunku. „Nie można ustalić” oznacza, że zasada może mieć zastosowanie, ale Sextant nie potrafi tego rozstrzygnąć.",
+    "chooseNamespace": "Wybierz namespace",
+    "chooseNamespaceText": "Wybierz jeden lub więcej namespace w filtrze powyżej, aby zobaczyć, które z ich Podów są izolowane.",
+    "firstNamespaces_one": "Pokazano tylko pierwszy {{count}} namespace z filtra.",
+    "firstNamespaces_few": "Pokazano tylko pierwsze {{count}} namespace z filtra.",
+    "firstNamespaces_many": "Pokazano tylko pierwszych {{count}} namespace z filtra.",
+    "firstNamespaces_other": "Pokazano tylko pierwsze {{count}} namespace z filtra.",
+    "table": "Pokrycie namespace",
+    "namespace": "Namespace",
+    "pods": "Pody",
+    "ingress": "Ingress izolowany",
+    "egress": "Egress izolowany",
+    "defaultDeny": "Domyślna odmowa",
+    "level": {
+      "all": "Wszystkie",
+      "some": "Niektóre",
+      "none": "Żaden",
+      "unknown": "Nie można ustalić",
+      "noPods": "Brak Podów"
+    },
+    "levelCount": "{{level}} ({{isolated}} z {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Izolowany",
+      "notIsolated": "Nieizolowany",
+      "unknown": "Nie można ustalić",
+      "hostNetwork": "Sieć hosta: bez zasad"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} może wybierać ten Pod: Sextant nie potrafi tu ocenić jej selektora.",
+    "noPolicies": "Żadna zasada oceniana przez Sextant nie izoluje Poda w tym namespace.",
+    "policies": "Zasady izolujące Pody w {{namespace}}",
+    "policy": "Zasada",
+    "flavor": "Rodzaj",
+    "ingressPods": "Pody izolowane dla Ingress",
+    "egressPods": "Pody izolowane dla Egress",
+    "openPods": "Pody z {{namespace}} nieizolowane w którymś kierunku",
+    "allIsolated": "Każdy Pod jest izolowany dla Ingress i Egress.",
+    "podFields": {
+      "coverage": "Pokrycie",
+      "defaultDeny": "Domyślna odmowa w namespace"
+    },
+    "column": {
+      "ingress": "Ingress izolowany",
+      "egress": "Egress izolowany",
+      "loading": "Wczytywanie…",
+      "notInFilter": "Poza filtrem",
+      "notInFilterHint": "Wybierz ten namespace w filtrze namespace, aby zobaczyć jego pokrycie."
+    }
   }
 }

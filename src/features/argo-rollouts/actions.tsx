@@ -1,4 +1,4 @@
-// The Rollout actions Promote, Promote fully, Abort and Retry (ADR-0097). Each opens a confirmation that reads the
+// The Rollout actions Promote, Promote fully, Abort, Retry, Pause and Resume (ADR-0097). Each opens a confirmation that reads the
 // Rollout again and lists exactly the patches it will send (./patches.ts, as `kubectl argo rollouts` builds them from
 // the Rollout as it is now); on confirm the Rollout is read once more, and if the patches would differ from the ones
 // shown, nothing is sent and the dialog shows the new ones to confirm. Each patch is sent once (ADR-0055), through
@@ -15,10 +15,20 @@ import { changesSomething, planFor, sendPlan, type PatchPlan, type RolloutAction
 
 const json = (value: unknown) => JSON.stringify(value);
 
+/** What the dialog says when the Rollout as it is now needs no patch (only these actions can need none). */
+const NOTHING: Record<RolloutAction, string> = {
+  promote: "argorollouts:dialog.nothing",
+  promoteFull: "argorollouts:dialog.nothing",
+  abort: "argorollouts:dialog.nothing",
+  retry: "argorollouts:dialog.nothing",
+  pause: "argorollouts:dialog.nothingPause",
+  resume: "argorollouts:dialog.nothingResume",
+};
+
 /** The patches as the dialog lists them. */
-function PlanView({ plan }: { plan: PatchPlan }) {
+function PlanView({ plan, action }: { plan: PatchPlan; action: RolloutAction }) {
   const { t } = useTranslation();
-  if (!changesSomething(plan)) return <p>{t("argorollouts:dialog.nothing")}</p>;
+  if (!changesSomething(plan)) return <p>{t(NOTHING[action])}</p>;
   const fallback = plan.status && plan.unified ? plan.unified : undefined;
   return (
     <div className="ar-plan">
@@ -92,7 +102,7 @@ export function RolloutActionDialog({
       onConfirm={confirm}
     >
       <p>{t(`argorollouts:dialog.${action}Text`)}</p>
-      {loadError ? <ErrorState error={loadError} /> : plan ? <PlanView plan={plan} /> : <p>{t("argorollouts:dialog.loading")}</p>}
+      {loadError ? <ErrorState error={loadError} /> : plan ? <PlanView plan={plan} action={action} /> : <p>{t("argorollouts:dialog.loading")}</p>}
     </ConfirmAction>
   );
 }
@@ -108,11 +118,19 @@ export function canPromote(ro: KubeObject): boolean {
   return specPaused(ro) || pauseConditions(ro).length > 0 || rolloutPhase(ro).phase === "Paused" || updating(ro);
 }
 
-const ACTIONS: { id: "rolloutPromote" | "rolloutPromoteFull" | "rolloutAbort" | "rolloutRetry"; action: RolloutAction; applies: (ro: KubeObject) => boolean; danger?: boolean }[] = [
+type RolloutActionId = "rolloutPromote" | "rolloutPromoteFull" | "rolloutAbort" | "rolloutRetry" | "rolloutPause" | "rolloutResume";
+
+/** Resume is offered while the Rollout is paused by hand or by the controller (as Argo CD's `resume` action). */
+export const canResume = (ro: KubeObject): boolean => specPaused(ro) || pauseConditions(ro).length > 0;
+
+const ACTIONS: { id: RolloutActionId; action: RolloutAction; applies: (ro: KubeObject) => boolean; danger?: boolean }[] = [
   { id: "rolloutPromote", action: "promote", applies: canPromote },
   { id: "rolloutPromoteFull", action: "promoteFull", applies: (ro) => !isAborted(ro) && (!fullyPromoted(ro) || specPaused(ro)) },
   { id: "rolloutAbort", action: "abort", applies: (ro) => !isAborted(ro) && updating(ro), danger: true },
   { id: "rolloutRetry", action: "retry", applies: isAborted },
+  // The plugin pauses any Rollout; offered while it is not paused by hand already.
+  { id: "rolloutPause", action: "pause", applies: (ro) => !specPaused(ro) },
+  { id: "rolloutResume", action: "resume", applies: canResume },
 ];
 
 const ICONS = {
@@ -120,6 +138,8 @@ const ICONS = {
   promoteFull: "rolloutPromoteFull",
   abort: "rolloutAbort",
   retry: "rolloutRetry",
+  pause: "suspend",
+  resume: "resume",
 } as const;
 
 for (const { id, action, applies, danger } of ACTIONS) {

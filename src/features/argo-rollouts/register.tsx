@@ -16,7 +16,7 @@ const ICONS: Record<string, IconName> = {
   experiments: "argoExperiment",
 };
 
-const ROLLOUT_ACTIONS: ActionId[] = ["rolloutPromote", "rolloutPromoteFull", "rolloutAbort", "rolloutRetry", "edit", "delete"];
+const ROLLOUT_ACTIONS: ActionId[] = ["rolloutPromote", "rolloutPromoteFull", "rolloutAbort", "rolloutRetry", "rolloutPause", "rolloutResume", "edit", "delete"];
 
 function columnsOf(label: string, namespaced: boolean): ColumnDef[] {
   if (label === "rollouts") return rolloutColumns;

@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Konnektivitätsansichten",
     "check": "Prüfung",
-    "map": "Policy-Übersicht"
+    "map": "Policy-Übersicht",
+    "coverage": "Abdeckung"
   },
   "form": {
     "source": "Quelle",
@@ -335,5 +336,53 @@
     "noPolicies": "Keine Policy wählt Pods in diesem Namespace aus: Jeder Pod nimmt allen eingehenden Datenverkehr an und sendet allen ausgehenden.",
     "selects_one": "{{what}} — derzeit {{count}} Pod ausgewählt",
     "selects_other": "{{what}} — derzeit {{count}} Pods ausgewählt"
+  },
+  "coverage": {
+    "intro": "Welche Pods keine Policy isoliert, getrennt für Ingress und Egress. Ein Pod, den für eine Richtung keine Policy auswählt, nimmt allen Verkehr dieser Richtung an (oder sendet ihn). „Nicht feststellbar“ heißt, dass eine Policy greifen könnte, Sextant das aber nicht entscheiden kann.",
+    "chooseNamespace": "Namespaces auswählen",
+    "chooseNamespaceText": "Wählen Sie oben im Filter einen oder mehrere Namespaces, um zu sehen, welche ihrer Pods isoliert sind.",
+    "firstNamespaces_one": "Nur der erste {{count}} Namespace des Filters wird angezeigt.",
+    "firstNamespaces_other": "Nur die ersten {{count}} Namespaces des Filters werden angezeigt.",
+    "table": "Abdeckung der Namespaces",
+    "namespace": "Namespace",
+    "pods": "Pods",
+    "ingress": "Ingress isoliert",
+    "egress": "Egress isoliert",
+    "defaultDeny": "Standardmäßig verweigert",
+    "level": {
+      "all": "Alle",
+      "some": "Einige",
+      "none": "Keine",
+      "unknown": "Nicht feststellbar",
+      "noPods": "Keine Pods"
+    },
+    "levelCount": "{{level}} ({{isolated}} von {{total}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Isoliert",
+      "notIsolated": "Nicht isoliert",
+      "unknown": "Nicht feststellbar",
+      "hostNetwork": "Host-Netzwerk: keine Policy gilt"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} könnte den Pod auswählen: Sextant kann ihren Selektor hier nicht auswerten.",
+    "noPolicies": "Keine Policy, die Sextant auswertet, isoliert einen Pod in diesem Namespace.",
+    "policies": "Policies, die Pods in {{namespace}} isolieren",
+    "policy": "Policy",
+    "flavor": "Art",
+    "ingressPods": "Für Ingress isolierte Pods",
+    "egressPods": "Für Egress isolierte Pods",
+    "openPods": "Pods in {{namespace}}, die in einer Richtung nicht isoliert sind",
+    "allIsolated": "Jeder Pod ist für Ingress und Egress isoliert.",
+    "podFields": {
+      "coverage": "Abdeckung",
+      "defaultDeny": "Standardverweigerung im Namespace"
+    },
+    "column": {
+      "ingress": "Ingress isoliert",
+      "egress": "Egress isoliert",
+      "loading": "Wird geladen…",
+      "notInFilter": "Nicht im Filter",
+      "notInFilterHint": "Wählen Sie diesen Namespace im Namespace-Filter, um seine Abdeckung zu sehen."
+    }
   }
 }

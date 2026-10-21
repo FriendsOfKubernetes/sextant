@@ -1,6 +1,7 @@
 // Details sections: a policy in plain words (NetworkPolicy, and the Cilium and Calico policy kinds) — which pods it
 // selects (and which it selects now), its types, and what each rule allows — and a pod's isolation for ingress and
-// egress with the policies that isolate it. Both watch only the object's namespace (pods and policies) while open.
+// egress with the policies that isolate it, its coverage and the namespace's default deny (#239). Both watch only the
+// object's namespace (pods and policies) while open.
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject } from "../../api";
@@ -9,6 +10,8 @@ import { formatList } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ObjectLink } from "../../resources";
 import { Block, Fields, type FieldRow } from "../details";
+import { coverageOf, defaultDenyOf } from "./coverage";
+import { defaultDenyText, stateText } from "./coverageText";
 import { dnsCheck, isolationOf, type Isolation, type World } from "./engine";
 import { policiesOf, useNetpolData } from "./hooks";
 import { ignoredRules } from "./kubernetes";
@@ -19,6 +22,7 @@ import { DnsWarning, PolicyLink, RulesView } from "./views";
 
 const FIELD_LABELS = "netpol:fields";
 const DIRECTION_LABELS = "netpol:direction";
+const COVERAGE_LABELS = "netpol:coverage.podFields";
 
 /** Selected pods named at most. */
 export const MAX_SELECTED_SHOWN = 20;
@@ -161,9 +165,17 @@ function PodIsolation({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObjec
   }
   const rows: FieldRow[] = SHOWN_DIRECTIONS.map((d) => [d, <IsolationValue key={d} iso={isolationOf(pod, d, data.world)} direction={d} />]);
   const unknown = data.world.unreadable.filter((u) => u.namespace === null || u.namespace === pod.namespace);
+  // Coverage (#239): the stricter verdict ("Cannot tell" whenever a policy might apply) and the namespace's default deny.
+  const coverage = coverageOf(pod, data.world);
+  const deny = (d: Direction) => defaultDenyOf(pod.namespace, d, data.world).state;
+  const coverageRows: FieldRow[] = [
+    ["coverage", t("netpol:coverage.directions", { ingress: stateText(t, coverage.ingress), egress: stateText(t, coverage.egress) })],
+    ["defaultDeny", defaultDenyText(t, deny("ingress"), deny("egress"))],
+  ];
   return (
     <Block title={t("netpol:pod.title")} actions={actions}>
       <Fields rows={rows} labelPrefix={DIRECTION_LABELS} />
+      <Fields rows={coverageRows} labelPrefix={COVERAGE_LABELS} />
       {unknown.map((u, i) => (
         <p key={i} className="dt-muted">
           {unreadableText(t, u)}

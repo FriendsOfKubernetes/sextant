@@ -33,9 +33,11 @@
     "crossplane": "Crossplane",
     "policies": "Kyverno-Richtlinien",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "Sicherheit",
     "practices": "Best Practices",
     "credentials": "Zugangsdaten",
@@ -68,13 +70,18 @@
     "policyErrors_other": "{{count}} Richtlinienregeln konnten nicht ausgewertet werden: {{policies}}",
     "traefikMissingReference": "Verweist auf Objekte, die nicht existieren: {{refs}}. Traefik überspringt, was davon abhängt.",
     "traefikSkippedRoute": "Traefik überspringt seine Routen {{routes}}: eine leere Match-Regel oder ein anderer Kind als Rule.",
+    "sealedSecretTargetMissing": "Gilt als synchronisiert, aber sein Secret {{name}} existiert nicht.",
     "serviceMonitorSelectsNothing": "Wählt keinen Service in den Namespaces aus: {{namespaces}}",
     "podMonitorSelectsNothing": "Wählt keinen Pod in den Namespaces aus: {{namespaces}}",
-    "monitorNotPickedUp": "Kein Prometheus erfasst ihn über seine Selectors"
+    "monitorNotPickedUp": "Kein Prometheus erfasst ihn über seine Selectors",
+    "reflectorStale": "Reflector hat die aktuelle Version der Quelle {{source}} nicht in diesen Spiegel kopiert.",
+    "reflectorNotAllowed": "Die Quelle {{source}} erlaubt diesen Namespace nicht mehr, und der Spiegel ist veraltet.",
+    "reflectorSourceMissing": "Die Quelle {{source}} existiert nicht."
   },
   "showDisk": "Datenträger fast voll",
   "showPractices": "Best-Practice-Befunde",
   "showPolicies": "Kyverno-Richtlinienverstöße",
   "showPrometheusOperator": "Monitore und Server des Prometheus Operator",
-  "showTraefik": "Traefik-Verweise"
+  "showTraefik": "Traefik-Verweise",
+  "showReflector": "Reflector-Spiegel"
 }

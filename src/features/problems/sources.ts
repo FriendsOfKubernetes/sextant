@@ -18,6 +18,8 @@ import { XRD } from "../crossplane/model";
 import { BACKUP as CNPG_BACKUP, PG_CLUSTER } from "../cnpg/model";
 import { CLUSTER_EXTERNAL_SECRET, CLUSTER_SECRET_STORE, EXTERNAL_SECRET, PUSH_SECRET, SECRET_STORE } from "../external-secrets/model";
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
+import { SEALED_SECRET } from "../sealed-secrets/model";
+import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import { STRIMZI_KINDS } from "../strimzi/model";
 import {
   CERTIFICATE,
@@ -129,6 +131,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   externalSecrets: [EXTERNAL_SECRET, CLUSTER_EXTERNAL_SECRET, SECRET_STORE, CLUSTER_SECRET_STORE, PUSH_SECRET].map((kind) =>
     tool("externalSecrets", kind),
   ),
+  // Sealed Secrets (#240): failed unseals and synced SealedSecrets whose Secret is missing, judged by the provider of
+  // features/sealed-secrets (`external`: the Secret is another object), held only where SealedSecrets are served.
+  sealedSecrets: [{ category: "sealedSecrets", kind: SEALED_SECRET, fieldSelector: null, discovered: true, external: true }],
   // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
   cnpg: [tool("cnpg", PG_CLUSTER), tool("cnpg", CNPG_BACKUP)],
   // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
@@ -152,6 +157,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   credentials: [],
   // Claims almost full (#152, opt-in): from the kubelets' stats or Prometheus, polled while held (features/storage).
   disk: [{ category: "disk", kind: PVC, fieldSelector: null, discovered: false, external: true }],
+  // Reflector mirrors (#241, opt-in): stale or without a source, judged by the provider of features/reflector over
+  // metadata-only lists of every Secret and ConfigMap (`external`, a source of its own: `sourceKey`).
+  reflector: [{ category: "reflector", kind: REFLECTOR_SECRET, fieldSelector: null, discovered: false, external: true }],
   // Only Warning events are listed.
   events: [builtIn("events", EVENT, "type=Warning")],
 };
@@ -209,5 +217,6 @@ export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fiel
   // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
   // provider's source of full claims, which watches nothing.
   if (def.category === "practices") return `${key}|${def.category}`;
+  if (def.category === "reflector") return `${key}|${def.category}`;
   return def.category === "security" || def.category === "disk" ? `${key}|${def.category}` : key;
 }

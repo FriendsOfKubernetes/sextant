@@ -6,7 +6,8 @@
   "tabs": {
     "label": "Bağlantı görünümleri",
     "check": "Denetim",
-    "map": "İlke haritası"
+    "map": "İlke haritası",
+    "coverage": "Kapsam"
   },
   "form": {
     "source": "Kaynak",
@@ -335,5 +336,53 @@
     "noPolicies": "Bu namespace'te hiçbir ilke Pod seçmiyor: her Pod gelen tüm trafiği kabul eder ve giden tüm trafiği gönderir.",
     "selects_one": "{{what}} — şu anda {{count}} Pod seçili",
     "selects_other": "{{what}} — şu anda {{count}} Pod seçili"
+  },
+  "coverage": {
+    "intro": "Hiçbir ilkenin yalıtmadığı Pod'lar, Ingress ve Egress için ayrı ayrı. Bir yön için hiçbir ilkenin seçmediği Pod, o yöndeki tüm trafiği kabul eder (ya da gönderir). “Belirlenemiyor”, bir ilkenin uygulanabileceği ama Sextant'ın buna karar veremediği anlamına gelir.",
+    "chooseNamespace": "Namespace seçin",
+    "chooseNamespaceText": "Hangi Pod'larının yalıtıldığını görmek için yukarıdaki filtrede bir veya daha fazla namespace seçin.",
+    "firstNamespaces_one": "Filtredeki yalnızca ilk {{count}} namespace gösteriliyor.",
+    "firstNamespaces_other": "Filtredeki yalnızca ilk {{count}} namespace gösteriliyor.",
+    "table": "Namespace'lerin kapsamı",
+    "namespace": "Namespace",
+    "pods": "Pod'lar",
+    "ingress": "Ingress yalıtılmış",
+    "egress": "Egress yalıtılmış",
+    "defaultDeny": "Varsayılan ret",
+    "level": {
+      "all": "Tümü",
+      "some": "Bazıları",
+      "none": "Hiçbiri",
+      "unknown": "Belirlenemiyor",
+      "noPods": "Pod yok"
+    },
+    "levelCount": "{{level}} ({{total}} içinden {{isolated}})",
+    "directions": "Ingress: {{ingress}} · Egress: {{egress}}",
+    "state": {
+      "isolated": "Yalıtılmış",
+      "notIsolated": "Yalıtılmamış",
+      "unknown": "Belirlenemiyor",
+      "hostNetwork": "Ana bilgisayar ağı: ilke uygulanmaz"
+    },
+    "maybeSelected": "{{flavor}} {{policy}} bu Pod'u seçebilir: Sextant burada seçicisini değerlendiremiyor.",
+    "noPolicies": "Sextant'ın değerlendirdiği hiçbir ilke bu namespace'teki bir Pod'u yalıtmıyor.",
+    "policies": "{{namespace}} içindeki Pod'ları yalıtan ilkeler",
+    "policy": "İlke",
+    "flavor": "Tür",
+    "ingressPods": "Ingress için yalıtılmış Pod'lar",
+    "egressPods": "Egress için yalıtılmış Pod'lar",
+    "openPods": "{{namespace}} içinde bir yönde yalıtılmamış Pod'lar",
+    "allIsolated": "Her Pod, Ingress ve Egress için yalıtılmış.",
+    "podFields": {
+      "coverage": "Kapsam",
+      "defaultDeny": "Namespace varsayılan reddi"
+    },
+    "column": {
+      "ingress": "Ingress yalıtılmış",
+      "egress": "Egress yalıtılmış",
+      "loading": "Yükleniyor…",
+      "notInFilter": "Filtrede değil",
+      "notInFilterHint": "Kapsamını görmek için bu namespace'i namespace filtresinde seçin."
+    }
   }
 }

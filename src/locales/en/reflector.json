@@ -1,0 +1,77 @@
+{
+  "title": "Reflection",
+  "column": "Reflection",
+  "role": {
+    "source": "Source",
+    "sourceAuto": "Source, mirrored automatically",
+    "mirror": "Mirror",
+    "autoMirror": "Automatic mirror"
+  },
+  "state": {
+    "inSync": "In sync",
+    "stale": "Stale",
+    "sourceMissing": "Source missing",
+    "notAllowed": "Not allowed",
+    "unknown": "Cannot tell",
+    "loading": "Checking…"
+  },
+  "expected": {
+    "notCreated": "Not created",
+    "conflict": "Name taken"
+  },
+  "fields": {
+    "role": "Role",
+    "source": "Source",
+    "state": "State",
+    "reflectedVersion": "Copied version",
+    "sourceVersion": "Source version",
+    "reflectedAt": "Copied at",
+    "allowed": "Reflection allowed",
+    "allowedNamespaces": "Allowed namespaces",
+    "allowedSelector": "Allowed namespace selector",
+    "autoEnabled": "Automatic mirrors",
+    "autoNamespaces": "Automatic namespaces",
+    "autoSelector": "Automatic namespace selector",
+    "autoTargets": "Mirrored automatically to"
+  },
+  "values": {
+    "yes": "Yes",
+    "no": "No",
+    "everyNamespace": "Every namespace",
+    "none": "None",
+    "automatic": "Automatic",
+    "direct": "Manual",
+    "more_one": "and {{count}} more",
+    "more_other": "and {{count}} more"
+  },
+  "headers": {
+    "mirror": "Mirror",
+    "mode": "Mode",
+    "state": "State"
+  },
+  "mirrorsTitle": "Mirrors",
+  "patternIssue": {
+    "invalid": "The namespace pattern {{pattern}} is not a regular expression Sextant can run, so the namespaces it names cannot be told.",
+    "notEvaluated": "The namespace pattern {{pattern}} is too long or repeats a repetition, so Sextant does not run it and the namespaces it names cannot be told."
+  },
+  "explain": {
+    "valuesNotCompared": "Values are never read or compared: the state comes from Reflector's annotations and the source's resourceVersion.",
+    "inSync": "Reflector copied the source's current version into this {{kind}}.",
+    "stale": "The source changed since Reflector last copied it: this mirror holds version {{reflected}}, the source is at {{current}}. Reflector usually catches up within seconds; if it does not, check that Reflector is running.",
+    "staleNever": "Reflector has not copied the source into this {{kind}} yet. If it stays so, check that Reflector is running and that the source allows this namespace.",
+    "sourceMissing": "The source {{source}} does not exist. Reflector leaves a manual mirror as it is and deletes an automatic one.",
+    "notAllowed": "The source no longer allows mirrors in namespace {{namespace}}: Reflector stops updating this mirror.",
+    "notAllowedAuto": "The source no longer creates automatic mirrors in namespace {{namespace}}: Reflector deletes this mirror.",
+    "unknown": "The source's namespace could not be read, so the state of this mirror cannot be told.",
+    "permittedUnknown": "Whether the source still allows namespace {{namespace}} cannot be told: a namespace pattern cannot be run here, or the namespace's labels are not known.",
+    "invalidReflects": "The reflects annotation is not namespace/name, so Reflector ignores this object.",
+    "autoNeedsAllowed": "Automatic mirrors are enabled but have no effect: reflection is not allowed from this object.",
+    "selectorInvalid": "Reflector cannot parse the selector {{selector}} and matches no namespace by it.",
+    "targetsUnknown_one": "Whether the source may be mirrored to {{count}} namespace cannot be told: {{namespaces}}.",
+    "targetsUnknown_other": "Whether the source may be mirrored to {{count}} namespaces cannot be told: {{namespaces}}.",
+    "noMirrors": "No mirror of it was found in the namespaces checked.",
+    "conflict": "Where the name is taken by another object, Reflector does not create the automatic mirror.",
+    "notChecked_one": "{{count}} namespace it may be mirrored to was not checked: {{namespaces}}.",
+    "notChecked_other": "{{count}} namespaces it may be mirrored to were not checked: {{namespaces}}."
+  }
+}

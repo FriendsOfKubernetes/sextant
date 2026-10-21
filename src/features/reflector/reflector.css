@@ -1,0 +1,21 @@
+/* Reflector (#241): the explanations and notes of the "Reflection" details section. */
+.reflector__explain,
+.reflector__note {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.reflector__note {
+  color: var(--color-text-muted);
+}
+
+.reflector__heading {
+  margin: 12px 0 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.reflector__more {
+  margin-left: 6px;
+  color: var(--color-text-muted);
+}

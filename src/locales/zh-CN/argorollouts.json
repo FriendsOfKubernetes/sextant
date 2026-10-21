@@ -94,7 +94,9 @@
     "promote": "晋级",
     "promoteFull": "完全晋级",
     "abort": "中止",
-    "retry": "重试"
+    "retry": "重试",
+    "pause": "暂停",
+    "resume": "恢复"
   },
   "dialog": {
     "promoteTitle": "晋级 rollout {{name}}？",
@@ -110,6 +112,12 @@
     "specPatch": "发送到 rollout：",
     "fallbackPatch": "如果集群中的 Argo Rollouts 没有 status 子资源（v0.9），则改为向 rollout 发送：",
     "nothing": "无需更改：rollout 已完全晋级且未暂停。",
-    "changed": "此对话框打开期间 rollout 已发生变化。请检查更新后的更改并再次确认。"
+    "changed": "此对话框打开期间 rollout 已发生变化。请检查更新后的更改并再次确认。",
+    "pauseTitle": "暂停 rollout {{name}}？",
+    "pauseText": "rollout 将被手动暂停（spec.paused），在恢复或晋级之前不会推进，与 kubectl argo rollouts pause 相同。",
+    "resumeTitle": "恢复 rollout {{name}}？",
+    "resumeText": "rollout 将退出暂停：清除 spec.paused 并移除其暂停条件，与插件以前的 resume 命令和 Argo CD 的 resume 操作相同。与“晋级”不同，它不会自行把 rollout 推进到下一步。",
+    "nothingPause": "无需更改：rollout 已暂停。",
+    "nothingResume": "无需更改：rollout 未暂停。"
   }
 }

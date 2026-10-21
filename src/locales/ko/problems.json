@@ -31,9 +31,11 @@
     "crossplane": "Crossplane",
     "policies": "Kyverno 정책",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "보안",
     "practices": "모범 사례",
     "credentials": "자격 증명",
@@ -62,13 +64,18 @@
     "policyErrors_other": "정책 규칙 {{count}}개를 평가할 수 없음: {{policies}}",
     "traefikMissingReference": "존재하지 않는 오브젝트를 참조합니다: {{refs}}. Traefik은 그것에 의존하는 부분을 건너뜁니다.",
     "traefikSkippedRoute": "Traefik이 라우트 {{routes}}을(를) 건너뜁니다: match 규칙이 비어 있거나 kind가 Rule이 아닙니다.",
+    "sealedSecretTargetMissing": "동기화됨으로 표시되지만 Secret {{name}}이(가) 존재하지 않습니다.",
     "serviceMonitorSelectsNothing": "다음 namespace에서 Service를 하나도 선택하지 않습니다: {{namespaces}}",
     "podMonitorSelectsNothing": "다음 namespace에서 Pod를 하나도 선택하지 않습니다: {{namespaces}}",
-    "monitorNotPickedUp": "어떤 Prometheus의 selector도 이를 선택하지 않습니다"
+    "monitorNotPickedUp": "어떤 Prometheus의 selector도 이를 선택하지 않습니다",
+    "reflectorStale": "Reflector가 소스 {{source}}의 현재 버전을 이 미러에 복사하지 않았습니다.",
+    "reflectorNotAllowed": "소스 {{source}}가 더 이상 이 namespace를 허용하지 않으며 미러가 오래되었습니다.",
+    "reflectorSourceMissing": "소스 {{source}}가 존재하지 않습니다."
   },
   "showDisk": "디스크 거의 가득 참",
   "showPractices": "모범 사례 발견 사항",
   "showPolicies": "Kyverno 정책 위반",
   "showPrometheusOperator": "Prometheus Operator 모니터와 서버",
-  "showTraefik": "Traefik 참조"
+  "showTraefik": "Traefik 참조",
+  "showReflector": "Reflector 미러"
 }

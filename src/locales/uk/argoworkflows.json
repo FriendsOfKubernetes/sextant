@@ -66,5 +66,39 @@
     "offloaded": "Контролер зберігає кроки цього workflow у своїй базі даних (offloaded node status): їх немає в об'єкті, тому показати їх тут неможливо.",
     "compressed": "Контролер зберіг кроки цього workflow у стиснутому вигляді: показати їх тут неможливо.",
     "none": "Кроків поки немає."
-  }
+  },
+  "actions": {
+    "suspend": "Призупинити",
+    "resume": "Відновити",
+    "stop": "Зупинити",
+    "terminate": "Завершити"
+  },
+  "dialog": {
+    "suspendTitle": "Призупинити workflow {{name}}?",
+    "suspendText": "Workflow не почне нових кроків, доки його не відновлять; уже запущені кроки триватимуть, як при argo suspend.",
+    "resumeTitle": "Відновити workflow {{name}}?",
+    "resumeText": "Призупинення workflow буде знято, а кожен крок suspend, що очікує, буде позначено як Succeeded, як при argo resume.",
+    "stopTitle": "Зупинити workflow {{name}}?",
+    "stopText": "Запущені кроки буде зупинено й нові не почнуться, але обробники виходу все одно виконаються, як при argo stop.",
+    "terminateTitle": "Завершити workflow {{name}}?",
+    "terminateText": "Запущені кроки буде зупинено й більше нічого не виконається, зокрема обробники виходу, як при argo terminate.",
+    "loading": "Читання workflow…",
+    "patch": "Буде надіслано у workflow (JSON merge patch):",
+    "versioned": "Патч містить resourceVersion, прочитаний безпосередньо перед надсиланням, тому API-сервер відхилить його, якщо workflow тим часом зміниться; повторів не буде.",
+    "stamped": "finishedAt дорівнюватиме часу надсилання.",
+    "changed": "Workflow змінився, поки цей діалог був відкритий. Перевірте оновлену зміну й підтвердьте знову.",
+    "nothing": {
+      "suspend": "Нічого змінювати: workflow уже призупинено.",
+      "resume": "Нічого змінювати: workflow не призупинено й жоден крок suspend не очікує.",
+      "stop": "Нічого змінювати: workflow уже зупиняється.",
+      "terminate": "Нічого змінювати: workflow уже завершується."
+    },
+    "refusal": {
+      "completed": "Завершений workflow не можна призупинити.",
+      "finished": "Workflow уже закінчився, зупиняти нічого.",
+      "nodesElsewhere": "Вузли цього workflow стиснуті або зберігаються в базі даних контролера, тому Sextant не може відновити його кроки suspend. Виконайте argo resume {{name}} -n {{namespace}}.",
+      "noDefault": "Крок suspend {{step}} очікує вихідний параметр {{parameter}}, який не має ні значення, ні значення за замовчуванням, тому його не можна відновити. Спершу задайте його через argo node set."
+    }
+  },
+  "retryHint": "Sextant не повторює workflow: повтор скидає вузли зі збоєм і видаляє їхні поди, а це робить сервер Argo. Виконайте argo retry {{name}} -n {{namespace}}."
 }

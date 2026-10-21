@@ -1,0 +1,77 @@
+{
+  "title": "Yansıtma",
+  "column": "Yansıtma",
+  "role": {
+    "source": "Kaynak",
+    "sourceAuto": "Kaynak, otomatik yansıtılıyor",
+    "mirror": "Yansı",
+    "autoMirror": "Otomatik yansı"
+  },
+  "state": {
+    "inSync": "Eşitlenmiş",
+    "stale": "Eski",
+    "sourceMissing": "Kaynak yok",
+    "notAllowed": "İzin yok",
+    "unknown": "Bilinmiyor",
+    "loading": "Denetleniyor…"
+  },
+  "expected": {
+    "notCreated": "Oluşturulmadı",
+    "conflict": "Ad dolu"
+  },
+  "fields": {
+    "role": "Rol",
+    "source": "Kaynak",
+    "state": "Durum",
+    "reflectedVersion": "Kopyalanan sürüm",
+    "sourceVersion": "Kaynak sürümü",
+    "reflectedAt": "Kopyalanma zamanı",
+    "allowed": "Yansıtmaya izin var",
+    "allowedNamespaces": "İzin verilen namespace'ler",
+    "allowedSelector": "İzin verilen namespace selector'ı",
+    "autoEnabled": "Otomatik yansılar",
+    "autoNamespaces": "Otomatik yansı namespace'leri",
+    "autoSelector": "Otomatik yansı namespace selector'ı",
+    "autoTargets": "Otomatik yansıtıldığı yerler"
+  },
+  "values": {
+    "yes": "Evet",
+    "no": "Hayır",
+    "everyNamespace": "Her namespace",
+    "none": "Yok",
+    "automatic": "Otomatik",
+    "direct": "Elle",
+    "more_one": "ve {{count}} tane daha",
+    "more_other": "ve {{count}} tane daha"
+  },
+  "headers": {
+    "mirror": "Yansı",
+    "mode": "Tür",
+    "state": "Durum"
+  },
+  "mirrorsTitle": "Yansılar",
+  "patternIssue": {
+    "invalid": "{{pattern}} namespace deseni, Sextant'ın çalıştırabileceği bir düzenli ifade değil; bu yüzden hangi namespace'leri gösterdiği bilinmiyor.",
+    "notEvaluated": "{{pattern}} namespace deseni çok uzun ya da bir tekrarı tekrarlıyor; Sextant onu çalıştırmaz ve hangi namespace'leri gösterdiği bilinmiyor."
+  },
+  "explain": {
+    "valuesNotCompared": "Değerler asla okunmaz ve karşılaştırılmaz: durum Reflector'ın açıklamalarından (annotation) ve kaynağın resourceVersion değerinden gelir.",
+    "inSync": "Reflector kaynağın güncel sürümünü bu {{kind}} nesnesine kopyaladı.",
+    "stale": "Kaynak son kopyadan beri değişti: bu yansıda {{reflected}} sürümü var, kaynak {{current}} sürümünde. Reflector genellikle saniyeler içinde yetişir; yetişmezse Reflector'ın çalıştığını denetleyin.",
+    "staleNever": "Reflector kaynağı bu {{kind}} nesnesine henüz kopyalamadı. Böyle kalırsa Reflector'ın çalıştığını ve kaynağın bu namespace'e izin verdiğini denetleyin.",
+    "sourceMissing": "{{source}} kaynağı mevcut değil. Reflector elle oluşturulan yansıyı olduğu gibi bırakır, otomatik olanı siler.",
+    "notAllowed": "Kaynak artık {{namespace}} namespace'inde yansıya izin vermiyor: Reflector bu yansıyı güncellemeyi bırakır.",
+    "notAllowedAuto": "Kaynak artık {{namespace}} namespace'inde otomatik yansı oluşturmuyor: Reflector bu yansıyı siler.",
+    "unknown": "Kaynağın namespace'i okunamadı; bu yüzden bu yansının durumu bilinmiyor.",
+    "permittedUnknown": "Kaynağın {{namespace}} namespace'ine hâlâ izin verip vermediği bilinmiyor: bir namespace deseni burada çalıştırılamıyor ya da namespace'in label'ları bilinmiyor.",
+    "invalidReflects": "reflects açıklaması namespace/name biçiminde değil; bu yüzden Reflector bu nesneyi yok sayar.",
+    "autoNeedsAllowed": "Otomatik yansılar açık ama etkisiz: bu nesneden yansıtmaya izin verilmiyor.",
+    "selectorInvalid": "Reflector {{selector}} selector'ını çözümleyemez ve onunla hiçbir namespace seçmez.",
+    "targetsUnknown_one": "Kaynağın {{count}} namespace'e yansıtılıp yansıtılamayacağı bilinmiyor: {{namespaces}}.",
+    "targetsUnknown_other": "Kaynağın {{count}} namespace'e yansıtılıp yansıtılamayacağı bilinmiyor: {{namespaces}}.",
+    "noMirrors": "Denetlenen namespace'lerde hiçbir yansısı bulunamadı.",
+    "conflict": "Adı başka bir nesnenin kullandığı yerde Reflector otomatik yansıyı oluşturmaz.",
+    "notChecked_one": "Kaynağın yansıtılabileceği {{count}} namespace denetlenmedi: {{namespaces}}.",
+    "notChecked_other": "Kaynağın yansıtılabileceği {{count}} namespace denetlenmedi: {{namespaces}}."
+  }
+}

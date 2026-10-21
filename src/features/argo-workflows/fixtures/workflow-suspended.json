@@ -1,0 +1,191 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "Workflow",
+  "metadata": {
+    "name": "suspend-template-kxt9w",
+    "generateName": "suspend-template-",
+    "namespace": "argo",
+    "uid": "6f1d2c3a-5b4e-4f7a-9c8d-1e2f3a4b5c6d",
+    "resourceVersion": "48211",
+    "generation": 5,
+    "creationTimestamp": "2026-10-20T09:00:00Z",
+    "labels": {
+      "workflows.argoproj.io/no-test": "environment",
+      "workflows.argoproj.io/phase": "Running",
+      "workflows.argoproj.io/actor": "admin",
+      "workflows.argoproj.io/action": "Suspend"
+    },
+    "annotations": {
+      "workflows.argoproj.io/pod-name-format": "v2"
+    }
+  },
+  "spec": {
+    "entrypoint": "suspend",
+    "suspend": true,
+    "arguments": {},
+    "templates": [
+      {
+        "name": "suspend",
+        "steps": [
+          [
+            {
+              "name": "build",
+              "template": "hello-world",
+              "arguments": {}
+            }
+          ],
+          [
+            {
+              "name": "approve",
+              "template": "approve",
+              "arguments": {}
+            }
+          ],
+          [
+            {
+              "name": "delay",
+              "template": "delay",
+              "arguments": {}
+            }
+          ],
+          [
+            {
+              "name": "release",
+              "template": "hello-world",
+              "arguments": {}
+            }
+          ]
+        ],
+        "inputs": {},
+        "outputs": {},
+        "metadata": {}
+      },
+      {
+        "name": "approve",
+        "suspend": {},
+        "inputs": {},
+        "outputs": {},
+        "metadata": {}
+      },
+      {
+        "name": "delay",
+        "suspend": {
+          "duration": "20"
+        },
+        "inputs": {},
+        "outputs": {},
+        "metadata": {}
+      },
+      {
+        "name": "hello-world",
+        "container": {
+          "name": "",
+          "image": "busybox",
+          "command": [
+            "echo"
+          ],
+          "args": [
+            "hello world"
+          ],
+          "resources": {}
+        },
+        "inputs": {},
+        "outputs": {},
+        "metadata": {}
+      }
+    ]
+  },
+  "status": {
+    "phase": "Running",
+    "startedAt": "2026-10-20T09:00:00Z",
+    "finishedAt": null,
+    "progress": "1/1",
+    "nodes": {
+      "suspend-template-kxt9w": {
+        "id": "suspend-template-kxt9w",
+        "name": "suspend-template-kxt9w",
+        "displayName": "suspend-template-kxt9w",
+        "type": "Steps",
+        "templateName": "suspend",
+        "templateScope": "local/suspend-template-kxt9w",
+        "phase": "Running",
+        "startedAt": "2026-10-20T09:00:00Z",
+        "progress": "1/1",
+        "children": [
+          "suspend-template-kxt9w-2659719186"
+        ]
+      },
+      "suspend-template-kxt9w-2659719186": {
+        "id": "suspend-template-kxt9w-2659719186",
+        "name": "suspend-template-kxt9w[0]",
+        "displayName": "[0]",
+        "type": "StepGroup",
+        "templateScope": "local/suspend-template-kxt9w",
+        "phase": "Succeeded",
+        "boundaryID": "suspend-template-kxt9w",
+        "startedAt": "2026-10-20T09:00:00Z",
+        "finishedAt": "2026-10-20T09:00:12Z",
+        "progress": "1/1",
+        "children": [
+          "suspend-template-kxt9w-3828160100"
+        ]
+      },
+      "suspend-template-kxt9w-3828160100": {
+        "id": "suspend-template-kxt9w-3828160100",
+        "name": "suspend-template-kxt9w[0].build",
+        "displayName": "build",
+        "type": "Pod",
+        "templateName": "hello-world",
+        "templateScope": "local/suspend-template-kxt9w",
+        "phase": "Succeeded",
+        "boundaryID": "suspend-template-kxt9w",
+        "startedAt": "2026-10-20T09:00:00Z",
+        "finishedAt": "2026-10-20T09:00:09Z",
+        "progress": "1/1",
+        "hostNodeName": "kind-worker",
+        "outputs": {
+          "exitCode": "0"
+        },
+        "children": [
+          "suspend-template-kxt9w-2592461615"
+        ]
+      },
+      "suspend-template-kxt9w-2592461615": {
+        "id": "suspend-template-kxt9w-2592461615",
+        "name": "suspend-template-kxt9w[1]",
+        "displayName": "[1]",
+        "type": "StepGroup",
+        "templateScope": "local/suspend-template-kxt9w",
+        "phase": "Running",
+        "boundaryID": "suspend-template-kxt9w",
+        "startedAt": "2026-10-20T09:00:12Z",
+        "progress": "0/0",
+        "children": [
+          "suspend-template-kxt9w-1879311160"
+        ]
+      },
+      "suspend-template-kxt9w-1879311160": {
+        "id": "suspend-template-kxt9w-1879311160",
+        "name": "suspend-template-kxt9w[1].approve",
+        "displayName": "approve",
+        "type": "Suspend",
+        "templateName": "approve",
+        "templateScope": "local/suspend-template-kxt9w",
+        "phase": "Running",
+        "boundaryID": "suspend-template-kxt9w",
+        "startedAt": "2026-10-20T09:00:12Z",
+        "progress": "0/0"
+      }
+    },
+    "artifactRepositoryRef": {
+      "default": true,
+      "artifactRepository": {}
+    },
+    "artifactGCStatus": {
+      "notSpecified": true
+    },
+    "taskResultsCompletionStatus": {
+      "suspend-template-kxt9w-3828160100": true
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "title": "Віддзеркалення",
+  "column": "Віддзеркалення",
+  "role": {
+    "source": "Джерело",
+    "sourceAuto": "Джерело, віддзеркалюється автоматично",
+    "mirror": "Дзеркало",
+    "autoMirror": "Автоматичне дзеркало"
+  },
+  "state": {
+    "inSync": "Синхронізовано",
+    "stale": "Застаріло",
+    "sourceMissing": "Немає джерела",
+    "notAllowed": "Не дозволено",
+    "unknown": "Невідомо",
+    "loading": "Перевірка…"
+  },
+  "expected": {
+    "notCreated": "Не створено",
+    "conflict": "Ім’я зайняте"
+  },
+  "fields": {
+    "role": "Роль",
+    "source": "Джерело",
+    "state": "Стан",
+    "reflectedVersion": "Скопійована версія",
+    "sourceVersion": "Версія джерела",
+    "reflectedAt": "Скопійовано",
+    "allowed": "Віддзеркалення дозволено",
+    "allowedNamespaces": "Дозволені namespace",
+    "allowedSelector": "Selector дозволених namespace",
+    "autoEnabled": "Автоматичні дзеркала",
+    "autoNamespaces": "Namespace для автоматичних дзеркал",
+    "autoSelector": "Selector namespace для автоматичних дзеркал",
+    "autoTargets": "Автоматично віддзеркалюється в"
+  },
+  "values": {
+    "yes": "Так",
+    "no": "Ні",
+    "everyNamespace": "Усі namespace",
+    "none": "Немає",
+    "automatic": "Автоматичне",
+    "direct": "Ручне",
+    "more_one": "і ще {{count}}",
+    "more_few": "і ще {{count}}",
+    "more_many": "і ще {{count}}",
+    "more_other": "і ще {{count}}"
+  },
+  "headers": {
+    "mirror": "Дзеркало",
+    "mode": "Режим",
+    "state": "Стан"
+  },
+  "mirrorsTitle": "Дзеркала",
+  "patternIssue": {
+    "invalid": "Шаблон namespace {{pattern}} — не регулярний вираз, який Sextant може виконати, тому невідомо, які namespace він задає.",
+    "notEvaluated": "Шаблон namespace {{pattern}} задовгий або повторює повторення, тому Sextant його не виконує і невідомо, які namespace він задає."
+  },
+  "explain": {
+    "valuesNotCompared": "Значення ніколи не читаються й не порівнюються: стан береться з анотацій Reflector і resourceVersion джерела.",
+    "inSync": "Reflector скопіював поточну версію джерела в цей {{kind}}.",
+    "stale": "Джерело змінилося після останнього копіювання: у дзеркалі версія {{reflected}}, у джерела — {{current}}. Зазвичай Reflector наздоганяє за секунди; якщо ні, перевірте, що Reflector працює.",
+    "staleNever": "Reflector ще не скопіював джерело в цей {{kind}}. Якщо так і залишиться, перевірте, що Reflector працює і що джерело дозволяє цей namespace.",
+    "sourceMissing": "Джерело {{source}} не існує. Ручне дзеркало Reflector залишає як є, а автоматичне видаляє.",
+    "notAllowed": "Джерело більше не дозволяє дзеркала в namespace {{namespace}}: Reflector перестає оновлювати це дзеркало.",
+    "notAllowedAuto": "Джерело більше не створює автоматичні дзеркала в namespace {{namespace}}: Reflector видаляє це дзеркало.",
+    "unknown": "Не вдалося прочитати namespace джерела, тому стан дзеркала невідомий.",
+    "permittedUnknown": "Невідомо, чи джерело досі дозволяє namespace {{namespace}}: шаблон namespace тут не можна виконати або label цього namespace невідомі.",
+    "invalidReflects": "Анотація reflects не у вигляді namespace/name, тому Reflector ігнорує цей об’єкт.",
+    "autoNeedsAllowed": "Автоматичні дзеркала ввімкнено, але вони не діють: віддзеркалення з цього об’єкта не дозволено.",
+    "selectorInvalid": "Reflector не може розібрати selector {{selector}} і не вибирає за ним жодного namespace.",
+    "targetsUnknown_one": "Невідомо, чи можна віддзеркалювати джерело в {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_few": "Невідомо, чи можна віддзеркалювати джерело в {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_many": "Невідомо, чи можна віддзеркалювати джерело в {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_other": "Невідомо, чи можна віддзеркалювати джерело в {{count}} namespace: {{namespaces}}.",
+    "noMirrors": "У перевірених namespace його дзеркал не знайдено.",
+    "conflict": "Де ім’я зайняте іншим об’єктом, Reflector не створює автоматичне дзеркало.",
+    "notChecked_one": "Не перевірено {{count}} namespace, куди його можна віддзеркалити: {{namespaces}}.",
+    "notChecked_few": "Не перевірено {{count}} namespace, куди його можна віддзеркалити: {{namespaces}}.",
+    "notChecked_many": "Не перевірено {{count}} namespace, куди його можна віддзеркалити: {{namespaces}}.",
+    "notChecked_other": "Не перевірено {{count}} namespace, куди його можна віддзеркалити: {{namespaces}}."
+  }
+}

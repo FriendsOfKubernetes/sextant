@@ -162,6 +162,28 @@ describe("the patches, as kubectl argo rollouts builds them", () => {
     expect(planFor("abort", canary)).toEqual({ status: { status: { abort: true } }, unified: { status: { abort: true } } });
     expect(planFor("retry", aborted)).toEqual({ status: { status: { abort: false } }, unified: { status: { abort: false } } });
   });
+
+  it("pause: the plugin's spec patch to the object, nothing when it is paused by hand already", () => {
+    expect(planFor("pause", canary)).toEqual({ spec: { spec: { paused: true } } });
+    const paused = copy(canary);
+    (paused.spec as Record<string, unknown>).paused = true;
+    expect(planFor("pause", paused)).toEqual({});
+  });
+
+  it("resume: the plugin's former resume, each part only where it applies, never a step forward", () => {
+    // Paused at a pause step: the conditions go (status), the v0.9 fallback is the old command's whole patch.
+    expect(planFor("resume", canary)).toEqual({
+      status: { status: { pauseConditions: null } },
+      unified: { spec: { paused: false }, status: { pauseConditions: null } },
+    });
+    // Paused by hand only: the spec alone.
+    const byHand = copy(canary);
+    (byHand.spec as Record<string, unknown>).paused = true;
+    st(byHand).pauseConditions = null;
+    expect(planFor("resume", byHand)).toEqual({ spec: { spec: { paused: false } } });
+    // Not paused: nothing.
+    expect(planFor("resume", aborted)).toEqual({});
+  });
 });
 
 // ---------- In the app ----------
@@ -368,6 +390,52 @@ describe("the Rollout actions", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Abort" }));
     await waitFor(() => expect(calls("resource_patch")).toHaveLength(1));
     expect(calls("resource_patch")[0]).toMatchObject({ patch: { status: { abort: true } }, patchType: "merge" });
+  });
+
+  it("Pause and Resume are offered as they apply; Pause sends the plugin's spec patch to the rollout once", async () => {
+    const pauseResume: ActionId[] = ["rolloutPause", "rolloutResume"];
+    const byHand = copy(aborted);
+    (byHand.spec as Record<string, unknown>).paused = true;
+    expect(getActionsFor([canary], ROLLOUT, pauseResume).map((a) => a.id)).toEqual(pauseResume);
+    expect(getActionsFor([aborted], ROLLOUT, pauseResume).map((a) => a.id)).toEqual(["rolloutPause"]);
+    expect(getActionsFor([byHand], ROLLOUT, pauseResume).map((a) => a.id)).toEqual(["rolloutResume"]);
+    expect(getResourceDef(ROLLOUT).actions).toEqual(expect.arrayContaining(pauseResume));
+
+    await run("rolloutPause", canary);
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(within(dialog).getByText('{"spec":{"paused":true}}')).toBeInTheDocument());
+    expect(await axeViolations(dialog)).toEqual([]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Pause" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(calls("resource_patch")).toEqual([{ clusterId: "c1", ref: refTo(canary), patch: { spec: { paused: true } }, patchType: "merge" }]);
+    expect(calls("resource_patch_status")).toEqual([]);
+  });
+
+  it("Resume lists the status patch and its v0.9 fallback, then sends the status patch once", async () => {
+    await run("rolloutResume", canary);
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(within(dialog).getByText('{"status":{"pauseConditions":null}}')).toBeInTheDocument());
+    expect(within(dialog).getByText('{"spec":{"paused":false},"status":{"pauseConditions":null}}')).toBeInTheDocument();
+    expect(await axeViolations(dialog)).toEqual([]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Resume" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(calls("resource_patch_status")).toEqual([
+      { clusterId: "c1", ref: refTo(canary), patch: { status: { pauseConditions: null } }, patchType: "merge" },
+    ]);
+    expect(calls("resource_patch")).toEqual([]);
+  });
+
+  it("Pause of a rollout someone paused meanwhile says so and sends nothing", async () => {
+    await run("rolloutPause", canary);
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(within(dialog).getByText('{"spec":{"paused":true}}')).toBeInTheDocument());
+    (live.spec as Record<string, unknown>).paused = true;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Pause" }));
+    await waitFor(() => expect(within(dialog).getByText(/already paused/)).toBeInTheDocument());
+    expect(within(dialog).getByRole("button", { name: "Pause" })).toBeDisabled();
+    expect(calls("resource_patch")).toEqual([]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("sends nothing when the rollout changed since the dialog showed the patches", async () => {

@@ -880,3 +880,24 @@ fn traefik_problems_are_never_given_to_agents() {
         &["traefik".to_owned()]
     ));
 }
+
+/// Sealed Secrets problems (#240) are a window view: agents get none of them.
+#[test]
+fn sealed_secrets_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"sealedSecrets"));
+    assert!(!answers::category_for_agents(
+        "sealedSecrets",
+        &["sealedSecrets".to_owned()]
+    ));
+}
+
+/// Reflector mirror problems (#241) are a window view: agents get none of them, even when the category is on.
+#[test]
+fn reflector_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"reflector"));
+    assert!(answers::OPT_IN_CATEGORIES.contains(&"reflector"));
+    assert!(!answers::category_for_agents(
+        "reflector",
+        &["reflector".to_owned()]
+    ));
+}

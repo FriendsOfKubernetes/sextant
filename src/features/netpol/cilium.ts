@@ -19,6 +19,7 @@ import { status } from "../../resources";
 import { labelSelector, matches } from "../resource-map/selectors";
 import { portPhrase } from "./kubernetes";
 import { ipBlockCheck } from "./kubernetes";
+import { describedPod } from "./model";
 import {
   type Check,
   type Ctx,
@@ -260,6 +261,12 @@ export function ciliumPolicies(obj: KubeObject, clusterwide: boolean): Policy[] 
         selects(pod, ctx) {
           if (namespace !== null && pod.namespace !== namespace) return { result: "no", reason: null };
           return { result: selectorMatch(sel, pod, ctx), reason: null };
+        },
+        everyPodIn(ns, ctx) {
+          if (namespace !== null && ns !== namespace) return "no";
+          // A selector naming only the namespace (its name, its labels, the cluster) holds for every pod in it.
+          const byNamespace = sel.keys.every((k) => k === NS_LABEL || k === CLUSTER_LABEL || k.startsWith(NS_LABELS_PREFIX));
+          return byNamespace ? selectorMatch(sel, describedPod(ns, {}), ctx) : "no";
         },
         selectorText: namespace !== null
           ? { key: "selects.ciliumHere", params: { selector: sel.text || "{}", namespace } }

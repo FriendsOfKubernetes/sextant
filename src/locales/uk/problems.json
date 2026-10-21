@@ -37,9 +37,11 @@
     "crossplane": "Crossplane",
     "policies": "Політики Kyverno",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "Безпека",
     "practices": "Найкращі практики",
     "credentials": "Облікові дані",
@@ -80,13 +82,18 @@
     "policyErrors_other": "{{count}} правила політик не вдалося перевірити: {{policies}}",
     "traefikMissingReference": "Посилається на об'єкти, яких не існує: {{refs}}. Traefik пропускає те, що від них залежить.",
     "traefikSkippedRoute": "Traefik пропускає його маршрути {{routes}}: порожнє правило match або kind, відмінний від Rule.",
+    "sealedSecretTargetMissing": "Позначений як синхронізований, але його Secret {{name}} не існує.",
     "serviceMonitorSelectsNothing": "Не вибирає жодного Service у namespace: {{namespaces}}",
     "podMonitorSelectsNothing": "Не вибирає жодного Pod у namespace: {{namespaces}}",
-    "monitorNotPickedUp": "Жоден Prometheus не підхоплює його своїми selector"
+    "monitorNotPickedUp": "Жоден Prometheus не підхоплює його своїми selector",
+    "reflectorStale": "Reflector не скопіював у це дзеркало поточну версію джерела {{source}}.",
+    "reflectorNotAllowed": "Джерело {{source}} більше не дозволяє цей namespace, а дзеркало застаріло.",
+    "reflectorSourceMissing": "Джерело {{source}} не існує."
   },
   "showDisk": "Диск майже заповнений",
   "showPractices": "Зауваження щодо найкращих практик",
   "showPolicies": "Порушення політик Kyverno",
   "showPrometheusOperator": "Монітори й сервери Prometheus Operator",
-  "showTraefik": "Посилання Traefik"
+  "showTraefik": "Посилання Traefik",
+  "showReflector": "Дзеркала Reflector"
 }

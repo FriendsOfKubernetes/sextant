@@ -97,7 +97,9 @@
     "promote": "Promuj",
     "promoteFull": "Promuj w pełni",
     "abort": "Przerwij",
-    "retry": "Ponów"
+    "retry": "Ponów",
+    "pause": "Wstrzymaj",
+    "resume": "Wznów"
   },
   "dialog": {
     "promoteTitle": "Promować rollout {{name}}?",
@@ -113,6 +115,12 @@
     "specPatch": "Zostanie wysłane do rolloutu:",
     "fallbackPatch": "Jeśli Argo Rollouts w klastrze nie ma podzasobu status (v0.9), do rolloutu zostanie wysłane zamiast tego:",
     "nothing": "Nie ma nic do zmiany: rollout jest już w pełni promowany i nie jest wstrzymany.",
-    "changed": "Rollout zmienił się, gdy to okno było otwarte. Sprawdź zaktualizowane zmiany i potwierdź ponownie."
+    "changed": "Rollout zmienił się, gdy to okno było otwarte. Sprawdź zaktualizowane zmiany i potwierdź ponownie.",
+    "pauseTitle": "Wstrzymać rollout {{name}}?",
+    "pauseText": "Rollout zostanie wstrzymany ręcznie (spec.paused) i nie będzie postępował, dopóki nie zostanie wznowiony lub promowany, tak jak przy kubectl argo rollouts pause.",
+    "resumeTitle": "Wznowić rollout {{name}}?",
+    "resumeText": "Rollout wychodzi z wstrzymania: spec.paused zostaje zdjęte, a jego warunki wstrzymania usunięte, tak jak robiło to dawne polecenie resume wtyczki i akcja resume w Argo CD. W przeciwieństwie do „Promuj” nie przenosi samo rolloutu do następnego kroku.",
+    "nothingPause": "Nie ma nic do zmiany: rollout jest już wstrzymany.",
+    "nothingResume": "Nie ma nic do zmiany: rollout nie jest wstrzymany."
   }
 }

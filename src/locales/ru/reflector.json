@@ -1,0 +1,83 @@
+{
+  "title": "Отражение",
+  "column": "Отражение",
+  "role": {
+    "source": "Источник",
+    "sourceAuto": "Источник, зеркалируется автоматически",
+    "mirror": "Зеркало",
+    "autoMirror": "Автоматическое зеркало"
+  },
+  "state": {
+    "inSync": "Синхронизировано",
+    "stale": "Устарело",
+    "sourceMissing": "Нет источника",
+    "notAllowed": "Не разрешено",
+    "unknown": "Неизвестно",
+    "loading": "Проверка…"
+  },
+  "expected": {
+    "notCreated": "Не создано",
+    "conflict": "Имя занято"
+  },
+  "fields": {
+    "role": "Роль",
+    "source": "Источник",
+    "state": "Состояние",
+    "reflectedVersion": "Скопированная версия",
+    "sourceVersion": "Версия источника",
+    "reflectedAt": "Скопировано",
+    "allowed": "Отражение разрешено",
+    "allowedNamespaces": "Разрешённые namespace",
+    "allowedSelector": "Selector разрешённых namespace",
+    "autoEnabled": "Автоматические зеркала",
+    "autoNamespaces": "Namespace для автоматических зеркал",
+    "autoSelector": "Selector namespace для автоматических зеркал",
+    "autoTargets": "Автоматически зеркалируется в"
+  },
+  "values": {
+    "yes": "Да",
+    "no": "Нет",
+    "everyNamespace": "Все namespace",
+    "none": "Нет",
+    "automatic": "Автоматическое",
+    "direct": "Ручное",
+    "more_one": "и ещё {{count}}",
+    "more_few": "и ещё {{count}}",
+    "more_many": "и ещё {{count}}",
+    "more_other": "и ещё {{count}}"
+  },
+  "headers": {
+    "mirror": "Зеркало",
+    "mode": "Режим",
+    "state": "Состояние"
+  },
+  "mirrorsTitle": "Зеркала",
+  "patternIssue": {
+    "invalid": "Шаблон namespace {{pattern}} — не регулярное выражение, которое Sextant может выполнить, поэтому неизвестно, какие namespace он задаёт.",
+    "notEvaluated": "Шаблон namespace {{pattern}} слишком длинный или повторяет повторение, поэтому Sextant его не выполняет и неизвестно, какие namespace он задаёт."
+  },
+  "explain": {
+    "valuesNotCompared": "Значения никогда не читаются и не сравниваются: состояние берётся из аннотаций Reflector и resourceVersion источника.",
+    "inSync": "Reflector скопировал текущую версию источника в этот {{kind}}.",
+    "stale": "Источник изменился после последнего копирования: в зеркале версия {{reflected}}, у источника — {{current}}. Обычно Reflector догоняет за секунды; если нет, проверьте, что Reflector работает.",
+    "staleNever": "Reflector ещё не скопировал источник в этот {{kind}}. Если так и останется, проверьте, что Reflector работает и что источник разрешает этот namespace.",
+    "sourceMissing": "Источник {{source}} не существует. Ручное зеркало Reflector оставляет как есть, а автоматическое удаляет.",
+    "notAllowed": "Источник больше не разрешает зеркала в namespace {{namespace}}: Reflector перестаёт обновлять это зеркало.",
+    "notAllowedAuto": "Источник больше не создаёт автоматические зеркала в namespace {{namespace}}: Reflector удаляет это зеркало.",
+    "unknown": "Не удалось прочитать namespace источника, поэтому состояние зеркала неизвестно.",
+    "permittedUnknown": "Неизвестно, разрешает ли источник по-прежнему namespace {{namespace}}: шаблон namespace здесь нельзя выполнить или label этого namespace неизвестны.",
+    "invalidReflects": "Аннотация reflects не в виде namespace/name, поэтому Reflector игнорирует этот объект.",
+    "autoNeedsAllowed": "Автоматические зеркала включены, но не действуют: отражение из этого объекта не разрешено.",
+    "selectorInvalid": "Reflector не может разобрать selector {{selector}} и не выбирает по нему ни одного namespace.",
+    "targetsUnknown_one": "Неизвестно, можно ли зеркалировать источник в {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_few": "Неизвестно, можно ли зеркалировать источник в {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_many": "Неизвестно, можно ли зеркалировать источник в {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_other": "Неизвестно, можно ли зеркалировать источник в {{count}} namespace: {{namespaces}}.",
+    "noMirrors": "В проверенных namespace его зеркал не найдено.",
+    "conflict": "Где имя занято другим объектом, Reflector не создаёт автоматическое зеркало.",
+    "notChecked_one": "Не проверен {{count}} namespace, куда его можно зеркалировать: {{namespaces}}.",
+    "notChecked_few": "Не проверены {{count}} namespace, куда его можно зеркалировать: {{namespaces}}.",
+    "notChecked_many": "Не проверены {{count}} namespace, куда его можно зеркалировать: {{namespaces}}.",
+    "notChecked_other": "Не проверены {{count}} namespace, куда его можно зеркалировать: {{namespaces}}."
+  }
+}

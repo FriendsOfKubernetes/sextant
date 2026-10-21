@@ -12,6 +12,11 @@
 //                 current template is not the stable one
 //   abort         status {"status":{"abort":true}}
 //   retry         status {"status":{"abort":false}}
+//   pause         spec  {"spec":{"paused":true}}                                   (cmd/pause/pause.go, the object only)
+//   resume        spec  {"spec":{"paused":false}} when spec.paused; status {"status":{"pauseConditions":null}} when
+//                 pause conditions are set — the plugin's own `resume` before `promote` replaced it (argo-rollouts#277:
+//                 `{"spec":{"paused":false},"status":{"pauseConditions":null}}`, sent whole), split as `promote` splits
+//                 it and with the conditions of Argo CD's Rollout `resume` action; it never moves `currentStepIndex`
 //
 // A status patch goes to the status subresource first (`api.resources.patchStatus`); an API server that answers
 // `notFound` there has no status subresource (Argo Rollouts v0.9), and the plugin then sends the "unified" patch
@@ -22,7 +27,7 @@ import { canarySteps, currentStepIndex, currentHash, pauseConditions, specPaused
 
 const { get } = status;
 
-export type RolloutAction = "promote" | "promoteFull" | "abort" | "retry";
+export type RolloutAction = "promote" | "promoteFull" | "abort" | "retry" | "pause" | "resume";
 
 export interface PatchPlan {
   /** To the status subresource. */
@@ -61,6 +66,10 @@ export function planFor(action: RolloutAction, ro: KubeObject): PatchPlan {
       };
     case "promote":
       return promotePlan(ro);
+    case "pause":
+      return specPaused(ro) ? {} : { spec: { spec: { paused: true } } };
+    case "resume":
+      return resumePlan(ro);
   }
 }
 
@@ -76,6 +85,17 @@ function promotePlan(ro: KubeObject): PatchPlan {
   } else if (strategyOf(ro) === "canary" && next !== undefined) {
     plan.status = { status: { pauseConditions: null, currentStepIndex: next } };
     plan.unified = { spec: { paused: false }, status: { pauseConditions: null, currentStepIndex: next } };
+  }
+  return plan;
+}
+
+/** The plugin's former `resume`: unpause the spec and clear the pause conditions, each only where it is set. */
+function resumePlan(ro: KubeObject): PatchPlan {
+  const plan: PatchPlan = {};
+  if (specPaused(ro)) plan.spec = UNPAUSE;
+  if (pauseConditions(ro).length > 0) {
+    plan.status = { status: { pauseConditions: null } };
+    plan.unified = { spec: { paused: false }, status: { pauseConditions: null } };
   }
   return plan;
 }

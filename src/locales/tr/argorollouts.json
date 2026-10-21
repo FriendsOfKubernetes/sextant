@@ -95,7 +95,9 @@
     "promote": "Yükselt",
     "promoteFull": "Tamamen yükselt",
     "abort": "İptal et",
-    "retry": "Yeniden dene"
+    "retry": "Yeniden dene",
+    "pause": "Duraklat",
+    "resume": "Sürdür"
   },
   "dialog": {
     "promoteTitle": "{{name}} rollout'u yükseltilsin mi?",
@@ -111,6 +113,12 @@
     "specPatch": "Rollout'a gönderilecek:",
     "fallbackPatch": "Kümedeki Argo Rollouts'ta status alt kaynağı yoksa (v0.9), bunun yerine rollout'a şu gönderilir:",
     "nothing": "Değiştirilecek bir şey yok: rollout zaten tamamen yükseltildi ve duraklatılmadı.",
-    "changed": "Bu iletişim kutusu açıkken rollout değişti. Güncellenen değişiklikleri kontrol edip yeniden onaylayın."
+    "changed": "Bu iletişim kutusu açıkken rollout değişti. Güncellenen değişiklikleri kontrol edip yeniden onaylayın.",
+    "pauseTitle": "{{name}} rollout'u duraklatılsın mı?",
+    "pauseText": "Rollout elle duraklatılır (spec.paused) ve sürdürülene ya da yükseltilene kadar ilerlemez; kubectl argo rollouts pause gibi.",
+    "resumeTitle": "{{name}} rollout'u sürdürülsün mü?",
+    "resumeText": "Rollout duraklamadan çıkar: spec.paused kaldırılır ve duraklatma koşulları silinir; eklentinin eski resume komutu ve Argo CD'nin resume eylemi de bunu yapar. “Yükselt”ten farklı olarak rollout'u kendiliğinden sonraki adıma geçirmez.",
+    "nothingPause": "Değiştirilecek bir şey yok: rollout zaten duraklatılmış.",
+    "nothingResume": "Değiştirilecek bir şey yok: rollout duraklatılmamış."
   }
 }

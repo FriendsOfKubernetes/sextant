@@ -60,5 +60,39 @@
     "offloaded": "コントローラーはこの Workflow のステップを自身のデータベースに保存しています (offloaded node status)。オブジェクトに含まれていないため、ここには表示できません。",
     "compressed": "コントローラーはこの Workflow のステップを圧縮して保存しました。ここには表示できません。",
     "none": "まだステップはありません。"
-  }
+  },
+  "actions": {
+    "suspend": "一時停止",
+    "resume": "再開",
+    "stop": "停止",
+    "terminate": "終了"
+  },
+  "dialog": {
+    "suspendTitle": "Workflow {{name}} を一時停止しますか?",
+    "suspendText": "Workflow は再開されるまで新しいステップを開始しません。実行中のステップは続行します。argo suspend と同じです。",
+    "resumeTitle": "Workflow {{name}} を再開しますか?",
+    "resumeText": "Workflow の一時停止が解除され、待機中の suspend ステップはすべて Succeeded になります。argo resume と同じです。",
+    "stopTitle": "Workflow {{name}} を停止しますか?",
+    "stopText": "実行中のステップが停止され、新しいステップは開始しませんが、終了ハンドラーは実行されます。argo stop と同じです。",
+    "terminateTitle": "Workflow {{name}} を終了しますか?",
+    "terminateText": "実行中のステップが停止され、終了ハンドラーを含めてそれ以上何も実行されません。argo terminate と同じです。",
+    "loading": "Workflow を読み込み中…",
+    "patch": "Workflow に送信する内容（JSON merge patch）:",
+    "versioned": "送信の直前に読み込んだ resourceVersion を含むため、その間に Workflow が変更されると API サーバーが拒否します。再試行はしません。",
+    "stamped": "finishedAt は送信時刻になります。",
+    "changed": "このダイアログを開いている間に Workflow が変更されました。更新された変更内容を確認して、もう一度確定してください。",
+    "nothing": {
+      "suspend": "変更はありません。Workflow はすでに一時停止しています。",
+      "resume": "変更はありません。Workflow は一時停止しておらず、待機中の suspend ステップもありません。",
+      "stop": "変更はありません。Workflow はすでに停止処理中です。",
+      "terminate": "変更はありません。Workflow はすでに終了処理中です。"
+    },
+    "refusal": {
+      "completed": "完了した Workflow は一時停止できません。",
+      "finished": "Workflow はすでに終わっているため、停止するものはありません。",
+      "nodesElsewhere": "この Workflow のノードは圧縮されているか、コントローラーのデータベースに保存されているため、Sextant は suspend ステップを再開できません。代わりに argo resume {{name}} -n {{namespace}} を実行してください。",
+      "noDefault": "suspend ステップ {{step}} は出力パラメーター {{parameter}} を待っていますが、値もデフォルト値もないため再開できません。先に argo node set で設定してください。"
+    }
+  },
+  "retryHint": "Sextant は Workflow を再試行しません。再試行は失敗したノードをリセットしてその Pod を削除するもので、Argo サーバーが行います。argo retry {{name}} -n {{namespace}} を実行してください。"
 }

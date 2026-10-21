@@ -19,6 +19,7 @@ import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
 import { cnpgProblems, CNPG_GROUP } from "../cnpg/model";
 import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
+import { isSealedSecret } from "../sealed-secrets/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import { STRIMZI_GROUP, strimziProblems } from "../strimzi/model";
 import {
@@ -56,9 +57,11 @@ export const PROBLEM_CATEGORIES = [
   "crossplane",
   "policies",
   "externalSecrets",
+  "sealedSecrets",
   "cnpg",
   "strimzi",
   "prometheusOperator",
+  "reflector",
   "security",
   "practices",
   "credentials",
@@ -80,8 +83,9 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * Prometheus Operator findings (`prometheusOperator`) judge every ServiceMonitor and PodMonitor against metadata
  * lists of the Services and Pods they look at: a cost a cluster pays only when asked for. So do Traefik findings
  * (`traefik`, #232): every Traefik object of the cluster and metadata of the Services they name.
+ * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices", "policies", "prometheusOperator", "traefik"];
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices", "policies", "prometheusOperator", "traefik", "reflector"];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
@@ -243,6 +247,8 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
   // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
   if (kind.group === ESO_GROUP) return "externalSecrets";
+  // Sealed Secrets (#240): judged by the provider of features/sealed-secrets (the target Secret is another object).
+  if (isSealedSecret(kind)) return "sealedSecrets";
   if (kind.group === CNPG_GROUP) return "cnpg";
   if (kind.group === STRIMZI_GROUP) return "strimzi";
   if (kind.group === MONITORING_GROUP) return "prometheusOperator";
@@ -711,6 +717,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "disk":
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
+    case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
+    case "sealedSecrets": // A missing target Secret is another object: the provider of features/sealed-secrets finds both.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];

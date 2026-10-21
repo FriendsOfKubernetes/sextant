@@ -10,7 +10,7 @@ export const CONNECTIVITY_PAGE = "networkConnectivity";
 
 export type SourceType = "pod" | "labels" | "external";
 export type DestinationType = "pod" | "service" | "external";
-export type ConnectivityTab = "check" | "map";
+export type ConnectivityTab = "check" | "map" | "coverage";
 
 export interface ConnectivityForm {
   sourceType: SourceType;

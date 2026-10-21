@@ -37,9 +37,11 @@
     "crossplane": "Crossplane",
     "policies": "Zasady Kyverno",
     "externalSecrets": "External Secrets",
+    "sealedSecrets": "Sealed Secrets",
     "cnpg": "CloudNativePG",
     "strimzi": "Strimzi",
     "prometheusOperator": "Prometheus Operator",
+    "reflector": "Reflector",
     "security": "Bezpieczeństwo",
     "practices": "Dobre praktyki",
     "credentials": "Poświadczenia",
@@ -80,13 +82,18 @@
     "policyErrors_other": "{{count}} reguły zasad nie udało się ocenić: {{policies}}",
     "traefikMissingReference": "Odwołuje się do obiektów, które nie istnieją: {{refs}}. Traefik pomija to, co od nich zależy.",
     "traefikSkippedRoute": "Traefik pomija jego trasy {{routes}}: pusta reguła match lub kind inny niż Rule.",
+    "sealedSecretTargetMissing": "Jest oznaczony jako zsynchronizowany, ale jego Secret {{name}} nie istnieje.",
     "serviceMonitorSelectsNothing": "Nie wybiera żadnego Service w namespace: {{namespaces}}",
     "podMonitorSelectsNothing": "Nie wybiera żadnego Poda w namespace: {{namespaces}}",
-    "monitorNotPickedUp": "Żaden Prometheus nie wybiera go swoimi selectorami"
+    "monitorNotPickedUp": "Żaden Prometheus nie wybiera go swoimi selectorami",
+    "reflectorStale": "Reflector nie skopiował do tej kopii aktualnej wersji źródła {{source}}.",
+    "reflectorNotAllowed": "Źródło {{source}} nie zezwala już na ten namespace, a kopia jest nieaktualna.",
+    "reflectorSourceMissing": "Źródło {{source}} nie istnieje."
   },
   "showDisk": "Dysk prawie pełny",
   "showPractices": "Ustalenia dotyczące dobrych praktyk",
   "showPolicies": "Naruszenia zasad Kyverno",
   "showPrometheusOperator": "Monitory i serwery Prometheus Operator",
-  "showTraefik": "Odwołania Traefik"
+  "showTraefik": "Odwołania Traefik",
+  "showReflector": "Kopie lustrzane Reflector"
 }

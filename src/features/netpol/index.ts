@@ -6,9 +6,12 @@
 // Registered here:
 //  - the page "Connectivity" in the Network section (`ConnectivityPage.tsx`): the check and the per-namespace map;
 //  - the details section "In plain words" of NetworkPolicies and the Cilium / Calico policy kinds;
-//  - the details section "Network policies" of pods (isolation for ingress and egress).
+//  - the details section "Network policies" of pods (isolation for ingress and egress, coverage, default deny);
+//  - the namespace table's columns "Ingress isolated" and "Egress isolated" (#239, `coverageColumns.tsx`).
 import { registerDetailsSection } from "../../layout/details/registry";
+import { extendColumns } from "../../resources";
 import "./ConnectivityPage";
+import { COVERAGE_COLUMNS } from "./coverageColumns";
 import { PodIsolationSection, PolicySection } from "./details";
 import { isPolicyKind } from "./hooks";
 import "./netpol.css";
@@ -23,6 +26,9 @@ registerDetailsSection({
   appliesTo: (kind) => kind.group === "" && kind.kind === "Pod",
   Component: PodIsolationSection,
 });
+
+// After the namespace's status.
+extendColumns({ group: "", kind: "Namespace" }, COVERAGE_COLUMNS);
 
 export { ConnectivityPage } from "./ConnectivityPage";
 export { CONNECTIVITY_PAGE, openConnectivity } from "./state";

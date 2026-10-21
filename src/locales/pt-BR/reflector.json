@@ -1,0 +1,80 @@
+{
+  "title": "Reflexão",
+  "column": "Reflexão",
+  "role": {
+    "source": "Origem",
+    "sourceAuto": "Origem, espelhada automaticamente",
+    "mirror": "Espelho",
+    "autoMirror": "Espelho automático"
+  },
+  "state": {
+    "inSync": "Sincronizado",
+    "stale": "Desatualizado",
+    "sourceMissing": "Origem ausente",
+    "notAllowed": "Não permitido",
+    "unknown": "Desconhecido",
+    "loading": "Verificando…"
+  },
+  "expected": {
+    "notCreated": "Não criado",
+    "conflict": "Nome ocupado"
+  },
+  "fields": {
+    "role": "Papel",
+    "source": "Origem",
+    "state": "Estado",
+    "reflectedVersion": "Versão copiada",
+    "sourceVersion": "Versão da origem",
+    "reflectedAt": "Copiado em",
+    "allowed": "Reflexão permitida",
+    "allowedNamespaces": "Namespaces permitidos",
+    "allowedSelector": "Selector de namespaces permitidos",
+    "autoEnabled": "Espelhos automáticos",
+    "autoNamespaces": "Namespaces dos espelhos automáticos",
+    "autoSelector": "Selector de namespaces dos espelhos automáticos",
+    "autoTargets": "Espelhada automaticamente em"
+  },
+  "values": {
+    "yes": "Sim",
+    "no": "Não",
+    "everyNamespace": "Todos os namespaces",
+    "none": "Nenhum",
+    "automatic": "Automático",
+    "direct": "Manual",
+    "more_one": "e mais {{count}}",
+    "more_many": "e mais {{count}}",
+    "more_other": "e mais {{count}}"
+  },
+  "headers": {
+    "mirror": "Espelho",
+    "mode": "Modo",
+    "state": "Estado"
+  },
+  "mirrorsTitle": "Espelhos",
+  "patternIssue": {
+    "invalid": "O padrão de namespace {{pattern}} não é uma expressão regular que o Sextant consiga executar, então não se sabe quais namespaces ele indica.",
+    "notEvaluated": "O padrão de namespace {{pattern}} é longo demais ou repete uma repetição; o Sextant não o executa e não se sabe quais namespaces ele indica."
+  },
+  "explain": {
+    "valuesNotCompared": "Os valores nunca são lidos nem comparados: o estado vem das anotações do Reflector e do resourceVersion da origem.",
+    "inSync": "O Reflector copiou a versão atual da origem para este {{kind}}.",
+    "stale": "A origem mudou desde a última cópia: este espelho tem a versão {{reflected}} e a origem está em {{current}}. O Reflector costuma se atualizar em segundos; se não, verifique se o Reflector está rodando.",
+    "staleNever": "O Reflector ainda não copiou a origem para este {{kind}}. Se continuar assim, verifique se o Reflector está rodando e se a origem permite este namespace.",
+    "sourceMissing": "A origem {{source}} não existe. O Reflector deixa um espelho manual como está e exclui um automático.",
+    "notAllowed": "A origem não permite mais espelhos no namespace {{namespace}}: o Reflector deixa de atualizar este espelho.",
+    "notAllowedAuto": "A origem não cria mais espelhos automáticos no namespace {{namespace}}: o Reflector exclui este espelho.",
+    "unknown": "Não foi possível ler o namespace da origem, então o estado deste espelho é desconhecido.",
+    "permittedUnknown": "Não se sabe se a origem ainda permite o namespace {{namespace}}: um padrão de namespace não pode ser executado aqui, ou os labels do namespace não são conhecidos.",
+    "invalidReflects": "A anotação reflects não está na forma namespace/name, então o Reflector ignora este objeto.",
+    "autoNeedsAllowed": "Os espelhos automáticos estão ativados, mas não têm efeito: a reflexão a partir deste objeto não é permitida.",
+    "selectorInvalid": "O Reflector não consegue interpretar o selector {{selector}} e não escolhe nenhum namespace por ele.",
+    "targetsUnknown_one": "Não se sabe se a origem pode ser espelhada em {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_many": "Não se sabe se a origem pode ser espelhada em {{count}} de namespaces: {{namespaces}}.",
+    "targetsUnknown_other": "Não se sabe se a origem pode ser espelhada em {{count}} namespaces: {{namespaces}}.",
+    "noMirrors": "Nenhum espelho foi encontrado nos namespaces verificados.",
+    "conflict": "Onde outro objeto já usa o nome, o Reflector não cria o espelho automático.",
+    "notChecked_one": "{{count}} namespace em que a origem pode ser espelhada não foi verificado: {{namespaces}}.",
+    "notChecked_many": "{{count}} de namespaces em que a origem pode ser espelhada não foram verificados: {{namespaces}}.",
+    "notChecked_other": "{{count}} namespaces em que a origem pode ser espelhada não foram verificados: {{namespaces}}."
+  }
+}

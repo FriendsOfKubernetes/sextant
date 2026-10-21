@@ -1,0 +1,80 @@
+{
+  "title": "Riflessione",
+  "column": "Riflessione",
+  "role": {
+    "source": "Sorgente",
+    "sourceAuto": "Sorgente, replicata automaticamente",
+    "mirror": "Mirror",
+    "autoMirror": "Mirror automatico"
+  },
+  "state": {
+    "inSync": "Sincronizzato",
+    "stale": "Non aggiornato",
+    "sourceMissing": "Sorgente mancante",
+    "notAllowed": "Non consentito",
+    "unknown": "Sconosciuto",
+    "loading": "Verifica…"
+  },
+  "expected": {
+    "notCreated": "Non creato",
+    "conflict": "Nome occupato"
+  },
+  "fields": {
+    "role": "Ruolo",
+    "source": "Sorgente",
+    "state": "Stato",
+    "reflectedVersion": "Versione copiata",
+    "sourceVersion": "Versione della sorgente",
+    "reflectedAt": "Copiato il",
+    "allowed": "Riflessione consentita",
+    "allowedNamespaces": "Namespace consentiti",
+    "allowedSelector": "Selector dei namespace consentiti",
+    "autoEnabled": "Mirror automatici",
+    "autoNamespaces": "Namespace dei mirror automatici",
+    "autoSelector": "Selector dei namespace dei mirror automatici",
+    "autoTargets": "Replicata automaticamente in"
+  },
+  "values": {
+    "yes": "Sì",
+    "no": "No",
+    "everyNamespace": "Tutti i namespace",
+    "none": "Nessuno",
+    "automatic": "Automatico",
+    "direct": "Manuale",
+    "more_one": "e altri {{count}}",
+    "more_many": "e altri {{count}}",
+    "more_other": "e altri {{count}}"
+  },
+  "headers": {
+    "mirror": "Mirror",
+    "mode": "Modalità",
+    "state": "Stato"
+  },
+  "mirrorsTitle": "Mirror",
+  "patternIssue": {
+    "invalid": "Il pattern di namespace {{pattern}} non è un'espressione regolare che Sextant possa eseguire, quindi non si sa quali namespace indichi.",
+    "notEvaluated": "Il pattern di namespace {{pattern}} è troppo lungo o ripete una ripetizione: Sextant non lo esegue e non si sa quali namespace indichi."
+  },
+  "explain": {
+    "valuesNotCompared": "I valori non vengono mai letti né confrontati: lo stato deriva dalle annotazioni di Reflector e dal resourceVersion della sorgente.",
+    "inSync": "Reflector ha copiato la versione attuale della sorgente in questo {{kind}}.",
+    "stale": "La sorgente è cambiata dall'ultima copia: questo mirror ha la versione {{reflected}}, la sorgente è alla {{current}}. Di solito Reflector si allinea in pochi secondi; altrimenti verifica che Reflector sia in esecuzione.",
+    "staleNever": "Reflector non ha ancora copiato la sorgente in questo {{kind}}. Se resta così, verifica che Reflector sia in esecuzione e che la sorgente consenta questo namespace.",
+    "sourceMissing": "La sorgente {{source}} non esiste. Reflector lascia com'è un mirror manuale ed elimina quello automatico.",
+    "notAllowed": "La sorgente non consente più mirror nel namespace {{namespace}}: Reflector smette di aggiornare questo mirror.",
+    "notAllowedAuto": "La sorgente non crea più mirror automatici nel namespace {{namespace}}: Reflector elimina questo mirror.",
+    "unknown": "Non è stato possibile leggere il namespace della sorgente, quindi lo stato di questo mirror è sconosciuto.",
+    "permittedUnknown": "Non si sa se la sorgente consenta ancora il namespace {{namespace}}: un pattern di namespace non può essere eseguito qui, oppure le label del namespace non sono note.",
+    "invalidReflects": "L'annotazione reflects non è nella forma namespace/name, quindi Reflector ignora questo oggetto.",
+    "autoNeedsAllowed": "I mirror automatici sono attivi ma senza effetto: la riflessione da questo oggetto non è consentita.",
+    "selectorInvalid": "Reflector non riesce a interpretare il selector {{selector}} e non sceglie alcun namespace con esso.",
+    "targetsUnknown_one": "Non si sa se la sorgente possa essere replicata in {{count}} namespace: {{namespaces}}.",
+    "targetsUnknown_many": "Non si sa se la sorgente possa essere replicata in {{count}} di namespace: {{namespaces}}.",
+    "targetsUnknown_other": "Non si sa se la sorgente possa essere replicata in {{count}} namespace: {{namespaces}}.",
+    "noMirrors": "Nessun mirror trovato nei namespace controllati.",
+    "conflict": "Dove un altro oggetto usa già il nome, Reflector non crea il mirror automatico.",
+    "notChecked_one": "{{count}} namespace in cui la sorgente può essere replicata non è stato controllato: {{namespaces}}.",
+    "notChecked_many": "{{count}} di namespace in cui la sorgente può essere replicata non sono stati controllati: {{namespaces}}.",
+    "notChecked_other": "{{count}} namespace in cui la sorgente può essere replicata non sono stati controllati: {{namespaces}}."
+  }
+}

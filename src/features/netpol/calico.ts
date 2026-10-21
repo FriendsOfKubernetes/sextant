@@ -23,6 +23,7 @@ import { evalCalico, parseCalicoSelector, type Expr } from "./calicoSelector";
 import { portPhrase } from "./kubernetes";
 import {
   and,
+  describedPod,
   type Check,
   type Ctx,
   type Direction,
@@ -276,6 +277,18 @@ export function calicoPolicy(obj: KubeObject, global: boolean): Policy | null {
       if (nsSelector === null) return { result: "maybe", reason: "namespaceSelector" };
       const r = evalOnPod(selector, pod, ctx);
       return { result: nsSelector ? and(r, evalOnNamespace(nsSelector, pod.namespace, ctx)) : r, reason: null };
+    },
+    everyPodIn(ns, ctx) {
+      if (namespace !== null && ns !== namespace) return "no";
+      if (!selector || nsSelector === null || unmodelled.includes("serviceAccountSelector")) return "maybe";
+      // A selector naming only the namespace (its name, its labels) holds for every pod in it.
+      const byNamespace = keysOf(selector).every(
+        (k) => k === "projectcalico.org/namespace" || k === "projectcalico.org/orchestrator" || k.startsWith("pcns."),
+      );
+      if (!byNamespace) return "no";
+      const pod = describedPod(ns, {});
+      const r = evalOnPod(selector, pod, ctx);
+      return nsSelector ? and(r, evalOnNamespace(nsSelector, ns, ctx)) : r;
     },
     selectorText: namespace !== null
       ? { key: "selects.calicoHere", params: { selector: selectorText || "all()", namespace } }
