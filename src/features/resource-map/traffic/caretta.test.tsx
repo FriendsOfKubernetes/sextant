@@ -11,11 +11,11 @@ import { resetNamespaceRestore, selectNamespaces } from "../../namespaces";
 import { resetClusterKinds } from "../../../resources";
 import { MapPage, resetMapFilters } from "../MapPage";
 import { resetSharedWatches } from "../watches";
-import { edge, graph, SHOP_EDGES, workload } from "./fixtures";
+import { edge, graph, service, SHOP_EDGES, workload } from "./fixtures";
 import { layoutTraffic, matchesFilters, NO_FILTERS } from "./model";
 import { resetResolved } from "./resolve";
 
-/** What the core makes of `metrics/traffic/testdata/caretta.json`: frontend → web both ways, 32 000 bytes/s. */
+/** What the core makes of `metrics/traffic/testdata/caretta.json`: frontend → web both ways (no Service between), 32 000 bytes/s. */
 const bytes = (rate: number, patch: Partial<TrafficEdge> = {}): TrafficEdge =>
   edge(workload("shop", "frontend"), workload("shop", "web"), {
     source: "caretta",
@@ -99,6 +99,27 @@ describe("Caretta in the Traffic mode", () => {
       "Caretta",
     ]);
     expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it("through a ClusterIP: the client's bytes to the Service are labelled one way, apart from the workload's answers", async () => {
+    // What the core makes of the fixture's web → cache link (ADR-0096): role 1 names the Service, role 2 the workload.
+    const toService = bytes(400, { from: workload("shop", "web"), to: service("shop", "cache") });
+    const toWorkload = bytes(3600, { from: workload("shop", "web"), to: workload("shop", "cache") });
+    await openTraffic(graph({ sources: [{ kind: "caretta", via: "cluster", latency: false }], edges: [toWorkload, toService], totalEdges: 2 }));
+    await screen.findByRole("button", { name: "Workload web (shop): show its calls" });
+    expect(screen.getByText(/one connection shows as two lines/)).toBeTruthy();
+    expect(screen.queryByText(/in both directions/)).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "List" }));
+    const table = screen.getByRole("table", { name: /busiest first/ });
+    const protocols = within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .map((r) => within(r).getAllByRole("cell").map((c) => c.textContent))
+      .map((cells) => [cells[1], cells[2]]);
+    expect(protocols).toEqual([
+      ["cache (shop)", "TCP"],
+      ["cache (shop)", "TCP to a Service (ClusterIP)"],
+    ]);
   });
 
   it("is named among what would provide the graph", async () => {

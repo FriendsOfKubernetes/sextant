@@ -90,7 +90,13 @@
     "otherProvider": "Una referencia nombra un objeto de otro proveedor de Traefik (nombre@proveedor): Sextant no puede verlo.",
     "unknown": "Algunas listas no se pudieron leer: esas referencias no están comprobadas.",
     "ingressClass": "Solo lo sirve un Traefik cuyo proveedor vigile la clase de Ingress {{name}}.",
-    "certResolver": "El certificado viene del resolutor {{name}} y lo guarda Traefik, no un Secret: Sextant no puede verlo."
+    "certResolver": "El certificado viene del resolutor {{name}} y lo guarda Traefik, no un Secret: Sextant no puede verlo.",
+    "tlsSecretMissing": "El Secret TLS {{name}} no existe: Traefik sigue sirviendo las rutas, con un certificado que elige por el nombre solicitado o, si no, con su certificado predeterminado.",
+    "legacyOnly": "Una referencia nombra un objeto que solo existe en traefik.containo.us: Traefik 2.10 lo encuentra; Traefik v3 solo lee traefik.io y no lo encuentra.",
+    "legacyToo": "Un objeto referenciado existe en ambos grupos: Traefik v3 usa el de traefik.io; Traefik 2.10 lee los dos.",
+    "legacyTwin": "También existe un {{kind}} con el mismo nombre en traefik.containo.us: Traefik v3 solo lee este; Traefik 2.10 lee los dos.",
+    "ioTwin": "Existe un {{kind}} con el mismo nombre en traefik.io: Traefik v3 solo lee ese e ignora este objeto.",
+    "legacyIgnored": "Traefik v3 solo lee traefik.io e ignora este objeto; solo Traefik 2.10 lee ambos grupos."
   },
   "refState": {
     "found": "Encontrado",
@@ -98,7 +104,8 @@
     "crossNamespace": "En otro namespace: depende de allowCrossNamespace",
     "otherProvider": "Objeto de otro proveedor: no comprobado",
     "unknown": "No se sabe: la lista no se pudo leer",
-    "badKind": "Kind de servicio desconocido {{kind}}"
+    "badKind": "Kind de servicio desconocido {{kind}}",
+    "legacyOnly": "Solo en traefik.containo.us: Traefik v3 no lo lee"
   },
   "place": {
     "route": "Ruta {{route}}",
@@ -169,7 +176,6 @@
     "moreBackends_other": "{{count}} servicios más no se siguen.",
     "tlsUnknown": "No se puede leer el certificado del Secret {{name}}.",
     "tlsSecretMissing": "El Secret TLS {{name}} no existe en el namespace {{namespace}}.",
-    "tlsDefaultNote": "Traefik sirve entonces su certificado predeterminado, en el que los clientes no confían.",
     "tlsInvalid": "El Secret {{name}} no contiene un certificado válido.",
     "tlsExpired": "El certificado del Secret {{name}} ha caducado.",
     "tlsNotYetValid": "El certificado del Secret {{name}} aún no es válido.",
@@ -177,6 +183,8 @@
     "tlsOk": "El certificado del Secret {{name}} es válido y cubre {{hosts}}.",
     "tlsOkNoHosts": "El certificado del Secret {{name}} es válido.",
     "tlsResolver": "El certificado viene del resolutor {{resolver}} y lo guarda Traefik: Sextant no puede verlo.",
-    "tlsDefault": "TLS sin Secret ni resolutor: Traefik sirve el certificado predeterminado de su almacén TLS."
+    "tlsDefault": "TLS sin Secret ni resolutor: Traefik sirve el certificado predeterminado de su almacén TLS.",
+    "refLegacyOnly": "{{kind}} {{name}} solo existe en traefik.containo.us: Traefik v3 solo lee traefik.io y no lo encuentra; Traefik 2.10 sí.",
+    "tlsSniNote": "Traefik sigue sirviendo las rutas: elige un certificado por el nombre solicitado entre los que tiene o, si no, su certificado predeterminado, en el que los clientes no confían."
   }
 }

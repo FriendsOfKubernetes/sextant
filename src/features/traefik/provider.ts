@@ -1,8 +1,12 @@
-// The problems category "Traefik" (#232): while the problems store holds its source (the problems screen, the section
-// counter or the notifications look at a cluster that serves IngressRoutes), the Traefik objects are held (store.ts)
-// and each object with a broken reference — a Middleware, Service, TraefikService, TLSOption or Secret that does not
-// exist — or a route Traefik skips by its shape becomes a problem of that object. A reference that cannot be judged
-// (another namespace, another provider, a list not read) is never one. Agents get none of it (NEVER_FOR_AGENTS).
+// The problems category "Traefik" (#232), opt-in (`OPT_IN_CATEGORIES`: it lists every Traefik object of the cluster
+// and the Services they name, a cost a cluster pays only when asked): while the problems store holds its source (the
+// problems screen, the section counter or the notifications look at a cluster that serves IngressRoutes and the
+// category is on), the Traefik objects are held (store.ts) and each object with a broken reference — a Middleware,
+// Service, TraefikService or TLSOption that does not exist — or a route Traefik skips by its shape becomes a problem
+// of that object. No Secret is listed for it (a Secret reference is judged only in the open details), and a missing
+// TLS Secret of a route is no problem anyway: Traefik builds the router and serves another certificate. A reference
+// that cannot be judged (another namespace, another provider, a list not read, a target only in the old group) is
+// never one. Agents get none of it (NEVER_FOR_AGENTS).
 import type { Problem } from "../problems/model";
 import { registerProblemProvider } from "../problems/store";
 import { breaks, refText } from "./resolve";

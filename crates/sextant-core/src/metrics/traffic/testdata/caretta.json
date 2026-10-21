@@ -125,6 +125,26 @@
   {
    "metric": "caretta_links_observed",
    "labels": {
+    "link_id": "2210448713",
+    "client_id": "4142368622",
+    "client_name": "web",
+    "client_namespace": "shop",
+    "client_kind": "Deployment",
+    "client_owner": "",
+    "server_id": "1290115566",
+    "server_name": "cache",
+    "server_namespace": "shop",
+    "server_kind": "Deployment",
+    "server_port": "6379",
+    "role": "2",
+    "instance": "10.244.1.2:7117",
+    "job": "caretta"
+   },
+   "rate": 3600.0
+  },
+  {
+   "metric": "caretta_links_observed",
+   "labels": {
     "link_id": "3421272456",
     "client_id": "4142368622",
     "client_name": "web",
@@ -223,6 +243,20 @@
       "value": [
        1760000000,
        "31999.999999999996"
+      ]
+     },
+     {
+      "metric": {
+       "client_kind": "Deployment",
+       "client_name": "web",
+       "client_namespace": "shop",
+       "server_kind": "Deployment",
+       "server_name": "cache",
+       "server_namespace": "shop"
+      },
+      "value": [
+       1760000000,
+       "3599.9999999999995"
       ]
      },
      {

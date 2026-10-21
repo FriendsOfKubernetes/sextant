@@ -87,8 +87,9 @@ pub enum TrafficProtocol {
     Grpc,
     /// New TCP connections per second, of traffic the source sees only as connections.
     Tcp,
-    /// Bytes per second sent over TCP connections, both ways where both ends are seen (Caretta, #236): a source that
-    /// sees connections and their bytes, never requests.
+    /// Bytes per second sent over TCP connections (Caretta, #236): a source that sees connections and their bytes,
+    /// never requests. Both ways where both sides name the same two ends; an edge to a Service is the client's bytes
+    /// to the Service's ClusterIP only (its answers are on the edge to the workload behind it, see ADR-0096).
     TcpBytes,
     /// The source does not say (Beyla's service graph).
     Unknown,
@@ -127,7 +128,8 @@ pub struct TrafficEdge {
     pub to: TrafficPeer,
     pub protocol: TrafficProtocol,
     /// Requests per second; for [`TrafficProtocol::Tcp`] new connections, for [`TrafficProtocol::TcpBytes`] bytes per
-    /// second.
+    /// second the ends' sockets sent — both ways only where both sides name the same two ends; on an edge to a
+    /// Service, the client's bytes to its ClusterIP alone (the answers are on the edge to the workload behind it).
     pub rate: f64,
     /// Share (0–1) of failed requests by the source's own rule (ADR-0095); `None` for TCP.
     pub error_ratio: Option<f64>,

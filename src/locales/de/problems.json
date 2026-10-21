@@ -75,5 +75,6 @@
   "showDisk": "Datenträger fast voll",
   "showPractices": "Best-Practice-Befunde",
   "showPolicies": "Kyverno-Richtlinienverstöße",
-  "showPrometheusOperator": "Monitore und Server des Prometheus Operator"
+  "showPrometheusOperator": "Monitore und Server des Prometheus Operator",
+  "showTraefik": "Traefik-Verweise"
 }

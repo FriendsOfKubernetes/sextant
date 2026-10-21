@@ -75,5 +75,6 @@
   "showDisk": "Disk neredeyse dolu",
   "showPractices": "En iyi uygulama bulguları",
   "showPolicies": "Kyverno ilkesi ihlalleri",
-  "showPrometheusOperator": "Prometheus Operator izleyicileri ve sunucuları"
+  "showPrometheusOperator": "Prometheus Operator izleyicileri ve sunucuları",
+  "showTraefik": "Traefik başvuruları"
 }

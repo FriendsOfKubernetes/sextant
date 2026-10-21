@@ -69,5 +69,6 @@
   "showDisk": "磁碟即將用盡",
   "showPractices": "最佳做法發現",
   "showPolicies": "Kyverno 原則違規",
-  "showPrometheusOperator": "Prometheus Operator 監視器與伺服器"
+  "showPrometheusOperator": "Prometheus Operator 監視器與伺服器",
+  "showTraefik": "Traefik 參照"
 }

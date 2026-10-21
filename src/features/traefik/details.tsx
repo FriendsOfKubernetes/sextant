@@ -1,6 +1,9 @@
 // Details of Traefik objects (#232), one section for every kind of the section. Traefik writes no status, so each view
 // opens with what can be judged — whether the objects its references name exist (store.ts) — and says why one breaks
-// the object or cannot be judged. Then per kind:
+// the object or cannot be judged. The Secrets an object names are checked only here, while the details are open: one
+// metadata-only list of the namespaces they are in (names only), added to the shared store's lookup. Where a cluster
+// serves both groups, it says when the other group holds an object of the same name (Traefik v3 reads only
+// `traefik.io`). Then per kind:
 //   IngressRoute(TCP/UDP) — entry points, ingress class, parents, TLS (Secret with its certificate through the
 //                           core's TLS reader, options, store, resolver, domains) and the routes: match, priority,
 //                           middlewares and services, each a link;
@@ -8,8 +11,9 @@
 //   Middleware            — its type and, for a chain, the middlewares in order;
 //   TLSOption / TLSStore / ServersTransport — their main settings and the Secrets they read.
 // Read-only.
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, KindRef, KubeObject } from "../../api";
+import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec, type WatchState } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { status, StatusText } from "../../resources";
 import { Block, chips, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
@@ -19,7 +23,9 @@ import {
   apiVersionOf,
   isRouteKind,
   isTraefik,
+  LEGACY_GROUP,
   middlewareRefs,
+  referencesOf,
   middlewareType,
   routeSpec,
   traefikKind,
@@ -30,12 +36,14 @@ import {
   SERVERS_TRANSPORT_TCP,
   TLS_OPTION,
   TLS_STORE,
+  SECRET,
+  TRAEFIK_GROUP,
   TRAEFIK_SERVICE,
   type Ref,
   type Route,
 } from "./model";
-import { breaks, HEALTH_TONE, type Health, type RefCheck, type RefState } from "./resolve";
-import { useTraefik } from "./store";
+import { breaks, HEALTH_TONE, isRouteTlsSecret, judge, type Health, type Judgement, type Lookup, type RefCheck, type RefState } from "./resolve";
+import { listHas, useTraefik } from "./store";
 
 const { get, str } = status;
 const LABELS = "traefik:fields";
@@ -51,6 +59,7 @@ const STATE_TONE: Record<RefState, "success" | "danger" | "muted" | "warning"> =
   crossNamespace: "warning",
   otherProvider: "muted",
   unknown: "muted",
+  legacyOnly: "warning",
 };
 
 /** The details link of what a reference names, in the group of the object it is in. */
@@ -78,6 +87,9 @@ function Judged({ health, checks, issues }: { health: Health; checks: RefCheck[]
   const cross = checks.some((c) => c.state === "crossNamespace");
   const other = checks.some((c) => c.state === "otherProvider");
   const unknown = checks.some((c) => c.state === "unknown");
+  const legacyOnly = checks.some((c) => c.state === "legacyOnly");
+  const legacyToo = checks.some((c) => c.legacyToo);
+  const tlsMissing = checks.find((c) => isRouteTlsSecret(c.ref) && c.state === "missing");
   return (
     <>
       <p className="cm-muted">{t("traefik:explain.noStatus")}</p>
@@ -87,11 +99,34 @@ function Judged({ health, checks, issues }: { health: Health; checks: RefCheck[]
           {t(`traefik:explain.${i.type}`, { route: i.route + 1, kind: i.value ?? "" })}
         </p>
       ))}
+      {tlsMissing && <p className="cm-explain">{t("traefik:explain.tlsSecretMissing", { name: tlsMissing.ref.name })}</p>}
       {cross && <p className="cm-explain">{t("traefik:explain.crossNamespace")}</p>}
       {other && <p className="cm-explain">{t("traefik:explain.otherProvider")}</p>}
       {unknown && <p className="cm-explain">{t("traefik:explain.unknown")}</p>}
+      {legacyOnly && <p className="cm-explain">{t("traefik:explain.legacyOnly")}</p>}
+      {legacyToo && <p className="cm-explain">{t("traefik:explain.legacyToo")}</p>}
     </>
   );
+}
+
+/** The other group holds an object of the same kind and name (the cluster serves both groups). */
+function TwinNote({ kind, twin }: { kind: KindRef; twin: boolean | undefined }) {
+  const { t } = useTranslation();
+  if (kind.group === TRAEFIK_GROUP) return twin ? <p className="cm-explain">{t("traefik:explain.legacyTwin", { kind: kind.kind })}</p> : null;
+  if (kind.group !== LEGACY_GROUP || twin === undefined) return null;
+  return <p className="cm-explain">{twin ? t("traefik:explain.ioTwin", { kind: kind.kind }) : t("traefik:explain.legacyIgnored")}</p>;
+}
+
+const secretSpec = (namespaces: readonly string[]): WatchSpec | null =>
+  namespaces.length > 0 ? { kind: SECRET, namespaces: [...namespaces], labelSelector: null, fieldSelector: null, metadataOnly: true } : null;
+
+/** The store's lookup with the Secrets of the one object whose details are open. */
+export function withSecrets(lookup: Lookup, namespaces: readonly string[], secrets: WatchState): Lookup {
+  return {
+    exists: (kind, namespace, name) =>
+      kind === "Secret" ? (namespaces.includes(namespace) ? listHas(secrets, namespace, name) : undefined) : lookup.exists(kind, namespace, name),
+    legacy: lookup.legacy,
+  };
 }
 
 function stateText(t: (key: string, options?: Record<string, unknown>) => string, check: RefCheck): string {
@@ -220,10 +255,21 @@ export function TraefikSection({ clusterId, objectRef, obj }: DetailsSectionProp
   const { t } = useTranslation();
   const state = useTraefik(clusterId);
   const def = traefikKind(objectRef.kind);
-  if (!obj || !def) return null;
   const kind = objectRef.kind;
-  const finding = obj.metadata?.uid ? state.byUid.get(obj.metadata.uid) : undefined;
-  const health: Health = finding?.judgement.health ?? "loading";
+  const secretNamespaces = useMemo(
+    () => (obj && def ? [...new Set(referencesOf(kind, obj).filter((r) => r.kind === "Secret").map((r) => r.namespace))].sort() : []),
+    [obj, def, kind],
+  );
+  const secrets = useWatch(clusterId, secretSpec(secretNamespaces));
+  const finding = obj?.metadata?.uid ? state.byUid.get(obj.metadata.uid) : undefined;
+  // The store judged everything but the Secrets: judged again here with them.
+  const judgement = useMemo<Judgement | undefined>(
+    () => (finding && state.lookup && obj && secretNamespaces.length > 0 ? judge(kind, obj, withSecrets(state.lookup, secretNamespaces, secrets)) : finding?.judgement),
+    [finding, state.lookup, obj, kind, secretNamespaces, secrets],
+  );
+  if (!obj || !def) return null;
+  const health: Health = judgement?.health ?? "loading";
+  const twin = state.twin?.(kind, obj.metadata?.namespace ?? "", obj.metadata?.name ?? "");
   const view = isRouteKind(kind) ? (
     <RouteView clusterId={clusterId} kind={kind} obj={obj} />
   ) : isTraefik(kind, TRAEFIK_SERVICE) ? (
@@ -236,9 +282,10 @@ export function TraefikSection({ clusterId, objectRef, obj }: DetailsSectionProp
   return (
     <Block title={t("details:sections.fields", { kind: kind.kind })}>
       <Fields rows={stateRow(health)} labelPrefix={LABELS} />
-      {finding && <Judged health={health} checks={finding.judgement.checks} issues={finding.judgement.issues} />}
+      {judgement && <Judged health={health} checks={judgement.checks} issues={judgement.issues} />}
+      {!state.loading && <TwinNote kind={kind} twin={twin} />}
       {view}
-      {finding && <ReferencesTable checks={finding.judgement.checks} group={kind.group} />}
+      {judgement && <ReferencesTable checks={judgement.checks} group={kind.group} />}
     </Block>
   );
 }

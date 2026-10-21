@@ -41,7 +41,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "プロトコル不明",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "Service への TCP (ClusterIP)"
   },
   "level": {
     "ok": "エラー 1% 未満",
@@ -127,5 +128,5 @@
     "minutes5": "{{sources}} によると、直近 5 分間にこれらの namespace に端がある呼び出しはありません。",
     "hour1": "{{sources}} によると、直近 1 時間にこれらの namespace に端がある呼び出しはありません。"
   },
-  "bytesNote": "Caretta は TCP 接続しか見ません。その線は双方向の毎秒バイト数を示し、リクエスト、エラー、レイテンシはありません。"
+  "bytesNote": "Caretta は TCP 接続しか見ません。その線は毎秒バイト数を示し、リクエスト、エラー、レイテンシはありません。Service の ClusterIP を経由すると 1 つの接続が 2 本の線になります: クライアントが送ったバイトは Service への線に、その背後のワークロードが返したバイトはクライアントからそのワークロードへの線に表示されます。"
 }

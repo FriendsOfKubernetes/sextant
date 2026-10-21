@@ -75,6 +75,14 @@ export class Walk {
     return !this.chain.stopped;
   }
 
+  /**
+   * Adds a finding beside the path: whatever its status, the walk goes on past it (a route's TLS, which Traefik serves
+   * whether or not its certificate loads, does not cut the routes after it).
+   */
+  aside(finding: Finding): void {
+    if (!this.chain.stopped) this.chain.findings.push(finding);
+  }
+
   branch(chain: Chain): void {
     if (!this.chain.stopped) this.chain.chains.push(chain);
   }

@@ -86,7 +86,13 @@
     "otherProvider": "参照が別の Traefik プロバイダーのオブジェクト (名前@プロバイダー) を指しています: Sextant からは見えません。",
     "unknown": "一部の一覧を読み取れませんでした: それらの参照は未確認です。",
     "ingressClass": "プロバイダーが Ingress クラス {{name}} を監視している Traefik だけが扱います。",
-    "certResolver": "証明書はリゾルバー {{name}} が発行し、Secret ではなく Traefik 自身が保持します: Sextant からは見えません。"
+    "certResolver": "証明書はリゾルバー {{name}} が発行し、Secret ではなく Traefik 自身が保持します: Sextant からは見えません。",
+    "tlsSecretMissing": "TLS Secret {{name}} は存在しません: Traefik はそれでもルートを提供し、要求された名前で選んだ証明書、なければ既定の証明書を使います。",
+    "legacyOnly": "参照が traefik.containo.us にのみ存在するオブジェクトを指しています: Traefik 2.10 は見つけますが、traefik.io しか読まない Traefik v3 は見つけません。",
+    "legacyToo": "参照先のオブジェクトが両方のグループに存在します: Traefik v3 は traefik.io のものを使い、Traefik 2.10 は両方を読みます。",
+    "legacyTwin": "同じ名前の {{kind}} が traefik.containo.us にもあります: Traefik v3 はこちらだけを読み、Traefik 2.10 は両方を読みます。",
+    "ioTwin": "同じ名前の {{kind}} が traefik.io にあります: Traefik v3 はそちらだけを読み、このオブジェクトは無視します。",
+    "legacyIgnored": "Traefik v3 は traefik.io しか読まず、このオブジェクトを無視します。両方のグループを読むのは Traefik 2.10 だけです。"
   },
   "refState": {
     "found": "あり",
@@ -94,7 +100,8 @@
     "crossNamespace": "別の namespace: allowCrossNamespace 次第",
     "otherProvider": "別プロバイダーのオブジェクト: 未確認",
     "unknown": "不明: 一覧を読み取れませんでした",
-    "badKind": "不明なサービスの kind {{kind}}"
+    "badKind": "不明なサービスの kind {{kind}}",
+    "legacyOnly": "traefik.containo.us にのみ存在: Traefik v3 は読みません"
   },
   "place": {
     "route": "ルート {{route}}",
@@ -161,7 +168,6 @@
     "moreBackends_other": "さらに {{count}} 件のサービスはたどっていません。",
     "tlsUnknown": "Secret {{name}} の証明書を読み取れません。",
     "tlsSecretMissing": "TLS Secret {{name}} は namespace {{namespace}} に存在しません。",
-    "tlsDefaultNote": "その場合 Traefik は既定の証明書を返しますが、クライアントはそれを信頼しません。",
     "tlsInvalid": "Secret {{name}} に有効な証明書がありません。",
     "tlsExpired": "Secret {{name}} の証明書は期限切れです。",
     "tlsNotYetValid": "Secret {{name}} の証明書はまだ有効ではありません。",
@@ -169,6 +175,8 @@
     "tlsOk": "Secret {{name}} の証明書は有効で、{{hosts}} をカバーしています。",
     "tlsOkNoHosts": "Secret {{name}} の証明書は有効です。",
     "tlsResolver": "証明書はリゾルバー {{resolver}} が発行し、Traefik 自身が保持します: Sextant からは見えません。",
-    "tlsDefault": "Secret もリゾルバーもない TLS: Traefik は TLS ストアの既定の証明書を返します。"
+    "tlsDefault": "Secret もリゾルバーもない TLS: Traefik は TLS ストアの既定の証明書を返します。",
+    "refLegacyOnly": "{{kind}} {{name}} は traefik.containo.us にのみ存在します: traefik.io しか読まない Traefik v3 は見つけられず、Traefik 2.10 は見つけます。",
+    "tlsSniNote": "Traefik はそれでもルートを提供します: 保持している証明書から要求された名前で選び、なければクライアントが信頼しない既定の証明書を返します。"
   }
 }

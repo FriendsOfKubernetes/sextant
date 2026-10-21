@@ -1,7 +1,8 @@
 // Live data of the Contour details, bounded and shared:
 //  - the delegation tree reads every HTTPProxy as a compact row (`proxyRow`), a tap on the problems store's
 //    cluster-wide HTTPProxy watch (the source of the `contour` category, src/features/problems/sources.ts), so the
-//    tree opens no second watch of the kind; the tap stays held `TAP_LINGER_MS` after the last view lets go;
+//    tree opens no second watch of the kind; the tap stays held `TAP_LINGER_MS` after the last view lets go (the
+//    source keeps the same tap for its own judgement across proxies while it is held, across.ts);
 //  - the TLSCertificateDelegations of one namespace (where a delegated Secret lives) through the resource map's shared
 //    watches (src/features/resource-map/watches.ts).
 // Nothing of Contour is watched before discovery or where the cluster does not serve the kind.
@@ -11,14 +12,14 @@ import { findKind, useClusterKinds } from "../../resources";
 import { sourceKey, sourcesFor, type SourceDef } from "../problems/sources";
 import { acquireRows, epochOf, getRows, sourcesVersion, subscribeSources, type RowsState, type RowTap } from "../problems/store";
 import { useSharedWatches } from "../resource-map/watches";
-import { indexRows, proxyRow, TLS_DELEGATION, type ProxyIndex, type ProxyRow } from "./model";
+import { MAX_PROXY_ROWS, PROXY_TAP as TAP } from "./across";
+import { indexRows, TLS_DELEGATION, type ProxyIndex, type ProxyRow } from "./model";
+
+export { MAX_PROXY_ROWS };
 
 /** How long the tap stays held after its last view unmounts (moving from one proxy to the next keeps it). */
 export const TAP_LINGER_MS = 60_000;
-/** Rows the tap keeps at most (beyond it the tree says it may be incomplete). */
-export const MAX_PROXY_ROWS = 5000;
-
-const PROXY_TAP: RowTap<ProxyRow> = { id: "contour:proxies", toRow: proxyRow, max: MAX_PROXY_ROWS };
+const PROXY_TAP: RowTap<ProxyRow> = TAP;
 
 interface Held {
   release: () => void;

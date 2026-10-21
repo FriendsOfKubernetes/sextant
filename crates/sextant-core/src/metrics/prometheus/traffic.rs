@@ -406,8 +406,14 @@ const HUBBLE: EdgeShape = EdgeShape {
 /// probes saw since it started (`pkg/caretta/caretta.go`: labels `link_id`, `client_id`, `client_name`,
 /// `client_namespace`, `client_kind`, `client_owner`, `server_id`, `server_name`, `server_namespace`, `server_kind`,
 /// `server_port`, `role`; `role` 1 is the client's socket — the bytes it sent — and 2 the server's, the bytes it
-/// answered). Its rate summed over roles and ports is the link's throughput both ways, as Caretta's own dashboard sums
-/// it. TCP only: no requests, errors, status or latency.
+/// answered). Its rate summed over roles and ports is the bytes per second the ends' sockets sent, as Caretta's own
+/// dashboard sums it — both ways only where both sides name the same two ends. Through a Service's ClusterIP they do
+/// not: with kube-proxy the client's socket (role 1) is connected to the ClusterIP, which Caretta resolves to the
+/// Service (`server_kind` `Service`), while the server's socket (role 2) sees the backing pod's workload. One
+/// connection is then two edges, each one way: client → Service (the bytes the client sent) and client → workload
+/// (the bytes the workload answered). They are kept apart: folding the Service onto its workload would need the
+/// Service's selector and the pods' owners at query time, which this read of Prometheus does not have, and a Service
+/// may select pods of several workloads. TCP only: no requests, errors, status or latency.
 const CARETTA: EdgeShape = EdgeShape {
     to_ms: 1.0,
     unknown: "",

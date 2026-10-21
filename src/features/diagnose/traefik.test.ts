@@ -117,11 +117,52 @@ describe("an IngressRoute's path", () => {
       traefik("TLSOption", "strict", {}),
     ]);
     expect(steps(diagnoseIngressRoute(tls, INGRESS_ROUTE, good))).toEqual(["traefik.entryPoints:ok", "traefik.tls:ok", "traefik.tls.options:ok"]);
+    // Traefik builds the router whatever its certificate: a host the certificate does not cover and a missing Secret
+    // are warnings, and the routes, middlewares and services after them are still followed.
     const wrongHost = copy(tls);
     (wrongHost.spec as { routes: { match: string }[] }).routes[0]!.match = "Host(`other.example.com`)";
-    expect(steps(diagnoseIngressRoute(wrongHost, INGRESS_ROUTE, good))).toEqual(["traefik.entryPoints:ok", "traefik.tls:broken", "…"]);
-    const missing = withTraefik({ ...healthy, certificates: { [`${NS}/shop-tls`]: { state: "notFound" } } }, []);
-    expect(steps(diagnoseIngressRoute(tls, INGRESS_ROUTE, missing))).toEqual(["traefik.entryPoints:ok", "traefik.tls:broken", "…"]);
+    const uncovered = diagnoseIngressRoute(wrongHost, INGRESS_ROUTE, good);
+    expect(steps(uncovered)).toEqual(["traefik.entryPoints:ok", "traefik.tls:warn", "traefik.tls.options:ok"]);
+    expect(uncovered.findings[1]!.notes?.[0]?.key).toBe("traefik:diagnose.tlsSniNote");
+    expect(steps(uncovered.chains[0]!)).toEqual(["traefik.rule:ok"]);
+    expect(steps(uncovered.chains[0]!.chains[0]!).slice(0, 2)).toEqual(["traefik.service:ok", "service.selector:ok"]);
+    expect(chainStatus(uncovered)).toBe("warn");
+    const missing = withTraefik({ ...healthy, certificates: { [`${NS}/shop-tls`]: { state: "notFound" } } }, [traefik("TLSOption", "strict", {})]);
+    const noSecret = diagnoseIngressRoute(tls, INGRESS_ROUTE, missing);
+    expect(steps(noSecret)).toEqual(["traefik.entryPoints:ok", "traefik.tls:warn", "traefik.tls.options:ok"]);
+    expect(steps(noSecret.chains[0]!.chains[0]!).slice(0, 2)).toEqual(["traefik.service:ok", "service.selector:ok"]);
+    // An expired certificate fails the clients' handshakes (broken), yet the routes are still followed.
+    const expired = withTraefik(
+      { ...healthy, certificates: { [`${NS}/shop-tls`]: { state: "ready", info: { chain: [certificate(["shop.example.com"], { notAfter: "2026-02-01T00:00:00Z" })], ca: [], caInvalid: false, chainTruncated: false } } } },
+      [traefik("TLSOption", "strict", {})],
+    );
+    const old = diagnoseIngressRoute(tls, INGRESS_ROUTE, expired);
+    expect(steps(old)).toEqual(["traefik.entryPoints:ok", "traefik.tls:broken", "traefik.tls.options:ok"]);
+    expect(firstBroken(old)?.text.key).toBe("traefik:diagnose.tlsExpired");
+    expect(steps(old.chains[0]!)).toEqual(["traefik.rule:ok"]);
+  });
+
+  it("where both groups are served, looks a Traefik object up in traefik.io; one only in the old group is unknown", () => {
+    const legacy = (kind: string, name: string): KubeObject => ({ ...traefik(kind, name, {}), apiVersion: "traefik.containo.us/v1alpha1" });
+    const both = (objects: KubeObject[]): ClusterView => ({
+      ...view(healthy),
+      objects: (kind, ns) =>
+        ns === NS && (kind.group === "traefik.io" || kind.group === "traefik.containo.us")
+          ? objects.filter((o) => o.kind === kind.kind && o.apiVersion?.startsWith(`${kind.group}/`))
+          : null,
+    });
+    const onlyOld = diagnoseIngressRoute(simple, INGRESS_ROUTE, both([legacy("Middleware", "auth")]));
+    expect(steps(onlyOld.chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:unknown"]);
+    expect(onlyOld.chains[0]!.findings[1]!.text.key).toBe("traefik:diagnose.refLegacyOnly");
+    // In traefik.io: found, whatever the old group holds.
+    const inBoth = diagnoseIngressRoute(simple, INGRESS_ROUTE, both([legacy("Middleware", "auth"), traefik("Middleware", "auth", {})]));
+    expect(steps(inBoth.chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:ok"]);
+    // A route of the old group is served only by a Traefik that reads both: the old group's Middleware is found.
+    const oldRoute = { ...simple, apiVersion: "traefik.containo.us/v1alpha1" };
+    const fromOld = diagnoseIngressRoute(oldRoute, { group: "traefik.containo.us", version: "v1alpha1", kind: "IngressRoute" }, both([legacy("Middleware", "auth")]));
+    expect(steps(fromOld.chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:ok"]);
+    // Neither group has it: broken.
+    expect(steps(diagnoseIngressRoute(simple, INGRESS_ROUTE, both([])).chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:broken", "…"]);
   });
 
   it("an empty match rule or another kind than Rule breaks only its route", () => {

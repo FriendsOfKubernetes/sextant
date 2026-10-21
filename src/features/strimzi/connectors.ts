@@ -112,6 +112,44 @@ export function autoRestartSpecOf(obj: KubeObject): {
   };
 }
 
+/**
+ * Strimzi's wait before the next automatic restart after `count` restarts, in minutes: n² + n, at most 60
+ * (`AbstractConnectOperator.nextAutoRestartBackOffIntervalInMinutes`: restarts after 0, 2, 6, 12, 20, 30, 42 and 56
+ * minutes, then hourly). `shouldAutoRestart` restarts when that many minutes passed since `lastRestartTimestamp`.
+ */
+export const nextRestartMinutes = (count: number): number => Math.min(count * count + count, 60);
+
+/**
+ * A due restart happens at the operator's next reconciliation of the connector: the default full reconciliation
+ * interval (`STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`, 120 s) is the slack after a restart window.
+ */
+export const RECONCILIATION_MS = 120_000;
+
+/**
+ * Restarts after which the wait stops growing (every 60 minutes from then on). Without `maxRestarts` Strimzi never
+ * stops restarting, so a failure counts once these are spent (about three hours): longer would never tell.
+ */
+export const ESCALATING_RESTARTS = 7;
+
+/**
+ * Whether Strimzi's auto-restart can still act on a failed KafkaConnector, and from when its failure counts if not
+ * fixed by then: `activeFrom`, the next restart window plus one reconciliation (after a restart); `graceMs`, one
+ * reconciliation (no restart yet: Strimzi restarts at once). `undefined`: no restart is coming — auto-restart is off,
+ * `maxRestarts` is reached (`count < maxRestarts` in `shouldAutoRestart`), or the object is a KafkaMirrorMaker2, whose
+ * auto-restart is set per mirror connector and not matched here.
+ */
+export function autoRestartGrace(obj: KubeObject): { activeFrom?: number; graceMs?: number } | undefined {
+  if (!connectorStatusOf(obj)) return undefined;
+  const spec = autoRestartSpecOf(obj);
+  if (!spec.enabled) return undefined;
+  const status = readAutoRestart(get(obj, "status", "autoRestart"));
+  const count = status?.count ?? 0;
+  if (count >= (spec.maxRestarts ?? ESCALATING_RESTARTS)) return undefined;
+  const last = status?.lastRestart ? Date.parse(status.lastRestart) : Number.NaN;
+  if (Number.isNaN(last)) return { graceMs: RECONCILIATION_MS };
+  return { activeFrom: last + nextRestartMinutes(count) * 60_000 + RECONCILIATION_MS };
+}
+
 /** The state a KafkaConnector asks for: `spec.state`, else the deprecated `spec.pause`. */
 export const desiredStateOf = (obj: KubeObject): string | undefined =>
   str(get(obj, "spec", "state")) ?? (get(obj, "spec", "pause") === true ? "paused" : undefined);

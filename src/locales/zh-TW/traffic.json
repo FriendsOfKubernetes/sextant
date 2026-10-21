@@ -41,7 +41,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "未回報通訊協定",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "TCP 到 Service（ClusterIP）"
   },
   "level": {
     "ok": "錯誤低於 1%",
@@ -127,5 +128,5 @@
     "minutes5": "根據 {{sources}}，最近 5 分鐘內沒有一端在這些 namespace 中的呼叫。",
     "hour1": "根據 {{sources}}，最近 1 小時內沒有一端在這些 namespace 中的呼叫。"
   },
-  "bytesNote": "Caretta 只能看到 TCP 連線：它的線條顯示雙向的每秒位元組數，沒有請求、錯誤和延遲。"
+  "bytesNote": "Caretta 只能看到 TCP 連線：它的線條顯示每秒位元組數，沒有請求、錯誤和延遲。經由 Service 的 ClusterIP 時，一個連線顯示為兩條線：用戶端送出的位元組在通往 Service 的線上，其後工作負載回應的位元組在從用戶端到該工作負載的線上。"
 }

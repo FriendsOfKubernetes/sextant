@@ -11,7 +11,9 @@ import "../details";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
 import { resolve } from "../problems/model";
-import { resetProblemSources } from "../problems/store";
+import { sourceKey, sourcesFor } from "../problems/sources";
+import { acquireSource, getSource, resetProblemSources } from "../problems/store";
+import { toldThroughInvalid } from "./across";
 import { explain } from "./explain";
 import delegationJson from "./fixtures/delegation.json";
 import extensionJson from "./fixtures/extension.json";
@@ -72,7 +74,14 @@ describe("the model", () => {
 
   it("builds the delegation tree, prefixes concatenated, a missing include marked", () => {
     expect(includesOf(root).map((i) => `${i.namespace}/${i.name} ${i.prefix}`)).toEqual(["marketing/blogsite /blog", "marketing/missing-site /missing"]);
-    expect(joinPrefixes(["/api", "/v1/"])).toBe("/api/v1");
+    // As Contour's mergePathMatchConditions: concatenated, slashes collapsed, a trailing slash kept.
+    expect(joinPrefixes(["/api", "/v1/"])).toBe("/api/v1/");
+    expect(joinPrefixes(["/blog", "/"])).toBe("/blog/");
+    expect(joinPrefixes(["/", "/blog"])).toBe("/blog");
+    expect(joinPrefixes(["/a/", "/b"])).toBe("/a/b");
+    expect(joinPrefixes(["///", "/"])).toBe("/");
+    expect(joinPrefixes([undefined, "/"])).toBe("/");
+    expect(joinPrefixes([])).toBe("/");
     const index = indexRows(proxies.map(proxyRow));
     expect(rootsReaching(index, "marketing/blogsite")).toEqual(["roots/root-blog"]);
     expect(rootsReaching(index, "marketing/old-blog")).toEqual([]);
@@ -102,6 +111,15 @@ describe("problems", () => {
     expect(contourProblems(EXTENSION_SERVICE, extension)).toEqual([]);
     const [resolved] = resolve(HTTP_PROXY, duplicate, Date.parse("2026-10-20T12:00:00Z"));
     expect(resolved).toMatchObject({ category: "contour", reason: "DuplicateVhost" });
+  });
+
+  it("an orphan whose include path goes up to an invalid proxy is told through that proxy", () => {
+    const row = (name: string, state: "valid" | "invalid" | "orphaned", includes: string[] = [], root = false) =>
+      [name, { namespace: "ns", name, root, state, includes: includes.map((i) => ({ key: `ns/${i}`, conditions: [], tcp: false })) }] as const;
+    const rows = new Map([row("root", "invalid", ["a"], true), row("a", "orphaned", ["b"]), row("b", "orphaned"), row("loose", "orphaned")]);
+    const problem = (name: string, reason: string) => ({ reason, object: { kind: HTTP_PROXY, namespace: "ns", name } }) as Parameters<typeof toldThroughInvalid>[0][number];
+    const kept = toldThroughInvalid([problem("root", "TLSError"), problem("a", "Orphaned"), problem("b", "Orphaned"), problem("loose", "Orphaned")], rows);
+    expect(kept.map((p) => p.object.name)).toEqual(["root", "loose"]);
   });
 
   it("the HTTPProxy table offers the problem filter", () => {
@@ -158,6 +176,39 @@ describe("the Contour section", () => {
     expect(section.queryByRole("button", { name: "Extension Services" })).toBeNull();
     emitSnapshot(wb, await watchOf(wb, "HTTPProxy", everywhere("HTTPProxy")), [blog, orphan, duplicate]);
     await waitFor(() => expect(screen.getByTitle("2 HTTPProxies need attention")).toHaveTextContent("2"));
+  });
+
+  it("a root with 20 includes and a bad TLS Secret is one problem, not 21", async () => {
+    const [def] = sourcesFor(["contour"], [served(HTTP_PROXY)]);
+    const release = acquireSource("c1", def!);
+    const since = "2026-01-01T00:00:00Z";
+    const valid = (state: string, error: { type: string; reason: string; message: string }) => ({
+      currentStatus: state,
+      conditions: [{ type: "Valid", status: "False", reason: "ErrorPresent", lastTransitionTime: since, errors: [error] }],
+    });
+    const proxy = (name: string, spec: Record<string, unknown>, status: Record<string, unknown>): KubeObject => ({
+      apiVersion: "projectcontour.io/v1",
+      kind: "HTTPProxy",
+      metadata: { name, namespace: "web", uid: `uid-${name}`, creationTimestamp: since },
+      spec,
+      status,
+    });
+    const sites = Array.from({ length: 20 }, (_, i) => `site-${i}`);
+    const bad = proxy(
+      "root",
+      { virtualhost: { fqdn: "example.com", tls: { secretName: "gone" } }, includes: sites.map((name) => ({ name, conditions: [{ prefix: `/${name}` }] })) },
+      valid("invalid", { type: "TLSError", reason: "SecretNotValid", message: 'Secret "web/gone" not found' }),
+    );
+    const orphaned = (name: string) => proxy(name, { routes: [{ services: [{ name: "web", port: 80 }] }] }, valid("orphaned", { type: "Orphaned", reason: "Orphaned", message: "not part of a delegation chain from a root" }));
+    const id = await watchOf(wb, "HTTPProxy", everywhere("HTTPProxy"));
+    emitSnapshot(wb, id, [bad, ...sites.map(orphaned)]);
+    const key = sourceKey("c1", def!);
+    await waitFor(() => expect(getSource(key)?.status).toBe("ready"));
+    expect(getSource(key)!.problems.map((p) => [p.object.name, p.reason])).toEqual([["root", "SecretNotValid"]]);
+    // A proxy nobody includes is still an orphan of its own.
+    emitSnapshot(wb, id, [bad, ...sites.map(orphaned), orphaned("loose")]);
+    await waitFor(() => expect(getSource(key)!.problems.map((p) => p.object.name).sort()).toEqual(["loose", "root"]));
+    release();
   });
 
   it("is not there without Contour", async () => {

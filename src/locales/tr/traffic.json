@@ -42,7 +42,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "protokol bildirilmedi",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "Bir Service'e TCP (ClusterIP)"
   },
   "level": {
     "ok": "Hatalar %1’in altında",
@@ -132,5 +133,5 @@
     "minutes5": "{{sources}} verilerine göre son 5 dakikada bu namespace’lerde ucu olan çağrı yok.",
     "hour1": "{{sources}} verilerine göre son bir saatte bu namespace’lerde ucu olan çağrı yok."
   },
-  "bytesNote": "Caretta yalnızca TCP bağlantılarını görür: çizgileri her iki yönde saniye başına baytı gösterir; istek, hata veya gecikme yoktur."
+  "bytesNote": "Caretta yalnızca TCP bağlantılarını görür: çizgileri saniye başına baytı gösterir; istek, hata veya gecikme yoktur. Bir Service'in ClusterIP'si üzerinden tek bir bağlantı iki çizgi olarak görünür: istemcinin gönderdiği baytlar Service'e, arkasındaki iş yükünün yanıt baytları ise istemciden o iş yüküne."
 }

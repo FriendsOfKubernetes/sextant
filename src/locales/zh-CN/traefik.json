@@ -86,7 +86,13 @@
     "otherProvider": "有引用指向另一个 Traefik 提供程序的对象（名称@提供程序）：Sextant 无法看到它。",
     "unknown": "部分列表无法读取：这些引用未检查。",
     "ingressClass": "仅由其提供程序监视 Ingress 类 {{name}} 的 Traefik 提供服务。",
-    "certResolver": "证书来自解析器 {{name}}，由 Traefik 自己保存，而不在 Secret 中：Sextant 无法看到它。"
+    "certResolver": "证书来自解析器 {{name}}，由 Traefik 自己保存，而不在 Secret 中：Sextant 无法看到它。",
+    "tlsSecretMissing": "TLS Secret {{name}} 不存在：Traefik 仍会提供这些路由，使用按请求名称选出的证书，否则使用其默认证书。",
+    "legacyOnly": "有引用指向仅存在于 traefik.containo.us 中的对象：Traefik 2.10 能找到它，Traefik v3 只读取 traefik.io，找不到它。",
+    "legacyToo": "被引用的对象在两个组中都存在：Traefik v3 使用 traefik.io 中的那个，Traefik 2.10 两者都读取。",
+    "legacyTwin": "traefik.containo.us 中也有同名的 {{kind}}：Traefik v3 只读取这个，Traefik 2.10 两个都读取。",
+    "ioTwin": "traefik.io 中有同名的 {{kind}}：Traefik v3 只读取那个，忽略此对象。",
+    "legacyIgnored": "Traefik v3 只读取 traefik.io，会忽略此对象；只有 Traefik 2.10 读取两个组。"
   },
   "refState": {
     "found": "已找到",
@@ -94,7 +100,8 @@
     "crossNamespace": "在另一个 namespace：取决于 allowCrossNamespace",
     "otherProvider": "其他提供程序的对象：未检查",
     "unknown": "无法判断：列表无法读取",
-    "badKind": "未知的服务 kind {{kind}}"
+    "badKind": "未知的服务 kind {{kind}}",
+    "legacyOnly": "仅在 traefik.containo.us 中：Traefik v3 不读取它"
   },
   "place": {
     "route": "路由 {{route}}",
@@ -161,7 +168,6 @@
     "moreBackends_other": "另有 {{count}} 个服务未跟踪。",
     "tlsUnknown": "无法读取 Secret {{name}} 中的证书。",
     "tlsSecretMissing": "TLS Secret {{name}} 在 namespace {{namespace}} 中不存在。",
-    "tlsDefaultNote": "此时 Traefik 会提供其默认证书，客户端不信任该证书。",
     "tlsInvalid": "Secret {{name}} 中没有有效证书。",
     "tlsExpired": "Secret {{name}} 中的证书已过期。",
     "tlsNotYetValid": "Secret {{name}} 中的证书尚未生效。",
@@ -169,6 +175,8 @@
     "tlsOk": "Secret {{name}} 中的证书有效，并覆盖 {{hosts}}。",
     "tlsOkNoHosts": "Secret {{name}} 中的证书有效。",
     "tlsResolver": "证书来自解析器 {{resolver}}，由 Traefik 自己保存：Sextant 无法看到它。",
-    "tlsDefault": "TLS 既无 Secret 也无解析器：Traefik 提供其 TLS 存储的默认证书。"
+    "tlsDefault": "TLS 既无 Secret 也无解析器：Traefik 提供其 TLS 存储的默认证书。",
+    "refLegacyOnly": "{{kind}} {{name}} 仅存在于 traefik.containo.us：Traefik v3 只读取 traefik.io，找不到它；Traefik 2.10 能找到。",
+    "tlsSniNote": "Traefik 仍会提供这些路由：它会在已有证书中按请求名称挑选一个，否则使用客户端不信任的默认证书。"
   }
 }

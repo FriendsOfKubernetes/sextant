@@ -75,5 +75,6 @@
   "showDisk": "Disk almost full",
   "showPractices": "Best-practice findings",
   "showPolicies": "Kyverno policy failures",
-  "showPrometheusOperator": "Prometheus Operator monitors and servers"
+  "showPrometheusOperator": "Prometheus Operator monitors and servers",
+  "showTraefik": "Traefik references"
 }

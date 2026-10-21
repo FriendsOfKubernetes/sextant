@@ -282,8 +282,8 @@ fn caretta_links_are_bytes_per_second_between_workloads_both_ways() {
         detected(RequestSourceKind::Caretta),
         &fixture_answers(RequestSourceKind::Caretta, "caretta"),
     );
-    // Six pairs in scope (the `other` namespace's link is not).
-    assert_eq!(edges.total, 6);
+    // Seven pairs in scope (the `other` namespace's link is not).
+    assert_eq!(edges.total, 7);
     assert!(
         edges
             .edges
@@ -337,6 +337,31 @@ fn caretta_links_are_bytes_per_second_between_workloads_both_ways() {
     );
 }
 
+/// Through kube-proxy the client's socket (role 1) is connected to the ClusterIP and the server's (role 2) to the pod:
+/// Caretta names the Service on one side and the workload on the other, so one connection is two one-way edges. They
+/// are kept apart (ADR-0096): the Service edge carries the client's bytes only, the workload edge the answers only.
+#[test]
+fn caretta_through_a_cluster_ip_is_two_one_way_edges() {
+    let edges = assemble(
+        detected(RequestSourceKind::Caretta),
+        &fixture_answers(RequestSourceKind::Caretta, "caretta"),
+    );
+    let web = workload("shop", "web");
+    let to_service = peer_of(Some("shop"), Some("cache"), TrafficPeerKind::Service);
+    let to_workload = workload("shop", "cache");
+    let rate = |to: &TrafficPeer| {
+        edges
+            .edges
+            .iter()
+            .filter(|e| e.from == web && &e.to == to)
+            .map(|e| r6(e.rate))
+            .collect::<Vec<_>>()
+    };
+    // Role 1 alone: the 400 bytes/s web sent to the Service's ClusterIP.
+    assert_eq!(rate(&to_service), [400.0]);
+    // Role 2 alone: the 3 600 bytes/s the workload behind it answered; not folded into the Service's edge.
+    assert_eq!(rate(&to_workload), [3600.0]);
+}
 #[test]
 fn istio_edges_name_both_ends_or_say_unknown() {
     let edges = assemble(

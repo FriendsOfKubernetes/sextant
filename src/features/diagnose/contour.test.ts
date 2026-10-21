@@ -68,7 +68,7 @@ describe("the Contour diagnosis", () => {
     expect(included.title?.params).toMatchObject({ name: "marketing/blogsite", prefix: "/blog" });
     expect(steps(included)).toEqual(["contour.include.status:ok"]);
     // The included proxy's routes go on under the include, with the prefixes joined.
-    expect(included.chains.map((c) => c.title?.params?.prefix)).toEqual(["/blog", "/blog", "/blog", "/blog/admin", "/blog/admin"]);
+    expect(included.chains.map((c) => c.title?.params?.prefix)).toEqual(["/blog/", "/blog/", "/blog/", "/blog/admin", "/blog/admin"]);
     const mirror = included.chains[2]!;
     expect(keys(mirror)[0]).toBe("contour:diagnose.mirror");
     expect(steps(missing)).toEqual(["contour.include:broken", "…"]);

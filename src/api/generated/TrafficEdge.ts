@@ -12,7 +12,8 @@ import type { TrafficProtocol } from "./TrafficProtocol";
 export type TrafficEdge = { source: RequestSourceKind, via: RequestVia, from: TrafficPeer, to: TrafficPeer, protocol: TrafficProtocol, 
 /**
  * Requests per second; for [`TrafficProtocol::Tcp`] new connections, for [`TrafficProtocol::TcpBytes`] bytes per
- * second.
+ * second the ends' sockets sent — both ways only where both sides name the same two ends; on an edge to a
+ * Service, the client's bytes to its ClusterIP alone (the answers are on the edge to the workload behind it).
  */
 rate: number, 
 /**

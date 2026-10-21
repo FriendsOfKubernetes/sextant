@@ -1,7 +1,7 @@
 // Which kinds are watched for each category of problems. Built-in kinds are watched without discovery; the kinds of
 // installed tools (cert-manager, Flux, Argo CD, Gateway API) only once discovery says the cluster serves them, at the
 // version it serves.
-import type { KindRef, ResourceKind } from "../../api";
+import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
 import { APPLICATION } from "../argocd/model";
 import { ROLLOUT } from "../argo-rollouts/model";
@@ -9,6 +9,7 @@ import { WORKFLOW } from "../argo-workflows/model";
 import { BUCKET, GIT_REPOSITORY, HELM_RELEASE, HELM_REPOSITORY, KUSTOMIZATION, OCI_REPOSITORY } from "../flux/model";
 import { COUNTED_KINDS } from "../gateway-api/problems";
 import { CONFIGURATION as KNATIVE_CONFIGURATION, KSERVICE } from "../knative/model";
+import { CONTOUR_ACROSS } from "../contour/across";
 import { HTTP_PROXY } from "../contour/model";
 import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
 import { EVENTING_KINDS } from "../knative/eventing";
@@ -31,6 +32,7 @@ import {
   PVC,
   STATEFULSET,
   categoryOf,
+  type Problem,
   type ProblemCategory,
 } from "./model";
 
@@ -51,6 +53,18 @@ export interface SourceDef {
    * thousand (Kafka topics and users, policy reports); beyond it the source says it is truncated.
    */
   maxObjects?: number;
+  /**
+   * Problems judged across the objects of the source: the store keeps a row tap of the watch while the source is held
+   * and passes every problem list through `keep` with the rows (an HTTPProxy orphaned because the root that includes
+   * it is invalid is told through that root, #233). `keep` runs only while the rows are read in full.
+   */
+  across?: AcrossDef;
+}
+
+/** A source's problems judged across its objects (`SourceDef.across`). */
+export interface AcrossDef {
+  tap: { id: string; toRow(obj: KubeObject): unknown; max: number };
+  keep(problems: readonly Problem[], rows: ReadonlyMap<string, unknown>): Problem[];
 }
 
 /** The cap of a source whose kind a cluster can hold by the thousand. */
@@ -99,11 +113,12 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
     tool("knative", KNATIVE_CONFIGURATION),
     ...EVENTING_KINDS.map((d) => tool("knative", d.kind, MAX_SOURCE_OBJECTS)),
   ],
-  // Traefik (#232): references to objects that do not exist, judged across objects by the provider of features/traefik
-  // (`external`), held only where the cluster serves IngressRoutes (traefik.io).
+  // Traefik (#232, opt-in): references to objects that do not exist, judged across objects by the provider of
+  // features/traefik (`external`), held only where the cluster serves IngressRoutes (traefik.io); no Secret is listed.
   traefik: [{ category: "traefik", kind: TRAEFIK_INGRESS_ROUTE, fieldSelector: null, discovered: true, external: true }],
-  // Contour (#233): invalid and orphaned HTTPProxies; the same watch feeds the delegation tree (a row tap).
-  contour: [tool("contour", HTTP_PROXY, MAX_SOURCE_OBJECTS)],
+  // Contour (#233): invalid and orphaned HTTPProxies; the same watch feeds the delegation tree (a row tap), and those
+  // rows tell an orphan under an invalid root through the root (`across`).
+  contour: [{ ...tool("contour", HTTP_PROXY, MAX_SOURCE_OBJECTS), across: CONTOUR_ACROSS }],
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],

@@ -69,5 +69,6 @@
   "showDisk": "ディスク残りわずか",
   "showPractices": "ベストプラクティスの指摘",
   "showPolicies": "Kyverno ポリシー違反",
-  "showPrometheusOperator": "Prometheus Operator のモニターとサーバー"
+  "showPrometheusOperator": "Prometheus Operator のモニターとサーバー",
+  "showTraefik": "Traefik の参照"
 }

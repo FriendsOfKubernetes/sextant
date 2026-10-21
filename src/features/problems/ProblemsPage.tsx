@@ -91,6 +91,13 @@ export function ProblemsPage({ clusterId }: PageProps) {
           />
           {t("problems:showPrometheusOperator")}
         </label>
+        <label className="problems__choice">
+          <Checkbox
+            checked={categories.includes("traefik")}
+            onChange={(e) => void updateSettings(setCategory("traefik", e.target.checked)).catch(() => undefined)}
+          />
+          {t("problems:showTraefik")}
+        </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}
         </Button>

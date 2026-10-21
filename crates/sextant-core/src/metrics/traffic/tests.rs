@@ -263,7 +263,7 @@ async fn caretta_is_an_edge_source_whose_bytes_never_crowd_out_requests() {
     // Not a source of request metrics, and not "request only" either.
     assert!(graph.request_only.is_empty());
     assert!(graph.failed.is_empty());
-    assert_eq!(graph.edges.len(), 5 + 6);
+    assert_eq!(graph.edges.len(), 5 + 7);
     // Taken in turns: Istio's busiest (1 request/s) first, then Caretta's busiest (32 000 bytes/s), …
     let order: Vec<(RequestSourceKind, TrafficProtocol)> = graph
         .edges

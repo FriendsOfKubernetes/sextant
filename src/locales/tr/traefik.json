@@ -88,7 +88,13 @@
     "otherProvider": "Bir başvuru başka bir Traefik sağlayıcısının nesnesini gösteriyor (ad@sağlayıcı): Sextant onu göremez.",
     "unknown": "Bazı listeler okunamadı: bu başvurular denetlenmedi.",
     "ingressClass": "Yalnızca sağlayıcısı {{name}} Ingress sınıfını izleyen bir Traefik tarafından sunulur.",
-    "certResolver": "Sertifika {{name}} çözümleyicisinden gelir ve Secret'ta değil Traefik'te saklanır: Sextant onu göremez."
+    "certResolver": "Sertifika {{name}} çözümleyicisinden gelir ve Secret'ta değil Traefik'te saklanır: Sextant onu göremez.",
+    "tlsSecretMissing": "TLS Secret {{name}} yok: Traefik yolları yine de sunar; istenen ada göre seçtiği bir sertifikayla, yoksa varsayılan sertifikasıyla.",
+    "legacyOnly": "Bir başvuru yalnızca traefik.containo.us'ta bulunan bir nesneyi gösteriyor: Traefik 2.10 onu bulur, Traefik v3 yalnızca traefik.io'yu okur ve bulamaz.",
+    "legacyToo": "Başvurulan bir nesne her iki grupta da var: Traefik v3 traefik.io'dakini kullanır, Traefik 2.10 ikisini de okur.",
+    "legacyTwin": "Aynı adlı bir {{kind}} traefik.containo.us'ta da var: Traefik v3 yalnızca bunu okur, Traefik 2.10 ikisini de okur.",
+    "ioTwin": "Aynı adlı bir {{kind}} traefik.io'da var: Traefik v3 yalnızca onu okur ve bu nesneyi yok sayar.",
+    "legacyIgnored": "Traefik v3 yalnızca traefik.io'yu okur ve bu nesneyi yok sayar; iki grubu da yalnızca Traefik 2.10 okur."
   },
   "refState": {
     "found": "Bulundu",
@@ -96,7 +102,8 @@
     "crossNamespace": "Başka namespace'te: allowCrossNamespace'e bağlı",
     "otherProvider": "Başka sağlayıcının nesnesi: denetlenmedi",
     "unknown": "Bilinmiyor: liste okunamadı",
-    "badKind": "Bilinmeyen servis kind'ı {{kind}}"
+    "badKind": "Bilinmeyen servis kind'ı {{kind}}",
+    "legacyOnly": "Yalnızca traefik.containo.us'ta: Traefik v3 onu okumaz"
   },
   "place": {
     "route": "Rota {{route}}",
@@ -165,7 +172,6 @@
     "moreBackends_other": "{{count}} servis daha izlenmedi.",
     "tlsUnknown": "{{name}} Secret'ının sertifikası okunamıyor.",
     "tlsSecretMissing": "{{name}} TLS Secret'ı {{namespace}} namespace'inde yok.",
-    "tlsDefaultNote": "Traefik bu durumda istemcilerin güvenmediği varsayılan sertifikasını sunar.",
     "tlsInvalid": "{{name}} Secret'ında geçerli bir sertifika yok.",
     "tlsExpired": "{{name}} Secret'ındaki sertifikanın süresi doldu.",
     "tlsNotYetValid": "{{name}} Secret'ındaki sertifika henüz geçerli değil.",
@@ -173,6 +179,8 @@
     "tlsOk": "{{name}} Secret'ındaki sertifika geçerli ve {{hosts}} adlarını kapsıyor.",
     "tlsOkNoHosts": "{{name}} Secret'ındaki sertifika geçerli.",
     "tlsResolver": "Sertifika {{resolver}} çözümleyicisinden gelir ve Traefik'te saklanır: Sextant onu göremez.",
-    "tlsDefault": "Secret ve çözümleyici olmadan TLS: Traefik, TLS deposunun varsayılan sertifikasını sunar."
+    "tlsDefault": "Secret ve çözümleyici olmadan TLS: Traefik, TLS deposunun varsayılan sertifikasını sunar.",
+    "refLegacyOnly": "{{kind}} {{name}} yalnızca traefik.containo.us'ta var: Traefik v3 yalnızca traefik.io'yu okur ve onu bulamaz, Traefik 2.10 bulur.",
+    "tlsSniNote": "Traefik yolları yine de sunar: elindeki sertifikalar arasından istenen ada göre birini seçer, yoksa istemcilerin güvenmediği varsayılan sertifikasını sunar."
   }
 }

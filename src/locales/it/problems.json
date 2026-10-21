@@ -81,5 +81,6 @@
   "showDisk": "Disco quasi pieno",
   "showPractices": "Rilievi sulle buone pratiche",
   "showPolicies": "Violazioni delle policy Kyverno",
-  "showPrometheusOperator": "Monitor e server di Prometheus Operator"
+  "showPrometheusOperator": "Monitor e server di Prometheus Operator",
+  "showTraefik": "Riferimenti di Traefik"
 }

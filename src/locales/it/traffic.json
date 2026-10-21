@@ -43,7 +43,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "protocollo non indicato",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "TCP verso un Service (ClusterIP)"
   },
   "level": {
     "ok": "Errori sotto l’1%",
@@ -137,5 +138,5 @@
     "minutes5": "Secondo {{sources}}, nessuna chiamata con un estremo in questi namespace negli ultimi 5 minuti.",
     "hour1": "Secondo {{sources}}, nessuna chiamata con un estremo in questi namespace nell’ultima ora."
   },
-  "bytesNote": "Caretta vede solo connessioni TCP: le sue linee mostrano i byte al secondo in entrambe le direzioni, senza richieste, errori né latenza."
+  "bytesNote": "Caretta vede solo connessioni TCP: le sue linee mostrano i byte al secondo, senza richieste, errori né latenza. Attraverso il ClusterIP di un Service una connessione appare come due linee: i byte inviati dal client, verso il Service, e i byte con cui ha risposto il workload dietro di esso, dal client a quel workload."
 }

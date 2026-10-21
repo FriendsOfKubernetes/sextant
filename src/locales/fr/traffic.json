@@ -43,7 +43,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "protocole non indiqué",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "TCP vers un Service (ClusterIP)"
   },
   "level": {
     "ok": "Erreurs sous 1 %",
@@ -137,5 +138,5 @@
     "minutes5": "D’après {{sources}}, aucun appel avec une extrémité dans ces namespaces au cours des 5 dernières minutes.",
     "hour1": "D’après {{sources}}, aucun appel avec une extrémité dans ces namespaces au cours de la dernière heure."
   },
-  "bytesNote": "Caretta ne voit que des connexions TCP : ses lignes montrent les octets par seconde dans les deux sens, sans requêtes, erreurs ni latence."
+  "bytesNote": "Caretta ne voit que des connexions TCP : ses lignes montrent les octets par seconde, sans requêtes, erreurs ni latence. Par la ClusterIP d'un Service, une connexion apparaît comme deux lignes : les octets envoyés par le client, vers le Service, et ceux répondus par le workload derrière lui, du client vers ce workload."
 }

@@ -5,7 +5,7 @@ import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
 import type { Detected } from "../problems/model";
-import { connectorsOf, failedTasks, FAILED, firstLine } from "./connectors";
+import { autoRestartGrace, connectorsOf, failedTasks, FAILED, firstLine } from "./connectors";
 
 const { arr, get, num, str } = status;
 
@@ -167,8 +167,10 @@ export function isProblem(obj: KubeObject): boolean {
 
 /**
  * Failed connectors and tasks (#235) from the Kafka Connect REST status Strimzi copies into a KafkaConnector or a
- * KafkaMirrorMaker2: one problem per reason, the message the first line of the first failure's trace. They count at
- * once (a FAILED state is final until a restart; Strimzi's own auto-restart shows in the details).
+ * KafkaMirrorMaker2: one problem per reason, the message the first line of the first failure's trace. A FAILED state
+ * is final until a restart, so they count at once — unless Strimzi's auto-restart of a KafkaConnector can still act
+ * (`spec.autoRestart.enabled`, fewer restarts than `maxRestarts`): then only after its next restart window
+ * (`autoRestartGrace`), so a failure the restart cures never notifies.
  */
 export function connectorFailures(obj: KubeObject): Detected[] {
   const connectors = connectorsOf(obj);
@@ -176,16 +178,17 @@ export function connectorFailures(obj: KubeObject): Detected[] {
   const named = (name: string | undefined, line: string | undefined) => (many && name && line ? `${name}: ${line}` : line);
   const r = readinessOf(obj);
   const since = r.state === "notReady" ? r.since : undefined;
+  const grace = autoRestartGrace(obj);
   const found: Detected[] = [];
   const failed = connectors.find((c) => c.state === FAILED);
   if (failed) {
     const message = named(failed.name, firstLine(failed.trace));
-    found.push({ reason: "ConnectorFailed", group: "connectorFailed", message, since, notify: true });
+    found.push({ reason: "ConnectorFailed", group: "connectorFailed", message, since, notify: true, ...grace });
   }
   const task = connectors.map((c) => ({ c, t: failedTasks(c)[0] })).find((x) => x.t !== undefined);
   if (task) {
     const message = named(task.c.name, firstLine(task.t?.trace));
-    found.push({ reason: "TaskFailed", group: "taskFailed", message, since, notify: true });
+    found.push({ reason: "TaskFailed", group: "taskFailed", message, since, notify: true, ...grace });
   }
   return found;
 }

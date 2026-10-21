@@ -64,7 +64,12 @@ export function latencyText(t: TFunction, edge: TrafficEdge): string {
   return t("traffic:value.latency", { p50: formatLatency(t, edge.p50Ms), p95: formatLatency(t, edge.p95Ms) });
 }
 
-export function protocolText(t: TFunction, edge: TrafficEdge): string {
+/**
+ * The protocol of an edge. Caretta's bytes to a Service are only what the client sent to the Service's ClusterIP (the
+ * answers are on the edge to the workload behind it, ADR-0096): said so.
+ */
+export function protocolText(t: TFunction, edge: Pick<TrafficEdge, "protocol" | "to">): string {
+  if (edge.protocol === "tcpBytes" && edge.to.kind === "service") return t("traffic:protocol.tcpBytesToService");
   return t(`traffic:protocol.${edge.protocol}`);
 }
 

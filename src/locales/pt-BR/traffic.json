@@ -43,7 +43,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "protocolo não informado",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "TCP para um Service (ClusterIP)"
   },
   "level": {
     "ok": "Erros abaixo de 1%",
@@ -137,5 +138,5 @@
     "minutes5": "Segundo {{sources}}, não houve chamadas com uma ponta nestes namespaces nos últimos 5 minutos.",
     "hour1": "Segundo {{sources}}, não houve chamadas com uma ponta nestes namespaces na última hora."
   },
-  "bytesNote": "O Caretta vê apenas conexões TCP: suas linhas mostram bytes por segundo nos dois sentidos, sem requisições, erros nem latência."
+  "bytesNote": "O Caretta vê apenas conexões TCP: suas linhas mostram bytes por segundo, sem requisições, erros nem latência. Pelo ClusterIP de um Service, uma conexão aparece como duas linhas: os bytes que o cliente enviou, para o Service, e os bytes com que o workload por trás dele respondeu, do cliente para esse workload."
 }

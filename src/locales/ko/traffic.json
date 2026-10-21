@@ -41,7 +41,8 @@
     "grpc": "gRPC",
     "tcp": "TCP",
     "unknown": "프로토콜 미보고",
-    "tcpBytes": "TCP"
+    "tcpBytes": "TCP",
+    "tcpBytesToService": "Service로 가는 TCP(ClusterIP)"
   },
   "level": {
     "ok": "오류 1% 미만",
@@ -127,5 +128,5 @@
     "minutes5": "{{sources}}에 따르면 최근 5분 동안 이 namespace에 한쪽 끝이 있는 호출이 없습니다.",
     "hour1": "{{sources}}에 따르면 최근 1시간 동안 이 namespace에 한쪽 끝이 있는 호출이 없습니다."
   },
-  "bytesNote": "Caretta는 TCP 연결만 봅니다. 그 선은 양방향 초당 바이트를 보여 주며 요청, 오류, 지연 시간은 없습니다."
+  "bytesNote": "Caretta는 TCP 연결만 봅니다. 그 선은 초당 바이트를 보여 주며 요청, 오류, 지연 시간은 없습니다. Service의 ClusterIP를 거치면 연결 하나가 두 선으로 보입니다: 클라이언트가 보낸 바이트는 Service로 가는 선에, 그 뒤 워크로드가 응답한 바이트는 클라이언트에서 그 워크로드로 가는 선에 표시됩니다."
 }

@@ -92,7 +92,13 @@
     "otherProvider": "Посилання називає об'єкт іншого провайдера Traefik (ім'я@провайдер): Sextant його не бачить.",
     "unknown": "Деякі списки не вдалося прочитати: ці посилання не перевірено.",
     "ingressClass": "Обслуговується лише тим Traefik, чий провайдер стежить за ingress class {{name}}.",
-    "certResolver": "Сертифікат видає джерело {{name}}, і Traefik зберігає його в себе, а не в Secret: Sextant його не бачить."
+    "certResolver": "Сертифікат видає джерело {{name}}, і Traefik зберігає його в себе, а не в Secret: Sextant його не бачить.",
+    "tlsSecretMissing": "TLS Secret {{name}} не існує: Traefik однаково обслуговує маршрути із сертифікатом, вибраним за запитаним ім'ям, інакше — зі своїм сертифікатом за замовчуванням.",
+    "legacyOnly": "Посилання називає об'єкт, який є лише в traefik.containo.us: Traefik 2.10 його знаходить, а Traefik v3 читає лише traefik.io і не знаходить.",
+    "legacyToo": "Об'єкт, на який є посилання, є в обох групах: Traefik v3 бере той, що в traefik.io, Traefik 2.10 читає обидві.",
+    "legacyTwin": "{{kind}} з тим самим ім'ям є і в traefik.containo.us: Traefik v3 читає лише цей об'єкт, Traefik 2.10 — обидва.",
+    "ioTwin": "{{kind}} з тим самим ім'ям є в traefik.io: Traefik v3 читає лише його, а цей об'єкт пропускає.",
+    "legacyIgnored": "Traefik v3 читає лише traefik.io і пропускає цей об'єкт; обидві групи читає лише Traefik 2.10."
   },
   "refState": {
     "found": "Знайдено",
@@ -100,7 +106,8 @@
     "crossNamespace": "В іншому namespace: залежить від allowCrossNamespace",
     "otherProvider": "Об'єкт іншого провайдера: не перевіряється",
     "unknown": "Невідомо: список не вдалося прочитати",
-    "badKind": "Невідомий kind сервісу {{kind}}"
+    "badKind": "Невідомий kind сервісу {{kind}}",
+    "legacyOnly": "Лише в traefik.containo.us: Traefik v3 його не читає"
   },
   "place": {
     "route": "Маршрут {{route}}",
@@ -173,7 +180,6 @@
     "moreBackends_other": "Ще {{count}} сервісу не відстежено.",
     "tlsUnknown": "Не вдалося прочитати сертифікат із Secret {{name}}.",
     "tlsSecretMissing": "TLS Secret {{name}} не існує в namespace {{namespace}}.",
-    "tlsDefaultNote": "Тоді Traefik віддає свій сертифікат за замовчуванням, якому клієнти не довіряють.",
     "tlsInvalid": "У Secret {{name}} немає дійсного сертифіката.",
     "tlsExpired": "Строк дії сертифіката в Secret {{name}} минув.",
     "tlsNotYetValid": "Сертифікат у Secret {{name}} ще не діє.",
@@ -181,6 +187,8 @@
     "tlsOk": "Сертифікат у Secret {{name}} дійсний і покриває {{hosts}}.",
     "tlsOkNoHosts": "Сертифікат у Secret {{name}} дійсний.",
     "tlsResolver": "Сертифікат видає джерело {{resolver}}, і Traefik зберігає його в себе: Sextant його не бачить.",
-    "tlsDefault": "TLS без Secret і без джерела сертифікатів: Traefik віддає сертифікат за замовчуванням зі свого сховища TLS."
+    "tlsDefault": "TLS без Secret і без джерела сертифікатів: Traefik віддає сертифікат за замовчуванням зі свого сховища TLS.",
+    "refLegacyOnly": "{{kind}} {{name}} є лише в traefik.containo.us: Traefik v3 читає лише traefik.io і не знаходить його, Traefik 2.10 знаходить.",
+    "tlsSniNote": "Traefik однаково обслуговує маршрути: він вибирає сертифікат за запитаним ім'ям серед наявних, інакше віддає свій сертифікат за замовчуванням, якому клієнти не довіряють."
   }
 }

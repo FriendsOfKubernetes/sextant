@@ -5,7 +5,12 @@
 // weight or failover children down to Services. Traefik writes no status, so a link is broken only when an object it
 // names does not exist (Traefik then skips the route: its clients get a 404); a reference into another namespace
 // depends on the provider's `allowCrossNamespace`, which no object shows, and another provider's object
-// (`name@file`) cannot be seen: both stay unknown, never "ok" and never "broken".
+// (`name@file`) cannot be seen: both stay unknown, never "ok" and never "broken". The TLS never stops the walk:
+// Traefik builds the router whether or not the route's certificate loads (`getTLSHTTP` errors are only logged) and
+// picks a certificate by the requested name among all it holds, so a missing Secret, one without a valid certificate
+// and a certificate that does not cover a host are warnings, and the routes, middlewares and services after them are
+// still followed. Where both groups are served, a Traefik object is looked up in `traefik.io` (all Traefik v3 reads);
+// one only in `traefik.containo.us` is unknown.
 import type { KindRef, KubeObject } from "../../api";
 import {
   hostsOf,
@@ -14,6 +19,8 @@ import {
   routeSpec,
   traefikServiceRefs,
   TRAEFIK_GROUPS,
+  LEGACY_GROUP,
+  TRAEFIK_GROUP,
   type Ref,
   type RefKind,
   type Route,
@@ -37,8 +44,17 @@ const phrase = (key: string, params?: Record<string, Param>): Phrase => ({ key: 
 const LISTED: RefKind[] = ["Middleware", "TraefikService", "TLSOption", "TLSStore"];
 const kindRef = (group: string, kind: string): KindRef => ({ group, version: "v1alpha1", kind });
 
-/** The lookup over the view: a Traefik kind in either group, Services; nothing else is listed. */
+/**
+ * The lookup over the view: a Traefik kind in `traefik.io` where the cluster serves it there (Traefik v3 reads nothing
+ * else), else in `traefik.containo.us`; `legacy` tells whether the old group has the name too. Services; nothing else
+ * is listed.
+ */
 export function viewLookup(view: ClusterView): Lookup {
+  const has = (list: readonly KubeObject[] | null | undefined, name: string) => (list ? list.some((o) => nameOf(o) === name) : list);
+  const lists = (kind: RefKind, namespace: string) => ({
+    own: view.objects!({ group: TRAEFIK_GROUP, kind }, namespace),
+    legacy: view.objects!({ group: LEGACY_GROUP, kind }, namespace),
+  });
   return {
     exists(kind, namespace, name) {
       if (kind === "Service") {
@@ -46,9 +62,16 @@ export function viewLookup(view: ClusterView): Lookup {
         return list ? list.some((s) => nameOf(s) === name) : undefined;
       }
       if (!LISTED.includes(kind) || !view.objects) return undefined;
-      const lists = TRAEFIK_GROUPS.map((g) => view.objects!({ group: g, kind }, namespace));
-      if (lists.some((l) => l?.some((o) => nameOf(o) === name))) return true;
-      return lists.every((l) => l !== undefined) ? false : undefined;
+      const { own, legacy } = lists(kind, namespace);
+      // `null`: the group does not serve the kind (no objects); `undefined`: not known.
+      const found = has(own !== null ? own : legacy, name);
+      return found === null ? false : found;
+    },
+    legacy(kind, namespace, name) {
+      if (!LISTED.includes(kind) || !view.objects) return false;
+      const { own, legacy } = lists(kind, namespace);
+      if (own === null || legacy === null) return false;
+      return has(legacy, name) ?? undefined;
     },
   };
 }
@@ -73,6 +96,8 @@ const refName = (ref: Ref) => (ref.provider ? `${ref.name}@${ref.provider}` : re
  * and a list not read are unknown.
  */
 export function refFinding(id: string, ref: Ref, state: RefState, group: string): Finding {
+  // A target only in the old group: linked there.
+  if (state === "legacyOnly") return { id, status: "unknown", text: phrase("refLegacyOnly", { kind: ref.kind, name: refName(ref) }), links: refLink(ref, LEGACY_GROUP) };
   const params = { kind: ref.kind, name: refName(ref), namespace: ref.namespace };
   const links = refLink(ref, group);
   switch (state) {
@@ -112,6 +137,8 @@ function groups(refs: readonly Ref[]): Group[] {
 interface Context {
   view: ClusterView;
   lookup: Lookup;
+  /** The route is of `traefik.containo.us` (read only by a Traefik that reads both groups). */
+  fromLegacy: boolean;
   /** Backends left to follow. */
   budget: { left: number };
 }
@@ -125,10 +152,10 @@ function backendChain(group: Group, traefikGroup: string, ctx: Context, depth: n
   const { service: ref } = group;
   const walk = new Walk(serviceTitle(ref));
   if (ref.weight === 0 && ref.place !== "mirror") walk.add({ id: "traefik.weight", status: "warn", text: phrase("weightZero") });
-  const state = checkRef(ref, ctx.lookup);
+  const state = checkRef(ref, ctx.lookup, ctx.fromLegacy);
   if (!walk.add(refFinding("traefik.service", ref, state, traefikGroup))) return walk.chain;
   for (const [i, extra] of group.extras.entries()) {
-    if (!walk.add(refFinding(`traefik.service.ref.${i}`, extra, checkRef(extra, ctx.lookup), traefikGroup))) return walk.chain;
+    if (!walk.add(refFinding(`traefik.service.ref.${i}`, extra, checkRef(extra, ctx.lookup, ctx.fromLegacy), traefikGroup))) return walk.chain;
   }
   if (state !== "found" && state !== "crossNamespace") return walk.chain;
   if (ref.kind === "TraefikService") {
@@ -164,7 +191,7 @@ function routeChain(route: Route, group: string, ctx: Context): Chain {
   }
   walk.add({ id: "traefik.rule", status: "ok", text: phrase("rule", { match: route.match }), notes: route.priority === undefined ? undefined : [phrase("priority", { priority: route.priority })] });
   for (const [i, m] of route.middlewares.entries()) {
-    if (!walk.add(refFinding(`traefik.middleware.${i}`, m, checkRef(m, ctx.lookup), group))) return walk.chain;
+    if (!walk.add(refFinding(`traefik.middleware.${i}`, m, checkRef(m, ctx.lookup, ctx.fromLegacy), group))) return walk.chain;
   }
   const backends = groups(route.refs.filter((r) => r.place !== "route" || r.kind === "Service" || r.kind === "TraefikService"));
   if (backends.length === 0) {
@@ -193,9 +220,15 @@ function tlsFindings(route: KubeObject, group: string, ctx: Context): Finding[] 
     const state = ctx.view.certificates(namespace, name);
     const leaf = state?.state === "ready" ? state.info.chain[0] : undefined;
     if (!state) out.push({ id, status: "unknown", text: phrase("tlsUnknown", { name }), links });
-    else if (state.state === "notFound") out.push({ id, status: "broken", text: phrase("tlsSecretMissing", { name, namespace }), notes: [phrase("tlsDefaultNote")] });
-    else if (state.state === "error") out.push({ id, status: state.code === "invalid" ? "broken" : "unknown", text: phrase(state.code === "invalid" ? "tlsInvalid" : "tlsUnknown", { name }), links });
-    else if (!leaf) out.push({ id, status: "broken", text: phrase("tlsInvalid", { name }), links });
+    // Traefik logs that it cannot load the certificate and builds the router anyway: a warning, the walk goes on.
+    else if (state.state === "notFound") out.push({ id, status: "warn", text: phrase("tlsSecretMissing", { name, namespace }), notes: [phrase("tlsSniNote")] });
+    else if (state.state === "error")
+      out.push(
+        state.code === "invalid"
+          ? { id, status: "warn", text: phrase("tlsInvalid", { name }), notes: [phrase("tlsSniNote")], links }
+          : { id, status: "unknown", text: phrase("tlsUnknown", { name }), links },
+      );
+    else if (!leaf) out.push({ id, status: "warn", text: phrase("tlsInvalid", { name }), notes: [phrase("tlsSniNote")], links });
     else {
       const notAfter = Date.parse(leaf.notAfter);
       const notBefore = Date.parse(leaf.notBefore);
@@ -203,7 +236,7 @@ function tlsFindings(route: KubeObject, group: string, ctx: Context): Finding[] 
       if (Number.isFinite(notAfter) && notAfter < ctx.view.now) out.push({ id, status: "broken", text: phrase("tlsExpired", { name }), links });
       else if (Number.isFinite(notBefore) && notBefore > ctx.view.now) out.push({ id, status: "broken", text: phrase("tlsNotYetValid", { name }), links });
       else if (uncovered.length > 0)
-        out.push({ id, status: "broken", text: phrase("tlsHostNotCovered", { name, hosts: uncovered, names: certificateNames(leaf) }), links });
+        out.push({ id, status: "warn", text: phrase("tlsHostNotCovered", { name, hosts: uncovered, names: certificateNames(leaf) }), notes: [phrase("tlsSniNote")], links });
       else out.push({ id, status: "ok", text: hosts.length > 0 ? phrase("tlsOk", { name, hosts }) : phrase("tlsOkNoHosts", { name }), links });
     }
   } else if (tls.certResolver) {
@@ -211,15 +244,15 @@ function tlsFindings(route: KubeObject, group: string, ctx: Context): Finding[] 
   } else {
     out.push({ id, status: "warn", text: phrase("tlsDefault") });
   }
-  if (tls.options) out.push(refFinding("traefik.tls.options", tls.options, checkRef(tls.options, ctx.lookup), group));
-  if (tls.store) out.push(refFinding("traefik.tls.store", tls.store, checkRef(tls.store, ctx.lookup), group));
+  if (tls.options) out.push(refFinding("traefik.tls.options", tls.options, checkRef(tls.options, ctx.lookup, ctx.fromLegacy), group));
+  if (tls.store) out.push(refFinding("traefik.tls.store", tls.store, checkRef(tls.store, ctx.lookup, ctx.fromLegacy), group));
   return out;
 }
 
 export function diagnoseIngressRoute(route: KubeObject, kind: KindRef, view: ClusterView): Chain {
   const walk = new Walk(undefined, linkOf(kind, route));
   const spec = routeSpec(kind, route);
-  const ctx: Context = { view, lookup: viewLookup(view), budget: { left: MAX_TRAEFIK_BACKENDS } };
+  const ctx: Context = { view, lookup: viewLookup(view), fromLegacy: kind.group === LEGACY_GROUP, budget: { left: MAX_TRAEFIK_BACKENDS } };
   const notes = [phrase("noStatus"), ...(spec.ingressClassName ? [phrase("ingressClass", { name: spec.ingressClassName })] : [])];
   walk.add(
     spec.entryPoints.length > 0
@@ -229,7 +262,8 @@ export function diagnoseIngressRoute(route: KubeObject, kind: KindRef, view: Clu
   if (spec.parents.length > 0) {
     walk.add({ id: "traefik.parents", status: "unknown", text: phrase("parents", { names: spec.parents.map((p) => p.name) }) });
   }
-  for (const f of tlsFindings(route, kind.group, ctx)) if (!walk.add(f)) return walk.chain;
+  // Beside the path: an expired certificate fails the clients' handshakes, but the routes are built and followed.
+  for (const f of tlsFindings(route, kind.group, ctx)) walk.aside(f);
   if (spec.routes.length === 0) {
     walk.add({ id: "traefik.routes", status: "broken", text: phrase("noRoutes") });
     return walk.chain;

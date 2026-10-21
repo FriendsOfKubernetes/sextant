@@ -69,5 +69,6 @@
   "showDisk": "디스크 거의 가득 참",
   "showPractices": "모범 사례 발견 사항",
   "showPolicies": "Kyverno 정책 위반",
-  "showPrometheusOperator": "Prometheus Operator 모니터와 서버"
+  "showPrometheusOperator": "Prometheus Operator 모니터와 서버",
+  "showTraefik": "Traefik 참조"
 }

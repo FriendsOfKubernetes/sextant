@@ -69,5 +69,6 @@
   "showDisk": "磁盘即将用满",
   "showPractices": "最佳实践发现",
   "showPolicies": "Kyverno 策略违规",
-  "showPrometheusOperator": "Prometheus Operator 监视器和服务器"
+  "showPrometheusOperator": "Prometheus Operator 监视器和服务器",
+  "showTraefik": "Traefik 引用"
 }

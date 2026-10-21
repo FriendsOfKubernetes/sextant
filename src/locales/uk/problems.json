@@ -87,5 +87,6 @@
   "showDisk": "Диск майже заповнений",
   "showPractices": "Зауваження щодо найкращих практик",
   "showPolicies": "Порушення політик Kyverno",
-  "showPrometheusOperator": "Монітори й сервери Prometheus Operator"
+  "showPrometheusOperator": "Монітори й сервери Prometheus Operator",
+  "showTraefik": "Посилання Traefik"
 }

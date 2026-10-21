@@ -220,12 +220,17 @@ export function prefixOf(list: unknown): string | undefined {
     .find((p): p is string => p !== undefined);
 }
 
-/** Prefixes along an include path, concatenated as Contour does (`/api` + `/v1` = `/api/v1`). */
+/**
+ * Prefixes along an include path, merged as Contour merges them (`mergePathMatchConditions` in
+ * internal/dag/conditions.go, called by internal/dag/httpproxy_processor.go for every route and include): concatenated
+ * as written (Contour's validation makes each start with `/`), every run of slashes collapsed to one (`//+` → `/`), an
+ * empty result `/`; a trailing slash is kept (`/api` + `/v1/` = `/api/v1/`, `/` + `/blog` = `/blog`).
+ */
 export function joinPrefixes(prefixes: readonly (string | undefined)[]): string {
   const joined = prefixes
-    .filter((p): p is string => Boolean(p) && p !== "/")
-    .map((p) => p.replace(/\/+$/, ""))
-    .join("");
+    .filter((p): p is string => Boolean(p))
+    .join("")
+    .replace(/\/\/+/g, "/");
   return joined === "" ? "/" : joined;
 }
 

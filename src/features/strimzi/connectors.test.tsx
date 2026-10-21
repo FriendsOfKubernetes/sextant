@@ -17,10 +17,19 @@ import { axeViolations } from "../../test/axe";
 import "../details";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
-import { detect, resolve } from "../problems/model";
+import { detect, isActive, resolve } from "../problems/model";
 import { resetProblemSources } from "../problems/store";
 import { resetSharedWatches } from "../resource-map/watches";
-import { connectorStatusOf, firstLine, MAX_LINE_CHARS, mirrorConnectorsOf, taskCounts } from "./connectors";
+import {
+  connectorStatusOf,
+  ESCALATING_RESTARTS,
+  firstLine,
+  MAX_LINE_CHARS,
+  mirrorConnectorsOf,
+  nextRestartMinutes,
+  RECONCILIATION_MS,
+  taskCounts,
+} from "./connectors";
 import connectorJson from "./fixtures/kafkaconnector.json";
 import mirrorJson from "./fixtures/kafkamirrormaker2.json";
 import "./index";
@@ -102,6 +111,34 @@ describe("connectors in the model", () => {
     hs.conditions = [{ type: "Ready", status: "True" }];
     expect(detect(KAFKA_CONNECTOR, healthy)).toEqual([]);
     expect(isProblem(healthy)).toBe(false);
+  });
+
+  it("while Strimzi's auto-restart can still act, a failure counts only after its next restart window", () => {
+    // AbstractConnectOperator: n² + n minutes after the n-th restart, at most 60.
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8].map(nextRestartMinutes)).toEqual([0, 2, 6, 12, 20, 30, 42, 56, 60]);
+    const last = "2026-10-10T08:12:00Z";
+    const restarting = copy(connector);
+    const st = (restarting as unknown as Mutable).status!;
+    st.autoRestart = { count: 2, connectorName: "my-source-connector", lastRestartTimestamp: last };
+    const window = Date.parse(last) + 6 * 60_000 + RECONCILIATION_MS;
+    expect(detect(KAFKA_CONNECTOR, restarting)).toEqual([expect.objectContaining({ reason: "TaskFailed", activeFrom: window })]);
+    const [problem] = resolve(KAFKA_CONNECTOR, restarting, Date.parse("2026-10-10T08:13:00Z"));
+    expect(isActive(problem!, window - 1)).toBe(false);
+    expect(isActive(problem!, window)).toBe(true);
+    // No restart yet: Strimzi restarts at its next reconciliation.
+    delete st.autoRestart;
+    expect(detect(KAFKA_CONNECTOR, restarting)).toEqual([expect.objectContaining({ graceMs: RECONCILIATION_MS, since: "2026-10-10T08:00:00Z" })]);
+    // Without maxRestarts Strimzi never stops: the grace ends once its wait stops growing.
+    (restarting as unknown as Mutable).spec!.autoRestart = { enabled: true };
+    st.autoRestart = { count: ESCALATING_RESTARTS - 1, lastRestartTimestamp: last };
+    expect(detect(KAFKA_CONNECTOR, restarting)[0]!.activeFrom).toBe(Date.parse(last) + 42 * 60_000 + RECONCILIATION_MS);
+    st.autoRestart = { count: ESCALATING_RESTARTS, lastRestartTimestamp: last };
+    expect(detect(KAFKA_CONNECTOR, restarting)[0]).not.toHaveProperty("activeFrom");
+    // Auto-restart off: at once.
+    (restarting as unknown as Mutable).spec!.autoRestart = { enabled: false };
+    st.autoRestart = { count: 1, lastRestartTimestamp: last };
+    expect(detect(KAFKA_CONNECTOR, restarting)[0]).not.toHaveProperty("activeFrom");
+    expect(detect(KAFKA_CONNECTOR, restarting)[0]).not.toHaveProperty("graceMs");
   });
 
   it("a MirrorMaker 2 stays Ready with a failed task, which is still a problem, named by its connector", () => {
