@@ -82,8 +82,8 @@
     "terminateText": "Os passos em execução são parados e nada mais é executado, inclusive os manipuladores de saída, como com argo terminate.",
     "loading": "Lendo o workflow…",
     "patch": "Enviado ao workflow (um JSON merge patch):",
-    "versioned": "Ele leva a resourceVersion lida logo antes do envio, então o servidor de API o recusa se o workflow mudar nesse meio-tempo; nada é repetido.",
-    "stamped": "finishedAt recebe a hora do envio.",
+    "versioned": "A resourceVersion mostrada é a lida ao abrir esta caixa de diálogo; ela é lida de novo logo antes do envio e a atual é enviada, então o servidor de API recusa a mudança se o workflow mudar nesse meio-tempo; nada é repetido.",
+    "stamped": "O finishedAt mostrado é definido de novo com a hora do envio.",
     "changed": "O workflow mudou enquanto esta caixa de diálogo estava aberta. Verifique a alteração atualizada e confirme novamente.",
     "nothing": {
       "suspend": "Nada a alterar: o workflow já está suspenso.",

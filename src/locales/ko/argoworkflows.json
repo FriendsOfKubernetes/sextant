@@ -78,8 +78,8 @@
     "terminateText": "실행 중인 단계가 중지되고 종료 핸들러를 포함해 더 이상 아무것도 실행되지 않습니다. argo terminate와 같습니다.",
     "loading": "workflow를 읽는 중…",
     "patch": "workflow로 보내는 내용(JSON merge patch):",
-    "versioned": "보내기 직전에 읽은 resourceVersion을 담고 있어, 그 사이 workflow가 변경되면 API 서버가 거부합니다. 다시 시도하지 않습니다.",
-    "stamped": "finishedAt은 보내는 시각으로 설정됩니다.",
+    "versioned": "표시된 resourceVersion은 이 대화 상자를 열 때 읽은 값입니다. 보내기 직전에 다시 읽어 최신 값을 보내므로, 그 사이 workflow가 변경되면 API 서버가 변경을 거부합니다. 다시 시도하지 않습니다.",
+    "stamped": "표시된 finishedAt은 보내는 시각으로 다시 설정됩니다.",
     "changed": "이 대화 상자가 열려 있는 동안 workflow가 변경되었습니다. 업데이트된 변경 내용을 확인하고 다시 확인하세요.",
     "nothing": {
       "suspend": "변경할 내용이 없습니다. workflow가 이미 일시 중단되었습니다.",

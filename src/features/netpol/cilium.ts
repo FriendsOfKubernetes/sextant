@@ -230,6 +230,13 @@ function ciliumRule(raw: unknown, index: number, list: RuleList, policyNamespace
   };
 }
 
+/** Whether the object holds a host policy (a spec with `nodeSelector`), which the engine does not evaluate. */
+export function isCiliumHostPolicy(obj: KubeObject): boolean {
+  const single = get(obj, "spec");
+  const specs = [...(single && typeof single === "object" ? [single] : []), ...arr(get(obj, "specs"))];
+  return specs.some((spec) => get(spec, "nodeSelector") !== undefined);
+}
+
 /** A Cilium policy (one engine policy per spec of `specs`); host policies (`nodeSelector`) select no pod. */
 export function ciliumPolicies(obj: KubeObject, clusterwide: boolean): Policy[] {
   const namespace = clusterwide ? null : (obj.metadata?.namespace ?? "");

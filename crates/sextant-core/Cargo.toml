@@ -45,6 +45,9 @@ x509-parser = { version = "0.18.1", default-features = false }
 secrecy = { version = "0.10.3", default-features = false }
 # Image file viewer (`image_fs`): zstd-compressed layers, a pure-Rust streaming decoder (its encoder serves the tests).
 ruzstd = "0.9.1"
+# Reflector's namespace patterns (`reflector.rs`): matched in linear time, never by a backtracking engine. The version
+# the build already has.
+regex = "1.13.1"
 
 # Signals without spawning `kill`: the liveness check of a temporary kubeconfig's owner (`kubeconfig.rs`) and stopping
 # a timed-out cloud CLI's whole process group (`cloud.rs`); `fs`: the `openat` walk that serves extension files without

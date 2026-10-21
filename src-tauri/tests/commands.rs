@@ -132,6 +132,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("access_preset_rules", Some("preset")),
     ("rbac_can_i", Some("clusterId")),
     ("rbac_rules_review", Some("clusterId")),
+    ("reflector_match_patterns", Some("patterns")),
     ("upgrade_scan", Some("clusterId")),
     ("cleanup_sample", Some("clusterId")),
     ("cleanup_cluster_check", Some("clusterId")),
@@ -402,6 +403,33 @@ fn rbac_reviews_need_a_connected_cluster_and_check_their_input_first() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "notFound", "{err}");
+}
+
+#[test]
+fn reflector_patterns_are_matched_in_the_core_and_bounded() {
+    let h = harness();
+    let out = invoke(
+        &h,
+        "reflector_match_patterns",
+        json!({ "patterns": ["namespace-[0-9]*", "(a|a)*b", "(?=x)x"], "names": ["namespace-30", "aaaaaaaaaaaaaaaaaaaaaaaaaa"] }),
+    )
+    .unwrap();
+    assert_eq!(
+        out,
+        json!([
+            { "matches": ["yes", "no"] },
+            { "matches": ["no", "no"] },
+            { "issue": "invalid", "matches": ["cannotTell", "cannotTell"] }
+        ])
+    );
+    let too_many: Vec<String> = (0..65).map(|i| format!("p{i}")).collect();
+    let err = invoke(
+        &h,
+        "reflector_match_patterns",
+        json!({ "patterns": too_many, "names": [] }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
 }
 
 #[test]

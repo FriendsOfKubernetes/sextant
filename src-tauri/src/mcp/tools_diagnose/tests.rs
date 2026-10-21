@@ -881,10 +881,12 @@ fn traefik_problems_are_never_given_to_agents() {
     ));
 }
 
-/// Sealed Secrets problems (#240) are a window view: agents get none of them.
+/// Sealed Secrets problems (#240) are a window view: agents get none of them, even when the opt-in category is on
+/// (ADR-0109, amended).
 #[test]
 fn sealed_secrets_problems_are_never_given_to_agents() {
     assert!(answers::PROBLEM_CATEGORIES.contains(&"sealedSecrets"));
+    assert!(answers::OPT_IN_CATEGORIES.contains(&"sealedSecrets"));
     assert!(!answers::category_for_agents(
         "sealedSecrets",
         &["sealedSecrets".to_owned()]

@@ -17,7 +17,8 @@ import fixtures from "./fixtures/objects.json";
 import "./index";
 import { canAutoReflect, canReflect, judgeMirror, type NamespaceLabels } from "./judge";
 import { parseNamespacedName, reflectionOf, SECRET, CONFIG_MAP } from "./model";
-import { namespaceMatches, parseSelector, patternListMatches, patternMatches, selectorMatches } from "./patterns";
+import { resetPatternMatcher, settlePatterns } from "./matcher";
+import { namespaceMatches, parseSelector, patternIssues, patternListMatches, patternMatches, selectorMatches } from "./patterns";
 import { MISSING_GRACE_MS, STALE_GRACE_MS, toProblems } from "./provider";
 import { sourceView } from "./source";
 import { acquireReflector, getReflector, MAX_NAMESPACES, NAMESPACES_SPEC, REBUILD_DELAY_MS, resetReflectorStore, SYNC_DELAY_MS, type Lookup } from "./store";
@@ -45,31 +46,106 @@ function lookupOf(unread: string[] = []): Lookup {
   };
 }
 
+/** Patterns a backtracking engine takes seconds on (`(a|a)*b`: 7.6 s on 26 characters in JavaScript). */
+const PATHOLOGICAL = ["(a|a)*b", "((a)+)+b", ".*.*.*.*.*.*.*.*.*x"];
+/** Patterns the fake core refuses as the real one does (lookaround, a backreference, .NET's `\Z`). */
+const REFUSED = new Set(["(?=team)team", "(team)\\1", "team\\Z"]);
+
+/**
+ * The core's `reflector_match_patterns` for the tests (the real one is `sextant_core::reflector`, tested in Rust):
+ * the fixtures' patterns as regular expressions whose first match is the whole name; the pathological ones answered
+ * without running them.
+ */
+function fakeCore(args: Record<string, unknown>): unknown {
+  const patterns = args.patterns as string[];
+  const names = args.names as string[];
+  return patterns.map((p) => {
+    if (PATHOLOGICAL.includes(p)) return { matches: names.map(() => "no") };
+    if (p.length > 256) return { issue: "notEvaluated", matches: names.map(() => "cannotTell") };
+    if (REFUSED.has(p)) return { issue: "invalid", matches: names.map(() => "cannotTell") };
+    const re = new RegExp(p);
+    return {
+      matches: names.map((n) => {
+        const m = re.exec(n);
+        return m !== null && m.index === 0 && m[0].length === n.length ? "yes" : "no";
+      }),
+    };
+  });
+}
+
+const patternCalls = () => wb.backend.calls.filter((c) => c.cmd === "reflector_match_patterns");
+
+/** Runs `fn` so the patterns it needs are asked for, lets the core answer, and runs it again with the answers. */
+async function answered<T>(fn: () => T): Promise<T> {
+  fn();
+  await settlePatterns();
+  fn();
+  await settlePatterns();
+  return fn();
+}
+
 describe("namespace patterns, as Reflector's PatternListMatch runs them", () => {
-  it("a pattern must match the whole name; an empty list matches every namespace", () => {
-    expect(patternListMatches("namespace-1,namespace-2,namespace-[0-9]*", "namespace-30")).toBe(true);
-    expect(patternListMatches("namespace-[0-9]*", "xnamespace-1")).toBe(false);
-    expect(patternListMatches("namespace-[0-9]*", "namespace-1x")).toBe(false);
+  it("a pattern must match the whole name; an empty list matches every namespace", async () => {
+    expect(await answered(() => patternListMatches("namespace-1,namespace-2,namespace-[0-9]*", "namespace-30"))).toBe(true);
+    expect(await answered(() => patternListMatches("namespace-[0-9]*", "xnamespace-1"))).toBe(false);
+    expect(await answered(() => patternListMatches("namespace-[0-9]*", "namespace-1x"))).toBe(false);
     expect(patternListMatches("", "anything")).toBe(true);
-    expect(patternListMatches(" , ", "anything")).toBe(true);
-    expect(patternListMatches(" team-a , team-b ", "team-b")).toBe(true);
+    expect(await answered(() => patternListMatches(" team-a , team-b ", "team-b"))).toBe(true);
   });
 
-  it("the first match found must cover the name (Regex.Match), as in .NET", () => {
-    expect(patternMatches("a|ab", "ab")).toBe(false);
-    expect(patternMatches("ab|a", "ab")).toBe(true);
+  it("a list that is not empty but holds no pattern matches no namespace, as in Reflector", () => {
+    expect(patternListMatches(" , ", "anything")).toBe(false);
+    expect(patternListMatches(",", "anything")).toBe(false);
+    expect(patternListMatches(" ", "anything")).toBe(false);
+    expect(namespaceMatches(" ", "", "anything", {})).toBe(false);
+    expect(namespaceMatches("", "", "anything", {})).toBe(true);
+    const source = copy(fx.sourceSecret!);
+    source.metadata!.annotations = {
+      "reflector.v1.k8s.emberstack.com/reflection-allowed": "true",
+      "reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces": " ",
+    };
+    expect(canReflect(reflectionOf(source), "team-x", labels)).toBe(false);
   });
 
-  it("a list is split on every comma, even inside a quantifier", () => {
-    expect(patternListMatches("ns-[a-z]{1,3}", "ns-abc")).toBe(false);
+  it("the first match found must cover the name (Regex.Match), as in .NET", async () => {
+    expect(await answered(() => patternMatches("a|ab", "ab"))).toBe(false);
+    expect(await answered(() => patternMatches("ab|a", "ab"))).toBe(true);
   });
 
-  it("an invalid, too long or catastrophic pattern is 'cannot tell', never a match or a mismatch", () => {
-    expect(patternMatches("(?i)team", "team")).toBeUndefined();
-    expect(patternMatches("(a+)+$", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab")).toBeUndefined();
-    expect(patternMatches("a".repeat(300), "a")).toBeUndefined();
-    expect(patternListMatches("(?i)team,other", "team")).toBeUndefined();
-    expect(patternListMatches("(?i)team,team", "team")).toBe(true);
+  it("a list is split on every comma, even inside a quantifier", async () => {
+    expect(await answered(() => patternListMatches("ns-[a-z]{1,3}", "ns-abc"))).toBe(false);
+  });
+
+  it("never runs a pattern in the window: the core answers, the pathological ones at once, in one batched call", async () => {
+    const name = "a".repeat(26);
+    const started = performance.now();
+    for (const p of PATHOLOGICAL) expect(patternMatches(p, name)).toBeUndefined();
+    expect(performance.now() - started).toBeLessThan(100);
+    await settlePatterns();
+    for (const p of PATHOLOGICAL) expect(patternMatches(p, name)).toBe(false);
+    expect(patternCalls().map((c) => c.args)).toEqual([{ patterns: PATHOLOGICAL, names: [name] }]);
+  });
+
+  it("a pattern the core does not run is 'cannot tell', never a match or a mismatch, with its reason", async () => {
+    expect(await answered(() => patternMatches("(?=team)team", "team"))).toBeUndefined();
+    expect(await answered(() => patternMatches("a".repeat(300), "a"))).toBeUndefined();
+    expect(await answered(() => patternListMatches("(team)\\1,other", "team"))).toBeUndefined();
+    expect(await answered(() => patternListMatches("team\\Z,team", "team"))).toBe(true);
+    expect(await answered(() => patternIssues(`(?=team)team,ok,${"a".repeat(300)}`))).toEqual([
+      { pattern: "(?=team)team", issue: "invalid" },
+      { pattern: "a".repeat(300), issue: "notEvaluated" },
+    ]);
+  });
+
+  it("'cannot tell' while the answer is pending or when the call fails, and a failed call is not repeated at once", async () => {
+    wb.backend.on("reflector_match_patterns", () => {
+      throw { code: "other", message: "down" };
+    });
+    expect(patternMatches("team", "team")).toBeUndefined();
+    await settlePatterns();
+    expect(patternMatches("team", "team")).toBeUndefined();
+    await settlePatterns();
+    expect(patternCalls()).toHaveLength(1);
   });
 });
 
@@ -90,11 +166,11 @@ describe("namespace selectors, as Reflector's TryParseLabelSelector parses them"
     expect(selectorMatches("=x", {})).toBe(false);
   });
 
-  it("the list OR the selector; a selector needs the namespace's labels", () => {
-    expect(namespaceMatches("ns-a", "env=production", "team-x", { env: "production" })).toBe(true);
-    expect(namespaceMatches("ns-a", "env=production", "team-x", {})).toBe(false);
-    expect(namespaceMatches("ns-a", "env=production", "team-x", undefined)).toBeUndefined();
-    expect(namespaceMatches("ns-a", "env=production", "team-x", null)).toBe(false);
+  it("the list OR the selector; a selector needs the namespace's labels", async () => {
+    expect(await answered(() => namespaceMatches("ns-a", "env=production", "team-x", { env: "production" }))).toBe(true);
+    expect(await answered(() => namespaceMatches("ns-a", "env=production", "team-x", {}))).toBe(false);
+    expect(await answered(() => namespaceMatches("ns-a", "env=production", "team-x", undefined))).toBeUndefined();
+    expect(await answered(() => namespaceMatches("ns-a", "env=production", "team-x", null))).toBe(false);
   });
 });
 
@@ -108,51 +184,52 @@ describe("annotations, read as Reflector reads them", () => {
     expect(parseNamespacedName(" a / b ")).toEqual({ namespace: "a", name: "b" });
   });
 
-  it("automatic mirrors need reflection allowed, the allowed namespaces and the automatic ones", () => {
+  it("automatic mirrors need reflection allowed, the allowed namespaces and the automatic ones", async () => {
     const source = reflectionOf(fx.sourceSecret!);
-    expect(canReflect(source, "other", labels)).toBe(false);
-    expect(canReflect(source, "team-x", labels)).toBe(true);
-    expect(canAutoReflect(source, "team-x", labels)).toBe(false);
-    expect(canAutoReflect(source, "namespace-30", labels)).toBe(true);
+    expect(await answered(() => canReflect(source, "other", labels))).toBe(false);
+    expect(await answered(() => canReflect(source, "team-x", labels))).toBe(true);
+    expect(await answered(() => canAutoReflect(source, "team-x", labels))).toBe(false);
+    expect(await answered(() => canAutoReflect(source, "namespace-30", labels))).toBe(true);
     expect(canAutoReflect({ ...source, allowed: false }, "namespace-1", labels)).toBe(false);
   });
 });
 
 describe("a mirror's state", () => {
-  const judge = (mirror: KubeObject, unread: string[] = []) => {
-    const lookup = lookupOf(unread);
-    const ref = reflectionOf(mirror).reflects!;
-    return judgeMirror(mirror, lookup.get(mirror.kind as "Secret", ref.namespace, ref.name), labels)!;
-  };
+  const judge = (mirror: KubeObject, unread: string[] = []) =>
+    answered(() => {
+      const lookup = lookupOf(unread);
+      const ref = reflectionOf(mirror).reflects!;
+      return judgeMirror(mirror, lookup.get(mirror.kind as "Secret", ref.namespace, ref.name), labels)!;
+    });
 
-  it("in sync when reflected-version is the source's resourceVersion; stale when not", () => {
-    expect(judge(fx.autoMirror!)).toMatchObject({ state: "inSync", permitted: true, versionMatches: true });
-    expect(judge(fx.staleMirror!)).toMatchObject({ state: "stale", versionMatches: false });
+  it("in sync when reflected-version is the source's resourceVersion; stale when not", async () => {
+    expect(await judge(fx.autoMirror!)).toMatchObject({ state: "inSync", permitted: true, versionMatches: true });
+    expect(await judge(fx.staleMirror!)).toMatchObject({ state: "stale", versionMatches: false });
   });
 
-  it("allowed through the namespace selector; not allowed where neither the list nor the selector matches", () => {
-    expect(judge(fx.selectorMirror!).state).toBe("inSync");
-    expect(judge(fx.notAllowedMirror!)).toMatchObject({ state: "notAllowed", permitted: false, versionMatches: true });
+  it("allowed through the namespace selector; not allowed where neither the list nor the selector matches", async () => {
+    expect((await judge(fx.selectorMirror!)).state).toBe("inSync");
+    expect(await judge(fx.notAllowedMirror!)).toMatchObject({ state: "notAllowed", permitted: false, versionMatches: true });
   });
 
-  it("source missing where its namespace is read and it is not there; 'cannot tell' where not read", () => {
-    expect(judge(fx.missingSourceMirror!).state).toBe("sourceMissing");
-    expect(judge(fx.autoMirror!, ["default"]).state).toBe("unknown");
+  it("source missing where its namespace is read and it is not there; 'cannot tell' where not read", async () => {
+    expect((await judge(fx.missingSourceMirror!)).state).toBe("sourceMissing");
+    expect((await judge(fx.autoMirror!, ["default"])).state).toBe("unknown");
     const nameOnly = copy(fx.selectorMirror!);
     nameOnly.metadata!.annotations = { "reflector.v1.k8s.emberstack.com/reflects": "source-secret" };
     expect(judgeMirror(nameOnly, undefined, labels)!.state).toBe("sourceMissing");
   });
 
-  it("never reads a value: a changed value with the same versions is still in sync", () => {
+  it("never reads a value: a changed value with the same versions is still in sync", async () => {
     const mirror = copy(fx.autoMirror!);
     mirror.data = { password: "c29tZXRoaW5nIGVsc2U=" };
-    expect(judge(mirror).state).toBe("inSync");
+    expect((await judge(mirror)).state).toBe("inSync");
   });
 });
 
 describe("a source's view", () => {
-  it("lists its mirrors with their states, automatic targets without a mirror, and the name taken by another object", () => {
-    const view = sourceView("Secret", fx.sourceSecret!, lookupOf());
+  it("lists its mirrors with their states, automatic targets without a mirror, and the name taken by another object", async () => {
+    const view = await answered(() => sourceView("Secret", fx.sourceSecret!, lookupOf()));
     expect(view.mirrors.map((m) => [m.obj.metadata?.namespace, m.judgement.state])).toEqual([
       ["namespace-1", "inSync"],
       ["namespace-2", "stale"],
@@ -165,8 +242,8 @@ describe("a source's view", () => {
     expect(view.notChecked).toEqual([]);
   });
 
-  it("says which namespaces it may reach were not read", () => {
-    expect(sourceView("Secret", fx.sourceSecret!, lookupOf(["team-x"])).notChecked).toEqual(["team-x"]);
+  it("says which namespaces it may reach were not read", async () => {
+    expect((await answered(() => sourceView("Secret", fx.sourceSecret!, lookupOf(["team-x"])))).notChecked).toEqual(["team-x"]);
   });
 });
 
@@ -176,9 +253,9 @@ describe("problems of the opt-in category", () => {
     expect(OPT_IN_CATEGORIES).toContain("reflector");
   });
 
-  it("stale mirrors after a grace, mirrors whose source is missing, and out-of-date mirrors no longer allowed", () => {
+  it("stale mirrors after a grace, mirrors whose source is missing, and out-of-date mirrors no longer allowed", async () => {
     const firstSeen = new Map<string, number>();
-    const problems = toProblems(lookupOf(), firstSeen, 1000);
+    const problems = await answered(() => toProblems(lookupOf(), firstSeen, 1000));
     expect(problems.map((p) => [p.object.kind.kind, p.object.namespace, p.object.name, p.reason, p.activeAt])).toEqual([
       ["Secret", "namespace-2", "source-secret", "Stale", 1000 + STALE_GRACE_MS],
       ["ConfigMap", "namespace-1", "mirror-config-map", "SourceMissing", 1000 + MISSING_GRACE_MS],
@@ -201,10 +278,12 @@ beforeEach(() => {
   resetClusterKinds();
   resetProblemSources();
   resetReflectorStore();
+  resetPatternMatcher();
   resetSharedWatches();
   resetSettingsCache();
   stored = defaultAppSettings();
   wb = watchBackend();
+  wb.backend.on("reflector_match_patterns", fakeCore);
   wb.backend.on("cluster_kinds", () => [SECRET, CONFIG_MAP].map(served));
   wb.backend.on("settings_get", () => structuredClone(stored));
 });
@@ -272,17 +351,17 @@ describe("the shared store", () => {
       ["ConfigMap", null],
     ]);
     await feed();
-    const problems = toProblems(getReflector("c1").lookup, new Map(), 0);
+    const problems = await answered(() => toProblems(getReflector("c1").lookup, new Map(), 0));
     expect(problems.map((p) => p.reason)).toEqual(["Stale", "SourceMissing"]);
     release();
   });
 
-  it("an out-of-date mirror the source no longer allows is a problem", () => {
+  it("an out-of-date mirror the source no longer allows is a problem", async () => {
     const stale = copy(fx.notAllowedMirror!);
     stale.metadata!.annotations = { ...(stale.metadata!.annotations as Record<string, string>), "reflector.v1.k8s.emberstack.com/reflected-version": "1" };
     const base = lookupOf();
     const lookup: Lookup = { ...base, annotated: (kind) => (kind === "Secret" ? [stale] : []) };
-    expect(toProblems(lookup, new Map(), 0).map((p) => [p.reason, p.messageKey])).toEqual([["NotAllowed", "messages.reflectorNotAllowed"]]);
+    expect((await answered(() => toProblems(lookup, new Map(), 0))).map((p) => [p.reason, p.messageKey])).toEqual([["NotAllowed", "messages.reflectorNotAllowed"]]);
   });
 });
 

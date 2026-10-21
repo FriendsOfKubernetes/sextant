@@ -170,7 +170,7 @@ describe("the patches, as kubectl argo rollouts builds them", () => {
     expect(planFor("pause", paused)).toEqual({});
   });
 
-  it("resume: the plugin's former resume, each part only where it applies, never a step forward", () => {
+  it("resume: the plugin's former resume, each part only where it applies, never writing currentStepIndex", () => {
     // Paused at a pause step: the conditions go (status), the v0.9 fallback is the old command's whole patch.
     expect(planFor("resume", canary)).toEqual({
       status: { status: { pauseConditions: null } },
@@ -416,6 +416,10 @@ describe("the Rollout actions", () => {
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(within(dialog).getByText('{"status":{"pauseConditions":null}}')).toBeInTheDocument());
     expect(within(dialog).getByText('{"spec":{"paused":false},"status":{"pauseConditions":null}}')).toBeInTheDocument();
+    // pause.go `CompletedCanaryPauseStep`: a controller pause with no pause condition left completes the canary pause
+    // step, so the rollout moves on as with Promote — the dialog must not say otherwise.
+    expect(within(dialog).getByText(/counts that step as completed and goes on to the next step, as with Promote/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/does not move the rollout/)).toBeNull();
     expect(await axeViolations(dialog)).toEqual([]);
     fireEvent.click(within(dialog).getByRole("button", { name: "Resume" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

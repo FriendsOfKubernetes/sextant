@@ -51,7 +51,7 @@
   "mirrorsTitle": "鏡像",
   "patternIssue": {
     "invalid": "namespace 模式 {{pattern}} 不是 Sextant 能執行的正規表示式，因此無法判斷它指定哪些 namespace。",
-    "notEvaluated": "namespace 模式 {{pattern}} 過長或包含巢狀重複，Sextant 不執行它，因此無法判斷它指定哪些 namespace。"
+    "notEvaluated": "namespace 模式 {{pattern}} 過長或編譯後過大，Sextant 不執行它，因此無法判斷它指定哪些 namespace。"
   },
   "explain": {
     "valuesNotCompared": "從不讀取或比較值：狀態來自 Reflector 的 annotation 和來源的 resourceVersion。",

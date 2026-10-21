@@ -95,5 +95,6 @@
   "showPolicies": "Naruszenia zasad Kyverno",
   "showPrometheusOperator": "Monitory i serwery Prometheus Operator",
   "showTraefik": "Odwołania Traefik",
-  "showReflector": "Kopie lustrzane Reflector"
+  "showReflector": "Kopie lustrzane Reflector",
+  "showSealedSecrets": "Odpieczętowanie Sealed Secrets"
 }

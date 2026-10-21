@@ -19,9 +19,10 @@ export function levelText(t: T, s: DirectionSummary): string {
   return t("netpol:coverage.levelCount", { level: word, isolated: s.isolated, total: s.isolated + s.notIsolated + s.unknown });
 }
 
-/** "Isolated", "Not isolated", "Host network: not subject", "Cannot tell". */
+/** "Isolated", "Not isolated", "Host network: not subject", "Host network: cannot tell", "Cannot tell". */
 export function stateText(t: T, c: DirectionCoverage): string {
-  return t(`netpol:coverage.state.${c.hostNetwork ? "hostNetwork" : c.state}`);
+  if (c.hostNetwork) return t(`netpol:coverage.state.${c.state === "unknown" ? "hostNetworkUnknown" : "hostNetwork"}`);
+  return t(`netpol:coverage.state.${c.state}`);
 }
 
 /** "Ingress: Yes · Egress: Cannot tell" — the namespace's default deny per direction. */
@@ -39,6 +40,8 @@ export function causeText(t: T, c: CoverageCause): string {
       return t("netpol:coverage.maybeSelected", { flavor: flavorText(t, c.policy), policy: policyName(c.policy) });
     case "unmodelledPolicy":
       return unknownText(t, c);
+    case "hostPolicy":
+      return t("netpol:coverage.hostPolicy", { kind: c.kind, name: c.name });
   }
 }
 

@@ -89,5 +89,6 @@
   "showPolicies": "Échecs des politiques Kyverno",
   "showPrometheusOperator": "Moniteurs et serveurs Prometheus Operator",
   "showTraefik": "Références Traefik",
-  "showReflector": "Miroirs Reflector"
+  "showReflector": "Miroirs Reflector",
+  "showSealedSecrets": "Descellement des Sealed Secrets"
 }

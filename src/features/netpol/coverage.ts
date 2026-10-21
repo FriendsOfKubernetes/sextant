@@ -8,13 +8,17 @@
 // direction and default deny on; Calico: `types`) certainly selects it. It is "unknown" — never "not isolated" — when
 // a policy might select it (a selector Sextant cannot evaluate, a policy feature it does not model such as a Calico
 // tier or `serviceAccountSelector`), when a policy list of its namespace or a cluster-wide one could not be read, and
-// when an object of a policy kind Sextant does not evaluate (`UNEVALUATED_KINDS`) could apply to it. hostNetwork pods
-// are not subject to pod policy: they are "not isolated", with that reason.
+// when an object of a policy kind Sextant does not evaluate (`UNEVALUATED_KINDS`) could apply to it. A Calico Pass rule
+// of the direction counts as an unmodelled feature of its policy for that direction (the traffic it matches goes on to
+// the next tier or the profiles, which Sextant does not model), so such a policy makes the pod "unknown", never
+// "isolated". hostNetwork pods are not subject to pod policy: they are "not isolated", with that reason — unless a host
+// policy exists (a Cilium policy with `nodeSelector`, any Calico GlobalNetworkPolicy: they can govern the node's own
+// traffic, which Sextant does not evaluate), then "unknown".
 //
 // A namespace's default deny for a direction: an evaluated policy that selects every pod of the namespace whatever its
 // labels (`Policy.everyPodIn`) and allows nothing for the direction by itself (no rules, Cilium's `{}`, or only
 // Deny/Log rules). "maybe" when such a policy has an unmodelled feature or a list that could hold one is unreadable.
-import { or, policyKey, type Direction, type PodInfo, type PolicyRef, type Rule, type Tri } from "./model";
+import { or, policyKey, type Direction, type PodInfo, type Policy, type PolicyRef, type Rule, type Tri } from "./model";
 import type { World } from "./engine";
 
 export type CoverageState = "isolated" | "notIsolated" | "unknown";
@@ -25,12 +29,14 @@ export type CoverageCause =
   | { type: "unevaluated"; kind: string; name: string }
   /** A selector of the policy Sextant cannot evaluate for this pod. */
   | { type: "maybeSelected"; policy: PolicyRef }
-  /** The policy selects the pod but has features Sextant does not model (a Calico tier, …). */
-  | { type: "unmodelledPolicy"; policy: PolicyRef; features: string[] };
+  /** The policy selects the pod but has features Sextant does not model (a Calico tier, a Pass rule, …). */
+  | { type: "unmodelledPolicy"; policy: PolicyRef; features: string[] }
+  /** A host policy that may apply to the node a hostNetwork pod runs on. */
+  | { type: "hostPolicy"; kind: string; name: string };
 
 export interface DirectionCoverage {
   state: CoverageState;
-  /** A hostNetwork pod: not subject to pod policy, so never isolated. */
+  /** A hostNetwork pod: not subject to pod policy, so never isolated ("unknown" where a host policy exists). */
   hostNetwork: boolean;
   /** The policies that certainly isolate the pod for the direction. */
   by: PolicyRef[];
@@ -51,9 +57,20 @@ export function openCauses(world: World, namespace: string): CoverageCause[] {
   return causes;
 }
 
+/** The feature a Pass rule adds (Calico: the traffic goes on to the next tier or the profiles). */
+export const PASS_FEATURE = "Pass";
+
+/** The policy's unmodelled features that matter for `direction`: its own, and a Pass rule of that direction. */
+export function unmodelledFor(policy: Policy, direction: Direction): string[] {
+  return policy.rules[direction].some((r) => r.action === "pass") ? [...policy.unmodelled, PASS_FEATURE] : policy.unmodelled;
+}
+
 /** Whether `pod` is isolated for `direction` by the policies of `world`. */
 export function podCoverage(pod: PodInfo, direction: Direction, world: World): DirectionCoverage {
-  if (pod.hostNetwork) return { state: "notIsolated", hostNetwork: true, by: [], maybe: [], unknown: [] };
+  if (pod.hostNetwork) {
+    const unknown: CoverageCause[] = (world.hostPolicies ?? []).map((h) => ({ type: "hostPolicy", kind: h.kind, name: h.name }));
+    return { state: unknown.length > 0 ? "unknown" : "notIsolated", hostNetwork: true, by: [], maybe: [], unknown };
+  }
   const by: PolicyRef[] = [];
   const maybe: PolicyRef[] = [];
   const unknown: CoverageCause[] = [];
@@ -64,9 +81,9 @@ export function podCoverage(pod: PodInfo, direction: Direction, world: World): D
     if (selected === "maybe") {
       maybe.push(policy.ref);
       unknown.push({ type: "maybeSelected", policy: policy.ref });
-    } else if (policy.unmodelled.length > 0) {
+    } else if (unmodelledFor(policy, direction).length > 0) {
       maybe.push(policy.ref);
-      unknown.push({ type: "unmodelledPolicy", policy: policy.ref, features: policy.unmodelled });
+      unknown.push({ type: "unmodelledPolicy", policy: policy.ref, features: unmodelledFor(policy, direction) });
     } else {
       by.push(policy.ref);
     }
@@ -108,7 +125,7 @@ export function defaultDenyOf(namespace: string, direction: Direction, world: Wo
     if (!policy.isolates[direction] || !policy.rules[direction].every(allowsNothing)) continue;
     const every = policy.everyPodIn?.(namespace, world) ?? "no";
     if (every === "no") continue;
-    const result: Tri = every === "yes" && policy.unmodelled.length === 0 ? "yes" : "maybe";
+    const result: Tri = every === "yes" && unmodelledFor(policy, direction).length === 0 ? "yes" : "maybe";
     if (result === "yes") by.push(policy.ref);
     results.push(result);
   }
@@ -127,7 +144,7 @@ export interface DirectionSummary {
   isolated: number;
   notIsolated: number;
   unknown: number;
-  /** Of `notIsolated`: hostNetwork pods. */
+  /** Of `notIsolated`: hostNetwork pods (those "unknown" for a host policy count as unknown). */
   hostNetwork: number;
   defaultDeny: DefaultDeny;
 }
@@ -169,7 +186,7 @@ function summary(pods: PodCoverage[] | null, direction: Direction, namespace: st
   if (pods === null) return { level: "unknown", isolated: 0, notIsolated: 0, unknown: 0, hostNetwork: 0, defaultDeny };
   const of = (state: CoverageState) => pods.filter((p) => p[direction].state === state).length;
   const counts = { isolated: of("isolated"), notIsolated: of("notIsolated"), unknown: of("unknown") };
-  return { level: levelOf(counts), ...counts, hostNetwork: pods.filter((p) => p[direction].hostNetwork).length, defaultDeny };
+  return { level: levelOf(counts), ...counts, hostNetwork: pods.filter((p) => p[direction].hostNetwork && p[direction].state === "notIsolated").length, defaultDeny };
 }
 
 /** The coverage of `namespace` from its running pods (`undefined`: not readable). */

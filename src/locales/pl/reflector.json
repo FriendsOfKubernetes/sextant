@@ -54,7 +54,7 @@
   "mirrorsTitle": "Kopie lustrzane",
   "patternIssue": {
     "invalid": "Wzorzec namespace {{pattern}} nie jest wyrażeniem regularnym, które Sextant może wykonać, więc nie wiadomo, które namespace wskazuje.",
-    "notEvaluated": "Wzorzec namespace {{pattern}} jest za długi lub powtarza powtórzenie, więc Sextant go nie wykonuje i nie wiadomo, które namespace wskazuje."
+    "notEvaluated": "Wzorzec namespace {{pattern}} jest za długi lub po skompilowaniu za duży, więc Sextant go nie wykonuje i nie wiadomo, które namespace wskazuje."
   },
   "explain": {
     "valuesNotCompared": "Wartości nigdy nie są odczytywane ani porównywane: stan pochodzi z adnotacji Reflectora i resourceVersion źródła.",

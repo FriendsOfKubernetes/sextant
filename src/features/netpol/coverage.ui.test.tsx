@@ -14,7 +14,7 @@ import { ConnectivityPage } from "./ConnectivityPage";
 import { NamespaceCoverageCell } from "./coverageColumns";
 import { MAX_COVERAGE_NAMESPACES } from "./CoverageView";
 import { PodIsolationSection } from "./details";
-import { NAMESPACE, NETWORK_POLICY, POD, SERVICE } from "./hooks";
+import { CILIUM_CLUSTERWIDE, NAMESPACE, NETWORK_POLICY, POD, SERVICE } from "./hooks";
 import "./index";
 import { resetConnectivity, useConnectivityStore } from "./state";
 import { namespace, netpol, pod } from "./testData";
@@ -101,6 +101,29 @@ describe("the Coverage tab", () => {
     const podWatches = [...wb.specs.values()].filter((s) => s.kind.kind === "Pod").map((s) => JSON.stringify(s.namespaces));
     expect(podWatches.sort()).toEqual(['["payments"]', '["shop"]']);
     expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it("a hostNetwork pod is 'Cannot tell' while a Cilium host policy exists, with the reason", async () => {
+    wb.backend.on("cluster_kinds", () => [served(POD), served(SERVICE), served(NAMESPACE, false), served(NETWORK_POLICY), served(CILIUM_CLUSTERWIDE, false)]);
+    useAppStore.getState().setNamespaces("c1", ["shop"]);
+    useConnectivityStore.getState().patch("c1", { tab: "coverage" });
+    render(<ConnectivityPage clusterId="c1" />);
+    await feedNamespaces();
+    const agent = pod("shop", "agent", { app: "agent" }, { ip: "10.0.0.2", hostNetwork: true });
+    await feed("shop", [agent], []);
+    const hostPolicy = {
+      apiVersion: "cilium.io/v2",
+      kind: "CiliumClusterwideNetworkPolicy",
+      metadata: { name: "lock-nodes", uid: "ccnp-1" },
+      spec: { nodeSelector: {}, ingress: [{ fromEntities: ["cluster"] }] },
+    } as KubeObject;
+    emitSnapshot(wb, await watchOf(wb, "CiliumClusterwideNetworkPolicy", (s) => s.namespaces === null), [hostPolicy]);
+    const shop = await screen.findByRole("region", { name: "shop" });
+    await waitFor(() =>
+      expect(shop).toHaveTextContent("CiliumClusterwideNetworkPolicy lock-nodes is a host policy: it may govern the traffic of the node a host-network pod runs on"),
+    );
+    const open = within(shop).getByRole("table", { name: "Pods of shop not isolated in some direction" });
+    expect(within(open).getAllByRole("row")[1]).toHaveTextContent("agentHost network: cannot tell (a host policy may apply)Host network: cannot tell (a host policy may apply)");
   });
 
   it("says 'Cannot tell' for a namespace whose policies cannot be read", async () => {

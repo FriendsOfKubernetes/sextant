@@ -1,5 +1,7 @@
-// The problems category "Sealed Secrets" (#240): while the problems store holds its source (the problems screen, the
-// section counter or the notifications look at a cluster that serves SealedSecrets), the cluster's SealedSecrets are
+// The problems category "Sealed Secrets" (#240), opt-in (`OPT_IN_CATEGORIES`, ADR-0109 amended: a cluster-wide list of
+// every SealedSecret and metadata lists of Secrets are a cost a cluster pays only when asked): while the problems store
+// holds its source (the problems screen, the section counter or the notifications look at a cluster that serves
+// SealedSecrets, with the category turned on), the cluster's SealedSecrets are
 // held (one shared watch, all namespaces, at most `MAX_SEALED_SECRETS`) and so is a metadata-only list of the Secrets
 // in the namespaces whose SealedSecrets say Synced (at most `MAX_SECRET_NAMESPACES` namespaces and `MAX_SECRETS`
 // objects; beyond either, a missing Secret is not judged and the source says it is truncated). Two problems:

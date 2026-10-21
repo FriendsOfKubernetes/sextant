@@ -51,7 +51,7 @@
   "mirrorsTitle": "ミラー",
   "patternIssue": {
     "invalid": "namespace のパターン {{pattern}} は Sextant が実行できる正規表現ではないため、どの namespace を指すか判断できません。",
-    "notEvaluated": "namespace のパターン {{pattern}} は長すぎるか繰り返しを繰り返しているため、Sextant は実行せず、どの namespace を指すか判断できません。"
+    "notEvaluated": "namespace のパターン {{pattern}} は長すぎるか、コンパイル後のサイズが大きすぎるため、Sextant は実行せず、どの namespace を指すか判断できません。"
   },
   "explain": {
     "valuesNotCompared": "値は読み取りも比較もしません。状態は Reflector の annotation とソースの resourceVersion から判断します。",

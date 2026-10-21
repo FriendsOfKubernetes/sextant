@@ -353,9 +353,11 @@
       "isolated": "격리됨",
       "notIsolated": "격리 안 됨",
       "unknown": "판단할 수 없음",
-      "hostNetwork": "호스트 네트워크: 정책 적용 안 됨"
+      "hostNetwork": "호스트 네트워크: 정책 적용 안 됨",
+      "hostNetworkUnknown": "호스트 네트워크: 판단할 수 없음 (호스트 정책이 적용될 수 있음)"
     },
     "maybeSelected": "{{flavor}} {{policy}}이(가) 이 Pod를 선택할 수 있습니다: Sextant는 여기서 그 선택기를 평가할 수 없습니다.",
+    "hostPolicy": "{{kind}} {{name}}은(는) 호스트 정책입니다. 호스트 네트워크 Pod가 실행되는 노드의 트래픽을 제어할 수 있으며, Sextant는 호스트 정책을 평가하지 않습니다.",
     "noPolicies": "Sextant가 평가하는 정책 중 이 namespace의 Pod를 격리하는 정책이 없습니다.",
     "policies": "{{namespace}}의 Pod를 격리하는 정책",
     "policy": "정책",

@@ -89,5 +89,6 @@
   "showPolicies": "Violazioni delle policy Kyverno",
   "showPrometheusOperator": "Monitor e server di Prometheus Operator",
   "showTraefik": "Riferimenti di Traefik",
-  "showReflector": "Mirror di Reflector"
+  "showReflector": "Mirror di Reflector",
+  "showSealedSecrets": "Apertura dei Sealed Secrets"
 }

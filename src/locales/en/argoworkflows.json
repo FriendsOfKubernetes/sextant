@@ -80,8 +80,8 @@
     "terminateText": "Running steps are stopped and nothing else runs, exit handlers included, as argo terminate does.",
     "loading": "Reading the workflow…",
     "patch": "Sent to the workflow (a JSON merge patch):",
-    "versioned": "It carries the resourceVersion read right before sending, so the API server refuses it if the workflow changes in between; nothing is retried.",
-    "stamped": "finishedAt is set to the time of sending.",
+    "versioned": "The resourceVersion shown is the one read when this dialog opened; it is read again right before sending and the fresh one is sent, so the API server refuses the change if the workflow changes in between; nothing is retried.",
+    "stamped": "The finishedAt shown is set anew to the time of sending.",
     "changed": "The workflow changed while this dialog was open. Check the updated change and confirm again.",
     "nothing": {
       "suspend": "Nothing to change: the workflow is already suspended.",

@@ -52,7 +52,7 @@
   "mirrorsTitle": "Mirrors",
   "patternIssue": {
     "invalid": "The namespace pattern {{pattern}} is not a regular expression Sextant can run, so the namespaces it names cannot be told.",
-    "notEvaluated": "The namespace pattern {{pattern}} is too long or repeats a repetition, so Sextant does not run it and the namespaces it names cannot be told."
+    "notEvaluated": "The namespace pattern {{pattern}} is too long or compiles too large, so Sextant does not run it and the namespaces it names cannot be told."
   },
   "explain": {
     "valuesNotCompared": "Values are never read or compared: the state comes from Reflector's annotations and the source's resourceVersion.",

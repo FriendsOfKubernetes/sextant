@@ -80,8 +80,8 @@
     "terminateText": "Çalışan adımlar durdurulur ve çıkış işleyicileri dahil başka hiçbir şey çalışmaz; argo terminate gibi.",
     "loading": "Workflow okunuyor…",
     "patch": "Workflow'a gönderilen (bir JSON merge patch):",
-    "versioned": "Göndermeden hemen önce okunan resourceVersion'ı taşır; workflow bu arada değişirse API sunucusu reddeder ve hiçbir şey yeniden denenmez.",
-    "stamped": "finishedAt gönderme zamanına ayarlanır.",
+    "versioned": "Gösterilen resourceVersion bu pencere açılırken okunandır; göndermeden hemen önce yeniden okunur ve güncel olanı gönderilir, böylece workflow bu arada değişirse API sunucusu değişikliği reddeder; hiçbir şey yeniden denenmez.",
+    "stamped": "Gösterilen finishedAt gönderme anında yeniden gönderme zamanına ayarlanır.",
     "changed": "Bu iletişim kutusu açıkken workflow değişti. Güncellenen değişikliği kontrol edip yeniden onaylayın.",
     "nothing": {
       "suspend": "Değiştirilecek bir şey yok: workflow zaten askıda.",

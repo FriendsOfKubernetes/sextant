@@ -16,7 +16,8 @@
 // a client without a user), so as `creator.LabelActor` does then, suspend and resume remove the actor and action labels
 // (only those present are named) and the resume message names no user; stop and terminate add no labels.
 // Resume marks every running Suspend node Succeeded at the time of sending, with an output parameter the user was to
-// supply set to its default (refused without one, as util.go refuses) and its global outputs exported. Nodes that are
+// supply (`valueFrom.supplied`) set to its `valueFrom.default` (refused without one, as util.go refuses) and its global
+// outputs exported. Nodes that are
 // compressed or offloaded to the controller's database cannot be read here: resume is then refused.
 // Retry is not offered: util.go's `FormulateRetryWorkflow` rebuilds the node tree and deletes pods (ADR-0097).
 import type { KubeObject } from "../../api";
@@ -119,14 +120,16 @@ function resumePlan(wf: KubeObject): WorkflowPlan {
   for (const [id, node] of activeSuspendNodes(wf)) {
     const params: Fields[] = arr(get(node, "outputs", "parameters")).map((p) => ({ ...record(p) }));
     let overridden = false;
-    // `OverrideOutputParametersWithDefault`: a parameter to be supplied takes its default, or the resume is refused.
+    // util.go `OverrideOutputParametersWithDefault`: a parameter with `valueFrom.supplied` takes
+    // `valueFrom.default` (`param.ValueFrom.Default`, not the parameter's own `default`) as its value, `valueFrom`
+    // kept; without it the resume is refused.
     for (const param of params) {
       if (!isSet(get(param, "valueFrom", "supplied"))) continue;
-      if (!isSet(param.default)) {
+      const fallback = get(param, "valueFrom", "default");
+      if (!isSet(fallback)) {
         return { ...base, refusal: { reason: "noDefault", step: str(node.displayName) ?? id, parameter: str(param.name) ?? "" } };
       }
-      param.value = param.default;
-      delete param.valueFrom;
+      param.value = fallback;
       overridden = true;
     }
     for (const param of params) globalsChanged = addToGlobalScope(globals, param) || globalsChanged;

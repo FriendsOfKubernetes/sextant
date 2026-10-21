@@ -64,22 +64,29 @@ describe("the patches, as util.go builds them", () => {
     expect(nowStamp(new Date("2026-10-21T10:00:00.123Z"))).toBe("2026-10-21T10:00:00Z");
   });
 
-  it("resume: a supplied output takes its default and is exported to the global outputs; no default refuses", () => {
+  it("resume: a supplied output takes valueFrom.default and is exported to the global outputs; no default refuses", () => {
+    // workflow/util/util.go `OverrideOutputParametersWithDefault`: `param.ValueFrom.Default` is checked and becomes
+    // the value; `valueFrom` stays as it is.
     const wf = atApproval();
     node(wf, APPROVE).outputs = {
-      parameters: [{ name: "message", default: "approved", globalName: "approval", valueFrom: { supplied: {} } }],
+      parameters: [{ name: "message", globalName: "approval", valueFrom: { supplied: {}, default: "approved" } }],
     };
     st(wf).outputs = { parameters: [{ name: "other", value: "x" }] };
     expect(planFor("resume", wf).patch).toEqual({
       metadata: { labels: ACTOR_NULLS },
       status: {
         nodes: {
-          [APPROVE]: { phase: "Succeeded", outputs: { parameters: [{ name: "message", default: "approved", globalName: "approval", value: "approved" }] } },
+          [APPROVE]: {
+            phase: "Succeeded",
+            outputs: { parameters: [{ name: "message", globalName: "approval", valueFrom: { supplied: {}, default: "approved" }, value: "approved" }] },
+          },
         },
         outputs: { parameters: [{ name: "other", value: "x" }, { name: "approval", value: "approved" }] },
       },
     });
-    delete (node(wf, APPROVE).outputs as { parameters: Record<string, unknown>[] }).parameters[0]!.default;
+    // The parameter's own `default` is not what util.go reads: without `valueFrom.default` the resume is refused.
+    const params = (node(wf, APPROVE).outputs as { parameters: Record<string, unknown>[] }).parameters;
+    params[0] = { name: "message", default: "approved", globalName: "approval", valueFrom: { supplied: {} } };
     expect(planFor("resume", wf)).toMatchObject({ refusal: { reason: "noDefault", step: "approve", parameter: "message" } });
   });
 
@@ -151,6 +158,9 @@ describe("the Workflow actions", () => {
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(within(dialog).getByText(/"spec":\{"suspend":null\}/)).toBeInTheDocument());
     expect(within(dialog).getByText(/"resourceVersion":"48211"/)).toBeInTheDocument();
+    // The resourceVersion and finishedAt shown are those of the dialog's opening: both are refreshed when sent.
+    expect(within(dialog).getByText(/read again right before sending and the fresh one is sent/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/finishedAt shown is set anew to the time of sending/)).toBeInTheDocument();
     expect(await axeViolations(dialog)).toEqual([]);
     live.metadata!.resourceVersion = "48212"; // an unrelated update by the controller meanwhile
     fireEvent.click(within(dialog).getByRole("button", { name: "Resume" }));

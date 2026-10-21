@@ -31,6 +31,7 @@ pub mod node_shell;
 pub mod openapi;
 pub mod portforward;
 pub mod rbac;
+pub mod reflector;
 pub mod resources;
 pub mod settings;
 pub mod timeline;

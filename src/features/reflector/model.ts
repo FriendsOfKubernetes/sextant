@@ -10,10 +10,12 @@
 // Pure: no value of a Secret is ever read — only annotations, names and resourceVersions.
 //
 // Choices where Reflector's C# cannot be copied exactly (ADR-0110):
-//   - patterns run as JavaScript regular expressions (.NET syntax JavaScript refuses — inline options, atomic groups —
-//     is "cannot tell", never a match or a mismatch); like `Regex.Match` the first match must cover the whole name;
-//   - a pattern longer than `MAX_PATTERN_LENGTH`, or with a repeated group that itself repeats (catastrophic
-//     backtracking), is not run: "cannot tell";
+//   - patterns are matched by the core with the `regex` crate in linear time (matcher.ts; never a regular expression in
+//     the window); like `Regex.Match` the first match must cover the whole name; .NET syntax the crate refuses or reads
+//     otherwise (backreferences, lookaround, `\Z`, nested classes, …), a pattern longer than 256 characters or
+//     one that compiles too large is "cannot tell", never a match or a mismatch — and so is a pattern whose answer has
+//     not come yet;
+//   - a pattern list that is not empty but holds no pattern (",", " ") matches no namespace, as `PatternListMatch` does;
 //   - a label selector Reflector cannot parse matches no namespace (it fails closed), and so here; a namespace whose
 //     labels are not known yet is "cannot tell" where Reflector would wait for its namespace cache.
 import type { KindRef, KubeObject } from "../../api";
@@ -37,8 +39,6 @@ export const CONFIG_MAP: KindRef = { group: "", version: "v1", kind: "ConfigMap"
 export const NAMESPACE: KindRef = { group: "", version: "v1", kind: "Namespace" };
 export type ReflectedKind = "Secret" | "ConfigMap";
 
-/** A pattern longer than this is not run. */
-export const MAX_PATTERN_LENGTH = 256;
 /** At most this many patterns of one list are run. */
 export const MAX_PATTERNS = 64;
 
@@ -97,15 +97,18 @@ export interface Reflection {
 /** The annotations as Reflector reads them (`GetMirroringProperties`). */
 export function reflectionOf(obj: KubeObject): Reflection {
   const text = (key: string) => annotation(obj, key)?.trim() ?? "";
+  // Pattern lists as written: Reflector tests `string.IsNullOrEmpty` before splitting, so " " or "," is a list with
+  // no pattern, which matches no namespace (patterns.ts), not an empty one.
+  const list = (key: string) => annotation(obj, key) ?? "";
   const rawReflects = annotation(obj, ANNOTATIONS.reflects);
   const reflects = parseNamespacedName(rawReflects);
   const at = text(ANNOTATIONS.reflectedAt).replaceAll('"', "");
   return {
     allowed: flag(obj, ANNOTATIONS.allowed),
-    allowedNamespaces: text(ANNOTATIONS.allowedNamespaces),
+    allowedNamespaces: list(ANNOTATIONS.allowedNamespaces),
     allowedSelector: text(ANNOTATIONS.allowedSelector),
     autoEnabled: flag(obj, ANNOTATIONS.autoEnabled),
-    autoNamespaces: text(ANNOTATIONS.autoNamespaces),
+    autoNamespaces: list(ANNOTATIONS.autoNamespaces),
     autoSelector: text(ANNOTATIONS.autoSelector),
     ...(reflects ? { reflects } : {}),
     reflectsInvalid: rawReflects !== undefined && rawReflects.trim() !== "" && !reflects,

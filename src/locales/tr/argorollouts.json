@@ -117,7 +117,7 @@
     "pauseTitle": "{{name}} rollout'u duraklatılsın mı?",
     "pauseText": "Rollout elle duraklatılır (spec.paused) ve sürdürülene ya da yükseltilene kadar ilerlemez; kubectl argo rollouts pause gibi.",
     "resumeTitle": "{{name}} rollout'u sürdürülsün mü?",
-    "resumeText": "Rollout duraklamadan çıkar: spec.paused kaldırılır ve duraklatma koşulları silinir; eklentinin eski resume komutu ve Argo CD'nin resume eylemi de bunu yapar. “Yükselt”ten farklı olarak rollout'u kendiliğinden sonraki adıma geçirmez.",
+    "resumeText": "Rollout duraklamadan çıkar: spec.paused kaldırılır ve duraklatma koşulları silinir; eklentinin eski resume komutu ve Argo CD'nin resume eylemi de bunu yapar. Bir canary duraklatma adımında bekliyorsa denetleyici bu adımı tamamlanmış sayar ve “Yükselt”te olduğu gibi sonraki adıma geçer.",
     "nothingPause": "Değiştirilecek bir şey yok: rollout zaten duraklatılmış.",
     "nothingResume": "Değiştirilecek bir şey yok: rollout duraklatılmamış."
   }

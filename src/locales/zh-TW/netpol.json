@@ -353,9 +353,11 @@
       "isolated": "已隔離",
       "notIsolated": "未隔離",
       "unknown": "無法判斷",
-      "hostNetwork": "主機網路：不受原則約束"
+      "hostNetwork": "主機網路：不受原則約束",
+      "hostNetworkUnknown": "主機網路：無法判斷（可能有主機原則生效）"
     },
     "maybeSelected": "{{flavor}} {{policy}} 可能選取此 Pod：Sextant 無法在此評估其選取器。",
+    "hostPolicy": "{{kind}} {{name}} 是主機原則：它可能管控執行主機網路 Pod 的節點的流量，而 Sextant 不評估主機原則。",
     "noPolicies": "Sextant 評估的原則中沒有任何一條隔離此 namespace 中的 Pod。",
     "policies": "隔離 {{namespace}} 中 Pod 的原則",
     "policy": "原則",

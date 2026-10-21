@@ -380,9 +380,11 @@
       "isolated": "Izolowany",
       "notIsolated": "Nieizolowany",
       "unknown": "Nie można ustalić",
-      "hostNetwork": "Sieć hosta: bez zasad"
+      "hostNetwork": "Sieć hosta: bez zasad",
+      "hostNetworkUnknown": "Sieć hosta: nie wiadomo (może obowiązywać polityka hosta)"
     },
     "maybeSelected": "{{flavor}} {{policy}} może wybierać ten Pod: Sextant nie potrafi tu ocenić jej selektora.",
+    "hostPolicy": "{{kind}} {{name}} to polityka hosta: może sterować ruchem węzła, na którym działa pod w sieci hosta, a Sextant nie ocenia polityk hosta.",
     "noPolicies": "Żadna zasada oceniana przez Sextant nie izoluje Poda w tym namespace.",
     "policies": "Zasady izolujące Pody w {{namespace}}",
     "policy": "Zasada",

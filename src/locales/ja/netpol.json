@@ -353,9 +353,11 @@
       "isolated": "分離済み",
       "notIsolated": "分離なし",
       "unknown": "判断不可",
-      "hostNetwork": "ホストネットワーク: ポリシー対象外"
+      "hostNetwork": "ホストネットワーク: ポリシー対象外",
+      "hostNetworkUnknown": "ホストネットワーク: 判断できません (ホストポリシーが適用される可能性があります)"
     },
     "maybeSelected": "{{flavor}} {{policy}} がこの Pod を選択している可能性があります: Sextant はここでそのセレクターを評価できません。",
+    "hostPolicy": "{{kind}} {{name}} はホストポリシーです。ホストネットワークの Pod が動くノードの通信を制御する可能性があり、Sextant はホストポリシーを評価しません。",
     "noPolicies": "Sextant が評価するポリシーで、この namespace の Pod を分離しているものはありません。",
     "policies": "{{namespace}} の Pod を分離しているポリシー",
     "policy": "ポリシー",

@@ -84,8 +84,8 @@
     "terminateText": "Uruchomione kroki zostaną zatrzymane i nic więcej się nie wykona, łącznie z procedurami obsługi wyjścia, tak jak przy argo terminate.",
     "loading": "Odczytywanie workflow…",
     "patch": "Wysyłane do workflow (JSON merge patch):",
-    "versioned": "Zawiera resourceVersion odczytane tuż przed wysłaniem, więc serwer API go odrzuci, jeśli workflow w międzyczasie się zmieni; nic nie jest ponawiane.",
-    "stamped": "finishedAt przyjmie czas wysłania.",
+    "versioned": "Pokazane resourceVersion odczytano przy otwarciu tego okna; tuż przed wysłaniem jest odczytywane ponownie i wysyłana jest aktualna wartość, więc serwer API odrzuci zmianę, jeśli workflow w międzyczasie się zmieni; nic nie jest ponawiane.",
+    "stamped": "Pokazane finishedAt zostanie ustawione na nowo na czas wysłania.",
     "changed": "Workflow zmienił się, gdy to okno było otwarte. Sprawdź zaktualizowaną zmianę i potwierdź ponownie.",
     "nothing": {
       "suspend": "Nie ma nic do zmiany: workflow jest już wstrzymany.",

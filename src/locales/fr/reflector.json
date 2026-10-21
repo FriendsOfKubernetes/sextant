@@ -53,7 +53,7 @@
   "mirrorsTitle": "Miroirs",
   "patternIssue": {
     "invalid": "Le motif de namespace {{pattern}} n’est pas une expression régulière que Sextant peut exécuter : les namespaces qu’il désigne sont inconnus.",
-    "notEvaluated": "Le motif de namespace {{pattern}} est trop long ou répète une répétition : Sextant ne l’exécute pas et les namespaces qu’il désigne sont inconnus."
+    "notEvaluated": "Le motif de namespace {{pattern}} est trop long ou trop gros une fois compilé : Sextant ne l’exécute pas et les namespaces qu’il désigne sont inconnus."
   },
   "explain": {
     "valuesNotCompared": "Les valeurs ne sont jamais lues ni comparées : l’état vient des annotations de Reflector et du resourceVersion de la source.",

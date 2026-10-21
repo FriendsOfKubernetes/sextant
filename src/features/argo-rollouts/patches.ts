@@ -16,7 +16,9 @@
 //   resume        spec  {"spec":{"paused":false}} when spec.paused; status {"status":{"pauseConditions":null}} when
 //                 pause conditions are set — the plugin's own `resume` before `promote` replaced it (argo-rollouts#277:
 //                 `{"spec":{"paused":false},"status":{"pauseConditions":null}}`, sent whole), split as `promote` splits
-//                 it and with the conditions of Argo CD's Rollout `resume` action; it never moves `currentStepIndex`
+//                 it and with the conditions of Argo CD's Rollout `resume` action; it never writes `currentStepIndex`,
+//                 but on a canary pause step the controller counts the step completed once no pause condition is
+//                 left (pause.go `CompletedCanaryPauseStep`) and moves on, as after `promote`
 //
 // A status patch goes to the status subresource first (`api.resources.patchStatus`); an API server that answers
 // `notFound` there has no status subresource (Argo Rollouts v0.9), and the plugin then sends the "unified" patch

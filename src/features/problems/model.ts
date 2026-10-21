@@ -83,9 +83,21 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * Prometheus Operator findings (`prometheusOperator`) judge every ServiceMonitor and PodMonitor against metadata
  * lists of the Services and Pods they look at: a cost a cluster pays only when asked for. So do Traefik findings
  * (`traefik`, #232): every Traefik object of the cluster and metadata of the Services they name.
- * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster.
+ * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster. And Sealed Secrets
+ * (`sealedSecrets`, #240, amended ADR-0109): every SealedSecret of the cluster and metadata lists of Secrets, a
+ * background cost like Traefik's and Reflector's, so it is asked for the same way.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["security", "credentials", "disk", "practices", "policies", "prometheusOperator", "traefik", "reflector"];
+export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
+  "security",
+  "credentials",
+  "disk",
+  "practices",
+  "policies",
+  "prometheusOperator",
+  "traefik",
+  "reflector",
+  "sealedSecrets",
+];
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;

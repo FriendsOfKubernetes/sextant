@@ -371,9 +371,11 @@
       "isolated": "Isolé",
       "notIsolated": "Non isolé",
       "unknown": "Impossible à dire",
-      "hostNetwork": "Réseau de l'hôte : non soumis aux politiques"
+      "hostNetwork": "Réseau de l'hôte : non soumis aux politiques",
+      "hostNetworkUnknown": "Réseau de l'hôte : inconnu (une politique d'hôte peut s'appliquer)"
     },
     "maybeSelected": "{{flavor}} {{policy}} pourrait sélectionner le Pod : Sextant ne peut pas évaluer son sélecteur ici.",
+    "hostPolicy": "{{kind}} {{name}} est une politique d'hôte : elle peut régir le trafic du nœud où tourne un pod sur le réseau de l'hôte, et Sextant n'évalue pas les politiques d'hôte.",
     "noPolicies": "Aucune politique évaluée par Sextant n'isole un Pod dans ce namespace.",
     "policies": "Politiques qui isolent des Pods dans {{namespace}}",
     "policy": "Politique",

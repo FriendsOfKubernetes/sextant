@@ -61,6 +61,11 @@ export interface World extends Ctx {
    * select — those of their namespace, or every pod for a cluster-wide one (`namespace` null).
    */
   unevaluated?: readonly { kind: string; name: string; namespace?: string | null }[];
+  /**
+   * Host policies (a Cilium policy with `nodeSelector`, every Calico GlobalNetworkPolicy): not evaluated, they may
+   * govern a node's own traffic, so a hostNetwork pod's coverage is "unknown" while any exists (coverage.ts).
+   */
+  hostPolicies?: readonly { kind: string; name: string }[];
 }
 
 export interface PortCheck {

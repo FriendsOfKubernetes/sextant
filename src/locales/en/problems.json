@@ -83,5 +83,6 @@
   "showPolicies": "Kyverno policy failures",
   "showPrometheusOperator": "Prometheus Operator monitors and servers",
   "showTraefik": "Traefik references",
-  "showReflector": "Reflector mirrors"
+  "showReflector": "Reflector mirrors",
+  "showSealedSecrets": "Sealed Secrets unsealing"
 }

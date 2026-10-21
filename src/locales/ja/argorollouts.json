@@ -116,7 +116,7 @@
     "pauseTitle": "Rollout {{name}} を一時停止しますか?",
     "pauseText": "Rollout は手動で一時停止され（spec.paused）、再開またはプロモートされるまで進みません。kubectl argo rollouts pause と同じです。",
     "resumeTitle": "Rollout {{name}} を再開しますか?",
-    "resumeText": "Rollout は一時停止を抜けます。spec.paused が解除され、一時停止の条件が削除されます。プラグインの以前の resume コマンドや Argo CD の resume アクションと同じです。「プロモート」と違い、Rollout を自ら次のステップに進めることはありません。",
+    "resumeText": "Rollout は一時停止を抜けます。spec.paused が解除され、一時停止の条件が削除されます。プラグインの以前の resume コマンドや Argo CD の resume アクションと同じです。canary の一時停止ステップで止まっている場合、コントローラーはそのステップを完了とみなして次のステップに進みます。「プロモート」と同じです。",
     "nothingPause": "変更はありません。Rollout はすでに一時停止しています。",
     "nothingResume": "変更はありません。Rollout は一時停止していません。"
   }

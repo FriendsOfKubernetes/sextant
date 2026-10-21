@@ -77,5 +77,6 @@
   "showPolicies": "Kyverno 策略违规",
   "showPrometheusOperator": "Prometheus Operator 监视器和服务器",
   "showTraefik": "Traefik 引用",
-  "showReflector": "Reflector 镜像"
+  "showReflector": "Reflector 镜像",
+  "showSealedSecrets": "Sealed Secrets 解封"
 }

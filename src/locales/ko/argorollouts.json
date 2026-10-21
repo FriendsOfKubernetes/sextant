@@ -116,7 +116,7 @@
     "pauseTitle": "rollout {{name}}을(를) 일시 중지할까요?",
     "pauseText": "rollout이 수동으로 일시 중지되며(spec.paused) 재개되거나 승격될 때까지 진행되지 않습니다. kubectl argo rollouts pause와 같습니다.",
     "resumeTitle": "rollout {{name}}을(를) 재개할까요?",
-    "resumeText": "rollout이 일시 중지에서 벗어납니다. spec.paused가 해제되고 일시 중지 조건이 제거되며, 플러그인의 이전 resume 명령과 Argo CD의 resume 작업과 같습니다. “승격”과 달리 rollout을 스스로 다음 단계로 진행시키지 않습니다.",
+    "resumeText": "rollout이 일시 중지에서 벗어납니다. spec.paused가 해제되고 일시 중지 조건이 제거되며, 플러그인의 이전 resume 명령과 Argo CD의 resume 작업과 같습니다. canary 일시 중지 단계에서 멈춰 있었다면 컨트롤러가 그 단계를 완료된 것으로 보고 다음 단계로 진행합니다. “승격”과 같습니다.",
     "nothingPause": "변경할 내용이 없습니다. rollout이 이미 일시 중지되었습니다.",
     "nothingResume": "변경할 내용이 없습니다. rollout이 일시 중지되지 않았습니다."
   }

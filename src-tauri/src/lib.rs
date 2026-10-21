@@ -158,6 +158,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         access::access_preset_rules,
         commands::rbac::rbac_can_i,
         commands::rbac::rbac_rules_review,
+        commands::reflector::reflector_match_patterns,
         commands::upgrade::upgrade_scan,
         commands::cleanup::cleanup_sample,
         commands::cleanup::cleanup_cluster_check,

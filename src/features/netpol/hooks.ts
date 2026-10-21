@@ -13,7 +13,7 @@ import type { ClusterId, KindRef, KubeObject, WatchSpec, WatchState } from "../.
 import { findKind, status, useClusterKinds } from "../../resources";
 import { useSharedWatches } from "../resource-map/watches";
 import { calicoPolicy } from "./calico";
-import { ciliumPolicies } from "./cilium";
+import { ciliumPolicies, isCiliumHostPolicy } from "./cilium";
 import { DNS_LABELS, DNS_NAMESPACE, type Unreadable, type World } from "./engine";
 import { kubernetesPolicy } from "./kubernetes";
 import { isFinished, namespaceLabels, podInfo, type Labels, type PodInfo, type Policy } from "./model";
@@ -78,6 +78,12 @@ export function policiesOf(kind: Pick<KindRef, "group" | "kind">, obj: KubeObjec
     return p ? [p] : [];
   }
   return [];
+}
+
+/** A host policy (coverage of hostNetwork pods): a Cilium policy with `nodeSelector`, any Calico GlobalNetworkPolicy. */
+export function isHostPolicy(kind: Pick<KindRef, "group" | "kind">, obj: KubeObject): boolean {
+  if (kind.group === "cilium.io") return isCiliumHostPolicy(obj);
+  return (kind.group === "projectcalico.org" || kind.group === "crd.projectcalico.org") && kind.kind === "GlobalNetworkPolicy";
 }
 
 type Kinds = ReturnType<typeof useClusterKinds>;
@@ -236,6 +242,7 @@ export function useNetpolData(clusterId: ClusterId, namespacesInView: readonly s
     const policies: Policy[] = [];
     const unreadable: Unreadable[] = [...withheld];
     const unevaluated: NonNullable<World["unevaluated"]>[number][] = [];
+    const hostPolicies: NonNullable<World["hostPolicies"]>[number][] = [];
     // Without discovery the Cilium, Calico and other plugins' policy kinds cannot be known: nothing is "allowed".
     if (served?.discoveryFailed) {
       for (const kind of [CILIUM_POLICY, CALICO_POLICY, ...UNEVALUATED_KINDS]) unreadable.push({ kind: kindLabel(kind), namespace: null });
@@ -253,13 +260,17 @@ export function useNetpolData(clusterId: ClusterId, namespacesInView: readonly s
         }
         continue;
       }
-      for (const o of items) policies.push(...policiesOf(e.policyKind, o));
+      for (const o of items) {
+        policies.push(...policiesOf(e.policyKind, o));
+        if (isHostPolicy(e.policyKind, o)) hostPolicies.push({ kind: kindLabel(e.policyKind), name: o.metadata?.name ?? "" });
+      }
     }
     // Policies of namespaces out of view are not listed: a side in such a namespace is unknown.
     const world: World = {
       policies,
       unreadable,
       unevaluated,
+      hostPolicies,
       namespaceLabels: (name) => (nsReadable ? (nsLabels.get(name) ?? { "kubernetes.io/metadata.name": name }) : undefined),
     };
     const listOf = (role: Planned["role"], namespace: string) => {

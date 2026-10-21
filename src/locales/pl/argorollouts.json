@@ -119,7 +119,7 @@
     "pauseTitle": "Wstrzymać rollout {{name}}?",
     "pauseText": "Rollout zostanie wstrzymany ręcznie (spec.paused) i nie będzie postępował, dopóki nie zostanie wznowiony lub promowany, tak jak przy kubectl argo rollouts pause.",
     "resumeTitle": "Wznowić rollout {{name}}?",
-    "resumeText": "Rollout wychodzi z wstrzymania: spec.paused zostaje zdjęte, a jego warunki wstrzymania usunięte, tak jak robiło to dawne polecenie resume wtyczki i akcja resume w Argo CD. W przeciwieństwie do „Promuj” nie przenosi samo rolloutu do następnego kroku.",
+    "resumeText": "Rollout wychodzi z wstrzymania: spec.paused zostaje zdjęte, a jego warunki wstrzymania usunięte, tak jak robiło to dawne polecenie resume wtyczki i akcja resume w Argo CD. Jeśli stoi na kroku pauzy canary, kontroler uzna ten krok za zakończony i przejdzie do następnego, tak jak przy „Promuj”.",
     "nothingPause": "Nie ma nic do zmiany: rollout jest już wstrzymany.",
     "nothingResume": "Nie ma nic do zmiany: rollout nie jest wstrzymany."
   }

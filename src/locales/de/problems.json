@@ -83,5 +83,6 @@
   "showPolicies": "Kyverno-Richtlinienverstöße",
   "showPrometheusOperator": "Monitore und Server des Prometheus Operator",
   "showTraefik": "Traefik-Verweise",
-  "showReflector": "Reflector-Spiegel"
+  "showReflector": "Reflector-Spiegel",
+  "showSealedSecrets": "Entsiegeln von Sealed Secrets"
 }

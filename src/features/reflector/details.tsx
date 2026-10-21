@@ -15,7 +15,7 @@ import { formatDateTime, formatList } from "../../i18n";
 import { Block, chips, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { judgeMirror, MIRROR_TONE, type MirrorJudgement } from "./judge";
 import { hasReflectorAnnotations, reflectedKind, reflectionOf, resourceVersionOf, type ReflectedKind, type Reflection } from "./model";
-import { parseSelector, patternIssues } from "./patterns";
+import { parseSelector, patternIssues, patternsOf } from "./patterns";
 import { MAX_LISTED_NAMESPACES, namespacesToRead, sourceView } from "./source";
 import { useReflector } from "./store";
 
@@ -121,7 +121,11 @@ function SourceDetails({ clusterId, kind, obj, reflection }: ViewProps) {
   const state = useReflector(clusterId, { kind, namespaces: wanted });
   const view = sourceView(kind, obj, state.lookup);
   const yesNo = (v: boolean) => t(v ? "reflector:values.yes" : "reflector:values.no");
-  const patterns = (list: string) => (list ? chips(list.split(",").map((s) => s.trim()).filter(Boolean)) : t("reflector:values.everyNamespace"));
+  const patterns = (list: string) => {
+    if (list === "") return t("reflector:values.everyNamespace");
+    const each = patternsOf(list);
+    return each.length > 0 ? chips(each) : t("reflector:values.none");
+  };
   const rows: FieldRow[] = [
     ["allowed", yesNo(reflection.allowed)],
     ["allowedNamespaces", reflection.allowed ? patterns(reflection.allowedNamespaces) : null],

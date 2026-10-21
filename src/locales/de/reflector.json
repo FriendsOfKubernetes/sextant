@@ -52,7 +52,7 @@
   "mirrorsTitle": "Spiegel",
   "patternIssue": {
     "invalid": "Das Namespace-Muster {{pattern}} ist kein regulärer Ausdruck, den Sextant ausführen kann; welche Namespaces es nennt, ist daher unbekannt.",
-    "notEvaluated": "Das Namespace-Muster {{pattern}} ist zu lang oder wiederholt eine Wiederholung; Sextant führt es nicht aus, welche Namespaces es nennt, ist daher unbekannt."
+    "notEvaluated": "Das Namespace-Muster {{pattern}} ist zu lang oder wird kompiliert zu groß; Sextant führt es nicht aus, welche Namespaces es nennt, ist daher unbekannt."
   },
   "explain": {
     "valuesNotCompared": "Werte werden nie gelesen oder verglichen: Der Zustand stammt aus den Annotationen von Reflector und der resourceVersion der Quelle.",

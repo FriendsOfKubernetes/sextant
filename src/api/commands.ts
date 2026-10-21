@@ -6,6 +6,7 @@ import type { AccessAnswer } from "./generated/AccessAnswer";
 import type { AccessPreset } from "./generated/AccessPreset";
 import type { AccessQuery } from "./generated/AccessQuery";
 import type { RulesReview } from "./generated/RulesReview";
+import type { PatternMatches } from "./generated/PatternMatches";
 import type { SecretCertificates } from "./generated/SecretCertificates";
 import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
 import type { VolumeUsageReport } from "./generated/VolumeUsageReport";
@@ -649,6 +650,16 @@ export const rbac = {
   canI: (clusterId: ClusterId, queries: AccessQuery[]) => call<AccessAnswer[]>("rbac_can_i", { clusterId, queries }),
   /** What the current user may do in `namespace` (SelfSubjectRulesReview; `incomplete` when an authorizer cannot list). */
   rulesReview: (clusterId: ClusterId, namespace: string) => call<RulesReview>("rbac_rules_review", { clusterId, namespace }),
+};
+
+/**
+ * Reflector's namespace patterns (#241, ADR-0110), matched in the core in linear time (never by a backtracking
+ * engine in the window): `result[i].matches[j]` is pattern `i` on name `j`, "cannotTell" for a pattern the core does not
+ * run (`issue` says why). At most 64 patterns and 2000 names per call. Pure; window only.
+ */
+export const reflector = {
+  matchPatterns: (patterns: string[], names: string[]) =>
+    call<PatternMatches[]>("reflector_match_patterns", { patterns, names }),
 };
 
 /**

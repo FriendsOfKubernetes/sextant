@@ -53,7 +53,7 @@
   "mirrorsTitle": "Mirror",
   "patternIssue": {
     "invalid": "Il pattern di namespace {{pattern}} non è un'espressione regolare che Sextant possa eseguire, quindi non si sa quali namespace indichi.",
-    "notEvaluated": "Il pattern di namespace {{pattern}} è troppo lungo o ripete una ripetizione: Sextant non lo esegue e non si sa quali namespace indichi."
+    "notEvaluated": "Il pattern di namespace {{pattern}} è troppo lungo o compilato diventa troppo grande: Sextant non lo esegue e non si sa quali namespace indichi."
   },
   "explain": {
     "valuesNotCompared": "I valori non vengono mai letti né confrontati: lo stato deriva dalle annotazioni di Reflector e dal resourceVersion della sorgente.",

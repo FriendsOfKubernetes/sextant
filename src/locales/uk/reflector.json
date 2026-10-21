@@ -54,7 +54,7 @@
   "mirrorsTitle": "Дзеркала",
   "patternIssue": {
     "invalid": "Шаблон namespace {{pattern}} — не регулярний вираз, який Sextant може виконати, тому невідомо, які namespace він задає.",
-    "notEvaluated": "Шаблон namespace {{pattern}} задовгий або повторює повторення, тому Sextant його не виконує і невідомо, які namespace він задає."
+    "notEvaluated": "Шаблон namespace {{pattern}} задовгий або завеликий після компіляції, тому Sextant його не виконує і невідомо, які namespace він задає."
   },
   "explain": {
     "valuesNotCompared": "Значення ніколи не читаються й не порівнюються: стан береться з анотацій Reflector і resourceVersion джерела.",

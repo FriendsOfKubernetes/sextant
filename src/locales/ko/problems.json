@@ -77,5 +77,6 @@
   "showPolicies": "Kyverno 정책 위반",
   "showPrometheusOperator": "Prometheus Operator 모니터와 서버",
   "showTraefik": "Traefik 참조",
-  "showReflector": "Reflector 미러"
+  "showReflector": "Reflector 미러",
+  "showSealedSecrets": "Sealed Secrets 봉인 해제"
 }

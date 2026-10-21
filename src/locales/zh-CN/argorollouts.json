@@ -116,7 +116,7 @@
     "pauseTitle": "暂停 rollout {{name}}？",
     "pauseText": "rollout 将被手动暂停（spec.paused），在恢复或晋级之前不会推进，与 kubectl argo rollouts pause 相同。",
     "resumeTitle": "恢复 rollout {{name}}？",
-    "resumeText": "rollout 将退出暂停：清除 spec.paused 并移除其暂停条件，与插件以前的 resume 命令和 Argo CD 的 resume 操作相同。与“晋级”不同，它不会自行把 rollout 推进到下一步。",
+    "resumeText": "rollout 将退出暂停：清除 spec.paused 并移除其暂停条件，与插件以前的 resume 命令和 Argo CD 的 resume 操作相同。如果停在 canary 暂停步骤上，控制器随后会将该步骤视为已完成并进入下一步，与“晋级”一样。",
     "nothingPause": "无需更改：rollout 已暂停。",
     "nothingResume": "无需更改：rollout 未暂停。"
   }

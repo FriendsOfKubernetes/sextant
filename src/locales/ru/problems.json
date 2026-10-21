@@ -95,5 +95,6 @@
   "showPolicies": "Нарушения политик Kyverno",
   "showPrometheusOperator": "Мониторы и серверы Prometheus Operator",
   "showTraefik": "Ссылки Traefik",
-  "showReflector": "Зеркала Reflector"
+  "showReflector": "Зеркала Reflector",
+  "showSealedSecrets": "Распечатывание Sealed Secrets"
 }

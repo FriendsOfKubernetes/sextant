@@ -83,5 +83,6 @@
   "showPolicies": "Kyverno ilkesi ihlalleri",
   "showPrometheusOperator": "Prometheus Operator izleyicileri ve sunucuları",
   "showTraefik": "Traefik başvuruları",
-  "showReflector": "Reflector yansıları"
+  "showReflector": "Reflector yansıları",
+  "showSealedSecrets": "Sealed Secrets mühür açma"
 }

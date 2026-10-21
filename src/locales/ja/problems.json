@@ -77,5 +77,6 @@
   "showPolicies": "Kyverno ポリシー違反",
   "showPrometheusOperator": "Prometheus Operator のモニターとサーバー",
   "showTraefik": "Traefik の参照",
-  "showReflector": "Reflector のミラー"
+  "showReflector": "Reflector のミラー",
+  "showSealedSecrets": "Sealed Secrets の復号"
 }

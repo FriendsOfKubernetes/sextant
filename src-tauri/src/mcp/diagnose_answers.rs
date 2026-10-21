@@ -213,7 +213,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 8] = [
+pub const OPT_IN_CATEGORIES: [&str; 9] = [
     "security",
     "credentials",
     "disk",
@@ -222,6 +222,7 @@ pub const OPT_IN_CATEGORIES: [&str; 8] = [
     "prometheusOperator",
     "traefik",
     "reflector",
+    "sealedSecrets",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.

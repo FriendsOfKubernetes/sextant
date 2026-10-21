@@ -3,6 +3,7 @@
 import type { KubeObject } from "../../api";
 import { canAutoReflect, canReflect, judgeMirror, type MirrorJudgement, type NamespaceLabels } from "./judge";
 import { reflectionOf, type Reflection, type ReflectedKind } from "./model";
+import { patternsReady } from "./patterns";
 import type { Lookup } from "./store";
 
 /** Namespaces listed by name in a view at most. */
@@ -42,6 +43,8 @@ export function targetsOf(source: Reflection, sourceNamespace: string, names: re
  */
 export function namespacesToRead(source: Reflection, sourceNamespace: string, names: readonly string[] | undefined, labels: NamespaceLabels): string[] {
   if (!names || !source.allowed) return [sourceNamespace];
+  // Until the core has matched the patterns every namespace would be "cannot tell": list nothing more meanwhile.
+  if (!patternsReady([source.allowedNamespaces, source.autoNamespaces], names)) return [sourceNamespace];
   const { allowed, auto } = targetsOf(source, sourceNamespace, names, labels);
   return [...new Set([sourceNamespace, ...auto.yes, ...auto.unknown, ...allowed.yes, ...allowed.unknown])];
 }

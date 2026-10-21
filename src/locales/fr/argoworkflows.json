@@ -82,8 +82,8 @@
     "terminateText": "Les étapes en cours sont arrêtées et plus rien ne s'exécute, gestionnaires de sortie compris, comme avec argo terminate.",
     "loading": "Lecture du workflow…",
     "patch": "Envoyé au workflow (un JSON merge patch) :",
-    "versioned": "Il porte la resourceVersion lue juste avant l'envoi : le serveur d'API le refuse si le workflow change entre-temps ; rien n'est réessayé.",
-    "stamped": "finishedAt prend l'heure de l'envoi.",
+    "versioned": "La resourceVersion affichée est celle lue à l'ouverture de cette boîte de dialogue ; elle est relue juste avant l'envoi et c'est la nouvelle qui est envoyée : le serveur d'API refuse la modification si le workflow change entre-temps ; rien n'est réessayé.",
+    "stamped": "Le finishedAt affiché est remplacé par l'heure de l'envoi.",
     "changed": "Le workflow a changé pendant que cette boîte de dialogue était ouverte. Vérifiez la modification mise à jour et confirmez à nouveau.",
     "nothing": {
       "suspend": "Rien à modifier : le workflow est déjà suspendu.",

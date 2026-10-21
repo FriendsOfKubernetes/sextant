@@ -15,6 +15,7 @@ import { isCapped } from "../../api/watchState";
 import { acquireWatch, epochOf, specKey, subscribeSharedWatches, watchState } from "../resource-map/watches";
 import type { NamespaceLabels } from "./judge";
 import { labelsOf } from "../../resources/status";
+import { subscribePatternResults } from "./matcher";
 import { hasReflectorAnnotations, kindRefOf, NAMESPACE, reflectionOf, type ReflectedKind } from "./model";
 
 export const MAX_NAMESPACES = 40;
@@ -73,6 +74,7 @@ interface Entry {
 const entries = new Map<ClusterId, Entry>();
 const listeners = new Set<() => void>();
 let unsubscribeShared: (() => void) | undefined;
+let unsubscribePatterns: (() => void) | undefined;
 let rebuild: ReturnType<typeof setTimeout> | undefined;
 let pendingSync: ReturnType<typeof setTimeout> | undefined;
 let nextToken = 0;
@@ -167,9 +169,16 @@ function onShared(): void {
   }, REBUILD_DELAY_MS);
 }
 
+/** The core answered patterns: every state is rebuilt, so its holders judge again with the answers. */
+function onPatterns(): void {
+  for (const entry of entries.values()) entry.state = undefined;
+  notify();
+}
+
 /** Asks for the lists of `request`; the returned function lets go of them. */
 export function acquireReflector(clusterId: ClusterId, request: ReflectorRequest): () => void {
   unsubscribeShared ??= subscribeSharedWatches(onShared);
+  unsubscribePatterns ??= subscribePatternResults(onPatterns);
   let entry = entries.get(clusterId);
   if (!entry) {
     entry = { clusterId, requests: new Map(), held: new Map(), specs: {}, skipped: { Secret: [], ConfigMap: [] }, epoch: epochOf(clusterId) };
@@ -320,4 +329,6 @@ export function resetReflectorStore(): void {
   pendingSync = undefined;
   unsubscribeShared?.();
   unsubscribeShared = undefined;
+  unsubscribePatterns?.();
+  unsubscribePatterns = undefined;
 }

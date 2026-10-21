@@ -105,6 +105,13 @@ export function ProblemsPage({ clusterId }: PageProps) {
           />
           {t("problems:showReflector")}
         </label>
+        <label className="problems__choice">
+          <Checkbox
+            checked={categories.includes("sealedSecrets")}
+            onChange={(e) => void updateSettings(setCategory("sealedSecrets", e.target.checked)).catch(() => undefined)}
+          />
+          {t("problems:showSealedSecrets")}
+        </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}
         </Button>

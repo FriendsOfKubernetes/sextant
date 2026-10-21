@@ -10,7 +10,7 @@ import { axeViolations } from "../../test/axe";
 import "../details";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
-import { categoryOf, detect } from "../problems/model";
+import { categoryOf, detect, OPT_IN_CATEGORIES } from "../problems/model";
 import { resetProblemSources } from "../problems/store";
 import { judgedByRules, sourcesFor } from "../problems/sources";
 import { resetSharedWatches } from "../resource-map/watches";
@@ -136,6 +136,8 @@ describe("the problems", () => {
 
   it("is a category of its own, judged by its provider only where SealedSecrets are served", () => {
     expect(categoryOf(SEALED_SECRET)).toBe("sealedSecrets");
+    // Opt-in like Traefik and Reflector (ADR-0109, amended): a cluster-wide SealedSecret list and Secret metadata.
+    expect(OPT_IN_CATEGORIES).toContain("sealedSecrets");
     expect(detect(SEALED_SECRET, failed)).toEqual([]);
     expect(judgedByRules(SEALED_SECRET)).toBe(false);
     expect(sourcesFor(["sealedSecrets"], [served(SEALED_SECRET)])).toEqual([expect.objectContaining({ external: true })]);
@@ -198,7 +200,16 @@ function expectNoSecretData(): void {
 }
 
 describe("the Sealed Secrets section", () => {
-  it("is there where the cluster serves SealedSecrets and counts the failed ones and missing Secrets", async () => {
+  it("is there where the cluster serves SealedSecrets; its counter watches nothing while the opt-in category is off", async () => {
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(sections()).toContain("Sealed Secrets"));
+    await new Promise((r) => setTimeout(r, 100));
+    expect([...wb.specs.values()].some((s) => s.kind.kind === "SealedSecret" || s.kind.kind === "Secret")).toBe(false);
+    expect(screen.queryByTitle("1 object needs attention")).toBeNull();
+  });
+
+  it("turned on, counts the failed ones and missing Secrets", async () => {
+    stored = { ...stored, notifications: { ...stored.notifications, enabledCategories: ["sealedSecrets"] } };
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Sealed Secrets"));
     const header = screen.getAllByRole("button", { name: /Sealed Secrets/ }).find((b) => b.hasAttribute("aria-expanded"))!;

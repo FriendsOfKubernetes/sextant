@@ -78,8 +78,8 @@
     "terminateText": "正在运行的步骤会被停止，不再运行任何内容，包括退出处理程序，与 argo terminate 相同。",
     "loading": "正在读取 workflow…",
     "patch": "发送到 workflow 的内容（JSON merge patch）：",
-    "versioned": "它带有发送前刚读取的 resourceVersion，因此如果 workflow 在此期间发生变化，API 服务器会拒绝它；不会重试。",
-    "stamped": "finishedAt 设为发送时间。",
+    "versioned": "显示的 resourceVersion 是打开此对话框时读取的；发送前会重新读取并发送最新的值，因此如果 workflow 在此期间发生变化，API 服务器会拒绝此更改；不会重试。",
+    "stamped": "显示的 finishedAt 会在发送时重新设为发送时间。",
     "changed": "此对话框打开期间 workflow 已发生变化。请检查更新后的更改并再次确认。",
     "nothing": {
       "suspend": "无需更改：workflow 已挂起。",

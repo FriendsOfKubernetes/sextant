@@ -362,9 +362,11 @@
       "isolated": "Yalıtılmış",
       "notIsolated": "Yalıtılmamış",
       "unknown": "Belirlenemiyor",
-      "hostNetwork": "Ana bilgisayar ağı: ilke uygulanmaz"
+      "hostNetwork": "Ana bilgisayar ağı: ilke uygulanmaz",
+      "hostNetworkUnknown": "Ana makine ağı: bilinmiyor (bir ana makine politikası uygulanabilir)"
     },
     "maybeSelected": "{{flavor}} {{policy}} bu Pod'u seçebilir: Sextant burada seçicisini değerlendiremiyor.",
+    "hostPolicy": "{{kind}} {{name}} bir ana makine politikasıdır: ana makine ağındaki bir pod'un çalıştığı düğümün trafiğini yönetebilir ve Sextant ana makine politikalarını değerlendirmez.",
     "noPolicies": "Sextant'ın değerlendirdiği hiçbir ilke bu namespace'teki bir Pod'u yalıtmıyor.",
     "policies": "{{namespace}} içindeki Pod'ları yalıtan ilkeler",
     "policy": "İlke",

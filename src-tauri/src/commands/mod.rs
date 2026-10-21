@@ -22,6 +22,7 @@ pub mod metrics;
 pub mod openapi;
 pub mod portforward;
 pub mod rbac;
+pub mod reflector;
 pub mod resources;
 pub mod secrets;
 pub mod set_image;

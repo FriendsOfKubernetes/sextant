@@ -51,7 +51,7 @@
   "mirrorsTitle": "미러",
   "patternIssue": {
     "invalid": "namespace 패턴 {{pattern}}은(는) Sextant가 실행할 수 있는 정규식이 아니므로 어떤 namespace를 가리키는지 판단할 수 없습니다.",
-    "notEvaluated": "namespace 패턴 {{pattern}}이(가) 너무 길거나 반복을 반복하므로 Sextant가 실행하지 않으며 어떤 namespace를 가리키는지 판단할 수 없습니다."
+    "notEvaluated": "namespace 패턴 {{pattern}}이(가) 너무 길거나 컴파일하면 너무 커지므로 Sextant가 실행하지 않으며 어떤 namespace를 가리키는지 판단할 수 없습니다."
   },
   "explain": {
     "valuesNotCompared": "값은 읽거나 비교하지 않습니다. 상태는 Reflector의 annotation과 소스의 resourceVersion으로 판단합니다.",

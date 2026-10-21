@@ -1,7 +1,9 @@
 // Reflector's namespace matching (`MirroringPropertiesExtensions.cs`): a comma-separated list of regular expressions
 // (`PatternListMatch`) OR a label selector on the namespace (`LabelSelectorMatch`); both empty: every namespace.
-// Pure. See the header of model.ts for where JavaScript cannot follow .NET exactly.
-import { MAX_PATTERN_LENGTH, MAX_PATTERNS, type Tri } from "./model";
+// The patterns are matched by the core (matcher.ts, ADR-0110), never by a regular expression in the window; a pair whose
+// answer has not come yet is "cannot tell" until it does.
+import { MAX_PATTERNS, type Tri } from "./model";
+import { issueOf, matchResult } from "./matcher";
 
 /** A pattern list split as Reflector splits it: on every comma, blank entries dropped, each trimmed. */
 export function patternsOf(list: string): string[] {
@@ -11,43 +13,21 @@ export function patternsOf(list: string): string[] {
     .map((s) => s.trim());
 }
 
-/** A repeated group that itself contains a repetition (`(a+)+`, `(\w*)*`): it can backtrack for ever. */
-const NESTED_REPEAT = /\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d*,?\d*\})/;
-
 export type PatternIssue = "invalid" | "notEvaluated";
 
-/** The compiled pattern, or why it is not run (cached by text). */
-const compiled = new Map<string, RegExp | PatternIssue>();
-
-export function compilePattern(pattern: string): RegExp | PatternIssue {
-  const hit = compiled.get(pattern);
-  if (hit !== undefined) return hit;
-  let out: RegExp | PatternIssue;
-  if (pattern.length > MAX_PATTERN_LENGTH || NESTED_REPEAT.test(pattern)) out = "notEvaluated";
-  else {
-    try {
-      out = new RegExp(pattern);
-    } catch {
-      out = "invalid";
-    }
-  }
-  if (compiled.size > 2000) compiled.clear();
-  compiled.set(pattern, out);
-  return out;
-}
-
-/** `Regex.Match(value, pattern)` whose match is the whole value: the first match found must cover it. */
+/** `Regex.Match(value, pattern)` whose match is the whole value, as the core answers it; `undefined` while not known. */
 export function patternMatches(pattern: string, value: string): Tri {
-  const re = compilePattern(pattern);
-  if (typeof re === "string") return undefined;
-  const m = re.exec(value);
-  return m !== null && m.index === 0 && m[0].length === value.length;
+  const r = matchResult(pattern, value);
+  return r === "pending" ? undefined : r;
 }
 
-/** `PatternListMatch`: an empty list matches; else any pattern; a pattern not run leaves "no" open. */
+/**
+ * `PatternListMatch`: an empty annotation (`string.IsNullOrEmpty`) matches; otherwise any pattern of the list — so a
+ * value with no pattern after splitting (",", " ") matches no namespace. A pattern not run leaves "no" open.
+ */
 export function patternListMatches(list: string, value: string): Tri {
+  if (list === "") return true;
   const patterns = patternsOf(list);
-  if (patterns.length === 0) return true;
   let unknown = patterns.length > MAX_PATTERNS;
   for (const p of patterns.slice(0, MAX_PATTERNS)) {
     const m = patternMatches(p, value);
@@ -57,11 +37,22 @@ export function patternListMatches(list: string, value: string): Tri {
   return unknown ? undefined : false;
 }
 
-/** The patterns of a list that are not run, with why. */
+/** Whether every pattern of `lists` has its answer for every one of `names` (asking for those that have not). */
+export function patternsReady(lists: readonly string[], names: readonly string[]): boolean {
+  let ready = true;
+  for (const list of lists) {
+    for (const p of patternsOf(list).slice(0, MAX_PATTERNS)) {
+      for (const name of names) if (matchResult(p, name) === "pending") ready = false;
+    }
+  }
+  return ready;
+}
+
+/** The patterns of a list that are not run, with why (those not answered yet are left out). */
 export function patternIssues(list: string): { pattern: string; issue: PatternIssue }[] {
   return patternsOf(list).flatMap((pattern) => {
-    const re = compilePattern(pattern);
-    return typeof re === "string" ? [{ pattern, issue: re }] : [];
+    const issue = issueOf(pattern);
+    return issue === null || issue === "pending" ? [] : [{ pattern, issue }];
   });
 }
 

@@ -5,6 +5,7 @@ import { calicoPolicy } from "./calico";
 import { ciliumPolicies } from "./cilium";
 import { defaultDenyOf, levelOf, namespaceCoverage, podCoverage, type CoverageState } from "./coverage";
 import type { Direction, Policy, Tri } from "./model";
+import { isHostPolicy } from "./hooks";
 import { info, namespace, netpol, pod, world } from "./testData";
 
 const NAMESPACES = [namespace("shop", { team: "shop" }), namespace("other", { team: "other" })];
@@ -79,6 +80,32 @@ describe("Kubernetes NetworkPolicy", () => {
     expect(podCoverage(web, "ingress", w).by.map((r) => r.name)).toEqual(["deny"]);
     expect(podCoverage(host, "ingress", w).hostNetwork).toBe(true);
   });
+
+  it("hostNetwork pods are 'unknown' while a host policy exists (a Cilium nodeSelector, a Calico GlobalNetworkPolicy)", () => {
+    const hostPolicies = [{ kind: "CiliumClusterwideNetworkPolicy", name: "lock-nodes" }];
+    const w = world([netpol("shop", "deny", { podSelector: {} })], NAMESPACES, { hostPolicies });
+    expect(podCoverage(host, "ingress", w)).toEqual({
+      state: "unknown",
+      hostNetwork: true,
+      by: [],
+      maybe: [],
+      unknown: [{ type: "hostPolicy", kind: "CiliumClusterwideNetworkPolicy", name: "lock-nodes" }],
+    });
+    expect(podCoverage(web, "ingress", w).state).toBe("isolated");
+    const c = namespaceCoverage("shop", [web, host], w);
+    expect(c.ingress).toMatchObject({ unknown: 1, hostNetwork: 0 });
+    // Without one, as before: not subject to pod policy.
+    expect(podCoverage(host, "ingress", world([], NAMESPACES, { hostPolicies: [] })).state).toBe("notIsolated");
+  });
+
+  it("host policies are recognised from the objects", () => {
+    expect(isHostPolicy({ group: "cilium.io", kind: "CiliumClusterwideNetworkPolicy" }, cnp(null, "h", { nodeSelector: {}, ingress: [{}] }))).toBe(true);
+    expect(isHostPolicy({ group: "cilium.io", kind: "CiliumClusterwideNetworkPolicy" }, { ...cnp(null, "h", { endpointSelector: {} }), specs: [{ endpointSelector: {} }, { nodeSelector: { matchLabels: { a: "b" } } }] } as KubeObject)).toBe(true);
+    expect(isHostPolicy({ group: "cilium.io", kind: "CiliumNetworkPolicy" }, cnp("shop", "c", { endpointSelector: {} }))).toBe(false);
+    expect(isHostPolicy({ group: "projectcalico.org", kind: "GlobalNetworkPolicy" }, calico(null, "g", { selector: "all()" }))).toBe(true);
+    expect(isHostPolicy({ group: "crd.projectcalico.org", kind: "GlobalNetworkPolicy" }, calico(null, "g", { selector: "all()" }))).toBe(true);
+    expect(isHostPolicy({ group: "projectcalico.org", kind: "NetworkPolicy" }, calico("shop", "k", { selector: "all()" }))).toBe(false);
+  });
 });
 
 describe("Cilium", () => {
@@ -112,6 +139,9 @@ describe("Calico", () => {
     { name: "a tier other than default: unknown", policies: [cal(calico("shop", "k", { selector: "all()", tier: "security" }))], ingress: "unknown", egress: "notIsolated" },
     { name: "serviceAccountSelector: unknown", policies: [cal(calico("shop", "k", { selector: "all()", serviceAccountSelector: "name == 'x'" }))], ingress: "unknown", egress: "notIsolated" },
     { name: "a selector Sextant cannot parse: unknown", policies: [cal(calico("shop", "k", { selector: "app ==" }))], ingress: "unknown", egress: "notIsolated" },
+    // A Pass rule sends the traffic it matches to the next tier or the profiles, which Sextant does not model.
+    { name: "a Pass rule of a direction: unknown for it", policies: [cal(calico("shop", "k", { selector: "all()", types: ["Ingress", "Egress"], ingress: [{ action: "Pass" }], egress: [{ action: "Allow" }] }))], ingress: "unknown", egress: "isolated" },
+    { name: "a Pass rule among others: unknown", policies: [cal(calico("shop", "k", { selector: "app == 'web'", egress: [{ action: "Deny", destination: { nets: ["10.0.0.0/8"] } }, { action: "pass" }] }))], ingress: "notIsolated", egress: "unknown" },
   ]);
 });
 

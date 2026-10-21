@@ -353,9 +353,11 @@
       "isolated": "已隔离",
       "notIsolated": "未隔离",
       "unknown": "无法判断",
-      "hostNetwork": "主机网络：不受策略约束"
+      "hostNetwork": "主机网络：不受策略约束",
+      "hostNetworkUnknown": "主机网络：无法判断（可能有主机策略生效）"
     },
     "maybeSelected": "{{flavor}} {{policy}} 可能选中该 Pod：Sextant 无法在此评估其选择器。",
+    "hostPolicy": "{{kind}} {{name}} 是主机策略：它可能管控运行主机网络 Pod 的节点的流量，而 Sextant 不评估主机策略。",
     "noPolicies": "Sextant 评估的策略中没有任何一条隔离此 namespace 中的 Pod。",
     "policies": "隔离 {{namespace}} 中 Pod 的策略",
     "policy": "策略",

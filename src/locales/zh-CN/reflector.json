@@ -51,7 +51,7 @@
   "mirrorsTitle": "镜像",
   "patternIssue": {
     "invalid": "namespace 模式 {{pattern}} 不是 Sextant 能执行的正则表达式，因此无法判断它指定哪些 namespace。",
-    "notEvaluated": "namespace 模式 {{pattern}} 过长或包含嵌套重复，Sextant 不执行它，因此无法判断它指定哪些 namespace。"
+    "notEvaluated": "namespace 模式 {{pattern}} 过长或编译后过大，Sextant 不执行它，因此无法判断它指定哪些 namespace。"
   },
   "explain": {
     "valuesNotCompared": "从不读取或比较值：状态来自 Reflector 的 annotation 和源的 resourceVersion。",

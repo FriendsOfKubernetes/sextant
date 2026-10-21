@@ -117,7 +117,7 @@
     "pauseTitle": "Rollout {{name}} pausieren?",
     "pauseText": "Der Rollout wird von Hand pausiert (spec.paused) und kommt nicht weiter, bis er fortgesetzt oder promotet wird, wie bei kubectl argo rollouts pause.",
     "resumeTitle": "Rollout {{name}} fortsetzen?",
-    "resumeText": "Der Rollout verlässt seine Pause: spec.paused wird aufgehoben und seine Pausenbedingungen werden entfernt, wie beim früheren resume-Befehl des Plugins und der resume-Aktion von Argo CD. Anders als „Promoten“ bringt es den Rollout nicht selbst zum nächsten Schritt.",
+    "resumeText": "Der Rollout verlässt seine Pause: spec.paused wird aufgehoben und seine Pausenbedingungen werden entfernt, wie beim früheren resume-Befehl des Plugins und der resume-Aktion von Argo CD. Steht er an einem Canary-Pausenschritt, wertet der Controller diesen Schritt danach als abgeschlossen und geht zum nächsten Schritt über, wie bei „Promoten“.",
     "nothingPause": "Nichts zu ändern: Der Rollout ist bereits pausiert.",
     "nothingResume": "Nichts zu ändern: Der Rollout ist nicht pausiert."
   }

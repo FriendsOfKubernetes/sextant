@@ -78,8 +78,8 @@
     "terminateText": "実行中のステップが停止され、終了ハンドラーを含めてそれ以上何も実行されません。argo terminate と同じです。",
     "loading": "Workflow を読み込み中…",
     "patch": "Workflow に送信する内容（JSON merge patch）:",
-    "versioned": "送信の直前に読み込んだ resourceVersion を含むため、その間に Workflow が変更されると API サーバーが拒否します。再試行はしません。",
-    "stamped": "finishedAt は送信時刻になります。",
+    "versioned": "表示されている resourceVersion はこのダイアログを開いたときに読み込んだものです。送信の直前に読み込み直し、その最新の値を送るため、その間に Workflow が変更されると API サーバーが変更を拒否します。再試行はしません。",
+    "stamped": "表示されている finishedAt は、送信時刻にあらためて設定されます。",
     "changed": "このダイアログを開いている間に Workflow が変更されました。更新された変更内容を確認して、もう一度確定してください。",
     "nothing": {
       "suspend": "変更はありません。Workflow はすでに一時停止しています。",

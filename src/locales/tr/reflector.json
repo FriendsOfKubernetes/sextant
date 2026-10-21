@@ -52,7 +52,7 @@
   "mirrorsTitle": "Yansılar",
   "patternIssue": {
     "invalid": "{{pattern}} namespace deseni, Sextant'ın çalıştırabileceği bir düzenli ifade değil; bu yüzden hangi namespace'leri gösterdiği bilinmiyor.",
-    "notEvaluated": "{{pattern}} namespace deseni çok uzun ya da bir tekrarı tekrarlıyor; Sextant onu çalıştırmaz ve hangi namespace'leri gösterdiği bilinmiyor."
+    "notEvaluated": "{{pattern}} namespace deseni çok uzun ya da derlendiğinde çok büyük; Sextant onu çalıştırmaz ve hangi namespace'leri gösterdiği bilinmiyor."
   },
   "explain": {
     "valuesNotCompared": "Değerler asla okunmaz ve karşılaştırılmaz: durum Reflector'ın açıklamalarından (annotation) ve kaynağın resourceVersion değerinden gelir.",
