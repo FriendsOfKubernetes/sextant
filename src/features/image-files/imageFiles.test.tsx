@@ -119,7 +119,8 @@ describe("image file viewer", () => {
     fireEvent.click(within(tree).getByRole("button", { name: "alias" }));
     fireEvent.click(await screen.findByRole("button", { name: "Go to the target" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "os-release" })).toBeInTheDocument());
-    expect(calls("image_files_read_start")).toHaveLength(2);
+    // The read starts in an effect after the heading renders; a slow runner can see the heading first.
+    await waitFor(() => expect(calls("image_files_read_start")).toHaveLength(2));
 
     // A download asks the backend's save dialog; cancelled, nothing runs.
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
