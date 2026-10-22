@@ -3,7 +3,7 @@ import type { ValidationCode } from "./ValidationCode";
 
 export type ValidationProblem = { code: ValidationCode, 
 /**
- * What it is about: a name, a file path, a command's file name, a time (RFC 3339).
+ * What it is about: a name, a file path, an exec command as written, a time (RFC 3339).
  */
 subject: string | null, line: number | null, column: number | null, 
 /**

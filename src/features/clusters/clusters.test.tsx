@@ -256,6 +256,62 @@ describe("cluster rail", () => {
   });
 });
 
+describe("a login program that is not on this computer (#253)", () => {
+  const command = "/home/user/yandex-cloud/bin/yc";
+  const yc: ClusterInfo = { ...cluster("cccc", "yc-prod"), execProblem: { command, missing: "folderMissing" } };
+  const notFound = {
+    code: "authPlugin",
+    message: `the auth plugin was not found: '${command}' — the folder '/home/user/yandex-cloud/bin' does not exist on this computer (os error 3)`,
+  };
+
+  it("the rail marks the cluster before connecting and says why in its tooltip", async () => {
+    setup([alpha, yc]);
+    render(<AppShell />);
+    const button = await within(rail()).findByRole("button", { name: "yc-prod" });
+    const mark = within(button).getByRole("img", { name: "Login program not found or cannot be run" });
+    expect(mark).toHaveAttribute("title", `The folder of the login program ${command} does not exist on this computer.`);
+    expect(within(railButton("kind-alpha")).queryByRole("img", { name: /Login program/ })).not.toBeInTheDocument();
+    expect(commands("cluster_connect")).toHaveLength(0);
+    expect(await axeViolations(rail())).toEqual([]);
+  });
+
+  it("a failed connection names the command and explains the usual causes", async () => {
+    setup([yc], {
+      connect: () => {
+        throw notFound;
+      },
+    });
+    render(<AppShell />);
+    fireEvent.click(await within(rail()).findByRole("button", { name: "yc-prod" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The login program the kubeconfig names was not found on this computer.");
+    expect(alert).toHaveTextContent(`The folder of the login program ${command} does not exist on this computer.`);
+    expect(alert).toHaveTextContent("(os error 3)");
+    const hint = within(alert).getByTestId("exec-plugin-hint");
+    expect(hint).toHaveTextContent("Generate it again on this computer");
+    expect(hint).toHaveTextContent("is not on Sextant's PATH until you restart Sextant");
+    expect(await axeViolations(alert)).toEqual([]);
+  });
+
+  it("the hint follows the error even when the list did not see it; another plugin failure gets none", async () => {
+    let error: { code: string; message: string } = notFound;
+    setup([alpha], {
+      connect: () => {
+        throw error;
+      },
+    });
+    render(<AppShell />);
+    fireEvent.click(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+    expect(within(await screen.findByRole("alert")).getByTestId("exec-plugin-hint")).toBeInTheDocument();
+
+    error = { code: "authPlugin", message: "the auth plugin 'yc' failed with exit code 1" };
+    fireEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Reconnect" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("exit code 1"));
+    expect(screen.getByRole("alert")).toHaveTextContent("The authentication plugin from the kubeconfig is missing or failed.");
+    expect(screen.queryByTestId("exec-plugin-hint")).not.toBeInTheDocument();
+  });
+});
+
 describe("kubeconfig source errors", () => {
   const broken: KubeconfigSource = {
     id: "src-env2",

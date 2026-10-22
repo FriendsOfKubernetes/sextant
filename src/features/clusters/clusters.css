@@ -715,6 +715,25 @@
   background: var(--color-danger);
 }
 
+.cluster-icon__exec {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-rail);
+  background: var(--color-danger);
+}
+
+.exec-hint {
+  color: var(--color-text-muted);
+}
+
+.exec-hint p {
+  margin: 4px 0;
+}
+
 .cluster-menu__separator {
   margin: 4px 0;
   border-top: 1px solid var(--color-border);

@@ -122,8 +122,8 @@ impl From<kube::Error> for CoreError {
 ///
 /// Auth errors are the exception, found whether kube returns them directly or wrapped in a service error:
 /// kube-rs puts the whole exec command (its env and arguments, which often carry tokens) and the plugin's
-/// stdout/stderr into their text, so only the plugin name (`plugin`, when the caller knows it) and the exit code
-/// are kept.
+/// stdout/stderr into their text, so only the plugin's command (`plugin`, when the caller knows it: the command as
+/// the kubeconfig writes it, without arguments or env) and the exit code are kept.
 pub fn kube_error(err: kube::Error, plugin: Option<&str>) -> CoreError {
     use kube::Error as E;
     if let Some(auth) = find_auth_error(&err) {
@@ -179,7 +179,12 @@ fn find_auth_error(err: &kube::Error) -> Option<&kube::client::AuthError> {
     None
 }
 
-/// An auth error without anything the exec plugin was given or printed.
+/// How the message of an exec plugin that cannot be found begins (code `authPlugin`): the window shows its hint on
+/// it (regenerate a kubeconfig written elsewhere, or a tool installed after Sextant started) (#253).
+pub const EXEC_PLUGIN_NOT_FOUND: &str = "the auth plugin was not found";
+
+/// An auth error without anything the exec plugin was given or printed. `plugin` is its command as the kubeconfig
+/// writes it (a path is not a secret; its arguments and env are never part of it).
 fn auth_error(auth: &kube::client::AuthError, plugin: Option<&str>) -> CoreError {
     use kube::client::AuthError as A;
     let name = plugin.map_or_else(
@@ -187,7 +192,7 @@ fn auth_error(auth: &kube::client::AuthError, plugin: Option<&str>) -> CoreError
         |p| format!("the auth plugin '{p}'"),
     );
     let message = match auth {
-        A::AuthExecStart(io) => format!("cannot run {name}: {io}"),
+        A::AuthExecStart(io) => start_error_message(io, plugin, cfg!(windows)),
         A::AuthExecRun { status, .. } => match status.code() {
             Some(exit) => format!("{name} failed with exit code {exit}"),
             None => format!("{name} was terminated by a signal"),
@@ -200,6 +205,37 @@ fn auth_error(auth: &kube::client::AuthError, plugin: Option<&str>) -> CoreError
         other => return CoreError::new(ErrorCode::Unauthorized, other.to_string()),
     };
     CoreError::new(ErrorCode::AuthPlugin, message)
+}
+
+/// Why the exec plugin `command` could not be started, in plain words: which file or folder is missing, or that it
+/// cannot be run ([`crate::kubeconfig::validate::start_failure`]); the OS text follows in parentheses. A missing
+/// file or folder starts with [`EXEC_PLUGIN_NOT_FOUND`].
+fn start_error_message(io: &std::io::Error, command: Option<&str>, windows: bool) -> String {
+    use crate::kubeconfig::validate::{ExecMissing, command_folder, start_failure};
+    let Some(command) = command else {
+        return format!("cannot run the auth plugin: {io}");
+    };
+    match start_failure(io.kind(), io.raw_os_error(), windows, command) {
+        Some(ExecMissing::NotOnPath) => {
+            format!("{EXEC_PLUGIN_NOT_FOUND}: '{command}' is in no folder of Sextant's PATH ({io})")
+        }
+        Some(ExecMissing::FileMissing) => {
+            format!("{EXEC_PLUGIN_NOT_FOUND}: the file '{command}' does not exist ({io})")
+        }
+        Some(ExecMissing::FolderMissing) => match command_folder(command) {
+            Some(folder) => format!(
+                "{EXEC_PLUGIN_NOT_FOUND}: '{command}' — the folder '{}' does not exist on this computer ({io})",
+                folder.display()
+            ),
+            None => format!(
+                "{EXEC_PLUGIN_NOT_FOUND}: the folder of '{command}' does not exist on this computer ({io})"
+            ),
+        },
+        Some(ExecMissing::NotExecutable) => format!(
+            "cannot run the auth plugin '{command}': the file is not executable or cannot be opened ({io})"
+        ),
+        None => format!("cannot run the auth plugin '{command}': {io}"),
+    }
 }
 
 /// Errors of `kube::runtime::watcher` (watch subscriptions).
@@ -370,10 +406,81 @@ mod tests {
                 assert!(!json.contains(secret), "{secret} leaked in {json}");
             }
         }
-        // With the plugin name known (as `ClusterManager::connect` knows it), only the name is added.
+        // With the plugin's command known (as `ClusterManager::connect` knows it), only the command is added.
         let named = kube_error(kube::Error::Auth(exec_run_error()), Some("vault-login"));
         assert!(named.message.contains("'vault-login'"), "{named}");
         assert!(!named.message.contains("ARG-SECRET"), "{named}");
+    }
+
+    #[test]
+    fn a_plugin_that_cannot_start_is_named_by_its_command_with_what_is_missing() {
+        use std::io::{Error, ErrorKind};
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("yc").display().to_string();
+        let folder = dir.path().join("yandex-cloud").join("bin");
+        let deep = folder.join("yc").display().to_string();
+        let enoent = || {
+            Error::new(
+                ErrorKind::NotFound,
+                "No such file or directory (os error 2)",
+            )
+        };
+
+        let message = start_error_message(&enoent(), Some("yc"), false);
+        assert!(message.starts_with(EXEC_PLUGIN_NOT_FOUND), "{message}");
+        assert!(
+            message.contains("'yc' is in no folder of Sextant's PATH"),
+            "{message}"
+        );
+
+        let message = start_error_message(&enoent(), Some(&file), false);
+        assert!(message.starts_with(EXEC_PLUGIN_NOT_FOUND), "{message}");
+        assert!(
+            message.contains(&format!("the file '{file}' does not exist")),
+            "{message}"
+        );
+
+        let message = start_error_message(&enoent(), Some(&deep), false);
+        assert!(message.starts_with(EXEC_PLUGIN_NOT_FOUND), "{message}");
+        assert!(message.contains(&format!("'{deep}'")), "{message}");
+        assert!(
+            message.contains(&format!("the folder '{}' does not exist", folder.display())),
+            "{message}"
+        );
+
+        // Windows' ERROR_PATH_NOT_FOUND, read as Windows means it, for a kubeconfig written in WSL.
+        let message = start_error_message(
+            &Error::from_raw_os_error(3),
+            Some("/home/user/yandex-cloud/bin/yc"),
+            true,
+        );
+        assert!(message.starts_with(EXEC_PLUGIN_NOT_FOUND), "{message}");
+        assert!(
+            message.contains("the folder '/home/user/yandex-cloud/bin' does not exist"),
+            "{message}"
+        );
+
+        let message = start_error_message(
+            &Error::new(
+                ErrorKind::PermissionDenied,
+                "Permission denied (os error 13)",
+            ),
+            Some(&file),
+            false,
+        );
+        assert!(!message.starts_with(EXEC_PLUGIN_NOT_FOUND), "{message}");
+        assert!(message.contains("not executable"), "{message}");
+
+        let message = start_error_message(&Error::other("busy"), Some(&file), false);
+        assert_eq!(
+            message,
+            format!("cannot run the auth plugin '{file}': busy")
+        );
+        let message = start_error_message(&enoent(), None, false);
+        assert!(
+            message.starts_with("cannot run the auth plugin: "),
+            "{message}"
+        );
     }
 
     #[test]

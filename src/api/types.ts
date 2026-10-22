@@ -74,6 +74,8 @@ export type { CredentialSource } from "./generated/CredentialSource";
 export type { DrainOptions } from "./generated/DrainOptions";
 export type { DrainPreview } from "./generated/DrainPreview";
 export type { ErrorCode } from "./generated/ErrorCode";
+export type { ExecMissing } from "./generated/ExecMissing";
+export type { ExecProblem } from "./generated/ExecProblem";
 export type { ForwardInfo } from "./generated/ForwardInfo";
 export type { ForwardStatus } from "./generated/ForwardStatus";
 export type { ForwardTarget } from "./generated/ForwardTarget";

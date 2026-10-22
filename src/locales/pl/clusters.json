@@ -167,5 +167,15 @@
   "order": {
     "hint": "Przeciągnij, aby zmienić kolejność, lub naciśnij Alt+Strzałka w górę albo Alt+Strzałka w dół.",
     "moved": "{{name}} przeniesiono na pozycję {{position}} z {{count}}"
+  },
+  "exec": {
+    "notFound": "Nie znaleziono na tym komputerze programu logowania wskazanego w kubeconfig.",
+    "notOnPath": "Programu logowania {{command}} nie ma w żadnym folderze PATH, który widzi Sextant.",
+    "fileMissing": "Program logowania {{command}} nie istnieje.",
+    "folderMissing": "Folder programu logowania {{command}} nie istnieje na tym komputerze.",
+    "notExecutable": "Nie można uruchomić programu logowania {{command}}: to nie jest plik wykonywalny.",
+    "badge": "Nie znaleziono programu logowania lub nie można go uruchomić",
+    "hintElsewhere": "Plik kubeconfig mógł zostać wygenerowany na innym komputerze lub w WSL. Wygeneruj go ponownie na tym komputerze albo ustaw jako polecenie exec samą nazwę narzędzia (CLI chmury, np. yc, aws, gcloud, az, kubelogin) i upewnij się, że narzędzie jest w PATH.",
+    "hintRestart": "Narzędzie zainstalowane po uruchomieniu Sextant lub sesji pulpitu nie jest w PATH Sextant, dopóki nie uruchomisz Sextant ponownie. W systemie Windows najpierw wyloguj się i zaloguj ponownie."
   }
 }

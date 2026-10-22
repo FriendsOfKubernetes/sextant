@@ -1,6 +1,7 @@
 // The check of a kubeconfig being added (a chosen file or pasted text), shown before it is added when the backend
 // found problems: per context, in plain words; "Check connection" connects once on request (the usual timeouts);
-// "Add anyway" adds it as it is. Nothing is run by the check itself (exec plugins are only looked up in PATH).
+// "Add anyway" adds it as it is. Nothing is run by the check itself (exec plugins are only looked up in PATH); a
+// missing one gets the hint of `ExecPlugin.tsx`.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,6 +14,7 @@ import {
 } from "../../../api";
 import { Button, Dialog, ErrorState } from "../../../components";
 import { formatDateTime } from "../../../i18n";
+import { ExecPluginHint, isExecPluginNotFound } from "../ExecPlugin";
 
 /** The backend's check; `null` when it could not run (an older backend, a test without it): the add goes on. */
 export async function checkKubeconfig(input: KubeconfigInput): Promise<KubeconfigValidation | null> {
@@ -28,6 +30,8 @@ export function hasProblems(v: KubeconfigValidation | null): v is KubeconfigVali
 }
 
 const DATED = new Set(["clientCertificateExpired", "tokenExpired"]);
+/** An exec plugin that is not where the kubeconfig says: the usual causes are explained below the problems. */
+const EXEC_MISSING = new Set(["execNotFound", "execFileMissing", "execFolderMissing"]);
 
 export function problemText(t: (key: string, values?: Record<string, unknown>) => string, p: ValidationProblem): string {
   if (p.code === "notYaml" && p.line !== null) {
@@ -106,6 +110,8 @@ export function ValidationDialog({
             <h3 className="kc-check__name">{c.context}</h3>
             {c.server && <p className="kc-check__server">{c.server}</p>}
             {c.problems.length > 0 && <Problems problems={c.problems} />}
+            {(c.problems.some((p) => EXEC_MISSING.has(p.code)) ||
+              (r?.state === "error" && isExecPluginNotFound(r.error))) && <ExecPluginHint />}
             <div className="kc-check__reach">
               <Button size="compact" disabled={r?.state === "checking"} onClick={() => void check(c.context)}>
                 {r?.state === "checking" ? t("kubeconfig:validate.checking") : t("kubeconfig:validate.checkConnection")}

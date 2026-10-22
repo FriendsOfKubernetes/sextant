@@ -161,5 +161,15 @@
   "order": {
     "hint": "드래그하여 순서를 바꾸거나 Alt+위쪽 화살표 또는 Alt+아래쪽 화살표를 누르세요.",
     "moved": "{{name}}을(를) {{count}}개 중 {{position}}번째로 이동했습니다"
+  },
+  "exec": {
+    "notFound": "kubeconfig에 지정된 로그인 프로그램을 이 컴퓨터에서 찾을 수 없습니다.",
+    "notOnPath": "로그인 프로그램 {{command}}이(가) Sextant의 PATH에 있는 어떤 폴더에도 없습니다.",
+    "fileMissing": "로그인 프로그램 {{command}}이(가) 존재하지 않습니다.",
+    "folderMissing": "로그인 프로그램 {{command}}의 폴더가 이 컴퓨터에 존재하지 않습니다.",
+    "notExecutable": "로그인 프로그램 {{command}}을(를) 실행할 수 없습니다. 실행 파일이 아닙니다.",
+    "badge": "로그인 프로그램을 찾을 수 없거나 실행할 수 없음",
+    "hintElsewhere": "kubeconfig가 다른 컴퓨터나 WSL에서 생성되었을 수 있습니다. 이 컴퓨터에서 다시 생성하거나, exec 명령을 도구 이름만(클라우드 CLI, 예: yc, aws, gcloud, az, kubelogin)으로 설정하고 도구가 PATH에 있는지 확인하세요.",
+    "hintRestart": "Sextant나 데스크톱 세션이 시작된 후 설치한 도구는 Sextant를 다시 시작해야 Sextant의 PATH에 들어갑니다. Windows에서는 먼저 로그아웃했다가 다시 로그인하세요."
   }
 }

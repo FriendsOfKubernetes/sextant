@@ -163,5 +163,15 @@
   "order": {
     "hint": "Drag to change the order, or press Alt+Up Arrow or Alt+Down Arrow.",
     "moved": "{{name}} moved to position {{position}} of {{count}}"
+  },
+  "exec": {
+    "notFound": "The login program the kubeconfig names was not found on this computer.",
+    "notOnPath": "The login program {{command}} is not in any folder of Sextant's PATH.",
+    "fileMissing": "The login program {{command}} does not exist.",
+    "folderMissing": "The folder of the login program {{command}} does not exist on this computer.",
+    "notExecutable": "The login program {{command}} cannot be run: it is not an executable file.",
+    "badge": "Login program not found or cannot be run",
+    "hintElsewhere": "The kubeconfig may have been generated on another computer or in WSL. Generate it again on this computer, or set the exec command to the bare tool name (the cloud CLI, e.g. yc, aws, gcloud, az, kubelogin) and make sure the tool is on PATH.",
+    "hintRestart": "A tool installed after Sextant or your desktop session started is not on Sextant's PATH until you restart Sextant. On Windows, sign out and sign in again first."
   }
 }

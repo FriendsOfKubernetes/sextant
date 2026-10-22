@@ -161,5 +161,15 @@
   "order": {
     "hint": "ドラッグして順序を変更するか、Alt+上矢印 または Alt+下矢印 を押します。",
     "moved": "{{name}} を {{count}} 件中 {{position}} 番目に移動しました"
+  },
+  "exec": {
+    "notFound": "kubeconfig に指定されたログインプログラムがこのコンピューターに見つかりません。",
+    "notOnPath": "ログインプログラム {{command}} は Sextant の PATH のどのフォルダーにもありません。",
+    "fileMissing": "ログインプログラム {{command}} が存在しません。",
+    "folderMissing": "ログインプログラム {{command}} のフォルダーがこのコンピューターに存在しません。",
+    "notExecutable": "ログインプログラム {{command}} を実行できません。実行可能ファイルではありません。",
+    "badge": "ログインプログラムが見つからないか実行できません",
+    "hintElsewhere": "kubeconfig が別のコンピューターや WSL で生成された可能性があります。このコンピューターで生成し直すか、exec のコマンドをツール名だけ (クラウド CLI。例: yc、aws、gcloud、az、kubelogin) にして、そのツールが PATH にあることを確認してください。",
+    "hintRestart": "Sextant やデスクトップセッションの開始後にインストールしたツールは、Sextant を再起動するまで Sextant の PATH に入りません。Windows では先にサインアウトしてサインインし直してください。"
   }
 }

@@ -163,5 +163,15 @@
   "order": {
     "hint": "Sırayı değiştirmek için sürükleyin ya da Alt+Yukarı Ok veya Alt+Aşağı Ok tuşlarına basın.",
     "moved": "{{name}}, {{count}} içinde {{position}}. konuma taşındı"
+  },
+  "exec": {
+    "notFound": "kubeconfig'in belirttiği oturum açma programı bu bilgisayarda bulunamadı.",
+    "notOnPath": "{{command}} oturum açma programı Sextant'ın PATH'indeki hiçbir klasörde yok.",
+    "fileMissing": "{{command}} oturum açma programı mevcut değil.",
+    "folderMissing": "{{command}} oturum açma programının klasörü bu bilgisayarda mevcut değil.",
+    "notExecutable": "{{command}} oturum açma programı çalıştırılamıyor: çalıştırılabilir bir dosya değil.",
+    "badge": "Oturum açma programı bulunamadı veya çalıştırılamıyor",
+    "hintElsewhere": "kubeconfig başka bir bilgisayarda veya WSL'de oluşturulmuş olabilir. Bu bilgisayarda yeniden oluşturun ya da exec komutu olarak yalnızca aracın adını yazın (bulut CLI'si, ör. yc, aws, gcloud, az, kubelogin) ve aracın PATH'te olduğundan emin olun.",
+    "hintRestart": "Sextant veya masaüstü oturumunuz başladıktan sonra kurulan bir araç, Sextant'ı yeniden başlatana kadar Sextant'ın PATH'inde olmaz. Windows'ta önce oturumu kapatıp yeniden açın."
   }
 }

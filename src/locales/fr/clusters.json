@@ -165,5 +165,15 @@
   "order": {
     "hint": "Faites glisser pour changer l’ordre, ou appuyez sur Alt+Flèche haut ou Alt+Flèche bas.",
     "moved": "{{name}} déplacé en position {{position}} sur {{count}}"
+  },
+  "exec": {
+    "notFound": "Le programme de connexion indiqué dans le kubeconfig est introuvable sur cet ordinateur.",
+    "notOnPath": "Le programme de connexion {{command}} ne se trouve dans aucun dossier du PATH de Sextant.",
+    "fileMissing": "Le programme de connexion {{command}} n'existe pas.",
+    "folderMissing": "Le dossier du programme de connexion {{command}} n'existe pas sur cet ordinateur.",
+    "notExecutable": "Le programme de connexion {{command}} ne peut pas être lancé : ce n'est pas un fichier exécutable.",
+    "badge": "Programme de connexion introuvable ou impossible à lancer",
+    "hintElsewhere": "Le kubeconfig a peut-être été généré sur un autre ordinateur ou dans WSL. Générez-le à nouveau sur cet ordinateur, ou mettez comme commande exec le seul nom de l'outil (la CLI du cloud, par ex. yc, aws, gcloud, az, kubelogin) et vérifiez que l'outil est dans le PATH.",
+    "hintRestart": "Un outil installé après le démarrage de Sextant ou de votre session n'est dans le PATH de Sextant qu'après un redémarrage de Sextant. Sous Windows, déconnectez-vous puis reconnectez-vous d'abord."
   }
 }

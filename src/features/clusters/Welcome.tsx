@@ -6,6 +6,7 @@ import { errorKey, useSettings, type ClusterInfo, type CoreError } from "../../a
 import { EmptyState, SLOW_AFTER_S, useElapsedSeconds } from "../../components";
 import { AddFileButton, PasteButton, SourceError } from "./AddClusterDialog";
 import { CloudLoginHint } from "./CloudClusters";
+import { ExecPluginHint, execProblemText, isExecPluginNotFound } from "./ExecPlugin";
 import { displayNameOf } from "./clusterSettings";
 import { connectCluster, disconnectCluster, openClusterSettings, useClustersStore } from "./clustersStore";
 import { useClusters, useClusterState } from "./hooks";
@@ -58,7 +59,11 @@ function Connection({ cluster }: { cluster: ClusterInfo }) {
           {t("clusters:connection.failed", { name })}
         </h1>
         <p>{connectionErrorText(t, { code, message })}</p>
+        {code === "authPlugin" && cluster.execProblem && <p>{execProblemText(t, cluster.execProblem)}</p>}
         {message && <p className="clusters-error__details">{t("common:error.details", { message })}</p>}
+        {(isExecPluginNotFound({ code, message }) || (code === "authPlugin" && cluster.execProblem)) && (
+          <ExecPluginHint />
+        )}
         {(code === "authPlugin" || code === "unauthorized") && <CloudLoginHint clusterId={cluster.id} />}
         <div className="clusters-buttons">
           <button type="button" className="btn btn--primary" onClick={() => void connectCluster(cluster.id)}>
@@ -91,8 +96,9 @@ function Connection({ cluster }: { cluster: ClusterInfo }) {
   );
 }
 
-/** Words for a connection error; a rejected server certificate gets its own text. */
+/** Words for a connection error; a rejected server certificate and a login program not found get their own texts. */
 export function connectionErrorText(t: TFunction, error: CoreError): string {
+  if (isExecPluginNotFound(error)) return t("clusters:exec.notFound");
   if (error.code === "unreachable" && /certificate|x509|UnknownIssuer|BadSignature/i.test(error.message)) {
     return t("clusters:connection.certificate");
   }

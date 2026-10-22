@@ -3,4 +3,4 @@
 /**
  * What is wrong (or doubtful) with a kubeconfig or one of its contexts.
  */
-export type ValidationCode = "unreadable" | "notYaml" | "notKubeconfig" | "noContexts" | "currentContextMissing" | "clusterMissing" | "userMissing" | "noServer" | "badServerUrl" | "caUnreadable" | "fileMissing" | "clientCertificateUnreadable" | "clientCertificateExpired" | "tokenExpired" | "execNotFound" | "insecureTls";
+export type ValidationCode = "unreadable" | "notYaml" | "notKubeconfig" | "noContexts" | "currentContextMissing" | "clusterMissing" | "userMissing" | "noServer" | "badServerUrl" | "caUnreadable" | "fileMissing" | "clientCertificateUnreadable" | "clientCertificateExpired" | "tokenExpired" | "execNotFound" | "execFileMissing" | "execFolderMissing" | "execNotExecutable" | "insecureTls";

@@ -17,6 +17,7 @@ import { closeContextEdit, openContextEdit } from "./apply";
 import { ContextEditDialog } from "./ContextEditDialog";
 import { SourceWritable } from "./SourceSettings";
 import { ValidationDialog } from "./ValidationDialog";
+import { axeViolations } from "../../../test/axe";
 
 // Fake secrets: none of them may ever be rendered.
 const SECRETS = [
@@ -317,6 +318,59 @@ describe("kubeconfig check on add", () => {
     );
     expect(screen.getByText("The file is not valid YAML (line 3, column 7).")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add anyway" })).not.toBeInTheDocument();
+  });
+});
+
+describe("a login program that is not on this computer (#253)", () => {
+  const command = "/home/user/yandex-cloud/bin/yc";
+  const missing: KubeconfigValidation = {
+    problems: [],
+    contexts: [
+      {
+        context: "yc",
+        server: "https://yc.example:443",
+        problems: [{ code: "execFolderMissing", subject: command, line: null, column: null, warning: false }],
+      },
+      { context: "plain", server: "https://plain.example:443", problems: [] },
+    ],
+  };
+
+  it("names the command as written, says its folder is missing and how to fix it", async () => {
+    backend = mockBackend({});
+    render(<ValidationDialog input={{ type: "text", text: "" }} validation={missing} onAdd={() => undefined} onClose={() => undefined} />);
+    expect(
+      screen.getByText(`The folder of the login program ${command} does not exist on this computer.`),
+    ).toBeInTheDocument();
+    const hints = screen.getAllByTestId("exec-plugin-hint");
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toHaveTextContent("generated on another computer or in WSL");
+    expect(hints[0]).toHaveTextContent("e.g. yc, aws, gcloud, az, kubelogin");
+    expect(hints[0]).toHaveTextContent("On Windows, sign out and sign in again first.");
+    expect(await axeViolations(screen.getByRole("dialog"))).toEqual([]);
+  });
+
+  it("explains a failed connection check whose plugin was not found, and no other failure", async () => {
+    backend = mockBackend({
+      kubeconfig_check_connection: (args) => {
+        if (args.context === "plain") throw { code: "authPlugin", message: "the auth plugin 'yc' failed with exit code 1" };
+        throw { code: "authPlugin", message: `the auth plugin was not found: '${command}' — the folder does not exist` };
+      },
+    });
+    const clean: KubeconfigValidation = {
+      problems: [],
+      contexts: [
+        { context: "yc", server: null, problems: [] },
+        { context: "plain", server: null, problems: [] },
+      ],
+    };
+    render(<ValidationDialog input={{ type: "text", text: "" }} validation={clean} onAdd={() => undefined} onClose={() => undefined} />);
+    const [first, second] = screen.getAllByRole("button", { name: "Check connection" });
+    fireEvent.click(second!);
+    await waitFor(() => expect(calls("kubeconfig_check_connection")).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Check connection" })[1]).toBeEnabled());
+    expect(screen.queryByTestId("exec-plugin-hint")).not.toBeInTheDocument();
+    fireEvent.click(first!);
+    expect(await screen.findByTestId("exec-plugin-hint")).toBeInTheDocument();
   });
 });
 

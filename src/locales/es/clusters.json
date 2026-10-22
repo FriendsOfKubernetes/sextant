@@ -165,5 +165,15 @@
   "order": {
     "hint": "Arrastre para cambiar el orden, o pulse Alt+Flecha arriba o Alt+Flecha abajo.",
     "moved": "{{name}} movido a la posición {{position}} de {{count}}"
+  },
+  "exec": {
+    "notFound": "El programa de inicio de sesión que indica el kubeconfig no se encontró en este equipo.",
+    "notOnPath": "El programa de inicio de sesión {{command}} no está en ninguna carpeta del PATH de Sextant.",
+    "fileMissing": "El programa de inicio de sesión {{command}} no existe.",
+    "folderMissing": "La carpeta del programa de inicio de sesión {{command}} no existe en este equipo.",
+    "notExecutable": "El programa de inicio de sesión {{command}} no se puede ejecutar: no es un archivo ejecutable.",
+    "badge": "Programa de inicio de sesión no encontrado o no ejecutable",
+    "hintElsewhere": "Puede que el kubeconfig se haya generado en otro equipo o en WSL. Vuelva a generarlo en este equipo, o ponga como comando exec solo el nombre de la herramienta (la CLI de la nube, p. ej. yc, aws, gcloud, az, kubelogin) y asegúrese de que la herramienta está en el PATH.",
+    "hintRestart": "Una herramienta instalada después de iniciar Sextant o su sesión de escritorio no está en el PATH de Sextant hasta que reinicie Sextant. En Windows, primero cierre la sesión y vuelva a iniciarla."
   }
 }

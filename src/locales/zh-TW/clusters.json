@@ -161,5 +161,15 @@
   "order": {
     "hint": "拖曳以變更順序，或按 Alt+上方向鍵 或 Alt+下方向鍵。",
     "moved": "{{name}} 已移到第 {{position}} 位（共 {{count}} 個）"
+  },
+  "exec": {
+    "notFound": "在這台電腦上找不到 kubeconfig 指定的登入程式。",
+    "notOnPath": "登入程式 {{command}} 不在 Sextant 的 PATH 的任何資料夾中。",
+    "fileMissing": "登入程式 {{command}} 不存在。",
+    "folderMissing": "登入程式 {{command}} 所在的資料夾在這台電腦上不存在。",
+    "notExecutable": "無法執行登入程式 {{command}}：它不是可執行檔。",
+    "badge": "找不到登入程式或無法執行",
+    "hintElsewhere": "kubeconfig 可能是在另一台電腦或 WSL 中產生的。請在這台電腦上重新產生，或將 exec 命令設為工具的名稱（雲端 CLI，例如 yc、aws、gcloud、az、kubelogin），並確認該工具在 PATH 中。",
+    "hintRestart": "在 Sextant 或桌面工作階段啟動後安裝的工具，要等重新啟動 Sextant 後才會出現在 Sextant 的 PATH 中。在 Windows 上，請先登出再重新登入。"
   }
 }

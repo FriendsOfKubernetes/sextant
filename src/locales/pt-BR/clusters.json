@@ -165,5 +165,15 @@
   "order": {
     "hint": "Arraste para mudar a ordem ou pressione Alt+Seta para cima ou Alt+Seta para baixo.",
     "moved": "{{name}} movido para a posição {{position}} de {{count}}"
+  },
+  "exec": {
+    "notFound": "O programa de login indicado no kubeconfig não foi encontrado neste computador.",
+    "notOnPath": "O programa de login {{command}} não está em nenhuma pasta do PATH do Sextant.",
+    "fileMissing": "O programa de login {{command}} não existe.",
+    "folderMissing": "A pasta do programa de login {{command}} não existe neste computador.",
+    "notExecutable": "O programa de login {{command}} não pode ser executado: não é um arquivo executável.",
+    "badge": "Programa de login não encontrado ou não executável",
+    "hintElsewhere": "O kubeconfig pode ter sido gerado em outro computador ou no WSL. Gere-o novamente neste computador, ou defina como comando exec apenas o nome da ferramenta (a CLI da nuvem, por exemplo yc, aws, gcloud, az, kubelogin) e verifique se a ferramenta está no PATH.",
+    "hintRestart": "Uma ferramenta instalada depois que o Sextant ou a sua sessão foi iniciada só entra no PATH do Sextant quando você reinicia o Sextant. No Windows, primeiro saia da sessão e entre novamente."
   }
 }

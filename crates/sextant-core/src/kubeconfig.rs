@@ -108,6 +108,11 @@ pub struct ClusterInfo {
     pub user: String,
     pub namespace: Option<String>,
     pub source_id: String,
+    /// The context's exec plugin when it cannot be found on this computer (checked offline when the sources are read,
+    /// never run): the rail warns before connecting (#253). Absent when there is no exec plugin or it is found.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub exec_problem: Option<validate::ExecProblem>,
 }
 
 /// Where the default sources are looked up: the `KUBECONFIG` value and the home directory.
@@ -272,7 +277,12 @@ impl KubeconfigRegistry {
     /// error (that error); otherwise the errors are on [`Self::sources`].
     pub fn clusters(&self) -> CoreResult<Vec<ClusterInfo>> {
         let (loaded, errors) = self.load();
-        let clusters: Vec<ClusterInfo> = loaded.iter().flat_map(Loaded::clusters).collect();
+        // Exec plugins are looked up in the PATH kube starts them with: this process's.
+        let path_var = std::env::var_os("PATH");
+        let clusters: Vec<ClusterInfo> = loaded
+            .iter()
+            .flat_map(|entry| entry.clusters(path_var.as_deref()))
+            .collect();
         match errors.into_iter().next() {
             Some((_, err)) if clusters.is_empty() => Err(err),
             _ => Ok(clusters),
@@ -677,7 +687,8 @@ struct Loaded {
 }
 
 impl Loaded {
-    fn clusters(&self) -> Vec<ClusterInfo> {
+    /// The contexts of this source; `path_var` is where bare exec plugin names are looked up.
+    fn clusters(&self, path_var: Option<&std::ffi::OsStr>) -> Vec<ClusterInfo> {
         self.own
             .contexts
             .iter()
@@ -691,6 +702,7 @@ impl Loaded {
                     .and_then(|c| c.cluster.as_ref())
                     .and_then(|c| c.server.clone())
                     .unwrap_or_default();
+                let exec_problem = self.exec_problem(ctx.user.as_deref(), path_var);
                 ClusterInfo {
                     id: ClusterId::for_context(&self.source.path, &named.name),
                     context: named.name.clone(),
@@ -699,9 +711,37 @@ impl Loaded {
                     user: ctx.user.unwrap_or_default(),
                     namespace: ctx.namespace,
                     source_id: self.source.id.clone(),
+                    exec_problem,
                 }
             })
             .collect()
+    }
+
+    /// The exec plugin of `user` when it cannot be found ([`validate::exec_problem`]). Kube already resolved a
+    /// relative command with a folder in it against its file's directory when the file was read
+    /// ([`Kubeconfig::read_from`]), so what is left relative is started (and looked up) as it is.
+    fn exec_problem(
+        &self,
+        user: Option<&str>,
+        path_var: Option<&std::ffi::OsStr>,
+    ) -> Option<validate::ExecProblem> {
+        let user = user?;
+        let command = self
+            .resolve
+            .auth_infos
+            .iter()
+            .find(|u| u.name == user)?
+            .auth_info
+            .as_ref()?
+            .exec
+            .as_ref()?
+            .command
+            .as_deref()?;
+        let missing = validate::exec_problem(command, None, path_var)?;
+        Some(validate::ExecProblem {
+            command: command.to_owned(),
+            missing,
+        })
     }
 }
 
@@ -1700,5 +1740,68 @@ contexts:
         assert!(!json.contains(SECRET_TOKEN));
         assert!(!json.contains("a2V5"));
         assert!(!json.contains("Y2VydA=="));
+    }
+
+    /// A kubeconfig with contexts `missing` (an exec plugin in a folder that does not exist), `found` (an exec plugin
+    /// at a relative path next to the file, Unix only), `bare` (a name in no folder of PATH) and `token`.
+    #[test]
+    fn the_cluster_list_tells_which_exec_plugins_cannot_be_found_without_running_them() {
+        let f = Fixture::new();
+        let missing = f.path("elsewhere/yandex-cloud/bin/yc");
+        let marker = f.path("ran");
+        let plugin = f.write(
+            "home/.kube/bin/plugin",
+            &format!("#!/bin/sh\ntouch '{}'\n", marker.display()),
+        );
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&plugin, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let found = if cfg!(unix) {
+            "bin/plugin".to_owned()
+        } else {
+            plugin.display().to_string()
+        };
+        let user = |name: &str, command: &str| {
+            format!(
+                "  - name: {name}\n    user:\n      exec:\n        apiVersion: client.authentication.k8s.io/v1\n        command: '{command}'\n        args: [--token, ARG-SECRET]\n        env: [{{ name: TOKEN, value: ENV-SECRET }}]\n"
+            )
+        };
+        let text = format!(
+            "apiVersion: v1\nkind: Config\nclusters:\n  - name: c\n    cluster: {{ server: https://c:6443 }}\nusers:\n{}{}{}  - name: t\n    user: {{ token: abc }}\ncontexts:\n  - name: missing\n    context: {{ cluster: c, user: m }}\n  - name: found\n    context: {{ cluster: c, user: f }}\n  - name: bare\n    context: {{ cluster: c, user: b }}\n  - name: token\n    context: {{ cluster: c, user: t }}\n",
+            user("m", &missing.display().to_string()),
+            user("f", &found),
+            user("b", "sextant-no-such-auth-plugin"),
+        );
+        f.write("home/.kube/config", &text);
+        let clusters = f.registry().clusters().unwrap();
+        let problem = |context: &str| {
+            clusters
+                .iter()
+                .find(|c| c.context == context)
+                .unwrap()
+                .exec_problem
+                .clone()
+        };
+        assert_eq!(
+            problem("missing"),
+            Some(validate::ExecProblem {
+                command: missing.display().to_string(),
+                missing: validate::ExecMissing::FolderMissing,
+            })
+        );
+        assert_eq!(problem("found"), None);
+        assert_eq!(
+            problem("bare").map(|p| p.missing),
+            Some(validate::ExecMissing::NotOnPath)
+        );
+        assert_eq!(problem("token"), None);
+        assert!(!marker.exists(), "no plugin was started");
+        let json = serde_json::to_string(&clusters).unwrap();
+        assert!(!json.contains("SECRET"), "{json}");
+        // A cluster without a problem has no field at all.
+        let token = serde_json::to_value(clusters.iter().find(|c| c.context == "token")).unwrap();
+        assert!(token.get("execProblem").is_none(), "{token}");
     }
 }

@@ -28,6 +28,7 @@ import { Dialog, Icon, pointRect, SLOW_AFTER_S, useElapsedSeconds, usePopup, use
 import { AddClusterDialog, SourceError } from "./AddClusterDialog";
 import { ClusterAvatar } from "./ClusterAvatar";
 import { ClusterSettingsDialog } from "./ClusterSettingsDialog";
+import { ExecProblemBadge } from "./ExecPlugin";
 import { colorOf, displayNameOf } from "./clusterSettings";
 import {
   connectCluster,
@@ -316,7 +317,12 @@ function ClusterIcon({
       <span className="cluster-icon__badge">
         <ClusterAvatar cluster={cluster} settings={settings} />
         <span className="cluster-icon__status" data-state={state.state} aria-hidden="true" />
-        <ExpiryBadge clusterId={cluster.id} />
+        {cluster.execProblem ? (
+          // A login program that cannot be found fails before any credential is used: it is the one mark shown.
+          <ExecProblemBadge problem={cluster.execProblem} />
+        ) : (
+          <ExpiryBadge clusterId={cluster.id} />
+        )}
         {seconds >= 1 && (
           // Drawn from `data-text` by CSS, like the initials: the button's name is the cluster name (WCAG 2.5.3); the
           // seconds are in its tooltip and on the connection screen.

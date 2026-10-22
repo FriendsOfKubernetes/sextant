@@ -6,7 +6,7 @@
 //! Rules: offline and read-only — nothing is run (an exec plugin is only looked up, never started), nothing is sent.
 //! Whether the server answers is checked only when the user asks ([`connection_kubeconfig`] +
 //! [`crate::cluster::check_connection`], the usual connect timeouts). No value of the file is returned: names, file
-//! paths and the exec command's file name only.
+//! paths and the exec command as written (never its arguments or env) only.
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -72,8 +72,14 @@ pub enum ValidationCode {
     ClientCertificateExpired,
     /// The token (a JWT) expired (`subject`: when).
     TokenExpired,
-    /// The exec plugin (`subject`: its file name) is not found.
+    /// The exec plugin (`subject`: its command, a bare name) is in no folder of `PATH`.
     ExecNotFound,
+    /// The exec plugin's file (`subject`: the command as written) does not exist; its folder does.
+    ExecFileMissing,
+    /// The folder of the exec plugin's command (`subject`: the command as written) does not exist on this computer.
+    ExecFolderMissing,
+    /// The exec plugin's file (`subject`) exists but cannot be run.
+    ExecNotExecutable,
     /// TLS is not verified (`insecure-skip-tls-verify`).
     InsecureTls,
 }
@@ -83,7 +89,7 @@ pub enum ValidationCode {
 #[ts(export)]
 pub struct ValidationProblem {
     pub code: ValidationCode,
-    /// What it is about: a name, a file path, a command's file name, a time (RFC 3339).
+    /// What it is about: a name, a file path, an exec command as written, a time (RFC 3339).
     pub subject: Option<String>,
     pub line: Option<u32>,
     pub column: Option<u32>,
@@ -285,12 +291,15 @@ fn check_context(
             }
             if let Some(exec) = &user.exec
                 && let Some(command) = exec.command.as_deref()
-                && find_command(command, base_dir, path_var).is_none()
+                && let Some(missing) = exec_problem(command, base_dir, path_var)
             {
-                let shown = Path::new(command)
-                    .file_name()
-                    .map_or_else(|| command.to_owned(), |n| n.to_string_lossy().into_owned());
-                problems.push(problem(ValidationCode::ExecNotFound, Some(shown)));
+                let code = match missing {
+                    ExecMissing::NotOnPath => ValidationCode::ExecNotFound,
+                    ExecMissing::FileMissing => ValidationCode::ExecFileMissing,
+                    ExecMissing::FolderMissing => ValidationCode::ExecFolderMissing,
+                    ExecMissing::NotExecutable => ValidationCode::ExecNotExecutable,
+                };
+                problems.push(problem(code, Some(command.to_owned())));
             }
             let expiry = expiry_of(ClusterId::from(""), &single_context(config, name));
             match (expiry.kind, expiry.problem, expiry.expires_at) {
@@ -335,32 +344,164 @@ fn server_url_ok(url: &str) -> bool {
 }
 
 /// Where the exec plugin `command` would be found: a path (relative ones against the kubeconfig's directory, as
-/// kubectl does), else in `path_var`. Nothing is run.
+/// kubectl does), else in `path_var`. On Windows a name or path without an extension is also tried with the
+/// extensions of `PATHEXT` (`.exe`, `.cmd`, `.bat`, `.com` when it is unset). Nothing is run.
 pub fn find_command(
     command: &str,
     base_dir: Option<&Path>,
     path_var: Option<&OsStr>,
 ) -> Option<PathBuf> {
-    let as_path = Path::new(command);
-    if as_path.components().count() > 1 || as_path.is_absolute() {
-        let full = match (as_path.is_relative(), base_dir) {
-            (true, Some(dir)) => dir.join(as_path),
-            _ => as_path.to_path_buf(),
-        };
-        return is_executable(&full).then_some(full);
-    }
-    let names: Vec<String> = if cfg!(windows) {
-        ["", ".exe", ".cmd", ".bat"]
-            .iter()
-            .map(|ext| format!("{command}{ext}"))
-            .collect()
+    let extensions = if cfg!(windows) {
+        executable_extensions(std::env::var_os("PATHEXT").as_deref())
     } else {
-        vec![command.to_owned()]
+        Vec::new()
     };
+    if is_path(command) {
+        let full = resolve_path(command, base_dir);
+        return with_extensions(&full, &extensions)
+            .into_iter()
+            .find(|candidate| is_executable(candidate));
+    }
+    let names = with_extensions(Path::new(command), &extensions);
     std::env::split_paths(path_var?)
         .filter(|dir| !dir.as_os_str().is_empty())
         .flat_map(|dir| names.iter().map(move |n| dir.join(n)))
         .find(|candidate| is_executable(candidate))
+}
+
+/// Why an exec plugin's command cannot be started, as far as it can be told without running it (#253).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ExecMissing {
+    /// A bare name (`yc`) that no folder of Sextant's `PATH` holds.
+    NotOnPath,
+    /// A path whose folder exists but whose file does not.
+    FileMissing,
+    /// A path whose folder does not exist on this computer (typically a kubeconfig written on another machine or in
+    /// WSL).
+    FolderMissing,
+    /// The file exists but cannot be run (not executable, or not a file).
+    NotExecutable,
+}
+
+/// An exec plugin a context needs that cannot be found: its command exactly as the kubeconfig writes it (relative
+/// paths resolved against the kubeconfig's directory, as kube does; a path is not a secret, its arguments and env
+/// are never included) and why.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ExecProblem {
+    pub command: String,
+    pub missing: ExecMissing,
+}
+
+/// Whether the exec plugin `command` can be found ([`find_command`]) and, when it cannot, why. Offline: only file
+/// metadata is read.
+pub fn exec_problem(
+    command: &str,
+    base_dir: Option<&Path>,
+    path_var: Option<&OsStr>,
+) -> Option<ExecMissing> {
+    if find_command(command, base_dir, path_var).is_some() {
+        return None;
+    }
+    if !is_path(command) {
+        return Some(ExecMissing::NotOnPath);
+    }
+    let full = resolve_path(command, base_dir);
+    Some(if std::fs::metadata(&full).is_ok() {
+        ExecMissing::NotExecutable
+    } else {
+        missing_part(&full)
+    })
+}
+
+/// Why starting the exec plugin `command` failed with an OS error of `kind` (and `raw` OS code), in the words of
+/// [`ExecMissing`]; `None` when the error says something else. `windows` tells how to read `raw`, so that the
+/// Windows codes are tested on every platform: `ERROR_PATH_NOT_FOUND` (3) is a missing folder, `ERROR_FILE_NOT_FOUND`
+/// (2, `NotFound`) a missing file. On Unix a missing folder is `ENOENT` too, so the folder is looked at.
+pub fn start_failure(
+    kind: std::io::ErrorKind,
+    raw: Option<i32>,
+    windows: bool,
+    command: &str,
+) -> Option<ExecMissing> {
+    const ERROR_PATH_NOT_FOUND: i32 = 3;
+    const ERROR_BAD_EXE_FORMAT: i32 = 193;
+    if windows && raw == Some(ERROR_PATH_NOT_FOUND) {
+        return Some(ExecMissing::FolderMissing);
+    }
+    if windows && raw == Some(ERROR_BAD_EXE_FORMAT) {
+        return Some(ExecMissing::NotExecutable);
+    }
+    match kind {
+        std::io::ErrorKind::NotFound if !is_path(command) => Some(ExecMissing::NotOnPath),
+        std::io::ErrorKind::NotFound => Some(missing_part(Path::new(command))),
+        std::io::ErrorKind::PermissionDenied => Some(ExecMissing::NotExecutable),
+        _ => None,
+    }
+}
+
+/// The folder a command path names, when there is one to name.
+pub fn command_folder(command: &str) -> Option<&Path> {
+    Path::new(command)
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+}
+
+/// A path that does not exist: is its folder missing, or only the file?
+fn missing_part(full: &Path) -> ExecMissing {
+    match full.parent().filter(|dir| !dir.as_os_str().is_empty()) {
+        Some(dir) if !dir.is_dir() => ExecMissing::FolderMissing,
+        _ => ExecMissing::FileMissing,
+    }
+}
+
+/// A command with a folder in it (`bin/yc`, `/home/u/yc`, `C:\yc.exe`) is a path; a bare name is looked up in `PATH`.
+/// On Windows `/home/u/yc` counts as a path too (its components are counted, whatever the separator).
+fn is_path(command: &str) -> bool {
+    let as_path = Path::new(command);
+    as_path.components().count() > 1 || as_path.is_absolute()
+}
+
+fn resolve_path(command: &str, base_dir: Option<&Path>) -> PathBuf {
+    let as_path = Path::new(command);
+    match (as_path.is_relative(), base_dir) {
+        (true, Some(dir)) => dir.join(as_path),
+        _ => as_path.to_path_buf(),
+    }
+}
+
+/// `path` itself, then, when it has no extension, `path` with each of `extensions`.
+fn with_extensions(path: &Path, extensions: &[String]) -> Vec<PathBuf> {
+    let mut out = vec![path.to_path_buf()];
+    if path.extension().is_none() {
+        out.extend(extensions.iter().map(|ext| {
+            let mut name = path.as_os_str().to_owned();
+            name.push(ext);
+            PathBuf::from(name)
+        }));
+    }
+    out
+}
+
+/// The extensions an executable may have on Windows: those of `PATHEXT` (`.COM;.EXE;…`, lower-cased, without empty
+/// or dot-less entries), or `.exe`, `.cmd`, `.bat`, `.com` when it is unset or empty.
+pub(crate) fn executable_extensions(pathext: Option<&OsStr>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    if let Some(value) = pathext.and_then(OsStr::to_str) {
+        for ext in value.split(';').map(str::trim) {
+            let ext = ext.to_ascii_lowercase();
+            if ext.len() > 1 && ext.starts_with('.') && !out.contains(&ext) {
+                out.push(ext);
+            }
+        }
+    }
+    if out.is_empty() {
+        out = [".exe", ".cmd", ".bat", ".com"].map(str::to_owned).to_vec();
+    }
+    out
 }
 
 fn is_executable(path: &Path) -> bool {
@@ -519,6 +660,121 @@ mod tests {
             Some(dir.path().join("./my-plugin"))
         );
         assert!(!marker.exists(), "the plugin was never started");
+    }
+
+    #[test]
+    fn a_missing_exec_plugin_says_whether_the_file_or_its_folder_is_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        let in_dir = dir.path().join("yc");
+        let in_missing_dir = dir.path().join("yandex-cloud").join("bin").join("yc");
+        let empty = std::env::join_paths([dir.path()]).unwrap();
+        let check = |command: &Path| exec_problem(command.to_str().unwrap(), None, Some(&empty));
+        assert_eq!(check(&in_dir), Some(ExecMissing::FileMissing));
+        assert_eq!(check(&in_missing_dir), Some(ExecMissing::FolderMissing));
+        assert_eq!(
+            exec_problem("sextant-no-such-plugin", None, Some(&empty)),
+            Some(ExecMissing::NotOnPath)
+        );
+        // A relative path is resolved against the kubeconfig's directory.
+        assert_eq!(
+            exec_problem("bin/yc", Some(dir.path()), None),
+            Some(ExecMissing::FolderMissing)
+        );
+        // A folder where the file should be cannot be run.
+        std::fs::create_dir(dir.path().join("folder")).unwrap();
+        assert_eq!(
+            check(&dir.path().join("folder")),
+            Some(ExecMissing::NotExecutable)
+        );
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::write(&in_dir, "#!/bin/sh\n").unwrap();
+            std::fs::set_permissions(&in_dir, std::fs::Permissions::from_mode(0o644)).unwrap();
+            assert_eq!(check(&in_dir), Some(ExecMissing::NotExecutable));
+            std::fs::set_permissions(&in_dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+            assert_eq!(check(&in_dir), None);
+        }
+    }
+
+    #[test]
+    fn the_add_check_names_the_exec_command_as_written() {
+        let dir = tempfile::tempdir().unwrap();
+        let command = dir
+            .path()
+            .join("yandex-cloud")
+            .join("bin")
+            .join("yc")
+            .display()
+            .to_string();
+        let yaml = format!(
+            "apiVersion: v1\nkind: Config\nclusters:\n  - name: c\n    cluster: {{ server: https://c:6443 }}\nusers:\n  - name: u\n    user:\n      exec:\n        apiVersion: client.authentication.k8s.io/v1\n        command: '{command}'\n        args: [--token, s3cret]\ncontexts:\n  - name: x\n    context: {{ cluster: c, user: u }}\n"
+        );
+        let v = validate(&text(&yaml), None);
+        let p = &v.contexts[0].problems[0];
+        assert_eq!(p.code, ValidationCode::ExecFolderMissing, "{v:?}");
+        assert_eq!(p.subject.as_deref(), Some(command.as_str()));
+        assert!(!serde_json::to_string(&v).unwrap().contains("s3cret"));
+    }
+
+    /// The OS errors of a failed start, read the way each platform means them (so the Windows codes are tested
+    /// everywhere): `ERROR_PATH_NOT_FOUND` (3) is a missing folder, `NotFound` a missing file or a name in no folder of
+    /// `PATH`, `PermissionDenied` a file that cannot be run.
+    #[test]
+    fn start_failures_are_read_by_os_error() {
+        use std::io::ErrorKind as K;
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("yc").display().to_string();
+        let deep = dir.path().join("gone").join("yc").display().to_string();
+        let win_style = "/home/user/yandex-cloud/bin/yc";
+        assert_eq!(
+            start_failure(K::NotFound, Some(3), true, win_style),
+            Some(ExecMissing::FolderMissing)
+        );
+        assert_eq!(
+            start_failure(K::NotFound, Some(2), true, "yc"),
+            Some(ExecMissing::NotOnPath)
+        );
+        assert_eq!(
+            start_failure(K::NotFound, Some(2), false, &file),
+            Some(ExecMissing::FileMissing)
+        );
+        // On Unix a missing folder is `ENOENT` as well: the folder is looked at.
+        assert_eq!(
+            start_failure(K::NotFound, Some(2), false, &deep),
+            Some(ExecMissing::FolderMissing)
+        );
+        assert_eq!(
+            start_failure(K::PermissionDenied, Some(13), false, &file),
+            Some(ExecMissing::NotExecutable)
+        );
+        assert_eq!(
+            start_failure(K::Other, Some(193), true, &file),
+            Some(ExecMissing::NotExecutable)
+        );
+        // Raw 3 on Unix is not a missing folder.
+        assert_eq!(start_failure(K::Other, Some(3), false, &file), None);
+        assert_eq!(start_failure(K::OutOfMemory, None, false, "yc"), None);
+    }
+
+    #[test]
+    fn executable_extensions_come_from_pathext() {
+        assert_eq!(
+            executable_extensions(Some(OsStr::new(".COM;.EXE;;.Bat;exe;.EXE"))),
+            [".com", ".exe", ".bat"]
+        );
+        assert_eq!(
+            executable_extensions(None),
+            [".exe", ".cmd", ".bat", ".com"]
+        );
+        assert_eq!(
+            with_extensions(Path::new("yc"), &[".exe".to_owned()]),
+            [PathBuf::from("yc"), PathBuf::from("yc.exe")]
+        );
+        assert_eq!(
+            with_extensions(Path::new("yc.exe"), &[".exe".to_owned()]),
+            [PathBuf::from("yc.exe")]
+        );
     }
 
     #[test]

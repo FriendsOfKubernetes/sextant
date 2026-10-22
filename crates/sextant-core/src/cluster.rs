@@ -364,17 +364,12 @@ pub(crate) async fn open_checked_client(
 ) -> CoreResult<(kube::Client, Option<ServerBinding>)> {
     // Read from the very text the client is built from.
     let binding = ServerBinding::of(&kubeconfig).ok();
-    // Only the file name of the exec plugin goes into error messages.
+    // The exec plugin's command as the kubeconfig writes it goes into error messages, so a path that does not exist
+    // here can be seen (#253); never its arguments, env or output.
     let plugin: Option<String> = kubeconfig
         .auth_infos
         .iter()
-        .filter_map(|u| u.auth_info.as_ref()?.exec.as_ref()?.command.as_deref())
-        .map(|cmd| {
-            std::path::Path::new(cmd)
-                .file_name()
-                .map_or_else(|| cmd.to_owned(), |n| n.to_string_lossy().into_owned())
-        })
-        .next();
+        .find_map(|u| u.auth_info.as_ref()?.exec.as_ref()?.command.clone());
     let options = KubeConfigOptions {
         context: kubeconfig.current_context.clone(),
         ..Default::default()
@@ -793,7 +788,47 @@ mod tests {
         let (_dir, mgr, id) = manager(&kubeconfig("https://127.0.0.1:1", user));
         let err = mgr.connect(&id).await.unwrap_err();
         assert_eq!(err.code, ErrorCode::AuthPlugin, "{err}");
+        assert!(
+            err.message.starts_with(crate::error::EXEC_PLUGIN_NOT_FOUND),
+            "{err}"
+        );
+        assert!(
+            err.message
+                .contains("'sextant-no-such-auth-plugin' is in no folder of Sextant's PATH"),
+            "{err}"
+        );
         assert_eq!(error_code(mgr.state(&id)), ErrorCode::AuthPlugin);
+    }
+
+    /// A kubeconfig written on another machine or in WSL (#253): the command is a path whose folder is not here. The
+    /// error names that path and folder, and never the plugin's arguments or env.
+    #[tokio::test]
+    async fn an_exec_plugin_in_a_missing_folder_is_named_by_its_path() {
+        let elsewhere = tempfile::tempdir().unwrap();
+        let folder = elsewhere.path().join("yandex-cloud").join("bin");
+        let command = folder.join("yc").display().to_string();
+        let user = format!(
+            "      exec:\n        apiVersion: client.authentication.k8s.io/v1\n        command: '{command}'\n        args: [--password=ARG-SECRET]\n        env:\n          - name: VAULT_TOKEN\n            value: ENV-SECRET-123\n        interactiveMode: Never\n"
+        );
+        let (_dir, mgr, id) = manager(&kubeconfig("https://127.0.0.1:1", &user));
+        let err = mgr.connect(&id).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::AuthPlugin, "{err}");
+        assert!(
+            err.message.starts_with(crate::error::EXEC_PLUGIN_NOT_FOUND),
+            "{err}"
+        );
+        assert!(err.message.contains(&format!("'{command}'")), "{err}");
+        assert!(
+            err.message
+                .contains(&format!("the folder '{}' does not exist", folder.display())),
+            "{err}"
+        );
+        let state = serde_json::to_string(&mgr.state(&id)).unwrap();
+        for text in [&err.message, &state] {
+            for secret in ["ARG-SECRET", "ENV-SECRET-123", "VAULT_TOKEN"] {
+                assert!(!text.contains(secret), "{secret} leaked in {text}");
+            }
+        }
     }
 
     #[tokio::test]
