@@ -56,6 +56,8 @@
     "vgpuDeviceManager": "vGPU device manager",
     "vfioManager": "VFIO manager",
     "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataSandboxDevicePlugin": "Kata 沙箱裝置外掛",
+    "sandboxValidator": "沙箱驗證器",
     "kataManager": "Kata manager",
     "ccManager": "機密運算管理器"
   },

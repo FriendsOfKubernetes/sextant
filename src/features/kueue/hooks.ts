@@ -6,14 +6,14 @@
 //  - the LocalQueues and ClusterQueues of the cluster (few: one LocalQueue per team namespace, ≤ 5000) through the
 //    resource map's shared watches, while a queue's, flavor's or cohort's details are open;
 //  - the Workloads of one job, in its namespace, by the label Kueue puts on them (`kueue.x-k8s.io/job-uid`, selected
-//    by the API server), or a prebuilt Workload by name.
+//    by the API server), or a prebuilt Workload by name (its annotation first, then its label).
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { ClusterId, KubeObject, WatchSpec, WatchState } from "../../api";
 import { findKind, status, useClusterKinds } from "../../resources";
 import { sourceKey, sourcesFor, type SourceDef } from "../problems/sources";
 import { acquireRows, epochOf, getRows, sourcesVersion, subscribeSources, type RowsState, type RowTap } from "../problems/store";
 import { useSharedWatches } from "../resource-map/watches";
-import { CLUSTER_QUEUE, JOB_UID_LABEL, LOCAL_QUEUE, PREBUILT_LABEL, WORKLOAD, workloadRow, type WorkloadRow } from "./model";
+import { CLUSTER_QUEUE, JOB_UID_LABEL, LOCAL_QUEUE, prebuiltWorkloadOf, WORKLOAD, workloadRow, type WorkloadRow } from "./model";
 
 /** Rows the tap keeps at most, as the source's watch. */
 export const MAX_WORKLOAD_ROWS = 5000;
@@ -137,7 +137,7 @@ export function useJobWorkloads(clusterId: ClusterId, job: KubeObject | null): J
   const served = kinds.kinds ? (findKind(kinds.kinds, WORKLOAD)?.kindRef ?? null) : undefined;
   const namespace = job?.metadata?.namespace;
   const uid = job?.metadata?.uid;
-  const prebuilt = (job?.metadata?.labels as Record<string, string> | undefined)?.[PREBUILT_LABEL];
+  const prebuilt = prebuiltWorkloadOf(job);
   const specs = useMemo<WatchSpec[]>(() => {
     if (!served || !namespace || !uid) return [];
     const ns = [namespace];

@@ -73,10 +73,12 @@
     "serveService": "Serve Service",
     "serveEndpoints": "Serve 端點",
     "upgradeStrategy": "升級策略",
-    "upgrade": "正在升級"
+    "upgrade": "正在升級",
+    "rollback": "正在回滾"
   },
   "workersReady": "{{ready}}/{{desired}} 就緒",
   "bounds": "{{min}} 到 {{max}}",
+  "boundsUnlimited": "至少 {{min}}，無上限",
   "desiredResource": {
     "CPU": "CPU：{{value}}",
     "Memory": "記憶體：{{value}}",
@@ -127,5 +129,6 @@
   "activeCluster": "作用中叢集",
   "pendingCluster": "待切換叢集（升級）",
   "serveConfig": "Serve 設定",
-  "noServeConfig": "未設定 serveConfigV2。"
+  "noServeConfig": "未設定 serveConfigV2。",
+  "serveConfigUnreadable": "未顯示：無法安全讀取 Serve 設定。請查看 YAML 區段。"
 }

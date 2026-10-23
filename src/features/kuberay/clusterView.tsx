@@ -7,7 +7,18 @@ import { status, StatusText } from "../../resources";
 import { Block, chips, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { ClusterStateText } from "./columns";
 import { useRayPods } from "./hooks";
-import { clusterReason, clusterState, endpointsOf, GROUP_LABEL, headOf, NODE_TYPE_LABEL, CLUSTER_LABEL, workerGroups, workersOf } from "./model";
+import {
+  clusterReason,
+  clusterState,
+  endpointsOf,
+  GROUP_LABEL,
+  headOf,
+  isUnlimited,
+  NODE_TYPE_LABEL,
+  CLUSTER_LABEL,
+  workerGroups,
+  workersOf,
+} from "./model";
 import { LABELS, Muted, Note, PodLogsButton, SelectorLogsButton } from "./parts";
 
 const { arr, get, podStatus, record, str, statusTone } = status;
@@ -41,7 +52,14 @@ export function ClusterView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
     ["status", <ClusterStateText key="s" obj={obj} />],
     ["rayVersion", str(get(obj, "spec", "rayVersion"))],
     ["workers", t("kuberay:workersReady", { ready: workers.ready, desired: workers.desired })],
-    ["workerBounds", workers.min !== undefined && workers.max !== undefined ? t("kuberay:bounds", { min: workers.min, max: workers.max }) : null],
+    [
+      "workerBounds",
+      workers.min !== undefined && workers.max !== undefined
+        ? isUnlimited(workers.max)
+          ? t("kuberay:boundsUnlimited", { min: workers.min })
+          : t("kuberay:bounds", { min: workers.min, max: workers.max })
+        : null,
+    ],
     ["headPod", link(KINDS.pod, head.podName ?? headPod?.metadata?.name, ns)],
     ["headPodIP", head.podIP],
     ["headService", link(KINDS.service, head.serviceName, ns)],
@@ -57,7 +75,7 @@ export function ClusterView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   const groups = workerGroups(obj).map((g) => [
     g.name,
     g.replicas === undefined ? "" : String(g.replicas * g.hosts),
-    t("kuberay:bounds", { min: g.min ?? 0, max: g.max ?? 0 }),
+    isUnlimited(g.max) ? t("kuberay:boundsUnlimited", { min: g.min ?? 0 }) : t("kuberay:bounds", { min: g.min ?? 0, max: g.max }),
     loading || error ? "" : String(ready.get(g.name) ?? 0),
     g.suspended ? t("kuberay:yes") : t("kuberay:no"),
   ]);

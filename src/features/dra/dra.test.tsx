@@ -38,7 +38,7 @@ import {
   sliceDevicesOf,
   sliceScope,
 } from "./model";
-import { claimsIn, namespacesToCheck, toProblems, unallocatedClaims, WAIT_GRACE_MS } from "./provider";
+import { claimsIn, LOOK_DELAY_MS, namespacesToCheck, toProblems, unallocatedClaims, WAIT_GRACE_MS } from "./provider";
 import { DEVICES_PAGE_ID } from "./register";
 
 const f = fixtures as unknown as Record<string, KubeObject>;
@@ -161,6 +161,27 @@ describe("pods waiting for devices", () => {
     expect(toProblems([f.podWaiting!], () => allocated, new Map(), now)).toEqual([]);
   });
 
+  it("an unallocated claim with a scheduler message that names no DRA reason is not why the pod waits", () => {
+    // Claims known, one of them not allocated, but the scheduler waits for CPU: the claim would be allocated while
+    // the pod is placed, so this is not a DRA problem.
+    const cpu = copy(f.podWaiting!);
+    (cpu.status as { conditions: { message: string }[] }).conditions[0]!.message = "0/3 nodes are available: 3 Insufficient cpu.";
+    expect(toProblems([cpu], () => claims, new Map(), now)).toEqual([]);
+    // A claim that does not exist is: the pod cannot be placed until it does, whatever the message says.
+    const absent = new Map([["pod1-scratch-q8z4m", f.claimAllocated!]]);
+    expect(toProblems([cpu], () => absent, new Map(), now)).toEqual([
+      expect.objectContaining({ reason: "DraWaiting", messageLists: { claims: ["shared-gpu"] } }),
+    ]);
+    // A pod held by a scheduling gate waits for no node yet.
+    const gated = copy(f.podWaiting!);
+    Object.assign((gated.status as { conditions: Record<string, unknown>[] }).conditions[0]!, {
+      reason: "SchedulingGated",
+      message: "Scheduling is blocked due to non-empty scheduling gates",
+    });
+    expect(toProblems([gated], () => new Map(), new Map(), now)).toEqual([]);
+    expect(namespacesToCheck([gated])).toEqual([]);
+  });
+
   it("looks at the claims of only the namespaces where a pod waits with claims", () => {
     expect(namespacesToCheck([f.podWaiting!, f.podRunning!, f.podNotCreated!])).toEqual(["gpu-test1", "gpu-test2"]);
     expect(claimsIn(ready([f.claimPending!, f.claimV1beta1!]), "gpu-test1")?.has("shared-gpu")).toBe(true);
@@ -229,12 +250,27 @@ describe("the Dynamic Resource Allocation section", () => {
   it("is there where the cluster serves the kinds, and counts the pods waiting for devices", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Dynamic Resource Allocation"));
+    emitSnapshot(wb, await watchOf(wb, "DeviceClass", (s) => s.metadataOnly === true), [f.deviceClass!]);
     const pending = await watchOf(wb, "Pod", (s) => s.fieldSelector === "status.phase=Pending" && s.namespaces === null);
     emitSnapshot(wb, pending, [f.podWaiting!]);
     const claims = await watchOf(wb, "ResourceClaim", (s) => s.namespaces?.join() === "gpu-test1");
     expect((wb.specs.get(claims)!.kind as KindRef).version).toBe("v1beta1");
     emitSnapshot(wb, claims, [f.claimPending!]);
     await waitFor(() => expect(screen.getByTitle("1 pod waits for devices")).toHaveTextContent("1"));
+  });
+
+  it("watches no pod while the cluster has no DeviceClass (resource.k8s.io is served by default from 1.34)", async () => {
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(sections()).toContain("Dynamic Resource Allocation"));
+    const classes = await watchOf(wb, "DeviceClass", (s) => s.metadataOnly === true);
+    const pendingWatch = () => [...wb.specs.values()].some((s) => s.fieldSelector === "status.phase=Pending");
+    expect(pendingWatch()).toBe(false);
+    emitSnapshot(wb, classes, []);
+    await new Promise((resolve) => setTimeout(resolve, 3 * LOOK_DELAY_MS));
+    expect(pendingWatch()).toBe(false);
+    // A driver installs its class: the pods are looked at.
+    emitSnapshot(wb, classes, [f.deviceClass!]);
+    await watchOf(wb, "Pod", (s) => s.fieldSelector === "status.phase=Pending" && s.namespaces === null);
   });
 
   it("is not there without the kinds, and nothing of it is watched", async () => {

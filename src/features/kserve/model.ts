@@ -7,6 +7,7 @@
 import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
+import { cleanText } from "../../resources/uri";
 import type { Detected } from "../problems/model";
 
 const { arr, get, num, record, str } = status;
@@ -60,7 +61,7 @@ export function conditionsOf(obj: KubeObject): Condition[] {
     type: str(get(c, "type")) ?? "",
     status: str(get(c, "status")) ?? "Unknown",
     reason: str(get(c, "reason")),
-    message: str(get(c, "message")),
+    message: cleanText(str(get(c, "message"))),
     since: str(get(c, "lastTransitionTime")),
   }));
 }
@@ -69,30 +70,8 @@ export const conditionOf = (obj: KubeObject, type: string): Condition | undefine
 
 // ---------- URIs ----------
 
-const URI = /^([a-z][a-z0-9+.-]*:\/\/)([^/?#]*)([^?#]*)([?#].*)?$/i;
-
-export interface SafeUri {
-  text: string;
-  /** Credentials (`user:password@`), a query or a fragment were left out. */
-  hidden: boolean;
-}
-
-/**
- * A URI as it may be shown: without its userinfo (`user:token@`), query (`?X-Amz-Signature=…`, a SAS token) and
- * fragment, which can carry credentials. A text that is not `scheme://…` loses everything from its first `?` or `#`.
- */
-export function safeUri(value: string | undefined): SafeUri | undefined {
-  if (!value) return undefined;
-  const m = URI.exec(value);
-  if (!m) {
-    const cut = value.search(/[?#]/);
-    return cut < 0 ? { text: value, hidden: false } : { text: value.slice(0, cut), hidden: true };
-  }
-  const authority = m[2] ?? "";
-  const at = authority.lastIndexOf("@");
-  const host = at < 0 ? authority : authority.slice(at + 1);
-  return { text: `${m[1]}${host}${m[3] ?? ""}`, hidden: at >= 0 || Boolean(m[4]) };
-}
+/** Every URI and free text the KServe views show goes through the one cleaner (`src/resources/uri.ts`). */
+export { cleanText, safeUri, type SafeUri } from "../../resources/uri";
 
 // ---------- Deployment mode ----------
 
@@ -234,8 +213,8 @@ export function modelStatusOf(obj: KubeObject): ModelStatus {
         ? undefined
         : {
             reason: str(get(f, "reason")),
-            message: str(get(f, "message")),
-            location: str(get(f, "location")),
+            message: cleanText(str(get(f, "message"))),
+            location: cleanText(str(get(f, "location"))),
             time: str(get(f, "time")),
             exitCode: num(get(f, "exitCode")),
             revision: str(get(f, "modelRevisionName")),
@@ -307,17 +286,20 @@ export function failingCondition(obj: KubeObject): Condition | undefined {
 export function serviceState(obj: KubeObject): ServiceState {
   if (isStopped(obj)) return "stopped";
   const model = modelStatusOf(obj);
-  if (modelFailed(model) || model.transitionStatus === "InvalidSpec") return "failed";
+  if (modelFailed(model) || invalidSpec(model)) return "failed";
   const ready = conditionOf(obj, READY);
   if (ready?.status === "True") return "ready";
   if (ready?.status === "False") return "notReady";
   return "progressing";
 }
 
-/** What explains the state in KServe's words: the failing condition, else the model's last failure. */
+/** The spec cannot be served as it is (`transitionStatus: InvalidSpec`: no runtime, a disabled one, a protocol or format it lacks). */
+export const invalidSpec = (m: ModelStatus): boolean => m.transitionStatus === "InvalidSpec";
+
+/** What explains the state in KServe's words: the model's last failure when it failed or the spec is invalid, else the failing condition. */
 export function serviceReason(obj: KubeObject): string | undefined {
   const model = modelStatusOf(obj);
-  if (modelFailed(model) && model.failure?.message) return model.failure.message;
+  if ((modelFailed(model) || invalidSpec(model)) && model.failure?.message) return model.failure.message;
   const c = failingCondition(obj);
   return c ? c.message || c.reason : undefined;
 }
@@ -334,16 +316,34 @@ export function recordedRuntimeOf(obj: KubeObject): { name: string; cluster: boo
 
 /** An InferenceService not ready counts after this long: a model download and a first revision take a while. */
 export const KSERVE_GRACE_MS = 10 * 60_000;
+/**
+ * An invalid spec counts after this long: KServe writes `InvalidSpec` with "Waiting for runtime to become available"
+ * while a runtime named in the spec is being created next to it (`reconcileModel` in components/predictor.go).
+ */
+export const INVALID_SPEC_GRACE_MS = 2 * 60_000;
 
 /**
- * The problems of an InferenceService: not ready after a grace (the failing condition's reason and message), and
- * a model that failed to load (at once, from `modelStatus`). A stopped or deleted one has none.
+ * The problems of an InferenceService: not ready after a grace (the failing condition's reason and message), a
+ * model that failed to load (at once, from `modelStatus`), and a spec KServe cannot serve (`transitionStatus:
+ * InvalidSpec`, with `lastFailureInfo`'s reason and message, after `INVALID_SPEC_GRACE_MS` from its `time` — KServe
+ * writes none for an invalid spec, so then from when Sextant first saw it). A stopped or deleted one has none.
  */
 export function kserveProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObject): Detected[] {
   if (!isKind(kind, INFERENCE_SERVICE) || obj.metadata?.deletionTimestamp || isStopped(obj)) return [];
   const found: Detected[] = [];
   const model = modelStatusOf(obj);
-  if (modelFailed(model)) {
+  // KServe also sets `targetModelState: FailedToLoad` with `InvalidSpec` (`UpdateModelTransitionStatus` in
+  // inference_service_status.go), so the invalid spec is told first, with its grace.
+  if (invalidSpec(model)) {
+    found.push({
+      reason: model.failure?.reason || "InvalidSpec",
+      group: "invalidSpec",
+      message: model.failure?.message,
+      since: model.failure?.time,
+      graceMs: INVALID_SPEC_GRACE_MS,
+      notify: true,
+    });
+  } else if (modelFailed(model)) {
     found.push({
       reason: model.failure?.reason || "FailedToLoad",
       group: "modelLoad",

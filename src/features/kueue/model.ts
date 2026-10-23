@@ -50,8 +50,18 @@ export const kueueKind = (kind: Pick<KindRef, "group" | "kind">): KueueKind | un
 export const QUEUE_LABEL = "kueue.x-k8s.io/queue-name";
 /** The label Kueue puts on a job's Workload: the job's uid (`constants.JobUIDLabel`). */
 export const JOB_UID_LABEL = "kueue.x-k8s.io/job-uid";
-/** A job that names its prebuilt Workload (`constants.PrebuiltWorkloadLabel`). */
+/**
+ * A job that names its prebuilt Workload: the annotation (`constants.PrebuiltWorkloadAnnotation`, with the
+ * WorkloadIdentifierAnnotations gate) or the label (`constants.PrebuiltWorkloadLabel`) of the same key
+ * (pkg/controller/constants/constants.go).
+ */
 export const PREBUILT_LABEL = "kueue.x-k8s.io/prebuilt-workload-name";
+export const PREBUILT_ANNOTATION = "kueue.x-k8s.io/prebuilt-workload-name";
+
+/** The prebuilt Workload a job names: the annotation first, then the label, as Kueue reads them. */
+export function prebuiltWorkloadOf(job: KubeObject | null | undefined): string | undefined {
+  return str(record(job?.metadata?.annotations)[PREBUILT_ANNOTATION]) || str(record(job?.metadata?.labels)[PREBUILT_LABEL]) || undefined;
+}
 /** Composable jobs name their owner by annotation (`constants.JobOwnerGVKAnnotation` / `JobOwnerNameAnnotation`). */
 export const OWNER_GVK_ANNOTATION = "kueue.x-k8s.io/job-owner-gvk";
 export const OWNER_NAME_ANNOTATION = "kueue.x-k8s.io/job-owner-name";
@@ -249,7 +259,9 @@ export const WORKLOAD_TONE: Record<WorkloadState, Tone> = {
 /**
  * QuotaReserved=False reasons that mean "waiting for quota" — the scheduler's (`pkg/scheduler/scheduler.go`): `Pending`
  * (every version; the only one without the UnadmittedWorkloadsObservability gate), and with it `WaitingForQuota`,
- * `NoMatchingFlavor`, `ExceedsMaxQuota`, `TopologyPlacementFailed`, `WaitingForPreemptedWorkloads`.
+ * `NoMatchingFlavor`, `ExceedsMaxQuota`, `TopologyPlacementFailed`, `WaitingForPreemptedWorkloads`, and
+ * `WaitingForPodsReady` (waitForPodsReady holds the queue until admitted Workloads' pods are ready; `Waiting` without
+ * the gate — `UnadmittedWorkloadReasonWithFallback` in scheduler.go; reasons in apis/kueue/v1beta2/workload_types.go).
  */
 export const QUOTA_REASONS = new Set([
   "Pending",
@@ -258,13 +270,17 @@ export const QUOTA_REASONS = new Set([
   "ExceedsMaxQuota",
   "TopologyPlacementFailed",
   "WaitingForPreemptedWorkloads",
+  "WaitingForPodsReady",
+  "Waiting",
 ]);
 /**
  * Reasons that mean the Workload cannot be queued as it is (a missing LocalQueue or ClusterQueue, a namespace the
- * ClusterQueue does not select): `Inadmissible` (every version) and `Misconfigured` (with the gate). A stopped or
- * inactive queue (`Suspended`, or `Inadmissible` saying so) is the queue's state, told through the queue.
+ * ClusterQueue does not select, DRA resources Kueue cannot resolve): `Inadmissible` (every version), `Misconfigured`
+ * and `DRAResourcesUnresolved` (with the gate; Kueue itself reads the last as inadmissible, `isDRAInadmissibleReason`
+ * in pkg/controller/core/workload_controller.go). A stopped or inactive queue (`Suspended`, or `Inadmissible` saying
+ * so) is the queue's state, told through the queue.
  */
-const INADMISSIBLE_REASONS = new Set(["Inadmissible", "Misconfigured"]);
+const INADMISSIBLE_REASONS = new Set(["Inadmissible", "Misconfigured", "DRAResourcesUnresolved"]);
 const QUEUE_STOPPED = /\bis (?:stopped|inactive)\b/;
 /** Deactivations that are a failure, not a user's choice (`Evicted` reason `Deactivated<cause>`). */
 const FAILED_DEACTIVATION = /RequeuingLimitExceeded|MaximumExecutionTimeExceeded|AdmissionCheck/;
@@ -325,12 +341,23 @@ export function workloadInfo(wl: KubeObject): WorkloadInfo {
   return { ...base, state: "pending", why: withType("QuotaReserved", reserved) };
 }
 
-/** A deactivation Kueue made because something failed (the requeuing limit, the maximum execution time, a check). */
+/** Evicted reasons of a deactivation that do not carry its cause (older Kueue: `InactiveWorkload`; `Deactivated` without one). */
+const CAUSELESS_DEACTIVATION = new Set(["InactiveWorkload", "Deactivated"]);
+
+/**
+ * A deactivation Kueue made because something failed (the requeuing limit, the maximum execution time, a check): by
+ * the Evicted or DeactivationTarget condition's reason (`Deactivated<cause>`), else — where the Evicted reason carries
+ * no cause, as older Kueue writes it with the cause in the message only — by the eviction counts' `underlyingCause`
+ * of a deactivation (`workloadEvictionStateInc` in pkg/workload/evict/evict.go records reason `Deactivated` with the
+ * DeactivationTarget's reason as the cause).
+ */
 export function failedDeactivation(wl: KubeObject): boolean {
   if (isActiveWorkload(wl)) return false;
   const evicted = conditionOf(wl, "Evicted");
   const target = conditionOf(wl, "DeactivationTarget");
-  return [evicted?.reason, target?.reason].some((r) => r !== undefined && FAILED_DEACTIVATION.test(r));
+  if ([evicted?.reason, target?.reason].some((r) => r !== undefined && FAILED_DEACTIVATION.test(r))) return true;
+  if (evicted?.reason !== undefined && !CAUSELESS_DEACTIVATION.has(evicted.reason)) return false;
+  return evictionsOf(wl).some((e) => CAUSELESS_DEACTIVATION.has(e.reason) && e.cause !== undefined && FAILED_DEACTIVATION.test(e.cause));
 }
 
 export interface OwnerLink {

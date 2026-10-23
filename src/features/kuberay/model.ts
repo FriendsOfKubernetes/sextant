@@ -4,10 +4,12 @@
 // (`RayClusterProvisioned`, `HeadPodReady`, `ReplicaFailure`, `RayClusterSuspending`, `RayClusterSuspended`); a
 // RayJob's `jobStatus` (Ray's own: PENDING … FAILED) and `jobDeploymentStatus` (KubeRay's: Initializing … Failed); a
 // RayService's `Ready` and `UpgradeInProgress` conditions (the deprecated `serviceStatus` "Running" before 1.3) and
-// the Serve applications of its active and pending clusters. Pure functions, no React.
+// the Serve applications of its active and pending clusters. Every message read here goes through `cleanText` (no
+// userinfo or query of a URI in it, ADR-0115). Pure functions, no React.
 import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
+import { cleanText } from "../../resources/uri";
 import type { Detected } from "../problems/model";
 
 const { arr, get, num, record, str } = status;
@@ -55,7 +57,7 @@ export function conditionOf(obj: KubeObject, type: string): Condition | undefine
   return {
     status: str(get(c, "status")) ?? "Unknown",
     reason: str(get(c, "reason")),
-    message: str(get(c, "message")),
+    message: cleanText(str(get(c, "message"))),
     since: str(get(c, "lastTransitionTime")),
   };
 }
@@ -96,6 +98,14 @@ export function clusterState(obj: KubeObject): ClusterState {
   }
   return state === "ready" ? "ready" : "provisioning";
 }
+
+/**
+ * `maxReplicas` defaults to the largest int32 (raycluster_types.go `+kubebuilder:default:=2147483647`; the operator
+ * reads a missing one so too, `CalculateMaxReplicas` in controllers/ray/utils/util.go, which saturates the cluster's
+ * sum at it): no limit.
+ */
+export const UNLIMITED_REPLICAS = 2_147_483_647;
+export const isUnlimited = (max: number | undefined): boolean => max === undefined || max >= UNLIMITED_REPLICAS;
 
 export interface WorkerGroup {
   name: string;
@@ -166,7 +176,7 @@ export function clusterReason(obj: KubeObject): string | undefined {
     const bad = type === "ReplicaFailure" ? isTrue(c) : isFalse(c);
     if (bad && (c?.message || c?.reason)) return c.message || c.reason;
   }
-  return str(get(obj, "status", "reason"));
+  return cleanText(str(get(obj, "status", "reason")));
 }
 
 // ---------- RayJob ----------
@@ -203,6 +213,9 @@ export function jobState(obj: KubeObject): JobState {
   if (job === "RUNNING") return "running";
   return "pending";
 }
+
+/** Why a RayJob failed or waits, in KubeRay's words (`status.message`; it can quote the job's last logs). */
+export const jobMessageOf = (obj: KubeObject): string | undefined => cleanText(str(get(obj, "status", "message")));
 
 /** How the job is submitted; `K8sJobMode` (a submitter Kubernetes Job) when not set. */
 export const submissionModeOf = (obj: KubeObject): string => str(get(obj, "spec", "submissionMode")) || "K8sJobMode";
@@ -251,9 +264,9 @@ function serveCluster(value: unknown): ServeCluster {
     .map(([name, a]) => ({
       name,
       status: str(get(a, "status")),
-      message: str(get(a, "message")),
+      message: cleanText(str(get(a, "message"))),
       deployments: Object.entries(record(get(a, "serveDeploymentStatuses")))
-        .map(([d, s]) => ({ name: d, status: str(get(s, "status")), message: str(get(s, "message")) }))
+        .map(([d, s]) => ({ name: d, status: str(get(s, "status")), message: cleanText(str(get(s, "message"))) }))
         .sort((x, y) => x.name.localeCompare(y.name)),
     }))
     .sort((x, y) => x.name.localeCompare(y.name));
@@ -273,8 +286,9 @@ const FAILED_REASONS = new Set(["ValidationFailed", "InitializingTimeout"]);
 
 /**
  * A RayService's state: the `Ready` condition (KubeRay 1.3+; `serviceStatus` "Running" before), suspension, a
- * zero-downtime upgrade in progress, and a failure when the condition says so or a Serve application of the active
- * cluster failed to deploy or is unhealthy.
+ * zero-downtime upgrade in progress — or its rollback (`RollbackInProgress`, rayservice_types.go), which is read as
+ * upgrading too — and a failure when the condition says so or a Serve application of the active cluster failed to
+ * deploy or is unhealthy.
  */
 export function serviceState(obj: KubeObject): ServiceState {
   if (isTrue(conditionOf(obj, "Suspended")) || isTrue(conditionOf(obj, "Suspending"))) return "suspended";
@@ -282,7 +296,7 @@ export function serviceState(obj: KubeObject): ServiceState {
   const failedApp = failedAppOf(obj) !== undefined;
   if (ready && isFalse(ready) && FAILED_REASONS.has(ready.reason ?? "")) return "failed";
   if (failedApp) return "failed";
-  if (isTrue(conditionOf(obj, "UpgradeInProgress"))) return "upgrading";
+  if (isTrue(conditionOf(obj, "UpgradeInProgress")) || isTrue(conditionOf(obj, "RollbackInProgress"))) return "upgrading";
   if (ready) return isTrue(ready) ? "ready" : "notReady";
   return str(get(obj, "status", "serviceStatus")) === "Running" ? "ready" : "notReady";
 }
@@ -312,7 +326,10 @@ export function serviceReason(obj: KubeObject): string | undefined {
 
 // ---------- Problems ----------
 
-/** A head pod not ready, a pod KubeRay cannot create, a RayService not ready count after this long. */
+/**
+ * A head pod not ready, a pod KubeRay cannot create, a RayService not ready count after this long; so does a failed
+ * Serve application of a RayService whose `Ready` is still True, from when it was first seen.
+ */
 export const RAY_GRACE_MS = 5 * 60_000;
 /** A RayService serves only once every application is up (models load, images pull): a longer grace. */
 export const SERVICE_GRACE_MS = 10 * 60_000;
@@ -370,7 +387,7 @@ export function rayProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObje
     return [
       {
         reason: str(get(obj, "status", "reason")) || (deploymentStatusOf(obj) === "ValidationFailed" ? "ValidationFailed" : "RayJobFailed"),
-        message: str(get(obj, "status", "message")),
+        message: jobMessageOf(obj),
         since: ended,
         until,
         notify: true,
@@ -381,13 +398,16 @@ export function rayProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObje
     const state = serviceState(obj);
     if (state === "ready" || state === "upgrading" || state === "suspended") return [];
     const ready = conditionOf(obj, "Ready");
+    // A Serve application can turn UNHEALTHY or DEPLOY_FAILED while `Ready` stays True (the service still answers):
+    // the time `Ready` turned True says nothing about it, so the grace runs from when Sextant first saw the failure.
+    const appWhileReady = isTrue(ready);
     return [
       {
         reason: (isFalse(ready) && ready?.reason) || (state === "failed" ? "ServeApplicationFailed" : "RayServiceNotReady"),
         group: "notReady",
         message: serviceReason(obj),
-        since: ready?.since,
-        graceMs: state === "failed" && FAILED_REASONS.has(ready?.reason ?? "") ? undefined : SERVICE_GRACE_MS,
+        since: appWhileReady ? undefined : ready?.since,
+        graceMs: state === "failed" && FAILED_REASONS.has(ready?.reason ?? "") ? undefined : appWhileReady ? RAY_GRACE_MS : SERVICE_GRACE_MS,
         notify: true,
       },
     ];

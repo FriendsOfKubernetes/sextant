@@ -76,10 +76,12 @@
     "serveService": "Service Serve",
     "serveEndpoints": "Эндпоинты Serve",
     "upgradeStrategy": "Стратегия обновления",
-    "upgrade": "Идёт обновление"
+    "upgrade": "Идёт обновление",
+    "rollback": "Идёт откат"
   },
   "workersReady": "Готово {{ready}} из {{desired}}",
   "bounds": "от {{min}} до {{max}}",
+  "boundsUnlimited": "от {{min}}, без верхнего предела",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "Память: {{value}}",
@@ -133,5 +135,6 @@
   "activeCluster": "Активный кластер",
   "pendingCluster": "Ожидающий кластер (обновление)",
   "serveConfig": "Конфигурация Serve",
-  "noServeConfig": "serveConfigV2 не задан."
+  "noServeConfig": "serveConfigV2 не задан.",
+  "serveConfigUnreadable": "Не показано: конфигурацию Serve не удалось безопасно прочитать. Смотрите раздел YAML."
 }

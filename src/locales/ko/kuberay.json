@@ -73,10 +73,12 @@
     "serveService": "Serve Service",
     "serveEndpoints": "Serve 엔드포인트",
     "upgradeStrategy": "업그레이드 전략",
-    "upgrade": "업그레이드 진행 중"
+    "upgrade": "업그레이드 진행 중",
+    "rollback": "롤백 진행 중"
   },
   "workersReady": "{{desired}}개 중 {{ready}}개 준비됨",
   "bounds": "{{min}}~{{max}}",
+  "boundsUnlimited": "최소 {{min}}, 상한 없음",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "메모리: {{value}}",
@@ -127,5 +129,6 @@
   "activeCluster": "활성 클러스터",
   "pendingCluster": "대기 중인 클러스터(업그레이드)",
   "serveConfig": "Serve 구성",
-  "noServeConfig": "serveConfigV2가 설정되지 않았습니다."
+  "noServeConfig": "serveConfigV2가 설정되지 않았습니다.",
+  "serveConfigUnreadable": "표시하지 않음: Serve 구성을 안전하게 읽을 수 없습니다. YAML 섹션을 참조하세요."
 }

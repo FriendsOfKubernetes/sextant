@@ -61,6 +61,22 @@ describe("the model", () => {
     expect(detect(JOBSET, early)).toEqual([]);
   });
 
+  it("a missing restartsCountTowardsMax is 0 when restarts are ignored by a rule (the field is omitempty)", () => {
+    const ignoring = running();
+    const st = ignoring.status as Record<string, unknown>;
+    st.restarts = 5;
+    delete st.restartsCountTowardsMax;
+    (ignoring.spec as { failurePolicy: Record<string, unknown> }).failurePolicy = {
+      maxRestarts: 3,
+      rules: [{ name: "preempted", action: "RestartJobSetAndIgnoreMaxRestarts", onJobFailureReasons: ["PodFailurePolicy"] }],
+    };
+    expect(restartsOf(ignoring)).toEqual({ total: 5, counted: 0, max: 3 });
+    expect(detect(JOBSET, ignoring)).toEqual([]);
+    // Without such a rule a missing field is an older controller: every restart counts.
+    (ignoring.spec as { failurePolicy: Record<string, unknown> }).failurePolicy = { maxRestarts: 3 };
+    expect(restartsOf(ignoring).counted).toBe(5);
+  });
+
   it("the table shows the state, succeeded Jobs and restarts; the filter marks failures", () => {
     const def = getResourceDef(JOBSET);
     expect(def.columns.map((c) => c.id)).toEqual(["name", "namespace", "status", "succeeded", "active", "failed", "restarts", "age"]);

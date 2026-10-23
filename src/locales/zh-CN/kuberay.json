@@ -73,10 +73,12 @@
     "serveService": "Serve Service",
     "serveEndpoints": "Serve 端点",
     "upgradeStrategy": "升级策略",
-    "upgrade": "正在升级"
+    "upgrade": "正在升级",
+    "rollback": "正在回滚"
   },
   "workersReady": "{{ready}}/{{desired}} 就绪",
   "bounds": "{{min}} 到 {{max}}",
+  "boundsUnlimited": "至少 {{min}}，无上限",
   "desiredResource": {
     "CPU": "CPU：{{value}}",
     "Memory": "内存：{{value}}",
@@ -127,5 +129,6 @@
   "activeCluster": "活动集群",
   "pendingCluster": "待切换集群（升级）",
   "serveConfig": "Serve 配置",
-  "noServeConfig": "未设置 serveConfigV2。"
+  "noServeConfig": "未设置 serveConfigV2。",
+  "serveConfigUnreadable": "未显示：无法安全读取 Serve 配置。请查看 YAML 部分。"
 }

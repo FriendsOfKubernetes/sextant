@@ -53,6 +53,25 @@ describe("the model", () => {
     expect(isComponentDaemonSet(COMPONENTS.find((c) => c.id === "dcgm")!, "nvidia-dcgm-exporter")).toBe(false);
   });
 
+  it("knows the Kata sandbox device plugin and the sandbox validator, on only with sandbox workloads", () => {
+    const sandbox = copy(f.policyNotReady!);
+    (sandbox.spec as Record<string, unknown>).sandboxWorkloads = { enabled: true, defaultWorkload: "vm-passthrough" };
+    (sandbox.spec as Record<string, unknown>).kataSandboxDevicePlugin = { enabled: true };
+    const ds = (name: string): KubeObject => ({
+      apiVersion: "apps/v1",
+      kind: "DaemonSet",
+      metadata: { name, namespace: "gpu-operator", uid: name },
+      status: { desiredNumberScheduled: 1, numberReady: 1, updatedNumberScheduled: 1, numberAvailable: 1 },
+    });
+    const rows = Object.fromEntries(
+      componentsOf(sandbox, [ds("nvidia-kata-sandbox-device-plugin-daemonset"), ds("nvidia-sandbox-validator")]).map((r) => [r.def.id, r]),
+    );
+    expect(rows.kataSandboxDevicePlugin).toMatchObject({ enabled: true, state: "ready" });
+    expect(rows.sandboxValidator).toMatchObject({ enabled: true, state: "ready" });
+    const plain = Object.fromEntries(componentsOf(f.policyNotReady!, []).map((r) => [r.def.id, r.enabled]));
+    expect(plain).toMatchObject({ kataSandboxDevicePlugin: false, sandboxValidator: false });
+  });
+
   it("judges components as their IsEnabled() defaults do", () => {
     const rows = componentsOf(f.policyReady!, daemonSets());
     const byId = Object.fromEntries(rows.map((r) => [r.def.id, r]));

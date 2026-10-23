@@ -74,10 +74,12 @@
     "serveService": "Serve-Service",
     "serveEndpoints": "Serve-Endpunkte",
     "upgradeStrategy": "Update-Strategie",
-    "upgrade": "Update läuft"
+    "upgrade": "Update läuft",
+    "rollback": "Rollback läuft"
   },
   "workersReady": "{{ready}} von {{desired}} bereit",
   "bounds": "{{min}} bis {{max}}",
+  "boundsUnlimited": "Mindestens {{min}}, ohne Obergrenze",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "Speicher: {{value}}",
@@ -129,5 +131,6 @@
   "activeCluster": "Aktiver Cluster",
   "pendingCluster": "Wartender Cluster (Update)",
   "serveConfig": "Serve-Konfiguration",
-  "noServeConfig": "Kein serveConfigV2 gesetzt."
+  "noServeConfig": "Kein serveConfigV2 gesetzt.",
+  "serveConfigUnreadable": "Nicht angezeigt: Die Serve-Konfiguration ließ sich nicht sicher lesen. Siehe den YAML-Abschnitt."
 }

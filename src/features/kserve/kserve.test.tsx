@@ -18,14 +18,17 @@ import objectsJson from "./fixtures/objects.json";
 import "./index";
 import {
   canaryPercent,
+  cleanText,
   CLUSTER_SERVING_RUNTIME,
   componentsOf,
   deploymentModeOf,
   INFERENCE_GRAPH,
   INFERENCE_SERVICE,
+  INVALID_SPEC_GRACE_MS,
   KSERVE_GRACE_MS,
   safeUri,
   SERVING_RUNTIME,
+  serviceReason,
   serviceState,
   TRAINED_MODEL,
 } from "./model";
@@ -48,6 +51,58 @@ describe("the model", () => {
     expect(safeUri("hf://org/model?revision=main")?.text).toBe("hf://org/model");
     expect(safeUri("not a uri?token=1")).toEqual({ text: "not a uri", hidden: true });
     expect(safeUri(undefined)).toBeUndefined();
+  });
+
+  it("cleans every URI shape: whitespace, a `/` in the password, a single slash, cloud schemes", () => {
+    const shown = (v: string) => safeUri(v)?.text;
+    expect(safeUri("https://u:tok@models.example.com/m\n")).toEqual({ text: "https://models.example.com/m", hidden: true });
+    expect(shown("  https://u:tok@models.example.com/m")).toBe("https://models.example.com/m");
+    expect(shown("https://user:pa/ss@models.example.com/m.tar.gz")).toBe("https://models.example.com/m.tar.gz");
+    expect(shown("https://user:p@ss@models.example.com/m")).toBe("https://models.example.com/m");
+    expect(shown("https:/u:tok@h/model")).toBe("https:/h/model");
+    expect(shown("s3://AKIAIOSFODNN7EXAMPLE:wJalrXUtnFEMI%2FK7MDENG@bucket/p")).toBe("s3://bucket/p");
+    expect(shown("gs://key:secret@bucket/p?x=1#y")).toBe("gs://bucket/p");
+    expect(shown("u:tok@host/model")).toBe("host/model");
+    expect(shown("https://user:pass\nword@h/p")).toBe("https://h/p");
+    for (const clean of ["gs://kfserving-examples/models/sklearn/1.0/model", "s3://bucket/model", "pvc://claim/model", "hf://org/model", "https://h/p"])
+      expect(safeUri(clean)).toEqual({ text: clean, hidden: false });
+    expect(safeUri("   ")).toBeUndefined();
+  });
+
+  it("cleans the URIs inside free text from the cluster", () => {
+    expect(cleanText("Failed to download s3://AKIA:wJalr@bucket/m?X-Amz-Signature=abc: 403")).toBe("Failed to download s3://bucket/m 403");
+    expect(cleanText('fetch "https://u:hf_tok@huggingface.co/m?token=1" failed; from u:pw@registry/x')).toBe('fetch "https://huggingface.co/m" failed; from registry/x');
+    expect(cleanText("0/3 nodes are available: 3 Insufficient cpu.")).toBe("0/3 nodes are available: 3 Insufficient cpu.");
+    const leaky = isvc("torch-mnist");
+    const conditions = (leaky.status as { conditions: { type: string; message?: string }[] }).conditions;
+    conditions.find((c) => c.type === "IngressReady")!.message = "cannot reach https://admin:s3cr3t@ingress.example.com/?sig=xyz";
+    const messages = detect(INFERENCE_SERVICE, leaky).map((d) => d.message ?? "");
+    expect(messages.join()).not.toMatch(/s3cr3t|sig=xyz/);
+    expect(serviceReason(leaky)).not.toContain("s3cr3t");
+  });
+
+  it("an invalid spec is a failure with KServe's reason, counted after a short grace", () => {
+    const invalid = isvc("llm-invalid");
+    expect(serviceState(invalid)).toBe("failed");
+    expect(serviceReason(invalid)).toBe("Specified runtime does not support specified framework/version");
+    // KServe writes no time for it: the grace runs from when Sextant first saw it.
+    expect(detect(INFERENCE_SERVICE, invalid)).toEqual([
+      expect.objectContaining({ reason: "NoSupportingRuntime", group: "invalidSpec", graceMs: INVALID_SPEC_GRACE_MS, since: undefined, notify: true }),
+    ]);
+    const timed = copy(invalid);
+    (timed.status as { modelStatus: { lastFailureInfo: { time?: string } } }).modelStatus.lastFailureInfo.time = "2026-10-22T13:00:02Z";
+    const [problem] = resolve(INFERENCE_SERVICE, timed, Date.parse("2026-10-22T13:01:00Z"));
+    expect(problem).toMatchObject({ reason: "NoSupportingRuntime", activeAt: Date.parse("2026-10-22T13:00:02Z") + INVALID_SPEC_GRACE_MS });
+  });
+
+  it("checks a named runtime's protocol only when the predictor sets one", () => {
+    const [predictor] = componentsOf(isvc("sklearn-iris"));
+    const named = { ...predictor!, runtime: "kserve-mlserver", protocolVersion: undefined };
+    expect(chooseRuntime(named, nsRuntimes(), clusterRuntimes())).toMatchObject({ kind: "chosen", runtime: { name: "kserve-mlserver", cluster: true }, named: true });
+    expect(chooseRuntime({ ...named, protocolVersion: "v1" }, nsRuntimes(), clusterRuntimes())).toMatchObject({ kind: "namedProtocol" });
+    // Auto-selection still asks for v1 when none is set: the MLServer (v2 only) is no candidate.
+    const auto = chooseRuntime({ ...predictor!, protocolVersion: undefined }, nsRuntimes(), clusterRuntimes());
+    expect(auto.kind === "chosen" && auto.candidates.map((c) => c.name)).toEqual(["kserve-sklearnserver"]);
   });
 
   it("reads the components, deployment mode, canary share and state", () => {

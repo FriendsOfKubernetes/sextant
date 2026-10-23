@@ -3,7 +3,9 @@
 // `RuntimeSupportsModel`, `sortServingRuntimeList`, `sortSupportedRuntimeByPriority`; pkg/controller/v1beta1/
 // inferenceservice/components/predictor.go and utils.go `GetServingRuntime`):
 //   - a runtime named in `model.runtime` is looked up as a ServingRuntime of the namespace, then as a
-//     ClusterServingRuntime; it must not be disabled, must speak the model's protocol and list its format;
+//     ClusterServingRuntime; it must not be disabled, must speak the model's protocol when the predictor sets one
+//     (`reconcileModel` checks `IsProtocolVersionSupported` only when `ProtocolVersion != nil`, then defaults it from
+//     the runtime) and list its format;
 //   - otherwise the candidates are the namespace's ServingRuntimes, then the ClusterServingRuntimes, each list kept
 //     if not disabled, single-model (ModelMesh runtimes only in ModelMesh mode), multi-node exactly when the predictor
 //     has a `workerSpec`, speaking the model's protocol (`v1` when not set) and listing the format with `autoSelect`;
@@ -111,7 +113,6 @@ export type Choice =
 export function chooseRuntime(predictor: ComponentSpec, namespaced: KubeObject[], clusterWide: KubeObject[], modelMesh = false): Choice {
   const format = predictor.format;
   if (!format) return { kind: "noFormat" };
-  const protocol = predictor.protocolVersion ?? "v1";
   if (predictor.runtime) {
     const name = predictor.runtime;
     const local = namespaced.find((r) => r.metadata?.name === name);
@@ -120,10 +121,12 @@ export function chooseRuntime(predictor: ComponentSpec, namespaced: KubeObject[]
     if (!rt) return { kind: "namedMissing", runtime: { name } };
     const ref = { name, cluster: !local };
     if (isDisabled(rt)) return { kind: "namedDisabled", runtime: ref };
-    if (!speaks(rt, protocol)) return { kind: "namedProtocol", runtime: ref };
+    if (predictor.protocolVersion && !speaks(rt, predictor.protocolVersion)) return { kind: "namedProtocol", runtime: ref };
     if (!supportsModel(rt, format, true)) return { kind: "namedFormat", runtime: ref };
     return { kind: "chosen", runtime: ref, named: true, candidates: [ref] };
   }
+  // Auto-selection: `GetSupportingRuntimes` asks for the predictor's protocol, `v1` when it sets none.
+  const protocol = predictor.protocolVersion ?? "v1";
   const fits = (rt: KubeObject) =>
     !isDisabled(rt) && isMultiModel(rt) === modelMesh && supportsModel(rt, format, false) && speaks(rt, protocol) && isMultiNode(rt) === predictor.workers;
   const local = sortByPriority(sortList(namespaced).filter(fits), format.name).map((r) => ({ name: r.metadata?.name ?? "", cluster: false }));

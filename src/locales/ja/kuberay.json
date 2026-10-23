@@ -73,10 +73,12 @@
     "serveService": "Serve Service",
     "serveEndpoints": "Serve エンドポイント",
     "upgradeStrategy": "更新戦略",
-    "upgrade": "更新中"
+    "upgrade": "更新中",
+    "rollback": "ロールバック中"
   },
   "workersReady": "{{desired}} 中 {{ready}} 準備完了",
   "bounds": "{{min}}～{{max}}",
+  "boundsUnlimited": "{{min}} 以上、上限なし",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "メモリ: {{value}}",
@@ -127,5 +129,6 @@
   "activeCluster": "アクティブなクラスター",
   "pendingCluster": "保留中のクラスター (更新)",
   "serveConfig": "Serve の設定",
-  "noServeConfig": "serveConfigV2 は設定されていません。"
+  "noServeConfig": "serveConfigV2 は設定されていません。",
+  "serveConfigUnreadable": "表示しません: Serve の設定を安全に読み取れませんでした。YAML セクションを参照してください。"
 }

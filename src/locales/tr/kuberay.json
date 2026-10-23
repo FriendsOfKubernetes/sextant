@@ -74,10 +74,12 @@
     "serveService": "Serve Service’i",
     "serveEndpoints": "Serve uç noktaları",
     "upgradeStrategy": "Güncelleme stratejisi",
-    "upgrade": "Güncelleme sürüyor"
+    "upgrade": "Güncelleme sürüyor",
+    "rollback": "Geri alma sürüyor"
   },
   "workersReady": "{{desired}} içinden {{ready}} hazır",
   "bounds": "{{min}} ile {{max}} arası",
+  "boundsUnlimited": "En az {{min}}, üst sınır yok",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "Bellek: {{value}}",
@@ -129,5 +131,6 @@
   "activeCluster": "Etkin küme",
   "pendingCluster": "Bekleyen küme (güncelleme)",
   "serveConfig": "Serve yapılandırması",
-  "noServeConfig": "serveConfigV2 ayarlanmamış."
+  "noServeConfig": "serveConfigV2 ayarlanmamış.",
+  "serveConfigUnreadable": "Gösterilmiyor: Serve yapılandırması güvenle okunamadı. YAML bölümüne bakın."
 }

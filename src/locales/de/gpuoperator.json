@@ -57,6 +57,8 @@
     "vgpuDeviceManager": "vGPU Device Manager",
     "vfioManager": "VFIO Manager",
     "sandboxDevicePlugin": "Sandbox Device Plugin",
+    "kataSandboxDevicePlugin": "Kata Sandbox Device Plugin",
+    "sandboxValidator": "Sandbox-Validator",
     "kataManager": "Kata Manager",
     "ccManager": "Confidential-Computing-Manager"
   },

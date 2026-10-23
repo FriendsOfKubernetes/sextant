@@ -57,6 +57,8 @@
     "vgpuDeviceManager": "vGPU device manager",
     "vfioManager": "VFIO manager",
     "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataSandboxDevicePlugin": "Kata sandbox cihaz eklentisi",
+    "sandboxValidator": "Sandbox doğrulayıcı",
     "kataManager": "Kata manager",
     "ccManager": "Gizli hesaplama yöneticisi"
   },

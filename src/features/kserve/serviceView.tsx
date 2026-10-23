@@ -14,6 +14,7 @@ import {
   componentStatusOf,
   componentsOf,
   deploymentModeOf,
+  invalidSpec,
   modelFailed,
   modelStatusOf,
   recordedRuntimeOf,
@@ -99,7 +100,7 @@ function ModelStatusBlock({ obj }: { obj: KubeObject }) {
   return (
     <Block title={t("kserve:modelStatus")}>
       <Fields rows={rows} labelPrefix={LABELS} />
-      {m.failure?.message && <Note text={m.failure.message} tone={modelFailed(m) ? "danger" : "warning"} />}
+      {m.failure?.message && <Note text={m.failure.message} tone={modelFailed(m) || invalidSpec(m) ? "danger" : "warning"} />}
     </Block>
   );
 }

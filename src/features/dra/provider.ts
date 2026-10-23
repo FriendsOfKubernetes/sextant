@@ -1,14 +1,19 @@
 // The problems category "Dynamic Resource Allocation" (#244, ADR-0116), on by default: a pod the scheduler has not
-// placed because a ResourceClaim it uses has no devices yet — the claim made from its template does not exist, the
-// claim it names is missing, or a claim is not allocated — counted `WAIT_GRACE_MS` after its PodScheduled condition
-// changed (else after it was created). The scheduler's own message is the problem's text.
+// placed because a ResourceClaim it uses has no devices yet, counted `WAIT_GRACE_MS` after its PodScheduled condition
+// changed (else after it was created). The scheduler's own message is the problem's text. A pod counts when the claim
+// made from its template does not exist yet or the claim it names is missing; a claim that exists but is not
+// allocated counts only with a DRA reason in the scheduler's message (`draReasonsIn`) — the scheduler allocates
+// claims while it places the pod, so an unallocated claim of a pod that waits for CPU, a taint or an affinity is not
+// the reason it waits. A pod held by a scheduling gate (`SchedulingGated`) is not judged at all.
 //
-// Held only where the cluster serves ResourceClaims, and bounded: one shared watch of the cluster's Pending pods
+// Held only where the cluster serves ResourceClaims and has at least one DeviceClass (resource.k8s.io/v1 is served by
+// default from Kubernetes 1.34, but a cluster without a DRA driver has no class; one metadata-only DeviceClass watch
+// capped at `MAX_DEVICE_CLASSES` tells), and bounded: one shared watch of the cluster's Pending pods
 // (`status.phase=Pending` on the API server, at most `MAX_PENDING_PODS`), and the ResourceClaims of only the
 // namespaces where such a pod waits (at most `MAX_CLAIM_NAMESPACES` namespaces and `MAX_CLAIMS` objects). Where the
-// claims are not read in full, a pod counts only when the scheduler's message names a DRA reason. The watches are the
-// resource map's shared ones (`acquireWatch`); they are released with the source. Agents get none of it
-// (NEVER_FOR_AGENTS).
+// claims are not read in full, a pod counts only when the scheduler's message names a DRA reason. A DeviceClass list
+// that cannot be read does not stop it (nothing tells then). The watches are the resource map's shared ones
+// (`acquireWatch`); they are released with the source. Agents get none of it (NEVER_FOR_AGENTS).
 import type { ClusterId, KubeObject, WatchSpec, WatchState } from "../../api";
 import { isCapped } from "../../api/watchState";
 import { findKind } from "../../resources";
@@ -17,9 +22,11 @@ import { isUnscheduled, schedulingCondition } from "../autoscaling/scheduling";
 import { LONG_GRACE_MS, type Problem } from "../problems/model";
 import { registerProblemProvider, type ProvidedProblems } from "../problems/store";
 import { acquireWatch, epochOf, specKey, subscribeSharedWatches, watchState } from "../resource-map/watches";
-import { draReasonsIn, isAllocated, POD, podClaimsOf, RESOURCE_CLAIM, usesClaims } from "./model";
+import { DEVICE_CLASS, draReasonsIn, isAllocated, POD, podClaimsOf, RESOURCE_CLAIM, usesClaims } from "./model";
 
 export const MAX_PENDING_PODS = 2000;
+/** The DeviceClass watch only tells whether there is one. */
+export const MAX_DEVICE_CLASSES = 5;
 export const MAX_CLAIM_NAMESPACES = 40;
 export const MAX_CLAIMS = 5000;
 export const WAIT_GRACE_MS = LONG_GRACE_MS;
@@ -36,8 +43,9 @@ function time(value: string | undefined): number | undefined {
 const uidOf = (obj: KubeObject) => obj.metadata?.uid ?? `${obj.metadata?.namespace ?? ""}/${obj.metadata?.name ?? ""}`;
 const deleting = (obj: KubeObject) => Boolean((obj.metadata as { deletionTimestamp?: string } | undefined)?.deletionTimestamp);
 
-/** A pod waiting for its node that uses claims. */
-export const waitsWithClaims = (pod: KubeObject): boolean => !deleting(pod) && usesClaims(pod) && isUnscheduled(pod);
+/** A pod waiting for its node that uses claims (a pod held by a scheduling gate waits for no node yet). */
+export const waitsWithClaims = (pod: KubeObject): boolean =>
+  !deleting(pod) && usesClaims(pod) && isUnscheduled(pod) && schedulingCondition(pod).reason !== "SchedulingGated";
 
 /** The namespaces whose claims are looked at: those of pods waiting with claims. */
 export function namespacesToCheck(pods: Iterable<KubeObject>): string[] {
@@ -59,16 +67,28 @@ export function claimsIn(claims: WatchState | undefined, namespace: string): Map
  * names whose claim was not made yet; `undefined` when the claims of its namespace are not known.
  */
 export function unallocatedClaims(pod: KubeObject, claims: Map<string, KubeObject> | undefined): string[] | undefined {
-  const out: string[] = [];
+  return claimGaps(pod, claims)?.map((g) => g.name);
+}
+
+/** A claim a waiting pod has no devices for: `absent` when it does not exist (yet), else it is not allocated. */
+export interface ClaimGap {
+  name: string;
+  absent: boolean;
+}
+
+/** The claims a waiting pod has no devices for, in the pod's order; `undefined` when its namespace's claims are not known. */
+export function claimGaps(pod: KubeObject, claims: Map<string, KubeObject> | undefined): ClaimGap[] | undefined {
+  const out: ClaimGap[] = [];
   for (const c of podClaimsOf(pod)) {
     if (c.notNeeded) continue;
     if (c.notCreated || !c.claimName) {
-      out.push(c.name);
+      out.push({ name: c.name, absent: true });
       continue;
     }
     if (!claims) return undefined;
     const claim = claims.get(c.claimName);
-    if (!claim || !isAllocated(claim)) out.push(c.claimName);
+    if (!claim) out.push({ name: c.claimName, absent: true });
+    else if (!isAllocated(claim)) out.push({ name: c.claimName, absent: false });
   }
   return out;
 }
@@ -86,10 +106,13 @@ export function toProblems(
     if (!waitsWithClaims(pod)) continue;
     const namespace = pod.metadata?.namespace ?? "";
     const scheduling = schedulingCondition(pod);
-    const missing = unallocatedClaims(pod, claimsOf(namespace));
-    // Claims not read in full: only the scheduler's own DRA reason says the pod waits for devices.
-    const waits = missing === undefined ? draReasonsIn(scheduling.message).length > 0 : missing.length > 0;
+    const gaps = claimGaps(pod, claimsOf(namespace));
+    const draReason = draReasonsIn(scheduling.message).length > 0;
+    // Claims not read in full: only the scheduler's own DRA reason says the pod waits for devices. Read: a claim not
+    // there (yet) does; an unallocated one only with the scheduler's DRA reason.
+    const waits = gaps === undefined ? draReason : gaps.some((g) => g.absent) || (draReason && gaps.length > 0);
     if (!waits) continue;
+    const missing = gaps?.map((g) => g.name);
     const uid = uidOf(pod);
     const key = `${uid}|DraWaiting`;
     keys.add(key);
@@ -147,10 +170,24 @@ export function provideDra(clusterId: ClusterId, set: (update: ProvidedProblems)
     }
     const kinds = knownClusterKinds(clusterId);
     const served = kinds ? findKind(kinds, RESOURCE_CLAIM)?.kindRef : undefined;
-    if (!served) {
+    const classKind = kinds ? findKind(kinds, DEVICE_CLASS)?.kindRef : undefined;
+    if (!served || !classKind) {
       hold([]);
       if (last?.[0] !== "none") set({ status: kinds ? "ready" : "loading", problems: [] });
       last = ["none"];
+      return;
+    }
+    const classSpec: WatchSpec = { kind: classKind, namespaces: null, labelSelector: null, fieldSelector: null, metadataOnly: true };
+    const classKey = specKey(clusterId, classSpec);
+    if (!held.has(classKey)) held.set(classKey, acquireWatch(clusterId, classSpec, MAX_DEVICE_CLASSES));
+    const classes = watchState(clusterId, classSpec);
+    if (classes.status === "loading" || (classes.status === "ready" && classes.items.size === 0)) {
+      // No DeviceClass (yet): no DRA driver, nothing can wait for devices; only the class watch is kept.
+      hold([{ spec: classSpec, cap: MAX_DEVICE_CLASSES }]);
+      const state = classes.status === "loading" ? "classesLoading" : "noClasses";
+      if (last?.[0] !== state) set({ status: classes.status === "loading" ? "loading" : "ready", problems: [] });
+      last = [state];
+      for (const key of [...firstSeen.keys()]) firstSeen.delete(key);
       return;
     }
     const podSpec: WatchSpec = { kind: POD, namespaces: null, labelSelector: null, fieldSelector: PENDING_SELECTOR };
@@ -161,7 +198,7 @@ export function provideDra(clusterId: ClusterId, set: (update: ProvidedProblems)
     const tooMany = namespaces.length > MAX_CLAIM_NAMESPACES;
     const claimSpec: WatchSpec | undefined =
       namespaces.length > 0 && !tooMany ? { kind: served, namespaces, labelSelector: null, fieldSelector: null } : undefined;
-    hold([{ spec: podSpec, cap: MAX_PENDING_PODS }, ...(claimSpec ? [{ spec: claimSpec, cap: MAX_CLAIMS }] : [])]);
+    hold([{ spec: classSpec, cap: MAX_DEVICE_CLASSES }, { spec: podSpec, cap: MAX_PENDING_PODS }, ...(claimSpec ? [{ spec: claimSpec, cap: MAX_CLAIMS }] : [])]);
     const claims = claimSpec ? watchState(clusterId, claimSpec) : undefined;
     const inputs = [pods, claims];
     if (last && last.length === 2 && last[0] === inputs[0] && last[1] === inputs[1]) return;

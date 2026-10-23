@@ -196,20 +196,36 @@ describe("performance", () => {
   const coloured = (i: number) =>
     `[2026-10-19T19:55:55.${String(i).padStart(6, "0")}+00:00] ${E}[1mworker${E}[0m.${E}[0;33mwarning${E}[0m: ${E}[1;36mrequest ${i} took ${E}[1;35m(${i}ms)${E}[0m`;
 
-  it("10 000 coloured lines are parsed and searched in well under a second", () => {
+  /** The fastest of `times` runs after one warm-up, in milliseconds. */
+  const fastest = (run: () => void, times: number): number => {
+    run();
+    let best = Infinity;
+    for (let i = 0; i < times; i++) {
+      const started = performance.now();
+      run();
+      best = Math.min(best, performance.now() - started);
+    }
+    return best;
+  };
+
+  it("10 000 coloured lines are parsed and searched in time that grows linearly with their number", () => {
+    // Compared with a tenth of the lines in the same run, not a fixed time: a loaded runner is slow for both (#258).
+    // Linear work takes ~10x as long for 10x the lines; a quadratic path would take ~100x.
     const lines = Array.from({ length: 10_000 }, (_, i) => coloured(i));
-    const t0 = performance.now();
+    const tenth = lines.slice(0, 1_000);
     let chars = 0;
-    for (const line of lines) chars += visibleText(line).length;
-    const parsed = performance.now() - t0;
-    const t1 = performance.now();
-    const found = findMatches(lines, "request 9999 took");
-    const searched = performance.now() - t1;
+    const parse = (input: string[]) => () => {
+      chars = 0;
+      for (const line of input) chars += visibleText(line).length;
+    };
+    const parsedTenth = fastest(parse(tenth), 5);
+    const parsed = fastest(parse(lines), 3);
     expect(chars).toBeGreaterThan(0);
-    expect(found).toEqual([{ line: 9999, start: expect.any(Number) }]);
-    // Typically a few ms each; the bounds only catch an accidental quadratic path on a slow CI machine.
-    expect(parsed).toBeLessThan(500);
-    expect(searched).toBeLessThan(500);
+    expect(findMatches(lines, "request 9999 took")).toEqual([{ line: 9999, start: expect.any(Number) }]);
+    const searchedTenth = fastest(() => findMatches(tenth, "request 9999 took"), 5);
+    const searched = fastest(() => findMatches(lines, "request 9999 took"), 3);
+    expect(parsed).toBeLessThan(Math.max(30 * parsedTenth, 20));
+    expect(searched).toBeLessThan(Math.max(30 * searchedTenth, 20));
   });
 
   it.each([
@@ -220,12 +236,10 @@ describe("performance", () => {
     ["ESC ( ", "\u001b("],
   ])("a 64 KB line of repeated %s parses in linear time", (_name, piece) => {
     const line = piece.repeat(Math.ceil(65_536 / piece.length));
-    const t0 = performance.now();
-    const text = visibleText(line);
-    const elapsed = performance.now() - t0;
-    expect(text.length).toBeLessThan(line.length);
-    // Linear: about 1 ms; the quadratic scan took seconds.
-    expect(elapsed).toBeLessThan(50);
+    const tenth = piece.repeat(Math.ceil(6_554 / piece.length));
+    expect(visibleText(line).length).toBeLessThan(line.length);
+    // Linear: about 1 ms, ~10x a tenth of the line measured in the same run; the quadratic scan took seconds.
+    expect(fastest(() => visibleText(line), 3)).toBeLessThan(Math.max(30 * fastest(() => visibleText(tenth), 5), 20));
   });
 
   it("random escape-heavy lines parse in bounded time and never keep an ESC", () => {

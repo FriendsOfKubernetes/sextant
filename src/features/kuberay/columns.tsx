@@ -13,6 +13,7 @@ import {
   deploymentStatusOf,
   headOf,
   JOB_TONE,
+  jobMessageOf,
   jobState,
   jobStatusOf,
   SERVICE_TONE,
@@ -43,7 +44,7 @@ export function ClusterStateText({ obj }: { obj: KubeObject }) {
 export function JobStateText({ obj }: { obj: KubeObject }) {
   const { t } = useTranslation();
   const state = jobState(obj);
-  const message = str(get(obj, "status", "message"));
+  const message = jobMessageOf(obj);
   return (
     <span title={message}>
       <StatusText value={t(`kuberay:jobState.${state}`)} tone={JOB_TONE[state]} />

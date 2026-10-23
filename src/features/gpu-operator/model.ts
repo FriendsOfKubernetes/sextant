@@ -109,6 +109,10 @@ export const COMPONENTS: ComponentDef[] = [
   { id: "vgpuDeviceManager", daemonSet: "nvidia-vgpu-device-manager", defaultEnabled: false, sandbox: true },
   { id: "vfioManager", daemonSet: "nvidia-vfio-manager", defaultEnabled: false, sandbox: true },
   { id: "sandboxDevicePlugin", daemonSet: "nvidia-sandbox-device-plugin-daemonset", defaultEnabled: false, sandbox: true },
+  // assets/state-kata-device-plugin/0500_daemonset.yaml; `KataDevicePluginSpec.IsEnabled` is false when not set.
+  { id: "kataSandboxDevicePlugin", daemonSet: "nvidia-kata-sandbox-device-plugin-daemonset", defaultEnabled: false, sandbox: true },
+  // assets/state-sandbox-validation/0500_daemonset.yaml; `isStateEnabled` runs it whenever sandbox workloads are on.
+  { id: "sandboxValidator", daemonSet: "nvidia-sandbox-validator", defaultEnabled: "always", sandbox: true },
   { id: "kataManager", daemonSet: "nvidia-kata-manager", defaultEnabled: false, sandbox: true },
   { id: "ccManager", daemonSet: "nvidia-cc-manager", defaultEnabled: false, sandbox: true },
 ];

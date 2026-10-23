@@ -32,3 +32,10 @@
 - More than 5000 Workloads: the waiting lists say they may be incomplete; the problems source says it is truncated.
 - A job whose Workload Kueue made before the job-uid label existed (very old Kueue) shows "no Workload yet"; its Workload is still in the Workloads table.
 - JobSets older than v0.6 count every restart toward the limit, as they did then.
+
+## Amended (v0.23.0): review findings (#246, #247)
+
+- **A Workload deactivated by an older Kueue** is recognised as a failure from its eviction counts too: where the Evicted reason carries no cause (`InactiveWorkload`, or a bare `Deactivated`), a `status.schedulingStats.evictions[]` entry of a deactivation whose `underlyingCause` is `RequeuingLimitExceeded`, `MaximumExecutionTimeExceeded` or an admission check counts (`workloadEvictionStateInc` in kubernetes-sigs/kueue `pkg/workload/evict/evict.go` records reason `Deactivated` with the DeactivationTarget's reason as the cause, d98cde1). An Evicted reason that names its own cause decides alone.
+- **QuotaReserved reasons**: `WaitingForPodsReady` (and its pre-gate fallback `Waiting`) wait like quota; `DRAResourcesUnresolved` cannot be queued as it is, as Kueue itself reads it (`isDRAInadmissibleReason` in `pkg/controller/core/workload_controller.go`; reasons in `apis/kueue/v1beta2/workload_types.go`).
+- **A prebuilt Workload** is named by the job's annotation `kueue.x-k8s.io/prebuilt-workload-name` first, then its label of the same key, as Kueue reads them (`PrebuiltWorkloadAnnotation`/`PrebuiltWorkloadLabel` in `pkg/controller/constants/constants.go`).
+- **JobSet restarts that count**: `status.restartsCountTowardsMax` is `omitempty` (kubernetes-sigs/jobset `api/jobset/v1alpha2/jobset_types.go`), so a missing one is 0 when `status.restarts` is present and a failure-policy rule uses an `…IgnoreMaxRestarts` action; otherwise a missing one still means a controller older than v0.6, where every restart counted.

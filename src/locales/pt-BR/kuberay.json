@@ -75,10 +75,12 @@
     "serveService": "Service do Serve",
     "serveEndpoints": "Endpoints do Serve",
     "upgradeStrategy": "Estratégia de atualização",
-    "upgrade": "Atualização em andamento"
+    "upgrade": "Atualização em andamento",
+    "rollback": "Reversão em andamento"
   },
   "workersReady": "{{ready}} de {{desired}} prontos",
   "bounds": "de {{min}} a {{max}}",
+  "boundsUnlimited": "pelo menos {{min}}, sem limite superior",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "Memória: {{value}}",
@@ -131,5 +133,6 @@
   "activeCluster": "Cluster ativo",
   "pendingCluster": "Cluster pendente (atualização)",
   "serveConfig": "Configuração do Serve",
-  "noServeConfig": "Nenhum serveConfigV2 definido."
+  "noServeConfig": "Nenhum serveConfigV2 definido.",
+  "serveConfigUnreadable": "Não exibida: a configuração do Serve não pôde ser lida com segurança. Veja a seção YAML."
 }

@@ -107,10 +107,18 @@ export interface Restarts {
   max?: number;
 }
 
+/** Failure-policy actions whose restarts do not count toward `maxRestarts` (jobset_types.go `FailurePolicyAction`). */
+const IGNORE_MAX = /IgnoreMaxRestarts$/;
+
 export function restartsOf(js: KubeObject): Restarts {
-  const total = num(get(js, "status", "restarts")) ?? 0;
-  // Before v0.6 there is no restartsCountTowardsMax: every restart counted.
-  const own = num(get(js, "status", "restartsCountTowardsMax")) ?? total;
+  const restarts = num(get(js, "status", "restarts"));
+  const total = restarts ?? 0;
+  const counted = num(get(js, "status", "restartsCountTowardsMax"));
+  // `restartsCountTowardsMax` is `omitempty`: missing is 0 once a rule restarts without counting (the field exists
+  // from the version that has those actions, v0.6). Otherwise it may be an older controller without the field, where
+  // every restart counted.
+  const ignoring = failureRules(js).some((r) => IGNORE_MAX.test(r.action));
+  const own = counted ?? (restarts !== undefined && ignoring ? 0 : total);
   const jobs = arr(get(js, "status", "replicatedJobsStatus"))
     .flatMap((s) => arr(get(s, "jobRestartsCountTowardsMax")))
     .reduce<number>((sum, n) => sum + (num(n) ?? 0), 0);

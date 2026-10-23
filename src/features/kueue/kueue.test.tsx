@@ -24,6 +24,7 @@ import {
   LOCAL_QUEUE,
   ownerOf,
   PENDING_GRACE_MS,
+  prebuiltWorkloadOf,
   QUEUE_GRACE_MS,
   queueState,
   quotaRows,
@@ -119,6 +120,39 @@ describe("the model", () => {
       { type: "Evicted", status: "True", reason: "DeactivatedDueToRequeuingLimitExceeded", message: "The workload is deactivated due to exceeding the maximum number of re-queuing retries" },
     ];
     expect(workloadProblems(off).map((p) => p.reason)).toEqual(["Deactivated"]);
+  });
+
+  it("an older Kueue's deactivation tells its cause only in the eviction counts: still a failure", () => {
+    const off = pending();
+    (off.spec as Record<string, unknown>).active = false;
+    const st = off.status as Record<string, unknown>;
+    st.conditions = [{ type: "Evicted", status: "True", reason: "InactiveWorkload", message: "The workload is deactivated due to exceeding the PodsReady timeout 5 times in a row" }];
+    st.schedulingStats = { evictions: [{ reason: "Deactivated", underlyingCause: "RequeuingLimitExceeded", count: 1 }] };
+    expect(workloadProblems(off).map((p) => p.reason)).toEqual(["Deactivated"]);
+    // A cause that is no failure, or an Evicted reason that names its own cause, is not.
+    st.schedulingStats = { evictions: [{ reason: "Deactivated", underlyingCause: "", count: 1 }] };
+    expect(workloadProblems(off)).toEqual([]);
+    st.conditions = [{ type: "Evicted", status: "True", reason: "DeactivatedDueToUser" }];
+    st.schedulingStats = { evictions: [{ reason: "Deactivated", underlyingCause: "RequeuingLimitExceeded", count: 1 }] };
+    expect(workloadProblems(off)).toEqual([]);
+  });
+
+  it("waiting for pods ready waits; unresolved DRA resources cannot be queued as they are", () => {
+    const waiting = pending();
+    const reserved = (waiting.status as { conditions: { type: string; reason: string }[] }).conditions.find((c) => c.type === "QuotaReserved")!;
+    reserved.reason = "WaitingForPodsReady";
+    expect(workloadProblems(waiting).map((p) => p.reason)).toEqual(["PendingQuota"]);
+    reserved.reason = "DRAResourcesUnresolved";
+    expect(workloadInfo(waiting).state).toBe("inadmissible");
+    expect(workloadProblems(waiting).map((p) => p.reason)).toEqual(["Inadmissible"]);
+  });
+
+  it("a job's prebuilt Workload: the annotation first, then the label", () => {
+    const job = { metadata: { name: "j", labels: { "kueue.x-k8s.io/prebuilt-workload-name": "from-label" } } } as KubeObject;
+    expect(prebuiltWorkloadOf(job)).toBe("from-label");
+    job.metadata!.annotations = { "kueue.x-k8s.io/prebuilt-workload-name": "from-annotation" };
+    expect(prebuiltWorkloadOf(job)).toBe("from-annotation");
+    expect(prebuiltWorkloadOf({ metadata: { name: "x" } } as KubeObject)).toBeUndefined();
   });
 });
 

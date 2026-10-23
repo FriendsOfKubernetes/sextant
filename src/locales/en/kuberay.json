@@ -74,10 +74,12 @@
     "serveService": "Serve Service",
     "serveEndpoints": "Serve endpoints",
     "upgradeStrategy": "Upgrade strategy",
-    "upgrade": "Upgrade in progress"
+    "upgrade": "Upgrade in progress",
+    "rollback": "Rollback in progress"
   },
   "workersReady": "{{ready}} of {{desired}} ready",
   "bounds": "{{min}} to {{max}}",
+  "boundsUnlimited": "At least {{min}}, no upper limit",
   "desiredResource": {
     "CPU": "CPU: {{value}}",
     "Memory": "Memory: {{value}}",
@@ -129,5 +131,6 @@
   "activeCluster": "Active cluster",
   "pendingCluster": "Pending cluster (upgrade)",
   "serveConfig": "Serve configuration",
-  "noServeConfig": "No serveConfigV2 is set."
+  "noServeConfig": "No serveConfigV2 is set.",
+  "serveConfigUnreadable": "Not shown: the serve configuration could not be read safely. See the YAML section."
 }
