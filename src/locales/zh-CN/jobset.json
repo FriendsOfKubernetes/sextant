@@ -1,0 +1,96 @@
+{
+  "sidebar": {
+    "jobSets": "JobSet"
+  },
+  "badge_other": "{{count}} 个 JobSet 需要关注",
+  "state": {
+    "completed": "已完成",
+    "failed": "失败",
+    "suspended": "已暂停",
+    "restarting": "重启中",
+    "starting": "启动中",
+    "running": "运行中",
+    "pending": "等待中"
+  },
+  "jobState": {
+    "complete": "已完成",
+    "failed": "失败",
+    "suspended": "已暂停",
+    "active": "活跃",
+    "pending": "等待中"
+  },
+  "columns": {
+    "status": "状态",
+    "succeeded": "成功",
+    "active": "活跃",
+    "failed": "失败",
+    "restarts": "重启"
+  },
+  "fields": {
+    "status": "状态",
+    "terminalState": "最终状态",
+    "restarts": "重启",
+    "restartStrategy": "重启策略",
+    "successPolicy": "成功条件",
+    "startupPolicy": "启动顺序",
+    "suspend": "已暂停",
+    "startTime": "开始时间",
+    "activeDeadline": "运行期限（秒）",
+    "ttlAfterFinished": "完成后删除（秒）",
+    "subdomain": "子域名",
+    "coordinator": "协调 Pod",
+    "managedBy": "管理者",
+    "firstFailedJob": "第一个失败的 Job"
+  },
+  "success": {
+    "all": "每个副本作业的每个 Job 都完成",
+    "any": "任一 Job 完成",
+    "allOf": "{{targets}} 的每个 Job 都完成",
+    "anyOf": "{{targets}} 的任一 Job 完成"
+  },
+  "restartsOfMax": "已用 {{counted}}/{{max}} 次（共 {{total}} 次）",
+  "nearLimit": "已用 {{counted}}/{{max}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
+  "failedNoReason": "JobSet 已失败。",
+  "failedJobGone": "该 Job 已不存在。",
+  "suspendedNote": "已暂停：在恢复之前其 Job 保持暂停。",
+  "replicated": {
+    "title": "副本作业",
+    "name": "名称",
+    "replicas": "Job 数",
+    "completions": "完成数 / 并行数",
+    "ready": "就绪",
+    "active": "活跃",
+    "succeeded": "成功",
+    "failed": "失败",
+    "dependsOn": "依赖"
+  },
+  "rules": {
+    "title": "失败策略规则",
+    "name": "规则",
+    "action": "操作",
+    "onFailure": "Job 失败时",
+    "targets": "副本作业"
+  },
+  "jobs": {
+    "title": "Job",
+    "job": "Job",
+    "replicatedJob": "副本作业",
+    "index": "索引",
+    "state": "状态",
+    "attempt": "重启尝试",
+    "reason": "失败"
+  },
+  "pods": {
+    "title": "Pod",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "状态"
+  },
+  "yes": "是",
+  "loading": "加载中…",
+  "listUnknown": "无法读取列表。",
+  "noJobs": "没有 Job。",
+  "noPods": "没有 Pod。",
+  "morePods": "显示了 {{total}} 个中的前 {{shown}} 个，未运行的排在前面。",
+  "truncated": "只读取了前 {{max}} 个：列表不完整。"
+}

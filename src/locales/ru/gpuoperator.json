@@ -1,0 +1,123 @@
+{
+  "badge_one": "{{count}} объект требует внимания",
+  "badge_few": "{{count}} объекта требуют внимания",
+  "badge_many": "{{count}} объектов требуют внимания",
+  "badge_other": "{{count}} объекта требуют внимания",
+  "loading": "Загрузка…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "Состояние",
+    "namespace": "Namespace компонентов",
+    "migStrategy": "Стратегия MIG",
+    "driverType": "Тип драйвера",
+    "version": "Версия",
+    "nodeSelector": "Селектор узлов"
+  },
+  "state": {
+    "ready": "Готов",
+    "notReady": "Не готов",
+    "ignored": "Игнорируется",
+    "disabled": "Отключён",
+    "unknown": "Состояния ещё нет"
+  },
+  "hint": {
+    "notReady": "Оператор ещё не закончил: какой-то компонент не развёрнут или не готов. Компоненты ниже показывают, какой.",
+    "ignored": "Оператор игнорирует эту ClusterPolicy, потому что существует другая: используется только одна.",
+    "disabled": "Оператор сообщает, что этот объект отключён.",
+    "unknown": "Оператор ещё не сообщил состояние."
+  },
+  "fields": {
+    "state": "Состояние",
+    "namespace": "Namespace компонентов",
+    "migStrategy": "Стратегия MIG",
+    "migStrategyUnset": "Не задана (решает device plugin, по умолчанию none)",
+    "driver": "Драйвер",
+    "driverByCrd": "Управляется объектами NVIDIADriver",
+    "driverType": "Тип драйвера",
+    "version": "Версия",
+    "nodeSelector": "Селектор узлов",
+    "product": "Модель GPU",
+    "count": "GPU",
+    "memory": "Память на GPU",
+    "migConfig": "Конфигурация MIG",
+    "migState": "Состояние конфигурации MIG"
+  },
+  "component": {
+    "driver": "Драйвер",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "Валидатор",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "Менеджер конфиденциальных вычислений"
+  },
+  "components": {
+    "title": "Компоненты",
+    "component": "Компонент",
+    "enabled": "Включён",
+    "status": "Развёртывание",
+    "daemonSet": "DaemonSet",
+    "on": "Да",
+    "off": "Нет",
+    "rollout": "готово {{ready}} из {{desired}}, обновлено {{updated}}",
+    "state": {
+      "ready": "Развёрнут",
+      "rollingOut": "Развёртывается",
+      "missing": "Ещё не развёрнут",
+      "off": "Не развёртывается",
+      "managedByDriver": "См. NVIDIADriver",
+      "unknown": "Нельзя сказать"
+    },
+    "noNamespace": "Оператор ещё не сообщил namespace компонентов, поэтому DaemonSet не найти.",
+    "unavailable": "Не удалось прочитать DaemonSet в namespace {{namespace}}.",
+    "truncated": "Прочитаны не все DaemonSet этого namespace: список может быть неполным."
+  },
+  "driver": {
+    "daemonSets": "DaemonSet",
+    "none": "У этого NVIDIADriver ещё нет DaemonSet."
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "Ресурс",
+    "capacity": "Ёмкость",
+    "allocatable": "Доступно",
+    "noResources": "Узел не объявляет ресурсов nvidia.com/gpu или MIG.",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "MIG manager не смог применить конфигурацию MIG {{config}} на этом узле."
+  },
+  "page": {
+    "sidebar": "Узлы с GPU",
+    "title": "Узлы с GPU",
+    "hint": "Узлы с label nvidia.com/gpu.present=true, их GPU и конфигурация MIG.",
+    "total_one": "{{count}} узел",
+    "total_few": "{{count}} узла",
+    "total_many": "{{count}} узлов",
+    "total_other": "{{count}} узла",
+    "truncated_one": "Прочитан только первый {{count}} узел.",
+    "truncated_few": "Прочитаны только первые {{count}} узла.",
+    "truncated_many": "Прочитаны только первые {{count}} узлов.",
+    "truncated_other": "Прочитаны только первые {{count}} узла.",
+    "unavailable": "Не удалось прочитать узлы.",
+    "amount": "{{allocatable}} из {{capacity}}",
+    "columns": {
+      "node": "Узел",
+      "product": "Модель",
+      "count": "GPU",
+      "gpus": "nvidia.com/gpu доступно",
+      "mig": "Ресурсы MIG (доступно/ёмкость)",
+      "migConfig": "Конфигурация MIG",
+      "migState": "Состояние MIG"
+    }
+  }
+}

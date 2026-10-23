@@ -1,0 +1,114 @@
+{
+  "badge_other": "{{count}} 個物件需要注意",
+  "loading": "正在載入…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "狀態",
+    "namespace": "元件 namespace",
+    "migStrategy": "MIG 策略",
+    "driverType": "驅動程式類型",
+    "version": "版本",
+    "nodeSelector": "節點選擇器"
+  },
+  "state": {
+    "ready": "就緒",
+    "notReady": "未就緒",
+    "ignored": "已忽略",
+    "disabled": "已停用",
+    "unknown": "尚無狀態"
+  },
+  "hint": {
+    "notReady": "operator 尚未完成：某個元件未部署或尚未就緒。下方的元件會說明是哪一個。",
+    "ignored": "operator 忽略此 ClusterPolicy，因為已有另一個：只會使用一個。",
+    "disabled": "operator 回報此物件已停用。",
+    "unknown": "operator 尚未回報狀態。"
+  },
+  "fields": {
+    "state": "狀態",
+    "namespace": "元件 namespace",
+    "migStrategy": "MIG 策略",
+    "migStrategyUnset": "未設定（由 device plugin 決定，預設 none）",
+    "driver": "驅動程式",
+    "driverByCrd": "由 NVIDIADriver 物件管理",
+    "driverType": "驅動程式類型",
+    "version": "版本",
+    "nodeSelector": "節點選擇器",
+    "product": "GPU 型號",
+    "count": "GPU 數量",
+    "memory": "每個 GPU 的記憶體",
+    "migConfig": "MIG 設定",
+    "migState": "MIG 設定狀態"
+  },
+  "component": {
+    "driver": "驅動程式",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "驗證器",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "機密運算管理器"
+  },
+  "components": {
+    "title": "元件",
+    "component": "元件",
+    "enabled": "已啟用",
+    "status": "推出",
+    "daemonSet": "DaemonSet",
+    "on": "開",
+    "off": "關",
+    "rollout": "{{ready}}/{{desired}} 就緒，{{updated}} 已更新",
+    "state": {
+      "ready": "已推出",
+      "rollingOut": "正在推出",
+      "missing": "尚未部署",
+      "off": "不部署",
+      "managedByDriver": "見 NVIDIADriver",
+      "unknown": "無法判斷"
+    },
+    "noNamespace": "operator 尚未回報元件的 namespace，因此找不到 DaemonSet。",
+    "unavailable": "無法讀取 namespace {{namespace}} 中的 DaemonSet。",
+    "truncated": "未讀取此 namespace 的全部 DaemonSet：清單可能不完整。"
+  },
+  "driver": {
+    "daemonSets": "DaemonSet",
+    "none": "此 NVIDIADriver 還沒有 DaemonSet。"
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "資源",
+    "capacity": "容量",
+    "allocatable": "可配置",
+    "noResources": "此節點未宣告 nvidia.com/gpu 或 MIG 資源。",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "MIG manager 無法在此節點上套用 MIG 設定 {{config}}。"
+  },
+  "page": {
+    "sidebar": "GPU 節點",
+    "title": "GPU 節點",
+    "hint": "帶有 label nvidia.com/gpu.present=true 的節點，及其 GPU 與 MIG 設定。",
+    "total_other": "{{count}} 個節點",
+    "truncated_other": "僅讀取前 {{count}} 個節點。",
+    "unavailable": "無法讀取節點。",
+    "amount": "{{allocatable}}/{{capacity}}",
+    "columns": {
+      "node": "節點",
+      "product": "型號",
+      "count": "GPU 數量",
+      "gpus": "nvidia.com/gpu 可配置",
+      "mig": "MIG 資源（可配置/容量）",
+      "migConfig": "MIG 設定",
+      "migState": "MIG 狀態"
+    }
+  }
+}

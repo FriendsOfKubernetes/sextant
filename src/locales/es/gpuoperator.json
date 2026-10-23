@@ -1,0 +1,120 @@
+{
+  "badge_one": "{{count}} objeto requiere atención",
+  "badge_many": "{{count}} de objetos requieren atención",
+  "badge_other": "{{count}} objetos requieren atención",
+  "loading": "Cargando…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "Estado",
+    "namespace": "Namespace de los operandos",
+    "migStrategy": "Estrategia MIG",
+    "driverType": "Tipo de controlador",
+    "version": "Versión",
+    "nodeSelector": "Selector de nodos"
+  },
+  "state": {
+    "ready": "Listo",
+    "notReady": "No listo",
+    "ignored": "Ignorado",
+    "disabled": "Desactivado",
+    "unknown": "Aún sin estado"
+  },
+  "hint": {
+    "notReady": "El operador no ha terminado: algún componente no está desplegado o aún no está listo. Los componentes de abajo indican cuál.",
+    "ignored": "El operador ignora esta ClusterPolicy porque existe otra: solo se usa una.",
+    "disabled": "El operador indica que este objeto está desactivado.",
+    "unknown": "El operador aún no ha indicado un estado."
+  },
+  "fields": {
+    "state": "Estado",
+    "namespace": "Namespace de los operandos",
+    "migStrategy": "Estrategia MIG",
+    "migStrategyUnset": "No definida (decide el device plugin, none por defecto)",
+    "driver": "Controlador",
+    "driverByCrd": "Gestionado por objetos NVIDIADriver",
+    "driverType": "Tipo de controlador",
+    "version": "Versión",
+    "nodeSelector": "Selector de nodos",
+    "product": "Producto GPU",
+    "count": "GPU",
+    "memory": "Memoria por GPU",
+    "migConfig": "Configuración MIG",
+    "migState": "Estado de la configuración MIG"
+  },
+  "component": {
+    "driver": "Controlador",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "Validador",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "Gestor de computación confidencial"
+  },
+  "components": {
+    "title": "Componentes",
+    "component": "Componente",
+    "enabled": "Activado",
+    "status": "Despliegue",
+    "daemonSet": "DaemonSet",
+    "on": "Sí",
+    "off": "No",
+    "rollout": "{{ready}} de {{desired}} listos, {{updated}} actualizados",
+    "state": {
+      "ready": "Desplegado",
+      "rollingOut": "Desplegándose",
+      "missing": "Aún no desplegado",
+      "off": "No se despliega",
+      "managedByDriver": "Ver NVIDIADriver",
+      "unknown": "No se puede saber"
+    },
+    "noNamespace": "El operador aún no ha indicado el namespace de sus operandos, así que no se pueden encontrar los DaemonSets.",
+    "unavailable": "No se pudieron leer los DaemonSets del namespace {{namespace}}.",
+    "truncated": "No se leyeron todos los DaemonSets del namespace: la lista puede estar incompleta."
+  },
+  "driver": {
+    "daemonSets": "DaemonSets",
+    "none": "Este NVIDIADriver aún no tiene DaemonSet."
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "Recurso",
+    "capacity": "Capacidad",
+    "allocatable": "Asignable",
+    "noResources": "El nodo no anuncia recursos nvidia.com/gpu ni MIG.",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "El MIG manager no pudo aplicar la configuración MIG {{config}} en este nodo."
+  },
+  "page": {
+    "sidebar": "Nodos con GPU",
+    "title": "Nodos con GPU",
+    "hint": "Nodos con el label nvidia.com/gpu.present=true, con sus GPU y su configuración MIG.",
+    "total_one": "{{count}} nodo",
+    "total_many": "{{count}} de nodos",
+    "total_other": "{{count}} nodos",
+    "truncated_one": "Solo se lee el primer nodo ({{count}}).",
+    "truncated_many": "Solo se leen los primeros {{count}} nodos.",
+    "truncated_other": "Solo se leen los primeros {{count}} nodos.",
+    "unavailable": "No se pudieron leer los nodos.",
+    "amount": "{{allocatable}} de {{capacity}}",
+    "columns": {
+      "node": "Nodo",
+      "product": "Producto",
+      "count": "GPU",
+      "gpus": "nvidia.com/gpu asignables",
+      "mig": "Recursos MIG (asignable/capacidad)",
+      "migConfig": "Configuración MIG",
+      "migState": "Estado MIG"
+    }
+  }
+}

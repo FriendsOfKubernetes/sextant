@@ -1,0 +1,129 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_other": "対応が必要な InferenceService が {{count}} 件あります",
+  "state": {
+    "ready": "準備完了",
+    "progressing": "進行中",
+    "notReady": "未準備",
+    "failed": "失敗",
+    "stopped": "停止"
+  },
+  "columns": {
+    "status": "状態",
+    "url": "URL",
+    "modelFormat": "モデル形式",
+    "runtime": "ランタイム",
+    "mode": "モード",
+    "canary": "Canary %",
+    "formats": "モデル形式",
+    "protocols": "プロトコル",
+    "disabled": "無効",
+    "multiModel": "マルチモデル",
+    "nodes": "グラフのノード",
+    "inferenceService": "InferenceService",
+    "framework": "フレームワーク"
+  },
+  "fields": {
+    "status": "状態",
+    "url": "URL",
+    "address": "アドレス",
+    "deploymentMode": "デプロイモード",
+    "recordedRuntime": "使用中のランタイム",
+    "modelFormat": "モデル形式",
+    "runtime": "ランタイム",
+    "storageUri": "ストレージ URI",
+    "protocolVersion": "プロトコル",
+    "images": "イメージ",
+    "replicas": "レプリカ",
+    "canaryTrafficPercent": "Canary トラフィック",
+    "workers": "マルチノード",
+    "componentUrl": "URL",
+    "latestReadyRevision": "最新の準備完了リビジョン",
+    "latestCreatedRevision": "最新の作成済みリビジョン",
+    "previousRolledoutRevision": "前のリビジョン",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "遷移",
+    "activeModelState": "アクティブなモデル",
+    "targetModelState": "目標のモデル",
+    "failureReason": "失敗の理由",
+    "failureLocation": "失敗した場所",
+    "failureTime": "失敗した時刻",
+    "exitCode": "終了コード",
+    "copies": "コピー",
+    "protocols": "プロトコル",
+    "disabled": "無効",
+    "multiModel": "マルチモデル",
+    "multiNode": "マルチノード",
+    "inferenceService": "InferenceService",
+    "framework": "フレームワーク",
+    "memory": "メモリ"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment と Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "未設定: クラスターの既定値が適用されます"
+  },
+  "uriHidden": "認証情報とクエリは非表示",
+  "bounds": "{{min}}～{{max}}",
+  "percent": "{{value}}%",
+  "copies": "{{total}} 中 {{failed}} が失敗",
+  "yes": "はい",
+  "no": "いいえ",
+  "stoppedNote": "この InferenceService は意図的に停止されています。KServe はサービスを提供するものを削除しました。",
+  "traffic": {
+    "revision": "リビジョン",
+    "percent": "トラフィック",
+    "tag": "タグ",
+    "latest": "最新"
+  },
+  "modelStatus": "モデルの状態",
+  "choice": {
+    "title": "サービングランタイム",
+    "fields": {
+      "named": "spec で指定",
+      "auto": "KServe の選択"
+    },
+    "loading": "サービングランタイムを読み取っています…",
+    "notServed": "クラスターは ServingRuntime の種類を提供していません。",
+    "unreadable": "一部のサービングランタイムを読み取れないため、選択結果を判断できません。",
+    "noFormat": "Predictor はモデル形式を指定していません。KServe はランタイムを選択しません。",
+    "none": "モデル形式 {{format}} をサポートするサービングランタイムはありません。KServe はこのモデルを提供できません。",
+    "others": "KServe の順序でのその他の候補: {{names}}",
+    "differs": "KServe は前回の調整で {{recorded}} を記録しました。その後ランタイムが変更されています。",
+    "namedMissing": "spec で指定されたランタイム {{name}} は、この namespace にもクラスターにも存在しません。",
+    "namedDisabled": "spec で指定されたランタイム {{name}} は無効です。",
+    "namedProtocol": "spec で指定されたランタイム {{name}} はモデルのプロトコルに対応していません。",
+    "namedFormat": "spec で指定されたランタイム {{name}} はモデルの形式を挙げていません。"
+  },
+  "formats": {
+    "title": "モデル形式",
+    "name": "形式",
+    "version": "バージョン",
+    "autoSelect": "自動選択",
+    "priority": "優先度"
+  },
+  "graph": {
+    "node": "ノード {{name}} ({{type}})",
+    "toNode": "ノード {{name}}",
+    "step": "ステップ",
+    "target": "ターゲット",
+    "weight": "重み",
+    "condition": "条件",
+    "dependency": "依存関係"
+  }
+}

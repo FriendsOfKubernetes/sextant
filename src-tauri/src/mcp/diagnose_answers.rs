@@ -187,6 +187,9 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "pods",
     "workloads",
     "jobs",
+    "kueue",
+    "kueueWorkloads",
+    "jobset",
     "vpa",
     "volumes",
     "certificates",
@@ -201,6 +204,10 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "knative",
     "crossplane",
     "clusterApi",
+    "dra",
+    "gpuOperator",
+    "kuberay",
+    "kserve",
     "policies",
     "externalSecrets",
     "sealedSecrets",
@@ -215,7 +222,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 9] = [
+pub const OPT_IN_CATEGORIES: [&str; 10] = [
     "security",
     "credentials",
     "disk",
@@ -225,6 +232,7 @@ pub const OPT_IN_CATEGORIES: [&str; 9] = [
     "traefik",
     "reflector",
     "sealedSecrets",
+    "kueueWorkloads",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
@@ -250,6 +258,17 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "vpa",
     // Cluster API (#243): a window view of 0.22.0.
     "clusterApi",
+    // Kueue queues and Workloads (#246) and JobSets (#247): window views of 0.23.0.
+    "kueue",
+    "kueueWorkloads",
+    "jobset",
+    // Dynamic Resource Allocation (#244): a window view of 0.23.0.
+    "dra",
+    // NVIDIA GPU Operator (#245): a window view of 0.23.0.
+    "gpuOperator",
+    // KubeRay (#248) and KServe (#249): window views of 0.23.0.
+    "kuberay",
+    "kserve",
     "cnpg",
     "strimzi",
     "prometheusOperator",

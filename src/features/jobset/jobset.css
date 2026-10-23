@@ -1,0 +1,16 @@
+/* JobSet: why it failed or is near its restart limit, and muted remarks. */
+.jobset-note {
+  margin: 0 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.jobset-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.jobset-muted {
+  margin: 0 0 0.5rem;
+  color: var(--color-text-muted);
+}

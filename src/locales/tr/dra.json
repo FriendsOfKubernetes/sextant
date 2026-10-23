@@ -1,0 +1,150 @@
+{
+  "badge_one": "{{count}} Pod cihaz bekliyor",
+  "badge_other": "{{count}} Pod cihaz bekliyor",
+  "loading": "Yükleniyor…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Durum",
+    "classes": "Cihaz sınıfları",
+    "devices": "Cihazlar",
+    "node": "Düğüm",
+    "reservedFor": "Ayrıldığı yer",
+    "requests": "İstekler",
+    "selectors": "Seçiciler",
+    "drivers": "Sürücüler",
+    "extendedResource": "Genişletilmiş kaynak",
+    "driver": "Sürücü",
+    "pool": "Havuz",
+    "deviceCount": "Cihazlar"
+  },
+  "state": {
+    "inUse": "Kullanımda",
+    "allocated": "Ayrıldı",
+    "pending": "Bekliyor",
+    "bindingFailed": "Bağlama başarısız",
+    "deleting": "Siliniyor"
+  },
+  "hint": {
+    "inUse": "Cihazlar ayrıldı ve aşağıdaki tüketiciler için rezerve edildi.",
+    "allocated": "Cihazlar ayrıldı, ancak henüz hiçbir Pod onları rezerve etmedi.",
+    "pending": "Henüz cihaz ayrılmadı. Zamanlayıcı, bu claim'i kullanan ilk Pod'u yerleştirdiğinde cihazları ayırır.",
+    "bindingFailed": "Sürücü, bir cihazın bağlanmasının başarısız olduğunu bildiriyor: zamanlayıcı başka bir düğüm deneyecek.",
+    "deleting": "Claim siliniyor; hiçbir Pod onu kullanmadığında cihazları serbest kalır."
+  },
+  "scope": {
+    "node": "Tek düğüm",
+    "allNodes": "Tüm düğümler",
+    "selector": "Seçiciyle düğümler",
+    "perDevice": "Cihaz başına belirlenir",
+    "unknown": "Belirtilmemiş"
+  },
+  "fields": {
+    "state": "Durum",
+    "node": "Düğüm",
+    "nodeSelector": "Düğüm seçici",
+    "allocatedAt": "Ayrıldı",
+    "madeFor": "Oluşturulduğu Pod",
+    "reservedFor": "Ayrıldığı yer",
+    "extendedResource": "Genişletilmiş kaynak",
+    "driver": "Sürücü",
+    "pool": "Havuz",
+    "poolGeneration": "Havuz nesli",
+    "poolSlices": "Havuzdaki slice'lar",
+    "reach": "Cihazlara erişilen yer"
+  },
+  "requests": {
+    "title": "İstekler",
+    "request": "İstek",
+    "class": "Cihaz sınıfı",
+    "selectors": "Seçiciler (CEL)",
+    "amount": "Miktar",
+    "choice": "{{request}}: seçenek {{n}} ({{choice}})",
+    "all": "Eşleşen tüm cihazlar",
+    "count_one": "{{count}} cihaz",
+    "count_other": "{{count}} cihaz",
+    "withAdminAccess": "{{amount}}, yönetici erişimiyle",
+    "none": "İstek yok."
+  },
+  "results": {
+    "title": "Ayrılan cihazlar",
+    "request": "İstek",
+    "driver": "Sürücü",
+    "device": "Havuz / cihaz",
+    "notes": "Notlar",
+    "adminAccess": "Yönetici erişimi.",
+    "bindingFailed": "Bağlama başarısız: {{conditions}}.",
+    "bindingPending": "Bekleniyor: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Bu claim'i bekleyen Pod'lar",
+    "none": "Bu namespace'teki hiçbir Pending Pod bu claim'i kullanmıyor.",
+    "unknown": "Bu namespace'teki Pending Pod'lar okunamadı."
+  },
+  "reason": {
+    "notCreated": "Pod'un şablonundan oluşturduğu claim henüz yok: resource claim denetleyicisi onu oluşturmadı.",
+    "notFound": "Pod'un adını verdiği bir claim yok.",
+    "deleting": "Pod'un kullandığı bir claim siliniyor.",
+    "inUse": "Claim başka Pod'lar tarafından rezerve edildi ve bununla paylaşılamaz.",
+    "noClass": "Bir istek, var olmayan bir cihaz sınıfının adını veriyor.",
+    "cannotAllocate": "Hiçbir düğümde Pod'un claim'lerinin tüm isteklerine uyan boş cihaz yok.",
+    "notOnNode": "Claim'in cihazları, Pod'un çalışabileceği düğümlerden farklı bir düğümde ayrılmış.",
+    "allocating": "Başka bir zamanlama denemesi şu anda claim'i ayırıyor.",
+    "notOwner": "Claim başka bir Pod için oluşturuldu."
+  },
+  "class": {
+    "selectors": "Seçiciler (CEL)",
+    "noSelectors": "Seçici yok: sürücülerin her cihazı eşleşir.",
+    "celNote": "İfadeler yazıldığı gibi gösterilir; Sextant onları değerlendirmez.",
+    "config": "Sürücü yapılandırması"
+  },
+  "devices": {
+    "title": "Cihazlar",
+    "node": "Düğüm",
+    "driver": "Sürücü",
+    "device": "Havuz / cihaz",
+    "product": "Ürün",
+    "capacity": "Kapasite",
+    "allocatedTo": "Ayrıldığı yer",
+    "free": "Boş",
+    "unknown": "Söylenemiyor",
+    "none": "Cihaz yok.",
+    "cut_one": "{{total}} cihazdan yalnızca ilk {{count}} tanesi gösteriliyor.",
+    "cut_other": "{{total}} cihazdan yalnızca ilk {{count}} tanesi gösteriliyor."
+  },
+  "pod": {
+    "title": "Cihazlar",
+    "name": "Pod'daki ad",
+    "claim": "Claim",
+    "state": "Durum",
+    "devices": "Cihazlar",
+    "containers": "Konteynerler",
+    "fromTemplate": "{{template}} şablonundan",
+    "notNeeded": "Gerekli değil ({{template}} şablonu)",
+    "notCreated": "Henüz oluşturulmadı",
+    "missing": "Yok",
+    "unknown": "Söylenemiyor",
+    "notServed": "Küme resource.k8s.io ResourceClaim'lerini sunmuyor."
+  },
+  "node": {
+    "title": "DRA cihazları",
+    "truncated_one": "Yalnızca ilk {{count}} ResourceSlice okunuyor.",
+    "truncated_other": "Yalnızca ilk {{count}} ResourceSlice okunuyor."
+  },
+  "page": {
+    "sidebar": "Cihazlar",
+    "title": "Cihazlar",
+    "hint": "Sürücülerin ResourceSlice'larda yayımladığı her cihaz, düğümlere göre, onu tutan claim ile birlikte.",
+    "total_one": "{{count}} cihaz",
+    "total_other": "{{count}} cihaz",
+    "totals_one": "{{count}} cihaz, {{allocated}} ayrıldı",
+    "totals_other": "{{count}} cihaz, {{allocated}} ayrıldı",
+    "slicesTruncated_one": "Yalnızca ilk {{count}} ResourceSlice okunuyor.",
+    "slicesTruncated_other": "Yalnızca ilk {{count}} ResourceSlice okunuyor.",
+    "claimsUnknown": "Kümenin ResourceClaim'leri tamamen okunamadı, bu yüzden hangi cihazların ayrıldığı söylenemiyor."
+  }
+}

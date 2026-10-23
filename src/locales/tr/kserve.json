@@ -1,0 +1,130 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService ilgi gerektiriyor",
+  "badge_other": "{{count}} InferenceService ilgi gerektiriyor",
+  "state": {
+    "ready": "Hazır",
+    "progressing": "Sürüyor",
+    "notReady": "Hazır değil",
+    "failed": "Başarısız",
+    "stopped": "Durduruldu"
+  },
+  "columns": {
+    "status": "Durum",
+    "url": "URL",
+    "modelFormat": "Model biçimi",
+    "runtime": "Çalışma ortamı",
+    "mode": "Mod",
+    "canary": "Canary %",
+    "formats": "Model biçimleri",
+    "protocols": "Protokoller",
+    "disabled": "Devre dışı",
+    "multiModel": "Çoklu model",
+    "nodes": "Graf düğümleri",
+    "inferenceService": "InferenceService",
+    "framework": "Çerçeve"
+  },
+  "fields": {
+    "status": "Durum",
+    "url": "URL",
+    "address": "Adres",
+    "deploymentMode": "Dağıtım modu",
+    "recordedRuntime": "Kullanılan çalışma ortamı",
+    "modelFormat": "Model biçimi",
+    "runtime": "Çalışma ortamı",
+    "storageUri": "Depolama URI’si",
+    "protocolVersion": "Protokol",
+    "images": "İmajlar",
+    "replicas": "Replikalar",
+    "canaryTrafficPercent": "Canary trafiği",
+    "workers": "Çoklu düğüm",
+    "componentUrl": "URL",
+    "latestReadyRevision": "En son hazır revizyon",
+    "latestCreatedRevision": "En son oluşturulan revizyon",
+    "previousRolledoutRevision": "Önceki revizyon",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Geçiş",
+    "activeModelState": "Etkin model",
+    "targetModelState": "Hedef model",
+    "failureReason": "Hata nedeni",
+    "failureLocation": "Hatanın yeri",
+    "failureTime": "Hata zamanı",
+    "exitCode": "Çıkış kodu",
+    "copies": "Kopyalar",
+    "protocols": "Protokoller",
+    "disabled": "Devre dışı",
+    "multiModel": "Çoklu model",
+    "multiNode": "Çoklu düğüm",
+    "inferenceService": "InferenceService",
+    "framework": "Çerçeve",
+    "memory": "Bellek"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment ve Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Ayarlanmamış: kümenin varsayılanı geçerli"
+  },
+  "uriHidden": "kimlik bilgileri ve sorgu gizlendi",
+  "bounds": "{{min}} ile {{max}} arası",
+  "percent": "%{{value}}",
+  "copies": "{{total}} içinden {{failed}} başarısız",
+  "yes": "Evet",
+  "no": "Hayır",
+  "stoppedNote": "InferenceService bilerek durduruldu: KServe onu sunan bileşenleri kaldırdı.",
+  "traffic": {
+    "revision": "Revizyon",
+    "percent": "Trafik",
+    "tag": "Etiket",
+    "latest": "En son"
+  },
+  "modelStatus": "Model durumu",
+  "choice": {
+    "title": "Sunum çalışma ortamı",
+    "fields": {
+      "named": "Spec’te belirtilen",
+      "auto": "KServe’ün seçimi"
+    },
+    "loading": "Sunum çalışma ortamları okunuyor…",
+    "notServed": "Küme hiçbir ServingRuntime türü sunmuyor.",
+    "unreadable": "Sunum çalışma ortamlarının hepsi okunamıyor, bu yüzden seçim belirlenemiyor.",
+    "noFormat": "Predictor bir model biçimi belirtmiyor: KServe onun için çalışma ortamı seçmez.",
+    "none": "Hiçbir sunum çalışma ortamı {{format}} model biçimini desteklemiyor: KServe bu modeli sunamaz.",
+    "others": "KServe sırasına göre diğer adaylar: {{names}}",
+    "differs": "KServe son uzlaştırmada {{recorded}} kaydetti: çalışma ortamları o zamandan beri değişti.",
+    "namedMissing": "Spec’te belirtilen {{name}} çalışma ortamı ne bu namespace’te ne de kümede var.",
+    "namedDisabled": "Spec’te belirtilen {{name}} çalışma ortamı devre dışı.",
+    "namedProtocol": "Spec’te belirtilen {{name}} çalışma ortamı modelin protokolünü desteklemiyor.",
+    "namedFormat": "Spec’te belirtilen {{name}} çalışma ortamı modelin biçimini listelemiyor."
+  },
+  "formats": {
+    "title": "Model biçimleri",
+    "name": "Biçim",
+    "version": "Sürüm",
+    "autoSelect": "Otomatik seçim",
+    "priority": "Öncelik"
+  },
+  "graph": {
+    "node": "Düğüm {{name}} ({{type}})",
+    "toNode": "Düğüm {{name}}",
+    "step": "Adım",
+    "target": "Hedef",
+    "weight": "Ağırlık",
+    "condition": "Koşul",
+    "dependency": "Bağımlılık"
+  }
+}

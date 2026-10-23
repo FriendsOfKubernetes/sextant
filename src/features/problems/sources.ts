@@ -28,6 +28,12 @@ import { CLUSTER_EXTERNAL_SECRET, CLUSTER_SECRET_STORE, EXTERNAL_SECRET, PUSH_SE
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
 import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
+import { RESOURCE_CLAIM as DRA_CLAIM } from "../dra/model";
+import { CLUSTER_POLICY as GPU_CLUSTER_POLICY } from "../gpu-operator/model";
+import { CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
+import { JOBSET } from "../jobset/model";
+import { RAY_CLUSTER, RAY_JOB, RAY_SERVICE } from "../kuberay/model";
+import { INFERENCE_SERVICE as KSERVE_INFERENCE_SERVICE } from "../kserve/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import { STRIMZI_KINDS } from "../strimzi/model";
 import {
@@ -108,6 +114,14 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   pods: [builtIn("pods", POD)],
   workloads: [builtIn("workloads", DEPLOYMENT), builtIn("workloads", STATEFULSET), builtIn("workloads", DAEMONSET)],
   jobs: [builtIn("jobs", JOB)],
+  // Kueue (#246): ClusterQueues that admit nothing and LocalQueues of a missing ClusterQueue; LocalQueues are one per
+  // team namespace: capped.
+  kueue: [tool("kueue", KUEUE_CLUSTER_QUEUE), tool("kueue", KUEUE_LOCAL_QUEUE, MAX_SOURCE_OBJECTS)],
+  // Kueue Workloads (#246, opt-in): waiting for quota, not queueable, evicted repeatedly; each one holds its jobs' pod
+  // templates and a batch cluster queues thousands: capped. The same watch feeds the queues' pending lists (a row tap).
+  kueueWorkloads: [tool("kueueWorkloads", KUEUE_WORKLOAD, MAX_SOURCE_OBJECTS)],
+  // JobSet (#247): failed JobSets (for a day) and restarts near the limit; capped like the other kinds by the thousand.
+  jobset: [tool("jobset", JOBSET, MAX_SOURCE_OBJECTS)],
   // Vertical Pod Autoscaler (#242): configurations the recommender cannot use, VPAs that match no pod, and VPAs that
   // fight an HPA over the same resource, judged by the provider of features/vpa (`external`: the HPA is another
   // object), held only where VPAs are served.
@@ -163,6 +177,18 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
     const def = tool("clusterApi", kind, kind === CAPI_MACHINE ? MAX_SOURCE_OBJECTS : undefined);
     return isCapiKind(kind, CAPI_MACHINE, CAPI_KCP) ? { ...def, across: { ...CAPI_PAUSED_ACROSS, from: tool("clusterApi", CAPI_CLUSTER) } } : def;
   }),
+  // Dynamic Resource Allocation (#244): pods the scheduler has not placed because a claim has no devices, judged by
+  // the provider of features/dra (`external`: Pending pods and their namespaces' claims), held only where
+  // ResourceClaims are served.
+  dra: [{ category: "dra", kind: DRA_CLAIM, fieldSelector: null, discovered: true, external: true }],
+  // NVIDIA GPU Operator (#245): ClusterPolicies and NVIDIADrivers not ready, component DaemonSets not rolled out, MIG
+  // configurations that failed on a node, judged by the provider of features/gpu-operator (`external`), held only
+  // where ClusterPolicies are served.
+  gpuOperator: [{ category: "gpuOperator", kind: GPU_CLUSTER_POLICY, fieldSelector: null, discovered: true, external: true }],
+  // KubeRay (#248): failed RayClusters or ones whose head is not ready, failed RayJobs (batch jobs can be thousands:
+  // capped), RayServices not ready. KServe (#249): InferenceServices not ready or whose model failed to load.
+  kuberay: [tool("kuberay", RAY_CLUSTER), tool("kuberay", RAY_JOB, MAX_SOURCE_OBJECTS), tool("kuberay", RAY_SERVICE)],
+  kserve: [tool("kserve", KSERVE_INFERENCE_SERVICE)],
   // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
   strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind, d.label === "topics" || d.label === "users" ? MAX_SOURCE_OBJECTS : undefined)),
   // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged

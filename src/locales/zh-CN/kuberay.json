@@ -1,0 +1,131 @@
+{
+  "sidebar": {
+    "rayClusters": "Ray Clusters",
+    "rayJobs": "Ray Jobs",
+    "rayServices": "Ray Services"
+  },
+  "badge_other": "{{count}} 个对象需要关注",
+  "clusterState": {
+    "ready": "就绪",
+    "provisioning": "创建中",
+    "headNotReady": "Head 未就绪",
+    "suspending": "正在暂停",
+    "suspended": "已暂停",
+    "failed": "失败"
+  },
+  "jobState": {
+    "succeeded": "成功",
+    "running": "运行中",
+    "pending": "等待中",
+    "retrying": "重试中",
+    "stopped": "已停止",
+    "suspended": "已暂停",
+    "failed": "失败"
+  },
+  "serviceState": {
+    "ready": "就绪",
+    "upgrading": "升级中",
+    "notReady": "未就绪",
+    "suspended": "已暂停",
+    "failed": "失败"
+  },
+  "columns": {
+    "status": "状态",
+    "workers": "Worker",
+    "headIP": "Head IP",
+    "rayVersion": "Ray 版本",
+    "jobStatus": "作业状态",
+    "deploymentStatus": "部署状态",
+    "cluster": "Ray 集群",
+    "started": "开始时间",
+    "applications": "应用",
+    "endpoints": "端点",
+    "activeCluster": "活动集群"
+  },
+  "fields": {
+    "status": "状态",
+    "rayVersion": "Ray 版本",
+    "workers": "Worker",
+    "workerBounds": "Worker 范围",
+    "headPod": "Head Pod",
+    "headPodIP": "Head Pod IP",
+    "headService": "Head Service",
+    "headServiceIP": "Head Service IP",
+    "endpoints": "端点",
+    "desired": "请求的资源",
+    "jobStatus": "作业状态",
+    "deploymentStatus": "部署状态",
+    "reason": "原因",
+    "rayCluster": "Ray 集群",
+    "clusterSelector": "集群选择器",
+    "submissionMode": "提交模式",
+    "submitter": "提交 Job",
+    "jobId": "作业 ID",
+    "dashboardURL": "仪表板 URL",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "succeeded": "成功次数",
+    "failed": "失败次数",
+    "shutdown": "完成后删除集群",
+    "trafficPercent": "流量",
+    "targetCapacity": "目标容量",
+    "serviceStatus": "服务状态",
+    "serveService": "Serve Service",
+    "serveEndpoints": "Serve 端点",
+    "upgradeStrategy": "升级策略",
+    "upgrade": "正在升级"
+  },
+  "workersReady": "{{ready}}/{{desired}} 就绪",
+  "bounds": "{{min}} 到 {{max}}",
+  "desiredResource": {
+    "CPU": "CPU：{{value}}",
+    "Memory": "内存：{{value}}",
+    "GPU": "GPU：{{value}}",
+    "TPU": "TPU：{{value}}"
+  },
+  "yes": "是",
+  "no": "否",
+  "percent": "{{value}}%",
+  "suspendedNote": {
+    "suspended": "集群已暂停：KubeRay 已删除其 Pod。",
+    "suspending": "集群正在暂停：KubeRay 正在删除其 Pod。",
+    "service": "服务已暂停：KubeRay 已删除为其创建的资源。"
+  },
+  "groups": {
+    "title": "Worker 组",
+    "name": "组",
+    "desired": "期望 Pod 数",
+    "bounds": "副本",
+    "ready": "就绪 Pod 数",
+    "suspended": "已暂停",
+    "none": "集群没有 Worker 组：由 Head 完成工作。"
+  },
+  "pods": {
+    "title": "Pod",
+    "headLogs": "Head 日志",
+    "workerLogs": "Worker 日志",
+    "loading": "正在查找集群的 Pod…",
+    "error": "无法读取集群的 Pod。",
+    "name": "Pod",
+    "type": "类型",
+    "group": "组",
+    "status": "状态",
+    "none": "集群没有 Pod。",
+    "more_other": "还有 {{count}} 个 Pod 未列出。",
+    "truncated": "集群的 Pod 多于此处保留的数量：列表不完整。"
+  },
+  "deploymentsHealthy": "{{healthy}}/{{total}} 健康",
+  "apps": {
+    "name": "应用",
+    "status": "状态",
+    "deployments": "部署",
+    "message": "消息"
+  },
+  "entrypoint": "入口点",
+  "noEntrypoint": "没有入口点：作业以其他方式提交。",
+  "submitterLogs": "提交日志",
+  "activeCluster": "活动集群",
+  "pendingCluster": "待切换集群（升级）",
+  "serveConfig": "Serve 配置",
+  "noServeConfig": "未设置 serveConfigV2。"
+}

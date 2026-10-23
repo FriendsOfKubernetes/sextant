@@ -1,0 +1,132 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService потребує уваги",
+  "badge_few": "{{count}} InferenceService потребують уваги",
+  "badge_many": "{{count}} InferenceService потребують уваги",
+  "badge_other": "{{count}} InferenceService потребують уваги",
+  "state": {
+    "ready": "Готовий",
+    "progressing": "Триває",
+    "notReady": "Не готовий",
+    "failed": "Збій",
+    "stopped": "Зупинено"
+  },
+  "columns": {
+    "status": "Статус",
+    "url": "URL",
+    "modelFormat": "Формат моделі",
+    "runtime": "Середовище",
+    "mode": "Режим",
+    "canary": "Canary, %",
+    "formats": "Формати моделей",
+    "protocols": "Протоколи",
+    "disabled": "Вимкнено",
+    "multiModel": "Багато моделей",
+    "nodes": "Вузли графа",
+    "inferenceService": "InferenceService",
+    "framework": "Фреймворк"
+  },
+  "fields": {
+    "status": "Статус",
+    "url": "URL",
+    "address": "Адреса",
+    "deploymentMode": "Режим розгортання",
+    "recordedRuntime": "Використане середовище",
+    "modelFormat": "Формат моделі",
+    "runtime": "Середовище",
+    "storageUri": "URI сховища",
+    "protocolVersion": "Протокол",
+    "images": "Образи",
+    "replicas": "Репліки",
+    "canaryTrafficPercent": "Трафік canary",
+    "workers": "Кілька вузлів",
+    "componentUrl": "URL",
+    "latestReadyRevision": "Остання готова ревізія",
+    "latestCreatedRevision": "Остання створена ревізія",
+    "previousRolledoutRevision": "Попередня ревізія",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Перехід",
+    "activeModelState": "Активна модель",
+    "targetModelState": "Цільова модель",
+    "failureReason": "Причина збою",
+    "failureLocation": "Де стався збій",
+    "failureTime": "Час збою",
+    "exitCode": "Код виходу",
+    "copies": "Копії",
+    "protocols": "Протоколи",
+    "disabled": "Вимкнено",
+    "multiModel": "Багато моделей",
+    "multiNode": "Кілька вузлів",
+    "inferenceService": "InferenceService",
+    "framework": "Фреймворк",
+    "memory": "Пам’ять"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment і Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Не задано: діє типове значення кластера"
+  },
+  "uriHidden": "облікові дані та параметри запиту приховано",
+  "bounds": "від {{min}} до {{max}}",
+  "percent": "{{value}} %",
+  "copies": "збій у {{failed}} з {{total}}",
+  "yes": "Так",
+  "no": "Ні",
+  "stoppedNote": "InferenceService зупинено навмисно: KServe видалив те, що його обслуговує.",
+  "traffic": {
+    "revision": "Ревізія",
+    "percent": "Трафік",
+    "tag": "Тег",
+    "latest": "Остання"
+  },
+  "modelStatus": "Стан моделі",
+  "choice": {
+    "title": "Середовище виконання",
+    "fields": {
+      "named": "Указано в специфікації",
+      "auto": "Вибір KServe"
+    },
+    "loading": "Читання середовищ виконання…",
+    "notServed": "Кластер не обслуговує види ServingRuntime.",
+    "unreadable": "Не всі середовища виконання вдається прочитати, тому вибір визначити не можна.",
+    "noFormat": "Predictor не вказує формат моделі: KServe не вибирає для нього середовище.",
+    "none": "Жодне середовище виконання не підтримує формат моделі {{format}}: KServe не може обслуговувати цю модель.",
+    "others": "Інші кандидати в порядку KServe: {{names}}",
+    "differs": "Під час останнього узгодження KServe записав {{recorded}}: відтоді середовища виконання змінилися.",
+    "namedMissing": "Середовища {{name}}, указаного в специфікації, немає ні в цьому namespace, ні в кластері.",
+    "namedDisabled": "Середовище {{name}}, указане в специфікації, вимкнено.",
+    "namedProtocol": "Середовище {{name}}, указане в специфікації, не підтримує протокол моделі.",
+    "namedFormat": "Середовище {{name}}, указане в специфікації, не підтримує формат моделі."
+  },
+  "formats": {
+    "title": "Формати моделей",
+    "name": "Формат",
+    "version": "Версія",
+    "autoSelect": "Автовибір",
+    "priority": "Пріоритет"
+  },
+  "graph": {
+    "node": "Вузол {{name}} ({{type}})",
+    "toNode": "Вузол {{name}}",
+    "step": "Крок",
+    "target": "Ціль",
+    "weight": "Вага",
+    "condition": "Умова",
+    "dependency": "Залежність"
+  }
+}

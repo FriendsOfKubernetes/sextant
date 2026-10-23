@@ -1,0 +1,97 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet erfordert Aufmerksamkeit",
+  "badge_other": "{{count}} JobSets erfordern Aufmerksamkeit",
+  "state": {
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "suspended": "Angehalten",
+    "restarting": "Startet neu",
+    "starting": "Startet",
+    "running": "Läuft",
+    "pending": "Wartend"
+  },
+  "jobState": {
+    "complete": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "suspended": "Angehalten",
+    "active": "Aktiv",
+    "pending": "Wartend"
+  },
+  "columns": {
+    "status": "Status",
+    "succeeded": "Erfolgreich",
+    "active": "Aktiv",
+    "failed": "Fehlgeschlagen",
+    "restarts": "Neustarts"
+  },
+  "fields": {
+    "status": "Status",
+    "terminalState": "Endzustand",
+    "restarts": "Neustarts",
+    "restartStrategy": "Neustartstrategie",
+    "successPolicy": "Erfolgreich, wenn",
+    "startupPolicy": "Startreihenfolge",
+    "suspend": "Angehalten",
+    "startTime": "Gestartet",
+    "activeDeadline": "Aktive Frist (s)",
+    "ttlAfterFinished": "Gelöscht nach Ende (s)",
+    "subdomain": "Subdomain",
+    "coordinator": "Koordinator-Pod",
+    "managedBy": "Verwaltet von",
+    "firstFailedJob": "Erster fehlgeschlagener Job"
+  },
+  "success": {
+    "all": "Jeder Job jedes replizierten Jobs wird abgeschlossen",
+    "any": "Ein beliebiger Job wird abgeschlossen",
+    "allOf": "Jeder Job von {{targets}} wird abgeschlossen",
+    "anyOf": "Ein beliebiger Job von {{targets}} wird abgeschlossen"
+  },
+  "restartsOfMax": "{{counted}} von {{max}} erlaubten ({{total}} insgesamt)",
+  "nearLimit": "{{counted}} von {{max}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
+  "failedNoReason": "Das JobSet ist fehlgeschlagen.",
+  "failedJobGone": "Dieser Job existiert nicht mehr.",
+  "suspendedNote": "Angehalten: seine Jobs bleiben angehalten, bis es fortgesetzt wird.",
+  "replicated": {
+    "title": "Replizierte Jobs",
+    "name": "Name",
+    "replicas": "Jobs",
+    "completions": "Abschlüsse / parallel",
+    "ready": "Bereit",
+    "active": "Aktiv",
+    "succeeded": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "dependsOn": "Hängt ab von"
+  },
+  "rules": {
+    "title": "Regeln der Fehlerrichtlinie",
+    "name": "Regel",
+    "action": "Aktion",
+    "onFailure": "Bei Job-Fehlern",
+    "targets": "Replizierte Jobs"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "job": "Job",
+    "replicatedJob": "Replizierter Job",
+    "index": "Index",
+    "state": "Zustand",
+    "attempt": "Neustartversuch",
+    "reason": "Fehler"
+  },
+  "pods": {
+    "title": "Pods",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Status"
+  },
+  "yes": "Ja",
+  "loading": "Wird geladen…",
+  "listUnknown": "Die Liste konnte nicht gelesen werden.",
+  "noJobs": "Es gibt keinen Job.",
+  "noPods": "Es gibt keinen Pod.",
+  "morePods": "Die ersten {{shown}} von {{total}} werden angezeigt, nicht laufende zuerst.",
+  "truncated": "Nur die ersten {{max}} werden gelesen: die Liste ist unvollständig."
+}

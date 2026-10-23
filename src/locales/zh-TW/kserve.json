@@ -1,0 +1,129 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_other": "{{count}} 個 InferenceService 需要注意",
+  "state": {
+    "ready": "就緒",
+    "progressing": "進行中",
+    "notReady": "未就緒",
+    "failed": "失敗",
+    "stopped": "已停止"
+  },
+  "columns": {
+    "status": "狀態",
+    "url": "URL",
+    "modelFormat": "模型格式",
+    "runtime": "執行階段",
+    "mode": "模式",
+    "canary": "Canary %",
+    "formats": "模型格式",
+    "protocols": "通訊協定",
+    "disabled": "已停用",
+    "multiModel": "多模型",
+    "nodes": "圖形節點",
+    "inferenceService": "InferenceService",
+    "framework": "架構"
+  },
+  "fields": {
+    "status": "狀態",
+    "url": "URL",
+    "address": "位址",
+    "deploymentMode": "部署模式",
+    "recordedRuntime": "使用中的執行階段",
+    "modelFormat": "模型格式",
+    "runtime": "執行階段",
+    "storageUri": "儲存體 URI",
+    "protocolVersion": "通訊協定",
+    "images": "映像",
+    "replicas": "複本",
+    "canaryTrafficPercent": "Canary 流量",
+    "workers": "多節點",
+    "componentUrl": "URL",
+    "latestReadyRevision": "最新就緒修訂",
+    "latestCreatedRevision": "最新建立修訂",
+    "previousRolledoutRevision": "上一個修訂",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "轉換",
+    "activeModelState": "作用中模型",
+    "targetModelState": "目標模型",
+    "failureReason": "失敗原因",
+    "failureLocation": "失敗位置",
+    "failureTime": "失敗時間",
+    "exitCode": "結束代碼",
+    "copies": "複本數",
+    "protocols": "通訊協定",
+    "disabled": "已停用",
+    "multiModel": "多模型",
+    "multiNode": "多節點",
+    "inferenceService": "InferenceService",
+    "framework": "架構",
+    "memory": "記憶體"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative（{{value}}）",
+    "standard": "Standard：Deployment 和 Service（{{value}}）",
+    "modelMesh": "ModelMesh（{{value}}）",
+    "other": "{{value}}",
+    "default": "未設定：採用叢集的預設值"
+  },
+  "uriHidden": "已隱藏認證與查詢參數",
+  "bounds": "{{min}} 到 {{max}}",
+  "percent": "{{value}}%",
+  "copies": "{{total}} 個中有 {{failed}} 個失敗",
+  "yes": "是",
+  "no": "否",
+  "stoppedNote": "此 InferenceService 被刻意停止：KServe 已移除為其提供服務的元件。",
+  "traffic": {
+    "revision": "修訂",
+    "percent": "流量",
+    "tag": "標籤",
+    "latest": "最新"
+  },
+  "modelStatus": "模型狀態",
+  "choice": {
+    "title": "服務執行階段",
+    "fields": {
+      "named": "規格中指定",
+      "auto": "KServe 選擇"
+    },
+    "loading": "正在讀取服務執行階段…",
+    "notServed": "叢集未提供 ServingRuntime 種類。",
+    "unreadable": "無法讀取全部服務執行階段，因此無法判斷選擇結果。",
+    "noFormat": "Predictor 未指定模型格式：KServe 不會為其選擇執行階段。",
+    "none": "沒有服務執行階段支援模型格式 {{format}}：KServe 無法提供此模型。",
+    "others": "其他候選（依 KServe 的順序）：{{names}}",
+    "differs": "KServe 上次協調時記錄的是 {{recorded}}：此後執行階段已變更。",
+    "namedMissing": "規格中指定的執行階段 {{name}} 在此 namespace 和叢集中都不存在。",
+    "namedDisabled": "規格中指定的執行階段 {{name}} 已停用。",
+    "namedProtocol": "規格中指定的執行階段 {{name}} 不支援模型的通訊協定。",
+    "namedFormat": "規格中指定的執行階段 {{name}} 未列出模型的格式。"
+  },
+  "formats": {
+    "title": "模型格式",
+    "name": "格式",
+    "version": "版本",
+    "autoSelect": "自動選擇",
+    "priority": "優先順序"
+  },
+  "graph": {
+    "node": "節點 {{name}}（{{type}}）",
+    "toNode": "節點 {{name}}",
+    "step": "步驟",
+    "target": "目標",
+    "weight": "權重",
+    "condition": "條件",
+    "dependency": "相依性"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet потребує уваги",
+  "badge_few": "{{count}} JobSet потребують уваги",
+  "badge_many": "{{count}} JobSet потребують уваги",
+  "badge_other": "{{count}} JobSet потребують уваги",
+  "state": {
+    "completed": "Завершено",
+    "failed": "Збій",
+    "suspended": "Призупинено",
+    "restarting": "Перезапускається",
+    "starting": "Запускається",
+    "running": "Працює",
+    "pending": "Очікує"
+  },
+  "jobState": {
+    "complete": "Завершено",
+    "failed": "Збій",
+    "suspended": "Призупинено",
+    "active": "Активний",
+    "pending": "Очікує"
+  },
+  "columns": {
+    "status": "Статус",
+    "succeeded": "Успішно",
+    "active": "Активні",
+    "failed": "Збій",
+    "restarts": "Перезапуски"
+  },
+  "fields": {
+    "status": "Статус",
+    "terminalState": "Підсумковий стан",
+    "restarts": "Перезапуски",
+    "restartStrategy": "Стратегія перезапуску",
+    "successPolicy": "Успішний, коли",
+    "startupPolicy": "Порядок запуску",
+    "suspend": "Призупинено",
+    "startTime": "Запущено",
+    "activeDeadline": "Строк виконання (с)",
+    "ttlAfterFinished": "Видалення після завершення (с)",
+    "subdomain": "Піддомен",
+    "coordinator": "Pod-координатор",
+    "managedBy": "Керується",
+    "firstFailedJob": "Перший Job зі збоєм"
+  },
+  "success": {
+    "all": "Завершується кожен Job кожного реплікованого завдання",
+    "any": "Завершується будь-який Job",
+    "allOf": "Завершується кожен Job із {{targets}}",
+    "anyOf": "Завершується будь-який Job із {{targets}}"
+  },
+  "restartsOfMax": "{{counted}} з {{max}} дозволених (усього {{total}})",
+  "nearLimit": "Використано {{counted}} з {{max}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
+  "failedNoReason": "JobSet завершився збоєм.",
+  "failedJobGone": "Цього Job вже немає.",
+  "suspendedNote": "Призупинено: його Job призупинені, доки його не буде відновлено.",
+  "replicated": {
+    "title": "Репліковані завдання",
+    "name": "Ім'я",
+    "replicas": "Job",
+    "completions": "Завершень / паралельно",
+    "ready": "Готові",
+    "active": "Активні",
+    "succeeded": "Успішно",
+    "failed": "Збій",
+    "dependsOn": "Залежить від"
+  },
+  "rules": {
+    "title": "Правила політики збоїв",
+    "name": "Правило",
+    "action": "Дія",
+    "onFailure": "При збоях Job",
+    "targets": "Репліковані завдання"
+  },
+  "jobs": {
+    "title": "Job",
+    "job": "Job",
+    "replicatedJob": "Репліковане завдання",
+    "index": "Індекс",
+    "state": "Стан",
+    "attempt": "Спроба перезапуску",
+    "reason": "Збій"
+  },
+  "pods": {
+    "title": "Pod",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Статус"
+  },
+  "yes": "Так",
+  "loading": "Завантаження…",
+  "listUnknown": "Не вдалося прочитати список.",
+  "noJobs": "Жодного Job немає.",
+  "noPods": "Жодного Pod немає.",
+  "morePods": "Показано перші {{shown}} з {{total}}, спочатку непрацюючі.",
+  "truncated": "Читаються лише перші {{max}}: список неповний."
+}

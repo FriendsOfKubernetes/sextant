@@ -1,0 +1,164 @@
+{
+  "badge_one": "{{count}} Pod czeka na urządzenia",
+  "badge_few": "{{count}} Pody czekają na urządzenia",
+  "badge_many": "{{count}} Podów czeka na urządzenia",
+  "badge_other": "{{count}} Poda czeka na urządzenia",
+  "loading": "Wczytywanie…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Stan",
+    "classes": "Klasy urządzeń",
+    "devices": "Urządzenia",
+    "node": "Węzeł",
+    "reservedFor": "Zarezerwowane dla",
+    "requests": "Żądania",
+    "selectors": "Selektory",
+    "drivers": "Sterowniki",
+    "extendedResource": "Zasób rozszerzony",
+    "driver": "Sterownik",
+    "pool": "Pula",
+    "deviceCount": "Urządzenia"
+  },
+  "state": {
+    "inUse": "W użyciu",
+    "allocated": "Przydzielone",
+    "pending": "Oczekuje",
+    "bindingFailed": "Wiązanie nie powiodło się",
+    "deleting": "Usuwanie"
+  },
+  "hint": {
+    "inUse": "Urządzenia są przydzielone i zarezerwowane dla poniższych odbiorców.",
+    "allocated": "Urządzenia są przydzielone, ale żaden Pod jeszcze ich nie zarezerwował.",
+    "pending": "Nie przydzielono jeszcze urządzeń. Scheduler przydzieli je, gdy umieści pierwszy Pod korzystający z tego claimu.",
+    "bindingFailed": "Sterownik zgłasza, że wiązanie urządzenia nie powiodło się: scheduler spróbuje innego węzła.",
+    "deleting": "Claim jest usuwany; jego urządzenia zostaną zwolnione, gdy żaden Pod nie będzie go używał."
+  },
+  "scope": {
+    "node": "Jeden węzeł",
+    "allNodes": "Wszystkie węzły",
+    "selector": "Węzły według selektora",
+    "perDevice": "Ustawiane dla każdego urządzenia",
+    "unknown": "Nie podano"
+  },
+  "fields": {
+    "state": "Stan",
+    "node": "Węzeł",
+    "nodeSelector": "Selektor węzłów",
+    "allocatedAt": "Przydzielono",
+    "madeFor": "Utworzony dla Poda",
+    "reservedFor": "Zarezerwowane dla",
+    "extendedResource": "Zasób rozszerzony",
+    "driver": "Sterownik",
+    "pool": "Pula",
+    "poolGeneration": "Generacja puli",
+    "poolSlices": "Slice’y w puli",
+    "reach": "Urządzenia dostępne z"
+  },
+  "requests": {
+    "title": "Żądania",
+    "request": "Żądanie",
+    "class": "Klasa urządzeń",
+    "selectors": "Selektory (CEL)",
+    "amount": "Liczba",
+    "choice": "{{request}}: wybór {{n}} ({{choice}})",
+    "all": "Wszystkie pasujące urządzenia",
+    "count_one": "{{count}} urządzenie",
+    "count_few": "{{count}} urządzenia",
+    "count_many": "{{count}} urządzeń",
+    "count_other": "{{count}} urządzenia",
+    "withAdminAccess": "{{amount}}, z dostępem administratora",
+    "none": "Brak żądań."
+  },
+  "results": {
+    "title": "Przydzielone urządzenia",
+    "request": "Żądanie",
+    "driver": "Sterownik",
+    "device": "Pula / urządzenie",
+    "notes": "Uwagi",
+    "adminAccess": "Dostęp administratora.",
+    "bindingFailed": "Wiązanie nie powiodło się: {{conditions}}.",
+    "bindingPending": "Czeka na: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pody czekające na ten claim",
+    "none": "Żaden Pod w stanie Pending z tego namespace nie używa tego claimu.",
+    "unknown": "Nie udało się odczytać Podów w stanie Pending z tego namespace."
+  },
+  "reason": {
+    "notCreated": "Claim, który Pod tworzy ze swojego szablonu, jeszcze nie istnieje: kontroler resource claim go nie utworzył.",
+    "notFound": "Claim wskazany przez Pod nie istnieje.",
+    "deleting": "Claim używany przez Pod jest usuwany.",
+    "inUse": "Claim jest zarezerwowany przez inne Pody i nie może być współdzielony z tym.",
+    "noClass": "Żądanie wskazuje klasę urządzeń, która nie istnieje.",
+    "cannotAllocate": "Żaden węzeł nie ma wolnych urządzeń pasujących do wszystkich żądań claimów Poda.",
+    "notOnNode": "Urządzenia claimu są przydzielone na innym węźle niż te, na których Pod może działać.",
+    "allocating": "Inna próba planowania właśnie przydziela ten claim.",
+    "notOwner": "Claim został utworzony dla innego Poda."
+  },
+  "class": {
+    "selectors": "Selektory (CEL)",
+    "noSelectors": "Brak selektorów: pasuje każde urządzenie sterowników.",
+    "celNote": "Wyrażenia są pokazane tak, jak je zapisano; Sextant ich nie oblicza.",
+    "config": "Konfiguracja sterowników"
+  },
+  "devices": {
+    "title": "Urządzenia",
+    "node": "Węzeł",
+    "driver": "Sterownik",
+    "device": "Pula / urządzenie",
+    "product": "Produkt",
+    "capacity": "Pojemność",
+    "allocatedTo": "Przydzielone do",
+    "free": "Wolne",
+    "unknown": "Nie da się stwierdzić",
+    "none": "Brak urządzeń.",
+    "cut_one": "Pokazano tylko pierwsze {{count}} urządzenie z {{total}}.",
+    "cut_few": "Pokazano tylko pierwsze {{count}} urządzenia z {{total}}.",
+    "cut_many": "Pokazano tylko pierwszych {{count}} urządzeń z {{total}}.",
+    "cut_other": "Pokazano tylko pierwsze {{count}} urządzenia z {{total}}."
+  },
+  "pod": {
+    "title": "Urządzenia",
+    "name": "Nazwa w Podzie",
+    "claim": "Claim",
+    "state": "Stan",
+    "devices": "Urządzenia",
+    "containers": "Kontenery",
+    "fromTemplate": "Z szablonu {{template}}",
+    "notNeeded": "Niepotrzebny (szablon {{template}})",
+    "notCreated": "Jeszcze nie utworzony",
+    "missing": "Nie istnieje",
+    "unknown": "Nie da się stwierdzić",
+    "notServed": "Klaster nie udostępnia ResourceClaim z resource.k8s.io."
+  },
+  "node": {
+    "title": "Urządzenia DRA",
+    "truncated_one": "Odczytano tylko pierwszy {{count}} ResourceSlice.",
+    "truncated_few": "Odczytano tylko pierwsze {{count}} ResourceSlice.",
+    "truncated_many": "Odczytano tylko pierwszych {{count}} ResourceSlice.",
+    "truncated_other": "Odczytano tylko pierwsze {{count}} ResourceSlice."
+  },
+  "page": {
+    "sidebar": "Urządzenia",
+    "title": "Urządzenia",
+    "hint": "Każde urządzenie, które sterowniki publikują w ResourceSlice, według węzłów, z claimem, który je trzyma.",
+    "total_one": "{{count}} urządzenie",
+    "total_few": "{{count}} urządzenia",
+    "total_many": "{{count}} urządzeń",
+    "total_other": "{{count}} urządzenia",
+    "totals_one": "{{count}} urządzenie, przydzielone: {{allocated}}",
+    "totals_few": "{{count}} urządzenia, przydzielone: {{allocated}}",
+    "totals_many": "{{count}} urządzeń, przydzielone: {{allocated}}",
+    "totals_other": "{{count}} urządzenia, przydzielone: {{allocated}}",
+    "slicesTruncated_one": "Odczytano tylko pierwszy {{count}} ResourceSlice.",
+    "slicesTruncated_few": "Odczytano tylko pierwsze {{count}} ResourceSlice.",
+    "slicesTruncated_many": "Odczytano tylko pierwszych {{count}} ResourceSlice.",
+    "slicesTruncated_other": "Odczytano tylko pierwsze {{count}} ResourceSlice.",
+    "claimsUnknown": "Nie udało się w całości odczytać ResourceClaim klastra, więc nie da się stwierdzić, które urządzenia są przydzielone."
+  }
+}

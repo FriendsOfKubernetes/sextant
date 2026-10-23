@@ -1,0 +1,131 @@
+{
+  "sidebar": {
+    "rayClusters": "Ray Clusters",
+    "rayJobs": "Ray Jobs",
+    "rayServices": "Ray Services"
+  },
+  "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
+  "clusterState": {
+    "ready": "準備完了",
+    "provisioning": "作成中",
+    "headNotReady": "Head 未準備",
+    "suspending": "一時停止中",
+    "suspended": "一時停止",
+    "failed": "失敗"
+  },
+  "jobState": {
+    "succeeded": "成功",
+    "running": "実行中",
+    "pending": "保留中",
+    "retrying": "再試行中",
+    "stopped": "停止",
+    "suspended": "一時停止",
+    "failed": "失敗"
+  },
+  "serviceState": {
+    "ready": "準備完了",
+    "upgrading": "更新中",
+    "notReady": "未準備",
+    "suspended": "一時停止",
+    "failed": "失敗"
+  },
+  "columns": {
+    "status": "状態",
+    "workers": "Worker",
+    "headIP": "Head IP",
+    "rayVersion": "Ray バージョン",
+    "jobStatus": "ジョブの状態",
+    "deploymentStatus": "デプロイの状態",
+    "cluster": "Ray クラスター",
+    "started": "開始",
+    "applications": "アプリケーション",
+    "endpoints": "エンドポイント",
+    "activeCluster": "アクティブなクラスター"
+  },
+  "fields": {
+    "status": "状態",
+    "rayVersion": "Ray バージョン",
+    "workers": "Worker",
+    "workerBounds": "Worker の範囲",
+    "headPod": "Head Pod",
+    "headPodIP": "Head Pod の IP",
+    "headService": "Head Service",
+    "headServiceIP": "Head Service の IP",
+    "endpoints": "エンドポイント",
+    "desired": "要求リソース",
+    "jobStatus": "ジョブの状態",
+    "deploymentStatus": "デプロイの状態",
+    "reason": "理由",
+    "rayCluster": "Ray クラスター",
+    "clusterSelector": "クラスターセレクター",
+    "submissionMode": "送信モード",
+    "submitter": "送信 Job",
+    "jobId": "ジョブ ID",
+    "dashboardURL": "ダッシュボード URL",
+    "startTime": "開始",
+    "endTime": "終了",
+    "succeeded": "成功した試行",
+    "failed": "失敗した試行",
+    "shutdown": "完了後にクラスターを削除",
+    "trafficPercent": "トラフィック",
+    "targetCapacity": "目標容量",
+    "serviceStatus": "サービスの状態",
+    "serveService": "Serve Service",
+    "serveEndpoints": "Serve エンドポイント",
+    "upgradeStrategy": "更新戦略",
+    "upgrade": "更新中"
+  },
+  "workersReady": "{{desired}} 中 {{ready}} 準備完了",
+  "bounds": "{{min}}～{{max}}",
+  "desiredResource": {
+    "CPU": "CPU: {{value}}",
+    "Memory": "メモリ: {{value}}",
+    "GPU": "GPU: {{value}}",
+    "TPU": "TPU: {{value}}"
+  },
+  "yes": "はい",
+  "no": "いいえ",
+  "percent": "{{value}}%",
+  "suspendedNote": {
+    "suspended": "クラスターは一時停止しています。KubeRay が Pod を削除しました。",
+    "suspending": "クラスターを一時停止しています。KubeRay が Pod を削除しています。",
+    "service": "サービスは一時停止しています。KubeRay がこのサービス用に作成したものを削除しました。"
+  },
+  "groups": {
+    "title": "Worker グループ",
+    "name": "グループ",
+    "desired": "必要な Pod",
+    "bounds": "レプリカ",
+    "ready": "準備完了の Pod",
+    "suspended": "一時停止",
+    "none": "クラスターに Worker グループはありません。Head が処理します。"
+  },
+  "pods": {
+    "title": "Pod",
+    "headLogs": "Head のログ",
+    "workerLogs": "Worker のログ",
+    "loading": "クラスターの Pod を検索しています…",
+    "error": "クラスターの Pod を読み取れません。",
+    "name": "Pod",
+    "type": "種類",
+    "group": "グループ",
+    "status": "状態",
+    "none": "クラスターに Pod はありません。",
+    "more_other": "ほかに {{count}} 個の Pod は表示されていません。",
+    "truncated": "クラスターの Pod はここに保持できる数を超えています。一覧は不完全です。"
+  },
+  "deploymentsHealthy": "{{total}} 中 {{healthy}} 正常",
+  "apps": {
+    "name": "アプリケーション",
+    "status": "状態",
+    "deployments": "デプロイ",
+    "message": "メッセージ"
+  },
+  "entrypoint": "エントリーポイント",
+  "noEntrypoint": "エントリーポイントはありません。ジョブは別の方法で送信されます。",
+  "submitterLogs": "送信のログ",
+  "activeCluster": "アクティブなクラスター",
+  "pendingCluster": "保留中のクラスター (更新)",
+  "serveConfig": "Serve の設定",
+  "noServeConfig": "serveConfigV2 は設定されていません。"
+}

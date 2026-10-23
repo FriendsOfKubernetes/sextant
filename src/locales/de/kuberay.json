@@ -1,0 +1,133 @@
+{
+  "sidebar": {
+    "rayClusters": "Ray Clusters",
+    "rayJobs": "Ray Jobs",
+    "rayServices": "Ray Services"
+  },
+  "badge_one": "{{count}} Objekt erfordert Aufmerksamkeit",
+  "badge_other": "{{count}} Objekte erfordern Aufmerksamkeit",
+  "clusterState": {
+    "ready": "Bereit",
+    "provisioning": "Wird erstellt",
+    "headNotReady": "Head nicht bereit",
+    "suspending": "Wird angehalten",
+    "suspended": "Angehalten",
+    "failed": "Fehlgeschlagen"
+  },
+  "jobState": {
+    "succeeded": "Erfolgreich",
+    "running": "Läuft",
+    "pending": "Wartend",
+    "retrying": "Neuer Versuch",
+    "stopped": "Gestoppt",
+    "suspended": "Angehalten",
+    "failed": "Fehlgeschlagen"
+  },
+  "serviceState": {
+    "ready": "Bereit",
+    "upgrading": "Wird aktualisiert",
+    "notReady": "Nicht bereit",
+    "suspended": "Angehalten",
+    "failed": "Fehlgeschlagen"
+  },
+  "columns": {
+    "status": "Status",
+    "workers": "Worker",
+    "headIP": "Head-IP",
+    "rayVersion": "Ray-Version",
+    "jobStatus": "Job-Status",
+    "deploymentStatus": "Bereitstellungsstatus",
+    "cluster": "Ray-Cluster",
+    "started": "Gestartet",
+    "applications": "Anwendungen",
+    "endpoints": "Endpunkte",
+    "activeCluster": "Aktiver Cluster"
+  },
+  "fields": {
+    "status": "Status",
+    "rayVersion": "Ray-Version",
+    "workers": "Worker",
+    "workerBounds": "Worker-Grenzen",
+    "headPod": "Head-Pod",
+    "headPodIP": "IP des Head-Pods",
+    "headService": "Head-Service",
+    "headServiceIP": "IP des Head-Service",
+    "endpoints": "Endpunkte",
+    "desired": "Angefordert",
+    "jobStatus": "Job-Status",
+    "deploymentStatus": "Bereitstellungsstatus",
+    "reason": "Grund",
+    "rayCluster": "Ray-Cluster",
+    "clusterSelector": "Cluster-Selector",
+    "submissionMode": "Übermittlungsmodus",
+    "submitter": "Übermittlungs-Job",
+    "jobId": "Job-ID",
+    "dashboardURL": "Dashboard-URL",
+    "startTime": "Gestartet",
+    "endTime": "Beendet",
+    "succeeded": "Erfolgreiche Versuche",
+    "failed": "Fehlgeschlagene Versuche",
+    "shutdown": "Löscht den Cluster nach Abschluss",
+    "trafficPercent": "Traffic",
+    "targetCapacity": "Zielkapazität",
+    "serviceStatus": "Service-Status",
+    "serveService": "Serve-Service",
+    "serveEndpoints": "Serve-Endpunkte",
+    "upgradeStrategy": "Update-Strategie",
+    "upgrade": "Update läuft"
+  },
+  "workersReady": "{{ready}} von {{desired}} bereit",
+  "bounds": "{{min}} bis {{max}}",
+  "desiredResource": {
+    "CPU": "CPU: {{value}}",
+    "Memory": "Speicher: {{value}}",
+    "GPU": "GPU: {{value}}",
+    "TPU": "TPU: {{value}}"
+  },
+  "yes": "Ja",
+  "no": "Nein",
+  "percent": "{{value}} %",
+  "suspendedNote": {
+    "suspended": "Der Cluster ist angehalten: KubeRay hat seine Pods gelöscht.",
+    "suspending": "Der Cluster wird angehalten: KubeRay löscht seine Pods.",
+    "service": "Der Service ist angehalten: KubeRay hat gelöscht, was es für ihn erstellt hatte."
+  },
+  "groups": {
+    "title": "Worker-Gruppen",
+    "name": "Gruppe",
+    "desired": "Gewünschte Pods",
+    "bounds": "Replikate",
+    "ready": "Bereite Pods",
+    "suspended": "Angehalten",
+    "none": "Der Cluster hat keine Worker-Gruppen: Der Head erledigt die Arbeit."
+  },
+  "pods": {
+    "title": "Pods",
+    "headLogs": "Head-Logs",
+    "workerLogs": "Worker-Logs",
+    "loading": "Pods des Clusters werden gesucht…",
+    "error": "Die Pods des Clusters können nicht gelesen werden.",
+    "name": "Pod",
+    "type": "Typ",
+    "group": "Gruppe",
+    "status": "Status",
+    "none": "Der Cluster hat keine Pods.",
+    "more_one": "{{count}} weiterer Pod ist nicht aufgeführt.",
+    "more_other": "{{count}} weitere Pods sind nicht aufgeführt.",
+    "truncated": "Der Cluster hat mehr Pods, als hier gehalten werden: Die Liste ist unvollständig."
+  },
+  "deploymentsHealthy": "{{healthy}} von {{total}} fehlerfrei",
+  "apps": {
+    "name": "Anwendung",
+    "status": "Status",
+    "deployments": "Deployments",
+    "message": "Meldung"
+  },
+  "entrypoint": "Einstiegspunkt",
+  "noEntrypoint": "Kein Einstiegspunkt: Der Job wird anders übermittelt.",
+  "submitterLogs": "Übermittlungs-Logs",
+  "activeCluster": "Aktiver Cluster",
+  "pendingCluster": "Wartender Cluster (Update)",
+  "serveConfig": "Serve-Konfiguration",
+  "noServeConfig": "Kein serveConfigV2 gesetzt."
+}

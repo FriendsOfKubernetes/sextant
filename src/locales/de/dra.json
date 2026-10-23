@@ -1,0 +1,150 @@
+{
+  "badge_one": "{{count}} Pod wartet auf Geräte",
+  "badge_other": "{{count}} Pods warten auf Geräte",
+  "loading": "Wird geladen…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Zustand",
+    "classes": "Geräteklassen",
+    "devices": "Geräte",
+    "node": "Knoten",
+    "reservedFor": "Reserviert für",
+    "requests": "Anforderungen",
+    "selectors": "Selektoren",
+    "drivers": "Treiber",
+    "extendedResource": "Erweiterte Ressource",
+    "driver": "Treiber",
+    "pool": "Pool",
+    "deviceCount": "Geräte"
+  },
+  "state": {
+    "inUse": "In Verwendung",
+    "allocated": "Zugewiesen",
+    "pending": "Ausstehend",
+    "bindingFailed": "Bindung fehlgeschlagen",
+    "deleting": "Wird gelöscht"
+  },
+  "hint": {
+    "inUse": "Geräte sind zugewiesen und für die Verbraucher unten reserviert.",
+    "allocated": "Geräte sind zugewiesen, aber noch kein Pod hat sie reserviert.",
+    "pending": "Noch sind keine Geräte zugewiesen. Der Scheduler weist sie zu, wenn er den ersten Pod platziert, der diesen Claim nutzt.",
+    "bindingFailed": "Der Treiber meldet, dass das Binden eines Geräts fehlgeschlagen ist: Der Scheduler versucht einen anderen Knoten.",
+    "deleting": "Der Claim wird gelöscht; seine Geräte werden frei, sobald kein Pod ihn mehr nutzt."
+  },
+  "scope": {
+    "node": "Ein Knoten",
+    "allNodes": "Alle Knoten",
+    "selector": "Knoten per Selektor",
+    "perDevice": "Pro Gerät festgelegt",
+    "unknown": "Nicht angegeben"
+  },
+  "fields": {
+    "state": "Zustand",
+    "node": "Knoten",
+    "nodeSelector": "Knoten-Selektor",
+    "allocatedAt": "Zugewiesen",
+    "madeFor": "Erstellt für Pod",
+    "reservedFor": "Reserviert für",
+    "extendedResource": "Erweiterte Ressource",
+    "driver": "Treiber",
+    "pool": "Pool",
+    "poolGeneration": "Pool-Generation",
+    "poolSlices": "Slices im Pool",
+    "reach": "Geräte erreichbar von"
+  },
+  "requests": {
+    "title": "Anforderungen",
+    "request": "Anforderung",
+    "class": "Geräteklasse",
+    "selectors": "Selektoren (CEL)",
+    "amount": "Menge",
+    "choice": "{{request}}: Wahl {{n}} ({{choice}})",
+    "all": "Alle passenden Geräte",
+    "count_one": "{{count}} Gerät",
+    "count_other": "{{count}} Geräte",
+    "withAdminAccess": "{{amount}}, mit Admin-Zugriff",
+    "none": "Keine Anforderungen."
+  },
+  "results": {
+    "title": "Zugewiesene Geräte",
+    "request": "Anforderung",
+    "driver": "Treiber",
+    "device": "Pool / Gerät",
+    "notes": "Hinweise",
+    "adminAccess": "Admin-Zugriff.",
+    "bindingFailed": "Bindung fehlgeschlagen: {{conditions}}.",
+    "bindingPending": "Wartet auf: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pods, die auf diesen Claim warten",
+    "none": "Kein Pending-Pod dieses Namespace nutzt diesen Claim.",
+    "unknown": "Die Pending-Pods dieses Namespace konnten nicht gelesen werden."
+  },
+  "reason": {
+    "notCreated": "Der Claim, den der Pod aus seiner Vorlage erstellt, existiert noch nicht: Der Resource-Claim-Controller hat ihn nicht erstellt.",
+    "notFound": "Ein Claim, den der Pod nennt, existiert nicht.",
+    "deleting": "Ein Claim, den der Pod nutzt, wird gelöscht.",
+    "inUse": "Der Claim ist von anderen Pods reserviert und kann nicht mit diesem geteilt werden.",
+    "noClass": "Eine Anforderung nennt eine Geräteklasse, die nicht existiert.",
+    "cannotAllocate": "Kein Knoten hat freie Geräte, die zu allen Anforderungen der Claims des Pods passen.",
+    "notOnNode": "Die Geräte des Claims sind auf einem anderen Knoten zugewiesen als denen, auf denen der Pod laufen kann.",
+    "allocating": "Ein anderer Planungsversuch weist den Claim gerade zu.",
+    "notOwner": "Der Claim wurde für einen anderen Pod erstellt."
+  },
+  "class": {
+    "selectors": "Selektoren (CEL)",
+    "noSelectors": "Keine Selektoren: Jedes Gerät der Treiber passt.",
+    "celNote": "Die Ausdrücke werden so gezeigt, wie sie geschrieben sind; Sextant wertet sie nicht aus.",
+    "config": "Treiberkonfiguration"
+  },
+  "devices": {
+    "title": "Geräte",
+    "node": "Knoten",
+    "driver": "Treiber",
+    "device": "Pool / Gerät",
+    "product": "Produkt",
+    "capacity": "Kapazität",
+    "allocatedTo": "Zugewiesen an",
+    "free": "Frei",
+    "unknown": "Nicht feststellbar",
+    "none": "Keine Geräte.",
+    "cut_one": "Nur das erste {{count}} Gerät von {{total}} wird gezeigt.",
+    "cut_other": "Nur die ersten {{count}} Geräte von {{total}} werden gezeigt."
+  },
+  "pod": {
+    "title": "Geräte",
+    "name": "Name im Pod",
+    "claim": "Claim",
+    "state": "Zustand",
+    "devices": "Geräte",
+    "containers": "Container",
+    "fromTemplate": "Aus Vorlage {{template}}",
+    "notNeeded": "Nicht nötig (Vorlage {{template}})",
+    "notCreated": "Noch nicht erstellt",
+    "missing": "Existiert nicht",
+    "unknown": "Nicht feststellbar",
+    "notServed": "Der Cluster stellt keine ResourceClaims von resource.k8s.io bereit."
+  },
+  "node": {
+    "title": "DRA-Geräte",
+    "truncated_one": "Nur das erste {{count}} ResourceSlice wird gelesen.",
+    "truncated_other": "Nur die ersten {{count}} ResourceSlices werden gelesen."
+  },
+  "page": {
+    "sidebar": "Geräte",
+    "title": "Geräte",
+    "hint": "Jedes Gerät, das die Treiber in ResourceSlices veröffentlichen, nach Knoten, mit dem Claim, der es hält.",
+    "total_one": "{{count}} Gerät",
+    "total_other": "{{count}} Geräte",
+    "totals_one": "{{count}} Gerät, {{allocated}} zugewiesen",
+    "totals_other": "{{count}} Geräte, {{allocated}} zugewiesen",
+    "slicesTruncated_one": "Nur das erste {{count}} ResourceSlice wird gelesen.",
+    "slicesTruncated_other": "Nur die ersten {{count}} ResourceSlices werden gelesen.",
+    "claimsUnknown": "Die ResourceClaims des Clusters konnten nicht vollständig gelesen werden, daher ist nicht feststellbar, welche Geräte zugewiesen sind."
+  }
+}

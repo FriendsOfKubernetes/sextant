@@ -1,0 +1,131 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService richiede attenzione",
+  "badge_many": "{{count}} InferenceService richiedono attenzione",
+  "badge_other": "{{count}} InferenceService richiedono attenzione",
+  "state": {
+    "ready": "Pronto",
+    "progressing": "In corso",
+    "notReady": "Non pronto",
+    "failed": "Non riuscito",
+    "stopped": "Fermato"
+  },
+  "columns": {
+    "status": "Stato",
+    "url": "URL",
+    "modelFormat": "Formato del modello",
+    "runtime": "Runtime",
+    "mode": "Modalità",
+    "canary": "Canary %",
+    "formats": "Formati di modello",
+    "protocols": "Protocolli",
+    "disabled": "Disattivato",
+    "multiModel": "Multi-modello",
+    "nodes": "Nodi del grafo",
+    "inferenceService": "InferenceService",
+    "framework": "Framework"
+  },
+  "fields": {
+    "status": "Stato",
+    "url": "URL",
+    "address": "Indirizzo",
+    "deploymentMode": "Modalità di deployment",
+    "recordedRuntime": "Runtime in uso",
+    "modelFormat": "Formato del modello",
+    "runtime": "Runtime",
+    "storageUri": "URI di archiviazione",
+    "protocolVersion": "Protocollo",
+    "images": "Immagini",
+    "replicas": "Repliche",
+    "canaryTrafficPercent": "Traffico canary",
+    "workers": "Multi-nodo",
+    "componentUrl": "URL",
+    "latestReadyRevision": "Ultima revisione pronta",
+    "latestCreatedRevision": "Ultima revisione creata",
+    "previousRolledoutRevision": "Revisione precedente",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Transizione",
+    "activeModelState": "Modello attivo",
+    "targetModelState": "Modello di destinazione",
+    "failureReason": "Motivo dell’errore",
+    "failureLocation": "Errore in",
+    "failureTime": "Errore alle",
+    "exitCode": "Codice di uscita",
+    "copies": "Copie",
+    "protocols": "Protocolli",
+    "disabled": "Disattivato",
+    "multiModel": "Multi-modello",
+    "multiNode": "Multi-nodo",
+    "inferenceService": "InferenceService",
+    "framework": "Framework",
+    "memory": "Memoria"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment e Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Non impostata: vale il valore predefinito del cluster"
+  },
+  "uriHidden": "credenziali e parametri di query nascosti",
+  "bounds": "da {{min}} a {{max}}",
+  "percent": "{{value}}%",
+  "copies": "{{failed}} non riuscite su {{total}}",
+  "yes": "Sì",
+  "no": "No",
+  "stoppedNote": "L’InferenceService è fermato di proposito: KServe ha rimosso ciò che lo serve.",
+  "traffic": {
+    "revision": "Revisione",
+    "percent": "Traffico",
+    "tag": "Tag",
+    "latest": "Più recente"
+  },
+  "modelStatus": "Stato del modello",
+  "choice": {
+    "title": "Runtime di serving",
+    "fields": {
+      "named": "Indicato nella spec",
+      "auto": "Scelta di KServe"
+    },
+    "loading": "Lettura dei runtime di serving…",
+    "notServed": "Il cluster non serve tipi ServingRuntime.",
+    "unreadable": "Non tutti i runtime di serving sono leggibili, quindi la scelta non si può stabilire.",
+    "noFormat": "Il predictor non indica un formato di modello: KServe non sceglie alcun runtime.",
+    "none": "Nessun runtime di serving supporta il formato di modello {{format}}: KServe non può servire questo modello.",
+    "others": "Altri candidati, nell’ordine di KServe: {{names}}",
+    "differs": "KServe ha registrato {{recorded}} all’ultima riconciliazione: da allora i runtime sono cambiati.",
+    "namedMissing": "Il runtime {{name}} indicato nella spec non esiste né in questo namespace né nel cluster.",
+    "namedDisabled": "Il runtime {{name}} indicato nella spec è disattivato.",
+    "namedProtocol": "Il runtime {{name}} indicato nella spec non parla il protocollo del modello.",
+    "namedFormat": "Il runtime {{name}} indicato nella spec non elenca il formato del modello."
+  },
+  "formats": {
+    "title": "Formati di modello",
+    "name": "Formato",
+    "version": "Versione",
+    "autoSelect": "Selezione automatica",
+    "priority": "Priorità"
+  },
+  "graph": {
+    "node": "Nodo {{name}} ({{type}})",
+    "toNode": "Nodo {{name}}",
+    "step": "Passo",
+    "target": "Destinazione",
+    "weight": "Peso",
+    "condition": "Condizione",
+    "dependency": "Dipendenza"
+  }
+}

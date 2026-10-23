@@ -155,6 +155,12 @@ export const SIDEBAR_SECTIONS = [
   "strimzi",
   "prometheusOperator",
   "clusterApi",
+  "dra",
+  "gpuOperator",
+  "kueue",
+  "jobset",
+  "kuberay",
+  "kserve",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -191,6 +197,12 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "strimzi",
   "prometheusOperator",
   "clusterApi",
+  "dra",
+  "gpuOperator",
+  "kueue",
+  "jobset",
+  "kuberay",
+  "kserve",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -231,6 +243,12 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   strimzi: "strimzi",
   prometheusOperator: "prometheusOperator",
   clusterApi: "clusterApi",
+  dra: "dra",
+  gpuOperator: "gpuOperator",
+  kueue: "kueue",
+  jobset: "jobset",
+  kuberay: "kuberay",
+  kserve: "kserve",
   customResources: "customResources",
   settings: "settings",
 };

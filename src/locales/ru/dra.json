@@ -1,0 +1,164 @@
+{
+  "badge_one": "{{count}} Pod ждёт устройства",
+  "badge_few": "{{count}} Pod ждут устройства",
+  "badge_many": "{{count}} Pod ждут устройства",
+  "badge_other": "{{count}} Pod ждут устройства",
+  "loading": "Загрузка…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Состояние",
+    "classes": "Классы устройств",
+    "devices": "Устройства",
+    "node": "Узел",
+    "reservedFor": "Зарезервировано для",
+    "requests": "Запросы",
+    "selectors": "Селекторы",
+    "drivers": "Драйверы",
+    "extendedResource": "Расширенный ресурс",
+    "driver": "Драйвер",
+    "pool": "Пул",
+    "deviceCount": "Устройства"
+  },
+  "state": {
+    "inUse": "Используется",
+    "allocated": "Выделено",
+    "pending": "Ожидает",
+    "bindingFailed": "Привязка не удалась",
+    "deleting": "Удаляется"
+  },
+  "hint": {
+    "inUse": "Устройства выделены и зарезервированы для потребителей ниже.",
+    "allocated": "Устройства выделены, но ни один Pod ещё не зарезервировал их.",
+    "pending": "Устройства ещё не выделены. Планировщик выделит их, когда разместит первый Pod, использующий этот claim.",
+    "bindingFailed": "Драйвер сообщает, что привязка устройства не удалась: планировщик попробует другой узел.",
+    "deleting": "Claim удаляется; его устройства освободятся, когда ни один Pod не будет его использовать."
+  },
+  "scope": {
+    "node": "Один узел",
+    "allNodes": "Все узлы",
+    "selector": "Узлы по селектору",
+    "perDevice": "Задаётся для каждого устройства",
+    "unknown": "Не указано"
+  },
+  "fields": {
+    "state": "Состояние",
+    "node": "Узел",
+    "nodeSelector": "Селектор узлов",
+    "allocatedAt": "Выделено",
+    "madeFor": "Создан для Pod",
+    "reservedFor": "Зарезервировано для",
+    "extendedResource": "Расширенный ресурс",
+    "driver": "Драйвер",
+    "pool": "Пул",
+    "poolGeneration": "Поколение пула",
+    "poolSlices": "Срезов в пуле",
+    "reach": "Устройства доступны с"
+  },
+  "requests": {
+    "title": "Запросы",
+    "request": "Запрос",
+    "class": "Класс устройств",
+    "selectors": "Селекторы (CEL)",
+    "amount": "Количество",
+    "choice": "{{request}}: вариант {{n}} ({{choice}})",
+    "all": "Все подходящие устройства",
+    "count_one": "{{count}} устройство",
+    "count_few": "{{count}} устройства",
+    "count_many": "{{count}} устройств",
+    "count_other": "{{count}} устройства",
+    "withAdminAccess": "{{amount}}, с правами администратора",
+    "none": "Запросов нет."
+  },
+  "results": {
+    "title": "Выделенные устройства",
+    "request": "Запрос",
+    "driver": "Драйвер",
+    "device": "Пул / устройство",
+    "notes": "Примечания",
+    "adminAccess": "Права администратора.",
+    "bindingFailed": "Привязка не удалась: {{conditions}}.",
+    "bindingPending": "Ожидает: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pod, ожидающие этот claim",
+    "none": "Ни один Pod в состоянии Pending из этого namespace не использует этот claim.",
+    "unknown": "Не удалось прочитать Pod в состоянии Pending из этого namespace."
+  },
+  "reason": {
+    "notCreated": "Claim, который Pod создаёт из своего шаблона, ещё не существует: контроллер resource claim его не создал.",
+    "notFound": "Claim, который указан в Pod, не существует.",
+    "deleting": "Claim, который использует Pod, удаляется.",
+    "inUse": "Claim зарезервирован другими Pod и не может быть общим с этим.",
+    "noClass": "Запрос указывает класс устройств, которого не существует.",
+    "cannotAllocate": "Ни на одном узле нет свободных устройств, подходящих под все запросы claim этого Pod.",
+    "notOnNode": "Устройства claim выделены на другом узле, а не на тех, где может работать Pod.",
+    "allocating": "Другая попытка планирования прямо сейчас выделяет устройства для этого claim.",
+    "notOwner": "Claim был создан для другого Pod."
+  },
+  "class": {
+    "selectors": "Селекторы (CEL)",
+    "noSelectors": "Селекторов нет: подходит любое устройство драйверов.",
+    "celNote": "Выражения показаны как написаны; Sextant их не вычисляет.",
+    "config": "Настройки драйверов"
+  },
+  "devices": {
+    "title": "Устройства",
+    "node": "Узел",
+    "driver": "Драйвер",
+    "device": "Пул / устройство",
+    "product": "Модель",
+    "capacity": "Ёмкость",
+    "allocatedTo": "Выделено для",
+    "free": "Свободно",
+    "unknown": "Нельзя сказать",
+    "none": "Устройств нет.",
+    "cut_one": "Показано только первое {{count}} устройство из {{total}}.",
+    "cut_few": "Показаны только первые {{count}} устройства из {{total}}.",
+    "cut_many": "Показаны только первые {{count}} устройств из {{total}}.",
+    "cut_other": "Показаны только первые {{count}} устройства из {{total}}."
+  },
+  "pod": {
+    "title": "Устройства",
+    "name": "Имя в Pod",
+    "claim": "Claim",
+    "state": "Состояние",
+    "devices": "Устройства",
+    "containers": "Контейнеры",
+    "fromTemplate": "Из шаблона {{template}}",
+    "notNeeded": "Не нужен (шаблон {{template}})",
+    "notCreated": "Ещё не создан",
+    "missing": "Не существует",
+    "unknown": "Нельзя сказать",
+    "notServed": "Кластер не обслуживает ResourceClaim из resource.k8s.io."
+  },
+  "node": {
+    "title": "Устройства DRA",
+    "truncated_one": "Прочитан только первый {{count}} ResourceSlice.",
+    "truncated_few": "Прочитаны только первые {{count}} ResourceSlice.",
+    "truncated_many": "Прочитаны только первые {{count}} ResourceSlice.",
+    "truncated_other": "Прочитаны только первые {{count}} ResourceSlice."
+  },
+  "page": {
+    "sidebar": "Устройства",
+    "title": "Устройства",
+    "hint": "Все устройства, которые драйверы публикуют в ResourceSlice, по узлам, с claim, который их держит.",
+    "total_one": "{{count}} устройство",
+    "total_few": "{{count}} устройства",
+    "total_many": "{{count}} устройств",
+    "total_other": "{{count}} устройства",
+    "totals_one": "{{count}} устройство, выделено {{allocated}}",
+    "totals_few": "{{count}} устройства, выделено {{allocated}}",
+    "totals_many": "{{count}} устройств, выделено {{allocated}}",
+    "totals_other": "{{count}} устройства, выделено {{allocated}}",
+    "slicesTruncated_one": "Прочитан только первый {{count}} ResourceSlice.",
+    "slicesTruncated_few": "Прочитаны только первые {{count}} ResourceSlice.",
+    "slicesTruncated_many": "Прочитаны только первые {{count}} ResourceSlice.",
+    "slicesTruncated_other": "Прочитаны только первые {{count}} ResourceSlice.",
+    "claimsUnknown": "ResourceClaim кластера не удалось прочитать полностью, поэтому нельзя сказать, какие устройства выделены."
+  }
+}

@@ -1,0 +1,608 @@
+[
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayCluster",
+  "metadata": {
+   "name": "raycluster-kuberay",
+   "namespace": "default",
+   "uid": "rc-1",
+   "generation": 1,
+   "creationTimestamp": "2026-10-20T10:00:00Z"
+  },
+  "spec": {
+   "rayVersion": "2.52.0",
+   "headGroupSpec": {
+    "rayStartParams": {},
+    "template": {
+     "spec": {
+      "containers": [
+       {
+        "name": "ray-head",
+        "image": "rayproject/ray:2.52.0",
+        "ports": [
+         {
+          "containerPort": 6379,
+          "name": "gcs-server"
+         },
+         {
+          "containerPort": 8265,
+          "name": "dashboard"
+         },
+         {
+          "containerPort": 10001,
+          "name": "client"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "workerGroupSpecs": [
+    {
+     "replicas": 1,
+     "minReplicas": 1,
+     "maxReplicas": 5,
+     "groupName": "workergroup",
+     "rayStartParams": {},
+     "template": {
+      "spec": {
+       "containers": [
+        {
+         "name": "ray-worker",
+         "image": "rayproject/ray:2.52.0"
+        }
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "status": {
+   "state": "ready",
+   "stateTransitionTimes": {
+    "ready": "2026-10-20T10:01:10Z"
+   },
+   "desiredCPU": "2",
+   "desiredMemory": "6Gi",
+   "desiredGPU": "0",
+   "desiredTPU": "0",
+   "readyWorkerReplicas": 1,
+   "availableWorkerReplicas": 1,
+   "desiredWorkerReplicas": 1,
+   "minWorkerReplicas": 1,
+   "maxWorkerReplicas": 5,
+   "endpoints": {
+    "client": "10001",
+    "dashboard": "8265",
+    "gcs-server": "6379",
+    "metrics": "8080"
+   },
+   "head": {
+    "podIP": "10.244.0.12",
+    "podName": "raycluster-kuberay-head",
+    "serviceIP": "10.96.43.11",
+    "serviceName": "raycluster-kuberay-head-svc"
+   },
+   "lastUpdateTime": "2026-10-20T10:01:10Z",
+   "observedGeneration": 1,
+   "conditions": [
+    {
+     "type": "HeadPodReady",
+     "status": "True",
+     "reason": "HeadPodRunningAndReady",
+     "message": "",
+     "lastTransitionTime": "2026-10-20T10:00:50Z"
+    },
+    {
+     "type": "RayClusterProvisioned",
+     "status": "True",
+     "reason": "AllPodRunningAndReadyFirstTime",
+     "message": "",
+     "lastTransitionTime": "2026-10-20T10:01:10Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayCluster",
+  "metadata": {
+   "name": "raycluster-gpu",
+   "namespace": "ml",
+   "uid": "rc-2",
+   "creationTimestamp": "2026-10-20T11:00:00Z"
+  },
+  "spec": {
+   "rayVersion": "2.52.0",
+   "headGroupSpec": {
+    "rayStartParams": {},
+    "template": {
+     "spec": {
+      "containers": [
+       {
+        "name": "ray-head",
+        "image": "rayproject/ray:2.52.0",
+        "ports": [
+         {
+          "containerPort": 6379,
+          "name": "gcs-server"
+         },
+         {
+          "containerPort": 8265,
+          "name": "dashboard"
+         },
+         {
+          "containerPort": 10001,
+          "name": "client"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "workerGroupSpecs": [
+    {
+     "replicas": 2,
+     "minReplicas": 0,
+     "maxReplicas": 4,
+     "groupName": "gpu-group",
+     "rayStartParams": {},
+     "template": {
+      "spec": {
+       "containers": [
+        {
+         "name": "ray-worker",
+         "image": "rayproject/ray:2.52.0"
+        }
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "status": {
+   "readyWorkerReplicas": 0,
+   "availableWorkerReplicas": 0,
+   "desiredWorkerReplicas": 2,
+   "minWorkerReplicas": 0,
+   "maxWorkerReplicas": 4,
+   "head": {
+    "podIP": "10.244.1.7",
+    "podName": "raycluster-gpu-head",
+    "serviceIP": "10.96.12.40",
+    "serviceName": "raycluster-gpu-head-svc"
+   },
+   "conditions": [
+    {
+     "type": "HeadPodReady",
+     "status": "True",
+     "reason": "HeadPodRunningAndReady",
+     "message": "",
+     "lastTransitionTime": "2026-10-20T11:00:40Z"
+    },
+    {
+     "type": "RayClusterProvisioned",
+     "status": "False",
+     "reason": "RayClusterPodsProvisioning",
+     "message": "RayCluster Pods are being provisioned for first time",
+     "lastTransitionTime": "2026-10-20T11:00:00Z"
+    },
+    {
+     "type": "ReplicaFailure",
+     "status": "True",
+     "reason": "FailedCreateWorkerPod",
+     "message": "pods \"raycluster-gpu-gpu-group-worker-8kq2x\" is forbidden: exceeded quota: gpu-quota, requested: nvidia.com/gpu=1, used: nvidia.com/gpu=4, limited: nvidia.com/gpu=4",
+     "lastTransitionTime": "2026-10-20T11:00:41Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayCluster",
+  "metadata": {
+   "name": "raycluster-legacy",
+   "namespace": "default",
+   "uid": "rc-3",
+   "creationTimestamp": "2024-03-01T09:00:00Z"
+  },
+  "spec": {
+   "rayVersion": "2.52.0",
+   "headGroupSpec": {
+    "rayStartParams": {},
+    "template": {
+     "spec": {
+      "containers": [
+       {
+        "name": "ray-head",
+        "image": "rayproject/ray:2.52.0",
+        "ports": [
+         {
+          "containerPort": 6379,
+          "name": "gcs-server"
+         },
+         {
+          "containerPort": 8265,
+          "name": "dashboard"
+         },
+         {
+          "containerPort": 10001,
+          "name": "client"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "workerGroupSpecs": []
+  },
+  "status": {
+   "state": "failed",
+   "reason": "admission webhook \"validate.kyverno.svc\" denied the request: image registry is not allowed",
+   "head": {},
+   "lastUpdateTime": "2024-03-01T09:00:05Z"
+  }
+ },
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayJob",
+  "metadata": {
+   "name": "rayjob-sample",
+   "namespace": "default",
+   "uid": "rj-1",
+   "creationTimestamp": "2026-10-21T08:00:00Z"
+  },
+  "spec": {
+   "entrypoint": "python /home/ray/samples/sample_code.py",
+   "runtimeEnvYAML": "pip:\n  - requests==2.26.0\n",
+   "shutdownAfterJobFinishes": true,
+   "rayClusterSpec": {
+    "rayVersion": "2.52.0",
+    "headGroupSpec": {
+     "rayStartParams": {},
+     "template": {
+      "spec": {
+       "containers": [
+        {
+         "name": "ray-head",
+         "image": "rayproject/ray:2.52.0",
+         "ports": [
+          {
+           "containerPort": 6379,
+           "name": "gcs-server"
+          },
+          {
+           "containerPort": 8265,
+           "name": "dashboard"
+          },
+          {
+           "containerPort": 10001,
+           "name": "client"
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    "workerGroupSpecs": []
+   }
+  },
+  "status": {
+   "jobId": "rayjob-sample-x7pqd",
+   "rayClusterName": "rayjob-sample-raycluster-v6bgw",
+   "dashboardURL": "rayjob-sample-raycluster-v6bgw-head-svc.default.svc.cluster.local:8265",
+   "jobStatus": "FAILED",
+   "jobDeploymentStatus": "Failed",
+   "reason": "AppFailed",
+   "message": "Job entrypoint command failed with exit code 1, last available logs (truncated to 20,000 chars):\nModuleNotFoundError: No module named 'requests'",
+   "startTime": "2026-10-21T08:00:05Z",
+   "endTime": "2026-10-21T08:02:40Z",
+   "failed": 1,
+   "succeeded": 0,
+   "observedGeneration": 1
+  }
+ },
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayJob",
+  "metadata": {
+   "name": "rayjob-done",
+   "namespace": "default",
+   "uid": "rj-2",
+   "creationTimestamp": "2026-10-21T07:00:00Z"
+  },
+  "spec": {
+   "entrypoint": "python train.py",
+   "submissionMode": "HTTPMode",
+   "clusterSelector": {
+    "ray.io/cluster": "raycluster-kuberay"
+   }
+  },
+  "status": {
+   "jobId": "rayjob-done-4h2c1",
+   "rayClusterName": "raycluster-kuberay",
+   "jobStatus": "SUCCEEDED",
+   "jobDeploymentStatus": "Complete",
+   "startTime": "2026-10-21T07:00:02Z",
+   "endTime": "2026-10-21T07:10:00Z",
+   "succeeded": 1,
+   "failed": 0
+  }
+ },
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayService",
+  "metadata": {
+   "name": "rayservice-sample",
+   "namespace": "default",
+   "uid": "rs-1",
+   "creationTimestamp": "2026-10-22T09:00:00Z"
+  },
+  "spec": {
+   "serveConfigV2": "applications:\n  - name: fruit_app\n    import_path: fruit.deployment_graph\n    route_prefix: /fruit\n  - name: math_app\n    import_path: conditional_dag.serve_dag\n    route_prefix: /calc\n",
+   "rayClusterConfig": {
+    "rayVersion": "2.52.0",
+    "headGroupSpec": {
+     "rayStartParams": {},
+     "template": {
+      "spec": {
+       "containers": [
+        {
+         "name": "ray-head",
+         "image": "rayproject/ray:2.52.0",
+         "ports": [
+          {
+           "containerPort": 6379,
+           "name": "gcs-server"
+          },
+          {
+           "containerPort": 8265,
+           "name": "dashboard"
+          },
+          {
+           "containerPort": 10001,
+           "name": "client"
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    "workerGroupSpecs": []
+   }
+  },
+  "status": {
+   "activeServiceStatus": {},
+   "pendingServiceStatus": {
+    "rayClusterName": "rayservice-sample-raycluster-bk8jd",
+    "applicationStatuses": {
+     "fruit_app": {
+      "status": "DEPLOY_FAILED",
+      "message": "Deploying app 'fruit_app' failed with exception:\nModuleNotFoundError: No module named 'fruit'",
+      "serveDeploymentStatuses": {
+       "FruitMarket": {
+        "status": "UPDATING"
+       }
+      }
+     },
+     "math_app": {
+      "status": "RUNNING",
+      "serveDeploymentStatuses": {
+       "Adder": {
+        "status": "HEALTHY"
+       },
+       "Multiplier": {
+        "status": "HEALTHY"
+       },
+       "Router": {
+        "status": "HEALTHY"
+       }
+      }
+     }
+    }
+   },
+   "numServeEndpoints": 0,
+   "observedGeneration": 1,
+   "conditions": [
+    {
+     "type": "Ready",
+     "status": "False",
+     "reason": "Initializing",
+     "message": "",
+     "lastTransitionTime": "2026-10-22T09:00:00Z"
+    },
+    {
+     "type": "UpgradeInProgress",
+     "status": "False",
+     "reason": "NoActiveCluster",
+     "message": "The RayService has no active cluster",
+     "lastTransitionTime": "2026-10-22T09:00:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "ray.io/v1",
+  "kind": "RayService",
+  "metadata": {
+   "name": "rayservice-ready",
+   "namespace": "default",
+   "uid": "rs-2",
+   "creationTimestamp": "2026-10-22T08:00:00Z"
+  },
+  "spec": {
+   "serveConfigV2": "applications:\n  - name: fruit_app\n    import_path: fruit.deployment_graph\n    route_prefix: /fruit\n  - name: math_app\n    import_path: conditional_dag.serve_dag\n    route_prefix: /calc\n",
+   "rayClusterConfig": {
+    "rayVersion": "2.52.0",
+    "headGroupSpec": {
+     "rayStartParams": {},
+     "template": {
+      "spec": {
+       "containers": [
+        {
+         "name": "ray-head",
+         "image": "rayproject/ray:2.52.0",
+         "ports": [
+          {
+           "containerPort": 6379,
+           "name": "gcs-server"
+          },
+          {
+           "containerPort": 8265,
+           "name": "dashboard"
+          },
+          {
+           "containerPort": 10001,
+           "name": "client"
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    "workerGroupSpecs": []
+   }
+  },
+  "status": {
+   "serviceStatus": "Running",
+   "numServeEndpoints": 2,
+   "activeServiceStatus": {
+    "rayClusterName": "rayservice-ready-raycluster-2kz9w",
+    "applicationStatuses": {
+     "fruit_app": {
+      "status": "RUNNING",
+      "serveDeploymentStatuses": {
+       "FruitMarket": {
+        "status": "HEALTHY"
+       },
+       "MangoStand": {
+        "status": "HEALTHY"
+       }
+      }
+     },
+     "math_app": {
+      "status": "RUNNING",
+      "serveDeploymentStatuses": {
+       "Adder": {
+        "status": "HEALTHY"
+       }
+      }
+     }
+    }
+   },
+   "pendingServiceStatus": {},
+   "conditions": [
+    {
+     "type": "Ready",
+     "status": "True",
+     "reason": "NonZeroServeEndpoints",
+     "message": "Number of serve endpoints is greater than 0",
+     "lastTransitionTime": "2026-10-22T08:03:00Z"
+    },
+    {
+     "type": "UpgradeInProgress",
+     "status": "False",
+     "reason": "NoPendingCluster",
+     "message": "Active Ray cluster exists and no pending Ray cluster",
+     "lastTransitionTime": "2026-10-22T08:03:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+   "name": "raycluster-kuberay-head",
+   "namespace": "default",
+   "uid": "pod-raycluster-kuberay-head",
+   "labels": {
+    "ray.io/cluster": "raycluster-kuberay",
+    "ray.io/node-type": "head",
+    "ray.io/group": "headgroup",
+    "ray.io/is-ray-node": "yes"
+   }
+  },
+  "spec": {
+   "containers": [
+    {
+     "name": "ray-head",
+     "image": "rayproject/ray:2.52.0"
+    }
+   ]
+  },
+  "status": {
+   "phase": "Running",
+   "podIP": "10.244.0.12",
+   "conditions": [
+    {
+     "type": "Ready",
+     "status": "True"
+    }
+   ],
+   "containerStatuses": [
+    {
+     "name": "ray-head",
+     "ready": true,
+     "restartCount": 0,
+     "state": {
+      "running": {
+       "startedAt": "2026-10-20T10:00:30Z"
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+   "name": "raycluster-kuberay-workergroup-worker-7tq2m",
+   "namespace": "default",
+   "uid": "pod-raycluster-kuberay-workergroup-worker-7tq2m",
+   "labels": {
+    "ray.io/cluster": "raycluster-kuberay",
+    "ray.io/node-type": "worker",
+    "ray.io/group": "workergroup",
+    "ray.io/is-ray-node": "yes"
+   }
+  },
+  "spec": {
+   "containers": [
+    {
+     "name": "ray-worker",
+     "image": "rayproject/ray:2.52.0"
+    }
+   ]
+  },
+  "status": {
+   "phase": "Running",
+   "podIP": "10.244.0.12",
+   "conditions": [
+    {
+     "type": "Ready",
+     "status": "True"
+    }
+   ],
+   "containerStatuses": [
+    {
+     "name": "ray-worker",
+     "ready": true,
+     "restartCount": 0,
+     "state": {
+      "running": {
+       "startedAt": "2026-10-20T10:00:30Z"
+      }
+     }
+    }
+   ]
+  }
+ }
+]

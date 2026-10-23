@@ -1,0 +1,129 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_other": "{{count}} 个 InferenceService 需要关注",
+  "state": {
+    "ready": "就绪",
+    "progressing": "进行中",
+    "notReady": "未就绪",
+    "failed": "失败",
+    "stopped": "已停止"
+  },
+  "columns": {
+    "status": "状态",
+    "url": "URL",
+    "modelFormat": "模型格式",
+    "runtime": "运行时",
+    "mode": "模式",
+    "canary": "Canary %",
+    "formats": "模型格式",
+    "protocols": "协议",
+    "disabled": "已禁用",
+    "multiModel": "多模型",
+    "nodes": "图节点",
+    "inferenceService": "InferenceService",
+    "framework": "框架"
+  },
+  "fields": {
+    "status": "状态",
+    "url": "URL",
+    "address": "地址",
+    "deploymentMode": "部署模式",
+    "recordedRuntime": "使用的运行时",
+    "modelFormat": "模型格式",
+    "runtime": "运行时",
+    "storageUri": "存储 URI",
+    "protocolVersion": "协议",
+    "images": "镜像",
+    "replicas": "副本",
+    "canaryTrafficPercent": "Canary 流量",
+    "workers": "多节点",
+    "componentUrl": "URL",
+    "latestReadyRevision": "最新就绪修订",
+    "latestCreatedRevision": "最新创建修订",
+    "previousRolledoutRevision": "上一修订",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "转换",
+    "activeModelState": "活动模型",
+    "targetModelState": "目标模型",
+    "failureReason": "失败原因",
+    "failureLocation": "失败位置",
+    "failureTime": "失败时间",
+    "exitCode": "退出码",
+    "copies": "副本数",
+    "protocols": "协议",
+    "disabled": "已禁用",
+    "multiModel": "多模型",
+    "multiNode": "多节点",
+    "inferenceService": "InferenceService",
+    "framework": "框架",
+    "memory": "内存"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative（{{value}}）",
+    "standard": "Standard：Deployment 和 Service（{{value}}）",
+    "modelMesh": "ModelMesh（{{value}}）",
+    "other": "{{value}}",
+    "default": "未设置：采用集群的默认值"
+  },
+  "uriHidden": "已隐藏凭据和查询参数",
+  "bounds": "{{min}} 到 {{max}}",
+  "percent": "{{value}}%",
+  "copies": "{{total}} 个中有 {{failed}} 个失败",
+  "yes": "是",
+  "no": "否",
+  "stoppedNote": "此 InferenceService 被有意停止：KServe 已移除为其提供服务的组件。",
+  "traffic": {
+    "revision": "修订",
+    "percent": "流量",
+    "tag": "标签",
+    "latest": "最新"
+  },
+  "modelStatus": "模型状态",
+  "choice": {
+    "title": "服务运行时",
+    "fields": {
+      "named": "规范中指定",
+      "auto": "KServe 选择"
+    },
+    "loading": "正在读取服务运行时…",
+    "notServed": "集群不提供 ServingRuntime 类型。",
+    "unreadable": "无法读取全部服务运行时，因此无法判断选择结果。",
+    "noFormat": "Predictor 未指定模型格式：KServe 不会为其选择运行时。",
+    "none": "没有服务运行时支持模型格式 {{format}}：KServe 无法提供此模型。",
+    "others": "其他候选（按 KServe 的顺序）：{{names}}",
+    "differs": "KServe 上次协调时记录的是 {{recorded}}：此后运行时已发生变化。",
+    "namedMissing": "规范中指定的运行时 {{name}} 在此 namespace 和集群中都不存在。",
+    "namedDisabled": "规范中指定的运行时 {{name}} 已禁用。",
+    "namedProtocol": "规范中指定的运行时 {{name}} 不支持模型的协议。",
+    "namedFormat": "规范中指定的运行时 {{name}} 未列出模型的格式。"
+  },
+  "formats": {
+    "title": "模型格式",
+    "name": "格式",
+    "version": "版本",
+    "autoSelect": "自动选择",
+    "priority": "优先级"
+  },
+  "graph": {
+    "node": "节点 {{name}}（{{type}}）",
+    "toNode": "节点 {{name}}",
+    "step": "步骤",
+    "target": "目标",
+    "weight": "权重",
+    "condition": "条件",
+    "dependency": "依赖"
+  }
+}

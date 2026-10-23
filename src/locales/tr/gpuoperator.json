@@ -1,0 +1,117 @@
+{
+  "badge_one": "{{count}} nesne ilgi gerektiriyor",
+  "badge_other": "{{count}} nesne ilgi gerektiriyor",
+  "loading": "Yükleniyor…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "Durum",
+    "namespace": "Bileşen namespace'i",
+    "migStrategy": "MIG stratejisi",
+    "driverType": "Sürücü türü",
+    "version": "Sürüm",
+    "nodeSelector": "Düğüm seçici"
+  },
+  "state": {
+    "ready": "Hazır",
+    "notReady": "Hazır değil",
+    "ignored": "Yok sayılıyor",
+    "disabled": "Devre dışı",
+    "unknown": "Henüz durum yok"
+  },
+  "hint": {
+    "notReady": "Operatör henüz bitirmedi: bir bileşen dağıtılmadı ya da hazır değil. Aşağıdaki bileşenler hangisi olduğunu söyler.",
+    "ignored": "Operatör bu ClusterPolicy'yi yok sayıyor çünkü başka bir tane var: yalnızca biri kullanılır.",
+    "disabled": "Operatör bu nesneyi devre dışı olarak bildiriyor.",
+    "unknown": "Operatör henüz bir durum bildirmedi."
+  },
+  "fields": {
+    "state": "Durum",
+    "namespace": "Bileşen namespace'i",
+    "migStrategy": "MIG stratejisi",
+    "migStrategyUnset": "Ayarlanmadı (device plugin karar verir, varsayılan none)",
+    "driver": "Sürücü",
+    "driverByCrd": "NVIDIADriver nesneleri yönetiyor",
+    "driverType": "Sürücü türü",
+    "version": "Sürüm",
+    "nodeSelector": "Düğüm seçici",
+    "product": "GPU ürünü",
+    "count": "GPU sayısı",
+    "memory": "GPU başına bellek",
+    "migConfig": "MIG yapılandırması",
+    "migState": "MIG yapılandırma durumu"
+  },
+  "component": {
+    "driver": "Sürücü",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "Doğrulayıcı",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "Gizli hesaplama yöneticisi"
+  },
+  "components": {
+    "title": "Bileşenler",
+    "component": "Bileşen",
+    "enabled": "Etkin",
+    "status": "Dağıtım",
+    "daemonSet": "DaemonSet",
+    "on": "Açık",
+    "off": "Kapalı",
+    "rollout": "{{desired}} içinden {{ready}} hazır, {{updated}} güncel",
+    "state": {
+      "ready": "Dağıtıldı",
+      "rollingOut": "Dağıtılıyor",
+      "missing": "Henüz dağıtılmadı",
+      "off": "Dağıtılmıyor",
+      "managedByDriver": "NVIDIADriver'a bakın",
+      "unknown": "Söylenemiyor"
+    },
+    "noNamespace": "Operatör henüz bileşen namespace'ini bildirmedi, bu yüzden DaemonSet'ler bulunamıyor.",
+    "unavailable": "{{namespace}} namespace'inin DaemonSet'leri okunamadı.",
+    "truncated": "Namespace'in tüm DaemonSet'leri okunmadı: liste eksik olabilir."
+  },
+  "driver": {
+    "daemonSets": "DaemonSet'ler",
+    "none": "Bu NVIDIADriver'ın henüz DaemonSet'i yok."
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "Kaynak",
+    "capacity": "Kapasite",
+    "allocatable": "Ayrılabilir",
+    "noResources": "Düğüm nvidia.com/gpu veya MIG kaynağı bildirmiyor.",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "MIG manager bu düğümde {{config}} MIG yapılandırmasını uygulayamadı."
+  },
+  "page": {
+    "sidebar": "GPU düğümleri",
+    "title": "GPU düğümleri",
+    "hint": "nvidia.com/gpu.present=true label'ı olan düğümler, GPU'ları ve MIG yapılandırmalarıyla.",
+    "total_one": "{{count}} düğüm",
+    "total_other": "{{count}} düğüm",
+    "truncated_one": "Yalnızca ilk {{count}} düğüm okunuyor.",
+    "truncated_other": "Yalnızca ilk {{count}} düğüm okunuyor.",
+    "unavailable": "Düğümler okunamadı.",
+    "amount": "{{capacity}} içinden {{allocatable}}",
+    "columns": {
+      "node": "Düğüm",
+      "product": "Ürün",
+      "count": "GPU sayısı",
+      "gpus": "Ayrılabilir nvidia.com/gpu",
+      "mig": "MIG kaynakları (ayrılabilir/kapasite)",
+      "migConfig": "MIG yapılandırması",
+      "migState": "MIG durumu"
+    }
+  }
+}

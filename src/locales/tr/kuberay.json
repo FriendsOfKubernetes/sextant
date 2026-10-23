@@ -1,0 +1,133 @@
+{
+  "sidebar": {
+    "rayClusters": "Ray Clusters",
+    "rayJobs": "Ray Jobs",
+    "rayServices": "Ray Services"
+  },
+  "badge_one": "{{count}} nesne ilgi gerektiriyor",
+  "badge_other": "{{count}} nesne ilgi gerektiriyor",
+  "clusterState": {
+    "ready": "Hazır",
+    "provisioning": "Oluşturuluyor",
+    "headNotReady": "Head hazır değil",
+    "suspending": "Askıya alınıyor",
+    "suspended": "Askıda",
+    "failed": "Başarısız"
+  },
+  "jobState": {
+    "succeeded": "Başarılı",
+    "running": "Çalışıyor",
+    "pending": "Beklemede",
+    "retrying": "Yeniden deneniyor",
+    "stopped": "Durduruldu",
+    "suspended": "Askıda",
+    "failed": "Başarısız"
+  },
+  "serviceState": {
+    "ready": "Hazır",
+    "upgrading": "Güncelleniyor",
+    "notReady": "Hazır değil",
+    "suspended": "Askıda",
+    "failed": "Başarısız"
+  },
+  "columns": {
+    "status": "Durum",
+    "workers": "Worker’lar",
+    "headIP": "Head IP",
+    "rayVersion": "Ray sürümü",
+    "jobStatus": "İş durumu",
+    "deploymentStatus": "Dağıtım durumu",
+    "cluster": "Ray kümesi",
+    "started": "Başladı",
+    "applications": "Uygulamalar",
+    "endpoints": "Uç noktalar",
+    "activeCluster": "Etkin küme"
+  },
+  "fields": {
+    "status": "Durum",
+    "rayVersion": "Ray sürümü",
+    "workers": "Worker’lar",
+    "workerBounds": "Worker sınırları",
+    "headPod": "Head Pod’u",
+    "headPodIP": "Head Pod IP’si",
+    "headService": "Head Service’i",
+    "headServiceIP": "Head Service IP’si",
+    "endpoints": "Uç noktalar",
+    "desired": "İstenen",
+    "jobStatus": "İş durumu",
+    "deploymentStatus": "Dağıtım durumu",
+    "reason": "Neden",
+    "rayCluster": "Ray kümesi",
+    "clusterSelector": "Küme seçici",
+    "submissionMode": "Gönderme modu",
+    "submitter": "Gönderen Job",
+    "jobId": "İş kimliği",
+    "dashboardURL": "Pano URL’si",
+    "startTime": "Başladı",
+    "endTime": "Bitti",
+    "succeeded": "Başarılı denemeler",
+    "failed": "Başarısız denemeler",
+    "shutdown": "Bitince kümeyi siler",
+    "trafficPercent": "Trafik",
+    "targetCapacity": "Hedef kapasite",
+    "serviceStatus": "Hizmet durumu",
+    "serveService": "Serve Service’i",
+    "serveEndpoints": "Serve uç noktaları",
+    "upgradeStrategy": "Güncelleme stratejisi",
+    "upgrade": "Güncelleme sürüyor"
+  },
+  "workersReady": "{{desired}} içinden {{ready}} hazır",
+  "bounds": "{{min}} ile {{max}} arası",
+  "desiredResource": {
+    "CPU": "CPU: {{value}}",
+    "Memory": "Bellek: {{value}}",
+    "GPU": "GPU: {{value}}",
+    "TPU": "TPU: {{value}}"
+  },
+  "yes": "Evet",
+  "no": "Hayır",
+  "percent": "%{{value}}",
+  "suspendedNote": {
+    "suspended": "Küme askıda: KubeRay Pod’larını sildi.",
+    "suspending": "Küme askıya alınıyor: KubeRay Pod’larını siliyor.",
+    "service": "Hizmet askıda: KubeRay onun için oluşturduklarını sildi."
+  },
+  "groups": {
+    "title": "Worker grupları",
+    "name": "Grup",
+    "desired": "İstenen Pod’lar",
+    "bounds": "Replikalar",
+    "ready": "Hazır Pod’lar",
+    "suspended": "Askıda",
+    "none": "Kümenin worker grubu yok: işi head yapıyor."
+  },
+  "pods": {
+    "title": "Pod’lar",
+    "headLogs": "Head günlükleri",
+    "workerLogs": "Worker günlükleri",
+    "loading": "Kümenin Pod’ları aranıyor…",
+    "error": "Kümenin Pod’ları okunamıyor.",
+    "name": "Pod",
+    "type": "Tür",
+    "group": "Grup",
+    "status": "Durum",
+    "none": "Kümenin Pod’u yok.",
+    "more_one": "{{count}} Pod daha listelenmedi.",
+    "more_other": "{{count}} Pod daha listelenmedi.",
+    "truncated": "Kümede burada tutulandan daha fazla Pod var: liste eksik."
+  },
+  "deploymentsHealthy": "{{total}} içinden {{healthy}} sağlıklı",
+  "apps": {
+    "name": "Uygulama",
+    "status": "Durum",
+    "deployments": "Dağıtımlar",
+    "message": "İleti"
+  },
+  "entrypoint": "Giriş noktası",
+  "noEntrypoint": "Giriş noktası yok: iş başka bir yolla gönderiliyor.",
+  "submitterLogs": "Gönderme günlükleri",
+  "activeCluster": "Etkin küme",
+  "pendingCluster": "Bekleyen küme (güncelleme)",
+  "serveConfig": "Serve yapılandırması",
+  "noServeConfig": "serveConfigV2 ayarlanmamış."
+}

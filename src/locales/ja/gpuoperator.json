@@ -1,0 +1,114 @@
+{
+  "badge_other": "{{count}} 個のオブジェクトに注意が必要です",
+  "loading": "読み込み中…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "状態",
+    "namespace": "オペランドの namespace",
+    "migStrategy": "MIG 戦略",
+    "driverType": "ドライバーの種類",
+    "version": "バージョン",
+    "nodeSelector": "ノードセレクター"
+  },
+  "state": {
+    "ready": "準備完了",
+    "notReady": "未準備",
+    "ignored": "無視",
+    "disabled": "無効",
+    "unknown": "状態なし"
+  },
+  "hint": {
+    "notReady": "オペレーターはまだ完了していません。いずれかのコンポーネントがデプロイされていないか、準備ができていません。下のコンポーネントでどれかがわかります。",
+    "ignored": "別の ClusterPolicy があるため、オペレーターはこれを無視しています。使われるのは 1 つだけです。",
+    "disabled": "オペレーターはこのオブジェクトを無効と報告しています。",
+    "unknown": "オペレーターはまだ状態を報告していません。"
+  },
+  "fields": {
+    "state": "状態",
+    "namespace": "オペランドの namespace",
+    "migStrategy": "MIG 戦略",
+    "migStrategyUnset": "未設定 (device plugin が決定、既定は none)",
+    "driver": "ドライバー",
+    "driverByCrd": "NVIDIADriver オブジェクトが管理",
+    "driverType": "ドライバーの種類",
+    "version": "バージョン",
+    "nodeSelector": "ノードセレクター",
+    "product": "GPU 製品",
+    "count": "GPU 数",
+    "memory": "GPU あたりのメモリ",
+    "migConfig": "MIG 構成",
+    "migState": "MIG 構成の状態"
+  },
+  "component": {
+    "driver": "ドライバー",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "バリデーター",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "コンフィデンシャルコンピューティングマネージャー"
+  },
+  "components": {
+    "title": "コンポーネント",
+    "component": "コンポーネント",
+    "enabled": "有効",
+    "status": "ロールアウト",
+    "daemonSet": "DaemonSet",
+    "on": "オン",
+    "off": "オフ",
+    "rollout": "{{desired}} 中 {{ready}} 準備完了、{{updated}} 更新済み",
+    "state": {
+      "ready": "ロールアウト済み",
+      "rollingOut": "ロールアウト中",
+      "missing": "未デプロイ",
+      "off": "デプロイなし",
+      "managedByDriver": "NVIDIADriver を参照",
+      "unknown": "判断できません"
+    },
+    "noNamespace": "オペレーターがオペランドの namespace をまだ報告していないため、DaemonSet を見つけられません。",
+    "unavailable": "namespace {{namespace}} の DaemonSet を読み取れませんでした。",
+    "truncated": "この namespace のすべての DaemonSet は読み取れていません。一覧は不完全な可能性があります。"
+  },
+  "driver": {
+    "daemonSets": "DaemonSet",
+    "none": "この NVIDIADriver にはまだ DaemonSet がありません。"
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "リソース",
+    "capacity": "容量",
+    "allocatable": "割り当て可能",
+    "noResources": "このノードは nvidia.com/gpu や MIG のリソースを公開していません。",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "MIG manager はこのノードで MIG 構成 {{config}} を適用できませんでした。"
+  },
+  "page": {
+    "sidebar": "GPU ノード",
+    "title": "GPU ノード",
+    "hint": "label nvidia.com/gpu.present=true の付いたノードと、その GPU と MIG 構成です。",
+    "total_other": "{{count}} 個のノード",
+    "truncated_other": "最初の {{count}} 個のノードのみ読み取っています。",
+    "unavailable": "ノードを読み取れませんでした。",
+    "amount": "{{capacity}} 中 {{allocatable}}",
+    "columns": {
+      "node": "ノード",
+      "product": "製品",
+      "count": "GPU 数",
+      "gpus": "nvidia.com/gpu 割り当て可能",
+      "mig": "MIG リソース (割り当て可能/容量)",
+      "migConfig": "MIG 構成",
+      "migState": "MIG の状態"
+    }
+  }
+}

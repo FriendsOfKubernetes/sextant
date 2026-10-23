@@ -1,0 +1,96 @@
+{
+  "sidebar": {
+    "jobSets": "JobSet"
+  },
+  "badge_other": "対応が必要な JobSet が {{count}} 件あります",
+  "state": {
+    "completed": "完了",
+    "failed": "失敗",
+    "suspended": "一時停止",
+    "restarting": "再起動中",
+    "starting": "起動中",
+    "running": "実行中",
+    "pending": "待機中"
+  },
+  "jobState": {
+    "complete": "完了",
+    "failed": "失敗",
+    "suspended": "一時停止",
+    "active": "アクティブ",
+    "pending": "待機中"
+  },
+  "columns": {
+    "status": "状態",
+    "succeeded": "成功",
+    "active": "アクティブ",
+    "failed": "失敗",
+    "restarts": "再起動"
+  },
+  "fields": {
+    "status": "状態",
+    "terminalState": "最終状態",
+    "restarts": "再起動",
+    "restartStrategy": "再起動戦略",
+    "successPolicy": "成功の条件",
+    "startupPolicy": "起動順序",
+    "suspend": "一時停止",
+    "startTime": "開始",
+    "activeDeadline": "実行期限 (秒)",
+    "ttlAfterFinished": "終了後の削除 (秒)",
+    "subdomain": "サブドメイン",
+    "coordinator": "コーディネーター Pod",
+    "managedBy": "管理元",
+    "firstFailedJob": "最初に失敗した Job"
+  },
+  "success": {
+    "all": "すべての複製ジョブのすべての Job が完了する",
+    "any": "いずれかの Job が完了する",
+    "allOf": "{{targets}} のすべての Job が完了する",
+    "anyOf": "{{targets}} のいずれかの Job が完了する"
+  },
+  "restartsOfMax": "許可された {{max}} 回のうち {{counted}} 回 (合計 {{total}} 回)",
+  "nearLimit": "許可された再起動 {{max}} 回のうち {{counted}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
+  "failedNoReason": "JobSet は失敗しました。",
+  "failedJobGone": "その Job はもう存在しません。",
+  "suspendedNote": "一時停止中: 再開されるまで Job は一時停止したままです。",
+  "replicated": {
+    "title": "複製ジョブ",
+    "name": "名前",
+    "replicas": "Job 数",
+    "completions": "完了数 / 並列数",
+    "ready": "準備完了",
+    "active": "アクティブ",
+    "succeeded": "成功",
+    "failed": "失敗",
+    "dependsOn": "依存先"
+  },
+  "rules": {
+    "title": "失敗ポリシーのルール",
+    "name": "ルール",
+    "action": "アクション",
+    "onFailure": "Job の失敗時",
+    "targets": "複製ジョブ"
+  },
+  "jobs": {
+    "title": "Job",
+    "job": "Job",
+    "replicatedJob": "複製ジョブ",
+    "index": "インデックス",
+    "state": "状態",
+    "attempt": "再起動の試行",
+    "reason": "失敗"
+  },
+  "pods": {
+    "title": "Pod",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "状態"
+  },
+  "yes": "はい",
+  "loading": "読み込み中…",
+  "listUnknown": "一覧を読み取れませんでした。",
+  "noJobs": "Job はありません。",
+  "noPods": "Pod はありません。",
+  "morePods": "{{total}} 件のうち最初の {{shown}} 件を、実行中でないものから表示しています。",
+  "truncated": "最初の {{max}} 件だけを読み取っています: 一覧は不完全です。"
+}

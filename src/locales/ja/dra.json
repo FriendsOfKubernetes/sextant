@@ -1,0 +1,143 @@
+{
+  "badge_other": "{{count}} 個の Pod がデバイスを待っています",
+  "loading": "読み込み中…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "状態",
+    "classes": "デバイスクラス",
+    "devices": "デバイス",
+    "node": "ノード",
+    "reservedFor": "予約先",
+    "requests": "リクエスト",
+    "selectors": "セレクター",
+    "drivers": "ドライバー",
+    "extendedResource": "拡張リソース",
+    "driver": "ドライバー",
+    "pool": "プール",
+    "deviceCount": "デバイス"
+  },
+  "state": {
+    "inUse": "使用中",
+    "allocated": "割り当て済み",
+    "pending": "保留中",
+    "bindingFailed": "バインド失敗",
+    "deleting": "削除中"
+  },
+  "hint": {
+    "inUse": "デバイスは割り当て済みで、下のコンシューマーのために予約されています。",
+    "allocated": "デバイスは割り当て済みですが、まだどの Pod も予約していません。",
+    "pending": "まだデバイスは割り当てられていません。この claim を使う最初の Pod をスケジューラーが配置するときに割り当てます。",
+    "bindingFailed": "ドライバーがデバイスのバインドに失敗したと報告しています。スケジューラーは別のノードを試します。",
+    "deleting": "この claim は削除中です。どの Pod も使わなくなるとデバイスは解放されます。"
+  },
+  "scope": {
+    "node": "1 つのノード",
+    "allNodes": "すべてのノード",
+    "selector": "セレクターで選ばれるノード",
+    "perDevice": "デバイスごとに設定",
+    "unknown": "記載なし"
+  },
+  "fields": {
+    "state": "状態",
+    "node": "ノード",
+    "nodeSelector": "ノードセレクター",
+    "allocatedAt": "割り当て日時",
+    "madeFor": "作成対象の Pod",
+    "reservedFor": "予約先",
+    "extendedResource": "拡張リソース",
+    "driver": "ドライバー",
+    "pool": "プール",
+    "poolGeneration": "プールの世代",
+    "poolSlices": "プール内の slice 数",
+    "reach": "デバイスに到達できる範囲"
+  },
+  "requests": {
+    "title": "リクエスト",
+    "request": "リクエスト",
+    "class": "デバイスクラス",
+    "selectors": "セレクター (CEL)",
+    "amount": "数量",
+    "choice": "{{request}}: 選択肢 {{n}} ({{choice}})",
+    "all": "一致するすべてのデバイス",
+    "count_other": "{{count}} 個のデバイス",
+    "withAdminAccess": "{{amount}}、管理者アクセス付き",
+    "none": "リクエストはありません。"
+  },
+  "results": {
+    "title": "割り当て済みデバイス",
+    "request": "リクエスト",
+    "driver": "ドライバー",
+    "device": "プール / デバイス",
+    "notes": "メモ",
+    "adminAccess": "管理者アクセス。",
+    "bindingFailed": "バインド失敗: {{conditions}}。",
+    "bindingPending": "待機中: {{conditions}}。"
+  },
+  "waiting": {
+    "title": "この claim を待っている Pod",
+    "none": "この namespace の Pending の Pod でこの claim を使うものはありません。",
+    "unknown": "この namespace の Pending の Pod を読み取れませんでした。"
+  },
+  "reason": {
+    "notCreated": "Pod がテンプレートから作る claim がまだ存在しません。resource claim コントローラーがまだ作成していません。",
+    "notFound": "Pod が指定している claim が存在しません。",
+    "deleting": "Pod が使う claim が削除中です。",
+    "inUse": "この claim は他の Pod に予約されており、この Pod と共有できません。",
+    "noClass": "リクエストが存在しないデバイスクラスを指定しています。",
+    "cannotAllocate": "Pod の claim のすべてのリクエストに合う空きデバイスを持つノードがありません。",
+    "notOnNode": "claim のデバイスは、Pod が実行できるノードとは別のノードに割り当てられています。",
+    "allocating": "別のスケジューリングの試行が今この claim を割り当てています。",
+    "notOwner": "この claim は別の Pod のために作成されました。"
+  },
+  "class": {
+    "selectors": "セレクター (CEL)",
+    "noSelectors": "セレクターなし: ドライバーのすべてのデバイスが一致します。",
+    "celNote": "式は書かれたとおりに表示されます。Sextant は評価しません。",
+    "config": "ドライバーの設定"
+  },
+  "devices": {
+    "title": "デバイス",
+    "node": "ノード",
+    "driver": "ドライバー",
+    "device": "プール / デバイス",
+    "product": "製品",
+    "capacity": "容量",
+    "allocatedTo": "割り当て先",
+    "free": "空き",
+    "unknown": "判断できません",
+    "none": "デバイスはありません。",
+    "cut_other": "{{total}} 個のうち最初の {{count}} 個のデバイスのみ表示しています。"
+  },
+  "pod": {
+    "title": "デバイス",
+    "name": "Pod 内の名前",
+    "claim": "Claim",
+    "state": "状態",
+    "devices": "デバイス",
+    "containers": "コンテナー",
+    "fromTemplate": "テンプレート {{template}} から",
+    "notNeeded": "不要 (テンプレート {{template}})",
+    "notCreated": "未作成",
+    "missing": "存在しません",
+    "unknown": "判断できません",
+    "notServed": "クラスターは resource.k8s.io の ResourceClaim を提供していません。"
+  },
+  "node": {
+    "title": "DRA デバイス",
+    "truncated_other": "最初の {{count}} 個の ResourceSlice のみ読み取っています。"
+  },
+  "page": {
+    "sidebar": "デバイス",
+    "title": "デバイス",
+    "hint": "ドライバーが ResourceSlice で公開しているすべてのデバイスを、ノードごとに、それを保持する claim とともに表示します。",
+    "total_other": "{{count}} 個のデバイス",
+    "totals_other": "{{count}} 個のデバイス、{{allocated}} 個割り当て済み",
+    "slicesTruncated_other": "最初の {{count}} 個の ResourceSlice のみ読み取っています。",
+    "claimsUnknown": "クラスターの ResourceClaim をすべて読み取れなかったため、どのデバイスが割り当て済みか判断できません。"
+  }
+}

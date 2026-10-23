@@ -1,0 +1,123 @@
+{
+  "badge_one": "{{count}} obiekt wymaga uwagi",
+  "badge_few": "{{count}} obiekty wymagają uwagi",
+  "badge_many": "{{count}} obiektów wymaga uwagi",
+  "badge_other": "{{count}} obiektu wymaga uwagi",
+  "loading": "Wczytywanie…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "Stan",
+    "namespace": "Namespace komponentów",
+    "migStrategy": "Strategia MIG",
+    "driverType": "Typ sterownika",
+    "version": "Wersja",
+    "nodeSelector": "Selektor węzłów"
+  },
+  "state": {
+    "ready": "Gotowy",
+    "notReady": "Niegotowy",
+    "ignored": "Ignorowany",
+    "disabled": "Wyłączony",
+    "unknown": "Brak stanu"
+  },
+  "hint": {
+    "notReady": "Operator jeszcze nie skończył: któryś komponent nie jest wdrożony albo nie jest gotowy. Komponenty poniżej pokazują który.",
+    "ignored": "Operator ignoruje tę ClusterPolicy, bo istnieje inna: używana jest tylko jedna.",
+    "disabled": "Operator zgłasza ten obiekt jako wyłączony.",
+    "unknown": "Operator nie zgłosił jeszcze stanu."
+  },
+  "fields": {
+    "state": "Stan",
+    "namespace": "Namespace komponentów",
+    "migStrategy": "Strategia MIG",
+    "migStrategyUnset": "Nie ustawiono (decyduje device plugin, domyślnie none)",
+    "driver": "Sterownik",
+    "driverByCrd": "Zarządzany przez obiekty NVIDIADriver",
+    "driverType": "Typ sterownika",
+    "version": "Wersja",
+    "nodeSelector": "Selektor węzłów",
+    "product": "Model GPU",
+    "count": "GPU",
+    "memory": "Pamięć na GPU",
+    "migConfig": "Konfiguracja MIG",
+    "migState": "Stan konfiguracji MIG"
+  },
+  "component": {
+    "driver": "Sterownik",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "Walidator",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "Menedżer poufnego przetwarzania"
+  },
+  "components": {
+    "title": "Komponenty",
+    "component": "Komponent",
+    "enabled": "Włączony",
+    "status": "Wdrożenie",
+    "daemonSet": "DaemonSet",
+    "on": "Tak",
+    "off": "Nie",
+    "rollout": "gotowe {{ready}} z {{desired}}, zaktualizowane {{updated}}",
+    "state": {
+      "ready": "Wdrożony",
+      "rollingOut": "Wdrażany",
+      "missing": "Jeszcze nie wdrożony",
+      "off": "Nie jest wdrażany",
+      "managedByDriver": "Zob. NVIDIADriver",
+      "unknown": "Nie da się stwierdzić"
+    },
+    "noNamespace": "Operator nie zgłosił jeszcze namespace komponentów, więc nie da się znaleźć DaemonSetów.",
+    "unavailable": "Nie udało się odczytać DaemonSetów z namespace {{namespace}}.",
+    "truncated": "Nie odczytano wszystkich DaemonSetów z namespace: lista może być niepełna."
+  },
+  "driver": {
+    "daemonSets": "DaemonSety",
+    "none": "Ten NVIDIADriver nie ma jeszcze DaemonSetu."
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "Zasób",
+    "capacity": "Pojemność",
+    "allocatable": "Do przydzielenia",
+    "noResources": "Węzeł nie zgłasza zasobów nvidia.com/gpu ani MIG.",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "MIG manager nie zdołał zastosować konfiguracji MIG {{config}} na tym węźle."
+  },
+  "page": {
+    "sidebar": "Węzły z GPU",
+    "title": "Węzły z GPU",
+    "hint": "Węzły z labelem nvidia.com/gpu.present=true, ich GPU i konfiguracja MIG.",
+    "total_one": "{{count}} węzeł",
+    "total_few": "{{count}} węzły",
+    "total_many": "{{count}} węzłów",
+    "total_other": "{{count}} węzła",
+    "truncated_one": "Odczytano tylko pierwszy {{count}} węzeł.",
+    "truncated_few": "Odczytano tylko pierwsze {{count}} węzły.",
+    "truncated_many": "Odczytano tylko pierwszych {{count}} węzłów.",
+    "truncated_other": "Odczytano tylko pierwsze {{count}} węzła.",
+    "unavailable": "Nie udało się odczytać węzłów.",
+    "amount": "{{allocatable}} z {{capacity}}",
+    "columns": {
+      "node": "Węzeł",
+      "product": "Produkt",
+      "count": "GPU",
+      "gpus": "nvidia.com/gpu do przydzielenia",
+      "mig": "Zasoby MIG (do przydzielenia/pojemność)",
+      "migConfig": "Konfiguracja MIG",
+      "migState": "Stan MIG"
+    }
+  }
+}

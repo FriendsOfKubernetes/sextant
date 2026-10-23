@@ -1,0 +1,130 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService erfordert Aufmerksamkeit",
+  "badge_other": "{{count}} InferenceServices erfordern Aufmerksamkeit",
+  "state": {
+    "ready": "Bereit",
+    "progressing": "In Arbeit",
+    "notReady": "Nicht bereit",
+    "failed": "Fehlgeschlagen",
+    "stopped": "Gestoppt"
+  },
+  "columns": {
+    "status": "Status",
+    "url": "URL",
+    "modelFormat": "Modellformat",
+    "runtime": "Runtime",
+    "mode": "Modus",
+    "canary": "Canary %",
+    "formats": "Modellformate",
+    "protocols": "Protokolle",
+    "disabled": "Deaktiviert",
+    "multiModel": "Multi-Modell",
+    "nodes": "Graphknoten",
+    "inferenceService": "InferenceService",
+    "framework": "Framework"
+  },
+  "fields": {
+    "status": "Status",
+    "url": "URL",
+    "address": "Adresse",
+    "deploymentMode": "Bereitstellungsmodus",
+    "recordedRuntime": "Verwendete Runtime",
+    "modelFormat": "Modellformat",
+    "runtime": "Runtime",
+    "storageUri": "Speicher-URI",
+    "protocolVersion": "Protokoll",
+    "images": "Images",
+    "replicas": "Replikate",
+    "canaryTrafficPercent": "Canary-Traffic",
+    "workers": "Mehrere Knoten",
+    "componentUrl": "URL",
+    "latestReadyRevision": "Neueste bereite Revision",
+    "latestCreatedRevision": "Neueste erstellte Revision",
+    "previousRolledoutRevision": "Vorherige Revision",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Übergang",
+    "activeModelState": "Aktives Modell",
+    "targetModelState": "Zielmodell",
+    "failureReason": "Fehlergrund",
+    "failureLocation": "Fehlgeschlagen in",
+    "failureTime": "Fehlgeschlagen um",
+    "exitCode": "Exit-Code",
+    "copies": "Kopien",
+    "protocols": "Protokolle",
+    "disabled": "Deaktiviert",
+    "multiModel": "Multi-Modell",
+    "multiNode": "Mehrere Knoten",
+    "inferenceService": "InferenceService",
+    "framework": "Framework",
+    "memory": "Speicher"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment und Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Nicht gesetzt: Es gilt der Standard des Clusters"
+  },
+  "uriHidden": "Zugangsdaten und Query ausgeblendet",
+  "bounds": "{{min}} bis {{max}}",
+  "percent": "{{value}} %",
+  "copies": "{{failed}} von {{total}} fehlgeschlagen",
+  "yes": "Ja",
+  "no": "Nein",
+  "stoppedNote": "Der InferenceService ist absichtlich gestoppt: KServe hat entfernt, was ihn bereitstellt.",
+  "traffic": {
+    "revision": "Revision",
+    "percent": "Traffic",
+    "tag": "Tag",
+    "latest": "Neueste"
+  },
+  "modelStatus": "Modellstatus",
+  "choice": {
+    "title": "Serving-Runtime",
+    "fields": {
+      "named": "In der Spec genannt",
+      "auto": "Wahl von KServe"
+    },
+    "loading": "Serving-Runtimes werden gelesen…",
+    "notServed": "Der Cluster stellt keine ServingRuntime-Arten bereit.",
+    "unreadable": "Nicht alle Serving-Runtimes sind lesbar, daher lässt sich die Wahl nicht bestimmen.",
+    "noFormat": "Der Predictor nennt kein Modellformat: KServe wählt dafür keine Runtime.",
+    "none": "Keine Serving-Runtime unterstützt das Modellformat {{format}}: KServe kann dieses Modell nicht bereitstellen.",
+    "others": "Weitere Kandidaten in der Reihenfolge von KServe: {{names}}",
+    "differs": "KServe hat beim letzten Abgleich {{recorded}} vermerkt: Die Runtimes haben sich seitdem geändert.",
+    "namedMissing": "Die in der Spec genannte Runtime {{name}} gibt es weder in diesem Namespace noch im Cluster.",
+    "namedDisabled": "Die in der Spec genannte Runtime {{name}} ist deaktiviert.",
+    "namedProtocol": "Die in der Spec genannte Runtime {{name}} spricht das Protokoll des Modells nicht.",
+    "namedFormat": "Die in der Spec genannte Runtime {{name}} führt das Format des Modells nicht auf."
+  },
+  "formats": {
+    "title": "Modellformate",
+    "name": "Format",
+    "version": "Version",
+    "autoSelect": "Automatisch wählbar",
+    "priority": "Priorität"
+  },
+  "graph": {
+    "node": "Knoten {{name}} ({{type}})",
+    "toNode": "Knoten {{name}}",
+    "step": "Schritt",
+    "target": "Ziel",
+    "weight": "Gewicht",
+    "condition": "Bedingung",
+    "dependency": "Abhängigkeit"
+  }
+}

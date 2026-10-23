@@ -1,0 +1,133 @@
+{
+  "sidebar": {
+    "rayClusters": "Ray Clusters",
+    "rayJobs": "Ray Jobs",
+    "rayServices": "Ray Services"
+  },
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "clusterState": {
+    "ready": "Ready",
+    "provisioning": "Provisioning",
+    "headNotReady": "Head not ready",
+    "suspending": "Suspending",
+    "suspended": "Suspended",
+    "failed": "Failed"
+  },
+  "jobState": {
+    "succeeded": "Succeeded",
+    "running": "Running",
+    "pending": "Pending",
+    "retrying": "Retrying",
+    "stopped": "Stopped",
+    "suspended": "Suspended",
+    "failed": "Failed"
+  },
+  "serviceState": {
+    "ready": "Ready",
+    "upgrading": "Upgrading",
+    "notReady": "Not ready",
+    "suspended": "Suspended",
+    "failed": "Failed"
+  },
+  "columns": {
+    "status": "Status",
+    "workers": "Workers",
+    "headIP": "Head IP",
+    "rayVersion": "Ray version",
+    "jobStatus": "Job status",
+    "deploymentStatus": "Deployment status",
+    "cluster": "Ray cluster",
+    "started": "Started",
+    "applications": "Applications",
+    "endpoints": "Endpoints",
+    "activeCluster": "Active cluster"
+  },
+  "fields": {
+    "status": "Status",
+    "rayVersion": "Ray version",
+    "workers": "Workers",
+    "workerBounds": "Worker bounds",
+    "headPod": "Head pod",
+    "headPodIP": "Head pod IP",
+    "headService": "Head Service",
+    "headServiceIP": "Head Service IP",
+    "endpoints": "Endpoints",
+    "desired": "Requested",
+    "jobStatus": "Job status",
+    "deploymentStatus": "Deployment status",
+    "reason": "Reason",
+    "rayCluster": "Ray cluster",
+    "clusterSelector": "Cluster selector",
+    "submissionMode": "Submission mode",
+    "submitter": "Submitter Job",
+    "jobId": "Job ID",
+    "dashboardURL": "Dashboard URL",
+    "startTime": "Started",
+    "endTime": "Ended",
+    "succeeded": "Succeeded attempts",
+    "failed": "Failed attempts",
+    "shutdown": "Deletes the cluster when done",
+    "trafficPercent": "Traffic",
+    "targetCapacity": "Target capacity",
+    "serviceStatus": "Service status",
+    "serveService": "Serve Service",
+    "serveEndpoints": "Serve endpoints",
+    "upgradeStrategy": "Upgrade strategy",
+    "upgrade": "Upgrade in progress"
+  },
+  "workersReady": "{{ready}} of {{desired}} ready",
+  "bounds": "{{min}} to {{max}}",
+  "desiredResource": {
+    "CPU": "CPU: {{value}}",
+    "Memory": "Memory: {{value}}",
+    "GPU": "GPU: {{value}}",
+    "TPU": "TPU: {{value}}"
+  },
+  "yes": "Yes",
+  "no": "No",
+  "percent": "{{value}}%",
+  "suspendedNote": {
+    "suspended": "The cluster is suspended: KubeRay deleted its pods.",
+    "suspending": "The cluster is being suspended: KubeRay is deleting its pods.",
+    "service": "The service is suspended: KubeRay deleted what it created for it."
+  },
+  "groups": {
+    "title": "Worker groups",
+    "name": "Group",
+    "desired": "Desired pods",
+    "bounds": "Replicas",
+    "ready": "Ready pods",
+    "suspended": "Suspended",
+    "none": "The cluster has no worker groups: the head runs the work."
+  },
+  "pods": {
+    "title": "Pods",
+    "headLogs": "Head logs",
+    "workerLogs": "Worker logs",
+    "loading": "Looking for the cluster's pods…",
+    "error": "The cluster's pods cannot be read.",
+    "name": "Pod",
+    "type": "Type",
+    "group": "Group",
+    "status": "Status",
+    "none": "The cluster has no pods.",
+    "more_one": "{{count}} more pod is not listed.",
+    "more_other": "{{count}} more pods are not listed.",
+    "truncated": "The cluster has more pods than are kept here: the list is incomplete."
+  },
+  "deploymentsHealthy": "{{healthy}} of {{total}} healthy",
+  "apps": {
+    "name": "Application",
+    "status": "Status",
+    "deployments": "Deployments",
+    "message": "Message"
+  },
+  "entrypoint": "Entrypoint",
+  "noEntrypoint": "No entrypoint: the job is submitted another way.",
+  "submitterLogs": "Submitter logs",
+  "activeCluster": "Active cluster",
+  "pendingCluster": "Pending cluster (upgrade)",
+  "serveConfig": "Serve configuration",
+  "noServeConfig": "No serveConfigV2 is set."
+}

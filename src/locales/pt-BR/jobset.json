@@ -1,0 +1,98 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet precisa de atenção",
+  "badge_many": "{{count}} de JobSets precisam de atenção",
+  "badge_other": "{{count}} JobSets precisam de atenção",
+  "state": {
+    "completed": "Concluído",
+    "failed": "Falhou",
+    "suspended": "Suspenso",
+    "restarting": "Reiniciando",
+    "starting": "Iniciando",
+    "running": "Em execução",
+    "pending": "Pendente"
+  },
+  "jobState": {
+    "complete": "Concluído",
+    "failed": "Falhou",
+    "suspended": "Suspenso",
+    "active": "Ativo",
+    "pending": "Pendente"
+  },
+  "columns": {
+    "status": "Status",
+    "succeeded": "Concluídos",
+    "active": "Ativos",
+    "failed": "Falhos",
+    "restarts": "Reinícios"
+  },
+  "fields": {
+    "status": "Status",
+    "terminalState": "Estado final",
+    "restarts": "Reinícios",
+    "restartStrategy": "Estratégia de reinício",
+    "successPolicy": "Tem sucesso quando",
+    "startupPolicy": "Ordem de início",
+    "suspend": "Suspenso",
+    "startTime": "Iniciado",
+    "activeDeadline": "Prazo ativo (s)",
+    "ttlAfterFinished": "Excluído após terminar (s)",
+    "subdomain": "Subdomínio",
+    "coordinator": "Pod coordenador",
+    "managedBy": "Gerenciado por",
+    "firstFailedJob": "Primeiro Job com falha"
+  },
+  "success": {
+    "all": "Cada Job de cada job replicado é concluído",
+    "any": "Qualquer Job é concluído",
+    "allOf": "Cada Job de {{targets}} é concluído",
+    "anyOf": "Qualquer Job de {{targets}} é concluído"
+  },
+  "restartsOfMax": "{{counted}} de {{max}} permitidos ({{total}} no total)",
+  "nearLimit": "{{counted}} de {{max}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
+  "failedNoReason": "O JobSet falhou.",
+  "failedJobGone": "Esse Job não existe mais.",
+  "suspendedNote": "Suspenso: os Jobs dele ficam suspensos até que seja retomado.",
+  "replicated": {
+    "title": "Jobs replicados",
+    "name": "Nome",
+    "replicas": "Jobs",
+    "completions": "Conclusões / paralelismo",
+    "ready": "Prontos",
+    "active": "Ativos",
+    "succeeded": "Concluídos",
+    "failed": "Falhos",
+    "dependsOn": "Depende de"
+  },
+  "rules": {
+    "title": "Regras da política de falhas",
+    "name": "Regra",
+    "action": "Ação",
+    "onFailure": "Em falhas de Job",
+    "targets": "Jobs replicados"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "job": "Job",
+    "replicatedJob": "Job replicado",
+    "index": "Índice",
+    "state": "Estado",
+    "attempt": "Tentativa de reinício",
+    "reason": "Falha"
+  },
+  "pods": {
+    "title": "Pods",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Status"
+  },
+  "yes": "Sim",
+  "loading": "Carregando…",
+  "listUnknown": "Não foi possível ler a lista.",
+  "noJobs": "Não existe nenhum Job.",
+  "noPods": "Não existe nenhum Pod.",
+  "morePods": "São mostrados os primeiros {{shown}} de {{total}}, os que não estão em execução primeiro.",
+  "truncated": "Só os primeiros {{max}} são lidos: a lista está incompleta."
+}

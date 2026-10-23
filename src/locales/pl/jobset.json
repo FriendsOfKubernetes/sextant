@@ -1,0 +1,99 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet wymaga uwagi",
+  "badge_few": "{{count}} JobSety wymagają uwagi",
+  "badge_many": "{{count}} JobSetów wymaga uwagi",
+  "badge_other": "{{count}} JobSetu wymaga uwagi",
+  "state": {
+    "completed": "Zakończony",
+    "failed": "Niepowodzenie",
+    "suspended": "Wstrzymany",
+    "restarting": "Restartuje",
+    "starting": "Uruchamia się",
+    "running": "Działa",
+    "pending": "Oczekuje"
+  },
+  "jobState": {
+    "complete": "Zakończony",
+    "failed": "Niepowodzenie",
+    "suspended": "Wstrzymany",
+    "active": "Aktywny",
+    "pending": "Oczekuje"
+  },
+  "columns": {
+    "status": "Status",
+    "succeeded": "Udane",
+    "active": "Aktywne",
+    "failed": "Nieudane",
+    "restarts": "Restarty"
+  },
+  "fields": {
+    "status": "Status",
+    "terminalState": "Stan końcowy",
+    "restarts": "Restarty",
+    "restartStrategy": "Strategia restartu",
+    "successPolicy": "Udany, gdy",
+    "startupPolicy": "Kolejność uruchamiania",
+    "suspend": "Wstrzymany",
+    "startTime": "Uruchomiony",
+    "activeDeadline": "Termin aktywności (s)",
+    "ttlAfterFinished": "Usuwany po zakończeniu (s)",
+    "subdomain": "Subdomena",
+    "coordinator": "Pod koordynujący",
+    "managedBy": "Zarządzany przez",
+    "firstFailedJob": "Pierwszy nieudany Job"
+  },
+  "success": {
+    "all": "Kończy się każdy Job każdego replikowanego zadania",
+    "any": "Kończy się dowolny Job",
+    "allOf": "Kończy się każdy Job z {{targets}}",
+    "anyOf": "Kończy się dowolny Job z {{targets}}"
+  },
+  "restartsOfMax": "{{counted}} z {{max}} dozwolonych (łącznie {{total}})",
+  "nearLimit": "Wykorzystano {{counted}} z {{max}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
+  "failedNoReason": "JobSet zakończył się niepowodzeniem.",
+  "failedJobGone": "Ten Job już nie istnieje.",
+  "suspendedNote": "Wstrzymany: jego Joby są wstrzymane do czasu wznowienia.",
+  "replicated": {
+    "title": "Replikowane zadania",
+    "name": "Nazwa",
+    "replicas": "Joby",
+    "completions": "Ukończenia / równolegle",
+    "ready": "Gotowe",
+    "active": "Aktywne",
+    "succeeded": "Udane",
+    "failed": "Nieudane",
+    "dependsOn": "Zależy od"
+  },
+  "rules": {
+    "title": "Reguły zasady awarii",
+    "name": "Reguła",
+    "action": "Akcja",
+    "onFailure": "Przy awariach Jobów",
+    "targets": "Replikowane zadania"
+  },
+  "jobs": {
+    "title": "Joby",
+    "job": "Job",
+    "replicatedJob": "Replikowane zadanie",
+    "index": "Indeks",
+    "state": "Stan",
+    "attempt": "Próba restartu",
+    "reason": "Awaria"
+  },
+  "pods": {
+    "title": "Pody",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Status"
+  },
+  "yes": "Tak",
+  "loading": "Ładowanie…",
+  "listUnknown": "Nie udało się odczytać listy.",
+  "noJobs": "Nie ma żadnego Joba.",
+  "noPods": "Nie ma żadnego Poda.",
+  "morePods": "Pokazano pierwsze {{shown}} z {{total}}, najpierw niedziałające.",
+  "truncated": "Odczytywane są tylko pierwsze {{max}}: lista jest niepełna."
+}

@@ -1,0 +1,130 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService needs attention",
+  "badge_other": "{{count}} InferenceServices need attention",
+  "state": {
+    "ready": "Ready",
+    "progressing": "Progressing",
+    "notReady": "Not ready",
+    "failed": "Failed",
+    "stopped": "Stopped"
+  },
+  "columns": {
+    "status": "Status",
+    "url": "URL",
+    "modelFormat": "Model format",
+    "runtime": "Runtime",
+    "mode": "Mode",
+    "canary": "Canary %",
+    "formats": "Model formats",
+    "protocols": "Protocols",
+    "disabled": "Disabled",
+    "multiModel": "Multi-model",
+    "nodes": "Nodes",
+    "inferenceService": "InferenceService",
+    "framework": "Framework"
+  },
+  "fields": {
+    "status": "Status",
+    "url": "URL",
+    "address": "Address",
+    "deploymentMode": "Deployment mode",
+    "recordedRuntime": "Runtime in use",
+    "modelFormat": "Model format",
+    "runtime": "Runtime",
+    "storageUri": "Storage URI",
+    "protocolVersion": "Protocol",
+    "images": "Images",
+    "replicas": "Replicas",
+    "canaryTrafficPercent": "Canary traffic",
+    "workers": "Multi-node",
+    "componentUrl": "URL",
+    "latestReadyRevision": "Latest ready revision",
+    "latestCreatedRevision": "Latest created revision",
+    "previousRolledoutRevision": "Previous revision",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Transition",
+    "activeModelState": "Active model",
+    "targetModelState": "Target model",
+    "failureReason": "Failure reason",
+    "failureLocation": "Failed in",
+    "failureTime": "Failed at",
+    "exitCode": "Exit code",
+    "copies": "Copies",
+    "protocols": "Protocols",
+    "disabled": "Disabled",
+    "multiModel": "Multi-model",
+    "multiNode": "Multi-node",
+    "inferenceService": "InferenceService",
+    "framework": "Framework",
+    "memory": "Memory"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment and Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Not set: the cluster's default applies"
+  },
+  "uriHidden": "credentials and query hidden",
+  "bounds": "{{min}} to {{max}}",
+  "percent": "{{value}}%",
+  "copies": "{{failed}} failed of {{total}}",
+  "yes": "Yes",
+  "no": "No",
+  "stoppedNote": "The InferenceService is stopped on purpose: KServe removed what serves it.",
+  "traffic": {
+    "revision": "Revision",
+    "percent": "Traffic",
+    "tag": "Tag",
+    "latest": "Latest"
+  },
+  "modelStatus": "Model status",
+  "choice": {
+    "title": "Serving runtime",
+    "fields": {
+      "named": "Named in the spec",
+      "auto": "KServe chooses"
+    },
+    "loading": "Reading the serving runtimes…",
+    "notServed": "The cluster serves no ServingRuntime kinds.",
+    "unreadable": "The serving runtimes cannot all be read, so the choice cannot be told.",
+    "noFormat": "The predictor names no model format: KServe chooses no runtime for it.",
+    "none": "No serving runtime supports the model format {{format}}: KServe cannot serve this model.",
+    "others": "Other candidates, in KServe's order: {{names}}",
+    "differs": "KServe recorded {{recorded}} when it last reconciled: the runtimes changed since.",
+    "namedMissing": "The runtime {{name}} named in the spec does not exist in this namespace or the cluster.",
+    "namedDisabled": "The runtime {{name}} named in the spec is disabled.",
+    "namedProtocol": "The runtime {{name}} named in the spec does not speak the model's protocol.",
+    "namedFormat": "The runtime {{name}} named in the spec does not list the model's format."
+  },
+  "formats": {
+    "title": "Model formats",
+    "name": "Format",
+    "version": "Version",
+    "autoSelect": "Auto-select",
+    "priority": "Priority"
+  },
+  "graph": {
+    "node": "Node {{name}} ({{type}})",
+    "toNode": "Node {{name}}",
+    "step": "Step",
+    "target": "Target",
+    "weight": "Weight",
+    "condition": "Condition",
+    "dependency": "Dependency"
+  }
+}

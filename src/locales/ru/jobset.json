@@ -1,0 +1,99 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet требует внимания",
+  "badge_few": "{{count}} JobSet требуют внимания",
+  "badge_many": "{{count}} JobSet требуют внимания",
+  "badge_other": "{{count}} JobSet требуют внимания",
+  "state": {
+    "completed": "Завершён",
+    "failed": "Сбой",
+    "suspended": "Приостановлен",
+    "restarting": "Перезапускается",
+    "starting": "Запускается",
+    "running": "Работает",
+    "pending": "Ожидает"
+  },
+  "jobState": {
+    "complete": "Завершён",
+    "failed": "Сбой",
+    "suspended": "Приостановлен",
+    "active": "Активен",
+    "pending": "Ожидает"
+  },
+  "columns": {
+    "status": "Статус",
+    "succeeded": "Успешно",
+    "active": "Активны",
+    "failed": "Сбой",
+    "restarts": "Перезапуски"
+  },
+  "fields": {
+    "status": "Статус",
+    "terminalState": "Итоговое состояние",
+    "restarts": "Перезапуски",
+    "restartStrategy": "Стратегия перезапуска",
+    "successPolicy": "Успешен, когда",
+    "startupPolicy": "Порядок запуска",
+    "suspend": "Приостановлен",
+    "startTime": "Запущен",
+    "activeDeadline": "Срок выполнения (с)",
+    "ttlAfterFinished": "Удаление после завершения (с)",
+    "subdomain": "Поддомен",
+    "coordinator": "Pod-координатор",
+    "managedBy": "Управляется",
+    "firstFailedJob": "Первый упавший Job"
+  },
+  "success": {
+    "all": "Завершается каждый Job каждого реплицируемого задания",
+    "any": "Завершается любой Job",
+    "allOf": "Завершается каждый Job из {{targets}}",
+    "anyOf": "Завершается любой Job из {{targets}}"
+  },
+  "restartsOfMax": "{{counted}} из {{max}} разрешённых (всего {{total}})",
+  "nearLimit": "Использовано {{counted}} из {{max}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
+  "failedNoReason": "JobSet завершился сбоем.",
+  "failedJobGone": "Этого Job уже нет.",
+  "suspendedNote": "Приостановлен: его Job приостановлены, пока он не будет возобновлён.",
+  "replicated": {
+    "title": "Реплицируемые задания",
+    "name": "Имя",
+    "replicas": "Job",
+    "completions": "Завершений / параллельно",
+    "ready": "Готовы",
+    "active": "Активны",
+    "succeeded": "Успешно",
+    "failed": "Сбой",
+    "dependsOn": "Зависит от"
+  },
+  "rules": {
+    "title": "Правила политики сбоев",
+    "name": "Правило",
+    "action": "Действие",
+    "onFailure": "При сбоях Job",
+    "targets": "Реплицируемые задания"
+  },
+  "jobs": {
+    "title": "Job",
+    "job": "Job",
+    "replicatedJob": "Реплицируемое задание",
+    "index": "Индекс",
+    "state": "Состояние",
+    "attempt": "Попытка перезапуска",
+    "reason": "Сбой"
+  },
+  "pods": {
+    "title": "Pod",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Статус"
+  },
+  "yes": "Да",
+  "loading": "Загрузка…",
+  "listUnknown": "Не удалось прочитать список.",
+  "noJobs": "Ни одного Job нет.",
+  "noPods": "Ни одного Pod нет.",
+  "morePods": "Показаны первые {{shown}} из {{total}}, сначала неработающие.",
+  "truncated": "Читаются только первые {{max}}: список неполный."
+}

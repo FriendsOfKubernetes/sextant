@@ -924,3 +924,47 @@ fn cluster_api_problems_are_never_given_to_agents() {
         &["clusterApi".to_owned()]
     ));
 }
+
+/// Dynamic Resource Allocation (#244) and NVIDIA GPU Operator (#245) problems are window views: agents get none of
+/// them, though both categories are on by default (ADR-0116).
+#[test]
+fn dra_and_gpu_operator_problems_are_never_given_to_agents() {
+    for category in ["dra", "gpuOperator"] {
+        assert!(answers::PROBLEM_CATEGORIES.contains(&category));
+        assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
+        assert!(!answers::category_for_agents(
+            category,
+            &[category.to_owned()]
+        ));
+    }
+}
+
+/// KubeRay (#248) and KServe (#249) problems are window views: agents get none of them, though both categories are
+/// on by default (ADR-0115).
+#[test]
+fn kuberay_and_kserve_problems_are_never_given_to_agents() {
+    for category in ["kuberay", "kserve"] {
+        assert!(answers::PROBLEM_CATEGORIES.contains(&category));
+        assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
+        assert!(!answers::category_for_agents(
+            category,
+            &[category.to_owned()]
+        ));
+    }
+}
+
+/// Kueue (#246) and JobSet (#247) problems are window views: agents get none of them — neither the queues and JobSets
+/// (on by default) nor the opt-in Kueue Workloads, even when turned on (ADR-0114).
+#[test]
+fn kueue_and_jobset_problems_are_never_given_to_agents() {
+    for category in ["kueue", "kueueWorkloads", "jobset"] {
+        assert!(answers::PROBLEM_CATEGORIES.contains(&category));
+        assert!(!answers::category_for_agents(
+            category,
+            &[category.to_owned()]
+        ));
+    }
+    assert!(answers::OPT_IN_CATEGORIES.contains(&"kueueWorkloads"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"kueue"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"jobset"));
+}

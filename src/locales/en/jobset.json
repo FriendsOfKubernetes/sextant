@@ -1,0 +1,97 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet needs attention",
+  "badge_other": "{{count}} JobSets need attention",
+  "state": {
+    "completed": "Completed",
+    "failed": "Failed",
+    "suspended": "Suspended",
+    "restarting": "Restarting",
+    "starting": "Starting",
+    "running": "Running",
+    "pending": "Pending"
+  },
+  "jobState": {
+    "complete": "Complete",
+    "failed": "Failed",
+    "suspended": "Suspended",
+    "active": "Active",
+    "pending": "Pending"
+  },
+  "columns": {
+    "status": "Status",
+    "succeeded": "Succeeded",
+    "active": "Active",
+    "failed": "Failed",
+    "restarts": "Restarts"
+  },
+  "fields": {
+    "status": "Status",
+    "terminalState": "Terminal state",
+    "restarts": "Restarts",
+    "restartStrategy": "Restart strategy",
+    "successPolicy": "Succeeds when",
+    "startupPolicy": "Startup order",
+    "suspend": "Suspended",
+    "startTime": "Started",
+    "activeDeadline": "Active deadline (s)",
+    "ttlAfterFinished": "Deleted after finishing (s)",
+    "subdomain": "Subdomain",
+    "coordinator": "Coordinator pod",
+    "managedBy": "Managed by",
+    "firstFailedJob": "First failed Job"
+  },
+  "success": {
+    "all": "Every Job of every replicated job completes",
+    "any": "Any Job completes",
+    "allOf": "Every Job of {{targets}} completes",
+    "anyOf": "Any Job of {{targets}} completes"
+  },
+  "restartsOfMax": "{{counted}} of {{max}} allowed ({{total}} in all)",
+  "nearLimit": "{{counted}} of {{max}} allowed restarts used: a failure past the limit fails the JobSet.",
+  "failedNoReason": "The JobSet failed.",
+  "failedJobGone": "That Job no longer exists.",
+  "suspendedNote": "Suspended: its Jobs are suspended until it is resumed.",
+  "replicated": {
+    "title": "Replicated jobs",
+    "name": "Name",
+    "replicas": "Jobs",
+    "completions": "Completions / parallelism",
+    "ready": "Ready",
+    "active": "Active",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "dependsOn": "Depends on"
+  },
+  "rules": {
+    "title": "Failure policy rules",
+    "name": "Rule",
+    "action": "Action",
+    "onFailure": "On Job failures",
+    "targets": "Replicated jobs"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "job": "Job",
+    "replicatedJob": "Replicated job",
+    "index": "Index",
+    "state": "State",
+    "attempt": "Restart attempt",
+    "reason": "Failure"
+  },
+  "pods": {
+    "title": "Pods",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Status"
+  },
+  "yes": "Yes",
+  "loading": "Loading…",
+  "listUnknown": "The list could not be read.",
+  "noJobs": "No Job exists.",
+  "noPods": "No Pod exists.",
+  "morePods": "The first {{shown}} of {{total}} are shown, those not running first.",
+  "truncated": "Only the first {{max}} are read: the list is incomplete."
+}

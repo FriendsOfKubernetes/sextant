@@ -1,0 +1,131 @@
+{
+  "sidebar": {
+    "rayClusters": "Ray Clusters",
+    "rayJobs": "Ray Jobs",
+    "rayServices": "Ray Services"
+  },
+  "badge_other": "주의가 필요한 개체 {{count}}개",
+  "clusterState": {
+    "ready": "준비됨",
+    "provisioning": "생성 중",
+    "headNotReady": "Head 준비 안 됨",
+    "suspending": "일시 중단 중",
+    "suspended": "일시 중단됨",
+    "failed": "실패"
+  },
+  "jobState": {
+    "succeeded": "성공",
+    "running": "실행 중",
+    "pending": "대기 중",
+    "retrying": "재시도 중",
+    "stopped": "중지됨",
+    "suspended": "일시 중단됨",
+    "failed": "실패"
+  },
+  "serviceState": {
+    "ready": "준비됨",
+    "upgrading": "업그레이드 중",
+    "notReady": "준비 안 됨",
+    "suspended": "일시 중단됨",
+    "failed": "실패"
+  },
+  "columns": {
+    "status": "상태",
+    "workers": "Worker",
+    "headIP": "Head IP",
+    "rayVersion": "Ray 버전",
+    "jobStatus": "작업 상태",
+    "deploymentStatus": "배포 상태",
+    "cluster": "Ray 클러스터",
+    "started": "시작",
+    "applications": "애플리케이션",
+    "endpoints": "엔드포인트",
+    "activeCluster": "활성 클러스터"
+  },
+  "fields": {
+    "status": "상태",
+    "rayVersion": "Ray 버전",
+    "workers": "Worker",
+    "workerBounds": "Worker 범위",
+    "headPod": "Head Pod",
+    "headPodIP": "Head Pod IP",
+    "headService": "Head Service",
+    "headServiceIP": "Head Service IP",
+    "endpoints": "엔드포인트",
+    "desired": "요청된 리소스",
+    "jobStatus": "작업 상태",
+    "deploymentStatus": "배포 상태",
+    "reason": "이유",
+    "rayCluster": "Ray 클러스터",
+    "clusterSelector": "클러스터 선택기",
+    "submissionMode": "제출 모드",
+    "submitter": "제출 Job",
+    "jobId": "작업 ID",
+    "dashboardURL": "대시보드 URL",
+    "startTime": "시작",
+    "endTime": "종료",
+    "succeeded": "성공한 시도",
+    "failed": "실패한 시도",
+    "shutdown": "완료 후 클러스터 삭제",
+    "trafficPercent": "트래픽",
+    "targetCapacity": "목표 용량",
+    "serviceStatus": "서비스 상태",
+    "serveService": "Serve Service",
+    "serveEndpoints": "Serve 엔드포인트",
+    "upgradeStrategy": "업그레이드 전략",
+    "upgrade": "업그레이드 진행 중"
+  },
+  "workersReady": "{{desired}}개 중 {{ready}}개 준비됨",
+  "bounds": "{{min}}~{{max}}",
+  "desiredResource": {
+    "CPU": "CPU: {{value}}",
+    "Memory": "메모리: {{value}}",
+    "GPU": "GPU: {{value}}",
+    "TPU": "TPU: {{value}}"
+  },
+  "yes": "예",
+  "no": "아니요",
+  "percent": "{{value}}%",
+  "suspendedNote": {
+    "suspended": "클러스터가 일시 중단되었습니다. KubeRay가 Pod를 삭제했습니다.",
+    "suspending": "클러스터를 일시 중단하는 중입니다. KubeRay가 Pod를 삭제하고 있습니다.",
+    "service": "서비스가 일시 중단되었습니다. KubeRay가 이 서비스를 위해 만든 것을 삭제했습니다."
+  },
+  "groups": {
+    "title": "Worker 그룹",
+    "name": "그룹",
+    "desired": "원하는 Pod",
+    "bounds": "복제본",
+    "ready": "준비된 Pod",
+    "suspended": "일시 중단됨",
+    "none": "클러스터에 Worker 그룹이 없습니다. Head가 작업을 처리합니다."
+  },
+  "pods": {
+    "title": "Pod",
+    "headLogs": "Head 로그",
+    "workerLogs": "Worker 로그",
+    "loading": "클러스터의 Pod를 찾는 중…",
+    "error": "클러스터의 Pod를 읽을 수 없습니다.",
+    "name": "Pod",
+    "type": "유형",
+    "group": "그룹",
+    "status": "상태",
+    "none": "클러스터에 Pod가 없습니다.",
+    "more_other": "Pod {{count}}개가 더 있지만 표시되지 않았습니다.",
+    "truncated": "클러스터의 Pod가 여기에 보관되는 수보다 많습니다. 목록이 불완전합니다."
+  },
+  "deploymentsHealthy": "{{total}}개 중 {{healthy}}개 정상",
+  "apps": {
+    "name": "애플리케이션",
+    "status": "상태",
+    "deployments": "배포",
+    "message": "메시지"
+  },
+  "entrypoint": "진입점",
+  "noEntrypoint": "진입점이 없습니다. 작업은 다른 방법으로 제출됩니다.",
+  "submitterLogs": "제출 로그",
+  "activeCluster": "활성 클러스터",
+  "pendingCluster": "대기 중인 클러스터(업그레이드)",
+  "serveConfig": "Serve 구성",
+  "noServeConfig": "serveConfigV2가 설정되지 않았습니다."
+}

@@ -1,0 +1,421 @@
+[
+ {
+  "apiVersion": "serving.kserve.io/v1alpha1",
+  "kind": "ClusterServingRuntime",
+  "metadata": {
+   "name": "kserve-sklearnserver",
+   "uid": "rt-kserve-sklearnserver",
+   "creationTimestamp": "2026-10-01T00:00:00Z"
+  },
+  "spec": {
+   "supportedModelFormats": [
+    {
+     "name": "sklearn",
+     "version": "1",
+     "autoSelect": true,
+     "priority": 1
+    }
+   ],
+   "protocolVersions": [
+    "v1",
+    "v2"
+   ],
+   "containers": [
+    {
+     "name": "kserve-container",
+     "image": "kserve/kserve-sklearnserver:v0.16.0"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1alpha1",
+  "kind": "ClusterServingRuntime",
+  "metadata": {
+   "name": "kserve-mlserver",
+   "uid": "rt-kserve-mlserver",
+   "creationTimestamp": "2026-10-01T00:00:00Z"
+  },
+  "spec": {
+   "supportedModelFormats": [
+    {
+     "name": "sklearn",
+     "version": "0",
+     "autoSelect": true,
+     "priority": 2
+    },
+    {
+     "name": "sklearn",
+     "version": "1",
+     "autoSelect": true,
+     "priority": 2
+    },
+    {
+     "name": "xgboost",
+     "version": "1",
+     "autoSelect": true,
+     "priority": 2
+    },
+    {
+     "name": "mlflow",
+     "version": "1",
+     "autoSelect": true,
+     "priority": 1
+    }
+   ],
+   "protocolVersions": [
+    "v2"
+   ],
+   "containers": [
+    {
+     "name": "kserve-container",
+     "image": "kserve/kserve-mlserver:v0.16.0"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1alpha1",
+  "kind": "ServingRuntime",
+  "metadata": {
+   "name": "team-sklearn-old",
+   "uid": "rt-team-sklearn-old",
+   "creationTimestamp": "2026-09-01T00:00:00Z",
+   "namespace": "default"
+  },
+  "spec": {
+   "supportedModelFormats": [
+    {
+     "name": "sklearn",
+     "autoSelect": true
+    }
+   ],
+   "protocolVersions": [
+    "v1"
+   ],
+   "containers": [
+    {
+     "name": "kserve-container",
+     "image": "kserve/team-sklearn-old:v0.16.0"
+    }
+   ],
+   "disabled": true
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1beta1",
+  "kind": "InferenceService",
+  "metadata": {
+   "name": "sklearn-iris",
+   "namespace": "default",
+   "uid": "isvc-1",
+   "creationTimestamp": "2026-10-22T10:00:00Z",
+   "annotations": {
+    "serving.kserve.io/deploymentMode": "Serverless"
+   }
+  },
+  "spec": {
+   "predictor": {
+    "canaryTrafficPercent": 10,
+    "minReplicas": 1,
+    "model": {
+     "modelFormat": {
+      "name": "sklearn"
+     },
+     "storageUri": "gs://kfserving-examples/models/sklearn/1.0/model-2",
+     "name": ""
+    }
+   }
+  },
+  "status": {
+   "url": "http://sklearn-iris.default.example.com",
+   "address": {
+    "url": "http://sklearn-iris.default.svc.cluster.local"
+   },
+   "deploymentMode": "Serverless",
+   "clusterServingRuntimeName": "kserve-sklearnserver",
+   "observedGeneration": 2,
+   "components": {
+    "predictor": {
+     "latestReadyRevision": "sklearn-iris-predictor-00002",
+     "latestCreatedRevision": "sklearn-iris-predictor-00002",
+     "previousRolledoutRevision": "sklearn-iris-predictor-00001",
+     "latestRolledoutRevision": "sklearn-iris-predictor-00001",
+     "url": "http://sklearn-iris-predictor.default.example.com",
+     "traffic": [
+      {
+       "tag": "latest",
+       "revisionName": "sklearn-iris-predictor-00002",
+       "percent": 10,
+       "latestRevision": true
+      },
+      {
+       "tag": "prev",
+       "revisionName": "sklearn-iris-predictor-00001",
+       "percent": 90,
+       "latestRevision": false
+      }
+     ]
+    }
+   },
+   "modelStatus": {
+    "transitionStatus": "UpToDate",
+    "states": {
+     "activeModelState": "Loaded",
+     "targetModelState": "Loaded"
+    },
+    "copies": {
+     "failedCopies": 0,
+     "totalCopies": 1
+    }
+   },
+   "conditions": [
+    {
+     "type": "IngressReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "LatestDeploymentReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "PredictorConfigurationReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "PredictorReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "PredictorRouteReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "Ready",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "RoutesReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1beta1",
+  "kind": "InferenceService",
+  "metadata": {
+   "name": "flowers",
+   "namespace": "default",
+   "uid": "isvc-2",
+   "creationTimestamp": "2026-10-22T11:00:00Z",
+   "annotations": {
+    "serving.kserve.io/deploymentMode": "RawDeployment"
+   }
+  },
+  "spec": {
+   "predictor": {
+    "model": {
+     "modelFormat": {
+      "name": "tensorflow"
+     },
+     "runtime": "kserve-tensorflow-serving",
+     "storageUri": "https://reader:s3cr3t@models.example.com/flowers.tar.gz?X-Amz-Signature=abc123"
+    }
+   }
+  },
+  "status": {
+   "deploymentMode": "RawDeployment",
+   "modelStatus": {
+    "transitionStatus": "BlockedByFailedLoad",
+    "states": {
+     "activeModelState": "",
+     "targetModelState": "FailedToLoad"
+    },
+    "lastFailureInfo": {
+     "location": "flowers-predictor-6d7f9c-x2k4q",
+     "reason": "ModelLoadFailed",
+     "message": "Failed to download model: 403 Forbidden",
+     "exitCode": 1,
+     "time": "2026-10-22T11:03:00Z"
+    }
+   },
+   "conditions": [
+    {
+     "type": "IngressReady",
+     "status": "False",
+     "lastTransitionTime": "2026-10-22T11:00:05Z",
+     "reason": "PredictorNotReady"
+    },
+    {
+     "type": "PredictorReady",
+     "status": "False",
+     "lastTransitionTime": "2026-10-22T11:00:05Z",
+     "reason": "ContainerNotReady",
+     "message": "storage-initializer: CrashLoopBackOff"
+    },
+    {
+     "type": "Ready",
+     "status": "False",
+     "lastTransitionTime": "2026-10-22T11:00:05Z",
+     "reason": "PredictorNotReady"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1beta1",
+  "kind": "InferenceService",
+  "metadata": {
+   "name": "torch-mnist",
+   "namespace": "default",
+   "uid": "isvc-3",
+   "creationTimestamp": "2026-10-22T12:00:00Z"
+  },
+  "spec": {
+   "predictor": {
+    "model": {
+     "modelFormat": {
+      "name": "pytorch"
+     },
+     "protocolVersion": "v2",
+     "storageUri": "pvc://models/mnist"
+    }
+   },
+   "transformer": {
+    "containers": [
+     {
+      "name": "kserve-container",
+      "image": "kserve/image-transformer:latest"
+     }
+    ]
+   }
+  },
+  "status": {
+   "conditions": [
+    {
+     "type": "IngressReady",
+     "status": "False",
+     "lastTransitionTime": "2026-10-22T12:00:10Z",
+     "reason": "IngressNotConfigured",
+     "message": "Ingress has not been configured yet"
+    },
+    {
+     "type": "PredictorReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "Ready",
+     "status": "False",
+     "lastTransitionTime": "2026-10-22T12:00:10Z",
+     "reason": "IngressNotConfigured"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1alpha1",
+  "kind": "InferenceGraph",
+  "metadata": {
+   "name": "model-chainer",
+   "namespace": "default",
+   "uid": "ig-1",
+   "creationTimestamp": "2026-10-22T13:00:00Z"
+  },
+  "spec": {
+   "nodes": {
+    "root": {
+     "routerType": "Sequence",
+     "steps": [
+      {
+       "serviceName": "sklearn-iris",
+       "name": "first"
+      },
+      {
+       "nodeName": "split",
+       "name": "second",
+       "data": "$response"
+      }
+     ]
+    },
+    "split": {
+     "routerType": "Splitter",
+     "steps": [
+      {
+       "serviceName": "torch-mnist",
+       "weight": 80
+      },
+      {
+       "serviceUrl": "http://user:pw@other.example.com/v1/models/x:predict?token=1",
+       "weight": 20
+      }
+     ]
+    }
+   }
+  },
+  "status": {
+   "url": "http://model-chainer.default.example.com",
+   "conditions": [
+    {
+     "type": "Ready",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.kserve.io/v1alpha1",
+  "kind": "TrainedModel",
+  "metadata": {
+   "name": "iris-v2",
+   "namespace": "default",
+   "uid": "tm-1",
+   "creationTimestamp": "2026-10-22T14:00:00Z"
+  },
+  "spec": {
+   "inferenceService": "sklearn-iris",
+   "model": {
+    "framework": "sklearn",
+    "storageUri": "gs://kfserving-examples/models/sklearn/1.0/model",
+    "memory": "256Mi"
+   }
+  },
+  "status": {
+   "url": "http://sklearn-iris.default.example.com/v1/models/iris-v2:predict",
+   "conditions": [
+    {
+     "type": "Ready",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    },
+    {
+     "type": "InferenceServiceReady",
+     "status": "True",
+     "lastTransitionTime": "2026-10-22T10:05:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+   "name": "sklearn-iris-predictor",
+   "namespace": "default",
+   "uid": "ksvc-1",
+   "labels": {
+    "serving.kserve.io/inferenceservice": "sklearn-iris",
+    "component": "predictor"
+   }
+  }
+ }
+]

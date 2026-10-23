@@ -1,0 +1,129 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_other": "주의가 필요한 InferenceService {{count}}개",
+  "state": {
+    "ready": "준비됨",
+    "progressing": "진행 중",
+    "notReady": "준비 안 됨",
+    "failed": "실패",
+    "stopped": "중지됨"
+  },
+  "columns": {
+    "status": "상태",
+    "url": "URL",
+    "modelFormat": "모델 형식",
+    "runtime": "런타임",
+    "mode": "모드",
+    "canary": "Canary %",
+    "formats": "모델 형식",
+    "protocols": "프로토콜",
+    "disabled": "사용 안 함",
+    "multiModel": "다중 모델",
+    "nodes": "그래프 노드",
+    "inferenceService": "InferenceService",
+    "framework": "프레임워크"
+  },
+  "fields": {
+    "status": "상태",
+    "url": "URL",
+    "address": "주소",
+    "deploymentMode": "배포 모드",
+    "recordedRuntime": "사용 중인 런타임",
+    "modelFormat": "모델 형식",
+    "runtime": "런타임",
+    "storageUri": "스토리지 URI",
+    "protocolVersion": "프로토콜",
+    "images": "이미지",
+    "replicas": "복제본",
+    "canaryTrafficPercent": "Canary 트래픽",
+    "workers": "다중 노드",
+    "componentUrl": "URL",
+    "latestReadyRevision": "최신 준비 리비전",
+    "latestCreatedRevision": "최신 생성 리비전",
+    "previousRolledoutRevision": "이전 리비전",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "전환",
+    "activeModelState": "활성 모델",
+    "targetModelState": "대상 모델",
+    "failureReason": "실패 이유",
+    "failureLocation": "실패 위치",
+    "failureTime": "실패 시각",
+    "exitCode": "종료 코드",
+    "copies": "사본",
+    "protocols": "프로토콜",
+    "disabled": "사용 안 함",
+    "multiModel": "다중 모델",
+    "multiNode": "다중 노드",
+    "inferenceService": "InferenceService",
+    "framework": "프레임워크",
+    "memory": "메모리"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative({{value}})",
+    "standard": "Standard: Deployment 및 Service({{value}})",
+    "modelMesh": "ModelMesh({{value}})",
+    "other": "{{value}}",
+    "default": "설정 안 됨: 클러스터 기본값이 적용됩니다"
+  },
+  "uriHidden": "자격 증명과 쿼리 숨김",
+  "bounds": "{{min}}~{{max}}",
+  "percent": "{{value}}%",
+  "copies": "{{total}}개 중 {{failed}}개 실패",
+  "yes": "예",
+  "no": "아니요",
+  "stoppedNote": "이 InferenceService는 의도적으로 중지되었습니다. KServe가 이를 제공하는 구성 요소를 제거했습니다.",
+  "traffic": {
+    "revision": "리비전",
+    "percent": "트래픽",
+    "tag": "태그",
+    "latest": "최신"
+  },
+  "modelStatus": "모델 상태",
+  "choice": {
+    "title": "서빙 런타임",
+    "fields": {
+      "named": "spec에 지정됨",
+      "auto": "KServe의 선택"
+    },
+    "loading": "서빙 런타임을 읽는 중…",
+    "notServed": "클러스터가 ServingRuntime 종류를 제공하지 않습니다.",
+    "unreadable": "일부 서빙 런타임을 읽을 수 없어 선택 결과를 알 수 없습니다.",
+    "noFormat": "Predictor가 모델 형식을 지정하지 않습니다. KServe는 런타임을 선택하지 않습니다.",
+    "none": "모델 형식 {{format}}을(를) 지원하는 서빙 런타임이 없습니다. KServe가 이 모델을 제공할 수 없습니다.",
+    "others": "KServe 순서에 따른 다른 후보: {{names}}",
+    "differs": "KServe가 마지막 조정 때 {{recorded}}을(를) 기록했습니다. 그 후 런타임이 변경되었습니다.",
+    "namedMissing": "spec에 지정된 런타임 {{name}}이(가) 이 namespace에도 클러스터에도 없습니다.",
+    "namedDisabled": "spec에 지정된 런타임 {{name}}이(가) 비활성화되어 있습니다.",
+    "namedProtocol": "spec에 지정된 런타임 {{name}}이(가) 모델의 프로토콜을 지원하지 않습니다.",
+    "namedFormat": "spec에 지정된 런타임 {{name}}이(가) 모델의 형식을 나열하지 않습니다."
+  },
+  "formats": {
+    "title": "모델 형식",
+    "name": "형식",
+    "version": "버전",
+    "autoSelect": "자동 선택",
+    "priority": "우선순위"
+  },
+  "graph": {
+    "node": "노드 {{name}}({{type}})",
+    "toNode": "노드 {{name}}",
+    "step": "단계",
+    "target": "대상",
+    "weight": "가중치",
+    "condition": "조건",
+    "dependency": "종속성"
+  }
+}

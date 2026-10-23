@@ -1,0 +1,157 @@
+{
+  "badge_one": "{{count}} Pod attend des périphériques",
+  "badge_many": "{{count}} de Pods attendent des périphériques",
+  "badge_other": "{{count}} Pods attendent des périphériques",
+  "loading": "Chargement…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "État",
+    "classes": "Classes de périphériques",
+    "devices": "Périphériques",
+    "node": "Nœud",
+    "reservedFor": "Réservé pour",
+    "requests": "Demandes",
+    "selectors": "Sélecteurs",
+    "drivers": "Pilotes",
+    "extendedResource": "Ressource étendue",
+    "driver": "Pilote",
+    "pool": "Pool",
+    "deviceCount": "Périphériques"
+  },
+  "state": {
+    "inUse": "En cours d’utilisation",
+    "allocated": "Alloué",
+    "pending": "En attente",
+    "bindingFailed": "Liaison échouée",
+    "deleting": "Suppression"
+  },
+  "hint": {
+    "inUse": "Des périphériques sont alloués et réservés pour les consommateurs ci-dessous.",
+    "allocated": "Des périphériques sont alloués, mais aucun Pod ne les a encore réservés.",
+    "pending": "Aucun périphérique n’est encore alloué. Le planificateur les alloue quand il place le premier Pod qui utilise ce claim.",
+    "bindingFailed": "Le pilote signale que la liaison d’un périphérique a échoué : le planificateur essaiera un autre nœud.",
+    "deleting": "Le claim est en cours de suppression ; ses périphériques seront libérés quand plus aucun Pod ne l’utilisera."
+  },
+  "scope": {
+    "node": "Un nœud",
+    "allNodes": "Tous les nœuds",
+    "selector": "Nœuds par sélecteur",
+    "perDevice": "Défini par périphérique",
+    "unknown": "Non indiqué"
+  },
+  "fields": {
+    "state": "État",
+    "node": "Nœud",
+    "nodeSelector": "Sélecteur de nœuds",
+    "allocatedAt": "Alloué",
+    "madeFor": "Créé pour le Pod",
+    "reservedFor": "Réservé pour",
+    "extendedResource": "Ressource étendue",
+    "driver": "Pilote",
+    "pool": "Pool",
+    "poolGeneration": "Génération du pool",
+    "poolSlices": "Slices dans le pool",
+    "reach": "Périphériques accessibles depuis"
+  },
+  "requests": {
+    "title": "Demandes",
+    "request": "Demande",
+    "class": "Classe de périphériques",
+    "selectors": "Sélecteurs (CEL)",
+    "amount": "Quantité",
+    "choice": "{{request}} : choix {{n}} ({{choice}})",
+    "all": "Tous les périphériques correspondants",
+    "count_one": "{{count}} périphérique",
+    "count_many": "{{count}} de périphériques",
+    "count_other": "{{count}} périphériques",
+    "withAdminAccess": "{{amount}}, avec accès administrateur",
+    "none": "Aucune demande."
+  },
+  "results": {
+    "title": "Périphériques alloués",
+    "request": "Demande",
+    "driver": "Pilote",
+    "device": "Pool / périphérique",
+    "notes": "Remarques",
+    "adminAccess": "Accès administrateur.",
+    "bindingFailed": "Liaison échouée : {{conditions}}.",
+    "bindingPending": "En attente de : {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pods qui attendent ce claim",
+    "none": "Aucun Pod Pending de ce namespace n’utilise ce claim.",
+    "unknown": "Les Pods Pending de ce namespace n’ont pas pu être lus."
+  },
+  "reason": {
+    "notCreated": "Le claim que le Pod crée à partir de son modèle n’existe pas encore : le contrôleur de resource claims ne l’a pas créé.",
+    "notFound": "Un claim que le Pod nomme n’existe pas.",
+    "deleting": "Un claim qu’utilise le Pod est en cours de suppression.",
+    "inUse": "Le claim est réservé par d’autres Pods et ne peut pas être partagé avec celui-ci.",
+    "noClass": "Une demande nomme une classe de périphériques qui n’existe pas.",
+    "cannotAllocate": "Aucun nœud n’a de périphériques libres qui correspondent à toutes les demandes des claims du Pod.",
+    "notOnNode": "Les périphériques du claim sont alloués sur un autre nœud que ceux où le Pod peut s’exécuter.",
+    "allocating": "Une autre tentative de planification alloue le claim en ce moment.",
+    "notOwner": "Le claim a été créé pour un autre Pod."
+  },
+  "class": {
+    "selectors": "Sélecteurs (CEL)",
+    "noSelectors": "Aucun sélecteur : tout périphérique des pilotes correspond.",
+    "celNote": "Les expressions sont affichées telles qu’écrites ; Sextant ne les évalue pas.",
+    "config": "Configuration des pilotes"
+  },
+  "devices": {
+    "title": "Périphériques",
+    "node": "Nœud",
+    "driver": "Pilote",
+    "device": "Pool / périphérique",
+    "product": "Produit",
+    "capacity": "Capacité",
+    "allocatedTo": "Alloué à",
+    "free": "Libre",
+    "unknown": "Impossible à dire",
+    "none": "Aucun périphérique.",
+    "cut_one": "Seul le premier périphérique ({{count}}) sur {{total}} est affiché.",
+    "cut_many": "Seuls les {{count}} premiers périphériques sur {{total}} sont affichés.",
+    "cut_other": "Seuls les {{count}} premiers périphériques sur {{total}} sont affichés."
+  },
+  "pod": {
+    "title": "Périphériques",
+    "name": "Nom dans le Pod",
+    "claim": "Claim",
+    "state": "État",
+    "devices": "Périphériques",
+    "containers": "Conteneurs",
+    "fromTemplate": "Depuis le modèle {{template}}",
+    "notNeeded": "Inutile (modèle {{template}})",
+    "notCreated": "Pas encore créé",
+    "missing": "N’existe pas",
+    "unknown": "Impossible à dire",
+    "notServed": "Le cluster ne sert pas les ResourceClaims de resource.k8s.io."
+  },
+  "node": {
+    "title": "Périphériques DRA",
+    "truncated_one": "Seul le premier ResourceSlice ({{count}}) est lu.",
+    "truncated_many": "Seuls les {{count}} premiers ResourceSlices sont lus.",
+    "truncated_other": "Seuls les {{count}} premiers ResourceSlices sont lus."
+  },
+  "page": {
+    "sidebar": "Périphériques",
+    "title": "Périphériques",
+    "hint": "Chaque périphérique que les pilotes publient dans des ResourceSlices, par nœud, avec le claim qui le détient.",
+    "total_one": "{{count}} périphérique",
+    "total_many": "{{count}} de périphériques",
+    "total_other": "{{count}} périphériques",
+    "totals_one": "{{count}} périphérique, {{allocated}} alloués",
+    "totals_many": "{{count}} de périphériques, {{allocated}} alloués",
+    "totals_other": "{{count}} périphériques, {{allocated}} alloués",
+    "slicesTruncated_one": "Seul le premier ResourceSlice ({{count}}) est lu.",
+    "slicesTruncated_many": "Seuls les {{count}} premiers ResourceSlices sont lus.",
+    "slicesTruncated_other": "Seuls les {{count}} premiers ResourceSlices sont lus.",
+    "claimsUnknown": "Les ResourceClaims du cluster n’ont pas pu être lus en entier : impossible de dire quels périphériques sont alloués."
+  }
+}

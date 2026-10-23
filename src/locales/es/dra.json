@@ -1,0 +1,157 @@
+{
+  "badge_one": "{{count}} Pod espera dispositivos",
+  "badge_many": "{{count}} de Pods esperan dispositivos",
+  "badge_other": "{{count}} Pods esperan dispositivos",
+  "loading": "Cargando…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Estado",
+    "classes": "Clases de dispositivo",
+    "devices": "Dispositivos",
+    "node": "Nodo",
+    "reservedFor": "Reservado para",
+    "requests": "Solicitudes",
+    "selectors": "Selectores",
+    "drivers": "Controladores",
+    "extendedResource": "Recurso extendido",
+    "driver": "Controlador",
+    "pool": "Pool",
+    "deviceCount": "Dispositivos"
+  },
+  "state": {
+    "inUse": "En uso",
+    "allocated": "Asignado",
+    "pending": "Pendiente",
+    "bindingFailed": "Vinculación fallida",
+    "deleting": "Eliminándose"
+  },
+  "hint": {
+    "inUse": "Hay dispositivos asignados y reservados para los consumidores de abajo.",
+    "allocated": "Hay dispositivos asignados, pero ningún Pod los ha reservado todavía.",
+    "pending": "Aún no hay dispositivos asignados. El planificador los asigna cuando coloca el primer Pod que usa este claim.",
+    "bindingFailed": "El controlador informa de que la vinculación de un dispositivo falló: el planificador probará otro nodo.",
+    "deleting": "El claim se está eliminando; sus dispositivos se liberan cuando ningún Pod lo use."
+  },
+  "scope": {
+    "node": "Un nodo",
+    "allNodes": "Todos los nodos",
+    "selector": "Nodos por selector",
+    "perDevice": "Definido por dispositivo",
+    "unknown": "No indicado"
+  },
+  "fields": {
+    "state": "Estado",
+    "node": "Nodo",
+    "nodeSelector": "Selector de nodos",
+    "allocatedAt": "Asignado",
+    "madeFor": "Creado para el Pod",
+    "reservedFor": "Reservado para",
+    "extendedResource": "Recurso extendido",
+    "driver": "Controlador",
+    "pool": "Pool",
+    "poolGeneration": "Generación del pool",
+    "poolSlices": "Slices en el pool",
+    "reach": "Dispositivos accesibles desde"
+  },
+  "requests": {
+    "title": "Solicitudes",
+    "request": "Solicitud",
+    "class": "Clase de dispositivo",
+    "selectors": "Selectores (CEL)",
+    "amount": "Cantidad",
+    "choice": "{{request}}: opción {{n}} ({{choice}})",
+    "all": "Todos los dispositivos que coinciden",
+    "count_one": "{{count}} dispositivo",
+    "count_many": "{{count}} de dispositivos",
+    "count_other": "{{count}} dispositivos",
+    "withAdminAccess": "{{amount}}, con acceso de administrador",
+    "none": "Sin solicitudes."
+  },
+  "results": {
+    "title": "Dispositivos asignados",
+    "request": "Solicitud",
+    "driver": "Controlador",
+    "device": "Pool / dispositivo",
+    "notes": "Notas",
+    "adminAccess": "Acceso de administrador.",
+    "bindingFailed": "Vinculación fallida: {{conditions}}.",
+    "bindingPending": "Esperando: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pods que esperan este claim",
+    "none": "Ningún Pod Pending de este namespace usa este claim.",
+    "unknown": "No se pudieron leer los Pods Pending de este namespace."
+  },
+  "reason": {
+    "notCreated": "El claim que el Pod crea a partir de su plantilla aún no existe: el controlador de resource claims no lo ha creado.",
+    "notFound": "Un claim que nombra el Pod no existe.",
+    "deleting": "Un claim que usa el Pod se está eliminando.",
+    "inUse": "El claim está reservado por otros Pods y no puede compartirse con este.",
+    "noClass": "Una solicitud nombra una clase de dispositivo que no existe.",
+    "cannotAllocate": "Ningún nodo tiene dispositivos libres que cumplan todas las solicitudes de los claims del Pod.",
+    "notOnNode": "Los dispositivos del claim están asignados en otro nodo distinto de aquellos donde puede ejecutarse el Pod.",
+    "allocating": "Otro intento de planificación está asignando el claim en este momento.",
+    "notOwner": "El claim se creó para otro Pod."
+  },
+  "class": {
+    "selectors": "Selectores (CEL)",
+    "noSelectors": "Sin selectores: coincide cualquier dispositivo de los controladores.",
+    "celNote": "Las expresiones se muestran tal como están escritas; Sextant no las evalúa.",
+    "config": "Configuración de los controladores"
+  },
+  "devices": {
+    "title": "Dispositivos",
+    "node": "Nodo",
+    "driver": "Controlador",
+    "device": "Pool / dispositivo",
+    "product": "Producto",
+    "capacity": "Capacidad",
+    "allocatedTo": "Asignado a",
+    "free": "Libre",
+    "unknown": "No se puede saber",
+    "none": "Sin dispositivos.",
+    "cut_one": "Solo se muestra el primer dispositivo ({{count}}) de {{total}}.",
+    "cut_many": "Solo se muestran los primeros {{count}} dispositivos de {{total}}.",
+    "cut_other": "Solo se muestran los primeros {{count}} dispositivos de {{total}}."
+  },
+  "pod": {
+    "title": "Dispositivos",
+    "name": "Nombre en el Pod",
+    "claim": "Claim",
+    "state": "Estado",
+    "devices": "Dispositivos",
+    "containers": "Contenedores",
+    "fromTemplate": "De la plantilla {{template}}",
+    "notNeeded": "No necesario (plantilla {{template}})",
+    "notCreated": "Aún no creado",
+    "missing": "No existe",
+    "unknown": "No se puede saber",
+    "notServed": "El clúster no sirve ResourceClaims de resource.k8s.io."
+  },
+  "node": {
+    "title": "Dispositivos DRA",
+    "truncated_one": "Solo se lee el primer ResourceSlice ({{count}}).",
+    "truncated_many": "Solo se leen los primeros {{count}} ResourceSlices.",
+    "truncated_other": "Solo se leen los primeros {{count}} ResourceSlices."
+  },
+  "page": {
+    "sidebar": "Dispositivos",
+    "title": "Dispositivos",
+    "hint": "Cada dispositivo que los controladores publican en ResourceSlices, por nodo, con el claim que lo tiene.",
+    "total_one": "{{count}} dispositivo",
+    "total_many": "{{count}} de dispositivos",
+    "total_other": "{{count}} dispositivos",
+    "totals_one": "{{count}} dispositivo, {{allocated}} asignados",
+    "totals_many": "{{count}} de dispositivos, {{allocated}} asignados",
+    "totals_other": "{{count}} dispositivos, {{allocated}} asignados",
+    "slicesTruncated_one": "Solo se lee el primer ResourceSlice ({{count}}).",
+    "slicesTruncated_many": "Solo se leen los primeros {{count}} ResourceSlices.",
+    "slicesTruncated_other": "Solo se leen los primeros {{count}} ResourceSlices.",
+    "claimsUnknown": "No se pudieron leer por completo los ResourceClaims del clúster, así que no se puede saber qué dispositivos están asignados."
+  }
+}

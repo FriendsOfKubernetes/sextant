@@ -1,0 +1,164 @@
+{
+  "badge_one": "{{count}} Pod чекає на пристрої",
+  "badge_few": "{{count}} Pod чекають на пристрої",
+  "badge_many": "{{count}} Pod чекають на пристрої",
+  "badge_other": "{{count}} Pod чекають на пристрої",
+  "loading": "Завантаження…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Стан",
+    "classes": "Класи пристроїв",
+    "devices": "Пристрої",
+    "node": "Вузол",
+    "reservedFor": "Зарезервовано для",
+    "requests": "Запити",
+    "selectors": "Селектори",
+    "drivers": "Драйвери",
+    "extendedResource": "Розширений ресурс",
+    "driver": "Драйвер",
+    "pool": "Пул",
+    "deviceCount": "Пристрої"
+  },
+  "state": {
+    "inUse": "Використовується",
+    "allocated": "Виділено",
+    "pending": "Очікує",
+    "bindingFailed": "Прив’язка не вдалася",
+    "deleting": "Видаляється"
+  },
+  "hint": {
+    "inUse": "Пристрої виділено й зарезервовано для споживачів нижче.",
+    "allocated": "Пристрої виділено, але жоден Pod ще не зарезервував їх.",
+    "pending": "Пристрої ще не виділено. Планувальник виділить їх, коли розмістить перший Pod, що використовує цей claim.",
+    "bindingFailed": "Драйвер повідомляє, що прив’язка пристрою не вдалася: планувальник спробує інший вузол.",
+    "deleting": "Claim видаляється; його пристрої звільняться, коли жоден Pod не використовуватиме його."
+  },
+  "scope": {
+    "node": "Один вузол",
+    "allNodes": "Усі вузли",
+    "selector": "Вузли за селектором",
+    "perDevice": "Задається для кожного пристрою",
+    "unknown": "Не вказано"
+  },
+  "fields": {
+    "state": "Стан",
+    "node": "Вузол",
+    "nodeSelector": "Селектор вузлів",
+    "allocatedAt": "Виділено",
+    "madeFor": "Створено для Pod",
+    "reservedFor": "Зарезервовано для",
+    "extendedResource": "Розширений ресурс",
+    "driver": "Драйвер",
+    "pool": "Пул",
+    "poolGeneration": "Покоління пулу",
+    "poolSlices": "Зрізів у пулі",
+    "reach": "Пристрої доступні з"
+  },
+  "requests": {
+    "title": "Запити",
+    "request": "Запит",
+    "class": "Клас пристроїв",
+    "selectors": "Селектори (CEL)",
+    "amount": "Кількість",
+    "choice": "{{request}}: варіант {{n}} ({{choice}})",
+    "all": "Усі відповідні пристрої",
+    "count_one": "{{count}} пристрій",
+    "count_few": "{{count}} пристрої",
+    "count_many": "{{count}} пристроїв",
+    "count_other": "{{count}} пристрою",
+    "withAdminAccess": "{{amount}}, з правами адміністратора",
+    "none": "Запитів немає."
+  },
+  "results": {
+    "title": "Виділені пристрої",
+    "request": "Запит",
+    "driver": "Драйвер",
+    "device": "Пул / пристрій",
+    "notes": "Примітки",
+    "adminAccess": "Права адміністратора.",
+    "bindingFailed": "Прив’язка не вдалася: {{conditions}}.",
+    "bindingPending": "Очікує: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pod, що чекають на цей claim",
+    "none": "Жоден Pod у стані Pending з цього namespace не використовує цей claim.",
+    "unknown": "Не вдалося прочитати Pod у стані Pending з цього namespace."
+  },
+  "reason": {
+    "notCreated": "Claim, який Pod створює зі свого шаблону, ще не існує: контролер resource claim його не створив.",
+    "notFound": "Claim, указаний у Pod, не існує.",
+    "deleting": "Claim, який використовує Pod, видаляється.",
+    "inUse": "Claim зарезервовано іншими Pod, і він не може бути спільним із цим.",
+    "noClass": "Запит указує клас пристроїв, якого не існує.",
+    "cannotAllocate": "На жодному вузлі немає вільних пристроїв, що відповідають усім запитам claim цього Pod.",
+    "notOnNode": "Пристрої claim виділено на іншому вузлі, а не на тих, де може працювати Pod.",
+    "allocating": "Інша спроба планування саме зараз виділяє пристрої для цього claim.",
+    "notOwner": "Claim було створено для іншого Pod."
+  },
+  "class": {
+    "selectors": "Селектори (CEL)",
+    "noSelectors": "Селекторів немає: підходить будь-який пристрій драйверів.",
+    "celNote": "Вирази показано так, як їх написано; Sextant їх не обчислює.",
+    "config": "Налаштування драйверів"
+  },
+  "devices": {
+    "title": "Пристрої",
+    "node": "Вузол",
+    "driver": "Драйвер",
+    "device": "Пул / пристрій",
+    "product": "Модель",
+    "capacity": "Ємність",
+    "allocatedTo": "Виділено для",
+    "free": "Вільний",
+    "unknown": "Неможливо сказати",
+    "none": "Пристроїв немає.",
+    "cut_one": "Показано лише перший {{count}} пристрій із {{total}}.",
+    "cut_few": "Показано лише перші {{count}} пристрої з {{total}}.",
+    "cut_many": "Показано лише перші {{count}} пристроїв з {{total}}.",
+    "cut_other": "Показано лише перші {{count}} пристрою з {{total}}."
+  },
+  "pod": {
+    "title": "Пристрої",
+    "name": "Ім’я в Pod",
+    "claim": "Claim",
+    "state": "Стан",
+    "devices": "Пристрої",
+    "containers": "Контейнери",
+    "fromTemplate": "Із шаблону {{template}}",
+    "notNeeded": "Не потрібен (шаблон {{template}})",
+    "notCreated": "Ще не створено",
+    "missing": "Не існує",
+    "unknown": "Неможливо сказати",
+    "notServed": "Кластер не обслуговує ResourceClaim із resource.k8s.io."
+  },
+  "node": {
+    "title": "Пристрої DRA",
+    "truncated_one": "Прочитано лише перший {{count}} ResourceSlice.",
+    "truncated_few": "Прочитано лише перші {{count}} ResourceSlice.",
+    "truncated_many": "Прочитано лише перші {{count}} ResourceSlice.",
+    "truncated_other": "Прочитано лише перші {{count}} ResourceSlice."
+  },
+  "page": {
+    "sidebar": "Пристрої",
+    "title": "Пристрої",
+    "hint": "Усі пристрої, які драйвери публікують у ResourceSlice, за вузлами, з claim, що їх тримає.",
+    "total_one": "{{count}} пристрій",
+    "total_few": "{{count}} пристрої",
+    "total_many": "{{count}} пристроїв",
+    "total_other": "{{count}} пристрою",
+    "totals_one": "{{count}} пристрій, виділено {{allocated}}",
+    "totals_few": "{{count}} пристрої, виділено {{allocated}}",
+    "totals_many": "{{count}} пристроїв, виділено {{allocated}}",
+    "totals_other": "{{count}} пристрою, виділено {{allocated}}",
+    "slicesTruncated_one": "Прочитано лише перший {{count}} ResourceSlice.",
+    "slicesTruncated_few": "Прочитано лише перші {{count}} ResourceSlice.",
+    "slicesTruncated_many": "Прочитано лише перші {{count}} ResourceSlice.",
+    "slicesTruncated_other": "Прочитано лише перші {{count}} ResourceSlice.",
+    "claimsUnknown": "ResourceClaim кластера не вдалося прочитати повністю, тому неможливо сказати, які пристрої виділено."
+  }
+}

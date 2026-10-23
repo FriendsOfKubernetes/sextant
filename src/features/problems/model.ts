@@ -22,6 +22,12 @@ import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../clust
 import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
 import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
+import { DRA_GROUP } from "../dra/model";
+import { isGpuOperatorKind } from "../gpu-operator/model";
+import { isKind as isKueueKind, KUEUE_GROUP, CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, queueProblems as kueueQueueProblems, workloadProblems as kueueWorkloadProblems, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
+import { isJobSet, jobSetProblems } from "../jobset/model";
+import { RAY_GROUP, rayKind, rayProblems } from "../kuberay/model";
+import { INFERENCE_SERVICE, isKind as isKServeKind, kserveProblems } from "../kserve/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import { STRIMZI_GROUP, strimziProblems } from "../strimzi/model";
 import {
@@ -45,6 +51,9 @@ export const PROBLEM_CATEGORIES = [
   "pods",
   "workloads",
   "jobs",
+  "kueue",
+  "kueueWorkloads",
+  "jobset",
   "vpa",
   "volumes",
   "certificates",
@@ -59,6 +68,10 @@ export const PROBLEM_CATEGORIES = [
   "knative",
   "crossplane",
   "clusterApi",
+  "dra",
+  "gpuOperator",
+  "kuberay",
+  "kserve",
   "policies",
   "externalSecrets",
   "sealedSecrets",
@@ -90,6 +103,8 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster. And Sealed Secrets
  * (`sealedSecrets`, #240, amended ADR-0109): every SealedSecret of the cluster and metadata lists of Secrets, a
  * background cost like Traefik's and Reflector's, so it is asked for the same way.
+ * And Kueue Workloads (`kueueWorkloads`, #246, ADR-0114): every Workload of the cluster with its pod templates (≤ 5000);
+ * the queues themselves (`kueue`) are few and on by default.
  */
 export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
   "security",
@@ -101,6 +116,7 @@ export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
   "traefik",
   "reflector",
   "sealedSecrets",
+  "kueueWorkloads",
 ];
 
 /** How long a container restart or an OOM kill counts after it happened. */
@@ -251,6 +267,11 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (same(kind, NODE)) return "nodes";
   if (same(kind, DEPLOYMENT) || same(kind, STATEFULSET) || same(kind, DAEMONSET)) return "workloads";
   if (same(kind, JOB)) return "jobs";
+  // Kueue (#246): queues that admit nothing; Workloads waiting or evicted (opt-in, `kueueWorkloads`).
+  if (kind.group === KUEUE_GROUP && isKueueKind(kind, KUEUE_CLUSTER_QUEUE, KUEUE_LOCAL_QUEUE)) return "kueue";
+  if (kind.group === KUEUE_GROUP && isKueueKind(kind, KUEUE_WORKLOAD)) return "kueueWorkloads";
+  // JobSet (#247): failed JobSets and restarts near the limit.
+  if (isJobSet(kind)) return "jobset";
   if (same(kind, PVC)) return "volumes";
   if (same(kind, EVENT)) return "events";
   if (same(kind, CERTIFICATE)) return "certificates";
@@ -275,6 +296,13 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (kind.group === CNPG_GROUP) return "cnpg";
   // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
   if (isClusterApiProblemKind(kind)) return "clusterApi";
+  // Dynamic Resource Allocation (#244): pods waiting for devices, judged by the provider of features/dra.
+  if (kind.group === DRA_GROUP) return "dra";
+  // NVIDIA GPU Operator (#245): ClusterPolicies, NVIDIADrivers and their DaemonSets, judged by features/gpu-operator.
+  if (isGpuOperatorKind(kind)) return "gpuOperator";
+  // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
+  if (kind.group === RAY_GROUP && rayKind(kind)) return "kuberay";
+  if (isKServeKind(kind, INFERENCE_SERVICE)) return "kserve";
   if (kind.group === STRIMZI_GROUP) return "strimzi";
   if (kind.group === MONITORING_GROUP) return "prometheusOperator";
   return undefined;
@@ -703,6 +731,12 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return daemonSetProblems(obj);
     case "jobs":
       return jobProblems(obj);
+    case "kueue":
+      return kueueQueueProblems(kind, obj);
+    case "kueueWorkloads":
+      return kueueWorkloadProblems(obj);
+    case "jobset":
+      return jobSetProblems(obj);
     case "volumes":
       return claimProblems(obj);
     case "events":
@@ -731,6 +765,10 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return cnpgProblems(kind, obj);
     case "clusterApi":
       return capiProblems(kind, obj);
+    case "kuberay":
+      return rayProblems(kind, obj);
+    case "kserve":
+      return kserveProblems(kind, obj);
     case "strimzi":
       return strimziProblems(obj);
     case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.
@@ -747,6 +785,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
     case "sealedSecrets": // A missing target Secret is another object: the provider of features/sealed-secrets finds both.
     case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
+    case "dra": // A pod waits for a claim (two objects): the provider of features/dra finds it.
+    case "gpuOperator": // Components are DaemonSets and MIG states are node labels: the provider of features/gpu-operator.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];

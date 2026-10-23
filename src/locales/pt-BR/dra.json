@@ -1,0 +1,157 @@
+{
+  "badge_one": "{{count}} Pod aguarda dispositivos",
+  "badge_many": "{{count}} de Pods aguardam dispositivos",
+  "badge_other": "{{count}} Pods aguardam dispositivos",
+  "loading": "Carregando…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Estado",
+    "classes": "Classes de dispositivo",
+    "devices": "Dispositivos",
+    "node": "Nó",
+    "reservedFor": "Reservado para",
+    "requests": "Solicitações",
+    "selectors": "Seletores",
+    "drivers": "Drivers",
+    "extendedResource": "Recurso estendido",
+    "driver": "Driver",
+    "pool": "Pool",
+    "deviceCount": "Dispositivos"
+  },
+  "state": {
+    "inUse": "Em uso",
+    "allocated": "Alocado",
+    "pending": "Pendente",
+    "bindingFailed": "Vinculação falhou",
+    "deleting": "Excluindo"
+  },
+  "hint": {
+    "inUse": "Os dispositivos estão alocados e reservados para os consumidores abaixo.",
+    "allocated": "Os dispositivos estão alocados, mas nenhum Pod os reservou ainda.",
+    "pending": "Nenhum dispositivo foi alocado ainda. O agendador os aloca quando posiciona o primeiro Pod que usa este claim.",
+    "bindingFailed": "O driver informa que a vinculação de um dispositivo falhou: o agendador tentará outro nó.",
+    "deleting": "O claim está sendo excluído; seus dispositivos são liberados quando nenhum Pod o usar."
+  },
+  "scope": {
+    "node": "Um nó",
+    "allNodes": "Todos os nós",
+    "selector": "Nós por seletor",
+    "perDevice": "Definido por dispositivo",
+    "unknown": "Não informado"
+  },
+  "fields": {
+    "state": "Estado",
+    "node": "Nó",
+    "nodeSelector": "Seletor de nós",
+    "allocatedAt": "Alocado",
+    "madeFor": "Criado para o Pod",
+    "reservedFor": "Reservado para",
+    "extendedResource": "Recurso estendido",
+    "driver": "Driver",
+    "pool": "Pool",
+    "poolGeneration": "Geração do pool",
+    "poolSlices": "Slices no pool",
+    "reach": "Dispositivos acessíveis a partir de"
+  },
+  "requests": {
+    "title": "Solicitações",
+    "request": "Solicitação",
+    "class": "Classe de dispositivo",
+    "selectors": "Seletores (CEL)",
+    "amount": "Quantidade",
+    "choice": "{{request}}: opção {{n}} ({{choice}})",
+    "all": "Todos os dispositivos correspondentes",
+    "count_one": "{{count}} dispositivo",
+    "count_many": "{{count}} de dispositivos",
+    "count_other": "{{count}} dispositivos",
+    "withAdminAccess": "{{amount}}, com acesso de administrador",
+    "none": "Nenhuma solicitação."
+  },
+  "results": {
+    "title": "Dispositivos alocados",
+    "request": "Solicitação",
+    "driver": "Driver",
+    "device": "Pool / dispositivo",
+    "notes": "Observações",
+    "adminAccess": "Acesso de administrador.",
+    "bindingFailed": "Vinculação falhou: {{conditions}}.",
+    "bindingPending": "Aguardando: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pods que aguardam este claim",
+    "none": "Nenhum Pod Pending deste namespace usa este claim.",
+    "unknown": "Não foi possível ler os Pods Pending deste namespace."
+  },
+  "reason": {
+    "notCreated": "O claim que o Pod cria a partir do seu template ainda não existe: o controlador de resource claims não o criou.",
+    "notFound": "Um claim que o Pod nomeia não existe.",
+    "deleting": "Um claim que o Pod usa está sendo excluído.",
+    "inUse": "O claim está reservado por outros Pods e não pode ser compartilhado com este.",
+    "noClass": "Uma solicitação nomeia uma classe de dispositivo que não existe.",
+    "cannotAllocate": "Nenhum nó tem dispositivos livres que atendam a todas as solicitações dos claims do Pod.",
+    "notOnNode": "Os dispositivos do claim estão alocados em outro nó que não aqueles onde o Pod pode rodar.",
+    "allocating": "Outra tentativa de agendamento está alocando o claim neste momento.",
+    "notOwner": "O claim foi criado para outro Pod."
+  },
+  "class": {
+    "selectors": "Seletores (CEL)",
+    "noSelectors": "Sem seletores: qualquer dispositivo dos drivers corresponde.",
+    "celNote": "As expressões são mostradas como foram escritas; o Sextant não as avalia.",
+    "config": "Configuração dos drivers"
+  },
+  "devices": {
+    "title": "Dispositivos",
+    "node": "Nó",
+    "driver": "Driver",
+    "device": "Pool / dispositivo",
+    "product": "Produto",
+    "capacity": "Capacidade",
+    "allocatedTo": "Alocado para",
+    "free": "Livre",
+    "unknown": "Não é possível saber",
+    "none": "Nenhum dispositivo.",
+    "cut_one": "Só o primeiro dispositivo ({{count}}) de {{total}} é mostrado.",
+    "cut_many": "Só os primeiros {{count}} dispositivos de {{total}} são mostrados.",
+    "cut_other": "Só os primeiros {{count}} dispositivos de {{total}} são mostrados."
+  },
+  "pod": {
+    "title": "Dispositivos",
+    "name": "Nome no Pod",
+    "claim": "Claim",
+    "state": "Estado",
+    "devices": "Dispositivos",
+    "containers": "Contêineres",
+    "fromTemplate": "Do template {{template}}",
+    "notNeeded": "Não necessário (template {{template}})",
+    "notCreated": "Ainda não criado",
+    "missing": "Não existe",
+    "unknown": "Não é possível saber",
+    "notServed": "O cluster não serve ResourceClaims de resource.k8s.io."
+  },
+  "node": {
+    "title": "Dispositivos DRA",
+    "truncated_one": "Só o primeiro ResourceSlice ({{count}}) é lido.",
+    "truncated_many": "Só os primeiros {{count}} ResourceSlices são lidos.",
+    "truncated_other": "Só os primeiros {{count}} ResourceSlices são lidos."
+  },
+  "page": {
+    "sidebar": "Dispositivos",
+    "title": "Dispositivos",
+    "hint": "Cada dispositivo que os drivers publicam em ResourceSlices, por nó, com o claim que o detém.",
+    "total_one": "{{count}} dispositivo",
+    "total_many": "{{count}} de dispositivos",
+    "total_other": "{{count}} dispositivos",
+    "totals_one": "{{count}} dispositivo, {{allocated}} alocados",
+    "totals_many": "{{count}} de dispositivos, {{allocated}} alocados",
+    "totals_other": "{{count}} dispositivos, {{allocated}} alocados",
+    "slicesTruncated_one": "Só o primeiro ResourceSlice ({{count}}) é lido.",
+    "slicesTruncated_many": "Só os primeiros {{count}} ResourceSlices são lidos.",
+    "slicesTruncated_other": "Só os primeiros {{count}} ResourceSlices são lidos.",
+    "claimsUnknown": "Não foi possível ler por completo os ResourceClaims do cluster, então não é possível saber quais dispositivos estão alocados."
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "badge_other": "{{count}} 個 Pod 正在等待裝置",
+  "loading": "正在載入…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "狀態",
+    "classes": "裝置類別",
+    "devices": "裝置",
+    "node": "節點",
+    "reservedFor": "保留給",
+    "requests": "請求",
+    "selectors": "選擇器",
+    "drivers": "驅動程式",
+    "extendedResource": "延伸資源",
+    "driver": "驅動程式",
+    "pool": "集區",
+    "deviceCount": "裝置"
+  },
+  "state": {
+    "inUse": "使用中",
+    "allocated": "已配置",
+    "pending": "等待中",
+    "bindingFailed": "繫結失敗",
+    "deleting": "正在刪除"
+  },
+  "hint": {
+    "inUse": "裝置已配置，並保留給下方的使用者。",
+    "allocated": "裝置已配置，但還沒有 Pod 保留它們。",
+    "pending": "尚未配置裝置。排程器放置第一個使用此 claim 的 Pod 時才會配置。",
+    "bindingFailed": "驅動程式回報裝置繫結失敗：排程器會嘗試其他節點。",
+    "deleting": "此 claim 正在刪除；沒有 Pod 使用它之後，其裝置會被釋放。"
+  },
+  "scope": {
+    "node": "單一節點",
+    "allNodes": "所有節點",
+    "selector": "依選擇器的節點",
+    "perDevice": "依裝置設定",
+    "unknown": "未說明"
+  },
+  "fields": {
+    "state": "狀態",
+    "node": "節點",
+    "nodeSelector": "節點選擇器",
+    "allocatedAt": "配置時間",
+    "madeFor": "為此 Pod 建立",
+    "reservedFor": "保留給",
+    "extendedResource": "延伸資源",
+    "driver": "驅動程式",
+    "pool": "集區",
+    "poolGeneration": "集區世代",
+    "poolSlices": "集區中的 slice 數",
+    "reach": "裝置可存取範圍"
+  },
+  "requests": {
+    "title": "請求",
+    "request": "請求",
+    "class": "裝置類別",
+    "selectors": "選擇器 (CEL)",
+    "amount": "數量",
+    "choice": "{{request}}：選項 {{n}}（{{choice}}）",
+    "all": "所有相符的裝置",
+    "count_other": "{{count}} 個裝置",
+    "withAdminAccess": "{{amount}}，含管理員存取",
+    "none": "沒有請求。"
+  },
+  "results": {
+    "title": "已配置的裝置",
+    "request": "請求",
+    "driver": "驅動程式",
+    "device": "集區 / 裝置",
+    "notes": "備註",
+    "adminAccess": "管理員存取。",
+    "bindingFailed": "繫結失敗：{{conditions}}。",
+    "bindingPending": "正在等待：{{conditions}}。"
+  },
+  "waiting": {
+    "title": "等待此 claim 的 Pod",
+    "none": "此 namespace 中沒有 Pending 的 Pod 使用此 claim。",
+    "unknown": "無法讀取此 namespace 中 Pending 的 Pod。"
+  },
+  "reason": {
+    "notCreated": "Pod 從其範本建立的 claim 還不存在：resource claim 控制器尚未建立它。",
+    "notFound": "Pod 指定的某個 claim 不存在。",
+    "deleting": "Pod 使用的某個 claim 正在刪除。",
+    "inUse": "此 claim 已被其他 Pod 保留，無法與此 Pod 共用。",
+    "noClass": "某個請求指定的裝置類別不存在。",
+    "cannotAllocate": "沒有節點擁有符合此 Pod 所有 claim 請求的空閒裝置。",
+    "notOnNode": "此 claim 的裝置配置在其他節點上，而不是 Pod 可以執行的節點。",
+    "allocating": "另一次排程嘗試正在配置此 claim。",
+    "notOwner": "此 claim 是為另一個 Pod 建立的。"
+  },
+  "class": {
+    "selectors": "選擇器 (CEL)",
+    "noSelectors": "沒有選擇器：驅動程式的任何裝置都相符。",
+    "celNote": "運算式依原樣顯示；Sextant 不會對其求值。",
+    "config": "驅動程式設定"
+  },
+  "devices": {
+    "title": "裝置",
+    "node": "節點",
+    "driver": "驅動程式",
+    "device": "集區 / 裝置",
+    "product": "產品",
+    "capacity": "容量",
+    "allocatedTo": "配置給",
+    "free": "空閒",
+    "unknown": "無法判斷",
+    "none": "沒有裝置。",
+    "cut_other": "僅顯示 {{total}} 個裝置中的前 {{count}} 個。"
+  },
+  "pod": {
+    "title": "裝置",
+    "name": "Pod 中的名稱",
+    "claim": "Claim",
+    "state": "狀態",
+    "devices": "裝置",
+    "containers": "容器",
+    "fromTemplate": "來自範本 {{template}}",
+    "notNeeded": "不需要（範本 {{template}}）",
+    "notCreated": "尚未建立",
+    "missing": "不存在",
+    "unknown": "無法判斷",
+    "notServed": "叢集未提供 resource.k8s.io 的 ResourceClaim。"
+  },
+  "node": {
+    "title": "DRA 裝置",
+    "truncated_other": "僅讀取前 {{count}} 個 ResourceSlice。"
+  },
+  "page": {
+    "sidebar": "裝置",
+    "title": "裝置",
+    "hint": "驅動程式在 ResourceSlice 中發布的每個裝置，依節點列出，並顯示持有它的 claim。",
+    "total_other": "{{count}} 個裝置",
+    "totals_other": "{{count}} 個裝置，已配置 {{allocated}} 個",
+    "slicesTruncated_other": "僅讀取前 {{count}} 個 ResourceSlice。",
+    "claimsUnknown": "無法完整讀取叢集的 ResourceClaim，因此無法判斷哪些裝置已配置。"
+  }
+}

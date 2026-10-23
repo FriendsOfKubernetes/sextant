@@ -1,0 +1,127 @@
+{
+  "policyReady": {
+    "apiVersion": "nvidia.com/v1",
+    "kind": "ClusterPolicy",
+    "metadata": { "name": "cluster-policy", "uid": "cp-1", "creationTimestamp": "2026-10-01T09:00:00Z" },
+    "spec": {
+      "operator": { "defaultRuntime": "containerd" },
+      "daemonsets": { "updateStrategy": "RollingUpdate" },
+      "driver": { "enabled": true },
+      "toolkit": { "enabled": true },
+      "devicePlugin": { "enabled": true },
+      "dcgm": { "enabled": false },
+      "dcgmExporter": { "enabled": true },
+      "gfd": { "enabled": true },
+      "mig": { "strategy": "mixed" },
+      "migManager": { "enabled": true },
+      "nodeStatusExporter": { "enabled": false },
+      "validator": {},
+      "sandboxWorkloads": { "enabled": false }
+    },
+    "status": {
+      "state": "ready",
+      "namespace": "gpu-operator",
+      "conditions": [
+        { "type": "Ready", "status": "True", "reason": "Reconciled", "message": "", "lastTransitionTime": "2026-10-01T09:10:00Z" },
+        { "type": "Error", "status": "False", "reason": "Ready", "message": "", "lastTransitionTime": "2026-10-01T09:10:00Z" }
+      ]
+    }
+  },
+  "policyNotReady": {
+    "apiVersion": "nvidia.com/v1",
+    "kind": "ClusterPolicy",
+    "metadata": { "name": "cluster-policy", "uid": "cp-2", "creationTimestamp": "2026-10-01T09:00:00Z" },
+    "spec": { "driver": {}, "toolkit": {}, "devicePlugin": {}, "dcgmExporter": {}, "gfd": {}, "migManager": {}, "validator": {} },
+    "status": {
+      "state": "notReady",
+      "namespace": "gpu-operator",
+      "conditions": [
+        { "type": "Ready", "status": "False", "reason": "OperandNotReady", "message": "ClusterPolicy is not ready, states not ready: [state-driver]", "lastTransitionTime": "2026-10-01T09:05:00Z" },
+        { "type": "Error", "status": "False", "reason": "OperandNotReady", "message": "", "lastTransitionTime": "2026-10-01T09:05:00Z" }
+      ]
+    }
+  },
+  "policyByCrd": {
+    "apiVersion": "nvidia.com/v1",
+    "kind": "ClusterPolicy",
+    "metadata": { "name": "cluster-policy", "uid": "cp-3" },
+    "spec": { "driver": { "useNvidiaDriverCRD": true } },
+    "status": { "state": "ready", "namespace": "gpu-operator" }
+  },
+  "driver": {
+    "apiVersion": "nvidia.com/v1alpha1",
+    "kind": "NVIDIADriver",
+    "metadata": { "name": "default", "uid": "nd-1", "creationTimestamp": "2026-10-01T09:00:00Z" },
+    "spec": { "driverType": "gpu", "image": "driver", "repository": "nvcr.io/nvidia", "version": "570.86.15", "nodeSelector": { "nvidia.com/gpu.present": "true" } },
+    "status": {
+      "state": "notReady",
+      "namespace": "gpu-operator",
+      "conditions": [{ "type": "Ready", "status": "False", "reason": "DriverNotReady", "message": "Driver is not ready", "lastTransitionTime": "2026-10-01T09:02:00Z" }]
+    }
+  },
+  "dsDriver": {
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": { "name": "nvidia-driver-daemonset-5.15.0-1066-aws-ubuntu22.04", "namespace": "gpu-operator", "uid": "ds-1" },
+    "status": { "desiredNumberScheduled": 2, "numberReady": 1, "updatedNumberScheduled": 2, "numberAvailable": 1 }
+  },
+  "dsToolkit": {
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": { "name": "nvidia-container-toolkit-daemonset", "namespace": "gpu-operator", "uid": "ds-2" },
+    "status": { "desiredNumberScheduled": 2, "numberReady": 2, "updatedNumberScheduled": 2, "numberAvailable": 2 }
+  },
+  "dsDevicePlugin": {
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": { "name": "nvidia-device-plugin-daemonset", "namespace": "gpu-operator", "uid": "ds-3" },
+    "status": { "desiredNumberScheduled": 2, "numberReady": 2, "updatedNumberScheduled": 2, "numberAvailable": 2 }
+  },
+  "dsOwnedByDriver": {
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": {
+      "name": "nvidia-gpu-driver-ubuntu22.04-7c6d5b9f8",
+      "namespace": "gpu-operator",
+      "uid": "ds-4",
+      "ownerReferences": [{ "apiVersion": "nvidia.com/v1alpha1", "kind": "NVIDIADriver", "name": "default", "uid": "nd-1", "controller": true }]
+    },
+    "status": { "desiredNumberScheduled": 1, "numberReady": 0, "updatedNumberScheduled": 1, "numberAvailable": 0 }
+  },
+  "nodeMig": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": {
+      "name": "gpu-node-1",
+      "uid": "node-1",
+      "labels": {
+        "nvidia.com/gpu.present": "true",
+        "nvidia.com/gpu.product": "NVIDIA-A100-SXM4-40GB",
+        "nvidia.com/gpu.count": "8",
+        "nvidia.com/gpu.memory": "40960",
+        "nvidia.com/mig.config": "all-1g.5gb",
+        "nvidia.com/mig.config.state": "success"
+      }
+    },
+    "status": {
+      "capacity": { "cpu": "96", "nvidia.com/gpu": "0", "nvidia.com/mig-1g.5gb": "56" },
+      "allocatable": { "cpu": "95", "nvidia.com/gpu": "0", "nvidia.com/mig-1g.5gb": "54" }
+    }
+  },
+  "nodeMigFailed": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": {
+      "name": "gpu-node-2",
+      "uid": "node-2",
+      "labels": { "nvidia.com/gpu.present": "true", "nvidia.com/gpu.product": "NVIDIA-H100-80GB-HBM3", "nvidia.com/gpu.count": "8", "nvidia.com/mig.config": "all-3g.40gb", "nvidia.com/mig.config.state": "failed" }
+    },
+    "status": { "capacity": { "nvidia.com/gpu": "8" }, "allocatable": { "nvidia.com/gpu": "8" } }
+  },
+  "nodePlain": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": { "name": "cpu-node", "uid": "node-3", "labels": { "kubernetes.io/os": "linux" } },
+    "status": { "capacity": { "cpu": "8" }, "allocatable": { "cpu": "8" } }
+  }
+}

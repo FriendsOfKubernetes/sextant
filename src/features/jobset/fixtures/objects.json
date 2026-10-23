@@ -1,0 +1,93 @@
+[
+  {
+    "apiVersion": "jobset.x-k8s.io/v1alpha2",
+    "kind": "JobSet",
+    "metadata": { "name": "failure-policy", "namespace": "default", "uid": "js-1", "creationTimestamp": "2026-10-20T08:00:00Z" },
+    "spec": {
+      "failurePolicy": {
+        "restartStrategy": "BlockingRecreate",
+        "maxRestarts": 3,
+        "rules": [ { "name": "fail-on-oom", "action": "FailJobSet", "onJobFailureReasons": ["PodFailurePolicy"], "targetReplicatedJobs": ["leader"] } ]
+      },
+      "replicatedJobs": [
+        { "name": "leader", "replicas": 1, "template": { "spec": { "backoffLimit": 0, "completions": 2, "parallelism": 2, "template": { "spec": { "containers": [ { "name": "leader", "image": "bash:latest" } ] } } } } },
+        { "name": "workers", "replicas": 1, "template": { "spec": { "backoffLimit": 0, "completions": 2, "parallelism": 2, "template": { "spec": { "containers": [ { "name": "worker", "image": "bash:latest" } ] } } } } }
+      ]
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Failed",
+          "status": "True",
+          "reason": "ReachedMaxRestarts",
+          "message": "jobset failed due to reaching max number of restarts (first failed job: failure-policy-leader-0)",
+          "lastTransitionTime": "2026-10-20T08:20:00Z"
+        }
+      ],
+      "restarts": 3,
+      "restartsCountTowardsMax": 3,
+      "terminalState": "Failed",
+      "replicatedJobsStatus": [
+        { "name": "leader", "ready": 0, "succeeded": 0, "failed": 1, "active": 0, "suspended": 0 },
+        { "name": "workers", "ready": 0, "succeeded": 0, "failed": 0, "active": 0, "suspended": 0 }
+      ]
+    }
+  },
+  {
+    "apiVersion": "jobset.x-k8s.io/v1alpha2",
+    "kind": "JobSet",
+    "metadata": { "name": "success-policy", "namespace": "default", "uid": "js-2", "creationTimestamp": "2026-10-20T08:00:00Z" },
+    "spec": {
+      "successPolicy": { "operator": "All", "targetReplicatedJobs": ["workers"] },
+      "failurePolicy": { "maxRestarts": 2 },
+      "replicatedJobs": [
+        { "name": "leader", "replicas": 1, "template": { "spec": { "backoffLimit": 0, "completions": 1, "parallelism": 1, "template": { "spec": { "containers": [ { "name": "leader", "image": "bash:latest" } ] } } } } },
+        { "name": "workers", "replicas": 1, "template": { "spec": { "backoffLimit": 0, "completions": 2, "parallelism": 2, "template": { "spec": { "containers": [ { "name": "worker", "image": "bash:latest" } ] } } } } }
+      ]
+    },
+    "status": {
+      "restarts": 1,
+      "restartsCountTowardsMax": 1,
+      "replicatedJobsStatus": [
+        { "name": "leader", "ready": 1, "succeeded": 0, "failed": 0, "active": 1, "suspended": 0 },
+        { "name": "workers", "ready": 1, "succeeded": 0, "failed": 0, "active": 1, "suspended": 0 }
+      ]
+    }
+  },
+  {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "name": "failure-policy-leader-0",
+      "namespace": "default",
+      "uid": "job-1",
+      "creationTimestamp": "2026-10-20T08:15:00Z",
+      "labels": {
+        "jobset.sigs.k8s.io/jobset-name": "failure-policy",
+        "jobset.sigs.k8s.io/replicatedjob-name": "leader",
+        "jobset.sigs.k8s.io/job-index": "0",
+        "jobset.sigs.k8s.io/restart-attempt": "3"
+      }
+    },
+    "spec": { "completions": 2, "parallelism": 2, "backoffLimit": 0 },
+    "status": {
+      "failed": 1,
+      "conditions": [
+        { "type": "Failed", "status": "True", "reason": "BackoffLimitExceeded", "message": "Job has reached the specified backoff limit", "lastTransitionTime": "2026-10-20T08:19:59Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "name": "failure-policy-leader-0-0-x7k2p",
+      "namespace": "default",
+      "uid": "pod-1",
+      "creationTimestamp": "2026-10-20T08:15:01Z",
+      "labels": { "jobset.sigs.k8s.io/jobset-name": "failure-policy", "batch.kubernetes.io/job-name": "failure-policy-leader-0" }
+    },
+    "spec": { "containers": [ { "name": "leader", "image": "bash:latest" } ] },
+    "status": { "phase": "Failed" }
+  }
+]

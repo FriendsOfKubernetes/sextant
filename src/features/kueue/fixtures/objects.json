@@ -1,0 +1,195 @@
+[
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "ResourceFlavor",
+    "metadata": { "name": "default-flavor", "uid": "rf-1", "creationTimestamp": "2026-10-01T00:00:00Z" }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "ResourceFlavor",
+    "metadata": { "name": "spot", "uid": "rf-2", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": {
+      "nodeLabels": { "instance-type": "spot" },
+      "nodeTaints": [{ "key": "spot", "value": "true", "effect": "NoSchedule" }],
+      "tolerations": [{ "key": "spot", "operator": "Equal", "value": "true", "effect": "NoSchedule" }]
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "ClusterQueue",
+    "metadata": { "name": "cluster-queue", "uid": "cq-1", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": {
+      "namespaceSelector": {},
+      "cohortName": "research",
+      "queueingStrategy": "BestEffortFIFO",
+      "resourceGroups": [
+        {
+          "coveredResources": ["cpu", "memory"],
+          "flavors": [
+            {
+              "name": "default-flavor",
+              "resources": [
+                { "name": "cpu", "nominalQuota": 9, "borrowingLimit": "2" },
+                { "name": "memory", "nominalQuota": "36Gi" }
+              ]
+            }
+          ]
+        }
+      ],
+      "preemption": { "withinClusterQueue": "LowerPriority", "reclaimWithinCohort": "Any" }
+    },
+    "status": {
+      "conditions": [
+        { "type": "Active", "status": "True", "reason": "Ready", "message": "Can admit new workloads", "lastTransitionTime": "2026-10-01T00:00:05Z" }
+      ],
+      "flavorsReservation": [
+        { "name": "default-flavor", "resources": [ { "name": "cpu", "total": "10", "borrowed": "1" }, { "name": "memory", "total": "6Gi", "borrowed": "0" } ] }
+      ],
+      "flavorsUsage": [
+        { "name": "default-flavor", "resources": [ { "name": "cpu", "total": "10", "borrowed": "1" }, { "name": "memory", "total": "6Gi", "borrowed": "0" } ] }
+      ],
+      "pendingWorkloads": 1,
+      "reservingWorkloads": 2,
+      "admittedWorkloads": 2
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "ClusterQueue",
+    "metadata": { "name": "gpu-queue", "uid": "cq-2", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": {
+      "cohortName": "research",
+      "resourceGroups": [
+        { "coveredResources": ["nvidia.com/gpu"], "flavors": [ { "name": "gpu-flavor", "resources": [ { "name": "nvidia.com/gpu", "nominalQuota": 8 } ] } ] }
+      ]
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Active",
+          "status": "False",
+          "reason": "FlavorNotFound",
+          "message": "Can't admit new workloads: references missing ResourceFlavor(s): gpu-flavor.",
+          "lastTransitionTime": "2026-10-20T10:00:00Z"
+        }
+      ],
+      "pendingWorkloads": 0,
+      "reservingWorkloads": 0,
+      "admittedWorkloads": 0
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "LocalQueue",
+    "metadata": { "name": "user-queue", "namespace": "default", "uid": "lq-1", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": { "clusterQueue": "cluster-queue" },
+    "status": {
+      "conditions": [ { "type": "Active", "status": "True", "reason": "Ready", "message": "Can submit new workloads to localQueue", "lastTransitionTime": "2026-10-01T00:00:06Z" } ],
+      "pendingWorkloads": 1,
+      "reservingWorkloads": 2,
+      "admittedWorkloads": 2,
+      "flavorsReservation": [ { "name": "default-flavor", "resources": [ { "name": "cpu", "total": "10" } ] } ],
+      "flavorsUsage": [ { "name": "default-flavor", "resources": [ { "name": "cpu", "total": "10" } ] } ]
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "LocalQueue",
+    "metadata": { "name": "team-queue", "namespace": "team-b", "uid": "lq-2", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": { "clusterQueue": "missing-queue" },
+    "status": {
+      "conditions": [
+        { "type": "Active", "status": "False", "reason": "ClusterQueueDoesNotExist", "message": "Can't submit new workloads to clusterQueue", "lastTransitionTime": "2026-10-20T10:00:00Z" }
+      ],
+      "pendingWorkloads": 0,
+      "reservingWorkloads": 0,
+      "admittedWorkloads": 0
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "Workload",
+    "metadata": {
+      "name": "job-sample-job-7f3a1",
+      "namespace": "default",
+      "uid": "wl-1",
+      "creationTimestamp": "2026-10-20T09:00:00Z",
+      "labels": { "kueue.x-k8s.io/job-uid": "job-uid-1" },
+      "ownerReferences": [ { "apiVersion": "batch/v1", "kind": "Job", "name": "sample-job", "uid": "job-uid-1", "controller": true, "blockOwnerDeletion": true } ]
+    },
+    "spec": {
+      "queueName": "user-queue",
+      "priority": 0,
+      "podSets": [
+        { "name": "main", "count": 3, "template": { "spec": { "containers": [ { "name": "dummy-job", "image": "registry.k8s.io/e2e-test-images/agnhost:2.53", "resources": { "requests": { "cpu": "1", "memory": "200Mi" } } } ] } } }
+      ]
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "QuotaReserved",
+          "status": "False",
+          "reason": "Pending",
+          "message": "couldn't assign flavors to pod set main: insufficient unused quota for cpu in flavor default-flavor, 3 more needed",
+          "lastTransitionTime": "2026-10-20T09:00:01Z"
+        }
+      ],
+      "resourceRequests": [ { "name": "main", "resources": { "cpu": "3", "memory": "600Mi" } } ]
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "Workload",
+    "metadata": {
+      "name": "jobset-trainer-1b2c3",
+      "namespace": "default",
+      "uid": "wl-2",
+      "creationTimestamp": "2026-10-20T08:00:00Z",
+      "labels": { "kueue.x-k8s.io/job-uid": "js-uid-1" },
+      "ownerReferences": [ { "apiVersion": "jobset.x-k8s.io/v1alpha2", "kind": "JobSet", "name": "trainer", "uid": "js-uid-1", "controller": true } ]
+    },
+    "spec": {
+      "queueName": "user-queue",
+      "priorityClassRef": { "group": "kueue.x-k8s.io", "kind": "WorkloadPriorityClass", "name": "high-priority" },
+      "priority": 10000,
+      "podSets": [ { "name": "workers", "count": 4, "minCount": 2, "template": { "spec": { "containers": [ { "name": "w", "image": "bash" } ] } } } ]
+    },
+    "status": {
+      "conditions": [
+        { "type": "QuotaReserved", "status": "True", "reason": "QuotaReserved", "message": "Quota reserved in ClusterQueue cluster-queue", "lastTransitionTime": "2026-10-20T09:40:00Z" },
+        { "type": "Admitted", "status": "True", "reason": "Admitted", "message": "The workload is admitted", "lastTransitionTime": "2026-10-20T09:40:00Z" },
+        { "type": "Evicted", "status": "False", "reason": "QuotaReserved", "message": "Previously: Exceeded the PodsReady timeout default/jobset-trainer-1b2c3", "lastTransitionTime": "2026-10-20T09:40:00Z" }
+      ],
+      "admission": {
+        "clusterQueue": "cluster-queue",
+        "podSetAssignments": [ { "name": "workers", "count": 4, "flavors": { "cpu": "default-flavor" }, "resourceUsage": { "cpu": "4" } } ]
+      },
+      "requeueState": { "count": 3 },
+      "schedulingStats": { "evictions": [ { "reason": "PodsReadyTimeout", "underlyingCause": "", "count": 3 } ] },
+      "admissionChecks": [ { "name": "prov-check", "state": "Ready", "message": "Provisioned", "lastTransitionTime": "2026-10-20T09:40:00Z" } ]
+    }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "Cohort",
+    "metadata": { "name": "research", "uid": "co-1", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": {}
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "AdmissionCheck",
+    "metadata": { "name": "prov-check", "uid": "ac-1", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": {
+      "controllerName": "kueue.x-k8s.io/provisioning-request",
+      "parameters": { "apiGroup": "kueue.x-k8s.io", "kind": "ProvisioningRequestConfig", "name": "prov-config" }
+    },
+    "status": { "conditions": [ { "type": "Active", "status": "True", "reason": "Active", "message": "The admission check is active", "lastTransitionTime": "2026-10-01T00:00:00Z" } ] }
+  },
+  {
+    "apiVersion": "kueue.x-k8s.io/v1beta2",
+    "kind": "WorkloadPriorityClass",
+    "metadata": { "name": "high-priority", "uid": "wpc-1", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "value": 10000,
+    "description": "Value of the priority for high-priority workloads"
+  }
+]

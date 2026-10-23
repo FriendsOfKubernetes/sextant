@@ -733,6 +733,18 @@ _Avoid_: child cluster, target cluster, managed cluster (that is a Crossplane/Ar
 A Machine still Pending, Provisioning or Provisioned 30 minutes after its phase last changed (`status.lastUpdated`): a problem of the `clusterApi` category, explained by its first unmet condition (BootstrapConfigReady, InfrastructureReady, NodeReady). Not the same as a MachineHealthCheck's verdict, which follows its own timeouts.
 _Avoid_: hung machine, failed machine (Failed is a terminal failure the controllers report)
 
+**Head / worker (KubeRay)**:
+The two kinds of pod of a RayCluster: one head (the GCS, the dashboard, the job submission endpoint) and the workers of its worker groups, each group with its own replicas and bounds. Told apart by the pod label `ray.io/node-type`, grouped by `ray.io/group`. The words stay as Ray writes them.
+_Avoid_: master, driver (a driver is the process of a Ray job)
+
+**Submitter Job (KubeRay)**:
+The batch Job KubeRay creates, with the RayJob's own name, to run `ray job submit` against the RayCluster in the default `K8sJobMode`; other submission modes have none.
+_Avoid_: runner, launcher
+
+**Serving runtime choice (KServe)**:
+The ServingRuntime or ClusterServingRuntime KServe uses for an InferenceService's predictor: the one named in `model.runtime`, else the first that fits the model's format and protocol, namespace runtimes before cluster runtimes, ordered as KServe orders them (ADR-0115).
+_Avoid_: server, backend, engine
+
 **Update mode (VPA)**:
 When a VerticalPodAutoscaler's recommendation reaches pods (`spec.updatePolicy.updateMode`, `Recreate` when unset): `Off` only recommends, `Initial` sets resources when a pod is created, `Recreate` (and its deprecated name `Auto`) also lets the updater evict running pods far from the recommendation, `InPlaceOrRecreate` and `InPlace` resize running pods in place. The request a new pod gets is the recommendation's target; its limit keeps the template's ratio of limit to request unless `controlledValues` is `RequestsOnly`.
 _Avoid_: policy (that is `resourcePolicy`, per container), auto mode (deprecated)
@@ -740,3 +752,31 @@ _Avoid_: policy (that is `resourcePolicy`, per container), auto mode (deprecated
 **VPA–HPA conflict**:
 A VPA that changes running pods and an HPA that scales the same workload on a CPU or memory metric the VPA controls: raising the request lowers the HPA's utilization, so the two fight. Judged from the two objects; a VPA on one resource beside an HPA on the other is no conflict.
 _Avoid_: overlap, double scaling
+
+**Workload (Kueue)**:
+Kueue's record of one job's claim on quota: the pod sets and their requests, the LocalQueue it was submitted to and, once admitted, the ClusterQueue and flavors it got. Kueue makes one per job (labelled with the job's uid) and the job runs only while its Workload is admitted. Not a Kubernetes workload (a Deployment, StatefulSet, …): Sextant writes "Workload" with a capital W for Kueue's kind.
+_Avoid_: job (that is the owner), task
+
+**Quota reservation / admission (Kueue)**:
+Two steps of a Workload: quota is reserved in a ClusterQueue (QuotaReserved), then, when its admission checks pass, it is admitted (Admitted) and the job is unsuspended. A Workload waiting for quota is pending; one whose LocalQueue or ClusterQueue is missing is inadmissible; an evicted one gave its quota back and waits again (ADR-0114).
+_Avoid_: scheduled (that is the kube-scheduler placing pods), approved
+
+**Replicated job (JobSet)**:
+One entry of a JobSet's `spec.replicatedJobs`: a Job template and how many Jobs of it (`replicas`) the JobSet keeps, named `<jobset>-<replicated job>-<index>`. The JobSet's success and failure policies count these Jobs; a restart recreates them (`restart-attempt` label).
+_Avoid_: job group, replica set
+
+**Resource claim / allocation (DRA)**:
+A ResourceClaim asks for devices (GPUs, NICs, accelerators) by device class and CEL selectors; a pod names it, or a template from which the resource claim controller makes one per pod. Allocation is the scheduler picking devices of ResourceSlices for it (`status.allocation`), done when it places the first pod that uses the claim; reservation (`status.reservedFor`) is the pods allowed to use them. A pending claim is one with no allocation yet (ADR-0116).
+_Avoid_: device request (a request is one entry of a claim), binding (a binding condition is a later, driver-side step)
+
+**Resource slice / pool (DRA)**:
+What a driver publishes about its devices: a ResourceSlice lists devices with attributes and capacity, reachable from one node, every node or a node selector; the slices of one driver and pool together describe the pool. A device is named `driver/pool/device` across slices and claims.
+_Avoid_: inventory, node devices
+
+**Component (NVIDIA GPU Operator)**:
+One operand the ClusterPolicy deploys as a DaemonSet in the operand namespace: the driver, the container toolkit, the device plugin, DCGM and its exporter, GPU Feature Discovery, the MIG manager, the node status exporter, the validator and the sandbox ones. Enabled by its spec block (else the operator's default); rolled out when every scheduled pod of its DaemonSet is ready and updated (ADR-0116).
+_Avoid_: plugin (the device plugin is one component), addon
+
+**MIG configuration (NVIDIA GPU Operator)**:
+How a node's GPUs are partitioned into MIG instances: the profile set named by the node label `nvidia.com/mig.config`, applied by the MIG manager, which writes the outcome to `nvidia.com/mig.config.state` (pending, rebooting, success, failed). The MIG strategy (`spec.mig.strategy`: none, single, mixed) decides whether the instances show as `nvidia.com/gpu` or as `nvidia.com/mig-<profile>` resources.
+_Avoid_: MIG mode (the GPU's own switch), partition layout

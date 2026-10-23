@@ -1,0 +1,160 @@
+{
+  "deviceClass": {
+    "apiVersion": "resource.k8s.io/v1",
+    "kind": "DeviceClass",
+    "metadata": { "name": "gpu.example.com", "uid": "dc-1", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "selectors": [{ "cel": { "expression": "device.driver == 'gpu.example.com'" } }],
+      "config": [{ "opaque": { "driver": "gpu.example.com", "parameters": { "apiVersion": "gpu.resource.example.com/v1alpha1", "kind": "GpuConfig", "sharing": { "strategy": "TimeSlicing" } } } }]
+    }
+  },
+  "templateV1": {
+    "apiVersion": "resource.k8s.io/v1",
+    "kind": "ResourceClaimTemplate",
+    "metadata": { "name": "single-gpu", "namespace": "gpu-test1", "uid": "rct-1" },
+    "spec": { "spec": { "devices": { "requests": [{ "name": "gpu", "exactly": { "deviceClassName": "gpu.example.com" } }] } } }
+  },
+  "templateV1beta1": {
+    "apiVersion": "resource.k8s.io/v1beta1",
+    "kind": "ResourceClaimTemplate",
+    "metadata": { "name": "two-gpus", "namespace": "gpu-test2", "uid": "rct-2" },
+    "spec": { "spec": { "devices": { "requests": [{ "name": "gpus", "deviceClassName": "gpu.example.com", "allocationMode": "ExactCount", "count": 2 }] } } }
+  },
+  "claimAllocated": {
+    "apiVersion": "resource.k8s.io/v1",
+    "kind": "ResourceClaim",
+    "metadata": {
+      "name": "pod0-gpu-x7k2p",
+      "namespace": "gpu-test1",
+      "uid": "rc-1",
+      "annotations": { "resource.kubernetes.io/pod-claim-name": "gpu" },
+      "ownerReferences": [{ "apiVersion": "v1", "kind": "Pod", "name": "pod0", "uid": "pod-0", "controller": true, "blockOwnerDeletion": true }]
+    },
+    "spec": { "devices": { "requests": [{ "name": "gpu", "exactly": { "deviceClassName": "gpu.example.com" } }] } },
+    "status": {
+      "allocation": {
+        "allocationTimestamp": "2026-10-01T10:05:00Z",
+        "devices": { "results": [{ "request": "gpu", "driver": "gpu.example.com", "pool": "kind-worker", "device": "gpu-0" }] },
+        "nodeSelector": { "nodeSelectorTerms": [{ "matchFields": [{ "key": "metadata.name", "operator": "In", "values": ["kind-worker"] }] }] }
+      },
+      "reservedFor": [{ "resource": "pods", "name": "pod0", "uid": "pod-0" }]
+    }
+  },
+  "claimPending": {
+    "apiVersion": "resource.k8s.io/v1",
+    "kind": "ResourceClaim",
+    "metadata": { "name": "shared-gpu", "namespace": "gpu-test1", "uid": "rc-2" },
+    "spec": {
+      "devices": {
+        "requests": [
+          {
+            "name": "gpu",
+            "firstAvailable": [
+              { "name": "big", "deviceClassName": "gpu.example.com", "selectors": [{ "cel": { "expression": "device.capacity['gpu.example.com'].memory.compareTo(quantity('80Gi')) >= 0" } }] },
+              { "name": "small", "deviceClassName": "gpu.example.com", "count": 2 }
+            ]
+          }
+        ]
+      }
+    },
+    "status": {}
+  },
+  "claimV1beta1": {
+    "apiVersion": "resource.k8s.io/v1beta1",
+    "kind": "ResourceClaim",
+    "metadata": { "name": "admin-claim", "namespace": "gpu-test2", "uid": "rc-3" },
+    "spec": { "devices": { "requests": [{ "name": "all", "deviceClassName": "gpu.example.com", "allocationMode": "All", "adminAccess": true }] } },
+    "status": {
+      "allocation": {
+        "devices": { "results": [{ "request": "all", "driver": "gpu.example.com", "pool": "kind-worker", "device": "gpu-1", "adminAccess": true, "bindingFailureConditions": ["FabricFailed"] }] },
+        "nodeSelector": { "nodeSelectorTerms": [{ "matchExpressions": [{ "key": "topology.kubernetes.io/zone", "operator": "In", "values": ["zone-a"] }] }] }
+      },
+      "devices": [{ "driver": "gpu.example.com", "pool": "kind-worker", "device": "gpu-1", "conditions": [{ "type": "FabricFailed", "status": "True", "reason": "Unreachable", "lastTransitionTime": "2026-10-01T10:06:00Z" }] }]
+    }
+  },
+  "sliceV1": {
+    "apiVersion": "resource.k8s.io/v1",
+    "kind": "ResourceSlice",
+    "metadata": { "name": "kind-worker-gpu.example.com-abcde", "uid": "rs-1" },
+    "spec": {
+      "driver": "gpu.example.com",
+      "nodeName": "kind-worker",
+      "pool": { "name": "kind-worker", "generation": 1, "resourceSliceCount": 1 },
+      "devices": [
+        { "name": "gpu-0", "attributes": { "productName": { "string": "LATEST-GPU-MODEL" }, "index": { "int": 0 }, "driverVersion": { "version": "1.0.0" } }, "capacity": { "memory": { "value": "80Gi" } } },
+        { "name": "gpu-1", "attributes": { "productName": { "string": "LATEST-GPU-MODEL" }, "index": { "int": 1 } }, "capacity": { "memory": { "value": "80Gi" } } }
+      ]
+    }
+  },
+  "sliceV1beta1": {
+    "apiVersion": "resource.k8s.io/v1beta1",
+    "kind": "ResourceSlice",
+    "metadata": { "name": "network-fabric-xyz", "uid": "rs-2" },
+    "spec": {
+      "driver": "fabric.example.com",
+      "allNodes": true,
+      "pool": { "name": "fabric", "generation": 3, "resourceSliceCount": 1 },
+      "devices": [{ "name": "link-0", "basic": { "attributes": { "model": { "string": "FX-100" } }, "capacity": { "bandwidth": { "value": "400G" } } } }]
+    }
+  },
+  "sliceV1alpha3": {
+    "apiVersion": "resource.k8s.io/v1alpha3",
+    "kind": "ResourceSlice",
+    "metadata": { "name": "old-worker-gpu", "uid": "rs-3" },
+    "spec": {
+      "driver": "gpu.example.com",
+      "nodeName": "old-worker",
+      "pool": { "name": "old-worker", "generation": 0, "resourceSliceCount": 1 },
+      "devices": [{ "name": "gpu-0", "basic": { "attributes": { "uuid": { "string": "gpu-1234" } }, "capacity": { "memory": "16Gi" } } }]
+    }
+  },
+  "podRunning": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": { "name": "pod0", "namespace": "gpu-test1", "uid": "pod-0" },
+    "spec": {
+      "nodeName": "kind-worker",
+      "resourceClaims": [{ "name": "gpu", "resourceClaimTemplateName": "single-gpu" }],
+      "containers": [{ "name": "ctr0", "image": "ubuntu:22.04", "resources": { "claims": [{ "name": "gpu" }] } }]
+    },
+    "status": { "phase": "Running", "resourceClaimStatuses": [{ "name": "gpu", "resourceClaimName": "pod0-gpu-x7k2p" }] }
+  },
+  "podWaiting": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "name": "pod1",
+      "namespace": "gpu-test1",
+      "uid": "pod-1",
+      "creationTimestamp": "2026-10-01T10:00:00Z",
+      "ownerReferences": [{ "apiVersion": "apps/v1", "kind": "ReplicaSet", "name": "trainer-5d9f8", "uid": "rs-owner", "controller": true }]
+    },
+    "spec": {
+      "resourceClaims": [{ "name": "gpu", "resourceClaimName": "shared-gpu" }, { "name": "scratch", "resourceClaimTemplateName": "single-gpu" }],
+      "containers": [{ "name": "trainer", "image": "trainer:1", "resources": { "claims": [{ "name": "gpu", "request": "gpu" }, { "name": "scratch" }] } }]
+    },
+    "status": {
+      "phase": "Pending",
+      "conditions": [
+        {
+          "type": "PodScheduled",
+          "status": "False",
+          "reason": "Unschedulable",
+          "lastTransitionTime": "2026-10-01T10:01:00Z",
+          "message": "0/3 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 2 cannot allocate all claims. preemption: 0/3 nodes are available: 3 Preemption is not helpful for scheduling."
+        }
+      ],
+      "resourceClaimStatuses": [{ "name": "scratch", "resourceClaimName": "pod1-scratch-q8z4m" }]
+    }
+  },
+  "podNotCreated": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": { "name": "pod2", "namespace": "gpu-test2", "uid": "pod-2", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": { "resourceClaims": [{ "name": "gpus", "resourceClaimTemplateName": "two-gpus" }], "containers": [{ "name": "c", "image": "c:1" }] },
+    "status": {
+      "phase": "Pending",
+      "conditions": [{ "type": "PodScheduled", "status": "False", "reason": "Unschedulable", "lastTransitionTime": "2026-10-01T10:00:30Z", "message": "pod \"gpu-test2/pod2\": ResourceClaim not created yet" }]
+    }
+  }
+}

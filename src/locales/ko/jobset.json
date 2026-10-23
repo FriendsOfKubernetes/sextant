@@ -1,0 +1,96 @@
+{
+  "sidebar": {
+    "jobSets": "JobSet"
+  },
+  "badge_other": "주의가 필요한 JobSet {{count}}개",
+  "state": {
+    "completed": "완료",
+    "failed": "실패",
+    "suspended": "일시 중지됨",
+    "restarting": "다시 시작 중",
+    "starting": "시작 중",
+    "running": "실행 중",
+    "pending": "대기 중"
+  },
+  "jobState": {
+    "complete": "완료",
+    "failed": "실패",
+    "suspended": "일시 중지됨",
+    "active": "활성",
+    "pending": "대기 중"
+  },
+  "columns": {
+    "status": "상태",
+    "succeeded": "성공",
+    "active": "활성",
+    "failed": "실패",
+    "restarts": "재시작"
+  },
+  "fields": {
+    "status": "상태",
+    "terminalState": "최종 상태",
+    "restarts": "재시작",
+    "restartStrategy": "재시작 전략",
+    "successPolicy": "성공 조건",
+    "startupPolicy": "시작 순서",
+    "suspend": "일시 중지됨",
+    "startTime": "시작됨",
+    "activeDeadline": "실행 기한(초)",
+    "ttlAfterFinished": "완료 후 삭제(초)",
+    "subdomain": "하위 도메인",
+    "coordinator": "코디네이터 Pod",
+    "managedBy": "관리 주체",
+    "firstFailedJob": "처음 실패한 Job"
+  },
+  "success": {
+    "all": "모든 복제 작업의 모든 Job이 완료됨",
+    "any": "어느 Job이든 하나가 완료됨",
+    "allOf": "{{targets}}의 모든 Job이 완료됨",
+    "anyOf": "{{targets}}의 Job 중 하나가 완료됨"
+  },
+  "restartsOfMax": "허용된 {{max}}회 중 {{counted}}회(전체 {{total}}회)",
+  "nearLimit": "허용된 재시작 {{max}}회 중 {{counted}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
+  "failedNoReason": "JobSet이 실패했습니다.",
+  "failedJobGone": "그 Job은 더 이상 없습니다.",
+  "suspendedNote": "일시 중지됨: 재개될 때까지 Job이 일시 중지된 상태로 남습니다.",
+  "replicated": {
+    "title": "복제 작업",
+    "name": "이름",
+    "replicas": "Job 수",
+    "completions": "완료 수 / 병렬 수",
+    "ready": "준비됨",
+    "active": "활성",
+    "succeeded": "성공",
+    "failed": "실패",
+    "dependsOn": "의존 대상"
+  },
+  "rules": {
+    "title": "실패 정책 규칙",
+    "name": "규칙",
+    "action": "작업",
+    "onFailure": "Job 실패 시",
+    "targets": "복제 작업"
+  },
+  "jobs": {
+    "title": "Job",
+    "job": "Job",
+    "replicatedJob": "복제 작업",
+    "index": "인덱스",
+    "state": "상태",
+    "attempt": "재시작 시도",
+    "reason": "실패"
+  },
+  "pods": {
+    "title": "Pod",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "상태"
+  },
+  "yes": "예",
+  "loading": "불러오는 중…",
+  "listUnknown": "목록을 읽을 수 없습니다.",
+  "noJobs": "Job이 없습니다.",
+  "noPods": "Pod가 없습니다.",
+  "morePods": "{{total}}개 중 처음 {{shown}}개를 실행 중이 아닌 것부터 표시합니다.",
+  "truncated": "처음 {{max}}개만 읽습니다: 목록이 불완전합니다."
+}

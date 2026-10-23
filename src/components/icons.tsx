@@ -268,8 +268,43 @@ import {
   Vault as EsoVault,
   Waves as KafkaWaves,
 } from "lucide-react";
+// Dynamic Resource Allocation (#244) and NVIDIA GPU Operator (#245).
+import {
+  CircuitBoard as DraCircuitBoard,
+  FileCog as GpuFileCog,
+  Gpu as GpuGpu,
+  LayoutGrid as DraLayoutGrid,
+  MemoryStick as GpuMemoryStick,
+  Microchip as DraMicrochip,
+  PcCase as GpuPcCase,
+  Shapes as DraShapes,
+  TicketCheck as DraTicketCheck,
+  Tickets as DraTickets,
+} from "lucide-react";
+// Kueue (#246) and JobSet (#247).
+import {
+  ArrowUpWideNarrow as KueueArrowUpWideNarrow,
+  Group as KueueGroup,
+  Hourglass as KueueHourglass,
+  ListOrdered as KueueListOrdered,
+  ListTodo as KueueListTodo,
+  Rows3 as KueueRows3,
+  ShieldCheck as KueueShieldCheck,
+  SquareStack as JobSetSquareStack,
+  Tags as KueueTags,
+} from "lucide-react";
 // Vertical Pod Autoscaler (#242).
 import { ChevronsUpDown as VpaChevronsUpDown, HardDriveDownload as VpaCheckpoint, UnfoldVertical as VpaUnfoldVertical } from "lucide-react";
+// KubeRay (#248) and KServe (#249).
+import { Orbit as RayOrbit, Rocket as RayRocket, SatelliteDish as RaySatelliteDish, Sun as RaySun } from "lucide-react";
+import {
+  Brain as KServeBrain,
+  BrainCircuit as KServeBrainCircuit,
+  Cpu as KServeCpu,
+  GraduationCap as KServeGraduationCap,
+  MemoryStick as KServeMemoryStick,
+  Workflow as KServeWorkflow,
+} from "lucide-react";
 import {
   File as ImageFile,
   FileSymlink as ImageFileSymlink,
@@ -544,6 +579,17 @@ const ICONS = {
   capiMachine: CapiServer,
   capiHealthCheck: CapiHeartPulse,
   capiResourceSet: CapiPackagePlus,
+  // Kueue (#246): the section and its kinds.
+  kueue: KueueListTodo,
+  kueueClusterQueue: KueueRows3,
+  kueueLocalQueue: KueueListOrdered,
+  kueueWorkload: KueueHourglass,
+  kueueResourceFlavor: KueueTags,
+  kueueCohort: KueueGroup,
+  kueueAdmissionCheck: KueueShieldCheck,
+  kueuePriorityClass: KueueArrowUpWideNarrow,
+  // JobSet (#247): the section and its kind.
+  jobset: JobSetSquareStack,
   strimzi: KafkaWaves,
   kafka: KafkaRadioTower,
   kafkaNodePool: KafkaServerCog,
@@ -563,6 +609,30 @@ const ICONS = {
   vpa: VpaUnfoldVertical,
   verticalPodAutoscaler: VpaChevronsUpDown,
   vpaCheckpoint: VpaCheckpoint,
+  // KubeRay (#248): the section and its kinds.
+  kuberay: RaySun,
+  rayCluster: RayOrbit,
+  rayJob: RayRocket,
+  rayService: RaySatelliteDish,
+  // KServe (#249): the section and its kinds.
+  kserve: KServeBrainCircuit,
+  inferenceService: KServeBrain,
+  servingRuntime: KServeCpu,
+  clusterServingRuntime: KServeMemoryStick,
+  inferenceGraph: KServeWorkflow,
+  trainedModel: KServeGraduationCap,
+  // Dynamic Resource Allocation (#244): the section, its kinds and the devices page.
+  dra: DraMicrochip,
+  resourceClaim: DraTicketCheck,
+  resourceClaimTemplate: DraTickets,
+  deviceClass: DraShapes,
+  resourceSlice: DraCircuitBoard,
+  draDevices: DraLayoutGrid,
+  // NVIDIA GPU Operator (#245): the section, its kinds and the GPU nodes page.
+  gpuOperator: GpuGpu,
+  clusterPolicy: GpuFileCog,
+  nvidiaDriver: GpuPcCase,
+  gpuNodes: GpuMemoryStick,
   // Image file viewer (#216): the page and the entries of an image's tree.
   imageFiles: ImageFolderSearch,
   imageFolder: ImageFolder,

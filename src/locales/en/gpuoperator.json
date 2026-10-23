@@ -1,0 +1,117 @@
+{
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "loading": "Loading…",
+  "sidebar": {
+    "clusterPolicies": "Cluster Policies",
+    "drivers": "NVIDIA Drivers"
+  },
+  "columns": {
+    "state": "State",
+    "namespace": "Operand namespace",
+    "migStrategy": "MIG strategy",
+    "driverType": "Driver type",
+    "version": "Version",
+    "nodeSelector": "Node selector"
+  },
+  "state": {
+    "ready": "Ready",
+    "notReady": "Not ready",
+    "ignored": "Ignored",
+    "disabled": "Disabled",
+    "unknown": "No state yet"
+  },
+  "hint": {
+    "notReady": "The operator has not finished: some component is not deployed or not ready yet. The components below say which.",
+    "ignored": "The operator ignores this ClusterPolicy because another one exists: only one is used.",
+    "disabled": "The operator reports this object as disabled.",
+    "unknown": "The operator has not reported a state yet."
+  },
+  "fields": {
+    "state": "State",
+    "namespace": "Operand namespace",
+    "migStrategy": "MIG strategy",
+    "migStrategyUnset": "Not set (the device plugin decides, by default none)",
+    "driver": "Driver",
+    "driverByCrd": "Managed by NVIDIADriver objects",
+    "driverType": "Driver type",
+    "version": "Version",
+    "nodeSelector": "Node selector",
+    "product": "GPU product",
+    "count": "GPUs",
+    "memory": "Memory per GPU",
+    "migConfig": "MIG configuration",
+    "migState": "MIG configuration state"
+  },
+  "component": {
+    "driver": "Driver",
+    "toolkit": "Container toolkit",
+    "devicePlugin": "Device plugin",
+    "dcgm": "DCGM",
+    "dcgmExporter": "DCGM exporter",
+    "gfd": "GPU Feature Discovery",
+    "migManager": "MIG manager",
+    "nodeStatusExporter": "Node status exporter",
+    "validator": "Validator",
+    "vgpuManager": "vGPU manager",
+    "vgpuDeviceManager": "vGPU device manager",
+    "vfioManager": "VFIO manager",
+    "sandboxDevicePlugin": "Sandbox device plugin",
+    "kataManager": "Kata manager",
+    "ccManager": "Confidential computing manager"
+  },
+  "components": {
+    "title": "Components",
+    "component": "Component",
+    "enabled": "Enabled",
+    "status": "Rollout",
+    "daemonSet": "DaemonSet",
+    "on": "On",
+    "off": "Off",
+    "rollout": "{{ready}} of {{desired}} ready, {{updated}} updated",
+    "state": {
+      "ready": "Rolled out",
+      "rollingOut": "Rolling out",
+      "missing": "Not deployed yet",
+      "off": "Not deployed",
+      "managedByDriver": "See NVIDIADriver",
+      "unknown": "Cannot tell"
+    },
+    "noNamespace": "The operator has not reported its operand namespace yet, so the DaemonSets cannot be found.",
+    "unavailable": "The DaemonSets of namespace {{namespace}} could not be read.",
+    "truncated": "Not every DaemonSet of the namespace was read: the list may be incomplete."
+  },
+  "driver": {
+    "daemonSets": "DaemonSets",
+    "none": "No DaemonSet of this NVIDIADriver yet."
+  },
+  "node": {
+    "title": "GPU",
+    "resource": "Resource",
+    "capacity": "Capacity",
+    "allocatable": "Allocatable",
+    "noResources": "The node advertises no nvidia.com/gpu or MIG resources.",
+    "memoryMiB": "{{value}} MiB",
+    "migFailed": "The MIG manager could not apply the MIG configuration {{config}} on this node."
+  },
+  "page": {
+    "sidebar": "GPU nodes",
+    "title": "GPU nodes",
+    "hint": "Nodes labelled nvidia.com/gpu.present=true, with their GPUs and MIG configuration.",
+    "total_one": "{{count}} node",
+    "total_other": "{{count}} nodes",
+    "truncated_one": "Only the first {{count}} node is read.",
+    "truncated_other": "Only the first {{count}} nodes are read.",
+    "unavailable": "The nodes could not be read.",
+    "amount": "{{allocatable}} of {{capacity}}",
+    "columns": {
+      "node": "Node",
+      "product": "Product",
+      "count": "GPUs",
+      "gpus": "nvidia.com/gpu allocatable",
+      "mig": "MIG resources (allocatable/capacity)",
+      "migConfig": "MIG configuration",
+      "migState": "MIG state"
+    }
+  }
+}

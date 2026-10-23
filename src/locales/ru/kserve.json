@@ -1,0 +1,132 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService требует внимания",
+  "badge_few": "{{count}} InferenceService требуют внимания",
+  "badge_many": "{{count}} InferenceService требуют внимания",
+  "badge_other": "{{count}} InferenceService требуют внимания",
+  "state": {
+    "ready": "Готов",
+    "progressing": "В процессе",
+    "notReady": "Не готов",
+    "failed": "Сбой",
+    "stopped": "Остановлен"
+  },
+  "columns": {
+    "status": "Статус",
+    "url": "URL",
+    "modelFormat": "Формат модели",
+    "runtime": "Среда",
+    "mode": "Режим",
+    "canary": "Canary, %",
+    "formats": "Форматы моделей",
+    "protocols": "Протоколы",
+    "disabled": "Отключена",
+    "multiModel": "Много моделей",
+    "nodes": "Узлы графа",
+    "inferenceService": "InferenceService",
+    "framework": "Фреймворк"
+  },
+  "fields": {
+    "status": "Статус",
+    "url": "URL",
+    "address": "Адрес",
+    "deploymentMode": "Режим развёртывания",
+    "recordedRuntime": "Используемая среда",
+    "modelFormat": "Формат модели",
+    "runtime": "Среда",
+    "storageUri": "URI хранилища",
+    "protocolVersion": "Протокол",
+    "images": "Образы",
+    "replicas": "Реплики",
+    "canaryTrafficPercent": "Трафик canary",
+    "workers": "Несколько узлов",
+    "componentUrl": "URL",
+    "latestReadyRevision": "Последняя готовая ревизия",
+    "latestCreatedRevision": "Последняя созданная ревизия",
+    "previousRolledoutRevision": "Предыдущая ревизия",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Переход",
+    "activeModelState": "Активная модель",
+    "targetModelState": "Целевая модель",
+    "failureReason": "Причина сбоя",
+    "failureLocation": "Где произошёл сбой",
+    "failureTime": "Время сбоя",
+    "exitCode": "Код выхода",
+    "copies": "Копии",
+    "protocols": "Протоколы",
+    "disabled": "Отключена",
+    "multiModel": "Много моделей",
+    "multiNode": "Несколько узлов",
+    "inferenceService": "InferenceService",
+    "framework": "Фреймворк",
+    "memory": "Память"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment и Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Не задан: действует значение кластера по умолчанию"
+  },
+  "uriHidden": "учётные данные и параметры запроса скрыты",
+  "bounds": "от {{min}} до {{max}}",
+  "percent": "{{value}} %",
+  "copies": "сбой у {{failed}} из {{total}}",
+  "yes": "Да",
+  "no": "Нет",
+  "stoppedNote": "InferenceService остановлен намеренно: KServe удалил то, что его обслуживает.",
+  "traffic": {
+    "revision": "Ревизия",
+    "percent": "Трафик",
+    "tag": "Тег",
+    "latest": "Последняя"
+  },
+  "modelStatus": "Состояние модели",
+  "choice": {
+    "title": "Среда выполнения",
+    "fields": {
+      "named": "Указана в спецификации",
+      "auto": "Выбор KServe"
+    },
+    "loading": "Чтение сред выполнения…",
+    "notServed": "Кластер не обслуживает виды ServingRuntime.",
+    "unreadable": "Не все среды выполнения удаётся прочитать, поэтому выбор определить нельзя.",
+    "noFormat": "Predictor не указывает формат модели: KServe не выбирает для него среду.",
+    "none": "Ни одна среда выполнения не поддерживает формат модели {{format}}: KServe не может обслуживать эту модель.",
+    "others": "Другие кандидаты в порядке KServe: {{names}}",
+    "differs": "При последней сверке KServe записал {{recorded}}: с тех пор среды выполнения изменились.",
+    "namedMissing": "Среды {{name}}, указанной в спецификации, нет ни в этом namespace, ни в кластере.",
+    "namedDisabled": "Среда {{name}}, указанная в спецификации, отключена.",
+    "namedProtocol": "Среда {{name}}, указанная в спецификации, не поддерживает протокол модели.",
+    "namedFormat": "Среда {{name}}, указанная в спецификации, не поддерживает формат модели."
+  },
+  "formats": {
+    "title": "Форматы моделей",
+    "name": "Формат",
+    "version": "Версия",
+    "autoSelect": "Автовыбор",
+    "priority": "Приоритет"
+  },
+  "graph": {
+    "node": "Узел {{name}} ({{type}})",
+    "toNode": "Узел {{name}}",
+    "step": "Шаг",
+    "target": "Цель",
+    "weight": "Вес",
+    "condition": "Условие",
+    "dependency": "Зависимость"
+  }
+}

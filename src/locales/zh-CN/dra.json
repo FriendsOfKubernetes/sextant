@@ -1,0 +1,143 @@
+{
+  "badge_other": "{{count}} 个 Pod 在等待设备",
+  "loading": "正在加载…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "状态",
+    "classes": "设备类",
+    "devices": "设备",
+    "node": "节点",
+    "reservedFor": "预留给",
+    "requests": "请求",
+    "selectors": "选择器",
+    "drivers": "驱动",
+    "extendedResource": "扩展资源",
+    "driver": "驱动",
+    "pool": "池",
+    "deviceCount": "设备"
+  },
+  "state": {
+    "inUse": "使用中",
+    "allocated": "已分配",
+    "pending": "等待中",
+    "bindingFailed": "绑定失败",
+    "deleting": "正在删除"
+  },
+  "hint": {
+    "inUse": "设备已分配，并预留给下面的使用者。",
+    "allocated": "设备已分配，但还没有 Pod 预留它们。",
+    "pending": "尚未分配设备。调度器放置第一个使用此 claim 的 Pod 时才会分配。",
+    "bindingFailed": "驱动报告设备绑定失败：调度器会尝试其他节点。",
+    "deleting": "此 claim 正在删除；没有 Pod 使用它后，其设备会被释放。"
+  },
+  "scope": {
+    "node": "单个节点",
+    "allNodes": "所有节点",
+    "selector": "按选择器的节点",
+    "perDevice": "按设备设置",
+    "unknown": "未说明"
+  },
+  "fields": {
+    "state": "状态",
+    "node": "节点",
+    "nodeSelector": "节点选择器",
+    "allocatedAt": "分配时间",
+    "madeFor": "为此 Pod 创建",
+    "reservedFor": "预留给",
+    "extendedResource": "扩展资源",
+    "driver": "驱动",
+    "pool": "池",
+    "poolGeneration": "池代数",
+    "poolSlices": "池中的 slice 数",
+    "reach": "设备可访问范围"
+  },
+  "requests": {
+    "title": "请求",
+    "request": "请求",
+    "class": "设备类",
+    "selectors": "选择器 (CEL)",
+    "amount": "数量",
+    "choice": "{{request}}：选项 {{n}}（{{choice}}）",
+    "all": "所有匹配的设备",
+    "count_other": "{{count}} 个设备",
+    "withAdminAccess": "{{amount}}，带管理员访问",
+    "none": "没有请求。"
+  },
+  "results": {
+    "title": "已分配的设备",
+    "request": "请求",
+    "driver": "驱动",
+    "device": "池 / 设备",
+    "notes": "备注",
+    "adminAccess": "管理员访问。",
+    "bindingFailed": "绑定失败：{{conditions}}。",
+    "bindingPending": "正在等待：{{conditions}}。"
+  },
+  "waiting": {
+    "title": "等待此 claim 的 Pod",
+    "none": "此 namespace 中没有 Pending 的 Pod 使用此 claim。",
+    "unknown": "无法读取此 namespace 中 Pending 的 Pod。"
+  },
+  "reason": {
+    "notCreated": "Pod 从其模板创建的 claim 还不存在：resource claim 控制器尚未创建它。",
+    "notFound": "Pod 指定的某个 claim 不存在。",
+    "deleting": "Pod 使用的某个 claim 正在删除。",
+    "inUse": "此 claim 已被其他 Pod 预留，不能与此 Pod 共享。",
+    "noClass": "某个请求指定的设备类不存在。",
+    "cannotAllocate": "没有节点拥有满足此 Pod 所有 claim 请求的空闲设备。",
+    "notOnNode": "此 claim 的设备分配在其他节点上，而不是 Pod 可以运行的节点。",
+    "allocating": "另一次调度尝试正在分配此 claim。",
+    "notOwner": "此 claim 是为另一个 Pod 创建的。"
+  },
+  "class": {
+    "selectors": "选择器 (CEL)",
+    "noSelectors": "没有选择器：驱动的任何设备都匹配。",
+    "celNote": "表达式按原样显示；Sextant 不会对其求值。",
+    "config": "驱动配置"
+  },
+  "devices": {
+    "title": "设备",
+    "node": "节点",
+    "driver": "驱动",
+    "device": "池 / 设备",
+    "product": "产品",
+    "capacity": "容量",
+    "allocatedTo": "分配给",
+    "free": "空闲",
+    "unknown": "无法判断",
+    "none": "没有设备。",
+    "cut_other": "仅显示 {{total}} 个设备中的前 {{count}} 个。"
+  },
+  "pod": {
+    "title": "设备",
+    "name": "Pod 中的名称",
+    "claim": "Claim",
+    "state": "状态",
+    "devices": "设备",
+    "containers": "容器",
+    "fromTemplate": "来自模板 {{template}}",
+    "notNeeded": "不需要（模板 {{template}}）",
+    "notCreated": "尚未创建",
+    "missing": "不存在",
+    "unknown": "无法判断",
+    "notServed": "集群未提供 resource.k8s.io 的 ResourceClaim。"
+  },
+  "node": {
+    "title": "DRA 设备",
+    "truncated_other": "仅读取前 {{count}} 个 ResourceSlice。"
+  },
+  "page": {
+    "sidebar": "设备",
+    "title": "设备",
+    "hint": "驱动在 ResourceSlice 中发布的每个设备，按节点列出，并显示持有它的 claim。",
+    "total_other": "{{count}} 个设备",
+    "totals_other": "{{count}} 个设备，已分配 {{allocated}} 个",
+    "slicesTruncated_other": "仅读取前 {{count}} 个 ResourceSlice。",
+    "claimsUnknown": "无法完整读取集群的 ResourceClaim，因此无法判断哪些设备已分配。"
+  }
+}

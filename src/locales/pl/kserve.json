@@ -1,0 +1,132 @@
+{
+  "sidebar": {
+    "inferenceServices": "Inference Services",
+    "servingRuntimes": "Serving Runtimes",
+    "clusterServingRuntimes": "Cluster Serving Runtimes",
+    "inferenceGraphs": "Inference Graphs",
+    "trainedModels": "Trained Models"
+  },
+  "badge_one": "{{count}} InferenceService wymaga uwagi",
+  "badge_few": "{{count}} InferenceService wymagają uwagi",
+  "badge_many": "{{count}} InferenceService wymaga uwagi",
+  "badge_other": "{{count}} InferenceService wymaga uwagi",
+  "state": {
+    "ready": "Gotowy",
+    "progressing": "W toku",
+    "notReady": "Niegotowy",
+    "failed": "Błąd",
+    "stopped": "Zatrzymany"
+  },
+  "columns": {
+    "status": "Stan",
+    "url": "URL",
+    "modelFormat": "Format modelu",
+    "runtime": "Środowisko",
+    "mode": "Tryb",
+    "canary": "Canary %",
+    "formats": "Formaty modeli",
+    "protocols": "Protokoły",
+    "disabled": "Wyłączone",
+    "multiModel": "Wiele modeli",
+    "nodes": "Węzły grafu",
+    "inferenceService": "InferenceService",
+    "framework": "Framework"
+  },
+  "fields": {
+    "status": "Stan",
+    "url": "URL",
+    "address": "Adres",
+    "deploymentMode": "Tryb wdrożenia",
+    "recordedRuntime": "Używane środowisko",
+    "modelFormat": "Format modelu",
+    "runtime": "Środowisko",
+    "storageUri": "URI magazynu",
+    "protocolVersion": "Protokół",
+    "images": "Obrazy",
+    "replicas": "Repliki",
+    "canaryTrafficPercent": "Ruch canary",
+    "workers": "Wiele węzłów",
+    "componentUrl": "URL",
+    "latestReadyRevision": "Najnowsza gotowa rewizja",
+    "latestCreatedRevision": "Najnowsza utworzona rewizja",
+    "previousRolledoutRevision": "Poprzednia rewizja",
+    "knativeService": "Knative Service",
+    "deployment": "Deployment",
+    "service": "Service",
+    "transitionStatus": "Przejście",
+    "activeModelState": "Aktywny model",
+    "targetModelState": "Docelowy model",
+    "failureReason": "Przyczyna błędu",
+    "failureLocation": "Błąd w",
+    "failureTime": "Czas błędu",
+    "exitCode": "Kod wyjścia",
+    "copies": "Kopie",
+    "protocols": "Protokoły",
+    "disabled": "Wyłączone",
+    "multiModel": "Wiele modeli",
+    "multiNode": "Wiele węzłów",
+    "inferenceService": "InferenceService",
+    "framework": "Framework",
+    "memory": "Pamięć"
+  },
+  "component": {
+    "predictor": "Predictor",
+    "transformer": "Transformer",
+    "explainer": "Explainer"
+  },
+  "mode": {
+    "knative": "Knative ({{value}})",
+    "standard": "Standard: Deployment i Service ({{value}})",
+    "modelMesh": "ModelMesh ({{value}})",
+    "other": "{{value}}",
+    "default": "Nie ustawiono: obowiązuje wartość domyślna klastra"
+  },
+  "uriHidden": "dane logowania i parametry zapytania ukryte",
+  "bounds": "od {{min}} do {{max}}",
+  "percent": "{{value}}%",
+  "copies": "błąd w {{failed}} z {{total}}",
+  "yes": "Tak",
+  "no": "Nie",
+  "stoppedNote": "InferenceService jest celowo zatrzymany: KServe usunął to, co go obsługuje.",
+  "traffic": {
+    "revision": "Rewizja",
+    "percent": "Ruch",
+    "tag": "Tag",
+    "latest": "Najnowsza"
+  },
+  "modelStatus": "Stan modelu",
+  "choice": {
+    "title": "Środowisko serwowania",
+    "fields": {
+      "named": "Podane w specyfikacji",
+      "auto": "Wybór KServe"
+    },
+    "loading": "Odczytywanie środowisk serwowania…",
+    "notServed": "Klaster nie obsługuje rodzajów ServingRuntime.",
+    "unreadable": "Nie wszystkie środowiska serwowania da się odczytać, więc wyboru nie można ustalić.",
+    "noFormat": "Predictor nie podaje formatu modelu: KServe nie wybiera dla niego środowiska.",
+    "none": "Żadne środowisko serwowania nie obsługuje formatu modelu {{format}}: KServe nie może serwować tego modelu.",
+    "others": "Inni kandydaci w kolejności KServe: {{names}}",
+    "differs": "Przy ostatnim uzgadnianiu KServe zapisał {{recorded}}: od tego czasu środowiska się zmieniły.",
+    "namedMissing": "Środowiska {{name}} podanego w specyfikacji nie ma ani w tym namespace, ani w klastrze.",
+    "namedDisabled": "Środowisko {{name}} podane w specyfikacji jest wyłączone.",
+    "namedProtocol": "Środowisko {{name}} podane w specyfikacji nie obsługuje protokołu modelu.",
+    "namedFormat": "Środowisko {{name}} podane w specyfikacji nie wymienia formatu modelu."
+  },
+  "formats": {
+    "title": "Formaty modeli",
+    "name": "Format",
+    "version": "Wersja",
+    "autoSelect": "Wybór automatyczny",
+    "priority": "Priorytet"
+  },
+  "graph": {
+    "node": "Węzeł {{name}} ({{type}})",
+    "toNode": "Węzeł {{name}}",
+    "step": "Krok",
+    "target": "Cel",
+    "weight": "Waga",
+    "condition": "Warunek",
+    "dependency": "Zależność"
+  }
+}

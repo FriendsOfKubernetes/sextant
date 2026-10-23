@@ -1,0 +1,157 @@
+{
+  "badge_one": "{{count}} Pod attende dispositivi",
+  "badge_many": "{{count}} di Pod attendono dispositivi",
+  "badge_other": "{{count}} Pod attendono dispositivi",
+  "loading": "Caricamento…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "Stato",
+    "classes": "Classi di dispositivi",
+    "devices": "Dispositivi",
+    "node": "Nodo",
+    "reservedFor": "Riservato per",
+    "requests": "Richieste",
+    "selectors": "Selettori",
+    "drivers": "Driver",
+    "extendedResource": "Risorsa estesa",
+    "driver": "Driver",
+    "pool": "Pool",
+    "deviceCount": "Dispositivi"
+  },
+  "state": {
+    "inUse": "In uso",
+    "allocated": "Allocato",
+    "pending": "In attesa",
+    "bindingFailed": "Binding non riuscito",
+    "deleting": "In eliminazione"
+  },
+  "hint": {
+    "inUse": "I dispositivi sono allocati e riservati per i consumatori qui sotto.",
+    "allocated": "I dispositivi sono allocati, ma nessun Pod li ha ancora riservati.",
+    "pending": "Nessun dispositivo è ancora allocato. Lo scheduler li alloca quando posiziona il primo Pod che usa questo claim.",
+    "bindingFailed": "Il driver segnala che il binding di un dispositivo non è riuscito: lo scheduler proverà un altro nodo.",
+    "deleting": "Il claim è in eliminazione; i suoi dispositivi si liberano quando nessun Pod lo usa più."
+  },
+  "scope": {
+    "node": "Un nodo",
+    "allNodes": "Tutti i nodi",
+    "selector": "Nodi per selettore",
+    "perDevice": "Definito per dispositivo",
+    "unknown": "Non indicato"
+  },
+  "fields": {
+    "state": "Stato",
+    "node": "Nodo",
+    "nodeSelector": "Selettore di nodi",
+    "allocatedAt": "Allocato",
+    "madeFor": "Creato per il Pod",
+    "reservedFor": "Riservato per",
+    "extendedResource": "Risorsa estesa",
+    "driver": "Driver",
+    "pool": "Pool",
+    "poolGeneration": "Generazione del pool",
+    "poolSlices": "Slice nel pool",
+    "reach": "Dispositivi raggiungibili da"
+  },
+  "requests": {
+    "title": "Richieste",
+    "request": "Richiesta",
+    "class": "Classe di dispositivi",
+    "selectors": "Selettori (CEL)",
+    "amount": "Quantità",
+    "choice": "{{request}}: scelta {{n}} ({{choice}})",
+    "all": "Tutti i dispositivi corrispondenti",
+    "count_one": "{{count}} dispositivo",
+    "count_many": "{{count}} di dispositivi",
+    "count_other": "{{count}} dispositivi",
+    "withAdminAccess": "{{amount}}, con accesso amministrativo",
+    "none": "Nessuna richiesta."
+  },
+  "results": {
+    "title": "Dispositivi allocati",
+    "request": "Richiesta",
+    "driver": "Driver",
+    "device": "Pool / dispositivo",
+    "notes": "Note",
+    "adminAccess": "Accesso amministrativo.",
+    "bindingFailed": "Binding non riuscito: {{conditions}}.",
+    "bindingPending": "In attesa di: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pod in attesa di questo claim",
+    "none": "Nessun Pod Pending di questo namespace usa questo claim.",
+    "unknown": "Impossibile leggere i Pod Pending di questo namespace."
+  },
+  "reason": {
+    "notCreated": "Il claim che il Pod crea dal suo modello non esiste ancora: il controller dei resource claim non lo ha creato.",
+    "notFound": "Un claim indicato dal Pod non esiste.",
+    "deleting": "Un claim usato dal Pod è in eliminazione.",
+    "inUse": "Il claim è riservato da altri Pod e non può essere condiviso con questo.",
+    "noClass": "Una richiesta indica una classe di dispositivi che non esiste.",
+    "cannotAllocate": "Nessun nodo ha dispositivi liberi che soddisfino tutte le richieste dei claim del Pod.",
+    "notOnNode": "I dispositivi del claim sono allocati su un nodo diverso da quelli su cui il Pod può girare.",
+    "allocating": "Un altro tentativo di scheduling sta allocando il claim proprio ora.",
+    "notOwner": "Il claim è stato creato per un altro Pod."
+  },
+  "class": {
+    "selectors": "Selettori (CEL)",
+    "noSelectors": "Nessun selettore: corrisponde qualsiasi dispositivo dei driver.",
+    "celNote": "Le espressioni sono mostrate come scritte; Sextant non le valuta.",
+    "config": "Configurazione dei driver"
+  },
+  "devices": {
+    "title": "Dispositivi",
+    "node": "Nodo",
+    "driver": "Driver",
+    "device": "Pool / dispositivo",
+    "product": "Prodotto",
+    "capacity": "Capacità",
+    "allocatedTo": "Allocato a",
+    "free": "Libero",
+    "unknown": "Impossibile dire",
+    "none": "Nessun dispositivo.",
+    "cut_one": "Viene mostrato solo il primo dispositivo ({{count}}) di {{total}}.",
+    "cut_many": "Vengono mostrati solo i primi {{count}} dispositivi di {{total}}.",
+    "cut_other": "Vengono mostrati solo i primi {{count}} dispositivi di {{total}}."
+  },
+  "pod": {
+    "title": "Dispositivi",
+    "name": "Nome nel Pod",
+    "claim": "Claim",
+    "state": "Stato",
+    "devices": "Dispositivi",
+    "containers": "Container",
+    "fromTemplate": "Dal modello {{template}}",
+    "notNeeded": "Non necessario (modello {{template}})",
+    "notCreated": "Non ancora creato",
+    "missing": "Non esiste",
+    "unknown": "Impossibile dire",
+    "notServed": "Il cluster non serve ResourceClaim di resource.k8s.io."
+  },
+  "node": {
+    "title": "Dispositivi DRA",
+    "truncated_one": "Viene letto solo il primo ResourceSlice ({{count}}).",
+    "truncated_many": "Vengono letti solo i primi {{count}} ResourceSlice.",
+    "truncated_other": "Vengono letti solo i primi {{count}} ResourceSlice."
+  },
+  "page": {
+    "sidebar": "Dispositivi",
+    "title": "Dispositivi",
+    "hint": "Ogni dispositivo che i driver pubblicano nei ResourceSlice, per nodo, con il claim che lo detiene.",
+    "total_one": "{{count}} dispositivo",
+    "total_many": "{{count}} di dispositivi",
+    "total_other": "{{count}} dispositivi",
+    "totals_one": "{{count}} dispositivo, {{allocated}} allocati",
+    "totals_many": "{{count}} di dispositivi, {{allocated}} allocati",
+    "totals_other": "{{count}} dispositivi, {{allocated}} allocati",
+    "slicesTruncated_one": "Viene letto solo il primo ResourceSlice ({{count}}).",
+    "slicesTruncated_many": "Vengono letti solo i primi {{count}} ResourceSlice.",
+    "slicesTruncated_other": "Vengono letti solo i primi {{count}} ResourceSlice.",
+    "claimsUnknown": "Impossibile leggere per intero i ResourceClaim del cluster, quindi non si può dire quali dispositivi siano allocati."
+  }
+}

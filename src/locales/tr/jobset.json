@@ -1,0 +1,97 @@
+{
+  "sidebar": {
+    "jobSets": "Job Sets"
+  },
+  "badge_one": "{{count}} JobSet ilgi gerektiriyor",
+  "badge_other": "{{count}} JobSet ilgi gerektiriyor",
+  "state": {
+    "completed": "Tamamlandı",
+    "failed": "Başarısız",
+    "suspended": "Askıda",
+    "restarting": "Yeniden başlıyor",
+    "starting": "Başlıyor",
+    "running": "Çalışıyor",
+    "pending": "Bekliyor"
+  },
+  "jobState": {
+    "complete": "Tamamlandı",
+    "failed": "Başarısız",
+    "suspended": "Askıda",
+    "active": "Etkin",
+    "pending": "Bekliyor"
+  },
+  "columns": {
+    "status": "Durum",
+    "succeeded": "Başarılı",
+    "active": "Etkin",
+    "failed": "Başarısız",
+    "restarts": "Yeniden başlatmalar"
+  },
+  "fields": {
+    "status": "Durum",
+    "terminalState": "Son durum",
+    "restarts": "Yeniden başlatmalar",
+    "restartStrategy": "Yeniden başlatma stratejisi",
+    "successPolicy": "Başarılı sayılma koşulu",
+    "startupPolicy": "Başlatma sırası",
+    "suspend": "Askıda",
+    "startTime": "Başladı",
+    "activeDeadline": "Etkin süre sınırı (sn)",
+    "ttlAfterFinished": "Bitince silinme (sn)",
+    "subdomain": "Alt alan adı",
+    "coordinator": "Koordinatör pod",
+    "managedBy": "Yöneten",
+    "firstFailedJob": "İlk başarısız Job"
+  },
+  "success": {
+    "all": "Her çoğaltılmış işin her Job'u tamamlanır",
+    "any": "Herhangi bir Job tamamlanır",
+    "allOf": "{{targets}} işlerinin her Job'u tamamlanır",
+    "anyOf": "{{targets}} işlerinden herhangi bir Job tamamlanır"
+  },
+  "restartsOfMax": "İzin verilen {{max}} içinden {{counted}} (toplam {{total}})",
+  "nearLimit": "İzin verilen {{max}} yeniden başlatmadan {{counted}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
+  "failedNoReason": "JobSet başarısız oldu.",
+  "failedJobGone": "Bu Job artık yok.",
+  "suspendedNote": "Askıda: sürdürülene kadar Job'ları askıda kalır.",
+  "replicated": {
+    "title": "Çoğaltılmış işler",
+    "name": "Ad",
+    "replicas": "Job'lar",
+    "completions": "Tamamlanma / paralellik",
+    "ready": "Hazır",
+    "active": "Etkin",
+    "succeeded": "Başarılı",
+    "failed": "Başarısız",
+    "dependsOn": "Bağımlı olduğu"
+  },
+  "rules": {
+    "title": "Hata ilkesi kuralları",
+    "name": "Kural",
+    "action": "Eylem",
+    "onFailure": "Job hatalarında",
+    "targets": "Çoğaltılmış işler"
+  },
+  "jobs": {
+    "title": "Job'lar",
+    "job": "Job",
+    "replicatedJob": "Çoğaltılmış iş",
+    "index": "Dizin",
+    "state": "Durum",
+    "attempt": "Yeniden başlatma denemesi",
+    "reason": "Hata"
+  },
+  "pods": {
+    "title": "Pod'lar",
+    "pod": "Pod",
+    "job": "Job",
+    "status": "Durum"
+  },
+  "yes": "Evet",
+  "loading": "Yükleniyor…",
+  "listUnknown": "Liste okunamadı.",
+  "noJobs": "Hiç Job yok.",
+  "noPods": "Hiç Pod yok.",
+  "morePods": "{{total}} içinden ilk {{shown}} tanesi gösteriliyor, önce çalışmayanlar.",
+  "truncated": "Yalnızca ilk {{max}} tanesi okunuyor: liste eksik."
+}

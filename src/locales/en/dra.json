@@ -1,0 +1,150 @@
+{
+  "badge_one": "{{count}} pod waits for devices",
+  "badge_other": "{{count}} pods wait for devices",
+  "loading": "Loading…",
+  "sidebar": {
+    "claims": "Resource Claims",
+    "templates": "Claim Templates",
+    "deviceClasses": "Device Classes",
+    "slices": "Resource Slices"
+  },
+  "columns": {
+    "state": "State",
+    "classes": "Device classes",
+    "devices": "Devices",
+    "node": "Node",
+    "reservedFor": "Reserved for",
+    "requests": "Requests",
+    "selectors": "Selectors",
+    "drivers": "Drivers",
+    "extendedResource": "Extended resource",
+    "driver": "Driver",
+    "pool": "Pool",
+    "deviceCount": "Devices"
+  },
+  "state": {
+    "inUse": "In use",
+    "allocated": "Allocated",
+    "pending": "Pending",
+    "bindingFailed": "Binding failed",
+    "deleting": "Deleting"
+  },
+  "hint": {
+    "inUse": "Devices are allocated and reserved for the consumers below.",
+    "allocated": "Devices are allocated, but no Pod has reserved them yet.",
+    "pending": "No devices are allocated yet. The scheduler allocates them when it places the first Pod that uses this claim.",
+    "bindingFailed": "The driver reports that binding a device failed: the scheduler will try another node.",
+    "deleting": "The claim is being deleted; its devices are freed once no Pod uses it."
+  },
+  "scope": {
+    "node": "One node",
+    "allNodes": "All nodes",
+    "selector": "Nodes by selector",
+    "perDevice": "Set per device",
+    "unknown": "Not stated"
+  },
+  "fields": {
+    "state": "State",
+    "node": "Node",
+    "nodeSelector": "Node selector",
+    "allocatedAt": "Allocated",
+    "madeFor": "Made for Pod",
+    "reservedFor": "Reserved for",
+    "extendedResource": "Extended resource",
+    "driver": "Driver",
+    "pool": "Pool",
+    "poolGeneration": "Pool generation",
+    "poolSlices": "Slices in the pool",
+    "reach": "Devices reachable from"
+  },
+  "requests": {
+    "title": "Requests",
+    "request": "Request",
+    "class": "Device class",
+    "selectors": "Selectors (CEL)",
+    "amount": "Amount",
+    "choice": "{{request}}: choice {{n}} ({{choice}})",
+    "all": "All matching devices",
+    "count_one": "{{count}} device",
+    "count_other": "{{count}} devices",
+    "withAdminAccess": "{{amount}}, with admin access",
+    "none": "No requests."
+  },
+  "results": {
+    "title": "Allocated devices",
+    "request": "Request",
+    "driver": "Driver",
+    "device": "Pool / device",
+    "notes": "Notes",
+    "adminAccess": "Admin access.",
+    "bindingFailed": "Binding failed: {{conditions}}.",
+    "bindingPending": "Waiting for: {{conditions}}."
+  },
+  "waiting": {
+    "title": "Pods waiting for this claim",
+    "none": "No Pending Pod of this namespace uses this claim.",
+    "unknown": "The Pending Pods of this namespace could not be read."
+  },
+  "reason": {
+    "notCreated": "The claim the Pod makes from its template does not exist yet: the resource claim controller has not created it.",
+    "notFound": "A claim the Pod names does not exist.",
+    "deleting": "A claim the Pod uses is being deleted.",
+    "inUse": "The claim is reserved by other Pods and cannot be shared with this one.",
+    "noClass": "A request names a device class that does not exist.",
+    "cannotAllocate": "No node has free devices that match every request of the Pod's claims.",
+    "notOnNode": "The claim's devices are allocated on another node than the ones the Pod can run on.",
+    "allocating": "Another scheduling attempt is allocating the claim right now.",
+    "notOwner": "The claim was made for another Pod."
+  },
+  "class": {
+    "selectors": "Selectors (CEL)",
+    "noSelectors": "No selectors: every device of the drivers' classes matches.",
+    "celNote": "The expressions are shown as written; Sextant does not evaluate them.",
+    "config": "Driver configuration"
+  },
+  "devices": {
+    "title": "Devices",
+    "node": "Node",
+    "driver": "Driver",
+    "device": "Pool / device",
+    "product": "Product",
+    "capacity": "Capacity",
+    "allocatedTo": "Allocated to",
+    "free": "Free",
+    "unknown": "Cannot tell",
+    "none": "No devices.",
+    "cut_one": "Only the first {{count}} device of {{total}} is shown.",
+    "cut_other": "Only the first {{count}} devices of {{total}} are shown."
+  },
+  "pod": {
+    "title": "Devices",
+    "name": "Name in the Pod",
+    "claim": "Claim",
+    "state": "State",
+    "devices": "Devices",
+    "containers": "Containers",
+    "fromTemplate": "From template {{template}}",
+    "notNeeded": "Not needed (template {{template}})",
+    "notCreated": "Not created yet",
+    "missing": "Does not exist",
+    "unknown": "Cannot tell",
+    "notServed": "The cluster does not serve resource.k8s.io ResourceClaims."
+  },
+  "node": {
+    "title": "DRA devices",
+    "truncated_one": "Only the first {{count}} ResourceSlice is read.",
+    "truncated_other": "Only the first {{count}} ResourceSlices are read."
+  },
+  "page": {
+    "sidebar": "Devices",
+    "title": "Devices",
+    "hint": "Every device the drivers publish in ResourceSlices, by node, with the claim that holds it.",
+    "total_one": "{{count}} device",
+    "total_other": "{{count}} devices",
+    "totals_one": "{{count}} device, {{allocated}} allocated",
+    "totals_other": "{{count}} devices, {{allocated}} allocated",
+    "slicesTruncated_one": "Only the first {{count}} ResourceSlice is read.",
+    "slicesTruncated_other": "Only the first {{count}} ResourceSlices are read.",
+    "claimsUnknown": "The cluster's ResourceClaims could not be read in full, so which devices are allocated cannot be told."
+  }
+}
