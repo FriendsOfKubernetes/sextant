@@ -172,6 +172,13 @@
     "notExecutable": "Das Anmeldeprogramm {{command}} kann nicht ausgeführt werden: Es ist keine ausführbare Datei.",
     "badge": "Anmeldeprogramm nicht gefunden oder nicht ausführbar",
     "hintElsewhere": "Die kubeconfig wurde vielleicht auf einem anderen Computer oder in WSL erzeugt. Erzeugen Sie sie auf diesem Computer neu, oder setzen Sie als exec-Befehl nur den Namen des Werkzeugs (die Cloud-CLI, z. B. yc, aws, gcloud, az, kubelogin) und stellen Sie sicher, dass das Werkzeug im PATH liegt.",
-    "hintRestart": "Ein Werkzeug, das nach dem Start von Sextant oder Ihrer Desktop-Sitzung installiert wurde, ist erst nach einem Neustart von Sextant in dessen PATH. Unter Windows melden Sie sich vorher ab und wieder an."
+    "hintRestart": "Ein Werkzeug, das nach dem Start von Sextant oder Ihrer Desktop-Sitzung installiert wurde, ist erst nach einem Neustart von Sextant in dessen PATH. Unter Windows melden Sie sich vorher ab und wieder an.",
+    "loginHint": "Das Anmeldeprogramm schlägt meist fehl, weil Sie nicht angemeldet sind oder Ihre Sitzung abgelaufen ist. Führen Sie es in einem Terminal aus, um sich anzumelden (zum Beispiel yc init, aws sso login, gcloud auth login, az login oder kubelogin), und versuchen Sie es dann erneut.",
+    "output": {
+      "title": "Ausgabe des Anmeldeprogramms (Geheimnisse ausgeblendet)",
+      "copy": "Ausgabe kopieren",
+      "copied": "Kopiert.",
+      "copyFailed": "Kopieren fehlgeschlagen."
+    }
   }
 }

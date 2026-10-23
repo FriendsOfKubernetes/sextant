@@ -23,10 +23,7 @@
     "invalid": "Geben Sie eine ganze Zahl ab 0 ein."
   },
   "restart": {
-    "label": "Neu starten",
-    "title": "{{kind}} {{name}} neu starten?",
-    "text": "Alle Pods von {{name}} werden nacheinander ersetzt (rollout restart).",
-    "confirm": "Neu starten"
+    "label": "Neu starten"
   },
   "cordon": {
     "label": "Cordon / Uncordon",

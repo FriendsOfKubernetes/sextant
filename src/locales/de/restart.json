@@ -1,0 +1,44 @@
+{
+  "title": "{{kind}} {{name}} neu starten?",
+  "titlePods": "Die Pods von ReplicaSet {{name}} neu starten?",
+  "titleMany_one": "{{count}} Objekt neu starten?",
+  "titleMany_other": "{{count}} Objekte neu starten?",
+  "intro_one": "Dieses {{count}} Objekt wird neu gestartet. Jede Anfrage wird einmal gesendet.",
+  "intro_other": "Diese {{count}} Objekte werden nacheinander in dieser Reihenfolge neu gestartet. Jede Anfrage wird einmal gesendet.",
+  "more_one": "…und {{count}} weiteres Objekt.",
+  "more_other": "…und {{count}} weitere Objekte.",
+  "step": {
+    "rollout": "{{name}}: seine Pods werden nacheinander ersetzt (rollout restart).",
+    "argoRollout": "{{name}}: Argo Rollouts ersetzt seine Pods nacheinander (kubectl argo rollouts restart).",
+    "owner": "{{name}} wird anstelle seines ReplicaSet {{replicaSets}} neu gestartet: seine Pods werden nacheinander ersetzt. Ein ReplicaSet eines Deployment oder Rollout lässt sich nicht allein neu starten.",
+    "pods": "{{name}} hat keinen Besitzer: seine Pods werden einzeln gelöscht, und das ReplicaSet erstellt für jeden einen neuen Pod. Der nächste Pod wird erst gelöscht, wenn der neue bereit ist; ist er nach 5 Minuten nicht bereit, bleiben die übrigen Pods unverändert.",
+    "pod": "{{name}} wird gelöscht, und sein {{controller}} erstellt an seiner Stelle einen neuen Pod."
+  },
+  "templatePatch": "An jedes Deployment, StatefulSet und DaemonSet als Merge-Patch gesendet, mit der Sendezeit (UTC):",
+  "argoPatch": "An jeden Rollout als Merge-Patch gesendet, mit der Sendezeit (UTC):",
+  "confirm": "Neu starten",
+  "stop": "Anhalten",
+  "stopping": "Wird nach dem aktuellen Schritt angehalten…",
+  "progress": "{{name}} wird neu gestartet ({{current}} von {{total}})…",
+  "progressPods_one": "{{name}}: {{done}} von {{count}} Pod neu gestartet, warte, bis der neue Pod bereit ist…",
+  "progressPods_other": "{{name}}: {{done}} von {{count}} Pods neu gestartet, warte, bis der neue Pod bereit ist…",
+  "summary": "{{done}} von {{total}} neu gestartet.",
+  "summaryStopped": "Angehalten: {{done}} von {{total}} neu gestartet; die übrigen wurden nicht begonnen.",
+  "result": {
+    "done": "Neu gestartet: {{name}}",
+    "failed": "Nicht neu gestartet: {{name}}",
+    "stopped": "Unterwegs angehalten: {{name}}",
+    "skipped": "Nicht begonnen: {{name}}",
+    "pods_one": "{{done}} von {{count}} Pod neu gestartet.",
+    "pods_other": "{{done}} von {{count}} Pods neu gestartet."
+  },
+  "error": {
+    "replaced": "{{name}} wurde durch ein anderes Objekt gleichen Namens ersetzt, seit die Liste angezeigt wurde. Nichts wurde gesendet.",
+    "deleting": "{{name}} wird gerade gelöscht. Nichts wurde gesendet.",
+    "ownerChanged": "Der Besitzer von {{name}} hat sich geändert, seit die Liste angezeigt wurde. Nichts wurde gesendet.",
+    "paused": "{{name}} ist pausiert: ein Neustart würde nicht ausgerollt. Setzen Sie es zuerst fort.",
+    "noPods": "{{name}} hat keine Pods zum Neustarten.",
+    "notReady": "Der neue Pod anstelle von {{name}} war nach 5 Minuten nicht bereit. Die übrigen Pods bleiben unverändert.",
+    "listTimeout": "Die Pods des ReplicaSet konnten nicht innerhalb von 5 Minuten aufgelistet werden."
+  }
+}

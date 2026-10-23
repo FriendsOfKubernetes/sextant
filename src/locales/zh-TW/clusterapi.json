@@ -1,0 +1,169 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_other": "{{count}} 個物件需要注意",
+  "state": {
+    "available": "可用",
+    "provisioned": "已佈建",
+    "provisioning": "佈建中",
+    "notAvailable": "無法使用",
+    "deleting": "刪除中",
+    "failed": "失敗",
+    "paused": "已暫停",
+    "unknown": "未知",
+    "running": "執行中",
+    "notReady": "未就緒",
+    "updating": "更新中",
+    "rollingOut": "推出中",
+    "scaling": "調整規模中",
+    "healthy": "健康",
+    "remediating": "修復中",
+    "blocked": "修復已封鎖"
+  },
+  "columns": {
+    "status": "狀態",
+    "phase": "階段",
+    "class": "類別",
+    "version": "版本",
+    "controlPlane": "控制平面",
+    "workers": "工作節點",
+    "cluster": "叢集",
+    "node": "節點",
+    "ready": "就緒",
+    "upToDate": "最新",
+    "available": "可用",
+    "healthy": "健康",
+    "remediationsAllowed": "允許修復數",
+    "strategy": "策略"
+  },
+  "fields": {
+    "state": "狀態",
+    "phase": "階段",
+    "class": "ClusterClass",
+    "version": "Kubernetes 版本",
+    "endpoint": "控制平面端點",
+    "controlPlane": "控制平面",
+    "infrastructure": "基礎架構",
+    "controlPlaneMachines": "控制平面機器",
+    "workerMachines": "工作機器",
+    "workloadCluster": "工作負載叢集",
+    "cluster": "叢集",
+    "owner": "擁有者",
+    "providerID": "提供者 ID",
+    "failureDomain": "故障網域",
+    "node": "節點",
+    "addresses": "位址",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Bootstrap 資料 Secret",
+    "lastUpdated": "階段變更時間",
+    "desired": "期望",
+    "current": "目前",
+    "ready": "就緒",
+    "available": "可用",
+    "upToDate": "最新",
+    "strategy": "推出策略",
+    "bootstrapTemplate": "Bootstrap 範本",
+    "infrastructureTemplate": "基礎架構範本",
+    "initialized": "已初始化",
+    "lastRemediation": "最近修復的機器",
+    "lastRemediationTime": "最近修復時間",
+    "retryCount": "修復重試次數",
+    "selector": "Selector",
+    "expected": "預期機器數",
+    "healthy": "健康機器數",
+    "remediationsAllowed": "允許修復數",
+    "maxUnhealthy": "不健康數不超過此值時修復",
+    "unhealthyRange": "不健康數在此範圍內時修復",
+    "nodeStartupTimeout": "節點啟動逾時",
+    "unhealthyNodeConditions": "不健康的 Node 條件",
+    "unhealthyMachineConditions": "不健康的機器條件",
+    "targets": "受檢機器",
+    "provider": {
+      "customImage": "自訂映像",
+      "endpoint": "負載平衡器端點",
+      "instanceType": "執行個體類型",
+      "instanceState": "執行個體狀態",
+      "instanceId": "執行個體 ID",
+      "vmSize": "虛擬機器大小",
+      "vmState": "虛擬機器狀態",
+      "template": "虛擬機器範本",
+      "cpus": "CPU",
+      "memoryMiB": "記憶體 (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "就緒",
+    "notReady": "未就緒",
+    "unknown": "未回報",
+    "missing": "不存在",
+    "unreadable": "無法讀取",
+    "notServed": "此叢集不提供該 kind"
+  },
+  "workload": {
+    "none": "Sextant 中沒有 API 伺服器為 {{address}} 的叢集。",
+    "open": "開啟叢集 {{context}}",
+    "openNode": "在 {{context}} 中開啟 Node {{node}}"
+  },
+  "readyOf": "{{ready}}/{{desired}} 就緒",
+  "explain": {
+    "cluster": {
+      "failed": "叢集失敗：Cluster API 回報了一個不會重試的錯誤。",
+      "notAvailable": "叢集無法使用：其 Available 條件的某項檢查未通過。",
+      "provisioning": "叢集仍在佈建中。",
+      "paused": "叢集已暫停：繼續之前 Cluster API 不會對它做任何變更。",
+      "deleting": "叢集正在刪除。"
+    },
+    "machine": {
+      "failed": "機器失敗：Cluster API 回報了一個不會重試的錯誤。",
+      "provisioning": "機器尚未進入 Running（階段 {{phase}}）。",
+      "notReady": "機器正在執行，但其 Ready 條件為 False。",
+      "paused": "機器已暫停：繼續之前 Cluster API 不會對它做任何變更。",
+      "deleting": "機器正在刪除。"
+    },
+    "group": {
+      "failed": "Cluster API 回報了一個不會重試的錯誤。",
+      "notAvailable": "無法使用：可用的機器少於所需數量。",
+      "rollingOut": "正在推出：部分機器尚未更新到最新。",
+      "scaling": "調整規模中：機器數量正在變化。",
+      "paused": "已暫停：繼續之前 Cluster API 不會在此做任何變更。",
+      "provisioning": "控制平面尚未初始化。"
+    },
+    "healthCheck": {
+      "blocked": "修復已封鎖：不健康的機器過多（{{expected}} 台中 {{healthy}} 台健康）。",
+      "remediating": "部分機器不健康（{{expected}} 台中 {{healthy}} 台健康），正在修復。"
+    }
+  },
+  "chain": {
+    "title": "機器",
+    "loading": "正在載入機器…",
+    "none": "此叢集沒有機器。",
+    "unavailable": "無法列出機器。",
+    "controlPlane": "控制平面",
+    "others": "其他機器",
+    "more_other": "還有 {{count}} 台機器",
+    "ready": "就緒：{{ready}}",
+    "node": "節點 {{node}}"
+  },
+  "machines": {
+    "title": "機器",
+    "none": "沒有機器。",
+    "name": "機器",
+    "state": "狀態",
+    "node": "節點"
+  },
+  "healthCheck": {
+    "type": "條件",
+    "status": "狀態",
+    "timeout": "逾時"
+  },
+  "yes": "是",
+  "no": "否"
+}

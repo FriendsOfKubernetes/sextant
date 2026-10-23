@@ -23,10 +23,7 @@
     "invalid": "Enter a whole number, 0 or more."
   },
   "restart": {
-    "label": "Restart",
-    "title": "Restart {{kind}} {{name}}?",
-    "text": "All pods of {{name}} will be replaced one by one (rollout restart).",
-    "confirm": "Restart"
+    "label": "Restart"
   },
   "cordon": {
     "label": "Cordon / Uncordon",

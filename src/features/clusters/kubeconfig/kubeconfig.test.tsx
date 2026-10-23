@@ -372,6 +372,23 @@ describe("a login program that is not on this computer (#253)", () => {
     fireEvent.click(first!);
     expect(await screen.findByTestId("exec-plugin-hint")).toBeInTheDocument();
   });
+
+  it("shows what a failed login program printed, masked, and how to sign in again (#256)", async () => {
+    const output = "ERROR: not logged in, run 'yc init'\ntoken=<hidden>";
+    backend = mockBackend({
+      kubeconfig_check_connection: () => {
+        throw { code: "authPlugin", message: "the auth plugin 'yc' failed with exit code 1", pluginOutput: output };
+      },
+    });
+    const one: KubeconfigValidation = { problems: [], contexts: [{ context: "yc", server: null, problems: [] }] };
+    render(<ValidationDialog input={{ type: "text", text: "" }} validation={one} onAdd={() => undefined} onClose={() => undefined} />);
+    fireEvent.click(screen.getByRole("button", { name: "Check connection" }));
+    const block = await screen.findByRole("region", { name: "What the login program printed (secrets masked)" });
+    expect(block.querySelector("pre")?.textContent).toBe(output);
+    expect(screen.getByTestId("exec-login-hint")).toHaveTextContent("gcloud auth login");
+    expect(screen.queryByTestId("exec-plugin-hint")).not.toBeInTheDocument();
+    expect(await axeViolations(screen.getByRole("dialog"))).toEqual([]);
+  });
 });
 
 describe("allowing Sextant to edit a kubeconfig", () => {

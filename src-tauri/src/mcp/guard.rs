@@ -207,11 +207,12 @@ impl Guard {
             ConnectionState::Connected
         );
         if !connected {
+            // What a failed exec plugin printed is for the window only (#256).
             self.ctx
                 .clusters
                 .connect(&target.id)
                 .await
-                .map_err(OpenError::Failed)?;
+                .map_err(|e| OpenError::Failed(e.without_plugin_output()))?;
         }
         self.running().map_err(OpenError::Refused)?;
         Ok(target)

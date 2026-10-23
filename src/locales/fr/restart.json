@@ -1,0 +1,49 @@
+{
+  "title": "Redémarrer {{kind}} {{name}} ?",
+  "titlePods": "Redémarrer les pods du ReplicaSet {{name}} ?",
+  "titleMany_one": "Redémarrer {{count}} objet ?",
+  "titleMany_many": "Redémarrer {{count}} d'objets ?",
+  "titleMany_other": "Redémarrer {{count}} objets ?",
+  "intro_one": "Cet objet ({{count}}) est redémarré. Chaque requête est envoyée une seule fois.",
+  "intro_many": "Ces {{count}} d'objets sont redémarrés un par un, dans cet ordre. Chaque requête est envoyée une seule fois.",
+  "intro_other": "Ces {{count}} objets sont redémarrés un par un, dans cet ordre. Chaque requête est envoyée une seule fois.",
+  "more_one": "…et {{count}} autre objet.",
+  "more_many": "…et {{count}} d'autres objets.",
+  "more_other": "…et {{count}} autres objets.",
+  "step": {
+    "rollout": "{{name}} : ses pods sont remplacés un par un (rollout restart).",
+    "argoRollout": "{{name}} : Argo Rollouts remplace ses pods un par un (kubectl argo rollouts restart).",
+    "owner": "{{name}} est redémarré à la place de son ReplicaSet {{replicaSets}} : ses pods sont remplacés un par un. Un ReplicaSet d'un Deployment ou d'un Rollout ne peut pas être redémarré seul.",
+    "pods": "{{name}} n'a pas de propriétaire : ses pods sont supprimés un à la fois et le ReplicaSet crée un nouveau pod pour chacun. Le pod suivant n'est supprimé qu'une fois le nouveau prêt ; s'il n'est pas prêt en 5 minutes, les autres pods restent tels quels.",
+    "pod": "{{name}} est supprimé, et son {{controller}} crée un nouveau pod à sa place."
+  },
+  "templatePatch": "Envoyé à chaque Deployment, StatefulSet et DaemonSet comme merge patch, avec l'heure d'envoi (UTC) :",
+  "argoPatch": "Envoyé à chaque Rollout comme merge patch, avec l'heure d'envoi (UTC) :",
+  "confirm": "Redémarrer",
+  "stop": "Arrêter",
+  "stopping": "Arrêt après l'étape en cours…",
+  "progress": "Redémarrage de {{name}} ({{current}} sur {{total}})…",
+  "progressPods_one": "{{name}} : {{done}} pod sur {{count}} redémarré, attente que le nouveau pod soit prêt…",
+  "progressPods_many": "{{name}} : {{done}} sur {{count}} de pods redémarrés, attente que le nouveau pod soit prêt…",
+  "progressPods_other": "{{name}} : {{done}} pods sur {{count}} redémarrés, attente que le nouveau pod soit prêt…",
+  "summary": "{{done}} sur {{total}} redémarrés.",
+  "summaryStopped": "Arrêté : {{done}} sur {{total}} redémarrés ; les autres n'ont pas été lancés.",
+  "result": {
+    "done": "Redémarré : {{name}}",
+    "failed": "Non redémarré : {{name}}",
+    "stopped": "Arrêté en cours de route : {{name}}",
+    "skipped": "Non lancé : {{name}}",
+    "pods_one": "{{done}} pod sur {{count}} redémarré.",
+    "pods_many": "{{done}} sur {{count}} de pods redémarrés.",
+    "pods_other": "{{done}} pods sur {{count}} redémarrés."
+  },
+  "error": {
+    "replaced": "{{name}} a été remplacé par un autre objet du même nom depuis l'affichage de la liste. Rien n'a été envoyé.",
+    "deleting": "{{name}} est en cours de suppression. Rien n'a été envoyé.",
+    "ownerChanged": "Le propriétaire de {{name}} a changé depuis l'affichage de la liste. Rien n'a été envoyé.",
+    "paused": "{{name}} est en pause : un redémarrage ne serait pas déployé. Reprenez-le d'abord.",
+    "noPods": "{{name}} n'a aucun pod à redémarrer.",
+    "notReady": "Le nouveau pod remplaçant {{name}} n'était pas prêt au bout de 5 minutes. Les autres pods sont laissés tels quels.",
+    "listTimeout": "Les pods du ReplicaSet n'ont pas pu être listés en 5 minutes."
+  }
+}

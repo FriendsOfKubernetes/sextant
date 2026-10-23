@@ -187,6 +187,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "pods",
     "workloads",
     "jobs",
+    "vpa",
     "volumes",
     "certificates",
     "flux",
@@ -199,6 +200,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "contour",
     "knative",
     "crossplane",
+    "clusterApi",
     "policies",
     "externalSecrets",
     "sealedSecrets",
@@ -244,6 +246,10 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "sealedSecrets",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",
+    // Vertical Pod Autoscaler (#242): a window view of 0.22.0.
+    "vpa",
+    // Cluster API (#243): a window view of 0.22.0.
+    "clusterApi",
     "cnpg",
     "strimzi",
     "prometheusOperator",

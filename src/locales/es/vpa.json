@@ -1,0 +1,125 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscalers",
+    "checkpoints": "Checkpoints"
+  },
+  "badge_one": "{{count}} objeto requiere atención",
+  "badge_many": "{{count}} de objetos requieren atención",
+  "badge_other": "{{count}} objetos requieren atención",
+  "loading": "Cargando…",
+  "columns": {
+    "target": "Destino",
+    "mode": "Modo",
+    "status": "Estado",
+    "cpu": "CPU",
+    "memory": "Memoria",
+    "vpa": "VPA",
+    "container": "Contenedor",
+    "samples": "Muestras",
+    "lastUpdate": "Último guardado"
+  },
+  "reason": {
+    "provided": "Recomendando",
+    "lowConfidence": "Confianza baja",
+    "fetchingHistory": "Cargando historial",
+    "configUnsupported": "No compatible",
+    "noPodsMatched": "Ningún pod coincide",
+    "notProvided": "Sin recomendación",
+    "noStatus": "En espera"
+  },
+  "hint": {
+    "lowConfidence": "El Recommender aún tiene pocos datos de algunos contenedores: la recomendación todavía puede cambiar mucho.",
+    "fetchingHistory": "El Recommender aún está cargando el historial: la recomendación todavía puede cambiar.",
+    "configUnsupported": "El Recommender no puede usar este VPA: su destino no se puede leer, o no es el controlador de nivel superior (apunte el VPA al Deployment, no a su ReplicaSet). No da ninguna recomendación.",
+    "noPodsMatched": "Ningún pod en ejecución pertenece al destino: no tiene réplicas, o sus pods no se ejecutan. El Recommender necesita pods que medir.",
+    "notProvided": "El Recommender aún no ha generado una recomendación.",
+    "noStatus": "Aún no hay estado: el Recommender no ha revisado este VPA, o no hay ningún Recommender en ejecución para él.",
+    "deprecated": "Según el Recommender, esta configuración está obsoleta y dejará de ser compatible."
+  },
+  "modeExplain": {
+    "Off": "Solo recomienda: el VPA nunca modifica los pods.",
+    "Initial": "Establece los recursos al crear un pod; los pods en ejecución nunca se modifican.",
+    "Recreate": "Establece los recursos al crear un pod, y el Updater desaloja un pod en ejecución cuyas solicitudes quedan fuera del rango recomendado (o, tras 12 horas, difieren un 10 % o más), para que se vuelva a crear con la recomendación. De forma predeterminada no desaloja nada mientras se ejecuten menos de 2 réplicas.",
+    "Auto": "Un nombre obsoleto de Recreate, que funciona igual: los recursos se establecen al crear un pod, y el Updater desaloja los pods en ejecución cuyas solicitudes están lejos de la recomendación.",
+    "InPlaceOrRecreate": "Establece los recursos al crear un pod, y el Updater redimensiona en el sitio los pods en ejecución, desalojándolos solo donde no es posible redimensionarlos en el sitio. Requiere la función InPlacePodVerticalScaling del clúster.",
+    "InPlace": "Establece los recursos al crear un pod, y el Updater solo redimensiona en el sitio los pods en ejecución, sin desalojarlos nunca. Requiere el feature gate InPlace de los componentes de VPA y la función InPlacePodVerticalScaling del clúster.",
+    "unknown": "Esta versión de Sextant no conoce el modo {{mode}}."
+  },
+  "fields": {
+    "status": "Estado",
+    "since": "Desde",
+    "target": "Destino",
+    "mode": "Modo de actualización",
+    "modeDefault": "{{mode}} (predeterminado)",
+    "modeExplained": "Qué hace",
+    "minReplicas": "Réplicas necesarias para desalojar",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "Sin definir",
+    "notServed": "El clúster no sirve el kind {{kind}} del destino.",
+    "notRead": "El destino no se ha leído: no existe, o no se puede leer."
+  },
+  "recommendation": {
+    "title": "Recomendación y los próximos pods"
+  },
+  "table": {
+    "container": "Contenedor",
+    "resource": "Recurso",
+    "now": "Solicitud / límite de la plantilla",
+    "range": "Rango recomendado",
+    "target": "Objetivo",
+    "after": "Un pod nuevo recibiría",
+    "unset": "sin definir",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "sin tope {{value}}",
+    "capped": {
+      "minAllowed": "elevado a minAllowed",
+      "maxAllowed": "reducido a maxAllowed",
+      "limit": "mantenido en el límite (RequestsOnly)"
+    },
+    "noTarget": "Aún sin recomendación",
+    "unchanged": "Sin cambios",
+    "unchangedOff": "Sin cambios (modo Off)",
+    "allResources": "todos",
+    "containerOff": "Sin escalar: la política del contenedor es Off",
+    "noContainers": "La plantilla de pod del destino no tiene contenedores.",
+    "notInTemplate": "También se recomienda para contenedores que no están en la plantilla (se añaden al crear el pod, como los sidecars): {{containers}}.",
+    "how": "Un pod creado ahora recibe el objetivo como solicitud; su límite conserva la proporción entre límite y solicitud de la plantilla, tal como la calcula el Admission Controller, y un límite ausente sigue ausente.",
+    "howRequestsOnly": "Con RequestsOnly la solicitud nunca se fija por encima del límite del contenedor, y el límite se queda como está; con RequestsAndLimits el límite conserva la proporción entre límite y solicitud de la plantilla.",
+    "notModelled": "No se tiene en cuenta aquí: un LimitRange del namespace, los contenedores que añaden otros webhooks y el aumento de CPU al arrancar."
+  },
+  "conflict": {
+    "line": "El HPA {{hpa}} escala este workload según {{resources}}, que este VPA modifica en modo {{mode}}: los dos se contrarrestan.",
+    "why": "Cuando el VPA sube una solicitud, la utilización que ve el HPA baja y elimina réplicas; los pods restantes consumen más, y así sucesivamente. Escale el HPA con otra métrica, deje el VPA en Off o Initial, o deje que el VPA controle solo el otro recurso."
+  },
+  "components": {
+    "title": "Componentes de VPA",
+    "component": "Componente",
+    "state": "Estado",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "Admission Controller"
+    },
+    "ready": "{{ready}} de {{desired}} listos",
+    "notFound": "No encontrado",
+    "unknown": "No se puede saber",
+    "missing": {
+      "recommender": "Las recomendaciones vienen del Recommender: sin él, este VPA no recibe ninguna.",
+      "admission": "Sin el Admission Controller los pods se crean con los valores de la plantilla: la recomendación no llega a ningún pod nuevo, y los pods desalojados vuelven sin cambios.",
+      "admissionInitial": "Sin el Admission Controller, Initial no hace nada: los pods se crean con los valores de la plantilla.",
+      "updater": "Sin el Updater los pods en ejecución nunca se modifican: solo los pods creados por otros motivos reciben la recomendación."
+    },
+    "managed": "Se buscan como los Deployments vpa-recommender, vpa-updater y vpa-admission-controller en kube-system, y por los labels de los charts de Helm de VPA. Donde VPA es un complemento administrado (como en GKE), sus componentes se ejecutan fuera del clúster."
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_one": "{{count}} VPA apunta a este workload: para sus pods solo cuenta el más antiguo.",
+    "several_many": "{{count}} de VPA apuntan a este workload: para sus pods solo cuenta el más antiguo.",
+    "several_other": "{{count}} VPA apuntan a este workload: para sus pods solo cuenta el más antiguo."
+  }
+}

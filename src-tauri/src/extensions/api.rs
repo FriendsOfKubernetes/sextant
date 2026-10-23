@@ -835,7 +835,12 @@ impl<'a> ExtCall<'a> {
             ConnectionState::Connected
         );
         if !connected {
-            self.api.clusters.connect(&target.id).await?;
+            // What a failed exec plugin printed is for the window only (#256).
+            self.api
+                .clusters
+                .connect(&target.id)
+                .await
+                .map_err(CoreError::without_plugin_output)?;
         }
         Ok(target)
     }
@@ -1017,7 +1022,8 @@ impl<'a> ExtCall<'a> {
                     "name": self.api.cluster_name(&c.id, &c.context),
                     "context": c.context,
                     "server": c.server,
-                    "state": self.api.clusters.state(&c.id),
+                    // What a failed exec plugin printed is for the window only (#256).
+                    "state": self.api.clusters.state(&c.id).without_plugin_output(),
                 })
             })
             .collect();

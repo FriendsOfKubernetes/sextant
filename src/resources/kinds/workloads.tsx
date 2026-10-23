@@ -90,7 +90,7 @@ registerResource({
   kind: { group: "", version: "v1", kind: "Pod" },
   sidebar: { section: "workloads", order: 10, labelKey: "resources:kinds.pods", icon: "pod" },
   columns: pods,
-  actions: ["logs", "exec", "portForward", "edit", "delete"],
+  actions: ["logs", "exec", "portForward", "restart", "edit", "delete"],
 });
 
 registerResource({
@@ -144,7 +144,7 @@ registerResource({
     column("current", (o) => num(get(o, "status", "replicas")) ?? 0, { width: "80px" }),
     column("ready", (o) => num(get(o, "status", "readyReplicas")) ?? 0, { width: "80px" }),
   ),
-  actions: ["scale", "edit", "delete"],
+  actions: ["scale", "restart", "edit", "delete"],
 });
 
 /** "Complete", "Failed", "Suspended" or "Running" — like Lens' job conditions. */

@@ -25,10 +25,7 @@
     "invalid": "Inserisci un numero intero maggiore o uguale a 0."
   },
   "restart": {
-    "label": "Riavvia",
-    "title": "Riavviare {{kind}} {{name}}?",
-    "text": "Tutti i pod di {{name}} verranno sostituiti uno alla volta (rollout restart).",
-    "confirm": "Riavvia"
+    "label": "Riavvia"
   },
   "cordon": {
     "label": "Isola / Ripristina",

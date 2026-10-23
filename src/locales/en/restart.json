@@ -1,0 +1,44 @@
+{
+  "title": "Restart {{kind}} {{name}}?",
+  "titlePods": "Restart the pods of ReplicaSet {{name}}?",
+  "titleMany_one": "Restart {{count}} object?",
+  "titleMany_other": "Restart {{count}} objects?",
+  "intro_one": "This {{count}} object is restarted:",
+  "intro_other": "These {{count}} objects are restarted one at a time, in this order. Each request is sent once.",
+  "more_one": "…and {{count}} more object.",
+  "more_other": "…and {{count}} more objects.",
+  "step": {
+    "rollout": "{{name}}: its pods are replaced one by one (rollout restart).",
+    "argoRollout": "{{name}}: Argo Rollouts replaces its pods one by one (kubectl argo rollouts restart).",
+    "owner": "{{name}} is restarted in place of its ReplicaSet {{replicaSets}}: its pods are replaced one by one. A ReplicaSet of a Deployment or Rollout cannot be restarted on its own.",
+    "pods": "{{name}} has no owner: its pods are deleted one at a time and the ReplicaSet creates a new pod for each. The next pod is deleted only after the new one is ready; if it is not ready in 5 minutes, the other pods are left as they are.",
+    "pod": "{{name}} is deleted, and its {{controller}} creates a new pod in its place."
+  },
+  "templatePatch": "Sent to each Deployment, StatefulSet and DaemonSet as a merge patch, with the time of sending (UTC):",
+  "argoPatch": "Sent to each Rollout as a merge patch, with the time of sending (UTC):",
+  "confirm": "Restart",
+  "stop": "Stop",
+  "stopping": "Stopping after the current step…",
+  "progress": "Restarting {{name}} ({{current}} of {{total}})…",
+  "progressPods_one": "{{name}}: {{done}} of {{count}} pod restarted, waiting for the new pod to be ready…",
+  "progressPods_other": "{{name}}: {{done}} of {{count}} pods restarted, waiting for the new pod to be ready…",
+  "summary": "{{done}} of {{total}} restarted.",
+  "summaryStopped": "Stopped: {{done}} of {{total}} restarted; the rest were not started.",
+  "result": {
+    "done": "Restarted: {{name}}",
+    "failed": "Not restarted: {{name}}",
+    "stopped": "Stopped partway: {{name}}",
+    "skipped": "Not started: {{name}}",
+    "pods_one": "{{done}} of {{count}} pod restarted.",
+    "pods_other": "{{done}} of {{count}} pods restarted."
+  },
+  "error": {
+    "replaced": "{{name}} was replaced by another object of the same name since the list was shown. Nothing was sent.",
+    "deleting": "{{name}} is being deleted. Nothing was sent.",
+    "ownerChanged": "The owner of {{name}} changed since the list was shown. Nothing was sent.",
+    "paused": "{{name}} is paused: a restart would not roll out. Resume it first.",
+    "noPods": "{{name}} has no pods to restart.",
+    "notReady": "The new pod in place of {{name}} was not ready within 5 minutes. The other pods were left as they are.",
+    "listTimeout": "The pods of the ReplicaSet could not be listed within 5 minutes."
+  }
+}

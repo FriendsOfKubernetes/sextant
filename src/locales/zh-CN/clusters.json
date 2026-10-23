@@ -170,6 +170,13 @@
     "notExecutable": "无法运行登录程序 {{command}}：它不是可执行文件。",
     "badge": "找不到登录程序或无法运行",
     "hintElsewhere": "kubeconfig 可能是在另一台电脑或 WSL 中生成的。请在这台电脑上重新生成，或将 exec 命令设为工具的名称（云 CLI，例如 yc、aws、gcloud、az、kubelogin），并确保该工具在 PATH 中。",
-    "hintRestart": "在 Sextant 或桌面会话启动后安装的工具，要等重启 Sextant 后才会出现在 Sextant 的 PATH 中。在 Windows 上，请先注销并重新登录。"
+    "hintRestart": "在 Sextant 或桌面会话启动后安装的工具，要等重启 Sextant 后才会出现在 Sextant 的 PATH 中。在 Windows 上，请先注销并重新登录。",
+    "loginHint": "登录程序失败通常是因为您尚未登录或会话已过期。请在终端中运行它以登录（例如 yc init、aws sso login、gcloud auth login、az login 或 kubelogin），然后重试。",
+    "output": {
+      "title": "登录程序的输出（已隐藏机密）",
+      "copy": "复制输出",
+      "copied": "已复制。",
+      "copyFailed": "无法复制。"
+    }
   }
 }

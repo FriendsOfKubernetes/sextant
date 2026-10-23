@@ -134,6 +134,7 @@ export const SIDEBAR_SECTIONS = [
   "trivy",
   "keda",
   "karpenter",
+  "vpa",
   "volumeSnapshots",
   "velero",
   "flux",
@@ -153,6 +154,7 @@ export const SIDEBAR_SECTIONS = [
   "cnpg",
   "strimzi",
   "prometheusOperator",
+  "clusterApi",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -172,6 +174,7 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "trivy",
   "keda",
   "karpenter",
+  "vpa",
   "volumeSnapshots",
   "velero",
   "istio",
@@ -187,6 +190,7 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "cnpg",
   "strimzi",
   "prometheusOperator",
+  "clusterApi",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -206,6 +210,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   trivy: "trivy",
   keda: "keda",
   karpenter: "karpenter",
+  vpa: "vpa",
   volumeSnapshots: "volumeSnapshots",
   velero: "velero",
   flux: "flux",
@@ -225,6 +230,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   cnpg: "cnpg",
   strimzi: "strimzi",
   prometheusOperator: "prometheusOperator",
+  clusterApi: "clusterApi",
   customResources: "customResources",
   settings: "settings",
 };

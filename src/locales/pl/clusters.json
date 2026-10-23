@@ -176,6 +176,13 @@
     "notExecutable": "Nie można uruchomić programu logowania {{command}}: to nie jest plik wykonywalny.",
     "badge": "Nie znaleziono programu logowania lub nie można go uruchomić",
     "hintElsewhere": "Plik kubeconfig mógł zostać wygenerowany na innym komputerze lub w WSL. Wygeneruj go ponownie na tym komputerze albo ustaw jako polecenie exec samą nazwę narzędzia (CLI chmury, np. yc, aws, gcloud, az, kubelogin) i upewnij się, że narzędzie jest w PATH.",
-    "hintRestart": "Narzędzie zainstalowane po uruchomieniu Sextant lub sesji pulpitu nie jest w PATH Sextant, dopóki nie uruchomisz Sextant ponownie. W systemie Windows najpierw wyloguj się i zaloguj ponownie."
+    "hintRestart": "Narzędzie zainstalowane po uruchomieniu Sextant lub sesji pulpitu nie jest w PATH Sextant, dopóki nie uruchomisz Sextant ponownie. W systemie Windows najpierw wyloguj się i zaloguj ponownie.",
+    "loginHint": "Program logowania zwykle kończy się błędem, ponieważ nie jesteś zalogowany lub sesja wygasła. Uruchom go w terminalu, aby się zalogować (na przykład yc init, aws sso login, gcloud auth login, az login lub kubelogin), a następnie spróbuj ponownie.",
+    "output": {
+      "title": "Co wypisał program logowania (sekrety ukryte)",
+      "copy": "Kopiuj wynik",
+      "copied": "Skopiowano.",
+      "copyFailed": "Nie udało się skopiować."
+    }
   }
 }

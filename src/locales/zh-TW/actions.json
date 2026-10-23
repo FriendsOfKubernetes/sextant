@@ -21,10 +21,7 @@
     "invalid": "請輸入大於或等於 0 的整數。"
   },
   "restart": {
-    "label": "重新啟動",
-    "title": "要重新啟動 {{kind}} {{name}} 嗎？",
-    "text": "{{name}} 的所有 Pod 將逐一被取代（rollout restart）。",
-    "confirm": "重新啟動"
+    "label": "重新啟動"
   },
   "cordon": {
     "label": "封鎖 / 解除封鎖",

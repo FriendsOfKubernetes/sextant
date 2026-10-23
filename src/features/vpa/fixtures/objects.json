@@ -1,0 +1,133 @@
+{
+  "recreate": {
+    "apiVersion": "autoscaling.k8s.io/v1",
+    "kind": "VerticalPodAutoscaler",
+    "metadata": { "name": "hamster-vpa", "namespace": "shop", "uid": "vpa-1", "generation": 1, "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "targetRef": { "apiVersion": "apps/v1", "kind": "Deployment", "name": "hamster" },
+      "resourcePolicy": {
+        "containerPolicies": [
+          { "containerName": "*", "minAllowed": { "cpu": "100m", "memory": "50Mi" }, "maxAllowed": { "cpu": "1", "memory": "500Mi" }, "controlledResources": ["cpu", "memory"] }
+        ]
+      }
+    },
+    "status": {
+      "conditions": [{ "type": "RecommendationProvided", "status": "True", "lastTransitionTime": "2026-10-01T10:02:00Z" }],
+      "recommendation": {
+        "containerRecommendations": [
+          {
+            "containerName": "hamster",
+            "lowerBound": { "cpu": "100m", "memory": "262144k" },
+            "target": { "cpu": "587m", "memory": "262144k" },
+            "uncappedTarget": { "cpu": "587m", "memory": "262144k" },
+            "upperBound": { "cpu": "1", "memory": "500Mi" }
+          }
+        ]
+      }
+    }
+  },
+  "hamster": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": { "name": "hamster", "namespace": "shop", "uid": "dep-1" },
+    "spec": {
+      "replicas": 2,
+      "selector": { "matchLabels": { "app": "hamster" } },
+      "template": {
+        "metadata": { "labels": { "app": "hamster" } },
+        "spec": {
+          "containers": [
+            {
+              "name": "hamster",
+              "image": "registry.k8s.io/ubuntu-slim:0.14",
+              "resources": { "requests": { "cpu": "100m", "memory": "50Mi" }, "limits": { "cpu": "200m", "memory": "100Mi" } }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "hpa": {
+    "apiVersion": "autoscaling/v2",
+    "kind": "HorizontalPodAutoscaler",
+    "metadata": { "name": "hamster", "namespace": "shop", "uid": "hpa-1" },
+    "spec": {
+      "scaleTargetRef": { "apiVersion": "apps/v1", "kind": "Deployment", "name": "hamster" },
+      "minReplicas": 2,
+      "maxReplicas": 10,
+      "metrics": [{ "type": "Resource", "resource": { "name": "cpu", "target": { "type": "Utilization", "averageUtilization": 60 } } }]
+    }
+  },
+  "off": {
+    "apiVersion": "autoscaling.k8s.io/v1",
+    "kind": "VerticalPodAutoscaler",
+    "metadata": { "name": "api-vpa", "namespace": "shop", "uid": "vpa-2", "creationTimestamp": "2026-10-02T10:00:00Z" },
+    "spec": {
+      "targetRef": { "apiVersion": "apps/v1", "kind": "Deployment", "name": "hamster" },
+      "updatePolicy": { "updateMode": "Off" },
+      "resourcePolicy": { "containerPolicies": [{ "containerName": "hamster", "controlledValues": "RequestsOnly" }] }
+    },
+    "status": {
+      "conditions": [
+        { "type": "RecommendationProvided", "status": "True", "lastTransitionTime": "2026-10-02T10:01:00Z" },
+        { "type": "LowConfidence", "status": "True", "lastTransitionTime": "2026-10-02T10:01:00Z" }
+      ],
+      "recommendation": {
+        "containerRecommendations": [
+          { "containerName": "hamster", "lowerBound": { "cpu": "50m", "memory": "64Mi" }, "target": { "cpu": "300m", "memory": "128Mi" }, "upperBound": { "cpu": "2", "memory": "1Gi" } }
+        ]
+      }
+    }
+  },
+  "unsupported": {
+    "apiVersion": "autoscaling.k8s.io/v1",
+    "kind": "VerticalPodAutoscaler",
+    "metadata": { "name": "rs-vpa", "namespace": "shop", "uid": "vpa-3" },
+    "spec": { "targetRef": { "apiVersion": "apps/v1", "kind": "ReplicaSet", "name": "hamster-5d4f8" }, "updatePolicy": { "updateMode": "Auto" } },
+    "status": {
+      "conditions": [
+        { "type": "ConfigUnsupported", "status": "True", "lastTransitionTime": "2026-10-03T08:00:00Z", "message": "The target ReplicaSet shop/hamster-5d4f8 has a parent controller but it should point to a topmost well-known or scalable controller" },
+        { "type": "NoPodsMatched", "status": "True", "reason": "NoPodsMatched", "message": "No pods match this VPA object", "lastTransitionTime": "2026-10-03T08:00:00Z" },
+        { "type": "RecommendationProvided", "status": "False", "reason": "NoPodsMatched", "message": "No pods match this VPA object", "lastTransitionTime": "2026-10-03T08:00:00Z" }
+      ]
+    }
+  },
+  "noPods": {
+    "apiVersion": "autoscaling.k8s.io/v1",
+    "kind": "VerticalPodAutoscaler",
+    "metadata": { "name": "batch-vpa", "namespace": "jobs", "uid": "vpa-4" },
+    "spec": { "targetRef": { "apiVersion": "batch/v1", "kind": "CronJob", "name": "report" }, "updatePolicy": { "updateMode": "Initial" } },
+    "status": {
+      "conditions": [
+        { "type": "NoPodsMatched", "status": "True", "reason": "NoPodsMatched", "message": "No pods match this VPA object", "lastTransitionTime": "2026-10-03T09:00:00Z" },
+        { "type": "RecommendationProvided", "status": "False", "reason": "NoPodsMatched", "message": "No pods match this VPA object", "lastTransitionTime": "2026-10-03T09:00:00Z" }
+      ]
+    }
+  },
+  "checkpoint": {
+    "apiVersion": "autoscaling.k8s.io/v1",
+    "kind": "VerticalPodAutoscalerCheckpoint",
+    "metadata": { "name": "hamster-vpa-hamster", "namespace": "shop", "uid": "cp-1" },
+    "spec": { "vpaObjectName": "hamster-vpa", "containerName": "hamster" },
+    "status": { "lastUpdateTime": "2026-10-20T12:00:00Z", "version": "v3", "totalSamplesCount": 4521, "cpuHistogram": { "bucketWeights": { "1": 10000 }, "totalWeight": 12.5 } }
+  },
+  "recommender": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": { "name": "vpa-recommender", "namespace": "kube-system", "uid": "rec-1" },
+    "spec": { "replicas": 1 },
+    "status": { "readyReplicas": 1 }
+  },
+  "chartUpdater": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "vpa-vertical-pod-autoscaler-updater",
+      "namespace": "vpa",
+      "uid": "upd-1",
+      "labels": { "app.kubernetes.io/name": "vertical-pod-autoscaler", "app.kubernetes.io/component": "updater", "app.kubernetes.io/instance": "vpa" }
+    },
+    "spec": { "replicas": 1 },
+    "status": { "readyReplicas": 0 }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "title": "Riavviare {{kind}} {{name}}?",
+  "titlePods": "Riavviare i pod del ReplicaSet {{name}}?",
+  "titleMany_one": "Riavviare {{count}} oggetto?",
+  "titleMany_many": "Riavviare {{count}} di oggetti?",
+  "titleMany_other": "Riavviare {{count}} oggetti?",
+  "intro_one": "Questo oggetto ({{count}}) viene riavviato. Ogni richiesta viene inviata una sola volta.",
+  "intro_many": "Questi {{count}} di oggetti vengono riavviati uno alla volta, in quest'ordine. Ogni richiesta viene inviata una sola volta.",
+  "intro_other": "Questi {{count}} oggetti vengono riavviati uno alla volta, in quest'ordine. Ogni richiesta viene inviata una sola volta.",
+  "more_one": "…e {{count}} altro oggetto.",
+  "more_many": "…e altri {{count}} di oggetti.",
+  "more_other": "…e altri {{count}} oggetti.",
+  "step": {
+    "rollout": "{{name}}: i suoi pod vengono sostituiti uno alla volta (rollout restart).",
+    "argoRollout": "{{name}}: Argo Rollouts sostituisce i suoi pod uno alla volta (kubectl argo rollouts restart).",
+    "owner": "{{name}} viene riavviato al posto del suo ReplicaSet {{replicaSets}}: i suoi pod vengono sostituiti uno alla volta. Un ReplicaSet di un Deployment o di un Rollout non può essere riavviato da solo.",
+    "pods": "{{name}} non ha un proprietario: i suoi pod vengono eliminati uno alla volta e il ReplicaSet crea un nuovo pod per ciascuno. Il pod successivo viene eliminato solo quando quello nuovo è pronto; se non è pronto entro 5 minuti, gli altri pod restano come sono.",
+    "pod": "{{name}} viene eliminato e il suo {{controller}} crea un nuovo pod al suo posto."
+  },
+  "templatePatch": "Inviato a ogni Deployment, StatefulSet e DaemonSet come merge patch, con l'ora dell'invio (UTC):",
+  "argoPatch": "Inviato a ogni Rollout come merge patch, con l'ora dell'invio (UTC):",
+  "confirm": "Riavvia",
+  "stop": "Interrompi",
+  "stopping": "Interruzione dopo il passo corrente…",
+  "progress": "Riavvio di {{name}} ({{current}} di {{total}})…",
+  "progressPods_one": "{{name}}: {{done}} di {{count}} pod riavviato, in attesa che il nuovo pod sia pronto…",
+  "progressPods_many": "{{name}}: {{done}} di {{count}} di pod riavviati, in attesa che il nuovo pod sia pronto…",
+  "progressPods_other": "{{name}}: {{done}} di {{count}} pod riavviati, in attesa che il nuovo pod sia pronto…",
+  "summary": "{{done}} di {{total}} riavviati.",
+  "summaryStopped": "Interrotto: {{done}} di {{total}} riavviati; gli altri non sono stati avviati.",
+  "result": {
+    "done": "Riavviato: {{name}}",
+    "failed": "Non riavviato: {{name}}",
+    "stopped": "Interrotto a metà: {{name}}",
+    "skipped": "Non avviato: {{name}}",
+    "pods_one": "{{done}} di {{count}} pod riavviato.",
+    "pods_many": "{{done}} di {{count}} di pod riavviati.",
+    "pods_other": "{{done}} di {{count}} pod riavviati."
+  },
+  "error": {
+    "replaced": "{{name}} è stato sostituito da un altro oggetto con lo stesso nome da quando è stato mostrato l'elenco. Non è stato inviato nulla.",
+    "deleting": "{{name}} è in corso di eliminazione. Non è stato inviato nulla.",
+    "ownerChanged": "Il proprietario di {{name}} è cambiato da quando è stato mostrato l'elenco. Non è stato inviato nulla.",
+    "paused": "{{name}} è in pausa: un riavvio non verrebbe distribuito. Riprendilo prima.",
+    "noPods": "{{name}} non ha pod da riavviare.",
+    "notReady": "Il nuovo pod al posto di {{name}} non era pronto entro 5 minuti. Gli altri pod sono stati lasciati come sono.",
+    "listTimeout": "Non è stato possibile elencare i pod del ReplicaSet entro 5 minuti."
+  }
+}

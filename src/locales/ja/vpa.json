@@ -1,0 +1,121 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscaler",
+    "checkpoints": "Checkpoint"
+  },
+  "badge_other": "対応が必要なオブジェクトが {{count}} 件あります",
+  "loading": "読み込み中…",
+  "columns": {
+    "target": "対象",
+    "mode": "モード",
+    "status": "ステータス",
+    "cpu": "CPU",
+    "memory": "メモリ",
+    "vpa": "VPA",
+    "container": "コンテナー",
+    "samples": "サンプル",
+    "lastUpdate": "最終保存"
+  },
+  "reason": {
+    "provided": "推奨中",
+    "lowConfidence": "信頼度が低い",
+    "fetchingHistory": "履歴を読み込み中",
+    "configUnsupported": "非対応",
+    "noPodsMatched": "一致する Pod なし",
+    "notProvided": "推奨なし",
+    "noStatus": "待機中"
+  },
+  "hint": {
+    "lowConfidence": "recommender には一部のコンテナーのデータがまだ少ないため、推奨値が大きく変わる可能性があります。",
+    "fetchingHistory": "recommender はまだ履歴を読み込んでいるため、推奨値が変わる可能性があります。",
+    "configUnsupported": "recommender はこの VPA を使用できません。対象を読み取れないか、対象が最上位のコントローラーではありません (VPA は ReplicaSet ではなく Deployment に向けてください)。推奨は出されません。",
+    "noPodsMatched": "対象に属する実行中の Pod がありません。レプリカがないか、Pod が実行されていません。recommender が測定するには Pod が必要です。",
+    "notProvided": "recommender はまだ推奨を出していません。",
+    "noStatus": "ステータスがまだありません。recommender がこの VPA をまだ確認していないか、この VPA 用の recommender が動いていません。",
+    "deprecated": "recommender によると、この構成は非推奨で、今後サポートされなくなります。"
+  },
+  "modeExplain": {
+    "Off": "推奨のみ。VPA が Pod を変更することはありません。",
+    "Initial": "Pod の作成時にリソースを設定します。実行中の Pod は変更されません。",
+    "Recreate": "Pod の作成時にリソースを設定し、要求が推奨範囲外にある (または 12 時間後に 10% 以上異なる) 実行中の Pod を updater が退避 (evict) して、推奨値で作り直させます。既定では、実行中のレプリカが 2 個未満の間は何も退避しません。",
+    "Auto": "Recreate の非推奨の名前で、動作は同じです。Pod の作成時にリソースを設定し、要求が推奨値から大きく離れた実行中の Pod を updater が退避します。",
+    "InPlaceOrRecreate": "Pod の作成時にリソースを設定し、updater が実行中の Pod のサイズをその場で変更します。その場での変更ができない場合にのみ退避します。クラスターの InPlacePodVerticalScaling 機能が必要です。",
+    "InPlace": "Pod の作成時にリソースを設定し、updater は実行中の Pod のサイズをその場で変更するだけで、退避はしません。VPA コンポーネントの InPlace feature gate と、クラスターの InPlacePodVerticalScaling 機能が必要です。",
+    "unknown": "モード {{mode}} は、このバージョンの Sextant では認識されません。"
+  },
+  "fields": {
+    "status": "ステータス",
+    "since": "開始",
+    "target": "対象",
+    "mode": "更新モード",
+    "modeDefault": "{{mode}} (既定)",
+    "modeExplained": "動作",
+    "minReplicas": "退避に必要なレプリカ数",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "未設定",
+    "notServed": "クラスターは対象の Kind {{kind}} を提供していません。",
+    "notRead": "対象を読み取っていません。存在しないか、読み取れません。"
+  },
+  "recommendation": {
+    "title": "推奨値と今後の Pod"
+  },
+  "table": {
+    "container": "コンテナー",
+    "resource": "リソース",
+    "now": "テンプレートの要求 / 上限",
+    "range": "推奨範囲",
+    "target": "目標値",
+    "after": "新しい Pod が受け取る値",
+    "unset": "未設定",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "制限前 {{value}}",
+    "capped": {
+      "minAllowed": "minAllowed まで引き上げ",
+      "maxAllowed": "maxAllowed まで引き下げ",
+      "limit": "上限で維持 (RequestsOnly)"
+    },
+    "noTarget": "推奨はまだありません",
+    "unchanged": "変更なし",
+    "unchangedOff": "変更なし (モード Off)",
+    "allResources": "すべて",
+    "containerOff": "スケールなし: コンテナーのポリシーが Off です",
+    "noContainers": "対象の Pod テンプレートにコンテナーがありません。",
+    "notInTemplate": "テンプレートにないコンテナー (サイドカーなど、Pod の作成時に追加されるもの) にも推奨があります: {{containers}}。",
+    "how": "今作成される Pod は目標値を要求として受け取ります。上限は、アドミッションコントローラーの計算と同じく、テンプレートの上限と要求の比率を保ちます。上限がない場合は、ないままです。",
+    "howRequestsOnly": "RequestsOnly では、要求がコンテナーの上限を超えて設定されることはなく、上限はそのままです。RequestsAndLimits では、上限がテンプレートの上限と要求の比率を保ちます。",
+    "notModelled": "ここでは考慮されていないもの: namespace の LimitRange、他の webhook が追加するコンテナー、起動時の CPU ブースト。"
+  },
+  "conflict": {
+    "line": "HPA {{hpa}} は {{resources}} に基づいてこのワークロードをスケールしますが、この VPA はモード {{mode}} でそのリソースを変更します。両者は競合します。",
+    "why": "VPA が要求を引き上げると、HPA から見た使用率が下がってレプリカが減り、残った Pod の使用量が増える、という繰り返しになります。HPA を別のメトリクスでスケールさせるか、VPA を Off または Initial のままにするか、VPA にもう一方のリソースだけを制御させてください。"
+  },
+  "components": {
+    "title": "VPA コンポーネント",
+    "component": "コンポーネント",
+    "state": "状態",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "アドミッションコントローラー"
+    },
+    "ready": "{{ready}}/{{desired}} 準備完了",
+    "notFound": "見つかりません",
+    "unknown": "判断できません",
+    "missing": {
+      "recommender": "推奨は recommender から来ます。recommender がないと、この VPA は推奨を得られません。",
+      "admission": "アドミッションコントローラーがないと、Pod はテンプレートの値で作成されます。推奨は新しい Pod に反映されず、退避された Pod も変更されずに戻ります。",
+      "admissionInitial": "アドミッションコントローラーがないと、Initial は何もしません。Pod はテンプレートの値で作成されます。",
+      "updater": "updater がないと、実行中の Pod は変更されません。推奨値を受け取るのは、別の理由で作成された Pod だけです。"
+    },
+    "managed": "kube-system の Deployment vpa-recommender、vpa-updater、vpa-admission-controller と、VPA の Helm チャートのラベルで検索します。VPA がマネージドアドオンの場合 (GKE など)、コンポーネントはクラスターの外で動作します。"
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_other": "このワークロードを対象とする VPA が {{count}} 個あります。Pod に適用されるのは最も古いものだけです。"
+  }
+}

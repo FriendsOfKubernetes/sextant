@@ -1,0 +1,11 @@
+/* Cluster API: the workload cluster's buttons. The notes and the chain reuse cert-manager's `cm-*` classes. */
+.capi-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+/* Cluster API's condition messages are lists, one item per line ("* WorkersAvailable: …"). */
+.capi-message {
+  white-space: pre-line;
+}

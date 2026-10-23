@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscalers",
+    "checkpoints": "Denetim noktaları"
+  },
+  "badge_one": "{{count}} nesne ilgi gerektiriyor",
+  "badge_other": "{{count}} nesne ilgi gerektiriyor",
+  "loading": "Yükleniyor…",
+  "columns": {
+    "target": "Hedef",
+    "mode": "Mod",
+    "status": "Durum",
+    "cpu": "CPU",
+    "memory": "Bellek",
+    "vpa": "VPA",
+    "container": "Kapsayıcı",
+    "samples": "Örnekler",
+    "lastUpdate": "Son kayıt"
+  },
+  "reason": {
+    "provided": "Öneriyor",
+    "lowConfidence": "Düşük güven",
+    "fetchingHistory": "Geçmiş yükleniyor",
+    "configUnsupported": "Desteklenmiyor",
+    "noPodsMatched": "Eşleşen pod yok",
+    "notProvided": "Öneri yok",
+    "noStatus": "Bekleniyor"
+  },
+  "hint": {
+    "lowConfidence": "Recommender'ın bazı kapsayıcılar için henüz az verisi var: öneri hâlâ çok değişebilir.",
+    "fetchingHistory": "Recommender geçmişi hâlâ yüklüyor: öneri hâlâ değişebilir.",
+    "configUnsupported": "Recommender bu VPA'yı kullanamıyor: hedefi okunamıyor ya da hedef en üstteki denetleyici değil (VPA'yı ReplicaSet'e değil, Deployment'a yöneltin). Öneri vermiyor.",
+    "noPodsMatched": "Hedefe ait çalışan pod yok: replikası yok ya da pod'ları çalışmıyor. Recommender'ın ölçüm için pod'lara ihtiyacı var.",
+    "notProvided": "Recommender henüz bir öneri üretmedi.",
+    "noStatus": "Henüz durum yok: recommender bu VPA'ya bakmadı ya da onun için çalışan bir recommender yok.",
+    "deprecated": "Recommender bu yapılandırmanın kullanımdan kaldırıldığını ve desteğinin sona ereceğini bildiriyor."
+  },
+  "modeExplain": {
+    "Off": "Yalnızca önerir: VPA pod'ları asla değiştirmez.",
+    "Initial": "Kaynakları pod oluşturulurken ayarlar; çalışan pod'lar asla değiştirilmez.",
+    "Recreate": "Kaynakları pod oluşturulurken ayarlar; updater ise istekleri önerilen aralığın dışında olan (ya da 12 saat sonra %10 veya daha fazla farklı olan) çalışan bir pod'u tahliye eder, böylece pod öneriyle yeniden oluşturulur. Varsayılan olarak 2'den az replika çalışırken hiçbir şeyi tahliye etmez.",
+    "Auto": "Recreate'in kullanımdan kaldırılmış adıdır ve aynı şekilde çalışır: kaynaklar pod oluşturulurken ayarlanır, updater ise istekleri öneriden çok uzak olan çalışan pod'ları tahliye eder.",
+    "InPlaceOrRecreate": "Kaynakları pod oluşturulurken ayarlar; updater ise çalışan pod'ları yerinde yeniden boyutlandırır ve yalnızca yerinde yeniden boyutlandırma mümkün olmadığında tahliye eder. Kümenin InPlacePodVerticalScaling özelliği gerekir.",
+    "InPlace": "Kaynakları pod oluşturulurken ayarlar; updater ise çalışan pod'ları yalnızca yerinde yeniden boyutlandırır, asla tahliye etmez. VPA bileşenlerinin InPlace feature gate'i ve kümenin InPlacePodVerticalScaling özelliği gerekir.",
+    "unknown": "{{mode}} modu, Sextant'ın bu sürümünün bildiği bir mod değil."
+  },
+  "fields": {
+    "status": "Durum",
+    "since": "Başlangıç",
+    "target": "Hedef",
+    "mode": "Güncelleme modu",
+    "modeDefault": "{{mode}} (varsayılan)",
+    "modeExplained": "Ne yapar",
+    "minReplicas": "Tahliye için gereken replika",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "Ayarlanmadı",
+    "notServed": "Küme, hedefin {{kind}} kind'ını sunmuyor.",
+    "notRead": "Hedef okunmadı: mevcut değil ya da okunamıyor."
+  },
+  "recommendation": {
+    "title": "Öneri ve sonraki pod'lar"
+  },
+  "table": {
+    "container": "Kapsayıcı",
+    "resource": "Kaynak",
+    "now": "Şablondaki istek / sınır",
+    "range": "Önerilen aralık",
+    "target": "Hedef",
+    "after": "Yeni bir pod'un alacağı",
+    "unset": "ayarlanmadı",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "sınırlamadan önce {{value}}",
+    "capped": {
+      "minAllowed": "minAllowed düzeyine çıkarıldı",
+      "maxAllowed": "maxAllowed düzeyine indirildi",
+      "limit": "sınırda tutuldu (RequestsOnly)"
+    },
+    "noTarget": "Henüz öneri yok",
+    "unchanged": "Değişiklik yok",
+    "unchangedOff": "Değişiklik yok (Off modu)",
+    "allResources": "tümü",
+    "containerOff": "Ölçeklendirilmiyor: kapsayıcının ilkesi Off",
+    "noContainers": "Hedefin pod şablonunda kapsayıcı yok.",
+    "notInTemplate": "Şablonda olmayan (sidecar'lar gibi pod oluşturulurken eklenen) kapsayıcılar için de öneri var: {{containers}}.",
+    "how": "Şimdi oluşturulan bir pod, hedefi istek olarak alır; sınırı, admission controller'ın hesapladığı gibi şablondaki sınır/istek oranını korur, eksik bir sınır ise eksik kalır.",
+    "howRequestsOnly": "RequestsOnly ile istek asla kapsayıcının sınırının üstüne ayarlanmaz ve sınır olduğu gibi kalır; RequestsAndLimits ile sınır, şablondaki sınır/istek oranını korur.",
+    "notModelled": "Burada hesaba katılmayanlar: namespace'in LimitRange'i, başka webhook'ların eklediği kapsayıcılar ve başlangıçtaki CPU artırımı."
+  },
+  "conflict": {
+    "line": "HPA {{hpa}} bu iş yükünü {{resources}} üzerinden ölçeklendiriyor, bu VPA ise bunları {{mode}} modunda değiştiriyor: ikisi çekişiyor.",
+    "why": "VPA bir isteği artırdığında HPA'nın gördüğü kullanım düşer ve HPA replikaları kaldırır; kalan pod'lar daha fazla kullanır ve bu böyle sürer. HPA'yı başka bir metrikle ölçeklendirin, VPA'yı Off ya da Initial modunda bırakın veya VPA'nın yalnızca diğer kaynağı yönetmesine izin verin."
+  },
+  "components": {
+    "title": "VPA bileşenleri",
+    "component": "Bileşen",
+    "state": "Durum",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "Admission controller"
+    },
+    "ready": "{{ready}} / {{desired}} hazır",
+    "notFound": "Bulunamadı",
+    "unknown": "Belirlenemiyor",
+    "missing": {
+      "recommender": "Öneriler recommender'dan gelir: o olmadan bu VPA öneri almaz.",
+      "admission": "Admission controller olmadan pod'lar şablondaki değerlerle oluşturulur: öneri hiçbir yeni pod'a ulaşmaz, tahliye edilen pod'lar da değişmeden geri gelir.",
+      "admissionInitial": "Admission controller olmadan Initial hiçbir şey yapmaz: pod'lar şablondaki değerlerle oluşturulur.",
+      "updater": "Updater olmadan çalışan pod'lar asla değiştirilmez: öneriyi yalnızca başka nedenlerle oluşturulan pod'lar alır."
+    },
+    "managed": "kube-system içinde vpa-recommender, vpa-updater ve vpa-admission-controller Deployment'ları olarak ve VPA Helm chart'larının label'larıyla aranır. VPA yönetilen bir eklenti olduğunda (GKE'de olduğu gibi) bileşenleri kümenin dışında çalışır."
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_one": "Bu iş yükünü {{count}} VPA hedefliyor: pod'ları için yalnızca en eskisi geçerlidir.",
+    "several_other": "Bu iş yükünü {{count}} VPA hedefliyor: pod'ları için yalnızca en eskisi geçerlidir."
+  }
+}

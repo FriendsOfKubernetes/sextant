@@ -724,3 +724,19 @@ _Avoid_: task (only DAG nodes are tasks), job
 **Mirror (Reflector)**:
 A Secret or ConfigMap that emberstack Reflector keeps as a copy of another one, its source, named by the annotation `reflector.v1.k8s.emberstack.com/reflects` (`namespace/name`). Automatic when Reflector created it (`auto-reflects`), manual when someone did. In sync when its `reflected-version` is the source's resourceVersion; stale when not; Sextant never compares values (ADR-0110).
 _Avoid_: replica, clone, synced copy
+
+**Management cluster / workload cluster (Cluster API)**:
+The management cluster holds the Cluster API objects (Cluster, Machine, …) that describe and build other clusters; a workload cluster is one of those built clusters, reached at the Cluster's `spec.controlPlaneEndpoint`. A Machine's `nodeRef` names a Node of the workload cluster, not of the cluster Sextant is looking at. Sextant opens the workload cluster only when a configured cluster's server is that endpoint, and only on a click (ADR-0113).
+_Avoid_: child cluster, target cluster, managed cluster (that is a Crossplane/Argo CD word)
+
+**Stuck machine (Cluster API)**:
+A Machine still Pending, Provisioning or Provisioned 30 minutes after its phase last changed (`status.lastUpdated`): a problem of the `clusterApi` category, explained by its first unmet condition (BootstrapConfigReady, InfrastructureReady, NodeReady). Not the same as a MachineHealthCheck's verdict, which follows its own timeouts.
+_Avoid_: hung machine, failed machine (Failed is a terminal failure the controllers report)
+
+**Update mode (VPA)**:
+When a VerticalPodAutoscaler's recommendation reaches pods (`spec.updatePolicy.updateMode`, `Recreate` when unset): `Off` only recommends, `Initial` sets resources when a pod is created, `Recreate` (and its deprecated name `Auto`) also lets the updater evict running pods far from the recommendation, `InPlaceOrRecreate` and `InPlace` resize running pods in place. The request a new pod gets is the recommendation's target; its limit keeps the template's ratio of limit to request unless `controlledValues` is `RequestsOnly`.
+_Avoid_: policy (that is `resourcePolicy`, per container), auto mode (deprecated)
+
+**VPA–HPA conflict**:
+A VPA that changes running pods and an HPA that scales the same workload on a CPU or memory metric the VPA controls: raising the request lowers the HPA's utilization, so the two fight. Judged from the two objects; a VPA on one resource beside an HPA on the other is no conflict.
+_Avoid_: overlap, double scaling

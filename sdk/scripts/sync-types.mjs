@@ -48,6 +48,13 @@ const NARROW = {
       "Serialized with a `type` tag.\n * (The SDK's copy leaves out the updates only the window's own watches get.)",
     );
   },
+  // What a failed exec plugin printed (`pluginOutput`, #256) is for the window only; extensions never get it.
+  "CoreError.ts": (content) => {
+    const field = /\n\/\*\*(?:(?!\*\/)[\s\S])*\*\/\npluginOutput\?: string, /g;
+    const narrowed = content.replace(field, "");
+    if (narrowed.length === content.length) throw new Error("CoreError.ts: expected to drop pluginOutput");
+    return narrowed;
+  },
 };
 
 /** `{relative path (posix, with .ts) → content}` of every file to copy. */

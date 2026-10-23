@@ -7,6 +7,18 @@
 // An icon is decoration: the button it is in keeps its name as visible text or `aria-label`, so the SVG is
 // `aria-hidden` and has no <title>. No trademark logos (Flux, Argo CD get icons close in meaning).
 import type { ReactNode } from "react";
+// Cluster API (#243): the section and its kinds.
+import {
+  Boxes as CapiBoxes,
+  CloudCog as CapiCloudCog,
+  HeartPulse as CapiHeartPulse,
+  Layers2 as CapiLayers2,
+  Layers3 as CapiLayers3,
+  LayoutTemplate as CapiLayoutTemplate,
+  PackagePlus as CapiPackagePlus,
+  Server as CapiServer,
+  ServerCog as CapiServerCog,
+} from "lucide-react";
 import {
   Anchor,
   AppWindow,
@@ -256,6 +268,8 @@ import {
   Vault as EsoVault,
   Waves as KafkaWaves,
 } from "lucide-react";
+// Vertical Pod Autoscaler (#242).
+import { ChevronsUpDown as VpaChevronsUpDown, HardDriveDownload as VpaCheckpoint, UnfoldVertical as VpaUnfoldVertical } from "lucide-react";
 import {
   File as ImageFile,
   FileSymlink as ImageFileSymlink,
@@ -520,6 +534,16 @@ const ICONS = {
   postgresBackup: CnpgDatabaseBackup,
   postgresScheduledBackup: CnpgCalendarClock,
   postgresPooler: CnpgCombine,
+  // Cluster API (#243): the section and its kinds.
+  clusterApi: CapiCloudCog,
+  capiCluster: CapiBoxes,
+  capiClusterClass: CapiLayoutTemplate,
+  capiControlPlane: CapiServerCog,
+  capiMachineDeployment: CapiLayers3,
+  capiMachineSet: CapiLayers2,
+  capiMachine: CapiServer,
+  capiHealthCheck: CapiHeartPulse,
+  capiResourceSet: CapiPackagePlus,
   strimzi: KafkaWaves,
   kafka: KafkaRadioTower,
   kafkaNodePool: KafkaServerCog,
@@ -535,6 +559,10 @@ const ICONS = {
   prometheusRule: PromScrollText,
   prometheus: PromChartLine,
   alertmanager: PromBellRing,
+  // Vertical Pod Autoscaler (#242): the section and its kinds.
+  vpa: VpaUnfoldVertical,
+  verticalPodAutoscaler: VpaChevronsUpDown,
+  vpaCheckpoint: VpaCheckpoint,
   // Image file viewer (#216): the page and the entries of an image's tree.
   imageFiles: ImageFolderSearch,
   imageFolder: ImageFolder,

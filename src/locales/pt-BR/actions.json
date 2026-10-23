@@ -25,10 +25,7 @@
     "invalid": "Digite um número inteiro, 0 ou maior."
   },
   "restart": {
-    "label": "Reiniciar",
-    "title": "Reiniciar {{kind}} {{name}}?",
-    "text": "Todos os Pods de {{name}} serão substituídos um a um (rollout restart).",
-    "confirm": "Reiniciar"
+    "label": "Reiniciar"
   },
   "cordon": {
     "label": "Cordon / Uncordon",

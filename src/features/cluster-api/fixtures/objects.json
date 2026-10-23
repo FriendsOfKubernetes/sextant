@@ -1,0 +1,175 @@
+[
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "Cluster",
+    "metadata": { "name": "capi-quickstart", "namespace": "default", "uid": "c-1", "resourceVersion": "100", "creationTimestamp": "2026-10-20T10:00:00Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "topology.cluster.x-k8s.io/owned": "" } },
+    "spec": {
+      "clusterNetwork": { "services": { "cidrBlocks": ["10.128.0.0/12"] }, "pods": { "cidrBlocks": ["192.168.0.0/16"] }, "serviceDomain": "cluster.local" },
+      "controlPlaneEndpoint": { "host": "172.18.0.3", "port": 6443 },
+      "controlPlaneRef": { "apiGroup": "controlplane.cluster.x-k8s.io", "kind": "KubeadmControlPlane", "name": "capi-quickstart-n5w87" },
+      "infrastructureRef": { "apiGroup": "infrastructure.cluster.x-k8s.io", "kind": "DockerCluster", "name": "capi-quickstart-x7ld2" },
+      "topology": { "classRef": { "name": "quick-start" }, "version": "v1.34.0", "controlPlane": { "replicas": 1 }, "workers": { "machineDeployments": [{ "class": "default-worker", "name": "md-0", "replicas": 2 }] } }
+    },
+    "status": {
+      "phase": "Provisioned",
+      "observedGeneration": 2,
+      "initialization": { "infrastructureProvisioned": true, "controlPlaneInitialized": true },
+      "controlPlane": { "desiredReplicas": 1, "replicas": 1, "readyReplicas": 1, "availableReplicas": 1, "upToDateReplicas": 1 },
+      "workers": { "desiredReplicas": 2, "replicas": 2, "readyReplicas": 1, "availableReplicas": 1, "upToDateReplicas": 2 },
+      "conditions": [
+        { "type": "Available", "status": "False", "reason": "NotAvailable", "message": "* WorkersAvailable:\n  * MachineDeployment capi-quickstart-md-0-6xq7b: 1 available replicas, at least 2 required (spec.strategy.rollout.maxUnavailable is 0, spec.replicas is 2)", "lastTransitionTime": "2026-10-20T10:05:00Z" },
+        { "type": "InfrastructureReady", "status": "True", "reason": "Ready", "lastTransitionTime": "2026-10-20T10:01:00Z" },
+        { "type": "ControlPlaneInitialized", "status": "True", "reason": "Initialized", "lastTransitionTime": "2026-10-20T10:03:00Z" },
+        { "type": "ControlPlaneAvailable", "status": "True", "reason": "Available", "lastTransitionTime": "2026-10-20T10:04:00Z" },
+        { "type": "WorkersAvailable", "status": "False", "reason": "NotAvailable", "message": "* MachineDeployment capi-quickstart-md-0-6xq7b: 1 available replicas, at least 2 required", "lastTransitionTime": "2026-10-20T10:05:00Z" },
+        { "type": "RemoteConnectionProbe", "status": "True", "reason": "ProbeSucceeded", "lastTransitionTime": "2026-10-20T10:03:00Z" },
+        { "type": "TopologyReconciled", "status": "True", "reason": "ReconcileSucceeded", "lastTransitionTime": "2026-10-20T10:00:10Z" },
+        { "type": "Paused", "status": "False", "reason": "NotPaused", "lastTransitionTime": "2026-10-20T10:00:00Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "controlplane.cluster.x-k8s.io/v1beta2",
+    "kind": "KubeadmControlPlane",
+    "metadata": { "name": "capi-quickstart-n5w87", "namespace": "default", "uid": "kcp-1", "resourceVersion": "101", "creationTimestamp": "2026-10-20T10:00:01Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart" }, "ownerReferences": [{ "apiVersion": "cluster.x-k8s.io/v1beta2", "kind": "Cluster", "name": "capi-quickstart", "uid": "c-1", "controller": true }] },
+    "spec": { "replicas": 1, "version": "v1.34.0", "machineTemplate": { "spec": { "infrastructureRef": { "apiGroup": "infrastructure.cluster.x-k8s.io", "kind": "DockerMachineTemplate", "name": "capi-quickstart-control-plane-wf5bq" } } } },
+    "status": {
+      "selector": "cluster.x-k8s.io/cluster-name=capi-quickstart,cluster.x-k8s.io/control-plane",
+      "replicas": 1, "readyReplicas": 1, "availableReplicas": 1, "upToDateReplicas": 1, "version": "v1.34.0",
+      "initialization": { "controlPlaneInitialized": true },
+      "conditions": [
+        { "type": "Available", "status": "True", "reason": "Available", "lastTransitionTime": "2026-10-20T10:04:00Z" },
+        { "type": "CertificatesAvailable", "status": "True", "reason": "Available", "lastTransitionTime": "2026-10-20T10:00:05Z" },
+        { "type": "Initialized", "status": "True", "reason": "Initialized", "lastTransitionTime": "2026-10-20T10:03:00Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "MachineDeployment",
+    "metadata": { "name": "capi-quickstart-md-0-6xq7b", "namespace": "default", "uid": "md-1", "resourceVersion": "102", "creationTimestamp": "2026-10-20T10:00:02Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "topology.cluster.x-k8s.io/deployment-name": "md-0" } },
+    "spec": {
+      "clusterName": "capi-quickstart", "replicas": 2,
+      "selector": { "matchLabels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "topology.cluster.x-k8s.io/deployment-name": "md-0" } },
+      "template": { "spec": { "clusterName": "capi-quickstart", "version": "v1.34.0", "bootstrap": { "configRef": { "apiGroup": "bootstrap.cluster.x-k8s.io", "kind": "KubeadmConfigTemplate", "name": "capi-quickstart-md-0-bootstrap-q2kcz" } }, "infrastructureRef": { "apiGroup": "infrastructure.cluster.x-k8s.io", "kind": "DockerMachineTemplate", "name": "capi-quickstart-md-0-infra-2kt4m" } } },
+      "rollout": { "strategy": { "type": "RollingUpdate" } }
+    },
+    "status": {
+      "selector": "cluster.x-k8s.io/cluster-name=capi-quickstart,topology.cluster.x-k8s.io/deployment-name=md-0",
+      "replicas": 2, "readyReplicas": 1, "availableReplicas": 1, "upToDateReplicas": 2, "phase": "Running",
+      "conditions": [
+        { "type": "Available", "status": "False", "reason": "NotAvailable", "message": "1 available replicas, at least 2 required (spec.strategy.rollout.maxUnavailable is 0, spec.replicas is 2)", "lastTransitionTime": "2026-10-20T10:05:00Z" },
+        { "type": "MachinesReady", "status": "False", "reason": "NotReady", "message": "* Machine capi-quickstart-md-0-6xq7b-k9dpl-5tq8w: InfrastructureReady: Waiting for DockerMachine to become ready", "lastTransitionTime": "2026-10-20T10:05:00Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "MachineSet",
+    "metadata": { "name": "capi-quickstart-md-0-6xq7b-k9dpl", "namespace": "default", "uid": "ms-1", "resourceVersion": "103", "creationTimestamp": "2026-10-20T10:00:03Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "cluster.x-k8s.io/deployment-name": "capi-quickstart-md-0-6xq7b" }, "ownerReferences": [{ "apiVersion": "cluster.x-k8s.io/v1beta2", "kind": "MachineDeployment", "name": "capi-quickstart-md-0-6xq7b", "uid": "md-1", "controller": true }] },
+    "spec": { "clusterName": "capi-quickstart", "replicas": 2, "selector": { "matchLabels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "topology.cluster.x-k8s.io/deployment-name": "md-0" } } },
+    "status": { "selector": "cluster.x-k8s.io/cluster-name=capi-quickstart,topology.cluster.x-k8s.io/deployment-name=md-0", "replicas": 2, "readyReplicas": 1, "availableReplicas": 1, "upToDateReplicas": 2, "conditions": [{ "type": "MachinesReady", "status": "False", "reason": "NotReady", "lastTransitionTime": "2026-10-20T10:05:00Z" }] }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "Machine",
+    "metadata": { "name": "capi-quickstart-n5w87-hz4sv", "namespace": "default", "uid": "m-cp", "resourceVersion": "104", "creationTimestamp": "2026-10-20T10:00:04Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "cluster.x-k8s.io/control-plane": "", "cluster.x-k8s.io/control-plane-name": "capi-quickstart-n5w87" }, "ownerReferences": [{ "apiVersion": "controlplane.cluster.x-k8s.io/v1beta2", "kind": "KubeadmControlPlane", "name": "capi-quickstart-n5w87", "uid": "kcp-1", "controller": true }] },
+    "spec": { "clusterName": "capi-quickstart", "version": "v1.34.0", "providerID": "docker:////capi-quickstart-n5w87-hz4sv", "bootstrap": { "configRef": { "apiGroup": "bootstrap.cluster.x-k8s.io", "kind": "KubeadmConfig", "name": "capi-quickstart-n5w87-hz4sv" }, "dataSecretName": "capi-quickstart-n5w87-hz4sv" }, "infrastructureRef": { "apiGroup": "infrastructure.cluster.x-k8s.io", "kind": "DockerMachine", "name": "capi-quickstart-n5w87-hz4sv" } },
+    "status": {
+      "phase": "Running", "lastUpdated": "2026-10-20T10:03:00Z",
+      "nodeRef": { "name": "capi-quickstart-n5w87-hz4sv" },
+      "addresses": [{ "type": "InternalIP", "address": "172.18.0.4" }, { "type": "Hostname", "address": "capi-quickstart-n5w87-hz4sv" }],
+      "initialization": { "infrastructureProvisioned": true, "bootstrapDataSecretCreated": true },
+      "conditions": [
+        { "type": "Available", "status": "True", "reason": "Available", "lastTransitionTime": "2026-10-20T10:03:30Z" },
+        { "type": "Ready", "status": "True", "reason": "Ready", "lastTransitionTime": "2026-10-20T10:03:30Z" },
+        { "type": "UpToDate", "status": "True", "reason": "UpToDate", "lastTransitionTime": "2026-10-20T10:00:04Z" },
+        { "type": "BootstrapConfigReady", "status": "True", "reason": "Ready", "lastTransitionTime": "2026-10-20T10:01:00Z" },
+        { "type": "InfrastructureReady", "status": "True", "reason": "Ready", "lastTransitionTime": "2026-10-20T10:02:00Z" },
+        { "type": "NodeReady", "status": "True", "reason": "NodeReady", "lastTransitionTime": "2026-10-20T10:03:30Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "Machine",
+    "metadata": { "name": "capi-quickstart-md-0-6xq7b-k9dpl-2vbjm", "namespace": "default", "uid": "m-w1", "resourceVersion": "105", "creationTimestamp": "2026-10-20T10:00:05Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "cluster.x-k8s.io/deployment-name": "capi-quickstart-md-0-6xq7b", "cluster.x-k8s.io/set-name": "capi-quickstart-md-0-6xq7b-k9dpl", "topology.cluster.x-k8s.io/deployment-name": "md-0" }, "ownerReferences": [{ "apiVersion": "cluster.x-k8s.io/v1beta2", "kind": "MachineSet", "name": "capi-quickstart-md-0-6xq7b-k9dpl", "uid": "ms-1", "controller": true }] },
+    "spec": { "clusterName": "capi-quickstart", "version": "v1.34.0", "providerID": "docker:////capi-quickstart-md-0-6xq7b-k9dpl-2vbjm", "bootstrap": { "configRef": { "apiGroup": "bootstrap.cluster.x-k8s.io", "kind": "KubeadmConfig", "name": "capi-quickstart-md-0-6xq7b-k9dpl-2vbjm" }, "dataSecretName": "capi-quickstart-md-0-6xq7b-k9dpl-2vbjm" }, "infrastructureRef": { "apiGroup": "infrastructure.cluster.x-k8s.io", "kind": "DockerMachine", "name": "capi-quickstart-md-0-6xq7b-k9dpl-2vbjm" } },
+    "status": {
+      "phase": "Running", "lastUpdated": "2026-10-20T10:04:00Z",
+      "nodeRef": { "name": "capi-quickstart-md-0-6xq7b-k9dpl-2vbjm" },
+      "initialization": { "infrastructureProvisioned": true, "bootstrapDataSecretCreated": true },
+      "conditions": [{ "type": "Ready", "status": "True", "reason": "Ready", "lastTransitionTime": "2026-10-20T10:04:30Z" }]
+    }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "Machine",
+    "metadata": { "name": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w", "namespace": "default", "uid": "m-w2", "resourceVersion": "106", "creationTimestamp": "2026-10-20T10:00:05Z", "labels": { "cluster.x-k8s.io/cluster-name": "capi-quickstart", "cluster.x-k8s.io/deployment-name": "capi-quickstart-md-0-6xq7b", "cluster.x-k8s.io/set-name": "capi-quickstart-md-0-6xq7b-k9dpl", "topology.cluster.x-k8s.io/deployment-name": "md-0" }, "ownerReferences": [{ "apiVersion": "cluster.x-k8s.io/v1beta2", "kind": "MachineSet", "name": "capi-quickstart-md-0-6xq7b-k9dpl", "uid": "ms-1", "controller": true }] },
+    "spec": { "clusterName": "capi-quickstart", "version": "v1.34.0", "bootstrap": { "configRef": { "apiGroup": "bootstrap.cluster.x-k8s.io", "kind": "KubeadmConfig", "name": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w" }, "dataSecretName": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w" }, "infrastructureRef": { "apiGroup": "infrastructure.cluster.x-k8s.io", "kind": "DockerMachine", "name": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w" } },
+    "status": {
+      "phase": "Provisioning", "lastUpdated": "2026-10-20T10:01:00Z",
+      "initialization": { "bootstrapDataSecretCreated": true },
+      "conditions": [
+        { "type": "Ready", "status": "False", "reason": "NotReady", "message": "* InfrastructureReady: Waiting for DockerMachine to become ready", "lastTransitionTime": "2026-10-20T10:01:00Z" },
+        { "type": "BootstrapConfigReady", "status": "True", "reason": "Ready", "lastTransitionTime": "2026-10-20T10:01:00Z" },
+        { "type": "InfrastructureReady", "status": "False", "reason": "NotReady", "message": "Waiting for DockerMachine to become ready", "lastTransitionTime": "2026-10-20T10:01:00Z" },
+        { "type": "NodeReady", "status": "Unknown", "reason": "NodeDoesNotExist", "message": "Waiting for a Node with spec.providerID to exist", "lastTransitionTime": "2026-10-20T10:01:00Z" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2",
+    "kind": "DockerMachine",
+    "metadata": { "name": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w", "namespace": "default", "uid": "dm-2" },
+    "spec": { "customImage": "kindest/node:v1.34.0" },
+    "status": { "initialization": { "provisioned": false }, "conditions": [{ "type": "Ready", "status": "False", "reason": "NotProvisioned", "message": "0 of 1 ContainerProvisioned" }] }
+  },
+  {
+    "apiVersion": "bootstrap.cluster.x-k8s.io/v1beta2",
+    "kind": "KubeadmConfig",
+    "metadata": { "name": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w", "namespace": "default", "uid": "kc-2" },
+    "status": { "initialization": { "dataSecretCreated": true }, "dataSecretName": "capi-quickstart-md-0-6xq7b-k9dpl-5tq8w" }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta2",
+    "kind": "MachineHealthCheck",
+    "metadata": { "name": "capi-quickstart-node-unhealthy-5m", "namespace": "default", "uid": "mhc-1", "resourceVersion": "107", "creationTimestamp": "2026-10-20T10:00:06Z" },
+    "spec": {
+      "clusterName": "capi-quickstart",
+      "selector": { "matchLabels": { "nodepool": "nodepool-0" } },
+      "checks": {
+        "nodeStartupTimeoutSeconds": 600,
+        "unhealthyNodeConditions": [{ "type": "Ready", "status": "Unknown", "timeoutSeconds": 300 }, { "type": "Ready", "status": "False", "timeoutSeconds": 300 }],
+        "unhealthyMachineConditions": [{ "type": "NodeReady", "status": "Unknown", "timeoutSeconds": 1800 }, { "type": "InfrastructureReady", "status": "False", "timeoutSeconds": 1800 }]
+      },
+      "remediation": { "triggerIf": { "unhealthyLessThanOrEqualTo": "40%" } }
+    },
+    "status": {
+      "expectedMachines": 5, "currentHealthy": 2, "remediationsAllowed": 0,
+      "targets": ["np0-a", "np0-b", "np0-c", "np0-d", "np0-e"],
+      "conditions": [{ "type": "RemediationAllowed", "status": "False", "reason": "TooManyUnhealthy", "message": "Remediation is not allowed, the number of not started or unhealthy machines exceeds maxUnhealthy (total: 5, unhealthy: 3, maxUnhealthy: 40%)", "lastTransitionTime": "2026-10-20T11:00:00Z" }]
+    }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta1",
+    "kind": "Machine",
+    "metadata": { "name": "legacy-md-0-abcde-fghij", "namespace": "legacy", "uid": "m-old", "resourceVersion": "200", "creationTimestamp": "2026-10-01T00:00:00Z", "labels": { "cluster.x-k8s.io/cluster-name": "legacy" } },
+    "spec": { "clusterName": "legacy", "version": "v1.31.2", "bootstrap": { "configRef": { "apiVersion": "bootstrap.cluster.x-k8s.io/v1beta1", "kind": "KubeadmConfig", "name": "legacy-md-0-abcde-fghij", "namespace": "legacy" } }, "infrastructureRef": { "apiVersion": "infrastructure.cluster.x-k8s.io/v1beta2", "kind": "AWSMachine", "name": "legacy-md-0-abcde-fghij", "namespace": "legacy" } },
+    "status": {
+      "phase": "Failed", "lastUpdated": "2026-10-01T00:20:00Z",
+      "failureReason": "CreateError",
+      "failureMessage": "Failure detected from referenced resource infrastructure.cluster.x-k8s.io/v1beta2, Kind=AWSMachine with name \"legacy-md-0-abcde-fghij\": failed to create instance: InsufficientInstanceCapacity",
+      "bootstrapReady": true, "infrastructureReady": false,
+      "conditions": [{ "type": "Ready", "status": "False", "severity": "Error", "reason": "InstanceProvisionFailed", "message": "failed to create instance", "lastTransitionTime": "2026-10-01T00:20:00Z" }],
+      "v1beta2": { "conditions": [{ "type": "Ready", "status": "False", "reason": "NotReady", "message": "* InfrastructureReady: failed to create instance", "lastTransitionTime": "2026-10-01T00:20:00Z" }, { "type": "InfrastructureReady", "status": "False", "reason": "NotReady", "message": "failed to create instance", "lastTransitionTime": "2026-10-01T00:20:00Z" }] }
+    }
+  },
+  {
+    "apiVersion": "cluster.x-k8s.io/v1beta1",
+    "kind": "MachineDeployment",
+    "metadata": { "name": "legacy-md-0", "namespace": "legacy", "uid": "md-old", "resourceVersion": "201", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": { "clusterName": "legacy", "replicas": 3, "selector": { "matchLabels": { "cluster.x-k8s.io/cluster-name": "legacy" } }, "strategy": { "type": "RollingUpdate" }, "template": { "spec": { "clusterName": "legacy", "version": "v1.31.2" } } },
+    "status": { "replicas": 3, "updatedReplicas": 3, "readyReplicas": 2, "availableReplicas": 2, "unavailableReplicas": 1, "phase": "Running", "conditions": [{ "type": "Ready", "status": "True" }], "v1beta2": { "readyReplicas": 1, "availableReplicas": 2, "upToDateReplicas": 3, "conditions": [{ "type": "Available", "status": "True", "reason": "Available" }] } }
+  }
+]

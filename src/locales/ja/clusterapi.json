@@ -1,0 +1,169 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_other": "{{count}} 件のオブジェクトに対応が必要です",
+  "state": {
+    "available": "利用可能",
+    "provisioned": "プロビジョニング済み",
+    "provisioning": "プロビジョニング中",
+    "notAvailable": "利用不可",
+    "deleting": "削除中",
+    "failed": "失敗",
+    "paused": "一時停止",
+    "unknown": "不明",
+    "running": "実行中",
+    "notReady": "準備未完了",
+    "updating": "更新中",
+    "rollingOut": "ロールアウト中",
+    "scaling": "スケール中",
+    "healthy": "正常",
+    "remediating": "修復中",
+    "blocked": "修復がブロック"
+  },
+  "columns": {
+    "status": "状態",
+    "phase": "フェーズ",
+    "class": "クラス",
+    "version": "バージョン",
+    "controlPlane": "コントロールプレーン",
+    "workers": "ワーカー",
+    "cluster": "クラスター",
+    "node": "ノード",
+    "ready": "準備完了",
+    "upToDate": "最新",
+    "available": "利用可能",
+    "healthy": "正常",
+    "remediationsAllowed": "許可された修復数",
+    "strategy": "戦略"
+  },
+  "fields": {
+    "state": "状態",
+    "phase": "フェーズ",
+    "class": "ClusterClass",
+    "version": "Kubernetes バージョン",
+    "endpoint": "コントロールプレーンのエンドポイント",
+    "controlPlane": "コントロールプレーン",
+    "infrastructure": "インフラストラクチャ",
+    "controlPlaneMachines": "コントロールプレーンのマシン",
+    "workerMachines": "ワーカーマシン",
+    "workloadCluster": "ワークロードクラスター",
+    "cluster": "クラスター",
+    "owner": "所有者",
+    "providerID": "プロバイダー ID",
+    "failureDomain": "障害ドメイン",
+    "node": "ノード",
+    "addresses": "アドレス",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Bootstrap データの Secret",
+    "lastUpdated": "フェーズ変更",
+    "desired": "希望数",
+    "current": "現在数",
+    "ready": "準備完了",
+    "available": "利用可能",
+    "upToDate": "最新",
+    "strategy": "ロールアウト戦略",
+    "bootstrapTemplate": "Bootstrap テンプレート",
+    "infrastructureTemplate": "インフラストラクチャのテンプレート",
+    "initialized": "初期化済み",
+    "lastRemediation": "最後に修復したマシン",
+    "lastRemediationTime": "最後の修復",
+    "retryCount": "修復の再試行回数",
+    "selector": "Selector",
+    "expected": "想定マシン数",
+    "healthy": "正常なマシン数",
+    "remediationsAllowed": "許可された修復数",
+    "maxUnhealthy": "異常数がこの値以下なら修復",
+    "unhealthyRange": "異常数がこの範囲内なら修復",
+    "nodeStartupTimeout": "ノード起動のタイムアウト",
+    "unhealthyNodeConditions": "異常とみなす Node の条件",
+    "unhealthyMachineConditions": "異常とみなすマシンの条件",
+    "targets": "チェック対象のマシン",
+    "provider": {
+      "customImage": "カスタムイメージ",
+      "endpoint": "ロードバランサーのエンドポイント",
+      "instanceType": "インスタンスタイプ",
+      "instanceState": "インスタンスの状態",
+      "instanceId": "インスタンス ID",
+      "vmSize": "VM サイズ",
+      "vmState": "VM の状態",
+      "template": "VM テンプレート",
+      "cpus": "CPU",
+      "memoryMiB": "メモリ (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "準備完了",
+    "notReady": "準備未完了",
+    "unknown": "報告なし",
+    "missing": "存在しない",
+    "unreadable": "読み取れません",
+    "notServed": "このクラスターはこの kind を提供していません"
+  },
+  "workload": {
+    "none": "API サーバーが {{address}} のクラスターは Sextant にありません。",
+    "open": "クラスター {{context}} を開く",
+    "openNode": "{{context}} で Node {{node}} を開く"
+  },
+  "readyOf": "{{desired}} 台中 {{ready}} 台が準備完了",
+  "explain": {
+    "cluster": {
+      "failed": "クラスターが失敗しました。Cluster API は再試行しないエラーを報告しています。",
+      "notAvailable": "クラスターは利用できません。Available 条件のチェックのいずれかが失敗しています。",
+      "provisioning": "クラスターはまだプロビジョニング中です。",
+      "paused": "クラスターは一時停止中です。再開するまで Cluster API は何も変更しません。",
+      "deleting": "クラスターを削除しています。"
+    },
+    "machine": {
+      "failed": "マシンが失敗しました。Cluster API は再試行しないエラーを報告しています。",
+      "provisioning": "マシンはまだ Running に達していません (フェーズ {{phase}})。",
+      "notReady": "マシンは実行中ですが、Ready 条件が False です。",
+      "paused": "マシンは一時停止中です。再開するまで Cluster API は何も変更しません。",
+      "deleting": "マシンを削除しています。"
+    },
+    "group": {
+      "failed": "Cluster API は再試行しないエラーを報告しています。",
+      "notAvailable": "利用できません。利用可能なマシンが必要数より少なくなっています。",
+      "rollingOut": "ロールアウト中です。一部のマシンはまだ最新ではありません。",
+      "scaling": "スケール中です。マシンの数が変わっています。",
+      "paused": "一時停止中です。再開するまで Cluster API はここで何も変更しません。",
+      "provisioning": "コントロールプレーンはまだ初期化されていません。"
+    },
+    "healthCheck": {
+      "blocked": "修復がブロックされています。異常なマシンが多すぎます ({{expected}} 台中 {{healthy}} 台が正常)。",
+      "remediating": "一部のマシンが異常で ({{expected}} 台中 {{healthy}} 台が正常)、修復中です。"
+    }
+  },
+  "chain": {
+    "title": "マシン",
+    "loading": "マシンを読み込んでいます…",
+    "none": "このクラスターにマシンはありません。",
+    "unavailable": "マシンを一覧表示できませんでした。",
+    "controlPlane": "コントロールプレーン",
+    "others": "その他のマシン",
+    "more_other": "ほかに {{count}} 台のマシン",
+    "ready": "準備完了: {{ready}}",
+    "node": "ノード {{node}}"
+  },
+  "machines": {
+    "title": "マシン",
+    "none": "マシンはありません。",
+    "name": "マシン",
+    "state": "状態",
+    "node": "ノード"
+  },
+  "healthCheck": {
+    "type": "条件",
+    "status": "状態",
+    "timeout": "タイムアウト"
+  },
+  "yes": "はい",
+  "no": "いいえ"
+}

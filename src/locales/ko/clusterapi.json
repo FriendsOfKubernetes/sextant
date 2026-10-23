@@ -1,0 +1,169 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_other": "{{count}}개 개체에 주의가 필요합니다",
+  "state": {
+    "available": "사용 가능",
+    "provisioned": "프로비저닝됨",
+    "provisioning": "프로비저닝 중",
+    "notAvailable": "사용 불가",
+    "deleting": "삭제 중",
+    "failed": "실패",
+    "paused": "일시 중지됨",
+    "unknown": "알 수 없음",
+    "running": "실행 중",
+    "notReady": "준비 안 됨",
+    "updating": "업데이트 중",
+    "rollingOut": "롤아웃 중",
+    "scaling": "스케일 조정 중",
+    "healthy": "정상",
+    "remediating": "복구 중",
+    "blocked": "복구 차단됨"
+  },
+  "columns": {
+    "status": "상태",
+    "phase": "단계",
+    "class": "클래스",
+    "version": "버전",
+    "controlPlane": "컨트롤 플레인",
+    "workers": "워커",
+    "cluster": "클러스터",
+    "node": "노드",
+    "ready": "준비됨",
+    "upToDate": "최신",
+    "available": "사용 가능",
+    "healthy": "정상",
+    "remediationsAllowed": "허용된 복구 수",
+    "strategy": "전략"
+  },
+  "fields": {
+    "state": "상태",
+    "phase": "단계",
+    "class": "ClusterClass",
+    "version": "Kubernetes 버전",
+    "endpoint": "컨트롤 플레인 엔드포인트",
+    "controlPlane": "컨트롤 플레인",
+    "infrastructure": "인프라",
+    "controlPlaneMachines": "컨트롤 플레인 머신",
+    "workerMachines": "워커 머신",
+    "workloadCluster": "워크로드 클러스터",
+    "cluster": "클러스터",
+    "owner": "소유자",
+    "providerID": "공급자 ID",
+    "failureDomain": "장애 도메인",
+    "node": "노드",
+    "addresses": "주소",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Bootstrap 데이터 Secret",
+    "lastUpdated": "단계 변경",
+    "desired": "원하는 수",
+    "current": "현재 수",
+    "ready": "준비됨",
+    "available": "사용 가능",
+    "upToDate": "최신",
+    "strategy": "롤아웃 전략",
+    "bootstrapTemplate": "Bootstrap 템플릿",
+    "infrastructureTemplate": "인프라 템플릿",
+    "initialized": "초기화됨",
+    "lastRemediation": "마지막으로 복구한 머신",
+    "lastRemediationTime": "마지막 복구",
+    "retryCount": "복구 재시도 횟수",
+    "selector": "Selector",
+    "expected": "예상 머신 수",
+    "healthy": "정상 머신 수",
+    "remediationsAllowed": "허용된 복구 수",
+    "maxUnhealthy": "비정상이 이 값 이하일 때 복구",
+    "unhealthyRange": "비정상이 이 범위일 때 복구",
+    "nodeStartupTimeout": "노드 시작 시간 제한",
+    "unhealthyNodeConditions": "비정상으로 보는 Node 조건",
+    "unhealthyMachineConditions": "비정상으로 보는 머신 조건",
+    "targets": "검사 대상 머신",
+    "provider": {
+      "customImage": "사용자 지정 이미지",
+      "endpoint": "부하 분산기 엔드포인트",
+      "instanceType": "인스턴스 유형",
+      "instanceState": "인스턴스 상태",
+      "instanceId": "인스턴스 ID",
+      "vmSize": "VM 크기",
+      "vmState": "VM 상태",
+      "template": "VM 템플릿",
+      "cpus": "CPU",
+      "memoryMiB": "메모리(MiB)"
+    }
+  },
+  "ref": {
+    "ready": "준비됨",
+    "notReady": "준비 안 됨",
+    "unknown": "보고 없음",
+    "missing": "없음",
+    "unreadable": "읽을 수 없음",
+    "notServed": "이 클러스터는 이 kind를 제공하지 않음"
+  },
+  "workload": {
+    "none": "Sextant에 API 서버가 {{address}}인 클러스터가 없습니다.",
+    "open": "클러스터 {{context}} 열기",
+    "openNode": "{{context}}에서 Node {{node}} 열기"
+  },
+  "readyOf": "{{desired}}개 중 {{ready}}개 준비됨",
+  "explain": {
+    "cluster": {
+      "failed": "클러스터가 실패했습니다. Cluster API가 재시도하지 않는 오류를 보고합니다.",
+      "notAvailable": "클러스터를 사용할 수 없습니다. Available 조건의 검사 중 하나가 실패합니다.",
+      "provisioning": "클러스터를 아직 프로비저닝하고 있습니다.",
+      "paused": "클러스터가 일시 중지되었습니다. 다시 시작할 때까지 Cluster API는 아무것도 변경하지 않습니다.",
+      "deleting": "클러스터를 삭제하고 있습니다."
+    },
+    "machine": {
+      "failed": "머신이 실패했습니다. Cluster API가 재시도하지 않는 오류를 보고합니다.",
+      "provisioning": "머신이 아직 Running에 도달하지 않았습니다(단계 {{phase}}).",
+      "notReady": "머신은 실행 중이지만 Ready 조건이 False입니다.",
+      "paused": "머신이 일시 중지되었습니다. 다시 시작할 때까지 Cluster API는 아무것도 변경하지 않습니다.",
+      "deleting": "머신을 삭제하고 있습니다."
+    },
+    "group": {
+      "failed": "Cluster API가 재시도하지 않는 오류를 보고합니다.",
+      "notAvailable": "사용할 수 없습니다. 사용 가능한 머신이 필요한 수보다 적습니다.",
+      "rollingOut": "롤아웃이 진행 중입니다. 일부 머신이 아직 최신이 아닙니다.",
+      "scaling": "스케일 조정 중입니다. 머신 수가 바뀌고 있습니다.",
+      "paused": "일시 중지되었습니다. 다시 시작할 때까지 Cluster API는 여기서 아무것도 변경하지 않습니다.",
+      "provisioning": "컨트롤 플레인이 아직 초기화되지 않았습니다."
+    },
+    "healthCheck": {
+      "blocked": "복구가 차단되었습니다. 비정상 머신이 너무 많습니다({{expected}}개 중 {{healthy}}개 정상).",
+      "remediating": "일부 머신이 비정상이며({{expected}}개 중 {{healthy}}개 정상) 복구하고 있습니다."
+    }
+  },
+  "chain": {
+    "title": "머신",
+    "loading": "머신을 불러오는 중…",
+    "none": "이 클러스터에는 머신이 없습니다.",
+    "unavailable": "머신 목록을 가져올 수 없습니다.",
+    "controlPlane": "컨트롤 플레인",
+    "others": "기타 머신",
+    "more_other": "머신 {{count}}개 더 있음",
+    "ready": "준비됨: {{ready}}",
+    "node": "노드 {{node}}"
+  },
+  "machines": {
+    "title": "머신",
+    "none": "머신이 없습니다.",
+    "name": "머신",
+    "state": "상태",
+    "node": "노드"
+  },
+  "healthCheck": {
+    "type": "조건",
+    "status": "상태",
+    "timeout": "시간 제한"
+  },
+  "yes": "예",
+  "no": "아니요"
+}

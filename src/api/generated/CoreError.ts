@@ -4,4 +4,12 @@ import type { ErrorCode } from "./ErrorCode";
 /**
  * The error every core function returns.
  */
-export type CoreError = { code: ErrorCode, message: string, };
+export type CoreError = { code: ErrorCode, message: string, 
+/**
+ * What a failed exec auth plugin printed on stderr, clipped and masked ([`plugin_output::masked_stderr`]), set
+ * only by a connection ([`exec_plugin_error`]) and meant for the window alone (#256): it is never part of
+ * `message`, `Display` or `Debug`, so logs, the activity log and notifications never carry it, and agents and
+ * extensions get the error [`CoreError::without_plugin_output`].
+ * Boxed so the error stays small (`Result`s and structs holding a `CoreError` are everywhere).
+ */
+pluginOutput?: string, };

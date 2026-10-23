@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use ts_rs::TS;
 
-use crate::error::{CoreError, CoreResult, ErrorCode, kube_error};
+use crate::error::{CoreError, CoreResult, ErrorCode, ExecSecrets, exec_plugin_error};
 use crate::kubeconfig::{ClusterId, KubeconfigRegistry, ServerBinding, kubeconfig_error};
 use crate::resources::{KindRef, ResourceKind};
 
@@ -83,6 +83,17 @@ pub enum ConnectionState {
     Connecting,
     Connected,
     Error(CoreError),
+}
+
+impl ConnectionState {
+    /// The state without what a failed exec plugin printed ([`CoreError::without_plugin_output`]): for agents and
+    /// extensions (#256).
+    pub fn without_plugin_output(self) -> Self {
+        match self {
+            Self::Error(err) => Self::Error(err.without_plugin_output()),
+            other => other,
+        }
+    }
 }
 
 /// Shared handle to all cluster connections. Cheap to clone.
@@ -365,11 +376,14 @@ pub(crate) async fn open_checked_client(
     // Read from the very text the client is built from.
     let binding = ServerBinding::of(&kubeconfig).ok();
     // The exec plugin's command as the kubeconfig writes it goes into error messages, so a path that does not exist
-    // here can be seen (#253); never its arguments, env or output.
-    let plugin: Option<String> = kubeconfig
+    // here can be seen (#253); never its arguments, env or stdout. Its stderr goes into `plugin_output` only, masked,
+    // with the values of its env and arguments among what is masked (#256).
+    let exec = kubeconfig
         .auth_infos
         .iter()
-        .find_map(|u| u.auth_info.as_ref()?.exec.as_ref()?.command.clone());
+        .find_map(|u| u.auth_info.as_ref()?.exec.as_ref());
+    let plugin: Option<String> = exec.and_then(|e| e.command.clone());
+    let secrets = exec.map(ExecSecrets::of).unwrap_or_default();
     let options = KubeConfigOptions {
         context: kubeconfig.current_context.clone(),
         ..Default::default()
@@ -382,7 +396,7 @@ pub(crate) async fn open_checked_client(
     config.default_retry = false;
 
     let client = retrying_client(config).map_err(|err| {
-        let core = kube_error(err, plugin.as_deref());
+        let core = exec_plugin_error(err, plugin.as_deref(), &secrets);
         if core.code == ErrorCode::AuthPlugin {
             core
         } else {
@@ -394,7 +408,7 @@ pub(crate) async fn open_checked_client(
     // `/api` needs an authenticated user (unlike `/version`), so a rejected token fails here with 401.
     match tokio::time::timeout(CHECK_TIMEOUT, client.list_core_api_versions()).await {
         Ok(Ok(_)) => Ok((client, binding)),
-        Ok(Err(err)) => Err(kube_error(err, plugin.as_deref())),
+        Ok(Err(err)) => Err(exec_plugin_error(err, plugin.as_deref(), &secrets)),
         Err(_) => Err(CoreError::new(
             ErrorCode::Unreachable,
             format!(
@@ -699,6 +713,7 @@ fn push_kinds(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::kube_error;
     use crate::fake_api::{FakeApi, Reply, Request};
     use crate::kubeconfig::KubeconfigEnv;
 
@@ -750,16 +765,19 @@ mod tests {
             "OUT-SECRET-456",
             "ERR-SECRET-789",
         ];
+        // Since #256 stderr reaches the window in `plugin_output`, masked: the env value and argument it echoes are
+        // hidden, its own words are not, and none of it is in the message.
         let cases = [
             // Non-zero exit with secrets on stdout and stderr.
             (
-                "echo OUT-SECRET-456; echo ERR-SECRET-789 >&2; exit 3",
+                "echo OUT-SECRET-456; echo not logged in: ENV-SECRET-123 ARG-SECRET token=ERR-SECRET-789 >&2; exit 3",
                 Some("3"),
+                Some("not logged in: <hidden> <hidden> token=<hidden>"),
             ),
             // Exit 0 with output that is not an ExecCredential.
-            ("echo token: OUT-SECRET-456", None),
+            ("echo token: OUT-SECRET-456", None, None),
         ];
-        for (script, exit_code) in cases {
+        for (script, exit_code, output) in cases {
             let (_dir, mgr, id) = manager(&kubeconfig("https://127.0.0.1:1", &exec_user(script)));
             let mut events = mgr.subscribe_states();
             let err = mgr.connect(&id).await.unwrap_err();
@@ -767,6 +785,12 @@ mod tests {
             assert!(err.message.contains("'sh'"), "names the plugin: {err}");
             if let Some(code) = exit_code {
                 assert!(err.message.contains(code), "gives the exit code: {err}");
+            }
+            assert_eq!(err.plugin_output(), output, "{script}");
+            assert!(!err.message.contains("logged in"), "{err}");
+            match mgr.state(&id) {
+                ConnectionState::Error(state) => assert_eq!(state.plugin_output(), output),
+                other => panic!("expected an error state, got {other:?}"),
             }
 
             let state = serde_json::to_string(&mgr.state(&id)).unwrap();

@@ -25,10 +25,7 @@
     "invalid": "Saisissez un nombre entier supérieur ou égal à 0."
   },
   "restart": {
-    "label": "Redémarrer",
-    "title": "Redémarrer {{kind}} {{name}} ?",
-    "text": "Tous les pods de {{name}} seront remplacés un par un (rollout restart).",
-    "confirm": "Redémarrer"
+    "label": "Redémarrer"
   },
   "cordon": {
     "label": "Isoler / Réintégrer",

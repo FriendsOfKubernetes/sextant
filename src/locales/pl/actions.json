@@ -27,10 +27,7 @@
     "invalid": "Wpisz liczbę całkowitą, 0 lub większą."
   },
   "restart": {
-    "label": "Uruchom ponownie",
-    "title": "Uruchomić ponownie {{kind}} {{name}}?",
-    "text": "Wszystkie Pody {{name}} zostaną po kolei zastąpione nowymi (rollout restart).",
-    "confirm": "Uruchom ponownie"
+    "label": "Uruchom ponownie"
   },
   "cordon": {
     "label": "Wyłącz / włącz planowanie",

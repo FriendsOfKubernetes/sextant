@@ -1,4 +1,5 @@
-// Actions that change objects: edit, delete, scale, restart, cordon/uncordon, drain, trigger, suspend/resume.
+// Actions that change objects: edit, delete, scale, cordon/uncordon, drain, trigger, suspend/resume (restart:
+// src/features/restart).
 // Which kinds offer them is decided by `ResourceDef.actions` and `appliesTo` below; every change except "edit"
 // goes through a dialog first.
 import type { KindRef, KubeObject } from "../../api";
@@ -54,26 +55,7 @@ registerAction("scale", {
   },
 });
 
-registerAction("restart", {
-  labelKey: "actions:restart.label",
-  icon: "restart",
-  appliesTo: (_obj, kind) => is(kind, "apps", "Deployment", "StatefulSet", "DaemonSet"),
-  run: ({ clusterId, refs, openDialog }) => {
-    const ref = refs[0];
-    if (!ref) return;
-    const names = { kind: ref.kind.kind, name: ref.name };
-    openDialog((close) => (
-      <ConfirmAction
-        title={t("actions:restart.title", names)}
-        confirmLabel={t("actions:restart.confirm")}
-        close={close}
-        onConfirm={() => api.actions.restart(clusterId, ref)}
-      >
-        <p>{t("actions:restart.text", names)}</p>
-      </ConfirmAction>
-    ));
-  },
-});
+// "restart" is registered by src/features/restart (several objects, ReplicaSets, Rollouts and pods, #255).
 
 registerAction("cordon", {
   labelKey: "actions:cordon.label",

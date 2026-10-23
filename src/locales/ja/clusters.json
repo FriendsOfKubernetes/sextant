@@ -170,6 +170,13 @@
     "notExecutable": "ログインプログラム {{command}} を実行できません。実行可能ファイルではありません。",
     "badge": "ログインプログラムが見つからないか実行できません",
     "hintElsewhere": "kubeconfig が別のコンピューターや WSL で生成された可能性があります。このコンピューターで生成し直すか、exec のコマンドをツール名だけ (クラウド CLI。例: yc、aws、gcloud、az、kubelogin) にして、そのツールが PATH にあることを確認してください。",
-    "hintRestart": "Sextant やデスクトップセッションの開始後にインストールしたツールは、Sextant を再起動するまで Sextant の PATH に入りません。Windows では先にサインアウトしてサインインし直してください。"
+    "hintRestart": "Sextant やデスクトップセッションの開始後にインストールしたツールは、Sextant を再起動するまで Sextant の PATH に入りません。Windows では先にサインアウトしてサインインし直してください。",
+    "loginHint": "ログインプログラムが失敗するのは、通常はサインインしていないかセッションの有効期限が切れているためです。ターミナルで実行してサインインし（例: yc init、aws sso login、gcloud auth login、az login、kubelogin）、もう一度お試しください。",
+    "output": {
+      "title": "ログインプログラムの出力（シークレットは伏せています）",
+      "copy": "出力をコピー",
+      "copied": "コピーしました。",
+      "copyFailed": "コピーできませんでした。"
+    }
   }
 }

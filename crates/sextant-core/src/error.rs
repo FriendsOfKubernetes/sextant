@@ -1,11 +1,16 @@
 //! One error type for the whole core. The frontend receives `{ code, message }` and picks a translated text
-//! by `code`; `message` keeps the original text for details.
+//! by `code`; `message` keeps the original text for details. A failed exec plugin's connection error may also carry
+//! `pluginOutput`, its masked stderr, for the window only (#256).
 
 use std::fmt;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+pub mod plugin_output;
+
+pub use plugin_output::ExecSecrets;
 
 /// Machine-readable error category. Serialized in camelCase (`notFound`, `authPlugin`, …).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -41,12 +46,34 @@ pub enum ErrorCode {
 }
 
 /// The error every core function returns.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CoreError {
     pub code: ErrorCode,
     pub message: String,
+    /// What a failed exec auth plugin printed on stderr, clipped and masked ([`plugin_output::masked_stderr`]), set
+    /// only by a connection ([`exec_plugin_error`]) and meant for the window alone (#256): it is never part of
+    /// `message`, `Display` or `Debug`, so logs, the activity log and notifications never carry it, and agents and
+    /// extensions get the error [`CoreError::without_plugin_output`].
+    /// Boxed so the error stays small (`Result`s and structs holding a `CoreError` are everywhere).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "string")]
+    pub plugin_output: Option<Box<String>>,
+}
+
+/// `Debug` like the derived one, but the plugin's output is never printed.
+impl fmt::Debug for CoreError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut debug = f.debug_struct("CoreError");
+        debug
+            .field("code", &self.code)
+            .field("message", &self.message);
+        if self.plugin_output.is_some() {
+            debug.field("plugin_output", &"<hidden>");
+        }
+        debug.finish()
+    }
 }
 
 pub type CoreResult<T> = Result<T, CoreError>;
@@ -56,7 +83,19 @@ impl CoreError {
         Self {
             code,
             message: message.into(),
+            plugin_output: None,
         }
+    }
+
+    /// What a failed exec plugin printed ([`CoreError::plugin_output`]), if anything.
+    pub fn plugin_output(&self) -> Option<&str> {
+        self.plugin_output.as_deref().map(String::as_str)
+    }
+
+    /// The error without what an exec plugin printed: for agents and extensions, which only ever get the message.
+    pub fn without_plugin_output(mut self) -> Self {
+        self.plugin_output = None;
+        self
     }
 
     pub fn other(message: impl Into<String>) -> Self {
@@ -177,6 +216,27 @@ fn find_auth_error(err: &kube::Error) -> Option<&kube::client::AuthError> {
         source = cause.source();
     }
     None
+}
+
+/// [`kube_error`] for a connection whose exec plugin is known: when the plugin ran and failed, its stderr goes into
+/// [`CoreError::plugin_output`], clipped and masked, with `secrets` (the values of its env and arguments) masked
+/// wherever they appear (#256). Its stdout (the ExecCredential) is never read.
+pub fn exec_plugin_error(
+    err: kube::Error,
+    plugin: Option<&str>,
+    secrets: &ExecSecrets,
+) -> CoreError {
+    let output = match find_auth_error(&err) {
+        Some(kube::client::AuthError::AuthExecRun { out, .. }) => {
+            plugin_output::masked_stderr(&out.stderr, secrets)
+        }
+        _ => None,
+    };
+    let mut core = kube_error(err, plugin);
+    if core.code == ErrorCode::AuthPlugin {
+        core.plugin_output = output.map(Box::new);
+    }
+    core
 }
 
 /// How the message of an exec plugin that cannot be found begins (code `authPlugin`): the window shows its hint on
@@ -382,6 +442,8 @@ mod tests {
         }
     }
 
+    /// [`kube_error`] (every path but a connection: watches, reads, a token refresh mid-stream) keeps nothing the
+    /// plugin was given or printed, not even its masked stderr.
     #[cfg(unix)]
     #[test]
     fn exec_plugin_errors_from_kube_carry_no_env_args_or_output() {
@@ -410,6 +472,74 @@ mod tests {
         let named = kube_error(kube::Error::Auth(exec_run_error()), Some("vault-login"));
         assert!(named.message.contains("'vault-login'"), "{named}");
         assert!(!named.message.contains("ARG-SECRET"), "{named}");
+    }
+
+    /// The rule since #256: the plugin's stderr reaches the window masked, in its own field; stdout, the command
+    /// line's env and arguments never; the message, `Display` and `Debug` stay without any of it.
+    #[cfg(unix)]
+    #[test]
+    fn a_connection_error_carries_the_plugins_stderr_masked_and_apart_from_the_message() {
+        use std::os::unix::process::ExitStatusExt as _;
+        let status = std::process::ExitStatus::from_raw(1 << 8);
+        let run = || {
+            kube::client::AuthError::AuthExecRun {
+            cmd: r#"VAULT_TOKEN="ENV-SECRET-123" "vault-login" "--password=ARG-SECRET""#.to_owned(),
+            status,
+            out: std::process::Output {
+                status,
+                stdout: b"token: OUT-SECRET-456".to_vec(),
+                stderr: b"\x1b[31mERROR\x1b[0m: not logged in, run 'vault login'\nVAULT_TOKEN ENV-SECRET-123 \
+                          rejected (--password ARG-SECRET)\n"
+                    .to_vec(),
+            },
+        }
+        };
+        let exec: kube::config::ExecConfig = serde_yaml::from_str(
+            "command: vault-login\nargs: [\"--password=ARG-SECRET\"]\nenv: [{name: VAULT_TOKEN, value: ENV-SECRET-123}]\n",
+        )
+        .unwrap();
+        let secrets = ExecSecrets::of(&exec);
+        let direct = kube::Error::Auth(run());
+        let wrapped = kube::Error::Service(Box::new(run()));
+        for err in [direct, wrapped] {
+            let core = exec_plugin_error(err, Some("vault-login"), &secrets);
+            assert_eq!(core.code, ErrorCode::AuthPlugin, "{core}");
+            assert_eq!(
+                core.message,
+                "the auth plugin 'vault-login' failed with exit code 1"
+            );
+            assert_eq!(
+                core.plugin_output(),
+                Some(
+                    "ERROR: not logged in, run 'vault login'\nVAULT_TOKEN <hidden> rejected (--password <hidden>)"
+                )
+            );
+            let json = serde_json::to_value(&core).unwrap();
+            assert_eq!(json["pluginOutput"], core.plugin_output().unwrap());
+            let shown = [json.to_string(), format!("{core}"), format!("{core:?}")];
+            for text in &shown {
+                for secret in ["ENV-SECRET-123", "ARG-SECRET", "OUT-SECRET-456"] {
+                    assert!(!text.contains(secret), "{secret} leaked in {text}");
+                }
+            }
+            for text in &shown[1..] {
+                assert!(!text.contains("not logged in"), "the output is in {text}");
+            }
+            let bare = core.without_plugin_output();
+            assert_eq!(bare.plugin_output, None);
+            assert!(
+                !serde_json::to_string(&bare)
+                    .unwrap()
+                    .contains("pluginOutput")
+            );
+        }
+        // An error that is not the plugin's run carries nothing extra.
+        let other = exec_plugin_error(
+            api_error(401, "Unauthorized"),
+            Some("vault-login"),
+            &secrets,
+        );
+        assert_eq!(other.plugin_output, None);
     }
 
     #[test]

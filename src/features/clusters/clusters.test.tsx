@@ -312,6 +312,48 @@ describe("a login program that is not on this computer (#253)", () => {
   });
 });
 
+describe("a login program that ran and failed (#256)", () => {
+  const output = "ERROR: Failed to get credentials: not logged in, run 'yc init'\nVAULT_TOKEN=<hidden>";
+  const failed = { code: "authPlugin", message: "the auth plugin 'yc' failed with exit code 1", pluginOutput: output };
+
+  it("shows what it printed, masked by the backend, with Copy and the way to sign in again", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+    setup([alpha], {
+      connect: () => {
+        throw failed;
+      },
+    });
+    render(<AppShell />);
+    fireEvent.click(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+    const alert = await screen.findByRole("alert");
+    const block = within(alert).getByRole("region", { name: "What the login program printed (secrets masked)" });
+    expect(block.querySelector("pre")).toHaveTextContent("not logged in, run 'yc init'");
+    expect(block.querySelector("pre")?.textContent).toBe(output);
+    expect(within(alert).getByTestId("exec-login-hint")).toHaveTextContent("aws sso login");
+    expect(within(alert).queryByTestId("exec-plugin-hint")).not.toBeInTheDocument();
+    fireEvent.click(within(block).getByRole("button", { name: "Copy the output" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(output));
+    expect(await within(block).findByRole("status")).toHaveTextContent("Copied.");
+    expect(within(alert).getByRole("button", { name: "Reconnect" })).toBeInTheDocument();
+    expect(await axeViolations(alert)).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+
+  it("an error without output shows no block", async () => {
+    setup([alpha], {
+      connect: () => {
+        throw { code: "unreachable", message: "connection refused" };
+      },
+    });
+    render(<AppShell />);
+    fireEvent.click(await within(rail()).findByRole("button", { name: "kind-alpha" }));
+    const alert = await screen.findByRole("alert");
+    expect(within(alert).queryByTestId("exec-plugin-output")).not.toBeInTheDocument();
+    expect(within(alert).queryByTestId("exec-login-hint")).not.toBeInTheDocument();
+  });
+});
+
 describe("kubeconfig source errors", () => {
   const broken: KubeconfigSource = {
     id: "src-env2",

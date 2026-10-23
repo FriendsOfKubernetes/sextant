@@ -1,0 +1,171 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_one": "{{count}} Objekt braucht Aufmerksamkeit",
+  "badge_other": "{{count}} Objekte brauchen Aufmerksamkeit",
+  "state": {
+    "available": "Verfügbar",
+    "provisioned": "Bereitgestellt",
+    "provisioning": "Wird bereitgestellt",
+    "notAvailable": "Nicht verfügbar",
+    "deleting": "Wird gelöscht",
+    "failed": "Fehlgeschlagen",
+    "paused": "Pausiert",
+    "unknown": "Unbekannt",
+    "running": "Läuft",
+    "notReady": "Nicht bereit",
+    "updating": "Wird aktualisiert",
+    "rollingOut": "Rollout läuft",
+    "scaling": "Wird skaliert",
+    "healthy": "Gesund",
+    "remediating": "Wird repariert",
+    "blocked": "Reparatur blockiert"
+  },
+  "columns": {
+    "status": "Status",
+    "phase": "Phase",
+    "class": "Klasse",
+    "version": "Version",
+    "controlPlane": "Control Plane",
+    "workers": "Worker",
+    "cluster": "Cluster",
+    "node": "Knoten",
+    "ready": "Bereit",
+    "upToDate": "Aktuell",
+    "available": "Verfügbar",
+    "healthy": "Gesund",
+    "remediationsAllowed": "Reparaturen erlaubt",
+    "strategy": "Strategie"
+  },
+  "fields": {
+    "state": "Zustand",
+    "phase": "Phase",
+    "class": "ClusterClass",
+    "version": "Kubernetes-Version",
+    "endpoint": "Control-Plane-Endpunkt",
+    "controlPlane": "Control Plane",
+    "infrastructure": "Infrastruktur",
+    "controlPlaneMachines": "Control-Plane-Maschinen",
+    "workerMachines": "Worker-Maschinen",
+    "workloadCluster": "Workload-Cluster",
+    "cluster": "Cluster",
+    "owner": "Besitzer",
+    "providerID": "Provider-ID",
+    "failureDomain": "Fehlerdomäne",
+    "node": "Knoten",
+    "addresses": "Adressen",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Secret mit Bootstrap-Daten",
+    "lastUpdated": "Phase geändert",
+    "desired": "Gewünscht",
+    "current": "Aktuell vorhanden",
+    "ready": "Bereit",
+    "available": "Verfügbar",
+    "upToDate": "Aktuell",
+    "strategy": "Rollout-Strategie",
+    "bootstrapTemplate": "Bootstrap-Vorlage",
+    "infrastructureTemplate": "Infrastruktur-Vorlage",
+    "initialized": "Initialisiert",
+    "lastRemediation": "Zuletzt reparierte Maschine",
+    "lastRemediationTime": "Letzte Reparatur",
+    "retryCount": "Reparaturversuche",
+    "selector": "Selector",
+    "expected": "Erwartete Maschinen",
+    "healthy": "Gesunde Maschinen",
+    "remediationsAllowed": "Reparaturen erlaubt",
+    "maxUnhealthy": "Reparieren bei höchstens so vielen ungesunden",
+    "unhealthyRange": "Reparieren bei ungesunden im Bereich",
+    "nodeStartupTimeout": "Timeout für den Knotenstart",
+    "unhealthyNodeConditions": "Ungesunde Node-Bedingungen",
+    "unhealthyMachineConditions": "Ungesunde Maschinenbedingungen",
+    "targets": "Geprüfte Maschinen",
+    "provider": {
+      "customImage": "Eigenes Image",
+      "endpoint": "Load-Balancer-Endpunkt",
+      "instanceType": "Instanztyp",
+      "instanceState": "Instanzzustand",
+      "instanceId": "Instanz-ID",
+      "vmSize": "VM-Größe",
+      "vmState": "VM-Zustand",
+      "template": "VM-Vorlage",
+      "cpus": "CPUs",
+      "memoryMiB": "Speicher (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "Bereit",
+    "notReady": "Nicht bereit",
+    "unknown": "Keine Angabe",
+    "missing": "Fehlt",
+    "unreadable": "Nicht lesbar",
+    "notServed": "Kind wird von diesem Cluster nicht angeboten"
+  },
+  "workload": {
+    "none": "Kein Cluster in Sextant hat den API-Server {{address}}.",
+    "open": "Cluster {{context}} öffnen",
+    "openNode": "Node {{node}} in {{context}} öffnen"
+  },
+  "readyOf": "{{ready}} von {{desired}} bereit",
+  "explain": {
+    "cluster": {
+      "failed": "Der Cluster ist fehlgeschlagen: Cluster API meldet einen Fehler, den es nicht wiederholt.",
+      "notAvailable": "Der Cluster ist nicht verfügbar: Eine der Prüfungen hinter seiner Bedingung Available schlägt fehl.",
+      "provisioning": "Der Cluster wird noch bereitgestellt.",
+      "paused": "Der Cluster ist pausiert: Cluster API ändert nichts an ihm, bis er fortgesetzt wird.",
+      "deleting": "Der Cluster wird gelöscht."
+    },
+    "machine": {
+      "failed": "Die Maschine ist fehlgeschlagen: Cluster API meldet einen Fehler, den es nicht wiederholt.",
+      "provisioning": "Die Maschine hat Running noch nicht erreicht (Phase {{phase}}).",
+      "notReady": "Die Maschine läuft, aber ihre Bedingung Ready ist False.",
+      "paused": "Die Maschine ist pausiert: Cluster API ändert nichts an ihr, bis sie fortgesetzt wird.",
+      "deleting": "Die Maschine wird gelöscht."
+    },
+    "group": {
+      "failed": "Cluster API meldet einen Fehler, den es nicht wiederholt.",
+      "notAvailable": "Nicht verfügbar: Es sind weniger Maschinen verfügbar als nötig.",
+      "rollingOut": "Ein Rollout läuft: Einige Maschinen sind noch nicht aktuell.",
+      "scaling": "Skalierung: Die Zahl der Maschinen wird geändert.",
+      "paused": "Pausiert: Cluster API ändert hier nichts, bis fortgesetzt wird.",
+      "provisioning": "Die Control Plane ist noch nicht initialisiert."
+    },
+    "healthCheck": {
+      "blocked": "Die Reparatur ist blockiert: Zu viele Maschinen sind ungesund ({{healthy}} von {{expected}} gesund).",
+      "remediating": "Einige Maschinen sind ungesund ({{healthy}} von {{expected}} gesund) und werden repariert."
+    }
+  },
+  "chain": {
+    "title": "Maschinen",
+    "loading": "Maschinen werden geladen…",
+    "none": "Der Cluster hat keine Maschinen.",
+    "unavailable": "Die Maschinen konnten nicht aufgelistet werden.",
+    "controlPlane": "Control Plane",
+    "others": "Andere Maschinen",
+    "more_one": "Und {{count}} weitere Maschine",
+    "more_other": "Und {{count}} weitere Maschinen",
+    "ready": "Bereit: {{ready}}",
+    "node": "Knoten {{node}}"
+  },
+  "machines": {
+    "title": "Maschinen",
+    "none": "Keine Maschinen.",
+    "name": "Maschine",
+    "state": "Zustand",
+    "node": "Knoten"
+  },
+  "healthCheck": {
+    "type": "Bedingung",
+    "status": "Status",
+    "timeout": "Timeout"
+  },
+  "yes": "Ja",
+  "no": "Nein"
+}

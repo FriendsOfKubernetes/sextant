@@ -1,0 +1,123 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscalers",
+    "checkpoints": "Checkpoints"
+  },
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "loading": "Loading…",
+  "columns": {
+    "target": "Target",
+    "mode": "Mode",
+    "status": "Status",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "vpa": "VPA",
+    "container": "Container",
+    "samples": "Samples",
+    "lastUpdate": "Last saved"
+  },
+  "reason": {
+    "provided": "Recommending",
+    "lowConfidence": "Low confidence",
+    "fetchingHistory": "Loading history",
+    "configUnsupported": "Unsupported",
+    "noPodsMatched": "No pods matched",
+    "notProvided": "No recommendation",
+    "noStatus": "Waiting"
+  },
+  "hint": {
+    "lowConfidence": "The recommender has little data for some containers yet: the recommendation may still change a lot.",
+    "fetchingHistory": "The recommender is still loading history: the recommendation may still change.",
+    "configUnsupported": "The recommender cannot use this VPA: its target cannot be read, or it is not the topmost controller (point the VPA at the Deployment, not at its ReplicaSet). It gives no recommendation.",
+    "noPodsMatched": "No running pod belongs to the target: it has no replicas, or its pods do not run. The recommender needs pods to measure.",
+    "notProvided": "The recommender has not produced a recommendation yet.",
+    "noStatus": "No status yet: the recommender has not looked at this VPA, or no recommender runs for it.",
+    "deprecated": "The recommender says this configuration is deprecated and will stop being supported."
+  },
+  "modeExplain": {
+    "Off": "Recommends only: the VPA never changes pods.",
+    "Initial": "Sets the resources when a pod is created; running pods are never changed.",
+    "Recreate": "Sets the resources when a pod is created, and the updater evicts a running pod whose requests are outside the recommended range (or, after 12 hours, differ by 10% or more), so it is created again with the recommendation. By default it evicts nothing while fewer than 2 replicas run.",
+    "Auto": "A deprecated name of Recreate, and works the same way: the resources are set when a pod is created, and the updater evicts running pods whose requests are far from the recommendation.",
+    "InPlaceOrRecreate": "Sets the resources when a pod is created, and the updater resizes running pods in place, evicting them only where an in-place resize is not possible. Needs the cluster's InPlacePodVerticalScaling feature.",
+    "InPlace": "Sets the resources when a pod is created, and the updater only resizes running pods in place, never evicting them. Needs the VPA components' InPlace feature gate and the cluster's InPlacePodVerticalScaling feature.",
+    "unknown": "The mode {{mode}} is not one this version of Sextant knows."
+  },
+  "fields": {
+    "status": "Status",
+    "since": "Since",
+    "target": "Target",
+    "mode": "Update mode",
+    "modeDefault": "{{mode}} (default)",
+    "modeExplained": "What it does",
+    "minReplicas": "Replicas needed to evict",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "Not set",
+    "notServed": "The cluster does not serve the target's kind {{kind}}.",
+    "notRead": "The target has not been read: it does not exist, or it cannot be read."
+  },
+  "recommendation": {
+    "title": "Recommendation and the next pods"
+  },
+  "table": {
+    "container": "Container",
+    "resource": "Resource",
+    "now": "Template request / limit",
+    "range": "Recommended range",
+    "target": "Target",
+    "after": "A new pod would get",
+    "unset": "not set",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "uncapped {{value}}",
+    "capped": {
+      "minAllowed": "raised to minAllowed",
+      "maxAllowed": "lowered to maxAllowed",
+      "limit": "kept at the limit (RequestsOnly)"
+    },
+    "noTarget": "No recommendation yet",
+    "unchanged": "No change",
+    "unchangedOff": "No change (mode Off)",
+    "allResources": "all",
+    "containerOff": "Not scaled: the container's policy is Off",
+    "noContainers": "The target's pod template has no containers.",
+    "notInTemplate": "Also recommended for containers that are not in the template (added when the pod is created, such as sidecars): {{containers}}.",
+    "how": "A pod created now gets the target as its request; its limit keeps the template's ratio of limit to request, as the admission controller computes it, and a missing limit stays missing.",
+    "howRequestsOnly": "With RequestsOnly the request is never set above the container's limit, and the limit stays as it is; with RequestsAndLimits the limit keeps the template's ratio of limit to request.",
+    "notModelled": "Not taken into account here: a LimitRange of the namespace, containers that other webhooks add, and the startup CPU boost."
+  },
+  "conflict": {
+    "line": "HPA {{hpa}} scales this workload on {{resources}}, which this VPA changes in mode {{mode}}: the two fight.",
+    "why": "When the VPA raises a request, the HPA's utilization falls and it removes replicas; the remaining pods use more, and so on. Scale the HPA on another metric, leave the VPA in Off or Initial, or let the VPA control only the other resource."
+  },
+  "components": {
+    "title": "VPA components",
+    "component": "Component",
+    "state": "State",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "Admission controller"
+    },
+    "ready": "{{ready}} of {{desired}} ready",
+    "notFound": "Not found",
+    "unknown": "Cannot tell",
+    "missing": {
+      "recommender": "Recommendations come from the recommender: without it this VPA gets none.",
+      "admission": "Without the admission controller pods are created with the template's values: the recommendation reaches no new pod, and evicted pods come back unchanged.",
+      "admissionInitial": "Without the admission controller, Initial does nothing: pods are created with the template's values.",
+      "updater": "Without the updater running pods are never changed: only pods created for other reasons get the recommendation."
+    },
+    "managed": "Looked for as the Deployments vpa-recommender, vpa-updater and vpa-admission-controller in kube-system, and by the labels of the VPA Helm charts. Where VPA is a managed add-on (as on GKE), its components run outside the cluster."
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_one": "{{count}} VPA targets this workload: for its pods only the oldest one counts.",
+    "several_other": "{{count}} VPAs target this workload: for its pods only the oldest one counts."
+  }
+}

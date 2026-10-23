@@ -1,0 +1,171 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "state": {
+    "available": "Available",
+    "provisioned": "Provisioned",
+    "provisioning": "Provisioning",
+    "notAvailable": "Not available",
+    "deleting": "Deleting",
+    "failed": "Failed",
+    "paused": "Paused",
+    "unknown": "Unknown",
+    "running": "Running",
+    "notReady": "Not ready",
+    "updating": "Updating",
+    "rollingOut": "Rolling out",
+    "scaling": "Scaling",
+    "healthy": "Healthy",
+    "remediating": "Remediating",
+    "blocked": "Remediation blocked"
+  },
+  "columns": {
+    "status": "Status",
+    "phase": "Phase",
+    "class": "Class",
+    "version": "Version",
+    "controlPlane": "Control plane",
+    "workers": "Workers",
+    "cluster": "Cluster",
+    "node": "Node",
+    "ready": "Ready",
+    "upToDate": "Up to date",
+    "available": "Available",
+    "healthy": "Healthy",
+    "remediationsAllowed": "Remediations allowed",
+    "strategy": "Strategy"
+  },
+  "fields": {
+    "state": "State",
+    "phase": "Phase",
+    "class": "ClusterClass",
+    "version": "Kubernetes version",
+    "endpoint": "Control plane endpoint",
+    "controlPlane": "Control plane",
+    "infrastructure": "Infrastructure",
+    "controlPlaneMachines": "Control plane machines",
+    "workerMachines": "Worker machines",
+    "workloadCluster": "Workload cluster",
+    "cluster": "Cluster",
+    "owner": "Owner",
+    "providerID": "Provider ID",
+    "failureDomain": "Failure domain",
+    "node": "Node",
+    "addresses": "Addresses",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Bootstrap data Secret",
+    "lastUpdated": "Phase changed",
+    "desired": "Desired",
+    "current": "Current",
+    "ready": "Ready",
+    "available": "Available",
+    "upToDate": "Up to date",
+    "strategy": "Rollout strategy",
+    "bootstrapTemplate": "Bootstrap template",
+    "infrastructureTemplate": "Infrastructure template",
+    "initialized": "Initialized",
+    "lastRemediation": "Last remediated machine",
+    "lastRemediationTime": "Last remediation",
+    "retryCount": "Remediation retries",
+    "selector": "Selector",
+    "expected": "Expected machines",
+    "healthy": "Healthy machines",
+    "remediationsAllowed": "Remediations allowed",
+    "maxUnhealthy": "Remediate while unhealthy at most",
+    "unhealthyRange": "Remediate while unhealthy in range",
+    "nodeStartupTimeout": "Node startup timeout",
+    "unhealthyNodeConditions": "Unhealthy Node conditions",
+    "unhealthyMachineConditions": "Unhealthy machine conditions",
+    "targets": "Checked machines",
+    "provider": {
+      "customImage": "Custom image",
+      "endpoint": "Load balancer endpoint",
+      "instanceType": "Instance type",
+      "instanceState": "Instance state",
+      "instanceId": "Instance ID",
+      "vmSize": "VM size",
+      "vmState": "VM state",
+      "template": "VM template",
+      "cpus": "CPUs",
+      "memoryMiB": "Memory (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "Ready",
+    "notReady": "Not ready",
+    "unknown": "Says nothing",
+    "missing": "Missing",
+    "unreadable": "Could not be read",
+    "notServed": "Kind not served by this cluster"
+  },
+  "workload": {
+    "none": "No cluster in Sextant has the API server {{address}}.",
+    "open": "Open cluster {{context}}",
+    "openNode": "Open Node {{node}} in {{context}}"
+  },
+  "readyOf": "{{ready}} of {{desired}} ready",
+  "explain": {
+    "cluster": {
+      "failed": "The cluster failed: Cluster API reports an error it does not retry.",
+      "notAvailable": "The cluster is not available: one of the checks behind its Available condition fails.",
+      "provisioning": "The cluster is still being provisioned.",
+      "paused": "The cluster is paused: Cluster API changes nothing in it until it is resumed.",
+      "deleting": "The cluster is being deleted."
+    },
+    "machine": {
+      "failed": "The machine failed: Cluster API reports an error it does not retry.",
+      "provisioning": "The machine has not reached Running yet (phase {{phase}}).",
+      "notReady": "The machine is running, but its Ready condition is False.",
+      "paused": "The machine is paused: Cluster API changes nothing in it until it is resumed.",
+      "deleting": "The machine is being deleted."
+    },
+    "group": {
+      "failed": "Cluster API reports an error it does not retry.",
+      "notAvailable": "Not available: fewer machines are available than required.",
+      "rollingOut": "A rollout is in progress: some machines are not up to date yet.",
+      "scaling": "Scaling: the number of machines is being changed.",
+      "paused": "Paused: Cluster API changes nothing here until it is resumed.",
+      "provisioning": "The control plane is not initialized yet."
+    },
+    "healthCheck": {
+      "blocked": "Remediation is blocked: too many machines are unhealthy ({{healthy}} of {{expected}} healthy).",
+      "remediating": "Some machines are unhealthy ({{healthy}} of {{expected}} healthy) and are being remediated."
+    }
+  },
+  "chain": {
+    "title": "Machines",
+    "loading": "Loading the machines…",
+    "none": "The cluster has no machines.",
+    "unavailable": "The machines could not be listed.",
+    "controlPlane": "Control plane",
+    "others": "Other machines",
+    "more_one": "And {{count}} more machine",
+    "more_other": "And {{count}} more machines",
+    "ready": "Ready: {{ready}}",
+    "node": "Node {{node}}"
+  },
+  "machines": {
+    "title": "Machines",
+    "none": "No machines.",
+    "name": "Machine",
+    "state": "State",
+    "node": "Node"
+  },
+  "healthCheck": {
+    "type": "Condition",
+    "status": "Status",
+    "timeout": "Timeout"
+  },
+  "yes": "Yes",
+  "no": "No"
+}

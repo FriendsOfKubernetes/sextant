@@ -14,7 +14,7 @@ import {
 } from "../../../api";
 import { Button, Dialog, ErrorState } from "../../../components";
 import { formatDateTime } from "../../../i18n";
-import { ExecPluginHint, isExecPluginNotFound } from "../ExecPlugin";
+import { ExecLoginHint, ExecPluginHint, PluginOutput, isExecPluginFailed, isExecPluginNotFound } from "../ExecPlugin";
 
 /** The backend's check; `null` when it could not run (an older backend, a test without it): the add goes on. */
 export async function checkKubeconfig(input: KubeconfigInput): Promise<KubeconfigValidation | null> {
@@ -119,6 +119,8 @@ export function ValidationDialog({
               {r?.state === "ok" && <span role="status">{t("kubeconfig:validate.reachable")}</span>}
               {r?.state === "error" && <ErrorState error={r.error} className="clusters-error" />}
             </div>
+            {r?.state === "error" && r.error.pluginOutput && <PluginOutput output={r.error.pluginOutput} />}
+            {r?.state === "error" && isExecPluginFailed(r.error) && <ExecLoginHint />}
           </section>
         );
       })}

@@ -1,0 +1,127 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscalers",
+    "checkpoints": "Punkty kontrolne"
+  },
+  "badge_one": "{{count}} obiekt wymaga uwagi",
+  "badge_few": "{{count}} obiekty wymagają uwagi",
+  "badge_many": "{{count}} obiektów wymaga uwagi",
+  "badge_other": "{{count}} obiektu wymaga uwagi",
+  "loading": "Wczytywanie…",
+  "columns": {
+    "target": "Cel",
+    "mode": "Tryb",
+    "status": "Status",
+    "cpu": "CPU",
+    "memory": "Pamięć",
+    "vpa": "VPA",
+    "container": "Kontener",
+    "samples": "Próbki",
+    "lastUpdate": "Zapisano"
+  },
+  "reason": {
+    "provided": "Rekomenduje",
+    "lowConfidence": "Niska pewność",
+    "fetchingHistory": "Wczytywanie historii",
+    "configUnsupported": "Nieobsługiwane",
+    "noPodsMatched": "Brak pasujących podów",
+    "notProvided": "Brak rekomendacji",
+    "noStatus": "Oczekiwanie"
+  },
+  "hint": {
+    "lowConfidence": "Recommender ma jeszcze mało danych o niektórych kontenerach: rekomendacja może się jeszcze bardzo zmienić.",
+    "fetchingHistory": "Recommender wciąż wczytuje historię: rekomendacja może się jeszcze zmienić.",
+    "configUnsupported": "Recommender nie może użyć tego VPA: nie da się odczytać jego celu albo cel nie jest kontrolerem najwyższego poziomu (wskaż w VPA Deployment, a nie jego ReplicaSet). Rekomendacji nie będzie.",
+    "noPodsMatched": "Żaden działający pod nie należy do celu: nie ma on replik albo jego pody nie działają. Recommender potrzebuje podów do pomiarów.",
+    "notProvided": "Recommender nie wygenerował jeszcze rekomendacji.",
+    "noStatus": "Brak statusu: recommender jeszcze nie sprawdził tego VPA albo nie działa dla niego żaden recommender.",
+    "deprecated": "Recommender zgłasza, że ta konfiguracja jest przestarzała i przestanie być obsługiwana."
+  },
+  "modeExplain": {
+    "Off": "Tylko rekomenduje: VPA nigdy nie zmienia podów.",
+    "Initial": "Ustawia zasoby przy tworzeniu poda; działające pody nigdy nie są zmieniane.",
+    "Recreate": "Ustawia zasoby przy tworzeniu poda, a updater eksmituje działający pod, którego requests wychodzą poza zalecany zakres (lub po 12 godzinach różnią się o 10% lub więcej), aby został utworzony ponownie z rekomendacją. Domyślnie nic nie jest eksmitowane, gdy działają mniej niż 2 repliki.",
+    "Auto": "Przestarzała nazwa Recreate, działa tak samo: zasoby są ustawiane przy tworzeniu poda, a updater eksmituje działające pody, których requests są dalekie od rekomendacji.",
+    "InPlaceOrRecreate": "Ustawia zasoby przy tworzeniu poda, a updater zmienia rozmiar działających podów w miejscu i eksmituje je tylko tam, gdzie zmiana w miejscu nie jest możliwa. Wymaga funkcji klastra InPlacePodVerticalScaling.",
+    "InPlace": "Ustawia zasoby przy tworzeniu poda, a updater tylko zmienia rozmiar działających podów w miejscu i nigdy ich nie eksmituje. Wymaga feature gate InPlace komponentów VPA i funkcji klastra InPlacePodVerticalScaling.",
+    "unknown": "Ta wersja Sextant nie zna trybu {{mode}}."
+  },
+  "fields": {
+    "status": "Status",
+    "since": "Od",
+    "target": "Cel",
+    "mode": "Tryb aktualizacji",
+    "modeDefault": "{{mode}} (domyślny)",
+    "modeExplained": "Co robi",
+    "minReplicas": "Repliki potrzebne do eksmisji",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "Nie ustawiono",
+    "notServed": "Klaster nie obsługuje kind celu {{kind}}.",
+    "notRead": "Cel nie został odczytany: nie istnieje albo nie można go odczytać."
+  },
+  "recommendation": {
+    "title": "Rekomendacja i kolejne pody"
+  },
+  "table": {
+    "container": "Kontener",
+    "resource": "Zasób",
+    "now": "Request / limit w szablonie",
+    "range": "Zalecany zakres",
+    "target": "Cel",
+    "after": "Nowy pod dostałby",
+    "unset": "nie ustawiono",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "przed ograniczeniem {{value}}",
+    "capped": {
+      "minAllowed": "podniesione do minAllowed",
+      "maxAllowed": "obniżone do maxAllowed",
+      "limit": "pozostawione na poziomie limitu (RequestsOnly)"
+    },
+    "noTarget": "Brak rekomendacji",
+    "unchanged": "Bez zmian",
+    "unchangedOff": "Bez zmian (tryb Off)",
+    "allResources": "wszystkie",
+    "containerOff": "Nieskalowany: polityka kontenera to Off",
+    "noContainers": "Szablon poda celu nie ma kontenerów.",
+    "notInTemplate": "Rekomendacje są też dla kontenerów, których nie ma w szablonie (dodawanych przy tworzeniu poda, np. sidecarów): {{containers}}.",
+    "how": "Pod utworzony teraz dostaje cel jako request; jego limit zachowuje stosunek limitu do requestu z szablonu, tak jak oblicza go admission controller, a brakujący limit pozostaje brakujący.",
+    "howRequestsOnly": "Przy RequestsOnly request nigdy nie jest ustawiany powyżej limitu kontenera, a limit pozostaje bez zmian; przy RequestsAndLimits limit zachowuje stosunek limitu do requestu z szablonu.",
+    "notModelled": "Nie uwzględniono tu: LimitRange namespace, kontenerów dodawanych przez inne webhooki ani zwiększenia CPU przy starcie."
+  },
+  "conflict": {
+    "line": "HPA {{hpa}} skaluje to obciążenie według {{resources}}, a ten VPA zmienia je w trybie {{mode}}: oba sobie przeszkadzają.",
+    "why": "Gdy VPA podnosi request, wykorzystanie widziane przez HPA spada i HPA usuwa repliki; pozostałe pody zużywają więcej i tak dalej. Skaluj HPA według innej metryki, zostaw VPA w trybie Off lub Initial albo pozwól VPA sterować tylko drugim zasobem."
+  },
+  "components": {
+    "title": "Komponenty VPA",
+    "component": "Komponent",
+    "state": "Stan",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "Admission controller"
+    },
+    "ready": "Gotowe: {{ready}} z {{desired}}",
+    "notFound": "Nie znaleziono",
+    "unknown": "Nie można określić",
+    "missing": {
+      "recommender": "Rekomendacje pochodzą od recommendera: bez niego ten VPA ich nie dostanie.",
+      "admission": "Bez admission controllera pody są tworzone z wartościami z szablonu: rekomendacja nie trafia do żadnego nowego poda, a eksmitowane pody wracają bez zmian.",
+      "admissionInitial": "Bez admission controllera tryb Initial nic nie robi: pody są tworzone z wartościami z szablonu.",
+      "updater": "Bez updatera działające pody nigdy nie są zmieniane: rekomendację dostają tylko pody utworzone z innych powodów."
+    },
+    "managed": "Szukane jako Deploymenty vpa-recommender, vpa-updater i vpa-admission-controller w kube-system oraz po label chartów Helm dla VPA. Gdy VPA jest dodatkiem zarządzanym (jak w GKE), jego komponenty działają poza klastrem."
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_one": "To obciążenie wskazuje {{count}} VPA: dla jego podów liczy się tylko najstarszy.",
+    "several_few": "To obciążenie wskazują {{count}} VPA: dla jego podów liczy się tylko najstarszy.",
+    "several_many": "To obciążenie wskazuje {{count}} VPA: dla jego podów liczy się tylko najstarszy.",
+    "several_other": "To obciążenie wskazuje {{count}} VPA: dla jego podów liczy się tylko najstarszy."
+  }
+}

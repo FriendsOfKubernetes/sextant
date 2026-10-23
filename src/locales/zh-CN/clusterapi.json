@@ -1,0 +1,169 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_other": "{{count}} 个对象需要关注",
+  "state": {
+    "available": "可用",
+    "provisioned": "已配置",
+    "provisioning": "配置中",
+    "notAvailable": "不可用",
+    "deleting": "删除中",
+    "failed": "失败",
+    "paused": "已暂停",
+    "unknown": "未知",
+    "running": "运行中",
+    "notReady": "未就绪",
+    "updating": "更新中",
+    "rollingOut": "发布中",
+    "scaling": "伸缩中",
+    "healthy": "健康",
+    "remediating": "修复中",
+    "blocked": "修复已阻止"
+  },
+  "columns": {
+    "status": "状态",
+    "phase": "阶段",
+    "class": "类",
+    "version": "版本",
+    "controlPlane": "控制平面",
+    "workers": "工作节点",
+    "cluster": "集群",
+    "node": "节点",
+    "ready": "就绪",
+    "upToDate": "最新",
+    "available": "可用",
+    "healthy": "健康",
+    "remediationsAllowed": "允许修复数",
+    "strategy": "策略"
+  },
+  "fields": {
+    "state": "状态",
+    "phase": "阶段",
+    "class": "ClusterClass",
+    "version": "Kubernetes 版本",
+    "endpoint": "控制平面端点",
+    "controlPlane": "控制平面",
+    "infrastructure": "基础设施",
+    "controlPlaneMachines": "控制平面机器",
+    "workerMachines": "工作机器",
+    "workloadCluster": "工作负载集群",
+    "cluster": "集群",
+    "owner": "所有者",
+    "providerID": "提供商 ID",
+    "failureDomain": "故障域",
+    "node": "节点",
+    "addresses": "地址",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Bootstrap 数据 Secret",
+    "lastUpdated": "阶段变更时间",
+    "desired": "期望",
+    "current": "当前",
+    "ready": "就绪",
+    "available": "可用",
+    "upToDate": "最新",
+    "strategy": "发布策略",
+    "bootstrapTemplate": "Bootstrap 模板",
+    "infrastructureTemplate": "基础设施模板",
+    "initialized": "已初始化",
+    "lastRemediation": "最近修复的机器",
+    "lastRemediationTime": "最近修复时间",
+    "retryCount": "修复重试次数",
+    "selector": "Selector",
+    "expected": "预期机器数",
+    "healthy": "健康机器数",
+    "remediationsAllowed": "允许修复数",
+    "maxUnhealthy": "不健康数不超过此值时修复",
+    "unhealthyRange": "不健康数在此范围内时修复",
+    "nodeStartupTimeout": "节点启动超时",
+    "unhealthyNodeConditions": "不健康的 Node 条件",
+    "unhealthyMachineConditions": "不健康的机器条件",
+    "targets": "受检机器",
+    "provider": {
+      "customImage": "自定义镜像",
+      "endpoint": "负载均衡器端点",
+      "instanceType": "实例类型",
+      "instanceState": "实例状态",
+      "instanceId": "实例 ID",
+      "vmSize": "虚拟机大小",
+      "vmState": "虚拟机状态",
+      "template": "虚拟机模板",
+      "cpus": "CPU",
+      "memoryMiB": "内存 (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "就绪",
+    "notReady": "未就绪",
+    "unknown": "未报告",
+    "missing": "不存在",
+    "unreadable": "无法读取",
+    "notServed": "此集群不提供该 kind"
+  },
+  "workload": {
+    "none": "Sextant 中没有 API 服务器为 {{address}} 的集群。",
+    "open": "打开集群 {{context}}",
+    "openNode": "在 {{context}} 中打开 Node {{node}}"
+  },
+  "readyOf": "{{ready}}/{{desired}} 就绪",
+  "explain": {
+    "cluster": {
+      "failed": "集群失败：Cluster API 报告了一个不会重试的错误。",
+      "notAvailable": "集群不可用：其 Available 条件的某项检查未通过。",
+      "provisioning": "集群仍在配置中。",
+      "paused": "集群已暂停：恢复之前 Cluster API 不会对其做任何更改。",
+      "deleting": "集群正在删除。"
+    },
+    "machine": {
+      "failed": "机器失败：Cluster API 报告了一个不会重试的错误。",
+      "provisioning": "机器尚未进入 Running（阶段 {{phase}}）。",
+      "notReady": "机器正在运行，但其 Ready 条件为 False。",
+      "paused": "机器已暂停：恢复之前 Cluster API 不会对其做任何更改。",
+      "deleting": "机器正在删除。"
+    },
+    "group": {
+      "failed": "Cluster API 报告了一个不会重试的错误。",
+      "notAvailable": "不可用：可用的机器少于所需数量。",
+      "rollingOut": "正在发布：部分机器尚未更新到最新。",
+      "scaling": "伸缩中：机器数量正在变化。",
+      "paused": "已暂停：恢复之前 Cluster API 不会在此做任何更改。",
+      "provisioning": "控制平面尚未初始化。"
+    },
+    "healthCheck": {
+      "blocked": "修复已阻止：不健康的机器过多（{{expected}} 台中 {{healthy}} 台健康）。",
+      "remediating": "部分机器不健康（{{expected}} 台中 {{healthy}} 台健康），正在修复。"
+    }
+  },
+  "chain": {
+    "title": "机器",
+    "loading": "正在加载机器…",
+    "none": "该集群没有机器。",
+    "unavailable": "无法列出机器。",
+    "controlPlane": "控制平面",
+    "others": "其他机器",
+    "more_other": "还有 {{count}} 台机器",
+    "ready": "就绪：{{ready}}",
+    "node": "节点 {{node}}"
+  },
+  "machines": {
+    "title": "机器",
+    "none": "没有机器。",
+    "name": "机器",
+    "state": "状态",
+    "node": "节点"
+  },
+  "healthCheck": {
+    "type": "条件",
+    "status": "状态",
+    "timeout": "超时"
+  },
+  "yes": "是",
+  "no": "否"
+}

@@ -1,0 +1,171 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_one": "{{count}} nesne ilgi bekliyor",
+  "badge_other": "{{count}} nesne ilgi bekliyor",
+  "state": {
+    "available": "Kullanılabilir",
+    "provisioned": "Hazırlandı",
+    "provisioning": "Hazırlanıyor",
+    "notAvailable": "Kullanılamıyor",
+    "deleting": "Siliniyor",
+    "failed": "Başarısız",
+    "paused": "Duraklatıldı",
+    "unknown": "Bilinmiyor",
+    "running": "Çalışıyor",
+    "notReady": "Hazır değil",
+    "updating": "Güncelleniyor",
+    "rollingOut": "Dağıtılıyor",
+    "scaling": "Ölçekleniyor",
+    "healthy": "Sağlıklı",
+    "remediating": "Onarılıyor",
+    "blocked": "Onarım engellendi"
+  },
+  "columns": {
+    "status": "Durum",
+    "phase": "Aşama",
+    "class": "Sınıf",
+    "version": "Sürüm",
+    "controlPlane": "Kontrol düzlemi",
+    "workers": "İşçiler",
+    "cluster": "Küme",
+    "node": "Düğüm",
+    "ready": "Hazır",
+    "upToDate": "Güncel",
+    "available": "Kullanılabilir",
+    "healthy": "Sağlıklı",
+    "remediationsAllowed": "İzin verilen onarım",
+    "strategy": "Strateji"
+  },
+  "fields": {
+    "state": "Durum",
+    "phase": "Aşama",
+    "class": "ClusterClass",
+    "version": "Kubernetes sürümü",
+    "endpoint": "Kontrol düzlemi uç noktası",
+    "controlPlane": "Kontrol düzlemi",
+    "infrastructure": "Altyapı",
+    "controlPlaneMachines": "Kontrol düzlemi makineleri",
+    "workerMachines": "İşçi makineler",
+    "workloadCluster": "İş yükü kümesi",
+    "cluster": "Küme",
+    "owner": "Sahip",
+    "providerID": "Sağlayıcı kimliği",
+    "failureDomain": "Hata alanı",
+    "node": "Düğüm",
+    "addresses": "Adresler",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Bootstrap verisi Secret'ı",
+    "lastUpdated": "Aşama değişti",
+    "desired": "İstenen",
+    "current": "Mevcut",
+    "ready": "Hazır",
+    "available": "Kullanılabilir",
+    "upToDate": "Güncel",
+    "strategy": "Dağıtım stratejisi",
+    "bootstrapTemplate": "Bootstrap şablonu",
+    "infrastructureTemplate": "Altyapı şablonu",
+    "initialized": "Başlatıldı",
+    "lastRemediation": "Son onarılan makine",
+    "lastRemediationTime": "Son onarım",
+    "retryCount": "Onarım yeniden denemeleri",
+    "selector": "Selector",
+    "expected": "Beklenen makineler",
+    "healthy": "Sağlıklı makineler",
+    "remediationsAllowed": "İzin verilen onarım",
+    "maxUnhealthy": "Sağlıksız sayısı en fazla şu kadarken onar",
+    "unhealthyRange": "Sağlıksız sayısı bu aralıktayken onar",
+    "nodeStartupTimeout": "Düğüm başlatma zaman aşımı",
+    "unhealthyNodeConditions": "Sağlıksız Node koşulları",
+    "unhealthyMachineConditions": "Sağlıksız makine koşulları",
+    "targets": "Denetlenen makineler",
+    "provider": {
+      "customImage": "Özel imaj",
+      "endpoint": "Yük dengeleyici uç noktası",
+      "instanceType": "Örnek türü",
+      "instanceState": "Örnek durumu",
+      "instanceId": "Örnek kimliği",
+      "vmSize": "VM boyutu",
+      "vmState": "VM durumu",
+      "template": "VM şablonu",
+      "cpus": "CPU",
+      "memoryMiB": "Bellek (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "Hazır",
+    "notReady": "Hazır değil",
+    "unknown": "Bilgi vermiyor",
+    "missing": "Yok",
+    "unreadable": "Okunamadı",
+    "notServed": "Bu küme bu kind'ı sunmuyor"
+  },
+  "workload": {
+    "none": "Sextant'taki hiçbir kümenin API sunucusu {{address}} değil.",
+    "open": "{{context}} kümesini aç",
+    "openNode": "{{context}} içinde Node {{node}} öğesini aç"
+  },
+  "readyOf": "{{desired}} makineden {{ready}} hazır",
+  "explain": {
+    "cluster": {
+      "failed": "Küme başarısız oldu: Cluster API yeniden denemediği bir hata bildiriyor.",
+      "notAvailable": "Küme kullanılamıyor: Available koşulunun denetimlerinden biri başarısız.",
+      "provisioning": "Küme hâlâ hazırlanıyor.",
+      "paused": "Küme duraklatıldı: Cluster API, sürdürülene kadar kümede hiçbir şeyi değiştirmez.",
+      "deleting": "Küme siliniyor."
+    },
+    "machine": {
+      "failed": "Makine başarısız oldu: Cluster API yeniden denemediği bir hata bildiriyor.",
+      "provisioning": "Makine henüz Running aşamasına ulaşmadı (aşama {{phase}}).",
+      "notReady": "Makine çalışıyor ama Ready koşulu False.",
+      "paused": "Makine duraklatıldı: Cluster API, sürdürülene kadar makinede hiçbir şeyi değiştirmez.",
+      "deleting": "Makine siliniyor."
+    },
+    "group": {
+      "failed": "Cluster API yeniden denemediği bir hata bildiriyor.",
+      "notAvailable": "Kullanılamıyor: gerekenden az makine kullanılabilir.",
+      "rollingOut": "Dağıtım sürüyor: bazı makineler henüz güncel değil.",
+      "scaling": "Ölçekleniyor: makine sayısı değişiyor.",
+      "paused": "Duraklatıldı: Cluster API, sürdürülene kadar burada hiçbir şeyi değiştirmez.",
+      "provisioning": "Kontrol düzlemi henüz başlatılmadı."
+    },
+    "healthCheck": {
+      "blocked": "Onarım engellendi: çok fazla makine sağlıksız ({{expected}} makineden {{healthy}} sağlıklı).",
+      "remediating": "Bazı makineler sağlıksız ({{expected}} makineden {{healthy}} sağlıklı) ve onarılıyor."
+    }
+  },
+  "chain": {
+    "title": "Makineler",
+    "loading": "Makineler yükleniyor…",
+    "none": "Kümenin makinesi yok.",
+    "unavailable": "Makineler listelenemedi.",
+    "controlPlane": "Kontrol düzlemi",
+    "others": "Diğer makineler",
+    "more_one": "Ve {{count}} makine daha",
+    "more_other": "Ve {{count}} makine daha",
+    "ready": "Hazır: {{ready}}",
+    "node": "Düğüm {{node}}"
+  },
+  "machines": {
+    "title": "Makineler",
+    "none": "Makine yok.",
+    "name": "Makine",
+    "state": "Durum",
+    "node": "Düğüm"
+  },
+  "healthCheck": {
+    "type": "Koşul",
+    "status": "Durum",
+    "timeout": "Zaman aşımı"
+  },
+  "yes": "Evet",
+  "no": "Hayır"
+}

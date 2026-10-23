@@ -6,6 +6,7 @@ import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import { registerPage, unregisterPage } from "../../layout/pages";
 import { resetClusterKinds } from "../../resources";
 import "../actions/index";
+import "../restart";
 import { resetClustersStore, useClustersStore } from "../clusters/clustersStore";
 import { ActionBar } from "../details/ActionBar";
 import { resetSettingsUi, useSettingsUi } from "../settings/store";

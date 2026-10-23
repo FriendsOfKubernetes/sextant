@@ -23,10 +23,7 @@
     "invalid": "0 veya daha büyük bir tam sayı girin."
   },
   "restart": {
-    "label": "Yeniden başlat",
-    "title": "{{kind}} {{name}} yeniden başlatılsın mı?",
-    "text": "{{name}} kaynağının tüm Pod'ları tek tek değiştirilecek (rollout restart).",
-    "confirm": "Yeniden başlat"
+    "label": "Yeniden başlat"
   },
   "cordon": {
     "label": "Cordon / Uncordon",

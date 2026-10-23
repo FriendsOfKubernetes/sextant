@@ -1,0 +1,121 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscalers",
+    "checkpoints": "Checkpoints"
+  },
+  "badge_other": "{{count}} 個物件需要注意",
+  "loading": "正在載入…",
+  "columns": {
+    "target": "目標",
+    "mode": "模式",
+    "status": "狀態",
+    "cpu": "CPU",
+    "memory": "記憶體",
+    "vpa": "VPA",
+    "container": "容器",
+    "samples": "樣本",
+    "lastUpdate": "上次儲存"
+  },
+  "reason": {
+    "provided": "正在建議",
+    "lowConfidence": "信賴度低",
+    "fetchingHistory": "正在載入歷史",
+    "configUnsupported": "不支援",
+    "noPodsMatched": "沒有相符的 Pod",
+    "notProvided": "沒有建議",
+    "noStatus": "等待中"
+  },
+  "hint": {
+    "lowConfidence": "recommender 對部分容器的資料仍然很少：建議值可能還會有較大變化。",
+    "fetchingHistory": "recommender 仍在載入歷史資料：建議值可能還會變化。",
+    "configUnsupported": "recommender 無法使用這個 VPA：無法讀取其目標，或目標不是最上層的控制器（請讓 VPA 指向 Deployment，而不是其 ReplicaSet）。它不會提供建議。",
+    "noPodsMatched": "沒有屬於目標的執行中 Pod：目標沒有複本，或其 Pod 未執行。recommender 需要 Pod 才能進行測量。",
+    "notProvided": "recommender 尚未產生建議。",
+    "noStatus": "尚無狀態：recommender 尚未處理這個 VPA，或沒有為它執行的 recommender。",
+    "deprecated": "recommender 指出此設定已淘汰，將不再受支援。"
+  },
+  "modeExplain": {
+    "Off": "僅提供建議：VPA 從不變更 Pod。",
+    "Initial": "在建立 Pod 時設定資源；從不變更執行中的 Pod。",
+    "Recreate": "在建立 Pod 時設定資源；若執行中 Pod 的要求超出建議範圍（或在 12 小時後相差 10% 以上），updater 會逐出該 Pod，使其依建議值重新建立。預設情況下，執行中的複本少於 2 個時不會逐出任何 Pod。",
+    "Auto": "Recreate 的已淘汰名稱，行為相同：在建立 Pod 時設定資源，updater 會逐出要求與建議值相差很大的執行中 Pod。",
+    "InPlaceOrRecreate": "在建立 Pod 時設定資源，updater 會就地調整執行中 Pod 的大小，僅在無法就地調整時才逐出它們。需要叢集的 InPlacePodVerticalScaling 功能。",
+    "InPlace": "在建立 Pod 時設定資源，updater 只會就地調整執行中 Pod 的大小，從不逐出它們。需要 VPA 元件的 InPlace feature gate 以及叢集的 InPlacePodVerticalScaling 功能。",
+    "unknown": "此版本的 Sextant 不認識模式 {{mode}}。"
+  },
+  "fields": {
+    "status": "狀態",
+    "since": "開始時間",
+    "target": "目標",
+    "mode": "更新模式",
+    "modeDefault": "{{mode}}（預設）",
+    "modeExplained": "作用",
+    "minReplicas": "逐出所需複本數",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "未設定",
+    "notServed": "叢集不提供目標的類型 {{kind}}。",
+    "notRead": "未讀取到目標：它不存在，或無法讀取。"
+  },
+  "recommendation": {
+    "title": "建議與後續的 Pod"
+  },
+  "table": {
+    "container": "容器",
+    "resource": "資源",
+    "now": "範本要求 / 限制",
+    "range": "建議範圍",
+    "target": "目標",
+    "after": "新 Pod 將取得",
+    "unset": "未設定",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "未截斷值 {{value}}",
+    "capped": {
+      "minAllowed": "已提高到 minAllowed",
+      "maxAllowed": "已降低到 maxAllowed",
+      "limit": "維持在限制值（RequestsOnly）"
+    },
+    "noTarget": "尚無建議",
+    "unchanged": "沒有變更",
+    "unchangedOff": "沒有變更（模式 Off）",
+    "allResources": "全部",
+    "containerOff": "不調整：此容器的原則為 Off",
+    "noContainers": "目標的 Pod 範本中沒有容器。",
+    "notInTemplate": "也為不在範本中的容器（在建立 Pod 時加入，例如 sidecar）提供了建議：{{containers}}。",
+    "how": "現在建立的 Pod 會以目標值作為要求；其限制維持範本中限制與要求的比例（與准入控制器的計算方式相同），未設定的限制仍不設定。",
+    "howRequestsOnly": "使用 RequestsOnly 時，要求永遠不會高於容器的限制，限制維持不變；使用 RequestsAndLimits 時，限制維持範本中限制與要求的比例。",
+    "notModelled": "此處未納入考量：namespace 的 LimitRange、其他 webhook 加入的容器，以及啟動時的 CPU 提升。"
+  },
+  "conflict": {
+    "line": "HPA {{hpa}} 依 {{resources}} 調整此工作負載的規模，而此 VPA 在模式 {{mode}} 下會變更這些資源：兩者會互相衝突。",
+    "why": "VPA 提高要求後，HPA 看到的使用率下降並減少複本；剩下的 Pod 用量增加，如此循環。請讓 HPA 依其他指標調整規模，將 VPA 維持在 Off 或 Initial，或只讓 VPA 控制另一種資源。"
+  },
+  "components": {
+    "title": "VPA 元件",
+    "component": "元件",
+    "state": "狀態",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "准入控制器"
+    },
+    "ready": "{{ready}}/{{desired}} 就緒",
+    "notFound": "找不到",
+    "unknown": "無法判斷",
+    "missing": {
+      "recommender": "建議來自 recommender：沒有它，這個 VPA 得不到任何建議。",
+      "admission": "沒有准入控制器時，Pod 會以範本中的值建立：建議不會套用到任何新 Pod，被逐出的 Pod 也會原樣重建。",
+      "admissionInitial": "沒有准入控制器時，Initial 不會有任何作用：Pod 會以範本中的值建立。",
+      "updater": "沒有 updater 時，執行中的 Pod 永遠不會被變更：只有因其他原因建立的 Pod 才會取得建議值。"
+    },
+    "managed": "依 kube-system 中的 Deployment vpa-recommender、vpa-updater 和 vpa-admission-controller，以及 VPA Helm chart 的 label 尋找。當 VPA 是代管附加元件時（例如 GKE），其元件在叢集外執行。"
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_other": "有 {{count}} 個 VPA 指向此工作負載：對其 Pod 而言，只有最早的那個有效。"
+  }
+}

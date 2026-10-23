@@ -1,0 +1,32 @@
+/* Vertical Pod Autoscaler: the recommender's message, notes that explain it, muted lines, conflicts. */
+.vpa-message {
+  margin: 0;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--color-danger);
+  overflow-wrap: anywhere;
+}
+
+.vpa-note {
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.vpa-danger {
+  margin: 0.25rem 0;
+}
+
+.vpa-muted {
+  margin: 0.25rem 0;
+  color: var(--color-text-muted);
+}
+
+.vpa-section__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.vpa-section {
+  margin: 0.75rem 0;
+}

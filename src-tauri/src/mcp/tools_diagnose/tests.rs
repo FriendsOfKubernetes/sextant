@@ -903,3 +903,24 @@ fn reflector_problems_are_never_given_to_agents() {
         &["reflector".to_owned()]
     ));
 }
+
+/// Vertical Pod Autoscaler problems (#242) are a window view: agents get none of them, though the category is on by
+/// default (ADR-0111).
+#[test]
+fn vpa_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"vpa"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"vpa"));
+    assert!(!answers::category_for_agents("vpa", &["vpa".to_owned()]));
+}
+
+/// Cluster API problems (#243) are a window view: agents get none of them, though the category is on by default
+/// (ADR-0113).
+#[test]
+fn cluster_api_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"clusterApi"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"clusterApi"));
+    assert!(!answers::category_for_agents(
+        "clusterApi",
+        &["clusterApi".to_owned()]
+    ));
+}

@@ -1,0 +1,39 @@
+{
+  "title": "重新啟動 {{kind}} {{name}}？",
+  "titlePods": "重新啟動 ReplicaSet {{name}} 的 Pod？",
+  "titleMany_other": "重新啟動 {{count}} 個物件？",
+  "intro_other": "這 {{count}} 個物件會依此順序逐一重新啟動。每個請求只傳送一次。",
+  "more_other": "……以及另外 {{count}} 個物件。",
+  "step": {
+    "rollout": "{{name}}：其 Pod 會逐一替換（rollout restart）。",
+    "argoRollout": "{{name}}：Argo Rollouts 會逐一替換其 Pod（kubectl argo rollouts restart）。",
+    "owner": "會重新啟動 {{name}} 來代替其 ReplicaSet {{replicaSets}}：其 Pod 會逐一替換。屬於 Deployment 或 Rollout 的 ReplicaSet 無法單獨重新啟動。",
+    "pods": "{{name}} 沒有擁有者：其 Pod 會逐一刪除，ReplicaSet 會為每個 Pod 建立一個新 Pod。只有在新 Pod 就緒後才會刪除下一個 Pod；若新 Pod 在 5 分鐘內未就緒，其餘 Pod 維持原狀。",
+    "pod": "{{name}} 會被刪除，其 {{controller}} 會建立一個新 Pod 取而代之。"
+  },
+  "templatePatch": "以 merge patch 傳送給每個 Deployment、StatefulSet 和 DaemonSet，附上傳送時間（UTC）：",
+  "argoPatch": "以 merge patch 傳送給每個 Rollout，附上傳送時間（UTC）：",
+  "confirm": "重新啟動",
+  "stop": "停止",
+  "stopping": "將在目前步驟之後停止……",
+  "progress": "正在重新啟動 {{name}}（第 {{current}} 個，共 {{total}} 個）……",
+  "progressPods_other": "{{name}}：已重新啟動 {{done}}/{{count}} 個 Pod，正在等待新 Pod 就緒……",
+  "summary": "已重新啟動 {{done}}/{{total}}。",
+  "summaryStopped": "已停止：已重新啟動 {{done}}/{{total}}，其餘未開始。",
+  "result": {
+    "done": "已重新啟動：{{name}}",
+    "failed": "未重新啟動：{{name}}",
+    "stopped": "中途停止：{{name}}",
+    "skipped": "未開始：{{name}}",
+    "pods_other": "已重新啟動 {{done}}/{{count}} 個 Pod。"
+  },
+  "error": {
+    "replaced": "顯示清單之後，{{name}} 已被另一個同名物件取代。未傳送任何內容。",
+    "deleting": "{{name}} 正在刪除中。未傳送任何內容。",
+    "ownerChanged": "顯示清單之後，{{name}} 的擁有者已變更。未傳送任何內容。",
+    "paused": "{{name}} 已暫停：重新啟動不會推出。請先恢復它。",
+    "noPods": "{{name}} 沒有可重新啟動的 Pod。",
+    "notReady": "取代 {{name}} 的新 Pod 在 5 分鐘內未就緒。其餘 Pod 維持原狀。",
+    "listTimeout": "無法在 5 分鐘內列出該 ReplicaSet 的 Pod。"
+  }
+}

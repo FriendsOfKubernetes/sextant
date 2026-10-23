@@ -1,0 +1,25 @@
+/* The restart dialog (#255): the steps, the patches and the results. */
+.restart-dialog__steps,
+.restart-dialog__results {
+  margin: 0.5rem 0;
+  padding-left: 1.125rem;
+  max-height: 15rem;
+  overflow: auto;
+  font-size: 0.8125rem;
+}
+
+.restart-dialog__steps li,
+.restart-dialog__results li {
+  margin-bottom: 0.25rem;
+}
+
+.restart-dialog__patch {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.restart-dialog__pods {
+  margin-left: 0.375rem;
+}

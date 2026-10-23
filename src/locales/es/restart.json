@@ -1,0 +1,49 @@
+{
+  "title": "¿Reiniciar {{kind}} {{name}}?",
+  "titlePods": "¿Reiniciar los pods del ReplicaSet {{name}}?",
+  "titleMany_one": "¿Reiniciar {{count}} objeto?",
+  "titleMany_many": "¿Reiniciar {{count}} de objetos?",
+  "titleMany_other": "¿Reiniciar {{count}} objetos?",
+  "intro_one": "Se reinicia este objeto ({{count}}). Cada solicitud se envía una sola vez.",
+  "intro_many": "Estos {{count}} de objetos se reinician de uno en uno, en este orden. Cada solicitud se envía una sola vez.",
+  "intro_other": "Estos {{count}} objetos se reinician de uno en uno, en este orden. Cada solicitud se envía una sola vez.",
+  "more_one": "…y {{count}} objeto más.",
+  "more_many": "…y {{count}} de objetos más.",
+  "more_other": "…y {{count}} objetos más.",
+  "step": {
+    "rollout": "{{name}}: sus pods se reemplazan uno a uno (rollout restart).",
+    "argoRollout": "{{name}}: Argo Rollouts reemplaza sus pods uno a uno (kubectl argo rollouts restart).",
+    "owner": "{{name}} se reinicia en lugar de su ReplicaSet {{replicaSets}}: sus pods se reemplazan uno a uno. Un ReplicaSet de un Deployment o de un Rollout no se puede reiniciar por sí solo.",
+    "pods": "{{name}} no tiene propietario: sus pods se eliminan de uno en uno y el ReplicaSet crea un pod nuevo por cada uno. El siguiente pod se elimina solo cuando el nuevo está listo; si no lo está en 5 minutos, los demás pods se quedan como están.",
+    "pod": "{{name}} se elimina y su {{controller}} crea un pod nuevo en su lugar."
+  },
+  "templatePatch": "Se envía a cada Deployment, StatefulSet y DaemonSet como merge patch, con la hora del envío (UTC):",
+  "argoPatch": "Se envía a cada Rollout como merge patch, con la hora del envío (UTC):",
+  "confirm": "Reiniciar",
+  "stop": "Detener",
+  "stopping": "Deteniendo después del paso actual…",
+  "progress": "Reiniciando {{name}} ({{current}} de {{total}})…",
+  "progressPods_one": "{{name}}: {{done}} de {{count}} pod reiniciado, esperando a que el pod nuevo esté listo…",
+  "progressPods_many": "{{name}}: {{done}} de {{count}} de pods reiniciados, esperando a que el pod nuevo esté listo…",
+  "progressPods_other": "{{name}}: {{done}} de {{count}} pods reiniciados, esperando a que el pod nuevo esté listo…",
+  "summary": "{{done}} de {{total}} reiniciados.",
+  "summaryStopped": "Detenido: {{done}} de {{total}} reiniciados; el resto no se inició.",
+  "result": {
+    "done": "Reiniciado: {{name}}",
+    "failed": "No reiniciado: {{name}}",
+    "stopped": "Detenido a medias: {{name}}",
+    "skipped": "No iniciado: {{name}}",
+    "pods_one": "{{done}} de {{count}} pod reiniciado.",
+    "pods_many": "{{done}} de {{count}} de pods reiniciados.",
+    "pods_other": "{{done}} de {{count}} pods reiniciados."
+  },
+  "error": {
+    "replaced": "{{name}} fue reemplazado por otro objeto con el mismo nombre desde que se mostró la lista. No se envió nada.",
+    "deleting": "{{name}} se está eliminando. No se envió nada.",
+    "ownerChanged": "El propietario de {{name}} cambió desde que se mostró la lista. No se envió nada.",
+    "paused": "{{name}} está en pausa: un reinicio no se desplegaría. Reanúdelo primero.",
+    "noPods": "{{name}} no tiene pods que reiniciar.",
+    "notReady": "El pod nuevo en lugar de {{name}} no estuvo listo en 5 minutos. Los demás pods se dejaron como estaban.",
+    "listTimeout": "No se pudieron listar los pods del ReplicaSet en 5 minutos."
+  }
+}

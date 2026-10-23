@@ -1,0 +1,127 @@
+{
+  "sidebar": {
+    "vpas": "VerticalPodAutoscalers",
+    "checkpoints": "Контрольні точки"
+  },
+  "badge_one": "{{count}} об'єкт потребує уваги",
+  "badge_few": "{{count}} об'єкти потребують уваги",
+  "badge_many": "{{count}} об'єктів потребують уваги",
+  "badge_other": "{{count}} об'єкта потребують уваги",
+  "loading": "Завантаження…",
+  "columns": {
+    "target": "Ціль",
+    "mode": "Режим",
+    "status": "Статус",
+    "cpu": "CPU",
+    "memory": "Пам'ять",
+    "vpa": "VPA",
+    "container": "Контейнер",
+    "samples": "Заміри",
+    "lastUpdate": "Збережено"
+  },
+  "reason": {
+    "provided": "Рекомендує",
+    "lowConfidence": "Низька впевненість",
+    "fetchingHistory": "Завантаження історії",
+    "configUnsupported": "Не підтримується",
+    "noPodsMatched": "Немає відповідних Pod",
+    "notProvided": "Немає рекомендації",
+    "noStatus": "Очікування"
+  },
+  "hint": {
+    "lowConfidence": "У recommender поки мало даних щодо деяких контейнерів: рекомендація ще може сильно змінитися.",
+    "fetchingHistory": "Recommender ще завантажує історію: рекомендація ще може змінитися.",
+    "configUnsupported": "Recommender не може використати цей VPA: його ціль не вдається прочитати, або вона не верхній контролер (спрямуйте VPA на Deployment, а не на його ReplicaSet). Рекомендації не буде.",
+    "noPodsMatched": "Жоден запущений Pod не належить цілі: у неї немає реплік, або її Pod не працюють. Recommender потрібні Pod для замірів.",
+    "notProvided": "Recommender ще не видав рекомендацію.",
+    "noStatus": "Статусу поки немає: recommender ще не переглянув цей VPA, або для нього не працює жоден recommender.",
+    "deprecated": "Recommender повідомляє, що ця конфігурація застаріла і перестане підтримуватися."
+  },
+  "modeExplain": {
+    "Off": "Лише рекомендує: VPA ніколи не змінює Pod.",
+    "Initial": "Задає ресурси під час створення Pod; запущені Pod ніколи не змінюються.",
+    "Recreate": "Задає ресурси під час створення Pod, а updater витісняє запущений Pod, чиї запити виходять за рекомендований діапазон (або, через 12 годин, відрізняються на 10% і більше), щоб його було створено знову з рекомендацією. За замовчуванням нічого не витісняється, доки працює менше 2 реплік.",
+    "Auto": "Застаріла назва Recreate, працює так само: ресурси задаються під час створення Pod, а updater витісняє запущені Pod, чиї запити далекі від рекомендації.",
+    "InPlaceOrRecreate": "Задає ресурси під час створення Pod, а updater змінює розмір запущених Pod на місці й витісняє їх, лише якщо змінити розмір на місці неможливо. Потрібна функція кластера InPlacePodVerticalScaling.",
+    "InPlace": "Задає ресурси під час створення Pod, а updater лише змінює розмір запущених Pod на місці й ніколи їх не витісняє. Потрібні feature gate InPlace компонентів VPA і функція кластера InPlacePodVerticalScaling.",
+    "unknown": "Режим {{mode}} невідомий цій версії Sextant."
+  },
+  "fields": {
+    "status": "Статус",
+    "since": "З моменту",
+    "target": "Ціль",
+    "mode": "Режим оновлення",
+    "modeDefault": "{{mode}} (за замовчуванням)",
+    "modeExplained": "Що він робить",
+    "minReplicas": "Реплік для витіснення",
+    "recommender": "Recommender",
+    "vpa": "VerticalPodAutoscaler"
+  },
+  "target": {
+    "missing": "Не задано",
+    "notServed": "Кластер не обслуговує kind цілі {{kind}}.",
+    "notRead": "Ціль не прочитано: її немає, або її не можна прочитати."
+  },
+  "recommendation": {
+    "title": "Рекомендація і наступні Pod"
+  },
+  "table": {
+    "container": "Контейнер",
+    "resource": "Ресурс",
+    "now": "Запит / ліміт у шаблоні",
+    "range": "Рекомендований діапазон",
+    "target": "Ціль",
+    "after": "Новий Pod отримає",
+    "unset": "не задано",
+    "pair": "{{request}} / {{limit}}",
+    "rangeValue": "{{lower}} – {{upper}}",
+    "uncapped": "до обмеження {{value}}",
+    "capped": {
+      "minAllowed": "піднято до minAllowed",
+      "maxAllowed": "знижено до maxAllowed",
+      "limit": "залишено на рівні ліміту (RequestsOnly)"
+    },
+    "noTarget": "Рекомендації поки немає",
+    "unchanged": "Без змін",
+    "unchangedOff": "Без змін (режим Off)",
+    "allResources": "усі",
+    "containerOff": "Не масштабується: політика контейнера — Off",
+    "noContainers": "У шаблоні Pod цілі немає контейнерів.",
+    "notInTemplate": "Рекомендації є й для контейнерів, яких немає в шаблоні (вони додаються під час створення Pod, як sidecar): {{containers}}.",
+    "how": "Pod, створений зараз, отримує ціль як запит; його ліміт зберігає відношення ліміту до запиту з шаблону, як це обчислює admission controller, а відсутній ліміт так і залишається відсутнім.",
+    "howRequestsOnly": "З RequestsOnly запит ніколи не перевищує ліміт контейнера, а ліміт залишається незмінним; з RequestsAndLimits ліміт зберігає відношення ліміту до запиту з шаблону.",
+    "notModelled": "Тут не враховуються: LimitRange namespace, контейнери, які додають інші webhook, і прискорення CPU під час запуску."
+  },
+  "conflict": {
+    "line": "HPA {{hpa}} масштабує це робоче навантаження за {{resources}}, а цей VPA змінює їх у режимі {{mode}}: вони заважають один одному.",
+    "why": "Коли VPA підвищує запит, завантаження для HPA падає, і він прибирає репліки; решта Pod споживає більше, і так далі. Масштабуйте HPA за іншою метрикою, залиште VPA в режимі Off або Initial або дайте VPA керувати лише іншим ресурсом."
+  },
+  "components": {
+    "title": "Компоненти VPA",
+    "component": "Компонент",
+    "state": "Стан",
+    "deployment": "Deployment",
+    "name": {
+      "recommender": "Recommender",
+      "updater": "Updater",
+      "admission-controller": "Admission controller"
+    },
+    "ready": "Готово {{ready}} з {{desired}}",
+    "notFound": "Не знайдено",
+    "unknown": "Не вдається визначити",
+    "missing": {
+      "recommender": "Рекомендації видає recommender: без нього цей VPA їх не отримає.",
+      "admission": "Без admission controller Pod створюються зі значеннями з шаблону: рекомендація не доходить до жодного нового Pod, а витіснені Pod повертаються без змін.",
+      "admissionInitial": "Без admission controller режим Initial нічого не робить: Pod створюються зі значеннями з шаблону.",
+      "updater": "Без updater запущені Pod ніколи не змінюються: рекомендацію отримують лише Pod, створені з інших причин."
+    },
+    "managed": "Шукаються як Deployment vpa-recommender, vpa-updater і vpa-admission-controller у kube-system і за label чартів Helm для VPA. Якщо VPA — кероване доповнення (як у GKE), його компоненти працюють поза кластером."
+  },
+  "workload": {
+    "title": "Vertical Pod Autoscaler",
+    "several_one": "На це робоче навантаження спрямовано {{count}} VPA: для його Pod враховується лише найстаріший.",
+    "several_few": "На це робоче навантаження спрямовано {{count}} VPA: для його Pod враховується лише найстаріший.",
+    "several_many": "На це робоче навантаження спрямовано {{count}} VPA: для його Pod враховується лише найстаріший.",
+    "several_other": "На це робоче навантаження спрямовано {{count}} VPA: для його Pod враховується лише найстаріший."
+  }
+}

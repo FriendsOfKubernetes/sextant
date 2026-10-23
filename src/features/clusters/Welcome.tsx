@@ -6,7 +6,14 @@ import { errorKey, useSettings, type ClusterInfo, type CoreError } from "../../a
 import { EmptyState, SLOW_AFTER_S, useElapsedSeconds } from "../../components";
 import { AddFileButton, PasteButton, SourceError } from "./AddClusterDialog";
 import { CloudLoginHint } from "./CloudClusters";
-import { ExecPluginHint, execProblemText, isExecPluginNotFound } from "./ExecPlugin";
+import {
+  ExecLoginHint,
+  ExecPluginHint,
+  PluginOutput,
+  execProblemText,
+  isExecPluginFailed,
+  isExecPluginNotFound,
+} from "./ExecPlugin";
 import { displayNameOf } from "./clusterSettings";
 import { connectCluster, disconnectCluster, openClusterSettings, useClustersStore } from "./clustersStore";
 import { useClusters, useClusterState } from "./hooks";
@@ -52,7 +59,7 @@ function Connection({ cluster }: { cluster: ClusterInfo }) {
   const seconds = useElapsedSeconds(state.state === "connecting");
 
   if (state.state === "error") {
-    const { code, message } = state;
+    const { code, message, pluginOutput } = state;
     return (
       <div className="clusters-welcome" role="alert" data-code={code}>
         <h1 className="clusters-welcome__title clusters-welcome__title--error">
@@ -64,6 +71,8 @@ function Connection({ cluster }: { cluster: ClusterInfo }) {
         {(isExecPluginNotFound({ code, message }) || (code === "authPlugin" && cluster.execProblem)) && (
           <ExecPluginHint />
         )}
+        {pluginOutput && <PluginOutput output={pluginOutput} />}
+        {isExecPluginFailed({ code, message }) && !cluster.execProblem && <ExecLoginHint />}
         {(code === "authPlugin" || code === "unauthorized") && <CloudLoginHint clusterId={cluster.id} />}
         <div className="clusters-buttons">
           <button type="button" className="btn btn--primary" onClick={() => void connectCluster(cluster.id)}>

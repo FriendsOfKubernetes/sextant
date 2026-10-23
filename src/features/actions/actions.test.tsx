@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockBackend, type KindRef, type KubeObject, type MockBackend } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
+import "../restart";
 import "./index";
 import { getAction, getActionsFor, runAction, type ActionId } from "./registry";
 
@@ -49,13 +50,14 @@ describe("registered actions", () => {
   it("are offered for the kinds they apply to", () => {
     expect(ids([obj(DEPLOYMENT, "web", "demo")], DEPLOYMENT)).toEqual(["edit", "delete", "scale", "restart"]);
     expect(ids([obj(STATEFUL_SET, "db", "demo")], STATEFUL_SET)).toEqual(["edit", "delete", "scale", "restart"]);
-    expect(ids([obj(REPLICA_SET, "web-1", "demo")], REPLICA_SET)).toEqual(["edit", "delete", "scale"]);
+    // A ReplicaSet without an owner restarts its pods (src/features/restart).
+    expect(ids([obj(REPLICA_SET, "web-1", "demo")], REPLICA_SET)).toEqual(["edit", "delete", "scale", "restart"]);
     expect(ids([obj(DAEMON_SET, "agent", "demo")], DAEMON_SET)).toEqual(["edit", "delete", "restart"]);
     expect(ids([obj(NODE, "n1", undefined)], NODE)).toEqual(["edit", "delete", "cordon", "drain"]);
     expect(ids([obj(CRON_JOB, "hello", "demo")], CRON_JOB)).toEqual(["edit", "delete", "trigger", "suspend"]);
     expect(ids([obj(CONFIG_MAP, "a", "demo")], CONFIG_MAP)).toEqual(["edit", "delete"]);
-    // Several selected rows: only delete.
-    expect(ids([obj(DEPLOYMENT, "a", "demo"), obj(DEPLOYMENT, "b", "demo")], DEPLOYMENT)).toEqual(["delete"]);
+    // Several selected rows: delete and restart.
+    expect(ids([obj(DEPLOYMENT, "a", "demo"), obj(DEPLOYMENT, "b", "demo")], DEPLOYMENT)).toEqual(["delete", "restart"]);
   });
 
   it("edit opens the object in a dock tab", async () => {
@@ -180,6 +182,7 @@ describe("scale", () => {
 describe("restart", () => {
   it("restarts after confirmation", async () => {
     backend.on("workload_restart", () => undefined);
+    backend.on("resource_get", () => obj(DAEMON_SET, "agent", "kube-system"));
     await run("restart", DAEMON_SET, [obj(DAEMON_SET, "agent", "kube-system")]);
     const dialog = screen.getByRole("dialog", { name: "Restart DaemonSet agent?" });
     expect(calls("workload_restart")).toHaveLength(0);

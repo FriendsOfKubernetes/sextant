@@ -16,9 +16,11 @@ import { EVENTING_KINDS } from "../knative/eventing";
 import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
 import { XRD } from "../crossplane/model";
 import { BACKUP as CNPG_BACKUP, PG_CLUSTER } from "../cnpg/model";
+import { MACHINE as CAPI_MACHINE, PROBLEM_KINDS as CAPI_PROBLEM_KINDS } from "../cluster-api/model";
 import { CLUSTER_EXTERNAL_SECRET, CLUSTER_SECRET_STORE, EXTERNAL_SECRET, PUSH_SECRET, SECRET_STORE } from "../external-secrets/model";
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
 import { SEALED_SECRET } from "../sealed-secrets/model";
+import { VPA } from "../vpa/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import { STRIMZI_KINDS } from "../strimzi/model";
 import {
@@ -94,6 +96,10 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   pods: [builtIn("pods", POD)],
   workloads: [builtIn("workloads", DEPLOYMENT), builtIn("workloads", STATEFULSET), builtIn("workloads", DAEMONSET)],
   jobs: [builtIn("jobs", JOB)],
+  // Vertical Pod Autoscaler (#242): configurations the recommender cannot use, VPAs that match no pod, and VPAs that
+  // fight an HPA over the same resource, judged by the provider of features/vpa (`external`: the HPA is another
+  // object), held only where VPAs are served.
+  vpa: [{ category: "vpa", kind: VPA, fieldSelector: null, discovered: true, external: true }],
   volumes: [builtIn("volumes", PVC)],
   certificates: [tool("certificates", CERTIFICATE)],
   flux: FLUX_WATCHED.map((kind) => tool("flux", kind)),
@@ -136,6 +142,10 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   sealedSecrets: [{ category: "sealedSecrets", kind: SEALED_SECRET, fieldSelector: null, discovered: true, external: true }],
   // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
   cnpg: [tool("cnpg", PG_CLUSTER), tool("cnpg", CNPG_BACKUP)],
+  // Cluster API (#243): failed or unavailable Clusters and KubeadmControlPlanes, Machines failed or stuck
+  // provisioning, MachineHealthChecks that stopped remediating; a management cluster can hold thousands of Machines:
+  // capped.
+  clusterApi: CAPI_PROBLEM_KINDS.map((kind) => tool("clusterApi", kind, kind === CAPI_MACHINE ? MAX_SOURCE_OBJECTS : undefined)),
   // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
   strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind, d.label === "topics" || d.label === "users" ? MAX_SOURCE_OBJECTS : undefined)),
   // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged

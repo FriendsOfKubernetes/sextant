@@ -172,6 +172,13 @@
     "notExecutable": "The login program {{command}} cannot be run: it is not an executable file.",
     "badge": "Login program not found or cannot be run",
     "hintElsewhere": "The kubeconfig may have been generated on another computer or in WSL. Generate it again on this computer, or set the exec command to the bare tool name (the cloud CLI, e.g. yc, aws, gcloud, az, kubelogin) and make sure the tool is on PATH.",
-    "hintRestart": "A tool installed after Sextant or your desktop session started is not on Sextant's PATH until you restart Sextant. On Windows, sign out and sign in again first."
+    "hintRestart": "A tool installed after Sextant or your desktop session started is not on Sextant's PATH until you restart Sextant. On Windows, sign out and sign in again first.",
+    "loginHint": "The login program usually fails because you are not signed in or your session has expired. Run it in a terminal to sign in (for example yc init, aws sso login, gcloud auth login, az login or kubelogin), then try again.",
+    "output": {
+      "title": "What the login program printed (secrets masked)",
+      "copy": "Copy the output",
+      "copied": "Copied.",
+      "copyFailed": "Could not copy."
+    }
   }
 }

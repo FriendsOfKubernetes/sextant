@@ -21,10 +21,7 @@
     "invalid": "0 以上の整数を入力してください。"
   },
   "restart": {
-    "label": "再起動",
-    "title": "{{kind}} {{name}} を再起動しますか?",
-    "text": "{{name}} のすべての Pod が 1 つずつ置き換えられます (rollout restart)。",
-    "confirm": "再起動"
+    "label": "再起動"
   },
   "cordon": {
     "label": "Cordon / Uncordon",

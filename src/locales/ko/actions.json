@@ -21,10 +21,7 @@
     "invalid": "0 이상의 정수를 입력하세요."
   },
   "restart": {
-    "label": "다시 시작",
-    "title": "{{kind}} {{name}}을(를) 다시 시작하시겠습니까?",
-    "text": "{{name}}의 모든 Pod가 하나씩 교체됩니다(rollout restart).",
-    "confirm": "다시 시작"
+    "label": "다시 시작"
   },
   "cordon": {
     "label": "Cordon / Uncordon",

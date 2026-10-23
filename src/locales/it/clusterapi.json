@@ -1,0 +1,173 @@
+{
+  "sidebar": {
+    "clusters": "Clusters",
+    "clusterClasses": "Cluster Classes",
+    "controlPlanes": "Kubeadm Control Planes",
+    "machineDeployments": "Machine Deployments",
+    "machineSets": "Machine Sets",
+    "machines": "Machines",
+    "machineHealthChecks": "Machine Health Checks",
+    "clusterResourceSets": "Cluster Resource Sets"
+  },
+  "badge_one": "{{count}} oggetto richiede attenzione",
+  "badge_many": "{{count}} di oggetti richiedono attenzione",
+  "badge_other": "{{count}} oggetti richiedono attenzione",
+  "state": {
+    "available": "Disponibile",
+    "provisioned": "Predisposto",
+    "provisioning": "In predisposizione",
+    "notAvailable": "Non disponibile",
+    "deleting": "In eliminazione",
+    "failed": "Non riuscito",
+    "paused": "In pausa",
+    "unknown": "Sconosciuto",
+    "running": "In esecuzione",
+    "notReady": "Non pronto",
+    "updating": "In aggiornamento",
+    "rollingOut": "Rollout in corso",
+    "scaling": "Ridimensionamento",
+    "healthy": "Integro",
+    "remediating": "Correzione in corso",
+    "blocked": "Correzione bloccata"
+  },
+  "columns": {
+    "status": "Stato",
+    "phase": "Fase",
+    "class": "Classe",
+    "version": "Versione",
+    "controlPlane": "Control plane",
+    "workers": "Worker",
+    "cluster": "Cluster",
+    "node": "Nodo",
+    "ready": "Pronte",
+    "upToDate": "Aggiornate",
+    "available": "Disponibili",
+    "healthy": "Integre",
+    "remediationsAllowed": "Correzioni consentite",
+    "strategy": "Strategia"
+  },
+  "fields": {
+    "state": "Stato",
+    "phase": "Fase",
+    "class": "ClusterClass",
+    "version": "Versione di Kubernetes",
+    "endpoint": "Endpoint del control plane",
+    "controlPlane": "Control plane",
+    "infrastructure": "Infrastruttura",
+    "controlPlaneMachines": "Macchine del control plane",
+    "workerMachines": "Macchine worker",
+    "workloadCluster": "Cluster di carico",
+    "cluster": "Cluster",
+    "owner": "Proprietario",
+    "providerID": "ID del provider",
+    "failureDomain": "Dominio di guasto",
+    "node": "Nodo",
+    "addresses": "Indirizzi",
+    "bootstrap": "Bootstrap",
+    "dataSecret": "Secret con i dati di bootstrap",
+    "lastUpdated": "Cambio di fase",
+    "desired": "Desiderate",
+    "current": "Attuali",
+    "ready": "Pronte",
+    "available": "Disponibili",
+    "upToDate": "Aggiornate",
+    "strategy": "Strategia di rollout",
+    "bootstrapTemplate": "Modello di bootstrap",
+    "infrastructureTemplate": "Modello di infrastruttura",
+    "initialized": "Inizializzato",
+    "lastRemediation": "Ultima macchina corretta",
+    "lastRemediationTime": "Ultima correzione",
+    "retryCount": "Tentativi di correzione",
+    "selector": "Selector",
+    "expected": "Macchine attese",
+    "healthy": "Macchine integre",
+    "remediationsAllowed": "Correzioni consentite",
+    "maxUnhealthy": "Correggere finché le non integre non superano",
+    "unhealthyRange": "Correggere finché le non integre sono nell'intervallo",
+    "nodeStartupTimeout": "Timeout di avvio del nodo",
+    "unhealthyNodeConditions": "Condizioni di Node non integre",
+    "unhealthyMachineConditions": "Condizioni di macchina non integre",
+    "targets": "Macchine controllate",
+    "provider": {
+      "customImage": "Immagine personalizzata",
+      "endpoint": "Endpoint del bilanciatore",
+      "instanceType": "Tipo di istanza",
+      "instanceState": "Stato dell'istanza",
+      "instanceId": "ID dell'istanza",
+      "vmSize": "Dimensione della VM",
+      "vmState": "Stato della VM",
+      "template": "Modello di VM",
+      "cpus": "CPU",
+      "memoryMiB": "Memoria (MiB)"
+    }
+  },
+  "ref": {
+    "ready": "Pronto",
+    "notReady": "Non pronto",
+    "unknown": "Non indica nulla",
+    "missing": "Mancante",
+    "unreadable": "Impossibile leggerlo",
+    "notServed": "Kind non servito da questo cluster"
+  },
+  "workload": {
+    "none": "Nessun cluster di Sextant ha il server API {{address}}.",
+    "open": "Apri il cluster {{context}}",
+    "openNode": "Apri il Node {{node}} in {{context}}"
+  },
+  "readyOf": "{{ready}} di {{desired}} pronte",
+  "explain": {
+    "cluster": {
+      "failed": "Il cluster non è riuscito: Cluster API segnala un errore che non riprova.",
+      "notAvailable": "Il cluster non è disponibile: uno dei controlli della sua condizione Available non passa.",
+      "provisioning": "Il cluster è ancora in predisposizione.",
+      "paused": "Il cluster è in pausa: Cluster API non vi cambia nulla finché non viene ripreso.",
+      "deleting": "Il cluster è in eliminazione."
+    },
+    "machine": {
+      "failed": "La macchina non è riuscita: Cluster API segnala un errore che non riprova.",
+      "provisioning": "La macchina non ha ancora raggiunto Running (fase {{phase}}).",
+      "notReady": "La macchina è in esecuzione, ma la sua condizione Ready è False.",
+      "paused": "La macchina è in pausa: Cluster API non vi cambia nulla finché non viene ripresa.",
+      "deleting": "La macchina è in eliminazione."
+    },
+    "group": {
+      "failed": "Cluster API segnala un errore che non riprova.",
+      "notAvailable": "Non disponibile: ci sono meno macchine disponibili del necessario.",
+      "rollingOut": "Un rollout è in corso: alcune macchine non sono ancora aggiornate.",
+      "scaling": "Ridimensionamento: il numero di macchine sta cambiando.",
+      "paused": "In pausa: Cluster API non cambia nulla qui finché non viene ripreso.",
+      "provisioning": "Il control plane non è ancora inizializzato."
+    },
+    "healthCheck": {
+      "blocked": "La correzione è bloccata: troppe macchine non sono integre ({{healthy}} integre su {{expected}}).",
+      "remediating": "Alcune macchine non sono integre ({{healthy}} integre su {{expected}}) e vengono corrette."
+    }
+  },
+  "chain": {
+    "title": "Macchine",
+    "loading": "Caricamento delle macchine…",
+    "none": "Il cluster non ha macchine.",
+    "unavailable": "Impossibile elencare le macchine.",
+    "controlPlane": "Control plane",
+    "others": "Altre macchine",
+    "more_one": "E {{count}} altra macchina",
+    "more_many": "E {{count}} di altre macchine",
+    "more_other": "E altre {{count}} macchine",
+    "ready": "Pronte: {{ready}}",
+    "node": "Nodo {{node}}"
+  },
+  "machines": {
+    "title": "Macchine",
+    "none": "Nessuna macchina.",
+    "name": "Macchina",
+    "state": "Stato",
+    "node": "Nodo"
+  },
+  "healthCheck": {
+    "type": "Condizione",
+    "status": "Stato",
+    "timeout": "Timeout"
+  },
+  "yes": "Sì",
+  "no": "No"
+}

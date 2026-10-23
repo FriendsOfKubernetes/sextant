@@ -851,3 +851,47 @@
   gap: 8px;
   margin-top: 6px;
 }
+
+/* What a failed login program printed (#256): masked by the backend, scrollable, monospace. */
+.exec-output {
+  margin: 8px 0;
+  text-align: start;
+  max-width: 100%;
+}
+
+.exec-output__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.exec-output__title {
+  font-weight: 600;
+}
+
+.exec-output__state {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.exec-output__text {
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.exec-output__text:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}

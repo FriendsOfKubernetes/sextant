@@ -67,9 +67,14 @@ impl Env {
 
     /// Clusters `ctx-a` and `ctx-b` at `server`.
     fn at(server: &str) -> Self {
+        Self::with_kubeconfig(&KUBECONFIG.replace("SERVER", server))
+    }
+
+    /// The clusters of the kubeconfig `text`.
+    fn with_kubeconfig(text: &str) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let kubeconfig = dir.path().join("kubeconfig");
-        std::fs::write(&kubeconfig, KUBECONFIG.replace("SERVER", server)).unwrap();
+        std::fs::write(&kubeconfig, text).unwrap();
         let settings = Arc::new(SettingsStore::open(dir.path().join("config/settings.json")));
         let mut registry = KubeconfigRegistry::new(Vec::new(), dir.path().join("data/kubeconfigs"));
         registry.set_env(KubeconfigEnv {
@@ -1895,4 +1900,48 @@ async fn a_long_extension_id_is_clipped_in_the_journal() {
     let entry = &env.api.audit_list(None)[0];
     assert!(entry.client.chars().count() < 300, "{}", entry.client.len());
     assert!(entry.client.ends_with("…[cut]"));
+}
+
+/// What a failed exec plugin printed reaches the window's connection state, never an extension: neither the error of
+/// a call that connected the cluster nor `clusters.list` carries it (#256).
+#[cfg(unix)]
+#[tokio::test]
+async fn an_extension_never_gets_what_a_failed_exec_plugin_printed() {
+    let user = "{ exec: { apiVersion: client.authentication.k8s.io/v1, command: sh, \
+                args: [-c, 'echo PLUGIN-SAID not logged in >&2; exit 1'], interactiveMode: Never } }";
+    let env = Env::with_kubeconfig(
+        &KUBECONFIG
+            .replace("SERVER", "https://127.0.0.1:9")
+            .replace("user: {}", &format!("user: {user}")),
+    );
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+
+    let err = env
+        .call("widgets", "kinds")
+        .open("ctx-a")
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::AuthPlugin, "{err}");
+    assert_eq!(err.plugin_output, None);
+    assert!(!serde_json::to_string(&err).unwrap().contains("PLUGIN-SAID"));
+
+    let id = env.cluster_id("ctx-a");
+    match env.api.clusters.state(&id) {
+        ConnectionState::Error(state) => {
+            assert!(
+                state
+                    .plugin_output
+                    .unwrap()
+                    .contains("PLUGIN-SAID not logged in")
+            );
+        }
+        other => panic!("expected an error state, got {other:?}"),
+    }
+    let listed = env
+        .api
+        .call(&env.host, "widgets", "clusters.list", json!({}), None)
+        .await
+        .unwrap();
+    assert!(!listed.to_string().contains("PLUGIN-SAID"), "{listed}");
+    assert_eq!(listed[0]["state"]["state"], "error", "{listed}");
 }

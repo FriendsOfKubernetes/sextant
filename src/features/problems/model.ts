@@ -18,8 +18,10 @@ import { knativeProblems } from "../knative/problemRules";
 import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
 import { cnpgProblems, CNPG_GROUP } from "../cnpg/model";
+import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
 import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
 import { isSealedSecret } from "../sealed-secrets/model";
+import { isVpa } from "../vpa/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import { STRIMZI_GROUP, strimziProblems } from "../strimzi/model";
 import {
@@ -43,6 +45,7 @@ export const PROBLEM_CATEGORIES = [
   "pods",
   "workloads",
   "jobs",
+  "vpa",
   "volumes",
   "certificates",
   "flux",
@@ -55,6 +58,7 @@ export const PROBLEM_CATEGORIES = [
   "contour",
   "knative",
   "crossplane",
+  "clusterApi",
   "policies",
   "externalSecrets",
   "sealedSecrets",
@@ -261,7 +265,11 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (kind.group === ESO_GROUP) return "externalSecrets";
   // Sealed Secrets (#240): judged by the provider of features/sealed-secrets (the target Secret is another object).
   if (isSealedSecret(kind)) return "sealedSecrets";
+  // Vertical Pod Autoscaler (#242): judged by the provider of features/vpa (HPA conflicts span two objects).
+  if (isVpa(kind)) return "vpa";
   if (kind.group === CNPG_GROUP) return "cnpg";
+  // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
+  if (isClusterApiProblemKind(kind)) return "clusterApi";
   if (kind.group === STRIMZI_GROUP) return "strimzi";
   if (kind.group === MONITORING_GROUP) return "prometheusOperator";
   return undefined;
@@ -716,6 +724,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return externalSecretsProblems(obj);
     case "cnpg":
       return cnpgProblems(kind, obj);
+    case "clusterApi":
+      return capiProblems(kind, obj);
     case "strimzi":
       return strimziProblems(obj);
     case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.
@@ -731,6 +741,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
     case "sealedSecrets": // A missing target Secret is another object: the provider of features/sealed-secrets finds both.
+    case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];

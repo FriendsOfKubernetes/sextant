@@ -1,0 +1,44 @@
+{
+  "title": "{{kind}} {{name}} yeniden başlatılsın mı?",
+  "titlePods": "ReplicaSet {{name}} Pod'ları yeniden başlatılsın mı?",
+  "titleMany_one": "{{count}} nesne yeniden başlatılsın mı?",
+  "titleMany_other": "{{count}} nesne yeniden başlatılsın mı?",
+  "intro_one": "Bu {{count}} nesne yeniden başlatılır. Her istek bir kez gönderilir.",
+  "intro_other": "Bu {{count}} nesne bu sırayla, birer birer yeniden başlatılır. Her istek bir kez gönderilir.",
+  "more_one": "…ve {{count}} nesne daha.",
+  "more_other": "…ve {{count}} nesne daha.",
+  "step": {
+    "rollout": "{{name}}: Pod'ları birer birer değiştirilir (rollout restart).",
+    "argoRollout": "{{name}}: Argo Rollouts, Pod'larını birer birer değiştirir (kubectl argo rollouts restart).",
+    "owner": "{{name}}, ReplicaSet {{replicaSets}} yerine yeniden başlatılır: Pod'ları birer birer değiştirilir. Bir Deployment veya Rollout'a ait ReplicaSet tek başına yeniden başlatılamaz.",
+    "pods": "{{name}} bir sahibe sahip değil: Pod'ları birer birer silinir ve ReplicaSet her biri için yeni bir Pod oluşturur. Sonraki Pod ancak yenisi hazır olduktan sonra silinir; 5 dakika içinde hazır olmazsa diğer Pod'lar olduğu gibi bırakılır.",
+    "pod": "{{name}} silinir ve {{controller}} onun yerine yeni bir Pod oluşturur."
+  },
+  "templatePatch": "Her Deployment, StatefulSet ve DaemonSet'e gönderim zamanıyla (UTC) merge patch olarak gönderilir:",
+  "argoPatch": "Her Rollout'a gönderim zamanıyla (UTC) merge patch olarak gönderilir:",
+  "confirm": "Yeniden başlat",
+  "stop": "Durdur",
+  "stopping": "Geçerli adımdan sonra duruluyor…",
+  "progress": "{{name}} yeniden başlatılıyor ({{current}} / {{total}})…",
+  "progressPods_one": "{{name}}: {{count}} Pod'dan {{done}} tanesi yeniden başlatıldı, yeni Pod'un hazır olması bekleniyor…",
+  "progressPods_other": "{{name}}: {{count}} Pod'dan {{done}} tanesi yeniden başlatıldı, yeni Pod'un hazır olması bekleniyor…",
+  "summary": "{{total}} nesneden {{done}} tanesi yeniden başlatıldı.",
+  "summaryStopped": "Durduruldu: {{total}} nesneden {{done}} tanesi yeniden başlatıldı; kalanlar başlatılmadı.",
+  "result": {
+    "done": "Yeniden başlatıldı: {{name}}",
+    "failed": "Yeniden başlatılmadı: {{name}}",
+    "stopped": "Yarıda durduruldu: {{name}}",
+    "skipped": "Başlatılmadı: {{name}}",
+    "pods_one": "{{count}} Pod'dan {{done}} tanesi yeniden başlatıldı.",
+    "pods_other": "{{count}} Pod'dan {{done}} tanesi yeniden başlatıldı."
+  },
+  "error": {
+    "replaced": "Liste gösterildikten sonra {{name}} aynı adlı başka bir nesneyle değiştirildi. Hiçbir şey gönderilmedi.",
+    "deleting": "{{name}} siliniyor. Hiçbir şey gönderilmedi.",
+    "ownerChanged": "Liste gösterildikten sonra {{name}} nesnesinin sahibi değişti. Hiçbir şey gönderilmedi.",
+    "paused": "{{name}} duraklatılmış: yeniden başlatma dağıtılmaz. Önce devam ettirin.",
+    "noPods": "{{name}} için yeniden başlatılacak Pod yok.",
+    "notReady": "{{name}} yerine gelen yeni Pod 5 dakika içinde hazır olmadı. Diğer Pod'lar olduğu gibi bırakıldı.",
+    "listTimeout": "ReplicaSet'in Pod'ları 5 dakika içinde listelenemedi."
+  }
+}

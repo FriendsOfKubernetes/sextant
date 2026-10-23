@@ -19,6 +19,10 @@
 //                 it and with the conditions of Argo CD's Rollout `resume` action; it never writes `currentStepIndex`,
 //                 but on a canary pause step the controller counts the step completed once no pause condition is
 //                 left (pause.go `CompletedCanaryPauseStep`) and moves on, as after `promote`
+//   restart       spec  {"spec":{"restartAt":"<now>"}}  (cmd/restart/restart.go: `restartPatch` and `RestartRollout`,
+//                 `timeutil.Now().UTC()` formatted with `time.RFC3339` — whole seconds, `Z` — sent as a merge patch of
+//                 the Rollout itself, never the status; the plugin's `--in` delay is not offered). Sent by the generic
+//                 Restart action (src/features/restart), which also restarts several objects at once.
 //
 // A status patch goes to the status subresource first (`api.resources.patchStatus`); an API server that answers
 // `notFound` there has no status subresource (Argo Rollouts v0.9), and the plugin then sends the "unified" patch
@@ -117,4 +121,17 @@ export async function sendPlan(clusterId: ClusterId, ref: ObjectRef, plan: Patch
     }
   }
   if (spec) await api.resources.patch(clusterId, ref, spec, "merge");
+}
+
+/**
+ * `kubectl argo rollouts restart`'s patch: `spec.restartAt` set to `at` as Go's `time.RFC3339` prints a UTC time
+ * (`2026-10-23T10:00:00Z`); the controller then replaces every pod created before that time, one at a time.
+ */
+export function restartPatch(at: Date): { spec: { restartAt: string } } {
+  return { spec: { restartAt: rfc3339Seconds(at) } };
+}
+
+/** `at` in UTC with whole seconds and `Z`, the format of Go's `time.RFC3339` (and of `kubectl rollout restart`). */
+export function rfc3339Seconds(at: Date): string {
+  return at.toISOString().replace(/\.\d{3}Z$/, "Z");
 }

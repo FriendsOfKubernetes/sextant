@@ -1766,3 +1766,56 @@ async fn stopping_closes_the_port_while_other_threads_start_processes() {
     }
     assert_eq!(still_listening, 0, "ports still listening after stop");
 }
+
+/// An agent's call that connects a cluster whose exec plugin fails gets the message only: what the plugin printed
+/// stays in the window's connection state, out of the tool result, `list_clusters` and the activity log (#256).
+#[cfg(unix)]
+#[tokio::test]
+async fn an_agent_never_gets_what_a_failed_exec_plugin_printed() {
+    let _turn = SERVERS.lock().await;
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("kubeconfig");
+    std::fs::write(
+        &path,
+        "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: https://127.0.0.1:1\n\
+         contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n\
+         users:\n- name: test\n  user:\n    exec:\n      apiVersion: client.authentication.k8s.io/v1\n\
+         \x20     command: sh\n      args: [-c, 'echo PLUGIN-SAID not logged in >&2; exit 1']\n\
+         \x20     interactiveMode: Never\ncurrent-context: test\n",
+    )
+    .unwrap();
+    let (state, _) = state_in(dir.path(), Some(path.into_os_string()));
+    let port = turn_on_free(&state).await;
+    let token = state.mcp.token().unwrap();
+    let session = initialize(port, token.as_str()).await;
+    let cluster = first_cluster(&state);
+    set_access(&state, &cluster, preset(AccessPreset::ReadOnly));
+
+    let result = call_tool(
+        port,
+        token.as_str(),
+        &session,
+        "list_kinds",
+        json!({ "cluster": "test" }),
+    )
+    .await;
+    assert_eq!(result["isError"], true, "{result}");
+    assert!(text_of(&result).contains("exit code 1"), "{result}");
+    assert!(!result.to_string().contains("PLUGIN-SAID"), "{result}");
+    match state.clusters.state(&cluster) {
+        ConnectionState::Error(err) => {
+            assert!(
+                err.plugin_output
+                    .unwrap()
+                    .contains("PLUGIN-SAID not logged in")
+            );
+        }
+        other => panic!("expected an error state, got {other:?}"),
+    }
+    let listed = call_tool(port, token.as_str(), &session, "list_clusters", json!({})).await;
+    assert!(!listed.to_string().contains("PLUGIN-SAID"), "{listed}");
+    let journal = serde_json::to_string(&state.mcp.context().audit.list(Some(&cluster))).unwrap();
+    assert!(journal.contains("authPlugin"), "{journal}");
+    assert!(!journal.contains("PLUGIN-SAID"), "{journal}");
+    state.close_all();
+}

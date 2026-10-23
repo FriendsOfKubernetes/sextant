@@ -170,6 +170,13 @@
     "notExecutable": "로그인 프로그램 {{command}}을(를) 실행할 수 없습니다. 실행 파일이 아닙니다.",
     "badge": "로그인 프로그램을 찾을 수 없거나 실행할 수 없음",
     "hintElsewhere": "kubeconfig가 다른 컴퓨터나 WSL에서 생성되었을 수 있습니다. 이 컴퓨터에서 다시 생성하거나, exec 명령을 도구 이름만(클라우드 CLI, 예: yc, aws, gcloud, az, kubelogin)으로 설정하고 도구가 PATH에 있는지 확인하세요.",
-    "hintRestart": "Sextant나 데스크톱 세션이 시작된 후 설치한 도구는 Sextant를 다시 시작해야 Sextant의 PATH에 들어갑니다. Windows에서는 먼저 로그아웃했다가 다시 로그인하세요."
+    "hintRestart": "Sextant나 데스크톱 세션이 시작된 후 설치한 도구는 Sextant를 다시 시작해야 Sextant의 PATH에 들어갑니다. Windows에서는 먼저 로그아웃했다가 다시 로그인하세요.",
+    "loginHint": "로그인 프로그램은 대개 로그인하지 않았거나 세션이 만료되어 실패합니다. 터미널에서 실행하여 로그인한 다음(예: yc init, aws sso login, gcloud auth login, az login 또는 kubelogin) 다시 시도하세요.",
+    "output": {
+      "title": "로그인 프로그램이 출력한 내용(비밀 값은 가림)",
+      "copy": "출력 복사",
+      "copied": "복사했습니다.",
+      "copyFailed": "복사하지 못했습니다."
+    }
   }
 }
