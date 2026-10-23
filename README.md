@@ -147,7 +147,7 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.20](https://github.com/FriendsOfKubernetes/sextant/milestone/24) | Ingress and events *(released)* | Traefik and Contour views with traffic diagnosis, Knative Eventing, Strimzi connectors and their failing tasks, Caretta as a traffic graph source |
 | [0.21](https://github.com/FriendsOfKubernetes/sextant/milestone/25) | GitOps actions and policies *(released)* | Argo Rollouts pause/resume, Argo Workflows suspend/resume/stop, network policy coverage, Sealed Secrets, Reflector mirrors |
 | [0.22](https://github.com/FriendsOfKubernetes/sextant/milestone/26) | Capacity and clusters *(released)* | Vertical Pod Autoscaler recommendations beside right-sizing, Cluster API |
-| [0.23](https://github.com/FriendsOfKubernetes/sextant/milestone/27) | GPU and AI/ML | Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe |
+| [0.23](https://github.com/FriendsOfKubernetes/sextant/milestone/27) | GPU and AI/ML *(released)* | Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
 a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
