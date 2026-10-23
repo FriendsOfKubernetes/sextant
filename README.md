@@ -148,6 +148,10 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.21](https://github.com/FriendsOfKubernetes/sextant/milestone/25) | GitOps actions and policies *(released)* | Argo Rollouts pause/resume, Argo Workflows suspend/resume/stop, network policy coverage, Sealed Secrets, Reflector mirrors |
 | [0.22](https://github.com/FriendsOfKubernetes/sextant/milestone/26) | Capacity and clusters *(released)* | Vertical Pod Autoscaler recommendations beside right-sizing, Cluster API |
 | [0.23](https://github.com/FriendsOfKubernetes/sextant/milestone/27) | GPU and AI/ML *(released)* | Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe |
+| [0.24](https://github.com/FriendsOfKubernetes/sextant/milestone/29) | Alerts and logs | Alertmanager alerts on the objects they name, logs of gone pods from Loki, links to Grafana dashboards and traces |
+| [0.25](https://github.com/FriendsOfKubernetes/sextant/milestone/30) | OpenShift and platforms | OpenShift Routes, DeploymentConfigs, Builds and ImageStreams, Operator Lifecycle Manager, vcluster, k3s and RKE2 |
+| [0.26](https://github.com/FriendsOfKubernetes/sextant/milestone/31) | Extensions ecosystem | A catalog of extensions with signed publishers, extensions with a backend part |
+| [0.27](https://github.com/FriendsOfKubernetes/sextant/milestone/28) | Stability and memory | Lower WebView memory on big clusters, hardened extension responses, measured against Freelens |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
 a mobile app ([#17](https://github.com/FriendsOfKubernetes/sextant/issues/17)).
