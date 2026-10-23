@@ -141,7 +141,9 @@
     "healthCheck": {
       "blocked": "La remediación está bloqueada: hay demasiadas máquinas no sanas ({{healthy}} sanas de {{expected}}).",
       "remediating": "Algunas máquinas no están sanas ({{healthy}} sanas de {{expected}}) y se están remediando."
-    }
+    },
+    "clusterPaused": "Su Cluster {{name}} está en pausa: Cluster API no cambia nada aquí hasta que se reanude, así que este estado puede estar desactualizado.",
+    "clusterUnread": "No se pudo leer su Cluster {{name}}, y este objeto no indica si está en pausa: si el Cluster está en pausa, este estado puede estar desactualizado."
   },
   "chain": {
     "title": "Máquinas",
@@ -153,6 +155,9 @@
     "more_one": "Y {{count}} máquina más",
     "more_many": "Y {{count}} de máquinas más",
     "more_other": "Y {{count}} máquinas más",
+    "truncated_one": "Aquí solo se lee el primer objeto ({{count}}) de cada tipo: la lista está incompleta.",
+    "truncated_many": "Aquí solo se leen los primeros {{count}} objetos de cada tipo: la lista está incompleta.",
+    "truncated_other": "Aquí solo se leen los primeros {{count}} objetos de cada tipo: la lista está incompleta.",
     "ready": "Listas: {{ready}}",
     "node": "Nodo {{node}}"
   },

@@ -4,6 +4,8 @@
   "titleMany_other": "개체 {{count}}개를 다시 시작할까요?",
   "intro_other": "이 개체 {{count}}개를 이 순서대로 하나씩 다시 시작합니다. 각 요청은 한 번만 보냅니다.",
   "more_other": "…그 밖에 개체 {{count}}개.",
+  "sharedController_other": "이 Pod 중 {{count}}개는 {{controller}}에 속합니다. 연달아 삭제하면 새 Pod가 준비될 때까지 워크로드가 중단될 수 있습니다.",
+  "waitShared": "같은 컨트롤러의 Pod를 하나씩 삭제하고, 각각 새 Pod가 Ready가 된 뒤에 다음으로 진행(각 최대 5분)",
   "step": {
     "rollout": "{{name}}: Pod가 하나씩 교체됩니다(rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts가 Pod를 하나씩 교체합니다(kubectl argo rollouts restart).",
@@ -20,6 +22,7 @@
   "progressPods_other": "{{name}}: Pod {{count}}개 중 {{done}}개를 다시 시작했습니다. 새 Pod가 준비되기를 기다리는 중…",
   "summary": "{{total}}개 중 {{done}}개를 다시 시작했습니다.",
   "summaryStopped": "중지됨: {{total}}개 중 {{done}}개를 다시 시작했고 나머지는 시작하지 않았습니다.",
+  "disconnected": "클러스터 연결이 끊어졌습니다. 재시작은 현재 단계 이후에 멈춥니다.",
   "result": {
     "done": "다시 시작함: {{name}}",
     "failed": "다시 시작하지 못함: {{name}}",
@@ -34,6 +37,7 @@
     "paused": "{{name}}이(가) 일시 중지되어 있어 다시 시작해도 롤아웃되지 않습니다. 먼저 재개하세요.",
     "noPods": "{{name}}에는 다시 시작할 Pod가 없습니다.",
     "notReady": "{{name}}을(를) 대신할 새 Pod가 5분 안에 준비되지 않았습니다. 나머지 Pod는 그대로 두었습니다.",
-    "listTimeout": "5분 안에 ReplicaSet의 Pod 목록을 가져오지 못했습니다."
+    "listTimeout": "5분 안에 ReplicaSet의 Pod 목록을 가져오지 못했습니다.",
+    "earlierNotReady": "삭제하지 않음: {{controller}}의 이전 Pod를 대신하는 새 Pod가 준비되지 않았습니다."
   }
 }

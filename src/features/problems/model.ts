@@ -182,6 +182,11 @@ export interface Detected {
    * so its grace measures the time without progress.
    */
   stamp?: string;
+  /**
+   * The name of the object in the same namespace this one belongs to, for a source judged across another source's
+   * rows (`AcrossDef.from`): a Cluster API Machine's or control plane's Cluster.
+   */
+  belongsTo?: string;
 }
 
 /** A problem as the screen and the notifications see it. */

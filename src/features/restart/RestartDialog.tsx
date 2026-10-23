@@ -2,14 +2,18 @@
 // MAX_LISTED, then a count) and shows the patches as they will be sent; nothing reaches the cluster before "Restart".
 // While it runs, Escape and the backdrop do nothing and "Stop" starts nothing more; the end lists what was restarted,
 // what failed and why, and what was not started. One object restarted without trouble closes the dialog at once.
-import { useState, type ReactNode } from "react";
+// The run lives in `runStore.ts` under the dialog entry's id, so the dialog unmounting (another cluster, "All
+// clusters") neither loses it nor lets a remount start a second one. Pods of one controller selected together get a
+// warning and, by default, are deleted one at a time, each after the new pod is Ready.
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId } from "../../api";
-import { Button, Dialog, ErrorState } from "../../components";
+import { Button, Checkbox, Dialog, ErrorState } from "../../components";
 import { formatList } from "../../i18n/format";
 import { rfc3339Seconds } from "../argo-rollouts/patches";
-import { isArgoRollout, isRolloutKind, MAX_LISTED, objectLabel, type RestartStep } from "./model";
-import { runRestart, type Progress, type RunControl, type StepOutcome } from "./run";
+import { isArgoRollout, isRolloutKind, MAX_LISTED, objectLabel, sharedControllers, type RestartStep } from "./model";
+import type { RunControl, StepOutcome } from "./run";
+import { forgetRestartRun, newRestartRunId, restartRunOf } from "./runStore";
 
 const TEMPLATE_PATCH = (at: string) => ({
   spec: { template: { metadata: { annotations: { "kubectl.kubernetes.io/restartedAt": at } } } },
@@ -55,87 +59,99 @@ export interface RestartDialogProps {
   clusterId: ClusterId;
   steps: RestartStep[];
   close: () => void;
+  /** The dialog entry's id: the run is kept under it across unmounts (one is made when absent). */
+  runId?: string;
   /** Tests: the clock and the replacement timeout of the run. */
   control?: Pick<RunControl, "now" | "replacementTimeoutMs">;
 }
 
-export function RestartDialog({ clusterId, steps, close, control }: RestartDialogProps) {
+export function RestartDialog({ clusterId, steps, close, runId, control }: RestartDialogProps) {
   const { t } = useTranslation();
-  const [phase, setPhase] = useState<"confirm" | "running" | "result">("confirm");
-  const [progress, setProgress] = useState<Progress | null>(null);
-  const [stopRequested, setStopRequested] = useState(false);
-  const [outcomes, setOutcomes] = useState<StepOutcome[]>([]);
-  const [stopFlag] = useState(() => ({ stopped: false }));
+  const [ownId] = useState(newRestartRunId);
+  const run = restartRunOf(runId ?? ownId, clusterId, steps);
+  const { phase, progress, stopRequested, disconnected, outcomes } = useSyncExternalStore(run.subscribe, run.snapshot, run.snapshot);
   const [openedAt] = useState(() => rfc3339Seconds(control?.now?.() ?? new Date()));
+  const shared = sharedControllers(run.steps);
+  const [waitShared, setWaitShared] = useState(true);
+  const runSteps = run.steps;
 
-  const start = async () => {
-    setPhase("running");
-    const result = await runRestart(clusterId, steps, {
-      ...control,
-      stopped: () => stopFlag.stopped,
-      onProgress: setProgress,
+  const closeDialog = () => {
+    forgetRestartRun(run.id);
+    close();
+  };
+  const start = () => {
+    void run.start({ ...control, waitShared: shared.length > 0 && waitShared }, (result) => {
+      if (runSteps.length === 1 && result[0]?.status === "done" && result[0].podsTotal === undefined) closeDialog();
     });
-    if (steps.length === 1 && result[0]?.status === "done" && result[0].podsTotal === undefined) {
-      close();
-      return;
-    }
-    setOutcomes(result);
-    setPhase("result");
-  };
-  const stop = () => {
-    stopFlag.stopped = true;
-    setStopRequested(true);
   };
 
-  const title = titleOf(steps, t);
-  if (phase === "result") return <ResultView title={title} steps={steps} outcomes={outcomes} close={close} />;
+  const title = titleOf(runSteps, t);
+  const disconnectedNote = disconnected ? <p role="alert">{t("restart:disconnected")}</p> : null;
+  if (phase === "result") {
+    return <ResultView title={title} steps={runSteps} outcomes={outcomes} close={closeDialog} note={disconnectedNote} />;
+  }
 
   if (phase === "running") {
-    const step = progress ? steps[progress.index] : undefined;
+    const step = progress ? runSteps[progress.index] : undefined;
     const name = step ? objectLabel(step.target) : "";
     const text =
       progress?.podsTotal !== undefined
         ? t("restart:progressPods", { name, done: progress.podsDone ?? 0, count: progress.podsTotal })
-        : t("restart:progress", { name, current: (progress?.index ?? 0) + 1, total: steps.length });
+        : t("restart:progress", { name, current: (progress?.index ?? 0) + 1, total: runSteps.length });
     return (
       <Dialog
         open
         title={title}
         onClose={() => {}}
         footer={
-          <Button disabled={stopRequested} onClick={stop}>
+          <Button disabled={stopRequested} onClick={run.stop}>
             {stopRequested ? t("restart:stopping") : t("restart:stop")}
           </Button>
         }
       >
         <p role="status">{text}</p>
+        {disconnectedNote}
       </Dialog>
     );
   }
 
-  const { template, argo } = patchKinds(steps);
-  const hidden = steps.length - MAX_LISTED;
+  const { template, argo } = patchKinds(runSteps);
+  const hidden = runSteps.length - MAX_LISTED;
   return (
     <Dialog
       open
       title={title}
-      onClose={close}
+      onClose={closeDialog}
       footer={
         <>
-          <Button onClick={close}>{t("common:actions.cancel")}</Button>
-          <Button variant="primary" disabled={steps.length === 0} onClick={() => void start()}>
+          <Button onClick={closeDialog}>{t("common:actions.cancel")}</Button>
+          <Button variant="primary" disabled={runSteps.length === 0} onClick={start}>
             {t("restart:confirm")}
           </Button>
         </>
       }
     >
-      {steps.length > 1 && <p>{t("restart:intro", { count: steps.length })}</p>}
+      {runSteps.length > 1 && <p>{t("restart:intro", { count: runSteps.length })}</p>}
       <ul className="restart-dialog__steps">
-        {steps.slice(0, MAX_LISTED).map((step) => (
+        {runSteps.slice(0, MAX_LISTED).map((step) => (
           <li key={objectLabel(step.target)}>{stepText(step, t)}</li>
         ))}
       </ul>
       {hidden > 0 && <p>{t("restart:more", { count: hidden })}</p>}
+      {shared.map((c) => (
+        <p key={c.controller.uid} className="restart-dialog__warning">
+          {t("restart:sharedController", {
+            count: c.count,
+            controller: objectLabel({ kind: c.controller.kind, namespace: c.namespace, name: c.controller.name }),
+          })}
+        </p>
+      ))}
+      {shared.length > 0 && (
+        <label className="restart-dialog__choice">
+          <Checkbox checked={waitShared} onChange={(e) => setWaitShared(e.target.checked)} />
+          {t("restart:waitShared")}
+        </label>
+      )}
       {template && <Patch label={t("restart:templatePatch")}>{JSON.stringify(TEMPLATE_PATCH(openedAt))}</Patch>}
       {argo && <Patch label={t("restart:argoPatch")}>{JSON.stringify({ spec: { restartAt: openedAt } })}</Patch>}
     </Dialog>
@@ -156,11 +172,13 @@ function ResultView({
   steps,
   outcomes,
   close,
+  note,
 }: {
   title: string;
-  steps: RestartStep[];
+  steps: readonly RestartStep[];
   outcomes: StepOutcome[];
   close: () => void;
+  note: ReactNode;
 }) {
   const { t } = useTranslation();
   const done = outcomes.filter((o) => o.status === "done").length;
@@ -177,6 +195,7 @@ function ResultView({
       }
     >
       <p>{t(stopped ? "restart:summaryStopped" : "restart:summary", { done, total: steps.length })}</p>
+      {note}
       <ul className="restart-dialog__results">
         {steps.map((step, i) => {
           const outcome = outcomes[i];

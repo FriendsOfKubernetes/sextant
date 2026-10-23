@@ -13,7 +13,7 @@ import { Block, Fields, link, table, type ColumnWrap, type FieldRow } from "../d
 import { StateCell } from "./columns";
 import { COMPONENTS, missingMeaning } from "./components";
 import { useComponents, useNamespaceHpas, useTarget } from "./hooks";
-import { isVpa, minReplicasOf, modeIsDefault, recommenderOf, statusOf, targetOf, updateModeOf, type TargetRef } from "./model";
+import { isVpa, minReplicasOf, modeIsDefault, recommendationsOf, recommenderOf, statusOf, targetOf, updateModeOf, type TargetRef } from "./model";
 import { ChangesTable, ConflictLines, ModeText } from "./ui";
 
 const LABELS = "vpa:fields";
@@ -30,6 +30,7 @@ function StateNote({ vpa }: { vpa: KubeObject }) {
     <>
       {s.message && <p className={s.state === "failed" ? "vpa-message" : "vpa-note"}>{s.message}</p>}
       {hint && <p className="vpa-note">{hint}</p>}
+      {s.noPodsNow && <p className="vpa-note">{t("vpa:hint.noPodsNow")}</p>}
       {s.deprecated && <p className="vpa-note">{t("vpa:hint.deprecated")}</p>}
     </>
   );
@@ -64,7 +65,8 @@ function Components({ clusterId, vpa }: { clusterId: ClusterId; vpa: KubeObject 
   const { t } = useTranslation();
   const { found, error } = useComponents(clusterId);
   const mode = updateModeOf(vpa);
-  const provided = statusOf(vpa).state === "ready";
+  // A recommendation in the status shows a recommender works, whatever the conditions say now.
+  const provided = recommendationsOf(vpa).length > 0 || statusOf(vpa).state === "ready";
   if (!found)
     return (
       <Block title={t("vpa:components.title")}>

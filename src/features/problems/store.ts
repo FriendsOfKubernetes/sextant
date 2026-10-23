@@ -99,6 +99,8 @@ interface Entry {
   attempts: number;
   /** A capped source (`SourceDef.maxObjects`) holds fewer objects than match: the last `capped` total said so. */
   capped?: boolean;
+  /** `SourceDef.across.from`: the key of the other source whose rows judge this one's problems, and its release. */
+  acrossFrom?: { key: string; release: () => void };
 }
 
 const entries = new Map<string, Entry>();
@@ -119,6 +121,7 @@ function dropCluster(clusterId: ClusterId): void {
     if (entry.retry) clearTimeout(entry.retry);
     entries.delete(key);
     entry.stop();
+    entry.acrossFrom?.release();
   }
   epochs.set(clusterId, epochOf(clusterId) + 1);
   changed();
@@ -156,11 +159,17 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   let problems: Problem[] = [];
   for (const list of entry.byUid.values()) problems.push(...list);
   const across = entry.state.def.across;
-  const rows = across ? entry.taps.get(across.tap.id)?.state : undefined;
+  const tapsOf = entry.acrossFrom ? entries.get(entry.acrossFrom.key)?.taps : entry.taps;
+  const rows = across ? tapsOf?.get(across.tap.id)?.state : undefined;
   // Only rows read in full may hide a problem: while they load (or after an error) every problem stays.
   if (across && rows?.status === "ready") problems = across.keep(problems, rows.rows);
   entry.state = { ...entry.state, ...patch, problems };
   changed();
+}
+
+/** Publishes again the sources judged across the rows of the source `key` (`AcrossDef.from`) after they changed. */
+function publishDependents(key: string): void {
+  for (const entry of entries.values()) if (entry.acrossFrom?.key === key) publish(entry);
 }
 
 /**
@@ -329,6 +338,7 @@ function scheduleRetry(key: string, entry: Entry, error: ApiError): void {
 function failed(key: string, entry: Entry, error: ApiError): void {
   for (const tap of entry.taps.values()) tap.state = { ...tap.state, status: "error", error };
   publish(entry, { status: "error", error });
+  publishDependents(key);
   scheduleRetry(key, entry, error);
 }
 
@@ -380,8 +390,9 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
           const patch = applyUpdate(created, update, clock());
           if (patch) publish(created, patch);
           // The rows decide which problems a source judged across its objects shows.
-          else if (tapped && def.across) publish(created);
+          else if (tapped && def.across && !def.across.from) publish(created);
           else if (tapped) changed();
+          if (tapped) publishDependents(key);
         },
         onStartError: (err) => {
           if (entries.get(key) !== created) return;
@@ -393,8 +404,14 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     if (def.external) created.open = () => (created.stop = openProvided(key, clusterId, created));
     // A source judged across its objects keeps its own tap for as long as it lives (a view's tap of the same id
     // shares it).
-    if (def.across) created.taps.set(def.across.tap.id, { tap: def.across.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
+    if (def.across && !def.across.from) {
+      created.taps.set(def.across.tap.id, { tap: def.across.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
+    }
     created.open();
+    // A source judged across another source's rows holds that source with a tap for as long as it lives.
+    if (def.across?.from) {
+      created.acrossFrom = { key: sourceKey(clusterId, def.across.from), release: acquireRows(clusterId, def.across.from, def.across.tap) };
+    }
     entry = created;
     changed();
   }
@@ -466,6 +483,7 @@ function close(key: string, entry: Entry): void {
   entries.delete(key);
   if (entry.retry) clearTimeout(entry.retry);
   entry.stop();
+  entry.acrossFrom?.release();
   changed();
 }
 

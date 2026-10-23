@@ -13,6 +13,11 @@
   "more_few": "…i jeszcze {{count}} obiekty.",
   "more_many": "…i jeszcze {{count}} obiektów.",
   "more_other": "…i jeszcze {{count}} obiektu.",
+  "sharedController_one": "{{count}} z tych Podów należy do {{controller}}. Usuwane jeden po drugim mogą zatrzymać obciążenie, dopóki nowe Pody nie będą gotowe.",
+  "sharedController_few": "{{count}} z tych Podów należą do {{controller}}. Usuwane jeden po drugim mogą zatrzymać obciążenie, dopóki nowe Pody nie będą gotowe.",
+  "sharedController_many": "{{count}} z tych Podów należy do {{controller}}. Usuwane jeden po drugim mogą zatrzymać obciążenie, dopóki nowe Pody nie będą gotowe.",
+  "sharedController_other": "{{count}} z tych Podów należy do {{controller}}. Usuwane jeden po drugim mogą zatrzymać obciążenie, dopóki nowe Pody nie będą gotowe.",
+  "waitShared": "Usuwaj Pody jednego kontrolera pojedynczo, każdy dopiero gdy nowy Pod będzie Ready (do 5 minut na każdy)",
   "step": {
     "rollout": "{{name}}: jego Pody są zastępowane po kolei (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts zastępuje jego Pody po kolei (kubectl argo rollouts restart).",
@@ -32,6 +37,7 @@
   "progressPods_other": "{{name}}: uruchomiono ponownie {{done}} z {{count}} Poda, oczekiwanie na gotowość nowego Poda…",
   "summary": "Uruchomiono ponownie {{done}} z {{total}}.",
   "summaryStopped": "Zatrzymano: uruchomiono ponownie {{done}} z {{total}}; pozostałych nie rozpoczęto.",
+  "disconnected": "Klaster się rozłączył: restart zatrzyma się po bieżącym kroku.",
   "result": {
     "done": "Uruchomiono ponownie: {{name}}",
     "failed": "Nie uruchomiono ponownie: {{name}}",
@@ -49,6 +55,7 @@
     "paused": "{{name}} jest wstrzymany: ponowne uruchomienie nie zostałoby wdrożone. Najpierw go wznów.",
     "noPods": "{{name}} nie ma Podów do ponownego uruchomienia.",
     "notReady": "Nowy Pod w miejsce {{name}} nie był gotowy w ciągu 5 minut. Pozostałe Pody zostały bez zmian.",
-    "listTimeout": "Nie udało się pobrać listy Podów ReplicaSet w ciągu 5 minut."
+    "listTimeout": "Nie udało się pobrać listy Podów ReplicaSet w ciągu 5 minut.",
+    "earlierNotReady": "Nie usunięto: nowy Pod w miejsce wcześniejszego Poda {{controller}} nie stał się gotowy."
   }
 }

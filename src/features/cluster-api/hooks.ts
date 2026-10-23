@@ -4,16 +4,22 @@
 //     object shown changes; a kind the cluster does not serve is not asked for;
 //   - the Machines, MachineSets and MachineDeployments of one Cluster or of one owner: watches of served kinds only,
 //     in the one namespace of the object shown, selected by label on the API server, through the shared watch
-//     registry (`useWatch`), closed when the details close.
+//     registry (`useWatch`), each keeping at most `MAX_CHAIN_OBJECTS` (the views say when a list is cut), closed when
+//     the details close.
 import { useEffect, useState } from "react";
 import { api, toApiError, useWatch, type ApiError, type ClusterId, type KindRef, type KubeObject, type ObjectRef } from "../../api";
+import { isCapped } from "../../api/watchState";
 import { findKind, useClusterKinds } from "../../resources";
+import { MAX_SOURCE_OBJECTS } from "../problems/sources";
 import type { CapiRef } from "./model";
 
 export const MAX_READS = 50;
 export const CONCURRENCY = 4;
 /** Machines (and owners) listed in one details view. */
 export const MAX_LISTED = 50;
+/** Objects one chain watch keeps at most (a management cluster can hold thousands of Machines). */
+export const MAX_CHAIN_OBJECTS = MAX_SOURCE_OBJECTS;
+const CHAIN_WATCH_OPTIONS = { progressive: false, maxObjects: MAX_CHAIN_OBJECTS } as const;
 
 export type Fetched = { obj: KubeObject } | { error: ApiError } | { notServed: true };
 
@@ -84,13 +90,20 @@ export interface Listed {
   loading: boolean;
   /** The kind is not served, or the list could not be read. */
   unavailable: boolean;
+  /** More objects match than the watch keeps (`MAX_CHAIN_OBJECTS`): the list is incomplete. */
+  truncated: boolean;
 }
 
 /** Objects of a served Cluster API kind in one namespace, selected by `labelSelector`; nothing without a selector. */
 export function useListed(clusterId: ClusterId, kind: KindRef, namespace: string | null, labelSelector: string | undefined): Listed {
   const served = useServed(clusterId, kind);
   const spec = served && namespace && labelSelector ? { kind: served, namespaces: [namespace], labelSelector, fieldSelector: null } : null;
-  const state = useWatch(clusterId, spec);
+  const state = useWatch(clusterId, spec, CHAIN_WATCH_OPTIONS);
   const items = [...state.items.values()].sort((a, b) => (a.metadata?.name ?? "").localeCompare(b.metadata?.name ?? ""));
-  return { items, loading: served === undefined || (spec !== null && state.status === "loading"), unavailable: served === null || Boolean(state.error) };
+  return {
+    items,
+    loading: served === undefined || (spec !== null && state.status === "loading"),
+    unavailable: served === null || Boolean(state.error),
+    truncated: spec !== null && isCapped(state),
+  };
 }

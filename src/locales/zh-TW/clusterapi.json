@@ -139,7 +139,9 @@
     "healthCheck": {
       "blocked": "修復已封鎖：不健康的機器過多（{{expected}} 台中 {{healthy}} 台健康）。",
       "remediating": "部分機器不健康（{{expected}} 台中 {{healthy}} 台健康），正在修復。"
-    }
+    },
+    "clusterPaused": "它所屬的 Cluster {{name}} 已暫停：恢復之前 Cluster API 不會在此做任何變更，因此此狀態可能已過時。",
+    "clusterUnread": "無法讀取它所屬的 Cluster {{name}}，而此物件本身沒有說明是否已暫停：如果該 Cluster 已暫停，此狀態可能已過時。"
   },
   "chain": {
     "title": "機器",
@@ -149,6 +151,7 @@
     "controlPlane": "控制平面",
     "others": "其他機器",
     "more_other": "還有 {{count}} 台機器",
+    "truncated_other": "此處每種類型只讀取前 {{count}} 個物件：清單不完整。",
     "ready": "就緒：{{ready}}",
     "node": "節點 {{node}}"
   },

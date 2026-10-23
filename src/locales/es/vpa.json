@@ -32,6 +32,7 @@
     "fetchingHistory": "El Recommender aún está cargando el historial: la recomendación todavía puede cambiar.",
     "configUnsupported": "El Recommender no puede usar este VPA: su destino no se puede leer, o no es el controlador de nivel superior (apunte el VPA al Deployment, no a su ReplicaSet). No da ninguna recomendación.",
     "noPodsMatched": "Ningún pod en ejecución pertenece al destino: no tiene réplicas, o sus pods no se ejecutan. El Recommender necesita pods que medir.",
+    "noPodsNow": "Ahora mismo ningún pod coincide con este VPA (el destino está escalado a cero o entre ejecuciones). El Recommender conserva su última recomendación, y los próximos pods la reciben.",
     "notProvided": "El Recommender aún no ha generado una recomendación.",
     "noStatus": "Aún no hay estado: el Recommender no ha revisado este VPA, o no hay ningún Recommender en ejecución para él.",
     "deprecated": "Según el Recommender, esta configuración está obsoleta y dejará de ser compatible."
@@ -93,7 +94,8 @@
   },
   "conflict": {
     "line": "El HPA {{hpa}} escala este workload según {{resources}}, que este VPA modifica en modo {{mode}}: los dos se contrarrestan.",
-    "why": "Cuando el VPA sube una solicitud, la utilización que ve el HPA baja y elimina réplicas; los pods restantes consumen más, y así sucesivamente. Escale el HPA con otra métrica, deje el VPA en Off o Initial, o deje que el VPA controle solo el otro recurso."
+    "why": "Cuando el VPA sube una solicitud, la utilización que ve el HPA baja y elimina réplicas; los pods restantes consumen más, y así sucesivamente. Escale el HPA con otra métrica, deje el VPA en Off o Initial, o deje que el VPA controle solo el otro recurso.",
+    "valueLine": "El HPA {{hpa}} escala esta carga de trabajo según el promedio de {{resources}} por pod (AverageValue), que este VPA cambia en el modo {{mode}}. Una request nueva no mueve ese promedio, así que no chocan directamente, pero ambos reaccionan al mismo consumo: vigila que no se deshagan mutuamente los cambios."
   },
   "components": {
     "title": "Componentes de VPA",

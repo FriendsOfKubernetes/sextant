@@ -19,7 +19,7 @@ import fixtures from "./fixtures/objects.json";
 import "./index";
 import { containerChange, milliOf, proportionalLimit, templateChanges, unitsOf } from "./admission";
 import { componentOf, groupComponents, missingMeaning } from "./components";
-import { conflictsOf, hpaResources } from "./conflicts";
+import { conflictsOf, hpaResources, valueOverlapsOf } from "./conflicts";
 import { containerPoliciesOf, controls, isProblem, recommendationsOf, statusOf, targetOf, updateModeOf, VPA, VPA_CHECKPOINT } from "./model";
 import { CONFLICT_GRACE_MS, hpasIn, MAX_HPA_NAMESPACES, namespacesToCheck, NO_PODS_GRACE_MS, toProblems, UNSUPPORTED_GRACE_MS } from "./provider";
 
@@ -34,6 +34,21 @@ const recommender = fixtures.recommender as KubeObject;
 const chartUpdater = fixtures.chartUpdater as KubeObject;
 
 const MI = 2 ** 20;
+/** `noPods` pointed at a Deployment in mode Recreate. */
+const noPodsDeployment = (() => {
+  const vpa = copy(noPods);
+  (vpa.spec as Record<string, unknown>).targetRef = { apiVersion: "apps/v1", kind: "Deployment", name: "report" };
+  (vpa.spec as Record<string, unknown>).updatePolicy = { updateMode: "Recreate" };
+  return vpa;
+})();
+/** `noPodsDeployment` that still holds the recommendation it had before its pods went away. */
+const noPodsRecommended = (() => {
+  const vpa = copy(noPodsDeployment);
+  const conditions = (vpa.status as { conditions: { type: string; status: string }[] }).conditions;
+  conditions.find((c) => c.type === "RecommendationProvided")!.status = "True";
+  (vpa.status as Record<string, unknown>).recommendation = copy((recreate.status as Record<string, unknown>).recommendation);
+  return vpa;
+})();
 const ready = (items: KubeObject[]): WatchState => ({ status: "ready", items: new Map(items.map((o) => [o.metadata?.uid ?? "", o])) });
 
 describe("the model", () => {
@@ -55,6 +70,17 @@ describe("the model", () => {
     expect(statusOf(none)).toMatchObject({ state: "progressing", reason: "noStatus" });
     expect(isProblem(unsupported)).toBe(true);
     expect(isProblem(recreate)).toBe(false);
+  });
+
+  it("a kept recommendation outranks NoPodsMatched: ready, with a note, and no problem", () => {
+    expect(statusOf(noPodsRecommended)).toMatchObject({ state: "ready", reason: "provided", noPodsNow: true });
+    expect(statusOf(noPodsDeployment)).toMatchObject({ state: "failed", reason: "noPodsMatched" });
+    expect(statusOf(noPodsDeployment).noPodsNow).toBeUndefined();
+    expect(isProblem(noPodsRecommended)).toBe(false);
+    expect(isProblem(noPodsDeployment)).toBe(true);
+    // A CronJob's pods come and go; mode Off changes nothing.
+    expect(isProblem(noPods)).toBe(false);
+    expect(isProblem({ ...noPodsDeployment, spec: { ...(noPodsDeployment.spec as object), updatePolicy: { updateMode: "Off" } } })).toBe(false);
   });
 
   it("finds a container's policy by name, else the wildcard, with the API's defaults", () => {
@@ -129,6 +155,21 @@ describe("conflicts with an HPA", () => {
     expect(hpaResources(custom)).toEqual([]);
   });
 
+  it("only a Utilization target fights; an AverageValue target is a note, not a problem", () => {
+    const averageValue = {
+      ...hpa,
+      spec: { ...(hpa.spec as object), metrics: [{ type: "Resource", resource: { name: "cpu", target: { type: "AverageValue", averageValue: "500m" } } }] },
+    };
+    expect(hpaResources(averageValue)).toEqual([{ resource: "cpu", byValue: true }]);
+    expect(conflictsOf(recreate, [averageValue])).toEqual([]);
+    expect(valueOverlapsOf(recreate, [averageValue])).toEqual([{ hpa: "hamster", resources: ["cpu"] }]);
+    expect(valueOverlapsOf(recreate, [hpa])).toEqual([]);
+    expect(toProblems([recreate], () => [averageValue], new Map(), Date.now())).toEqual([]);
+    // A metric whose target has no type is read by the field it sets.
+    const untyped = { ...hpa, spec: { ...(hpa.spec as object), metrics: [{ type: "Resource", resource: { name: "memory", target: { averageValue: "1Gi" } } }] } };
+    expect(hpaResources(untyped)).toEqual([{ resource: "memory", byValue: true }]);
+  });
+
   it("a VPA that changes running pods fights an HPA on the same resource of the same target", () => {
     expect(conflictsOf(recreate, [hpa])).toEqual([{ hpa: "hamster", resources: ["cpu"] }]);
     // Off and Initial change no running pod.
@@ -184,9 +225,27 @@ describe("the problems", () => {
     });
   });
 
-  it("no pods matched counts after a longer grace", () => {
-    const [p] = toProblems([noPods], () => [], new Map(), now);
-    expect(p).toMatchObject({ reason: "NoPodsMatched", messageKey: "messages.vpaNoPodsMatched", activeAt: Date.parse("2026-10-03T09:00:00Z") + NO_PODS_GRACE_MS });
+  it("no pods matched counts after a longer grace, and notifies only where the target is known to want pods", () => {
+    const [p] = toProblems([noPodsDeployment], () => [], new Map(), now, VPA, () => 2);
+    expect(p).toMatchObject({
+      reason: "NoPodsMatched",
+      messageKey: "messages.vpaNoPodsMatched",
+      notify: true,
+      activeAt: Date.parse("2026-10-03T09:00:00Z") + NO_PODS_GRACE_MS,
+    });
+    // The target's list is not held: listed, not notified.
+    expect(toProblems([noPodsDeployment], () => [], new Map(), now)).toEqual([expect.objectContaining({ reason: "NoPodsMatched", notify: false })]);
+    // Scaled to zero: no problem.
+    expect(toProblems([noPodsDeployment], () => [], new Map(), now, VPA, () => 0)).toEqual([]);
+  });
+
+  it("no pods matched is no problem with a recommendation, in mode Off, or for a Job or CronJob", () => {
+    expect(toProblems([noPodsRecommended], () => [], new Map(), now, VPA, () => 2)).toEqual([]);
+    const offVpa = { ...noPodsDeployment, spec: { ...(noPodsDeployment.spec as object), updatePolicy: { updateMode: "Off" } } };
+    expect(toProblems([offVpa], () => [], new Map(), now, VPA, () => 2)).toEqual([]);
+    expect(toProblems([noPods], () => [], new Map(), now, VPA, () => 2)).toEqual([]);
+    const job = { ...noPodsDeployment, spec: { ...(noPodsDeployment.spec as object), targetRef: { apiVersion: "batch/v1", kind: "Job", name: "once" } } };
+    expect(toProblems([job], () => [], new Map(), now, VPA, () => 2)).toEqual([]);
   });
 
   it("a fight with an HPA counts after its grace from the first sighting; HPAs not read are not judged", () => {
@@ -300,7 +359,8 @@ describe("the Vertical Pod Autoscaler section", () => {
     expect(col("mode").value(recreate)).toBe("Recreate");
     expect(col("status").value(unsupported)).toBe("configUnsupported");
     expect(col("cpu").value(recreate)).toBeCloseTo(0.587);
-    expect(def.problem?.(noPods)).toBe(true);
+    expect(def.problem?.(noPodsDeployment)).toBe(true);
+    expect(def.problem?.(noPods)).toBe(false);
     const cp = getResourceDef(VPA_CHECKPOINT);
     expect(cp.columns.find((c) => c.id === "samples")!.value(checkpoint)).toBe(4521);
     expect(cp.columns.find((c) => c.id === "vpa")!.value(checkpoint)).toBe("hamster-vpa");
@@ -377,6 +437,45 @@ describe("details of a VPA", () => {
     await waitFor(() => expect(view.getAllByText("Not found")).toHaveLength(3));
     expect(view.queryByText(/Recommendations come from the recommender/)).toBeNull();
     expect(await axeViolations(container)).toEqual([]);
+  });
+});
+
+describe("details of a VPA with a recommendation", () => {
+  it("says no pods right now, and never that the recommender is missing", async () => {
+    const container = await openDetails(noPodsRecommended);
+    await waitFor(() => expect(sectionOf("vpa")).not.toBeNull());
+    const view = within(sectionOf("vpa"));
+    expect(view.getAllByText("Recommending")[0]).toHaveClass("rt-status--success");
+    expect(view.getByText(/No pod matches this VPA right now/)).toBeInTheDocument();
+    await answerComponents([]);
+    await waitFor(() => expect(view.getAllByText("Not found")).toHaveLength(3));
+    expect(view.queryByText(/Recommendations come from the recommender/)).toBeNull();
+    expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it("an unsupported VPA that still holds a recommendation does not blame a missing recommender", async () => {
+    const vpa = copy(unsupported);
+    (vpa.status as Record<string, unknown>).recommendation = copy((recreate.status as Record<string, unknown>).recommendation);
+    await openDetails(vpa);
+    await waitFor(() => expect(sectionOf("vpa")).not.toBeNull());
+    const view = within(sectionOf("vpa"));
+    await answerComponents([]);
+    await waitFor(() => expect(view.getAllByText("Not found")).toHaveLength(3));
+    expect(view.queryByText(/Recommendations come from the recommender/)).toBeNull();
+  });
+
+  it("an HPA on an AverageValue is a note, not a danger line", async () => {
+    await openDetails(recreate);
+    await waitFor(() => expect(sectionOf("vpa")).not.toBeNull());
+    const view = within(sectionOf("vpa"));
+    emitSnapshot(wb, await watchOf(wb, "Deployment", (s) => s.fieldSelector === "metadata.name=hamster"), [hamster]);
+    const averageValue = {
+      ...hpa,
+      spec: { ...(hpa.spec as object), metrics: [{ type: "Resource", resource: { name: "cpu", target: { type: "AverageValue", averageValue: "500m" } } }] },
+    };
+    emitSnapshot(wb, await watchOf(wb, "HorizontalPodAutoscaler", (s) => s.namespaces?.join() === "shop"), [averageValue]);
+    await waitFor(() => expect(view.getByText(/HPA hamster scales this workload on the average cpu per pod/)).toHaveClass("vpa-note"));
+    expect(view.queryByText(/the two fight/)).toBeNull();
   });
 });
 

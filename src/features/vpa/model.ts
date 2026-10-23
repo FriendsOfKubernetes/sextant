@@ -49,6 +49,20 @@ export function targetOf(vpa: KubeObject): TargetRef | undefined {
   return { apiVersion, kind, name, group: kindFromApiVersion(apiVersion, kind).group };
 }
 
+/** Job and CronJob targets: their pods come and go by design, so "no pods" is their normal state between runs. */
+export const isBatchTarget = (ref: Pick<TargetRef, "group" | "kind"> | undefined): boolean =>
+  ref !== undefined && ref.group === "batch" && (ref.kind === "Job" || ref.kind === "CronJob");
+
+/** How many pods a target object wants: a DaemonSet's scheduled count, else `spec.replicas` (1 when unset). */
+export function replicasOfTarget(obj: KubeObject): number | undefined {
+  if (obj.kind === "DaemonSet") {
+    const n = get(obj, "status", "desiredNumberScheduled");
+    return typeof n === "number" ? n : undefined;
+  }
+  const n = get(obj, "spec", "replicas");
+  return typeof n === "number" ? n : 1;
+}
+
 /** Whether `ref` names the object `kind`/`name` (the group compared, never the version). */
 export function targets(ref: { kind: string; name: string; group: string } | undefined, kind: Pick<KindRef, "group" | "kind">, name: string): boolean {
   return ref !== undefined && ref.kind === kind.kind && ref.name === name && ref.group === kind.group;
@@ -135,34 +149,47 @@ export interface VpaStatus {
   since?: string;
   /** `ConfigDeprecated` is True. */
   deprecated: boolean;
+  /** A recommendation is there while `NoPodsMatched` is True: no pod right now (scaled to zero, between runs). */
+  noPodsNow?: true;
 }
 
 /**
  * The VPA's state from its conditions, in the order the recommender decides them: a configuration it cannot use
- * (`ConfigUnsupported`; it then also says `NoPodsMatched`, since it selects nothing), no matching pods, a
- * recommendation (with low confidence or while history is still loaded), or none yet.
+ * (`ConfigUnsupported`; it then also says `NoPodsMatched`, since it selects nothing), a recommendation (with low
+ * confidence or while history is still loaded), no matching pods, or none yet. A recommendation outranks
+ * `NoPodsMatched`: the recommender keeps it while the target has no pods (scaled to zero, a Job between runs), and
+ * the admission controller still applies it to the next pods — the VPA is ready, with a note (`noPodsNow`).
  */
 export function statusOf(vpa: KubeObject): VpaStatus {
   const deprecated = isTrue(vpa, "ConfigDeprecated");
   const unsupported = conditionOf(vpa, "ConfigUnsupported");
   if (unsupported?.status === "True") return { state: "failed", reason: "configUnsupported", message: unsupported.message, since: unsupported.since, deprecated };
   const noPods = conditionOf(vpa, "NoPodsMatched");
-  if (noPods?.status === "True") return { state: "failed", reason: "noPodsMatched", message: noPods.message, since: noPods.since, deprecated };
+  const noPodsNow = noPods?.status === "True" ? ({ noPodsNow: true } as const) : {};
   const provided = conditionOf(vpa, "RecommendationProvided");
   if (provided?.status === "True") {
     const reason: VpaReason = isTrue(vpa, "LowConfidence") ? "lowConfidence" : isTrue(vpa, "FetchingHistory") ? "fetchingHistory" : "provided";
-    return { state: "ready", reason, since: provided.since, deprecated };
+    return { state: "ready", reason, since: provided.since, deprecated, ...noPodsNow };
   }
+  // A recommendation without the condition (an older recommender) still counts.
+  const recommended = !provided && recommendationsOf(vpa).length > 0;
+  if (recommended) return { state: "ready", reason: "provided", deprecated, ...noPodsNow };
+  if (noPods?.status === "True") return { state: "failed", reason: "noPodsMatched", message: noPods.message, since: noPods.since, deprecated };
   if (provided) return { state: "progressing", reason: "notProvided", message: provided.message, since: provided.since, deprecated };
-  // A recommendation without conditions (an older recommender) still counts.
-  if (recommendationsOf(vpa).length > 0) return { state: "ready", reason: "provided", deprecated };
   return { state: "progressing", reason: "noStatus", deprecated };
 }
 
 export const STATE_TONE: Record<VpaState, Tone> = { ready: "success", progressing: "warning", failed: "danger" };
 
-/** The "Only problems" filter: a configuration the recommender cannot use, or no pods matched. */
-export const isProblem = (vpa: KubeObject): boolean => statusOf(vpa).state === "failed";
+/**
+ * The "Only problems" filter, as the problems category judges it: a configuration the recommender cannot use, or no
+ * pods matched without a recommendation — not in mode Off and not for a Job or CronJob (no pods between runs).
+ */
+export function isProblem(vpa: KubeObject): boolean {
+  const s = statusOf(vpa);
+  if (s.reason === "noPodsMatched") return updateModeOf(vpa) !== "Off" && !isBatchTarget(targetOf(vpa));
+  return s.state === "failed";
+}
 
 // ---------- Container policies ----------
 

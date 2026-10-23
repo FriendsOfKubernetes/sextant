@@ -10,6 +10,10 @@
   "more_one": "…et {{count}} autre objet.",
   "more_many": "…et {{count}} d'autres objets.",
   "more_other": "…et {{count}} autres objets.",
+  "sharedController_one": "{{count}} de ces pods appartient à {{controller}}. Supprimés l'un après l'autre, ils peuvent rendre le workload indisponible jusqu'à ce que les nouveaux pods soient prêts.",
+  "sharedController_many": "{{count}} de ces pods appartiennent à {{controller}}. Supprimés l'un après l'autre, ils peuvent rendre le workload indisponible jusqu'à ce que les nouveaux pods soient prêts.",
+  "sharedController_other": "{{count}} de ces pods appartiennent à {{controller}}. Supprimés l'un après l'autre, ils peuvent rendre le workload indisponible jusqu'à ce que les nouveaux pods soient prêts.",
+  "waitShared": "Supprimer les pods d'un même contrôleur un par un, chacun après que le nouveau pod est Ready (jusqu'à 5 minutes chacun)",
   "step": {
     "rollout": "{{name}} : ses pods sont remplacés un par un (rollout restart).",
     "argoRollout": "{{name}} : Argo Rollouts remplace ses pods un par un (kubectl argo rollouts restart).",
@@ -28,6 +32,7 @@
   "progressPods_other": "{{name}} : {{done}} pods sur {{count}} redémarrés, attente que le nouveau pod soit prêt…",
   "summary": "{{done}} sur {{total}} redémarrés.",
   "summaryStopped": "Arrêté : {{done}} sur {{total}} redémarrés ; les autres n'ont pas été lancés.",
+  "disconnected": "Le cluster s'est déconnecté : le redémarrage s'arrête après l'étape en cours.",
   "result": {
     "done": "Redémarré : {{name}}",
     "failed": "Non redémarré : {{name}}",
@@ -44,6 +49,7 @@
     "paused": "{{name}} est en pause : un redémarrage ne serait pas déployé. Reprenez-le d'abord.",
     "noPods": "{{name}} n'a aucun pod à redémarrer.",
     "notReady": "Le nouveau pod remplaçant {{name}} n'était pas prêt au bout de 5 minutes. Les autres pods sont laissés tels quels.",
-    "listTimeout": "Les pods du ReplicaSet n'ont pas pu être listés en 5 minutes."
+    "listTimeout": "Les pods du ReplicaSet n'ont pas pu être listés en 5 minutes.",
+    "earlierNotReady": "Non supprimé : le nouveau pod remplaçant un pod précédent de {{controller}} n'était pas prêt."
   }
 }

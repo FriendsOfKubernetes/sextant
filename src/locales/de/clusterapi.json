@@ -140,7 +140,9 @@
     "healthCheck": {
       "blocked": "Die Reparatur ist blockiert: Zu viele Maschinen sind ungesund ({{healthy}} von {{expected}} gesund).",
       "remediating": "Einige Maschinen sind ungesund ({{healthy}} von {{expected}} gesund) und werden repariert."
-    }
+    },
+    "clusterPaused": "Sein Cluster {{name}} ist pausiert: Cluster API ändert hier nichts, bis er fortgesetzt wird, daher kann dieser Zustand veraltet sein.",
+    "clusterUnread": "Sein Cluster {{name}} konnte nicht gelesen werden, und dieses Objekt sagt nicht, ob er pausiert ist: Ist der Cluster pausiert, kann dieser Zustand veraltet sein."
   },
   "chain": {
     "title": "Maschinen",
@@ -151,6 +153,8 @@
     "others": "Andere Maschinen",
     "more_one": "Und {{count}} weitere Maschine",
     "more_other": "Und {{count}} weitere Maschinen",
+    "truncated_one": "Hier wird nur das erste {{count}} Objekt jeder Art gelesen: Die Liste ist unvollständig.",
+    "truncated_other": "Hier werden nur die ersten {{count}} Objekte jeder Art gelesen: Die Liste ist unvollständig.",
     "ready": "Bereit: {{ready}}",
     "node": "Knoten {{node}}"
   },

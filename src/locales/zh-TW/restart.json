@@ -4,6 +4,8 @@
   "titleMany_other": "重新啟動 {{count}} 個物件？",
   "intro_other": "這 {{count}} 個物件會依此順序逐一重新啟動。每個請求只傳送一次。",
   "more_other": "……以及另外 {{count}} 個物件。",
+  "sharedController_other": "其中 {{count}} 個 Pod 屬於 {{controller}}。如果接連刪除，在新 Pod 就緒之前，工作負載可能會中斷。",
+  "waitShared": "逐一刪除同一控制器的 Pod，每個都等新 Pod 變為 Ready 後再刪下一個（每個最多 5 分鐘）",
   "step": {
     "rollout": "{{name}}：其 Pod 會逐一替換（rollout restart）。",
     "argoRollout": "{{name}}：Argo Rollouts 會逐一替換其 Pod（kubectl argo rollouts restart）。",
@@ -20,6 +22,7 @@
   "progressPods_other": "{{name}}：已重新啟動 {{done}}/{{count}} 個 Pod，正在等待新 Pod 就緒……",
   "summary": "已重新啟動 {{done}}/{{total}}。",
   "summaryStopped": "已停止：已重新啟動 {{done}}/{{total}}，其餘未開始。",
+  "disconnected": "叢集已中斷連線：重新啟動將在目前步驟之後停止。",
   "result": {
     "done": "已重新啟動：{{name}}",
     "failed": "未重新啟動：{{name}}",
@@ -34,6 +37,7 @@
     "paused": "{{name}} 已暫停：重新啟動不會推出。請先恢復它。",
     "noPods": "{{name}} 沒有可重新啟動的 Pod。",
     "notReady": "取代 {{name}} 的新 Pod 在 5 分鐘內未就緒。其餘 Pod 維持原狀。",
-    "listTimeout": "無法在 5 分鐘內列出該 ReplicaSet 的 Pod。"
+    "listTimeout": "無法在 5 分鐘內列出該 ReplicaSet 的 Pod。",
+    "earlierNotReady": "未刪除：取代 {{controller}} 先前某個 Pod 的新 Pod 未就緒。"
   }
 }

@@ -7,6 +7,9 @@
   "intro_other": "Diese {{count}} Objekte werden nacheinander in dieser Reihenfolge neu gestartet. Jede Anfrage wird einmal gesendet.",
   "more_one": "…und {{count}} weiteres Objekt.",
   "more_other": "…und {{count}} weitere Objekte.",
+  "sharedController_one": "{{count}} dieser Pods gehört zu {{controller}}. Direkt nacheinander gelöscht, können sie den Workload lahmlegen, bis die neuen Pods bereit sind.",
+  "sharedController_other": "{{count}} dieser Pods gehören zu {{controller}}. Direkt nacheinander gelöscht, können sie den Workload lahmlegen, bis die neuen Pods bereit sind.",
+  "waitShared": "Die Pods eines Controllers einzeln löschen, jeweils erst wenn der neue Pod Ready ist (bis zu 5 Minuten je Pod)",
   "step": {
     "rollout": "{{name}}: seine Pods werden nacheinander ersetzt (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts ersetzt seine Pods nacheinander (kubectl argo rollouts restart).",
@@ -24,6 +27,7 @@
   "progressPods_other": "{{name}}: {{done}} von {{count}} Pods neu gestartet, warte, bis der neue Pod bereit ist…",
   "summary": "{{done}} von {{total}} neu gestartet.",
   "summaryStopped": "Angehalten: {{done}} von {{total}} neu gestartet; die übrigen wurden nicht begonnen.",
+  "disconnected": "Die Verbindung zum Cluster ist getrennt: Der Neustart hält nach dem aktuellen Schritt an.",
   "result": {
     "done": "Neu gestartet: {{name}}",
     "failed": "Nicht neu gestartet: {{name}}",
@@ -39,6 +43,7 @@
     "paused": "{{name}} ist pausiert: ein Neustart würde nicht ausgerollt. Setzen Sie es zuerst fort.",
     "noPods": "{{name}} hat keine Pods zum Neustarten.",
     "notReady": "Der neue Pod anstelle von {{name}} war nach 5 Minuten nicht bereit. Die übrigen Pods bleiben unverändert.",
-    "listTimeout": "Die Pods des ReplicaSet konnten nicht innerhalb von 5 Minuten aufgelistet werden."
+    "listTimeout": "Die Pods des ReplicaSet konnten nicht innerhalb von 5 Minuten aufgelistet werden.",
+    "earlierNotReady": "Nicht gelöscht: Der neue Pod anstelle eines früheren Pods von {{controller}} war nicht bereit."
   }
 }

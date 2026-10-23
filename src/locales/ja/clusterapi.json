@@ -139,7 +139,9 @@
     "healthCheck": {
       "blocked": "修復がブロックされています。異常なマシンが多すぎます ({{expected}} 台中 {{healthy}} 台が正常)。",
       "remediating": "一部のマシンが異常で ({{expected}} 台中 {{healthy}} 台が正常)、修復中です。"
-    }
+    },
+    "clusterPaused": "所属する Cluster {{name}} は一時停止中です。再開するまで Cluster API はここを変更しないため、この状態は古い可能性があります。",
+    "clusterUnread": "所属する Cluster {{name}} を読み込めず、このオブジェクト自体も一時停止中かどうかを示していません。Cluster が一時停止中なら、この状態は古い可能性があります。"
   },
   "chain": {
     "title": "マシン",
@@ -149,6 +151,7 @@
     "controlPlane": "コントロールプレーン",
     "others": "その他のマシン",
     "more_other": "ほかに {{count}} 台のマシン",
+    "truncated_other": "ここでは種類ごとに最初の {{count}} 個のオブジェクトだけを読み込みます。一覧は不完全です。",
     "ready": "準備完了: {{ready}}",
     "node": "ノード {{node}}"
   },

@@ -32,6 +32,7 @@
     "fetchingHistory": "Il Recommender sta ancora caricando la cronologia: la raccomandazione può ancora cambiare.",
     "configUnsupported": "Il Recommender non può usare questo VPA: la sua destinazione non è leggibile, oppure non è il controller di livello più alto (punta il VPA al Deployment, non al suo ReplicaSet). Non fornisce alcuna raccomandazione.",
     "noPodsMatched": "Nessun pod in esecuzione appartiene alla destinazione: non ha repliche, oppure i suoi pod non sono in esecuzione. Il Recommender ha bisogno di pod da misurare.",
+    "noPodsNow": "Al momento nessun pod corrisponde a questo VPA (il target è scalato a zero o è tra due esecuzioni). Il Recommender conserva l'ultima raccomandazione, e i prossimi pod la ricevono.",
     "notProvided": "Il Recommender non ha ancora prodotto una raccomandazione.",
     "noStatus": "Ancora nessuno stato: il Recommender non ha esaminato questo VPA, oppure nessun Recommender è in esecuzione per esso.",
     "deprecated": "Secondo il Recommender questa configurazione è deprecata e smetterà di essere supportata."
@@ -93,7 +94,8 @@
   },
   "conflict": {
     "line": "L'HPA {{hpa}} scala questo workload in base a {{resources}}, che questo VPA modifica in modalità {{mode}}: i due si contrastano.",
-    "why": "Quando il VPA alza una richiesta, l'utilizzo visto dall'HPA scende ed esso rimuove repliche; i pod rimanenti consumano di più, e così via. Scala l'HPA su un'altra metrica, lascia il VPA in Off o Initial, oppure lascia che il VPA controlli solo l'altra risorsa."
+    "why": "Quando il VPA alza una richiesta, l'utilizzo visto dall'HPA scende ed esso rimuove repliche; i pod rimanenti consumano di più, e così via. Scala l'HPA su un'altra metrica, lascia il VPA in Off o Initial, oppure lascia che il VPA controlli solo l'altra risorsa.",
+    "valueLine": "L'HPA {{hpa}} scala questo workload in base alla media di {{resources}} per pod (AverageValue), che questo VPA modifica in modalità {{mode}}. Una nuova request non sposta quella media, quindi i due non si contrastano direttamente, ma reagiscono allo stesso consumo: controlla che non si annullino a vicenda."
   },
   "components": {
     "title": "Componenti VPA",

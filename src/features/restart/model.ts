@@ -173,6 +173,31 @@ export function ownedPods(pods: Iterable<KubeObject>, rsUid: string): KubeObject
   return result.sort((a, b) => (a.metadata?.name ?? "").localeCompare(b.metadata?.name ?? ""));
 }
 
+/** A controller of two or more of the pods to restart: deleted back to back, they may take its workload down. */
+export interface SharedController {
+  controller: Owner;
+  namespace: string | null;
+  /** How many of the steps delete one of its pods. */
+  count: number;
+}
+
+/** The controllers that two or more `pod` steps of `steps` share, in the order they first appear. */
+export function sharedControllers(steps: readonly RestartStep[]): SharedController[] {
+  const byUid = new Map<string, SharedController>();
+  for (const step of steps) {
+    if (step.type !== "pod" || !step.controller.uid) continue;
+    const entry = byUid.get(step.controller.uid);
+    if (entry) entry.count++;
+    else byUid.set(step.controller.uid, { controller: step.controller, namespace: step.target.namespace ?? null, count: 1 });
+  }
+  return [...byUid.values()].filter((c) => c.count > 1);
+}
+
+/** Pods `restartPods` may delete: owned by the ReplicaSet and neither Sextant's own nor a static pod's mirror. */
+export function deletablePods(pods: Iterable<KubeObject>, rsUid: string): KubeObject[] {
+  return ownedPods(pods, rsUid).filter((pod) => !isSextantPod(pod) && !isMirrorPod(pod));
+}
+
 /** "Deployment demo/web": a kind and a name as data, for the sentences that name objects. */
 export function objectLabel(r: ObjectRef): string {
   return `${r.kind.kind} ${r.namespace ? `${r.namespace}/${r.name}` : r.name}`;

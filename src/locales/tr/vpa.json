@@ -31,6 +31,7 @@
     "fetchingHistory": "Recommender geçmişi hâlâ yüklüyor: öneri hâlâ değişebilir.",
     "configUnsupported": "Recommender bu VPA'yı kullanamıyor: hedefi okunamıyor ya da hedef en üstteki denetleyici değil (VPA'yı ReplicaSet'e değil, Deployment'a yöneltin). Öneri vermiyor.",
     "noPodsMatched": "Hedefe ait çalışan pod yok: replikası yok ya da pod'ları çalışmıyor. Recommender'ın ölçüm için pod'lara ihtiyacı var.",
+    "noPodsNow": "Şu anda bu VPA ile eşleşen Pod yok (hedef sıfıra ölçeklenmiş ya da iki çalıştırma arasında). Recommender son önerisini korur ve sonraki Pod'lar onu alır.",
     "notProvided": "Recommender henüz bir öneri üretmedi.",
     "noStatus": "Henüz durum yok: recommender bu VPA'ya bakmadı ya da onun için çalışan bir recommender yok.",
     "deprecated": "Recommender bu yapılandırmanın kullanımdan kaldırıldığını ve desteğinin sona ereceğini bildiriyor."
@@ -92,7 +93,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}} bu iş yükünü {{resources}} üzerinden ölçeklendiriyor, bu VPA ise bunları {{mode}} modunda değiştiriyor: ikisi çekişiyor.",
-    "why": "VPA bir isteği artırdığında HPA'nın gördüğü kullanım düşer ve HPA replikaları kaldırır; kalan pod'lar daha fazla kullanır ve bu böyle sürer. HPA'yı başka bir metrikle ölçeklendirin, VPA'yı Off ya da Initial modunda bırakın veya VPA'nın yalnızca diğer kaynağı yönetmesine izin verin."
+    "why": "VPA bir isteği artırdığında HPA'nın gördüğü kullanım düşer ve HPA replikaları kaldırır; kalan pod'lar daha fazla kullanır ve bu böyle sürer. HPA'yı başka bir metrikle ölçeklendirin, VPA'yı Off ya da Initial modunda bırakın veya VPA'nın yalnızca diğer kaynağı yönetmesine izin verin.",
+    "valueLine": "HPA {{hpa}}, bu iş yükünü Pod başına ortalama {{resources}} (AverageValue) üzerinden ölçeklendiriyor; bu VPA ise {{mode}} modunda bunları değiştiriyor. Yeni bir request bu ortalamayı değiştirmez, dolayısıyla ikisi doğrudan çakışmaz, ancak ikisi de aynı kullanıma tepki verir: birbirlerinin yaptığını sürekli geri almadıklarından emin olun."
   },
   "components": {
     "title": "VPA bileşenleri",

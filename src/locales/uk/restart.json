@@ -13,6 +13,11 @@
   "more_few": "…і ще {{count}} об'єкти.",
   "more_many": "…і ще {{count}} об'єктів.",
   "more_other": "…і ще {{count}} об'єкта.",
+  "sharedController_one": "{{count}} з цих Pod належить {{controller}}. Видалені поспіль, вони можуть зупинити робоче навантаження, доки нові Pod не будуть готові.",
+  "sharedController_few": "{{count}} з цих Pod належать {{controller}}. Видалені поспіль, вони можуть зупинити робоче навантаження, доки нові Pod не будуть готові.",
+  "sharedController_many": "{{count}} з цих Pod належать {{controller}}. Видалені поспіль, вони можуть зупинити робоче навантаження, доки нові Pod не будуть готові.",
+  "sharedController_other": "{{count}} з цих Pod належать {{controller}}. Видалені поспіль, вони можуть зупинити робоче навантаження, доки нові Pod не будуть готові.",
+  "waitShared": "Видаляти Pod одного контролера по одному, кожен — після того як новий Pod стане Ready (до 5 хвилин на кожен)",
   "step": {
     "rollout": "{{name}}: його Pod замінюються по одному (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts замінює його Pod по одному (kubectl argo rollouts restart).",
@@ -32,6 +37,7 @@
   "progressPods_other": "{{name}}: перезапущено {{done}} з {{count}} Pod, чекаємо готовності нового Pod…",
   "summary": "Перезапущено: {{done}} з {{total}}.",
   "summaryStopped": "Зупинено: перезапущено {{done}} з {{total}}, решту не розпочато.",
+  "disconnected": "Кластер відключився: перезапуск зупиниться після поточного кроку.",
   "result": {
     "done": "Перезапущено: {{name}}",
     "failed": "Не перезапущено: {{name}}",
@@ -49,6 +55,7 @@
     "paused": "{{name}} призупинено: перезапуск не буде розгорнуто. Спершу відновіть його.",
     "noPods": "{{name}} не має Pod для перезапуску.",
     "notReady": "Новий Pod замість {{name}} не став готовим за 5 хвилин. Решту Pod залишено як є.",
-    "listTimeout": "Не вдалося отримати список Pod ReplicaSet за 5 хвилин."
+    "listTimeout": "Не вдалося отримати список Pod ReplicaSet за 5 хвилин.",
+    "earlierNotReady": "Не видалено: новий Pod замість попереднього Pod {{controller}} не став готовим."
   }
 }

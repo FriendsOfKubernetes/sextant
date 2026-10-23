@@ -106,13 +106,191 @@ fn the_exec_configs_own_values_are_masked_where_they_appear() {
          env:\n  - name: VAULT_ADDR\n    value: ENV-VALUE-123\n  - name: X\n    value: \"1\"\n",
     )
     .unwrap();
-    let secrets = ExecSecrets::of(&exec);
+    let secrets = ExecSecrets::collect(&exec, []);
     assert_eq!(format!("{secrets:?}"), "ExecSecrets(<3 hidden>)");
     let text = "using ENV-VALUE-123 and team-prod; ARG-SECRET rejected; exit 1 after get";
     assert_eq!(
         masked_stderr(text.as_bytes(), &secrets).unwrap(),
         "using <hidden> and <hidden>; <hidden> rejected; exit 1 after get"
     );
+}
+
+#[test]
+fn positional_arguments_and_secret_named_process_variables_are_masked() {
+    let exec: kube::config::ExecConfig = serde_yaml::from_str(
+        "command: /home/u/yandex-cloud/bin/yc\n\
+         args: [\"k8s\", \"create-token\", \"get-credentials\", \"Zq9xLm2PwR7\", \"/etc/kube/ca.pem\", \"short1\"]\n",
+    )
+    .unwrap();
+    let process = [
+        ("GITHUB_TOKEN", "process-token-1234"),
+        ("DB_PASSWORD", "Pa55-word-x"),
+        ("AWS_SECRET_ACCESS_KEY", "aws-secret-xyz"),
+        ("PWD", "/home/u/work"),
+        ("HOME", "/home/u"),
+        ("EDITOR", "vim-but-long"),
+    ]
+    .map(|(n, v)| (n.to_owned(), v.to_owned()));
+    let secrets = ExecSecrets::collect(&exec, process);
+    assert_eq!(format!("{secrets:?}"), "ExecSecrets(<4 hidden>)");
+    let text = "yc k8s create-token get-credentials: Zq9xLm2PwR7 refused for /home/u/work; \
+                env process-token-1234 Pa55-word-x aws-secret-xyz vim-but-long short1 /etc/kube/ca.pem";
+    assert_eq!(
+        masked_stderr(text.as_bytes(), &secrets).unwrap(),
+        "yc k8s create-token get-credentials: <hidden> refused for /home/u/work; \
+         env <hidden> <hidden> <hidden> vim-but-long short1 /etc/kube/ca.pem"
+    );
+}
+
+#[test]
+fn short_and_plain_word_literals_do_not_split_tokens_before_the_patterns_run() {
+    // "dev" and "json" (too short) and "production" (a plain word) are not masked by themselves; and literals are
+    // replaced only after the patterns, so the JWT and the base64 run around "dev" are hidden whole.
+    let secrets = ExecSecrets::from_parts(
+        ["dev".to_owned(), "production".to_owned()],
+        &["--format".to_owned(), "json".to_owned()],
+    );
+    assert_eq!(format!("{secrets:?}"), "ExecSecrets(<0 hidden>)");
+    let run = "Qm9vZGV2aGVsbG8xMjM0NTY3ODkwQUJDREVGR0hJSktMTU5PUA";
+    let text = format!("dev json production {JWT_TOKEN} {run} end");
+    assert_eq!(
+        masked_stderr(text.as_bytes(), &secrets).unwrap(),
+        "dev json production <hidden> <hidden> end"
+    );
+    // A literal that sits inside a token the patterns hide does not leave a fragment either.
+    let secrets = ExecSecrets::from_parts(["Zm9vYmFy".to_owned()], &[]);
+    let text = format!("got {JWT_TOKEN}Zm9vYmFy and Zm9vYmFy");
+    assert_eq!(
+        masked_stderr(text.as_bytes(), &secrets).unwrap(),
+        "got <hidden> and <hidden>"
+    );
+}
+
+#[test]
+fn provider_tokens_and_more_field_forms_are_masked() {
+    let cases: &[(&str, &str)] = &[
+        // Vault.
+        (
+            "token s.AbCdEfGhIjKlMnOpQrStUvWx expired",
+            "token <hidden> expired",
+        ),
+        (
+            "using hvs.CAESIJ1abcdefghijklmnopqrstuvwxyz0123 now",
+            "using <hidden> now",
+        ),
+        // GitLab, GitHub, Slack.
+        ("glpat-AbCdEfGh1234567890xyZ rejected", "<hidden> rejected"),
+        ("ghp_0123456789abcdefABCDEF0123456789ab ok", "<hidden> ok"),
+        ("gho_0123456789abcdefABCDEF ok", "<hidden> ok"),
+        ("ghs_0123456789abcdefABCDEF ok", "<hidden> ok"),
+        ("ghu_0123456789abcdefABCDEF ok", "<hidden> ok"),
+        (
+            "github_pat_11ABCDEFG0123456789_abcdefghijklmnop ok",
+            "<hidden> ok",
+        ),
+        (
+            "slack xoxb-1234567890-abcdefABCDEF fails",
+            "slack <hidden> fails",
+        ),
+        ("xoxp-12345-67890-abcdef bad", "<hidden> bad"),
+        // An Azure client secret, `~` and `.` inside.
+        (
+            "secret value Xyz8Q~abcDEF123ghi.JKL456mno_PQR789stuVWX0yz rejected",
+            "secret value <hidden> rejected",
+        ),
+        // A flag's value ends before a closing bracket.
+        (
+            "failed (--password hunter22) twice",
+            "failed (--password <hidden>) twice",
+        ),
+        // Escaped JSON.
+        (
+            r#"body: {\"access_token\":\"abc def\",\"expires_in\":3600}"#,
+            r#"body: {\"access_token\":\"<hidden>\",\"expires_in\":3600}"#,
+        ),
+        // YAML block scalars.
+        (
+            "user:\n  token: |\n    line-one\n    line-two\n  name: dev\nafter",
+            "user:\n  token: <hidden>\n  name: dev\nafter",
+        ),
+        (
+            "private_key: >-\n  abc\n\n  def\nnext: 1",
+            "private_key: <hidden>\nnext: 1",
+        ),
+        // More field names.
+        ("pass=hunter22 user=bob", "pass=<hidden> user=bob"),
+        ("pwd: hunter22", "pwd: <hidden>"),
+        ("passphrase=correct horse", "passphrase=<hidden> horse"),
+        ("private_key=abc", "private_key=<hidden>"),
+        (
+            r#"{"credentials":"abc","x":1}"#,
+            r#"{"credentials":"<hidden>","x":1}"#,
+        ),
+        ("credential=abc", "credential=<hidden>"),
+        ("--credentials abc", "--credentials <hidden>"),
+        (
+            "Set-Cookie: session=abc123; Path=/; HttpOnly",
+            "Set-Cookie: <hidden>",
+        ),
+        ("Cookie: a=b; c=d\nnext", "Cookie: <hidden>\nnext"),
+        ("cookie=abc", "cookie=<hidden>"),
+        (
+            "redirect https://x/cb?code=4%2F0AbCd&state=xyz",
+            "redirect https://x/cb?code=<hidden>&state=xyz",
+        ),
+        (
+            "https://acct.blob.core.windows.net/c?sv=2022&sig=AbC%2Bdef%3D&se=1",
+            "https://acct.blob.core.windows.net/c?sv=2022&sig=<hidden>&se=1",
+        ),
+        // Prose with the weak names stays.
+        (
+            "error getting credentials: exec: exit code: 1",
+            "error getting credentials: exec: exit code: 1",
+        ),
+        ("error_code=5 signal=9", "error_code=5 signal=9"),
+        // Paths, UUIDs and cluster-local names stay.
+        (
+            "/home/u/yandex-cloud/bin/yc failed",
+            "/home/u/yandex-cloud/bin/yc failed",
+        ),
+        (
+            "id 123E4567-E89B-12D3-A456-426614174000 / 123e4567-e89b-12d3-a456-426614174000",
+            "id 123E4567-E89B-12D3-A456-426614174000 / 123e4567-e89b-12d3-a456-426614174000",
+        ),
+        (
+            "dial web-7f9c8d.Prod-EU1-namespace.svc.cluster.local:443 refused",
+            "dial web-7f9c8d.Prod-EU1-namespace.svc.cluster.local:443 refused",
+        ),
+        (
+            "kube-dns.kube-system.svc.cluster.local and my-service.my-namespace.svc.cluster.local",
+            "kube-dns.kube-system.svc.cluster.local and my-service.my-namespace.svc.cluster.local",
+        ),
+    ];
+    for (input, expected) in cases {
+        assert_eq!(&shown(input), expected, "input: {input}");
+    }
+}
+
+#[test]
+fn the_whole_read_text_is_masked_before_the_last_lines_are_cut() {
+    // A PEM block whose BEGIN is far above the last 20 lines.
+    let body: String = (0..40)
+        .map(|_| "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl\n")
+        .collect();
+    let pem = format!("error:\n-----BEGIN PRIVATE KEY-----\n{body}-----END PRIVATE KEY-----\ndone");
+    let text = shown(&pem);
+    assert!(!text.contains("abcdefghij"), "{text}");
+    assert_eq!(text, "error:\n<hidden>\ndone");
+
+    // A `--password` flag whose value is on the next line: the value line is among the last 20, the flag is not.
+    let mut lines = vec![
+        "running --password".to_owned(),
+        "plainlowercasevalue".to_owned(),
+    ];
+    lines.extend((1..MAX_LINES).map(|i| format!("line {i}")));
+    let text = shown(&lines.join("\n"));
+    let tail: String = (1..MAX_LINES).map(|i| format!("\nline {i}")).collect();
+    assert_eq!(text, format!("…\n<hidden>{tail}"));
 }
 
 #[test]

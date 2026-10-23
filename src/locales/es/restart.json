@@ -10,6 +10,10 @@
   "more_one": "…y {{count}} objeto más.",
   "more_many": "…y {{count}} de objetos más.",
   "more_other": "…y {{count}} objetos más.",
+  "sharedController_one": "{{count}} de estos pods pertenece a {{controller}}. Si se eliminan uno tras otro, pueden dejar sin servicio la carga de trabajo hasta que los pods nuevos estén listos.",
+  "sharedController_many": "{{count}} de estos pods pertenecen a {{controller}}. Si se eliminan uno tras otro, pueden dejar sin servicio la carga de trabajo hasta que los pods nuevos estén listos.",
+  "sharedController_other": "{{count}} de estos pods pertenecen a {{controller}}. Si se eliminan uno tras otro, pueden dejar sin servicio la carga de trabajo hasta que los pods nuevos estén listos.",
+  "waitShared": "Eliminar los pods de un mismo controlador de uno en uno, cada uno cuando el pod nuevo esté Ready (hasta 5 minutos cada uno)",
   "step": {
     "rollout": "{{name}}: sus pods se reemplazan uno a uno (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts reemplaza sus pods uno a uno (kubectl argo rollouts restart).",
@@ -28,6 +32,7 @@
   "progressPods_other": "{{name}}: {{done}} de {{count}} pods reiniciados, esperando a que el pod nuevo esté listo…",
   "summary": "{{done}} de {{total}} reiniciados.",
   "summaryStopped": "Detenido: {{done}} de {{total}} reiniciados; el resto no se inició.",
+  "disconnected": "El clúster se desconectó: el reinicio se detiene después del paso actual.",
   "result": {
     "done": "Reiniciado: {{name}}",
     "failed": "No reiniciado: {{name}}",
@@ -44,6 +49,7 @@
     "paused": "{{name}} está en pausa: un reinicio no se desplegaría. Reanúdelo primero.",
     "noPods": "{{name}} no tiene pods que reiniciar.",
     "notReady": "El pod nuevo en lugar de {{name}} no estuvo listo en 5 minutos. Los demás pods se dejaron como estaban.",
-    "listTimeout": "No se pudieron listar los pods del ReplicaSet en 5 minutos."
+    "listTimeout": "No se pudieron listar los pods del ReplicaSet en 5 minutos.",
+    "earlierNotReady": "No se eliminó: el pod nuevo que sustituye a un pod anterior de {{controller}} no estuvo listo."
   }
 }

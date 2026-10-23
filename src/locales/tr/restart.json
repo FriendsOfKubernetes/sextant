@@ -7,6 +7,9 @@
   "intro_other": "Bu {{count}} nesne bu sırayla, birer birer yeniden başlatılır. Her istek bir kez gönderilir.",
   "more_one": "…ve {{count}} nesne daha.",
   "more_other": "…ve {{count}} nesne daha.",
+  "sharedController_one": "Bu Pod'lardan {{count}} tanesi {{controller}} nesnesine ait. Art arda silinirlerse yeni Pod'lar hazır olana kadar iş yükünü durdurabilirler.",
+  "sharedController_other": "Bu Pod'lardan {{count}} tanesi {{controller}} nesnesine ait. Art arda silinirlerse yeni Pod'lar hazır olana kadar iş yükünü durdurabilirler.",
+  "waitShared": "Bir denetleyicinin Pod'larını tek tek sil, her birini yeni Pod Ready olduktan sonra (her biri için en fazla 5 dakika)",
   "step": {
     "rollout": "{{name}}: Pod'ları birer birer değiştirilir (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts, Pod'larını birer birer değiştirir (kubectl argo rollouts restart).",
@@ -24,6 +27,7 @@
   "progressPods_other": "{{name}}: {{count}} Pod'dan {{done}} tanesi yeniden başlatıldı, yeni Pod'un hazır olması bekleniyor…",
   "summary": "{{total}} nesneden {{done}} tanesi yeniden başlatıldı.",
   "summaryStopped": "Durduruldu: {{total}} nesneden {{done}} tanesi yeniden başlatıldı; kalanlar başlatılmadı.",
+  "disconnected": "Küme bağlantısı kesildi: yeniden başlatma geçerli adımdan sonra durur.",
   "result": {
     "done": "Yeniden başlatıldı: {{name}}",
     "failed": "Yeniden başlatılmadı: {{name}}",
@@ -39,6 +43,7 @@
     "paused": "{{name}} duraklatılmış: yeniden başlatma dağıtılmaz. Önce devam ettirin.",
     "noPods": "{{name}} için yeniden başlatılacak Pod yok.",
     "notReady": "{{name}} yerine gelen yeni Pod 5 dakika içinde hazır olmadı. Diğer Pod'lar olduğu gibi bırakıldı.",
-    "listTimeout": "ReplicaSet'in Pod'ları 5 dakika içinde listelenemedi."
+    "listTimeout": "ReplicaSet'in Pod'ları 5 dakika içinde listelenemedi.",
+    "earlierNotReady": "Silinmedi: {{controller}} nesnesinin önceki bir Pod'u yerine gelen yeni Pod hazır olmadı."
   }
 }

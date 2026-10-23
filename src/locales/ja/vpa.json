@@ -30,6 +30,7 @@
     "fetchingHistory": "recommender はまだ履歴を読み込んでいるため、推奨値が変わる可能性があります。",
     "configUnsupported": "recommender はこの VPA を使用できません。対象を読み取れないか、対象が最上位のコントローラーではありません (VPA は ReplicaSet ではなく Deployment に向けてください)。推奨は出されません。",
     "noPodsMatched": "対象に属する実行中の Pod がありません。レプリカがないか、Pod が実行されていません。recommender が測定するには Pod が必要です。",
+    "noPodsNow": "現在この VPA に一致する Pod はありません（対象がゼロにスケールされているか、実行の合間です）。recommender は最後の推奨値を保持し、次の Pod にはそれが適用されます。",
     "notProvided": "recommender はまだ推奨を出していません。",
     "noStatus": "ステータスがまだありません。recommender がこの VPA をまだ確認していないか、この VPA 用の recommender が動いていません。",
     "deprecated": "recommender によると、この構成は非推奨で、今後サポートされなくなります。"
@@ -91,7 +92,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}} は {{resources}} に基づいてこのワークロードをスケールしますが、この VPA はモード {{mode}} でそのリソースを変更します。両者は競合します。",
-    "why": "VPA が要求を引き上げると、HPA から見た使用率が下がってレプリカが減り、残った Pod の使用量が増える、という繰り返しになります。HPA を別のメトリクスでスケールさせるか、VPA を Off または Initial のままにするか、VPA にもう一方のリソースだけを制御させてください。"
+    "why": "VPA が要求を引き上げると、HPA から見た使用率が下がってレプリカが減り、残った Pod の使用量が増える、という繰り返しになります。HPA を別のメトリクスでスケールさせるか、VPA を Off または Initial のままにするか、VPA にもう一方のリソースだけを制御させてください。",
+    "valueLine": "HPA {{hpa}} は Pod あたりの平均 {{resources}}（AverageValue）に基づいてこのワークロードをスケールしますが、この VPA はモード {{mode}} でそのリソースを変更します。新しい request はこの平均を動かさないため直接は競合しませんが、両者は同じ使用量に反応します。互いの変更を打ち消し合っていないか注意してください。"
   },
   "components": {
     "title": "VPA コンポーネント",

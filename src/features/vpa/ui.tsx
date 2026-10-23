@@ -9,7 +9,7 @@ import { StatusText, status } from "../../resources";
 import { table, type ColumnWrap } from "../details";
 import { formatAmount } from "../autoscaling/model";
 import { baseUnits, templateChanges, templateContainers, type ContainerChange, type ResourceChange } from "./admission";
-import { conflictsOf } from "./conflicts";
+import { conflictsOf, valueOverlapsOf } from "./conflicts";
 import { containerPoliciesOf, modeKey, recommendationsOf, updateModeOf } from "./model";
 
 const { get, str } = status;
@@ -87,12 +87,13 @@ export function ModeText({ vpa }: { vpa: KubeObject }) {
   return <>{t(`vpa:modeExplain.${key}`, { mode })}</>;
 }
 
-/** The HPAs that fight the VPA, as a danger line; nothing without conflicts. */
+/** The HPAs that fight the VPA, as a danger line; those on an AverageValue as a note; nothing without either. */
 export function ConflictLines({ vpa, hpas, target }: { vpa: KubeObject; hpas: readonly KubeObject[]; target?: KubeObject }) {
   const { t } = useTranslation();
   const containers = target ? templateContainers(target).map((c) => str(get(c, "name")) ?? "") : undefined;
   const conflicts = conflictsOf(vpa, hpas, containers);
-  if (conflicts.length === 0) return null;
+  const byValue = valueOverlapsOf(vpa, hpas, containers);
+  if (conflicts.length === 0 && byValue.length === 0) return null;
   return (
     <>
       {conflicts.map((c) => (
@@ -103,7 +104,12 @@ export function ConflictLines({ vpa, hpas, target }: { vpa: KubeObject; hpas: re
           />
         </p>
       ))}
-      <p className="vpa-muted">{t("vpa:conflict.why")}</p>
+      {conflicts.length > 0 && <p className="vpa-muted">{t("vpa:conflict.why")}</p>}
+      {byValue.map((c) => (
+        <p key={`value:${c.hpa}`} className="vpa-note">
+          {t("vpa:conflict.valueLine", { hpa: c.hpa, mode: updateModeOf(vpa), resources: formatList(c.resources) })}
+        </p>
+      ))}
     </>
   );
 }

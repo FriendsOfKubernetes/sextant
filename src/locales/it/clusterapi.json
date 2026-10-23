@@ -141,7 +141,9 @@
     "healthCheck": {
       "blocked": "La correzione è bloccata: troppe macchine non sono integre ({{healthy}} integre su {{expected}}).",
       "remediating": "Alcune macchine non sono integre ({{healthy}} integre su {{expected}}) e vengono corrette."
-    }
+    },
+    "clusterPaused": "Il suo Cluster {{name}} è in pausa: Cluster API non cambia nulla qui finché non viene ripreso, quindi questo stato può essere superato.",
+    "clusterUnread": "Non è stato possibile leggere il suo Cluster {{name}}, e questo oggetto non dice se è in pausa: se il Cluster è in pausa, questo stato può essere superato."
   },
   "chain": {
     "title": "Macchine",
@@ -153,6 +155,9 @@
     "more_one": "E {{count}} altra macchina",
     "more_many": "E {{count}} di altre macchine",
     "more_other": "E altre {{count}} macchine",
+    "truncated_one": "Qui viene letto solo il primo oggetto ({{count}}) di ogni tipo: l'elenco è incompleto.",
+    "truncated_many": "Qui vengono letti solo i primi {{count}} oggetti di ogni tipo: l'elenco è incompleto.",
+    "truncated_other": "Qui vengono letti solo i primi {{count}} oggetti di ogni tipo: l'elenco è incompleto.",
     "ready": "Pronte: {{ready}}",
     "node": "Nodo {{node}}"
   },

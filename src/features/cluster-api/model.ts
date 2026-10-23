@@ -126,18 +126,34 @@ export function conditionOf(obj: KubeObject, type: string, legacyType: string = 
 export function availableOf(obj: KubeObject): Condition | undefined {
   if (conditionsOf(obj).length > 0) return conditionOf(obj, "Available");
   const old = legacyConditionsOf(obj);
-  return old.find((c) => c.type === "Available") ?? old.find((c) => c.type === "Ready");
+  return decisive(old.find((c) => c.type === "Available") ?? old.find((c) => c.type === "Ready"));
+}
+
+/**
+ * An old (v1beta1) condition as a verdict: a False of severity Info or Warning is a passing state the controllers
+ * set while they wait or work (cluster-api `api/v1beta1/condition_types.go`: Info "should not be considered an
+ * error", Warning "might be a problem soon"; e.g. `WaitingForControlPlane`, `ScalingUp`), so it decides nothing —
+ * only Error (or no severity) does. The new conditions have no severity and are read as they are.
+ */
+export function decisive(c: Condition | undefined): Condition | undefined {
+  return c && c.status === "False" && (c.severity === "Info" || c.severity === "Warning") ? undefined : c;
+}
+
+/** A Machine's Ready condition: the new one, else the old one as a verdict (`decisive`). */
+export function machineReadyOf(obj: KubeObject): Condition | undefined {
+  if (conditionsOf(obj).length > 0) return conditionOf(obj, "Ready");
+  return decisive(legacyConditionsOf(obj).find((c) => c.type === "Ready"));
 }
 
 /**
  * The first condition that is False — of the new ones when there are any — leaving out the conditions whose False is
- * good news (Deleting, Paused, ScalingUp, …) and old ones of severity Info.
+ * good news (Deleting, Paused, ScalingUp, …) and old ones of severity Info or Warning (`decisive`).
  */
 export function firstFailing(obj: KubeObject): Condition | undefined {
   const negative = new Set(["Deleting", "Paused", "ScalingUp", "ScalingDown", "RollingOut", "Remediating", "Updating"]);
   const list = conditionsOf(obj);
-  const pick = list.length > 0 ? list : legacyConditionsOf(obj);
-  return pick.find((c) => !negative.has(c.type) && c.status === "False" && c.severity !== "Info");
+  if (list.length > 0) return list.find((c) => !negative.has(c.type) && c.status === "False");
+  return legacyConditionsOf(obj).find((c) => !negative.has(c.type) && c.status === "False" && decisive(c) !== undefined);
 }
 
 /** `failureReason` / `failureMessage` of the v1beta1 status: a terminal error the controllers will not retry. */
@@ -428,7 +444,7 @@ export function machineState(obj: KubeObject): MachineState {
   if (isPaused(obj)) return "paused";
   if (phase === "Pending" || phase === "Provisioning" || phase === "Provisioned") return "provisioning";
   if (phase === "Updating") return "updating";
-  if (phase === "Running") return conditionOf(obj, "Ready")?.status === "False" ? "notReady" : "running";
+  if (phase === "Running") return machineReadyOf(obj)?.status === "False" ? "notReady" : "running";
   return "unknown";
 }
 
@@ -438,6 +454,26 @@ const isTrue = (obj: KubeObject, type: string) => conditionsOf(obj).some((c) => 
 export function kcpInitialized(obj: KubeObject): boolean | undefined {
   const v = get(obj, "status", "initialization", "controlPlaneInitialized") ?? get(obj, "status", "initialized");
   return typeof v === "boolean" ? v : undefined;
+}
+
+/**
+ * Whether a Cluster's control plane is initialized (accepts requests): v1beta2 `status.initialization
+ * .controlPlaneInitialized` (cluster-api `api/core/v1beta2/cluster_types.go`, `ClusterInitializationStatus`), v1beta1
+ * the `ControlPlaneInitialized` condition (new: `ClusterControlPlaneInitializedCondition`; old:
+ * `ControlPlaneInitializedCondition`, `api/v1beta1/condition_consts.go`), else v1beta1 `status.controlPlaneReady`
+ * (`api/v1beta1/cluster_types.go`);
+ * `undefined` when the Cluster says nothing of it. Until then the Cluster cannot be available, so "not available" is
+ * judged with the long provisioning grace.
+ */
+export function clusterControlPlaneInitialized(obj: KubeObject): boolean | undefined {
+  const init = get(obj, "status", "initialization", "controlPlaneInitialized");
+  if (typeof init === "boolean") return init;
+  // The condition stays True once initialized; `controlPlaneReady` follows the control plane's readiness, so it is
+  // only the last resort.
+  const c = conditionsOf(obj).find((x) => x.type === "ControlPlaneInitialized") ?? legacyConditionsOf(obj).find((x) => x.type === "ControlPlaneInitialized");
+  if (c) return c.status === "True";
+  const ready = get(obj, "status", "controlPlaneReady");
+  return typeof ready === "boolean" && isLegacy(obj) ? ready : undefined;
 }
 
 /** A MachineDeployment, MachineSet or KubeadmControlPlane by its conditions and replica counts. */
@@ -453,6 +489,8 @@ export function scalableState(obj: KubeObject): ScalableState {
   if (available?.status === "False") return "notAvailable";
   if (available?.status === "True") return "available";
   if (r.desired !== undefined && r.ready === r.desired) return "available";
+  // A v1beta2 MachineSet has no Available condition: fewer ready Machines than wanted, and no scaling, is not available.
+  if (r.desired !== undefined && r.ready !== undefined && r.ready < r.desired) return "notAvailable";
   return "unknown";
 }
 
@@ -568,7 +606,9 @@ function provisioningWhy(obj: KubeObject): string | undefined {
  * v1beta1 status reports, or the Failed phase); a Cluster or KubeadmControlPlane not available (after 5 minutes, or
  * 30 while still coming up); a Machine that has not reached Running 30 minutes after its phase last changed; a
  * MachineHealthCheck that stopped remediating (`RemediationAllowed` False: more Machines unhealthy than its
- * `unhealthyLessThanOrEqualTo` / `maxUnhealthy` allows). Deleting and paused objects have none.
+ * `unhealthyLessThanOrEqualTo` / `maxUnhealthy` allows). Deleting and paused objects have none; a Machine or control
+ * plane carries its Cluster's name (`belongsTo`), so the problems store leaves it out while that Cluster is paused.
+ * A Cluster is "not available" after 5 minutes only once its control plane is initialized, else after 30.
  */
 export function capiProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObject): Detected[] {
   if (isDeleting(obj) || isPaused(obj)) return [];
@@ -576,7 +616,9 @@ export function capiProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObj
   if (isKind(kind, CAPI_CLUSTER)) {
     const f = failed(obj);
     const phase = phaseOf(obj);
-    found.push(f ?? notAvailable(obj, !(phase && PROVISIONING_PHASES.has(phase))));
+    // Settled only past the provisioning phases and once its control plane is initialized (when the Cluster says).
+    const settled = !(phase && PROVISIONING_PHASES.has(phase)) && clusterControlPlaneInitialized(obj) !== false;
+    found.push(f ?? notAvailable(obj, settled));
   } else if (isKind(kind, KUBEADM_CONTROL_PLANE)) {
     found.push(failed(obj) ?? notAvailable(obj, kcpInitialized(obj) !== false));
   } else if (isKind(kind, MACHINE)) {
@@ -598,7 +640,9 @@ export function capiProblems(kind: Pick<KindRef, "group" | "kind">, obj: KubeObj
     const c = remediationBlocked(obj);
     if (c) found.push({ reason: "RemediationBlocked", message: c.message ?? c.reason, since: c.since, graceMs: REMEDIATION_GRACE_MS, notify: true });
   }
-  return found.filter((d): d is Detected => d !== undefined);
+  const cluster = isKind(kind, MACHINE, KUBEADM_CONTROL_PLANE) ? clusterNameOf(obj) : undefined;
+  // A Machine's or control plane's Cluster: its problems are dropped while the Cluster is paused (across.ts).
+  return found.filter((d): d is Detected => d !== undefined).map((d) => (cluster ? { ...d, belongsTo: cluster } : d));
 }
 
 /** Whether the table's "Only problems" filter shows `obj`: a problem whose grace has passed by `now`. */

@@ -139,7 +139,9 @@
     "healthCheck": {
       "blocked": "修复已阻止：不健康的机器过多（{{expected}} 台中 {{healthy}} 台健康）。",
       "remediating": "部分机器不健康（{{expected}} 台中 {{healthy}} 台健康），正在修复。"
-    }
+    },
+    "clusterPaused": "它所属的 Cluster {{name}} 已暂停：恢复之前 Cluster API 不会在此做任何更改，因此此状态可能已过时。",
+    "clusterUnread": "无法读取它所属的 Cluster {{name}}，而此对象本身没有说明是否已暂停：如果该 Cluster 已暂停，此状态可能已过时。"
   },
   "chain": {
     "title": "机器",
@@ -149,6 +151,7 @@
     "controlPlane": "控制平面",
     "others": "其他机器",
     "more_other": "还有 {{count}} 台机器",
+    "truncated_other": "此处每种类型只读取前 {{count}} 个对象：列表不完整。",
     "ready": "就绪：{{ready}}",
     "node": "节点 {{node}}"
   },

@@ -32,6 +32,7 @@
     "fetchingHistory": "Le Recommender charge encore l'historique : la recommandation peut encore changer.",
     "configUnsupported": "Le Recommender ne peut pas utiliser ce VPA : sa cible est illisible, ou ce n'est pas le contrôleur de plus haut niveau (pointez le VPA vers le Deployment, pas vers son ReplicaSet). Il ne donne aucune recommandation.",
     "noPodsMatched": "Aucun pod en cours d'exécution n'appartient à la cible : elle n'a pas de réplica, ou ses pods ne tournent pas. Le Recommender a besoin de pods à mesurer.",
+    "noPodsNow": "Aucun pod ne correspond à ce VPA pour l'instant (la cible est mise à l'échelle à zéro ou entre deux exécutions). Le Recommender garde sa dernière recommandation, et les prochains pods la reçoivent.",
     "notProvided": "Le Recommender n'a pas encore produit de recommandation.",
     "noStatus": "Pas encore de statut : le Recommender n'a pas examiné ce VPA, ou aucun Recommender ne tourne pour lui.",
     "deprecated": "Selon le Recommender, cette configuration est obsolète et ne sera bientôt plus prise en charge."
@@ -93,7 +94,8 @@
   },
   "conflict": {
     "line": "Le HPA {{hpa}} met à l'échelle ce workload selon {{resources}}, que ce VPA modifie en mode {{mode}} : les deux se contrarient.",
-    "why": "Quand le VPA augmente une demande, l'utilisation vue par le HPA baisse et il retire des réplicas ; les pods restants consomment davantage, et ainsi de suite. Mettez le HPA à l'échelle sur une autre métrique, laissez le VPA en Off ou Initial, ou laissez le VPA ne contrôler que l'autre ressource."
+    "why": "Quand le VPA augmente une demande, l'utilisation vue par le HPA baisse et il retire des réplicas ; les pods restants consomment davantage, et ainsi de suite. Mettez le HPA à l'échelle sur une autre métrique, laissez le VPA en Off ou Initial, ou laissez le VPA ne contrôler que l'autre ressource.",
+    "valueLine": "Le HPA {{hpa}} met à l'échelle ce workload selon la moyenne de {{resources}} par pod (AverageValue), que ce VPA modifie en mode {{mode}}. Une nouvelle request ne déplace pas cette moyenne : les deux ne se contrarient pas directement, mais réagissent à la même consommation. Vérifiez qu'ils n'annulent pas sans cesse l'action l'un de l'autre."
   },
   "components": {
     "title": "Composants VPA",

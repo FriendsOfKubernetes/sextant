@@ -4,6 +4,8 @@
   "titleMany_other": "重启 {{count}} 个对象？",
   "intro_other": "这 {{count}} 个对象将按此顺序逐个重启。每个请求只发送一次。",
   "more_other": "……以及另外 {{count}} 个对象。",
+  "sharedController_other": "其中 {{count}} 个 Pod 属于 {{controller}}。如果接连删除，在新 Pod 就绪之前，工作负载可能会中断。",
+  "waitShared": "逐个删除同一控制器的 Pod，每个都等新 Pod 变为 Ready 后再删下一个（每个最多 5 分钟）",
   "step": {
     "rollout": "{{name}}：其 Pod 将逐个替换（rollout restart）。",
     "argoRollout": "{{name}}：Argo Rollouts 将逐个替换其 Pod（kubectl argo rollouts restart）。",
@@ -20,6 +22,7 @@
   "progressPods_other": "{{name}}：已重启 {{done}}/{{count}} 个 Pod，正在等待新 Pod 就绪……",
   "summary": "已重启 {{done}}/{{total}}。",
   "summaryStopped": "已停止：已重启 {{done}}/{{total}}，其余未开始。",
+  "disconnected": "集群已断开连接：重启将在当前步骤之后停止。",
   "result": {
     "done": "已重启：{{name}}",
     "failed": "未重启：{{name}}",
@@ -34,6 +37,7 @@
     "paused": "{{name}} 已暂停：重启不会被发布。请先恢复它。",
     "noPods": "{{name}} 没有可重启的 Pod。",
     "notReady": "替代 {{name}} 的新 Pod 在 5 分钟内未就绪。其余 Pod 保持不变。",
-    "listTimeout": "无法在 5 分钟内列出该 ReplicaSet 的 Pod。"
+    "listTimeout": "无法在 5 分钟内列出该 ReplicaSet 的 Pod。",
+    "earlierNotReady": "未删除：替代 {{controller}} 先前某个 Pod 的新 Pod 未就绪。"
   }
 }

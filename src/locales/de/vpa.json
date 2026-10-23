@@ -31,6 +31,7 @@
     "fetchingHistory": "Der Recommender lädt noch den Verlauf: Die Empfehlung kann sich noch ändern.",
     "configUnsupported": "Der Recommender kann diesen VPA nicht verwenden: Sein Ziel kann nicht gelesen werden, oder es ist nicht der oberste Controller (richten Sie den VPA auf das Deployment, nicht auf sein ReplicaSet). Er gibt keine Empfehlung.",
     "noPodsMatched": "Zum Ziel gehört kein laufender Pod: Es hat keine Replikate, oder seine Pods laufen nicht. Der Recommender braucht Pods zum Messen.",
+    "noPodsNow": "Derzeit passt kein Pod zu diesem VPA (das Ziel ist auf null skaliert oder zwischen zwei Läufen). Der Recommender behält seine letzte Empfehlung, und die nächsten Pods erhalten sie.",
     "notProvided": "Der Recommender hat noch keine Empfehlung erstellt.",
     "noStatus": "Noch kein Status: Der Recommender hat sich diesen VPA noch nicht angesehen, oder für ihn läuft kein Recommender.",
     "deprecated": "Laut Recommender ist diese Konfiguration veraltet und wird künftig nicht mehr unterstützt."
@@ -92,7 +93,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}} skaliert diesen Workload nach {{resources}}, die dieser VPA im Modus {{mode}} ändert: Die beiden arbeiten gegeneinander.",
-    "why": "Wenn der VPA einen Request erhöht, sinkt die Auslastung beim HPA, und er entfernt Replikate; die übrigen Pods verbrauchen mehr, und so weiter. Skalieren Sie den HPA nach einer anderen Metrik, lassen Sie den VPA in Off oder Initial, oder lassen Sie den VPA nur die andere Ressource steuern."
+    "why": "Wenn der VPA einen Request erhöht, sinkt die Auslastung beim HPA, und er entfernt Replikate; die übrigen Pods verbrauchen mehr, und so weiter. Skalieren Sie den HPA nach einer anderen Metrik, lassen Sie den VPA in Off oder Initial, oder lassen Sie den VPA nur die andere Ressource steuern.",
+    "valueLine": "HPA {{hpa}} skaliert diesen Workload nach dem durchschnittlichen {{resources}} je Pod (AverageValue), das dieser VPA im Modus {{mode}} ändert. Ein neuer Request verschiebt diesen Durchschnitt nicht, die beiden arbeiten also nicht direkt gegeneinander, reagieren aber auf denselben Verbrauch: Achten Sie darauf, dass sie sich nicht gegenseitig aufheben."
   },
   "components": {
     "title": "VPA-Komponenten",

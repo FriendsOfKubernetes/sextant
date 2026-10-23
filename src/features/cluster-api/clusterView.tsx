@@ -7,7 +7,7 @@ import { status } from "../../resources";
 import { Block, Fields, link, type FieldRow } from "../details";
 import { planChain, type SetPlan } from "./chain";
 import { StateText } from "./columns";
-import { MAX_LISTED, useListed, useRefObjects } from "./hooks";
+import { MAX_CHAIN_OBJECTS, MAX_LISTED, useListed, useRefObjects } from "./hooks";
 import {
   availableOf,
   CLUSTER_CLASS,
@@ -166,6 +166,9 @@ function MachineChain({ clusterId, cluster }: { clusterId: ClusterId; cluster: K
         )}
       </ul>
       {plan.hidden > 0 && <p className="cm-muted">{t("clusterapi:chain.more", { count: plan.hidden })}</p>}
+      {(deployments.truncated || sets.truncated || machines.truncated) && (
+        <p className="cm-muted">{t("clusterapi:chain.truncated", { count: MAX_CHAIN_OBJECTS })}</p>
+      )}
     </Block>
   );
 }

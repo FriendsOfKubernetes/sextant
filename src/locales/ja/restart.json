@@ -4,6 +4,8 @@
   "titleMany_other": "{{count}} 個のオブジェクトを再起動しますか？",
   "intro_other": "これらの {{count}} 個のオブジェクトをこの順序で 1 つずつ再起動します。各リクエストは 1 回だけ送信されます。",
   "more_other": "…ほか {{count}} 個のオブジェクト。",
+  "sharedController_other": "これらの Pod のうち {{count}} 個は {{controller}} に属しています。続けて削除すると、新しい Pod が Ready になるまでワークロードが停止するおそれがあります。",
+  "waitShared": "同じコントローラーの Pod を 1 つずつ削除し、それぞれ新しい Pod が Ready になってから次へ進む（各最大 5 分）",
   "step": {
     "rollout": "{{name}}: Pod が 1 つずつ置き換えられます (rollout restart)。",
     "argoRollout": "{{name}}: Argo Rollouts が Pod を 1 つずつ置き換えます (kubectl argo rollouts restart)。",
@@ -20,6 +22,7 @@
   "progressPods_other": "{{name}}: {{count}} 個中 {{done}} 個の Pod を再起動しました。新しい Pod が Ready になるのを待っています…",
   "summary": "{{total}} 個中 {{done}} 個を再起動しました。",
   "summaryStopped": "停止しました: {{total}} 個中 {{done}} 個を再起動しました。残りは開始されていません。",
+  "disconnected": "クラスターとの接続が切れました。再起動は現在のステップの後で停止します。",
   "result": {
     "done": "再起動しました: {{name}}",
     "failed": "再起動できませんでした: {{name}}",
@@ -34,6 +37,7 @@
     "paused": "{{name}} は一時停止中です: 再起動はロールアウトされません。先に再開してください。",
     "noPods": "{{name}} には再起動する Pod がありません。",
     "notReady": "{{name}} の代わりの新しい Pod が 5 分以内に Ready になりませんでした。残りの Pod はそのままです。",
-    "listTimeout": "ReplicaSet の Pod を 5 分以内に一覧できませんでした。"
+    "listTimeout": "ReplicaSet の Pod を 5 分以内に一覧できませんでした。",
+    "earlierNotReady": "削除していません: {{controller}} の以前の Pod の代わりの新しい Pod が Ready になりませんでした。"
   }
 }

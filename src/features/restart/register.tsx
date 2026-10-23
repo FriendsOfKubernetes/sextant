@@ -5,6 +5,7 @@
 import { registerAction } from "../actions/registry";
 import { canRestart, planRestart } from "./model";
 import { RestartDialog } from "./RestartDialog";
+import { newRestartRunId } from "./runStore";
 
 registerAction("restart", {
   labelKey: "actions:restart.label",
@@ -14,6 +15,8 @@ registerAction("restart", {
   run: ({ clusterId, kind, objects, openDialog }) => {
     const steps = planRestart(objects, kind);
     if (steps.length === 0) return;
-    openDialog((close) => <RestartDialog clusterId={clusterId} steps={steps} close={close} />);
+    // One run per dialog entry: a remount of the entry shows its run instead of starting another (runStore.ts).
+    const runId = newRestartRunId();
+    openDialog((close) => <RestartDialog clusterId={clusterId} steps={steps} close={close} runId={runId} />);
   },
 });

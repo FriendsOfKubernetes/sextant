@@ -30,6 +30,7 @@
     "fetchingHistory": "recommender 仍在載入歷史資料：建議值可能還會變化。",
     "configUnsupported": "recommender 無法使用這個 VPA：無法讀取其目標，或目標不是最上層的控制器（請讓 VPA 指向 Deployment，而不是其 ReplicaSet）。它不會提供建議。",
     "noPodsMatched": "沒有屬於目標的執行中 Pod：目標沒有複本，或其 Pod 未執行。recommender 需要 Pod 才能進行測量。",
+    "noPodsNow": "目前沒有 Pod 與此 VPA 相符（目標已縮減到零，或處於兩次執行之間）。recommender 會保留最後一次建議，之後的 Pod 會取得該建議。",
     "notProvided": "recommender 尚未產生建議。",
     "noStatus": "尚無狀態：recommender 尚未處理這個 VPA，或沒有為它執行的 recommender。",
     "deprecated": "recommender 指出此設定已淘汰，將不再受支援。"
@@ -91,7 +92,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}} 依 {{resources}} 調整此工作負載的規模，而此 VPA 在模式 {{mode}} 下會變更這些資源：兩者會互相衝突。",
-    "why": "VPA 提高要求後，HPA 看到的使用率下降並減少複本；剩下的 Pod 用量增加，如此循環。請讓 HPA 依其他指標調整規模，將 VPA 維持在 Off 或 Initial，或只讓 VPA 控制另一種資源。"
+    "why": "VPA 提高要求後，HPA 看到的使用率下降並減少複本；剩下的 Pod 用量增加，如此循環。請讓 HPA 依其他指標調整規模，將 VPA 維持在 Off 或 Initial，或只讓 VPA 控制另一種資源。",
+    "valueLine": "HPA {{hpa}} 依每個 Pod 的平均 {{resources}}（AverageValue）調整此工作負載的規模，而此 VPA 在模式 {{mode}} 下會變更這些資源。新的 request 不會改變這個平均值，因此兩者不會直接衝突，但它們會對同一用量做出反應：請留意它們是否反覆抵銷彼此的調整。"
   },
   "components": {
     "title": "VPA 元件",

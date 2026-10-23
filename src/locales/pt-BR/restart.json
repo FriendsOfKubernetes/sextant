@@ -10,6 +10,10 @@
   "more_one": "…e mais {{count}} objeto.",
   "more_many": "…e mais {{count}} de objetos.",
   "more_other": "…e mais {{count}} objetos.",
+  "sharedController_one": "{{count}} destes pods pertence a {{controller}}. Excluídos um após o outro, eles podem derrubar a carga de trabalho até que os novos pods fiquem prontos.",
+  "sharedController_many": "{{count}} destes pods pertencem a {{controller}}. Excluídos um após o outro, eles podem derrubar a carga de trabalho até que os novos pods fiquem prontos.",
+  "sharedController_other": "{{count}} destes pods pertencem a {{controller}}. Excluídos um após o outro, eles podem derrubar a carga de trabalho até que os novos pods fiquem prontos.",
+  "waitShared": "Excluir os pods de um mesmo controlador um de cada vez, cada um depois que o novo pod estiver Ready (até 5 minutos cada)",
   "step": {
     "rollout": "{{name}}: seus pods são substituídos um a um (rollout restart).",
     "argoRollout": "{{name}}: o Argo Rollouts substitui seus pods um a um (kubectl argo rollouts restart).",
@@ -28,6 +32,7 @@
   "progressPods_other": "{{name}}: {{done}} de {{count}} pods reiniciados, aguardando o novo pod ficar pronto…",
   "summary": "{{done}} de {{total}} reiniciados.",
   "summaryStopped": "Parado: {{done}} de {{total}} reiniciados; os demais não foram iniciados.",
+  "disconnected": "O cluster foi desconectado: a reinicialização para depois da etapa atual.",
   "result": {
     "done": "Reiniciado: {{name}}",
     "failed": "Não reiniciado: {{name}}",
@@ -44,6 +49,7 @@
     "paused": "{{name}} está pausado: um reinício não seria implantado. Retome-o primeiro.",
     "noPods": "{{name}} não tem pods para reiniciar.",
     "notReady": "O novo pod no lugar de {{name}} não ficou pronto em 5 minutos. Os demais pods ficaram como estavam.",
-    "listTimeout": "Não foi possível listar os pods do ReplicaSet em 5 minutos."
+    "listTimeout": "Não foi possível listar os pods do ReplicaSet em 5 minutos.",
+    "earlierNotReady": "Não excluído: o novo pod no lugar de um pod anterior de {{controller}} não ficou pronto."
   }
 }

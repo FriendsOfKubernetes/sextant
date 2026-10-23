@@ -30,6 +30,7 @@
     "fetchingHistory": "recommender가 아직 기록을 불러오는 중입니다. 권장값이 바뀔 수 있습니다.",
     "configUnsupported": "recommender가 이 VPA를 사용할 수 없습니다. 대상을 읽을 수 없거나 대상이 최상위 컨트롤러가 아닙니다(VPA가 ReplicaSet이 아닌 Deployment를 가리키도록 하세요). 권장값을 제공하지 않습니다.",
     "noPodsMatched": "대상에 속한 실행 중인 Pod가 없습니다. 복제본이 없거나 Pod가 실행되지 않습니다. recommender가 측정하려면 Pod가 필요합니다.",
+    "noPodsNow": "지금은 이 VPA와 일치하는 Pod가 없습니다(대상이 0으로 스케일되었거나 실행 사이입니다). recommender는 마지막 권장값을 유지하며, 다음 Pod가 이를 받습니다.",
     "notProvided": "recommender가 아직 권장값을 만들지 않았습니다.",
     "noStatus": "아직 상태가 없습니다. recommender가 이 VPA를 아직 확인하지 않았거나, 이 VPA를 담당하는 recommender가 실행되고 있지 않습니다.",
     "deprecated": "recommender에 따르면 이 구성은 더 이상 사용되지 않으며 지원이 중단될 예정입니다."
@@ -91,7 +92,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}}이(가) {{resources}} 기준으로 이 워크로드를 스케일링하는데, 이 VPA가 모드 {{mode}}에서 해당 리소스를 변경합니다. 둘이 서로 충돌합니다.",
-    "why": "VPA가 요청을 올리면 HPA가 보는 사용률이 떨어져 복제본을 줄이고, 남은 Pod의 사용량이 늘어나는 일이 반복됩니다. HPA를 다른 지표로 스케일링하거나, VPA를 Off 또는 Initial로 두거나, VPA가 다른 리소스만 제어하도록 하세요."
+    "why": "VPA가 요청을 올리면 HPA가 보는 사용률이 떨어져 복제본을 줄이고, 남은 Pod의 사용량이 늘어나는 일이 반복됩니다. HPA를 다른 지표로 스케일링하거나, VPA를 Off 또는 Initial로 두거나, VPA가 다른 리소스만 제어하도록 하세요.",
+    "valueLine": "HPA {{hpa}}는 Pod당 평균 {{resources}}(AverageValue)를 기준으로 이 워크로드를 스케일하고, 이 VPA는 모드 {{mode}}에서 해당 리소스를 변경합니다. 새 request는 이 평균을 바꾸지 않으므로 둘이 직접 충돌하지는 않지만 같은 사용량에 반응합니다. 서로의 변경을 계속 되돌리지 않는지 확인하세요."
   },
   "components": {
     "title": "VPA 구성 요소",

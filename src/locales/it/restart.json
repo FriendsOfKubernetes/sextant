@@ -10,6 +10,10 @@
   "more_one": "…e {{count}} altro oggetto.",
   "more_many": "…e altri {{count}} di oggetti.",
   "more_other": "…e altri {{count}} oggetti.",
+  "sharedController_one": "{{count}} di questi pod appartiene a {{controller}}. Eliminati uno dopo l'altro, possono rendere indisponibile il workload finché i nuovi pod non sono pronti.",
+  "sharedController_many": "{{count}} di questi pod appartengono a {{controller}}. Eliminati uno dopo l'altro, possono rendere indisponibile il workload finché i nuovi pod non sono pronti.",
+  "sharedController_other": "{{count}} di questi pod appartengono a {{controller}}. Eliminati uno dopo l'altro, possono rendere indisponibile il workload finché i nuovi pod non sono pronti.",
+  "waitShared": "Elimina i pod di uno stesso controller uno alla volta, ciascuno dopo che il nuovo pod è Ready (fino a 5 minuti ciascuno)",
   "step": {
     "rollout": "{{name}}: i suoi pod vengono sostituiti uno alla volta (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts sostituisce i suoi pod uno alla volta (kubectl argo rollouts restart).",
@@ -28,6 +32,7 @@
   "progressPods_other": "{{name}}: {{done}} di {{count}} pod riavviati, in attesa che il nuovo pod sia pronto…",
   "summary": "{{done}} di {{total}} riavviati.",
   "summaryStopped": "Interrotto: {{done}} di {{total}} riavviati; gli altri non sono stati avviati.",
+  "disconnected": "Il cluster si è disconnesso: il riavvio si ferma dopo il passo corrente.",
   "result": {
     "done": "Riavviato: {{name}}",
     "failed": "Non riavviato: {{name}}",
@@ -44,6 +49,7 @@
     "paused": "{{name}} è in pausa: un riavvio non verrebbe distribuito. Riprendilo prima.",
     "noPods": "{{name}} non ha pod da riavviare.",
     "notReady": "Il nuovo pod al posto di {{name}} non era pronto entro 5 minuti. Gli altri pod sono stati lasciati come sono.",
-    "listTimeout": "Non è stato possibile elencare i pod del ReplicaSet entro 5 minuti."
+    "listTimeout": "Non è stato possibile elencare i pod del ReplicaSet entro 5 minuti.",
+    "earlierNotReady": "Non eliminato: il nuovo pod al posto di un pod precedente di {{controller}} non era pronto."
   }
 }

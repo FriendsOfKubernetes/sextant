@@ -33,6 +33,7 @@
     "fetchingHistory": "Recommender wciąż wczytuje historię: rekomendacja może się jeszcze zmienić.",
     "configUnsupported": "Recommender nie może użyć tego VPA: nie da się odczytać jego celu albo cel nie jest kontrolerem najwyższego poziomu (wskaż w VPA Deployment, a nie jego ReplicaSet). Rekomendacji nie będzie.",
     "noPodsMatched": "Żaden działający pod nie należy do celu: nie ma on replik albo jego pody nie działają. Recommender potrzebuje podów do pomiarów.",
+    "noPodsNow": "Obecnie żaden Pod nie pasuje do tego VPA (cel jest przeskalowany do zera albo jest między uruchomieniami). Recommender zachowuje ostatnią rekomendację i dostaną ją następne Pody.",
     "notProvided": "Recommender nie wygenerował jeszcze rekomendacji.",
     "noStatus": "Brak statusu: recommender jeszcze nie sprawdził tego VPA albo nie działa dla niego żaden recommender.",
     "deprecated": "Recommender zgłasza, że ta konfiguracja jest przestarzała i przestanie być obsługiwana."
@@ -94,7 +95,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}} skaluje to obciążenie według {{resources}}, a ten VPA zmienia je w trybie {{mode}}: oba sobie przeszkadzają.",
-    "why": "Gdy VPA podnosi request, wykorzystanie widziane przez HPA spada i HPA usuwa repliki; pozostałe pody zużywają więcej i tak dalej. Skaluj HPA według innej metryki, zostaw VPA w trybie Off lub Initial albo pozwól VPA sterować tylko drugim zasobem."
+    "why": "Gdy VPA podnosi request, wykorzystanie widziane przez HPA spada i HPA usuwa repliki; pozostałe pody zużywają więcej i tak dalej. Skaluj HPA według innej metryki, zostaw VPA w trybie Off lub Initial albo pozwól VPA sterować tylko drugim zasobem.",
+    "valueLine": "HPA {{hpa}} skaluje to obciążenie według średniego {{resources}} na Pod (AverageValue), które ten VPA zmienia w trybie {{mode}}. Nowy request nie przesuwa tej średniej, więc nie ma bezpośredniego konfliktu, ale oba reagują na to samo zużycie: pilnuj, by nie znosiły nawzajem swoich zmian."
   },
   "components": {
     "title": "Komponenty VPA",

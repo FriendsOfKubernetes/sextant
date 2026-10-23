@@ -140,7 +140,9 @@
     "healthCheck": {
       "blocked": "Onarım engellendi: çok fazla makine sağlıksız ({{expected}} makineden {{healthy}} sağlıklı).",
       "remediating": "Bazı makineler sağlıksız ({{expected}} makineden {{healthy}} sağlıklı) ve onarılıyor."
-    }
+    },
+    "clusterPaused": "Cluster {{name}} duraklatılmış: devam ettirilene kadar Cluster API burada hiçbir şeyi değiştirmez, bu yüzden bu durum güncel olmayabilir.",
+    "clusterUnread": "Cluster {{name}} okunamadı ve bu nesne duraklatılıp duraklatılmadığını söylemiyor: Cluster duraklatılmışsa bu durum güncel olmayabilir."
   },
   "chain": {
     "title": "Makineler",
@@ -151,6 +153,8 @@
     "others": "Diğer makineler",
     "more_one": "Ve {{count}} makine daha",
     "more_other": "Ve {{count}} makine daha",
+    "truncated_one": "Burada her türün yalnızca ilk {{count}} nesnesi okunur: liste eksik.",
+    "truncated_other": "Burada her türün yalnızca ilk {{count}} nesnesi okunur: liste eksik.",
     "ready": "Hazır: {{ready}}",
     "node": "Düğüm {{node}}"
   },

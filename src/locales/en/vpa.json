@@ -31,6 +31,7 @@
     "fetchingHistory": "The recommender is still loading history: the recommendation may still change.",
     "configUnsupported": "The recommender cannot use this VPA: its target cannot be read, or it is not the topmost controller (point the VPA at the Deployment, not at its ReplicaSet). It gives no recommendation.",
     "noPodsMatched": "No running pod belongs to the target: it has no replicas, or its pods do not run. The recommender needs pods to measure.",
+    "noPodsNow": "No pod matches this VPA right now (the target is scaled to zero or between runs). The recommender keeps its last recommendation, and the next pods get it.",
     "notProvided": "The recommender has not produced a recommendation yet.",
     "noStatus": "No status yet: the recommender has not looked at this VPA, or no recommender runs for it.",
     "deprecated": "The recommender says this configuration is deprecated and will stop being supported."
@@ -92,7 +93,8 @@
   },
   "conflict": {
     "line": "HPA {{hpa}} scales this workload on {{resources}}, which this VPA changes in mode {{mode}}: the two fight.",
-    "why": "When the VPA raises a request, the HPA's utilization falls and it removes replicas; the remaining pods use more, and so on. Scale the HPA on another metric, leave the VPA in Off or Initial, or let the VPA control only the other resource."
+    "why": "When the VPA raises a request, the HPA's utilization falls and it removes replicas; the remaining pods use more, and so on. Scale the HPA on another metric, leave the VPA in Off or Initial, or let the VPA control only the other resource.",
+    "valueLine": "HPA {{hpa}} scales this workload on the average {{resources}} per pod (AverageValue), which this VPA changes in mode {{mode}}. A new request does not move that average, so the two do not fight directly, but both react to the same usage: watch that they do not keep undoing each other."
   },
   "components": {
     "title": "VPA components",

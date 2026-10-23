@@ -139,7 +139,9 @@
     "healthCheck": {
       "blocked": "복구가 차단되었습니다. 비정상 머신이 너무 많습니다({{expected}}개 중 {{healthy}}개 정상).",
       "remediating": "일부 머신이 비정상이며({{expected}}개 중 {{healthy}}개 정상) 복구하고 있습니다."
-    }
+    },
+    "clusterPaused": "소속 Cluster {{name}}이(가) 일시 중지되었습니다. 재개될 때까지 Cluster API가 여기서 아무것도 변경하지 않으므로 이 상태는 오래되었을 수 있습니다.",
+    "clusterUnread": "소속 Cluster {{name}}을(를) 읽을 수 없고, 이 객체도 일시 중지 여부를 알려 주지 않습니다. Cluster가 일시 중지되었다면 이 상태는 오래되었을 수 있습니다."
   },
   "chain": {
     "title": "머신",
@@ -149,6 +151,7 @@
     "controlPlane": "컨트롤 플레인",
     "others": "기타 머신",
     "more_other": "머신 {{count}}개 더 있음",
+    "truncated_other": "여기서는 종류별로 처음 {{count}}개 객체만 읽습니다. 목록이 불완전합니다.",
     "ready": "준비됨: {{ready}}",
     "node": "노드 {{node}}"
   },

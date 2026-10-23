@@ -16,7 +16,14 @@ import { EVENTING_KINDS } from "../knative/eventing";
 import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
 import { XRD } from "../crossplane/model";
 import { BACKUP as CNPG_BACKUP, PG_CLUSTER } from "../cnpg/model";
-import { MACHINE as CAPI_MACHINE, PROBLEM_KINDS as CAPI_PROBLEM_KINDS } from "../cluster-api/model";
+import { CAPI_PAUSED_ACROSS } from "../cluster-api/across";
+import {
+  CAPI_CLUSTER,
+  isKind as isCapiKind,
+  KUBEADM_CONTROL_PLANE as CAPI_KCP,
+  MACHINE as CAPI_MACHINE,
+  PROBLEM_KINDS as CAPI_PROBLEM_KINDS,
+} from "../cluster-api/model";
 import { CLUSTER_EXTERNAL_SECRET, CLUSTER_SECRET_STORE, EXTERNAL_SECRET, PUSH_SECRET, SECRET_STORE } from "../external-secrets/model";
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
 import { SEALED_SECRET } from "../sealed-secrets/model";
@@ -69,6 +76,11 @@ export interface SourceDef {
 export interface AcrossDef {
   tap: { id: string; toRow(obj: KubeObject): unknown; max: number };
   keep(problems: readonly Problem[], rows: ReadonlyMap<string, unknown>): Problem[];
+  /**
+   * The rows are of this other source of the same cluster (held with a tap while this source lives), not of this
+   * source's own objects: a Machine's problems are kept only while its Cluster is not paused (#243).
+   */
+  from?: SourceDef;
 }
 
 /** The cap of a source whose kind a cluster can hold by the thousand. */
@@ -145,7 +157,12 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // Cluster API (#243): failed or unavailable Clusters and KubeadmControlPlanes, Machines failed or stuck
   // provisioning, MachineHealthChecks that stopped remediating; a management cluster can hold thousands of Machines:
   // capped.
-  clusterApi: CAPI_PROBLEM_KINDS.map((kind) => tool("clusterApi", kind, kind === CAPI_MACHINE ? MAX_SOURCE_OBJECTS : undefined)),
+  // Machines and control planes of a paused Cluster are left alone by its controllers: their problems are judged
+  // across the Cluster source's rows (`CAPI_PAUSED_ACROSS`), and kept while those rows cannot be read in full.
+  clusterApi: CAPI_PROBLEM_KINDS.map((kind) => {
+    const def = tool("clusterApi", kind, kind === CAPI_MACHINE ? MAX_SOURCE_OBJECTS : undefined);
+    return isCapiKind(kind, CAPI_MACHINE, CAPI_KCP) ? { ...def, across: { ...CAPI_PAUSED_ACROSS, from: tool("clusterApi", CAPI_CLUSTER) } } : def;
+  }),
   // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
   strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind, d.label === "topics" || d.label === "users" ? MAX_SOURCE_OBJECTS : undefined)),
   // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged
@@ -196,10 +213,22 @@ export function sourcesFor(categories: readonly ProblemCategory[], kinds: Resour
         continue;
       }
       const served = kinds ? findKind(kinds, def.kind)?.kindRef : undefined;
-      if (served) add({ ...def, kind: served });
+      if (served) add({ ...def, kind: served, ...servedAcross(def, kinds) });
     }
   }
   return out;
+}
+
+/**
+ * A source's `across.from` with the version the cluster serves; without it served (or without discovery) the source
+ * is judged on its own (`across` dropped: every problem stays).
+ */
+function servedAcross(def: SourceDef, kinds: ResourceKind[] | null | undefined): Pick<SourceDef, "across"> {
+  const from = def.across?.from;
+  if (!def.across || !from) return {};
+  const served = from.discovered ? (kinds ? findKind(kinds, from.kind)?.kindRef : undefined) : from.kind;
+  if (!served) return { across: undefined };
+  return { across: { ...def.across, from: { ...from, kind: served } } };
 }
 
 /** Whether `categories` need discovery to be watched. */

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type KindRef, type KubeObject, type ObjectRef } from "../../api";
 import { resetAppStore } from "../../app/store";
@@ -10,6 +10,8 @@ import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } fro
 import "./index";
 import { planRestart, POD, REPLICA_SET } from "./model";
 import { RestartDialog } from "./RestartDialog";
+import { restartRunOf } from "./runStore";
+import { resetClustersStore, useClustersStore } from "../clusters/clustersStore";
 
 const DEPLOYMENT: KindRef = { group: "apps", version: "v1", kind: "Deployment" };
 
@@ -39,7 +41,10 @@ beforeEach(() => {
   render(<ActionDialogHost />);
   while (screen.queryAllByRole("dialog").length > 0) fireEvent.keyDown(window, { key: "Escape" });
 });
-afterEach(() => wb.backend.restore());
+afterEach(() => {
+  wb.backend.restore();
+  resetClustersStore();
+});
 
 const calls = (cmd: string) => wb.backend.calls.filter((c) => c.cmd === cmd).map((c) => c.args);
 const sent = () => wb.backend.calls.filter((c) => ["workload_restart", "resource_patch", "resource_delete"].includes(c.cmd)).map((c) => c.cmd);
@@ -200,6 +205,30 @@ describe("ReplicaSets", () => {
     await waitFor(() => expect(calls("watch_stop")).toHaveLength(1));
   });
 
+  it("never deletes Sextant's own or a static pod among an unowned ReplicaSet's pods", async () => {
+    wb.backend.on("resource_delete", () => undefined);
+    const shell = obj(POD, "legacy-shell", { status: { conditions: [{ type: "Ready", status: "True" }] } }, {
+      labels: { app: "legacy", "sextant.dev/node-shell": "true" },
+      ownerReferences: [controller("apps/v1", "ReplicaSet", "legacy")],
+    });
+    const mirror = obj(POD, "legacy-mirror", { status: { conditions: [{ type: "Ready", status: "True" }] } }, {
+      labels: { app: "legacy" },
+      annotations: { "kubernetes.io/config.mirror": "abc" },
+      ownerReferences: [controller("apps/v1", "ReplicaSet", "legacy")],
+    });
+    for (const p of [pod("legacy-a", true), shell, mirror]) live.set(p.metadata!.name!, p);
+    live.set("legacy", bare);
+    render(<RestartDialog clusterId="c1" steps={planRestart([bare], REPLICA_SET)} close={() => {}} />);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Restart" }));
+    const id = await watchOf(wb, "Pod");
+    emitSnapshot(wb, id, [pod("legacy-a", true), shell, mirror]);
+    await waitFor(() => expect(calls("resource_delete")).toHaveLength(1));
+    emitDelta(wb, id, [pod("legacy-c", true)], ["uid-legacy-a"]);
+    await screen.findByText("1 of 1 restarted.");
+    expect(calls("resource_delete").map((a) => (a.ref as ObjectRef).name)).toEqual(["legacy-a"]);
+    expect(screen.getByRole("dialog")).toHaveTextContent("1 of 1 pod restarted.");
+  });
+
   it("leaves the other pods alone when a replacement is not ready in time", async () => {
     wb.backend.on("resource_delete", () => undefined);
     for (const p of [pod("legacy-a", true), pod("legacy-b", true)]) live.set(p.metadata!.name!, p);
@@ -233,5 +262,132 @@ describe("Pods", () => {
   it("is not offered for a pod nothing recreates", () => {
     const action = getAction("restart")!;
     expect(action.appliesTo(obj(POD, "bare"), POD)).toBe(false);
+  });
+});
+
+describe("Pods of one controller selected together", () => {
+  const RS = obj(REPLICA_SET, "web-1", { spec: { replicas: 2, selector: { matchLabels: { app: "web" } } } });
+  const webPod = (name: string, ready = true) =>
+    obj(POD, name, { status: { conditions: [{ type: "Ready", status: ready ? "True" : "False" }] } }, {
+      labels: { app: "web" },
+      ownerReferences: [controller("apps/v1", "ReplicaSet", "web-1")],
+    });
+
+  it("warns, and by default deletes them one at a time, each after the new pod is Ready", async () => {
+    wb.backend.on("resource_delete", () => undefined);
+    live.set("web-1", RS);
+    await run(POD, [webPod("web-a"), webPod("web-b")]);
+    const dialog = screen.getByRole("dialog", { name: "Restart 2 objects?" });
+    expect(dialog).toHaveTextContent(
+      "2 of these pods belong to ReplicaSet demo/web-1. Deleted back to back, they can take the workload down until the new pods are ready.",
+    );
+    const wait = within(dialog).getByRole("checkbox", { name: /one at a time/ });
+    expect(wait).toBeChecked();
+    expect(await axeViolations(dialog)).toEqual([]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Restart" }));
+
+    const first = await watchOf(wb, "Pod");
+    expect(wb.specs.get(first)).toMatchObject({ namespaces: ["demo"], labelSelector: "app=web" });
+    emitSnapshot(wb, first, [webPod("web-a"), webPod("web-b")]);
+    await waitFor(() => expect(calls("resource_delete")).toHaveLength(1));
+    await new Promise((r) => setTimeout(r, 300));
+    // web-b is not deleted while web-a's replacement is not Ready.
+    emitDelta(wb, first, [webPod("web-c", false)], ["uid-web-a"]);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(calls("resource_delete")).toHaveLength(1);
+    emitDelta(wb, first, [webPod("web-c", true)]);
+
+    await waitFor(() => expect([...wb.specs.keys()].filter((id) => wb.specs.get(id)?.kind.kind === "Pod")).toHaveLength(2));
+    const second = await watchOf(wb, "Pod", (spec) => spec.labelSelector === "app=web");
+    expect(second).not.toBe(first);
+    emitSnapshot(wb, second, [webPod("web-b"), webPod("web-c")]);
+    await waitFor(() => expect(calls("resource_delete")).toHaveLength(2));
+    expect(calls("resource_delete")[1]).toMatchObject({ ref: { name: "web-b" }, preconditions: { uid: "uid-web-b" } });
+    emitDelta(wb, second, [webPod("web-d", true)], ["uid-web-b"]);
+    await screen.findByText("2 of 2 restarted.");
+  });
+
+  it("deletes them back to back when the choice is cleared", async () => {
+    wb.backend.on("resource_delete", () => undefined);
+    live.set("web-1", RS);
+    await run(POD, [webPod("web-a"), webPod("web-b")]);
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: /one at a time/ }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Restart" }));
+    await screen.findByText("2 of 2 restarted.");
+    expect(calls("resource_delete")).toHaveLength(2);
+    expect(calls("watch_start")).toHaveLength(0);
+  });
+
+  it("leaves the controller's other pods alone when a replacement is not Ready in time", async () => {
+    wb.backend.on("resource_delete", () => undefined);
+    live.set("web-1", RS);
+    const steps = planRestart([webPod("web-a"), webPod("web-b")], POD);
+    for (const name of ["web-a", "web-b"]) live.set(name, webPod(name));
+    render(<RestartDialog clusterId="c1" steps={steps} close={() => {}} control={{ replacementTimeoutMs: 300 }} />);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Restart" }));
+    emitSnapshot(wb, await watchOf(wb, "Pod"), [webPod("web-a"), webPod("web-b")]);
+    await screen.findByText("0 of 2 restarted.");
+    expect(calls("resource_delete")).toHaveLength(1);
+    expect(screen.getByRole("dialog")).toHaveTextContent("was not ready within 5 minutes");
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "Not deleted: the new pod in place of an earlier pod of ReplicaSet demo/web-1 was not ready.",
+    );
+  });
+});
+
+describe("a run outlives its dialog", () => {
+  it("shows the live run with Stop after a remount and never starts a second one", async () => {
+    let finish: () => void = () => {};
+    wb.backend.on("workload_restart", () => new Promise<void>((resolve) => (finish = resolve)));
+    cleanup();
+    const host = render(<ActionDialogHost />);
+    await run(DEPLOYMENT, [obj(DEPLOYMENT, "a"), obj(DEPLOYMENT, "b")]);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Restart" }));
+    await waitFor(() => expect(calls("workload_restart")).toHaveLength(1));
+
+    // The main view goes away ("All clusters") and comes back.
+    host.unmount();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    render(<ActionDialogHost />);
+    const dialog = screen.getByRole("dialog", { name: "Restart 2 objects?" });
+    expect(within(dialog).queryByRole("button", { name: "Restart" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("status")).toHaveTextContent("Restarting Deployment demo/a (1 of 2)");
+    expect(within(dialog).getByRole("button", { name: "Stop" })).toBeEnabled();
+
+    await act(async () => finish());
+    await waitFor(() => expect(calls("workload_restart")).toHaveLength(2));
+    await act(async () => finish());
+    await screen.findByText("2 of 2 restarted.");
+    expect(calls("workload_restart").map((a) => (a.ref as ObjectRef).name)).toEqual(["a", "b"]);
+  });
+
+  it("a second start of the same entry gets the running run", async () => {
+    let finish: () => void = () => {};
+    wb.backend.on("workload_restart", () => new Promise<void>((resolve) => (finish = resolve)));
+    live.set("a", obj(DEPLOYMENT, "a"));
+    const r = restartRunOf("entry-x", "c1", planRestart([obj(DEPLOYMENT, "a")], DEPLOYMENT));
+    const one = r.start({});
+    const two = r.start({});
+    expect(two).toBe(one);
+    await waitFor(() => expect(calls("workload_restart")).toHaveLength(1));
+    await act(async () => finish());
+    await one;
+    expect(calls("workload_restart")).toHaveLength(1);
+    expect(restartRunOf("entry-x", "c1", []).snapshot().phase).toBe("result");
+  });
+
+  it("stops when the cluster disconnects", async () => {
+    let finish: () => void = () => {};
+    wb.backend.on("workload_restart", () => new Promise<void>((resolve) => (finish = resolve)));
+    act(() => useClustersStore.setState((s) => ({ states: { ...s.states, c1: { state: "connected" } } })));
+    await run(DEPLOYMENT, [obj(DEPLOYMENT, "a"), obj(DEPLOYMENT, "b")]);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Restart" }));
+    await waitFor(() => expect(calls("workload_restart")).toHaveLength(1));
+    act(() => useClustersStore.setState((s) => ({ states: { ...s.states, c1: { state: "disconnected" } } })));
+    expect(screen.getByRole("dialog")).toHaveTextContent("The cluster disconnected");
+    await act(async () => finish());
+    await screen.findByText("Stopped: 1 of 2 restarted; the rest were not started.");
+    expect(calls("workload_restart")).toHaveLength(1);
   });
 });

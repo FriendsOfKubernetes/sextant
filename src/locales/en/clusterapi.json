@@ -140,7 +140,9 @@
     "healthCheck": {
       "blocked": "Remediation is blocked: too many machines are unhealthy ({{healthy}} of {{expected}} healthy).",
       "remediating": "Some machines are unhealthy ({{healthy}} of {{expected}} healthy) and are being remediated."
-    }
+    },
+    "clusterPaused": "Its Cluster {{name}} is paused: Cluster API changes nothing here until it is resumed, so this state may be out of date.",
+    "clusterUnread": "Its Cluster {{name}} could not be read, and this object does not say whether it is paused: if the Cluster is paused, this state may be out of date."
   },
   "chain": {
     "title": "Machines",
@@ -151,6 +153,8 @@
     "others": "Other machines",
     "more_one": "And {{count}} more machine",
     "more_other": "And {{count}} more machines",
+    "truncated_one": "Only the first {{count}} object of a kind is read here: the list is incomplete.",
+    "truncated_other": "Only the first {{count}} objects of a kind are read here: the list is incomplete.",
     "ready": "Ready: {{ready}}",
     "node": "Node {{node}}"
   },

@@ -17,11 +17,14 @@ import "./index";
 import { CATEGORY_SOURCES } from "../problems/sources";
 import { categoryOf, detect, OPT_IN_CATEGORIES, PROBLEM_CATEGORIES } from "../problems/model";
 import { planChain } from "./chain";
+import { clusterRow, withoutPausedClusters } from "./across";
+import { MAX_CHAIN_OBJECTS } from "./hooks";
 import objectsJson from "./fixtures/objects.json";
 import {
   CAPI_CLUSTER,
   CAPI_GRACE_MS,
   capiProblems,
+  clusterControlPlaneInitialized,
   clusterState,
   conditionsOf,
   healthCheckSpecOf,
@@ -159,6 +162,90 @@ describe("problems", () => {
     expect(isProblem(cluster(), CAPI_CLUSTER, Date.parse("2026-10-20T10:11:00Z"))).toBe(true);
   });
 
+  it("a Cluster whose control plane is not initialized gets the provisioning grace in every shape", () => {
+    expect(clusterControlPlaneInitialized(cluster())).toBe(true);
+    const v1beta2 = cluster();
+    (v1beta2.status as { initialization: Record<string, unknown> }).initialization.controlPlaneInitialized = false;
+    expect(capiProblems(CAPI_CLUSTER, v1beta2)[0]?.graceMs).toBe(PROVISIONING_GRACE_MS);
+    // v1beta1: the ControlPlaneInitialized condition, else controlPlaneReady.
+    const legacy: KubeObject = {
+      apiVersion: "cluster.x-k8s.io/v1beta1",
+      kind: "Cluster",
+      metadata: { name: "old", namespace: "legacy", uid: "c-old" },
+      status: {
+        phase: "Provisioned",
+        controlPlaneReady: true,
+        conditions: [
+          { type: "Ready", status: "False", severity: "Error", reason: "Down", lastTransitionTime: "2026-10-20T10:05:00Z" },
+          { type: "ControlPlaneInitialized", status: "False", severity: "Info", reason: "WaitingForControlPlane" },
+        ],
+      },
+    };
+    expect(clusterControlPlaneInitialized(legacy)).toBe(false);
+    expect(capiProblems(CAPI_CLUSTER, legacy)[0]?.graceMs).toBe(PROVISIONING_GRACE_MS);
+    const readyOnly = copy(legacy);
+    (readyOnly.status as { conditions: unknown[] }).conditions.pop();
+    (readyOnly.status as Record<string, unknown>).controlPlaneReady = false;
+    expect(clusterControlPlaneInitialized(readyOnly)).toBe(false);
+    (readyOnly.status as Record<string, unknown>).controlPlaneReady = true;
+    expect(capiProblems(CAPI_CLUSTER, readyOnly)[0]?.graceMs).toBe(CAPI_GRACE_MS);
+  });
+
+  it("an old-only status: a False of severity Info or Warning decides nothing", () => {
+    const waiting: KubeObject = {
+      apiVersion: "cluster.x-k8s.io/v1beta1",
+      kind: "Cluster",
+      metadata: { name: "old", namespace: "legacy", uid: "c-old" },
+      status: { phase: "Provisioned", conditions: [{ type: "Ready", status: "False", severity: "Info", reason: "WaitingForControlPlane" }] },
+    };
+    expect(clusterState(waiting)).toBe("provisioned");
+    expect(capiProblems(CAPI_CLUSTER, waiting)).toEqual([]);
+    const warning = copy(waiting);
+    (warning.status as { conditions: Record<string, unknown>[] }).conditions[0]!.severity = "Warning";
+    expect(capiProblems(CAPI_CLUSTER, warning)).toEqual([]);
+    const error = copy(waiting);
+    (error.status as { conditions: Record<string, unknown>[] }).conditions[0]!.severity = "Error";
+    expect(clusterState(error)).toBe("notAvailable");
+    expect(capiProblems(CAPI_CLUSTER, error)).toEqual([expect.objectContaining({ reason: "NotAvailable" })]);
+    const machine: KubeObject = {
+      apiVersion: "cluster.x-k8s.io/v1beta1",
+      kind: "Machine",
+      metadata: { name: "m", namespace: "legacy", uid: "m-1", labels: { "cluster.x-k8s.io/cluster-name": "old" } },
+      spec: { clusterName: "old" },
+      status: { phase: "Running", conditions: [{ type: "Ready", status: "False", severity: "Warning", reason: "Draining" }] },
+    };
+    expect(machineState(machine)).toBe("running");
+    (machine.status as { conditions: Record<string, unknown>[] }).conditions[0]!.severity = "Error";
+    expect(machineState(machine)).toBe("notReady");
+  });
+
+  it("a Machine's or control plane's problems carry its Cluster, and are left out while that Cluster is paused", () => {
+    const [stuck] = capiProblems(MACHINE, stuckWorker());
+    expect(stuck).toMatchObject({ belongsTo: "capi-quickstart" });
+    expect(capiProblems(CAPI_CLUSTER, cluster())[0]?.belongsTo).toBeUndefined();
+    const problem = { ...stuck!, key: "k", notifyKey: "n", category: "clusterApi" as const, uid: "u", firstSeen: 0, activeAt: 0, object: { kind: MACHINE, namespace: "default", name: "m" } };
+    const paused = cluster();
+    (paused.spec as Record<string, unknown>).paused = true;
+    expect(withoutPausedClusters([problem], new Map([["c", clusterRow(paused)]]))).toEqual([]);
+    expect(withoutPausedClusters([problem], new Map([["c", clusterRow(cluster())]]))).toEqual([problem]);
+    const annotated = cluster();
+    annotated.metadata!.annotations = { "cluster.x-k8s.io/paused": "" };
+    expect(withoutPausedClusters([problem], new Map([["c", clusterRow(annotated)]]))).toEqual([]);
+    // Another namespace's Cluster of the same name does not count.
+    const elsewhere = { ...clusterRow(paused), namespace: "other" };
+    expect(withoutPausedClusters([problem], new Map([["c", elsewhere]]))).toEqual([problem]);
+  });
+
+  it("a v1beta2 MachineSet with fewer ready Machines than wanted is not available, or scaling", () => {
+    expect(scalableState(machineSet())).toBe("notAvailable");
+    const scaling = machineSet();
+    (scaling.status as Record<string, unknown>).replicas = 1;
+    expect(scalableState(scaling)).toBe("scaling");
+    const ready = machineSet();
+    (ready.status as Record<string, unknown>).readyReplicas = 2;
+    expect(scalableState(ready)).toBe("available");
+  });
+
   it("a Machine stuck before Running counts 30 minutes after its phase changed; a running one has none", () => {
     expect(capiProblems(MACHINE, stuckWorker())).toEqual([
       expect.objectContaining({ reason: "ProvisioningStuck", message: "Waiting for DockerMachine to become ready", since: "2026-10-20T10:01:00Z", graceMs: PROVISIONING_GRACE_MS, stamp: "Provisioning" }),
@@ -281,6 +368,22 @@ describe("the Cluster API section", () => {
     await waitFor(() => expect(screen.getByTitle("1 object needs attention")).toHaveTextContent("1"));
   });
 
+  it("leaves out the problems of Machines whose Cluster is paused", async () => {
+    render(<Sidebar clusterId="c1" />);
+    await waitFor(() => expect(sections()).toContain("Cluster API"));
+    emitSnapshot(wb, await watchOf(wb, "Machine", (s) => s.namespaces === null), [legacyMachine(), cpMachine()]);
+    await waitFor(() => expect(screen.getByTitle("1 object needs attention")).toHaveTextContent("1"));
+    const clusters = await watchOf(wb, "Cluster", (s) => s.namespaces === null);
+    const legacy: KubeObject = { apiVersion: "cluster.x-k8s.io/v1beta1", kind: "Cluster", metadata: { name: "legacy", namespace: "legacy", uid: "c-legacy" }, spec: { paused: true } };
+    emitSnapshot(wb, clusters, [legacy]);
+    await waitFor(() => expect(screen.queryByTitle("1 object needs attention")).toBeNull());
+    // Resumed: the problem is back.
+    const resumed = copy(legacy);
+    delete (resumed.spec as Record<string, unknown>).paused;
+    emitSnapshot(wb, clusters, [resumed]);
+    await waitFor(() => expect(screen.getByTitle("1 object needs attention")).toHaveTextContent("1"));
+  });
+
   it("is not there without the CRDs", async () => {
     discovery = [POD];
     render(<Sidebar clusterId="c1" />);
@@ -348,6 +451,40 @@ describe("details", () => {
     expect(v.getByRole("button", { name: "Open DockerMachine capi-quickstart-md-0-6xq7b-k9dpl-5tq8w" })).toBeInTheDocument();
     expect(reads.map((r) => r.kind.kind).sort()).toEqual(["Cluster", "DockerMachine", "KubeadmConfig"]);
     expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it("of a Machine whose Cluster is paused: paused, and said why", async () => {
+    const paused = cluster();
+    (paused.spec as Record<string, unknown>).paused = true;
+    wb.backend.on("resource_get", (args) => {
+      const ref = args.ref as ObjectRef;
+      if (ref.kind.kind === "Cluster") return paused;
+      const found = objects.find((o) => o.kind === ref.kind.kind && o.metadata?.name === ref.name);
+      if (!found) throw { code: "notFound", message: "not found" };
+      return copy(found);
+    });
+    await openDetails(stuckWorker());
+    const v = view();
+    await waitFor(() => expect(v.getByText(/Its Cluster capi-quickstart is paused/)).toBeInTheDocument());
+    expect(v.getByText("The machine is paused: Cluster API changes nothing in it until it is resumed.")).toBeInTheDocument();
+  });
+
+  it("of an old-only Machine whose Cluster cannot be read: says it cannot tell whether it is paused", async () => {
+    const old = legacyMachine();
+    delete (old.status as Record<string, unknown>).v1beta2;
+    await openDetails(old);
+    await waitFor(() => expect(view().getByText(/Its Cluster legacy could not be read/)).toBeInTheDocument());
+  });
+
+  it("caps the machine watches and says when a list is cut", async () => {
+    await openDetails(deployment());
+    const v = view();
+    const w = await watchOf(wb, "Machine", (s) => s.labelSelector !== null);
+    const start = wb.backend.calls.find((c) => c.cmd === "watch_start" && (c.args.spec as WatchSpec).kind.kind === "Machine" && (c.args.spec as WatchSpec).labelSelector !== null)!;
+    expect(start.args.options).toEqual({ progressive: false, maxObjects: MAX_CHAIN_OBJECTS });
+    emitSnapshot(wb, w, [runningWorker(), stuckWorker()]);
+    act(() => wb.backend.emit(`watch:${w}`, { type: "capped", total: MAX_CHAIN_OBJECTS + 10 }));
+    await waitFor(() => expect(v.getByText("Only the first 5000 objects of a kind are read here: the list is incomplete.")).toBeInTheDocument());
   });
 
   it("of a running Machine: the Node opens in the workload cluster only on a click", async () => {

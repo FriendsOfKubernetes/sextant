@@ -142,7 +142,9 @@
     "healthCheck": {
       "blocked": "Naprawa jest zablokowana: zbyt wiele maszyn jest niesprawnych (sprawne: {{healthy}} z {{expected}}).",
       "remediating": "Część maszyn jest niesprawna (sprawne: {{healthy}} z {{expected}}) i trwa ich naprawa."
-    }
+    },
+    "clusterPaused": "Jego Cluster {{name}} jest wstrzymany: Cluster API niczego tu nie zmienia, dopóki nie zostanie wznowiony, więc ten stan może być nieaktualny.",
+    "clusterUnread": "Nie udało się odczytać jego Cluster {{name}}, a sam obiekt nie mówi, czy jest wstrzymany: jeśli Cluster jest wstrzymany, ten stan może być nieaktualny."
   },
   "chain": {
     "title": "Maszyny",
@@ -155,6 +157,10 @@
     "more_few": "I jeszcze {{count}} maszyny",
     "more_many": "I jeszcze {{count}} maszyn",
     "more_other": "I jeszcze {{count}} maszyny",
+    "truncated_one": "Tu odczytywany jest tylko pierwszy {{count}} obiekt każdego rodzaju: lista jest niepełna.",
+    "truncated_few": "Tu odczytywane są tylko pierwsze {{count}} obiekty każdego rodzaju: lista jest niepełna.",
+    "truncated_many": "Tu odczytywanych jest tylko pierwszych {{count}} obiektów każdego rodzaju: lista jest niepełna.",
+    "truncated_other": "Tu odczytywane jest tylko pierwsze {{count}} obiektu każdego rodzaju: lista jest niepełna.",
     "ready": "Gotowe: {{ready}}",
     "node": "Węzeł {{node}}"
   },

@@ -9,7 +9,7 @@ import { controllerOf } from "../../resources/status";
 import { Block, chips, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { labelSelector } from "../details/ui";
 import { StateText } from "./columns";
-import { MAX_LISTED, useListed, useRefObjects } from "./hooks";
+import { MAX_CHAIN_OBJECTS, MAX_LISTED, useListed, useRefObjects, type Fetched } from "./hooks";
 import {
   addressesOf,
   availableOf,
@@ -23,8 +23,10 @@ import {
   healthCheckSpecOf,
   healthCheckState,
   healthCountsOf,
+  conditionsOf,
   infrastructureRefOf,
   isLegacy,
+  isPaused,
   kcpInitialized,
   kcpTemplateRefOf,
   MACHINE,
@@ -51,17 +53,41 @@ function OwnerLink({ obj }: { obj: KubeObject }) {
   return owner ? <>{link({ apiVersion: owner.apiVersion, kind: owner.kind }, owner.name, nsOf(obj), `${owner.kind}/${owner.name}`)}</> : null;
 }
 
+/**
+ * Whether the object's Cluster is paused (read by name): its controllers then change nothing in the object, which
+ * may not say so itself (an old-only status has no Paused condition). `unread`: the Cluster could not be read and the
+ * object has no new conditions, so whether it is paused is not known (#243, ADR-0113 amendment).
+ */
+function clusterPause(obj: KubeObject, fetched: Fetched | undefined): { paused: boolean; unread: boolean } {
+  if (fetched && "obj" in fetched) return { paused: isPaused(fetched.obj), unread: false };
+  return { paused: false, unread: fetched !== undefined && conditionsOf(obj).length === 0 };
+}
+
+/** What the details say of the Cluster's pause, if anything. */
+function ClusterPauseNote({ name, pause }: { name: string | undefined; pause: { paused: boolean; unread: boolean } }) {
+  const { t } = useTranslation();
+  if (!name || (!pause.paused && !pause.unread)) return null;
+  return <p className="cm-muted">{t(pause.paused ? "clusterapi:explain.clusterPaused" : "clusterapi:explain.clusterUnread", { name })}</p>;
+}
+
+const clusterRefOf = (obj: KubeObject) => {
+  const name = clusterNameOf(obj);
+  return name ? { group: CAPI_GROUP, kind: CAPI_CLUSTER.kind, name, namespace: nsOf(obj) } : undefined;
+};
+
 export function MachineView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const linkTo = useRefLink(clusterId);
-  const state = machineState(obj);
   const clusterName = clusterNameOf(obj);
-  const clusterRef = clusterName ? { group: CAPI_GROUP, kind: CAPI_CLUSTER.kind, name: clusterName, namespace: nsOf(obj) } : undefined;
+  const clusterRef = clusterRefOf(obj);
   const bootstrap = bootstrapRefOf(obj);
   const infrastructure = infrastructureRefOf(obj);
   const refs = [clusterRef, bootstrap, infrastructure].filter((r) => r !== undefined);
   const read = useRefObjects(clusterId, refs, str(obj.metadata?.resourceVersion) ?? "");
   const fetchedCluster = fetchedOf(read.byKey, clusterRef);
+  const pause = clusterPause(obj, fetchedCluster);
+  const own = machineState(obj);
+  const state = pause.paused && own !== "deleting" && own !== "failed" ? "paused" : own;
   const infraFetched = fetchedOf(read.byKey, infrastructure);
   const infraObj = infraFetched && "obj" in infraFetched ? infraFetched.obj : undefined;
   const node = nodeNameOf(obj);
@@ -89,6 +115,7 @@ export function MachineView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   return (
     <Block title={t("details:sections.fields", { kind: MACHINE.kind })}>
       <Explain text={note} danger={state === "failed" || state === "notReady"} />
+      <ClusterPauseNote name={clusterName} pause={pause} />
       <Message text={failureOf(obj)?.message ?? (state !== "running" ? failing?.message : undefined)} />
       <Fields rows={rows} labelPrefix={LABELS} />
     </Block>
@@ -112,6 +139,7 @@ function MachineList({ clusterId, namespace, selector }: { clusterId: ClusterId;
       {shown.length === 0 && !listed.unavailable && <p className="cm-muted">{listed.loading ? t("clusterapi:chain.loading") : t("clusterapi:machines.none")}</p>}
       {shown.length > 0 && table(MACHINES_TABLE, [t("clusterapi:machines.name"), t("clusterapi:machines.state"), t("clusterapi:machines.node")], rows, WRAP)}
       {listed.items.length > MAX_LISTED && <p className="cm-muted">{t("clusterapi:chain.more", { count: listed.items.length - MAX_LISTED })}</p>}
+      {listed.truncated && <p className="cm-muted">{t("clusterapi:chain.truncated", { count: MAX_CHAIN_OBJECTS })}</p>}
     </Block>
   );
 }
@@ -169,7 +197,11 @@ export function MachineGroupView({ clusterId, obj }: { clusterId: ClusterId; obj
 export function ControlPlaneView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const linkTo = useRefLink(clusterId);
-  const state = scalableState(obj);
+  const clusterRef = clusterRefOf(obj);
+  const read = useRefObjects(clusterId, clusterRef ? [clusterRef] : [], str(obj.metadata?.resourceVersion) ?? "");
+  const pause = clusterPause(obj, fetchedOf(read.byKey, clusterRef));
+  const own = scalableState(obj);
+  const state = pause.paused && own !== "deleting" && own !== "failed" ? "paused" : own;
   const initialized = kcpInitialized(obj);
   const last = get(obj, "status", "lastRemediation");
   const rows: FieldRow[] = [
@@ -188,6 +220,7 @@ export function ControlPlaneView({ clusterId, obj }: { clusterId: ClusterId; obj
     <>
       <Block title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
         <Explain text={key ? t(`clusterapi:explain.group.${key}`) : undefined} danger={state === "failed" || state === "notAvailable"} />
+        <ClusterPauseNote name={clusterRef?.name} pause={pause} />
         <Message text={whyNot(obj, state)} />
         <Fields rows={rows} labelPrefix={LABELS} />
       </Block>

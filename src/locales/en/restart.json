@@ -7,6 +7,9 @@
   "intro_other": "These {{count}} objects are restarted one at a time, in this order. Each request is sent once.",
   "more_one": "…and {{count}} more object.",
   "more_other": "…and {{count}} more objects.",
+  "sharedController_one": "{{count}} of these pods belongs to {{controller}}. Deleted back to back, they can take the workload down until the new pods are ready.",
+  "sharedController_other": "{{count}} of these pods belong to {{controller}}. Deleted back to back, they can take the workload down until the new pods are ready.",
+  "waitShared": "Delete the pods of one controller one at a time, each after the new pod is Ready (up to 5 minutes each)",
   "step": {
     "rollout": "{{name}}: its pods are replaced one by one (rollout restart).",
     "argoRollout": "{{name}}: Argo Rollouts replaces its pods one by one (kubectl argo rollouts restart).",
@@ -24,6 +27,7 @@
   "progressPods_other": "{{name}}: {{done}} of {{count}} pods restarted, waiting for the new pod to be ready…",
   "summary": "{{done}} of {{total}} restarted.",
   "summaryStopped": "Stopped: {{done}} of {{total}} restarted; the rest were not started.",
+  "disconnected": "The cluster disconnected: the restart stops after the current step.",
   "result": {
     "done": "Restarted: {{name}}",
     "failed": "Not restarted: {{name}}",
@@ -39,6 +43,7 @@
     "paused": "{{name}} is paused: a restart would not roll out. Resume it first.",
     "noPods": "{{name}} has no pods to restart.",
     "notReady": "The new pod in place of {{name}} was not ready within 5 minutes. The other pods were left as they are.",
-    "listTimeout": "The pods of the ReplicaSet could not be listed within 5 minutes."
+    "listTimeout": "The pods of the ReplicaSet could not be listed within 5 minutes.",
+    "earlierNotReady": "Not deleted: the new pod in place of an earlier pod of {{controller}} was not ready."
   }
 }
