@@ -1,0 +1,71 @@
+.observability-section {
+  margin: 0.75rem 0;
+}
+
+.observability-section__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.observability-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.observability-links__error,
+.observability-settings__invalid {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.observability-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.observability-settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+}
+
+.observability-settings__template {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.observability-settings__field {
+  font-weight: 600;
+}
+
+.observability-settings__input {
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.observability-settings__preset {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.observability-settings__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.observability-settings__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}

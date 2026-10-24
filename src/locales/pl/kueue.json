@@ -101,6 +101,7 @@
     "borrowingLimit": "Limit pożyczania",
     "lendingLimit": "Limit udostępniania",
     "ofQuota": "{{value}} ({{percent}}%)",
+    "ofQuotaBelowOne": "{{value}} (<1%)",
     "borrowed": "{{value}}, pożyczono {{borrowed}}"
   },
   "usage": "Użycie",

@@ -5,7 +5,9 @@
   "openSettings": "クラスターの設定を開く",
   "na": "N/A",
   "percent": "{{value}}%",
+  "percentBelowOne": "<1%",
   "percentOf": "{{value}}% · {{text}}",
+  "percentOfBelowOne": "<1% · {{text}}",
   "usedOf": "{{used}} / {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -15,7 +17,9 @@
     "requestSetOn_other": "({{count}} 個中 {{set}} 個のコンテナーで設定)",
     "limitSetOn_other": "({{count}} 個中 {{set}} 個のコンテナーで設定)",
     "shareOfLimit": "上限の {{value}}%",
+    "shareOfLimitBelowOne": "上限の <1%",
     "shareOfRequest": "要求の {{value}}%",
+    "shareOfRequestBelowOne": "要求の <1%",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "メモリ {{amounts}}"
   },

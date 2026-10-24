@@ -235,3 +235,12 @@
   background: var(--color-selected);
   outline: 1px solid var(--color-warning);
 }
+
+/* The pin toggle in the details panel's header (#274): a filled pin in the accent colour while pinned. */
+.views-pin-toggle--on {
+  color: var(--color-accent-strong);
+}
+
+.views-pin-toggle--on svg {
+  fill: currentColor;
+}

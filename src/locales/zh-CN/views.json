@@ -118,7 +118,8 @@
       "icon": "图标",
       "namespaces": "namespace 筛选",
       "previewChanges": "预览更改",
-      "agentAccess": "智能体访问规则"
+      "agentAccess": "智能体访问规则",
+      "observabilityLinks": "仪表板和追踪链接"
     },
     "overwrite": "替换与我的不同的条目",
     "applyAgentAccess": "应用文件中的智能体访问规则",

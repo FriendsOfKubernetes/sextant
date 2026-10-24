@@ -292,6 +292,7 @@ function TransferTab({ settings }: { settings: AppSettings }) {
   const { clusters, sources } = useClusters();
   const [includeAccess, setIncludeAccess] = useState(false);
   const [includeSnippets, setIncludeSnippets] = useState(true);
+  const [includeLinks, setIncludeLinks] = useState(false);
   const [exported, setExported] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [problems, setProblems] = useState<string[] | null>(null);
@@ -311,6 +312,7 @@ function TransferTab({ settings }: { settings: AppSettings }) {
       const file = buildExport(settings, clusters, sources, {
         includeAgentAccess: includeAccess,
         includeSnippets,
+        includeObservabilityLinks: includeLinks,
       });
       await api.files.save(path, exportText(file));
       setExported(path);
@@ -349,6 +351,10 @@ function TransferTab({ settings }: { settings: AppSettings }) {
           {t("terminal:snippets.exportInclude")}
         </label>
         {includeSnippets && <p className="views-manager__empty">{t("terminal:snippets.exportWarning")}</p>}
+        <label className="views-form__choice">
+          <Checkbox checked={includeLinks} onChange={(e) => setIncludeLinks(e.target.checked)} />
+          {t("observability:transfer.include")}
+        </label>
         <Button icon="download" onClick={() => void doExport()}>
           {t("views:transfer.export")}
         </Button>

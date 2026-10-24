@@ -1,0 +1,83 @@
+{
+  "mark": "Loki",
+  "markTitle": "Diese Zeile wurde aus Loki gelesen",
+  "bar": "Ältere Zeilen aus Loki",
+  "openBar": "Ältere Zeilen aus Loki",
+  "load": "Ältere Zeilen aus Loki laden",
+  "loading_one": "Lesen aus Loki… bisher {{count}} Zeile",
+  "loading_other": "Lesen aus Loki… bisher {{count}} Zeilen",
+  "loaded_one": "{{count}} Zeile aus Loki",
+  "loaded_other": "{{count}} Zeilen aus Loki",
+  "linesFromLoki_one": "{{count}} Zeile aus Loki",
+  "linesFromLoki_other": "{{count}} Zeilen aus Loki",
+  "truncated_one": "Nur die neueste {{count}} Zeile des Zeitraums wird gezeigt; wählen Sie einen kürzeren Zeitraum, um ältere zu sehen.",
+  "truncated_other": "Nur die neuesten {{count}} Zeilen des Zeitraums werden gezeigt; wählen Sie einen kürzeren Zeitraum, um ältere zu sehen.",
+  "cancel": "Anhalten",
+  "clear": "Zeilen aus Loki entfernen",
+  "noContainerLabel": "Loki hat hier kein Container-Label, daher werden die Zeilen aller Container des Pods gezeigt.",
+  "noLines": "Loki hat keine Zeilen dieses Pods im Zeitraum.",
+  "readFailed": "Die Zeilen konnten nicht aus Loki gelesen werden.",
+  "statusFailed": "Sextant konnte das Loki des Clusters nicht prüfen.",
+  "statusFailedNote": "Sextant konnte das Loki des Clusters nicht prüfen: {{message}}",
+  "status": {
+    "loading": "Lesen aus Loki…",
+    "failed": "Lesen aus Loki fehlgeschlagen",
+    "onlyLoki": "Nur Zeilen aus Loki (der Pod existiert nicht mehr)"
+  },
+  "none": {
+    "off": "Loki ist in den Cluster-Einstellungen ausgeschaltet, daher können Logs nicht mehr vorhandener Pods nicht gelesen werden.",
+    "notFound": "Logs nicht mehr vorhandener Pods lassen sich aus Grafana Loki lesen, aber Sextant hat in diesem Cluster keines gefunden. Sextant sucht die Services der Loki-Helm-Charts (loki-gateway, loki-query-frontend, loki-read, loki) in den Namespaces loki, logging, monitoring, observability, grafana und loki-stack sowie Services mit dem Label app.kubernetes.io/name=loki. Liegt Loki woanders, geben Sie seinen Service in den Cluster-Einstellungen an (Tab „Metriken“).",
+    "manualNoAnswer": "Der in den Cluster-Einstellungen angegebene Loki-Service hat über den API-Server nicht als Loki geantwortet.",
+    "noLabels": "Loki hat geantwortet, aber seine Log-Streams haben weder die Labels namespace und pod noch k8s_namespace_name und k8s_pod_name, daher kann Sextant nicht erkennen, welche Zeilen zu einem Pod gehören."
+  },
+  "range": {
+    "label": "Zeitraum",
+    "1h": "Letzte Stunde",
+    "6h": "Letzte 6 Stunden",
+    "24h": "Letzte 24 Stunden",
+    "custom": "Benutzerdefiniert",
+    "from": "Von",
+    "to": "Bis",
+    "problem": {
+      "invalid": "Der Zeitraum muss nach seinem Beginn enden.",
+      "tooLong": "Der Zeitraum darf höchstens 24 Stunden lang sein.",
+      "future": "Der Zeitraum darf nicht in der Zukunft enden."
+    }
+  },
+  "previous": {
+    "title": "Logs früherer Pods (Loki)",
+    "find": "Pods in Loki suchen",
+    "hint": "Pods dieser Workload im Zeitraum, in Loki gefunden über die Namen, die ihr Controller ihnen gibt. Ihre Zeilen öffnen sich in einem Log-Tab.",
+    "searching": "Suche in Loki…",
+    "none": "Loki hat keine Zeilen der Pods dieser Workload im Zeitraum.",
+    "listLabel": "Pods mit Zeilen in Loki",
+    "truncated_one": "Nur der erste {{count}} Pod wird aufgeführt; wählen Sie einen kürzeren Zeitraum.",
+    "truncated_other": "Nur die ersten {{count}} Pods werden aufgeführt; wählen Sie einen kürzeren Zeitraum."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki (Logs nicht mehr vorhandener Pods)",
+    "mode": {
+      "auto": "Automatisch finden",
+      "manual": "Diesen Service verwenden",
+      "off": "Aus"
+    },
+    "service": "Service (namespace/Name:Port)",
+    "pathPrefix": "Pfadpräfix",
+    "tenant": "Tenant (X-Scope-OrgID)",
+    "tenantPlaceholder": "Keiner",
+    "invalid": {
+      "service": "Geben Sie den Service als namespace/Name:Port an, zum Beispiel loki/loki-gateway:80.",
+      "prefix": "Ein Pfadpräfix ist leer oder beginnt mit /, mit Buchstaben, Ziffern, -, ., _ und ~ zwischen den Schrägstrichen.",
+      "tenant": "Eine Tenant-ID besteht aus Buchstaben, Ziffern und den Zeichen ! - _ . * ' ( ), höchstens 150; mehrere werden mit | verbunden."
+    },
+    "save": "Speichern",
+    "checking": "Loki wird geprüft…",
+    "foundAuto": "{{target}} gefunden; seine Streams tragen {{labels}}.",
+    "foundManual": "{{target}} antwortet; seine Streams tragen {{labels}}.",
+    "scheme": {
+      "kubernetes": "die Labels namespace, pod und container",
+      "openTelemetry": "die OpenTelemetry-Labels k8s_namespace_name, k8s_pod_name und k8s_container_name"
+    }
+  }
+}

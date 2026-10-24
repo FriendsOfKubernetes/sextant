@@ -1,0 +1,93 @@
+{
+  "mark": "Loki",
+  "markTitle": "Цей рядок прочитано з Loki",
+  "bar": "Старіші рядки з Loki",
+  "openBar": "Старіші рядки з Loki",
+  "load": "Завантажити старіші рядки з Loki",
+  "loading_one": "Читання з Loki… поки {{count}} рядок",
+  "loading_few": "Читання з Loki… поки {{count}} рядки",
+  "loading_many": "Читання з Loki… поки {{count}} рядків",
+  "loading_other": "Читання з Loki… поки {{count}} рядка",
+  "loaded_one": "{{count}} рядок з Loki",
+  "loaded_few": "{{count}} рядки з Loki",
+  "loaded_many": "{{count}} рядків з Loki",
+  "loaded_other": "{{count}} рядка з Loki",
+  "linesFromLoki_one": "{{count}} рядок з Loki",
+  "linesFromLoki_few": "{{count}} рядки з Loki",
+  "linesFromLoki_many": "{{count}} рядків з Loki",
+  "linesFromLoki_other": "{{count}} рядка з Loki",
+  "truncated_one": "Показано лише {{count}} найновіший рядок періоду; виберіть коротший період, щоб побачити старіші.",
+  "truncated_few": "Показано лише {{count}} найновіші рядки періоду; виберіть коротший період, щоб побачити старіші.",
+  "truncated_many": "Показано лише {{count}} найновіших рядків періоду; виберіть коротший період, щоб побачити старіші.",
+  "truncated_other": "Показано лише {{count}} найновішого рядка періоду; виберіть коротший період, щоб побачити старіші.",
+  "cancel": "Зупинити",
+  "clear": "Прибрати рядки з Loki",
+  "noContainerLabel": "Loki тут не має label контейнера, тому показано рядки всіх контейнерів Pod.",
+  "noLines": "У Loki немає рядків цього Pod за цей період.",
+  "readFailed": "Не вдалося прочитати рядки з Loki.",
+  "statusFailed": "Sextant не зміг перевірити Loki кластера.",
+  "statusFailedNote": "Sextant не зміг перевірити Loki кластера: {{message}}",
+  "status": {
+    "loading": "Читання з Loki…",
+    "failed": "Читання з Loki не вдалося",
+    "onlyLoki": "Лише рядки з Loki (Pod видалено)"
+  },
+  "none": {
+    "off": "Loki вимкнено в налаштуваннях кластера, тому логи видалених Pod прочитати не можна.",
+    "notFound": "Логи видалених Pod можна прочитати з Grafana Loki, але Sextant не знайшов його в цьому кластері. Sextant шукає Service з Helm-чартів Loki (loki-gateway, loki-query-frontend, loki-read, loki) у namespace loki, logging, monitoring, observability, grafana і loki-stack, а також Service з label app.kubernetes.io/name=loki. Якщо Loki деінде, вкажіть його Service у налаштуваннях кластера (вкладка «Метрики»).",
+    "manualNoAnswer": "Service Loki, вказаний у налаштуваннях кластера, не відповів через API-сервер як Loki.",
+    "noLabels": "Loki відповів, але його потоки логів не мають ні label namespace і pod, ні k8s_namespace_name і k8s_pod_name, тому Sextant не може визначити, які рядки належать Pod."
+  },
+  "range": {
+    "label": "Період",
+    "1h": "Остання година",
+    "6h": "Останні 6 годин",
+    "24h": "Останні 24 години",
+    "custom": "Власний",
+    "from": "З",
+    "to": "По",
+    "problem": {
+      "invalid": "Період має закінчуватися пізніше, ніж починається.",
+      "tooLong": "Період може бути не довшим за 24 години.",
+      "future": "Період не може закінчуватися в майбутньому."
+    }
+  },
+  "previous": {
+    "title": "Логи попередніх Pod (Loki)",
+    "find": "Знайти Pod у Loki",
+    "hint": "Pod цього навантаження за період, знайдені в Loki за іменами, які їм дає контролер. Їхні рядки відкриваються у вкладці логів.",
+    "searching": "Пошук у Loki…",
+    "none": "У Loki немає рядків Pod цього навантаження за цей період.",
+    "listLabel": "Pod з рядками в Loki",
+    "truncated_one": "Показано лише перший {{count}} Pod; виберіть коротший період.",
+    "truncated_few": "Показано лише перші {{count}} Pod; виберіть коротший період.",
+    "truncated_many": "Показано лише перші {{count}} Pod; виберіть коротший період.",
+    "truncated_other": "Показано лише перші {{count}} Pod; виберіть коротший період."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki (логи видалених Pod)",
+    "mode": {
+      "auto": "Знаходити автоматично",
+      "manual": "Використовувати цей Service",
+      "off": "Вимкнено"
+    },
+    "service": "Service (namespace/ім'я:порт)",
+    "pathPrefix": "Префікс шляху",
+    "tenant": "Тенант (X-Scope-OrgID)",
+    "tenantPlaceholder": "Немає",
+    "invalid": {
+      "service": "Вкажіть Service як namespace/ім'я:порт, наприклад loki/loki-gateway:80.",
+      "prefix": "Префікс шляху порожній або починається з /, а між скісними рисками стоять літери, цифри, -, ., _ і ~.",
+      "tenant": "ID тенанта складається з літер, цифр і символів ! - _ . * ' ( ), не більше 150; кілька ID з'єднуються через |."
+    },
+    "save": "Зберегти",
+    "checking": "Перевірка Loki…",
+    "foundAuto": "Знайдено {{target}}; його потоки мають {{labels}}.",
+    "foundManual": "{{target}} відповідає; його потоки мають {{labels}}.",
+    "scheme": {
+      "kubernetes": "label namespace, pod і container",
+      "openTelemetry": "label OpenTelemetry k8s_namespace_name, k8s_pod_name і k8s_container_name"
+    }
+  }
+}

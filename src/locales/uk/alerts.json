@@ -1,0 +1,115 @@
+{
+  "sidebar": "Алерти",
+  "title": "Алерти",
+  "loading": "Читання алертів…",
+  "none": "Немає активних або очікуваних алертів.",
+  "noneMatch": "Жоден алерт не відповідає фільтрам.",
+  "unnamed": "(без alertname)",
+  "shown_one": "Показано {{count}} алерт",
+  "shown_few": "Показано {{count}} алерти",
+  "shown_many": "Показано {{count}} алертів",
+  "shown_other": "Показано {{count}} алерту",
+  "truncated": "Показано лише найсерйозніші алерти (усього {{total}}).",
+  "activeSince": "Активний з",
+  "labels": "Мітки",
+  "openSettings": "Джерела алертів…",
+  "tabs": {
+    "label": "Алерти й заглушення",
+    "alerts": "Алерти ({{count}})",
+    "silences": "Заглушення ({{count}})"
+  },
+  "filter": {
+    "search": "Пошук алертів",
+    "severity": "Важливість",
+    "namespace": "Namespace",
+    "state": "Стан",
+    "all": "Усі"
+  },
+  "state": {
+    "firing": "Спрацьовує",
+    "pending": "Очікує",
+    "silenced": "Заглушено",
+    "inhibited": "Пригнічено"
+  },
+  "severity": {
+    "critical": "Критична",
+    "error": "Помилка",
+    "high": "Висока",
+    "warning": "Попередження",
+    "medium": "Середня",
+    "info": "Інформація",
+    "low": "Низька",
+    "none": "Немає",
+    "unset": "Без важливості"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Дашборд",
+    "cleaned": "{{url}} (облікові дані, параметри запиту й фрагмент вилучено)"
+  },
+  "source": {
+    "title": "Джерела алертів",
+    "silencesFailed": "Не вдалося прочитати заглушення Alertmanager",
+    "prometheus": {
+      "ok": "Prometheus-сумісне джерело: {{target}}",
+      "off": "Prometheus-сумісне джерело вимкнено в налаштуваннях кластера.",
+      "notFound": "Prometheus-сумісне джерело не знайдено: очікувані алерти не показано.",
+      "vmalertMissing": "VictoriaMetrics за адресою {{target}} віддає алерти лише через vmalert, а -vmalert.proxyURL не задано.",
+      "failed": "Не вдалося прочитати алерти Prometheus-сумісного джерела",
+      "failedAt": "Не вдалося прочитати алерти {{target}}"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager вимкнено в налаштуваннях кластера.",
+      "notFound": "Alertmanager не знайдено: заглушені й пригнічені алерти не показано.",
+      "failed": "Не вдалося прочитати Alertmanager",
+      "failedAt": "Не вдалося прочитати Alertmanager за адресою {{target}}"
+    }
+  },
+  "silences": {
+    "readOnly": "Заглушення показано лише для читання: створюйте й завершуйте їх в Alertmanager.",
+    "none": "Немає активних або очікуваних заглушень.",
+    "noAlertmanager": "Заглушення надходять з Alertmanager, а він не відповідає.",
+    "expired_one": "{{count}} завершене заглушення не показано.",
+    "expired_few": "{{count}} завершені заглушення не показано.",
+    "expired_many": "{{count}} завершених заглушень не показано.",
+    "expired_other": "{{count}} завершеного заглушення не показано.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "автор: {{name}}",
+    "matchers": "Умови",
+    "state": {
+      "active": "Активне",
+      "pending": "Очікує",
+      "expired": "Завершене"
+    }
+  },
+  "details": {
+    "title": "Алерти",
+    "none": "Немає алертів про цей об'єкт.",
+    "openPage": "Усі алерти"
+  },
+  "settings": {
+    "title": "Алерти",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Знаходити автоматично",
+      "manual": "Адреса Service",
+      "off": "Вимкнено"
+    },
+    "service": "Service (namespace/ім'я:порт)",
+    "pathPrefix": "Префікс шляху",
+    "invalid": "Введіть адресу у вигляді namespace/service:порт і префікс шляху на зразок /alertmanager.",
+    "save": "Зберегти",
+    "prometheusHint": "Очікувані й активні алерти правил читаються з Prometheus-сумісного джерела розділу «Метрики».",
+    "detected": "Знайдені джерела алертів",
+    "prometheusSource": "Prometheus-сумісне джерело",
+    "checking": "Перевірка…",
+    "found": "Знайдено",
+    "failed": "Не відповідає",
+    "vmalertMissing": "VictoriaMetrics без vmalert (-vmalert.proxyURL)",
+    "status": {
+      "off": "Вимкнено",
+      "notFound": "Не знайдено"
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "tab": "Dashboards und Traces",
+  "openGrafana": "In Grafana öffnen",
+  "findTraces": "Traces suchen",
+  "openFailed": "Der Link konnte nicht geöffnet werden: {{error}}",
+  "details": {
+    "title": "Dashboards und Traces"
+  },
+  "settings": {
+    "title": "Dashboards und Traces",
+    "intro": "Links aus den Details von Workloads, Pods, Knoten und Namespaces und aus dem Traffic-Graphen zu Ihren Grafana-Dashboards und Traces. Ein Link öffnet sich im Browser; Sextant selbst ruft diese Adressen nie ab.",
+    "grafanaUrl": "Grafana-URL",
+    "grafanaUrlHint": "Zum Beispiel https://grafana.example.com oder https://example.com/grafana. Einfaches http wird nur für localhost (eine Portweiterleitung) akzeptiert.",
+    "tracesUrl": "Traces-URL",
+    "tracesUrlHint": "Grafana mit Tempo oder die Jaeger-Oberfläche. Leer bedeutet: die Grafana-URL.",
+    "dashboards": "Dashboards",
+    "tracesGroup": "Traces",
+    "templateHint": "Ein Pfad unter der URL oben (/d/…) oder eine vollständige Adresse auf derselben Website. Schreiben Sie eine echte geschweifte Klammer als %7B oder %7D. {from} und {to} sind die Stunde vor dem Klick in Millisekunden; {kind} ist die Art in Kleinbuchstaben (deployment). Eine leere Vorlage ergibt keinen Link.",
+    "variables": "Variablen: {{variables}}",
+    "targets": {
+      "workload": "Workloads",
+      "pod": "Pods",
+      "node": "Knoten",
+      "namespace": "Namespaces",
+      "edge": "Aufrufe im Traffic-Graphen",
+      "traces": "Trace-Suche"
+    },
+    "presetFor": "Vorlage für {{target}}",
+    "choosePreset": "Vorlage verwenden…",
+    "save": "Speichern",
+    "remove": "Links entfernen",
+    "saved": "Gespeichert."
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Pod-Logs in Grafana Explore (Loki-Datenquelle mit uid loki)",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "Workload-Dashboard des Ziels (kube-prometheus-stack)",
+    "tempo": "Tempo in Grafana Explore (Datenquelle mit uid tempo)",
+    "jaeger": "Suche in der Jaeger-Oberfläche"
+  },
+  "baseError": {
+    "empty": "Geben Sie eine URL ein.",
+    "tooLong": "Die URL ist zu lang (höchstens 2048 Zeichen).",
+    "invalid": "Das ist keine gültige URL.",
+    "scheme": "Verwenden Sie https; einfaches http wird nur für localhost akzeptiert.",
+    "credentials": "Die URL darf keinen Benutzernamen und kein Passwort enthalten.",
+    "query": "Die Basis-URL darf weder ? noch # enthalten."
+  },
+  "templateError": {
+    "empty": "Geben Sie eine Vorlage ein.",
+    "tooLong": "Die Vorlage ist zu lang (höchstens 2048 Zeichen).",
+    "invalid": "Die Vorlage enthält Leerzeichen, Steuerzeichen oder einen Backslash.",
+    "brace": "Eine geschweifte Klammer, die keine Variable ist: Schreiben Sie sie als %7B oder %7D.",
+    "variable": "Die Vorlage verwendet eine Variable, die dieser Link nicht hat.",
+    "origin": "Die Vorlage muss auf der Website der Basis-URL bleiben.",
+    "noBase": "Legen Sie zuerst die Basis-URL fest."
+  },
+  "transfer": {
+    "include": "Links zu Dashboards und Traces einschließen"
+  }
+}

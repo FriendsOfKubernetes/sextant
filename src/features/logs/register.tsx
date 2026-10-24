@@ -3,8 +3,12 @@ import { registerDockTab } from "../../layout/dock/registry";
 import { registerDetailsSection } from "../../layout/details/registry";
 import { extendActions } from "../../resources/registry";
 import { registerAction } from "../actions/registry";
+import { registerClusterSettingsSection } from "../clusters/settingsRegistry";
 import "./logs.css";
 import { LogsTab } from "./LogsTab";
+import { LOKI_WORKLOAD_KINDS, PreviousPodsSection } from "./loki/PreviousPodsSection";
+import { LokiSettingsSection } from "./loki/SettingsSection";
+import "./loki/loki.css";
 import { openPodsLogsTab, openSelectorLogsTab } from "./multi/open";
 import { WorkloadLogsSection } from "./multi/WorkloadLogsSection";
 import { openLogsTab } from "./openLogsTab";
@@ -18,6 +22,7 @@ extendActions({ group: "apps", kind: "ReplicaSet" }, ["logs"]);
 extendActions({ group: "", kind: "Service" }, ["logs"]);
 
 registerAction("logs", {
+  placement: "primary",
   labelKey: "logs:action.label",
   icon: "logs",
   // Several pods selected in a table: their logs merged in one tab; several workloads: a merged tab for each.
@@ -52,4 +57,21 @@ registerDetailsSection({
   order: 24,
   appliesTo: (kind) => POD_OWNERS[kind.group]?.includes(kind.kind) ?? false,
   Component: WorkloadLogsSection,
+});
+
+// Right after the live logs block: the pods a workload had, read from Loki (#265).
+registerDetailsSection({
+  id: "previousPodsLoki",
+  order: 25,
+  appliesTo: (kind) => LOKI_WORKLOAD_KINDS[kind.group]?.includes(kind.kind) ?? false,
+  Component: PreviousPodsSection,
+});
+
+// Where Loki is (#265): in the Metrics tab of the cluster settings, after Prometheus.
+registerClusterSettingsSection({
+  id: "loki",
+  order: 30,
+  tab: "metrics",
+  titleKey: "loki:settings.title",
+  Component: LokiSettingsSection,
 });

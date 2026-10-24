@@ -118,7 +118,8 @@
       "icon": "アイコン",
       "namespaces": "namespace フィルター",
       "previewChanges": "変更のプレビュー",
-      "agentAccess": "エージェントのアクセスルール"
+      "agentAccess": "エージェントのアクセスルール",
+      "observabilityLinks": "ダッシュボードとトレースへのリンク"
     },
     "overwrite": "自分のものと異なる項目を置き換える",
     "applyAgentAccess": "ファイルのエージェントのアクセスルールを適用",

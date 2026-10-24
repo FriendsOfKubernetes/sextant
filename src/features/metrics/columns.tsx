@@ -4,7 +4,7 @@ import type { ClusterId, KubeObject } from "../../api";
 import { useAppStore } from "../../app/store";
 import { status, type ColumnDef } from "../../resources";
 import { UnavailableCell, UsageBar, usageUnavailable } from "./components";
-import { formatBytes, formatCpu, parseQuantity, percentOf } from "./format";
+import { formatBytes, formatCpu, parseQuantity, percentKey, percentOf } from "./format";
 import {
   latestNodeUsage,
   latestPodUsage,
@@ -56,7 +56,7 @@ function NodeUsageCell({ clusterId, node, metric }: { clusterId: ClusterId; node
   return (
     <UsageBar
       percent={percent}
-      label={percent === undefined ? format(used) : t("metrics:percent", { value: percent })}
+      label={percent === undefined ? format(used) : t(percentKey("metrics:percent", percent), { value: percent })}
       title={absolute}
     />
   );

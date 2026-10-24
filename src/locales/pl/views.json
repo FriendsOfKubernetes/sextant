@@ -118,7 +118,8 @@
       "icon": "ikona",
       "namespaces": "filtr namespaces",
       "previewChanges": "podgląd zmian",
-      "agentAccess": "reguły dostępu agentów"
+      "agentAccess": "reguły dostępu agentów",
+      "observabilityLinks": "linki do pulpitów i śladów"
     },
     "overwrite": "Zastępuj wpisy, które różnią się od moich",
     "applyAgentAccess": "Zastosuj reguły dostępu agentów z pliku",

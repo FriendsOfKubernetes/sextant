@@ -1,0 +1,64 @@
+{
+  "tab": "Panolar ve izler",
+  "openGrafana": "Grafana'da aç",
+  "findTraces": "İz bul",
+  "openFailed": "Bağlantı açılamadı: {{error}}",
+  "details": {
+    "title": "Panolar ve izler"
+  },
+  "settings": {
+    "title": "Panolar ve izler",
+    "intro": "İş yüklerinin, Pod'ların, düğümlerin ve Namespace'lerin ayrıntılarından ve trafik grafiğinden Grafana panolarınıza ve izlerinize bağlantılar. Bağlantı tarayıcınızda açılır; Sextant bu adreslere hiçbir zaman kendisi istek göndermez.",
+    "grafanaUrl": "Grafana URL'si",
+    "grafanaUrlHint": "Örneğin https://grafana.example.com veya https://example.com/grafana. Düz http yalnızca localhost (bir port yönlendirmesi) için kabul edilir.",
+    "tracesUrl": "İz URL'si",
+    "tracesUrlHint": "Tempo'lu Grafana veya Jaeger arayüzü. Boşsa Grafana URL'si kullanılır.",
+    "dashboards": "Panolar",
+    "tracesGroup": "İzler",
+    "templateHint": "Yukarıdaki URL'nin altında bir yol (/d/…) veya aynı sitede tam bir adres. Düz bir süslü parantezi %7B veya %7D olarak yazın. {from} ve {to} tıklamadan önceki saattir, milisaniye cinsinden; {kind} küçük harfle türdür (deployment). Boş bir şablon bağlantı vermez.",
+    "variables": "Değişkenler: {{variables}}",
+    "targets": {
+      "workload": "İş yükleri",
+      "pod": "Pod'lar",
+      "node": "Düğümler",
+      "namespace": "Namespace'ler",
+      "edge": "Trafik grafiğindeki çağrılar",
+      "traces": "İz arama"
+    },
+    "presetFor": "{{target}} için hazır şablon",
+    "choosePreset": "Hazır şablon kullan…",
+    "save": "Kaydet",
+    "remove": "Bağlantıları kaldır",
+    "saved": "Kaydedildi."
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Grafana Explore'da Pod günlükleri (uid'si loki olan Loki veri kaynağı)",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "Hedefin iş yükü panosu (kube-prometheus-stack)",
+    "tempo": "Grafana Explore'da Tempo (uid'si tempo olan veri kaynağı)",
+    "jaeger": "Jaeger arayüzünde arama"
+  },
+  "baseError": {
+    "empty": "Bir URL girin.",
+    "tooLong": "URL çok uzun (en fazla 2048 karakter).",
+    "invalid": "Bu geçerli bir URL değil.",
+    "scheme": "https kullanın; düz http yalnızca localhost için kabul edilir.",
+    "credentials": "URL kullanıcı adı veya parola içermemelidir.",
+    "query": "Temel URL ? veya # içermemelidir."
+  },
+  "templateError": {
+    "empty": "Bir şablon girin.",
+    "tooLong": "Şablon çok uzun (en fazla 2048 karakter).",
+    "invalid": "Şablonda boşluk, denetim karakteri veya ters eğik çizgi var.",
+    "brace": "Değişken olmayan bir süslü parantez: %7B veya %7D olarak yazın.",
+    "variable": "Şablon, bu bağlantıda olmayan bir değişken kullanıyor.",
+    "origin": "Şablon temel URL'nin sitesinde kalmalıdır.",
+    "noBase": "Önce temel URL'yi ayarlayın."
+  },
+  "transfer": {
+    "include": "Pano ve iz bağlantılarını dahil et"
+  }
+}

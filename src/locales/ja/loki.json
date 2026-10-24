@@ -1,0 +1,78 @@
+{
+  "mark": "Loki",
+  "markTitle": "この行は Loki から読み取りました",
+  "bar": "Loki の古い行",
+  "openBar": "Loki の古い行",
+  "load": "Loki から古い行を読み込む",
+  "loading_other": "Loki から読み取り中… これまでに {{count}} 行",
+  "loaded_other": "Loki の {{count}} 行",
+  "linesFromLoki_other": "Loki の {{count}} 行",
+  "truncated_other": "期間内の最新 {{count}} 行のみを表示しています。古い行を見るには短い期間を選んでください。",
+  "cancel": "停止",
+  "clear": "Loki の行を消す",
+  "noContainerLabel": "ここの Loki にはコンテナの label がないため、Pod のすべてのコンテナの行を表示しています。",
+  "noLines": "Loki にはこの期間のこの Pod の行がありません。",
+  "readFailed": "Loki から行を読み取れませんでした。",
+  "statusFailed": "Sextant はクラスターの Loki を確認できませんでした。",
+  "statusFailedNote": "Sextant はクラスターの Loki を確認できませんでした: {{message}}",
+  "status": {
+    "loading": "Loki から読み取り中…",
+    "failed": "Loki からの読み取りに失敗しました",
+    "onlyLoki": "Loki の行のみ（Pod はもうありません）"
+  },
+  "none": {
+    "off": "クラスターの設定で Loki がオフになっているため、なくなった Pod のログは読み取れません。",
+    "notFound": "なくなった Pod のログは Grafana Loki から読み取れますが、Sextant はこのクラスターで Loki を見つけられませんでした。Sextant は namespace loki、logging、monitoring、observability、grafana、loki-stack にある Loki の Helm chart の Service（loki-gateway、loki-query-frontend、loki-read、loki）と、label app.kubernetes.io/name=loki の付いた Service を探します。Loki が別の場所にある場合は、クラスターの設定（「メトリクス」タブ）でその Service を指定してください。",
+    "manualNoAnswer": "クラスターの設定で指定した Loki の Service は、API サーバー経由で Loki として応答しませんでした。",
+    "noLabels": "Loki は応答しましたが、そのログストリームには label namespace と pod も、k8s_namespace_name と k8s_pod_name もないため、Sextant はどの行がどの Pod のものか判断できません。"
+  },
+  "range": {
+    "label": "期間",
+    "1h": "直近 1 時間",
+    "6h": "直近 6 時間",
+    "24h": "直近 24 時間",
+    "custom": "カスタム",
+    "from": "開始",
+    "to": "終了",
+    "problem": {
+      "invalid": "期間の終わりは始まりより後にしてください。",
+      "tooLong": "期間は最長 24 時間です。",
+      "future": "期間を未来で終えることはできません。"
+    }
+  },
+  "previous": {
+    "title": "以前の Pod のログ（Loki）",
+    "find": "Loki で Pod を探す",
+    "hint": "この期間のこのワークロードの Pod を、コントローラーが付ける名前で Loki から探します。その行はログタブで開きます。",
+    "searching": "Loki を検索中…",
+    "none": "Loki にはこの期間のこのワークロードの Pod の行がありません。",
+    "listLabel": "Loki に行がある Pod",
+    "truncated_other": "最初の {{count}} 個の Pod のみを表示しています。短い期間を選んでください。"
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki（なくなった Pod のログ）",
+    "mode": {
+      "auto": "自動で探す",
+      "manual": "この Service を使う",
+      "off": "オフ"
+    },
+    "service": "Service（namespace/名前:ポート）",
+    "pathPrefix": "パスのプレフィックス",
+    "tenant": "テナント（X-Scope-OrgID）",
+    "tenantPlaceholder": "なし",
+    "invalid": {
+      "service": "Service を namespace/名前:ポート の形で入力してください（例: loki/loki-gateway:80）。",
+      "prefix": "パスのプレフィックスは空か / で始まり、スラッシュの間には英字、数字、-、.、_、~ を使います。",
+      "tenant": "テナント ID は英字、数字、! - _ . * ' ( ) の文字で 150 文字までです。複数の ID は | でつなぎます。"
+    },
+    "save": "保存",
+    "checking": "Loki を確認中…",
+    "foundAuto": "{{target}} が見つかりました。ストリームには {{labels}} があります。",
+    "foundManual": "{{target}} が応答します。ストリームには {{labels}} があります。",
+    "scheme": {
+      "kubernetes": "label namespace、pod、container",
+      "openTelemetry": "OpenTelemetry の label k8s_namespace_name、k8s_pod_name、k8s_container_name"
+    }
+  }
+}

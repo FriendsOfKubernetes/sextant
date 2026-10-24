@@ -5,7 +5,9 @@
   "openSettings": "클러스터 설정 열기",
   "na": "해당 없음",
   "percent": "{{value}}%",
+  "percentBelowOne": "<1%",
   "percentOf": "{{value}}% · {{text}}",
+  "percentOfBelowOne": "<1% · {{text}}",
   "usedOf": "{{used}} / {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -15,7 +17,9 @@
     "requestSetOn_other": "(컨테이너 {{count}}개 중 {{set}}개에 설정됨)",
     "limitSetOn_other": "(컨테이너 {{count}}개 중 {{set}}개에 설정됨)",
     "shareOfLimit": "제한의 {{value}}%",
+    "shareOfLimitBelowOne": "제한의 <1%",
     "shareOfRequest": "요청의 {{value}}%",
+    "shareOfRequestBelowOne": "요청의 <1%",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "메모리 {{amounts}}"
   },

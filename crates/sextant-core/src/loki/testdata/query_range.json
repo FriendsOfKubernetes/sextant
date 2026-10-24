@@ -1,0 +1,40 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "streams",
+    "result": [
+      {
+        "stream": {
+          "namespace": "shop",
+          "pod": "web-7c9f8d6b5d-x2x4q",
+          "container": "app",
+          "stream": "stdout"
+        },
+        "values": [
+          ["1569266497240578000", "GET /cart 200"],
+          ["1569266492548155000", "\u001b[32mINFO\u001b[0m started"]
+        ]
+      },
+      {
+        "stream": {
+          "namespace": "shop",
+          "pod": "web-7c9f8d6b5d-x2x4q",
+          "container": "app",
+          "stream": "stderr"
+        },
+        "values": [
+          ["1569266495000000000", "warning: cache cold", { "structuredMetadata": { "trace_id": "abc" } }]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 0,
+        "linesProcessedPerSecond": 0,
+        "totalBytesProcessed": 0,
+        "totalLinesProcessed": 0,
+        "execTime": 0.001
+      }
+    }
+  }
+}

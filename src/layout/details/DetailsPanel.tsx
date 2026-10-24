@@ -3,9 +3,18 @@ import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import { useAppStore } from "../../app/store";
 import { ErrorState, Icon, Tabs } from "../../components";
-import { getDetailsSections, useDetailsObject, useDetailsSectionsVersion, type DetailsSectionDef } from "./registry";
+import {
+  getDetailsHeaderTools,
+  getDetailsSections,
+  useDetailsObject,
+  useDetailsSectionsVersion,
+  type DetailsHeaderPlace,
+  type DetailsSectionDef,
+} from "./registry";
 
 const OVERVIEW = "overview";
+const AFTER_NAME: DetailsHeaderPlace = "name";
+const AFTER_NAMESPACE: DetailsHeaderPlace = "namespace";
 
 /**
  * What had the focus when the panel opened (#158): a table row, a link, a palette entry. Closing the panel gives the
@@ -75,11 +84,17 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
       <header className="details__header">
         <div className="details__heading">
           <div className="details__kind">{objectRef.kind.kind}</div>
-          <h2 ref={headingRef} className="details__name" tabIndex={-1}>
-            {objectRef.name}
-          </h2>
+          <div className="details__name-line">
+            <h2 ref={headingRef} className="details__name" tabIndex={-1}>
+              {objectRef.name}
+            </h2>
+            <HeaderTools place={AFTER_NAME} clusterId={clusterId} objectRef={objectRef} obj={obj} />
+          </div>
           {objectRef.namespace && (
-            <div className="details__namespace">{t("common:details.inNamespace", { namespace: objectRef.namespace })}</div>
+            <div className="details__namespace">
+              <span>{t("common:details.inNamespace", { namespace: objectRef.namespace })}</span>
+              <HeaderTools place={AFTER_NAMESPACE} clusterId={clusterId} objectRef={objectRef} obj={obj} />
+            </div>
           )}
         </div>
         <button type="button" className="icon-btn" aria-label={t("common:actions.closeDetails")} onClick={() => closeDetails()}>
@@ -113,6 +128,29 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
         </Tabs>
       )}
     </aside>
+  );
+}
+
+/** The icon buttons registered for `place` (copy, pin; `registerDetailsHeaderTool`), nothing when there are none. */
+function HeaderTools({
+  place,
+  clusterId,
+  objectRef,
+  obj,
+}: {
+  place: DetailsHeaderPlace;
+  clusterId: ClusterId;
+  objectRef: ObjectRef;
+  obj: KubeObject | null;
+}) {
+  const tools = getDetailsHeaderTools(place);
+  if (tools.length === 0) return null;
+  return (
+    <span className="details__tools">
+      {tools.map(({ id, Component }) => (
+        <Component key={id} clusterId={clusterId} objectRef={objectRef} obj={obj} />
+      ))}
+    </span>
   );
 }
 

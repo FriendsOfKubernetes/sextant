@@ -51,6 +51,7 @@
     "practices": "Best Practices",
     "credentials": "Zugangsdaten",
     "disk": "Datenträger fast voll",
+    "alerts": "Ausgelöste Alerts",
     "events": "Warnereignisse"
   },
   "messages": {
@@ -103,5 +104,6 @@
   "showTraefik": "Traefik-Verweise",
   "showReflector": "Reflector-Spiegel",
   "showSealedSecrets": "Entsiegeln von Sealed Secrets",
-  "showKueueWorkloads": "Wartende oder verdrängte Kueue-Workloads"
+  "showKueueWorkloads": "Wartende oder verdrängte Kueue-Workloads",
+  "showAlerts": "Ausgelöste Alerts (Prometheus und Alertmanager)"
 }

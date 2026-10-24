@@ -1,0 +1,68 @@
+/* Lines from Loki in a logs tab, the bar that loads them, and the previous pods of a workload (#265). */
+.loki-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+}
+
+.loki-bar--closed {
+  padding: 0.125rem 0.5rem;
+}
+
+.loki-bar__note,
+.loki-note {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.loki-note {
+  margin: 0.25rem 0.5rem;
+}
+
+.loki-range {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.loki-range__problem {
+  color: var(--color-danger);
+}
+
+.logs__line--loki {
+  border-left: 0.1875rem solid var(--color-border);
+}
+
+.logs__loki-mark {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  user-select: none;
+}
+
+.loki-previous {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.loki-previous__pods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}

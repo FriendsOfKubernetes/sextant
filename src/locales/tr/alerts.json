@@ -1,0 +1,111 @@
+{
+  "sidebar": "Uyarılar",
+  "title": "Uyarılar",
+  "loading": "Uyarılar okunuyor…",
+  "none": "Tetiklenen veya bekleyen uyarı yok.",
+  "noneMatch": "Filtrelere uyan uyarı yok.",
+  "unnamed": "(alertname yok)",
+  "shown_one": "{{count}} uyarı gösteriliyor",
+  "shown_other": "{{count}} uyarı gösteriliyor",
+  "truncated": "Yalnızca en ciddi uyarılar gösteriliyor ({{total}} uyarıdan).",
+  "activeSince": "Etkin olduğu zaman",
+  "labels": "Label'lar",
+  "openSettings": "Uyarı kaynakları…",
+  "tabs": {
+    "label": "Uyarılar ve susturmalar",
+    "alerts": "Uyarılar ({{count}})",
+    "silences": "Susturmalar ({{count}})"
+  },
+  "filter": {
+    "search": "Uyarılarda ara",
+    "severity": "Önem",
+    "namespace": "Namespace",
+    "state": "Durum",
+    "all": "Tümü"
+  },
+  "state": {
+    "firing": "Tetiklendi",
+    "pending": "Beklemede",
+    "silenced": "Susturuldu",
+    "inhibited": "Bastırıldı"
+  },
+  "severity": {
+    "critical": "Kritik",
+    "error": "Hata",
+    "high": "Yüksek",
+    "warning": "Uyarı",
+    "medium": "Orta",
+    "info": "Bilgi",
+    "low": "Düşük",
+    "none": "Yok",
+    "unset": "Önem yok"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Pano",
+    "cleaned": "{{url}} (kimlik bilgileri, sorgu ve parça çıkarıldı)"
+  },
+  "source": {
+    "title": "Uyarı kaynakları",
+    "silencesFailed": "Alertmanager susturmaları okunamadı",
+    "prometheus": {
+      "ok": "Prometheus uyumlu kaynak: {{target}}",
+      "off": "Prometheus uyumlu kaynak küme ayarlarında kapalı.",
+      "notFound": "Prometheus uyumlu kaynak bulunamadı: bekleyen uyarılar gösterilmiyor.",
+      "vmalertMissing": "{{target}} adresindeki VictoriaMetrics uyarıları yalnızca vmalert üzerinden verir ve -vmalert.proxyURL ayarlı değil.",
+      "failed": "Prometheus uyumlu kaynağın uyarıları okunamadı",
+      "failedAt": "{{target}} uyarıları okunamadı"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager küme ayarlarında kapalı.",
+      "notFound": "Alertmanager bulunamadı: susturulan ve bastırılan uyarılar gösterilmiyor.",
+      "failed": "Alertmanager okunamadı",
+      "failedAt": "{{target}} adresindeki Alertmanager okunamadı"
+    }
+  },
+  "silences": {
+    "readOnly": "Susturmalar salt okunur gösterilir: onları Alertmanager'da oluşturun veya sonlandırın.",
+    "none": "Etkin veya bekleyen susturma yok.",
+    "noAlertmanager": "Susturmalar Alertmanager'dan gelir ve hiçbiri yanıt vermiyor.",
+    "expired_one": "Süresi dolmuş {{count}} susturma gösterilmiyor.",
+    "expired_other": "Süresi dolmuş {{count}} susturma gösterilmiyor.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "oluşturan: {{name}}",
+    "matchers": "Eşleştiriciler",
+    "state": {
+      "active": "Etkin",
+      "pending": "Beklemede",
+      "expired": "Süresi doldu"
+    }
+  },
+  "details": {
+    "title": "Uyarılar",
+    "none": "Bu nesneyi adlandıran uyarı yok.",
+    "openPage": "Tüm uyarılar"
+  },
+  "settings": {
+    "title": "Uyarılar",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Otomatik bul",
+      "manual": "Service adresi",
+      "off": "Kapalı"
+    },
+    "service": "Service (namespace/ad:port)",
+    "pathPrefix": "Yol öneki",
+    "invalid": "Adresi namespace/service:port biçiminde ve /alertmanager gibi bir yol önekiyle girin.",
+    "save": "Kaydet",
+    "prometheusHint": "Kuralların bekleyen ve tetiklenen uyarıları “Ölçümler” bölümündeki Prometheus uyumlu kaynaktan okunur.",
+    "detected": "Bulunan uyarı kaynakları",
+    "prometheusSource": "Prometheus uyumlu kaynak",
+    "checking": "Denetleniyor…",
+    "found": "Bulundu",
+    "failed": "Yanıt vermiyor",
+    "vmalertMissing": "vmalert olmadan VictoriaMetrics (-vmalert.proxyURL)",
+    "status": {
+      "off": "Kapalı",
+      "notFound": "Bulunamadı"
+    }
+  }
+}

@@ -4,15 +4,19 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useCssLength } from "../../app/accessibility";
-import { api, toApiError, type ClusterId, type LogOptions, type ObjectRef } from "../../api";
+import { api, toApiError, type ClusterId, type LogOptions, type LokiRange, type ObjectRef } from "../../api";
 import { Button, Checkbox, ErrorState, Icon } from "../../components";
 import type { DockTabProps } from "../../layout/dock/registry";
 import { LOG_BUFFER_LIMIT, LOG_BUFFER_TEXT_LIMIT } from "./buffer";
 import { LogAnnouncer } from "./LogAnnouncer";
+import { useLokiRead } from "./loki/hooks";
+import { LokiBar } from "./loki/LokiBar";
+import { useLokiLines } from "./loki/lines";
+import { MAX_LOKI_LINES } from "./loki/model";
 import { MultiLogsTab } from "./multi/MultiLogsTab";
 import { isMultiLogsPayload } from "./multi/open";
 import { logText, type TextRange } from "./LogText";
-import { MatchIndex, MAX_MATCHES, matchRanges } from "./search";
+import { findMatches, MatchIndex, MAX_MATCHES, matchRanges } from "./search";
 import { useLogStream } from "./useLogStream";
 import { LogViewControls, useFollowScroll } from "./view";
 import { useLogView } from "./viewSettings";
@@ -29,6 +33,8 @@ export interface LogsPayload {
   containers: LogContainer[];
   /** Container shown first; the first regular one when absent. */
   container?: string;
+  /** Only lines from Loki over this period (a pod that is gone, opened from a workload's details): no live stream. */
+  loki?: { range: LokiRange };
 }
 
 /** Lines requested from the pod before following. */
@@ -43,7 +49,7 @@ export function LogsTab(props: DockTabProps) {
 
 function PodLogsTab({ tab, active }: DockTabProps) {
   const { t } = useTranslation();
-  const { clusterId, pod, containers, container: preferred } = tab.payload as LogsPayload;
+  const { clusterId, pod, containers, container: preferred, loki: lokiOnly } = tab.payload as LogsPayload;
   const [container, setContainer] = useState(
     () => preferred ?? containers.find((c) => !c.init)?.name ?? containers[0]?.name ?? "",
   );
@@ -57,15 +63,49 @@ function PodLogsTab({ tab, active }: DockTabProps) {
   const [saveError, setSaveError] = useState<unknown>(null);
 
   const options: LogOptions = { container, follow, previous, timestamps, tailLines: INITIAL_TAIL_LINES };
-  const stream = useLogStream(clusterId, pod, options);
+  const stream = useLogStream(clusterId, pod, options, !lokiOnly);
   const { lines, dropped } = stream.buffer;
 
+  // ---- lines from Loki (#265): older than the live ones, shown before them ----
+  const read = useLokiRead();
+  const { load: loadLoki, clear: clearLoki } = read;
+  const lokiStart = lokiOnly?.range.startMs;
+  const lokiEnd = lokiOnly?.range.endMs;
+  useEffect(() => {
+    // Lines of another container or run are not the ones shown: a tab of a gone pod reads again, another one forgets.
+    if (lokiStart === undefined || lokiEnd === undefined) {
+      clearLoki();
+      return;
+    }
+    loadLoki(clusterId, {
+      namespace: pod.namespace ?? "",
+      pod: pod.name,
+      container: container || null,
+      range: { startMs: lokiStart, endMs: lokiEnd },
+      direction: "backward",
+      limit: MAX_LOKI_LINES,
+    });
+  }, [clusterId, pod.namespace, pod.name, container, previous, lokiStart, lokiEnd, loadLoki, clearLoki]);
+  const lokiLines = useLokiLines(read.entries, lines, timestamps, t("logs:lineCut"));
+  const lokiCount = lokiLines.length;
+  const total = lokiCount + lines.length;
+  const textAt = (i: number) => (i < lokiCount ? lokiLines[i] : lines.at(i - lokiCount));
+  const gone = !!lokiOnly || (stream.status === "error" && stream.error?.code === "notFound");
+
   // ---- search ----
-  // Each line is read once as it arrives, not on every batch (MatchIndex).
+  // Each line is read once as it arrives, not on every batch (MatchIndex); Loki's few thousand lines at once.
   const [index] = useState(() => new MatchIndex());
-  const matches = useMemo(
+  const liveMatches = useMemo(
     () => index.update(lines, dropped, query, stream.generation),
     [index, lines, dropped, query, stream.generation],
+  );
+  const lokiMatches = useMemo(() => (query ? findMatches(lokiLines, query) : []), [lokiLines, query]);
+  const matches = useMemo(
+    () =>
+      lokiMatches.length === 0
+        ? liveMatches
+        : [...lokiMatches, ...liveMatches.map((m) => ({ ...m, line: m.line + lokiCount }))].slice(0, MAX_MATCHES),
+    [lokiMatches, liveMatches, lokiCount],
   );
   const current = matches.length === 0 ? -1 : Math.min(cursor, matches.length - 1);
   const currentMatch = current >= 0 ? matches[current] : undefined;
@@ -91,19 +131,19 @@ function PodLogsTab({ tab, active }: DockTabProps) {
   // Lines are `--log-line-height` high, measured again when the interface text size changes.
   const lineHeight = useCssLength("--log-line-height", LINE_HEIGHT);
   const virtualizer = useVirtualizer({
-    count: lines.length,
+    count: total,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => lineHeight,
     // Keys follow the line, not its place: when the oldest lines are discarded, a measured (wrapped) height stays
     // with its line.
-    getItemKey: (index) => dropped + index,
+    getItemKey: (index) => (index < lokiCount ? `loki:${read.generation}:${index}` : dropped + index - lokiCount),
     overscan: 20,
   });
   // Lines placed (or measured, wrapped) at the old size are placed again.
   useEffect(() => {
     virtualizer.measure();
   }, [virtualizer, lineHeight]);
-  const count = lines.length;
+  const count = total;
   const { atBottom, onScroll } = useFollowScroll(virtualizer, scrollRef, {
     follow: follow && !currentMatch,
     active,
@@ -131,15 +171,21 @@ function PodLogsTab({ tab, active }: DockTabProps) {
         filters: [{ name: t("logs:save.filter"), extensions: ["log", "txt"] }],
       });
       if (!path) return;
-      await api.files.save(path, lines.length > 0 ? `${lines.toArray().join("\n")}\n` : "");
+      const all = [...lokiLines, ...lines.toArray()];
+      await api.files.save(path, all.length > 0 ? `${all.join("\n")}\n` : "");
     } catch (err) {
       setSaveError(toApiError(err));
     }
   };
 
   const lineBreakLabel = t("logs:lineBreak");
-  const statusText =
-    stream.status === "connecting"
+  const statusText = lokiOnly
+    ? read.status === "loading"
+      ? t("loki:status.loading")
+      : read.status === "error"
+        ? t("loki:status.failed")
+        : t("loki:status.onlyLoki")
+    : stream.status === "connecting"
       ? t("logs:status.connecting")
       : stream.status === "ended"
         ? t("logs:status.ended")
@@ -148,7 +194,7 @@ function PodLogsTab({ tab, active }: DockTabProps) {
           : follow
             ? t("logs:status.live")
             : t("logs:status.notFollowing");
-  const canReconnect = stream.status === "ended" || stream.status === "error";
+  const canReconnect = !lokiOnly && (stream.status === "ended" || stream.status === "error");
 
   const matchCount =
     matches.length === 0
@@ -171,21 +217,25 @@ function PodLogsTab({ tab, active }: DockTabProps) {
             ))}
           </select>
         </label>
-        <label className="logs__check">
-          <Checkbox checked={follow} onChange={(e) => {
-              atBottom.current = true;
-              setFollow(e.target.checked);
-            }} />
-          <span>{t("logs:toolbar.follow")}</span>
-        </label>
+        {!lokiOnly && (
+          <label className="logs__check">
+            <Checkbox checked={follow} onChange={(e) => {
+                atBottom.current = true;
+                setFollow(e.target.checked);
+              }} />
+            <span>{t("logs:toolbar.follow")}</span>
+          </label>
+        )}
         <label className="logs__check">
           <Checkbox checked={timestamps} onChange={(e) => setTimestamps(e.target.checked)} />
           <span>{t("logs:toolbar.timestamps")}</span>
         </label>
-        <label className="logs__check">
-          <Checkbox checked={previous} onChange={(e) => setPrevious(e.target.checked)} />
-          <span>{t("logs:toolbar.previous")}</span>
-        </label>
+        {!lokiOnly && (
+          <label className="logs__check">
+            <Checkbox checked={previous} onChange={(e) => setPrevious(e.target.checked)} />
+            <span>{t("logs:toolbar.previous")}</span>
+          </label>
+        )}
         <LogViewControls view={view} />
         <span className="logs__spacer" />
         <input
@@ -221,13 +271,15 @@ function PodLogsTab({ tab, active }: DockTabProps) {
           {statusText}
         </span>
         <span data-testid="logs-count">{t("logs:lines", { count: lines.length })}</span>
-        <LogAnnouncer total={dropped + lines.length} />
+        {lokiCount > 0 && <span data-testid="logs-loki-count">{t("loki:linesFromLoki", { count: lokiCount })}</span>}
+        <LogAnnouncer total={dropped + total} />
         {canReconnect && (
           <Button onClick={stream.reconnect}>
             {t("logs:toolbar.reconnect")}
           </Button>
         )}
       </div>
+      <LokiBar clusterId={clusterId} pod={pod} container={container} previous={previous} gone={gone} read={read} />
       {stream.status === "error" && stream.error && <ErrorState error={stream.error} />}
       {saveError !== null && <ErrorState error={saveError} title={t("logs:save.failed")} />}
       {dropped > 0 && (
@@ -244,13 +296,26 @@ function PodLogsTab({ tab, active }: DockTabProps) {
         aria-label={t("logs:view")}
         onScroll={onScroll}
       >
-        {lines.length === 0 && stream.status === "streaming" && <p className="logs__empty">{t("logs:empty")}</p>}
+        {total === 0 && stream.status === "streaming" && <p className="logs__empty">{t("logs:empty")}</p>}
+        {total === 0 && lokiOnly && read.status === "done" && <p className="logs__empty">{t("loki:noLines")}</p>}
         <div className="logs__body" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((item) => {
-            const text = lines.at(item.index) ?? "";
+            const text = textAt(item.index) ?? "";
             const style: CSSProperties = { transform: `translateY(${item.start}px)` };
+            const fromLoki = item.index < lokiCount;
             return (
-              <div key={item.key} ref={wrap ? virtualizer.measureElement : undefined} data-index={item.index} className="logs__line" style={style}>
+              <div
+                key={item.key}
+                ref={wrap ? virtualizer.measureElement : undefined}
+                data-index={item.index}
+                className={fromLoki ? "logs__line logs__line--loki" : "logs__line"}
+                style={style}
+              >
+                {fromLoki && (
+                  <span className="logs__loki-mark" title={t("loki:markTitle")}>
+                    {t("loki:mark")}
+                  </span>
+                )}
                 {logText(text, {
                   colours,
                   wrap,

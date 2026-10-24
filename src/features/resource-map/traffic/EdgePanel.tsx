@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { toApiError, type ClusterId, type TrafficEdge, type TrafficPeer } from "../../../api";
 import { useAppStore } from "../../../app/store";
 import { Button } from "../../../components";
+import { EdgeLinks } from "../../observability-links/LinkButtons";
 import {
   classesText,
   errorsText,
@@ -129,6 +130,7 @@ export function SelectionPanel({
           <Peer key={peerId(first.from)} clusterId={clusterId} peer={first.from} label={t("traffic:fields.from")} />
           <Peer key={peerId(first.to)} clusterId={clusterId} peer={first.to} label={t("traffic:fields.to")} />
         </div>
+        <EdgeLinks clusterId={clusterId} from={first.from} to={first.to} />
         {selection.link.edges.map((edge) => (
           <EdgeFacts key={`${edge.source}|${edge.protocol}`} edge={edge} />
         ))}

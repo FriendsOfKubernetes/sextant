@@ -1,0 +1,113 @@
+{
+  "sidebar": "Alert",
+  "title": "Alert",
+  "loading": "Lettura degli alert…",
+  "none": "Nessun alert attivo o in attesa.",
+  "noneMatch": "Nessun alert corrisponde ai filtri.",
+  "unnamed": "(senza alertname)",
+  "shown_one": "{{count}} alert mostrato",
+  "shown_many": "{{count}} di alert mostrati",
+  "shown_other": "{{count}} alert mostrati",
+  "truncated": "Sono mostrati solo gli alert più gravi (su {{total}}).",
+  "activeSince": "Attivo da",
+  "labels": "Label",
+  "openSettings": "Fonti degli alert…",
+  "tabs": {
+    "label": "Alert e silenziamenti",
+    "alerts": "Alert ({{count}})",
+    "silences": "Silenziamenti ({{count}})"
+  },
+  "filter": {
+    "search": "Cerca alert",
+    "severity": "Gravità",
+    "namespace": "Namespace",
+    "state": "Stato",
+    "all": "Tutti"
+  },
+  "state": {
+    "firing": "Attivo",
+    "pending": "In attesa",
+    "silenced": "Silenziato",
+    "inhibited": "Inibito"
+  },
+  "severity": {
+    "critical": "Critica",
+    "error": "Errore",
+    "high": "Alta",
+    "warning": "Avviso",
+    "medium": "Media",
+    "info": "Informazione",
+    "low": "Bassa",
+    "none": "Nessuna",
+    "unset": "Senza gravità"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Dashboard",
+    "cleaned": "{{url}} (credenziali, query e frammento rimossi)"
+  },
+  "source": {
+    "title": "Fonti degli alert",
+    "silencesFailed": "Impossibile leggere i silenziamenti di Alertmanager",
+    "prometheus": {
+      "ok": "Fonte compatibile con Prometheus: {{target}}",
+      "off": "La fonte compatibile con Prometheus è disattivata nelle impostazioni del cluster.",
+      "notFound": "Nessuna fonte compatibile con Prometheus trovata: gli alert in attesa non sono mostrati.",
+      "vmalertMissing": "VictoriaMetrics in {{target}} fornisce gli alert solo tramite vmalert, e -vmalert.proxyURL non è impostato.",
+      "failed": "Impossibile leggere gli alert della fonte compatibile con Prometheus",
+      "failedAt": "Impossibile leggere gli alert di {{target}}"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager è disattivato nelle impostazioni del cluster.",
+      "notFound": "Nessun Alertmanager trovato: gli alert silenziati e inibiti non sono mostrati.",
+      "failed": "Impossibile leggere Alertmanager",
+      "failedAt": "Impossibile leggere Alertmanager in {{target}}"
+    }
+  },
+  "silences": {
+    "readOnly": "I silenziamenti sono mostrati in sola lettura: creali o terminali in Alertmanager.",
+    "none": "Nessun silenziamento attivo o in attesa.",
+    "noAlertmanager": "I silenziamenti vengono da Alertmanager, e nessuno risponde.",
+    "expired_one": "{{count}} silenziamento scaduto non è mostrato.",
+    "expired_many": "{{count}} di silenziamenti scaduti non sono mostrati.",
+    "expired_other": "{{count}} silenziamenti scaduti non sono mostrati.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "di {{name}}",
+    "matchers": "Corrispondenze",
+    "state": {
+      "active": "Attivo",
+      "pending": "In attesa",
+      "expired": "Scaduto"
+    }
+  },
+  "details": {
+    "title": "Alert",
+    "none": "Nessun alert riguarda questo oggetto.",
+    "openPage": "Tutti gli alert"
+  },
+  "settings": {
+    "title": "Alert",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Trova automaticamente",
+      "manual": "Indirizzo del Service",
+      "off": "Disattivato"
+    },
+    "service": "Service (namespace/nome:porta)",
+    "pathPrefix": "Prefisso del percorso",
+    "invalid": "Inserisci l'indirizzo come namespace/service:porta e un prefisso di percorso come /alertmanager.",
+    "save": "Salva",
+    "prometheusHint": "Gli alert in attesa e attivi delle regole sono letti dalla fonte compatibile con Prometheus della sezione “Metriche”.",
+    "detected": "Fonti degli alert trovate",
+    "prometheusSource": "Fonte compatibile con Prometheus",
+    "checking": "Verifica…",
+    "found": "Trovata",
+    "failed": "Non risponde",
+    "vmalertMissing": "VictoriaMetrics senza vmalert (-vmalert.proxyURL)",
+    "status": {
+      "off": "Disattivata",
+      "notFound": "Non trovata"
+    }
+  }
+}

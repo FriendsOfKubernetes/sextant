@@ -89,6 +89,7 @@ export function SyncDialog({
 }
 
 registerAction("argoSync", {
+  placement: "primary",
   labelKey: "argocd:actions.sync",
   icon: "sync",
   appliesTo: (obj, kind) => isApplication(kind) && !operationRunning(obj),
@@ -103,6 +104,8 @@ function registerRefresh(id: "argoRefresh" | "argoHardRefresh", refresh: Refresh
   registerAction(id, {
     labelKey,
     icon,
+    // Refresh is a button of the details panel; Hard refresh is in "Actions" (#275).
+    placement: id === "argoRefresh" ? "primary" : "more",
     multiple: true,
     appliesTo: (_obj, kind) => isApplication(kind),
     run: async ({ clusterId, refs }) => {
@@ -115,6 +118,7 @@ registerRefresh("argoRefresh", "normal", "argocd:actions.refresh", "refresh");
 registerRefresh("argoHardRefresh", "hard", "argocd:actions.hardRefresh", "hardRefresh");
 
 registerAction("argoTerminate", {
+  placement: "more",
   labelKey: "argocd:actions.terminate",
   icon: "terminate",
   danger: true,
@@ -140,6 +144,7 @@ registerAction("argoTerminate", {
 });
 
 registerAction("argoOpenUi", {
+  placement: "more",
   labelKey: "argocd:actions.openUi",
   icon: "external",
   appliesTo: (_obj, kind) => kind.group === ARGO_GROUP,

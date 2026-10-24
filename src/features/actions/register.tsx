@@ -23,6 +23,7 @@ function field(obj: KubeObject, path: string[]): unknown {
 const t = (key: string, options?: Record<string, unknown>) => i18n.t(key, options);
 
 registerAction("edit", {
+  placement: "primary",
   labelKey: "actions:edit.label",
   icon: "edit",
   appliesTo: () => true,
@@ -32,6 +33,7 @@ registerAction("edit", {
 });
 
 registerAction("delete", {
+  placement: "primary",
   labelKey: "actions:delete.label",
   icon: "delete",
   danger: true,
@@ -43,6 +45,7 @@ registerAction("delete", {
 });
 
 registerAction("scale", {
+  placement: "primary",
   labelKey: "actions:scale.label",
   icon: "scale",
   appliesTo: (_obj, kind) => is(kind, "apps", "Deployment", "StatefulSet", "ReplicaSet"),
@@ -58,6 +61,7 @@ registerAction("scale", {
 // "restart" is registered by src/features/restart (several objects, ReplicaSets, Rollouts and pods, #255).
 
 registerAction("cordon", {
+  placement: "primary",
   labelKey: "actions:cordon.label",
   icon: "cordon",
   appliesTo: (_obj, kind) => is(kind, "", "Node"),
@@ -80,6 +84,7 @@ registerAction("cordon", {
 });
 
 registerAction("drain", {
+  placement: "primary",
   labelKey: "actions:drain.label",
   icon: "drain",
   danger: true,
@@ -92,6 +97,7 @@ registerAction("drain", {
 });
 
 registerAction("trigger", {
+  placement: "primary",
   labelKey: "actions:trigger.label",
   icon: "trigger",
   appliesTo: (_obj, kind) => is(kind, "batch", "CronJob"),
@@ -115,6 +121,7 @@ registerAction("trigger", {
 });
 
 registerAction("suspend", {
+  placement: "primary",
   labelKey: "actions:suspend.label",
   icon: "suspend",
   appliesTo: (_obj, kind) => is(kind, "batch", "CronJob"),

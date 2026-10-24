@@ -118,7 +118,8 @@
       "icon": "simge",
       "namespaces": "namespace filtresi",
       "previewChanges": "değişiklik önizlemesi",
-      "agentAccess": "ajan erişim kuralları"
+      "agentAccess": "ajan erişim kuralları",
+      "observabilityLinks": "pano ve iz bağlantıları"
     },
     "overwrite": "Benimkilerden farklı olan kayıtları değiştir",
     "applyAgentAccess": "Dosyadaki ajan erişim kurallarını uygula",

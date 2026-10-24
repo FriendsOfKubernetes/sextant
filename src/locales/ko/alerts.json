@@ -1,0 +1,109 @@
+{
+  "sidebar": "경보",
+  "title": "경보",
+  "loading": "경보를 읽는 중…",
+  "none": "발생 중이거나 대기 중인 경보가 없습니다.",
+  "noneMatch": "필터와 일치하는 경보가 없습니다.",
+  "unnamed": "(alertname 없음)",
+  "shown_other": "경보 {{count}}개 표시",
+  "truncated": "가장 심각한 경보만 표시합니다(전체 {{total}}개).",
+  "activeSince": "시작 시각",
+  "labels": "Label",
+  "openSettings": "경보 소스…",
+  "tabs": {
+    "label": "경보 및 사일런스",
+    "alerts": "경보 ({{count}})",
+    "silences": "사일런스 ({{count}})"
+  },
+  "filter": {
+    "search": "경보 검색",
+    "severity": "심각도",
+    "namespace": "Namespace",
+    "state": "상태",
+    "all": "전체"
+  },
+  "state": {
+    "firing": "발생 중",
+    "pending": "대기 중",
+    "silenced": "사일런스됨",
+    "inhibited": "억제됨"
+  },
+  "severity": {
+    "critical": "심각",
+    "error": "오류",
+    "high": "높음",
+    "warning": "경고",
+    "medium": "보통",
+    "info": "정보",
+    "low": "낮음",
+    "none": "없음",
+    "unset": "심각도 없음"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "대시보드",
+    "cleaned": "{{url}} (자격 증명, 쿼리, 프래그먼트 제거됨)"
+  },
+  "source": {
+    "title": "경보 소스",
+    "silencesFailed": "Alertmanager의 사일런스를 읽을 수 없습니다",
+    "prometheus": {
+      "ok": "Prometheus 호환 소스: {{target}}",
+      "off": "Prometheus 호환 소스가 클러스터 설정에서 꺼져 있습니다.",
+      "notFound": "Prometheus 호환 소스를 찾을 수 없습니다. 대기 중인 경보는 표시되지 않습니다.",
+      "vmalertMissing": "{{target}}의 VictoriaMetrics는 vmalert를 통해서만 경보를 제공하며 -vmalert.proxyURL이 설정되지 않았습니다.",
+      "failed": "Prometheus 호환 소스의 경보를 읽을 수 없습니다",
+      "failedAt": "{{target}}의 경보를 읽을 수 없습니다"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager가 클러스터 설정에서 꺼져 있습니다.",
+      "notFound": "Alertmanager를 찾을 수 없습니다. 사일런스되거나 억제된 경보는 표시되지 않습니다.",
+      "failed": "Alertmanager를 읽을 수 없습니다",
+      "failedAt": "{{target}}의 Alertmanager를 읽을 수 없습니다"
+    }
+  },
+  "silences": {
+    "readOnly": "사일런스는 읽기 전용으로 표시됩니다. 생성하거나 종료하려면 Alertmanager를 사용하십시오.",
+    "none": "활성 또는 대기 중인 사일런스가 없습니다.",
+    "noAlertmanager": "사일런스는 Alertmanager에서 가져오지만 응답하는 Alertmanager가 없습니다.",
+    "expired_other": "만료된 사일런스 {{count}}개는 표시되지 않습니다.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "작성자: {{name}}",
+    "matchers": "매처",
+    "state": {
+      "active": "활성",
+      "pending": "대기 중",
+      "expired": "만료됨"
+    }
+  },
+  "details": {
+    "title": "경보",
+    "none": "이 개체를 가리키는 경보가 없습니다.",
+    "openPage": "모든 경보"
+  },
+  "settings": {
+    "title": "경보",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "자동으로 찾기",
+      "manual": "Service 주소",
+      "off": "끄기"
+    },
+    "service": "Service (namespace/이름:포트)",
+    "pathPrefix": "경로 접두사",
+    "invalid": "주소를 namespace/service:포트 형식으로, 경로 접두사를 /alertmanager처럼 입력하십시오.",
+    "save": "저장",
+    "prometheusHint": "규칙의 대기 중 및 발생 중 경보는 “메트릭” 섹션의 Prometheus 호환 소스에서 읽습니다.",
+    "detected": "찾은 경보 소스",
+    "prometheusSource": "Prometheus 호환 소스",
+    "checking": "확인 중…",
+    "found": "찾음",
+    "failed": "응답 없음",
+    "vmalertMissing": "vmalert가 없는 VictoriaMetrics (-vmalert.proxyURL)",
+    "status": {
+      "off": "꺼짐",
+      "notFound": "찾을 수 없음"
+    }
+  }
+}

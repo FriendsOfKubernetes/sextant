@@ -99,6 +99,7 @@
     "borrowingLimit": "Borrowing limit",
     "lendingLimit": "Lending limit",
     "ofQuota": "{{value}} ({{percent}}%)",
+    "ofQuotaBelowOne": "{{value}} (<1%)",
     "borrowed": "{{value}}, {{borrowed}} borrowed"
   },
   "usage": "Usage",

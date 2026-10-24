@@ -5,5 +5,9 @@
   "copiedMany_one": "{{count}} nome copiato, uno per riga",
   "copiedMany_many": "{{count}} di nomi copiati, uno per riga",
   "copiedMany_other": "{{count}} nomi copiati, uno per riga",
-  "failed": "Impossibile copiare negli appunti"
+  "failed": "Impossibile copiare negli appunti",
+  "header": {
+    "copyName": "Copia nome",
+    "copyNamespace": "Copia namespace"
+  }
 }

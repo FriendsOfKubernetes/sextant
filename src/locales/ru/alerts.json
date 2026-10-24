@@ -1,0 +1,115 @@
+{
+  "sidebar": "Оповещения",
+  "title": "Оповещения",
+  "loading": "Чтение оповещений…",
+  "none": "Нет сработавших или ожидающих оповещений.",
+  "noneMatch": "Ни одно оповещение не подходит под фильтры.",
+  "unnamed": "(без alertname)",
+  "shown_one": "Показано {{count}} оповещение",
+  "shown_few": "Показано {{count}} оповещения",
+  "shown_many": "Показано {{count}} оповещений",
+  "shown_other": "Показано {{count}} оповещения",
+  "truncated": "Показаны только самые серьёзные оповещения (всего {{total}}).",
+  "activeSince": "Активно с",
+  "labels": "Метки",
+  "openSettings": "Источники оповещений…",
+  "tabs": {
+    "label": "Оповещения и заглушения",
+    "alerts": "Оповещения ({{count}})",
+    "silences": "Заглушения ({{count}})"
+  },
+  "filter": {
+    "search": "Поиск оповещений",
+    "severity": "Важность",
+    "namespace": "Namespace",
+    "state": "Состояние",
+    "all": "Все"
+  },
+  "state": {
+    "firing": "Срабатывает",
+    "pending": "Ожидает",
+    "silenced": "Заглушено",
+    "inhibited": "Подавлено"
+  },
+  "severity": {
+    "critical": "Критическая",
+    "error": "Ошибка",
+    "high": "Высокая",
+    "warning": "Предупреждение",
+    "medium": "Средняя",
+    "info": "Информация",
+    "low": "Низкая",
+    "none": "Нет",
+    "unset": "Без важности"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Дашборд",
+    "cleaned": "{{url}} (учётные данные, параметры запроса и фрагмент убраны)"
+  },
+  "source": {
+    "title": "Источники оповещений",
+    "silencesFailed": "Не удалось прочитать заглушения Alertmanager",
+    "prometheus": {
+      "ok": "Prometheus-совместимый источник: {{target}}",
+      "off": "Prometheus-совместимый источник выключен в настройках кластера.",
+      "notFound": "Prometheus-совместимый источник не найден: ожидающие оповещения не показаны.",
+      "vmalertMissing": "VictoriaMetrics по адресу {{target}} отдаёт оповещения только через vmalert, а -vmalert.proxyURL не задан.",
+      "failed": "Не удалось прочитать оповещения Prometheus-совместимого источника",
+      "failedAt": "Не удалось прочитать оповещения {{target}}"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager выключен в настройках кластера.",
+      "notFound": "Alertmanager не найден: заглушённые и подавленные оповещения не показаны.",
+      "failed": "Не удалось прочитать Alertmanager",
+      "failedAt": "Не удалось прочитать Alertmanager по адресу {{target}}"
+    }
+  },
+  "silences": {
+    "readOnly": "Заглушения показаны только для чтения: создавайте и завершайте их в Alertmanager.",
+    "none": "Нет активных или ожидающих заглушений.",
+    "noAlertmanager": "Заглушения берутся из Alertmanager, а он не отвечает.",
+    "expired_one": "{{count}} истёкшее заглушение не показано.",
+    "expired_few": "{{count}} истёкших заглушения не показаны.",
+    "expired_many": "{{count}} истёкших заглушений не показаны.",
+    "expired_other": "{{count}} истёкшего заглушения не показаны.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "автор: {{name}}",
+    "matchers": "Условия",
+    "state": {
+      "active": "Активно",
+      "pending": "Ожидает",
+      "expired": "Истекло"
+    }
+  },
+  "details": {
+    "title": "Оповещения",
+    "none": "Нет оповещений об этом объекте.",
+    "openPage": "Все оповещения"
+  },
+  "settings": {
+    "title": "Оповещения",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Находить автоматически",
+      "manual": "Адрес Service",
+      "off": "Выключено"
+    },
+    "service": "Service (namespace/имя:порт)",
+    "pathPrefix": "Префикс пути",
+    "invalid": "Введите адрес в виде namespace/service:порт и префикс пути вроде /alertmanager.",
+    "save": "Сохранить",
+    "prometheusHint": "Ожидающие и сработавшие оповещения правил читаются из Prometheus-совместимого источника раздела «Метрики».",
+    "detected": "Найденные источники оповещений",
+    "prometheusSource": "Prometheus-совместимый источник",
+    "checking": "Проверка…",
+    "found": "Найден",
+    "failed": "Не отвечает",
+    "vmalertMissing": "VictoriaMetrics без vmalert (-vmalert.proxyURL)",
+    "status": {
+      "off": "Выключено",
+      "notFound": "Не найден"
+    }
+  }
+}

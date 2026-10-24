@@ -153,6 +153,8 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
         // Shown as written: never through i18next, so `{{…}}` or `$t(…)` in a title stay text.
         label: action.title,
         icon: iconOf(action.icon, extensionIcon),
+        // Always in the details panel's "Actions" dropdown (#275); `registerAction` enforces it too.
+        placement: "more",
         danger: action.danger,
         multiple: action.multiple,
         appliesTo: (_obj, kind) => matches(action.kinds, kind),

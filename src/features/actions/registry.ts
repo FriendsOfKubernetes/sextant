@@ -5,6 +5,7 @@
 //   registerAction("logs", {
 //     labelKey: "logs:action",            // i18n key of the menu item / button
 //     icon: "logs",                       // icon of the set (src/components/icons.tsx) before the label
+//     placement: "primary",               // a button of the details panel; default "more": its "Actions" menu
 //     appliesTo: (obj, kind) => kind.kind === "Pod",
 //     run: ({ clusterId, objects, refs, openDialog }) => { … },
 //   });
@@ -12,7 +13,8 @@
 // The table's context menu and the details panel's ActionBar list, for a kind, the ids in its
 // `ResourceDef.actions` (src/resources/registry.ts) that are registered and apply to every selected object
 // (`getActionsFor`), and start them with `runAction`. An action that needs a dialog (scale, delete confirmation, …)
-// opens it with `ctx.openDialog`; a rejected `run` is shown to the user as an error dialog.
+// opens it with `ctx.openDialog`; a rejected `run` is shown to the user as an error dialog. The ActionBar splits them
+// by `placement` (#275, `detailsActions`): main buttons, Delete last, then one "Actions" menu for the rest.
 import { useSyncExternalStore, type ReactNode } from "react";
 import type { ClusterId, KindRef, KubeObject, ObjectRef } from "../../api";
 import type { IconName } from "../../components/icons";
@@ -50,7 +52,21 @@ export interface ActionDef {
   danger?: boolean;
   /** Offered when several rows are selected (e.g. delete). Default: single object only. */
   multiple?: boolean;
+  /**
+   * Where the details panel's action bar shows it (#275): `primary` — a button of its own, for an everyday operation
+   * or the kind's own main state change; `more` (default) — an item of the "Actions" dropdown at the end of the bar,
+   * for everything occasional, comparative, in-depth or exotic. An extension's action is always `more`. The table's
+   * row menu lists every action alike.
+   */
+  placement?: ActionPlacement;
+  /**
+   * `false` keeps the action out of the details panel altogether, because the panel's header offers it itself (copy
+   * and pin next to the name, #274); the table's row menu still lists it. Default true.
+   */
+  inDetails?: boolean;
 }
+
+export type ActionPlacement = "primary" | "more";
 
 export interface RegisteredAction extends ActionDef {
   id: ActionId;
@@ -67,7 +83,8 @@ function changed(): void {
 
 /** Registers (or replaces) the implementation of an action. Returns a function that removes it. */
 export function registerAction(id: ActionId, def: ActionDef): () => void {
-  const entry = { ...def, id };
+  // An extension cannot place its action among Sextant's main buttons, whatever it declares.
+  const entry: RegisteredAction = isExtensionAction(id) ? { ...def, id, placement: "more" } : { ...def, id };
   actions.set(id, entry);
   changed();
   return () => {
@@ -108,6 +125,34 @@ function safeApplies(action: ActionDef, obj: KubeObject, kind: KindRef): boolean
   } catch {
     return false;
   }
+}
+
+/** Whether `id` is an extension's contribution (`ext:<extension>:<id>`, src/extensions/protocol.ts). */
+export function isExtensionAction(id: ActionId): boolean {
+  return id.startsWith("ext:");
+}
+
+/** Where the details panel shows `action`: an extension's is always `more`, an undeclared one too. */
+export function placementOf(action: RegisteredAction): ActionPlacement {
+  return isExtensionAction(action.id) ? "more" : (action.placement ?? "more");
+}
+
+/**
+ * The details panel's actions for `objects`: the buttons (`primary`, Delete last) and the "Actions" dropdown's items
+ * (`more`), each in the order of `ids`; actions the panel's header offers itself (`inDetails: false`) are in neither.
+ */
+export function detailsActions(
+  objects: KubeObject[],
+  kind: KindRef,
+  ids: readonly ActionId[],
+): { primary: RegisteredAction[]; more: RegisteredAction[] } {
+  const shown = getActionsFor(objects, kind, ids).filter((a) => a.inDetails !== false);
+  const primary = shown.filter((a) => placementOf(a) === "primary");
+  const last = primary.filter((a) => a.id === "delete");
+  return {
+    primary: [...primary.filter((a) => a.id !== "delete"), ...last],
+    more: shown.filter((a) => placementOf(a) === "more"),
+  };
 }
 
 /** The label of an action as shown: its literal `label`, else the translation of `labelKey`. */

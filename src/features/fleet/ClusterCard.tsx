@@ -11,7 +11,7 @@ import { ClusterAvatar } from "../clusters/ClusterAvatar";
 import { connectCluster, selectCluster } from "../clusters/clustersStore";
 import { useClusterState } from "../clusters/hooks";
 import { connectionErrorText } from "../clusters/Welcome";
-import { formatBytes, formatCpu, percentOf } from "../metrics/format";
+import { formatBytes, formatCpu, percentKey, percentOf } from "../metrics/format";
 import { useMetricsStatus, useNodeUsage } from "../metrics/hooks";
 import { usageUnavailable } from "../metrics/components";
 import { useClusterProblems } from "../problems/hooks";
@@ -142,7 +142,7 @@ function Health({ clusterId, nodes }: { clusterId: ClusterId; nodes: RowsState<N
       const percent = percentOf(used, total);
       return percent === undefined
         ? format(used)
-        : t("fleet:card.usage", { percent: t("metrics:percent", { value: percent }), used: format(used) });
+        : t("fleet:card.usage", { percent: t(percentKey("metrics:percent", percent), { value: percent }), used: format(used) });
     };
     cpu = value(usedCpu, summary.cpu, formatCpu);
     memory = value(usedMemory, summary.memory, formatBytes);

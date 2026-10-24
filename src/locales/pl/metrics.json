@@ -5,7 +5,9 @@
   "openSettings": "Otwórz ustawienia klastra",
   "na": "b.d.",
   "percent": "{{value}}%",
+  "percentBelowOne": "<1%",
   "percentOf": "{{value}}% · {{text}}",
+  "percentOfBelowOne": "<1% · {{text}}",
   "usedOf": "{{used}} z {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -21,7 +23,9 @@
     "limitSetOn_many": "(ustawiony w {{set}} z {{count}} kontenerów)",
     "limitSetOn_other": "(ustawiony w {{set}} z {{count}} kontenera)",
     "shareOfLimit": "{{value}}% limitu",
+    "shareOfLimitBelowOne": "<1% limitu",
     "shareOfRequest": "{{value}}% request",
+    "shareOfRequestBelowOne": "<1% request",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "Pamięć {{amounts}}"
   },

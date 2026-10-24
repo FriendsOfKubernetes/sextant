@@ -25,6 +25,7 @@ export interface LogStreamState {
 }
 
 const INITIAL: LogStreamState = Object.freeze({ buffer: EMPTY_BUFFER, status: "connecting" }) as LogStreamState;
+const OFF: LogStreamState = Object.freeze({ buffer: EMPTY_BUFFER, status: "ended" }) as LogStreamState;
 
 export interface UseLogStream extends LogStreamState {
   /** Starts a new stream with the same options (after "Stream ended" or an error). The text is cleared. */
@@ -35,16 +36,18 @@ export interface UseLogStream extends LogStreamState {
 
 /**
  * Streams the logs of `pod`. A different cluster, pod or option (or `reconnect`) stops the stream, empties the
- * buffer and starts another one; unmounting stops it.
+ * buffer and starts another one; unmounting stops it. With `enabled` off nothing is started (a tab that shows only
+ * lines from Loki) and the state stays "ended" with an empty buffer.
  */
-export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogOptions): UseLogStream {
+export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogOptions, enabled = true): UseLogStream {
   const [attempt, setAttempt] = useState(0);
-  const key = JSON.stringify([clusterId, pod, options, attempt]);
+  const key = JSON.stringify([clusterId, pod, options, attempt, enabled]);
   // Keyed state: a new key starts from "connecting" in the same render, with an empty buffer.
   const [state, setState] = useState<{ key: string; value: LogStreamState }>({ key, value: INITIAL });
 
   useEffect(() => {
-    const [cluster, podRef, logOptions] = JSON.parse(key) as [ClusterId, ObjectRef, LogOptions];
+    const [cluster, podRef, logOptions, , on] = JSON.parse(key) as [ClusterId, ObjectRef, LogOptions, number, boolean];
+    if (!on) return;
     const update = (fn: (s: LogStreamState) => LogStreamState) =>
       setState((prev) => ({ key, value: fn(prev.key === key ? prev.value : INITIAL) }));
 
@@ -74,6 +77,6 @@ export function useLogStream(clusterId: ClusterId, pod: ObjectRef, options: LogO
   }, [key]);
 
   const reconnect = useCallback(() => setAttempt((n) => n + 1), []);
-  const value = state.key === key ? state.value : INITIAL;
+  const value = !enabled ? OFF : state.key === key ? state.value : INITIAL;
   return { ...value, reconnect, generation: key };
 }

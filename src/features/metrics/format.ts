@@ -68,8 +68,33 @@ export function formatCount(value: number): string {
   return String(Math.round(value));
 }
 
-/** `part` of `whole` in percent, 0–100 (rounded); `undefined` without a whole. */
-export function percentOf(part: number, whole: number | undefined): number | undefined {
+/**
+ * `part` of `whole` in percent, not capped (usage can be over its request); `undefined` without a whole. Rounded to a
+ * whole percent, except a share above 0 and below 1 %, which is returned as it is so it reads "<1%" (`isBelowOnePercent`)
+ * — never "1%" or "0%" (#276); 0 only when `part` is 0.
+ */
+export function shareOf(part: number, whole: number | undefined): number | undefined {
   if (!whole || whole <= 0) return undefined;
-  return Math.min(100, Math.max(0, Math.round((part / whole) * 100)));
+  const exact = (part / whole) * 100;
+  if (exact > 0 && exact < 1) return exact;
+  return Math.max(0, Math.round(exact));
+}
+
+/** `part` of `whole` in percent, 0–100, as `shareOf` (a share below 1 % kept as it is); `undefined` without a whole. */
+export function percentOf(part: number, whole: number | undefined): number | undefined {
+  const share = shareOf(part, whole);
+  return share === undefined ? undefined : Math.min(100, share);
+}
+
+/** Whether a percent from `percentOf`/`shareOf` is above 0 and below 1, told as "<1%". */
+export function isBelowOnePercent(percent: number | undefined): boolean {
+  return percent !== undefined && percent > 0 && percent < 1;
+}
+
+/**
+ * The i18n key that tells `percent`: `key` itself (with `{{value}}`), or its `…BelowOne` sibling ("<1%", no number)
+ * for a share below 1 %. Every key used so has that sibling in every language.
+ */
+export function percentKey(key: string, percent: number | undefined): string {
+  return isBelowOnePercent(percent) ? `${key}BelowOne` : key;
 }

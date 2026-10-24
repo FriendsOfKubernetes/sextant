@@ -44,8 +44,9 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
 use crate::settings::ClusterSettings;
 
-use prometheus::Prometheus;
 pub use prometheus::{CANDIDATE_NAMESPACES, VMSELECT_PATH_PREFIX, source_kind};
+// Also the client of `crate::alerts` (Prometheus' alerting rules, ADR-0119).
+pub(crate) use prometheus::{Prometheus, answer_data as prometheus_answer_data};
 
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

@@ -7,6 +7,7 @@ import { ArgoDiffDialog } from "./ArgoDiffDialog";
 import "./diff.css";
 
 registerAction("argoDiff", {
+  placement: "more",
   labelKey: "argocd:diff.action",
   icon: "diff",
   appliesTo: (_obj, kind) => kind.group === "argoproj.io" && kind.kind === "Application",

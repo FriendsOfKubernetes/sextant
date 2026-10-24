@@ -48,6 +48,37 @@ export function getDetailsSections(kind: KindRef): DetailsSectionDef[] {
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
 
+// ---------- Icon buttons of the panel's header (#274) ----------
+
+/** Where a header tool sits: right after the object's name, or right after its namespace line. */
+export type DetailsHeaderPlace = "name" | "namespace";
+
+export interface DetailsHeaderToolDef {
+  id: string;
+  place: DetailsHeaderPlace;
+  /** Order within its place, lower first. */
+  order: number;
+  /** An icon-only button (or nothing). `obj` is `null` while the object loads. */
+  Component: ComponentType<DetailsSectionProps>;
+}
+
+const headerTools = new Map<string, DetailsHeaderToolDef>();
+
+/** Adds a small tool (copy, pin) next to the name or the namespace in the panel's header, for every kind. */
+export function registerDetailsHeaderTool(def: DetailsHeaderToolDef): () => void {
+  headerTools.set(def.id, def);
+  version.bump();
+  return () => {
+    if (headerTools.get(def.id) === def && headerTools.delete(def.id)) version.bump();
+  };
+}
+
+export function getDetailsHeaderTools(place: DetailsHeaderPlace): DetailsHeaderToolDef[] {
+  return [...headerTools.values()]
+    .filter((tool) => tool.place === place)
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
 export interface DetailsObject {
   obj: KubeObject | null;
   loading: boolean;

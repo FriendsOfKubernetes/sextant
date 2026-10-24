@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type KindRef, type KubeObject, type MockBackend } from "../../api";
 import { resetAppStore } from "../../app/store";
 import { ResourceTable } from "../../components/Table";
+import { DetailsPanel } from "../../layout/details/DetailsPanel";
 import { getResourceDef } from "../../resources/registry";
 import { axeViolations } from "../../test/axe";
 import { getAction, getActionsFor, runAction } from "../actions/registry";
@@ -136,6 +137,48 @@ describe("in a table", () => {
     await waitFor(() => expect(clipboard).toHaveLength(1));
     expect(clipboard[0]!.split("\n").sort()).toEqual(["demo/web", "prod/db"]);
     expect(within(screen.getByRole("status")).getByText("Copied 2 names, one per line")).toBeInTheDocument();
+  });
+});
+
+describe("in the details header (#274)", () => {
+  it("has an icon-only button after the name and after the namespace that copy each alone", async () => {
+    backend.on("resource_get", () => obj(POD, "web", "demo"));
+    render(
+      <>
+        <DetailsPanel clusterId="c1" objectRef={{ kind: { ...POD }, namespace: "demo", name: "web" }} />
+        <CopyToast />
+      </>,
+    );
+    const header = screen.getByRole("heading", { name: "web" }).closest("header")!;
+    const copyName = within(header).getByRole("button", { name: "Copy name" });
+    const copyNamespace = within(header).getByRole("button", { name: "Copy namespace" });
+    // Icons only: the name is the accessible name and the tooltip, never visible text.
+    expect(copyName).toHaveTextContent(/^$/);
+    expect(copyName).toHaveAttribute("title", "Copy name");
+    expect(copyNamespace).toHaveTextContent(/^$/);
+    // Right after the name, and after the namespace line.
+    expect(copyName.closest(".details__name-line")).toContainElement(screen.getByRole("heading", { name: "web" }));
+    expect(copyNamespace.closest(".details__namespace")).toHaveTextContent("Namespace: demo");
+
+    fireEvent.click(copyName);
+    await waitFor(() => expect(clipboard).toEqual(["web"]));
+    expect(screen.getByRole("status")).toHaveTextContent("Copied web");
+    fireEvent.click(copyNamespace);
+    await waitFor(() => expect(clipboard).toEqual(["web", "demo"]));
+    expect(screen.getByRole("status")).toHaveTextContent("Copied demo");
+    expect(await axeViolations()).toEqual([]);
+  });
+
+  it("has no namespace button for a cluster-scoped object", () => {
+    backend.on("resource_get", () => obj(NODE, "node-a"));
+    render(<DetailsPanel clusterId="c1" objectRef={{ kind: { ...NODE }, namespace: null, name: "node-a" }} />);
+    expect(screen.getByRole("button", { name: "Copy name" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy namespace" })).toBeNull();
+  });
+
+  it("is not in the details action bar any more; the row menu keeps it", () => {
+    expect(getAction("copyNamespacedName")?.inDetails).toBe(false);
+    expect(getAction("copyName")?.inDetails).toBe(false);
   });
 });
 

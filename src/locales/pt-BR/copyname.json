@@ -5,5 +5,9 @@
   "copiedMany_one": "{{count}} nome copiado, um por linha",
   "copiedMany_many": "{{count}} de nomes copiados, um por linha",
   "copiedMany_other": "{{count}} nomes copiados, um por linha",
-  "failed": "Não foi possível copiar para a área de transferência"
+  "failed": "Não foi possível copiar para a área de transferência",
+  "header": {
+    "copyName": "Copiar nome",
+    "copyNamespace": "Copiar namespace"
+  }
 }

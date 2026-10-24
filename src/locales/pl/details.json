@@ -1,5 +1,6 @@
 {
   "actions": "Akcje",
+  "moreActions": "Akcje",
   "deleted": "Ten obiekt {{kind}} został usunięty.",
   "notFound": "Ten obiekt {{kind}} nie istnieje (już).",
   "sections": {

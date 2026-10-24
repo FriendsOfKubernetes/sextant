@@ -22,6 +22,7 @@ registerPage({
 });
 
 registerAction("portForward", {
+  placement: "primary",
   labelKey: "portforward:action.label",
   icon: "portForward",
   appliesTo: (obj, kind) => portsOf(obj, kind).length > 0,

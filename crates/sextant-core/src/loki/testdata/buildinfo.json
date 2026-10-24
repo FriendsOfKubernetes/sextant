@@ -1,0 +1,8 @@
+{
+  "version": "3.4.2",
+  "revision": "c0ab4d1b",
+  "branch": "release-3.4.x",
+  "buildUser": "root@buildkitsandbox",
+  "buildDate": "2025-02-05T19:25:19Z",
+  "goVersion": "go1.23.6"
+}

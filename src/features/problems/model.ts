@@ -83,6 +83,7 @@ export const PROBLEM_CATEGORIES = [
   "practices",
   "credentials",
   "disk",
+  "alerts",
   "events",
 ] as const;
 export type ProblemCategory = (typeof PROBLEM_CATEGORIES)[number];
@@ -105,6 +106,7 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * background cost like Traefik's and Reflector's, so it is asked for the same way.
  * And Kueue Workloads (`kueueWorkloads`, #246, ADR-0114): every Workload of the cluster with its pod templates (≤ 5000);
  * the queues themselves (`kueue`) are few and on by default.
+ * And firing alerts (`alerts`, #264, ADR-0119): Prometheus' and Alertmanager's alerts polled once a minute.
  */
 export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
   "security",
@@ -117,6 +119,7 @@ export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
   "reflector",
   "sealedSecrets",
   "kueueWorkloads",
+  "alerts",
 ];
 
 /** How long a container restart or an OOM kill counts after it happened. */
@@ -780,6 +783,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "credentials":
     case "practices": // Best-practice findings (#207) span several objects: the provider of features/practices finds them.
     case "disk":
+    case "alerts": // Firing alerts come from Prometheus and Alertmanager: the provider of features/alerts.
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.

@@ -1,0 +1,88 @@
+{
+  "mark": "Loki",
+  "markTitle": "Esta linha foi lida do Loki",
+  "bar": "Linhas anteriores do Loki",
+  "openBar": "Linhas anteriores do Loki",
+  "load": "Carregar linhas anteriores do Loki",
+  "loading_one": "Lendo do Loki… {{count}} linha até agora",
+  "loading_many": "Lendo do Loki… {{count}} de linhas até agora",
+  "loading_other": "Lendo do Loki… {{count}} linhas até agora",
+  "loaded_one": "{{count}} linha do Loki",
+  "loaded_many": "{{count}} de linhas do Loki",
+  "loaded_other": "{{count}} linhas do Loki",
+  "linesFromLoki_one": "{{count}} linha do Loki",
+  "linesFromLoki_many": "{{count}} de linhas do Loki",
+  "linesFromLoki_other": "{{count}} linhas do Loki",
+  "truncated_one": "Só a linha mais recente do período ({{count}}) é mostrada; escolha um período menor para ver as anteriores.",
+  "truncated_many": "Só os {{count}} de linhas mais recentes do período são mostrados; escolha um período menor para ver as anteriores.",
+  "truncated_other": "Só as {{count}} linhas mais recentes do período são mostradas; escolha um período menor para ver as anteriores.",
+  "cancel": "Parar",
+  "clear": "Remover as linhas do Loki",
+  "noContainerLabel": "O Loki não tem aqui um label de contêiner, então as linhas de todos os contêineres do Pod são mostradas.",
+  "noLines": "O Loki não tem linhas deste Pod no período.",
+  "readFailed": "Não foi possível ler as linhas do Loki.",
+  "statusFailed": "O Sextant não conseguiu verificar o Loki do cluster.",
+  "statusFailedNote": "O Sextant não conseguiu verificar o Loki do cluster: {{message}}",
+  "status": {
+    "loading": "Lendo do Loki…",
+    "failed": "A leitura do Loki falhou",
+    "onlyLoki": "Só linhas do Loki (o Pod não existe mais)"
+  },
+  "none": {
+    "off": "O Loki está desligado nas configurações do cluster, então os logs de Pods que não existem mais não podem ser lidos.",
+    "notFound": "Os logs de Pods que não existem mais podem ser lidos do Grafana Loki, mas o Sextant não encontrou nenhum neste cluster. O Sextant procura os Services dos charts Helm do Loki (loki-gateway, loki-query-frontend, loki-read, loki) nos namespaces loki, logging, monitoring, observability, grafana e loki-stack, e Services com o label app.kubernetes.io/name=loki. Se o Loki estiver em outro lugar, informe o Service dele nas configurações do cluster (aba “Métricas”).",
+    "manualNoAnswer": "O Service do Loki informado nas configurações do cluster não respondeu como Loki pelo API server.",
+    "noLabels": "O Loki respondeu, mas seus fluxos de logs não têm nem os labels namespace e pod nem k8s_namespace_name e k8s_pod_name, então o Sextant não consegue saber quais linhas pertencem a um Pod."
+  },
+  "range": {
+    "label": "Período",
+    "1h": "Última hora",
+    "6h": "Últimas 6 horas",
+    "24h": "Últimas 24 horas",
+    "custom": "Personalizado",
+    "from": "De",
+    "to": "Até",
+    "problem": {
+      "invalid": "O período deve terminar depois de começar.",
+      "tooLong": "O período pode ter no máximo 24 horas.",
+      "future": "O período não pode terminar no futuro."
+    }
+  },
+  "previous": {
+    "title": "Logs de Pods anteriores (Loki)",
+    "find": "Procurar Pods no Loki",
+    "hint": "Os Pods desta carga de trabalho no período, encontrados no Loki pelos nomes que o controlador dá a eles. As linhas deles abrem em uma aba de logs.",
+    "searching": "Procurando no Loki…",
+    "none": "O Loki não tem linhas dos Pods desta carga de trabalho no período.",
+    "listLabel": "Pods com linhas no Loki",
+    "truncated_one": "Só o primeiro Pod ({{count}}) é listado; escolha um período menor.",
+    "truncated_many": "Só os primeiros {{count}} de Pods são listados; escolha um período menor.",
+    "truncated_other": "Só os primeiros {{count}} Pods são listados; escolha um período menor."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki (logs de Pods que não existem mais)",
+    "mode": {
+      "auto": "Encontrar automaticamente",
+      "manual": "Usar este Service",
+      "off": "Desligado"
+    },
+    "service": "Service (namespace/nome:porta)",
+    "pathPrefix": "Prefixo de caminho",
+    "tenant": "Tenant (X-Scope-OrgID)",
+    "tenantPlaceholder": "Nenhum",
+    "invalid": {
+      "service": "Informe o Service como namespace/nome:porta, por exemplo loki/loki-gateway:80.",
+      "prefix": "Um prefixo de caminho é vazio ou começa com /, com letras, números, -, ., _ e ~ entre as barras.",
+      "tenant": "Um ID de tenant tem letras, números e os caracteres ! - _ . * ' ( ), no máximo 150; vários são unidos com |."
+    },
+    "save": "Salvar",
+    "checking": "Verificando o Loki…",
+    "foundAuto": "{{target}} encontrado; seus fluxos têm {{labels}}.",
+    "foundManual": "{{target}} responde; seus fluxos têm {{labels}}.",
+    "scheme": {
+      "kubernetes": "os labels namespace, pod e container",
+      "openTelemetry": "os labels do OpenTelemetry k8s_namespace_name, k8s_pod_name e k8s_container_name"
+    }
+  }
+}

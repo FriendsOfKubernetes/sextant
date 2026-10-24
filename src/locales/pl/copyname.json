@@ -6,5 +6,9 @@
   "copiedMany_few": "Skopiowano {{count}} nazwy, po jednej w wierszu",
   "copiedMany_many": "Skopiowano {{count}} nazw, po jednej w wierszu",
   "copiedMany_other": "Skopiowano {{count}} nazwy, po jednej w wierszu",
-  "failed": "Nie udało się skopiować do schowka"
+  "failed": "Nie udało się skopiować do schowka",
+  "header": {
+    "copyName": "Kopiuj nazwę",
+    "copyNamespace": "Kopiuj namespace"
+  }
 }

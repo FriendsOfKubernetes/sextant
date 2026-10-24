@@ -16,6 +16,7 @@ import { COMPARE_PAGE_ID, NamespaceComparePage } from "./NamespaceComparePage";
 import "./compare.css";
 
 registerAction("compareWith", {
+  placement: "more",
   labelKey: "compare:action",
   icon: "diff",
   appliesTo: (obj) => Boolean(obj.metadata?.name),

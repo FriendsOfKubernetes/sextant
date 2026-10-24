@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { api, ApiError, toApiError, type ApiError as ApiErrorType, type ClusterId, type KubeObject, type ObjectRef } from "../../api";
 import { ErrorState } from "../../components";
 import { ConfirmAction } from "../actions";
-import { registerAction } from "../actions/registry";
+import { registerAction, type ActionPlacement } from "../actions/registry";
 import { currentHash, fullyPromoted, isAborted, isKind, pauseConditions, ROLLOUT, rolloutPhase, specPaused, stableHash } from "./model";
 import { changesSomething, planFor, sendPlan, type PatchPlan, type RolloutAction } from "./patches";
 
@@ -123,14 +123,26 @@ type RolloutActionId = "rolloutPromote" | "rolloutPromoteFull" | "rolloutAbort" 
 /** Resume is offered while the Rollout is paused by hand or by the controller (as Argo CD's `resume` action). */
 export const canResume = (ro: KubeObject): boolean => specPaused(ro) || pauseConditions(ro).length > 0;
 
-const ACTIONS: { id: RolloutActionId; action: RolloutAction; applies: (ro: KubeObject) => boolean; danger?: boolean }[] = [
-  { id: "rolloutPromote", action: "promote", applies: canPromote },
-  { id: "rolloutPromoteFull", action: "promoteFull", applies: (ro) => !isAborted(ro) && (!fullyPromoted(ro) || specPaused(ro)) },
-  { id: "rolloutAbort", action: "abort", applies: (ro) => !isAborted(ro) && updating(ro), danger: true },
-  { id: "rolloutRetry", action: "retry", applies: isAborted },
+const ACTIONS: {
+  id: RolloutActionId;
+  action: RolloutAction;
+  applies: (ro: KubeObject) => boolean;
+  danger?: boolean;
+  /** Promote, Pause/Resume and Abort are buttons of the details panel; Promote full and Retry are in "Actions" (#275). */
+  placement: ActionPlacement;
+}[] = [
+  { id: "rolloutPromote", action: "promote", applies: canPromote, placement: "primary" },
+  {
+    id: "rolloutPromoteFull",
+    action: "promoteFull",
+    applies: (ro) => !isAborted(ro) && (!fullyPromoted(ro) || specPaused(ro)),
+    placement: "more",
+  },
+  { id: "rolloutAbort", action: "abort", applies: (ro) => !isAborted(ro) && updating(ro), danger: true, placement: "primary" },
+  { id: "rolloutRetry", action: "retry", applies: isAborted, placement: "more" },
   // The plugin pauses any Rollout; offered while it is not paused by hand already.
-  { id: "rolloutPause", action: "pause", applies: (ro) => !specPaused(ro) },
-  { id: "rolloutResume", action: "resume", applies: canResume },
+  { id: "rolloutPause", action: "pause", applies: (ro) => !specPaused(ro), placement: "primary" },
+  { id: "rolloutResume", action: "resume", applies: canResume, placement: "primary" },
 ];
 
 const ICONS = {
@@ -142,11 +154,12 @@ const ICONS = {
   resume: "resume",
 } as const;
 
-for (const { id, action, applies, danger } of ACTIONS) {
+for (const { id, action, applies, danger, placement } of ACTIONS) {
   registerAction(id, {
     labelKey: `argorollouts:actions.${action}`,
     icon: ICONS[action],
     danger,
+    placement,
     appliesTo: (obj, kind) => isRollout(kind) && applies(obj),
     run: ({ clusterId, refs, openDialog }) => {
       const ref = refs[0];

@@ -367,6 +367,20 @@ function actionButtons(): string[] {
   return within(screen.getByRole("toolbar")).getAllByRole("button").map((b) => b.textContent ?? "");
 }
 
+/** Labels of the items of the details panel's "Actions" menu (#275); the menu is closed again. */
+function menuItems(): string[] {
+  fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: "Actions" }));
+  const items = within(screen.getByRole("menu")).getAllByRole("menuitem").map((b) => b.textContent ?? "");
+  fireEvent.keyDown(window, { key: "Escape" });
+  return items;
+}
+
+/** Runs the item named `name` of the details panel's "Actions" menu. */
+function fromMenu(name: RegExp): void {
+  fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: "Actions" }));
+  fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem", { name }));
+}
+
 /** The `resource_patch` calls so far. */
 function patches(): Record<string, unknown>[] {
   return wb.backend.calls.filter((c) => c.cmd === "resource_patch").map((c) => c.args);
@@ -379,19 +393,14 @@ describe("Argo CD actions", () => {
 
   it("an idle Application offers Sync, Refresh, Hard refresh and the web UI; a syncing one Terminate instead of Sync", async () => {
     await openApplication(copy(application));
-    expect(actionButtons().map((b) => b.replace(/^\W+/, ""))).toEqual([
-      "Sync…",
-      "Refresh",
-      "Hard refresh",
-      "Open Argo CD UI",
-      "Edit",
-      "Delete",
-    ]);
+    // Sync and Refresh are buttons; Hard refresh and the web UI are in "Actions" (#275).
+    expect(actionButtons().map((b) => b.replace(/^\W+/, ""))).toEqual(["Sync…", "Refresh", "Edit", "Delete", "Actions"]);
+    expect(menuItems()).toEqual(["Hard refresh", "Open Argo CD UI"]);
     cleanupPanel();
     await openApplication(copy(applicationRunning));
     const running = actionButtons().map((b) => b.replace(/^\W+/, ""));
-    expect(running).toContain("Terminate…");
     expect(running).not.toContain("Sync…");
+    expect(menuItems()).toContain("Terminate…");
   });
 
   it("Sync asks for revision, prune and dry run, then patches the operation with the app's sync options", async () => {
@@ -440,7 +449,7 @@ describe("Argo CD actions", () => {
   it("Refresh and Hard refresh set the refresh annotation", async () => {
     await openApplication(copy(application));
     fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /^\W*Refresh$/ }));
-    fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Hard refresh/ }));
+    fromMenu(/Hard refresh/);
     await waitFor(() => expect(patches()).toHaveLength(2));
     expect(patches().map((p) => [p.patchType, p.patch])).toEqual([
       ["merge", { metadata: { annotations: { "argocd.argoproj.io/refresh": "normal" } } }],
@@ -450,7 +459,7 @@ describe("Argo CD actions", () => {
 
   it("Terminate asks first, then sets the operation phase to Terminating", async () => {
     await openApplication(copy(applicationRunning));
-    fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Terminate/ }));
+    fromMenu(/Terminate/);
     const dialog = await screen.findByRole("dialog");
     expect(patches()).toHaveLength(0);
     fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
@@ -513,7 +522,7 @@ describe("Open Argo CD UI", () => {
 
   async function openUi(services: KubeObject[] = [copy(argocdServer)]): Promise<void> {
     await openApplication(copy(application));
-    fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Open Argo CD UI/ }));
+    fromMenu(/Open Argo CD UI/);
     const id = await watchOf(wb, "Service", (s) => s.labelSelector === "app.kubernetes.io/name=argocd-server");
     expect(wb.specs.get(id)?.namespaces).toEqual([installedIn]);
     emitSnapshot(wb, id, services);
@@ -540,7 +549,7 @@ describe("Open Argo CD UI", () => {
       };
     });
     await openApplication(copy(application));
-    fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Open Argo CD UI/ }));
+    fromMenu(/Open Argo CD UI/);
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Several namespaces of this cluster look like an Argo CD installation");

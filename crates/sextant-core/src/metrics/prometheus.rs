@@ -230,6 +230,19 @@ impl Prometheus {
         answer_data(status, &body)
     }
 
+    /// `GET <base>/<path>` with the answer read up to `limit` bytes: the status and the body as sent, for a caller that
+    /// tells the answers apart itself (the alerting rules' alerts, `crate::alerts`, ADR-0119).
+    pub(crate) async fn get_raw_limited(
+        &self,
+        path: &str,
+        limit: usize,
+    ) -> CoreResult<(http::StatusCode, Vec<u8>)> {
+        let request = http::Request::get(format!("{}/{path}", self.base))
+            .body(Vec::new())
+            .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?;
+        self.send_limited(request, limit).await
+    }
+
     /// Whether this is a Prometheus-compatible API that answers: `api/v1/status/buildinfo` (Prometheus, and
     /// VictoriaMetrics from v1.77.0 on, single-node and vmselect alike); when the server refused that path the way an
     /// older VictoriaMetrics does (no such handler: HTTP 400, or an answer that is not the Prometheus API), an
@@ -295,7 +308,7 @@ fn too_long(status: http::StatusCode) -> bool {
 }
 
 /// The `data` of a Prometheus HTTP API answer with `status`; Prometheus' own error message kept for a refused query.
-fn answer_data(status: http::StatusCode, body: &[u8]) -> CoreResult<Value> {
+pub(crate) fn answer_data(status: http::StatusCode, body: &[u8]) -> CoreResult<Value> {
     let parsed: Option<Value> = serde_json::from_slice(body).ok();
     let Some(body) = parsed.filter(|b| b.get("status").is_some()) else {
         return Err(if status.is_success() {

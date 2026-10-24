@@ -1,0 +1,64 @@
+{
+  "tab": "ダッシュボードとトレース",
+  "openGrafana": "Grafana で開く",
+  "findTraces": "トレースを検索",
+  "openFailed": "リンクを開けませんでした: {{error}}",
+  "details": {
+    "title": "ダッシュボードとトレース"
+  },
+  "settings": {
+    "title": "ダッシュボードとトレース",
+    "intro": "ワークロード、Pod、ノード、Namespace の詳細とトラフィックグラフから、Grafana のダッシュボードとトレースへのリンクです。リンクはブラウザーで開きます。Sextant 自体がこれらのアドレスにリクエストを送ることはありません。",
+    "grafanaUrl": "Grafana の URL",
+    "grafanaUrlHint": "例: https://grafana.example.com または https://example.com/grafana。通常の http は localhost（ポートフォワード）の場合のみ受け付けます。",
+    "tracesUrl": "トレースの URL",
+    "tracesUrlHint": "Tempo を使う Grafana、または Jaeger の UI。空のときは Grafana の URL を使います。",
+    "dashboards": "ダッシュボード",
+    "tracesGroup": "トレース",
+    "templateHint": "上の URL の下のパス（/d/…）、または同じサイトの完全なアドレス。文字としての波かっこは %7B または %7D と書きます。{from} と {to} はクリック前の 1 時間（ミリ秒）、{kind} は小文字の種類（deployment）です。空のテンプレートではリンクは作られません。",
+    "variables": "変数: {{variables}}",
+    "targets": {
+      "workload": "ワークロード",
+      "pod": "Pod",
+      "node": "ノード",
+      "namespace": "Namespace",
+      "edge": "トラフィックグラフの呼び出し",
+      "traces": "トレース検索"
+    },
+    "presetFor": "{{target}} のプリセット",
+    "choosePreset": "プリセットを使う…",
+    "save": "保存",
+    "remove": "リンクを削除",
+    "saved": "保存しました。"
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Grafana Explore の Pod ログ（uid が loki の Loki データソース）",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "宛先のワークロードのダッシュボード（kube-prometheus-stack）",
+    "tempo": "Grafana Explore の Tempo（uid が tempo のデータソース）",
+    "jaeger": "Jaeger UI の検索"
+  },
+  "baseError": {
+    "empty": "URL を入力してください。",
+    "tooLong": "URL が長すぎます（最大 2048 文字）。",
+    "invalid": "有効な URL ではありません。",
+    "scheme": "https を使ってください。通常の http は localhost の場合のみ受け付けます。",
+    "credentials": "URL にユーザー名やパスワードを含めることはできません。",
+    "query": "ベース URL に ? や # を含めることはできません。"
+  },
+  "templateError": {
+    "empty": "テンプレートを入力してください。",
+    "tooLong": "テンプレートが長すぎます（最大 2048 文字）。",
+    "invalid": "テンプレートに空白、制御文字、またはバックスラッシュが含まれています。",
+    "brace": "変数ではない波かっこがあります。%7B または %7D と書いてください。",
+    "variable": "このリンクにない変数がテンプレートで使われています。",
+    "origin": "テンプレートはベース URL と同じサイトにとどまる必要があります。",
+    "noBase": "先にベース URL を設定してください。"
+  },
+  "transfer": {
+    "include": "ダッシュボードとトレースへのリンクを含める"
+  }
+}

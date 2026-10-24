@@ -5,7 +5,7 @@ use std::future::Future;
 use futures::{Stream, StreamExt};
 use sextant_core::logs::{self, LogOptions, LogUpdate};
 use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef};
-use tauri::ipc::Channel;
+use tauri::ipc::{Channel, IpcResponse};
 use tauri::{AppHandle, Manager, Runtime, State};
 
 use crate::state::{AppState, Subscription, check_stream_id};
@@ -29,17 +29,18 @@ pub async fn logs_start<R: Runtime>(
 
 /// `logs_start` once the pod is known: waits for `open` (the core opening the log stream), then registers and
 /// forwards it — unless `streams_reset` ran meanwhile, then the stream is dropped and the start fails.
-pub async fn start_logs<R, S>(
+pub async fn start_logs<R, S, U>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
     open: impl Future<Output = CoreResult<S>>,
-    channel: Channel<LogUpdate>,
+    channel: Channel<U>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
-    S: Stream<Item = LogUpdate> + Send + 'static,
+    S: Stream<Item = U> + Send + 'static,
+    U: IpcResponse + Send + 'static,
 {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -57,20 +58,21 @@ pub async fn logs_stop(state: State<'_, AppState>, stream_id: String) -> Result<
     Ok(())
 }
 
-/// Sends every update of `updates` through `channel` as soon as it comes (the window created the channel before the
+/// Sends every update of `updates` (log batches, or Loki pages) through `channel` as soon as it comes (the window created the channel before the
 /// start), once the stream is registered in `state.subscriptions` under `id` and `cluster`; the subscription forgets
 /// itself when the stream ends or a send fails. A taken or malformed `id` is `invalid` (nothing is sent).
-pub fn forward_logs<R, S>(
+pub fn forward_logs<R, S, U>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
     updates: S,
-    channel: Channel<LogUpdate>,
+    channel: Channel<U>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
-    S: Stream<Item = LogUpdate> + Send + 'static,
+    S: Stream<Item = U> + Send + 'static,
+    U: IpcResponse + Send + 'static,
 {
     let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
     let handle = app.clone();

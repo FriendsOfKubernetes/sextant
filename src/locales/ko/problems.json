@@ -49,6 +49,7 @@
     "practices": "모범 사례",
     "credentials": "자격 증명",
     "disk": "디스크 거의 가득 참",
+    "alerts": "발생 중인 경보",
     "events": "Warning 이벤트"
   },
   "messages": {
@@ -97,5 +98,6 @@
   "showTraefik": "Traefik 참조",
   "showReflector": "Reflector 미러",
   "showSealedSecrets": "Sealed Secrets 봉인 해제",
-  "showKueueWorkloads": "대기 중이거나 축출된 Kueue Workload"
+  "showKueueWorkloads": "대기 중이거나 축출된 Kueue Workload",
+  "showAlerts": "발생 중인 경보 (Prometheus 및 Alertmanager)"
 }

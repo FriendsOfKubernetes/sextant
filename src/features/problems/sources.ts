@@ -210,6 +210,9 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   credentials: [],
   // Claims almost full (#152, opt-in): from the kubelets' stats or Prometheus, polled while held (features/storage).
   disk: [{ category: "disk", kind: PVC, fieldSelector: null, discovered: false, external: true }],
+  // Firing alerts (#264, opt-in): from Prometheus and Alertmanager, polled while held (features/alerts); nothing is
+  // watched (a source of its own: `sourceKey`).
+  alerts: [{ category: "alerts", kind: { group: "", version: "v1", kind: "Namespace" }, fieldSelector: null, discovered: false, external: true }],
   // Reflector mirrors (#241, opt-in): stale or without a source, judged by the provider of features/reflector over
   // metadata-only lists of every Secret and ConfigMap (`external`, a source of its own: `sourceKey`).
   reflector: [{ category: "reflector", kind: REFLECTOR_SECRET, fieldSelector: null, discovered: false, external: true }],
@@ -283,5 +286,6 @@ export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fiel
   // provider's source of full claims, which watches nothing.
   if (def.category === "practices") return `${key}|${def.category}`;
   if (def.category === "reflector") return `${key}|${def.category}`;
+  if (def.category === "alerts") return `${key}|${def.category}`;
   return def.category === "security" || def.category === "disk" ? `${key}|${def.category}` : key;
 }

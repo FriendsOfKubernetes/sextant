@@ -1,0 +1,64 @@
+{
+  "tab": "Дашборди й трасування",
+  "openGrafana": "Відкрити в Grafana",
+  "findTraces": "Знайти трасування",
+  "openFailed": "Не вдалося відкрити посилання: {{error}}",
+  "details": {
+    "title": "Дашборди й трасування"
+  },
+  "settings": {
+    "title": "Дашборди й трасування",
+    "intro": "Посилання з відомостей про робочі навантаження, Pod, вузли та Namespace і з графа трафіку на ваші дашборди Grafana та трасування. Посилання відкривається в браузері; сам Sextant ніколи не звертається за цими адресами.",
+    "grafanaUrl": "URL Grafana",
+    "grafanaUrlHint": "Наприклад, https://grafana.example.com або https://example.com/grafana. Звичайний http приймається лише для localhost (переадресація порту).",
+    "tracesUrl": "URL трасувань",
+    "tracesUrlHint": "Grafana з Tempo або інтерфейс Jaeger. Якщо порожньо, використовується URL Grafana.",
+    "dashboards": "Дашборди",
+    "tracesGroup": "Трасування",
+    "templateHint": "Шлях під URL вище (/d/…) або повна адреса на тому самому сайті. Фігурну дужку як символ пишіть як %7B або %7D. {from} і {to} — година до натискання, у мілісекундах; {kind} — вид об'єкта малими літерами (deployment). Порожній шаблон не дає посилання.",
+    "variables": "Змінні: {{variables}}",
+    "targets": {
+      "workload": "Робочі навантаження",
+      "pod": "Pod",
+      "node": "Вузли",
+      "namespace": "Namespace",
+      "edge": "Виклики в графі трафіку",
+      "traces": "Пошук трасувань"
+    },
+    "presetFor": "Готовий шаблон для: {{target}}",
+    "choosePreset": "Узяти готовий шаблон…",
+    "save": "Зберегти",
+    "remove": "Видалити посилання",
+    "saved": "Збережено."
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Логи Pod у Grafana Explore (джерело даних Loki з uid loki)",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "Дашборд робочого навантаження отримувача (kube-prometheus-stack)",
+    "tempo": "Tempo у Grafana Explore (джерело даних з uid tempo)",
+    "jaeger": "Пошук в інтерфейсі Jaeger"
+  },
+  "baseError": {
+    "empty": "Введіть URL.",
+    "tooLong": "URL задовгий (не більше 2048 символів).",
+    "invalid": "Це не URL.",
+    "scheme": "Використовуйте https; звичайний http приймається лише для localhost.",
+    "credentials": "URL не повинен містити ім'я користувача чи пароль.",
+    "query": "Базовий URL не повинен містити ? або #."
+  },
+  "templateError": {
+    "empty": "Введіть шаблон.",
+    "tooLong": "Шаблон задовгий (не більше 2048 символів).",
+    "invalid": "У шаблоні є пробіли, керівні символи або зворотна скісна риска.",
+    "brace": "Фігурна дужка, яка не є змінною: пишіть її як %7B або %7D.",
+    "variable": "Шаблон використовує змінну, якої в цього посилання немає.",
+    "origin": "Шаблон має залишатися на сайті базового URL.",
+    "noBase": "Спершу вкажіть базовий URL."
+  },
+  "transfer": {
+    "include": "Додати посилання на дашборди й трасування"
+  }
+}

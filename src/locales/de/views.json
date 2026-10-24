@@ -118,7 +118,8 @@
       "icon": "Symbol",
       "namespaces": "Namespace-Filter",
       "previewChanges": "Vorschau von Änderungen",
-      "agentAccess": "Zugriffsregeln für Agenten"
+      "agentAccess": "Zugriffsregeln für Agenten",
+      "observabilityLinks": "Links zu Dashboards und Traces"
     },
     "overwrite": "Einträge ersetzen, die sich von meinen unterscheiden",
     "applyAgentAccess": "Zugriffsregeln für Agenten aus der Datei übernehmen",

@@ -1,0 +1,115 @@
+{
+  "sidebar": "Alerty",
+  "title": "Alerty",
+  "loading": "Odczytywanie alertów…",
+  "none": "Brak aktywnych lub oczekujących alertów.",
+  "noneMatch": "Żaden alert nie pasuje do filtrów.",
+  "unnamed": "(bez alertname)",
+  "shown_one": "Wyświetlono {{count}} alert",
+  "shown_few": "Wyświetlono {{count}} alerty",
+  "shown_many": "Wyświetlono {{count}} alertów",
+  "shown_other": "Wyświetlono {{count}} alertu",
+  "truncated": "Wyświetlono tylko najpoważniejsze alerty (z {{total}}).",
+  "activeSince": "Aktywny od",
+  "labels": "Labele",
+  "openSettings": "Źródła alertów…",
+  "tabs": {
+    "label": "Alerty i wyciszenia",
+    "alerts": "Alerty ({{count}})",
+    "silences": "Wyciszenia ({{count}})"
+  },
+  "filter": {
+    "search": "Szukaj alertów",
+    "severity": "Ważność",
+    "namespace": "Namespace",
+    "state": "Stan",
+    "all": "Wszystkie"
+  },
+  "state": {
+    "firing": "Aktywny",
+    "pending": "Oczekujący",
+    "silenced": "Wyciszony",
+    "inhibited": "Wstrzymany"
+  },
+  "severity": {
+    "critical": "Krytyczna",
+    "error": "Błąd",
+    "high": "Wysoka",
+    "warning": "Ostrzeżenie",
+    "medium": "Średnia",
+    "info": "Informacja",
+    "low": "Niska",
+    "none": "Brak",
+    "unset": "Bez ważności"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Pulpit",
+    "cleaned": "{{url}} (pominięto dane logowania, zapytanie i fragment)"
+  },
+  "source": {
+    "title": "Źródła alertów",
+    "silencesFailed": "Nie udało się odczytać wyciszeń Alertmanagera",
+    "prometheus": {
+      "ok": "Źródło zgodne z Prometheus: {{target}}",
+      "off": "Źródło zgodne z Prometheus jest wyłączone w ustawieniach klastra.",
+      "notFound": "Nie znaleziono źródła zgodnego z Prometheus: oczekujące alerty nie są wyświetlane.",
+      "vmalertMissing": "VictoriaMetrics pod adresem {{target}} podaje alerty tylko przez vmalert, a -vmalert.proxyURL nie jest ustawiony.",
+      "failed": "Nie udało się odczytać alertów źródła zgodnego z Prometheus",
+      "failedAt": "Nie udało się odczytać alertów {{target}}"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager jest wyłączony w ustawieniach klastra.",
+      "notFound": "Nie znaleziono Alertmanagera: wyciszone i wstrzymane alerty nie są wyświetlane.",
+      "failed": "Nie udało się odczytać Alertmanagera",
+      "failedAt": "Nie udało się odczytać Alertmanagera pod adresem {{target}}"
+    }
+  },
+  "silences": {
+    "readOnly": "Wyciszenia są tylko do odczytu: tworzy się je i kończy w Alertmanagerze.",
+    "none": "Brak aktywnych lub oczekujących wyciszeń.",
+    "noAlertmanager": "Wyciszenia pochodzą z Alertmanagera, a żaden nie odpowiada.",
+    "expired_one": "Nie wyświetlono {{count}} wygasłego wyciszenia.",
+    "expired_few": "Nie wyświetlono {{count}} wygasłych wyciszeń.",
+    "expired_many": "Nie wyświetlono {{count}} wygasłych wyciszeń.",
+    "expired_other": "Nie wyświetlono {{count}} wygasłego wyciszenia.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "autor: {{name}}",
+    "matchers": "Dopasowania",
+    "state": {
+      "active": "Aktywne",
+      "pending": "Oczekujące",
+      "expired": "Wygasłe"
+    }
+  },
+  "details": {
+    "title": "Alerty",
+    "none": "Żaden alert nie dotyczy tego obiektu.",
+    "openPage": "Wszystkie alerty"
+  },
+  "settings": {
+    "title": "Alerty",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Znajdź automatycznie",
+      "manual": "Adres Service",
+      "off": "Wyłączone"
+    },
+    "service": "Service (namespace/nazwa:port)",
+    "pathPrefix": "Prefiks ścieżki",
+    "invalid": "Podaj adres w postaci namespace/service:port i prefiks ścieżki, np. /alertmanager.",
+    "save": "Zapisz",
+    "prometheusHint": "Oczekujące i aktywne alerty reguł są odczytywane ze źródła zgodnego z Prometheus z sekcji „Metryki”.",
+    "detected": "Znalezione źródła alertów",
+    "prometheusSource": "Źródło zgodne z Prometheus",
+    "checking": "Sprawdzanie…",
+    "found": "Znaleziono",
+    "failed": "Nie odpowiada",
+    "vmalertMissing": "VictoriaMetrics bez vmalert (-vmalert.proxyURL)",
+    "status": {
+      "off": "Wyłączone",
+      "notFound": "Nie znaleziono"
+    }
+  }
+}

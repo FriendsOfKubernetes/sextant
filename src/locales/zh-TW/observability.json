@@ -1,0 +1,64 @@
+{
+  "tab": "儀表板與追蹤",
+  "openGrafana": "在 Grafana 中開啟",
+  "findTraces": "尋找追蹤",
+  "openFailed": "無法開啟連結：{{error}}",
+  "details": {
+    "title": "儀表板與追蹤"
+  },
+  "settings": {
+    "title": "儀表板與追蹤",
+    "intro": "從工作負載、Pod、節點與 Namespace 的詳細資料以及流量圖前往你的 Grafana 儀表板與追蹤的連結。連結會在瀏覽器中開啟；Sextant 本身從不要求這些位址。",
+    "grafanaUrl": "Grafana URL",
+    "grafanaUrlHint": "例如 https://grafana.example.com 或 https://example.com/grafana。僅對 localhost（連接埠轉送）接受一般 http。",
+    "tracesUrl": "追蹤 URL",
+    "tracesUrlHint": "搭配 Tempo 的 Grafana 或 Jaeger 介面。留空時使用 Grafana URL。",
+    "dashboards": "儀表板",
+    "tracesGroup": "追蹤",
+    "templateHint": "上方 URL 底下的路徑（/d/…）或同一網站上的完整位址。字面大括號請寫成 %7B 或 %7D。{from} 與 {to} 是點擊前的一小時，以毫秒計；{kind} 是小寫的類型（deployment）。空白範本不會產生連結。",
+    "variables": "變數：{{variables}}",
+    "targets": {
+      "workload": "工作負載",
+      "pod": "Pod",
+      "node": "節點",
+      "namespace": "Namespace",
+      "edge": "流量圖中的呼叫",
+      "traces": "追蹤搜尋"
+    },
+    "presetFor": "{{target}} 的預設範本",
+    "choosePreset": "使用預設範本…",
+    "save": "儲存",
+    "remove": "移除連結",
+    "saved": "已儲存。"
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Grafana Explore 中的 Pod 日誌（uid 為 loki 的 Loki 資料來源）",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "目標工作負載的儀表板（kube-prometheus-stack）",
+    "tempo": "Grafana Explore 中的 Tempo（uid 為 tempo 的資料來源）",
+    "jaeger": "Jaeger 介面搜尋"
+  },
+  "baseError": {
+    "empty": "請輸入 URL。",
+    "tooLong": "URL 過長（最多 2048 個字元）。",
+    "invalid": "這不是有效的 URL。",
+    "scheme": "請使用 https；一般 http 僅對 localhost 接受。",
+    "credentials": "URL 不得包含使用者名稱或密碼。",
+    "query": "基礎 URL 不得包含 ? 或 #。"
+  },
+  "templateError": {
+    "empty": "請輸入範本。",
+    "tooLong": "範本過長（最多 2048 個字元）。",
+    "invalid": "範本包含空白、控制字元或反斜線。",
+    "brace": "有不是變數的大括號：請寫成 %7B 或 %7D。",
+    "variable": "範本使用了此連結沒有的變數。",
+    "origin": "範本必須留在基礎 URL 的網站上。",
+    "noBase": "請先設定基礎 URL。"
+  },
+  "transfer": {
+    "include": "包含儀表板與追蹤連結"
+  }
+}

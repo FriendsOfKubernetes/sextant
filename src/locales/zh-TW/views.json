@@ -118,7 +118,8 @@
       "icon": "圖示",
       "namespaces": "namespace 篩選",
       "previewChanges": "預覽變更",
-      "agentAccess": "代理程式存取規則"
+      "agentAccess": "代理程式存取規則",
+      "observabilityLinks": "儀表板與追蹤連結"
     },
     "overwrite": "取代與我的不同的項目",
     "applyAgentAccess": "套用檔案中的代理程式存取規則",

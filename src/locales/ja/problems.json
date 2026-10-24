@@ -49,6 +49,7 @@
     "practices": "ベストプラクティス",
     "credentials": "認証情報",
     "disk": "ディスク残りわずか",
+    "alerts": "発火中のアラート",
     "events": "警告イベント"
   },
   "messages": {
@@ -97,5 +98,6 @@
   "showTraefik": "Traefik の参照",
   "showReflector": "Reflector のミラー",
   "showSealedSecrets": "Sealed Secrets の復号",
-  "showKueueWorkloads": "待機中または退避された Kueue の Workload"
+  "showKueueWorkloads": "待機中または退避された Kueue の Workload",
+  "showAlerts": "発火中のアラート (Prometheus と Alertmanager)"
 }

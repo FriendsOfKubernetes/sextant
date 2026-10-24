@@ -1,0 +1,64 @@
+{
+  "tab": "Painéis e traces",
+  "openGrafana": "Abrir no Grafana",
+  "findTraces": "Buscar traces",
+  "openFailed": "Não foi possível abrir o link: {{error}}",
+  "details": {
+    "title": "Painéis e traces"
+  },
+  "settings": {
+    "title": "Painéis e traces",
+    "intro": "Links dos detalhes de cargas de trabalho, Pods, nós e Namespaces e do grafo de tráfego para seus painéis do Grafana e traces. Um link abre no navegador; o próprio Sextant nunca solicita esses endereços.",
+    "grafanaUrl": "URL do Grafana",
+    "grafanaUrlHint": "Por exemplo https://grafana.example.com ou https://example.com/grafana. http simples só é aceito para localhost (um redirecionamento de porta).",
+    "tracesUrl": "URL de traces",
+    "tracesUrlHint": "Grafana com Tempo ou a interface do Jaeger. Se vazia, a URL do Grafana é usada.",
+    "dashboards": "Painéis",
+    "tracesGroup": "Traces",
+    "templateHint": "Um caminho sob a URL acima (/d/…) ou um endereço completo no mesmo site. Escreva uma chave literal como %7B ou %7D. {from} e {to} são a hora antes do clique, em milissegundos; {kind} é o tipo em minúsculas (deployment). Um modelo vazio não gera link.",
+    "variables": "Variáveis: {{variables}}",
+    "targets": {
+      "workload": "Cargas de trabalho",
+      "pod": "Pods",
+      "node": "Nós",
+      "namespace": "Namespaces",
+      "edge": "Chamadas do grafo de tráfego",
+      "traces": "Busca de traces"
+    },
+    "presetFor": "Modelo pronto para {{target}}",
+    "choosePreset": "Usar um modelo pronto…",
+    "save": "Salvar",
+    "remove": "Remover links",
+    "saved": "Salvo."
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Logs do Pod no Grafana Explore (fonte de dados Loki com uid loki)",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "Painel da carga de trabalho de destino (kube-prometheus-stack)",
+    "tempo": "Tempo no Grafana Explore (fonte de dados com uid tempo)",
+    "jaeger": "Busca na interface do Jaeger"
+  },
+  "baseError": {
+    "empty": "Informe uma URL.",
+    "tooLong": "A URL é longa demais (no máximo 2048 caracteres).",
+    "invalid": "Esta não é uma URL válida.",
+    "scheme": "Use https; http simples só é aceito para localhost.",
+    "credentials": "A URL não deve conter nome de usuário nem senha.",
+    "query": "A URL base não deve conter ? nem #."
+  },
+  "templateError": {
+    "empty": "Informe um modelo.",
+    "tooLong": "O modelo é longo demais (no máximo 2048 caracteres).",
+    "invalid": "O modelo contém espaços, caracteres de controle ou uma barra invertida.",
+    "brace": "Uma chave que não é variável: escreva-a como %7B ou %7D.",
+    "variable": "O modelo usa uma variável que este link não tem.",
+    "origin": "O modelo deve permanecer no site da URL base.",
+    "noBase": "Defina a URL base primeiro."
+  },
+  "transfer": {
+    "include": "Incluir links para painéis e traces"
+  }
+}

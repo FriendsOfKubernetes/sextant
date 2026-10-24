@@ -55,6 +55,7 @@
     "practices": "Найкращі практики",
     "credentials": "Облікові дані",
     "disk": "Диск майже заповнений",
+    "alerts": "Активні алерти",
     "events": "Події Warning"
   },
   "messages": {
@@ -115,5 +116,6 @@
   "showTraefik": "Посилання Traefik",
   "showReflector": "Дзеркала Reflector",
   "showSealedSecrets": "Розпечатування Sealed Secrets",
-  "showKueueWorkloads": "Очікувані та витіснені Workload Kueue"
+  "showKueueWorkloads": "Очікувані та витіснені Workload Kueue",
+  "showAlerts": "Активні алерти (Prometheus і Alertmanager)"
 }

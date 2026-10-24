@@ -605,6 +605,14 @@ _Avoid_: apply, upsert
 What a namespace, workload, Pod, node or label value cost over the last 24 hours, 7 or 30 days, as the cluster's OpenCost or Kubecost computes it, split by CPU, memory, storage, network, GPU and other. Sextant only reads it; it never installs either.
 _Avoid_: billing, spend, invoice
 
+**Alert**:
+A firing or pending alert of the cluster's alerting rules, read from its Prometheus-compatible source (vmalert for VictoriaMetrics) and its Alertmanager, never evaluated by Sextant. Its state is firing, pending (Prometheus only), silenced or inhibited (Alertmanager only); it is shown on the object its labels name (ADR-0119).
+_Avoid_: notification (that is Sextant's own desktop message), problem (an alert becomes one only in the opt-in `alerts` category)
+
+**Silence**:
+An Alertmanager rule that mutes alerts matching its matchers for a time. Sextant lists active and pending ones and never creates or expires one.
+_Avoid_: mute (Sextant's own "Mute for 1 hour" is for notifications)
+
 **Idle cost**:
 The cost of node capacity no workload used. It belongs to the whole cluster, also when namespaces are filtered.
 _Avoid_: waste, unallocated
@@ -780,3 +788,11 @@ _Avoid_: plugin (the device plugin is one component), addon
 **MIG configuration (NVIDIA GPU Operator)**:
 How a node's GPUs are partitioned into MIG instances: the profile set named by the node label `nvidia.com/mig.config`, applied by the MIG manager, which writes the outcome to `nvidia.com/mig.config.state` (pending, rebooting, success, failed). The MIG strategy (`spec.mig.strategy`: none, single, mixed) decides whether the instances show as `nvidia.com/gpu` or as `nvidia.com/mig-<profile>` resources.
 _Avoid_: MIG mode (the GPU's own switch), partition layout
+
+**Link template (Grafana and traces)**:
+A URL per cluster and target (workload, pod, node, namespace, traffic edge, trace search) with `{variable}` placeholders filled from the object at the click, under the cluster's Grafana or traces base URL and never leaving its origin. Sextant only opens the result in the browser (ADR-0117).
+_Avoid_: integration, data source (Sextant reads nothing from Grafana)
+
+**Lines from Loki**:
+Log lines of a container read from the cluster's Grafana Loki instead of the kubelet: for a pod that is gone, or for runs older than the one the live view shows. They end where the shown run began, carry a "Loki" mark and are read only by the stream selector Sextant builds (ADR-0118).
+_Avoid_: history, archived logs (Loki keeps what its retention keeps, nothing more)

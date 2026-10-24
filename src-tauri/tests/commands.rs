@@ -152,6 +152,11 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("tls_certificate_info", Some("clusterId")),
     ("tls_expiry_scan", Some("clusterId")),
     ("cost_allocation", Some("clusterId")),
+    ("alerts_list", Some("clusterId")),
+    ("loki_status", Some("clusterId")),
+    ("loki_names", Some("clusterId")),
+    ("loki_logs_start", Some("clusterId")),
+    ("loki_logs_stop", Some("streamId")),
     ("mcp_status", None),
     ("mcp_token", None),
     ("mcp_regenerate_token", None),
@@ -1115,6 +1120,23 @@ fn later_argument_names_match_the_frontend() {
     // (command, arguments given, next argument expected)
     let cases = [
         ("resource_get", json!({ "clusterId": "c" }), "ref"),
+        ("loki_names", json!({ "clusterId": "c" }), "query"),
+        (
+            "loki_names",
+            json!({ "clusterId": "c", "query": { "type": "podContainers", "namespace": "n", "pod": "p" } }),
+            "range",
+        ),
+        ("loki_logs_start", json!({ "clusterId": "c" }), "query"),
+        (
+            "loki_logs_start",
+            json!({ "clusterId": "c", "query": { "namespace": "n", "pod": "p", "container": null, "range": { "startMs": 1, "endMs": 2 }, "direction": "backward", "limit": 10 } }),
+            "streamId",
+        ),
+        (
+            "loki_logs_start",
+            json!({ "clusterId": "c", "query": { "namespace": "n", "pod": "p", "container": null, "range": { "startMs": 1, "endMs": 2 }, "direction": "backward", "limit": 10 }, "streamId": "s" }),
+            "onEvent",
+        ),
         ("resource_count", json!({ "clusterId": "c" }), "kind"),
         ("workload_scale", json!({ "clusterId": "c" }), "ref"),
         (
@@ -1677,6 +1699,41 @@ fn the_cost_allocation_checks_its_query_first_and_needs_a_connected_cluster() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+}
+
+/// Alerts (#264): a read of a cluster that is not connected is `notFound`; nothing else is taken from the window.
+#[test]
+fn alerts_need_a_connected_cluster() {
+    let h = harness();
+    let err = invoke(&h, "alerts_list", json!({ "clusterId": "nope" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+}
+
+/// Loki (#265): names and reads are checked before the cluster is looked up; a read needs a connected cluster.
+#[test]
+fn loki_calls_check_their_input_first_and_need_a_connected_cluster() {
+    let h = harness();
+    let range = json!({ "startMs": 1_700_000_000_000_i64, "endMs": 1_700_000_360_000_i64 });
+    let pods =
+        json!({ "type": "workloadPods", "namespace": "shop", "kind": "Deployment", "name": "web" });
+    let err = invoke(
+        &h,
+        "loki_names",
+        json!({ "clusterId": "nope", "query": pods, "range": range }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    // A name that could carry LogQL is refused before anything else.
+    let bad = json!({ "type": "workloadPods", "namespace": "shop", "kind": "Deployment", "name": "web\"} or {x=~\".+" });
+    let err = invoke(
+        &h,
+        "loki_names",
+        json!({ "clusterId": "nope", "query": bad, "range": range }),
+    )
+    .unwrap_err();
+    assert_eq!(err["code"], "invalid", "{err}");
+    let err = invoke(&h, "loki_status", json!({ "clusterId": "nope" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
 }
 
 /// Comparing two revisions reads the release Secrets of a connected cluster; the input is checked first (#209).

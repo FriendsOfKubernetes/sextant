@@ -98,6 +98,7 @@
     "borrowingLimit": "借用上限",
     "lendingLimit": "貸出上限",
     "ofQuota": "{{value}} ({{percent}}%)",
+    "ofQuotaBelowOne": "{{value}} (<1%)",
     "borrowed": "{{value}}、うち借用 {{borrowed}}"
   },
   "usage": "使用量",

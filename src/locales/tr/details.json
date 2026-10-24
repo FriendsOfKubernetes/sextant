@@ -1,5 +1,6 @@
 {
   "actions": "Eylemler",
+  "moreActions": "Eylemler",
   "deleted": "Bu {{kind}} silindi.",
   "notFound": "Bu {{kind}} (artık) mevcut değil.",
   "sections": {

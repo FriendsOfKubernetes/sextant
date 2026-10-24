@@ -26,6 +26,7 @@ registerDockTab("exec", ExecTab);
 registerDockTab("terminal", LocalTerminalTab);
 
 registerAction("exec", {
+  placement: "primary",
   labelKey: "terminal:shell.action",
   icon: "shell",
   appliesTo: (obj, kind) =>

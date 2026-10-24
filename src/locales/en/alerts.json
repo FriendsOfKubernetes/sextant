@@ -1,0 +1,111 @@
+{
+  "sidebar": "Alerts",
+  "title": "Alerts",
+  "loading": "Reading alerts…",
+  "none": "No alerts are firing or pending.",
+  "noneMatch": "No alert matches the filters.",
+  "unnamed": "(no alertname)",
+  "shown_one": "{{count}} alert shown",
+  "shown_other": "{{count}} alerts shown",
+  "truncated": "Only the most severe alerts are shown (of {{total}}).",
+  "activeSince": "Active since",
+  "labels": "Labels",
+  "openSettings": "Alert sources…",
+  "tabs": {
+    "label": "Alerts and silences",
+    "alerts": "Alerts ({{count}})",
+    "silences": "Silences ({{count}})"
+  },
+  "filter": {
+    "search": "Search alerts",
+    "severity": "Severity",
+    "namespace": "Namespace",
+    "state": "State",
+    "all": "All"
+  },
+  "state": {
+    "firing": "Firing",
+    "pending": "Pending",
+    "silenced": "Silenced",
+    "inhibited": "Inhibited"
+  },
+  "severity": {
+    "critical": "Critical",
+    "error": "Error",
+    "high": "High",
+    "warning": "Warning",
+    "medium": "Medium",
+    "info": "Info",
+    "low": "Low",
+    "none": "None",
+    "unset": "No severity"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Dashboard",
+    "cleaned": "{{url}} (credentials, query and fragment left out)"
+  },
+  "source": {
+    "title": "Alert sources",
+    "silencesFailed": "The Alertmanager's silences could not be read",
+    "prometheus": {
+      "ok": "Prometheus-compatible source: {{target}}",
+      "off": "The Prometheus-compatible source is turned off in the cluster settings.",
+      "notFound": "No Prometheus-compatible source was found: pending alerts are not shown.",
+      "vmalertMissing": "VictoriaMetrics at {{target}} gives alerts only through vmalert, and -vmalert.proxyURL is not set.",
+      "failed": "Could not read the alerts of the Prometheus-compatible source",
+      "failedAt": "Could not read the alerts of {{target}}"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager is turned off in the cluster settings.",
+      "notFound": "No Alertmanager was found: silenced and inhibited alerts are not shown.",
+      "failed": "Could not read the Alertmanager",
+      "failedAt": "Could not read the Alertmanager at {{target}}"
+    }
+  },
+  "silences": {
+    "readOnly": "Silences are shown read-only: create or expire them in Alertmanager.",
+    "none": "No active or pending silences.",
+    "noAlertmanager": "Silences come from Alertmanager, and none answers.",
+    "expired_one": "{{count}} expired silence is not shown.",
+    "expired_other": "{{count}} expired silences are not shown.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "by {{name}}",
+    "matchers": "Matchers",
+    "state": {
+      "active": "Active",
+      "pending": "Pending",
+      "expired": "Expired"
+    }
+  },
+  "details": {
+    "title": "Alerts",
+    "none": "No alerts name this object.",
+    "openPage": "All alerts"
+  },
+  "settings": {
+    "title": "Alerts",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Find automatically",
+      "manual": "Service address",
+      "off": "Off"
+    },
+    "service": "Service (namespace/name:port)",
+    "pathPrefix": "Path prefix",
+    "invalid": "Enter the address as namespace/service:port and a path prefix such as /alertmanager.",
+    "save": "Save",
+    "prometheusHint": "Pending and firing alerts of the rules are read from the Prometheus-compatible source of the Metrics section.",
+    "detected": "Alert sources found",
+    "prometheusSource": "Prometheus-compatible source",
+    "checking": "Checking…",
+    "found": "Found",
+    "failed": "Did not answer",
+    "vmalertMissing": "VictoriaMetrics without vmalert (-vmalert.proxyURL)",
+    "status": {
+      "off": "Off",
+      "notFound": "Not found"
+    }
+  }
+}

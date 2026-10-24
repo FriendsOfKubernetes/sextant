@@ -118,7 +118,8 @@
       "icon": "icona",
       "namespaces": "filtro dei namespace",
       "previewChanges": "anteprima delle modifiche",
-      "agentAccess": "regole di accesso degli agenti"
+      "agentAccess": "regole di accesso degli agenti",
+      "observabilityLinks": "link a dashboard e tracce"
     },
     "overwrite": "Sostituisci le voci diverse dalle mie",
     "applyAgentAccess": "Applica le regole di accesso degli agenti del file",

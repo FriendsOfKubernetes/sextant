@@ -219,10 +219,11 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "practices",
     "credentials",
     "disk",
+    "alerts",
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 10] = [
+pub const OPT_IN_CATEGORIES: [&str; 11] = [
     "security",
     "credentials",
     "disk",
@@ -233,6 +234,7 @@ pub const OPT_IN_CATEGORIES: [&str; 10] = [
     "reflector",
     "sealedSecrets",
     "kueueWorkloads",
+    "alerts",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
@@ -272,6 +274,8 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "cnpg",
     "strimzi",
     "prometheusOperator",
+    // Firing alerts of Prometheus and Alertmanager (#264): a window view of 0.24.0.
+    "alerts",
 ];
 
 /// Whether an agent may get problems of `category` now (`enabled`: `notifications.enabledCategories`).

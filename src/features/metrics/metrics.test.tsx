@@ -616,6 +616,16 @@ describe("requests and limits in the Metrics section of a pod", () => {
     expect(cpu.querySelector<HTMLElement>(".mx-bar__fill")!.style.width).toBe("100%");
   });
 
+  it("tells a share below 1 % as <1%, never 1% or 0%, and 0% only for no usage (#276)", async () => {
+    // 5m of a 1000m request is 0.5 %; 0 bytes of memory is 0 %.
+    serve(status(), { pods: [usageOf(["app", 5, 0])] });
+    await show(podWith([{ name: "app", resources: { requests: { cpu: "1", memory: "64Mi" } } }]));
+    await screen.findByText("5m");
+    expect(within(valueOf("CPU")).getByText("<1% of request")).toBeInTheDocument();
+    expect(within(valueOf("CPU")).queryByText("1% of request")).toBeNull();
+    expect(within(valueOf("Memory")).getByText("0% of request")).toBeInTheDocument();
+  });
+
   it("says when the request or the limit is not set on every container", async () => {
     serve(status(), { pods: [usageOf(["app", 10, MIB], ["sidecar", 5, MIB])] });
     await show(

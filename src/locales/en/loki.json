@@ -1,0 +1,83 @@
+{
+  "mark": "Loki",
+  "markTitle": "This line was read from Loki",
+  "bar": "Older lines from Loki",
+  "openBar": "Older lines from Loki",
+  "load": "Load older lines from Loki",
+  "loading_one": "Loading from Loki… {{count}} line so far",
+  "loading_other": "Loading from Loki… {{count}} lines so far",
+  "loaded_one": "{{count}} line from Loki",
+  "loaded_other": "{{count}} lines from Loki",
+  "linesFromLoki_one": "{{count}} line from Loki",
+  "linesFromLoki_other": "{{count}} lines from Loki",
+  "truncated_one": "Only the newest {{count}} line of the period is shown; choose a shorter period to see older ones.",
+  "truncated_other": "Only the newest {{count}} lines of the period are shown; choose a shorter period to see older ones.",
+  "cancel": "Stop",
+  "clear": "Remove the lines from Loki",
+  "noContainerLabel": "Loki has no container label here, so the lines of every container of the pod are shown.",
+  "noLines": "Loki has no lines of this pod in the period.",
+  "readFailed": "The lines could not be read from Loki.",
+  "statusFailed": "Sextant could not check the cluster's Loki.",
+  "statusFailedNote": "Sextant could not check the cluster's Loki: {{message}}",
+  "status": {
+    "loading": "Reading from Loki…",
+    "failed": "Reading from Loki failed",
+    "onlyLoki": "Lines from Loki only (the pod is gone)"
+  },
+  "none": {
+    "off": "Loki is turned off in the cluster settings, so logs of pods that are gone cannot be read.",
+    "notFound": "Logs of pods that are gone can be read from Grafana Loki, but this cluster has none that Sextant could find. Sextant looks for the Services of the Loki Helm charts (loki-gateway, loki-query-frontend, loki-read, loki) in the namespaces loki, logging, monitoring, observability, grafana and loki-stack, and for Services labelled app.kubernetes.io/name=loki. If Loki is elsewhere, name its Service in the cluster settings (Metrics tab).",
+    "manualNoAnswer": "The Loki Service named in the cluster settings did not answer as Loki through the API server.",
+    "noLabels": "Loki answered, but its log streams have neither the labels namespace and pod nor k8s_namespace_name and k8s_pod_name, so Sextant cannot tell which lines belong to a pod."
+  },
+  "range": {
+    "label": "Period",
+    "1h": "Last hour",
+    "6h": "Last 6 hours",
+    "24h": "Last 24 hours",
+    "custom": "Custom",
+    "from": "From",
+    "to": "To",
+    "problem": {
+      "invalid": "The period must end after it starts.",
+      "tooLong": "The period can be at most 24 hours.",
+      "future": "The period cannot end in the future."
+    }
+  },
+  "previous": {
+    "title": "Logs of previous pods (Loki)",
+    "find": "Find pods in Loki",
+    "hint": "Pods this workload had in the period, found in Loki by the names its controller gives its pods. Their lines open in a logs tab.",
+    "searching": "Searching Loki…",
+    "none": "Loki has no lines of this workload's pods in the period.",
+    "listLabel": "Pods with lines in Loki",
+    "truncated_one": "Only the first {{count}} pod is listed; choose a shorter period.",
+    "truncated_other": "Only the first {{count}} pods are listed; choose a shorter period."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki (logs of pods that are gone)",
+    "mode": {
+      "auto": "Find automatically",
+      "manual": "Use this Service",
+      "off": "Off"
+    },
+    "service": "Service (namespace/name:port)",
+    "pathPrefix": "Path prefix",
+    "tenant": "Tenant (X-Scope-OrgID)",
+    "tenantPlaceholder": "None",
+    "invalid": {
+      "service": "Enter the Service as namespace/name:port, for example loki/loki-gateway:80.",
+      "prefix": "A path prefix is empty or starts with /, with letters, digits, -, ., _ and ~ between the slashes.",
+      "tenant": "A tenant ID has letters, digits and the characters ! - _ . * ' ( ), at most 150 of them; several are joined with |."
+    },
+    "save": "Save",
+    "checking": "Checking Loki…",
+    "foundAuto": "Found {{target}}; its streams carry {{labels}}.",
+    "foundManual": "{{target}} answers; its streams carry {{labels}}.",
+    "scheme": {
+      "kubernetes": "the labels namespace, pod and container",
+      "openTelemetry": "the OpenTelemetry labels k8s_namespace_name, k8s_pod_name and k8s_container_name"
+    }
+  }
+}

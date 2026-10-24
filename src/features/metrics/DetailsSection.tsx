@@ -15,7 +15,7 @@ import {
   usageUnavailable,
   type MetricName,
 } from "./components";
-import { formatBytes, formatCpu, percentOf } from "./format";
+import { formatBytes, formatCpu, percentKey, percentOf, shareOf } from "./format";
 import { podKey, useMetricsStatus, useNodeUsage, usePodUsage, type Polled } from "./hooks";
 import { podResourceAmounts, type ResourceAmounts } from "./requests";
 
@@ -200,8 +200,8 @@ function PodAmount({
       : amounts.request !== undefined && everywhere(amounts.requestSetOn)
         ? { value: amounts.request, key: "shareOfRequest" }
         : undefined;
-  const share =
-    used !== undefined && against && against.value > 0 ? Math.round((used / against.value) * 100) : undefined;
+  // A share below 1 % reads "<1% of request", not "1%" (#276).
+  const share = used !== undefined && against ? shareOf(used, against.value) : undefined;
   const notes: ReactNode[] = [];
   // "(set on 1 of 2 containers)": said right after the value that is only the sum of some of the containers. The
   // noun agrees with the number of all containers (`count`); the gap before the note is the stylesheet's.
@@ -230,7 +230,10 @@ function PodAmount({
     <span className="mx-amount">
       {used !== undefined && <span className="mx-amount__value">{format(used)}</span>}
       {share !== undefined && against && (
-        <UsageBar percent={Math.min(100, share)} label={t(`metrics:requests.${against.key}`, { value: share })} />
+        <UsageBar
+          percent={Math.min(100, share)}
+          label={t(percentKey(`metrics:requests.${against.key}`, share), { value: share })}
+        />
       )}
       {notes.length > 0 && <span className="mx-amount__spec">{notes}</span>}
     </span>
@@ -262,7 +265,7 @@ function NodeCurrent({ clusterId, node, status }: { clusterId: ClusterId; node: 
     return (
       <UsageBar
         percent={percent}
-        label={percent === undefined ? text : t("metrics:percentOf", { value: percent, text })}
+        label={percent === undefined ? text : t(percentKey("metrics:percentOf", percent), { value: percent, text })}
       />
     );
   };

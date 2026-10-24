@@ -3,15 +3,17 @@
 // The file names clusters by reference only — the kubeconfig source's kind and path and the context name — never a
 // file's contents, credentials, tokens, the MCP token, extensions or their grants. Cluster settings are limited to
 // the shareable ones (display name, colour, icon, namespace filter, "Preview changes") plus, only when the user
-// ticks it, the agent access rules. An import is parsed strictly (an unknown field is an error naming it), previewed
+// ticks it, the agent access rules, and, only when ticked too, the dashboard and trace links (#266). An import is parsed strictly (an unknown field is an error naming it), previewed
 // section by section (added / changed / kept / skipped or missing) and applied only after the user confirms; a
 // changed entry replaces the local one only when the user also allows overwriting.
 import type { AppSettings, ClusterId, ClusterInfo, ClusterSettings, KubeconfigSource } from "../../api";
 import type { ClusterAccess } from "../../api/generated/ClusterAccess";
 import type { ClusterIcon } from "../../api/generated/ClusterIcon";
+import type { ObservabilityLinks } from "../../api/generated/ObservabilityLinks";
 import type { Snippet } from "../../api/generated/Snippet";
 import type { SourceKind } from "../../api/generated/SourceKind";
 import { clusterSettingsOf } from "../clusters/clusterSettings";
+import { readObservabilityLinks } from "../observability-links/transfer";
 import { MAX_COLUMNS_PER_KIND, MAX_CUSTOM_COLUMNS, type CustomColumn } from "../custom-columns/model";
 import { checkSpec, type ColumnSource, type CustomColumnSpec } from "../custom-columns/path";
 import { hasHiddenChars } from "../terminal/text";
@@ -47,6 +49,8 @@ export interface SharedClusterSettings {
   previewChanges: boolean | null;
   /** Only when "Include agent access rules" was ticked. */
   agentAccess?: ClusterAccess;
+  /** Only when "Include dashboard and trace links" was ticked (#266). */
+  observabilityLinks?: ObservabilityLinks;
 }
 
 export interface ExportedCluster {
@@ -74,9 +78,11 @@ export interface ExportOptions {
   includeAgentAccess: boolean;
   /** Write the terminal snippets (as written; the default). Without it the `snippets` section is empty. */
   includeSnippets?: boolean;
+  /** Write each cluster's dashboard and trace links (#266); off unless ticked. */
+  includeObservabilityLinks?: boolean;
 }
 
-function sharedSettings(settings: ClusterSettings, includeAgentAccess: boolean): SharedClusterSettings {
+function sharedSettings(settings: ClusterSettings, includeAgentAccess: boolean, includeLinks = false): SharedClusterSettings {
   const shared: SharedClusterSettings = {
     displayName: settings.displayName ?? null,
     color: settings.color ?? null,
@@ -85,6 +91,7 @@ function sharedSettings(settings: ClusterSettings, includeAgentAccess: boolean):
     previewChanges: settings.previewChanges ?? null,
   };
   if (includeAgentAccess) shared.agentAccess = { preset: settings.agentAccess.preset, rules: settings.agentAccess.rules };
+  if (includeLinks && settings.observabilityLinks) shared.observabilityLinks = settings.observabilityLinks;
   return shared;
 }
 
@@ -103,7 +110,11 @@ export function buildExport(
       id: cluster.id,
       context: cluster.context,
       source: { kind: source.kind, path: source.path },
-      settings: sharedSettings(clusterSettingsOf(settings, cluster.id), options.includeAgentAccess),
+      settings: sharedSettings(
+        clusterSettingsOf(settings, cluster.id),
+        options.includeAgentAccess,
+        options.includeObservabilityLinks === true,
+      ),
     });
   }
   return {
@@ -349,7 +360,7 @@ function readCluster(r: Reader, value: Json, path: string): ExportedCluster | nu
     o.settings,
     `${path}.settings`,
     ["displayName", "color", "icon", "namespaces", "previewChanges"],
-    ["agentAccess"],
+    ["agentAccess", "observabilityLinks"],
   );
   const settings: SharedClusterSettings = {
     displayName: s ? r.nullableString(s.displayName, `${path}.settings.displayName`, 120) : null,
@@ -359,6 +370,11 @@ function readCluster(r: Reader, value: Json, path: string): ExportedCluster | nu
     previewChanges: s && s.previewChanges !== null ? r.boolean(s.previewChanges, `${path}.settings.previewChanges`) : null,
   };
   if (s && "agentAccess" in s) settings.agentAccess = readAccess(r, s.agentAccess, `${path}.settings.agentAccess`);
+  if (s && "observabilityLinks" in s) {
+    const read = readObservabilityLinks(s.observabilityLinks, `${path}.settings.observabilityLinks`);
+    r.problems.push(...read.problems);
+    if (read.links) settings.observabilityLinks = read.links;
+  }
   return {
     id: r.string(o.id, `${path}.id`, { empty: false, max: 128 }),
     context: r.string(o.context, `${path}.context`, { empty: false, max: 253 }),
@@ -515,7 +531,7 @@ export function planImport(
     let agentAccessSkipped = false;
     if (local) {
       const current = clusterSettingsOf(settings, local.id);
-      const currentShared = sharedSettings(current, true);
+      const currentShared = sharedSettings(current, true, true);
       for (const field of Object.keys(exported.settings) as SharedField[]) {
         const incoming = exported.settings[field];
         if (incoming === undefined || isEmptyValue(field, incoming)) continue;

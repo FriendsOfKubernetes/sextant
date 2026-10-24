@@ -118,7 +118,8 @@
       "icon": "아이콘",
       "namespaces": "namespace 필터",
       "previewChanges": "변경 미리 보기",
-      "agentAccess": "에이전트 접근 규칙"
+      "agentAccess": "에이전트 접근 규칙",
+      "observabilityLinks": "대시보드와 트레이스 링크"
     },
     "overwrite": "내 항목과 다른 항목을 바꾸기",
     "applyAgentAccess": "파일의 에이전트 접근 규칙 적용",

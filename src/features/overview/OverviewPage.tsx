@@ -16,6 +16,7 @@ import {
   MetricsUnavailable,
   nodeAllocatable,
   nothingAvailable,
+  percentKey,
   percentOf,
   UsageBar,
   usageUnavailable,
@@ -273,7 +274,7 @@ function UsageCard({ clusterId, nodes }: { clusterId: ClusterId; nodes: KubeObje
         <div className="ov__usage">
           <div className="ov__usage-head">
             <span>{title}</span>
-            <span className="ov__usage-percent">{percent === undefined ? null : t("metrics:percent", { value: percent })}</span>
+            <span className="ov__usage-percent">{percent === undefined ? null : t(percentKey("metrics:percent", percent), { value: percent })}</span>
           </div>
           <UsageBar percent={percent} label={text} />
         </div>

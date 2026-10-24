@@ -51,6 +51,7 @@
     "practices": "En iyi uygulamalar",
     "credentials": "Kimlik bilgileri",
     "disk": "Disk neredeyse dolu",
+    "alerts": "Tetiklenen uyarılar",
     "events": "Uyarı olayları"
   },
   "messages": {
@@ -103,5 +104,6 @@
   "showTraefik": "Traefik başvuruları",
   "showReflector": "Reflector yansıları",
   "showSealedSecrets": "Sealed Secrets mühür açma",
-  "showKueueWorkloads": "Bekleyen veya tahliye edilen Kueue Workload'ları"
+  "showKueueWorkloads": "Bekleyen veya tahliye edilen Kueue Workload'ları",
+  "showAlerts": "Tetiklenen uyarılar (Prometheus ve Alertmanager)"
 }

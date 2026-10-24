@@ -53,6 +53,7 @@
     "practices": "Buone pratiche",
     "credentials": "Credenziali",
     "disk": "Disco quasi pieno",
+    "alerts": "Alert attivi",
     "events": "Eventi di avviso"
   },
   "messages": {
@@ -109,5 +110,6 @@
   "showTraefik": "Riferimenti di Traefik",
   "showReflector": "Mirror di Reflector",
   "showSealedSecrets": "Apertura dei Sealed Secrets",
-  "showKueueWorkloads": "Workload di Kueue in attesa o espulsi"
+  "showKueueWorkloads": "Workload di Kueue in attesa o espulsi",
+  "showAlerts": "Alert attivi (Prometheus e Alertmanager)"
 }

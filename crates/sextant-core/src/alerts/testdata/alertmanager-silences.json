@@ -1,0 +1,35 @@
+[
+  {
+    "id": "5f1c0a2e-0d7b-4e43-9a77-3e7e1a3b8c11",
+    "status": {"state": "active"},
+    "updatedAt": "2026-10-24T08:00:00.000Z",
+    "comment": "Maintenance of the metrics exporter, see https://ops:hunter2@wiki.example.com/maint?ticket=42",
+    "createdBy": "alice",
+    "endsAt": "2026-10-24T12:00:00.000Z",
+    "matchers": [
+      {"isEqual": true, "isRegex": false, "name": "alertname", "value": "TargetDown"},
+      {"isEqual": true, "isRegex": true, "name": "namespace", "value": "shop|cart"}
+    ],
+    "startsAt": "2026-10-24T08:00:00.000Z"
+  },
+  {
+    "id": "6a2d1b3f-1e8c-4f54-8b88-4f8f2b4c9d22",
+    "status": {"state": "pending"},
+    "updatedAt": "2026-10-24T08:00:00.000Z",
+    "comment": "Night window",
+    "createdBy": "bob",
+    "endsAt": "2026-10-25T06:00:00.000Z",
+    "matchers": [{"isRegex": false, "name": "severity", "value": "info"}],
+    "startsAt": "2026-10-25T00:00:00.000Z"
+  },
+  {
+    "id": "7b3e2c40-2f9d-4065-9c99-5090c3d5ae33",
+    "status": {"state": "expired"},
+    "updatedAt": "2026-10-20T08:00:00.000Z",
+    "comment": "old",
+    "createdBy": "carol",
+    "endsAt": "2026-10-20T12:00:00.000Z",
+    "matchers": [{"isEqual": false, "isRegex": false, "name": "job", "value": "x"}],
+    "startsAt": "2026-10-20T08:00:00.000Z"
+  }
+]

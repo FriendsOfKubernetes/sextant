@@ -5,7 +5,9 @@
   "openSettings": "Открыть настройки кластера",
   "na": "н/д",
   "percent": "{{value}}%",
+  "percentBelowOne": "<1%",
   "percentOf": "{{value}}% · {{text}}",
+  "percentOfBelowOne": "<1% · {{text}}",
   "usedOf": "{{used}} из {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -21,7 +23,9 @@
     "limitSetOn_many": "(задан в {{set}} из {{count}} контейнеров)",
     "limitSetOn_other": "(задан в {{set}} из {{count}} контейнера)",
     "shareOfLimit": "{{value}}% лимита",
+    "shareOfLimitBelowOne": "<1% лимита",
     "shareOfRequest": "{{value}}% запроса",
+    "shareOfRequestBelowOne": "<1% запроса",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "Память {{amounts}}"
   },

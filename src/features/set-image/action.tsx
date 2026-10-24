@@ -10,6 +10,7 @@ import { SetImageDialog } from "./SetImageDialog";
 export const setImageAction: ActionDef = {
   labelKey: "setimage:action",
   icon: "image",
+  placement: "more",
   appliesTo: (_obj, kind) => setImageKind(kind) !== null,
   run: ({ clusterId, kind, objects, refs, openDialog }) => {
     const obj = objects[0];

@@ -11,6 +11,7 @@ import { INGRESS, SERVICE } from "./objects";
 export const DIAGNOSED_KINDS = [SERVICE, INGRESS, HTTP_ROUTE, GRPC_ROUTE];
 
 registerAction("diagnose", {
+  placement: "primary",
   labelKey: "diagnose:action",
   icon: "connectivity",
   appliesTo: (obj, kind) => isDiagnosable(kind) && Boolean(obj.metadata?.namespace),

@@ -5,7 +5,9 @@
   "openSettings": "打开集群设置",
   "na": "不适用",
   "percent": "{{value}}%",
+  "percentBelowOne": "<1%",
   "percentOf": "{{value}}% · {{text}}",
+  "percentOfBelowOne": "<1% · {{text}}",
   "usedOf": "{{used}}/{{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -15,7 +17,9 @@
     "requestSetOn_other": "（{{count}} 个容器中有 {{set}} 个设置了此值）",
     "limitSetOn_other": "（{{count}} 个容器中有 {{set}} 个设置了此值）",
     "shareOfLimit": "占限制的 {{value}}%",
+    "shareOfLimitBelowOne": "占限制的 <1%",
     "shareOfRequest": "占请求的 {{value}}%",
+    "shareOfRequestBelowOne": "占请求的 <1%",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "内存 {{amounts}}"
   },

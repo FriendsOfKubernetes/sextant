@@ -8,7 +8,7 @@ import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
 import type { Detected } from "../problems/model";
-import { parseQuantity } from "../metrics/format";
+import { parseQuantity, shareOf } from "../metrics/format";
 
 const { arr, get, num, record, str } = status;
 
@@ -171,7 +171,8 @@ function percent(part: string | undefined, whole: string | undefined): number | 
   const p = parseQuantity(part);
   const w = parseQuantity(whole);
   if (p === undefined || w === undefined || w <= 0) return undefined;
-  return Math.round((p / w) * 100);
+  // Rounded, but a share below 1 % is kept as it is so it reads "<1%" (#276).
+  return shareOf(p, w);
 }
 
 /** The quota rows of a ClusterQueue (or a Cohort: its own quotas, no usage), in the order of its resource groups. */

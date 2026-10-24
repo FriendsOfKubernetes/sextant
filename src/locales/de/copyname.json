@@ -4,5 +4,9 @@
   "copied": "Kopiert: {{name}}",
   "copiedMany_one": "{{count}} Name kopiert, einer pro Zeile",
   "copiedMany_other": "{{count}} Namen kopiert, einer pro Zeile",
-  "failed": "Kopieren in die Zwischenablage fehlgeschlagen"
+  "failed": "Kopieren in die Zwischenablage fehlgeschlagen",
+  "header": {
+    "copyName": "Name kopieren",
+    "copyNamespace": "Namespace kopieren"
+  }
 }

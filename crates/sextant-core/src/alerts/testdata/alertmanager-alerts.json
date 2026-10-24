@@ -1,0 +1,61 @@
+[
+  {
+    "annotations": {
+      "description": "Pod shop/api-7d9c8b6f5d-x2x4q (api) is in waiting state (reason: \"CrashLoopBackOff\").",
+      "runbook_url": "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepodcrashlooping",
+      "summary": "Pod is crash looping."
+    },
+    "endsAt": "2026-10-24T10:04:00.000Z",
+    "fingerprint": "1a2b3c4d5e6f7081",
+    "receivers": [{"name": "default"}],
+    "startsAt": "2026-10-24T08:00:30.000Z",
+    "status": {"inhibitedBy": [], "silencedBy": [], "mutedBy": [], "state": "active"},
+    "updatedAt": "2026-10-24T10:00:00.000Z",
+    "generatorURL": "http://kps-prometheus.monitoring:9090/graph?g0.expr=max_over_time%28kube_pod_container_status_waiting_reason%5B5m%5D%29&g0.tab=1",
+    "labels": {
+      "alertname": "KubePodCrashLooping",
+      "container": "api",
+      "endpoint": "http",
+      "job": "kube-state-metrics",
+      "namespace": "shop",
+      "pod": "api-7d9c8b6f5d-x2x4q",
+      "prometheus": "monitoring/kps-prometheus",
+      "reason": "CrashLoopBackOff",
+      "service": "kps-kube-state-metrics",
+      "severity": "warning",
+      "uid": "8f0e4c1a-1b2c-4d5e-8f90-123456789abc"
+    }
+  },
+  {
+    "annotations": {"summary": "One or more targets are unreachable."},
+    "endsAt": "2026-10-24T10:04:00.000Z",
+    "fingerprint": "2b3c4d5e6f708192",
+    "receivers": [{"name": "null"}],
+    "startsAt": "2026-10-24T09:00:00.000Z",
+    "status": {"inhibitedBy": [], "silencedBy": ["5f1c0a2e-0d7b-4e43-9a77-3e7e1a3b8c11"], "mutedBy": [], "state": "suppressed"},
+    "updatedAt": "2026-10-24T10:00:00.000Z",
+    "generatorURL": "",
+    "labels": {"alertname": "TargetDown", "job": "metrics", "namespace": "shop", "service": "metrics", "severity": "warning"}
+  },
+  {
+    "annotations": {"summary": "CPU throttling"},
+    "endsAt": "2026-10-24T10:04:00.000Z",
+    "fingerprint": "3c4d5e6f708192a3",
+    "receivers": [{"name": "default"}],
+    "startsAt": "2026-10-24T09:30:00.000Z",
+    "status": {"inhibitedBy": ["1a2b3c4d5e6f7081"], "silencedBy": [], "mutedBy": [], "state": "suppressed"},
+    "updatedAt": "2026-10-24T10:00:00.000Z",
+    "labels": {"alertname": "CPUThrottlingHigh", "namespace": "shop", "pod": "api-7d9c8b6f5d-x2x4q", "container": "api", "severity": "info"}
+  },
+  {
+    "annotations": {},
+    "endsAt": "2026-10-24T10:04:00.000Z",
+    "fingerprint": "4d5e6f708192a3b4",
+    "receivers": [{"name": "default"}],
+    "startsAt": "2026-10-24T09:59:00.000Z",
+    "status": {"inhibitedBy": [], "silencedBy": [], "mutedBy": [], "state": "unprocessed"},
+    "updatedAt": "2026-10-24T10:00:00.000Z",
+    "labels": {"alertname": "Watchdog", "severity": "none"}
+  },
+  {"labels": "broken"}
+]

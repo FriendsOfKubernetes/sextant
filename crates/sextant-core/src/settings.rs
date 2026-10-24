@@ -26,6 +26,8 @@ pub mod logs;
 pub use logs::LogViewSettings;
 pub mod appearance;
 pub mod custom_columns;
+pub mod observability;
+pub use observability::ObservabilityLinks;
 pub mod practices;
 pub mod rail;
 pub use appearance::{AppearanceSettings, FontChoice, FontKind, ReduceMotion};
@@ -82,6 +84,23 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional = nullable)]
     pub preview_changes: Option<bool>,
+    /// How the Alertmanager of the alerts view (#264, ADR-0119) is found; `None` = automatically. Owned by the frontend,
+    /// read leniently (a value this version cannot read is automatic); left out of the file when there is none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub alertmanager: Option<crate::alerts::AlertmanagerMode>,
+    /// How Loki is found for logs of gone pods (#265) and the tenant sent to it; `None` = found automatically, no
+    /// tenant. Owned by the frontend, read leniently ([`crate::loki::LokiSettings::lenient`]); left out of the file
+    /// when there is none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub loki: Option<crate::loki::LokiSettings>,
+    /// Links to Grafana dashboards and traces (#266): base URLs and URL templates, opened in the system browser on a
+    /// click; Sextant never requests them. Owned by the frontend, read leniently ([`ObservabilityLinks::read`]); left
+    /// out of the file when there are none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub observability_links: Option<ObservabilityLinks>,
 }
 
 /// `ClusterSettings` as stored, with `agentAccess` still unread.
@@ -99,6 +118,9 @@ struct StoredClusterSettings {
     agent_access_unrecognised: Option<serde_json::Value>,
     argocd_namespace: Option<String>,
     preview_changes: Option<bool>,
+    alertmanager: Option<serde_json::Value>,
+    loki: Option<serde_json::Value>,
+    observability_links: Option<serde_json::Value>,
 }
 
 impl<'de> Deserialize<'de> for ClusterSettings {
@@ -128,6 +150,16 @@ impl<'de> Deserialize<'de> for ClusterSettings {
             agent_access_unrecognised,
             argocd_namespace: stored.argocd_namespace,
             preview_changes: stored.preview_changes,
+            alertmanager: stored
+                .alertmanager
+                .and_then(|value| serde_json::from_value(value).ok()),
+            loki: stored
+                .loki
+                .map(|value| crate::loki::LokiSettings::lenient(Some(value))),
+            observability_links: stored
+                .observability_links
+                .as_ref()
+                .and_then(ObservabilityLinks::read),
         })
     }
 }

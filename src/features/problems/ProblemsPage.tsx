@@ -119,6 +119,13 @@ export function ProblemsPage({ clusterId }: PageProps) {
           />
           {t("problems:showKueueWorkloads")}
         </label>
+        <label className="problems__choice">
+          <Checkbox
+            checked={categories.includes("alerts")}
+            onChange={(e) => void updateSettings(setCategory("alerts", e.target.checked)).catch(() => undefined)}
+          />
+          {t("problems:showAlerts")}
+        </label>
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}
         </Button>

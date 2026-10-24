@@ -12,6 +12,13 @@ import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
 import type { VolumeUsageReport } from "./generated/VolumeUsageReport";
 import type { CostQuery } from "./generated/CostQuery";
 import type { CostReport } from "./generated/CostReport";
+import type { LokiLogsQuery } from "./generated/LokiLogsQuery";
+import type { LokiNames } from "./generated/LokiNames";
+import type { LokiNamesQuery } from "./generated/LokiNamesQuery";
+import type { LokiRange } from "./generated/LokiRange";
+import type { LokiStatus } from "./generated/LokiStatus";
+import type { LokiUpdate } from "./generated/LokiUpdate";
+import type { AlertsReport } from "./generated/AlertsReport";
 import type { ScanApi } from "./generated/ScanApi";
 import type { UpgradeScan } from "./generated/UpgradeScan";
 import type { KindSchema } from "./generated/KindSchema";
@@ -712,6 +719,32 @@ export const tls = {
 export const cost = {
   /** One allocation query; `invalid` for a malformed label key or namespace filter. */
   allocation: (clusterId: ClusterId, query: CostQuery) => call<CostReport>("cost_allocation", { clusterId, query }),
+};
+
+/**
+ * Logs of gone pods from the cluster's Loki (#265), read through the API server's service proxy with the user's
+ * credentials. The window sends names, a time range and a line limit; the backend builds every request. Window only:
+ * agents and extensions have no such call.
+ */
+export const loki = {
+  /** Whether Loki is there (found, or named in the cluster settings) and which labels it has. */
+  status: (clusterId: ClusterId) => call<LokiStatus>("loki_status", { clusterId }),
+  /** Pod names of a workload, or container names of a pod, seen in Loki in `range` (≤ 200). */
+  names: (clusterId: ClusterId, query: LokiNamesQuery, range: LokiRange) =>
+    call<LokiNames>("loki_names", { clusterId, query, range }),
+  /** Starts a read under `streamId`; its pages arrive through `onEvent`. */
+  start: (clusterId: ClusterId, query: LokiLogsQuery, streamId: string, onEvent: StreamChannel<LokiUpdate>) =>
+    call<void>("loki_logs_start", { clusterId, query, streamId, onEvent }),
+  stop: (streamId: string) => call<void>("loki_logs_stop", { streamId }),
+};
+
+/**
+ * Alerts (#264): the firing and pending alerts of the cluster's Prometheus-compatible source and its Alertmanager's
+ * alerts and silences, read through the API server's service proxy; how each is found comes from the cluster settings
+ * (`prometheus`, `alertmanager`). Window only: agents and extensions have no such call.
+ */
+export const alerts = {
+  list: (clusterId: ClusterId) => call<AlertsReport>("alerts_list", { clusterId }),
 };
 
 /** AI agent access rules of a cluster (`ClusterSettings.agentAccess`). */

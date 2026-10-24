@@ -32,6 +32,8 @@ export const api = {
   openapi: commands.openapi,
   tls: commands.tls,
   cost: commands.cost,
+  loki: commands.loki,
+  alerts: commands.alerts,
   kubeconfig: commands.kubeconfig,
   mcp: commands.mcp,
   extensions: commands.extensions,

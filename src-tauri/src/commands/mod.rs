@@ -4,6 +4,7 @@
 pub mod about;
 pub mod access;
 pub mod actions;
+pub mod alerts;
 pub mod argocd;
 pub mod cleanup;
 pub mod cloud;
@@ -17,6 +18,7 @@ pub mod helm;
 pub mod image_files;
 pub mod kubeconfig;
 pub mod logs;
+pub mod loki;
 pub mod mcp;
 pub mod metrics;
 pub mod openapi;

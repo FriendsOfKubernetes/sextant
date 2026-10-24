@@ -1,0 +1,109 @@
+{
+  "sidebar": "告警",
+  "title": "告警",
+  "loading": "正在讀取告警…",
+  "none": "沒有觸發中或等待中的告警。",
+  "noneMatch": "沒有符合篩選條件的告警。",
+  "unnamed": "（無 alertname）",
+  "shown_other": "顯示 {{count}} 則告警",
+  "truncated": "僅顯示最嚴重的告警（共 {{total}} 則）。",
+  "activeSince": "開始時間",
+  "labels": "Label",
+  "openSettings": "告警來源…",
+  "tabs": {
+    "label": "告警和靜默",
+    "alerts": "告警（{{count}}）",
+    "silences": "靜默（{{count}}）"
+  },
+  "filter": {
+    "search": "搜尋告警",
+    "severity": "嚴重程度",
+    "namespace": "Namespace",
+    "state": "狀態",
+    "all": "全部"
+  },
+  "state": {
+    "firing": "觸發中",
+    "pending": "等待中",
+    "silenced": "已靜默",
+    "inhibited": "已抑制"
+  },
+  "severity": {
+    "critical": "嚴重",
+    "error": "錯誤",
+    "high": "高",
+    "warning": "警告",
+    "medium": "中",
+    "info": "資訊",
+    "low": "低",
+    "none": "無",
+    "unset": "未設嚴重程度"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "儀表板",
+    "cleaned": "{{url}}（已移除認證資訊、查詢和片段）"
+  },
+  "source": {
+    "title": "告警來源",
+    "silencesFailed": "無法讀取 Alertmanager 的靜默",
+    "prometheus": {
+      "ok": "Prometheus 相容來源：{{target}}",
+      "off": "Prometheus 相容來源已在叢集設定中關閉。",
+      "notFound": "找不到 Prometheus 相容來源：不顯示等待中的告警。",
+      "vmalertMissing": "{{target}} 上的 VictoriaMetrics 只能透過 vmalert 提供告警，而 -vmalert.proxyURL 未設定。",
+      "failed": "無法讀取 Prometheus 相容來源的告警",
+      "failedAt": "無法讀取 {{target}} 的告警"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager：{{target}}",
+      "off": "Alertmanager 已在叢集設定中關閉。",
+      "notFound": "找不到 Alertmanager：不顯示已靜默和已抑制的告警。",
+      "failed": "無法讀取 Alertmanager",
+      "failedAt": "無法讀取 {{target}} 上的 Alertmanager"
+    }
+  },
+  "silences": {
+    "readOnly": "靜默僅供檢視：請在 Alertmanager 中建立或結束靜默。",
+    "none": "沒有生效中或等待中的靜默。",
+    "noAlertmanager": "靜默來自 Alertmanager，但沒有 Alertmanager 回應。",
+    "expired_other": "未顯示 {{count}} 則已過期的靜默。",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "建立者：{{name}}",
+    "matchers": "比對條件",
+    "state": {
+      "active": "生效中",
+      "pending": "等待中",
+      "expired": "已過期"
+    }
+  },
+  "details": {
+    "title": "告警",
+    "none": "沒有告警指向此物件。",
+    "openPage": "全部告警"
+  },
+  "settings": {
+    "title": "告警",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "自動尋找",
+      "manual": "Service 位址",
+      "off": "關閉"
+    },
+    "service": "Service（namespace/名稱:連接埠）",
+    "pathPrefix": "路徑前置詞",
+    "invalid": "請以 namespace/service:連接埠 的形式輸入位址，並輸入類似 /alertmanager 的路徑前置詞。",
+    "save": "儲存",
+    "prometheusHint": "規則的等待中和觸發中告警從「指標」區段的 Prometheus 相容來源讀取。",
+    "detected": "找到的告警來源",
+    "prometheusSource": "Prometheus 相容來源",
+    "checking": "正在檢查…",
+    "found": "已找到",
+    "failed": "無回應",
+    "vmalertMissing": "沒有 vmalert 的 VictoriaMetrics（-vmalert.proxyURL）",
+    "status": {
+      "off": "關閉",
+      "notFound": "找不到"
+    }
+  }
+}

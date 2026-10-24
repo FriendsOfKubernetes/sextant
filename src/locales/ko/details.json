@@ -1,5 +1,6 @@
 {
   "actions": "작업",
+  "moreActions": "작업",
   "deleted": "이 {{kind}}은(는) 삭제되었습니다.",
   "notFound": "이 {{kind}}은(는) (더 이상) 존재하지 않습니다.",
   "sections": {

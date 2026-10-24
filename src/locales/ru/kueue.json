@@ -101,6 +101,7 @@
     "borrowingLimit": "Лимит заимствования",
     "lendingLimit": "Лимит одалживания",
     "ofQuota": "{{value}} ({{percent}}%)",
+    "ofQuotaBelowOne": "{{value}} (<1%)",
     "borrowed": "{{value}}, заимствовано {{borrowed}}"
   },
   "usage": "Использование",

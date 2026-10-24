@@ -55,6 +55,7 @@
     "practices": "Лучшие практики",
     "credentials": "Учётные данные",
     "disk": "Диск почти заполнен",
+    "alerts": "Сработавшие оповещения",
     "events": "События Warning"
   },
   "messages": {
@@ -115,5 +116,6 @@
   "showTraefik": "Ссылки Traefik",
   "showReflector": "Зеркала Reflector",
   "showSealedSecrets": "Распечатывание Sealed Secrets",
-  "showKueueWorkloads": "Ожидающие и вытесненные Workload Kueue"
+  "showKueueWorkloads": "Ожидающие и вытесненные Workload Kueue",
+  "showAlerts": "Сработавшие оповещения (Prometheus и Alertmanager)"
 }

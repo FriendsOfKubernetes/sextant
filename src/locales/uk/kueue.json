@@ -101,6 +101,7 @@
     "borrowingLimit": "Ліміт позичання",
     "lendingLimit": "Ліміт надання",
     "ofQuota": "{{value}} ({{percent}}%)",
+    "ofQuotaBelowOne": "{{value}} (<1%)",
     "borrowed": "{{value}}, позичено {{borrowed}}"
   },
   "usage": "Використання",

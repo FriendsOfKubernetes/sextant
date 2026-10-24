@@ -99,6 +99,7 @@
     "borrowingLimit": "Ödünç alma sınırı",
     "lendingLimit": "Ödünç verme sınırı",
     "ofQuota": "{{value}} (%{{percent}})",
+    "ofQuotaBelowOne": "{{value}} (<%1)",
     "borrowed": "{{value}}, {{borrowed}} ödünç"
   },
   "usage": "Kullanım",

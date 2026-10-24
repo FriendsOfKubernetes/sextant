@@ -32,7 +32,7 @@ export {
   usageUnavailable,
   type MetricName,
 } from "./components";
-export { formatBytes, formatCores, formatCount, formatCpu, parseQuantity, percentOf } from "./format";
+export { formatBytes, formatCores, formatCount, formatCpu, parseQuantity, percentKey, percentOf } from "./format";
 export {
   CHART_RANGE_SECS,
   POLL_INTERVAL_MS,

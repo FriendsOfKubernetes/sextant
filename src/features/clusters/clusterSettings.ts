@@ -15,6 +15,8 @@ export function defaultClusterSettings(): ClusterSettings {
     agentAccess: { preset: "off", rules: [] },
     argocdNamespace: null,
     previewChanges: null,
+    alertmanager: null,
+    observabilityLinks: null,
   };
 }
 

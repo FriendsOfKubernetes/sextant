@@ -1,0 +1,64 @@
+{
+  "tab": "仪表板和追踪",
+  "openGrafana": "在 Grafana 中打开",
+  "findTraces": "查找追踪",
+  "openFailed": "无法打开链接：{{error}}",
+  "details": {
+    "title": "仪表板和追踪"
+  },
+  "settings": {
+    "title": "仪表板和追踪",
+    "intro": "从工作负载、Pod、节点和 Namespace 的详情以及流量图跳转到你的 Grafana 仪表板和追踪的链接。链接在浏览器中打开；Sextant 本身从不请求这些地址。",
+    "grafanaUrl": "Grafana URL",
+    "grafanaUrlHint": "例如 https://grafana.example.com 或 https://example.com/grafana。仅对 localhost（端口转发）接受普通 http。",
+    "tracesUrl": "追踪 URL",
+    "tracesUrlHint": "带 Tempo 的 Grafana 或 Jaeger 界面。留空时使用 Grafana URL。",
+    "dashboards": "仪表板",
+    "tracesGroup": "追踪",
+    "templateHint": "上面 URL 下的路径（/d/…）或同一站点上的完整地址。字面花括号请写作 %7B 或 %7D。{from} 和 {to} 是点击前的一小时，以毫秒计；{kind} 是小写的类型（deployment）。空模板不生成链接。",
+    "variables": "变量：{{variables}}",
+    "targets": {
+      "workload": "工作负载",
+      "pod": "Pod",
+      "node": "节点",
+      "namespace": "Namespace",
+      "edge": "流量图中的调用",
+      "traces": "追踪搜索"
+    },
+    "presetFor": "{{target}} 的预设",
+    "choosePreset": "使用预设…",
+    "save": "保存",
+    "remove": "移除链接",
+    "saved": "已保存。"
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Grafana Explore 中的 Pod 日志（uid 为 loki 的 Loki 数据源）",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "目标工作负载的仪表板（kube-prometheus-stack）",
+    "tempo": "Grafana Explore 中的 Tempo（uid 为 tempo 的数据源）",
+    "jaeger": "Jaeger 界面搜索"
+  },
+  "baseError": {
+    "empty": "请输入 URL。",
+    "tooLong": "URL 过长（最多 2048 个字符）。",
+    "invalid": "这不是有效的 URL。",
+    "scheme": "请使用 https；普通 http 仅对 localhost 接受。",
+    "credentials": "URL 不得包含用户名或密码。",
+    "query": "基础 URL 不得包含 ? 或 #。"
+  },
+  "templateError": {
+    "empty": "请输入模板。",
+    "tooLong": "模板过长（最多 2048 个字符）。",
+    "invalid": "模板包含空格、控制字符或反斜杠。",
+    "brace": "有不是变量的花括号：请写作 %7B 或 %7D。",
+    "variable": "模板使用了此链接没有的变量。",
+    "origin": "模板必须留在基础 URL 的站点上。",
+    "noBase": "请先设置基础 URL。"
+  },
+  "transfer": {
+    "include": "包含仪表板和追踪链接"
+  }
+}

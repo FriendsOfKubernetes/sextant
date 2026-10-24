@@ -5,5 +5,9 @@
   "copiedMany_one": "{{count}} nombre copiado, uno por línea",
   "copiedMany_many": "{{count}} de nombres copiados, uno por línea",
   "copiedMany_other": "{{count}} nombres copiados, uno por línea",
-  "failed": "No se pudo copiar al portapapeles"
+  "failed": "No se pudo copiar al portapapeles",
+  "header": {
+    "copyName": "Copiar nombre",
+    "copyNamespace": "Copiar namespace"
+  }
 }

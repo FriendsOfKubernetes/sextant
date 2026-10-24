@@ -108,6 +108,7 @@ extendActions({ group: "", kind: "PersistentVolumeClaim" }, ["snapshotCreate"]);
 extendActions({ group: "", kind: "Namespace" }, ["veleroBackup"]);
 
 registerAction("snapshotCreate", {
+  placement: "more",
   labelKey: "storage:snapshot.create",
   icon: "volumeSnapshot",
   // A claim that is bound, in a cluster with the snapshot API.
@@ -119,6 +120,7 @@ registerAction("snapshotCreate", {
 });
 
 registerAction("snapshotRestore", {
+  placement: "more",
   labelKey: "storage:restore.action",
   icon: "restoreSnapshot",
   appliesTo: (obj, kind) => isKind(kind, VOLUME_SNAPSHOT) && readyToUse(obj),
@@ -129,6 +131,7 @@ registerAction("snapshotRestore", {
 });
 
 registerAction("veleroBackup", {
+  placement: "more",
   labelKey: "storage:velero.backupAction",
   icon: "veleroBackup",
   appliesTo: (obj, kind) => isKind(kind, NAMESPACE) && phase(obj) !== "Terminating" && served(BACKUP),
@@ -139,6 +142,7 @@ registerAction("veleroBackup", {
 });
 
 registerAction("veleroRestore", {
+  placement: "more",
   labelKey: "storage:velero.restoreAction",
   icon: "veleroRestore",
   appliesTo: (obj, kind) => isKind(kind, BACKUP) && status.get(obj, "status", "phase") !== "Deleting",

@@ -5,7 +5,9 @@
   "openSettings": "Abrir configurações do cluster",
   "na": "n/d",
   "percent": "{{value}}%",
+  "percentBelowOne": "<1%",
   "percentOf": "{{value}}% · {{text}}",
+  "percentOfBelowOne": "<1% · {{text}}",
   "usedOf": "{{used}} de {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -19,7 +21,9 @@
     "limitSetOn_many": "(definido em {{set}} de {{count}} contêineres)",
     "limitSetOn_other": "(definido em {{set}} de {{count}} contêineres)",
     "shareOfLimit": "{{value}}% do limite",
+    "shareOfLimitBelowOne": "<1% do limite",
     "shareOfRequest": "{{value}}% da requisição",
+    "shareOfRequestBelowOne": "<1% da requisição",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "Memória {{amounts}}"
   },

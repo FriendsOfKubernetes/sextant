@@ -383,10 +383,14 @@ describe("contributions of an extension", () => {
     expect(def.actions).toContain("ext:demo.widgets:scale");
     expect(getResourceDef({ group: "", version: "v1", kind: "Pod" }).actions).not.toContain("ext:demo.widgets:scale");
     const [action] = getActionsFor([widget], WIDGET, ["ext:demo.widgets:scale"]);
-    expect(action).toMatchObject({ label: ACTION_TITLE, icon: "scale" });
+    expect(action).toMatchObject({ label: ACTION_TITLE, icon: "scale", placement: "more" });
     expect(action!.labelKey).toBeUndefined();
+    // An extension's action is always in the details panel's "Actions" menu, never a main button (#275).
     const bar = render(<ActionBar clusterId="c1" kind={WIDGET} obj={widget} />);
-    expect(within(bar.container).getByRole("button", { name: ACTION_TITLE })).toBeInTheDocument();
+    expect(within(bar.container).queryByRole("button", { name: ACTION_TITLE })).toBeNull();
+    fireEvent.click(within(bar.container).getByRole("button", { name: "Actions" }));
+    expect(screen.getByRole("menuitem", { name: ACTION_TITLE })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
     bar.unmount();
 
     // The main view of the window draws the windows actions open.

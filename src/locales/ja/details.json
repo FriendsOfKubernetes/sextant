@@ -1,5 +1,6 @@
 {
   "actions": "操作",
+  "moreActions": "操作",
   "deleted": "この {{kind}} は削除されました。",
   "notFound": "この {{kind}} は存在しません (既に削除されています)。",
   "sections": {

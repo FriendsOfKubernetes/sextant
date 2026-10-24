@@ -49,6 +49,7 @@
     "practices": "最佳实践",
     "credentials": "凭据",
     "disk": "磁盘即将用满",
+    "alerts": "触发中的告警",
     "events": "警告事件"
   },
   "messages": {
@@ -97,5 +98,6 @@
   "showTraefik": "Traefik 引用",
   "showReflector": "Reflector 镜像",
   "showSealedSecrets": "Sealed Secrets 解封",
-  "showKueueWorkloads": "等待中或被驱逐的 Kueue Workload"
+  "showKueueWorkloads": "等待中或被驱逐的 Kueue Workload",
+  "showAlerts": "触发中的告警（Prometheus 和 Alertmanager）"
 }

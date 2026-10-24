@@ -65,6 +65,7 @@ const NOT_IMPLEMENTED = { code: "other", message: "not implemented" } as const;
 export const STREAM_PREFIXES: Readonly<Record<string, string>> = {
   watch_start: "watch",
   logs_start: "logs",
+  loki_logs_start: "loki",
   exec_start: "term",
   terminal_start: "term",
   node_shell_start: "term",

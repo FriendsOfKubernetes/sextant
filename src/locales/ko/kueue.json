@@ -98,6 +98,7 @@
     "borrowingLimit": "차용 한도",
     "lendingLimit": "대여 한도",
     "ofQuota": "{{value}}({{percent}}%)",
+    "ofQuotaBelowOne": "{{value}}(<1%)",
     "borrowed": "{{value}}, 그중 차용 {{borrowed}}"
   },
   "usage": "사용량",

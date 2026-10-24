@@ -526,6 +526,7 @@ describe("actions", () => {
     registerAction("delete", {
       labelKey: "details:actions",
       icon: "delete",
+      placement: "primary",
       appliesTo: () => true,
       run: (ctx) => {
         ran = ctx.refs.map((r) => r.name);
@@ -533,7 +534,7 @@ describe("actions", () => {
     });
     await openDetails(pod, POD_REF);
     const bar = within(section("summary")).getByRole("toolbar");
-    fireEvent.click(within(bar).getByRole("button", { name: /Actions/ }));
+    fireEvent.click(within(bar).getByRole("button", { name: "Actions" }));
     await waitFor(() => expect(ran).toEqual(["nginx-9f755754d-g85tv"]));
   });
 });

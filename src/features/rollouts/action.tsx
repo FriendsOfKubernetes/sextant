@@ -9,6 +9,7 @@ import { RollbackDialog } from "./RollbackDialog";
 export const rolloutUndoAction: ActionDef = {
   labelKey: "rollouts:rollback.action",
   icon: "rollback",
+  placement: "more",
   appliesTo: (_obj, kind) => workloadKind(kind) !== null,
   run: ({ clusterId, kind, objects, refs, openDialog }) => {
     const workload = objects[0];

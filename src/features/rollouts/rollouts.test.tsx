@@ -244,7 +244,9 @@ describe("the Roll back… action", () => {
       </>,
     );
     emitSnapshot(wb, await watchOf(wb, "Deployment", (s) => s.fieldSelector === "metadata.name=web"), [deployment()]);
-    fireEvent.click(await screen.findByRole("button", { name: "Roll back…" }));
+    // A secondary action: in the details panel's "Actions" menu (#275).
+    fireEvent.click(await screen.findByRole("button", { name: "Actions" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Roll back…" }));
     emitSnapshot(wb, await watchOf(wb, "ReplicaSet", isRevisionWatch), REPLICA_SETS);
     const dialog = await screen.findByRole("dialog", { name: "Roll back web" });
     expect(within(dialog).getByRole("combobox")).toHaveValue("2");

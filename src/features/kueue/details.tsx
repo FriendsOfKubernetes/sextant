@@ -15,6 +15,7 @@ import type { DetailsSectionProps } from "../../layout/details/registry";
 import { status, StatusText } from "../../resources";
 import { Block, chips, Fields, link, mapChips, table, type ColumnWrap, type FieldRow } from "../details";
 import { labelSelector, tolerations } from "../details/ui";
+import { percentKey } from "../metrics/format";
 import { useClusterQueues, useLocalQueues, useWorkloadRows, type WorkloadRows } from "./hooks";
 import { QueueStateText } from "./columns";
 import {
@@ -57,7 +58,10 @@ function QuotaTable({ rows, usage }: { rows: QuotaRow[]; usage: boolean }) {
   const { t } = useTranslation();
   const reservedText = (r: QuotaRow) => {
     if (!r.reserved) return "";
-    const base = r.percent === undefined ? r.reserved : t("kueue:quota.ofQuota", { value: r.reserved, percent: r.percent });
+    const base =
+      r.percent === undefined
+        ? r.reserved
+        : t(percentKey("kueue:quota.ofQuota", r.percent), { value: r.reserved, percent: r.percent });
     return r.borrowed ? t("kueue:quota.borrowed", { value: base, borrowed: r.borrowed }) : base;
   };
   const headers = [t("kueue:quota.flavor"), t("kueue:quota.resource"), t("kueue:quota.nominal")];

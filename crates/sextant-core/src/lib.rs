@@ -8,6 +8,7 @@
 //! bindings (see `.cargo/config.toml` and `npm run gen:types`).
 
 pub mod access;
+pub mod alerts;
 pub mod argocd;
 #[cfg(feature = "desktop")]
 pub mod cloud;
@@ -26,6 +27,7 @@ pub mod helm;
 pub mod image_fs;
 pub mod kubeconfig;
 pub mod logs;
+pub mod loki;
 pub mod metrics;
 pub mod node_shell;
 pub mod openapi;

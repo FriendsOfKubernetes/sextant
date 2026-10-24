@@ -1,0 +1,64 @@
+{
+  "tab": "Pulpity i ślady",
+  "openGrafana": "Otwórz w Grafana",
+  "findTraces": "Znajdź ślady",
+  "openFailed": "Nie udało się otworzyć linku: {{error}}",
+  "details": {
+    "title": "Pulpity i ślady"
+  },
+  "settings": {
+    "title": "Pulpity i ślady",
+    "intro": "Linki ze szczegółów obciążeń, Podów, węzłów i Namespace'ów oraz z grafu ruchu do Twoich pulpitów Grafana i śladów. Link otwiera się w przeglądarce; sam Sextant nigdy nie wysyła żądań pod te adresy.",
+    "grafanaUrl": "URL Grafana",
+    "grafanaUrlHint": "Na przykład https://grafana.example.com lub https://example.com/grafana. Zwykły http jest akceptowany tylko dla localhost (przekierowanie portu).",
+    "tracesUrl": "URL śladów",
+    "tracesUrlHint": "Grafana z Tempo albo interfejs Jaeger. Gdy puste, używany jest URL Grafana.",
+    "dashboards": "Pulpity",
+    "tracesGroup": "Ślady",
+    "templateHint": "Ścieżka pod powyższym URL (/d/…) albo pełny adres w tej samej witrynie. Dosłowny nawias klamrowy zapisz jako %7B lub %7D. {from} i {to} to godzina przed kliknięciem, w milisekundach; {kind} to rodzaj małymi literami (deployment). Pusty szablon nie daje linku.",
+    "variables": "Zmienne: {{variables}}",
+    "targets": {
+      "workload": "Obciążenia",
+      "pod": "Pody",
+      "node": "Węzły",
+      "namespace": "Namespace'y",
+      "edge": "Wywołania w grafie ruchu",
+      "traces": "Wyszukiwanie śladów"
+    },
+    "presetFor": "Gotowy szablon dla: {{target}}",
+    "choosePreset": "Użyj gotowego szablonu…",
+    "save": "Zapisz",
+    "remove": "Usuń linki",
+    "saved": "Zapisano."
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Logi Poda w Grafana Explore (źródło danych Loki z uid loki)",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "Pulpit obciążenia docelowego (kube-prometheus-stack)",
+    "tempo": "Tempo w Grafana Explore (źródło danych z uid tempo)",
+    "jaeger": "Wyszukiwanie w interfejsie Jaeger"
+  },
+  "baseError": {
+    "empty": "Wpisz URL.",
+    "tooLong": "URL jest za długi (najwyżej 2048 znaków).",
+    "invalid": "To nie jest prawidłowy URL.",
+    "scheme": "Użyj https; zwykły http jest akceptowany tylko dla localhost.",
+    "credentials": "URL nie może zawierać nazwy użytkownika ani hasła.",
+    "query": "Bazowy URL nie może zawierać ? ani #."
+  },
+  "templateError": {
+    "empty": "Wpisz szablon.",
+    "tooLong": "Szablon jest za długi (najwyżej 2048 znaków).",
+    "invalid": "Szablon zawiera spacje, znaki sterujące lub ukośnik wsteczny.",
+    "brace": "Nawias klamrowy, który nie jest zmienną: zapisz go jako %7B lub %7D.",
+    "variable": "Szablon używa zmiennej, której ten link nie ma.",
+    "origin": "Szablon musi pozostać w witrynie bazowego URL.",
+    "noBase": "Najpierw ustaw bazowy URL."
+  },
+  "transfer": {
+    "include": "Dołącz linki do pulpitów i śladów"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "sidebar": "アラート",
+  "title": "アラート",
+  "loading": "アラートを読み込み中…",
+  "none": "発火中または保留中のアラートはありません。",
+  "noneMatch": "フィルターに一致するアラートはありません。",
+  "unnamed": "(alertname なし)",
+  "shown_other": "{{count}} 件のアラートを表示",
+  "truncated": "最も重大なアラートのみ表示しています ({{total}} 件中)。",
+  "activeSince": "開始時刻",
+  "labels": "Label",
+  "openSettings": "アラートのソース…",
+  "tabs": {
+    "label": "アラートとサイレンス",
+    "alerts": "アラート ({{count}})",
+    "silences": "サイレンス ({{count}})"
+  },
+  "filter": {
+    "search": "アラートを検索",
+    "severity": "重大度",
+    "namespace": "Namespace",
+    "state": "状態",
+    "all": "すべて"
+  },
+  "state": {
+    "firing": "発火中",
+    "pending": "保留中",
+    "silenced": "サイレンス中",
+    "inhibited": "抑制中"
+  },
+  "severity": {
+    "critical": "重大",
+    "error": "エラー",
+    "high": "高",
+    "warning": "警告",
+    "medium": "中",
+    "info": "情報",
+    "low": "低",
+    "none": "なし",
+    "unset": "重大度なし"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "ダッシュボード",
+    "cleaned": "{{url}} (認証情報、クエリ、フラグメントを除去済み)"
+  },
+  "source": {
+    "title": "アラートのソース",
+    "silencesFailed": "Alertmanager のサイレンスを読み取れませんでした",
+    "prometheus": {
+      "ok": "Prometheus 互換のソース: {{target}}",
+      "off": "Prometheus 互換のソースはクラスター設定でオフになっています。",
+      "notFound": "Prometheus 互換のソースが見つかりません。保留中のアラートは表示されません。",
+      "vmalertMissing": "{{target}} の VictoriaMetrics は vmalert 経由でしかアラートを提供せず、-vmalert.proxyURL が設定されていません。",
+      "failed": "Prometheus 互換のソースのアラートを読み取れませんでした",
+      "failedAt": "{{target}} のアラートを読み取れませんでした"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Alertmanager はクラスター設定でオフになっています。",
+      "notFound": "Alertmanager が見つかりません。サイレンス中・抑制中のアラートは表示されません。",
+      "failed": "Alertmanager を読み取れませんでした",
+      "failedAt": "{{target}} の Alertmanager を読み取れませんでした"
+    }
+  },
+  "silences": {
+    "readOnly": "サイレンスは読み取り専用で表示されます。作成や終了は Alertmanager で行ってください。",
+    "none": "有効または保留中のサイレンスはありません。",
+    "noAlertmanager": "サイレンスは Alertmanager から取得しますが、応答する Alertmanager がありません。",
+    "expired_other": "期限切れのサイレンス {{count}} 件は表示されません。",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "作成者: {{name}}",
+    "matchers": "マッチャー",
+    "state": {
+      "active": "有効",
+      "pending": "保留中",
+      "expired": "期限切れ"
+    }
+  },
+  "details": {
+    "title": "アラート",
+    "none": "このオブジェクトを指すアラートはありません。",
+    "openPage": "すべてのアラート"
+  },
+  "settings": {
+    "title": "アラート",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "自動で検出",
+      "manual": "Service のアドレス",
+      "off": "オフ"
+    },
+    "service": "Service (namespace/名前:ポート)",
+    "pathPrefix": "パスのプレフィックス",
+    "invalid": "アドレスを namespace/service:ポート の形式で、パスのプレフィックスを /alertmanager のように入力してください。",
+    "save": "保存",
+    "prometheusHint": "ルールの保留中・発火中のアラートは「メトリクス」セクションの Prometheus 互換のソースから読み取ります。",
+    "detected": "見つかったアラートのソース",
+    "prometheusSource": "Prometheus 互換のソース",
+    "checking": "確認中…",
+    "found": "検出済み",
+    "failed": "応答なし",
+    "vmalertMissing": "vmalert のない VictoriaMetrics (-vmalert.proxyURL)",
+    "status": {
+      "off": "オフ",
+      "notFound": "見つかりません"
+    }
+  }
+}

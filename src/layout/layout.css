@@ -178,6 +178,26 @@
   word-break: break-all;
 }
 
+/* The name and the namespace line, each followed by its icon buttons (copy, pin; #274). */
+.details__name-line,
+.details__namespace {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.details__name-line .details__name {
+  min-width: 0;
+}
+
+.details__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
 .details__body {
   flex: 1;
   overflow: auto;

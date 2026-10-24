@@ -1,0 +1,71 @@
+{
+  "status": "success",
+  "data": {
+    "alerts": [
+      {
+        "labels": {"alertname": "my-alert"},
+        "annotations": {},
+        "state": "firing",
+        "activeAt": "2018-07-04T20:27:12.60602144+02:00",
+        "value": "1e+00"
+      },
+      {
+        "labels": {
+          "alertname": "KubePodCrashLooping",
+          "container": "api",
+          "endpoint": "http",
+          "job": "kube-state-metrics",
+          "namespace": "shop",
+          "pod": "api-7d9c8b6f5d-x2x4q",
+          "reason": "CrashLoopBackOff",
+          "service": "kps-kube-state-metrics",
+          "severity": "warning",
+          "uid": "8f0e4c1a-1b2c-4d5e-8f90-123456789abc"
+        },
+        "annotations": {
+          "description": "Pod shop/api-7d9c8b6f5d-x2x4q (api) is in waiting state (reason: \"CrashLoopBackOff\"). See https://admin:s3cret@grafana.example.com/d/abc?var-ns=shop&token=xyz for details.",
+          "runbook_url": "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepodcrashlooping",
+          "summary": "Pod is crash looping."
+        },
+        "state": "firing",
+        "activeAt": "2026-10-24T08:00:00Z",
+        "value": "1e+00"
+      },
+      {
+        "labels": {
+          "alertname": "KubeDeploymentReplicasMismatch",
+          "deployment": "web",
+          "namespace": "shop",
+          "severity": "warning"
+        },
+        "annotations": {
+          "description": "Deployment shop/web has not matched the expected number of replicas for longer than 15 minutes.",
+          "runbook_url": "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubedeploymentreplicasmismatch",
+          "summary": "Deployment has not matched the expected number of replicas.",
+          "dashboard": "javascript:alert(1)"
+        },
+        "state": "pending",
+        "activeAt": "2026-10-24T09:50:00Z",
+        "value": "2e+00"
+      },
+      {
+        "labels": {"alertname": "KubeNodeNotReady", "node": "worker-2", "severity": "critical"},
+        "annotations": {
+          "message": "worker-2 has been unready for more than 15 minutes.",
+          "grafana_url": "https://grafana.example.com/d/nodes?var-node=worker-2#panel-3"
+        },
+        "state": "firing",
+        "activeAt": "2026-10-24T07:00:00Z",
+        "value": "0e+00"
+      },
+      {
+        "labels": {"alertname": "Inactive", "severity": "critical"},
+        "annotations": {},
+        "state": "inactive",
+        "activeAt": "0001-01-01T00:00:00Z",
+        "value": "0e+00"
+      },
+      "not an alert"
+    ]
+  }
+}

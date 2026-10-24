@@ -53,6 +53,7 @@ export function withSourceOrder(obj: KubeObject, ref: ObjectRef): ObjectRef[] {
 const isFlux = (kind: KindRef) => Boolean(fluxKind(kind));
 
 registerAction("reconcile", {
+  placement: "primary",
   labelKey: "flux:actions.reconcile",
   icon: "reconcile",
   multiple: true,
@@ -63,6 +64,7 @@ registerAction("reconcile", {
 });
 
 registerAction("reconcileWithSource", {
+  placement: "more",
   labelKey: "flux:actions.reconcileWithSource",
   icon: "reconcileWithSource",
   appliesTo: (obj, kind) => isKind(kind, KUSTOMIZATION, HELM_RELEASE) && Boolean(sourceRefOf(obj)),
@@ -74,6 +76,7 @@ registerAction("reconcileWithSource", {
 });
 
 registerAction("fluxSuspend", {
+  placement: "primary",
   labelKey: "flux:actions.suspend",
   icon: "suspend",
   appliesTo: (obj, kind) => isFlux(kind) && !isSuspended(obj),
@@ -97,6 +100,7 @@ registerAction("fluxSuspend", {
 });
 
 registerAction("fluxResume", {
+  placement: "primary",
   labelKey: "flux:actions.resume",
   icon: "resume",
   multiple: true,

@@ -99,6 +99,7 @@
     "borrowingLimit": "Ausleihgrenze",
     "lendingLimit": "Verleihgrenze",
     "ofQuota": "{{value}} ({{percent}} %)",
+    "ofQuotaBelowOne": "{{value}} (<1 %)",
     "borrowed": "{{value}}, davon {{borrowed}} geliehen"
   },
   "usage": "Nutzung",

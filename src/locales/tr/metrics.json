@@ -5,7 +5,9 @@
   "openSettings": "Küme ayarlarını aç",
   "na": "yok",
   "percent": "%{{value}}",
+  "percentBelowOne": "<%1",
   "percentOf": "%{{value}} · {{text}}",
+  "percentOfBelowOne": "<%1 · {{text}}",
   "usedOf": "{{used}} / {{total}}",
   "containerUsage": "{{cpu}} · {{memory}}",
   "requests": {
@@ -17,7 +19,9 @@
     "limitSetOn_one": "({{count}} kapsayıcının {{set}} tanesinde ayarlı)",
     "limitSetOn_other": "({{count}} kapsayıcının {{set}} tanesinde ayarlı)",
     "shareOfLimit": "sınırın %{{value}} kadarı",
+    "shareOfLimitBelowOne": "sınırın <%1 kadarı",
     "shareOfRequest": "isteğin %{{value}} kadarı",
+    "shareOfRequestBelowOne": "isteğin <%1 kadarı",
     "containerCpu": "CPU {{amounts}}",
     "containerMemory": "Bellek {{amounts}}"
   },

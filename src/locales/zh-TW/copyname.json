@@ -3,5 +3,9 @@
   "actionClusterScoped": "複製名稱",
   "copied": "已複製 {{name}}",
   "copiedMany_other": "已複製 {{count}} 個名稱，每行一個",
-  "failed": "無法複製到剪貼簿"
+  "failed": "無法複製到剪貼簿",
+  "header": {
+    "copyName": "複製名稱",
+    "copyNamespace": "複製 namespace"
+  }
 }

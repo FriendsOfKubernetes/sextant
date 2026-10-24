@@ -1,0 +1,78 @@
+{
+  "mark": "Loki",
+  "markTitle": "이 줄은 Loki에서 읽었습니다",
+  "bar": "Loki의 이전 줄",
+  "openBar": "Loki의 이전 줄",
+  "load": "Loki에서 이전 줄 불러오기",
+  "loading_other": "Loki에서 읽는 중… 지금까지 {{count}}줄",
+  "loaded_other": "Loki의 {{count}}줄",
+  "linesFromLoki_other": "Loki의 {{count}}줄",
+  "truncated_other": "기간의 최신 {{count}}줄만 표시합니다. 이전 줄을 보려면 더 짧은 기간을 선택하세요.",
+  "cancel": "중지",
+  "clear": "Loki 줄 지우기",
+  "noContainerLabel": "여기의 Loki에는 컨테이너 label이 없으므로 Pod의 모든 컨테이너 줄을 표시합니다.",
+  "noLines": "Loki에 이 기간의 이 Pod 줄이 없습니다.",
+  "readFailed": "Loki에서 줄을 읽지 못했습니다.",
+  "statusFailed": "Sextant가 클러스터의 Loki를 확인하지 못했습니다.",
+  "statusFailedNote": "Sextant가 클러스터의 Loki를 확인하지 못했습니다: {{message}}",
+  "status": {
+    "loading": "Loki에서 읽는 중…",
+    "failed": "Loki에서 읽지 못했습니다",
+    "onlyLoki": "Loki의 줄만 표시(Pod가 더 이상 없음)"
+  },
+  "none": {
+    "off": "클러스터 설정에서 Loki가 꺼져 있어 사라진 Pod의 로그를 읽을 수 없습니다.",
+    "notFound": "사라진 Pod의 로그는 Grafana Loki에서 읽을 수 있지만 Sextant가 이 클러스터에서 Loki를 찾지 못했습니다. Sextant는 namespace loki, logging, monitoring, observability, grafana, loki-stack에서 Loki Helm chart의 Service(loki-gateway, loki-query-frontend, loki-read, loki)를 찾고, label app.kubernetes.io/name=loki가 붙은 Service도 찾습니다. Loki가 다른 곳에 있다면 클러스터 설정(메트릭 탭)에서 해당 Service를 지정하세요.",
+    "manualNoAnswer": "클러스터 설정에 지정한 Loki Service가 API 서버를 통해 Loki로 응답하지 않았습니다.",
+    "noLabels": "Loki가 응답했지만 로그 스트림에 label namespace와 pod도, k8s_namespace_name과 k8s_pod_name도 없어 Sextant가 어떤 줄이 어느 Pod의 것인지 알 수 없습니다."
+  },
+  "range": {
+    "label": "기간",
+    "1h": "최근 1시간",
+    "6h": "최근 6시간",
+    "24h": "최근 24시간",
+    "custom": "사용자 지정",
+    "from": "시작",
+    "to": "끝",
+    "problem": {
+      "invalid": "기간은 시작보다 늦게 끝나야 합니다.",
+      "tooLong": "기간은 최대 24시간입니다.",
+      "future": "기간은 미래에 끝날 수 없습니다."
+    }
+  },
+  "previous": {
+    "title": "이전 Pod의 로그(Loki)",
+    "find": "Loki에서 Pod 찾기",
+    "hint": "이 기간에 이 워크로드에 있던 Pod를 컨트롤러가 붙이는 이름으로 Loki에서 찾습니다. 그 줄은 로그 탭에서 열립니다.",
+    "searching": "Loki 검색 중…",
+    "none": "Loki에 이 기간의 이 워크로드 Pod 줄이 없습니다.",
+    "listLabel": "Loki에 줄이 있는 Pod",
+    "truncated_other": "처음 {{count}}개의 Pod만 표시합니다. 더 짧은 기간을 선택하세요."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki(사라진 Pod의 로그)",
+    "mode": {
+      "auto": "자동으로 찾기",
+      "manual": "이 Service 사용",
+      "off": "끄기"
+    },
+    "service": "Service(namespace/이름:포트)",
+    "pathPrefix": "경로 접두사",
+    "tenant": "테넌트(X-Scope-OrgID)",
+    "tenantPlaceholder": "없음",
+    "invalid": {
+      "service": "Service를 namespace/이름:포트 형식으로 입력하세요(예: loki/loki-gateway:80).",
+      "prefix": "경로 접두사는 비어 있거나 /로 시작하며, 슬래시 사이에는 문자, 숫자, -, ., _, ~가 옵니다.",
+      "tenant": "테넌트 ID는 문자, 숫자와 ! - _ . * ' ( ) 문자로 최대 150자입니다. 여러 ID는 |로 연결합니다."
+    },
+    "save": "저장",
+    "checking": "Loki 확인 중…",
+    "foundAuto": "{{target}}을(를) 찾았습니다. 스트림에 {{labels}}이(가) 있습니다.",
+    "foundManual": "{{target}}이(가) 응답합니다. 스트림에 {{labels}}이(가) 있습니다.",
+    "scheme": {
+      "kubernetes": "label namespace, pod, container",
+      "openTelemetry": "OpenTelemetry label k8s_namespace_name, k8s_pod_name, k8s_container_name"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "mark": "Loki",
+  "markTitle": "此行讀取自 Loki",
+  "bar": "來自 Loki 的較早日誌行",
+  "openBar": "來自 Loki 的較早日誌行",
+  "load": "從 Loki 載入較早的日誌行",
+  "loading_other": "正在從 Loki 讀取… 目前 {{count}} 行",
+  "loaded_other": "來自 Loki 的 {{count}} 行",
+  "linesFromLoki_other": "來自 Loki 的 {{count}} 行",
+  "truncated_other": "只顯示該時段內最新的 {{count}} 行；選擇較短的時段可查看更早的行。",
+  "cancel": "停止",
+  "clear": "移除來自 Loki 的行",
+  "noContainerLabel": "這裡的 Loki 沒有容器 label，因此顯示該 Pod 所有容器的行。",
+  "noLines": "Loki 在該時段內沒有此 Pod 的日誌行。",
+  "readFailed": "無法從 Loki 讀取日誌行。",
+  "statusFailed": "Sextant 無法檢查叢集的 Loki。",
+  "statusFailedNote": "Sextant 無法檢查叢集的 Loki：{{message}}",
+  "status": {
+    "loading": "正在從 Loki 讀取…",
+    "failed": "從 Loki 讀取失敗",
+    "onlyLoki": "僅來自 Loki 的行（該 Pod 已不存在）"
+  },
+  "none": {
+    "off": "Loki 已在叢集設定中關閉，因此無法讀取已不存在的 Pod 的日誌。",
+    "notFound": "已不存在的 Pod 的日誌可以從 Grafana Loki 讀取，但 Sextant 在此叢集中沒有找到 Loki。Sextant 會在 namespace loki、logging、monitoring、observability、grafana 和 loki-stack 中尋找 Loki Helm chart 的 Service（loki-gateway、loki-query-frontend、loki-read、loki），以及帶有 label app.kubernetes.io/name=loki 的 Service。如果 Loki 在別處，請在叢集設定（「指標」分頁）中指定它的 Service。",
+    "manualNoAnswer": "叢集設定中指定的 Loki Service 沒有透過 API 伺服器以 Loki 的身分回應。",
+    "noLabels": "Loki 已回應，但它的日誌串流既沒有 label namespace 和 pod，也沒有 k8s_namespace_name 和 k8s_pod_name，因此 Sextant 無法判斷哪些行屬於某個 Pod。"
+  },
+  "range": {
+    "label": "時段",
+    "1h": "最近 1 小時",
+    "6h": "最近 6 小時",
+    "24h": "最近 24 小時",
+    "custom": "自訂",
+    "from": "從",
+    "to": "到",
+    "problem": {
+      "invalid": "時段的結束必須晚於開始。",
+      "tooLong": "時段最長為 24 小時。",
+      "future": "時段不能在未來結束。"
+    }
+  },
+  "previous": {
+    "title": "先前 Pod 的日誌（Loki）",
+    "find": "在 Loki 中尋找 Pod",
+    "hint": "此工作負載在該時段內的 Pod，依其控制器為 Pod 取的名稱在 Loki 中尋找。它們的日誌行會在日誌分頁中開啟。",
+    "searching": "正在搜尋 Loki…",
+    "none": "Loki 在該時段內沒有此工作負載的 Pod 的日誌行。",
+    "listLabel": "在 Loki 中有日誌行的 Pod",
+    "truncated_other": "只列出前 {{count}} 個 Pod；請選擇較短的時段。"
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki（已不存在的 Pod 的日誌）",
+    "mode": {
+      "auto": "自動尋找",
+      "manual": "使用此 Service",
+      "off": "關閉"
+    },
+    "service": "Service（namespace/名稱:連接埠）",
+    "pathPrefix": "路徑前綴",
+    "tenant": "租戶（X-Scope-OrgID）",
+    "tenantPlaceholder": "無",
+    "invalid": {
+      "service": "請以 namespace/名稱:連接埠 的形式輸入 Service，例如 loki/loki-gateway:80。",
+      "prefix": "路徑前綴為空，或以 / 開頭，斜線之間是字母、數字、-、.、_ 和 ~。",
+      "tenant": "租戶 ID 由字母、數字和字元 ! - _ . * ' ( ) 組成，最多 150 個；多個 ID 以 | 連接。"
+    },
+    "save": "儲存",
+    "checking": "正在檢查 Loki…",
+    "foundAuto": "已找到 {{target}}；其日誌串流帶有 {{labels}}。",
+    "foundManual": "{{target}} 有回應；其日誌串流帶有 {{labels}}。",
+    "scheme": {
+      "kubernetes": "label namespace、pod 和 container",
+      "openTelemetry": "OpenTelemetry label k8s_namespace_name、k8s_pod_name 和 k8s_container_name"
+    }
+  }
+}

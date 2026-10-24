@@ -8,6 +8,7 @@ import { RestartDialog } from "./RestartDialog";
 import { newRestartRunId } from "./runStore";
 
 registerAction("restart", {
+  placement: "primary",
   labelKey: "actions:restart.label",
   icon: "restart",
   multiple: true,

@@ -1,0 +1,111 @@
+{
+  "sidebar": "Alerts",
+  "title": "Alerts",
+  "loading": "Alerts werden gelesen…",
+  "none": "Keine Alerts sind ausgelöst oder ausstehend.",
+  "noneMatch": "Kein Alert passt zu den Filtern.",
+  "unnamed": "(kein alertname)",
+  "shown_one": "{{count}} Alert angezeigt",
+  "shown_other": "{{count}} Alerts angezeigt",
+  "truncated": "Nur die schwersten Alerts werden angezeigt (von {{total}}).",
+  "activeSince": "Aktiv seit",
+  "labels": "Labels",
+  "openSettings": "Alert-Quellen…",
+  "tabs": {
+    "label": "Alerts und Stummschaltungen",
+    "alerts": "Alerts ({{count}})",
+    "silences": "Stummschaltungen ({{count}})"
+  },
+  "filter": {
+    "search": "Alerts durchsuchen",
+    "severity": "Schweregrad",
+    "namespace": "Namespace",
+    "state": "Zustand",
+    "all": "Alle"
+  },
+  "state": {
+    "firing": "Ausgelöst",
+    "pending": "Ausstehend",
+    "silenced": "Stummgeschaltet",
+    "inhibited": "Unterdrückt"
+  },
+  "severity": {
+    "critical": "Kritisch",
+    "error": "Fehler",
+    "high": "Hoch",
+    "warning": "Warnung",
+    "medium": "Mittel",
+    "info": "Info",
+    "low": "Niedrig",
+    "none": "Keiner",
+    "unset": "Ohne Schweregrad"
+  },
+  "link": {
+    "runbook": "Runbook",
+    "dashboard": "Dashboard",
+    "cleaned": "{{url}} (Zugangsdaten, Abfrage und Fragment entfernt)"
+  },
+  "source": {
+    "title": "Alert-Quellen",
+    "silencesFailed": "Die Stummschaltungen des Alertmanagers konnten nicht gelesen werden",
+    "prometheus": {
+      "ok": "Prometheus-kompatible Quelle: {{target}}",
+      "off": "Die Prometheus-kompatible Quelle ist in den Cluster-Einstellungen ausgeschaltet.",
+      "notFound": "Keine Prometheus-kompatible Quelle gefunden: ausstehende Alerts werden nicht angezeigt.",
+      "vmalertMissing": "VictoriaMetrics unter {{target}} liefert Alerts nur über vmalert, und -vmalert.proxyURL ist nicht gesetzt.",
+      "failed": "Die Alerts der Prometheus-kompatiblen Quelle konnten nicht gelesen werden",
+      "failedAt": "Die Alerts von {{target}} konnten nicht gelesen werden"
+    },
+    "alertmanager": {
+      "ok": "Alertmanager: {{target}}",
+      "off": "Der Alertmanager ist in den Cluster-Einstellungen ausgeschaltet.",
+      "notFound": "Kein Alertmanager gefunden: stummgeschaltete und unterdrückte Alerts werden nicht angezeigt.",
+      "failed": "Der Alertmanager konnte nicht gelesen werden",
+      "failedAt": "Der Alertmanager unter {{target}} konnte nicht gelesen werden"
+    }
+  },
+  "silences": {
+    "readOnly": "Stummschaltungen werden nur angezeigt: Erstellen und beenden Sie sie im Alertmanager.",
+    "none": "Keine aktiven oder ausstehenden Stummschaltungen.",
+    "noAlertmanager": "Stummschaltungen kommen vom Alertmanager, und keiner antwortet.",
+    "expired_one": "{{count}} abgelaufene Stummschaltung wird nicht angezeigt.",
+    "expired_other": "{{count}} abgelaufene Stummschaltungen werden nicht angezeigt.",
+    "period": "{{start}} – {{end}}",
+    "createdBy": "von {{name}}",
+    "matchers": "Matcher",
+    "state": {
+      "active": "Aktiv",
+      "pending": "Ausstehend",
+      "expired": "Abgelaufen"
+    }
+  },
+  "details": {
+    "title": "Alerts",
+    "none": "Kein Alert nennt dieses Objekt.",
+    "openPage": "Alle Alerts"
+  },
+  "settings": {
+    "title": "Alerts",
+    "alertmanager": "Alertmanager",
+    "mode": {
+      "auto": "Automatisch finden",
+      "manual": "Service-Adresse",
+      "off": "Aus"
+    },
+    "service": "Service (namespace/Name:Port)",
+    "pathPrefix": "Pfadpräfix",
+    "invalid": "Geben Sie die Adresse als namespace/service:port und ein Pfadpräfix wie /alertmanager ein.",
+    "save": "Speichern",
+    "prometheusHint": "Ausstehende und ausgelöste Alerts der Regeln werden aus der Prometheus-kompatiblen Quelle des Abschnitts „Metriken“ gelesen.",
+    "detected": "Gefundene Alert-Quellen",
+    "prometheusSource": "Prometheus-kompatible Quelle",
+    "checking": "Wird geprüft…",
+    "found": "Gefunden",
+    "failed": "Antwortet nicht",
+    "vmalertMissing": "VictoriaMetrics ohne vmalert (-vmalert.proxyURL)",
+    "status": {
+      "off": "Aus",
+      "notFound": "Nicht gefunden"
+    }
+  }
+}

@@ -118,7 +118,8 @@
       "icon": "icon",
       "namespaces": "namespace filter",
       "previewChanges": "preview changes",
-      "agentAccess": "agent access rules"
+      "agentAccess": "agent access rules",
+      "observabilityLinks": "dashboard and trace links"
     },
     "overwrite": "Replace entries that differ from mine",
     "applyAgentAccess": "Apply the agent access rules from the file",

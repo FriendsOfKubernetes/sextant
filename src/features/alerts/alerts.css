@@ -1,0 +1,174 @@
+/* Alerts: the page, its silences tab, the details section and the shared rows. */
+.al-page {
+  padding: 16px 24px 32px;
+  min-width: 0;
+}
+
+.al-page__title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.al-loading {
+  margin: 8px 0;
+}
+
+.al-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 16px;
+  margin: 0 0 12px;
+}
+
+.al-sources__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.al-source {
+  overflow-wrap: anywhere;
+}
+
+.al-source--muted,
+.al-note {
+  color: var(--color-text-muted);
+}
+
+.al-note {
+  margin: 4px 0 8px;
+}
+
+.al-error {
+  margin: 4px 0;
+}
+
+.al-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 8px 0 12px;
+}
+
+.al-search {
+  width: 16em;
+  max-width: 100%;
+}
+
+.al-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.al-choice select {
+  max-width: 14em;
+}
+
+.al-total {
+  color: var(--color-text-muted);
+}
+
+.al-group {
+  margin: 0 0 16px;
+}
+
+.al-group__title,
+.al-name__title,
+.al-section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+
+.al-group__title {
+  font-size: 1rem;
+}
+
+.al-name__title {
+  font-size: 0.875rem;
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.al-section__title {
+  font-size: 0.875rem;
+}
+
+.al-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.al-row {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+  min-width: 0;
+}
+
+.al-row__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.al-row__name {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.al-row__age,
+.al-row__time,
+.al-row__by {
+  color: var(--color-text-muted);
+}
+
+.al-row__summary,
+.al-row__description {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.al-row__description {
+  color: var(--color-text-muted);
+}
+
+.al-object {
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
+.al-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.al-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.al-label {
+  padding: 0 6px;
+  border-radius: 3px;
+  background: var(--color-hover);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.al-section {
+  margin: 0 0 12px;
+}

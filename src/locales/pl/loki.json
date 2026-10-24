@@ -1,0 +1,93 @@
+{
+  "mark": "Loki",
+  "markTitle": "Ten wiersz odczytano z Loki",
+  "bar": "Starsze wiersze z Loki",
+  "openBar": "Starsze wiersze z Loki",
+  "load": "Wczytaj starsze wiersze z Loki",
+  "loading_one": "Odczyt z Loki… na razie {{count}} wiersz",
+  "loading_few": "Odczyt z Loki… na razie {{count}} wiersze",
+  "loading_many": "Odczyt z Loki… na razie {{count}} wierszy",
+  "loading_other": "Odczyt z Loki… na razie {{count}} wiersza",
+  "loaded_one": "{{count}} wiersz z Loki",
+  "loaded_few": "{{count}} wiersze z Loki",
+  "loaded_many": "{{count}} wierszy z Loki",
+  "loaded_other": "{{count}} wiersza z Loki",
+  "linesFromLoki_one": "{{count}} wiersz z Loki",
+  "linesFromLoki_few": "{{count}} wiersze z Loki",
+  "linesFromLoki_many": "{{count}} wierszy z Loki",
+  "linesFromLoki_other": "{{count}} wiersza z Loki",
+  "truncated_one": "Pokazano tylko {{count}} najnowszy wiersz okresu; wybierz krótszy okres, aby zobaczyć starsze.",
+  "truncated_few": "Pokazano tylko {{count}} najnowsze wiersze okresu; wybierz krótszy okres, aby zobaczyć starsze.",
+  "truncated_many": "Pokazano tylko {{count}} najnowszych wierszy okresu; wybierz krótszy okres, aby zobaczyć starsze.",
+  "truncated_other": "Pokazano tylko {{count}} najnowszego wiersza okresu; wybierz krótszy okres, aby zobaczyć starsze.",
+  "cancel": "Zatrzymaj",
+  "clear": "Usuń wiersze z Loki",
+  "noContainerLabel": "Loki nie ma tu label kontenera, więc pokazano wiersze wszystkich kontenerów Poda.",
+  "noLines": "Loki nie ma wierszy tego Poda w tym okresie.",
+  "readFailed": "Nie udało się odczytać wierszy z Loki.",
+  "statusFailed": "Sextant nie mógł sprawdzić Loki klastra.",
+  "statusFailedNote": "Sextant nie mógł sprawdzić Loki klastra: {{message}}",
+  "status": {
+    "loading": "Odczyt z Loki…",
+    "failed": "Odczyt z Loki nie powiódł się",
+    "onlyLoki": "Tylko wiersze z Loki (Pod już nie istnieje)"
+  },
+  "none": {
+    "off": "Loki jest wyłączone w ustawieniach klastra, więc logów nieistniejących Podów nie można odczytać.",
+    "notFound": "Logi nieistniejących Podów można odczytać z Grafana Loki, ale Sextant nie znalazł go w tym klastrze. Sextant szuka Service z chartów Helm Loki (loki-gateway, loki-query-frontend, loki-read, loki) w namespace loki, logging, monitoring, observability, grafana i loki-stack oraz Service z label app.kubernetes.io/name=loki. Jeśli Loki jest gdzie indziej, wskaż jego Service w ustawieniach klastra (karta „Metryki”).",
+    "manualNoAnswer": "Service Loki wskazany w ustawieniach klastra nie odpowiedział przez API server jak Loki.",
+    "noLabels": "Loki odpowiedział, ale jego strumienie logów nie mają ani label namespace i pod, ani k8s_namespace_name i k8s_pod_name, więc Sextant nie wie, które wiersze należą do Poda."
+  },
+  "range": {
+    "label": "Okres",
+    "1h": "Ostatnia godzina",
+    "6h": "Ostatnie 6 godzin",
+    "24h": "Ostatnie 24 godziny",
+    "custom": "Własny",
+    "from": "Od",
+    "to": "Do",
+    "problem": {
+      "invalid": "Okres musi kończyć się po swoim początku.",
+      "tooLong": "Okres może trwać najwyżej 24 godziny.",
+      "future": "Okres nie może kończyć się w przyszłości."
+    }
+  },
+  "previous": {
+    "title": "Logi poprzednich Podów (Loki)",
+    "find": "Znajdź Pody w Loki",
+    "hint": "Pody tego obciążenia w okresie, znalezione w Loki po nazwach nadawanych im przez kontroler. Ich wiersze otwierają się w karcie logów.",
+    "searching": "Szukanie w Loki…",
+    "none": "Loki nie ma wierszy Podów tego obciążenia w tym okresie.",
+    "listLabel": "Pody z wierszami w Loki",
+    "truncated_one": "Pokazano tylko pierwszy {{count}} Pod; wybierz krótszy okres.",
+    "truncated_few": "Pokazano tylko pierwsze {{count}} Pody; wybierz krótszy okres.",
+    "truncated_many": "Pokazano tylko pierwszych {{count}} Podów; wybierz krótszy okres.",
+    "truncated_other": "Pokazano tylko pierwsze {{count}} Poda; wybierz krótszy okres."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki (logi nieistniejących Podów)",
+    "mode": {
+      "auto": "Znajdź automatycznie",
+      "manual": "Użyj tego Service",
+      "off": "Wyłączone"
+    },
+    "service": "Service (namespace/nazwa:port)",
+    "pathPrefix": "Prefiks ścieżki",
+    "tenant": "Tenant (X-Scope-OrgID)",
+    "tenantPlaceholder": "Brak",
+    "invalid": {
+      "service": "Podaj Service jako namespace/nazwa:port, na przykład loki/loki-gateway:80.",
+      "prefix": "Prefiks ścieżki jest pusty albo zaczyna się od /, a między ukośnikami są litery, cyfry, -, ., _ i ~.",
+      "tenant": "ID tenanta składa się z liter, cyfr i znaków ! - _ . * ' ( ), najwyżej 150; kilka ID łączy się znakiem |."
+    },
+    "save": "Zapisz",
+    "checking": "Sprawdzanie Loki…",
+    "foundAuto": "Znaleziono {{target}}; jego strumienie mają {{labels}}.",
+    "foundManual": "{{target}} odpowiada; jego strumienie mają {{labels}}.",
+    "scheme": {
+      "kubernetes": "label namespace, pod i container",
+      "openTelemetry": "label OpenTelemetry k8s_namespace_name, k8s_pod_name i k8s_container_name"
+    }
+  }
+}

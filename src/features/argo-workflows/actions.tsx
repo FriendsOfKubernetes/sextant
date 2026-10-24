@@ -10,7 +10,7 @@ import { api, ApiError, toApiError, type ApiError as ApiErrorType, type ClusterI
 import { ErrorState } from "../../components";
 import { status } from "../../resources";
 import { ConfirmAction } from "../actions";
-import { registerAction } from "../actions/registry";
+import { registerAction, type ActionPlacement } from "../actions/registry";
 import { isKind, WORKFLOW } from "./model";
 import {
   activeSuspendNodes,
@@ -126,24 +126,28 @@ export const WORKFLOW_ACTIONS: {
   applies: (wf: KubeObject) => boolean;
   icon: "suspend" | "resume" | "terminate" | "rolloutAbort";
   danger?: boolean;
+  /** Suspend/Resume and Stop are buttons of the details panel; Terminate is in "Actions" (#275). */
+  placement: ActionPlacement;
 }[] = [
-  { id: "workflowSuspend", action: "suspend", icon: "suspend", applies: (wf) => !isCompleted(wf) && !isFinished(wf) && !isSuspended(wf) },
-  { id: "workflowResume", action: "resume", icon: "resume", applies: (wf) => isSuspended(wf) || activeSuspendNodes(wf).length > 0 },
-  { id: "workflowStop", action: "stop", icon: "terminate", danger: true, applies: (wf) => !isFinished(wf) && shutdownOf(wf) !== "Stop" },
+  { id: "workflowSuspend", action: "suspend", icon: "suspend", applies: (wf) => !isCompleted(wf) && !isFinished(wf) && !isSuspended(wf), placement: "primary" },
+  { id: "workflowResume", action: "resume", icon: "resume", applies: (wf) => isSuspended(wf) || activeSuspendNodes(wf).length > 0, placement: "primary" },
+  { id: "workflowStop", action: "stop", icon: "terminate", danger: true, applies: (wf) => !isFinished(wf) && shutdownOf(wf) !== "Stop", placement: "primary" },
   {
     id: "workflowTerminate",
     action: "terminate",
     icon: "rolloutAbort",
     danger: true,
     applies: (wf) => !isFinished(wf) && shutdownOf(wf) !== "Terminate",
+    placement: "more",
   },
 ];
 
-for (const { id, action, applies, icon, danger } of WORKFLOW_ACTIONS) {
+for (const { id, action, applies, icon, danger, placement } of WORKFLOW_ACTIONS) {
   registerAction(id, {
     labelKey: `argoworkflows:actions.${action}`,
     icon,
     danger,
+    placement,
     appliesTo: (obj, kind) => isKind(kind, WORKFLOW) && applies(obj),
     run: ({ clusterId, refs, openDialog }) => {
       const ref = refs[0];

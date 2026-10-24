@@ -1,5 +1,6 @@
 {
   "actions": "動作",
+  "moreActions": "動作",
   "deleted": "此 {{kind}} 已被刪除。",
   "notFound": "此 {{kind}} 不存在（或已不存在）。",
   "sections": {

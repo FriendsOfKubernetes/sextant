@@ -1,0 +1,83 @@
+{
+  "mark": "Loki",
+  "markTitle": "Bu satır Loki'den okundu",
+  "bar": "Loki'den eski satırlar",
+  "openBar": "Loki'den eski satırlar",
+  "load": "Loki'den eski satırları yükle",
+  "loading_one": "Loki'den okunuyor… şimdiye kadar {{count}} satır",
+  "loading_other": "Loki'den okunuyor… şimdiye kadar {{count}} satır",
+  "loaded_one": "Loki'den {{count}} satır",
+  "loaded_other": "Loki'den {{count}} satır",
+  "linesFromLoki_one": "Loki'den {{count}} satır",
+  "linesFromLoki_other": "Loki'den {{count}} satır",
+  "truncated_one": "Dönemin yalnızca en yeni {{count}} satırı gösteriliyor; daha eskileri görmek için daha kısa bir dönem seçin.",
+  "truncated_other": "Dönemin yalnızca en yeni {{count}} satırı gösteriliyor; daha eskileri görmek için daha kısa bir dönem seçin.",
+  "cancel": "Durdur",
+  "clear": "Loki satırlarını kaldır",
+  "noContainerLabel": "Loki'de burada container label'ı yok, bu yüzden Pod'un tüm container'larının satırları gösteriliyor.",
+  "noLines": "Loki'de bu Pod'un bu dönemde satırı yok.",
+  "readFailed": "Satırlar Loki'den okunamadı.",
+  "statusFailed": "Sextant, cluster'ın Loki'sini denetleyemedi.",
+  "statusFailedNote": "Sextant, cluster'ın Loki'sini denetleyemedi: {{message}}",
+  "status": {
+    "loading": "Loki'den okunuyor…",
+    "failed": "Loki'den okuma başarısız oldu",
+    "onlyLoki": "Yalnızca Loki satırları (Pod artık yok)"
+  },
+  "none": {
+    "off": "Loki, cluster ayarlarında kapalı; bu yüzden artık olmayan Pod'ların logları okunamaz.",
+    "notFound": "Artık olmayan Pod'ların logları Grafana Loki'den okunabilir, ancak Sextant bu cluster'da bir Loki bulamadı. Sextant, Loki Helm chart'larının Service'lerini (loki-gateway, loki-query-frontend, loki-read, loki) loki, logging, monitoring, observability, grafana ve loki-stack namespace'lerinde ve app.kubernetes.io/name=loki label'lı Service'leri arar. Loki başka bir yerdeyse Service'ini cluster ayarlarında (Ölçümler sekmesi) belirtin.",
+    "manualNoAnswer": "Cluster ayarlarında belirtilen Loki Service'i API sunucusu üzerinden Loki olarak yanıt vermedi.",
+    "noLabels": "Loki yanıt verdi, ancak log akışlarında ne namespace ve pod ne de k8s_namespace_name ve k8s_pod_name label'ları var; bu yüzden Sextant hangi satırların bir Pod'a ait olduğunu anlayamıyor."
+  },
+  "range": {
+    "label": "Dönem",
+    "1h": "Son 1 saat",
+    "6h": "Son 6 saat",
+    "24h": "Son 24 saat",
+    "custom": "Özel",
+    "from": "Başlangıç",
+    "to": "Bitiş",
+    "problem": {
+      "invalid": "Dönem, başladıktan sonra bitmelidir.",
+      "tooLong": "Dönem en fazla 24 saat olabilir.",
+      "future": "Dönem gelecekte bitemez."
+    }
+  },
+  "previous": {
+    "title": "Önceki Pod'ların logları (Loki)",
+    "find": "Loki'de Pod ara",
+    "hint": "Bu iş yükünün dönem içindeki Pod'ları, denetleyicisinin onlara verdiği adlarla Loki'de bulunur. Satırları bir log sekmesinde açılır.",
+    "searching": "Loki'de aranıyor…",
+    "none": "Loki'de bu iş yükünün Pod'larına ait bu dönemde satır yok.",
+    "listLabel": "Loki'de satırı olan Pod'lar",
+    "truncated_one": "Yalnızca ilk {{count}} Pod listeleniyor; daha kısa bir dönem seçin.",
+    "truncated_other": "Yalnızca ilk {{count}} Pod listeleniyor; daha kısa bir dönem seçin."
+  },
+  "settings": {
+    "title": "Loki",
+    "legend": "Loki (artık olmayan Pod'ların logları)",
+    "mode": {
+      "auto": "Otomatik bul",
+      "manual": "Bu Service'i kullan",
+      "off": "Kapalı"
+    },
+    "service": "Service (namespace/ad:port)",
+    "pathPrefix": "Yol öneki",
+    "tenant": "Tenant (X-Scope-OrgID)",
+    "tenantPlaceholder": "Yok",
+    "invalid": {
+      "service": "Service'i namespace/ad:port olarak girin, örneğin loki/loki-gateway:80.",
+      "prefix": "Yol öneki boştur ya da / ile başlar; eğik çizgiler arasında harf, rakam, -, ., _ ve ~ bulunur.",
+      "tenant": "Tenant kimliği harf, rakam ve ! - _ . * ' ( ) karakterlerinden oluşur, en fazla 150; birden çok kimlik | ile birleştirilir."
+    },
+    "save": "Kaydet",
+    "checking": "Loki denetleniyor…",
+    "foundAuto": "{{target}} bulundu; akışlarında {{labels}} var.",
+    "foundManual": "{{target}} yanıt veriyor; akışlarında {{labels}} var.",
+    "scheme": {
+      "kubernetes": "namespace, pod ve container label'ları",
+      "openTelemetry": "OpenTelemetry label'ları k8s_namespace_name, k8s_pod_name ve k8s_container_name"
+    }
+  }
+}

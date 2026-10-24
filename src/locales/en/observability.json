@@ -1,0 +1,64 @@
+{
+  "tab": "Dashboards and traces",
+  "openGrafana": "Open in Grafana",
+  "findTraces": "Find traces",
+  "openFailed": "Could not open the link: {{error}}",
+  "details": {
+    "title": "Dashboards and traces"
+  },
+  "settings": {
+    "title": "Dashboards and traces",
+    "intro": "Links from the details of workloads, pods, nodes and namespaces and from the traffic graph to your Grafana dashboards and traces. A link opens in your browser; Sextant itself never requests these addresses.",
+    "grafanaUrl": "Grafana URL",
+    "grafanaUrlHint": "For example https://grafana.example.com or https://example.com/grafana. Plain http is accepted only for localhost (a port forward).",
+    "tracesUrl": "Traces URL",
+    "tracesUrlHint": "Grafana with Tempo, or the Jaeger UI. When empty, the Grafana URL is used.",
+    "dashboards": "Dashboards",
+    "tracesGroup": "Traces",
+    "templateHint": "A path under the URL above (/d/…) or a full address on the same site. Write a literal brace as %7B or %7D. {from} and {to} are the hour before the click, in milliseconds; {kind} is the kind in lower case (deployment). An empty template gives no link.",
+    "variables": "Variables: {{variables}}",
+    "targets": {
+      "workload": "Workloads",
+      "pod": "Pods",
+      "node": "Nodes",
+      "namespace": "Namespaces",
+      "edge": "Calls in the traffic graph",
+      "traces": "Trace search"
+    },
+    "presetFor": "Preset for {{target}}",
+    "choosePreset": "Use a preset…",
+    "save": "Save",
+    "remove": "Remove links",
+    "saved": "Saved."
+  },
+  "presets": {
+    "mixinWorkload": "Kubernetes / Compute Resources / Workload (kube-prometheus-stack)",
+    "mixinPod": "Kubernetes / Compute Resources / Pod (kube-prometheus-stack)",
+    "lokiPod": "Pod logs in Grafana Explore (Loki data source with uid loki)",
+    "mixinNode": "Kubernetes / Compute Resources / Node (Pods) (kube-prometheus-stack)",
+    "mixinNamespace": "Kubernetes / Compute Resources / Namespace (Pods) (kube-prometheus-stack)",
+    "mixinEdge": "The destination's workload dashboard (kube-prometheus-stack)",
+    "tempo": "Tempo in Grafana Explore (data source with uid tempo)",
+    "jaeger": "Jaeger UI search"
+  },
+  "baseError": {
+    "empty": "Enter a URL.",
+    "tooLong": "The URL is too long (at most 2048 characters).",
+    "invalid": "This is not a valid URL.",
+    "scheme": "Use https; plain http is accepted only for localhost.",
+    "credentials": "The URL must not contain a user name or password.",
+    "query": "The base URL must not contain ? or #."
+  },
+  "templateError": {
+    "empty": "Enter a template.",
+    "tooLong": "The template is too long (at most 2048 characters).",
+    "invalid": "The template contains spaces, control characters or a backslash.",
+    "brace": "A brace that is not a variable: write a literal brace as %7B or %7D.",
+    "variable": "The template uses a variable this link does not have.",
+    "origin": "The template must stay on the site of the base URL.",
+    "noBase": "Set the base URL first."
+  },
+  "transfer": {
+    "include": "Include dashboard and trace links"
+  }
+}

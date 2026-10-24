@@ -1,5 +1,6 @@
 {
   "actions": "Действия",
+  "moreActions": "Действия",
   "deleted": "Этот {{kind}} удален.",
   "notFound": "Этот {{kind}} не существует (больше).",
   "sections": {

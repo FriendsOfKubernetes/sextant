@@ -51,6 +51,7 @@
     "practices": "Best practices",
     "credentials": "Credentials",
     "disk": "Disk almost full",
+    "alerts": "Firing alerts",
     "events": "Warning events"
   },
   "messages": {
@@ -103,5 +104,6 @@
   "showTraefik": "Traefik references",
   "showReflector": "Reflector mirrors",
   "showSealedSecrets": "Sealed Secrets unsealing",
-  "showKueueWorkloads": "Kueue Workloads waiting or evicted"
+  "showKueueWorkloads": "Kueue Workloads waiting or evicted",
+  "showAlerts": "Firing alerts (Prometheus and Alertmanager)"
 }
