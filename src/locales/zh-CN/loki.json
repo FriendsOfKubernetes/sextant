@@ -24,6 +24,7 @@
     "off": "Loki 已在集群设置中关闭，因此无法读取已不存在的 Pod 的日志。",
     "notFound": "已不存在的 Pod 的日志可以从 Grafana Loki 读取，但 Sextant 在此集群中没有找到 Loki。Sextant 会在 namespace loki、logging、monitoring、observability、grafana 和 loki-stack 中查找 Loki Helm chart 的 Service（loki-gateway、loki-query-frontend、loki-read、loki），以及带有 label app.kubernetes.io/name=loki 的 Service。如果 Loki 在别处，请在集群设置（“指标”选项卡）中指定它的 Service。",
     "manualNoAnswer": "集群设置中指定的 Loki Service 没有通过 API 服务器以 Loki 的身份应答。",
+    "probeError": "API 服务器的答复：{{message}}",
     "noLabels": "Loki 已应答，但它的日志流既没有 label namespace 和 pod，也没有 k8s_namespace_name 和 k8s_pod_name，因此 Sextant 无法判断哪些行属于某个 Pod。"
   },
   "range": {

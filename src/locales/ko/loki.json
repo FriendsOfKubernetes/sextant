@@ -24,6 +24,7 @@
     "off": "클러스터 설정에서 Loki가 꺼져 있어 사라진 Pod의 로그를 읽을 수 없습니다.",
     "notFound": "사라진 Pod의 로그는 Grafana Loki에서 읽을 수 있지만 Sextant가 이 클러스터에서 Loki를 찾지 못했습니다. Sextant는 namespace loki, logging, monitoring, observability, grafana, loki-stack에서 Loki Helm chart의 Service(loki-gateway, loki-query-frontend, loki-read, loki)를 찾고, label app.kubernetes.io/name=loki가 붙은 Service도 찾습니다. Loki가 다른 곳에 있다면 클러스터 설정(메트릭 탭)에서 해당 Service를 지정하세요.",
     "manualNoAnswer": "클러스터 설정에 지정한 Loki Service가 API 서버를 통해 Loki로 응답하지 않았습니다.",
+    "probeError": "API 서버의 응답: {{message}}",
     "noLabels": "Loki가 응답했지만 로그 스트림에 label namespace와 pod도, k8s_namespace_name과 k8s_pod_name도 없어 Sextant가 어떤 줄이 어느 Pod의 것인지 알 수 없습니다."
   },
   "range": {

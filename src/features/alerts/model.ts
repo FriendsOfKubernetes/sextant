@@ -4,10 +4,27 @@
 // The labels are the ones kube-state-metrics, the kubelet/cAdvisor and the kube-prometheus rules put on alerts:
 // `pod`, `deployment`, `statefulset`, `daemonset`, `replicaset`, `job_name` (kube-state-metrics' name for a Job: `job`
 // is Prometheus' scrape job), `cronjob`, `horizontalpodautoscaler`, `persistentvolumeclaim` and `service`, each with
-// the alert's `namespace`; `node` (cluster-scoped); `namespace` alone names the Namespace. The first label of that
-// order that is set is the alert's object (a pod before its workload, so an alert is shown once on what it is about;
-// the workload's details also list the alerts of its own pods). `service` is skipped on alerts of kube-state-metrics
-// (`job` or `service` naming it): there it is the scrape target's Service, not the object's.
+// the alert's `namespace`; `persistentvolume` and `node` (cluster-scoped); `namespace` alone names the Namespace. The
+// first label of that order that is set is the alert's object (a pod before its workload, so an alert is shown once on
+// what it is about; the workload's details also list the alerts of its own pods).
+//
+// Labels of the scrape target leak in (#264 review). kube-prometheus-stack scrapes kube-state-metrics with
+// `honorLabels: true` and no relabelling (its values.yaml, `kube-state-metrics.prometheus.monitor`), and
+// prometheus-operator puts the target's `namespace`, `service`, `pod`, `container` and `endpoint` on every series:
+// a series of kube-state-metrics that has no `pod` of its own (`kube_deployment_*`, `kube_node_*`) carries the
+// kube-state-metrics pod, and one without a `namespace` (`kube_node_*`, `kube_persistentvolume_*`) carries the
+// namespace kube-state-metrics runs in. node-exporter's series (`job="node-exporter"`) never have a pod or namespace
+// of their own, so theirs are always the exporter's. (kube-prometheus' own ServiceMonitor drops them:
+// `labeldrop (pod|service|endpoint|namespace)`, and sets node-exporter's `instance` to the node name.) So, on alerts of
+// those exporters (`job`, else `service`, naming them):
+// - `pod` is skipped when it is the scrape target — node-exporter's always; kube-state-metrics' when a workload, HPA,
+//   PVC, PV or node label is set, when `container` is the exporter's, or when the pod is named after the `service` —
+//   unless `uid` is set (kube-state-metrics' pod series carry the pod's uid: their `pod` is their own);
+// - `service` is skipped unless the alert names no pod and no instance (TargetDown is aggregated by job, namespace and
+//   service: its Service is the target's own);
+// - node-exporter's `namespace` is never the object's: such an alert names its Node by `node`, or by an `instance`
+//   without a port (kube-prometheus' relabelling), and otherwise nothing.
+// An alert whose pod was skipped and that names a node maps to the Node, never to the scraper's namespace.
 import type { Alert, AlertState, KindRef, ObjectRef } from "../../api";
 
 const k = (group: string, version: string, kind: string): KindRef => ({ group, version, kind });
@@ -16,6 +33,7 @@ export const NODE = k("", "v1", "Node");
 export const SERVICE = k("", "v1", "Service");
 export const NAMESPACE = k("", "v1", "Namespace");
 export const PVC = k("", "v1", "PersistentVolumeClaim");
+export const PV = k("", "v1", "PersistentVolume");
 export const DEPLOYMENT = k("apps", "v1", "Deployment");
 export const STATEFULSET = k("apps", "v1", "StatefulSet");
 export const DAEMONSET = k("apps", "v1", "DaemonSet");
@@ -35,6 +53,7 @@ export const TARGET_LABELS: ReadonlyArray<readonly [string, KindRef]> = [
   ["cronjob", CRONJOB],
   ["horizontalpodautoscaler", HPA],
   ["persistentvolumeclaim", PVC],
+  ["persistentvolume", PV],
   ["node", NODE],
   ["service", SERVICE],
 ];
@@ -42,22 +61,90 @@ export const TARGET_LABELS: ReadonlyArray<readonly [string, KindRef]> = [
 /** The kinds that get the "Alerts" details section. */
 export const ALERT_KINDS: readonly KindRef[] = [...TARGET_LABELS.map(([, kind]) => kind), NAMESPACE];
 
-const isKubeStateMetrics = (labels: Record<string, string>) =>
-  /kube-state-metrics/.test(labels.job ?? "") || /kube-state-metrics/.test(labels.service ?? "");
+/** Cluster-scoped kinds among the targets. */
+const CLUSTER_SCOPED: readonly KindRef[] = [NODE, PV];
+
+type Exporter = "kubeStateMetrics" | "nodeExporter" | "kubelet";
+
+/** The exporter whose series the alert was computed from, by its scrape `job`, else by its `service`. */
+function exporterOf(labels: Record<string, string>): Exporter | null {
+  const of = (text: string | undefined): Exporter | null => {
+    if (!text) return null;
+    if (/kube-state-metrics/.test(text)) return "kubeStateMetrics";
+    if (/node-exporter/.test(text)) return "nodeExporter";
+    if (/^kubelet$|-kubelet$/.test(text)) return "kubelet";
+    return null;
+  };
+  return of(labels.job) ?? of(labels.service);
+}
+
+/** Labels that name an object other than a pod (a kube-state-metrics series with one of them has no pod of its own). */
+const OBJECT_LABELS = TARGET_LABELS.filter(([, kind]) => kind !== POD && kind !== SERVICE).map(([label]) => label);
+
+const SCRAPER_CONTAINER = /^(kube-state-metrics|node-exporter)$/;
+
+/** Whether the alert's `pod` is the scrape target's, not what the alert is about (see the header). */
+function podIsScraper(labels: Record<string, string>, exporter: Exporter | null): boolean {
+  const pod = labels.pod?.trim();
+  if (!pod) return false;
+  if (exporter === "nodeExporter") return true;
+  if (exporter !== "kubeStateMetrics" || labels.uid?.trim()) return false;
+  if (OBJECT_LABELS.some((label) => labels[label]?.trim())) return true;
+  if (SCRAPER_CONTAINER.test(labels.container?.trim() ?? "")) return true;
+  const service = labels.service?.trim();
+  return !!service && pod.startsWith(`${service}-`);
+}
+
+/** A node name in node-exporter's `instance` (kube-prometheus sets it so): a DNS name without a port. */
+function nodeOfInstance(instance: string | undefined): string | null {
+  const name = instance?.trim() ?? "";
+  return name.length <= 253 && /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/.test(name) ? name : null;
+}
+
+/** The pod an alert is about, `null` when it names none or only the scrape target's (see the header). */
+export function alertPod(alert: Pick<Alert, "labels">): string | null {
+  const { labels } = alert;
+  const pod = labels.pod?.trim();
+  if (!pod || !labels.namespace?.trim() || podIsScraper(labels, exporterOf(labels))) return null;
+  return pod;
+}
 
 /** The object an alert is about (see the header); `null` when its labels name none. */
 export function alertTarget(alert: Pick<Alert, "labels">): ObjectRef | null {
   const { labels } = alert;
-  const namespace = labels.namespace?.trim() || null;
+  const exporter = exporterOf(labels);
+  const skipPod = podIsScraper(labels, exporter);
+  // node-exporter's namespace is always its own.
+  const namespace = exporter === "nodeExporter" ? null : labels.namespace?.trim() || null;
+  const keepService = !exporter || (!labels.pod?.trim() && !labels.instance?.trim());
   for (const [label, kind] of TARGET_LABELS) {
     const name = labels[label]?.trim();
     if (!name) continue;
-    if (kind === NODE) return { kind, namespace: null, name };
+    if (kind === POD && skipPod) continue;
+    if (CLUSTER_SCOPED.includes(kind)) return { kind, namespace: null, name };
     if (!namespace) continue;
-    if (kind === SERVICE && isKubeStateMetrics(labels)) continue;
+    if (kind === SERVICE && !keepService) continue;
     return { kind, namespace, name };
   }
+  if (exporter === "nodeExporter") {
+    const node = nodeOfInstance(labels.instance);
+    return node ? { kind: NODE, namespace: null, name: node } : null;
+  }
   return namespace ? { kind: NAMESPACE, namespace: null, name: namespace } : null;
+}
+
+/**
+ * React keys for a list of alerts: origin and id, made unique by a counter where two alerts share them (the core makes
+ * ids unique within a report; this keeps a list correct whatever it is given).
+ */
+export function alertKeys(alerts: readonly Pick<Alert, "origin" | "id">[]): string[] {
+  const seen = new Map<string, number>();
+  return alerts.map((a) => {
+    const base = `${a.origin}|${a.id}`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return n === 0 ? base : `${base}#${n}`;
+  });
 }
 
 /** The key of an object in an index of alerts. */
@@ -83,8 +170,8 @@ export function indexAlerts(alerts: readonly Alert[]): AlertIndex {
   for (const alert of alerts) {
     const target = alertTarget(alert);
     if (target) push(byTarget, targetKey(target), alert);
-    const pod = alert.labels.pod;
-    if (pod && alert.labels.namespace) push(byPod, `${alert.labels.namespace}/${pod}`, alert);
+    const pod = alertPod(alert);
+    if (pod) push(byPod, `${alert.labels.namespace!.trim()}/${pod}`, alert);
   }
   return { byTarget, byPod };
 }
@@ -93,12 +180,12 @@ export function indexAlerts(alerts: readonly Alert[]): AlertIndex {
 export function alertsOf(index: AlertIndex, ref: ObjectRef, podNames: readonly string[] = []): Alert[] {
   const own = index.byTarget.get(targetKey(ref)) ?? [];
   if (podNames.length === 0) return [...own];
-  const seen = new Set(own.map((a) => a.id));
+  const seen = new Set<Alert>(own);
   const out = [...own];
   for (const pod of podNames) {
     for (const alert of index.byPod.get(`${ref.namespace ?? ""}/${pod}`) ?? []) {
-      if (seen.has(alert.id)) continue;
-      seen.add(alert.id);
+      if (seen.has(alert)) continue;
+      seen.add(alert);
       out.push(alert);
     }
   }

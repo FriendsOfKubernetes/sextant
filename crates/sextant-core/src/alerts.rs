@@ -50,8 +50,20 @@ pub const MAX_LABEL_BYTES: usize = 512;
 /// At most this many other annotations and links of an alert are kept.
 pub const MAX_OTHER_ANNOTATIONS: usize = 16;
 pub const MAX_LINKS: usize = 8;
-/// How long an Alertmanager detection result (also "not found") is reused for a connection.
-const DETECT_TTL: Duration = Duration::from_secs(60);
+/// How long a found Alertmanager is reused for a connection.
+const DETECT_TTL: Duration = Duration::from_secs(5 * 60);
+/// How long "not found" is reused: shorter, so an Alertmanager that was starting (or a probe that failed) is found
+/// again soon.
+const NOT_FOUND_TTL: Duration = Duration::from_secs(60);
+/// At most this many candidate Services are probed in one detection (the best ranked first).
+const MAX_PROBES: usize = 4;
+/// At most this many Services are listed per namespace.
+const LIST_LIMIT: u32 = 100;
+
+/// How long a detection result is reused.
+fn detect_ttl(found: bool) -> Duration {
+    if found { DETECT_TTL } else { NOT_FOUND_TTL }
+}
 
 /// How the Alertmanager is found (a cluster setting, like [`PrometheusMode`]). Serialized with a `mode` tag.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -369,7 +381,8 @@ fn lock_detected() -> std::sync::MutexGuard<'static, Detected> {
 
 /// The first known Alertmanager Service in the namespaces Prometheus is looked for in ([`metrics::CANDIDATE_NAMESPACES`],
 /// one list each, in parallel) that answers `api/v2/alerts` through the service proxy: Prometheus' Alertmanagers
-/// before VictoriaMetrics', then by namespace, then by rank. Kept a minute per connection, "not found" too.
+/// before VictoriaMetrics', then by namespace, then by rank; at most [`MAX_PROBES`] are probed. Kept five minutes per
+/// connection, "not found" one.
 async fn detect(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -378,7 +391,7 @@ async fn detect(
     let connection = mgr.connection(cluster)?;
     if let Some((conn, at, found)) = lock_detected().get(cluster)
         && *conn == connection
-        && at.elapsed() < DETECT_TTL
+        && at.elapsed() < detect_ttl(found.is_some())
     {
         return Ok(found.clone());
     }
@@ -387,7 +400,7 @@ async fn detect(
         async move {
             let api: Api<Service> = Api::namespaced(client, ns);
             // A missing namespace lists nothing; a forbidden one is skipped.
-            api.list(&ListParams::default())
+            api.list(&ListParams::default().limit(LIST_LIMIT))
                 .await
                 .map(|l| l.items)
                 .unwrap_or_default()
@@ -414,7 +427,7 @@ async fn detect(
     }
     candidates.sort_by_key(|(victoria, index, rank, _)| (*victoria, *index, *rank));
     let mut found = None;
-    for (_, _, _, target) in candidates {
+    for (_, _, _, target) in candidates.into_iter().take(MAX_PROBES) {
         if alertmanager::probe(&client, &target).await.is_ok() {
             found = Some(target);
             break;

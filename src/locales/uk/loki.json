@@ -36,6 +36,7 @@
     "off": "Loki вимкнено в налаштуваннях кластера, тому логи видалених Pod прочитати не можна.",
     "notFound": "Логи видалених Pod можна прочитати з Grafana Loki, але Sextant не знайшов його в цьому кластері. Sextant шукає Service з Helm-чартів Loki (loki-gateway, loki-query-frontend, loki-read, loki) у namespace loki, logging, monitoring, observability, grafana і loki-stack, а також Service з label app.kubernetes.io/name=loki. Якщо Loki деінде, вкажіть його Service у налаштуваннях кластера (вкладка «Метрики»).",
     "manualNoAnswer": "Service Loki, вказаний у налаштуваннях кластера, не відповів через API-сервер як Loki.",
+    "probeError": "Відповідь API-сервера: {{message}}",
     "noLabels": "Loki відповів, але його потоки логів не мають ні label namespace і pod, ні k8s_namespace_name і k8s_pod_name, тому Sextant не може визначити, які рядки належать Pod."
   },
   "range": {

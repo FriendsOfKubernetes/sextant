@@ -112,6 +112,7 @@
     "matchExact": "Aynı kubeconfig dosyası ve context",
     "matchName": "Yalnızca context adıyla eşleşti: başka bir küme olabilir",
     "agentAccessSkipped": "Ajan erişim kuralları uygulanmaz: küme yalnızca adıyla eşleşti",
+    "linksSkipped": "Pano ve iz bağlantıları uygulanmaz: küme yalnızca adıyla eşleşti",
     "fields": {
       "displayName": "görünen ad",
       "color": "renk",
@@ -124,6 +125,8 @@
     "overwrite": "Benimkilerden farklı olan kayıtları değiştir",
     "applyAgentAccess": "Dosyadaki ajan erişim kurallarını uygula",
     "agentAccessWarning": "Ajan erişim kuralları, yapay zekâ ajanlarının bir kümede ne yapabileceğini belirler. Bunları yalnızca güvendiğiniz bir dosyadan uygulayın.",
+    "applyLinks": "Dosyadaki pano ve iz bağlantılarını uygula",
+    "linksWarning": "Bağlantılar, Sextant'ın bu kümenin nesne adlarıyla hangi adresleri açacağını belirler. Yalnızca güvendiğiniz bir dosyadan uygulayın.",
     "nothing": "Bu seçimlerle içe aktarılacak bir şey yok.",
     "changes": "Kaydedilecek kayıtlar: {{number}}",
     "apply": "İçe aktar",

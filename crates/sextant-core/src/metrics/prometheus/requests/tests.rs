@@ -30,13 +30,13 @@ fn every_source_names_the_workload_by_its_own_labels() {
     assert_eq!(
         one(RequestSourceKind::Linkerd),
         [format!(
-            r#"direction="inbound",namespace="shop",pod=~"web-{SAFE}{{6,10}}-{SAFE}{{5}}""#
+            r#"direction="inbound",namespace="shop",pod=~"web-{SAFE}{{1,10}}-{SAFE}{{5}}""#
         )]
     );
     assert_eq!(
         one(RequestSourceKind::Beyla),
         [format!(
-            r#"k8s_namespace_name="shop",k8s_pod_name=~"web-{SAFE}{{6,10}}-{SAFE}{{5}}""#
+            r#"k8s_namespace_name="shop",k8s_pod_name=~"web-{SAFE}{{1,10}}-{SAFE}{{5}}""#
         )]
     );
     // Hubble's selector names the callee only: which side's report counts is the query's ([`Sides`]).

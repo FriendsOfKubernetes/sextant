@@ -10,7 +10,7 @@ import { Badge, Button } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { useWorkloadPods } from "../rightsizing/workloadPods";
 import { ALERTS_PAGE_ID } from "./ids";
-import { ALERT_KINDS, alertsOf, alertTarget, isActive, targetKey } from "./model";
+import { ALERT_KINDS, alertKeys, alertsOf, alertTarget, isActive, targetKey } from "./model";
 import { anySource } from "./SourceNotes";
 import { useAlerts } from "./store";
 import { AlertRow } from "./ui";
@@ -36,6 +36,7 @@ export function AlertsDetailsSection({ clusterId, objectRef, obj }: DetailsSecti
   const { pods } = useWorkloadPods(clusterId, objectRef, obj, podAlerts);
   const podNames = useMemo(() => pods.map((p) => p.metadata?.name ?? "").filter(Boolean), [pods]);
   const alerts = useMemo(() => alertsOf(index, objectRef, podNames), [index, objectRef, podNames]);
+  const keys = useMemo(() => alertKeys(alerts), [alerts]);
 
   if (!report || !anySource(report)) return null;
   const active = alerts.filter(isActive).length;
@@ -49,9 +50,9 @@ export function AlertsDetailsSection({ clusterId, objectRef, obj }: DetailsSecti
         <p className="al-note">{t("alerts:details.none")}</p>
       ) : (
         <ul className="al-list">
-          {alerts.map((alert) => (
+          {alerts.map((alert, i) => (
             <AlertRow
-              key={`${alert.origin}|${alert.id}`}
+              key={keys[i]}
               alert={alert}
               showName
               // A pod's alert on its workload names the pod.

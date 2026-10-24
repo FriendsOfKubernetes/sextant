@@ -112,6 +112,7 @@
     "matchExact": "相同的 kubeconfig 檔案與 context",
     "matchName": "僅依 context 名稱比對：可能是另一個叢集",
     "agentAccessSkipped": "不套用代理程式存取規則：此叢集僅依名稱比對",
+    "linksSkipped": "不套用儀表板與追蹤連結：此叢集僅依名稱比對",
     "fields": {
       "displayName": "顯示名稱",
       "color": "顏色",
@@ -124,6 +125,8 @@
     "overwrite": "取代與我的不同的項目",
     "applyAgentAccess": "套用檔案中的代理程式存取規則",
     "agentAccessWarning": "代理程式存取規則決定 AI 代理程式在叢集中可以做什麼。只從你信任的檔案套用它們。",
+    "applyLinks": "套用檔案中的儀表板與追蹤連結",
+    "linksWarning": "連結決定 Sextant 帶著此叢集物件的名稱開啟哪些位址。請只從你信任的檔案套用。",
     "nothing": "依目前的選擇沒有可匯入的內容。",
     "changes": "要儲存的項目：{{number}}",
     "apply": "匯入",

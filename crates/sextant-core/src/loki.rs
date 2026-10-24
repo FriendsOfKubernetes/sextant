@@ -139,6 +139,10 @@ pub struct LokiStatus {
     pub scheme: Option<LokiLabelScheme>,
     /// Whether the scheme's container label is there (else a pod's containers are read together).
     pub container_label: bool,
+    /// Why the Service the settings name did not answer as Loki (a manual address only: no permission, no endpoints,
+    /// not Loki), with every URI in it cleaned; `None` when it answered or detection is automatic.
+    #[ts(optional = nullable)]
+    pub probe_error: Option<CoreError>,
 }
 
 /// A time range, in Unix milliseconds; `end` is excluded.
@@ -515,8 +519,27 @@ struct Resolved {
     container_label: bool,
 }
 
-/// Results per cluster: when, for which connection and settings, and what was found (`None`: no Loki).
-type Detected = HashMap<ClusterId, (Instant, u64, LokiSettings, Option<Resolved>)>;
+/// What resolving gave: the source and scheme (`None`: no Loki), and why a manual address did not answer.
+#[derive(Debug, Clone, Default)]
+struct Resolution {
+    found: Option<Resolved>,
+    probe_error: Option<CoreError>,
+}
+
+/// The failed probe of a manual address as the window may show it: its code, and its message with every URI cleaned
+/// (no credentials, query or fragment) and clipped; nothing else of the error.
+fn probe_failure(err: &CoreError) -> CoreError {
+    CoreError::new(
+        err.code,
+        crate::alerts::clean_text(&err.message)
+            .chars()
+            .take(300)
+            .collect::<String>(),
+    )
+}
+
+/// Results per cluster: when, for which connection and settings, and what was found.
+type Detected = HashMap<ClusterId, (Instant, u64, LokiSettings, Resolution)>;
 
 static DETECTED: LazyLock<Mutex<Detected>> = LazyLock::new(Default::default);
 
@@ -530,7 +553,7 @@ async fn resolve(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     settings: &LokiSettings,
-) -> CoreResult<Option<Resolved>> {
+) -> CoreResult<Resolution> {
     let client = mgr.client(cluster)?;
     let connection = mgr.connection(cluster)?;
     if let Some((at, conn, kept, found)) = lock_detected().get(cluster)
@@ -540,8 +563,9 @@ async fn resolve(
     {
         return Ok(found.clone());
     }
+    let mut probe_error = None;
     let source = match &settings.mode {
-        LokiMode::Off => return Ok(None),
+        LokiMode::Off => return Ok(Resolution::default()),
         LokiMode::Manual {
             namespace,
             service,
@@ -554,11 +578,16 @@ async fn resolve(
                 port: *port,
                 path_prefix: path_prefix.trim_end_matches('/').to_owned(),
             };
-            client::Loki::new(client.clone(), source.clone(), settings.tenant.clone())
+            match client::Loki::new(client.clone(), source.clone(), settings.tenant.clone())
                 .probe()
                 .await
-                .ok()
-                .map(|()| source)
+            {
+                Ok(()) => Some(source),
+                Err(err) => {
+                    probe_error = Some(probe_failure(&err));
+                    None
+                }
+            }
         }
         LokiMode::Auto => discover(&client, settings.tenant.as_ref()).await,
     };
@@ -576,11 +605,17 @@ async fn resolve(
             })
         }
     };
+    let resolution = Resolution { found, probe_error };
     lock_detected().insert(
         cluster.clone(),
-        (Instant::now(), connection, settings.clone(), found.clone()),
+        (
+            Instant::now(),
+            connection,
+            settings.clone(),
+            resolution.clone(),
+        ),
     );
-    Ok(found)
+    Ok(resolution)
 }
 
 /// Milliseconds to nanoseconds.
@@ -595,13 +630,14 @@ pub async fn status(
     settings: &LokiSettings,
 ) -> CoreResult<LokiStatus> {
     validate_settings(settings)?;
-    let found = resolve(mgr, cluster, settings).await?;
+    let Resolution { found, probe_error } = resolve(mgr, cluster, settings).await?;
     Ok(LokiStatus {
         off: settings.mode == LokiMode::Off,
         manual: matches!(settings.mode, LokiMode::Manual { .. }),
         scheme: found.as_ref().and_then(|f| f.scheme),
         container_label: found.as_ref().is_some_and(|f| f.container_label),
         source: found.map(|f| f.source),
+        probe_error,
     })
 }
 
@@ -612,7 +648,12 @@ async fn readable(
     settings: &LokiSettings,
 ) -> CoreResult<(client::Loki, LokiLabelScheme, bool)> {
     validate_settings(settings)?;
-    let Some(found) = resolve(mgr, cluster, settings).await? else {
+    let resolution = resolve(mgr, cluster, settings).await?;
+    let Some(found) = resolution.found else {
+        // The manual address's own error says why (403 vs a wrong port); else "not found".
+        if let Some(err) = resolution.probe_error {
+            return Err(err);
+        }
         return Err(CoreError::new(
             ErrorCode::NotFound,
             match settings.mode {
@@ -752,6 +793,11 @@ pub(crate) struct Pager {
     boundary: Vec<(i64, String)>,
     /// Set when the read is over: whether lines were left.
     over: Option<bool>,
+    /// Lines were stepped over without being sent (more lines on one timestamp than one answer holds): the read
+    /// ends as cut, whatever comes after.
+    skipped: bool,
+    /// The most lines one request asks for ([`MAX_LINES`], Loki's default `max_entries_limit_per_query`).
+    max_ask: u32,
 }
 
 /// What [`Pager::next_page`] got.
@@ -775,7 +821,17 @@ impl Pager {
             requests: 0,
             boundary: Vec::new(),
             over: None,
+            skipped: false,
+            max_ask: MAX_LINES,
         }
+    }
+
+    /// The same pager asking at most `max_ask` lines per request (tests: a source that holds more lines on one
+    /// timestamp than one answer).
+    #[cfg(test)]
+    pub(crate) fn with_max_ask(mut self, max_ask: u32) -> Self {
+        self.max_ask = max_ask;
+        self
     }
 }
 
@@ -784,7 +840,7 @@ impl Pager {
     pub(crate) async fn next_page(&mut self) -> Step {
         loop {
             if let Some(left) = self.over {
-                return Step::End(left);
+                return Step::End(left || self.skipped);
             }
             if self.sent >= self.limit || self.bytes >= MAX_TEXT_BYTES {
                 return Step::End(true);
@@ -795,7 +851,7 @@ impl Pager {
             self.requests += 1;
             let want = (self.limit - self.sent).min(PAGE_LINES);
             let boundary = u32::try_from(self.boundary.len()).unwrap_or(u32::MAX);
-            let ask = want.saturating_add(boundary).min(MAX_LINES);
+            let ask = want.saturating_add(boundary).min(self.max_ask);
             let got = match self
                 .source
                 .query(
@@ -827,7 +883,8 @@ impl Pager {
             .map(|(ts, _)| *ts) else {
                 if full && let Some((ts, _)) = self.boundary.first() {
                     // Only lines already sent came back (more lines share that timestamp than a page holds):
-                    // step past the timestamp.
+                    // step past the timestamp. Its lines that were not sent are lost, so the read is cut.
+                    self.skipped = true;
                     match self.direction {
                         LokiDirection::Backward => self.end_ns = *ts,
                         LokiDirection::Forward => self.start_ns = ts.saturating_add(1),
@@ -835,7 +892,7 @@ impl Pager {
                     self.boundary.clear();
                     continue;
                 }
-                return Step::End(false);
+                return Step::End(self.skipped);
             };
             self.boundary.retain(|(ts, _)| *ts == edge);
             self.boundary

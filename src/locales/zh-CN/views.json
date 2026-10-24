@@ -112,6 +112,7 @@
     "matchExact": "相同的 kubeconfig 文件和 context",
     "matchName": "仅按 context 名称匹配：可能是另一个集群",
     "agentAccessSkipped": "不应用智能体访问规则：该集群仅按名称匹配",
+    "linksSkipped": "不应用仪表板和追踪链接：该集群仅按名称匹配",
     "fields": {
       "displayName": "显示名称",
       "color": "颜色",
@@ -124,6 +125,8 @@
     "overwrite": "替换与我的不同的条目",
     "applyAgentAccess": "应用文件中的智能体访问规则",
     "agentAccessWarning": "智能体访问规则决定 AI 智能体在集群中可以做什么。仅从你信任的文件应用它们。",
+    "applyLinks": "应用文件中的仪表板和追踪链接",
+    "linksWarning": "链接决定 Sextant 带着此集群对象的名称打开哪些地址。请仅从你信任的文件中应用。",
     "nothing": "按当前选择没有可导入的内容。",
     "changes": "要保存的条目：{{number}}",
     "apply": "导入",

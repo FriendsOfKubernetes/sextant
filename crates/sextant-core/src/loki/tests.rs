@@ -99,7 +99,7 @@ fn pod_name_patterns_follow_the_controllers_names() {
     let safe = "[bcdfghjklmnpqrstvwxz2456789]";
     assert_eq!(
         pod_name_pattern("Deployment", "web"),
-        format!("web-{safe}{{6,10}}-{safe}{{5}}")
+        format!("web-{safe}{{1,10}}-{safe}{{5}}")
     );
     assert_eq!(
         pod_name_pattern("DaemonSet", "agent"),
@@ -107,11 +107,11 @@ fn pod_name_patterns_follow_the_controllers_names() {
     );
     assert_eq!(
         pod_name_pattern("Job", "migrate"),
-        format!("migrate-{safe}{{5}}")
+        format!("(?:migrate-|migrate-[0-9]{{1,6}}-){safe}{{5}}")
     );
     assert_eq!(
         pod_name_pattern("CronJob", "backup"),
-        format!("backup-[0-9]+-{safe}{{5}}")
+        format!("backup-[0-9]{{1,11}}-{safe}{{5}}")
     );
 }
 
@@ -453,6 +453,37 @@ async fn more_lines_on_one_timestamp_than_a_page_holds_never_stall_the_read() {
     assert!(calls <= MAX_REQUESTS as usize);
 }
 
+#[tokio::test]
+async fn stepping_past_a_timestamp_with_unsent_lines_ends_the_read_as_cut() {
+    // 3000 lines on one timestamp, one older line, and answers of at most 1500 lines: the last answer on that
+    // timestamp holds only lines already sent, so the read steps past it and 1500 of its lines are never sent.
+    let mut lines: Vec<(i64, String)> =
+        (0..3000).map(|i| (ns(2000), format!("same {i}"))).collect();
+    lines.push((ns(1500), "older".into()));
+    let source = FakeLoki {
+        lines,
+        calls: Arc::new(Mutex::new(Vec::new())),
+    };
+    let mut query = logs_query(LokiRange {
+        start_ms: 1000,
+        end_ms: 1000 + MAX_RANGE_MS,
+    });
+    query.direction = LokiDirection::Backward;
+    query.limit = MAX_LINES;
+    let mut pager = Pager::new(Box::new(source), "{}".into(), &query).with_max_ask(1500);
+    let mut sent: Vec<String> = Vec::new();
+    let truncated = loop {
+        match pager.next_page().await {
+            Step::Page(entries) => sent.extend(entries.into_iter().map(|e| e.line)),
+            Step::End(truncated) => break truncated,
+            Step::Fail(err) => panic!("{err:?}"),
+        }
+    };
+    assert!(sent.contains(&"older".to_owned()));
+    assert_eq!(sent.len(), 1501);
+    assert!(truncated, "lines were skipped, so the read is cut");
+}
+
 const GATEWAY: &str = "/api/v1/namespaces/loki/services/loki-gateway:80/proxy";
 
 /// A cluster with the grafana/loki chart's gateway in `loki`; `labels` is the answer of the labels API.
@@ -670,4 +701,64 @@ async fn a_loki_that_wants_a_tenant_says_so() {
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::Unauthorized);
     assert!(err.message.contains("tenant"), "{}", err.message);
+}
+
+#[tokio::test]
+async fn a_manual_loki_that_does_not_answer_says_why() {
+    let forbidden = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","code":403,
+        "message":"services \"loki\" is forbidden: see https://ops:hunter2@wiki.example.com/rbac?token=s3cr3t"}"#;
+    let api = FakeApi::start(move |req: &Request| match req.path.as_str() {
+        "/api" => Reply::json(200, API_VERSIONS),
+        p if p.ends_with("/services") => Reply::json(200, EMPTY_LIST),
+        p if p.contains("/services/loki:3100/proxy") => Reply::json(403, forbidden),
+        _ => Reply::not_found(),
+    })
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let manual = |service: &str, port: u16| LokiSettings {
+        mode: LokiMode::Manual {
+            namespace: "loki".into(),
+            service: service.into(),
+            port,
+            path_prefix: String::new(),
+        },
+        tenant: None,
+    };
+    // No permission: Forbidden, its message kept without the URI's credentials and query.
+    let status = status_of(&mgr, &id, &manual("loki", 3100)).await;
+    assert_eq!(status.source, None);
+    let err = status.probe_error.expect("the probe's error");
+    assert_eq!(err.code, ErrorCode::Forbidden);
+    assert!(
+        err.message.contains("https://wiki.example.com/rbac"),
+        "{}",
+        err.message
+    );
+    assert!(
+        !err.message.contains("hunter2") && !err.message.contains("s3cr3t"),
+        "{}",
+        err.message
+    );
+    // A wrong port: nothing answers there.
+    let status = status_of(&mgr, &id, &manual("loki", 9999)).await;
+    let err = status.probe_error.expect("the probe's error");
+    assert_eq!(err.code, ErrorCode::Unreachable);
+    // A read says the same.
+    let now = now_ms();
+    let query = logs_query(LokiRange {
+        start_ms: now - HOUR,
+        end_ms: now,
+    });
+    let read = read_logs(&mgr, &id, &manual("loki", 3100), query)
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(read.code, ErrorCode::Forbidden);
+    // Automatic detection keeps no probe error.
+    assert!(
+        status_of(&mgr, &id, &LokiSettings::default())
+            .await
+            .probe_error
+            .is_none()
+    );
 }

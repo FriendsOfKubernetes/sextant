@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type ClusterInfo, type KubeObject, type MockBackend } from "../../api";
 import { resetSettingsCache } from "../../api/settings";
 import { resetAppStore, useAppStore } from "../../app/store";
@@ -15,6 +15,8 @@ import { AlertsDetailsSection } from "./DetailsSection";
 import "./index";
 import {
   alertsOf,
+  alertKeys,
+  alertPod,
   alertTarget,
   choices,
   DEPLOYMENT,
@@ -27,10 +29,20 @@ import {
   POD,
   SERVICE,
 } from "./model";
+import kpsFixture from "./fixtures/kube-prometheus-stack.json";
 import { alertProblems } from "./provider";
 import { AlertsSettingsSection, parseAlertmanagerAddress } from "./SettingsSection";
 import { alertsStats, resetAlerts } from "./store";
 import { alert, NODE_ALERT, PENDING_ALERT, report, SILENCED_ALERT, WATCHDOG } from "./testing";
+
+/** The real kube-prometheus label sets (fixtures/kube-prometheus-stack.json, its `about` cites the sources). */
+interface LabelCase {
+  name: string;
+  labels: Record<string, string>;
+  expected: { kind: string; namespace: string | null; name: string } | null;
+  pod: string | null;
+}
+const KPS = kpsFixture.cases as unknown as LabelCase[];
 
 let backend: MockBackend;
 let wb: WatchBackend;
@@ -84,11 +96,26 @@ describe("which object an alert names", () => {
     expect(alertTarget(SILENCED_ALERT)).toEqual({ kind: SERVICE, namespace: "shop", name: "metrics" });
     const hpa = alert({ labels: { horizontalpodautoscaler: "web", job: "kube-state-metrics", namespace: "shop", service: "kps-kube-state-metrics" } });
     expect(alertTarget(hpa)?.kind.kind).toBe("HorizontalPodAutoscaler");
-    const ksmOnly = alert({ labels: { job: "kube-state-metrics", namespace: "shop", service: "kps-kube-state-metrics" } });
+    const ksmOnly = alert({ labels: { job: "kube-state-metrics", namespace: "shop", service: "kps-kube-state-metrics", instance: "10.244.1.7:8080" } });
     expect(alertTarget(ksmOnly)).toEqual({ kind: NAMESPACE, namespace: null, name: "shop" });
     // A namespaced label without a namespace names nothing.
     expect(alertTarget(alert({ labels: { pod: "x" } }))).toBeNull();
     expect(alertTarget(WATCHDOG)).toBeNull();
+  });
+
+  it.each(KPS)("maps the real kube-prometheus label sets: $name", (c) => {
+    const target = alertTarget({ labels: c.labels });
+    expect(target && { kind: target.kind.kind, namespace: target.namespace, name: target.name }).toEqual(c.expected);
+    expect(alertPod({ labels: c.labels })).toBe(c.pod);
+  });
+
+  it("never lists a scrape target's pod among a workload's pod alerts", () => {
+    const [mismatch] = KPS;
+    const leaked = alert({ id: "leak", labels: mismatch!.labels });
+    const index = indexAlerts([leaked]);
+    expect([...index.byPod.keys()]).toEqual([]);
+    const ksm = { kind: DEPLOYMENT, namespace: "monitoring", name: "kps-kube-state-metrics" };
+    expect(alertsOf(index, ksm, ["kps-kube-state-metrics-6d5f8b7c9d-q7z2x"])).toEqual([]);
   });
 
   it("finds a workload's alerts and those of its own pods, each once", () => {
@@ -133,6 +160,17 @@ describe("problems of the opt-in category", () => {
     expect(next.map((p) => p.object)).toEqual([{ kind: NAMESPACE, namespace: null, name: "shop" }]);
     expect(firstSeen.size).toBe(1);
   });
+
+  it("use the same mapping: a kube-state-metrics alert is on its object, never on the scraper's pod", () => {
+    const [mismatch, nodeNotReady] = KPS;
+    const alerts = [mismatch!, nodeNotReady!].map((c, i) =>
+      alert({ id: `k${i}`, name: c.labels.alertname, labels: c.labels, severity: "critical" }),
+    );
+    expect(alertProblems(alerts, new Map(), 1000).map((p) => [p.object.kind.kind, p.object.namespace, p.object.name])).toEqual([
+      ["Deployment", "shop", "web"],
+      ["Node", null, "worker-2"],
+    ]);
+  });
 });
 
 describe("Alerts page", () => {
@@ -160,6 +198,25 @@ describe("Alerts page", () => {
     expect(screen.getByText("1 expired silence is not shown.")).toBeTruthy();
     expect(screen.getByText(/create or expire them in Alertmanager/)).toBeTruthy();
     expect(await axeViolations(container)).toEqual([]);
+  });
+
+  it("shows alerts with identical labels (two rule groups) as two rows without a duplicate React key", async () => {
+    const twin = alert({ summary: "From the second rule group." });
+    start(() => report({ alerts: [alert(), twin], totalAlerts: 2 }));
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      render(<AlertsPage clusterId="c1" />);
+      expect(await screen.findByText("From the second rule group.")).toBeTruthy();
+      expect(screen.getByText("Pod is crash looping.")).toBeTruthy();
+      expect(errors.mock.calls.flat().join(" ")).not.toMatch(/same key/);
+    } finally {
+      errors.mockRestore();
+    }
+    expect(alertKeys([alert(), alert(), alert()])).toEqual([
+      "alertmanager|1a2b3c4d5e6f7081",
+      "alertmanager|1a2b3c4d5e6f7081#1",
+      "alertmanager|1a2b3c4d5e6f7081#2",
+    ]);
   });
 
   it("says why there are no alerts when no source answers", async () => {

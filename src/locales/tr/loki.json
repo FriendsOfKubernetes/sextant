@@ -28,6 +28,7 @@
     "off": "Loki, cluster ayarlarında kapalı; bu yüzden artık olmayan Pod'ların logları okunamaz.",
     "notFound": "Artık olmayan Pod'ların logları Grafana Loki'den okunabilir, ancak Sextant bu cluster'da bir Loki bulamadı. Sextant, Loki Helm chart'larının Service'lerini (loki-gateway, loki-query-frontend, loki-read, loki) loki, logging, monitoring, observability, grafana ve loki-stack namespace'lerinde ve app.kubernetes.io/name=loki label'lı Service'leri arar. Loki başka bir yerdeyse Service'ini cluster ayarlarında (Ölçümler sekmesi) belirtin.",
     "manualNoAnswer": "Cluster ayarlarında belirtilen Loki Service'i API sunucusu üzerinden Loki olarak yanıt vermedi.",
+    "probeError": "API sunucusunun yanıtı: {{message}}",
     "noLabels": "Loki yanıt verdi, ancak log akışlarında ne namespace ve pod ne de k8s_namespace_name ve k8s_pod_name label'ları var; bu yüzden Sextant hangi satırların bir Pod'a ait olduğunu anlayamıyor."
   },
   "range": {

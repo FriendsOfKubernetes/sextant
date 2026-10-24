@@ -112,6 +112,7 @@
     "matchExact": "Ten sam plik kubeconfig i ten sam context",
     "matchName": "Dopasowano tylko po nazwie context — może to być inny klaster",
     "agentAccessSkipped": "Reguły dostępu agentów nie zostaną zastosowane: klaster dopasowano tylko po nazwie",
+    "linksSkipped": "Linki do pulpitów i śladów nie zostaną zastosowane: klaster dopasowano tylko po nazwie",
     "fields": {
       "displayName": "nazwa wyświetlana",
       "color": "kolor",
@@ -124,6 +125,8 @@
     "overwrite": "Zastępuj wpisy, które różnią się od moich",
     "applyAgentAccess": "Zastosuj reguły dostępu agentów z pliku",
     "agentAccessWarning": "Reguły dostępu agentów decydują, co agenci AI mogą robić w klastrze. Stosuj je tylko z zaufanego pliku.",
+    "applyLinks": "Zastosuj linki do pulpitów i śladów z pliku",
+    "linksWarning": "Linki decydują, jakie adresy Sextant otwiera z nazwami obiektów tego klastra. Stosuj je tylko z pliku, któremu ufasz.",
     "nothing": "Przy tych wyborach nie ma nic do zaimportowania.",
     "changes": "Wpisy do zapisania: {{number}}",
     "apply": "Importuj",

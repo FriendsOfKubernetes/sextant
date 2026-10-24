@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import type { AlertState } from "../../api";
 import { Badge, ErrorState, LoadingIndicator, Tabs } from "../../components";
 import type { PageProps } from "../../layout/pages";
-import { choices, groupAlerts, matches, NO_FILTER, STATES, type AlertFilter } from "./model";
+import { alertKeys, choices, groupAlerts, matches, NO_FILTER, STATES, type AlertFilter } from "./model";
 import { SilencesView } from "./SilencesView";
 import { anySource, SourceNotes } from "./SourceNotes";
 import { useAlerts } from "./store";
@@ -117,19 +117,22 @@ export function AlertsPage({ clusterId }: PageProps) {
                       {severityText(group.severity)}
                       <Badge>{group.count}</Badge>
                     </h3>
-                    {group.names.map((byName) => (
-                      <div key={byName.name} className="al-name">
-                        <h4 className="al-name__title">
-                          {byName.name || t("alerts:unnamed")}
-                          <Badge>{byName.alerts.length}</Badge>
-                        </h4>
-                        <ul className="al-list">
-                          {byName.alerts.map((alert) => (
-                            <AlertRow key={`${alert.origin}|${alert.id}`} alert={alert} />
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                    {group.names.map((byName) => {
+                      const keys = alertKeys(byName.alerts);
+                      return (
+                        <div key={byName.name} className="al-name">
+                          <h4 className="al-name__title">
+                            {byName.name || t("alerts:unnamed")}
+                            <Badge>{byName.alerts.length}</Badge>
+                          </h4>
+                          <ul className="al-list">
+                            {byName.alerts.map((alert, i) => (
+                              <AlertRow key={keys[i]} alert={alert} />
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
                   </section>
                 ))
               )}

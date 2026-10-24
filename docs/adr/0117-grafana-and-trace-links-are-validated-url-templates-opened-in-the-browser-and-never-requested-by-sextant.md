@@ -26,3 +26,7 @@
 - A data source with another uid, or a Grafana whose dashboards were imported under other uids, needs the template edited; the hint says how.
 - The time window is fixed at one hour before the click.
 - An export with links is still version 3; an older Sextant names `observabilityLinks` as an unknown field.
+
+## Amendment: links are imported only onto the same cluster and only when ticked (review of #264–#266)
+
+Links decide which addresses Sextant opens with the names of a cluster's objects in them, so an imported file is treated like agent access rules (ADR-0083): `GATED_FIELDS` in `src/features/views/transfer.ts` holds `agentAccess` and `observabilityLinks`. Both apply only to a cluster matched exactly (the same id, or the same kubeconfig path and context) — a cluster matched by the context name alone is listed with "not applied" (`linksSkipped`) — and only when the import preview's "Apply the dashboard and trace links from the file" is ticked (`ApplyOptions.observabilityLinks`, off by default), with a warning beside it. Without the tick nothing of the file's links is written, whatever "Replace entries" says.

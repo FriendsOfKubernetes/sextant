@@ -112,6 +112,7 @@
     "matchExact": "Stesso file kubeconfig e stesso context",
     "matchName": "Associato solo per nome del context: potrebbe essere un altro cluster",
     "agentAccessSkipped": "Le regole di accesso degli agenti non vengono applicate: il cluster è stato associato solo per nome",
+    "linksSkipped": "I link a dashboard e tracce non vengono applicati: il cluster è stato associato solo per nome",
     "fields": {
       "displayName": "nome visualizzato",
       "color": "colore",
@@ -124,6 +125,8 @@
     "overwrite": "Sostituisci le voci diverse dalle mie",
     "applyAgentAccess": "Applica le regole di accesso degli agenti del file",
     "agentAccessWarning": "Le regole di accesso degli agenti decidono cosa possono fare gli agenti IA in un cluster. Applicale solo da un file di cui ti fidi.",
+    "applyLinks": "Applica i link a dashboard e tracce del file",
+    "linksWarning": "I link decidono quali indirizzi Sextant apre con i nomi degli oggetti di questo cluster. Applicali solo da un file di cui ti fidi.",
     "nothing": "Niente da importare con queste scelte.",
     "changes": "Voci da salvare: {{number}}",
     "apply": "Importa",

@@ -28,6 +28,7 @@
     "off": "Loki ist in den Cluster-Einstellungen ausgeschaltet, daher können Logs nicht mehr vorhandener Pods nicht gelesen werden.",
     "notFound": "Logs nicht mehr vorhandener Pods lassen sich aus Grafana Loki lesen, aber Sextant hat in diesem Cluster keines gefunden. Sextant sucht die Services der Loki-Helm-Charts (loki-gateway, loki-query-frontend, loki-read, loki) in den Namespaces loki, logging, monitoring, observability, grafana und loki-stack sowie Services mit dem Label app.kubernetes.io/name=loki. Liegt Loki woanders, geben Sie seinen Service in den Cluster-Einstellungen an (Tab „Metriken“).",
     "manualNoAnswer": "Der in den Cluster-Einstellungen angegebene Loki-Service hat über den API-Server nicht als Loki geantwortet.",
+    "probeError": "Antwort des API-Servers: {{message}}",
     "noLabels": "Loki hat geantwortet, aber seine Log-Streams haben weder die Labels namespace und pod noch k8s_namespace_name und k8s_pod_name, daher kann Sextant nicht erkennen, welche Zeilen zu einem Pod gehören."
   },
   "range": {

@@ -7,7 +7,7 @@ import { Button, ErrorState, Radio } from "../../../components";
 import { updateClusterSettings } from "../../clusters/clusterSettings";
 import type { ClusterSettingsSectionProps } from "../../clusters/settingsRegistry";
 import { resetLokiStatuses, useLokiSettings, useLokiStatus } from "./hooks";
-import { lokiUnavailableKey } from "./LokiBar";
+import { LokiProbeError, lokiUnavailableKey } from "./LokiBar";
 
 const MODES = ["auto", "manual", "off"] as const;
 /** The grafana/loki chart's gateway, as an example of the address. */
@@ -161,6 +161,7 @@ function LokiDetected({ clusterId }: { clusterId: ClusterId }) {
             target: `${status.source!.namespace}/${status.source!.service}:${status.source!.port}${status.source!.pathPrefix}`,
             labels: t(`loki:settings.scheme.${status.scheme!}`),
           })}
+      {status.probeError && <LokiProbeError error={status.probeError} />}
     </div>
   );
 }

@@ -447,7 +447,8 @@ export function ImportPreview({
   const { t } = useTranslation();
   const [overwrite, setOverwrite] = useState(false);
   const [agentAccess, setAgentAccess] = useState(false);
-  const options = { overwrite, agentAccess };
+  const [observabilityLinks, setObservabilityLinks] = useState(false);
+  const options = { overwrite, agentAccess, observabilityLinks };
   const count = countChanges(plan, options);
   const fields = (list: SharedField[]) => formatList(list.map((f) => t(`views:transfer.fields.${f}`)));
   const section = <T,>(title: string, entries: PlannedEntry<T>[], detail?: (entry: PlannedEntry<T>) => ReactNode) =>
@@ -481,6 +482,7 @@ export function ImportPreview({
                   <span title={c.sourcePath}>{c.context}</span>
                   {c.match && <small>{t(c.match === "exact" ? "views:transfer.matchExact" : "views:transfer.matchName")}</small>}
                   {c.agentAccessSkipped && <small>{t("views:transfer.agentAccessSkipped")}</small>}
+                  {c.linksSkipped && <small>{t("views:transfer.linksSkipped")}</small>}
                   {c.localId && c.added.length > 0 && <small>{t("views:transfer.clusterFields", { fields: fields(c.added) })}</small>}
                   {c.localId && c.changed.length > 0 && (
                     <small>{t("views:transfer.clusterChanges", { fields: fields(c.changed) })}</small>
@@ -508,6 +510,15 @@ export function ImportPreview({
             {t("views:transfer.applyAgentAccess")}
           </label>
           <p className="views-manager__empty">{t("views:transfer.agentAccessWarning")}</p>
+        </>
+      )}
+      {plan.hasObservabilityLinks && (
+        <>
+          <label className="views-form__choice">
+            <Checkbox checked={observabilityLinks} onChange={(e) => setObservabilityLinks(e.target.checked)} />
+            {t("views:transfer.applyLinks")}
+          </label>
+          <p className="views-manager__empty">{t("views:transfer.linksWarning")}</p>
         </>
       )}
       <p role="status">{count > 0 ? t("views:transfer.changes", { number: count }) : t("views:transfer.nothing")}</p>

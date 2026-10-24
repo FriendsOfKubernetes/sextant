@@ -49,6 +49,33 @@ fn uris_lose_credentials_query_and_fragment_as_the_window_cleans_them() {
     assert_eq!(clip("abc", 5), "abc");
 }
 
+/// The cases `src/resources/uri.ts` passes too (`src/resources/uri.test.ts`).
+const URI_CASES: &str = include_str!("../../../../src/resources/uri-cases.json");
+
+#[test]
+fn the_cleaners_pass_the_cases_shared_with_the_window() {
+    let cases: serde_json::Value = serde_json::from_str(URI_CASES).unwrap();
+    let mut failed = Vec::new();
+    for case in cases["uri"].as_array().unwrap() {
+        let input = case["input"].as_str().unwrap();
+        let want = case["text"]
+            .as_str()
+            .map(|t| (t.to_owned(), case["hidden"].as_bool().unwrap()));
+        let got = safe_uri(input);
+        if got != want {
+            failed.push(format!("safe_uri({input:?}) = {got:?}, want {want:?}"));
+        }
+    }
+    for case in cases["text"].as_array().unwrap() {
+        let input = case["input"].as_str().unwrap();
+        let got = clean_text(input);
+        if got != case["output"].as_str().unwrap() {
+            failed.push(format!("clean_text({input:?}) = {got:?}"));
+        }
+    }
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
 #[test]
 fn prometheus_alerts_keep_firing_and_pending_with_clean_texts_and_http_links_only() {
     let alerts = prometheus_alerts(ok(), PROMETHEUS.as_bytes()).unwrap();
@@ -384,5 +411,102 @@ fn the_cluster_setting_reads_leniently_and_round_trips() {
             .unwrap()
             .get("alertmanager")
             .is_none()
+    );
+}
+
+#[test]
+fn every_shown_label_value_and_matcher_is_cleaned_not_only_clipped() {
+    let answer = r#"{"status":"success","data":{"alerts":[{"state":"firing","activeAt":"2026-10-24T08:00:00Z",
+        "labels":{"alertname":"Leaky","severity":"warning","target":"https://ops:hunter2@db.example.com/x?token=s3cr3t",
+        "https://u:pw@h/k":"v","dsn":"user:pass@db:5432/app"},"annotations":{}}]}}"#;
+    let alerts = prometheus_alerts(ok(), answer.as_bytes()).unwrap();
+    let shown = serde_json::to_string(&alerts).unwrap();
+    for secret in ["hunter2", "s3cr3t", "pw@", "user:pass"] {
+        assert!(!shown.contains(secret), "{secret} in {shown}");
+    }
+    assert_eq!(alerts[0].labels["target"], "https://db.example.com/x");
+    assert_eq!(alerts[0].labels["dsn"], "db:5432/app");
+
+    let silence = r#"[{"id":"s1","status":{"state":"active"},"createdBy":"bob","comment":"c",
+        "startsAt":"2026-10-24T08:00:00Z","endsAt":"2026-10-24T09:00:00Z",
+        "matchers":[{"name":"instance","value":"https://ops:hunter2@db.example.com/?sig=1","isRegex":false,"isEqual":true}]}]"#;
+    let (list, _) = silences(silence.as_bytes()).unwrap();
+    assert_eq!(list[0].matchers[0].value, "https://db.example.com/");
+}
+
+#[test]
+fn alerts_with_identical_labels_get_unique_ids() {
+    // Two rule groups of Prometheus with the same rule: two alerts, the same labels.
+    let twice = r#"{"status":"success","data":{"alerts":[
+        {"state":"firing","labels":{"alertname":"Twin","namespace":"shop"},"annotations":{"summary":"one"}},
+        {"state":"firing","labels":{"alertname":"Twin","namespace":"shop"},"annotations":{"summary":"two"}}]}}"#;
+    let merged = merge(None, prometheus_alerts(ok(), twice.as_bytes()).unwrap());
+    assert_eq!(merged.len(), 2);
+    assert_ne!(merged[0].id, merged[1].id);
+    assert_eq!(merged[1].id, format!("{}-2", merged[0].id));
+    // vmalert says which group and rule an alert is from: the ids differ by them, the same on every poll.
+    let groups = r#"{"status":"success","data":{"alerts":[
+        {"state":"firing","group_id":"1","rule_id":"10","labels":{"alertname":"Twin"},"annotations":{}},
+        {"state":"firing","group_id":"2","rule_id":"20","labels":{"alertname":"Twin"},"annotations":{}}]}}"#;
+    let read = prometheus_alerts(ok(), groups.as_bytes()).unwrap();
+    assert_ne!(read[0].id, read[1].id);
+    assert_eq!(read, prometheus_alerts(ok(), groups.as_bytes()).unwrap());
+}
+
+#[test]
+fn a_found_alertmanager_is_kept_longer_than_not_finding_one() {
+    assert_eq!(detect_ttl(true), Duration::from_secs(300));
+    assert!(detect_ttl(false) < detect_ttl(true));
+}
+
+#[tokio::test]
+async fn detection_lists_at_most_a_hundred_services_and_probes_at_most_four() {
+    let names = [
+        ("alertmanager-operated", 9093),
+        ("alertmanager-main", 9093),
+        ("a-alertmanager", 9093),
+        ("b-alertmanager", 9093),
+        ("c-alertmanager", 9093),
+        ("alertmanager", 9093),
+        ("vmalertmanager-vm", 9093),
+    ];
+    let list = service_list(&names);
+    let api = FakeApi::start(move |req: &Request| {
+        let path = req.path.as_str();
+        if path == "/api" {
+            Reply::json(
+                200,
+                r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+            )
+        } else if path == "/api/v1/namespaces/monitoring/services" {
+            Reply::json(200, list.clone())
+        } else if path.ends_with("/services") {
+            Reply::json(200, service_list(&[]))
+        } else {
+            // No candidate answers as an Alertmanager (a 404 is not retried, so each request is one probe).
+            Reply::not_found()
+        }
+    })
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let got = report(&mgr, &id, &PrometheusMode::Off, &AlertmanagerMode::Auto)
+        .await
+        .unwrap();
+    assert_eq!(got.alertmanager.status, AlertSourceStatus::NotFound);
+    let requests = api.requests();
+    let probes = requests
+        .iter()
+        .filter(|r| r.path.ends_with("/api/v2/alerts"))
+        .count();
+    assert_eq!(probes, MAX_PROBES);
+    let lists: Vec<_> = requests
+        .iter()
+        .filter(|r| r.path.ends_with("/services"))
+        .collect();
+    assert!(!lists.is_empty());
+    assert!(
+        lists.iter().all(|r| r.query.contains("limit=100")),
+        "{:?}",
+        lists.iter().map(|r| &r.query).collect::<Vec<_>>()
     );
 }

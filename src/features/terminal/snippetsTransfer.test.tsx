@@ -100,7 +100,7 @@ describe("snippets in the export file", () => {
     expect(within(section).getByText("Logs")).toBeInTheDocument();
     expect(within(section).getByText("Top")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Import" }));
-    expect(onApply).toHaveBeenCalledWith({ overwrite: false, agentAccess: false });
+    expect(onApply).toHaveBeenCalledWith({ overwrite: false, agentAccess: false, observabilityLinks: false });
   });
 
   it("can be left out of an export", () => {

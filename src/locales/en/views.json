@@ -112,6 +112,7 @@
     "matchExact": "Same kubeconfig file and context",
     "matchName": "Matched by the context name only: it may be another cluster",
     "agentAccessSkipped": "Agent access rules are not applied: the cluster matched by name only",
+    "linksSkipped": "Dashboard and trace links are not applied: the cluster matched by name only",
     "fields": {
       "displayName": "display name",
       "color": "colour",
@@ -124,6 +125,8 @@
     "overwrite": "Replace entries that differ from mine",
     "applyAgentAccess": "Apply the agent access rules from the file",
     "agentAccessWarning": "Agent access rules decide what AI agents may do in a cluster. Apply them only from a file you trust.",
+    "applyLinks": "Apply the dashboard and trace links from the file",
+    "linksWarning": "Links decide which addresses Sextant opens with the names of this cluster's objects in them. Apply them only from a file you trust.",
     "nothing": "Nothing to import with these choices.",
     "changes": "Entries to save: {{number}}",
     "apply": "Import",

@@ -36,6 +36,7 @@
     "off": "Loki выключен в настройках кластера, поэтому логи удалённых Pod прочитать нельзя.",
     "notFound": "Логи удалённых Pod можно прочитать из Grafana Loki, но Sextant не нашёл его в этом кластере. Sextant ищет Service из Helm-чартов Loki (loki-gateway, loki-query-frontend, loki-read, loki) в namespace loki, logging, monitoring, observability, grafana и loki-stack, а также Service с label app.kubernetes.io/name=loki. Если Loki в другом месте, укажите его Service в настройках кластера (вкладка «Метрики»).",
     "manualNoAnswer": "Service Loki, указанный в настройках кластера, не ответил через API-сервер как Loki.",
+    "probeError": "Ответ API-сервера: {{message}}",
     "noLabels": "Loki ответил, но у его потоков логов нет ни label namespace и pod, ни k8s_namespace_name и k8s_pod_name, поэтому Sextant не может понять, какие строки относятся к Pod."
   },
   "range": {

@@ -112,6 +112,7 @@
     "matchExact": "같은 kubeconfig 파일과 context",
     "matchName": "context 이름으로만 일치: 다른 클러스터일 수 있습니다",
     "agentAccessSkipped": "에이전트 접근 규칙은 적용되지 않습니다: 클러스터가 이름으로만 일치했습니다",
+    "linksSkipped": "대시보드와 트레이스 링크는 적용되지 않습니다: 클러스터가 이름으로만 일치했습니다",
     "fields": {
       "displayName": "표시 이름",
       "color": "색상",
@@ -124,6 +125,8 @@
     "overwrite": "내 항목과 다른 항목을 바꾸기",
     "applyAgentAccess": "파일의 에이전트 접근 규칙 적용",
     "agentAccessWarning": "에이전트 접근 규칙은 AI 에이전트가 클러스터에서 무엇을 할 수 있는지 결정합니다. 신뢰할 수 있는 파일에서만 적용하세요.",
+    "applyLinks": "파일의 대시보드와 트레이스 링크 적용",
+    "linksWarning": "링크는 Sextant가 이 클러스터 오브젝트의 이름을 넣어 여는 주소를 정합니다. 신뢰하는 파일에서만 적용하세요.",
     "nothing": "이 선택으로는 가져올 내용이 없습니다.",
     "changes": "저장할 항목: {{number}}",
     "apply": "가져오기",

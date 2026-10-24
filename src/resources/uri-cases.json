@@ -1,0 +1,201 @@
+{
+  "about": "Cases both URI cleaners must pass: safeUri/cleanText in src/resources/uri.ts (vitest src/resources/uri.test.ts) and safe_uri/clean_text in crates/sextant-core/src/alerts/read.rs (cargo test -p sextant-core alerts). `text` null: nothing to show.",
+  "uri": [
+    {
+      "input": "https://reader:s3cr3t@models.example.com/flowers.tar.gz?X-Amz-Signature=abc123",
+      "text": "https://models.example.com/flowers.tar.gz",
+      "hidden": true
+    },
+    {
+      "input": "gs://kfserving-examples/models/sklearn/1.0/model",
+      "text": "gs://kfserving-examples/models/sklearn/1.0/model",
+      "hidden": false
+    },
+    {
+      "input": "s3://bucket/model#frag",
+      "text": "s3://bucket/model",
+      "hidden": true
+    },
+    {
+      "input": "hf://org/model?revision=main",
+      "text": "hf://org/model",
+      "hidden": true
+    },
+    {
+      "input": "pvc://claim/model",
+      "text": "pvc://claim/model",
+      "hidden": false
+    },
+    {
+      "input": "not a uri?token=1",
+      "text": "not a uri",
+      "hidden": true
+    },
+    {
+      "input": "https://u:tok@models.example.com/m\n",
+      "text": "https://models.example.com/m",
+      "hidden": true
+    },
+    {
+      "input": "  https://u:tok@models.example.com/m",
+      "text": "https://models.example.com/m",
+      "hidden": true
+    },
+    {
+      "input": "https://user:pa/ss@models.example.com/m.tar.gz",
+      "text": "https://models.example.com/m.tar.gz",
+      "hidden": true
+    },
+    {
+      "input": "https://user:p@ss@models.example.com/m",
+      "text": "https://models.example.com/m",
+      "hidden": true
+    },
+    {
+      "input": "https:/u:tok@h/model",
+      "text": "https:/h/model",
+      "hidden": true
+    },
+    {
+      "input": "s3://AKIAIOSFODNN7EXAMPLE:wJalrXUtnFEMI%2FK7MDENG@bucket/p",
+      "text": "s3://bucket/p",
+      "hidden": true
+    },
+    {
+      "input": "gs://key:secret@bucket/p?x=1#y",
+      "text": "gs://bucket/p",
+      "hidden": true
+    },
+    {
+      "input": "u:tok@host/model",
+      "text": "host/model",
+      "hidden": true
+    },
+    {
+      "input": "https://user:pass\nword@h/p",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "HTTPS://U:T@H/P",
+      "text": "HTTPS://H/P",
+      "hidden": true
+    },
+    {
+      "input": "ftp://u:p@h:21/x?y",
+      "text": "ftp://h:21/x",
+      "hidden": true
+    },
+    {
+      "input": "https://h/p",
+      "text": "https://h/p",
+      "hidden": false
+    },
+    {
+      "input": "\ufeffhttps://u:tok@h/p",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "https://u:tok@h/p\ufeff",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "https://u:tok@h/p\u0085",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "\u0085https://u:tok@h/p",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "\u00a0https://u:tok@h/p\u3000",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "\u200bhttps://u:tok@h/p",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "\u200ehttps://u:tok@h/p",
+      "text": "\u200ehttps://h/p",
+      "hidden": true
+    },
+    {
+      "input": "\u017fhttps://u:tok@h/p",
+      "text": "\u017fhttps://h/p",
+      "hidden": true
+    },
+    {
+      "input": "\t\r\n https://u:tok@h/p \t",
+      "text": "https://h/p",
+      "hidden": true
+    },
+    {
+      "input": "   ",
+      "text": null,
+      "hidden": false
+    },
+    {
+      "input": "",
+      "text": null,
+      "hidden": false
+    },
+    {
+      "input": "\ufeff\u0085",
+      "text": null,
+      "hidden": false
+    }
+  ],
+  "text": [
+    {
+      "input": "Failed to download s3://AKIA:wJalr@bucket/m?X-Amz-Signature=abc: 403",
+      "output": "Failed to download s3://bucket/m 403"
+    },
+    {
+      "input": "fetch \"https://u:hf_tok@huggingface.co/m?token=1\" failed; from u:pw@registry/x",
+      "output": "fetch \"https://huggingface.co/m\" failed; from registry/x"
+    },
+    {
+      "input": "0/3 nodes are available: 3 Insufficient cpu.",
+      "output": "0/3 nodes are available: 3 Insufficient cpu."
+    },
+    {
+      "input": "see https://a:b@x.io/p?q=1 and u:p@db:5432/x now",
+      "output": "see https://x.io/p and db:5432/x now"
+    },
+    {
+      "input": "at\ufeffhttps://u:tok@h/p end",
+      "output": "at\ufeffhttps://h/p end"
+    },
+    {
+      "input": "a\u0085u:tok@h/p",
+      "output": "a\u0085h/p"
+    },
+    {
+      "input": "x https:/u:tok@h/p y",
+      "output": "x https:/h/p y"
+    },
+    {
+      "input": "\u017fhttps://u:tok@h/p",
+      "output": "\u017fhttps://h/p"
+    },
+    {
+      "input": "line\nhttps://u:tok@h/p\nnext",
+      "output": "line\nhttps://h/p\nnext"
+    },
+    {
+      "input": "<https://u:tok@h/p>",
+      "output": "<https://h/p>"
+    },
+    {
+      "input": "zero\u200bu:tok@h/p",
+      "output": "zero\u200bh/p"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "about": "Alert label sets as Prometheus reports them for the kube-prometheus mixin rules (prometheus-operator/kube-prometheus manifests/kubernetesControlPlane-prometheusRule.yaml, nodeExporter-prometheusRule.yaml, kubePrometheus-prometheusRule.yaml): the labels of each rule's left-hand series plus the scrape target's labels prometheus-operator adds (namespace, service, pod, container, endpoint, instance, job). kube-prometheus-stack (release `kps` in `monitoring`) scrapes kube-state-metrics with honorLabels and no relabelling (values.yaml `kube-state-metrics.prometheus.monitor`) and node-exporter without relabelling (`prometheus-node-exporter.prometheus.monitor.relabelings: []`); kube-prometheus drops kube-state-metrics' pod/service/endpoint/namespace and sets node-exporter's instance to the node name (manifests/kubeStateMetrics-serviceMonitor.yaml, nodeExporter-serviceMonitor.yaml).",
+  "cases": [
+    {
+      "name": "KubeDeploymentReplicasMismatch (kube_deployment_spec_replicas > kube_deployment_status_replicas_available), kube-prometheus-stack",
+      "labels": { "alertname": "KubeDeploymentReplicasMismatch", "severity": "warning", "container": "kube-state-metrics", "deployment": "web", "endpoint": "http", "instance": "10.244.1.7:8080", "job": "kube-state-metrics", "namespace": "shop", "pod": "kps-kube-state-metrics-6d5f8b7c9d-q7z2x", "service": "kps-kube-state-metrics", "prometheus": "monitoring/kps-kube-prometheus-stack-prometheus" },
+      "expected": { "kind": "Deployment", "namespace": "shop", "name": "web" },
+      "pod": null
+    },
+    {
+      "name": "KubeNodeNotReady (kube_node_status_condition{condition=\"Ready\",status=\"true\"} == 0), kube-prometheus-stack",
+      "labels": { "alertname": "KubeNodeNotReady", "severity": "warning", "condition": "Ready", "status": "true", "node": "worker-2", "container": "kube-state-metrics", "endpoint": "http", "instance": "10.244.1.7:8080", "job": "kube-state-metrics", "namespace": "monitoring", "pod": "kps-kube-state-metrics-6d5f8b7c9d-q7z2x", "service": "kps-kube-state-metrics" },
+      "expected": { "kind": "Node", "namespace": null, "name": "worker-2" },
+      "pod": null
+    },
+    {
+      "name": "NodeFilesystemSpaceFillingUp (node_filesystem_avail_bytes{job=\"node-exporter\"} / node_filesystem_size_bytes …), kube-prometheus-stack: no node name anywhere",
+      "labels": { "alertname": "NodeFilesystemSpaceFillingUp", "severity": "warning", "container": "node-exporter", "device": "/dev/nvme0n1p1", "endpoint": "http-metrics", "fstype": "ext4", "instance": "10.0.3.17:9100", "job": "node-exporter", "mountpoint": "/", "namespace": "monitoring", "pod": "kps-prometheus-node-exporter-8xk2p", "service": "kps-prometheus-node-exporter" },
+      "expected": null,
+      "pod": null
+    },
+    {
+      "name": "NodeFilesystemSpaceFillingUp, kube-prometheus: instance is the node name",
+      "labels": { "alertname": "NodeFilesystemSpaceFillingUp", "severity": "warning", "container": "kube-rbac-proxy", "device": "/dev/nvme0n1p1", "endpoint": "https", "fstype": "ext4", "instance": "worker-3", "job": "node-exporter", "mountpoint": "/", "namespace": "monitoring", "pod": "node-exporter-7lq2m", "service": "node-exporter" },
+      "expected": { "kind": "Node", "namespace": null, "name": "worker-3" },
+      "pod": null
+    },
+    {
+      "name": "KubePodCrashLooping (max_over_time(kube_pod_container_status_waiting_reason{reason=\"CrashLoopBackOff\"}[5m]) >= 1), kube-prometheus-stack: the series' own pod and container win (honorLabels)",
+      "labels": { "alertname": "KubePodCrashLooping", "severity": "warning", "container": "api", "endpoint": "http", "instance": "10.244.1.7:8080", "job": "kube-state-metrics", "namespace": "shop", "pod": "api-7d9c8b6f5d-x2x4q", "reason": "CrashLoopBackOff", "service": "kps-kube-state-metrics", "uid": "0f9b6c1e-5d1c-4f43-9a51-2a4f7d0c8e11" },
+      "expected": { "kind": "Pod", "namespace": "shop", "name": "api-7d9c8b6f5d-x2x4q" },
+      "pod": "api-7d9c8b6f5d-x2x4q"
+    },
+    {
+      "name": "KubePodCrashLooping of kube-state-metrics' own pod: uid says the pod is the series' own",
+      "labels": { "alertname": "KubePodCrashLooping", "severity": "warning", "container": "kube-state-metrics", "endpoint": "http", "instance": "10.244.1.7:8080", "job": "kube-state-metrics", "namespace": "monitoring", "pod": "kps-kube-state-metrics-6d5f8b7c9d-q7z2x", "reason": "CrashLoopBackOff", "service": "kps-kube-state-metrics", "uid": "5c0e1a77-1d2b-4c1e-8f0a-6b9d2e3f4a55" },
+      "expected": { "kind": "Pod", "namespace": "monitoring", "name": "kps-kube-state-metrics-6d5f8b7c9d-q7z2x" },
+      "pod": "kps-kube-state-metrics-6d5f8b7c9d-q7z2x"
+    },
+    {
+      "name": "KubePersistentVolumeFillingUp (kubelet_volume_stats_available_bytes{job=\"kubelet\"} / kubelet_volume_stats_capacity_bytes < 0.03), kube-prometheus-stack",
+      "labels": { "alertname": "KubePersistentVolumeFillingUp", "severity": "critical", "endpoint": "https-metrics", "instance": "172.18.0.3:10250", "job": "kubelet", "metrics_path": "/metrics", "namespace": "shop", "node": "worker-1", "persistentvolumeclaim": "data-db-0", "service": "kps-kube-prometheus-stack-kubelet" },
+      "expected": { "kind": "PersistentVolumeClaim", "namespace": "shop", "name": "data-db-0" },
+      "pod": null
+    },
+    {
+      "name": "KubePersistentVolumeErrors (kube_persistentvolume_status_phase{phase=~\"Failed|Pending\"} > 0), kube-prometheus-stack",
+      "labels": { "alertname": "KubePersistentVolumeErrors", "severity": "critical", "container": "kube-state-metrics", "endpoint": "http", "instance": "10.244.1.7:8080", "job": "kube-state-metrics", "namespace": "monitoring", "persistentvolume": "pvc-6f1c2d3e", "phase": "Failed", "pod": "kps-kube-state-metrics-6d5f8b7c9d-q7z2x", "service": "kps-kube-state-metrics" },
+      "expected": { "kind": "PersistentVolume", "namespace": null, "name": "pvc-6f1c2d3e" },
+      "pod": null
+    },
+    {
+      "name": "TargetDown (count(up == 0) BY (cluster, job, namespace, service) / count(up) …) of kube-state-metrics",
+      "labels": { "alertname": "TargetDown", "severity": "warning", "job": "kube-state-metrics", "namespace": "monitoring", "service": "kps-kube-state-metrics" },
+      "expected": { "kind": "Service", "namespace": "monitoring", "name": "kps-kube-state-metrics" },
+      "pod": null
+    },
+    {
+      "name": "KubeDeploymentReplicasMismatch, kube-prometheus (pod, service, endpoint and namespace of the target dropped)",
+      "labels": { "alertname": "KubeDeploymentReplicasMismatch", "severity": "warning", "container": "kube-rbac-proxy-main", "deployment": "web", "instance": "10.244.1.7:8443", "job": "kube-state-metrics", "namespace": "shop" },
+      "expected": { "kind": "Deployment", "namespace": "shop", "name": "web" },
+      "pod": null
+    }
+  ]
+}

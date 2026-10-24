@@ -461,6 +461,8 @@ export interface PlannedCluster {
   match: ClusterMatch | null;
   /** The file's agent access rules are left out because the cluster matched by name only. */
   agentAccessSkipped: boolean;
+  /** The file's dashboard and trace links are left out because the cluster matched by name only. */
+  linksSkipped: boolean;
   /** Fields the file sets on an empty local value (applied on confirmation). */
   added: SharedField[];
   /** Fields the file sets to another value than the local one (applied only when overwriting is allowed). */
@@ -481,7 +483,18 @@ export interface ImportPlan {
   /** Whether the file carries agent access rules that would change a cluster matched exactly (applied only when the
    *  user ticks it). */
   hasAgentAccess: boolean;
+  /** The same for dashboard and trace links: they decide which addresses Sextant opens with object names in them. */
+  hasObservabilityLinks: boolean;
 }
+
+/**
+ * Cluster settings applied only to the very cluster they were exported from (an exact match) and only when the user
+ * ticks them on import: agent access rules (what AI agents may do) and dashboard and trace links (which addresses are
+ * opened with the cluster's object names in them).
+ */
+export const GATED_FIELDS = ["agentAccess", "observabilityLinks"] as const;
+type GatedField = (typeof GATED_FIELDS)[number];
+const isGated = (field: SharedField): field is GatedField => (GATED_FIELDS as readonly string[]).includes(field);
 
 function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -529,15 +542,17 @@ export function planImport(
     const added: SharedField[] = [];
     const changed: SharedField[] = [];
     let agentAccessSkipped = false;
+    let linksSkipped = false;
     if (local) {
       const current = clusterSettingsOf(settings, local.id);
       const currentShared = sharedSettings(current, true, true);
       for (const field of Object.keys(exported.settings) as SharedField[]) {
         const incoming = exported.settings[field];
         if (incoming === undefined || isEmptyValue(field, incoming)) continue;
-        // Agent access goes only to the very cluster it was exported from, never to one that shares a name.
-        if (field === "agentAccess" && matched?.match !== "exact") {
-          agentAccessSkipped = true;
+        // Agent access and links go only to the very cluster they were exported from, never to one that shares a name.
+        if (isGated(field) && matched?.match !== "exact") {
+          if (field === "agentAccess") agentAccessSkipped = true;
+          else linksSkipped = true;
           continue;
         }
         const now = currentShared[field];
@@ -554,6 +569,7 @@ export function planImport(
       localId: local?.id ?? null,
       match: matched?.match ?? null,
       agentAccessSkipped,
+      linksSkipped,
       added,
       changed,
       incoming: exported.settings,
@@ -625,6 +641,9 @@ export function planImport(
     snippets,
     customColumns,
     hasAgentAccess: plannedClusters.some((c) => c.added.includes("agentAccess") || c.changed.includes("agentAccess")),
+    hasObservabilityLinks: plannedClusters.some(
+      (c) => c.added.includes("observabilityLinks") || c.changed.includes("observabilityLinks"),
+    ),
   };
 }
 
@@ -633,6 +652,14 @@ export interface ApplyOptions {
   overwrite: boolean;
   /** Apply the agent access rules the file carries. */
   agentAccess: boolean;
+  /** Apply the dashboard and trace links the file carries. */
+  observabilityLinks?: boolean;
+}
+
+/** Whether `field` of a cluster matched as `match` is applied with `options` (see `GATED_FIELDS`). */
+function applies(field: SharedField, match: ClusterMatch | null, options: ApplyOptions): boolean {
+  if (!isGated(field)) return true;
+  return match === "exact" && options[field] === true;
 }
 
 /** `settings` with the plan applied (only what the preview listed; nothing for missing clusters). */
@@ -640,8 +667,8 @@ export function applyImport(settings: AppSettings, plan: ImportPlan, options: Ap
   const clustersNext = { ...settings.clusters };
   for (const planned of plan.clusters) {
     if (!planned.localId) continue;
-    const fields = [...planned.added, ...(options.overwrite ? planned.changed : [])].filter(
-      (f) => f !== "agentAccess" || (options.agentAccess && planned.match === "exact"),
+    const fields = [...planned.added, ...(options.overwrite ? planned.changed : [])].filter((f) =>
+      applies(f, planned.match, options),
     );
     if (fields.length === 0) continue;
     const current: ClusterSettings = clusterSettingsOf(settings, planned.localId);
@@ -701,9 +728,7 @@ export function countChanges(plan: ImportPlan, options: ApplyOptions): number {
   const entries = [...plan.views, ...plan.pins, ...plan.workspaces, ...plan.snippets, ...plan.customColumns];
   const fromEntries = entries.filter((e) => e.status === "added" || (e.status === "changed" && options.overwrite)).length;
   const fromClusters = plan.clusters.filter((c) =>
-    [...c.added, ...(options.overwrite ? c.changed : [])].some(
-      (f) => f !== "agentAccess" || (options.agentAccess && c.match === "exact"),
-    ),
+    [...c.added, ...(options.overwrite ? c.changed : [])].some((f) => applies(f, c.match, options)),
   ).length;
   return fromEntries + fromClusters;
 }

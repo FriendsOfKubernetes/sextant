@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defaultAppSettings, type AppSettings, type ClusterInfo, type KubeconfigSource } from "../../api";
 import type { ObservabilityLinks } from "../../api/generated/ObservabilityLinks";
 import { defaultClusterSettings } from "../clusters/clusterSettings";
-import { applyImport, buildExport, exportText, ImportError, parseImport, planImport } from "../views/transfer";
+import { applyImport, buildExport, countChanges, exportText, ImportError, parseImport, planImport } from "../views/transfer";
 import { readObservabilityLinks } from "./transfer";
 
 const SOURCES: KubeconfigSource[] = [{ id: "s1", path: "/home/me/.kube/config", kind: "default", error: null }];
@@ -36,14 +36,33 @@ describe("export of views", () => {
     expect(ticked.clusters[0]!.settings.observabilityLinks).toEqual(LINKS);
   });
 
-  it("imports checked links onto the same cluster", () => {
+  it("imports links onto the same cluster only when ticked on import", () => {
     const text = exportText(
       buildExport(withLinks(LINKS), [CLUSTER], SOURCES, { includeAgentAccess: false, includeObservabilityLinks: true }),
     );
     const plan = planImport(parseImport(text), withLinks(null), [CLUSTER], SOURCES);
     expect(plan.clusters[0]!.added).toContain("observabilityLinks");
-    const applied = applyImport(withLinks(null), plan, { overwrite: false, agentAccess: false });
+    expect(plan.hasObservabilityLinks).toBe(true);
+    const unticked = applyImport(withLinks(null), plan, { overwrite: true, agentAccess: false });
+    expect(unticked.clusters.c1!.observabilityLinks).toBeNull();
+    expect(countChanges(plan, { overwrite: false, agentAccess: false })).toBe(0);
+    const applied = applyImport(withLinks(null), plan, { overwrite: false, agentAccess: false, observabilityLinks: true });
     expect(applied.clusters.c1!.observabilityLinks).toEqual(LINKS);
+  });
+
+  it("never applies links to a cluster that only shares the context name", () => {
+    const text = exportText(
+      buildExport(withLinks(LINKS), [CLUSTER], SOURCES, { includeAgentAccess: false, includeObservabilityLinks: true }),
+    );
+    // The only local "prod" comes from another kubeconfig file under another id.
+    const other: ClusterInfo = { ...CLUSTER, id: "y1", sourceId: "s2" };
+    const sources: KubeconfigSource[] = [...SOURCES, { id: "s2", path: "/elsewhere/config", kind: "addedFile", error: null }];
+    const plan = planImport(parseImport(text), defaultAppSettings(), [other], sources);
+    expect(plan.clusters[0]).toMatchObject({ localId: "y1", match: "name", linksSkipped: true });
+    expect([...plan.clusters[0]!.added, ...plan.clusters[0]!.changed]).not.toContain("observabilityLinks");
+    expect(plan.hasObservabilityLinks).toBe(false);
+    const applied = applyImport(defaultAppSettings(), plan, { overwrite: true, agentAccess: true, observabilityLinks: true });
+    expect(applied.clusters.y1?.observabilityLinks ?? null).toBeNull();
   });
 
   it("refuses a file whose template leaves the base URL's site", () => {

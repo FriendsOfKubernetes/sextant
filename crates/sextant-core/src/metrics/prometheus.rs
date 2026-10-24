@@ -717,13 +717,12 @@ pub(crate) fn chart_queries(chart: &ChartTarget) -> Vec<(&'static str, String)> 
             kind,
             name,
         } => {
-            let name = regex_literal(name);
-            // Pod names that the controller generates, so pods replaced during the hour still count.
-            let pods = match kind.as_str() {
-                "Deployment" => format!("{name}-[a-z0-9]+-[a-z0-9]+"),
-                "StatefulSet" => format!("{name}-[0-9]+"),
-                "DaemonSet" | "ReplicaSet" | "Job" => format!("{name}-[a-z0-9]+"),
-                _ => format!("{name}-.+"),
+            // Pod names that the controller generates (`crate::pod_names`, cut to 58 characters as the API server
+            // cuts them), so pods replaced during the hour still count.
+            let pods = if crate::pod_names::WORKLOAD_KINDS.contains(&kind.as_str()) {
+                crate::pod_names::pod_name_pattern(kind, name)
+            } else {
+                format!("{}-.+", regex_literal(name))
             };
             containers(&format!(
                 r#"namespace="{}",pod=~"{}""#,

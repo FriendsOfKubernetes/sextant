@@ -7,10 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use futures::future::join_all;
 use serde_json::Value;
 
-use super::{
-    CONTAINERS, Prometheus, encode, labels, literal, namespace_filter, number, regex_literal,
-    results,
-};
+use super::{CONTAINERS, Prometheus, encode, labels, literal, namespace_filter, number, results};
 use crate::error::CoreResult;
 use crate::metrics::history::{
     ContainerHistory, HistoryScope, HistoryWindow, MAX_HISTORY_CONTAINERS, UsageHistory,
@@ -25,9 +22,6 @@ const MEMORY_STEP: &str = "5m";
 /// Resolution of "first seen".
 const SEEN_STEP: &str = "10m";
 const BY: &str = "namespace, pod, container";
-/// The characters of generated name parts (`k8s.io/apimachinery/pkg/util/rand`): the pod-template-hash and the random
-/// suffix of a pod name.
-const SAFE: &str = "[bcdfghjklmnpqrstvwxz2456789]";
 
 /// The selector of the scope's containers (without braces); `None` when it can match nothing.
 pub(crate) fn scope_selector(scope: &HistoryScope) -> Option<String> {
@@ -57,19 +51,10 @@ pub(crate) fn scope_selector(scope: &HistoryScope) -> Option<String> {
     }
 }
 
-/// The regular expression (not yet a PromQL literal) of the names a workload's controller gives its pods. Exactly
-/// those names (`=~` is anchored), so pods replaced inside a window still count but pods of `web-api` or `web-agent`
-/// are not taken for pods of `web`: a Deployment's pods are `<name>-<pod-template-hash>-<5>`, a StatefulSet's
-/// `<name>-<ordinal>`, a DaemonSet's `<name>-<5>`. The hash and the suffix use Kubernetes' safe alphabet (no vowels, no
-/// 0, 1, 3), which also keeps out most pods of a CronJob `<name>-<minutes>-<5>`. Shared with the request metrics.
-pub(crate) fn pod_name_pattern(kind: &str, name: &str) -> String {
-    let name = regex_literal(name);
-    match kind {
-        "Deployment" => format!("{name}-{SAFE}{{6,10}}-{SAFE}{{5}}"),
-        "StatefulSet" => format!("{name}-[0-9]+"),
-        _ => format!("{name}-{SAFE}{{5}}"),
-    }
-}
+/// The names a workload's controller gives its pods (`crate::pod_names`): exactly those names (`=~` is anchored), so
+/// pods replaced inside a window still count but pods of `web-api` or `web-agent` are not taken for pods of `web`, and
+/// a long name cut to 58 characters by the API server still matches. Shared with the request metrics.
+pub(crate) use crate::pod_names::pod_name_pattern;
 
 /// The queries, by the field they fill. The CPU rate subquery is the expensive part and is evaluated once (for
 /// the 95th percentile); the peak of CPU is not asked.
@@ -277,7 +262,7 @@ mod tests {
         .unwrap();
         assert!(
             workload.ends_with(
-                r#"pod=~"api\\.v2-[bcdfghjklmnpqrstvwxz2456789]{6,10}-[bcdfghjklmnpqrstvwxz2456789]{5}""#
+                r#"pod=~"api\\.v2-[bcdfghjklmnpqrstvwxz2456789]{1,10}-[bcdfghjklmnpqrstvwxz2456789]{5}""#
             ),
             "{workload}"
         );

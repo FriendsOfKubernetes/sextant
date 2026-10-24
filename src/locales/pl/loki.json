@@ -36,6 +36,7 @@
     "off": "Loki jest wyłączone w ustawieniach klastra, więc logów nieistniejących Podów nie można odczytać.",
     "notFound": "Logi nieistniejących Podów można odczytać z Grafana Loki, ale Sextant nie znalazł go w tym klastrze. Sextant szuka Service z chartów Helm Loki (loki-gateway, loki-query-frontend, loki-read, loki) w namespace loki, logging, monitoring, observability, grafana i loki-stack oraz Service z label app.kubernetes.io/name=loki. Jeśli Loki jest gdzie indziej, wskaż jego Service w ustawieniach klastra (karta „Metryki”).",
     "manualNoAnswer": "Service Loki wskazany w ustawieniach klastra nie odpowiedział przez API server jak Loki.",
+    "probeError": "Odpowiedź serwera API: {{message}}",
     "noLabels": "Loki odpowiedział, ale jego strumienie logów nie mają ani label namespace i pod, ani k8s_namespace_name i k8s_pod_name, więc Sextant nie wie, które wiersze należą do Poda."
   },
   "range": {

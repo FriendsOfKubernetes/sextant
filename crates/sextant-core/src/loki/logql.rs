@@ -52,45 +52,7 @@ impl LokiLabelScheme {
     }
 }
 
-/// The workload kinds whose pods [`pod_name_pattern`] knows.
-pub const WORKLOAD_KINDS: [&str; 6] = [
-    "Deployment",
-    "ReplicaSet",
-    "StatefulSet",
-    "DaemonSet",
-    "Job",
-    "CronJob",
-];
-
-/// The characters of generated name parts (`k8s.io/apimachinery/pkg/util/rand`): a pod-template-hash and the random
-/// suffix of a pod name (as in `metrics/prometheus/rightsizing.rs`).
-const SAFE: &str = "[bcdfghjklmnpqrstvwxz2456789]";
-
-/// A regular expression matching `text` literally.
-fn regex_literal(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    for ch in text.chars() {
-        if r"\.+*?()|[]{}^$".contains(ch) {
-            out.push('\\');
-        }
-        out.push(ch);
-    }
-    out
-}
-
-/// The regular expression (not yet a LogQL literal; LogQL's `=~` is anchored) of the names a workload's controller
-/// gives its pods, so pods of `web-api` are never taken for pods of `web`: a Deployment's pods are
-/// `<name>-<pod-template-hash>-<5>`, a ReplicaSet's, DaemonSet's and Job's `<name>-<5>`, a StatefulSet's
-/// `<name>-<ordinal>`, a CronJob's (through its Jobs, named `<name>-<scheduled time in minutes>`) `<name>-<digits>-<5>`.
-pub fn pod_name_pattern(kind: &str, name: &str) -> String {
-    let name = regex_literal(name);
-    match kind {
-        "Deployment" => format!("{name}-{SAFE}{{6,10}}-{SAFE}{{5}}"),
-        "StatefulSet" => format!("{name}-[0-9]+"),
-        "CronJob" => format!("{name}-[0-9]+-{SAFE}{{5}}"),
-        _ => format!("{name}-{SAFE}{{5}}"),
-    }
-}
+pub use crate::pod_names::{WORKLOAD_KINDS, pod_name_pattern};
 
 /// A LogQL string literal (double quotes, Go escapes).
 fn literal(text: &str) -> String {
@@ -100,7 +62,7 @@ fn literal(text: &str) -> String {
 /// How the pod label is matched.
 pub(crate) enum PodMatch<'a> {
     Exact(&'a str),
-    /// A regular expression from [`pod_name_pattern`].
+    /// A regular expression from [`pod_name_pattern`] (`crate::pod_names`).
     Pattern(String),
 }
 

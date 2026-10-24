@@ -6,6 +6,7 @@
 // controller gives pods, so a rollout inside the window does not lose the history.
 import type { ContainerHistory, KubeObject, KindRef, ObjectRef, PodUsage, UsageHistory } from "../../api";
 import { podResourceAmounts, type ContainerAmounts } from "../metrics/requests";
+import { podNamePattern } from "./podNames";
 import { assess, type Assessment, type UsageStats } from "./recommend";
 
 export type WorkloadKind = "Deployment" | "StatefulSet" | "DaemonSet" | "ReplicaSet" | "Job" | "Pod";
@@ -66,25 +67,10 @@ export function workloadOf(pod: KubeObject): WorkloadRef {
   return { kind: "Pod", namespace, name };
 }
 
-/**
- * What follows `<name>-` in the pod names of each controller (the same shapes as the core's history query). Generated
- * parts use Kubernetes' safe alphabet (no vowels, no 0, 1, 3), which also keeps out most pods of a CronJob
- * `<name>-<minutes>-<5>`.
- */
-const POD_SUFFIX: Partial<Record<WorkloadKind, RegExp>> = {
-  // pod-template-hash, then the ReplicaSet's 5 random characters
-  Deployment: /^[bcdfghjklmnpqrstvwxz2456789]{6,10}-[bcdfghjklmnpqrstvwxz2456789]{5}$/,
-  StatefulSet: /^[0-9]+$/,
-  DaemonSet: /^[bcdfghjklmnpqrstvwxz2456789]{5}$/,
-  ReplicaSet: /^[bcdfghjklmnpqrstvwxz2456789]{5}$/,
-  Job: /^[bcdfghjklmnpqrstvwxz2456789]{5}$/,
-};
-
-/** Whether `pod` is a name the controller of `w` would give one of its pods. */
+/** Whether `pod` is a name the controller of `w` would give one of its pods (`podNames.ts`, the core's twin). */
 export function podNameMatches(w: WorkloadRef, pod: string): boolean {
   if (w.kind === "Pod") return pod === w.name;
-  const suffix = POD_SUFFIX[w.kind];
-  return !!suffix && pod.startsWith(`${w.name}-`) && suffix.test(pod.slice(w.name.length + 1));
+  return podNamePattern(w.kind, w.name).test(pod);
 }
 
 /** Requests and limits of the containers and native sidecars of `pod`, by name. */

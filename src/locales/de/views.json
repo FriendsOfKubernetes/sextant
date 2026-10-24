@@ -112,6 +112,7 @@
     "matchExact": "Dieselbe kubeconfig-Datei und derselbe Context",
     "matchName": "Nur über den Context-Namen zugeordnet: Es kann ein anderer Cluster sein",
     "agentAccessSkipped": "Zugriffsregeln für Agenten werden nicht übernommen: Der Cluster wurde nur über den Namen zugeordnet",
+    "linksSkipped": "Links zu Dashboards und Traces werden nicht übernommen: Der Cluster wurde nur über den Namen zugeordnet",
     "fields": {
       "displayName": "Anzeigename",
       "color": "Farbe",
@@ -124,6 +125,8 @@
     "overwrite": "Einträge ersetzen, die sich von meinen unterscheiden",
     "applyAgentAccess": "Zugriffsregeln für Agenten aus der Datei übernehmen",
     "agentAccessWarning": "Zugriffsregeln für Agenten legen fest, was KI-Agenten in einem Cluster tun dürfen. Übernehmen Sie sie nur aus einer Datei, der Sie vertrauen.",
+    "applyLinks": "Links zu Dashboards und Traces aus der Datei übernehmen",
+    "linksWarning": "Links bestimmen, welche Adressen Sextant mit den Namen der Objekte dieses Clusters öffnet. Übernehmen Sie sie nur aus einer Datei, der Sie vertrauen.",
     "nothing": "Mit dieser Auswahl gibt es nichts zu importieren.",
     "changes": "Zu speichernde Einträge: {{number}}",
     "apply": "Importieren",

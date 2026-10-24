@@ -31,6 +31,7 @@ pub mod loki;
 pub mod metrics;
 pub mod node_shell;
 pub mod openapi;
+pub mod pod_names;
 pub mod portforward;
 pub mod rbac;
 pub mod reflector;

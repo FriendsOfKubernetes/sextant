@@ -24,6 +24,7 @@
     "off": "クラスターの設定で Loki がオフになっているため、なくなった Pod のログは読み取れません。",
     "notFound": "なくなった Pod のログは Grafana Loki から読み取れますが、Sextant はこのクラスターで Loki を見つけられませんでした。Sextant は namespace loki、logging、monitoring、observability、grafana、loki-stack にある Loki の Helm chart の Service（loki-gateway、loki-query-frontend、loki-read、loki）と、label app.kubernetes.io/name=loki の付いた Service を探します。Loki が別の場所にある場合は、クラスターの設定（「メトリクス」タブ）でその Service を指定してください。",
     "manualNoAnswer": "クラスターの設定で指定した Loki の Service は、API サーバー経由で Loki として応答しませんでした。",
+    "probeError": "API サーバーの応答：{{message}}",
     "noLabels": "Loki は応答しましたが、そのログストリームには label namespace と pod も、k8s_namespace_name と k8s_pod_name もないため、Sextant はどの行がどの Pod のものか判断できません。"
   },
   "range": {

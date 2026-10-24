@@ -23,6 +23,11 @@
   margin: 0.25rem 0.5rem;
 }
 
+.loki-note__detail {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
 .loki-range {
   display: inline-flex;
   flex-wrap: wrap;

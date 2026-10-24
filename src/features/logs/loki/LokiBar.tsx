@@ -2,7 +2,7 @@
 // when the cluster has no Loki (shown when the pod is gone, where it matters).
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type ClusterId, type LokiRange, type LokiStatus, type ObjectRef } from "../../../api";
+import { api, toApiError, type ApiError, type ClusterId, type LokiRange, type LokiStatus, type ObjectRef } from "../../../api";
 import { Button, ErrorState } from "../../../components";
 import type { UseLokiRead } from "./hooks";
 import { useLokiStatus } from "./hooks";
@@ -39,6 +39,12 @@ export function lokiUnavailableKey(status: LokiStatus): string | null {
   return null;
 }
 
+/** Why the Service named in the settings did not answer as Loki (no permission, a wrong port), as the core cleaned it. */
+export function LokiProbeError({ error }: { error: Pick<ApiError, "message"> }) {
+  const { t } = useTranslation();
+  return <span className="loki-note__detail">{t("loki:none.probeError", { message: error.message })}</span>;
+}
+
 export function LokiBar({ clusterId, pod, container, previous, gone, read }: LokiBarProps) {
   const { t } = useTranslation();
   const loki = useLokiStatus(clusterId);
@@ -55,6 +61,7 @@ export function LokiBar({ clusterId, pod, container, previous, gone, read }: Lok
     return gone ? (
       <p className="loki-note" data-testid="loki-unavailable">
         {t(unavailable)}
+        {status.probeError && <LokiProbeError error={status.probeError} />}
       </p>
     ) : null;
   }

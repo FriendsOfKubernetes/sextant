@@ -101,6 +101,26 @@ describe("podNameMatches", () => {
     [ds, "agent-x7k2p-1", false],
     [ds, "agent-node-x7k2p", false],
   ])("%o / %s → %s", (w, name, expected) => expect(podNameMatches(w, name)).toBe(expected));
+
+  it("matches a 60-character Deployment's pods, cut to 58 by the API server, and short pod-template-hashes", () => {
+    const name = "checkout-service-with-a-really-long-name-for-the-tests-of-p";
+    expect(name).toHaveLength(59);
+    const long: WorkloadRef = { kind: "Deployment", namespace: "n", name: `${name}x` };
+    // `<name>-<hash>-` cut to 58 characters keeps neither the hash nor its dash.
+    expect(podNameMatches(long, `${name.slice(0, 58)}x2b4q`)).toBe(true);
+    expect(podNameMatches(long, `${name}x-7d9c8b6f5d-x2b4q`)).toBe(false);
+    for (const len of [54, 55, 56, 57]) {
+      const short: WorkloadRef = { kind: "Deployment", namespace: "n", name: name.slice(0, len).replace(/-$/, "x") };
+      for (const hash of ["5", "7d9", "7d9c8b", "7d9c8b6f5d"])
+        expect(podNameMatches(short, `${`${short.name}-${hash}-`.slice(0, 58)}x2b4q`)).toBe(true);
+    }
+    expect(podNameMatches(deploy, "web-5d-x2x4z")).toBe(true);
+    const job: WorkloadRef = { kind: "Job", namespace: "n", name: "migrate" };
+    expect(podNameMatches(job, "migrate-x2x4z")).toBe(true);
+    expect(podNameMatches(job, "migrate-3-x2x4z")).toBe(true);
+    const longDs: WorkloadRef = { kind: "DaemonSet", namespace: "n", name: `${name}xyz` };
+    expect(podNameMatches(longDs, `${name.slice(0, 58)}x2b4q`)).toBe(true);
+  });
 });
 
 describe("oomKilledContainers", () => {

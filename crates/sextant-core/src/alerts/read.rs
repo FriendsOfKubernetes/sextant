@@ -1,5 +1,6 @@
-//! Reading the answers: only the fields the views need, every text clipped and every URI in it cleaned, an element
-//! that does not read skipped; then Prometheus' and Alertmanager's alerts merged and sorted.
+//! Reading the answers: only the fields the views need, every text that is shown (label names and values, matchers,
+//! ids and times included) cleaned of URI credentials, queries and fragments and clipped, an element that does not
+//! read skipped; then Prometheus' and Alertmanager's alerts merged, sorted and given unique ids.
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::LazyLock;
@@ -44,40 +45,86 @@ pub(crate) fn clip(text: &str, max: usize) -> String {
     format!("{}…", &text[..end])
 }
 
+/// The characters trimmed around a URI and ending a URI-looking part of a text, as `SPACE` in
+/// `src/resources/uri.ts`: Unicode's White_Space, the byte order mark (Rust's `trim` leaves it, JavaScript's takes
+/// it) and the zero-width spaces and joiners. `src/resources/uri-cases.json` holds the cases both must pass.
+const SPACE: &str = r"\t\n\x0B\x0C\r \x{85}\x{A0}\x{1680}\x{180E}\x{2000}-\x{200D}\x{2028}\x{2029}\x{202F}\x{205F}\x{2060}\x{3000}\x{FEFF}";
+
+fn is_space(c: char) -> bool {
+    matches!(
+        c,
+        '\t' | '\n'
+            | '\x0B'
+            | '\x0C'
+            | '\r'
+            | ' '
+            | '\u{85}'
+            | '\u{A0}'
+            | '\u{1680}'
+            | '\u{180E}'
+            | '\u{2000}'
+            ..='\u{200D}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202F}'
+                | '\u{205F}'
+                | '\u{2060}'
+                | '\u{3000}'
+                | '\u{FEFF}'
+    )
+}
+
 static SCHEME: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?s)^([A-Za-z][A-Za-z0-9+.\-]*:)(/*)(.*)$").expect("scheme"));
+/// A `scheme:/` anywhere: where a URI starts after something else (an invisible mark, say).
+static SCHEME_INSIDE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[A-Za-z][A-Za-z0-9+.\-]*:/").expect("scheme inside"));
 static LEADING_USERINFO: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[^/]*@").expect("userinfo"));
 /// URI-looking parts of a free text, as `src/resources/uri.ts` finds them: `scheme:/…` (one slash or more), and
-/// `user:password@host…` without a scheme; a part ends at whitespace, a quote or an angle bracket.
+/// `user:password@host…` without a scheme; a part ends at a [`SPACE`] character, a quote or an angle bracket.
 static URI_IN_TEXT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)[a-z][a-z0-9+.\-]*:/+[^\s"'`<>]+|[^\s"'`<>/@:]+:[^\s"'`<>/@]*@[^\s"'`<>]+"#)
-        .expect("uri in text")
+    Regex::new(&format!(
+        r#"[A-Za-z][A-Za-z0-9+.\-]*:/+[^{SPACE}"'`<>]+|[^{SPACE}"'`<>/@:]+:[^{SPACE}"'`<>/@]*@[^{SPACE}"'`<>]+"#
+    ))
+    .expect("uri in text")
 });
 
-/// A URI as it may be shown, as `safeUri` in `src/resources/uri.ts` (ADR-0115): trimmed, everything from the first `?`
-/// or `#` dropped, and the userinfo (up to the last `@` after `scheme:` and its slashes; without a scheme up to the
-/// `@` before the first `/`) dropped. The text and whether anything was left out; `None` for nothing.
+/// A URI as it may be shown, as `safeUri` in `src/resources/uri.ts` (ADR-0115): trimmed of [`SPACE`] characters,
+/// everything from the first `?` or `#` dropped, and the userinfo (up to the last `@` after `scheme:` and its slashes;
+/// after a `scheme:/` further on when the value does not start with one; without a scheme up to the `@` before the
+/// first `/`) dropped. The text and whether anything was left out; `None` for nothing.
 pub fn safe_uri(value: &str) -> Option<(String, bool)> {
-    let trimmed = value.trim();
+    let trimmed = value.trim_matches(is_space);
     if trimmed.is_empty() {
         return None;
     }
     let cut = trimmed.find(['?', '#']);
     let main = &trimmed[..cut.unwrap_or(trimmed.len())];
-    let mut hidden = cut.is_some();
-    if let Some(caps) = SCHEME.captures(main) {
+    let (text, hidden) = clean_main(main);
+    Some((text, hidden || cut.is_some()))
+}
+
+fn clean_main(main: &str) -> (String, bool) {
+    let caps = SCHEME.captures(main);
+    if let Some(caps) = &caps {
         let (scheme, slashes, rest) = (&caps[1], &caps[2], &caps[3]);
         if !slashes.is_empty() || !rest.contains('@') {
             let at = rest.rfind('@');
-            hidden |= at.is_some();
             let host = at.map_or(rest, |i| &rest[i + 1..]);
-            return Some((format!("{scheme}{slashes}{host}"), hidden));
+            return (format!("{scheme}{slashes}{host}"), at.is_some());
         }
     }
+    if caps.is_none()
+        && let Some(inside) = SCHEME_INSIDE.find(main)
+        && inside.start() > 0
+    {
+        let (tail, hidden) = clean_main(&main[inside.start()..]);
+        return (format!("{}{tail}", &main[..inside.start()]), hidden);
+    }
     let text = LEADING_USERINFO.replace(main, "").into_owned();
-    hidden |= text != main;
-    Some((text, hidden))
+    let hidden = text != main;
+    (text, hidden)
 }
 
 /// A free text with every URI-looking part cleaned as [`safe_uri`] cleans a URI.
@@ -89,9 +136,14 @@ pub fn clean_text(text: &str) -> String {
         .into_owned()
 }
 
+/// A shown text: cleaned as [`clean_text`] cleans it, then clipped to `max` bytes.
+fn shown(value: &str, max: usize) -> String {
+    clip(&clean_text(value), max)
+}
+
 /// A cleaned, clipped text; `None` for an empty one.
 fn text(value: Option<&String>, max: usize) -> Option<String> {
-    let cleaned = clean_text(value?.trim());
+    let cleaned = clean_text(value?.trim_matches(is_space));
     (!cleaned.is_empty()).then(|| clip(&cleaned, max))
 }
 
@@ -106,7 +158,7 @@ fn link(key: &str, value: &str) -> Option<AlertLink> {
         return None;
     }
     Some(AlertLink {
-        key: clip(key, 128),
+        key: shown(key, 128),
         url,
         cleaned,
     })
@@ -119,10 +171,16 @@ fn is_link_key(key: &str) -> bool {
     key.ends_with("url") || key == "runbook" || key == "dashboard" || key == "playbook"
 }
 
-/// FNV-1a over the label pairs: the id of an alert read from Prometheus (its labels are its identity).
-fn label_hash(labels: &BTreeMap<String, String>) -> String {
+/// FNV-1a over the label pairs (and vmalert's group and rule ids, when it gives them): the id of an alert read from
+/// Prometheus (its labels are its identity; two rule groups can give alerts with the same labels, which
+/// [`merge`] then tells apart).
+fn label_hash(labels: &BTreeMap<String, String>, rule: &[&str]) -> String {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
-    for (k, v) in labels {
+    let pairs = labels
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .chain(rule.iter().map(|r| ("", *r)));
+    for (k, v) in pairs {
         for byte in k.bytes().chain([0xff]).chain(v.bytes()).chain([0xfe]) {
             hash ^= u64::from(byte);
             hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
@@ -156,16 +214,16 @@ fn alert(parts: Parts) -> Alert {
     let labels: BTreeMap<String, String> = raw_labels
         .iter()
         .take(MAX_LABELS)
-        .map(|(k, v)| (clip(k, 128), clip(v, MAX_LABEL_BYTES)))
+        .map(|(k, v)| (shown(k, 128), shown(v, MAX_LABEL_BYTES)))
         .collect();
     let name = raw_labels
         .get("alertname")
         .or(parts.fallback_name.as_ref())
-        .map(|n| clip(n, 256))
+        .map(|n| shown(n, 256))
         .unwrap_or_default();
     let severity = raw_labels
         .get("severity")
-        .map(|s| clip(&s.trim().to_lowercase(), 32))
+        .map(|s| shown(&s.trim().to_lowercase(), 32))
         .filter(|s| !s.is_empty());
     let summary = text(
         annotations.get("summary").or(annotations.get("message")),
@@ -189,15 +247,15 @@ fn alert(parts: Parts) -> Alert {
             Some(_) => {}
             None if others.len() < MAX_OTHER_ANNOTATIONS => {
                 if let Some(t) = text(Some(value), MAX_ANNOTATION_BYTES) {
-                    others.push((clip(key, 128), t));
+                    others.push((shown(key, 128), t));
                 }
             }
             None => {}
         }
     }
-    let ids = |list: &[String]| list.iter().take(32).map(|s| clip(s, 64)).collect();
+    let ids = |list: &[String]| list.iter().take(32).map(|s| shown(s, 64)).collect();
     Alert {
-        id: clip(&parts.id, 64),
+        id: shown(&parts.id, 64),
         name,
         state: parts.state,
         severity,
@@ -206,7 +264,7 @@ fn alert(parts: Parts) -> Alert {
         description,
         annotations: others,
         links,
-        active_at: parts.active_at.as_deref().map(|t| clip(t, 64)),
+        active_at: parts.active_at.as_deref().map(|t| shown(t, 64)),
         origin: parts.origin,
         silenced_by: ids(&parts.silenced_by),
         inhibited_by: ids(&parts.inhibited_by),
@@ -224,6 +282,9 @@ struct RawPromAlert {
     active_at: Option<String>,
     /// vmalert's rule name (its alerts carry `alertname` too).
     name: Option<String>,
+    /// vmalert's group and rule ids (strings in its API).
+    group_id: Option<String>,
+    rule_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -252,8 +313,12 @@ pub(super) fn prometheus_alerts(status: http::StatusCode, body: &[u8]) -> CoreRe
                     "pending" => AlertState::Pending,
                     _ => return None,
                 };
+                let rule: Vec<&str> = [raw.group_id.as_deref(), raw.rule_id.as_deref()]
+                    .into_iter()
+                    .flatten()
+                    .collect();
                 Some(alert(Parts {
-                    id: label_hash(&raw.labels),
+                    id: label_hash(&raw.labels, &rule),
                     labels: raw.labels,
                     annotations: raw.annotations,
                     state,
@@ -319,7 +384,7 @@ pub(super) fn alertmanager_alerts(body: &[u8]) -> CoreResult<Vec<Alert>> {
                 _ => AlertState::Firing,
             };
             let id = if raw.fingerprint.is_empty() {
-                label_hash(&raw.labels)
+                label_hash(&raw.labels, &[])
             } else {
                 raw.fingerprint
             };
@@ -392,19 +457,19 @@ pub(super) fn silences(body: &[u8]) -> CoreResult<(Vec<Silence>, u32)> {
             }
         };
         out.push(Silence {
-            id: clip(&raw.id, 64),
+            id: shown(&raw.id, 64),
             state,
             matchers: read_all(raw.matchers)
                 .take(MAX_LABELS)
                 .map(|m| SilenceMatcher {
-                    name: clip(&m.name, 128),
-                    value: clip(&m.value, MAX_LABEL_BYTES),
+                    name: shown(&m.name, 128),
+                    value: shown(&m.value, MAX_LABEL_BYTES),
                     is_regex: m.is_regex,
                     is_equal: m.is_equal,
                 })
                 .collect(),
-            starts_at: raw.starts_at.map(|t| clip(&t, 64)),
-            ends_at: raw.ends_at.map(|t| clip(&t, 64)),
+            starts_at: raw.starts_at.map(|t| shown(&t, 64)),
+            ends_at: raw.ends_at.map(|t| shown(&t, 64)),
             created_by: text(raw.created_by.as_ref(), 256),
             comment: text(raw.comment.as_ref(), MAX_ANNOTATION_BYTES),
         });
@@ -446,7 +511,8 @@ fn covers(held: &Alert, alert: &Alert) -> bool {
 
 /// Alertmanager's alerts (`held`, when it answered) and Prometheus' pending ones, and Prometheus' firing ones that
 /// Alertmanager does not hold (not sent yet, or sent to another Alertmanager); without an Alertmanager every alert
-/// Prometheus gives. Sorted by severity, name, state, then the oldest first.
+/// Prometheus gives. Sorted by severity, name, state, then the oldest first; an id that repeats (alerts with the same
+/// labels from two rule groups) gets `-2`, `-3`, … in that order, so every alert of a report has its own.
 pub(super) fn merge(held: Option<Vec<Alert>>, prometheus: Vec<Alert>) -> Vec<Alert> {
     let present = held.is_some();
     let mut out = held.unwrap_or_default();
@@ -488,5 +554,26 @@ pub(super) fn merge(held: Option<Vec<Alert>>, prometheus: Vec<Alert>) -> Vec<Ale
                 &b.id,
             ))
     });
+    unique_ids(&mut out);
     out
+}
+
+/// Makes every id of `alerts` unique, in order: a repeated one gets the first free `-<n>` suffix.
+fn unique_ids(alerts: &mut [Alert]) {
+    let mut used: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for alert in alerts.iter_mut() {
+        if used.insert(alert.id.clone()) {
+            continue;
+        }
+        let mut n = 2;
+        let id = loop {
+            let candidate = format!("{}-{n}", alert.id);
+            if !used.contains(&candidate) {
+                break candidate;
+            }
+            n += 1;
+        };
+        used.insert(id.clone());
+        alert.id = id;
+    }
 }

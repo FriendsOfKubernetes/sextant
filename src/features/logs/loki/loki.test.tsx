@@ -255,6 +255,22 @@ describe("the Loki cluster settings", () => {
     sourceId: "default",
   };
 
+  it("say why the Service named in the settings did not answer", async () => {
+    status = {
+      off: false,
+      manual: true,
+      source: null,
+      scheme: null,
+      containerLabel: false,
+      probeError: { code: "forbidden", message: "no permission to reach Loki loki/loki through the API server (services/proxy)" },
+    };
+    const view = render(<LokiSettingsSection clusterId="c1" cluster={cluster} />);
+    const detected = await screen.findByTestId("loki-detected");
+    expect(detected).toHaveTextContent("did not answer as Loki");
+    expect(detected).toHaveTextContent("What the API server answered: no permission to reach Loki loki/loki");
+    expect(await axeViolations(view.container)).toEqual([]);
+  });
+
   it("save a Service and a tenant, and refuse a malformed tenant", async () => {
     const view = render(<LokiSettingsSection clusterId="c1" cluster={cluster} />);
     expect(await screen.findByTestId("loki-detected")).toHaveTextContent("loki/loki-gateway:80");
