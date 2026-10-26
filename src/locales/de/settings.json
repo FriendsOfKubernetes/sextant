@@ -11,6 +11,12 @@
     "extensions": "Erweiterungen",
     "about": "Updates und Info"
   },
+  "sidebar": {
+    "title": "Seitenleiste",
+    "indentChildren": "Untergeordnete Einträge einrücken",
+    "treeGuides": "Baumlinien anzeigen",
+    "hint": "Gilt für die Seitenleiste aller Cluster."
+  },
   "appearance": {
     "title": "Darstellung",
     "theme": "Design",

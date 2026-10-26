@@ -2,9 +2,11 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockBackend, type HelmStatus, type KubeconfigSource, type MockBackend } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
-import { availableLanguages } from "../../i18n";
+import { availableLanguages, startI18n } from "../../i18n";
 import { AppShell } from "../../layout";
+import { Sidebar } from "../../layout/sidebar/Sidebar";
 import { getPage } from "../../layout/pages";
+import { axeViolations } from "../../test/axe";
 import { resetClustersStore } from "../clusters/clustersStore";
 import { resetHelmStatus } from "../helm";
 import { SETTINGS_PAGE_ID, languageName, openSettings, resetSettingsUi, selectSettingsTab, type SettingsTab } from "./index";
@@ -52,6 +54,62 @@ beforeEach(() => {
   resetSettingsUi();
 });
 afterEach(() => backend.restore());
+
+describe("sidebar tree appearance", () => {
+  it("localizes the sidebar options in Russian", async () => {
+    setup();
+    await act(async () => { await startI18n("ru"); });
+    try {
+      renderPage();
+      expect(screen.getByRole("checkbox", { name: "Отступы для дочерних пунктов" })).toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "Линии дерева" })).toBeInTheDocument();
+    } finally {
+      await act(async () => { await startI18n("en"); });
+    }
+  });
+
+  it("offers two accessible independent choices, both off by default", async () => {
+    setup();
+    renderPage();
+    const indent = screen.getByRole("checkbox", { name: "Indent child items" });
+    const guides = screen.getByRole("checkbox", { name: "Show tree guides" });
+    await waitFor(() => expect(indent).toBeEnabled());
+    expect(indent).not.toBeChecked();
+    expect(guides).not.toBeChecked();
+    expect(await axeViolations(document.body)).toEqual([]);
+  });
+
+  it("saves all four combinations, updates every sidebar and keeps the other appearance choices", async () => {
+    setup();
+    backend.on("cluster_kinds", () => []);
+    backend.on("cluster_kinds_refresh", () => undefined);
+    backend.on("watch_start", () => undefined);
+    backend.on("watch_stop", () => undefined);
+    backend.settings.appearance = { ...backend.settings.appearance, monoFont: { kind: "system" }, textSize: 125 };
+    const original = { ...backend.settings.appearance };
+    const page = renderPage();
+    const menus = render(<><Sidebar clusterId="c1" /><Sidebar clusterId="c2" /></>).container.children;
+    const indent = screen.getByRole("checkbox", { name: "Indent child items" });
+    const guides = screen.getByRole("checkbox", { name: "Show tree guides" });
+    await waitFor(() => expect(indent).toBeEnabled());
+    for (const [control, indented, guided] of [
+      [indent, true, false], [guides, true, true], [indent, false, true], [guides, false, false],
+    ] as const) {
+      fireEvent.click(control);
+      await waitFor(() => expect(backend.settings.appearance).toEqual({ ...original, sidebarIndent: indented, sidebarGuides: guided }));
+      for (const menu of menus) {
+        expect(menu).toHaveAttribute("data-sidebar-indent", String(indented));
+        expect(menu).toHaveAttribute("data-sidebar-guides", String(guided));
+      }
+    }
+    fireEvent.click(guides);
+    await waitFor(() => expect(backend.settings.appearance.sidebarGuides).toBe(true));
+    page.unmount();
+    renderPage();
+    expect(screen.getByRole("checkbox", { name: "Show tree guides" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Indent child items" })).not.toBeChecked();
+  });
+});
 
 describe("Settings page", () => {
   it("is a sidebar page and changes the theme", async () => {

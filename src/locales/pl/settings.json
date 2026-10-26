@@ -11,6 +11,12 @@
     "extensions": "Rozszerzenia",
     "about": "Aktualizacje i informacje"
   },
+  "sidebar": {
+    "title": "Panel boczny",
+    "indentChildren": "Wcięcia elementów podrzędnych",
+    "treeGuides": "Pokaż linie drzewa",
+    "hint": "Dotyczy panelu bocznego wszystkich klastrów."
+  },
   "appearance": {
     "title": "Wygląd",
     "theme": "Motyw",

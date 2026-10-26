@@ -11,6 +11,12 @@
     "extensions": "拡張機能",
     "about": "アップデートと情報"
   },
+  "sidebar": {
+    "title": "サイドバー",
+    "indentChildren": "子項目をインデントする",
+    "treeGuides": "ツリーのガイド線を表示する",
+    "hint": "すべてのクラスターのサイドバーに適用されます。"
+  },
   "appearance": {
     "title": "外観",
     "theme": "テーマ",

@@ -31,6 +31,8 @@ export function defaultAppSettings(): AppSettings {
       reduceMotion: "system",
       textSize: 100,
       terminalScreenReader: false,
+      sidebarIndent: false,
+      sidebarGuides: false,
     },
     checkForUpdates: true,
     closeToTray: false,

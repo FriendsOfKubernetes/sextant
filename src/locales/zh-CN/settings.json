@@ -11,6 +11,12 @@
     "extensions": "扩展",
     "about": "更新与关于"
   },
+  "sidebar": {
+    "title": "侧边栏",
+    "indentChildren": "缩进子项",
+    "treeGuides": "显示树形引导线",
+    "hint": "应用于所有集群的侧边栏。"
+  },
   "appearance": {
     "title": "外观",
     "theme": "主题",

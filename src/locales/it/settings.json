@@ -11,6 +11,12 @@
     "extensions": "Estensioni",
     "about": "Aggiornamenti e informazioni"
   },
+  "sidebar": {
+    "title": "Barra laterale",
+    "indentChildren": "Rientrare le voci figlie",
+    "treeGuides": "Mostrare le linee dell’albero",
+    "hint": "Si applica alla barra laterale di tutti i cluster."
+  },
   "appearance": {
     "title": "Aspetto",
     "theme": "Tema",

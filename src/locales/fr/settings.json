@@ -11,6 +11,12 @@
     "extensions": "Extensions",
     "about": "Mises à jour et à propos"
   },
+  "sidebar": {
+    "title": "Barre latérale",
+    "indentChildren": "Indenter les éléments enfants",
+    "treeGuides": "Afficher les guides de l’arborescence",
+    "hint": "S’applique à la barre latérale de tous les clusters."
+  },
   "appearance": {
     "title": "Apparence",
     "theme": "Thème",

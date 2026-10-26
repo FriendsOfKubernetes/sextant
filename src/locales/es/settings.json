@@ -11,6 +11,12 @@
     "extensions": "Extensiones",
     "about": "Actualizaciones y Acerca de"
   },
+  "sidebar": {
+    "title": "Barra lateral",
+    "indentChildren": "Aplicar sangría a los elementos secundarios",
+    "treeGuides": "Mostrar guías del árbol",
+    "hint": "Se aplica a la barra lateral de todos los clústeres."
+  },
   "appearance": {
     "title": "Apariencia",
     "theme": "Tema",

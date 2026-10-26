@@ -8,7 +8,7 @@
 // so a kind created or deleted while connected appears or goes without reconnecting.
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, KindRef } from "../../api";
+import { useSettings, type ClusterId, type KindRef } from "../../api";
 import { useSelectedNamespaces } from "../../features/namespaces";
 import { useAppStore, useClusterView } from "../../app/store";
 import { Badge, Icon, type IconName } from "../../components";
@@ -56,6 +56,7 @@ interface Section {
 
 export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const { view } = useClusterView(clusterId);
   const setView = useAppStore((s) => s.setView);
   const setSearch = useAppStore((s) => s.setSearch);
@@ -112,7 +113,11 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
   );
 
   return (
-    <ul className="sidebar__list">
+    <ul
+      className="sidebar__list"
+      data-sidebar-indent={settings?.appearance?.sidebarIndent === true}
+      data-sidebar-guides={settings?.appearance?.sidebarGuides === true}
+    >
       {Top && (
         <li className="sidebar__top">
           <Top />
