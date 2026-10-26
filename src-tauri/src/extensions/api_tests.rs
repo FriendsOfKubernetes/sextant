@@ -1694,7 +1694,11 @@ async fn every_method_against_the_test_cluster() {
     let WatchUpdate::Snapshot { items } = first else {
         panic!("first update is a snapshot: {first:?}");
     };
-    assert!(items.iter().any(|o| o["metadata"]["name"] == "db"));
+    assert!(
+        items
+            .iter()
+            .any(|o| o.to_value()["metadata"]["name"] == "db")
+    );
     assert!(
         !serde_json::to_string(&items).unwrap().contains("hunter2"),
         "no Secret values in a watch"
@@ -1734,9 +1738,14 @@ async fn every_method_against_the_test_cluster() {
     let WatchUpdate::Snapshot { items } = first else {
         panic!("first update is a snapshot: {first:?}");
     };
-    let namespaces: std::collections::BTreeSet<&str> = items
+    let namespaces: std::collections::BTreeSet<String> = items
         .iter()
-        .map(|o| o["metadata"]["namespace"].as_str().unwrap())
+        .map(|o| {
+            o.to_value()["metadata"]["namespace"]
+                .as_str()
+                .unwrap()
+                .to_owned()
+        })
         .collect();
     assert!(namespaces.contains(NS), "{namespaces:?}");
     assert!(

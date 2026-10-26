@@ -144,19 +144,73 @@ pub struct WatchOptions {
     pub max_objects: Option<u32>,
 }
 
+/// A watched object (as `get::to_json` gives it) kept as its compact JSON text, shared (`Arc`) between the watch's
+/// store and every update that carries it (#170). The text is a few KB where a `serde_json::Value` tree of the same
+/// object is several times that, a snapshot of a large list costs pointers, and since updates are only serialized on
+/// their way out (the Tauri channel, extensions) the text is written as it is: the watch never parses it again.
+/// Serialized as the object itself.
+#[derive(Debug, Clone, Serialize)]
+#[serde(transparent)]
+pub struct WatchObject(Arc<serde_json::value::RawValue>);
+
+/// Read through a `Value`: inside the tagged `WatchUpdate` serde buffers the fields, and a `RawValue` cannot be read
+/// from that buffer. Only tests read updates back.
+impl<'de> Deserialize<'de> for WatchObject {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Self::new(&value).map_err(serde::de::Error::custom)
+    }
+}
+
+impl WatchObject {
+    /// The JSON text of `value` (an object; anything that serializes as one).
+    pub fn new<T: Serialize + ?Sized>(value: &T) -> serde_json::Result<Self> {
+        serde_json::value::to_raw_value(value).map(|raw| Self(raw.into()))
+    }
+
+    /// The JSON text.
+    pub fn json(&self) -> &str {
+        self.0.get()
+    }
+
+    /// The object parsed, for a reader that looks inside it (tests); the watch itself never does.
+    pub fn to_value(&self) -> serde_json::Value {
+        // Only ever made from a JSON value or read as valid JSON, so the text always parses.
+        serde_json::from_str(self.json()).unwrap_or_default()
+    }
+
+    /// Whether both are the very same stored object (not just equal text).
+    pub fn same(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+
+    /// How many holders share this object (the store, updates not yet dropped).
+    pub fn holders(&self) -> usize {
+        Arc::strong_count(&self.0)
+    }
+}
+
+impl PartialEq for WatchObject {
+    fn eq(&self, other: &Self) -> bool {
+        self.json() == other.json()
+    }
+}
+
 /// One batch of a watch subscription. Serialized with a `type` tag.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "type", rename_all = "camelCase")]
 #[ts(export)]
 pub enum WatchUpdate {
-    /// Full list (first batch and after every relist). The objects are shared with the watch's store (`Arc`), not
-    /// copied: a snapshot of a large list costs pointers, and the JSON is the same as of plain values.
+    /// Full list (first batch and after every relist). The objects are shared with the watch's store, not copied: a
+    /// snapshot of a large list costs pointers.
     Snapshot {
-        items: Vec<Arc<serde_json::Value>>,
+        #[ts(as = "Vec<serde_json::Value>")]
+        items: Vec<WatchObject>,
     },
     /// Changes since the previous batch; `deleted` holds uids. Shared with the store like a snapshot's items.
     Delta {
-        upserted: Vec<Arc<serde_json::Value>>,
+        #[ts(as = "Vec<serde_json::Value>")]
+        upserted: Vec<WatchObject>,
         deleted: Vec<String>,
     },
     Reconnecting,
@@ -168,12 +222,14 @@ pub enum WatchUpdate {
     /// Objects of the first list that came in since the previous part, while the list still runs (only with
     /// `WatchOptions::progressive`). Parts add up; a `SnapshotEnd` completes them.
     SnapshotPart {
-        items: Vec<Arc<serde_json::Value>>,
+        #[ts(as = "Vec<serde_json::Value>")]
+        items: Vec<WatchObject>,
     },
     /// The end of a list sent in parts: the parts, without the uids in `deleted` and with `items` added or replacing
     /// their earlier copies, are the full list a `Snapshot` would have carried.
     SnapshotEnd {
-        items: Vec<Arc<serde_json::Value>>,
+        #[ts(as = "Vec<serde_json::Value>")]
+        items: Vec<WatchObject>,
         deleted: Vec<String>,
     },
     /// The watch keeps only `WatchOptions::max_objects` objects and `total` match in all. Sent after the batch in which

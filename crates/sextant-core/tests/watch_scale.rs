@@ -10,12 +10,12 @@
 mod common;
 
 use std::collections::BTreeSet;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures::{Stream, StreamExt};
-use serde_json::Value;
-use sextant_core::resources::{self, KindRef, ObjectCount, WatchOptions, WatchSpec, WatchUpdate};
+use sextant_core::resources::{
+    self, KindRef, ObjectCount, WatchObject, WatchOptions, WatchSpec, WatchUpdate,
+};
 
 fn pods(namespaces: Option<&[&str]>) -> WatchSpec {
     WatchSpec {
@@ -31,10 +31,15 @@ fn pods(namespaces: Option<&[&str]>) -> WatchSpec {
     }
 }
 
-fn uids(items: &[Arc<Value>]) -> Vec<String> {
+fn uids(items: &[WatchObject]) -> Vec<String> {
     items
         .iter()
-        .map(|o| o["metadata"]["uid"].as_str().unwrap_or_default().to_owned())
+        .map(|o| {
+            o.to_value()["metadata"]["uid"]
+                .as_str()
+                .unwrap_or_default()
+                .to_owned()
+        })
         .collect()
 }
 

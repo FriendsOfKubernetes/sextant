@@ -26,7 +26,7 @@ use kube::{Api, Client};
 use sextant_core::helm::cli::{self, ChartHit, HelmCli, HelmRepo};
 use sextant_core::helm::{self, HelmRelease};
 use sextant_core::kubeconfig::KubeconfigEnv;
-use sextant_core::resources::{self, KindRef, WatchSpec, WatchUpdate};
+use sextant_core::resources::{self, KindRef, WatchObject, WatchSpec, WatchUpdate};
 use sextant_core::{ClusterId, ClusterManager, ErrorCode, KubeconfigRegistry};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -346,8 +346,8 @@ async fn release_secrets_are_watched_by_their_metadata_only() {
                 .expect("a watch update in 30s")
                 .expect("the watch stream ended")
         };
-        let items = match next().await {
-            WatchUpdate::Snapshot { items } => items,
+        let items: Vec<_> = match next().await {
+            WatchUpdate::Snapshot { items } => items.iter().map(WatchObject::to_value).collect(),
             other => panic!("expected a snapshot, got {other:?}"),
         };
         assert_eq!(items.len(), 1, "{items:?}");
@@ -366,11 +366,14 @@ async fn release_secrets_are_watched_by_their_metadata_only() {
         let deadline = Instant::now() + Duration::from_secs(30);
         loop {
             assert!(Instant::now() < deadline, "revision 2 never came");
-            let upserted = match next().await {
+            let upserted: Vec<_> = match next().await {
                 WatchUpdate::Delta { upserted, .. } => upserted,
                 WatchUpdate::Snapshot { items } => items,
                 _ => continue,
-            };
+            }
+            .iter()
+            .map(WatchObject::to_value)
+            .collect();
             if let Some(v2) = upserted
                 .iter()
                 .find(|o| o["metadata"]["name"] == "sh.helm.release.v1.demo.v2")
