@@ -274,26 +274,12 @@ async fn scale_watch_of_many_pods() {
     }
 }
 
-/// Estimated heap of the objects of an update (see [`value_heap`]).
+/// Heap of the objects of an update: each object's JSON text and its `Arc`'s two counters.
 fn update_heap(update: &WatchUpdate) -> usize {
     match update {
         WatchUpdate::Snapshot { items }
         | WatchUpdate::SnapshotPart { items }
-        | WatchUpdate::SnapshotEnd { items, .. } => items.iter().map(|v| value_heap(v)).sum(),
-        _ => 0,
-    }
-}
-
-/// Estimated heap of a JSON value: 32 bytes per value slot, string capacities, and per object entry its key and a
-/// map slot (an estimate of serde_json's layout, enough to compare modes).
-fn value_heap(value: &Value) -> usize {
-    match value {
-        Value::String(s) => s.capacity(),
-        Value::Array(items) => items.iter().map(|v| 32 + value_heap(v)).sum(),
-        Value::Object(map) => map
-            .iter()
-            .map(|(k, v)| 24 + k.capacity() + 32 + 16 + value_heap(v))
-            .sum(),
+        | WatchUpdate::SnapshotEnd { items, .. } => items.iter().map(|o| o.json().len() + 16).sum(),
         _ => 0,
     }
 }
@@ -331,8 +317,8 @@ fn options(progressive: bool, max_objects: Option<u32>) -> WatchOptions {
     }
 }
 
-fn uids(items: &[Arc<Value>]) -> Vec<String> {
-    items.iter().map(|v| uid_of(v)).collect()
+fn uids(items: &[WatchObject]) -> Vec<String> {
+    items.iter().map(|o| uid_of(&o.to_value())).collect()
 }
 
 #[tokio::test]

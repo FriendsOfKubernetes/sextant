@@ -162,7 +162,7 @@ async fn watched(s: &Scratch, kind: &str) -> Vec<Arc<Value>> {
         .expect("a watch update in 30s")
         .expect("the watch stream ended");
     match first {
-        WatchUpdate::Snapshot { items } => items,
+        WatchUpdate::Snapshot { items } => items.iter().map(|o| Arc::new(o.to_value())).collect(),
         other => panic!("expected a snapshot, got {other:?}"),
     }
 }

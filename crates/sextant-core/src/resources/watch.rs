@@ -25,6 +25,9 @@
 //! downloaded. A release Secret gets `type` and one empty `release` key, so its row looks as if it were whole. Values
 //! are hidden as everywhere (`get::to_json`).
 //!
+//! The store keeps each object as its JSON text ([`WatchObject`], #170), not as a `serde_json::Value` tree several
+//! times its size; every update carries the stored objects themselves, and they are written out as they are.
+//!
 //! The first snapshot is sent as soon as everything is listed (the caller listens before it starts the watch);
 //! after it, at most one update per 250 ms.
 //!
@@ -50,8 +53,8 @@ use kube::runtime::watcher;
 use serde_json::Value;
 use tokio::time::{Instant, Interval, MissedTickBehavior};
 
-use super::get::{ResolvedKind, resolve_kind, to_json};
-use super::{WatchOptions, WatchSpec, WatchUpdate};
+use super::get::{ResolvedKind, resolve_kind, to_watch_object};
+use super::{WatchObject, WatchOptions, WatchSpec, WatchUpdate};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
@@ -406,15 +409,15 @@ struct Batcher {
     /// A `Forbidden` update waits to be sent.
     forbidden_pending: bool,
     /// uid → (index of the source api, object).
-    store: HashMap<String, (usize, Arc<Value>)>,
-    /// Objects of a source's running relist (`Init` … `InitDone`).
-    init_buffers: Vec<Option<Vec<Arc<Value>>>>,
+    store: HashMap<String, (usize, WatchObject)>,
+    /// Objects of a source's running relist (`Init` … `InitDone`), with their uids.
+    init_buffers: Vec<Option<Vec<(String, WatchObject)>>>,
     /// Sources whose (re)list finished.
     listed: Vec<bool>,
     /// A full list was sent at least once (errors after that are never fatal).
     snapshot_sent: bool,
     snapshot_pending: bool,
-    upserted: HashMap<String, Arc<Value>>,
+    upserted: HashMap<String, WatchObject>,
     deleted: HashSet<String>,
     reconnecting: bool,
     reconnect_pending: bool,
@@ -426,7 +429,7 @@ struct Batcher {
     done: bool,
     /// `WatchOptions::progressive` while the first list runs: what the parts sent, by uid (the very object, so a
     /// changed one is told apart); `None` without the option and once the first full list went out.
-    progressive: Option<HashMap<String, Arc<Value>>>,
+    progressive: Option<HashMap<String, WatchObject>>,
     /// `WatchOptions::max_objects`.
     cap: Option<usize>,
     /// Matching objects left out for the cap: uid → source.
@@ -656,10 +659,13 @@ impl Batcher {
                 if !self.has_room_while_listing() {
                     // Over the cap: only the uid is remembered, the object is neither converted nor kept.
                     self.init_dropped[index].push(meta_uid(&obj.metadata));
-                } else if let Some(value) = self.json(obj) {
-                    self.init_buffers[index]
-                        .get_or_insert_with(Vec::new)
-                        .push(value);
+                } else {
+                    let uid = meta_uid(&obj.metadata);
+                    if let Some(value) = self.json(obj) {
+                        self.init_buffers[index]
+                            .get_or_insert_with(Vec::new)
+                            .push((uid, value));
+                    }
                 }
             }
             watcher::Event::InitDone => {
@@ -667,8 +673,7 @@ impl Batcher {
                 let left_out = std::mem::take(&mut self.init_dropped[index]);
                 self.store.retain(|_, (source, _)| *source != index);
                 self.dropped.retain(|_, source| *source != index);
-                for value in items {
-                    let uid = uid_of(&value);
+                for (uid, value) in items {
                     if self.has_room() {
                         self.store.insert(uid, (index, value));
                     } else {
@@ -702,7 +707,7 @@ impl Batcher {
                 if let Some(value) = self.json(obj) {
                     self.dropped.remove(&uid);
                     self.deleted.remove(&uid);
-                    self.upserted.insert(uid.clone(), Arc::clone(&value));
+                    self.upserted.insert(uid.clone(), value.clone());
                     self.store.insert(uid, (index, value));
                 }
             }
@@ -934,8 +939,8 @@ impl Batcher {
                 let items = self
                     .store
                     .iter()
-                    .filter(|(uid, (_, v))| !sent.get(*uid).is_some_and(|s| Arc::ptr_eq(s, v)))
-                    .map(|(_, (_, v))| Arc::clone(v))
+                    .filter(|(uid, (_, v))| !sent.get(*uid).is_some_and(|s| s.same(v)))
+                    .map(|(_, (_, v))| v.clone())
                     .collect();
                 let deleted = sent
                     .into_keys()
@@ -944,7 +949,7 @@ impl Batcher {
                 return Some(WatchUpdate::SnapshotEnd { items, deleted });
             }
             // Pointers to the stored objects, not copies: a deep copy of a large list was several times its size.
-            let items = self.store.values().map(|(_, v)| Arc::clone(v)).collect();
+            let items = self.store.values().map(|(_, v)| v.clone()).collect();
             return Some(WatchUpdate::Snapshot { items });
         }
         if !self.snapshot_sent {
@@ -966,26 +971,27 @@ impl Batcher {
     /// A part of a progressive first list: the objects listed (or changed) since the previous part.
     fn part(&mut self) -> Option<WatchUpdate> {
         let sent = self.progressive.as_mut()?;
-        let listed = self
-            .store
-            .values()
-            .map(|(_, v)| v)
-            .chain(self.init_buffers.iter().flatten().flatten());
+        let listed = self.store.iter().map(|(uid, (_, v))| (uid, v)).chain(
+            self.init_buffers
+                .iter()
+                .flatten()
+                .flatten()
+                .map(|(uid, v)| (uid, v)),
+        );
         let mut items = Vec::new();
-        for value in listed {
-            let uid = uid_of(value);
-            if sent.get(&uid).is_some_and(|s| Arc::ptr_eq(s, value)) {
+        for (uid, value) in listed {
+            if sent.get(uid).is_some_and(|s| s.same(value)) {
                 continue;
             }
-            sent.insert(uid, Arc::clone(value));
-            items.push(Arc::clone(value));
+            sent.insert(uid.clone(), value.clone());
+            items.push(value.clone());
         }
         (!items.is_empty()).then_some(WatchUpdate::SnapshotPart { items })
     }
 
-    fn json(&self, obj: DynamicObject) -> Option<Arc<Value>> {
+    fn json(&self, obj: DynamicObject) -> Option<WatchObject> {
         // A DynamicObject always serializes; `None` only guards against the impossible.
-        to_json(obj, &self.resource).ok().map(Arc::new)
+        to_watch_object(obj, &self.resource).ok()
     }
 }
 
@@ -1020,7 +1026,8 @@ async fn sleep_until(at: Option<Instant>) {
     }
 }
 
-/// [`uid_of`] of an object kube handed over, before it is converted.
+/// The store's key of an object kube handed over, before it is converted: `metadata.uid`, or `namespace/name` for
+/// the rare object without one.
 fn meta_uid(meta: &kube::api::ObjectMeta) -> String {
     match &meta.uid {
         Some(uid) => uid.clone(),
@@ -1032,7 +1039,8 @@ fn meta_uid(meta: &kube::api::ObjectMeta) -> String {
     }
 }
 
-/// `metadata.uid`, or `namespace/name` for the rare object without one.
+/// [`meta_uid`] of an object the watch sent (the tests).
+#[cfg(test)]
 fn uid_of(obj: &Value) -> String {
     let meta = &obj["metadata"];
     match meta["uid"].as_str() {
@@ -1134,10 +1142,13 @@ mod tests {
         }
     }
 
-    fn names(items: &[Arc<Value>]) -> Vec<&str> {
-        let mut names: Vec<&str> = items
+    fn names(items: &[WatchObject]) -> Vec<String> {
+        let mut names: Vec<String> = items
             .iter()
-            .map(|o| o["metadata"]["name"].as_str().unwrap_or_default())
+            .map(|o| {
+                let name = &o.to_value()["metadata"]["name"];
+                name.as_str().unwrap_or_default().to_owned()
+            })
             .collect();
         names.sort();
         names
@@ -1162,7 +1173,7 @@ mod tests {
         mgr: &ClusterManager,
         id: &ClusterId,
         spec: WatchSpec,
-    ) -> Vec<Arc<Value>> {
+    ) -> Vec<WatchObject> {
         let mut updates = Box::pin(watch(mgr, id, spec).await.unwrap());
         match tokio::time::timeout(Duration::from_secs(5), updates.next()).await {
             Ok(Some(WatchUpdate::Snapshot { items })) => items,
@@ -1225,11 +1236,12 @@ mod tests {
             "status": { "phase": "Running", "restartCount": 0, "ready": true, "ratio": 0.5, "none": null }
         });
         let node = serde_json::json!({ "metadata": { "name": "node-1", "uid": "uid-node-1" } });
+        let object = |value: &Value| WatchObject::new(value).unwrap();
         let snapshot = WatchUpdate::Snapshot {
-            items: vec![Arc::new(pod.clone()), Arc::new(node.clone())],
+            items: vec![object(&pod), object(&node)],
         };
         let delta = WatchUpdate::Delta {
-            upserted: vec![Arc::new(pod.clone())],
+            upserted: vec![object(&pod)],
             deleted: vec!["uid-node-1".into()],
         };
         // The bytes of the old `Vec<Value>` payloads: the tag first, then the fields, each object as it serializes.
@@ -1259,9 +1271,9 @@ mod tests {
         };
         assert_eq!(names(&items), ["a"]);
         // The running watch keeps the object in its store: the snapshot holds a second pointer to it, not a copy.
-        assert_eq!(Arc::strong_count(&items[0]), 2);
+        assert_eq!(items[0].holders(), 2);
         drop(updates);
-        assert_eq!(Arc::strong_count(&items[0]), 1);
+        assert_eq!(items[0].holders(), 1);
     }
 
     #[tokio::test]
@@ -1482,9 +1494,8 @@ mod tests {
         };
         let items = first_snapshot(&mgr, &id, spec).await;
         assert_eq!(names(&items), ["db", "sh.helm.release.v1.web.v1"]);
-        let secret = by_name(&items, "sh.helm.release.v1.web.v1")
-            .as_object()
-            .unwrap();
+        let secret = by_name(&items, "sh.helm.release.v1.web.v1");
+        let secret = secret.as_object().unwrap();
         assert_eq!(
             (secret["apiVersion"].as_str(), secret["kind"].as_str()),
             (Some("v1"), Some("Secret"))
@@ -1501,9 +1512,10 @@ mod tests {
         );
     }
 
-    fn by_name<'a>(items: &'a [Arc<Value>], name: &str) -> &'a Value {
+    fn by_name(items: &[WatchObject], name: &str) -> Value {
         items
             .iter()
+            .map(WatchObject::to_value)
             .find(|o| o["metadata"]["name"] == name)
             .unwrap_or_else(|| panic!("no {name} in {items:?}"))
     }
@@ -1694,8 +1706,8 @@ mod tests {
     async fn watch_flaky_namespace(
         api: &FakeApi,
         wait: Duration,
-        done: impl Fn(&[Vec<String>], &[Arc<Value>]) -> bool,
-    ) -> (Vec<Vec<String>>, Vec<Vec<Arc<Value>>>) {
+        done: impl Fn(&[Vec<String>], &[WatchObject]) -> bool,
+    ) -> (Vec<Vec<String>>, Vec<Vec<WatchObject>>) {
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let mut updates = Box::pin(
             watch_with(
@@ -1708,7 +1720,7 @@ mod tests {
             .await
             .unwrap(),
         );
-        let (mut forbidden, mut snapshots): (Vec<Vec<String>>, Vec<Vec<Arc<Value>>>) =
+        let (mut forbidden, mut snapshots): (Vec<Vec<String>>, Vec<Vec<WatchObject>>) =
             (Vec::new(), Vec::new());
         let deadline = Instant::now() + wait;
         while !done(&forbidden, snapshots.last().map_or(&[], |s| s.as_slice())) {
@@ -1807,7 +1819,7 @@ mod tests {
         while forbidden.is_none()
             || last_items
                 .as_ref()
-                .is_none_or(|items: &Vec<Arc<Value>>| items.len() != 1)
+                .is_none_or(|items: &Vec<WatchObject>| items.len() != 1)
         {
             let left = deadline.saturating_duration_since(Instant::now());
             match tokio::time::timeout(left, updates.next()).await {

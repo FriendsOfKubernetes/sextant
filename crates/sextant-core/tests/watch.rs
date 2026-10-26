@@ -26,7 +26,7 @@ use kube::Api;
 use kube::api::{DeleteParams, ListParams, Patch, PatchParams, PostParams};
 use serde_json::{Value, json};
 use sextant_core::kubeconfig::KubeconfigEnv;
-use sextant_core::resources::{self, KindRef, ObjectRef, WatchSpec, WatchUpdate};
+use sextant_core::resources::{self, KindRef, ObjectRef, WatchObject, WatchSpec, WatchUpdate};
 use sextant_core::{ClusterId, ClusterManager, ErrorCode, KubeconfigRegistry};
 
 type Updates = Pin<Box<dyn Stream<Item = WatchUpdate> + Send>>;
@@ -75,9 +75,14 @@ async fn next(updates: &mut Updates, secs: u64) -> WatchUpdate {
         .expect("the watch stream ended")
 }
 
+/// The objects of an update, parsed.
+fn values(items: Vec<WatchObject>) -> Vec<Arc<Value>> {
+    items.iter().map(|o| Arc::new(o.to_value())).collect()
+}
+
 fn snapshot(update: WatchUpdate) -> Vec<Arc<Value>> {
     match update {
-        WatchUpdate::Snapshot { items } => items,
+        WatchUpdate::Snapshot { items } => values(items),
         other => panic!("expected a snapshot, got {other:?}"),
     }
 }
@@ -143,7 +148,7 @@ async fn pods_snapshot_then_batched_deltas_follow_a_scale() {
         );
         last = now;
         if let WatchUpdate::Delta { upserted, .. } = update {
-            new_pod = upserted.into_iter().find(|p| {
+            new_pod = values(upserted).into_iter().find(|p| {
                 !items
                     .iter()
                     .any(|o| o["metadata"]["uid"] == p["metadata"]["uid"])
@@ -391,7 +396,7 @@ async fn a_namespace_without_permission_is_reported_and_the_others_keep_streamin
         while forbidden.is_none() || items.is_none() {
             match next(&mut updates, 30).await {
                 WatchUpdate::Forbidden { namespaces } => forbidden = Some(namespaces),
-                WatchUpdate::Snapshot { items: list } => items = Some(list),
+                WatchUpdate::Snapshot { items: list } => items = Some(values(list)),
                 other => panic!("expected forbidden and a snapshot, got {other:?}"),
             }
         }
@@ -404,7 +409,7 @@ async fn a_namespace_without_permission_is_reported_and_the_others_keep_streamin
         let mut added = Vec::new();
         while added.is_empty() && Instant::now() < deadline {
             match next(&mut updates, 30).await {
-                WatchUpdate::Delta { upserted, .. } => added = names(&upserted),
+                WatchUpdate::Delta { upserted, .. } => added = names(&values(upserted)),
                 WatchUpdate::Error(err) => panic!("the watch ended: {err}"),
                 _ => {}
             }
@@ -483,7 +488,7 @@ async fn a_namespace_listed_but_not_watchable_is_left_out_after_its_list_and_the
                 );
                 match next(&mut updates, 30).await {
                     WatchUpdate::Forbidden { namespaces } => forbidden = Some(namespaces),
-                    WatchUpdate::Snapshot { items: list } => items = list,
+                    WatchUpdate::Snapshot { items: list } => items = values(list),
                     WatchUpdate::Delta { .. } => {}
                     other => panic!("expected forbidden and snapshots, got {other:?}"),
                 }
@@ -495,7 +500,7 @@ async fn a_namespace_listed_but_not_watchable_is_left_out_after_its_list_and_the
             let mut added = Vec::new();
             while added.is_empty() && Instant::now() < deadline {
                 match next(&mut updates, 30).await {
-                    WatchUpdate::Delta { upserted, .. } => added = names(&upserted),
+                    WatchUpdate::Delta { upserted, .. } => added = names(&values(upserted)),
                     WatchUpdate::Error(err) => panic!("the watch ended: {err}"),
                     WatchUpdate::Reconnecting => panic!("the watch lost its connection"),
                     _ => {}
@@ -732,7 +737,7 @@ async fn watch_survives_a_cluster_restart() {
     let mut fresh = None;
     while fresh.is_none() && Instant::now() < deadline {
         match next(&mut updates, 240).await {
-            WatchUpdate::Snapshot { items } => fresh = Some(items),
+            WatchUpdate::Snapshot { items } => fresh = Some(values(items)),
             WatchUpdate::Error(err) => panic!("a lost connection is not fatal: {err}"),
             _ => {}
         }

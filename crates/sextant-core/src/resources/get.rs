@@ -6,7 +6,7 @@ use kube::Api;
 use kube::api::{ApiResource, DynamicObject};
 use serde_json::{Map, Value};
 
-use super::{KindRef, ObjectRef};
+use super::{KindRef, ObjectRef, WatchObject};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
@@ -364,6 +364,24 @@ pub(crate) fn to_json(obj: DynamicObject, resource: &ApiResource) -> CoreResult<
     Ok(value)
 }
 
+/// What `to_json` gives, as the watch keeps it. Any kind but a core Secret is written straight from the object kube
+/// read (no `Value` tree in between: the watch takes every listed object through here); a Secret goes through
+/// `to_json`, which hides its values.
+pub(crate) fn to_watch_object(
+    mut obj: DynamicObject,
+    resource: &ApiResource,
+) -> CoreResult<WatchObject> {
+    if resource.group.is_empty() && resource.kind == "Secret" {
+        return Ok(WatchObject::new(&to_json(obj, resource)?)?);
+    }
+    obj.types = Some(kube::api::TypeMeta {
+        api_version: resource.api_version.clone(),
+        kind: resource.kind.clone(),
+    });
+    obj.metadata.managed_fields = None;
+    Ok(WatchObject::new(&obj)?)
+}
+
 /// `to_json` without hiding anything of a Secret.
 fn to_json_full(obj: DynamicObject, resource: &ApiResource) -> CoreResult<Value> {
     let mut value = serde_json::to_value(obj)?;
@@ -442,6 +460,61 @@ mod tests {
         assert_eq!(json["spec"]["replicas"], 2);
         assert_eq!(json["metadata"]["name"], "web");
         assert!(json["metadata"].get("managedFields").is_none());
+    }
+
+    #[test]
+    fn the_watch_keeps_the_same_json_as_to_json() {
+        let resource = |group: &str, kind: &str| ApiResource {
+            group: group.into(),
+            version: "v1".into(),
+            api_version: if group.is_empty() {
+                "v1".into()
+            } else {
+                format!("{group}/v1")
+            },
+            kind: kind.into(),
+            plural: format!("{}s", kind.to_lowercase()),
+        };
+        let cases = [
+            (
+                resource("apps", "Deployment"),
+                serde_json::json!({
+                    "apiVersion": "apps/v1beta1",
+                    "metadata": {
+                        "name": "web", "namespace": "default", "uid": "u1", "labels": { "app": "web" },
+                        "managedFields": [{ "manager": "kubectl" }]
+                    },
+                    "spec": { "replicas": 2, "paused": false, "selector": null },
+                    "status": { "ratio": 0.5 }
+                }),
+            ),
+            (
+                resource("", "Secret"),
+                serde_json::json!({
+                    "metadata": {
+                        "name": "creds", "namespace": "default",
+                        "annotations": { LAST_APPLIED_ANNOTATION: "{}" },
+                        "managedFields": [{ "manager": "kubectl" }]
+                    },
+                    "type": "Opaque",
+                    "data": { "token": "eA==" }
+                }),
+            ),
+            (
+                resource("", "Namespace"),
+                serde_json::json!({ "metadata": { "name": "bare" } }),
+            ),
+        ];
+        for (resource, json) in cases {
+            let obj: DynamicObject = serde_json::from_value(json).unwrap();
+            let kept = to_watch_object(obj.clone(), &resource).unwrap();
+            assert_eq!(
+                kept.to_value(),
+                to_json(obj, &resource).unwrap(),
+                "{}",
+                resource.kind
+            );
+        }
     }
 
     #[test]
@@ -581,7 +654,10 @@ mod tests {
         {
             Ok(Some(crate::resources::WatchUpdate::Snapshot { items })) => {
                 assert_eq!(items.len(), 1);
-                assert_eq!(items[0]["apiVersion"], "image.toolkit.fluxcd.io/v1beta2");
+                assert_eq!(
+                    items[0].to_value()["apiVersion"],
+                    "image.toolkit.fluxcd.io/v1beta2"
+                );
             }
             other => panic!("expected a snapshot, got {other:?}"),
         }

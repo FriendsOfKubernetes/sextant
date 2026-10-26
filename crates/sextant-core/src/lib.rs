@@ -45,7 +45,7 @@ pub use cluster::{ClusterManager, ConnectionState};
 pub use error::{CoreError, CoreResult, ErrorCode};
 pub use kubeconfig::{ClusterId, ClusterInfo, KubeconfigRegistry, KubeconfigSource, SourceKind};
 pub use resources::{
-    DrainOptions, DrainPreview, KindRef, ObjectRef, PodRef, PrinterColumn, ResourceKind, WatchSpec,
-    WatchUpdate,
+    DrainOptions, DrainPreview, KindRef, ObjectRef, PodRef, PrinterColumn, ResourceKind,
+    WatchObject, WatchSpec, WatchUpdate,
 };
 pub use settings::{AppSettings, ClusterSettings, McpSettings, SettingsStore, Theme, WindowLayout};
