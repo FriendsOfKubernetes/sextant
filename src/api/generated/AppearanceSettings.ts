@@ -22,4 +22,12 @@ textSize: number,
 /**
  * xterm's screen reader mode in terminals (off by default: it costs rendering speed).
  */
-terminalScreenReader: boolean, };
+terminalScreenReader: boolean, 
+/**
+ * Indent child items in every cluster sidebar (off preserves the original alignment).
+ */
+sidebarIndent: boolean, 
+/**
+ * Draw tree guides in every cluster sidebar, independently of indentation.
+ */
+sidebarGuides: boolean, };

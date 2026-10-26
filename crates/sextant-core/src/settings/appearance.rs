@@ -74,6 +74,10 @@ pub struct AppearanceSettings {
     pub text_size: u16,
     /// xterm's screen reader mode in terminals (off by default: it costs rendering speed).
     pub terminal_screen_reader: bool,
+    /// Indent child items in every cluster sidebar (off preserves the original alignment).
+    pub sidebar_indent: bool,
+    /// Draw tree guides in every cluster sidebar, independently of indentation.
+    pub sidebar_guides: bool,
 }
 
 impl Default for AppearanceSettings {
@@ -84,6 +88,8 @@ impl Default for AppearanceSettings {
             reduce_motion: ReduceMotion::default(),
             text_size: DEFAULT_TEXT_SIZE,
             terminal_screen_reader: false,
+            sidebar_indent: false,
+            sidebar_guides: false,
         }
     }
 }
@@ -167,6 +173,14 @@ pub(crate) mod appearance_field {
                 .get("terminalScreenReader")
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false),
+            sidebar_indent: value
+                .get("sidebarIndent")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            sidebar_guides: value
+                .get("sidebarGuides")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
         })
     }
 }
@@ -189,7 +203,9 @@ mod tests {
                 "monoFont": { "kind": "builtin" },
                 "reduceMotion": "system",
                 "textSize": 100,
-                "terminalScreenReader": false
+                "terminalScreenReader": false,
+                "sidebarIndent": false,
+                "sidebarGuides": false
             })
         );
     }
@@ -201,7 +217,9 @@ mod tests {
             "monoFont": { "kind": "custom", "family": "JetBrains Mono" },
             "reduceMotion": "on",
             "textSize": 125,
-            "terminalScreenReader": true
+            "terminalScreenReader": true,
+            "sidebarIndent": true,
+            "sidebarGuides": false
         });
         let settings: AppSettings =
             serde_json::from_value(json!({ "appearance": appearance })).unwrap();
@@ -282,6 +300,51 @@ mod tests {
             let s: AppSettings = serde_json::from_value(json!({ "appearance": wrong })).unwrap();
             assert_eq!(s.appearance, AppearanceSettings::default(), "{wrong}");
         }
+    }
+
+    #[test]
+    fn sidebar_choices_default_to_off_and_read_leniently() {
+        for appearance in [
+            json!({}),
+            json!({ "sidebarIndent": "true", "sidebarGuides": 1 }),
+            json!({ "sidebarIndent": null, "sidebarGuides": [] }),
+        ] {
+            let settings: AppSettings = serde_json::from_value(json!({
+                "theme": "dark", "appearance": appearance
+            }))
+            .unwrap();
+            let written = serde_json::to_value(&settings).unwrap();
+            assert_eq!(written["appearance"]["sidebarIndent"], false);
+            assert_eq!(written["appearance"]["sidebarGuides"], false);
+            assert_eq!(settings.theme, crate::Theme::Dark);
+        }
+    }
+
+    #[test]
+    fn sidebar_choices_round_trip_independently_and_keep_other_appearance() {
+        for (indent, guides) in [(false, false), (true, false), (false, true), (true, true)] {
+            let settings: AppSettings = serde_json::from_value(json!({
+                "appearance": {
+                    "sidebarIndent": indent, "sidebarGuides": guides,
+                    "uiFont": { "kind": "system" }, "textSize": 125
+                }
+            }))
+            .unwrap();
+            let written = serde_json::to_value(&settings).unwrap();
+            assert_eq!(written["appearance"]["sidebarIndent"], indent);
+            assert_eq!(written["appearance"]["sidebarGuides"], guides);
+            assert_eq!(written["appearance"]["uiFont"]["kind"], "system");
+            assert_eq!(written["appearance"]["textSize"], 125);
+            let reloaded: AppSettings = serde_json::from_value(written).unwrap();
+            assert_eq!(reloaded.appearance, settings.appearance);
+        }
+        let settings: AppSettings = serde_json::from_value(json!({
+            "appearance": { "sidebarIndent": "yes", "sidebarGuides": true }
+        }))
+        .unwrap();
+        let written = serde_json::to_value(settings).unwrap();
+        assert_eq!(written["appearance"]["sidebarIndent"], false);
+        assert_eq!(written["appearance"]["sidebarGuides"], true);
     }
 
     #[test]

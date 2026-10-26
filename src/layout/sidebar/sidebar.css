@@ -31,6 +31,67 @@
   padding-left: 48px;
 }
 
+/* A nested group already reserves a chevron column; indent its leaf siblings to the same icon column. */
+[data-sidebar-indent="true"] .sidebar__item.sidebar__item--nested:not(.sidebar__group) {
+  padding-left: 48px;
+  --sidebar-guide-end: 44px;
+}
+
+[data-sidebar-indent="true"] .sidebar__list--nested .sidebar__list--nested .sidebar__item.sidebar__item--nested:not(.sidebar__group) {
+  padding-left: 64px;
+  --sidebar-guide-end: 60px;
+}
+
+/* Each guide sits under its parent's 12px chevron. The elbow stops 4px before the child's content. */
+[data-sidebar-guides="true"] .sidebar__list--nested {
+  --sidebar-guide-left: 22px;
+  --sidebar-guide-end: 28px;
+}
+
+[data-sidebar-guides="true"] .sidebar__list--nested .sidebar__list--nested {
+  --sidebar-guide-left: 38px;
+  --sidebar-guide-end: 44px;
+}
+
+[data-sidebar-guides="true"] .sidebar__list--nested > li,
+[data-sidebar-guides="true"] .sidebar__list--nested > li > .sidebar__item {
+  position: relative;
+}
+
+/* Borders are pixel-snapped by the WebView; 1px background strips blur differently at fractional display scales. */
+[data-sidebar-guides="true"] .sidebar__list--nested > li:not(:last-child)::before,
+[data-sidebar-guides="true"] .sidebar__list--nested > li:last-child > .sidebar__item::before,
+[data-sidebar-guides="true"] .sidebar__list--nested > li:last-child > .sidebar__item::after {
+  content: "";
+  position: absolute;
+  left: var(--sidebar-guide-left);
+  border: 0 solid var(--color-control-border);
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-sidebar-guides="true"] .sidebar__list--nested > li:not(:last-child)::before {
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left-width: 1px;
+}
+
+/* End the parent's guide at the last child's own row, even when that child has an open subtree. */
+[data-sidebar-guides="true"] .sidebar__list--nested > li:last-child > .sidebar__item::before {
+  top: 0;
+  bottom: 50%;
+  width: 0;
+  border-left-width: 1px;
+}
+
+[data-sidebar-guides="true"] .sidebar__list--nested > li:last-child > .sidebar__item::after {
+  top: 50%;
+  width: calc(var(--sidebar-guide-end) - var(--sidebar-guide-left));
+  height: 0;
+  border-top-width: 1px;
+}
+
 .sidebar__item.sidebar__group {
   display: flex;
   align-items: center;

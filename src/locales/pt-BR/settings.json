@@ -11,6 +11,12 @@
     "extensions": "Extensões",
     "about": "Atualizações e Sobre"
   },
+  "sidebar": {
+    "title": "Barra lateral",
+    "indentChildren": "Recuar itens filhos",
+    "treeGuides": "Mostrar guias da árvore",
+    "hint": "Aplica-se à barra lateral de todos os clusters."
+  },
   "appearance": {
     "title": "Aparência",
     "theme": "Tema",

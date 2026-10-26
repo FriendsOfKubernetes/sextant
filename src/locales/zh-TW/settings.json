@@ -11,6 +11,12 @@
     "extensions": "擴充功能",
     "about": "更新與關於"
   },
+  "sidebar": {
+    "title": "側邊欄",
+    "indentChildren": "縮排子項目",
+    "treeGuides": "顯示樹狀導引線",
+    "hint": "套用至所有叢集的側邊欄。"
+  },
   "appearance": {
     "title": "外觀",
     "theme": "佈景主題",

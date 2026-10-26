@@ -37,6 +37,7 @@ import { SETTINGS_TABS, useSettingsUi } from "./store";
 import "./settings.css";
 
 const THEMES: Theme[] = ["system", "light", "dark"];
+const SIDEBAR_CHOICES = [["sidebarIndent", "indentChildren"], ["sidebarGuides", "treeGuides"]] as const;
 const DEFAULT_NODE_SHELL_IMAGE = defaultAppSettings().nodeShellImage;
 
 /** The sidebar page (`registerPage`). */
@@ -135,6 +136,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 function AppearanceSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
   const { t } = useTranslation();
   const languageId = useId();
+  const sidebarHintId = useId();
   const theme = settings?.theme ?? "system";
   // "system" (a new install) follows the OS; a stored code is an explicit choice. Empty reads as "system".
   const language = settings?.language || SYSTEM_LANGUAGE;
@@ -187,6 +189,26 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
         <p className="settings__hint">{t("settings:appearance.languageHint")}</p>
       </div>
       <FontSettings settings={settings} save={save} />
+      <div className="settings__field">
+        <span className="settings__label">{t("settings:sidebar.title")}</span>
+        <div className="settings__choices settings__choices--column">
+          {SIDEBAR_CHOICES.map(([field, label]) => (
+            <label key={field} className="settings__choice">
+              <Checkbox
+                checked={settings?.appearance?.[field] === true}
+                disabled={!settings}
+                aria-describedby={sidebarHintId}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  void save((s) => ({ ...s, appearance: { ...s.appearance, [field]: checked } }));
+                }}
+              />
+              {t(`settings:sidebar.${label}`)}
+            </label>
+          ))}
+        </div>
+        <p className="settings__hint" id={sidebarHintId}>{t("settings:sidebar.hint")}</p>
+      </div>
       <AccessibilitySettings settings={settings} save={save} />
     </Section>
   );

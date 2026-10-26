@@ -74,6 +74,8 @@ describe("Accessibility in Settings -> Appearance", () => {
       reduceMotion: "on",
       textSize: 125,
       terminalScreenReader: true,
+      sidebarIndent: false,
+      sidebarGuides: false,
     });
     expect(within(motion).getByRole("radio", { name: "On" })).toBeChecked();
   });

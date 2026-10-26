@@ -11,6 +11,12 @@
     "extensions": "Uzantılar",
     "about": "Güncellemeler ve Hakkında"
   },
+  "sidebar": {
+    "title": "Kenar çubuğu",
+    "indentChildren": "Alt öğeleri girintile",
+    "treeGuides": "Ağaç kılavuzlarını göster",
+    "hint": "Tüm kümelerin kenar çubuğuna uygulanır."
+  },
   "appearance": {
     "title": "Görünüm",
     "theme": "Tema",

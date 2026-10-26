@@ -11,6 +11,12 @@
     "extensions": "Extensions",
     "about": "Updates & About"
   },
+  "sidebar": {
+    "title": "Sidebar",
+    "indentChildren": "Indent child items",
+    "treeGuides": "Show tree guides",
+    "hint": "Applies to the sidebar of every cluster."
+  },
   "appearance": {
     "title": "Appearance",
     "theme": "Theme",
