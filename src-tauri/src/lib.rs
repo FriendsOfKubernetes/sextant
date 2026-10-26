@@ -12,6 +12,7 @@ pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
 pub mod state;
+pub mod webkit;
 // The tray exists on the desktop only (as the window code in `window.rs`); elsewhere there is no icon.
 #[cfg(desktop)]
 mod tray;

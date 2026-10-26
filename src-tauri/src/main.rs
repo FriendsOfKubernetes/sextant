@@ -10,6 +10,8 @@ fn main() -> ExitCode {
     if std::env::args_os().nth(1).is_some_and(|arg| arg == "mcp") {
         return sextant_lib::mcp_proxy::run();
     }
+    // Still before any thread: an empty window on NVIDIA drivers older than 495 (#278).
+    sextant_lib::webkit::disable_dmabuf_on_old_nvidia();
     sextant_lib::run();
     ExitCode::SUCCESS
 }
