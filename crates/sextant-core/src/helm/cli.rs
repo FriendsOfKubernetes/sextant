@@ -474,6 +474,13 @@ impl HelmCli {
     /// [`REDIRECTING_ENV`]), plus what was set with [`HelmCli::with_env`].
     fn command(&self, binary: &Path) -> Command {
         let mut cmd = Command::new(binary);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            // A console steals and returns focus, triggering another status check in the window.
+            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
         for (key, _) in std::env::vars_os() {
             if redirects_helm(&key) {
                 cmd.env_remove(&key);
@@ -1852,6 +1859,49 @@ mod tests {
                 version: None,
                 path: None
             }
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn helm_commands_do_not_allocate_a_console() {
+        use std::os::windows::process::CommandExt;
+
+        const CHILD: &str = "SEXTANT_TEST_HELM_CONSOLE_CHILD";
+        let mode = std::env::var(CHILD).unwrap_or_default();
+        if mode == "check" {
+            #[link(name = "kernel32")]
+            unsafe extern "system" {
+                fn GetConsoleWindow() -> *mut std::ffi::c_void;
+            }
+            // A console-subsystem child must not create or inherit a console in the desktop app.
+            // SAFETY: GetConsoleWindow has no preconditions; the returned handle is only checked for null.
+            assert!(unsafe { GetConsoleWindow() }.is_null());
+            return;
+        }
+        let executable = std::env::current_exe().unwrap();
+        let (mut command, next) = if mode == "host" {
+            (HelmCli::default().command(&executable), "check")
+        } else {
+            // Cargo can itself run without a console. Give the host one so this is not a vacuous check.
+            let mut host = Command::new(&executable);
+            host.creation_flags(0x0000_0010); // CREATE_NEW_CONSOLE, only for the test host.
+            (host, "host")
+        };
+        let output = command
+            .args([
+                "--exact",
+                "helm::cli::tests::helm_commands_do_not_allocate_a_console",
+                "--nocapture",
+            ])
+            .env(CHILD, next)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "child allocated a console:\n{}\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
         );
     }
 
