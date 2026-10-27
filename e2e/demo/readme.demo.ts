@@ -37,6 +37,18 @@ describe("README demo", () => {
     await openSection("Pods", "Workloads");
     await eventually(async () => (await textOf(row("etcd-sextant-test"))).includes("Running"), "the pods");
     await browser.pause(1_600);
+
+    // Filters → Controlled By → Everything except selected → DaemonSet: the kindnet and kube-proxy pods go.
+    await demoClick($("//main//button[@aria-haspopup='dialog' and contains(., 'Filters')]"));
+    const popup = $(".tf-popup");
+    await demoClick(popup.$("//button[contains(@class,'tf-column-choice') and contains(., 'Controlled By')]"));
+    await demoClick($(".tf-popup").$("//button[normalize-space(text())='Everything except selected']"));
+    await demoClick($(".tf-popup").$("//label[contains(@class,'tf-value') and .//*[normalize-space(text())='DaemonSet']]"));
+    await eventually(async () => !(await row("kube-proxy-").isExisting()), "the DaemonSet pods hidden");
+    await browser.pause(900);
+    await demoClick(byName("Close filter", $(".tf-popup")));
+    await browser.pause(1_600);
+
     const box = $('main input[type="search"]');
     await demoClick(box);
     await typeSlowly("e2e-web");

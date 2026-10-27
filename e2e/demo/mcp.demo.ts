@@ -128,7 +128,7 @@ describe("MCP demo", () => {
     await demoClick(menu.$("[role='menuitem']=Settings"));
 
     // The cluster settings are in tabs (#230): agent access has its own.
-    await demoClick($('[role="dialog"] [role="tab"]=AI agent access'));
+    await demoClick($("//*[@role='dialog']//*[@role='tab' and normalize-space(.)='AI agent access']"));
     const section = $('section[aria-label="AI agent access"]');
     await section.waitForExist();
     await browser.pause(900);
