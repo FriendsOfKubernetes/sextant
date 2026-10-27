@@ -28,6 +28,9 @@ pub const EXTENSIONS_CHANGED: &str = "extensions-changed";
 pub const EXTENSION_FILES_CHANGED: &str = "extension-files-changed";
 /// `open-about` — no payload (`null`): "About Sextant…" in the tray menu; the window opens the About dialog.
 pub const OPEN_ABOUT: &str = "open-about";
+/// `vcluster-links` — payload `VclusterLink[]`: the virtual clusters Sextant forwards for changed (ADR-0122); the window
+/// reads the cluster list again.
+pub const VCLUSTER_LINKS: &str = "vcluster-links";
 
 // Streams the window opens (watch, logs, terminal sessions, extension watches, GitOps installs, file transfers) are
 // not events: each `*_start` command takes a `tauri::ipc::Channel` (`onEvent`) the window created before the start,

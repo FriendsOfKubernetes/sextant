@@ -14,6 +14,7 @@ import podJson from "../details/fixtures/pod.json";
 import "../details/index";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
+import { resetHistory } from "./history";
 import { IDLE_TTL_MS, MAX_IDLE_ENTRIES, metricsCacheStats, POLL_INTERVAL_MS, resetMetricsCache, usePodUsage } from "./hooks";
 import "./index";
 import { presetOf } from "./SettingsSection";
@@ -86,6 +87,7 @@ beforeEach(() => {
   resetAppStore();
   resetNamespaceRestore();
   resetMetricsCache();
+  resetHistory();
   useClustersStore.setState({ settingsFor: null });
   useAppStore.getState().setActiveCluster("c1");
   wb = watchBackend();
@@ -311,12 +313,12 @@ describe("Metrics section of the details panel", () => {
     expect(calls("metrics_charts")[0]!.args.chart).toEqual({ type: "node", name: "sextant-test-control-plane" });
   });
 
-  it("without Prometheus (off or not found) asks for it and does not query charts", async () => {
+  it("without Prometheus (off or not found) draws from metrics-server since opened and does not query charts", async () => {
     serve(status({ mode: { mode: "off" } }), { pods: [nginxUsage] });
     const Section = section(POD);
     render(<Section clusterId="c1" objectRef={{ kind: POD, namespace: "sextant-demo", name: "nginx-9f755754d-g85tv" }} obj={pod} />);
-    expect(await screen.findByText("Charts of the last hour need a Prometheus-compatible source (Prometheus or VictoriaMetrics).")).toBeInTheDocument();
-    expect(await screen.findByText("34.0MiB")).toBeInTheDocument();
+    expect(await screen.findByText("Since opened · metrics-server, no history")).toBeInTheDocument();
+    expect(await screen.findByRole("figure", { name: "Memory" })).toHaveTextContent("34.0MiB");
     expect(calls("metrics_charts")).toHaveLength(0);
   });
 
@@ -583,7 +585,7 @@ describe("requests and limits in the Metrics section of a pod", () => {
         },
       ]),
     );
-    expect(await screen.findByText("32.0MiB")).toBeInTheDocument();
+    expect(await screen.findByText("32.0MiB", { selector: ".mx-current *" })).toBeInTheDocument();
     const cpu = valueOf("CPU");
     expect(within(cpu).getByText("25m")).toBeInTheDocument();
     expect(within(cpu).getByText("request 100m")).toBeInTheDocument();
@@ -606,7 +608,7 @@ describe("requests and limits in the Metrics section of a pod", () => {
         },
       ]),
     );
-    await screen.findByText("150m");
+    await screen.findByText("150m", { selector: ".mx-current *" });
     const cpu = valueOf("CPU");
     expect(within(cpu).getByText("request 100m")).toBeInTheDocument();
     expect(within(cpu).getByText("no limit")).toBeInTheDocument();
@@ -620,7 +622,7 @@ describe("requests and limits in the Metrics section of a pod", () => {
     // 5m of a 1000m request is 0.5 %; 0 bytes of memory is 0 %.
     serve(status(), { pods: [usageOf(["app", 5, 0])] });
     await show(podWith([{ name: "app", resources: { requests: { cpu: "1", memory: "64Mi" } } }]));
-    await screen.findByText("5m");
+    await screen.findByText("5m", { selector: ".mx-current *" });
     expect(within(valueOf("CPU")).getByText("<1% of request")).toBeInTheDocument();
     expect(within(valueOf("CPU")).queryByText("1% of request")).toBeNull();
     expect(within(valueOf("Memory")).getByText("0% of request")).toBeInTheDocument();
@@ -643,7 +645,7 @@ describe("requests and limits in the Metrics section of a pod", () => {
         },
       ]),
     );
-    await screen.findByText("15m");
+    await screen.findByText("15m", { selector: ".mx-current *" });
     const cpu = valueOf("CPU");
     expect(within(cpu).getByText("request 150m")).toBeInTheDocument();
     expect(within(cpu).getByText("no limit")).toBeInTheDocument();
@@ -676,7 +678,7 @@ describe("requests and limits in the Metrics section of a pod", () => {
         { name: "sidecar" },
       ]),
     );
-    await screen.findByText("15m");
+    await screen.findByText("15m", { selector: ".mx-current *" });
     const app = valueOf("app");
     expect(app.textContent).toContain("10m · 8.00MiB");
     expect(app.textContent).toContain("CPU request 100m, limit 200m");
@@ -689,7 +691,7 @@ describe("requests and limits in the Metrics section of a pod", () => {
   it("shows nothing about requests and limits when no container has any", async () => {
     serve(status(), { pods: [usageOf(["app", 25, 32 * MIB])] });
     await show(podWith([{ name: "app" }]));
-    expect(await screen.findByText("25m")).toBeInTheDocument();
+    expect(await screen.findByText("25m", { selector: ".mx-current *" })).toBeInTheDocument();
     expect(screen.queryByText(/request|limit/)).toBeNull();
   });
 

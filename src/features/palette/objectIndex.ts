@@ -28,6 +28,7 @@ import {
   type WatchUpdate,
 } from "../../api";
 import { findKind, getResourceDefs, kindKey, SIDEBAR_SECTIONS } from "../../resources";
+import { useRestrictedScope } from "../namespaces/accessStore";
 import { queryWords } from "./fuzzy";
 
 export const MAX_SEARCH_KINDS = 80;
@@ -196,6 +197,8 @@ interface Entry {
   key: string;
   clusterId: ClusterId;
   search: SearchKind;
+  /** `null` = all namespaces; for a user who may not list Namespaces, the accessible known ones (#285). */
+  namespaces: string[] | null;
   state: WatchState;
   /** Palettes using it; at 0 the keep-alive timer runs. */
   users: number;
@@ -252,7 +255,7 @@ function start(entry: Entry): void {
     start: (id, channel) =>
       api.resources.watchStart(
         entry.clusterId,
-        { kind: entry.search.kind, namespaces: null, labelSelector: null, fieldSelector: null, metadataOnly: true },
+        { kind: entry.search.kind, namespaces: entry.namespaces, labelSelector: null, fieldSelector: null, metadataOnly: true },
         id, channel,
         { progressive: false, maxObjects: MAX_INDEXED_OBJECTS },
       ),
@@ -279,14 +282,25 @@ function dispose(entry: Entry): void {
   changed();
 }
 
+/** The namespaces a kind is watched in: the restricted scope for a namespaced kind (#285), else all. */
+function namespacesOf(search: SearchKind, scope: string[] | null): string[] | null {
+  return search.resourceKind.namespaced ? scope : null;
+}
+
+function entryKey(clusterId: ClusterId, search: SearchKind, scope: string[] | null): string {
+  const namespaces = namespacesOf(search, scope);
+  return `${clusterId}|${kindKey(search.kind)}${namespaces ? `|${namespaces.join(",")}` : ""}`;
+}
+
 /** Starts (or keeps) watching `kinds` of the cluster; the returned function lets them go (stopped after keep-alive). */
-function acquire(clusterId: ClusterId, kinds: SearchKind[]): () => void {
+function acquire(clusterId: ClusterId, kinds: SearchKind[], scope: string[] | null): () => void {
   const held: Entry[] = [];
   for (const search of kinds) {
-    const key = `${clusterId}|${kindKey(search.kind)}`;
+    const key = entryKey(clusterId, search, scope);
     let entry = entries.get(key);
     if (!entry) {
-      entry = { key, clusterId, search, state: LOADING, users: 0, keepAlive: null, stop: null, releaseSlot: null };
+      const namespaces = namespacesOf(search, scope);
+      entry = { key, clusterId, search, namespaces, state: LOADING, users: 0, keepAlive: null, stop: null, releaseSlot: null };
       entries.set(key, entry);
       waiting.push(entry);
     }
@@ -323,24 +337,25 @@ const getVersion = () => version;
  */
 export function useObjectIndex(clusterId: ClusterId | null, kinds: SearchKind[] | null): ObjectIndex {
   const current = useSyncExternalStore(subscribe, getVersion, getVersion);
+  const scope = useRestrictedScope(clusterId);
 
   useEffect(() => {
     if (!clusterId || !kinds || kinds.length === 0) return;
-    return acquire(clusterId, kinds);
-  }, [clusterId, kinds]);
+    return acquire(clusterId, kinds, scope);
+  }, [clusterId, kinds, scope]);
 
   return useMemo(() => {
     const result: ObjectIndex = { kinds: [], pending: 0 };
     if (!clusterId || !kinds) return result;
     for (const search of kinds) {
-      const entry = entries.get(`${clusterId}|${kindKey(search.kind)}`);
+      const entry = entries.get(entryKey(clusterId, search, scope));
       if (!entry) continue;
       result.kinds.push({ ...entry.search, state: entry.state });
       if (entry.state.status === "loading") result.pending++;
     }
     return result;
     // `current`: a new index after every change of the watches.
-  }, [clusterId, kinds, current]);
+  }, [clusterId, kinds, current, scope]);
 }
 
 /** Stops every watch at once (tests). */

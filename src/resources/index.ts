@@ -41,6 +41,7 @@ export {
   viewIdOf,
   type ActionId,
   type CellContext,
+  type SearchTextContext,
   type ColumnDef,
   type ResourceDef,
   type SidebarEntry,

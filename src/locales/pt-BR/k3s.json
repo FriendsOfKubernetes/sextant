@@ -1,0 +1,232 @@
+{
+  "badge_one": "{{count}} objeto precisa de atenção",
+  "badge_many": "{{count}} de objetos precisam de atenção",
+  "badge_other": "{{count}} objetos precisam de atenção",
+  "loading": "Carregando…",
+  "yes": "Sim",
+  "sidebar": {
+    "helmCharts": "Helm Charts",
+    "helmChartConfigs": "Helm Chart Configs",
+    "addons": "Addons",
+    "etcdSnapshots": "Snapshots do etcd"
+  },
+  "distribution": {
+    "k3s": "k3s",
+    "rke2": "RKE2",
+    "mixed": "Nós k3s e RKE2"
+  },
+  "role": {
+    "controlPlane": "plano de controle",
+    "etcd": "etcd",
+    "master": "master (label antigo)"
+  },
+  "signal": {
+    "kubeletVersion": "versão do kubelet",
+    "annotations": "annotations do nó",
+    "providerId": "ID do provedor",
+    "instanceType": "label do tipo de instância"
+  },
+  "page": {
+    "sidebar": "Distribuição",
+    "title": "k3s / RKE2",
+    "hint": "O que os nós, os Addons e os HelmCharts dizem deste cluster k3s ou RKE2. Somente leitura.",
+    "summary": "Cluster",
+    "notRecognised": "Nenhum nó indica k3s ou RKE2",
+    "recognised": "{{recognised}} de {{total}} nós",
+    "serversAgents": "Servidores: {{servers}}, agentes: {{agents}}",
+    "embeddedEtcd": "etcd embutido",
+    "otherDatastore": "Nenhum membro de um etcd embutido: SQLite ou um datastore externo (o Sextant não sabe dizer qual)",
+    "nodesTruncated": "Só os primeiros {{limit}} nós são lidos.",
+    "nodesUnavailable": "Não é possível ler os nós.",
+    "columns": {
+      "node": "Nó",
+      "distribution": "Distribuição",
+      "version": "Versão",
+      "role": "Papel",
+      "roles": "Labels de papel"
+    }
+  },
+  "columns": {
+    "state": "Estado",
+    "chart": "Chart",
+    "version": "Versão",
+    "targetNamespace": "Namespace de destino",
+    "addon": "Addon",
+    "helmChart": "HelmChart",
+    "source": "Manifesto",
+    "checksum": "Checksum",
+    "node": "Nó",
+    "storage": "Armazenamento",
+    "size": "Tamanho",
+    "created": "Criado"
+  },
+  "chartState": {
+    "deployed": "Implantado",
+    "installing": "Instalando",
+    "retrying": "Tentando de novo",
+    "failed": "Falhou",
+    "deleting": "Excluindo",
+    "applied": "Job criado",
+    "unknown": "Sem status"
+  },
+  "jobState": {
+    "running": "Em execução",
+    "complete": "Concluído",
+    "failed": "Falhou",
+    "pending": "Pendente"
+  },
+  "snapshotState": {
+    "ready": "Pronto",
+    "failed": "Falhou",
+    "pending": "Não pronto"
+  },
+  "storage": {
+    "s3": "S3",
+    "local": "Local"
+  },
+  "fields": {
+    "state": "Estado",
+    "chart": "Chart",
+    "repo": "Repositório",
+    "version": "Versão",
+    "targetNamespace": "Namespace de destino",
+    "createNamespace": "Cria o namespace",
+    "bootstrap": "Chart de bootstrap",
+    "failurePolicy": "Política de falha",
+    "backOffLimit": "Tentativas de instalação (backoff limit)",
+    "timeout": "Tempo limite",
+    "jobImage": "Imagem do Job",
+    "authSecret": "Credenciais do repositório",
+    "repoCA": "CA do repositório",
+    "registrySecret": "Credenciais do registry",
+    "addon": "Implantado pelo Addon",
+    "helmChartConfig": "HelmChartConfig",
+    "helmChart": "HelmChart",
+    "job": "Job",
+    "jobState": "Estado do Job",
+    "failedPods": "Pods com falha",
+    "started": "Iniciado",
+    "completed": "Concluído",
+    "failedAt": "Falhou em",
+    "source": "Manifesto",
+    "checksum": "Checksum",
+    "snapshotState": "Estado",
+    "snapshotName": "Nome do snapshot",
+    "node": "Nó",
+    "storage": "Armazenamento",
+    "bucket": "Bucket",
+    "location": "Local",
+    "size": "Tamanho",
+    "created": "Criado",
+    "errorAt": "Erro em",
+    "distribution": "Distribuição",
+    "versions": "Versões",
+    "recognised": "Nós reconhecidos",
+    "servers": "Nós",
+    "datastore": "Datastore",
+    "nodeRole": "Papel",
+    "roles": "Labels de papel",
+    "signals": "Reconhecido por",
+    "hostname": "Nome do host",
+    "internalIp": "IP interno",
+    "externalIp": "IP externo",
+    "etcdMember": "Membro do etcd"
+  },
+  "hint": {
+    "retrying": "O Job de instalação falha repetidamente e o helm-controller tenta de novo. Os logs do Job dizem por quê.",
+    "applied": "O helm-controller criou o Job de instalação; o resultado está no Job abaixo.",
+    "unknown": "O helm-controller não informou status (versões antigas não escrevem); o Job abaixo mostra como foi a instalação.",
+    "bundled": "Implantado a partir do diretório de manifestos do servidor (Addon {{addon}}): alterações feitas aqui são sobrescritas quando o servidor reinicia; use um HelmChartConfig."
+  },
+  "job": {
+    "title": "Job de instalação",
+    "logs": "Logs",
+    "none": "Nenhum Job {{job}} na lista.",
+    "unavailable": "Não é possível ler os Jobs."
+  },
+  "values": {
+    "title": "Valores",
+    "none": "Nenhum valor definido aqui.",
+    "note": "Valores podem conter segredos: valores sob chaves que parecem secretas ficam ocultos, e credenciais são removidas de endereços. A seção YAML mostra o objeto salvo.",
+    "unreadable": "Os valores não são mostrados: não é possível lê-los como YAML com segurança.",
+    "showContent": "Mostrar valuesContent",
+    "showValues": "Mostrar values",
+    "showSet": "Mostrar os valores set",
+    "secrets": "Valores de Secrets",
+    "secret": "Secret",
+    "keys": "Chaves",
+    "allKeys": "todas as chaves"
+  },
+  "config": {
+    "noChart": "Não há HelmChart {{name}} em {{namespace}}: este HelmChartConfig não sobrescreve nada agora.",
+    "hint": "Um HelmChartConfig sobrescreve os valores do HelmChart de mesmo nome e namespace; o helm-controller instala o chart de novo quando ele muda."
+  },
+  "addon": {
+    "hint": "O k3s aplica este manifesto a partir do diretório de manifestos do servidor. Um manifesto que ele não consegue aplicar é informado como evento Warning deste Addon."
+  },
+  "node": {
+    "server": "Servidor",
+    "agent": "Agente",
+    "args": "Argumentos",
+    "flag": "Opção",
+    "value": "Valor",
+    "hidden": "oculto",
+    "argsNote": "Os valores de tokens, chaves, senhas e endereços de datastore nunca são mostrados.",
+    "argsUnreadable": "Não é possível ler os argumentos."
+  },
+  "components": {
+    "title": "Componentes incluídos",
+    "hint": {
+      "k3s": "O que o k3s implanta a partir do seu diretório de manifestos. Um componente omitido com --disable não é encontrado.",
+      "rke2": "Os charts que o RKE2 instala em kube-system. Quais depende das opções do servidor (--cni, --ingress-controller, --disable)."
+    },
+    "unavailable": "Não é possível ler os Deployments ou DaemonSets de kube-system.",
+    "truncated": "Algumas listas estão cortadas: os estados podem estar incompletos.",
+    "component": "Componente",
+    "status": "Estado",
+    "from": "Origem",
+    "workloads": "Cargas de trabalho",
+    "available": "{{available}} de {{desired}} disponíveis",
+    "state": {
+      "ready": "Pronto",
+      "notReady": "Indisponível",
+      "installing": "Instalando",
+      "failed": "A instalação falhou",
+      "noWorkload": "Ainda sem carga de trabalho",
+      "notFound": "Não encontrado",
+      "notFoundDisabled": "Não encontrado (desativado com --disable {{flag}}?)",
+      "notFoundServiceLb": "Sem uso: nenhum Service do tipo LoadBalancer, ou desativado com --disable {{flag}}"
+    }
+  },
+  "component": {
+    "coredns": "CoreDNS",
+    "traefik": "Traefik",
+    "localPath": "Local Path Provisioner",
+    "metricsServer": "metrics-server",
+    "serviceLb": "ServiceLB (Klipper)",
+    "rke2Coredns": "CoreDNS",
+    "rke2IngressNginx": "Ingress NGINX",
+    "rke2Traefik": "Traefik",
+    "rke2MetricsServer": "metrics-server",
+    "rke2SnapshotController": "Controlador de snapshots",
+    "rke2Canal": "Canal",
+    "rke2Calico": "Calico",
+    "rke2Cilium": "Cilium",
+    "rke2Flannel": "Flannel",
+    "rke2Multus": "Multus",
+    "serviceLbRke2": "ServiceLB (Klipper)"
+  },
+  "serviceLb": {
+    "title": "ServiceLB",
+    "hint": "O ServiceLB executa um DaemonSet por Service do tipo LoadBalancer e publica os endereços dos nós em que ele roda.",
+    "none": "Nenhum DaemonSet do ServiceLB em kube-system.",
+    "service": "Service",
+    "daemonSet": "DaemonSet",
+    "pods": "Pods",
+    "addresses": "Endereços do balanceador",
+    "ready": "{{ready}} de {{desired}} prontos",
+    "noAddress": "Ainda sem endereço",
+    "serviceUnreadable": "Não é possível ler o Service",
+    "truncated": "Só os primeiros {{limit}} Services são listados."
+  }
+}

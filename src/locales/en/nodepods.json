@@ -1,0 +1,32 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Pods on this node"
+  },
+  "search": {
+    "placeholder": "Search in every column (app=web for a label)…"
+  },
+  "columns": {
+    "cpuRequest": "CPU request",
+    "cpuLimit": "CPU limit",
+    "memoryRequest": "Memory request",
+    "memoryLimit": "Memory limit"
+  },
+  "resources": {
+    "tab": "Resources",
+    "allocated": "Allocated resources",
+    "podsTitle": "Non-terminated pods",
+    "resource": "Resource",
+    "requests": "Requests",
+    "limits": "Limits",
+    "usage": "Usage",
+    "allocatable": "Allocatable",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pods: {{count}}",
+    "podsOf": "Pods: {{count}} of {{allocatable}} allowed",
+    "withoutLimit_one": "{{count}} pod has no limit on every container: the limits above are at least these sums.",
+    "withoutLimit_other": "{{count}} pods have no limit on every container: the limits above are at least these sums."
+  }
+}

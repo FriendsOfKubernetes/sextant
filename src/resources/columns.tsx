@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../api";
 import { useAppStore } from "../app/store";
-import { Age } from "../components";
+import { Age, ageParts } from "../components";
 import { kindFromApiVersion } from "./refs";
 import type { ColumnDef } from "./registry";
 import { createdAt, labelPairs, sortStatuses, statusTone, type OwnerRef, type Tone } from "./status";
@@ -36,6 +36,14 @@ export const ageColumn: ColumnDef = column(
   {
     width: "70px",
     render: (o, ctx) => <Age timestamp={o.metadata?.creationTimestamp as string | undefined} now={ctx.now} />,
+    // The search matches the age as the cell shows it ("5m"), as of the table's clock.
+    searchText: (o, ctx) => {
+      const t = createdAt(o);
+      if (t === undefined) return undefined;
+      const { unit, count } = ageParts(ctx.now - t);
+      return ctx.t(`common:age.${unit}`, { count });
+    },
+    searchTextTimed: true,
   },
 );
 

@@ -1,0 +1,54 @@
+{
+  "invalidName": "«{{name}}» — не имя namespace",
+  "filter": {
+    "allAccessible_one": "Все доступные ({{count}})",
+    "allAccessible_few": "Все доступные ({{count}})",
+    "allAccessible_many": "Все доступные ({{count}})",
+    "allAccessible_other": "Все доступные ({{count}})",
+    "restrictedHint": "У вас нет прав на просмотр списка namespace этого кластера. Введите namespace и нажмите Enter — Sextant его запомнит.",
+    "scopeCapped": "«Все доступные» показывает первые {{max}} из {{total}} namespace; чтобы увидеть остальные, выберите namespace.",
+    "forget": "Забыть {{namespace}}"
+  },
+  "mark": {
+    "accessible": "доступен",
+    "noAccess": "нет доступа",
+    "found": "найден"
+  },
+  "found": {
+    "title": "Найден при подключении: {{sources}}",
+    "context": "namespace контекста kubeconfig",
+    "serviceAccount": "namespace ServiceAccount",
+    "project": "проект OpenShift"
+  },
+  "check": {
+    "again": "Проверить доступ снова",
+    "checking": "Проверка доступа…",
+    "checkedAt": "Доступ проверен в {{time}}."
+  },
+  "noAccess": {
+    "title": "Нет доступа: {{kind}}",
+    "namespaced": "API-сервер сообщает, что у вас нет прав на просмотр списка {{kind}} в {{namespaces}}.",
+    "cluster": "API-сервер сообщает, что у вас нет прав на просмотр списка {{kind}} в этом кластере.",
+    "noScopeTitle": "Нет namespace для показа",
+    "noScope": "У вас нет прав на просмотр списка namespace этого кластера, и Sextant не знает ни одного доступного вам namespace. Введите его в фильтре namespace.",
+    "listAnyway": "Всё равно показать",
+    "mark": "Нет доступа"
+  },
+  "settings": {
+    "title": "Доступные namespace",
+    "hint": "Namespace, которые вы ввели или выбрали в фильтре namespace, и добавленные здесь. Они остаются в фильтре, даже когда флажок снят. Если у вас нет прав на просмотр списка namespace этого кластера, «Все namespace» означает эти.",
+    "restricted": "У вас нет прав на просмотр списка namespace этого кластера: «Все namespace» показывает доступные namespace ниже.",
+    "unrestricted": "Вы можете просматривать список namespace этого кластера: эти имена лишь запоминаются для фильтра namespace.",
+    "unknown": "Sextant не смог проверить, можете ли вы просматривать список namespace этого кластера.",
+    "notConnected": "Подключитесь к кластеру, чтобы проверить, к каким из этих namespace у вас есть доступ.",
+    "username": "API-сервер знает вас как {{user}}.",
+    "addLabel": "Namespace",
+    "add": "Добавить",
+    "cap": "Для кластера хранится не больше {{max}} namespace.",
+    "empty": "Пока нет namespace.",
+    "remove": "Удалить {{namespace}}",
+    "found": "Найдены при подключении",
+    "keep": "Запомнить",
+    "keepNamed": "Запомнить {{namespace}}"
+  }
+}

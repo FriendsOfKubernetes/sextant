@@ -44,6 +44,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Оператори (OLM)",
+    "openshift": "OpenShift",
     "policies": "Політики Kyverno",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -56,7 +58,8 @@
     "credentials": "Облікові дані",
     "disk": "Диск майже заповнений",
     "alerts": "Активні алерти",
-    "events": "Події Warning"
+    "events": "Події Warning",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -107,7 +110,12 @@
     "monitorNotPickedUp": "Жоден Prometheus не підхоплює його своїми selector",
     "reflectorStale": "Reflector не скопіював у це дзеркало поточну версію джерела {{source}}.",
     "reflectorNotAllowed": "Джерело {{source}} більше не дозволяє цей namespace, а дзеркало застаріло.",
-    "reflectorSourceMissing": "Джерело {{source}} не існує."
+    "reflectorSourceMissing": "Джерело {{source}} не існує.",
+    "olmPlanStuck": "InstallPlan цієї Subscription перебуває у фазі {{phase}} понад 30 хвилин.",
+    "olmCatalogState": "Підключення до реєстру каталогу: {{state}}. Subscription не можуть отримувати з нього оператори.",
+    "k3sHelmChartFailed": "Job встановлення {{job}} цього HelmChart завершився з помилкою.",
+    "k3sHelmChartRetrying": "Job {{job}}: Pod з помилкою наразі: {{failed}}; helm-controller далі повторює.",
+    "k3sComponentUnavailable": "Вбудований компонент {{deployment}}: доступно {{available}} з {{desired}} реплік."
   },
   "showDisk": "Диск майже заповнений",
   "showPractices": "Зауваження щодо найкращих практик",

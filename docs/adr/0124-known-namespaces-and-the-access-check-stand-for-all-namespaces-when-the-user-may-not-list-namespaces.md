@@ -1,0 +1,31 @@
+# ADR-0124: Known namespaces and the access check stand for "All namespaces" when the user may not list Namespaces
+
+## Context
+
+#285 (from Discussion #281): a user with namespace-scoped RBAC, who may not list Namespaces, got "forbidden" everywhere. "All namespaces" is one cluster-wide watch per kind, which the API server refuses; the namespace filter could only offer what the Namespace list returned (nothing) plus the current selection, so a namespace typed with Enter vanished as soon as it was unticked. OpenLens has "Accessible namespaces" in the cluster settings. Kubernetes has no API that names the namespaces a user may read without listing Namespaces, but it answers "may I …" (SelfSubjectAccessReview), "what may I do in this namespace" (SelfSubjectRulesReview) and "who am I" (SelfSubjectReview).
+
+## Decision
+
+- **Known namespaces per cluster**: `ClusterSettings.knownNamespaces` (frontend-written; read leniently in the core by `settings/known_namespaces.rs` — not a list reads as none, entries that are not DNS-1123 labels and repeats are dropped, at most 200 kept; moved by a context rename and dropped with a deleted context like the rest of `ClusterSettings`). Every namespace typed or selected in the filter is added in the same write as the selection (`selectNamespaces` → `knownPatch`); an unticked one stays; the filter's popup lists the cluster's namespaces ∪ selected ∪ known ∪ found and offers "Forget" on a known one; the cluster settings ("Connection" tab, "Accessible namespaces") add and remove them. A typed text that is not a namespace name is refused with a message.
+- **The access check** (`src/features/namespaces/accessStore.ts`), once per connection and again on "Check access again" (filter, settings, "No access" view), window only:
+  1. One access review: may the user `list namespaces` cluster-wide? Yes, or the review fails → nothing changes (one cluster-wide watch as always).
+  2. No → the cluster is *restricted*. Candidates: the kubeconfig context's namespace (`ClusterInfo.namespace`), the ServiceAccount namespace from a SelfSubjectReview (new core `rbac::whoami`, command `rbac_whoami`; `system:serviceaccount:<ns>:<name>` parsed as the API server forms it; `None` where `authentication.k8s.io/v1` does not serve it), the user's OpenShift projects where `project.openshift.io/v1` Project is served (a metadata-only list ≤ 200, 15 s; listing projects returns only the user's projects, `openshift/api` `project/v1/types.go`), and the known namespaces. Found ones are kept in memory, never saved; the user can "Keep" one.
+  3. Each candidate (≤ 200) is asked "may I list pods in it?" in batches of `rbac::MAX_QUERIES` = 64: *accessible*, *no access*, or *unknown* (the review failed or reported an evaluation error) — the API server's answer, never a guess; unknown changes nothing. A name added later (typed, in the settings, a saved view) is asked when it appears in the settings.
+  4. Kinds: every served cluster-scoped kind (Sextant's own first, ≤ 64) by one batch of access reviews; namespaced kinds from a rules review of each accessible namespace (≤ 10 per connection, 4 at once), matched as the RBAC authorizer matches rules (`list` or `*`, the group or `*`, the plural or `*`, no resource names). A kind is "no access" only when every namespace looked at was reviewed completely and none grants it; an `incomplete` review (a webhook or another authorizer) can only grant.
+- **"All namespaces" while restricted** means the found and known namespaces the server did not refuse, at most 20 (`MAX_SCOPE_NAMESPACES`; one list and watch per kind each), sorted — `restrictedScope`, the same array until it changes. It is applied in one place, `useSelectedNamespaces`, which every namespace-wide view uses; the problems store (and with it the fleet cards' row taps) and the palette's object index use the same scope and start again when it changes. The filter says "All accessible (N)"; past the cap it says how many it leaves out. Views wait for the first answer (and the candidates) at most `CHECK_WAIT_MS` = 3 s, tables for the kinds' answers at most `KINDS_WAIT_MS` = 6 s, instead of starting watches the server would refuse.
+- **"No access" once**: a table whose kind the check says cannot be listed in the namespaces it would watch shows "No access to {kind}" with the namespace filter, "Check access again" and "List anyway" (for the window's lifetime) instead of starting a watch; restricted with no namespace known at all it says so. A sidebar entry carries a "No access" mark. Nothing is hidden.
+- Only the user's own permissions are asked; the answers live in memory per connection and are never saved or logged. `rbac_whoami` returns the user name and the ServiceAccount namespace only (no groups or extra attributes). No MCP tool and no extension method (tests in `src-tauri/src/commands/rbac.rs`).
+
+## Why
+
+- Guessing accessible namespaces from Roles and bindings was rejected: a namespace-scoped user usually cannot read them either, other authorizers decide too, and the reviews are authoritative.
+- "List pods in it" as the namespace question: pods are what nearly every view needs, and a rules review cannot tell a namespace grant from a cluster-wide one (a ClusterRoleBinding's rules appear in every namespace's review).
+- Saving the found namespaces was rejected: they are found again on every connect, and saving them would make "Forget" pointless; the user keeps one deliberately.
+- Running the kind check for users who may list Namespaces was left out: "if yes, nothing changes" (#285), and such a table already says "You don't have permission to list these objects" once.
+
+## Consequences
+
+- A restricted user sees at most 20 namespaces under "All accessible"; more need a selection (each view's own caps still apply).
+- The first connect of a restricted cluster shows loading for the length of a few reviews (≤ 3 s for views, ≤ 6 s for tables) instead of a burst of refused watches.
+- Kinds in namespaces past the 10 reviewed ones are "unknown": their tables list as usual and report the refused namespaces.
+- On OpenShift a user's projects are the candidates without typing anything.

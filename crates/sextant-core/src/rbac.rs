@@ -5,6 +5,7 @@
 //! so these answers are authoritative for the user, unlike permissions computed from Roles and bindings.
 
 use futures::StreamExt;
+use k8s_openapi::api::authentication::v1::SelfSubjectReview;
 use k8s_openapi::api::authorization::v1::{
     NonResourceAttributes, ResourceAttributes, SelfSubjectAccessReview,
     SelfSubjectAccessReviewSpec, SelfSubjectRulesReview, SelfSubjectRulesReviewSpec,
@@ -90,6 +91,61 @@ pub struct RulesReview {
     /// Some authorizer cannot list rules (webhook, Node): the list may miss permissions the user has.
     pub incomplete: bool,
     pub evaluation_error: String,
+}
+
+/// Who the API server says the current user is (SelfSubjectReview, #285): the user name, and for a ServiceAccount
+/// token the ServiceAccount's namespace. Groups and extra attributes are not passed on: the window needs only these.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SelfSubject {
+    pub username: String,
+    /// `<ns>` of a `system:serviceaccount:<ns>:<name>` user; `None` for any other user.
+    pub service_account_namespace: Option<String>,
+}
+
+/// The ServiceAccount namespace of a user name `system:serviceaccount:<namespace>:<name>`, as the API server names
+/// ServiceAccount users (`k8s.io/apiserver/pkg/authentication/serviceaccount`, `MakeUsername`); `None` for any other
+/// name or a namespace that is not a DNS-1123 label.
+fn service_account_namespace(username: &str) -> Option<String> {
+    let rest = username.strip_prefix("system:serviceaccount:")?;
+    let (namespace, name) = rest.split_once(':')?;
+    let label = |b: &u8| b.is_ascii_lowercase() || b.is_ascii_digit();
+    let bytes = namespace.as_bytes();
+    let valid = !bytes.is_empty()
+        && bytes.len() <= 63
+        && bytes.first().is_some_and(label)
+        && bytes.last().is_some_and(label)
+        && bytes.iter().all(|b| label(b) || *b == b'-');
+    (valid && !name.is_empty() && !name.contains(':')).then(|| namespace.to_owned())
+}
+
+/// Who the current user is, by a SelfSubjectReview (`authentication.k8s.io/v1`, served since Kubernetes 1.28); `None`
+/// where the API server does not serve it. Like the access reviews it is a `create` the server evaluates and
+/// discards.
+pub async fn whoami(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<Option<SelfSubject>> {
+    let client = mgr.client(cluster)?;
+    let answered = with_timeout(STEP_TIMEOUT, "asking who the user is", async {
+        Api::<SelfSubjectReview>::all(client)
+            .create(&PostParams::default(), &SelfSubjectReview::default())
+            .await
+            .map_err(CoreError::from)
+    })
+    .await;
+    let answered = match answered {
+        Ok(answered) => answered,
+        Err(err) if err.code == ErrorCode::NotFound => return Ok(None),
+        Err(err) => return Err(err),
+    };
+    let username = answered
+        .status
+        .and_then(|s| s.user_info)
+        .and_then(|u| u.username)
+        .unwrap_or_default();
+    Ok(Some(SelfSubject {
+        service_account_namespace: service_account_namespace(&username),
+        username,
+    }))
 }
 
 /// Checks a query before anything is sent.
@@ -409,6 +465,54 @@ mod tests {
         assert_eq!(err.code, ErrorCode::Forbidden);
         let err = rules_review(&mgr, &id, "default").await.unwrap_err();
         assert_eq!(err.code, ErrorCode::Forbidden);
+    }
+
+    const SSR: &str = "/apis/authentication.k8s.io/v1/selfsubjectreviews";
+
+    #[test]
+    fn a_service_account_user_names_its_namespace() {
+        assert_eq!(
+            service_account_namespace("system:serviceaccount:team-a:ci").as_deref(),
+            Some("team-a")
+        );
+        for other in [
+            "alice@example.com",
+            "system:serviceaccount:team-a",
+            "system:serviceaccount::ci",
+            "system:serviceaccount:Team-A:ci",
+            "system:serviceaccount:team-a:",
+            "system:serviceaccount:team-a:ci:extra",
+            "system:serviceaccounts:team-a:ci",
+        ] {
+            assert_eq!(service_account_namespace(other), None, "{other}");
+        }
+    }
+
+    #[tokio::test]
+    async fn whoami_asks_a_self_subject_review_and_none_where_it_is_not_served() {
+        let api = FakeApi::start(|req: &Request| match (req.method.as_str(), req.path.as_str()) {
+            (_, "/api") => Reply::json(200, API_VERSIONS),
+            ("POST", SSR) => Reply::json(
+                201,
+                r#"{"kind":"SelfSubjectReview","apiVersion":"authentication.k8s.io/v1","metadata":{},
+                   "status":{"userInfo":{"username":"system:serviceaccount:team-a:ci","uid":"u","groups":["system:serviceaccounts"]}}}"#,
+            ),
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let me = whoami(&mgr, &id).await.unwrap().unwrap();
+        assert_eq!(me.username, "system:serviceaccount:team-a:ci");
+        assert_eq!(me.service_account_namespace.as_deref(), Some("team-a"));
+        assert_eq!(api.count(SSR), 1);
+
+        let old = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(old.url()).await;
+        assert_eq!(whoami(&mgr, &id).await.unwrap(), None);
     }
 
     #[tokio::test]

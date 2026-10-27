@@ -124,5 +124,10 @@
       "jobs": "Jobs"
     },
     "count": "{{count}}"
+  },
+  "history": {
+    "note": "Açıldığından beri · metrics-server, geçmiş yok",
+    "waiting": "metrics-server'dan ilk değerler bekleniyor…",
+    "full": "Aynı anda çok fazla grafik örnekleniyor; bunu çizmek için diğer ayrıntıları kapatın."
   }
 }

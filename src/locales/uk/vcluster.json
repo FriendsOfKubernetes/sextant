@@ -1,0 +1,93 @@
+{
+  "sidebar": "Віртуальні кластери",
+  "loading": "Завантаження…",
+  "page": {
+    "title": "Віртуальні кластери",
+    "hint": "Екземпляри vcluster у цьому кластері: StatefulSet і Deployment з label app=vcluster. «Під'єднати» додає віртуальний кластер до списку кластерів через переспрямування порту цього кластера.",
+    "total_one": "{{count}} віртуальний кластер",
+    "total_few": "{{count}} віртуальні кластери",
+    "total_many": "{{count}} віртуальних кластерів",
+    "total_other": "{{count}} віртуального кластера",
+    "truncated": "Показано лише перші {{max}} StatefulSet і Deployment.",
+    "unavailable": "Деякі StatefulSet або Deployment не вдається отримати. Щоб шукати в доступних вам namespace, виберіть їх у фільтрі.",
+    "namespacesCapped": "Pod, Service і Secret перевіряються лише в перших {{max}} namespace.",
+    "lifetime": "Під'єднаний віртуальний кластер залишається в списку кластерів, лише поки Sextant переспрямовує для нього порт: від'єднання його основного кластера, зупинка переспрямування або вихід із Sextant видаляють його."
+  },
+  "columns": {
+    "name": "Ім'я",
+    "namespace": "Namespace",
+    "kind": "Вид",
+    "version": "Версія",
+    "state": "Стан",
+    "pods": "Pod",
+    "service": "Service",
+    "secret": "Secret з kubeconfig",
+    "connection": "З'єднання"
+  },
+  "state": {
+    "paused": "Призупинено",
+    "scaledDown": "Масштабовано до нуля",
+    "ready": "Готовий",
+    "degraded": "Готово {{ready}} з {{replicas}}",
+    "notReady": "Не готовий"
+  },
+  "pods": {
+    "ready": "готово {{ready}}/{{total}}",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "Є",
+    "missing": "Немає",
+    "unknown": "Невідомо"
+  },
+  "connect": {
+    "button": "Під'єднати",
+    "buttonNamed": "Під'єднати {{name}}",
+    "connecting": "Під'єднання…",
+    "forwarded": "Переспрямовано на порт {{port}}",
+    "open": "Відкрити",
+    "openNamed": "Відкрити {{context}}",
+    "disconnect": "Від'єднати",
+    "disconnectNamed": "Від'єднати {{name}}",
+    "failed": "Не вдалося під'єднатися: {{message}}",
+    "title": "Під'єднатися до vcluster {{name}}?",
+    "confirm": "Під'єднати",
+    "reads": "Sextant прочитає Secret {{secret}} у {{namespace}} з вашими обліковими даними. kubeconfig з нього залишається в серверній частині Sextant.",
+    "forwards": "Локальний порт переспрямовується через {{host}} до API-сервера vcluster.",
+    "adds": "Віртуальний кластер {{context}} додається до списку кластерів, у власний файл kubeconfig Sextant vcluster.yaml.",
+    "lasts": "Він залишається там, поки працює переспрямування порту: від'єднання {{host}}, зупинка переспрямування або вихід із Sextant видаляють його."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Версія",
+    "state": "Стан",
+    "pods": "Pod площини керування",
+    "service": "Service",
+    "secret": "Secret з kubeconfig",
+    "connection": "З'єднання"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Синхронізовані об'єкти",
+    "hint": "Об'єкти, які syncer {{name}} скопіював із віртуального кластера в цей namespace, та ім'я й namespace у віртуальному кластері, яким кожен відповідає.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "Об'єкти {{kind}} не вдається отримати.",
+    "notSaid": "не вказано",
+    "more_one": "Ще {{count}} не показано.",
+    "more_few": "Ще {{count}} не показано.",
+    "more_many": "Ще {{count}} не показано.",
+    "more_other": "Ще {{count}} не показано.",
+    "truncated": "Показано лише перші {{max}}.",
+    "columns": {
+      "host": "Об'єкт основного кластера",
+      "virtualName": "Ім'я у віртуальному кластері",
+      "virtualNamespace": "Namespace у віртуальному кластері"
+    }
+  },
+  "source": {
+    "kind": "віртуальні кластери",
+    "confirmRemove": "Його віртуальні кластери зникнуть зі списку, а kubeconfig Sextant для них буде видалено. Їхні переспрямування портів працюватимуть, доки ви не зупините їх у розділі «Переспрямування портів»."
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "sidebar": "Virtual clusters",
+  "loading": "Loading…",
+  "page": {
+    "title": "Virtual clusters",
+    "hint": "vcluster instances of this cluster: StatefulSets and Deployments labelled app=vcluster. Connect adds a virtual cluster to the cluster list through a port forward of this cluster.",
+    "total_one": "{{count}} virtual cluster",
+    "total_other": "{{count}} virtual clusters",
+    "truncated": "Only the first {{max}} StatefulSets and Deployments are listed.",
+    "unavailable": "Some StatefulSets or Deployments cannot be listed. To look in namespaces you can read, choose them in the filter.",
+    "namespacesCapped": "Pods, Services and Secrets are checked in the first {{max}} namespaces only.",
+    "lifetime": "A connected virtual cluster stays in the cluster list only while Sextant forwards a port for it: disconnecting its host cluster, stopping the port forward or quitting Sextant removes it."
+  },
+  "columns": {
+    "name": "Name",
+    "namespace": "Namespace",
+    "kind": "Kind",
+    "version": "Version",
+    "state": "State",
+    "pods": "Pods",
+    "service": "Service",
+    "secret": "kubeconfig Secret",
+    "connection": "Connection"
+  },
+  "state": {
+    "paused": "Paused",
+    "scaledDown": "Scaled down",
+    "ready": "Ready",
+    "degraded": "{{ready}} of {{replicas}} ready",
+    "notReady": "Not ready"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} ready",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "Found",
+    "missing": "Missing",
+    "unknown": "Cannot tell"
+  },
+  "connect": {
+    "button": "Connect",
+    "buttonNamed": "Connect {{name}}",
+    "connecting": "Connecting…",
+    "forwarded": "Forwarded on port {{port}}",
+    "open": "Open",
+    "openNamed": "Open {{context}}",
+    "disconnect": "Disconnect",
+    "disconnectNamed": "Disconnect {{name}}",
+    "failed": "Could not connect: {{message}}",
+    "title": "Connect to vcluster {{name}}?",
+    "confirm": "Connect",
+    "reads": "Sextant reads the Secret {{secret}} in {{namespace}} with your credentials. The kubeconfig in it stays in Sextant's backend.",
+    "forwards": "A local port is forwarded through {{host}} to the vcluster's API server.",
+    "adds": "The virtual cluster {{context}} is added to the cluster list, in Sextant's own kubeconfig file vcluster.yaml.",
+    "lasts": "It stays there while the port forward runs: disconnecting {{host}}, stopping the forward or quitting Sextant removes it."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Version",
+    "state": "State",
+    "pods": "Control plane pods",
+    "service": "Service",
+    "secret": "kubeconfig Secret",
+    "connection": "Connection"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Synced objects",
+    "hint": "Objects the syncer of {{name}} copied from the virtual cluster into this namespace, and the virtual name and namespace each stands for.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "{{kind}} objects cannot be listed.",
+    "notSaid": "not recorded",
+    "more_one": "{{count}} more is not shown.",
+    "more_other": "{{count}} more are not shown.",
+    "truncated": "Only the first {{max}} are listed.",
+    "columns": {
+      "host": "Host object",
+      "virtualName": "Virtual name",
+      "virtualNamespace": "Virtual namespace"
+    }
+  },
+  "source": {
+    "kind": "virtual clusters",
+    "confirmRemove": "Its virtual clusters disappear from the list and Sextant's kubeconfig of them is deleted. Their port forwards keep running until you stop them in Port forwarding."
+  }
+}

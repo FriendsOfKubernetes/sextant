@@ -1,0 +1,32 @@
+/* The Node details tabs "Pods" and "Resources" (#279, #280): a table filling the tab, the summary above it. */
+.np-tab {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.np-tab > .rt,
+.np-table {
+  flex: 1;
+  min-height: 0;
+}
+
+.np-summary {
+  padding: 8px 16px 0;
+}
+
+.np-note {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+}
+
+.np-search {
+  width: 200px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: inherit;
+  font: inherit;
+}

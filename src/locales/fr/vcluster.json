@@ -1,0 +1,91 @@
+{
+  "sidebar": "Clusters virtuels",
+  "loading": "Chargement…",
+  "page": {
+    "title": "Clusters virtuels",
+    "hint": "Instances vcluster de ce cluster : StatefulSets et Deployments portant le label app=vcluster. « Se connecter » ajoute un cluster virtuel à la liste des clusters via une redirection de port de ce cluster.",
+    "total_one": "{{count}} cluster virtuel",
+    "total_many": "{{count}} de clusters virtuels",
+    "total_other": "{{count}} clusters virtuels",
+    "truncated": "Seuls les {{max}} premiers StatefulSets et Deployments sont listés.",
+    "unavailable": "Certains StatefulSets ou Deployments ne peuvent pas être listés. Pour chercher dans les namespaces que vous pouvez lire, choisissez-les dans le filtre.",
+    "namespacesCapped": "Les Pods, Services et Secrets ne sont vérifiés que dans les {{max}} premiers namespaces.",
+    "lifetime": "Un cluster virtuel connecté ne reste dans la liste des clusters que tant que Sextant redirige un port pour lui : déconnecter son cluster hôte, arrêter la redirection de port ou quitter Sextant le retire."
+  },
+  "columns": {
+    "name": "Nom",
+    "namespace": "Namespace",
+    "kind": "Type",
+    "version": "Version",
+    "state": "État",
+    "pods": "Pods",
+    "service": "Service",
+    "secret": "Secret kubeconfig",
+    "connection": "Connexion"
+  },
+  "state": {
+    "paused": "En pause",
+    "scaledDown": "Réduit à zéro",
+    "ready": "Prêt",
+    "degraded": "{{ready}} sur {{replicas}} prêts",
+    "notReady": "Pas prêt"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} prêts",
+    "phase": "{{phase}} : {{number}}"
+  },
+  "presence": {
+    "found": "Présent",
+    "missing": "Absent",
+    "unknown": "Impossible à dire"
+  },
+  "connect": {
+    "button": "Se connecter",
+    "buttonNamed": "Se connecter {{name}}",
+    "connecting": "Connexion…",
+    "forwarded": "Redirigé sur le port {{port}}",
+    "open": "Ouvrir",
+    "openNamed": "Ouvrir {{context}}",
+    "disconnect": "Déconnecter",
+    "disconnectNamed": "Déconnecter {{name}}",
+    "failed": "Connexion impossible : {{message}}",
+    "title": "Se connecter au vcluster {{name}} ?",
+    "confirm": "Se connecter",
+    "reads": "Sextant lit le Secret {{secret}} dans {{namespace}} avec vos identifiants. Le kubeconfig qu'il contient reste dans le backend de Sextant.",
+    "forwards": "Un port local est redirigé via {{host}} vers le serveur d'API du vcluster.",
+    "adds": "Le cluster virtuel {{context}} est ajouté à la liste des clusters, dans le fichier kubeconfig propre à Sextant vcluster.yaml.",
+    "lasts": "Il y reste tant que la redirection de port fonctionne : déconnecter {{host}}, arrêter la redirection ou quitter Sextant le retire."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Version",
+    "state": "État",
+    "pods": "Pods du plan de contrôle",
+    "service": "Service",
+    "secret": "Secret kubeconfig",
+    "connection": "Connexion"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Objets synchronisés",
+    "hint": "Objets que le syncer de {{name}} a copiés du cluster virtuel dans ce namespace, avec le nom et le namespace virtuels que chacun représente.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "Les objets {{kind}} ne peuvent pas être listés.",
+    "notSaid": "non indiqué",
+    "more_one": "{{count}} autre n'est pas affiché.",
+    "more_many": "{{count}} d'autres ne sont pas affichés.",
+    "more_other": "{{count}} autres ne sont pas affichés.",
+    "truncated": "Seuls les {{max}} premiers sont listés.",
+    "columns": {
+      "host": "Objet hôte",
+      "virtualName": "Nom virtuel",
+      "virtualNamespace": "Namespace virtuel"
+    }
+  },
+  "source": {
+    "kind": "clusters virtuels",
+    "confirmRemove": "Ses clusters virtuels disparaissent de la liste et le kubeconfig que Sextant en garde est supprimé. Leurs redirections de port continuent jusqu'à ce que vous les arrêtiez dans Redirection de ports."
+  }
+}

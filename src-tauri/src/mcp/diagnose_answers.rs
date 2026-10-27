@@ -204,10 +204,13 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "knative",
     "crossplane",
     "clusterApi",
+    "k3s",
     "dra",
     "gpuOperator",
     "kuberay",
     "kserve",
+    "olm",
+    "openshift",
     "policies",
     "externalSecrets",
     "sealedSecrets",
@@ -268,9 +271,15 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "dra",
     // NVIDIA GPU Operator (#245): a window view of 0.23.0.
     "gpuOperator",
+    // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
+    "k3s",
     // KubeRay (#248) and KServe (#249): window views of 0.23.0.
     "kuberay",
     "kserve",
+    // Operator Lifecycle Manager (#268): a window view of 0.25.0.
+    "olm",
+    // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.
+    "openshift",
     "cnpg",
     "strimzi",
     "prometheusOperator",

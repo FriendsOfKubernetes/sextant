@@ -10,7 +10,7 @@ import { MergeButton } from "./MergeDialog";
 
 /** Sextant's own files (pasted, cloud, merged): the backend lets Sextant edit them without the flag. */
 export function isOwnSource(kind: SourceKind): boolean {
-  return kind === "pasted" || kind === "cloud" || kind === "merged";
+  return kind === "pasted" || kind === "cloud" || kind === "merged" || kind === "vcluster";
 }
 
 export function SourceWritable({ source }: { source: KubeconfigSource }) {

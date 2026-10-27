@@ -24,7 +24,7 @@ textSize: number,
  */
 terminalScreenReader: boolean, 
 /**
- * Indent child items in every cluster sidebar (off preserves the original alignment).
+ * Indent child items in every cluster sidebar (on by default since 0.25; off keeps the original alignment).
  */
 sidebarIndent: boolean, 
 /**

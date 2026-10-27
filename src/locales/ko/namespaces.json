@@ -1,0 +1,51 @@
+{
+  "invalidName": "“{{name}}”은(는) namespace 이름이 아닙니다",
+  "filter": {
+    "allAccessible_other": "접근 가능한 모든 항목({{count}})",
+    "restrictedHint": "이 클러스터의 namespace 목록을 조회할 권한이 없습니다. namespace를 입력하고 Enter를 누르세요. Sextant가 기억합니다.",
+    "scopeCapped": "“접근 가능한 모든 항목”은 namespace {{total}}개 중 처음 {{max}}개만 감시합니다. 나머지를 보려면 namespace를 선택하세요.",
+    "forget": "{{namespace}} 잊기"
+  },
+  "mark": {
+    "accessible": "접근 가능",
+    "noAccess": "접근 불가",
+    "found": "발견됨"
+  },
+  "found": {
+    "title": "연결할 때 발견: {{sources}}",
+    "context": "kubeconfig context의 namespace",
+    "serviceAccount": "ServiceAccount의 namespace",
+    "project": "OpenShift 프로젝트"
+  },
+  "check": {
+    "again": "접근 권한 다시 확인",
+    "checking": "접근 권한 확인 중…",
+    "checkedAt": "{{time}}에 접근 권한을 확인했습니다."
+  },
+  "noAccess": {
+    "title": "{{kind}}에 접근할 수 없음",
+    "namespaced": "API 서버에 따르면 {{namespaces}}에서 {{kind}} 목록을 조회할 권한이 없습니다.",
+    "cluster": "API 서버에 따르면 이 클러스터에서 {{kind}} 목록을 조회할 권한이 없습니다.",
+    "noScopeTitle": "표시할 namespace 없음",
+    "noScope": "이 클러스터의 namespace 목록을 조회할 권한이 없고, Sextant는 읽을 수 있는 namespace를 알지 못합니다. namespace 필터에 하나를 입력하세요.",
+    "listAnyway": "그래도 조회",
+    "mark": "접근 불가"
+  },
+  "settings": {
+    "title": "접근 가능한 namespace",
+    "hint": "namespace 필터에서 입력하거나 선택한 namespace와 여기에서 추가한 namespace입니다. 선택을 해제해도 필터에 남습니다. 이 클러스터의 namespace 목록을 조회할 권한이 없으면 “모든 namespace”는 이 namespace들을 뜻합니다.",
+    "restricted": "이 클러스터의 namespace 목록을 조회할 권한이 없습니다. “모든 namespace”는 아래의 접근 가능한 namespace를 감시합니다.",
+    "unrestricted": "이 클러스터의 namespace 목록을 조회할 수 있습니다. 이 이름들은 namespace 필터를 위해 기억될 뿐입니다.",
+    "unknown": "Sextant가 이 클러스터의 namespace 목록을 조회할 수 있는지 확인하지 못했습니다.",
+    "notConnected": "이 namespace 중 어느 것을 읽을 수 있는지 확인하려면 클러스터에 연결하세요.",
+    "username": "API 서버는 사용자를 {{user}}(으)로 알고 있습니다.",
+    "addLabel": "Namespace",
+    "add": "추가",
+    "cap": "클러스터마다 namespace를 최대 {{max}}개까지 보관합니다.",
+    "empty": "아직 namespace가 없습니다.",
+    "remove": "{{namespace}} 제거",
+    "found": "연결할 때 발견됨",
+    "keep": "보관",
+    "keepNamed": "{{namespace}} 보관"
+  }
+}

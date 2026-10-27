@@ -126,5 +126,10 @@
       "jobs": "Jobs"
     },
     "count": "{{count}}"
+  },
+  "history": {
+    "note": "Depuis l’ouverture · metrics-server, sans historique",
+    "waiting": "En attente des premières valeurs de metrics-server…",
+    "full": "Trop de graphiques sont échantillonnés à la fois ; fermez d’autres détails pour tracer celui-ci."
   }
 }

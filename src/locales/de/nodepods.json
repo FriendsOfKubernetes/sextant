@@ -1,0 +1,32 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Pods auf diesem Knoten"
+  },
+  "search": {
+    "placeholder": "In allen Spalten suchen (app=web für ein Label)…"
+  },
+  "columns": {
+    "cpuRequest": "CPU-Request",
+    "cpuLimit": "CPU-Limit",
+    "memoryRequest": "Speicher-Request",
+    "memoryLimit": "Speicher-Limit"
+  },
+  "resources": {
+    "tab": "Ressourcen",
+    "allocated": "Zugewiesene Ressourcen",
+    "podsTitle": "Nicht beendete Pods",
+    "resource": "Ressource",
+    "requests": "Requests",
+    "limits": "Limits",
+    "usage": "Nutzung",
+    "allocatable": "Zuweisbar",
+    "share": "{{value}} ({{percent}} %)",
+    "shareBelowOne": "{{value}} (<1 %)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pods: {{count}}",
+    "podsOf": "Pods: {{count}} von {{allocatable}} erlaubten",
+    "withoutLimit_one": "{{count}} Pod hat nicht in jedem Container ein Limit: Die Limits oben sind mindestens diese Summen.",
+    "withoutLimit_other": "{{count}} Pods haben nicht in jedem Container ein Limit: Die Limits oben sind mindestens diese Summen."
+  }
+}

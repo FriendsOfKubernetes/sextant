@@ -26,6 +26,7 @@ pub mod logs;
 pub use logs::LogViewSettings;
 pub mod appearance;
 pub mod custom_columns;
+pub mod known_namespaces;
 pub mod observability;
 pub use observability::ObservabilityLinks;
 pub mod practices;
@@ -101,6 +102,12 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional = nullable)]
     pub observability_links: Option<ObservabilityLinks>,
+    /// Known namespaces (#285, ADR-0124): every namespace typed or selected in the namespace filter and the ones added
+    /// as "Accessible namespaces"; for a user who may not list Namespaces they stand for "All namespaces". Owned by the
+    /// frontend, read leniently ([`known_namespaces::read`]); left out of the file when there are none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub known_namespaces: Option<Vec<String>>,
 }
 
 /// `ClusterSettings` as stored, with `agentAccess` still unread.
@@ -121,6 +128,7 @@ struct StoredClusterSettings {
     alertmanager: Option<serde_json::Value>,
     loki: Option<serde_json::Value>,
     observability_links: Option<serde_json::Value>,
+    known_namespaces: Option<serde_json::Value>,
 }
 
 impl<'de> Deserialize<'de> for ClusterSettings {
@@ -160,6 +168,10 @@ impl<'de> Deserialize<'de> for ClusterSettings {
                 .observability_links
                 .as_ref()
                 .and_then(ObservabilityLinks::read),
+            known_namespaces: stored
+                .known_namespaces
+                .as_ref()
+                .and_then(known_namespaces::read),
         })
     }
 }
@@ -396,7 +408,7 @@ pub const SYSTEM_LANGUAGE: &str = "system";
 
 /// `AppSettings.settings_version` this version writes. 1: `language` "en" is a choice (before, it was the only
 /// language and the default, so it said nothing; see [`migrate`]).
-pub const SETTINGS_VERSION: u32 = 1;
+pub const SETTINGS_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
@@ -634,13 +646,19 @@ impl SettingsStore {
 
 /// Brings settings read from an older file up to [`SETTINGS_VERSION`]. Version 0 → 1: every earlier version stored
 /// `language: "en"` by default while English was the only language, so it was never a choice; it becomes `system`
-/// (the OS language when Sextant has it). An `en` stored from version 1 on is the user's and stays.
+/// (the OS language when Sextant has it). An `en` stored from version 1 on is the user's and stays. Version 1 → 2:
+/// sidebar indentation became the default in 0.25; 0.24.1, which added it switched off, wrote that default into
+/// every saved file, so a version-1 `sidebarIndent: false` was not a choice and turns on. From version 2 on it is.
 pub fn migrate(settings: &mut AppSettings) {
     if settings.settings_version < 1 {
         if settings.language == "en" {
             settings.language = SYSTEM_LANGUAGE.to_owned();
         }
         settings.settings_version = 1;
+    }
+    if settings.settings_version < 2 {
+        settings.appearance.sidebar_indent = true;
+        settings.settings_version = 2;
     }
 }
 
@@ -1137,6 +1155,27 @@ mod tests {
         assert_eq!(s.language, SYSTEM_LANGUAGE);
         assert_eq!(s.editor_theme, "auto");
         assert!(s.check_for_updates);
+    }
+
+    #[test]
+    fn a_version_one_sidebar_without_indent_turns_indented_once_and_a_later_choice_stays() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        // What 0.24.1 wrote: the default it had then, not a choice.
+        std::fs::write(
+            &path,
+            r#"{ "settingsVersion": 1, "appearance": { "sidebarIndent": false, "sidebarGuides": true } }"#,
+        )
+        .unwrap();
+        let store = SettingsStore::open(path.clone());
+        assert!(store.get().appearance.sidebar_indent);
+        assert!(store.get().appearance.sidebar_guides);
+        assert_eq!(store.get().settings_version, SETTINGS_VERSION);
+        // Turned off after the migration: the user's choice, kept across a reopen.
+        store
+            .update(|s| s.appearance.sidebar_indent = false)
+            .unwrap();
+        assert!(!SettingsStore::open(path).get().appearance.sidebar_indent);
     }
 
     #[test]

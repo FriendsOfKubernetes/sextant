@@ -38,6 +38,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operator(OLM)",
+    "openshift": "OpenShift",
     "policies": "Kyverno 정책",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -50,7 +52,8 @@
     "credentials": "자격 증명",
     "disk": "디스크 거의 가득 참",
     "alerts": "발생 중인 경보",
-    "events": "Warning 이벤트"
+    "events": "Warning 이벤트",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -89,7 +92,12 @@
     "monitorNotPickedUp": "어떤 Prometheus의 selector도 이를 선택하지 않습니다",
     "reflectorStale": "Reflector가 소스 {{source}}의 현재 버전을 이 미러에 복사하지 않았습니다.",
     "reflectorNotAllowed": "소스 {{source}}가 더 이상 이 namespace를 허용하지 않으며 미러가 오래되었습니다.",
-    "reflectorSourceMissing": "소스 {{source}}가 존재하지 않습니다."
+    "reflectorSourceMissing": "소스 {{source}}가 존재하지 않습니다.",
+    "olmPlanStuck": "Subscription의 InstallPlan이 30분 넘게 {{phase}} 단계에 있습니다.",
+    "olmCatalogState": "카탈로그 레지스트리 연결 상태가 {{state}}입니다. Subscription이 이 카탈로그에서 해석할 수 없습니다.",
+    "k3sHelmChartFailed": "이 HelmChart의 설치 Job {{job}}이(가) 실패했습니다.",
+    "k3sHelmChartRetrying": "Job {{job}}: 지금까지 실패한 Pod: {{failed}}. helm-controller가 계속 다시 시도하고 있습니다.",
+    "k3sComponentUnavailable": "기본 제공 구성 요소 {{deployment}}: 복제본 {{desired}}개 중 {{available}}개 사용 가능."
   },
   "showDisk": "디스크 거의 가득 참",
   "showPractices": "모범 사례 발견 사항",

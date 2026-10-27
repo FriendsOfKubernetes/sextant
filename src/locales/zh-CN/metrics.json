@@ -122,5 +122,10 @@
       "jobs": "Jobs"
     },
     "count": "{{count}}"
+  },
+  "history": {
+    "note": "自打开以来 · metrics-server，无历史",
+    "waiting": "正在等待 metrics-server 的首批数值…",
+    "full": "同时采样的图表过多；请关闭其他详细信息以绘制此图表。"
   }
 }

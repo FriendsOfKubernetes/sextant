@@ -1,0 +1,34 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Pody na tym węźle"
+  },
+  "search": {
+    "placeholder": "Szukaj we wszystkich kolumnach (app=web dla etykiety)…"
+  },
+  "columns": {
+    "cpuRequest": "Request CPU",
+    "cpuLimit": "Limit CPU",
+    "memoryRequest": "Request pamięci",
+    "memoryLimit": "Limit pamięci"
+  },
+  "resources": {
+    "tab": "Zasoby",
+    "allocated": "Przydzielone zasoby",
+    "podsTitle": "Niezakończone pody",
+    "resource": "Zasób",
+    "requests": "Requesty",
+    "limits": "Limity",
+    "usage": "Użycie",
+    "allocatable": "Do przydzielenia",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pody: {{count}}",
+    "podsOf": "Pody: {{count}} z {{allocatable}} dozwolonych",
+    "withoutLimit_one": "{{count}} Pod nie ma limitu w każdym kontenerze: limity powyżej to co najmniej te sumy.",
+    "withoutLimit_few": "{{count}} Pody nie mają limitu w każdym kontenerze: limity powyżej to co najmniej te sumy.",
+    "withoutLimit_many": "{{count}} Podów nie ma limitu w każdym kontenerze: limity powyżej to co najmniej te sumy.",
+    "withoutLimit_other": "{{count}} Poda nie ma limitu w każdym kontenerze: limity powyżej to co najmniej te sumy."
+  }
+}

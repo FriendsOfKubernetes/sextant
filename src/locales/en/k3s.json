@@ -1,0 +1,231 @@
+{
+  "badge_one": "{{count}} object needs attention",
+  "badge_other": "{{count}} objects need attention",
+  "loading": "Loading…",
+  "yes": "Yes",
+  "sidebar": {
+    "helmCharts": "Helm Charts",
+    "helmChartConfigs": "Helm Chart Configs",
+    "addons": "Addons",
+    "etcdSnapshots": "etcd Snapshots"
+  },
+  "distribution": {
+    "k3s": "k3s",
+    "rke2": "RKE2",
+    "mixed": "k3s and RKE2 nodes"
+  },
+  "role": {
+    "controlPlane": "control plane",
+    "etcd": "etcd",
+    "master": "master (old label)"
+  },
+  "signal": {
+    "kubeletVersion": "kubelet version",
+    "annotations": "node annotations",
+    "providerId": "provider ID",
+    "instanceType": "instance type label"
+  },
+  "page": {
+    "sidebar": "Distribution",
+    "title": "k3s / RKE2",
+    "hint": "What the nodes, the Addons and the HelmCharts tell of this k3s or RKE2 cluster. Read-only.",
+    "summary": "Cluster",
+    "notRecognised": "No node tells k3s or RKE2",
+    "recognised": "{{recognised}} of {{total}} nodes",
+    "serversAgents": "Servers: {{servers}}, agents: {{agents}}",
+    "embeddedEtcd": "Embedded etcd",
+    "otherDatastore": "No embedded etcd member: SQLite or an external datastore (Sextant cannot tell which)",
+    "nodesTruncated": "Only the first {{limit}} nodes are read.",
+    "nodesUnavailable": "The nodes cannot be read.",
+    "columns": {
+      "node": "Node",
+      "distribution": "Distribution",
+      "version": "Version",
+      "role": "Role",
+      "roles": "Role labels"
+    }
+  },
+  "columns": {
+    "state": "State",
+    "chart": "Chart",
+    "version": "Version",
+    "targetNamespace": "Target namespace",
+    "addon": "Addon",
+    "helmChart": "HelmChart",
+    "source": "Manifest",
+    "checksum": "Checksum",
+    "node": "Node",
+    "storage": "Storage",
+    "size": "Size",
+    "created": "Created"
+  },
+  "chartState": {
+    "deployed": "Deployed",
+    "installing": "Installing",
+    "retrying": "Retrying",
+    "failed": "Failed",
+    "deleting": "Deleting",
+    "applied": "Job created",
+    "unknown": "No status"
+  },
+  "jobState": {
+    "running": "Running",
+    "complete": "Complete",
+    "failed": "Failed",
+    "pending": "Pending"
+  },
+  "snapshotState": {
+    "ready": "Ready",
+    "failed": "Failed",
+    "pending": "Not ready"
+  },
+  "storage": {
+    "s3": "S3",
+    "local": "Local"
+  },
+  "fields": {
+    "state": "State",
+    "chart": "Chart",
+    "repo": "Repository",
+    "version": "Version",
+    "targetNamespace": "Target namespace",
+    "createNamespace": "Creates the namespace",
+    "bootstrap": "Bootstrap chart",
+    "failurePolicy": "Failure policy",
+    "backOffLimit": "Install attempts (backoff limit)",
+    "timeout": "Timeout",
+    "jobImage": "Job image",
+    "authSecret": "Repository credentials",
+    "repoCA": "Repository CA",
+    "registrySecret": "Registry credentials",
+    "addon": "Deployed by Addon",
+    "helmChartConfig": "HelmChartConfig",
+    "helmChart": "HelmChart",
+    "job": "Job",
+    "jobState": "Job state",
+    "failedPods": "Failed Pods",
+    "started": "Started",
+    "completed": "Completed",
+    "failedAt": "Failed at",
+    "source": "Manifest",
+    "checksum": "Checksum",
+    "snapshotState": "State",
+    "snapshotName": "Snapshot name",
+    "node": "Node",
+    "storage": "Storage",
+    "bucket": "Bucket",
+    "location": "Location",
+    "size": "Size",
+    "created": "Created",
+    "errorAt": "Error at",
+    "distribution": "Distribution",
+    "versions": "Versions",
+    "recognised": "Recognised nodes",
+    "servers": "Nodes",
+    "datastore": "Datastore",
+    "nodeRole": "Role",
+    "roles": "Role labels",
+    "signals": "Recognised by",
+    "hostname": "Host name",
+    "internalIp": "Internal IP",
+    "externalIp": "External IP",
+    "etcdMember": "etcd member"
+  },
+  "hint": {
+    "retrying": "The install Job keeps failing and helm-controller keeps retrying it. The Job's logs tell why.",
+    "applied": "helm-controller created the install Job; its outcome is in the Job below.",
+    "unknown": "helm-controller has not reported a status (older versions write none); the Job below tells how the install went.",
+    "bundled": "Deployed from the server's manifests directory (Addon {{addon}}): changes made here are overwritten when the server restarts; use a HelmChartConfig instead."
+  },
+  "job": {
+    "title": "Install Job",
+    "logs": "Logs",
+    "none": "No Job {{job}} is listed.",
+    "unavailable": "The Jobs cannot be read."
+  },
+  "values": {
+    "title": "Values",
+    "none": "No values are set here.",
+    "note": "Values may hold secrets: values under keys that look secret are hidden, and credentials are removed from addresses. The YAML section shows the stored object.",
+    "unreadable": "The values are not shown: they cannot be read as YAML safely.",
+    "showContent": "Show valuesContent",
+    "showValues": "Show values",
+    "showSet": "Show the set values",
+    "secrets": "Values from Secrets",
+    "secret": "Secret",
+    "keys": "Keys",
+    "allKeys": "every key"
+  },
+  "config": {
+    "noChart": "There is no HelmChart {{name}} in {{namespace}}: this HelmChartConfig overrides nothing now.",
+    "hint": "A HelmChartConfig overrides the values of the HelmChart of the same name and namespace; helm-controller installs the chart again when it changes."
+  },
+  "addon": {
+    "hint": "k3s applies this manifest from the server's manifests directory. A manifest it cannot apply is reported as a Warning event of this Addon."
+  },
+  "node": {
+    "server": "Server",
+    "agent": "Agent",
+    "args": "Arguments",
+    "flag": "Flag",
+    "value": "Value",
+    "hidden": "hidden",
+    "argsNote": "The values of tokens, keys, passwords and datastore addresses are never shown.",
+    "argsUnreadable": "The arguments cannot be read."
+  },
+  "components": {
+    "title": "Bundled components",
+    "hint": {
+      "k3s": "What k3s deploys from its manifests directory. A component left out with --disable is not found.",
+      "rke2": "The charts RKE2 installs in kube-system. Which ones depend on the server's options (--cni, --ingress-controller, --disable)."
+    },
+    "unavailable": "kube-system's Deployments or DaemonSets cannot be read.",
+    "truncated": "Some lists are cut: the states may be incomplete.",
+    "component": "Component",
+    "status": "State",
+    "from": "From",
+    "workloads": "Workloads",
+    "available": "{{available}} of {{desired}} available",
+    "state": {
+      "ready": "Ready",
+      "notReady": "Not available",
+      "installing": "Installing",
+      "failed": "Install failed",
+      "noWorkload": "No workload yet",
+      "notFound": "Not found",
+      "notFoundDisabled": "Not found (disabled with --disable {{flag}}?)",
+      "notFoundServiceLb": "Not in use: no LoadBalancer Service, or disabled with --disable {{flag}}"
+    }
+  },
+  "component": {
+    "coredns": "CoreDNS",
+    "traefik": "Traefik",
+    "localPath": "Local Path Provisioner",
+    "metricsServer": "metrics-server",
+    "serviceLb": "ServiceLB (Klipper)",
+    "rke2Coredns": "CoreDNS",
+    "rke2IngressNginx": "Ingress NGINX",
+    "rke2Traefik": "Traefik",
+    "rke2MetricsServer": "metrics-server",
+    "rke2SnapshotController": "Snapshot controller",
+    "rke2Canal": "Canal",
+    "rke2Calico": "Calico",
+    "rke2Cilium": "Cilium",
+    "rke2Flannel": "Flannel",
+    "rke2Multus": "Multus",
+    "serviceLbRke2": "ServiceLB (Klipper)"
+  },
+  "serviceLb": {
+    "title": "ServiceLB",
+    "hint": "ServiceLB runs a DaemonSet per LoadBalancer Service and publishes the addresses of the nodes it runs on.",
+    "none": "No ServiceLB DaemonSet in kube-system.",
+    "service": "Service",
+    "daemonSet": "DaemonSet",
+    "pods": "Pods",
+    "addresses": "Load-balancer addresses",
+    "ready": "{{ready}} of {{desired}} ready",
+    "noAddress": "No address yet",
+    "serviceUnreadable": "The Service cannot be read",
+    "truncated": "Only the first {{limit}} Services are listed."
+  }
+}

@@ -1,0 +1,233 @@
+{
+  "badge_one": "{{count}} объект требует внимания",
+  "badge_few": "{{count}} объекта требуют внимания",
+  "badge_many": "{{count}} объектов требуют внимания",
+  "badge_other": "{{count}} объекта требуют внимания",
+  "loading": "Загрузка…",
+  "yes": "Да",
+  "sidebar": {
+    "helmCharts": "Helm Charts",
+    "helmChartConfigs": "Helm Chart Configs",
+    "addons": "Addons",
+    "etcdSnapshots": "Снимки etcd"
+  },
+  "distribution": {
+    "k3s": "k3s",
+    "rke2": "RKE2",
+    "mixed": "Узлы k3s и RKE2"
+  },
+  "role": {
+    "controlPlane": "control plane",
+    "etcd": "etcd",
+    "master": "master (старый label)"
+  },
+  "signal": {
+    "kubeletVersion": "версия kubelet",
+    "annotations": "annotations узла",
+    "providerId": "provider ID",
+    "instanceType": "label типа экземпляра"
+  },
+  "page": {
+    "sidebar": "Дистрибутив",
+    "title": "k3s / RKE2",
+    "hint": "Что узлы, Addons и HelmCharts говорят об этом кластере k3s или RKE2. Только чтение.",
+    "summary": "Кластер",
+    "notRecognised": "Ни один узел не указывает на k3s или RKE2",
+    "recognised": "{{recognised}} из {{total}} узлов",
+    "serversAgents": "Серверы: {{servers}}, агенты: {{agents}}",
+    "embeddedEtcd": "Встроенный etcd",
+    "otherDatastore": "Нет участника встроенного etcd: SQLite или внешнее хранилище (Sextant не может сказать, что именно)",
+    "nodesTruncated": "Прочитаны только первые {{limit}} узлов.",
+    "nodesUnavailable": "Узлы не удаётся прочитать.",
+    "columns": {
+      "node": "Узел",
+      "distribution": "Дистрибутив",
+      "version": "Версия",
+      "role": "Роль",
+      "roles": "Labels ролей"
+    }
+  },
+  "columns": {
+    "state": "Состояние",
+    "chart": "Chart",
+    "version": "Версия",
+    "targetNamespace": "Целевой namespace",
+    "addon": "Addon",
+    "helmChart": "HelmChart",
+    "source": "Манифест",
+    "checksum": "Контрольная сумма",
+    "node": "Узел",
+    "storage": "Хранилище",
+    "size": "Размер",
+    "created": "Создан"
+  },
+  "chartState": {
+    "deployed": "Установлен",
+    "installing": "Устанавливается",
+    "retrying": "Повторяется",
+    "failed": "Ошибка",
+    "deleting": "Удаляется",
+    "applied": "Job создан",
+    "unknown": "Нет статуса"
+  },
+  "jobState": {
+    "running": "Выполняется",
+    "complete": "Завершён",
+    "failed": "Ошибка",
+    "pending": "Ожидает"
+  },
+  "snapshotState": {
+    "ready": "Готов",
+    "failed": "Ошибка",
+    "pending": "Не готов"
+  },
+  "storage": {
+    "s3": "S3",
+    "local": "Локально"
+  },
+  "fields": {
+    "state": "Состояние",
+    "chart": "Chart",
+    "repo": "Репозиторий",
+    "version": "Версия",
+    "targetNamespace": "Целевой namespace",
+    "createNamespace": "Создаёт namespace",
+    "bootstrap": "Chart начальной загрузки",
+    "failurePolicy": "Политика при ошибке",
+    "backOffLimit": "Попытки установки (backoff limit)",
+    "timeout": "Тайм-аут",
+    "jobImage": "Образ Job",
+    "authSecret": "Учётные данные репозитория",
+    "repoCA": "CA репозитория",
+    "registrySecret": "Учётные данные registry",
+    "addon": "Развёрнут Addon",
+    "helmChartConfig": "HelmChartConfig",
+    "helmChart": "HelmChart",
+    "job": "Job",
+    "jobState": "Состояние Job",
+    "failedPods": "Pod с ошибкой",
+    "started": "Начат",
+    "completed": "Завершён",
+    "failedAt": "Ошибка в",
+    "source": "Манифест",
+    "checksum": "Контрольная сумма",
+    "snapshotState": "Состояние",
+    "snapshotName": "Имя снимка",
+    "node": "Узел",
+    "storage": "Хранилище",
+    "bucket": "Bucket",
+    "location": "Расположение",
+    "size": "Размер",
+    "created": "Создан",
+    "errorAt": "Ошибка в",
+    "distribution": "Дистрибутив",
+    "versions": "Версии",
+    "recognised": "Распознанные узлы",
+    "servers": "Узлы",
+    "datastore": "Хранилище данных",
+    "nodeRole": "Роль",
+    "roles": "Labels ролей",
+    "signals": "Распознан по",
+    "hostname": "Имя хоста",
+    "internalIp": "Внутренний IP",
+    "externalIp": "Внешний IP",
+    "etcdMember": "Участник etcd"
+  },
+  "hint": {
+    "retrying": "Job установки снова и снова падает, и helm-controller повторяет его. Причину покажут логи Job.",
+    "applied": "helm-controller создал Job установки; его результат — в Job ниже.",
+    "unknown": "helm-controller не сообщил статус (старые версии его не пишут); как прошла установка, покажет Job ниже.",
+    "bundled": "Развёрнут из каталога манифестов сервера (Addon {{addon}}): правки здесь перезаписываются при перезапуске сервера; используйте HelmChartConfig."
+  },
+  "job": {
+    "title": "Job установки",
+    "logs": "Логи",
+    "none": "Job {{job}} не найден.",
+    "unavailable": "Jobs не удаётся прочитать."
+  },
+  "values": {
+    "title": "Значения",
+    "none": "Значения здесь не заданы.",
+    "note": "В значениях могут быть секреты: значения под ключами, похожими на секретные, скрыты, а из адресов убраны учётные данные. Сохранённый объект показывает раздел YAML.",
+    "unreadable": "Значения не показаны: их не удаётся безопасно прочитать как YAML.",
+    "showContent": "Показать valuesContent",
+    "showValues": "Показать values",
+    "showSet": "Показать значения set",
+    "secrets": "Значения из Secrets",
+    "secret": "Secret",
+    "keys": "Ключи",
+    "allKeys": "все ключи"
+  },
+  "config": {
+    "noChart": "В {{namespace}} нет HelmChart {{name}}: этот HelmChartConfig сейчас ничего не переопределяет.",
+    "hint": "HelmChartConfig переопределяет значения HelmChart с тем же именем и namespace; при его изменении helm-controller устанавливает chart заново."
+  },
+  "addon": {
+    "hint": "k3s применяет этот манифест из каталога манифестов сервера. Манифест, который не удалось применить, отмечается событием Warning у этого Addon."
+  },
+  "node": {
+    "server": "Сервер",
+    "agent": "Агент",
+    "args": "Аргументы",
+    "flag": "Флаг",
+    "value": "Значение",
+    "hidden": "скрыто",
+    "argsNote": "Значения токенов, ключей, паролей и адресов хранилища данных никогда не показываются.",
+    "argsUnreadable": "Аргументы не удаётся прочитать."
+  },
+  "components": {
+    "title": "Встроенные компоненты",
+    "hint": {
+      "k3s": "Что k3s разворачивает из своего каталога манифестов. Компонент, отключённый через --disable, не найден.",
+      "rke2": "Charts, которые RKE2 устанавливает в kube-system. Какие именно — зависит от параметров сервера (--cni, --ingress-controller, --disable)."
+    },
+    "unavailable": "Deployments или DaemonSets из kube-system не удаётся прочитать.",
+    "truncated": "Некоторые списки обрезаны: состояния могут быть неполными.",
+    "component": "Компонент",
+    "status": "Состояние",
+    "from": "Откуда",
+    "workloads": "Нагрузки",
+    "available": "Доступно {{available}} из {{desired}}",
+    "state": {
+      "ready": "Готов",
+      "notReady": "Недоступен",
+      "installing": "Устанавливается",
+      "failed": "Ошибка установки",
+      "noWorkload": "Нагрузки пока нет",
+      "notFound": "Не найден",
+      "notFoundDisabled": "Не найден (отключён через --disable {{flag}}?)",
+      "notFoundServiceLb": "Не используется: нет Service типа LoadBalancer, или отключён через --disable {{flag}}"
+    }
+  },
+  "component": {
+    "coredns": "CoreDNS",
+    "traefik": "Traefik",
+    "localPath": "Local Path Provisioner",
+    "metricsServer": "metrics-server",
+    "serviceLb": "ServiceLB (Klipper)",
+    "rke2Coredns": "CoreDNS",
+    "rke2IngressNginx": "Ingress NGINX",
+    "rke2Traefik": "Traefik",
+    "rke2MetricsServer": "metrics-server",
+    "rke2SnapshotController": "Контроллер снимков",
+    "rke2Canal": "Canal",
+    "rke2Calico": "Calico",
+    "rke2Cilium": "Cilium",
+    "rke2Flannel": "Flannel",
+    "rke2Multus": "Multus",
+    "serviceLbRke2": "ServiceLB (Klipper)"
+  },
+  "serviceLb": {
+    "title": "ServiceLB",
+    "hint": "ServiceLB запускает по DaemonSet на каждый Service типа LoadBalancer и публикует адреса узлов, на которых он работает.",
+    "none": "В kube-system нет DaemonSet ServiceLB.",
+    "service": "Service",
+    "daemonSet": "DaemonSet",
+    "pods": "Pod",
+    "addresses": "Адреса балансировщика",
+    "ready": "Готово {{ready}} из {{desired}}",
+    "noAddress": "Адреса пока нет",
+    "serviceUnreadable": "Service не удаётся прочитать",
+    "truncated": "Показаны только первые {{limit}} Services."
+  }
+}

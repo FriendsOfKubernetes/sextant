@@ -1,0 +1,51 @@
+{
+  "invalidName": "「{{name}}」不是 Namespace 名稱",
+  "filter": {
+    "allAccessible_other": "所有可存取的（{{count}}）",
+    "restrictedHint": "您沒有列出此叢集 Namespace 的權限。輸入一個 Namespace 並按 Enter：Sextant 會記住它。",
+    "scopeCapped": "「所有可存取的」只監看 {{total}} 個 Namespace 中的前 {{max}} 個；選取 Namespace 以查看其餘的。",
+    "forget": "忘記 {{namespace}}"
+  },
+  "mark": {
+    "accessible": "可存取",
+    "noAccess": "無存取權限",
+    "found": "已找到"
+  },
+  "found": {
+    "title": "連線時找到：{{sources}}",
+    "context": "kubeconfig context 的 Namespace",
+    "serviceAccount": "ServiceAccount 的 Namespace",
+    "project": "OpenShift 專案"
+  },
+  "check": {
+    "again": "重新檢查存取權限",
+    "checking": "正在檢查存取權限…",
+    "checkedAt": "存取權限檢查於 {{time}}。"
+  },
+  "noAccess": {
+    "title": "無權存取 {{kind}}",
+    "namespaced": "API 伺服器表示您無權在 {{namespaces}} 中列出 {{kind}}。",
+    "cluster": "API 伺服器表示您無權在此叢集中列出 {{kind}}。",
+    "noScopeTitle": "沒有可顯示的 Namespace",
+    "noScope": "您沒有列出此叢集 Namespace 的權限，Sextant 也不知道任何您可以讀取的 Namespace。請在 Namespace 篩選中輸入一個。",
+    "listAnyway": "仍然列出",
+    "mark": "無存取權限"
+  },
+  "settings": {
+    "title": "可存取的 Namespace",
+    "hint": "您在 Namespace 篩選中輸入或選取過的 Namespace，以及在這裡新增的。取消勾選後它們仍留在篩選中。如果您沒有列出此叢集 Namespace 的權限，「所有 Namespace」即指這些。",
+    "restricted": "您沒有列出此叢集 Namespace 的權限：「所有 Namespace」監看下面可存取的 Namespace。",
+    "unrestricted": "您可以列出此叢集的 Namespace：這些名稱只是為 Namespace 篩選而記住。",
+    "unknown": "Sextant 無法檢查您是否可以列出此叢集的 Namespace。",
+    "notConnected": "連線到叢集以檢查您可以讀取其中哪些 Namespace。",
+    "username": "API 伺服器識別您為 {{user}}。",
+    "addLabel": "Namespace",
+    "add": "新增",
+    "cap": "每個叢集最多保存 {{max}} 個 Namespace。",
+    "empty": "還沒有 Namespace。",
+    "remove": "移除 {{namespace}}",
+    "found": "連線時找到",
+    "keep": "保留",
+    "keepNamed": "保留 {{namespace}}"
+  }
+}

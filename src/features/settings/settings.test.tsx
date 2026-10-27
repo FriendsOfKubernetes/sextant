@@ -68,13 +68,13 @@ describe("sidebar tree appearance", () => {
     }
   });
 
-  it("offers two accessible independent choices, both off by default", async () => {
+  it("offers two accessible independent choices, indented without guides by default", async () => {
     setup();
     renderPage();
     const indent = screen.getByRole("checkbox", { name: "Indent child items" });
     const guides = screen.getByRole("checkbox", { name: "Show tree guides" });
     await waitFor(() => expect(indent).toBeEnabled());
-    expect(indent).not.toBeChecked();
+    expect(indent).toBeChecked();
     expect(guides).not.toBeChecked();
     expect(await axeViolations(document.body)).toEqual([]);
   });
@@ -85,7 +85,9 @@ describe("sidebar tree appearance", () => {
     backend.on("cluster_kinds_refresh", () => undefined);
     backend.on("watch_start", () => undefined);
     backend.on("watch_stop", () => undefined);
-    backend.settings.appearance = { ...backend.settings.appearance, monoFont: { kind: "system" }, textSize: 125 };
+    backend.settings.appearance = {
+      ...backend.settings.appearance, monoFont: { kind: "system" }, textSize: 125, sidebarIndent: false,
+    };
     const original = { ...backend.settings.appearance };
     const page = renderPage();
     const menus = render(<><Sidebar clusterId="c1" /><Sidebar clusterId="c2" /></>).container.children;

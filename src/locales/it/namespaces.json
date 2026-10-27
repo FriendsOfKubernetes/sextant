@@ -1,0 +1,53 @@
+{
+  "invalidName": "«{{name}}» non è un nome di namespace",
+  "filter": {
+    "allAccessible_one": "Tutti gli accessibili ({{count}})",
+    "allAccessible_many": "Tutti gli accessibili ({{count}})",
+    "allAccessible_other": "Tutti gli accessibili ({{count}})",
+    "restrictedHint": "Non hai l'autorizzazione per elencare i namespace di questo cluster. Digita un namespace e premi Enter: Sextant lo ricorda.",
+    "scopeCapped": "«Tutti gli accessibili» osserva i primi {{max}} di {{total}} namespace; seleziona dei namespace per vedere gli altri.",
+    "forget": "Dimentica {{namespace}}"
+  },
+  "mark": {
+    "accessible": "accessibile",
+    "noAccess": "nessun accesso",
+    "found": "trovato"
+  },
+  "found": {
+    "title": "Trovato alla connessione: {{sources}}",
+    "context": "il namespace del contesto kubeconfig",
+    "serviceAccount": "il namespace del ServiceAccount",
+    "project": "un progetto OpenShift"
+  },
+  "check": {
+    "again": "Verifica di nuovo l'accesso",
+    "checking": "Verifica dell'accesso…",
+    "checkedAt": "Accesso verificato alle {{time}}."
+  },
+  "noAccess": {
+    "title": "Nessun accesso a {{kind}}",
+    "namespaced": "Secondo il server API non hai l'autorizzazione per elencare {{kind}} in {{namespaces}}.",
+    "cluster": "Secondo il server API non hai l'autorizzazione per elencare {{kind}} in questo cluster.",
+    "noScopeTitle": "Nessun namespace da mostrare",
+    "noScope": "Non hai l'autorizzazione per elencare i namespace di questo cluster e Sextant non conosce alcun namespace che puoi leggere. Digitane uno nel filtro dei namespace.",
+    "listAnyway": "Elenca comunque",
+    "mark": "Nessun accesso"
+  },
+  "settings": {
+    "title": "Namespace accessibili",
+    "hint": "I namespace digitati o selezionati nel filtro dei namespace e quelli aggiunti qui. Restano nel filtro anche se deselezionati. Se non hai l'autorizzazione per elencare i namespace di questo cluster, «Tutti i namespace» indica questi.",
+    "restricted": "Non hai l'autorizzazione per elencare i namespace di questo cluster: «Tutti i namespace» osserva i namespace accessibili qui sotto.",
+    "unrestricted": "Puoi elencare i namespace di questo cluster: questi nomi sono solo ricordati per il filtro dei namespace.",
+    "unknown": "Sextant non è riuscito a verificare se puoi elencare i namespace di questo cluster.",
+    "notConnected": "Connettiti al cluster per verificare quali di questi namespace puoi leggere.",
+    "username": "Il server API ti conosce come {{user}}.",
+    "addLabel": "Namespace",
+    "add": "Aggiungi",
+    "cap": "Per cluster si conservano al massimo {{max}} namespace.",
+    "empty": "Ancora nessun namespace.",
+    "remove": "Rimuovi {{namespace}}",
+    "found": "Trovati alla connessione",
+    "keep": "Tieni",
+    "keepNamed": "Tieni {{namespace}}"
+  }
+}

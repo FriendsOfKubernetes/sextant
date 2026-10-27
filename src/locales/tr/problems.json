@@ -40,6 +40,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operatörler (OLM)",
+    "openshift": "OpenShift",
     "policies": "Kyverno ilkeleri",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -52,7 +54,8 @@
     "credentials": "Kimlik bilgileri",
     "disk": "Disk neredeyse dolu",
     "alerts": "Tetiklenen uyarılar",
-    "events": "Uyarı olayları"
+    "events": "Uyarı olayları",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -95,7 +98,12 @@
     "monitorNotPickedUp": "Hiçbir Prometheus selector'larıyla onu seçmiyor",
     "reflectorStale": "Reflector, kaynak {{source}} nesnesinin güncel sürümünü bu yansıya kopyalamadı.",
     "reflectorNotAllowed": "Kaynak {{source}} artık bu namespace'e izin vermiyor ve yansı güncel değil.",
-    "reflectorSourceMissing": "Kaynak {{source}} mevcut değil."
+    "reflectorSourceMissing": "Kaynak {{source}} mevcut değil.",
+    "olmPlanStuck": "Subscription'ın InstallPlan'ı 30 dakikadan uzun süredir {{phase}} aşamasında.",
+    "olmCatalogState": "Kataloğun kayıt defteri bağlantısı {{state}}: Subscription'lar bu katalogdan çözümleme yapamaz.",
+    "k3sHelmChartFailed": "Bu HelmChart'ın {{job}} kurulum Job'ı başarısız oldu.",
+    "k3sHelmChartRetrying": "Job {{job}}: şimdiye kadar başarısız Pod'lar: {{failed}}; helm-controller yeniden denemeye devam ediyor.",
+    "k3sComponentUnavailable": "Birlikte gelen bileşen {{deployment}}: {{desired}} replikadan {{available}} kullanılabilir."
   },
   "showDisk": "Disk neredeyse dolu",
   "showPractices": "En iyi uygulama bulguları",

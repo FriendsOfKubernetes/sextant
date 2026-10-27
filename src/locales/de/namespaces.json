@@ -1,0 +1,52 @@
+{
+  "invalidName": "„{{name}}“ ist kein Namespace-Name",
+  "filter": {
+    "allAccessible_one": "Alle zugänglichen ({{count}})",
+    "allAccessible_other": "Alle zugänglichen ({{count}})",
+    "restrictedHint": "Sie dürfen die Namespaces dieses Clusters nicht auflisten. Geben Sie einen Namespace ein und drücken Sie Enter: Sextant merkt ihn sich.",
+    "scopeCapped": "„Alle zugänglichen“ beobachtet die ersten {{max}} von {{total}} Namespaces; wählen Sie Namespaces aus, um die anderen zu sehen.",
+    "forget": "{{namespace}} vergessen"
+  },
+  "mark": {
+    "accessible": "zugänglich",
+    "noAccess": "kein Zugriff",
+    "found": "gefunden"
+  },
+  "found": {
+    "title": "Beim Verbinden gefunden: {{sources}}",
+    "context": "der Namespace des kubeconfig-Kontexts",
+    "serviceAccount": "der Namespace des ServiceAccounts",
+    "project": "ein OpenShift-Projekt"
+  },
+  "check": {
+    "again": "Zugriff erneut prüfen",
+    "checking": "Zugriff wird geprüft…",
+    "checkedAt": "Zugriff geprüft um {{time}}."
+  },
+  "noAccess": {
+    "title": "Kein Zugriff auf {{kind}}",
+    "namespaced": "Laut API-Server dürfen Sie {{kind}} in {{namespaces}} nicht auflisten.",
+    "cluster": "Laut API-Server dürfen Sie {{kind}} in diesem Cluster nicht auflisten.",
+    "noScopeTitle": "Kein Namespace zum Anzeigen",
+    "noScope": "Sie dürfen die Namespaces dieses Clusters nicht auflisten, und Sextant kennt keinen Namespace, den Sie lesen dürfen. Geben Sie einen im Namespace-Filter ein.",
+    "listAnyway": "Trotzdem auflisten",
+    "mark": "Kein Zugriff"
+  },
+  "settings": {
+    "title": "Zugängliche Namespaces",
+    "hint": "Namespaces, die Sie im Namespace-Filter eingegeben oder ausgewählt haben, und die hier hinzugefügten. Sie bleiben im Filter, auch wenn sie abgewählt sind. Wenn Sie die Namespaces dieses Clusters nicht auflisten dürfen, bedeutet „Alle Namespaces“ diese.",
+    "restricted": "Sie dürfen die Namespaces dieses Clusters nicht auflisten: „Alle Namespaces“ beobachtet die zugänglichen Namespaces unten.",
+    "unrestricted": "Sie dürfen die Namespaces dieses Clusters auflisten: Diese Namen werden nur für den Namespace-Filter gemerkt.",
+    "unknown": "Sextant konnte nicht prüfen, ob Sie die Namespaces dieses Clusters auflisten dürfen.",
+    "notConnected": "Verbinden Sie sich mit dem Cluster, um zu prüfen, welche dieser Namespaces Sie lesen dürfen.",
+    "username": "Der API-Server kennt Sie als {{user}}.",
+    "addLabel": "Namespace",
+    "add": "Hinzufügen",
+    "cap": "Pro Cluster werden höchstens {{max}} Namespaces gespeichert.",
+    "empty": "Noch keine Namespaces.",
+    "remove": "{{namespace}} entfernen",
+    "found": "Beim Verbinden gefunden",
+    "keep": "Behalten",
+    "keepNamed": "{{namespace}} behalten"
+  }
+}

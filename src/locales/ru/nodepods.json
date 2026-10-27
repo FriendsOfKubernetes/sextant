@@ -1,0 +1,34 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Pods на этом узле"
+  },
+  "search": {
+    "placeholder": "Поиск по всем столбцам (app=web — по метке)…"
+  },
+  "columns": {
+    "cpuRequest": "Запрос CPU",
+    "cpuLimit": "Лимит CPU",
+    "memoryRequest": "Запрос памяти",
+    "memoryLimit": "Лимит памяти"
+  },
+  "resources": {
+    "tab": "Ресурсы",
+    "allocated": "Выделенные ресурсы",
+    "podsTitle": "Незавершённые Pods",
+    "resource": "Ресурс",
+    "requests": "Запросы",
+    "limits": "Лимиты",
+    "usage": "Использование",
+    "allocatable": "Доступно",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pods: {{count}}",
+    "podsOf": "Pods: {{count}} из {{allocatable}} допустимых",
+    "withoutLimit_one": "У {{count}} Pod лимит задан не во всех контейнерах: лимиты выше — не меньше этих сумм.",
+    "withoutLimit_few": "У {{count}} Pods лимит задан не во всех контейнерах: лимиты выше — не меньше этих сумм.",
+    "withoutLimit_many": "У {{count}} Pods лимит задан не во всех контейнерах: лимиты выше — не меньше этих сумм.",
+    "withoutLimit_other": "У {{count}} Pods лимит задан не во всех контейнерах: лимиты выше — не меньше этих сумм."
+  }
+}

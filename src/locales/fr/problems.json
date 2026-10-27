@@ -42,6 +42,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Opérateurs (OLM)",
+    "openshift": "OpenShift",
     "policies": "Politiques Kyverno",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -54,7 +56,8 @@
     "credentials": "Identifiants",
     "disk": "Disque presque plein",
     "alerts": "Alertes déclenchées",
-    "events": "Événements d'avertissement"
+    "events": "Événements d'avertissement",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -101,7 +104,12 @@
     "monitorNotPickedUp": "Aucun Prometheus ne le prend en compte par ses selectors",
     "reflectorStale": "Reflector n’a pas copié la version actuelle de la source {{source}} dans ce miroir.",
     "reflectorNotAllowed": "La source {{source}} n’autorise plus ce namespace, et le miroir n’est plus à jour.",
-    "reflectorSourceMissing": "La source {{source}} n’existe pas."
+    "reflectorSourceMissing": "La source {{source}} n’existe pas.",
+    "olmPlanStuck": "L'InstallPlan de la Subscription est en phase {{phase}} depuis plus de 30 minutes.",
+    "olmCatalogState": "La connexion au registre du catalogue est {{state}} : les Subscriptions ne peuvent rien y résoudre.",
+    "k3sHelmChartFailed": "Le Job d'installation {{job}} de ce HelmChart a échoué.",
+    "k3sHelmChartRetrying": "Job {{job}} : Pods en échec jusqu'ici : {{failed}} ; helm-controller continue de réessayer.",
+    "k3sComponentUnavailable": "Composant fourni {{deployment}} : {{available}} réplicas disponibles sur {{desired}}."
   },
   "showDisk": "Disque presque plein",
   "showPractices": "Constats de bonnes pratiques",

@@ -1,0 +1,33 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Pods neste nó"
+  },
+  "search": {
+    "placeholder": "Pesquisar em todas as colunas (app=web para um rótulo)…"
+  },
+  "columns": {
+    "cpuRequest": "Requisição de CPU",
+    "cpuLimit": "Limite de CPU",
+    "memoryRequest": "Requisição de memória",
+    "memoryLimit": "Limite de memória"
+  },
+  "resources": {
+    "tab": "Recursos",
+    "allocated": "Recursos alocados",
+    "podsTitle": "Pods não encerrados",
+    "resource": "Recurso",
+    "requests": "Requisições",
+    "limits": "Limites",
+    "usage": "Uso",
+    "allocatable": "Alocável",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pods: {{count}}",
+    "podsOf": "Pods: {{count}} de {{allocatable}} permitidos",
+    "withoutLimit_one": "{{count}} Pod não tem limite em todos os contêineres: os limites acima são no mínimo estas somas.",
+    "withoutLimit_many": "{{count}} de Pods não têm limite em todos os contêineres: os limites acima são no mínimo estas somas.",
+    "withoutLimit_other": "{{count}} Pods não têm limite em todos os contêineres: os limites acima são no mínimo estas somas."
+  }
+}

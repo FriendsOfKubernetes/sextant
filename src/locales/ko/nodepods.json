@@ -1,0 +1,31 @@
+{
+  "pods": {
+    "tab": "Pod",
+    "title": "이 노드의 Pod"
+  },
+  "search": {
+    "placeholder": "모든 열에서 검색(레이블은 app=web)…"
+  },
+  "columns": {
+    "cpuRequest": "CPU 요청",
+    "cpuLimit": "CPU 제한",
+    "memoryRequest": "메모리 요청",
+    "memoryLimit": "메모리 제한"
+  },
+  "resources": {
+    "tab": "리소스",
+    "allocated": "할당된 리소스",
+    "podsTitle": "종료되지 않은 Pod",
+    "resource": "리소스",
+    "requests": "요청",
+    "limits": "제한",
+    "usage": "사용량",
+    "allocatable": "할당 가능",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pod: {{count}}",
+    "podsOf": "Pod: 허용 {{allocatable}}개 중 {{count}}개",
+    "withoutLimit_other": "Pod {{count}}개는 모든 컨테이너에 제한이 설정되어 있지 않습니다. 위의 제한은 최소한 이 합계입니다."
+  }
+}

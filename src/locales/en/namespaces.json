@@ -1,0 +1,52 @@
+{
+  "invalidName": "“{{name}}” is not a namespace name",
+  "filter": {
+    "allAccessible_one": "All accessible ({{count}})",
+    "allAccessible_other": "All accessible ({{count}})",
+    "restrictedHint": "You may not list the namespaces of this cluster. Type a namespace and press Enter: Sextant remembers it.",
+    "scopeCapped": "“All accessible” watches the first {{max}} of {{total}} namespaces; select namespaces to see the others.",
+    "forget": "Forget {{namespace}}"
+  },
+  "mark": {
+    "accessible": "accessible",
+    "noAccess": "no access",
+    "found": "found"
+  },
+  "found": {
+    "title": "Found when connecting: {{sources}}",
+    "context": "the kubeconfig context's namespace",
+    "serviceAccount": "the ServiceAccount's namespace",
+    "project": "an OpenShift project"
+  },
+  "check": {
+    "again": "Check access again",
+    "checking": "Checking access…",
+    "checkedAt": "Access checked at {{time}}."
+  },
+  "noAccess": {
+    "title": "No access to {{kind}}",
+    "namespaced": "The API server says you may not list {{kind}} in {{namespaces}}.",
+    "cluster": "The API server says you may not list {{kind}} in this cluster.",
+    "noScopeTitle": "No namespace to show",
+    "noScope": "You may not list the namespaces of this cluster, and Sextant knows no namespace you may read. Type one into the namespace filter.",
+    "listAnyway": "List anyway",
+    "mark": "No access"
+  },
+  "settings": {
+    "title": "Accessible namespaces",
+    "hint": "Namespaces you typed or selected in the namespace filter, and the ones added here. They stay in the filter when unticked. If you may not list the namespaces of this cluster, “All namespaces” means these.",
+    "restricted": "You may not list the namespaces of this cluster: “All namespaces” watches the accessible namespaces below.",
+    "unrestricted": "You may list the namespaces of this cluster: these names are only remembered for the namespace filter.",
+    "unknown": "Sextant could not check whether you may list the namespaces of this cluster.",
+    "notConnected": "Connect to the cluster to check which of these namespaces you may read.",
+    "username": "The API server knows you as {{user}}.",
+    "addLabel": "Namespace",
+    "add": "Add",
+    "cap": "At most {{max}} namespaces are kept per cluster.",
+    "empty": "No namespaces yet.",
+    "remove": "Remove {{namespace}}",
+    "found": "Found when connecting",
+    "keep": "Keep",
+    "keepNamed": "Keep {{namespace}}"
+  }
+}

@@ -3,7 +3,7 @@
 //! MCP server nor the extension API offers them (an agent or extension gets nothing new without a decision to grant it,
 //! and the answers describe the app user's own credentials, which are not theirs to probe).
 
-use sextant_core::rbac::{self, AccessAnswer, AccessQuery, RulesReview};
+use sextant_core::rbac::{self, AccessAnswer, AccessQuery, RulesReview, SelfSubject};
 use sextant_core::{ClusterId, CoreResult};
 use tauri::State;
 
@@ -29,6 +29,16 @@ pub async fn rbac_rules_review(
     rbac::rules_review(&state.clusters, &cluster_id, &namespace).await
 }
 
+/// Who the API server says the current user is (SelfSubjectReview); `null` where it is not served. The window uses the
+/// ServiceAccount namespace as a candidate of the known namespaces (#285).
+#[tauri::command]
+pub async fn rbac_whoami(
+    state: State<'_, AppState>,
+    cluster_id: ClusterId,
+) -> CoreResult<Option<SelfSubject>> {
+    rbac::whoami(&state.clusters, &cluster_id).await
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -47,6 +57,25 @@ mod tests {
                 || m.contains("canI")
                 || m.contains("can_i")
                 || m.contains("review")),
+            "{methods:?}"
+        );
+    }
+
+    #[test]
+    fn neither_agents_nor_extensions_can_ask_who_the_user_is() {
+        let tools = crate::mcp::server::all_tools().names();
+        assert!(
+            !tools.iter().any(|t| t.contains("whoami")
+                || t.contains("self_subject")
+                || t.contains("subject_review")),
+            "{tools:?}"
+        );
+        let methods = crate::extensions::api::METHODS;
+        assert!(
+            !methods.iter().any(|m| {
+                let m = m.to_ascii_lowercase();
+                m.contains("whoami") || m.contains("selfsubject") || m.contains("self_subject")
+            }),
             "{methods:?}"
         );
     }

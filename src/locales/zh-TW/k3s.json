@@ -1,0 +1,230 @@
+{
+  "badge_other": "{{count}} 個物件需要注意",
+  "loading": "正在載入…",
+  "yes": "是",
+  "sidebar": {
+    "helmCharts": "Helm Charts",
+    "helmChartConfigs": "Helm Chart Configs",
+    "addons": "Addons",
+    "etcdSnapshots": "etcd 快照"
+  },
+  "distribution": {
+    "k3s": "k3s",
+    "rke2": "RKE2",
+    "mixed": "k3s 與 RKE2 節點"
+  },
+  "role": {
+    "controlPlane": "控制平面",
+    "etcd": "etcd",
+    "master": "master（舊 label）"
+  },
+  "signal": {
+    "kubeletVersion": "kubelet 版本",
+    "annotations": "節點 annotations",
+    "providerId": "供應商 ID",
+    "instanceType": "執行個體類型 label"
+  },
+  "page": {
+    "sidebar": "發行版",
+    "title": "k3s / RKE2",
+    "hint": "節點、Addons 與 HelmCharts 透露的這個 k3s 或 RKE2 叢集的狀況。唯讀。",
+    "summary": "叢集",
+    "notRecognised": "沒有節點顯示為 k3s 或 RKE2",
+    "recognised": "{{total}} 個節點中的 {{recognised}} 個",
+    "serversAgents": "伺服器：{{servers}}，代理：{{agents}}",
+    "embeddedEtcd": "內嵌 etcd",
+    "otherDatastore": "沒有內嵌 etcd 成員：SQLite 或外部資料儲存（Sextant 無法判斷是哪一種）",
+    "nodesTruncated": "只讀取前 {{limit}} 個節點。",
+    "nodesUnavailable": "無法讀取節點。",
+    "columns": {
+      "node": "節點",
+      "distribution": "發行版",
+      "version": "版本",
+      "role": "角色",
+      "roles": "角色 labels"
+    }
+  },
+  "columns": {
+    "state": "狀態",
+    "chart": "Chart",
+    "version": "版本",
+    "targetNamespace": "目標 namespace",
+    "addon": "Addon",
+    "helmChart": "HelmChart",
+    "source": "資訊清單",
+    "checksum": "總和檢查碼",
+    "node": "節點",
+    "storage": "儲存",
+    "size": "大小",
+    "created": "建立時間"
+  },
+  "chartState": {
+    "deployed": "已部署",
+    "installing": "正在安裝",
+    "retrying": "正在重試",
+    "failed": "失敗",
+    "deleting": "正在刪除",
+    "applied": "已建立 Job",
+    "unknown": "無狀態"
+  },
+  "jobState": {
+    "running": "執行中",
+    "complete": "已完成",
+    "failed": "失敗",
+    "pending": "等待中"
+  },
+  "snapshotState": {
+    "ready": "就緒",
+    "failed": "失敗",
+    "pending": "未就緒"
+  },
+  "storage": {
+    "s3": "S3",
+    "local": "本機"
+  },
+  "fields": {
+    "state": "狀態",
+    "chart": "Chart",
+    "repo": "儲存庫",
+    "version": "版本",
+    "targetNamespace": "目標 namespace",
+    "createNamespace": "建立 namespace",
+    "bootstrap": "啟動 chart",
+    "failurePolicy": "失敗原則",
+    "backOffLimit": "安裝嘗試次數（backoff limit）",
+    "timeout": "逾時",
+    "jobImage": "Job 映像",
+    "authSecret": "儲存庫憑證",
+    "repoCA": "儲存庫 CA",
+    "registrySecret": "映像儲存庫憑證",
+    "addon": "部署它的 Addon",
+    "helmChartConfig": "HelmChartConfig",
+    "helmChart": "HelmChart",
+    "job": "Job",
+    "jobState": "Job 狀態",
+    "failedPods": "失敗的 Pod",
+    "started": "開始時間",
+    "completed": "完成時間",
+    "failedAt": "失敗時間",
+    "source": "資訊清單",
+    "checksum": "總和檢查碼",
+    "snapshotState": "狀態",
+    "snapshotName": "快照名稱",
+    "node": "節點",
+    "storage": "儲存",
+    "bucket": "Bucket",
+    "location": "位置",
+    "size": "大小",
+    "created": "建立時間",
+    "errorAt": "出錯時間",
+    "distribution": "發行版",
+    "versions": "版本",
+    "recognised": "已辨識的節點",
+    "servers": "節點",
+    "datastore": "資料儲存",
+    "nodeRole": "角色",
+    "roles": "角色 labels",
+    "signals": "辨識依據",
+    "hostname": "主機名稱",
+    "internalIp": "內部 IP",
+    "externalIp": "外部 IP",
+    "etcdMember": "etcd 成員"
+  },
+  "hint": {
+    "retrying": "安裝 Job 一再失敗，helm-controller 持續重試。原因請見 Job 的日誌。",
+    "applied": "helm-controller 已建立安裝 Job；結果請見下方的 Job。",
+    "unknown": "helm-controller 沒有回報狀態（舊版本不寫狀態）；安裝情況請見下方的 Job。",
+    "bundled": "從伺服器的資訊清單目錄部署（Addon {{addon}}）：在此所做的修改會在伺服器重新啟動時被覆寫；請改用 HelmChartConfig。"
+  },
+  "job": {
+    "title": "安裝 Job",
+    "logs": "日誌",
+    "none": "未列出 Job {{job}}。",
+    "unavailable": "無法讀取 Jobs。"
+  },
+  "values": {
+    "title": "值",
+    "none": "這裡沒有設定任何值。",
+    "note": "值中可能含有機密：看似機密的鍵下的值已隱藏，位址中的憑證已移除。YAML 區段顯示儲存的物件。",
+    "unreadable": "未顯示這些值：無法安全地將其當作 YAML 讀取。",
+    "showContent": "顯示 valuesContent",
+    "showValues": "顯示 values",
+    "showSet": "顯示 set 值",
+    "secrets": "來自 Secrets 的值",
+    "secret": "Secret",
+    "keys": "鍵",
+    "allKeys": "所有鍵"
+  },
+  "config": {
+    "noChart": "{{namespace}} 中沒有 HelmChart {{name}}：這個 HelmChartConfig 目前不覆寫任何內容。",
+    "hint": "HelmChartConfig 會覆寫同名同 namespace 的 HelmChart 的值；它變更時，helm-controller 會重新安裝該 chart。"
+  },
+  "addon": {
+    "hint": "k3s 從伺服器的資訊清單目錄套用此資訊清單。無法套用的資訊清單會以此 Addon 的 Warning 事件回報。"
+  },
+  "node": {
+    "server": "伺服器",
+    "agent": "代理",
+    "args": "參數",
+    "flag": "旗標",
+    "value": "值",
+    "hidden": "已隱藏",
+    "argsNote": "權杖、金鑰、密碼與資料儲存位址的值一律不顯示。",
+    "argsUnreadable": "無法讀取參數。"
+  },
+  "components": {
+    "title": "內建元件",
+    "hint": {
+      "k3s": "k3s 從其資訊清單目錄部署的內容。以 --disable 排除的元件不會被找到。",
+      "rke2": "RKE2 安裝在 kube-system 中的 charts。實際有哪些取決於伺服器的選項（--cni、--ingress-controller、--disable）。"
+    },
+    "unavailable": "無法讀取 kube-system 的 Deployments 或 DaemonSets。",
+    "truncated": "部分清單被截斷：狀態可能不完整。",
+    "component": "元件",
+    "status": "狀態",
+    "from": "來源",
+    "workloads": "工作負載",
+    "available": "{{desired}} 個中 {{available}} 個可用",
+    "state": {
+      "ready": "就緒",
+      "notReady": "無法使用",
+      "installing": "正在安裝",
+      "failed": "安裝失敗",
+      "noWorkload": "尚無工作負載",
+      "notFound": "找不到",
+      "notFoundDisabled": "找不到（是否以 --disable {{flag}} 停用了？）",
+      "notFoundServiceLb": "未使用：沒有 LoadBalancer 類型的 Service，或已以 --disable {{flag}} 停用"
+    }
+  },
+  "component": {
+    "coredns": "CoreDNS",
+    "traefik": "Traefik",
+    "localPath": "Local Path Provisioner",
+    "metricsServer": "metrics-server",
+    "serviceLb": "ServiceLB (Klipper)",
+    "rke2Coredns": "CoreDNS",
+    "rke2IngressNginx": "Ingress NGINX",
+    "rke2Traefik": "Traefik",
+    "rke2MetricsServer": "metrics-server",
+    "rke2SnapshotController": "快照控制器",
+    "rke2Canal": "Canal",
+    "rke2Calico": "Calico",
+    "rke2Cilium": "Cilium",
+    "rke2Flannel": "Flannel",
+    "rke2Multus": "Multus",
+    "serviceLbRke2": "ServiceLB (Klipper)"
+  },
+  "serviceLb": {
+    "title": "ServiceLB",
+    "hint": "ServiceLB 為每個 LoadBalancer 類型的 Service 執行一個 DaemonSet，並發布其所在節點的位址。",
+    "none": "kube-system 中沒有 ServiceLB 的 DaemonSet。",
+    "service": "Service",
+    "daemonSet": "DaemonSet",
+    "pods": "Pod",
+    "addresses": "負載平衡器位址",
+    "ready": "{{desired}} 個中 {{ready}} 個就緒",
+    "noAddress": "尚無位址",
+    "serviceUnreadable": "無法讀取該 Service",
+    "truncated": "只列出前 {{limit}} 個 Services。"
+  }
+}

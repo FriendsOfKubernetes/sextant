@@ -968,3 +968,21 @@ fn kueue_and_jobset_problems_are_never_given_to_agents() {
     assert!(!answers::OPT_IN_CATEGORIES.contains(&"kueue"));
     assert!(!answers::OPT_IN_CATEGORIES.contains(&"jobset"));
 }
+
+/// Operator Lifecycle Manager problems (#268) are a window view: agents get none of them, though the category is on by
+/// default (ADR-0121).
+#[test]
+fn olm_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"olm"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"olm"));
+    assert!(!answers::category_for_agents("olm", &["olm".to_owned()]));
+}
+
+/// k3s / RKE2 problems (#270) — failed HelmChart installs and bundled components not available — are a window view:
+/// agents get none of them, though the category is on by default (ADR-0123).
+#[test]
+fn k3s_problems_are_never_given_to_agents() {
+    assert!(answers::PROBLEM_CATEGORIES.contains(&"k3s"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"k3s"));
+    assert!(!answers::category_for_agents("k3s", &["k3s".to_owned()]));
+}

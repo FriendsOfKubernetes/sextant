@@ -1,0 +1,115 @@
+{
+  "_comment": "Host-side objects of vcluster as the chart (chart/templates/statefulset.yaml, service.yaml, etcd-statefulset.yaml) and the syncer (pkg/util/kubeconfig/kubeconfig.go, pkg/util/translate/types.go) of github.com/loft-sh/vcluster write them.",
+  "devStatefulSet": {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": {
+      "name": "dev",
+      "namespace": "team-a",
+      "uid": "sts-dev",
+      "creationTimestamp": "2026-10-01T10:00:00Z",
+      "labels": { "app": "vcluster", "chart": "vcluster-0.29.0", "release": "dev", "heritage": "Helm" }
+    },
+    "spec": {
+      "replicas": 1,
+      "serviceName": "dev-headless",
+      "selector": { "matchLabels": { "app": "vcluster", "release": "dev" } },
+      "template": {
+        "metadata": { "labels": { "app": "vcluster", "release": "dev" } },
+        "spec": { "containers": [{ "name": "syncer", "image": "ghcr.io/loft-sh/vcluster-oss:0.29.0" }] }
+      }
+    },
+    "status": { "replicas": 1, "readyReplicas": 1 }
+  },
+  "qaDeploymentPaused": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "qa",
+      "namespace": "team-b",
+      "uid": "deploy-qa",
+      "creationTimestamp": "2026-10-02T10:00:00Z",
+      "labels": { "app": "vcluster", "chart": "vcluster-0.29.0", "release": "qa", "heritage": "Helm" },
+      "annotations": { "loft.sh/paused": "true", "loft.sh/paused-replicas": "1" }
+    },
+    "spec": {
+      "replicas": 0,
+      "selector": { "matchLabels": { "app": "vcluster", "release": "qa" } },
+      "template": {
+        "metadata": { "labels": { "app": "vcluster", "release": "qa" } },
+        "spec": { "containers": [{ "name": "syncer", "image": "ghcr.io/loft-sh/vcluster-oss:0.28.1" }] }
+      }
+    },
+    "status": {}
+  },
+  "devEtcd": {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": {
+      "name": "dev-etcd",
+      "namespace": "team-a",
+      "uid": "sts-dev-etcd",
+      "labels": { "app": "vcluster-etcd", "release": "dev", "heritage": "Helm" }
+    },
+    "spec": { "replicas": 1, "template": { "spec": { "containers": [{ "name": "etcd", "image": "registry.k8s.io/etcd:3.5.21-0" }] } } },
+    "status": { "replicas": 1, "readyReplicas": 1 }
+  },
+  "devPod": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "name": "dev-0",
+      "namespace": "team-a",
+      "uid": "pod-dev-0",
+      "creationTimestamp": "2026-10-01T10:00:05Z",
+      "labels": { "app": "vcluster", "release": "dev" }
+    },
+    "spec": { "containers": [{ "name": "syncer" }] },
+    "status": { "phase": "Running", "conditions": [{ "type": "Ready", "status": "True" }] }
+  },
+  "syncedPod": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "name": "nginx-x-default-x-dev",
+      "namespace": "team-a",
+      "uid": "pod-synced",
+      "creationTimestamp": "2026-10-03T10:00:00Z",
+      "labels": {
+        "app": "vcluster",
+        "release": "dev",
+        "vcluster.loft.sh/managed-by": "dev",
+        "vcluster.loft.sh/namespace": "default"
+      },
+      "annotations": {
+        "vcluster.loft.sh/object-name": "nginx",
+        "vcluster.loft.sh/object-namespace": "default",
+        "vcluster.loft.sh/object-kind": "/v1, Kind=Pod",
+        "vcluster.loft.sh/object-host-name": "nginx-x-default-x-dev",
+        "vcluster.loft.sh/object-host-namespace": "team-a"
+      }
+    },
+    "spec": { "containers": [{ "name": "nginx" }] },
+    "status": { "phase": "Pending" }
+  },
+  "devService": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "dev",
+      "namespace": "team-a",
+      "uid": "svc-dev",
+      "labels": { "app": "vcluster", "release": "dev", "vcluster.loft.sh/service": "true" }
+    }
+  },
+  "devSecret": {
+    "apiVersion": "v1",
+    "kind": "Secret",
+    "metadata": {
+      "name": "vc-dev",
+      "namespace": "team-a",
+      "uid": "secret-vc-dev",
+      "labels": { "app": "vcluster", "vcluster-name": "dev" }
+    }
+  }
+}

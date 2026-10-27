@@ -1,0 +1,87 @@
+{
+  "sidebar": "가상 클러스터",
+  "loading": "불러오는 중…",
+  "page": {
+    "title": "가상 클러스터",
+    "hint": "이 클러스터의 vcluster 인스턴스: label app=vcluster가 있는 StatefulSet과 Deployment입니다. \"연결\"은 이 클러스터의 포트 포워딩을 통해 가상 클러스터를 클러스터 목록에 추가합니다.",
+    "total_other": "가상 클러스터 {{count}}개",
+    "truncated": "처음 {{max}}개의 StatefulSet과 Deployment만 표시합니다.",
+    "unavailable": "일부 StatefulSet 또는 Deployment를 나열할 수 없습니다. 읽을 수 있는 namespace에서 찾으려면 필터에서 선택하세요.",
+    "namespacesCapped": "Pod, Service, Secret은 처음 {{max}}개 namespace에서만 확인합니다.",
+    "lifetime": "연결된 가상 클러스터는 Sextant가 포트를 포워딩하는 동안에만 클러스터 목록에 남습니다. 호스트 클러스터 연결 해제, 포트 포워딩 중지 또는 Sextant 종료 시 제거됩니다."
+  },
+  "columns": {
+    "name": "이름",
+    "namespace": "Namespace",
+    "kind": "종류",
+    "version": "버전",
+    "state": "상태",
+    "pods": "Pod",
+    "service": "Service",
+    "secret": "kubeconfig Secret",
+    "connection": "연결"
+  },
+  "state": {
+    "paused": "일시 중지됨",
+    "scaledDown": "0으로 축소됨",
+    "ready": "준비됨",
+    "degraded": "{{replicas}}개 중 {{ready}}개 준비됨",
+    "notReady": "준비 안 됨"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} 준비됨",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "있음",
+    "missing": "없음",
+    "unknown": "알 수 없음"
+  },
+  "connect": {
+    "button": "연결",
+    "buttonNamed": "연결 {{name}}",
+    "connecting": "연결 중…",
+    "forwarded": "포트 {{port}}로 포워딩 중",
+    "open": "열기",
+    "openNamed": "열기 {{context}}",
+    "disconnect": "연결 해제",
+    "disconnectNamed": "연결 해제 {{name}}",
+    "failed": "연결할 수 없습니다: {{message}}",
+    "title": "vcluster {{name}}에 연결할까요?",
+    "confirm": "연결",
+    "reads": "Sextant가 사용자의 자격 증명으로 {{namespace}}의 Secret {{secret}}을 읽습니다. 그 안의 kubeconfig는 Sextant 백엔드에만 남습니다.",
+    "forwards": "로컬 포트가 {{host}}를 통해 vcluster의 API 서버로 포워딩됩니다.",
+    "adds": "가상 클러스터 {{context}}가 Sextant 자체 kubeconfig 파일 vcluster.yaml에 저장되어 클러스터 목록에 추가됩니다.",
+    "lasts": "포트 포워딩이 실행되는 동안 유지됩니다. {{host}} 연결 해제, 포워딩 중지 또는 Sextant 종료 시 제거됩니다."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "버전",
+    "state": "상태",
+    "pods": "컨트롤 플레인 Pod",
+    "service": "Service",
+    "secret": "kubeconfig Secret",
+    "connection": "연결"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "동기화된 객체",
+    "hint": "{{name}}의 syncer가 가상 클러스터에서 이 namespace로 복사한 객체와 각 객체가 나타내는 가상 이름 및 namespace입니다.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "{{kind}} 객체를 나열할 수 없습니다.",
+    "notSaid": "기록 없음",
+    "more_other": "{{count}}개가 더 있지만 표시되지 않습니다.",
+    "truncated": "처음 {{max}}개만 표시합니다.",
+    "columns": {
+      "host": "호스트 객체",
+      "virtualName": "가상 이름",
+      "virtualNamespace": "가상 namespace"
+    }
+  },
+  "source": {
+    "kind": "가상 클러스터",
+    "confirmRemove": "그 가상 클러스터가 목록에서 사라지고 Sextant가 보관한 kubeconfig가 삭제됩니다. 포트 포워딩은 포트 포워딩 화면에서 중지할 때까지 계속 실행됩니다."
+  }
+}

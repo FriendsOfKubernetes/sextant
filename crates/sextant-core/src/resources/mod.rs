@@ -9,6 +9,7 @@ mod dry_run;
 mod get;
 mod list;
 mod mutate;
+pub mod openshift;
 pub mod rollouts;
 mod sample;
 pub mod set_image;

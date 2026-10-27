@@ -1,0 +1,230 @@
+{
+  "badge_other": "{{count}} 個のオブジェクトに注意が必要です",
+  "loading": "読み込み中…",
+  "yes": "はい",
+  "sidebar": {
+    "helmCharts": "Helm Charts",
+    "helmChartConfigs": "Helm Chart Configs",
+    "addons": "Addons",
+    "etcdSnapshots": "etcd スナップショット"
+  },
+  "distribution": {
+    "k3s": "k3s",
+    "rke2": "RKE2",
+    "mixed": "k3s と RKE2 のノード"
+  },
+  "role": {
+    "controlPlane": "コントロールプレーン",
+    "etcd": "etcd",
+    "master": "master（古い label）"
+  },
+  "signal": {
+    "kubeletVersion": "kubelet のバージョン",
+    "annotations": "ノードの annotations",
+    "providerId": "プロバイダー ID",
+    "instanceType": "インスタンスタイプの label"
+  },
+  "page": {
+    "sidebar": "ディストリビューション",
+    "title": "k3s / RKE2",
+    "hint": "ノード、Addons、HelmCharts から分かるこの k3s または RKE2 クラスターの情報。読み取り専用です。",
+    "summary": "クラスター",
+    "notRecognised": "k3s または RKE2 を示すノードはありません",
+    "recognised": "{{total}} ノード中 {{recognised}}",
+    "serversAgents": "サーバー: {{servers}}、エージェント: {{agents}}",
+    "embeddedEtcd": "組み込み etcd",
+    "otherDatastore": "組み込み etcd のメンバーがいません: SQLite か外部データストアです（Sextant にはどちらか判断できません）",
+    "nodesTruncated": "最初の {{limit}} ノードだけを読み取ります。",
+    "nodesUnavailable": "ノードを読み取れません。",
+    "columns": {
+      "node": "ノード",
+      "distribution": "ディストリビューション",
+      "version": "バージョン",
+      "role": "ロール",
+      "roles": "ロールの labels"
+    }
+  },
+  "columns": {
+    "state": "状態",
+    "chart": "Chart",
+    "version": "バージョン",
+    "targetNamespace": "対象 namespace",
+    "addon": "Addon",
+    "helmChart": "HelmChart",
+    "source": "マニフェスト",
+    "checksum": "チェックサム",
+    "node": "ノード",
+    "storage": "ストレージ",
+    "size": "サイズ",
+    "created": "作成日時"
+  },
+  "chartState": {
+    "deployed": "デプロイ済み",
+    "installing": "インストール中",
+    "retrying": "再試行中",
+    "failed": "失敗",
+    "deleting": "削除中",
+    "applied": "Job 作成済み",
+    "unknown": "ステータスなし"
+  },
+  "jobState": {
+    "running": "実行中",
+    "complete": "完了",
+    "failed": "失敗",
+    "pending": "保留中"
+  },
+  "snapshotState": {
+    "ready": "準備完了",
+    "failed": "失敗",
+    "pending": "未完了"
+  },
+  "storage": {
+    "s3": "S3",
+    "local": "ローカル"
+  },
+  "fields": {
+    "state": "状態",
+    "chart": "Chart",
+    "repo": "リポジトリ",
+    "version": "バージョン",
+    "targetNamespace": "対象 namespace",
+    "createNamespace": "namespace を作成",
+    "bootstrap": "ブートストラップ chart",
+    "failurePolicy": "失敗時のポリシー",
+    "backOffLimit": "インストール試行回数（backoff limit）",
+    "timeout": "タイムアウト",
+    "jobImage": "Job のイメージ",
+    "authSecret": "リポジトリの認証情報",
+    "repoCA": "リポジトリの CA",
+    "registrySecret": "レジストリの認証情報",
+    "addon": "デプロイ元の Addon",
+    "helmChartConfig": "HelmChartConfig",
+    "helmChart": "HelmChart",
+    "job": "Job",
+    "jobState": "Job の状態",
+    "failedPods": "失敗した Pod",
+    "started": "開始",
+    "completed": "完了",
+    "failedAt": "失敗日時",
+    "source": "マニフェスト",
+    "checksum": "チェックサム",
+    "snapshotState": "状態",
+    "snapshotName": "スナップショット名",
+    "node": "ノード",
+    "storage": "ストレージ",
+    "bucket": "Bucket",
+    "location": "場所",
+    "size": "サイズ",
+    "created": "作成日時",
+    "errorAt": "エラー日時",
+    "distribution": "ディストリビューション",
+    "versions": "バージョン",
+    "recognised": "認識されたノード",
+    "servers": "ノード",
+    "datastore": "データストア",
+    "nodeRole": "ロール",
+    "roles": "ロールの labels",
+    "signals": "認識の根拠",
+    "hostname": "ホスト名",
+    "internalIp": "内部 IP",
+    "externalIp": "外部 IP",
+    "etcdMember": "etcd メンバー"
+  },
+  "hint": {
+    "retrying": "インストール Job が失敗を繰り返し、helm-controller が再試行しています。理由は Job のログで分かります。",
+    "applied": "helm-controller がインストール Job を作成しました。結果は下の Job にあります。",
+    "unknown": "helm-controller はステータスを報告していません（古いバージョンは書き込みません）。インストールの結果は下の Job で分かります。",
+    "bundled": "サーバーのマニフェストディレクトリからデプロイされています（Addon {{addon}}）。ここでの変更はサーバーの再起動時に上書きされるため、代わりに HelmChartConfig を使ってください。"
+  },
+  "job": {
+    "title": "インストール Job",
+    "logs": "ログ",
+    "none": "Job {{job}} は一覧にありません。",
+    "unavailable": "Jobs を読み取れません。"
+  },
+  "values": {
+    "title": "値",
+    "none": "ここで設定されている値はありません。",
+    "note": "値には秘密情報が含まれることがあります。秘密らしいキーの下の値は隠され、アドレスから認証情報は取り除かれます。保存されたオブジェクトは YAML セクションで確認できます。",
+    "unreadable": "値は表示されません: YAML として安全に読み取れません。",
+    "showContent": "valuesContent を表示",
+    "showValues": "values を表示",
+    "showSet": "set の値を表示",
+    "secrets": "Secrets からの値",
+    "secret": "Secret",
+    "keys": "キー",
+    "allKeys": "すべてのキー"
+  },
+  "config": {
+    "noChart": "{{namespace}} に HelmChart {{name}} はありません。この HelmChartConfig は現在何も上書きしていません。",
+    "hint": "HelmChartConfig は同じ名前と namespace の HelmChart の値を上書きします。変更されると helm-controller が chart を再インストールします。"
+  },
+  "addon": {
+    "hint": "k3s はこのマニフェストをサーバーのマニフェストディレクトリから適用します。適用できないマニフェストは、この Addon の Warning イベントとして報告されます。"
+  },
+  "node": {
+    "server": "サーバー",
+    "agent": "エージェント",
+    "args": "引数",
+    "flag": "フラグ",
+    "value": "値",
+    "hidden": "非表示",
+    "argsNote": "トークン、キー、パスワード、データストアのアドレスの値は表示されません。",
+    "argsUnreadable": "引数を読み取れません。"
+  },
+  "components": {
+    "title": "同梱コンポーネント",
+    "hint": {
+      "k3s": "k3s がマニフェストディレクトリからデプロイするもの。--disable で除外したコンポーネントは見つかりません。",
+      "rke2": "RKE2 が kube-system にインストールする charts。どれが入るかはサーバーのオプション（--cni、--ingress-controller、--disable）によります。"
+    },
+    "unavailable": "kube-system の Deployments または DaemonSets を読み取れません。",
+    "truncated": "一部の一覧が切り詰められています: 状態が不完全な可能性があります。",
+    "component": "コンポーネント",
+    "status": "状態",
+    "from": "提供元",
+    "workloads": "ワークロード",
+    "available": "{{desired}} 中 {{available}} が利用可能",
+    "state": {
+      "ready": "準備完了",
+      "notReady": "利用不可",
+      "installing": "インストール中",
+      "failed": "インストール失敗",
+      "noWorkload": "ワークロードはまだありません",
+      "notFound": "見つかりません",
+      "notFoundDisabled": "見つかりません（--disable {{flag}} で無効化されていますか？）",
+      "notFoundServiceLb": "未使用: LoadBalancer タイプの Service がないか、--disable {{flag}} で無効化されています"
+    }
+  },
+  "component": {
+    "coredns": "CoreDNS",
+    "traefik": "Traefik",
+    "localPath": "Local Path Provisioner",
+    "metricsServer": "metrics-server",
+    "serviceLb": "ServiceLB (Klipper)",
+    "rke2Coredns": "CoreDNS",
+    "rke2IngressNginx": "Ingress NGINX",
+    "rke2Traefik": "Traefik",
+    "rke2MetricsServer": "metrics-server",
+    "rke2SnapshotController": "スナップショットコントローラー",
+    "rke2Canal": "Canal",
+    "rke2Calico": "Calico",
+    "rke2Cilium": "Cilium",
+    "rke2Flannel": "Flannel",
+    "rke2Multus": "Multus",
+    "serviceLbRke2": "ServiceLB (Klipper)"
+  },
+  "serviceLb": {
+    "title": "ServiceLB",
+    "hint": "ServiceLB は LoadBalancer タイプの Service ごとに DaemonSet を実行し、それが動くノードのアドレスを公開します。",
+    "none": "kube-system に ServiceLB の DaemonSet はありません。",
+    "service": "Service",
+    "daemonSet": "DaemonSet",
+    "pods": "Pod",
+    "addresses": "ロードバランサーのアドレス",
+    "ready": "{{desired}} 中 {{ready}} が準備完了",
+    "noAddress": "アドレスはまだありません",
+    "serviceUnreadable": "Service を読み取れません",
+    "truncated": "最初の {{limit}} 個の Services だけを表示しています。"
+  }
+}

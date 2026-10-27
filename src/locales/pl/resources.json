@@ -42,7 +42,11 @@
     "jobset": "JobSet",
     "kuberay": "KubeRay",
     "kserve": "KServe",
-    "customResources": "Zasoby niestandardowe"
+    "olm": "Operatory (OLM)",
+    "openshift": "OpenShift",
+    "customResources": "Zasoby niestandardowe",
+    "k3s": "k3s / RKE2",
+    "helmController": "helm-controller"
   },
   "kinds": {
     "pods": "Pods",

@@ -1,0 +1,31 @@
+/* OpenShift: notes in the controllers' words, a request or a log snippet as text, the action buttons. */
+.os-note {
+  margin: 0 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-left: 0.1875rem solid var(--color-warning);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.os-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.os-muted {
+  margin: 0 0 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.os-pre {
+  margin: 0 0 0.5rem;
+  max-height: 20rem;
+  overflow: auto;
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.os-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+}

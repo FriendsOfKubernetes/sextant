@@ -1,0 +1,93 @@
+{
+  "sidebar": "Klastry wirtualne",
+  "loading": "Wczytywanie…",
+  "page": {
+    "title": "Klastry wirtualne",
+    "hint": "Instancje vcluster w tym klastrze: StatefulSet i Deployment z label app=vcluster. „Połącz” dodaje klaster wirtualny do listy klastrów przez przekierowanie portu tego klastra.",
+    "total_one": "{{count}} klaster wirtualny",
+    "total_few": "{{count}} klastry wirtualne",
+    "total_many": "{{count}} klastrów wirtualnych",
+    "total_other": "{{count}} klastra wirtualnego",
+    "truncated": "Wyświetlane są tylko pierwsze {{max}} StatefulSet i Deployment.",
+    "unavailable": "Niektórych StatefulSet lub Deployment nie można wyświetlić. Aby szukać w namespace, które możesz odczytać, wybierz je w filtrze.",
+    "namespacesCapped": "Pod, Service i Secret są sprawdzane tylko w pierwszych {{max}} namespace.",
+    "lifetime": "Połączony klaster wirtualny pozostaje na liście klastrów tylko wtedy, gdy Sextant przekierowuje dla niego port: rozłączenie klastra macierzystego, zatrzymanie przekierowania portu lub zamknięcie Sextant go usuwa."
+  },
+  "columns": {
+    "name": "Nazwa",
+    "namespace": "Namespace",
+    "kind": "Rodzaj",
+    "version": "Wersja",
+    "state": "Stan",
+    "pods": "Pody",
+    "service": "Service",
+    "secret": "Secret z kubeconfig",
+    "connection": "Połączenie"
+  },
+  "state": {
+    "paused": "Wstrzymany",
+    "scaledDown": "Przeskalowany do zera",
+    "ready": "Gotowy",
+    "degraded": "Gotowe {{ready}} z {{replicas}}",
+    "notReady": "Niegotowy"
+  },
+  "pods": {
+    "ready": "gotowe {{ready}}/{{total}}",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "Jest",
+    "missing": "Brak",
+    "unknown": "Nie wiadomo"
+  },
+  "connect": {
+    "button": "Połącz",
+    "buttonNamed": "Połącz {{name}}",
+    "connecting": "Łączenie…",
+    "forwarded": "Przekierowano na port {{port}}",
+    "open": "Otwórz",
+    "openNamed": "Otwórz {{context}}",
+    "disconnect": "Rozłącz",
+    "disconnectNamed": "Rozłącz {{name}}",
+    "failed": "Nie udało się połączyć: {{message}}",
+    "title": "Połączyć z vcluster {{name}}?",
+    "confirm": "Połącz",
+    "reads": "Sextant odczyta Secret {{secret}} w {{namespace}} przy użyciu Twoich poświadczeń. kubeconfig z niego pozostaje w backendzie Sextant.",
+    "forwards": "Lokalny port jest przekierowywany przez {{host}} do serwera API vcluster.",
+    "adds": "Klaster wirtualny {{context}} zostanie dodany do listy klastrów, we własnym pliku kubeconfig Sextant vcluster.yaml.",
+    "lasts": "Pozostaje tam, dopóki działa przekierowanie portu: rozłączenie {{host}}, zatrzymanie przekierowania lub zamknięcie Sextant go usuwa."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Wersja",
+    "state": "Stan",
+    "pods": "Pody płaszczyzny sterowania",
+    "service": "Service",
+    "secret": "Secret z kubeconfig",
+    "connection": "Połączenie"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Zsynchronizowane obiekty",
+    "hint": "Obiekty, które syncer {{name}} skopiował z klastra wirtualnego do tego namespace, oraz wirtualna nazwa i namespace, którym każdy odpowiada.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "Nie można wyświetlić obiektów {{kind}}.",
+    "notSaid": "nie podano",
+    "more_one": "Jeszcze {{count}} nie jest wyświetlany.",
+    "more_few": "Jeszcze {{count}} nie są wyświetlane.",
+    "more_many": "Jeszcze {{count}} nie jest wyświetlanych.",
+    "more_other": "Jeszcze {{count}} nie jest wyświetlane.",
+    "truncated": "Wyświetlane są tylko pierwsze {{max}}.",
+    "columns": {
+      "host": "Obiekt klastra macierzystego",
+      "virtualName": "Nazwa wirtualna",
+      "virtualNamespace": "Wirtualny namespace"
+    }
+  },
+  "source": {
+    "kind": "klastry wirtualne",
+    "confirmRemove": "Jego klastry wirtualne znikną z listy, a kubeconfig, który Sextant dla nich przechowuje, zostanie usunięty. Ich przekierowania portów działają dalej, dopóki nie zatrzymasz ich w sekcji Przekierowanie portów."
+  }
+}

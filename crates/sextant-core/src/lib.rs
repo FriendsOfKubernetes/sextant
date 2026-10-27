@@ -40,6 +40,7 @@ pub mod settings;
 pub mod timeline;
 pub mod tls;
 pub mod upgrade;
+pub mod vcluster;
 
 pub use cluster::{ClusterManager, ConnectionState};
 pub use error::{CoreError, CoreResult, ErrorCode};

@@ -1,0 +1,1508 @@
+[
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "ClusterServiceVersion",
+  "metadata": {
+   "name": "prometheusoperator.0.70.0",
+   "uid": "csv-prom",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "labels": {
+    "operators.coreos.com/prometheus.operators": ""
+   },
+   "annotations": {
+    "olm.operatorGroup": "global-operators",
+    "olm.operatorNamespace": "operators",
+    "olm.targetNamespaces": "",
+    "operatorframework.io/properties": "{}"
+   }
+  },
+  "spec": {
+   "displayName": "Prometheus Operator",
+   "version": "0.70.0",
+   "replaces": "prometheusoperator.0.65.1",
+   "skips": [
+    "prometheusoperator.0.66.0"
+   ],
+   "provider": {
+    "name": "Red Hat"
+   },
+   "minKubeVersion": "1.16.0",
+   "maturity": "beta",
+   "icon": [
+    {
+     "base64data": "PHN2Zz48L3N2Zz4=",
+     "mediatype": "image/svg+xml"
+    }
+   ],
+   "installModes": [
+    {
+     "type": "OwnNamespace",
+     "supported": true
+    },
+    {
+     "type": "SingleNamespace",
+     "supported": true
+    },
+    {
+     "type": "MultiNamespace",
+     "supported": false
+    },
+    {
+     "type": "AllNamespaces",
+     "supported": true
+    }
+   ],
+   "customresourcedefinitions": {
+    "owned": [
+     {
+      "name": "prometheuses.monitoring.coreos.com",
+      "version": "v1",
+      "kind": "Prometheus",
+      "displayName": "Prometheus"
+     },
+     {
+      "name": "servicemonitors.monitoring.coreos.com",
+      "version": "v1",
+      "kind": "ServiceMonitor",
+      "displayName": "Service Monitor"
+     }
+    ],
+    "required": []
+   },
+   "install": {
+    "strategy": "deployment",
+    "spec": {
+     "deployments": [
+      {
+       "name": "prometheus-operator",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "k8s-app": "prometheus-operator"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "k8s-app": "prometheus-operator"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "prometheus-operator",
+            "image": "quay.io/prometheus-operator/prometheus-operator:v0.70.0"
+           }
+          ]
+         }
+        }
+       }
+      }
+     ],
+     "clusterPermissions": [
+      {
+       "serviceAccountName": "prometheus-operator",
+       "rules": [
+        {
+         "apiGroups": [
+          "monitoring.coreos.com"
+         ],
+         "resources": [
+          "*"
+         ],
+         "verbs": [
+          "*"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "status": {
+   "phase": "Succeeded",
+   "reason": "InstallSucceeded",
+   "message": "install strategy completed with no errors",
+   "lastTransitionTime": "2026-10-20T10:05:00Z",
+   "lastUpdateTime": "2026-10-20T10:05:00Z",
+   "conditions": [
+    {
+     "phase": "Pending",
+     "reason": "RequirementsUnknown",
+     "message": "requirements not yet checked",
+     "lastTransitionTime": "2026-10-20T10:01:00Z",
+     "lastUpdateTime": "2026-10-20T10:01:00Z"
+    },
+    {
+     "phase": "Succeeded",
+     "reason": "InstallSucceeded",
+     "message": "install strategy completed with no errors",
+     "lastTransitionTime": "2026-10-20T10:05:00Z",
+     "lastUpdateTime": "2026-10-20T10:05:00Z"
+    }
+   ],
+   "requirementStatus": [
+    {
+     "group": "apiextensions.k8s.io",
+     "version": "v1",
+     "kind": "CustomResourceDefinition",
+     "name": "prometheuses.monitoring.coreos.com",
+     "status": "Present",
+     "message": "CRD is present and Established condition is true",
+     "uuid": "crd-1"
+    },
+    {
+     "group": "apiextensions.k8s.io",
+     "version": "v1",
+     "kind": "CustomResourceDefinition",
+     "name": "servicemonitors.monitoring.coreos.com",
+     "status": "Present",
+     "message": "CRD is present and Established condition is true",
+     "uuid": "crd-2"
+    },
+    {
+     "group": "",
+     "version": "v1",
+     "kind": "ServiceAccount",
+     "name": "prometheus-operator",
+     "status": "Present",
+     "message": "",
+     "uuid": "sa-1",
+     "dependents": [
+      {
+       "group": "rbac.authorization.k8s.io",
+       "version": "v1",
+       "kind": "PolicyRule",
+       "status": "Satisfied",
+       "message": "cluster rule:{\"verbs\":[\"*\"],\"apiGroups\":[\"monitoring.coreos.com\"],\"resources\":[\"*\"]}"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "ClusterServiceVersion",
+  "metadata": {
+   "name": "prometheusoperator.0.70.0",
+   "uid": "csv-prom-copy",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "default",
+   "labels": {
+    "olm.copiedFrom": "operators"
+   },
+   "annotations": {
+    "olm.operatorGroup": "global-operators",
+    "olm.operatorNamespace": "operators",
+    "operatorframework.io/properties": "{}"
+   }
+  },
+  "spec": {
+   "displayName": "Prometheus Operator",
+   "version": "0.70.0",
+   "replaces": "prometheusoperator.0.65.1",
+   "skips": [
+    "prometheusoperator.0.66.0"
+   ],
+   "provider": {
+    "name": "Red Hat"
+   },
+   "minKubeVersion": "1.16.0",
+   "maturity": "beta",
+   "icon": [
+    {
+     "base64data": "PHN2Zz48L3N2Zz4=",
+     "mediatype": "image/svg+xml"
+    }
+   ],
+   "installModes": [
+    {
+     "type": "OwnNamespace",
+     "supported": true
+    },
+    {
+     "type": "SingleNamespace",
+     "supported": true
+    },
+    {
+     "type": "MultiNamespace",
+     "supported": false
+    },
+    {
+     "type": "AllNamespaces",
+     "supported": true
+    }
+   ],
+   "customresourcedefinitions": {
+    "owned": [
+     {
+      "name": "prometheuses.monitoring.coreos.com",
+      "version": "v1",
+      "kind": "Prometheus",
+      "displayName": "Prometheus"
+     },
+     {
+      "name": "servicemonitors.monitoring.coreos.com",
+      "version": "v1",
+      "kind": "ServiceMonitor",
+      "displayName": "Service Monitor"
+     }
+    ],
+    "required": []
+   },
+   "install": {
+    "strategy": "deployment",
+    "spec": {
+     "deployments": [
+      {
+       "name": "prometheus-operator",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "k8s-app": "prometheus-operator"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "k8s-app": "prometheus-operator"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "prometheus-operator",
+            "image": "quay.io/prometheus-operator/prometheus-operator:v0.70.0"
+           }
+          ]
+         }
+        }
+       }
+      }
+     ],
+     "clusterPermissions": [
+      {
+       "serviceAccountName": "prometheus-operator",
+       "rules": [
+        {
+         "apiGroups": [
+          "monitoring.coreos.com"
+         ],
+         "resources": [
+          "*"
+         ],
+         "verbs": [
+          "*"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "status": {
+   "phase": "Succeeded",
+   "reason": "Copied",
+   "message": "The operator is running in operators but is managing this namespace",
+   "lastTransitionTime": "2026-10-20T10:05:00Z",
+   "lastUpdateTime": "2026-10-20T10:05:00Z",
+   "conditions": [
+    {
+     "phase": "Pending",
+     "reason": "RequirementsUnknown",
+     "message": "requirements not yet checked",
+     "lastTransitionTime": "2026-10-20T10:01:00Z",
+     "lastUpdateTime": "2026-10-20T10:01:00Z"
+    },
+    {
+     "phase": "Succeeded",
+     "reason": "InstallSucceeded",
+     "message": "install strategy completed with no errors",
+     "lastTransitionTime": "2026-10-20T10:05:00Z",
+     "lastUpdateTime": "2026-10-20T10:05:00Z"
+    }
+   ],
+   "requirementStatus": [
+    {
+     "group": "apiextensions.k8s.io",
+     "version": "v1",
+     "kind": "CustomResourceDefinition",
+     "name": "prometheuses.monitoring.coreos.com",
+     "status": "Present",
+     "message": "CRD is present and Established condition is true",
+     "uuid": "crd-1"
+    },
+    {
+     "group": "apiextensions.k8s.io",
+     "version": "v1",
+     "kind": "CustomResourceDefinition",
+     "name": "servicemonitors.monitoring.coreos.com",
+     "status": "Present",
+     "message": "CRD is present and Established condition is true",
+     "uuid": "crd-2"
+    },
+    {
+     "group": "",
+     "version": "v1",
+     "kind": "ServiceAccount",
+     "name": "prometheus-operator",
+     "status": "Present",
+     "message": "",
+     "uuid": "sa-1",
+     "dependents": [
+      {
+       "group": "rbac.authorization.k8s.io",
+       "version": "v1",
+       "kind": "PolicyRule",
+       "status": "Satisfied",
+       "message": "cluster rule:{\"verbs\":[\"*\"],\"apiGroups\":[\"monitoring.coreos.com\"],\"resources\":[\"*\"]}"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "ClusterServiceVersion",
+  "metadata": {
+   "name": "broken-operator.v1.0.0",
+   "uid": "csv-broken",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "annotations": {
+    "olm.operatorGroup": "global-operators",
+    "olm.operatorNamespace": "operators",
+    "olm.targetNamespaces": "",
+    "operatorframework.io/properties": "{}"
+   }
+  },
+  "spec": {
+   "displayName": "Broken Operator",
+   "version": "1.0.0",
+   "installModes": [
+    {
+     "type": "AllNamespaces",
+     "supported": true
+    }
+   ],
+   "customresourcedefinitions": {
+    "owned": [],
+    "required": [
+     {
+      "name": "widgets.example.com",
+      "version": "v1",
+      "kind": "Widget",
+      "displayName": "Widget"
+     }
+    ]
+   },
+   "install": {
+    "strategy": "deployment",
+    "spec": {
+     "deployments": [
+      {
+       "name": "broken-operator",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "app": "broken"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "app": "broken"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "manager",
+            "image": "example.com/broken:1.0.0"
+           }
+          ]
+         }
+        }
+       }
+      },
+      {
+       "name": "broken-webhook",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "app": "broken-webhook"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "app": "broken-webhook"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "webhook",
+            "image": "example.com/broken-webhook:1.0.0"
+           }
+          ]
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  },
+  "status": {
+   "phase": "Failed",
+   "reason": "InstallCheckFailed",
+   "message": "install timeout",
+   "lastTransitionTime": "2026-10-20T11:00:00Z",
+   "lastUpdateTime": "2026-10-20T11:00:00Z",
+   "requirementStatus": [
+    {
+     "group": "apiextensions.k8s.io",
+     "version": "v1",
+     "kind": "CustomResourceDefinition",
+     "name": "widgets.example.com",
+     "status": "NotPresent",
+     "message": "CRD is not present",
+     "uuid": ""
+    },
+    {
+     "group": "",
+     "version": "v1",
+     "kind": "ServiceAccount",
+     "name": "broken-operator",
+     "status": "Present",
+     "message": "",
+     "uuid": "sa-2"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "ClusterServiceVersion",
+  "metadata": {
+   "name": "broken-operator.v1.0.0",
+   "uid": "csv-broken-copy",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "default",
+   "labels": {
+    "olm.copiedFrom": "operators"
+   },
+   "annotations": {
+    "olm.operatorGroup": "global-operators",
+    "olm.operatorNamespace": "operators",
+    "operatorframework.io/properties": "{}"
+   }
+  },
+  "spec": {
+   "displayName": "Broken Operator",
+   "version": "1.0.0",
+   "installModes": [
+    {
+     "type": "AllNamespaces",
+     "supported": true
+    }
+   ],
+   "customresourcedefinitions": {
+    "owned": [],
+    "required": [
+     {
+      "name": "widgets.example.com",
+      "version": "v1",
+      "kind": "Widget",
+      "displayName": "Widget"
+     }
+    ]
+   },
+   "install": {
+    "strategy": "deployment",
+    "spec": {
+     "deployments": [
+      {
+       "name": "broken-operator",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "app": "broken"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "app": "broken"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "manager",
+            "image": "example.com/broken:1.0.0"
+           }
+          ]
+         }
+        }
+       }
+      },
+      {
+       "name": "broken-webhook",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "app": "broken-webhook"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "app": "broken-webhook"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "webhook",
+            "image": "example.com/broken-webhook:1.0.0"
+           }
+          ]
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  },
+  "status": {
+   "phase": "Failed",
+   "reason": "Copied",
+   "message": "The operator is running in operators but is managing this namespace",
+   "lastTransitionTime": "2026-10-20T11:00:00Z",
+   "lastUpdateTime": "2026-10-20T11:00:00Z",
+   "requirementStatus": [
+    {
+     "group": "apiextensions.k8s.io",
+     "version": "v1",
+     "kind": "CustomResourceDefinition",
+     "name": "widgets.example.com",
+     "status": "NotPresent",
+     "message": "CRD is not present",
+     "uuid": ""
+    },
+    {
+     "group": "",
+     "version": "v1",
+     "kind": "ServiceAccount",
+     "name": "broken-operator",
+     "status": "Present",
+     "message": "",
+     "uuid": "sa-2"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "ClusterServiceVersion",
+  "metadata": {
+   "name": "etcdoperator.v0.9.2",
+   "uid": "csv-etcd",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "annotations": {
+    "olm.operatorGroup": "global-operators",
+    "olm.operatorNamespace": "operators",
+    "olm.targetNamespaces": "",
+    "operatorframework.io/properties": "{}"
+   }
+  },
+  "spec": {
+   "displayName": "etcd",
+   "version": "0.9.2",
+   "replaces": "etcdoperator.v0.9.0",
+   "installModes": [
+    {
+     "type": "AllNamespaces",
+     "supported": true
+    }
+   ],
+   "customresourcedefinitions": {
+    "owned": [
+     {
+      "name": "etcdclusters.etcd.database.coreos.com",
+      "version": "v1beta2",
+      "kind": "EtcdCluster",
+      "displayName": "etcd Cluster"
+     }
+    ]
+   },
+   "install": {
+    "strategy": "deployment",
+    "spec": {
+     "deployments": [
+      {
+       "name": "etcd-operator",
+       "spec": {
+        "replicas": 1,
+        "selector": {
+         "matchLabels": {
+          "name": "etcd-operator"
+         }
+        },
+        "template": {
+         "metadata": {
+          "labels": {
+           "name": "etcd-operator"
+          }
+         },
+         "spec": {
+          "containers": [
+           {
+            "name": "etcd-operator",
+            "image": "quay.io/coreos/etcd-operator:v0.9.2"
+           }
+          ]
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  },
+  "status": {
+   "phase": "Succeeded",
+   "reason": "InstallSucceeded",
+   "message": "install strategy completed with no errors",
+   "lastTransitionTime": "2026-10-20T10:05:00Z"
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "Subscription",
+  "metadata": {
+   "name": "prometheus",
+   "uid": "sub-prom",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "labels": {
+    "operators.coreos.com/prometheus.operators": ""
+   }
+  },
+  "spec": {
+   "channel": "beta",
+   "name": "prometheus",
+   "source": "operatorhubio-catalog",
+   "sourceNamespace": "olm",
+   "installPlanApproval": "Automatic"
+  },
+  "status": {
+   "currentCSV": "prometheusoperator.0.70.0",
+   "installedCSV": "prometheusoperator.0.70.0",
+   "state": "AtLatestKnown",
+   "lastUpdated": "2026-10-20T10:05:00Z",
+   "installPlanGeneration": 1,
+   "installPlanRef": {
+    "apiVersion": "operators.coreos.com/v1alpha1",
+    "kind": "InstallPlan",
+    "name": "install-p7x2k",
+    "namespace": "operators",
+    "resourceVersion": "100",
+    "uid": "ip-prom"
+   },
+   "installplan": {
+    "apiVersion": "operators.coreos.com/v1alpha1",
+    "kind": "InstallPlan",
+    "name": "install-p7x2k",
+    "uuid": "ip-prom"
+   },
+   "catalogHealth": [
+    {
+     "catalogSourceRef": {
+      "apiVersion": "operators.coreos.com/v1alpha1",
+      "kind": "CatalogSource",
+      "name": "operatorhubio-catalog",
+      "namespace": "olm",
+      "resourceVersion": "5",
+      "uid": "cs-hub"
+     },
+     "healthy": true,
+     "lastUpdated": "2026-10-20T10:00:30Z"
+    }
+   ],
+   "conditions": [
+    {
+     "type": "CatalogSourcesUnhealthy",
+     "status": "False",
+     "reason": "AllCatalogSourcesHealthy",
+     "message": "all available catalogsources are healthy",
+     "lastTransitionTime": "2026-10-20T10:00:30Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "Subscription",
+  "metadata": {
+   "name": "etcd",
+   "uid": "sub-etcd",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators"
+  },
+  "spec": {
+   "channel": "clusterwide-alpha",
+   "name": "etcd",
+   "source": "operatorhubio-catalog",
+   "sourceNamespace": "olm",
+   "installPlanApproval": "Manual",
+   "startingCSV": "etcdoperator.v0.9.2"
+  },
+  "status": {
+   "currentCSV": "etcdoperator.v0.9.4-clusterwide",
+   "installedCSV": "etcdoperator.v0.9.2",
+   "state": "UpgradePending",
+   "lastUpdated": "2026-10-21T09:00:00Z",
+   "installPlanRef": {
+    "apiVersion": "operators.coreos.com/v1alpha1",
+    "kind": "InstallPlan",
+    "name": "install-q9w4m",
+    "namespace": "operators",
+    "uid": "ip-etcd"
+   },
+   "installplan": {
+    "apiVersion": "operators.coreos.com/v1alpha1",
+    "kind": "InstallPlan",
+    "name": "install-q9w4m",
+    "uuid": "ip-etcd"
+   },
+   "catalogHealth": [
+    {
+     "catalogSourceRef": {
+      "name": "operatorhubio-catalog",
+      "namespace": "olm"
+     },
+     "healthy": true,
+     "lastUpdated": "2026-10-21T09:00:00Z"
+    }
+   ],
+   "conditions": [
+    {
+     "type": "CatalogSourcesUnhealthy",
+     "status": "False",
+     "reason": "AllCatalogSourcesHealthy",
+     "message": "all available catalogsources are healthy",
+     "lastTransitionTime": "2026-10-20T10:00:30Z"
+    },
+    {
+     "type": "InstallPlanPending",
+     "status": "True",
+     "reason": "RequiresApproval",
+     "lastTransitionTime": "2026-10-21T09:00:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "Subscription",
+  "metadata": {
+   "name": "strimzi-kafka-operator",
+   "uid": "sub-strimzi",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "team-a"
+  },
+  "spec": {
+   "channel": "stable",
+   "name": "strimzi-kafka-operator",
+   "source": "broken-catalog",
+   "sourceNamespace": "olm"
+  },
+  "status": {
+   "lastUpdated": "2026-10-21T08:00:00Z",
+   "catalogHealth": [
+    {
+     "catalogSourceRef": {
+      "name": "broken-catalog",
+      "namespace": "olm"
+     },
+     "healthy": false,
+     "lastUpdated": "2026-10-21T08:00:00Z"
+    }
+   ],
+   "conditions": [
+    {
+     "type": "CatalogSourcesUnhealthy",
+     "status": "True",
+     "reason": "UnhealthyCatalogSourceFound",
+     "message": "targeted catalogsource olm/broken-catalog unhealthy",
+     "lastTransitionTime": "2026-10-21T08:00:00Z"
+    },
+    {
+     "type": "ResolutionFailed",
+     "status": "True",
+     "reason": "ConstraintsNotSatisfiable",
+     "message": "no operators found from catalog broken-catalog in namespace olm referenced by subscription strimzi-kafka-operator",
+     "lastTransitionTime": "2026-10-21T08:00:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "Subscription",
+  "metadata": {
+   "name": "broken-operator",
+   "uid": "sub-broken",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators"
+  },
+  "spec": {
+   "channel": "stable",
+   "name": "broken-operator",
+   "source": "operatorhubio-catalog",
+   "sourceNamespace": "olm",
+   "installPlanApproval": "Automatic"
+  },
+  "status": {
+   "currentCSV": "broken-operator.v1.0.0",
+   "state": "UpgradePending",
+   "lastUpdated": "2026-10-21T08:00:00Z",
+   "installPlanRef": {
+    "apiVersion": "operators.coreos.com/v1alpha1",
+    "kind": "InstallPlan",
+    "name": "install-z3v8b",
+    "namespace": "operators",
+    "uid": "ip-broken"
+   },
+   "conditions": [
+    {
+     "type": "InstallPlanFailed",
+     "status": "True",
+     "reason": "InstallComponentFailed",
+     "message": "error creating clusterrole broken-operator: forbidden",
+     "lastTransitionTime": "2026-10-21T08:10:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "InstallPlan",
+  "metadata": {
+   "name": "install-q9w4m",
+   "uid": "ip-etcd",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "generateName": "install-",
+   "ownerReferences": [
+    {
+     "apiVersion": "operators.coreos.com/v1alpha1",
+     "kind": "Subscription",
+     "name": "etcd",
+     "uid": "sub-etcd",
+     "blockOwnerDeletion": false,
+     "controller": false
+    }
+   ]
+  },
+  "spec": {
+   "approval": "Manual",
+   "approved": false,
+   "clusterServiceVersionNames": [
+    "etcdoperator.v0.9.4-clusterwide"
+   ],
+   "generation": 2
+  },
+  "status": {
+   "phase": "RequiresApproval",
+   "catalogSources": [],
+   "startTime": "2026-10-21T09:00:00Z",
+   "conditions": [
+    {
+     "type": "Installed",
+     "status": "False",
+     "reason": "RequiresApproval",
+     "lastTransitionTime": "2026-10-21T09:00:00Z",
+     "lastUpdateTime": "2026-10-21T09:00:00Z"
+    }
+   ],
+   "plan": [
+    {
+     "resolving": "etcdoperator.v0.9.4-clusterwide",
+     "resource": {
+      "group": "operators.coreos.com",
+      "version": "v1alpha1",
+      "kind": "ClusterServiceVersion",
+      "name": "etcdoperator.v0.9.4-clusterwide",
+      "sourceName": "operatorhubio-catalog",
+      "sourceNamespace": "olm",
+      "manifest": "{\"kind\":\"ClusterServiceVersion\"}"
+     },
+     "status": "Unknown"
+    },
+    {
+     "resolving": "etcdoperator.v0.9.4-clusterwide",
+     "resource": {
+      "group": "apiextensions.k8s.io",
+      "version": "v1",
+      "kind": "CustomResourceDefinition",
+      "name": "etcdclusters.etcd.database.coreos.com",
+      "sourceName": "operatorhubio-catalog",
+      "sourceNamespace": "olm",
+      "manifest": "{}"
+     },
+     "status": "Present"
+    },
+    {
+     "resolving": "etcdoperator.v0.9.4-clusterwide",
+     "resource": {
+      "group": "",
+      "version": "v1",
+      "kind": "Secret",
+      "name": "etcd-operator-webhook-cert",
+      "sourceName": "operatorhubio-catalog",
+      "sourceNamespace": "olm",
+      "manifest": "{\"kind\":\"Secret\",\"data\":{\"tls.key\":\"c2VjcmV0LXZhbHVl\"}}"
+     },
+     "status": "Unknown"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "InstallPlan",
+  "metadata": {
+   "name": "install-z3v8b",
+   "uid": "ip-broken",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "generateName": "install-"
+  },
+  "spec": {
+   "approval": "Automatic",
+   "approved": true,
+   "clusterServiceVersionNames": [
+    "broken-operator.v1.0.0"
+   ],
+   "generation": 1
+  },
+  "status": {
+   "phase": "Failed",
+   "catalogSources": [],
+   "startTime": "2026-10-21T08:05:00Z",
+   "message": "error creating clusterrole broken-operator: forbidden",
+   "conditions": [
+    {
+     "type": "Installed",
+     "status": "False",
+     "reason": "InstallComponentFailed",
+     "message": "error creating clusterrole broken-operator: forbidden",
+     "lastTransitionTime": "2026-10-21T08:10:00Z"
+    }
+   ],
+   "bundleLookups": [
+    {
+     "path": "quay.io/example/broken-bundle:v1.0.0",
+     "identifier": "broken-operator.v1.0.0",
+     "replaces": "",
+     "catalogSourceRef": {
+      "name": "operatorhubio-catalog",
+      "namespace": "olm"
+     },
+     "conditions": [
+      {
+       "type": "BundleLookupFailed",
+       "status": "True",
+       "reason": "JobFailed",
+       "message": "unpack job not completed: DeadlineExceeded"
+      }
+     ]
+    }
+   ],
+   "plan": [
+    {
+     "resolving": "broken-operator.v1.0.0",
+     "resource": {
+      "group": "rbac.authorization.k8s.io",
+      "version": "v1",
+      "kind": "ClusterRole",
+      "name": "broken-operator",
+      "sourceName": "operatorhubio-catalog",
+      "sourceNamespace": "olm",
+      "manifest": "{}"
+     },
+     "status": "NotCreated"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "InstallPlan",
+  "metadata": {
+   "name": "install-p7x2k",
+   "uid": "ip-prom",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "generateName": "install-"
+  },
+  "spec": {
+   "approval": "Automatic",
+   "approved": true,
+   "clusterServiceVersionNames": [
+    "prometheusoperator.0.70.0"
+   ],
+   "generation": 1
+  },
+  "status": {
+   "phase": "Complete",
+   "catalogSources": [],
+   "startTime": "2026-10-20T10:01:00Z",
+   "conditions": [
+    {
+     "type": "Installed",
+     "status": "True",
+     "lastTransitionTime": "2026-10-20T10:02:00Z"
+    }
+   ],
+   "plan": [
+    {
+     "resolving": "prometheusoperator.0.70.0",
+     "resource": {
+      "group": "operators.coreos.com",
+      "version": "v1alpha1",
+      "kind": "ClusterServiceVersion",
+      "name": "prometheusoperator.0.70.0",
+      "sourceName": "operatorhubio-catalog",
+      "sourceNamespace": "olm",
+      "manifest": "{}"
+     },
+     "status": "Created"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "CatalogSource",
+  "metadata": {
+   "name": "operatorhubio-catalog",
+   "uid": "cs-hub",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "olm"
+  },
+  "spec": {
+   "sourceType": "grpc",
+   "image": "quay.io/operatorhubio/catalog:latest",
+   "displayName": "Community Operators",
+   "publisher": "OperatorHub.io",
+   "grpcPodConfig": {
+    "securityContextConfig": "restricted"
+   },
+   "updateStrategy": {
+    "registryPoll": {
+     "interval": "60m"
+    }
+   }
+  },
+  "status": {
+   "connectionState": {
+    "address": "operatorhubio-catalog.olm.svc:50051",
+    "lastConnect": "2026-10-21T09:00:00Z",
+    "lastObservedState": "READY"
+   },
+   "latestImageRegistryPoll": "2026-10-21T09:00:00Z",
+   "registryService": {
+    "createdAt": "2026-10-20T10:00:00Z",
+    "port": "50051",
+    "protocol": "grpc",
+    "serviceName": "operatorhubio-catalog",
+    "serviceNamespace": "olm"
+   }
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1alpha1",
+  "kind": "CatalogSource",
+  "metadata": {
+   "name": "broken-catalog",
+   "uid": "cs-broken",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "olm"
+  },
+  "spec": {
+   "sourceType": "grpc",
+   "image": "example.com/missing/catalog:latest",
+   "displayName": "Broken catalog",
+   "publisher": "Example"
+  },
+  "status": {
+   "connectionState": {
+    "address": "broken-catalog.olm.svc:50051",
+    "lastConnect": "2026-10-21T08:00:00Z",
+    "lastObservedState": "TRANSIENT_FAILURE"
+   },
+   "registryService": {
+    "createdAt": "2026-10-21T07:00:00Z",
+    "port": "50051",
+    "protocol": "grpc",
+    "serviceName": "broken-catalog",
+    "serviceNamespace": "olm"
+   }
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1",
+  "kind": "OperatorGroup",
+  "metadata": {
+   "name": "global-operators",
+   "uid": "og-global",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "annotations": {
+    "olm.providedAPIs": "Prometheus.v1.monitoring.coreos.com,ServiceMonitor.v1.monitoring.coreos.com"
+   }
+  },
+  "spec": {
+   "upgradeStrategy": "Default"
+  },
+  "status": {
+   "namespaces": [
+    ""
+   ],
+   "lastUpdated": "2026-10-20T10:00:00Z"
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1",
+  "kind": "OperatorGroup",
+  "metadata": {
+   "name": "team-a",
+   "uid": "og-team",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "team-a"
+  },
+  "spec": {
+   "targetNamespaces": [
+    "team-a"
+   ],
+   "upgradeStrategy": "TechPreviewUnsafeFailForward"
+  },
+  "status": {
+   "namespaces": [
+    "team-a"
+   ],
+   "lastUpdated": "2026-10-20T10:00:00Z"
+  }
+ },
+ {
+  "apiVersion": "operators.coreos.com/v1",
+  "kind": "Operator",
+  "metadata": {
+   "name": "prometheus.operators",
+   "uid": "op-prom",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1"
+  },
+  "spec": {},
+  "status": {
+   "components": {
+    "labelSelector": {
+     "matchExpressions": [
+      {
+       "key": "operators.coreos.com/prometheus.operators",
+       "operator": "Exists"
+      }
+     ]
+    },
+    "refs": [
+     {
+      "apiVersion": "operators.coreos.com/v1alpha1",
+      "kind": "ClusterServiceVersion",
+      "name": "prometheusoperator.0.70.0",
+      "namespace": "operators",
+      "conditions": [
+       {
+        "type": "Succeeded",
+        "status": "True",
+        "reason": "InstallSucceeded",
+        "message": "install strategy completed with no errors",
+        "lastTransitionTime": "2026-10-20T10:05:00Z"
+       }
+      ]
+     },
+     {
+      "apiVersion": "operators.coreos.com/v1alpha1",
+      "kind": "Subscription",
+      "name": "prometheus",
+      "namespace": "operators",
+      "conditions": [
+       {
+        "type": "CatalogSourcesUnhealthy",
+        "status": "False",
+        "reason": "AllCatalogSourcesHealthy"
+       }
+      ]
+     },
+     {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "name": "prometheuses.monitoring.coreos.com",
+      "conditions": [
+       {
+        "type": "Established",
+        "status": "True"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+   "name": "prometheus-operator",
+   "uid": "dep-prom",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "labels": {
+    "olm.owner": "prometheusoperator.0.70.0",
+    "olm.owner.kind": "ClusterServiceVersion",
+    "olm.owner.namespace": "operators",
+    "olm.managed": "true"
+   }
+  },
+  "spec": {
+   "replicas": 1
+  },
+  "status": {
+   "replicas": 1,
+   "readyReplicas": 1,
+   "availableReplicas": 1,
+   "conditions": [
+    {
+     "type": "Available",
+     "status": "True",
+     "reason": "MinimumReplicasAvailable",
+     "message": "Deployment has minimum availability."
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+   "name": "broken-operator",
+   "uid": "dep-broken",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "namespace": "operators",
+   "labels": {
+    "olm.owner": "broken-operator.v1.0.0",
+    "olm.owner.kind": "ClusterServiceVersion",
+    "olm.owner.namespace": "operators"
+   }
+  },
+  "spec": {
+   "replicas": 1
+  },
+  "status": {
+   "replicas": 1,
+   "readyReplicas": 0,
+   "unavailableReplicas": 1,
+   "conditions": [
+    {
+     "type": "Available",
+     "status": "False",
+     "reason": "MinimumReplicasUnavailable",
+     "message": "Deployment does not have minimum availability."
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "olm.operatorframework.io/v1",
+  "kind": "ClusterExtension",
+  "metadata": {
+   "name": "argocd",
+   "uid": "ce-argocd",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1"
+  },
+  "spec": {
+   "namespace": "argocd",
+   "serviceAccount": {
+    "name": "argocd-installer"
+   },
+   "source": {
+    "sourceType": "Catalog",
+    "catalog": {
+     "packageName": "argocd-operator",
+     "version": "0.6.0",
+     "channels": [
+      "alpha"
+     ],
+     "upgradeConstraintPolicy": "CatalogProvided"
+    }
+   }
+  },
+  "status": {
+   "conditions": [
+    {
+     "type": "Installed",
+     "status": "True",
+     "reason": "Succeeded",
+     "message": "Installed bundle quay.io/operatorhubio/argocd-operator@sha256:d538 successfully",
+     "lastTransitionTime": "2026-10-20T10:03:00Z",
+     "observedGeneration": 1
+    },
+    {
+     "type": "Progressing",
+     "status": "True",
+     "reason": "Succeeded",
+     "message": "Desired state reached",
+     "lastTransitionTime": "2026-10-20T10:03:00Z",
+     "observedGeneration": 1
+    }
+   ],
+   "install": {
+    "bundle": {
+     "name": "argocd-operator.v0.6.0",
+     "version": "0.6.0"
+    }
+   }
+  }
+ },
+ {
+  "apiVersion": "olm.operatorframework.io/v1",
+  "kind": "ClusterExtension",
+  "metadata": {
+   "name": "cert-manager",
+   "uid": "ce-cm",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1"
+  },
+  "spec": {
+   "namespace": "cert-manager",
+   "serviceAccount": {
+    "name": "cert-manager-installer"
+   },
+   "source": {
+    "sourceType": "Catalog",
+    "catalog": {
+     "packageName": "cert-manager",
+     "channels": [
+      "stable"
+     ]
+    }
+   }
+  },
+  "status": {
+   "conditions": [
+    {
+     "type": "Installed",
+     "status": "False",
+     "reason": "Failed",
+     "message": "no bundles found for package \"cert-manager\"",
+     "lastTransitionTime": "2026-10-21T08:00:00Z"
+    },
+    {
+     "type": "Progressing",
+     "status": "True",
+     "reason": "Retrying",
+     "message": "error upgrading from currently installed version: no bundles found",
+     "lastTransitionTime": "2026-10-21T08:00:00Z"
+    }
+   ]
+  }
+ },
+ {
+  "apiVersion": "olm.operatorframework.io/v1",
+  "kind": "ClusterCatalog",
+  "metadata": {
+   "name": "operatorhubio",
+   "uid": "cc-hub",
+   "creationTimestamp": "2026-10-20T10:00:00Z",
+   "resourceVersion": "1",
+   "labels": {
+    "olm.operatorframework.io/metadata.name": "operatorhubio"
+   }
+  },
+  "spec": {
+   "availabilityMode": "Available",
+   "priority": 0,
+   "source": {
+    "type": "Image",
+    "image": {
+     "ref": "quay.io/operatorhubio/catalog:latest",
+     "pollIntervalMinutes": 10
+    }
+   }
+  },
+  "status": {
+   "conditions": [
+    {
+     "type": "Progressing",
+     "status": "True",
+     "reason": "Succeeded",
+     "message": "Successfully unpacked and stored content from resolved source",
+     "lastTransitionTime": "2026-10-21T09:00:00Z"
+    },
+    {
+     "type": "Serving",
+     "status": "True",
+     "reason": "Available",
+     "message": "Serving desired content from resolved source",
+     "lastTransitionTime": "2026-10-20T10:00:00Z"
+    }
+   ],
+   "lastUnpacked": "2026-10-21T09:00:00Z",
+   "resolvedSource": {
+    "type": "Image",
+    "image": {
+     "ref": "quay.io/operatorhubio/catalog@sha256:e53267559addc85227c2a7901ca54b980bc900276fc24d77f5ee8a2a63a6b30b"
+    }
+   },
+   "urls": {
+    "base": "https://catalogd-service.olmv1-system.svc/catalogs/operatorhubio"
+   }
+  }
+ }
+]

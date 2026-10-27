@@ -122,5 +122,10 @@
       "jobs": "Job"
     },
     "count": "{{count}}"
+  },
+  "history": {
+    "note": "開いてから · metrics-server、履歴なし",
+    "waiting": "metrics-server からの最初の値を待っています…",
+    "full": "同時にサンプリングしているグラフが多すぎます。このグラフを描くには他の詳細を閉じてください。"
   }
 }

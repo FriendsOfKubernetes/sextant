@@ -1,0 +1,31 @@
+{
+  "pods": {
+    "tab": "Pod",
+    "title": "此節點上的 Pod"
+  },
+  "search": {
+    "placeholder": "在所有欄位中搜尋（標籤用 app=web）…"
+  },
+  "columns": {
+    "cpuRequest": "CPU 要求",
+    "cpuLimit": "CPU 限制",
+    "memoryRequest": "記憶體要求",
+    "memoryLimit": "記憶體限制"
+  },
+  "resources": {
+    "tab": "資源",
+    "allocated": "已配置資源",
+    "podsTitle": "未終止的 Pod",
+    "resource": "資源",
+    "requests": "要求",
+    "limits": "限制",
+    "usage": "使用量",
+    "allocatable": "可配置",
+    "share": "{{value}}（{{percent}}%）",
+    "shareBelowOne": "{{value}}（<1%）",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pod：{{count}}",
+    "podsOf": "Pod：{{count}}/{{allocatable}}（允許上限）",
+    "withoutLimit_other": "{{count}} 個 Pod 並非每個容器都設定了限制：上方的限制至少為這些總和。"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Pods на цьому вузлі"
+  },
+  "search": {
+    "placeholder": "Пошук за всіма стовпцями (app=web — за міткою)…"
+  },
+  "columns": {
+    "cpuRequest": "Запит CPU",
+    "cpuLimit": "Ліміт CPU",
+    "memoryRequest": "Запит пам'яті",
+    "memoryLimit": "Ліміт пам'яті"
+  },
+  "resources": {
+    "tab": "Ресурси",
+    "allocated": "Виділені ресурси",
+    "podsTitle": "Незавершені Pods",
+    "resource": "Ресурс",
+    "requests": "Запити",
+    "limits": "Ліміти",
+    "usage": "Використання",
+    "allocatable": "Доступно",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pods: {{count}}",
+    "podsOf": "Pods: {{count}} з {{allocatable}} допустимих",
+    "withoutLimit_one": "У {{count}} Pod ліміт задано не в усіх контейнерах: ліміти вище — не менші за ці суми.",
+    "withoutLimit_few": "У {{count}} Pods ліміт задано не в усіх контейнерах: ліміти вище — не менші за ці суми.",
+    "withoutLimit_many": "У {{count}} Pods ліміт задано не в усіх контейнерах: ліміти вище — не менші за ці суми.",
+    "withoutLimit_other": "У {{count}} Pods ліміт задано не в усіх контейнерах: ліміти вище — не менші за ці суми."
+  }
+}

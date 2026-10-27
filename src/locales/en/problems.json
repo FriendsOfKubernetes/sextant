@@ -40,6 +40,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operators (OLM)",
+    "openshift": "OpenShift",
     "policies": "Kyverno policies",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -52,7 +54,8 @@
     "credentials": "Credentials",
     "disk": "Disk almost full",
     "alerts": "Firing alerts",
-    "events": "Warning events"
+    "events": "Warning events",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -95,7 +98,12 @@
     "monitorNotPickedUp": "No Prometheus picks it up by its selectors",
     "reflectorStale": "Reflector has not copied the current version of its source {{source}} into this mirror.",
     "reflectorNotAllowed": "Its source {{source}} no longer allows this namespace, and the mirror is out of date.",
-    "reflectorSourceMissing": "Its source {{source}} does not exist."
+    "reflectorSourceMissing": "Its source {{source}} does not exist.",
+    "olmPlanStuck": "The Subscription's InstallPlan has been in phase {{phase}} for more than 30 minutes.",
+    "olmCatalogState": "The catalog's registry connection is {{state}}: Subscriptions cannot resolve from it.",
+    "k3sHelmChartFailed": "The install Job {{job}} of this HelmChart failed.",
+    "k3sHelmChartRetrying": "Job {{job}}: failed Pods so far: {{failed}}; helm-controller keeps retrying.",
+    "k3sComponentUnavailable": "Bundled component {{deployment}}: {{available}} of {{desired}} replicas available."
   },
   "showDisk": "Disk almost full",
   "showPractices": "Best-practice findings",

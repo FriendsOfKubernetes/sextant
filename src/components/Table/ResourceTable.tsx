@@ -62,7 +62,7 @@ import {
 } from "./limits";
 import { showCutText, useColumnWidths, type ColumnWidthMap } from "./columnWidths";
 import { ResizeHandles } from "./ResizeHandle";
-import { compileSearch, searchTerms } from "./search";
+import { compileSearch, createRowText, hasPlainTerms, searchTerms } from "./search";
 import { joinSelectors, serverSelectors } from "./selectors";
 import "./table.css";
 
@@ -311,15 +311,21 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   const items = stale && previous ? previous.items : watch.items;
 
   const { rowFilter } = props;
+  const now = useNow(AGE_TICK_MS);
+  // Plain search words match the text of every shown column (#279), custom columns included (#214); the texts are
+  // built once per object. Only a search with a plain word over a column whose text changes with time (an age) is
+  // matched again as the clock ticks, and an unchanged result keeps its array (no new sort).
+  const rowText = useMemo(() => createRowText(columns, (key, options) => t(key, options)), [columns, t]);
+  const searchNow = rowText.timed && hasPlainTerms(search) ? now : 0;
+  const lastData = useRef<KubeObject[]>([]);
   const data = useMemo(() => {
-    // Plain search words also match the text of the custom columns (#214).
-    const customText =
-      customDefs.length > 0
-        ? (obj: KubeObject) => customDefs.map((c) => c.value(obj)).filter((v) => v !== undefined && v !== null).map(String)
-        : undefined;
-    const matches = compileSearch(search, kindId, customText);
-    return [...items.values()].filter((obj) => matches(obj) && (!rowFilter || rowFilter(obj)));
-  }, [items, search, kindId, rowFilter, customDefs]);
+    const matches = compileSearch(search, kindId, undefined, (obj) => rowText.textOf(obj, searchNow));
+    const next = [...items.values()].filter((obj) => matches(obj) && (!rowFilter || rowFilter(obj)));
+    const prev = lastData.current;
+    if (next.length === prev.length && next.every((obj, i) => obj === prev[i])) return prev;
+    lastData.current = next;
+    return next;
+  }, [items, search, kindId, rowFilter, rowText, searchNow]);
   const filtered = Boolean(search.trim()) || rowFilter !== undefined;
 
   const tableColumns = useMemo(
@@ -389,7 +395,6 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
 
   const selected = rows.filter((r) => r.getIsSelected()).map((r) => r.original);
 
-  const now = useNow(AGE_TICK_MS);
   const cellContext: CellContext = useMemo(() => ({ clusterId, kind, now }), [clusterId, kind, now]);
 
   const [menu, setMenu] = useState<MenuState | null>(null);

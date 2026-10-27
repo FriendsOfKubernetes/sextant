@@ -1,0 +1,31 @@
+{
+  "pods": {
+    "tab": "Pod",
+    "title": "このノード上の Pod"
+  },
+  "search": {
+    "placeholder": "すべての列で検索 (ラベルは app=web)…"
+  },
+  "columns": {
+    "cpuRequest": "CPU 要求",
+    "cpuLimit": "CPU 上限",
+    "memoryRequest": "メモリ要求",
+    "memoryLimit": "メモリ上限"
+  },
+  "resources": {
+    "tab": "リソース",
+    "allocated": "割り当て済みリソース",
+    "podsTitle": "終了していない Pod",
+    "resource": "リソース",
+    "requests": "要求",
+    "limits": "上限",
+    "usage": "使用量",
+    "allocatable": "割り当て可能",
+    "share": "{{value}} ({{percent}}%)",
+    "shareBelowOne": "{{value}} (<1%)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pod: {{count}}",
+    "podsOf": "Pod: {{count}} / 許可 {{allocatable}}",
+    "withoutLimit_other": "{{count}} 個の Pod はすべてのコンテナーに上限を設定していません。上の上限は少なくともこの合計です。"
+  }
+}

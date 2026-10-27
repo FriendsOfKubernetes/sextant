@@ -1,0 +1,87 @@
+{
+  "sidebar": "仮想クラスター",
+  "loading": "読み込み中…",
+  "page": {
+    "title": "仮想クラスター",
+    "hint": "このクラスターの vcluster インスタンス: label app=vcluster の StatefulSet と Deployment。「接続」は、このクラスターのポート転送を通じて仮想クラスターをクラスター一覧に追加します。",
+    "total_other": "仮想クラスター {{count}} 個",
+    "truncated": "最初の {{max}} 個の StatefulSet と Deployment のみを表示しています。",
+    "unavailable": "一部の StatefulSet または Deployment を一覧できません。読み取れる namespace で探すには、フィルターで選択してください。",
+    "namespacesCapped": "Pod、Service、Secret は最初の {{max}} 個の namespace でのみ確認します。",
+    "lifetime": "接続した仮想クラスターは、Sextant がポートを転送している間だけクラスター一覧に残ります。ホストクラスターの切断、ポート転送の停止、Sextant の終了で削除されます。"
+  },
+  "columns": {
+    "name": "名前",
+    "namespace": "Namespace",
+    "kind": "種類",
+    "version": "バージョン",
+    "state": "状態",
+    "pods": "Pod",
+    "service": "Service",
+    "secret": "kubeconfig の Secret",
+    "connection": "接続"
+  },
+  "state": {
+    "paused": "一時停止中",
+    "scaledDown": "ゼロにスケールダウン",
+    "ready": "準備完了",
+    "degraded": "{{replicas}} 個中 {{ready}} 個が準備完了",
+    "notReady": "準備未完了"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} 準備完了",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "あり",
+    "missing": "なし",
+    "unknown": "判断できません"
+  },
+  "connect": {
+    "button": "接続",
+    "buttonNamed": "接続 {{name}}",
+    "connecting": "接続中…",
+    "forwarded": "ポート {{port}} に転送中",
+    "open": "開く",
+    "openNamed": "開く {{context}}",
+    "disconnect": "切断",
+    "disconnectNamed": "切断 {{name}}",
+    "failed": "接続できませんでした: {{message}}",
+    "title": "vcluster {{name}} に接続しますか?",
+    "confirm": "接続",
+    "reads": "Sextant はあなたの認証情報で {{namespace}} の Secret {{secret}} を読み取ります。中の kubeconfig は Sextant のバックエンドにとどまります。",
+    "forwards": "ローカルポートを {{host}} 経由で vcluster の API サーバーに転送します。",
+    "adds": "仮想クラスター {{context}} をクラスター一覧に追加します (Sextant 自身の kubeconfig ファイル vcluster.yaml)。",
+    "lasts": "ポート転送が動いている間だけ残ります。{{host}} の切断、転送の停止、Sextant の終了で削除されます。"
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "バージョン",
+    "state": "状態",
+    "pods": "コントロールプレーンの Pod",
+    "service": "Service",
+    "secret": "kubeconfig の Secret",
+    "connection": "接続"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "同期されたオブジェクト",
+    "hint": "{{name}} の syncer が仮想クラスターからこの namespace にコピーしたオブジェクトと、それぞれが表す仮想クラスター内の名前と namespace。",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "{{kind}} オブジェクトを一覧できません。",
+    "notSaid": "記録なし",
+    "more_other": "ほかに {{count}} 個は表示されていません。",
+    "truncated": "最初の {{max}} 個のみを表示しています。",
+    "columns": {
+      "host": "ホストのオブジェクト",
+      "virtualName": "仮想名",
+      "virtualNamespace": "仮想 namespace"
+    }
+  },
+  "source": {
+    "kind": "仮想クラスター",
+    "confirmRemove": "その仮想クラスターは一覧から消え、Sextant が保存しているそれらの kubeconfig は削除されます。ポート転送は「ポート転送」で停止するまで動き続けます。"
+  }
+}

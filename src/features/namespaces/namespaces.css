@@ -71,3 +71,138 @@
   padding: 4px;
   color: var(--color-text-muted);
 }
+
+/* A namespace of the list, with "Forget" for a known one (#285). */
+.ns-filter__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ns-filter__row .ns-filter__option {
+  flex: 1;
+  min-width: 0;
+}
+
+.ns-filter__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ns-filter__found {
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+}
+
+.ns-filter__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.ns-filter__hint p {
+  margin: 0;
+}
+
+.ns-filter__invalid {
+  padding: 0 4px;
+  color: var(--color-danger);
+}
+
+/* "No access" instead of a table the user may not list (#285). */
+.ns-no-access {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px;
+}
+
+.ns-no-access__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ns-no-access p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.ns-no-access__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ns-access-mark {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+
+/* The "Accessible namespaces" section of the cluster settings. */
+.ns-known {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ns-known p {
+  margin: 0;
+}
+
+.ns-known__hint {
+  color: var(--color-text-muted);
+}
+
+.ns-known__add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ns-known__add input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: inherit;
+  font: inherit;
+}
+
+.ns-known__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ns-known__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ns-known__item > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ns-known__heading {
+  margin: 4px 0 0;
+  font-size: 1em;
+  font-weight: 600;
+}

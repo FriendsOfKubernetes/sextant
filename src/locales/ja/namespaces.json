@@ -1,0 +1,51 @@
+{
+  "invalidName": "「{{name}}」は namespace 名ではありません",
+  "filter": {
+    "allAccessible_other": "アクセス可能なすべて ({{count}})",
+    "restrictedHint": "このクラスターの namespace を一覧表示する権限がありません。namespace を入力して Enter を押してください。Sextant が覚えておきます。",
+    "scopeCapped": "「アクセス可能なすべて」は {{total}} 個の namespace のうち最初の {{max}} 個だけを監視します。ほかを見るには namespace を選択してください。",
+    "forget": "{{namespace}} を忘れる"
+  },
+  "mark": {
+    "accessible": "アクセス可",
+    "noAccess": "アクセス不可",
+    "found": "検出"
+  },
+  "found": {
+    "title": "接続時に検出: {{sources}}",
+    "context": "kubeconfig の context の namespace",
+    "serviceAccount": "ServiceAccount の namespace",
+    "project": "OpenShift のプロジェクト"
+  },
+  "check": {
+    "again": "アクセスを再確認",
+    "checking": "アクセスを確認中…",
+    "checkedAt": "{{time}} にアクセスを確認しました。"
+  },
+  "noAccess": {
+    "title": "{{kind}} へのアクセス権がありません",
+    "namespaced": "API サーバーによると、{{namespaces}} で {{kind}} を一覧表示する権限がありません。",
+    "cluster": "API サーバーによると、このクラスターで {{kind}} を一覧表示する権限がありません。",
+    "noScopeTitle": "表示する namespace がありません",
+    "noScope": "このクラスターの namespace を一覧表示する権限がなく、Sextant は読み取り可能な namespace を知りません。namespace フィルターに入力してください。",
+    "listAnyway": "それでも一覧表示",
+    "mark": "アクセス不可"
+  },
+  "settings": {
+    "title": "アクセス可能な namespace",
+    "hint": "namespace フィルターで入力または選択した namespace と、ここで追加したものです。チェックを外してもフィルターに残ります。このクラスターの namespace を一覧表示する権限がない場合、「すべての namespace」はこれらを指します。",
+    "restricted": "このクラスターの namespace を一覧表示する権限がありません。「すべての namespace」は下のアクセス可能な namespace を監視します。",
+    "unrestricted": "このクラスターの namespace を一覧表示できます。これらの名前は namespace フィルターのために覚えておくだけです。",
+    "unknown": "Sextant は、このクラスターの namespace を一覧表示できるか確認できませんでした。",
+    "notConnected": "どの namespace を読み取れるか確認するには、クラスターに接続してください。",
+    "username": "API サーバーはあなたを {{user}} として認識しています。",
+    "addLabel": "Namespace",
+    "add": "追加",
+    "cap": "クラスターごとに保存される namespace は最大 {{max}} 個です。",
+    "empty": "まだ namespace はありません。",
+    "remove": "{{namespace}} を削除",
+    "found": "接続時に検出",
+    "keep": "保存",
+    "keepNamed": "{{namespace}} を保存"
+  }
+}

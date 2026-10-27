@@ -74,7 +74,7 @@ pub struct AppearanceSettings {
     pub text_size: u16,
     /// xterm's screen reader mode in terminals (off by default: it costs rendering speed).
     pub terminal_screen_reader: bool,
-    /// Indent child items in every cluster sidebar (off preserves the original alignment).
+    /// Indent child items in every cluster sidebar (on by default since 0.25; off keeps the original alignment).
     pub sidebar_indent: bool,
     /// Draw tree guides in every cluster sidebar, independently of indentation.
     pub sidebar_guides: bool,
@@ -88,7 +88,7 @@ impl Default for AppearanceSettings {
             reduce_motion: ReduceMotion::default(),
             text_size: DEFAULT_TEXT_SIZE,
             terminal_screen_reader: false,
-            sidebar_indent: false,
+            sidebar_indent: true,
             sidebar_guides: false,
         }
     }
@@ -176,7 +176,7 @@ pub(crate) mod appearance_field {
             sidebar_indent: value
                 .get("sidebarIndent")
                 .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
+                .unwrap_or(true),
             sidebar_guides: value
                 .get("sidebarGuides")
                 .and_then(serde_json::Value::as_bool)
@@ -204,7 +204,7 @@ mod tests {
                 "reduceMotion": "system",
                 "textSize": 100,
                 "terminalScreenReader": false,
-                "sidebarIndent": false,
+                "sidebarIndent": true,
                 "sidebarGuides": false
             })
         );
@@ -303,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_choices_default_to_off_and_read_leniently() {
+    fn sidebar_choices_default_to_indented_without_guides_and_read_leniently() {
         for appearance in [
             json!({}),
             json!({ "sidebarIndent": "true", "sidebarGuides": 1 }),
@@ -314,7 +314,7 @@ mod tests {
             }))
             .unwrap();
             let written = serde_json::to_value(&settings).unwrap();
-            assert_eq!(written["appearance"]["sidebarIndent"], false);
+            assert_eq!(written["appearance"]["sidebarIndent"], true);
             assert_eq!(written["appearance"]["sidebarGuides"], false);
             assert_eq!(settings.theme, crate::Theme::Dark);
         }
@@ -343,7 +343,7 @@ mod tests {
         }))
         .unwrap();
         let written = serde_json::to_value(settings).unwrap();
-        assert_eq!(written["appearance"]["sidebarIndent"], false);
+        assert_eq!(written["appearance"]["sidebarIndent"], true);
         assert_eq!(written["appearance"]["sidebarGuides"], true);
     }
 

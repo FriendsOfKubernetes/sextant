@@ -1,0 +1,89 @@
+{
+  "sidebar": "Sanal kümeler",
+  "loading": "Yükleniyor…",
+  "page": {
+    "title": "Sanal kümeler",
+    "hint": "Bu kümedeki vcluster örnekleri: app=vcluster label'ına sahip StatefulSet ve Deployment'lar. \"Bağlan\", bu kümenin bir port yönlendirmesi üzerinden bir sanal kümeyi küme listesine ekler.",
+    "total_one": "{{count}} sanal küme",
+    "total_other": "{{count}} sanal küme",
+    "truncated": "Yalnızca ilk {{max}} StatefulSet ve Deployment listelenir.",
+    "unavailable": "Bazı StatefulSet veya Deployment'lar listelenemiyor. Okuyabildiğiniz namespace'lerde aramak için onları filtrede seçin.",
+    "namespacesCapped": "Pod, Service ve Secret'lar yalnızca ilk {{max}} namespace'te denetlenir.",
+    "lifetime": "Bağlı bir sanal küme, yalnızca Sextant onun için bir port yönlendirdiği sürece küme listesinde kalır: ana kümesinin bağlantısını kesmek, port yönlendirmesini durdurmak veya Sextant'tan çıkmak onu kaldırır."
+  },
+  "columns": {
+    "name": "Ad",
+    "namespace": "Namespace",
+    "kind": "Tür",
+    "version": "Sürüm",
+    "state": "Durum",
+    "pods": "Pod'lar",
+    "service": "Service",
+    "secret": "kubeconfig Secret'ı",
+    "connection": "Bağlantı"
+  },
+  "state": {
+    "paused": "Duraklatıldı",
+    "scaledDown": "Sıfıra ölçeklendi",
+    "ready": "Hazır",
+    "degraded": "{{replicas}} içinden {{ready}} hazır",
+    "notReady": "Hazır değil"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} hazır",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "Var",
+    "missing": "Yok",
+    "unknown": "Bilinmiyor"
+  },
+  "connect": {
+    "button": "Bağlan",
+    "buttonNamed": "Bağlan {{name}}",
+    "connecting": "Bağlanıyor…",
+    "forwarded": "{{port}} portuna yönlendirildi",
+    "open": "Aç",
+    "openNamed": "Aç {{context}}",
+    "disconnect": "Bağlantıyı kes",
+    "disconnectNamed": "Bağlantıyı kes {{name}}",
+    "failed": "Bağlanılamadı: {{message}}",
+    "title": "vcluster {{name}} kümesine bağlanılsın mı?",
+    "confirm": "Bağlan",
+    "reads": "Sextant, {{namespace}} içindeki {{secret}} Secret'ını kimlik bilgilerinizle okur. İçindeki kubeconfig Sextant'ın arka ucunda kalır.",
+    "forwards": "Yerel bir port, {{host}} üzerinden vcluster'ın API sunucusuna yönlendirilir.",
+    "adds": "{{context}} sanal kümesi, Sextant'ın kendi kubeconfig dosyası vcluster.yaml içinde küme listesine eklenir.",
+    "lasts": "Port yönlendirmesi çalıştığı sürece orada kalır: {{host}} bağlantısını kesmek, yönlendirmeyi durdurmak veya Sextant'tan çıkmak onu kaldırır."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Sürüm",
+    "state": "Durum",
+    "pods": "Kontrol düzlemi Pod'ları",
+    "service": "Service",
+    "secret": "kubeconfig Secret'ı",
+    "connection": "Bağlantı"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Eşitlenen nesneler",
+    "hint": "{{name}} syncer'ının sanal kümeden bu namespace'e kopyaladığı nesneler ve her birinin temsil ettiği sanal ad ile namespace.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "{{kind}} nesneleri listelenemiyor.",
+    "notSaid": "belirtilmemiş",
+    "more_one": "{{count}} tane daha gösterilmiyor.",
+    "more_other": "{{count}} tane daha gösterilmiyor.",
+    "truncated": "Yalnızca ilk {{max}} tanesi listelenir.",
+    "columns": {
+      "host": "Ana küme nesnesi",
+      "virtualName": "Sanal ad",
+      "virtualNamespace": "Sanal namespace"
+    }
+  },
+  "source": {
+    "kind": "sanal kümeler",
+    "confirmRemove": "Sanal kümeleri listeden kaybolur ve Sextant'ın onlar için tuttuğu kubeconfig silinir. Port yönlendirmeleri, siz Port yönlendirme bölümünde durdurana kadar çalışmaya devam eder."
+  }
+}

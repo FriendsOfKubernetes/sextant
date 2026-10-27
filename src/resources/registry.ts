@@ -80,7 +80,10 @@ export type BuiltInActionId =
   | "diagnose"
   // Copy namespace/name (src/features/copy-name), offered for every kind through `extendActionsForAll`
   | "copyNamespacedName"
-  | "copyName";
+  | "copyName"
+  // OpenShift (src/features/openshift): `oc rollout latest` of a DeploymentConfig, `oc start-build` of a BuildConfig
+  | "openshiftRolloutLatest"
+  | "openshiftStartBuild";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {
@@ -88,6 +91,12 @@ export interface CellContext {
   kind: KindRef;
   /** Current time (ms), refreshed periodically so ages tick. */
   now: number;
+}
+
+/** What `ColumnDef.searchText` gets: the time the table shows and a translation function (cached by the table). */
+export interface SearchTextContext {
+  now: number;
+  t: (key: string, options?: { count?: number }) => string;
 }
 
 export interface ColumnDef {
@@ -101,6 +110,14 @@ export interface ColumnDef {
   value: (obj: KubeObject) => string | number | boolean | null | undefined;
   /** Custom cell; the default shows `value`. */
   render?: (obj: KubeObject, ctx: CellContext) => ReactNode;
+  /**
+   * The cell's text as shown, for the table search (#279), when `value` is not it (an age is a time, shown "5m").
+   * Without it a plain search word matches `value` as text, except a number under a `render` (a count drawn as
+   * squares, a time drawn as an age), which the cell does not show.
+   */
+  searchText?: (obj: KubeObject, ctx: SearchTextContext) => string | null | undefined;
+  /** `searchText` changes with `ctx.now` (an age): the table matches it again as time passes. */
+  searchTextTimed?: boolean;
   /** CSS grid track, e.g. "120px" or "minmax(160px, 3fr)". Default "minmax(80px, 1fr)". */
   width?: string;
   /** Default true. */
@@ -155,12 +172,16 @@ export const SIDEBAR_SECTIONS = [
   "strimzi",
   "prometheusOperator",
   "clusterApi",
+  "k3s",
+  "helmController",
   "dra",
   "gpuOperator",
   "kueue",
   "jobset",
   "kuberay",
   "kserve",
+  "olm",
+  "openshift",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -197,12 +218,16 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "strimzi",
   "prometheusOperator",
   "clusterApi",
+  "k3s",
+  "helmController",
   "dra",
   "gpuOperator",
   "kueue",
   "jobset",
   "kuberay",
   "kserve",
+  "olm",
+  "openshift",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -243,12 +268,16 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   strimzi: "strimzi",
   prometheusOperator: "prometheusOperator",
   clusterApi: "clusterApi",
+  k3s: "k3s",
+  helmController: "helmController",
   dra: "dra",
   gpuOperator: "gpuOperator",
   kueue: "kueue",
   jobset: "jobset",
   kuberay: "kuberay",
   kserve: "kserve",
+  olm: "olm",
+  openshift: "openshift",
   customResources: "customResources",
   settings: "settings",
 };

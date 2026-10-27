@@ -1,0 +1,54 @@
+{
+  "invalidName": "„{{name}}” nie jest nazwą namespace’u",
+  "filter": {
+    "allAccessible_one": "Wszystkie dostępne ({{count}})",
+    "allAccessible_few": "Wszystkie dostępne ({{count}})",
+    "allAccessible_many": "Wszystkie dostępne ({{count}})",
+    "allAccessible_other": "Wszystkie dostępne ({{count}})",
+    "restrictedHint": "Nie masz uprawnień do wyświetlania listy namespace’ów tego klastra. Wpisz namespace i naciśnij Enter: Sextant go zapamięta.",
+    "scopeCapped": "„Wszystkie dostępne” obserwuje pierwsze {{max}} z {{total}} namespace’ów; zaznacz namespace’y, aby zobaczyć pozostałe.",
+    "forget": "Zapomnij {{namespace}}"
+  },
+  "mark": {
+    "accessible": "dostępny",
+    "noAccess": "brak dostępu",
+    "found": "znaleziony"
+  },
+  "found": {
+    "title": "Znaleziony podczas łączenia: {{sources}}",
+    "context": "namespace kontekstu kubeconfig",
+    "serviceAccount": "namespace ServiceAccount",
+    "project": "projekt OpenShift"
+  },
+  "check": {
+    "again": "Sprawdź dostęp ponownie",
+    "checking": "Sprawdzanie dostępu…",
+    "checkedAt": "Dostęp sprawdzono o {{time}}."
+  },
+  "noAccess": {
+    "title": "Brak dostępu do {{kind}}",
+    "namespaced": "Według serwera API nie masz uprawnień do wyświetlania listy {{kind}} w {{namespaces}}.",
+    "cluster": "Według serwera API nie masz uprawnień do wyświetlania listy {{kind}} w tym klastrze.",
+    "noScopeTitle": "Brak namespace’u do pokazania",
+    "noScope": "Nie masz uprawnień do wyświetlania listy namespace’ów tego klastra, a Sextant nie zna żadnego namespace’u, który możesz czytać. Wpisz go w filtrze namespace’ów.",
+    "listAnyway": "Pokaż mimo to",
+    "mark": "Brak dostępu"
+  },
+  "settings": {
+    "title": "Dostępne namespace’y",
+    "hint": "Namespace’y wpisane lub zaznaczone w filtrze namespace’ów oraz dodane tutaj. Zostają w filtrze także po odznaczeniu. Jeśli nie masz uprawnień do wyświetlania listy namespace’ów tego klastra, „Wszystkie namespace’y” oznacza właśnie je.",
+    "restricted": "Nie masz uprawnień do wyświetlania listy namespace’ów tego klastra: „Wszystkie namespace’y” obserwuje dostępne namespace’y poniżej.",
+    "unrestricted": "Możesz wyświetlać listę namespace’ów tego klastra: te nazwy są tylko zapamiętywane dla filtra namespace’ów.",
+    "unknown": "Sextant nie mógł sprawdzić, czy możesz wyświetlać listę namespace’ów tego klastra.",
+    "notConnected": "Połącz się z klastrem, aby sprawdzić, które z tych namespace’ów możesz czytać.",
+    "username": "Serwer API zna cię jako {{user}}.",
+    "addLabel": "Namespace",
+    "add": "Dodaj",
+    "cap": "Dla klastra przechowywanych jest najwyżej {{max}} namespace’ów.",
+    "empty": "Na razie brak namespace’ów.",
+    "remove": "Usuń {{namespace}}",
+    "found": "Znalezione podczas łączenia",
+    "keep": "Zachowaj",
+    "keepNamed": "Zachowaj {{namespace}}"
+  }
+}

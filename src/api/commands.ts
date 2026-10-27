@@ -6,6 +6,7 @@ import type { AccessAnswer } from "./generated/AccessAnswer";
 import type { AccessPreset } from "./generated/AccessPreset";
 import type { AccessQuery } from "./generated/AccessQuery";
 import type { RulesReview } from "./generated/RulesReview";
+import type { SelfSubject } from "./generated/SelfSubject";
 import type { PatternMatches } from "./generated/PatternMatches";
 import type { SecretCertificates } from "./generated/SecretCertificates";
 import type { TlsExpiryScan } from "./generated/TlsExpiryScan";
@@ -17,6 +18,7 @@ import type { LokiNames } from "./generated/LokiNames";
 import type { LokiNamesQuery } from "./generated/LokiNamesQuery";
 import type { LokiRange } from "./generated/LokiRange";
 import type { LokiStatus } from "./generated/LokiStatus";
+import type { VclusterLink } from "./generated/VclusterLink";
 import type { LokiUpdate } from "./generated/LokiUpdate";
 import type { AlertsReport } from "./generated/AlertsReport";
 import type { ScanApi } from "./generated/ScanApi";
@@ -657,6 +659,8 @@ export const rbac = {
   canI: (clusterId: ClusterId, queries: AccessQuery[]) => call<AccessAnswer[]>("rbac_can_i", { clusterId, queries }),
   /** What the current user may do in `namespace` (SelfSubjectRulesReview; `incomplete` when an authorizer cannot list). */
   rulesReview: (clusterId: ClusterId, namespace: string) => call<RulesReview>("rbac_rules_review", { clusterId, namespace }),
+  /** Who the API server says the user is (SelfSubjectReview), with a ServiceAccount's namespace; `null` where not served. */
+  whoami: (clusterId: ClusterId) => call<SelfSubject | null>("rbac_whoami", { clusterId }),
 };
 
 /**
@@ -667,6 +671,17 @@ export const rbac = {
 export const reflector = {
   matchPatterns: (patterns: string[], names: string[]) =>
     call<PatternMatches[]>("reflector_match_patterns", { patterns, names }),
+};
+
+/**
+ * OpenShift's actions (#267, ADR-0120), window only: one POST each to an `instantiate` subresource with the body `oc`
+ * sends, built by the core from the object's name. `rolloutLatest` (`oc rollout latest`) returns the new
+ * ReplicationController and refuses a paused DeploymentConfig or one still rolling out; `startBuild` (`oc start-build`)
+ * returns the new Build. Agents and extensions have no such call.
+ */
+export const openshift = {
+  rolloutLatest: (clusterId: ClusterId, ref: ObjectRef) => call<ObjectRef>("openshift_rollout_latest", { clusterId, ref }),
+  startBuild: (clusterId: ClusterId, ref: ObjectRef) => call<ObjectRef>("openshift_start_build", { clusterId, ref }),
 };
 
 /**
@@ -745,6 +760,21 @@ export const loki = {
  */
 export const alerts = {
   list: (clusterId: ClusterId) => call<AlertsReport>("alerts_list", { clusterId }),
+};
+
+/**
+ * vcluster (#269, ADR-0122): "Connect" on a virtual cluster of a connected host cluster. The backend reads the
+ * vcluster's kubeconfig Secret, forwards a local port through the host cluster and writes the entry into Sextant's own
+ * `vcluster.yaml`; the window gets names and the port only, never the kubeconfig. An entry lives as long as its
+ * forward (`vcluster-links`). Window only: agents and extensions have no such call.
+ */
+export const vcluster = {
+  /** The virtual clusters Sextant forwards for now. */
+  links: () => call<VclusterLink[]>("vcluster_links"),
+  connect: (hostClusterId: ClusterId, namespace: string, name: string) =>
+    call<VclusterLink>("vcluster_connect", { hostClusterId, namespace, name }),
+  /** Stops the forward of a virtual cluster, disconnects it and removes its entry. */
+  disconnect: (clusterId: ClusterId) => call<void>("vcluster_disconnect", { clusterId }),
 };
 
 /** AI agent access rules of a cluster (`ClusterSettings.agentAccess`). */

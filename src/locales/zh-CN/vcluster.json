@@ -1,0 +1,87 @@
+{
+  "sidebar": "虚拟集群",
+  "loading": "正在加载…",
+  "page": {
+    "title": "虚拟集群",
+    "hint": "此集群中的 vcluster 实例：带有 label app=vcluster 的 StatefulSet 和 Deployment。“连接”通过此集群的端口转发将虚拟集群加入集群列表。",
+    "total_other": "{{count}} 个虚拟集群",
+    "truncated": "仅列出前 {{max}} 个 StatefulSet 和 Deployment。",
+    "unavailable": "部分 StatefulSet 或 Deployment 无法列出。要在你有权读取的 namespace 中查找，请在筛选器中选择它们。",
+    "namespacesCapped": "仅在前 {{max}} 个 namespace 中检查 Pod、Service 和 Secret。",
+    "lifetime": "已连接的虚拟集群只在 Sextant 为它转发端口期间留在集群列表中：断开其宿主集群、停止端口转发或退出 Sextant 都会将其移除。"
+  },
+  "columns": {
+    "name": "名称",
+    "namespace": "Namespace",
+    "kind": "类型",
+    "version": "版本",
+    "state": "状态",
+    "pods": "Pod",
+    "service": "Service",
+    "secret": "kubeconfig Secret",
+    "connection": "连接"
+  },
+  "state": {
+    "paused": "已暂停",
+    "scaledDown": "已缩容至零",
+    "ready": "就绪",
+    "degraded": "{{replicas}} 个中 {{ready}} 个就绪",
+    "notReady": "未就绪"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} 就绪",
+    "phase": "{{phase}}：{{number}}"
+  },
+  "presence": {
+    "found": "存在",
+    "missing": "缺失",
+    "unknown": "无法判断"
+  },
+  "connect": {
+    "button": "连接",
+    "buttonNamed": "连接 {{name}}",
+    "connecting": "正在连接…",
+    "forwarded": "已转发到端口 {{port}}",
+    "open": "打开",
+    "openNamed": "打开 {{context}}",
+    "disconnect": "断开",
+    "disconnectNamed": "断开 {{name}}",
+    "failed": "无法连接：{{message}}",
+    "title": "连接到 vcluster {{name}}？",
+    "confirm": "连接",
+    "reads": "Sextant 使用你的凭据读取 {{namespace}} 中的 Secret {{secret}}。其中的 kubeconfig 只保留在 Sextant 后端。",
+    "forwards": "一个本地端口经由 {{host}} 转发到 vcluster 的 API 服务器。",
+    "adds": "虚拟集群 {{context}} 会加入集群列表，保存在 Sextant 自己的 kubeconfig 文件 vcluster.yaml 中。",
+    "lasts": "端口转发运行期间它会一直保留：断开 {{host}}、停止转发或退出 Sextant 都会将其移除。"
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "版本",
+    "state": "状态",
+    "pods": "控制平面 Pod",
+    "service": "Service",
+    "secret": "kubeconfig Secret",
+    "connection": "连接"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "同步的对象",
+    "hint": "{{name}} 的 syncer 从虚拟集群复制到此 namespace 的对象，以及每个对象在虚拟集群中对应的名称和 namespace。",
+    "kind": "{{kind}}（{{number}}）",
+    "unavailable": "无法列出 {{kind}} 对象。",
+    "notSaid": "未记录",
+    "more_other": "另有 {{count}} 个未显示。",
+    "truncated": "仅列出前 {{max}} 个。",
+    "columns": {
+      "host": "宿主对象",
+      "virtualName": "虚拟名称",
+      "virtualNamespace": "虚拟 namespace"
+    }
+  },
+  "source": {
+    "kind": "虚拟集群",
+    "confirmRemove": "其中的虚拟集群会从列表中消失，Sextant 为它们保存的 kubeconfig 会被删除。它们的端口转发会继续运行，直到你在“端口转发”中停止。"
+  }
+}

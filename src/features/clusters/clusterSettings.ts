@@ -17,6 +17,7 @@ export function defaultClusterSettings(): ClusterSettings {
     previewChanges: null,
     alertmanager: null,
     observabilityLinks: null,
+    knownNamespaces: null,
   };
 }
 

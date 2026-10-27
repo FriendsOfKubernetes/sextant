@@ -24,10 +24,13 @@ import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
 import { DRA_GROUP } from "../dra/model";
 import { isGpuOperatorKind } from "../gpu-operator/model";
+import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isKind as isKueueKind, KUEUE_GROUP, CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, queueProblems as kueueQueueProblems, workloadProblems as kueueWorkloadProblems, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
 import { isJobSet, jobSetProblems } from "../jobset/model";
 import { RAY_GROUP, rayKind, rayProblems } from "../kuberay/model";
 import { INFERENCE_SERVICE, isKind as isKServeKind, kserveProblems } from "../kserve/model";
+import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
+import { isOlmProblemKind, OLM_GROUP, olmProblems } from "../olm/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import { STRIMZI_GROUP, strimziProblems } from "../strimzi/model";
 import {
@@ -68,10 +71,13 @@ export const PROBLEM_CATEGORIES = [
   "knative",
   "crossplane",
   "clusterApi",
+  "k3s",
   "dra",
   "gpuOperator",
   "kuberay",
   "kserve",
+  "olm",
+  "openshift",
   "policies",
   "externalSecrets",
   "sealedSecrets",
@@ -303,9 +309,16 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCatego
   if (kind.group === DRA_GROUP) return "dra";
   // NVIDIA GPU Operator (#245): ClusterPolicies, NVIDIADrivers and their DaemonSets, judged by features/gpu-operator.
   if (isGpuOperatorKind(kind)) return "gpuOperator";
+  // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
+  if (isHelmControllerKind(kind) || isK3sKind(kind)) return "k3s";
   // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
   if (kind.group === RAY_GROUP && rayKind(kind)) return "kuberay";
   if (isKServeKind(kind, INFERENCE_SERVICE)) return "kserve";
+  // Operator Lifecycle Manager (#268): failed CSVs (originals only), Subscriptions whose resolution or InstallPlan
+  // failed or whose plan is stuck, catalogs not READY.
+  if (kind.group === OLM_GROUP && isOlmProblemKind(kind)) return "olm";
+  // OpenShift (#267): Routes no router admitted, failed DeploymentConfig rollouts, failed Builds, failing imports.
+  if (isOpenShiftProblemKind(kind)) return "openshift";
   if (kind.group === STRIMZI_GROUP) return "strimzi";
   if (kind.group === MONITORING_GROUP) return "prometheusOperator";
   return undefined;
@@ -772,6 +785,10 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return rayProblems(kind, obj);
     case "kserve":
       return kserveProblems(kind, obj);
+    case "olm":
+      return olmProblems(kind, obj);
+    case "openshift":
+      return openshiftProblems(kind, obj);
     case "strimzi":
       return strimziProblems(obj);
     case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.
@@ -791,6 +808,7 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
     case "dra": // A pod waits for a claim (two objects): the provider of features/dra finds it.
     case "gpuOperator": // Components are DaemonSets and MIG states are node labels: the provider of features/gpu-operator.
+    case "k3s": // A chart's outcome is its Job, components are Deployments: the provider of features/k3s finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];

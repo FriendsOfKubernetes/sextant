@@ -1,0 +1,52 @@
+{
+  "invalidName": "“{{name}}” bir namespace adı değil",
+  "filter": {
+    "allAccessible_one": "Tüm erişilebilenler ({{count}})",
+    "allAccessible_other": "Tüm erişilebilenler ({{count}})",
+    "restrictedHint": "Bu kümenin namespace'lerini listeleme izniniz yok. Bir namespace yazıp Enter'a basın: Sextant onu hatırlar.",
+    "scopeCapped": "“Tüm erişilebilenler” {{total}} namespace'in ilk {{max}} tanesini izler; diğerlerini görmek için namespace seçin.",
+    "forget": "{{namespace}} unutulsun"
+  },
+  "mark": {
+    "accessible": "erişilebilir",
+    "noAccess": "erişim yok",
+    "found": "bulundu"
+  },
+  "found": {
+    "title": "Bağlanırken bulundu: {{sources}}",
+    "context": "kubeconfig context'inin namespace'i",
+    "serviceAccount": "ServiceAccount'un namespace'i",
+    "project": "bir OpenShift projesi"
+  },
+  "check": {
+    "again": "Erişimi yeniden denetle",
+    "checking": "Erişim denetleniyor…",
+    "checkedAt": "Erişim {{time}} saatinde denetlendi."
+  },
+  "noAccess": {
+    "title": "{{kind}} için erişim yok",
+    "namespaced": "API sunucusuna göre {{namespaces}} içinde {{kind}} listeleme izniniz yok.",
+    "cluster": "API sunucusuna göre bu kümede {{kind}} listeleme izniniz yok.",
+    "noScopeTitle": "Gösterilecek namespace yok",
+    "noScope": "Bu kümenin namespace'lerini listeleme izniniz yok ve Sextant okuyabileceğiniz hiçbir namespace bilmiyor. Namespace süzgecine bir tane yazın.",
+    "listAnyway": "Yine de listele",
+    "mark": "Erişim yok"
+  },
+  "settings": {
+    "title": "Erişilebilir namespace'ler",
+    "hint": "Namespace süzgecinde yazdığınız ya da seçtiğiniz namespace'ler ve burada eklenenler. İşaretleri kaldırılsa da süzgeçte kalırlar. Bu kümenin namespace'lerini listeleme izniniz yoksa “Tüm namespace'ler” bunlar demektir.",
+    "restricted": "Bu kümenin namespace'lerini listeleme izniniz yok: “Tüm namespace'ler” aşağıdaki erişilebilir namespace'leri izler.",
+    "unrestricted": "Bu kümenin namespace'lerini listeleyebilirsiniz: bu adlar yalnızca namespace süzgeci için hatırlanır.",
+    "unknown": "Sextant bu kümenin namespace'lerini listeleyip listeleyemeyeceğinizi denetleyemedi.",
+    "notConnected": "Bu namespace'lerden hangilerini okuyabileceğinizi denetlemek için kümeye bağlanın.",
+    "username": "API sunucusu sizi {{user}} olarak tanıyor.",
+    "addLabel": "Namespace",
+    "add": "Ekle",
+    "cap": "Küme başına en çok {{max}} namespace saklanır.",
+    "empty": "Henüz namespace yok.",
+    "remove": "{{namespace}} kaldırılsın",
+    "found": "Bağlanırken bulunanlar",
+    "keep": "Sakla",
+    "keepNamed": "{{namespace}} saklansın"
+  }
+}

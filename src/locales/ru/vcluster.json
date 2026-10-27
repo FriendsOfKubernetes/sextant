@@ -1,0 +1,93 @@
+{
+  "sidebar": "Виртуальные кластеры",
+  "loading": "Загрузка…",
+  "page": {
+    "title": "Виртуальные кластеры",
+    "hint": "Экземпляры vcluster в этом кластере: StatefulSet и Deployment с label app=vcluster. «Подключить» добавляет виртуальный кластер в список кластеров через перенаправление порта этого кластера.",
+    "total_one": "{{count}} виртуальный кластер",
+    "total_few": "{{count}} виртуальных кластера",
+    "total_many": "{{count}} виртуальных кластеров",
+    "total_other": "{{count}} виртуального кластера",
+    "truncated": "Показаны только первые {{max}} StatefulSet и Deployment.",
+    "unavailable": "Некоторые StatefulSet или Deployment нельзя получить. Чтобы искать в доступных вам namespace, выберите их в фильтре.",
+    "namespacesCapped": "Pod, Service и Secret проверяются только в первых {{max}} namespace.",
+    "lifetime": "Подключённый виртуальный кластер остаётся в списке кластеров, только пока Sextant перенаправляет для него порт: отключение его основного кластера, остановка перенаправления или выход из Sextant удаляют его."
+  },
+  "columns": {
+    "name": "Имя",
+    "namespace": "Namespace",
+    "kind": "Вид",
+    "version": "Версия",
+    "state": "Состояние",
+    "pods": "Pod",
+    "service": "Service",
+    "secret": "Secret с kubeconfig",
+    "connection": "Подключение"
+  },
+  "state": {
+    "paused": "Приостановлен",
+    "scaledDown": "Масштабирован до нуля",
+    "ready": "Готов",
+    "degraded": "Готово {{ready}} из {{replicas}}",
+    "notReady": "Не готов"
+  },
+  "pods": {
+    "ready": "готово {{ready}}/{{total}}",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "Есть",
+    "missing": "Нет",
+    "unknown": "Неизвестно"
+  },
+  "connect": {
+    "button": "Подключить",
+    "buttonNamed": "Подключить {{name}}",
+    "connecting": "Подключение…",
+    "forwarded": "Перенаправлено на порт {{port}}",
+    "open": "Открыть",
+    "openNamed": "Открыть {{context}}",
+    "disconnect": "Отключить",
+    "disconnectNamed": "Отключить {{name}}",
+    "failed": "Не удалось подключиться: {{message}}",
+    "title": "Подключиться к vcluster {{name}}?",
+    "confirm": "Подключить",
+    "reads": "Sextant прочитает Secret {{secret}} в {{namespace}} с вашими учётными данными. kubeconfig из него остаётся в серверной части Sextant.",
+    "forwards": "Локальный порт перенаправляется через {{host}} к API-серверу vcluster.",
+    "adds": "Виртуальный кластер {{context}} добавляется в список кластеров, в собственный файл kubeconfig Sextant vcluster.yaml.",
+    "lasts": "Он остаётся там, пока работает перенаправление порта: отключение {{host}}, остановка перенаправления или выход из Sextant удаляют его."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Версия",
+    "state": "Состояние",
+    "pods": "Pod плоскости управления",
+    "service": "Service",
+    "secret": "Secret с kubeconfig",
+    "connection": "Подключение"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Синхронизированные объекты",
+    "hint": "Объекты, которые syncer {{name}} скопировал из виртуального кластера в этот namespace, и имя и namespace в виртуальном кластере, которым каждый соответствует.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "Объекты {{kind}} нельзя получить.",
+    "notSaid": "не указано",
+    "more_one": "Ещё {{count}} не показан.",
+    "more_few": "Ещё {{count}} не показаны.",
+    "more_many": "Ещё {{count}} не показаны.",
+    "more_other": "Ещё {{count}} не показано.",
+    "truncated": "Показаны только первые {{max}}.",
+    "columns": {
+      "host": "Объект основного кластера",
+      "virtualName": "Имя в виртуальном кластере",
+      "virtualNamespace": "Namespace в виртуальном кластере"
+    }
+  },
+  "source": {
+    "kind": "виртуальные кластеры",
+    "confirmRemove": "Его виртуальные кластеры исчезнут из списка, а kubeconfig Sextant для них будет удалён. Их перенаправления портов продолжат работать, пока вы не остановите их в разделе «Перенаправление портов»."
+  }
+}

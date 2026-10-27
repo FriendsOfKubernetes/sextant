@@ -9,6 +9,7 @@ import type { ForwardInfo } from "./generated/ForwardInfo";
 import type { McpStatus } from "./generated/McpStatus";
 import type { DiagnosticCancel } from "./generated/DiagnosticCancel";
 import type { DiagnosticRequest } from "./generated/DiagnosticRequest";
+import type { VclusterLink } from "./generated/VclusterLink";
 import { subscribe, type Unsubscribe } from "./transport";
 
 export const events = {
@@ -41,4 +42,7 @@ export const events = {
   onOpenAbout: (handler: () => void): Promise<Unsubscribe> => subscribe("open-about", () => handler()),
   /** A new call of an extension was written to the extensions' journal. */
   onExtAudit: (handler: (entry: AuditEntry) => void): Promise<Unsubscribe> => subscribe("ext-audit", handler),
+  /** The virtual clusters Sextant forwards for changed (ADR-0122): the full list; read the cluster list again. */
+  onVclusterLinks: (handler: (links: VclusterLink[]) => void): Promise<Unsubscribe> =>
+    subscribe("vcluster-links", handler),
 };

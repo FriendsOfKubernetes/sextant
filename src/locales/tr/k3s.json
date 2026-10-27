@@ -1,0 +1,231 @@
+{
+  "badge_one": "{{count}} nesne ilgi bekliyor",
+  "badge_other": "{{count}} nesne ilgi bekliyor",
+  "loading": "Yükleniyor…",
+  "yes": "Evet",
+  "sidebar": {
+    "helmCharts": "Helm Charts",
+    "helmChartConfigs": "Helm Chart Configs",
+    "addons": "Addons",
+    "etcdSnapshots": "etcd anlık görüntüleri"
+  },
+  "distribution": {
+    "k3s": "k3s",
+    "rke2": "RKE2",
+    "mixed": "k3s ve RKE2 düğümleri"
+  },
+  "role": {
+    "controlPlane": "control plane",
+    "etcd": "etcd",
+    "master": "master (eski label)"
+  },
+  "signal": {
+    "kubeletVersion": "kubelet sürümü",
+    "annotations": "düğüm annotations",
+    "providerId": "sağlayıcı kimliği",
+    "instanceType": "örnek türü label'ı"
+  },
+  "page": {
+    "sidebar": "Dağıtım",
+    "title": "k3s / RKE2",
+    "hint": "Düğümlerin, Addons'ın ve HelmCharts'ın bu k3s veya RKE2 kümesi hakkında söyledikleri. Salt okunur.",
+    "summary": "Küme",
+    "notRecognised": "Hiçbir düğüm k3s veya RKE2 olduğunu göstermiyor",
+    "recognised": "{{total}} düğümden {{recognised}}",
+    "serversAgents": "Sunucular: {{servers}}, ajanlar: {{agents}}",
+    "embeddedEtcd": "Gömülü etcd",
+    "otherDatastore": "Gömülü etcd üyesi yok: SQLite veya harici bir datastore (Sextant hangisi olduğunu söyleyemez)",
+    "nodesTruncated": "Yalnızca ilk {{limit}} düğüm okunur.",
+    "nodesUnavailable": "Düğümler okunamıyor.",
+    "columns": {
+      "node": "Düğüm",
+      "distribution": "Dağıtım",
+      "version": "Sürüm",
+      "role": "Rol",
+      "roles": "Rol label'ları"
+    }
+  },
+  "columns": {
+    "state": "Durum",
+    "chart": "Chart",
+    "version": "Sürüm",
+    "targetNamespace": "Hedef namespace",
+    "addon": "Addon",
+    "helmChart": "HelmChart",
+    "source": "Manifest",
+    "checksum": "Sağlama toplamı",
+    "node": "Düğüm",
+    "storage": "Depolama",
+    "size": "Boyut",
+    "created": "Oluşturuldu"
+  },
+  "chartState": {
+    "deployed": "Kuruldu",
+    "installing": "Kuruluyor",
+    "retrying": "Yeniden deneniyor",
+    "failed": "Başarısız",
+    "deleting": "Siliniyor",
+    "applied": "Job oluşturuldu",
+    "unknown": "Durum yok"
+  },
+  "jobState": {
+    "running": "Çalışıyor",
+    "complete": "Tamamlandı",
+    "failed": "Başarısız",
+    "pending": "Bekliyor"
+  },
+  "snapshotState": {
+    "ready": "Hazır",
+    "failed": "Başarısız",
+    "pending": "Hazır değil"
+  },
+  "storage": {
+    "s3": "S3",
+    "local": "Yerel"
+  },
+  "fields": {
+    "state": "Durum",
+    "chart": "Chart",
+    "repo": "Depo",
+    "version": "Sürüm",
+    "targetNamespace": "Hedef namespace",
+    "createNamespace": "Namespace'i oluşturur",
+    "bootstrap": "Önyükleme chart'ı",
+    "failurePolicy": "Hata politikası",
+    "backOffLimit": "Kurulum denemeleri (backoff limit)",
+    "timeout": "Zaman aşımı",
+    "jobImage": "Job imajı",
+    "authSecret": "Depo kimlik bilgileri",
+    "repoCA": "Depo CA'sı",
+    "registrySecret": "Registry kimlik bilgileri",
+    "addon": "Dağıtan Addon",
+    "helmChartConfig": "HelmChartConfig",
+    "helmChart": "HelmChart",
+    "job": "Job",
+    "jobState": "Job durumu",
+    "failedPods": "Başarısız Pod'lar",
+    "started": "Başladı",
+    "completed": "Tamamlandı",
+    "failedAt": "Başarısız olduğu an",
+    "source": "Manifest",
+    "checksum": "Sağlama toplamı",
+    "snapshotState": "Durum",
+    "snapshotName": "Anlık görüntü adı",
+    "node": "Düğüm",
+    "storage": "Depolama",
+    "bucket": "Bucket",
+    "location": "Konum",
+    "size": "Boyut",
+    "created": "Oluşturuldu",
+    "errorAt": "Hata anı",
+    "distribution": "Dağıtım",
+    "versions": "Sürümler",
+    "recognised": "Tanınan düğümler",
+    "servers": "Düğümler",
+    "datastore": "Datastore",
+    "nodeRole": "Rol",
+    "roles": "Rol label'ları",
+    "signals": "Tanındığı yer",
+    "hostname": "Ana makine adı",
+    "internalIp": "İç IP",
+    "externalIp": "Dış IP",
+    "etcdMember": "etcd üyesi"
+  },
+  "hint": {
+    "retrying": "Kurulum Job'ı tekrar tekrar başarısız oluyor ve helm-controller onu yeniden deniyor. Nedenini Job'ın logları söyler.",
+    "applied": "helm-controller kurulum Job'ını oluşturdu; sonucu aşağıdaki Job'da.",
+    "unknown": "helm-controller bir durum bildirmedi (eski sürümler yazmaz); kurulumun nasıl gittiğini aşağıdaki Job gösterir.",
+    "bundled": "Sunucunun manifest dizininden dağıtıldı (Addon {{addon}}): burada yapılan değişiklikler sunucu yeniden başladığında üzerine yazılır; bunun yerine bir HelmChartConfig kullanın."
+  },
+  "job": {
+    "title": "Kurulum Job'ı",
+    "logs": "Loglar",
+    "none": "Listede {{job}} adlı Job yok.",
+    "unavailable": "Jobs okunamıyor."
+  },
+  "values": {
+    "title": "Değerler",
+    "none": "Burada değer ayarlanmamış.",
+    "note": "Değerler sır içerebilir: gizli görünen anahtarların altındaki değerler gizlenir ve adreslerden kimlik bilgileri çıkarılır. Kayıtlı nesneyi YAML bölümü gösterir.",
+    "unreadable": "Değerler gösterilmiyor: güvenli biçimde YAML olarak okunamıyorlar.",
+    "showContent": "valuesContent'i göster",
+    "showValues": "values'u göster",
+    "showSet": "set değerlerini göster",
+    "secrets": "Secrets'tan gelen değerler",
+    "secret": "Secret",
+    "keys": "Anahtarlar",
+    "allKeys": "tüm anahtarlar"
+  },
+  "config": {
+    "noChart": "{{namespace}} içinde {{name}} adlı HelmChart yok: bu HelmChartConfig şu an hiçbir şeyi geçersiz kılmıyor.",
+    "hint": "Bir HelmChartConfig, aynı ad ve namespace'teki HelmChart'ın değerlerini geçersiz kılar; değiştiğinde helm-controller chart'ı yeniden kurar."
+  },
+  "addon": {
+    "hint": "k3s bu manifesti sunucunun manifest dizininden uygular. Uygulayamadığı bir manifest, bu Addon'ın Warning olayı olarak bildirilir."
+  },
+  "node": {
+    "server": "Sunucu",
+    "agent": "Ajan",
+    "args": "Argümanlar",
+    "flag": "Bayrak",
+    "value": "Değer",
+    "hidden": "gizli",
+    "argsNote": "Token, anahtar, parola ve datastore adreslerinin değerleri asla gösterilmez.",
+    "argsUnreadable": "Argümanlar okunamıyor."
+  },
+  "components": {
+    "title": "Birlikte gelen bileşenler",
+    "hint": {
+      "k3s": "k3s'in kendi manifest dizininden dağıttıkları. --disable ile dışarıda bırakılan bir bileşen bulunmaz.",
+      "rke2": "RKE2'nin kube-system içine kurduğu chart'lar. Hangileri olduğu sunucunun seçeneklerine bağlıdır (--cni, --ingress-controller, --disable)."
+    },
+    "unavailable": "kube-system'deki Deployments veya DaemonSets okunamıyor.",
+    "truncated": "Bazı listeler kesildi: durumlar eksik olabilir.",
+    "component": "Bileşen",
+    "status": "Durum",
+    "from": "Kaynak",
+    "workloads": "İş yükleri",
+    "available": "{{desired}} içinden {{available}} kullanılabilir",
+    "state": {
+      "ready": "Hazır",
+      "notReady": "Kullanılamıyor",
+      "installing": "Kuruluyor",
+      "failed": "Kurulum başarısız",
+      "noWorkload": "Henüz iş yükü yok",
+      "notFound": "Bulunamadı",
+      "notFoundDisabled": "Bulunamadı (--disable {{flag}} ile kapatıldı mı?)",
+      "notFoundServiceLb": "Kullanılmıyor: LoadBalancer türünde Service yok ya da --disable {{flag}} ile kapatıldı"
+    }
+  },
+  "component": {
+    "coredns": "CoreDNS",
+    "traefik": "Traefik",
+    "localPath": "Local Path Provisioner",
+    "metricsServer": "metrics-server",
+    "serviceLb": "ServiceLB (Klipper)",
+    "rke2Coredns": "CoreDNS",
+    "rke2IngressNginx": "Ingress NGINX",
+    "rke2Traefik": "Traefik",
+    "rke2MetricsServer": "metrics-server",
+    "rke2SnapshotController": "Anlık görüntü denetleyicisi",
+    "rke2Canal": "Canal",
+    "rke2Calico": "Calico",
+    "rke2Cilium": "Cilium",
+    "rke2Flannel": "Flannel",
+    "rke2Multus": "Multus",
+    "serviceLbRke2": "ServiceLB (Klipper)"
+  },
+  "serviceLb": {
+    "title": "ServiceLB",
+    "hint": "ServiceLB her LoadBalancer türündeki Service için bir DaemonSet çalıştırır ve üzerinde çalıştığı düğümlerin adreslerini yayımlar.",
+    "none": "kube-system içinde ServiceLB DaemonSet'i yok.",
+    "service": "Service",
+    "daemonSet": "DaemonSet",
+    "pods": "Pod'lar",
+    "addresses": "Yük dengeleyici adresleri",
+    "ready": "{{desired}} içinden {{ready}} hazır",
+    "noAddress": "Henüz adres yok",
+    "serviceUnreadable": "Service okunamıyor",
+    "truncated": "Yalnızca ilk {{limit}} Service listelenir."
+  }
+}

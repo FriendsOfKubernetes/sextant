@@ -42,6 +42,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operadores (OLM)",
+    "openshift": "OpenShift",
     "policies": "Políticas do Kyverno",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -54,7 +56,8 @@
     "credentials": "Credenciais",
     "disk": "Disco quase cheio",
     "alerts": "Alertas disparados",
-    "events": "Eventos de aviso"
+    "events": "Eventos de aviso",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -101,7 +104,12 @@
     "monitorNotPickedUp": "Nenhum Prometheus o seleciona pelos seus selectors",
     "reflectorStale": "O Reflector não copiou para este espelho a versão atual da origem {{source}}.",
     "reflectorNotAllowed": "A origem {{source}} não permite mais este namespace, e o espelho está desatualizado.",
-    "reflectorSourceMissing": "A origem {{source}} não existe."
+    "reflectorSourceMissing": "A origem {{source}} não existe.",
+    "olmPlanStuck": "O InstallPlan da Subscription está na fase {{phase}} há mais de 30 minutos.",
+    "olmCatalogState": "A conexão com o registro do catálogo está em {{state}}: as Subscriptions não conseguem resolver nada a partir dele.",
+    "k3sHelmChartFailed": "O Job de instalação {{job}} deste HelmChart falhou.",
+    "k3sHelmChartRetrying": "Job {{job}}: Pods com falha até agora: {{failed}}; o helm-controller continua tentando.",
+    "k3sComponentUnavailable": "Componente incluído {{deployment}}: {{available}} de {{desired}} réplicas disponíveis."
   },
   "showDisk": "Disco quase cheio",
   "showPractices": "Constatações de boas práticas",

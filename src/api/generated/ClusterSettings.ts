@@ -66,4 +66,10 @@ loki?: LokiSettings | null,
  * click; Sextant never requests them. Owned by the frontend, read leniently ([`ObservabilityLinks::read`]); left
  * out of the file when there are none.
  */
-observabilityLinks?: ObservabilityLinks | null, };
+observabilityLinks?: ObservabilityLinks | null, 
+/**
+ * Known namespaces (#285, ADR-0124): every namespace typed or selected in the namespace filter and the ones added
+ * as "Accessible namespaces"; for a user who may not list Namespaces they stand for "All namespaces". Owned by the
+ * frontend, read leniently ([`known_namespaces::read`]); left out of the file when there are none.
+ */
+knownNamespaces?: Array<string> | null, };

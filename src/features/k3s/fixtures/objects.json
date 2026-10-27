@@ -1,0 +1,430 @@
+{
+  "nodeK3sServer": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": {
+      "name": "k3s-server-1",
+      "uid": "6f1c2b0e-4c55-4b1e-9b6e-2a1d9c0e1a01",
+      "labels": {
+        "beta.kubernetes.io/arch": "amd64",
+        "beta.kubernetes.io/instance-type": "k3s",
+        "beta.kubernetes.io/os": "linux",
+        "kubernetes.io/arch": "amd64",
+        "kubernetes.io/hostname": "k3s-server-1",
+        "kubernetes.io/os": "linux",
+        "node-role.kubernetes.io/control-plane": "true",
+        "node-role.kubernetes.io/etcd": "true",
+        "node.kubernetes.io/instance-type": "k3s"
+      },
+      "annotations": {
+        "alpha.kubernetes.io/provided-node-ip": "10.0.0.11",
+        "etcd.k3s.cattle.io/local-snapshots-timestamp": "2026-10-01T12:00:03Z",
+        "etcd.k3s.cattle.io/node-address": "10.0.0.11",
+        "etcd.k3s.cattle.io/node-name": "k3s-server-1-6d1f4a2b",
+        "flannel.alpha.coreos.com/backend-type": "vxlan",
+        "k3s.io/hostname": "k3s-server-1",
+        "k3s.io/internal-ip": "10.0.0.11",
+        "k3s.io/node-args": "[\"server\",\"--cluster-init\",\"--disable\",\"traefik\",\"--token\",\"********\",\"--etcd-s3-secret-key\",\"plain-old-secret\",\"--kube-apiserver-arg\",\"oidc-client-secret=abc123\",\"--tls-san\",\"k3s.example.com\",\"--write-kubeconfig-mode=0644\"]",
+        "k3s.io/node-config-hash": "QZ2ZJ7XKQ4GJ3VXW2B4SW6Y6YH5M7BQ7ZQJ3LZ7S7Z5XKZ4QJ3LQ====",
+        "k3s.io/node-env": "{\"K3S_TOKEN\":\"********\"}",
+        "node.alpha.kubernetes.io/ttl": "0",
+        "volumes.kubernetes.io/controller-managed-attach-detach": "true"
+      }
+    },
+    "spec": { "podCIDR": "10.42.0.0/24", "providerID": "k3s://k3s-server-1" },
+    "status": {
+      "addresses": [
+        { "type": "InternalIP", "address": "10.0.0.11" },
+        { "type": "Hostname", "address": "k3s-server-1" }
+      ],
+      "nodeInfo": {
+        "architecture": "amd64",
+        "containerRuntimeVersion": "containerd://2.1.4-k3s1",
+        "kernelVersion": "6.8.0-79-generic",
+        "kubeProxyVersion": "v1.33.4+k3s1",
+        "kubeletVersion": "v1.33.4+k3s1",
+        "operatingSystem": "linux",
+        "osImage": "Ubuntu 24.04.3 LTS"
+      },
+      "conditions": [{ "type": "Ready", "status": "True", "reason": "KubeletReady" }]
+    }
+  },
+  "nodeK3sAgent": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": {
+      "name": "k3s-agent-1",
+      "uid": "6f1c2b0e-4c55-4b1e-9b6e-2a1d9c0e1a02",
+      "labels": {
+        "kubernetes.io/hostname": "k3s-agent-1",
+        "kubernetes.io/os": "linux",
+        "node.kubernetes.io/instance-type": "k3s"
+      },
+      "annotations": {
+        "k3s.io/hostname": "k3s-agent-1",
+        "k3s.io/internal-ip": "10.0.0.21",
+        "k3s.io/external-ip": "203.0.113.21",
+        "k3s.io/node-args": "[\"agent\",\"--server\",\"https://k3s:k3s-pass@10.0.0.11:6443\",\"--token\",\"********\"]",
+        "k3s.io/node-config-hash": "7KXQ2ZJ4GJ3VXW2B4SW6Y6YH5M7BQ7ZQJ3LZ7S7Z5XKZ4QJ3LQA====",
+        "k3s.io/node-env": "{\"K3S_URL\":\"https://10.0.0.11:6443\"}"
+      }
+    },
+    "spec": { "podCIDR": "10.42.1.0/24", "providerID": "k3s://k3s-agent-1" },
+    "status": {
+      "nodeInfo": { "kubeletVersion": "v1.33.4+k3s1", "kubeProxyVersion": "v1.33.4+k3s1", "containerRuntimeVersion": "containerd://2.1.4-k3s1" },
+      "conditions": [{ "type": "Ready", "status": "True", "reason": "KubeletReady" }]
+    }
+  },
+  "nodeRke2": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": {
+      "name": "rke2-server-1",
+      "uid": "8a2b3c4d-1111-4222-8333-944455566601",
+      "labels": {
+        "kubernetes.io/hostname": "rke2-server-1",
+        "kubernetes.io/os": "linux",
+        "node-role.kubernetes.io/control-plane": "true",
+        "node-role.kubernetes.io/etcd": "true",
+        "node-role.kubernetes.io/master": "true",
+        "node.kubernetes.io/instance-type": "rke2"
+      },
+      "annotations": {
+        "etcd.rke2.cattle.io/node-address": "10.0.1.11",
+        "etcd.rke2.cattle.io/node-name": "rke2-server-1-2c4e6a8b",
+        "rke2.io/hostname": "rke2-server-1",
+        "rke2.io/internal-ip": "10.0.1.11",
+        "rke2.io/node-args": "[\"server\",\"--cni\",\"canal\",\"--token\",\"********\",\"--datastore-endpoint\",\"postgres://rke2:hunter2@db.example.com:5432/rke2\"]",
+        "rke2.io/node-config-hash": "VXW2B4SW6Y6YH5M7BQ7ZQJ3LZ7S7Z5XKZ4QJ3LQZ2ZJ7XKQ4GJ3====",
+        "rke2.io/node-env": "{\"RKE2_TOKEN\":\"********\"}"
+      }
+    },
+    "spec": { "podCIDR": "10.42.0.0/24", "providerID": "rke2://rke2-server-1" },
+    "status": {
+      "nodeInfo": { "kubeletVersion": "v1.33.4+rke2r1", "kubeProxyVersion": "v1.33.4+rke2r1", "containerRuntimeVersion": "containerd://2.1.4-k3s1" },
+      "conditions": [{ "type": "Ready", "status": "True", "reason": "KubeletReady" }]
+    }
+  },
+  "nodePlain": {
+    "apiVersion": "v1",
+    "kind": "Node",
+    "metadata": {
+      "name": "kubeadm-node-1",
+      "uid": "9b9b9b9b-0000-4000-8000-000000000001",
+      "labels": { "kubernetes.io/hostname": "kubeadm-node-1", "node-role.kubernetes.io/control-plane": "" }
+    },
+    "spec": { "podCIDR": "10.244.0.0/24" },
+    "status": { "nodeInfo": { "kubeletVersion": "v1.33.4" } }
+  },
+  "chartTraefik": {
+    "apiVersion": "helm.cattle.io/v1",
+    "kind": "HelmChart",
+    "metadata": {
+      "name": "traefik",
+      "namespace": "kube-system",
+      "uid": "c0ffee00-0000-4000-8000-000000000001",
+      "creationTimestamp": "2026-10-01T08:00:20Z",
+      "annotations": {
+        "objectset.rio.cattle.io/applied": "H4sIAAAAAAAA/4yQwU7DMAyGX6Xy+WA==",
+        "objectset.rio.cattle.io/id": "",
+        "objectset.rio.cattle.io/owner-gvk": "k3s.cattle.io/v1, Kind=Addon",
+        "objectset.rio.cattle.io/owner-name": "traefik",
+        "objectset.rio.cattle.io/owner-namespace": "kube-system"
+      },
+      "labels": { "objectset.rio.cattle.io/hash": "c2d8b1b6a1f5f9e3c8b0a4f1c0e9d8b7a6f5e4d3" },
+      "finalizers": ["wrangler.cattle.io/on-helm-chart-remove"]
+    },
+    "spec": {
+      "chart": "https://%{KUBERNETES_API}%/static/charts/traefik-37.1.1+up37.1.0.tgz",
+      "failurePolicy": "retry",
+      "forceConflicts": true,
+      "set": { "global.systemDefaultRegistry": "" },
+      "valuesContent": "deployment:\n  podAnnotations:\n    prometheus.io/port: \"8082\"\n    prometheus.io/scrape: \"true\"\nproviders:\n  kubernetesIngress:\n    publishedService:\n      enabled: true\npriorityClassName: \"system-cluster-critical\"\nimage:\n  repository: \"rancher/mirrored-library-traefik\"\n  tag: \"3.3.6\"\ntolerations:\n- key: \"CriticalAddonsOnly\"\n  operator: \"Exists\"\n- key: \"node-role.kubernetes.io/control-plane\"\n  operator: \"Exists\"\n  effect: \"NoSchedule\"\nservice:\n  ipFamilyPolicy: \"PreferDualStack\""
+    },
+    "status": {
+      "jobName": "helm-install-traefik",
+      "conditions": [
+        { "type": "JobCreated", "status": "True", "reason": "Job created", "message": "Applying HelmChart using Job kube-system/helm-install-traefik" },
+        { "type": "Failed", "status": "False", "reason": "", "message": "" }
+      ]
+    }
+  },
+  "jobTraefik": {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "name": "helm-install-traefik",
+      "namespace": "kube-system",
+      "uid": "c0ffee00-0000-4000-8000-0000000000a1",
+      "creationTimestamp": "2026-10-01T08:00:21Z",
+      "labels": { "helmcharts.helm.cattle.io/chart": "traefik", "objectset.rio.cattle.io/hash": "b5f8a0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7" },
+      "annotations": { "helmcharts.helm.cattle.io/configHash": "SHA256=9B1F2E3D4C5B6A7980F1E2D3C4B5A69788F9E0D1C2B3A4958677869504A3B2C1" }
+    },
+    "spec": { "backoffLimit": 1000, "completions": 1, "parallelism": 1 },
+    "status": {
+      "startTime": "2026-10-01T08:00:21Z",
+      "completionTime": "2026-10-01T08:01:02Z",
+      "succeeded": 1,
+      "failed": 1,
+      "conditions": [{ "type": "Complete", "status": "True", "lastTransitionTime": "2026-10-01T08:01:02Z" }]
+    }
+  },
+  "chartFailed": {
+    "apiVersion": "helm.cattle.io/v1",
+    "kind": "HelmChart",
+    "metadata": { "name": "my-app", "namespace": "kube-system", "uid": "c0ffee00-0000-4000-8000-000000000002", "creationTimestamp": "2026-10-01T09:00:00Z" },
+    "spec": {
+      "chart": "my-app",
+      "repo": "https://deploy:repo-pass@charts.example.com/stable?token=abc",
+      "version": "1.2.3",
+      "targetNamespace": "apps",
+      "createNamespace": true,
+      "backOffLimit": 5,
+      "valuesContent": "replicaCount: 2\nimage:\n  tag: 1.2.3\napiToken: s3cr3t-value\ndatabase:\n  url: postgres://app:dbpass@db.apps:5432/app\n  password: hunter2\n",
+      "set": { "auth.password": "inline-pass", "ingress.enabled": "true" },
+      "valuesSecrets": [{ "name": "my-app-values", "keys": ["values.yaml"] }],
+      "authSecret": { "name": "chart-repo-auth" }
+    },
+    "status": {
+      "jobName": "helm-install-my-app",
+      "conditions": [
+        { "type": "JobCreated", "status": "True", "reason": "Job created", "message": "Applying HelmChart using Job kube-system/helm-install-my-app" },
+        { "type": "Failed", "status": "True", "reason": "Job failed", "message": "Job has reached configured number of retries without succeeding" }
+      ]
+    }
+  },
+  "jobFailed": {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "name": "helm-install-my-app",
+      "namespace": "kube-system",
+      "uid": "c0ffee00-0000-4000-8000-0000000000a2",
+      "creationTimestamp": "2026-10-01T09:00:01Z",
+      "labels": { "helmcharts.helm.cattle.io/chart": "my-app" }
+    },
+    "spec": { "backoffLimit": 5 },
+    "status": {
+      "startTime": "2026-10-01T09:00:01Z",
+      "failed": 6,
+      "conditions": [
+        { "type": "FailureTarget", "status": "True", "reason": "BackoffLimitExceeded", "message": "Job has reached the specified backoff limit", "lastTransitionTime": "2026-10-01T10:00:00Z" },
+        { "type": "Failed", "status": "True", "reason": "BackoffLimitExceeded", "message": "Job has reached the specified backoff limit", "lastTransitionTime": "2026-10-01T10:00:00Z" }
+      ]
+    }
+  },
+  "chartRetrying": {
+    "apiVersion": "helm.cattle.io/v1",
+    "kind": "HelmChart",
+    "metadata": {
+      "name": "rke2-ingress-nginx",
+      "namespace": "kube-system",
+      "uid": "c0ffee00-0000-4000-8000-000000000003",
+      "creationTimestamp": "2026-10-01T09:30:00Z",
+      "annotations": {
+        "objectset.rio.cattle.io/owner-gvk": "k3s.cattle.io/v1, Kind=Addon",
+        "objectset.rio.cattle.io/owner-name": "rke2-ingress-nginx",
+        "objectset.rio.cattle.io/owner-namespace": "kube-system"
+      }
+    },
+    "spec": {
+      "bootstrap": false,
+      "chart": "https://%{KUBERNETES_API}%/static/charts/rke2-ingress-nginx-4.12.401.tgz",
+      "set": { "global.clusterCIDR": "10.42.0.0/16", "global.systemDefaultRegistry": "" }
+    },
+    "status": {
+      "jobName": "helm-install-rke2-ingress-nginx",
+      "conditions": [{ "type": "JobCreated", "status": "True", "reason": "Job created", "message": "Applying HelmChart using Job kube-system/helm-install-rke2-ingress-nginx" }]
+    }
+  },
+  "jobRetrying": {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "name": "helm-install-rke2-ingress-nginx",
+      "namespace": "kube-system",
+      "uid": "c0ffee00-0000-4000-8000-0000000000a3",
+      "creationTimestamp": "2026-10-01T09:30:01Z",
+      "labels": { "helmcharts.helm.cattle.io/chart": "rke2-ingress-nginx" }
+    },
+    "spec": { "backoffLimit": 1000 },
+    "status": { "startTime": "2026-10-01T09:30:01Z", "active": 1, "failed": 4 }
+  },
+  "chartConfigTraefik": {
+    "apiVersion": "helm.cattle.io/v1",
+    "kind": "HelmChartConfig",
+    "metadata": { "name": "traefik", "namespace": "kube-system", "uid": "c0ffee00-0000-4000-8000-000000000004", "creationTimestamp": "2026-10-01T08:10:00Z" },
+    "spec": {
+      "valuesContent": "additionalArguments:\n- \"--log.level=DEBUG\"\nproviders:\n  kubernetesGateway:\n    enabled: true\n"
+    }
+  },
+  "chartConfigOrphan": {
+    "apiVersion": "helm.cattle.io/v1",
+    "kind": "HelmChartConfig",
+    "metadata": { "name": "rke2-canal", "namespace": "kube-system", "uid": "c0ffee00-0000-4000-8000-000000000005" },
+    "spec": { "valuesContent": "flannel:\n  iface: eth1\n" }
+  },
+  "addonCoredns": {
+    "apiVersion": "k3s.cattle.io/v1",
+    "kind": "Addon",
+    "metadata": { "name": "coredns", "namespace": "kube-system", "uid": "add0n000-0000-4000-8000-000000000001", "creationTimestamp": "2026-10-01T08:00:10Z" },
+    "spec": {
+      "checksum": "6b3a1d8f0e9c7b5a4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e",
+      "source": "/var/lib/rancher/k3s/server/manifests/coredns.yaml"
+    }
+  },
+  "addonTraefik": {
+    "apiVersion": "k3s.cattle.io/v1",
+    "kind": "Addon",
+    "metadata": { "name": "traefik", "namespace": "kube-system", "uid": "add0n000-0000-4000-8000-000000000002", "creationTimestamp": "2026-10-01T08:00:10Z" },
+    "spec": {
+      "checksum": "0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e6b3a1d8f0e9c7b5a4d3c2b1a",
+      "source": "/var/lib/rancher/k3s/server/manifests/traefik.yaml"
+    }
+  },
+  "deployCoredns": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "coredns",
+      "namespace": "kube-system",
+      "uid": "de910000-0000-4000-8000-000000000001",
+      "labels": { "k8s-app": "kube-dns", "kubernetes.io/name": "CoreDNS", "objectset.rio.cattle.io/hash": "bce283298811743a0386ab510f2f67ef74240c57" },
+      "annotations": {
+        "objectset.rio.cattle.io/owner-gvk": "k3s.cattle.io/v1, Kind=Addon",
+        "objectset.rio.cattle.io/owner-name": "coredns",
+        "objectset.rio.cattle.io/owner-namespace": "kube-system"
+      }
+    },
+    "spec": { "replicas": 1 },
+    "status": {
+      "replicas": 1,
+      "readyReplicas": 1,
+      "availableReplicas": 1,
+      "conditions": [{ "type": "Available", "status": "True", "lastTransitionTime": "2026-10-01T08:01:00Z" }]
+    }
+  },
+  "deployTraefik": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "traefik",
+      "namespace": "kube-system",
+      "uid": "de910000-0000-4000-8000-000000000002",
+      "labels": { "app.kubernetes.io/instance": "traefik-kube-system", "app.kubernetes.io/managed-by": "Helm", "app.kubernetes.io/name": "traefik" },
+      "annotations": { "meta.helm.sh/release-name": "traefik", "meta.helm.sh/release-namespace": "kube-system" }
+    },
+    "spec": { "replicas": 1 },
+    "status": {
+      "replicas": 1,
+      "unavailableReplicas": 1,
+      "conditions": [{ "type": "Available", "status": "False", "reason": "MinimumReplicasUnavailable", "lastTransitionTime": "2026-10-01T09:00:00Z" }]
+    }
+  },
+  "deployLocalPath": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": { "name": "local-path-provisioner", "namespace": "kube-system", "uid": "de910000-0000-4000-8000-000000000003" },
+    "spec": { "replicas": 1 },
+    "status": { "replicas": 1, "availableReplicas": 1, "conditions": [{ "type": "Available", "status": "True" }] }
+  },
+  "deployOther": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": { "name": "my-operator", "namespace": "kube-system", "uid": "de910000-0000-4000-8000-000000000004" },
+    "spec": { "replicas": 1 },
+    "status": { "replicas": 1, "conditions": [{ "type": "Available", "status": "False", "lastTransitionTime": "2026-10-01T09:00:00Z" }] }
+  },
+  "deployRke2Coredns": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "rke2-coredns-rke2-coredns",
+      "namespace": "kube-system",
+      "uid": "de910000-0000-4000-8000-000000000005",
+      "labels": { "app.kubernetes.io/managed-by": "Helm", "k8s-app": "kube-dns" },
+      "annotations": { "meta.helm.sh/release-name": "rke2-coredns", "meta.helm.sh/release-namespace": "kube-system" }
+    },
+    "spec": { "replicas": 2 },
+    "status": { "replicas": 2, "availableReplicas": 2, "conditions": [{ "type": "Available", "status": "True" }] }
+  },
+  "dsSvclb": {
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": {
+      "name": "svclb-traefik-5d3e1c2a",
+      "namespace": "kube-system",
+      "uid": "d5000000-0000-4000-8000-000000000001",
+      "labels": {
+        "objectset.rio.cattle.io/hash": "f31b7a6ce2e4f9a8b0f2c1d4e5a6b7c8d9e0f1a2",
+        "svccontroller.k3s.cattle.io/nodeselector": "false",
+        "svccontroller.k3s.cattle.io/svcname": "traefik",
+        "svccontroller.k3s.cattle.io/svcnamespace": "kube-system"
+      }
+    },
+    "spec": {
+      "template": {
+        "metadata": { "labels": { "app": "svclb-traefik-5d3e1c2a", "svccontroller.k3s.cattle.io/svcname": "traefik", "svccontroller.k3s.cattle.io/svcnamespace": "kube-system" } },
+        "spec": {
+          "priorityClassName": "system-node-critical",
+          "containers": [
+            { "name": "lb-tcp-80", "image": "rancher/klipper-lb:v0.4.13", "env": [{ "name": "SRC_PORT", "value": "80" }, { "name": "DEST_PROTO", "value": "TCP" }, { "name": "DEST_PORT", "value": "80" }, { "name": "DEST_IPS", "value": "10.43.163.10" }] },
+            { "name": "lb-tcp-443", "image": "rancher/klipper-lb:v0.4.13", "env": [{ "name": "SRC_PORT", "value": "443" }, { "name": "DEST_PROTO", "value": "TCP" }, { "name": "DEST_PORT", "value": "443" }, { "name": "DEST_IPS", "value": "10.43.163.10" }] }
+          ]
+        }
+      }
+    },
+    "status": { "desiredNumberScheduled": 2, "currentNumberScheduled": 2, "numberReady": 2, "numberAvailable": 2, "updatedNumberScheduled": 2 }
+  },
+  "dsOther": {
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": { "name": "kube-flannel", "namespace": "kube-system", "uid": "d5000000-0000-4000-8000-000000000002" },
+    "status": { "desiredNumberScheduled": 2, "numberReady": 2, "numberAvailable": 2 }
+  },
+  "svcTraefik": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "traefik",
+      "namespace": "kube-system",
+      "uid": "5d3e1c2a-7b8f-4c1d-9e2a-3b4c5d6e7f80",
+      "annotations": { "meta.helm.sh/release-name": "traefik", "meta.helm.sh/release-namespace": "kube-system" }
+    },
+    "spec": {
+      "type": "LoadBalancer",
+      "clusterIP": "10.43.163.10",
+      "ports": [
+        { "name": "web", "port": 80, "protocol": "TCP", "targetPort": "web", "nodePort": 31080 },
+        { "name": "websecure", "port": 443, "protocol": "TCP", "targetPort": "websecure", "nodePort": 31443 }
+      ]
+    },
+    "status": { "loadBalancer": { "ingress": [{ "ip": "10.0.0.11", "ipMode": "VIP" }, { "ip": "10.0.0.21", "ipMode": "VIP" }] } }
+  },
+  "snapshotLocal": {
+    "apiVersion": "k3s.cattle.io/v1",
+    "kind": "ETCDSnapshotFile",
+    "metadata": { "name": "local-etcd-snapshot-k3s-server-1-1759320003-3f9a1b", "uid": "e7c00000-0000-4000-8000-000000000001", "creationTimestamp": "2026-10-01T12:00:05Z" },
+    "spec": {
+      "snapshotName": "etcd-snapshot-k3s-server-1-1759320003",
+      "nodeName": "k3s-server-1",
+      "location": "file:///var/lib/rancher/k3s/server/db/snapshots/etcd-snapshot-k3s-server-1-1759320003"
+    },
+    "status": { "size": "12582944", "creationTime": "2026-10-01T12:00:03Z", "readyToUse": true }
+  },
+  "snapshotS3Failed": {
+    "apiVersion": "k3s.cattle.io/v1",
+    "kind": "ETCDSnapshotFile",
+    "metadata": { "name": "s3-etcd-snapshot-k3s-server-1-1759320003-8c2d4e", "uid": "e7c00000-0000-4000-8000-000000000002", "creationTimestamp": "2026-10-01T12:00:09Z" },
+    "spec": {
+      "snapshotName": "etcd-snapshot-k3s-server-1-1759320003",
+      "nodeName": "s3",
+      "location": "s3://k3s-backups/etcd/etcd-snapshot-k3s-server-1-1759320003",
+      "s3": { "endpoint": "s3.amazonaws.com", "bucket": "k3s-backups", "region": "us-east-1", "prefix": "etcd" }
+    },
+    "status": {
+      "readyToUse": false,
+      "error": { "time": "2026-10-01T12:00:09Z", "message": "failed to upload snapshot: The AWS Access Key Id you provided does not exist in our records." }
+    }
+  }
+}

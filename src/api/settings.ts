@@ -10,7 +10,7 @@ export function defaultAppSettings(): AppSettings {
   return {
     theme: "system",
     language: "system",
-    settingsVersion: 1,
+    settingsVersion: 2,
     kubeconfigSources: [],
     clusters: {},
     window: {
@@ -31,7 +31,7 @@ export function defaultAppSettings(): AppSettings {
       reduceMotion: "system",
       textSize: 100,
       terminalScreenReader: false,
-      sidebarIndent: false,
+      sidebarIndent: true,
       sidebarGuides: false,
     },
     checkForUpdates: true,

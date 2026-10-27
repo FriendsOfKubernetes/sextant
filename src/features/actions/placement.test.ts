@@ -30,6 +30,8 @@ const PRIMARY: ActionId[] = [
   "workflowSuspend",
   "workflowResume",
   "workflowStop",
+  "openshiftRolloutLatest",
+  "openshiftStartBuild",
 ];
 
 const MORE: ActionId[] = [

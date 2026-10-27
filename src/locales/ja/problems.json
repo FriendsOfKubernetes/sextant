@@ -38,6 +38,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operator (OLM)",
+    "openshift": "OpenShift",
     "policies": "Kyverno ポリシー",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -50,7 +52,8 @@
     "credentials": "認証情報",
     "disk": "ディスク残りわずか",
     "alerts": "発火中のアラート",
-    "events": "警告イベント"
+    "events": "警告イベント",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -89,7 +92,12 @@
     "monitorNotPickedUp": "どの Prometheus の selector にも選択されていません",
     "reflectorStale": "Reflector はソース {{source}} の現在のバージョンをこのミラーにコピーしていません。",
     "reflectorNotAllowed": "ソース {{source}} はこの namespace を許可しなくなり、ミラーは古くなっています。",
-    "reflectorSourceMissing": "ソース {{source}} は存在しません。"
+    "reflectorSourceMissing": "ソース {{source}} は存在しません。",
+    "olmPlanStuck": "Subscription の InstallPlan が 30 分以上 {{phase}} フェーズのままです。",
+    "olmCatalogState": "カタログのレジストリ接続は {{state}} です。Subscription はこのカタログから解決できません。",
+    "k3sHelmChartFailed": "この HelmChart のインストール Job {{job}} が失敗しました。",
+    "k3sHelmChartRetrying": "Job {{job}}: これまでに失敗した Pod: {{failed}}。helm-controller は再試行を続けています。",
+    "k3sComponentUnavailable": "同梱コンポーネント {{deployment}}: {{desired}} レプリカ中 {{available}} が利用可能です。"
   },
   "showDisk": "ディスク残りわずか",
   "showPractices": "ベストプラクティスの指摘",

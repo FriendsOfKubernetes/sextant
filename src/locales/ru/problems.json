@@ -44,6 +44,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Операторы (OLM)",
+    "openshift": "OpenShift",
     "policies": "Политики Kyverno",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -56,7 +58,8 @@
     "credentials": "Учётные данные",
     "disk": "Диск почти заполнен",
     "alerts": "Сработавшие оповещения",
-    "events": "События Warning"
+    "events": "События Warning",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -107,7 +110,12 @@
     "monitorNotPickedUp": "Ни один Prometheus не подхватывает его своими selector",
     "reflectorStale": "Reflector не скопировал в это зеркало текущую версию источника {{source}}.",
     "reflectorNotAllowed": "Источник {{source}} больше не разрешает этот namespace, а зеркало устарело.",
-    "reflectorSourceMissing": "Источник {{source}} не существует."
+    "reflectorSourceMissing": "Источник {{source}} не существует.",
+    "olmPlanStuck": "InstallPlan этой Subscription находится в фазе {{phase}} больше 30 минут.",
+    "olmCatalogState": "Подключение к реестру каталога: {{state}}. Subscription не могут получать из него операторы.",
+    "k3sHelmChartFailed": "Job установки {{job}} этого HelmChart завершился с ошибкой.",
+    "k3sHelmChartRetrying": "Job {{job}}: Pod с ошибкой пока: {{failed}}; helm-controller продолжает повторять.",
+    "k3sComponentUnavailable": "Встроенный компонент {{deployment}}: доступно {{available}} из {{desired}} реплик."
   },
   "showDisk": "Диск почти заполнен",
   "showPractices": "Замечания по лучшим практикам",

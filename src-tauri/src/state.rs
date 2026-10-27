@@ -49,6 +49,9 @@ pub struct AppState {
     /// Images open in the image file viewer (#216): their trees and registry sessions (credentials in memory only);
     /// dropped with a pod's cluster, on a reload and on exit.
     pub image_files: crate::image_files::ImageSessions,
+    /// Virtual clusters connected through a port forward of their host cluster (#269, ADR-0122): each entry of
+    /// `kubeconfigs/vcluster.yaml` lives as long as its forward in `forwarder`.
+    pub vcluster: crate::commands::vcluster::VclusterLinks,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -61,6 +64,8 @@ impl AppState {
             settings.get().kubeconfig_sources,
             data_dir.join("kubeconfigs"),
         )));
+        // No forward runs yet: virtual clusters of an earlier run cannot be reached (ADR-0122).
+        crate::commands::vcluster::forget_earlier_run(&registry, &settings);
         let clusters = ClusterManager::new(Arc::clone(&registry));
         // Node shell pods left by an earlier run go when their cluster connects.
         clusters.sweep_node_shells_on_connect();
@@ -91,6 +96,7 @@ impl AppState {
             ext_api,
             gitops: GitopsInstalls::default(),
             image_files: crate::image_files::ImageSessions::default(),
+            vcluster: crate::commands::vcluster::VclusterLinks::default(),
             streams_generation: AtomicU64::new(0),
         }
     }

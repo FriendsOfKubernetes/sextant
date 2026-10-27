@@ -1,0 +1,32 @@
+{
+  "pods": {
+    "tab": "Pods",
+    "title": "Bu düğümdeki Pod'lar"
+  },
+  "search": {
+    "placeholder": "Tüm sütunlarda ara (etiket için app=web)…"
+  },
+  "columns": {
+    "cpuRequest": "CPU isteği",
+    "cpuLimit": "CPU sınırı",
+    "memoryRequest": "Bellek isteği",
+    "memoryLimit": "Bellek sınırı"
+  },
+  "resources": {
+    "tab": "Kaynaklar",
+    "allocated": "Ayrılan kaynaklar",
+    "podsTitle": "Sonlanmamış Pod'lar",
+    "resource": "Kaynak",
+    "requests": "İstekler",
+    "limits": "Sınırlar",
+    "usage": "Kullanım",
+    "allocatable": "Ayrılabilir",
+    "share": "{{value}} (%{{percent}})",
+    "shareBelowOne": "{{value}} (<%1)",
+    "partial": "{{value}} {{note}}",
+    "podCount": "Pod'lar: {{count}}",
+    "podsOf": "Pod'lar: izin verilen {{allocatable}} içinden {{count}}",
+    "withoutLimit_one": "{{count}} Pod'un her kapsayıcısında sınır yok: yukarıdaki sınırlar en az bu toplamlardır.",
+    "withoutLimit_other": "{{count}} Pod'un her kapsayıcısında sınır yok: yukarıdaki sınırlar en az bu toplamlardır."
+  }
+}

@@ -41,6 +41,9 @@ pub enum SourceKind {
     /// Sextant's own file `merged.yaml` in the app data directory: kubeconfig files the user merged into one
     /// ([`edit::KubeconfigEdit::Merge`]).
     Merged,
+    /// Sextant's own file `vcluster.yaml` in the app data directory: virtual clusters connected through a port forward
+    /// of their host cluster ([`crate::vcluster`], ADR-0122); an entry lives only as long as its forward.
+    Vcluster,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -337,6 +340,16 @@ impl KubeconfigRegistry {
         file_name: &str,
         entries: &Kubeconfig,
     ) -> CoreResult<KubeconfigSource> {
+        self.write_own_file(file_name, entries, SourceKind::Cloud)
+    }
+
+    /// [`Self::add_cloud`] for any of Sextant's own file kinds (`kind` is registered with the file).
+    pub(crate) fn write_own_file(
+        &mut self,
+        file_name: &str,
+        entries: &Kubeconfig,
+        kind: SourceKind,
+    ) -> CoreResult<KubeconfigSource> {
         let bare = Path::new(file_name)
             .file_name()
             .is_some_and(|name| name == std::ffi::OsStr::new(file_name));
@@ -395,9 +408,58 @@ impl KubeconfigRegistry {
         if let Some(existing) = self.listed_sources().into_iter().find(|s| s.path == path) {
             return Ok(existing);
         }
-        let added = source(path, SourceKind::Cloud);
+        let added = source(path, kind);
         self.extra_sources.push(added.clone());
         Ok(added)
+    }
+
+    /// Removes the contexts named `contexts` (with their clusters and users of the same names) from Sextant's own file
+    /// `file_name` of `kind`; when no context is left, the source is removed and the file deleted. Returns whether the
+    /// list of sources changed (to be saved). A file that is not a source of `kind` is left alone.
+    pub(crate) fn remove_own_contexts(
+        &mut self,
+        file_name: &str,
+        kind: SourceKind,
+        contexts: &[String],
+    ) -> CoreResult<bool> {
+        let path = self.pasted_dir.join(file_name);
+        let Some(registered) = self
+            .extra_sources
+            .iter()
+            .find(|s| s.path == path && s.kind == kind)
+            .cloned()
+        else {
+            return Ok(false);
+        };
+        let mut config = match Kubeconfig::read_from(&path) {
+            Ok(config) => config,
+            // Unreadable or gone: nothing of it can be kept.
+            Err(_) => {
+                self.remove_source(&registered.id)?;
+                return Ok(true);
+            }
+        };
+        let named = |name: &String| contexts.contains(name);
+        config.contexts.retain(|c| !named(&c.name));
+        config.clusters.retain(|c| !named(&c.name));
+        config.auth_infos.retain(|u| !named(&u.name));
+        if config.contexts.is_empty() {
+            self.remove_source(&registered.id)?;
+            return Ok(true);
+        }
+        if config.current_context.as_ref().is_some_and(named) {
+            config.current_context = config.contexts.first().map(|c| c.name.clone());
+        }
+        let yaml = serde_yaml::to_string(&config)?;
+        let mut file = tempfile::Builder::new()
+            .prefix(".own-")
+            .suffix(".yaml")
+            .tempfile_in(&self.pasted_dir)?;
+        restrict_permissions(file.path())?;
+        file.write_all(yaml.as_bytes())?;
+        file.as_file().sync_all()?;
+        file.persist(&path).map_err(|e| CoreError::from(e.error))?;
+        Ok(false)
     }
 
     /// Forgets an added, pasted or cloud source; a pasted or cloud file (Sextant's own copy) is deleted. `KUBECONFIG` and `~/.kube/config` cannot
@@ -418,7 +480,7 @@ impl KubeconfigRegistry {
         let removed = self.extra_sources.remove(index);
         let own_file = matches!(
             removed.kind,
-            SourceKind::Pasted | SourceKind::Cloud | SourceKind::Merged
+            SourceKind::Pasted | SourceKind::Cloud | SourceKind::Merged | SourceKind::Vcluster
         );
         if own_file && removed.path.starts_with(&self.pasted_dir) {
             match std::fs::remove_file(&removed.path) {
@@ -439,7 +501,7 @@ impl KubeconfigRegistry {
     pub fn is_own(&self, source: &KubeconfigSource) -> bool {
         matches!(
             source.kind,
-            SourceKind::Pasted | SourceKind::Cloud | SourceKind::Merged
+            SourceKind::Pasted | SourceKind::Cloud | SourceKind::Merged | SourceKind::Vcluster
         ) && source.path.starts_with(&self.pasted_dir)
     }
 

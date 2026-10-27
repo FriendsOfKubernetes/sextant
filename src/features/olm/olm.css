@@ -1,0 +1,16 @@
+/* Operators (OLM): why an operator failed, waits or is a copy, and muted remarks. */
+.olm-note {
+  margin: 0 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.olm-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.olm-muted {
+  margin: 0 0 0.5rem;
+  color: var(--color-text-muted);
+}

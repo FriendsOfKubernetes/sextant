@@ -1,0 +1,51 @@
+{
+  "invalidName": "“{{name}}”不是 Namespace 名称",
+  "filter": {
+    "allAccessible_other": "所有可访问的（{{count}}）",
+    "restrictedHint": "你没有列出此集群 Namespace 的权限。输入一个 Namespace 并按 Enter：Sextant 会记住它。",
+    "scopeCapped": "“所有可访问的”只监视 {{total}} 个 Namespace 中的前 {{max}} 个；选择 Namespace 以查看其余的。",
+    "forget": "忘记 {{namespace}}"
+  },
+  "mark": {
+    "accessible": "可访问",
+    "noAccess": "无访问权限",
+    "found": "已发现"
+  },
+  "found": {
+    "title": "连接时发现：{{sources}}",
+    "context": "kubeconfig context 的 Namespace",
+    "serviceAccount": "ServiceAccount 的 Namespace",
+    "project": "OpenShift 项目"
+  },
+  "check": {
+    "again": "重新检查访问权限",
+    "checking": "正在检查访问权限…",
+    "checkedAt": "访问权限检查于 {{time}}。"
+  },
+  "noAccess": {
+    "title": "无权访问 {{kind}}",
+    "namespaced": "API 服务器表示你无权在 {{namespaces}} 中列出 {{kind}}。",
+    "cluster": "API 服务器表示你无权在此集群中列出 {{kind}}。",
+    "noScopeTitle": "没有可显示的 Namespace",
+    "noScope": "你没有列出此集群 Namespace 的权限，Sextant 也不知道任何你可以读取的 Namespace。请在 Namespace 筛选中输入一个。",
+    "listAnyway": "仍然列出",
+    "mark": "无访问权限"
+  },
+  "settings": {
+    "title": "可访问的 Namespace",
+    "hint": "你在 Namespace 筛选中输入或选择过的 Namespace，以及在这里添加的。取消勾选后它们仍留在筛选中。如果你没有列出此集群 Namespace 的权限，“所有 Namespace”即指这些。",
+    "restricted": "你没有列出此集群 Namespace 的权限：“所有 Namespace”监视下面可访问的 Namespace。",
+    "unrestricted": "你可以列出此集群的 Namespace：这些名称只是为 Namespace 筛选而记住。",
+    "unknown": "Sextant 无法检查你是否可以列出此集群的 Namespace。",
+    "notConnected": "连接到集群以检查你可以读取其中哪些 Namespace。",
+    "username": "API 服务器识别你为 {{user}}。",
+    "addLabel": "Namespace",
+    "add": "添加",
+    "cap": "每个集群最多保存 {{max}} 个 Namespace。",
+    "empty": "还没有 Namespace。",
+    "remove": "移除 {{namespace}}",
+    "found": "连接时发现",
+    "keep": "保留",
+    "keepNamed": "保留 {{namespace}}"
+  }
+}

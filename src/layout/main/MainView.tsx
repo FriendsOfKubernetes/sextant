@@ -8,7 +8,7 @@ import type { ClusterId, KindRef, ResourceKind } from "../../api";
 import { tableStateOf, useAppStore, useClusterView } from "../../app/store";
 import { Badge, Checkbox, EmptyState, ErrorState, Icon } from "../../components";
 import { LoadingTable, ResourceTable } from "../../components/Table";
-import { NamespaceFilter, useSelectedNamespaces } from "../../features/namespaces";
+import { NamespaceFilter, NoAccessTable, useNoAccess, useSelectedNamespaces } from "../../features/namespaces";
 import {
   findKind,
   findResourceDef,
@@ -116,7 +116,21 @@ function KindTable({
   const rowFilter = onlyProblems ? def.problem : undefined;
   const labelSelector = table.labelSelector.trim();
 
-  if (namespaces === undefined) return <LoadingTable title={title} since={openedAt} />;
+  // The access check says the user may not list the kind here (#285): said once instead of a refused watch.
+  const noAccess = useNoAccess(clusterId, kind, resourceKind, namespaced, namespaces);
+
+  if (namespaces === undefined || noAccess.reason === "pending") return <LoadingTable title={title} since={openedAt} />;
+  if (noAccess.reason)
+    return (
+      <NoAccessTable
+        clusterId={clusterId}
+        title={title}
+        namespaced={namespaced}
+        namespaces={namespaces}
+        reason={noAccess.reason}
+        onListAnyway={noAccess.listAnyway}
+      />
+    );
   return (
     <ResourceTable
       clusterId={clusterId}

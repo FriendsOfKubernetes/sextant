@@ -1,0 +1,89 @@
+{
+  "sidebar": "Virtuelle Cluster",
+  "loading": "Wird geladen…",
+  "page": {
+    "title": "Virtuelle Cluster",
+    "hint": "vcluster-Instanzen dieses Clusters: StatefulSets und Deployments mit dem label app=vcluster. „Verbinden“ fügt einen virtuellen Cluster über eine Portweiterleitung dieses Clusters zur Clusterliste hinzu.",
+    "total_one": "{{count}} virtueller Cluster",
+    "total_other": "{{count}} virtuelle Cluster",
+    "truncated": "Nur die ersten {{max}} StatefulSets und Deployments werden aufgeführt.",
+    "unavailable": "Einige StatefulSets oder Deployments können nicht aufgelistet werden. Um in Namespaces zu suchen, die Sie lesen dürfen, wählen Sie sie im Filter.",
+    "namespacesCapped": "Pods, Services und Secrets werden nur in den ersten {{max}} Namespaces geprüft.",
+    "lifetime": "Ein verbundener virtueller Cluster bleibt nur in der Clusterliste, solange Sextant einen Port für ihn weiterleitet: Das Trennen seines Host-Clusters, das Beenden der Portweiterleitung oder das Beenden von Sextant entfernt ihn."
+  },
+  "columns": {
+    "name": "Name",
+    "namespace": "Namespace",
+    "kind": "Art",
+    "version": "Version",
+    "state": "Zustand",
+    "pods": "Pods",
+    "service": "Service",
+    "secret": "kubeconfig-Secret",
+    "connection": "Verbindung"
+  },
+  "state": {
+    "paused": "Pausiert",
+    "scaledDown": "Herunterskaliert",
+    "ready": "Bereit",
+    "degraded": "{{ready}} von {{replicas}} bereit",
+    "notReady": "Nicht bereit"
+  },
+  "pods": {
+    "ready": "{{ready}}/{{total}} bereit",
+    "phase": "{{phase}}: {{number}}"
+  },
+  "presence": {
+    "found": "Vorhanden",
+    "missing": "Fehlt",
+    "unknown": "Unbekannt"
+  },
+  "connect": {
+    "button": "Verbinden",
+    "buttonNamed": "Verbinden {{name}}",
+    "connecting": "Wird verbunden…",
+    "forwarded": "Weitergeleitet auf Port {{port}}",
+    "open": "Öffnen",
+    "openNamed": "Öffnen {{context}}",
+    "disconnect": "Trennen",
+    "disconnectNamed": "Trennen {{name}}",
+    "failed": "Verbindung fehlgeschlagen: {{message}}",
+    "title": "Mit vcluster {{name}} verbinden?",
+    "confirm": "Verbinden",
+    "reads": "Sextant liest das Secret {{secret}} in {{namespace}} mit Ihren Anmeldedaten. Die kubeconfig darin bleibt im Backend von Sextant.",
+    "forwards": "Ein lokaler Port wird über {{host}} an den API-Server des vcluster weitergeleitet.",
+    "adds": "Der virtuelle Cluster {{context}} wird der Clusterliste hinzugefügt, in Sextants eigener kubeconfig-Datei vcluster.yaml.",
+    "lasts": "Er bleibt dort, solange die Portweiterleitung läuft: Das Trennen von {{host}}, das Beenden der Weiterleitung oder das Beenden von Sextant entfernt ihn."
+  },
+  "fields": {
+    "name": "vcluster",
+    "version": "Version",
+    "state": "Zustand",
+    "pods": "Pods der Steuerungsebene",
+    "service": "Service",
+    "secret": "kubeconfig-Secret",
+    "connection": "Verbindung"
+  },
+  "section": {
+    "title": "vcluster"
+  },
+  "synced": {
+    "title": "Synchronisierte Objekte",
+    "hint": "Objekte, die der Syncer von {{name}} aus dem virtuellen Cluster in diesen Namespace kopiert hat, und der virtuelle Name und Namespace, für die jedes steht.",
+    "kind": "{{kind}} ({{number}})",
+    "unavailable": "{{kind}}-Objekte können nicht aufgelistet werden.",
+    "notSaid": "nicht angegeben",
+    "more_one": "{{count}} weiteres wird nicht angezeigt.",
+    "more_other": "{{count}} weitere werden nicht angezeigt.",
+    "truncated": "Nur die ersten {{max}} werden aufgeführt.",
+    "columns": {
+      "host": "Host-Objekt",
+      "virtualName": "Virtueller Name",
+      "virtualNamespace": "Virtueller Namespace"
+    }
+  },
+  "source": {
+    "kind": "virtuelle Cluster",
+    "confirmRemove": "Seine virtuellen Cluster verschwinden aus der Liste, und Sextants kubeconfig für sie wird gelöscht. Ihre Portweiterleitungen laufen weiter, bis Sie sie unter Portweiterleitung beenden."
+  }
+}

@@ -29,6 +29,7 @@ import {
 } from "../../api";
 import { reportWatchUpdate } from "../../api/watchObservers";
 import { useClustersStore } from "../clusters/clustersStore";
+import { restrictedScope, subscribeScope } from "../namespaces/accessStore";
 import {
   currentCertExpiryWarningMs,
   DEFAULT_CERT_EXPIRY_DAYS,
@@ -139,9 +140,18 @@ function followConnections(): void {
     }
   };
   look(useClustersStore.getState().states);
-  unfollow = useClustersStore.subscribe((s, prev) => {
+  const offStates = useClustersStore.subscribe((s, prev) => {
     if (s.states !== prev.states) look(s.states);
   });
+  // A user who may not list Namespaces watches the accessible known namespaces (#285): when they change, the sources
+  // start again with them.
+  const offScope = subscribeScope((id) => {
+    if (connected.get(id)) dropCluster(id);
+  });
+  unfollow = () => {
+    offStates();
+    offScope();
+  };
 }
 
 /** Moves on whenever the cluster's connection comes or goes; acquire again when it does. */
@@ -359,7 +369,8 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
       attempts: 0,
     };
     entries.set(key, created);
-    const spec: WatchSpec = { kind: def.kind, namespaces: null, labelSelector: null, fieldSelector: def.fieldSelector };
+    // `null` (cluster-wide) unless the user may not list Namespaces: then the accessible known namespaces (#285).
+    const spec: WatchSpec = { kind: def.kind, namespaces: restrictedScope(clusterId), labelSelector: null, fieldSelector: def.fieldSelector };
     created.open = () => {
       created.stop = openStream<WatchUpdate>({
         start: (id, channel) =>

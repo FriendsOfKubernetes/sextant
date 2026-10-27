@@ -268,6 +268,16 @@ import {
   Vault as EsoVault,
   Waves as KafkaWaves,
 } from "lucide-react";
+// k3s and RKE2 (#270).
+import {
+  BadgeInfo as K3sBadgeInfo,
+  DatabaseZap as K3sDatabaseZap,
+  FileInput as K3sFileInput,
+  FileSliders as K3sFileSliders,
+  PackageCheck as K3sPackageCheck,
+  ShipWheel as K3sShipWheel,
+  Tractor as K3sTractor,
+} from "lucide-react";
 // Dynamic Resource Allocation (#244) and NVIDIA GPU Operator (#245).
 import {
   CircuitBoard as DraCircuitBoard,
@@ -304,6 +314,28 @@ import {
   GraduationCap as KServeGraduationCap,
   MemoryStick as KServeMemoryStick,
   Workflow as KServeWorkflow,
+} from "lucide-react";
+// Operator Lifecycle Manager (#268).
+import {
+  BadgeCheck as OlmBadgeCheck,
+  Blocks as OlmBlocks,
+  BookMarked as OlmBookMarked,
+  ClipboardList as OlmClipboardList,
+  Library as OlmLibrary,
+  LibraryBig as OlmLibraryBig,
+  PackageCheck as OlmPackageCheck,
+  Puzzle as OlmPuzzle,
+  UsersRound as OlmUsersRound,
+} from "lucide-react";
+// OpenShift (#267).
+import {
+  Construction as OsConstruction,
+  FolderKanban as OsFolderKanban,
+  Hammer as OsHammer,
+  Hexagon as OsHexagon,
+  Images as OsImages,
+  RefreshCcwDot as OsRefreshCcwDot,
+  Signpost as OsSignpost,
 } from "lucide-react";
 import {
   File as ImageFile,
@@ -633,6 +665,32 @@ const ICONS = {
   clusterPolicy: GpuFileCog,
   nvidiaDriver: GpuPcCase,
   gpuNodes: GpuMemoryStick,
+  // k3s and RKE2 (#270): the two sections, the Distribution page and the kinds.
+  k3s: K3sTractor,
+  k3sDistribution: K3sBadgeInfo,
+  k3sAddon: K3sFileInput,
+  etcdSnapshot: K3sDatabaseZap,
+  helmController: K3sShipWheel,
+  helmControllerChart: K3sPackageCheck,
+  helmChartConfig: K3sFileSliders,
+  // Operator Lifecycle Manager (#268): the section and its kinds.
+  olm: OlmBlocks,
+  olmSubscription: OlmBookMarked,
+  olmCsv: OlmPackageCheck,
+  olmInstallPlan: OlmClipboardList,
+  olmCatalogSource: OlmLibraryBig,
+  olmOperatorGroup: OlmUsersRound,
+  olmOperator: OlmPuzzle,
+  olmClusterExtension: OlmBadgeCheck,
+  olmClusterCatalog: OlmLibrary,
+  // OpenShift (#267): the section and its kinds.
+  openshift: OsHexagon,
+  openshiftRoute: OsSignpost,
+  openshiftDeploymentConfig: OsRefreshCcwDot,
+  openshiftBuildConfig: OsHammer,
+  openshiftBuild: OsConstruction,
+  openshiftImageStream: OsImages,
+  openshiftProject: OsFolderKanban,
   // Image file viewer (#216): the page and the entries of an image's tree.
   imageFiles: ImageFolderSearch,
   imageFolder: ImageFolder,

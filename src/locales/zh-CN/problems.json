@@ -38,6 +38,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operator (OLM)",
+    "openshift": "OpenShift",
     "policies": "Kyverno 策略",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -50,7 +52,8 @@
     "credentials": "凭据",
     "disk": "磁盘即将用满",
     "alerts": "触发中的告警",
-    "events": "警告事件"
+    "events": "警告事件",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -89,7 +92,12 @@
     "monitorNotPickedUp": "没有 Prometheus 通过其 selector 选中它",
     "reflectorStale": "Reflector 尚未将源 {{source}} 的当前版本复制到此镜像。",
     "reflectorNotAllowed": "源 {{source}} 已不再允许此 namespace，且镜像已过时。",
-    "reflectorSourceMissing": "源 {{source}} 不存在。"
+    "reflectorSourceMissing": "源 {{source}} 不存在。",
+    "olmPlanStuck": "该 Subscription 的 InstallPlan 处于 {{phase}} 阶段已超过 30 分钟。",
+    "olmCatalogState": "目录的注册表连接状态为 {{state}}：Subscription 无法从中解析。",
+    "k3sHelmChartFailed": "此 HelmChart 的安装 Job {{job}} 失败。",
+    "k3sHelmChartRetrying": "Job {{job}}：目前失败的 Pod：{{failed}}；helm-controller 仍在重试。",
+    "k3sComponentUnavailable": "内置组件 {{deployment}}：{{desired}} 个副本中 {{available}} 个可用。"
   },
   "showDisk": "磁盘即将用满",
   "showPractices": "最佳实践发现",

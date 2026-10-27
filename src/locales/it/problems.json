@@ -42,6 +42,8 @@
     "gpuOperator": "NVIDIA GPU Operator",
     "kuberay": "KubeRay",
     "kserve": "KServe",
+    "olm": "Operatori (OLM)",
+    "openshift": "OpenShift",
     "policies": "Policy Kyverno",
     "externalSecrets": "External Secrets",
     "sealedSecrets": "Sealed Secrets",
@@ -54,7 +56,8 @@
     "credentials": "Credenziali",
     "disk": "Disco quasi pieno",
     "alerts": "Alert attivi",
-    "events": "Eventi di avviso"
+    "events": "Eventi di avviso",
+    "k3s": "k3s / RKE2"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -101,7 +104,12 @@
     "monitorNotPickedUp": "Nessun Prometheus lo raccoglie con i suoi selector",
     "reflectorStale": "Reflector non ha copiato in questo mirror la versione attuale della sorgente {{source}}.",
     "reflectorNotAllowed": "La sorgente {{source}} non consente più questo namespace e il mirror non è aggiornato.",
-    "reflectorSourceMissing": "La sorgente {{source}} non esiste."
+    "reflectorSourceMissing": "La sorgente {{source}} non esiste.",
+    "olmPlanStuck": "L'InstallPlan della Subscription è nella fase {{phase}} da più di 30 minuti.",
+    "olmCatalogState": "La connessione al registro del catalogo è {{state}}: le Subscription non possono risolvere nulla da esso.",
+    "k3sHelmChartFailed": "Il Job di installazione {{job}} di questo HelmChart non è riuscito.",
+    "k3sHelmChartRetrying": "Job {{job}}: Pod non riusciti finora: {{failed}}; helm-controller continua a ritentare.",
+    "k3sComponentUnavailable": "Componente incluso {{deployment}}: {{available}} repliche disponibili su {{desired}}."
   },
   "showDisk": "Disco quasi pieno",
   "showPractices": "Rilievi sulle buone pratiche",

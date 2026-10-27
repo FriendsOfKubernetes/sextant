@@ -122,5 +122,10 @@
       "jobs": "Jobs"
     },
     "count": "{{count}}"
+  },
+  "history": {
+    "note": "연 이후 · metrics-server, 기록 없음",
+    "waiting": "metrics-server의 첫 값을 기다리는 중…",
+    "full": "동시에 샘플링하는 차트가 너무 많습니다. 이 차트를 그리려면 다른 세부 정보를 닫으십시오."
   }
 }

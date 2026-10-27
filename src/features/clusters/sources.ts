@@ -15,10 +15,13 @@ const POLICY: Record<SourceKind, SourcePolicy> = {
   cloud: { removable: true, confirmKey: "clusters:sources.confirmCloud" },
   // Sextant's own merged file (#150) is deleted like the other copies.
   merged: { removable: true, confirmKey: "clusters:sources.confirmPasted" },
+  // Sextant's own file of forwarded virtual clusters (#269): deleted, its forwards stopped.
+  vcluster: { removable: true, confirmKey: "vcluster:source.confirmRemove" },
 };
 
 /** The translation key of a source kind's label. */
 export function sourceKindLabelKey(kind: SourceKind): string {
+  if (kind === "vcluster") return "vcluster:source.kind";
   return kind === "merged" ? "kubeconfig:sources.kindMerged" : `clusters:sources.kind.${kind}`;
 }
 

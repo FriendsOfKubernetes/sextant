@@ -30,10 +30,14 @@ import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
 import { RESOURCE_CLAIM as DRA_CLAIM } from "../dra/model";
 import { CLUSTER_POLICY as GPU_CLUSTER_POLICY } from "../gpu-operator/model";
+import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
 import { JOBSET } from "../jobset/model";
 import { RAY_CLUSTER, RAY_JOB, RAY_SERVICE } from "../kuberay/model";
 import { INFERENCE_SERVICE as KSERVE_INFERENCE_SERVICE } from "../kserve/model";
+import { CATALOG_SOURCE as OLM_CATALOG_SOURCE, CSV as OLM_CSV, SUBSCRIPTION as OLM_SUBSCRIPTION } from "../olm/model";
+import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
+import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import { STRIMZI_KINDS } from "../strimzi/model";
 import {
@@ -185,10 +189,33 @@ export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
   // configurations that failed on a node, judged by the provider of features/gpu-operator (`external`), held only
   // where ClusterPolicies are served.
   gpuOperator: [{ category: "gpuOperator", kind: GPU_CLUSTER_POLICY, fieldSelector: null, discovered: true, external: true }],
+  // k3s and RKE2 (#270): HelmCharts whose install Job failed or keeps failing, bundled components' Deployments not
+  // available, judged by the provider of features/k3s (`external`: the Job and the Deployments are other objects), held
+  // only where HelmCharts are served (its watches are bounded there).
+  k3s: [{ category: "k3s", kind: K3S_HELM_CHART, fieldSelector: null, discovered: true, external: true }],
   // KubeRay (#248): failed RayClusters or ones whose head is not ready, failed RayJobs (batch jobs can be thousands:
   // capped), RayServices not ready. KServe (#249): InferenceServices not ready or whose model failed to load.
   kuberay: [tool("kuberay", RAY_CLUSTER), tool("kuberay", RAY_JOB, MAX_SOURCE_OBJECTS), tool("kuberay", RAY_SERVICE)],
   kserve: [tool("kserve", KSERVE_INFERENCE_SERVICE)],
+  // Operator Lifecycle Manager (#268): Subscriptions whose resolution or current InstallPlan failed or whose plan is
+  // stuck (one per installed operator, capped), CatalogSources not READY; failed ClusterServiceVersions come from the
+  // provider of features/olm (`external`), which lists the originals only — OLM copies each CSV into every target
+  // namespace. InstallPlans are not watched: each holds its steps' whole manifests, and the Subscription tells its
+  // current plan's state.
+  olm: [
+    tool("olm", OLM_SUBSCRIPTION, MAX_SOURCE_OBJECTS),
+    tool("olm", OLM_CATALOG_SOURCE),
+    { category: "olm", kind: OLM_CSV, fieldSelector: null, discovered: true, external: true },
+  ],
+  // OpenShift (#267): Routes no router admitted, DeploymentConfigs whose rollout failed, failed Builds (only the latest
+  // of their BuildConfig: judged across the Build rows) and ImageStreams with a failing tag import; every kind a cluster
+  // can hold by the thousand: capped.
+  openshift: [
+    tool("openshift", OPENSHIFT_ROUTE, MAX_SOURCE_OBJECTS),
+    tool("openshift", OPENSHIFT_DC, MAX_SOURCE_OBJECTS),
+    { ...tool("openshift", OPENSHIFT_BUILD, MAX_SOURCE_OBJECTS), across: OPENSHIFT_BUILD_ACROSS },
+    tool("openshift", OPENSHIFT_IMAGE_STREAM, MAX_SOURCE_OBJECTS),
+  ],
   // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
   strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind, d.label === "topics" || d.label === "users" ? MAX_SOURCE_OBJECTS : undefined)),
   // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged

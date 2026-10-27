@@ -132,8 +132,14 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("access_preset_rules", Some("preset")),
     ("rbac_can_i", Some("clusterId")),
     ("rbac_rules_review", Some("clusterId")),
+    ("rbac_whoami", Some("clusterId")),
     ("reflector_match_patterns", Some("patterns")),
+    ("openshift_rollout_latest", Some("clusterId")),
+    ("openshift_start_build", Some("clusterId")),
     ("upgrade_scan", Some("clusterId")),
+    ("vcluster_links", None),
+    ("vcluster_connect", Some("hostClusterId")),
+    ("vcluster_disconnect", Some("clusterId")),
     ("cleanup_sample", Some("clusterId")),
     ("cleanup_cluster_check", Some("clusterId")),
     ("compare_list", Some("clusterId")),
@@ -407,6 +413,8 @@ fn rbac_reviews_need_a_connected_cluster_and_check_their_input_first() {
         json!({ "clusterId": "nope", "namespace": "default" }),
     )
     .unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
+    let err = invoke(&h, "rbac_whoami", json!({ "clusterId": "nope" })).unwrap_err();
     assert_eq!(err["code"], "notFound", "{err}");
 }
 
@@ -1138,6 +1146,16 @@ fn later_argument_names_match_the_frontend() {
             "onEvent",
         ),
         ("resource_count", json!({ "clusterId": "c" }), "kind"),
+        (
+            "vcluster_connect",
+            json!({ "hostClusterId": "c" }),
+            "namespace",
+        ),
+        (
+            "vcluster_connect",
+            json!({ "hostClusterId": "c", "namespace": "n" }),
+            "name",
+        ),
         ("workload_scale", json!({ "clusterId": "c" }), "ref"),
         (
             "kubeconfig_copy",
@@ -1315,6 +1333,12 @@ fn later_argument_names_match_the_frontend() {
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
         ("resource_patch", json!({ "clusterId": "c" }), "ref"),
         ("resource_patch_status", json!({ "clusterId": "c" }), "ref"),
+        (
+            "openshift_rollout_latest",
+            json!({ "clusterId": "c" }),
+            "ref",
+        ),
+        ("openshift_start_build", json!({ "clusterId": "c" }), "ref"),
         (
             "resource_patch",
             json!({ "clusterId": "c", "ref": { "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "x" } }),

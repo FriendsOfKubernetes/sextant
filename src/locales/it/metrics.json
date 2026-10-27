@@ -126,5 +126,10 @@
       "jobs": "Jobs"
     },
     "count": "{{count}}"
+  },
+  "history": {
+    "note": "Dall'apertura · metrics-server, senza cronologia",
+    "waiting": "In attesa dei primi valori da metrics-server…",
+    "full": "Troppi grafici campionati contemporaneamente; chiudi altri dettagli per tracciare questo."
   }
 }

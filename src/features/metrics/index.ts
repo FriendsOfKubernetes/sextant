@@ -28,6 +28,7 @@ export {
   ChartGrid,
   MetricsUnavailable,
   nothingAvailable,
+  UnavailableCell,
   UsageBar,
   usageUnavailable,
   type MetricName,
@@ -42,6 +43,7 @@ export {
   useMetricsStatus,
   useNodeUsage,
   usePodUsage,
+  usePodUsageIn,
   type Polled,
 } from "./hooks";
 export { describeTarget, parseServiceAddress, parseUrlAddress } from "./SettingsSection";

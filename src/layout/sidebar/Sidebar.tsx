@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings, type ClusterId, type KindRef } from "../../api";
-import { useSelectedNamespaces } from "../../features/namespaces";
+import { KindAccessMark, useSelectedNamespaces } from "../../features/namespaces";
 import { useAppStore, useClusterView } from "../../app/store";
 import { Badge, Icon, type IconName } from "../../components";
 import {
@@ -107,6 +107,9 @@ export function Sidebar({ clusterId }: { clusterId: ClusterId }) {
         <span className="sidebar__label">{label(e)}</span>
         {selectedNamespaces !== undefined && (counted || e.id === view) && (
           <EntryCount clusterId={clusterId} entry={entryKind(e.id, kinds)} namespaces={selectedNamespaces} />
+        )}
+        {selectedNamespaces !== undefined && (
+          <KindAccessMark clusterId={clusterId} entry={entryKind(e.id, kinds)} namespaces={selectedNamespaces} />
         )}
       </button>
     </li>

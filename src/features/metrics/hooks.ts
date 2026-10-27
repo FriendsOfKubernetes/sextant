@@ -223,24 +223,42 @@ export function latestNodeUsage(clusterId: ClusterId | null, name: string): Node
 
 /** Current usage of the pods in the selected namespaces, by `namespace/name` (`enabled` false: nothing is fetched). */
 export function usePodUsage(clusterId: ClusterId, enabled = true): Polled<Map<string, PodUsage>> {
+  return usePodUsageIn(clusterId, null, enabled, true);
+}
+
+/**
+ * Current usage of the pods in `namespaces` (`null`: all), by `namespace/name`. When the selected namespaces cover
+ * them, this is the very poll of `usePodUsage` (one request for the table and the details); otherwise a poll of just
+ * these namespaces, which leaves the values the table columns sort by alone. `selected`: the selected namespaces
+ * themselves (`usePodUsage`).
+ */
+export function usePodUsageIn(
+  clusterId: ClusterId,
+  namespaces: readonly string[] | null,
+  enabled = true,
+  selected = false,
+): Polled<Map<string, PodUsage>> {
   const settings = useMetricsSettings(clusterId);
-  const namespaces = useSelectedNamespaces(clusterId);
+  const chosen = useSelectedNamespaces(clusterId);
+  // Until the selected namespaces are known nothing is asked (the poll would change at once).
+  const covered = selected || chosen === null || (chosen !== undefined && namespaces !== null && namespaces.every((n) => chosen.includes(n)));
+  const asked = chosen === undefined || covered ? chosen : namespaces === null ? null : [...new Set(namespaces)].sort();
   const key =
-    enabled && settings && namespaces !== undefined
-      ? `pods|${clusterId}|${settingsKey(settings)}|${JSON.stringify(namespaces)}`
+    enabled && settings && asked !== undefined
+      ? `pods|${clusterId}|${settingsKey(settings)}|${JSON.stringify(asked)}`
       : null;
   return usePolled(key, async () => {
-    const list = await api.metrics.pods(clusterId, namespaces ?? null);
+    const list = await api.metrics.pods(clusterId, asked ?? null);
     const byKey = new Map(list.map((p) => [podKey(p.namespace, p.name), p]));
-    if (key !== null && entries.has(key)) lastPods.set(clusterId, byKey);
+    if (covered && key !== null && entries.has(key)) lastPods.set(clusterId, byKey);
     return byKey;
   });
 }
 
-/** Current usage of every node, by name. */
-export function useNodeUsage(clusterId: ClusterId): Polled<Map<string, NodeUsage>> {
+/** Current usage of every node, by name (`enabled` false: nothing is fetched). */
+export function useNodeUsage(clusterId: ClusterId, enabled = true): Polled<Map<string, NodeUsage>> {
   const settings = useMetricsSettings(clusterId);
-  const key = settings ? `nodes|${clusterId}|${settingsKey(settings)}` : null;
+  const key = settings && enabled ? `nodes|${clusterId}|${settingsKey(settings)}` : null;
   return usePolled(key, async () => {
     const list = await api.metrics.nodes(clusterId);
     const byName = new Map(list.map((n) => [n.name, n]));
